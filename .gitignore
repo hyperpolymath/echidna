@@ -1,99 +1,79 @@
-# SPDX-License-Identifier: CC0-1.0
-# SPDX-FileCopyrightText: 2024-2025 ECHIDNA Project Contributors
+# SPDX-License-Identifier: AGPL-3.0-or-later
+# RSR-compliant .gitignore
 
-# Rust
-/target/
-**/*.rs.bk
-*.pdb
-Cargo.lock
-.cargo/
-
-# Julia
-.julia/
-Manifest.toml
-*.jl.cov
-*.jl.*.cov
-*.jl.mem
-deps/deps.jl
-deps/build.log
-deps/downloads/
-
-# ReScript/Deno
-.deno/
-node_modules/
-dist/
-build/
-*.bs.js
-
-# Mercury/Logtalk (if used)
-*.mh
-*.err
-Mercury/
-
-# Build artifacts
-*.o
-*.a
-*.so
-*.dylib
-*.dll
-*.exe
-
-# IDE and Editor files
-.vscode/
-.idea/
+# OS & Editor
+.DS_Store
+Thumbs.db
 *.swp
 *.swo
 *~
-.DS_Store
-*.sublime-project
-*.sublime-workspace
+.idea/
+.vscode/
 
-# Podman/Container
-*.tar
-*.tar.gz
-*.tgz
+# Build
+/target/
+/_build/
+/build/
+/dist/
+/out/
+
+# Dependencies
+/node_modules/
+/vendor/
+/deps/
+/.elixir_ls/
+
+# Rust
+# Cargo.lock  # Keep for binaries
+
+# Elixir
+/cover/
+/doc/
+*.ez
+erl_crash.dump
+
+# Julia
+*.jl.cov
+*.jl.mem
+/Manifest.toml
+
+# ReScript
+/lib/bs/
+/.bsb.lock
+
+# Python (SaltStack only)
+__pycache__/
+*.py[cod]
+.venv/
+
+# Ada/SPARK
+*.ali
+/obj/
+/bin/
+
+# Haskell
+/.stack-work/
+/dist-newstyle/
+
+# Chapel
+*.chpl.tmp.*
+
+# Secrets
+.env
+.env.*
+*.pem
+*.key
+secrets/
+
+# Test/Coverage
+/coverage/
+htmlcov/
 
 # Logs
 *.log
-logs/
+/logs/
 
-# Temporary files
-tmp/
-temp/
+# Temp
+/tmp/
 *.tmp
-
-# Test coverage
-coverage/
-*.profdata
-*.profraw
-lcov.info
-coverage.xml
-coverage.info
-
-# Documentation builds
-docs/_build/
-docs/.doctrees/
-site/
-
-# OS-specific
-Thumbs.db
-.Spotlight-V100
-.Trashes
-
-# Security scanning
-trivy-*.json
-*.sarif
-
-# Proof artifacts (keep proofs source, ignore artifacts)
-*.proof.cache
-*.proof.bin
-
-# Environment files (never commit secrets!)
-.env
-.env.local
-*.credentials
-*.key
-*.pem
-
-# REUSE tool
-.reuse/spdx-cache
+*.bak
