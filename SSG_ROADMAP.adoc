@@ -1,0 +1,205 @@
+// SPDX-License-Identifier: MIT AND Palimpsest-0.6
+// SPDX-FileCopyrightText: 2024-2025 ECHIDNA Project Contributors
+
+= SSG Integration Roadmap
+:toc:
+
+== Overview
+
+ECHIDNA's neurosymbolic verification capabilities extend naturally to static site generation, enabling formally verified content pipelines. This roadmap outlines three integration paths currently in development.
+
+== Active Development Tracks
+
+=== Track 1: `echidna-docs` — Proof Content SSG
+
+*Status*: 🟢 Active Development
+
+A static site generator that understands formal proof content from 12 theorem prover systems.
+
+[cols="1,1,1"]
+|===
+|Component |Status |Location
+
+|Prover backend traits
+|✅ Complete
+|`src/echidna_provers.rs`
+
+|Agda parser integration
+|✅ Complete
+|`src/prover/agda.rs`
+
+|Aspect tagging system
+|✅ Complete
+|`src/aspect/`
+
+|HTML proof renderer
+|🔨 In Progress
+|`src/echidna_docs/render.rs`
+
+|Dependency graph generator
+|🔨 In Progress
+|`src/echidna_docs/graph.rs`
+
+|CLI interface
+|📋 Planned
+|`src/bin/echidna-docs.rs`
+|===
+
+*Unique Capabilities*:
+
+* Semantic syntax highlighting (type-aware, not regex)
+* Cross-prover theorem linking
+* Aspect-tagged navigation
+* Proof dependency visualisation
+
+=== Track 2: `echidna-verify` — Property Oracle MCP
+
+*Status*: 🟡 Architecture Complete
+
+MCP server for verifying semantic properties of SSG implementations across the polyglot-ssg ecosystem.
+
+[cols="1,1,1"]
+|===
+|Component |Status |Location
+
+|MCP tool definitions
+|✅ Complete
+|`src/echidna_verify/lib.rs`
+
+|Z3 backend integration
+|✅ Complete
+|`src/solver/z3.rs`
+
+|CVC5 backend integration
+|✅ Complete
+|`src/solver/cvc5.rs`
+
+|Property encoders
+|🔨 In Progress
+|`src/echidna_verify/properties/`
+
+|Counterexample minimiser
+|📋 Planned
+|`src/echidna_verify/minimize.rs`
+
+|Fuzzing harness
+|📋 Planned
+|`src/echidna_verify/fuzz.rs`
+|===
+
+*MCP Tools*:
+
+* `verify_ssg_property` — Check semantic properties hold
+* `compare_implementations` — Verify equivalence across languages
+* `generate_counterexample` — Find inputs that distinguish implementations
+
+=== Track 3: `libechidna-ssg` — Verified Core Library
+
+*Status*: 🔵 Specification Phase
+
+Formally verified SSG core with proofs extracted to a shared native library.
+
+[cols="1,1,1"]
+|===
+|Component |Status |Location
+
+|Agda AST specification
+|🔨 In Progress
+|`proofs/agda/SSG/Specification.agda`
+
+|Idempotence proofs
+|📋 Planned
+|`proofs/agda/SSG/Idempotence.agda`
+
+|Well-formedness proofs
+|📋 Planned
+|`proofs/agda/SSG/WellFormed.agda`
+
+|Lean template formalisation
+|📋 Planned
+|`proofs/lean/SSG/`
+
+|Extraction pipeline
+|📋 Planned
+|`extraction/`
+
+|Rust FFI wrapper
+|📋 Planned
+|`src/libechidna_ssg/`
+|===
+
+*Formal Properties Under Development*:
+
+1. **Rendering Idempotence**: `render(render(x)) = render(x)`
+2. **Structure Preservation**: Heading counts preserved across transformation
+3. **HTML Well-formedness**: Output always valid HTML5
+4. **Template Safety**: No script injection through variables
+5. **Determinism**: Same input always produces same output
+
+== Timeline
+
+[cols="1,2,1"]
+|===
+|Phase |Deliverables |Target
+
+|*Q1 2025*
+|`echidna-docs` MVP with Agda/Lean/Coq support
+|✅ On Track
+
+|*Q2 2025*
+|`echidna-verify` MCP server beta
+|🟡 Scheduled
+
+|*Q3 2025*
+|Formal specifications complete, proof sketches
+|🔵 Scheduled
+
+|*Q4 2025*
+|`libechidna-ssg` extraction pipeline prototype
+|🔵 Scheduled
+
+|*2026*
+|Production `libechidna-ssg` with polyglot bindings
+|📋 Roadmap
+|===
+
+== Integration with polyglot-ssg-mcp
+
+ECHIDNA serves as the verification layer for the polyglot-ssg-mcp project:
+
+[source]
+----
+┌─────────────────────────────────────────────────────┐
+│              polyglot-ssg-mcp                       │
+│  ┌─────────┐  ┌─────────┐  ┌─────────┐            │
+│  │ Forth   │  │ Ada     │  │ Haskell │  ...       │
+│  │ SSG     │  │ SSG     │  │ SSG     │            │
+│  └────┬────┘  └────┬────┘  └────┬────┘            │
+│       │            │            │                  │
+│       └────────────┼────────────┘                  │
+│                    │                               │
+│                    ▼                               │
+│       ┌────────────────────────┐                  │
+│       │   echidna-verify MCP   │ ◄── Verification │
+│       │   Property Oracle      │     Layer        │
+│       └────────────────────────┘                  │
+└─────────────────────────────────────────────────────┘
+----
+
+== Contributing
+
+We particularly welcome contributions in:
+
+* **Formal verification**: Agda, Lean, Coq, Isabelle proofs
+* **SSG implementation**: Rust, proof rendering
+* **MCP tooling**: Protocol handling, solver integration
+* **Test corpus**: Diverse markdown/proof content for testing
+
+See link:../CONTRIBUTING.md[CONTRIBUTING.md] for guidelines.
+
+== References
+
+* link:docs/SSG_INTEGRATION.adoc[Full SSG Integration Architecture]
+* link:src/echidna_docs/lib.rs[echidna-docs source]
+* link:src/echidna_verify/lib.rs[echidna-verify source]
+* link:proofs/agda/SSG/Specification.agda[Agda specification]
