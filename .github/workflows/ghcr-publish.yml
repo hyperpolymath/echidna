@@ -32,14 +32,12 @@ jobs:
           sudo apt-get install -y containerd
           sudo systemctl start containerd
 
-          # Install nerdctl
-          NERDCTL_VERSION=2.0.2
-          curl -sSL "https://github.com/containerd/nerdctl/releases/download/v${NERDCTL_VERSION}/nerdctl-${NERDCTL_VERSION}-linux-amd64.tar.gz" | sudo tar -xz -C /usr/local/bin
-
-          # Install CNI plugins
-          CNI_VERSION=1.6.1
+          # Install nerdctl full (includes containerd, CNI plugins, buildkit)
+          NERDCTL_VERSION=2.2.1
+          curl -fsSL "https://github.com/containerd/nerdctl/releases/download/v${NERDCTL_VERSION}/nerdctl-full-${NERDCTL_VERSION}-linux-amd64.tar.gz" -o /tmp/nerdctl.tar.gz
+          sudo tar -xzf /tmp/nerdctl.tar.gz -C /usr/local
           sudo mkdir -p /opt/cni/bin
-          curl -sSL "https://github.com/containernetworking/plugins/releases/download/v${CNI_VERSION}/cni-plugins-linux-amd64-v${CNI_VERSION}.tgz" | sudo tar -xz -C /opt/cni/bin
+          sudo cp /usr/local/libexec/cni/* /opt/cni/bin/ 2>/dev/null || true
 
       - name: Log in to GHCR
         run: |
