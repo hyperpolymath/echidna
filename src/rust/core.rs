@@ -36,8 +36,39 @@ pub enum Term {
         body: Box<Term>,
     },
 
-    /// Type universe
+    /// Type universe at level
+    Type(usize),
+
+    /// Sort universe at level
+    Sort(usize),
+
+    /// Type universe (legacy alias for Type)
     Universe(usize),
+
+    /// Let binding: let name : ty = value in body
+    Let {
+        name: String,
+        ty: Option<Box<Term>>,
+        value: Box<Term>,
+        body: Box<Term>,
+    },
+
+    /// Pattern matching: match scrutinee with branches
+    Match {
+        scrutinee: Box<Term>,
+        return_type: Option<Box<Term>>,
+        branches: Vec<(Pattern, Term)>,
+    },
+
+    /// Fixed-point combinator: fix name. body
+    Fix {
+        name: String,
+        ty: Option<Box<Term>>,
+        body: Box<Term>,
+    },
+
+    /// Hole/goal marker
+    Hole(String),
 
     /// Meta-variable (for unification)
     Meta(usize),
@@ -46,6 +77,20 @@ pub enum Term {
     ProverSpecific {
         prover: String,
         data: serde_json::Value,
+    },
+}
+
+/// Pattern for match expressions
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, Hash)]
+pub enum Pattern {
+    /// Wildcard pattern _
+    Wildcard,
+    /// Variable pattern
+    Var(String),
+    /// Constructor pattern C(p1, p2, ...)
+    Constructor {
+        name: String,
+        args: Vec<Pattern>,
     },
 }
 
@@ -72,7 +117,23 @@ impl fmt::Display for Term {
             Term::Pi { param, param_type, body } => {
                 write!(f, "(Π {}: {}. {})", param, param_type, body)
             },
+            Term::Type(level) => write!(f, "Type{}", level),
+            Term::Sort(level) => write!(f, "Sort{}", level),
             Term::Universe(level) => write!(f, "Type{}", level),
+            Term::Let { name, ty, value, body } => {
+                if let Some(t) = ty {
+                    write!(f, "(let {} : {} = {} in {})", name, t, value, body)
+                } else {
+                    write!(f, "(let {} = {} in {})", name, value, body)
+                }
+            },
+            Term::Match { scrutinee, .. } => {
+                write!(f, "(match {} with ...)", scrutinee)
+            },
+            Term::Fix { name, body, .. } => {
+                write!(f, "(fix {}. {})", name, body)
+            },
+            Term::Hole(name) => write!(f, "?{}", name),
             Term::Meta(id) => write!(f, "?{}", id),
             Term::ProverSpecific { prover, .. } => write!(f, "<{}-term>", prover),
         }

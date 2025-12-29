@@ -367,11 +367,11 @@ async fn search_command(
             ProverKind::Z3,
             ProverKind::CVC5,
             ProverKind::Metamath,
-            ProverKind::HolLight,
+            ProverKind::HOLLight,
             ProverKind::Mizar,
             ProverKind::PVS,
             ProverKind::ACL2,
-            ProverKind::Hol4,
+            ProverKind::HOL4,
         ]
     };
 
@@ -437,11 +437,11 @@ fn list_provers_command(detailed: bool, formatter: &OutputFormatter) -> Result<(
         ProverKind::Z3,
         ProverKind::CVC5,
         ProverKind::Metamath,
-        ProverKind::HolLight,
+        ProverKind::HOLLight,
         ProverKind::Mizar,
         ProverKind::PVS,
         ProverKind::ACL2,
-        ProverKind::Hol4,
+        ProverKind::HOL4,
     ];
 
     formatter.header("Available Provers")?;
@@ -517,7 +517,7 @@ fn info_command(prover: ProverKind, formatter: &OutputFormatter) -> Result<()> {
             "Ultra-minimal proof verification system with plain-text proofs.\n  \
              EASIEST to integrate (2/5 complexity). Large database of formalized mathematics."
         }
-        ProverKind::HolLight => {
+        ProverKind::HOLLight => {
             "Simple, elegant HOL (Higher-Order Logic) proof assistant in OCaml.\n  \
              Part of the 'Big Six' theorem provers. Strong mathematical foundations."
         }
@@ -533,7 +533,7 @@ fn info_command(prover: ProverKind, formatter: &OutputFormatter) -> Result<()> {
             "Computational Logic for Applicative Common Lisp.\n  \
              Industrial-strength theorem prover for software/hardware verification."
         }
-        ProverKind::Hol4 => {
+        ProverKind::HOL4 => {
             "Interactive theorem prover in the HOL family.\n  \
              Used extensively in hardware verification. ML-based tactic language."
         }
@@ -549,11 +549,11 @@ fn info_command(prover: ProverKind, formatter: &OutputFormatter) -> Result<()> {
         ProverKind::Isabelle => ".thy",
         ProverKind::Z3 | ProverKind::CVC5 => ".smt2",
         ProverKind::Metamath => ".mm",
-        ProverKind::HolLight => ".ml",
+        ProverKind::HOLLight => ".ml",
         ProverKind::Mizar => ".miz",
         ProverKind::PVS => ".pvs",
         ProverKind::ACL2 => ".lisp",
-        ProverKind::Hol4 => ".sml",
+        ProverKind::HOL4 => ".sml",
     };
     formatter.info(&format!("  {}", extension))?;
     formatter.info("")?;
@@ -634,11 +634,11 @@ fn get_default_executable(kind: ProverKind) -> PathBuf {
         ProverKind::Z3 => PathBuf::from("z3"),
         ProverKind::CVC5 => PathBuf::from("cvc5"),
         ProverKind::Metamath => PathBuf::from("metamath"),
-        ProverKind::HolLight => PathBuf::from("ocaml"),
+        ProverKind::HOLLight => PathBuf::from("ocaml"),
         ProverKind::Mizar => PathBuf::from("verifier"),
         ProverKind::PVS => PathBuf::from("pvs"),
         ProverKind::ACL2 => PathBuf::from("acl2"),
-        ProverKind::Hol4 => PathBuf::from("hol"),
+        ProverKind::HOL4 => PathBuf::from("hol"),
     }
 }
 

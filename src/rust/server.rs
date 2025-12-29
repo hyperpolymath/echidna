@@ -487,11 +487,11 @@ fn parse_prover_kind(s: &str) -> Result<ProverKind, AppError> {
         "z3" => Ok(ProverKind::Z3),
         "cvc5" => Ok(ProverKind::CVC5),
         "metamath" => Ok(ProverKind::Metamath),
-        "hollight" => Ok(ProverKind::HolLight),
+        "hollight" => Ok(ProverKind::HOLLight),
         "mizar" => Ok(ProverKind::Mizar),
         "pvs" => Ok(ProverKind::PVS),
         "acl2" => Ok(ProverKind::ACL2),
-        "hol4" => Ok(ProverKind::Hol4),
+        "hol4" => Ok(ProverKind::HOL4),
         _ => Err(AppError::BadRequest(format!("Unknown prover: {}", s))),
     }
 }

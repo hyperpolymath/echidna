@@ -125,13 +125,24 @@ impl AgdaBackend {
                 let body_str = self.term_to_agda(body);
                 format!("({} : {}) → {}", param, param_ty_str, body_str)
             }
-            Term::Universe(level) => {
+            Term::Universe(level) | Term::Type(level) => {
                 if *level == 0 {
                     "Set".to_string()
                 } else {
                     format!("Set{}", level)
                 }
             }
+            Term::Sort(level) => format!("Sort{}", level),
+            Term::Let { name, value, body, .. } => {
+                format!("let {} = {} in {}", name, self.term_to_agda(value), self.term_to_agda(body))
+            }
+            Term::Match { scrutinee, .. } => {
+                format!("(case {} of ...)", self.term_to_agda(scrutinee))
+            }
+            Term::Fix { name, body, .. } => {
+                format!("(fix {} = {})", name, self.term_to_agda(body))
+            }
+            Term::Hole(name) => format!("{{! {} !}}", name),
             Term::Meta(id) => format!("?{}", id),
             Term::ProverSpecific { .. } => "{! !}".to_string(),
         }

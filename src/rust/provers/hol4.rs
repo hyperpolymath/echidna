@@ -12,7 +12,7 @@ impl Hol4Backend { pub fn new(config: ProverConfig) -> Self { Hol4Backend { conf
 
 #[async_trait]
 impl ProverBackend for Hol4Backend {
-    fn kind(&self) -> ProverKind { ProverKind::Hol4 }
+    fn kind(&self) -> ProverKind { ProverKind::HOL4 }
     async fn version(&self) -> Result<String> { anyhow::bail!("Not implemented") }
     async fn parse_file(&self, _path: PathBuf) -> Result<ProofState> { anyhow::bail!("Not implemented") }
     async fn parse_string(&self, _content: &str) -> Result<ProofState> { anyhow::bail!("Not implemented") }

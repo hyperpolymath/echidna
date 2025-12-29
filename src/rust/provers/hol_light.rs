@@ -224,7 +224,18 @@ impl HolLightBackend {
             Term::Pi { param, param_type, body } => {
                 format!("(!{} : {}. {})", param, self.term_to_hol(param_type), self.term_to_hol(body))
             }
-            Term::Universe(level) => format!("Type{}", level),
+            Term::Universe(level) | Term::Type(level) => format!("Type{}", level),
+            Term::Sort(level) => format!("Sort{}", level),
+            Term::Let { name, value, body, .. } => {
+                format!("(let {} = {} in {})", name, self.term_to_hol(value), self.term_to_hol(body))
+            }
+            Term::Match { scrutinee, .. } => {
+                format!("(match {} with ...)", self.term_to_hol(scrutinee))
+            }
+            Term::Fix { name, body, .. } => {
+                format!("(fix {} = {})", name, self.term_to_hol(body))
+            }
+            Term::Hole(name) => format!("?{}", name),
             Term::Meta(id) => format!("?{}", id),
             Term::ProverSpecific { data, .. } => {
                 data.as_str().unwrap_or("<term>").to_string()
@@ -347,7 +358,7 @@ impl HolLightBackend {
 #[async_trait]
 impl ProverBackend for HolLightBackend {
     fn kind(&self) -> ProverKind {
-        ProverKind::HolLight
+        ProverKind::HOLLight
     }
 
     async fn version(&self) -> Result<String> {
@@ -1070,7 +1081,7 @@ mod tests {
     async fn test_hol_light_backend_creation() {
         let config = ProverConfig::default();
         let backend = HolLightBackend::new(config);
-        assert_eq!(backend.kind(), ProverKind::HolLight);
+        assert_eq!(backend.kind(), ProverKind::HOLLight);
         assert_eq!(backend.kind().complexity(), 3);
         assert_eq!(backend.kind().tier(), 2);
     }

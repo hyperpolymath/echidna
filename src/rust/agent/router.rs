@@ -131,7 +131,7 @@ impl ProverRouter {
             ProverKind::Z3,
             ProverKind::CVC5,
             ProverKind::Metamath,
-            ProverKind::HolLight,
+            ProverKind::HOLLight,
             ProverKind::Mizar,
         ];
 

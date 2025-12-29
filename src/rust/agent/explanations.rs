@@ -290,8 +290,9 @@ impl ExplanationGenerator {
             Term::Pi { param, param_type, body } => {
                 format!("∀{}:{}. {}", param, self.format_term(param_type), self.format_term(body))
             }
-            Term::App { func, arg } => {
-                format!("({} {})", self.format_term(func), self.format_term(arg))
+            Term::App { func, args } => {
+                let args_str: Vec<_> = args.iter().map(|a| self.format_term(a)).collect();
+                format!("({} {})", self.format_term(func), args_str.join(" "))
             }
             Term::Type(level) => format!("Type({})", level),
             Term::Sort(level) => format!("Sort({})", level),
@@ -306,6 +307,9 @@ impl ExplanationGenerator {
             }
             Term::Const(name) => name.clone(),
             Term::Hole(name) => format!("?{}", name),
+            Term::Universe(level) => format!("Type{}", level),
+            Term::Meta(id) => format!("?{}", id),
+            Term::ProverSpecific { prover, .. } => format!("<{}-term>", prover),
         }
     }
 

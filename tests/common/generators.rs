@@ -3,7 +3,7 @@
 
 //! Property-based testing generators for ECHIDNA types
 
-use echidna::core::{Context, Goal, ProofState, Tactic, Term};
+use echidna::core::{Context, Definition, Goal, Hypothesis, ProofState, Tactic, Term, Theorem, Variable};
 use proptest::prelude::*;
 use std::collections::HashMap;
 
@@ -64,25 +64,58 @@ pub fn arb_term() -> impl Strategy<Value = Term> {
     term_with_depth(5)
 }
 
+/// Strategy for generating a hypothesis
+pub fn arb_hypothesis() -> impl Strategy<Value = Hypothesis> {
+    (var_name(), arb_term(), prop::option::of(arb_term())).prop_map(|(name, ty, body)| {
+        Hypothesis { name, ty, body }
+    })
+}
+
 /// Strategy for generating goals
 pub fn arb_goal() -> impl Strategy<Value = Goal> {
     (
         "[a-z]+[0-9]*",
-        prop::collection::vec(arb_term(), 0..5),
+        prop::collection::vec(arb_hypothesis(), 0..5),
         arb_term(),
     )
-        .prop_map(|(id, hypotheses, conclusion)| Goal {
+        .prop_map(|(id, hypotheses, target)| Goal {
             id,
             hypotheses,
-            conclusion,
+            target,
         })
+}
+
+/// Strategy for generating a definition
+pub fn arb_definition() -> impl Strategy<Value = Definition> {
+    (const_name(), arb_term(), arb_term()).prop_map(|(name, ty, body)| {
+        Definition { name, ty, body }
+    })
+}
+
+/// Strategy for generating a theorem
+pub fn arb_theorem() -> impl Strategy<Value = Theorem> {
+    (const_name(), arb_term()).prop_map(|(name, statement)| {
+        Theorem { name, statement, proof: None, aspects: vec![] }
+    })
+}
+
+/// Strategy for generating a variable
+pub fn arb_variable() -> impl Strategy<Value = Variable> {
+    (var_name(), arb_term()).prop_map(|(name, ty)| {
+        Variable { name, ty }
+    })
 }
 
 /// Strategy for generating contexts
 pub fn arb_context() -> impl Strategy<Value = Context> {
-    prop::collection::hash_map("[a-z]+", arb_term(), 0..5).prop_map(|definitions| Context {
+    (
+        prop::collection::vec(arb_theorem(), 0..3),
+        prop::collection::vec(arb_definition(), 0..3),
+        prop::collection::vec(arb_variable(), 0..3),
+    ).prop_map(|(theorems, definitions, variables)| Context {
+        theorems,
         definitions,
-        theorems: vec![],
+        variables,
     })
 }
 
@@ -104,18 +137,15 @@ pub fn arb_proof_state() -> impl Strategy<Value = ProofState> {
 /// Strategy for generating tactics
 pub fn arb_tactic() -> impl Strategy<Value = Tactic> {
     prop_oneof![
-        Just(Tactic::Intro),
-        Just(Tactic::Split),
+        prop::option::of(var_name()).prop_map(Tactic::Intro),
         Just(Tactic::Reflexivity),
         Just(Tactic::Assumption),
-        arb_term().prop_map(|t| Tactic::Apply { term: t }),
-        arb_term().prop_map(|t| Tactic::Exact { term: t }),
-        arb_term().prop_map(|t| Tactic::Rewrite { equation: t }),
-        var_name().prop_map(|name| Tactic::Induction { on: name }),
-        (var_name(), arb_term()).prop_map(|(name, ty)| Tactic::Have {
-            name,
-            claim: ty
-        }),
+        Just(Tactic::Simplify),
+        const_name().prop_map(Tactic::Apply),
+        arb_term().prop_map(Tactic::Exact),
+        const_name().prop_map(Tactic::Rewrite),
+        arb_term().prop_map(Tactic::Induction),
+        arb_term().prop_map(Tactic::Cases),
     ]
 }
 

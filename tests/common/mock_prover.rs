@@ -5,7 +5,7 @@
 
 use async_trait::async_trait;
 use echidna::core::{ProofState, Tactic, TacticResult, Term};
-use echidna::provers::{ProverBackend, ProverKind};
+use echidna::provers::{ProverBackend, ProverConfig, ProverKind};
 use std::path::PathBuf;
 use std::sync::{Arc, Mutex};
 
@@ -13,11 +13,11 @@ use std::sync::{Arc, Mutex};
 pub struct MockProver {
     pub kind: ProverKind,
     pub version_string: String,
+    pub config: ProverConfig,
     pub parse_results: Arc<Mutex<Vec<anyhow::Result<ProofState>>>>,
     pub verify_results: Arc<Mutex<Vec<anyhow::Result<bool>>>>,
     pub tactic_results: Arc<Mutex<Vec<anyhow::Result<TacticResult>>>>,
     pub export_results: Arc<Mutex<Vec<anyhow::Result<String>>>>,
-    pub translate_results: Arc<Mutex<Vec<anyhow::Result<Term>>>>,
 }
 
 impl MockProver {
@@ -26,11 +26,11 @@ impl MockProver {
         MockProver {
             kind,
             version_string: "Mock 1.0.0".to_string(),
+            config: ProverConfig::default(),
             parse_results: Arc::new(Mutex::new(vec![])),
             verify_results: Arc::new(Mutex::new(vec![])),
             tactic_results: Arc::new(Mutex::new(vec![])),
             export_results: Arc::new(Mutex::new(vec![])),
-            translate_results: Arc::new(Mutex::new(vec![])),
         }
     }
 
@@ -52,11 +52,6 @@ impl MockProver {
     /// Add an export result to return
     pub fn add_export_result(&self, result: anyhow::Result<String>) {
         self.export_results.lock().unwrap().push(result);
-    }
-
-    /// Add a translate result to return
-    pub fn add_translate_result(&self, result: anyhow::Result<Term>) {
-        self.translate_results.lock().unwrap().push(result);
     }
 
     /// Pop the next parse result
@@ -86,10 +81,7 @@ impl MockProver {
             .unwrap()
             .pop()
             .unwrap_or_else(|| {
-                Ok(TacticResult {
-                    new_state: crate::common::simple_proof_state(),
-                    messages: vec![],
-                })
+                Ok(TacticResult::Success(crate::common::simple_proof_state()))
             })
     }
 
@@ -100,15 +92,6 @@ impl MockProver {
             .unwrap()
             .pop()
             .unwrap_or_else(|| Ok("-- Generated proof".to_string()))
-    }
-
-    /// Pop the next translate result
-    fn pop_translate_result(&self) -> anyhow::Result<Term> {
-        self.translate_results
-            .lock()
-            .unwrap()
-            .pop()
-            .unwrap_or_else(|| Ok(Term::Const("translated".to_string())))
     }
 }
 
@@ -146,16 +129,20 @@ impl ProverBackend for MockProver {
         self.pop_export_result()
     }
 
-    async fn translate_term(&self, _term: &Term, _target: ProverKind) -> anyhow::Result<Term> {
-        self.pop_translate_result()
+    async fn suggest_tactics(&self, _state: &ProofState, _limit: usize) -> anyhow::Result<Vec<Tactic>> {
+        Ok(vec![])
     }
 
-    async fn check_type(&self, _term: &Term) -> anyhow::Result<Term> {
-        Ok(Term::Universe(0))
+    async fn search_theorems(&self, _pattern: &str) -> anyhow::Result<Vec<String>> {
+        Ok(vec![])
     }
 
-    async fn normalize(&self, term: &Term) -> anyhow::Result<Term> {
-        Ok(term.clone())
+    fn config(&self) -> &ProverConfig {
+        &self.config
+    }
+
+    fn set_config(&mut self, config: ProverConfig) {
+        self.config = config;
     }
 }
 

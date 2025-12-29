@@ -616,7 +616,21 @@ impl RuleBasedTagger {
                 self.extract_symbols_recursive(param_type, symbols);
                 self.extract_symbols_recursive(body, symbols);
             },
-            Term::Universe(_) => {},
+            Term::Universe(_) | Term::Type(_) | Term::Sort(_) => {},
+            Term::Let { value, body, .. } => {
+                self.extract_symbols_recursive(value, symbols);
+                self.extract_symbols_recursive(body, symbols);
+            },
+            Term::Match { scrutinee, branches, .. } => {
+                self.extract_symbols_recursive(scrutinee, symbols);
+                for (_, body) in branches {
+                    self.extract_symbols_recursive(body, symbols);
+                }
+            },
+            Term::Fix { body, .. } => {
+                self.extract_symbols_recursive(body, symbols);
+            },
+            Term::Hole(_) => {},
             Term::ProverSpecific { .. } => {},
         }
     }
@@ -749,10 +763,23 @@ impl RuleBasedTagger {
                 self.analyze_term(param_type, features, depth + 1);
                 self.analyze_term(body, features, depth + 1);
             },
-            Term::Universe(level) => {
+            Term::Universe(level) | Term::Type(level) | Term::Sort(level) => {
                 features.universe_levels.insert(*level);
             },
-            Term::Meta(_) => {},
+            Term::Let { value, body, .. } => {
+                self.analyze_term(value, features, depth + 1);
+                self.analyze_term(body, features, depth + 1);
+            },
+            Term::Match { scrutinee, branches, .. } => {
+                self.analyze_term(scrutinee, features, depth + 1);
+                for (_, branch_body) in branches {
+                    self.analyze_term(branch_body, features, depth + 1);
+                }
+            },
+            Term::Fix { body, .. } => {
+                self.analyze_term(body, features, depth + 1);
+            },
+            Term::Hole(_) | Term::Meta(_) => {},
             Term::ProverSpecific { .. } => {},
         }
     }
