@@ -7,6 +7,7 @@
 
 use actix::prelude::*;
 use anyhow::Result;
+use std::sync::Arc;
 use std::time::{Duration, Instant};
 use tracing::{debug, info, warn};
 
@@ -22,7 +23,7 @@ pub struct ProveGoal {
     pub timeout_ms: u64,
 }
 
-#[derive::(Message)]
+#[derive(Message)]
 #[rtype(result = "Vec<String>")]
 pub struct GetRelatedConcepts {
     pub theorem_text: String,
@@ -54,18 +55,18 @@ pub struct RecordFailure {
 /// Prover agent - wraps a single prover backend
 pub struct ProverAgent {
     kind: ProverKind,
-    backend: Box<dyn ProverBackend>,
+    backend: Arc<dyn ProverBackend>,
 }
 
 impl ProverAgent {
-    pub fn new(kind: ProverKind, backend: Box<dyn ProverBackend>) -> Self {
+    pub fn new(kind: ProverKind, backend: Arc<dyn ProverBackend>) -> Self {
         ProverAgent { kind, backend }
     }
 
     /// Start the actor
-    pub fn start_actor(kind: ProverKind, backend: Box<dyn ProverBackend>) -> Addr<Self> {
+    pub fn start_actor(kind: ProverKind, backend: Arc<dyn ProverBackend>) -> Addr<Self> {
         SyncArbiter::start(1, move || {
-            ProverAgent::new(kind.clone(), backend.clone())
+            ProverAgent::new(kind, backend.clone())
         })
     }
 }
@@ -361,7 +362,7 @@ pub struct MultiAgentSystem {
 
 impl MultiAgentSystem {
     /// Initialize the multi-agent system
-    pub fn new(provers: Vec<(ProverKind, Box<dyn ProverBackend>)>) -> Self {
+    pub fn new(provers: Vec<(ProverKind, Arc<dyn ProverBackend>)>) -> Self {
         // Start prover agents
         let prover_agents: Vec<_> = provers
             .into_iter()

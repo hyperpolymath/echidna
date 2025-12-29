@@ -3,7 +3,7 @@
 
 //! Common test utilities for ECHIDNA test suite
 
-use echidna::core::{Context, Goal, ProofState, Tactic, TacticResult, Term, Theorem};
+use echidna::core::{Context, Goal, Hypothesis, ProofState, Tactic, TacticResult, Term, Theorem};
 use echidna::provers::{ProverBackend, ProverConfig, ProverKind};
 use std::collections::HashMap;
 use std::path::PathBuf;
@@ -18,12 +18,9 @@ pub fn simple_proof_state() -> ProofState {
         goals: vec![Goal {
             id: "goal1".to_string(),
             hypotheses: vec![],
-            conclusion: Term::Const("true".to_string()),
+            target: Term::Const("true".to_string()),
         }],
-        context: Context {
-            definitions: HashMap::new(),
-            theorems: vec![],
-        },
+        context: Context::default(),
         proof_script: vec![],
         metadata: HashMap::new(),
     }
@@ -36,7 +33,7 @@ pub fn multi_goal_proof_state() -> ProofState {
             Goal {
                 id: "goal1".to_string(),
                 hypotheses: vec![],
-                conclusion: Term::App {
+                target: Term::App {
                     func: Box::new(Term::Const("eq".to_string())),
                     args: vec![
                         Term::Var("x".to_string()),
@@ -46,14 +43,15 @@ pub fn multi_goal_proof_state() -> ProofState {
             },
             Goal {
                 id: "goal2".to_string(),
-                hypotheses: vec![Term::Const("P".to_string())],
-                conclusion: Term::Const("Q".to_string()),
+                hypotheses: vec![Hypothesis {
+                    name: "h".to_string(),
+                    ty: Term::Const("P".to_string()),
+                    body: None,
+                }],
+                target: Term::Const("Q".to_string()),
             },
         ],
-        context: Context {
-            definitions: HashMap::new(),
-            theorems: vec![],
-        },
+        context: Context::default(),
         proof_script: vec![],
         metadata: HashMap::new(),
     }
@@ -69,11 +67,11 @@ pub fn test_prover_config(kind: ProverKind) -> ProverConfig {
         ProverKind::Z3 => "z3",
         ProverKind::CVC5 => "cvc5",
         ProverKind::Metamath => "metamath",
-        ProverKind::HolLight => "ocaml",
+        ProverKind::HOLLight => "ocaml",
         ProverKind::Mizar => "mizf",
         ProverKind::PVS => "pvs",
         ProverKind::ACL2 => "acl2",
-        ProverKind::Hol4 => "hol",
+        ProverKind::HOL4 => "hol",
     };
 
     ProverConfig {
@@ -95,11 +93,11 @@ pub fn proof_examples_dir(kind: ProverKind) -> PathBuf {
         ProverKind::Z3 => "z3",
         ProverKind::CVC5 => "cvc5",
         ProverKind::Metamath => "metamath",
-        ProverKind::HolLight => "hol_light",
+        ProverKind::HOLLight => "hol_light",
         ProverKind::Mizar => "mizar",
         ProverKind::PVS => "pvs",
         ProverKind::ACL2 => "acl2",
-        ProverKind::Hol4 => "hol4",
+        ProverKind::HOL4 => "hol4",
     };
 
     PathBuf::from("/home/user/echidna/proofs").join(subdir)
@@ -119,11 +117,11 @@ pub fn find_proof_files(kind: ProverKind) -> Vec<PathBuf> {
         ProverKind::Isabelle => vec!["thy"],
         ProverKind::Z3 | ProverKind::CVC5 => vec!["smt2"],
         ProverKind::Metamath => vec!["mm"],
-        ProverKind::HolLight => vec!["ml"],
+        ProverKind::HOLLight => vec!["ml"],
         ProverKind::Mizar => vec!["miz"],
         ProverKind::PVS => vec!["pvs"],
         ProverKind::ACL2 => vec!["lisp"],
-        ProverKind::Hol4 => vec!["sml"],
+        ProverKind::HOL4 => vec!["sml"],
     };
 
     let mut files = vec![];

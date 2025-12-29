@@ -37,7 +37,7 @@ pub enum ProverKind {
 
     // Tier 2: "Big Six" completion
     Metamath,
-    HolLight,
+    HOLLight,
     Mizar,
 
     // Tier 3: Additional coverage
@@ -45,7 +45,7 @@ pub enum ProverKind {
     ACL2,
 
     // Tier 4: Advanced
-    Hol4,
+    HOL4,
 }
 
 impl std::str::FromStr for ProverKind {
@@ -60,11 +60,11 @@ impl std::str::FromStr for ProverKind {
             "z3" => Ok(ProverKind::Z3),
             "cvc5" => Ok(ProverKind::CVC5),
             "metamath" => Ok(ProverKind::Metamath),
-            "hollight" | "hol-light" => Ok(ProverKind::HolLight),
+            "hollight" | "hol-light" => Ok(ProverKind::HOLLight),
             "mizar" => Ok(ProverKind::Mizar),
             "pvs" => Ok(ProverKind::PVS),
             "acl2" => Ok(ProverKind::ACL2),
-            "hol4" => Ok(ProverKind::Hol4),
+            "hol4" => Ok(ProverKind::HOL4),
             _ => Err(anyhow::anyhow!("Unknown prover: {}", s)),
         }
     }
@@ -82,7 +82,7 @@ impl ProverKind {
         match self {
             ProverKind::Metamath => 2,
             ProverKind::Agda => 3,
-            ProverKind::HolLight => 3,
+            ProverKind::HOLLight => 3,
             ProverKind::Mizar => 3,
             ProverKind::Lean => 3,
             ProverKind::Coq => 3,
@@ -91,7 +91,7 @@ impl ProverKind {
             ProverKind::CVC5 => 2,
             ProverKind::PVS => 4,
             ProverKind::ACL2 => 4,
-            ProverKind::Hol4 => 5,
+            ProverKind::HOL4 => 5,
         }
     }
 
@@ -101,11 +101,11 @@ impl ProverKind {
             ProverKind::Agda | ProverKind::Coq | ProverKind::Lean |
             ProverKind::Isabelle | ProverKind::Z3 | ProverKind::CVC5 => 1,
 
-            ProverKind::Metamath | ProverKind::HolLight | ProverKind::Mizar => 2,
+            ProverKind::Metamath | ProverKind::HOLLight | ProverKind::Mizar => 2,
 
             ProverKind::PVS | ProverKind::ACL2 => 3,
 
-            ProverKind::Hol4 => 4,
+            ProverKind::HOL4 => 4,
         }
     }
 
@@ -114,11 +114,11 @@ impl ProverKind {
         match self {
             ProverKind::Metamath => 1.5,
             ProverKind::Z3 | ProverKind::CVC5 => 1.0,
-            ProverKind::HolLight | ProverKind::Mizar => 2.0,
+            ProverKind::HOLLight | ProverKind::Mizar => 2.0,
             ProverKind::Agda | ProverKind::Lean | ProverKind::Coq => 2.5,
             ProverKind::Isabelle => 3.0,
             ProverKind::PVS | ProverKind::ACL2 => 3.5,
-            ProverKind::Hol4 => 4.0,
+            ProverKind::HOL4 => 4.0,
         }
     }
 }
@@ -191,6 +191,17 @@ pub trait ProverBackend: Send + Sync {
 
     /// Set configuration
     fn set_config(&mut self, config: ProverConfig);
+
+    /// Attempt to prove a goal (synchronous wrapper for actor use)
+    fn prove(&self, goal: &crate::core::Goal) -> anyhow::Result<ProofState> {
+        // Default implementation: create initial proof state from goal
+        Ok(ProofState {
+            goals: vec![goal.clone()],
+            context: crate::core::Context::default(),
+            proof_script: vec![],
+            metadata: std::collections::HashMap::new(),
+        })
+    }
 }
 
 /// Factory for creating prover backends
@@ -206,11 +217,11 @@ impl ProverFactory {
             ProverKind::Z3 => Ok(Box::new(z3::Z3Backend::new(config))),
             ProverKind::CVC5 => Ok(Box::new(cvc5::CVC5Backend::new(config))),
             ProverKind::Metamath => Ok(Box::new(metamath::MetamathBackend::new(config))),
-            ProverKind::HolLight => Ok(Box::new(hol_light::HolLightBackend::new(config))),
+            ProverKind::HOLLight => Ok(Box::new(hol_light::HolLightBackend::new(config))),
             ProverKind::Mizar => Ok(Box::new(mizar::MizarBackend::new(config))),
             ProverKind::PVS => Ok(Box::new(pvs::PVSBackend::new(config))),
             ProverKind::ACL2 => Ok(Box::new(acl2::ACL2Backend::new(config))),
-            ProverKind::Hol4 => Ok(Box::new(hol4::Hol4Backend::new(config))),
+            ProverKind::HOL4 => Ok(Box::new(hol4::Hol4Backend::new(config))),
         }
     }
 
@@ -223,11 +234,11 @@ impl ProverFactory {
             "thy" => Some(ProverKind::Isabelle),
             "smt2" => Some(ProverKind::Z3),  // Could be CVC5 too
             "mm" => Some(ProverKind::Metamath),
-            "ml" => Some(ProverKind::HolLight),
+            "ml" => Some(ProverKind::HOLLight),
             "miz" => Some(ProverKind::Mizar),
             "pvs" => Some(ProverKind::PVS),
             "lisp" => Some(ProverKind::ACL2),
-            "sml" => Some(ProverKind::Hol4),
+            "sml" => Some(ProverKind::HOL4),
             _ => None,
         })
     }

@@ -105,7 +105,8 @@ proptest! {
 fn substitute_var(term: &Term, var: &str, replacement: &Term) -> Term {
     match term {
         Term::Var(v) if v == var => replacement.clone(),
-        Term::Var(_) | Term::Const(_) | Term::Universe(_) | Term::Meta(_) => term.clone(),
+        Term::Var(_) | Term::Const(_) | Term::Universe(_) | Term::Meta(_)
+        | Term::Type(_) | Term::Sort(_) | Term::Hole(_) => term.clone(),
         Term::App { func, args } => Term::App {
             func: Box::new(substitute_var(func, var, replacement)),
             args: args
@@ -143,6 +144,35 @@ fn substitute_var(term: &Term, var: &str, replacement: &Term) -> Term {
                 Term::Pi {
                     param: param.clone(),
                     param_type: Box::new(substitute_var(param_type, var, replacement)),
+                    body: Box::new(substitute_var(body, var, replacement)),
+                }
+            }
+        }
+        Term::Let { name, ty, value, body } => {
+            if name == var {
+                // Variable is shadowed
+                term.clone()
+            } else {
+                Term::Let {
+                    name: name.clone(),
+                    ty: ty.as_ref().map(|t| Box::new(substitute_var(t, var, replacement))),
+                    value: Box::new(substitute_var(value, var, replacement)),
+                    body: Box::new(substitute_var(body, var, replacement)),
+                }
+            }
+        }
+        Term::Match { scrutinee, return_type, branches } => Term::Match {
+            scrutinee: Box::new(substitute_var(scrutinee, var, replacement)),
+            return_type: return_type.as_ref().map(|t| Box::new(substitute_var(t, var, replacement))),
+            branches: branches.iter().map(|(p, t)| (p.clone(), substitute_var(t, var, replacement))).collect(),
+        },
+        Term::Fix { name, ty, body } => {
+            if name == var {
+                term.clone()
+            } else {
+                Term::Fix {
+                    name: name.clone(),
+                    ty: ty.as_ref().map(|t| Box::new(substitute_var(t, var, replacement))),
                     body: Box::new(substitute_var(body, var, replacement)),
                 }
             }
@@ -298,9 +328,10 @@ proptest! {
     #[test]
     fn test_context_definitions_valid(context in common::generators::arb_context()) {
         // All definition names should be non-empty
-        for (name, term) in &context.definitions {
-            prop_assert!(!name.is_empty(), "Definition name should not be empty");
-            common::assertions::assert_well_formed_term(term);
+        for def in &context.definitions {
+            prop_assert!(!def.name.is_empty(), "Definition name should not be empty");
+            common::assertions::assert_well_formed_term(&def.ty);
+            common::assertions::assert_well_formed_term(&def.body);
         }
     }
 }
@@ -311,19 +342,35 @@ proptest! {
     fn test_term_depth_bounded(term in common::generators::arb_term()) {
         fn depth(t: &Term) -> usize {
             match t {
-                Term::Var(_) | Term::Const(_) | Term::Universe(_) | Term::Meta(_) => 0,
+                Term::Var(_) | Term::Const(_) | Term::Universe(_) | Term::Meta(_)
+                | Term::Type(_) | Term::Sort(_) | Term::Hole(_) => 0,
                 Term::App { func, args } => {
                     1 + depth(func).max(args.iter().map(depth).max().unwrap_or(0))
                 }
                 Term::Lambda { body, param_type, .. } => {
-                    1 + body.as_ref().iter()
-                        .chain(param_type.as_ref().map(|t| t.as_ref()))
-                        .map(depth)
-                        .max()
-                        .unwrap_or(0)
+                    let body_depth = depth(body);
+                    let type_depth = param_type.as_ref().map(|t| depth(t)).unwrap_or(0);
+                    1 + body_depth.max(type_depth)
                 }
                 Term::Pi { param_type, body, .. } => {
                     1 + depth(param_type).max(depth(body))
+                }
+                Term::Let { value, body, ty, .. } => {
+                    let val_depth = depth(value);
+                    let body_depth = depth(body);
+                    let ty_depth = ty.as_ref().map(|t| depth(t)).unwrap_or(0);
+                    1 + val_depth.max(body_depth).max(ty_depth)
+                }
+                Term::Match { scrutinee, return_type, branches } => {
+                    let scr_depth = depth(scrutinee);
+                    let ret_depth = return_type.as_ref().map(|t| depth(t)).unwrap_or(0);
+                    let br_depth = branches.iter().map(|(_, t)| depth(t)).max().unwrap_or(0);
+                    1 + scr_depth.max(ret_depth).max(br_depth)
+                }
+                Term::Fix { body, ty, .. } => {
+                    let body_depth = depth(body);
+                    let ty_depth = ty.as_ref().map(|t| depth(t)).unwrap_or(0);
+                    1 + body_depth.max(ty_depth)
                 }
                 Term::ProverSpecific { .. } => 0,
             }

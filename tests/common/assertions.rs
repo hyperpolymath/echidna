@@ -126,7 +126,7 @@ fn contains_subterm(term: &Term, target: &Term) -> bool {
     }
 }
 
-/// Assert that a proof state is valid (all goals have conclusions)
+/// Assert that a proof state is valid (all goals have targets)
 pub fn assert_valid_proof_state(state: &ProofState) {
     for (i, goal) in state.goals.iter().enumerate() {
         assert!(
@@ -134,10 +134,10 @@ pub fn assert_valid_proof_state(state: &ProofState) {
             "Goal {} has empty ID",
             i
         );
-        // Goals should have conclusions (even if trivial)
-        match &goal.conclusion {
+        // Goals should have targets (even if trivial)
+        match &goal.target {
             Term::Const(c) if c.is_empty() => {
-                panic!("Goal {} has empty constant as conclusion", i)
+                panic!("Goal {} has empty constant as target", i)
             }
             _ => {}
         }

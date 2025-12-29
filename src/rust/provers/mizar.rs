@@ -266,7 +266,18 @@ impl MizarBackend {
                     self.term_to_mizar(body)
                 )
             }
-            Term::Universe(level) => format!("Type{}", level),
+            Term::Universe(level) | Term::Type(level) => format!("Type{}", level),
+            Term::Sort(level) => format!("Sort{}", level),
+            Term::Let { name, value, body, .. } => {
+                format!("let {} = {} in {}", name, self.term_to_mizar(value), self.term_to_mizar(body))
+            }
+            Term::Match { scrutinee, .. } => {
+                format!("(match {} with ...)", self.term_to_mizar(scrutinee))
+            }
+            Term::Fix { name, body, .. } => {
+                format!("(fix {} = {})", name, self.term_to_mizar(body))
+            }
+            Term::Hole(name) => format!("?{}", name),
             Term::Meta(id) => format!("?{}", id),
             Term::ProverSpecific { .. } => "<term>".to_string(),
         }
