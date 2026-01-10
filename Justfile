@@ -16,13 +16,25 @@ build:
 build-release:
     cargo build --release
 
-# Run tests
+# Run unit tests
 test:
+    cargo test --lib
+
+# Run all tests (unit + integration)
+test-all:
     cargo test
 
 # Run tests verbose
 test-verbose:
     cargo test -- --nocapture
+
+# Run integration tests only
+test-integration:
+    cargo test --test integration_tests
+
+# Run neural integration tests (requires Julia server)
+test-neural:
+    ./scripts/test-integration.sh
 
 # Format code
 fmt:
