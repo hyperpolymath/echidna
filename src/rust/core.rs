@@ -220,7 +220,7 @@ pub struct Variable {
 }
 
 /// A proof tactic/command
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
 pub enum Tactic {
     /// Apply a theorem/lemma
     Apply(String),
