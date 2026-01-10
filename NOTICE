@@ -138,7 +138,7 @@ If you use this software in academic work, please cite:
            Deductive Neural Assistance},
   author = {ECHIDNA Project Contributors},
   year = {2025},
-  url = {https://gitlab.com/non-initiate/rhodinised/quill},
+  url = {https://github.com/hyperpolymath/echidna},
   license = {MIT AND Palimpsest-0.6}
 }
 
@@ -148,15 +148,15 @@ See CITATION.cff for machine-readable citation metadata.
 
 CONTACT
 
-Project Repository: https://gitlab.com/non-initiate/rhodinised/quill
-Issue Tracker: https://gitlab.com/non-initiate/rhodinised/quill/-/issues
+Project Repository: https://github.com/hyperpolymath/echidna
+Issue Tracker: https://github.com/hyperpolymath/echidna/-/issues
 Documentation: See docs/ directory
 
 ================================================================================
 
 ACKNOWLEDGMENTS
 
-Based on the Quill project (Agda neural solver)
+Built on foundations from the theorem proving community
 Thanks to all theorem prover communities
 Thanks to all contributors (see AUTHORS.md)
 

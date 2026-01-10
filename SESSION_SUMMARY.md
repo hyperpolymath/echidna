@@ -448,7 +448,7 @@ Multiple development streams executed simultaneously:
    ```
 
 3. **Prepare Training Data**
-   - Convert Agda corpus from Quill
+   - Convert Agda theorem corpus
    - Add Metamath set.mm
    - Collect Lean Mathlib theorems
 
@@ -484,7 +484,7 @@ Multiple development streams executed simultaneously:
 
 1. **Deploy to GitLab**
    ```bash
-   git remote add gitlab https://gitlab.com/non-initiate/rhodinised/quill.git
+   git remote add gitlab https://github.com/hyperpolymath/echidna.git
    git push gitlab main
    ```
 

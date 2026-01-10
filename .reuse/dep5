@@ -1,7 +1,7 @@
 Format: https://www.debian.org/doc/packaging-manuals/copyright-format/1.0/
 Upstream-Name: ECHIDNA
 Upstream-Contact: ECHIDNA Project Team
-Source: https://gitlab.com/non-initiate/rhodinised/quill
+Source: https://github.com/hyperpolymath/echidna
 
 # Core source code - dual licensed
 Files: src/* Cargo.toml Cargo.lock Justfile

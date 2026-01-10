@@ -493,7 +493,7 @@ fn info_command(prover: ProverKind, formatter: &OutputFormatter) -> Result<()> {
     let description = match prover {
         ProverKind::Agda => {
             "Dependently typed functional programming language and proof assistant.\n  \
-             Original Quill prover. Strong type system with universe polymorphism."
+             Tier 1 prover. Strong type system with universe polymorphism."
         }
         ProverKind::Coq => {
             "Interactive theorem prover using the Calculus of Inductive Constructions.\n  \

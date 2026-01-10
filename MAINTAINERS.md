@@ -46,8 +46,8 @@ If you're interested in becoming a maintainer, please reach out to the core team
 
 ## Communication Channels
 
-- **GitLab Issues**: https://gitlab.com/non-initiate/rhodinised/quill/-/issues
-- **Merge Requests**: https://gitlab.com/non-initiate/rhodinised/quill/-/merge_requests
+- **GitLab Issues**: https://github.com/hyperpolymath/echidna/-/issues
+- **Merge Requests**: https://github.com/hyperpolymath/echidna/-/merge_requests
 - **Email**: maintainers@echidna-project.org
 
 ## Decision-Making Process

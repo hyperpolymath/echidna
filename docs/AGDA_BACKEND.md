@@ -2,7 +2,7 @@
 
 ## Overview
 
-The Agda backend is the **ORIGINAL** prover from Quill, now generalized and enhanced as part of the ECHIDNA universal theorem proving platform. This implementation provides full integration with Agda's dependently-typed proof system.
+The Agda backend is a Tier 1 prover in ECHIDNA with full dependent type theory support. This implementation provides full integration with Agda's dependently-typed proof system.
 
 ## Features
 
@@ -236,7 +236,7 @@ let config = ProverConfig {
 ## Complexity & Timeline
 
 - **Complexity**: 3/5 (Medium)
-- **Tier**: 1 (Original prover from Quill)
+- **Tier**: 1 (Dependent type theory)
 - **Implementation Time**: 2.5 weeks (estimated)
 - **Status**: ✅ Complete and production-ready
 
@@ -283,7 +283,7 @@ The Agda backend follows ECHIDNA's development standards:
 - [Agda Documentation](https://agda.readthedocs.io/)
 - [Agda JSON Interaction](https://agda.readthedocs.io/en/latest/tools/json-api.html)
 - [Agda Standard Library](https://github.com/agda/agda-stdlib)
-- [ECHIDNA Project](https://gitlab.com/non-initiate/rhodinised/quill)
+- [ECHIDNA Project](https://github.com/hyperpolymath/echidna)
 
 ---
 

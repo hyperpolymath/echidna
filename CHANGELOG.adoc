@@ -123,9 +123,9 @@ ECHIDNA follows Semantic Versioning (SemVer):
 
 == Migration Notes
 
-=== From Quill (Agda-only)
+=== Migration Notes
 
-If you're migrating from the original Quill project:
+If you're migrating from earlier versions:
 
 1. Update import paths to use ECHIDNA modules
 2. Replace Python ML code with Julia equivalents

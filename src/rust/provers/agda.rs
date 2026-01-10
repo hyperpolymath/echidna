@@ -3,7 +3,7 @@
 
 //! Agda backend implementation for ECHIDNA
 //!
-//! Agda is the ORIGINAL prover from Quill - now generalized in ECHIDNA.
+//! Agda is a Tier 1 prover in ECHIDNA with dependent type theory support.
 //! This module provides full integration with Agda's dependently-typed proof system.
 
 use async_trait::async_trait;

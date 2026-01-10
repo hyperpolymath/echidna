@@ -439,7 +439,7 @@ The implementation demonstrates ECHIDNA's capability to integrate diverse theore
 ---
 
 **Next Steps**:
-1. Deploy to actual Quill repository (Priority 1 from CLAUDE.md)
+1. Deploy to actual ECHIDNA repository (Priority 1 from CLAUDE.md)
 2. Continue with Metamath implementation (easiest Tier 2, 2/5 complexity)
 3. Integrate neural premise selection for MML theorem suggestions
 4. Add interactive proof development features
@@ -448,5 +448,5 @@ The implementation demonstrates ECHIDNA's capability to integrate diverse theore
 
 **Implementation Team**: ECHIDNA Project
 **License**: MIT OR Palimpsest-0.6
-**Repository**: https://gitlab.com/non-initiate/rhodinised/quill
+**Repository**: https://github.com/hyperpolymath/echidna
 **Documentation**: /home/user/echidna/docs/MIZAR_BACKEND.md

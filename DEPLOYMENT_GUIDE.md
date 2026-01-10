@@ -62,7 +62,7 @@ In this intensive autonomous development session, we've created:
 
 | Tier | Prover | Complexity | Status | Lines | Notes |
 |------|--------|------------|--------|-------|-------|
-| **Tier 1** | Agda | 3/5 | ✅ Complete | 495 | Original Quill prover |
+| **Tier 1** | Agda | 3/5 | ✅ Complete | 495 | Tier 1 prover |
 | | Coq/Rocq | 3/5 | ✅ Complete | 1,112 | SerAPI integration |
 | | Lean 4 | 3/5 | ✅ Complete | 1,126 | LSP support |
 | | Isabelle | 4/5 | ✅ Complete | 313 | PIDE + Sledgehammer |
@@ -170,8 +170,8 @@ In this intensive autonomous development session, we've created:
 
 ```bash
 # Clone repository (when deployed to GitLab)
-git clone https://gitlab.com/non-initiate/rhodinised/quill.git
-cd quill
+git clone https://github.com/hyperpolymath/echidna.git
+cd echidna
 
 # Verify Justfile is PRIMARY build system
 just --version  # Ensure Just is installed
@@ -445,7 +445,7 @@ echidna/
 1. **Deploy to GitLab**
    ```bash
    # Add GitLab remote
-   git remote add gitlab https://gitlab.com/non-initiate/rhodinised/quill.git
+   git remote add gitlab https://github.com/hyperpolymath/echidna.git
 
    # Push code
    git push gitlab main
@@ -473,7 +473,7 @@ echidna/
    - Implement ACL2 backend (4/5 complexity)
 
 5. **Prepare Training Data**
-   - Convert Agda theorem corpus from Quill
+   - Convert Agda theorem corpus 
    - Add Metamath database (set.mm)
    - Collect Lean Mathlib theorems
 
@@ -538,7 +538,7 @@ Files to preserve from wrong repo:
 - `echidna_provers.rs` - Rust trait implementation (RECREATED, 600+ lines)
 - `TIER2_PROVER_INTEGRATION_GUIDES.md` (should exist in wrong repo)
 - `ECHIDNA_PROVER_EXPANSION_ANALYSIS.md` (should exist in wrong repo)
-- All `.quill-template` files (RSR/CCCP templates - RECREATED)
+- All `.template` files (RSR/CCCP templates - RECREATED)
 
 **Action**: If those files exist in zotero-voyant-export, copy to echidna repo and integrate.
 
@@ -621,7 +621,7 @@ All limitations are **environmental** (missing external tools), not **architectu
 
 ### External Links
 
-- **Quill Original**: https://gitlab.com/non-initiate/rhodinised/quill
+- **ECHIDNA**: https://github.com/hyperpolymath/echidna
 - **RSR/CCCP**: https://rhodium-standard.org
 - **Palimpsest License**: https://palimpsest.license
 

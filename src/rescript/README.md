@@ -335,7 +335,7 @@ See project root for full license texts.
 - [Deno Manual](https://deno.land/manual)
 - [Tailwind CSS](https://tailwindcss.com)
 - [ECHIDNA Main Docs](../../docs/)
-- [Quill Repository](https://gitlab.com/non-initiate/rhodinised/quill)
+- [ECHIDNA Repository](https://github.com/hyperpolymath/echidna)
 
 ## Support
 
