@@ -15,7 +15,7 @@ Architecture:
 3. Attention: Cross-attention between goal and premise candidates
 4. Ranking: Scores premises by relevance to current proof state
 
-Generalizes Quill's Agda-specific architecture to universal multi-prover system.
+Generalizes ECHIDNA's universal architecture to universal multi-prover system.
 """
 
 using Flux

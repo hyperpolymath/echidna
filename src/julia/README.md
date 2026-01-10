@@ -5,7 +5,7 @@
 
 **Neural Premise Selection for Universal Theorem Proving**
 
-This directory contains the complete Julia-based machine learning system for ECHIDNA (Extensible Cognitive Hybrid Intelligence for Deductive Neural Assistance). It generalizes Quill's Agda-specific neural architecture to support all 12 theorem provers.
+This directory contains the complete Julia-based machine learning system for ECHIDNA (Extensible Cognitive Hybrid Intelligence for Deductive Neural Assistance). It generalizes ECHIDNA's universal neural architecture to support all 12 theorem provers.
 
 ## Overview
 
@@ -479,13 +479,13 @@ See LICENSE files for details.
 
 ## Support
 
-- Issues: GitLab issue tracker at https://gitlab.com/non-initiate/rhodinised/quill
+- Issues: GitLab issue tracker at https://github.com/hyperpolymath/echidna
 - Documentation: See `/home/user/echidna/docs/`
-- ECHIDNA Project: https://gitlab.com/non-initiate/rhodinised/quill
+- ECHIDNA Project: https://github.com/hyperpolymath/echidna
 
 ## References
 
-- Quill (original Agda-only system): https://gitlab.com/non-initiate/rhodinised/quill
+- ECHIDNA project: https://github.com/hyperpolymath/echidna
 - Flux.jl: https://fluxml.ai/
 - GraphNeuralNetworks.jl: https://github.com/CarloLucibello/GraphNeuralNetworks.jl
 - Oxygen.jl: https://github.com/ndortega/Oxygen.jl

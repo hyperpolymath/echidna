@@ -1,15 +1,11 @@
 = ECHIDNA
 
-image:https://img.shields.io/badge/License-MPL_2.0-blue.svg[MPL-2.0,link="https://opensource.org/licenses/MPL-2.0"]
+image:https://img.shields.io/badge/License-MIT-blue.svg[MIT,link="https://opensource.org/licenses/MIT"]
 image:https://img.shields.io/badge/Philosophy-Palimpsest-purple.svg[Palimpsest,link="https://github.com/hyperpolymath/palimpsest-licence"]
-
 
 *E*xtensible *C*ognitive *H*ybrid *I*ntelligence for *D*eductive *N*eural *A*ssistance
 
-[![REUSE status](https://api.reuse.software/badge/gitlab.com/non-initiate/rhodinised/quill)](https://api.reuse.software/info/gitlab.com/non-initiate/rhodinised/quill)
-[![Pipeline](https://gitlab.com/non-initiate/rhodinised/quill/badges/main/pipeline.svg)](https://gitlab.com/non-initiate/rhodinised/quill/-/pipelines)
-
-A neurosymbolic theorem proving platform that transforms Quill (Agda-only neural solver) into a universal multi-prover system supporting 12 theorem provers with aspect tagging, OpenCyc integration, and DeepProbLog probabilistic logic.
+A neurosymbolic theorem proving platform supporting 12 theorem provers with aspect tagging, OpenCyc integration, and DeepProbLog probabilistic logic.
 
 == Features
 
@@ -33,33 +29,27 @@ A neurosymbolic theorem proving platform that transforms Quill (Agda-only neural
 === Installation
 
 ```bash
-= Clone the repository
+# Clone the repository
+git clone https://github.com/hyperpolymath/echidna.git
+cd echidna
 
-git clone https://gitlab.com/non-initiate/rhodinised/quill.git
-cd quill
-
-= Build the project
-
+# Build the project
 just build
 
-= Run tests
-
+# Run tests
 just test
 
-= Run ECHIDNA
-
+# Run ECHIDNA
 just run
 ```
 
 === Using Podman Container
 
 ```bash
-= Build container
-
+# Build container
 podman build -f Containerfile -t echidna:latest .
 
-= Run container
-
+# Run container
 podman run -it echidna:latest
 ```
 
@@ -67,7 +57,7 @@ podman run -it echidna:latest
 
 === Prover Tiers
 
-*Tier 1* (6 provers - Months 2-4):
+*Tier 1* (6 provers):
 - Agda - Dependent type theory
 - Coq/Rocq - Interactive theorem prover
 - Lean - Functional programming and proving
@@ -75,16 +65,16 @@ podman run -it echidna:latest
 - Z3 - SMT solver
 - CVC5 - SMT solver
 
-*Tier 2* (3 provers - Months 5-7):
-- Metamath - Plain text verifier (easiest, start here!)
+*Tier 2* (3 provers):
+- Metamath - Plain text verifier
 - HOL Light - Classical higher-order logic
 - Mizar - Mathematical vernacular
 
-*Tier 3* (2 provers - Months 8-10):
+*Tier 3* (2 provers):
 - PVS - Specification and verification
 - ACL2 - Applicative Common Lisp
 
-*Tier 4* (1 prover - Months 11-12):
+*Tier 4* (1 prover):
 - HOL4 - Higher-order logic
 
 === Technology Stack
@@ -96,9 +86,9 @@ podman run -it echidna:latest
 
 === Key Components
 
-- *`echidna_provers.rs`*: Complete Rust trait system (600+ lines)
+- *`src/rust/provers/`*: Complete Rust prover implementations
 - *Aspect Tagging System*: Proof classification and analysis
-- *Neural Solver*: Integration from original Quill project
+- *Neural Solver*: ML-based proof synthesis
 - *Universal Prover Abstraction*: Unified interface for all 12 provers
 
 == Usage
@@ -106,24 +96,27 @@ podman run -it echidna:latest
 === Basic Theorem Proving
 
 ```rust
-use echidna::prover::{Prover, AgdaProver};
+use echidna::provers::{ProverFactory, ProverKind};
 
-let prover = AgdaProver::new();
-let result = prover.prove("∀ (n : ℕ) → n + 0 ≡ n")?;
-println!("Proof: {}", result);
+let backend = ProverFactory::create(ProverKind::Agda, config)?;
+let state = backend.parse_string("module T where\nid : {A : Set} → A → A\nid x = x").await?;
+let verified = backend.verify_proof(&state).await?;
 ```
 
 === Using Multiple Provers
 
 ```rust
-use echidna::prover::{ProverBackend, lean, coq, z3};
+use echidna::provers::{ProverFactory, ProverKind};
 
 // Try multiple provers
-let backends = vec![lean(), coq(), z3()];
-for backend in backends {
-    if let Ok(proof) = backend.prove(theorem) {
-        println!("Proved with {}: {}", backend.name(), proof);
-        break;
+let provers = vec![ProverKind::Lean, ProverKind::Coq, ProverKind::Z3];
+for kind in provers {
+    let backend = ProverFactory::create(kind, config.clone())?;
+    if let Ok(state) = backend.parse_string(theorem).await {
+        if backend.verify_proof(&state).await.unwrap_or(false) {
+            println!("Proved with {:?}", kind);
+            break;
+        }
     }
 }
 ```
@@ -131,18 +124,15 @@ for backend in backends {
 === Neural Proof Synthesis
 
 ```julia
-using ECHIDNA
+using EchidnaML
 
-= Train neural model
-
+# Train neural model
 model = train_proof_synthesizer(training_data)
 
-= Generate proof candidates
-
+# Generate proof candidates
 candidates = synthesize_proofs(model, theorem)
 
-= Verify with symbolic prover
-
+# Verify with symbolic prover
 for candidate in candidates
     if verify_proof(candidate)
         return candidate
@@ -155,16 +145,13 @@ end
 === Building from Source
 
 ```bash
-= Install dependencies
-
+# Install dependencies
 just deps
 
-= Build all components
-
+# Build all components
 just build
 
-= Build specific component
-
+# Build specific component
 just build-rust
 just build-julia
 just build-rescript
@@ -173,29 +160,26 @@ just build-rescript
 === Running Tests
 
 ```bash
-= Run all tests
-
+# Run all tests
 just test
 
-= Run specific language tests
+# Run Rust tests
+cargo test
 
-just test-rust
-just test-julia
+# Run unit tests only
+cargo test --lib
 
-= Run integration tests
-
-just test-integration
+# Run integration tests
+cargo test --test integration_tests
 ```
 
 === Quality Checks
 
 ```bash
-= Run all quality checks
-
+# Run all quality checks
 just check
 
-= Individual checks
-
+# Individual checks
 just lint          # REUSE, rustfmt, clippy
 just security      # Trivy, cargo-audit
 just coverage      # Test coverage
@@ -203,63 +187,45 @@ just coverage      # Test coverage
 
 == Documentation
 
-- [Contributing Guidelines](CONTRIBUTING.md)
-- [Code of Conduct](CODE_OF_CONDUCT.md)
-- [Security Policy](SECURITY.md)
-- [Changelog](CHANGELOG.md)
-- [API Documentation](docs/)
-- [Prover Backend Guides](docs/)
+- link:CONTRIBUTING.md[Contributing Guidelines]
+- link:CODE_OF_CONDUCT.md[Code of Conduct]
+- link:SECURITY.md[Security Policy]
+- link:CHANGELOG.adoc[Changelog]
+- link:docs/[API Documentation]
 
-== Roadmap
+== Current Status
 
-=== 12-Month Implementation Plan
+*Completed*:
+- All 12 prover backends implemented
+- 99 unit tests passing
+- 38 integration tests passing
+- RSR/CCCP compliance templates
+- Complete Rust trait system
 
-*Months 1-2*: Foundation
-- Deploy RSR/CCCP compliance templates
-- Migrate Python code to Julia
-- Complete Tier 1 infrastructure
-
-*Months 2-4*: Tier 1 Provers
-- Coq/Rocq implementation
-- Lean implementation
-- Isabelle implementation
-- Z3 and CVC5 integration
-
-*Months 5-7*: Tier 2 Provers
-- Metamath (start here - easiest!)
-- HOL Light
-- Mizar
-
-*Months 8-10*: Tier 3 Provers
-- PVS
-- ACL2
-
-*Months 11-12*: Tier 4 and Polish
-- HOL4 implementation
-- Performance optimization
-- Documentation completion
+*In Progress*:
+- Neural/ML integration (Julia components)
+- UI implementation (ReScript + Deno)
 
 == Contributing
 
-We welcome contributions! Please see [CONTRIBUTING.md](CONTRIBUTING.md) for guidelines.
+We welcome contributions! Please see link:CONTRIBUTING.md[CONTRIBUTING.md] for guidelines.
 
 === Critical Constraints
 
-- ❌ *NO PYTHON* - Use Julia for all ML code
-- ✅ *RSR/CCCP Compliance* - Follow Rhodium Standard Repository guidelines
-- ✅ *Justfile PRIMARY* - Use Just, not Make
-- ✅ *GitLab-first* - This is a GitLab project
-- ✅ *Podman not Docker* - Always use Podman
-- ✅ *Dual Licensing* - MIT + Palimpsest v0.6
+- *NO PYTHON* - Use Julia for all ML code
+- *RSR/CCCP Compliance* - Follow Rhodium Standard Repository guidelines
+- *Justfile PRIMARY* - Use Just, not Make
+- *Podman not Docker* - Always use Podman
+- *Dual Licensing* - MIT + Palimpsest v0.6
 
 == License
 
 This project is dual-licensed under:
 
-- [Palimpsest-MPL-1.0 License](LICENSES/MIT.txt)
-- [Palimpsest License v0.6](LICENSES/Palimpsest-0.6.txt)
+- link:LICENSES/MIT.txt[MIT License]
+- link:LICENSES/Palimpsest-0.6.txt[Palimpsest License v0.6]
 
-See [NOTICE](NOTICE) for complete license information.
+See link:NOTICE[NOTICE] for complete license information.
 
 == Citation
 
@@ -270,25 +236,24 @@ If you use ECHIDNA in your research, please cite:
   title = {ECHIDNA: Extensible Cognitive Hybrid Intelligence for Deductive Neural Assistance},
   author = {ECHIDNA Project Contributors},
   year = {2025},
-  url = {https://gitlab.com/non-initiate/rhodinised/quill},
+  url = {https://github.com/hyperpolymath/echidna},
   license = {MIT AND Palimpsest-0.6}
 }
 ```
 
 == Acknowledgments
 
-- Based on the Quill project (Agda neural solver)
 - Built on the shoulders of the theorem proving community
-- See [AUTHORS.md](AUTHORS.md) for contributor list
+- See link:AUTHORS.md[AUTHORS.md] for contributor list
 
 == Contact
 
-- *GitLab Issues*: https://gitlab.com/non-initiate/rhodinised/quill/-/issues
-- *Merge Requests*: https://gitlab.com/non-initiate/rhodinised/quill/-/merge_requests
+- *GitHub Issues*: https://github.com/hyperpolymath/echidna/issues
+- *Pull Requests*: https://github.com/hyperpolymath/echidna/pulls
 - *Security*: security@echidna-project.org
 
 ---
 
 *Version*: 0.1.0
 *Status*: Active Development
-*Last Updated*: 2025-11-22
+*Last Updated*: 2026-01-10

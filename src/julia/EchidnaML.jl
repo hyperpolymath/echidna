@@ -7,7 +7,7 @@
 ECHIDNA (Extensible Cognitive Hybrid Intelligence for Deductive Neural Assistance)
 Machine Learning Module - Universal Neural Solver for 12 Theorem Provers
 
-Generalizes Quill's Agda-specific neural architecture to support:
+Generalizes ECHIDNA's universal neural architecture to support:
 - Tier 1 (6): Agda, Coq/Rocq, Lean, Isabelle, Z3, CVC5
 - Tier 2 (3): Metamath, HOL Light, Mizar
 - Tier 3 (2): PVS, ACL2

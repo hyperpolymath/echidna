@@ -35,7 +35,7 @@ Contributors who have improved documentation:
 
 We would like to extend special thanks to:
 
-- **Quill Project** - For the original Agda neural solver that inspired ECHIDNA
+- **Theorem Proving Community** - For foundations and inspiration
 - **Theorem Prover Communities** - For developing and maintaining the 12 provers we integrate
 - **Rhodium Standard Repository (RSR/CCCP)** - For compliance guidelines
 - **Palimpsest License** - For ethical licensing framework
@@ -96,7 +96,7 @@ By contributing to ECHIDNA, you agree to license your contributions under these 
 ## Contact
 
 For questions about attribution or contributions:
-- GitLab Issues: https://gitlab.com/non-initiate/rhodinised/quill/-/issues
+- GitLab Issues: https://github.com/hyperpolymath/echidna/-/issues
 - Email: contributors@echidna-project.org (when available)
 
 ---

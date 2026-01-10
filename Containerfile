@@ -166,7 +166,7 @@ RUN opam install -y hol && \
 FROM docker.io/library/debian:bookworm-slim
 
 LABEL maintainer="ECHIDNA Project Team"
-LABEL org.opencontainers.image.source="https://gitlab.com/non-initiate/rhodinised/quill"
+LABEL org.opencontainers.image.source="https://github.com/hyperpolymath/echidna"
 LABEL org.opencontainers.image.description="ECHIDNA - Extensible Cognitive Hybrid Intelligence for Deductive Neural Assistance"
 LABEL org.opencontainers.image.licenses="MIT AND Palimpsest-0.6"
 LABEL org.opencontainers.image.version="0.1.0"

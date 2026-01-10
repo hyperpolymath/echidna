@@ -361,7 +361,7 @@ All files include proper SPDX headers.
 ## Contact
 
 For questions or issues:
-- File issue on GitLab: https://gitlab.com/non-initiate/rhodinised/quill
+- File issue on GitLab: https://github.com/hyperpolymath/echidna
 - ECHIDNA Project Team
 
 ---

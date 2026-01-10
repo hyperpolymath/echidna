@@ -192,7 +192,7 @@ When adding new proofs:
 - [Lean 4 Documentation](https://lean-lang.org/documentation/)
 - [Theorem Proving in Lean 4](https://leanprover.github.io/theorem_proving_in_lean4/)
 - [Lean 4 Mathlib](https://github.com/leanprover-community/mathlib4)
-- [ECHIDNA Project](https://gitlab.com/non-initiate/rhodinised/quill)
+- [ECHIDNA Project](https://github.com/hyperpolymath/echidna)
 
 ---
 

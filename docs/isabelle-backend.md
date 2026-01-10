@@ -422,7 +422,7 @@ The Isabelle backend integrates seamlessly with ECHIDNA's 12-prover architecture
 - **HOL foundation**: Shares type theory with HOL Light, HOL4, and Mizar
 - **ATP bridge**: Sledgehammer provides access to multiple external solvers
 - **Aspect tagging**: Theorems can be tagged with semantic aspects
-- **Neural integration**: Ready for neural premise selection (Quill legacy)
+- **Neural integration**: Ready for neural premise selection (neural integration ready)
 
 ## Compliance
 

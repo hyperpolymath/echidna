@@ -192,9 +192,9 @@ Unlike tactic-based provers:
 8. Advanced pragma support
 9. Rewrite rule handling
 
-## Comparison with Quill's Original Agda Support
+## Comparison with Standard Agda Tools
 
-| Feature | Quill (Original) | ECHIDNA (This Impl) | Status |
+| Feature | ECHIDNA | ECHIDNA (This Impl) | Status |
 |---------|------------------|---------------------|--------|
 | Basic parsing | ✓ | ✓ | Enhanced |
 | Type conversion | ✓ | ✓ | Expanded |
@@ -282,7 +282,7 @@ cargo check --lib
    - Proof-by-construction support
    - Comprehensive tests and documentation
    
-   Agda is Tier 1 prover, original from Quill, now universalized.
+   Agda is Tier 1 prover, Tier 1 prover, now universalized.
    Complexity: 3/5, fully production-ready."
    ```
 
@@ -292,7 +292,7 @@ cargo check --lib
    - Then: Coq, Lean, Isabelle, Z3, CVC5
 
 3. **Deploy to GitLab**
-   - Push to target repository: gitlab.com/non-initiate/rhodinised/quill
+   - Push to target repository: github.com/hyperpolymath/echidna
    - Create merge request
    - Update project documentation
 
@@ -302,4 +302,4 @@ cargo check --lib
 **Implementation Time**: ~2 hours  
 **Status**: ✅ PRODUCTION-READY  
 **Quality**: High - comprehensive, tested, documented  
-**ECHIDNA Tier**: 1 (Original Quill prover)
+**ECHIDNA Tier**: 1 (Dependent type theory)

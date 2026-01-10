@@ -130,7 +130,7 @@ Security updates are released as:
 
 Security advisories are published at:
 
-- **GitLab**: https://gitlab.com/non-initiate/rhodinised/quill/-/security/advisories
+- **GitLab**: https://github.com/hyperpolymath/echidna/-/security/advisories
 - **Email**: Subscribers to security@echidna-project.org
 - **RSS**: Security advisory feed (when available)
 

@@ -306,7 +306,7 @@ let coq_code = backend.export(&state).await?;
 ### 🚧 Future Enhancements
 
 1. **Advanced SerAPI features** - Goal inspection, proof term extraction
-2. **Machine learning integration** - Neural premise selection from Quill
+2. **Machine learning integration** - Neural premise selection from early development
 3. **Tactic composition** - Chained tactics (`;`, `||`)
 4. **SSReflect support** - Small-scale reflection tactics
 5. **Module system** - Import/Export, Module, Section
@@ -431,14 +431,14 @@ impl ProverFactory {
 - **Coq Reference Manual**: https://coq.inria.fr/doc/
 - **SerAPI Documentation**: https://github.com/ejgallego/coq-serapi
 - **ECHIDNA Documentation**: /home/user/echidna/docs/
-- **Quill Original**: https://gitlab.com/non-initiate/rhodinised/quill
+- **ECHIDNA Repository**: https://github.com/hyperpolymath/echidna
 
 ## Credits
 
 - **Implementation**: ECHIDNA Project Team (2025)
 - **Coq**: INRIA, France
 - **SerAPI**: Emilio J. Gallego Arias
-- **Inspiration**: Quill neural solver
+- **Inspiration**: ECHIDNA development
 
 ---
 
