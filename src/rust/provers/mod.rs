@@ -23,6 +23,7 @@ pub mod mizar;
 pub mod pvs;
 pub mod acl2;
 pub mod hol4;
+pub mod idris2;
 
 /// Enumeration of all supported provers
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]
@@ -46,6 +47,9 @@ pub enum ProverKind {
 
     // Tier 4: Advanced
     HOL4,
+
+    // Extended: Additional provers
+    Idris2,
 }
 
 impl std::str::FromStr for ProverKind {
@@ -65,6 +69,7 @@ impl std::str::FromStr for ProverKind {
             "pvs" => Ok(ProverKind::PVS),
             "acl2" => Ok(ProverKind::ACL2),
             "hol4" => Ok(ProverKind::HOL4),
+            "idris2" | "idris" => Ok(ProverKind::Idris2),
             _ => Err(anyhow::anyhow!("Unknown prover: {}", s)),
         }
     }
@@ -92,6 +97,7 @@ impl ProverKind {
             ProverKind::PVS => 4,
             ProverKind::ACL2 => 4,
             ProverKind::HOL4 => 5,
+            ProverKind::Idris2 => 3,
         }
     }
 
@@ -106,6 +112,9 @@ impl ProverKind {
             ProverKind::PVS | ProverKind::ACL2 => 3,
 
             ProverKind::HOL4 => 4,
+
+            // Extended tier (same as Tier 1 in capability)
+            ProverKind::Idris2 => 1,
         }
     }
 
@@ -119,6 +128,7 @@ impl ProverKind {
             ProverKind::Isabelle => 3.0,
             ProverKind::PVS | ProverKind::ACL2 => 3.5,
             ProverKind::HOL4 => 4.0,
+            ProverKind::Idris2 => 2.5,
         }
     }
 }
@@ -222,6 +232,7 @@ impl ProverFactory {
             ProverKind::PVS => Ok(Box::new(pvs::PVSBackend::new(config))),
             ProverKind::ACL2 => Ok(Box::new(acl2::ACL2Backend::new(config))),
             ProverKind::HOL4 => Ok(Box::new(hol4::Hol4Backend::new(config))),
+            ProverKind::Idris2 => Ok(Box::new(idris2::Idris2Backend::new(config))),
         }
     }
 
@@ -239,6 +250,7 @@ impl ProverFactory {
             "pvs" => Some(ProverKind::PVS),
             "lisp" => Some(ProverKind::ACL2),
             "sml" => Some(ProverKind::HOL4),
+            "idr" => Some(ProverKind::Idris2),
             _ => None,
         })
     }
