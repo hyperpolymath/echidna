@@ -12,6 +12,7 @@ pub mod parsers;
 pub mod neural;
 pub mod aspect;
 pub mod agent;
+pub mod ffi;
 
 pub use core::{ProofState, Term, Tactic, TacticResult};
 pub use provers::{ProverBackend, ProverKind, ProverConfig};

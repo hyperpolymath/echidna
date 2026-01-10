@@ -613,6 +613,7 @@ dependencies = [
  "criterion",
  "futures",
  "indicatif",
+ "lazy_static",
  "mockall",
  "nom",
  "pretty_assertions",
