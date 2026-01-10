@@ -789,10 +789,26 @@ impl MizarParser {
     fn parse_theorem(&mut self) -> Result<MizarTheorem> {
         self.expect_keyword("theorem")?;
 
-        let name = self.parse_identifier()
-            .unwrap_or_else(|| format!("Theorem{}", self.pos));
+        // Mizar supports both named and unnamed theorems:
+        // Named: "theorem TheoremName: formula;"
+        // Unnamed: "theorem formula;"
+        let saved_pos = self.pos;
+        self.skip_whitespace_and_comments();
 
-        self.expect_char(':')?;
+        let name = if let Some(ident) = self.parse_identifier() {
+            self.skip_whitespace_and_comments();
+            if self.check_char(':') {
+                // Named theorem - consume the colon
+                self.pos += 1;
+                ident
+            } else {
+                // Not a named theorem - restore position and use generated name
+                self.pos = saved_pos;
+                format!("Theorem{}", self.pos)
+            }
+        } else {
+            format!("Theorem{}", self.pos)
+        };
 
         let formula = self.parse_formula()?;
 
