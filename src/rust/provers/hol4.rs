@@ -2115,3 +2115,143 @@ impl ProverBackend for Hol4Backend {
         self.config = config;
     }
 }
+
+// ============================================================================
+// Tests
+// ============================================================================
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_parse_simple_term() {
+        let mut parser = HOL4Parser::new("x");
+        let term = parser.parse_term().unwrap();
+        match term {
+            HOL4Term::Var { name, .. } => assert_eq!(name, "x"),
+            _ => panic!("Expected variable"),
+        }
+    }
+
+    #[test]
+    fn test_parse_numeral() {
+        let mut parser = HOL4Parser::new("42");
+        let term = parser.parse_term().unwrap();
+        assert_eq!(term, HOL4Term::Numeral(42));
+    }
+
+    #[test]
+    fn test_parse_application() {
+        let mut parser = HOL4Parser::new("f x");
+        let term = parser.parse_term().unwrap();
+        match term {
+            HOL4Term::App { func, arg } => {
+                match *func {
+                    HOL4Term::Var { name, .. } => assert_eq!(name, "f"),
+                    _ => panic!("Expected function variable"),
+                }
+                match *arg {
+                    HOL4Term::Var { name, .. } => assert_eq!(name, "x"),
+                    _ => panic!("Expected argument variable"),
+                }
+            }
+            _ => panic!("Expected application"),
+        }
+    }
+
+    #[test]
+    fn test_parse_lambda() {
+        let mut parser = HOL4Parser::new("\\x. x");
+        let term = parser.parse_term().unwrap();
+        match term {
+            HOL4Term::Abs { var, body, .. } => {
+                assert_eq!(var, "x");
+                match *body {
+                    HOL4Term::Var { name, .. } => assert_eq!(name, "x"),
+                    _ => panic!("Expected variable in body"),
+                }
+            }
+            _ => panic!("Expected lambda abstraction"),
+        }
+    }
+
+    #[test]
+    fn test_parse_forall() {
+        let mut parser = HOL4Parser::new("!x. P x");
+        let term = parser.parse_term().unwrap();
+        match term {
+            HOL4Term::Quant { quantifier, var, .. } => {
+                assert_eq!(quantifier, HOL4Quantifier::Forall);
+                assert_eq!(var, "x");
+            }
+            _ => panic!("Expected forall quantification"),
+        }
+    }
+
+    #[test]
+    fn test_parse_exists() {
+        let mut parser = HOL4Parser::new("?x. P x");
+        let term = parser.parse_term().unwrap();
+        match term {
+            HOL4Term::Quant { quantifier, var, .. } => {
+                assert_eq!(quantifier, HOL4Quantifier::Exists);
+                assert_eq!(var, "x");
+            }
+            _ => panic!("Expected exists quantification"),
+        }
+    }
+
+    #[test]
+    fn test_parse_type_bool() {
+        let mut parser = HOL4Parser::new("bool");
+        let ty = parser.parse_type().unwrap();
+        assert_eq!(ty, HOL4Type::TyCon("bool".to_string()));
+    }
+
+    #[test]
+    fn test_parse_type_num() {
+        let mut parser = HOL4Parser::new("num");
+        let ty = parser.parse_type().unwrap();
+        assert_eq!(ty, HOL4Type::TyCon("num".to_string()));
+    }
+
+    #[test]
+    fn test_parse_type_arrow() {
+        let mut parser = HOL4Parser::new("num -> bool");
+        let ty = parser.parse_type().unwrap();
+        match ty {
+            HOL4Type::TyFun { domain, range } => {
+                assert_eq!(*domain, HOL4Type::TyCon("num".to_string()));
+                assert_eq!(*range, HOL4Type::TyCon("bool".to_string()));
+            }
+            _ => panic!("Expected function type"),
+        }
+    }
+
+    #[test]
+    fn test_term_to_universal() {
+        let term = HOL4Term::Numeral(42);
+        let universal = Hol4Backend::hol4_to_term(&term);
+        match universal {
+            Term::Const(name) => assert_eq!(name, "42"),
+            _ => panic!("Expected constant"),
+        }
+    }
+
+    #[test]
+    fn test_hol4_backend_creation() {
+        let backend = Hol4Backend::new(ProverConfig::default());
+        assert_eq!(backend.kind(), ProverKind::HOL4);
+    }
+
+    #[test]
+    fn test_hol4_config() {
+        let config = ProverConfig {
+            executable: PathBuf::from("/usr/bin/hol4"),
+            ..Default::default()
+        };
+        let backend = Hol4Backend::new(config);
+        assert_eq!(backend.config().executable, PathBuf::from("/usr/bin/hol4"));
+    }
+}
