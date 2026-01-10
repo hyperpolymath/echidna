@@ -74,7 +74,14 @@ impl Z3Backend {
 
         if !output.status.success() {
             let stderr = String::from_utf8_lossy(&output.stderr);
-            bail!("Z3 failed: {}", stderr);
+            let stdout = String::from_utf8_lossy(&output.stdout);
+            // Z3 sometimes reports errors in stdout
+            let error_msg = if stderr.trim().is_empty() {
+                stdout.to_string()
+            } else {
+                format!("{}\n{}", stderr, stdout)
+            };
+            bail!("Z3 failed: {}", error_msg.trim());
         }
 
         let stdout_str = String::from_utf8_lossy(&output.stdout).to_string();
@@ -277,14 +284,25 @@ impl ProverBackend for Z3Backend {
             return Ok(true);
         }
 
-        let mut assertions = Vec::new();
+        // Build complete SMT-LIB query with variable declarations
+        let mut commands = String::new();
+        commands.push_str("(set-logic ALL)\n");
 
-        for goal in &state.goals {
-            let smt_goal = self.term_to_smt(&goal.target);
-            assertions.push(format!("(not {})", smt_goal));
+        // Include variable declarations from context
+        for var in &state.context.variables {
+            let ty_smt = self.term_to_smt(&var.ty);
+            commands.push_str(&format!("(declare-const {} {})\n", var.name, ty_smt));
         }
 
-        let result = self.check_sat(&assertions).await?;
+        // Assert negation of each goal (if unsat, goal is valid)
+        for goal in &state.goals {
+            let smt_goal = self.term_to_smt(&goal.target);
+            commands.push_str(&format!("(assert (not {}))\n", smt_goal));
+        }
+
+        commands.push_str("(check-sat)\n");
+
+        let result = self.execute_command(&commands).await?;
 
         match result {
             SmtResult::Unsat => Ok(true),
