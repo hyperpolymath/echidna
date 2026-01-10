@@ -72,6 +72,7 @@ pub fn test_prover_config(kind: ProverKind) -> ProverConfig {
         ProverKind::PVS => "pvs",
         ProverKind::ACL2 => "acl2",
         ProverKind::HOL4 => "hol",
+        ProverKind::Idris2 => "idris2",
     };
 
     ProverConfig {
@@ -98,6 +99,7 @@ pub fn proof_examples_dir(kind: ProverKind) -> PathBuf {
         ProverKind::PVS => "pvs",
         ProverKind::ACL2 => "acl2",
         ProverKind::HOL4 => "hol4",
+        ProverKind::Idris2 => "idris2",
     };
 
     PathBuf::from("/home/user/echidna/proofs").join(subdir)
@@ -122,6 +124,7 @@ pub fn find_proof_files(kind: ProverKind) -> Vec<PathBuf> {
         ProverKind::PVS => vec!["pvs"],
         ProverKind::ACL2 => vec!["lisp"],
         ProverKind::HOL4 => vec!["sml"],
+        ProverKind::Idris2 => vec!["idr"],
     };
 
     let mut files = vec![];
