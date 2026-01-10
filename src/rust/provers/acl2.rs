@@ -913,6 +913,23 @@ impl ACL2Backend {
         }
     }
 
+    /// Convert core Pattern to ACL2 S-expression
+    fn pattern_to_sexp(&self, pattern: &crate::core::Pattern) -> SExp {
+        match pattern {
+            crate::core::Pattern::Wildcard => SExp::Atom("_".to_string()),
+            crate::core::Pattern::Var(name) => SExp::Atom(name.clone()),
+            crate::core::Pattern::Constructor { name, args } => {
+                if args.is_empty() {
+                    SExp::Atom(name.clone())
+                } else {
+                    let mut items = vec![SExp::Atom(name.clone())];
+                    items.extend(args.iter().map(|a| self.pattern_to_sexp(a)));
+                    SExp::List(items)
+                }
+            }
+        }
+    }
+
     /// Convert universal Term to ACL2 S-expression
     fn term_to_sexp(&self, term: &Term) -> SExp {
         match term {
@@ -958,15 +975,16 @@ impl ACL2Backend {
                     self.term_to_sexp(body),
                 ])
             }
-            Term::Match { scrutinee, cases, .. } => {
+            Term::Match { scrutinee, branches, .. } => {
                 // ACL2 doesn't have pattern matching, approximate with cond
                 let mut cond_clauses = Vec::new();
-                for (pattern, body) in cases {
+                for (pattern, body) in branches {
+                    let pattern_sexp = self.pattern_to_sexp(pattern);
                     cond_clauses.push(SExp::List(vec![
                         SExp::List(vec![
                             SExp::Atom("equal".to_string()),
                             self.term_to_sexp(scrutinee),
-                            self.term_to_sexp(pattern),
+                            pattern_sexp,
                         ]),
                         self.term_to_sexp(body),
                     ]));
@@ -978,7 +996,46 @@ impl ACL2Backend {
             Term::Hole(name) => {
                 SExp::List(vec![
                     SExp::Atom("error".to_string()),
-                    SExp::Str(format!("hole: {}", name.as_deref().unwrap_or("_"))),
+                    SExp::Str(format!("hole: {}", if name.is_empty() { "_" } else { name })),
+                ])
+            }
+            Term::Type(level) => {
+                SExp::List(vec![
+                    SExp::Atom("quote".to_string()),
+                    SExp::Atom(format!("TYPE-{}", level)),
+                ])
+            }
+            Term::Sort(level) => {
+                SExp::List(vec![
+                    SExp::Atom("quote".to_string()),
+                    SExp::Atom(format!("SORT-{}", level)),
+                ])
+            }
+            Term::Fix { name, body, .. } => {
+                // ACL2 doesn't have fix, approximate with a recursive label
+                SExp::List(vec![
+                    SExp::Atom("labels".to_string()),
+                    SExp::List(vec![
+                        SExp::List(vec![
+                            SExp::Atom(name.clone()),
+                            SExp::List(vec![]),
+                            self.term_to_sexp(body),
+                        ]),
+                    ]),
+                    SExp::Atom(name.clone()),
+                ])
+            }
+            Term::Meta(id) => {
+                SExp::List(vec![
+                    SExp::Atom("error".to_string()),
+                    SExp::Str(format!("meta-{}", id)),
+                ])
+            }
+            Term::ProverSpecific { data, .. } => {
+                // Try to represent prover-specific data
+                SExp::List(vec![
+                    SExp::Atom("quote".to_string()),
+                    SExp::Atom(data.to_string()),
                 ])
             }
         }
