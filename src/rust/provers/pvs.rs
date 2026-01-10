@@ -1410,9 +1410,20 @@ impl<'a> PVSParser<'a> {
             "flatten" => PVSStrategy::Flatten,
             "lift-if" => PVSStrategy::LiftIf,
             "induct" => {
-                let var = self.parse_identifier()?;
+                self.skip_whitespace_and_comments();
+                // Variable can be bare identifier or quoted string
+                let var = if self.peek_char() == Some('"') {
+                    self.parse_string_literal()?
+                } else {
+                    self.parse_identifier()?
+                };
                 let scheme = if self.peek_char() != Some(')') {
-                    Some(self.parse_identifier()?)
+                    self.skip_whitespace_and_comments();
+                    if self.peek_char() == Some('"') {
+                        Some(self.parse_string_literal()?)
+                    } else {
+                        Some(self.parse_identifier()?)
+                    }
                 } else {
                     None
                 };
@@ -2734,7 +2745,7 @@ mod tests {
         let expr = PVSExpr::Forall {
             bindings: vec![PVSBinding {
                 name: "x".to_string(),
-                var_type: PVSType::Name("nat".to_string()),
+                var_type: Box::new(PVSType::Name("nat".to_string())),
             }],
             body: Box::new(PVSExpr::Application {
                 function: Box::new(PVSExpr::Name(">=".to_string())),

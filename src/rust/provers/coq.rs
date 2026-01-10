@@ -375,19 +375,19 @@ impl CoqBackend {
     /// Parse a theorem declaration
     fn parse_theorem(&self, stmt: &str) -> Result<CoqStatement> {
         // Format: "Theorem name : type."
-        let parts: Vec<&str> = stmt.split(':').collect();
-        if parts.len() < 2 {
-            return Err(anyhow!("Invalid theorem statement"));
-        }
+        // Split on first colon only, since type can contain colons (e.g., "forall A : Prop, A")
+        let colon_pos = stmt
+            .find(':')
+            .ok_or_else(|| anyhow!("Invalid theorem statement: missing colon"))?;
 
-        let name_part = parts[0].trim();
+        let name_part = stmt[..colon_pos].trim();
         let name = name_part
             .split_whitespace()
             .nth(1)
             .ok_or_else(|| anyhow!("Missing theorem name"))?
             .to_string();
 
-        let type_part = parts[1].trim().trim_end_matches('.');
+        let type_part = stmt[colon_pos + 1..].trim().trim_end_matches('.');
         let ty = self.parse_term(type_part)?;
 
         Ok(CoqStatement::Theorem { name, ty })
