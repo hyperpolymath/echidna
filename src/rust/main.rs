@@ -372,6 +372,7 @@ async fn search_command(
             ProverKind::PVS,
             ProverKind::ACL2,
             ProverKind::HOL4,
+            ProverKind::Idris2,
         ]
     };
 
@@ -442,6 +443,7 @@ fn list_provers_command(detailed: bool, formatter: &OutputFormatter) -> Result<(
         ProverKind::PVS,
         ProverKind::ACL2,
         ProverKind::HOL4,
+        ProverKind::Idris2,
     ];
 
     formatter.header("Available Provers")?;
@@ -537,6 +539,10 @@ fn info_command(prover: ProverKind, formatter: &OutputFormatter) -> Result<()> {
             "Interactive theorem prover in the HOL family.\n  \
              Used extensively in hardware verification. ML-based tactic language."
         }
+        ProverKind::Idris2 => {
+            "Dependently typed functional language with quantitative types.\n  \
+             First-class type-level computation, elaborator reflection, linear types."
+        }
     };
     formatter.info(&format!("  {}", description))?;
     formatter.info("")?;
@@ -554,6 +560,7 @@ fn info_command(prover: ProverKind, formatter: &OutputFormatter) -> Result<()> {
         ProverKind::PVS => ".pvs",
         ProverKind::ACL2 => ".lisp",
         ProverKind::HOL4 => ".sml",
+        ProverKind::Idris2 => ".idr",
     };
     formatter.info(&format!("  {}", extension))?;
     formatter.info("")?;
@@ -639,6 +646,7 @@ fn get_default_executable(kind: ProverKind) -> PathBuf {
         ProverKind::PVS => PathBuf::from("pvs"),
         ProverKind::ACL2 => PathBuf::from("acl2"),
         ProverKind::HOL4 => PathBuf::from("hol"),
+        ProverKind::Idris2 => PathBuf::from("idris2"),
     }
 }
 

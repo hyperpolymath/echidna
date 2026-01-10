@@ -328,6 +328,7 @@ impl ExplanationGenerator {
             ProverKind::PVS => "PVS combines specification and verification for critical systems.",
             ProverKind::ACL2 => "ACL2 is based on executable logic for program verification.",
             ProverKind::HOL4 => "HOL4 is the classic HOL implementation with extensive libraries.",
+            ProverKind::Idris2 => "Idris 2 excels at dependent types with first-class type-level computation and quantitative types.",
         }.to_string()
     }
 
