@@ -1,0 +1,24 @@
+# SPDX-License-Identifier: PMPL-1.0
+[package]
+name = "echidna-fuzz"
+version = "0.0.0"
+authors = ["hyperpolymath"]
+publish = false
+edition = "2021"
+
+[package.metadata]
+cargo-fuzz = true
+
+[dependencies]
+libfuzzer-sys = "0.4"
+arbitrary = { version = "1", features = ["derive"] }
+
+[dependencies.echidna]
+path = ".."
+
+[[bin]]
+name = "fuzz_input"
+path = "fuzz_targets/fuzz_input.rs"
+test = false
+doc = false
+bench = false
