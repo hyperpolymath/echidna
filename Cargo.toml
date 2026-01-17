@@ -1,6 +1,6 @@
 [package]
 name = "echidna"
-version = "0.1.0"
+version = "1.0.0"
 edition = "2021"
 authors = ["ECHIDNA Project Team"]
 license = "MIT OR Palimpsest-0.6"
