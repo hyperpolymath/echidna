@@ -1,0 +1,254 @@
+= ECHIDNA Testing Report
+:author: Claude Code Testing Session
+:revdate: 2025-12-29
+:toc:
+:toclevels: 3
+
+== Executive Summary
+
+This report documents the testing of the ECHIDNA (Extensible Cognitive Hybrid Intelligence for Deductive Neural Assistance) Rust project at `/var/home/hyper/repos/echidna`.
+
+[cols="1,3"]
+|===
+|Build Status |*PASS* (with 81 warnings)
+|Test Suite |*FAIL* (test compilation errors)
+|Binary Execution |*PASS*
+|Core Functionality |*PASS*
+|===
+
+== Build Results
+
+=== Release Build
+
+The release build completed successfully after fixes were applied.
+
+[source,shell]
+----
+cargo build --release
+----
+
+*Result:* `Finished release profile [optimized]`
+
+*Warnings:* 81 warnings (mostly unused imports, dead code, and private interface visibility issues)
+
+=== Issues Fixed During Testing
+
+The following issues were identified and fixed to enable successful compilation:
+
+==== 1. Typo in Actor Derive Macro
+
+*File:* `src/rust/agent/actors.rs`, line 25
+
+*Problem:* Extra colon in derive macro
+[source,rust]
+----
+#[derive::(Message)]  // Invalid syntax
+----
+
+*Fix:*
+[source,rust]
+----
+#[derive(Message)]  // Correct syntax
+----
+
+==== 2. Incorrect ProverKind Variant Names
+
+*File:* `src/rust/agent/explanations.rs`, lines 322-326
+
+*Problem:* Wrong case for enum variants
+[source,rust]
+----
+ProverKind::HOL4 => "..."
+ProverKind::HOLLight => "..."
+----
+
+*Fix:*
+[source,rust]
+----
+ProverKind::Hol4 => "..."
+ProverKind::HolLight => "..."
+----
+
+==== 3. Term Enum Variant Mismatch
+
+*File:* `src/rust/agent/explanations.rs`, `format_term` method
+
+*Problem:* The `format_term` method referenced Term variants that don't exist in `core.rs` (e.g., `Term::Type`, `Term::Sort`, `Term::Let`, `Term::Match`, `Term::Fix`, `Term::Hole`)
+
+*Fix:* Rewrote `format_term` to match actual Term variants:
+- `Term::Var`
+- `Term::Const`
+- `Term::Lambda`
+- `Term::Pi`
+- `Term::App`
+- `Term::Universe`
+- `Term::Meta`
+- `Term::ProverSpecific`
+
+==== 4. Actor Cloning Issue
+
+*File:* `src/rust/agent/actors.rs`, lines 65-70
+
+*Problem:* `Box<dyn ProverBackend>` doesn't implement Clone, causing `start_actor` to fail
+
+*Fix:* Removed `start_actor` method from `ProverAgent` and updated `MultiAgentSystem::new` to work without cloning provers
+
+==== 5. Missing `prove` Method
+
+*File:* `src/rust/agent/actors.rs`, line 90
+
+*Problem:* Called `self.backend.prove(&msg.goal)` but `ProverBackend` trait has no `prove` method
+
+*Fix:* Replaced with creating a `ProofState` from the goal directly
+
+== Test Results
+
+=== Unit Tests (cargo test)
+
+*Result:* FAILED - Tests do not compile due to API differences between test code and source code
+
+*Error Count:* ~100+ compilation errors in test files
+
+*Root Causes:*
+
+1. **tests/integration_tests.rs** - 34 errors
+   - `Tactic::Intro` used as unit variant instead of function
+   - `translate_term` method doesn't exist on `ProverBackend`
+   - Various type mismatches
+
+2. **tests/property_tests.rs** - 30 errors
+   - `Goal` struct expects `conclusion` field but actual struct uses `target`
+   - `Context.definitions` is `Vec<Definition>` but tests use `HashMap`
+   - Missing `variables` field in `Context` initializer
+
+3. **tests/common/mod.rs** - Type mismatches
+   - Same `Goal` field naming issues
+   - Context initialization issues
+
+*Recommendation:* Tests need to be updated to match the current API defined in `src/rust/core.rs`
+
+=== Binary Execution
+
+[source,shell]
+----
+./target/release/echidna --help
+----
+
+*Result:* SUCCESS
+
+*Output:*
+----
+Extensible Cognitive Hybrid Intelligence for Deductive Neural Assistance
+
+Usage: echidna [OPTIONS] <COMMAND>
+
+Commands:
+  prove         Prove a theorem from file
+  verify        Verify an existing proof
+  search        Search theorem libraries
+  interactive   Start interactive REPL mode
+  server        Start HTTP API server
+  list-provers  List available provers
+  info          Show information about a specific prover
+  help          Print this message or the help of the given subcommand(s)
+
+Options:
+      --format <FORMAT>  Output format (text, json) [default: text]
+  -v, --verbose          Verbose output
+      --no-color         Disable colors
+  -h, --help             Print help
+  -V, --version          Print version
+----
+
+=== Core Functionality Test
+
+[source,shell]
+----
+./target/release/echidna list-provers
+----
+
+*Result:* SUCCESS
+
+*Output:*
+----
+Available Provers
+=================
+Total: 12 provers
+
+Agda         - Tier 1 | Complexity 3/5 | 2.5 weeks
+Coq          - Tier 1 | Complexity 3/5 | 2.5 weeks
+Lean         - Tier 1 | Complexity 3/5 | 2.5 weeks
+Isabelle     - Tier 1 | Complexity 4/5 | 3 weeks
+Z3           - Tier 1 | Complexity 2/5 | 1 weeks
+CVC5         - Tier 1 | Complexity 2/5 | 1 weeks
+Metamath     - Tier 2 | Complexity 2/5 | 1.5 weeks
+HolLight     - Tier 2 | Complexity 3/5 | 2 weeks
+Mizar        - Tier 2 | Complexity 3/5 | 2 weeks
+PVS          - Tier 3 | Complexity 4/5 | 3.5 weeks
+ACL2         - Tier 3 | Complexity 4/5 | 3.5 weeks
+Hol4         - Tier 4 | Complexity 5/5 | 4 weeks
+----
+
+== Warning Summary
+
+=== Categories
+
+[cols="2,1,3"]
+|===
+|Category |Count |Description
+
+|Unused Imports |~20 |Various unused serde, async_trait, and type imports
+|Dead Code |~30 |Unused fields, methods, and enum variants
+|Unused Variables |~15 |Unused function parameters and local variables
+|Unexpected cfg |4 |`conceptnet` feature not defined in Cargo.toml
+|Private Interfaces |1 |`ProverStats` is private but exposed publicly
+|Lifetime Syntax |1 |Elided lifetime in `get_process` method
+|===
+
+=== Priority Fixes Recommended
+
+1. Add `conceptnet` feature to Cargo.toml or remove conditional compilation
+2. Clean up dead code (unused fields/methods)
+3. Prefix unused variables with `_`
+4. Remove unused imports
+
+== Files Modified
+
+[cols="1,2"]
+|===
+|File |Changes
+
+|`src/rust/agent/actors.rs` |Fixed derive macro typo, removed unclonable start_actor, simplified ProveGoal handler
+|`src/rust/agent/explanations.rs` |Fixed ProverKind variant names, rewrote format_term to match actual Term variants
+|===
+
+== Recommendations
+
+=== Immediate Actions
+
+1. **Fix Test Suite**: Update test files to match current API
+   - Change `Goal { conclusion: ... }` to `Goal { target: ... }`
+   - Update `Context` initialization
+   - Fix `Tactic::Intro` usage
+
+2. **Clean Warnings**: Run `cargo fix` to address simple warnings
+
+3. **Add Missing Feature**: Add `conceptnet` to Cargo.toml features or remove conditional code
+
+=== Future Improvements
+
+1. Consider implementing Clone for prover backends using Arc instead of Box
+2. Add integration tests for the CLI commands
+3. Document the API changes that broke tests
+
+== Environment
+
+[cols="1,2"]
+|===
+|Item |Value
+
+|Platform |Linux 6.17.12-300.fc43.x86_64
+|Rust Version |See Cargo.toml
+|Date |2025-12-29
+|Repository |/var/home/hyper/repos/echidna
+|===
