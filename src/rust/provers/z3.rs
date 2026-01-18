@@ -283,6 +283,12 @@ impl ProverBackend for Z3Backend {
         if state.goals.is_empty() {
             return Ok(true);
         }
+        if state.goals.iter().all(|g| matches!(&g.target, Term::Const(c) if c == "true")) {
+            return Ok(true);
+        }
+        if state.goals.iter().any(|g| matches!(&g.target, Term::Const(c) if c == "false")) {
+            return Ok(false);
+        }
 
         // Build complete SMT-LIB query with variable declarations
         let mut commands = String::new();
