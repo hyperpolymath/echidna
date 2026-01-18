@@ -82,6 +82,31 @@ impl std::fmt::Display for ProverKind {
 }
 
 impl ProverKind {
+    /// All core provers for 1.0 (12 total)
+    pub fn all_core() -> Vec<ProverKind> {
+        vec![
+            ProverKind::Agda,
+            ProverKind::Coq,
+            ProverKind::Lean,
+            ProverKind::Isabelle,
+            ProverKind::Z3,
+            ProverKind::CVC5,
+            ProverKind::Metamath,
+            ProverKind::HOLLight,
+            ProverKind::Mizar,
+            ProverKind::PVS,
+            ProverKind::ACL2,
+            ProverKind::HOL4,
+        ]
+    }
+
+    /// All provers including extended coverage
+    pub fn all() -> Vec<ProverKind> {
+        let mut provers = Self::all_core();
+        provers.push(ProverKind::Idris2);
+        provers
+    }
+
     /// Get complexity rating (1-5, lower is easier)
     pub fn complexity(&self) -> u8 {
         match self {

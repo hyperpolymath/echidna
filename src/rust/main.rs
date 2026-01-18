@@ -430,21 +430,7 @@ async fn server_command(port: u16, host: String, cors: bool) -> Result<()> {
 
 /// List provers command
 fn list_provers_command(detailed: bool, formatter: &OutputFormatter) -> Result<()> {
-    let provers = vec![
-        ProverKind::Agda,
-        ProverKind::Coq,
-        ProverKind::Lean,
-        ProverKind::Isabelle,
-        ProverKind::Z3,
-        ProverKind::CVC5,
-        ProverKind::Metamath,
-        ProverKind::HOLLight,
-        ProverKind::Mizar,
-        ProverKind::PVS,
-        ProverKind::ACL2,
-        ProverKind::HOL4,
-        ProverKind::Idris2,
-    ];
+    let provers = ProverKind::all();
 
     formatter.header("Available Provers")?;
     formatter.info(&format!("Total: {} provers\n", provers.len()))?;

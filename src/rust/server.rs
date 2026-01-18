@@ -112,68 +112,14 @@ async fn health_check() -> Json<HealthResponse> {
 
 /// List available provers
 async fn list_provers() -> Json<ProversResponse> {
-    let provers = vec![
-        ProverInfo {
-            name: "Agda".to_string(),
-            tier: 1,
-            complexity: 3,
-        },
-        ProverInfo {
-            name: "Coq".to_string(),
-            tier: 1,
-            complexity: 3,
-        },
-        ProverInfo {
-            name: "Lean".to_string(),
-            tier: 1,
-            complexity: 3,
-        },
-        ProverInfo {
-            name: "Isabelle".to_string(),
-            tier: 1,
-            complexity: 4,
-        },
-        ProverInfo {
-            name: "Z3".to_string(),
-            tier: 1,
-            complexity: 2,
-        },
-        ProverInfo {
-            name: "CVC5".to_string(),
-            tier: 1,
-            complexity: 2,
-        },
-        ProverInfo {
-            name: "Metamath".to_string(),
-            tier: 2,
-            complexity: 2,
-        },
-        ProverInfo {
-            name: "HolLight".to_string(),
-            tier: 2,
-            complexity: 3,
-        },
-        ProverInfo {
-            name: "Mizar".to_string(),
-            tier: 2,
-            complexity: 3,
-        },
-        ProverInfo {
-            name: "PVS".to_string(),
-            tier: 3,
-            complexity: 4,
-        },
-        ProverInfo {
-            name: "ACL2".to_string(),
-            tier: 3,
-            complexity: 4,
-        },
-        ProverInfo {
-            name: "Hol4".to_string(),
-            tier: 4,
-            complexity: 5,
-        },
-    ];
+    let provers = ProverKind::all_core()
+        .into_iter()
+        .map(|prover| ProverInfo {
+            name: format!("{:?}", prover),
+            tier: prover.tier(),
+            complexity: prover.complexity(),
+        })
+        .collect();
 
     Json(ProversResponse { provers })
 }
