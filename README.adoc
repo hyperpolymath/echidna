@@ -188,6 +188,16 @@ just security      # Trivy, cargo-audit
 just coverage      # Test coverage
 ```
 
+=== MVP Smoke (Best Effort)
+
+```bash
+# MVP smoke checks (reports missing provers, does not fail)
+just mvp
+
+# Dependency checklist (always non-fatal)
+just mvp-env
+```
+
 == Documentation
 
 - link:CONTRIBUTING.md[Contributing Guidelines]
