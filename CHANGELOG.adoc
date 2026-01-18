@@ -115,11 +115,11 @@ ECHIDNA follows Semantic Versioning (SemVer):
 - DeepProbLog integration
 - Performance optimizations
 
-=== [1.0.0] - Target: 2026-11-22
-- Tier 4 prover implementation (HOL4)
-- Complete 12-prover support
-- Production-ready release
-- Comprehensive documentation
+=== [1.0.0] - Target: ASAP
+- Complete 12-prover support (core 12)
+- CLI + HTTP API MVP
+- MVP smoke checks
+- Documentation updated for 1.0
 
 == Migration Notes
 

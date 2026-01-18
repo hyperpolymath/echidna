@@ -75,3 +75,7 @@ audit:
 # All checks before commit
 pre-commit: fmt-check lint test
     @echo "All checks passed!"
+
+# MVP 1.0 smoke checks
+mvp:
+    ./scripts/mvp-smoke.sh

@@ -257,6 +257,6 @@ If you use ECHIDNA in your research, please cite:
 
 ---
 
-*Version*: 0.1.0
-*Status*: Active Development
-*Last Updated*: 2026-01-10
+*Version*: 1.0.0 (MVP target)
+*Status*: MVP Drive (All Provers + CLI/API)
+*Last Updated*: 2026-01-18

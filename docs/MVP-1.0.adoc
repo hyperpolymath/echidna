@@ -1,0 +1,61 @@
+= ECHIDNA MVP 1.0 Checklist
+:toc: macro
+:toclevels: 2
+
+This checklist defines the minimum shippable scope for ECHIDNA 1.0.
+
+TOC::[]
+
+== Scope
+
+* All 12 core provers are wired and available via CLI + HTTP API.
+* CLI supports prove/verify/search/interactive/server.
+* HTTP API exposes health, provers, prove/verify/suggest/search, sessions.
+* Basic smoke checks exist for prover executables and pipeline paths.
+* Release documentation is updated and consistent.
+
+== Prover Coverage (Core 12)
+
+* Agda
+* Coq
+* Lean
+* Isabelle
+* Z3
+* CVC5
+* Metamath
+* HOL Light
+* Mizar
+* PVS
+* ACL2
+* HOL4
+
+== CLI
+
+* `echidna prove` works for each prover (file-based proof).
+* `echidna verify` works for each prover.
+* `echidna search` works (at least for provers with theorem DBs).
+* `echidna interactive` starts for each prover.
+* `echidna server` starts API server and serves endpoints.
+
+== HTTP API
+
+* `GET /api/health` returns OK + version.
+* `GET /api/provers` lists all 12 core provers.
+* `POST /api/prove` accepts payload + returns success.
+* `POST /api/verify` accepts payload + returns success.
+* `POST /api/suggest` returns tactics (or explicit “not available”).
+* `GET /api/search` returns matches (or explicit “not available”).
+* `POST /api/session/create` creates a session.
+* `GET /api/session/:id/state` returns state.
+* `POST /api/session/:id/apply` applies tactic.
+
+== Smoke Tests
+
+* Script exists to check prover executables are available (or clearly report missing).
+* Script runs minimal prove/verify for each prover when available.
+
+== Release Prep
+
+* `README.adoc` updated for 1.0 MVP.
+* `CHANGELOG.adoc` updated for 1.0 MVP.
+* Tagging plan for `v1.0.0`.
