@@ -1,0 +1,12 @@
+:: Minimal Mizar example for ECHIDNA MVP
+
+environ
+
+begin
+
+theorem Th1:
+  for P being set holds P = P
+proof
+  let P be set;
+  thus P = P;
+end;

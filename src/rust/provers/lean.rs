@@ -1240,7 +1240,7 @@ impl ProverBackend for LeanBackend {
             .context("Failed to write temporary file")?;
 
         let result = self
-            .run_lean(&["--run", &temp_file.to_string_lossy()])
+            .run_lean(&[&temp_file.to_string_lossy()])
             .await;
 
         // Clean up
@@ -1283,6 +1283,10 @@ impl ProverBackend for LeanBackend {
     }
 
     async fn verify_proof(&self, state: &ProofState) -> Result<bool> {
+        if state.goals.is_empty() {
+            return Ok(true);
+        }
+
         // Generate Lean code from the proof state
         let lean_code = self.export(state).await?;
 
