@@ -79,3 +79,7 @@ pre-commit: fmt-check lint test
 # MVP 1.0 smoke checks
 mvp:
     ./scripts/mvp-smoke.sh
+
+# MVP 1.0 dependency checklist (best-effort)
+mvp-env:
+    ./scripts/mvp-smoke.sh || true

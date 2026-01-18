@@ -1,0 +1,76 @@
+= ECHIDNA MVP 1.0 Dependencies
+:toc: macro
+:toclevels: 2
+
+This document lists external prover dependencies for the 1.0 MVP and how to verify them.
+
+TOC::[]
+
+== Core Provers (12)
+
+|===
+| Prover | Executable | Notes
+
+| Agda
+| `agda`
+| Install via system package or Agda tooling.
+
+| Coq
+| `coqtop`
+| Coq/Rocq interactive toplevel.
+
+| Lean
+| `lean`
+| Lean 4 CLI (elan recommended).
+
+| Isabelle
+| `isabelle`
+| Isabelle server + tools.
+
+| Z3
+| `z3`
+| SMT solver.
+
+| CVC5
+| `cvc5`
+| SMT solver.
+
+| Metamath
+| `metamath`
+| Metamath verifier.
+
+| HOL Light
+| `hol-light`
+| HOL Light executable wrapper.
+
+| Mizar
+| `mizar`
+| Mizar system (verifier + MML).
+
+| PVS
+| `pvs`
+| PVS environment.
+
+| ACL2
+| `acl2`
+| ACL2 environment.
+
+| HOL4
+| `hol4`
+| HOL4 environment.
+|===
+
+== Quick Check
+
+Run:
+
+----
+just mvp
+----
+
+Missing executables are reported explicitly. This is expected on dev machines.
+
+== Optional Helpers
+
+* `just mvp-env` (best-effort checklist) prints what is missing.
+* Prefer installing provers locally for full MVP validation.

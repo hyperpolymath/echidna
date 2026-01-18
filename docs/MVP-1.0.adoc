@@ -53,6 +53,8 @@ TOC::[]
 
 * Script exists to check prover executables are available (or clearly report missing).
 * Script runs minimal prove/verify for each prover when available.
+* Dependency checklist is documented in `docs/MVP-1.0-DEPS.adoc`.
+* Dependency checklist is documented in `docs/MVP-1.0-DEPS.adoc`.
 
 == Release Prep
 
