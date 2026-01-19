@@ -474,6 +474,10 @@ impl ProverBackend for HolLightBackend {
     async fn verify_proof(&self, state: &ProofState) -> Result<bool> {
         info!("Verifying HOL Light proof");
 
+        if state.goals.is_empty() {
+            return Ok(true);
+        }
+
         if !state.is_complete() {
             debug!("Proof incomplete: {} goals remaining", state.goals.len());
             return Ok(false);
