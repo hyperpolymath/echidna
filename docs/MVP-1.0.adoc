@@ -56,6 +56,19 @@ TOC::[]
 * Dependency checklist is documented in `docs/MVP-1.0-DEPS.adoc`.
 * Dependency checklist is documented in `docs/MVP-1.0-DEPS.adoc`.
 
+== Missing Provers (Local)
+
+This section tracks local gaps for the MVP drive. Update as tools are installed.
+
+* [ ] agda
+* [ ] coqtop
+* [ ] cvc5
+* [ ] metamath
+* [ ] acl2
+* [ ] hol4
+* [ ] hol-light
+* [ ] isabelle
+
 == Release Prep
 
 * `README.adoc` updated for 1.0 MVP.
