@@ -340,7 +340,12 @@ impl ProverBackend for MizarBackend {
             .await
             .context("Failed to read Mizar file")?;
 
-        self.parse_string(&content).await
+        let mut state = self.parse_string(&content).await?;
+        state.metadata.insert(
+            "source_path".to_string(),
+            serde_json::Value::String(path.to_string_lossy().to_string()),
+        );
+        Ok(state)
     }
 
     async fn parse_string(&self, content: &str) -> Result<ProofState> {
@@ -496,6 +501,14 @@ impl ProverBackend for MizarBackend {
     async fn verify_proof(&self, state: &ProofState) -> Result<bool> {
         if !state.is_complete() {
             return Ok(false);
+        }
+
+        if let Some(serde_json::Value::String(path)) = state.metadata.get("source_path") {
+            let path = Path::new(path);
+            if path.exists() {
+                let result = self.verify_file(path).await?;
+                return Ok(result.success);
+            }
         }
 
         let mizar_content = self.export_to_mizar(state)?;
