@@ -74,3 +74,9 @@ This section tracks local gaps for the MVP drive. Update as tools are installed.
 * `README.adoc` updated for 1.0 MVP.
 * `CHANGELOG.adoc` updated for 1.0 MVP.
 * Tagging plan for `v1.0.0`.
+
+== Local MVP Status (Toolbox)
+
+* Date: 2026-01-19
+* MVP sweep: `MIZAR_TOOLCHAIN_OK=1 scripts/mvp-functional.sh`
+* Result: all 12 core provers passed
