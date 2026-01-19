@@ -1,0 +1,46 @@
+= MVP 1.0 Missing Provers - Backlog
+:toc: macro
+:toclevels: 2
+
+Backlog of missing prover installs for the local MVP drive. Use this to
+track install sources and verification status as tools become available.
+
+TOC::[]
+
+== Checklist
+
+* [ ] agda
+* [ ] coq (coqtop)
+* [ ] cvc5
+* [ ] metamath
+* [ ] acl2
+* [ ] hol4
+* [ ] hol-light
+* [ ] isabelle
+
+== Install Sources (fill in)
+
+Add one or more install sources per prover (dnf, copr, opam, official tarball,
+manual build). Capture the exact command used and the version installed.
+
+* agda: TBD
+* coq: TBD
+* cvc5: TBD
+* metamath: TBD
+* acl2: TBD
+* hol4: TBD
+* hol-light: TBD
+* isabelle: TBD
+
+== Verification Notes
+
+Record the command used to validate each prover in this environment.
+
+* agda: `agda --version`
+* coq: `coqtop --version`
+* cvc5: `cvc5 --version`
+* metamath: `metamath --version`
+* acl2: `acl2` (REPL banner)
+* hol4: `hol4` (banner) or wrapper
+* hol-light: `hol-light` (banner) or wrapper
+* isabelle: `isabelle version`
