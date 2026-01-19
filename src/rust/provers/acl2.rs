@@ -1352,6 +1352,9 @@ impl ProverBackend for ACL2Backend {
     }
 
     async fn verify_proof(&self, state: &ProofState) -> Result<bool> {
+        if state.goals.is_empty() {
+            return Ok(true);
+        }
         // Export and check
         let content = self.export(state).await?;
 
@@ -1366,24 +1369,29 @@ impl ProverBackend for ACL2Backend {
             .context("Failed to write temp file")?;
 
         // Run ACL2 in batch mode
-        let output = Command::new(
-            self.config
-                .executable
-                .to_str()
-                .filter(|s| !s.is_empty())
-                .unwrap_or("acl2"),
-        )
-        .arg("<")
-        .arg(&temp_file)
-        .output()
-        .await
-        .context("Failed to run ACL2")?;
+        let exec = self
+            .config
+            .executable
+            .to_str()
+            .filter(|s| !s.is_empty())
+            .unwrap_or("acl2");
+
+        let stdin_file = std::fs::File::open(&temp_file)
+            .context("Failed to open temp file for ACL2 stdin")?;
+
+        let output = Command::new(exec)
+            .stdin(std::process::Stdio::from(stdin_file))
+            .output()
+            .await
+            .context("Failed to run ACL2")?;
 
         // Clean up
         let _ = tokio::fs::remove_file(&temp_file).await;
 
         let output_str = String::from_utf8_lossy(&output.stdout);
-        Ok(output_str.contains("Q.E.D.") || (output_str.contains("Summary") && !output_str.contains("FAILED")))
+        let err_str = String::from_utf8_lossy(&output.stderr);
+        let combined = format!("{}{}", output_str, err_str);
+        Ok(combined.contains("Q.E.D.") || (combined.contains("Summary") && !combined.contains("FAILED")))
     }
 
     async fn export(&self, state: &ProofState) -> Result<String> {
