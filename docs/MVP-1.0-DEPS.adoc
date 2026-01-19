@@ -74,3 +74,14 @@ Missing executables are reported explicitly. This is expected on dev machines.
 
 * `just mvp-env` (best-effort checklist) prints what is missing.
 * Prefer installing provers locally for full MVP validation.
+
+== Local Snapshot (Fedora 43) - 2026-01-19
+
+This is a local environment note for the current MVP drive (host + toolbox).
+It is *not* a general availability statement for all platforms.
+
+* Present: `lean`, `z3`, `mizar`, `pvs`
+* Missing: `agda`, `coqtop`, `cvc5`, `metamath`, `acl2`, `hol4`, `hol-light`, `isabelle`
+* Notes:
+** `mizar` verifies successfully inside toolbox; host `verifier` previously failed with sandbox restrictions.
+** `guix` is not available via `dnf` inside toolbox; manual install required if we choose the Guix route.
