@@ -321,6 +321,9 @@ impl ProverBackend for AgdaBackend {
     }
 
     async fn verify_proof(&self, state: &ProofState) -> Result<bool> {
+        if state.goals.is_empty() {
+            return Ok(true);
+        }
         let temp_file = std::env::temp_dir().join("echidna_agda_verify.agda");
         let agda_code = self.export(state).await?;
         tokio::fs::write(&temp_file, agda_code).await?;

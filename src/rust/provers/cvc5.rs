@@ -17,6 +17,8 @@ use std::io::{BufRead, BufReader, Write};
 use std::path::PathBuf;
 use std::process::{Child, Command, Stdio};
 use std::sync::{Arc, Mutex};
+use tokio::fs;
+use uuid::Uuid;
 
 use crate::core::{Goal, ProofState, Tactic, TacticResult, Term};
 use crate::provers::{ProverBackend, ProverConfig, ProverKind};
@@ -378,8 +380,26 @@ impl CVC5Backend {
             if trimmed.is_empty() || trimmed.starts_with(';') {
                 continue;
             }
+            if trimmed.starts_with("(declare-const") {
+                let inner = trimmed
+                    .trim_start_matches("(declare-const")
+                    .trim_end_matches(')')
+                    .trim();
+                let mut parts = inner.splitn(2, ' ');
+                if let (Some(name), Some(ty)) = (parts.next(), parts.next()) {
+                    state.context.variables.push(crate::core::Variable {
+                        name: name.to_string(),
+                        ty: Term::Const(ty.trim().to_string()),
+                    });
+                }
+                continue;
+            }
             if trimmed.starts_with("(assert") {
-                assertions.push(trimmed.to_string());
+                let inner = trimmed
+                    .trim_start_matches("(assert")
+                    .trim_end_matches(')')
+                    .trim();
+                assertions.push(inner.to_string());
             }
             if trimmed.starts_with("(check-sat") {
                 if !assertions.is_empty() {
@@ -495,16 +515,49 @@ impl ProverBackend for CVC5Backend {
     }
 
     async fn verify_proof(&self, state: &ProofState) -> Result<bool> {
-        self.push_context()?;
-        let mut success = false;
+        if state.goals.is_empty() {
+            return Ok(true);
+        }
+
+        let mut commands = String::new();
+        commands.push_str("(set-logic ALL)\n");
+        for var in &state.context.variables {
+            let ty = self.term_to_smtlib(&var.ty)?;
+            commands.push_str(&format!("(declare-const {} {})\n", var.name, ty));
+        }
         for goal in &state.goals {
             let smtlib = self.term_to_smtlib(&goal.target)?;
-            self.send_command(&format!("(assert (not {}))", smtlib))?;
+            commands.push_str(&format!("(assert (not {}))\n", smtlib));
         }
-        let result = self.check_sat()?;
-        success = result == SmtResult::Unsat;
-        self.pop_context()?;
-        Ok(success)
+        commands.push_str("(check-sat)\n");
+
+        let temp_file = std::env::temp_dir()
+            .join(format!("echidna_cvc5_verify_{}.smt2", Uuid::new_v4()));
+        fs::write(&temp_file, commands)
+            .await
+            .context("Failed to write CVC5 temp file")?;
+
+        let output = Command::new(&self.config.base.executable)
+            .arg("--lang=smt2")
+            .arg(&temp_file)
+            .output()
+            .context("Failed to run CVC5")?;
+
+        let _ = fs::remove_file(&temp_file).await;
+
+        if !output.status.success() {
+            let stderr = String::from_utf8_lossy(&output.stderr);
+            let stdout = String::from_utf8_lossy(&output.stdout);
+            let combined = format!("{}{}", stdout, stderr);
+            return Err(anyhow!("CVC5 failed: {}", combined.trim()));
+        }
+
+        let stdout = String::from_utf8_lossy(&output.stdout);
+        if stdout.contains("unsat") {
+            Ok(true)
+        } else {
+            Ok(false)
+        }
     }
 
     async fn export(&self, state: &ProofState) -> Result<String> {
