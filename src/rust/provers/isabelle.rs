@@ -223,6 +223,12 @@ impl ProverBackend for IsabelleBackend {
     }
 
     async fn verify_proof(&self, state: &ProofState) -> Result<bool> {
+        if state.goals.is_empty() {
+            return Ok(true);
+        }
+        if state.goals.iter().all(|g| matches!(&g.target, Term::Const(c) if c == "True")) {
+            return Ok(true);
+        }
         let theory_content = self.export_theory(state)?;
         let temp_path = std::env::temp_dir().join("echidna_verify.thy");
         tokio::fs::write(&temp_path, &theory_content).await.context("Failed to write temp file")?;
