@@ -1,4 +1,4 @@
-SPDX-License-Identifier: PMPL-1.0
+SPDX-License-Identifier: PMPL-1.0-or-later
 SPDX-FileCopyrightText: 2024-2025 Palimpsest Stewardship Council
 
 ================================================================================
@@ -7,15 +7,15 @@ PALIMPSEST-MPL LICENSE VERSION 1.0
 
 File-level copyleft with ethical use and quantum-safe provenance
 
-Based on Palimpsest-MPL License v1.0 (PMPL-1.0)
+Based on Mozilla Public License 2.0
 
 --------------------------------------------------------------------------------
 PREAMBLE
 --------------------------------------------------------------------------------
 
-This License extends the Palimpsest-MPL License v1.0 (PMPL-1.0) (PMPL-1.0) with provisions
+This License extends the Mozilla Public License 2.0 (MPL-2.0) with provisions
 for ethical use, post-quantum cryptographic provenance, and emotional lineage
-protection. The base PMPL-1.0 terms apply except where explicitly modified by
+protection. The base MPL-2.0 terms apply except where explicitly modified by
 the Exhibits below.
 
 Like a palimpsest manuscript where each layer builds upon what came before,
@@ -26,11 +26,11 @@ that transcend mere code or text.
 SECTION 1: BASE LICENSE
 --------------------------------------------------------------------------------
 
-This License incorporates the full text of Palimpsest-MPL License v1.0 (PMPL-1.0) by
-reference. The complete PMPL-1.0 text is available at:
-https://github.com/hyperpolymath/palimpsest-license
+This License incorporates the full text of Mozilla Public License 2.0 by
+reference. The complete MPL-2.0 text is available at:
+https://www.mozilla.org/en-US/MPL/2.0/
 
-All terms, conditions, and definitions from PMPL-1.0 apply except where
+All terms, conditions, and definitions from MPL-2.0 apply except where
 explicitly modified by the Exhibits in this License.
 
 --------------------------------------------------------------------------------
@@ -61,7 +61,7 @@ SECTION 2: ADDITIONAL DEFINITIONS
 SECTION 3: ETHICAL USE REQUIREMENTS
 --------------------------------------------------------------------------------
 
-In addition to the rights and obligations under PMPL-1.0:
+In addition to the rights and obligations under MPL-2.0:
 
 3.1. Emotional Lineage Preservation
     You must make reasonable efforts to preserve and communicate the
@@ -125,12 +125,12 @@ SECTION 5: GOVERNANCE
 SECTION 6: COMPATIBILITY
 --------------------------------------------------------------------------------
 
-6.1. PMPL-1.0 Compatibility
+6.1. MPL-2.0 Compatibility
     Covered Software under this License may be combined with software under
-    PMPL-1.0. The combined work must comply with both licenses.
+    MPL-2.0. The combined work must comply with both licenses.
 
 6.2. Secondary Licenses
-    The Secondary License provisions of PMPL-1.0 Section 3.3 apply to this
+    The Secondary License provisions of MPL-2.0 Section 3.3 apply to this
     License.
 
 --------------------------------------------------------------------------------
