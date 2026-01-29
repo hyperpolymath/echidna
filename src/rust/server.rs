@@ -463,32 +463,104 @@ async fn get_proof_tree(
 async fn suggest_tactics_ui(
     Json(req): Json<SuggestTacticsUIRequest>,
 ) -> Result<Json<SuggestTacticsUIResponse>, AppError> {
-    info!("UI tactic suggestion request for goal: {}", req.goal_id);
+    let prover = req.prover.as_deref().unwrap_or("Coq");
+    let top_k = req.top_k.unwrap_or(5);
 
-    // For now, return mock suggestions
-    // TODO: Integrate with Julia ML models
-    let suggestions = vec![
-        TacticSuggestion {
-            tactic: "intro".to_string(),
-            confidence: 0.92,
-            premise: Some("Introduce hypothesis".to_string()),
-            aspect_tags: vec!["deductive".to_string()],
-        },
-        TacticSuggestion {
-            tactic: "apply lemma_name".to_string(),
-            confidence: 0.85,
-            premise: Some("lemma_name".to_string()),
-            aspect_tags: vec!["algebraic".to_string(), "deductive".to_string()],
-        },
-        TacticSuggestion {
-            tactic: "reflexivity".to_string(),
-            confidence: 0.78,
-            premise: None,
-            aspect_tags: vec!["automated".to_string()],
-        },
-    ];
+    info!("UI tactic suggestion request - prover: {}, goal: {}", prover, req.goal);
 
-    Ok(Json(SuggestTacticsUIResponse { suggestions }))
+    // Call Julia ML API for real AI predictions
+    let client = reqwest::Client::new();
+    let julia_url = "http://127.0.0.1:9000/suggest";
+
+    let julia_request = serde_json::json!({
+        "goal": req.goal,
+        "prover": prover,
+        "top_k": top_k
+    });
+
+    match client.post(julia_url).json(&julia_request).send().await {
+        Ok(response) => {
+            if response.status().is_success() {
+                match response.json::<serde_json::Value>().await {
+                    Ok(json) => {
+                        let empty_vec = vec![];
+                        let suggestions_json = json["suggestions"].as_array().unwrap_or(&empty_vec);
+                        let suggestions: Vec<TacticSuggestion> = suggestions_json
+                            .iter()
+                            .map(|s| {
+                                let confidence = s["confidence"].as_f64().unwrap_or(0.0);
+                                let tactic = s["tactic"].as_str().unwrap_or("auto").to_string();
+                                let premise = s.get("premises")
+                                    .and_then(|p| p.as_array())
+                                    .and_then(|arr| arr.first())
+                                    .and_then(|v| v.as_str())
+                                    .map(String::from);
+
+                                // Infer aspect tags from confidence and tactic
+                                let aspect_tags = if confidence > 0.8 {
+                                    vec!["automated".to_string()]
+                                } else if tactic.contains("intro") {
+                                    vec!["deductive".to_string()]
+                                } else {
+                                    vec!["algebraic".to_string(), "deductive".to_string()]
+                                };
+
+                                TacticSuggestion {
+                                    tactic,
+                                    confidence,
+                                    premise,
+                                    aspect_tags,
+                                }
+                            })
+                            .collect();
+
+                        Ok(Json(SuggestTacticsUIResponse { suggestions }))
+                    }
+                    Err(e) => {
+                        info!("Failed to parse Julia response: {}", e);
+                        // Fall back to mock data
+                        Ok(Json(SuggestTacticsUIResponse {
+                            suggestions: vec![
+                                TacticSuggestion {
+                                    tactic: "auto".to_string(),
+                                    confidence: 0.5,
+                                    premise: None,
+                                    aspect_tags: vec!["automated".to_string()],
+                                }
+                            ]
+                        }))
+                    }
+                }
+            } else {
+                info!("Julia API returned error status: {}", response.status());
+                // Fall back to mock data
+                Ok(Json(SuggestTacticsUIResponse {
+                    suggestions: vec![
+                        TacticSuggestion {
+                            tactic: "auto".to_string(),
+                            confidence: 0.5,
+                            premise: None,
+                            aspect_tags: vec!["automated".to_string()],
+                        }
+                    ]
+                }))
+            }
+        }
+        Err(e) => {
+            info!("Failed to connect to Julia ML API: {}", e);
+            // Fall back to mock data if Julia service is down
+            Ok(Json(SuggestTacticsUIResponse {
+                suggestions: vec![
+                    TacticSuggestion {
+                        tactic: "auto".to_string(),
+                        confidence: 0.5,
+                        premise: None,
+                        aspect_tags: vec!["automated".to_string()],
+                    }
+                ]
+            }))
+        }
+    }
 }
 
 /// UI-specific theorem search endpoint
@@ -719,8 +791,10 @@ struct ProofTreeResponse {
 
 #[derive(Deserialize)]
 struct SuggestTacticsUIRequest {
-    goal_id: String,
+    goal: String,  // Changed from goal_id to accept goal text directly
+    prover: Option<String>,
     active_tags: Option<Vec<String>>,
+    top_k: Option<usize>,
 }
 
 #[derive(Serialize)]
