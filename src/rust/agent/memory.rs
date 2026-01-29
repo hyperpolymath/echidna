@@ -1,6 +1,8 @@
 // SPDX-FileCopyrightText: 2025 ECHIDNA Project Contributors
 // SPDX-License-Identifier: MIT OR Palimpsest-0.6
 
+#![allow(dead_code)]
+
 //! Proof Memory - stores successful proofs and failures for learning
 //!
 //! Uses SQLite for structured storage and optionally LanceDB for vector similarity search.

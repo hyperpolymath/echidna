@@ -1,6 +1,8 @@
 // SPDX-FileCopyrightText: 2025 ECHIDNA Project Contributors
 // SPDX-License-Identifier: MIT OR Palimpsest-0.6
 
+#![allow(dead_code)]
+
 //! Prover Router - dynamically selects best prover for a goal
 //!
 //! Uses aspect tags and success/failure history to score provers.

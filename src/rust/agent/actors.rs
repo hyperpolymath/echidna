@@ -1,6 +1,8 @@
 // SPDX-FileCopyrightText: 2025 ECHIDNA Project Contributors
 // SPDX-License-Identifier: MIT OR Palimpsest-0.6
 
+#![allow(dead_code)]
+
 //! Actor-based Multi-Agent Orchestration
 //!
 //! Uses Actix to enable parallel proof search across multiple provers.

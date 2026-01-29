@@ -1,6 +1,8 @@
 // SPDX-FileCopyrightText: 2025 ECHIDNA Project Team
 // SPDX-License-Identifier: MIT OR Palimpsest-0.6
 
+#![allow(dead_code)]
+
 //! CVC5 SMT solver backend for ECHIDNA
 //!
 //! CVC5 is a Tier 1 SMT solver, successor to CVC4, with strong support for:

@@ -1,6 +1,8 @@
 // SPDX-FileCopyrightText: 2025 ECHIDNA Project Team
 // SPDX-License-Identifier: MIT OR Palimpsest-0.6
 
+#![allow(dead_code)]
+
 //! Theorem prover backend implementations
 //!
 //! Supports 12 theorem provers across 4 tiers

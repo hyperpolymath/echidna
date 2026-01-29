@@ -1,6 +1,8 @@
 // SPDX-FileCopyrightText: 2025 ECHIDNA Project Team
 // SPDX-License-Identifier: MIT OR Palimpsest-0.6
 
+#![allow(dead_code)]
+
 //! ACL2 theorem prover backend implementation
 //!
 //! ACL2 (A Computational Logic for Applicative Common Lisp) is a theorem prover

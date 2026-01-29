@@ -1,6 +1,8 @@
 // SPDX-FileCopyrightText: 2025 ECHIDNA Project Team
 // SPDX-License-Identifier: MIT OR Palimpsest-0.6
 
+#![allow(dead_code)]
+
 //! HOL4 (Higher Order Logic 4) backend implementation.
 //!
 //! HOL4 is a proof assistant for higher-order logic based on the LCF approach.

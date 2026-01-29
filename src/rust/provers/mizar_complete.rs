@@ -1,6 +1,8 @@
 // SPDX-FileCopyrightText: 2025 ECHIDNA Project Team
 // SPDX-License-Identifier: MIT OR Palimpsest-0.6
 
+#![allow(dead_code)]
+
 //! Mizar theorem prover backend implementation
 //!
 //! Mizar is a Tier 2 prover (complexity 3/5) with natural-language-like syntax.

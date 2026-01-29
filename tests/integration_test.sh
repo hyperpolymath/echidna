@@ -4,9 +4,9 @@
 
 set -e
 
-JULIA_URL="http://127.0.0.1:9000"
+JULIA_URL="http://127.0.0.1:8090"
 RUST_URL="http://127.0.0.1:8080/api"
-UI_URL="http://127.0.0.1:3000"
+UI_URL="http://127.0.0.1:8000"
 
 echo "╔═══════════════════════════════════════════════════════════╗"
 echo "║  ECHIDNA v1.3 - Full Stack Integration Tests             ║"

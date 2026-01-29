@@ -1,6 +1,8 @@
 // SPDX-FileCopyrightText: 2025 ECHIDNA Project Team
 // SPDX-License-Identifier: MIT OR Palimpsest-0.6
 
+#![allow(dead_code)]
+
 //! PVS (Prototype Verification System) backend implementation.
 //!
 //! PVS is a specification and verification system from SRI International.
