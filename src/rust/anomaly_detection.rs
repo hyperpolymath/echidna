@@ -136,8 +136,8 @@ impl AnomalyDetector {
 
     /// Check if theorem is complex (multiple quantifiers, long)
     fn is_complex_theorem(&self, goal: &str) -> bool {
-        goal.matches("forall").count() > 2
-            || goal.matches("exists").count() > 1
+        goal.matches("forall").count() >= 2
+            || goal.matches("exists").count() >= 1
             || goal.len() > 100
     }
 
@@ -260,7 +260,7 @@ mod tests {
 
         // Create a suspicious result
         let result = ProofResult {
-            goal: "forall n m p : nat, (n + m) + p = n + (m + p)".to_string(),
+            goal: "forall n m : nat, forall p q : nat, (n + m) + (p + q) = (n + p) + (m + q)".to_string(),
             success: true,
             confidence: 0.99, // Too confident for complex theorem!
             tactic_count: 50,  // Way too many tactics!
