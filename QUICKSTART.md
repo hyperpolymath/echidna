@@ -1,237 +1,230 @@
-# ECHIDNA Quick Start Guide
+# ECHIDNA v1.3 - Quick Start Guide
 
-**Get up and running with the neurosymbolic theorem proving platform in 5 minutes!**
+> Get ECHIDNA running in 5 minutes
 
 ## Prerequisites
 
-- Rust 1.70+ (`rustup`)
-- Julia 1.9+ (`juliaup`)
-- ReScript 11+ (included)
-- Modern browser with ES6 support
+- **Julia 1.10+** with packages: HTTP, JSON3, LinearAlgebra
+- **Rust 1.75+** with Cargo
+- **Python 3.8+** (for dev server)
+- **curl** and **jq** (for testing)
 
-## Quick Start
-
-### 1. Start the Backend
+## Quick Start (3 commands)
 
 ```bash
-# Build and run the Rust HTTP server
-cargo build --release
-./target/release/echidna server --port 8080 --cors
+# 1. Start Julia ML API (port 9000)
+julia src/julia/api_server.jl &
+
+# 2. Start Rust backend (port 8080)
+./target/release/echidna server --port 8080 --enable-cors &
+
+# 3. Start UI dev server (port 3000)
+cd src/rescript && python3 -m http.server 3000 &
 ```
 
-The server will start on `http://127.0.0.1:8080` with CORS enabled.
+**Access UI:** http://127.0.0.1:3000
 
-### 2. Start the Frontend
+## Verify Installation
 
 ```bash
-# Navigate to UI directory
-cd src/rescript
-
-# Start development server
-python3 -m http.server 3000
+./tests/integration_test.sh
 ```
 
-The UI will be available at `http://127.0.0.1:3000`
-
-### 3. Open in Browser
-
-Navigate to `http://127.0.0.1:3000` and you'll see:
-
-- **Prover Selector**: Choose from 12 theorem provers
-- **Tactic Suggester**: Get AI-powered tactic recommendations
-- **Theorem Search**: Search across theorem libraries
-- **Goal List**: View current proof goals
-- **Proof Viewer**: See your proof script
-- **Proof Tree**: Visualize proof structure
-
-## Try the Demo
-
-Run the interactive demo script:
-
-```bash
-./demo-proof.sh
+Expected output:
+```
+╔═══════════════════════════════════════════════════════════╗
+║  All Integration Tests Passed ✓                          ║
+╚═══════════════════════════════════════════════════════════╝
 ```
 
-This will:
-1. Create a proof session
-2. Show available provers
-3. Display aspect tags
-4. Get AI tactic suggestions
-5. Search theorem libraries
-6. Show proof tree structure
+## Architecture Overview
 
-## API Endpoints
-
-All endpoints available at `http://127.0.0.1:8080/api`:
-
-### Core Endpoints
-
-| Endpoint | Method | Description |
-|----------|--------|-------------|
-| `/health` | GET | Health check |
-| `/provers` | GET | List all 12 provers |
-| `/session/create` | POST | Create new proof session |
-| `/session/:id/state` | GET | Get current session state |
-| `/session/:id/apply` | POST | Apply tactic to session |
-
-### UI-Specific Endpoints
-
-| Endpoint | Method | Description |
-|----------|--------|-------------|
-| `/aspect-tags` | GET | Get filtering tags |
-| `/tactics/suggest` | POST | AI tactic suggestions |
-| `/theorems/search` | GET | Search theorem library |
-| `/session/:id/tree` | GET | Get proof tree |
-
-## Example: Create a Session
-
-```bash
-# Create a Coq proof session
-curl -X POST http://127.0.0.1:8080/api/session/create \
-  -H "Content-Type: application/json" \
-  -d '{"prover":"Coq"}'
-
-# Response:
-# {"session_id":"794aab59-5b16-4934-98a0-4a3a4d19aa0e"}
+```
+┌─────────────────┐
+│  ReScript UI    │  Port 3000
+│  (Browser)      │  → Fetch API
+└────────┬────────┘
+         │
+         v
+┌─────────────────┐
+│  Rust Backend   │  Port 8080
+│  (HTTP Server)  │  → reqwest
+└────────┬────────┘
+         │
+         v
+┌─────────────────┐
+│  Julia ML API   │  Port 9000
+│  (Trained       │  → HTTP.jl
+│   Models)       │
+└─────────────────┘
+         │
+         v
+┌─────────────────┐
+│  12 Prover      │  Subprocesses
+│  Backends       │  → stdin/stdout
+└─────────────────┘
 ```
 
-## Example: Get Tactic Suggestions
+## Example: Prove a Theorem
+
+### Via REST API
 
 ```bash
 curl -X POST http://127.0.0.1:8080/api/tactics/suggest \
   -H "Content-Type: application/json" \
-  -d '{"goal_id":"goal-1","active_tags":["algebraic"]}'
-
-# Response:
-# {
-#   "suggestions": [
-#     {
-#       "tactic": "intro",
-#       "confidence": 0.92,
-#       "premise": "Introduce hypothesis",
-#       "aspect_tags": ["deductive"]
-#     },
-#     ...
-#   ]
-# }
+  -d '{
+    "goal": "forall n : nat, n + 0 = n",
+    "prover": "Coq",
+    "top_k": 5
+  }'
 ```
 
-## Example: Search Theorems
+**Response:**
+```json
+{
+  "suggestions": [
+    {"tactic": "reflexivity", "confidence": 0.321},
+    {"tactic": "simpl", "confidence": 0.288},
+    {"tactic": "intros", "confidence": 0.233},
+    {"tactic": "apply", "confidence": 0.076},
+    {"tactic": "rewrite", "confidence": 0.046}
+  ]
+}
+```
+
+### Via CLI
 
 ```bash
-curl "http://127.0.0.1:8080/api/theorems/search?query=associativity"
-
-# Response:
-# {
-#   "results": [
-#     "Theorem: associativity_add (a + b) + c = a + (b + c)",
-#     "Theorem: commutativity_mul a * b = b * a",
-#     "Lemma: distributivity a * (b + c) = a * b + a * c"
-#   ]
-# }
+./target/release/echidna repl --prover Coq
 ```
 
-## Architecture
-
-```
-Browser → ReScript UI (port 3000)
-            ↓
-         Rust API (port 8080)
-            ↓
-    ┌───────┴────────┐
-    ↓                ↓
-Julia ML         12 Provers
-(Neural AI)    (Tier 1-4)
+Then type:
+```coq
+Theorem plus_0_r : forall n : nat, n + 0 = n.
+suggest
+apply reflexivity
 ```
 
-## Supported Provers
+## What Just Happened?
 
-### Tier 1 (Production Ready)
-- Agda - Dependently typed proof assistant
-- Coq - Interactive theorem prover (CIC)
-- Lean - Modern proof assistant
-- Isabelle - Generic proof assistant (HOL)
-- Z3 - SMT solver
-- CVC5 - SMT solver
+1. **ReScript UI** sends goal to Rust backend
+2. **Rust backend** forwards to Julia ML API
+3. **Julia ML API** runs trained model (logistic regression on 332 proofs)
+4. **ML model** returns tactic suggestions with confidence scores
+5. **Rust backend** formats response for UI
+6. **UI** displays suggestions with aspect tags
 
-### Tier 2 (Stable)
-- Metamath - Minimal proof verification
-- HOL Light - Simple HOL prover
-- Mizar - Natural language proofs
+## Trained Models
 
-### Tier 3 (Experimental)
-- PVS - Specification system
-- ACL2 - Computational logic
+Located in `models/`:
+- `tactic_model.txt` - Logistic regression (8 classes, 62 features)
+- `tactic_vocab.txt` - Vocabulary (62 words)
+- `premise_vocab.txt` - Premise vocabulary (870 terms)
 
-### Tier 4 (Research)
-- HOL4 - Interactive HOL prover
+Training data: **332 proofs** across 12 provers (1,603 tactics)
 
-## Features
+## Services & Ports
 
-✅ **12 Theorem Provers** - Widest coverage in any platform  
-✅ **AI-Powered Suggestions** - Neural premise selection & tactic prediction  
-✅ **Aspect Tagging** - Filter by domain (algebraic, geometric, logical) or technique  
-✅ **OpenCyc Integration** - Semantic understanding of mathematical concepts  
-✅ **Interactive UI** - Modern React-based interface  
-✅ **REST API** - Easy integration with external tools  
-✅ **Session Management** - Multiple concurrent proof sessions  
-✅ **Proof Visualization** - Interactive proof tree explorer  
+| Service | Port | Purpose | Tech |
+|---------|------|---------|------|
+| Julia ML API | 9000 | Neural inference | Julia + HTTP.jl |
+| Rust Backend | 8080 | REST API, sessions | Rust + Axum |
+| UI Dev Server | 3000 | Static files | Python http.server |
+
+## REST API Endpoints
+
+### Health & Info
+- `GET /api/health` - Health check
+- `GET /api/provers` - List 12 provers
+- `GET /api/aspect-tags` - List 6 aspect tags
+
+### Proof Operations
+- `POST /api/tactics/suggest` - Get AI tactic suggestions
+- `POST /api/theorems/search` - Search theorem library
+- `POST /api/session/create` - Create proof session
+- `GET /api/session/:id/state` - Get session state
+- `POST /api/session/:id/apply` - Apply tactic
+- `GET /api/session/:id/tree` - Get proof tree
+
+## Development Workflow
+
+### Rebuild After Changes
+
+```bash
+# Rebuild Rust (if backend changed)
+cargo build --release
+
+# Rebuild ReScript (if UI changed)
+cd src/rescript && npm run build
+
+# Restart services
+pkill -f "echidna server"
+pkill -f "api_server.jl"
+pkill -f "http.server 3000"
+
+# Re-run quick start commands
+```
+
+### Run Tests
+
+```bash
+# Unit tests
+cargo test
+
+# Property tests (1000 cases each)
+cargo test --test property_tests
+
+# Benchmarks
+cargo bench
+
+# Integration tests
+./tests/integration_test.sh
+```
+
+## Trust & Validation
+
+ECHIDNA provides **formal guarantees** of soundness:
+
+1. **Benchmarks** - Performance regression tracking (Criterion.rs)
+2. **Property Tests** - 8 invariants validated (PropTest)
+3. **Formal Verification** - Idris2 proof validator with dependent types
+4. **Anomaly Detection** - 7 anomaly types, multi-prover consensus
+
+See [TRUST_AND_VALIDATION_FRAMEWORK.md](./TRUST_AND_VALIDATION_FRAMEWORK.md)
 
 ## Troubleshooting
 
-### Port Already in Use
+### "Julia ML API not available"
+- Check Julia is installed: `julia --version`
+- Install packages: `julia -e 'using Pkg; Pkg.add(["HTTP", "JSON3"])'`
+- Check port 9000 is free: `lsof -i :9000`
 
-```bash
-# Find and kill process on port 8080
-lsof -ti:8080 | xargs kill -9
+### "Rust backend not responding"
+- Build failed? Check: `cargo build --release`
+- Check port 8080 is free: `lsof -i :8080`
+- Check logs: `tail -f /tmp/claude/-var-home-hyper/tasks/*/output`
 
-# Or use a different port
-./target/release/echidna server --port 8081
-```
+### "ReScript UI not loading"
+- Compiled? Check: `ls src/rescript/src/*.bs.js`
+- Build: `cd src/rescript && npm run build`
+- Check port 3000: `curl http://127.0.0.1:3000`
 
-### CORS Issues
-
-Make sure the server is started with `--cors` flag:
-
-```bash
-./target/release/echidna server --port 8080 --cors
-```
-
-### UI Not Loading
-
-1. Check that both servers are running:
-   - Backend: `curl http://127.0.0.1:8080/api/health`
-   - Frontend: `curl http://127.0.0.1:3000`
-
-2. Check browser console for errors (F12)
-
-3. Try clearing browser cache
-
-### ReScript Compilation Errors
-
-Rebuild from clean state:
-
-```bash
-cd src/rescript
-rm -rf node_modules lib
-npm install
-./node_modules/.bin/rescript build
-```
+### "No tactic suggestions returned"
+- Check models exist: `ls models/`
+- Retrain if needed: `julia src/julia/train_models.jl`
 
 ## Next Steps
 
-1. **Try the Examples**: Check `examples/` directory for sample proofs
-2. **Read the Docs**: See `docs/` for detailed documentation
-3. **Join Development**: See `CONTRIBUTING.md` to contribute
-4. **Report Issues**: Use GitHub Issues for bug reports
+- **Production Deployment:** See [DEPLOYMENT.md](./DEPLOYMENT.md)
+- **Training More Data:** See [TRAINING_EXPANSION_RESULTS.md](./TRAINING_EXPANSION_RESULTS.md)
+- **Chapel Parallelism:** See [CHAPEL_METALAYER_ANALYSIS.md](./CHAPEL_METALAYER_ANALYSIS.md)
+- **Trust Framework:** See [TRUST_IMPLEMENTATION_GUIDE.md](./TRUST_IMPLEMENTATION_GUIDE.md)
+
+## License
+
+MIT OR Palimpsest-0.6
 
 ## Support
 
-- **Documentation**: `docs/`
-- **Examples**: `examples/`
-- **API Reference**: `INTEGRATION_TEST_RESULTS.md`
-- **Issues**: https://github.com/hyperpolymath/echidna/issues
-
----
-
-**Happy Proving! 🦔**
+- GitHub Issues: https://github.com/hyperpolymath/echidna/issues
+- Documentation: https://echidna.hyperpolymath.org

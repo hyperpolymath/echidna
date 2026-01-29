@@ -19,10 +19,13 @@ use axum::{
 use colored::Colorize;
 use echidna::core::{ProofState, Tactic, TacticResult};
 use echidna::{ProverBackend, ProverConfig, ProverKind};
+use reqwest::Client;
 use serde::{Deserialize, Serialize};
+use serde_json::json;
 use std::collections::HashMap;
 use std::net::SocketAddr;
 use std::sync::Arc;
+use std::time::Duration;
 use tokio::sync::{Mutex, RwLock};
 use tower_http::cors::CorsLayer;
 use tracing::info;
@@ -32,6 +35,10 @@ use tracing::info;
 struct AppState {
     /// Active proof sessions (session_id -> ProofSession)
     sessions: Arc<RwLock<HashMap<String, Arc<Mutex<ProofSession>>>>>,
+    /// HTTP client for Julia ML API
+    ml_client: Client,
+    /// Julia ML API base URL
+    ml_api_url: String,
 }
 
 /// A proof session
@@ -43,8 +50,27 @@ struct ProofSession {
 
 /// Start the HTTP server
 pub async fn start_server(port: u16, host: String, enable_cors: bool) -> Result<()> {
+    // Create HTTP client for Julia ML API
+    let ml_client = Client::builder()
+        .timeout(Duration::from_secs(10))
+        .build()?;
+
+    let ml_api_url = "http://127.0.0.1:9000".to_string();
+
+    // Test Julia ML connection
+    match ml_client.get(format!("{}/health", ml_api_url)).send().await {
+        Ok(resp) if resp.status().is_success() => {
+            info!("✓ Connected to Julia ML API at {}", ml_api_url);
+        }
+        _ => {
+            info!("⚠ Julia ML API not available at {} (will use fallback)", ml_api_url);
+        }
+    }
+
     let state = AppState {
         sessions: Arc::new(RwLock::new(HashMap::new())),
+        ml_client,
+        ml_api_url,
     };
 
     // Build router
@@ -198,22 +224,54 @@ async fn verify_handler(
 
 /// Get tactic suggestions
 async fn suggest_handler(
+    State(state): State<AppState>,
     Json(req): Json<SuggestRequest>,
 ) -> Result<Json<SuggestResponse>, AppError> {
     info!("Suggest request for prover: {:?}", req.prover);
 
-    // Create prover
+    // Try Julia ML API first
+    let julia_req = json!({
+        "goal": req.content,
+        "prover": format!("{:?}", req.prover),
+        "top_k": req.limit.unwrap_or(5)
+    });
+
+    match state.ml_client
+        .post(format!("{}/suggest", state.ml_api_url))
+        .json(&julia_req)
+        .send()
+        .await
+    {
+        Ok(resp) if resp.status().is_success() => {
+            if let Ok(ml_resp) = resp.json::<serde_json::Value>().await {
+                if let Some(suggestions_arr) = ml_resp["suggestions"].as_array() {
+                    let suggestions: Vec<String> = suggestions_arr
+                        .iter()
+                        .filter_map(|s| s["tactic"].as_str().map(|t| t.to_string()))
+                        .collect();
+
+                    if !suggestions.is_empty() {
+                        info!("✓ Got {} ML suggestions", suggestions.len());
+                        return Ok(Json(SuggestResponse { suggestions }));
+                    }
+                }
+            }
+        }
+        _ => {
+            info!("ML API unavailable, using prover fallback");
+        }
+    }
+
+    // Fallback: Use prover's built-in suggestions
     let config = ProverConfig::default();
     let prover = echidna::provers::ProverFactory::create(req.prover, config)
         .map_err(|e| AppError::InternalError(e.to_string()))?;
 
-    // Parse current state
     let state = prover
         .parse_string(&req.content)
         .await
         .map_err(|e| AppError::ParseError(e.to_string()))?;
 
-    // Get suggestions
     let tactics = prover
         .suggest_tactics(&state, req.limit.unwrap_or(5))
         .await
