@@ -16,7 +16,7 @@ using JSON3
 using LinearAlgebra
 using Logging
 
-const MODELS_DIR = "models"
+const MODELS_DIR = joinpath(@__DIR__, "../../models")  # Relative to this file
 const PORT = 8090  # Unprivileged port (>1024, no sudo required)
 const HOST = "127.0.0.1"
 
