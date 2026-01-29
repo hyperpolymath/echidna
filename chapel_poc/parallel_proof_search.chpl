@@ -89,9 +89,8 @@ proc parallelProofSearch(goal: string, provers: [] string): ProofResult {
         results[i] = tryProver(prover, goal);
 
         if verbose && results[i].success {
-            writeln("  ✓ ", prover, " succeeded in ",
-                   "%{#.##}".format(results[i].time), " seconds (",
-                   results[i].tactics, " tactics)");
+            writef("  ✓ %s succeeded in %.2dr seconds (%i tactics)\n",
+                   prover, results[i].time, results[i].tactics);
         }
     }
 
@@ -111,7 +110,7 @@ proc parallelProofSearch(goal: string, provers: [] string): ProofResult {
     if verbose {
         var successCount = + reduce [r in results] if r.success then 1 else 0;
         writeln("\nParallel search completed in ",
-               "%{#.##}".format(totalTimer.elapsed()), " seconds");
+               totalTimer.elapsed():real, " seconds");
         writeln("  Successful proofs: ", successCount, "/", provers.size);
     }
 
@@ -212,7 +211,7 @@ proc main() {
     writeln();
 
     writeln("Sequential Search:");
-    writeln("  Time: ", "%{#.##}".format(seqTimer.elapsed()), " seconds");
+    writef("  Time: %.2dr seconds\n", seqTimer.elapsed());
     if seqResult.success {
         writeln("  Result: ✓ SUCCESS (", seqResult.prover, ", ",
                seqResult.tactics, " tactics)");
@@ -223,7 +222,7 @@ proc main() {
     writeln();
 
     writeln("Parallel Search:");
-    writeln("  Time: ", "%{#.##}".format(parTimer.elapsed()), " seconds");
+    writef("  Time: %.2dr seconds\n", parTimer.elapsed());
     if parResult.success {
         writeln("  Result: ✓ SUCCESS (", parResult.prover, ", ",
                parResult.tactics, " tactics)");
@@ -235,7 +234,7 @@ proc main() {
 
     if seqTimer.elapsed() > 0 && parTimer.elapsed() > 0 {
         var speedup = seqTimer.elapsed() / parTimer.elapsed();
-        writeln("Speedup: ", "%{#.##}".format(speedup), "x");
+        writef("Speedup: %.2drx\n", speedup);
 
         if speedup > 1.5 {
             writeln("✓ Parallel search is significantly faster!");
