@@ -1,23 +1,10 @@
-# SPDX-FileCopyrightText: 2025 ECHIDNA Project Team
-# SPDX-License-Identifier: PMPL-1.0-or-later
-
-name = "EchidnaML"
-uuid = "e6c41d0a-5b2e-4f1a-9c3d-2e8f7a9b1c0d"
-authors = ["ECHIDNA Project Team"]
-version = "0.1.0"
-
 [deps]
-# HTTP Server (MVP - only what we need now)
 HTTP = "cd3eb016-35fb-5094-929b-558a96fad6f3"
 JSON3 = "0f8b85d8-7281-11e9-16c2-39a750bddbf1"
-
-# Utilities (stdlib - no install needed)
-Statistics = "10745b16-79ce-11e8-11f9-7d13ad32a3b2"
 LinearAlgebra = "37e2e46d-f89d-539d-b4ee-838fcccc9c8e"
-Random = "9a3f8284-a2c9-5f02-9a11-845980a1fd5c"
 Logging = "56ddb016-857b-54e1-b83d-db4d58db5568"
 
 [compat]
-julia = "1.9"
+julia = "1.10"
 HTTP = "1"
 JSON3 = "1"
