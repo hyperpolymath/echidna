@@ -104,6 +104,10 @@ harness = false
 name = "verification_bench"
 harness = false
 
+[[bench]]
+name = "proof_benchmarks"
+harness = false
+
 [profile.release]
 opt-level = 3
 lto = true
