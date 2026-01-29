@@ -13,6 +13,7 @@ pub mod neural;
 pub mod aspect;
 pub mod agent;
 pub mod ffi;
+pub mod anomaly_detection;
 
 pub use core::{ProofState, Term, Tactic, TacticResult};
 pub use provers::{ProverBackend, ProverKind, ProverConfig};
