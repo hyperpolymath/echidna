@@ -1,0 +1,829 @@
+# ECHIDNA: Just and Must Framework
+
+**Status**: Design Standard
+**Date**: 2026-01-29
+**Purpose**: Standardize entry paths and stabilize design expectations
+
+---
+
+## Philosophy
+
+**Just** = Common entry point for all developers (Justfile)
+**Must** = Requirements that MUST be met before acceptance (validation system)
+
+Together, these create a **stable, predictable development experience**.
+
+---
+
+## Part 1: Just (Common Entry Point)
+
+### Justfile as Primary Build System
+
+**Why Justfile?**
+- ✅ Cross-platform (works on Linux, macOS, Windows)
+- ✅ Simple syntax (easier than Make)
+- ✅ Self-documenting (`just --list`)
+- ✅ Composable recipes
+- ✅ No magic variables or implicit rules
+
+**Rule**: **ALL build commands go through Justfile**
+
+---
+
+### Standard Justfile Recipes
+
+**Justfile** (complete, comprehensive):
+
+```justfile
+# SPDX-License-Identifier: MIT OR Palimpsest-0.6
+# ECHIDNA Standard Build System
+
+# List all available commands
+default:
+    @just --list
+
+# ═══════════════════════════════════════════════════════
+# BUILDING
+# ═══════════════════════════════════════════════════════
+
+# Build core (no Chapel)
+build:
+    @echo "Building ECHIDNA core..."
+    cargo build --release
+
+# Build with Chapel support
+build-chapel:
+    @echo "Building with Chapel support..."
+    @just check-chapel
+    cd crates/echidna-chapel/chapel && ./build.sh
+    cargo build --release --features chapel
+
+# Build for development (debug mode)
+build-dev:
+    cargo build
+
+# Build WASM target
+build-wasm:
+    cargo build --target wasm32-unknown-unknown --release
+
+# Build UI components
+build-ui:
+    @echo "Compiling ReScript UI..."
+    cd src/rescript && npm run build
+
+# Build Julia ML components
+build-ml:
+    @echo "Building Julia ML models..."
+    cd src/julia && julia --project -e 'using Pkg; Pkg.instantiate()'
+
+# Build everything (core + Chapel + UI + ML)
+build-all:
+    @just build
+    @just build-ui
+    @just build-ml
+    @just build-chapel
+
+# ═══════════════════════════════════════════════════════
+# TESTING
+# ═══════════════════════════════════════════════════════
+
+# Run all tests
+test:
+    @echo "Running Rust tests..."
+    cargo test
+    @echo "Running Julia tests..."
+    cd src/julia && julia --project test/runtests.jl
+
+# Run tests with Chapel
+test-chapel:
+    @just check-chapel
+    cargo test --features chapel
+
+# Run property-based tests
+test-properties:
+    cargo test property_tests -- --nocapture
+
+# Run integration tests
+test-integration:
+    cargo test --test integration_tests
+
+# Run benchmarks
+bench:
+    cargo bench
+
+# Test specific prover
+test-prover PROVER:
+    cargo test provers::{{PROVER}}
+
+# ═══════════════════════════════════════════════════════
+# CODE QUALITY
+# ═══════════════════════════════════════════════════════
+
+# Run all quality checks (MUST pass before commit)
+check:
+    @just check-format
+    @just check-lint
+    @just check-licenses
+    @just check-security
+    @just check-types
+    @echo "✓ All quality checks passed!"
+
+# Check code formatting
+check-format:
+    @echo "Checking Rust formatting..."
+    cargo fmt -- --check
+    @echo "Checking Julia formatting..."
+    cd src/julia && julia --project -e 'using JuliaFormatter; format(".", verbose=true, overwrite=false)'
+
+# Fix formatting issues
+fix-format:
+    cargo fmt
+    cd src/julia && julia --project -e 'using JuliaFormatter; format(".", verbose=true)'
+
+# Run linter
+check-lint:
+    @echo "Running Clippy..."
+    cargo clippy -- -D warnings
+
+# Check license headers
+check-licenses:
+    @echo "Checking SPDX headers..."
+    reuse lint
+
+# Security audit
+check-security:
+    @echo "Running security audit..."
+    cargo audit
+    cd src/julia && julia --project -e 'using Aqua; Aqua.test_all(ECHIDNA)'
+
+# Type checking (Rust + Julia)
+check-types:
+    cargo check --all-targets
+    cd src/julia && julia --project -e 'using JET; report_package("ECHIDNA")'
+
+# ═══════════════════════════════════════════════════════
+# DOCUMENTATION
+# ═══════════════════════════════════════════════════════
+
+# Generate all documentation
+docs:
+    @just docs-rust
+    @just docs-julia
+    @just docs-api
+
+# Generate Rust docs
+docs-rust:
+    cargo doc --no-deps --open
+
+# Generate Julia docs
+docs-julia:
+    cd src/julia && julia --project -e 'using Documenter; include("docs/make.jl")'
+
+# Generate API docs (OpenAPI spec)
+docs-api:
+    @echo "Generating OpenAPI specification..."
+    cargo run --bin generate-openapi > docs/api/openapi.yaml
+
+# ═══════════════════════════════════════════════════════
+# DEVELOPMENT
+# ═══════════════════════════════════════════════════════
+
+# Start development server (UI + Rust + Julia)
+dev:
+    @echo "Starting development servers..."
+    @just dev-rust & just dev-julia & just dev-ui
+
+# Start Rust API server
+dev-rust:
+    cargo run --bin echidna-server
+
+# Start Julia ML API server
+dev-julia:
+    cd src/julia && julia --project api_server.jl
+
+# Start UI development server
+dev-ui:
+    cd src/rescript && npm run dev
+
+# Watch for changes and rebuild
+watch:
+    cargo watch -x build -x test
+
+# ═══════════════════════════════════════════════════════
+# DEPENDENCIES
+# ═══════════════════════════════════════════════════════
+
+# Install all dependencies
+install-deps:
+    @echo "Installing Rust dependencies..."
+    cargo fetch
+    @echo "Installing Julia dependencies..."
+    cd src/julia && julia --project -e 'using Pkg; Pkg.instantiate()'
+    @echo "Installing ReScript dependencies..."
+    cd src/rescript && npm install
+
+# Update dependencies
+update-deps:
+    cargo update
+    cd src/julia && julia --project -e 'using Pkg; Pkg.update()'
+    cd src/rescript && npm update
+
+# Check for outdated dependencies
+check-deps:
+    cargo outdated
+    cd src/julia && julia --project -e 'using Pkg; Pkg.status()'
+
+# ═══════════════════════════════════════════════════════
+# CHAPEL (OPTIONAL)
+# ═══════════════════════════════════════════════════════
+
+# Check if Chapel is available
+check-chapel:
+    #!/usr/bin/env bash
+    if ! command -v chpl &> /dev/null; then
+        echo "ERROR: Chapel compiler not found"
+        echo ""
+        echo "Install Chapel:"
+        echo "  Fedora: sudo dnf install chapel"
+        echo "  macOS:  brew install chapel"
+        echo "  Other:  https://chapel-lang.org/download.html"
+        echo ""
+        echo "Or build without Chapel: just build"
+        exit 1
+    fi
+    echo "✓ Chapel $(chpl --version | head -1)"
+
+# Benchmark Chapel vs Sequential
+bench-chapel:
+    @just build-chapel
+    cargo bench --features chapel -- parallel
+
+# ═══════════════════════════════════════════════════════
+# VALIDATION (MUST SYSTEM)
+# ═══════════════════════════════════════════════════════
+
+# Run MUST validation (all requirements)
+must:
+    @just must-build
+    @just must-test
+    @just must-quality
+    @just must-docs
+    @echo ""
+    @echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+    @echo "✓ ALL MUST REQUIREMENTS SATISFIED"
+    @echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+
+# MUST: Code must build
+must-build:
+    @echo "MUST: Code builds cleanly..."
+    @just build > /dev/null 2>&1 || (echo "✗ FAILED: Code does not build" && exit 1)
+    @echo "✓ PASSED: Code builds"
+
+# MUST: All tests must pass
+must-test:
+    @echo "MUST: All tests pass..."
+    @cargo test --quiet 2>&1 || (echo "✗ FAILED: Tests failing" && exit 1)
+    @echo "✓ PASSED: All tests pass"
+
+# MUST: Code quality standards met
+must-quality:
+    @echo "MUST: Code quality standards met..."
+    @cargo clippy --quiet -- -D warnings 2>&1 || (echo "✗ FAILED: Clippy warnings" && exit 1)
+    @cargo fmt -- --check 2>&1 || (echo "✗ FAILED: Formatting" && exit 1)
+    @reuse lint > /dev/null 2>&1 || (echo "✗ FAILED: License headers" && exit 1)
+    @echo "✓ PASSED: Code quality"
+
+# MUST: Documentation exists and builds
+must-docs:
+    @echo "MUST: Documentation builds..."
+    @cargo doc --no-deps --quiet 2>&1 || (echo "✗ FAILED: Doc build" && exit 1)
+    @echo "✓ PASSED: Documentation"
+
+# ═══════════════════════════════════════════════════════
+# RELEASE
+# ═══════════════════════════════════════════════════════
+
+# Prepare release (run all checks)
+release-prep VERSION:
+    @echo "Preparing release {{VERSION}}..."
+    @just must
+    @just check-deps
+    @just build-all
+    @echo "✓ Ready for release {{VERSION}}"
+
+# Tag release
+release-tag VERSION:
+    @echo "Tagging release {{VERSION}}..."
+    git tag -a "v{{VERSION}}" -m "Release {{VERSION}}"
+    git push origin "v{{VERSION}}"
+
+# ═══════════════════════════════════════════════════════
+# CLEANUP
+# ═══════════════════════════════════════════════════════
+
+# Clean build artifacts
+clean:
+    cargo clean
+    rm -rf target/
+    rm -rf src/rescript/lib/
+    find . -name "*.bs.js" -delete
+
+# Deep clean (including dependencies)
+clean-all:
+    @just clean
+    rm -rf ~/.cargo/registry/
+    cd src/julia && rm -rf Manifest.toml
+
+# ═══════════════════════════════════════════════════════
+# HELPERS
+# ═══════════════════════════════════════════════════════
+
+# Show project statistics
+stats:
+    @echo "Project Statistics:"
+    @echo "  Rust LoC:    $(tokei src/rust -t Rust | grep 'Total' | awk '{print $5}')"
+    @echo "  Julia LoC:   $(tokei src/julia -t Julia | grep 'Total' | awk '{print $5}')"
+    @echo "  Chapel LoC:  $(tokei crates/echidna-chapel -t Chapel | grep 'Total' | awk '{print $5}')"
+    @echo "  Tests:       $(cargo test --quiet 2>&1 | grep 'test result' | awk '{print $3}')"
+    @echo "  Provers:     12"
+
+# Open project in editor
+edit:
+    $EDITOR .
+
+# Quick development cycle
+dev-cycle:
+    @just build-dev
+    @just test
+    @just check-lint
+```
+
+---
+
+## Part 2: Must (Requirements Validation)
+
+### Must Requirements System
+
+**Concept**: Before any PR is merged, it MUST pass validation
+
+**Implementation**: `scripts/must_validate.sh`
+
+```bash
+#!/usr/bin/env bash
+# SPDX-License-Identifier: MIT OR Palimpsest-0.6
+# Must Validation System
+#
+# Exit codes:
+#   0 = All requirements met
+#   1 = Requirement failed
+#
+# Usage:
+#   ./scripts/must_validate.sh
+
+set -euo pipefail
+
+RED='\033[0;31m'
+GREEN='\033[0;32m'
+YELLOW='\033[1;33m'
+NC='\033[0m' # No Color
+
+echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+echo "ECHIDNA MUST Validation System"
+echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+echo ""
+
+FAILED=0
+
+# Helper function
+check_requirement() {
+    local name="$1"
+    local command="$2"
+
+    echo -n "MUST: $name... "
+
+    if eval "$command" > /dev/null 2>&1; then
+        echo -e "${GREEN}✓ PASSED${NC}"
+        return 0
+    else
+        echo -e "${RED}✗ FAILED${NC}"
+        FAILED=$((FAILED + 1))
+        return 1
+    fi
+}
+
+# MUST 1: Code builds
+check_requirement "Code builds" "cargo build --release"
+
+# MUST 2: All tests pass
+check_requirement "All tests pass" "cargo test --quiet"
+
+# MUST 3: No Clippy warnings
+check_requirement "No Clippy warnings" "cargo clippy -- -D warnings"
+
+# MUST 4: Code formatted correctly
+check_requirement "Code formatted" "cargo fmt -- --check"
+
+# MUST 5: SPDX license headers
+check_requirement "SPDX headers present" "reuse lint"
+
+# MUST 6: No security vulnerabilities
+check_requirement "No security issues" "cargo audit"
+
+# MUST 7: Documentation builds
+check_requirement "Documentation builds" "cargo doc --no-deps"
+
+# MUST 8: Benchmarks compile
+check_requirement "Benchmarks compile" "cargo bench --no-run"
+
+# MUST 9: Property tests pass
+check_requirement "Property tests pass" "cargo test property_tests"
+
+# MUST 10: Integration tests pass
+check_requirement "Integration tests pass" "cargo test --test integration_tests"
+
+echo ""
+echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+
+if [ $FAILED -eq 0 ]; then
+    echo -e "${GREEN}✓ ALL $((10)) MUST REQUIREMENTS SATISFIED${NC}"
+    echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+    exit 0
+else
+    echo -e "${RED}✗ $FAILED MUST REQUIREMENT(S) FAILED${NC}"
+    echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+    exit 1
+fi
+```
+
+### Must Requirements List
+
+| # | Requirement | Check | Why |
+|---|-------------|-------|-----|
+| 1 | **Code builds** | `cargo build` | Broken builds block everyone |
+| 2 | **All tests pass** | `cargo test` | Regressions must not merge |
+| 3 | **No Clippy warnings** | `cargo clippy -D warnings` | Code quality standards |
+| 4 | **Code formatted** | `cargo fmt --check` | Consistent style |
+| 5 | **SPDX headers** | `reuse lint` | Legal compliance |
+| 6 | **No security issues** | `cargo audit` | Vulnerability prevention |
+| 7 | **Docs build** | `cargo doc` | Documentation coverage |
+| 8 | **Benchmarks compile** | `cargo bench --no-run` | Performance tracking |
+| 9 | **Property tests pass** | Property-based testing | Invariant checking |
+| 10 | **Integration tests pass** | End-to-end validation | Full stack works |
+
+---
+
+## Part 3: Developer Onboarding
+
+### Day 1: New Developer Experience
+
+**Goal**: Developer productive in < 30 minutes
+
+**Onboarding checklist**:
+
+```bash
+# 1. Clone repo
+git clone https://github.com/hyperpolymath/echidna.git
+cd echidna
+
+# 2. Install dependencies
+just install-deps
+
+# 3. Build
+just build
+
+# 4. Run tests
+just test
+
+# 5. Start dev environment
+just dev
+
+# Done! Ready to contribute.
+```
+
+**Expected output**:
+```
+$ just build
+Building ECHIDNA core...
+   Compiling echidna v1.3.1
+    Finished release [optimized] target(s) in 1m 23s
+
+$ just test
+Running Rust tests...
+   test result: ok. 137 passed; 0 failed; 0 ignored
+
+$ just check
+Checking Rust formatting...  ✓
+Running Clippy...             ✓
+Checking SPDX headers...      ✓
+Running security audit...     ✓
+Checking types...             ✓
+✓ All quality checks passed!
+```
+
+---
+
+## Part 4: CI/CD Integration
+
+### GitHub Actions Using Just + Must
+
+**.github/workflows/ci.yml**:
+
+```yaml
+name: CI
+
+on: [push, pull_request]
+
+jobs:
+  must-validation:
+    name: MUST Requirements
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: dtolnay/rust-toolchain@stable
+
+      - uses: Swatinem/rust-cache@v2
+
+      # Install Just
+      - uses: extractions/setup-just@v1
+
+      # Install REUSE tool
+      - run: pip install reuse
+
+      # Run MUST validation
+      - name: Validate MUST requirements
+        run: just must
+
+      # If MUST fails, PR cannot merge
+```
+
+**Result**: PRs cannot merge unless `just must` passes
+
+---
+
+## Part 5: Pre-Commit Hooks
+
+### Git Hooks Using Just
+
+**.git/hooks/pre-commit**:
+
+```bash
+#!/usr/bin/env bash
+# SPDX-License-Identifier: MIT OR Palimpsest-0.6
+# Pre-commit hook: Run quick validation
+
+set -e
+
+echo "Running pre-commit validation..."
+
+# Quick check (fast subset of MUST)
+just check-format
+just check-lint
+
+echo "✓ Pre-commit validation passed"
+```
+
+**Installation**:
+```bash
+# Setup hooks
+just setup-hooks
+
+# Or manually
+cp scripts/pre-commit.sh .git/hooks/pre-commit
+chmod +x .git/hooks/pre-commit
+```
+
+---
+
+## Part 6: CONTRIBUTING.md Integration
+
+**CONTRIBUTING.md** (excerpt):
+
+```markdown
+# Contributing to ECHIDNA
+
+## Quick Start
+
+All development goes through `just`:
+
+```bash
+# List available commands
+just --list
+
+# Build and test
+just build
+just test
+
+# Check quality
+just check
+
+# Before commit
+just must
+```
+
+## Requirements (MUST System)
+
+Before your PR can merge, it MUST satisfy:
+
+1. ✓ Code builds
+2. ✓ All tests pass
+3. ✓ No Clippy warnings
+4. ✓ Code formatted
+5. ✓ SPDX headers
+6. ✓ No security issues
+7. ✓ Docs build
+8. ✓ Benchmarks compile
+9. ✓ Property tests pass
+10. ✓ Integration tests pass
+
+Check requirements:
+```bash
+just must
+```
+
+## I don't know Justfiles
+
+No problem! Just treats it like a better Makefile:
+
+```bash
+# Instead of:
+make build
+
+# Use:
+just build
+```
+
+See available commands:
+```bash
+just --list
+```
+```
+
+---
+
+## Part 7: Documentation Standards
+
+### Must-Have Documentation
+
+Every module MUST have:
+
+1. **Module doc comment** (what it does)
+2. **Example usage** (how to use it)
+3. **Public API docs** (all public items documented)
+
+**Example**:
+
+```rust
+//! Proof search strategies.
+//!
+//! This module provides different strategies for searching for proofs,
+//! including sequential and parallel (Chapel-based) approaches.
+//!
+//! # Example
+//!
+//! ```
+//! use echidna::core::proof_search::*;
+//!
+//! let selector = StrategySelector::auto();
+//! let result = selector.best().search(goal, provers, timeout)?;
+//! ```
+
+/// Sequential proof search strategy.
+///
+/// Tries each prover one-by-one until one succeeds or all fail.
+///
+/// # Example
+///
+/// ```
+/// use echidna::core::sequential_search::SequentialSearch;
+///
+/// let strategy = SequentialSearch;
+/// let result = strategy.search(goal, provers, timeout)?;
+/// ```
+pub struct SequentialSearch;
+```
+
+**Validation**:
+```bash
+# Check docs coverage
+just check-docs-coverage
+
+# Must have 100% public API documented
+cargo doc --no-deps 2>&1 | grep "warning: missing documentation"
+```
+
+---
+
+## Part 8: Stabilization Checklist
+
+### Design Stabilization Goals
+
+Before v2.0, we MUST stabilize:
+
+**Architecture** ✓
+- [x] 12 prover backends
+- [x] Trait-based abstractions
+- [x] Chapel as optional plugin
+- [x] ML/neural integration
+
+**Build System** ✓
+- [x] Justfile as primary interface
+- [x] Chapel optional (feature flag)
+- [x] Cross-platform support
+
+**Code Quality** ✓
+- [x] MUST validation system
+- [x] Property-based testing
+- [x] Benchmarking infrastructure
+- [x] Security auditing
+
+**Documentation** ✓
+- [x] API documentation
+- [x] Tutorial/quickstart
+- [x] Contribution guidelines
+- [x] Chapel separation docs
+
+**Testing** ✓
+- [x] 137+ unit tests
+- [x] 38 integration tests
+- [x] Property tests
+- [x] Benchmark suite
+
+---
+
+## Part 9: Version Stability Promise
+
+### Semantic Versioning + Must
+
+**1.x.x** = Current (experimental)
+- MUST requirements recommended but not enforced
+- Breaking changes allowed with notice
+
+**2.0.0** = Stable release
+- MUST requirements ENFORCED in CI
+- No breaking changes without major version bump
+- API stability guaranteed
+
+**2.x.x** = Stable minor releases
+- Only backwards-compatible changes
+- MUST requirements always enforced
+
+---
+
+## Conclusion
+
+**Just + Must = Predictable Development**
+
+**Just (Justfile)**:
+- ✅ Common entry point for all commands
+- ✅ Self-documenting (`just --list`)
+- ✅ Cross-platform
+- ✅ Composable recipes
+
+**Must (Validation System)**:
+- ✅ Clear requirements before merge
+- ✅ Automated checking
+- ✅ Prevents regressions
+- ✅ Enforced in CI/CD
+
+**Together**:
+- New developers productive in < 30 minutes
+- Code quality maintained automatically
+- Breaking changes caught before merge
+- Stable foundation for growth
+
+---
+
+**Developer Experience**:
+
+```bash
+# Day 1
+$ git clone echidna && cd echidna
+$ just build
+$ just test
+# ✓ Productive!
+
+# Day 7
+$ git checkout -b feature/new-prover
+$ edit src/rust/provers/new_prover.rs
+$ just test-prover new_prover
+$ just check
+$ just must
+$ git commit && git push
+# ✓ PR ready!
+```
+
+**Maintainer Experience**:
+
+```bash
+# Review PR
+$ gh pr checkout 123
+$ just must
+# ✓ All requirements met - safe to merge
+```
+
+---
+
+*ECHIDNA Just and Must Framework*
+*Co-Authored-By: Claude Sonnet 4.5 <noreply@anthropic.com>*
