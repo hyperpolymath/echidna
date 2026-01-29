@@ -1,6 +1,8 @@
 // SPDX-FileCopyrightText: 2025 ECHIDNA Project Contributors
 // SPDX-License-Identifier: MIT OR Palimpsest-0.6
 
+#![allow(dead_code)]
+
 //! Agent Core - Agentic theorem proving with goal selection, planning, and reflection
 //!
 //! This module implements the autonomous agent that coordinates theorem proving

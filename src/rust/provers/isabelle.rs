@@ -1,6 +1,8 @@
 // SPDX-FileCopyrightText: 2025 ECHIDNA Project Team
 // SPDX-License-Identifier: MIT OR Palimpsest-0.6
 
+#![allow(dead_code)]
+
 //! Isabelle/HOL backend for ECHIDNA
 //!
 //! Tier 1 Prover: Isabelle is a generic proof assistant with powerful automation

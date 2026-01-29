@@ -97,14 +97,6 @@ path = "src/rust/lib.rs"
 crate-type = ["cdylib", "rlib"]
 
 [[bench]]
-name = "parser_bench"
-harness = false
-
-[[bench]]
-name = "verification_bench"
-harness = false
-
-[[bench]]
 name = "proof_benchmarks"
 harness = false
 

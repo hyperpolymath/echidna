@@ -1,6 +1,8 @@
 // SPDX-FileCopyrightText: 2025 ECHIDNA Project Team
 // SPDX-License-Identifier: MIT OR Palimpsest-0.6
 
+#![allow(dead_code)]
+
 //! HOL Light theorem prover backend
 //!
 //! HOL Light is a Tier 2 prover (complexity 3/5) written in OCaml with a powerful tactic-based

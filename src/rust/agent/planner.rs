@@ -1,6 +1,8 @@
 // SPDX-FileCopyrightText: 2025 ECHIDNA Project Contributors
 // SPDX-License-Identifier: MIT OR Palimpsest-0.6
 
+#![allow(dead_code)]
+
 //! Planner - decomposes goals into sub-goals
 //!
 //! Uses hierarchical task network planning to break complex goals into manageable pieces.

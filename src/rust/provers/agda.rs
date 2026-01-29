@@ -1,6 +1,8 @@
 // SPDX-FileCopyrightText: 2025 ECHIDNA Project Team
 // SPDX-License-Identifier: MIT OR Palimpsest-0.6
 
+#![allow(dead_code)]
+
 //! Agda backend implementation for ECHIDNA
 //!
 //! Agda is a Tier 1 prover in ECHIDNA with dependent type theory support.

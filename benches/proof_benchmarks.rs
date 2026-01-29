@@ -1,123 +1,68 @@
+// SPDX-FileCopyrightText: 2025 ECHIDNA Project Team
 // SPDX-License-Identifier: MIT OR Palimpsest-0.6
-// Criterion-based benchmarks for proof search performance
 
-use criterion::{black_box, criterion_group, criterion_main, Criterion, BenchmarkId};
-use echidna::provers::*;
-use echidna::core::*;
+//! Performance benchmarks for ECHIDNA proof operations
 
+use criterion::{black_box, criterion_group, criterion_main, Criterion};
+
+/// Benchmark simple proof search operations
 fn bench_simple_arithmetic(c: &mut Criterion) {
-    let mut group = c.benchmark_group("simple_arithmetic");
-
-    // Benchmark: n + 0 = n (right identity)
-    group.bench_function("add_zero_right", |b| {
+    c.bench_function("simple_goal_complexity", |b| {
         b.iter(|| {
             let goal = black_box("forall n : nat, n + 0 = n");
-            // Simulate proof search (replace with actual prover call)
-            goal.len()
+            // Simulate complexity calculation
+            goal.matches("forall").count() * 10 + goal.len() / 10
         })
     });
-
-    // Benchmark: 0 + n = n (left identity)
-    group.bench_function("add_zero_left", |b| {
-        b.iter(|| {
-            let goal = black_box("forall n : nat, 0 + n = n");
-            goal.len()
-        })
-    });
-
-    // Benchmark: n + m = m + n (commutativity)
-    group.bench_function("add_commutativity", |b| {
-        b.iter(|| {
-            let goal = black_box("forall n m : nat, n + m = m + n");
-            goal.len()
-        })
-    });
-
-    group.finish();
 }
 
-fn bench_ml_inference(c: &mut Criterion) {
-    let mut group = c.benchmark_group("ml_inference");
-
-    let goals = vec![
-        "forall n, n + 0 = n",
-        "forall n m, n + m = m + n",
-        "forall n m p, (n + m) + p = n + (m + p)",
-    ];
-
-    for (i, goal) in goals.iter().enumerate() {
-        group.bench_with_input(
-            BenchmarkId::new("tactic_suggestion", i),
-            goal,
-            |b, &goal| {
-                b.iter(|| {
-                    // Simulate ML inference (replace with actual Julia API call)
-                    let _hash = black_box(goal).as_bytes().iter().sum::<u8>();
-                })
-            },
-        );
-    }
-
-    group.finish();
+/// Benchmark proof state construction
+fn bench_proof_state(c: &mut Criterion) {
+    c.bench_function("proof_state_creation", |b| {
+        b.iter(|| {
+            let hypotheses = vec!["H1: P".to_string(), "H2: Q".to_string()];
+            let conclusion = "P /\\ Q";
+            // Simulate proof state construction
+            black_box(hypotheses.len() + conclusion.len())
+        })
+    });
 }
 
-fn bench_proof_tree_construction(c: &mut Criterion) {
-    let mut group = c.benchmark_group("proof_tree");
-
-    group.bench_function("create_tree", |b| {
+/// Benchmark tactic application simulation
+fn bench_tactic_application(c: &mut Criterion) {
+    c.bench_function("tactic_selection", |b| {
         b.iter(|| {
-            // Simulate proof tree construction
-            let mut nodes = Vec::new();
-            for i in 0..10 {
-                nodes.push(black_box(i));
+            let goal = black_box("forall n : nat, n + 0 = n");
+            // Simulate tactic selection heuristics
+            if goal.contains("forall") {
+                "intros"
+            } else if goal.contains("=") {
+                "reflexivity"
+            } else {
+                "auto"
             }
-            nodes
         })
     });
-
-    group.bench_function("add_tactic", |b| {
-        b.iter(|| {
-            let mut tactics = Vec::new();
-            for _ in 0..5 {
-                tactics.push(black_box("intro".to_string()));
-            }
-            tactics
-        })
-    });
-
-    group.finish();
 }
 
-fn bench_parsing(c: &mut Criterion) {
-    let mut group = c.benchmark_group("parsing");
-
-    let terms = vec![
-        "forall n : nat, n + 0 = n",
-        "exists x : nat, x > 0",
-        "forall n m p : nat, (n + m) + p = n + (m + p)",
-    ];
-
-    for (i, term) in terms.iter().enumerate() {
-        group.bench_with_input(
-            BenchmarkId::new("parse_term", i),
-            term,
-            |b, &term| {
-                b.iter(|| {
-                    // Simulate term parsing
-                    black_box(term).chars().count()
-                })
-            },
-        );
-    }
-
-    group.finish();
+/// Benchmark ML confidence calculation
+fn bench_ml_confidence(c: &mut Criterion) {
+    c.bench_function("confidence_calculation", |b| {
+        b.iter(|| {
+            let goal_length = black_box(42);
+            let quantifiers = black_box(2);
+            // Simulate confidence score calculation
+            let complexity = quantifiers as f64 * 10.0 + goal_length as f64 / 10.0;
+            1.0 / (1.0 + (-complexity / 100.0).exp())
+        })
+    });
 }
 
 criterion_group!(
     benches,
     bench_simple_arithmetic,
-    bench_ml_inference,
-    bench_proof_tree_construction,
-    bench_parsing
+    bench_proof_state,
+    bench_tactic_application,
+    bench_ml_confidence
 );
 criterion_main!(benches);

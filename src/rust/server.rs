@@ -55,7 +55,7 @@ pub async fn start_server(port: u16, host: String, enable_cors: bool) -> Result<
         .timeout(Duration::from_secs(10))
         .build()?;
 
-    let ml_api_url = "http://127.0.0.1:9000".to_string();
+    let ml_api_url = "http://127.0.0.1:8090".to_string();
 
     // Test Julia ML connection
     match ml_client.get(format!("{}/health", ml_api_url)).send().await {
@@ -528,7 +528,7 @@ async fn suggest_tactics_ui(
 
     // Call Julia ML API for real AI predictions
     let client = reqwest::Client::new();
-    let julia_url = "http://127.0.0.1:9000/suggest";
+    let julia_url = "http://127.0.0.1:8090/suggest";
 
     let julia_request = serde_json::json!({
         "goal": req.goal,

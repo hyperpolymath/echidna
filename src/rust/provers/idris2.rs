@@ -1,6 +1,8 @@
 // SPDX-FileCopyrightText: 2025 ECHIDNA Project Team
 // SPDX-License-Identifier: MIT OR Palimpsest-0.6
 
+#![allow(dead_code)]
+
 //! Idris 2 backend implementation for ECHIDNA
 //!
 //! Idris 2 is a dependently-typed language with first-class type-level computation,

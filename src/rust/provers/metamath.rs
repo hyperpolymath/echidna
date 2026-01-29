@@ -1,6 +1,8 @@
 // SPDX-FileCopyrightText: 2025 ECHIDNA Project Team
 // SPDX-License-Identifier: MIT OR Palimpsest-0.6
 
+#![allow(dead_code)]
+
 //! Metamath theorem prover backend
 //!
 //! Metamath is a minimalist proof verification system using RPN-style proofs.

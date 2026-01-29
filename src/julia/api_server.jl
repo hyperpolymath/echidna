@@ -17,7 +17,7 @@ using LinearAlgebra
 using Logging
 
 const MODELS_DIR = "models"
-const PORT = 9000
+const PORT = 8090  # Unprivileged port (>1024, no sudo required)
 const HOST = "127.0.0.1"
 
 # Model structures

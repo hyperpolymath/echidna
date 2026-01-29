@@ -1,6 +1,8 @@
 // SPDX-FileCopyrightText: 2025 ECHIDNA Project Team
 // SPDX-License-Identifier: MIT OR Palimpsest-0.6
 
+#![allow(dead_code)]
+
 //! Lean 4 theorem prover backend implementation
 //!
 //! Integrates with Lean 4 via command-line interface and Lake build system.
