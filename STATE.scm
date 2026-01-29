@@ -6,7 +6,7 @@
       ((version . "1.3.0-alpha")
        (schema-version . "1")
        (created . "2026-01-10T13:48:18+00:00")
-       (updated . "2026-01-29T14:30:00+00:00")
+       (updated . "2026-01-29T15:00:00+00:00")
        (project . "echidna")
        (repo . "echidna")))
 
