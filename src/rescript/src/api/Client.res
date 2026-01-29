@@ -1,15 +1,18 @@
 // SPDX-License-Identifier: MIT OR Palimpsest-0.6
-// SPDX-FileCopyrightText: 2025 ECHIDNA Project Team
+// SPDX-FileCopyrightText: 2026 ECHIDNA Project Team
 
 /**
- * API client for ECHIDNA Rust backend
- * Handles all communication with the proof backend
+ * API client for ECHIDNA Rust backend (v1.3)
+ * Connects to HTTP server on port 8080
  */
 
 open Store
 
-// API configuration
-let apiBase = "/api"
+// API configuration - connects to Rust backend
+let apiBase = "http://localhost:8080/api"
+
+// Session ID tracking (using ref for mutability)
+let currentSessionId: ref<option<string>> = ref(None)
 
 // Response types
 type apiResponse<'a> = {
@@ -17,254 +20,339 @@ type apiResponse<'a> = {
   error: option<string>,
 }
 
-// JSON encoding/decoding helpers
+// Prover info from backend
+type proverInfo = {
+  name: string,
+  tier: int,
+  complexity: int,
+}
+
+type proversResponse = {provers: array<proverInfo>}
+
+// JSON decoding helpers using Js.Json
 module Decode = {
-  let goal = (json): goal => {
-    open JSON.Decode
-    {
-      id: field("id", string, json),
-      hypotheses: field("hypotheses", array(string), json),
-      conclusion: field("conclusion", string, json),
-      context: field("context", array(string), json),
-    }
+  let getString = (dict, key) =>
+    Belt.Option.flatMap(Js.Dict.get(dict, key), Js.Json.decodeString)
+
+  let getInt = (dict, key) =>
+    Belt.Option.flatMap(Js.Dict.get(dict, key), Js.Json.decodeNumber)
+    ->Belt.Option.map(Belt.Float.toInt)
+
+  let getFloat = (dict, key) =>
+    Belt.Option.flatMap(Js.Dict.get(dict, key), Js.Json.decodeNumber)
+
+  let getBool = (dict, key) =>
+    Belt.Option.flatMap(Js.Dict.get(dict, key), Js.Json.decodeBoolean)
+
+  let getArray = (dict, key) =>
+    Belt.Option.flatMap(Js.Dict.get(dict, key), Js.Json.decodeArray)
+
+  let goal = (json): option<goal> => {
+    Js.Json.decodeObject(json)->Belt.Option.map(dict => {
+      {
+        id: getString(dict, "id")->Belt.Option.getWithDefault(""),
+        hypotheses: getArray(dict, "hypotheses")
+          ->Belt.Option.map(arr => Belt.Array.keepMap(arr, Js.Json.decodeString))
+          ->Belt.Option.getWithDefault([]),
+        conclusion: getString(dict, "conclusion")->Belt.Option.getWithDefault(""),
+        context: getArray(dict, "context")
+          ->Belt.Option.map(arr => Belt.Array.keepMap(arr, Js.Json.decodeString))
+          ->Belt.Option.getWithDefault([]),
+      }
+    })
   }
 
-  let tacticSuggestion = (json): tacticSuggestion => {
-    open JSON.Decode
-    {
-      tactic: field("tactic", string, json),
-      confidence: field("confidence", float, json),
-      premise: optional(field("premise", string), json),
-      aspectTags: field("aspect_tags", array(string), json),
-    }
+  let tacticSuggestion = (json): option<tacticSuggestion> => {
+    Js.Json.decodeObject(json)->Belt.Option.map(dict => {
+      {
+        tactic: getString(dict, "tactic")->Belt.Option.getWithDefault(""),
+        confidence: getFloat(dict, "confidence")->Belt.Option.getWithDefault(0.0),
+        premise: getString(dict, "premise"),
+        aspectTags: getArray(dict, "aspect_tags")
+          ->Belt.Option.map(arr => Belt.Array.keepMap(arr, Js.Json.decodeString))
+          ->Belt.Option.getWithDefault([]),
+      }
+    })
   }
 
-  let proofState = (json): proofState => {
-    open JSON.Decode
-    {
-      goals: field("goals", array(goal), json),
-      currentGoalIndex: field("current_goal_index", int, json),
-      proofScript: field("proof_script", array(string), json),
-      completed: field("completed", bool, json),
-    }
+  let proofState = (json): option<proofState> => {
+    Js.Json.decodeObject(json)->Belt.Option.map(dict => {
+      {
+        goals: getArray(dict, "goals")
+          ->Belt.Option.map(arr => Belt.Array.keepMap(arr, goal))
+          ->Belt.Option.getWithDefault([]),
+        currentGoalIndex: getInt(dict, "current_goal_index")->Belt.Option.getWithDefault(0),
+        proofScript: getArray(dict, "proof_script")
+          ->Belt.Option.map(arr => Belt.Array.keepMap(arr, Js.Json.decodeString))
+          ->Belt.Option.getWithDefault([]),
+        completed: getBool(dict, "completed")->Belt.Option.getWithDefault(false),
+      }
+    })
   }
 
-  let aspectTag = (json): aspectTag => {
-    open JSON.Decode
-    {
-      name: field("name", string, json),
-      category: field("category", string, json),
-      active: field("active", bool, json),
-    }
-  }
-}
-
-module Encode = {
-  let prover = (prover: prover): JSON.t => {
-    proverToString(prover)->JSON.String
+  let aspectTag = (json): option<aspectTag> => {
+    Js.Json.decodeObject(json)->Belt.Option.map(dict => {
+      {
+        name: getString(dict, "name")->Belt.Option.getWithDefault(""),
+        category: getString(dict, "category")->Belt.Option.getWithDefault(""),
+        active: getBool(dict, "active")->Belt.Option.getWithDefault(false),
+      }
+    })
   }
 
-  let tactic = (tactic: string): JSON.t => {
-    open JSON.Encode
-    object([
-      ("tactic", string(tactic)),
-    ])
-  }
-
-  let searchQuery = (query: string, aspectTags: array<string>): JSON.t => {
-    open JSON.Encode
-    object([
-      ("query", string(query)),
-      ("aspect_tags", array(string, aspectTags)),
-    ])
-  }
-}
-
-// API functions
-let handleResponse = async (response: Fetch.Response.t): Promise.t<apiResponse<'a>> => {
-  if response->Fetch.Response.ok {
-    try {
-      let json = await response->Fetch.Response.json
-      Promise.resolve({data: Some(json), error: None})
-    } catch {
-    | error => Promise.resolve({
-        data: None,
-        error: Some(`Failed to parse response: ${error->JSON.stringify}`),
-      })
-    }
-  } else {
-    let status = response->Fetch.Response.status
-    Promise.resolve({
-      data: None,
-      error: Some(`API error: ${status->Int.toString}`),
+  let proverInfo = (json): option<proverInfo> => {
+    Js.Json.decodeObject(json)->Belt.Option.map(dict => {
+      {
+        name: getString(dict, "name")->Belt.Option.getWithDefault(""),
+        tier: getInt(dict, "tier")->Belt.Option.getWithDefault(0),
+        complexity: getInt(dict, "complexity")->Belt.Option.getWithDefault(0),
+      }
     })
   }
 }
 
-// Initialize proof session
-let initProofSession = async (prover: prover): Promise.t<result<proofState, string>> => {
-  try {
-    let response = await Fetch.fetch(
-      `${apiBase}/proof/init`,
-      {
-        method: #POST,
-        headers: Headers.fromObject({
-          "Content-Type": "application/json",
-        }),
-        body: Encode.prover(prover)->JSON.stringify->Body.string,
-      },
-    )
+module Encode = {
+  let createSessionRequest = (prover: prover): Js.Json.t => {
+    let dict = Js.Dict.empty()
+    Js.Dict.set(dict, "prover", Js.Json.string(proverToString(prover)))
+    Js.Dict.set(dict, "goal", Js.Json.string(""))
+    Js.Json.object_(dict)
+  }
 
-    let result = await handleResponse(response)
-    switch result {
-    | {data: Some(json), error: None} =>
-      try {
-        let state = Decode.proofState(json)
-        Promise.resolve(Ok(state))
-      } catch {
-      | error => Promise.resolve(Error(`Decode error: ${error->JSON.stringify}`))
-      }
-    | {error: Some(err)} => Promise.resolve(Error(err))
-    | _ => Promise.resolve(Error("Unknown error"))
-    }
-  } catch {
-  | error => Promise.resolve(Error(`Network error: ${error->JSON.stringify}`))
+  let applyTacticRequest = (tactic: string): Js.Json.t => {
+    let dict = Js.Dict.empty()
+    Js.Dict.set(dict, "tactic", Js.Json.string(tactic))
+    Js.Json.object_(dict)
+  }
+
+  let searchQuery = (query: string): Js.Json.t => {
+    let dict = Js.Dict.empty()
+    Js.Dict.set(dict, "q", Js.Json.string(query))
+    Js.Json.object_(dict)
   }
 }
 
-// Apply tactic
-let applyTactic = async (
-  tactic: string,
-  goalId: string,
-): Promise.t<result<proofState, string>> => {
-  try {
-    let response = await Fetch.fetch(
-      `${apiBase}/proof/tactic`,
-      {
-        method: #POST,
-        headers: Headers.fromObject({
-          "Content-Type": "application/json",
-        }),
-        body: JSON.stringify(
-          JSON.Encode.object([
-            ("tactic", JSON.Encode.string(tactic)),
-            ("goal_id", JSON.Encode.string(goalId)),
-          ]),
-        )->Body.string,
-      },
-    )
+// API helper functions
+let handleResponse = (response: Webapi.Fetch.Response.t): promise<apiResponse<Js.Json.t>> => {
+  if response->Webapi.Fetch.Response.ok {
+    response->Webapi.Fetch.Response.json
+    |> Js.Promise.then_(json => Js.Promise.resolve({data: Some(json), error: None}))
+    |> Js.Promise.catch(_ => Js.Promise.resolve({
+      data: None,
+      error: Some("Failed to parse response"),
+    }))
+  } else {
+    let status = response->Webapi.Fetch.Response.status
+    Js.Promise.resolve({
+      data: None,
+      error: Some(`API error: ${Belt.Int.toString(status)}`),
+    })
+  }
+}
 
-    let result = await handleResponse(response)
+// Get available provers
+let getProvers = (): promise<result<array<proverInfo>, string>> => {
+  Webapi.Fetch.fetch(`${apiBase}/provers`)
+  |> Js.Promise.then_(handleResponse)
+  |> Js.Promise.then_(result => {
     switch result {
     | {data: Some(json), error: None} =>
-      try {
-        let state = Decode.proofState(json)
-        Promise.resolve(Ok(state))
-      } catch {
-      | error => Promise.resolve(Error(`Decode error: ${error->JSON.stringify}`))
+      switch Js.Json.decodeObject(json) {
+      | Some(dict) =>
+        switch Js.Dict.get(dict, "provers") {
+        | Some(proversJson) =>
+          switch Js.Json.decodeArray(proversJson) {
+          | Some(arr) =>
+            let provers = Belt.Array.keepMap(arr, Decode.proverInfo)
+            Js.Promise.resolve(Ok(provers))
+          | None => Js.Promise.resolve(Error("Failed to decode provers array"))
+          }
+        | None => Js.Promise.resolve(Error("Missing 'provers' field"))
+        }
+      | None => Js.Promise.resolve(Error("Invalid JSON response"))
       }
-    | {error: Some(err)} => Promise.resolve(Error(err))
-    | _ => Promise.resolve(Error("Unknown error"))
+    | {error: Some(err)} => Js.Promise.resolve(Error(err))
+    | _ => Js.Promise.resolve(Error("Unknown error"))
     }
-  } catch {
-  | error => Promise.resolve(Error(`Network error: ${error->JSON.stringify}`))
+  })
+  |> Js.Promise.catch(_ => Js.Promise.resolve(Error("Network error")))
+}
+
+// Initialize proof session (creates new session)
+let initProofSession = (prover: prover): promise<result<proofState, string>> => {
+  let init = Webapi.Fetch.RequestInit.make(
+    ~method_=Post,
+    ~body=Webapi.Fetch.BodyInit.make(Encode.createSessionRequest(prover)->Js.Json.stringify),
+    ~headers=Webapi.Fetch.HeadersInit.make({"Content-Type": "application/json"}),
+    (),
+  )
+
+  Webapi.Fetch.fetchWithInit(`${apiBase}/session/create`, init)
+  |> Js.Promise.then_(handleResponse)
+  |> Js.Promise.then_(result => {
+    switch result {
+    | {data: Some(json), error: None} =>
+      switch Js.Json.decodeObject(json) {
+      | Some(dict) =>
+        switch Decode.getString(dict, "session_id") {
+        | Some(sessionId) =>
+          currentSessionId := Some(sessionId)
+          switch Js.Dict.get(dict, "state") {
+          | Some(stateJson) =>
+            switch Decode.proofState(stateJson) {
+            | Some(state) => Js.Promise.resolve(Ok(state))
+            | None => Js.Promise.resolve(Error("Failed to decode proof state"))
+            }
+          | None => Js.Promise.resolve(Error("Missing 'state' field"))
+          }
+        | None => Js.Promise.resolve(Error("Missing 'session_id' field"))
+        }
+      | None => Js.Promise.resolve(Error("Invalid JSON response"))
+      }
+    | {error: Some(err)} => Js.Promise.resolve(Error(err))
+    | _ => Js.Promise.resolve(Error("Unknown error"))
+    }
+  })
+  |> Js.Promise.catch(_ => Js.Promise.resolve(Error("Network error")))
+}
+
+// Apply tactic to current session
+let applyTactic = (tactic: string, _goalId: string): promise<result<proofState, string>> => {
+  switch currentSessionId.contents {
+  | None => Js.Promise.resolve(Error("No active session"))
+  | Some(sessionId) =>
+    let init = Webapi.Fetch.RequestInit.make(
+      ~method_=Post,
+      ~body=Webapi.Fetch.BodyInit.make(Encode.applyTacticRequest(tactic)->Js.Json.stringify),
+      ~headers=Webapi.Fetch.HeadersInit.make({"Content-Type": "application/json"}),
+      (),
+    )
+
+    Webapi.Fetch.fetchWithInit(`${apiBase}/session/${sessionId}/apply`, init)
+    |> Js.Promise.then_(handleResponse)
+    |> Js.Promise.then_(result => {
+      switch result {
+      | {data: Some(json), error: None} =>
+        switch Js.Json.decodeObject(json) {
+        | Some(dict) =>
+          switch Js.Dict.get(dict, "state") {
+          | Some(stateJson) =>
+            switch Decode.proofState(stateJson) {
+            | Some(state) => Js.Promise.resolve(Ok(state))
+            | None => Js.Promise.resolve(Error("Failed to decode proof state"))
+            }
+          | None => Js.Promise.resolve(Error("Missing 'state' field"))
+          }
+        | None => Js.Promise.resolve(Error("Invalid JSON response"))
+        }
+      | {error: Some(err)} => Js.Promise.resolve(Error(err))
+      | _ => Js.Promise.resolve(Error("Unknown error"))
+      }
+    })
+    |> Js.Promise.catch(_ => Js.Promise.resolve(Error("Network error")))
   }
 }
 
 // Get tactic suggestions (neural)
-let getTacticSuggestions = async (
-  goalId: string,
-  aspectTags: array<string>,
-): Promise.t<result<array<tacticSuggestion>, string>> => {
-  try {
-    let url = `${apiBase}/proof/suggestions?goal_id=${goalId}&tags=${aspectTags->Array.joinWith(",")}`
-    let response = await Fetch.fetch(url)
+let getTacticSuggestions = (
+  _goalId: string,
+  _aspectTags: array<string>,
+): promise<result<array<tacticSuggestion>, string>> => {
+  switch currentSessionId.contents {
+  | None => Js.Promise.resolve(Error("No active session"))
+  | Some(_sessionId) =>
+    let init = Webapi.Fetch.RequestInit.make(
+      ~method_=Post,
+      ~body=Webapi.Fetch.BodyInit.make("{}"),
+      ~headers=Webapi.Fetch.HeadersInit.make({"Content-Type": "application/json"}),
+      (),
+    )
 
-    let result = await handleResponse(response)
-    switch result {
-    | {data: Some(json), error: None} =>
-      try {
-        let suggestions = JSON.Decode.array(Decode.tacticSuggestion, json)
-        Promise.resolve(Ok(suggestions))
-      } catch {
-      | error => Promise.resolve(Error(`Decode error: ${error->JSON.stringify}`))
+    Webapi.Fetch.fetchWithInit(`${apiBase}/suggest`, init)
+    |> Js.Promise.then_(handleResponse)
+    |> Js.Promise.then_(result => {
+      switch result {
+      | {data: Some(json), error: None} =>
+        switch Js.Json.decodeObject(json) {
+        | Some(dict) =>
+          switch Js.Dict.get(dict, "suggestions") {
+          | Some(suggestionsJson) =>
+            switch Js.Json.decodeArray(suggestionsJson) {
+            | Some(arr) =>
+              let suggestions = Belt.Array.keepMap(arr, Decode.tacticSuggestion)
+              Js.Promise.resolve(Ok(suggestions))
+            | None => Js.Promise.resolve(Error("Failed to decode suggestions array"))
+            }
+          | None => Js.Promise.resolve(Error("Missing 'suggestions' field"))
+          }
+        | None => Js.Promise.resolve(Error("Invalid JSON response"))
+        }
+      | {error: Some(err)} => Js.Promise.resolve(Error(err))
+      | _ => Js.Promise.resolve(Error("Unknown error"))
       }
-    | {error: Some(err)} => Promise.resolve(Error(err))
-    | _ => Promise.resolve(Error("Unknown error"))
-    }
-  } catch {
-  | error => Promise.resolve(Error(`Network error: ${error->JSON.stringify}`))
+    })
+    |> Js.Promise.catch(_ => Js.Promise.resolve(Error("Network error")))
   }
 }
 
 // Search theorems
-let searchTheorems = async (
-  query: string,
-  aspectTags: array<string>,
-): Promise.t<result<array<string>, string>> => {
-  try {
-    let response = await Fetch.fetch(
-      `${apiBase}/theorems/search`,
-      {
-        method: #POST,
-        headers: Headers.fromObject({
-          "Content-Type": "application/json",
-        }),
-        body: Encode.searchQuery(query, aspectTags)->JSON.stringify->Body.string,
-      },
-    )
+let searchTheorems = (query: string, _aspectTags: array<string>): promise<
+  result<array<string>, string>,
+> => {
+  let url = `${apiBase}/search?q=${query}`
 
-    let result = await handleResponse(response)
+  Webapi.Fetch.fetch(url)
+  |> Js.Promise.then_(handleResponse)
+  |> Js.Promise.then_(result => {
     switch result {
     | {data: Some(json), error: None} =>
-      try {
-        let theorems = JSON.Decode.array(JSON.Decode.string, json)
-        Promise.resolve(Ok(theorems))
-      } catch {
-      | error => Promise.resolve(Error(`Decode error: ${error->JSON.stringify}`))
+      switch Js.Json.decodeObject(json) {
+      | Some(dict) =>
+        switch Js.Dict.get(dict, "results") {
+        | Some(resultsJson) =>
+          switch Js.Json.decodeArray(resultsJson) {
+          | Some(arr) =>
+            let theorems = Belt.Array.keepMap(arr, Js.Json.decodeString)
+            Js.Promise.resolve(Ok(theorems))
+          | None => Js.Promise.resolve(Error("Failed to decode results array"))
+          }
+        | None => Js.Promise.resolve(Error("Missing 'results' field"))
+        }
+      | None => Js.Promise.resolve(Error("Invalid JSON response"))
       }
-    | {error: Some(err)} => Promise.resolve(Error(err))
-    | _ => Promise.resolve(Error("Unknown error"))
+    | {error: Some(err)} => Js.Promise.resolve(Error(err))
+    | _ => Js.Promise.resolve(Error("Unknown error"))
     }
-  } catch {
-  | error => Promise.resolve(Error(`Network error: ${error->JSON.stringify}`))
-  }
+  })
+  |> Js.Promise.catch(_ => Js.Promise.resolve(Error("Network error")))
 }
 
-// Get aspect tags
-let getAspectTags = async (): Promise.t<result<array<aspectTag>, string>> => {
-  try {
-    let response = await Fetch.fetch(`${apiBase}/aspects/tags`)
-
-    let result = await handleResponse(response)
-    switch result {
-    | {data: Some(json), error: None} =>
-      try {
-        let tags = JSON.Decode.array(Decode.aspectTag, json)
-        Promise.resolve(Ok(tags))
-      } catch {
-      | error => Promise.resolve(Error(`Decode error: ${error->JSON.stringify}`))
-      }
-    | {error: Some(err)} => Promise.resolve(Error(err))
-    | _ => Promise.resolve(Error("Unknown error"))
-    }
-  } catch {
-  | error => Promise.resolve(Error(`Network error: ${error->JSON.stringify}`))
-  }
+// Get aspect tags (mock for now - not yet implemented in backend)
+let getAspectTags = (): promise<result<array<aspectTag>, string>> => {
+  // Return mock data until backend implements this
+  let mockTags = [
+    {name: "constructive", category: "logic", active: false},
+    {name: "computational", category: "type", active: false},
+    {name: "algebraic", category: "domain", active: false},
+  ]
+  Js.Promise.resolve(Ok(mockTags))
 }
 
-// Get proof tree structure
-let getProofTree = async (): Promise.t<result<JSON.t, string>> => {
-  try {
-    let response = await Fetch.fetch(`${apiBase}/proof/tree`)
+// Get proof tree structure (mock for now)
+let getProofTree = (): promise<result<Js.Json.t, string>> => {
+  // Return empty tree until backend implements this
+  Js.Promise.resolve(Ok(Js.Json.object_(Js.Dict.empty())))
+}
 
-    let result = await handleResponse(response)
-    switch result {
-    | {data: Some(json), error: None} => Promise.resolve(Ok(json))
-    | {error: Some(err)} => Promise.resolve(Error(err))
-    | _ => Promise.resolve(Error("Unknown error"))
+// Health check
+let checkHealth = (): promise<result<bool, string>> => {
+  Webapi.Fetch.fetch(`${apiBase}/health`)
+  |> Js.Promise.then_(response => {
+    if response->Webapi.Fetch.Response.ok {
+      Js.Promise.resolve(Ok(true))
+    } else {
+      Js.Promise.resolve(Error("Backend not healthy"))
     }
-  } catch {
-  | error => Promise.resolve(Error(`Network error: ${error->JSON.stringify}`))
-  }
+  })
+  |> Js.Promise.catch(_ => Js.Promise.resolve(Error("Network error")))
 }

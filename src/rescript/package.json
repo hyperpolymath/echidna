@@ -22,11 +22,12 @@
   ],
   "devDependencies": {
     "@rescript/core": "^1.2.0",
-    "rescript": "^11.0.1",
-    "@rescript/react": "^0.12.1"
+    "@rescript/react": "^0.12.1",
+    "rescript": "^11.0.1"
   },
   "dependencies": {
     "react": "^18.2.0",
-    "react-dom": "^18.2.0"
+    "react-dom": "^18.2.0",
+    "rescript-webapi": "^0.10.0"
   }
 }

@@ -1,0 +1,42 @@
+% SPDX-FileCopyrightText: 2025 ECHIDNA Project Team
+% SPDX-License-Identifier: MIT OR Palimpsest-0.6
+
+% List theory with append and length
+% Demonstrates PVS's dependent types and TCCs
+
+list_theory[T: TYPE]: THEORY
+BEGIN
+
+  list: DATATYPE
+  BEGIN
+    null: null?
+    cons(car: T, cdr: list): cons?
+  END list
+
+  append(l1, l2: list): RECURSIVE list =
+    CASES l1 OF
+      null: l2,
+      cons(h, t): cons(h, append(t, l2))
+    ENDCASES
+  MEASURE length(l1)
+
+  length(l: list): RECURSIVE nat =
+    CASES l OF
+      null: 0,
+      cons(h, t): 1 + length(t)
+    ENDCASES
+  MEASURE l BY <<
+
+  % Theorems about append
+  append_nil_right: THEOREM
+    FORALL (l: list): append(l, null) = l
+
+  append_associative: THEOREM
+    FORALL (l1, l2, l3: list):
+      append(append(l1, l2), l3) = append(l1, append(l2, l3))
+
+  length_append: THEOREM
+    FORALL (l1, l2: list):
+      length(append(l1, l2)) = length(l1) + length(l2)
+
+END list_theory

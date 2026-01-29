@@ -16,7 +16,8 @@
   "suffix": ".bs.js",
   "bs-dependencies": [
     "@rescript/react",
-    "@rescript/core"
+    "@rescript/core",
+    "rescript-webapi"
   ],
   "gentypeconfig": {
     "language": "typescript",
@@ -32,8 +33,5 @@
   },
   "warnings": {
     "error": "+101+8+27"
-  },
-  "bsc-flags": [
-    "-bs-super-errors"
-  ]
+  }
 }

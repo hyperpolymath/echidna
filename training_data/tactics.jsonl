@@ -1,0 +1,585 @@
+{"proof_id":1,"step":1,"tactic":"auto","prover":"Z3"}
+{"proof_id":2,"step":1,"tactic":"use 0","prover":"Lean"}
+{"proof_id":3,"step":1,"tactic":"use 0","prover":"Lean"}
+{"proof_id":4,"step":1,"tactic":"use 1","prover":"Lean"}
+{"proof_id":5,"step":1,"tactic":"intro h","prover":"Lean"}
+{"proof_id":6,"step":1,"tactic":"intro h","prover":"Lean"}
+{"proof_id":7,"step":1,"tactic":"intros A H","prover":"Coq"}
+{"proof_id":7,"step":2,"tactic":"(* Introduce the proposition A and hypothesis H : A *)\n  exact H","prover":"Coq"}
+{"proof_id":7,"step":3,"tactic":"(* The goal is exactly H *)","prover":"Coq"}
+{"proof_id":8,"step":1,"tactic":"intros A B H_imp H_a","prover":"Coq"}
+{"proof_id":8,"step":2,"tactic":"(* Introduce propositions and hypotheses *)\n                          (* H_imp : A -> B *)\n                          (* H_a : A *)\n  apply H_imp","prover":"Coq"}
+{"proof_id":8,"step":3,"tactic":"(* Apply the implication to prove B *)\n  exact H_a","prover":"Coq"}
+{"proof_id":8,"step":4,"tactic":"(* Provide A as the argument *)","prover":"Coq"}
+{"proof_id":9,"step":1,"tactic":"intros A B C H_ab H_bc","prover":"Coq"}
+{"proof_id":9,"step":2,"tactic":"(* H_ab : A -> B, H_bc : B -> C *)\n  intro H_a","prover":"Coq"}
+{"proof_id":9,"step":3,"tactic":"(* H_a : A *)\n  apply H_bc","prover":"Coq"}
+{"proof_id":9,"step":4,"tactic":"(* To prove C, we prove B *)\n  apply H_ab","prover":"Coq"}
+{"proof_id":9,"step":5,"tactic":"(* To prove B, we prove A *)\n  exact H_a","prover":"Coq"}
+{"proof_id":9,"step":6,"tactic":"(* We have A *)","prover":"Coq"}
+{"proof_id":10,"step":1,"tactic":"intros A B H_a H_b","prover":"Coq"}
+{"proof_id":10,"step":2,"tactic":"split","prover":"Coq"}
+{"proof_id":10,"step":3,"tactic":"(* Split the conjunction into two goals *)\n  - exact H_a","prover":"Coq"}
+{"proof_id":10,"step":4,"tactic":"(* Prove A *)\n  - exact H_b","prover":"Coq"}
+{"proof_id":10,"step":5,"tactic":"(* Prove B *)","prover":"Coq"}
+{"proof_id":11,"step":1,"tactic":"intros A B H","prover":"Coq"}
+{"proof_id":11,"step":2,"tactic":"destruct H as [H_a H_b]","prover":"Coq"}
+{"proof_id":11,"step":3,"tactic":"(* Destruct the conjunction *)\n  exact H_a","prover":"Coq"}
+{"proof_id":12,"step":1,"tactic":"intros A B H","prover":"Coq"}
+{"proof_id":12,"step":2,"tactic":"destruct H as [H_a H_b]","prover":"Coq"}
+{"proof_id":12,"step":3,"tactic":"exact H_b","prover":"Coq"}
+{"proof_id":13,"step":1,"tactic":"intros A B H","prover":"Coq"}
+{"proof_id":13,"step":2,"tactic":"destruct H as [H_a H_b]","prover":"Coq"}
+{"proof_id":13,"step":3,"tactic":"split","prover":"Coq"}
+{"proof_id":13,"step":4,"tactic":"- exact H_b","prover":"Coq"}
+{"proof_id":13,"step":5,"tactic":"- exact H_a","prover":"Coq"}
+{"proof_id":14,"step":1,"tactic":"intros A B H_a","prover":"Coq"}
+{"proof_id":14,"step":2,"tactic":"left","prover":"Coq"}
+{"proof_id":14,"step":3,"tactic":"(* Choose the left side of the disjunction *)\n  exact H_a","prover":"Coq"}
+{"proof_id":15,"step":1,"tactic":"intros A B H_b","prover":"Coq"}
+{"proof_id":15,"step":2,"tactic":"right","prover":"Coq"}
+{"proof_id":15,"step":3,"tactic":"(* Choose the right side of the disjunction *)\n  exact H_b","prover":"Coq"}
+{"proof_id":16,"step":1,"tactic":"intros A B C H_or H_ac H_bc","prover":"Coq"}
+{"proof_id":16,"step":2,"tactic":"destruct H_or as [H_a | H_b]","prover":"Coq"}
+{"proof_id":16,"step":3,"tactic":"- (* Case: A is true *)\n    apply H_ac","prover":"Coq"}
+{"proof_id":16,"step":4,"tactic":"exact H_a","prover":"Coq"}
+{"proof_id":16,"step":5,"tactic":"- (* Case: B is true *)\n    apply H_bc","prover":"Coq"}
+{"proof_id":16,"step":6,"tactic":"exact H_b","prover":"Coq"}
+{"proof_id":17,"step":1,"tactic":"intros A B C H_and_imp H_a H_b","prover":"Coq"}
+{"proof_id":17,"step":2,"tactic":"apply H_and_imp","prover":"Coq"}
+{"proof_id":17,"step":3,"tactic":"split","prover":"Coq"}
+{"proof_id":17,"step":4,"tactic":"- exact H_a","prover":"Coq"}
+{"proof_id":17,"step":5,"tactic":"- exact H_b","prover":"Coq"}
+{"proof_id":18,"step":1,"tactic":"intros A B C H_curry H_and","prover":"Coq"}
+{"proof_id":18,"step":2,"tactic":"destruct H_and as [H_a H_b]","prover":"Coq"}
+{"proof_id":18,"step":3,"tactic":"apply H_curry","prover":"Coq"}
+{"proof_id":18,"step":4,"tactic":"- exact H_a","prover":"Coq"}
+{"proof_id":18,"step":5,"tactic":"- exact H_b","prover":"Coq"}
+{"proof_id":19,"step":1,"tactic":"intros A l","prover":"Coq"}
+{"proof_id":19,"step":2,"tactic":"induction l as [| h t IH]","prover":"Coq"}
+{"proof_id":19,"step":3,"tactic":"- (* Base case: [] ++ [] = [] *)\n    reflexivity","prover":"Coq"}
+{"proof_id":19,"step":4,"tactic":"- (* Inductive case: (h :: t) ++ [] = h :: t *)\n    simpl","prover":"Coq"}
+{"proof_id":19,"step":5,"tactic":"rewrite IH","prover":"Coq"}
+{"proof_id":19,"step":6,"tactic":"reflexivity","prover":"Coq"}
+{"proof_id":20,"step":1,"tactic":"intros A l1 l2 l3","prover":"Coq"}
+{"proof_id":20,"step":2,"tactic":"induction l1 as [| h t IH]","prover":"Coq"}
+{"proof_id":20,"step":3,"tactic":"- (* Base case: ([] ++ l2) ++ l3 = [] ++ (l2 ++ l3) *)\n    reflexivity","prover":"Coq"}
+{"proof_id":20,"step":4,"tactic":"- (* Inductive case *)\n    simpl","prover":"Coq"}
+{"proof_id":20,"step":5,"tactic":"rewrite IH","prover":"Coq"}
+{"proof_id":20,"step":6,"tactic":"reflexivity","prover":"Coq"}
+{"proof_id":21,"step":1,"tactic":"intros A x l","prover":"Coq"}
+{"proof_id":21,"step":2,"tactic":"reflexivity","prover":"Coq"}
+{"proof_id":22,"step":1,"tactic":"intros A l1 l2","prover":"Coq"}
+{"proof_id":22,"step":2,"tactic":"induction l1 as [| h t IH]","prover":"Coq"}
+{"proof_id":22,"step":3,"tactic":"- (* Base case: length ([] ++ l2) = length [] + length l2 *)\n    reflexivity","prover":"Coq"}
+{"proof_id":22,"step":4,"tactic":"- (* Inductive case: length ((h :: t) ++ l2) = length (h :: t) + length l2 *)\n    simpl","prover":"Coq"}
+{"proof_id":22,"step":5,"tactic":"rewrite IH","prover":"Coq"}
+{"proof_id":22,"step":6,"tactic":"reflexivity","prover":"Coq"}
+{"proof_id":23,"step":1,"tactic":"intros A x l","prover":"Coq"}
+{"proof_id":23,"step":2,"tactic":"reflexivity","prover":"Coq"}
+{"proof_id":24,"step":1,"tactic":"intro A","prover":"Coq"}
+{"proof_id":24,"step":2,"tactic":"reflexivity","prover":"Coq"}
+{"proof_id":25,"step":1,"tactic":"intros A l1 l2","prover":"Coq"}
+{"proof_id":25,"step":2,"tactic":"induction l1 as [| h t IH]","prover":"Coq"}
+{"proof_id":25,"step":3,"tactic":"- (* Base case *)\n    simpl","prover":"Coq"}
+{"proof_id":25,"step":4,"tactic":"rewrite app_nil_r","prover":"Coq"}
+{"proof_id":25,"step":5,"tactic":"reflexivity","prover":"Coq"}
+{"proof_id":25,"step":6,"tactic":"- (* Inductive case *)\n    simpl","prover":"Coq"}
+{"proof_id":25,"step":7,"tactic":"rewrite IH","prover":"Coq"}
+{"proof_id":25,"step":8,"tactic":"rewrite app_assoc","prover":"Coq"}
+{"proof_id":25,"step":9,"tactic":"reflexivity","prover":"Coq"}
+{"proof_id":26,"step":1,"tactic":"intros A l","prover":"Coq"}
+{"proof_id":26,"step":2,"tactic":"induction l as [| h t IH]","prover":"Coq"}
+{"proof_id":26,"step":3,"tactic":"- (* Base case: rev (rev []) = [] *)\n    reflexivity","prover":"Coq"}
+{"proof_id":26,"step":4,"tactic":"- (* Inductive case: rev (rev (h :: t)) = h :: t *)\n    simpl","prover":"Coq"}
+{"proof_id":26,"step":5,"tactic":"rewrite rev_app_distr","prover":"Coq"}
+{"proof_id":26,"step":6,"tactic":"simpl","prover":"Coq"}
+{"proof_id":26,"step":7,"tactic":"rewrite IH","prover":"Coq"}
+{"proof_id":26,"step":8,"tactic":"reflexivity","prover":"Coq"}
+{"proof_id":27,"step":1,"tactic":"intros A l","prover":"Coq"}
+{"proof_id":27,"step":2,"tactic":"induction l as [| h t IH]","prover":"Coq"}
+{"proof_id":27,"step":3,"tactic":"- (* Base case *)\n    reflexivity","prover":"Coq"}
+{"proof_id":27,"step":4,"tactic":"- (* Inductive case *)\n    simpl","prover":"Coq"}
+{"proof_id":27,"step":5,"tactic":"rewrite length_app","prover":"Coq"}
+{"proof_id":27,"step":6,"tactic":"simpl","prover":"Coq"}
+{"proof_id":27,"step":7,"tactic":"rewrite IH","prover":"Coq"}
+{"proof_id":27,"step":8,"tactic":"lia","prover":"Coq"}
+{"proof_id":28,"step":1,"tactic":"intros A B f l","prover":"Coq"}
+{"proof_id":28,"step":2,"tactic":"induction l as [| h t IH]","prover":"Coq"}
+{"proof_id":28,"step":3,"tactic":"- (* Base case *)\n    reflexivity","prover":"Coq"}
+{"proof_id":28,"step":4,"tactic":"- (* Inductive case *)\n    simpl","prover":"Coq"}
+{"proof_id":28,"step":5,"tactic":"rewrite IH","prover":"Coq"}
+{"proof_id":28,"step":6,"tactic":"reflexivity","prover":"Coq"}
+{"proof_id":29,"step":1,"tactic":"intros A B f l1 l2","prover":"Coq"}
+{"proof_id":29,"step":2,"tactic":"induction l1 as [| h t IH]","prover":"Coq"}
+{"proof_id":29,"step":3,"tactic":"- (* Base case *)\n    reflexivity","prover":"Coq"}
+{"proof_id":29,"step":4,"tactic":"- (* Inductive case *)\n    simpl","prover":"Coq"}
+{"proof_id":29,"step":5,"tactic":"rewrite IH","prover":"Coq"}
+{"proof_id":29,"step":6,"tactic":"reflexivity","prover":"Coq"}
+{"proof_id":30,"step":1,"tactic":"intros A B C f g l","prover":"Coq"}
+{"proof_id":30,"step":2,"tactic":"induction l as [| h t IH]","prover":"Coq"}
+{"proof_id":30,"step":3,"tactic":"- (* Base case *)\n    reflexivity","prover":"Coq"}
+{"proof_id":30,"step":4,"tactic":"- (* Inductive case *)\n    simpl","prover":"Coq"}
+{"proof_id":30,"step":5,"tactic":"rewrite <- IH","prover":"Coq"}
+{"proof_id":30,"step":6,"tactic":"reflexivity","prover":"Coq"}
+{"proof_id":31,"step":1,"tactic":"intros A l","prover":"Coq"}
+{"proof_id":31,"step":2,"tactic":"induction l as [| h t IH]","prover":"Coq"}
+{"proof_id":31,"step":3,"tactic":"- (* Base case *)\n    reflexivity","prover":"Coq"}
+{"proof_id":31,"step":4,"tactic":"- (* Inductive case *)\n    simpl","prover":"Coq"}
+{"proof_id":31,"step":5,"tactic":"rewrite IH","prover":"Coq"}
+{"proof_id":31,"step":6,"tactic":"reflexivity","prover":"Coq"}
+{"proof_id":32,"step":1,"tactic":"intros A B f l","prover":"Coq"}
+{"proof_id":32,"step":2,"tactic":"induction l as [| h t IH]","prover":"Coq"}
+{"proof_id":32,"step":3,"tactic":"- (* Base case *)\n    reflexivity","prover":"Coq"}
+{"proof_id":32,"step":4,"tactic":"- (* Inductive case *)\n    simpl","prover":"Coq"}
+{"proof_id":32,"step":5,"tactic":"rewrite map_app","prover":"Coq"}
+{"proof_id":32,"step":6,"tactic":"rewrite IH","prover":"Coq"}
+{"proof_id":32,"step":7,"tactic":"reflexivity","prover":"Coq"}
+{"proof_id":33,"step":1,"tactic":"intros A B f acc","prover":"Coq"}
+{"proof_id":33,"step":2,"tactic":"reflexivity","prover":"Coq"}
+{"proof_id":34,"step":1,"tactic":"intros A B f acc h t","prover":"Coq"}
+{"proof_id":34,"step":2,"tactic":"reflexivity","prover":"Coq"}
+{"proof_id":35,"step":1,"tactic":"intros A B f acc l1 l2","prover":"Coq"}
+{"proof_id":35,"step":2,"tactic":"induction l1 as [| h t IH]","prover":"Coq"}
+{"proof_id":35,"step":3,"tactic":"- (* Base case *)\n    reflexivity","prover":"Coq"}
+{"proof_id":35,"step":4,"tactic":"- (* Inductive case *)\n    simpl","prover":"Coq"}
+{"proof_id":35,"step":5,"tactic":"rewrite IH","prover":"Coq"}
+{"proof_id":35,"step":6,"tactic":"reflexivity","prover":"Coq"}
+{"proof_id":36,"step":1,"tactic":"intros l1 l2","prover":"Coq"}
+{"proof_id":36,"step":2,"tactic":"unfold sum_list","prover":"Coq"}
+{"proof_id":36,"step":3,"tactic":"rewrite fold_right_app","prover":"Coq"}
+{"proof_id":36,"step":4,"tactic":"induction l1 as [| h t IH]","prover":"Coq"}
+{"proof_id":36,"step":5,"tactic":"- (* Base case *)\n    reflexivity","prover":"Coq"}
+{"proof_id":36,"step":6,"tactic":"- (* Inductive case *)\n    simpl","prover":"Coq"}
+{"proof_id":36,"step":7,"tactic":"rewrite <- plus_assoc","prover":"Coq"}
+{"proof_id":36,"step":8,"tactic":"reflexivity","prover":"Coq"}
+{"proof_id":37,"step":1,"tactic":"(* This is a complex property; we'll state it without full proof *)\n  (* The proof would require defining what \"preserves order\" means precisely *)\nAdmitted","prover":"Coq"}
+{"proof_id":37,"step":2,"tactic":"(** *** Filter and Append *)\nTheorem filter_app : forall {A : Type} (f : A -> bool) (l1 l2 : list A),\n  filter f (l1 ++ l2) = filter f l1 ++ filter f l2","prover":"Coq"}
+{"proof_id":37,"step":3,"tactic":"Proof","prover":"Coq"}
+{"proof_id":37,"step":4,"tactic":"intros A f l1 l2","prover":"Coq"}
+{"proof_id":37,"step":5,"tactic":"induction l1 as [| h t IH]","prover":"Coq"}
+{"proof_id":37,"step":6,"tactic":"- (* Base case *)\n    reflexivity","prover":"Coq"}
+{"proof_id":37,"step":7,"tactic":"- (* Inductive case *)\n    simpl","prover":"Coq"}
+{"proof_id":37,"step":8,"tactic":"rewrite IH","prover":"Coq"}
+{"proof_id":37,"step":9,"tactic":"destruct (f h)","prover":"Coq"}
+{"proof_id":37,"step":10,"tactic":"+ reflexivity","prover":"Coq"}
+{"proof_id":37,"step":11,"tactic":"+ reflexivity","prover":"Coq"}
+{"proof_id":38,"step":1,"tactic":"intros A f l","prover":"Coq"}
+{"proof_id":38,"step":2,"tactic":"induction l as [| h t IH]","prover":"Coq"}
+{"proof_id":38,"step":3,"tactic":"- (* Base case *)\n    simpl","prover":"Coq"}
+{"proof_id":38,"step":4,"tactic":"apply le_n","prover":"Coq"}
+{"proof_id":38,"step":5,"tactic":"- (* Inductive case *)\n    simpl","prover":"Coq"}
+{"proof_id":38,"step":6,"tactic":"destruct (f h) eqn:E","prover":"Coq"}
+{"proof_id":38,"step":7,"tactic":"+ (* f h = true *)\n      simpl","prover":"Coq"}
+{"proof_id":38,"step":8,"tactic":"apply le_n_S","prover":"Coq"}
+{"proof_id":38,"step":9,"tactic":"exact IH","prover":"Coq"}
+{"proof_id":38,"step":10,"tactic":"+ (* f h = false *)\n      apply le_S","prover":"Coq"}
+{"proof_id":38,"step":11,"tactic":"exact IH","prover":"Coq"}
+{"proof_id":39,"step":1,"tactic":"intros A l1 l2 n d H","prover":"Coq"}
+{"proof_id":39,"step":2,"tactic":"generalize dependent n","prover":"Coq"}
+{"proof_id":39,"step":3,"tactic":"induction l1 as [| h t IH]","prover":"Coq"}
+{"proof_id":39,"step":4,"tactic":"- (* Base case: contradiction since n < 0 is impossible *)\n    intros n H","prover":"Coq"}
+{"proof_id":39,"step":5,"tactic":"inversion H","prover":"Coq"}
+{"proof_id":39,"step":6,"tactic":"- (* Inductive case *)\n    intros n H","prover":"Coq"}
+{"proof_id":39,"step":7,"tactic":"destruct n as [| n']","prover":"Coq"}
+{"proof_id":39,"step":8,"tactic":"+ (* n = 0 *)\n      reflexivity","prover":"Coq"}
+{"proof_id":39,"step":9,"tactic":"+ (* n = S n' *)\n      simpl","prover":"Coq"}
+{"proof_id":39,"step":10,"tactic":"apply IH","prover":"Coq"}
+{"proof_id":39,"step":11,"tactic":"simpl in H","prover":"Coq"}
+{"proof_id":39,"step":12,"tactic":"lia","prover":"Coq"}
+{"proof_id":40,"step":1,"tactic":"intros A l1 l2 n d H","prover":"Coq"}
+{"proof_id":40,"step":2,"tactic":"generalize dependent n","prover":"Coq"}
+{"proof_id":40,"step":3,"tactic":"induction l1 as [| h t IH]","prover":"Coq"}
+{"proof_id":40,"step":4,"tactic":"- (* Base case *)\n    intros n H","prover":"Coq"}
+{"proof_id":40,"step":5,"tactic":"simpl","prover":"Coq"}
+{"proof_id":40,"step":6,"tactic":"rewrite Nat","prover":"Coq"}
+{"proof_id":40,"step":7,"tactic":"sub_0_r","prover":"Coq"}
+{"proof_id":40,"step":8,"tactic":"reflexivity","prover":"Coq"}
+{"proof_id":40,"step":9,"tactic":"- (* Inductive case *)\n    intros n H","prover":"Coq"}
+{"proof_id":40,"step":10,"tactic":"destruct n as [| n']","prover":"Coq"}
+{"proof_id":40,"step":11,"tactic":"+ (* n = 0: contradiction since length (h :: t) > 0 *)\n      simpl in H","prover":"Coq"}
+{"proof_id":40,"step":12,"tactic":"inversion H","prover":"Coq"}
+{"proof_id":40,"step":13,"tactic":"+ (* n = S n' *)\n      simpl","prover":"Coq"}
+{"proof_id":40,"step":14,"tactic":"apply IH","prover":"Coq"}
+{"proof_id":40,"step":15,"tactic":"simpl in H","prover":"Coq"}
+{"proof_id":40,"step":16,"tactic":"lia","prover":"Coq"}
+{"proof_id":41,"step":1,"tactic":"intros A x l1 l2","prover":"Coq"}
+{"proof_id":41,"step":2,"tactic":"split","prover":"Coq"}
+{"proof_id":41,"step":3,"tactic":"- (* Forward direction *)\n    intro H","prover":"Coq"}
+{"proof_id":41,"step":4,"tactic":"induction l1 as [| h t IH]","prover":"Coq"}
+{"proof_id":41,"step":5,"tactic":"+ (* l1 = [] *)\n      simpl in H","prover":"Coq"}
+{"proof_id":41,"step":6,"tactic":"right","prover":"Coq"}
+{"proof_id":41,"step":7,"tactic":"exact H","prover":"Coq"}
+{"proof_id":41,"step":8,"tactic":"+ (* l1 = h :: t *)\n      simpl in H","prover":"Coq"}
+{"proof_id":41,"step":9,"tactic":"destruct H as [H_eq | H_in]","prover":"Coq"}
+{"proof_id":41,"step":10,"tactic":"* (* x = h *)\n        left","prover":"Coq"}
+{"proof_id":41,"step":11,"tactic":"left","prover":"Coq"}
+{"proof_id":41,"step":12,"tactic":"exact H_eq","prover":"Coq"}
+{"proof_id":41,"step":13,"tactic":"* (* In x (t ++ l2) *)\n        destruct (IH H_in) as [H_l | H_r]","prover":"Coq"}
+{"proof_id":41,"step":14,"tactic":"-- left; right; exact H_l","prover":"Coq"}
+{"proof_id":41,"step":15,"tactic":"-- right; exact H_r","prover":"Coq"}
+{"proof_id":41,"step":16,"tactic":"- (* Backward direction *)\n    intro H","prover":"Coq"}
+{"proof_id":41,"step":17,"tactic":"destruct H as [H_l | H_r]","prover":"Coq"}
+{"proof_id":41,"step":18,"tactic":"+ (* In x l1 *)\n      induction l1 as [| h t IH]","prover":"Coq"}
+{"proof_id":41,"step":19,"tactic":"* (* l1 = []: contradiction *)\n        inversion H_l","prover":"Coq"}
+{"proof_id":41,"step":20,"tactic":"* (* l1 = h :: t *)\n        simpl","prover":"Coq"}
+{"proof_id":41,"step":21,"tactic":"destruct H_l as [H_eq | H_in]","prover":"Coq"}
+{"proof_id":41,"step":22,"tactic":"-- left; exact H_eq","prover":"Coq"}
+{"proof_id":41,"step":23,"tactic":"-- right; apply IH; exact H_in","prover":"Coq"}
+{"proof_id":41,"step":24,"tactic":"+ (* In x l2 *)\n      induction l1 as [| h t IH]","prover":"Coq"}
+{"proof_id":41,"step":25,"tactic":"* (* l1 = [] *)\n        simpl","prover":"Coq"}
+{"proof_id":41,"step":26,"tactic":"exact H_r","prover":"Coq"}
+{"proof_id":41,"step":27,"tactic":"* (* l1 = h :: t *)\n        simpl","prover":"Coq"}
+{"proof_id":41,"step":28,"tactic":"right","prover":"Coq"}
+{"proof_id":41,"step":29,"tactic":"apply IH","prover":"Coq"}
+{"proof_id":42,"step":1,"tactic":"intros A B f l x H","prover":"Coq"}
+{"proof_id":42,"step":2,"tactic":"induction l as [| h t IH]","prover":"Coq"}
+{"proof_id":42,"step":3,"tactic":"- (* Base case: contradiction *)\n    inversion H","prover":"Coq"}
+{"proof_id":42,"step":4,"tactic":"- (* Inductive case *)\n    simpl","prover":"Coq"}
+{"proof_id":42,"step":5,"tactic":"destruct H as [H_eq | H_in]","prover":"Coq"}
+{"proof_id":42,"step":6,"tactic":"+ (* x = h *)\n      left","prover":"Coq"}
+{"proof_id":42,"step":7,"tactic":"rewrite H_eq","prover":"Coq"}
+{"proof_id":42,"step":8,"tactic":"reflexivity","prover":"Coq"}
+{"proof_id":42,"step":9,"tactic":"+ (* In x t *)\n      right","prover":"Coq"}
+{"proof_id":42,"step":10,"tactic":"apply IH","prover":"Coq"}
+{"proof_id":42,"step":11,"tactic":"exact H_in","prover":"Coq"}
+{"proof_id":43,"step":1,"tactic":"intros A f l x","prover":"Coq"}
+{"proof_id":43,"step":2,"tactic":"split","prover":"Coq"}
+{"proof_id":43,"step":3,"tactic":"- (* Forward direction *)\n    intro H","prover":"Coq"}
+{"proof_id":43,"step":4,"tactic":"induction l as [| h t IH]","prover":"Coq"}
+{"proof_id":43,"step":5,"tactic":"+ (* Base case: contradiction *)\n      inversion H","prover":"Coq"}
+{"proof_id":43,"step":6,"tactic":"+ (* Inductive case *)\n      simpl in H","prover":"Coq"}
+{"proof_id":43,"step":7,"tactic":"destruct (f h) eqn:E","prover":"Coq"}
+{"proof_id":43,"step":8,"tactic":"* (* f h = true *)\n        simpl in H","prover":"Coq"}
+{"proof_id":43,"step":9,"tactic":"destruct H as [H_eq | H_in]","prover":"Coq"}
+{"proof_id":43,"step":10,"tactic":"-- (* x = h *)\n          split","prover":"Coq"}
+{"proof_id":43,"step":11,"tactic":"++ left; exact H_eq","prover":"Coq"}
+{"proof_id":43,"step":12,"tactic":"++ rewrite <- H_eq; exact E","prover":"Coq"}
+{"proof_id":43,"step":13,"tactic":"-- (* In x (filter f t) *)\n          destruct (IH H_in) as [H_in_t H_fx]","prover":"Coq"}
+{"proof_id":43,"step":14,"tactic":"split","prover":"Coq"}
+{"proof_id":43,"step":15,"tactic":"++ right; exact H_in_t","prover":"Coq"}
+{"proof_id":43,"step":16,"tactic":"++ exact H_fx","prover":"Coq"}
+{"proof_id":43,"step":17,"tactic":"* (* f h = false *)\n        destruct (IH H) as [H_in_t H_fx]","prover":"Coq"}
+{"proof_id":43,"step":18,"tactic":"split","prover":"Coq"}
+{"proof_id":43,"step":19,"tactic":"-- right; exact H_in_t","prover":"Coq"}
+{"proof_id":43,"step":20,"tactic":"-- exact H_fx","prover":"Coq"}
+{"proof_id":43,"step":21,"tactic":"- (* Backward direction *)\n    intro H","prover":"Coq"}
+{"proof_id":43,"step":22,"tactic":"destruct H as [H_in H_fx]","prover":"Coq"}
+{"proof_id":43,"step":23,"tactic":"induction l as [| h t IH]","prover":"Coq"}
+{"proof_id":43,"step":24,"tactic":"+ (* Base case: contradiction *)\n      inversion H_in","prover":"Coq"}
+{"proof_id":43,"step":25,"tactic":"+ (* Inductive case *)\n      simpl","prover":"Coq"}
+{"proof_id":43,"step":26,"tactic":"destruct H_in as [H_eq | H_in_t]","prover":"Coq"}
+{"proof_id":43,"step":27,"tactic":"* (* x = h *)\n        rewrite <- H_eq","prover":"Coq"}
+{"proof_id":43,"step":28,"tactic":"rewrite H_fx","prover":"Coq"}
+{"proof_id":43,"step":29,"tactic":"simpl","prover":"Coq"}
+{"proof_id":43,"step":30,"tactic":"left","prover":"Coq"}
+{"proof_id":43,"step":31,"tactic":"reflexivity","prover":"Coq"}
+{"proof_id":43,"step":32,"tactic":"* (* In x t *)\n        destruct (f h) eqn:E","prover":"Coq"}
+{"proof_id":43,"step":33,"tactic":"-- simpl","prover":"Coq"}
+{"proof_id":43,"step":34,"tactic":"right","prover":"Coq"}
+{"proof_id":43,"step":35,"tactic":"apply IH","prover":"Coq"}
+{"proof_id":43,"step":36,"tactic":"exact H_in_t","prover":"Coq"}
+{"proof_id":43,"step":37,"tactic":"-- apply IH","prover":"Coq"}
+{"proof_id":43,"step":38,"tactic":"exact H_in_t","prover":"Coq"}
+{"proof_id":44,"step":1,"tactic":"intros n m","prover":"Coq"}
+{"proof_id":44,"step":2,"tactic":"induction n as [| n' IH]","prover":"Coq"}
+{"proof_id":44,"step":3,"tactic":"- (* Base case: 0 + m = m + 0 *)\n    simpl","prover":"Coq"}
+{"proof_id":44,"step":4,"tactic":"rewrite <- plus_n_O","prover":"Coq"}
+{"proof_id":44,"step":5,"tactic":"reflexivity","prover":"Coq"}
+{"proof_id":44,"step":6,"tactic":"- (* Inductive case: S n' + m = m + S n' *)\n    simpl","prover":"Coq"}
+{"proof_id":44,"step":7,"tactic":"rewrite IH","prover":"Coq"}
+{"proof_id":44,"step":8,"tactic":"rewrite <- plus_n_Sm","prover":"Coq"}
+{"proof_id":44,"step":9,"tactic":"reflexivity","prover":"Coq"}
+{"proof_id":45,"step":1,"tactic":"intros n m p","prover":"Coq"}
+{"proof_id":45,"step":2,"tactic":"induction n as [| n' IH]","prover":"Coq"}
+{"proof_id":45,"step":3,"tactic":"- (* Base case: (0 + m) + p = 0 + (m + p) *)\n    simpl","prover":"Coq"}
+{"proof_id":45,"step":4,"tactic":"reflexivity","prover":"Coq"}
+{"proof_id":45,"step":5,"tactic":"- (* Inductive case *)\n    simpl","prover":"Coq"}
+{"proof_id":45,"step":6,"tactic":"rewrite IH","prover":"Coq"}
+{"proof_id":45,"step":7,"tactic":"reflexivity","prover":"Coq"}
+{"proof_id":46,"step":1,"tactic":"intro n","prover":"Coq"}
+{"proof_id":46,"step":2,"tactic":"induction n as [| n' IH]","prover":"Coq"}
+{"proof_id":46,"step":3,"tactic":"- (* Base case: 0 + 0 = 0 *)\n    reflexivity","prover":"Coq"}
+{"proof_id":46,"step":4,"tactic":"- (* Inductive case: S n' + 0 = S n' *)\n    simpl","prover":"Coq"}
+{"proof_id":46,"step":5,"tactic":"rewrite IH","prover":"Coq"}
+{"proof_id":46,"step":6,"tactic":"reflexivity","prover":"Coq"}
+{"proof_id":47,"step":1,"tactic":"intros n m","prover":"Coq"}
+{"proof_id":47,"step":2,"tactic":"induction n as [| n' IH]","prover":"Coq"}
+{"proof_id":47,"step":3,"tactic":"- (* Base case: 0 + S m = S (0 + m) *)\n    simpl","prover":"Coq"}
+{"proof_id":47,"step":4,"tactic":"reflexivity","prover":"Coq"}
+{"proof_id":47,"step":5,"tactic":"- (* Inductive case *)\n    simpl","prover":"Coq"}
+{"proof_id":47,"step":6,"tactic":"rewrite IH","prover":"Coq"}
+{"proof_id":47,"step":7,"tactic":"reflexivity","prover":"Coq"}
+{"proof_id":48,"step":1,"tactic":"intro n","prover":"Coq"}
+{"proof_id":48,"step":2,"tactic":"induction n as [| n' IH]","prover":"Coq"}
+{"proof_id":48,"step":3,"tactic":"- (* Base case: 0 * 0 = 0 *)\n    reflexivity","prover":"Coq"}
+{"proof_id":48,"step":4,"tactic":"- (* Inductive case: S n' * 0 = 0 *)\n    simpl","prover":"Coq"}
+{"proof_id":48,"step":5,"tactic":"exact IH","prover":"Coq"}
+{"proof_id":49,"step":1,"tactic":"intros n m","prover":"Coq"}
+{"proof_id":49,"step":2,"tactic":"induction n as [| n' IH]","prover":"Coq"}
+{"proof_id":49,"step":3,"tactic":"- (* Base case: 0 * m = m * 0 *)\n    simpl","prover":"Coq"}
+{"proof_id":49,"step":4,"tactic":"rewrite mult_0_r","prover":"Coq"}
+{"proof_id":49,"step":5,"tactic":"reflexivity","prover":"Coq"}
+{"proof_id":49,"step":6,"tactic":"- (* Inductive case: S n' * m = m * S n' *)\n    simpl","prover":"Coq"}
+{"proof_id":49,"step":7,"tactic":"rewrite IH","prover":"Coq"}
+{"proof_id":49,"step":8,"tactic":"rewrite <- mult_n_Sm","prover":"Coq"}
+{"proof_id":49,"step":9,"tactic":"reflexivity","prover":"Coq"}
+{"proof_id":50,"step":1,"tactic":"intros n m p","prover":"Coq"}
+{"proof_id":50,"step":2,"tactic":"induction n as [| n' IH]","prover":"Coq"}
+{"proof_id":50,"step":3,"tactic":"- (* Base case: 0 * (m + p) = 0 * m + 0 * p *)\n    reflexivity","prover":"Coq"}
+{"proof_id":50,"step":4,"tactic":"- (* Inductive case *)\n    simpl","prover":"Coq"}
+{"proof_id":50,"step":5,"tactic":"rewrite IH","prover":"Coq"}
+{"proof_id":50,"step":6,"tactic":"(* Now we need: (m + p) + (n' * m + n' * p) = m + n' * m + (p + n' * p) *)\n    rewrite plus_assoc","prover":"Coq"}
+{"proof_id":50,"step":7,"tactic":"rewrite plus_assoc","prover":"Coq"}
+{"proof_id":50,"step":8,"tactic":"(* Rearrange the middle terms *)\n    assert (H: forall a b c d : nat, a + (b + c) + d = a + b + (c + d))","prover":"Coq"}
+{"proof_id":50,"step":9,"tactic":"{ intros","prover":"Coq"}
+{"proof_id":50,"step":10,"tactic":"lia","prover":"Coq"}
+{"proof_id":50,"step":11,"tactic":"}\n    rewrite <- H","prover":"Coq"}
+{"proof_id":50,"step":12,"tactic":"rewrite <- plus_assoc","prover":"Coq"}
+{"proof_id":50,"step":13,"tactic":"rewrite (plus_comm p (n' * m))","prover":"Coq"}
+{"proof_id":50,"step":14,"tactic":"reflexivity","prover":"Coq"}
+{"proof_id":51,"step":1,"tactic":"intros n m p","prover":"Coq"}
+{"proof_id":51,"step":2,"tactic":"induction n as [| n' IH]","prover":"Coq"}
+{"proof_id":51,"step":3,"tactic":"- (* Base case *)\n    reflexivity","prover":"Coq"}
+{"proof_id":51,"step":4,"tactic":"- (* Inductive case *)\n    simpl","prover":"Coq"}
+{"proof_id":51,"step":5,"tactic":"rewrite mult_plus_distr_l","prover":"Coq"}
+{"proof_id":51,"step":6,"tactic":"rewrite IH","prover":"Coq"}
+{"proof_id":51,"step":7,"tactic":"reflexivity","prover":"Coq"}
+{"proof_id":52,"step":1,"tactic":"intro n","prover":"Coq"}
+{"proof_id":52,"step":2,"tactic":"induction n as [| n' IH]","prover":"Coq"}
+{"proof_id":52,"step":3,"tactic":"- (* Base case: 0 ≤ 0 *)\n    apply le_n","prover":"Coq"}
+{"proof_id":52,"step":4,"tactic":"- (* Inductive case: S n' ≤ S n' *)\n    apply le_n","prover":"Coq"}
+{"proof_id":53,"step":1,"tactic":"intros n m p H_nm H_mp","prover":"Coq"}
+{"proof_id":53,"step":2,"tactic":"induction H_mp as [| p' H_mp' IH]","prover":"Coq"}
+{"proof_id":53,"step":3,"tactic":"- (* Case: m = p *)\n    exact H_nm","prover":"Coq"}
+{"proof_id":53,"step":4,"tactic":"- (* Case: m ≤ p' and p = S p' *)\n    apply le_S","prover":"Coq"}
+{"proof_id":53,"step":5,"tactic":"exact IH","prover":"Coq"}
+{"proof_id":54,"step":1,"tactic":"intros n m p H","prover":"Coq"}
+{"proof_id":54,"step":2,"tactic":"induction H as [| m' H' IH]","prover":"Coq"}
+{"proof_id":54,"step":3,"tactic":"- (* Case: n = m *)\n    apply le_refl","prover":"Coq"}
+{"proof_id":54,"step":4,"tactic":"- (* Case: n ≤ m' *)\n    rewrite <- plus_n_Sm","prover":"Coq"}
+{"proof_id":54,"step":5,"tactic":"apply le_S","prover":"Coq"}
+{"proof_id":54,"step":6,"tactic":"exact IH","prover":"Coq"}
+{"proof_id":55,"step":1,"tactic":"intro n","prover":"Coq"}
+{"proof_id":55,"step":2,"tactic":"induction n as [| n' IH]","prover":"Coq"}
+{"proof_id":55,"step":3,"tactic":"- (* Base case: n = 0 *)\n    reflexivity","prover":"Coq"}
+{"proof_id":55,"step":4,"tactic":"- (* Inductive case: n = S n' *)\n    simpl","prover":"Coq"}
+{"proof_id":55,"step":5,"tactic":"rewrite mult_plus_distr_l","prover":"Coq"}
+{"proof_id":55,"step":6,"tactic":"rewrite IH","prover":"Coq"}
+{"proof_id":55,"step":7,"tactic":"(* Need to show: 2 * S n' + n' * (n' + 1) = S n' * (S n' + 1) *)\n    simpl","prover":"Coq"}
+{"proof_id":55,"step":8,"tactic":"ring","prover":"Coq"}
+{"proof_id":55,"step":9,"tactic":"(* The ring tactic solves polynomial equalities *)","prover":"Coq"}
+{"proof_id":56,"step":1,"tactic":"intro n","prover":"Coq"}
+{"proof_id":56,"step":2,"tactic":"induction n as [| n' IH]","prover":"Coq"}
+{"proof_id":56,"step":3,"tactic":"- (* Base case *)\n    simpl","prover":"Coq"}
+{"proof_id":56,"step":4,"tactic":"apply le_n","prover":"Coq"}
+{"proof_id":56,"step":5,"tactic":"- (* Inductive case *)\n    simpl","prover":"Coq"}
+{"proof_id":56,"step":6,"tactic":"(* Need: 2 * power_of_2 n' >= 1 *)\n    (* Since power_of_2 n' >= 1, we have 2 * power_of_2 n' >= 2 *)\n    lia","prover":"Coq"}
+{"proof_id":57,"step":1,"tactic":"intro n","prover":"Coq"}
+{"proof_id":57,"step":2,"tactic":"reflexivity","prover":"Coq"}
+{"proof_id":58,"step":1,"tactic":"intro n","prover":"Coq"}
+{"proof_id":58,"step":2,"tactic":"induction n as [| n' IH]","prover":"Coq"}
+{"proof_id":58,"step":3,"tactic":"- (* Base case: factorial 0 = 1 *)\n    simpl","prover":"Coq"}
+{"proof_id":58,"step":4,"tactic":"apply le_n","prover":"Coq"}
+{"proof_id":58,"step":5,"tactic":"- (* Inductive case *)\n    simpl","prover":"Coq"}
+{"proof_id":58,"step":6,"tactic":"(* factorial (S n') = S n' * factorial n' *)\n    (* Since factorial n' >= 1 and S n' >= 1, result >= 1 *)\n    apply Nat","prover":"Coq"}
+{"proof_id":58,"step":7,"tactic":"le_trans with (m := factorial n')","prover":"Coq"}
+{"proof_id":58,"step":8,"tactic":"+ exact IH","prover":"Coq"}
+{"proof_id":58,"step":9,"tactic":"+ apply Nat","prover":"Coq"}
+{"proof_id":58,"step":10,"tactic":"le_trans with (m := 1 * factorial n')","prover":"Coq"}
+{"proof_id":58,"step":11,"tactic":"* simpl","prover":"Coq"}
+{"proof_id":58,"step":12,"tactic":"apply le_refl","prover":"Coq"}
+{"proof_id":58,"step":13,"tactic":"* apply mult_le_compat_r","prover":"Coq"}
+{"proof_id":58,"step":14,"tactic":"apply le_S","prover":"Coq"}
+{"proof_id":58,"step":15,"tactic":"apply le_0_n","prover":"Coq"}
+{"proof_id":59,"step":1,"tactic":"intro n","prover":"Coq"}
+{"proof_id":59,"step":2,"tactic":"induction n as [| n' IH]","prover":"Coq"}
+{"proof_id":59,"step":3,"tactic":"- (* Base case: impossible since 0 < 4 *)\n    intro H","prover":"Coq"}
+{"proof_id":59,"step":4,"tactic":"inversion H","prover":"Coq"}
+{"proof_id":59,"step":5,"tactic":"- (* Inductive case *)\n    intro H","prover":"Coq"}
+{"proof_id":59,"step":6,"tactic":"destruct n' as [| [| [| [| n'']]]]","prover":"Coq"}
+{"proof_id":59,"step":7,"tactic":"+ (* n' = 0, so n = 1 < 4: contradiction *)\n      inversion H","prover":"Coq"}
+{"proof_id":59,"step":8,"tactic":"+ (* n' = 1, so n = 2 < 4: contradiction *)\n      inversion H","prover":"Coq"}
+{"proof_id":59,"step":9,"tactic":"inversion H1","prover":"Coq"}
+{"proof_id":59,"step":10,"tactic":"+ (* n' = 2, so n = 3 < 4: contradiction *)\n      inversion H","prover":"Coq"}
+{"proof_id":59,"step":11,"tactic":"inversion H1","prover":"Coq"}
+{"proof_id":59,"step":12,"tactic":"inversion H3","prover":"Coq"}
+{"proof_id":59,"step":13,"tactic":"+ (* n' = 3, so n = 4: base case *)\n      simpl","prover":"Coq"}
+{"proof_id":59,"step":14,"tactic":"lia","prover":"Coq"}
+{"proof_id":59,"step":15,"tactic":"+ (* n' >= 4: use induction *)\n      assert (H_ge: S n'' >= 4)","prover":"Coq"}
+{"proof_id":59,"step":16,"tactic":"{ lia","prover":"Coq"}
+{"proof_id":59,"step":17,"tactic":"}\n      assert (H_IH := IH (Nat","prover":"Coq"}
+{"proof_id":59,"step":18,"tactic":"le_trans _ _ _ (le_S _ _ (le_S _ _ (le_S _ _ (le_S _ _ (le_0_n n''))))) H))","prover":"Coq"}
+{"proof_id":59,"step":19,"tactic":"simpl","prover":"Coq"}
+{"proof_id":59,"step":20,"tactic":"(* factorial (S (S (S (S n'')))) = S (S (S (S n''))) * factorial (S (S (S n''))) *)\n      (* power_of_2 (S (S (S (S n'')))) = 2 * power_of_2 (S (S (S n''))) *)\n      (* Need: 5 + n'' * factorial","prover":"Coq"}
+{"proof_id":59,"step":21,"tactic":">= 2 * power_of_2","prover":"Coq"}
+{"proof_id":59,"step":22,"tactic":"*)\n      (* Since n'' + 4 >= 4 and factorial grows faster, this holds *)\n      lia","prover":"Coq"}
+{"proof_id":60,"step":1,"tactic":"intro n","prover":"Coq"}
+{"proof_id":60,"step":2,"tactic":"induction n as [| n' IH]","prover":"Coq"}
+{"proof_id":60,"step":3,"tactic":"- (* Base case: 0 is even *)\n    left","prover":"Coq"}
+{"proof_id":60,"step":4,"tactic":"apply even_0","prover":"Coq"}
+{"proof_id":60,"step":5,"tactic":"- (* Inductive case *)\n    destruct IH as [H_even | H_odd]","prover":"Coq"}
+{"proof_id":60,"step":6,"tactic":"+ (* n' is even, so S n' is odd *)\n      right","prover":"Coq"}
+{"proof_id":60,"step":7,"tactic":"destruct n' as [| n'']","prover":"Coq"}
+{"proof_id":60,"step":8,"tactic":"* apply odd_1","prover":"Coq"}
+{"proof_id":60,"step":9,"tactic":"* inversion H_even","prover":"Coq"}
+{"proof_id":60,"step":10,"tactic":"apply odd_SS","prover":"Coq"}
+{"proof_id":60,"step":11,"tactic":"assumption","prover":"Coq"}
+{"proof_id":60,"step":12,"tactic":"+ (* n' is odd, so S n' is even *)\n      left","prover":"Coq"}
+{"proof_id":60,"step":13,"tactic":"destruct n' as [| n'']","prover":"Coq"}
+{"proof_id":60,"step":14,"tactic":"* inversion H_odd","prover":"Coq"}
+{"proof_id":60,"step":15,"tactic":"* inversion H_odd","prover":"Coq"}
+{"proof_id":60,"step":16,"tactic":"apply even_SS","prover":"Coq"}
+{"proof_id":60,"step":17,"tactic":"assumption","prover":"Coq"}
+{"proof_id":61,"step":1,"tactic":"intros n m H_n H_m","prover":"Coq"}
+{"proof_id":61,"step":2,"tactic":"induction H_n as [| n' H_n' IH]","prover":"Coq"}
+{"proof_id":61,"step":3,"tactic":"- (* n = 0 *)\n    simpl","prover":"Coq"}
+{"proof_id":61,"step":4,"tactic":"exact H_m","prover":"Coq"}
+{"proof_id":61,"step":5,"tactic":"- (* n = S (S n') *)\n    simpl","prover":"Coq"}
+{"proof_id":61,"step":6,"tactic":"apply even_SS","prover":"Coq"}
+{"proof_id":61,"step":7,"tactic":"exact IH","prover":"Coq"}
+{"proof_id":62,"step":1,"tactic":"intros A B H_not_or","prover":"Coq"}
+{"proof_id":62,"step":2,"tactic":"split","prover":"Coq"}
+{"proof_id":62,"step":3,"tactic":"- (* Prove ¬A *)\n    intro H_a","prover":"Coq"}
+{"proof_id":62,"step":4,"tactic":"apply H_not_or","prover":"Coq"}
+{"proof_id":62,"step":5,"tactic":"left","prover":"Coq"}
+{"proof_id":62,"step":6,"tactic":"exact H_a","prover":"Coq"}
+{"proof_id":62,"step":7,"tactic":"- (* Prove ¬B *)\n    intro H_b","prover":"Coq"}
+{"proof_id":62,"step":8,"tactic":"apply H_not_or","prover":"Coq"}
+{"proof_id":62,"step":9,"tactic":"right","prover":"Coq"}
+{"proof_id":62,"step":10,"tactic":"exact H_b","prover":"Coq"}
+{"proof_id":63,"step":1,"tactic":"intros A B H_and H_or","prover":"Coq"}
+{"proof_id":63,"step":2,"tactic":"destruct H_and as [H_not_a H_not_b]","prover":"Coq"}
+{"proof_id":63,"step":3,"tactic":"destruct H_or as [H_a | H_b]","prover":"Coq"}
+{"proof_id":63,"step":4,"tactic":"- (* Case: A is true *)\n    apply H_not_a","prover":"Coq"}
+{"proof_id":63,"step":5,"tactic":"exact H_a","prover":"Coq"}
+{"proof_id":63,"step":6,"tactic":"- (* Case: B is true *)\n    apply H_not_b","prover":"Coq"}
+{"proof_id":63,"step":7,"tactic":"exact H_b","prover":"Coq"}
+{"proof_id":64,"step":1,"tactic":"intros A B H_or H_and","prover":"Coq"}
+{"proof_id":64,"step":2,"tactic":"destruct H_and as [H_a H_b]","prover":"Coq"}
+{"proof_id":64,"step":3,"tactic":"destruct H_or as [H_not_a | H_not_b]","prover":"Coq"}
+{"proof_id":64,"step":4,"tactic":"- (* Case: ¬A *)\n    apply H_not_a","prover":"Coq"}
+{"proof_id":64,"step":5,"tactic":"exact H_a","prover":"Coq"}
+{"proof_id":64,"step":6,"tactic":"- (* Case: ¬B *)\n    apply H_not_b","prover":"Coq"}
+{"proof_id":64,"step":7,"tactic":"exact H_b","prover":"Coq"}
+{"proof_id":65,"step":1,"tactic":"intros A B H_not_and","prover":"Coq"}
+{"proof_id":65,"step":2,"tactic":"(* Use excluded middle on A *)\n  destruct (classic A) as [H_a | H_not_a]","prover":"Coq"}
+{"proof_id":65,"step":3,"tactic":"- (* Case: A is true *)\n    right","prover":"Coq"}
+{"proof_id":65,"step":4,"tactic":"intro H_b","prover":"Coq"}
+{"proof_id":65,"step":5,"tactic":"apply H_not_and","prover":"Coq"}
+{"proof_id":65,"step":6,"tactic":"split; assumption","prover":"Coq"}
+{"proof_id":65,"step":7,"tactic":"- (* Case: ¬A is true *)\n    left","prover":"Coq"}
+{"proof_id":65,"step":8,"tactic":"exact H_not_a","prover":"Coq"}
+{"proof_id":66,"step":1,"tactic":"intros A H_a H_not_a","prover":"Coq"}
+{"proof_id":66,"step":2,"tactic":"apply H_not_a","prover":"Coq"}
+{"proof_id":66,"step":3,"tactic":"exact H_a","prover":"Coq"}
+{"proof_id":67,"step":1,"tactic":"intros A H_not_not_a","prover":"Coq"}
+{"proof_id":67,"step":2,"tactic":"destruct (classic A) as [H_a | H_not_a]","prover":"Coq"}
+{"proof_id":67,"step":3,"tactic":"- exact H_a","prover":"Coq"}
+{"proof_id":67,"step":4,"tactic":"- (* This is a contradiction *)\n    exfalso","prover":"Coq"}
+{"proof_id":67,"step":5,"tactic":"apply H_not_not_a","prover":"Coq"}
+{"proof_id":67,"step":6,"tactic":"exact H_not_a","prover":"Coq"}
+{"proof_id":68,"step":1,"tactic":"intros H_lem B H_not_not_b","prover":"Coq"}
+{"proof_id":68,"step":2,"tactic":"destruct (H_lem B) as [H_b | H_not_b]","prover":"Coq"}
+{"proof_id":68,"step":3,"tactic":"- exact H_b","prover":"Coq"}
+{"proof_id":68,"step":4,"tactic":"- exfalso","prover":"Coq"}
+{"proof_id":68,"step":5,"tactic":"apply H_not_not_b","prover":"Coq"}
+{"proof_id":68,"step":6,"tactic":"exact H_not_b","prover":"Coq"}
+{"proof_id":69,"step":1,"tactic":"intros A B H","prover":"Coq"}
+{"proof_id":69,"step":2,"tactic":"destruct (classic A) as [H_a | H_not_a]","prover":"Coq"}
+{"proof_id":69,"step":3,"tactic":"- exact H_a","prover":"Coq"}
+{"proof_id":69,"step":4,"tactic":"- apply H","prover":"Coq"}
+{"proof_id":69,"step":5,"tactic":"intro H_a","prover":"Coq"}
+{"proof_id":69,"step":6,"tactic":"exfalso","prover":"Coq"}
+{"proof_id":69,"step":7,"tactic":"apply H_not_a","prover":"Coq"}
+{"proof_id":69,"step":8,"tactic":"exact H_a","prover":"Coq"}
+{"proof_id":70,"step":1,"tactic":"intros A B H_imp H_not_b H_a","prover":"Coq"}
+{"proof_id":70,"step":2,"tactic":"apply H_not_b","prover":"Coq"}
+{"proof_id":70,"step":3,"tactic":"apply H_imp","prover":"Coq"}
+{"proof_id":70,"step":4,"tactic":"exact H_a","prover":"Coq"}
+{"proof_id":71,"step":1,"tactic":"intros A B H_contra H_a","prover":"Coq"}
+{"proof_id":71,"step":2,"tactic":"destruct (classic B) as [H_b | H_not_b]","prover":"Coq"}
+{"proof_id":71,"step":3,"tactic":"- exact H_b","prover":"Coq"}
+{"proof_id":71,"step":4,"tactic":"- exfalso","prover":"Coq"}
+{"proof_id":71,"step":5,"tactic":"apply (H_contra H_not_b)","prover":"Coq"}
+{"proof_id":71,"step":6,"tactic":"exact H_a","prover":"Coq"}
+{"proof_id":72,"step":1,"tactic":"intros A B H","prover":"Coq"}
+{"proof_id":72,"step":2,"tactic":"destruct H as [H_a | H_b]","prover":"Coq"}
+{"proof_id":72,"step":3,"tactic":"- right; exact H_a","prover":"Coq"}
+{"proof_id":72,"step":4,"tactic":"- left; exact H_b","prover":"Coq"}
+{"proof_id":73,"step":1,"tactic":"intros A B C H","prover":"Coq"}
+{"proof_id":73,"step":2,"tactic":"destruct H as [[H_a | H_b] | H_c]","prover":"Coq"}
+{"proof_id":73,"step":3,"tactic":"- left; exact H_a","prover":"Coq"}
+{"proof_id":73,"step":4,"tactic":"- right; left; exact H_b","prover":"Coq"}
+{"proof_id":73,"step":5,"tactic":"- right; right; exact H_c","prover":"Coq"}
+{"proof_id":74,"step":1,"tactic":"intros A B C H","prover":"Coq"}
+{"proof_id":74,"step":2,"tactic":"destruct H as [[H_a H_b] H_c]","prover":"Coq"}
+{"proof_id":74,"step":3,"tactic":"split","prover":"Coq"}
+{"proof_id":74,"step":4,"tactic":"- exact H_a","prover":"Coq"}
+{"proof_id":74,"step":5,"tactic":"- split","prover":"Coq"}
+{"proof_id":74,"step":6,"tactic":"+ exact H_b","prover":"Coq"}
+{"proof_id":74,"step":7,"tactic":"+ exact H_c","prover":"Coq"}
+{"proof_id":75,"step":1,"tactic":"intros A B C H","prover":"Coq"}
+{"proof_id":75,"step":2,"tactic":"destruct H as [H_a [H_b H_c]]","prover":"Coq"}
+{"proof_id":75,"step":3,"tactic":"split","prover":"Coq"}
+{"proof_id":75,"step":4,"tactic":"- split","prover":"Coq"}
+{"proof_id":75,"step":5,"tactic":"+ exact H_a","prover":"Coq"}
+{"proof_id":75,"step":6,"tactic":"+ exact H_b","prover":"Coq"}
+{"proof_id":75,"step":7,"tactic":"- exact H_c","prover":"Coq"}
+{"proof_id":76,"step":1,"tactic":"intros A B C H","prover":"Coq"}
+{"proof_id":76,"step":2,"tactic":"destruct H as [H_a H_or]","prover":"Coq"}
+{"proof_id":76,"step":3,"tactic":"destruct H_or as [H_b | H_c]","prover":"Coq"}
+{"proof_id":76,"step":4,"tactic":"- left; split; assumption","prover":"Coq"}
+{"proof_id":76,"step":5,"tactic":"- right; split; assumption","prover":"Coq"}
+{"proof_id":77,"step":1,"tactic":"intros A B C H","prover":"Coq"}
+{"proof_id":77,"step":2,"tactic":"destruct H as [[H_a H_b] | [H_a H_c]]","prover":"Coq"}
+{"proof_id":77,"step":3,"tactic":"- split","prover":"Coq"}
+{"proof_id":77,"step":4,"tactic":"+ exact H_a","prover":"Coq"}
+{"proof_id":77,"step":5,"tactic":"+ left; exact H_b","prover":"Coq"}
+{"proof_id":77,"step":6,"tactic":"- split","prover":"Coq"}
+{"proof_id":77,"step":7,"tactic":"+ exact H_a","prover":"Coq"}
+{"proof_id":77,"step":8,"tactic":"+ right; exact H_c","prover":"Coq"}
+{"proof_id":78,"step":1,"tactic":"intros A B C H","prover":"Coq"}
+{"proof_id":78,"step":2,"tactic":"destruct H as [H_a | [H_b H_c]]","prover":"Coq"}
+{"proof_id":78,"step":3,"tactic":"- split","prover":"Coq"}
+{"proof_id":78,"step":4,"tactic":"+ left; exact H_a","prover":"Coq"}
+{"proof_id":78,"step":5,"tactic":"+ left; exact H_a","prover":"Coq"}
+{"proof_id":78,"step":6,"tactic":"- split","prover":"Coq"}
+{"proof_id":78,"step":7,"tactic":"+ right; exact H_b","prover":"Coq"}
+{"proof_id":78,"step":8,"tactic":"+ right; exact H_c","prover":"Coq"}
+{"proof_id":79,"step":1,"tactic":"intros A H","prover":"Coq"}
+{"proof_id":79,"step":2,"tactic":"destruct (classic A) as [H_a | H_not_a]","prover":"Coq"}
+{"proof_id":79,"step":3,"tactic":"- exact H_a","prover":"Coq"}
+{"proof_id":79,"step":4,"tactic":"- exfalso","prover":"Coq"}
+{"proof_id":79,"step":5,"tactic":"apply H","prover":"Coq"}
+{"proof_id":79,"step":6,"tactic":"exact H_not_a","prover":"Coq"}
+{"proof_id":80,"step":1,"tactic":"intros A H_false","prover":"Coq"}
+{"proof_id":80,"step":2,"tactic":"exfalso","prover":"Coq"}
+{"proof_id":80,"step":3,"tactic":"exact H_false","prover":"Coq"}
+{"proof_id":81,"step":1,"tactic":"auto","prover":"Isabelle"}
+{"proof_id":82,"step":1,"tactic":"auto","prover":"Isabelle"}
+{"proof_id":83,"step":1,"tactic":"auto","prover":"Isabelle"}
+{"proof_id":84,"step":1,"tactic":"auto","prover":"Isabelle"}
+{"proof_id":85,"step":1,"tactic":"(\"Goal\" :induct (plus x y","prover":"ACL2"}
+{"proof_id":86,"step":1,"tactic":"(\"Goal\" :induct (mirror tree","prover":"ACL2"}
+{"proof_id":87,"step":1,"tactic":"(\"Goal\" :induct (mirror tree","prover":"ACL2"}
+{"proof_id":88,"step":1,"tactic":"(\"Goal\" :induct (fact n","prover":"ACL2"}
+{"proof_id":89,"step":1,"tactic":"(\"Goal\" :induct (fact-tail n acc","prover":"ACL2"}
+{"proof_id":90,"step":1,"tactic":"(\"Goal\" :induct (my-append xs nil","prover":"ACL2"}
+{"proof_id":91,"step":1,"tactic":"(\"Goal\" :induct (my-append xs ys","prover":"ACL2"}
+{"proof_id":92,"step":1,"tactic":"(\"Goal\" :induct (my-append xs ys","prover":"ACL2"}
+{"proof_id":93,"step":1,"tactic":"(\"Goal\" :induct (insert x xs","prover":"ACL2"}
+{"proof_id":94,"step":1,"tactic":"(\"Goal\" :induct (insertion-sort xs","prover":"ACL2"}
+{"proof_id":95,"step":1,"tactic":"(\"Goal\" :induct (insert x xs","prover":"ACL2"}
+{"proof_id":96,"step":1,"tactic":"auto","prover":"Mizar"}
+{"proof_id":97,"step":1,"tactic":"auto","prover":"Mizar"}
+{"proof_id":98,"step":1,"tactic":"auto","prover":"Mizar"}
+{"proof_id":99,"step":1,"tactic":"auto","prover":"Mizar"}
+{"proof_id":100,"step":1,"tactic":"auto","prover":"Mizar"}
+{"proof_id":101,"step":1,"tactic":"auto","prover":"Mizar"}
+{"proof_id":102,"step":1,"tactic":"auto","prover":"Mizar"}
+{"proof_id":103,"step":1,"tactic":"auto","prover":"CVC5"}
+{"proof_id":104,"step":1,"tactic":"auto","prover":"Agda"}
+{"proof_id":105,"step":1,"tactic":"auto","prover":"Agda"}
+{"proof_id":106,"step":1,"tactic":"auto","prover":"Agda"}
+{"proof_id":107,"step":1,"tactic":"auto","prover":"Agda"}

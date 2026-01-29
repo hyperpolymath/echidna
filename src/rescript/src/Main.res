@@ -21,7 +21,7 @@ let make = () => {
 
   // Load aspect tags on mount
   React.useEffect(() => {
-    let _ = Client.getAspectTags()->Promise.then(result => {
+    let _ = Client.getAspectTags()|> Js.Promise.then_(result => {
       switch result {
       | Ok(tags) => {
           dispatch(UpdateProofState({
@@ -31,7 +31,7 @@ let make = () => {
             completed: false,
           }))
           // Initialize aspect tags
-          let initializedTags = tags->Array.map(tag => {...tag, active: false})
+          let initializedTags = tags->Belt.Array.map(tag => {...tag, active: false})
           dispatch(
             UpdateProofState({
               goals: [],
@@ -40,9 +40,9 @@ let make = () => {
               completed: false,
             }),
           )
-          Promise.resolve()
+          Js.Promise.resolve()
         }
-      | Error(_) => Promise.resolve()
+      | Error(_) => Js.Promise.resolve()
       }
     })
     None
@@ -50,18 +50,18 @@ let make = () => {
 
   let handleSelectProver = prover => {
     dispatch(SetLoading(true))
-    let _ = Client.initProofSession(prover)->Promise.then(result => {
+    let _ = Client.initProofSession(prover)|> Js.Promise.then_(result => {
       switch result {
       | Ok(proofState) => {
           dispatch(UpdateProofState(proofState))
           dispatch(SetLoading(false))
           setCurrentView(_ => ProofSession)
-          Promise.resolve()
+          Js.Promise.resolve()
         }
       | Error(err) => {
           dispatch(SetError(Some(err)))
           dispatch(SetLoading(false))
-          Promise.resolve()
+          Js.Promise.resolve()
         }
       }
     })
@@ -73,17 +73,17 @@ let make = () => {
         dispatch(SetLoading(true))
         dispatch(ApplyTactic(tactic))
 
-        let _ = Client.applyTactic(tactic, goalId)->Promise.then(result => {
+        let _ = Client.applyTactic(tactic, goalId)|> Js.Promise.then_(result => {
           switch result {
           | Ok(newState) => {
               dispatch(UpdateProofState(newState))
               dispatch(SetLoading(false))
-              Promise.resolve()
+              Js.Promise.resolve()
             }
           | Error(err) => {
               dispatch(SetError(Some(err)))
               dispatch(SetLoading(false))
-              Promise.resolve()
+              Js.Promise.resolve()
             }
           }
         })
@@ -123,7 +123,7 @@ let make = () => {
               currentView == ProofSession ? "bg-blue-600" : "bg-gray-700 hover:bg-gray-600"
             }`}
             onClick={_ => setCurrentView(_ => ProofSession)}
-            disabled={Option.isNone(state.selectedProver)}>
+            disabled={Belt.Option.isNone(state.selectedProver)}>
             {React.string("Proof")}
           </button>
           <button
@@ -208,7 +208,7 @@ let make = () => {
 switch ReactDOM.querySelector("#root") {
 | Some(root) => {
     let reactRoot = ReactDOM.Client.createRoot(root)
-    ReactDOM.Client.render(reactRoot, <make />)
+    reactRoot->ReactDOM.Client.Root.render(<make />)
   }
-| None => Console.error("Root element not found")
+| None => Js.Console.error("Root element not found")
 }

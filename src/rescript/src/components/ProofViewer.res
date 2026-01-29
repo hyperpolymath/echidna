@@ -27,17 +27,17 @@ let make = () => {
     | ACL2 => "syntax-lisp"
     }
 
-  let renderProofLine = (tactic: string, index: int) => {
+  let renderProofLine = (index: int, tactic: string) => {
     let syntaxClass = switch state.selectedProver {
     | Some(prover) => getSyntaxHighlightClass(prover)
     | None => ""
     }
 
     <div
-      key={Int.toString(index)}
+      key={Belt.Int.toString(index)}
       className="proof-line flex items-start py-2 px-3 hover:bg-gray-50 border-b border-gray-100">
       <span className="line-number text-xs text-gray-400 mr-4 font-mono w-8 text-right">
-        {React.string(Int.toString(index + 1))}
+        {React.string(Belt.Int.toString(index + 1))}
       </span>
       <code className={`flex-1 text-sm font-mono ${syntaxClass}`}>
         {React.string(tactic)}
@@ -46,8 +46,8 @@ let make = () => {
   }
 
   let renderProofStats = (proofState: proofState) => {
-    let totalLines = Array.length(proofState.proofScript)
-    let goalsRemaining = Array.length(proofState.goals)
+    let totalLines = Belt.Array.length(proofState.proofScript)
+    let goalsRemaining = Belt.Array.length(proofState.goals)
     let progress = if totalLines > 0 && goalsRemaining == 0 {
       100.0
     } else {
@@ -57,18 +57,18 @@ let make = () => {
     <div className="proof-stats grid grid-cols-3 gap-4 mb-4">
       <div className="stat-card p-3 bg-blue-50 border border-blue-200 rounded-lg">
         <p className="text-xs text-blue-600 font-semibold"> {React.string("Proof Lines")} </p>
-        <p className="text-2xl font-bold text-blue-900"> {React.string(Int.toString(totalLines))} </p>
+        <p className="text-2xl font-bold text-blue-900"> {React.string(Belt.Int.toString(totalLines))} </p>
       </div>
       <div className="stat-card p-3 bg-purple-50 border border-purple-200 rounded-lg">
         <p className="text-xs text-purple-600 font-semibold"> {React.string("Goals Left")} </p>
         <p className="text-2xl font-bold text-purple-900">
-          {React.string(Int.toString(goalsRemaining))}
+          {React.string(Belt.Int.toString(goalsRemaining))}
         </p>
       </div>
       <div className="stat-card p-3 bg-green-50 border border-green-200 rounded-lg">
         <p className="text-xs text-green-600 font-semibold"> {React.string("Progress")} </p>
         <p className="text-2xl font-bold text-green-900">
-          {React.string(Float.toString(progress) ++ "%")}
+          {React.string(Belt.Float.toString(progress) ++ "%")}
         </p>
       </div>
     </div>
@@ -102,10 +102,10 @@ let make = () => {
     </div>
 
     {switch state.proofState {
-    | Some(ps) => {
-        renderProofStats(ps)
-
-        if Array.length(ps.proofScript) == 0 {
+    | Some(ps) =>
+      <React.Fragment>
+        {renderProofStats(ps)}
+        {if Belt.Array.length(ps.proofScript) == 0 {
           <div className="empty-proof p-8 text-center bg-gray-50 border border-gray-300 rounded-lg">
             <p className="text-gray-600"> {React.string("No proof steps yet")} </p>
             <p className="text-sm text-gray-500 mt-2">
@@ -120,12 +120,12 @@ let make = () => {
               </p>
             </div>
             <div className="proof-content max-h-96 overflow-y-auto">
-              {ps.proofScript->Array.mapWithIndex(renderProofLine)->React.array}
+              {ps.proofScript->Belt.Array.mapWithIndex(renderProofLine)->React.array}
             </div>
           </div>
-        }
+        }}
 
-        if ps.completed {
+        {if ps.completed {
           <div className="proof-complete mt-4 p-4 bg-green-50 border-2 border-green-500 rounded-lg">
             <div className="flex items-center">
               <span className="text-4xl mr-4"> {React.string("✓")} </span>
@@ -141,8 +141,8 @@ let make = () => {
           </div>
         } else {
           React.null
-        }
-      }
+        }}
+      </React.Fragment>
     | None =>
       <div className="no-proof p-8 text-center bg-gray-50 border border-gray-300 rounded-lg">
         <p className="text-gray-600"> {React.string("No active proof session")} </p>

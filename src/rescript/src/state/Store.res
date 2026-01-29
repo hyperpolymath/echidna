@@ -1,12 +1,11 @@
 // SPDX-License-Identifier: MIT OR Palimpsest-0.6
 // SPDX-FileCopyrightText: 2025 ECHIDNA Project Team
 
+// Types for theorem provers
 /**
  * Application state management for ECHIDNA UI
  * Manages proof state, prover selection, and UI state
  */
-
-// Types for theorem provers
 type proverTier =
   | Tier1 // Agda, Coq/Rocq, Lean, Isabelle, Z3, CVC5
   | Tier2 // Metamath, HOL Light, Mizar
@@ -105,12 +104,7 @@ let proverTier = prover =>
   | HOL4 => Tier4
   }
 
-let allProvers = [
-  Agda, Coq, Lean, Isabelle, Z3, CVC5,
-  Metamath, HOLLight, Mizar,
-  PVS, ACL2,
-  HOL4
-]
+let allProvers = [Agda, Coq, Lean, Isabelle, Z3, CVC5, Metamath, HOLLight, Mizar, PVS, ACL2, HOL4]
 
 // Initial state
 let initialState = {
@@ -141,24 +135,29 @@ let reducer = (state, action) =>
       ...state,
       tacticSuggestions: suggestions,
     }
-  | ApplyTactic(tactic) => {
-      // Update proof script
-      switch state.proofState {
-      | Some(ps) => {
-          ...state,
-          proofState: Some({
-            ...ps,
-            proofScript: Array.concat(ps.proofScript, [tactic]),
-          }),
-        }
-      | None => state
+  | ApplyTactic(tactic) => // Update proof script
+    switch state.proofState {
+    | Some(ps) => {
+        ...state,
+        proofState: Some({
+          ...ps,
+          proofScript: Array.concat(list{ps.proofScript, [tactic]}),
+        }),
       }
+    | None => state
     }
   | ToggleAspectTag(tagName) => {
-      ...state,
-      aspectTags: state.aspectTags->Array.map(tag =>
-        tag.name === tagName ? {...tag, active: !tag.active} : tag
-      ),
+      let newTags = Belt.Array.map(state.aspectTags, tag => {
+        if tag.name == tagName {
+          {...tag, active: !tag.active}
+        } else {
+          tag
+        }
+      })
+      {
+        ...state,
+        aspectTags: newTags,
+      }
     }
   | UpdateSearchQuery(query) => {
       ...state,
@@ -174,7 +173,7 @@ let reducer = (state, action) =>
     }
   | SetError(error) => {
       ...state,
-      error: error,
+      error,
       isLoading: false,
     }
   | ResetState => initialState

@@ -20,20 +20,20 @@ let make = (~onSelectTheorem: string => unit) => {
       dispatch(UpdateSearchQuery(searchInput))
 
       let activeTags = state.aspectTags
-        ->Array.filter(tag => tag.active)
-        ->Array.map(tag => tag.name)
+        ->Belt.Array.keep(tag => tag.active)
+        ->Belt.Array.map(tag => tag.name)
 
-      let _ = Client.searchTheorems(searchInput, activeTags)->Promise.then(result => {
+      let _ = Client.searchTheorems(searchInput, activeTags)|> Js.Promise.then_(result => {
         switch result {
         | Ok(results) => {
             dispatch(UpdateSearchResults(results))
             setIsSearching(_ => false)
-            Promise.resolve()
+            Js.Promise.resolve(())
           }
         | Error(err) => {
             dispatch(SetError(Some(err)))
             setIsSearching(_ => false)
-            Promise.resolve()
+            Js.Promise.resolve(())
           }
         }
       })
@@ -63,9 +63,9 @@ let make = (~onSelectTheorem: string => unit) => {
     </button>
   }
 
-  let renderResult = (theorem: string, index: int) =>
+  let renderResult = (index: int, theorem: string) =>
     <div
-      key={Int.toString(index)}
+      key={Belt.Int.toString(index)}
       className="result-card p-4 mb-3 bg-white border border-gray-300 rounded-lg hover:shadow-md transition-shadow cursor-pointer"
       onClick={_ => onSelectTheorem(theorem)}>
       <div className="flex justify-between items-start">
@@ -83,28 +83,26 @@ let make = (~onSelectTheorem: string => unit) => {
 
   let renderAspectFilters = () => {
     // Group tags by category
-    let categories = state.aspectTags->Array.reduce(Map.make(), (acc, tag) => {
-      let existing = Map.get(acc, tag.category)->Option.getOr([])
-      Map.set(acc, tag.category, Array.concat(existing, [tag]))
-      acc
+    let categories = state.aspectTags->Belt.Array.reduce(Belt.Map.String.empty, (acc, tag) => {
+      let existing = Belt.Map.String.get(acc, tag.category)->Belt.Option.getWithDefault([])
+      Belt.Map.String.set(acc, tag.category, Belt.Array.concat(existing, [tag]))
     })
 
-    if Map.size(categories) == 0 {
+    if Belt.Map.String.size(categories) == 0 {
       React.null
     } else {
       <div className="aspect-filters mb-4">
         <h3 className="text-sm font-bold text-gray-700 mb-2">
           {React.string("Filter by Aspect Tags")}
         </h3>
-        {Map.entries(categories)
-          ->Array.fromIterator
-          ->Array.map(((category, tags)) =>
+        {Belt.Map.String.toArray(categories)
+          ->Belt.Array.map(((category, tags)) =>
             <div key=category className="category-group mb-3">
               <p className="text-xs font-semibold text-gray-600 mb-1">
-                {React.string(String.toUpperCase(category))}
+                {React.string(Js.String.toUpperCase(category))}
               </p>
               <div className="flex flex-wrap gap-2">
-                {tags->Array.map(renderAspectTag)->React.array}
+                {tags->Belt.Array.map(renderAspectTag)->React.array}
               </div>
             </div>
           )
@@ -158,7 +156,7 @@ let make = (~onSelectTheorem: string => unit) => {
           {React.string("Search by theorem name, statement, or keywords")}
         </p>
       </div>
-    } else if Array.length(state.searchResults) == 0 {
+    } else if Belt.Array.length(state.searchResults) == 0 {
       <div className="no-results p-8 text-center bg-yellow-50 border border-yellow-300 rounded-lg">
         <p className="text-yellow-800"> {React.string("No theorems found")} </p>
         <p className="text-sm text-yellow-700 mt-2">
@@ -170,12 +168,12 @@ let make = (~onSelectTheorem: string => unit) => {
         <div className="results-header mb-3">
           <p className="text-sm text-gray-600">
             {React.string(
-              `Found ${Int.toString(Array.length(state.searchResults))} ${Array.length(state.searchResults) == 1 ? "result" : "results"}`,
+              `Found ${Belt.Int.toString(Belt.Array.length(state.searchResults))} ${Belt.Array.length(state.searchResults) == 1 ? "result" : "results"}`,
             )}
           </p>
         </div>
         <div className="results-list max-h-96 overflow-y-auto">
-          {state.searchResults->Array.mapWithIndex(renderResult)->React.array}
+          {state.searchResults->Belt.Array.mapWithIndex(renderResult)->React.array}
         </div>
       </div>
     }}
