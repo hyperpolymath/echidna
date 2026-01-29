@@ -1,0 +1,256 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ECHIDNA v1.3.0 - Live Integration Test</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        .test-result { transition: all 0.3s; }
+        .test-pass { background: #10b981; }
+        .test-fail { background: #ef4444; }
+        .test-pending { background: #6b7280; }
+        pre { background: #1e293b; color: #e2e8f0; padding: 1rem; border-radius: 0.5rem; overflow-x: auto; }
+    </style>
+</head>
+<body class="bg-gray-900 text-gray-100 p-8">
+    <div class="max-w-6xl mx-auto">
+        <header class="mb-8">
+            <h1 class="text-4xl font-bold mb-2">🦔 ECHIDNA v1.3.0</h1>
+            <p class="text-xl text-gray-400">Neurosymbolic Theorem Proving Platform - Live Integration Test</p>
+        </header>
+
+        <div class="grid gap-6">
+            <!-- Test 1: Julia ML API Health -->
+            <div class="test-result test-pending rounded-lg p-6" id="test-julia-health">
+                <h3 class="text-xl font-semibold mb-2">1. Julia ML API Health</h3>
+                <p class="text-gray-400 mb-4">Testing: http://127.0.0.1:9000/health</p>
+                <div class="status text-sm">Testing...</div>
+            </div>
+
+            <!-- Test 2: Julia ML Inference -->
+            <div class="test-result test-pending rounded-lg p-6" id="test-julia-inference">
+                <h3 class="text-xl font-semibold mb-2">2. Julia ML Inference</h3>
+                <p class="text-gray-400 mb-4">Testing: Tactic prediction with confidence scores</p>
+                <div class="status text-sm">Waiting...</div>
+            </div>
+
+            <!-- Test 3: Rust API Health -->
+            <div class="test-result test-pending rounded-lg p-6" id="test-rust-health">
+                <h3 class="text-xl font-semibold mb-2">3. Rust HTTP API Health</h3>
+                <p class="text-gray-400 mb-4">Testing: http://127.0.0.1:8080/api/health</p>
+                <div class="status text-sm">Waiting...</div>
+            </div>
+
+            <!-- Test 4: End-to-End Integration -->
+            <div class="test-result test-pending rounded-lg p-6" id="test-e2e">
+                <h3 class="text-xl font-semibold mb-2">4. End-to-End Integration</h3>
+                <p class="text-gray-400 mb-4">Testing: UI → Rust → Julia → Models</p>
+                <div class="status text-sm">Waiting...</div>
+            </div>
+
+            <!-- Test 5: Live Tactic Suggestion -->
+            <div class="bg-gray-800 rounded-lg p-6">
+                <h3 class="text-xl font-semibold mb-4">5. Live Tactic Suggestion Demo</h3>
+                <div class="mb-4">
+                    <label class="block mb-2 text-sm">Goal:</label>
+                    <input type="text" id="goal-input" value="forall n m : nat, n + m = m + n"
+                           class="w-full bg-gray-700 text-white px-4 py-2 rounded">
+                </div>
+                <div class="mb-4">
+                    <label class="block mb-2 text-sm">Prover:</label>
+                    <select id="prover-select" class="w-full bg-gray-700 text-white px-4 py-2 rounded">
+                        <option>Coq</option>
+                        <option>Lean</option>
+                        <option>Isabelle</option>
+                        <option>Agda</option>
+                        <option>Z3</option>
+                    </select>
+                </div>
+                <button onclick="testTacticSuggestion()"
+                        class="bg-blue-600 hover:bg-blue-700 px-6 py-2 rounded font-semibold">
+                    Get AI Suggestions
+                </button>
+                <div id="suggestions-result" class="mt-4"></div>
+            </div>
+
+            <!-- Summary -->
+            <div id="summary" class="bg-gray-800 rounded-lg p-6 hidden">
+                <h3 class="text-2xl font-bold mb-4">✓ Test Summary</h3>
+                <div id="summary-content"></div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let testResults = { passed: 0, failed: 0, total: 4 };
+
+        async function runTest(id, name, testFn) {
+            const el = document.getElementById(id);
+            const status = el.querySelector('.status');
+
+            status.textContent = 'Testing...';
+            el.classList.remove('test-pending');
+            el.classList.add('test-pending');
+
+            try {
+                const result = await testFn();
+                el.classList.remove('test-pending');
+                el.classList.add('test-pass');
+                status.innerHTML = `<strong>✓ PASS</strong><pre class="mt-2">${JSON.stringify(result, null, 2)}</pre>`;
+                testResults.passed++;
+            } catch (error) {
+                el.classList.remove('test-pending');
+                el.classList.add('test-fail');
+                status.innerHTML = `<strong>✗ FAIL</strong><p class="mt-2 text-sm">${error.message}</p>`;
+                testResults.failed++;
+            }
+
+            updateSummary();
+        }
+
+        async function testJuliaHealth() {
+            const response = await fetch('http://127.0.0.1:9000/health');
+            if (!response.ok) throw new Error('Health check failed');
+            return await response.json();
+        }
+
+        async function testJuliaInference() {
+            const response = await fetch('http://127.0.0.1:9000/suggest', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    goal: 'forall n m : nat, n + m = m + n',
+                    prover: 'Coq',
+                    top_k: 3
+                })
+            });
+            if (!response.ok) throw new Error('Inference failed');
+            const data = await response.json();
+            if (!data.suggestions || data.suggestions.length === 0) {
+                throw new Error('No suggestions returned');
+            }
+            return data;
+        }
+
+        async function testRustHealth() {
+            const response = await fetch('http://127.0.0.1:8080/api/health');
+            if (!response.ok) throw new Error('Rust API health check failed');
+            return await response.json();
+        }
+
+        async function testE2E() {
+            const response = await fetch('http://127.0.0.1:8080/api/tactics/suggest', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    goal: 'forall n m : nat, n + m = m + n',
+                    prover: 'Coq',
+                    top_k: 3
+                })
+            });
+            if (!response.ok) throw new Error('E2E test failed');
+            const data = await response.json();
+            if (!data.suggestions || data.suggestions.length === 0) {
+                throw new Error('No suggestions from E2E');
+            }
+            return {
+                top_suggestion: data.suggestions[0],
+                total_suggestions: data.suggestions.length
+            };
+        }
+
+        async function testTacticSuggestion() {
+            const goal = document.getElementById('goal-input').value;
+            const prover = document.getElementById('prover-select').value;
+            const resultDiv = document.getElementById('suggestions-result');
+
+            resultDiv.innerHTML = '<p class="text-gray-400">Loading...</p>';
+
+            try {
+                const response = await fetch('http://127.0.0.1:8080/api/tactics/suggest', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ goal, prover, top_k: 5 })
+                });
+
+                const data = await response.json();
+
+                let html = '<div class="mt-4"><h4 class="font-semibold mb-2">AI Suggestions:</h4>';
+                data.suggestions.forEach((s, i) => {
+                    const width = Math.round(s.confidence * 100);
+                    html += `
+                        <div class="mb-3 bg-gray-700 p-3 rounded">
+                            <div class="flex justify-between mb-1">
+                                <span class="font-mono">${s.tactic}</span>
+                                <span class="text-sm text-gray-400">${(s.confidence * 100).toFixed(1)}%</span>
+                            </div>
+                            <div class="w-full bg-gray-600 rounded-full h-2">
+                                <div class="bg-blue-500 h-2 rounded-full" style="width: ${width}%"></div>
+                            </div>
+                            <div class="text-xs text-gray-400 mt-1">
+                                Tags: ${s.aspect_tags.join(', ')}
+                            </div>
+                        </div>
+                    `;
+                });
+                html += '</div>';
+
+                resultDiv.innerHTML = html;
+            } catch (error) {
+                resultDiv.innerHTML = `<p class="text-red-400">Error: ${error.message}</p>`;
+            }
+        }
+
+        function updateSummary() {
+            if (testResults.passed + testResults.failed === testResults.total) {
+                const summary = document.getElementById('summary');
+                const content = document.getElementById('summary-content');
+
+                const allPassed = testResults.failed === 0;
+
+                content.innerHTML = `
+                    <div class="grid grid-cols-2 gap-4 mb-4">
+                        <div class="bg-green-900 p-4 rounded">
+                            <div class="text-3xl font-bold">${testResults.passed}</div>
+                            <div class="text-sm">Tests Passed</div>
+                        </div>
+                        <div class="bg-red-900 p-4 rounded">
+                            <div class="text-3xl font-bold">${testResults.failed}</div>
+                            <div class="text-sm">Tests Failed</div>
+                        </div>
+                    </div>
+                    ${allPassed ? `
+                        <div class="bg-green-900 p-6 rounded-lg text-center">
+                            <h4 class="text-2xl font-bold mb-2">🎉 All Tests Passed!</h4>
+                            <p>Neurosymbolic pipeline is fully operational.</p>
+                            <p class="mt-2 text-sm text-gray-300">
+                                ReScript UI ← Rust Backend ← Julia ML ← 12 Provers
+                            </p>
+                        </div>
+                    ` : `
+                        <div class="bg-red-900 p-6 rounded-lg text-center">
+                            <h4 class="text-2xl font-bold mb-2">⚠ Some Tests Failed</h4>
+                            <p>Check the logs above for details.</p>
+                        </div>
+                    `}
+                `;
+
+                summary.classList.remove('hidden');
+            }
+        }
+
+        // Run all tests on page load
+        window.addEventListener('load', async () => {
+            await new Promise(resolve => setTimeout(resolve, 500));
+            await runTest('test-julia-health', 'Julia ML API Health', testJuliaHealth);
+            await new Promise(resolve => setTimeout(resolve, 500));
+            await runTest('test-julia-inference', 'Julia ML Inference', testJuliaInference);
+            await new Promise(resolve => setTimeout(resolve, 500));
+            await runTest('test-rust-health', 'Rust HTTP API Health', testRustHealth);
+            await new Promise(resolve => setTimeout(resolve, 500));
+            await runTest('test-e2e', 'End-to-End Integration', testE2E);
+        });
+    </script>
+</body>
+</html>
