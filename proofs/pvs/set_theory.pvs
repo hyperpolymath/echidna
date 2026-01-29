@@ -1,0 +1,53 @@
+% SPDX-FileCopyrightText: 2025 ECHIDNA Project Team
+% SPDX-License-Identifier: MIT OR Palimpsest-0.6
+
+% Set operations and properties
+% Demonstrates higher-order reasoning in PVS
+
+set_theory[T: TYPE]: THEORY
+BEGIN
+
+  set: TYPE = [T -> bool]
+
+  member(x: T, s: set): bool = s(x)
+
+  empty_set: set = LAMBDA (x: T): FALSE
+
+  full_set: set = LAMBDA (x: T): TRUE
+
+  union(s1, s2: set): set =
+    LAMBDA (x: T): s1(x) OR s2(x)
+
+  intersection(s1, s2: set): set =
+    LAMBDA (x: T): s1(x) AND s2(x)
+
+  complement(s: set): set =
+    LAMBDA (x: T): NOT s(x)
+
+  subset?(s1, s2: set): bool =
+    FORALL (x: T): s1(x) IMPLIES s2(x)
+
+  % Set algebra theorems
+  union_commutative: THEOREM
+    FORALL (s1, s2: set): union(s1, s2) = union(s2, s1)
+
+  union_associative: THEOREM
+    FORALL (s1, s2, s3: set):
+      union(union(s1, s2), s3) = union(s1, union(s2, s3))
+
+  de_morgan_union: THEOREM
+    FORALL (s1, s2: set):
+      complement(union(s1, s2)) = intersection(complement(s1), complement(s2))
+
+  de_morgan_intersection: THEOREM
+    FORALL (s1, s2: set):
+      complement(intersection(s1, s2)) = union(complement(s1), complement(s2))
+
+  subset_reflexive: THEOREM
+    FORALL (s: set): subset?(s, s)
+
+  subset_transitive: THEOREM
+    FORALL (s1, s2, s3: set):
+      subset?(s1, s2) AND subset?(s2, s3) IMPLIES subset?(s1, s3)
+
+END set_theory

@@ -1,6 +1,6 @@
 <!--
 SPDX-FileCopyrightText: 2025 ECHIDNA Project Team
-SPDX-License-Identifier: MIT
+SPDX-License-Identifier: PMPL-1.0-or-later-or-later
 -->
 
 # ECHIDNA Lean 4 Theorems Reference

@@ -1,0 +1,107 @@
+{"id":1,"prover":"Z3","theorem":"generic_example","goal":"extracted_from_Z3","context":[]}
+{"id":2,"prover":"Lean","theorem":"zero_is_even","goal":"is_even 0","context":[]}
+{"id":3,"prover":"Lean","theorem":"one_is_odd","goal":"is_odd 1","context":[]}
+{"id":4,"prover":"Lean","theorem":"two_is_even","goal":"is_even 2","context":[]}
+{"id":5,"prover":"Lean","theorem":"not_true","goal":"¬True → False","context":[]}
+{"id":6,"prover":"Lean","theorem":"not_not_false","goal":"¬¬False → False","context":[]}
+{"id":7,"prover":"Coq","theorem":"identity","goal":"forall A : Prop, A -> A","context":["H"]}
+{"id":8,"prover":"Coq","theorem":"modus_ponens","goal":"forall A B : Prop, (A -> B) -> A -> B","context":["H_imp","H_a"]}
+{"id":9,"prover":"Coq","theorem":"transitivity","goal":"forall A B C : Prop,\n  (A -> B) -> (B -> C) -> (A -> C)","context":["H_bc","H_ab","H_a"]}
+{"id":10,"prover":"Coq","theorem":"and_intro","goal":"forall A B : Prop, A -> B -> A /\\ B","context":["H_a","H_b"]}
+{"id":11,"prover":"Coq","theorem":"and_elim_left","goal":"forall A B : Prop, A /\\ B -> A","context":["H_a"]}
+{"id":12,"prover":"Coq","theorem":"and_elim_right","goal":"forall A B : Prop, A /\\ B -> B","context":["H_b"]}
+{"id":13,"prover":"Coq","theorem":"and_commutative","goal":"forall A B : Prop, A /\\ B -> B /\\ A","context":["H_b","H_a"]}
+{"id":14,"prover":"Coq","theorem":"or_intro_left","goal":"forall A B : Prop, A -> A \\/ B","context":["H_a"]}
+{"id":15,"prover":"Coq","theorem":"or_intro_right","goal":"forall A B : Prop, B -> A \\/ B","context":["H_b"]}
+{"id":16,"prover":"Coq","theorem":"or_elim","goal":"forall A B C : Prop,\n  A \\/ B -> (A -> C) -> (B -> C) -> C","context":["H_ac","H_a","H_bc","H_b"]}
+{"id":17,"prover":"Coq","theorem":"curry","goal":"forall A B C : Prop,\n  ((A /\\ B) -> C) -> (A -> B -> C)","context":["H_and_imp","H_a","H_b"]}
+{"id":18,"prover":"Coq","theorem":"uncurry","goal":"forall A B C : Prop,\n  (A -> B -> C) -> ((A /\\ B) -> C)","context":["H_curry","H_a","H_b"]}
+{"id":19,"prover":"Coq","theorem":"app_nil_r","goal":"forall {A : Type} (l : list A),\n  l ++ [] = l","context":["IH"]}
+{"id":20,"prover":"Coq","theorem":"app_assoc","goal":"forall {A : Type} (l1 l2 l3 : list A),\n  (l1 ++ l2) ++ l3 = l1 ++ (l2 ++ l3)","context":["IH"]}
+{"id":21,"prover":"Coq","theorem":"cons_app","goal":"forall {A : Type} (x : A) (l : list A),\n  x :: l = [x] ++ l","context":[]}
+{"id":22,"prover":"Coq","theorem":"length_app","goal":"forall {A : Type} (l1 l2 : list A),\n  length (l1 ++ l2) = length l1 + length l2","context":["IH"]}
+{"id":23,"prover":"Coq","theorem":"length_cons","goal":"forall {A : Type} (x : A) (l : list A),\n  length (x :: l) = S (length l)","context":[]}
+{"id":24,"prover":"Coq","theorem":"length_nil","goal":"forall {A : Type},\n  length (@nil A) = 0","context":[]}
+{"id":25,"prover":"Coq","theorem":"rev_app_distr","goal":"forall {A : Type} (l1 l2 : list A),\n  rev (l1 ++ l2) = rev l2 ++ rev l1","context":["app_nil_r","IH","app_assoc"]}
+{"id":26,"prover":"Coq","theorem":"rev_involutive","goal":"forall {A : Type} (l : list A),\n  rev (rev l) = l","context":["rev_app_distr","IH"]}
+{"id":27,"prover":"Coq","theorem":"length_rev","goal":"forall {A : Type} (l : list A),\n  length (rev l) = length l","context":["length_app","IH"]}
+{"id":28,"prover":"Coq","theorem":"map_length","goal":"forall {A B : Type} (f : A -> B) (l : list A),\n  length (map f l) = length l","context":["IH"]}
+{"id":29,"prover":"Coq","theorem":"map_app","goal":"forall {A B : Type} (f : A -> B) (l1 l2 : list A),\n  map f (l1 ++ l2) = map f l1 ++ map f l2","context":["IH"]}
+{"id":30,"prover":"Coq","theorem":"map_map","goal":"forall {A B C : Type} (f : A -> B) (g : B -> C) (l : list A),\n  map g (map f l) = map (fun x => g (f x)) l","context":[]}
+{"id":31,"prover":"Coq","theorem":"map_id","goal":"forall {A : Type} (l : list A),\n  map (fun x => x) l = l","context":["IH"]}
+{"id":32,"prover":"Coq","theorem":"map_rev","goal":"forall {A B : Type} (f : A -> B) (l : list A),\n  map f (rev l) = rev (map f l)","context":["map_app","IH"]}
+{"id":33,"prover":"Coq","theorem":"fold_right_nil","goal":"forall {A B : Type} (f : A -> B -> B) (acc : B),\n  fold_right f acc [] = acc","context":[]}
+{"id":34,"prover":"Coq","theorem":"fold_right_cons","goal":"forall {A B : Type} (f : A -> B -> B) (acc : B) (h : A) (t : list A),\n  fold_right f acc (h :: t) = f h (fold_right f acc t)","context":[]}
+{"id":35,"prover":"Coq","theorem":"fold_right_app","goal":"forall {A B : Type} (f : A -> B -> B) (acc : B) (l1 l2 : list A),\n  fold_right f acc (l1 ++ l2) = fold_right f (fold_right f acc l2) l1","context":["IH"]}
+{"id":36,"prover":"Coq","theorem":"sum_list_app","goal":"forall l1 l2 : list nat,\n  sum_list (l1 ++ l2) = sum_list l1 + sum_list l2","context":["fold_right_app"]}
+{"id":37,"prover":"Coq","theorem":"filter_preserves_order","goal":"forall {A : Type} (f : A -> bool) (l : list A) (x y : A),\n  In x l -> In y l ->\n  In x (filter f l) -> In y (filter f l) ->\n  exists l1 l2 l3, l = l1 ++ [x] ++ l2 ++ [y] ++ l3 ->\n  exists l1' l2', filter f l = l1' ++ [x] ++ l2' ++ [y]","context":["IH"]}
+{"id":38,"prover":"Coq","theorem":"filter_length","goal":"forall {A : Type} (f : A -> bool) (l : list A),\n  length (filter f l) <= length l","context":["le_n","le_n_S","IH","le_S"]}
+{"id":39,"prover":"Coq","theorem":"nth_app_l","goal":"forall {A : Type} (l1 l2 : list A) (n : nat) (d : A),\n  n < length l1 ->\n  nth n (l1 ++ l2) d = nth n l1 d","context":["IH"]}
+{"id":40,"prover":"Coq","theorem":"nth_app_r","goal":"forall {A : Type} (l1 l2 : list A) (n : nat) (d : A),\n  length l1 <= n ->\n  nth n (l1 ++ l2) d = nth (n - length l1) l2 d","context":["Nat","IH"]}
+{"id":41,"prover":"Coq","theorem":"in_app_iff","goal":"forall {A : Type} (x : A) (l1 l2 : list A),\n  In x (l1 ++ l2) <-> In x l1 \\/ In x l2","context":["H","H_eq","H_l","H_r","IH","H_in"]}
+{"id":42,"prover":"Coq","theorem":"in_map","goal":"forall {A B : Type} (f : A -> B) (l : list A) (x : A),\n  In x l -> In (f x) (map f l)","context":["H_eq","IH","H_in"]}
+{"id":43,"prover":"Coq","theorem":"in_filter","goal":"forall {A : Type} (f : A -> bool) (l : list A) (x : A),\n  In x (filter f l) <-> In x l /\\ f x = true","context":["H_eq","E","H_in_t","H_fx","IH"]}
+{"id":44,"prover":"Coq","theorem":"plus_comm","goal":"forall n m : nat,\n  n + m = m + n","context":["IH"]}
+{"id":45,"prover":"Coq","theorem":"plus_assoc","goal":"forall n m p : nat,\n  (n + m) + p = n + (m + p)","context":["IH"]}
+{"id":46,"prover":"Coq","theorem":"plus_0_r","goal":"forall n : nat,\n  n + 0 = n","context":["IH"]}
+{"id":47,"prover":"Coq","theorem":"plus_succ_r","goal":"forall n m : nat,\n  n + S m = S (n + m)","context":["IH"]}
+{"id":48,"prover":"Coq","theorem":"mult_0_r","goal":"forall n : nat,\n  n * 0 = 0","context":["IH"]}
+{"id":49,"prover":"Coq","theorem":"mult_comm","goal":"forall n m : nat,\n  n * m = m * n","context":["mult_0_r","IH"]}
+{"id":50,"prover":"Coq","theorem":"mult_plus_distr_l","goal":"forall n m p : nat,\n  n * (m + p) = n * m + n * p","context":["IH","plus_assoc"]}
+{"id":51,"prover":"Coq","theorem":"mult_assoc","goal":"forall n m p : nat,\n  (n * m) * p = n * (m * p)","context":["mult_plus_distr_l","IH"]}
+{"id":52,"prover":"Coq","theorem":"le_refl","goal":"forall n : nat,\n  n <= n","context":["le_n"]}
+{"id":53,"prover":"Coq","theorem":"le_trans","goal":"forall n m p : nat,\n  n <= m -> m <= p -> n <= p","context":["H_nm","le_S","IH"]}
+{"id":54,"prover":"Coq","theorem":"plus_le_compat_r","goal":"forall n m p : nat,\n  n <= m -> n + p <= m + p","context":["le_refl","le_S","IH"]}
+{"id":55,"prover":"Coq","theorem":"sum_formula","goal":"forall n : nat,\n  2 * sum_n n = n * (n + 1)","context":["mult_plus_distr_l","IH"]}
+{"id":56,"prover":"Coq","theorem":"power_of_2_positive","goal":"forall n : nat,\n  power_of_2 n >= 1","context":["le_n"]}
+{"id":57,"prover":"Coq","theorem":"power_of_2_grows","goal":"forall n : nat,\n  power_of_2 (S n) = 2 * power_of_2 n","context":[]}
+{"id":58,"prover":"Coq","theorem":"factorial_positive","goal":"forall n : nat,\n  factorial n >= 1","context":["le_n","Nat","IH","le_refl","mult_le_compat_r","le_S","le_0_n"]}
+{"id":59,"prover":"Coq","theorem":"factorial_ge_power_of_2","goal":"forall n : nat,\n  n >= 4 -> factorial n >= power_of_2 n","context":[]}
+{"id":60,"prover":"Coq","theorem":"even_or_odd","goal":"forall n : nat,\n  even n \\/ odd n","context":["even_0","odd_1","odd_SS","even_SS"]}
+{"id":61,"prover":"Coq","theorem":"even_plus_even","goal":"forall n m : nat,\n  even n -> even m -> even (n + m)","context":["H_m","even_SS","IH"]}
+{"id":62,"prover":"Coq","theorem":"de_morgan_1","goal":"forall A B : Prop,\n  ~(A \\/ B) -> (~A /\\ ~B)","context":["H_not_or","H_a","H_b"]}
+{"id":63,"prover":"Coq","theorem":"de_morgan_1_rev","goal":"forall A B : Prop,\n  (~A /\\ ~B) -> ~(A \\/ B)","context":["H_not_a","H_a","H_not_b","H_b"]}
+{"id":64,"prover":"Coq","theorem":"de_morgan_2_constructive","goal":"forall A B : Prop,\n  (~A \\/ ~B) -> ~(A /\\ B)","context":["H_not_a","H_a","H_not_b","H_b"]}
+{"id":65,"prover":"Coq","theorem":"de_morgan_2_classical","goal":"forall A B : Prop,\n  ~(A /\\ B) -> (~A \\/ ~B)","context":["H_not_and","H_not_a"]}
+{"id":66,"prover":"Coq","theorem":"double_negation_intro","goal":"forall A : Prop,\n  A -> ~~A","context":["H_not_a","H_a"]}
+{"id":67,"prover":"Coq","theorem":"double_negation_elim","goal":"forall A : Prop,\n  ~~A -> A","context":["H_a","H_not_not_a","H_not_a"]}
+{"id":68,"prover":"Coq","theorem":"lem_implies_dne","goal":"(forall A : Prop, A \\/ ~A) -> (forall B : Prop, ~~B -> B)","context":["H_b","H_not_not_b","H_not_b"]}
+{"id":69,"prover":"Coq","theorem":"peirce_law","goal":"forall A B : Prop,\n  ((A -> B) -> A) -> A","context":["H_a","H","H_not_a"]}
+{"id":70,"prover":"Coq","theorem":"contrapositive","goal":"forall A B : Prop,\n  (A -> B) -> (~B -> ~A)","context":["H_not_b","H_imp","H_a"]}
+{"id":71,"prover":"Coq","theorem":"contrapositive_reverse","goal":"forall A B : Prop,\n  (~B -> ~A) -> (A -> B)","context":["H_b","H_a"]}
+{"id":72,"prover":"Coq","theorem":"or_commutative","goal":"forall A B : Prop,\n  A \\/ B -> B \\/ A","context":["H_a","H_b"]}
+{"id":73,"prover":"Coq","theorem":"or_associative","goal":"forall A B C : Prop,\n  (A \\/ B) \\/ C -> A \\/ (B \\/ C)","context":["H_a","H_b","H_c"]}
+{"id":74,"prover":"Coq","theorem":"and_associative","goal":"forall A B C : Prop,\n  (A /\\ B) /\\ C -> A /\\ (B /\\ C)","context":["H_a","H_b","H_c"]}
+{"id":75,"prover":"Coq","theorem":"and_associative_rev","goal":"forall A B C : Prop,\n  A /\\ (B /\\ C) -> (A /\\ B) /\\ C","context":["H_a","H_b","H_c"]}
+{"id":76,"prover":"Coq","theorem":"and_distributes_over_or","goal":"forall A B C : Prop,\n  A /\\ (B \\/ C) -> (A /\\ B) \\/ (A /\\ C)","context":[]}
+{"id":77,"prover":"Coq","theorem":"and_distributes_over_or_rev","goal":"forall A B C : Prop,\n  (A /\\ B) \\/ (A /\\ C) -> A /\\ (B \\/ C)","context":["H_a","H_b","H_c"]}
+{"id":78,"prover":"Coq","theorem":"or_distributes_over_and","goal":"forall A B C : Prop,\n  A \\/ (B /\\ C) -> (A \\/ B) /\\ (A \\/ C)","context":["H_a","H_b","H_c"]}
+{"id":79,"prover":"Coq","theorem":"proof_by_contradiction","goal":"forall A : Prop,\n  (~A -> False) -> A","context":["H_a","H","H_not_a"]}
+{"id":80,"prover":"Coq","theorem":"ex_falso","goal":"forall A : Prop,\n  False -> A","context":["H_false"]}
+{"id":81,"prover":"Isabelle","theorem":"generic_example","goal":"extracted_from_Isabelle","context":[]}
+{"id":82,"prover":"Isabelle","theorem":"generic_example","goal":"extracted_from_Isabelle","context":[]}
+{"id":83,"prover":"Isabelle","theorem":"generic_example","goal":"extracted_from_Isabelle","context":[]}
+{"id":84,"prover":"Isabelle","theorem":"generic_example","goal":"extracted_from_Isabelle","context":[]}
+{"id":85,"prover":"ACL2","theorem":"plus-associative","goal":"(implies (and (natp x","context":[]}
+{"id":86,"prover":"ACL2","theorem":"mirror-involutive","goal":"(implies (tree-p tree","context":[]}
+{"id":87,"prover":"ACL2","theorem":"mirror-preserves-size","goal":"(equal (tree-size (mirror tree","context":[]}
+{"id":88,"prover":"ACL2","theorem":"fact-positive","goal":"(implies (natp n","context":[]}
+{"id":89,"prover":"ACL2","theorem":"fact-tail-correct","goal":"(implies (and (natp n","context":[]}
+{"id":90,"prover":"ACL2","theorem":"append-nil","goal":"(implies (true-listp xs","context":[]}
+{"id":91,"prover":"ACL2","theorem":"append-associative","goal":"(equal (my-append (my-append xs ys","context":[]}
+{"id":92,"prover":"ACL2","theorem":"length-append","goal":"(equal (list-length (my-append xs ys","context":[]}
+{"id":93,"prover":"ACL2","theorem":"insert-ordered","goal":"(implies (ordered xs","context":[]}
+{"id":94,"prover":"ACL2","theorem":"insertion-sort-ordered","goal":"(ordered (insertion-sort xs","context":[]}
+{"id":95,"prover":"ACL2","theorem":"member-insert","goal":"(iff (member-equal y (insert x xs","context":[]}
+{"id":96,"prover":"Mizar","theorem":"generic_example","goal":"extracted_from_Mizar","context":[]}
+{"id":97,"prover":"Mizar","theorem":"generic_example","goal":"extracted_from_Mizar","context":[]}
+{"id":98,"prover":"Mizar","theorem":"generic_example","goal":"extracted_from_Mizar","context":[]}
+{"id":99,"prover":"Mizar","theorem":"generic_example","goal":"extracted_from_Mizar","context":[]}
+{"id":100,"prover":"Mizar","theorem":"generic_example","goal":"extracted_from_Mizar","context":[]}
+{"id":101,"prover":"Mizar","theorem":"generic_example","goal":"extracted_from_Mizar","context":[]}
+{"id":102,"prover":"Mizar","theorem":"generic_example","goal":"extracted_from_Mizar","context":[]}
+{"id":103,"prover":"CVC5","theorem":"generic_example","goal":"extracted_from_CVC5","context":[]}
+{"id":104,"prover":"Agda","theorem":"generic_example","goal":"extracted_from_Agda","context":[]}
+{"id":105,"prover":"Agda","theorem":"generic_example","goal":"extracted_from_Agda","context":[]}
+{"id":106,"prover":"Agda","theorem":"generic_example","goal":"extracted_from_Agda","context":[]}
+{"id":107,"prover":"Agda","theorem":"generic_example","goal":"extracted_from_Agda","context":[]}

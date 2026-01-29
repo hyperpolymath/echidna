@@ -1,0 +1,40 @@
+% SPDX-FileCopyrightText: 2025 ECHIDNA Project Team
+% SPDX-License-Identifier: MIT OR Palimpsest-0.6
+
+% Binary search on sorted arrays
+% Demonstrates PVS's specification and verification capabilities
+
+binary_search: THEORY
+BEGIN
+
+  IMPORTING arrays@array_ops
+
+  sorted?(a: ARRAY[nat], low, high: nat): bool =
+    FORALL (i, j: nat):
+      low <= i AND i < j AND j <= high IMPLIES a(i) <= a(j)
+
+  % Binary search specification
+  binary_search(a: ARRAY[nat], low, high: nat, key: nat): RECURSIVE int =
+    IF low > high THEN -1
+    ELSIF low = high THEN
+      IF a(low) = key THEN low ELSE -1 ENDIF
+    ELSE
+      LET mid = (low + high) / 2 IN
+      IF a(mid) = key THEN mid
+      ELSIF a(mid) < key THEN binary_search(a, mid + 1, high, key)
+      ELSE binary_search(a, low, mid - 1, key)
+      ENDIF
+    ENDIF
+  MEASURE high - low
+
+  % Correctness theorem
+  binary_search_correct: THEOREM
+    FORALL (a: ARRAY[nat], low, high: nat, key: nat):
+      sorted?(a, low, high) IMPLIES
+        (LET result = binary_search(a, low, high, key) IN
+         (result >= 0 IMPLIES
+           (low <= result AND result <= high AND a(result) = key)) AND
+         (result < 0 IMPLIES
+           (FORALL (i: nat): low <= i AND i <= high IMPLIES a(i) /= key)))
+
+END binary_search

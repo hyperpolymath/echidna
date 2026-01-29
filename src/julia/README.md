@@ -1,5 +1,5 @@
 # SPDX-FileCopyrightText: 2025 ECHIDNA Project Team
-# SPDX-License-Identifier: MIT AND Palimpsest-0.6
+# SPDX-License-Identifier: PMPL-1.0-or-later
 
 # ECHIDNA Julia ML Components
 

@@ -19,20 +19,20 @@ let make = (~onApplyTactic: string => unit, ~goalId: option<string>) => {
     | Some(id) => {
         setIsRefreshing(_ => true)
         let activeTags = state.aspectTags
-          ->Array.filter(tag => tag.active)
-          ->Array.map(tag => tag.name)
+          ->Belt.Array.keep(tag => tag.active)
+          ->Belt.Array.map(tag => tag.name)
 
-        let _ = Client.getTacticSuggestions(id, activeTags)->Promise.then(result => {
+        let _ = Client.getTacticSuggestions(id, activeTags) |> Js.Promise.then_(result => {
           switch result {
           | Ok(suggestions) => {
               dispatch(UpdateTacticSuggestions(suggestions))
               setIsRefreshing(_ => false)
-              Promise.resolve()
+              Js.Promise.resolve(())
             }
           | Error(err) => {
               dispatch(SetError(Some(err)))
               setIsRefreshing(_ => false)
-              Promise.resolve()
+              Js.Promise.resolve(())
             }
           }
         })
@@ -52,7 +52,7 @@ let make = (~onApplyTactic: string => unit, ~goalId: option<string>) => {
     }
 
   let confidenceBar = (confidence: float) => {
-    let width = Float.toString(confidence *. 100.0) ++ "%"
+    let width = Belt.Float.toString(confidence *. 100.0) ++ "%"
     let bgColor = if confidence >= 0.8 {
       "bg-green-500"
     } else if confidence >= 0.5 {
@@ -73,11 +73,11 @@ let make = (~onApplyTactic: string => unit, ~goalId: option<string>) => {
       {React.string(tag)}
     </span>
 
-  let renderSuggestion = (suggestion: tacticSuggestion, index: int) => {
-    let confidencePercent = Int.toString(Float.toInt(suggestion.confidence *. 100.0)) ++ "%"
+  let renderSuggestion = (index: int, suggestion: tacticSuggestion) => {
+    let confidencePercent = Belt.Int.toString(Belt.Float.toInt(suggestion.confidence *. 100.0)) ++ "%"
 
     <div
-      key={Int.toString(index)}
+      key={Belt.Int.toString(index)}
       className="suggestion-card p-4 mb-3 bg-white border border-gray-300 rounded-lg hover:shadow-md transition-shadow">
       <div className="flex justify-between items-start mb-2">
         <div className="flex-1">
@@ -121,7 +121,7 @@ let make = (~onApplyTactic: string => unit, ~goalId: option<string>) => {
             {React.string("Aspect Tags:")}
           </p>
           <div className="tags-container">
-            {suggestion.aspectTags->Array.map(renderAspectTag)->React.array}
+            {suggestion.aspectTags->Belt.Array.map(renderAspectTag)->React.array}
           </div>
         </div>
       } else {
@@ -165,7 +165,7 @@ let make = (~onApplyTactic: string => unit, ~goalId: option<string>) => {
       </div>
     } else {
       <div className="suggestions-container">
-        {state.tacticSuggestions->Array.mapWithIndex(renderSuggestion)->React.array}
+        {state.tacticSuggestions->Belt.Array.mapWithIndex(renderSuggestion)->React.array}
       </div>
     }}
 

@@ -59,6 +59,11 @@ pub async fn start_server(port: u16, host: String, enable_cors: bool) -> Result<
         .route("/api/session/create", post(create_session))
         .route("/api/session/:id/state", get(get_session_state))
         .route("/api/session/:id/apply", post(apply_tactic_handler))
+        .route("/api/session/:id/tree", get(get_proof_tree))
+        // Additional UI-specific endpoints
+        .route("/api/aspect-tags", get(get_aspect_tags))
+        .route("/api/tactics/suggest", post(suggest_tactics_ui))
+        .route("/api/theorems/search", get(search_theorems_ui))
         // WebSocket endpoint
         .route("/ws/interactive", get(websocket_handler))
         .with_state(state);
@@ -380,6 +385,139 @@ async fn apply_tactic_handler(
     }
 }
 
+/// Get aspect tags for filtering
+async fn get_aspect_tags() -> Json<AspectTagsResponse> {
+    // Return hardcoded aspect tags for now
+    // TODO: Load from configuration or database
+    let tags = vec![
+        AspectTag {
+            name: "algebraic".to_string(),
+            category: "domain".to_string(),
+            active: false,
+        },
+        AspectTag {
+            name: "geometric".to_string(),
+            category: "domain".to_string(),
+            active: false,
+        },
+        AspectTag {
+            name: "logical".to_string(),
+            category: "domain".to_string(),
+            active: false,
+        },
+        AspectTag {
+            name: "inductive".to_string(),
+            category: "technique".to_string(),
+            active: false,
+        },
+        AspectTag {
+            name: "deductive".to_string(),
+            category: "technique".to_string(),
+            active: false,
+        },
+        AspectTag {
+            name: "automated".to_string(),
+            category: "technique".to_string(),
+            active: false,
+        },
+    ];
+
+    Json(AspectTagsResponse { tags })
+}
+
+/// Get proof tree for a session
+async fn get_proof_tree(
+    State(state): State<AppState>,
+    Path(session_id): Path<String>,
+) -> Result<Json<ProofTreeResponse>, AppError> {
+    let sessions = state.sessions.read().await;
+    let session = sessions
+        .get(&session_id)
+        .ok_or_else(|| AppError::NotFound(format!("Session not found: {}", session_id)))?;
+
+    let session = session.lock().await;
+
+    // Build proof tree from session state
+    let tree = if let Some(proof_state) = &session.state {
+        serde_json::json!({
+            "id": "root",
+            "type": "goal",
+            "label": proof_state.goals.first()
+                .map(|g| format!("{:?}", g.target))
+                .unwrap_or_else(|| "No goals".to_string()),
+            "children": []
+        })
+    } else {
+        serde_json::json!({
+            "id": "root",
+            "type": "goal",
+            "label": "No proof state",
+            "children": []
+        })
+    };
+
+    Ok(Json(ProofTreeResponse { tree }))
+}
+
+/// UI-specific tactic suggestion endpoint
+async fn suggest_tactics_ui(
+    Json(req): Json<SuggestTacticsUIRequest>,
+) -> Result<Json<SuggestTacticsUIResponse>, AppError> {
+    info!("UI tactic suggestion request for goal: {}", req.goal_id);
+
+    // For now, return mock suggestions
+    // TODO: Integrate with Julia ML models
+    let suggestions = vec![
+        TacticSuggestion {
+            tactic: "intro".to_string(),
+            confidence: 0.92,
+            premise: Some("Introduce hypothesis".to_string()),
+            aspect_tags: vec!["deductive".to_string()],
+        },
+        TacticSuggestion {
+            tactic: "apply lemma_name".to_string(),
+            confidence: 0.85,
+            premise: Some("lemma_name".to_string()),
+            aspect_tags: vec!["algebraic".to_string(), "deductive".to_string()],
+        },
+        TacticSuggestion {
+            tactic: "reflexivity".to_string(),
+            confidence: 0.78,
+            premise: None,
+            aspect_tags: vec!["automated".to_string()],
+        },
+    ];
+
+    Ok(Json(SuggestTacticsUIResponse { suggestions }))
+}
+
+/// UI-specific theorem search endpoint
+async fn search_theorems_ui(
+    Query(params): Query<HashMap<String, String>>,
+) -> Result<Json<SearchTheoremsUIResponse>, AppError> {
+    let query = params
+        .get("query")
+        .or_else(|| params.get("q"))
+        .ok_or_else(|| AppError::BadRequest("Missing query parameter".to_string()))?;
+
+    let _tags = params
+        .get("tags")
+        .map(|t| t.split(',').map(String::from).collect::<Vec<_>>())
+        .unwrap_or_default();
+
+    info!("UI theorem search: query={}", query);
+
+    // For now, return mock results
+    // TODO: Integrate with actual theorem database
+    let results = vec![
+        format!("Theorem: associativity_add (a + b) + c = a + (b + c)"),
+        format!("Theorem: commutativity_mul a * b = b * a"),
+        format!("Lemma: distributivity a * (b + c) = a * b + a * c"),
+    ];
+
+    Ok(Json(SearchTheoremsUIResponse { results }))
+}
+
 // ========== WebSocket Handler ==========
 
 /// WebSocket handler for interactive proof sessions
@@ -560,6 +698,47 @@ struct ProverInfo {
     name: String,
     tier: u8,
     complexity: u8,
+}
+
+#[derive(Serialize)]
+struct AspectTag {
+    name: String,
+    category: String,
+    active: bool,
+}
+
+#[derive(Serialize)]
+struct AspectTagsResponse {
+    tags: Vec<AspectTag>,
+}
+
+#[derive(Serialize)]
+struct ProofTreeResponse {
+    tree: serde_json::Value,
+}
+
+#[derive(Deserialize)]
+struct SuggestTacticsUIRequest {
+    goal_id: String,
+    active_tags: Option<Vec<String>>,
+}
+
+#[derive(Serialize)]
+struct SuggestTacticsUIResponse {
+    suggestions: Vec<TacticSuggestion>,
+}
+
+#[derive(Serialize)]
+struct TacticSuggestion {
+    tactic: String,
+    confidence: f64,
+    premise: Option<String>,
+    aspect_tags: Vec<String>,
+}
+
+#[derive(Serialize)]
+struct SearchTheoremsUIResponse {
+    results: Vec<String>,
 }
 
 // ========== Error Handling ==========

@@ -1,0 +1,45 @@
+% SPDX-FileCopyrightText: 2025 ECHIDNA Project Team
+% SPDX-License-Identifier: MIT OR Palimpsest-0.6
+
+% Arithmetic properties
+% Demonstrates PVS's powerful decision procedures
+
+arithmetic_props: THEORY
+BEGIN
+
+  % Basic properties
+  commutativity: THEOREM
+    FORALL (x, y: nat): x + y = y + x
+
+  associativity: THEOREM
+    FORALL (x, y, z: nat): (x + y) + z = x + (y + z)
+
+  distributivity: THEOREM
+    FORALL (x, y, z: nat): x * (y + z) = x * y + x * z
+
+  % Factorial function
+  factorial(n: nat): RECURSIVE posnat =
+    IF n = 0 THEN 1
+    ELSE n * factorial(n - 1)
+    ENDIF
+  MEASURE n
+
+  factorial_positive: THEOREM
+    FORALL (n: nat): factorial(n) > 0
+
+  factorial_increasing: THEOREM
+    FORALL (n: nat): n > 0 IMPLIES factorial(n + 1) > factorial(n)
+
+  % Fibonacci numbers
+  fib(n: nat): RECURSIVE nat =
+    CASES n OF
+      0: 0,
+      1: 1
+      ELSE fib(n - 1) + fib(n - 2)
+    ENDCASES
+  MEASURE n
+
+  fib_positive: THEOREM
+    FORALL (n: nat): n > 0 IMPLIES fib(n) > 0
+
+END arithmetic_props

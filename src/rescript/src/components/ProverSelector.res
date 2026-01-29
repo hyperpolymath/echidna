@@ -34,7 +34,7 @@ let make = (~onSelect: prover => unit) => {
     }
 
   let proversByTier = tier =>
-    allProvers->Array.filter(p => proverTier(p) == tier)
+    Belt.Array.keep(allProvers, p => proverTier(p) == tier)
 
   let renderProverCard = prover => {
     let isSelected = switch state.selectedProver {
@@ -80,7 +80,7 @@ let make = (~onSelect: prover => unit) => {
       <div key={tierLabel(tier)} className="mb-6">
         <h2 className="text-xl font-bold mb-3 text-gray-800"> {React.string(tierLabel(tier))} </h2>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-          {provers->Array.map(renderProverCard)->React.array}
+          {Belt.Array.map(provers, renderProverCard)->React.array}
         </div>
       </div>
     }
@@ -108,7 +108,7 @@ let make = (~onSelect: prover => unit) => {
     }}
 
     <div className="space-y-6">
-      {[Tier1, Tier2, Tier3, Tier4]->Array.map(renderTier)->React.array}
+      {Belt.Array.map([Tier1, Tier2, Tier3, Tier4], renderTier)->React.array}
     </div>
 
     <div className="mt-6 p-4 bg-gray-50 rounded-lg">

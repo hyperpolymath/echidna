@@ -161,4 +161,4 @@ cargo test --lib aspect
 
 ## License
 
-SPDX-License-Identifier: MIT OR Palimpsest-0.6
+SPDX-License-Identifier: PMPL-1.0-or-later-or-later

@@ -1,5 +1,5 @@
 ;; SPDX-FileCopyrightText: 2025 Hyperpolymath
-;; SPDX-License-Identifier: AGPL-3.0-or-later
+;; SPDX-License-Identifier: PMPL-1.0-or-later
 ;;
 ;; ECHIDNA Testing Report - Guile Scheme Format
 ;; Generated: 2025-12-29

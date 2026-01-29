@@ -1,0 +1,7 @@
+{
+  "total_proofs": 107,
+  "total_tactics": 585,
+  "total_premises": 148,
+  "proofs_by_prover": {"Z3":1,"Mizar":7,"Lean":5,"Coq":74,"Isabelle":4,"ACL2":11,"CVC5":1,"Agda":4},
+  "extracted_at": "2026-01-29T00:34:27.269"
+}

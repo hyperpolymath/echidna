@@ -10,22 +10,22 @@
 let make = () => {
   let (treeData, setTreeData) = React.useState(() => None)
   let (isLoading, setIsLoading) = React.useState(() => false)
-  let (expandedNodes, setExpandedNodes) = React.useState(() => Set.make())
+  let (expandedNodes, setExpandedNodes) = React.useState(() => Belt.Set.String.empty)
 
   // Fetch proof tree on mount
   React.useEffect(() => {
     setIsLoading(_ => true)
-    let _ = Client.getProofTree()->Promise.then(result => {
+    let _ = Client.getProofTree()|> Js.Promise.then_(result => {
       switch result {
       | Ok(data) => {
           setTreeData(_ => Some(data))
           setIsLoading(_ => false)
-          Promise.resolve()
+          Js.Promise.resolve(())
         }
       | Error(_) => {
           setTreeData(_ => None)
           setIsLoading(_ => false)
-          Promise.resolve()
+          Js.Promise.resolve(())
         }
       }
     })
@@ -34,41 +34,44 @@ let make = () => {
 
   let toggleNode = nodeId => {
     setExpandedNodes(prev => {
-      if Set.has(prev, nodeId) {
-        let next = Set.fromArray(Set.values(prev)->Array.fromIterator)
-        Set.delete(next, nodeId)
-        next
+      if Belt.Set.String.has(prev, nodeId) {
+        Belt.Set.String.remove(prev, nodeId)
       } else {
-        let next = Set.fromArray(Set.values(prev)->Array.fromIterator)
-        Set.add(next, nodeId)
-        next
+        Belt.Set.String.add(prev, nodeId)
       }
     })
   }
 
-  let rec renderTreeNode = (~node: JSON.t, ~depth: int) => {
-    try {
-      let nodeId = JSON.Decode.field("id", JSON.Decode.string, node)
-      let nodeType = JSON.Decode.field("type", JSON.Decode.string, node)
-      let label = JSON.Decode.field("label", JSON.Decode.string, node)
-      let children = JSON.Decode.optional(
-        JSON.Decode.field("children", JSON.Decode.array(x => x)),
-        node,
-      )->Option.getOr([])
+  // JSON decode helpers
+  let getStringField = (dict, key) =>
+    Belt.Option.flatMap(Js.Dict.get(dict, key), Js.Json.decodeString)
+    ->Belt.Option.getWithDefault("")
 
-      let hasChildren = Array.length(children) > 0
-      let isExpanded = Set.has(expandedNodes, nodeId)
-      let indent = Int.toString(depth * 20) ++ "px"
+  let getArrayField = (dict, key) =>
+    Belt.Option.flatMap(Js.Dict.get(dict, key), Js.Json.decodeArray)
+    ->Belt.Option.getWithDefault([])
 
-      let nodeColor = switch nodeType {
-      | "goal" => "bg-blue-100 border-blue-500"
-      | "tactic" => "bg-green-100 border-green-500"
-      | "lemma" => "bg-purple-100 border-purple-500"
-      | "axiom" => "bg-yellow-100 border-yellow-500"
-      | _ => "bg-gray-100 border-gray-500"
-      }
+  let rec renderTreeNode = (~node: Js.Json.t, ~depth: int) => {
+    switch Js.Json.decodeObject(node) {
+    | Some(dict) => {
+        let nodeId = getStringField(dict, "id")
+        let nodeType = getStringField(dict, "type")
+        let label = getStringField(dict, "label")
+        let children = getArrayField(dict, "children")
 
-      <div key=nodeId className="tree-node mb-2">
+        let hasChildren = Array.length(children) > 0
+        let isExpanded = Belt.Set.String.has(expandedNodes, nodeId)
+        let indent = Belt.Int.toString(depth * 20) ++ "px"
+
+        let nodeColor = switch nodeType {
+        | "goal" => "bg-blue-100 border-blue-500"
+        | "tactic" => "bg-green-100 border-green-500"
+        | "lemma" => "bg-purple-100 border-purple-500"
+        | "axiom" => "bg-yellow-100 border-yellow-500"
+        | _ => "bg-gray-100 border-gray-500"
+        }
+
+        <div key=nodeId className="tree-node mb-2">
         <div
           className={`node-content p-3 rounded-lg border-l-4 ${nodeColor} cursor-pointer hover:shadow-md transition-shadow`}
           style={{marginLeft: indent}}
@@ -84,7 +87,7 @@ let make = () => {
               <span className="mr-2 text-gray-400"> {React.string("•")} </span>
             }}
             <span className="text-xs font-semibold text-gray-600 mr-2">
-              {React.string(String.toUpperCase(nodeType))}
+              {React.string(Js.String.toUpperCase(nodeType))}
             </span>
             <code className="text-sm font-mono text-gray-900"> {React.string(label)} </code>
           </div>
@@ -92,45 +95,42 @@ let make = () => {
 
         {if hasChildren && isExpanded {
           <div className="node-children mt-2">
-            {children->Array.map(child => renderTreeNode(~node=child, ~depth=depth + 1))->React.array}
+            {Belt.Array.map(children, child => renderTreeNode(~node=child, ~depth=depth + 1))->React.array}
           </div>
         } else {
           React.null
         }}
-      </div>
-    } catch {
-    | _ => React.null
+        </div>
+      }
+    | None => React.null
     }
   }
 
   let expandAll = () => {
     // Recursively collect all node IDs
-    let rec collectIds = (node: JSON.t): array<string> => {
-      try {
-        let id = JSON.Decode.field("id", JSON.Decode.string, node)
-        let children = JSON.Decode.optional(
-          JSON.Decode.field("children", JSON.Decode.array(x => x)),
-          node,
-        )->Option.getOr([])
-
-        let childIds = children->Array.flatMap(collectIds)
-        Array.concat([id], childIds)
-      } catch {
-      | _ => []
+    let rec collectIds = (node: Js.Json.t): array<string> => {
+      switch Js.Json.decodeObject(node) {
+      | Some(dict) => {
+          let id = getStringField(dict, "id")
+          let children = getArrayField(dict, "children")
+          let childIds = Belt.Array.map(children, collectIds)->Belt.Array.concatMany
+          Belt.Array.concat([id], childIds)
+        }
+      | None => []
       }
     }
 
     switch treeData {
     | Some(data) => {
         let allIds = collectIds(data)
-        setExpandedNodes(_ => Set.fromArray(allIds))
+        setExpandedNodes(_ => Belt.Set.String.fromArray(allIds))
       }
     | None => ()
     }
   }
 
   let collapseAll = () => {
-    setExpandedNodes(_ => Set.make())
+    setExpandedNodes(_ => Belt.Set.String.empty)
   }
 
   <div className="proof-tree">

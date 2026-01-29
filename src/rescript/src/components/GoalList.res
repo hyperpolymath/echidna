@@ -12,13 +12,13 @@ open Store
 let make = (~onSelectGoal: string => unit) => {
   let (state, _dispatch) = useStore()
 
-  let renderHypothesis = (hyp: string, index: int) =>
-    <div key={Int.toString(index)} className="hypothesis pl-4 border-l-2 border-gray-300 mb-1">
+  let renderHypothesis = (index: int, hyp: string) =>
+    <div key={Belt.Int.toString(index)} className="hypothesis pl-4 border-l-2 border-gray-300 mb-1">
       <code className="text-sm text-gray-700"> {React.string(hyp)} </code>
     </div>
 
-  let renderContext = (ctx: string, index: int) =>
-    <div key={Int.toString(index)} className="context-item text-xs text-gray-500 mb-1">
+  let renderContext = (index: int, ctx: string) =>
+    <div key={Belt.Int.toString(index)} className="context-item text-xs text-gray-500 mb-1">
       <code> {React.string(ctx)} </code>
     </div>
 
@@ -33,7 +33,7 @@ let make = (~onSelectGoal: string => unit) => {
       onClick={_ => onSelectGoal(goal.id)}>
       <div className="goal-header flex justify-between items-center mb-3">
         <h3 className="font-bold text-lg">
-          {React.string(`Goal ${Int.toString(index + 1)}`)}
+          {React.string(`Goal ${Belt.Int.toString(index + 1)}`)}
           {isCurrent ? <span className="ml-2 text-blue-600"> {React.string("(Current)")} </span> : React.null}
         </h3>
         <span className="text-xs text-gray-500 font-mono"> {React.string(goal.id)} </span>
@@ -45,7 +45,7 @@ let make = (~onSelectGoal: string => unit) => {
             {React.string("CONTEXT")}
           </h4>
           <div className="context-list">
-            {goal.context->Array.mapWithIndex(renderContext)->React.array}
+            {goal.context->Belt.Array.mapWithIndex(renderContext)->React.array}
           </div>
         </div>
       } else {
@@ -58,7 +58,7 @@ let make = (~onSelectGoal: string => unit) => {
             {React.string("Hypotheses")}
           </h4>
           <div className="hypothesis-list">
-            {goal.hypotheses->Array.mapWithIndex(renderHypothesis)->React.array}
+            {goal.hypotheses->Belt.Array.mapWithIndex(renderHypothesis)->React.array}
           </div>
         </div>
       } else {
@@ -85,7 +85,7 @@ let make = (~onSelectGoal: string => unit) => {
       | Some(ps) =>
         <p className="text-sm text-gray-600">
           {React.string(
-            `${Int.toString(Array.length(ps.goals))} ${Array.length(ps.goals) == 1 ? "goal" : "goals"} remaining`,
+            `${Belt.Int.toString(Array.length(ps.goals))} ${Array.length(ps.goals) == 1 ? "goal" : "goals"} remaining`,
           )}
         </p>
       | None => React.null
@@ -104,7 +104,7 @@ let make = (~onSelectGoal: string => unit) => {
         </div>
       } else {
         <div className="goals-container">
-          {ps.goals->Array.mapWithIndex((goal, index) =>
+          {ps.goals->Belt.Array.mapWithIndex((index, goal) =>
             renderGoal(goal, index, index == ps.currentGoalIndex)
           )->React.array}
         </div>

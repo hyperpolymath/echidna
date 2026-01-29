@@ -1,0 +1,66 @@
+% SPDX-FileCopyrightText: 2025 ECHIDNA Project Team
+% SPDX-License-Identifier: MIT OR Palimpsest-0.6
+
+% Insertion sort specification and verification
+% Demonstrates algorithm correctness in PVS
+
+sorting[T: TYPE, <=: (total_order?[T])]: THEORY
+BEGIN
+
+  IMPORTING list_theory[T]
+
+  sorted?(l: list): RECURSIVE bool =
+    CASES l OF
+      null: TRUE,
+      cons(h, t):
+        CASES t OF
+          null: TRUE,
+          cons(h2, t2): h <= h2 AND sorted?(t)
+        ENDCASES
+    ENDCASES
+  MEASURE length(l)
+
+  insert(x: T, l: list): RECURSIVE list =
+    CASES l OF
+      null: cons(x, null),
+      cons(h, t):
+        IF x <= h THEN cons(x, l)
+        ELSE cons(h, insert(x, t))
+        ENDIF
+    ENDCASES
+  MEASURE length(l)
+
+  insertion_sort(l: list): RECURSIVE list =
+    CASES l OF
+      null: null,
+      cons(h, t): insert(h, insertion_sort(t))
+    ENDCASES
+  MEASURE length(l)
+
+  % Correctness theorems
+  insert_sorted: THEOREM
+    FORALL (x: T, l: list):
+      sorted?(l) IMPLIES sorted?(insert(x, l))
+
+  insertion_sort_sorted: THEOREM
+    FORALL (l: list): sorted?(insertion_sort(l))
+
+  % Permutation preservation
+  occurrences(x: T, l: list): RECURSIVE nat =
+    CASES l OF
+      null: 0,
+      cons(h, t):
+        IF x = h THEN 1 + occurrences(x, t)
+        ELSE occurrences(x, t)
+        ENDIF
+    ENDCASES
+  MEASURE length(l)
+
+  insert_preserves_occurrences: THEOREM
+    FORALL (x, y: T, l: list):
+      occurrences(y, insert(x, l)) =
+        IF x = y THEN 1 + occurrences(y, l)
+        ELSE occurrences(y, l)
+        ENDIF
+
+END sorting
