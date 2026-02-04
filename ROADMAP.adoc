@@ -1,0 +1,22 @@
+// SPDX-License-Identifier: PMPL-1.0-or-later
+= YOUR Template Repo Roadmap
+
+== Current Status
+
+Initial development phase.
+
+== Milestones
+
+=== v0.1.0 - Foundation
+* [ ] Core functionality
+* [ ] Basic documentation
+* [ ] CI/CD pipeline
+
+=== v1.0.0 - Stable Release
+* [ ] Full feature set
+* [ ] Comprehensive tests
+* [ ] Production ready
+
+== Future Directions
+
+_To be determined based on community feedback._

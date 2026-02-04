@@ -1,0 +1,20 @@
+{
+  "// NOTE": "Example deno.json for ReScript web projects",
+  "tasks": {
+    "build": "deno run -A npm:rescript",
+    "clean": "deno run -A npm:rescript clean",
+    "watch": "deno run -A npm:rescript -w",
+    "serve": "deno run -A jsr:@std/http/file-server .",
+    "test": "deno test --allow-all"
+  },
+  "imports": {
+    "rescript": "npm:rescript@^12.1.0",
+    "@rescript/core": "npm:@rescript/core@^1.6.0",
+    "safe-dom/": "https://raw.githubusercontent.com/hyperpolymath/rescript-dom-mounter/main/src/",
+    "proven/": "../proven/bindings/rescript/src/"
+  },
+  "compilerOptions": {
+    "allowJs": true,
+    "checkJs": false
+  }
+}
