@@ -1,0 +1,39 @@
+= AI CLI Crash Capture
+:revdate: 2026-01-17
+
+Lightweight crash recovery helpers for CLI workflows.
+
+== Quick start
+
+[source,bash]
+----
+./recoverer-setup.sh
+systemctl --user enable --now terminal-recoverer.service
+systemctl --user enable --now terminal-recoverer-coredump.service
+----
+
+== What it does
+
+- Creates a persistent tmux session named `recovery`.
+- Flushes shell history on each prompt (bash).
+- Optional full session logging with `script`.
+- Watches for `systemd-coredump` events and captures diagnostics.
+
+== Optional logging
+
+Enable per-session logging (bash):
+
+[source,bash]
+----
+export ENABLE_TERMINAL_LOGGING=1
+----
+
+== Outputs
+
+- Session logs: `~/Documents/terminal-logs/`
+- Crash captures: `~/Documents/crash-captures/`
+
+== Notes
+
+- The coredump watcher relies on `journalctl` access to `systemd-coredump`.
+  If captures are empty, add your user to the `systemd-journal` group and re-login.

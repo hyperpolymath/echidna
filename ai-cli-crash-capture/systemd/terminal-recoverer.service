@@ -1,0 +1,10 @@
+[Unit]
+Description=Terminal recoverer (tmux session + log dir)
+After=default.target
+
+[Service]
+Type=oneshot
+ExecStart=%h/.local/bin/terminal-recoverer ensure
+
+[Install]
+WantedBy=default.target

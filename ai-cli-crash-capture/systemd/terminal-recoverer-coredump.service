@@ -1,0 +1,11 @@
+[Unit]
+Description=Terminal recoverer coredump watcher (best-effort)
+After=default.target
+
+[Service]
+ExecStart=%h/.local/bin/terminal-recoverer watch-coredump
+Restart=always
+RestartSec=2
+
+[Install]
+WantedBy=default.target
