@@ -1,22 +1,67 @@
 // SPDX-License-Identifier: PMPL-1.0-or-later
-= YOUR Template Repo Roadmap
+= ECHIDNA Roadmap
+Jonathan D. A. Jewell <jonathan.jewell@open.ac.uk>
+:toc:
 
-== Current Status
+== Current Status (v1.3.0, 85%)
 
-Initial development phase.
+* 12 prover backends operational (Coq, Lean, Isabelle, Agda, Z3, CVC5, ACL2, PVS, HOL4, Mizar, HOL Light, Metamath)
+* Julia ML: logistic regression serving predictions via HTTP
+* ReScript UI: 28 files compiled, 6 components functional
+* Rust core: 13 REST endpoints, anomaly detection, aspect tagging
+* Trust framework: benchmarks, PropTest, Idris2 validator, anomaly detection
+* Chapel PoC: parallel proof search validated (9/12 provers)
+* 99 unit tests + 38 integration tests passing
 
-== Milestones
+== Critical Gaps
 
-=== v0.1.0 - Foundation
-* [ ] Core functionality
-* [ ] Basic documentation
-* [ ] CI/CD pipeline
+=== Chapel Integration (HIGH)
+Chapel PoC is isolated — no FFI bridge to Rust or Julia.
+Parallel proof search uses simulated provers, not real backends.
 
-=== v1.0.0 - Stable Release
-* [ ] Full feature set
-* [ ] Comprehensive tests
-* [ ] Production ready
+**Action**: Create Chapel -> Rust C FFI bridge. Enable Chapel to call
+real prover backends and receive Julia neural guidance.
 
-== Future Directions
+=== Julia ML Depth (HIGH)
+Current ML is logistic regression (bag-of-words encoding).
+GNN + Transformer architecture exists in code but is not trained.
+Project.toml missing Flux.jl dependency.
 
-_To be determined based on community feedback._
+**Action**: Add Flux.jl, train neural_solver.jl models on expanded corpus.
+
+=== Correctness Certification (HIGH)
+Trust framework exists but no end-to-end certification pipeline.
+Users need machine-checkable proof certificates with provenance.
+
+**Action**: See CORRECTNESS-ARCHITECTURE.md for full design.
+
+== v1.4 — Neural Upgrade (Next)
+
+* [ ] Add Flux.jl to Julia Project.toml
+* [ ] Train GNN encoder on proof graphs
+* [ ] Train Transformer premise selector
+* [ ] Expand training corpus to 1000+ proofs
+* [ ] Baseline performance benchmarks with Criterion.rs
+* [ ] License update: PMPL-1.0-or-later throughout
+
+== v2.0 — Chapel Integration + Correctness
+
+* [ ] Chapel -> Rust C FFI bridge
+* [ ] Chapel neural-guided beam search (Julia HTTP integration)
+* [ ] End-to-end correctness certification pipeline
+* [ ] Multi-prover consensus voting
+* [ ] OpenCyc domain knowledge integration
+* [ ] Proof explanation in natural language
+
+== v3.0 — Autonomous Proving
+
+* [ ] Automated theorem discovery
+* [ ] Cross-domain knowledge transfer
+* [ ] Proof repair for failing proofs
+* [ ] Mathlib/AFP/Coq stdlib integration
+* [ ] Cloud deployment with GPU acceleration
+
+== Julia/Chapel Layer Interaction
+
+See CORRECTNESS-ARCHITECTURE.md section on "Compute Layer Integration"
+for the recommended architecture unifying Julia ML, Chapel HPC, and Rust core.
