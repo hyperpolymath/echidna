@@ -1,5 +1,5 @@
 # SPDX-FileCopyrightText: 2026 ECHIDNA Project Team
-# SPDX-License-Identifier: MIT OR Palimpsest-0.6
+# SPDX-License-Identifier: PMPL-1.0-or-later
 
 """
 Training Data Extraction for ECHIDNA v1.3
