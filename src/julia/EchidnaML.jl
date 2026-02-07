@@ -5,14 +5,14 @@
     EchidnaML
 
 ECHIDNA (Extensible Cognitive Hybrid Intelligence for Deductive Neural Assistance)
-Machine Learning Module - Universal Neural Solver for 14 Theorem Provers
+Machine Learning Module - Universal Neural Solver for 17 Theorem Provers
 
 Generalizes ECHIDNA's universal neural architecture to support:
 - Tier 1 (6): Agda, Coq/Rocq, Lean, Isabelle, Z3, CVC5
 - Tier 2 (3): Metamath, HOL Light, Mizar
 - Tier 3 (2): PVS, ACL2
 - Tier 4 (1): HOL4
-- Tier 5 (2): Vampire (FOL ATP), Idris2
+- Tier 5 (5): Vampire, E Prover, SPASS, Alt-Ergo (FOL ATPs), Idris2
 
 Architecture:
 - Graph Neural Networks for theorem embeddings
@@ -69,9 +69,12 @@ export start_api_server
     # Tier 4 - Complex (1)
     HOL4 = 13
 
-    # Tier 5 - First-Order ATPs & Extended (2)
+    # Tier 5 - First-Order ATPs & Extended (5)
     VAMPIRE = 14   # First-order ATP
     IDRIS2 = 15    # Dependent types
+    EPROVER = 16   # E theorem prover (FOL ATP)
+    SPASS = 17     # SPASS (sorted FOL)
+    ALT_ERGO = 18  # Alt-Ergo (SMT + FOL)
 end
 
 # Core data structures
@@ -203,7 +206,7 @@ function __init__()
     # Create checkpoint directory if it doesn't exist
     mkpath(CONFIG[].checkpoint_dir)
 
-    @info "EchidnaML initialized - Universal Neural Solver for 14 Theorem Provers"
+    @info "EchidnaML initialized - Universal Neural Solver for 17 Theorem Provers"
     @info "Architecture: GNN + Transformer | Framework: Flux.jl | Device: $(CUDA.functional() ? "GPU" : "CPU")"
 end
 

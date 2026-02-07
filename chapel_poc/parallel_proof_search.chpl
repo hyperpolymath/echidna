@@ -4,7 +4,7 @@
 use Time;
 use Random;
 
-config const numProvers = 14;
+config const numProvers = 17;
 config const verbose = true;
 
 // Proof result type
@@ -171,7 +171,7 @@ proc beamSearchProof(goal: string, initialProver: string, beamWidth: int = 5) {
 proc main() {
     var provers = ["Coq", "Lean", "Isabelle", "Agda", "Z3", "CVC5",
                    "ACL2", "PVS", "HOL4", "Metamath", "HOL Light", "Mizar",
-                   "Vampire", "Idris2"];
+                   "Vampire", "Idris2", "E Prover", "SPASS", "Alt-Ergo"];
 
     var goal = "forall n m : nat, n + m = m + n";
 
