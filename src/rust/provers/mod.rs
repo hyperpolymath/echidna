@@ -26,6 +26,7 @@ pub mod pvs;
 pub mod acl2;
 pub mod hol4;
 pub mod idris2;
+pub mod vampire;
 
 /// Enumeration of all supported provers
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]
@@ -52,6 +53,9 @@ pub enum ProverKind {
 
     // Extended: Additional provers
     Idris2,
+
+    // Tier 5: First-Order ATPs
+    Vampire,
 }
 
 impl std::str::FromStr for ProverKind {
@@ -72,6 +76,7 @@ impl std::str::FromStr for ProverKind {
             "acl2" => Ok(ProverKind::ACL2),
             "hol4" => Ok(ProverKind::HOL4),
             "idris2" | "idris" => Ok(ProverKind::Idris2),
+            "vampire" => Ok(ProverKind::Vampire),
             _ => Err(anyhow::anyhow!("Unknown prover: {}", s)),
         }
     }
@@ -106,6 +111,7 @@ impl ProverKind {
     pub fn all() -> Vec<ProverKind> {
         let mut provers = Self::all_core();
         provers.push(ProverKind::Idris2);
+        provers.push(ProverKind::Vampire);
         provers
     }
 
@@ -125,6 +131,7 @@ impl ProverKind {
             ProverKind::ACL2 => 4,
             ProverKind::HOL4 => 5,
             ProverKind::Idris2 => 3,
+            ProverKind::Vampire => 2,  // Automated, relatively simple
         }
     }
 
@@ -142,6 +149,9 @@ impl ProverKind {
 
             // Extended tier (same as Tier 1 in capability)
             ProverKind::Idris2 => 1,
+
+            // Tier 5: First-Order ATPs
+            ProverKind::Vampire => 5,
         }
     }
 
@@ -156,6 +166,7 @@ impl ProverKind {
             ProverKind::PVS | ProverKind::ACL2 => 3.5,
             ProverKind::HOL4 => 4.0,
             ProverKind::Idris2 => 2.5,
+            ProverKind::Vampire => 1.5,  // Automated, TPTP format
         }
     }
 }
@@ -260,6 +271,7 @@ impl ProverFactory {
             ProverKind::ACL2 => Ok(Box::new(acl2::ACL2Backend::new(config))),
             ProverKind::HOL4 => Ok(Box::new(hol4::Hol4Backend::new(config))),
             ProverKind::Idris2 => Ok(Box::new(idris2::Idris2Backend::new(config))),
+            ProverKind::Vampire => Ok(Box::new(vampire::VampireBackend::new(config))),
         }
     }
 
@@ -278,6 +290,7 @@ impl ProverFactory {
             "lisp" => Some(ProverKind::ACL2),
             "sml" => Some(ProverKind::HOL4),
             "idr" => Some(ProverKind::Idris2),
+            "p" | "tptp" => Some(ProverKind::Vampire),  // TPTP format
             _ => None,
         })
     }
