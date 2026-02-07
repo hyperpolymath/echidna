@@ -4,7 +4,7 @@
 (define echidna-meta
   `((metadata
       ((name . "ECHIDNA")
-       (full-name . "Extensible Computational Heuristic for Interactive Decision-making in Neural Architectures")
+       (full-name . "Extensible Cognitive Hybrid Intelligence for Deductive Neural Assistance")
        (tagline . "Neurosymbolic Theorem Proving with Formal Guarantees")
        (version . "1.3.0")
        (status . "production-ready")
