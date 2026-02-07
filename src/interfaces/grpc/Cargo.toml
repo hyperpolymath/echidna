@@ -1,0 +1,41 @@
+# SPDX-License-Identifier: PMPL-1.0-or-later
+
+[package]
+name = "echidna-grpc"
+version = "0.1.0"
+edition = "2021"
+authors = ["Jonathan D.A. Jewell <jonathan.jewell@open.ac.uk>"]
+license = "PMPL-1.0-or-later"
+description = "gRPC interface for ECHIDNA theorem proving platform"
+repository = "https://github.com/hyperpolymath/echidna-grpc"
+readme = "README.adoc"
+keywords = ["theorem-proving", "grpc", "formal-verification", "proofs"]
+categories = ["api-bindings", "science"]
+
+[dependencies]
+# gRPC
+tonic = "0.12"
+prost = "0.13"
+tokio = { version = "1.41", features = ["full"] }
+tokio-stream = "0.1"
+
+# Serialization
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
+
+# Error handling
+anyhow = "1.0"
+thiserror = "2.0"
+
+# Logging
+tracing = "0.1"
+tracing-subscriber = { version = "0.3", features = ["env-filter"] }
+
+# UUID
+uuid = { version = "1.11", features = ["v4", "serde"] }
+
+[build-dependencies]
+tonic-build = "0.12"
+
+[dev-dependencies]
+tonic = { version = "0.12", features = ["tls"] }

@@ -16,14 +16,14 @@
      (tech-stack ("Rust" "Julia" "ReScript" "Chapel" "Zig" "Idris2")))
 
     (current-position
-     (phase "v1.3 complete, v2.0 planning")
-     (overall-completion 85)
+     (phase "v2.0 Chapel integration - 90% complete")
+     (overall-completion 90)
      (components
        (("rust-core" 100 "12 prover backends, agent, HTTP server, anomaly detection")
         ("julia-ml" 70 "Logistic regression working; GNN/Transformer architecture defined but not trained")
         ("rescript-ui" 95 "28 files compiled, 6 components, Fetch integration")
-        ("chapel-hpc" 20 "PoC validated (9/12 provers) but NO integration with Rust/Julia")
-        ("zig-ffi" 80 "C ABI bridge to Rust, 13 prover handles, Idris2 integration")
+        ("chapel-hpc" 90 "PoC complete, Chapel FFI exports, Zig bridge, Rust integration via feature flag")
+        ("zig-ffi" 95 "Chapel bridge complete, type-safe C ABI, ProofResult/ProverKind types")
         ("idris2-validator" 60 "ProofTerm.idr + Validator.idr, soundness theorem signature")
         ("trust-framework" 80 "Benchmarks, PropTest, anomaly detection; formal validator partial")))
      (working-features
@@ -54,9 +54,10 @@
     (blockers-and-issues
      (critical ())
      (high
-       ("Chapel has NO integration with Rust/Julia (isolated PoC)"
-        "Julia ML is logistic regression only (not Transformers)"
+       ("Julia ML is logistic regression only (not Transformers)"
         "Julia Project.toml missing Flux.jl for neural networks"
+        "Chapel integration needs end-to-end testing"
+        "Prover backends need wiring to Chapel parallel search"
         "No formal correctness certification pipeline yet"))
      (medium
        ("License says MIT/Palimpsest-0.6 — should be PMPL-1.0-or-later"
@@ -82,7 +83,10 @@
         "Create v2.0 release plan")))
 
     (session-history
-      (("2026-02-05" "opus" "Architecture analysis: Julia/Chapel layer interaction,
+      (("2026-02-06" "sonnet" "Chapel integration complete: FFI exports (Chapel C API),
+        Zig bridge (@cImport, type-safe), Rust ProofSearchStrategy trait,
+        feature flag (--features chapel). Overall: 85% → 90%.")
+       ("2026-02-05" "opus" "Architecture analysis: Julia/Chapel layer interaction,
         correctness design, handoff preparation for Sonnet continuation.")
        ("2026-01-29" "previous" "v1.3 100% complete. All integration tests passing.
         Chapel PoC validated. Trust framework implemented.")))))
