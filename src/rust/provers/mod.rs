@@ -27,6 +27,9 @@ pub mod acl2;
 pub mod hol4;
 pub mod idris2;
 pub mod vampire;
+pub mod eprover;
+pub mod spass;
+pub mod altergo;
 
 /// Enumeration of all supported provers
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]
@@ -56,6 +59,9 @@ pub enum ProverKind {
 
     // Tier 5: First-Order ATPs
     Vampire,
+    EProver,
+    SPASS,
+    AltErgo,
 }
 
 impl std::str::FromStr for ProverKind {
@@ -77,6 +83,9 @@ impl std::str::FromStr for ProverKind {
             "hol4" => Ok(ProverKind::HOL4),
             "idris2" | "idris" => Ok(ProverKind::Idris2),
             "vampire" => Ok(ProverKind::Vampire),
+            "eprover" | "e" => Ok(ProverKind::EProver),
+            "spass" => Ok(ProverKind::SPASS),
+            "altergo" | "alt-ergo" => Ok(ProverKind::AltErgo),
             _ => Err(anyhow::anyhow!("Unknown prover: {}", s)),
         }
     }
@@ -112,6 +121,9 @@ impl ProverKind {
         let mut provers = Self::all_core();
         provers.push(ProverKind::Idris2);
         provers.push(ProverKind::Vampire);
+        provers.push(ProverKind::EProver);
+        provers.push(ProverKind::SPASS);
+        provers.push(ProverKind::AltErgo);
         provers
     }
 
@@ -132,10 +144,13 @@ impl ProverKind {
             ProverKind::HOL4 => 5,
             ProverKind::Idris2 => 3,
             ProverKind::Vampire => 2,  // Automated, relatively simple
+            ProverKind::EProver => 2,  // Similar to Vampire
+            ProverKind::SPASS => 2,    // Automated FOL
+            ProverKind::AltErgo => 2,  // SMT + FOL
         }
     }
 
-    /// Get tier (1-4)
+    /// Get tier (1-5)
     pub fn tier(&self) -> u8 {
         match self {
             ProverKind::Agda | ProverKind::Coq | ProverKind::Lean |
@@ -152,6 +167,9 @@ impl ProverKind {
 
             // Tier 5: First-Order ATPs
             ProverKind::Vampire => 5,
+            ProverKind::EProver => 5,
+            ProverKind::SPASS => 5,
+            ProverKind::AltErgo => 5,
         }
     }
 
@@ -167,6 +185,9 @@ impl ProverKind {
             ProverKind::HOL4 => 4.0,
             ProverKind::Idris2 => 2.5,
             ProverKind::Vampire => 1.5,  // Automated, TPTP format
+            ProverKind::EProver => 1.5,  // Similar to Vampire
+            ProverKind::SPASS => 1.5,    // DFG format
+            ProverKind::AltErgo => 1.5,  // Native format
         }
     }
 }
@@ -272,6 +293,9 @@ impl ProverFactory {
             ProverKind::HOL4 => Ok(Box::new(hol4::Hol4Backend::new(config))),
             ProverKind::Idris2 => Ok(Box::new(idris2::Idris2Backend::new(config))),
             ProverKind::Vampire => Ok(Box::new(vampire::VampireBackend::new(config))),
+            ProverKind::EProver => Ok(Box::new(eprover::EProverBackend::new(config))),
+            ProverKind::SPASS => Ok(Box::new(spass::SPASSBackend::new(config))),
+            ProverKind::AltErgo => Ok(Box::new(altergo::AltErgoBackend::new(config))),
         }
     }
 
@@ -290,7 +314,9 @@ impl ProverFactory {
             "lisp" => Some(ProverKind::ACL2),
             "sml" => Some(ProverKind::HOL4),
             "idr" => Some(ProverKind::Idris2),
-            "p" | "tptp" => Some(ProverKind::Vampire),  // TPTP format
+            "p" | "tptp" => Some(ProverKind::Vampire),  // TPTP format (could be E too)
+            "dfg" => Some(ProverKind::SPASS),  // SPASS DFG format
+            "ae" | "why" => Some(ProverKind::AltErgo),  // Alt-Ergo or Why3
             _ => None,
         })
     }
