@@ -12,15 +12,17 @@
 //! - Superposition calculus
 //! - Auto mode with sophisticated strategy selection
 
+#![allow(dead_code)]
+
 use async_trait::async_trait;
 use anyhow::{Context, Result};
 use std::path::PathBuf;
 use std::process::Stdio;
-use tokio::io::{AsyncReadExt, AsyncWriteExt};
+use tokio::io::AsyncWriteExt;
 use tokio::process::Command;
 
 use super::{ProverBackend, ProverConfig, ProverKind};
-use crate::core::{Goal, ProofState, Tactic, TacticResult};
+use crate::core::{Goal, Hypothesis, ProofState, Tactic, TacticResult, Term};
 
 /// E Prover theorem prover backend
 pub struct EProverBackend {
@@ -45,7 +47,7 @@ impl EProverBackend {
         }
 
         if let Some(goal) = state.goals.first() {
-            tptp.push_str(&format!("fof(conjecture, conjecture, {}).\n", goal.statement));
+            tptp.push_str(&format!("fof(conjecture, conjecture, {}).\n", goal.target));
         }
 
         Ok(tptp)
@@ -53,12 +55,6 @@ impl EProverBackend {
 
     /// Parse E output to determine proof success
     fn parse_result(&self, output: &str) -> Result<bool> {
-        // E output patterns:
-        // - "# Proof found!" = success
-        // - "# SZS status Theorem" = success
-        // - "# SZS status CounterSatisfiable" = failed
-        // - "# SZS status Timeout" = timeout
-
         if output.contains("# Proof found!")
             || output.contains("# SZS status Theorem")
             || output.contains("# SZS status Unsatisfiable")
@@ -102,7 +98,6 @@ impl ProverBackend for EProverBackend {
     }
 
     async fn parse_string(&self, content: &str) -> Result<ProofState> {
-        // Parse TPTP format (same as Vampire)
         let mut state = ProofState::default();
 
         for line in content.lines() {
@@ -118,8 +113,9 @@ impl ProverBackend for EProverBackend {
                         state.context.axioms.push(formula.to_string());
                     } else if line.contains("conjecture") {
                         state.goals.push(Goal {
-                            statement: formula.to_string(),
-                            context: state.context.clone(),
+                            id: format!("goal_{}", state.goals.len()),
+                            target: Term::Const(formula.to_string()),
+                            hypotheses: vec![],
                         });
                     }
                 }
@@ -139,11 +135,11 @@ impl ProverBackend for EProverBackend {
         let tptp_code = self.to_tptp(state)?;
 
         let mut child = Command::new(&self.config.executable)
-            .arg("--auto")  // Automatic mode
-            .arg("--tptp3-format")  // TPTP3 input
+            .arg("--auto")
+            .arg("--tptp3-format")
             .arg("--cpu-limit").arg(format!("{}", self.config.timeout))
-            .arg("--proof-object=0")  // No proof object (faster)
-            .arg("-")  // Read from stdin
+            .arg("--proof-object=0")
+            .arg("-")
             .stdin(Stdio::piped())
             .stdout(Stdio::piped())
             .stderr(Stdio::piped())
@@ -206,8 +202,9 @@ mod tests {
         state.context.axioms.push("p => q".to_string());
         state.context.axioms.push("p".to_string());
         state.goals.push(Goal {
-            statement: "q".to_string(),
-            context: state.context.clone(),
+            id: "goal_0".to_string(),
+            target: Term::Const("q".to_string()),
+            hypotheses: vec![],
         });
 
         let tptp = backend.to_tptp(&state).unwrap();

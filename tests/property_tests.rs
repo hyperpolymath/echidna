@@ -108,7 +108,12 @@ mod property_tests {
     // Mock implementations for testing (replace with real implementations)
 
     fn apply_reflexivity(s: &str) -> String {
-        format!("reflexivity({})", s)
+        // Idempotent: if already wrapped, return as-is
+        if s.starts_with("reflexivity(") && s.ends_with(')') {
+            s.to_string()
+        } else {
+            format!("reflexivity({})", s)
+        }
     }
 
     fn calculate_confidence(goal: &str) -> f64 {
@@ -175,6 +180,347 @@ mod property_tests {
         ProofResult {
             success: hash % 3 == 0,
             tactics: vec!["intro".to_string(), "reflexivity".to_string()],
+        }
+    }
+}
+
+/// Trust-hardening property tests that exercise the actual verification modules
+#[cfg(test)]
+mod trust_hardening_property_tests {
+    use proptest::prelude::*;
+
+    use echidna::verification::confidence::{compute_trust_level, TrustLevel, TrustFactors};
+    use echidna::verification::axiom_tracker::{AxiomTracker, DangerLevel};
+    use echidna::verification::mutation::{MutationTester, MutationResult, MutationKind};
+    use echidna::verification::pareto::{ParetoFrontier, ProofCandidate, ProofObjective};
+    use echidna::provers::ProverKind;
+    use echidna::core::Term;
+
+    // ===== Confidence Scoring Properties =====
+
+    // Property: Trust level is monotonically non-decreasing with more confirming provers
+    proptest! {
+        #[test]
+        fn trust_level_monotonic_with_provers(confirming in 1u32..10) {
+            let factors_low = TrustFactors {
+                prover: ProverKind::Lean,
+                confirming_provers: 1,
+                has_certificate: true,
+                certificate_verified: true,
+                worst_axiom_danger: DangerLevel::Safe,
+                solver_integrity_ok: true,
+                portfolio_confidence: None,
+            };
+
+            let factors_high = TrustFactors {
+                prover: ProverKind::Lean,
+                confirming_provers: confirming.max(2),
+                has_certificate: true,
+                certificate_verified: true,
+                worst_axiom_danger: DangerLevel::Safe,
+                solver_integrity_ok: true,
+                portfolio_confidence: None,
+            };
+
+            let level_low = compute_trust_level(&factors_low);
+            let level_high = compute_trust_level(&factors_high);
+
+            prop_assert!(level_high >= level_low,
+                "More provers should not decrease trust: {:?} vs {:?}", level_low, level_high);
+        }
+    }
+
+    // Property: Dangerous axioms always cap trust at Level 1
+    proptest! {
+        #[test]
+        fn dangerous_axioms_always_level1(
+            confirming in 1u32..10,
+            has_cert in proptest::bool::ANY,
+            cert_verified in proptest::bool::ANY,
+        ) {
+            let factors = TrustFactors {
+                prover: ProverKind::Lean,
+                confirming_provers: confirming,
+                has_certificate: has_cert,
+                certificate_verified: cert_verified,
+                worst_axiom_danger: DangerLevel::Reject,
+                solver_integrity_ok: true,
+                portfolio_confidence: None,
+            };
+
+            let level = compute_trust_level(&factors);
+            prop_assert_eq!(level, TrustLevel::Level1,
+                "Reject-level axioms must always yield Level 1");
+        }
+    }
+
+    // Property: Failed integrity check always caps at Level 1
+    proptest! {
+        #[test]
+        fn failed_integrity_always_level1(
+            confirming in 1u32..10,
+            has_cert in proptest::bool::ANY,
+        ) {
+            let factors = TrustFactors {
+                prover: ProverKind::Lean,
+                confirming_provers: confirming,
+                has_certificate: has_cert,
+                certificate_verified: has_cert,
+                worst_axiom_danger: DangerLevel::Safe,
+                solver_integrity_ok: false,
+                portfolio_confidence: None,
+            };
+
+            let level = compute_trust_level(&factors);
+            prop_assert_eq!(level, TrustLevel::Level1,
+                "Failed integrity must always yield Level 1");
+        }
+    }
+
+    // Property: Trust level values are always between 1 and 5
+    proptest! {
+        #[test]
+        fn trust_level_always_valid(
+            confirming in 1u32..10,
+            has_cert in proptest::bool::ANY,
+            cert_verified in proptest::bool::ANY,
+            integrity_ok in proptest::bool::ANY,
+        ) {
+            let factors = TrustFactors {
+                prover: ProverKind::Z3,
+                confirming_provers: confirming,
+                has_certificate: has_cert,
+                certificate_verified: cert_verified,
+                worst_axiom_danger: DangerLevel::Safe,
+                solver_integrity_ok: integrity_ok,
+                portfolio_confidence: None,
+            };
+
+            let level = compute_trust_level(&factors);
+            let value = level.value();
+            prop_assert!(value >= 1 && value <= 5,
+                "Trust level must be 1-5, got {}", value);
+        }
+    }
+
+    // ===== Axiom Tracking Properties =====
+
+    // Property: Clean content never triggers axiom warnings
+    proptest! {
+        #[test]
+        fn clean_content_no_warnings(content in "[a-z0-9 ]+") {
+            let tracker = AxiomTracker::new();
+            let usages = tracker.scan(ProverKind::Lean, &content);
+
+            // Clean alphanumeric content should not contain dangerous patterns
+            // (sorry, native_decide, etc. won't appear in purely alphanumeric strings)
+            for usage in &usages {
+                // If any dangerous construct is found, it must actually be in the content
+                prop_assert!(content.contains(&usage.construct),
+                    "False positive: found '{}' in '{}'", usage.construct, content);
+            }
+        }
+    }
+
+    // Property: Content with sorry always gets at least Warning level
+    proptest! {
+        #[test]
+        fn sorry_always_detected(prefix in "[a-z ]*", suffix in "[a-z ]*") {
+            let content = format!("{} sorry {}", prefix, suffix);
+            let tracker = AxiomTracker::new();
+            let usages = tracker.scan(ProverKind::Lean, &content);
+
+            let has_sorry = usages.iter().any(|u| u.construct == "sorry");
+            prop_assert!(has_sorry, "sorry should always be detected");
+
+            let worst = usages.iter().map(|u| u.danger_level).max();
+            prop_assert!(worst >= Some(DangerLevel::Warning),
+                "sorry should be at least Warning level");
+        }
+    }
+
+    // ===== Mutation Testing Properties =====
+
+    // Property: Mutation score is always between 0 and 100
+    proptest! {
+        #[test]
+        fn mutation_score_valid_range(
+            caught_count in 0usize..20,
+            total_count in 1usize..20,
+        ) {
+            let tester = MutationTester::new();
+            let caught = caught_count.min(total_count);
+
+            let results: Vec<MutationResult> = (0..total_count).map(|i| {
+                MutationResult {
+                    kind: MutationKind::NegateSubterm { position: i },
+                    caught: i < caught,
+                    description: format!("mutation {}", i),
+                }
+            }).collect();
+
+            let summary = tester.compute_summary(results);
+
+            prop_assert!(summary.mutation_score >= 0.0 && summary.mutation_score <= 100.0,
+                "Score must be 0-100, got {}", summary.mutation_score);
+            prop_assert_eq!(summary.total_mutations, total_count);
+            prop_assert_eq!(summary.mutations_caught + summary.mutations_survived, total_count);
+        }
+    }
+
+    // Property: All caught = 100% score; none caught = 0% score
+    proptest! {
+        #[test]
+        fn mutation_score_boundary_values(total in 1usize..50) {
+            let tester = MutationTester::new();
+
+            // All caught
+            let all_caught: Vec<MutationResult> = (0..total).map(|i| {
+                MutationResult {
+                    kind: MutationKind::NegateSubterm { position: i },
+                    caught: true,
+                    description: "caught".to_string(),
+                }
+            }).collect();
+
+            let summary = tester.compute_summary(all_caught);
+            prop_assert_eq!(summary.mutation_score, 100.0);
+
+            // None caught
+            let none_caught: Vec<MutationResult> = (0..total).map(|i| {
+                MutationResult {
+                    kind: MutationKind::NegateSubterm { position: i },
+                    caught: false,
+                    description: "survived".to_string(),
+                }
+            }).collect();
+
+            let summary = tester.compute_summary(none_caught);
+            prop_assert_eq!(summary.mutation_score, 0.0);
+        }
+    }
+
+    // Property: Generating mutations from any term always includes at least negation
+    proptest! {
+        #[test]
+        fn mutation_generation_always_includes_negation(name in "[a-z]+") {
+            let tester = MutationTester::new();
+            let term = Term::Const(name);
+            let mutations = tester.generate_mutations(&term);
+
+            // Should always include at least the negation mutation
+            prop_assert!(!mutations.is_empty(),
+                "Should always generate at least one mutation");
+
+            let has_negation = mutations.iter().any(|(kind, _)| {
+                matches!(kind, MutationKind::NegateSubterm { .. })
+            });
+            prop_assert!(has_negation, "Should always include a negation mutation");
+        }
+    }
+
+    // ===== Pareto Frontier Properties =====
+
+    // Property: A single candidate is always Pareto-optimal
+    proptest! {
+        #[test]
+        fn single_candidate_always_optimal(
+            time in 1u64..10000,
+            mem in 1u64..1000000,
+            steps in 1usize..1000,
+        ) {
+            let mut candidates = vec![
+                ProofCandidate {
+                    id: "only".to_string(),
+                    objectives: ProofObjective {
+                        proof_time_ms: time,
+                        trust_level: TrustLevel::Level3,
+                        memory_bytes: mem,
+                        proof_steps: steps,
+                    },
+                    is_pareto_optimal: false,
+                },
+            ];
+
+            let frontier = ParetoFrontier::compute(&mut candidates);
+            prop_assert_eq!(frontier.len(), 1);
+            prop_assert!(candidates[0].is_pareto_optimal);
+        }
+    }
+
+    // Property: If candidate A is strictly better on ALL objectives, B is not Pareto-optimal
+    proptest! {
+        #[test]
+        fn dominated_candidate_not_optimal(
+            time_a in 1u64..5000,
+            mem_a in 1u64..500000,
+            steps_a in 1usize..500,
+        ) {
+            let mut candidates = vec![
+                ProofCandidate {
+                    id: "good".to_string(),
+                    objectives: ProofObjective {
+                        proof_time_ms: time_a,
+                        trust_level: TrustLevel::Level4,
+                        memory_bytes: mem_a,
+                        proof_steps: steps_a,
+                    },
+                    is_pareto_optimal: false,
+                },
+                ProofCandidate {
+                    id: "bad".to_string(),
+                    objectives: ProofObjective {
+                        proof_time_ms: time_a + 1,  // strictly worse
+                        trust_level: TrustLevel::Level3,  // strictly worse
+                        memory_bytes: mem_a + 1,  // strictly worse
+                        proof_steps: steps_a + 1,  // strictly worse
+                    },
+                    is_pareto_optimal: false,
+                },
+            ];
+
+            let frontier = ParetoFrontier::compute(&mut candidates);
+            prop_assert!(candidates[0].is_pareto_optimal, "Better candidate must be optimal");
+            prop_assert!(!candidates[1].is_pareto_optimal, "Dominated candidate must not be optimal");
+            prop_assert_eq!(frontier.len(), 1);
+        }
+    }
+
+    // Property: ProofState serialization round-trips via serde_json
+    proptest! {
+        #[test]
+        fn proof_state_serde_roundtrip(name in "[a-z]+") {
+            use echidna::core::{ProofState, Theorem, Context};
+
+            let mut state = ProofState::default();
+            state.context.theorems.push(Theorem {
+                name: name.clone(),
+                statement: Term::Const(name.clone()),
+                proof: None,
+                aspects: vec![],
+            });
+
+            let json = serde_json::to_string(&state).unwrap();
+            let deserialized: ProofState = serde_json::from_str(&json).unwrap();
+
+            prop_assert_eq!(deserialized.context.theorems.len(), 1);
+            prop_assert_eq!(&deserialized.context.theorems[0].name, &name);
+        }
+    }
+
+    // ===== Dispatch Properties =====
+
+    // Property: Prover selection is deterministic
+    proptest! {
+        #[test]
+        fn prover_selection_deterministic(content in "[a-z() ]+") {
+            use echidna::dispatch::ProverDispatcher;
+
+            let result1 = ProverDispatcher::select_prover(&content, None);
+            let result2 = ProverDispatcher::select_prover(&content, None);
+
+            prop_assert_eq!(result1, result2,
+                "Prover selection must be deterministic for same content");
         }
     }
 }

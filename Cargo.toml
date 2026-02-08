@@ -1,14 +1,88 @@
 # SPDX-License-Identifier: PMPL-1.0-or-later
 
+[package]
+name = "echidna"
+version = "0.1.0"
+edition = "2021"
+authors = ["Jonathan D.A. Jewell <jonathan.jewell@open.ac.uk>"]
+license = "PMPL-1.0-or-later"
+description = "Neurosymbolic theorem proving platform with multi-prover support"
+repository = "https://github.com/hyperpolymath/echidna"
+
+[lib]
+name = "echidna"
+path = "src/rust/lib.rs"
+
+[[bin]]
+name = "echidna"
+path = "src/rust/main.rs"
+
+[dependencies]
+# Async runtime
+tokio = { version = "1", features = ["full"] }
+async-trait = "0.1"
+futures = "0.3"
+
+# Serialization
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+toml = "0.8"
+
+# Error handling
+anyhow = "1"
+thiserror = "2"
+
+# CLI
+clap = { version = "4", features = ["derive"] }
+colored = "3"
+indicatif = "0.17"
+
+# Logging
+tracing = "0.1"
+tracing-subscriber = { version = "0.3", features = ["env-filter"] }
+
+# Web/HTTP
+axum = { version = "0.7", features = ["macros"] }
+tower = "0.5"
+tower-http = { version = "0.6", features = ["cors", "trace"] }
+reqwest = { version = "0.12", default-features = false, features = ["json", "rustls-tls"] }
+
+# Actor framework
+actix = "0.13"
+
+# Parsing
+nom = "7"
+
+# REPL
+rustyline = "15"
+
+# Hashing (BLAKE3 for speed, SHAKE3-512 via tiny-keccak for provenance)
+blake3 = "1"
+tiny-keccak = { version = "2", features = ["shake"] }
+
+# UUID
+uuid = { version = "1", features = ["v4", "serde"] }
+
+# Lazy statics
+lazy_static = "1"
+
+# Chrono for timestamps
+chrono = { version = "0.4", features = ["serde"] }
+
+[dev-dependencies]
+proptest = "1"
+tempfile = "3"
+tokio-test = "0.4"
+which = "7"
+pretty_assertions = "1"
+
 [workspace]
 members = [
     "src/interfaces/graphql",
     "src/interfaces/grpc",
     "src/interfaces/rest",
 ]
-
-[workspace.package]
-version = "0.1.0"
-edition = "2021"
-authors = ["Jonathan D.A. Jewell <jonathan.jewell@open.ac.uk>"]
-license = "PMPL-1.0-or-later"
+exclude = [
+    "echidnabot",
+    "fuzz",
+]

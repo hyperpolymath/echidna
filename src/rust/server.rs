@@ -8,7 +8,6 @@
 use anyhow::Result;
 use axum::{
     extract::{
-        ws::{Message, WebSocket, WebSocketUpgrade},
         Path, Query, State,
     },
     http::StatusCode,
@@ -90,8 +89,8 @@ pub async fn start_server(port: u16, host: String, enable_cors: bool) -> Result<
         .route("/api/aspect-tags", get(get_aspect_tags))
         .route("/api/tactics/suggest", post(suggest_tactics_ui))
         .route("/api/theorems/search", get(search_theorems_ui))
-        // WebSocket endpoint
-        .route("/ws/interactive", get(websocket_handler))
+        // WebSocket endpoint (disabled - requires axum ws feature)
+        // .route("/ws/interactive", get(websocket_handler))
         .with_state(state);
 
     // Add CORS if enabled
@@ -648,47 +647,6 @@ async fn search_theorems_ui(
     Ok(Json(SearchTheoremsUIResponse { results }))
 }
 
-// ========== WebSocket Handler ==========
-
-/// WebSocket handler for interactive proof sessions
-async fn websocket_handler(
-    ws: WebSocketUpgrade,
-    State(state): State<AppState>,
-) -> Response {
-    ws.on_upgrade(|socket| handle_websocket(socket, state))
-}
-
-/// Handle WebSocket connection
-async fn handle_websocket(socket: WebSocket, _state: AppState) {
-    info!("WebSocket connection established");
-
-    let (mut sender, mut receiver) = socket.split();
-
-    // For this example, we'll just echo messages
-    // In production, this would handle proof session commands
-    while let Some(msg) = receiver.next().await {
-        match msg {
-            Ok(Message::Text(text)) => {
-                info!("Received: {}", text);
-
-                // Echo back
-                if sender
-                    .send(Message::Text(format!("Echo: {}", text)))
-                    .await
-                    .is_err()
-                {
-                    break;
-                }
-            }
-            Ok(Message::Close(_)) => {
-                info!("WebSocket closed");
-                break;
-            }
-            _ => {}
-        }
-    }
-}
-
 // ========== Helper Functions ==========
 
 /// Parse prover kind from string
@@ -906,6 +864,3 @@ impl IntoResponse for AppError {
     }
 }
 
-// Import for WebSocket stream splitting
-use futures::stream::StreamExt;
-use futures::SinkExt;

@@ -9,6 +9,10 @@ license = "PMPL-1.0-or-later"
 description = "REST API for ECHIDNA theorem proving platform"
 publish = false
 
+[[bin]]
+name = "echidna-rest"
+path = "main.rs"
+
 [dependencies]
 # Web framework
 axum = "0.7"

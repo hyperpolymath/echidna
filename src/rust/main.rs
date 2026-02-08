@@ -529,6 +529,35 @@ fn info_command(prover: ProverKind, formatter: &OutputFormatter) -> Result<()> {
             "Dependently typed functional language with quantitative types.\n  \
              First-class type-level computation, elaborator reflection, linear types."
         }
+        ProverKind::Vampire => {
+            "First-order automated theorem prover. Multiple CASC winner.\n  \
+             Superposition calculus with excellent performance on CASC benchmarks."
+        }
+        ProverKind::EProver => {
+            "Highly optimized first-order theorem prover for clausal logic.\n  \
+             CASC winner. Auto mode with sophisticated strategy selection."
+        }
+        ProverKind::SPASS => {
+            "First-order theorem prover with sorted logic support.\n  \
+             DFG format input. Superposition calculus with sort handling."
+        }
+        ProverKind::AltErgo => {
+            "SMT solver with polymorphic first-order logic.\n  \
+             Designed for program verification (Why3, Frama-C integration)."
+        }
+        ProverKind::FStar => "F* dependent types with effects. Project Everest/HACL* verified crypto.",
+        ProverKind::Dafny => "Auto-active verifier. Pre/postconditions verified via Boogie and Z3.",
+        ProverKind::Why3 => "Multi-prover orchestration. Dispatches to Z3, CVC5, Alt-Ergo in parallel.",
+        ProverKind::TLAPS => "TLA+ Proof System. Verifies distributed system properties.",
+        ProverKind::Twelf => "Logical framework (LF). Metatheory verification for type systems.",
+        ProverKind::Nuprl => "Constructive type theory. Large library of formalized mathematics.",
+        ProverKind::Minlog => "Minimal logic with certified program extraction from proofs.",
+        ProverKind::Imandra => "ML-based reasoning for industrial verification.",
+        ProverKind::GLPK => "GNU Linear Programming Kit. LP/MIP constraint solving.",
+        ProverKind::SCIP => "Mixed-integer nonlinear programming solver.",
+        ProverKind::MiniZinc => "Constraint modelling language with multiple backend solvers.",
+        ProverKind::Chuffed => "Lazy clause generation CP solver with SAT-style learning.",
+        ProverKind::ORTools => "Google OR-Tools. CP-SAT, routing, linear/integer programming.",
     };
     formatter.info(&format!("  {}", description))?;
     formatter.info("")?;
@@ -547,6 +576,23 @@ fn info_command(prover: ProverKind, formatter: &OutputFormatter) -> Result<()> {
         ProverKind::ACL2 => ".lisp",
         ProverKind::HOL4 => ".sml",
         ProverKind::Idris2 => ".idr",
+        ProverKind::Vampire => ".p / .tptp",
+        ProverKind::EProver => ".p / .tptp",
+        ProverKind::SPASS => ".dfg",
+        ProverKind::AltErgo => ".ae / .why",
+        ProverKind::FStar => ".fst / .fsti",
+        ProverKind::Dafny => ".dfy",
+        ProverKind::Why3 => ".why / .mlw",
+        ProverKind::TLAPS => ".tla",
+        ProverKind::Twelf => ".elf",
+        ProverKind::Nuprl => ".nuprl",
+        ProverKind::Minlog => ".minlog",
+        ProverKind::Imandra => ".iml",
+        ProverKind::GLPK => ".lp / .mps",
+        ProverKind::SCIP => ".pip / .zpl",
+        ProverKind::MiniZinc => ".mzn / .dzn",
+        ProverKind::Chuffed => ".fzn",
+        ProverKind::ORTools => ".or / .proto",
     };
     formatter.info(&format!("  {}", extension))?;
     formatter.info("")?;
@@ -633,6 +679,23 @@ fn get_default_executable(kind: ProverKind) -> PathBuf {
         ProverKind::ACL2 => PathBuf::from("acl2"),
         ProverKind::HOL4 => PathBuf::from("hol"),
         ProverKind::Idris2 => PathBuf::from("idris2"),
+        ProverKind::Vampire => PathBuf::from("vampire"),
+        ProverKind::EProver => PathBuf::from("eprover"),
+        ProverKind::SPASS => PathBuf::from("SPASS"),
+        ProverKind::AltErgo => PathBuf::from("alt-ergo"),
+        ProverKind::FStar => PathBuf::from("fstar.exe"),
+        ProverKind::Dafny => PathBuf::from("dafny"),
+        ProverKind::Why3 => PathBuf::from("why3"),
+        ProverKind::TLAPS => PathBuf::from("tlapm"),
+        ProverKind::Twelf => PathBuf::from("twelf-server"),
+        ProverKind::Nuprl => PathBuf::from("nuprl"),
+        ProverKind::Minlog => PathBuf::from("minlog"),
+        ProverKind::Imandra => PathBuf::from("imandra"),
+        ProverKind::GLPK => PathBuf::from("glpsol"),
+        ProverKind::SCIP => PathBuf::from("scip"),
+        ProverKind::MiniZinc => PathBuf::from("minizinc"),
+        ProverKind::Chuffed => PathBuf::from("fzn-chuffed"),
+        ProverKind::ORTools => PathBuf::from("ortools_solve"),
     }
 }
 

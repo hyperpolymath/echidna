@@ -15,6 +15,11 @@ pub mod agent;
 pub mod ffi;
 pub mod anomaly_detection;
 pub mod proof_search; // Chapel parallel proof search (optional feature)
+pub mod integrity;
+pub mod verification;
+pub mod executor;
+pub mod exchange;
+pub mod dispatch;
 
 pub use core::{ProofState, Term, Tactic, TacticResult};
 pub use provers::{ProverBackend, ProverKind, ProverConfig};

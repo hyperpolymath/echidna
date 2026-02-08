@@ -331,6 +331,23 @@ impl ExplanationGenerator {
             ProverKind::ACL2 => "ACL2 is based on executable logic for program verification.",
             ProverKind::HOL4 => "HOL4 is the classic HOL implementation with extensive libraries.",
             ProverKind::Idris2 => "Idris 2 excels at dependent types with first-class type-level computation and quantitative types.",
+            ProverKind::Vampire => "Vampire is a leading first-order ATP with superposition calculus, winning multiple CASC awards.",
+            ProverKind::EProver => "E Prover is a highly optimized first-order theorem prover for clausal logic with auto mode.",
+            ProverKind::SPASS => "SPASS handles sorted first-order logic with superposition calculus and sort handling.",
+            ProverKind::AltErgo => "Alt-Ergo is an SMT solver designed for program verification with polymorphic first-order logic.",
+            ProverKind::FStar => "F* combines dependent types with an effect system for verified programming (Project Everest/HACL*).",
+            ProverKind::Dafny => "Dafny is an auto-active verifier generating verification conditions for SMT solvers via Boogie.",
+            ProverKind::Why3 => "Why3 orchestrates multiple provers (Z3, CVC5, Alt-Ergo) for deductive program verification.",
+            ProverKind::TLAPS => "TLAPS is the TLA+ Proof System for verifying distributed system properties.",
+            ProverKind::Twelf => "Twelf is a logical framework (LF) for encoding and checking metatheoretic properties.",
+            ProverKind::Nuprl => "Nuprl implements constructive type theory with a large library of formalized mathematics.",
+            ProverKind::Minlog => "Minlog extracts certified programs from constructive proofs in minimal logic.",
+            ProverKind::Imandra => "Imandra provides ML-based reasoning for industrial verification (finance, autonomous systems).",
+            ProverKind::GLPK => "GLPK solves linear programming and mixed-integer programming problems.",
+            ProverKind::SCIP => "SCIP handles mixed-integer nonlinear programming beyond SMT solver capabilities.",
+            ProverKind::MiniZinc => "MiniZinc is a constraint modelling language compiling to multiple backend solvers.",
+            ProverKind::Chuffed => "Chuffed uses lazy clause generation for constraint propagation with SAT-style learning.",
+            ProverKind::ORTools => "OR-Tools provides constraint solving, routing, and linear/integer programming.",
         }.to_string()
     }
 

@@ -1,0 +1,106 @@
+# SPDX-License-Identifier: PMPL-1.0-or-later
+# Solver binary integrity manifest for ECHIDNA
+# SHAKE3-512 hashes of known-good solver binaries
+# Update hashes when upgrading solver versions
+
+[solvers.z3]
+version = "4.13.0"
+shake3_512 = "PLACEHOLDER_COMPUTE_ON_FIRST_RUN"
+path = "/usr/bin/z3"
+fallback_paths = ["/usr/local/bin/z3", "~/.local/bin/z3"]
+
+[solvers.cvc5]
+version = "1.2.0"
+shake3_512 = "PLACEHOLDER_COMPUTE_ON_FIRST_RUN"
+path = "/usr/bin/cvc5"
+fallback_paths = ["/usr/local/bin/cvc5", "~/.local/bin/cvc5"]
+
+[solvers.lean4]
+version = "4.8.0"
+shake3_512 = "PLACEHOLDER_COMPUTE_ON_FIRST_RUN"
+path = "/usr/bin/lean"
+fallback_paths = ["~/.elan/toolchains/stable/bin/lean"]
+
+[solvers.coq]
+version = "8.19.0"
+shake3_512 = "PLACEHOLDER_COMPUTE_ON_FIRST_RUN"
+path = "/usr/bin/coqtop"
+fallback_paths = ["/usr/local/bin/coqtop"]
+
+[solvers.agda]
+version = "2.6.4"
+shake3_512 = "PLACEHOLDER_COMPUTE_ON_FIRST_RUN"
+path = "/usr/bin/agda"
+fallback_paths = ["~/.local/bin/agda", "~/.cabal/bin/agda"]
+
+[solvers.isabelle]
+version = "2024"
+shake3_512 = "PLACEHOLDER_COMPUTE_ON_FIRST_RUN"
+path = "/usr/bin/isabelle"
+fallback_paths = ["~/.local/bin/isabelle"]
+
+[solvers.metamath]
+version = "0.198"
+shake3_512 = "PLACEHOLDER_COMPUTE_ON_FIRST_RUN"
+path = "/usr/bin/metamath"
+fallback_paths = ["~/.local/bin/metamath"]
+
+[solvers.hol_light]
+version = "2023"
+shake3_512 = "PLACEHOLDER_COMPUTE_ON_FIRST_RUN"
+path = "/usr/bin/hol_light"
+fallback_paths = ["~/.local/bin/hol_light"]
+
+[solvers.mizar]
+version = "8.1"
+shake3_512 = "PLACEHOLDER_COMPUTE_ON_FIRST_RUN"
+path = "/usr/bin/verifier"
+fallback_paths = ["~/.local/bin/verifier"]
+
+[solvers.pvs]
+version = "7.1"
+shake3_512 = "PLACEHOLDER_COMPUTE_ON_FIRST_RUN"
+path = "/usr/bin/pvs"
+fallback_paths = ["~/.local/bin/pvs"]
+
+[solvers.acl2]
+version = "8.5"
+shake3_512 = "PLACEHOLDER_COMPUTE_ON_FIRST_RUN"
+path = "/usr/bin/acl2"
+fallback_paths = ["~/.local/bin/acl2"]
+
+[solvers.hol4]
+version = "2024"
+shake3_512 = "PLACEHOLDER_COMPUTE_ON_FIRST_RUN"
+path = "/usr/bin/hol"
+fallback_paths = ["~/.local/bin/hol"]
+
+[solvers.idris2]
+version = "0.7.0"
+shake3_512 = "PLACEHOLDER_COMPUTE_ON_FIRST_RUN"
+path = "/usr/bin/idris2"
+fallback_paths = ["~/.local/bin/idris2", "~/.idris2/bin/idris2"]
+
+[solvers.vampire]
+version = "4.8"
+shake3_512 = "PLACEHOLDER_COMPUTE_ON_FIRST_RUN"
+path = "/usr/bin/vampire"
+fallback_paths = ["~/.local/bin/vampire"]
+
+[solvers.eprover]
+version = "3.1"
+shake3_512 = "PLACEHOLDER_COMPUTE_ON_FIRST_RUN"
+path = "/usr/bin/eprover"
+fallback_paths = ["~/.local/bin/eprover"]
+
+[solvers.spass]
+version = "3.9"
+shake3_512 = "PLACEHOLDER_COMPUTE_ON_FIRST_RUN"
+path = "/usr/bin/SPASS"
+fallback_paths = ["~/.local/bin/SPASS"]
+
+[solvers.altergo]
+version = "2.5.4"
+shake3_512 = "PLACEHOLDER_COMPUTE_ON_FIRST_RUN"
+path = "/usr/bin/alt-ergo"
+fallback_paths = ["~/.local/bin/alt-ergo", "~/.opam/default/bin/alt-ergo"]
