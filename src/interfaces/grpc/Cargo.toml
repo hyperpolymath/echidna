@@ -12,6 +12,10 @@ readme = "README.adoc"
 keywords = ["theorem-proving", "grpc", "formal-verification", "proofs"]
 categories = ["api-bindings", "science"]
 
+[[bin]]
+name = "echidna-grpc"
+path = "main.rs"
+
 [dependencies]
 # gRPC
 tonic = "0.12"

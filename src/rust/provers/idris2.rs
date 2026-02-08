@@ -814,10 +814,9 @@ impl ProverBackend for Idris2Backend {
             }
 
             // Check hypotheses for assumption
-            for hyp in &goal.hypotheses {
+            if !goal.hypotheses.is_empty() {
                 // If hypothesis type matches goal, suggest assumption
                 suggestions.push(Tactic::Assumption);
-                break;
             }
 
             // Suggest applicable theorems

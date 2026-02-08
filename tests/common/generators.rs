@@ -116,6 +116,7 @@ pub fn arb_context() -> impl Strategy<Value = Context> {
         theorems,
         definitions,
         variables,
+        axioms: vec![],
     })
 }
 

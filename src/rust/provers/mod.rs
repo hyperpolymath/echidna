@@ -30,6 +30,19 @@ pub mod vampire;
 pub mod eprover;
 pub mod spass;
 pub mod altergo;
+pub mod fstar;
+pub mod dafny;
+pub mod why3;
+pub mod tlaps;
+pub mod twelf;
+pub mod nuprl;
+pub mod minlog;
+pub mod imandra;
+pub mod glpk;
+pub mod scip;
+pub mod minizinc;
+pub mod chuffed;
+pub mod ortools;
 
 /// Enumeration of all supported provers
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]
@@ -62,6 +75,25 @@ pub enum ProverKind {
     EProver,
     SPASS,
     AltErgo,
+
+    // Tier 6: Dependent types + effects, auto-active, orchestration
+    FStar,
+    Dafny,
+    Why3,
+
+    // Tier 7: Specialized / niche
+    TLAPS,
+    Twelf,
+    Nuprl,
+    Minlog,
+    Imandra,
+
+    // Tier 8: Constraint solvers
+    GLPK,
+    SCIP,
+    MiniZinc,
+    Chuffed,
+    ORTools,
 }
 
 impl std::str::FromStr for ProverKind {
@@ -86,6 +118,19 @@ impl std::str::FromStr for ProverKind {
             "eprover" | "e" => Ok(ProverKind::EProver),
             "spass" => Ok(ProverKind::SPASS),
             "altergo" | "alt-ergo" => Ok(ProverKind::AltErgo),
+            "fstar" | "f*" | "f-star" => Ok(ProverKind::FStar),
+            "dafny" => Ok(ProverKind::Dafny),
+            "why3" => Ok(ProverKind::Why3),
+            "tlaps" | "tla+" => Ok(ProverKind::TLAPS),
+            "twelf" => Ok(ProverKind::Twelf),
+            "nuprl" => Ok(ProverKind::Nuprl),
+            "minlog" => Ok(ProverKind::Minlog),
+            "imandra" => Ok(ProverKind::Imandra),
+            "glpk" => Ok(ProverKind::GLPK),
+            "scip" => Ok(ProverKind::SCIP),
+            "minizinc" | "mzn" => Ok(ProverKind::MiniZinc),
+            "chuffed" => Ok(ProverKind::Chuffed),
+            "ortools" | "or-tools" => Ok(ProverKind::ORTools),
             _ => Err(anyhow::anyhow!("Unknown prover: {}", s)),
         }
     }
@@ -119,11 +164,26 @@ impl ProverKind {
     /// All provers including extended coverage
     pub fn all() -> Vec<ProverKind> {
         let mut provers = Self::all_core();
-        provers.push(ProverKind::Idris2);
-        provers.push(ProverKind::Vampire);
-        provers.push(ProverKind::EProver);
-        provers.push(ProverKind::SPASS);
-        provers.push(ProverKind::AltErgo);
+        provers.extend_from_slice(&[
+            ProverKind::Idris2,
+            ProverKind::Vampire,
+            ProverKind::EProver,
+            ProverKind::SPASS,
+            ProverKind::AltErgo,
+            ProverKind::FStar,
+            ProverKind::Dafny,
+            ProverKind::Why3,
+            ProverKind::TLAPS,
+            ProverKind::Twelf,
+            ProverKind::Nuprl,
+            ProverKind::Minlog,
+            ProverKind::Imandra,
+            ProverKind::GLPK,
+            ProverKind::SCIP,
+            ProverKind::MiniZinc,
+            ProverKind::Chuffed,
+            ProverKind::ORTools,
+        ]);
         provers
     }
 
@@ -147,6 +207,19 @@ impl ProverKind {
             ProverKind::EProver => 2,  // Similar to Vampire
             ProverKind::SPASS => 2,    // Automated FOL
             ProverKind::AltErgo => 2,  // SMT + FOL
+            ProverKind::FStar => 3,    // Dependent types + effects
+            ProverKind::Dafny => 2,    // Auto-active
+            ProverKind::Why3 => 3,     // Multi-prover orchestration
+            ProverKind::TLAPS => 4,    // TLA+ proof system
+            ProverKind::Twelf => 4,    // Logical framework
+            ProverKind::Nuprl => 4,    // Constructive type theory
+            ProverKind::Minlog => 4,   // Minimal logic
+            ProverKind::Imandra => 3,  // ML-based reasoning
+            ProverKind::GLPK => 2,     // LP solver
+            ProverKind::SCIP => 3,     // MINLP solver
+            ProverKind::MiniZinc => 2, // Constraint modelling
+            ProverKind::Chuffed => 2,  // CP solver
+            ProverKind::ORTools => 2,  // Constraint/optimization solver
         }
     }
 
@@ -170,6 +243,25 @@ impl ProverKind {
             ProverKind::EProver => 5,
             ProverKind::SPASS => 5,
             ProverKind::AltErgo => 5,
+
+            // Tier 6: Dependent types + effects, auto-active
+            ProverKind::FStar => 1,  // Small kernel, dependent types
+            ProverKind::Dafny => 2,  // Auto-active (relies on Boogie->Z3)
+            ProverKind::Why3 => 2,   // Multi-prover orchestration
+
+            // Tier 7: Specialized / niche
+            ProverKind::TLAPS => 2,
+            ProverKind::Twelf => 4,
+            ProverKind::Nuprl => 4,
+            ProverKind::Minlog => 4,
+            ProverKind::Imandra => 2,
+
+            // Tier 8: Constraint solvers
+            ProverKind::GLPK => 5,
+            ProverKind::SCIP => 5,
+            ProverKind::MiniZinc => 5,
+            ProverKind::Chuffed => 5,
+            ProverKind::ORTools => 5,
         }
     }
 
@@ -188,6 +280,19 @@ impl ProverKind {
             ProverKind::EProver => 1.5,  // Similar to Vampire
             ProverKind::SPASS => 1.5,    // DFG format
             ProverKind::AltErgo => 1.5,  // Native format
+            ProverKind::FStar => 2.5,    // Dependent types + effects
+            ProverKind::Dafny => 2.0,    // Auto-active, Boogie pipeline
+            ProverKind::Why3 => 2.0,     // Multi-prover
+            ProverKind::TLAPS => 2.5,    // TLA+ specific
+            ProverKind::Twelf => 3.0,    // LF framework
+            ProverKind::Nuprl => 3.0,    // Constructive type theory
+            ProverKind::Minlog => 2.5,   // Minimal logic
+            ProverKind::Imandra => 2.0,  // ML-based
+            ProverKind::GLPK => 1.0,     // LP API
+            ProverKind::SCIP => 1.5,     // MINLP API
+            ProverKind::MiniZinc => 1.0, // Constraint modelling
+            ProverKind::Chuffed => 1.0,  // CP solver
+            ProverKind::ORTools => 1.5,  // Constraint/optimization
         }
     }
 }
@@ -296,6 +401,19 @@ impl ProverFactory {
             ProverKind::EProver => Ok(Box::new(eprover::EProverBackend::new(config))),
             ProverKind::SPASS => Ok(Box::new(spass::SPASSBackend::new(config))),
             ProverKind::AltErgo => Ok(Box::new(altergo::AltErgoBackend::new(config))),
+            ProverKind::FStar => Ok(Box::new(fstar::FStarBackend::new(config))),
+            ProverKind::Dafny => Ok(Box::new(dafny::DafnyBackend::new(config))),
+            ProverKind::Why3 => Ok(Box::new(why3::Why3Backend::new(config))),
+            ProverKind::TLAPS => Ok(Box::new(tlaps::TLAPSBackend::new(config))),
+            ProverKind::Twelf => Ok(Box::new(twelf::TwelfBackend::new(config))),
+            ProverKind::Nuprl => Ok(Box::new(nuprl::NuprlBackend::new(config))),
+            ProverKind::Minlog => Ok(Box::new(minlog::MinlogBackend::new(config))),
+            ProverKind::Imandra => Ok(Box::new(imandra::ImandraBackend::new(config))),
+            ProverKind::GLPK => Ok(Box::new(glpk::GLPKBackend::new(config))),
+            ProverKind::SCIP => Ok(Box::new(scip::SCIPBackend::new(config))),
+            ProverKind::MiniZinc => Ok(Box::new(minizinc::MiniZincBackend::new(config))),
+            ProverKind::Chuffed => Ok(Box::new(chuffed::ChuffedBackend::new(config))),
+            ProverKind::ORTools => Ok(Box::new(ortools::ORToolsBackend::new(config))),
         }
     }
 
@@ -316,7 +434,19 @@ impl ProverFactory {
             "idr" => Some(ProverKind::Idris2),
             "p" | "tptp" => Some(ProverKind::Vampire),  // TPTP format (could be E too)
             "dfg" => Some(ProverKind::SPASS),  // SPASS DFG format
-            "ae" | "why" => Some(ProverKind::AltErgo),  // Alt-Ergo or Why3
+            "ae" => Some(ProverKind::AltErgo),  // Alt-Ergo native format
+            "why" | "mlw" => Some(ProverKind::Why3),  // Why3 / WhyML
+            "fst" | "fsti" => Some(ProverKind::FStar),  // F* source / interface
+            "dfy" => Some(ProverKind::Dafny),  // Dafny format
+            "tla" => Some(ProverKind::TLAPS),  // TLA+ format
+            "elf" => Some(ProverKind::Twelf),  // Twelf LF format
+            "nuprl" => Some(ProverKind::Nuprl),  // Nuprl format
+            "minlog" => Some(ProverKind::Minlog),  // Minlog format
+            "iml" => Some(ProverKind::Imandra),  // Imandra ML format
+            "lp" | "mps" => Some(ProverKind::GLPK),  // LP/MIP format
+            "pip" | "zpl" => Some(ProverKind::SCIP),  // SCIP/ZIMPL format
+            "mzn" | "dzn" => Some(ProverKind::MiniZinc),  // MiniZinc format
+            "fzn" => Some(ProverKind::Chuffed),  // FlatZinc (Chuffed input)
             _ => None,
         })
     }

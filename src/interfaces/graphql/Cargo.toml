@@ -12,6 +12,10 @@ readme = "README.adoc"
 keywords = ["theorem-proving", "graphql", "formal-verification", "proofs"]
 categories = ["api-bindings", "science"]
 
+[[bin]]
+name = "echidna-graphql"
+path = "main.rs"
+
 [dependencies]
 # GraphQL
 async-graphql = "7.0"
