@@ -1,271 +1,350 @@
+// SPDX-License-Identifier: PMPL-1.0-or-later
+// SPDX-FileCopyrightText: 2025-2026 Jonathan D.A. Jewell <jonathan.jewell@open.ac.uk>
+
 = ECHIDNA
 
 image:https://img.shields.io/badge/License-PMPL--1.0-blue.svg[License: PMPL-1.0,link="https://github.com/hyperpolymath/palimpsest-license"]
-// SPDX-License-Identifier: PMPL-1.0-or-later
-// SPDX-FileCopyrightText: 2025 Jonathan D.A. Jewell
-
+image:https://img.shields.io/badge/Provers-30-green.svg[Provers: 30]
+image:https://img.shields.io/badge/Tests-306%2B-brightgreen.svg[Tests: 306+]
 
 *E*xtensible *C*ognitive *H*ybrid *I*ntelligence for *D*eductive *N*eural *A*ssistance
 
-A neurosymbolic theorem proving platform supporting 12 theorem provers with aspect tagging, OpenCyc integration, and DeepProbLog probabilistic logic.
+A neurosymbolic theorem proving platform with 30 prover backends,
+trust-hardened verification pipeline, and multi-objective proof search.
+
+== Overview
+
+ECHIDNA orchestrates 30 theorem provers, SMT solvers, first-order ATPs, and
+constraint solvers through a unified Rust core. Every proof result passes
+through a trust-hardening pipeline that checks solver integrity, tracks axiom
+usage, verifies proof certificates, and assigns a 5-level confidence score.
+
+Neural premise selection (via Julia) suggests tactics, but formal provers
+always have the final word. ECHIDNA never produces unsound proofs.
 
 == Features
 
-- *12 Theorem Prover Support*: Universal backend supporting Agda, Coq/Rocq, Lean, Isabelle, Z3, CVC5, Metamath, HOL Light, Mizar, PVS, ACL2, and HOL4
-- *Neurosymbolic AI*: Neural proof synthesis combined with symbolic verification
-- *Aspect Tagging*: Intelligent proof categorization and analysis
-- *OpenCyc Integration*: Common sense reasoning with ontological knowledge
-- *DeepProbLog*: Probabilistic logic programming for uncertain reasoning
-- *4-Language Architecture*: Rust (core), Julia (ML), ReScript (UI), Mercury/Logtalk (logic)
+=== 30 Prover Backends
+
+[cols="1,4", options="header"]
+|===
+| Tier | Provers
+
+| *Tier 1: Interactive Proof Assistants*
+| Agda, Coq/Rocq, Lean 4, Isabelle/HOL, Idris2, F*
+
+| *Tier 2: SMT Solvers*
+| Z3, CVC5, Alt-Ergo
+
+| *Tier 3: Auto-Active Verifiers*
+| Dafny, Why3
+
+| *Tier 4: Specialised*
+| Metamath, HOL Light, Mizar, HOL4, PVS, ACL2, TLAPS, Twelf, Nuprl, Minlog, Imandra
+
+| *Tier 5: First-Order ATPs*
+| Vampire, E Prover, SPASS
+
+| *Tier 6: Constraint / Optimisation Solvers*
+| GLPK, SCIP, MiniZinc, Chuffed, OR-Tools
+|===
+
+All 30 backends implement the `ProverBackend` trait: parse, verify, export,
+tactic suggestion, and theorem search. File extension detection covers 30+
+formats (`.v`, `.lean`, `.smt2`, `.tptp`, `.dfy`, `.mzn`, etc.).
+
+=== Trust & Safety Hardening (v1.5)
+
+The verification pipeline applies the following checks to every proof:
+
+* *Solver Binary Integrity* (`integrity/`): SHAKE3-512 provenance hashing and
+  BLAKE3 fast runtime re-verification. Solver binaries are checked against a
+  TOML manifest at startup; tampered binaries are rejected.
+
+* *SMT Portfolio Solving* (`verification/portfolio.rs`): Cross-checks proofs
+  across multiple solvers (e.g. Z3 + CVC5 + Alt-Ergo). Flags disagreements
+  for human review. Supports SMT, ATP, and ITP solver pools.
+
+* *Proof Certificate Checking* (`verification/certificates.rs`): Verifies
+  Alethe (CVC5), DRAT/LRAT (SAT solvers), TSTP (first-order ATPs), Lean4
+  kernel, and Coq kernel certificate formats. Certificates are hashed with
+  BLAKE3 and stored for audit trails.
+
+* *Axiom Usage Tracking* (`verification/axiom_tracker.rs`): Scans proof
+  content for dangerous constructs across provers. Four danger levels:
+  - *Safe*: Standard library axioms
+  - *Noted*: Classical axioms in constructive systems (e.g. `Axiom` in Coq)
+  - *Warning*: Incomplete proof markers (`sorry`, `Admitted`, `postulate`)
+  - *Reject*: Known unsound constructs (`--type-in-type`, `mk_thm`,
+    `believe_me`)
+  Comments are not flagged.
+
+* *Solver Sandboxing* (`executor/sandbox.rs`): Runs solvers in isolated
+  environments. Three modes: Podman containers (preferred, `--network=none`,
+  read-only, memory/CPU/disk limits), bubblewrap namespaces (fallback), or
+  unsandboxed (development only, requires explicit opt-in). Auto-detection
+  selects the strongest available option.
+
+* *5-Level Trust Hierarchy* (`verification/confidence.rs`): Every proof result
+  receives a trust level:
+  - Level 1: Large-TCB system, unchecked, or dangerous axioms used
+  - Level 2: Single prover, no dangerous axioms
+  - Level 3: Single prover with verified proof certificate
+  - Level 4: Small-kernel prover (Lean, Coq, Isabelle, Agda, Metamath,
+    HOL Light, HOL4, Idris2, F*, Twelf, Nuprl, Minlog) with verified
+    certificate
+  - Level 5: Cross-checked by 2+ independent small-kernel systems with
+    certificates
+
+* *Mutation Testing* (`verification/mutation.rs`): Deliberately weakens
+  specifications (remove preconditions, weaken postconditions, negate
+  subterms, replace constants) to verify the pipeline catches them. Computes
+  a mutation score with a default 95% threshold.
+
+* *Cross-Prover Proof Exchange* (`exchange/`): Export and import proofs in
+  universal formats: OpenTheory (HOL family interop) and Dedukti/Lambdapi
+  (universal proof kernel based on lambda-Pi calculus modulo rewriting).
+
+* *Pareto Optimisation* (`verification/pareto.rs`): Multi-objective ranking
+  of proof candidates across four axes: proof time, trust level, memory
+  usage, and proof size. Computes the Pareto frontier and optionally applies
+  weighted scoring for single-best selection.
+
+* *Statistical Confidence Tracking* (`verification/statistics.rs`):
+  Per-prover, per-domain success rates and timing statistics. Bayesian timeout
+  estimation (mean + 2 sigma). Wilson score intervals for mutation score
+  confidence. Prover ranking by composite score (success rate, timeout rate,
+  speed). JSON serialisation for persistence.
+
+* *Dispatch Pipeline* (`dispatch.rs`): Orchestrates the full pipeline:
+  create prover -> parse -> verify -> axiom scan -> confidence scoring.
+  Supports single-prover and cross-checked (portfolio) modes with configurable
+  minimum trust levels.
+
+=== Additional Capabilities
+
+* *Neurosymbolic ML* (Julia layer): Logistic regression tactic prediction
+  trained on 332 proofs / 1,603 tactics. Serves predictions via HTTP (port 8090).
+* *Aspect Tagging*: Intelligent proof categorisation and domain analysis
+* *Anomaly Detection*: ML-based overconfidence detection
+* *Agentic Proof Search*: Actor-based autonomous proof exploration
+* *Chapel Parallel Layer* (optional): Coforall-based parallel proof dispatch
+* *3 API Interfaces*:
+  - GraphQL (async-graphql, port 8080)
+  - gRPC (tonic + Protocol Buffers, port 50051)
+  - REST (axum + OpenAPI/Swagger, port 8000)
+* *ReScript UI*: 28 compiled components for proof exploration
+* *REPL*: Interactive proof session via rustyline
 
 == Quick Start
 
 === Prerequisites
 
-- *Rust* 1.75 or later
-- *Julia* 1.10 or later
-- *Deno* 1.40 or later (for ReScript)
-- *Podman* (NOT Docker)
-- *Just* command runner
+* *Rust* nightly (managed via asdf)
+* *Julia* 1.10+ (for ML layer)
+* *Deno* (for ReScript UI)
+* *Podman* (NOT Docker) -- recommended for solver sandboxing
+* *Just* command runner
 
-=== Installation
+=== Build and Test
 
-```bash
-# Clone the repository
+[source,bash]
+----
+# Clone
 git clone https://github.com/hyperpolymath/echidna.git
 cd echidna
 
-# Build the project
+# Build
 just build
+# or: cargo build
 
-# Run tests
+# Run all tests (306+ passing)
 just test
+# or: cargo test
 
-# Run ECHIDNA
+# Run ECHIDNA REPL
 just run
-```
+----
 
 === Using Podman Container
 
-```bash
-# Build container
+[source,bash]
+----
 podman build -f Containerfile -t echidna:latest .
-
-# Run container
 podman run -it echidna:latest
-```
+----
 
 == Architecture
 
-=== Prover Tiers
-
-*Tier 1* (6 provers):
-- Agda - Dependent type theory
-- Coq/Rocq - Interactive theorem prover
-- Lean - Functional programming and proving
-- Isabelle - Higher-order logic
-- Z3 - SMT solver
-- CVC5 - SMT solver
-
-*Tier 2* (3 provers):
-- Metamath - Plain text verifier
-- HOL Light - Classical higher-order logic
-- Mizar - Mathematical vernacular
-
-*Tier 3* (2 provers):
-- PVS - Specification and verification
-- ACL2 - Applicative Common Lisp
-
-*Tier 4* (1 prover):
-- HOL4 - Higher-order logic
-
 === Technology Stack
 
-- *Rust*: Core logic, FFI, WASM compilation
-- *Julia*: Machine learning components (NO Python allowed!)
-- *ReScript + Deno*: User interface
-- *Mercury/Logtalk*: Optional logic reservoir
+* *Rust*: Core logic, prover backends, trust pipeline, CLI, REPL, API servers
+* *Julia*: ML inference (tactic prediction, premise selection)
+* *ReScript + Deno*: UI components
+* *Chapel*: Optional parallel proof dispatch
 
-=== Key Components
+=== Key Modules
 
-- *`src/rust/provers/`*: Complete Rust prover implementations
-- *Aspect Tagging System*: Proof classification and analysis
-- *Neural Solver*: ML-based proof synthesis
-- *Universal Prover Abstraction*: Unified interface for all 12 provers
+[source]
+----
+src/rust/
+  provers/          # 30 prover backend implementations (ProverBackend trait)
+  verification/     # Trust-hardening subsystem
+    portfolio.rs    # SMT portfolio solving / cross-checking
+    certificates.rs # Proof certificate checking (Alethe, DRAT/LRAT, TSTP)
+    axiom_tracker.rs# Axiom usage scanning and policy enforcement
+    confidence.rs   # 5-level trust hierarchy
+    mutation.rs     # Mutation testing for specifications
+    pareto.rs       # Pareto frontier computation
+    statistics.rs   # Per-prover statistical tracking
+  integrity/        # Solver binary integrity (SHAKE3-512, BLAKE3)
+  executor/         # Sandboxed solver execution (Podman, bubblewrap)
+  exchange/         # Cross-prover proof exchange (OpenTheory, Dedukti)
+  dispatch.rs       # Full trust-hardening dispatch pipeline
+  agent/            # Agentic proof search (actor model)
+  neural.rs         # Neural premise selection integration
+  aspect.rs         # Aspect tagging system
+  anomaly_detection.rs
+  proof_search.rs   # Chapel parallel proof search
+  core.rs           # Core types (Term, ProofState, Tactic, Goal, etc.)
+  parsers/          # Proof file parsers
+  ffi/              # Foreign function interface
+  server.rs         # HTTP API server
+  repl.rs           # Interactive REPL
+  main.rs           # CLI entry point
+  lib.rs            # Library root
+----
 
-== Usage
+=== API Usage
 
-=== Basic Theorem Proving
+[source,rust]
+----
+use echidna::provers::{ProverFactory, ProverKind, ProverConfig};
 
-```rust
-use echidna::provers::{ProverFactory, ProverKind};
-
-let backend = ProverFactory::create(ProverKind::Agda, config)?;
-let state = backend.parse_string("module T where\nid : {A : Set} → A → A\nid x = x").await?;
+// Create a prover backend
+let backend = ProverFactory::create(ProverKind::Lean, ProverConfig::default())?;
+let state = backend.parse_string("theorem foo : 1 + 1 = 2 := by omega").await?;
 let verified = backend.verify_proof(&state).await?;
-```
+----
 
-=== Using Multiple Provers
+[source,rust]
+----
+use echidna::dispatch::{ProverDispatcher, DispatchConfig};
+use echidna::provers::ProverKind;
 
-```rust
-use echidna::provers::{ProverFactory, ProverKind};
+// Use the trust-hardening dispatch pipeline
+let dispatcher = ProverDispatcher::with_config(DispatchConfig {
+    cross_check: true,
+    track_axioms: true,
+    ..Default::default()
+});
 
-// Try multiple provers
-let provers = vec![ProverKind::Lean, ProverKind::Coq, ProverKind::Z3];
-for kind in provers {
-    let backend = ProverFactory::create(kind, config.clone())?;
-    if let Ok(state) = backend.parse_string(theorem).await {
-        if backend.verify_proof(&state).await.unwrap_or(false) {
-            println!("Proved with {:?}", kind);
-            break;
-        }
-    }
-}
-```
+// Cross-checked verification
+let result = dispatcher.verify_proof_cross_checked(
+    ProverKind::Z3,
+    "(set-logic QF_LIA)\n(assert (> x 0))\n(check-sat)",
+    &[ProverKind::CVC5],
+).await?;
 
-=== Neural Proof Synthesis
+println!("Verified: {}, Trust: {}", result.verified, result.trust_level);
+----
 
-```julia
-using EchidnaML
+== Test Suite
 
-# Train neural model
-model = train_proof_synthesizer(training_data)
+306+ tests passing across the codebase:
 
-# Generate proof candidates
-candidates = synthesize_proofs(model, theorem)
+* 232 unit tests (lib)
+* 38 integration tests
+* 21 property-based tests (PropTest)
+* Additional interface and neural integration tests
 
-# Verify with symbolic prover
-for candidate in candidates
-    if verify_proof(candidate)
-        return candidate
-    end
-end
-```
+[source,bash]
+----
+cargo test              # Run all tests
+cargo test --lib        # Unit tests only
+cargo test --test integration_tests
+----
 
 == Development
 
-=== Building from Source
-
-```bash
-# Install dependencies
-just deps
-
-# Build all components
-just build
-
-# Build specific component
-just build-rust
-just build-julia
-just build-rescript
-```
-
-=== Running Tests
-
-```bash
-# Run all tests
-just test
-
-# Run Rust tests
-cargo test
-
-# Run unit tests only
-cargo test --lib
-
-# Run integration tests
-cargo test --test integration_tests
-```
-
 === Quality Checks
 
-```bash
-# Run all quality checks
-just check
-
-# Individual checks
-just lint          # REUSE, rustfmt, clippy
-just security      # Trivy, cargo-audit
-just coverage      # Test coverage
-```
-
-=== MVP Smoke (Best Effort)
-
-```bash
-# MVP smoke checks (reports missing provers, does not fail)
-just mvp
-
-# Dependency checklist (always non-fatal)
-just mvp-env
-```
-
-== Documentation
-
-- link:CONTRIBUTING.md[Contributing Guidelines]
-- link:CODE_OF_CONDUCT.md[Code of Conduct]
-- link:SECURITY.md[Security Policy]
-- link:CHANGELOG.adoc[Changelog]
-- link:docs/[API Documentation]
+[source,bash]
+----
+just check      # All quality checks
+just lint       # REUSE, rustfmt, clippy
+just security   # Trivy, cargo-audit
+just coverage   # Test coverage
+just mvp        # MVP smoke checks (reports missing provers, non-fatal)
+----
 
 == Current Status
 
-*Completed*:
-- All 12 prover backends implemented
-- 99 unit tests passing
-- 38 integration tests passing
-- RSR/CCCP compliance templates
-- Complete Rust trait system
+*v1.5.0 -- Trust & Safety Hardening Complete*
 
-*In Progress*:
-- Neural/ML integration (Julia components)
-- UI implementation (ReScript + Deno)
+[cols="1,3", options="header"]
+|===
+| Area | Status
 
-== Contributing
+| Prover backends | 30/30 operational
+| Trust pipeline | All 13 tasks complete
+| Unit tests | 232 passing
+| Integration tests | 38 passing
+| Property tests | 21 passing (PropTest)
+| API interfaces | GraphQL, gRPC, REST
+| ML layer | Julia logistic regression
+| UI | ReScript, 28 components
+| CI/CD | 17 workflows
+|===
 
-We welcome contributions! Please see link:CONTRIBUTING.md[CONTRIBUTING.md] for guidelines.
+*Planned for v2.0*:
 
-=== Critical Constraints
+* Full API-to-prover FFI/IPC integration
+* Deep learning models (Transformers via Flux.jl)
+* Production deployment configuration
+* Tamarin/ProVerif bridge for cipherbot
 
-- *NO PYTHON* - Use Julia for all ML code
-- *RSR/CCCP Compliance* - Follow Rhodium Standard Repository guidelines
-- *Justfile PRIMARY* - Use Just, not Make
-- *Podman not Docker* - Always use Podman
-- *Dual Licensing* - MIT + Palimpsest v0.6
+== Documentation
+
+* link:CONTRIBUTING.md[Contributing Guidelines]
+* link:CODE_OF_CONDUCT.md[Code of Conduct]
+* link:SECURITY.md[Security Policy]
+* link:CHANGELOG.adoc[Changelog]
+* link:ROADMAP.adoc[Roadmap]
+
+== Critical Constraints
+
+* *NO PYTHON* -- Julia for ML, Rust for systems, ReScript for UI
+* *RSR/CCCP Compliance* -- Rhodium Standard Repository guidelines
+* *Justfile PRIMARY* -- Use Just, not Make
+* *Podman not Docker* -- Always Podman
+* *License*: PMPL-1.0-or-later
 
 == License
 
-This project is dual-licensed under:
-
-- link:LICENSES/MIT.txt[MIT License]
-- link:LICENSES/Palimpsest-0.6.txt[Palimpsest License v0.6]
-
-See link:NOTICE[NOTICE] for complete license information.
+This project is licensed under the link:LICENSE[Palimpsest Meta-Project License (PMPL-1.0-or-later)].
 
 == Citation
 
-If you use ECHIDNA in your research, please cite:
-
-```bibtex
-@software{echidna2025,
+[source,bibtex]
+----
+@software{echidna2026,
   title = {ECHIDNA: Extensible Cognitive Hybrid Intelligence for Deductive Neural Assistance},
-  author = {ECHIDNA Project Contributors},
-  year = {2025},
+  author = {Jewell, Jonathan D.A.},
+  year = {2026},
   url = {https://github.com/hyperpolymath/echidna},
-  license = {MIT AND Palimpsest-0.6}
+  license = {PMPL-1.0-or-later}
 }
-```
-
-== Acknowledgments
-
-- Built on the shoulders of the theorem proving community
-- See link:AUTHORS.md[AUTHORS.md] for contributor list
+----
 
 == Contact
 
-- *GitHub Issues*: https://github.com/hyperpolymath/echidna/issues
-- *Pull Requests*: https://github.com/hyperpolymath/echidna/pulls
-- *Security*: security@echidna-project.org
+* *GitHub Issues*: https://github.com/hyperpolymath/echidna/issues
+* *Pull Requests*: https://github.com/hyperpolymath/echidna/pulls
 
 ---
 
-*Version*: 1.0.0 (MVP target)
-*Status*: MVP Drive (All Provers + CLI/API)
-*Last Updated*: 2026-01-18
+*Version*: 1.5.0 +
+*Status*: Trust & Safety Hardening Complete +
+*Author*: Jonathan D.A. Jewell <jonathan.jewell@open.ac.uk> +
+*Last Updated*: 2026-02-08

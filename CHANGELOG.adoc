@@ -1,43 +1,82 @@
 // SPDX-License-Identifier: PMPL-1.0-or-later
-<!--
-SPDX-License-Identifier: PMPL-1.0-or-later-or-later
-SPDX-FileCopyrightText: 2024-2025 ECHIDNA Project Contributors
--->
+// SPDX-FileCopyrightText: 2025-2026 Jonathan D.A. Jewell <jonathan.jewell@open.ac.uk>
 
 = Changelog
 
 All notable changes to the ECHIDNA project will be documented in this file.
 
-The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
-and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
+The format is based on https://keepachangelog.com/en/1.0.0/[Keep a Changelog],
+and this project adheres to https://semver.org/spec/v2.0.0.html[Semantic Versioning].
 
-== [Unreleased]
+== [1.5.0] - 2026-02-08
 
 === Added
-- RSR/CCCP compliance templates
-- Dual licensing (MIT + Palimpsest v0.6)
-- REUSE-compliant SPDX headers
-- GitLab CI/CD pipeline with security scanning
-- Podman containerization support
-- Justfile build system
-- Complete project documentation structure
+- 13 new prover backends: F*, Dafny, Why3, TLAPS, Twelf, Nuprl, Minlog, Imandra, GLPK, SCIP, MiniZinc, Chuffed, OR-Tools (total: 30)
+- Solver binary integrity verification (SHAKE3-512 provenance hashing + BLAKE3 fast re-verification)
+- SMT portfolio solving with cross-checking (Z3 + CVC5 + Alt-Ergo pool)
+- Proof certificate checking: Alethe, DRAT/LRAT, TSTP, Lean4 kernel, Coq kernel formats
+- Axiom usage tracking with 4 danger levels (Safe, Noted, Warning, Reject)
+- Solver sandboxing: Podman containers, bubblewrap namespaces, unsandboxed (dev-only)
+- 5-level trust hierarchy for proof confidence scoring
+- Mutation testing for specifications with 6 mutation kinds
+- Cross-prover proof exchange via OpenTheory and Dedukti/Lambdapi
+- Pareto frontier computation for multi-objective proof search
+- Statistical confidence tracking with Bayesian timeout estimation
+- Wilson score confidence intervals for mutation scores
+- Prover dispatch pipeline with full trust-hardening stages
+- Property-based tests for trust hardening modules (21 new PropTest tests)
+- Total test count: 306+ (232 unit, 38 integration, 21 property-based, + interface tests)
 
 === Changed
-- Nothing yet
+- Prover tier structure expanded from 4 tiers to 8 tiers
+- ProverKind enum expanded to 30 variants
+- ProverFactory handles all 30 backends
+- File extension detection covers 30+ formats
+- Documentation updated for v1.5.0
+- License standardised to PMPL-1.0-or-later throughout (replaced dual MIT/Palimpsest-0.6)
 
-=== Deprecated
-- Nothing yet
+== [1.4.0] - 2026-01-29
 
-=== Removed
-- Nothing yet
+=== Added
+- 5 new provers: Vampire, E Prover, SPASS, Alt-Ergo, Idris2 (total: 17)
+- GraphQL interface (async-graphql, port 8080)
+- gRPC interface (tonic + Protocol Buffers, port 50051)
+- REST interface (axum + OpenAPI/Swagger, port 8000)
+- Interface consolidation into `src/interfaces/` monorepo workspace
 
-=== Fixed
-- Nothing yet
+=== Changed
+- All 3 layers (Rust, Julia, Chapel) updated to support 17 provers
+- Restored original name: "Cognitive Hybrid" (not "Computational Heuristic")
 
-=== Security
-- Integrated Trivy security scanning
-- Added cargo-audit for Rust dependencies
-- Implemented Aqua.jl for Julia package security
+== [1.3.0] - 2026-01-25
+
+=== Added
+- Integration test suite (38 tests)
+- Neural training pipeline with Julia HTTP server
+- Trust framework: benchmarking, PropTest, Idris2 validator, anomaly detection
+- Training data: 332 proofs, 1,603 tactics across 12 provers
+
+=== Changed
+- ReScript UI polished (28 files, 6 functional components)
+
+== [1.2.0] - 2026-01-18
+
+=== Added
+- All 12 core prover backends (Agda, Coq, Lean, Isabelle, Z3, CVC5, Metamath, HOL Light, Mizar, PVS, ACL2, HOL4)
+- Example proof libraries per prover
+- 99 unit tests passing
+- RSR/CCCP compliance templates
+- Complete Rust trait system (ProverBackend)
+
+== [1.0.0] - 2026-01-12
+
+=== Added
+- Initial core infrastructure
+- 9/12 prover backends
+- Core types: Term, ProofState, Tactic, TacticResult, Goal, Context
+- Aspect tagging system
+- Neural solver integration placeholder
+- CLI and REPL
 
 == [0.1.0] - 2025-11-22
 
@@ -47,95 +86,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Julia ML components
 - ReScript UI foundation
 - Basic Agda prover support
-- Project documentation (CLAUDE.md)
-- Contribution guidelines
-- Code of Conduct
-- Security policy
+- Project documentation
 
 === Infrastructure
-- GitLab CI/CD pipeline
+- CI/CD pipeline (17 GitHub Actions workflows)
 - Podman Containerfile
 - REUSE license compliance
-- EditorConfig for consistent formatting
-- .gitignore for all languages
-
-=== Documentation
-- Comprehensive README
-- CONTRIBUTING guide
-- CODE_OF_CONDUCT
-- SECURITY policy
-- CHANGELOG (this file)
-- AUTHORS attribution
-
-== Release Notes Format
-
-Each release will include the following sections as applicable:
-
-=== Added
-- New features and capabilities
-
-=== Changed
-- Changes to existing functionality
-
-=== Deprecated
-- Features that will be removed in future releases
-
-=== Removed
-- Features that have been removed
-
-=== Fixed
-- Bug fixes
-
-=== Security
-- Security improvements and vulnerability fixes
-
-== Version Numbering
-
-ECHIDNA follows Semantic Versioning (SemVer):
-
-- **MAJOR** version (X.0.0): Incompatible API changes
-- **MINOR** version (0.X.0): New functionality, backwards compatible
-- **PATCH** version (0.0.X): Bug fixes, backwards compatible
-
-== Upcoming Releases
-
-=== [0.2.0] - Target: 2026-01-22
-- Tier 1 prover implementations (Coq, Lean, Isabelle)
-- Enhanced Z3 and CVC5 integration
-- Neural proof synthesis improvements
-- Python to Julia migration completion
-
-=== [0.3.0] - Target: 2026-04-22
-- Tier 2 prover implementations (Metamath, HOL Light, Mizar)
-- Aspect tagging system
-- OpenCyc integration
-
-=== [0.4.0] - Target: 2026-07-22
-- Tier 3 prover implementations (PVS, ACL2)
-- DeepProbLog integration
-- Performance optimizations
-
-=== [1.0.0] - Target: ASAP
-- Complete 12-prover support (core 12)
-- CLI + HTTP API MVP
-- MVP smoke checks
-- Documentation updated for 1.0
-
-== Migration Notes
-
-=== Migration Notes
-
-If you're migrating from earlier versions:
-
-1. Update import paths to use ECHIDNA modules
-2. Replace Python ML code with Julia equivalents
-3. Update prover selection to use new universal backend
-4. Review aspect tagging configuration
-5. Update build scripts to use Justfile
-
-See migration guide in docs/ for detailed instructions.
+- EditorConfig, .gitignore, .gitattributes
 
 ---
 
-**Maintained By**: ECHIDNA Project Team
-**Last Updated**: 2025-11-22
+*Maintained By*: Jonathan D.A. Jewell <jonathan.jewell@open.ac.uk> +
+*Last Updated*: 2026-02-08

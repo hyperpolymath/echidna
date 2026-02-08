@@ -1,43 +1,141 @@
 // SPDX-License-Identifier: PMPL-1.0-or-later
+// SPDX-FileCopyrightText: 2025-2026 Jonathan D.A. Jewell <jonathan.jewell@open.ac.uk>
+
 = ECHIDNA Roadmap
-Jonathan D. A. Jewell <jonathan.jewell@open.ac.uk>
+Jonathan D.A. Jewell <jonathan.jewell@open.ac.uk>
 :toc:
 
-== Current Status (v1.4.0, 100% ✓)
+== Current Status (v1.5.0)
 
-* **17 prover backends operational** (Coq, Lean, Isabelle, Agda, Z3, CVC5, ACL2, PVS, HOL4, Mizar, HOL Light, Metamath, Vampire, E Prover, SPASS, Alt-Ergo, Idris2)
-* **3 API interfaces consolidated** into monorepo
-  - GraphQL server (port 8080, async-graphql + axum)
-  - gRPC server (port 50051, tonic + Protocol Buffers)
-  - REST server (port 8000, axum + OpenAPI/Swagger)
-* Julia ML layer supports all 17 provers with logistic regression
-* Chapel parallel layer dispatches all 17 provers
-* ReScript UI: 28 files compiled, 6 components functional
-* Rust core: 17 prover backends, anomaly detection, aspect tagging
-* Trust framework: benchmarks, PropTest, Idris2 validator, anomaly detection
-* Training data: 332 proofs, 1,603 tactics across 12 provers
-* 99 unit tests + 38 integration tests passing
-* **License standardized**: PMPL-1.0-or-later throughout
+* *30 prover backends operational* across 8 tiers
+* *Trust & safety hardening complete* (13 tasks)
+* *306+ tests passing* (232 unit, 38 integration, 21 property-based, + interface tests)
+* *3 API interfaces* consolidated into monorepo (GraphQL, gRPC, REST)
+* Julia ML layer with logistic regression tactic prediction
+* Chapel parallel dispatch layer
+* ReScript UI: 28 compiled components
+* Training data: 332 proofs, 1,603 tactics
+* License standardised: PMPL-1.0-or-later throughout
 
-== v1.4.0 Achievements (COMPLETE)
+== v1.0 -- Core Infrastructure (COMPLETE)
 
-* [x] Added 5 new Tier 5 provers (Vampire, E Prover, SPASS, Alt-Ergo, Idris2)
-* [x] Consolidated all interfaces into echidna monorepo under `src/interfaces/`
-* [x] Updated all 3 layers (Rust, Julia, Chapel) to support 17 provers
-* [x] Created GraphQL interface with type-safe schema
-* [x] Created gRPC interface with bidirectional streaming
-* [x] Created REST interface with OpenAPI 3.0 specification
-* [x] Restored original name: "Cognitive Hybrid" (not "Computational Heuristic")
-* [x] Full documentation update for v1.4.0
+* [x] Initial Rust core with ProverBackend trait
+* [x] 9/12 original prover backends
+* [x] Core types (Term, ProofState, Tactic, Goal, Context)
+* [x] Aspect tagging system
+* [x] Neural solver integration (Julia HTTP)
 
-== Critical Gaps Identified
+== v1.2 -- Original 12 Provers (COMPLETE)
 
-== v2.0 — Core Integration + Neural Upgrade (Next)
+* [x] All 12 core provers: Agda, Coq, Lean, Isabelle, Z3, CVC5, Metamath, HOL Light, Mizar, PVS, ACL2, HOL4
+* [x] Example proof libraries per prover
+* [x] Training data extraction (332 proofs, 1,603 tactics)
+* [x] Documentation update
+
+== v1.3 -- Integration and Polish (COMPLETE)
+
+* [x] 99 unit tests + 38 integration tests
+* [x] Neural training pipeline
+* [x] ReScript UI functional (28 files, 6 components)
+* [x] RSR/CCCP compliance templates
+
+== v1.4 -- Interfaces and Extended Provers (COMPLETE)
+
+* [x] 5 new provers (Vampire, E Prover, SPASS, Alt-Ergo, Idris2) -- total 17
+* [x] GraphQL interface (async-graphql, port 8080)
+* [x] gRPC interface (tonic + Protocol Buffers, port 50051)
+* [x] REST interface (axum + OpenAPI/Swagger, port 8000)
+* [x] All 3 layers (Rust, Julia, Chapel) support 17 provers
+* [x] Interface consolidation into `src/interfaces/`
+
+== v1.5 -- Trust & Safety Hardening (COMPLETE)
+
+=== Task 1: Solver Binary Integrity Verification
+* [x] SHAKE3-512 provenance hashing (64-byte output via tiny-keccak)
+* [x] BLAKE3 fast runtime re-verification
+* [x] TOML manifest for known-good solver hashes
+* [x] Auto-detect solver paths with fallback and PATH lookup
+* [x] Status tracking: Verified, Tampered, Missing, Uninitialized, Unchecked
+
+=== Task 2: SMT Portfolio Solving (Cross-Checking)
+* [x] PortfolioSolver with configurable solver pools (SMT, ATP, ITP)
+* [x] Reconciliation logic: CrossChecked, SingleSolver, Inconclusive, AllTimedOut
+* [x] Disagreement flagging for human review
+* [x] Default pools: Z3/CVC5/Alt-Ergo (SMT), Vampire/E (ATP), Lean/Coq (ITP)
+
+=== Task 3: Proof Certificate Checking
+* [x] Alethe format verification (structural validation)
+* [x] DRAT/LRAT certificate checking (via drat-trim)
+* [x] TSTP, Lean4 kernel, Coq kernel format support
+* [x] BLAKE3-hashed certificate storage for audit trails
+* [x] CertificateVerifier with pluggable external checkers
+
+=== Task 4: Axiom Usage Tracking
+* [x] 4-level danger classification: Safe, Noted, Warning, Reject
+* [x] Prover-specific dangerous patterns (Lean sorry, Coq Admitted, Agda --type-in-type, HOL4 mk_thm, Idris2 believe_me, etc.)
+* [x] Comment-aware scanning (skips comments per prover syntax)
+* [x] AxiomPolicy enforcement (Clean, ClassicalAxioms, IncompleteProof, Rejected)
+
+=== Task 5: Solver Sandboxing
+* [x] Podman container isolation (--network=none, --read-only, memory/CPU/disk limits)
+* [x] Bubblewrap namespace isolation (fallback)
+* [x] Unsandboxed mode (dev only, explicit opt-in with warning)
+* [x] Auto-detection of strongest available sandbox
+* [x] Async execution with timeout enforcement
+
+=== Task 6: 5-Level Trust Hierarchy
+* [x] TrustLevel enum (Level1 through Level5) with Ord
+* [x] TrustFactors computation from prover, certificates, axioms, integrity
+* [x] Small-kernel prover detection (Lean, Coq, Isabelle, Agda, Metamath, HOL Light, HOL4, Idris2, F*, Twelf, Nuprl, Minlog)
+* [x] Dangerous axioms and failed integrity always cap at Level1
+
+=== Task 7: Mutation Testing
+* [x] 6 mutation kinds: RemovePrecondition, WeakenPostcondition, AddDisjunct, RemoveHypothesis, ReplaceConstant, NegateSubterm
+* [x] Mutation generation from Term AST
+* [x] Mutation score computation with configurable threshold (default 95%)
+* [x] MutationTestSummary with per-mutation results
+
+=== Task 8: Prover Dispatch Pipeline
+* [x] ProverDispatcher: create -> parse -> verify -> axiom scan -> confidence scoring
+* [x] Single-prover and cross-checked (portfolio) modes
+* [x] Configurable minimum trust level
+* [x] Content-based and extension-based prover auto-selection
+* [x] DispatchResult with full audit information
+
+=== Task 9: Property-Based Testing Expansion
+* [x] PropTest strategies for trust hardening modules
+* [x] 21 property-based tests for core invariants
+* [x] Total test count: 306+
+
+=== Task 10: Cross-Prover Proof Exchange
+* [x] OpenTheory exporter (HOL4, HOL Light, Isabelle/HOL interop)
+* [x] Dedukti/Lambdapi exporter (universal proof format)
+* [x] Article and module representations with serialisation
+
+=== Task 11: Fix Metadata
+* [x] STATE.scm, ECOSYSTEM.scm, META.scm updated
+* [x] Version numbers aligned
+
+=== Task 12: New Prover Backends (13 new, total 30)
+* [x] F*, Dafny, Why3 (dependent types + effects, auto-active, orchestration)
+* [x] TLAPS, Twelf, Nuprl, Minlog, Imandra (specialised / niche)
+* [x] GLPK, SCIP, MiniZinc, Chuffed, OR-Tools (constraint solvers)
+* [x] ProverKind enum, ProverFactory, file extension detection for all 30
+
+=== Task 13: Pareto Optimality + Statistical Tracking
+* [x] ParetoFrontier: dominance checking, frontier computation, weighted ranking
+* [x] StatisticsTracker: per-prover per-domain stats, Bayesian timeout estimation
+* [x] Wilson score confidence intervals for mutation scores
+* [x] JSON serialisation for persistence
+* [x] Prover ranking by composite score
+
+== v2.0 -- Core Integration + Neural Upgrade (Next)
 
 === Core Integration Layer (HIGH PRIORITY)
-Current interfaces cannot call Rust prover backends — no FFI/IPC layer exists.
 
-* [ ] Implement FFI/IPC bridge for interfaces → Rust core
+Current interfaces cannot call Rust prover backends -- no FFI/IPC layer exists.
+
+* [ ] Implement FFI/IPC bridge for interfaces -> Rust core
 * [ ] Enable GraphQL/gRPC/REST to invoke real prover backends
 * [ ] Production deployment configuration
 
@@ -49,7 +147,7 @@ Current interfaces cannot call Rust prover backends — no FFI/IPC layer exists.
 * [ ] Baseline performance benchmarks with Criterion.rs
 
 === Chapel Integration
-* [ ] Chapel → Rust C FFI bridge
+* [ ] Chapel -> Rust C FFI bridge
 * [ ] Chapel neural-guided beam search (Julia HTTP integration)
 * [ ] Multi-prover consensus voting via Chapel parallelism
 
@@ -58,7 +156,11 @@ Current interfaces cannot call Rust prover backends — no FFI/IPC layer exists.
 * [ ] Proof explanation in natural language
 * [ ] End-to-end correctness certification pipeline
 
-== v3.0 — Autonomous Proving
+=== Security Bridge
+* [ ] Tamarin/ProVerif bridge for cipherbot
+* [ ] Julia Axiom.jl self-verification integration
+
+== v3.0 -- Autonomous Proving
 
 * [ ] Automated theorem discovery
 * [ ] Cross-domain knowledge transfer

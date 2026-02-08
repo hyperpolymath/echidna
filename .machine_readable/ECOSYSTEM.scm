@@ -3,178 +3,321 @@
 
 (ecosystem
   ((metadata
-     ((version . "1.3.0")
+     ((version . "1.5.0")
       (name . "ECHIDNA")
       (type . "neurosymbolic-theorem-prover")
-      (purpose . "AI-assisted formal verification with soundness guarantees")))
+      (purpose . "AI-assisted formal verification with trust-hardened soundness guarantees")))
 
    (position-in-ecosystem
-     "ECHIDNA sits at the intersection of machine learning and formal verification, acting as a meta-tool that orchestrates multiple existing theorem provers while providing learned heuristics for proof search. It complements rather than replaces existing provers.")
+     "ECHIDNA sits at the intersection of machine learning and formal verification, acting as a meta-tool that orchestrates 30 theorem provers, SMT solvers, ATPs, and constraint solvers. It provides a trust-hardened verification pipeline (integrity checking, portfolio solving, certificate verification, axiom tracking, sandboxing, and confidence scoring) while using learned heuristics for proof search. It complements rather than replaces existing provers.")
 
    (related-projects
      ((theorem-provers
+        ;; Tier 1: Interactive Proof Assistants (small kernel)
         ((coq
            ((relationship . "backend-integration")
-            (description . "Coq proof assistant - ECHIDNA uses Coq as one of 12 backend provers")
-            (interaction . "ECHIDNA sends Coq proof scripts via stdin/stdout, parses responses")
+            (description . "Coq/Rocq proof assistant with small trusted kernel")
+            (interaction . "Proof scripts via stdin/stdout, coqchk certificate checking")
             (url . "https://coq.inria.fr")))
 
          (lean
            ((relationship . "backend-integration")
-            (description . "Lean 4 theorem prover - ECHIDNA's primary prover for dependent type theory")
-            (interaction . "Lean LSP integration for interactive proving, tactic parsing")
+            (description . "Lean 4 theorem prover with dependent types")
+            (interaction . "LSP integration, lean4checker certificate checking")
             (url . "https://lean-lang.org")))
 
          (isabelle
            ((relationship . "backend-integration")
             (description . "Isabelle/HOL proof assistant")
-            (interaction . "Isabelle server protocol for proof checking")
+            (interaction . "Server protocol for proof checking")
             (url . "https://isabelle.in.tum.de")))
 
          (agda
            ((relationship . "backend-integration")
-            (description . "Agda dependently typed programming language and proof assistant")
-            (interaction . "Agda type checking for proof validation")
+            (description . "Agda dependently typed programming language")
+            (interaction . "Type checking for proof validation")
             (url . "https://wiki.portal.chalmers.se/agda")))
 
+         (idris2
+           ((relationship . "backend-integration")
+            (description . "Idris2 with dependent types, also used as ABI definition language")
+            (interaction . "Type checking with totality verification")
+            (url . "https://idris-lang.org")))
+
+         (fstar
+           ((relationship . "backend-integration")
+            (description . "F* verification-oriented programming language")
+            (interaction . "Dependent types with effects, small kernel")
+            (url . "https://fstar-lang.org")))
+
+         ;; Tier 2: SMT Solvers
          (z3
            ((relationship . "backend-integration")
             (description . "Z3 SMT solver from Microsoft Research")
-            (interaction . "SMT-LIB2 format for automated theorem proving")
+            (interaction . "SMT-LIB2 format, portfolio cross-checking with CVC5")
             (url . "https://github.com/Z3Prover/z3")))
 
          (cvc5
            ((relationship . "backend-integration")
-            (description . "CVC5 SMT solver (successor to CVC4)")
-            (interaction . "SMT-LIB2 input for satisfiability checking")
+            (description . "CVC5 SMT solver with Alethe proof certificates")
+            (interaction . "SMT-LIB2, Alethe certificate generation and checking")
             (url . "https://cvc5.github.io")))
 
-         (acl2
+         (altergo
            ((relationship . "backend-integration")
-            (description . "ACL2 theorem prover for industrial verification")
-            (interaction . "ACL2 S-expression syntax for proof scripts")
-            (url . "https://www.cs.utexas.edu/users/moore/acl2")))
+            (description . "Alt-Ergo SMT solver for software verification")
+            (interaction . "Native and SMT-LIB2 format")
+            (url . "https://alt-ergo.ocamlpro.com")))
 
-         (pvs
+         ;; Auto-active verifiers
+         (dafny
            ((relationship . "backend-integration")
-            (description . "PVS (Prototype Verification System)")
-            (interaction . "PVS proof commands and sequent manipulation")
-            (url . "https://pvs.csl.sri.com")))
+            (description . "Dafny auto-active verification language")
+            (interaction . "Dafny source verification via Boogie/Z3 pipeline")
+            (url . "https://dafny.org")))
 
-         (hol4
+         (why3
            ((relationship . "backend-integration")
-            (description . "HOL4 higher-order logic theorem prover")
-            (interaction . "Standard ML integration for HOL proofs")
-            (url . "https://hol-theorem-prover.org")))
+            (description . "Why3 multi-prover verification platform")
+            (interaction . "WhyML format, orchestrates multiple backend provers")
+            (url . "https://why3.lri.fr")))
 
-         (mizar
-           ((relationship . "backend-integration")
-            (description . "Mizar proof checker with natural language syntax")
-            (interaction . "Mizar article format parsing")
-            (url . "http://mizar.org")))
-
+         ;; Specialised
          (metamath
            ((relationship . "backend-integration")
-            (description . "Metamath minimal proof checker")
-            (interaction . "Metamath database format for proofs")
+            (description . "Metamath minimal proof checker (tiny kernel)")
+            (interaction . "Metamath database format")
             (url . "http://us.metamath.org")))
 
          (hol-light
            ((relationship . "backend-integration")
-            (description . "HOL Light proof assistant in OCaml")
-            (interaction . "OCaml toplevel interaction for proofs")
-            (url . "https://www.cl.cam.ac.uk/~jrh13/hol-light")))))
+            (description . "HOL Light proof assistant (small kernel)")
+            (interaction . "OCaml toplevel, OpenTheory interop")
+            (url . "https://www.cl.cam.ac.uk/~jrh13/hol-light")))
+
+         (mizar
+           ((relationship . "backend-integration")
+            (description . "Mizar mathematical vernacular proof checker")
+            (interaction . "Mizar article format")
+            (url . "http://mizar.org")))
+
+         (hol4
+           ((relationship . "backend-integration")
+            (description . "HOL4 higher-order logic theorem prover")
+            (interaction . "SML integration, OpenTheory interop")
+            (url . "https://hol-theorem-prover.org")))
+
+         (pvs
+           ((relationship . "backend-integration")
+            (description . "PVS Prototype Verification System")
+            (interaction . "PVS proof commands")
+            (url . "https://pvs.csl.sri.com")))
+
+         (acl2
+           ((relationship . "backend-integration")
+            (description . "ACL2 theorem prover for industrial verification")
+            (interaction . "S-expression syntax")
+            (url . "https://www.cs.utexas.edu/users/moore/acl2")))
+
+         (tlaps
+           ((relationship . "backend-integration")
+            (description . "TLA+ Proof System for distributed systems")
+            (interaction . "TLA+ proof language")
+            (url . "https://tla.msr-inria.inria.fr/tlaps")))
+
+         (twelf
+           ((relationship . "backend-integration")
+            (description . "Twelf logical framework (LF type theory)")
+            (interaction . "Elf format")
+            (url . "http://twelf.org")))
+
+         (nuprl
+           ((relationship . "backend-integration")
+            (description . "Nuprl constructive type theory prover")
+            (interaction . "Nuprl proof format")
+            (url . "http://www.nuprl.org")))
+
+         (minlog
+           ((relationship . "backend-integration")
+            (description . "Minlog minimal logic proof system")
+            (interaction . "Minlog format")
+            (url . "https://minlog-system.de")))
+
+         (imandra
+           ((relationship . "backend-integration")
+            (description . "Imandra ML-based automated reasoning")
+            (interaction . "IML format")
+            (url . "https://imandra.ai")))
+
+         ;; First-Order ATPs
+         (vampire
+           ((relationship . "backend-integration")
+            (description . "Vampire first-order ATP (TPTP format)")
+            (interaction . "TPTP input, TSTP proof certificates")
+            (url . "https://vprover.github.io")))
+
+         (eprover
+           ((relationship . "backend-integration")
+            (description . "E Prover equational first-order ATP")
+            (interaction . "TPTP input, TSTP proof certificates")
+            (url . "https://eprover.org")))
+
+         (spass
+           ((relationship . "backend-integration")
+            (description . "SPASS first-order ATP (DFG format)")
+            (interaction . "DFG and TPTP formats")
+            (url . "https://www.mpi-inf.mpg.de/departments/automation-of-logic/software/spass-workbench")))
+
+         ;; Constraint / Optimisation Solvers
+         (glpk
+           ((relationship . "backend-integration")
+            (description . "GNU Linear Programming Kit")
+            (interaction . "LP/MPS format")
+            (url . "https://www.gnu.org/software/glpk")))
+
+         (scip
+           ((relationship . "backend-integration")
+            (description . "SCIP mixed-integer nonlinear programming solver")
+            (interaction . "PIP/ZIMPL format")
+            (url . "https://scipopt.org")))
+
+         (minizinc
+           ((relationship . "backend-integration")
+            (description . "MiniZinc constraint modelling language")
+            (interaction . "MZN/DZN format")
+            (url . "https://www.minizinc.org")))
+
+         (chuffed
+           ((relationship . "backend-integration")
+            (description . "Chuffed lazy clause generation CP solver")
+            (interaction . "FlatZinc format")
+            (url . "https://github.com/chuffed/chuffed")))
+
+         (ortools
+           ((relationship . "backend-integration")
+            (description . "Google OR-Tools constraint/optimisation solver")
+            (interaction . "Constraint programming API")
+            (url . "https://developers.google.com/optimization")))))
+
+      (proof-exchange-formats
+        ((opentheory
+           ((relationship . "interoperability")
+            (description . "OpenTheory universal format for HOL family")
+            (usage . "Cross-checking between HOL4, HOL Light, Isabelle/HOL")
+            (url . "https://www.gilith.com/opentheory")))
+
+         (dedukti
+           ((relationship . "interoperability")
+            (description . "Dedukti/Lambdapi universal proof format")
+            (usage . "Universal proof kernel (lambda-Pi calculus modulo rewriting)")
+            (url . "https://deducteam.github.io")))
+
+         (alethe
+           ((relationship . "certificate-format")
+            (description . "Alethe proof format for SMT solvers")
+            (usage . "Certificate verification for CVC5 proofs")
+            (url . "https://verit.loria.fr/documentation/alethe-spec.pdf")))
+
+         (drat-lrat
+           ((relationship . "certificate-format")
+            (description . "DRAT/LRAT proof formats for SAT solvers")
+            (usage . "Independent certificate checking via drat-trim")
+            (url . "https://www.cs.utexas.edu/~marijn/drat-trim")))
+
+         (tstp
+           ((relationship . "certificate-format")
+            (description . "TSTP proof format for first-order ATPs")
+            (usage . "Proof output from Vampire and E Prover")
+            (url . "http://www.tptp.org/TSTP.html")))))
 
       (ml-frameworks
         ((julia-ecosystem
            ((relationship . "runtime-dependency")
             (description . "Julia scientific computing for ML inference")
             (packages . ("HTTP.jl" "JSON3.jl" "LinearAlgebra"))
-            (usage . "Model serving, numerical computation, API server")
+            (usage . "Logistic regression tactic prediction (port 8090)")
             (url . "https://julialang.org")))
 
          (flux-jl
            ((relationship . "potential-future")
             (description . "Julia ML framework for deep learning")
-            (usage . "Future v2.0 Transformer models")
-            (url . "https://fluxml.ai")))
+            (usage . "v2.0 Transformer models for premise selection")
+            (url . "https://fluxml.ai")))))
 
-         (scikit-learn
-           ((relationship . "inspiration")
-            (description . "Python ML library - our logistic regression mirrors sklearn API")
-            (usage . "Training methodology inspiration")
-            (url . "https://scikit-learn.org")))))
+      (trust-infrastructure
+        ((blake3
+           ((relationship . "cryptographic-dependency")
+            (description . "BLAKE3 hash function for fast integrity checks")
+            (usage . "Runtime solver re-verification, certificate hashing")
+            (url . "https://blake3.io")))
 
-      (formal-verification-tools
-        ((idris2
-           ((relationship . "formal-validator")
-            (description . "Idris2 dependent types for proof validator")
-            (interaction . "Standalone validator with totality checking")
-            (usage . "Formal soundness guarantees for proof terms")
-            (url . "https://idris-lang.org")))
-
-         (proven-library
-           ((relationship . "validation-library")
-            (description . "Idris2 library for proven-correct algorithms")
-            (interaction . "Import proven modules for verified components")
-            (usage . "Integrate proven-correct data structures and algorithms")
-            (url . "https://github.com/hyperpolymath/proven")))
+         (shake3-512
+           ((relationship . "cryptographic-dependency")
+            (description . "SHAKE (SHA-3 XOF) for provenance hashing")
+            (usage . "Solver binary integrity manifests (via tiny-keccak)")
+            (url . "https://nvlpubs.nist.gov/nistpubs/FIPS/NIST.FIPS.202.pdf")))
 
          (proptest
            ((relationship . "testing-dependency")
             (description . "Rust property-based testing framework")
-            (usage . "Generate test cases for invariant validation")
+            (usage . "21 property-based tests for trust invariants")
             (url . "https://github.com/proptest-rs/proptest")))
 
-         (criterion-rs
-           ((relationship . "benchmarking-dependency")
-            (description . "Rust statistical benchmarking")
-            (usage . "Performance regression detection")
-            (url . "https://github.com/bheisler/criterion.rs")))))
+         (podman
+           ((relationship . "sandbox-runtime")
+            (description . "Podman container runtime for solver isolation")
+            (usage . "Network-disabled, read-only, resource-limited solver execution")
+            (url . "https://podman.io")))
+
+         (bubblewrap
+           ((relationship . "sandbox-fallback")
+            (description . "Bubblewrap namespace isolation")
+            (usage . "Lightweight solver sandboxing when Podman unavailable")
+            (url . "https://github.com/containers/bubblewrap")))))
 
       (web-frameworks
         ((axum
            ((relationship . "runtime-dependency")
             (description . "Rust async web framework")
-            (usage . "REST API server (port 8080)")
+            (usage . "REST API server (port 8000), core HTTP server")
             (url . "https://github.com/tokio-rs/axum")))
+
+         (async-graphql
+           ((relationship . "runtime-dependency")
+            (description . "Rust async GraphQL framework")
+            (usage . "GraphQL API server (port 8080)")
+            (url . "https://github.com/async-graphql/async-graphql")))
+
+         (tonic
+           ((relationship . "runtime-dependency")
+            (description . "Rust gRPC framework")
+            (usage . "gRPC server with bidirectional streaming (port 50051)")
+            (url . "https://github.com/hyperium/tonic")))
 
          (rescript-react
            ((relationship . "ui-framework")
             (description . "ReScript bindings for React")
-            (usage . "Type-safe UI components")
-            (url . "https://rescript-lang.org")))
-
-         (rescript-webapi
-           ((relationship . "ui-dependency")
-            (description . "ReScript bindings for Web APIs")
-            (usage . "Fetch API for HTTP requests")
-            (url . "https://github.com/rescript-lang/rescript-webapi")))))
+            (usage . "Type-safe UI components (28 files)")
+            (url . "https://rescript-lang.org")))))
 
       (parallel-computing
         ((chapel
            ((relationship . "optional-metalayer")
             (description . "Chapel high-performance parallel programming")
-            (usage . "Optional parallel proof search (feature-flagged)")
-            (url . "https://chapel-lang.org")))
-
-         (zig
-           ((relationship . "alternative-ffi")
-            (description . "Zig systems programming language")
-            (usage . "Alternative to C for FFI/ABI (safer than C)")
-            (url . "https://ziglang.org")))))
+            (usage . "Optional parallel proof dispatch across 30 provers")
+            (url . "https://chapel-lang.org")))))
 
       (standards
         ((rhodium-standard-repositories
            ((relationship . "sibling-standard")
             (description . "RSR compliance for repository structure")
-            (compliance . "ECHIDNA follows RSR for repository layout")
+            (compliance . "ECHIDNA follows RSR for repository layout, 17 CI workflows")
             (url . "https://github.com/hyperpolymath/rhodium-standard-repositories")))
 
          (pmpl-license
            ((relationship . "licensing-framework")
             (description . "Palimpsest Meta-Project License")
-            (usage . "Dual MIT/PMPL-1.0-or-later licensing")
+            (usage . "PMPL-1.0-or-later (sole license)")
             (url . "https://github.com/hyperpolymath/pmpl")))
 
          (cccp-protocol
@@ -196,95 +339,61 @@
             (usage . "Repository metrics, code quality tracking")
             (url . "https://github.com/hyperpolymath/gitvisor")))
 
-         (robot-repo-cleaner
-           ((relationship . "maintenance-automation")
-            (description . "Automated repository cleanup and standardization")
-            (usage . "Workflow cleanup, dead code removal")
-            (url . "https://github.com/hyperpolymath/robot-repo-cleaner")))))
+         (panic-attacker
+           ((relationship . "security-scanner")
+            (description . "Security weakness scanner for repositories")
+            (usage . "VeriSimDB integration for weakness tracking")
+            (url . "https://github.com/hyperpolymath/panic-attacker")))
 
-      (academic-foundations
-        ((machine-learning-for-theorem-proving
-           ((papers . ("Kaliszyk et al. 'Deep Learning for Automated Theorem Proving'"
-                      "Polu & Sutskever 'Generative Language Modeling for Automated Theorem Proving'"
-                      "First et al. 'TacticZero: Learning to Prove Theorems from Scratch with Deep Reinforcement Learning'"))
-            (relationship . "theoretical-foundation")
-            (contribution . "ECHIDNA applies these techniques with added soundness guarantees")))
+         (verisimdb
+           ((relationship . "security-database")
+            (description . "Verisimilitude Database for weakness tracking")
+            (usage . "Aggregates scan results across repos")
+            (url . "https://github.com/hyperpolymath/verisimdb")))
 
-         (neurosymbolic-ai
-           ((papers . ("Garcez et al. 'Neurosymbolic AI: The 3rd Wave'"
-                      "Lamb et al. 'Graph Neural Networks for Theorem Proving'"
-                      "d'Avila Garcez & Lamb 'Neurosymbolic AI: The State of the Art'"))
-            (relationship . "paradigm-alignment")
-            (contribution . "ECHIDNA exemplifies neurosymbolic approach: neural learning + symbolic verification")))
-
-         (dependent-type-theory
-           ((references . ("Martin-Löf 'Intuitionistic Type Theory'"
-                          "Coquand & Huet 'The Calculus of Constructions'"
-                          "Univalent Foundations Program 'Homotopy Type Theory'"))
-            (relationship . "theoretical-basis")
-            (contribution . "ECHIDNA supports dependent type provers (Coq, Lean, Agda, Idris2)")))))
+         (hypatia
+           ((relationship . "sibling-intelligence")
+            (description . "Neurosymbolic CI/CD intelligence platform")
+            (usage . "VeriSimDB connector, pattern detection, fleet dispatch")
+            (url . "https://github.com/hyperpolymath/hypatia")))))
 
       (potential-integrations
         ((mathlib
            ((description . "Lean's mathematical library")
-            (potential . "Future integration for mathematical theorem search")
+            (potential . "Training data and theorem search")
             (priority . "high")
             (timeline . "v2.0")))
 
-         (opencyc
-           ((description . "Open source version of Cyc knowledge base")
-            (potential . "Domain knowledge for premise selection")
+         (tamarin-proverif
+           ((description . "Security protocol verification tools")
+            (potential . "Cipherbot integration for protocol proofs")
             (priority . "medium")
             (timeline . "v2.0")))
 
          (isabelle-afp
            ((description . "Archive of Formal Proofs for Isabelle")
-            (potential . "Training data source for Isabelle proofs")
+            (potential . "Training data source")
             (priority . "medium")
-            (timeline . "v1.4")))
-
-         (coq-platform
-           ((description . "Curated Coq package distribution")
-            (potential . "Integration with standard Coq libraries")
-            (priority . "medium")
-            (timeline . "v1.4")))))))
+            (timeline . "v2.0")))))))
 
    (what-this-is
-     (("A neurosymbolic theorem proving system that combines machine learning with formal verification"
-       "An orchestrator for 12 different theorem provers with learned heuristics"
-       "A research platform for ML-guided proof search with soundness guarantees"
-       "A production tool for formal verification with AI assistance"
-       "An educational resource for learning theorem proving with AI guidance")))
+     (("A neurosymbolic theorem proving system with 30 prover backends"
+       "A trust-hardened verification pipeline with 5-level confidence scoring"
+       "An orchestrator for theorem provers, SMT solvers, ATPs, and constraint solvers"
+       "A platform for ML-guided proof search with formal soundness guarantees"
+       "A multi-objective proof optimiser using Pareto frontier analysis")))
 
    (what-this-is-not
      (("Not a replacement for human mathematicians or proof engineers"
-       "Not a 'black box' that magically proves theorems - transparency is key"
-       "Not unsound - ML suggests, provers verify, no false proofs possible"
-       "Not limited to one prover - supports 12 backends for maximum coverage"
-       "Not closed-source - fully open MIT/PMPL licensed"
-       "Not research-only - production-ready v1.3 available now")))
+       "Not a black box -- transparency via trust levels, axiom reports, certificates"
+       "Not unsound -- ML suggests, provers verify, dangerous axioms are tracked and rejected"
+       "Not limited to one prover -- 30 backends across 8 tiers"
+       "Not closed-source -- fully open PMPL-1.0-or-later licensed")))
 
    (ecosystem-contributions
-     (("First production neurosymbolic theorem prover with 12 backends"
-       "Open-source reference implementation of ML + formal verification"
-       "Comprehensive trust framework (benchmarking, property tests, formal validation, anomaly detection)"
-       "Training data extraction methodology from proof files"
-       "HTTP/REST architecture for language-agnostic prover integration"
-       "Documentation spanning academic, developer, user, and layperson audiences")))
-
-   (community-engagement
-     ((target-audiences
-        (("Researchers: Novel neurosymbolic architecture for study"
-          "Educators: Teaching tool for theorem proving concepts"
-          "Practitioners: Production verification for software/hardware"
-          "Students: Learn formal methods with AI assistance"
-          "Open-source community: Contribute to cutting-edge AI+verification")))
-
-      (contribution-opportunities
-        (("Add support for new theorem provers"
-          "Improve ML models (Transformers, premise selection)"
-          "Expand training data corpus"
-          "Build domain-specific tactic libraries"
-          "Create tutorials and educational content"
-          "Integrate with existing proof libraries (Mathlib, AFP, etc.)"
-          "Develop better UI/UX for proof exploration")))))))
+     (("First trust-hardened neurosymbolic theorem prover with 30 backends"
+       "Open-source reference for solver integrity verification (SHAKE3-512 + BLAKE3)"
+       "Comprehensive trust framework: integrity, portfolio, certificates, axioms, sandboxing, confidence"
+       "Cross-prover proof exchange via OpenTheory and Dedukti/Lambdapi"
+       "Pareto optimisation for multi-objective proof search"
+       "Statistical confidence tracking with Bayesian timeout estimation")))))
