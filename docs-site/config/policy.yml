@@ -1,0 +1,45 @@
+# SPDX-License-Identifier: PMPL-1.0-or-later
+#
+# Capability policy for ECHIDNA documentation site.
+# Used by http-capability-gateway for request governance.
+
+dsl_version: "1"
+
+governance:
+  global_verbs: [GET, HEAD, OPTIONS]
+
+  routes:
+    # Public documentation (read-only)
+    - path: "/"
+      verbs: [GET]
+      exposure: public
+
+    - path: "/api/.*"
+      verbs: [GET]
+      exposure: public
+
+    - path: "/architecture"
+      verbs: [GET]
+      exposure: public
+
+    # Well-known endpoints
+    - path: "/.well-known/.*"
+      verbs: [GET]
+      exposure: public
+
+    # Health check
+    - path: "/health"
+      verbs: [GET]
+      exposure: public
+
+    # Static assets
+    - path: "/static/.*"
+      verbs: [GET]
+      exposure: public
+
+stealth:
+  enabled: false
+
+logging:
+  level: info
+  format: structured

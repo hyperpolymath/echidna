@@ -1,0 +1,36 @@
+{
+  "canonical_uri": "https://echidna.hyperpolymath.dev/.well-known/aibdp.json",
+  "version": "1.0",
+  "policies": {
+    "training": {
+      "status": "Refused",
+      "rationale": "ECHIDNA documentation is licensed under PMPL-1.0-or-later and may not be used for AI model training without explicit permission."
+    },
+    "indexing": {
+      "status": "Allowed",
+      "scope": ["search-engines", "academic-indexes"],
+      "conditions": ["Attribution required", "Link to original source"]
+    },
+    "generation": {
+      "status": "Conditional",
+      "conditions": [
+        "Attribution to ECHIDNA project required",
+        "Link to https://github.com/hyperpolymath/echidna",
+        "No misrepresentation of capabilities"
+      ]
+    },
+    "summarization": {
+      "status": "Conditional",
+      "conditions": [
+        "Attribution required",
+        "Must not replace visiting the documentation"
+      ]
+    },
+    "embedding": {
+      "status": "Refused",
+      "rationale": "Embedding in vector databases for RAG requires explicit license agreement."
+    }
+  },
+  "contact": "jonathan.jewell@open.ac.uk",
+  "license": "PMPL-1.0-or-later"
+}

@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>{{title}} — ECHIDNA Documentation</title>
+    <style>
+        :root {
+            --primary: #2d5016;
+            --bg: #fafafa;
+            --text: #1a1a1a;
+            --sidebar-bg: #f0f0f0;
+            --border: #ddd;
+            --code-bg: #f5f5f5;
+        }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: system-ui, sans-serif; background: var(--bg); color: var(--text); }
+        .docs-layout { display: flex; min-height: 100vh; }
+        .sidebar { width: 260px; background: var(--sidebar-bg); border-right: 1px solid var(--border); padding: 1.5rem; }
+        .sidebar h2 { color: var(--primary); margin-bottom: 1rem; }
+        .sidebar ul { list-style: none; }
+        .sidebar li { margin-bottom: 0.5rem; }
+        .sidebar a { color: var(--text); text-decoration: none; padding: 0.25rem 0.5rem; display: block; border-radius: 4px; }
+        .sidebar a:hover, .nav-item.active a { background: var(--primary); color: white; }
+        .docs-main { flex: 1; padding: 2rem; max-width: 900px; }
+        .docs-header { display: flex; align-items: center; gap: 1rem; margin-bottom: 2rem; }
+        .search-bar input { width: 100%; padding: 0.5rem 1rem; border: 1px solid var(--border); border-radius: 4px; font-size: 1rem; }
+        pre { background: var(--code-bg); padding: 1rem; border-radius: 4px; overflow-x: auto; }
+        code { font-family: 'Fira Code', monospace; }
+        table { border-collapse: collapse; width: 100%; margin: 1rem 0; }
+        th, td { border: 1px solid var(--border); padding: 0.5rem; text-align: left; }
+        th { background: var(--sidebar-bg); }
+        h1 { color: var(--primary); margin-bottom: 1rem; }
+        h2, h3 { margin: 1.5rem 0 0.5rem; }
+        p { line-height: 1.6; margin-bottom: 0.75rem; }
+    </style>
+</head>
+<body>
+    <div id="app">
+        <div class="docs-layout">
+            <nav class="sidebar">
+                <h2>ECHIDNA</h2>
+                <ul>
+                    <li><a href="/">Home</a></li>
+                    <li><a href="/api/rest">REST API</a></li>
+                    <li><a href="/api/graphql">GraphQL API</a></li>
+                    <li><a href="/api/grpc">gRPC API</a></li>
+                    <li><a href="/architecture">Architecture</a></li>
+                </ul>
+            </nav>
+            <main class="docs-main">
+                {{content}}
+            </main>
+        </div>
+    </div>
+    <script type="module" src="/static/app.js"></script>
+</body>
+</html>

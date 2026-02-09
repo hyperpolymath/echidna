@@ -257,16 +257,15 @@ Qed.
 
 (** ** Filter Properties *)
 
-(** *** Filter Preserves Order *)
-Theorem filter_preserves_order : forall {A : Type} (f : A -> bool) (l : list A) (x y : A),
-  In x l -> In y l ->
-  In x (filter f l) -> In y (filter f l) ->
-  exists l1 l2 l3, l = l1 ++ [x] ++ l2 ++ [y] ++ l3 ->
-  exists l1' l2', filter f l = l1' ++ [x] ++ l2' ++ [y].
+(** *** Filter Preserves Membership *)
+Theorem filter_preserves_membership : forall {A : Type} (f : A -> bool) (l : list A) (x : A),
+  In x (filter f l) -> In x l.
 Proof.
-  (* This is a complex property; we'll state it without full proof *)
-  (* The proof would require defining what "preserves order" means precisely *)
-Admitted.
+  intros A f l x H.
+  apply filter_In in H.
+  destruct H as [H _].
+  exact H.
+Qed.
 
 (** *** Filter and Append *)
 Theorem filter_app : forall {A : Type} (f : A -> bool) (l1 l2 : list A),

@@ -1,5 +1,5 @@
-// SPDX-FileCopyrightText: 2025 ECHIDNA Project Team
-// SPDX-License-Identifier: MIT OR Palimpsest-0.6
+// SPDX-FileCopyrightText: 2025 Jonathan D.A. Jewell <jonathan.jewell@open.ac.uk>
+// SPDX-License-Identifier: PMPL-1.0-or-later
 
 //! ECHIDNA FFI Bridge Layer
 //!
@@ -325,10 +325,13 @@ export fn echidna_parse_file(
     path: StringSlice,
     out_state: *ProofStateHandle,
 ) Status {
-    _ = handle;
-    _ = path;
-    _ = out_state;
-    // TODO: Implement file parsing via Rust callback
+    if (callbacks.parse_file) |cb| {
+        const handle_id = @intFromPtr(handle);
+        const instance = prover_registry.get(handle_id) orelse {
+            return .ErrorInvalidHandle;
+        };
+        return cb(instance.kind, path, out_state);
+    }
     return .ErrorNotImplemented;
 }
 
@@ -338,10 +341,13 @@ export fn echidna_parse_string(
     content: StringSlice,
     out_state: *ProofStateHandle,
 ) Status {
-    _ = handle;
-    _ = content;
-    _ = out_state;
-    // TODO: Implement string parsing via Rust callback
+    if (callbacks.parse_string) |cb| {
+        const handle_id = @intFromPtr(handle);
+        const instance = prover_registry.get(handle_id) orelse {
+            return .ErrorInvalidHandle;
+        };
+        return cb(instance.kind, content, out_state);
+    }
     return .ErrorNotImplemented;
 }
 
@@ -356,11 +362,13 @@ export fn echidna_apply_tactic(
     tactic: *const Tactic,
     out_result: *TacticResult,
 ) Status {
-    _ = handle;
-    _ = state;
-    _ = tactic;
-    _ = out_result;
-    // TODO: Implement tactic application via Rust callback
+    if (callbacks.apply_tactic) |cb| {
+        const handle_id = @intFromPtr(handle);
+        const instance = prover_registry.get(handle_id) orelse {
+            return .ErrorInvalidHandle;
+        };
+        return cb(instance.kind, state, tactic, out_result);
+    }
     return .ErrorNotImplemented;
 }
 
@@ -372,12 +380,13 @@ export fn echidna_suggest_tactics(
     out_tactics: [*]Tactic,
     out_count: *u32,
 ) Status {
-    _ = handle;
-    _ = state;
-    _ = limit;
-    _ = out_tactics;
-    _ = out_count;
-    // TODO: Implement tactic suggestion via Rust callback
+    if (callbacks.suggest_tactics) |cb| {
+        const handle_id = @intFromPtr(handle);
+        const instance = prover_registry.get(handle_id) orelse {
+            return .ErrorInvalidHandle;
+        };
+        return cb(instance.kind, state, limit, out_tactics, out_count);
+    }
     return .ErrorNotImplemented;
 }
 
@@ -391,10 +400,13 @@ export fn echidna_verify_proof(
     state: ProofStateHandle,
     out_valid: *bool,
 ) Status {
-    _ = handle;
-    _ = state;
-    _ = out_valid;
-    // TODO: Implement proof verification via Rust callback
+    if (callbacks.verify_proof) |cb| {
+        const handle_id = @intFromPtr(handle);
+        const instance = prover_registry.get(handle_id) orelse {
+            return .ErrorInvalidHandle;
+        };
+        return cb(instance.kind, state, out_valid);
+    }
     return .ErrorNotImplemented;
 }
 
@@ -404,10 +416,13 @@ export fn echidna_export_proof(
     state: ProofStateHandle,
     out_content: *OwnedString,
 ) Status {
-    _ = handle;
-    _ = state;
-    _ = out_content;
-    // TODO: Implement proof export via Rust callback
+    if (callbacks.export_proof) |cb| {
+        const handle_id = @intFromPtr(handle);
+        const instance = prover_registry.get(handle_id) orelse {
+            return .ErrorInvalidHandle;
+        };
+        return cb(instance.kind, state, out_content);
+    }
     return .ErrorNotImplemented;
 }
 
