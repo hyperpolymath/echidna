@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: 2025 ECHIDNA Project Team
+// SPDX-FileCopyrightText: 2025 Jonathan D.A. Jewell <jonathan.jewell@open.ac.uk>
 // SPDX-License-Identifier: PMPL-1.0-or-later
 
 //! FFI bindings for ECHIDNA
@@ -78,10 +78,14 @@ impl FfiStringSlice {
         }
     }
 
+    /// # Safety
+    /// Caller must ensure `self.ptr` points to a valid, aligned, UTF-8
+    /// byte buffer of at least `self.len` bytes that outlives the returned `&str`.
     pub unsafe fn to_str(&self) -> Option<&str> {
         if self.ptr.is_null() || self.len == 0 {
             return Some("");
         }
+        // SAFETY: Caller guarantees ptr is valid for len bytes and properly aligned.
         let slice = std::slice::from_raw_parts(self.ptr, self.len);
         std::str::from_utf8(slice).ok()
     }
@@ -114,8 +118,12 @@ impl FfiOwnedString {
         }
     }
 
+    /// # Safety
+    /// Must only be called once. The ptr/len/capacity must have originated
+    /// from `FfiOwnedString::from_string()` (i.e., a valid `Vec<u8>` allocation).
     pub unsafe fn free(&mut self) {
         if !self.ptr.is_null() && self.capacity > 0 {
+            // SAFETY: ptr/len/capacity came from Vec::into_raw_parts via from_string().
             let _ = Vec::from_raw_parts(self.ptr, self.len, self.capacity);
         }
         self.ptr = ptr::null_mut();
@@ -151,6 +159,10 @@ impl Default for FfiProverConfig {
 
 /// Convert FFI config to Rust ProverConfig
 impl FfiProverConfig {
+    /// # Safety
+    /// All `FfiStringSlice` fields must point to valid, UTF-8 memory that
+    /// outlives the returned `ProverConfig`. `library_paths` must point to
+    /// a valid array of `library_paths_len` elements.
     pub unsafe fn to_prover_config(&self) -> ProverConfig {
         let executable = self
             .executable_path
@@ -161,6 +173,7 @@ impl FfiProverConfig {
         let mut library_paths = Vec::new();
         if !self.library_paths.is_null() {
             for i in 0..self.library_paths_len {
+                // SAFETY: Caller guarantees library_paths is valid for library_paths_len elements.
                 let slice = *self.library_paths.add(i);
                 if let Some(s) = slice.to_str() {
                     library_paths.push(PathBuf::from(s));
@@ -244,10 +257,14 @@ pub struct FfiTactic {
 }
 
 impl FfiTactic {
+    /// # Safety
+    /// `self.arg` must point to a valid UTF-8 buffer of `self.arg_len` bytes
+    /// (or be null with arg_len == 0).
     pub unsafe fn to_tactic(&self) -> Option<Tactic> {
         let arg = if self.arg.is_null() || self.arg_len == 0 {
             String::new()
         } else {
+            // SAFETY: Caller guarantees arg is valid for arg_len bytes.
             let slice = std::slice::from_raw_parts(self.arg, self.arg_len as usize);
             std::str::from_utf8(slice).ok()?.to_string()
         };
@@ -316,8 +333,40 @@ lazy_static::lazy_static! {
 }
 
 // ============================================================================
-// FFI Exports (called from Zig)
+// FFI Exports (called from Zig via callbacks)
 // ============================================================================
+
+/// Helper: convert u8 kind to ProverKind
+fn kind_from_u8(kind: u8) -> Option<ProverKind> {
+    match kind {
+        0 => Some(ProverKind::Agda),
+        1 => Some(ProverKind::Coq),
+        2 => Some(ProverKind::Lean),
+        3 => Some(ProverKind::Isabelle),
+        4 => Some(ProverKind::Z3),
+        5 => Some(ProverKind::CVC5),
+        6 => Some(ProverKind::Metamath),
+        7 => Some(ProverKind::HOLLight),
+        8 => Some(ProverKind::Mizar),
+        9 => Some(ProverKind::PVS),
+        10 => Some(ProverKind::ACL2),
+        11 => Some(ProverKind::HOL4),
+        12 => Some(ProverKind::Idris2),
+        _ => None,
+    }
+}
+
+/// Helper: run async operation in a blocking context for FFI
+fn run_async<F, T>(future: F) -> Result<T, FfiStatus>
+where
+    F: std::future::Future<Output = anyhow::Result<T>>,
+{
+    let rt = tokio::runtime::Builder::new_current_thread()
+        .enable_all()
+        .build()
+        .map_err(|_| FfiStatus::ErrorUnknown)?;
+    rt.block_on(future).map_err(FfiStatus::from)
+}
 
 /// Parse file callback for Zig FFI
 #[no_mangle]
@@ -326,23 +375,12 @@ pub extern "C" fn rust_parse_file(
     path: FfiStringSlice,
     out_state: *mut *mut c_void,
 ) -> c_int {
-    let prover_kind = match kind {
-        0 => ProverKind::Agda,
-        1 => ProverKind::Coq,
-        2 => ProverKind::Lean,
-        3 => ProverKind::Isabelle,
-        4 => ProverKind::Z3,
-        5 => ProverKind::CVC5,
-        6 => ProverKind::Metamath,
-        7 => ProverKind::HOLLight,
-        8 => ProverKind::Mizar,
-        9 => ProverKind::PVS,
-        10 => ProverKind::ACL2,
-        11 => ProverKind::HOL4,
-        12 => ProverKind::Idris2,
-        _ => return FfiStatus::ErrorInvalidArgument as c_int,
+    let prover_kind = match kind_from_u8(kind) {
+        Some(k) => k,
+        None => return FfiStatus::ErrorInvalidArgument as c_int,
     };
 
+    // SAFETY: path comes from C caller which must provide valid UTF-8 pointer.
     let path_str = unsafe {
         match path.to_str() {
             Some(s) => s,
@@ -356,9 +394,15 @@ pub extern "C" fn rust_parse_file(
         Err(_) => return FfiStatus::ErrorProverNotFound as c_int,
     };
 
-    // Would need async runtime here
-    // For now, return not implemented
-    FfiStatus::ErrorNotImplemented as c_int
+    match run_async(prover.parse_file(PathBuf::from(path_str))) {
+        Ok(proof_state) => {
+            let boxed = Box::new(proof_state);
+            // SAFETY: out_state is a valid pointer from the caller.
+            unsafe { *out_state = Box::into_raw(boxed) as *mut c_void; }
+            FfiStatus::Ok as c_int
+        }
+        Err(status) => status as c_int,
+    }
 }
 
 /// Parse string callback for Zig FFI
@@ -368,7 +412,34 @@ pub extern "C" fn rust_parse_string(
     content: FfiStringSlice,
     out_state: *mut *mut c_void,
 ) -> c_int {
-    FfiStatus::ErrorNotImplemented as c_int
+    let prover_kind = match kind_from_u8(kind) {
+        Some(k) => k,
+        None => return FfiStatus::ErrorInvalidArgument as c_int,
+    };
+
+    // SAFETY: content comes from C caller which must provide valid UTF-8 pointer.
+    let content_str = unsafe {
+        match content.to_str() {
+            Some(s) => s.to_string(),
+            None => return FfiStatus::ErrorInvalidArgument as c_int,
+        }
+    };
+
+    let config = ProverConfig::default();
+    let prover = match ProverFactory::create(prover_kind, config) {
+        Ok(p) => p,
+        Err(_) => return FfiStatus::ErrorProverNotFound as c_int,
+    };
+
+    match run_async(prover.parse_string(&content_str)) {
+        Ok(proof_state) => {
+            let boxed = Box::new(proof_state);
+            // SAFETY: out_state is a valid pointer from the caller.
+            unsafe { *out_state = Box::into_raw(boxed) as *mut c_void; }
+            FfiStatus::Ok as c_int
+        }
+        Err(status) => status as c_int,
+    }
 }
 
 /// Apply tactic callback for Zig FFI
@@ -379,7 +450,64 @@ pub extern "C" fn rust_apply_tactic(
     tactic: *const FfiTactic,
     out_result: *mut FfiTacticResult,
 ) -> c_int {
-    FfiStatus::ErrorNotImplemented as c_int
+    if state.is_null() || tactic.is_null() || out_result.is_null() {
+        return FfiStatus::ErrorInvalidArgument as c_int;
+    }
+
+    let prover_kind = match kind_from_u8(kind) {
+        Some(k) => k,
+        None => return FfiStatus::ErrorInvalidArgument as c_int,
+    };
+
+    // SAFETY: state was created by rust_parse_string/rust_parse_file.
+    let proof_state = unsafe { &*(state as *const ProofState) };
+    // SAFETY: tactic pointer is valid per caller contract.
+    let ffi_tactic = unsafe { &*tactic };
+    // SAFETY: ffi_tactic fields are valid per caller contract.
+    let core_tactic = match unsafe { ffi_tactic.to_tactic() } {
+        Some(t) => t,
+        None => return FfiStatus::ErrorInvalidArgument as c_int,
+    };
+
+    let config = ProverConfig::default();
+    let prover = match ProverFactory::create(prover_kind, config) {
+        Ok(p) => p,
+        Err(_) => return FfiStatus::ErrorProverNotFound as c_int,
+    };
+
+    match run_async(prover.apply_tactic(proof_state, &core_tactic)) {
+        Ok(result) => {
+            let (result_kind, msg) = match &result {
+                TacticResult::Success(new_state) => {
+                    let boxed = Box::new(new_state.clone());
+                    // SAFETY: out_result is valid per caller contract.
+                    unsafe { (*out_result).new_state = Box::into_raw(boxed) as *mut c_void; }
+                    (FfiTacticResultKind::Success, "Tactic applied")
+                }
+                TacticResult::Error(msg) => {
+                    // SAFETY: out_result is valid per caller contract.
+                    unsafe { (*out_result).new_state = ptr::null_mut(); }
+                    (FfiTacticResultKind::Error, msg.as_str())
+                }
+                TacticResult::QED => {
+                    // SAFETY: out_result is valid per caller contract.
+                    unsafe { (*out_result).new_state = ptr::null_mut(); }
+                    (FfiTacticResultKind::QED, "QED")
+                }
+            };
+
+            // SAFETY: out_result is valid per caller contract.
+            unsafe {
+                (*out_result).kind = result_kind;
+                (*out_result)._padding = [0; 3];
+                (*out_result).message_len = msg.len() as u32;
+                (*out_result).message = msg.as_ptr();
+            }
+
+            FfiStatus::Ok as c_int
+        }
+        Err(status) => status as c_int,
+    }
 }
 
 /// Verify proof callback for Zig FFI
@@ -389,7 +517,32 @@ pub extern "C" fn rust_verify_proof(
     state: *mut c_void,
     out_valid: *mut bool,
 ) -> c_int {
-    FfiStatus::ErrorNotImplemented as c_int
+    if state.is_null() || out_valid.is_null() {
+        return FfiStatus::ErrorInvalidArgument as c_int;
+    }
+
+    let prover_kind = match kind_from_u8(kind) {
+        Some(k) => k,
+        None => return FfiStatus::ErrorInvalidArgument as c_int,
+    };
+
+    // SAFETY: state was created by rust_parse_string/rust_parse_file.
+    let proof_state = unsafe { &*(state as *const ProofState) };
+
+    let config = ProverConfig::default();
+    let prover = match ProverFactory::create(prover_kind, config) {
+        Ok(p) => p,
+        Err(_) => return FfiStatus::ErrorProverNotFound as c_int,
+    };
+
+    match run_async(prover.verify_proof(proof_state)) {
+        Ok(valid) => {
+            // SAFETY: out_valid is valid per caller contract.
+            unsafe { *out_valid = valid; }
+            FfiStatus::Ok as c_int
+        }
+        Err(status) => status as c_int,
+    }
 }
 
 /// Export proof callback for Zig FFI
@@ -399,7 +552,32 @@ pub extern "C" fn rust_export_proof(
     state: *mut c_void,
     out_content: *mut FfiOwnedString,
 ) -> c_int {
-    FfiStatus::ErrorNotImplemented as c_int
+    if state.is_null() || out_content.is_null() {
+        return FfiStatus::ErrorInvalidArgument as c_int;
+    }
+
+    let prover_kind = match kind_from_u8(kind) {
+        Some(k) => k,
+        None => return FfiStatus::ErrorInvalidArgument as c_int,
+    };
+
+    // SAFETY: state was created by rust_parse_string/rust_parse_file.
+    let proof_state = unsafe { &*(state as *const ProofState) };
+
+    let config = ProverConfig::default();
+    let prover = match ProverFactory::create(prover_kind, config) {
+        Ok(p) => p,
+        Err(_) => return FfiStatus::ErrorProverNotFound as c_int,
+    };
+
+    match run_async(prover.export(proof_state)) {
+        Ok(content) => {
+            // SAFETY: out_content is valid per caller contract.
+            unsafe { *out_content = FfiOwnedString::from_string(content); }
+            FfiStatus::Ok as c_int
+        }
+        Err(status) => status as c_int,
+    }
 }
 
 /// Suggest tactics callback for Zig FFI
@@ -411,7 +589,57 @@ pub extern "C" fn rust_suggest_tactics(
     out_tactics: *mut FfiTactic,
     out_count: *mut u32,
 ) -> c_int {
-    FfiStatus::ErrorNotImplemented as c_int
+    if state.is_null() || out_tactics.is_null() || out_count.is_null() {
+        return FfiStatus::ErrorInvalidArgument as c_int;
+    }
+
+    let prover_kind = match kind_from_u8(kind) {
+        Some(k) => k,
+        None => return FfiStatus::ErrorInvalidArgument as c_int,
+    };
+
+    // SAFETY: state was created by rust_parse_string/rust_parse_file.
+    let proof_state = unsafe { &*(state as *const ProofState) };
+
+    let config = ProverConfig::default();
+    let prover = match ProverFactory::create(prover_kind, config) {
+        Ok(p) => p,
+        Err(_) => return FfiStatus::ErrorProverNotFound as c_int,
+    };
+
+    match run_async(prover.suggest_tactics(proof_state, limit as usize)) {
+        Ok(tactics) => {
+            let count = tactics.len().min(limit as usize);
+            for (i, tactic) in tactics.iter().take(count).enumerate() {
+                let tactic_kind = match tactic {
+                    Tactic::Apply(_) => FfiTacticKind::Apply,
+                    Tactic::Intro(_) => FfiTacticKind::Intro,
+                    Tactic::Cases(_) => FfiTacticKind::Cases,
+                    Tactic::Induction(_) => FfiTacticKind::Induction,
+                    Tactic::Rewrite(_) => FfiTacticKind::Rewrite,
+                    Tactic::Simplify => FfiTacticKind::Simplify,
+                    Tactic::Reflexivity => FfiTacticKind::Reflexivity,
+                    Tactic::Assumption => FfiTacticKind::Assumption,
+                    Tactic::Exact(_) => FfiTacticKind::Exact,
+                    Tactic::Custom { .. } => FfiTacticKind::Custom,
+                };
+
+                // SAFETY: out_tactics + i is within the caller-allocated buffer.
+                unsafe {
+                    let tactic_ptr = out_tactics.add(i);
+                    (*tactic_ptr).kind = tactic_kind;
+                    (*tactic_ptr)._padding = [0; 3];
+                    (*tactic_ptr).arg_len = 0;
+                    (*tactic_ptr).arg = ptr::null();
+                }
+            }
+
+            // SAFETY: out_count is valid per caller contract.
+            unsafe { *out_count = count as u32; }
+            FfiStatus::Ok as c_int
+        }
+        Err(status) => status as c_int,
+    }
 }
 
 // ============================================================================
@@ -474,6 +702,7 @@ mod tests {
     fn test_ffi_string_slice() {
         let s = "hello";
         let slice = FfiStringSlice::from_str(s);
+        // SAFETY: slice was created from a valid &str that is still in scope.
         unsafe {
             assert_eq!(slice.to_str(), Some("hello"));
         }
@@ -486,6 +715,7 @@ mod tests {
         assert!(!owned.ptr.is_null());
         assert_eq!(owned.len, 11);
 
+        // SAFETY: owned was created from from_string() and has not been freed.
         unsafe {
             let mut owned = owned;
             owned.free();

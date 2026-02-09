@@ -38,3 +38,9 @@ uuid = { version = "1.11", features = ["v4", "serde"] }
 # OpenAPI
 utoipa = { version = "5.3", features = ["axum_extras"] }
 utoipa-swagger-ui = { version = "8.1", features = ["axum"] }
+
+# ECHIDNA core
+echidna = { path = "../../.." }
+
+# HTTP client (for Julia ML API)
+reqwest = { version = "0.12", default-features = false, features = ["json", "rustls-tls"] }

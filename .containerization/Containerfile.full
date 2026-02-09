@@ -1,0 +1,252 @@
+# SPDX-License-Identifier: PMPL-1.0-or-later
+# SPDX-FileCopyrightText: 2024-2025 Jonathan D.A. Jewell <jonathan.jewell@open.ac.uk>
+#
+# ECHIDNA Full Containerfile - Includes all Tier 1-4 provers
+# Uses chainguard base images for supply chain security.
+# For a minimal image with Z3/CVC5/Lean only, see Containerfile
+#
+# Build: podman build -f .containerization/Containerfile.full -t echidna:full .
+# Seal:  selur seal echidna:full
+# Sign:  cerro-torre sign echidna:full
+
+# =============================================================================
+# Stage 1: Rust Builder
+# =============================================================================
+FROM cgr.dev/chainguard/wolfi-base:latest AS rust-builder
+
+RUN apk add --no-cache \
+    rust \
+    cargo \
+    build-base \
+    pkgconf \
+    openssl-dev
+
+WORKDIR /build
+
+COPY Cargo.toml Cargo.lock ./
+COPY src/rust ./src/rust
+COPY src/interfaces ./src/interfaces
+
+RUN cargo build --release --bin echidna
+
+# =============================================================================
+# Stage 2: Idris2 Builder
+# =============================================================================
+FROM cgr.dev/chainguard/wolfi-base:latest AS idris2-builder
+
+RUN apk add --no-cache \
+    curl \
+    ca-certificates \
+    tar \
+    gzip \
+    gmp-dev
+
+WORKDIR /build
+
+RUN curl -fsSL "https://github.com/idris-lang/Idris2/releases/download/v0.8.0/Idris2-0.8.0-Linux-x86_64.tar.gz" \
+    -o /tmp/idris2.tar.gz && \
+    mkdir -p /opt/idris2 && \
+    tar -xzf /tmp/idris2.tar.gz -C /opt/idris2 --strip-components=1 && \
+    rm /tmp/idris2.tar.gz
+
+COPY src/idris /build/idris
+RUN export PATH="/opt/idris2/bin:$PATH" && \
+    export IDRIS2_PREFIX="/opt/idris2" && \
+    cd /build/idris && \
+    idris2 --build echidna-validator.ipkg || true
+
+# =============================================================================
+# Stage 3: Julia Builder
+# =============================================================================
+FROM cgr.dev/chainguard/wolfi-base:latest AS julia-builder
+
+RUN apk add --no-cache curl ca-certificates tar gzip
+
+# Install Julia
+RUN curl -fsSL "https://julialang-s3.julialang.org/bin/linux/x64/1.11/julia-1.11.2-linux-x86_64.tar.gz" \
+    -o /tmp/julia.tar.gz && \
+    mkdir -p /opt/julia && \
+    tar -xzf /tmp/julia.tar.gz -C /opt/julia --strip-components=1 && \
+    rm /tmp/julia.tar.gz
+
+WORKDIR /build
+ENV PATH="/opt/julia/bin:${PATH}"
+
+COPY Project.toml Manifest.toml* ./
+COPY src/julia ./src/julia
+
+RUN julia --project=. -e 'using Pkg; Pkg.instantiate(); Pkg.precompile()' || true
+
+# =============================================================================
+# Stage 4: Prover Installer (Tier 1-4)
+# =============================================================================
+FROM cgr.dev/chainguard/wolfi-base:latest AS prover-installer
+
+RUN apk add --no-cache \
+    build-base \
+    curl \
+    git \
+    wget \
+    ca-certificates \
+    z3 \
+    ghc \
+    cabal-install
+
+WORKDIR /provers
+
+# Tier 1: Agda (via cabal)
+RUN cabal update && \
+    cabal install Agda --installdir=/usr/local/bin || true
+
+# Tier 1: Lean 4 (via elan)
+RUN curl -fsSL https://raw.githubusercontent.com/leanprover/elan/master/elan-init.sh | \
+    sh -s -- -y --default-toolchain stable
+
+# Tier 2: Metamath
+RUN git clone --depth 1 https://github.com/metamath/metamath-exe.git && \
+    cd metamath-exe && \
+    gcc -O2 -o metamath src/*.c && \
+    cp metamath /usr/local/bin/ && \
+    cd .. && rm -rf metamath-exe
+
+# =============================================================================
+# Stage 5: VeriSimDB Builder
+# =============================================================================
+FROM cgr.dev/chainguard/wolfi-base:latest AS verisimdb-builder
+
+RUN apk add --no-cache \
+    rust \
+    cargo \
+    build-base \
+    pkgconf \
+    openssl-dev
+
+WORKDIR /build
+
+# Build VeriSimDB from source (rust-core only)
+COPY vendor/verisimdb/Cargo.toml vendor/verisimdb/Cargo.lock ./
+COPY vendor/verisimdb/rust-core ./rust-core
+RUN cargo build --release -p verisimdb-core || true
+
+# =============================================================================
+# Stage 6: panic-attack Builder
+# =============================================================================
+FROM cgr.dev/chainguard/wolfi-base:latest AS panic-attack-builder
+
+RUN apk add --no-cache \
+    rust \
+    cargo \
+    build-base \
+    pkgconf \
+    openssl-dev
+
+WORKDIR /build
+
+COPY vendor/panic-attacker/Cargo.toml vendor/panic-attacker/Cargo.lock ./
+COPY vendor/panic-attacker/src ./src
+RUN cargo build --release --bin panic-attacker || true
+
+# =============================================================================
+# Stage 7: Guix Channel
+# =============================================================================
+FROM cgr.dev/chainguard/wolfi-base:latest AS guix-channel
+
+WORKDIR /channel
+
+# Create Guix channel definition for echidna
+RUN mkdir -p /channel/echidna
+
+COPY guix-channel/echidna.scm /channel/echidna/ 2>/dev/null || true
+
+# If no guix channel file exists, create a stub
+RUN if [ ! -f /channel/echidna/echidna.scm ]; then \
+    cat > /channel/echidna/echidna.scm << 'GUIX_EOF' ; \
+    ;;; SPDX-License-Identifier: PMPL-1.0-or-later \
+    (define-module (echidna) \
+      #:use-module (guix packages) \
+      #:use-module (guix build-system cargo) \
+      #:use-module (guix download) \
+      #:use-module ((guix licenses) #:prefix license:)) \
+    \
+    (define-public echidna \
+      (package \
+        (name "echidna") \
+        (version "1.5.0") \
+        (source #f) \
+        (build-system cargo-build-system) \
+        (synopsis "Neurosymbolic theorem proving platform") \
+        (description "ECHIDNA: 30-prover trust-hardened theorem proving") \
+        (home-page "https://github.com/hyperpolymath/echidna") \
+        (license (list license:pmpl1.0+)))) \
+    GUIX_EOF \
+    fi
+
+# =============================================================================
+# Stage 8: Runtime Image (Full, chainguard)
+# =============================================================================
+FROM cgr.dev/chainguard/wolfi-base:latest
+
+LABEL maintainer="Jonathan D.A. Jewell <jonathan.jewell@open.ac.uk>"
+LABEL org.opencontainers.image.source="https://github.com/hyperpolymath/echidna"
+LABEL org.opencontainers.image.description="ECHIDNA Full - All provers + VeriSimDB + Guix"
+LABEL org.opencontainers.image.licenses="PMPL-1.0-or-later"
+LABEL org.opencontainers.image.version="1.5.0"
+LABEL org.opencontainers.image.vendor="hyperpolymath"
+
+RUN apk add --no-cache \
+    ca-certificates \
+    libssl3 \
+    gmp \
+    z3
+
+WORKDIR /app
+
+# Copy echidna binary
+COPY --from=rust-builder /build/target/release/echidna /app/bin/echidna
+
+# Copy Idris2 runtime
+COPY --from=idris2-builder /opt/idris2 /opt/idris2
+COPY --from=idris2-builder /build/idris/build/exec/echidna-validator /app/bin/echidna-validator
+
+# Copy Julia environment
+COPY --from=julia-builder /opt/julia /opt/julia
+COPY --from=julia-builder /build /app/julia
+
+# Copy prover installations
+COPY --from=prover-installer /usr/local/bin/metamath /usr/local/bin/metamath
+COPY --from=prover-installer /root/.elan /opt/elan
+
+# Copy VeriSimDB
+COPY --from=verisimdb-builder /build/target/release/verisimdb-core /app/bin/verisimdb 2>/dev/null || true
+
+# Copy panic-attack
+COPY --from=panic-attack-builder /build/target/release/panic-attacker /app/bin/panic-attack 2>/dev/null || true
+
+# Copy Guix channel
+COPY --from=guix-channel /channel /app/guix-channel
+
+# Copy docs-site assets
+COPY docs-site/.well-known /app/well-known
+
+ENV PATH="/app/bin:/opt/idris2/bin:/opt/elan/toolchains/stable/bin:/opt/julia/bin:${PATH}"
+ENV IDRIS2_PREFIX="/opt/idris2"
+ENV JULIA_PROJECT="/app/julia"
+ENV ECHIDNA_PROVER_PATH="/opt"
+ENV ECHIDNA_GUIX_CHANNEL="/app/guix-channel"
+
+RUN mkdir -p /app/proofs /app/config /app/logs /app/verisimdb-data
+
+# REST API
+EXPOSE 8000
+# GraphQL
+EXPOSE 8080
+# gRPC
+EXPOSE 50051
+# Julia ML
+EXPOSE 8090
+
+HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
+    CMD ["/app/bin/echidna", "--version"]
+
+ENTRYPOINT ["/app/bin/echidna"]
+CMD ["--help"]

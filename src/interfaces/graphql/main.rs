@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: PMPL-1.0-or-later
 // ECHIDNA GraphQL Interface - Main server
 
-use async_graphql::{Context, EmptySubscription, Object, Schema, SimpleObject};
+use async_graphql::{EmptySubscription, Schema};
 use async_graphql_axum::GraphQL;
 use axum::{routing::get, Router};
 use tower_http::cors::CorsLayer;
@@ -9,17 +9,21 @@ use tower_http::cors::CorsLayer;
 mod schema;
 mod resolvers;
 
+use resolvers::EchidnaContext;
 use schema::{MutationRoot, QueryRoot};
 
 #[tokio::main]
 async fn main() {
-    // Initialize tracing
     tracing_subscriber::fmt()
         .with_env_filter(tracing_subscriber::EnvFilter::from_default_env())
         .init();
 
-    // Build GraphQL schema
+    // Create ECHIDNA context with core integration
+    let echidna_ctx = EchidnaContext::new();
+
+    // Build GraphQL schema with ECHIDNA context
     let schema = Schema::build(QueryRoot, MutationRoot, EmptySubscription)
+        .data(echidna_ctx)
         .finish();
 
     // Build application with routes
@@ -28,7 +32,6 @@ async fn main() {
         .route("/health", get(health_check))
         .layer(CorsLayer::permissive());
 
-    // Start server
     let addr = "127.0.0.1:8080";
     tracing::info!("GraphQL server listening on http://{}", addr);
     tracing::info!("GraphQL playground available at http://{}/", addr);

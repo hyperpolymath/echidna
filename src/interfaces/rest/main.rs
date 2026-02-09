@@ -8,8 +8,13 @@ use axum::{
     routing::{delete, get, post},
     Router,
 };
+use echidna::provers::{ProverBackend, ProverConfig, ProverFactory, ProverKind};
+use echidna::core::{ProofState, Tactic, TacticResult};
 use serde::{Deserialize, Serialize};
+use std::collections::HashMap;
 use std::sync::Arc;
+use std::time::Duration;
+use tokio::sync::{Mutex, RwLock};
 use tower_http::cors::CorsLayer;
 use utoipa::{OpenApi, ToSchema};
 use utoipa_swagger_ui::SwaggerUi;
@@ -19,9 +24,27 @@ mod models;
 
 use models::*;
 
+/// Application state shared across handlers
 #[derive(Clone)]
-struct AppState {
-    // TODO: Connection to ECHIDNA core
+pub struct AppState {
+    /// Active proof sessions (proof_id -> ProofSession)
+    pub sessions: Arc<RwLock<HashMap<String, Arc<Mutex<ProofSession>>>>>,
+    /// HTTP client for Julia ML API
+    pub ml_client: reqwest::Client,
+    /// Julia ML API base URL
+    pub ml_api_url: String,
+}
+
+/// A proof session
+pub struct ProofSession {
+    pub id: String,
+    pub prover_kind: echidna::ProverKind,
+    pub prover: Box<dyn ProverBackend>,
+    pub state: Option<ProofState>,
+    pub goal: String,
+    pub status: ProofStatus,
+    pub history: Vec<String>,
+    pub start_time: std::time::Instant,
 }
 
 #[tokio::main]
@@ -30,7 +53,28 @@ async fn main() {
         .with_env_filter(tracing_subscriber::EnvFilter::from_default_env())
         .init();
 
-    let state = Arc::new(AppState {});
+    let ml_client = reqwest::Client::builder()
+        .timeout(Duration::from_secs(10))
+        .build()
+        .expect("Failed to create HTTP client");
+
+    let ml_api_url = "http://127.0.0.1:8090".to_string();
+
+    // Test Julia ML connection
+    match ml_client.get(format!("{}/health", ml_api_url)).send().await {
+        Ok(resp) if resp.status().is_success() => {
+            tracing::info!("Connected to Julia ML API at {}", ml_api_url);
+        }
+        _ => {
+            tracing::info!("Julia ML API not available at {} (will use fallback)", ml_api_url);
+        }
+    }
+
+    let state = AppState {
+        sessions: Arc::new(RwLock::new(HashMap::new())),
+        ml_client,
+        ml_api_url,
+    };
 
     let app = Router::new()
         // Health check
