@@ -8,15 +8,15 @@ use axum::{
     routing::{delete, get, post},
     Router,
 };
-use echidna::provers::{ProverBackend, ProverConfig, ProverFactory, ProverKind};
-use echidna::core::{ProofState, Tactic, TacticResult};
+use echidna::provers::{ProverBackend, ProverConfig, ProverFactory, ProverKind as CoreProverKind};
+use echidna::core::{ProofState, Tactic as CoreTactic, TacticResult};
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use std::sync::Arc;
 use std::time::Duration;
 use tokio::sync::{Mutex, RwLock};
 use tower_http::cors::CorsLayer;
-use utoipa::{OpenApi, ToSchema};
+use utoipa::OpenApi;
 use utoipa_swagger_ui::SwaggerUi;
 
 mod handlers;

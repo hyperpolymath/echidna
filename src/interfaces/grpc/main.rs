@@ -26,6 +26,16 @@ struct ProofSession {
     start_time: std::time::Instant,
 }
 
+impl std::fmt::Debug for ProofSession {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.debug_struct("ProofSession")
+            .field("prover_kind", &self.prover_kind)
+            .field("goal", &self.goal)
+            .field("status", &self.status)
+            .finish()
+    }
+}
+
 #[derive(Debug)]
 pub struct ProofServiceImpl {
     sessions: Arc<RwLock<HashMap<String, Arc<Mutex<ProofSession>>>>>,
