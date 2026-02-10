@@ -5,7 +5,7 @@
 //! design in CHAPEL_PLUGGABILITY_DESIGN.md. Chapel is optional - the system
 //! falls back to sequential search if Chapel is unavailable.
 
-use crate::core::Term;
+use crate::provers::{ProverConfig, ProverFactory, ProverKind};
 use anyhow::{Context, Result};
 use std::time::{Duration, Instant};
 
@@ -48,17 +48,40 @@ pub struct SequentialSearch;
 impl ProofSearchStrategy for SequentialSearch {
     fn search(&self, goal: &str, timeout: Duration) -> Result<ProofResult> {
         let start = Instant::now();
+        let config = ProverConfig {
+            timeout: timeout.as_secs(),
+            ..ProverConfig::default()
+        };
 
-        // TODO: Actually call provers sequentially
-        // For now, return a mock success
+        // Build list of available provers (those that can be instantiated)
+        let mut tried: Vec<String> = Vec::new();
+        for kind in ProverKind::all_core() {
+            if start.elapsed() > timeout {
+                break;
+            }
+
+            match ProverFactory::create(kind, config.clone()) {
+                Ok(_prover) => {
+                    tried.push(format!("{:?}", kind));
+                    // Note: ProverBackend methods are async. Full sequential dispatch
+                    // requires the async verify_proof_sequential() path (via ProverDispatcher).
+                    // This sync strategy enumerates available provers for reporting.
+                }
+                Err(_) => continue,
+            }
+        }
+
         let elapsed = start.elapsed();
-
         Ok(ProofResult {
-            success: false, // No prover integration yet
+            success: false,
             prover_name: None,
             time_seconds: elapsed.as_secs_f64(),
             tactic_count: 0,
-            error_message: Some("Sequential search not yet integrated with provers".to_string()),
+            error_message: Some(format!(
+                "Sequential search checked {} provers ({}). Use ProverDispatcher for async verification.",
+                tried.len(),
+                tried.join(", ")
+            )),
             strategy_used: self.name().to_string(),
         })
     }
@@ -113,13 +136,15 @@ mod chapel_ffi {
             // Convert goal to C string
             let c_goal = CString::new(goal).context("Invalid goal string")?;
 
-            // Call Chapel via Zig FFI (use all 12 provers)
+            // SAFETY: c_goal is a valid CString, null prover_ids with 0 count
+            // means "use all provers". Chapel FFI allocates the result.
             let mut c_result = unsafe {
                 echidna_prove_parallel(c_goal.as_ptr(), std::ptr::null(), 0)
             };
 
             // Convert result
             let prover_name = if !c_result.prover_name.is_null() {
+                // SAFETY: Non-null prover_name is a valid C string from Chapel FFI.
                 unsafe {
                     let name_cstr = CStr::from_ptr(c_result.prover_name);
                     Some(name_cstr.to_string_lossy().to_string())
@@ -129,6 +154,7 @@ mod chapel_ffi {
             };
 
             let error_message = if !c_result.error_message.is_null() {
+                // SAFETY: Non-null error_message is a valid C string from Chapel FFI.
                 unsafe {
                     let err_cstr = CStr::from_ptr(c_result.error_message);
                     Some(err_cstr.to_string_lossy().to_string())
@@ -146,7 +172,7 @@ mod chapel_ffi {
                 strategy_used: self.name().to_string(),
             };
 
-            // Free C-allocated strings
+            // SAFETY: c_result was allocated by Chapel FFI and must be freed once.
             unsafe {
                 echidna_free_proof_result(&mut c_result as *mut _);
             }
@@ -159,12 +185,14 @@ mod chapel_ffi {
         }
 
         fn available(&self) -> bool {
+            // SAFETY: echidna_chapel_is_available is a pure query with no side effects.
             unsafe { echidna_chapel_is_available() != 0 }
         }
     }
 
     impl ChapelParallelSearch {
         pub fn new() -> Result<Self> {
+            // SAFETY: echidna_chapel_is_available is a pure query with no side effects.
             if unsafe { echidna_chapel_is_available() } == 0 {
                 anyhow::bail!("Chapel runtime not available");
             }
@@ -172,6 +200,7 @@ mod chapel_ffi {
         }
 
         pub fn get_version() -> Result<String> {
+            // SAFETY: Chapel FFI returns a valid C string that we copy and free.
             unsafe {
                 let c_version = echidna_chapel_get_version();
                 if c_version.is_null() {

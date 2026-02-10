@@ -47,15 +47,20 @@ jobs:
         run: |
           echo "${{ secrets.GITHUB_TOKEN }}" | sudo nerdctl login ghcr.io -u ${{ github.actor }} --password-stdin
 
-      - name: Build image
+      - name: Build minimal image
         run: |
-          sudo nerdctl build -f Containerfile -t ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ github.sha }} .
+          sudo nerdctl build -f .containerization/Containerfile -t ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ github.sha }} .
           sudo nerdctl tag ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ github.sha }} ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:latest
 
-      - name: Push image
+      - name: Build full image
+        run: |
+          sudo nerdctl build -f .containerization/Containerfile.full -t ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:full .
+
+      - name: Push images
         run: |
           sudo nerdctl push ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ github.sha }}
           sudo nerdctl push ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:latest
+          sudo nerdctl push ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:full
 
       - name: Tag release version
         if: github.event_name == 'release'

@@ -1,4 +1,4 @@
--- SPDX-License-Identifier: MIT OR Palimpsest-0.6
+-- SPDX-License-Identifier: PMPL-1.0-or-later
 -- ProofTerm.idr - Dependent-typed representation of proof terms
 
 module ProofTerm

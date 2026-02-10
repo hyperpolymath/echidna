@@ -629,7 +629,7 @@ impl SmtParser {
 
                 match self.peek() {
                     Some("forall") | Some("exists") => {
-                        let quantifier = self.next().unwrap();
+                        let quantifier = self.next().ok_or_else(|| anyhow!("unexpected end of tokens"))?;
                         self.expect("(")?;
 
                         let mut bindings = Vec::new();
@@ -669,7 +669,7 @@ impl SmtParser {
                     }
 
                     Some(_) => {
-                        let func = self.next().unwrap();
+                        let func = self.next().ok_or_else(|| anyhow!("unexpected end of tokens"))?;
                         let mut args = Vec::new();
 
                         while self.peek() != Some(")") {
@@ -695,7 +695,7 @@ impl SmtParser {
             }
 
             Some(_) => {
-                let token = self.next().unwrap();
+                let token = self.next().ok_or_else(|| anyhow!("unexpected end of tokens"))?;
 
                 if let Ok(n) = token.parse::<i64>() {
                     Ok(SmtTerm::Numeral(n))
@@ -763,16 +763,17 @@ mod tests {
     }
 
     #[test]
-    fn test_parse_simple_term() {
+    fn test_parse_simple_term() -> Result<()> {
         let mut parser = SmtParser::new("42");
-        let term = parser.parse_term().unwrap();
+        let term = parser.parse_term()?;
         assert_eq!(term, SmtTerm::Numeral(42));
+        Ok(())
     }
 
     #[test]
-    fn test_parse_app() {
+    fn test_parse_app() -> Result<()> {
         let mut parser = SmtParser::new("(+ x y)");
-        let term = parser.parse_term().unwrap();
+        let term = parser.parse_term()?;
         match term {
             SmtTerm::App { func, args } => {
                 assert_eq!(func, "+");
@@ -780,6 +781,7 @@ mod tests {
             }
             _ => panic!("Expected App"),
         }
+        Ok(())
     }
 
     #[tokio::test]

@@ -238,8 +238,8 @@ impl AgentCore {
                     info!("Goal {} proved with {} in {}ms",
                         goal.goal.id, prover, time_ms);
 
-                    // Store success
-                    self.memory.store_success(&goal, &proof, prover).await?;
+                    // Store success with elapsed time
+                    self.memory.store_success(&goal, &proof, prover, time_ms).await?;
 
                     // Reflect on success (update router scores)
                     if self.config.reflection_enabled {
@@ -387,11 +387,18 @@ impl AgentCore {
     pub async fn stats(&self) -> AgentStats {
         let queue_len = self.goal_queue.read().await.len();
 
+        let (total_proved, total_failed, success_rate) =
+            if let Ok(mem_stats) = self.memory.stats().await {
+                (mem_stats.total_proofs, mem_stats.total_failures, mem_stats.success_rate)
+            } else {
+                (0, 0, 0.0)
+            };
+
         AgentStats {
             queue_length: queue_len,
-            total_proved: 0, // TODO: Get from memory
-            total_failed: 0, // TODO: Get from memory
-            success_rate: 0.0, // TODO: Calculate
+            total_proved,
+            total_failed,
+            success_rate,
         }
     }
 }

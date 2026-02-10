@@ -7,7 +7,7 @@ K9!
 {
   pedigree = {
     schema_version = "1.0.0",
-    component_type = "TODO: describe component type (e.g., 'deployment', 'setup-script')",
+    component_type = "build-and-deploy",
     security = {
       leash = 'Hunt,
       trust_level = "full-system-access",
@@ -17,9 +17,9 @@ K9!
       signature_required = true,
     },
     metadata = {
-      name = "TODO: component-name",
-      version = "1.0.0",
-      description = "TODO: Detailed description of what this component does",
+      name = "echidna-hunt",
+      version = "1.5.0",
+      description = "ECHIDNA build, test, and deployment orchestration via K9 hunt-level contractile",
       author = "Jonathan D.A. Jewell <jonathan.jewell@open.ac.uk>",
     },
     warnings = [
@@ -29,9 +29,9 @@ K9!
       "Use dry-run mode first: ./must --dry-run run your-file.k9.ncl",
     ],
     side_effects = [
-      "TODO: List what files/directories this creates or modifies",
-      "TODO: List what commands this executes",
-      "TODO: List what network access this requires",
+      "Creates target/release/echidna binary via cargo build",
+      "Executes just build, just test, cargo clippy",
+      "Network access for cargo dependency resolution",
     ],
   },
 
@@ -53,58 +53,53 @@ K9!
   recipes = {
     # Main entry point (runs by default)
     default = {
-      recipe = "TODO: main-task",
-      description = "TODO: What the default recipe does",
+      recipe = "main-task",
+      description = "Build and test ECHIDNA",
     },
 
     # Define your recipes here
     "main-task" = {
       dependencies = ["check-prerequisites"],
       commands = [
-        "echo 'TODO: Add your commands here'",
-        # Example: Create directory
-        # "mkdir -p %{config.target_dir}",
-        # Example: Run a command
-        # "just build",
-        # Example: Conditional execution
-        # "@if [ \"%{config.dry_run}\" = \"true\" ]; then echo '[DRY-RUN] Would execute'; else actual-command; fi",
+        "just build",
+        "just test",
+        "echo '✓ ECHIDNA build and test complete'",
       ],
     },
 
     "check-prerequisites" = {
       description = "Verify required tools and permissions",
       commands = [
-        # Example: Check for required tools
-        # "command -v git || (echo 'ERROR: git not found' && exit 1)",
-        # Example: Check permissions
-        # "[ -w %{config.target_dir} ] || (echo 'ERROR: Cannot write to target directory' && exit 1)",
+        "command -v cargo || (echo 'ERROR: cargo not found' && exit 1)",
+        "command -v just || (echo 'ERROR: just not found' && exit 1)",
         "echo '✓ Prerequisites checked'",
       ],
     },
 
     # Add more recipes as needed
     "build" = {
-      description = "Build the project",
+      description = "Build ECHIDNA release binary",
       commands = [
-        "echo 'TODO: Add build commands'",
+        "cargo build --release --bin echidna",
       ],
     },
 
     "deploy" = {
-      description = "Deploy the application",
+      description = "Build container image and seal",
       dependencies = ["build"],
       commands = [
-        "echo 'TODO: Add deployment commands'",
+        "podman build -f .containerization/Containerfile -t echidna:latest .",
+        "selur seal echidna:latest",
+        "cerro-torre sign echidna:latest",
       ],
     },
 
     "clean" = {
-      description = "Clean up generated files",
+      description = "Clean up build artefacts",
       commands = [
-        "echo '⚠️  This will delete files - waiting 3 seconds...'",
+        "echo '⚠️  This will delete build artefacts - waiting 3 seconds...'",
         "sleep 3",
-        "echo 'TODO: Add cleanup commands'",
-        # "rm -rf %{config.target_dir}",
+        "cargo clean",
       ],
     },
   },
@@ -117,14 +112,11 @@ K9!
 }
 
 # Usage:
-# 1. Fill in TODO items above
-# 2. Define configuration with contracts
-# 3. Implement Just recipes with your commands
-# 4. Test with dry-run: ./must --dry-run run your-file.k9.ncl
-# 5. Review dry-run output carefully
-# 6. Sign the component: ./must sign your-file.k9.ncl
-# 7. Distribute with signature: your-file.k9.ncl.sig
-# 8. Users verify and run: ./must verify && ./must run your-file.k9.ncl
+# 1. Test with dry-run: ./must --dry-run run template-hunt.k9.ncl
+# 2. Review dry-run output carefully
+# 3. Sign the component: ./must sign template-hunt.k9.ncl
+# 4. Distribute with signature: template-hunt.k9.ncl.sig
+# 5. Users verify and run: ./must verify && ./must run template-hunt.k9.ncl
 #
 # Security checklist:
 # ✓ All TODO items filled in

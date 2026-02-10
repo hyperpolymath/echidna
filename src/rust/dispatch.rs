@@ -12,6 +12,7 @@ use std::path::PathBuf;
 use std::time::Instant;
 use tracing::{info, warn};
 
+use crate::integrity::solver_integrity::{IntegrityChecker, IntegrityStatus};
 use crate::provers::{ProverConfig, ProverFactory, ProverKind};
 use crate::verification::axiom_tracker::{AxiomTracker, AxiomUsage, DangerLevel};
 use crate::verification::confidence::{compute_trust_level, TrustFactors, TrustLevel};
@@ -69,6 +70,7 @@ impl Default for DispatchConfig {
 /// Prover dispatcher that runs the full trust-hardening pipeline
 pub struct ProverDispatcher {
     config: DispatchConfig,
+    integrity_checker: Option<IntegrityChecker>,
 }
 
 impl ProverDispatcher {
@@ -76,12 +78,19 @@ impl ProverDispatcher {
     pub fn new() -> Self {
         Self {
             config: DispatchConfig::default(),
+            integrity_checker: None,
         }
     }
 
     /// Create a dispatcher with custom configuration
     pub fn with_config(config: DispatchConfig) -> Self {
-        Self { config }
+        Self { config, integrity_checker: None }
+    }
+
+    /// Set the integrity checker for solver binary verification
+    pub fn with_integrity_checker(mut self, checker: IntegrityChecker) -> Self {
+        self.integrity_checker = Some(checker);
+        self
     }
 
     /// Dispatch a proof verification request through the trust-hardening pipeline
@@ -137,14 +146,26 @@ impl ProverDispatcher {
             .as_ref()
             .and_then(|usages| usages.first().cloned());
 
-        // Step 6: Compute trust level
+        // Step 6: Check solver integrity (if checker configured)
+        let solver_integrity_ok = if let Some(ref checker) = self.integrity_checker {
+            let reports = checker.verify_all().await.unwrap_or_default();
+            let prover_name = format!("{:?}", prover_kind).to_lowercase();
+            reports.iter()
+                .find(|r| r.name.to_lowercase() == prover_name)
+                .map(|r| r.status == IntegrityStatus::Verified || r.status == IntegrityStatus::Uninitialized)
+                .unwrap_or(true) // If prover not in manifest, assume ok
+        } else {
+            true // No checker configured, assume ok
+        };
+
+        // Step 7: Compute trust level
         let trust_factors = TrustFactors {
             prover: prover_kind,
             confirming_provers: 1,
             has_certificate: false,
             certificate_verified: false,
             worst_axiom_danger: worst_danger,
-            solver_integrity_ok: true, // TODO: wire to actual integrity checker
+            solver_integrity_ok,
             portfolio_confidence: None,
         };
 
@@ -152,7 +173,7 @@ impl ProverDispatcher {
 
         let elapsed = start.elapsed().as_millis() as u64;
 
-        // Step 7: Check minimum trust level
+        // Step 8: Check minimum trust level
         let meets_minimum = trust_level >= self.config.min_trust_level;
 
         let message = if !verified {
@@ -225,13 +246,25 @@ impl ProverDispatcher {
             .map(|r| r.danger_level)
             .unwrap_or(DangerLevel::Safe);
 
+        // Check solver integrity for cross-checked path
+        let solver_integrity_ok = if let Some(ref checker) = self.integrity_checker {
+            let reports = checker.verify_all().await.unwrap_or_default();
+            let prover_name = format!("{:?}", primary_prover).to_lowercase();
+            reports.iter()
+                .find(|r| r.name.to_lowercase() == prover_name)
+                .map(|r| r.status == IntegrityStatus::Verified || r.status == IntegrityStatus::Uninitialized)
+                .unwrap_or(true)
+        } else {
+            true
+        };
+
         let trust_factors = TrustFactors {
             prover: primary_prover,
             confirming_provers: confirming_count,
             has_certificate: false,
             certificate_verified: false,
             worst_axiom_danger: worst_danger,
-            solver_integrity_ok: true,
+            solver_integrity_ok,
             portfolio_confidence: Some(if confirming_count >= 2 {
                 crate::verification::portfolio::PortfolioConfidence::CrossChecked
             } else if confirming_count == 1 {

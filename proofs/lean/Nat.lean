@@ -1,6 +1,6 @@
 /-
-SPDX-FileCopyrightText: 2025 ECHIDNA Project Team
-SPDX-License-Identifier: MIT
+SPDX-FileCopyrightText: 2025 Jonathan D.A. Jewell <jonathan.jewell@open.ac.uk>
+SPDX-License-Identifier: PMPL-1.0-or-later
 
 Natural Number Proofs in Lean 4
 
@@ -114,11 +114,19 @@ theorem right_distrib (m n k : Nat) : (m + n) * k = m * k + n * k := by
 /-! ## Induction Examples -/
 
 /--
-Sum of first n natural numbers: 0 + 1 + ... + n = n(n+1)/2
-Proven using the formula: sum = n * (n + 1) / 2
+Sum of first n natural numbers (Gauss formula).
+We define our own sum function to avoid Mathlib dependency.
 -/
-theorem sum_first_n (n : Nat) : 2 * (Fin.sum n id) = n * (n + 1) := by
-  sorry -- Requires more advanced Mathlib setup
+def sumTo : Nat → Nat
+  | 0 => 0
+  | n + 1 => (n + 1) + sumTo n
+
+theorem sumTo_formula (n : Nat) : 2 * sumTo n = n * (n + 1) := by
+  induction n with
+  | zero => rfl
+  | succ n ih =>
+    simp [sumTo]
+    omega
 
 /--
 Simple induction: n + n = 2 * n

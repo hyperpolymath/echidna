@@ -87,7 +87,7 @@
            ((relationship . "backend-integration")
             (description . "Metamath minimal proof checker (tiny kernel)")
             (interaction . "Metamath database format")
-            (url . "http://us.metamath.org")))
+            (url . "https://us.metamath.org")))
 
          (hol-light
            ((relationship . "backend-integration")
@@ -99,7 +99,7 @@
            ((relationship . "backend-integration")
             (description . "Mizar mathematical vernacular proof checker")
             (interaction . "Mizar article format")
-            (url . "http://mizar.org")))
+            (url . "https://mizar.org")))
 
          (hol4
            ((relationship . "backend-integration")
@@ -129,13 +129,13 @@
            ((relationship . "backend-integration")
             (description . "Twelf logical framework (LF type theory)")
             (interaction . "Elf format")
-            (url . "http://twelf.org")))
+            (url . "https://twelf.org")))
 
          (nuprl
            ((relationship . "backend-integration")
             (description . "Nuprl constructive type theory prover")
             (interaction . "Nuprl proof format")
-            (url . "http://www.nuprl.org")))
+            (url . "https://www.nuprl.org")))
 
          (minlog
            ((relationship . "backend-integration")
@@ -228,7 +228,7 @@
            ((relationship . "certificate-format")
             (description . "TSTP proof format for first-order ATPs")
             (usage . "Proof output from Vampire and E Prover")
-            (url . "http://www.tptp.org/TSTP.html")))))
+            (url . "https://www.tptp.org/TSTP.html")))))
 
       (ml-frameworks
         ((julia-ecosystem

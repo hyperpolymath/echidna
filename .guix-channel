@@ -1,0 +1,6 @@
+;; SPDX-License-Identifier: PMPL-1.0-or-later
+;; Guix channel definition for ECHIDNA
+(channel
+  (version 0)
+  (url "https://github.com/hyperpolymath/echidna")
+  (name echidna))

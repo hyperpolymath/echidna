@@ -366,44 +366,47 @@ mod tests {
     }
 
     #[test]
-    fn test_compute_blake3() {
-        let mut tmp = NamedTempFile::new().unwrap();
-        write!(tmp, "test content for hashing").unwrap();
+    fn test_compute_blake3() -> Result<()> {
+        let mut tmp = NamedTempFile::new()?;
+        write!(tmp, "test content for hashing")?;
 
-        let hash = IntegrityChecker::compute_blake3(tmp.path()).unwrap();
+        let hash = IntegrityChecker::compute_blake3(tmp.path())?;
         assert_eq!(hash.len(), 64); // 32 bytes = 64 hex chars
 
         // Same content should give same hash
-        let hash2 = IntegrityChecker::compute_blake3(tmp.path()).unwrap();
+        let hash2 = IntegrityChecker::compute_blake3(tmp.path())?;
         assert_eq!(hash, hash2);
+        Ok(())
     }
 
     #[test]
-    fn test_compute_shake3_512() {
-        let mut tmp = NamedTempFile::new().unwrap();
-        write!(tmp, "test content for SHAKE3-512").unwrap();
+    fn test_compute_shake3_512() -> Result<()> {
+        let mut tmp = NamedTempFile::new()?;
+        write!(tmp, "test content for SHAKE3-512")?;
 
-        let hash = IntegrityChecker::compute_shake3_512(tmp.path()).unwrap();
+        let hash = IntegrityChecker::compute_shake3_512(tmp.path())?;
         assert_eq!(hash.len(), 128); // 64 bytes = 128 hex chars
 
         // Same content should give same hash
-        let hash2 = IntegrityChecker::compute_shake3_512(tmp.path()).unwrap();
+        let hash2 = IntegrityChecker::compute_shake3_512(tmp.path())?;
         assert_eq!(hash, hash2);
+        Ok(())
     }
 
     #[test]
-    fn test_tampered_binary_detected() {
-        let mut tmp = NamedTempFile::new().unwrap();
-        write!(tmp, "original content").unwrap();
+    fn test_tampered_binary_detected() -> Result<()> {
+        let mut tmp = NamedTempFile::new()?;
+        write!(tmp, "original content")?;
 
-        let original_hash = IntegrityChecker::compute_blake3(tmp.path()).unwrap();
+        let original_hash = IntegrityChecker::compute_blake3(tmp.path())?;
 
         // Modify the file
-        write!(tmp, "tampered content!").unwrap();
+        write!(tmp, "tampered content!")?;
 
-        let tampered_hash = IntegrityChecker::compute_blake3(tmp.path()).unwrap();
+        let tampered_hash = IntegrityChecker::compute_blake3(tmp.path())?;
 
         assert_ne!(original_hash, tampered_hash, "Tampered binary should have different hash");
+        Ok(())
     }
 
     #[test]
@@ -413,7 +416,7 @@ mod tests {
     }
 
     #[tokio::test]
-    async fn test_integrity_checker_verify_all() {
+    async fn test_integrity_checker_verify_all() -> Result<()> {
         let manifest = SolverManifest {
             solvers: HashMap::from([
                 ("test_solver".to_string(), SolverManifestEntry {
@@ -426,23 +429,25 @@ mod tests {
         };
 
         let checker = IntegrityChecker::new(manifest);
-        let reports = checker.verify_all().await.unwrap();
+        let reports = checker.verify_all().await?;
 
         assert_eq!(reports.len(), 1);
         assert_eq!(reports[0].status, IntegrityStatus::Missing);
+        Ok(())
     }
 
     #[tokio::test]
-    async fn test_health_check_reports_status() {
+    async fn test_health_check_reports_status() -> Result<()> {
         let manifest = SolverManifest {
             solvers: HashMap::new(),
         };
 
         let checker = IntegrityChecker::new(manifest);
-        let reports = checker.verify_all().await.unwrap();
+        let reports = checker.verify_all().await?;
         assert!(reports.is_empty());
 
         let status = checker.get_status("nonexistent").await;
         assert_eq!(status, IntegrityStatus::Unchecked);
+        Ok(())
     }
 }
