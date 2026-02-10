@@ -148,13 +148,30 @@ function train_logistic!(model::LogisticRegression,
     end
 end
 
-# Load training data
+# Load training data (safe regex-based JSONL parsing, no eval)
 function load_jsonl(filepath::String)::Vector{Dict{String, Any}}
     data = Dict{String, Any}[]
     open(filepath, "r") do io
         for line in eachline(io)
-            # Simple JSON parsing (assumes well-formed JSON from our extraction)
-            push!(data, eval(Meta.parse(line)))
+            stripped = strip(line)
+            isempty(stripped) && continue
+            # Parse simple {"key":"value",...} objects via regex
+            # Matches string key-value pairs (sufficient for our JSONL schema)
+            entry = Dict{String, Any}()
+            for m in eachmatch(r"\"([^\"]+)\"\s*:\s*\"([^\"]*(?:\\.[^\"]*)*)\"", stripped)
+                entry[m.captures[1]] = m.captures[2]
+            end
+            # Also match numeric values
+            for m in eachmatch(r"\"([^\"]+)\"\s*:\s*(-?\d+(?:\.\d+)?)", stripped)
+                entry[m.captures[1]] = parse(Float64, m.captures[2])
+            end
+            # Also match boolean values
+            for m in eachmatch(r"\"([^\"]+)\"\s*:\s*(true|false)", stripped)
+                entry[m.captures[1]] = m.captures[2] == "true"
+            end
+            if !isempty(entry)
+                push!(data, entry)
+            end
         end
     end
     return data

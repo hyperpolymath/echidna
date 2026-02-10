@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # SPDX-License-Identifier: PMPL-1.0-or-later
-# SPDX-FileCopyrightText: 2026 ECHIDNA Project Team
+# SPDX-FileCopyrightText: 2026 Jonathan D.A. Jewell <jonathan.jewell@open.ac.uk>
 
 # ECHIDNA v1.2 Integration Test Script
 #
@@ -246,12 +246,12 @@ echo "────────────────────────�
 
 # Kill background processes
 if [ -n "${RUST_PID:-}" ]; then
-    kill $RUST_PID 2>/dev/null || true
+    kill "$RUST_PID" 2>/dev/null || true
     echo "  Stopped Rust backend"
 fi
 
 if [ -n "${JULIA_PID:-}" ]; then
-    kill $JULIA_PID 2>/dev/null || true
+    kill "$JULIA_PID" 2>/dev/null || true
     echo "  Stopped Julia ML server"
 fi
 

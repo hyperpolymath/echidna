@@ -1,20 +1,21 @@
 // SPDX-FileCopyrightText: 2025 ECHIDNA Project Team
 // SPDX-License-Identifier: PMPL-1.0-or-later
 
-//! Integration tests for Rust↔Julia neural API
+//! Integration tests for Rust<->Julia neural API
 //!
 //! These tests require the Julia test server to be running:
 //! ```bash
 //! julia src/julia/test_server.jl 8081
 //! ```
 
+use anyhow::Result;
 use echidna::core::{ProofState, Term};
 use echidna::neural::{NeuralConfig, NeuralSuggester};
 
 /// Test health check against Julia server
 #[tokio::test]
 #[ignore = "requires Julia test server running on port 8081"]
-async fn test_julia_health_check() {
+async fn test_julia_health_check() -> Result<()> {
     let config = NeuralConfig {
         api_url: "http://localhost:8081".to_string(),
         timeout_ms: 5000,
@@ -26,16 +27,17 @@ async fn test_julia_health_check() {
     };
 
     let mut suggester = NeuralSuggester::with_config(config);
-    let healthy = suggester.check_health().await.unwrap();
+    let healthy = suggester.check_health().await?;
 
     assert!(healthy, "Julia server should report healthy");
     assert!(suggester.is_connected(), "Suggester should be connected after health check");
+    Ok(())
 }
 
 /// Test premise prediction against Julia server
 #[tokio::test]
 #[ignore = "requires Julia test server running on port 8081"]
-async fn test_julia_predict_premises() {
+async fn test_julia_predict_premises() -> Result<()> {
     let config = NeuralConfig {
         api_url: "http://localhost:8081".to_string(),
         timeout_ms: 5000,
@@ -49,20 +51,19 @@ async fn test_julia_predict_premises() {
     let mut suggester = NeuralSuggester::with_config(config);
 
     // First connect
-    let healthy = suggester.check_health().await.unwrap();
+    let healthy = suggester.check_health().await?;
     assert!(healthy);
 
     // Test premise suggestion
     let goal = Term::Const("test_goal".to_string());
     let premises: Vec<(String, Term)> = vec![
-        ("lemma_1".to_string(), Term::Const("P → Q".to_string())),
-        ("lemma_2".to_string(), Term::Const("Q → R".to_string())),
+        ("lemma_1".to_string(), Term::Const("P -> Q".to_string())),
+        ("lemma_2".to_string(), Term::Const("Q -> R".to_string())),
     ];
 
     let results = suggester
         .suggest_premises(&goal, &premises, "agda")
-        .await
-        .unwrap();
+        .await?;
 
     assert!(!results.is_empty(), "Should return some premises");
 
@@ -71,12 +72,13 @@ async fn test_julia_predict_premises() {
         assert!(!name.is_empty(), "Premise name should not be empty");
         assert!(*score >= 0.0 && *score <= 1.0, "Score should be in [0, 1]");
     }
+    Ok(())
 }
 
 /// Test tactic suggestion against Julia server
 #[tokio::test]
 #[ignore = "requires Julia test server running on port 8081"]
-async fn test_julia_suggest_tactics() {
+async fn test_julia_suggest_tactics() -> Result<()> {
     let config = NeuralConfig {
         api_url: "http://localhost:8081".to_string(),
         timeout_ms: 5000,
@@ -90,23 +92,24 @@ async fn test_julia_suggest_tactics() {
     let mut suggester = NeuralSuggester::with_config(config);
 
     // First connect
-    let healthy = suggester.check_health().await.unwrap();
+    let healthy = suggester.check_health().await?;
     assert!(healthy);
 
     // Create proof state
-    let goal = Term::Const("∀x. P(x) → Q(x)".to_string());
+    let goal = Term::Const("forall x. P(x) -> Q(x)".to_string());
     let state = ProofState::new(goal);
 
     // Get suggestions
     let tactics = suggester.suggest_tactics(&state).await;
 
     assert!(!tactics.is_empty(), "Should return some tactics");
+    Ok(())
 }
 
 /// Test scored tactic suggestion
 #[tokio::test]
 #[ignore = "requires Julia test server running on port 8081"]
-async fn test_julia_suggest_tactics_scored() {
+async fn test_julia_suggest_tactics_scored() -> Result<()> {
     let config = NeuralConfig {
         api_url: "http://localhost:8081".to_string(),
         timeout_ms: 5000,
@@ -120,7 +123,7 @@ async fn test_julia_suggest_tactics_scored() {
     let mut suggester = NeuralSuggester::with_config(config);
 
     // First connect
-    suggester.check_health().await.unwrap();
+    suggester.check_health().await?;
 
     // Create proof state
     let goal = Term::Const("goal".to_string());
@@ -136,11 +139,12 @@ async fn test_julia_suggest_tactics_scored() {
         assert!(st.score >= 0.0, "Score should be non-negative");
         assert!(st.score <= 1.0, "Score should not exceed 1.0");
     }
+    Ok(())
 }
 
 /// Test connection failure handling
 #[tokio::test]
-async fn test_connection_failure_graceful() {
+async fn test_connection_failure_graceful() -> Result<()> {
     let config = NeuralConfig {
         api_url: "http://localhost:59999".to_string(), // Non-existent server
         timeout_ms: 1000,
@@ -154,7 +158,7 @@ async fn test_connection_failure_graceful() {
     let mut suggester = NeuralSuggester::with_config(config);
 
     // Health check should fail gracefully
-    let healthy = suggester.check_health().await.unwrap();
+    let healthy = suggester.check_health().await?;
     assert!(!healthy, "Should report unhealthy for non-existent server");
     assert!(!suggester.is_connected());
 
@@ -164,11 +168,12 @@ async fn test_connection_failure_graceful() {
     let tactics = suggester.suggest_tactics(&state).await;
 
     assert!(tactics.is_empty(), "Should return empty for disconnected suggester");
+    Ok(())
 }
 
 /// Test configuration updates
 #[tokio::test]
-async fn test_config_update() {
+async fn test_config_update() -> Result<()> {
     let initial_config = NeuralConfig {
         api_url: "http://localhost:8081".to_string(),
         timeout_ms: 1000,
@@ -200,12 +205,13 @@ async fn test_config_update() {
     assert_eq!(suggester.config().top_k, 20);
     assert_eq!(suggester.config().timeout_ms, 3000);
     assert_eq!(suggester.config().api_url, "http://localhost:8082");
+    Ok(())
 }
 
 /// Test multiple prover support
 #[tokio::test]
 #[ignore = "requires Julia test server running on port 8081"]
-async fn test_multiple_provers() {
+async fn test_multiple_provers() -> Result<()> {
     let config = NeuralConfig {
         api_url: "http://localhost:8081".to_string(),
         timeout_ms: 5000,
@@ -217,7 +223,7 @@ async fn test_multiple_provers() {
     };
 
     let mut suggester = NeuralSuggester::with_config(config);
-    suggester.check_health().await.unwrap();
+    suggester.check_health().await?;
 
     let goal = Term::Const("test".to_string());
     let premises: Vec<(String, Term)> = vec![
@@ -230,8 +236,7 @@ async fn test_multiple_provers() {
     for prover in provers {
         let results = suggester
             .suggest_premises(&goal, &premises, prover)
-            .await
-            .unwrap();
+            .await?;
 
         // Should return results for all provers
         assert!(
@@ -240,4 +245,5 @@ async fn test_multiple_provers() {
             prover
         );
     }
+    Ok(())
 }

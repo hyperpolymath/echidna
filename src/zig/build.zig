@@ -1,5 +1,5 @@
-// SPDX-FileCopyrightText: 2025 ECHIDNA Project Team
-// SPDX-License-Identifier: MIT OR Palimpsest-0.6
+// SPDX-FileCopyrightText: 2025 Jonathan D.A. Jewell <jonathan.jewell@open.ac.uk>
+// SPDX-License-Identifier: PMPL-1.0-or-later
 
 const std = @import("std");
 
