@@ -6,7 +6,7 @@
       ((version . "1.5.0")
        (schema-version . "1")
        (created . "2026-01-10T13:48:18+00:00")
-       (updated . "2026-02-12T15:35:00+00:00")
+       (updated . "2026-02-12T18:30:00+00:00")
        (project . "echidna")
        (repo . "echidna")))
 
@@ -99,7 +99,7 @@
 
     (critical-next-actions
       ((immediate
-         . ("Sync GitLab mirror (branch behind)"
+         . ("Fix GitLab mirror (diverged history, needs fresh PAT to unprotect branch)"
             "Add echidna to git-private-farm manifest"))
        (this-week
          . ("Begin FFI/IPC bridge design for v2.0"
@@ -112,14 +112,21 @@
 
 
     (session-history
-      ((session . "2026-02-12 v1.5.0-release")
-       (summary . "Released v1.5.0 with fleet integration, security audit, and ecosystem enrollment")
+      ((session . "2026-02-12b workflow-automation")
+       (summary . "Updated security-scan.yml for automated VERISIMDB_PAT dispatch")
        (changes
-         ("Integrated with gitbot-fleet (Tier 1 Verifier bot)"
-          "Created echidnabot/src/fleet.rs integration module (250+ lines)"
-          "Security audit: 82→50 weak points (39% reduction)"
-          "Created 7 documentation files (CHANGELOG, SECURITY-SCAN-FINAL, ROADMAP-v2.0, etc.)"
-          "Tagged and released v1.5.0 on GitHub"))
+         ("Updated security-scan.yml to pass VERISIMDB_PAT secret to reusable workflow"
+          "Pushed to GitHub"
+          "GitLab mirror diverged: protected branch + expired PAT blocks force push"))
        (previous-session
-         ((session . "2026-02-08 documentation-update")
-          (summary . "Updated all documentation to accurately reflect v1.5 trust & safety hardening completion")))))
+         ((session . "2026-02-12 v1.5.0-release")
+          (summary . "Released v1.5.0 with fleet integration, security audit, and ecosystem enrollment")
+          (changes
+            ("Integrated with gitbot-fleet (Tier 1 Verifier bot)"
+             "Created echidnabot/src/fleet.rs integration module (250+ lines)"
+             "Security audit: 82→50 weak points (39% reduction)"
+             "Created 7 documentation files (CHANGELOG, SECURITY-SCAN-FINAL, ROADMAP-v2.0, etc.)"
+             "Tagged and released v1.5.0 on GitHub"))
+          (previous-session
+            ((session . "2026-02-08 documentation-update")
+             (summary . "Updated all documentation to accurately reflect v1.5 trust & safety hardening completion")))))))
