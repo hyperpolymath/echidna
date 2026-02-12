@@ -355,7 +355,13 @@
            ((relationship . "sibling-intelligence")
             (description . "Neurosymbolic CI/CD intelligence platform")
             (usage . "VeriSimDB connector, pattern detection, fleet dispatch")
-            (url . "https://github.com/hyperpolymath/hypatia")))))
+            (url . "https://github.com/hyperpolymath/hypatia")))
+
+         (opsm
+           ((relationship . "sibling-tool")
+            (description . "Federated multi-language package manager with cryptographic security")
+            (usage . "Formal verification of package distribution pipelines, dependency integrity proofs")
+            (url . "https://github.com/hyperpolymath/odds-and-sods-package-manager")))))
 
       (potential-integrations
         ((mathlib
