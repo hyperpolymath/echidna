@@ -6,13 +6,13 @@
       ((version . "1.5.0")
        (schema-version . "1")
        (created . "2026-01-10T13:48:18+00:00")
-       (updated . "2026-02-08T20:00:00+00:00")
+       (updated . "2026-02-12T15:35:00+00:00")
        (project . "echidna")
        (repo . "echidna")))
 
     (current-position
-      ((phase . "v1.5 Trust & Safety Hardening - Complete")
-       (overall-completion . 97)
+      ((phase . "v1.5.0 Released - Production Ready")
+       (overall-completion . 100)
        (working-features
          ("30/30 theorem prover backends operational"
           "Tier 1: Agda, Coq, Lean, Isabelle, Z3, CVC5, Idris2, F*"
@@ -44,7 +44,11 @@
           "ReScript UI (28 files, 6 components)"
           "CI/CD pipeline with 17 workflows"
           "RSR/CCCP compliance complete"
-          "echidnabot integration ready"))
+          "echidnabot integration ready"
+          "Gitbot-fleet integration complete (Tier 1 Verifier)"
+          "Security audit complete: 50 weak points (39% reduction from 82)"
+          "Ecosystem enrollment: 6 services integrated"
+          "v1.5.0 released with comprehensive documentation"))
        (trust-hardening-status
          ("Task 1: Solver binary integrity verification - COMPLETE"
           "Task 2: SMT solver cross-checking (portfolio solving) - COMPLETE"
@@ -95,40 +99,27 @@
 
     (critical-next-actions
       ((immediate
-         . ("Update documentation to reflect v1.5 completion"
-            "Push trust hardening changes to origin and gitlab"))
+         . ("Sync GitLab mirror (branch behind)"
+            "Add echidna to git-private-farm manifest"))
        (this-week
-         . ("Performance benchmarking across all 30 provers"
-            "Begin FFI/IPC bridge design for v2.0"))
+         . ("Begin FFI/IPC bridge design for v2.0"
+            "Evaluate Flux.jl for Transformer models"
+            "Celebrate v1.5.0 release!"))
        (this-month
          . ("Implement FFI/IPC bridge for API-to-prover integration"
-            "Evaluate Flux.jl for Transformer models"
-            "Tamarin/ProVerif bridge for cipherbot"))))
+            "Train Transformer models on proof corpus"
+            "Tamarin/ProVerif bridge for protocol verification"))))
+
 
     (session-history
-      ((session . "2026-02-08 documentation-update")
-       (summary . "Updated all documentation to accurately reflect v1.5 trust & safety hardening completion")
+      ((session . "2026-02-12 v1.5.0-release")
+       (summary . "Released v1.5.0 with fleet integration, security audit, and ecosystem enrollment")
        (changes
-         ("Updated README.adoc: 30 provers, trust pipeline, test counts, correct license"
-          "Updated ROADMAP.adoc: all v1.5 tasks marked complete with details"
-          "Updated CHANGELOG.adoc: v1.5.0 release entry with all additions"
-          "Updated STATE.scm: version, completion, features, session history"
-          "Updated ECOSYSTEM.scm: 30 provers, trust hardening ecosystem"
-          "Updated META.scm: new ADRs for trust hardening decisions"))
+         ("Integrated with gitbot-fleet (Tier 1 Verifier bot)"
+          "Created echidnabot/src/fleet.rs integration module (250+ lines)"
+          "Security audit: 82→50 weak points (39% reduction)"
+          "Created 7 documentation files (CHANGELOG, SECURITY-SCAN-FINAL, ROADMAP-v2.0, etc.)"
+          "Tagged and released v1.5.0 on GitHub"))
        (previous-session
-         ((session . "2026-02-08 trust-hardening")
-          (summary . "Implemented Tasks 1-13 of SONNET-TASKS.md trust & safety hardening plan")
-          (changes
-            ("Added 13 new prover backends (total 30)"
-             "Implemented solver binary integrity verification"
-             "Implemented SMT portfolio solving with cross-checking"
-             "Implemented proof certificate checking"
-             "Implemented axiom usage tracking"
-             "Implemented solver sandboxing"
-             "Implemented 5-level trust hierarchy"
-             "Implemented mutation testing"
-             "Implemented cross-prover proof exchange"
-             "Implemented prover dispatch pipeline"
-             "Expanded property-based tests"
-             "Implemented Pareto frontier computation"
-             "Implemented statistical confidence tracking"))))))))
+         ((session . "2026-02-08 documentation-update")
+          (summary . "Updated all documentation to accurately reflect v1.5 trust & safety hardening completion")))))
