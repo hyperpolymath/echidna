@@ -16,7 +16,7 @@ cat > "$BIN_DIR/terminal-recoverer" <<'SCRIPT'
 #!/usr/bin/env bash
 set -euo pipefail
 
-cmd=${1:-ensure}
+cmd="${1:-ensure}"
 
 case "$cmd" in
   ensure)
@@ -41,7 +41,7 @@ case "$cmd" in
     if command -v journalctl >/dev/null 2>&1; then
       journalctl -f -o cat SYSLOG_IDENTIFIER=systemd-coredump | \
         while IFS= read -r line; do
-          ts=$(date +%F-%H%M%S)
+          ts="$(date +%F-%H%M%S)"
           dir="$HOME/Documents/crash-captures/coredump-$ts"
           mkdir -p "$dir"
           printf "%s\n" "$line" > "$dir/journal-line.txt"
