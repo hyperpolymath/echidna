@@ -1,0 +1,49 @@
+{
+  "version": "1.0",
+  "site": {
+    "name": "ECHIDNA",
+    "domain": "nesy-prover.dev",
+    "repository": "https://github.com/hyperpolymath/echidna"
+  },
+  "consent": {
+    "data_collection": {
+      "analytics": false,
+      "cookies": false,
+      "tracking": false,
+      "fingerprinting": false
+    },
+    "ai_training": {
+      "allow_scraping": true,
+      "allow_training": true,
+      "attribution_required": true,
+      "license": "PMPL-1.0-or-later"
+    },
+    "third_party": {
+      "advertising": false,
+      "behavioral_tracking": false,
+      "social_media_widgets": false
+    }
+  },
+  "privacy": {
+    "data_sovereignty": "EU/UK",
+    "data_retention": "none",
+    "contact": "https://nesy-prover.dev/contact.html"
+  },
+  "ethical_standards": {
+    "anti_slavery": true,
+    "anti_money_laundering": true,
+    "data_sovereignty": true,
+    "accessibility": "WCAG-2.3-AA",
+    "open_source": true
+  },
+  "technical": {
+    "security_headers": true,
+    "https_only": true,
+    "subresource_integrity": true,
+    "content_security_policy": true
+  },
+  "feedback": {
+    "url": "https://nesy-prover.dev/contact.html",
+    "github_issues": "https://github.com/hyperpolymath/echidna/issues"
+  }
+}

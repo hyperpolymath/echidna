@@ -1,0 +1,32 @@
+# Cloudflare Pages _headers format
+# Security headers for maximum protection
+
+/*
+  # HSTS - Force HTTPS for 2 years
+  Strict-Transport-Security: max-age=63072000; includeSubDomains; preload
+
+  # CSP - Strict content security
+  Content-Security-Policy: default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' https: data:; font-src 'self'; connect-src 'self'; frame-ancestors 'none'; base-uri 'self'; form-action 'self'
+
+  # Prevent clickjacking
+  X-Frame-Options: DENY
+
+  # Prevent MIME sniffing
+  X-Content-Type-Options: nosniff
+
+  # XSS Protection
+  X-XSS-Protection: 1; mode=block
+
+  # Referrer Policy
+  Referrer-Policy: strict-origin-when-cross-origin
+
+  # Permissions Policy
+  Permissions-Policy: geolocation=(), microphone=(), camera=(), payment=(), usb=(), magnetometer=(), gyroscope=(), accelerometer=()
+
+  # Cross-Origin policies
+  Cross-Origin-Embedder-Policy: require-corp
+  Cross-Origin-Opener-Policy: same-origin
+  Cross-Origin-Resource-Policy: same-origin
+
+  # HTTP 430 - Consent Required (custom header for aibdp.json)
+  X-AI-Bot-Data-Protocol: /.well-known/aibdp.json

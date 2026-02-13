@@ -1,0 +1,445 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Neurosymbolic theorem proving with 12 integrated provers">
+    <meta name="theme-color" content="#3182ce">
+    <title>ECHIDNA - Neurosymbolic theorem proving with 12 integrated provers</title>
+
+    <!-- Open Graph -->
+    <meta property="og:title" content="ECHIDNA">
+    <meta property="og:description" content="Neurosymbolic theorem proving with 12 integrated provers">
+    <meta property="og:type" content="website">
+    <meta property="og:url" content="https://nesy-prover.dev/">
+
+    <!-- Security -->
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' https: data:;">
+
+    <style>
+        /* WCAG AA/AAA Compliant Styles */
+        :root {
+            --primary: #3182ce;
+            --primary-dark: color-mix(in srgb, #3182ce 80%, black);
+            --primary-light: color-mix(in srgb, #3182ce 20%, white);
+            --text: #1a1a1a;
+            --text-light: #4a4a4a;
+            --bg: #ffffff;
+            --bg-alt: #f8f9fa;
+            --border: #dee2e6;
+            --focus: #0066cc;
+            --focus-ring: rgba(0, 102, 204, 0.25);
+        }
+
+        @media (prefers-color-scheme: dark) {
+            :root {
+                --text: #e9ecef;
+                --text-light: #adb5bd;
+                --bg: #1a1a1a;
+                --bg-alt: #2d2d2d;
+                --border: #495057;
+            }
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        html {
+            scroll-behavior: smooth;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Helvetica Neue', Arial, sans-serif;
+            font-size: 18px; /* WCAG AAA: larger base font */
+            line-height: 1.6; /* WCAG AA: minimum 1.5 */
+            color: var(--text);
+            background: var(--bg);
+        }
+
+        /* Skip link for keyboard navigation */
+        .skip-link {
+            position: absolute;
+            top: -40px;
+            left: 0;
+            background: var(--primary);
+            color: white;
+            padding: 8px 16px;
+            text-decoration: none;
+            font-weight: 600;
+            z-index: 100;
+        }
+
+        .skip-link:focus {
+            top: 0;
+            outline: 3px solid var(--focus);
+            outline-offset: 2px;
+        }
+
+        /* Focus visible for keyboard users */
+        *:focus-visible {
+            outline: 3px solid var(--focus);
+            outline-offset: 2px;
+        }
+
+        /* Header */
+        header {
+            background: var(--primary);
+            color: white;
+            padding: 1rem 2rem;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+
+        nav {
+            max-width: 1200px;
+            margin: 0 auto;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 1rem;
+        }
+
+        .site-title {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: white;
+            text-decoration: none;
+        }
+
+        .nav-links {
+            display: flex;
+            gap: 1.5rem;
+            list-style: none;
+            flex-wrap: wrap;
+        }
+
+        .nav-links a {
+            color: white;
+            text-decoration: none;
+            font-weight: 500;
+            padding: 0.5rem 1rem;
+            border-radius: 4px;
+            transition: background 0.2s;
+        }
+
+        .nav-links a:hover,
+        .nav-links a:focus {
+            background: rgba(255, 255, 255, 0.2);
+        }
+
+        /* Hero Section */
+        .hero {
+            background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
+            color: white;
+            padding: 6rem 2rem;
+            text-align: center;
+        }
+
+        .hero-icon {
+            font-size: 5rem;
+            margin-bottom: 1rem;
+            line-height: 1;
+        }
+
+        .hero h1 {
+            font-size: clamp(2.5rem, 5vw, 4rem);
+            margin-bottom: 1.5rem;
+            font-weight: 800;
+            line-height: 1.2;
+        }
+
+        .hero p {
+            font-size: clamp(1.25rem, 3vw, 1.75rem);
+            max-width: 800px;
+            margin: 0 auto 2rem;
+            opacity: 0.95;
+        }
+
+        .cta-group {
+            display: flex;
+            gap: 1rem;
+            justify-content: center;
+            flex-wrap: wrap;
+            margin-top: 2rem;
+        }
+
+        .btn {
+            display: inline-block;
+            padding: 1rem 2rem;
+            font-size: 1.125rem;
+            font-weight: 600;
+            text-decoration: none;
+            border-radius: 8px;
+            transition: transform 0.2s, box-shadow 0.2s;
+            min-width: 160px;
+            text-align: center;
+        }
+
+        .btn-primary {
+            background: white;
+            color: var(--primary);
+        }
+
+        .btn-secondary {
+            background: rgba(255, 255, 255, 0.2);
+            color: white;
+            border: 2px solid white;
+        }
+
+        .btn:hover,
+        .btn:focus {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 16px rgba(0, 0, 0, 0.2);
+        }
+
+        /* Main Content */
+        main {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 4rem 2rem;
+        }
+
+        .features {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 2rem;
+            margin: 4rem 0;
+        }
+
+        .feature {
+            background: var(--bg-alt);
+            padding: 2rem;
+            border-radius: 12px;
+            border-left: 4px solid var(--primary);
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+
+        .feature:hover,
+        .feature:focus-within {
+            transform: translateY(-4px);
+            box-shadow: 0 8px 16px rgba(0, 0, 0, 0.1);
+        }
+
+        .feature h3 {
+            color: var(--primary);
+            margin-bottom: 1rem;
+            font-size: 1.5rem;
+        }
+
+        .feature p {
+            color: var(--text-light);
+            line-height: 1.6;
+        }
+
+        /* Footer */
+        footer {
+            background: var(--bg-alt);
+            color: var(--text-light);
+            padding: 3rem 2rem 2rem;
+            margin-top: 4rem;
+            border-top: 1px solid var(--border);
+        }
+
+        .footer-content {
+            max-width: 1200px;
+            margin: 0 auto;
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 2rem;
+        }
+
+        .footer-section h4 {
+            margin-bottom: 1rem;
+            color: var(--text);
+        }
+
+        .footer-section ul {
+            list-style: none;
+        }
+
+        .footer-section li {
+            margin-bottom: 0.5rem;
+        }
+
+        .footer-section a {
+            color: var(--text-light);
+            text-decoration: none;
+        }
+
+        .footer-section a:hover,
+        .footer-section a:focus {
+            color: var(--primary);
+            text-decoration: underline;
+        }
+
+        .footer-bottom {
+            max-width: 1200px;
+            margin: 2rem auto 0;
+            padding-top: 2rem;
+            border-top: 1px solid var(--border);
+            text-align: center;
+            font-size: 0.9rem;
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            nav {
+                flex-direction: column;
+                align-items: flex-start;
+            }
+
+            .nav-links {
+                width: 100%;
+            }
+
+            .hero {
+                padding: 4rem 1.5rem;
+            }
+
+            .cta-group {
+                flex-direction: column;
+            }
+
+            .btn {
+                width: 100%;
+            }
+        }
+
+        /* Print styles */
+        @media print {
+            .skip-link,
+            nav,
+            .cta-group,
+            footer {
+                display: none;
+            }
+
+            .hero {
+                background: none;
+                color: black;
+            }
+
+            body {
+                font-size: 12pt;
+            }
+        }
+
+        /* Reduced motion */
+        @media (prefers-reduced-motion: reduce) {
+            * {
+                animation: none !important;
+                transition: none !important;
+                scroll-behavior: auto !important;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Skip link for keyboard navigation -->
+    <a href="#main" class="skip-link">Skip to main content</a>
+
+    <header role="banner">
+        <nav role="navigation" aria-label="Main navigation">
+            <a href="/" class="site-title">ECHIDNA</a>
+            <ul class="nav-links">
+                <li><a href="/" aria-current="page">Home</a></li>
+                <li><a href="/about.html">About</a></li>
+                <li><a href="/docs.html">Documentation</a></li>
+                <li><a href="/gallery.html">Gallery</a></li>
+                <li><a href="/contact.html">Contact</a></li>
+            </ul>
+        </nav>
+    </header>
+
+    <div class="hero" role="region" aria-label="Hero section">
+        <p class="hero-icon" aria-hidden="true">🧠</p>
+        <h1>ECHIDNA</h1>
+        <p>Neurosymbolic theorem proving with 12 integrated provers</p>
+        <div class="cta-group">
+            <a href="https://github.com/hyperpolymath/echidna" class="btn btn-primary">
+                View on GitHub
+            </a>
+            <a href="/docs.html" class="btn btn-secondary">
+                Documentation
+            </a>
+        </div>
+    </div>
+
+    <main id="main" role="main">
+        <section aria-labelledby="features-heading">
+            <h2 id="features-heading" class="visually-hidden">Key Features</h2>
+            <div class="features">
+                <article class="feature">
+                    <h3>🚀 Production Ready</h3>
+                    <p>Built with modern tools and battle-tested in real-world applications. Rigorously validated for reliability and performance.</p>
+                </article>
+
+                <article class="feature">
+                    <h3>📚 Well Documented</h3>
+                    <p>Comprehensive documentation with examples, tutorials, and API references to get you started quickly.</p>
+                </article>
+
+                <article class="feature">
+                    <h3>🔒 Type Safe</h3>
+                    <p>Formally verified components with dependent types ensure correctness and eliminate entire classes of bugs.</p>
+                </article>
+
+                <article class="feature">
+                    <h3>🌍 Open Source</h3>
+                    <p>Licensed under <a href="https://palimpsest.license">PMPL-1.0-or-later</a> with transparent development and community contributions welcome.</p>
+                </article>
+
+                <article class="feature">
+                    <h3>⚡ High Performance</h3>
+                    <p>Optimized for speed and efficiency without sacrificing safety or correctness.</p>
+                </article>
+
+                <article class="feature">
+                    <h3>🔧 Actively Maintained</h3>
+                    <p>Regular updates, security patches, and continuous improvement driven by community feedback.</p>
+                </article>
+            </div>
+        </section>
+    </main>
+
+    <footer role="contentinfo">
+        <div class="footer-content">
+            <div class="footer-section">
+                <h4>Project</h4>
+                <ul>
+                    <li><a href="/about.html">About</a></li>
+                    <li><a href="/docs.html">Documentation</a></li>
+                    <li><a href="/gallery.html">Gallery</a></li>
+                    <li><a href="https://github.com/hyperpolymath/echidna">Source Code</a></li>
+                </ul>
+            </div>
+
+            <div class="footer-section">
+                <h4>Community</h4>
+                <ul>
+                    <li><a href="https://github.com/hyperpolymath/echidna/issues">Issue Tracker</a></li>
+                    <li><a href="https://github.com/hyperpolymath/echidna/discussions">Discussions</a></li>
+                    <li><a href="/contact.html">Contact Us</a></li>
+                </ul>
+            </div>
+
+            <div class="footer-section">
+                <h4>Resources</h4>
+                <ul>
+                    <li><a href="/policies.html">Policies</a></li>
+                    <li><a href="/.well-known/security.txt">Security</a></li>
+                    <li><a href="https://palimpsest.license">License</a></li>
+                </ul>
+            </div>
+        </div>
+
+        <div class="footer-bottom">
+            <p>Built with ♥ using <a href="https://poly-ssg.org">poly-ssg</a> | License: <a href="https://palimpsest.license">PMPL-1.0-or-later</a></p>
+            <p>&copy; 2026 <a href="https://hyperpolymath.github.io">hyperpolymath</a> | <a href="/.well-known/aibdp.json">AI Bot Data Protocol</a></p>
+        </div>
+    </footer>
+</body>
+</html>

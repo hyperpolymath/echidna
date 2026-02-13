@@ -1,0 +1,7 @@
+Contact: mailto:security@hyperpolymath.org
+Expires: 2027-12-31T23:59:59.000Z
+Encryption: https://hyperpolymath.github.io/pgp-key.asc
+Preferred-Languages: en
+Canonical: https://hyperpolymath.github.io/.well-known/security.txt
+Policy: https://hyperpolymath.github.io/security-policy
+Acknowledgments: https://hyperpolymath.github.io/security-acknowledgments

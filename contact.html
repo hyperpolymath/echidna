@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Contact & Feedback - ECHIDNA</title>
+    <meta name="description" content="Contact ECHIDNA team - feedback, support, and inquiries">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: -apple-system, sans-serif; font-size: 18px; line-height: 1.6; color: #1a1a1a; }
+        .skip-link { position: absolute; top: -40px; left: 0; background: #0066cc; color: white; padding: 8px 16px; text-decoration: none; z-index: 100; }
+        .skip-link:focus { top: 0; outline: 3px solid #0066cc; }
+        header { background: #3182ce; color: white; padding: 1rem 2rem; }
+        nav { max-width: 1200px; margin: 0 auto; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem; }
+        .site-title { font-size: 1.5rem; font-weight: 700; color: white; text-decoration: none; }
+        .nav-links { display: flex; gap: 1.5rem; list-style: none; }
+        .nav-links a { color: white; text-decoration: none; padding: 0.5rem 1rem; border-radius: 4px; }
+        .nav-links a:hover { background: rgba(255,255,255,0.2); }
+        main { max-width: 800px; margin: 0 auto; padding: 3rem 2rem; }
+        h1 { font-size: 2.5rem; margin-bottom: 1.5rem; }
+        .contact-options { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 2rem; margin: 2rem 0; }
+        .contact-card { background: #f8f9fa; padding: 2rem; border-radius: 8px; border-left: 4px solid #3182ce; }
+        .contact-card h2 { font-size: 1.5rem; margin-bottom: 1rem; color: #3182ce; }
+        .contact-card a { color: #0066cc; font-weight: 600; }
+        form { background: #f8f9fa; padding: 2rem; border-radius: 8px; margin-top: 2rem; }
+        label { display: block; font-weight: 600; margin-bottom: 0.5rem; }
+        input, textarea, select { width: 100%; padding: 0.75rem; margin-bottom: 1.5rem; border: 2px solid #dee2e6; border-radius: 4px; font-size: 1rem; font-family: inherit; }
+        input:focus, textarea:focus, select:focus { outline: 3px solid #0066cc; outline-offset: 2px; border-color: #0066cc; }
+        textarea { min-height: 150px; resize: vertical; }
+        button { background: #3182ce; color: white; padding: 1rem 2rem; border: none; border-radius: 8px; font-size: 1.125rem; font-weight: 600; cursor: pointer; }
+        button:hover, button:focus { opacity: 0.9; outline: 3px solid #0066cc; }
+        .required { color: #dc3545; }
+        footer { background: #f8f9fa; padding: 2rem; margin-top: 4rem; text-align: center; border-top: 1px solid #dee2e6; }
+    </style>
+</head>
+<body>
+    <a href="#main" class="skip-link">Skip to main content</a>
+    <header><nav><a href="/" class="site-title">ECHIDNA</a>
+        <ul class="nav-links"><li><a href="/">Home</a></li><li><a href="/about.html">About</a></li><li><a href="/docs.html">Documentation</a></li><li><a href="/gallery.html">Gallery</a></li><li><a href="/contact.html" aria-current="page">Contact</a></li></ul></nav></header>
+
+    <main id="main" role="main">
+        <h1>Contact & Feedback</h1>
+        <p>We value your feedback, questions, and contributions. Choose the best channel for your needs:</p>
+
+        <div class="contact-options">
+            <div class="contact-card">
+                <h2>🐛 Bug Reports</h2>
+                <p>Found a bug? Report it on GitHub for fastest response.</p>
+                <a href="https://github.com/hyperpolymath/echidna/issues">GitHub Issues →</a>
+            </div>
+
+            <div class="contact-card">
+                <h2>💬 Discussions</h2>
+                <p>Ask questions, share ideas, or discuss features.</p>
+                <a href="https://github.com/hyperpolymath/echidna/discussions">GitHub Discussions →</a>
+            </div>
+
+            <div class="contact-card">
+                <h2>🔒 Security</h2>
+                <p>Report security vulnerabilities privately.</p>
+                <a href="/.well-known/security.txt">Security Contact →</a>
+            </div>
+
+            <div class="contact-card">
+                <h2>♿ Accessibility</h2>
+                <p>Report accessibility issues - we prioritize these!</p>
+                <a href="https://github.com/hyperpolymath/echidna/issues">Report Issue →</a>
+            </div>
+        </div>
+
+        <form id="feedback-form" aria-labelledby="form-heading">
+            <h2 id="form-heading">General Feedback</h2>
+            <p>For other inquiries, use the form below. We typically respond within 48 hours.</p>
+
+            <label for="name">Name <span class="required">*</span></label>
+            <input type="text" id="name" name="name" required autocomplete="name" aria-required="true">
+
+            <label for="email">Email <span class="required">*</span></label>
+            <input type="email" id="email" name="email" required autocomplete="email" aria-required="true">
+
+            <label for="category">Category <span class="required">*</span></label>
+            <select id="category" name="category" required aria-required="true">
+                <option value="">Select a category</option>
+                <option value="feedback">General Feedback</option>
+                <option value="feature">Feature Request</option>
+                <option value="documentation">Documentation</option>
+                <option value="accessibility">Accessibility Issue</option>
+                <option value="policy">Policy Question</option>
+                <option value="other">Other</option>
+            </select>
+
+            <label for="message">Message <span class="required">*</span></label>
+            <textarea id="message" name="message" required aria-required="true" aria-describedby="message-help"></textarea>
+            <p id="message-help" style="font-size: 0.9rem; color: #6c757d; margin-top: -1rem; margin-bottom: 1rem;">Please provide as much detail as possible.</p>
+
+            <button type="submit">Send Message</button>
+        </form>
+
+        <script>
+        document.getElementById('feedback-form').addEventListener('submit', function(e) {
+            e.preventDefault();
+            const formData = new FormData(e.target);
+            const data = Object.fromEntries(formData);
+
+            // In production, this would POST to a serverless function
+            // For now, construct a mailto: link as fallback
+            const subject = encodeURIComponent('[' + data.category + '] Feedback from ' + data.name);
+            const body = encodeURIComponent(
+                'Name: ' + data.name + '\n' +
+                'Email: ' + data.email + '\n' +
+                'Category: ' + data.category + '\n\n' +
+                'Message:\n' + data.message
+            );
+
+            alert('Thank you for your feedback! You will be redirected to your email client.');
+            window.location.href = 'mailto:hyperpolymath-feedback@example.org?subject=' + subject + '&body=' + body;
+        });
+        </script>
+    </main>
+
+    <footer><p>License: <a href="https://palimpsest.license">PMPL-1.0-or-later</a></p></footer>
+</body>
+</html>
