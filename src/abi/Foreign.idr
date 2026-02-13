@@ -179,6 +179,7 @@ buildInfo = do
 |||
 ||| The C side expects: void (*callback)(uint64_t handle, uint32_t event)
 ||| We declare the foreign function with the concrete function type
+-- PROOF_TODO: Replace believe_me with actual proof
 ||| so Idris2 can marshal the callback directly without believe_me.
 public export
 Callback : Type
