@@ -27,7 +27,7 @@ if [ "$EXISTING_COUNT" -gt 10 ]; then
     echo "  ✓ Ready to extract"
     echo
     echo "  Run this to extract:"
-    echo "    cd $ECHIDNA_ROOT"
+    echo "    cd "$ECHIDNA_ROOT""
     echo "    julia --project=src/julia -e 'include(\"src/julia/extract_training_data.jl\")'"
 else
     echo "  ⚠ Few proof files found - may need to add more examples"
