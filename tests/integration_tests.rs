@@ -1,10 +1,11 @@
 // SPDX-FileCopyrightText: 2025 ECHIDNA Project Team
-// SPDX-License-Identifier: MIT OR Palimpsest-0.6
+// SPDX-License-Identifier: PMPL-1.0-or-later
 
 //! Integration tests for all 12 theorem prover backends
 
 mod common;
 
+use anyhow::Result;
 use echidna::provers::{ProverBackend, ProverConfig, ProverFactory, ProverKind};
 use std::path::PathBuf;
 
@@ -14,14 +15,14 @@ mod tier1_tests {
     use super::*;
 
     #[tokio::test]
-    async fn test_agda_basic_parse() {
+    async fn test_agda_basic_parse() -> Result<()> {
         if !common::is_prover_available(ProverKind::Agda) {
             eprintln!("Skipping: Agda not available");
-            return;
+            return Ok(());
         }
 
         let config = common::test_prover_config(ProverKind::Agda);
-        let backend = ProverFactory::create(ProverKind::Agda, config).unwrap();
+        let backend = ProverFactory::create(ProverKind::Agda, config)?;
 
         let content = r#"
 module Test where
@@ -32,17 +33,18 @@ id x = x
 
         let result = backend.parse_string(content).await;
         assert!(result.is_ok(), "Failed to parse Agda: {:?}", result.err());
+        Ok(())
     }
 
     #[tokio::test]
-    async fn test_coq_basic_parse() {
+    async fn test_coq_basic_parse() -> Result<()> {
         if !common::is_prover_available(ProverKind::Coq) {
             eprintln!("Skipping: Coq not available");
-            return;
+            return Ok(());
         }
 
         let config = common::test_prover_config(ProverKind::Coq);
-        let backend = ProverFactory::create(ProverKind::Coq, config).unwrap();
+        let backend = ProverFactory::create(ProverKind::Coq, config)?;
 
         let content = r#"
 Theorem id_example : forall (A : Type) (x : A), x = x.
@@ -54,17 +56,18 @@ Qed.
 
         let result = backend.parse_string(content).await;
         assert!(result.is_ok(), "Failed to parse Coq: {:?}", result.err());
+        Ok(())
     }
 
     #[tokio::test]
-    async fn test_lean_basic_parse() {
+    async fn test_lean_basic_parse() -> Result<()> {
         if !common::is_prover_available(ProverKind::Lean) {
             eprintln!("Skipping: Lean not available");
-            return;
+            return Ok(());
         }
 
         let config = common::test_prover_config(ProverKind::Lean);
-        let backend = ProverFactory::create(ProverKind::Lean, config).unwrap();
+        let backend = ProverFactory::create(ProverKind::Lean, config)?;
 
         let content = r#"
 theorem id_example (A : Type) (x : A) : x = x := rfl
@@ -72,17 +75,18 @@ theorem id_example (A : Type) (x : A) : x = x := rfl
 
         let result = backend.parse_string(content).await;
         assert!(result.is_ok(), "Failed to parse Lean: {:?}", result.err());
+        Ok(())
     }
 
     #[tokio::test]
-    async fn test_isabelle_basic_parse() {
+    async fn test_isabelle_basic_parse() -> Result<()> {
         if !common::is_prover_available(ProverKind::Isabelle) {
             eprintln!("Skipping: Isabelle not available");
-            return;
+            return Ok(());
         }
 
         let config = common::test_prover_config(ProverKind::Isabelle);
-        let backend = ProverFactory::create(ProverKind::Isabelle, config).unwrap();
+        let backend = ProverFactory::create(ProverKind::Isabelle, config)?;
 
         let content = r#"
 theory Test
@@ -97,17 +101,18 @@ end
 
         let result = backend.parse_string(content).await;
         assert!(result.is_ok(), "Failed to parse Isabelle: {:?}", result.err());
+        Ok(())
     }
 
     #[tokio::test]
-    async fn test_z3_basic_parse() {
+    async fn test_z3_basic_parse() -> Result<()> {
         if !common::is_prover_available(ProverKind::Z3) {
             eprintln!("Skipping: Z3 not available");
-            return;
+            return Ok(());
         }
 
         let config = common::test_prover_config(ProverKind::Z3);
-        let backend = ProverFactory::create(ProverKind::Z3, config).unwrap();
+        let backend = ProverFactory::create(ProverKind::Z3, config)?;
 
         let content = r#"
 (declare-const x Int)
@@ -117,17 +122,18 @@ end
 
         let result = backend.parse_string(content).await;
         assert!(result.is_ok(), "Failed to parse Z3: {:?}", result.err());
+        Ok(())
     }
 
     #[tokio::test]
-    async fn test_cvc5_basic_parse() {
+    async fn test_cvc5_basic_parse() -> Result<()> {
         if !common::is_prover_available(ProverKind::CVC5) {
             eprintln!("Skipping: CVC5 not available");
-            return;
+            return Ok(());
         }
 
         let config = common::test_prover_config(ProverKind::CVC5);
-        let backend = ProverFactory::create(ProverKind::CVC5, config).unwrap();
+        let backend = ProverFactory::create(ProverKind::CVC5, config)?;
 
         let content = r#"
 (set-logic QF_LIA)
@@ -138,6 +144,7 @@ end
 
         let result = backend.parse_string(content).await;
         assert!(result.is_ok(), "Failed to parse CVC5: {:?}", result.err());
+        Ok(())
     }
 }
 
@@ -147,14 +154,14 @@ mod tier2_tests {
     use super::*;
 
     #[tokio::test]
-    async fn test_metamath_basic_parse() {
+    async fn test_metamath_basic_parse() -> Result<()> {
         if !common::is_prover_available(ProverKind::Metamath) {
             eprintln!("Skipping: Metamath not available");
-            return;
+            return Ok(());
         }
 
         let config = common::test_prover_config(ProverKind::Metamath);
-        let backend = ProverFactory::create(ProverKind::Metamath, config).unwrap();
+        let backend = ProverFactory::create(ProverKind::Metamath, config)?;
 
         let content = r#"
 $( Basic Metamath example $)
@@ -165,17 +172,18 @@ wx $f wff x $.
 
         let result = backend.parse_string(content).await;
         assert!(result.is_ok(), "Failed to parse Metamath: {:?}", result.err());
+        Ok(())
     }
 
     #[tokio::test]
-    async fn test_hol_light_basic_parse() {
+    async fn test_hol_light_basic_parse() -> Result<()> {
         if !common::is_prover_available(ProverKind::HOLLight) {
             eprintln!("Skipping: HOL Light not available");
-            return;
+            return Ok(());
         }
 
         let config = common::test_prover_config(ProverKind::HOLLight);
-        let backend = ProverFactory::create(ProverKind::HOLLight, config).unwrap();
+        let backend = ProverFactory::create(ProverKind::HOLLight, config)?;
 
         let content = r#"
 let id_theorem = prove(`!x:A. x = x`, REFL_TAC);;
@@ -183,17 +191,18 @@ let id_theorem = prove(`!x:A. x = x`, REFL_TAC);;
 
         let result = backend.parse_string(content).await;
         assert!(result.is_ok(), "Failed to parse HOL Light: {:?}", result.err());
+        Ok(())
     }
 
     #[tokio::test]
-    async fn test_mizar_basic_parse() {
+    async fn test_mizar_basic_parse() -> Result<()> {
         if !common::is_prover_available(ProverKind::Mizar) {
             eprintln!("Skipping: Mizar not available");
-            return;
+            return Ok(());
         }
 
         let config = common::test_prover_config(ProverKind::Mizar);
-        let backend = ProverFactory::create(ProverKind::Mizar, config).unwrap();
+        let backend = ProverFactory::create(ProverKind::Mizar, config)?;
 
         let content = r#"
 environ
@@ -208,6 +217,7 @@ theorem
 
         let result = backend.parse_string(content).await;
         assert!(result.is_ok(), "Failed to parse Mizar: {:?}", result.err());
+        Ok(())
     }
 }
 
@@ -217,14 +227,14 @@ mod tier3_tests {
     use super::*;
 
     #[tokio::test]
-    async fn test_pvs_basic_parse() {
+    async fn test_pvs_basic_parse() -> Result<()> {
         if !common::is_prover_available(ProverKind::PVS) {
             eprintln!("Skipping: PVS not available");
-            return;
+            return Ok(());
         }
 
         let config = common::test_prover_config(ProverKind::PVS);
-        let backend = ProverFactory::create(ProverKind::PVS, config).unwrap();
+        let backend = ProverFactory::create(ProverKind::PVS, config)?;
 
         let content = r#"
 test: THEORY
@@ -235,17 +245,18 @@ END test
 
         let result = backend.parse_string(content).await;
         assert!(result.is_ok(), "Failed to parse PVS: {:?}", result.err());
+        Ok(())
     }
 
     #[tokio::test]
-    async fn test_acl2_basic_parse() {
+    async fn test_acl2_basic_parse() -> Result<()> {
         if !common::is_prover_available(ProverKind::ACL2) {
             eprintln!("Skipping: ACL2 not available");
-            return;
+            return Ok(());
         }
 
         let config = common::test_prover_config(ProverKind::ACL2);
-        let backend = ProverFactory::create(ProverKind::ACL2, config).unwrap();
+        let backend = ProverFactory::create(ProverKind::ACL2, config)?;
 
         let content = r#"
 (defthm id-theorem
@@ -254,6 +265,7 @@ END test
 
         let result = backend.parse_string(content).await;
         assert!(result.is_ok(), "Failed to parse ACL2: {:?}", result.err());
+        Ok(())
     }
 }
 
@@ -263,14 +275,14 @@ mod tier4_tests {
     use super::*;
 
     #[tokio::test]
-    async fn test_hol4_basic_parse() {
+    async fn test_hol4_basic_parse() -> Result<()> {
         if !common::is_prover_available(ProverKind::HOL4) {
             eprintln!("Skipping: HOL4 not available");
-            return;
+            return Ok(());
         }
 
         let config = common::test_prover_config(ProverKind::HOL4);
-        let backend = ProverFactory::create(ProverKind::HOL4, config).unwrap();
+        let backend = ProverFactory::create(ProverKind::HOL4, config)?;
 
         let content = r#"
 val id_theorem = prove(``!x. x = x``, REFL_TAC);
@@ -278,6 +290,7 @@ val id_theorem = prove(``!x. x = x``, REFL_TAC);
 
         let result = backend.parse_string(content).await;
         assert!(result.is_ok(), "Failed to parse HOL4: {:?}", result.err());
+        Ok(())
     }
 }
 
@@ -286,23 +299,24 @@ val id_theorem = prove(``!x. x = x``, REFL_TAC);
 mod verification_tests {
     use super::*;
 
-    async fn test_prover_verification(kind: ProverKind, content: &str) {
+    async fn test_prover_verification(kind: ProverKind, content: &str) -> Result<()> {
         if !common::is_prover_available(kind) {
             eprintln!("Skipping: {:?} not available", kind);
-            return;
+            return Ok(());
         }
 
         let config = common::test_prover_config(kind);
-        let backend = ProverFactory::create(kind, config).unwrap();
+        let backend = ProverFactory::create(kind, config)?;
 
-        let state = backend.parse_string(content).await.unwrap();
+        let state = backend.parse_string(content).await?;
         let verified = backend.verify_proof(&state).await;
 
         assert!(verified.is_ok(), "Verification failed: {:?}", verified.err());
+        Ok(())
     }
 
     #[tokio::test]
-    async fn test_all_provers_verify() {
+    async fn test_all_provers_verify() -> Result<()> {
         // Test each prover with a simple theorem
         let provers_and_content = vec![
             (ProverKind::Agda, "module T where\nid : {A : Set} → A → A\nid x = x"),
@@ -312,8 +326,9 @@ mod verification_tests {
         ];
 
         for (kind, content) in provers_and_content {
-            test_prover_verification(kind, content).await;
+            test_prover_verification(kind, content).await?;
         }
+        Ok(())
     }
 }
 
@@ -324,37 +339,39 @@ mod tactic_tests {
     use echidna::core::Tactic;
 
     #[tokio::test]
-    async fn test_coq_intro_tactic() {
+    async fn test_coq_intro_tactic() -> Result<()> {
         if !common::is_prover_available(ProverKind::Coq) {
             eprintln!("Skipping: Coq not available");
-            return;
+            return Ok(());
         }
 
         let config = common::test_prover_config(ProverKind::Coq);
-        let backend = ProverFactory::create(ProverKind::Coq, config).unwrap();
+        let backend = ProverFactory::create(ProverKind::Coq, config)?;
 
         let content = "Theorem t : forall x, x = x.";
-        let state = backend.parse_string(content).await.unwrap();
+        let state = backend.parse_string(content).await?;
 
         let result = backend.apply_tactic(&state, &Tactic::Intro(None)).await;
         assert!(result.is_ok(), "Intro tactic failed: {:?}", result.err());
+        Ok(())
     }
 
     #[tokio::test]
-    async fn test_lean_reflexivity_tactic() {
+    async fn test_lean_reflexivity_tactic() -> Result<()> {
         if !common::is_prover_available(ProverKind::Lean) {
             eprintln!("Skipping: Lean not available");
-            return;
+            return Ok(());
         }
 
         let config = common::test_prover_config(ProverKind::Lean);
-        let backend = ProverFactory::create(ProverKind::Lean, config).unwrap();
+        let backend = ProverFactory::create(ProverKind::Lean, config)?;
 
         let content = "theorem t (x : Nat) : x = x := by";
-        let state = backend.parse_string(content).await.unwrap();
+        let state = backend.parse_string(content).await?;
 
         let result = backend.apply_tactic(&state, &Tactic::Reflexivity).await;
         assert!(result.is_ok(), "Reflexivity tactic failed: {:?}", result.err());
+        Ok(())
     }
 }
 
@@ -367,42 +384,44 @@ mod export_tests {
     use super::*;
 
     #[tokio::test]
-    async fn test_agda_export() {
+    async fn test_agda_export() -> Result<()> {
         if !common::is_prover_available(ProverKind::Agda) {
             eprintln!("Skipping: Agda not available");
-            return;
+            return Ok(());
         }
 
         let config = common::test_prover_config(ProverKind::Agda);
-        let backend = ProverFactory::create(ProverKind::Agda, config).unwrap();
+        let backend = ProverFactory::create(ProverKind::Agda, config)?;
 
         let state = common::simple_proof_state();
         let result = backend.export(&state).await;
 
         assert!(result.is_ok(), "Export failed: {:?}", result.err());
-        let code = result.unwrap();
+        let code = result?;
         assert!(code.contains("module"), "Exported code should contain module declaration");
+        Ok(())
     }
 
     #[tokio::test]
-    async fn test_coq_export() {
+    async fn test_coq_export() -> Result<()> {
         if !common::is_prover_available(ProverKind::Coq) {
             eprintln!("Skipping: Coq not available");
-            return;
+            return Ok(());
         }
 
         let config = common::test_prover_config(ProverKind::Coq);
-        let backend = ProverFactory::create(ProverKind::Coq, config).unwrap();
+        let backend = ProverFactory::create(ProverKind::Coq, config)?;
 
         let state = common::simple_proof_state();
         let result = backend.export(&state).await;
 
         assert!(result.is_ok(), "Export failed: {:?}", result.err());
-        let code = result.unwrap();
+        let code = result?;
         assert!(
             code.contains("Theorem") || code.contains("Lemma"),
             "Exported code should contain theorem/lemma"
         );
+        Ok(())
     }
 }
 
@@ -413,23 +432,24 @@ mod error_tests {
     use echidna::core::Tactic;
 
     #[tokio::test]
-    async fn test_parse_invalid_syntax() {
+    async fn test_parse_invalid_syntax() -> Result<()> {
         if !common::is_prover_available(ProverKind::Coq) {
             eprintln!("Skipping: Coq not available");
-            return;
+            return Ok(());
         }
 
         let config = common::test_prover_config(ProverKind::Coq);
-        let backend = ProverFactory::create(ProverKind::Coq, config).unwrap();
+        let backend = ProverFactory::create(ProverKind::Coq, config)?;
 
         let invalid_content = "This is not valid Coq syntax!!!";
         let result = backend.parse_string(invalid_content).await;
 
         assert!(result.is_err(), "Should fail on invalid syntax");
+        Ok(())
     }
 
     #[tokio::test]
-    async fn test_apply_invalid_tactic() {
+    async fn test_apply_invalid_tactic() -> Result<()> {
         let state = common::simple_proof_state();
         let mock = common::mock_prover::MockProver::new(ProverKind::Agda);
 
@@ -437,5 +457,6 @@ mod error_tests {
 
         let result = mock.apply_tactic(&state, &Tactic::Intro(None)).await;
         assert!(result.is_err(), "Should fail on invalid tactic");
+        Ok(())
     }
 }

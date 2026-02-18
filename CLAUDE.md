@@ -4,26 +4,46 @@ This document provides guidelines and context for working with Claude Code on th
 
 ## Project Overview
 
-**ECHIDNA** (Extensible Cognitive Hybrid Intelligence for Deductive Neural Assistance) is a neurosymbolic theorem proving platform supporting 12 theorem provers with aspect tagging, OpenCyc, and DeepProbLog integration.
+**ECHIDNA** (Extensible Cognitive Hybrid Intelligence for Deductive Neural Assistance) is a trust-hardened neurosymbolic theorem proving platform supporting 30 prover backends with a comprehensive verification pipeline.
 
 **Repository**: https://github.com/hyperpolymath/echidna
+**Version**: 1.5.0
+**License**: PMPL-1.0-or-later
 
 ## Repository Structure
 
 ```
 echidna/
-├── .git/              # Git repository
-├── CLAUDE.md          # This file
-├── src/               # Source code
-│   ├── rust/          # Rust core/FFI/WASM
-│   ├── julia/         # Julia ML components
-│   ├── rescript/      # ReScript+Deno UI
-│   └── mercury/       # Mercury/Logtalk logic (optional)
-├── templates/         # RSR/CCCP compliance templates
-├── scripts/           # Automation scripts
-├── docs/              # Documentation
-├── tests/             # Test suite
-└── Justfile           # Primary build system
+├── src/
+│   ├── rust/               # Rust core (30 provers, trust pipeline)
+│   │   ├── provers/        # 30 prover backend implementations
+│   │   ├── verification/   # Trust pipeline (portfolio, certificates, axioms, confidence, mutation, pareto, statistics)
+│   │   ├── integrity/      # Solver binary integrity (SHAKE3-512, BLAKE3)
+│   │   ├── executor/       # Sandboxed solver execution (Podman, bubblewrap)
+│   │   ├── exchange/       # Cross-prover proof exchange (OpenTheory, Dedukti)
+│   │   ├── dispatch.rs     # Full trust-hardening dispatch pipeline
+│   │   ├── agent/          # Agentic proof search (actor model)
+│   │   ├── neural.rs       # Neural premise selection
+│   │   ├── aspect.rs       # Aspect tagging
+│   │   ├── core.rs         # Core types (Term, ProofState, Tactic, Goal)
+│   │   ├── parsers/        # Proof file parsers
+│   │   ├── ffi/            # Foreign function interface
+│   │   ├── server.rs       # HTTP API server
+│   │   ├── repl.rs         # Interactive REPL
+│   │   ├── main.rs         # CLI entry point
+│   │   └── lib.rs          # Library root
+│   ├── interfaces/         # API interfaces (workspace members)
+│   │   ├── graphql/        # GraphQL (async-graphql, port 8080)
+│   │   ├── grpc/           # gRPC (tonic, port 50051)
+│   │   └── rest/           # REST (axum + OpenAPI, port 8000)
+│   ├── julia/              # Julia ML components
+│   ├── rescript/           # ReScript+Deno UI (28 files)
+│   └── mercury/            # Mercury/Logtalk logic (optional)
+├── .machine_readable/      # SCM files (STATE.scm, META.scm, ECOSYSTEM.scm)
+├── .github/workflows/      # 17 CI/CD workflows
+├── Cargo.toml              # Rust workspace root
+├── Justfile                # Primary build system
+└── Containerfile           # Podman container
 ```
 
 ## Working with Claude Code
@@ -32,17 +52,8 @@ echidna/
 
 1. **Code Quality**: Maintain high code quality standards with proper error handling, tests, and documentation
 2. **Git Workflow**: Follow conventional commit messages and keep commits atomic
-3. **Security**: Be vigilant about security vulnerabilities (XSS, SQL injection, command injection, etc.)
+3. **Security**: Be vigilant about security vulnerabilities
 4. **Dependencies**: Document all dependencies and their purposes
-
-### Development Workflow
-
-When working on features or fixes:
-
-1. Create feature branches with descriptive names (prefix with `claude/` for Claude Code branches)
-2. Write clear, concise commit messages
-3. Test changes thoroughly before committing
-4. Update documentation as needed
 
 ### Commit Message Format
 
@@ -54,150 +65,99 @@ Follow conventional commit format:
 - `test:` - Adding or updating tests
 - `chore:` - Maintenance tasks
 
-Example: `feat: add user authentication module`
-
-### Code Style
-
-- Use consistent formatting throughout the codebase
-- Include comments for complex logic
-- Keep functions small and focused
-- Use meaningful variable and function names
-
-### Testing
-
-- Write tests for new features
-- Ensure existing tests pass before committing
-- Include both unit and integration tests where appropriate
-- Run `cargo test` before committing Rust changes
-
-### Documentation
-
-- Update README.adoc for user-facing changes
-- Document API endpoints and interfaces
-- Include inline comments for complex algorithms
-- Keep this CLAUDE.md updated with project-specific guidelines
-
 ## Project-Specific Context
 
 ### Tech Stack
 
-**4-Language Architecture** (use as few languages as necessary):
-- **Julia**: Machine learning components (replaces Python - NO PYTHON ALLOWED)
-- **Rust**: Core logic, FFI, WASM compilation
-- **ReScript + Deno**: User interface
-- **Mercury/Logtalk**: Optional logic reservoir
+- **Rust**: Core logic, 30 prover backends, trust pipeline, CLI, REPL, API servers
+- **Julia**: ML inference (tactic prediction, premise selection, port 8090)
+- **ReScript + Deno**: UI components (28 files)
+- **Chapel**: Optional parallel proof dispatch
 
-**Prover Support** (12 Total - ALL IMPLEMENTED):
-- **Tier 1 (6)**: Agda, Coq/Rocq, Lean, Isabelle, Z3, CVC5
-- **Tier 2 (3)**: Metamath, HOL Light, Mizar
-- **Tier 3 (2)**: PVS, ACL2
-- **Tier 4 (1)**: HOL4
+### Prover Support (30 Total - ALL IMPLEMENTED)
 
-### Key Dependencies
+- **Interactive Proof Assistants**: Agda, Coq/Rocq, Lean 4, Isabelle/HOL, Idris2, F*
+- **SMT Solvers**: Z3, CVC5, Alt-Ergo
+- **Auto-Active Verifiers**: Dafny, Why3
+- **Specialised**: Metamath, HOL Light, Mizar, HOL4, PVS, ACL2, TLAPS, Twelf, Nuprl, Minlog, Imandra
+- **First-Order ATPs**: Vampire, E Prover, SPASS
+- **Constraint Solvers**: GLPK, SCIP, MiniZinc, Chuffed, OR-Tools
 
-**Development Tools**:
-- Justfile (PRIMARY build system, not Make)
-- Podman (not Docker)
-- GitHub Actions CI/CD
-- Trivy (security scanning)
+### Trust & Safety Pipeline
 
-**Quality Checkers**:
-- REUSE (license compliance)
-- Aqua.jl (dependency security)
-- JET.jl (static analysis)
-- Coverage.jl (test coverage)
+The v1.5 trust hardening added:
+1. Solver binary integrity verification (SHAKE3-512 + BLAKE3)
+2. SMT portfolio solving / cross-checking
+3. Proof certificate checking (Alethe, DRAT/LRAT, TSTP)
+4. Axiom usage tracking (4 danger levels: Safe, Noted, Warning, Reject)
+5. Solver sandboxing (Podman, bubblewrap, none)
+6. 5-level trust hierarchy for confidence scoring
+7. Mutation testing for specifications
+8. Prover dispatch pipeline
+9. Cross-prover proof exchange (OpenTheory, Dedukti)
+10. Pareto frontier computation for multi-objective proof search
+11. Statistical confidence tracking with Bayesian timeout estimation
 
-**Integrations**:
-- OpenCyc ontology
-- DeepProbLog probabilistic logic
+### Key Components
 
-### Architecture
-
-**12-Prover System**: Based on "Big Six" theorem provers covering >70% of standard theorems.
-
-**Key Components**:
-- `src/rust/provers/mod.rs`: ProverBackend trait and factory
-- `src/rust/provers/*.rs`: Individual prover implementations
-- `src/rust/core/`: Core types (Term, ProofState, Tactic, etc.)
-- `src/rust/agent/`: Agentic proof search
-- Aspect tagging system
-- Neural solver integration
-- Universal prover abstraction layer
+- `src/rust/provers/mod.rs`: ProverBackend trait, ProverKind enum (30 variants), ProverFactory
+- `src/rust/dispatch.rs`: Full trust-hardening dispatch pipeline
+- `src/rust/verification/`: Portfolio, certificates, axiom tracker, confidence, mutation, pareto, statistics
+- `src/rust/integrity/`: Solver binary integrity (SHAKE3-512, BLAKE3)
+- `src/rust/executor/`: Sandboxed solver execution
+- `src/rust/exchange/`: OpenTheory, Dedukti proof exchange
+- `src/rust/core.rs`: Core types (Term, ProofState, Tactic, Goal, Context, Theorem)
+- `src/rust/agent/`: Agentic proof search (actor model)
 
 ### Current Status
 
-**Completed**:
-- ✅ All 12 prover backends implemented
-- ✅ 99 unit tests passing
-- ✅ 38 integration tests passing
-- ✅ RSR/CCCP compliance templates
-- ✅ Complete Rust trait system
+**Completed (v1.5.0)**:
+- 30/30 prover backends
+- Trust & safety hardening (13 tasks complete)
+- 306+ tests (232 unit, 38 integration, 21 property-based)
+- 3 API interfaces (GraphQL, gRPC, REST)
+- Julia ML layer (logistic regression)
+- ReScript UI (28 files)
+- 17 CI/CD workflows
 
-**In Progress**:
-- Neural/ML integration (Julia components)
-- UI implementation (ReScript + Deno)
+**Next (v2.0)**:
+- FFI/IPC bridge (API interfaces to Rust prover backends)
+- Deep learning models (Transformers via Flux.jl)
+- Tamarin/ProVerif bridge
 
 ## Useful Commands
 
 ```bash
 # Build System (Justfile is PRIMARY)
 just build              # Build the project
-just test               # Run tests
+just test               # Run tests (306+)
 just check              # Run all quality checkers
 
 # Cargo commands
 cargo build             # Build Rust code
 cargo test              # Run all tests
-cargo test --lib        # Run unit tests only
-cargo test --test integration_tests  # Run integration tests
+cargo test --lib        # Unit tests only (232)
+cargo test --test integration_tests  # Integration tests (38)
 
 # Container Management (Podman, not Docker)
 podman build -f Containerfile .   # Build container
 podman run echidna                # Run container
 
 # Quality Checks
-reuse lint                        # License compliance
 cargo clippy                      # Rust lints
 cargo fmt --check                 # Format check
 ```
 
-## Resources
+## Critical Constraints
 
-- [RSR/CCCP Compliance](https://rhodium-standard.org) - Rhodium Standard Repository
-- [Palimpsest License v0.6](https://palimpsest.license)
-
-## Notes for Claude Code
-
-### Priorities
-
-1. Code correctness and security
-2. Clear, maintainable code
-3. Comprehensive testing
-4. Thorough documentation
-
-### Constraints
-
-- Always verify file paths before operations
-- Use parallel tool calls when operations are independent
-- Prefer specialized tools over bash commands for file operations
-- Use the Task tool for complex, multi-step operations
-
-### Special Considerations
-
-**Critical Constraints**:
 - **NO PYTHON** - use Julia for ML/data, Rust for systems, ReScript for apps
 - **RSR/CCCP Compliance Required** - follow Rhodium Standard Repository guidelines
 - **Justfile PRIMARY** - never use Make or other build systems
 - **Podman not Docker** - always use Podman for containers
-- **Dual Licensing**: MIT + Palimpsest v0.6
-
-**Development Priority Order**:
-1. Neural/ML integration with Julia
-2. UI implementation with ReScript + Deno
-3. Additional test coverage
-4. Performance optimization
+- **License**: PMPL-1.0-or-later (not AGPL, not dual MIT/Palimpsest)
+- **Author**: Jonathan D.A. Jewell <jonathan.jewell@open.ac.uk>
 
 ---
 
-**Last Updated**: 2026-01-10
-**Maintained By**: ECHIDNA Project Team
+**Last Updated**: 2026-02-08
+**Maintained By**: Jonathan D.A. Jewell <jonathan.jewell@open.ac.uk>

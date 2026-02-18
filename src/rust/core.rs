@@ -1,5 +1,5 @@
 // SPDX-FileCopyrightText: 2025 ECHIDNA Project Team
-// SPDX-License-Identifier: MIT OR Palimpsest-0.6
+// SPDX-License-Identifier: PMPL-1.0-or-later
 
 //! Core types and abstractions for ECHIDNA theorem proving
 
@@ -188,6 +188,9 @@ pub struct Context {
     /// Available theorems/lemmas
     pub theorems: Vec<Theorem>,
 
+    /// Axioms (alias for certain prover backends that distinguish axioms from theorems)
+    pub axioms: Vec<String>,
+
     /// Type definitions
     pub definitions: Vec<Definition>,
 
@@ -268,6 +271,23 @@ pub enum TacticResult {
 
     /// Proof complete!
     QED,
+}
+
+impl Default for ProofState {
+    fn default() -> Self {
+        ProofState {
+            goals: vec![],
+            context: Context::default(),
+            proof_script: vec![],
+            metadata: HashMap::new(),
+        }
+    }
+}
+
+impl fmt::Display for Definition {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "{} : {} = {}", self.name, self.ty, self.body)
+    }
 }
 
 impl ProofState {

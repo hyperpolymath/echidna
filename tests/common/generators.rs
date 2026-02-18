@@ -1,5 +1,5 @@
 // SPDX-FileCopyrightText: 2025 ECHIDNA Project Team
-// SPDX-License-Identifier: MIT OR Palimpsest-0.6
+// SPDX-License-Identifier: PMPL-1.0-or-later
 
 //! Property-based testing generators for ECHIDNA types
 
@@ -116,6 +116,7 @@ pub fn arb_context() -> impl Strategy<Value = Context> {
         theorems,
         definitions,
         variables,
+        axioms: vec![],
     })
 }
 

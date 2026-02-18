@@ -1,5 +1,5 @@
 // SPDX-FileCopyrightText: 2025 ECHIDNA Project Team
-// SPDX-License-Identifier: MIT OR Palimpsest-0.6
+// SPDX-License-Identifier: PMPL-1.0-or-later
 
 #![allow(dead_code)]
 
@@ -859,8 +859,10 @@ impl ACL2Backend {
                             "let" | "let*" => {
                                 if items.len() >= 3 {
                                     // Simplify let to lambda application
-                                    let body = self.sexp_to_term(items.last().unwrap());
-                                    return body;
+                                    if let Some(last_item) = items.last() {
+                                        let body = self.sexp_to_term(last_item);
+                                        return body;
+                                    }
                                 }
                             }
                             "lambda" => {
@@ -872,7 +874,11 @@ impl ACL2Backend {
                                             .collect::<Vec<_>>(),
                                         _ => vec![],
                                     };
-                                    let body = self.sexp_to_term(items.last().unwrap());
+                                    let body = if let Some(last_item) = items.last() {
+                                        self.sexp_to_term(last_item)
+                                    } else {
+                                        Term::Const("nil".to_string())
+                                    };
 
                                     // Build nested lambdas
                                     let mut result = body;
@@ -1601,42 +1607,47 @@ mod tests {
     use super::*;
 
     #[test]
-    fn test_sexp_parse_atom() {
-        let sexp = SExp::parse("foo").unwrap();
+    fn test_sexp_parse_atom() -> Result<()> {
+        let sexp = SExp::parse("foo")?;
         assert!(matches!(sexp, SExp::Atom(s) if s == "foo"));
+        Ok(())
     }
 
     #[test]
-    fn test_sexp_parse_number() {
-        let sexp = SExp::parse("42").unwrap();
+    fn test_sexp_parse_number() -> Result<()> {
+        let sexp = SExp::parse("42")?;
         assert!(matches!(sexp, SExp::Num(42)));
+        Ok(())
     }
 
     #[test]
-    fn test_sexp_parse_list() {
-        let sexp = SExp::parse("(a b c)").unwrap();
+    fn test_sexp_parse_list() -> Result<()> {
+        let sexp = SExp::parse("(a b c)")?;
         if let SExp::List(items) = sexp {
             assert_eq!(items.len(), 3);
         } else {
             panic!("Expected list");
         }
+        Ok(())
     }
 
     #[test]
-    fn test_sexp_parse_nested() {
-        let sexp = SExp::parse("(defun foo (x) (+ x 1))").unwrap();
+    fn test_sexp_parse_nested() -> Result<()> {
+        let sexp = SExp::parse("(defun foo (x) (+ x 1))")?;
         if let SExp::List(items) = sexp {
             assert_eq!(items.len(), 4);
             assert!(items[0].is_atom("defun"));
         } else {
             panic!("Expected list");
         }
+        Ok(())
     }
 
     #[test]
-    fn test_sexp_parse_quote() {
-        let sexp = SExp::parse("'foo").unwrap();
+    fn test_sexp_parse_quote() -> Result<()> {
+        let sexp = SExp::parse("'foo")?;
         assert!(matches!(sexp, SExp::Quote(_)));
+        Ok(())
     }
 
     #[test]
@@ -1656,10 +1667,10 @@ mod tests {
     }
 
     #[test]
-    fn test_parse_defun() {
+    fn test_parse_defun() -> Result<()> {
         let backend = ACL2Backend::new(ProverConfig::default());
         let content = "(defun square (x) (* x x))";
-        let events = backend.parse_file_content(content).unwrap();
+        let events = backend.parse_file_content(content)?;
 
         assert_eq!(events.len(), 1);
         if let ACL2Event::Defun { name, params, .. } = &events[0] {
@@ -1668,10 +1679,11 @@ mod tests {
         } else {
             panic!("Expected Defun");
         }
+        Ok(())
     }
 
     #[test]
-    fn test_parse_defthm() {
+    fn test_parse_defthm() -> Result<()> {
         let backend = ACL2Backend::new(ProverConfig::default());
         let content = r#"
             (defthm square-positive
@@ -1679,7 +1691,7 @@ mod tests {
                        (<= 0 (square x)))
               :hints (("Goal" :induct t)))
         "#;
-        let events = backend.parse_file_content(content).unwrap();
+        let events = backend.parse_file_content(content)?;
 
         assert_eq!(events.len(), 1);
         if let ACL2Event::Defthm { name, hints, .. } = &events[0] {
@@ -1688,19 +1700,21 @@ mod tests {
         } else {
             panic!("Expected Defthm");
         }
+        Ok(())
     }
 
     #[test]
-    fn test_sexp_to_term() {
+    fn test_sexp_to_term() -> Result<()> {
         let backend = ACL2Backend::new(ProverConfig::default());
 
-        let sexp = SExp::parse("(implies a b)").unwrap();
+        let sexp = SExp::parse("(implies a b)")?;
         let term = backend.sexp_to_term(&sexp);
         assert!(matches!(term, Term::Pi { .. }));
 
-        let sexp = SExp::parse("(+ x y)").unwrap();
+        let sexp = SExp::parse("(+ x y)")?;
         let term = backend.sexp_to_term(&sexp);
         assert!(matches!(term, Term::App { .. }));
+        Ok(())
     }
 
     #[test]
@@ -1718,7 +1732,7 @@ mod tests {
     }
 
     #[tokio::test]
-    async fn test_parse_string() {
+    async fn test_parse_string() -> Result<()> {
         let backend = ACL2Backend::new(ProverConfig::default());
 
         let content = r#"
@@ -1728,12 +1742,13 @@ mod tests {
                        (integerp (double x))))
         "#;
 
-        let state = backend.parse_string(content).await.unwrap();
+        let state = backend.parse_string(content).await?;
 
         assert_eq!(state.context.definitions.len(), 1);
         assert_eq!(state.context.definitions[0].name, "double");
 
         assert_eq!(state.context.theorems.len(), 1);
         assert_eq!(state.context.theorems[0].name, "double-even");
+        Ok(())
     }
 }

@@ -83,3 +83,15 @@ mvp:
 # MVP 1.0 dependency checklist (best-effort)
 mvp-env:
     ./scripts/mvp-smoke.sh || true
+
+# Build minimal container image (Z3, CVC5, Lean, Idris2)
+container-build:
+    podman build -f .containerization/Containerfile -t echidna:latest .
+
+# Build full container image (all provers + Julia)
+container-build-full:
+    podman build -f .containerization/Containerfile.full -t echidna:full .
+
+# Run echidna container
+container-run *ARGS:
+    podman run --rm -it echidna:latest {{ARGS}}

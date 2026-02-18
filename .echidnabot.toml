@@ -1,0 +1,78 @@
+# SPDX-License-Identifier: PMPL-1.0-or-later
+# SPDX-FileCopyrightText: 2026 Hyperpolymath
+#
+# echidnabot configuration for echidna
+# Self-verification configuration for ECHIDNA Core
+
+[project]
+name = "echidna"
+description = "Extensible Cognitive Hybrid Intelligence for Deductive Neural Assistance - Neurosymbolic theorem proving platform"
+type = "formal-verification"
+
+[architecture]
+enforcement_level = "normal"
+primary_language = "rust"    # Core prover backends
+secondary_languages = ["julia", "rescript", "idris2", "chapel"]
+
+[provers]
+# ECHIDNA is self-hosting - can verify its own Idris2 ABI definitions
+idris2 = { enabled = true, priority = "high" }
+
+# Can also use SMT solvers for property checking
+z3 = { enabled = true, priority = "medium" }
+cvc5 = { enabled = true, priority = "medium" }
+
+# Can verify Coq/Lean examples
+coq = { enabled = true, priority = "low" }
+lean = { enabled = true, priority = "low" }
+
+[provers.idris2]
+package_file = "src/abi/echidna.ipkg"
+source_dirs = ["src/abi"]
+totality_required = true
+coverage_required = true
+
+critical_modules = [
+    "Foreign",     # FFI safety proofs
+    "Types",       # Core type definitions
+    "Layout",      # Memory layout verification
+]
+
+[verification]
+timeout_secs = 300
+max_retries = 2
+fail_fast = false
+
+required_aspects = [
+    "Safety.TotalFunction",
+    "Verified.TypeSafe",
+]
+
+[notifications]
+on_success = "silent"
+on_failure = "comment"
+on_timeout = "comment"
+
+[check_run]
+name = "ECHIDNA Self-Verification"
+summary_template = """
+## Self-Verification Results
+
+**Status**: {{status}}
+**Duration**: {{duration_ms}}ms
+
+### Verified Components
+{{#each verified_files}}
+- ✓ {{this}}
+{{/each}}
+
+{{#if failed_files}}
+### Failed Components
+{{#each failed_files}}
+- ✗ {{this}}
+{{/each}}
+{{/if}}
+
+---
+ECHIDNA Core self-verification via [echidnabot](https://github.com/hyperpolymath/echidnabot)
+"""

@@ -1,0 +1,9 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(iwconfig)",
+      "Bash(nmcli radio:*)",
+      "Bash(nmcli:*)"
+    ]
+  }
+}

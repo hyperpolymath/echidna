@@ -104,3 +104,6 @@ htmlcov/
 /proofs/mizar/*.vcl
 /proofs/mizar/*.wsx
 /proofs/mizar/*.xml
+
+# Crash recovery artifacts
+ai-cli-crash-capture/

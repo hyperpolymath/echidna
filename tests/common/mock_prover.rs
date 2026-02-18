@@ -1,5 +1,5 @@
 // SPDX-FileCopyrightText: 2025 ECHIDNA Project Team
-// SPDX-License-Identifier: MIT OR Palimpsest-0.6
+// SPDX-License-Identifier: PMPL-1.0-or-later
 
 //! Mock prover backend for testing
 
@@ -36,29 +36,29 @@ impl MockProver {
 
     /// Add a parse result to return
     pub fn add_parse_result(&self, result: anyhow::Result<ProofState>) {
-        self.parse_results.lock().unwrap().push(result);
+        self.parse_results.lock().unwrap_or_else(|e| e.into_inner()).push(result);
     }
 
     /// Add a verify result to return
     pub fn add_verify_result(&self, result: anyhow::Result<bool>) {
-        self.verify_results.lock().unwrap().push(result);
+        self.verify_results.lock().unwrap_or_else(|e| e.into_inner()).push(result);
     }
 
     /// Add a tactic result to return
     pub fn add_tactic_result(&self, result: anyhow::Result<TacticResult>) {
-        self.tactic_results.lock().unwrap().push(result);
+        self.tactic_results.lock().unwrap_or_else(|e| e.into_inner()).push(result);
     }
 
     /// Add an export result to return
     pub fn add_export_result(&self, result: anyhow::Result<String>) {
-        self.export_results.lock().unwrap().push(result);
+        self.export_results.lock().unwrap_or_else(|e| e.into_inner()).push(result);
     }
 
     /// Pop the next parse result
     fn pop_parse_result(&self) -> anyhow::Result<ProofState> {
         self.parse_results
             .lock()
-            .unwrap()
+            .map_err(|e| anyhow::anyhow!("lock poisoned: {}", e))?
             .pop()
             .unwrap_or_else(|| {
                 Ok(crate::common::simple_proof_state())
@@ -69,7 +69,7 @@ impl MockProver {
     fn pop_verify_result(&self) -> anyhow::Result<bool> {
         self.verify_results
             .lock()
-            .unwrap()
+            .map_err(|e| anyhow::anyhow!("lock poisoned: {}", e))?
             .pop()
             .unwrap_or(Ok(true))
     }
@@ -78,7 +78,7 @@ impl MockProver {
     fn pop_tactic_result(&self) -> anyhow::Result<TacticResult> {
         self.tactic_results
             .lock()
-            .unwrap()
+            .map_err(|e| anyhow::anyhow!("lock poisoned: {}", e))?
             .pop()
             .unwrap_or_else(|| {
                 Ok(TacticResult::Success(crate::common::simple_proof_state()))
@@ -89,7 +89,7 @@ impl MockProver {
     fn pop_export_result(&self) -> anyhow::Result<String> {
         self.export_results
             .lock()
-            .unwrap()
+            .map_err(|e| anyhow::anyhow!("lock poisoned: {}", e))?
             .pop()
             .unwrap_or_else(|| Ok("-- Generated proof".to_string()))
     }
@@ -149,29 +149,33 @@ impl ProverBackend for MockProver {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use anyhow::Result;
     use echidna::provers::ProverKind;
 
     #[tokio::test]
-    async fn test_mock_prover_version() {
+    async fn test_mock_prover_version() -> Result<()> {
         let mock = MockProver::new(ProverKind::Agda);
-        let version = mock.version().await.unwrap();
+        let version = mock.version().await?;
         assert_eq!(version, "Mock 1.0.0");
+        Ok(())
     }
 
     #[tokio::test]
-    async fn test_mock_prover_parse() {
+    async fn test_mock_prover_parse() -> Result<()> {
         let mock = MockProver::new(ProverKind::Agda);
         let result = mock.parse_string("test").await;
         assert!(result.is_ok());
+        Ok(())
     }
 
     #[tokio::test]
-    async fn test_mock_prover_custom_result() {
+    async fn test_mock_prover_custom_result() -> Result<()> {
         let mock = MockProver::new(ProverKind::Agda);
         mock.add_verify_result(Ok(false));
 
         let state = crate::common::simple_proof_state();
-        let result = mock.verify_proof(&state).await.unwrap();
+        let result = mock.verify_proof(&state).await?;
         assert!(!result);
+        Ok(())
     }
 }

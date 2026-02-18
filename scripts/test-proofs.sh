@@ -1,6 +1,8 @@
 #!/usr/bin/env bash
-# SPDX-FileCopyrightText: 2025 ECHIDNA Project Team
-# SPDX-License-Identifier: MIT OR Palimpsest-0.6
+# SPDX-FileCopyrightText: 2025 Jonathan D.A. Jewell <jonathan.jewell@open.ac.uk>
+# SPDX-License-Identifier: PMPL-1.0-or-later
+
+set -euo pipefail
 
 # Test all proof examples for ECHIDNA provers
 # Usage: ./scripts/test-proofs.sh [prover_name]
@@ -350,21 +352,21 @@ print_summary() {
     echo -e "${RED}Failed:       $FAILED_TESTS${NC}"
     echo -e "${YELLOW}Skipped:      $SKIPPED_TESTS${NC}"
 
-    if [ $TOTAL_TESTS -eq 0 ]; then
+    if [ "$TOTAL_TESTS" -eq 0 ]; then
         echo ""
         echo -e "${YELLOW}No tests were run. Make sure theorem provers are installed.${NC}"
         exit 0
     fi
 
     local success_rate=0
-    if [ $TOTAL_TESTS -gt 0 ]; then
+    if [ "$TOTAL_TESTS" -gt 0 ]; then
         success_rate=$((PASSED_TESTS * 100 / TOTAL_TESTS))
     fi
 
     echo ""
     echo "Success rate: ${success_rate}%"
 
-    if [ $FAILED_TESTS -gt 0 ]; then
+    if [ "$FAILED_TESTS" -gt 0 ]; then
         exit 1
     fi
 }

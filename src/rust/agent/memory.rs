@@ -1,5 +1,5 @@
 // SPDX-FileCopyrightText: 2025 ECHIDNA Project Contributors
-// SPDX-License-Identifier: MIT OR Palimpsest-0.6
+// SPDX-License-Identifier: PMPL-1.0-or-later
 
 #![allow(dead_code)]
 
@@ -62,8 +62,8 @@ pub struct FailedAttempt {
 /// Trait for proof memory implementations
 #[async_trait]
 pub trait ProofMemory: Send + Sync {
-    /// Store a successful proof
-    async fn store_success(&self, goal: &AgenticGoal, proof: &ProofState, prover: ProverKind) -> Result<()>;
+    /// Store a successful proof with elapsed time in milliseconds
+    async fn store_success(&self, goal: &AgenticGoal, proof: &ProofState, prover: ProverKind, time_ms: u64) -> Result<()>;
 
     /// Store a failed attempt
     async fn store_failure(&self, goal: &AgenticGoal, reason: String) -> Result<()>;
@@ -109,21 +109,22 @@ impl SqliteMemory {
 
     /// Initialize the database
     pub async fn init(&self) -> Result<()> {
-        // TODO: Create SQLite tables
-        // For now, use in-memory storage
-        info!("Initialized proof memory at {:?}", self.db_path);
+        // Note: Full SQLite persistence is planned for v2.0.
+        // Currently uses in-memory storage backed by Vec<CachedProof>/Vec<FailedAttempt>.
+        // The db_path is stored for future migration to on-disk SQLite.
+        info!("Initialized proof memory at {:?} (in-memory mode)", self.db_path);
         Ok(())
     }
 }
 
 #[async_trait]
 impl ProofMemory for SqliteMemory {
-    async fn store_success(&self, goal: &AgenticGoal, proof: &ProofState, prover: ProverKind) -> Result<()> {
+    async fn store_success(&self, goal: &AgenticGoal, proof: &ProofState, prover: ProverKind, time_ms: u64) -> Result<()> {
         let cached = CachedProof {
             goal_id: goal.goal.id.clone(),
             proof: proof.clone(),
             prover,
-            time_ms: 0, // TODO: Track actual time
+            time_ms,
             timestamp: chrono::Utc::now().timestamp(),
             aspects: goal.aspects.clone(),
         };
@@ -234,7 +235,7 @@ mod tests {
         let proof = ProofState::new(Term::Var("A".to_string()));
 
         // Store success
-        memory.store_success(&goal, &proof, ProverKind::Agda).await.unwrap();
+        memory.store_success(&goal, &proof, ProverKind::Agda, 42).await.unwrap();
 
         // Retrieve
         let successes = memory.get_successes().await.unwrap();

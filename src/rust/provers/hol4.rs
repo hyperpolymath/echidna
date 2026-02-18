@@ -1,5 +1,5 @@
 // SPDX-FileCopyrightText: 2025 ECHIDNA Project Team
-// SPDX-License-Identifier: MIT OR Palimpsest-0.6
+// SPDX-License-Identifier: PMPL-1.0-or-later
 
 #![allow(dead_code)]
 
@@ -14,7 +14,7 @@
 //! - Backward-style proof construction
 
 use async_trait::async_trait;
-use anyhow::{Result, Context, bail};
+use anyhow::{anyhow, Result, Context, bail};
 use std::collections::HashMap;
 use std::path::PathBuf;
 use tokio::sync::Mutex;
@@ -890,7 +890,7 @@ impl HOL4Parser {
         }
 
         if types.len() == 1 {
-            Ok(types.pop().unwrap())
+            Ok(types.pop().ok_or_else(|| anyhow!("empty type stack"))?)
         } else {
             Ok(HOL4Type::TyProd(types))
         }
@@ -954,7 +954,7 @@ impl HOL4Parser {
             self.expect_char(')')?;
 
             if types.len() == 1 {
-                return Ok(types.pop().unwrap());
+                return Ok(types.pop().ok_or_else(|| anyhow!("empty type stack"))?);
             } else {
                 return Ok(HOL4Type::TyProd(types));
             }
@@ -1510,7 +1510,7 @@ impl Hol4Backend {
                     Term::Const("unit".to_string())
                 } else {
                     let mut args: Vec<Term> = types.iter().map(|t| Self::type_to_term(t)).collect();
-                    let last = args.pop().unwrap();
+                    let last = args.pop().unwrap_or_else(|| Term::Const("unit".to_string()));
                     args.into_iter().rev().fold(last, |acc, t| {
                         Term::App {
                             func: Box::new(Term::Const("#".to_string())),
@@ -1903,10 +1903,10 @@ impl ProverBackend for Hol4Backend {
         let mut session_guard = self.session.lock().await;
 
         let session = if session_guard.is_some() {
-            session_guard.as_mut().unwrap()
+            session_guard.as_mut().ok_or_else(|| anyhow!("session not initialized"))?
         } else {
             *session_guard = Some(self.start_session().await?);
-            session_guard.as_mut().unwrap()
+            session_guard.as_mut().ok_or_else(|| anyhow!("session not initialized"))?
         };
 
         // Apply the tactic
@@ -2084,10 +2084,10 @@ impl ProverBackend for Hol4Backend {
         let mut session_guard = self.session.lock().await;
 
         let session = if session_guard.is_some() {
-            session_guard.as_mut().unwrap()
+            session_guard.as_mut().ok_or_else(|| anyhow!("session not initialized"))?
         } else {
             *session_guard = Some(self.start_session().await?);
-            session_guard.as_mut().unwrap()
+            session_guard.as_mut().ok_or_else(|| anyhow!("session not initialized"))?
         };
 
         // Use DB.match_string to search for theorems
@@ -2127,26 +2127,28 @@ mod tests {
     use super::*;
 
     #[test]
-    fn test_parse_simple_term() {
+    fn test_parse_simple_term() -> Result<()> {
         let mut parser = HOL4Parser::new("x");
-        let term = parser.parse_term().unwrap();
+        let term = parser.parse_term()?;
         match term {
             HOL4Term::Var { name, .. } => assert_eq!(name, "x"),
             _ => panic!("Expected variable"),
         }
+        Ok(())
     }
 
     #[test]
-    fn test_parse_numeral() {
+    fn test_parse_numeral() -> Result<()> {
         let mut parser = HOL4Parser::new("42");
-        let term = parser.parse_term().unwrap();
+        let term = parser.parse_term()?;
         assert_eq!(term, HOL4Term::Numeral(42));
+        Ok(())
     }
 
     #[test]
-    fn test_parse_application() {
+    fn test_parse_application() -> Result<()> {
         let mut parser = HOL4Parser::new("f x");
-        let term = parser.parse_term().unwrap();
+        let term = parser.parse_term()?;
         match term {
             HOL4Term::App { func, arg } => {
                 match *func {
@@ -2160,12 +2162,13 @@ mod tests {
             }
             _ => panic!("Expected application"),
         }
+        Ok(())
     }
 
     #[test]
-    fn test_parse_lambda() {
+    fn test_parse_lambda() -> Result<()> {
         let mut parser = HOL4Parser::new("\\x. x");
-        let term = parser.parse_term().unwrap();
+        let term = parser.parse_term()?;
         match term {
             HOL4Term::Abs { var, body, .. } => {
                 assert_eq!(var, "x");
@@ -2176,12 +2179,13 @@ mod tests {
             }
             _ => panic!("Expected lambda abstraction"),
         }
+        Ok(())
     }
 
     #[test]
-    fn test_parse_forall() {
+    fn test_parse_forall() -> Result<()> {
         let mut parser = HOL4Parser::new("!x. P x");
-        let term = parser.parse_term().unwrap();
+        let term = parser.parse_term()?;
         match term {
             HOL4Term::Quant { quantifier, var, .. } => {
                 assert_eq!(quantifier, HOL4Quantifier::Forall);
@@ -2189,12 +2193,13 @@ mod tests {
             }
             _ => panic!("Expected forall quantification"),
         }
+        Ok(())
     }
 
     #[test]
-    fn test_parse_exists() {
+    fn test_parse_exists() -> Result<()> {
         let mut parser = HOL4Parser::new("?x. P x");
-        let term = parser.parse_term().unwrap();
+        let term = parser.parse_term()?;
         match term {
             HOL4Term::Quant { quantifier, var, .. } => {
                 assert_eq!(quantifier, HOL4Quantifier::Exists);
@@ -2202,26 +2207,29 @@ mod tests {
             }
             _ => panic!("Expected exists quantification"),
         }
+        Ok(())
     }
 
     #[test]
-    fn test_parse_type_bool() {
+    fn test_parse_type_bool() -> Result<()> {
         let mut parser = HOL4Parser::new("bool");
-        let ty = parser.parse_type().unwrap();
+        let ty = parser.parse_type()?;
         assert_eq!(ty, HOL4Type::TyCon("bool".to_string()));
+        Ok(())
     }
 
     #[test]
-    fn test_parse_type_num() {
+    fn test_parse_type_num() -> Result<()> {
         let mut parser = HOL4Parser::new("num");
-        let ty = parser.parse_type().unwrap();
+        let ty = parser.parse_type()?;
         assert_eq!(ty, HOL4Type::TyCon("num".to_string()));
+        Ok(())
     }
 
     #[test]
-    fn test_parse_type_arrow() {
+    fn test_parse_type_arrow() -> Result<()> {
         let mut parser = HOL4Parser::new("num -> bool");
-        let ty = parser.parse_type().unwrap();
+        let ty = parser.parse_type()?;
         match ty {
             HOL4Type::TyFun { domain, range } => {
                 assert_eq!(*domain, HOL4Type::TyCon("num".to_string()));
@@ -2229,6 +2237,7 @@ mod tests {
             }
             _ => panic!("Expected function type"),
         }
+        Ok(())
     }
 
     #[test]

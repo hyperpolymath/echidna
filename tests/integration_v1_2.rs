@@ -1,5 +1,5 @@
 // SPDX-FileCopyrightText: 2026 ECHIDNA Project Team
-// SPDX-License-Identifier: MIT OR Palimpsest-0.6
+// SPDX-License-Identifier: PMPL-1.0-or-later
 
 //! Integration tests for ECHIDNA v1.2
 //!
@@ -8,6 +8,7 @@
 //! - PVS (Tier 3)
 //! - HOL4 (Tier 4)
 
+use anyhow::{Context, Result};
 use echidna::provers::{ProverBackend, ProverConfig, ProverFactory, ProverKind};
 use std::path::PathBuf;
 use tempfile::TempDir;
@@ -29,14 +30,14 @@ fn test_config() -> ProverConfig {
 
 #[tokio::test]
 #[ignore] // Requires ACL2 binary
-async fn test_acl2_basic_theorem() {
+async fn test_acl2_basic_theorem() -> Result<()> {
     let config = ProverConfig {
         executable: PathBuf::from("acl2"),
         ..test_config()
     };
 
     let backend = ProverFactory::create(ProverKind::ACL2, config)
-        .expect("Failed to create ACL2 backend");
+        .context("Failed to create ACL2 backend")?;
 
     // Simple associativity theorem
     let proof = r#"
@@ -46,24 +47,25 @@ async fn test_acl2_basic_theorem() {
 "#;
 
     let state = backend.parse_string(proof).await
-        .expect("Failed to parse ACL2 proof");
+        .context("Failed to parse ACL2 proof")?;
 
     let verified = backend.verify_proof(&state).await
-        .expect("Failed to verify proof");
+        .context("Failed to verify proof")?;
 
     assert!(verified, "ACL2 proof should verify");
+    Ok(())
 }
 
 #[tokio::test]
 #[ignore] // Requires ACL2 binary
-async fn test_acl2_hint_system() {
+async fn test_acl2_hint_system() -> Result<()> {
     let config = ProverConfig {
         executable: PathBuf::from("acl2"),
         ..test_config()
     };
 
     let backend = ProverFactory::create(ProverKind::ACL2, config)
-        .expect("Failed to create ACL2 backend");
+        .context("Failed to create ACL2 backend")?;
 
     // Theorem with induction hint
     let proof = r#"
@@ -79,21 +81,22 @@ async fn test_acl2_hint_system() {
 "#;
 
     let state = backend.parse_string(proof).await
-        .expect("Failed to parse ACL2 proof with hints");
+        .context("Failed to parse ACL2 proof with hints")?;
 
     assert!(!state.goals.is_empty(), "Should have parsed goals");
+    Ok(())
 }
 
 #[test]
-fn test_acl2_sexp_parser() {
+fn test_acl2_sexp_parser() -> Result<()> {
     use echidna::provers::acl2::SExp;
 
     // Test basic S-expression parsing
-    let sexp = SExp::parse("(defthm test (equal x x))").unwrap();
+    let sexp = SExp::parse("(defthm test (equal x x))")?;
     assert!(matches!(sexp, SExp::List(_)));
 
     // Test nested lists
-    let nested = SExp::parse("(a (b c) d)").unwrap();
+    let nested = SExp::parse("(a (b c) d)")?;
     if let SExp::List(items) = nested {
         assert_eq!(items.len(), 3);
     } else {
@@ -101,8 +104,9 @@ fn test_acl2_sexp_parser() {
     }
 
     // Test quoted expressions
-    let quoted = SExp::parse("'(a b c)").unwrap();
+    let quoted = SExp::parse("'(a b c)")?;
     assert!(matches!(quoted, SExp::Quote(_)));
+    Ok(())
 }
 
 // ============================================================================
@@ -111,14 +115,14 @@ fn test_acl2_sexp_parser() {
 
 #[tokio::test]
 #[ignore] // Requires PVS binary
-async fn test_pvs_basic_theory() {
+async fn test_pvs_basic_theory() -> Result<()> {
     let config = ProverConfig {
         executable: PathBuf::from("pvs"),
         ..test_config()
     };
 
     let backend = ProverFactory::create(ProverKind::PVS, config)
-        .expect("Failed to create PVS backend");
+        .context("Failed to create PVS backend")?;
 
     // Simple PVS theory
     let theory = r#"
@@ -133,21 +137,22 @@ END simple_theory
 "#;
 
     let state = backend.parse_string(theory).await
-        .expect("Failed to parse PVS theory");
+        .context("Failed to parse PVS theory")?;
 
     assert!(!state.goals.is_empty(), "Should have lemmas");
+    Ok(())
 }
 
 #[tokio::test]
 #[ignore] // Requires PVS binary
-async fn test_pvs_parametric_theory() {
+async fn test_pvs_parametric_theory() -> Result<()> {
     let config = ProverConfig {
         executable: PathBuf::from("pvs"),
         ..test_config()
     };
 
     let backend = ProverFactory::create(ProverKind::PVS, config)
-        .expect("Failed to create PVS backend");
+        .context("Failed to create PVS backend")?;
 
     // Parametric list theory
     let theory = r#"
@@ -172,9 +177,10 @@ END list_theory
 "#;
 
     let state = backend.parse_string(theory).await
-        .expect("Failed to parse parametric PVS theory");
+        .context("Failed to parse parametric PVS theory")?;
 
     assert!(!state.goals.is_empty(), "Should have parametric lemmas");
+    Ok(())
 }
 
 #[test]
@@ -190,14 +196,14 @@ fn test_pvs_tcc_generation() {
 
 #[tokio::test]
 #[ignore] // Requires HOL4 binary
-async fn test_hol4_basic_theorem() {
+async fn test_hol4_basic_theorem() -> Result<()> {
     let config = ProverConfig {
         executable: PathBuf::from("hol"),
         ..test_config()
     };
 
     let backend = ProverFactory::create(ProverKind::HOL4, config)
-        .expect("Failed to create HOL4 backend");
+        .context("Failed to create HOL4 backend")?;
 
     // Simple HOL4 theorem
     let proof = r#"
@@ -209,21 +215,22 @@ val append_nil = Q.store_thm(
 "#;
 
     let state = backend.parse_string(proof).await
-        .expect("Failed to parse HOL4 proof");
+        .context("Failed to parse HOL4 proof")?;
 
     assert!(!state.goals.is_empty(), "Should have goals");
+    Ok(())
 }
 
 #[tokio::test]
 #[ignore] // Requires HOL4 binary
-async fn test_hol4_datatype() {
+async fn test_hol4_datatype() -> Result<()> {
     let config = ProverConfig {
         executable: PathBuf::from("hol"),
         ..test_config()
     };
 
     let backend = ProverFactory::create(ProverKind::HOL4, config)
-        .expect("Failed to create HOL4 backend");
+        .context("Failed to create HOL4 backend")?;
 
     // Datatype definition
     let datatype_def = r#"
@@ -245,9 +252,10 @@ val tree_size_positive = Q.store_thm(
 "#;
 
     let state = backend.parse_string(datatype_def).await
-        .expect("Failed to parse HOL4 datatype");
+        .context("Failed to parse HOL4 datatype")?;
 
     assert!(!state.goals.is_empty(), "Should have datatype theorems");
+    Ok(())
 }
 
 #[test]
@@ -262,7 +270,7 @@ fn test_hol4_tactic_parsing() {
 // ============================================================================
 
 #[tokio::test]
-async fn test_all_provers_available() {
+async fn test_all_provers_available() -> Result<()> {
     // Test that all 12 provers can be instantiated
     let config = test_config();
 
@@ -285,10 +293,11 @@ async fn test_all_provers_available() {
         let result = ProverFactory::create(kind, config.clone());
         assert!(result.is_ok(), "Failed to create backend for {:?}", kind);
     }
+    Ok(())
 }
 
 #[tokio::test]
-async fn test_tier_classification() {
+async fn test_tier_classification() -> Result<()> {
     // Verify tier assignments
     assert_eq!(ProverKind::ACL2.tier(), 3);
     assert_eq!(ProverKind::PVS.tier(), 3);
@@ -298,6 +307,7 @@ async fn test_tier_classification() {
     assert_eq!(ProverKind::ACL2.complexity(), 4);
     assert_eq!(ProverKind::PVS.complexity(), 4);
     assert_eq!(ProverKind::HOL4.complexity(), 5);
+    Ok(())
 }
 
 #[test]
@@ -332,7 +342,7 @@ fn test_file_extension_detection() {
 
 #[tokio::test]
 #[ignore] // Requires prover binaries
-async fn test_acl2_examples() {
+async fn test_acl2_examples() -> Result<()> {
     let example_files = vec![
         "proofs/acl2/associativity.lisp",
         "proofs/acl2/list_append.lisp",
@@ -347,21 +357,22 @@ async fn test_acl2_examples() {
     };
 
     let backend = ProverFactory::create(ProverKind::ACL2, config)
-        .expect("Failed to create ACL2 backend");
+        .context("Failed to create ACL2 backend")?;
 
     for file in example_files {
         let path = PathBuf::from(file);
         if path.exists() {
             let state = backend.parse_file(path.clone()).await
-                .expect(&format!("Failed to parse {}", file));
+                .context(format!("Failed to parse {}", file))?;
             assert!(!state.goals.is_empty(), "Example {} should have goals", file);
         }
     }
+    Ok(())
 }
 
 #[tokio::test]
 #[ignore] // Requires prover binaries
-async fn test_pvs_examples() {
+async fn test_pvs_examples() -> Result<()> {
     let example_files = vec![
         "proofs/pvs/list_theory.pvs",
         "proofs/pvs/arithmetic.pvs",
@@ -376,21 +387,22 @@ async fn test_pvs_examples() {
     };
 
     let backend = ProverFactory::create(ProverKind::PVS, config)
-        .expect("Failed to create PVS backend");
+        .context("Failed to create PVS backend")?;
 
     for file in example_files {
         let path = PathBuf::from(file);
         if path.exists() {
             let state = backend.parse_file(path.clone()).await
-                .expect(&format!("Failed to parse {}", file));
+                .context(format!("Failed to parse {}", file))?;
             assert!(!state.goals.is_empty(), "Example {} should have goals", file);
         }
     }
+    Ok(())
 }
 
 #[tokio::test]
 #[ignore] // Requires prover binaries
-async fn test_hol4_examples() {
+async fn test_hol4_examples() -> Result<()> {
     let example_files = vec![
         "proofs/hol4/list_append.sml",
         "proofs/hol4/arithmetic.sml",
@@ -405,16 +417,17 @@ async fn test_hol4_examples() {
     };
 
     let backend = ProverFactory::create(ProverKind::HOL4, config)
-        .expect("Failed to create HOL4 backend");
+        .context("Failed to create HOL4 backend")?;
 
     for file in example_files {
         let path = PathBuf::from(file);
         if path.exists() {
             let state = backend.parse_file(path.clone()).await
-                .expect(&format!("Failed to parse {}", file));
+                .context(format!("Failed to parse {}", file))?;
             assert!(!state.goals.is_empty(), "Example {} should have goals", file);
         }
     }
+    Ok(())
 }
 
 // ============================================================================
@@ -422,7 +435,7 @@ async fn test_hol4_examples() {
 // ============================================================================
 
 #[tokio::test]
-async fn test_backend_creation_performance() {
+async fn test_backend_creation_performance() -> Result<()> {
     use std::time::Instant;
 
     let config = test_config();
@@ -435,6 +448,7 @@ async fn test_backend_creation_performance() {
 
     let elapsed = start.elapsed();
     assert!(elapsed.as_millis() < 100, "Backend creation should be fast (< 100ms), took {:?}", elapsed);
+    Ok(())
 }
 
 // ============================================================================

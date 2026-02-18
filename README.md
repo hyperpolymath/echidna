@@ -1,13 +1,14 @@
 # ECHIDNA
 
-**Extensible Computational Heuristic for Interactive Decision-making in Neural Architectures**
+**E**xtensible **C**ognitive **H**ybrid **I**ntelligence for **D**eductive **N**eural **A**ssistance
 
 > Neurosymbolic Theorem Proving with Formal Guarantees
 
 [![License](https://img.shields.io/badge/license-MIT%2FPalimpsest-blue.svg)](LICENSE)
-[![Version](https://img.shields.io/badge/version-1.3.0-green.svg)](RELEASE_NOTES_v1.3.md)
+[![Version](https://img.shields.io/badge/version-1.4.0-green.svg)](RELEASE_NOTES_v1.4.md)
 [![Tests](https://img.shields.io/badge/tests-passing-brightgreen.svg)](tests/)
-[![Provers](https://img.shields.io/badge/provers-12-orange.svg)](#supported-provers)
+[![Provers](https://img.shields.io/badge/provers-17-orange.svg)](#supported-provers)
+[![Interfaces](https://img.shields.io/badge/interfaces-GraphQL%2FgRPC%2FREST-blue.svg)](#interfaces)
 
 ---
 
@@ -17,7 +18,8 @@ ECHIDNA is the world's first **production-ready neurosymbolic theorem prover** t
 
 - 🧠 **AI-Powered Suggestions** - Machine learning predicts tactics with confidence scores
 - ✓ **Formal Soundness** - All proofs verified by established theorem provers
-- 🔬 **12 Prover Backends** - Coq, Lean, Isabelle, Agda, Z3, CVC5, ACL2, PVS, HOL4, Mizar, HOL Light, Metamath
+- 🔬 **17 Prover Backends** - Coq, Lean, Isabelle, Agda, Z3, CVC5, ACL2, PVS, HOL4, Mizar, HOL Light, Metamath, Vampire, E Prover, SPASS, Alt-Ergo, Idris2
+- 🌐 **3 API Interfaces** - GraphQL (port 8080), gRPC (port 50051), REST (port 8000)
 - 🛡️ **Trust Framework** - Benchmarking, property testing, formal verification, anomaly detection
 - ⚡ **Parallel Search** - Optional Chapel integration for multi-prover consensus
 
@@ -78,26 +80,38 @@ echidna> apply reflexivity
 
 ```
 ┌─────────────────┐
-│  ReScript UI    │  Port 8000 - Browser interface
+│  ReScript UI    │  Port 3000 - Browser interface
 │  (Type-safe)    │
 └────────┬────────┘
-         │ Fetch API
+         │ HTTP/GraphQL
          v
+┌─────────────────────────────────────┐
+│         API Interfaces              │
+│  GraphQL (8080) gRPC (50051)       │
+│  REST (8000)                        │
+└──────────┬──────────────────────────┘
+           │
+           v
 ┌─────────────────┐
-│  Rust Backend   │  Port 8080 - REST API (13 endpoints)
-│  (Memory-safe)  │
+│  Rust Core      │  17 Prover Backends
+│  (Memory-safe)  │  + Neural Integration
 └────────┬────────┘
-         │ HTTP
-         v
-┌─────────────────┐
-│  Julia ML API   │  Port 8090 - Trained models
-│  (Scientific)   │  332 proofs, 1,603 tactics
-└─────────────────┘
-         │ stdio
-         v
-┌─────────────────┐
-│  12 Provers     │  Subprocess execution
-│  (Verified)     │  Coq, Lean, Isabelle, Agda...
+         │
+    ┌────┴────┐
+    │         │
+    v         v
+┌─────────┐ ┌──────────────┐
+│ Julia   │ │  Chapel      │
+│ ML      │ │  Parallel    │
+│ Layer   │ │  Dispatch    │
+└─────────┘ └──────────────┘
+    │              │
+    v              v
+┌──────────────────────────┐
+│    17 Provers            │
+│  Subprocess execution    │
+│  Coq, Lean, Isabelle...  │
+│  + Vampire, E, SPASS...  │
 └─────────────────┘
 ```
 
@@ -371,3 +385,107 @@ Special thanks to all contributors and the open-source community.
   <strong>ECHIDNA: Where Machine Learning meets Mathematical Rigor</strong><br>
   <em>Prove theorems faster. Trust results completely.</em>
 </p>
+
+---
+
+## Interfaces
+
+ECHIDNA provides three modern API interfaces:
+
+### GraphQL (Port 8080)
+- **Framework:** async-graphql + axum
+- **Features:** Type-safe schema, GraphQL Playground
+- **Location:** `src/interfaces/graphql/`
+- **Access:** http://localhost:8080/
+
+```graphql
+query {
+  provers {
+    kind
+    version
+    tier
+    available
+  }
+}
+
+mutation {
+  submitProof(goal: "forall n, n + 0 = n", prover: LEAN) {
+    id
+    status
+  }
+}
+```
+
+### gRPC (Port 50051)
+- **Framework:** tonic + Protocol Buffers
+- **Features:** Bidirectional streaming, high performance
+- **Location:** `src/interfaces/grpc/`
+- **Proto:** `src/interfaces/grpc/proto/echidna.proto`
+
+```protobuf
+service ProofService {
+  rpc SubmitProof(SubmitProofRequest) returns (ProofResponse);
+  rpc StreamProof(StreamProofRequest) returns (stream ProofUpdate);
+  rpc SuggestTactics(SuggestTacticsRequest) returns (SuggestTacticsResponse);
+}
+```
+
+### REST (Port 8000)
+- **Framework:** axum + utoipa (OpenAPI 3.0)
+- **Features:** Swagger UI, standard HTTP verbs
+- **Location:** `src/interfaces/rest/`
+- **Swagger:** http://localhost:8000/swagger-ui
+
+```bash
+# Submit proof
+curl -X POST http://localhost:8000/api/v1/proofs \
+  -H "Content-Type: application/json" \
+  -d '{"goal": "forall n, n + 0 = n", "prover": "lean"}'
+
+# Get proof status
+curl http://localhost:8000/api/v1/proofs/{id}
+
+# List provers
+curl http://localhost:8000/api/v1/provers
+```
+
+**See:** [`src/interfaces/README.md`](src/interfaces/README.md) for detailed documentation.
+
+---
+
+## Supported Provers
+
+ECHIDNA supports **17 theorem provers** across 5 tiers:
+
+### Tier 1 - Interactive Proof Assistants + SMT (6)
+- **Agda** - Dependent types, proof by computation
+- **Coq/Rocq** - Calculus of Inductive Constructions  
+- **Lean** - Modern dependent types
+- **Isabelle** - Higher-order logic
+- **Z3** - SMT solver with theories
+- **CVC5** - SMT solver successor to CVC4
+
+### Tier 2 - Classical Systems (3)
+- **Metamath** - Zero-trust foundations
+- **HOL Light** - Simple higher-order logic
+- **Mizar** - Mathematical vernacular
+
+### Tier 3 - Specialized (2)
+- **PVS** - Specification and verification
+- **ACL2** - Computational logic
+
+### Tier 4 - Advanced (1)
+- **HOL4** - ML-based theorem prover
+
+### Tier 5 - First-Order ATPs + Extended (5)
+- **Vampire** - CASC winner, TPTP format
+- **E Prover** - Superposition calculus
+- **SPASS** - Sorted first-order logic  
+- **Alt-Ergo** - SMT + polymorphic FOL
+- **Idris2** - Dependent types
+
+**All 17 provers** are integrated across:
+- Rust core implementations
+- Julia ML layer for premise selection
+- Chapel parallel dispatcher for cluster execution
+

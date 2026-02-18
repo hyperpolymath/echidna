@@ -1,5 +1,5 @@
 // SPDX-FileCopyrightText: 2025 ECHIDNA Project Team
-// SPDX-License-Identifier: MIT OR Palimpsest-0.6
+// SPDX-License-Identifier: PMPL-1.0-or-later
 
 #![allow(dead_code)]
 
@@ -479,7 +479,7 @@ impl<'a> PVSParser<'a> {
         loop {
             // Skip whitespace
             while self.position < self.input.len() {
-                let ch = self.input[self.position..].chars().next().unwrap();
+                let ch = self.input[self.position..].chars().next().unwrap_or('\0');
                 if ch.is_whitespace() {
                     self.position += ch.len_utf8();
                 } else {
@@ -490,7 +490,7 @@ impl<'a> PVSParser<'a> {
             // Skip comments (% to end of line)
             if self.remaining().starts_with('%') {
                 while self.position < self.input.len() {
-                    let ch = self.input[self.position..].chars().next().unwrap();
+                    let ch = self.input[self.position..].chars().next().unwrap_or('\0');
                     self.position += ch.len_utf8();
                     if ch == '\n' {
                         break;
@@ -2468,10 +2468,10 @@ impl ProverBackend for PVSBackend {
         let mut session_guard = self.session.lock().await;
 
         let session = if session_guard.is_some() {
-            session_guard.as_mut().unwrap()
+            session_guard.as_mut().ok_or_else(|| anyhow::anyhow!("session not initialized"))?
         } else {
             *session_guard = Some(self.start_session().await?);
-            session_guard.as_mut().unwrap()
+            session_guard.as_mut().ok_or_else(|| anyhow::anyhow!("session not initialized"))?
         };
 
         let response = Self::send_command(session, &strategy_str).await?;
@@ -2633,9 +2633,9 @@ mod tests {
     use super::*;
 
     #[test]
-    fn test_parse_simple_expr() {
+    fn test_parse_simple_expr() -> Result<()> {
         let mut parser = PVSParser::new("x + y");
-        let expr = parser.parse_expr().unwrap();
+        let expr = parser.parse_expr()?;
 
         match expr {
             PVSExpr::Application { function, arguments } => {
@@ -2643,12 +2643,13 @@ mod tests {
             }
             _ => panic!("Expected application"),
         }
+        Ok(())
     }
 
     #[test]
-    fn test_parse_forall() {
+    fn test_parse_forall() -> Result<()> {
         let mut parser = PVSParser::new("FORALL (x: nat): x >= 0");
-        let expr = parser.parse_expr().unwrap();
+        let expr = parser.parse_expr()?;
 
         match expr {
             PVSExpr::Forall { bindings, .. } => {
@@ -2657,23 +2658,25 @@ mod tests {
             }
             _ => panic!("Expected forall"),
         }
+        Ok(())
     }
 
     #[test]
-    fn test_parse_if_then_else() {
+    fn test_parse_if_then_else() -> Result<()> {
         let mut parser = PVSParser::new("IF x > 0 THEN 1 ELSE 0 ENDIF");
-        let expr = parser.parse_expr().unwrap();
+        let expr = parser.parse_expr()?;
 
         match expr {
             PVSExpr::IfThenElse { .. } => {}
             _ => panic!("Expected if-then-else"),
         }
+        Ok(())
     }
 
     #[test]
-    fn test_parse_lambda() {
+    fn test_parse_lambda() -> Result<()> {
         let mut parser = PVSParser::new("LAMBDA (x: int): x * x");
-        let expr = parser.parse_expr().unwrap();
+        let expr = parser.parse_expr()?;
 
         match expr {
             PVSExpr::Lambda { bindings, .. } => {
@@ -2681,12 +2684,13 @@ mod tests {
             }
             _ => panic!("Expected lambda"),
         }
+        Ok(())
     }
 
     #[test]
-    fn test_parse_record() {
+    fn test_parse_record() -> Result<()> {
         let mut parser = PVSParser::new("(# x := 1, y := 2 #)");
-        let expr = parser.parse_expr().unwrap();
+        let expr = parser.parse_expr()?;
 
         match expr {
             PVSExpr::Record(fields) => {
@@ -2694,45 +2698,49 @@ mod tests {
             }
             _ => panic!("Expected record"),
         }
+        Ok(())
     }
 
     #[test]
-    fn test_parse_function_type() {
+    fn test_parse_function_type() -> Result<()> {
         let mut parser = PVSParser::new("[int -> bool]");
-        let t = parser.parse_type().unwrap();
+        let t = parser.parse_type()?;
 
         match t {
             PVSType::Function { .. } => {}
             _ => panic!("Expected function type"),
         }
+        Ok(())
     }
 
     #[test]
-    fn test_parse_subtype() {
+    fn test_parse_subtype() -> Result<()> {
         let mut parser = PVSParser::new("{x: int | x > 0}");
-        let t = parser.parse_type().unwrap();
+        let t = parser.parse_type()?;
 
         match t {
             PVSType::Subtype { .. } => {}
             _ => panic!("Expected subtype"),
         }
+        Ok(())
     }
 
     #[test]
-    fn test_parse_strategy_grind() {
+    fn test_parse_strategy_grind() -> Result<()> {
         let mut parser = PVSParser::new("(grind)");
-        let strategy = parser.parse_strategy().unwrap();
+        let strategy = parser.parse_strategy()?;
 
         match strategy {
             PVSStrategy::Grind { .. } => {}
             _ => panic!("Expected grind strategy"),
         }
+        Ok(())
     }
 
     #[test]
-    fn test_parse_strategy_induct() {
+    fn test_parse_strategy_induct() -> Result<()> {
         let mut parser = PVSParser::new("(induct \"n\")");
-        let strategy = parser.parse_strategy().unwrap();
+        let strategy = parser.parse_strategy()?;
 
         match strategy {
             PVSStrategy::Induct { var, .. } => {
@@ -2740,6 +2748,7 @@ mod tests {
             }
             _ => panic!("Expected induct strategy"),
         }
+        Ok(())
     }
 
     #[test]

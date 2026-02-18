@@ -1,0 +1,21 @@
+# SPDX-License-Identifier: PLMP-1.0-or-later
+# Intentfile template - declared future intent
+
+version: 1
+
+future:
+  trust-engine:
+    - "Integrate hardware-backed key management."
+    - "Support node attestation for deployments."
+
+  control-plane:
+    - "Move to GitOps-backed configuration promotion."
+    - "Add canary and staged rollout support."
+
+  pipeline:
+    - "Adopt Nickel (or your DSL) as the primary policy language."
+    - "Automate policy promotion from dev to prod with signed artifacts."
+
+  introspection:
+    - "Expose decision latency and policy evaluation metrics."
+    - "Add tracing for end-to-end request decisions."

@@ -1,5 +1,5 @@
 // SPDX-FileCopyrightText: 2025 ECHIDNA Project Team
-// SPDX-License-Identifier: MIT OR Palimpsest-0.6
+// SPDX-License-Identifier: PMPL-1.0-or-later
 
 #![allow(dead_code)]
 
@@ -164,7 +164,7 @@ impl CoqBackend {
         let exe = if self.config.executable.as_os_str().is_empty() {
             "sertop"
         } else {
-            self.config.executable.to_str().unwrap()
+            self.config.executable.to_str().unwrap_or("coqtop")
         };
 
         let mut cmd = Command::new(exe);
@@ -547,7 +547,7 @@ impl CoqBackend {
     /// Parse forall (Pi type)
     fn parse_forall(&self, input: &str) -> Result<Term> {
         // Format: "forall x : A, B" or "forall x, B"
-        let after_forall = input.strip_prefix("forall ").unwrap().trim();
+        let after_forall = input.strip_prefix("forall ").unwrap_or(input).trim();
 
         let comma_pos = after_forall
             .find(',')
@@ -577,7 +577,7 @@ impl CoqBackend {
     /// Parse lambda
     fn parse_lambda(&self, input: &str) -> Result<Term> {
         // Format: "fun x : A => B" or "fun x => B"
-        let after_fun = input.strip_prefix("fun ").unwrap().trim();
+        let after_fun = input.strip_prefix("fun ").unwrap_or(input).trim();
 
         let arrow_pos = after_fun
             .find("=>")
@@ -1052,7 +1052,7 @@ mod tests {
     use super::*;
 
     #[tokio::test]
-    async fn test_parse_simple_theorem() {
+    async fn test_parse_simple_theorem() -> Result<()> {
         let backend = CoqBackend::new(ProverConfig::default());
 
         let code = r#"
@@ -1063,30 +1063,33 @@ Proof.
 Qed.
         "#;
 
-        let state = backend.parse_string(code).await.unwrap();
+        let state = backend.parse_string(code).await?;
 
         assert_eq!(state.context.theorems.len(), 1);
         assert_eq!(state.context.theorems[0].name, "identity");
+        Ok(())
     }
 
     #[test]
-    fn test_parse_term() {
+    fn test_parse_term() -> Result<()> {
         let backend = CoqBackend::new(ProverConfig::default());
 
-        let term = backend.parse_term("A -> B").unwrap();
+        let term = backend.parse_term("A -> B")?;
         assert!(matches!(term, Term::Pi { .. }));
 
-        let term = backend.parse_term("forall A : Prop, A -> A").unwrap();
+        let term = backend.parse_term("forall A : Prop, A -> A")?;
         assert!(matches!(term, Term::Pi { .. }));
+        Ok(())
     }
 
     #[test]
-    fn test_sexp_parsing() {
-        let sexp = SExp::parse("(Add () \"Definition x := 1.\")").unwrap();
+    fn test_sexp_parsing() -> Result<()> {
+        let sexp = SExp::parse("(Add () \"Definition x := 1.\")")?;
         assert!(matches!(sexp, SExp::List(_)));
 
         let sexp_str = sexp.to_string_repr();
         assert!(sexp_str.contains("Add"));
+        Ok(())
     }
 
     #[test]

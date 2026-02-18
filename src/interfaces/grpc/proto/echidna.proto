@@ -1,0 +1,141 @@
+// SPDX-License-Identifier: PMPL-1.0-or-later
+// ECHIDNA gRPC Protocol
+
+syntax = "proto3";
+
+package echidna.v1;
+
+// Theorem proving service
+service ProofService {
+  // Submit a new proof goal
+  rpc SubmitProof(SubmitProofRequest) returns (ProofResponse);
+
+  // Get proof status
+  rpc GetProofStatus(GetProofStatusRequest) returns (ProofResponse);
+
+  // Stream proof progress (long-running)
+  rpc StreamProof(StreamProofRequest) returns (stream ProofUpdate);
+
+  // Apply a tactic
+  rpc ApplyTactic(ApplyTacticRequest) returns (TacticResponse);
+
+  // Cancel proof attempt
+  rpc CancelProof(CancelProofRequest) returns (CancelProofResponse);
+
+  // List available provers
+  rpc ListProvers(ListProversRequest) returns (ListProversResponse);
+
+  // Get suggested tactics (neural premise selection)
+  rpc SuggestTactics(SuggestTacticsRequest) returns (SuggestTacticsResponse);
+}
+
+enum ProverKind {
+  PROVER_KIND_UNSPECIFIED = 0;
+  PROVER_KIND_AGDA = 1;
+  PROVER_KIND_COQ = 2;
+  PROVER_KIND_LEAN = 3;
+  PROVER_KIND_ISABELLE = 4;
+  PROVER_KIND_Z3 = 5;
+  PROVER_KIND_CVC5 = 6;
+  PROVER_KIND_METAMATH = 7;
+  PROVER_KIND_HOL_LIGHT = 8;
+  PROVER_KIND_MIZAR = 9;
+  PROVER_KIND_PVS = 10;
+  PROVER_KIND_ACL2 = 11;
+  PROVER_KIND_HOL4 = 12;
+  PROVER_KIND_IDRIS2 = 13;
+  PROVER_KIND_VAMPIRE = 14;
+  PROVER_KIND_EPROVER = 15;
+  PROVER_KIND_SPASS = 16;
+  PROVER_KIND_ALT_ERGO = 17;
+}
+
+enum ProofStatus {
+  PROOF_STATUS_UNSPECIFIED = 0;
+  PROOF_STATUS_PENDING = 1;
+  PROOF_STATUS_IN_PROGRESS = 2;
+  PROOF_STATUS_SUCCESS = 3;
+  PROOF_STATUS_FAILED = 4;
+  PROOF_STATUS_TIMEOUT = 5;
+  PROOF_STATUS_ERROR = 6;
+}
+
+message SubmitProofRequest {
+  string goal = 1;
+  ProverKind prover = 2;
+  optional uint32 timeout_seconds = 3;
+}
+
+message GetProofStatusRequest {
+  string proof_id = 1;
+}
+
+message StreamProofRequest {
+  string proof_id = 1;
+}
+
+message ApplyTacticRequest {
+  string proof_id = 1;
+  string tactic_name = 2;
+  repeated string tactic_args = 3;
+}
+
+message CancelProofRequest {
+  string proof_id = 1;
+}
+
+message ListProversRequest {}
+
+message SuggestTacticsRequest {
+  string proof_id = 1;
+  optional uint32 limit = 2;
+}
+
+message ProofResponse {
+  string proof_id = 1;
+  ProverKind prover = 2;
+  string goal = 3;
+  ProofStatus status = 4;
+  repeated string proof_script = 5;
+  optional double time_elapsed = 6;
+  optional string error_message = 7;
+}
+
+message ProofUpdate {
+  string proof_id = 1;
+  ProofStatus status = 2;
+  string message = 3;
+  optional double progress = 4;
+}
+
+message TacticResponse {
+  bool success = 1;
+  ProofResponse proof_state = 2;
+}
+
+message CancelProofResponse {
+  bool success = 1;
+}
+
+message ProverInfo {
+  ProverKind kind = 1;
+  string version = 2;
+  int32 tier = 3;
+  int32 complexity = 4;
+  bool available = 5;
+}
+
+message ListProversResponse {
+  repeated ProverInfo provers = 1;
+}
+
+message Tactic {
+  string name = 1;
+  repeated string args = 2;
+  optional string description = 3;
+  optional float confidence = 4;
+}
+
+message SuggestTacticsResponse {
+  repeated Tactic tactics = 1;
+}

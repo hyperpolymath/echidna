@@ -1,5 +1,5 @@
 // SPDX-FileCopyrightText: 2025 ECHIDNA Project Team
-// SPDX-License-Identifier: MIT OR Palimpsest-0.6
+// SPDX-License-Identifier: PMPL-1.0-or-later
 
 //! Common test utilities for ECHIDNA test suite
 
@@ -73,6 +73,23 @@ pub fn test_prover_config(kind: ProverKind) -> ProverConfig {
         ProverKind::ACL2 => "acl2",
         ProverKind::HOL4 => "hol",
         ProverKind::Idris2 => "idris2",
+        ProverKind::Vampire => "vampire",
+        ProverKind::EProver => "eprover",
+        ProverKind::SPASS => "SPASS",
+        ProverKind::AltErgo => "alt-ergo",
+        ProverKind::FStar => "fstar.exe",
+        ProverKind::Dafny => "dafny",
+        ProverKind::Why3 => "why3",
+        ProverKind::TLAPS => "tlapm",
+        ProverKind::Twelf => "twelf-server",
+        ProverKind::Nuprl => "nuprl",
+        ProverKind::Minlog => "minlog",
+        ProverKind::Imandra => "imandra",
+        ProverKind::GLPK => "glpsol",
+        ProverKind::SCIP => "scip",
+        ProverKind::MiniZinc => "minizinc",
+        ProverKind::Chuffed => "fzn-chuffed",
+        ProverKind::ORTools => "ortools_solve",
     };
 
     ProverConfig {
@@ -100,6 +117,23 @@ pub fn proof_examples_dir(kind: ProverKind) -> PathBuf {
         ProverKind::ACL2 => "acl2",
         ProverKind::HOL4 => "hol4",
         ProverKind::Idris2 => "idris2",
+        ProverKind::Vampire => "vampire",
+        ProverKind::EProver => "eprover",
+        ProverKind::SPASS => "spass",
+        ProverKind::AltErgo => "alt_ergo",
+        ProverKind::FStar => "fstar",
+        ProverKind::Dafny => "dafny",
+        ProverKind::Why3 => "why3",
+        ProverKind::TLAPS => "tlaps",
+        ProverKind::Twelf => "twelf",
+        ProverKind::Nuprl => "nuprl",
+        ProverKind::Minlog => "minlog",
+        ProverKind::Imandra => "imandra",
+        ProverKind::GLPK => "glpk",
+        ProverKind::SCIP => "scip",
+        ProverKind::MiniZinc => "minizinc",
+        ProverKind::Chuffed => "chuffed",
+        ProverKind::ORTools => "ortools",
     };
 
     PathBuf::from("/home/user/echidna/proofs").join(subdir)
@@ -117,7 +151,7 @@ pub fn find_proof_files(kind: ProverKind) -> Vec<PathBuf> {
         ProverKind::Coq => vec!["v"],
         ProverKind::Lean => vec!["lean"],
         ProverKind::Isabelle => vec!["thy"],
-        ProverKind::Z3 | ProverKind::CVC5 => vec!["smt2"],
+        ProverKind::Z3 | ProverKind::CVC5 | ProverKind::AltErgo => vec!["smt2"],
         ProverKind::Metamath => vec!["mm"],
         ProverKind::HOLLight => vec!["ml"],
         ProverKind::Mizar => vec!["miz"],
@@ -125,6 +159,21 @@ pub fn find_proof_files(kind: ProverKind) -> Vec<PathBuf> {
         ProverKind::ACL2 => vec!["lisp"],
         ProverKind::HOL4 => vec!["sml"],
         ProverKind::Idris2 => vec!["idr"],
+        ProverKind::Vampire | ProverKind::EProver => vec!["p", "tptp"],
+        ProverKind::SPASS => vec!["dfg"],
+        ProverKind::FStar => vec!["fst", "fsti"],
+        ProverKind::Dafny => vec!["dfy"],
+        ProverKind::Why3 => vec!["why", "mlw"],
+        ProverKind::TLAPS => vec!["tla"],
+        ProverKind::Twelf => vec!["elf"],
+        ProverKind::Nuprl => vec!["nuprl"],
+        ProverKind::Minlog => vec!["minlog"],
+        ProverKind::Imandra => vec!["iml"],
+        ProverKind::GLPK => vec!["lp", "mps"],
+        ProverKind::SCIP => vec!["pip", "zpl"],
+        ProverKind::MiniZinc => vec!["mzn", "dzn"],
+        ProverKind::Chuffed => vec!["fzn"],
+        ProverKind::ORTools => vec!["or", "proto"],
     };
 
     let mut files = vec![];
