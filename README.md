@@ -489,3 +489,8 @@ ECHIDNA supports **17 theorem provers** across 5 tiers:
 - Julia ML layer for premise selection
 - Chapel parallel dispatcher for cluster execution
 
+
+
+## Architecture
+
+See [TOPOLOGY.md](TOPOLOGY.md) for a visual architecture map and completion dashboard.
