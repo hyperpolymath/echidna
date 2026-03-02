@@ -1,0 +1,22 @@
+# SPDX-License-Identifier: PMPL-1.0-or-later
+# humans.txt - The humans behind ECHIDNA
+# See https://humanstxt.org/
+
+/* TEAM */
+Developer: Jonathan D.A. Jewell (hyperpolymath)
+GitHub: hyperpolymath
+Role: Lead Developer
+Location: United Kingdom
+
+/* THANKS */
+Z3 team (Microsoft Research)
+Lean community
+Coq development team
+Isabelle/HOL team
+All theorem prover backend authors
+
+/* SITE */
+Standards: Rhodium Standard Repositories (RSR)
+License: PMPL-1.0-or-later (Palimpsest License)
+Language: Rust, Julia, ReScript, Chapel
+Version: 1.5.0

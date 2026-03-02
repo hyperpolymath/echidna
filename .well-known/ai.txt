@@ -1,0 +1,11 @@
+# SPDX-License-Identifier: PMPL-1.0-or-later
+# ai.txt - AI agent instructions for ECHIDNA
+# See https://site.spawning.ai/ai-txt
+
+User-Agent: *
+Allow: /
+
+# This project welcomes AI contributions under PMPL-1.0-or-later
+# See .machine_readable/ for structured metadata
+# See AI.a2ml for agent entry point
+# ECHIDNA is itself an AI-powered neurosymbolic theorem prover

@@ -1,0 +1,25 @@
+# SPDX-License-Identifier: PMPL-1.0-or-later
+# CODEOWNERS - Code ownership for ECHIDNA
+# See https://docs.github.com/en/repositories/managing-your-repositorys-settings-and-features/customizing-your-repository/about-code-owners
+
+# Default owner for all files
+* @hyperpolymath
+
+# Core prover backends
+/src/rust/provers/ @hyperpolymath
+/src/rust/core.rs @hyperpolymath
+/src/rust/dispatch.rs @hyperpolymath
+
+# ML layer
+/src/julia/ @hyperpolymath
+
+# Interfaces
+/src/interfaces/ @hyperpolymath
+
+# Infrastructure and CI/CD
+/.github/workflows/ @hyperpolymath
+/.containerization/ @hyperpolymath
+/Containerfile @hyperpolymath
+
+# SCM and machine-readable metadata
+/.machine_readable/ @hyperpolymath
