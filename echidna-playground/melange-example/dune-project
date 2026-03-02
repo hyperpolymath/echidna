@@ -1,0 +1,17 @@
+; SPDX-License-Identifier: AGPL-3.0-or-later
+; Melange setup - this would replace package.json/rescript.json
+
+(lang dune 3.14)
+(using melange 0.1)
+
+(name coq_jr)
+
+(generate_opam_files true)
+
+(package
+ (name coq_jr)
+ (synopsis "jsCoq in ReScript/Melange")
+ (depends
+  (ocaml (>= 5.1))
+  (melange (>= 4.0))
+  (reason (>= 3.10))))

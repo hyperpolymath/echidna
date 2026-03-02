@@ -1,0 +1,17 @@
+{
+  "name": "@coq-jr/web",
+  "version": "0.1.0",
+  "tasks": {
+    "build:res": "npx rescript build",
+    "clean:res": "npx rescript clean",
+    "dev": "deno run --allow-net --allow-read server.ts",
+    "serve": "deno run --allow-net --allow-read server.ts"
+  },
+  "imports": {
+    "@std/http": "jsr:@std/http@^1.0.0",
+    "@std/path": "jsr:@std/path@^1.0.0"
+  },
+  "compilerOptions": {
+    "lib": ["deno.window", "dom"]
+  }
+}

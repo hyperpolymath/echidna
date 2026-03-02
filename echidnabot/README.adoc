@@ -1,0 +1,364 @@
+image:https://img.shields.io/badge/Philosophy-Palimpsest-indigo.svg[Palimpsest,link="https://github.com/hyperpolymath/palimpsest-license"]
+
+
+// SPDX-License-Identifier: PMPL-1.0-or-later
+// SPDX-FileCopyrightText: 2024-2025 hyperpolymath
+
+= echidnabot
+image:https://img.shields.io/badge/License-PMPL--1.0-blue.svg[License: PMPL-1.0,link="https://github.com/hyperpolymath/palimpsest-license"]
+
+
+
+:toc: auto
+:toclevels: 3
+:icons: font
+:source-highlighter: rouge
+:experimental:
+:url-github: https://github.com/hyperpolymath/echidnabot
+:url-docs: https://hyperpolymath.github.io/echidnabot
+:url-echidna: https://github.com/hyperpolymath/echidna
+
+image:https://img.shields.io/github/v/release/hyperpolymath/echidnabot?include_prereleases[GitHub Release,link={url-github}/releases]
+image:https://github.com/hyperpolymath/echidnabot/actions/workflows/quality.yml/badge.svg[CI,link={url-github}/actions/workflows/quality.yml]
+image:https://api.securityscorecards.dev/projects/github.com/hyperpolymath/echidnabot/badge[OpenSSF Scorecard,link=https://securityscorecards.dev/viewer/?uri=github.com/hyperpolymath/echidnabot]
+image:https://img.shields.io/badge/RSR-Certified-gold[RSR Certified,link=https://github.com/hyperpolymath/rhodium-standard-repositories]
+
+**echidnabot** — Proof-Aware CI Bot for Formal Verification
+
+_When you push code with formal proofs, echidnabot automatically verifies them and reports the results in your pull requests._
+
+== The Problem
+
+You're writing formally verified software—proofs in Coq, Lean, Agda, or Isabelle. But your CI pipeline doesn't understand proofs:
+
+* Tests pass, but **proofs are broken**
+* PRs merge with **unverified theorems**
+* No one notices until a dependent build fails
+* Manual verification is **slow and error-prone**
+
+== The Solution
+
+echidnabot bridges the gap between code platforms (GitHub, GitLab, Bitbucket) and the ECHIDNA theorem proving platform. Every push, every PR—proofs get verified automatically.
+
+[source]
+----
+  GitHub/GitLab/Bitbucket
+           │
+           │ webhook (push/PR)
+           ▼
+   ┌───────────────────┐
+   │    echidnabot     │  ◄── Rust, Tokio, Axum
+   │  ┌─────────────┐  │
+   │  │ Dispatcher  │──┼──► ECHIDNA Core (Agda, Coq, Lean, Z3...)
+   │  │ Scheduler   │  │
+   │  │ GraphQL API │  │
+   │  └─────────────┘  │
+   └───────────────────┘
+           │
+           │ Check Runs / Comments
+           ▼
+       ✓ Proof verified
+       ✗ Proof failed (line 42: goal not discharged)
+----
+
+== Features
+
+=== Multi-Prover Support
+
+[cols="1,1,2"]
+|===
+|Tier |Provers |Status
+
+|**Tier 1** |Coq, Lean 4, Agda, Isabelle/HOL, Z3, CVC5 |Ready
+|**Tier 2** |Metamath, HOL Light, Mizar |MVP
+|**Tier 3** |PVS, ACL2, HOL4 |Planned
+|===
+
+=== Multi-Platform Integration
+
+* **GitHub** — Check Runs, PR comments, status checks
+* **GitLab** — Merge request pipelines, commit status
+* **Bitbucket** — Build status, PR comments
+* **Codeberg** — Planned
+
+=== Bot Modes
+
+Like link:https://github.com/hyperpolymath/oikos[Oikos Bot], echidnabot operates in multiple modes:
+
+* **Verifier** — Silent pass/fail on proof files
+* **Advisor** — Suggestions on failing proofs
+* **Consultant** — Answer questions about proof state
+* **Regulator** — Block merges on proof failures
+
+=== ML-Powered Tactic Suggestions
+
+When proofs fail, echidnabot can suggest tactics via ECHIDNA's Julia ML backend:
+
+[source]
+----
+❌ Proof failed at theorem `list_append_assoc`
+   Goal: ∀ xs ys zs, xs ++ (ys ++ zs) = (xs ++ ys) ++ zs
+
+💡 Suggested tactics:
+   1. induction xs; simpl; auto.
+   2. intros; rewrite app_assoc; reflexivity.
+----
+
+=== Language Policy
+
+echidnabot is Rust + ReScript only. TypeScript/JavaScript are not permitted, and CI will block TS/JS additions.
+
+== Quick Start
+
+=== Installation
+
+[source,bash]
+----
+# From source
+git clone https://github.com/hyperpolymath/echidnabot
+cd echidnabot
+cargo build --release
+
+# Or with Cargo
+cargo install echidnabot
+
+# Or with Guix
+guix install echidnabot
+----
+
+=== Configuration
+
+Create `echidnabot.toml` in your repository:
+
+[source,toml]
+----
+[repository]
+platform = "github"
+owner = "your-org"
+name = "your-repo"
+
+[provers]
+enabled = ["coq", "lean4", "agda"]
+
+[webhook]
+secret = "${ECHIDNABOT_WEBHOOK_SECRET}"
+
+[echidna]
+endpoint = "https://echidna.your-domain.com/graphql"
+rest_endpoint = "https://echidna.your-domain.com"
+mode = "auto"
+----
+
+=== Running the Server
+
+[source,bash]
+----
+# Start the webhook server
+echidnabot serve --port 8080
+
+# Register a repository
+echidnabot register --platform github --repo owner/name
+
+# Manually trigger verification
+echidnabot check --commit HEAD
+----
+
+== Architecture
+
+echidnabot is built in Rust for reliability and performance:
+
+[cols="1,1,2"]
+|===
+|Component |Technology |Purpose
+
+|Webhook Server |Axum 0.7 |Receive platform events
+|Job Scheduler |Tokio |Async job queue with priorities
+|Platform Adapters |Octocrab |GitHub/GitLab/Bitbucket APIs
+|GraphQL API |async-graphql |Query and control interface
+|Database |SQLx |SQLite (dev) / PostgreSQL (prod)
+|ECHIDNA Client |Reqwest |Communicate with proof backends
+|===
+
+=== Project Structure
+
+[source]
+----
+echidnabot/
+├── src/
+│   ├── api/              # GraphQL & webhooks
+│   │   ├── graphql.rs    # Query/mutation resolvers
+│   │   └── webhooks.rs   # Platform webhook handlers
+│   ├── adapters/         # Platform integrations
+│   │   ├── github.rs     # GitHub Check Runs
+│   │   ├── gitlab.rs     # GitLab pipelines
+│   │   └── bitbucket.rs  # Bitbucket builds
+│   ├── dispatcher/       # ECHIDNA communication
+│   ├── scheduler/        # Job queue management
+│   ├── store/            # Database models
+│   └── main.rs           # CLI entry point
+├── docs/                 # Documentation site
+├── wiki/                 # GitHub Wiki content
+└── justfile              # Task automation
+----
+
+== API
+
+=== GraphQL
+
+[source,graphql]
+----
+# Register a repository
+mutation {
+  registerRepository(input: {
+    platform: GITHUB
+    owner: "your-org"
+    name: "your-repo"
+    enabledProvers: [COQ, LEAN4]
+  }) {
+    id
+    webhookUrl
+  }
+}
+
+# Query verification status
+query {
+  job(id: "...") {
+    status
+    result {
+      success
+      verifiedFiles
+      failedFiles
+    }
+  }
+}
+----
+
+=== REST Webhooks
+
+[source]
+----
+POST /webhooks/github   # GitHub webhook endpoint
+POST /webhooks/gitlab   # GitLab webhook endpoint
+POST /webhooks/bitbucket # Bitbucket webhook endpoint
+----
+
+== Development
+
+=== Prerequisites
+
+* Rust 1.83+ (stable)
+* PostgreSQL 15+ (or SQLite for development)
+* Access to ECHIDNA Core instance
+
+=== Using Guix (Recommended)
+
+[source,bash]
+----
+guix shell -D -f guix.scm
+just build
+just test
+----
+
+=== Using Nix
+
+[source,bash]
+----
+nix develop
+just build
+----
+
+=== Using Cargo Directly
+
+[source,bash]
+----
+cargo build
+cargo test
+cargo clippy
+----
+
+=== Common Tasks
+
+[source,bash]
+----
+just              # Show all available tasks
+just build        # Build debug binary
+just test         # Run all tests
+just lint         # Run clippy + fmt check
+just run          # Start development server
+just docs         # Generate documentation
+----
+
+== Deployment
+
+=== Docker
+
+[source,bash]
+----
+# Build image
+podman build -t echidnabot:latest .
+
+# Run with environment config
+podman run -d \
+  -p 8080:8080 \
+  -e ECHIDNABOT_DATABASE_URL=postgres://... \
+  -e ECHIDNABOT_ECHIDNA_ENDPOINT=https://... \
+  -e GITHUB_WEBHOOK_SECRET=... \
+  echidnabot:latest
+----
+
+=== Systemd
+
+[source,bash]
+----
+# Install service
+sudo cp dist/echidnabot.service /etc/systemd/system/
+sudo systemctl enable --now echidnabot
+----
+
+== Roadmap
+
+[cols="1,1,3"]
+|===
+|Phase |Target |Features
+
+|**Phase 1** |MVP |GitHub webhooks, Metamath verification, Check Runs
+|**Phase 2** |Multi-Prover |Coq, Lean, Agda, Z3 support
+|**Phase 3** |Intelligence |ML tactic suggestions, auto-fix PRs
+|**Phase 4** |Production |PostgreSQL scaling, horizontal workers, dashboards
+|===
+
+== Related Projects
+
+* link:{url-echidna}[**ECHIDNA**] — The theorem proving platform (backend)
+* link:https://github.com/hyperpolymath/oikos[**Oikos Bot**] — Ecological & economic code analysis
+* link:https://github.com/hyperpolymath/poly-ssg[**poly-ssg**] — Language-native static site generators
+* link:https://github.com/hyperpolymath/rhodium-standard-repositories[**RSR**] — Repository quality standards
+
+== About hyperpolymath
+
+link:https://github.com/hyperpolymath[hyperpolymath] builds politically autonomous software for ecologically and economically conscious development. Our tools prioritize:
+
+* **Formal correctness** — Proofs over tests where possible
+* **Sustainability** — Carbon-aware computing
+* **Independence** — No Big Tech dependencies
+* **Openness** — AGPL/PMPL-1.0 licensing, reproducible builds
+
+== License
+
+This project is licensed under **PMPL-1.0-or-later**.
+
+We also encourage adherence to the principles of the link:https://github.com/hyperpolymath/palimpsest-license[Palimpsest License] — a framework for consent-based digital interaction.
+
+== Contributing
+
+See link:CONTRIBUTING.adoc[CONTRIBUTING.adoc] for guidelines.
+
+Key points:
+
+* Rust code follows `cargo fmt` and `cargo clippy`
+* All commits signed with GPG
+* PRs require passing CI and proof verification
+
+'''
+
+_Part of the link:https://github.com/hyperpolymath[hyperpolymath] ecosystem. Proof-aware CI for mathematically certain software._

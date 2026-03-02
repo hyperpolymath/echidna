@@ -1,0 +1,121 @@
+/* SPDX-License-Identifier: AGPL-3.0-or-later */
+/* SPDX-FileCopyrightText: 2025 Coq-Jr Contributors */
+
+/* jsCoq Styles for Coq-Jr */
+
+kbd {
+  background: rgba(0, 0, 0, 0.02);
+  color: #333;
+  font-size: 80%;
+  padding: 2px 5px;
+  border-radius: 3px;
+  border: 1px solid #ccc;
+}
+
+table.doc-actions th,
+table.doc-actions td {
+  padding: 0.2em 0.5em;
+  vertical-align: top;
+  border: 1px solid #999;
+}
+
+table.doc-actions td {
+  padding-bottom: 0.25em;
+}
+
+h4 {
+  background: #f6f9f9;
+  padding: 3px;
+  color: #089;
+  margin-top: 1em;
+}
+
+h5 {
+  margin-top: 12px;
+  margin-bottom: 7px;
+  font-size: 110%;
+  font-style: italic;
+  color: #089;
+}
+
+span.jscoq-name {
+  color: #363;
+  font-weight: 500;
+}
+
+#team {
+  margin-top: 2em;
+  border: 1px solid #eee;
+  padding: 5px;
+}
+
+#team ul {
+  margin-bottom: 0.5em;
+}
+
+#document {
+  max-width: 800px;
+  margin: 0 auto;
+  padding: 20px;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  line-height: 1.6;
+}
+
+#document p {
+  margin-bottom: 1em;
+}
+
+#document textarea {
+  width: 100%;
+  min-height: 80px;
+  font-family: "Monaco", "Menlo", "Ubuntu Mono", "Consolas", monospace;
+  font-size: 14px;
+  padding: 10px;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  background: #fafafa;
+  margin: 10px 0;
+}
+
+#document textarea:focus {
+  outline: none;
+  border-color: #089;
+  box-shadow: 0 0 0 2px rgba(0, 136, 153, 0.1);
+}
+
+#document code {
+  background: #f4f4f4;
+  padding: 2px 6px;
+  border-radius: 3px;
+  font-family: "Monaco", "Menlo", "Ubuntu Mono", "Consolas", monospace;
+  font-size: 90%;
+}
+
+#document a {
+  color: #089;
+  text-decoration: none;
+}
+
+#document a:hover {
+  text-decoration: underline;
+}
+
+#ide-wrapper {
+  min-height: 100vh;
+}
+
+#code-wrapper {
+  background: white;
+}
+
+body.jscoq-main {
+  margin: 0;
+  padding: 0;
+  background: #f0f0f0;
+}
+
+hr {
+  border: none;
+  border-top: 1px solid #ddd;
+  margin: 2em 0;
+}

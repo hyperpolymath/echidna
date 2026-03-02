@@ -1,0 +1,494 @@
+= Coq-Jr Roadmap: Toward an Integrated Proof Nexus
+:toc: macro
+:toc-title: Contents
+:toclevels: 3
+:icons: font
+:source-highlighter: rouge
+
+[.lead]
+This document outlines the development trajectory for Coq-Jr, from its current state as a browser-based Coq interface to its role as a core component of the Hyperpolymath pan-solver verification network.
+
+toc::[]
+
+== Current State Assessment
+
+=== What We Have (Phase 0 — Complete)
+
+[cols="1,1,3"]
+|===
+|Component |Status |Description
+
+|*ReScript Infrastructure*
+|✓ Complete
+|7 modules (589 LoC) providing type-safe page generation, DOM bindings, and server logic
+
+|*Deno HTTP Server*
+|✓ Complete
+|Static file serving with MIME detection, route handling, and HTML generation
+
+|*jsCoq Integration*
+|✓ Complete
+|Browser-side Coq execution via WebAssembly with MathComp support
+
+|*Demo Proof*
+|✓ Complete
+|Interactive "Infinitude of Primes" demonstration with step-through capability
+
+|*Styling*
+|✓ Complete
+|Custom CSS with responsive layout for proof environment
+|===
+
+=== Current Limitations
+
+* *No API layer* — Only static HTML serving, no programmatic proof access
+* *No session management* — Proofs are ephemeral; state lost on page refresh
+* *Single proof mode* — No workspace or multi-file project support
+* *Browser-only verification* — All execution is client-side; no server-side Coq
+* *No AI integration* — Cannot be used as an MCP tool or via GraphQL
+
+---
+
+== Roadmap Phases
+
+[source]
+----
+  Phase 0        Phase 1         Phase 2         Phase 3         Phase 4
+  ────────       ────────        ────────        ────────        ────────
+  ┌──────┐      ┌──────┐        ┌──────┐        ┌──────┐        ┌──────┐
+  │ Web  │ ──▶  │ REST │  ──▶   │GraphQL│ ──▶   │ MCP  │  ──▶   │ Pan- │
+  │ UI   │      │ API  │        │  API  │       │Server│        │Solver│
+  └──────┘      └──────┘        └──────┘        └──────┘        └──────┘
+  Complete      Sessions        Queries         AI Access       ECHIDNA
+               + Tactics        + Search        + Tools         + Multi-
+                                                                 Prover
+----
+
+'''
+
+== Phase 1: RESTful Proof API
+
+*Goal:* Transform Coq-Jr from a static page server into a proof-as-a-service platform.
+
+=== 1.1 Session Management
+
+[source,typescript]
+----
+// Session API Types
+interface ProofSession {
+  id: string;
+  created: Date;
+  lastActivity: Date;
+  state: 'active' | 'paused' | 'complete' | 'error';
+  goals: Goal[];
+  history: TacticExecution[];
+}
+
+interface Goal {
+  id: number;
+  hypothesis: string[];
+  conclusion: string;
+}
+----
+
+.Deliverables
+* [ ] `POST /api/sessions` — Create new proof session with optional theorem
+* [ ] `GET /api/sessions/:id` — Retrieve session state and goals
+* [ ] `DELETE /api/sessions/:id` — Terminate and clean up session
+* [ ] Session timeout and garbage collection (30 min default)
+* [ ] Optional Redis/KV backend for session persistence
+
+=== 1.2 Tactic Execution API
+
+.Endpoints
+[cols="1,1,3"]
+|===
+|Method |Path |Description
+
+|POST
+|`/api/sessions/:id/tactic`
+|Execute single tactic, return updated goals
+
+|POST
+|`/api/sessions/:id/undo`
+|Undo last tactic execution
+
+|POST
+|`/api/sessions/:id/reset`
+|Reset to initial state
+
+|GET
+|`/api/sessions/:id/goals`
+|Get current proof obligations
+|===
+
+=== 1.3 Server-Side Coq (SerAPI Integration)
+
+Browser-side jsCoq has limitations. This phase adds optional server-side verification:
+
+* [ ] SerAPI Docker container with pre-installed libraries
+* [ ] Proof execution worker pool
+* [ ] Fallback: jsCoq (browser) → SerAPI (server) when needed
+* [ ] Execution timeout and resource limits
+
+.Architecture Addition
+[source]
+----
+┌─────────────────┐        ┌─────────────────┐
+│   Deno Server   │───────▶│  SerAPI Worker  │
+│   (API Layer)   │        │    (Docker)     │
+└────────┬────────┘        └─────────────────┘
+         │
+         ▼
+┌─────────────────┐
+│   jsCoq WASM    │
+│   (Fallback)    │
+└─────────────────┘
+----
+
+'''
+
+== Phase 2: GraphQL API & Search
+
+*Goal:* Rich query interface for proof exploration, library search, and structured access.
+
+=== 2.1 GraphQL Schema
+
+[source,graphql]
+----
+type Query {
+  # Session queries
+  session(id: ID!): Session
+  sessions(status: SessionStatus): [Session!]!
+
+  # Library queries
+  searchLemmas(
+    pattern: String!
+    library: Library
+    limit: Int = 20
+  ): [Lemma!]!
+
+  searchTactics(
+    goalPattern: String
+    name: String
+  ): [Tactic!]!
+
+  # Proof structure
+  proofTree(sessionId: ID!): ProofNode
+}
+
+type Mutation {
+  # Session management
+  createSession(theorem: String, libraries: [Library!]): Session!
+  deleteSession(id: ID!): Boolean!
+
+  # Proof execution
+  executeTactic(sessionId: ID!, tactic: String!): TacticResult!
+  undoTactic(sessionId: ID!): TacticResult!
+  applyLemma(sessionId: ID!, lemmaName: String!): TacticResult!
+}
+
+type Subscription {
+  # Real-time proof state
+  proofState(sessionId: ID!): ProofStateUpdate!
+}
+
+enum Library {
+  COQ_STDLIB
+  MATHCOMP
+  COQ_COMPCERT
+  COQ_VST
+  EQUATIONS
+  METACOQ
+}
+
+type Session {
+  id: ID!
+  created: DateTime!
+  status: SessionStatus!
+  goals: [Goal!]!
+  history: [TacticExecution!]!
+  proofComplete: Boolean!
+}
+
+type Goal {
+  id: Int!
+  hypotheses: [Hypothesis!]!
+  conclusion: String!
+  depth: Int!
+}
+
+type Lemma {
+  name: String!
+  statement: String!
+  library: Library!
+  location: String
+}
+----
+
+=== 2.2 Library Search Index
+
+* [ ] Index MathComp lemmas and definitions
+* [ ] Full-text search with type-aware ranking
+* [ ] "Find theorems" by goal pattern
+* [ ] Cross-library discovery
+
+=== 2.3 Proof Tree Visualization
+
+* [ ] Structured proof tree representation
+* [ ] Goal dependency tracking
+* [ ] Branch visualization for case splits
+
+'''
+
+== Phase 3: MCP Integration
+
+*Goal:* Make Coq-Jr accessible to AI assistants as a proof tool.
+
+=== 3.1 MCP Server Implementation
+
+[source,typescript]
+----
+// MCP Tool Definitions
+const tools = {
+  coq_start_proof: {
+    description: "Begin a new Coq proof session",
+    parameters: {
+      theorem: { type: "string", description: "The statement to prove" },
+      libraries: { type: "array", items: { type: "string" } }
+    }
+  },
+
+  coq_tactic: {
+    description: "Execute a Coq tactic in the current proof",
+    parameters: {
+      sessionId: { type: "string" },
+      tactic: { type: "string", description: "The tactic to apply" }
+    }
+  },
+
+  coq_suggest: {
+    description: "Get tactic suggestions for current goal",
+    parameters: {
+      sessionId: { type: "string" },
+      strategy: {
+        type: "string",
+        enum: ["auto", "rewrite", "induction", "destruct"]
+      }
+    }
+  },
+
+  coq_search: {
+    description: "Search for relevant lemmas",
+    parameters: {
+      pattern: { type: "string" },
+      goalContext: { type: "boolean", default: true }
+    }
+  }
+};
+----
+
+=== 3.2 MCP Resources
+
+[source,json]
+----
+{
+  "resources": [
+    {
+      "uri": "coq://session/{id}/goals",
+      "name": "Current proof goals",
+      "mimeType": "text/plain"
+    },
+    {
+      "uri": "coq://session/{id}/proof",
+      "name": "Complete proof script",
+      "mimeType": "text/x-coq"
+    },
+    {
+      "uri": "coq://library/{name}",
+      "name": "Library documentation",
+      "mimeType": "text/markdown"
+    }
+  ]
+}
+----
+
+=== 3.3 Integration with poly-proof-mcp
+
+* [ ] Register as Coq/Rocq backend in poly-proof-mcp
+* [ ] Implement prover capability announcement
+* [ ] Support proof translation requests from other backends
+* [ ] Participate in distributed proof search
+
+.Ecosystem Integration
+[source]
+----
+┌──────────────────────────────────────────────────────────────┐
+│                      poly-proof-mcp                          │
+│              (Proof Orchestration Layer)                     │
+└──────────────────────────────────┬───────────────────────────┘
+                                   │
+         ┌────────────────┬────────┼────────┬────────────────┐
+         │                │        │        │                │
+         ▼                ▼        ▼        ▼                ▼
+   ┌──────────┐    ┌──────────┐ ┌──────┐ ┌──────────┐  ┌──────────┐
+   │ Coq-Jr   │    │  ECHIDNA │ │ Lean │ │ Isabelle │  │   Z3     │
+   │  (Coq)   │    │  (Meta)  │ │      │ │          │  │  (SMT)   │
+   └──────────┘    └──────────┘ └──────┘ └──────────┘  └──────────┘
+         │
+         ├──────────────────────┐
+         │                      │
+         ▼                      ▼
+   ┌──────────┐          ┌──────────┐
+   │echidnabot│          │git-eco-  │
+   │(CI verify│          │bot (perf)│
+   └──────────┘          └──────────┘
+----
+
+'''
+
+== Phase 4: Pan-Solver Network
+
+*Goal:* Full integration with the Hyperpolymath verification ecosystem.
+
+=== 4.1 ECHIDNA Backend Registration
+
+* [ ] Implement ECHIDNA prover adapter interface
+* [ ] Support neural candidate evaluation
+* [ ] Contribute to cross-prover translation corpus
+
+=== 4.2 Proof Portability
+
+* [ ] Export proofs to portable JSON format
+* [ ] Import proofs from Lean/Isabelle (where applicable)
+* [ ] Proof certificate generation
+
+=== 4.3 Collaborative Features
+
+* [ ] Multi-user proof sessions
+* [ ] Proof branching and merging
+* [ ] Annotation and documentation layer
+
+=== 4.4 echidnabot Integration
+
+* [ ] CI/CD proof obligation detection
+* [ ] Automated proof maintenance on library updates
+* [ ] Regression testing for proof stability
+
+'''
+
+== Technical Specifications
+
+=== API Versioning
+
+[source]
+----
+/api/v1/*     # Current stable API
+/api/v2/*     # Next version (breaking changes)
+/graphql      # GraphQL endpoint (versionless, schema evolution)
+----
+
+=== Authentication (Phase 2+)
+
+* API keys for programmatic access
+* OAuth2 for web interface
+* MCP server uses inherited credentials
+
+=== Rate Limiting
+
+[cols="1,2,2"]
+|===
+|Tier |Rate Limit |Use Case
+
+|Anonymous
+|10 req/min
+|Experimentation
+
+|Authenticated
+|100 req/min
+|Development
+
+|Premium
+|1000 req/min
+|Production pipelines
+|===
+
+=== Resource Limits
+
+[cols="2,2"]
+|===
+|Resource |Limit
+
+|Proof session duration
+|30 minutes (extendable)
+
+|Maximum goals per session
+|100
+
+|Tactic execution timeout
+|30 seconds
+
+|Library load timeout
+|60 seconds
+|===
+
+'''
+
+== Milestone Targets
+
+[cols="1,2,1,3"]
+|===
+|Phase |Milestone |Target |Key Deliverables
+
+|1.0
+|REST API
+|Q1
+|Sessions, tactics, basic API
+
+|1.5
+|SerAPI Backend
+|Q2
+|Server-side Coq, worker pool
+
+|2.0
+|GraphQL
+|Q2
+|Full query API, library search
+
+|3.0
+|MCP Server
+|Q3
+|AI tool integration, poly-proof-mcp satellite
+
+|4.0
+|Pan-Solver
+|Q4
+|ECHIDNA integration, proof portability
+|===
+
+'''
+
+== Contributing to the Roadmap
+
+We welcome community input on prioritization and feature design.
+
+=== How to Contribute
+
+1. *Feature Requests* — Open an issue with `[ROADMAP]` prefix
+2. *Design Proposals* — Submit ADR (Architecture Decision Record) PRs
+3. *Implementation* — Pick up issues labeled `roadmap` + `help-wanted`
+
+=== Design Principles
+
+* *Incremental value* — Each phase is independently useful
+* *API stability* — Versioned endpoints, deprecation notices
+* *Minimal lock-in* — Standard protocols (HTTP, GraphQL, MCP)
+* *Composability* — Works standalone or as ecosystem component
+
+---
+
+[.text-center]
+_This roadmap is a living document. Last updated: 2025-12-23_
+
+[.text-center]
+_Part of the https://github.com/hyperpolymath[Hyperpolymath] formal verification ecosystem_

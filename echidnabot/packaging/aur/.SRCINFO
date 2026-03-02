@@ -1,0 +1,17 @@
+pkgbase = echidnabot-bin
+	pkgdesc = Proof-aware CI bot that orchestrates ECHIDNA for theorem proof verification
+	pkgver = 0.1.3
+	pkgrel = 1
+	url = https://github.com/hyperpolymath/echidnabot
+	arch = x86_64
+	arch = aarch64
+	license = PMPL-1.0-or-later
+	depends = openssl
+	provides = echidnabot
+	conflicts = echidnabot
+	source_x86_64 = echidnabot-0.1.3-x86_64.tar.gz::https://github.com/hyperpolymath/echidnabot/releases/download/v0.1.3/echidnabot-v0.1.3-x86_64-unknown-linux-gnu.tar.gz
+	sha256sums_x86_64 = SKIP
+	source_aarch64 = echidnabot-0.1.3-aarch64.tar.gz::https://github.com/hyperpolymath/echidnabot/releases/download/v0.1.3/echidnabot-v0.1.3-aarch64-unknown-linux-gnu.tar.gz
+	sha256sums_aarch64 = SKIP
+
+pkgname = echidnabot-bin

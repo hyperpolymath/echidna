@@ -1,0 +1,12 @@
+; Build config for Melange
+; ReScript files (.res) would compile through this
+
+(melange.emit
+ (target output)
+ (libraries melange.belt)
+ (preprocess (pps melange.ppx)))
+
+; For native binary (no JS needed):
+; (executable
+;  (name coq_page)
+;  (libraries str))

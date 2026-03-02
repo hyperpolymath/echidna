@@ -1,0 +1,15 @@
+{
+  "name": "coq-jr",
+  "version": "0.1.0",
+  "description": "jsCoq reimplemented in ReScript with Deno",
+  "type": "module",
+  "scripts": {
+    "res:build": "rescript build",
+    "res:clean": "rescript clean",
+    "res:watch": "rescript build -w"
+  },
+  "devDependencies": {
+    "rescript": "^11.1.0"
+  },
+  "dependencies": {}
+}

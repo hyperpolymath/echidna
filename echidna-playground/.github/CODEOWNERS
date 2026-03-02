@@ -1,0 +1,42 @@
+# SPDX-License-Identifier: AGPL-3.0-or-later
+# CODEOWNERS - Defines code ownership for mandatory review requirements
+#
+# These owners will be requested for review when someone opens a pull request
+# that modifies code that they own. Code owners are automatically requested
+# for review when someone opens a pull request that modifies code they own.
+#
+# Order matters: the last matching pattern takes precedence.
+# For more information: https://docs.github.com/en/repositories/managing-your-repositorys-settings-and-features/customizing-your-repository/about-code-owners
+
+# Default owners for everything in the repo
+* @hyperpolymath
+
+# Security-critical files (Perimeter 1) - require explicit security review
+/.github/workflows/      @hyperpolymath
+/.github/dependabot.yml  @hyperpolymath
+/.github/CODEOWNERS      @hyperpolymath
+/SECURITY.md             @hyperpolymath
+/.gitignore              @hyperpolymath
+/.gitattributes          @hyperpolymath
+/flake.nix               @hyperpolymath
+/flake.lock              @hyperpolymath
+
+# License and legal
+/LICENSE*                @hyperpolymath
+/CONTRIBUTING.md         @hyperpolymath
+
+# Source code (Perimeter 1-2)
+/src/                    @hyperpolymath
+/lib/                    @hyperpolymath
+
+# Build configuration
+/Cargo.toml              @hyperpolymath
+/Cargo.lock              @hyperpolymath
+/mix.exs                 @hyperpolymath
+/mix.lock                @hyperpolymath
+/package.json            @hyperpolymath
+/package-lock.json       @hyperpolymath
+
+# Documentation (Perimeter 2-3) - can have broader ownership
+/docs/                   @hyperpolymath
+/README*                 @hyperpolymath

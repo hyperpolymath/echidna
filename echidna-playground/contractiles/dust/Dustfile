@@ -1,0 +1,29 @@
+# SPDX-License-Identifier: PLMP-1.0-or-later
+# Dustfile template - recovery and rollback semantics
+
+version: 1
+
+recovery:
+  logs:
+    - name: decision-log
+      path: logs/decisions.json
+      reversible: true
+      handler: "log-replay --reverse logs/decisions.json"
+
+  policy:
+    - name: policy-rollback
+      path: policy/policy.ncl
+      rollback: "git checkout HEAD~1 -- policy/policy.ncl"
+      notes: "Rollback policy to the previous known-good revision."
+
+  gateway:
+    - name: bad-deployment
+      event: "deploy.failure"
+      undo: "kubectl rollout undo deployment/gateway"
+      notes: "Undo a failed deployment while preserving audit logs."
+
+  dust-events:
+    - name: decision-log-to-dust
+      source: logs/decisions.json
+      transform: "dustify --input logs/decisions.json --output logs/dust-events.json"
+      notes: "Map gateway decision logs into reversible dust events."

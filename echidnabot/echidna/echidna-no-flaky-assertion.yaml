@@ -1,0 +1,45 @@
+# SPDX-License-Identifier: PMPL-1.0-or-later
+# Echidna No-Flaky Assertion Mode Configuration
+# Deterministic settings for stable assertion-based testing
+
+# Assertion-based testing mode
+testMode: "assertion"
+
+# Higher test limit for thorough coverage
+testLimit: 25000
+
+# Longer sequences
+seqLen: 100
+
+# Aggressive shrinking
+shrinkLimit: 10000
+
+# Fixed sender addresses
+sender:
+  - "0x10000"
+  - "0x20000"
+  - "0x30000"
+
+deployer: "0x30000"
+
+# No prefix filter in assertion mode
+prefix: ""
+
+# Enable coverage
+coverage: true
+
+# Text output for readability
+format: "text"
+
+# Longer timeout
+timeout: 300
+
+# Single worker for determinism
+workers: 1
+
+# Persistent corpus
+corpusDir: "echidna-corpus-assertion"
+
+# Fixed values
+maxValue: 100000000000000000000
+maxGas: 12500000

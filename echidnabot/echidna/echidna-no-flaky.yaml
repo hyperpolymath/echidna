@@ -1,0 +1,74 @@
+# SPDX-License-Identifier: PMPL-1.0-or-later
+# Echidna No-Flaky Mode Configuration
+# Deterministic settings for reproducible, stable test results
+#
+# This configuration prioritizes:
+# 1. Reproducibility - same inputs produce same outputs
+# 2. Stability - tests don't randomly pass/fail
+# 3. Thoroughness - comprehensive coverage to catch edge cases
+
+# Property-based testing mode
+testMode: "property"
+
+# Higher test limit for thorough coverage (reduces flakiness)
+testLimit: 25000
+
+# Longer sequences to explore deeper state space
+seqLen: 100
+
+# Aggressive shrinking for minimal reproduction
+shrinkLimit: 10000
+
+# Fixed sender addresses for determinism
+sender:
+  - "0x10000"
+  - "0x20000"
+  - "0x30000"
+
+# Fixed deployer
+deployer: "0x30000"
+
+# Invariant test prefix
+prefix: "echidna_"
+
+# Enable coverage for guided fuzzing
+coverage: true
+
+# JSON output for CI parsing
+format: "json"
+
+# Longer timeout for thorough testing
+timeout: 300
+
+# Single worker for deterministic execution order
+workers: 1
+
+# Persistent corpus for reproducibility
+corpusDir: "echidna-corpus"
+
+# No dictionary randomization
+dictionary: []
+
+# Test all functions
+filterFunctions: []
+filterBlacklist: false
+
+# Fixed transaction values
+maxValue: 100000000000000000000
+maxGas: 12500000
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# NO-FLAKY SPECIFIC SETTINGS
+# ═══════════════════════════════════════════════════════════════════════════════
+
+# Disable mutation-based exploration (more deterministic)
+# Note: This reduces coverage but increases reproducibility
+# mutConsts: []
+
+# Use fixed block parameters
+# timestamp: 1704067200  # 2024-01-01 00:00:00 UTC
+# blockNumber: 1
+
+# Retry failed property checks to confirm failure
+# (prevents false positives from transient issues)
+# retryLimit: 3

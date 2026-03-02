@@ -1,0 +1,17 @@
+#!/usr/bin/make -f
+# SPDX-License-Identifier: PMPL-1.0
+
+%:
+	dh $@
+
+override_dh_auto_build:
+	cargo build --release
+
+override_dh_auto_install:
+	install -D -m 755 target/release/echidnabot debian/echidnabot/usr/bin/echidnabot
+
+override_dh_auto_test:
+	cargo test --release
+
+override_dh_auto_clean:
+	cargo clean

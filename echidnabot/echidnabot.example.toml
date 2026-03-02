@@ -1,0 +1,58 @@
+# echidnabot Configuration Example
+# Copy to echidnabot.toml and customize
+
+[server]
+# Host to bind to (0.0.0.0 for all interfaces)
+host = "0.0.0.0"
+# Port to listen on
+port = 8080
+
+[database]
+# SQLite for development, PostgreSQL for production
+# SQLite: sqlite://path/to/db.sqlite
+# PostgreSQL: postgres://user:pass@host/dbname
+url = "sqlite://echidnabot.db"
+# Maximum database connections
+max_connections = 5
+
+[echidna]
+# ECHIDNA Core GraphQL endpoint
+endpoint = "http://localhost:8080/graphql"
+# ECHIDNA Core REST endpoint
+rest_endpoint = "http://localhost:8080"
+# API mode: auto, graphql, rest
+mode = "auto"
+# Timeout for proof verification (seconds)
+timeout_secs = 300
+
+[scheduler]
+# Maximum concurrent proof jobs
+max_concurrent = 5
+# Maximum jobs in queue
+queue_size = 100
+
+# GitHub Integration (optional)
+# [github]
+# # Option 1: GitHub App (recommended for production)
+# app_id = 123456
+# private_key_path = "/path/to/private-key.pem"
+#
+# # Option 2: Personal Access Token (simpler for testing)
+# token = "ghp_xxxxxxxxxxxxxxxxxxxx"
+#
+# # Webhook secret for signature verification
+# webhook_secret = "your-webhook-secret"
+
+# GitLab Integration (optional)
+# [gitlab]
+# url = "https://gitlab.com"
+# token = "glpat-xxxxxxxxxxxxxxxxxxxx"
+# webhook_secret = "your-webhook-secret"
+
+# Environment variables can override any setting:
+# ECHIDNABOT__SERVER__PORT=9090
+# ECHIDNABOT__DATABASE__URL=postgres://...
+# ECHIDNABOT__ECHIDNA__ENDPOINT=http://...
+# ECHIDNABOT__ECHIDNA__REST_ENDPOINT=http://...
+# ECHIDNABOT__ECHIDNA__MODE=rest
+# ECHIDNABOT__GITHUB__TOKEN=ghp_...

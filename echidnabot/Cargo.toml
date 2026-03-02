@@ -1,0 +1,112 @@
+[package]
+name = "echidnabot"
+version = "0.1.0"
+edition = "2021"
+license = "PMPL-1.0"
+description = "Proof-aware CI bot that orchestrates ECHIDNA for theorem proof verification"
+repository = "https://github.com/hyperpolymath/echidnabot"
+keywords = ["theorem-prover", "formal-verification", "ci", "bot", "echidna"]
+categories = ["development-tools", "science"]
+authors = ["Jonathan D.A. Jewell <jonathan.jewell@gmail.com>"]
+readme = "README.adoc"
+
+[lib]
+name = "echidnabot"
+path = "src/lib.rs"
+
+[[bin]]
+name = "echidnabot"
+path = "src/main.rs"
+
+[dependencies]
+# Async runtime
+tokio = { version = "1", features = ["full"] }
+
+# HTTP framework
+axum = { version = "0.8", features = ["macros"] }
+tower = "0.4"
+tower-http = { version = "0.6", features = ["cors", "trace", "request-id"] }
+
+# GraphQL
+async-graphql = { version = "7", features = ["uuid", "chrono"] }
+async-graphql-axum = "7"
+
+# Serialization
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+toml = "0.8"
+
+# Database
+sqlx = { version = "0.8.1", features = ["runtime-tokio-rustls", "sqlite", "postgres", "uuid", "chrono"] }
+
+# GitHub API
+octocrab = "0.49"
+
+# HTTP client (for ECHIDNA communication)
+reqwest = { version = "0.11", default-features = false, features = ["json", "rustls-tls"] }
+
+# Utilities
+async-trait = "0.1"
+uuid = { version = "1", features = ["v4", "serde"] }
+chrono = { version = "0.4", features = ["serde"] }
+thiserror = "2"
+anyhow = "1"
+tracing = "0.1"
+tracing-subscriber = { version = "0.3", features = ["env-filter", "json"] }
+
+# Crypto for webhook verification
+hmac = "0.12"
+sha2 = "0.10"
+hex = "0.4"
+
+# CLI
+clap = { version = "4", features = ["derive", "env"] }
+
+# Config
+config = "0.15"
+
+# Filesystem utilities
+tempfile = "3"
+
+# Gitbot Fleet integration
+gitbot-shared-context = { path = "../../gitbot-fleet/shared-context" }
+
+[dev-dependencies]
+tokio-test = "0.4"
+axum-test = "18"
+mockall = "0.14"
+tempfile = "3"
+wiremock = "0.6"
+
+[profile.release]
+lto = true
+codegen-units = 1
+strip = true
+
+# Packaging metadata for cargo-deb
+[package.metadata.deb]
+maintainer = "hyperpolymath <packages@hyperpolymath.dev>"
+copyright = "2025, hyperpolymath"
+license-PMPL--1.0 = ["LICENSE", "0"]
+extended-description = """
+ECHIDNABOT is a proof-aware CI bot that orchestrates ECHIDNA for theorem
+proof verification. It integrates with GitHub to automatically verify
+formal proofs in pull requests.
+"""
+depends = "$auto, openssl"
+section = "devel"
+priority = "optional"
+assets = [
+    ["target/release/echidnabot", "usr/bin/", "755"],
+    ["README.adoc", "usr/share/doc/echidnabot/README.adoc", "644"],
+]
+
+# Packaging metadata for cargo-generate-rpm
+[package.metadata.generate-rpm]
+assets = [
+    { source = "target/release/echidnabot", dest = "/usr/bin/echidnabot", mode = "755" },
+    { source = "README.adoc", dest = "/usr/share/doc/echidnabot/README.adoc", mode = "644" },
+]
+
+[package.metadata.generate-rpm.requires]
+openssl = "*"

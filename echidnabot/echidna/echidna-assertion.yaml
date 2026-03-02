@@ -1,0 +1,42 @@
+# SPDX-License-Identifier: PMPL-1.0-or-later
+# Echidna Assertion Mode Configuration
+# Tests functions with assert() statements
+
+# Assertion-based testing mode
+testMode: "assertion"
+
+# Test iterations
+testLimit: 30000
+
+# Sequence length
+seqLen: 75
+
+# Shrinking for minimal reproduction
+shrinkLimit: 3000
+
+# Sender addresses
+sender:
+  - "0x10000"
+  - "0x20000"
+  - "0x30000"
+
+deployer: "0x30000"
+
+# No prefix filter in assertion mode - tests all functions with assert()
+prefix: ""
+
+# Enable coverage
+coverage: true
+
+# Text output for readability
+format: "text"
+
+# Transaction timeout
+timeout: 180
+
+workers: 1
+
+corpusDir: "echidna-corpus-assertion"
+
+maxValue: 100000000000000000000
+maxGas: 12500000

@@ -1,0 +1,41 @@
+= Palimpsest License
+:toc:
+:toc-placement!:
+
+image:https://img.shields.io/badge/License-PMPL--1.0-blue.svg[License: PMPL-1.0,link="https://github.com/hyperpolymath/palimpsest-license"]
+image:https://img.shields.io/badge/Philosophy-Palimpsest-indigo.svg[Palimpsest,link="https://github.com/hyperpolymath/palimpsest-license"]
+
+toc::[]
+
+== Legal Status
+
+This project is licensed under the **Palimpsest-MPL License 1.0 (PMPL-1.0)**.
+For SPDX and tooling, use **PMPL-1.0-or-later**.
+
+PMPL-1.0 incorporates the Mozilla Public License 2.0 by reference and adds
+ethical-use, provenance, and lineage requirements.
+
+== What PMPL Adds
+
+* **Emotional Lineage** - preserve narrative intent and cultural context
+* **Provenance Integrity** - retain attribution and lineage metadata
+* **Ethical Use Constraints** - explicit consent for non-interpretive AI training
+* **Quantum-Safe Provenance (optional)** - post-quantum signature support
+
+== How to Adopt
+
+1. Include the PMPL-1.0 license text in `LICENSE`.
+2. Add SPDX headers to source files:
+   `SPDX-License-Identifier: PMPL-1.0-or-later`
+3. Add a Palimpsest badge to your README (see `assets/badges/` and `embed/license-blocks/`).
+
+== Versioning
+
+See `VERSIONING.adoc` for the release process and the "-or-later" model.
+The current legal text is PMPL-1.0.
+
+== References
+
+* `legal/README.adoc`
+* `assets/badges/README.md`
+* `embed/license-blocks/README.md`

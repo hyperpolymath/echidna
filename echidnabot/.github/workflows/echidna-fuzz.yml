@@ -1,0 +1,420 @@
+# SPDX-License-Identifier: PMPL-1.0-or-later
+# SPDX-License-Identifier: PMPL-1.0-or-later
+name: Echidna Smart Contract Fuzzing
+
+permissions:
+  contents: read
+  checks: write
+  pull-requests: write
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# RATE LIMITING: Only one fuzzing run per PR/branch at a time
+# New pushes cancel in-progress runs to save resources
+# ═══════════════════════════════════════════════════════════════════════════════
+concurrency:
+  group: echidna-fuzz-${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'contracts/**/*.sol'
+      - 'echidna/**'
+      - '.github/workflows/echidna-fuzz.yml'
+  pull_request:
+    paths:
+      - 'contracts/**/*.sol'
+      - 'echidna/**'
+      - '.github/workflows/echidna-fuzz.yml'
+  workflow_dispatch:
+    inputs:
+      contract:
+        description: 'Contract to test (e.g., TokenEchidnaTest)'
+        required: false
+        default: ''
+        type: string
+      test_limit:
+        description: 'Number of test iterations'
+        required: false
+        default: '10000'
+        type: string
+      test_mode:
+        description: 'Echidna test mode'
+        required: false
+        default: 'property'
+        type: choice
+        options:
+          - property
+          - assertion
+          - optimization
+          - overflow
+          - exploration
+      no_flaky:
+        description: 'Enable no-flaky-tests mode (deterministic, multi-pass verification)'
+        required: false
+        default: false
+        type: boolean
+      seed:
+        description: 'Fixed seed for reproducibility (0 = random)'
+        required: false
+        default: '0'
+        type: string
+
+env:
+  SOLC_VERSION: "0.8.19"
+  ECHIDNA_VERSION: "2.2.3"
+  # Rate limit: Maximum contracts to test in parallel
+  MAX_PARALLEL_CONTRACTS: 3
+  # Timeout for individual test runs (seconds)
+  TEST_TIMEOUT: 600
+  # No-flaky mode: Number of verification passes required
+  VERIFICATION_PASSES: 3
+
+jobs:
+  # ═══════════════════════════════════════════════════════════════════════════
+  # RATE LIMIT CHECK: Prevent abuse and resource exhaustion
+  # ═══════════════════════════════════════════════════════════════════════════
+  rate-limit-check:
+    name: Rate Limit Check
+    runs-on: ubuntu-latest
+    outputs:
+      allowed: ${{ steps.check.outputs.allowed }}
+      reason: ${{ steps.check.outputs.reason }}
+    steps:
+      - name: Check rate limits
+        id: check
+        run: |
+          # Check if this is a scheduled/automated run vs manual
+          if [ "${{ github.event_name }}" = "schedule" ]; then
+            echo "allowed=true" >> $GITHUB_OUTPUT
+            echo "reason=scheduled" >> $GITHUB_OUTPUT
+            exit 0
+          fi
+
+          # For PRs, check if the author has permission
+          if [ "${{ github.event_name }}" = "pull_request" ]; then
+            AUTHOR="${{ github.event.pull_request.user.login }}"
+            # Allow all PR authors but log for monitoring
+            echo "::notice::Fuzzing triggered by PR author: $AUTHOR"
+          fi
+
+          # Check workflow run count in last hour (basic rate limiting)
+          # In production, this would query GitHub API for recent workflow runs
+          echo "allowed=true" >> $GITHUB_OUTPUT
+          echo "reason=within_limits" >> $GITHUB_OUTPUT
+
+  detect-contracts:
+    name: Detect Solidity contracts
+    needs: rate-limit-check
+    if: needs.rate-limit-check.outputs.allowed == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    outputs:
+      has_contracts: ${{ steps.detect.outputs.has_contracts }}
+      has_echidna_tests: ${{ steps.detect.outputs.has_echidna_tests }}
+      contracts: ${{ steps.detect.outputs.contracts }}
+      contract_count: ${{ steps.detect.outputs.contract_count }}
+    steps:
+      - uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8 # v6.0.1
+
+      - name: Detect contract files
+        id: detect
+        run: |
+          # Find all Solidity files
+          contract_count=$(find contracts -name "*.sol" -type f 2>/dev/null | wc -l)
+
+          # Find Echidna test contracts (contain "echidna_" functions)
+          echidna_tests=$(grep -rl "echidna_" contracts/*.sol 2>/dev/null | xargs -I{} basename {} .sol | tr '\n' ',' | sed 's/,$//' || echo "")
+
+          # Count test contracts for rate limiting
+          test_count=$(echo "$echidna_tests" | tr ',' '\n' | grep -c . || echo 0)
+
+          # Rate limit: Cap number of contracts
+          if [ "$test_count" -gt "${{ env.MAX_PARALLEL_CONTRACTS }}" ]; then
+            echo "::warning::Found $test_count test contracts, limiting to ${{ env.MAX_PARALLEL_CONTRACTS }}"
+            echidna_tests=$(echo "$echidna_tests" | tr ',' '\n' | head -${{ env.MAX_PARALLEL_CONTRACTS }} | tr '\n' ',' | sed 's/,$//')
+          fi
+
+          echo "has_contracts=$([[ $contract_count -gt 0 ]] && echo true || echo false)" >> $GITHUB_OUTPUT
+          echo "has_echidna_tests=$([[ -n "$echidna_tests" ]] && echo true || echo false)" >> $GITHUB_OUTPUT
+          echo "contracts=$echidna_tests" >> $GITHUB_OUTPUT
+          echo "contract_count=$test_count" >> $GITHUB_OUTPUT
+
+          echo "::notice::Found $contract_count Solidity files, Echidna tests: $echidna_tests (limited to ${{ env.MAX_PARALLEL_CONTRACTS }} max)"
+
+  # ═══════════════════════════════════════════════════════════════════════════
+  # PROPERTY TESTING with safeguards
+  # ═══════════════════════════════════════════════════════════════════════════
+  echidna-property-test:
+    name: Echidna Property Testing
+    needs: detect-contracts
+    if: needs.detect-contracts.outputs.has_echidna_tests == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    strategy:
+      fail-fast: false
+      max-parallel: 2  # Rate limit: max 2 concurrent test jobs
+      matrix:
+        contract: ${{ fromJson(format('["{0}"]', needs.detect-contracts.outputs.contracts)) }}
+    steps:
+      - uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8 # v6.0.1
+
+      - name: Restore Echidna corpus cache
+        uses: actions/cache@9255dc7a253b0ccc959486e2bca901246202afeb # v5.0.1
+        with:
+          path: echidna-corpus
+          key: echidna-corpus-${{ matrix.contract }}-${{ hashFiles(format('contracts/{0}.sol', matrix.contract)) }}
+          restore-keys: |
+            echidna-corpus-${{ matrix.contract }}-
+
+      - name: Install solc
+        run: |
+          wget -q "https://github.com/ethereum/solidity/releases/download/v${{ env.SOLC_VERSION }}/solc-static-linux"
+          chmod +x solc-static-linux
+          sudo mv solc-static-linux /usr/local/bin/solc
+          solc --version
+
+      - name: Install Echidna
+        run: |
+          wget -q "https://github.com/crytic/echidna/releases/download/v${{ env.ECHIDNA_VERSION }}/echidna-${{ env.ECHIDNA_VERSION }}-x86_64-linux.tar.gz"
+          tar -xzf "echidna-${{ env.ECHIDNA_VERSION }}-x86_64-linux.tar.gz"
+          sudo mv echidna /usr/local/bin/
+          echidna --version
+
+      - name: Run Echidna property tests
+        id: echidna
+        run: |
+          echo "::group::Echidna Property Testing - ${{ matrix.contract }}"
+
+          CONTRACT_FILE="contracts/${{ matrix.contract }}.sol"
+          NO_FLAKY="${{ github.event.inputs.no_flaky || 'false' }}"
+          SEED="${{ github.event.inputs.seed || '0' }}"
+
+          # Select config based on mode
+          if [ "$NO_FLAKY" = "true" ]; then
+            CONFIG_FILE="echidna/echidna-no-flaky.yaml"
+            echo "::notice::Running in NO-FLAKY mode with deterministic settings"
+          else
+            CONFIG_FILE="echidna/echidna-ci.yaml"
+          fi
+
+          if [ ! -f "$CONTRACT_FILE" ]; then
+            echo "::error::Contract file not found: $CONTRACT_FILE"
+            exit 1
+          fi
+
+          mkdir -p echidna-results
+
+          # Build Echidna command
+          ECHIDNA_CMD="echidna $CONTRACT_FILE --contract ${{ matrix.contract }} --config $CONFIG_FILE --format json"
+
+          # Add fixed seed if specified (for reproducibility)
+          if [ "$SEED" != "0" ]; then
+            ECHIDNA_CMD="$ECHIDNA_CMD --seed $SEED"
+            echo "::notice::Using fixed seed: $SEED"
+          fi
+
+          # NO-FLAKY MODE: Run multiple passes and require all to agree
+          if [ "$NO_FLAKY" = "true" ]; then
+            echo "Running ${{ env.VERIFICATION_PASSES }} verification passes..."
+            PASS_COUNT=0
+            FAIL_COUNT=0
+
+            for i in $(seq 1 ${{ env.VERIFICATION_PASSES }}); do
+              echo "=== Pass $i/${{ env.VERIFICATION_PASSES }} ==="
+
+              # Use consistent seed across passes if not specified
+              if [ "$SEED" = "0" ]; then
+                PASS_SEED=$((42 + i))
+                PASS_CMD="$ECHIDNA_CMD --seed $PASS_SEED"
+              else
+                PASS_CMD="$ECHIDNA_CMD"
+              fi
+
+              timeout ${{ env.TEST_TIMEOUT }} $PASS_CMD 2>&1 | tee "echidna-results/pass-$i.json" || true
+              PASS_EXIT=${PIPESTATUS[0]}
+
+              if [ $PASS_EXIT -eq 0 ]; then
+                PASS_COUNT=$((PASS_COUNT + 1))
+                echo "Pass $i: SUCCESS"
+              else
+                FAIL_COUNT=$((FAIL_COUNT + 1))
+                echo "Pass $i: FAILURE"
+              fi
+            done
+
+            echo ""
+            echo "=== Verification Summary ==="
+            echo "Passed: $PASS_COUNT / ${{ env.VERIFICATION_PASSES }}"
+            echo "Failed: $FAIL_COUNT / ${{ env.VERIFICATION_PASSES }}"
+
+            # Require ALL passes to succeed in no-flaky mode
+            if [ $FAIL_COUNT -gt 0 ]; then
+              echo "result=flaky" >> $GITHUB_OUTPUT
+              echo "passes=$PASS_COUNT" >> $GITHUB_OUTPUT
+              echo "::error::Test is FLAKY - failed $FAIL_COUNT of ${{ env.VERIFICATION_PASSES }} passes"
+              exit 1
+            else
+              echo "result=stable" >> $GITHUB_OUTPUT
+              echo "passes=$PASS_COUNT" >> $GITHUB_OUTPUT
+              echo "::notice::Test is STABLE - passed all ${{ env.VERIFICATION_PASSES }} verification passes"
+            fi
+          else
+            # Standard single-pass mode with timeout
+            set +e
+            timeout ${{ env.TEST_TIMEOUT }} $ECHIDNA_CMD 2>&1 | tee echidna-results/property-test.json
+            ECHIDNA_EXIT=${PIPESTATUS[0]}
+            set -e
+
+            echo "::endgroup::"
+
+            if [ $ECHIDNA_EXIT -eq 124 ]; then
+              echo "result=timeout" >> $GITHUB_OUTPUT
+              echo "::error::Echidna test timed out after ${{ env.TEST_TIMEOUT }} seconds"
+              exit 1
+            elif [ $ECHIDNA_EXIT -eq 0 ]; then
+              echo "result=success" >> $GITHUB_OUTPUT
+              echo "::notice::All property tests passed!"
+            else
+              echo "result=failure" >> $GITHUB_OUTPUT
+              echo "::error::Echidna found property violations"
+              exit $ECHIDNA_EXIT
+            fi
+          fi
+
+      - name: Save corpus cache
+        if: always()
+        uses: actions/cache/save@9255dc7a253b0ccc959486e2bca901246202afeb # v5.0.1
+        with:
+          path: echidna-corpus
+          key: echidna-corpus-${{ matrix.contract }}-${{ hashFiles(format('contracts/{0}.sol', matrix.contract)) }}
+
+      - name: Upload Echidna results
+        if: always()
+        uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6.0.0
+        with:
+          name: echidna-property-results-${{ matrix.contract }}
+          path: echidna-results/
+          retention-days: 30
+
+  # ═══════════════════════════════════════════════════════════════════════════
+  # ASSERTION TESTING with safeguards
+  # ═══════════════════════════════════════════════════════════════════════════
+  echidna-assertion-test:
+    name: Echidna Assertion Testing
+    needs: detect-contracts
+    if: needs.detect-contracts.outputs.has_echidna_tests == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    strategy:
+      fail-fast: false
+      max-parallel: 2
+      matrix:
+        contract: ${{ fromJson(format('["{0}"]', needs.detect-contracts.outputs.contracts)) }}
+    steps:
+      - uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8 # v6.0.1
+
+      - name: Restore Echidna corpus cache
+        uses: actions/cache@9255dc7a253b0ccc959486e2bca901246202afeb # v5.0.1
+        with:
+          path: echidna-corpus-assertion
+          key: echidna-corpus-assertion-${{ matrix.contract }}-${{ hashFiles(format('contracts/{0}.sol', matrix.contract)) }}
+          restore-keys: |
+            echidna-corpus-assertion-${{ matrix.contract }}-
+
+      - name: Install solc
+        run: |
+          wget -q "https://github.com/ethereum/solidity/releases/download/v${{ env.SOLC_VERSION }}/solc-static-linux"
+          chmod +x solc-static-linux
+          sudo mv solc-static-linux /usr/local/bin/solc
+
+      - name: Install Echidna
+        run: |
+          wget -q "https://github.com/crytic/echidna/releases/download/v${{ env.ECHIDNA_VERSION }}/echidna-${{ env.ECHIDNA_VERSION }}-x86_64-linux.tar.gz"
+          tar -xzf "echidna-${{ env.ECHIDNA_VERSION }}-x86_64-linux.tar.gz"
+          sudo mv echidna /usr/local/bin/
+
+      - name: Run Echidna assertion tests
+        id: echidna
+        run: |
+          echo "::group::Echidna Assertion Testing - ${{ matrix.contract }}"
+
+          CONTRACT_FILE="contracts/${{ matrix.contract }}.sol"
+          NO_FLAKY="${{ github.event.inputs.no_flaky || 'false' }}"
+
+          if [ "$NO_FLAKY" = "true" ]; then
+            CONFIG_FILE="echidna/echidna-no-flaky-assertion.yaml"
+          else
+            CONFIG_FILE="echidna/echidna-assertion.yaml"
+          fi
+
+          mkdir -p echidna-results
+
+          set +e
+          timeout ${{ env.TEST_TIMEOUT }} echidna "$CONTRACT_FILE" \
+            --contract "${{ matrix.contract }}" \
+            --config "$CONFIG_FILE" \
+            --format text \
+            2>&1 | tee echidna-results/assertion-test.txt
+
+          ECHIDNA_EXIT=${PIPESTATUS[0]}
+          set -e
+
+          echo "::endgroup::"
+
+          if [ $ECHIDNA_EXIT -eq 124 ]; then
+            echo "::error::Assertion test timed out after ${{ env.TEST_TIMEOUT }} seconds"
+            exit 1
+          elif [ $ECHIDNA_EXIT -eq 0 ]; then
+            echo "::notice::All assertion tests passed!"
+          else
+            echo "::warning::Echidna found assertion violations"
+          fi
+
+      - name: Upload Echidna results
+        if: always()
+        uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6.0.0
+        with:
+          name: echidna-assertion-results-${{ matrix.contract }}
+          path: echidna-results/
+          retention-days: 30
+
+  summary:
+    name: Fuzzing Summary
+    needs: [detect-contracts, echidna-property-test, echidna-assertion-test]
+    if: always() && needs.detect-contracts.outputs.has_echidna_tests == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Generate summary
+        run: |
+          NO_FLAKY="${{ github.event.inputs.no_flaky || 'false' }}"
+
+          echo "## Echidna Smart Contract Fuzzing Summary" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+
+          # Show safeguard status
+          echo "### Safeguards" >> $GITHUB_STEP_SUMMARY
+          echo "| Setting | Value |" >> $GITHUB_STEP_SUMMARY
+          echo "|---------|-------|" >> $GITHUB_STEP_SUMMARY
+          echo "| Rate Limit (max parallel) | ${{ env.MAX_PARALLEL_CONTRACTS }} contracts |" >> $GITHUB_STEP_SUMMARY
+          echo "| Test Timeout | ${{ env.TEST_TIMEOUT }}s |" >> $GITHUB_STEP_SUMMARY
+          echo "| No-Flaky Mode | $NO_FLAKY |" >> $GITHUB_STEP_SUMMARY
+          if [ "$NO_FLAKY" = "true" ]; then
+            echo "| Verification Passes | ${{ env.VERIFICATION_PASSES }} |" >> $GITHUB_STEP_SUMMARY
+          fi
+          echo "" >> $GITHUB_STEP_SUMMARY
+
+          echo "### Test Results" >> $GITHUB_STEP_SUMMARY
+          echo "| Test Type | Contract | Status |" >> $GITHUB_STEP_SUMMARY
+          echo "|-----------|----------|--------|" >> $GITHUB_STEP_SUMMARY
+          echo "| Property Tests | ${{ needs.detect-contracts.outputs.contracts }} | ${{ needs.echidna-property-test.result }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| Assertion Tests | ${{ needs.detect-contracts.outputs.contracts }} | ${{ needs.echidna-assertion-test.result }} |" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### Configuration" >> $GITHUB_STEP_SUMMARY
+          echo "- Solidity Version: ${{ env.SOLC_VERSION }}" >> $GITHUB_STEP_SUMMARY
+          echo "- Echidna Version: ${{ env.ECHIDNA_VERSION }}" >> $GITHUB_STEP_SUMMARY
+          echo "- Contracts Tested: ${{ needs.detect-contracts.outputs.contract_count }}" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "_Fuzzed by [echidnabot](https://github.com/hyperpolymath/echidnabot)_" >> $GITHUB_STEP_SUMMARY

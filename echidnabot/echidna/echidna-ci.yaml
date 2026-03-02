@@ -1,0 +1,43 @@
+# SPDX-License-Identifier: PMPL-1.0-or-later
+# Echidna CI Configuration - Faster settings for continuous integration
+
+# Property-based testing mode
+testMode: "property"
+
+# Reduced test limit for CI (faster feedback)
+testLimit: 10000
+
+# Shorter sequences for quick runs
+seqLen: 50
+
+# Faster shrinking
+shrinkLimit: 1000
+
+# Sender addresses
+sender:
+  - "0x10000"
+  - "0x20000"
+  - "0x30000"
+
+deployer: "0x30000"
+
+# Invariant test prefix
+prefix: "echidna_"
+
+# Enable coverage
+coverage: true
+
+# JSON output for parsing in CI
+format: "json"
+
+# Shorter timeout for CI
+timeout: 120
+
+# Single worker for reproducibility
+workers: 1
+
+# Corpus for reproducible fuzzing
+corpusDir: "echidna-corpus"
+
+maxValue: 100000000000000000000
+maxGas: 12500000

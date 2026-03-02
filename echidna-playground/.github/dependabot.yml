@@ -1,0 +1,51 @@
+# SPDX-License-Identifier: PMPL-1.0-or-later
+# Dependabot configuration for RSR-compliant repositories
+# Covers common ecosystems - remove unused ones for your project
+#
+# Security note: Keep github-actions ecosystem enabled to receive
+# security updates for all workflow dependencies.
+
+version: 2
+updates:
+  # GitHub Actions - always include
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+    groups:
+      actions:
+        patterns:
+          - "*"
+
+  # Rust/Cargo
+  - package-ecosystem: "cargo"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+    ignore:
+      - dependency-name: "*"
+        update-types: ["version-update:semver-patch"]
+
+  # Elixir/Mix
+  - package-ecosystem: "mix"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+
+  # Node.js/npm
+  - package-ecosystem: "npm"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+
+  # Python/pip
+  - package-ecosystem: "pip"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+
+  # Nix flakes
+  - package-ecosystem: "nix"
+    directory: "/"
+    schedule:
+      interval: "weekly"

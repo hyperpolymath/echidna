@@ -1,0 +1,17 @@
+# SPDX-License-Identifier: PMPL-1.0-or-later
+# Issue template chooser configuration
+
+blank_issues_enabled: false
+
+contact_links:
+  - name: Security Vulnerability
+    url: https://github.com/hyperpolymath/template-repo/security/advisories/new
+    about: Report security vulnerabilities privately through GitHub Security Advisories
+
+  - name: Discussions
+    url: https://github.com/hyperpolymath/template-repo/discussions
+    about: Ask questions and discuss ideas in GitHub Discussions
+
+  - name: Documentation
+    url: https://github.com/hyperpolymath/template-repo/wiki
+    about: Check the wiki for documentation and guides
