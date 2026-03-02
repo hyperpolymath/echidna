@@ -5,14 +5,14 @@
 
 ## Critical Architecture Facts
 
-### 17 Prover Backends (3 Layers)
+### 30 Prover Backends (3 Layers)
 - **Rust Layer**: Core implementations in `src/rust/provers/`
-  - Tier 1-5 provers: Coq, Lean, Isabelle, Agda, Z3, CVC5, ACL2, PVS, HOL4, Mizar, HOL Light, Metamath, Vampire, E Prover, SPASS, Alt-Ergo, Idris2
+  - Tier 1-5 provers: Coq, Lean, Isabelle, Agda, Z3, CVC5, ACL2, PVS, HOL4, Mizar, HOL Light, Metamath, Vampire, E Prover, SPASS, Alt-Ergo, Idris2, and 13 more
 - **Julia ML Layer**: Neural recommendations in `src/julia/`
-  - Supports all 17 provers with logistic regression
+  - Supports all 30 provers with logistic regression
   - Training data: 332 proofs, 1,603 tactics
 - **Chapel Parallel Layer**: Distributed dispatch in `chapel_poc/`
-  - Parallel proof search across all 17 provers
+  - Parallel proof search across all 30 provers
 
 ### 3 Consolidated Interfaces (Monorepo)
 All interfaces located under `src/interfaces/` (consolidated in v1.4.0):
@@ -35,6 +35,7 @@ All interfaces located under `src/interfaces/` (consolidated in v1.4.0):
 3. **3-layer sync**: When adding provers, update Rust + Julia + Chapel
 4. **Original name**: "Cognitive Hybrid" not "Computational Heuristic"
 5. **License**: PMPL-1.0-or-later throughout
+6. **Author**: Jonathan D.A. Jewell (hyperpolymath) <j.d.a.jewell@open.ac.uk>
 
 ## Workflow
 1. Check `.machine_readable/STATE.scm` for current status and next actions
@@ -45,25 +46,33 @@ All interfaces located under `src/interfaces/` (consolidated in v1.4.0):
 
 ## Key Files
 - `README.md` - Main documentation with architecture diagram
-- `ROADMAP.adoc` - Development roadmap (v1.4.0 complete, v2.0 planned)
+- `ROADMAP.adoc` - Development roadmap (v1.5.0 complete, v2.0 planned)
 - `.machine_readable/STATE.scm` - Current project state
 - `.machine_readable/META.scm` - Architecture decisions (ADRs)
 - `.machine_readable/ECOSYSTEM.scm` - Ecosystem positioning
 
-## Current Status (v1.4.0)
-- ✅ 17 provers operational across 3 layers
-- ✅ 3 interfaces consolidated into monorepo
-- ✅ Full documentation updated
-- 🔄 **Next**: Core integration layer (FFI/IPC for interfaces → Rust core)
+## Current Status (v1.5.0)
+- 30 provers operational across 3 layers
+- 3 interfaces consolidated into monorepo
+- 306+ tests passing (232 unit, 38 integration, 21 property-based)
+- 13/13 trust hardening tasks complete
+- Full documentation updated
+- **Next**: Dependent typing support tool integration, Core FFI/IPC layer
 
 ## Testing
 - Unit tests: `cargo test`
 - Integration tests: `./tests/integration_test.sh`
 - Benchmarks: `cargo bench`
-- All tests: 99 unit + 38 integration (passing)
+- All tests: 306+ (passing)
 
 ## Delivery Promises
 - Update STATE.scm after completing tasks
 - Maintain 3-layer sync when changing provers
 - Keep interfaces consolidated in monorepo
 - Preserve original "Cognitive Hybrid" name
+
+## PanLL Module Mapping
+ECHIDNA is a strong PanLL candidate:
+- **Panel-L** (Constraints): Formal proof obligations, prover constraints
+- **Panel-N** (Agent reasoning): ML-powered tactic suggestion, agentic proof search
+- **Panel-W** (Results): Proof certificates, verification status, confidence scores

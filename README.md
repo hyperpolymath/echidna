@@ -4,10 +4,10 @@
 
 > Neurosymbolic Theorem Proving with Formal Guarantees
 
-[![License](https://img.shields.io/badge/license-MIT%2FPalimpsest-blue.svg)](LICENSE)
-[![Version](https://img.shields.io/badge/version-1.4.0-green.svg)](RELEASE_NOTES_v1.4.md)
-[![Tests](https://img.shields.io/badge/tests-passing-brightgreen.svg)](tests/)
-[![Provers](https://img.shields.io/badge/provers-17-orange.svg)](#supported-provers)
+[![License](https://img.shields.io/badge/license-PMPL--1.0-blue.svg)](LICENSE)
+[![Version](https://img.shields.io/badge/version-1.5.0-green.svg)](CHANGELOG.md)
+[![Tests](https://img.shields.io/badge/tests-306%2B%20passing-brightgreen.svg)](tests/)
+[![Provers](https://img.shields.io/badge/provers-30-orange.svg)](#supported-provers)
 [![Interfaces](https://img.shields.io/badge/interfaces-GraphQL%2FgRPC%2FREST-blue.svg)](#interfaces)
 
 ---
@@ -18,7 +18,7 @@ ECHIDNA is the world's first **production-ready neurosymbolic theorem prover** t
 
 - 🧠 **AI-Powered Suggestions** - Machine learning predicts tactics with confidence scores
 - ✓ **Formal Soundness** - All proofs verified by established theorem provers
-- 🔬 **17 Prover Backends** - Coq, Lean, Isabelle, Agda, Z3, CVC5, ACL2, PVS, HOL4, Mizar, HOL Light, Metamath, Vampire, E Prover, SPASS, Alt-Ergo, Idris2
+- 🔬 **30 Prover Backends** - Coq, Lean, Isabelle, Agda, Z3, CVC5, ACL2, PVS, HOL4, Mizar, HOL Light, Metamath, Vampire, E Prover, SPASS, Alt-Ergo, Idris2, and 13 more
 - 🌐 **3 API Interfaces** - GraphQL (port 8080), gRPC (port 50051), REST (port 8000)
 - 🛡️ **Trust Framework** - Benchmarking, property testing, formal verification, anomaly detection
 - ⚡ **Parallel Search** - Optional Chapel integration for multi-prover consensus

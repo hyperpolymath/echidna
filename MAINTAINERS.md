@@ -1,6 +1,6 @@
 <!--
-SPDX-License-Identifier: PMPL-1.0-or-later-or-later
-SPDX-FileCopyrightText: 2025 ECHIDNA Project Contributors
+SPDX-License-Identifier: PMPL-1.0-or-later
+SPDX-FileCopyrightText: 2025-2026 Jonathan D.A. Jewell (hyperpolymath) <j.d.a.jewell@open.ac.uk>
 -->
 
 # Maintainers
@@ -11,10 +11,10 @@ This document lists the maintainers of the ECHIDNA project.
 
 ### Core Team
 
-- **ECHIDNA Project Team**
-  - Email: maintainers@echidna-project.org
-  - Role: Core development, architecture, and project direction
-  - GitLab: [@echidna-team](https://gitlab.com/echidna-team)
+- **Jonathan D.A. Jewell (hyperpolymath)**
+  - Email: j.d.a.jewell@open.ac.uk
+  - Role: Lead developer, architecture, and project direction
+  - GitHub: [@hyperpolymath](https://github.com/hyperpolymath)
 
 ## Emeritus Maintainers
 
