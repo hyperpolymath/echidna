@@ -1,0 +1,75 @@
+# SPDX-License-Identifier: PMPL-1.0-or-later
+# Echidna Configuration for Smart Contract Fuzzing
+# https://github.com/crytic/echidna
+
+# Test mode: property (default), assertion, optimization, overflow, exploration
+testMode: "property"
+
+# Number of test sequences to run (higher = more thorough but slower)
+testLimit: 50000
+
+# Maximum length of a single test sequence
+seqLen: 100
+
+# Shrink failing test cases to minimal reproduction
+shrinkLimit: 5000
+
+# Contract deployment configuration
+deployContracts: []
+deployBytecodes: []
+
+# Sender addresses Echidna will use
+sender:
+  - "0x10000"
+  - "0x20000"
+  - "0x30000"
+
+# Deploy the test contract from this address
+deployer: "0x30000"
+
+# Property test prefix (functions starting with this are invariant tests)
+prefix: "echidna_"
+
+# Enable coverage-guided fuzzing
+coverage: true
+
+# Output format: text, json, none
+format: "text"
+
+# Solidity compiler settings
+solcArgs: ""
+
+# Timeout for individual transactions (in seconds)
+timeout: 300
+
+# Number of workers (parallel fuzzing)
+workers: 1
+
+# Corpus directory for saving interesting inputs
+corpusDir: "echidna-corpus"
+
+# Dictionary of values to guide fuzzing
+dictionary: []
+
+# Filter functions to test (empty = all functions)
+filterFunctions: []
+
+# Filter blacklisted functions
+filterBlacklist: false
+
+# Maximum value for msg.value in transactions
+maxValue: 100000000000000000000
+
+# Maximum gas for transactions
+maxGas: 12500000
+
+# Enable balance checking
+balanceContract: 0
+
+# RPC settings for forking (optional)
+# rpcUrl: "https://eth-mainnet.g.alchemy.com/v2/YOUR_KEY"
+# rpcBlock: 18000000
+
+# Symbolic execution backend (optional)
+# symExec: false
+# symExecTimeout: 30

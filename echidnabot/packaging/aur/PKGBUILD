@@ -1,0 +1,22 @@
+# SPDX-License-Identifier: PMPL-1.0
+# Maintainer: hyperpolymath <packages@hyperpolymath.dev>
+
+pkgname=echidnabot-bin
+_pkgname=echidnabot
+pkgver=0.1.3
+pkgrel=1
+pkgdesc="Proof-aware CI bot that orchestrates ECHIDNA for theorem proof verification"
+arch=('x86_64' 'aarch64')
+url="https://github.com/hyperpolymath/echidnabot"
+license=('PMPL-1.0-or-later')
+provides=('echidnabot')
+conflicts=('echidnabot')
+depends=('openssl')
+source_x86_64=("${_pkgname}-${pkgver}-x86_64.tar.gz::${url}/releases/download/v${pkgver}/${_pkgname}-v${pkgver}-x86_64-unknown-linux-gnu.tar.gz")
+source_aarch64=("${_pkgname}-${pkgver}-aarch64.tar.gz::${url}/releases/download/v${pkgver}/${_pkgname}-v${pkgver}-aarch64-unknown-linux-gnu.tar.gz")
+sha256sums_x86_64=('SKIP')
+sha256sums_aarch64=('SKIP')
+
+package() {
+    install -Dm755 "${srcdir}/${_pkgname}" "${pkgdir}/usr/bin/${_pkgname}"
+}

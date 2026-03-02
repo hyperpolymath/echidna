@@ -1,0 +1,23 @@
+{
+    "version": "0.1.0",
+    "description": "Proof-aware CI bot that orchestrates ECHIDNA for theorem proof verification",
+    "homepage": "https://github.com/hyperpolymath/echidnabot",
+    "license": "PMPL-1.0",
+    "architecture": {
+        "64bit": {
+            "url": "https://github.com/hyperpolymath/echidnabot/releases/download/v0.1.0/echidnabot-0.1.0-x86_64-pc-windows-msvc.zip",
+            "hash": "TODO",
+            "bin": "echidnabot.exe"
+        }
+    },
+    "checkver": {
+        "github": "https://github.com/hyperpolymath/echidnabot"
+    },
+    "autoupdate": {
+        "architecture": {
+            "64bit": {
+                "url": "https://github.com/hyperpolymath/echidnabot/releases/download/v$version/echidnabot-$version-x86_64-pc-windows-msvc.zip"
+            }
+        }
+    }
+}

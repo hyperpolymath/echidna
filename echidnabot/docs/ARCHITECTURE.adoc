@@ -1,0 +1,663 @@
+= echidnabot Architecture
+:toc: macro
+:icons: font
+:source-highlighter: rouge
+
+== Executive Summary
+
+echidnabot is a **proof-aware CI bot** that integrates with code hosting platforms (GitHub, GitLab, Bitbucket) to automatically verify theorem proofs when changes are pushed to repositories containing formal specifications.
+
+It is **not** a theorem prover itself—it orchestrates proof verification by delegating to the ECHIDNA platform.
+
+toc::[]
+
+== Design Principles
+
+[cols="1,3"]
+|===
+| Principle | Implementation
+
+| **RSR Compliance**
+| Rust only (no Python/Ruby/Perl), Deno for any TS, Guix for packages
+
+| **Separation of Concerns**
+| echidnabot = orchestration; ECHIDNA = proving; Julia = ML
+
+| **Start Simple**
+| MVP targets ONE prover (Metamath) on ONE platform (GitHub)
+
+| **Incremental Expansion**
+| Add provers/platforms only after core loop is solid
+
+| **No Duplication**
+| Reuse ECHIDNA's prover backends, don't reimplement
+|===
+
+== System Architecture
+
+[source]
+----
+                    ┌─────────────────────────────────────────────────────────┐
+                    │                     CODE PLATFORMS                       │
+                    │  ┌──────────┐   ┌──────────┐   ┌──────────────────────┐ │
+                    │  │  GitHub  │   │  GitLab  │   │  Bitbucket/Codeberg  │ │
+                    │  └────┬─────┘   └────┬─────┘   └──────────┬───────────┘ │
+                    └───────┼──────────────┼────────────────────┼─────────────┘
+                            │ webhooks     │ webhooks           │ webhooks
+                            ▼              ▼                    ▼
+┌───────────────────────────────────────────────────────────────────────────────┐
+│                            ECHIDNABOT (Rust)                                  │
+│  ┌─────────────────┐  ┌──────────────────┐  ┌─────────────────────────────┐  │
+│  │  Webhook Server │──│  Job Scheduler   │──│  Platform Adapter Registry  │  │
+│  │  (axum)         │  │  (tokio tasks)   │  │  (GitHub/GitLab/Bitbucket)  │  │
+│  └─────────────────┘  └────────┬─────────┘  └─────────────────────────────┘  │
+│                                │                                              │
+│                                ▼                                              │
+│  ┌─────────────────────────────────────────────────────────────────────────┐ │
+│  │                         GraphQL API (async-graphql)                      │ │
+│  │  Mutations: scanRepo, checkProof, createIssue, requestSuggestion        │ │
+│  │  Queries: repoStatus, proofHistory, proverCapabilities                  │ │
+│  └─────────────────────────────────────────────────────────────────────────┘ │
+│                                │                                              │
+│  ┌─────────────────┐  ┌───────┴──────┐  ┌──────────────────────────────────┐ │
+│  │  State Store    │  │ Prover       │  │  Results Reporter                │ │
+│  │  (SQLite/PG)    │  │ Dispatcher   │  │  (Check runs, comments, issues)  │ │
+│  └─────────────────┘  └──────┬───────┘  └──────────────────────────────────┘ │
+└──────────────────────────────┼──────────────────────────────────────────────┘
+                               │ gRPC/HTTP
+                               ▼
+┌───────────────────────────────────────────────────────────────────────────────┐
+│                           ECHIDNA CORE (Rust)                                 │
+│  ┌─────────────┐ ┌─────────────┐ ┌─────────────┐ ┌─────────────┐            │
+│  │ Tier 1      │ │ Tier 2      │ │ Tier 3      │ │ Julia ML    │            │
+│  │ Agda, Coq,  │ │ Metamath,   │ │ PVS, ACL2,  │ │ Tactic      │            │
+│  │ Lean, Z3... │ │ HOL Light,  │ │ HOL4        │ │ Suggestions │            │
+│  │             │ │ Mizar       │ │ (stubs)     │ │             │            │
+│  └─────────────┘ └─────────────┘ └─────────────┘ └─────────────┘            │
+└───────────────────────────────────────────────────────────────────────────────┘
+----
+
+== Technology Stack
+
+[cols="1,2,2"]
+|===
+| Layer | Technology | Rationale
+
+| **Language**
+| Rust
+| RSR-mandated for systems; matches ECHIDNA Core
+
+| **Async Runtime**
+| Tokio
+| De facto Rust async standard
+
+| **HTTP Framework**
+| Axum
+| Modern, tower-based, excellent middleware
+
+| **GraphQL**
+| async-graphql
+| Best Rust GraphQL library, integrates with axum
+
+| **Database**
+| SQLite (MVP) → PostgreSQL (prod)
+| Reduce initial complexity
+
+| **Platform APIs**
+| Octocrab (GitHub), gitlab crate, custom for others
+| Native Rust API clients
+
+| **Serialization**
+| Serde + JSON
+| Standard Rust ecosystem
+
+| **Config**
+| TOML (config files) + env vars
+| Guix-friendly, no YAML
+
+| **Packaging**
+| Guix (primary), Nix (fallback)
+| RSR requirement
+|===
+
+== Core Components
+
+=== 1. Webhook Server
+
+Receives push events from code platforms.
+
+[source,rust]
+----
+// Simplified webhook handler
+async fn handle_github_webhook(
+    headers: HeaderMap,
+    body: Bytes,
+) -> Result<impl IntoResponse, AppError> {
+    let event = verify_signature(&headers, &body, &config.webhook_secret)?;
+
+    match event.action.as_str() {
+        "push" => queue_proof_check(event.repository, event.commits).await,
+        "pull_request" => queue_pr_check(event.repository, event.pull_request).await,
+        _ => Ok(StatusCode::OK),
+    }
+}
+----
+
+=== 2. Job Scheduler
+
+Manages proof verification queue with concurrency limits.
+
+[source,rust]
+----
+pub struct JobScheduler {
+    queue: Arc<Mutex<VecDeque<ProofJob>>>,
+    active_jobs: AtomicUsize,
+    max_concurrent: usize,  // Start with 3-5, scale later
+}
+
+impl JobScheduler {
+    pub async fn enqueue(&self, job: ProofJob) -> JobId {
+        // Deduplicate: same repo+commit+prover = skip
+        // Priority: PR checks > push checks > scheduled scans
+    }
+
+    pub async fn process_next(&self) -> Option<ProofResult> {
+        // Dispatch to ECHIDNA, collect result
+    }
+}
+----
+
+=== 3. Platform Adapters
+
+Abstract away GitHub/GitLab/Bitbucket differences.
+
+[source,rust]
+----
+#[async_trait]
+pub trait PlatformAdapter: Send + Sync {
+    async fn clone_repo(&self, repo: &RepoId, commit: &str) -> Result<PathBuf>;
+    async fn create_check_run(&self, repo: &RepoId, check: CheckRun) -> Result<CheckRunId>;
+    async fn update_check_run(&self, id: CheckRunId, status: CheckStatus) -> Result<()>;
+    async fn create_comment(&self, repo: &RepoId, pr: PrId, body: &str) -> Result<CommentId>;
+    async fn create_issue(&self, repo: &RepoId, issue: NewIssue) -> Result<IssueId>;
+}
+
+// Implementations
+pub struct GitHubAdapter { client: Octocrab }
+pub struct GitLabAdapter { client: GitlabClient }
+pub struct BitbucketAdapter { client: BitbucketClient }
+----
+
+=== 4. Prover Dispatcher
+
+Routes proof requests to ECHIDNA Core.
+
+[source,rust]
+----
+pub struct ProverDispatcher {
+    echidna_endpoint: Url,  // ECHIDNA's GraphQL or gRPC endpoint
+    client: reqwest::Client,
+}
+
+impl ProverDispatcher {
+    pub async fn verify_proof(
+        &self,
+        prover: ProverKind,
+        source_path: &Path,
+    ) -> Result<ProofResult> {
+        // 1. Read proof file
+        // 2. Send to ECHIDNA: POST /graphql { mutation { verifyProof(...) } }
+        // 3. Parse response
+        // 4. Return structured result
+    }
+
+    pub async fn suggest_tactic(
+        &self,
+        prover: ProverKind,
+        context: &ProofContext,
+    ) -> Result<Vec<TacticSuggestion>> {
+        // Delegate to ECHIDNA's Julia ML component
+    }
+}
+----
+
+=== 5. State Store
+
+Tracks repositories, jobs, and results.
+
+[source,rust]
+----
+// Schema (SQLite/Postgres compatible)
+pub struct Repository {
+    pub id: Uuid,
+    pub platform: Platform,
+    pub owner: String,
+    pub name: String,
+    pub webhook_secret: Option<String>,
+    pub enabled_provers: Vec<ProverKind>,
+    pub last_checked_commit: Option<String>,
+}
+
+pub struct ProofJob {
+    pub id: Uuid,
+    pub repo_id: Uuid,
+    pub commit_sha: String,
+    pub prover: ProverKind,
+    pub status: JobStatus,
+    pub queued_at: DateTime<Utc>,
+    pub started_at: Option<DateTime<Utc>>,
+    pub completed_at: Option<DateTime<Utc>>,
+}
+
+pub struct ProofResult {
+    pub id: Uuid,
+    pub job_id: Uuid,
+    pub status: ProofStatus,  // Verified, Failed, Timeout, Error
+    pub message: String,
+    pub prover_output: String,
+    pub duration_ms: u64,
+}
+----
+
+== GraphQL Schema
+
+[source,graphql]
+----
+type Query {
+  # Repository management
+  repository(platform: Platform!, owner: String!, name: String!): Repository
+  repositories(platform: Platform): [Repository!]!
+
+  # Job status
+  job(id: ID!): ProofJob
+  jobsForRepo(repoId: ID!, limit: Int = 20): [ProofJob!]!
+
+  # Prover info
+  availableProvers: [ProverInfo!]!
+  proverStatus(prover: ProverKind!): ProverStatus!
+}
+
+type Mutation {
+  # Register a repository for monitoring
+  registerRepository(input: RegisterRepoInput!): Repository!
+
+  # Manually trigger a proof check
+  triggerCheck(repoId: ID!, commitSha: String, provers: [ProverKind!]): ProofJob!
+
+  # Request tactic suggestions (uses ECHIDNA ML)
+  requestSuggestions(
+    prover: ProverKind!
+    context: String!
+    goalState: String!
+  ): [TacticSuggestion!]!
+
+  # Update repository settings
+  updateRepoSettings(repoId: ID!, settings: RepoSettingsInput!): Repository!
+
+  # Disable/enable monitoring
+  setRepoEnabled(repoId: ID!, enabled: Boolean!): Repository!
+}
+
+type Subscription {
+  # Live job updates
+  jobUpdated(repoId: ID): ProofJob!
+}
+
+# Core types
+type Repository {
+  id: ID!
+  platform: Platform!
+  owner: String!
+  name: String!
+  enabledProvers: [ProverKind!]!
+  lastCheckedCommit: String
+  recentJobs(limit: Int = 10): [ProofJob!]!
+}
+
+type ProofJob {
+  id: ID!
+  repository: Repository!
+  commitSha: String!
+  prover: ProverKind!
+  status: JobStatus!
+  queuedAt: DateTime!
+  startedAt: DateTime
+  completedAt: DateTime
+  result: ProofResult
+}
+
+type ProofResult {
+  status: ProofStatus!
+  message: String!
+  proverOutput: String!
+  durationMs: Int!
+  suggestions: [TacticSuggestion!]
+}
+
+type TacticSuggestion {
+  tactic: String!
+  confidence: Float!
+  explanation: String
+}
+
+type ProverInfo {
+  kind: ProverKind!
+  name: String!
+  tier: Int!
+  fileExtensions: [String!]!
+  status: ProverStatus!
+}
+
+# Enums
+enum Platform { GITHUB, GITLAB, BITBUCKET, CODEBERG }
+enum ProverKind {
+  AGDA, COQ, LEAN, ISABELLE, Z3, CVC5,
+  METAMATH, HOL_LIGHT, MIZAR,
+  PVS, ACL2, HOL4
+}
+enum JobStatus { QUEUED, RUNNING, COMPLETED, FAILED, CANCELLED }
+enum ProofStatus { VERIFIED, FAILED, TIMEOUT, ERROR, UNKNOWN }
+enum ProverStatus { AVAILABLE, DEGRADED, UNAVAILABLE }
+
+# Inputs
+input RegisterRepoInput {
+  platform: Platform!
+  owner: String!
+  name: String!
+  webhookSecret: String
+  enabledProvers: [ProverKind!]
+}
+
+input RepoSettingsInput {
+  webhookSecret: String
+  enabledProvers: [ProverKind!]
+  checkOnPush: Boolean
+  checkOnPr: Boolean
+  autoComment: Boolean
+}
+
+scalar DateTime
+----
+
+== Phased Roadmap
+
+=== Phase 0: Foundation (Current)
+
+[cols="1,1,3"]
+|===
+| Task | Status | Notes
+
+| Define architecture
+| In Progress
+| This document
+
+| Initialize Rust project
+| Pending
+| `cargo new echidnabot --lib`
+
+| Set up Guix dev environment
+| Pending
+| Update guix.scm with Rust deps
+
+| GitHub webhook handler (stub)
+| Pending
+| Accept webhooks, log them
+|===
+
+=== Phase 1: MVP (Target: 4 weeks)
+
+**Scope**: GitHub + Metamath (simplest prover) + single repo
+
+[cols="1,3"]
+|===
+| Deliverable | Description
+
+| Webhook receiver
+| Accept GitHub push/PR events, verify signatures
+
+| Metamath dispatcher
+| Send `.mm` files to ECHIDNA, parse results
+
+| Check run reporter
+| Create GitHub Check Runs with pass/fail status
+
+| SQLite state
+| Track repos, jobs, results
+
+| GraphQL API
+| `registerRepository`, `triggerCheck`, `job` query
+
+| CLI tool
+| `echidnabot register`, `echidnabot check`, `echidnabot status`
+|===
+
+=== Phase 2: Multi-Prover (Target: +4 weeks)
+
+**Scope**: Add Z3, CVC5, Lean (all Tier 1 complete in ECHIDNA)
+
+[cols="1,3"]
+|===
+| Deliverable | Description
+
+| Prover detection
+| Auto-detect proof type from file extension/content
+
+| Parallel checking
+| Run multiple provers concurrently
+
+| Aggregated reporting
+| Combine results across provers in one Check Run
+
+| GitLab adapter
+| Extend to GitLab MR support
+|===
+
+=== Phase 3: Intelligence (Target: +6 weeks)
+
+**Scope**: ML integration, better UX
+
+[cols="1,3"]
+|===
+| Deliverable | Description
+
+| Tactic suggestions
+| Query ECHIDNA Julia ML for failed proofs
+
+| Auto-fix PRs
+| Generate PRs with suggested fixes
+
+| Dashboard
+| ReScript web UI (reuse ECHIDNA patterns)
+
+| Bitbucket/Codeberg
+| Complete platform coverage
+|===
+
+=== Phase 4: Production (Target: +4 weeks)
+
+[cols="1,3"]
+|===
+| Deliverable | Description
+
+| PostgreSQL migration
+| Scale beyond SQLite
+
+| Horizontal scaling
+| Multiple workers, shared job queue
+
+| Monitoring
+| Prometheus metrics, Grafana dashboards
+
+| Documentation
+| User guide, API docs, deployment guide
+|===
+
+== Deployment Options
+
+=== Option A: Containerized (Recommended)
+
+[source,dockerfile]
+----
+FROM rust:1.75-slim as builder
+WORKDIR /app
+COPY . .
+RUN cargo build --release
+
+FROM debian:bookworm-slim
+COPY --from=builder /app/target/release/echidnabot /usr/local/bin/
+EXPOSE 8080
+CMD ["echidnabot", "serve"]
+----
+
+=== Option B: Guix System Service
+
+[source,scheme]
+----
+(service echidnabot-service-type
+  (echidnabot-configuration
+    (echidna-endpoint "http://localhost:3000/graphql")
+    (database-path "/var/lib/echidnabot/db.sqlite")
+    (webhook-port 8080)))
+----
+
+=== Option C: Systemd (Fallback)
+
+[source,ini]
+----
+[Unit]
+Description=echidnabot proof verification service
+
+[Service]
+ExecStart=/usr/local/bin/echidnabot serve
+Environment=ECHIDNA_ENDPOINT=http://localhost:3000/graphql
+Environment=DATABASE_URL=sqlite:///var/lib/echidnabot/db.sqlite
+
+[Install]
+WantedBy=multi-user.target
+----
+
+== Security Considerations
+
+[cols="1,2,2"]
+|===
+| Concern | Mitigation | Implementation
+
+| Webhook spoofing
+| Signature verification
+| HMAC-SHA256 with per-repo secrets
+
+| Secrets in env
+| Vault/SOPS integration
+| Load secrets at startup, never log
+
+| Repo access
+| Least-privilege tokens
+| Read-only for cloning, write only for check runs
+
+| Prover execution
+| Sandboxed via ECHIDNA
+| echidnabot never runs provers directly
+
+| API access
+| JWT/OAuth2
+| Token-based auth for GraphQL
+|===
+
+== Differences from AI Analyses
+
+[cols="2,2,2"]
+|===
+| AI Suggestion | Why Changed | This Architecture
+
+| Chapel
+| Not in RSR approved languages
+| Rust (matches ECHIDNA Core)
+
+| 100 concurrent provers
+| Over-engineered for MVP
+| 3-5 concurrent (configurable)
+
+| PostgreSQL required
+| Too heavy for initial deploy
+| SQLite MVP → Postgres later
+
+| Full prover implementation
+| Duplicates ECHIDNA
+| Delegate to ECHIDNA Core
+
+| Complex neural training
+| Scope creep
+| Use ECHIDNA's Julia ML as-is
+
+| 6-month timeline
+| No time estimates per policy
+| Phased milestones instead
+|===
+
+== Integration with ECHIDNA
+
+echidnabot depends on ECHIDNA Core being deployed and accessible.
+
+[source]
+----
+echidnabot ──── HTTP/GraphQL ────▶ ECHIDNA Core
+                                      │
+                                      ├──▶ Prover backends (Agda, Coq, Lean, etc.)
+                                      └──▶ Julia ML (tactic suggestions)
+----
+
+**Required ECHIDNA endpoints** (to be defined in ECHIDNA):
+
+1. `mutation verifyProof(prover: String!, content: String!): VerificationResult!`
+2. `mutation suggestTactics(prover: String!, context: String!): [Tactic!]!`
+3. `query proverStatus(prover: String!): ProverStatus!`
+
+== File Layout
+
+[source]
+----
+echidnabot/
+├── Cargo.toml
+├── guix.scm
+├── justfile
+├── src/
+│   ├── lib.rs
+│   ├── main.rs
+│   ├── config.rs
+│   ├── api/
+│   │   ├── mod.rs
+│   │   ├── graphql.rs          # async-graphql schema
+│   │   └── webhooks.rs         # Platform webhook handlers
+│   ├── adapters/
+│   │   ├── mod.rs
+│   │   ├── github.rs
+│   │   ├── gitlab.rs
+│   │   └── bitbucket.rs
+│   ├── dispatcher/
+│   │   ├── mod.rs
+│   │   └── echidna_client.rs   # ECHIDNA Core client
+│   ├── scheduler/
+│   │   ├── mod.rs
+│   │   └── job_queue.rs
+│   ├── store/
+│   │   ├── mod.rs
+│   │   ├── models.rs
+│   │   └── sqlite.rs
+│   └── cli/
+│       └── mod.rs
+├── tests/
+│   ├── integration/
+│   └── fixtures/
+└── docs/
+    ├── ARCHITECTURE.adoc       # This file
+    ├── API.adoc                # GraphQL documentation
+    └── DEPLOYMENT.adoc         # Deployment guide
+----
+
+== Next Steps
+
+1. **Update STATE.scm** with this defined scope
+2. **Initialize Cargo project** with workspace structure
+3. **Implement webhook stub** that logs events
+4. **Test with ngrok** against a real GitHub repo
+5. **Add Metamath dispatcher** connecting to ECHIDNA

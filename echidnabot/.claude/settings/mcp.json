@@ -1,0 +1,45 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "mcpServers": {
+    "echidnabot": {
+      "command": "cargo",
+      "args": ["run", "--", "mcp-server"],
+      "cwd": "${workspaceFolder}",
+      "env": {
+        "RUST_LOG": "info"
+      }
+    },
+    "filesystem": {
+      "command": "npx",
+      "args": ["-y", "@anthropic/mcp-server-filesystem", "${workspaceFolder}"]
+    },
+    "git": {
+      "command": "npx",
+      "args": ["-y", "@anthropic/mcp-server-git", "--repository", "${workspaceFolder}"]
+    }
+  },
+  "tools": {
+    "echidnabot": {
+      "verify_proof": {
+        "description": "Verify a proof file using echidnabot",
+        "parameters": {
+          "file": {
+            "type": "string",
+            "description": "Path to the proof file"
+          },
+          "prover": {
+            "type": "string",
+            "enum": ["coq", "lean4", "agda", "isabelle", "z3", "metamath"],
+            "description": "Theorem prover to use"
+          }
+        }
+      },
+      "list_provers": {
+        "description": "List available theorem provers"
+      },
+      "check_status": {
+        "description": "Check verification status for a repository"
+      }
+    }
+  }
+}

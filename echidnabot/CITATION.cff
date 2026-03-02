@@ -1,0 +1,24 @@
+# CITATION.cff - Citation File Format for echidnabot
+# https://citation-file-format.github.io/
+# SPDX-License-Identifier: PMPL-1.0 OR LicenseRef-Palimpsest-0.5
+
+cff-version: 1.2.0
+title: "echidnabot"
+message: "If you use this software, please cite it as below."
+type: software
+authors:
+  - family-names: "Jewell"
+    given-names: "Jonathan D.A."
+    alias: "hyperpolymath"
+    email: "hyperpolymath@proton.me"
+    affiliation: "Rhodium Standard / Independent Researcher"
+repository-code: "https://github.com/hyperpolymath/echidnabot"
+url: "https://rhodium.sh/projects/echidnabot"
+abstract: "RSR-compliant project"
+keywords:
+  - RSR
+  - rhodium-standard
+license: PMPL-1.0
+license-url: "https://github.com/hyperpolymath/echidnabot/blob/main/LICENSE.txt"
+version: "0.1.0"
+date-released: "2025-12-10"

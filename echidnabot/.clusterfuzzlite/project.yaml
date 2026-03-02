@@ -1,0 +1,3 @@
+# SPDX-License-Identifier: PMPL-1.0-or-later
+# ClusterFuzzLite configuration for echidnabot
+language: rust

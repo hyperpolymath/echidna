@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- SPDX-License-Identifier: PMPL-1.0 -->
+<package xmlns="http://schemas.microsoft.com/packaging/2015/06/nuspec.xsd">
+  <metadata>
+    <id>echidnabot</id>
+    <version>0.1.0</version>
+    <title>Echidnabot</title>
+    <authors>hyperpolymath</authors>
+    <owners>hyperpolymath</owners>
+    <projectUrl>https://github.com/hyperpolymath/echidnabot</projectUrl>
+    <licenseUrl>https://github.com/hyperpolymath/echidnabot/blob/main/LICENSE</licenseUrl>
+    <requireLicenseAcceptance>false</requireLicenseAcceptance>
+    <description>
+ECHIDNABOT is a proof-aware CI bot that orchestrates ECHIDNA for theorem
+proof verification. It integrates with GitHub to automatically verify
+formal proofs in pull requests.
+
+Features:
+- GitHub webhook integration for automated PR verification
+- GraphQL API for proof status queries
+- Support for multiple theorem provers via ECHIDNA
+- PostgreSQL and SQLite database backends
+- Real-time proof status updates
+    </description>
+    <summary>Proof-aware CI bot for theorem proof verification</summary>
+    <tags>theorem-prover formal-verification ci bot rust</tags>
+    <packageSourceUrl>https://github.com/hyperpolymath/echidnabot</packageSourceUrl>
+    <docsUrl>https://github.com/hyperpolymath/echidnabot/blob/main/README.adoc</docsUrl>
+    <bugTrackerUrl>https://github.com/hyperpolymath/echidnabot/issues</bugTrackerUrl>
+  </metadata>
+  <files>
+    <file src="tools\**" target="tools" />
+  </files>
+</package>

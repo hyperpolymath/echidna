@@ -1,0 +1,35 @@
+# SPDX-License-Identifier: PLMP-1.0-or-later
+# Mustfile - declarative state contract (template)
+# See: https://github.com/hyperpolymath/mustfile
+
+version: 1
+
+metadata:
+  name: project-state-contract
+  spec: v0.0.1
+  description: "Invariant checks for config, policy, gateway, logs, and schema."
+
+parameters:
+  gateway_port: "8080"
+  schema_version: "v0.0.1"
+
+checks:
+  - name: config-valid
+    description: "config/service.yaml must be valid."
+    run: "yq -e '.' config/service.yaml >/dev/null"
+
+  - name: policy-compiles
+    description: "policy/policy.ncl must compile."
+    run: "nickel check policy/policy.ncl"
+
+  - name: gateway-exposes-port
+    description: "Service must expose the configured port."
+    run: "bash -uc 'ss -lnt | rg \":${GATEWAY_PORT:-8080}\"'"
+
+  - name: logs-are-json
+    description: "Logs must be JSON."
+    run: "bash -uc 'rg --files -g \"*.json\" logs | xargs -r jq -e .'"
+
+  - name: schema-version-matches
+    description: "Schema must match version spec."
+    run: "bash -uc 'rg -n \"${SCHEMA_VERSION:-v0.0.1}\" schema'"

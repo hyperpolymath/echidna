@@ -1,0 +1,26 @@
+# SPDX-License-Identifier: PMPL-1.0-or-later
+[package]
+name = "echidnabot-fuzz"
+version = "0.0.0"
+authors = ["hyperpolymath"]
+publish = false
+edition = "2021"
+
+[package.metadata]
+cargo-fuzz = true
+
+[dependencies]
+libfuzzer-sys = "0.4"
+arbitrary = { version = "1", features = ["derive"] }
+toml = "0.8"
+serde = { version = "1", features = ["derive"] }
+
+[dependencies.echidnabot]
+path = ".."
+
+[[bin]]
+name = "fuzz_config"
+path = "fuzz_targets/fuzz_config.rs"
+test = false
+doc = false
+bench = false

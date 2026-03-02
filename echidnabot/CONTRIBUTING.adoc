@@ -1,0 +1,26 @@
+// SPDX-License-Identifier: PMPL-1.0-or-later
+= Contributing Guide
+
+== Getting Started
+
+1. Fork the repository
+2. Create a feature branch from `main`
+3. Sign off commits (`git commit -s`)
+4. Submit a pull request
+
+== Commit Guidelines
+
+* Conventional commits: `type(scope): description`
+* Sign all commits (DCO required)
+* Atomic, focused commits
+
+== Language Policy
+
+* ReScript only for frontend/JS-adjacent work.
+* TypeScript/JavaScript are not permitted.
+* CI enforces the policy and will fail PRs that add TS/JS files.
+* Optional local hook: link `hooks/pre-commit-tsjs-blocker.sh` to `.git/hooks/pre-commit`.
+
+== License
+
+Contributions licensed under project license.

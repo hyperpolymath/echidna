@@ -1,0 +1,112 @@
+# SPDX-License-Identifier: PMPL-1.0-or-later
+# RSR-compliant security validation workflow with SHA-pinned actions
+
+name: Security Checks
+
+on:
+  push:
+    branches: ["main"]
+  pull_request:
+    branches: ["main"]
+
+permissions: read-all
+
+jobs:
+  secret-scanning:
+    name: Detect Secrets
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+        with:
+          fetch-depth: 0
+
+      - name: Detect secrets with Gitleaks
+        uses: gitleaks/gitleaks-action@ff98106e4c7b2bc287b24eaf42907196329070c7 # v2.3.8
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  dependency-review:
+    name: Dependency Review
+    runs-on: ubuntu-latest
+    if: github.event_name == 'pull_request'
+    permissions:
+      contents: read
+      pull-requests: write
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+
+      - name: Dependency Review
+        uses: actions/dependency-review-action@da24556b548a50705dd671f47852072ea4c105d9 # v4.5.0
+        with:
+          fail-on-severity: high
+          deny-licenses: GPL-3.0, AGPL-3.0
+          comment-summary-in-pr: always
+
+  validate-actions:
+    name: Validate GitHub Actions
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+
+      - name: Check for unpinned actions
+        run: |
+          echo "Checking for unpinned GitHub Actions..."
+          UNPINNED=$(grep -rE "uses:\s+[^@]+@(v[0-9]+|main|master|latest)" .github/workflows/ || true)
+          if [ -n "$UNPINNED" ]; then
+            echo "::warning::Found potentially unpinned actions (should use SHA pinning):"
+            echo "$UNPINNED"
+          else
+            echo "All actions appear to be SHA-pinned"
+          fi
+
+      - name: Check for dangerous permissions
+        run: |
+          echo "Checking for overly permissive workflow permissions..."
+          DANGEROUS=$(grep -rE "permissions:\s*write-all" .github/workflows/ || true)
+          if [ -n "$DANGEROUS" ]; then
+            echo "::error::Found workflows with write-all permissions:"
+            echo "$DANGEROUS"
+            exit 1
+          fi
+          echo "No dangerous permissions found"
+
+  file-validation:
+    name: Validate Security Files
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+
+      - name: Check required security files exist
+        run: |
+          MISSING=""
+          for file in SECURITY.md LICENSE.txt .github/CODEOWNERS .github/dependabot.yml; do
+            if [ ! -f "$file" ]; then
+              MISSING="$MISSING $file"
+            fi
+          done
+          if [ -n "$MISSING" ]; then
+            echo "::error::Missing required security files:$MISSING"
+            exit 1
+          fi
+          echo "All required security files present"
+
+      - name: Check for template placeholders
+        run: |
+          echo "Checking for unfilled template placeholders..."
+          PLACEHOLDERS=$(grep -rE "\{\{[A-Z_]+\}\}" SECURITY.md CONTRIBUTING.md 2>/dev/null || true)
+          if [ -n "$PLACEHOLDERS" ]; then
+            echo "::error::Found unfilled template placeholders:"
+            echo "$PLACEHOLDERS"
+            exit 1
+          fi
+          echo "No template placeholders found"

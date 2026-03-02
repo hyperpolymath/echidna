@@ -1,0 +1,36 @@
+= RSR-template-repo - Citation Guide
+:toc:
+
+== BibTeX
+
+[source,bibtex]
+----
+@software{rsr-template-repo_2025,
+  author = {Polymath, Hyper},
+  title = {RSR-template-repo},
+  year = {2025},
+  url = {https://github.com/hyperpolymath/RSR-template-repo},
+  license = {AGPL-3.0-or-later}
+}
+----
+
+== Harvard Style
+
+Polymath, H. (2025) _RSR-template-repo_ [Computer software]. Available at: https://github.com/hyperpolymath/RSR-template-repo
+
+== OSCOLA
+
+Hyper Polymath, 'RSR-template-repo' (2025) <https://github.com/hyperpolymath/RSR-template-repo>
+
+== MLA
+
+Polymath, Hyper. "RSR-template-repo." 2025, github.com/hyperpolymath/RSR-template-repo.
+
+== APA 7
+
+Polymath, H. (2025). _RSR-template-repo_ [Computer software]. GitHub. https://github.com/hyperpolymath/RSR-template-repo
+
+== See Also
+
+* link:../CITATION.cff[CITATION.cff]
+* link:../codemeta.json[codemeta.json]

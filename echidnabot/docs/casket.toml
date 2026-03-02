@@ -1,0 +1,32 @@
+# SPDX-License-Identifier: PMPL-1.0-or-later
+# casket-ssg configuration for echidnabot documentation
+
+[site]
+title = "echidnabot"
+description = "Proof-aware CI bot for formal verification"
+base_url = "https://hyperpolymath.github.io/echidnabot"
+language = "en"
+
+[build]
+content_dir = "content"
+template_dir = "templates"
+output_dir = "_site"
+clean = true
+
+[theme]
+primary_color = "#4361ee"
+accent_color = "#00d9ff"
+background = "#1a1a2e"
+font_family = "JetBrains Mono, monospace"
+
+[feeds]
+rss = true
+atom = true
+
+[sitemap]
+enabled = true
+
+[assets]
+hash_filenames = true
+minify_css = true
+minify_js = true

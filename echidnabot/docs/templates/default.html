@@ -1,0 +1,162 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>{{title}} | echidnabot</title>
+  <meta name="description" content="Proof-aware CI bot for formal verification">
+  <style>
+    :root {
+      --bg: #1a1a2e;
+      --bg-secondary: #16213e;
+      --text: #e4e4e7;
+      --text-muted: #a1a1aa;
+      --primary: #4361ee;
+      --accent: #00d9ff;
+      --success: #00c853;
+      --error: #ff1744;
+      --code-bg: #0f0f1a;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: 'Inter', system-ui, -apple-system, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      line-height: 1.6;
+    }
+    .container {
+      max-width: 900px;
+      margin: 0 auto;
+      padding: 2rem;
+    }
+    header {
+      border-bottom: 1px solid var(--bg-secondary);
+      padding-bottom: 1rem;
+      margin-bottom: 2rem;
+    }
+    header h1 {
+      font-family: 'JetBrains Mono', monospace;
+      color: var(--accent);
+      font-size: 1.5rem;
+    }
+    nav {
+      margin-top: 1rem;
+    }
+    nav a {
+      color: var(--text-muted);
+      text-decoration: none;
+      margin-right: 1.5rem;
+      transition: color 0.2s;
+    }
+    nav a:hover {
+      color: var(--accent);
+    }
+    article h1 {
+      font-size: 2.5rem;
+      margin-bottom: 0.5rem;
+      color: var(--text);
+    }
+    article h2 {
+      font-size: 1.75rem;
+      margin: 2rem 0 1rem;
+      color: var(--accent);
+      border-bottom: 1px solid var(--bg-secondary);
+      padding-bottom: 0.5rem;
+    }
+    article h3 {
+      font-size: 1.25rem;
+      margin: 1.5rem 0 0.75rem;
+      color: var(--text);
+    }
+    article p {
+      margin-bottom: 1rem;
+    }
+    article a {
+      color: var(--primary);
+      text-decoration: none;
+    }
+    article a:hover {
+      text-decoration: underline;
+    }
+    article ul, article ol {
+      margin: 1rem 0 1rem 2rem;
+    }
+    article li {
+      margin-bottom: 0.5rem;
+    }
+    article code {
+      font-family: 'JetBrains Mono', 'Fira Code', monospace;
+      background: var(--code-bg);
+      padding: 0.2rem 0.4rem;
+      border-radius: 4px;
+      font-size: 0.9em;
+    }
+    article pre {
+      background: var(--code-bg);
+      padding: 1.5rem;
+      border-radius: 8px;
+      overflow-x: auto;
+      margin: 1rem 0;
+      border: 1px solid var(--bg-secondary);
+    }
+    article pre code {
+      background: none;
+      padding: 0;
+    }
+    article table {
+      width: 100%;
+      border-collapse: collapse;
+      margin: 1rem 0;
+    }
+    article th, article td {
+      padding: 0.75rem;
+      text-align: left;
+      border-bottom: 1px solid var(--bg-secondary);
+    }
+    article th {
+      color: var(--accent);
+      font-weight: 600;
+    }
+    article strong {
+      color: var(--accent);
+    }
+    time {
+      color: var(--text-muted);
+      font-size: 0.9rem;
+    }
+    footer {
+      margin-top: 4rem;
+      padding-top: 2rem;
+      border-top: 1px solid var(--bg-secondary);
+      color: var(--text-muted);
+      font-size: 0.875rem;
+      text-align: center;
+    }
+    footer a {
+      color: var(--primary);
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <header>
+      <h1>echidnabot</h1>
+      <nav>
+        <a href="/">Home</a>
+        <a href="/getting-started.html">Getting Started</a>
+        <a href="/api.html">API</a>
+        <a href="/configuration.html">Configuration</a>
+        <a href="https://github.com/hyperpolymath/echidnabot">GitHub</a>
+      </nav>
+    </header>
+    <article>
+      <h1>{{title}}</h1>
+      <time>{{date}}</time>
+      {{content}}
+    </article>
+    <footer>
+      <p>echidnabot &copy; 2025 hyperpolymath | <a href="https://github.com/hyperpolymath/echidnabot">Source</a> | PMPL-1.0-or-later</p>
+    </footer>
+  </div>
+</body>
+</html>

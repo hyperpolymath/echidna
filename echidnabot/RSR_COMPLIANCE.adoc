@@ -1,0 +1,90 @@
+= RSR Compliance: echidnabot
+:toc:
+:sectnums:
+
+== Overview
+
+This document describes the Rhodium Standard Repository (RSR) compliance status for *echidnabot*.
+
+== Classification
+
+[cols="1,2"]
+|===
+|Attribute |Value
+
+|Project |echidnabot
+|Primary Language |Rust (Tier 1)
+|Secondary Language |Guile Scheme (Tier 2 - state management)
+|RSR Tier |Gold Target
+|Compliance Status |Compliant
+|Last Updated |2025-12-17
+|===
+
+== Language Tier Classification
+
+=== Tier 1 Languages (Preferred)
+* Rust ✓ (primary)
+* Elixir
+* Zig
+* Ada
+* Haskell
+* ReScript
+
+=== Tier 2 Languages (Acceptable)
+* Nickel (configuration)
+* Racket (scripting)
+* Guile Scheme ✓ (state management - META.scm, STATE.scm, ECOSYSTEM.scm)
+* Nix (derivations)
+
+=== Restricted Languages
+* Python - Only allowed in salt/ directories for SaltStack
+* TypeScript/JavaScript - Not permitted, use ReScript
+* CUE - Not permitted, use Nickel or Guile
+
+== Compliance Checklist
+
+[cols="1,1,2"]
+|===
+|Requirement |Status |Notes
+
+|Primary language is Tier 1/2 |✓ |Rust (Tier 1)
+|No restricted languages outside exemptions |✓ |Only Rust and Guile Scheme
+|.editorconfig present |✓ |Line length 100, spaces indent
+|.well-known/ directory |✓ |security.txt, ai.txt, humans.txt, consent-required.txt
+|justfile present |✗ |TODO: Add justfile for task running
+|LICENSE.txt (AGPL + Palimpsest) |✓ |PMPL-1.0-or-later
+|Containerfile present |✓ |Multi-stage build with Chainguard base
+|guix.scm present |✓ |Guix package definition (primary)
+|flake.nix present |✗ |TODO: Add Nix flake (fallback)
+|===
+
+== Security Compliance
+
+[cols="1,1,2"]
+|===
+|Requirement |Status |Notes
+
+|No MD5/SHA1 for security |✓ |Uses SHA-256 (sha2 crate)
+|HTTPS only |✓ |rustls-tls, no HTTP URLs
+|No hardcoded secrets |✓ |Env vars / Vault integration
+|SHA-pinned GitHub Actions |✓ |All workflows use SHA-pinned actions
+|Secret scanning |✓ |TruffleHog in quality.yml
+|Static analysis |✓ |CodeQL workflow
+|Fuzzing |✓ |ClusterFuzzLite with libfuzzer
+|===
+
+== Exemptions
+
+None
+
+== Action Items
+
+* [ ] Add justfile for task running
+* [ ] Add flake.nix for Nix users (fallback package manager)
+
+== References
+
+* link:https://github.com/hyperpolymath/RSR-template-repo[RSR Template Repository]
+* link:CONTRIBUTING.adoc[Contributing Guidelines]
+* link:CODE_OF_CONDUCT.md[Code of Conduct]
+* link:docs/ARCHITECTURE.adoc[Architecture Documentation]

@@ -1,0 +1,25 @@
+#!/usr/bin/env bash
+# SPDX-License-Identifier: PMPL-1.0
+# Pre-commit hook: Validate SPDX headers in workflow files
+
+set -euo pipefail
+
+ERRORS=0
+SPDX_PATTERN="^# SPDX-License-Identifier:PMPL-1.0
+
+for workflow in .github/workflows/*.yml .github/workflows/*.yaml; do
+    [ -f "$workflow" ] || continue
+    
+    first_line=$(head -n1 "$workflow")
+    if ! echo "$first_line" | grep -qE "$SPDX_PATTERN"; then
+        echo "ERROR: Missing SPDX header in $workflow"
+        echo "  First line should be: # SPDX-License-Identifier: PMPL-1.0
+        ERRORS=$((ERRORS + 1))
+    fi
+done
+
+if [ $ERRORS -gt 0 ]; then
+    exit 1
+fi
+
+exit 0

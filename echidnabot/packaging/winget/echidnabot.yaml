@@ -1,0 +1,40 @@
+# winget manifest for echidnabot
+# yaml-language-server: $schema=https://aka.ms/winget-manifest.version.1.4.0.schema.json
+
+PackageIdentifier: Hyperpolymath.Echidnabot
+PackageVersion: 0.1.0
+PackageLocale: en-US
+Publisher: hyperpolymath
+PublisherUrl: https://github.com/hyperpolymath
+PackageName: Echidnabot
+PackageUrl: https://github.com/hyperpolymath/echidnabot
+License: PMPL-1.0-or-later
+LicenseUrl: https://github.com/hyperpolymath/echidnabot/blob/main/LICENSE
+ShortDescription: Proof-aware CI bot for theorem proof verification
+Description: |
+  ECHIDNABOT is a proof-aware CI bot that orchestrates ECHIDNA for theorem
+  proof verification. It integrates with GitHub to automatically verify
+  formal proofs in pull requests.
+
+  Features:
+  - GitHub webhook integration for automated PR verification
+  - GraphQL API for proof status queries
+  - Support for multiple theorem provers via ECHIDNA
+  - PostgreSQL and SQLite database backends
+  - Real-time proof status updates
+Tags:
+  - theorem-prover
+  - formal-verification
+  - ci
+  - bot
+  - rust
+Moniker: echidnabot
+Commands:
+  - echidnabot
+Installers:
+  - Architecture: x64
+    InstallerType: zip
+    InstallerUrl: https://github.com/hyperpolymath/echidnabot/releases/download/v0.1.0/echidnabot-0.1.0-x86_64-pc-windows-msvc.zip
+    InstallerSha256: TODO
+ManifestType: singleton
+ManifestVersion: 1.4.0

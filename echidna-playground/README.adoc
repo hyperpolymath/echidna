@@ -1,0 +1,413 @@
+= Coq-Jr: Web-Native Interactive Theorem Proving
+image:https://img.shields.io/badge/License-PMPL--1.0-blue.svg[License: PMPL-1.0,link="https://github.com/hyperpolymath/palimpsest-license"]
+
+
+
+:toc: macro
+:toc-title: Contents
+:toclevels: 3
+:icons: font
+:source-highlighter: rouge
+:experimental:
+:imagesdir: docs/images
+
+[.lead]
+*Coq-Jr* is a lightweight, browser-native interface for the https://coq.inria.fr[Coq proof assistant], built with ReScript and Deno. It provides HTTP and GraphQL access to interactive theorem proving, serving as both a standalone proof environment and a satellite component of the https://github.com/hyperpolymath/poly-proof-mcp[poly-proof-mcp] AI-accessible verification network.
+
+[discrete]
+== Status: Alpha (v0.2.0-dev)
+
+image:https://img.shields.io/badge/coq-compatible-orange[Coq Compatible]
+image:https://img.shields.io/badge/rescript-v11-red[ReScript]
+image:https://img.shields.io/badge/deno-v2-black[Deno]
+
+'''
+
+toc::[]
+
+== What is Coq-Jr?
+
+Coq-Jr democratizes formal verification by making the Coq proof assistant accessible through:
+
+* *Web Interface* — An interactive browser-based IDE for writing and executing Coq proofs
+* *GraphQL API* — Programmatic access for automated verification pipelines
+* *MCP Integration* — AI-accessible proof assistance via the Model Context Protocol
+
+Unlike traditional Coq installations requiring local setup, Coq-Jr runs entirely in the browser using WebAssembly, with optional server-side verification for enhanced capabilities.
+
+=== Core Capabilities
+
+[cols="1,3"]
+|===
+|Feature |Description
+
+|*Interactive Proofs*
+|Step through proofs with real-time goal display, tactic feedback, and error highlighting
+
+|*MathComp Support*
+|Built-in Mathematical Components library for advanced mathematical reasoning
+
+|*Zero Installation*
+|No local Coq installation required—proofs execute in WebAssembly
+
+|*Session Persistence*
+|Save and resume proof sessions (roadmap)
+
+|*Multi-Backend*
+|Pluggable architecture supporting jsCoq (browser) and SerAPI (server) backends
+|===
+
+== The Hyperpolymath Ecosystem
+
+Coq-Jr is one component of a larger formal verification ecosystem:
+
+[source]
+----
+                    ┌──────────────────────────────────────────────┐
+                    │           poly-proof-mcp                     │
+                    │    (AI-Accessible Proof Orchestration)       │
+                    └──────────────┬───────────────────────────────┘
+                                   │ MCP Protocol
+           ┌───────────────────────┼───────────────────────┐
+           │                       │                       │
+           ▼                       ▼                       ▼
+    ┌─────────────┐        ┌─────────────┐        ┌─────────────┐
+    │   Coq-Jr    │        │   ECHIDNA   │        │  Other      │
+    │  (Coq/Rocq) │        │ (12 provers)│        │  Provers    │
+    └─────────────┘        └─────────────┘        └─────────────┘
+           │                       │
+           │              ┌────────┴────────┐
+           │              │                 │
+           ▼              ▼                 ▼
+    ┌─────────────┐ ┌───────────┐   ┌─────────────┐
+    │ echidnabot  │ │git-eco-bot│   │   ...       │
+    │(math verify)│ │(efficiency)│   │             │
+    └─────────────┘ └───────────┘   └─────────────┘
+----
+
+*https://github.com/hyperpolymath/echidna[ECHIDNA]*:: Neurosymbolic theorem proving platform supporting 12 proof assistants (Agda, Coq, Lean, Isabelle, Z3, etc.) with neural candidate generation
+
+*https://github.com/hyperpolymath/echidnabot[echidnabot]*:: Mathematical verification bot for git forges—like Dependabot, but for proof obligations
+
+*https://github.com/hyperpolymath/git-eco-bot[git-eco-bot]*:: Ecological and thermodynamic efficiency analysis for codebases
+
+== Quick Start
+
+=== Prerequisites
+
+* https://deno.land[Deno] v2.0+
+* https://nodejs.org[Node.js] v18+ (for ReScript compilation only)
+
+=== Installation
+
+[source,bash]
+----
+# Clone the repository
+git clone https://github.com/hyperpolymath/coq-jr.git
+cd coq-jr
+
+# Install ReScript compiler
+npm install
+
+# Compile ReScript sources
+npm run res:build
+
+# Start the server
+deno task dev
+----
+
+The proof environment is now available at http://localhost:8000
+
+=== Docker (Coming Soon)
+
+[source,bash]
+----
+docker run -p 8000:8000 ghcr.io/hyperpolymath/coq-jr:latest
+----
+
+== Usage
+
+=== Web Interface
+
+Navigate to http://localhost:8000 to access the interactive proof environment.
+
+.Key Bindings
+[cols="1,2"]
+|===
+|Key |Action
+
+|kbd:[Alt+↓] / kbd:[Alt+N]
+|Execute next proof step
+
+|kbd:[Alt+↑] / kbd:[Alt+P]
+|Undo last proof step
+
+|kbd:[Alt+→] / kbd:[Alt+Enter]
+|Execute to cursor position
+
+|kbd:[F8]
+|Toggle goal panel visibility
+|===
+
+=== GraphQL API (Roadmap)
+
+[source,graphql]
+----
+# Start a new proof session
+mutation {
+  createSession(theorem: "forall n : nat, n + 0 = n") {
+    sessionId
+    goals
+  }
+}
+
+# Execute a tactic
+mutation {
+  executeTactic(sessionId: "abc123", tactic: "intros n.") {
+    goals
+    proofState
+    isComplete
+  }
+}
+
+# Query available lemmas
+query {
+  searchLemmas(pattern: "*comm*", library: "mathcomp") {
+    name
+    statement
+    library
+  }
+}
+----
+
+=== MCP Integration (Roadmap)
+
+For AI assistants using the Model Context Protocol:
+
+[source,json]
+----
+{
+  "mcpServers": {
+    "coq-jr": {
+      "command": "deno",
+      "args": ["run", "--allow-net", "mcp-server.ts"],
+      "env": {
+        "COQ_JR_URL": "http://localhost:8000"
+      }
+    }
+  }
+}
+----
+
+== Architecture
+
+=== Technology Stack
+
+[cols="1,1,2"]
+|===
+|Layer |Technology |Purpose
+
+|*Frontend*
+|ReScript → JavaScript
+|Type-safe UI generation and DOM manipulation
+
+|*Server*
+|Deno
+|HTTP server, static file serving, API endpoints
+
+|*Proof Engine*
+|jsCoq (WebAssembly)
+|Browser-side Coq execution via WASM
+
+|*Styles*
+|CSS
+|Custom styling with Bootstrap foundation
+|===
+
+=== Module Structure
+
+[source]
+----
+src/
+├── Main.res          # Entry point and module exports
+├── Page.res          # HTML page generation
+├── Components.res    # Reusable UI components
+├── JsCoq.res         # jsCoq library bindings
+├── Dom.res           # Browser DOM API bindings
+├── Server.res        # HTTP server implementation
+└── Deno.res          # Deno runtime bindings
+----
+
+=== Request Flow
+
+[source]
+----
+Browser Request
+       │
+       ▼
+┌─────────────────┐
+│  Deno Server    │
+│  (Server.res)   │
+└────────┬────────┘
+         │
+    ┌────┴────┐
+    │         │
+    ▼         ▼
+ /index    /static
+    │         │
+    ▼         ▼
+Page.res   File I/O
+    │         │
+    ▼         ▼
+HTML Gen   Asset
+    │         │
+    └────┬────┘
+         │
+         ▼
+   HTTP Response
+         │
+         ▼
+┌─────────────────────┐
+│       Browser       │
+│   jsCoq (WASM)      │
+│   Proof Engine      │
+└─────────────────────┘
+----
+
+== Example: Infinitude of Primes
+
+The default page demonstrates the classic proof that there are infinitely many primes:
+
+[source,coq]
+----
+From Coq Require Import ssreflect ssrfun ssrbool.
+From mathcomp Require Import eqtype ssrnat div prime.
+
+Lemma prime_above m : {p | m < p & prime p}.
+Proof.
+  have /pdivP[p pr_p p_dv_m1]: 1 < m`! + 1
+    by rewrite addn1 ltnS fact_gt0.
+  exists p => //; rewrite ltnNge; apply: contraL p_dv_m1 => p_le_m.
+  by rewrite dvdn_addr ?dvdn_fact ?prime_gt0 // gtnNdvd ?prime_gt1.
+Qed.
+----
+
+This proof uses the Mathematical Components library to show that for any natural number `m`, there exists a prime `p` greater than `m`.
+
+== Development
+
+=== Build Commands
+
+[source,bash]
+----
+# Watch mode for ReScript compilation
+npm run res:dev
+
+# Production build
+npm run res:build
+
+# Start development server
+deno task dev
+
+# Type check
+deno check server.ts
+----
+
+=== Testing (Roadmap)
+
+[source,bash]
+----
+# Run unit tests
+deno test
+
+# Run integration tests
+deno task test:integration
+
+# Run proof verification tests
+deno task test:proofs
+----
+
+== API Reference
+
+=== HTTP Endpoints
+
+[cols="1,1,3"]
+|===
+|Method |Path |Description
+
+|GET
+|`/`
+|Serve interactive proof environment
+
+|GET
+|`/index.html`
+|Alias for `/`
+
+|GET
+|`/{file}`
+|Serve static assets (CSS, JS, images)
+
+|POST
+|`/api/session` _(roadmap)_
+|Create new proof session
+
+|POST
+|`/api/tactic` _(roadmap)_
+|Execute tactic in session
+
+|GET
+|`/api/state/{id}` _(roadmap)_
+|Retrieve proof state
+|===
+
+=== Configuration
+
+.Environment Variables
+[cols="1,1,2"]
+|===
+|Variable |Default |Description
+
+|`PORT`
+|`8000`
+|HTTP server port
+
+|`COQ_PACKAGES`
+|`coq,mathcomp`
+|Coq packages to load
+
+|`JSCOQ_CDN`
+|unpkg
+|jsCoq distribution source
+|===
+
+== Contributing
+
+We welcome contributions! Please see link:CONTRIBUTING.adoc[CONTRIBUTING.adoc] for guidelines.
+
+=== Development Philosophy
+
+* *Minimal dependencies* — Prefer standard library solutions
+* *Type safety* — Leverage ReScript's type system
+* *Polyglot flexibility* — Support multiple compilation targets (Deno, Node, browser)
+* *Accessibility* — Theorem proving should be approachable
+
+== License
+
+Dual-licensed under your choice of:
+
+* Palimpsest-MPL License v1.0 (PMPL-1.0)
+* Palimpsest-MPL License v3.0 or later (PMPL-1.0-or-later)
+
+See link:LICENSE-PMPL-1.0[LICENSE-PMPL-1.0] and link:LICENSE-AGPL[LICENSE-AGPL] for details.
+
+== Acknowledgements
+
+* https://github.com/jscoq/jscoq[jsCoq] — The Coq proof assistant in the browser
+* https://coq.inria.fr[Coq] — The formal proof management system
+* https://math-comp.github.io[Mathematical Components] — A library for formalized mathematics
+* The Hyperpolymath community for the broader verification ecosystem
+
+---
+
+[.text-center]
+_Part of the https://github.com/hyperpolymath[Hyperpolymath] formal verification ecosystem_

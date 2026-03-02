@@ -1,0 +1,52 @@
+# GitHub Repository Topics for echidnabot
+# Apply these via: Settings → About → Topics
+# Or via API: gh repo edit --add-topic <topic>
+
+# PRIMARY - What this project IS
+theorem-prover
+formal-verification
+proof-assistant
+ci-cd
+ci-bot
+automation
+
+# PROOF SYSTEMS - Supported theorem provers
+coq
+lean
+lean4
+agda
+isabelle
+z3
+smt
+metamath
+hol
+
+# TECHNOLOGY - What it's built with
+rust
+rust-lang
+tokio
+axum
+graphql
+async
+
+# DOMAIN - What field it serves
+formal-methods
+type-theory
+dependent-types
+mathematics
+logic
+verified-software
+
+# PLATFORM INTEGRATION
+github-app
+github-actions
+gitlab-ci
+webhooks
+devops
+
+# DISCOVERABILITY
+hacktoberfest
+good-first-issue
+
+# COPY-PASTE FOR GitHub Settings (max 20):
+# theorem-prover, formal-verification, proof-assistant, ci-cd, rust, coq, lean4, agda, isabelle, z3, smt, formal-methods, type-theory, github-app, automation, mathematics, logic, webhooks, hacktoberfest

@@ -1,0 +1,29 @@
+app-id: dev.hyperpolymath.Echidnabot
+runtime: org.freedesktop.Platform
+runtime-version: '23.08'
+sdk: org.freedesktop.Sdk
+sdk-extensions:
+  - org.freedesktop.Sdk.Extension.rust-stable
+
+command: echidnabot
+
+finish-args:
+  - --share=network
+  - --filesystem=xdg-config/echidnabot:create
+
+build-options:
+  append-path: /usr/lib/sdk/rust-stable/bin
+  env:
+    CARGO_HOME: /run/build/echidnabot/cargo
+    RUSTUP_HOME: /usr/lib/sdk/rust-stable
+
+modules:
+  - name: echidnabot
+    buildsystem: simple
+    build-commands:
+      - cargo build --release
+      - install -Dm755 target/release/echidnabot /app/bin/echidnabot
+    sources:
+      - type: git
+        url: https://github.com/hyperpolymath/echidnabot.git
+        tag: v0.1.0

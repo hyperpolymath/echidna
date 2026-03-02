@@ -1,0 +1,36 @@
+= echidnabot - Citation Guide
+:toc:
+
+== BibTeX
+
+[source,bibtex]
+----
+@software{echidnabot_2025,
+  author = {Polymath, Hyper},
+  title = {echidnabot},
+  year = {2025},
+  url = {https://github.com/hyperpolymath/echidnabot},
+license = "PMPL-1.0"
+}
+----
+
+== Harvard Style
+
+Polymath, H. (2025) _echidnabot_ [Computer software]. Available at: https://github.com/hyperpolymath/echidnabot
+
+== OSCOLA
+
+Hyper Polymath, 'echidnabot' (2025) <https://github.com/hyperpolymath/echidnabot>
+
+== MLA
+
+Polymath, Hyper. "echidnabot." 2025, github.com/hyperpolymath/echidnabot.
+
+== APA 7
+
+Polymath, H. (2025). _echidnabot_ [Computer software]. GitHub. https://github.com/hyperpolymath/echidnabot
+
+== See Also
+
+* link:../CITATION.cff[CITATION.cff]
+* link:../codemeta.json[codemeta.json]

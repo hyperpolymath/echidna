@@ -1,0 +1,28 @@
+Source: echidnabot
+Section: devel
+Priority: optional
+Maintainer: hyperpolymath <packages@hyperpolymath.dev>
+Build-Depends: debhelper-compat (= 13), cargo, rustc (>= 1.70), pkg-config, libssl-dev
+Standards-Version: 4.6.2
+Homepage: https://github.com/hyperpolymath/echidnabot
+Vcs-Git: https://github.com/hyperpolymath/echidnabot.git
+Vcs-Browser: https://github.com/hyperpolymath/echidnabot
+Rules-Requires-Root: no
+
+Package: echidnabot
+Architecture: any
+Depends: ${shlibs:Depends}, ${misc:Depends}, openssl
+Suggests: postgresql, sqlite3
+Description: Proof-aware CI bot for theorem proof verification
+ ECHIDNABOT is a proof-aware CI bot that orchestrates ECHIDNA for theorem
+ proof verification. It integrates with GitHub to automatically verify
+ formal proofs in pull requests.
+ .
+ Features:
+  - GitHub webhook integration for automated PR verification
+  - GraphQL API for proof status queries
+  - Support for multiple theorem provers via ECHIDNA
+  - PostgreSQL and SQLite database backends
+  - Real-time proof status updates
+ .
+ License: PMPL-1.0-or-later
