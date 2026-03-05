@@ -1,7 +1,12 @@
 {
   "compilerOptions": {
     "allowJs": true,
-    "lib": ["deno.window", "dom", "dom.iterable", "esnext"],
+    "lib": [
+      "deno.window",
+      "dom",
+      "dom.iterable",
+      "esnext"
+    ],
     "jsx": "react-jsx",
     "jsxImportSource": "react"
   },
@@ -9,11 +14,19 @@
   "tasks": {
     "dev": "deno run --allow-net --allow-read --allow-env --watch server.ts",
     "serve": "deno run --allow-net --allow-read --allow-env server.ts",
-    "build": "deno run --allow-read --allow-write --allow-env build.ts"
+    "build": "deno run --allow-read --allow-write --allow-env build.ts",
+    "res:build": "rescript build",
+    "res:dev": "rescript build -w",
+    "res:clean": "rescript clean",
+    "check": "rescript build && deno check src/Main.bs.js"
   },
   "fmt": {
     "files": {
-      "include": ["src/", "server.ts", "build.ts"]
+      "include": [
+        "src/",
+        "server.ts",
+        "build.ts"
+      ]
     },
     "options": {
       "useTabs": false,
@@ -24,10 +37,24 @@
   },
   "lint": {
     "files": {
-      "include": ["src/", "server.ts", "build.ts"]
+      "include": [
+        "src/",
+        "server.ts",
+        "build.ts"
+      ]
     },
     "rules": {
-      "tags": ["recommended"]
+      "tags": [
+        "recommended"
+      ]
     }
+  },
+  "imports": {
+    "react": "npm:react@^18.2.0",
+    "react-dom": "npm:react-dom@^18.2.0",
+    "rescript-webapi": "npm:rescript-webapi@^0.10.0",
+    "@rescript/core": "npm:@rescript/core@^1.2.0",
+    "@rescript/react": "npm:@rescript/react@^0.12.1",
+    "rescript": "^12.0.0"
   }
 }

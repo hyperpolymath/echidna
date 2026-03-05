@@ -95,3 +95,8 @@ container-build-full:
 # Run echidna container
 container-run *ARGS:
     podman run --rm -it echidna:latest {{ARGS}}
+
+# [AUTO-GENERATED] Multi-arch / RISC-V target
+build-riscv:
+	@echo "Building for RISC-V..."
+	cross build --target riscv64gc-unknown-linux-gnu
