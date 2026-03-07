@@ -1,0 +1,12 @@
+# SPDX-License-Identifier: PMPL-1.0-or-later
+# Canonical authority anchor for ECHIDNA
+
+[anchor]
+canonical-repo = "https://github.com/hyperpolymath/echidna"
+canonical-owner = "hyperpolymath"
+canonical-author = "Jonathan D.A. Jewell <j.d.a.jewell@open.ac.uk>"
+canonical-license = "PMPL-1.0-or-later"
+mirrors = [
+  "https://gitlab.com/hyperpolymath/echidna",
+]
+forge = "github.com"

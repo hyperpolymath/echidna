@@ -1,0 +1,40 @@
+// SPDX-License-Identifier: PMPL-1.0-or-later
+= ECHIDNA Container Ecosystem (Stapeln)
+:author: Jonathan D.A. Jewell
+
+== Overview
+
+ECHIDNA uses the Stapeln container ecosystem for production deployment.
+
+== Files
+
+[cols="1,2"]
+|===
+| File | Purpose
+
+| `Containerfile` | Multi-stage OCI build (Chainguard wolfi-base)
+| `compose.toml` | selur-compose orchestration (app + svalinn gateway)
+| `.gatekeeper.yaml` | Svalinn edge gateway policies
+| `entrypoint.sh` | Container entrypoint with signal handling
+| `vordr.toml` | Vordr runtime monitoring configuration
+| `manifest.toml` | Cerro-torre .ctp bundle metadata
+| `ct-build.sh` | Build/sign/verify pipeline
+| `deploy.k9.ncl` | k9-svc deployment (Hunt trust level)
+|===
+
+== Quick Start
+
+[source,bash]
+----
+# Build
+just container-build
+
+# Start stack
+just container-up
+
+# Full pipeline (build + sign + verify)
+just container-pipeline
+
+# Stop
+just container-down
+----

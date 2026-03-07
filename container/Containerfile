@@ -1,0 +1,80 @@
+# SPDX-License-Identifier: PMPL-1.0-or-later
+# ECHIDNA Container Image (Stapeln standard)
+#
+# Multi-stage Rust build using Chainguard Wolfi base images.
+#
+# Build with Podman:
+#   podman build -t ghcr.io/hyperpolymath/echidna:latest -f container/Containerfile .
+#
+# Run:
+#   podman run -p 8080:8080 ghcr.io/hyperpolymath/echidna:latest
+
+# =============================================================================
+# Stage 1: Builder
+# =============================================================================
+FROM cgr.dev/chainguard/wolfi-base:latest AS builder
+
+RUN apk add --no-cache \
+    rust \
+    cargo \
+    build-base \
+    pkgconf \
+    openssl-dev
+
+WORKDIR /build
+
+COPY Cargo.toml Cargo.lock ./
+COPY src/rust ./src/rust
+COPY src/interfaces ./src/interfaces
+
+RUN cargo build --release --bin echidna
+
+# =============================================================================
+# Stage 2: Runtime
+# =============================================================================
+FROM cgr.dev/chainguard/wolfi-base:latest
+
+LABEL org.opencontainers.image.title="ECHIDNA" \
+      org.opencontainers.image.description="Extensible Cognitive Hybrid Intelligence for Deductive Neural Assistance" \
+      org.opencontainers.image.url="https://github.com/hyperpolymath/echidna" \
+      org.opencontainers.image.source="https://github.com/hyperpolymath/echidna" \
+      org.opencontainers.image.vendor="hyperpolymath" \
+      org.opencontainers.image.licenses="PMPL-1.0-or-later" \
+      org.opencontainers.image.version="1.5.0" \
+      org.opencontainers.image.authors="Jonathan D.A. Jewell <j.d.a.jewell@open.ac.uk>" \
+      dev.cerrotorre.manifest="container/manifest.toml" \
+      dev.cerrotorre.gatekeeper="container/.gatekeeper.yaml" \
+      dev.stapeln.compose="container/compose.toml"
+
+RUN apk add --no-cache ca-certificates curl z3
+
+RUN addgroup -S appuser && adduser -S appuser -G appuser
+
+WORKDIR /app
+
+COPY --from=builder /build/target/release/echidna /app/bin/echidna
+
+COPY container/entrypoint.sh /app/entrypoint.sh
+RUN chmod +x /app/entrypoint.sh
+
+COPY container/.gatekeeper.yaml /etc/svalinn/gatekeeper.yaml
+COPY container/manifest.toml /app/manifest.toml
+
+RUN mkdir -p /data /app/proofs /app/config /app/logs && \
+    chown -R appuser:appuser /app /data
+
+ENV APP_HOST=[::]
+ENV APP_PORT=8080
+ENV APP_LOG_FORMAT=json
+ENV APP_DATA_DIR=/data
+
+VOLUME ["/data"]
+
+USER appuser
+
+EXPOSE 8080
+
+HEALTHCHECK --interval=30s --timeout=5s --start-period=10s --retries=3 \
+    CMD curl -sf http://localhost:${APP_PORT}/health || exit 1
+
+ENTRYPOINT ["/app/entrypoint.sh"]

@@ -1,0 +1,70 @@
+# SPDX-License-Identifier: PMPL-1.0-or-later
+# 0-AI-MANIFEST.a2ml — Universal AI Agent Entry Point
+# ECHIDNA: Extensible Cognitive Hybrid Intelligence for Deductive Neural Assistance
+#
+# READ THIS FILE FIRST. This is the canonical entry point for all AI agents.
+
+[manifest]
+version = "1.0"
+project = "echidna"
+type = "neurosymbolic-theorem-prover"
+
+[canonical-locations]
+# Machine-readable state files — ONLY in .machine_readable/
+state-files = ".machine_readable/"
+# Anchors
+anchors = ".machine_readable/anchors/"
+# Policies
+policies = ".machine_readable/policies/"
+# Contractiles (trust, dust, k9, lust, must)
+contractiles = ".machine_readable/contractiles/"
+# Bot directives
+bot-directives = ".machine_readable/bot_directives/"
+# AI configuration
+ai-config = ".machine_readable/ai/"
+# Community metadata
+community = ".github/"
+# Container ecosystem (Stapeln)
+container = "container/"
+# Source code
+source = "src/"
+# ABI definitions (Idris2)
+abi = "src/abi/"
+# FFI bridge (Zig)
+ffi = "ffi/zig/"
+# Formal proofs
+proofs = "proofs/"
+
+[critical-invariants]
+# Rules that MUST NEVER be violated
+invariant-1 = "State files (STATE.scm, META.scm, ECOSYSTEM.scm, AGENTIC.scm, NEUROSYM.scm, PLAYBOOK.scm) exist in .machine_readable/ ONLY — never in root"
+invariant-2 = "All interfaces stay under src/interfaces/ — never extract to separate repos"
+invariant-3 = "When adding provers: update all 3 layers (Rust, Julia, Chapel)"
+invariant-4 = "Original name: 'Cognitive Hybrid' not 'Computational Heuristic'"
+invariant-5 = "License: PMPL-1.0-or-later throughout"
+invariant-6 = "Author: Jonathan D.A. Jewell (hyperpolymath) <j.d.a.jewell@open.ac.uk>"
+invariant-7 = "Container files use 'Containerfile' never 'Dockerfile'"
+invariant-8 = "Container runtime is Podman never Docker"
+
+[structure]
+# Key directories
+src-rust = "src/rust/"           # Core Rust implementation (30 prover backends)
+src-julia = "src/julia/"         # Neural ML layer
+src-interfaces = "src/interfaces/"  # GraphQL + gRPC + REST (consolidated)
+src-rescript = "src/rescript/"   # UI components
+src-abi = "src/abi/"             # Idris2 ABI definitions
+ffi-zig = "ffi/zig/"             # Zig FFI bridge
+chapel-poc = "chapel_poc/"      # Chapel parallel layer
+echidnabot = "echidnabot/"      # Echidnabot satellite
+echidna-playground = "echidna-playground/"  # Playground
+
+[session-protocol]
+on-enter = [
+  "Read this manifest",
+  "Read .machine_readable/STATE.scm for current status",
+  "Read .machine_readable/META.scm for architecture decisions",
+  "Read .machine_readable/ECOSYSTEM.scm for ecosystem position",
+]
+on-exit = [
+  "Update .machine_readable/STATE.scm with progress",
+]

@@ -1,0 +1,24 @@
+# SPDX-License-Identifier: PMPL-1.0-or-later
+# ECHIDNA AI configuration (machine-readable)
+
+[metadata]
+project = "echidna"
+last-updated = "2026-03-06"
+
+[agent-constraints]
+can-edit-source = true
+can-edit-tests = true
+can-edit-docs = true
+can-edit-config = true
+can-create-files = true
+
+[agent-rules]
+fail-closed = true
+require-evidence-per-step = true
+allow-silent-skip = false
+require-rerun-after-fix = true
+
+[forbidden-patterns]
+idris2 = ["believe_me", "assert_total", "assert_smaller", "unsafePerformIO"]
+rust-unsafe = "require SAFETY comment"
+haskell = ["unsafeCoerce", "unsafePerformIO"]

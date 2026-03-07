@@ -1,0 +1,10 @@
+# SPDX-License-Identifier: PMPL-1.0-or-later
+# ECHIDNA Maintenance Checklist (machine-readable pointer)
+
+[metadata]
+project = "echidna"
+last-updated = "2026-03-06"
+
+[source]
+source-human = "docs/maintenance/MAINTENANCE-CHECKLIST.adoc"
+format = "asciidoc"

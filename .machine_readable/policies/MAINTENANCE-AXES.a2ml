@@ -1,0 +1,63 @@
+# SPDX-License-Identifier: PMPL-1.0-or-later
+# ECHIDNA Maintenance Axes
+
+[metadata]
+project = "echidna"
+last-updated = "2026-03-06"
+
+[discovery]
+human-entrypoints = ["README.adoc", "docs/maintenance/MAINTENANCE-CHECKLIST.adoc", "docs/practice/SOFTWARE-DEVELOPMENT-APPROACH.adoc"]
+machine-entrypoints = ["0-AI-MANIFEST.a2ml", "AI.a2ml", ".machine_readable/STATE.scm", ".machine_readable/META.scm", ".machine_readable/ECOSYSTEM.scm"]
+bots = ["hypatia", "gitbot-fleet", "echidnabot"]
+
+[axes]
+
+[axes.axis-1]
+name = "scoping"
+principle = "must > intend > like"
+scoping-first = true
+sources = ["README.adoc", "ROADMAP.adoc", "docs/maintenance/MAINTENANCE-CHECKLIST.adoc"]
+
+[axes.axis-1.must]
+items = [
+  "30 prover backends compile and pass smoke tests",
+  "cargo test --lib passes with zero failures",
+  "No believe_me or assert_total in Idris2 source",
+  "No unsafe blocks without SAFETY comments",
+  "SCM files only in .machine_readable/",
+  "Container builds with Podman on Chainguard base",
+]
+
+[axes.axis-1.intend]
+items = [
+  "Integration test suite passes end-to-end",
+  "Julia ML layer responds to tactic prediction",
+  "All 3 API interfaces responding",
+]
+
+[axes.axis-1.like]
+items = [
+  "Performance benchmarks show no regression",
+  "Code coverage above 80%",
+  "GitLab mirror in sync",
+]
+
+[axes.axis-2]
+name = "maintenance-type"
+principle = "corrective > adaptive > perfective"
+corrective = ["Fix compilation errors", "Fix failing tests", "Fix security vulnerabilities"]
+adaptive = ["Update Rust edition and dependencies", "Update prover backend versions", "Update Chainguard base images"]
+perfective = ["Reduce unsafe block count", "Improve error messages", "Optimise proof search"]
+
+[axes.axis-3]
+name = "audit"
+principle = "systems > compliance > effects"
+systems-check = ["cargo check", "cargo clippy", "container health check"]
+compliance-check = ["panic-attack scan", "SPDX headers", "RSR validation"]
+compliance-tool = "panic-attack"
+effects-check = ["sustainabot ecological assessment", "binary size tracking"]
+effects-tool = "sustainabot"
+
+[idris-unsound-scan]
+patterns = ["believe_me", "assert_total", "assert_smaller", "unsafePerformIO"]
+action = "block"

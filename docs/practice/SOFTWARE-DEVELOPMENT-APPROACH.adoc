@@ -1,0 +1,61 @@
+// SPDX-License-Identifier: PMPL-1.0-or-later
+= ECHIDNA Software Development Approach
+:author: Jonathan D.A. Jewell
+:toc:
+
+== Overview
+
+ECHIDNA is a neurosymbolic theorem proving platform. Development follows
+RSR (Rhodium Standard Repository) practices with formal verification emphasis.
+
+== Language Stack
+
+[cols="1,2,2"]
+|===
+| Layer | Language | Purpose
+
+| Core | Rust | 30 prover backends, dispatch pipeline, trust pipeline
+| ML | Julia | Neural tactic prediction, premise selection, anomaly detection
+| Parallel | Chapel | HPC distributed proof search
+| ABI | Idris2 | Formal interface definitions with dependent types
+| FFI | Zig | C-compatible bridge layer
+| UI | ReScript | Proof exploration frontend (28 components)
+| Interfaces | Rust (axum/tonic) | GraphQL (8080), gRPC (50051), REST (8000)
+|===
+
+== Build & Test
+
+[source,bash]
+----
+just build          # Debug build
+just build-release  # Release build
+just test           # Unit tests
+just test-all       # Unit + integration
+just quality        # Format + lint + test
+just ci             # Full CI pipeline
+----
+
+== Container Workflow
+
+[source,bash]
+----
+just container-build     # Build with Podman
+just container-up        # Start stack (selur-compose)
+just container-down      # Stop stack
+just container-pipeline  # Full build/sign/verify
+----
+
+== Prover Synchronisation
+
+When adding or modifying a prover backend, all three layers must be updated:
+
+1. **Rust** (`src/rust/provers/`): Implement `ProverBackend` trait
+2. **Julia** (`src/julia/`): Register in ML models and training data
+3. **Chapel** (`chapel_poc/`): Add to parallel dispatch table
+
+== Safety Requirements
+
+* No `believe_me`, `assert_total`, `assert_smaller` in Idris2
+* Every `unsafe` block in Rust requires `// SAFETY:` comment
+* No `unsafeCoerce` or `unsafePerformIO` in Haskell bindings
+* All prover executions sandboxed (Podman/Bubblewrap, no network)

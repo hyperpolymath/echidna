@@ -1,0 +1,271 @@
+# SPDX-License-Identifier: PMPL-1.0-or-later
+# =============================================================================
+# A2ML Trustfile for ECHIDNA
+# Neurosymbolic Theorem Proving Platform
+# =============================================================================
+
+---
+### [META]
+id: "did:web:github.com:hyperpolymath:echidna"
+version: "2026.3.6-final"
+context:
+  - "https://a2ml.org/ns/v2"
+  - "https://leanprover-community.github.io/lean4"
+  - "https://hypatia.scans/ns/v1"
+  - "https://w3id.org/security/v4"
+  - "https://w3id.org/transparency/v1"
+meta:
+  generated: "2026-03-06T00:00:00Z"
+  expires: "2027-03-06T00:00:00Z"
+  signature:
+    algorithm: "Ed448+Dilithium5"
+    value: |
+      -----BEGIN HYBRID SIGNATURE-----
+      BASE64_Ed448+Dilithium5_SIGNATURE_OF_THIS_FILE
+      -----END HYBRID SIGNATURE-----
+    signedBy: "did:web:github.com:hyperpolymath:echidna#primary-sig"
+    proof: "https://github.com/hyperpolymath/echidna/proofs/meta.lean"
+  fallbackSignature:
+    algorithm: "SPHINCS+"
+    value: |
+      -----BEGIN SPHINCS+ SIGNATURE-----
+      BASE64_SPHINCS+_SIGNATURE_OF_THIS_FILE
+      -----END SPHINCS+ SIGNATURE-----
+  integrity:
+    sha3-512: "HEX_SHA3_512_OF_THIS_FILE"
+    shake256: "BASE32_SHAKE256_OF_THIS_FILE"
+  ci_cd:
+    github_actions: "https://github.com/hyperpolymath/echidna/blob/main/.github/workflows/hypatia-scan.yml"
+    gitbot_fleet: "https://gitbot-fleet.hyperpolymath.dev/hooks/echidna"
+    hypatia_scan: "https://hypatia.scans/repos/echidna"
+  automation:
+    hashing: ["SHA3-512", "SHAKE256", "BLAKE3"]
+    diffing: "alert-on-unexpected-changes"
+    integrity: ["lean-proof-validity", "transparency-log-continuity"]
+
+---
+### [THREAT_MODEL]
+adversaries:
+  - type: "APT"
+    mitigations:
+      - "Capability-based auth - No lateral movement."
+      - "Formal verification (30 provers) - No exploit primitives."
+      - "Transparency logs - Immediate detection."
+  - type: "Ransomware"
+    mitigations:
+      - "Sandboxed prover execution (Podman/Bubblewrap) - No breakout."
+      - "Immutable proof certificates - Instant verification."
+  - type: "Quantum Adversary"
+    mitigations:
+      - "Kyber1024 + Dilithium5 - PQ-resistant crypto."
+      - "SPHINCS+ fallback - Crypto agility."
+      - "GitBot-Fleet - Automated key rotation."
+  - type: "Supply Chain"
+    mitigations:
+      - "Chainguard Wolfi base images - CVE-free, rebuilt daily."
+      - "cerro-torre .ctp bundles - Signed and verified."
+      - "svalinn gateway - Rejects unsigned containers."
+  - type: "Proof Forgery"
+    mitigations:
+      - "Multi-prover cross-verification - No single point of trust."
+      - "5-level trust hierarchy - Confidence scoring."
+      - "Axiom usage tracking - 4 danger levels active."
+
+---
+### [TRUSTFILE]
+issuer: "did:web:github.com:hyperpolymath:echidna"
+keys:
+  - id: "#primary-sig"
+    type: "HybridKey2024"
+    classical:
+      algorithm: "Ed448"
+      publicKeyJwk:
+        kty: "OKP"
+        crv: "Ed448"
+        x: "BASE64URL_Ed448_PUBLIC_KEY"
+    postQuantum:
+      algorithm: "Dilithium5"
+      publicKeyJwk:
+        kty: "OKP"
+        crv: "Dilithium5"
+        x: "BASE64URL_Dilithium5_PUBLIC_KEY"
+    fallback:
+      algorithm: "SPHINCS+"
+      publicKeyJwk:
+        kty: "OKP"
+        crv: "SPHINCS+"
+        x: "BASE64URL_SPHINCS+_PUBLIC_KEY"
+    usage: ["authentication", "assertion"]
+algorithms:
+  hashing: ["SHA3-512", "SHAKE256", "BLAKE3"]
+  kdf: "HKDF-SHAKE512"
+  rng: "ChaCha20-DRBG"
+fallbacks:
+  signatures: ["Ed448+Dilithium5", "SPHINCS+"]
+  keyExchange: ["Kyber1024-X25519", "X25519"]
+
+---
+### [SSL/TLS]
+ciphers:
+  - "TLS_AES_256_GCM_SHA384"
+  - "TLS_CHACHA20_POLY1305_SHA256"
+groups:
+  - "X25519Kyber768Draft00"
+  - "secp256r1"
+protocols:
+  - "TLSv1.3"
+minimum_version: "1.2"
+features:
+  ocspStapling: true
+  signedCertTimestamps: true
+  certificateTransparency:
+    monitoring: true
+  opportunistic_encryption: true
+  automatic_https_rewrites: true
+  always_use_https: true
+
+---
+### [NETWORK]
+http2: true
+http3: true
+quic: true
+zero_rtt: true
+websockets: true
+onion_routing: true
+ipv6_compatibility: true
+brotli: true
+
+---
+### [RESPONSE_HEADERS]
+managed_transforms:
+  add:
+    - "X-Content-Type-Options: nosniff"
+    - "X-Frame-Options: SAMEORIGIN"
+    - "Referrer-Policy: strict-origin-when-cross-origin"
+  remove:
+    - "Server"
+    - "X-Powered-By"
+custom_headers:
+  - name: "Permissions-Policy"
+    value: "camera=(), microphone=(), geolocation=(), payment=()"
+  - name: "Content-Security-Policy"
+    value: "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: https:; frame-ancestors 'self'; base-uri 'self'; form-action 'self'"
+  - name: "Cross-Origin-Opener-Policy"
+    value: "same-origin"
+  - name: "Cross-Origin-Embedder-Policy"
+    value: "require-corp"
+  - name: "Cross-Origin-Resource-Policy"
+    value: "same-origin"
+
+---
+### [CONTAINER_SUPPLY_CHAIN]
+overview: |
+  Container supply-chain verification via the stapeln ecosystem.
+  All container images are built with Podman on Chainguard Wolfi base
+  images, signed as .ctp bundles via cerro-torre, and governed by
+  svalinn edge gateway policies. Runtime monitoring provided by vordr.
+
+runtime:
+  engine: "Podman"
+  policy: "Rootless containers only. Never Docker."
+
+base_images:
+  provider: "Chainguard"
+  registry: "cgr.dev/chainguard/"
+  allowed:
+    - "cgr.dev/chainguard/wolfi-base:latest"
+    - "cgr.dev/chainguard/static:latest"
+  policy: "Only Chainguard images permitted as base."
+
+verified_bundles:
+  format: ".ctp"
+  tool: "cerro-torre"
+  operations:
+    pack: "ct pack <image> -o <bundle.ctp>"
+    sign: "cerro-sign sign <bundle.ctp> --key-id echidna-release"
+    verify: "ct verify <bundle.ctp>"
+  attestations:
+    required: ["source-signature", "sbom-complete"]
+    recommended: ["security-audit", "reproducible-build"]
+
+gateway:
+  tool: "svalinn"
+  policy_file: "container/.gatekeeper.yaml"
+  capabilities:
+    - "JWT/OAuth2 authentication"
+    - "Rate limiting (per-client, per-endpoint)"
+    - "Container trust enforcement (.ctp signature verification)"
+    - "Request validation (body size, NaN/Inf rejection)"
+    - "CORS policy enforcement"
+    - "Audit logging for write operations"
+
+monitoring:
+  tool: "vordr"
+  config_file: "container/vordr.toml"
+  capabilities:
+    - "Health endpoint monitoring"
+    - "Container crash detection"
+    - "Resource usage thresholds (CPU, memory, disk)"
+    - "Structured JSON log output"
+
+signing:
+  algorithm: "Ed25519"
+  tool: "cerro-torre sign / cerro-sign"
+  key_id: "echidna-release"
+
+deployment:
+  tool: "k9-svc"
+  spec_file: "container/deploy.k9.ncl"
+  trust_level: "Hunt"
+
+---
+### [CI_CD]
+github_actions:
+  name: "Trustfile Validation"
+  on: ["push", "pull_request"]
+  jobs:
+    validate:
+      runs-on: "ubuntu-latest"
+      steps:
+        - uses: "actions/checkout@v4"
+        - name: "Validate A2ML"
+          run: "a2ml validate .machine_readable/contractiles/trust/Trustfile.a2ml"
+        - name: "Hypatia Scan"
+          run: "hypatia scan --config hypatia.yml"
+gitbot_fleet:
+  hooks:
+    - type: "pre-commit"
+      script: "a2ml validate .machine_readable/contractiles/trust/Trustfile.a2ml"
+
+---
+### [AUTOMATION]
+hashing:
+  tool: "GitBot-Fleet"
+  triggers: ["pre-commit", "post-merge"]
+  algorithms: ["SHA3-512", "SHAKE256", "BLAKE3"]
+diffing:
+  tool: "GitBot-Fleet"
+  rules:
+    - "alert-on-unexpected-changes"
+    - "require-proof-updates-for-crypto-changes"
+integrity:
+  tool: "Hypatia + LEAN4"
+  checks:
+    - "transparency-log-continuity"
+    - "lean-proof-validity"
+
+---
+### [SIGNATURE_BLOCK]
+primary:
+  algorithm: "Ed448+Dilithium5"
+  signature: |
+    -----BEGIN HYBRID SIGNATURE-----
+    BASE64_Ed448+Dilithium5_SIGNATURE_OF_THIS_FILE
+    -----END HYBRID SIGNATURE-----
+  signedBy: "did:web:github.com:hyperpolymath:echidna#primary-sig"
+fallback:
+  algorithm: "SPHINCS+"
+  signature: |
+    -----BEGIN SPHINCS+ SIGNATURE-----
+    BASE64_SPHINCS+_SIGNATURE_OF_THIS_FILE
+    -----END SPHINCS+ SIGNATURE-----
