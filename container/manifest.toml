@@ -1,0 +1,57 @@
+# SPDX-License-Identifier: PMPL-1.0-or-later
+#
+# Cerro Torre manifest for ECHIDNA .ctp bundle
+
+[metadata]
+name = "echidna"
+version = "1.5.0"
+revision = 1
+summary = "Extensible Cognitive Hybrid Intelligence for Deductive Neural Assistance"
+description = """
+ECHIDNA — neurosymbolic theorem proving platform with 30 prover backends,
+packaged as a verified cerro-torre .ctp bundle with Ed25519 signing and
+full provenance tracking.
+"""
+license = "PMPL-1.0-or-later"
+homepage = "https://github.com/hyperpolymath/echidna"
+maintainer = "Jonathan D.A. Jewell <j.d.a.jewell@open.ac.uk>"
+
+[provenance]
+upstream = "https://github.com/hyperpolymath/echidna"
+
+[dependencies]
+runtime = ["ca-certificates", "curl", "z3"]
+build = ["rust", "cargo", "build-base", "pkgconf", "openssl-dev"]
+
+[build]
+system = "podman"
+
+[build.environment]
+APP_HOST = "[::]"
+APP_PORT = "8080"
+
+[outputs]
+primary = "echidna"
+split = []
+
+[attestations]
+require = ["source-signature", "sbom-complete"]
+recommend = ["security-audit", "reproducible-build"]
+
+[security]
+user = "appuser"
+group = "appuser"
+read_only_root = false
+no_new_privileges = true
+
+[security.capabilities]
+drop = ["ALL"]
+add = ["NET_BIND_SERVICE"]
+
+[security.network]
+listen_tcp = [8080]
+
+[security.filesystem]
+read = ["/app/", "/data/"]
+write = ["/data/", "/tmp/"]
+execute = ["/app/entrypoint.sh", "/app/bin/echidna"]

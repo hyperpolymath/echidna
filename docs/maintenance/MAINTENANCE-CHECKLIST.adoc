@@ -1,0 +1,76 @@
+// SPDX-License-Identifier: PMPL-1.0-or-later
+= ECHIDNA Maintenance Checklist
+:author: Jonathan D.A. Jewell
+:toc:
+
+== Axis 1: Scoping (Must > Intend > Like)
+
+=== Must
+
+* [ ] All 30 prover backends compile and pass smoke tests
+* [ ] `cargo test --lib` passes with zero failures
+* [ ] No `believe_me` or `assert_total` in Idris2 source
+* [ ] No `unsafe` blocks without `// SAFETY:` comments
+* [ ] LICENSE is PMPL-1.0-or-later
+* [ ] SCM files only in `.machine_readable/`
+* [ ] Container builds with Podman on Chainguard base
+
+=== Intend
+
+* [ ] Integration test suite passes end-to-end
+* [ ] Julia ML layer responds to tactic prediction requests
+* [ ] Chapel parallel dispatch operational
+* [ ] All 3 API interfaces (GraphQL, gRPC, REST) responding
+* [ ] Documentation up to date with current version
+
+=== Like
+
+* [ ] Performance benchmarks show no regression
+* [ ] Code coverage above 80%
+* [ ] All security scan workflows green
+* [ ] GitLab mirror in sync
+
+== Axis 2: Maintenance Type (Corrective > Adaptive > Perfective)
+
+=== Corrective
+
+* Fix compilation errors
+* Fix failing tests
+* Fix security vulnerabilities (cargo audit)
+* Fix broken prover integrations
+
+=== Adaptive
+
+* Update Rust edition and dependencies
+* Update prover backend versions
+* Update Chainguard base images
+* Adapt to new RSR template requirements
+
+=== Perfective
+
+* Reduce unsafe block count
+* Improve error messages
+* Add property-based tests
+* Optimise proof search performance
+
+== Axis 3: Audit (Systems > Compliance > Effects)
+
+=== Systems Check
+
+* `cargo check` compiles without errors
+* `cargo clippy` has no warnings
+* Container health check passes
+* Submodule references valid
+
+=== Compliance Check
+
+* panic-attack security scan clean
+* SPDX headers on all source files
+* RSR validation passes (`just validate-rsr`)
+* Workflow SHAs pinned
+
+=== Effects Check
+
+* sustainabot ecological assessment
+* Binary size tracking
+* Dependency count monitoring

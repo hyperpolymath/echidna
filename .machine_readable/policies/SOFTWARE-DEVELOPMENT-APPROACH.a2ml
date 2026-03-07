@@ -1,0 +1,10 @@
+# SPDX-License-Identifier: PMPL-1.0-or-later
+# ECHIDNA Software Development Approach (machine-readable pointer)
+
+[metadata]
+project = "echidna"
+last-updated = "2026-03-06"
+
+[source]
+source-human = "docs/practice/SOFTWARE-DEVELOPMENT-APPROACH.adoc"
+format = "asciidoc"

@@ -1,0 +1,21 @@
+SPDX-License-Identifier: PMPL-1.0-or-later
+
+EXHIBIT A — ETHICAL USE PROVISIONS
+
+The Palimpsest-MPL License includes the following ethical use provisions:
+
+1. This software SHALL NOT be used for:
+   - Mass surveillance or warrantless monitoring of individuals
+   - Weapons systems or autonomous lethal decision-making
+   - Discrimination based on protected characteristics
+   - Environmental destruction or ecocide
+
+2. This software SHALL be used in accordance with:
+   - Applicable human rights law
+   - Data protection regulations (GDPR, etc.)
+   - Academic integrity standards
+
+3. Users of this software acknowledge that formal verification tools
+   (such as ECHIDNA) carry responsibility: a verified proof is only
+   as trustworthy as its axioms. Users MUST NOT misrepresent the
+   scope or certainty of formal verification results.

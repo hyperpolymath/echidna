@@ -1,0 +1,58 @@
+# SPDX-License-Identifier: PMPL-1.0-or-later
+#
+# Svalinn gatekeeper policy for ECHIDNA
+
+version: "1.0"
+
+auth:
+  public:
+    - path: "/health"
+      methods: ["GET"]
+    - path: "/ready"
+      methods: ["GET"]
+    - path: "/metrics"
+      methods: ["GET"]
+
+  authenticated:
+    - path: "/api/v1/*"
+      methods: ["GET", "POST", "PUT", "DELETE"]
+    - path: "/graphql"
+      methods: ["POST"]
+
+rate_limits:
+  global:
+    requests_per_second: 500
+    burst: 1000
+  writes:
+    paths: ["/api/v1/*", "/graphql"]
+    methods: ["POST", "PUT", "DELETE"]
+    requests_per_second: 100
+    burst: 200
+
+trust:
+  trusted_signers:
+    - key_id: "echidna-release"
+      algorithm: "Ed25519"
+      public_key_file: "/etc/svalinn/keys/echidna-release.pub"
+  required_attestations:
+    - "source-signature"
+    - "sbom-complete"
+  reject_unsigned: true
+
+validation:
+  max_body_size: "8MB"
+  reject_nan_inf: true
+  max_result_limit: 500
+
+cors:
+  allow_origins: ["*"]
+  allow_methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"]
+  allow_headers: ["Content-Type", "Authorization"]
+  max_age: 3600
+
+logging:
+  format: "json"
+  level: "info"
+  audit_paths:
+    - "/api/v1/*"
+    - "/graphql"

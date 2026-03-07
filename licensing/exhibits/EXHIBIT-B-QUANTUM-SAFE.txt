@@ -1,0 +1,26 @@
+SPDX-License-Identifier: PMPL-1.0-or-later
+
+EXHIBIT B — QUANTUM-SAFE PROVENANCE
+
+This software's integrity chain uses quantum-safe cryptographic primitives:
+
+1. SIGNING
+   - Primary: Ed448 + Dilithium5 (hybrid classical + post-quantum)
+   - Fallback: SPHINCS+ (stateless hash-based, NIST PQC standard)
+
+2. HASHING
+   - SHA3-512, SHAKE256, BLAKE3
+   - ZONEMD for DNS zone integrity
+
+3. KEY EXCHANGE
+   - Primary: Kyber1024 + X25519 (hybrid PQ + classical)
+   - Fallback: X25519 (classical only)
+
+4. CONTAINER BUNDLES
+   - .ctp bundles signed with Ed25519 (cerro-torre)
+   - Attestations: source-signature, sbom-complete
+
+5. PROVENANCE
+   - All releases include SBOM (Software Bill of Materials)
+   - Transparency log entries for each signed artifact
+   - Reproducible builds where toolchain permits

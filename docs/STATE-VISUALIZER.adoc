@@ -1,0 +1,151 @@
+// SPDX-License-Identifier: PMPL-1.0-or-later
+= Project State Visualizer
+[source]
+----
+<!-- SPDX-License-Identifier: PMPL-1.0-or-later -->
+<!-- STATE-VISUALIZER.adoc — Project architecture map and completion dashboard -->
+<!-- Last updated: 2026-03-06 -->
+
+# ECHIDNA — Project State Assessment
+
+## System Architecture
+
+```
+                        ┌─────────────────────────────────────────┐
+                        │              USERS / CLIENTS            │
+                        │      (GraphQL, gRPC, REST, REPL, UI)    │
+                        └───────────────────┬─────────────────────┘
+                                            │
+                                            ▼
+                        ┌─────────────────────────────────────────┐
+                        │           ECHIDNA CORE (RUST)           │
+                        │    (Dispatch Pipeline, Actor Agents)    │
+                        └──────────┬───────────────────┬──────────┘
+                                   │                   │
+                                   ▼                   ▼
+                        ┌───────────────────────┐  ┌────────────────────────────────┐
+                        │ TRUST PIPELINE        │  │ NEURAL LAYER (JULIA)           │
+                        │ - Axiom Tracking      │  │ - Premise Selection            │
+                        │ - Portfolio Solving   │  │ - Tactic Prediction            │
+                        │ - Binary Integrity    │  │ - Anomaly Detection            │
+                        └──────────┬────────────┘  └──────────┬─────────────────────┘
+                                   │                          │
+                                   └────────────┬─────────────┘
+                                                ▼
+                        ┌─────────────────────────────────────────┐
+                        │           PROVER BACKENDS (30)          │
+                        │  ┌───────────┐  ┌───────────┐  ┌───────┐│
+                        │  │ Tier 1    │  │ Tier 2    │  │ Tier 3││
+                        │  │ (Agda/Coq)│  │ (Z3/CVC5) │  │ (Dafny)││
+                        │  └───────────┘  └───────────┘  └───────┘│
+                        │  ┌───────────┐  ┌───────────┐           │
+                        │  │ Tier 4    │  │ Tier 5    │           │
+                        │  │ (Metamath)│  │ (Vampire) │           │
+                        │  └───────────┘  └───────────┘           │
+                        └───────────────────┬─────────────────────┘
+                                            │
+                                            ▼
+                        ┌─────────────────────────────────────────┐
+                        │          EXECUTOR (SANDBOXED)           │
+                        │      (Podman, Bubblewrap, No Net)       │
+                        └─────────────────────────────────────────┘
+
+                        ┌─────────────────────────────────────────┐
+                        │          CONTAINER ECOSYSTEM            │
+                        │  ┌──────────┐ ┌───────────────┐         │
+                        │  │ Podman / │ │ selur-compose  │         │
+                        │  │ OCI      │ │ cerro-torre    │         │
+                        │  │ Build    │ │ svalinn/vordr  │         │
+                        │  └──────────┘ └───────────────┘         │
+                        │  ct-build.sh  deploy.k9.ncl             │
+                        └────────│─────────────────│──────────────┘
+                                 │                 │
+                                 ▼                 ▼
+                        ┌─────────────────────────────────────────┐
+                        │          REPO INFRASTRUCTURE            │
+                        │  Justfile / Cargo   .machine_readable/  │
+                        │  0-AI-MANIFEST      RSR Compliant       │
+                        └─────────────────────────────────────────┘
+```
+
+## Completion Dashboard
+
+```
+COMPONENT                          STATUS              NOTES
+─────────────────────────────────  ──────────────────  ─────────────────────────────────
+PROVER BACKENDS
+  30/30 Provers Operational         ██████████ 100%    All backends verified
+  ProverBackend Trait               ██████████ 100%    Universal interface stable
+  File Extension Detection          ██████████ 100%    30+ formats supported
+
+TRUST PIPELINE
+  Axiom Usage Tracking              ██████████ 100%    4 danger levels active
+  SMT Portfolio Solving             ██████████ 100%    Cross-check logic stable
+  Solver Binary Integrity           ██████████ 100%    SHAKE3-512 provenance
+  5-Level Trust Hierarchy           ██████████ 100%    Confidence scoring active
+
+LAYERS & INTERFACES
+  Neural Layer (Julia)              ██████████ 100%    Logistic regression stable
+  3 API Interfaces                  ██████████ 100%    GraphQL, gRPC, REST active
+  ReScript UI (28 components)       ██████████ 100%    Proof exploration stable
+  Chapel Parallel Layer             ██████░░░░  60%    PoC validated, not production
+
+ABI / FFI
+  Idris2 ABI Definitions           ██████████ 100%    Types, Layout, Foreign
+  Zig FFI Bridge                   ██████░░░░  60%    Basic bridge in place
+
+CONTAINER ECOSYSTEM (Stapeln)
+  Containerfile (OCI build)         ██████████ 100%    Multi-stage Chainguard base
+  selur-compose orchestration       ██████████ 100%    Service + svalinn gateway
+  cerro-torre manifest              ██████████ 100%    Bundle metadata & signing
+  svalinn gateway policy            ██████████ 100%    .gatekeeper.yaml active
+  vordr runtime monitoring          ██████████ 100%    Runtime config present
+  k9-svc deployment (Nickel)        ██████████ 100%    Hunt-level deploy descriptor
+  ct-build.sh pipeline              ██████████ 100%    Build/sign/verify script
+  Justfile container-* recipes      ██████████ 100%    8+ recipes integrated
+
+RSR COMPLIANCE
+  0-AI-MANIFEST.a2ml                ██████████ 100%    Universal entry point
+  .machine_readable/ (6 SCM)        ██████████ 100%    STATE/META/ECOSYSTEM + 3 more
+  Anchors / Policies                ██████████ 100%    ANCHOR, maintenance axes
+  Contractiles (Trustfile)          ██████████ 100%    Full Trustfile.a2ml
+  Licensing (exhibits + texts)      ██████████ 100%    PMPL + ethical use + quantum
+  .well-known/                      ██████████ 100%    security.txt, ai.txt, humans.txt
+  .github community files           ██████████ 100%    CODEOWNERS, MAINTAINERS, SECURITY
+  Justfile RSR validation           ██████████ 100%    validate-rsr recipe active
+  .editorconfig                     ██████████ 100%    All languages covered
+
+REPO INFRASTRUCTURE
+  Test Suite (306+ Passing)         ██████████ 100%    High unit/integration coverage
+  GitLab Mirror                     ██░░░░░░░░  20%    ~90 commits behind GitHub
+  Bitbucket Mirror                  ░░░░░░░░░░   0%    Not configured
+  Workflows (21)                    ██████████ 100%    All standard workflows present
+
+─────────────────────────────────────────────────────────────────────────────
+OVERALL:                            █████████░  93%    v1.5.0 + RSR Compliance
+```
+
+## Key Dependencies
+
+```
+Julia Neural ───► Rust Dispatch ───► Trust Filter ───► Podman Sandbox
+     │                 │                 │                  │
+     ▼                 ▼                 ▼                  ▼
+Premise Selection ──► Prover ───────► Proof Cert ─────► Confidence 5
+
+Container Ecosystem:
+  selur-compose ──► cerro-torre ──► svalinn/vordr ──► k9-svc deploy
+```
+
+## Update Protocol
+
+This file is maintained by both humans and AI agents. When updating:
+
+1. **After completing a component**: Change its bar and percentage
+2. **After adding a component**: Add a new row in the appropriate section
+3. **After architectural changes**: Update the ASCII diagram
+4. **Date**: Update the `Last updated` comment at the top of this file
+
+Progress bars use: `█` (filled) and `░` (empty), 10 characters wide.
+Percentages: 0%, 10%, 20%, ... 100% (in 10% increments).
+----

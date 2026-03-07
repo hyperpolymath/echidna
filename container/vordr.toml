@@ -1,0 +1,35 @@
+# SPDX-License-Identifier: PMPL-1.0-or-later
+#
+# Vordr runtime monitoring configuration for ECHIDNA
+
+[metadata]
+name = "echidna"
+version = "1.5.0"
+
+[health]
+endpoint = "http://localhost:8080/health"
+interval = "30s"
+timeout = "5s"
+failure_threshold = 3
+readiness_endpoint = "http://localhost:8080/ready"
+readiness_timeout = "10s"
+on_failure = "alert"
+
+[crash_detection]
+enabled = true
+max_restarts = 5
+restart_window = "10m"
+
+[resources]
+cpu_warn = 80
+cpu_critical = 95
+memory_warn = 75
+memory_critical = 90
+disk_warn = 80
+disk_critical = 95
+sample_interval = "15s"
+
+[logging]
+format = "json"
+level = "info"
+output = "stdout"
