@@ -1,0 +1,29 @@
+;; SPDX-License-Identifier: PMPL-1.0-or-later
+;; 0-AI-MANIFEST.a2ml — HOL-o-extension AI Manifest
+;;
+;; This is an o-extension (optional-extension) for the HOL Theorem Prover.
+;; It NEVER modifies HOL source code. It overlays additional theories and
+;; tactics alongside HOL, switchable per-run via activate.sh.
+
+(ai-manifest
+  (version "0.1.0")
+  (name "HOL-o-extension")
+  (type "o-extension")
+
+  (canonical-locations
+    ((machine-readable ".machine_readable/")
+     (theories "theories/")
+     (tactics "tactics/")
+     (overlays "overlays/")))
+
+  (critical-invariants
+    (("NEVER modify files in ../HOL/ — this is upstream code"
+      "All theories and tactics are additive overlays only"
+      "Activation is purely environment-based (activate.sh)"
+      "Deactivation restores virgin HOL behaviour exactly"
+      "SCM files ONLY in .machine_readable/")))
+
+  (session-startup
+    ((read ".machine_readable/STATE.scm")
+     (read ".machine_readable/ECOSYSTEM.scm")
+     (acknowledge "HOL-o-extension overlays ../HOL without modification"))))
