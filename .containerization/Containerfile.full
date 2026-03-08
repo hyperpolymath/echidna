@@ -115,42 +115,7 @@ RUN git clone --depth 1 https://github.com/metamath/metamath-exe.git && \
     cd .. && rm -rf metamath-exe
 
 # =============================================================================
-# Stage 5: VeriSimDB Builder
-# =============================================================================
-FROM docker.io/library/rust:1.85-slim-bookworm AS verisimdb-builder
-
-RUN apt-get update && apt-get install -y --no-install-recommends \
-    build-essential \
-    pkg-config \
-    libssl-dev \
-    && rm -rf /var/lib/apt/lists/*
-
-WORKDIR /build
-
-# Build VeriSimDB from source (rust-core only)
-COPY vendor/verisimdb/Cargo.toml vendor/verisimdb/Cargo.lock ./
-COPY vendor/verisimdb/rust-core ./rust-core
-RUN cargo build --release -p verisimdb-core || true
-
-# =============================================================================
-# Stage 6: panic-attack Builder
-# =============================================================================
-FROM docker.io/library/rust:1.85-slim-bookworm AS panic-attack-builder
-
-RUN apt-get update && apt-get install -y --no-install-recommends \
-    build-essential \
-    pkg-config \
-    libssl-dev \
-    && rm -rf /var/lib/apt/lists/*
-
-WORKDIR /build
-
-COPY vendor/panic-attacker/Cargo.toml vendor/panic-attacker/Cargo.lock ./
-COPY vendor/panic-attacker/src ./src
-RUN cargo build --release --bin panic-attacker || true
-
-# =============================================================================
-# Stage 7: Guix Channel
+# Stage 5: Guix Channel
 # =============================================================================
 FROM docker.io/library/debian:bookworm-slim AS guix-channel
 
@@ -159,7 +124,7 @@ WORKDIR /channel
 # Create Guix channel definition for echidna
 RUN mkdir -p /channel/echidna
 
-COPY guix-channel/echidna.scm /channel/echidna/ 2>/dev/null || true
+COPY guix-channel/echidna.scm /channel/echidna/
 
 # If no guix channel file exists, create a stub
 RUN if [ ! -f /channel/echidna/echidna.scm ]; then \
@@ -184,7 +149,7 @@ RUN if [ ! -f /channel/echidna/echidna.scm ]; then \
     fi
 
 # =============================================================================
-# Stage 8: Runtime Image (Full)
+# Stage 6: Runtime Image (Full)
 # =============================================================================
 FROM docker.io/library/debian:bookworm-slim
 
@@ -208,9 +173,8 @@ WORKDIR /app
 # Copy echidna binary
 COPY --from=rust-builder /build/target/release/echidna /app/bin/echidna
 
-# Copy Idris2 runtime
-COPY --from=idris2-builder /opt/idris2 /opt/idris2
-COPY --from=idris2-builder /build/idris/build/exec/echidna-validator /app/bin/echidna-validator
+# Copy Idris2 runtime (optional — may be empty if pack install failed)
+COPY --from=idris2-builder /opt/idris2 /opt/idris2/
 
 # Copy Julia environment
 COPY --from=julia-builder /opt/julia /opt/julia
@@ -219,12 +183,6 @@ COPY --from=julia-builder /build /app/julia
 # Copy prover installations
 COPY --from=prover-installer /usr/local/bin/metamath /usr/local/bin/metamath
 COPY --from=prover-installer /root/.elan /opt/elan
-
-# Copy VeriSimDB
-COPY --from=verisimdb-builder /build/target/release/verisimdb-core /app/bin/verisimdb 2>/dev/null || true
-
-# Copy panic-attack
-COPY --from=panic-attack-builder /build/target/release/panic-attacker /app/bin/panic-attack 2>/dev/null || true
 
 # Copy Guix channel
 COPY --from=guix-channel /channel /app/guix-channel
@@ -238,7 +196,7 @@ ENV JULIA_PROJECT="/app/julia"
 ENV ECHIDNA_PROVER_PATH="/opt"
 ENV ECHIDNA_GUIX_CHANNEL="/app/guix-channel"
 
-RUN mkdir -p /app/proofs /app/config /app/logs /app/verisimdb-data
+RUN mkdir -p /app/proofs /app/config /app/logs
 
 # REST API
 EXPOSE 8000
