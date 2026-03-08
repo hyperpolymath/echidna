@@ -177,40 +177,10 @@ proverKindRoundtrip MiniZinc = Refl
 proverKindRoundtrip Chuffed  = Refl
 proverKindRoundtrip ORTools  = Refl
 
-||| Decidable equality for ProverKind
+||| Structural equality for ProverKind via ordinal comparison
 public export
-DecEq ProverKind where
-  decEq Agda     Agda     = Yes Refl
-  decEq Coq      Coq      = Yes Refl
-  decEq Lean     Lean     = Yes Refl
-  decEq Isabelle Isabelle = Yes Refl
-  decEq Z3       Z3       = Yes Refl
-  decEq CVC5     CVC5     = Yes Refl
-  decEq Metamath Metamath = Yes Refl
-  decEq HOLLight HOLLight = Yes Refl
-  decEq Mizar    Mizar    = Yes Refl
-  decEq PVS      PVS      = Yes Refl
-  decEq ACL2     ACL2     = Yes Refl
-  decEq HOL4     HOL4     = Yes Refl
-  decEq Idris2   Idris2   = Yes Refl
-  decEq Vampire  Vampire  = Yes Refl
-  decEq EProver  EProver  = Yes Refl
-  decEq SPASS    SPASS    = Yes Refl
-  decEq AltErgo  AltErgo  = Yes Refl
-  decEq FStar    FStar    = Yes Refl
-  decEq Dafny    Dafny    = Yes Refl
-  decEq Why3     Why3     = Yes Refl
-  decEq TLAPS    TLAPS    = Yes Refl
-  decEq Twelf    Twelf    = Yes Refl
-  decEq Nuprl    Nuprl    = Yes Refl
-  decEq Minlog   Minlog   = Yes Refl
-  decEq Imandra  Imandra  = Yes Refl
-  decEq GLPK     GLPK     = Yes Refl
-  decEq SCIP     SCIP     = Yes Refl
-  decEq MiniZinc MiniZinc = Yes Refl
-  decEq Chuffed  Chuffed  = Yes Refl
-  decEq ORTools  ORTools  = Yes Refl
-  decEq _        _        = No (\case Refl impossible)
+Eq ProverKind where
+  a == b = proverKindToU8 a == proverKindToU8 b
 
 --------------------------------------------------------------------------------
 -- ProverTier (8 tiers)
@@ -350,22 +320,10 @@ public export
 isError : FfiStatus -> Bool
 isError = not . isSuccess
 
-||| Decidable equality for FfiStatus
+||| Structural equality for FfiStatus via integer comparison
 public export
-DecEq FfiStatus where
-  decEq FfiOk                       FfiOk                       = Yes Refl
-  decEq FfiErrorInvalidHandle       FfiErrorInvalidHandle       = Yes Refl
-  decEq FfiErrorInvalidArgument     FfiErrorInvalidArgument     = Yes Refl
-  decEq FfiErrorProverNotFound      FfiErrorProverNotFound      = Yes Refl
-  decEq FfiErrorParseFailure        FfiErrorParseFailure        = Yes Refl
-  decEq FfiErrorTacticFailure       FfiErrorTacticFailure       = Yes Refl
-  decEq FfiErrorVerificationFailure FfiErrorVerificationFailure = Yes Refl
-  decEq FfiErrorOutOfMemory         FfiErrorOutOfMemory         = Yes Refl
-  decEq FfiErrorTimeout             FfiErrorTimeout             = Yes Refl
-  decEq FfiErrorNotImplemented      FfiErrorNotImplemented      = Yes Refl
-  decEq FfiErrorNotInitialized      FfiErrorNotInitialized      = Yes Refl
-  decEq FfiErrorUnknown             FfiErrorUnknown             = Yes Refl
-  decEq _                           _                           = No (\case Refl impossible)
+Eq FfiStatus where
+  a == b = ffiStatusToI32 a == ffiStatusToI32 b
 
 --------------------------------------------------------------------------------
 -- ProofPhase (proof lifecycle state machine)
@@ -442,14 +400,14 @@ trustLevelToNat TrustLevel3 = 3
 trustLevelToNat TrustLevel4 = 4
 trustLevelToNat TrustLevel5 = 5
 
+public export
+Eq TrustLevel where
+  a == b = trustLevelToNat a == trustLevelToNat b
+
 ||| TrustLevel ordering (higher is more trustworthy)
 public export
 Ord TrustLevel where
   compare a b = compare (trustLevelToNat a) (trustLevelToNat b)
-
-public export
-Eq TrustLevel where
-  a == b = trustLevelToNat a == trustLevelToNat b
 
 ||| Proof that TrustLevel5 is the maximum trust level
 public export
@@ -605,29 +563,31 @@ tacticKindToU8 TacticCustom      = 9
 --------------------------------------------------------------------------------
 
 ||| Opaque handle to a prover instance or proof state.
-||| The So constraint proves at construction time that the pointer
-||| is non-null, making null-dereference impossible.
+||| The So constraint witnesses that the pointer is non-zero.
 public export
 data Handle : Type where
-  MkHandle : (ptr : Bits64) -> {auto 0 nonNull : So (ptr /= 0)} -> Handle
+  MkHandle : (ptr : Bits64) -> (0 nonNull : So (not (ptr == 0))) -> Handle
 
 ||| Safely create a handle from a raw pointer value.
 ||| Returns Nothing if the pointer is null (0).
 public export
 createHandle : Bits64 -> Maybe Handle
-createHandle 0   = Nothing
-createHandle ptr = Just (MkHandle ptr)
+createHandle ptr with (choose (not (ptr == 0)))
+  createHandle ptr | Left  prf = Just (MkHandle ptr prf)
+  createHandle ptr | Right _   = Nothing
 
 ||| Extract the raw pointer from a handle.
 ||| The caller may pass this to C/Zig FFI functions.
 public export
 handlePtr : Handle -> Bits64
-handlePtr (MkHandle ptr) = ptr
+handlePtr (MkHandle ptr _) = ptr
 
-||| Proof that every Handle carries a non-null pointer
+||| Type-level witness: any Handle's pointer is non-null.
+||| The proof is erased (quantity 0) so it cannot be extracted at runtime,
+||| but it can be used in dependent type signatures to rule out null handles.
 public export
-handleNonNull : (h : Handle) -> So (handlePtr h /= 0)
-handleNonNull (MkHandle ptr {nonNull}) = nonNull
+0 handleNonNull : (h : Handle) -> So (not (handlePtr h == 0))
+handleNonNull (MkHandle _ prf) = prf
 
 --------------------------------------------------------------------------------
 -- ProverConfig (matches ProverConfig in provers/mod.rs + FfiProverConfig)

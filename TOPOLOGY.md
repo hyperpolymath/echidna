@@ -1,6 +1,6 @@
 <!-- SPDX-License-Identifier: PMPL-1.0-or-later -->
 <!-- TOPOLOGY.md — Project architecture map and completion dashboard -->
-<!-- Last updated: 2026-02-19 -->
+<!-- Last updated: 2026-03-08 -->
 
 # ECHIDNA — Project Topology
 
@@ -10,6 +10,26 @@
                         ┌─────────────────────────────────────────┐
                         │              USERS / CLIENTS            │
                         │      (GraphQL, gRPC, REST, REPL, UI)    │
+                        └───────────────────┬─────────────────────┘
+                                            │
+                        ┌───────────────────┼─────────────────────┐
+                        │    V-LANG REST ADAPTERS (4 adapters)    │
+                        │  Core:8100-8102  Overlay:8103           │
+                        │  BoJ:7700        TypeLL:7800            │
+                        └───────────────────┬─────────────────────┘
+                                            │ links .so
+                        ┌───────────────────┼─────────────────────┐
+                        │    ZIG FFI LAYER (4 shared libraries)   │
+                        │  libechidna_ffi  libechidna_overlay     │
+                        │  libechidna_boj  libechidna_typell      │
+                        │  (C-ABI exports, bidirectional callbacks)│
+                        └───────────────────┬─────────────────────┘
+                                            │
+                        ┌───────────────────┼─────────────────────┐
+                        │    IDRIS2 ABI LAYER (7 modules)         │
+                        │  Types.idr  Layout.idr  Foreign.idr     │
+                        │  Overlay.idr  Boj.Foreign  TypeLL.Foreign│
+                        │  (Dependent type proofs, zero believe_me)│
                         └───────────────────┬─────────────────────┘
                                             │
                                             ▼
@@ -43,6 +63,12 @@
                         └─────────────────────────────────────────┘
 
                         ┌─────────────────────────────────────────┐
+                        │    GENERATED C HEADERS (4 headers)      │
+                        │  echidna_ffi.h  echidna_overlay.h       │
+                        │  echidna_boj.h  echidna_typell.h        │
+                        └─────────────────────────────────────────┘
+
+                        ┌─────────────────────────────────────────┐
                         │          REPO INFRASTRUCTURE            │
                         │  Justfile / Cargo   .machine_readable/  │
                         │  Guix Channel       RSR Tier 1          │
@@ -70,18 +96,32 @@ LAYERS & INTERFACES
   3 API Interfaces                  ██████████ 100%    GraphQL, gRPC, REST active
   ReScript UI (28 components)       ██████████ 100%    Proof exploration stable
 
+FFI / ABI LAYER
+  Idris2 ABI (7 modules)           ██████████ 100%    Type-checked, zero believe_me
+  Zig FFI (4 shared libs)          ██████████ 100%    Core, overlay, boj, typell
+  Generated C Headers (4)          ██████████ 100%    echidna_ffi/overlay/boj/typell.h
+  Bidirectional Callbacks           ██████████ 100%    Init/prover/error/verify events
+  Native Zig Tests                  ██████████ 100%    30+ tests, core + overlay
+  V-lang REST Adapters (4)         ████████░░  80%    Polling works; SSE/WS pending
+  Memory Layout Proofs              ██████████ 100%    DivisibleBy, VerifiedLayout
+
 REPO INFRASTRUCTURE
   Justfile Automation               ██████████ 100%    Standard build/lint/test
   .machine_readable/                ██████████ 100%    STATE.a2ml tracking
   Test Suite (306+ Passing)         ██████████ 100%    High unit/integration coverage
 
 ─────────────────────────────────────────────────────────────────────────────
-OVERALL:                            ██████████ 100%    v1.5.0 Trust Hardening Complete
+OVERALL:                            █████████░  95%    v1.6 FFI/ABI ~95% (SSE/WS pending)
 ```
 
 ## Key Dependencies
 
 ```
+Idris2 ABI ──► C Headers ──► Zig FFI (.so) ──► V-lang Adapters (REST)
+     │              │              │                    │
+     ▼              ▼              ▼                    ▼
+Type Proofs    echidna_*.h    Callbacks ◄──►    SSE/WebSocket (planned)
+
 Julia Neural ───► Rust Dispatch ───► Trust Filter ───► Podman Sandbox
      │                 │                 │                  │
      ▼                 ▼                 ▼                  ▼

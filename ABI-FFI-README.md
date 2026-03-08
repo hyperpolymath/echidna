@@ -1,219 +1,218 @@
-{{~ Aditionally delete this line and fill out the template below ~}}
-
-# {{PROJECT}} ABI/FFI Documentation
+# ECHIDNA ABI/FFI Documentation
 
 ## Overview
 
-This library follows the **Hyperpolymath RSR Standard** for ABI and FFI design:
+ECHIDNA follows the **Hyperpolymath RSR Standard** for ABI and FFI design:
 
-- **ABI (Application Binary Interface)** defined in **Idris2** with formal proofs
+- **ABI (Application Binary Interface)** defined in **Idris2** with formal proofs (zero `believe_me`)
 - **FFI (Foreign Function Interface)** implemented in **Zig** for C compatibility
 - **Generated C headers** bridge Idris2 ABI to Zig FFI
+- **V-lang REST adapters** link shared libraries and expose triple API (REST+gRPC+GraphQL)
 - **Any language** can call through standard C ABI
 
 ## Architecture
 
 ```
-┌─────────────────────────────────────────────┐
-│  ABI Definitions (Idris2)                   │
-│  src/abi/                                   │
-│  - Types.idr      (Type definitions)        │
-│  - Layout.idr     (Memory layout proofs)    │
-│  - Foreign.idr    (FFI declarations)        │
-└─────────────────┬───────────────────────────┘
-                  │
-                  │ generates (at compile time)
-                  ▼
-┌─────────────────────────────────────────────┐
-│  C Headers (auto-generated)                 │
-│  generated/abi/{{project}}.h                │
-└─────────────────┬───────────────────────────┘
-                  │
-                  │ imported by
-                  ▼
-┌─────────────────────────────────────────────┐
-│  FFI Implementation (Zig)                   │
-│  ffi/zig/src/main.zig                       │
-│  - Implements C-compatible functions        │
-│  - Zero-cost abstractions                   │
-│  - Memory-safe by default                   │
-└─────────────────┬───────────────────────────┘
-                  │
-                  │ compiled to lib{{project}}.so/.a
-                  ▼
-┌─────────────────────────────────────────────┐
-│  Any Language via C ABI                     │
-│  - Rust, ReScript, Julia, Python, etc.     │
-└─────────────────────────────────────────────┘
+┌──────────────────────────────────────────────────────────────┐
+│  ABI Definitions (Idris2) — 7 modules                       │
+│  src/abi/                                                    │
+│  - Types.idr       (30 provers, enums, Handle, proofs)       │
+│  - Layout.idr      (Memory layout: DivisibleBy, VerifiedLayout)│
+│  - Foreign.idr     (Core FFI declarations)                   │
+│  - Overlay.idr     (Tor/IPFS/Ethereum types)                 │
+│  - Overlay/Foreign.idr (Overlay FFI declarations)            │
+│  - Boj/Foreign.idr (BoJ cartridge FFI)                       │
+│  - TypeLL/Foreign.idr (TypeLL FFI)                           │
+└─────────────────────────┬────────────────────────────────────┘
+                          │
+                          │ defines types / generates headers
+                          ▼
+┌──────────────────────────────────────────────────────────────┐
+│  C Headers (generated)                                       │
+│  generated/abi/                                              │
+│  - echidna_ffi.h      (23 functions, 5 enums, 4 callbacks)  │
+│  - echidna_overlay.h  (Tor/IPFS/Ethereum C interface)        │
+│  - echidna_boj.h      (BoJ cartridge C interface)            │
+│  - echidna_typell.h   (TypeLL C interface)                   │
+└─────────────────────────┬────────────────────────────────────┘
+                          │
+                          │ imported by
+                          ▼
+┌──────────────────────────────────────────────────────────────┐
+│  FFI Implementation (Zig) — 4 modules                        │
+│  ffi/zig/src/                                                │
+│  - core.zig       → libechidna_ffi.so     (prover mgmt)     │
+│  - overlay.zig    → libechidna_overlay.so (Tor/IPFS/Eth)    │
+│  - boj.zig        → libechidna_boj.so    (BoJ cartridges)   │
+│  - typell.zig     → libechidna_typell.so (TypeLL types)      │
+│  All: pub export fn (dual Zig @import + C linker access)     │
+│  All: bidirectional callback registration                    │
+└─────────────────────────┬────────────────────────────────────┘
+                          │
+                          │ linked by
+                          ▼
+┌──────────────────────────────────────────────────────────────┐
+│  V-lang REST Adapters                                        │
+│  src/interfaces/v-adapter/                                   │
+│  - core.v    (ports 8100-8102: REST, gRPC, GraphQL)          │
+│  - overlay.v (port 8103)                                     │
+│  - boj.v     (port 7700)                                     │
+│  - typell.v  (port 7800)                                     │
+└─────────────────────────┬────────────────────────────────────┘
+                          │
+                          │ consumed by
+                          ▼
+┌──────────────────────────────────────────────────────────────┐
+│  Any Language via C ABI                                      │
+│  - Rust, ReScript, Julia, V, etc.                            │
+└──────────────────────────────────────────────────────────────┘
 ```
 
 ## Directory Structure
 
 ```
-{{project}}/
+echidna/
 ├── src/
-│   ├── abi/                    # ABI definitions (Idris2)
-│   │   ├── Types.idr           # Core type definitions with proofs
-│   │   ├── Layout.idr          # Memory layout verification
-│   │   └── Foreign.idr         # FFI function declarations
-│   └── lib/                    # Core library (any language)
+│   ├── abi/                          # ABI definitions (Idris2)
+│   │   ├── Types.idr                  # Core types: 30 ProverKind, Handle, FfiStatus, proofs
+│   │   ├── Layout.idr                 # Memory layout: DivisibleBy, VerifiedLayout, 6 structs
+│   │   ├── Foreign.idr                # Core FFI function declarations
+│   │   ├── Overlay.idr                # Overlay types: Tor, IPFS, Ethereum
+│   │   ├── Overlay/Foreign.idr        # Overlay FFI declarations
+│   │   ├── Boj/Foreign.idr            # BoJ cartridge FFI declarations
+│   │   └── TypeLL/Foreign.idr         # TypeLL FFI declarations
+│   └── interfaces/
+│       └── v-adapter/                 # V-lang REST adapters
+│           ├── core.v                 # Core adapter (ports 8100-8102)
+│           ├── overlay.v              # Overlay adapter (port 8103)
+│           ├── boj.v                  # BoJ adapter (port 7700)
+│           └── typell.v               # TypeLL adapter (port 7800)
 │
 ├── ffi/
-│   └── zig/                    # FFI implementation (Zig)
-│       ├── build.zig           # Build configuration
-│       ├── build.zig.zon       # Dependencies
+│   └── zig/                           # FFI implementation (Zig)
+│       ├── build.zig                  # Build config (4 libraries, test steps)
+│       ├── build.zig.zon              # Dependencies
 │       ├── src/
-│       │   └── main.zig        # C-compatible FFI implementation
-│       ├── test/
-│       │   └── integration_test.zig
-│       └── include/
-│           └── {{project}}.h   # C header (optional, can be generated)
+│       │   ├── core.zig               # Core prover FFI → libechidna_ffi.so
+│       │   ├── overlay.zig            # Overlay FFI → libechidna_overlay.so
+│       │   ├── boj.zig                # BoJ FFI → libechidna_boj.so
+│       │   └── typell.zig             # TypeLL FFI → libechidna_typell.so
+│       └── test/
+│           ├── core_native_test.zig   # 30 pure Zig tests via @import("core")
+│           └── overlay_native_test.zig # Overlay native tests
 │
-├── generated/                  # Auto-generated files
-│   └── abi/
-│       └── {{project}}.h       # Generated from Idris2 ABI
-│
-└── bindings/                   # Language-specific wrappers (optional)
-    ├── rust/
-    ├── rescript/
-    └── julia/
+└── generated/                         # Auto-generated files
+    └── abi/
+        ├── echidna_ffi.h              # Core C header (23 fn, 5 enum, 4 callbacks)
+        ├── echidna_overlay.h          # Overlay C header
+        ├── echidna_boj.h              # BoJ C header
+        └── echidna_typell.h           # TypeLL C header
 ```
 
-## Why Idris2 for ABI?
+## Idris2 ABI Proofs
 
-### 1. **Formal Verification**
+### Memory Layout Verification
 
-Idris2's dependent types allow proving properties about the ABI at compile-time:
+All 6 struct layouts are formally verified using `DivisibleBy` witnesses:
 
 ```idris
--- Prove struct size is correct
-public export
-exampleStructSize : HasSize ExampleStruct 16
+data DivisibleBy : (a : Nat) -> (b : Nat) -> Type where
+  MkDivisible : {k : Nat} -> a = k * b -> DivisibleBy a b
 
--- Prove field alignment is correct
-public export
-fieldAligned : Divides 8 (offsetOf ExampleStruct.field)
+record VerifiedLayout (n : Nat) where
+  constructor MkVerifiedLayout
+  fields      : Vect n Field
+  totalSize   : Nat
+  structAlign : Nat
+  0 sizeOk    : DivisibleBy totalSize structAlign
 
--- Prove ABI is platform-compatible
-public export
-abiCompatible : Compatible (ABI 1) (ABI 2)
+-- Example: FfiStringSlice (16 bytes, align 8)
+-- Proof: 16 = 2 * 8 via Refl at construction time
+ffiStringSliceLayout : VerifiedLayout 2
+ffiStringSliceLayout = MkVerifiedLayout
+  [ MkField "ptr" 0 8 8, MkField "len" 8 8 8 ]
+  16 8 (MkDivisible {k=2} Refl)
 ```
 
-### 2. **Type Safety**
-
-Encode invariants that C/Zig cannot express:
+### Non-Null Handle Guarantee
 
 ```idris
--- Non-null pointer guaranteed at type level
 data Handle : Type where
-  MkHandle : (ptr : Bits64) -> {auto 0 nonNull : So (ptr /= 0)} -> Handle
+  MkHandle : (ptr : Bits64) -> (0 nonNull : So (not (ptr == 0))) -> Handle
 
--- Array with length proof
-data Buffer : (n : Nat) -> Type where
-  MkBuffer : Vect n Byte -> Buffer n
+createHandle : Bits64 -> Maybe Handle
+createHandle ptr with (choose (not (ptr == 0)))
+  createHandle ptr | Left  prf = Just (MkHandle ptr prf)
+  createHandle ptr | Right _   = Nothing
 ```
 
-### 3. **Platform Abstraction**
-
-Platform-specific types with compile-time selection:
+### Round-Trip Enum Proofs
 
 ```idris
-CInt : Platform -> Type
-CInt Linux = Bits32
-CInt Windows = Bits32
-
-CSize : Platform -> Type
-CSize Linux = Bits64
-CSize Windows = Bits64
+overlayKindRoundTrip : (k : OverlayKind) -> overlayKindFromInt (overlayKindToInt k) = Just k
+overlayKindRoundTrip Tor      = Refl
+overlayKindRoundTrip IPFS     = Refl
+overlayKindRoundTrip Ethereum = Refl
 ```
 
-### 4. **Safe Evolution**
+## Zig FFI Features
 
-Prove that new ABI versions are backward-compatible:
+### Dual Export Mode
 
-```idris
--- Compiler enforces compatibility
-abiUpgrade : ABI 1 -> ABI 2
-abiUpgrade old = MkABI2 {
-  -- Must preserve all v1 fields
-  v1_compat = old,
-  -- Can add new fields
-  new_features = defaults
+All FFI functions use `pub export fn` for both Zig `@import` and C linker access:
+
+```zig
+pub export fn echidna_prover_init(kind: u8) callconv(.C) i32 {
+    // Available via both @import("core") and C linking
 }
 ```
 
-## Why Zig for FFI?
+### Bidirectional Callbacks
 
-### 1. **C ABI Compatibility**
-
-Zig exports C-compatible functions naturally:
+Each module supports registering callbacks for real-time events:
 
 ```zig
-export fn library_function(param: i32) i32 {
-    return param * 2;
-}
-```
-
-### 2. **Memory Safety**
-
-Compile-time safety without runtime overhead:
-
-```zig
-// Null check enforced at compile time
-const handle = init() orelse return error.InitFailed;
-defer free(handle);
-```
-
-### 3. **Cross-Compilation**
-
-Built-in cross-compilation to any platform:
-
-```bash
-zig build -Dtarget=x86_64-linux
-zig build -Dtarget=aarch64-macos
-zig build -Dtarget=x86_64-windows
-```
-
-### 4. **Zero Dependencies**
-
-No runtime, no libc required (unless explicitly needed):
-
-```zig
-// Minimal binary size
-pub const lib = @import("std");
-// Only includes what you use
+// Core callbacks
+pub export fn echidna_set_init_callback(cb: ?*const fn () callconv(.C) void) callconv(.C) void;
+pub export fn echidna_set_prover_change_callback(cb: ?*const fn (u8) callconv(.C) void) callconv(.C) void;
+pub export fn echidna_set_error_callback(cb: ?*const fn ([*]const u8, usize) callconv(.C) void) callconv(.C) void;
+pub export fn echidna_set_verify_complete_callback(cb: ?*const fn (i32) callconv(.C) void) callconv(.C) void;
 ```
 
 ## Building
 
-### Build FFI Library
+### Build All Libraries
 
 ```bash
 cd ffi/zig
-zig build                         # Build debug
+zig build                         # Build debug (4 .so files)
 zig build -Doptimize=ReleaseFast  # Build optimized
-zig build test                    # Run tests
 ```
 
-### Generate C Header from Idris2 ABI
+### Run Tests
 
 ```bash
-cd src/abi
-idris2 --cg c-header Types.idr -o ../../generated/abi/{{project}}.h
+cd ffi/zig
+zig build test                    # All Zig tests
+zig build test-core-native        # Core native tests (30 tests)
+zig build test-overlay-native     # Overlay native tests
+```
+
+### Type-Check Idris2 ABI
+
+```bash
+# Individual module checking
+idris2 --check src/abi/Types.idr
+idris2 --check src/abi/Layout.idr
+idris2 --check src/abi/Foreign.idr
 ```
 
 ### Cross-Compile
 
 ```bash
 cd ffi/zig
-
-# Linux x86_64
 zig build -Dtarget=x86_64-linux
-
-# macOS ARM64
 zig build -Dtarget=aarch64-macos
-
-# Windows x86_64
 zig build -Dtarget=x86_64-windows
 ```
 
@@ -222,127 +221,75 @@ zig build -Dtarget=x86_64-windows
 ### From C
 
 ```c
-#include "{{project}}.h"
+#include "echidna_ffi.h"
+
+void on_error(const char* msg, size_t len) {
+    fprintf(stderr, "Error: %.*s\n", (int)len, msg);
+}
 
 int main() {
-    void* handle = {{project}}_init();
-    if (!handle) return 1;
+    echidna_set_error_callback(on_error);
 
-    int result = {{project}}_process(handle, 42);
-    if (result != 0) {
-        const char* err = {{project}}_last_error();
-        fprintf(stderr, "Error: %s\n", err);
-    }
+    int status = echidna_prover_init(0);  // Agda
+    if (status != 0) return 1;
 
-    {{project}}_free(handle);
+    // ... use prover ...
+
+    echidna_prover_shutdown();
     return 0;
 }
 ```
 
 Compile with:
 ```bash
-gcc -o example example.c -l{{project}} -L./zig-out/lib
-```
-
-### From Idris2
-
-```idris
-import {{PROJECT}}.ABI.Foreign
-
-main : IO ()
-main = do
-  Just handle <- init
-    | Nothing => putStrLn "Failed to initialize"
-
-  Right result <- process handle 42
-    | Left err => putStrLn $ "Error: " ++ errorDescription err
-
-  free handle
-  putStrLn "Success"
+gcc -o example example.c -lechidna_ffi -L./ffi/zig/zig-out/lib
 ```
 
 ### From Rust
 
 ```rust
-#[link(name = "{{project}}")]
+#[link(name = "echidna_ffi")]
 extern "C" {
-    fn {{project}}_init() -> *mut std::ffi::c_void;
-    fn {{project}}_free(handle: *mut std::ffi::c_void);
-    fn {{project}}_process(handle: *mut std::ffi::c_void, input: u32) -> i32;
-}
-
-fn main() {
-    unsafe {
-        let handle = {{project}}_init();
-        assert!(!handle.is_null());
-
-        let result = {{project}}_process(handle, 42);
-        assert_eq!(result, 0);
-
-        {{project}}_free(handle);
-    }
+    fn echidna_prover_init(kind: u8) -> i32;
+    fn echidna_prover_shutdown();
+    fn echidna_set_error_callback(
+        cb: Option<extern "C" fn(*const u8, usize)>,
+    );
 }
 ```
 
 ### From Julia
 
 ```julia
-const lib{{project}} = "lib{{project}}"
+const libechidna = "libechidna_ffi"
 
-function init()
-    handle = ccall((:{{project}}_init, lib{{project}}), Ptr{Cvoid}, ())
-    handle == C_NULL && error("Failed to initialize")
-    handle
+function prover_init(kind::UInt8)
+    ccall((:echidna_prover_init, libechidna), Cint, (UInt8,), kind)
 end
 
-function process(handle, input)
-    result = ccall((:{{project}}_process, lib{{project}}), Cint, (Ptr{Cvoid}, UInt32), handle, input)
-    result
-end
-
-function cleanup(handle)
-    ccall((:{{project}}_free, lib{{project}}), Cvoid, (Ptr{Cvoid},), handle)
-end
-
-# Usage
-handle = init()
-try
-    result = process(handle, 42)
-    println("Result: $result")
-finally
-    cleanup(handle)
+function prover_shutdown()
+    ccall((:echidna_prover_shutdown, libechidna), Cvoid, ())
 end
 ```
 
 ## Testing
 
-### Unit Tests (Zig)
+### Native Zig Tests (30+)
 
 ```bash
 cd ffi/zig
-zig build test
-```
-
-### Integration Tests
-
-```bash
-cd ffi/zig
-zig build test-integration
+zig build test-core-native        # Tests: enum values, StringSlice, safe API,
+                                  #        C-ABI exports, callbacks, round-trips
+zig build test-overlay-native     # Tests: overlay status, Tor/IPFS/Eth types
 ```
 
 ### ABI Verification (Idris2)
 
-```idris
--- Compile-time verification
-%runElab verifyABI
-
--- Runtime checks
-main : IO ()
-main = do
-  verifyLayoutsCorrect
-  verifyAlignmentsCorrect
-  putStrLn "ABI verification passed"
-```
+All proofs are checked at compile time. Type-checking the ABI modules verifies:
+- Struct sizes are multiples of their alignment (DivisibleBy witnesses)
+- Handle pointers are non-null (So proofs)
+- Enum round-trips are lossless (Refl proofs)
+- Platform pointer sizes are correct (ptrSize64, ptrSizeWASM)
 
 ## Contributing
 
@@ -350,36 +297,31 @@ When modifying the ABI/FFI:
 
 1. **Update ABI first** (`src/abi/*.idr`)
    - Modify type definitions
-   - Update proofs
+   - Update/add proofs
    - Ensure backward compatibility
 
-2. **Generate C header**
-   ```bash
-   idris2 --cg c-header src/abi/Types.idr -o generated/abi/{{project}}.h
-   ```
+2. **Update C headers** (`generated/abi/echidna_*.h`)
+   - Match new types and functions
 
-3. **Update FFI implementation** (`ffi/zig/src/main.zig`)
-   - Implement new functions
+3. **Update FFI implementation** (`ffi/zig/src/*.zig`)
+   - Implement new exported functions
    - Match ABI types exactly
+   - Add callback support if needed
 
 4. **Add tests**
-   - Unit tests in Zig
-   - Integration tests
-   - ABI verification tests
+   - Native Zig tests in `ffi/zig/test/`
+   - Build step in `build.zig`
 
-5. **Update documentation**
-   - Function signatures
-   - Usage examples
-   - Migration guide (if breaking changes)
+5. **Update V-lang adapters** (`src/interfaces/v-adapter/*.v`)
+   - Add REST endpoints for new FFI functions
+   - Update extern declarations
 
 ## License
 
-{{LICENSE}}
+PMPL-1.0-or-later
 
 ## See Also
 
 - [Idris2 Documentation](https://idris2.readthedocs.io)
 - [Zig Documentation](https://ziglang.org/documentation/master/)
 - [Rhodium Standard Repositories](https://github.com/hyperpolymath/rhodium-standard-repositories)
-- [FFI Migration Guide](../ffi-migration-guide.md)
-- [ABI Migration Guide](../abi-migration-guide.md)

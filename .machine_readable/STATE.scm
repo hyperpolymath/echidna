@@ -6,7 +6,7 @@
       ((version . "1.5.0")
        (schema-version . "1")
        (created . "2026-01-10T13:48:18+00:00")
-       (updated . "2026-02-12T18:30:00+00:00")
+       (updated . "2026-03-08T12:00:00+00:00")
        (project . "echidna")
        (repo . "echidna")))
 
@@ -48,7 +48,15 @@
           "Gitbot-fleet integration complete (Tier 1 Verifier)"
           "Security audit complete: 50 weak points (39% reduction from 82)"
           "Ecosystem enrollment: 6 services integrated"
-          "v1.5.0 released with comprehensive documentation"))
+          "v1.5.0 released with comprehensive documentation"
+          "Zig FFI layer: 4 shared libraries (core, overlay, boj, typell)"
+          "Zig FFI: bidirectional callbacks (init/prover/error/verify for core; status/error/progress/circuit/pin for overlay)"
+          "Zig FFI: 30+ pure Zig native tests (test-core-native, test-overlay-native)"
+          "Idris2 ABI: 7 modules type-checked with idris2 v0.8.0 (zero believe_me)"
+          "Idris2 ABI: DivisibleBy proof witnesses for all 6 struct memory layouts"
+          "Generated C headers: echidna_ffi.h (23 functions, 5 enums, 2 structs, 4 callback types)"
+          "Generated C headers: echidna_overlay.h, echidna_boj.h, echidna_typell.h"
+          "V-lang REST adapters: 4 adapters (core 8100-8102, overlay 8103, boj 7700, typell 7800)"))
        (trust-hardening-status
          ("Task 1: Solver binary integrity verification - COMPLETE"
           "Task 2: SMT solver cross-checking (portfolio solving) - COMPLETE"
@@ -82,7 +90,15 @@
                             "Dispatch pipeline" "Pareto optimisation"
                             "Statistical tracking" "306+ tests"))
                   (status . "complete")))
-         (v2.0 . ((items . ("FFI/IPC bridge for API-to-prover integration"
+         (v1.6 . ((items . ("Zig FFI layer (4 shared libraries: core, overlay, boj, typell)"
+                            "Idris2 ABI formal proofs (7 modules, zero believe_me)"
+                            "Generated C headers (4 headers, dual-mode pub+export)"
+                            "V-lang REST adapters (4 adapters, triple API)"
+                            "Bidirectional callbacks for real-time events"
+                            "30+ native Zig tests (test-core-native, test-overlay-native)"
+                            "Memory layout proofs (DivisibleBy witnesses, VerifiedLayout records)"))
+                  (status . "in-progress")))
+         (v2.0 . ((items . ("SSE/WebSocket callback streaming in V-lang adapters"
                             "Deep learning models (Transformers via Flux.jl)"
                             "Production deployment" "Tamarin/ProVerif bridge"))
                   (status . "planned")))))))
@@ -90,7 +106,8 @@
     (blockers-and-issues
       ((critical . ())
        (high . ())
-       (medium . ("FFI/IPC bridge: API interfaces cannot yet invoke real prover backends"
+       (medium . ("V-lang adapters need SSE/WebSocket for callback streaming"
+                  "Permanent .ipkg for Idris2 ABI module compilation"
                   "Tamarin/ProVerif bridge for cipherbot"
                   "Deep learning upgrade (Flux.jl Transformers)"))
        (low . ("Julia Axiom.jl self-verification integration"
@@ -99,34 +116,37 @@
 
     (critical-next-actions
       ((immediate
-         . ("Fix GitLab mirror (diverged history, needs fresh PAT to unprotect branch)"
-            "Add echidna to git-private-farm manifest"))
+         . ("Create permanent .ipkg for Idris2 ABI modules"
+            "Add SSE/WebSocket callback streaming to V-lang adapters"
+            "Seam analysis: cross-layer consistency (ABI↔header↔FFI↔adapter)"))
        (this-week
-         . ("Begin FFI/IPC bridge design for v2.0"
-            "Evaluate Flux.jl for Transformer models"
-            "Celebrate v1.5.0 release!"))
+         . ("Commit and push v1.6 FFI/ABI work"
+            "Fix GitLab mirror (diverged history)"
+            "Evaluate Flux.jl for Transformer models"))
        (this-month
-         . ("Implement FFI/IPC bridge for API-to-prover integration"
+         . ("Complete V-lang adapter callback streaming"
             "Train Transformer models on proof corpus"
             "Tamarin/ProVerif bridge for protocol verification"))))
 
 
     (session-history
-      ((session . "2026-02-12b workflow-automation")
-       (summary . "Updated security-scan.yml for automated VERISIMDB_PAT dispatch")
+      ((session . "2026-03-08 ffi-abi-gap-analysis")
+       (summary . "Completed 7-step FFI/ABI gap analysis: Zig FFI (4 libraries, callbacks, native tests), Idris2 ABI (7 modules type-checked, zero believe_me), generated C headers, V-lang REST adapters")
        (changes
-         ("Updated security-scan.yml to pass VERISIMDB_PAT secret to reusable workflow"
-          "Pushed to GitHub"
-          "GitLab mirror diverged: protected branch + expired PAT blocks force push"))
+         ("Created Zig FFI modules: core.zig, overlay.zig, boj.zig, typell.zig"
+          "Implemented bidirectional callbacks in all 4 FFI modules"
+          "Created core_native_test.zig (30 tests) and overlay_native_test.zig"
+          "Fixed Idris2 Types.idr: replaced DecEq with Eq, rewrote Handle with So/choose"
+          "Rewrote Layout.idr: DivisibleBy witnesses, VerifiedLayout records, 6 struct proofs"
+          "Fixed Overlay.idr: trailing doc comment → regular comments"
+          "All 7 Idris2 modules type-check with idris2 v0.8.0"
+          "Generated C headers: echidna_ffi.h, echidna_overlay.h, echidna_boj.h, echidna_typell.h"
+          "Created V-lang REST adapters: core (8100-8102), overlay (8103), boj (7700), typell (7800)"
+          "All native Zig tests pass: test-core-native, test-overlay-native"
+          "Updated all documentation: STATE.scm, META.scm, ECOSYSTEM.scm, TOPOLOGY.md, ABI-FFI-README.md, CHANGELOG.md"))
        (previous-session
-         ((session . "2026-02-12 v1.5.0-release")
-          (summary . "Released v1.5.0 with fleet integration, security audit, and ecosystem enrollment")
-          (changes
-            ("Integrated with gitbot-fleet (Tier 1 Verifier bot)"
-             "Created echidnabot/src/fleet.rs integration module (250+ lines)"
-             "Security audit: 82→50 weak points (39% reduction)"
-             "Created 7 documentation files (CHANGELOG, SECURITY-SCAN-FINAL, ROADMAP-v2.0, etc.)"
-             "Tagged and released v1.5.0 on GitHub"))
+         ((session . "2026-02-12b workflow-automation")
+          (summary . "Updated security-scan.yml for automated VERISIMDB_PAT dispatch")
           (previous-session
-            ((session . "2026-02-08 documentation-update")
-             (summary . "Updated all documentation to accurately reflect v1.5 trust & safety hardening completion")))))))
+            ((session . "2026-02-12 v1.5.0-release")
+             (summary . "Released v1.5.0 with fleet integration, security audit, and ecosystem enrollment"))))))))

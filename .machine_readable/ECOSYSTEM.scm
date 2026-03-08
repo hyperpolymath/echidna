@@ -300,6 +300,33 @@
             (usage . "Type-safe UI components (28 files)")
             (url . "https://rescript-lang.org")))))
 
+      (ffi-layer
+        ((zig-ffi
+           ((relationship . "native-implementation")
+            (description . "Zig FFI layer providing 4 C-ABI shared libraries")
+            (libraries . ("libechidna_ffi.so (core prover interface)"
+                         "libechidna_overlay.so (Tor/IPFS/Ethereum)"
+                         "libechidna_boj.so (BoJ cartridge protocol)"
+                         "libechidna_typell.so (TypeLL type-level operations)"))
+            (features . ("Bidirectional callbacks" "Dual pub+export" "Zero runtime deps"))
+            (url . "https://ziglang.org")))
+
+         (idris2-abi
+           ((relationship . "formal-abi-specification")
+            (description . "Idris2 ABI definitions with dependent type proofs")
+            (modules . ("EchidnaABI.Types" "EchidnaABI.Layout" "EchidnaABI.Foreign"
+                        "Overlay" "Overlay.Foreign" "Boj.Foreign" "TypeLL.Foreign"))
+            (proofs . ("DivisibleBy struct alignment" "So non-null handles"
+                      "Round-trip enum encoding" "Platform pointer sizes"))
+            (url . "https://idris-lang.org")))
+
+         (v-lang-adapters
+           ((relationship . "rest-adapter")
+            (description . "V-lang REST adapters linking Zig FFI shared libraries")
+            (adapters . ("Core (ports 8100-8102)" "Overlay (port 8103)"
+                        "BoJ (port 7700)" "TypeLL (port 7800)"))
+            (url . "https://vlang.io")))))
+
       (parallel-computing
         ((chapel
            ((relationship . "optional-metalayer")
