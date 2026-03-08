@@ -303,11 +303,12 @@
       (ffi-layer
         ((zig-ffi
            ((relationship . "native-implementation")
-            (description . "Zig FFI layer providing 4 C-ABI shared libraries")
+            (description . "Zig FFI layer providing 5 C-ABI shared libraries")
             (libraries . ("libechidna_ffi.so (core prover interface)"
                          "libechidna_overlay.so (Tor/IPFS/Ethereum)"
                          "libechidna_boj.so (BoJ cartridge protocol)"
-                         "libechidna_typell.so (TypeLL type-level operations)"))
+                         "libechidna_typell.so (TypeLL type-level operations)"
+                         "libechidna_tentacles.so (7-Tentacles agent system)"))
             (features . ("Bidirectional callbacks" "Dual pub+export" "Zero runtime deps"))
             (url . "https://ziglang.org")))
 
@@ -315,7 +316,8 @@
            ((relationship . "formal-abi-specification")
             (description . "Idris2 ABI definitions with dependent type proofs")
             (modules . ("EchidnaABI.Types" "EchidnaABI.Layout" "EchidnaABI.Foreign"
-                        "Overlay" "Overlay.Foreign" "Boj.Foreign" "TypeLL.Foreign"))
+                        "Overlay" "Overlay.Foreign" "Boj.Foreign" "TypeLL.Foreign"
+                        "Tentacles.TentaclesForeign"))
             (proofs . ("DivisibleBy struct alignment" "So non-null handles"
                       "Round-trip enum encoding" "Platform pointer sizes"))
             (url . "https://idris-lang.org")))
@@ -324,8 +326,20 @@
            ((relationship . "rest-adapter")
             (description . "V-lang REST adapters linking Zig FFI shared libraries")
             (adapters . ("Core (ports 8100-8102)" "Overlay (port 8103)"
-                        "BoJ (port 7700)" "TypeLL (port 7800)"))
-            (url . "https://vlang.io")))))
+                        "BoJ (port 7700)" "TypeLL (port 7800)"
+                        "Tentacles (port 8300)"))
+            (url . "https://vlang.io")))
+
+         (tentacles-ffi
+           ((relationship . "native-implementation")
+            (description . "Tentacles FFI/ABI layer for 7-Tentacles agent system with OODA loop")
+            (components . ("TentaclesForeign.idr (Idris2 ABI: agent types, OODA state, event declarations)"
+                          "tentacles.zig (Zig FFI: agent mgmt, OODA dispatch, event callbacks)"
+                          "echidna_tentacles.h (generated C header)"
+                          "tentacles.v (V-lang REST adapter on port 8300)"))
+            (library . "libechidna_tentacles.so")
+            (features . ("7 agent init/shutdown" "OODA loop dispatch" "Event callbacks" "Dual pub+export"))
+            (port . 8300)))))
 
       (parallel-computing
         ((chapel
