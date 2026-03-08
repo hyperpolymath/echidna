@@ -12,14 +12,16 @@
 # =============================================================================
 # Stage 1: Rust Builder
 # =============================================================================
-FROM cgr.dev/chainguard/wolfi-base:latest AS rust-builder
+FROM docker.io/library/rust:1.85-slim-bookworm AS rust-builder
 
-RUN apk add --no-cache \
-    rust \
-    cargo \
-    build-base \
-    pkgconf \
-    openssl-dev
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    build-essential \
+    pkg-config \
+    libssl-dev \
+    && rm -rf /var/lib/apt/lists/*
+
+# Some deps require nightly Rust
+RUN rustup toolchain install nightly && rustup default nightly
 
 WORKDIR /build
 
@@ -32,35 +34,37 @@ RUN cargo build --release --bin echidna
 # =============================================================================
 # Stage 2: Idris2 Builder
 # =============================================================================
-FROM cgr.dev/chainguard/wolfi-base:latest AS idris2-builder
+FROM docker.io/library/debian:bookworm-slim AS idris2-builder
 
-RUN apk add --no-cache \
+RUN apt-get update && apt-get install -y --no-install-recommends \
     curl \
     ca-certificates \
     tar \
     gzip \
-    gmp-dev
+    libgmp-dev \
+    && rm -rf /var/lib/apt/lists/*
 
 WORKDIR /build
 
-RUN curl -fsSL "https://github.com/idris-lang/Idris2/releases/download/v0.8.0/Idris2-0.8.0-Linux-x86_64.tar.gz" \
-    -o /tmp/idris2.tar.gz && \
-    mkdir -p /opt/idris2 && \
-    tar -xzf /tmp/idris2.tar.gz -C /opt/idris2 --strip-components=1 && \
-    rm /tmp/idris2.tar.gz
+# Install Idris2 from pack (v0.8.0 has no prebuilt binaries)
+RUN curl -fsSL https://raw.githubusercontent.com/stefan-hoeck/idris2-pack/main/install.bash \
+    -o /tmp/install-pack.bash && \
+    bash /tmp/install-pack.bash || { echo "Idris2 install skipped (optional)"; mkdir -p /opt/idris2/bin; }
 
 COPY src/idris /build/idris
-RUN export PATH="/opt/idris2/bin:$PATH" && \
-    export IDRIS2_PREFIX="/opt/idris2" && \
-    cd /build/idris && \
-    idris2 --build echidna-validator.ipkg || true
+RUN if command -v idris2 >/dev/null 2>&1; then \
+      cd /build/idris && \
+      idris2 --build echidna-validator.ipkg || true; \
+    else echo "Skipping echidna-validator (no idris2)"; fi
 
 # =============================================================================
 # Stage 3: Julia Builder
 # =============================================================================
-FROM cgr.dev/chainguard/wolfi-base:latest AS julia-builder
+FROM docker.io/library/debian:bookworm-slim AS julia-builder
 
-RUN apk add --no-cache curl ca-certificates tar gzip
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    curl ca-certificates tar gzip \
+    && rm -rf /var/lib/apt/lists/*
 
 # Install Julia
 RUN curl -fsSL "https://julialang-s3.julialang.org/bin/linux/x64/1.11/julia-1.11.2-linux-x86_64.tar.gz" \
@@ -80,17 +84,18 @@ RUN julia --project=. -e 'using Pkg; Pkg.instantiate(); Pkg.precompile()' || tru
 # =============================================================================
 # Stage 4: Prover Installer (Tier 1-4)
 # =============================================================================
-FROM cgr.dev/chainguard/wolfi-base:latest AS prover-installer
+FROM docker.io/library/debian:bookworm-slim AS prover-installer
 
-RUN apk add --no-cache \
-    build-base \
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    build-essential \
     curl \
     git \
     wget \
     ca-certificates \
     z3 \
     ghc \
-    cabal-install
+    cabal-install \
+    && rm -rf /var/lib/apt/lists/*
 
 WORKDIR /provers
 
@@ -112,14 +117,13 @@ RUN git clone --depth 1 https://github.com/metamath/metamath-exe.git && \
 # =============================================================================
 # Stage 5: VeriSimDB Builder
 # =============================================================================
-FROM cgr.dev/chainguard/wolfi-base:latest AS verisimdb-builder
+FROM docker.io/library/rust:1.85-slim-bookworm AS verisimdb-builder
 
-RUN apk add --no-cache \
-    rust \
-    cargo \
-    build-base \
-    pkgconf \
-    openssl-dev
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    build-essential \
+    pkg-config \
+    libssl-dev \
+    && rm -rf /var/lib/apt/lists/*
 
 WORKDIR /build
 
@@ -131,14 +135,13 @@ RUN cargo build --release -p verisimdb-core || true
 # =============================================================================
 # Stage 6: panic-attack Builder
 # =============================================================================
-FROM cgr.dev/chainguard/wolfi-base:latest AS panic-attack-builder
+FROM docker.io/library/rust:1.85-slim-bookworm AS panic-attack-builder
 
-RUN apk add --no-cache \
-    rust \
-    cargo \
-    build-base \
-    pkgconf \
-    openssl-dev
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    build-essential \
+    pkg-config \
+    libssl-dev \
+    && rm -rf /var/lib/apt/lists/*
 
 WORKDIR /build
 
@@ -149,7 +152,7 @@ RUN cargo build --release --bin panic-attacker || true
 # =============================================================================
 # Stage 7: Guix Channel
 # =============================================================================
-FROM cgr.dev/chainguard/wolfi-base:latest AS guix-channel
+FROM docker.io/library/debian:bookworm-slim AS guix-channel
 
 WORKDIR /channel
 
@@ -160,31 +163,30 @@ COPY guix-channel/echidna.scm /channel/echidna/ 2>/dev/null || true
 
 # If no guix channel file exists, create a stub
 RUN if [ ! -f /channel/echidna/echidna.scm ]; then \
-    cat > /channel/echidna/echidna.scm << 'GUIX_EOF' ; \
-    ;;; SPDX-License-Identifier: PMPL-1.0-or-later \
-    (define-module (echidna) \
-      #:use-module (guix packages) \
-      #:use-module (guix build-system cargo) \
-      #:use-module (guix download) \
-      #:use-module ((guix licenses) #:prefix license:)) \
-    \
-    (define-public echidna \
-      (package \
-        (name "echidna") \
-        (version "1.5.0") \
-        (source #f) \
-        (build-system cargo-build-system) \
-        (synopsis "Neurosymbolic theorem proving platform") \
-        (description "ECHIDNA: 30-prover trust-hardened theorem proving") \
-        (home-page "https://github.com/hyperpolymath/echidna") \
-        (license (list license:pmpl1.0+)))) \
-    GUIX_EOF \
+    printf ';;; SPDX-License-Identifier: PMPL-1.0-or-later\n\
+(define-module (echidna)\n\
+  #:use-module (guix packages)\n\
+  #:use-module (guix build-system cargo)\n\
+  #:use-module (guix download)\n\
+  #:use-module ((guix licenses) #:prefix license:))\n\
+\n\
+(define-public echidna\n\
+  (package\n\
+    (name "echidna")\n\
+    (version "1.5.0")\n\
+    (source #f)\n\
+    (build-system cargo-build-system)\n\
+    (synopsis "Neurosymbolic theorem proving platform")\n\
+    (description "ECHIDNA: 30-prover trust-hardened theorem proving")\n\
+    (home-page "https://github.com/hyperpolymath/echidna")\n\
+    (license (list license:pmpl1.0+))))\n' \
+    > /channel/echidna/echidna.scm; \
     fi
 
 # =============================================================================
-# Stage 8: Runtime Image (Full, chainguard)
+# Stage 8: Runtime Image (Full)
 # =============================================================================
-FROM cgr.dev/chainguard/wolfi-base:latest
+FROM docker.io/library/debian:bookworm-slim
 
 LABEL maintainer="Jonathan D.A. Jewell <jonathan.jewell@open.ac.uk>"
 LABEL org.opencontainers.image.source="https://github.com/hyperpolymath/echidna"
@@ -193,11 +195,13 @@ LABEL org.opencontainers.image.licenses="PMPL-1.0-or-later"
 LABEL org.opencontainers.image.version="1.5.0"
 LABEL org.opencontainers.image.vendor="hyperpolymath"
 
-RUN apk add --no-cache \
+# Runtime dependencies only
+RUN apt-get update && apt-get install -y --no-install-recommends \
     ca-certificates \
     libssl3 \
-    gmp \
-    z3
+    libgmp10 \
+    z3 \
+    && rm -rf /var/lib/apt/lists/*
 
 WORKDIR /app
 
