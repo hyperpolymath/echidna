@@ -34,6 +34,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Overlay adapter (port 8103)
 - BoJ adapter (port 7700)
 - TypeLL adapter (port 7800)
+- Tentacles adapter (port 8300)
+
+#### Tentacles FFI/ABI Layer (7-Tentacles Agent System)
+- `TentaclesForeign.idr` — Idris2 ABI definitions for 7-Tentacles agents with dependent type proofs
+- `tentacles.zig` → `libechidna_tentacles.so` — Zig FFI with 7 agent management, OODA loop dispatch, and event callbacks
+- `echidna_tentacles.h` — Generated C header for tentacles agent interface
+- `tentacles.v` — V-lang REST adapter on port 8300 exposing agent management and OODA endpoints
 
 ### Added
 

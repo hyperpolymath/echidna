@@ -14,7 +14,7 @@ ECHIDNA follows the **Hyperpolymath RSR Standard** for ABI and FFI design:
 
 ```
 ┌──────────────────────────────────────────────────────────────┐
-│  ABI Definitions (Idris2) — 7 modules                       │
+│  ABI Definitions (Idris2) — 8 modules                       │
 │  src/abi/                                                    │
 │  - Types.idr       (30 provers, enums, Handle, proofs)       │
 │  - Layout.idr      (Memory layout: DivisibleBy, VerifiedLayout)│
@@ -23,6 +23,7 @@ ECHIDNA follows the **Hyperpolymath RSR Standard** for ABI and FFI design:
 │  - Overlay/Foreign.idr (Overlay FFI declarations)            │
 │  - Boj/Foreign.idr (BoJ cartridge FFI)                       │
 │  - TypeLL/Foreign.idr (TypeLL FFI)                           │
+│  - Tentacles/TentaclesForeign.idr (7-Tentacles agent ABI)   │
 └─────────────────────────┬────────────────────────────────────┘
                           │
                           │ defines types / generates headers
@@ -34,17 +35,19 @@ ECHIDNA follows the **Hyperpolymath RSR Standard** for ABI and FFI design:
 │  - echidna_overlay.h  (Tor/IPFS/Ethereum C interface)        │
 │  - echidna_boj.h      (BoJ cartridge C interface)            │
 │  - echidna_typell.h   (TypeLL C interface)                   │
+│  - echidna_tentacles.h (7-Tentacles agent C interface)       │
 └─────────────────────────┬────────────────────────────────────┘
                           │
                           │ imported by
                           ▼
 ┌──────────────────────────────────────────────────────────────┐
-│  FFI Implementation (Zig) — 4 modules                        │
+│  FFI Implementation (Zig) — 5 modules                        │
 │  ffi/zig/src/                                                │
 │  - core.zig       → libechidna_ffi.so     (prover mgmt)     │
 │  - overlay.zig    → libechidna_overlay.so (Tor/IPFS/Eth)    │
 │  - boj.zig        → libechidna_boj.so    (BoJ cartridges)   │
 │  - typell.zig     → libechidna_typell.so (TypeLL types)      │
+│  - tentacles.zig  → libechidna_tentacles.so (7-Tentacles)   │
 │  All: pub export fn (dual Zig @import + C linker access)     │
 │  All: bidirectional callback registration                    │
 └─────────────────────────┬────────────────────────────────────┘
@@ -58,6 +61,7 @@ ECHIDNA follows the **Hyperpolymath RSR Standard** for ABI and FFI design:
 │  - overlay.v (port 8103)                                     │
 │  - boj.v     (port 7700)                                     │
 │  - typell.v  (port 7800)                                     │
+│  - tentacles.v (port 8300)                                   │
 └─────────────────────────┬────────────────────────────────────┘
                           │
                           │ consumed by
@@ -80,23 +84,26 @@ echidna/
 │   │   ├── Overlay.idr                # Overlay types: Tor, IPFS, Ethereum
 │   │   ├── Overlay/Foreign.idr        # Overlay FFI declarations
 │   │   ├── Boj/Foreign.idr            # BoJ cartridge FFI declarations
-│   │   └── TypeLL/Foreign.idr         # TypeLL FFI declarations
+│   │   ├── TypeLL/Foreign.idr         # TypeLL FFI declarations
+│   │   └── Tentacles/TentaclesForeign.idr  # 7-Tentacles agent ABI
 │   └── interfaces/
 │       └── v-adapter/                 # V-lang REST adapters
 │           ├── core.v                 # Core adapter (ports 8100-8102)
 │           ├── overlay.v              # Overlay adapter (port 8103)
 │           ├── boj.v                  # BoJ adapter (port 7700)
-│           └── typell.v               # TypeLL adapter (port 7800)
+│           ├── typell.v               # TypeLL adapter (port 7800)
+│           └── tentacles.v           # Tentacles adapter (port 8300)
 │
 ├── ffi/
 │   └── zig/                           # FFI implementation (Zig)
-│       ├── build.zig                  # Build config (4 libraries, test steps)
+│       ├── build.zig                  # Build config (5 libraries, test steps)
 │       ├── build.zig.zon              # Dependencies
 │       ├── src/
 │       │   ├── core.zig               # Core prover FFI → libechidna_ffi.so
 │       │   ├── overlay.zig            # Overlay FFI → libechidna_overlay.so
 │       │   ├── boj.zig                # BoJ FFI → libechidna_boj.so
-│       │   └── typell.zig             # TypeLL FFI → libechidna_typell.so
+│       │   ├── typell.zig             # TypeLL FFI → libechidna_typell.so
+│       │   └── tentacles.zig         # Tentacles FFI → libechidna_tentacles.so
 │       └── test/
 │           ├── core_native_test.zig   # 30 pure Zig tests via @import("core")
 │           └── overlay_native_test.zig # Overlay native tests
@@ -106,7 +113,8 @@ echidna/
         ├── echidna_ffi.h              # Core C header (23 fn, 5 enum, 4 callbacks)
         ├── echidna_overlay.h          # Overlay C header
         ├── echidna_boj.h              # BoJ C header
-        └── echidna_typell.h           # TypeLL C header
+        ├── echidna_typell.h           # TypeLL C header
+        └── echidna_tentacles.h       # Tentacles C header
 ```
 
 ## Idris2 ABI Proofs
@@ -178,6 +186,53 @@ pub export fn echidna_set_prover_change_callback(cb: ?*const fn (u8) callconv(.C
 pub export fn echidna_set_error_callback(cb: ?*const fn ([*]const u8, usize) callconv(.C) void) callconv(.C) void;
 pub export fn echidna_set_verify_complete_callback(cb: ?*const fn (i32) callconv(.C) void) callconv(.C) void;
 ```
+
+## Tentacles FFI/ABI (5th Module)
+
+The **Tentacles** module provides a C-ABI interface for managing ECHIDNA's
+7-Tentacles agent system. Each tentacle is a specialised agent that participates
+in an OODA (Observe-Orient-Decide-Act) loop for coordinated proof search.
+
+### Components
+
+| Layer | File | Description |
+|-------|------|-------------|
+| **ABI** | `src/abi/Tentacles/TentaclesForeign.idr` | 8th Idris2 module: agent types, OODA state, event declarations with dependent type proofs |
+| **FFI** | `ffi/zig/src/tentacles.zig` | 5th Zig FFI module: 7 agent init/shutdown, OODA dispatch, event callbacks → `libechidna_tentacles.so` |
+| **Header** | `generated/abi/echidna_tentacles.h` | 5th generated C header: agent management and OODA C-ABI functions |
+| **Adapter** | `src/interfaces/v-adapter/tentacles.v` | 5th V-lang REST adapter on port 8300: agent CRUD, OODA cycle, event streaming |
+
+### Key FFI Functions (tentacles.zig)
+
+```zig
+// Agent management
+pub export fn echidna_tentacle_init(agent_id: u8) callconv(.C) i32;
+pub export fn echidna_tentacle_shutdown(agent_id: u8) callconv(.C) i32;
+pub export fn echidna_tentacle_status(agent_id: u8) callconv(.C) u8;
+
+// OODA loop dispatch
+pub export fn echidna_tentacle_observe(agent_id: u8) callconv(.C) i32;
+pub export fn echidna_tentacle_orient(agent_id: u8) callconv(.C) i32;
+pub export fn echidna_tentacle_decide(agent_id: u8) callconv(.C) i32;
+pub export fn echidna_tentacle_act(agent_id: u8) callconv(.C) i32;
+
+// Event callbacks
+pub export fn echidna_tentacle_set_event_callback(
+    cb: ?*const fn (u8, u8) callconv(.C) void
+) callconv(.C) void;
+```
+
+### V-lang REST Endpoints (port 8300)
+
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| `POST` | `/tentacles/:id/init` | Initialise agent |
+| `POST` | `/tentacles/:id/shutdown` | Shutdown agent |
+| `GET`  | `/tentacles/:id/status` | Query agent status |
+| `POST` | `/tentacles/:id/observe` | OODA observe phase |
+| `POST` | `/tentacles/:id/orient` | OODA orient phase |
+| `POST` | `/tentacles/:id/decide` | OODA decide phase |
+| `POST` | `/tentacles/:id/act` | OODA act phase |
 
 ## Building
 
