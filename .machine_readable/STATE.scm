@@ -49,14 +49,18 @@
           "Security audit complete: 50 weak points (39% reduction from 82)"
           "Ecosystem enrollment: 6 services integrated"
           "v1.5.0 released with comprehensive documentation"
-          "Zig FFI layer: 4 shared libraries (core, overlay, boj, typell)"
+          "Zig FFI layer: 5 shared libraries (core, overlay, boj, typell, tentacles)"
           "Zig FFI: bidirectional callbacks (init/prover/error/verify for core; status/error/progress/circuit/pin for overlay)"
           "Zig FFI: 30+ pure Zig native tests (test-core-native, test-overlay-native)"
-          "Idris2 ABI: 7 modules type-checked with idris2 v0.8.0 (zero believe_me)"
+          "Idris2 ABI: 8 modules type-checked with idris2 v0.8.0 (zero believe_me)"
           "Idris2 ABI: DivisibleBy proof witnesses for all 6 struct memory layouts"
           "Generated C headers: echidna_ffi.h (23 functions, 5 enums, 2 structs, 4 callback types)"
           "Generated C headers: echidna_overlay.h, echidna_boj.h, echidna_typell.h"
-          "V-lang REST adapters: 4 adapters (core 8100-8102, overlay 8103, boj 7700, typell 7800)"))
+          "V-lang REST adapters: 5 adapters (core 8100-8102, overlay 8103, boj 7700, typell 7800, tentacles 8300)"
+          "Tentacles FFI: TentaclesForeign.idr ABI for 7-Tentacles agents (OODA loop)"
+          "Tentacles FFI: tentacles.zig with agent management, OODA dispatch, event callbacks"
+          "Tentacles FFI: echidna_tentacles.h generated C header"
+          "Tentacles FFI: tentacles.v REST adapter on port 8300"))
        (trust-hardening-status
          ("Task 1: Solver binary integrity verification - COMPLETE"
           "Task 2: SMT solver cross-checking (portfolio solving) - COMPLETE"
@@ -150,20 +154,20 @@
          ((session . "2026-03-08 ffi-abi-gap-analysis")
           (summary . "Completed 7-step FFI/ABI gap analysis: Zig FFI (4 libraries, callbacks, native tests), Idris2 ABI (7 modules type-checked, zero believe_me), generated C headers, V-lang REST adapters")
           (changes
-         ("Created Zig FFI modules: core.zig, overlay.zig, boj.zig, typell.zig"
-          "Implemented bidirectional callbacks in all 4 FFI modules"
-          "Created core_native_test.zig (30 tests) and overlay_native_test.zig"
-          "Fixed Idris2 Types.idr: replaced DecEq with Eq, rewrote Handle with So/choose"
-          "Rewrote Layout.idr: DivisibleBy witnesses, VerifiedLayout records, 6 struct proofs"
-          "Fixed Overlay.idr: trailing doc comment → regular comments"
-          "All 7 Idris2 modules type-check with idris2 v0.8.0"
-          "Generated C headers: echidna_ffi.h, echidna_overlay.h, echidna_boj.h, echidna_typell.h"
-          "Created V-lang REST adapters: core (8100-8102), overlay (8103), boj (7700), typell (7800)"
-          "All native Zig tests pass: test-core-native, test-overlay-native"
-          "Updated all documentation: STATE.scm, META.scm, ECOSYSTEM.scm, TOPOLOGY.md, ABI-FFI-README.md, CHANGELOG.md"))
-       (previous-session
-         ((session . "2026-02-12b workflow-automation")
-          (summary . "Updated security-scan.yml for automated VERISIMDB_PAT dispatch")
+            ("Created Zig FFI modules: core.zig, overlay.zig, boj.zig, typell.zig"
+             "Implemented bidirectional callbacks in all 4 FFI modules"
+             "Created core_native_test.zig (30 tests) and overlay_native_test.zig"
+             "Fixed Idris2 Types.idr: replaced DecEq with Eq, rewrote Handle with So/choose"
+             "Rewrote Layout.idr: DivisibleBy witnesses, VerifiedLayout records, 6 struct proofs"
+             "Fixed Overlay.idr: trailing doc comment → regular comments"
+             "All 7 Idris2 modules type-check with idris2 v0.8.0"
+             "Generated C headers: echidna_ffi.h, echidna_overlay.h, echidna_boj.h, echidna_typell.h"
+             "Created V-lang REST adapters: core (8100-8102), overlay (8103), boj (7700), typell (7800)"
+             "All native Zig tests pass: test-core-native, test-overlay-native"
+             "Updated all documentation: STATE.scm, META.scm, ECOSYSTEM.scm, TOPOLOGY.md, ABI-FFI-README.md, CHANGELOG.md"))
           (previous-session
-            ((session . "2026-02-12 v1.5.0-release")
-             (summary . "Released v1.5.0 with fleet integration, security audit, and ecosystem enrollment"))))))))
+            ((session . "2026-02-12b workflow-automation")
+             (summary . "Updated security-scan.yml for automated VERISIMDB_PAT dispatch")
+             (previous-session
+               ((session . "2026-02-12 v1.5.0-release")
+                (summary . "Released v1.5.0 with fleet integration, security audit, and ecosystem enrollment"))))))))))
