@@ -33,14 +33,15 @@ RUN cargo build --release --bin echidna
 # =============================================================================
 # Stage 2: Idris2 Builder
 # =============================================================================
-FROM cgr.dev/chainguard/wolfi-base:latest AS idris2-builder
+FROM docker.io/library/debian:bookworm-slim AS idris2-builder
 
-RUN apk add --no-cache \
+RUN apt-get update && apt-get install -y --no-install-recommends \
     curl \
     ca-certificates \
     tar \
     gzip \
-    gmp-dev
+    libgmp-dev \
+    && rm -rf /var/lib/apt/lists/*
 
 WORKDIR /build
 
@@ -78,7 +79,7 @@ RUN curl -fsSL https://raw.githubusercontent.com/leanprover/elan/master/elan-ini
 # =============================================================================
 # Stage 4: Runtime Image (Minimal, chainguard)
 # =============================================================================
-FROM cgr.dev/chainguard/wolfi-base:latest
+FROM docker.io/library/debian:bookworm-slim
 
 LABEL maintainer="Jonathan D.A. Jewell <jonathan.jewell@open.ac.uk>"
 LABEL org.opencontainers.image.source="https://github.com/hyperpolymath/echidna"
@@ -88,11 +89,12 @@ LABEL org.opencontainers.image.version="1.5.0"
 LABEL org.opencontainers.image.vendor="hyperpolymath"
 
 # Runtime dependencies only
-RUN apk add --no-cache \
+RUN apt-get update && apt-get install -y --no-install-recommends \
     ca-certificates \
     libssl3 \
-    gmp \
-    z3
+    libgmp10 \
+    z3 \
+    && rm -rf /var/lib/apt/lists/*
 
 WORKDIR /app
 
