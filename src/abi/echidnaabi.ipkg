@@ -25,3 +25,4 @@ modules = EchidnaABI.Types
         , Overlay.Foreign
         , Boj.Foreign
         , TypeLL.Foreign
+        , Tentacles.Foreign

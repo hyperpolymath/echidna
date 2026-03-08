@@ -13,22 +13,24 @@
                         └───────────────────┬─────────────────────┘
                                             │
                         ┌───────────────────┼─────────────────────┐
-                        │    V-LANG REST ADAPTERS (4 adapters)    │
+                        │    V-LANG REST ADAPTERS (5 adapters)    │
                         │  Core:8100-8102  Overlay:8103           │
-                        │  BoJ:7700        TypeLL:7800            │
+                        │  BoJ:7700  TypeLL:7800  Tentacles:8300  │
                         └───────────────────┬─────────────────────┘
                                             │ links .so
                         ┌───────────────────┼─────────────────────┐
-                        │    ZIG FFI LAYER (4 shared libraries)   │
+                        │    ZIG FFI LAYER (5 shared libraries)   │
                         │  libechidna_ffi  libechidna_overlay     │
                         │  libechidna_boj  libechidna_typell      │
+                        │  libechidna_tentacles                   │
                         │  (C-ABI exports, bidirectional callbacks)│
                         └───────────────────┬─────────────────────┘
                                             │
                         ┌───────────────────┼─────────────────────┐
-                        │    IDRIS2 ABI LAYER (7 modules)         │
+                        │    IDRIS2 ABI LAYER (8 modules)         │
                         │  Types.idr  Layout.idr  Foreign.idr     │
                         │  Overlay.idr  Boj.Foreign  TypeLL.Foreign│
+                        │  TentaclesForeign.idr                   │
                         │  (Dependent type proofs, zero believe_me)│
                         └───────────────────┬─────────────────────┘
                                             │
@@ -63,9 +65,10 @@
                         └─────────────────────────────────────────┘
 
                         ┌─────────────────────────────────────────┐
-                        │    GENERATED C HEADERS (4 headers)      │
+                        │    GENERATED C HEADERS (5 headers)      │
                         │  echidna_ffi.h  echidna_overlay.h       │
                         │  echidna_boj.h  echidna_typell.h        │
+                        │  echidna_tentacles.h                    │
                         └─────────────────────────────────────────┘
 
                         ┌─────────────────────────────────────────┐
@@ -97,13 +100,20 @@ LAYERS & INTERFACES
   ReScript UI (28 components)       ██████████ 100%    Proof exploration stable
 
 FFI / ABI LAYER
-  Idris2 ABI (7 modules)           ██████████ 100%    Type-checked, zero believe_me
-  Zig FFI (4 shared libs)          ██████████ 100%    Core, overlay, boj, typell
-  Generated C Headers (4)          ██████████ 100%    echidna_ffi/overlay/boj/typell.h
+  Idris2 ABI (8 modules)           ██████████ 100%    Type-checked, zero believe_me
+  Zig FFI (5 shared libs)          ██████████ 100%    Core, overlay, boj, typell, tentacles
+  Generated C Headers (5)          ██████████ 100%    echidna_ffi/overlay/boj/typell/tentacles.h
   Bidirectional Callbacks           ██████████ 100%    Init/prover/error/verify events
   Native Zig Tests                  ██████████ 100%    30+ tests, core + overlay
-  V-lang REST Adapters (4)         ████████░░  80%    Polling works; SSE/WS pending
+  V-lang REST Adapters (5)         ████████░░  80%    Polling works; SSE/WS pending
   Memory Layout Proofs              ██████████ 100%    DivisibleBy, VerifiedLayout
+
+TENTACLES FFI/ABI
+  TentaclesForeign.idr              ██████████ 100%    7-Tentacles agent ABI definitions
+  tentacles.zig                     ██████████ 100%    Agent mgmt, OODA loop, events FFI
+  echidna_tentacles.h               ██████████ 100%    Generated C header for tentacles
+  tentacles.v                       ██████████ 100%    V-lang REST adapter (port 8300)
+  libechidna_tentacles.so           ██████████ 100%    Shared library for tentacles FFI
 
 REPO INFRASTRUCTURE
   Justfile Automation               ██████████ 100%    Standard build/lint/test

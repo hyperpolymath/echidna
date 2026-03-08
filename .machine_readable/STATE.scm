@@ -6,7 +6,7 @@
       ((version . "1.5.0")
        (schema-version . "1")
        (created . "2026-01-10T13:48:18+00:00")
-       (updated . "2026-03-08T12:00:00+00:00")
+       (updated . "2026-03-08T18:00:00+00:00")
        (project . "echidna")
        (repo . "echidna")))
 
@@ -90,13 +90,17 @@
                             "Dispatch pipeline" "Pareto optimisation"
                             "Statistical tracking" "306+ tests"))
                   (status . "complete")))
-         (v1.6 . ((items . ("Zig FFI layer (4 shared libraries: core, overlay, boj, typell)"
-                            "Idris2 ABI formal proofs (7 modules, zero believe_me)"
-                            "Generated C headers (4 headers, dual-mode pub+export)"
-                            "V-lang REST adapters (4 adapters, triple API)"
+         (v1.6 . ((items . ("Zig FFI layer (5 shared libraries: core, overlay, boj, typell, tentacles)"
+                            "Idris2 ABI formal proofs (8 modules, zero believe_me)"
+                            "Generated C headers (5 headers, dual-mode pub+export)"
+                            "V-lang REST adapters (5 adapters, triple API)"
                             "Bidirectional callbacks for real-time events"
                             "30+ native Zig tests (test-core-native, test-overlay-native)"
-                            "Memory layout proofs (DivisibleBy witnesses, VerifiedLayout records)"))
+                            "Memory layout proofs (DivisibleBy witnesses, VerifiedLayout records)"
+                            "Tentacles FFI: TentaclesForeign.idr ABI for 7-Tentacles agents"
+                            "Tentacles FFI: tentacles.zig with agent mgmt, OODA loop, events"
+                            "Tentacles FFI: echidna_tentacles.h generated C header"
+                            "Tentacles FFI: tentacles.v REST adapter on port 8300"))
                   (status . "in-progress")))
          (v2.0 . ((items . ("SSE/WebSocket callback streaming in V-lang adapters"
                             "Deep learning models (Transformers via Flux.jl)"
@@ -130,9 +134,22 @@
 
 
     (session-history
-      ((session . "2026-03-08 ffi-abi-gap-analysis")
-       (summary . "Completed 7-step FFI/ABI gap analysis: Zig FFI (4 libraries, callbacks, native tests), Idris2 ABI (7 modules type-checked, zero believe_me), generated C headers, V-lang REST adapters")
+      ((session . "2026-03-08 tentacles-ffi-abi")
+       (summary . "Added Tentacles FFI/ABI layer: 5th Zig FFI module (tentacles.zig), 8th Idris2 ABI module (TentaclesForeign.idr), 5th C header (echidna_tentacles.h), 5th V-lang adapter (tentacles.v on port 8300) for 7-Tentacles agent management with OODA loop")
        (changes
+         ("Created TentaclesForeign.idr — Idris2 ABI for 7-Tentacles agents"
+          "Created tentacles.zig — Zig FFI with agent mgmt, OODA dispatch, event callbacks"
+          "Created echidna_tentacles.h — generated C header for tentacles"
+          "Created tentacles.v — V-lang REST adapter on port 8300"
+          "Updated TOPOLOGY.md — architecture diagram and dashboard with tentacles"
+          "Updated CHANGELOG.md — tentacles entries under v1.6.0"
+          "Updated ABI-FFI-README.md — tentacles section with FFI docs"
+          "Updated ECOSYSTEM.scm — tentacles-ffi entry in ffi-layer"
+          "Updated STATE.scm — tentacles items in v1.6 milestone"))
+       (previous-session
+         ((session . "2026-03-08 ffi-abi-gap-analysis")
+          (summary . "Completed 7-step FFI/ABI gap analysis: Zig FFI (4 libraries, callbacks, native tests), Idris2 ABI (7 modules type-checked, zero believe_me), generated C headers, V-lang REST adapters")
+          (changes
          ("Created Zig FFI modules: core.zig, overlay.zig, boj.zig, typell.zig"
           "Implemented bidirectional callbacks in all 4 FFI modules"
           "Created core_native_test.zig (30 tests) and overlay_native_test.zig"

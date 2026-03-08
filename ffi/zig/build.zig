@@ -327,6 +327,46 @@ pub fn build(b: *std.Build) void {
     test_step.dependOn(&run_typell_tests.step);
 
     // ---------------------------------------------------------------
+    // Tentacles module: libechidna_tentacles.so
+    // ---------------------------------------------------------------
+    const tentacles_module = b.createModule(.{
+        .root_source_file = b.path("src/tentacles.zig"),
+        .target = target,
+        .optimize = optimize,
+    });
+
+    const lib_tentacles = b.addLibrary(.{
+        .name = "echidna_tentacles",
+        .root_module = tentacles_module,
+        .linkage = .dynamic,
+        .version = .{ .major = 1, .minor = 0, .patch = 0 },
+    });
+    b.installArtifact(lib_tentacles);
+
+    const lib_tentacles_static = b.addLibrary(.{
+        .name = "echidna_tentacles",
+        .root_module = b.createModule(.{
+            .root_source_file = b.path("src/tentacles.zig"),
+            .target = target,
+            .optimize = optimize,
+        }),
+        .linkage = .static,
+    });
+    b.installArtifact(lib_tentacles_static);
+
+    // Tentacles unit tests
+    const tentacles_test_module = b.createModule(.{
+        .root_source_file = b.path("src/tentacles.zig"),
+        .target = target,
+        .optimize = optimize,
+    });
+    const tentacles_tests = b.addTest(.{ .root_module = tentacles_test_module });
+    const run_tentacles_tests = b.addRunArtifact(tentacles_tests);
+    const tentacles_test_step = b.step("test-tentacles", "Run Tentacles unit tests");
+    tentacles_test_step.dependOn(&run_tentacles_tests.step);
+    test_step.dependOn(&run_tentacles_tests.step);
+
+    // ---------------------------------------------------------------
     // Pure Zig overlay tests (native @import, no C-ABI overhead)
     // ---------------------------------------------------------------
     const native_test_module = b.createModule(.{
