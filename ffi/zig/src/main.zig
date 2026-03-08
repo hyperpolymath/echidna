@@ -567,45 +567,55 @@ pub fn suggestTactics(handle: ProverHandle, limit: u32) EchidnaError![]const u8 
 
 /// Initialise the ECHIDNA FFI layer.
 /// Returns 0 on success, negative on error.
-export fn echidna_init() c_int {
+pub export fn echidna_init() c_int {
     init() catch |e| {
-        setError("Initialisation failed");
+        const msg = "Initialisation failed";
+        setError(msg);
+        fireFfiError(errorToStatus(e), msg);
         return errorToStatus(e);
     };
+    fireInitChange(0, 1);
     return 0;
 }
 
 /// Shut down the ECHIDNA FFI layer.
-export fn echidna_deinit() void {
+pub export fn echidna_deinit() void {
+    fireInitChange(1, 0);
     deinit();
 }
 
 /// Create a prover of the given kind.
 /// Returns handle ID (>= 0) on success, -1 on error.
-export fn echidna_create_prover(kind: c_int) c_int {
+pub export fn echidna_create_prover(kind: c_int) c_int {
     const pk = ProverKind.fromInt(kind) orelse {
-        setError("Invalid prover kind");
+        const msg = "Invalid prover kind";
+        setError(msg);
+        fireFfiError(-3, msg);
         return -1;
     };
     const handle = createProver(pk) catch {
         return -1;
     };
-    return @intCast(handle.id);
+    const handle_id: c_int = @intCast(handle.id);
+    fireProverChange(handle_id, kind, true);
+    return handle_id;
 }
 
 /// Destroy a prover instance.
-export fn echidna_destroy_prover(handle: c_int) void {
+pub export fn echidna_destroy_prover(handle: c_int) void {
     if (handle < 0) return;
     const pk = ProverKind.fromInt(handle - 1);
+    const kind_int: c_int = if (pk) |k| k.toInt() else 0;
     destroyProver(.{
         .id = @intCast(handle),
         .kind = pk orelse .agda,
     });
+    fireProverChange(handle, kind_int, false);
 }
 
 /// Parse a proof file.
 /// Returns 0 on success, negative FfiStatus on error.
-export fn echidna_parse_file(handle: c_int, path_ptr: [*]const u8, path_len: usize) c_int {
+pub export fn echidna_parse_file(handle: c_int, path_ptr: [*]const u8, path_len: usize) c_int {
     if (handle < 0 or path_len == 0) {
         setError("Invalid arguments to echidna_parse_file");
         return @intFromEnum(FfiStatus.error_invalid_argument);
@@ -620,7 +630,7 @@ export fn echidna_parse_file(handle: c_int, path_ptr: [*]const u8, path_len: usi
 
 /// Parse a proof string.
 /// Returns 0 on success, negative FfiStatus on error.
-export fn echidna_parse_string(handle: c_int, content_ptr: [*]const u8, content_len: usize) c_int {
+pub export fn echidna_parse_string(handle: c_int, content_ptr: [*]const u8, content_len: usize) c_int {
     if (handle < 0 or content_len == 0) {
         setError("Invalid arguments to echidna_parse_string");
         return @intFromEnum(FfiStatus.error_invalid_argument);
@@ -635,7 +645,7 @@ export fn echidna_parse_string(handle: c_int, content_ptr: [*]const u8, content_
 
 /// Apply a tactic to the current proof state.
 /// Returns 0 on success, negative FfiStatus on error.
-export fn echidna_apply_tactic(handle: c_int, tactic_ptr: [*]const u8, tactic_len: usize) c_int {
+pub export fn echidna_apply_tactic(handle: c_int, tactic_ptr: [*]const u8, tactic_len: usize) c_int {
     if (handle < 0 or tactic_len == 0) {
         setError("Invalid arguments to echidna_apply_tactic");
         return @intFromEnum(FfiStatus.error_invalid_argument);
@@ -650,7 +660,7 @@ export fn echidna_apply_tactic(handle: c_int, tactic_ptr: [*]const u8, tactic_le
 
 /// Verify the current proof.
 /// Returns 1 (verified), 0 (failed), or negative FfiStatus on error.
-export fn echidna_verify_proof(handle: c_int) c_int {
+pub export fn echidna_verify_proof(handle: c_int) c_int {
     if (handle < 0) {
         setError("Invalid handle");
         return @intFromEnum(FfiStatus.error_invalid_handle);
@@ -659,13 +669,14 @@ export fn echidna_verify_proof(handle: c_int) c_int {
     const valid = verifyProof(.{ .id = @intCast(handle), .kind = pk }) catch |e| {
         return errorToStatus(e);
     };
+    fireVerifyComplete(handle, pk.toInt(), valid);
     return if (valid) 1 else 0;
 }
 
 /// Export the current proof into a caller-supplied buffer.
 /// On success, *out_len is set to the number of bytes written and returns 0.
 /// If the buffer is too small, *out_len is set to the required size and returns -2.
-export fn echidna_export_proof(handle: c_int, out_ptr: [*]u8, out_len: *usize) c_int {
+pub export fn echidna_export_proof(handle: c_int, out_ptr: [*]u8, out_len: *usize) c_int {
     if (handle < 0) {
         setError("Invalid handle");
         return @intFromEnum(FfiStatus.error_invalid_handle);
@@ -686,7 +697,7 @@ export fn echidna_export_proof(handle: c_int, out_ptr: [*]u8, out_len: *usize) c
 
 /// Suggest tactics into a caller-supplied buffer.
 /// On success, *out_len is set to the number of bytes written and returns 0.
-export fn echidna_suggest_tactics(handle: c_int, limit: c_int, out_ptr: [*]u8, out_len: *usize) c_int {
+pub export fn echidna_suggest_tactics(handle: c_int, limit: c_int, out_ptr: [*]u8, out_len: *usize) c_int {
     if (handle < 0 or limit < 0) {
         setError("Invalid arguments");
         return @intFromEnum(FfiStatus.error_invalid_argument);
@@ -709,18 +720,18 @@ export fn echidna_suggest_tactics(handle: c_int, limit: c_int, out_ptr: [*]u8, o
 }
 
 /// Return a null-terminated version string.
-export fn echidna_version() [*:0]const u8 {
+pub export fn echidna_version() [*:0]const u8 {
     return VERSION;
 }
 
 /// Return the total number of supported provers.
-export fn echidna_prover_count() c_int {
+pub export fn echidna_prover_count() c_int {
     return PROVER_COUNT;
 }
 
 /// Return the human-readable name for a prover kind.
 /// Returns a null-terminated string, or "Unknown" for invalid kinds.
-export fn echidna_prover_name(kind: c_int) [*:0]const u8 {
+pub export fn echidna_prover_name(kind: c_int) [*:0]const u8 {
     const pk = ProverKind.fromInt(kind) orelse return "Unknown";
     return pk.name();
 }
@@ -728,15 +739,109 @@ export fn echidna_prover_name(kind: c_int) [*:0]const u8 {
 /// Return the last error message as a null-terminated string.
 /// Returns a pointer to thread-local storage; valid until the next
 /// FFI call on the same thread. Returns null if no error is set.
-export fn echidna_last_error() ?[*:0]const u8 {
+pub export fn echidna_last_error() ?[*:0]const u8 {
     if (error_len == 0) return null;
     // error_buf is always null-terminated by setError()
     return @ptrCast(&error_buf);
 }
 
 /// Return build information as a null-terminated string.
-export fn echidna_build_info() [*:0]const u8 {
+pub export fn echidna_build_info() [*:0]const u8 {
     return BUILD_INFO;
+}
+
+// ============================================================================
+// Callback types and registration (bidirectional ABI ↔ FFI)
+// ============================================================================
+//
+// Callback function pointers allow the Idris2 ABI (or any consumer) to
+// register handlers that the FFI layer invokes on state transitions,
+// prover events, and errors. Uses C calling convention for cross-language
+// compatibility.
+
+/// Called when the FFI layer initialises or deinitialises.
+/// Parameters: old_state (0=uninit, 1=init), new_state (0=uninit, 1=init)
+pub const OnInitChangeFn = *const fn (old_state: c_int, new_state: c_int) callconv(.c) void;
+
+/// Called when a prover is created or destroyed.
+/// Parameters: handle_id, prover_kind, created (1=created, 0=destroyed)
+pub const OnProverChangeFn = *const fn (handle_id: c_int, prover_kind: c_int, created: c_int) callconv(.c) void;
+
+/// Called when an FFI error occurs.
+/// Parameters: error_code, msg_ptr, msg_len
+pub const OnFfiErrorFn = *const fn (error_code: c_int, msg_ptr: [*]const u8, msg_len: usize) callconv(.c) void;
+
+/// Called when a verification completes.
+/// Parameters: handle_id, prover_kind, verified (1=true, 0=false)
+pub const OnVerifyCompleteFn = *const fn (handle_id: c_int, prover_kind: c_int, verified: c_int) callconv(.c) void;
+
+// Registered callback storage
+var cb_on_init_change: ?OnInitChangeFn = null;
+var cb_on_prover_change: ?OnProverChangeFn = null;
+var cb_on_ffi_error: ?OnFfiErrorFn = null;
+var cb_on_verify_complete: ?OnVerifyCompleteFn = null;
+
+/// Internal: fire init state change callback
+fn fireInitChange(old: c_int, new: c_int) void {
+    if (cb_on_init_change) |cb| cb(old, new);
+}
+
+/// Internal: fire prover change callback
+fn fireProverChange(handle_id: c_int, kind: c_int, created: bool) void {
+    if (cb_on_prover_change) |cb| cb(handle_id, kind, if (created) 1 else 0);
+}
+
+/// Internal: fire error callback
+fn fireFfiError(code: c_int, msg: []const u8) void {
+    if (cb_on_ffi_error) |cb| cb(code, msg.ptr, msg.len);
+}
+
+/// Internal: fire verify complete callback
+fn fireVerifyComplete(handle_id: c_int, kind: c_int, verified: bool) void {
+    if (cb_on_verify_complete) |cb| cb(handle_id, kind, if (verified) 1 else 0);
+}
+
+/// Register a callback for init/deinit state changes.
+pub export fn echidna_register_on_init_change(callback: ?OnInitChangeFn) c_int {
+    cb_on_init_change = callback;
+    return 0;
+}
+
+/// Register a callback for prover create/destroy events.
+pub export fn echidna_register_on_prover_change(callback: ?OnProverChangeFn) c_int {
+    cb_on_prover_change = callback;
+    return 0;
+}
+
+/// Register a callback for FFI errors.
+pub export fn echidna_register_on_error(callback: ?OnFfiErrorFn) c_int {
+    cb_on_ffi_error = callback;
+    return 0;
+}
+
+/// Register a callback for verification completion.
+pub export fn echidna_register_on_verify_complete(callback: ?OnVerifyCompleteFn) c_int {
+    cb_on_verify_complete = callback;
+    return 0;
+}
+
+/// Unregister all callbacks at once. Returns 0.
+pub export fn echidna_unregister_all_callbacks() c_int {
+    cb_on_init_change = null;
+    cb_on_prover_change = null;
+    cb_on_ffi_error = null;
+    cb_on_verify_complete = null;
+    return 0;
+}
+
+/// Get the number of currently registered callbacks (0-4).
+pub export fn echidna_callback_count() c_int {
+    var count: c_int = 0;
+    if (cb_on_init_change != null) count += 1;
+    if (cb_on_prover_change != null) count += 1;
+    if (cb_on_ffi_error != null) count += 1;
+    if (cb_on_verify_complete != null) count += 1;
+    return count;
 }
 
 // ============================================================================
@@ -911,6 +1016,82 @@ test "C-ABI export init/create/verify/destroy round-trip" {
 
 test "prover count is 30" {
     try std.testing.expectEqual(@as(c_int, 30), echidna_prover_count());
+}
+
+test "callbacks: register and unregister" {
+    try std.testing.expectEqual(@as(c_int, 0), echidna_callback_count());
+
+    const noop = struct {
+        fn f(_: c_int, _: c_int) callconv(.c) void {}
+    }.f;
+    _ = echidna_register_on_init_change(noop);
+    try std.testing.expectEqual(@as(c_int, 1), echidna_callback_count());
+
+    _ = echidna_unregister_all_callbacks();
+    try std.testing.expectEqual(@as(c_int, 0), echidna_callback_count());
+}
+
+test "callbacks: init change fires on init/deinit" {
+    const Counter = struct {
+        var count: u32 = 0;
+        fn handler(_: c_int, _: c_int) callconv(.c) void {
+            count += 1;
+        }
+    };
+    Counter.count = 0;
+    _ = echidna_register_on_init_change(Counter.handler);
+    defer _ = echidna_unregister_all_callbacks();
+
+    _ = echidna_init();
+    try std.testing.expectEqual(@as(u32, 1), Counter.count);
+
+    echidna_deinit();
+    try std.testing.expectEqual(@as(u32, 2), Counter.count);
+}
+
+test "callbacks: prover change fires on create/destroy" {
+    const ProverCounter = struct {
+        var created_count: u32 = 0;
+        var destroyed_count: u32 = 0;
+        fn handler(_: c_int, _: c_int, created: c_int) callconv(.c) void {
+            if (created == 1) created_count += 1 else destroyed_count += 1;
+        }
+    };
+    ProverCounter.created_count = 0;
+    ProverCounter.destroyed_count = 0;
+    _ = echidna_register_on_prover_change(ProverCounter.handler);
+    defer _ = echidna_unregister_all_callbacks();
+
+    _ = echidna_init();
+    defer echidna_deinit();
+
+    const handle = echidna_create_prover(0);
+    try std.testing.expectEqual(@as(u32, 1), ProverCounter.created_count);
+
+    echidna_destroy_prover(handle);
+    try std.testing.expectEqual(@as(u32, 1), ProverCounter.destroyed_count);
+}
+
+test "callbacks: verify complete fires" {
+    const VerifyState = struct {
+        var fired: bool = false;
+        var last_verified: c_int = -1;
+        fn handler(_: c_int, _: c_int, verified: c_int) callconv(.c) void {
+            fired = true;
+            last_verified = verified;
+        }
+    };
+    VerifyState.fired = false;
+    _ = echidna_register_on_verify_complete(VerifyState.handler);
+    defer _ = echidna_unregister_all_callbacks();
+
+    _ = echidna_init();
+    defer echidna_deinit();
+
+    const handle = echidna_create_prover(2); // Lean
+    _ = echidna_verify_proof(handle);
+    try std.testing.expect(VerifyState.fired);
+    try std.testing.expectEqual(@as(c_int, 1), VerifyState.last_verified);
 }
 
 test "parse_file and parse_string reject invalid input" {

@@ -1,0 +1,27 @@
+-- SPDX-License-Identifier: PMPL-1.0-or-later
+-- Copyright (c) 2026 Jonathan D.A. Jewell (hyperpolymath) <j.d.a.jewell@open.ac.uk>
+--
+-- ECHIDNA ABI package — Idris2 formal ABI definitions with dependent type proofs.
+-- Type-check all modules: idris2 --build echidnaabi.ipkg
+-- Or check individually: idris2 --check Types.idr
+
+package echidnaabi
+
+version = 0.1.0
+
+authors = "Jonathan D.A. Jewell"
+license = "PMPL-1.0-or-later"
+brief   = "ECHIDNA ABI definitions with formal proofs (zero believe_me)"
+
+sourcedir = "."
+
+depends = base
+        , contrib
+
+modules = EchidnaABI.Types
+        , EchidnaABI.Layout
+        , EchidnaABI.Foreign
+        , Overlay
+        , Overlay.Foreign
+        , Boj.Foreign
+        , TypeLL.Foreign

@@ -11,7 +11,7 @@
        (license . "PMPL-1.0-or-later")
        (authors . ("Jonathan D.A. Jewell <jonathan.jewell@open.ac.uk>"))
        (created . "2026-01-10")
-       (updated . "2026-02-08")
+       (updated . "2026-03-08")
        (repository . "https://github.com/hyperpolymath/echidna")))
 
     (architecture-decisions
@@ -235,7 +235,29 @@
                          "OpenTheory limited to HOL family"))
              (mitigation . ("Focus on most commonly used provers first"
                            "Preserve original proof alongside translation"
-                           "Future: add SMTCoq bridge for SMT proofs in Coq"))))))))
+                           "Future: add SMTCoq bridge for SMT proofs in Coq"))))))
+
+       (adr-013
+         ((title . "Idris2 ABI + Zig FFI for Type-Safe Native Interface")
+          (status . "accepted")
+          (date . "2026-03-08")
+          (context . "ECHIDNA needs a native C-ABI layer to bridge Rust core, V-lang REST adapters, and external consumers. The interface must be provably correct (memory layout, alignment, non-null invariants) and zero-overhead.")
+          (decision . "Define all ABI types and memory layouts in Idris2 with dependent type proofs (DivisibleBy witnesses for struct alignment, So proofs for non-null handles, round-trip proofs for enum encoding). Implement the FFI in Zig with dual pub+export for both Zig @import and C linker access. Generate C headers from ABI definitions. Build 4 shared libraries: libechidna_ffi.so (core), libechidna_overlay.so (Tor/IPFS/Ethereum), libechidna_boj.so (BoJ cartridge), libechidna_typell.so (TypeLL). V-lang REST adapters link these libraries and expose triple API (REST+gRPC+GraphQL).")
+          (consequences
+            ((positive . ("Formal proofs of memory layout correctness (zero believe_me)"
+                         "Type-level non-null handle guarantees"
+                         "Round-trip proofs for all enum encodings"
+                         "Zero-cost C-ABI compatible exports"
+                         "Cross-compilation to any platform via Zig"
+                         "Bidirectional callbacks for real-time events"
+                         "Any language can consume via standard C ABI"))
+             (negative . ("Idris2 toolchain required for ABI verification"
+                         "Module path resolution requires symlink trees for type-checking"
+                         "So proofs don't reduce through named definitions in Idris2 v0.8"))
+             (mitigation . ("DivisibleBy witnesses work around So reduction limitations"
+                           "Symlink trees automated in build process"
+                           "Zig FFI works independently of Idris2 compilation"
+                           "C headers serve as stable interface contract"))))))
 
     (development-practices
       ((code-style

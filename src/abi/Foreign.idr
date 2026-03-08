@@ -373,3 +373,73 @@ echidnaIsInitialized : IO Bool
 echidnaIsInitialized = do
   result <- primIO prim__isInitialized
   pure (result /= 0)
+
+--------------------------------------------------------------------------------
+-- Callback Registration (Zig FFI layer — libechidna_ffi)
+--------------------------------------------------------------------------------
+--
+-- These functions register callback function pointers with the Zig FFI
+-- bridge. The Zig layer invokes these callbacks on state transitions,
+-- prover events, and errors, enabling bidirectional ABI ↔ FFI communication.
+
+||| Register a callback for FFI init/deinit state changes.
+||| Callback signature: void(int old_state, int new_state)
+||| Pass 0 to unregister.
+export
+%foreign "C:echidna_register_on_init_change, libechidna_ffi"
+prim__registerOnInitChange : Bits64 -> PrimIO Int
+
+export
+registerOnInitChange : (callbackPtr : Bits64) -> IO Int
+registerOnInitChange ptr = primIO (prim__registerOnInitChange ptr)
+
+||| Register a callback for prover create/destroy events.
+||| Callback signature: void(int handle_id, int prover_kind, int created)
+||| Pass 0 to unregister.
+export
+%foreign "C:echidna_register_on_prover_change, libechidna_ffi"
+prim__registerOnProverChange : Bits64 -> PrimIO Int
+
+export
+registerOnProverChange : (callbackPtr : Bits64) -> IO Int
+registerOnProverChange ptr = primIO (prim__registerOnProverChange ptr)
+
+||| Register a callback for FFI errors.
+||| Callback signature: void(int error_code, const uint8_t* msg_ptr, size_t msg_len)
+||| Pass 0 to unregister.
+export
+%foreign "C:echidna_register_on_error, libechidna_ffi"
+prim__registerOnFfiError : Bits64 -> PrimIO Int
+
+export
+registerOnFfiError : (callbackPtr : Bits64) -> IO Int
+registerOnFfiError ptr = primIO (prim__registerOnFfiError ptr)
+
+||| Register a callback for verification completion.
+||| Callback signature: void(int handle_id, int prover_kind, int verified)
+||| Pass 0 to unregister.
+export
+%foreign "C:echidna_register_on_verify_complete, libechidna_ffi"
+prim__registerOnVerifyComplete : Bits64 -> PrimIO Int
+
+export
+registerOnVerifyComplete : (callbackPtr : Bits64) -> IO Int
+registerOnVerifyComplete ptr = primIO (prim__registerOnVerifyComplete ptr)
+
+||| Unregister all FFI callbacks at once.
+export
+%foreign "C:echidna_unregister_all_callbacks, libechidna_ffi"
+prim__unregisterAllCallbacks : PrimIO Int
+
+export
+unregisterAllCallbacks : IO Int
+unregisterAllCallbacks = primIO prim__unregisterAllCallbacks
+
+||| Get the number of currently registered FFI callbacks (0-4).
+export
+%foreign "C:echidna_callback_count, libechidna_ffi"
+prim__callbackCount : PrimIO Int
+
+export
+callbackCount : IO Int
+callbackCount = primIO prim__callbackCount
