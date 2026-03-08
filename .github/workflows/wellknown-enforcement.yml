@@ -1,4 +1,6 @@
 # SPDX-License-Identifier: PMPL-1.0-or-later
+permissions: read-all
+
 name: Well-Known Standards (RFC 9116 + RSR)
 on:
   push:
@@ -18,7 +20,7 @@ jobs:
   validate:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
       
       - name: RFC 9116 security.txt validation
         run: |
