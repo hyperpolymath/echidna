@@ -43,8 +43,8 @@
            ((relationship . "protocol-peer")
             (peer-type . "aggregate-library")
             (description . "Curated subset of proven bindings — same Overlay Protocol, different peer-type")
-            (status . "planned")
-            (notes . "aggregate-library selects/re-exports; o-extension adds new capabilities")))))))
+            (status . "active")
+            (notes . "aggregate-library selects/re-exports; o-extension adds new capabilities. Both verified conformant.")))))))
 
    (what-this-is
      (("An optional overlay for HOL4 within ECHIDNA"
