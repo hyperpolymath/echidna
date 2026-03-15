@@ -1,0 +1,14 @@
+# SPDX-License-Identifier: PMPL-1.0-or-later
+# STATE.a2ml — Project state checkpoint
+# Converted from STATE.scm on 2026-03-15
+
+[metadata]
+project = "echidna"
+version = "1.5.0"
+last-updated = "2026-03-15"
+status = "active"
+
+[project-context]
+name = "echidna"
+completion-percentage = 100
+phase = "v1.5.0 Released - Production Ready"
