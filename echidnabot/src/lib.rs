@@ -11,6 +11,7 @@
 //!
 //! See `docs/ARCHITECTURE.adoc` for the full design document.
 
+#![forbid(unsafe_code)]
 pub mod api;
 pub mod adapters;
 pub mod config;
