@@ -155,9 +155,9 @@ cargo fmt --check                 # Format check
 - **Justfile PRIMARY** - never use Make or other build systems
 - **Podman not Docker** - always use Podman for containers
 - **License**: PMPL-1.0-or-later (not AGPL, not dual MIT/Palimpsest)
-- **Author**: Jonathan D.A. Jewell <jonathan.jewell@open.ac.uk>
+- **Author**: Jonathan D.A. Jewell <j.d.a.jewell@open.ac.uk>
 
 ---
 
 **Last Updated**: 2026-02-08
-**Maintained By**: Jonathan D.A. Jewell <jonathan.jewell@open.ac.uk>
+**Maintained By**: Jonathan D.A. Jewell <j.d.a.jewell@open.ac.uk>

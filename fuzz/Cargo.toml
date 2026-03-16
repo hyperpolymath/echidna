@@ -2,7 +2,7 @@
 [package]
 name = "echidna-fuzz"
 version = "0.0.0"
-authors = ["hyperpolymath"]
+authors = ["Jonathan D.A. Jewell <j.d.a.jewell@open.ac.uk>"]
 publish = false
 edition = "2021"
 
