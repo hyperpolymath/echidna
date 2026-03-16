@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: PMPL-1.0-or-later
-// SPDX-FileCopyrightText: 2025-2026 Jonathan D.A. Jewell <jonathan.jewell@open.ac.uk>
+// SPDX-FileCopyrightText: 2025-2026 Jonathan D.A. Jewell <j.d.a.jewell@open.ac.uk>
 
 = ECHIDNA
 
@@ -346,5 +346,5 @@ This project is licensed under the link:LICENSE[Palimpsest Meta-Project License 
 
 *Version*: 1.5.0 +
 *Status*: Trust & Safety Hardening Complete +
-*Author*: Jonathan D.A. Jewell <jonathan.jewell@open.ac.uk> +
+*Author*: Jonathan D.A. Jewell <j.d.a.jewell@open.ac.uk> +
 *Last Updated*: 2026-02-08

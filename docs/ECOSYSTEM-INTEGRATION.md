@@ -180,4 +180,4 @@ cd /var/mnt/eclipse/repos/gitbot-fleet
 ---
 
 **Last Updated**: 2026-02-12
-**Maintained By**: Jonathan D.A. Jewell <jonathan.jewell@open.ac.uk>
+**Maintained By**: Jonathan D.A. Jewell <j.d.a.jewell@open.ac.uk>

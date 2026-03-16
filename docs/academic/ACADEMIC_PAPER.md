@@ -2,7 +2,7 @@
 
 **Jonathan D.A. Jewell**  
 The Open University, UK  
-jonathan.jewell@open.ac.uk
+j.d.a.jewell@open.ac.uk
 
 **Version:** 1.3.0  
 **Date:** January 29, 2026  

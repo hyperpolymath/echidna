@@ -231,7 +231,7 @@ cd src/rescript && npm run build
 
 ## Contributors
 
-- Jonathan D.A. Jewell <jonathan.jewell@open.ac.uk>
+- Jonathan D.A. Jewell <j.d.a.jewell@open.ac.uk>
 - Claude Sonnet 4.5 (AI pair programmer)
 
 ## Next Steps (v1.3)
