@@ -374,7 +374,7 @@ When modifying the ABI/FFI:
 
 ## License
 
-{{LICENSE}}
+PMPL-1.0-or-later
 
 ## See Also
 
