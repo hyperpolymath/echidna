@@ -1,0 +1,26 @@
+# SPDX-License-Identifier: PMPL-1.0-or-later
+# Clade declaration — part of the gv-clade-index registry
+# See: https://github.com/hyperpolymath/gv-clade-index
+
+[identity]
+uuid = "6bab4e6b-e028-5e31-a5d8-d46c9359669b"
+primary-forge = "github"
+primary-owner = "hyperpolymath"
+canonical-name = "echidna"
+prefixed-name = "fv-echidna"
+
+[clade]
+primary = "fv"
+secondary = ["ax"]
+assigned = "2026-03-16"
+rationale = ""
+
+[forges]
+github = "hyperpolymath/echidna"
+gitlab = "hyperpolymath/echidna"
+bitbucket = "hyperpolymath/echidna"
+
+[lineage]
+type = "standalone"
+parent = "Neurosymbolic theorem proving — neural proof synthesis"
+born = "2026-03-16"
