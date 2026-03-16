@@ -1,5 +1,5 @@
 /-
-SPDX-FileCopyrightText: 2025 Jonathan D.A. Jewell <jonathan.jewell@open.ac.uk>
+SPDX-FileCopyrightText: 2025 Jonathan D.A. Jewell <j.d.a.jewell@open.ac.uk>
 SPDX-License-Identifier: PMPL-1.0-or-later
 
 Natural Number Proofs in Lean 4

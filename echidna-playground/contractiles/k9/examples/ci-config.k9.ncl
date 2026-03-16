@@ -19,7 +19,7 @@ K9!
       name = "ci-config",
       version = "1.0.0",
       description = "CI/CD configuration with runtime validation",
-      author = "Jonathan D.A. Jewell <jonathan.jewell@open.ac.uk>",
+      author = "Jonathan D.A. Jewell <j.d.a.jewell@open.ac.uk>",
     },
   },
 

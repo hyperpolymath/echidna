@@ -1,5 +1,5 @@
 # SPDX-License-Identifier: PMPL-1.0-or-later
-# SPDX-FileCopyrightText: 2024-2025 Jonathan D.A. Jewell <jonathan.jewell@open.ac.uk>
+# SPDX-FileCopyrightText: 2024-2025 Jonathan D.A. Jewell <j.d.a.jewell@open.ac.uk>
 #
 # ECHIDNA Container Build Redirect
 #
@@ -87,7 +87,7 @@ RUN curl -fsSL https://raw.githubusercontent.com/leanprover/elan/master/elan-ini
 # =============================================================================
 FROM cgr.dev/chainguard/wolfi-base:latest
 
-LABEL maintainer="Jonathan D.A. Jewell <jonathan.jewell@open.ac.uk>"
+LABEL maintainer="Jonathan D.A. Jewell <j.d.a.jewell@open.ac.uk>"
 LABEL org.opencontainers.image.source="https://github.com/hyperpolymath/echidna"
 LABEL org.opencontainers.image.description="ECHIDNA - Extensible Cognitive Hybrid Intelligence for Deductive Neural Assistance"
 LABEL org.opencontainers.image.licenses="PMPL-1.0-or-later"
