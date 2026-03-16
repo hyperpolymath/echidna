@@ -20,7 +20,7 @@ K9!
       name = "setup-repo",
       version = "1.0.0",
       description = "Automated repository setup with RSR standards",
-      author = "Jonathan D.A. Jewell <jonathan.jewell@open.ac.uk>",
+      author = "Jonathan D.A. Jewell <j.d.a.jewell@open.ac.uk>",
     },
     warnings = [
       "This component has full system access",
@@ -105,7 +105,7 @@ K9!
       commands = [
         "git init -b %{config.git.default_branch}",
         "git config user.name 'Jonathan D.A. Jewell'",
-        "git config user.email 'jonathan.jewell@open.ac.uk'",
+        "git config user.email 'j.d.a.jewell@open.ac.uk'",
         "echo '✓ Git initialized'",
       ],
     },
