@@ -37,7 +37,7 @@ proofs = "proofs/"
 
 [critical-invariants]
 # Rules that MUST NEVER be violated
-invariant-1 = "State files (STATE.scm, META.scm, ECOSYSTEM.scm, AGENTIC.scm, NEUROSYM.scm, PLAYBOOK.scm) exist in .machine_readable/ ONLY — never in root"
+invariant-1 = "State files (.machine_readable/6a2/STATE.a2ml, .machine_readable/6a2/META.a2ml, .machine_readable/6a2/ECOSYSTEM.a2ml, .machine_readable/6a2/AGENTIC.a2ml, .machine_readable/6a2/NEUROSYM.a2ml, .machine_readable/6a2/PLAYBOOK.a2ml) exist in .machine_readable/ ONLY — never in root"
 invariant-2 = "All interfaces stay under src/interfaces/ — never extract to separate repos"
 invariant-3 = "When adding provers: update all 3 layers (Rust, Julia, Chapel)"
 invariant-4 = "Original name: 'Cognitive Hybrid' not 'Computational Heuristic'"
@@ -61,10 +61,10 @@ echidna-playground = "echidna-playground/"  # Playground
 [session-protocol]
 on-enter = [
   "Read this manifest",
-  "Read .machine_readable/STATE.scm for current status",
-  "Read .machine_readable/META.scm for architecture decisions",
-  "Read .machine_readable/ECOSYSTEM.scm for ecosystem position",
+  "Read `.machine_readable/6a2/STATE.a2ml` for current status",
+  "Read `.machine_readable/6a2/META.a2ml` for architecture decisions",
+  "Read `.machine_readable/6a2/ECOSYSTEM.a2ml` for ecosystem position",
 ]
 on-exit = [
-  "Update .machine_readable/STATE.scm with progress",
+  "Update `.machine_readable/6a2/STATE.a2ml` with progress",
 ]
