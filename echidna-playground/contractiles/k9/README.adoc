@@ -130,7 +130,7 @@ K9 contractiles integrate with other RSR standards:
 ⚠️ **Never run as root unless required** +
 ⚠️ **Sandbox external components**
 
-**See:** https://github.com/hyperpolymath/k9-svc/blob/main/docs/SECURITY-BEST-PRACTICES.adoc
+**See:** https://github.com/hyperpolymath/standards/blob/main/k9-svc/docs/SECURITY-BEST-PRACTICES.adoc
 
 == Template Files
 
@@ -154,14 +154,15 @@ chmod +x nickel && sudo mv nickel /usr/local/bin/
 cargo install just
 
 # Clone K9-SVC (for must shim and tooling)
-git clone https://github.com/hyperpolymath/k9-svc.git
+git clone https://github.com/hyperpolymath/standards.git
+# Note: K9-SVC is located in standards/k9-svc
 ----
 
 == Learn More
 
-- **K9-SVC Specification:** https://github.com/hyperpolymath/k9-svc/blob/main/SPEC.adoc
-- **K9 User Guide:** https://github.com/hyperpolymath/k9-svc/blob/main/GUIDE.adoc
-- **Security Documentation:** https://github.com/hyperpolymath/k9-svc/blob/main/docs/SECURITY-FAQ.adoc
+- **K9-SVC Specification:** https://github.com/hyperpolymath/standards/blob/main/k9-svc/SPEC.adoc
+- **K9 User Guide:** https://github.com/hyperpolymath/standards/blob/main/k9-svc/GUIDE.adoc
+- **Security Documentation:** https://github.com/hyperpolymath/standards/blob/main/k9-svc/docs/SECURITY-FAQ.adoc
 - **IANA Media Type:** `application/vnd.k9+nickel`
 
 == Contributing
@@ -174,4 +175,4 @@ When adding K9 contractiles to your repository:
 4. Sign Hunt-level components before committing
 5. Add K9 validation to CI/CD pipeline
 
-**Questions?** Open an issue on https://github.com/hyperpolymath/k9-svc
+**Questions?** Open an issue on https://github.com/hyperpolymath/standards/tree/main/k9-svc
