@@ -47,6 +47,8 @@ struct ProofSession {
     history: Vec<String>,
 }
 
+const DEFAULT_ML_API_URL: &str = "http://127.0.0.1:8090";
+
 /// Start the HTTP server
 pub async fn start_server(port: u16, host: String, enable_cors: bool) -> Result<()> {
     // Create HTTP client for Julia ML API
@@ -54,7 +56,13 @@ pub async fn start_server(port: u16, host: String, enable_cors: bool) -> Result<
         .timeout(Duration::from_secs(10))
         .build()?;
 
-    let ml_api_url = "http://127.0.0.1:8090".to_string();
+    let ml_api_url = std::env::var("ECHIDNA_ML_API_URL")
+        .unwrap_or_else(|_| DEFAULT_ML_API_URL.to_string());
+
+    // Security: Validate that the ML API URL is either local or explicitly allowed
+    if !ml_api_url.starts_with("http://127.0.0.1") && !ml_api_url.starts_with("http://localhost") {
+        info!("⚠ Untrusted ML API URL detected: {}. Baseline security policy requires local or trusted endpoint.", ml_api_url);
+    }
 
     // Test Julia ML connection
     match ml_client.get(format!("{}/health", ml_api_url)).send().await {
