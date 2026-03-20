@@ -41,6 +41,9 @@ tracing-subscriber = { version = "0.3", features = ["env-filter"] }
 # UUID
 uuid = { version = "1.11", features = ["v4", "serde"] }
 
+# Async trait support
+async-trait = "0.1"
+
 [build-dependencies]
 tonic-build = "0.12"
 

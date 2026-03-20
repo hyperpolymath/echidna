@@ -19,6 +19,9 @@ use tower_http::cors::CorsLayer;
 use utoipa::OpenApi;
 use utoipa_swagger_ui::SwaggerUi;
 
+// Import FFI wrapper
+use crate::ffi_wrapper;
+
 mod handlers;
 mod models;
 
@@ -33,6 +36,8 @@ pub struct AppState {
     pub ml_client: reqwest::Client,
     /// Julia ML API base URL
     pub ml_api_url: String,
+    /// Whether FFI layer is initialized
+    pub ffi_initialized: bool,
 }
 
 /// A proof session
@@ -70,10 +75,19 @@ async fn main() {
         }
     }
 
+    // Initialize FFI layer
+    let ffi_initialized = ffi_wrapper::init_ffi().is_ok();
+    if ffi_initialized {
+        tracing::info!("FFI layer initialized successfully");
+    } else {
+        tracing::warn!("FFI layer initialization failed, falling back to direct Rust calls");
+    }
+
     let state = AppState {
         sessions: Arc::new(RwLock::new(HashMap::new())),
         ml_client,
         ml_api_url,
+        ffi_initialized,
     };
 
     let app = Router::new()
