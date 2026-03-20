@@ -1,0 +1,71 @@
+# SPDX-License-Identifier: PMPL-1.0-or-later
+name: Chapel Accelerator CI
+
+on:
+  push:
+    paths:
+      - 'src/zig_ffi/**'
+      - 'src/rust/proof_search.rs'
+      - 'chapel_poc/**'
+      - 'Cargo.toml'
+      - '.github/workflows/chapel-ci.yml'
+  pull_request:
+    paths:
+      - 'src/zig_ffi/**'
+      - 'src/rust/proof_search.rs'
+      - 'chapel_poc/**'
+      - 'Cargo.toml'
+      - '.github/workflows/chapel-ci.yml'
+
+permissions: read-all
+
+jobs:
+  zig-ffi:
+    name: Build & Test Zig FFI Bridge
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
+
+      - name: Install Zig
+        uses: goto-bus-stop/setup-zig@7ab2955eb728f5440978d7e4f60155e5e3a9e02f # v2
+        with:
+          version: 0.13.0
+
+      - name: Build Zig FFI library
+        run: cd src/zig_ffi && zig build -Doptimize=ReleaseSafe
+
+      - name: Run Zig FFI tests
+        run: cd src/zig_ffi && zig build test
+
+      - name: Upload FFI library artifact
+        uses: actions/upload-artifact@b4b15b8c7c6ac21ea08fcf65892d2ee8f75cf882 # v4
+        with:
+          name: chapel-ffi-lib
+          path: src/zig_ffi/zig-out/lib/
+
+  rust-chapel-feature:
+    name: Rust Build with Chapel Feature
+    runs-on: ubuntu-latest
+    needs: zig-ffi
+    steps:
+      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
+
+      - name: Install Rust toolchain
+        uses: dtolnay/rust-toolchain@4be9e76fd7c4901c61fb841f559994984270fce7 # stable
+        with:
+          toolchain: stable
+
+      - name: Rust cache
+        uses: Swatinem/rust-cache@779680da715d629ac1d338a641029a2f4372abb5 # v2
+
+      - name: Download FFI library
+        uses: actions/download-artifact@fa0a91b85d4f404e444e00e005971372dc801d16 # v4
+        with:
+          name: chapel-ffi-lib
+          path: src/zig_ffi/zig-out/lib/
+
+      - name: Build with chapel feature
+        run: cargo build --features chapel
+
+      - name: Test with chapel feature
+        run: cargo test --features chapel -- proof_search

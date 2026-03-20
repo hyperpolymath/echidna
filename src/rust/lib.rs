@@ -10,6 +10,7 @@ pub mod core;
 pub mod provers;
 pub mod parsers;
 pub mod neural;
+pub mod llm; // Frontier LLM advisor (via BoJ Server)
 pub mod aspect;
 pub mod agent;
 pub mod ffi;
@@ -24,6 +25,7 @@ pub mod dispatch;
 pub use core::{ProofState, Term, Tactic, TacticResult};
 pub use provers::{ProverBackend, ProverKind, ProverConfig};
 pub use agent::{AgentCore, AgentConfig};
+pub use llm::{LlmAdvisor, LlmConfig};
 
 #[cfg(test)]
 mod tests {
