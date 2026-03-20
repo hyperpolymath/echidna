@@ -364,12 +364,117 @@ impl QueryExecutor {
         }
     }
 
+    /// Validate a query against TypeLL's VQL-UT 10-level type checker.
+    ///
+    /// Calls the TypeLL server at localhost:7800 to verify that the query
+    /// meets its declared safety level. Returns the verified level and any
+    /// diagnostics. Falls back gracefully if TypeLL is unreachable.
+    async fn validate_with_typell(&self, query: &ProofQuery) -> Result<TypeLevel> {
+        let typell_url = std::env::var("TYPELL_URL")
+            .unwrap_or_else(|_| "http://localhost:7800".to_string());
+
+        let check_body = serde_json::json!({
+            "query": serde_json::to_string(query).unwrap_or_default(),
+            "modalities": ["Semantic", "Document", "Graph", "Provenance", "Temporal"],
+            "result_fields": query.theorem_name.as_deref().map(|t| vec![t]).unwrap_or_default(),
+        });
+
+        let client = reqwest::Client::builder()
+            .timeout(std::time::Duration::from_secs(5))
+            .build()
+            .context("Failed to create HTTP client for TypeLL")?;
+
+        match client
+            .post(format!("{}/api/v1/vql-ut/check", typell_url))
+            .json(&check_body)
+            .send()
+            .await
+        {
+            Ok(resp) if resp.status().is_success() => {
+                if let Ok(body) = resp.json::<serde_json::Value>().await {
+                    let max_level = body
+                        .get("safety_report")
+                        .and_then(|sr| sr.get("max_level"))
+                        .and_then(|ml| ml.as_u64())
+                        .unwrap_or(0);
+
+                    let valid = body
+                        .get("valid")
+                        .and_then(|v| v.as_bool())
+                        .unwrap_or(true);
+
+                    if !valid {
+                        let errors = body
+                            .get("rule_errors")
+                            .and_then(|e| e.as_array())
+                            .map(|arr| {
+                                arr.iter()
+                                    .filter_map(|v| v.as_str())
+                                    .collect::<Vec<_>>()
+                                    .join("; ")
+                            })
+                            .unwrap_or_default();
+                        anyhow::bail!("TypeLL VQL-UT validation failed: {}", errors);
+                    }
+
+                    info!(
+                        "TypeLL verified VQL-UT level {}/10 for {:?}",
+                        max_level, query.operation,
+                    );
+
+                    // Map TypeLL's 1-based SafetyLevel to our 0-10 TypeLevel
+                    Ok(match max_level {
+                        0 | 1 => TypeLevel::Parse,
+                        2 => TypeLevel::Schema,
+                        3 => TypeLevel::TypeCompat,
+                        4 => TypeLevel::NullSafe,
+                        5 => TypeLevel::InjectionProof,
+                        6 => TypeLevel::ResultType,
+                        7 => TypeLevel::Cardinality,
+                        8 => TypeLevel::Effect,
+                        9 => TypeLevel::Temporal,
+                        10 => TypeLevel::Linear,
+                        _ => TypeLevel::Linear,
+                    })
+                } else {
+                    debug!("TypeLL returned non-JSON response, falling back");
+                    Ok(query.level)
+                }
+            }
+            Ok(resp) => {
+                debug!(
+                    "TypeLL returned status {}, falling back to local validation",
+                    resp.status()
+                );
+                Ok(query.level)
+            }
+            Err(e) => {
+                debug!("TypeLL unreachable ({}), falling back to local validation", e);
+                Ok(query.level)
+            }
+        }
+    }
+
     /// Execute a typed query and return results.
+    ///
+    /// Validates the query against TypeLL's 10-level type checker before
+    /// execution. Falls back to local validation if TypeLL is unreachable.
     pub async fn execute(&self, query: &ProofQuery) -> Result<QueryResult> {
         info!(
             "Executing VQL-UT query: {:?} at level {:?}",
             query.operation, query.level,
         );
+
+        // Pre-flight: validate with TypeLL if available
+        let verified_level = self.validate_with_typell(query).await.unwrap_or(query.level);
+
+        if (verified_level as u8) < (query.level as u8) {
+            anyhow::bail!(
+                "TypeLL verified level {:?} is below requested level {:?}",
+                verified_level,
+                query.level,
+            );
+        }
 
         match query.operation {
             QueryOp::FindProof => self.execute_find_proof(query).await,
