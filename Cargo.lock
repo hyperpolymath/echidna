@@ -912,6 +912,7 @@ dependencies = [
  "anyhow",
  "async-graphql",
  "async-graphql-axum",
+ "async-trait",
  "axum 0.7.9",
  "echidna",
  "reqwest",
@@ -930,6 +931,7 @@ name = "echidna-grpc"
 version = "0.1.0"
 dependencies = [
  "anyhow",
+ "async-trait",
  "echidna",
  "prost",
  "serde",
@@ -949,6 +951,7 @@ name = "echidna-rest"
 version = "0.1.0"
 dependencies = [
  "anyhow",
+ "async-trait",
  "axum 0.7.9",
  "echidna",
  "reqwest",

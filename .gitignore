@@ -118,3 +118,35 @@ htmlcov/
 
 # Crash recovery artifacts
 ai-cli-crash-capture/
+
+# External corpora (large, downloadable separately)
+external_corpora/
+
+# Large/intermediate training data (corpus-specific extracts, merged files)
+# Keep base training_data/{premises,proof_states,tactics,stats}.jsonl and dated snapshots
+training_data/*_max.jsonl
+training_data/*_COMPLETE.jsonl
+training_data/*_ABSOLUTE*.jsonl
+training_data/*_ULTIMATE.jsonl
+training_data/*_FINAL*.jsonl
+training_data/*_BALANCED.jsonl
+training_data/*_all.jsonl
+training_data/*_coqgym.jsonl
+training_data/*_mathlib4.jsonl
+training_data/*_metamath.jsonl
+training_data/stats_*.json
+!training_data/stats.json
+training_data/vocabulary_*.txt
+
+# Root-level merged artifacts
+premises_merged.jsonl
+proof_states_merged.jsonl
+tactics_merged.jsonl
+stats_merged.json
+
+# Generated corpus reports (not source documentation)
+COMPLETE_CORPUS_SUMMARY.md
+CORPUS_EXPANSION_PLAN.md
+CORPUS_MAXIMIZATION_REPORT.md
+FINAL_CORPUS_COMPLETENESS_REPORT.md
+PROVER_EXPANSION_ROADMAP.md
