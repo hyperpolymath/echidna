@@ -13,6 +13,10 @@ pub mod neural;
 pub mod llm; // Frontier LLM advisor (via BoJ Server)
 pub mod aspect;
 pub mod agent;
+#[cfg(feature = "verisimdb")]
+pub mod proof_encoding; // CBOR encoding + proof identity hashing
+#[cfg(feature = "verisimdb")]
+pub mod verisimdb_bridge; // VeriSimDB 8-modality octad integration
 pub mod ffi;
 pub mod anomaly_detection;
 pub mod proof_search; // Chapel parallel proof search (optional feature)
