@@ -246,6 +246,49 @@ impl VeriSimDBProofStore {
         }
     }
 
+    /// Fetch a goal embedding from the Julia inference service (port 8090).
+    /// Returns a 512-dim f32 vector, or empty vec on failure.
+    async fn fetch_goal_embedding(&self, goal: &crate::core::Goal) -> Result<Vec<f32>> {
+        let julia_url = std::env::var("ECHIDNA_JULIA_URL")
+            .unwrap_or_else(|_| "http://localhost:8090".to_string());
+
+        let goal_display = format!("{}", goal.target);
+        let body = serde_json::json!({
+            "goal": goal_display,
+            "model": "default"
+        });
+
+        let http = reqwest::Client::builder()
+            .timeout(std::time::Duration::from_secs(5))
+            .build()?;
+
+        match http.post(format!("{}/api/encode", julia_url))
+            .json(&body)
+            .send()
+            .await
+        {
+            Ok(response) if response.status().is_success() => {
+                let result: serde_json::Value = response.json().await?;
+                if let Some(embedding) = result.get("embedding").and_then(|e| e.as_array()) {
+                    let vec: Vec<f32> = embedding.iter()
+                        .filter_map(|v| v.as_f64().map(|f| f as f32))
+                        .collect();
+                    debug!("Got {}-dim embedding from Julia for goal {}", vec.len(), goal.id);
+                    return Ok(vec);
+                }
+                Ok(vec![])
+            }
+            Ok(_) => {
+                debug!("Julia inference returned non-200 for goal {}", goal.id);
+                Ok(vec![])
+            }
+            Err(e) => {
+                debug!("Julia inference unreachable for goal {}: {}", goal.id, e);
+                Ok(vec![])
+            }
+        }
+    }
+
     /// Initialise the store and check VeriSimDB connectivity.
     pub async fn init(&self) -> Result<()> {
         let reachable = self.client.health_check().await;
@@ -287,6 +330,10 @@ impl ProofMemory for VeriSimDBProofStore {
         if *self.connected.read().await {
             use crate::verisimdb_bridge::{ProofOctadBuilder, ProofStatus};
 
+            // Fetch goal embedding from Julia inference service (best-effort)
+            let embedding = self.fetch_goal_embedding(&goal.goal).await
+                .unwrap_or_default();
+
             let octad = ProofOctadBuilder::new(&goal.goal.id, &goal.goal, prover)
                 .with_proof_state(proof)
                 .with_status(if proof.is_complete() {
@@ -296,6 +343,7 @@ impl ProofMemory for VeriSimDBProofStore {
                 })
                 .with_aspects(goal.aspects.clone())
                 .with_time_ms(time_ms)
+                .with_embedding(embedding)
                 .build()?;
 
             if let Err(e) = self.client.create_octad(&octad).await {

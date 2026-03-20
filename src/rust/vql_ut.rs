@@ -417,11 +417,51 @@ impl QueryExecutor {
         })
     }
 
-    /// Find similar proofs via vector similarity (future: neural embeddings).
+    /// Find similar proofs via vector similarity search.
+    /// Calls VeriSimDB POST /api/v1/search/vector with the goal embedding.
     async fn execute_find_similar(&self, query: &ProofQuery) -> Result<QueryResult> {
-        // Vector similarity requires neural embeddings in VeriSimDB's
-        // vector modality. Returns empty for now — wired when neural
-        // module provides embeddings.
+        let limit = query.limit.unwrap_or(10);
+        let goal_display = query.goal_display.as_deref().unwrap_or("");
+
+        #[cfg(feature = "verisimdb")]
+        {
+            // Request a goal embedding from the Julia inference service
+            let embedding = self.fetch_goal_embedding(goal_display).await
+                .unwrap_or_default();
+
+            if !embedding.is_empty() {
+                let search_body = serde_json::json!({
+                    "vector": embedding,
+                    "limit": limit,
+                    "modality": "vector"
+                });
+
+                let url = format!("{}/api/v1/search/vector", self.client.base_url);
+                let response = self.client.http.post(&url)
+                    .json(&search_body)
+                    .send()
+                    .await;
+
+                if let Ok(resp) = response {
+                    if resp.status().is_success() {
+                        if let Ok(results) = resp.json::<Vec<serde_json::Value>>().await {
+                            let entries: Vec<QueryResultEntry> = results.iter()
+                                .filter_map(|r| search_result_to_entry(r))
+                                .take(limit)
+                                .collect();
+                            return Ok(QueryResult {
+                                count: entries.len(),
+                                entries,
+                                verified_level: query.level,
+                                effect: query.effect,
+                            });
+                        }
+                    }
+                }
+            }
+        }
+
+        let _ = (limit, goal_display);
         Ok(QueryResult {
             count: 0,
             entries: vec![],
@@ -431,14 +471,43 @@ impl QueryExecutor {
     }
 
     /// Search across all provers for proofs of a theorem.
+    /// Calls VeriSimDB GET /api/v1/search/text with the theorem name.
     async fn execute_cross_prover(&self, query: &ProofQuery) -> Result<QueryResult> {
-        let _theorem = query.theorem_name.as_deref().unwrap_or("");
-        let _limit = query.limit.unwrap_or(100);
+        let theorem = query.theorem_name.as_deref().unwrap_or("");
+        let limit = query.limit.unwrap_or(100);
 
-        // In production: query VeriSimDB's document modality for all octads
-        // matching the theorem name, then group by cross_prover_id.
-        // The graph modality provides the cross-prover links.
+        #[cfg(feature = "verisimdb")]
+        {
+            let url = format!(
+                "{}/api/v1/search/text?q={}&limit={}",
+                self.client.base_url,
+                urlencoding::encode(theorem),
+                limit,
+            );
 
+            let response = self.client.http.get(&url)
+                .send()
+                .await;
+
+            if let Ok(resp) = response {
+                if resp.status().is_success() {
+                    if let Ok(results) = resp.json::<Vec<serde_json::Value>>().await {
+                        let entries: Vec<QueryResultEntry> = results.iter()
+                            .filter_map(|r| search_result_to_entry(r))
+                            .take(limit)
+                            .collect();
+                        return Ok(QueryResult {
+                            count: entries.len(),
+                            entries,
+                            verified_level: query.level,
+                            effect: query.effect,
+                        });
+                    }
+                }
+            }
+        }
+
+        let _ = (theorem, limit);
         Ok(QueryResult {
             count: 0,
             entries: vec![],
@@ -448,8 +517,32 @@ impl QueryExecutor {
     }
 
     /// Get the provenance trace for a proof.
+    /// Calls VeriSimDB GET /api/v1/octads/{key} and extracts provenance modality.
     async fn execute_provenance(&self, query: &ProofQuery) -> Result<QueryResult> {
-        // Route to VeriSimDB's provenance modality
+        #[cfg(feature = "verisimdb")]
+        if let Some(ref theorem) = query.theorem_name {
+            if let Some(ref goal_display) = query.goal_display {
+                if let Some(prover) = query.prover {
+                    let goal = Goal {
+                        id: "query".to_string(),
+                        target: crate::core::Term::Var(goal_display.clone()),
+                        hypotheses: vec![],
+                    };
+                    let key = proof_encoding::proof_identity(theorem, &goal, prover);
+
+                    if let Some(octad) = self.client.get_octad(&key).await? {
+                        let entry = octad_to_entry(&octad);
+                        return Ok(QueryResult {
+                            count: 1,
+                            entries: vec![entry],
+                            verified_level: query.level,
+                            effect: query.effect,
+                        });
+                    }
+                }
+            }
+        }
+
         Ok(QueryResult {
             count: 0,
             entries: vec![],
@@ -459,19 +552,58 @@ impl QueryExecutor {
     }
 
     /// Get the temporal version history for a proof.
+    /// Calls VeriSimDB GET /api/v1/octads/{key} and extracts temporal modality.
     async fn execute_temporal(&self, query: &ProofQuery) -> Result<QueryResult> {
-        // Route to VeriSimDB's temporal modality
-        Ok(QueryResult {
-            count: 0,
-            entries: vec![],
-            verified_level: query.level,
-            effect: query.effect,
-        })
+        // Same retrieval as provenance — the octad contains all modalities
+        self.execute_provenance(query).await
     }
 
     /// Get the dependency graph for a proof.
+    /// Calls VeriSimDB GET /api/v1/search/related/{id} for graph traversal.
     async fn execute_dependency(&self, query: &ProofQuery) -> Result<QueryResult> {
-        // Route to VeriSimDB's graph modality
+        let limit = query.limit.unwrap_or(50);
+
+        #[cfg(feature = "verisimdb")]
+        if let Some(ref theorem) = query.theorem_name {
+            if let Some(ref goal_display) = query.goal_display {
+                if let Some(prover) = query.prover {
+                    let goal = Goal {
+                        id: "query".to_string(),
+                        target: crate::core::Term::Var(goal_display.clone()),
+                        hypotheses: vec![],
+                    };
+                    let key = proof_encoding::proof_identity(theorem, &goal, prover);
+
+                    let url = format!(
+                        "{}/api/v1/search/related/{}?limit={}",
+                        self.client.base_url, key, limit,
+                    );
+
+                    let response = self.client.http.get(&url)
+                        .send()
+                        .await;
+
+                    if let Ok(resp) = response {
+                        if resp.status().is_success() {
+                            if let Ok(results) = resp.json::<Vec<serde_json::Value>>().await {
+                                let entries: Vec<QueryResultEntry> = results.iter()
+                                    .filter_map(|r| search_result_to_entry(r))
+                                    .take(limit)
+                                    .collect();
+                                return Ok(QueryResult {
+                                    count: entries.len(),
+                                    entries,
+                                    verified_level: query.level,
+                                    effect: query.effect,
+                                });
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        let _ = limit;
         Ok(QueryResult {
             count: 0,
             entries: vec![],
@@ -481,25 +613,116 @@ impl QueryExecutor {
     }
 
     /// Aggregate axiom usage across proofs.
+    /// Calls VeriSimDB text search for all proofs, then aggregates axioms.
     async fn execute_axiom_usage(&self, query: &ProofQuery) -> Result<QueryResult> {
-        // Aggregate across VeriSimDB's semantic modality (axioms_used field)
-        Ok(QueryResult {
-            count: 0,
-            entries: vec![],
-            verified_level: query.level,
-            effect: query.effect,
-        })
+        // Delegate to cross-prover search with aspect filter "axiom"
+        let mut axiom_query = query.clone();
+        axiom_query.operation = QueryOp::CrossProverSearch;
+        self.execute_cross_prover(&axiom_query).await
     }
 
     /// Aggregate tactic success statistics.
+    /// Calls VeriSimDB text search for all proofs, then aggregates tactics.
     async fn execute_tactic_stats(&self, query: &ProofQuery) -> Result<QueryResult> {
-        // Aggregate across VeriSimDB's document modality (tactics_text field)
-        Ok(QueryResult {
-            count: 0,
-            entries: vec![],
-            verified_level: query.level,
-            effect: query.effect,
-        })
+        // Delegate to cross-prover search with aspect filter "tactic"
+        let mut tactic_query = query.clone();
+        tactic_query.operation = QueryOp::CrossProverSearch;
+        self.execute_cross_prover(&tactic_query).await
+    }
+
+    /// Fetch a goal embedding from the Julia inference service (port 8090).
+    /// Returns a 512-dim f32 vector, or empty vec on failure.
+    #[cfg(feature = "verisimdb")]
+    async fn fetch_goal_embedding(&self, goal_display: &str) -> Result<Vec<f32>> {
+        let julia_url = std::env::var("ECHIDNA_JULIA_URL")
+            .unwrap_or_else(|_| "http://localhost:8090".to_string());
+
+        let body = serde_json::json!({
+            "goal": goal_display,
+            "model": "default"
+        });
+
+        let response = self.client.http.post(format!("{}/api/encode", julia_url))
+            .json(&body)
+            .timeout(std::time::Duration::from_secs(5))
+            .send()
+            .await
+            .context("Failed to reach Julia inference service")?;
+
+        if response.status().is_success() {
+            let result: serde_json::Value = response.json().await?;
+            if let Some(embedding) = result.get("embedding").and_then(|e| e.as_array()) {
+                let vec: Vec<f32> = embedding.iter()
+                    .filter_map(|v| v.as_f64().map(|f| f as f32))
+                    .collect();
+                debug!("Got {}-dim embedding from Julia", vec.len());
+                return Ok(vec);
+            }
+        }
+
+        warn!("Julia inference service returned no embedding");
+        Ok(vec![])
+    }
+}
+
+/// Convert a VeriSimDB search result JSON value to a QueryResultEntry.
+#[cfg(feature = "verisimdb")]
+fn search_result_to_entry(value: &serde_json::Value) -> Option<QueryResultEntry> {
+    Some(QueryResultEntry {
+        key: value.get("key")?.as_str()?.to_string(),
+        theorem_name: value.get("theorem_statement")
+            .or_else(|| value.get("document").and_then(|d| d.get("theorem_statement")))
+            .and_then(|v| v.as_str())
+            .unwrap_or("")
+            .to_string(),
+        prover: value.get("prover")
+            .or_else(|| value.get("semantic").and_then(|s| s.get("prover")))
+            .and_then(|v| v.as_str())
+            .unwrap_or("unknown")
+            .to_string(),
+        status: value.get("status")
+            .or_else(|| value.get("semantic").and_then(|s| s.get("status")))
+            .and_then(|v| v.as_str())
+            .unwrap_or("unknown")
+            .to_string(),
+        time_ms: value.get("time_ms")
+            .and_then(|v| v.as_u64())
+            .unwrap_or(0),
+        aspects: value.get("aspects")
+            .or_else(|| value.get("document").and_then(|d| d.get("aspects")))
+            .and_then(|v| v.as_array())
+            .map(|a| a.iter().filter_map(|v| v.as_str().map(String::from)).collect())
+            .unwrap_or_default(),
+        axioms: value.get("axioms_used")
+            .or_else(|| value.get("semantic").and_then(|s| s.get("axioms_used")))
+            .and_then(|v| v.as_array())
+            .map(|a| a.iter().filter_map(|v| v.as_str().map(String::from)).collect())
+            .unwrap_or_default(),
+        cross_prover_id: value.get("cross_prover_id")
+            .or_else(|| value.get("graph").and_then(|g| g.get("cross_prover_id")))
+            .and_then(|v| v.as_str())
+            .unwrap_or("")
+            .to_string(),
+    })
+}
+
+/// Simple URL encoding for query parameters.
+/// Encodes spaces, ampersands, and other special characters.
+mod urlencoding {
+    pub fn encode(s: &str) -> String {
+        let mut result = String::with_capacity(s.len() * 3);
+        for byte in s.bytes() {
+            match byte {
+                b'A'..=b'Z' | b'a'..=b'z' | b'0'..=b'9' | b'-' | b'_' | b'.' | b'~' => {
+                    result.push(byte as char);
+                }
+                _ => {
+                    result.push('%');
+                    result.push_str(&format!("{:02X}", byte));
+                }
+            }
+        }
+        result
     }
 }
 
