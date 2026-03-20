@@ -96,6 +96,42 @@ container-build-full:
 container-run *ARGS:
     podman run --rm -it echidna:latest {{ARGS}}
 
+# ── Chapel Accelerator ──────────────────────────────────────
+
+# Build Zig FFI bridge for Chapel (prerequisite for --features chapel)
+build-chapel-ffi:
+    @echo "Building Zig FFI bridge..."
+    cd src/zig_ffi && zig build -Doptimize=ReleaseSafe
+    @echo "Library built at src/zig_ffi/zig-out/lib/"
+
+# Build Chapel PoC (requires Chapel compiler)
+build-chapel-poc:
+    @echo "Building Chapel proof-of-concept..."
+    cd chapel_poc && chpl parallel_proof_search.chpl -o proof_search --fast
+    @echo "Built chapel_poc/proof_search"
+
+# Run Chapel PoC benchmark
+run-chapel-poc:
+    cd chapel_poc && ./proof_search
+
+# Build with Chapel support enabled (requires Zig FFI built first)
+build-chapel: build-chapel-ffi
+    cargo build --features chapel
+
+# Test Chapel integration
+test-chapel: build-chapel-ffi
+    cargo test --features chapel -- proof_search
+
+# Test Zig FFI bridge independently
+test-chapel-ffi:
+    cd src/zig_ffi && zig build test
+
+# Full Chapel build + test
+chapel-all: build-chapel-poc build-chapel-ffi test-chapel
+    @echo "Chapel accelerator fully built and tested"
+
+# ── Other ───────────────────────────────────────────────────
+
 # [AUTO-GENERATED] Multi-arch / RISC-V target
 build-riscv:
 	@echo "Building for RISC-V..."

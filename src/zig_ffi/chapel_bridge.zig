@@ -214,7 +214,7 @@ pub fn parallelProofSearch(
     );
 
     // Convert Chapel result to Zig (takes ownership of strings)
-    var result = try ProofResult.fromChapel(c_result, allocator);
+    const result = try ProofResult.fromChapel(c_result, allocator);
 
     // Free Chapel-allocated strings (we've copied them)
     chapel.chapel_free_result(@constCast(&c_result));
