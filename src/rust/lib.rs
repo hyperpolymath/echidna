@@ -17,6 +17,7 @@ pub mod agent;
 pub mod proof_encoding; // CBOR encoding + proof identity hashing
 #[cfg(feature = "verisimdb")]
 pub mod verisimdb_bridge; // VeriSimDB 8-modality octad integration
+pub mod vql_ut; // VQL-UT: 10-level type-safe cross-prover query language
 pub mod ffi;
 pub mod anomaly_detection;
 pub mod proof_search; // Chapel parallel proof search (optional feature)
