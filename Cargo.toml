@@ -69,6 +69,10 @@ lazy_static = "1"
 # Chrono for timestamps
 chrono = { version = "0.4", features = ["serde"] }
 
+[features]
+default = []
+chapel = []  # Enable Chapel parallel proof search (requires Zig FFI library)
+
 [dev-dependencies]
 proptest = "1"
 tempfile = "3"
