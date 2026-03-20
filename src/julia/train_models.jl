@@ -18,6 +18,9 @@ using Dates
 
 const TRAINING_DATA_DIR = "training_data"
 const MODELS_DIR = "models"
+const USE_COMPREHENSIVE_DATA = false  # Set to true to use merged corpus
+const USE_MAX_DATA = false  # Set to true to use MAXIMUM corpus
+const USE_COMPLETE_DATA = true  # Set to true to use COMPLETE corpus
 
 # Simple tokenizer
 function tokenize(text::String)::Vector{String}
@@ -182,13 +185,30 @@ function train_premise_selector(data_dir::String=TRAINING_DATA_DIR)
     @info "Training Premise Selector..."
 
     # Load data
-    states_file = joinpath(data_dir, "proof_states.jsonl")
-    premises_file = joinpath(data_dir, "premises.jsonl")
+    if USE_COMPLETE_DATA
+        states_suffix = "_COMPLETE.jsonl"
+        premises_suffix = "_COMPLETE.jsonl"
+    elseif USE_MAX_DATA
+        states_suffix = "_MAX.jsonl"
+        premises_suffix = "_MAX.jsonl"
+    elseif USE_COMPREHENSIVE_DATA
+        states_suffix = "_all.jsonl"
+        premises_suffix = "_all.jsonl"
+    else
+        states_suffix = ".jsonl"
+        premises_suffix = ".jsonl"
+    end
+    
+    states_file = joinpath(data_dir, "proof_states" * states_suffix)
+    premises_file = joinpath(data_dir, "premises" * premises_suffix)
 
-    if !isfile(states_file) || !isfile(premises_file)
+    if !isfile(states_file)
         @error "Training data not found. Run extract_training_data.jl first."
         return nothing
     end
+    
+    # Premises file is optional
+    has_premises = isfile(premises_file)
 
     # Parse manually (no JSON package)
     states = []
@@ -208,11 +228,16 @@ function train_premise_selector(data_dir::String=TRAINING_DATA_DIR)
     # For MVP, train a simple "relevant/not relevant" classifier
     # Real implementation would use more sophisticated premise selection
 
-    # Build vocabulary from goals
-    goal_texts = [String(s.goal) for s in states]
-    vocab = build_vocabulary(goal_texts)
+    # Build vocabulary from goals (only if we have states)
+    if length(states) > 0
+        goal_texts = [String(s.goal) for s in states]
+        vocab = build_vocabulary(goal_texts)
+        @info "  Vocabulary size: $(vocab.size) words"
+    else
+        @warn "  No proof states found, creating empty vocabulary"
+        vocab = Vocabulary(Dict{String, Int}(), String[], 0)
+    end
 
-    @info "  Vocabulary size: $(vocab.size) words"
     @info "✓ Premise selector model ready (vocabulary-based)"
 
     return (vocab=vocab, type="premise_selector")
@@ -222,8 +247,22 @@ end
 function train_tactic_predictor(data_dir::String=TRAINING_DATA_DIR)
     @info "Training Tactic Predictor..."
 
-    tactics_file = joinpath(data_dir, "tactics.jsonl")
-    states_file = joinpath(data_dir, "proof_states.jsonl")
+    if USE_COMPLETE_DATA
+        tactics_suffix = "_COMPLETE.jsonl"
+        states_suffix = "_COMPLETE.jsonl"
+    elseif USE_MAX_DATA
+        tactics_suffix = "_MAX.jsonl"
+        states_suffix = "_MAX.jsonl"
+    elseif USE_COMPREHENSIVE_DATA
+        tactics_suffix = "_all.jsonl"
+        states_suffix = "_all.jsonl"
+    else
+        tactics_suffix = ".jsonl"
+        states_suffix = ".jsonl"
+    end
+    
+    tactics_file = joinpath(data_dir, "tactics" * tactics_suffix)
+    states_file = joinpath(data_dir, "proof_states" * states_suffix)
 
     if !isfile(tactics_file) || !isfile(states_file)
         @error "Training data not found."
@@ -325,6 +364,27 @@ function save_models(premise_model, tactic_model, output_dir::String=MODELS_DIR)
     end
 
     @info "✓ Models saved to $output_dir"
+    
+    # Also save stats based on dataset size
+    if USE_COMPLETE_DATA
+        corpus_size = "COMPLETE (66k proofs, 179k tactics)"
+    elseif USE_MAX_DATA
+        corpus_size = "MAXIMUM (213k+ proofs)"
+    elseif USE_COMPREHENSIVE_DATA
+        corpus_size = "comprehensive (95k+ proofs)"
+    else
+        corpus_size = "original"
+    end
+    
+    open(joinpath(output_dir, "training_stats.txt"), "w") do io
+        println(io, "# ECHIDNA v2.0 Model Training Stats")
+        println(io, "# Training Date: $(Dates.now())")
+        println(io, "# Corpus Size: $corpus_size")
+        println(io, "# Premise Vocabulary: $(premise_model !== nothing ? premise_model.vocab.size : 0) words")
+        println(io, "# Tactic Classes: $(tactic_model !== nothing ? tactic_model.model.num_classes : 0)")
+        println(io, "# Tactic Features: $(tactic_model !== nothing ? tactic_model.model.num_features : 0)")
+        println(io, "# Training Method: logistic_regression")
+    end
 end
 
 # Main

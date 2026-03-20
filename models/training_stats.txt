@@ -1,0 +1,7 @@
+# ECHIDNA v2.0 Model Training Stats
+# Training Date: 2026-03-20T18:42:25.462
+# Corpus Size: COMPLETE (66k proofs, 179k tactics)
+# Premise Vocabulary: 0 words
+# Tactic Classes: 0
+# Tactic Features: 0
+# Training Method: logistic_regression
