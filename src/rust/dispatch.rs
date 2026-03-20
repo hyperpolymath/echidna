@@ -13,6 +13,7 @@ use std::time::Instant;
 use tracing::{info, warn};
 
 use crate::integrity::solver_integrity::{IntegrityChecker, IntegrityStatus};
+use crate::llm::{LlmAdvisor, DispatchOptimisation};
 use crate::provers::{ProverConfig, ProverFactory, ProverKind};
 use crate::verification::axiom_tracker::{AxiomTracker, AxiomUsage, DangerLevel};
 use crate::verification::confidence::{compute_trust_level, TrustFactors, TrustLevel};
@@ -71,6 +72,9 @@ impl Default for DispatchConfig {
 pub struct ProverDispatcher {
     config: DispatchConfig,
     integrity_checker: Option<IntegrityChecker>,
+    /// Optional frontier LLM advisor for intelligent dispatch optimisation.
+    /// Advisory only — cannot influence trust levels.
+    llm_advisor: Option<LlmAdvisor>,
 }
 
 impl ProverDispatcher {
@@ -79,18 +83,72 @@ impl ProverDispatcher {
         Self {
             config: DispatchConfig::default(),
             integrity_checker: None,
+            llm_advisor: None,
         }
     }
 
     /// Create a dispatcher with custom configuration
     pub fn with_config(config: DispatchConfig) -> Self {
-        Self { config, integrity_checker: None }
+        Self { config, integrity_checker: None, llm_advisor: None }
     }
 
     /// Set the integrity checker for solver binary verification
     pub fn with_integrity_checker(mut self, checker: IntegrityChecker) -> Self {
         self.integrity_checker = Some(checker);
         self
+    }
+
+    /// Set the frontier LLM advisor for intelligent dispatch optimisation.
+    /// Advisory only — the trust pipeline remains inviolable.
+    pub fn with_llm_advisor(mut self, advisor: LlmAdvisor) -> Self {
+        self.llm_advisor = Some(advisor);
+        self
+    }
+
+    /// Dispatch with LLM-guided optimisation
+    ///
+    /// The LLM suggests which prover to try and which cross-checkers to use.
+    /// If the LLM is unavailable, falls back to the provided prover_kind.
+    /// Trust levels are NEVER influenced by the LLM.
+    pub async fn verify_proof_llm_guided(
+        &self,
+        content: &str,
+        fallback_prover: ProverKind,
+    ) -> Result<DispatchResult> {
+        // Try to get LLM optimisation
+        if let Some(ref advisor) = self.llm_advisor {
+            if advisor.is_available() {
+                // Parse content into a minimal proof state for the LLM
+                let prover_config = ProverConfig::default();
+                if let Ok(prover) = ProverFactory::create(fallback_prover, prover_config) {
+                    if let Ok(state) = prover.parse_string(content).await {
+                        if let Some(opt) = advisor.optimise_dispatch(&state).await {
+                            info!(
+                                "LLM dispatch optimisation: primary={:?}, cross_check={:?}",
+                                opt.primary_prover, opt.cross_check_provers
+                            );
+
+                            let primary = opt.primary_prover.unwrap_or(fallback_prover);
+
+                            if !opt.cross_check_provers.is_empty() {
+                                return self
+                                    .verify_proof_cross_checked(
+                                        primary,
+                                        content,
+                                        &opt.cross_check_provers,
+                                    )
+                                    .await;
+                            }
+
+                            return self.verify_proof(primary, content).await;
+                        }
+                    }
+                }
+            }
+        }
+
+        // Fallback: use provided prover without LLM guidance
+        self.verify_proof(fallback_prover, content).await
     }
 
     /// Dispatch a proof verification request through the trust-hardening pipeline
