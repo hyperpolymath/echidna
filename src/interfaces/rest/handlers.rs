@@ -11,7 +11,73 @@ use echidna::core::{Tactic as CoreTactic, TacticResult as CoreTacticResult, Term
 use std::sync::Arc;
 use tokio::sync::Mutex;
 
+// Import FFI wrapper
+use crate::ffi_wrapper;
+
 use crate::{models::*, AppState, ProofSession};
+
+/// Wrapper for FFI-based prover backend
+struct FfiProverBackend {
+    handle: i32,
+}
+
+impl FfiProverBackend {
+    pub fn new(handle: i32) -> Self {
+        FfiProverBackend { handle }
+    }
+}
+
+#[async_trait::async_trait]
+impl ProverBackend for FfiProverBackend {
+    async fn parse_file(&self, path: std::path::PathBuf) -> anyhow::Result<echidna::core::ProofState> {
+        let content = std::fs::read_to_string(&path)?;
+        ffi_wrapper::parse_string(self.handle, &content)?;
+        Ok(echidna::core::ProofState::new(content))
+    }
+
+    async fn parse_string(&self, content: &str) -> anyhow::Result<echidna::core::ProofState> {
+        ffi_wrapper::parse_string(self.handle, content)?;
+        Ok(echidna::core::ProofState::new(content.to_string()))
+    }
+
+    async fn verify_proof(&self, state: &echidna::core::ProofState) -> anyhow::Result<bool> {
+        ffi_wrapper::verify_proof(self.handle)
+    }
+
+    async fn apply_tactic(&self, state: &echidna::core::ProofState, tactic: &CoreTactic) -> anyhow::Result<TacticResult> {
+        let tactic_str = format!("{:?}", tactic);
+        if ffi_wrapper::apply_tactic(self.handle, &tactic_str)? {
+            Ok(TacticResult::Success(Box::new(state.clone())))
+        } else {
+            Ok(TacticResult::Error("Tactic failed".to_string()))
+        }
+    }
+
+    async fn suggest_tactics(&self, state: &echidna::core::ProofState, limit: usize) -> anyhow::Result<Vec<CoreTactic>> {
+        let tactic_names = ffi_wrapper::suggest_tactics(self.handle, limit)?;
+        let tactics = tactic_names.into_iter().map(|name| {
+            CoreTactic::Custom {
+                prover: "ffi".to_string(),
+                command: name,
+                args: vec![],
+            }
+        }).collect();
+        Ok(tactics)
+    }
+
+    async fn export(&self, state: &echidna::core::ProofState) -> anyhow::Result<String> {
+        ffi_wrapper::export_proof(self.handle)
+    }
+
+    async fn version(&self) -> anyhow::Result<String> {
+        ffi_wrapper::get_version()
+    }
+
+    fn kind(&self) -> CoreProverKind {
+        // This is a bit simplified - in a real implementation we'd track the kind
+        CoreProverKind::Lean // Default, would need to be set during creation
+    }
+}
 
 /// List all available provers (all 30)
 #[utoipa::path(

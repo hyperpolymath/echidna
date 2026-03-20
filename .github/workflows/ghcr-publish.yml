@@ -1,7 +1,8 @@
 # SPDX-License-Identifier: PMPL-1.0-or-later
 name: Publish to GHCR
 
-permissions: read-all
+permissions:
+  contents: read
 
 on:
   release:

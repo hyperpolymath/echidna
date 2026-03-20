@@ -1,4 +1,4 @@
 # ECHIDNA Neural Models v1.3
-# Trained: 2026-01-29T09:25:26.326
-# Premise Selector: vocabulary-based (161 words)
-# Tactic Predictor: logistic regression (7 classes)
+# Trained: 2026-03-20T18:42:25.462
+# Premise Selector: vocabulary-based (0 words)
+# Tactic Predictor: logistic regression (0 classes)
