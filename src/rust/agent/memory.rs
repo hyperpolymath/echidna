@@ -207,6 +207,196 @@ impl ProofMemory for SqliteMemory {
     }
 }
 
+// ═══════════════════════════════════════════════════════════════════════
+// VeriSimDB-backed proof memory (behind feature flag)
+// ═══════════════════════════════════════════════════════════════════════
+
+/// VeriSimDB-backed proof memory.
+///
+/// Stores proofs as octads in VeriSimDB (8-modality persistent storage)
+/// while maintaining an in-memory cache for fast find_similar lookups.
+/// Falls back gracefully to in-memory-only if VeriSimDB is unreachable.
+///
+/// Enabled with `--features verisimdb` in Cargo.toml.
+#[cfg(feature = "verisimdb")]
+pub struct VeriSimDBProofStore {
+    /// VeriSimDB HTTP client
+    client: crate::verisimdb_bridge::VeriSimDBClient,
+
+    /// In-memory cache (fast lookups + fallback)
+    local_successes: RwLock<Vec<CachedProof>>,
+    local_failures: RwLock<Vec<FailedAttempt>>,
+
+    /// Whether VeriSimDB is reachable (checked on init)
+    connected: RwLock<bool>,
+}
+
+#[cfg(feature = "verisimdb")]
+impl VeriSimDBProofStore {
+    /// Create a new VeriSimDB proof store.
+    ///
+    /// # Arguments
+    /// * `verisimdb_url` — Base URL of the VeriSimDB instance (e.g., "http://localhost:8080")
+    pub fn new(verisimdb_url: &str) -> Self {
+        VeriSimDBProofStore {
+            client: crate::verisimdb_bridge::VeriSimDBClient::new(verisimdb_url),
+            local_successes: RwLock::new(Vec::new()),
+            local_failures: RwLock::new(Vec::new()),
+            connected: RwLock::new(false),
+        }
+    }
+
+    /// Initialise the store and check VeriSimDB connectivity.
+    pub async fn init(&self) -> Result<()> {
+        let reachable = self.client.health_check().await;
+        *self.connected.write().await = reachable;
+
+        if reachable {
+            info!("VeriSimDB proof store connected");
+        } else {
+            warn!("VeriSimDB unreachable — operating in cache-only mode");
+        }
+
+        Ok(())
+    }
+}
+
+#[cfg(feature = "verisimdb")]
+#[async_trait]
+impl ProofMemory for VeriSimDBProofStore {
+    async fn store_success(
+        &self,
+        goal: &AgenticGoal,
+        proof: &ProofState,
+        prover: ProverKind,
+        time_ms: u64,
+    ) -> Result<()> {
+        let cached = CachedProof {
+            goal_id: goal.goal.id.clone(),
+            proof: proof.clone(),
+            prover,
+            time_ms,
+            timestamp: chrono::Utc::now().timestamp(),
+            aspects: goal.aspects.clone(),
+        };
+
+        // Always store locally for fast lookups
+        self.local_successes.write().await.push(cached);
+
+        // Build octad and send to VeriSimDB (best-effort)
+        if *self.connected.read().await {
+            use crate::verisimdb_bridge::{ProofOctadBuilder, ProofStatus};
+
+            let octad = ProofOctadBuilder::new(&goal.goal.id, &goal.goal, prover)
+                .with_proof_state(proof)
+                .with_status(if proof.is_complete() {
+                    ProofStatus::Complete
+                } else {
+                    ProofStatus::Partial
+                })
+                .with_aspects(goal.aspects.clone())
+                .with_time_ms(time_ms)
+                .build()?;
+
+            if let Err(e) = self.client.create_octad(&octad).await {
+                warn!("Failed to store proof in VeriSimDB (continuing in-memory): {}", e);
+            } else {
+                debug!("Stored proof octad {} in VeriSimDB", octad.key);
+            }
+        }
+
+        debug!("Stored successful proof for goal {}", goal.goal.id);
+        Ok(())
+    }
+
+    async fn store_failure(&self, goal: &AgenticGoal, reason: String) -> Result<()> {
+        let failed = FailedAttempt {
+            goal_id: goal.goal.id.clone(),
+            prover: goal.preferred_prover,
+            reason: reason.clone(),
+            timestamp: chrono::Utc::now().timestamp(),
+            aspects: goal.aspects.clone(),
+        };
+
+        self.local_failures.write().await.push(failed);
+
+        // Store failure in VeriSimDB (best-effort)
+        if *self.connected.read().await {
+            use crate::verisimdb_bridge::{ProofOctadBuilder, ProofStatus};
+
+            let prover = goal.preferred_prover.unwrap_or(ProverKind::Z3);
+            let octad = ProofOctadBuilder::new(&goal.goal.id, &goal.goal, prover)
+                .with_status(ProofStatus::Failed)
+                .with_aspects(goal.aspects.clone())
+                .build()?;
+
+            if let Err(e) = self.client.create_octad(&octad).await {
+                warn!("Failed to store failure in VeriSimDB: {}", e);
+            }
+        }
+
+        debug!("Stored failed attempt for goal {}", goal.goal.id);
+        Ok(())
+    }
+
+    async fn find_similar(&self, goal: &AgenticGoal) -> Result<Option<CachedProof>> {
+        let successes = self.local_successes.read().await;
+
+        // Check local cache first (fast path)
+        for cached in successes.iter() {
+            let overlap = goal.aspects.iter()
+                .filter(|a| cached.aspects.contains(a))
+                .count();
+
+            if overlap > 0 {
+                debug!("Found similar proof in local cache: {} aspects overlap", overlap);
+                return Ok(Some(cached.clone()));
+            }
+        }
+
+        // VeriSimDB vector similarity search would go here in future
+        // (requires neural embeddings in the vector modality)
+
+        Ok(None)
+    }
+
+    async fn get_successes(&self) -> Result<Vec<CachedProof>> {
+        Ok(self.local_successes.read().await.clone())
+    }
+
+    async fn get_failures(&self) -> Result<Vec<FailedAttempt>> {
+        Ok(self.local_failures.read().await.clone())
+    }
+
+    async fn stats(&self) -> Result<MemoryStats> {
+        let successes = self.local_successes.read().await;
+        let failures = self.local_failures.read().await;
+
+        let total_proofs = successes.len();
+        let total_failures = failures.len();
+        let total = total_proofs + total_failures;
+
+        let success_rate = if total > 0 {
+            total_proofs as f64 / total as f64
+        } else {
+            0.0
+        };
+
+        let avg_proof_time_ms = if !successes.is_empty() {
+            successes.iter().map(|s| s.time_ms).sum::<u64>() as f64 / successes.len() as f64
+        } else {
+            0.0
+        };
+
+        Ok(MemoryStats {
+            total_proofs,
+            total_failures,
+            success_rate,
+            avg_proof_time_ms,
+        })
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
