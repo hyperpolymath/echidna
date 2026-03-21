@@ -1,25 +1,14 @@
 # SPDX-License-Identifier: PMPL-1.0-or-later
-# SPDX-FileCopyrightText: 2024-2025 Jonathan D.A. Jewell <j.d.a.jewell@open.ac.uk>
+# SPDX-FileCopyrightText: 2024-2026 Jonathan D.A. Jewell <j.d.a.jewell@open.ac.uk>
 #
-# ECHIDNA Container Build Redirect
+# ECHIDNA Minimal Container Image
 #
-# The canonical Containerfiles are in .containerization/:
-#   .containerization/Containerfile       - Minimal (Z3, CVC5, Lean, Idris2)
-#   .containerization/Containerfile.full  - All Tier 1-4 provers + Julia
+# Includes: echidna binary + Z3 + Lean 4
+# For all provers + Julia ML: use .containerization/Containerfile.full
 #
-# Build with:
-#   podman build -f .containerization/Containerfile -t echidna:latest .
-#   podman build -f .containerization/Containerfile.full -t echidna:full .
-#
-# Seal:  selur seal echidna:latest
-# Sign:  cerro-torre sign echidna:latest
-#
-# Or use:
-#   just container-build
-#   just container-build-full
-#
-# This file exists for compatibility with tools that expect a root Containerfile.
-# It builds the minimal image using chainguard base images.
+# Build:  podman build -f Containerfile -t echidna:latest .
+# Run:    podman run --rm echidna:latest --version
+# Or:     just container-build
 
 # =============================================================================
 # Stage 1: Rust Builder
@@ -41,36 +30,36 @@ COPY src/interfaces ./src/interfaces
 RUN cargo build --release --bin echidna
 
 # =============================================================================
-# Stage 2: Idris2 Builder (optional — no prebuilt binaries available)
-# =============================================================================
-FROM cgr.dev/chainguard/wolfi-base:latest AS idris2-builder
-
-# Create placeholder directories so COPY --from doesn't fail
-RUN mkdir -p /opt/idris2/bin /build/idris/build/exec && \
-    touch /opt/idris2/bin/.keep /build/idris/build/exec/.keep
-
-# NOTE: Idris2 has no prebuilt Linux binaries. For full Idris2 support,
-# use .containerization/Containerfile.full which builds from source.
-# The minimal image ships without Idris2 — the echidna binary still works
-# for all 30 provers; only the ABI validator requires Idris2.
-
-# =============================================================================
-# Stage 3: Prover Installer
+# Stage 2: Prover Installer (Z3 from official release, Lean via elan)
 # =============================================================================
 FROM cgr.dev/chainguard/wolfi-base:latest AS prover-installer
 
 RUN apk add --no-cache \
-    z3 \
     curl \
-    ca-certificates
+    ca-certificates \
+    gzip \
+    unzip \
+    bash
 
+WORKDIR /tmp
+
+# Install Z3 from official GitHub release
+RUN curl -fsSL "https://github.com/Z3Prover/z3/releases/download/z3-4.13.4/z3-4.13.4-x64-glibc-2.35.zip" \
+    -o z3.zip && \
+    unzip -q z3.zip && \
+    mkdir -p /opt/z3/bin && \
+    cp z3-4.13.4-x64-glibc-2.35/bin/z3 /opt/z3/bin/ && \
+    chmod +x /opt/z3/bin/z3 && \
+    rm -rf z3.zip z3-4.13.4-x64-glibc-2.35
+
+# Install Lean 4 via elan
 RUN curl -fsSL https://raw.githubusercontent.com/leanprover/elan/master/elan-init.sh | \
-    sh -s -- -y --default-toolchain stable && \
+    bash -s -- -y --default-toolchain stable && \
     . "$HOME/.elan/env" && \
     lean --version
 
 # =============================================================================
-# Stage 4: Runtime Image (chainguard)
+# Stage 3: Runtime Image (chainguard)
 # =============================================================================
 FROM cgr.dev/chainguard/wolfi-base:latest
 
@@ -85,17 +74,15 @@ RUN apk add --no-cache \
     ca-certificates \
     libssl3 \
     gmp \
-    z3
+    libstdc++
 
 WORKDIR /app
 
 COPY --from=rust-builder /build/target/release/echidna /app/bin/echidna
-COPY --from=idris2-builder /opt/idris2 /opt/idris2
-COPY --from=idris2-builder /build/idris/build/exec/echidna-validator /app/bin/echidna-validator
+COPY --from=prover-installer /opt/z3/bin/z3 /app/bin/z3
 COPY --from=prover-installer /root/.elan /opt/elan
 
-ENV PATH="/app/bin:/opt/idris2/bin:/opt/elan/toolchains/stable/bin:${PATH}"
-ENV IDRIS2_PREFIX="/opt/idris2"
+ENV PATH="/app/bin:/opt/elan/toolchains/stable/bin:${PATH}"
 ENV ECHIDNA_PROVER_PATH="/opt"
 
 RUN mkdir -p /app/proofs /app/config /app/logs
