@@ -487,15 +487,17 @@ end
 Save trained solver to disk.
 """
 function save_solver(solver::NeuralSolver, path::String)
+    mkpath(path)
+
     # Save model weights
     weights = Flux.state(solver)
-    BSON.@save joinpath(path, "model.bson") weights
+    BSON.bson(joinpath(path, "model.bson"), weights=weights)
 
     # Save vocabulary
-    BSON.@save joinpath(path, "vocabulary.bson") solver.vocabulary
+    BSON.bson(joinpath(path, "vocabulary.bson"), vocabulary=solver.vocabulary)
 
     # Save config
-    BSON.@save joinpath(path, "config.bson") solver.config
+    BSON.bson(joinpath(path, "config.bson"), config=solver.config)
 
     @info "Solver saved to $path"
 end
@@ -507,17 +509,19 @@ Load trained solver from disk.
 """
 function load_solver(path::String)
     # Load vocabulary
-    BSON.@load joinpath(path, "vocabulary.bson") vocabulary
+    vocab_data = BSON.load(joinpath(path, "vocabulary.bson"))
+    vocabulary = vocab_data[:vocabulary]
 
     # Load config
-    BSON.@load joinpath(path, "config.bson") config
+    config_data = BSON.load(joinpath(path, "config.bson"))
+    config = config_data[:config]
 
     # Create solver
     solver = create_solver(vocabulary, config=config)
 
     # Load weights
-    BSON.@load joinpath(path, "model.bson") weights
-    Flux.loadmodel!(solver, weights)
+    weights_data = BSON.load(joinpath(path, "model.bson"))
+    Flux.loadmodel!(solver, weights_data[:weights])
 
     @info "Solver loaded from $path"
     return solver

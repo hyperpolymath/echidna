@@ -29,7 +29,6 @@ using Zygote
 using CUDA
 using GraphNeuralNetworks
 using Graphs
-using Transformers
 using NNlib
 using Statistics
 using LinearAlgebra

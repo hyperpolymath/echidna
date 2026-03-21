@@ -21,27 +21,28 @@ using Flux
 using CUDA
 using Statistics
 using LinearAlgebra
-using DataStructures: OrderedDict, LRU
 using Logging
 
 # ============================================================================
-# Inference Cache
+# Inference Cache (simple Dict-based, evicts oldest when full)
 # ============================================================================
 
 """
     InferenceCache
 
-LRU cache for inference results to speed up repeated queries.
+Cache for inference results to speed up repeated queries.
+Uses a Dict with FIFO eviction when max_size is reached.
 """
 mutable struct InferenceCache
-    cache::LRU{UInt64, PremiseRanking}
+    cache::Dict{UInt64, PremiseRanking}
+    order::Vector{UInt64}
     max_size::Int
     hits::Int
     misses::Int
 end
 
 function InferenceCache(max_size::Int=1000)
-    return InferenceCache(LRU{UInt64, PremiseRanking}(max_size), max_size, 0, 0)
+    return InferenceCache(Dict{UInt64, PremiseRanking}(), UInt64[], max_size, 0, 0)
 end
 
 """
@@ -78,6 +79,14 @@ end
 Store result in cache.
 """
 function cache_result!(cache::InferenceCache, key::UInt64, result::PremiseRanking)
+    if !haskey(cache.cache, key)
+        # Evict oldest if at capacity
+        while length(cache.order) >= cache.max_size
+            old_key = popfirst!(cache.order)
+            delete!(cache.cache, old_key)
+        end
+        push!(cache.order, key)
+    end
     cache.cache[key] = result
 end
 
