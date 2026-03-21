@@ -20,6 +20,44 @@ on:
 permissions: read-all
 
 jobs:
+  # Job 1: Compile Chapel .chpl files into a shared library
+  chapel-build:
+    name: Compile Chapel Metalayer
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
+
+      - name: Install Chapel
+        run: |
+          # Install Chapel from official apt repository
+          curl -fsSL https://github.com/chapel-lang/chapel/releases/download/2.3.0/chapel-2.3.0-1.ubuntu24.amd64.deb \
+            -o /tmp/chapel.deb
+          sudo dpkg -i /tmp/chapel.deb || sudo apt-get install -f -y
+          # Verify installation
+          chpl --version
+
+      - name: Compile Chapel proof search module
+        run: |
+          cd chapel_poc
+          chpl --library --dynamic \
+            -o libechidna_chapel \
+            chapel_ffi_exports.chpl parallel_proof_search.chpl
+          ls -la libechidna_chapel*
+
+      - name: Run Chapel standalone test
+        run: |
+          cd chapel_poc
+          chpl -o chapel_test parallel_proof_search.chpl
+          # Run with verbose output, will show prover availability
+          timeout 30 ./chapel_test --verbose=true || true
+
+      - name: Upload Chapel library artifact
+        uses: actions/upload-artifact@b4b15b8c7c6ac21ea08fcf65892d2ee8f75cf882 # v4
+        with:
+          name: chapel-lib
+          path: chapel_poc/libechidna_chapel*
+
+  # Job 2: Build and test Zig FFI bridge (always uses stubs)
   zig-ffi:
     name: Build & Test Zig FFI Bridge
     runs-on: ubuntu-latest
@@ -31,10 +69,10 @@ jobs:
         with:
           version: 0.13.0
 
-      - name: Build Zig FFI library
+      - name: Build Zig FFI library (with Chapel stubs)
         run: cd src/zig_ffi && zig build -Doptimize=ReleaseSafe
 
-      - name: Run Zig FFI tests
+      - name: Run Zig FFI tests (stub mode)
         run: cd src/zig_ffi && zig build test
 
       - name: Upload FFI library artifact
@@ -43,6 +81,7 @@ jobs:
           name: chapel-ffi-lib
           path: src/zig_ffi/zig-out/lib/
 
+  # Job 3: Build Rust with chapel feature (links against Zig FFI stubs)
   rust-chapel-feature:
     name: Rust Build with Chapel Feature
     runs-on: ubuntu-latest

@@ -132,13 +132,15 @@ mod chapel_ffi {
     use std::ffi::{CStr, CString};
     use std::os::raw::{c_char, c_double, c_int};
 
-    /// C-compatible proof result from Zig FFI
+    /// C-compatible proof result from Zig FFI (30 provers)
     #[repr(C)]
     struct CProofResult {
         success: c_int,
         prover_id: c_int,
         time_seconds: c_double,
+        exit_code: c_int,
         tactic_count: u32,
+        category: c_int,
         prover_name: *const c_char,
         error_message: *const c_char,
     }
@@ -148,25 +150,29 @@ mod chapel_ffi {
             goal: *const c_char,
             prover_ids: *const c_int,
             num_provers: c_int,
+            timeout_secs: c_int,
         ) -> CProofResult;
 
         fn echidna_free_proof_result(result: *mut CProofResult);
         fn echidna_chapel_is_available() -> c_int;
         fn echidna_chapel_get_version() -> *const c_char;
+        fn echidna_chapel_available_prover_count() -> c_int;
+        fn echidna_chapel_is_prover_available(prover_id: c_int) -> c_int;
         fn echidna_free_string(s: *const c_char);
     }
 
     pub struct ChapelParallelSearch;
 
     impl ProofSearchStrategy for ChapelParallelSearch {
-        fn search(&self, goal: &str, _timeout: Duration) -> Result<ProofResult> {
+        fn search(&self, goal: &str, timeout: Duration) -> Result<ProofResult> {
             // Convert goal to C string
             let c_goal = CString::new(goal).context("Invalid goal string")?;
+            let timeout_secs = timeout.as_secs() as c_int;
 
             // SAFETY: c_goal is a valid CString, null prover_ids with 0 count
-            // means "use all provers". Chapel FFI allocates the result.
+            // means "use all 30 provers". Chapel FFI allocates the result.
             let mut c_result = unsafe {
-                echidna_prove_parallel(c_goal.as_ptr(), std::ptr::null(), 0)
+                echidna_prove_parallel(c_goal.as_ptr(), std::ptr::null(), 0, timeout_secs)
             };
 
             // Convert result
@@ -241,6 +247,13 @@ mod chapel_ffi {
 
                 Ok(version)
             }
+        }
+
+        /// Get count of provers available on this system (0-30)
+        pub fn available_prover_count() -> u32 {
+            // SAFETY: Pure query, no side effects.
+            let count = unsafe { echidna_chapel_available_prover_count() };
+            if count >= 0 { count as u32 } else { 0 }
         }
     }
 }
