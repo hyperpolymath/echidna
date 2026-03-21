@@ -23,6 +23,7 @@ module EchidnaABI.Provers.AutoActive
 
 import EchidnaABI.Types
 import Data.Fin
+import Data.List.Elem
 
 %default total
 

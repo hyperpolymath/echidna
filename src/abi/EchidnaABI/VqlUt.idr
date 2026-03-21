@@ -56,12 +56,12 @@ L8_Effect      = 8
 L9_Temporal    = 9
 L10_Linear     = 10
 
-||| Proof that level n subsumes all levels below it.
+||| Proof that level n subsumes level m (n >= m as natural numbers).
 ||| If a query is safe at level n, it is safe at all levels <= n.
 public export
 data Subsumes : TypeLevel -> TypeLevel -> Type where
   SubsumeSelf : Subsumes n n
-  SubsumeStep : Subsumes (FS n) m -> Subsumes (FS n) (weaken m)
+  SubsumeStep : Subsumes n m -> LTE (finToNat m) (finToNat n) -> Subsumes n m
 
 -- ═══════════════════════════════════════════════════════════════════════
 -- Proof Query Protocol
@@ -168,17 +168,19 @@ data TheoremIdentity : Type where
     (theoremName : String) ->
     TheoremIdentity
 
+||| Extract the goal hash from a theorem identity (prover-agnostic).
+public export
+theoremGoalHash : TheoremIdentity -> String
+theoremGoalHash (MkTheoremIdentity h _) = h
+
 ||| Proof that cross-prover deduplication is safe.
 ||| If two octads share the same goal hash, they prove the same theorem.
 public export
 data DeduplicationSafe : TheoremIdentity -> TheoremIdentity -> Type where
   SameTheorem :
     (t1 : TheoremIdentity) -> (t2 : TheoremIdentity) ->
-    (goalHash t1 = goalHash t2) ->
+    (theoremGoalHash t1 = theoremGoalHash t2) ->
     DeduplicationSafe t1 t2
-  where
-    goalHash : TheoremIdentity -> String
-    goalHash (MkTheoremIdentity h _) = h
 
 -- ═══════════════════════════════════════════════════════════════════════
 -- Effect Tracking (Level 8)

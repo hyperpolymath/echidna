@@ -27,6 +27,11 @@ import Data.Fin
 
 %default total
 
+||| Proof that a list is non-empty.
+public export
+data NonEmpty : List a -> Type where
+  IsNonEmpty : NonEmpty (x :: xs)
+
 -- ═══════════════════════════════════════════════════════════════════════
 -- Constraint Solver Variants
 -- ═══════════════════════════════════════════════════════════════════════

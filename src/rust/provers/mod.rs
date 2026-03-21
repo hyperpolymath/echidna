@@ -295,6 +295,42 @@ impl ProverKind {
             ProverKind::ORTools => 1.5,  // Constraint/optimization
         }
     }
+
+    /// Default executable name for this prover (what to look for on PATH)
+    pub fn default_executable(&self) -> &'static str {
+        match self {
+            ProverKind::Agda => "agda",
+            ProverKind::Coq => "coqc",
+            ProverKind::Lean => "lean",
+            ProverKind::Isabelle => "isabelle",
+            ProverKind::Z3 => "z3",
+            ProverKind::CVC5 => "cvc5",
+            ProverKind::Metamath => "metamath",
+            ProverKind::HOLLight => "ocaml",
+            ProverKind::Mizar => "mizf",
+            ProverKind::PVS => "pvs",
+            ProverKind::ACL2 => "acl2",
+            ProverKind::HOL4 => "hol",
+            ProverKind::Idris2 => "idris2",
+            ProverKind::Vampire => "vampire",
+            ProverKind::EProver => "eprover",
+            ProverKind::SPASS => "SPASS",
+            ProverKind::AltErgo => "alt-ergo",
+            ProverKind::FStar => "fstar.exe",
+            ProverKind::Dafny => "dafny",
+            ProverKind::Why3 => "why3",
+            ProverKind::TLAPS => "tlapm",
+            ProverKind::Twelf => "twelf-server",
+            ProverKind::Nuprl => "nuprl",
+            ProverKind::Minlog => "minlog",
+            ProverKind::Imandra => "imandra",
+            ProverKind::GLPK => "glpsol",
+            ProverKind::SCIP => "scip",
+            ProverKind::MiniZinc => "minizinc",
+            ProverKind::Chuffed => "fzn-chuffed",
+            ProverKind::ORTools => "ortools_solve",
+        }
+    }
 }
 
 /// Configuration for a prover backend
@@ -383,6 +419,16 @@ pub struct ProverFactory;
 
 impl ProverFactory {
     pub fn create(kind: ProverKind, config: ProverConfig) -> anyhow::Result<Box<dyn ProverBackend>> {
+        // Fill in default executable if not specified
+        let config = if config.executable.as_os_str().is_empty() {
+            ProverConfig {
+                executable: PathBuf::from(kind.default_executable()),
+                ..config
+            }
+        } else {
+            config
+        };
+
         match kind {
             ProverKind::Agda => Ok(Box::new(agda::AgdaBackend::new(config))),
             ProverKind::Coq => Ok(Box::new(coq::CoqBackend::new(config))),
