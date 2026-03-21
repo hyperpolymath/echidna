@@ -19,7 +19,6 @@ Supported Provers:
 
 using Flux
 using NNlib
-using Transformers
 using Statistics
 using LinearAlgebra
 
@@ -349,6 +348,117 @@ end
 # ============================================================================
 
 """
+    PositionalEncoding
+
+Sinusoidal positional encoding for transformers.
+"""
+struct PositionalEncoding
+    dropout::Dropout
+    pe::Matrix{Float32}
+end
+
+Flux.@functor PositionalEncoding
+
+function PositionalEncoding(d_model::Int, max_len::Int=5000; dropout::Float32=0.1f0)
+    pe = zeros(Float32, d_model, max_len)
+
+    position = collect(0:max_len-1)
+    div_term = exp.(collect(0:2:d_model-1) .* -(log(10000.0) / d_model))
+
+    pe[1:2:end, :] = sin.(position' .* div_term)
+    pe[2:2:end, :] = cos.(position' .* div_term)
+
+    PositionalEncoding(Dropout(dropout), pe)
+end
+
+function (pe::PositionalEncoding)(x::AbstractArray)
+    seq_len = size(x, 2)
+    x = x .+ pe.pe[:, 1:seq_len]
+    return pe.dropout(x)
+end
+
+"""
+    SimpleAttention
+
+Lightweight multi-head self-attention for the text encoder.
+Defined here (not in neural_solver.jl) to avoid circular dependencies.
+"""
+struct SimpleAttention
+    num_heads::Int
+    head_dim::Int
+    qkv_proj::Dense
+    out_proj::Dense
+    dropout::Dropout
+end
+
+Flux.@functor SimpleAttention
+
+function SimpleAttention(d_model::Int, num_heads::Int; dropout::Float32=0.1f0)
+    head_dim = d_model ÷ num_heads
+    qkv_proj = Dense(d_model, 3 * d_model)
+    out_proj = Dense(d_model, d_model)
+    SimpleAttention(num_heads, head_dim, qkv_proj, out_proj, Dropout(dropout))
+end
+
+function (sa::SimpleAttention)(x::AbstractArray)
+    d, seq_len = size(x, 1), size(x, 2)
+    qkv = sa.qkv_proj(x)  # (3*d, seq_len)
+    q = qkv[1:d, :]
+    k = qkv[d+1:2d, :]
+    v = qkv[2d+1:end, :]
+
+    # Scaled dot-product attention (single-head for simplicity)
+    scores = (q' * k) ./ sqrt(Float32(d))
+    attn = softmax(scores, dims=2)
+    attn = sa.dropout(attn)
+    out = v * attn'
+    return sa.out_proj(out)
+end
+
+"""
+    TransformerEncoderLayer
+
+Single transformer encoder layer with self-attention and FFN.
+"""
+struct TransformerEncoderLayer
+    attention::SimpleAttention
+    norm1::LayerNorm
+    ffn::Chain
+    norm2::LayerNorm
+    dropout::Dropout
+end
+
+Flux.@functor TransformerEncoderLayer
+
+function TransformerEncoderLayer(d_model::Int, d_ff::Int; num_heads::Int=8, dropout::Float32=0.1f0)
+    attention = SimpleAttention(d_model, num_heads, dropout=dropout)
+    norm1 = LayerNorm(d_model)
+
+    ffn = Chain(
+        Dense(d_model, d_ff, gelu),
+        Dropout(dropout),
+        Dense(d_ff, d_model)
+    )
+    norm2 = LayerNorm(d_model)
+
+    dropout_layer = Dropout(dropout)
+
+    return TransformerEncoderLayer(attention, norm1, ffn, norm2, dropout_layer)
+end
+
+function (layer::TransformerEncoderLayer)(x::AbstractArray)
+    # Self-attention with residual
+    attn_out = layer.attention(x)
+    x = layer.norm1(x .+ layer.dropout(attn_out))
+
+    # FFN with residual
+    ffn_out = layer.ffn(x)
+    x = layer.norm2(x .+ layer.dropout(ffn_out))
+
+    return x
+end
+
+"""
     TextEncoder
 
 Neural network for encoding tokenized text into embeddings.
@@ -402,79 +512,6 @@ function (encoder::TextEncoder)(token_ids::AbstractMatrix)
 
     # Output projection
     x = encoder.output_projection(x)
-
-    return x
-end
-
-"""
-    PositionalEncoding
-
-Sinusoidal positional encoding for transformers.
-"""
-struct PositionalEncoding
-    dropout::Dropout
-    pe::Matrix{Float32}
-end
-
-Flux.@functor PositionalEncoding
-
-function PositionalEncoding(d_model::Int, max_len::Int=5000; dropout::Float32=0.1f0)
-    pe = zeros(Float32, d_model, max_len)
-
-    position = collect(0:max_len-1)
-    div_term = exp.(collect(0:2:d_model-1) .* -(log(10000.0) / d_model))
-
-    pe[1:2:end, :] = sin.(position' .* div_term)
-    pe[2:2:end, :] = cos.(position' .* div_term)
-
-    PositionalEncoding(Dropout(dropout), pe)
-end
-
-function (pe::PositionalEncoding)(x::AbstractArray)
-    seq_len = size(x, 2)
-    x .+ pe.pe[:, 1:seq_len]
-    return pe.dropout(x)
-end
-
-"""
-    TransformerEncoderLayer
-
-Single transformer encoder layer with multi-head attention and FFN.
-"""
-struct TransformerEncoderLayer
-    attention::MultiHeadAttention
-    norm1::LayerNorm
-    ffn::Chain
-    norm2::LayerNorm
-    dropout::Dropout
-end
-
-Flux.@functor TransformerEncoderLayer
-
-function TransformerEncoderLayer(d_model::Int, d_ff::Int; num_heads::Int=8, dropout::Float32=0.1f0)
-    attention = MultiHeadAttention(d_model, num_heads)
-    norm1 = LayerNorm(d_model)
-
-    ffn = Chain(
-        Dense(d_model, d_ff, gelu),
-        Dropout(dropout),
-        Dense(d_ff, d_model)
-    )
-    norm2 = LayerNorm(d_model)
-
-    dropout_layer = Dropout(dropout)
-
-    return TransformerEncoderLayer(attention, norm1, ffn, norm2, dropout_layer)
-end
-
-function (layer::TransformerEncoderLayer)(x::AbstractArray)
-    # Self-attention with residual
-    attn_out = layer.attention(x, x, x)
-    x = layer.norm1(x .+ layer.dropout(attn_out))
-
-    # FFN with residual
-    ffn_out = layer.ffn(x)
-    x = layer.norm2(x .+ layer.dropout(ffn_out))
 
     return x
 end
