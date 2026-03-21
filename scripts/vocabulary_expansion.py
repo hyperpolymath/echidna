@@ -186,7 +186,7 @@ def main():
     synonym_vocab = add_synonyms_and_variants()
     
     # Combine all (convert dicts to sets first)
-    all_vocab = proof_vocab.union(set(math_vocab.keys()), set(cs_vocab.keys()), set(specialized_vocab.keys()), set(synonym_vocab.keys()))
+    all_vocab = proof_vocab.union(math_vocab, cs_vocab, specialized_vocab, set(synonym_vocab.keys()))
     
     print(f"\n✅ Total vocabulary collected: {len(all_vocab)} words")
     

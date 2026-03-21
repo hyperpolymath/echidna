@@ -136,7 +136,14 @@ training_data/*_mathlib4.jsonl
 training_data/*_metamath.jsonl
 training_data/stats_*.json
 !training_data/stats.json
+!training_data/stats_UNIFIED.json
 training_data/vocabulary_*.txt
+!training_data/vocabulary_UNIFIED.txt
+
+# Large unified/merged JSONL files (exceed GitHub 100MB limit)
+training_data/proof_states_UNIFIED.jsonl
+training_data/proof_states_smtlib.jsonl
+training_data/tactics_smtlib.jsonl
 
 # Root-level merged artifacts
 premises_merged.jsonl
