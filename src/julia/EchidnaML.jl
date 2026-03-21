@@ -1,5 +1,5 @@
 # SPDX-FileCopyrightText: 2025 ECHIDNA Project Team
-# SPDX-License-Identifier: MIT AND Palimpsest-0.6
+# SPDX-License-Identifier: PMPL-1.0-or-later
 
 """
     EchidnaML
@@ -185,6 +185,7 @@ get_config() = CONFIG[]
 # Include submodules
 include("models/encoder.jl")
 include("models/neural_solver.jl")
+include("training/dataloader.jl")
 include("training/train.jl")
 include("inference/predict.jl")
 include("api/server.jl")

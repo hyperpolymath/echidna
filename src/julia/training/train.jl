@@ -1,5 +1,5 @@
 # SPDX-FileCopyrightText: 2025 ECHIDNA Project Team
-# SPDX-License-Identifier: MIT AND Palimpsest-0.6
+# SPDX-License-Identifier: PMPL-1.0-or-later
 
 """
     training/train.jl
@@ -19,14 +19,12 @@ Features:
 """
 
 using Flux
-using Flux.Optimise
 using Optimisers
 using CUDA
 using Statistics
 using Random
 using Logging
-using DataFrames
-using CSV
+using JSON3
 using BSON
 using Dates
 using ProgressMeter
@@ -292,20 +290,26 @@ end
 """
     save_metrics(metrics::TrainingMetrics, path::String)
 
-Save metrics to CSV file.
+Save metrics to JSONL file.
 """
 function save_metrics(metrics::TrainingMetrics, path::String)
-    df = DataFrame(
-        epoch = metrics.epoch,
-        train_loss = metrics.train_loss,
-        val_loss = metrics.val_loss,
-        precision_at_10 = metrics.precision_at_k,
-        recall_at_10 = metrics.recall_at_k,
-        mrr = metrics.mrr,
-        learning_rate = metrics.learning_rate,
-        timestamp = metrics.timestamp
-    )
-    CSV.write(path, df)
+    open(path, "w") do io
+        for i in eachindex(metrics.epoch)
+            entry = Dict{String, Any}(
+                "epoch" => metrics.epoch[i],
+                "train_loss" => metrics.train_loss[i],
+                "learning_rate" => metrics.learning_rate[i],
+                "timestamp" => string(metrics.timestamp[i])
+            )
+            if i <= length(metrics.val_loss)
+                entry["val_loss"] = metrics.val_loss[i]
+                entry["precision_at_10"] = metrics.precision_at_k[i]
+                entry["recall_at_10"] = metrics.recall_at_k[i]
+                entry["mrr"] = metrics.mrr[i]
+            end
+            println(io, JSON3.write(entry))
+        end
+    end
     @info "Metrics saved to $path"
 end
 
@@ -386,8 +390,12 @@ function train_solver!(solver::NeuralSolver, train_data::TrainingDataset,
     # Create save directory
     mkpath(config.save_dir)
 
-    # Initialize optimizer
-    opt_state = Flux.setup(Adam(config.learning_rate), solver)
+    # Initialize optimizer with gradient clipping
+    opt_rule = Optimisers.OptimiserChain(
+        Optimisers.ClipNorm(config.gradient_clip_norm),
+        Optimisers.Adam(config.learning_rate)
+    )
+    opt_state = Flux.setup(opt_rule, solver)
 
     # Metrics tracking
     metrics = TrainingMetrics()
@@ -419,10 +427,7 @@ function train_solver!(solver::NeuralSolver, train_data::TrainingDataset,
                 combined_loss(m, batch, α=config.loss_alpha)
             end
 
-            # Clip gradients
-            Flux.Optimise.clip_norm!(grads, config.gradient_clip_norm)
-
-            # Update parameters
+            # Update parameters (gradient clipping via Optimisers.ClipNorm in opt setup)
             Flux.update!(opt_state, solver, grads[1])
 
             epoch_loss += loss
@@ -501,32 +506,10 @@ end
 # Data Loading Utilities
 # ============================================================================
 
-"""
-    load_training_data(data_dir::String; train_split::Float32=0.8f0)
-
-Load training and validation data from directory.
-"""
-function load_training_data(data_dir::String; train_split::Float32=0.8f0)
-    # Placeholder - implement based on your data format
-    # Expected: JSON/BSON files with proof states and premise labels
-
-    @info "Loading training data from $data_dir"
-
-    # TODO: Implement actual data loading
-    # For now, return empty datasets
-    train_examples = TrainingExample[]
-    val_examples = TrainingExample[]
-
-    train_data = TrainingDataset(train_examples, batch_size=32, shuffle=true)
-    val_data = TrainingDataset(val_examples, batch_size=32, shuffle=false)
-
-    @info "Loaded $(length(train_examples)) training examples, $(length(val_examples)) validation examples"
-
-    return train_data, val_data
-end
+# NOTE: load_training_data is defined in training/dataloader.jl (included before this file).
+# It reads JSONL files and returns (train_data, val_data, vocab).
 
 export TrainingExample, TrainingDataset, next_batch!, reset!
 export ranking_loss, contrastive_loss, combined_loss
 export TrainingMetrics, compute_metrics, log_metrics!, save_metrics
 export TrainingConfig, train_solver!
-export load_training_data
