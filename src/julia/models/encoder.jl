@@ -533,12 +533,12 @@ function encode_proof_state(state::ProofState, vocab::ProverVocabulary, encoder:
     goal_tokens, goal_features = encode_goal(prover_enc, state.goal)
     goal_ids = encode_tokens(vocab, goal_tokens)
 
-    # Encode context
-    context_tokens = reduce(vcat, [tokenize_text(c) for c in state.context])
+    # Encode context (may be empty)
+    context_tokens = isempty(state.context) ? String[] : reduce(vcat, [tokenize_text(c) for c in state.context])
     context_ids = encode_tokens(vocab, context_tokens)
 
-    # Encode hypotheses
-    hyp_tokens = reduce(vcat, [tokenize_text(h) for h in state.hypotheses])
+    # Encode hypotheses (may be empty)
+    hyp_tokens = isempty(state.hypotheses) ? String[] : reduce(vcat, [tokenize_text(h) for h in state.hypotheses])
     hyp_ids = encode_tokens(vocab, hyp_tokens)
 
     # Combine all tokens with separator

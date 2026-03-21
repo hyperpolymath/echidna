@@ -39,7 +39,7 @@ Nodes: Theorems, premises, proof states
 Edges: Dependencies, implications, similarity
 """
 struct TheoremGraph
-    graph::SimpleWeightedDiGraph{Int, Float32}
+    graph::SimpleWeightedDiGraph
     node_features::Matrix{Float32}  # (feature_dim, num_nodes)
     node_types::Vector{Symbol}       # :theorem, :premise, :goal
     node_names::Vector{String}
@@ -286,7 +286,7 @@ struct PremiseRanker
     gnn_encoder::GNNEncoder
     goal_encoder::Dense
     premise_encoder::Dense
-    cross_attention::MultiHeadAttention
+    cross_attention  # Our custom EchidnaMHA (not Flux's)
     score_mlp::Chain
 end
 
@@ -298,7 +298,7 @@ function PremiseRanker(feature_dim::Int, hidden_dim::Int, num_gnn_layers::Int=4)
     goal_encoder = Dense(hidden_dim, hidden_dim)
     premise_encoder = Dense(hidden_dim, hidden_dim)
 
-    cross_attention = MultiHeadAttention(hidden_dim, 8)
+    cross_attention = EchidnaMHA(hidden_dim, 8)
 
     score_mlp = Chain(
         Dense(hidden_dim * 2, hidden_dim, relu),
@@ -339,11 +339,11 @@ function (ranker::PremiseRanker)(g::TheoremGraph)
 end
 
 """
-    MultiHeadAttention
+    EchidnaMHA
 
 Standard multi-head attention mechanism.
 """
-struct MultiHeadAttention
+struct EchidnaMHA
     num_heads::Int
     head_dim::Int
     qkv_proj::Dense
@@ -351,18 +351,18 @@ struct MultiHeadAttention
     dropout::Dropout
 end
 
-Flux.@functor MultiHeadAttention
+Flux.@functor EchidnaMHA
 
-function MultiHeadAttention(d_model::Int, num_heads::Int; dropout::Float32=0.1f0)
+function EchidnaMHA(d_model::Int, num_heads::Int; dropout::Float32=0.1f0)
     head_dim = d_model ÷ num_heads
     qkv_proj = Dense(d_model, 3 * d_model)
     out_proj = Dense(d_model, d_model)
     dropout_layer = Dropout(dropout)
 
-    return MultiHeadAttention(num_heads, head_dim, qkv_proj, out_proj, dropout_layer)
+    return EchidnaMHA(num_heads, head_dim, qkv_proj, out_proj, dropout_layer)
 end
 
-function (mha::MultiHeadAttention)(Q::AbstractMatrix, K::AbstractMatrix, V::AbstractMatrix)
+function (mha::EchidnaMHA)(Q::AbstractMatrix, K::AbstractMatrix, V::AbstractMatrix)
     # Q, K, V: (d_model, seq_len)
     seq_len_q = size(Q, 2)
     seq_len_kv = size(K, 2)
@@ -411,7 +411,8 @@ struct NeuralSolver
     config::EchidnaConfig
 end
 
-Flux.@functor NeuralSolver
+# Only traverse neural network fields, not vocabulary/config
+Flux.@functor NeuralSolver (text_encoder, premise_ranker,)
 
 """
     create_solver(vocab::ProverVocabulary; config::EchidnaConfig=get_config())
@@ -529,5 +530,5 @@ end
 
 export TheoremGraph, build_theorem_graph
 export GCNLayer, GraphAttentionLayer, GNNEncoder
-export PremiseRanker, MultiHeadAttention
+export PremiseRanker, EchidnaMHA
 export NeuralSolver, create_solver, save_solver, load_solver
