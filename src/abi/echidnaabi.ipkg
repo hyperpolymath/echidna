@@ -7,11 +7,11 @@
 
 package echidnaabi
 
-version = 0.1.0
+version = 0.2.0
 
 authors = "Jonathan D.A. Jewell"
 license = "PMPL-1.0-or-later"
-brief   = "ECHIDNA ABI definitions with formal proofs (zero believe_me)"
+brief   = "ECHIDNA ABI definitions with formal proofs for 30 prover backends (zero believe_me)"
 
 sourcedir = "."
 
@@ -21,6 +21,14 @@ depends = base
 modules = EchidnaABI.Types
         , EchidnaABI.Layout
         , EchidnaABI.Foreign
+        , EchidnaABI.Provers
+        , EchidnaABI.Provers.InteractiveAssistants
+        , EchidnaABI.Provers.SmtSolvers
+        , EchidnaABI.Provers.FirstOrderAtp
+        , EchidnaABI.Provers.DeclarativeProvers
+        , EchidnaABI.Provers.AutoActive
+        , EchidnaABI.Provers.ConstraintSolvers
+        , EchidnaABI.VqlUt
         , Overlay
         , Overlay.Foreign
         , Boj.Foreign

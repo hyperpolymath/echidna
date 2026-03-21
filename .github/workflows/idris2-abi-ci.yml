@@ -1,0 +1,68 @@
+# SPDX-License-Identifier: PMPL-1.0-or-later
+name: Idris2 ABI Type-Check
+
+on:
+  push:
+    paths:
+      - 'src/abi/**'
+      - '.github/workflows/idris2-abi-ci.yml'
+  pull_request:
+    paths:
+      - 'src/abi/**'
+      - '.github/workflows/idris2-abi-ci.yml'
+
+permissions: read-all
+
+jobs:
+  idris2-typecheck:
+    name: Type-check Idris2 ABI definitions
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
+
+      - name: Install Idris2
+        run: |
+          # Install Idris2 from official release
+          curl -fsSL "https://github.com/idris-lang/Idris2/releases/download/v0.8.0/Idris2-0.8.0-Linux-x86_64.tar.gz" \
+            -o /tmp/idris2.tar.gz
+          sudo mkdir -p /opt/idris2
+          sudo tar -xzf /tmp/idris2.tar.gz -C /opt/idris2 --strip-components=1
+          echo "/opt/idris2/bin" >> "$GITHUB_PATH"
+          export PATH="/opt/idris2/bin:$PATH"
+          export IDRIS2_PREFIX="/opt/idris2"
+          idris2 --version
+
+      - name: Type-check all ABI modules via ipkg
+        env:
+          IDRIS2_PREFIX: /opt/idris2
+        run: |
+          cd src/abi
+          echo "=== Type-checking ECHIDNA ABI package (16 modules) ==="
+          idris2 --build echidnaabi.ipkg
+          echo "✓ All ABI modules type-check successfully"
+
+      - name: Verify no dangerous patterns
+        run: |
+          echo "=== Scanning for dangerous patterns in ABI code ==="
+          FOUND=0
+          for pattern in "believe_me" "assert_total" "unsafePerformIO" "prim__crash"; do
+            if grep -r "$pattern" src/abi/ --include="*.idr"; then
+              echo "✗ DANGEROUS: Found '$pattern' in ABI code"
+              FOUND=1
+            fi
+          done
+          if [ "$FOUND" -eq 0 ]; then
+            echo "✓ No dangerous patterns found"
+          else
+            echo "✗ Dangerous patterns detected — ABI code must be formally verified"
+            exit 1
+          fi
+
+      - name: Count modules and report
+        run: |
+          echo "=== ABI Module Summary ==="
+          IDR_COUNT=$(find src/abi -name "*.idr" | wc -l)
+          echo "Total .idr files: $IDR_COUNT"
+          echo ""
+          echo "Module listing:"
+          find src/abi -name "*.idr" -printf "  %P\n" | sort

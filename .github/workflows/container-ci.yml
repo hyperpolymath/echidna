@@ -1,0 +1,78 @@
+# SPDX-License-Identifier: PMPL-1.0-or-later
+name: Container Build Verification
+
+on:
+  push:
+    paths:
+      - 'Containerfile'
+      - '.containerization/**'
+      - 'Cargo.toml'
+      - 'Cargo.lock'
+      - 'src/rust/**'
+      - '.github/workflows/container-ci.yml'
+  pull_request:
+    paths:
+      - 'Containerfile'
+      - '.containerization/**'
+      - 'Cargo.toml'
+      - 'Cargo.lock'
+      - 'src/rust/**'
+      - '.github/workflows/container-ci.yml'
+
+permissions: read-all
+
+jobs:
+  container-build:
+    name: Build & verify container image
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
+
+      - name: Install Podman
+        run: |
+          sudo apt-get update -q
+          sudo apt-get install -y -q podman
+
+      - name: Build minimal container image
+        run: |
+          podman build \
+            -f Containerfile \
+            -t echidna:ci-test \
+            --no-cache \
+            .
+
+      - name: Verify image metadata
+        run: |
+          echo "=== Image labels ==="
+          podman inspect echidna:ci-test --format '{{range $k, $v := .Config.Labels}}{{$k}}: {{$v}}{{"\n"}}{{end}}'
+
+          echo "=== Image size ==="
+          podman images echidna:ci-test --format "{{.Size}}"
+
+      - name: Verify ECHIDNA binary runs
+        run: |
+          echo "=== echidna --version ==="
+          podman run --rm echidna:ci-test --version
+
+          echo "=== echidna --help ==="
+          podman run --rm echidna:ci-test --help
+
+      - name: Verify solver availability inside container
+        run: |
+          echo "=== Checking installed solvers ==="
+          podman run --rm --entrypoint /bin/sh echidna:ci-test -c '
+            echo "Z3:"; z3 --version 2>/dev/null || echo "  not found"
+            echo "Lean:"; lean --version 2>/dev/null || echo "  not found"
+            echo "Idris2:"; idris2 --version 2>/dev/null || echo "  not found"
+          '
+
+      - name: Verify healthcheck
+        run: |
+          echo "=== Running healthcheck command ==="
+          podman run --rm echidna:ci-test --version
+          echo "✓ Healthcheck passed"
+
+      - name: Clean up
+        if: always()
+        run: |
+          podman rmi echidna:ci-test 2>/dev/null || true
