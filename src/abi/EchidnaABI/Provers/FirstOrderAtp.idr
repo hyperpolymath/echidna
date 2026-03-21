@@ -22,6 +22,7 @@ module EchidnaABI.Provers.FirstOrderAtp
 
 import EchidnaABI.Types
 import Data.Fin
+import Data.List.Elem
 
 %default total
 
