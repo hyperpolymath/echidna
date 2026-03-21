@@ -13,7 +13,7 @@
 
 use anyhow::{Context, Result};
 use serde::{Deserialize, Serialize};
-use std::path::{Path, PathBuf};
+use std::path::PathBuf;
 
 /// Supported proof certificate formats
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
@@ -69,8 +69,10 @@ pub struct CertificateVerifier {
     /// Path to drat-trim binary
     drat_trim_path: PathBuf,
     /// Path to lean4checker binary
+    #[allow(dead_code)]
     lean4checker_path: PathBuf,
     /// Path to coqchk binary
+    #[allow(dead_code)]
     coqchk_path: PathBuf,
     /// Storage directory for certificates
     storage_dir: PathBuf,

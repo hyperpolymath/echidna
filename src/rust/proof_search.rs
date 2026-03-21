@@ -33,7 +33,7 @@
 //! but they are LEGITIMATE, OPTIONAL, and NECESSARY for Chapel interop.
 
 use crate::provers::{ProverConfig, ProverFactory, ProverKind};
-use anyhow::{Context, Result};
+use anyhow::Result;
 use std::time::{Duration, Instant};
 
 /// Proof result from any strategy
@@ -73,7 +73,7 @@ pub trait ProofSearchStrategy: Send + Sync {
 pub struct SequentialSearch;
 
 impl ProofSearchStrategy for SequentialSearch {
-    fn search(&self, goal: &str, timeout: Duration) -> Result<ProofResult> {
+    fn search(&self, _goal: &str, timeout: Duration) -> Result<ProofResult> {
         let start = Instant::now();
         let config = ProverConfig {
             timeout: timeout.as_secs(),

@@ -9,13 +9,12 @@
 //! across multiple provers with neural guidance and symbolic verification.
 
 use anyhow::Result;
-use async_trait::async_trait;
 use serde::{Deserialize, Serialize};
 use std::collections::VecDeque;
 use tokio::sync::RwLock;
 use tracing::{debug, info, warn};
 
-use crate::core::{Goal, ProofState, Tactic, TacticResult, Term, Theorem};
+use crate::core::{Goal, ProofState, Tactic, Term};
 use crate::provers::{ProverBackend, ProverKind};
 
 pub mod memory;
@@ -290,7 +289,7 @@ impl AgentCore {
     }
 
     /// Process a single goal
-    async fn process_goal(&self, mut goal: AgenticGoal) -> Result<GoalResult> {
+    async fn process_goal(&self, goal: AgenticGoal) -> Result<GoalResult> {
         // Step 1: Check memory for similar proofs
         if let Some(cached) = self.memory.find_similar(&goal).await? {
             info!("Found similar proof in memory for goal {}", goal.goal.id);
@@ -330,7 +329,7 @@ impl AgentCore {
         };
 
         // Step 5: Try tactics
-        let start = std::time::Instant::now();
+        let _start = std::time::Instant::now();
 
         for tactic in tactics {
             debug!("Trying tactic {:?} for goal {}", tactic, goal.goal.id);

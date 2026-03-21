@@ -22,7 +22,7 @@ use tokio::io::AsyncWriteExt;
 use tokio::process::Command;
 
 use super::{ProverBackend, ProverConfig, ProverKind};
-use crate::core::{Goal, Hypothesis, ProofState, Tactic, TacticResult, Term};
+use crate::core::{Goal, ProofState, Tactic, TacticResult, Term};
 
 /// E Prover theorem prover backend
 pub struct EProverBackend {

@@ -17,12 +17,10 @@
 use async_trait::async_trait;
 use anyhow::{Context, Result};
 use std::path::PathBuf;
-use std::process::Stdio;
-use tokio::io::AsyncWriteExt;
 use tokio::process::Command;
 
 use super::{ProverBackend, ProverConfig, ProverKind};
-use crate::core::{Goal, Hypothesis, ProofState, Tactic, TacticResult, Term};
+use crate::core::{Goal, ProofState, Tactic, TacticResult, Term};
 
 /// Alt-Ergo theorem prover backend
 pub struct AltErgoBackend {

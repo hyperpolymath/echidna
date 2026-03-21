@@ -17,7 +17,7 @@ use super::AgenticGoal;
 
 /// Prover performance statistics
 #[derive(Debug, Clone, Serialize, Deserialize)]
-struct ProverStats {
+pub struct ProverStats {
     /// Total attempts
     attempts: u32,
 

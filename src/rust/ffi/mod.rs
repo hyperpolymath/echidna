@@ -34,7 +34,7 @@
 //! panic-attack flagged these as "High" severity because they use unsafe,
 //! but they are LEGITIMATE and NECESSARY for C interoperability.
 
-use std::ffi::{c_char, c_int, c_void, CStr, CString};
+use std::ffi::{c_int, c_void};
 use std::path::PathBuf;
 use std::ptr;
 

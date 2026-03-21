@@ -12,7 +12,7 @@ use async_trait::async_trait;
 use tracing::{debug, info};
 
 use crate::core::{Goal, Term};
-use super::{AgenticGoal, Priority};
+use super::AgenticGoal;
 
 /// Trait for goal planning/decomposition
 #[async_trait]
@@ -35,7 +35,7 @@ impl RulePlanner {
     }
 
     /// Check if term is a conjunction (A ∧ B)
-    fn is_conjunction(&self, term: &Term) -> Option<(Term, Term)> {
+    fn is_conjunction(&self, _term: &Term) -> Option<(Term, Term)> {
         // TODO: Implement proper pattern matching for conjunction
         None
     }
@@ -71,7 +71,7 @@ impl Planner for RulePlanner {
         // Rule 1: Decompose implication (A → B) into:
         //   - Assume A
         //   - Prove B
-        if let Some((premise, conclusion)) = self.is_implication(&goal.goal.target) {
+        if let Some((_premise, conclusion)) = self.is_implication(&goal.goal.target) {
             debug!("Decomposing implication");
 
             // Sub-goal 1: Assume premise (this becomes a hypothesis)
@@ -150,6 +150,7 @@ impl Planner for LeanPlanner {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::agent::Priority;
     use crate::core::{Goal, Term};
 
     #[tokio::test]

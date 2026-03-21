@@ -13,14 +13,13 @@ use async_trait::async_trait;
 use anyhow::{anyhow, Context, Result};
 use nom::{
     branch::alt,
-    bytes::complete::{tag, take_until, take_while, take_while1},
-    character::complete::{alpha1, alphanumeric1, multispace0, multispace1, space0, space1},
-    combinator::{opt, recognize},
+    bytes::complete::{tag, take_until, take_while},
+    character::complete::{alpha1, multispace0, space0, space1},
+    combinator::opt,
     multi::{many0, separated_list0},
-    sequence::{delimited, pair, preceded, tuple},
+    sequence::preceded,
     IResult,
 };
-use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use std::path::PathBuf;
 use tokio::process::Command;
@@ -28,7 +27,7 @@ use tokio::sync::Mutex;
 
 use crate::core::{
     Context as ProofContext, Definition, Goal, Hypothesis, ProofState, Tactic, TacticResult,
-    Term, Theorem, Variable,
+    Term, Theorem,
 };
 use crate::provers::{ProverBackend, ProverConfig, ProverKind};
 
@@ -494,7 +493,7 @@ impl ProverBackend for Idris2Backend {
                         aspects: Vec::new(),
                     });
                 }
-                Idris2Decl::Interface { name, params, methods } => {
+                Idris2Decl::Interface { name, params: _, methods } => {
                     // Interface as a constraint type
                     context.definitions.push(Definition {
                         name: name.clone(),
@@ -516,7 +515,7 @@ impl ProverBackend for Idris2Backend {
                         });
                     }
                 }
-                Idris2Decl::Pragma { directive, args } => {
+                Idris2Decl::Pragma { directive, args: _ } => {
                     // Store pragmas as metadata
                     if directive == "total" || directive == "default" {
                         // Track totality checking
@@ -539,7 +538,7 @@ impl ProverBackend for Idris2Backend {
 
     async fn apply_tactic(&self, state: &ProofState, tactic: &Tactic) -> Result<TacticResult> {
         match tactic {
-            Tactic::Exact(term) => {
+            Tactic::Exact(_term) => {
                 let mut new_state = state.clone();
                 if !new_state.goals.is_empty() {
                     new_state.goals.remove(0);
@@ -625,19 +624,19 @@ impl ProverBackend for Idris2Backend {
                     Ok(TacticResult::Success(new_state))
                 }
             }
-            Tactic::Cases(scrutinee) => {
+            Tactic::Cases(_scrutinee) => {
                 let mut new_state = state.clone();
                 // Generate case split - creates new goals for each constructor
                 new_state.proof_script.push(tactic.clone());
                 Ok(TacticResult::Success(new_state))
             }
-            Tactic::Induction(target) => {
+            Tactic::Induction(_target) => {
                 let mut new_state = state.clone();
                 // Induction creates base case and inductive step goals
                 new_state.proof_script.push(tactic.clone());
                 Ok(TacticResult::Success(new_state))
             }
-            Tactic::Rewrite(eq_name) => {
+            Tactic::Rewrite(_eq_name) => {
                 let mut new_state = state.clone();
                 // Rewrite using an equality
                 new_state.proof_script.push(tactic.clone());
@@ -653,7 +652,7 @@ impl ProverBackend for Idris2Backend {
                 let mut new_state = state.clone();
                 // Try to solve with a hypothesis
                 if let Some(goal) = new_state.goals.first() {
-                    for hyp in &goal.hypotheses {
+                    for _hyp in &goal.hypotheses {
                         // Check if hypothesis type matches goal
                         // Simplified: would need proper unification
                     }
@@ -668,7 +667,7 @@ impl ProverBackend for Idris2Backend {
                     Ok(TacticResult::Success(new_state))
                 }
             }
-            Tactic::Custom { prover, command, args } => {
+            Tactic::Custom { prover, command, args: _ } => {
                 if prover != "idris2" {
                     return Err(anyhow!("Custom tactic for wrong prover: {}", prover));
                 }
@@ -758,7 +757,7 @@ impl ProverBackend for Idris2Backend {
             let stmt_str = self.term_to_idris2(&theorem.statement);
             output.push_str(&format!("{} : {}\n", theorem.name, stmt_str));
 
-            if let Some(proof) = &theorem.proof {
+            if let Some(_proof) = &theorem.proof {
                 // Generate proof term from tactics
                 // Simplified: would need proper elaboration
                 output.push_str(&format!("{} = ?{}_proof\n\n", theorem.name, theorem.name));
@@ -845,10 +844,10 @@ impl ProverBackend for Idris2Backend {
         Ok(suggestions.into_iter().take(limit).collect())
     }
 
-    async fn search_theorems(&self, pattern: &str) -> Result<Vec<String>> {
+    async fn search_theorems(&self, _pattern: &str) -> Result<Vec<String>> {
         // Search for theorems matching pattern
         // Would integrate with Idris 2's :search command
-        let mut results = Vec::new();
+        let results = Vec::new();
 
         // For now, return empty - would need REPL integration
         Ok(results)

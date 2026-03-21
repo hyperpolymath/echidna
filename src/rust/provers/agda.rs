@@ -17,7 +17,6 @@ use nom::{
     multi::many0,
     IResult,
 };
-use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use std::path::PathBuf;
 use tokio::process::Command;

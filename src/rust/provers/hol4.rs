@@ -23,7 +23,7 @@ use tokio::io::{AsyncBufReadExt, AsyncWriteExt, BufReader};
 use tokio::process::{Child, ChildStdin, ChildStdout};
 
 use crate::core::{
-    Context as CoreContext, Definition, Goal, Hypothesis, ProofState, Tactic, TacticResult, Term, Theorem,
+    Context as CoreContext, Goal, Hypothesis, ProofState, Tactic, TacticResult, Term,
 };
 use super::{ProverBackend, ProverConfig, ProverKind};
 
@@ -1172,7 +1172,7 @@ impl HOL4Parser {
 
         // Parse name and type vars
         let name = self.parse_identifier()?;
-        let mut type_vars = Vec::new();
+        let type_vars = Vec::new();
         let mut constructors = Vec::new();
 
         self.expect_char('=')?;
@@ -1951,7 +1951,7 @@ impl ProverBackend for Hol4Backend {
         output.push_str(&format!("val _ = new_theory \"{}\";\n\n", theory_name));
 
         // Export hypotheses as definitions
-        for (i, goal) in state.goals.iter().enumerate() {
+        for (_i, goal) in state.goals.iter().enumerate() {
             for hyp in &goal.hypotheses {
                 output.push_str(&format!("(* Hypothesis: {} *)\n", hyp.name));
                 let hol4_ty = Self::term_to_hol4(&hyp.ty);

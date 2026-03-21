@@ -789,6 +789,7 @@ impl RuleBasedTagger {
 ///
 /// This integrates with Julia ML components for neural aspect classification.
 /// The neural model is trained on a corpus of tagged theorems.
+#[allow(dead_code)]
 pub struct NeuralTagger {
     /// Confidence threshold for aspect prediction
     threshold: f64,
@@ -821,6 +822,7 @@ impl NeuralTagger {
     }
 
     /// Get embeddings for a term (to be implemented with Julia integration)
+    #[allow(dead_code)]
     async fn get_embeddings(&self, _statement: &Term) -> Vec<f64> {
         // TODO: Implement Julia FFI or HTTP call to Julia ML service
         // For now, return dummy embeddings
@@ -828,6 +830,7 @@ impl NeuralTagger {
     }
 
     /// Classify embeddings into aspects (to be implemented)
+    #[allow(dead_code)]
     async fn classify_embeddings(&self, _embeddings: &[f64]) -> HashMap<Aspect, f64> {
         // TODO: Implement Julia FFI or HTTP call to Julia ML service
         // For now, return empty predictions
@@ -859,6 +862,7 @@ impl AspectTagger for NeuralTagger {
 ///
 /// Maps mathematical concepts to OpenCyc ontology and uses semantic relationships
 /// to infer aspects.
+#[allow(dead_code)]
 pub struct OpenCycTagger {
     /// OpenCyc service URL
     service_url: String,
@@ -877,6 +881,7 @@ impl OpenCycTagger {
     }
 
     /// Query OpenCyc for concept relationships
+    #[allow(dead_code)]
     async fn query_concept(&self, _concept: &str) -> Option<Vec<Aspect>> {
         // TODO: Implement OpenCyc API integration
         // For now, return None

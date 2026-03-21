@@ -81,6 +81,7 @@ impl Default for LlmConfig {
 // ─── Request/Response Types ─────────────────────────────────────────────────
 
 /// Structured request for tactic suggestions
+#[allow(dead_code)]
 #[derive(Debug, Serialize)]
 struct TacticSuggestionRequest {
     /// The proof goal in human-readable form
@@ -107,6 +108,7 @@ struct ProofAttemptSummary {
 }
 
 /// Structured response with ranked tactic suggestions
+#[allow(dead_code)]
 #[derive(Debug, Deserialize)]
 struct TacticSuggestionResponse {
     /// Ranked tactic suggestions
@@ -126,6 +128,7 @@ struct TacticSuggestionResponse {
 }
 
 /// A tactic suggestion from the LLM
+#[allow(dead_code)]
 #[derive(Debug, Deserialize)]
 struct LlmScoredTactic {
     /// Tactic text (e.g. "apply nat_add_comm", "induction n")
@@ -161,6 +164,7 @@ pub struct GoalDecomposition {
 }
 
 /// Request to BoJ cartridge
+#[allow(dead_code)]
 #[derive(Debug, Serialize)]
 struct BojCartridgeRequest {
     operation: String,
@@ -168,6 +172,7 @@ struct BojCartridgeRequest {
 }
 
 /// Response from BoJ cartridge
+#[allow(dead_code)]
 #[derive(Debug, Deserialize)]
 struct BojCartridgeResponse {
     cartridge: Option<String>,
@@ -177,6 +182,7 @@ struct BojCartridgeResponse {
 }
 
 /// Model router classification result
+#[allow(dead_code)]
 #[derive(Debug, Deserialize)]
 struct ModelRouterResult {
     complexity: String,
@@ -197,6 +203,7 @@ pub struct LlmAdvisor {
     client: Client,
     available: bool,
     /// Current ephemeral session token (rotated per proof attempt)
+    #[allow(dead_code)]
     session_token: Option<String>,
     /// Proof attempt history for in-context learning
     history: Vec<ProofAttemptSummary>,

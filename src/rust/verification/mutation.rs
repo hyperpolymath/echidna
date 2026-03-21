@@ -6,7 +6,6 @@
 //! pipeline catches the weakening. A high mutation score indicates that
 //! the specification is precise and the verification pipeline is effective.
 
-use anyhow::Result;
 use serde::{Deserialize, Serialize};
 
 use crate::core::Term;

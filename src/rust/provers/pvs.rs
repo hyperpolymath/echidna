@@ -23,7 +23,7 @@ use tokio::io::{AsyncBufReadExt, AsyncWriteExt, BufReader};
 use tokio::process::{Child, ChildStdin, ChildStdout};
 
 use crate::core::{
-    Context as CoreContext, Definition, Goal, Hypothesis, ProofState, Tactic, TacticResult, Term, Theorem,
+    Context as CoreContext, Goal, Hypothesis, ProofState, Tactic, TacticResult, Term,
 };
 use super::{ProverBackend, ProverConfig, ProverKind};
 
@@ -1141,7 +1141,7 @@ impl<'a> PVSParser<'a> {
         // Subtype {x: T | P}
         if self.peek_char() == Some('{') {
             self.consume_char();
-            let name = self.parse_identifier()?;
+            let _name = self.parse_identifier()?;
             self.expect_char(':')?;
             let base = self.parse_type()?;
             self.expect_char('|')?;
@@ -1270,7 +1270,7 @@ impl<'a> PVSParser<'a> {
 
         // Parse declarations
         let mut declarations = Vec::new();
-        let mut assuming = Vec::new();
+        let assuming = Vec::new();
 
         while !self.try_consume("END") {
             if let Some(decl) = self.parse_declaration()? {
@@ -2421,7 +2421,7 @@ impl ProverBackend for PVSBackend {
                         }
                     }
                 }
-                PVSDeclaration::ConstDecl { name, declared_type, definition } => {
+                PVSDeclaration::ConstDecl { name, declared_type: _, definition } => {
                     if let Some(def) = definition {
                         let def_term = Term::App {
                             func: Box::new(Term::Const("=".to_string())),
