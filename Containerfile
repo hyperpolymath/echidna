@@ -28,7 +28,6 @@ FROM cgr.dev/chainguard/wolfi-base:latest AS rust-builder
 
 RUN apk add --no-cache \
     rust \
-    cargo \
     build-base \
     pkgconf \
     openssl-dev
