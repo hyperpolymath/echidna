@@ -5,7 +5,6 @@
 //! For critical proofs, submits to multiple solvers in parallel and compares
 //! results. If solvers disagree, the proof is flagged for human review.
 
-use anyhow::Result;
 use serde::{Deserialize, Serialize};
 use std::time::Duration;
 
@@ -111,7 +110,7 @@ impl PortfolioSolver {
             .filter(|r| r.verified.is_some())
             .collect();
 
-        let timed_out: Vec<&SolverResult> = results.iter()
+        let _timed_out: Vec<&SolverResult> = results.iter()
             .filter(|r| r.verified.is_none())
             .collect();
 

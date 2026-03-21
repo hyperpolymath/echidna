@@ -13,7 +13,7 @@ use std::time::Instant;
 use tracing::{info, warn};
 
 use crate::integrity::solver_integrity::{IntegrityChecker, IntegrityStatus};
-use crate::llm::{LlmAdvisor, DispatchOptimisation};
+use crate::llm::LlmAdvisor;
 use crate::provers::{ProverConfig, ProverFactory, ProverKind};
 use crate::verification::axiom_tracker::{AxiomTracker, AxiomUsage, DangerLevel};
 use crate::verification::confidence::{compute_trust_level, TrustFactors, TrustLevel};

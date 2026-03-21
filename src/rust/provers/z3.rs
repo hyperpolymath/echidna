@@ -60,7 +60,7 @@ impl Z3Backend {
 
         let mut stdin = child.stdin.take()
             .ok_or_else(|| anyhow!("Failed to open Z3 stdin"))?;
-        let stdout = child.stdout.take()
+        let _stdout = child.stdout.take()
             .ok_or_else(|| anyhow!("Failed to open Z3 stdout"))?;
 
         // Write command

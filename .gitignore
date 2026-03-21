@@ -8,6 +8,9 @@ Thumbs.db
 *.swo
 *~
 .idea/
+
+# Training data scripts (one-off analysis, not part of build)
+training_data/scripts/
 .vscode/
 
 # Build

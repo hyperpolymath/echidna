@@ -11,7 +11,7 @@ use async_trait::async_trait;
 use serde::{Deserialize, Serialize};
 use std::path::PathBuf;
 
-use crate::core::{ProofState, Tactic, TacticResult, Term};
+use crate::core::{ProofState, Tactic, TacticResult};
 
 pub mod agda;
 pub mod coq;

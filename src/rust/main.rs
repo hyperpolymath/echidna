@@ -7,7 +7,6 @@
 
 use anyhow::{Context, Result};
 use clap::{Parser, Subcommand};
-use colored::Colorize;
 use echidna::{ProverConfig, ProverKind};
 use indicatif::{ProgressBar, ProgressStyle};
 use std::path::PathBuf;

@@ -15,9 +15,9 @@
 //! - Support for apply-style and Isar proofs
 //! - Term conversion between HOL and universal representation
 
-use crate::core::{Context, Goal, Hypothesis, ProofState, Tactic, TacticResult, Term, Theorem};
+use crate::core::{Context, Goal, Hypothesis, ProofState, Tactic, TacticResult, Term};
 use crate::provers::{ProverBackend, ProverConfig, ProverKind};
-use anyhow::{anyhow, Context as AnyhowContext, Result};
+use anyhow::{Context as AnyhowContext, Result};
 use async_trait::async_trait;
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
@@ -172,7 +172,7 @@ impl ProverBackend for IsabelleBackend {
         self.parse_string(&content).await
     }
 
-    async fn parse_string(&self, content: &str) -> Result<ProofState> {
+    async fn parse_string(&self, _content: &str) -> Result<ProofState> {
         // Simplified parsing - extract lemma statements
         let goal = Term::Const("True".to_string());
         Ok(ProofState {
@@ -190,7 +190,7 @@ impl ProverBackend for IsabelleBackend {
     async fn apply_tactic(&self, state: &ProofState, tactic: &Tactic) -> Result<TacticResult> {
         match tactic {
             Tactic::Simplify | Tactic::Assumption => self.execute_tactic(state).await,
-            Tactic::Induction(term) => {
+            Tactic::Induction(_term) => {
                 if let Some(goal) = state.goals.first() {
                     let base_case = Goal {
                         id: format!("{}_base", goal.id),

@@ -25,7 +25,7 @@ use tokio::process::{Child, Command};
 use tokio::sync::Mutex;
 
 use crate::core::{
-    Context, Definition, Goal, Hypothesis, ProofState, Tactic, TacticResult, Term, Theorem,
+    Context, Definition, Goal, ProofState, Tactic, TacticResult, Term, Theorem,
 };
 use crate::provers::{ProverBackend, ProverConfig, ProverKind};
 

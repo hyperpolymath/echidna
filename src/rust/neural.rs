@@ -65,6 +65,7 @@ struct PredictRequest {
 }
 
 /// Premise information for ML request
+#[allow(dead_code)]
 #[derive(Debug, Serialize)]
 struct PremiseInfo {
     name: String,
@@ -87,6 +88,7 @@ struct SuggestRequest {
 }
 
 /// Response from Julia ML server
+#[allow(dead_code)]
 #[derive(Debug, Deserialize)]
 struct PredictResponse {
     success: bool,
@@ -101,6 +103,7 @@ struct PredictResponse {
 }
 
 /// Scored premise from ML response
+#[allow(dead_code)]
 #[derive(Debug, Deserialize)]
 struct ScoredPremise {
     name: String,
@@ -113,6 +116,7 @@ struct ScoredPremise {
 }
 
 /// Health check response
+#[allow(dead_code)]
 #[derive(Debug, Deserialize)]
 struct HealthResponse {
     status: String,

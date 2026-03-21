@@ -127,7 +127,7 @@ impl CVC5Backend {
         })
     }
 
-    fn get_process(&self) -> Result<std::sync::MutexGuard<Option<CVC5Process>>> {
+    fn get_process(&self) -> Result<std::sync::MutexGuard<'_, Option<CVC5Process>>> {
         let mut guard = self.process.lock().map_err(|e| anyhow!("Failed to lock process: {}", e))?;
         if guard.is_none() {
             *guard = Some(self.start_process()?);

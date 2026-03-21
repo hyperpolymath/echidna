@@ -817,6 +817,7 @@ struct ProofTreeResponse {
 struct SuggestTacticsUIRequest {
     goal: String,  // Changed from goal_id to accept goal text directly
     prover: Option<String>,
+    #[allow(dead_code)] // Reserved for future aspect-tag filtering
     active_tags: Option<Vec<String>>,
     top_k: Option<usize>,
 }

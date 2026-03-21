@@ -18,7 +18,6 @@
 
 use async_trait::async_trait;
 use anyhow::{anyhow, Context, Result};
-use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use std::path::{Path, PathBuf};
 use std::process::Stdio;
@@ -28,7 +27,7 @@ use tokio::process::Command;
 
 use crate::core::{
     Context as ProofContext, Definition, Goal, Hypothesis, ProofState, Tactic, TacticResult,
-    Term, Theorem, Variable,
+    Term, Theorem,
 };
 use crate::provers::{ProverBackend, ProverConfig, ProverKind};
 
@@ -398,7 +397,7 @@ impl ProverBackend for MizarBackend {
         let mut new_state = state.clone();
 
         match tactic {
-            Tactic::Apply(theorem_name) => {
+            Tactic::Apply(_theorem_name) => {
                 if new_state.goals.is_empty() {
                     return Ok(TacticResult::QED);
                 }
@@ -415,7 +414,7 @@ impl ProverBackend for MizarBackend {
                     .clone()
                     .unwrap_or_else(|| format!("H{}", goal.hypotheses.len()));
 
-                if let Term::Pi { param, param_type, body } = &goal.target {
+                if let Term::Pi { param: _, param_type, body } = &goal.target {
                     goal.hypotheses.push(Hypothesis {
                         name: hypothesis_name,
                         ty: *param_type.clone(),
@@ -428,7 +427,7 @@ impl ProverBackend for MizarBackend {
                     Err(anyhow!("Cannot introduce: goal is not a Pi type"))
                 }
             }
-            Tactic::Cases(term) => {
+            Tactic::Cases(_term) => {
                 if new_state.goals.is_empty() {
                     return Ok(TacticResult::QED);
                 }
@@ -476,7 +475,7 @@ impl ProverBackend for MizarBackend {
                     Err(anyhow!("Exact term does not match goal"))
                 }
             }
-            Tactic::Custom { prover, command, args } => {
+            Tactic::Custom { prover, command, args: _ } => {
                 if prover != "mizar" {
                     return Err(anyhow!("Custom tactic not for Mizar"));
                 }
@@ -546,7 +545,7 @@ impl ProverBackend for MizarBackend {
             Term::Pi { .. } => {
                 suggestions.push(Tactic::Intro(None));
             }
-            Term::App { func, .. } => {
+            Term::App { func: _, .. } => {
                 for theorem in &state.context.theorems {
                     suggestions.push(Tactic::Apply(theorem.name.clone()));
                     if suggestions.len() >= limit {

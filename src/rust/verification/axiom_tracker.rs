@@ -6,7 +6,6 @@
 //! constructs across all supported provers. Enforces policies on axiom usage
 //! to ensure proof trustworthiness.
 
-use anyhow::Result;
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 

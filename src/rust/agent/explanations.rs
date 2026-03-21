@@ -11,9 +11,9 @@
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 
-use crate::core::{Goal, Term};
+use crate::core::Term;
 use crate::provers::ProverKind;
-use super::{AgenticGoal, Priority};
+use super::AgenticGoal;
 
 /// Explanation for a proof attempt
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -301,7 +301,7 @@ impl ExplanationGenerator {
             Term::Let { name, value, body, .. } => {
                 format!("let {} = {} in {}", name, self.format_term(value), self.format_term(body))
             }
-            Term::Match { scrutinee, branches, .. } => {
+            Term::Match { scrutinee, branches: _, .. } => {
                 format!("match {} with ...", self.format_term(scrutinee))
             }
             Term::Fix { name, body, .. } => {
@@ -378,6 +378,8 @@ impl Default for ExplanationGenerator {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::agent::Priority;
+    use crate::core::Goal;
 
     #[test]
     fn test_failure_explanation() {

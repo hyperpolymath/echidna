@@ -22,10 +22,8 @@
 
 use anyhow::{Context, Result};
 use serde::{Deserialize, Serialize};
-use std::collections::HashMap;
 use tracing::{debug, info};
 
-use crate::core::Goal;
 use crate::provers::ProverKind;
 
 #[cfg(feature = "verisimdb")]
@@ -490,7 +488,7 @@ impl QueryExecutor {
 
     /// Find a specific proof by theorem name and optional prover.
     async fn execute_find_proof(&self, query: &ProofQuery) -> Result<QueryResult> {
-        let theorem = query.theorem_name.as_deref().unwrap_or("");
+        let _theorem = query.theorem_name.as_deref().unwrap_or("");
 
         #[cfg(feature = "verisimdb")]
         if let Some(prover) = query.prover {
@@ -813,6 +811,7 @@ fn search_result_to_entry(value: &serde_json::Value) -> Option<QueryResultEntry>
 
 /// Simple URL encoding for query parameters.
 /// Encodes spaces, ampersands, and other special characters.
+#[allow(dead_code)]
 mod urlencoding {
     pub fn encode(s: &str) -> String {
         let mut result = String::with_capacity(s.len() * 3);

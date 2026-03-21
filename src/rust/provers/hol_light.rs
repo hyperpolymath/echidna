@@ -164,10 +164,10 @@ impl HolLightBackend {
     /// Convert HOL Light term to universal Term
     fn hol_to_term(&self, hol_term: &HolTerm) -> Result<Term> {
         match hol_term {
-            HolTerm::Var { name, ty } => {
+            HolTerm::Var { name, ty: _ } => {
                 Ok(Term::Var(name.clone()))
             }
-            HolTerm::Const { name, ty } => {
+            HolTerm::Const { name, ty: _ } => {
                 Ok(Term::Const(name.clone()))
             }
             HolTerm::Comb { func, arg } => {
@@ -251,7 +251,7 @@ impl HolLightBackend {
             Tactic::Apply(theorem_name) => {
                 Ok(format!("MATCH_MP_TAC {};;", theorem_name))
             }
-            Tactic::Intro(name) => {
+            Tactic::Intro(_name) => {
                 Ok("GEN_TAC;;".to_string())
             }
             Tactic::Cases(term) => {
@@ -259,7 +259,7 @@ impl HolLightBackend {
                 Ok(format!("STRUCT_CASES_TAC (SPEC {} cases);;", term_str))
             }
             Tactic::Induction(term) => {
-                let term_str = self.term_to_hol(term);
+                let _term_str = self.term_to_hol(term);
                 Ok(format!("INDUCT_TAC;;"))
             }
             Tactic::Rewrite(theorem_name) => {
@@ -748,7 +748,7 @@ impl HolLightParser {
     fn parse(&mut self) -> Result<HolLightFile> {
         let mut theorems = Vec::new();
         let mut definitions = Vec::new();
-        let mut tactics = Vec::new();
+        let tactics = Vec::new();
 
         while self.pos < self.input.len() {
             self.skip_whitespace_and_comments();
@@ -831,7 +831,7 @@ impl HolLightParser {
         self.expect_char(',')?;
 
         // Parse tactics (simplified - would need full tactic parser)
-        let mut proof = Vec::new();
+        let proof = Vec::new();
 
         // Skip to closing paren
         let mut depth = 1;

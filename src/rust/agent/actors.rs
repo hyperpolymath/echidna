@@ -2,6 +2,7 @@
 // SPDX-License-Identifier: PMPL-1.0-or-later
 
 #![allow(dead_code)]
+#![allow(unexpected_cfgs)]
 
 //! Actor-based Multi-Agent Orchestration
 //!
@@ -10,12 +11,12 @@
 use actix::prelude::*;
 use anyhow::Result;
 use std::sync::Arc;
-use std::time::{Duration, Instant};
-use tracing::{debug, info, warn};
+use std::time::Instant;
+use tracing::{debug, info};
 
 use crate::core::{Goal, ProofState};
 use crate::provers::{ProverBackend, ProverKind};
-use super::{AgenticGoal, GoalResult};
+use super::AgenticGoal;
 
 /// Message types for actor communication
 #[derive(Message)]
@@ -143,7 +144,7 @@ impl Actor for ContextAgent {
 impl Handler<GetRelatedConcepts> for ContextAgent {
     type Result = Vec<String>;
 
-    fn handle(&mut self, msg: GetRelatedConcepts, _ctx: &mut Self::Context) -> Self::Result {
+    fn handle(&mut self, _msg: GetRelatedConcepts, _ctx: &mut Self::Context) -> Self::Result {
         #[cfg(feature = "conceptnet")]
         {
             use actix::AsyncContext;

@@ -181,7 +181,7 @@ impl ConsensusChecker {
     /// Check consensus across multiple provers
     pub fn check_consensus(
         &self,
-        goal: &str,
+        _goal: &str,
         prover_results: Vec<(String, bool)>,
     ) -> ConsensusResult {
         let mut voting = HashMap::new();

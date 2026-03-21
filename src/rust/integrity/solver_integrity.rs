@@ -11,7 +11,7 @@ use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use std::path::{Path, PathBuf};
 use std::sync::Arc;
-use tiny_keccak::{Hasher, Xof};
+use tiny_keccak::Xof;
 use tokio::sync::RwLock;
 use tracing::{error, info, warn};
 
