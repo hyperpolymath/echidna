@@ -41,29 +41,18 @@ COPY src/interfaces ./src/interfaces
 RUN cargo build --release --bin echidna
 
 # =============================================================================
-# Stage 2: Idris2 Builder
+# Stage 2: Idris2 Builder (optional — no prebuilt binaries available)
 # =============================================================================
 FROM cgr.dev/chainguard/wolfi-base:latest AS idris2-builder
 
-RUN apk add --no-cache \
-    curl \
-    ca-certificates \
-    gzip \
-    gmp-dev
+# Create placeholder directories so COPY --from doesn't fail
+RUN mkdir -p /opt/idris2/bin /build/idris/build/exec && \
+    touch /opt/idris2/bin/.keep /build/idris/build/exec/.keep
 
-WORKDIR /build
-
-RUN curl -fsSL "https://github.com/idris-lang/Idris2/releases/download/v0.8.0/Idris2-0.8.0-Linux-x86_64.tar.gz" \
-    -o /tmp/idris2.tar.gz && \
-    mkdir -p /opt/idris2 && \
-    tar -xzf /tmp/idris2.tar.gz -C /opt/idris2 --strip-components=1 && \
-    rm /tmp/idris2.tar.gz
-
-COPY src/idris /build/idris
-RUN export PATH="/opt/idris2/bin:$PATH" && \
-    export IDRIS2_PREFIX="/opt/idris2" && \
-    cd /build/idris && \
-    idris2 --build echidna-validator.ipkg || true
+# NOTE: Idris2 has no prebuilt Linux binaries. For full Idris2 support,
+# use .containerization/Containerfile.full which builds from source.
+# The minimal image ships without Idris2 — the echidna binary still works
+# for all 30 provers; only the ABI validator requires Idris2.
 
 # =============================================================================
 # Stage 3: Prover Installer
