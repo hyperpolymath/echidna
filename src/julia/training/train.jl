@@ -103,85 +103,131 @@ end
 """
     ranking_loss(scores::Vector{Float32}, relevant_indices::Vector{Int})
 
-Pairwise ranking loss for premise selection.
-Encourages relevant premises to score higher than irrelevant ones.
+Binary cross-entropy loss for premise selection (Zygote-differentiable).
+Uses a label vector: 1 for relevant, 0 for irrelevant.
 """
 function ranking_loss(scores::Vector{Float32}, relevant_indices::Vector{Int})
-    if isempty(relevant_indices)
+    n = length(scores)
+    if n == 0 || isempty(relevant_indices)
         return 0.0f0
     end
 
-    num_premises = length(scores)
-    irrelevant_indices = setdiff(1:num_premises, relevant_indices)
-
-    if isempty(irrelevant_indices)
-        return 0.0f0
+    # Build label vector (outside gradient graph)
+    labels = Zygote.@ignore begin
+        rel_set = Set(relevant_indices)
+        Float32[i in rel_set ? 1.0f0 : 0.0f0 for i in 1:n]
     end
 
-    # Pairwise margin ranking loss
-    loss = 0.0f0
-    margin = 0.5f0
+    # Binary cross-entropy loss
+    eps = 1f-7
+    clamped = clamp.(scores, eps, 1.0f0 - eps)
+    loss = -mean(labels .* log.(clamped) .+ (1.0f0 .- labels) .* log.(1.0f0 .- clamped))
 
-    for rel_idx in relevant_indices
-        for irrel_idx in irrelevant_indices
-            # Encourage scores[rel_idx] > scores[irrel_idx] + margin
-            loss += max(0.0f0, margin + scores[irrel_idx] - scores[rel_idx])
-        end
-    end
-
-    # Normalize by number of pairs
-    num_pairs = length(relevant_indices) * length(irrelevant_indices)
-    return loss / num_pairs
+    return loss
 end
 
 """
     contrastive_loss(scores::Vector{Float32}, relevant_indices::Vector{Int}; temperature::Float32=0.1f0)
 
-Contrastive learning loss (InfoNCE) for premise selection.
+InfoNCE contrastive loss for premise selection (Zygote-differentiable).
 """
 function contrastive_loss(scores::Vector{Float32}, relevant_indices::Vector{Int}; temperature::Float32=0.1f0)
-    if isempty(relevant_indices)
+    if isempty(relevant_indices) || length(scores) == 0
         return 0.0f0
     end
 
     # Normalize scores with temperature
     scaled_scores = scores ./ temperature
-    exp_scores = exp.(scaled_scores)
+    log_sum_exp = log(sum(exp.(scaled_scores)) + 1f-10)
 
-    # For each relevant premise, compute contrastive loss
+    # InfoNCE: -log(exp(s_pos) / sum(exp(s_all))) for each positive
     loss = 0.0f0
     for rel_idx in relevant_indices
-        # Positive: relevant premise
-        positive_score = exp_scores[rel_idx]
-
-        # Negatives: all premises
-        denominator = sum(exp_scores)
-
-        # InfoNCE loss
-        loss -= log(positive_score / (denominator + 1f-10))
+        loss += log_sum_exp - scaled_scores[rel_idx]
     end
 
-    return loss / length(relevant_indices)
+    return loss / Float32(length(relevant_indices))
+end
+
+"""
+    pre_encode_batch(solver::NeuralSolver, batch::Vector{TrainingExample})
+
+Pre-encode a batch of examples into token ID matrices (non-differentiable step).
+Returns vector of (goal_ids, premise_ids_list, relevant_indices) tuples.
+"""
+function pre_encode_batch(solver::NeuralSolver, batch::Vector{TrainingExample})
+    encoded = []
+    vocab = solver.vocabulary
+    unk_id = vocab.token_to_id[vocab.unk_token]
+    sep_id = vocab.token_to_id[vocab.sep_token]
+
+    for example in batch
+        # Tokenize and encode goal
+        goal_tokens = tokenize_text(example.proof_state.goal)
+        goal_ids = encode_tokens(vocab, goal_tokens)
+
+        # Ensure minimum length
+        if isempty(goal_ids)
+            goal_ids = [unk_id]
+        end
+
+        # Build token matrix for goal (seq_len, 1)
+        goal_matrix = reshape(goal_ids, length(goal_ids), 1)
+
+        # Pre-encode each premise
+        premise_matrices = []
+        for prem in example.candidate_premises
+            prem_tokens = tokenize_text(prem.name * " " * prem.statement)
+            prem_ids = encode_tokens(vocab, prem_tokens)
+            if isempty(prem_ids)
+                prem_ids = [unk_id]
+            end
+            push!(premise_matrices, reshape(prem_ids, length(prem_ids), 1))
+        end
+
+        push!(encoded, (goal_matrix, premise_matrices, example.relevant_indices))
+    end
+
+    return encoded
 end
 
 """
     combined_loss(solver::NeuralSolver, batch::Vector{TrainingExample}; α::Float32=0.5f0)
 
 Combined loss function: ranking + contrastive learning.
+Pre-encodes tokens (non-differentiable), then runs neural forward pass (differentiable).
 """
 function combined_loss(solver::NeuralSolver, batch::Vector{TrainingExample}; α::Float32=0.5f0)
     total_loss = 0.0f0
     batch_size = length(batch)
 
-    for example in batch
-        # Forward pass
-        scores = solver(example.proof_state, example.candidate_premises)
+    # Pre-encode outside gradient (dict lookups are not differentiable)
+    encoded_batch = pre_encode_batch(solver, batch)
+
+    for (goal_matrix, premise_matrices, relevant_indices) in encoded_batch
+        # Neural forward pass (differentiable)
+        goal_embed = solver.text_encoder(goal_matrix)  # (embed_dim, seq_len, 1)
+        goal_vec = mean(goal_embed, dims=2)[:, 1, 1]   # (embed_dim,)
+
+        # Encode each premise
+        num_premises = length(premise_matrices)
+        embed_dim = length(goal_vec)
+        premise_vecs = zeros(Float32, embed_dim, num_premises)
+
+        for (i, pmat) in enumerate(premise_matrices)
+            prem_embed = solver.text_encoder(pmat)
+            premise_vecs[:, i] = mean(prem_embed, dims=2)[:, 1, 1]
+        end
+
+        # Score premises by cosine similarity with goal
+        goal_norm = goal_vec ./ (sqrt(sum(goal_vec .^ 2)) + 1f-10)
+        prem_norms = premise_vecs ./ (sqrt.(sum(premise_vecs .^ 2, dims=1)) .+ 1f-10)
+        scores = vec(goal_norm' * prem_norms)  # (num_premises,)
 
         # Compute losses
-        rank_loss = ranking_loss(scores, example.relevant_indices)
-        contrast_loss = contrastive_loss(scores, example.relevant_indices)
+        rank_loss = ranking_loss(scores, relevant_indices)
+        contrast_loss = contrastive_loss(scores, relevant_indices)
 
-        # Combine
         total_loss += α * rank_loss + (1 - α) * contrast_loss
     end
 
@@ -227,27 +273,41 @@ function compute_metrics(solver::NeuralSolver, dataset::TrainingDataset; k::Int=
     total_mrr = 0.0f0
     num_examples = 0
 
+    Flux.testmode!(solver)
+
     while true
         batch = next_batch!(dataset)
         batch === nothing && break
 
-        for example in batch
-            scores = solver(example.proof_state, example.candidate_premises)
+        # Pre-encode batch (same approach as training)
+        encoded_batch = pre_encode_batch(solver, batch)
+
+        for (i, (goal_matrix, premise_matrices, relevant_indices)) in enumerate(encoded_batch)
+            # Score via cosine similarity (same as training loss)
+            goal_embed = solver.text_encoder(goal_matrix)
+            goal_vec = mean(goal_embed, dims=2)[:, 1, 1]
+            prem_vecs = [mean(solver.text_encoder(pmat), dims=2)[:, 1, 1] for pmat in premise_matrices]
+            premise_vecs = hcat(prem_vecs...)
+
+            goal_norm = goal_vec ./ (sqrt(sum(goal_vec .^ 2)) + 1f-10)
+            prem_norms = premise_vecs ./ (sqrt.(sum(premise_vecs .^ 2, dims=1)) .+ 1f-10)
+            scores = vec(goal_norm' * prem_norms)
 
             # Get top-k predictions
-            top_k_indices = partialsortperm(scores, 1:min(k, length(scores)), rev=true)
+            actual_k = min(k, length(scores))
+            top_k_indices = partialsortperm(scores, 1:actual_k, rev=true)
 
             # Precision@k
-            num_relevant_in_top_k = length(intersect(top_k_indices, example.relevant_indices))
-            precision = num_relevant_in_top_k / k
+            num_relevant_in_top_k = length(intersect(top_k_indices, relevant_indices))
+            precision = num_relevant_in_top_k / actual_k
 
             # Recall@k
-            recall = num_relevant_in_top_k / max(1, length(example.relevant_indices))
+            recall = num_relevant_in_top_k / max(1, length(relevant_indices))
 
-            # MRR - find rank of first relevant premise
+            # MRR
             mrr = 0.0f0
             for (rank, idx) in enumerate(top_k_indices)
-                if idx in example.relevant_indices
+                if idx in relevant_indices
                     mrr = 1.0f0 / rank
                     break
                 end
@@ -260,6 +320,9 @@ function compute_metrics(solver::NeuralSolver, dataset::TrainingDataset; k::Int=
         end
     end
 
+    Flux.trainmode!(solver)
+
+    num_examples = max(num_examples, 1)
     return (
         precision = total_precision / num_examples,
         recall = total_recall / num_examples,
@@ -367,10 +430,10 @@ function get_learning_rate(config::TrainingConfig, epoch::Int)
     if config.lr_schedule == :constant
         return base_lr
     elseif config.lr_schedule == :exponential
-        return base_lr * (config.lr_decay_rate ^ (epoch - 1))
+        return Float32(base_lr * (config.lr_decay_rate ^ (epoch - 1)))
     elseif config.lr_schedule == :cosine
         # Cosine annealing
-        return base_lr * 0.5f0 * (1.0f0 + cos(π * epoch / config.num_epochs))
+        return Float32(base_lr * 0.5f0 * (1.0f0 + cos(Float32(π) * epoch / config.num_epochs)))
     else
         @warn "Unknown learning rate schedule: $(config.lr_schedule), using constant"
         return base_lr
@@ -408,7 +471,7 @@ function train_solver!(solver::NeuralSolver, train_data::TrainingDataset,
 
         # Update learning rate
         current_lr = get_learning_rate(config, epoch)
-        Optimisers.adjust!(opt_state, current_lr)
+        Optimisers.adjust!(opt_state, Float32(current_lr))
 
         # Training epoch
         reset!(train_data)
@@ -422,9 +485,29 @@ function train_solver!(solver::NeuralSolver, train_data::TrainingDataset,
             batch = next_batch!(train_data)
             batch === nothing && break
 
-            # Compute loss and gradients
+            # Pre-encode tokens (non-differentiable)
+            encoded_batch = pre_encode_batch(solver, batch)
+
+            # Compute loss and gradients (only neural forward pass is differentiable)
             loss, grads = Flux.withgradient(solver) do m
-                combined_loss(m, batch, α=config.loss_alpha)
+                _loss = 0.0f0
+                for (goal_matrix, premise_matrices, relevant_indices) in encoded_batch
+                    goal_embed = m.text_encoder(goal_matrix)
+                    goal_vec = mean(goal_embed, dims=2)[:, 1, 1]
+
+                    # Encode premises without mutation (hcat instead of setindex!)
+                    prem_vecs = [mean(m.text_encoder(pmat), dims=2)[:, 1, 1] for pmat in premise_matrices]
+                    premise_vecs = hcat(prem_vecs...)  # (embed_dim, num_premises)
+
+                    # Cosine similarity scores
+                    goal_norm = goal_vec ./ (sqrt(sum(goal_vec .^ 2)) + 1f-10)
+                    prem_norms = premise_vecs ./ (sqrt.(sum(premise_vecs .^ 2, dims=1)) .+ 1f-10)
+                    scores = vec(goal_norm' * prem_norms)
+
+                    _loss += config.loss_alpha * ranking_loss(scores, relevant_indices) +
+                             (1 - config.loss_alpha) * contrastive_loss(scores, relevant_indices)
+                end
+                _loss / length(encoded_batch)
             end
 
             # Update parameters (gradient clipping via Optimisers.ClipNorm in opt setup)

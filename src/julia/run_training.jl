@@ -40,19 +40,20 @@ using .EchidnaML
 
 # Configure for available hardware
 println("Configuring...")
-if CUDA.functional()
+using CUDA, Flux
+has_gpu = CUDA.functional()
+if has_gpu
     println("  GPU: $(CUDA.device())")
-    set_config!(device=gpu)
+    EchidnaML.set_config!(device=Flux.gpu)
 else
     println("  GPU: not available (using CPU)")
-    set_config!(device=cpu)
+    EchidnaML.set_config!(device=Flux.cpu)
 end
 
 # Use smaller model dimensions for CPU training
-config = get_config()
-if config.device === cpu
+if !has_gpu
     println("  Reducing model size for CPU training")
-    set_config!(
+    EchidnaML.set_config!(
         embedding_dim=128,
         hidden_dim=256,
         num_transformer_layers=2,
@@ -61,11 +62,11 @@ if config.device === cpu
     )
 end
 
-println("  Embedding dim: $(get_config().embedding_dim)")
-println("  Hidden dim: $(get_config().hidden_dim)")
-println("  Transformer layers: $(get_config().num_transformer_layers)")
-println("  GNN layers: $(get_config().gnn_num_layers)")
-println("  Batch size: $(get_config().batch_size)")
+println("  Embedding dim: $(EchidnaML.get_config().embedding_dim)")
+println("  Hidden dim: $(EchidnaML.get_config().hidden_dim)")
+println("  Transformer layers: $(EchidnaML.get_config().num_transformer_layers)")
+println("  GNN layers: $(EchidnaML.get_config().gnn_num_layers)")
+println("  Batch size: $(EchidnaML.get_config().batch_size)")
 println()
 
 # Load data
