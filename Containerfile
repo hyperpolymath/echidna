@@ -48,7 +48,6 @@ FROM cgr.dev/chainguard/wolfi-base:latest AS idris2-builder
 RUN apk add --no-cache \
     curl \
     ca-certificates \
-    tar \
     gzip \
     gmp-dev
 
