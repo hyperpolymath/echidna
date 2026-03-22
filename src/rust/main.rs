@@ -558,6 +558,22 @@ fn info_command(prover: ProverKind, formatter: &OutputFormatter) -> Result<()> {
         ProverKind::Chuffed => "Lazy clause generation CP solver with SAT-style learning.",
         ProverKind::ORTools => "Google OR-Tools. CP-SAT, routing, linear/integer programming.",
         ProverKind::TypedWasm => "TypedWasm oracle. 10-level type safety validation for .twasm programs.",
+        ProverKind::SPIN => "SPIN model checker for Promela concurrent system specifications.",
+        ProverKind::CBMC => "C Bounded Model Checker. Verifies C programs via bounded unwinding.",
+        ProverKind::CaDiCaL => {
+            "State-of-the-art CDCL SAT solver. DIMACS CNF input.\n  \
+             Multiple SAT Competition winner. Default SAT backend for ECHIDNA."
+        }
+        ProverKind::Kissat => {
+            "Fast, highly-optimised CDCL SAT solver. DIMACS CNF input.\n  \
+             SAT Competition winner. Designed for raw solving speed."
+        }
+        ProverKind::MiniSat => "Classic DPLL/CDCL SAT solver. DIMACS CNF input. Reference implementation.",
+        ProverKind::NuSMV => "NuSMV/nuXmv symbolic model checker for CTL/LTL verification of finite state systems.",
+        ProverKind::TLC => "TLC model checker for exhaustive state exploration of TLA+ specifications.",
+        ProverKind::Alloy => "Alloy relational model finder using SAT-based bounded analysis.",
+        ProverKind::Prism => "PRISM probabilistic model checker for DTMCs, CTMCs, MDPs, and PTAs.",
+        ProverKind::UPPAAL => "UPPAAL timed automata model checker for real-time system verification.",
     };
     formatter.info(&format!("  {}", description))?;
     formatter.info("")?;
@@ -594,6 +610,16 @@ fn info_command(prover: ProverKind, formatter: &OutputFormatter) -> Result<()> {
         ProverKind::Chuffed => ".fzn",
         ProverKind::ORTools => ".or / .proto",
         ProverKind::TypedWasm => ".twasm",
+        ProverKind::SPIN => ".pml",
+        ProverKind::CBMC => ".c",
+        ProverKind::CaDiCaL => ".cnf",
+        ProverKind::Kissat => ".cnf",
+        ProverKind::MiniSat => ".cnf",
+        ProverKind::NuSMV => ".smv",
+        ProverKind::TLC => ".tla",
+        ProverKind::Alloy => ".als",
+        ProverKind::Prism => ".pm / .prism",
+        ProverKind::UPPAAL => ".xml",
     };
     formatter.info(&format!("  {}", extension))?;
     formatter.info("")?;
@@ -698,6 +724,10 @@ fn get_default_executable(kind: ProverKind) -> PathBuf {
         ProverKind::Chuffed => PathBuf::from("fzn-chuffed"),
         ProverKind::ORTools => PathBuf::from("ortools_solve"),
         ProverKind::TypedWasm => PathBuf::from("idris2"),
+        ProverKind::SPIN => PathBuf::from("spin"),
+        ProverKind::CBMC => PathBuf::from("cbmc"),
+        ProverKind::CaDiCaL => PathBuf::from("cadical"),
+        ProverKind::Kissat => PathBuf::from("kissat"),
     }
 }
 

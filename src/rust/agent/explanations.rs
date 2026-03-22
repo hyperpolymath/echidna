@@ -349,6 +349,16 @@ impl ExplanationGenerator {
             ProverKind::Chuffed => "Chuffed uses lazy clause generation for constraint propagation with SAT-style learning.",
             ProverKind::ORTools => "OR-Tools provides constraint solving, routing, and linear/integer programming.",
             ProverKind::TypedWasm => "TypedWasm is an internal oracle validating 10-level type safety for typed WASM memory regions.",
+            ProverKind::SPIN => "SPIN is a model checker for verifying concurrent systems using Promela specifications and LTL.",
+            ProverKind::CBMC => "CBMC is a bounded model checker for C/C++ programs verifying assertions and safety properties.",
+            ProverKind::CaDiCaL => "CaDiCaL is a state-of-the-art CDCL SAT solver with advanced inprocessing techniques.",
+            ProverKind::Kissat => "Kissat is a high-performance SAT solver optimized for competition benchmarks.",
+            ProverKind::MiniSat => "MiniSat is a classic DPLL/CDCL SAT solver widely used as a reference implementation.",
+            ProverKind::NuSMV => "NuSMV/nuXmv is a symbolic model checker for CTL/LTL verification of finite state systems.",
+            ProverKind::TLC => "TLC is the TLA+ model checker for exhaustive state exploration of distributed system specifications.",
+            ProverKind::Alloy => "Alloy is a relational model finder using SAT-based bounded analysis for structural properties.",
+            ProverKind::Prism => "PRISM is a probabilistic model checker for DTMCs, CTMCs, MDPs, and reward-based properties.",
+            ProverKind::UPPAAL => "UPPAAL verifies real-time systems modelled as timed automata against TCTL properties.",
         }.to_string()
     }
 
