@@ -348,6 +348,7 @@ impl ExplanationGenerator {
             ProverKind::MiniZinc => "MiniZinc is a constraint modelling language compiling to multiple backend solvers.",
             ProverKind::Chuffed => "Chuffed uses lazy clause generation for constraint propagation with SAT-style learning.",
             ProverKind::ORTools => "OR-Tools provides constraint solving, routing, and linear/integer programming.",
+            ProverKind::TypedWasm => "TypedWasm is an internal oracle validating 10-level type safety for typed WASM memory regions.",
         }.to_string()
     }
 

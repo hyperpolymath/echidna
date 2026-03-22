@@ -557,6 +557,7 @@ fn info_command(prover: ProverKind, formatter: &OutputFormatter) -> Result<()> {
         ProverKind::MiniZinc => "Constraint modelling language with multiple backend solvers.",
         ProverKind::Chuffed => "Lazy clause generation CP solver with SAT-style learning.",
         ProverKind::ORTools => "Google OR-Tools. CP-SAT, routing, linear/integer programming.",
+        ProverKind::TypedWasm => "TypedWasm oracle. 10-level type safety validation for .twasm programs.",
     };
     formatter.info(&format!("  {}", description))?;
     formatter.info("")?;
@@ -592,6 +593,7 @@ fn info_command(prover: ProverKind, formatter: &OutputFormatter) -> Result<()> {
         ProverKind::MiniZinc => ".mzn / .dzn",
         ProverKind::Chuffed => ".fzn",
         ProverKind::ORTools => ".or / .proto",
+        ProverKind::TypedWasm => ".twasm",
     };
     formatter.info(&format!("  {}", extension))?;
     formatter.info("")?;
@@ -695,6 +697,7 @@ fn get_default_executable(kind: ProverKind) -> PathBuf {
         ProverKind::MiniZinc => PathBuf::from("minizinc"),
         ProverKind::Chuffed => PathBuf::from("fzn-chuffed"),
         ProverKind::ORTools => PathBuf::from("ortools_solve"),
+        ProverKind::TypedWasm => PathBuf::from("idris2"),
     }
 }
 
