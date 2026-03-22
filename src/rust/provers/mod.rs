@@ -43,6 +43,7 @@ pub mod scip;
 pub mod minizinc;
 pub mod chuffed;
 pub mod ortools;
+pub mod typed_wasm;
 
 /// Enumeration of all supported provers
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]
@@ -94,6 +95,9 @@ pub enum ProverKind {
     MiniZinc,
     Chuffed,
     ORTools,
+
+    // Prover oracles (internal structural validators)
+    TypedWasm,
 }
 
 impl std::str::FromStr for ProverKind {
@@ -131,6 +135,7 @@ impl std::str::FromStr for ProverKind {
             "minizinc" | "mzn" => Ok(ProverKind::MiniZinc),
             "chuffed" => Ok(ProverKind::Chuffed),
             "ortools" | "or-tools" => Ok(ProverKind::ORTools),
+            "typedwasm" | "typed-wasm" | "typed_wasm" | "twasm" => Ok(ProverKind::TypedWasm),
             _ => Err(anyhow::anyhow!("Unknown prover: {}", s)),
         }
     }
@@ -183,6 +188,7 @@ impl ProverKind {
             ProverKind::MiniZinc,
             ProverKind::Chuffed,
             ProverKind::ORTools,
+            ProverKind::TypedWasm,
         ]);
         provers
     }
@@ -220,6 +226,7 @@ impl ProverKind {
             ProverKind::MiniZinc => 2, // Constraint modelling
             ProverKind::Chuffed => 2,  // CP solver
             ProverKind::ORTools => 2,  // Constraint/optimization solver
+            ProverKind::TypedWasm => 3, // Internal oracle, structural analysis
         }
     }
 
@@ -262,6 +269,7 @@ impl ProverKind {
             ProverKind::MiniZinc => 5,
             ProverKind::Chuffed => 5,
             ProverKind::ORTools => 5,
+            ProverKind::TypedWasm => 1, // Internal oracle, tier 1 capability
         }
     }
 
@@ -293,6 +301,7 @@ impl ProverKind {
             ProverKind::MiniZinc => 1.0, // Constraint modelling
             ProverKind::Chuffed => 1.0,  // CP solver
             ProverKind::ORTools => 1.5,  // Constraint/optimization
+            ProverKind::TypedWasm => 2.0, // Internal oracle
         }
     }
 
@@ -329,6 +338,7 @@ impl ProverKind {
             ProverKind::MiniZinc => "minizinc",
             ProverKind::Chuffed => "fzn-chuffed",
             ProverKind::ORTools => "ortools_solve",
+            ProverKind::TypedWasm => "idris2", // Validates via Idris2 ABI
         }
     }
 }
@@ -460,6 +470,7 @@ impl ProverFactory {
             ProverKind::MiniZinc => Ok(Box::new(minizinc::MiniZincBackend::new(config))),
             ProverKind::Chuffed => Ok(Box::new(chuffed::ChuffedBackend::new(config))),
             ProverKind::ORTools => Ok(Box::new(ortools::ORToolsBackend::new(config))),
+            ProverKind::TypedWasm => Ok(Box::new(typed_wasm::TypedWasmBackend::new(config))),
         }
     }
 
@@ -493,6 +504,7 @@ impl ProverFactory {
             "pip" | "zpl" => Some(ProverKind::SCIP),  // SCIP/ZIMPL format
             "mzn" | "dzn" => Some(ProverKind::MiniZinc),  // MiniZinc format
             "fzn" => Some(ProverKind::Chuffed),  // FlatZinc (Chuffed input)
+            "twasm" => Some(ProverKind::TypedWasm),  // TypedWasm program
             _ => None,
         })
     }
