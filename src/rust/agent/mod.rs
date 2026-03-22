@@ -199,7 +199,7 @@ impl AgentCore {
     }
 
     /// Get the next goal from the queue
-    async fn next_goal(&self) -> Option<AgenticGoal> {
+    pub async fn next_goal(&self) -> Option<AgenticGoal> {
         let mut queue = self.goal_queue.write().await;
         queue.pop_front()
     }
