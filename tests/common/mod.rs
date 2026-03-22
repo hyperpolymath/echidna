@@ -90,6 +90,7 @@ pub fn test_prover_config(kind: ProverKind) -> ProverConfig {
         ProverKind::MiniZinc => "minizinc",
         ProverKind::Chuffed => "fzn-chuffed",
         ProverKind::ORTools => "ortools_solve",
+        ProverKind::TypedWasm => "typed-wasm",
     };
 
     ProverConfig {
@@ -134,6 +135,7 @@ pub fn proof_examples_dir(kind: ProverKind) -> PathBuf {
         ProverKind::MiniZinc => "minizinc",
         ProverKind::Chuffed => "chuffed",
         ProverKind::ORTools => "ortools",
+        ProverKind::TypedWasm => "typed_wasm",
     };
 
     PathBuf::from("/home/user/echidna/proofs").join(subdir)
@@ -174,6 +176,7 @@ pub fn find_proof_files(kind: ProverKind) -> Vec<PathBuf> {
         ProverKind::MiniZinc => vec!["mzn", "dzn"],
         ProverKind::Chuffed => vec!["fzn"],
         ProverKind::ORTools => vec!["or", "proto"],
+        ProverKind::TypedWasm => vec!["wasm", "wat"],
     };
 
     let mut files = vec![];

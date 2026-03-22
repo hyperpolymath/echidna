@@ -278,7 +278,7 @@ async fn smoke_dispatch_config_defaults() {
 // ---------------------------------------------------------------------------
 
 #[tokio::test]
-async fn smoke_all_30_provers_instantiate() -> Result<()> {
+async fn smoke_all_31_provers_instantiate() -> Result<()> {
     use echidna::provers::{ProverConfig, ProverFactory};
 
     let config = ProverConfig::default();
@@ -297,15 +297,16 @@ async fn smoke_all_30_provers_instantiate() -> Result<()> {
         }
     }
 
+    let total = created + failed;
     eprintln!(
-        "ProverFactory: {}/30 created, {}/30 failed",
-        created, failed
+        "ProverFactory: {}/{} created, {}/{} failed",
+        created, total, failed, total
     );
 
-    // All 30 should at least instantiate (even if the binary isn't installed)
+    // All provers should at least instantiate (even if the binary isn't installed)
     assert_eq!(
-        created, 30,
-        "All 30 prover backends should instantiate via ProverFactory"
+        created, total,
+        "All {} prover backends should instantiate via ProverFactory", total
     );
 
     Ok(())

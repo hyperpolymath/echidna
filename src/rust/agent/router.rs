@@ -19,20 +19,21 @@ use super::AgenticGoal;
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct ProverStats {
     /// Total attempts
-    attempts: u32,
+    pub attempts: u32,
 
     /// Successful proofs
-    successes: u32,
+    pub successes: u32,
 
     /// Failures
-    failures: u32,
+    pub failures: u32,
 
     /// Total time (milliseconds)
-    total_time_ms: u64,
+    pub total_time_ms: u64,
 }
 
 impl ProverStats {
-    fn new() -> Self {
+    /// Create new empty stats
+    pub fn new() -> Self {
         ProverStats {
             attempts: 0,
             successes: 0,
@@ -42,7 +43,7 @@ impl ProverStats {
     }
 
     /// Success rate (0.0 - 1.0)
-    fn success_rate(&self) -> f64 {
+    pub fn success_rate(&self) -> f64 {
         if self.attempts == 0 {
             0.5 // No data, assume 50%
         } else {
