@@ -834,6 +834,66 @@ impl<'a> PVSParser<'a> {
             });
         }
 
+        // CASES expression: CASES expr OF sel1, sel2, ... ENDCASES
+        if self.try_consume("CASES") {
+            let case_expr = self.parse_expr()?;
+            if !self.try_consume("OF") {
+                bail!("Expected OF after CASES expression");
+            }
+            let mut selections = Vec::new();
+            let mut else_clause = None;
+            loop {
+                self.skip_whitespace_and_comments();
+                // Check for ELSE clause
+                if self.try_consume("ELSE") {
+                    self.expect_char(':')?;
+                    else_clause = Some(Box::new(self.parse_expr()?));
+                    break;
+                }
+                // Check for ENDCASES
+                if self.try_consume("ENDCASES") {
+                    break;
+                }
+                // Parse constructor pattern: ctor_name(args): result_expr
+                // or ctor_name: result_expr
+                let ctor = self.parse_identifier()?;
+                let mut pattern_args = Vec::new();
+                if self.peek_char() == Some('(') {
+                    self.consume_char(); // '('
+                    while self.peek_char() != Some(')') {
+                        pattern_args.push(self.parse_identifier()?);
+                        if !self.try_consume(",") {
+                            break;
+                        }
+                    }
+                    self.expect_char(')')?;
+                }
+                self.expect_char(':')?;
+                let result = self.parse_expr()?;
+                selections.push(PVSCaseSelection {
+                    pattern: if pattern_args.is_empty() {
+                        PVSPattern::Variable(ctor)
+                    } else {
+                        PVSPattern::Constructor {
+                            name: ctor,
+                            args: pattern_args,
+                        }
+                    },
+                    expr: result,
+                });
+                // Comma separates selections; also check for ENDCASES
+                if !self.try_consume(",") {
+                    self.try_consume("ENDCASES");
+                    break;
+                }
+            }
+            return Ok(PVSExpr::Cases {
+                expr: Box::new(case_expr),
+                selections,
+                else_clause,
+            });
+        }
+
         // LET
         if self.try_consume("LET") {
             let mut bindings = Vec::new();
@@ -1301,7 +1361,36 @@ impl<'a> PVSParser<'a> {
             return Ok(None);
         }
 
+        // Parse first identifier
         let name = self.parse_identifier()?;
+
+        // Handle comma-separated identifiers (e.g., "x, y: VAR nat")
+        // Collect additional names if commas follow before colon
+        let mut extra_names: Vec<String> = Vec::new();
+        while self.peek_char() == Some(',') {
+            self.consume_char(); // consume ','
+            extra_names.push(self.parse_identifier()?);
+        }
+
+        // Handle function-style declarations: name(params): ...
+        // Skip over the parameter list in parentheses before the colon
+        if self.peek_char() == Some('(') {
+            let mut depth = 0;
+            loop {
+                match self.consume_char() {
+                    Some('(') => depth += 1,
+                    Some(')') => {
+                        depth -= 1;
+                        if depth == 0 {
+                            break;
+                        }
+                    }
+                    None => bail!("Unexpected end of input in parameter list"),
+                    _ => {}
+                }
+            }
+        }
+
         self.expect_char(':')?;
 
         // Type declaration
@@ -1312,6 +1401,24 @@ impl<'a> PVSParser<'a> {
                 None
             };
             return Ok(Some(PVSDeclaration::TypeDecl { name, definition }));
+        }
+
+        // VAR declaration (e.g., "x, y: VAR nat") — variable binding, not a goal
+        // Skip it and return None so the parser continues to the next declaration
+        if self.try_consume("VAR") {
+            // Consume the type name (e.g., "nat") to advance past it
+            let _var_type = self.parse_type()?;
+            return Ok(Some(PVSDeclaration::ConstDecl {
+                name,
+                declared_type: _var_type,
+                definition: None,
+            }));
+        }
+
+        // DATATYPE declaration (e.g., "list: DATATYPE BEGIN ... END list")
+        if self.try_consume("DATATYPE") {
+            let constructors = self.parse_pvs_datatype_body()?;
+            return Ok(Some(PVSDeclaration::Datatype { name, constructors }));
         }
 
         // Formula declaration
@@ -1338,6 +1445,27 @@ impl<'a> PVSParser<'a> {
             return Ok(Some(PVSDeclaration::FormulaDecl { name, kind, formula }));
         }
 
+        // RECURSIVE function declaration
+        if self.try_consume("RECURSIVE") {
+            let declared_type = self.parse_type()?;
+            let body = if self.try_consume("=") {
+                self.parse_expr()?
+            } else {
+                PVSExpr::Name("_".to_string())
+            };
+            let measure = if self.try_consume("MEASURE") {
+                Some(self.parse_expr()?)
+            } else {
+                None
+            };
+            return Ok(Some(PVSDeclaration::RecursiveDecl {
+                name,
+                signature: declared_type,
+                measure,
+                body,
+            }));
+        }
+
         // Constant declaration (with optional definition)
         let declared_type = self.parse_type()?;
         let definition = if self.try_consume("=") {
@@ -1351,6 +1479,74 @@ impl<'a> PVSParser<'a> {
             declared_type,
             definition,
         }))
+    }
+
+    /// Parse the body of a PVS DATATYPE declaration (after "DATATYPE" keyword).
+    ///
+    /// PVS datatype syntax:
+    /// ```text
+    /// BEGIN
+    ///   null: null?
+    ///   cons(car: T, cdr: list): cons?
+    /// END list
+    /// ```
+    fn parse_pvs_datatype_body(&mut self) -> Result<Vec<PVSConstructor>> {
+        let mut constructors = Vec::new();
+
+        // Expect BEGIN
+        if !self.try_consume("BEGIN") {
+            bail!("Expected BEGIN after DATATYPE");
+        }
+
+        // Parse constructors until END
+        loop {
+            self.skip_whitespace_and_comments();
+
+            // Check for END (the outer parse_theory loop will consume END + name)
+            if self.remaining().to_uppercase().starts_with("END") {
+                // Consume "END" and the datatype name that follows
+                self.try_consume("END");
+                // Consume the datatype name
+                let _ = self.parse_identifier();
+                break;
+            }
+
+            // Parse constructor name
+            let ctor_name = self.parse_identifier()?;
+
+            // Parse optional accessor list: (field: Type, ...)
+            let mut accessors = Vec::new();
+            if self.peek_char() == Some('(') {
+                self.consume_char(); // '('
+                while self.peek_char() != Some(')') {
+                    let field_name = self.parse_identifier()?;
+                    self.expect_char(':')?;
+                    let field_type = self.parse_type()?;
+                    accessors.push((field_name, field_type));
+                    if !self.try_consume(",") {
+                        break;
+                    }
+                }
+                self.expect_char(')')?;
+            }
+
+            // Parse optional recogniser: ctor_name?
+            let recogniser = if self.peek_char() == Some(':') {
+                self.consume_char(); // ':'
+                self.skip_whitespace_and_comments();
+                Some(self.parse_identifier()?)
+            } else {
+                None
+            };
+
+            constructors.push(PVSConstructor {
+                name: ctor_name,
+                accessors,
+                recogniser,
+            });
+        }
+
+        Ok(constructors)
     }
 
     /// Parse a PVS strategy (tactic)
