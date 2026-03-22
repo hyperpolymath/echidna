@@ -1,0 +1,46 @@
+// SPDX-License-Identifier: PMPL-1.0-or-later
+= ECHIDNA — Show Me The Receipts
+:toc:
+:icons: font
+
+The README makes claims. This file backs them up.
+
+[quote, README]
+____
+This project is licensed under the link:LICENSE[Palimpsest Meta-Project License (PMPL-1.0-or-later)].
+____
+
+== Technology Choices
+
+[cols="1,2"]
+|===
+| Technology | Learn More
+
+| **Rust** | https://www.rust-lang.org
+| **Zig** | https://ziglang.org
+| **Deno** | https://deno.land
+| **Julia** | https://julialang.org
+| **Idris2 ABI** | https://www.idris-lang.org
+|===
+
+== Dogfooded Across The Account
+
+Uses the hyperpolymath ABI/FFI standard (Idris2 + Zig). Same pattern used across
+https://github.com/hyperpolymath/proven[proven],
+https://github.com/hyperpolymath/burble[burble], and
+https://github.com/hyperpolymath/gossamer[gossamer].
+
+== File Map
+
+[cols="1,2"]
+|===
+| Path | What's There
+
+| `src/` | Source code
+| `ffi/` | Foreign function interface
+| `test(s)/` | Test suite
+|===
+
+== Questions?
+
+Open an issue or reach out directly — happy to explain anything in more detail.
