@@ -405,6 +405,28 @@ impl HOL4Parser {
         true
     }
 
+    /// Check if the keyword appears at the current position as a standalone word
+    /// (not part of a larger identifier). Does not consume or advance position.
+    fn matches_keyword_at_pos(&self, keyword: &str) -> bool {
+        let chars: Vec<char> = keyword.chars().collect();
+        if self.pos + chars.len() > self.input.len() {
+            return false;
+        }
+        for (i, &expected) in chars.iter().enumerate() {
+            if self.input[self.pos + i] != expected {
+                return false;
+            }
+        }
+        // Check that the next character (if any) is not alphanumeric or underscore
+        // to ensure we match a whole keyword, not a prefix of a longer word
+        if let Some(&next) = self.input.get(self.pos + chars.len()) {
+            if next.is_alphanumeric() || next == '_' {
+                return false;
+            }
+        }
+        true
+    }
+
     fn parse_identifier(&mut self) -> Result<String> {
         self.skip_whitespace();
         let mut name = String::new();
@@ -1000,19 +1022,35 @@ impl HOL4Parser {
                 self.skip_whitespace();
 
                 if self.try_consume("_") {
-                    // val _ = ... (typically export_theory())
+                    // val _ = ... (export_theory(), Datatype, etc.)
                     self.expect_char('=')?;
                     self.skip_whitespace();
                     if self.try_consume("export_theory") {
                         declarations.push(HOL4Declaration::Export);
-                    }
-                    // Skip to end of declaration
-                    while let Some(c) = self.peek() {
-                        if c == ';' {
+                        // Skip to end of declaration
+                        while let Some(c) = self.peek() {
+                            if c == ';' {
+                                self.advance();
+                                break;
+                            }
                             self.advance();
-                            break;
                         }
-                        self.advance();
+                    } else if self.try_consume("Datatype") {
+                        // val _ = Datatype`...`
+                        if let Ok(decl) = self.parse_datatype() {
+                            declarations.push(decl);
+                        }
+                        // Skip trailing semicolon
+                        self.try_consume(";");
+                    } else {
+                        // Skip to end of declaration
+                        while let Some(c) = self.peek() {
+                            if c == ';' {
+                                self.advance();
+                                break;
+                            }
+                            self.advance();
+                        }
                     }
                 } else {
                     let decl_name = self.parse_identifier()?;
@@ -1024,9 +1062,19 @@ impl HOL4Parser {
                         if let Ok(decl) = self.parse_define_decl(&decl_name) {
                             declarations.push(decl);
                         }
-                    } else if self.try_consume("store_thm") {
-                        // Parse theorem
+                    } else if self.try_consume("store_thm") || self.try_consume("Q.store_thm") {
+                        // Parse theorem (both unqualified and Q-qualified)
                         if let Ok(decl) = self.parse_store_thm(&decl_name) {
+                            declarations.push(decl);
+                        }
+                    } else if self.try_consume("Q.prove") || self.try_consume("prove") {
+                        // Parse prove-style theorem
+                        if let Ok(decl) = self.parse_store_thm(&decl_name) {
+                            declarations.push(decl);
+                        }
+                    } else if self.try_consume("Datatype") {
+                        // val name = Datatype`...`
+                        if let Ok(decl) = self.parse_datatype() {
                             declarations.push(decl);
                         }
                     }
@@ -1117,7 +1165,48 @@ impl HOL4Parser {
     fn parse_new_definition(&mut self, name: &str) -> Result<HOL4Declaration> {
         self.skip_whitespace();
 
-        // Skip to the term
+        // Check for colon (new-style: Definition name: body End)
+        if self.try_consume(":") {
+            self.skip_whitespace();
+
+            // Check if backtick-quoted body follows
+            if self.peek() == Some('`') {
+                self.advance();
+                let body = self.parse_term()?;
+                self.try_consume("`");
+                return Ok(HOL4Declaration::Definition {
+                    name: name.to_string(),
+                    body,
+                    is_recursive: false,
+                });
+            }
+
+            // New-style: read body text until "End" keyword (on its own line)
+            let start = self.pos;
+            while self.pos < self.input.len() {
+                if self.matches_keyword_at_pos("End") {
+                    break;
+                }
+                self.pos += 1;
+            }
+            let body_text: String = self.input[start..self.pos].iter().collect();
+            let body_text = body_text.trim().to_string();
+            let body = HOL4Term::Var {
+                name: body_text,
+                ty: None,
+            };
+
+            // Skip past "End"
+            self.try_consume("End");
+
+            return Ok(HOL4Declaration::Definition {
+                name: name.to_string(),
+                body,
+                is_recursive: false,
+            });
+        }
+
+        // Legacy style: skip to backtick-quoted term
         while let Some(c) = self.peek() {
             if c == '`' {
                 break;
@@ -1139,7 +1228,55 @@ impl HOL4Parser {
     fn parse_new_theorem(&mut self, name: &str) -> Result<HOL4Declaration> {
         self.skip_whitespace();
 
-        // Skip to the term
+        // Check for colon (new-style: Theorem name: stmt Proof ... QED)
+        if self.try_consume(":") {
+            self.skip_whitespace();
+
+            // Check if backtick-quoted statement follows
+            if self.peek() == Some('`') {
+                self.advance();
+                let statement = self.parse_term()?;
+                self.try_consume("`");
+                return Ok(HOL4Declaration::Theorem {
+                    name: name.to_string(),
+                    statement,
+                    proof: None,
+                });
+            }
+
+            // New-style: read statement text until "Proof" keyword, then skip to "QED"
+            let start = self.pos;
+            while self.pos < self.input.len() {
+                if self.matches_keyword_at_pos("Proof") {
+                    break;
+                }
+                self.pos += 1;
+            }
+            let stmt_text: String = self.input[start..self.pos].iter().collect();
+            let stmt_text = stmt_text.trim().to_string();
+            let statement = HOL4Term::Var {
+                name: stmt_text,
+                ty: None,
+            };
+
+            // Skip past Proof ... QED block
+            self.try_consume("Proof");
+            while self.pos < self.input.len() {
+                if self.matches_keyword_at_pos("QED") {
+                    self.try_consume("QED");
+                    break;
+                }
+                self.pos += 1;
+            }
+
+            return Ok(HOL4Declaration::Theorem {
+                name: name.to_string(),
+                statement,
+                proof: None,
+            });
+        }
+
+        // Legacy style: skip to backtick-quoted term
         while let Some(c) = self.peek() {
             if c == '`' {
                 break;
@@ -1161,13 +1298,19 @@ impl HOL4Parser {
     fn parse_datatype(&mut self) -> Result<HOL4Declaration> {
         self.skip_whitespace();
 
-        // Find the backtick
-        while let Some(c) = self.peek() {
-            if c == '`' {
+        // Determine format: backtick-style or colon-style (new format)
+        let use_colon_style = self.peek() == Some(':');
+        if use_colon_style {
+            self.advance(); // skip ':'
+        } else {
+            // Find the backtick (old-style: Datatype`name = ...`)
+            while let Some(c) = self.peek() {
+                if c == '`' {
+                    self.advance();
+                    break;
+                }
                 self.advance();
-                break;
             }
-            self.advance();
         }
 
         // Parse name and type vars
@@ -1180,12 +1323,42 @@ impl HOL4Parser {
         // Parse constructors
         loop {
             self.skip_whitespace();
-            let ctor_name = self.parse_identifier()?;
+
+            // Check for end markers
+            if use_colon_style && self.matches_keyword_at_pos("End") {
+                self.try_consume("End");
+                break;
+            }
+            if !use_colon_style && self.peek() == Some('`') {
+                self.advance();
+                break;
+            }
+
+            let ctor_name = match self.parse_identifier() {
+                Ok(n) => n,
+                Err(_) => break, // Can't parse more constructors
+            };
             let mut args = Vec::new();
 
-            // Parse constructor arguments
-            while self.try_consume("of") || self.try_consume("=>") {
-                args.push(self.parse_type()?);
+            // Parse constructor arguments (type names following the constructor)
+            // Arguments can be type names, type variables ('a), or the datatype name itself
+            loop {
+                self.skip_whitespace();
+                // Stop if we see a pipe, backtick, End, or the next constructor starts
+                match self.peek() {
+                    Some('|') | Some('`') | Some(';') | None => break,
+                    _ => {}
+                }
+                // Check for "End" keyword (colon-style)
+                if use_colon_style && self.matches_keyword_at_pos("End") {
+                    break;
+                }
+                // Try to parse a type argument
+                if let Ok(ty) = self.parse_type() {
+                    args.push(ty);
+                } else {
+                    break;
+                }
             }
 
             constructors.push(HOL4Constructor {
@@ -1194,11 +1367,15 @@ impl HOL4Parser {
             });
 
             if !self.try_consume("|") {
+                // If colon-style, consume End if present
+                if use_colon_style {
+                    self.try_consume("End");
+                } else {
+                    self.try_consume("`");
+                }
                 break;
             }
         }
-
-        self.try_consume("`");
 
         Ok(HOL4Declaration::Datatype {
             name,

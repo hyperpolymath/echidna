@@ -44,6 +44,16 @@ pub mod minizinc;
 pub mod chuffed;
 pub mod ortools;
 pub mod typed_wasm;
+pub mod spin_checker;
+pub mod cbmc;
+pub mod cadical;
+pub mod kissat;
+pub mod nusmv;
+pub mod tlc;
+pub mod alloy;
+pub mod prism;
+pub mod uppaal;
+pub mod minisat;
 
 /// Enumeration of all supported provers
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]
@@ -98,6 +108,22 @@ pub enum ProverKind {
 
     // Prover oracles (internal structural validators)
     TypedWasm,
+
+    // Tier 9: Model checkers and program verifiers
+    SPIN,
+    CBMC,
+
+    // Tier 9: SAT Solvers
+    CaDiCaL,
+    Kissat,
+    MiniSat,
+
+    // Tier 9: Model checkers (extended)
+    NuSMV,
+    TLC,
+    Alloy,
+    Prism,
+    UPPAAL,
 }
 
 impl std::str::FromStr for ProverKind {
@@ -136,6 +162,16 @@ impl std::str::FromStr for ProverKind {
             "chuffed" => Ok(ProverKind::Chuffed),
             "ortools" | "or-tools" => Ok(ProverKind::ORTools),
             "typedwasm" | "typed-wasm" | "typed_wasm" | "twasm" => Ok(ProverKind::TypedWasm),
+            "spin" | "promela" => Ok(ProverKind::SPIN),
+            "cbmc" | "c-bounded" => Ok(ProverKind::CBMC),
+            "cadical" => Ok(ProverKind::CaDiCaL),
+            "kissat" => Ok(ProverKind::Kissat),
+            "minisat" | "mini-sat" => Ok(ProverKind::MiniSat),
+            "nusmv" | "nuxmv" => Ok(ProverKind::NuSMV),
+            "tlc" | "tlc2" => Ok(ProverKind::TLC),
+            "alloy" => Ok(ProverKind::Alloy),
+            "prism" => Ok(ProverKind::Prism),
+            "uppaal" | "verifyta" => Ok(ProverKind::UPPAAL),
             _ => Err(anyhow::anyhow!("Unknown prover: {}", s)),
         }
     }
@@ -189,6 +225,16 @@ impl ProverKind {
             ProverKind::Chuffed,
             ProverKind::ORTools,
             ProverKind::TypedWasm,
+            ProverKind::SPIN,
+            ProverKind::CBMC,
+            ProverKind::CaDiCaL,
+            ProverKind::Kissat,
+            ProverKind::MiniSat,
+            ProverKind::NuSMV,
+            ProverKind::TLC,
+            ProverKind::Alloy,
+            ProverKind::Prism,
+            ProverKind::UPPAAL,
         ]);
         provers
     }
@@ -227,6 +273,16 @@ impl ProverKind {
             ProverKind::Chuffed => 2,  // CP solver
             ProverKind::ORTools => 2,  // Constraint/optimization solver
             ProverKind::TypedWasm => 3, // Internal oracle, structural analysis
+            ProverKind::SPIN => 3,      // Model checker, Promela language
+            ProverKind::CBMC => 2,      // Bounded model checker, C input
+            ProverKind::CaDiCaL => 1,   // SAT solver, DIMACS CNF
+            ProverKind::Kissat => 1,    // SAT solver, DIMACS CNF
+            ProverKind::MiniSat => 1,   // SAT solver, DIMACS CNF
+            ProverKind::NuSMV => 3,     // Symbolic model checker, SMV language
+            ProverKind::TLC => 3,       // TLA+ model checker
+            ProverKind::Alloy => 3,     // Relational model finder
+            ProverKind::Prism => 3,     // Probabilistic model checker
+            ProverKind::UPPAAL => 3,    // Timed automata model checker
         }
     }
 
@@ -270,6 +326,22 @@ impl ProverKind {
             ProverKind::Chuffed => 5,
             ProverKind::ORTools => 5,
             ProverKind::TypedWasm => 1, // Internal oracle, tier 1 capability
+
+            // Tier 9: Model checkers and program verifiers
+            ProverKind::SPIN => 5,
+            ProverKind::CBMC => 5,
+
+            // Tier 9: SAT Solvers
+            ProverKind::CaDiCaL => 5,
+            ProverKind::Kissat => 5,
+            ProverKind::MiniSat => 5,
+
+            // Tier 9: Model checkers (extended)
+            ProverKind::NuSMV => 5,
+            ProverKind::TLC => 5,
+            ProverKind::Alloy => 5,
+            ProverKind::Prism => 5,
+            ProverKind::UPPAAL => 5,
         }
     }
 
@@ -302,6 +374,16 @@ impl ProverKind {
             ProverKind::Chuffed => 1.0,  // CP solver
             ProverKind::ORTools => 1.5,  // Constraint/optimization
             ProverKind::TypedWasm => 2.0, // Internal oracle
+            ProverKind::SPIN => 1.5,     // Model checker
+            ProverKind::CBMC => 1.5,     // Bounded model checker
+            ProverKind::CaDiCaL => 1.0,  // SAT solver, DIMACS CNF
+            ProverKind::Kissat => 1.0,   // SAT solver, DIMACS CNF
+            ProverKind::MiniSat => 1.0,  // SAT solver, DIMACS CNF
+            ProverKind::NuSMV => 1.5,    // Symbolic model checker
+            ProverKind::TLC => 1.5,      // TLA+ model checker
+            ProverKind::Alloy => 1.5,    // Relational model finder
+            ProverKind::Prism => 1.5,    // Probabilistic model checker
+            ProverKind::UPPAAL => 1.5,   // Timed automata model checker
         }
     }
 
@@ -339,6 +421,16 @@ impl ProverKind {
             ProverKind::Chuffed => "fzn-chuffed",
             ProverKind::ORTools => "ortools_solve",
             ProverKind::TypedWasm => "idris2", // Validates via Idris2 ABI
+            ProverKind::SPIN => "spin",
+            ProverKind::CBMC => "cbmc",
+            ProverKind::CaDiCaL => "cadical",  // CaDiCaL SAT solver
+            ProverKind::Kissat => "kissat",    // Kissat SAT solver
+            ProverKind::MiniSat => "minisat",  // MiniSat SAT solver
+            ProverKind::NuSMV => "nuXmv",      // nuXmv / NuSMV model checker
+            ProverKind::TLC => "tlc2",         // TLA+ model checker (Java)
+            ProverKind::Alloy => "alloy",      // Alloy Analyzer (Java JAR)
+            ProverKind::Prism => "prism",      // PRISM probabilistic model checker
+            ProverKind::UPPAAL => "verifyta",  // UPPAAL verification engine
         }
     }
 }
@@ -471,6 +563,16 @@ impl ProverFactory {
             ProverKind::Chuffed => Ok(Box::new(chuffed::ChuffedBackend::new(config))),
             ProverKind::ORTools => Ok(Box::new(ortools::ORToolsBackend::new(config))),
             ProverKind::TypedWasm => Ok(Box::new(typed_wasm::TypedWasmBackend::new(config))),
+            ProverKind::SPIN => Ok(Box::new(spin_checker::SpinBackend::new(config))),
+            ProverKind::CBMC => Ok(Box::new(cbmc::CBMCBackend::new(config))),
+            ProverKind::CaDiCaL => Ok(Box::new(cadical::CaDiCaLBackend::new(config))),
+            ProverKind::Kissat => Ok(Box::new(kissat::KissatBackend::new(config))),
+            ProverKind::MiniSat => Ok(Box::new(minisat::MiniSatBackend::new(config))),
+            ProverKind::NuSMV => Ok(Box::new(nusmv::NuSMVBackend::new(config))),
+            ProverKind::TLC => Ok(Box::new(tlc::TLCBackend::new(config))),
+            ProverKind::Alloy => Ok(Box::new(alloy::AlloyBackend::new(config))),
+            ProverKind::Prism => Ok(Box::new(prism::PrismBackend::new(config))),
+            ProverKind::UPPAAL => Ok(Box::new(uppaal::UppaalBackend::new(config))),
         }
     }
 
@@ -505,7 +607,39 @@ impl ProverFactory {
             "mzn" | "dzn" => Some(ProverKind::MiniZinc),  // MiniZinc format
             "fzn" => Some(ProverKind::Chuffed),  // FlatZinc (Chuffed input)
             "twasm" => Some(ProverKind::TypedWasm),  // TypedWasm program
+            "pml" => Some(ProverKind::SPIN),  // Promela model
+            "smv" => Some(ProverKind::NuSMV),     // SMV specification
+            "als" => Some(ProverKind::Alloy),    // Alloy specification
+            "pm" | "prism" => Some(ProverKind::Prism),  // PRISM model
+            "cnf" => Some(ProverKind::CaDiCaL),  // DIMACS CNF (default SAT solver)
+            // Note: .c files only map to CBMC when containing __CPROVER directives
+            // Use detect_from_file_content() for content-aware detection
             _ => None,
         })
+    }
+
+    /// Content-aware prover detection for ambiguous file extensions
+    ///
+    /// For .c files, checks whether the source contains __CPROVER directives
+    /// to determine if CBMC is the appropriate prover.
+    pub fn detect_from_file_content(path: &PathBuf, content: &str) -> Option<ProverKind> {
+        // First try extension-based detection
+        if let Some(kind) = Self::detect_from_file(path) {
+            return Some(kind);
+        }
+
+        // Content-aware fallback for .c files
+        if let Some(ext) = path.extension().and_then(|e| e.to_str()) {
+            if ext == "c" || ext == "h" {
+                if content.contains("__CPROVER_assert")
+                    || content.contains("__CPROVER_assume")
+                    || content.contains("__CPROVER")
+                {
+                    return Some(ProverKind::CBMC);
+                }
+            }
+        }
+
+        None
     }
 }
