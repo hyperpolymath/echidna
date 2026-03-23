@@ -46,6 +46,7 @@ pub mod ortools;
 pub mod typed_wasm;
 pub mod spin_checker;
 pub mod cbmc;
+pub mod seahorn;
 pub mod cadical;
 pub mod kissat;
 pub mod nusmv;
@@ -54,6 +55,13 @@ pub mod alloy;
 pub mod prism;
 pub mod uppaal;
 pub mod minisat;
+pub mod framac;
+pub mod viper;
+pub mod tamarin;
+pub mod proverif;
+pub mod key;
+pub mod dreal;
+pub mod abc;
 
 /// Enumeration of all supported provers
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]
@@ -112,6 +120,7 @@ pub enum ProverKind {
     // Tier 9: Model checkers and program verifiers
     SPIN,
     CBMC,
+    SeaHorn,
 
     // Tier 9: SAT Solvers
     CaDiCaL,
@@ -124,6 +133,25 @@ pub enum ProverKind {
     Alloy,
     Prism,
     UPPAAL,
+
+    // Tier 9: Program verifiers (deductive)
+    FramaC,
+
+    // Tier 9: Permission-based program verifiers
+    Viper,
+
+    // Tier 9: Security protocol verifiers
+    Tamarin,
+    ProVerif,
+
+    // Tier 9: Deductive Java verifiers (JavaDL + JML)
+    KeY,
+
+    // Tier 10: Delta-complete SMT solvers
+    DReal,
+
+    // Tier 10: Logic synthesis & hardware verification
+    ABC,
 }
 
 impl std::str::FromStr for ProverKind {
@@ -164,6 +192,7 @@ impl std::str::FromStr for ProverKind {
             "typedwasm" | "typed-wasm" | "typed_wasm" | "twasm" => Ok(ProverKind::TypedWasm),
             "spin" | "promela" => Ok(ProverKind::SPIN),
             "cbmc" | "c-bounded" => Ok(ProverKind::CBMC),
+            "seahorn" | "sea" | "sea-horn" => Ok(ProverKind::SeaHorn),
             "cadical" => Ok(ProverKind::CaDiCaL),
             "kissat" => Ok(ProverKind::Kissat),
             "minisat" | "mini-sat" => Ok(ProverKind::MiniSat),
@@ -172,6 +201,13 @@ impl std::str::FromStr for ProverKind {
             "alloy" => Ok(ProverKind::Alloy),
             "prism" => Ok(ProverKind::Prism),
             "uppaal" | "verifyta" => Ok(ProverKind::UPPAAL),
+            "framac" | "frama-c" | "frama_c" | "wp" => Ok(ProverKind::FramaC),
+            "viper" | "silicon" | "carbon" => Ok(ProverKind::Viper),
+            "tamarin" | "tamarin-prover" | "spthy" => Ok(ProverKind::Tamarin),
+            "proverif" | "pv" => Ok(ProverKind::ProVerif),
+            "key" | "key-project" | "javadl" => Ok(ProverKind::KeY),
+            "dreal" | "d-real" | "dreal4" => Ok(ProverKind::DReal),
+            "abc" | "berkeley-abc" => Ok(ProverKind::ABC),
             _ => Err(anyhow::anyhow!("Unknown prover: {}", s)),
         }
     }
@@ -227,6 +263,7 @@ impl ProverKind {
             ProverKind::TypedWasm,
             ProverKind::SPIN,
             ProverKind::CBMC,
+            ProverKind::SeaHorn,
             ProverKind::CaDiCaL,
             ProverKind::Kissat,
             ProverKind::MiniSat,
@@ -235,6 +272,13 @@ impl ProverKind {
             ProverKind::Alloy,
             ProverKind::Prism,
             ProverKind::UPPAAL,
+            ProverKind::FramaC,
+            ProverKind::Viper,
+            ProverKind::Tamarin,
+            ProverKind::ProVerif,
+            ProverKind::KeY,
+            ProverKind::DReal,
+            ProverKind::ABC,
         ]);
         provers
     }
@@ -275,6 +319,7 @@ impl ProverKind {
             ProverKind::TypedWasm => 3, // Internal oracle, structural analysis
             ProverKind::SPIN => 3,      // Model checker, Promela language
             ProverKind::CBMC => 2,      // Bounded model checker, C input
+            ProverKind::SeaHorn => 2,   // LLVM-based verifier, abstract interpretation + CHC
             ProverKind::CaDiCaL => 1,   // SAT solver, DIMACS CNF
             ProverKind::Kissat => 1,    // SAT solver, DIMACS CNF
             ProverKind::MiniSat => 1,   // SAT solver, DIMACS CNF
@@ -283,6 +328,13 @@ impl ProverKind {
             ProverKind::Alloy => 3,     // Relational model finder
             ProverKind::Prism => 3,     // Probabilistic model checker
             ProverKind::UPPAAL => 3,    // Timed automata model checker
+            ProverKind::FramaC => 3,    // Deductive C verifier (ACSL + WP)
+            ProverKind::Viper => 3,     // Permission-based verifier (Silver + Silicon/Carbon)
+            ProverKind::Tamarin => 3,   // Security protocol verifier, multiset rewriting
+            ProverKind::ProVerif => 2,  // Automated protocol verifier, applied pi-calculus
+            ProverKind::KeY => 3,      // Deductive Java verifier (JavaDL + JML), auto + interactive
+            ProverKind::DReal => 2,    // Automated delta-complete SMT solver, NRA
+            ProverKind::ABC => 2,      // Automated hardware verification, AIG-based
         }
     }
 
@@ -330,6 +382,7 @@ impl ProverKind {
             // Tier 9: Model checkers and program verifiers
             ProverKind::SPIN => 5,
             ProverKind::CBMC => 5,
+            ProverKind::SeaHorn => 5,
 
             // Tier 9: SAT Solvers
             ProverKind::CaDiCaL => 5,
@@ -342,6 +395,13 @@ impl ProverKind {
             ProverKind::Alloy => 5,
             ProverKind::Prism => 5,
             ProverKind::UPPAAL => 5,
+            ProverKind::FramaC => 5,    // Deductive program verifier
+            ProverKind::Viper => 5,     // Permission-based program verifier
+            ProverKind::Tamarin => 5,   // Security protocol verifier
+            ProverKind::ProVerif => 5,  // Security protocol verifier (automated)
+            ProverKind::KeY => 5,       // Deductive Java verifier
+            ProverKind::DReal => 5,     // Delta-complete SMT solver (NRA/ODE)
+            ProverKind::ABC => 5,       // Logic synthesis & hardware verification
         }
     }
 
@@ -376,6 +436,7 @@ impl ProverKind {
             ProverKind::TypedWasm => 2.0, // Internal oracle
             ProverKind::SPIN => 1.5,     // Model checker
             ProverKind::CBMC => 1.5,     // Bounded model checker
+            ProverKind::SeaHorn => 1.5,  // LLVM-based CHC verifier
             ProverKind::CaDiCaL => 1.0,  // SAT solver, DIMACS CNF
             ProverKind::Kissat => 1.0,   // SAT solver, DIMACS CNF
             ProverKind::MiniSat => 1.0,  // SAT solver, DIMACS CNF
@@ -384,6 +445,13 @@ impl ProverKind {
             ProverKind::Alloy => 1.5,    // Relational model finder
             ProverKind::Prism => 1.5,    // Probabilistic model checker
             ProverKind::UPPAAL => 1.5,   // Timed automata model checker
+            ProverKind::FramaC => 1.5,   // Deductive C verifier
+            ProverKind::Viper => 2.0,    // Permission-based verifier (Silver + two backends)
+            ProverKind::Tamarin => 2.0,  // Security protocol verifier (.spthy)
+            ProverKind::ProVerif => 1.5, // Automated protocol verifier (.pv)
+            ProverKind::KeY => 2.0,     // Deductive Java verifier (JavaDL + JML)
+            ProverKind::DReal => 1.0,   // Automated SMT solver, SMT-LIB input
+            ProverKind::ABC => 1.5,    // Hardware verification, AIGER/BLIF input
         }
     }
 
@@ -423,6 +491,7 @@ impl ProverKind {
             ProverKind::TypedWasm => "idris2", // Validates via Idris2 ABI
             ProverKind::SPIN => "spin",
             ProverKind::CBMC => "cbmc",
+            ProverKind::SeaHorn => "sea",       // SeaHorn verification framework CLI
             ProverKind::CaDiCaL => "cadical",  // CaDiCaL SAT solver
             ProverKind::Kissat => "kissat",    // Kissat SAT solver
             ProverKind::MiniSat => "minisat",  // MiniSat SAT solver
@@ -431,6 +500,13 @@ impl ProverKind {
             ProverKind::Alloy => "alloy",      // Alloy Analyzer (Java JAR)
             ProverKind::Prism => "prism",      // PRISM probabilistic model checker
             ProverKind::UPPAAL => "verifyta",  // UPPAAL verification engine
+            ProverKind::FramaC => "frama-c",   // Frama-C platform (WP plugin)
+            ProverKind::Viper => "silicon",     // Viper Silicon verifier (default backend)
+            ProverKind::Tamarin => "tamarin-prover", // Tamarin security protocol prover
+            ProverKind::ProVerif => "proverif",        // ProVerif protocol verifier
+            ProverKind::KeY => "key",                    // KeY Java verifier (Java, headless mode)
+            ProverKind::DReal => "dreal",                  // dReal delta-complete SMT solver
+            ProverKind::ABC => "abc",                      // Berkeley ABC logic synthesis system
         }
     }
 }
@@ -565,6 +641,7 @@ impl ProverFactory {
             ProverKind::TypedWasm => Ok(Box::new(typed_wasm::TypedWasmBackend::new(config))),
             ProverKind::SPIN => Ok(Box::new(spin_checker::SpinBackend::new(config))),
             ProverKind::CBMC => Ok(Box::new(cbmc::CBMCBackend::new(config))),
+            ProverKind::SeaHorn => Ok(Box::new(seahorn::SeaHornBackend::new(config))),
             ProverKind::CaDiCaL => Ok(Box::new(cadical::CaDiCaLBackend::new(config))),
             ProverKind::Kissat => Ok(Box::new(kissat::KissatBackend::new(config))),
             ProverKind::MiniSat => Ok(Box::new(minisat::MiniSatBackend::new(config))),
@@ -573,6 +650,13 @@ impl ProverFactory {
             ProverKind::Alloy => Ok(Box::new(alloy::AlloyBackend::new(config))),
             ProverKind::Prism => Ok(Box::new(prism::PrismBackend::new(config))),
             ProverKind::UPPAAL => Ok(Box::new(uppaal::UppaalBackend::new(config))),
+            ProverKind::FramaC => Ok(Box::new(framac::FramaCBackend::new(config))),
+            ProverKind::Viper => Ok(Box::new(viper::ViperBackend::new(config))),
+            ProverKind::Tamarin => Ok(Box::new(tamarin::TamarinBackend::new(config))),
+            ProverKind::ProVerif => Ok(Box::new(proverif::ProVerifBackend::new(config))),
+            ProverKind::KeY => Ok(Box::new(key::KeyBackend::new(config))),
+            ProverKind::DReal => Ok(Box::new(dreal::DRealBackend::new(config))),
+            ProverKind::ABC => Ok(Box::new(abc::AbcBackend::new(config))),
         }
     }
 
@@ -611,7 +695,15 @@ impl ProverFactory {
             "smv" => Some(ProverKind::NuSMV),     // SMV specification
             "als" => Some(ProverKind::Alloy),    // Alloy specification
             "pm" | "prism" => Some(ProverKind::Prism),  // PRISM model
+            "vpr" => Some(ProverKind::Viper),    // Viper Silver language
+            "spthy" => Some(ProverKind::Tamarin),  // Tamarin security protocol theory
+            "pv" => Some(ProverKind::ProVerif),    // ProVerif applied pi-calculus
             "cnf" => Some(ProverKind::CaDiCaL),  // DIMACS CNF (default SAT solver)
+            "dr" => Some(ProverKind::DReal),   // dReal SMT-LIB (.dr extension)
+            "aig" => Some(ProverKind::ABC),    // AIGER format (And-Inverter Graph)
+            "blif" => Some(ProverKind::ABC),   // Berkeley Logic Interchange Format
+            "key" => Some(ProverKind::KeY),    // KeY proof problem file (JavaDL)
+            // Note: .java files with JML annotations can also be detected via content-aware detection
             // Note: .c files only map to CBMC when containing __CPROVER directives
             // Use detect_from_file_content() for content-aware detection
             _ => None,
@@ -628,9 +720,30 @@ impl ProverFactory {
             return Some(kind);
         }
 
-        // Content-aware fallback for .c files
+        // Content-aware fallback for .java and .c files
         if let Some(ext) = path.extension().and_then(|e| e.to_str()) {
+            // Java files with JML annotations → KeY
+            if ext == "java" {
+                if content.contains("//@") || content.contains("/*@")
+                    || content.contains("requires") && content.contains("ensures")
+                {
+                    return Some(ProverKind::KeY);
+                }
+            }
+
             if ext == "c" || ext == "h" {
+                // Frama-C ACSL annotations take priority (deductive verification)
+                if content.contains("/*@") || content.contains("//@") {
+                    return Some(ProverKind::FramaC);
+                }
+                // SeaHorn sassert / seahorn.h (LLVM-based CHC verification)
+                if content.contains("sassert(")
+                    || content.contains("seahorn/seahorn.h")
+                    || content.contains("nd_int(")
+                {
+                    return Some(ProverKind::SeaHorn);
+                }
+                // CBMC __CPROVER directives (bounded model checking)
                 if content.contains("__CPROVER_assert")
                     || content.contains("__CPROVER_assume")
                     || content.contains("__CPROVER")

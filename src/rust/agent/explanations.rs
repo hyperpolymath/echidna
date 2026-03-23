@@ -351,6 +351,7 @@ impl ExplanationGenerator {
             ProverKind::TypedWasm => "TypedWasm is an internal oracle validating 10-level type safety for typed WASM memory regions.",
             ProverKind::SPIN => "SPIN is a model checker for verifying concurrent systems using Promela specifications and LTL.",
             ProverKind::CBMC => "CBMC is a bounded model checker for C/C++ programs verifying assertions and safety properties.",
+            ProverKind::SeaHorn => "SeaHorn is an LLVM-based verification framework using abstract interpretation and Constrained Horn Clauses (CHC) to verify safety properties of C programs.",
             ProverKind::CaDiCaL => "CaDiCaL is a state-of-the-art CDCL SAT solver with advanced inprocessing techniques.",
             ProverKind::Kissat => "Kissat is a high-performance SAT solver optimized for competition benchmarks.",
             ProverKind::MiniSat => "MiniSat is a classic DPLL/CDCL SAT solver widely used as a reference implementation.",
@@ -359,6 +360,13 @@ impl ExplanationGenerator {
             ProverKind::Alloy => "Alloy is a relational model finder using SAT-based bounded analysis for structural properties.",
             ProverKind::Prism => "PRISM is a probabilistic model checker for DTMCs, CTMCs, MDPs, and reward-based properties.",
             ProverKind::UPPAAL => "UPPAAL verifies real-time systems modelled as timed automata against TCTL properties.",
+            ProverKind::FramaC => "Frama-C is a C program analysis framework whose WP plugin performs deductive verification of ACSL-annotated code.",
+            ProverKind::Viper => "Viper is a permission-based program verifier using separation logic with Silicon and Carbon backends.",
+            ProverKind::Tamarin => "Tamarin verifies security protocols via multiset rewriting rules under the Dolev-Yao adversary model.",
+            ProverKind::ProVerif => "ProVerif is an automatic cryptographic protocol verifier based on the applied pi-calculus.",
+            ProverKind::KeY => "KeY is a deductive verification tool for Java programs using dynamic logic and the JML specification language.",
+            ProverKind::DReal => "dReal is a delta-complete SMT solver for nonlinear real arithmetic (QF_NRA/QF_NRA_ODE) using interval constraint propagation.",
+            _ => "Unknown prover.",
         }.to_string()
     }
 
