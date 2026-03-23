@@ -90,7 +90,10 @@ impl CertificateVerifier {
     }
 
     /// Verify an Alethe certificate (CVC5 proof format)
-    pub fn verify_alethe(&self, certificate: &ProofCertificate) -> Result<CertificateVerificationResult> {
+    pub fn verify_alethe(
+        &self,
+        certificate: &ProofCertificate,
+    ) -> Result<CertificateVerificationResult> {
         let start = std::time::Instant::now();
 
         // Parse Alethe proof steps
@@ -111,13 +114,21 @@ impl CertificateVerifier {
             valid,
             checker: "echidna-alethe-checker".to_string(),
             time_ms: elapsed.as_millis() as u64,
-            error: if valid { None } else { Some("Invalid proof step found".to_string()) },
+            error: if valid {
+                None
+            } else {
+                Some("Invalid proof step found".to_string())
+            },
             steps_checked: Some(steps.len() as u64),
         })
     }
 
     /// Verify a DRAT/LRAT certificate
-    pub fn verify_drat(&self, certificate: &ProofCertificate, cnf_formula: &str) -> Result<CertificateVerificationResult> {
+    pub fn verify_drat(
+        &self,
+        certificate: &ProofCertificate,
+        cnf_formula: &str,
+    ) -> Result<CertificateVerificationResult> {
         let start = std::time::Instant::now();
 
         // Write CNF and certificate to temp files
@@ -149,24 +160,30 @@ impl CertificateVerifier {
                     valid,
                     checker: "drat-trim".to_string(),
                     time_ms: elapsed.as_millis() as u64,
-                    error: if valid { None } else { Some(stdout.to_string()) },
+                    error: if valid {
+                        None
+                    } else {
+                        Some(stdout.to_string())
+                    },
                     steps_checked: None,
                 })
-            }
-            Err(e) => {
-                Ok(CertificateVerificationResult {
-                    valid: false,
-                    checker: "drat-trim".to_string(),
-                    time_ms: elapsed.as_millis() as u64,
-                    error: Some(format!("Failed to run drat-trim: {}", e)),
-                    steps_checked: None,
-                })
-            }
+            },
+            Err(e) => Ok(CertificateVerificationResult {
+                valid: false,
+                checker: "drat-trim".to_string(),
+                time_ms: elapsed.as_millis() as u64,
+                error: Some(format!("Failed to run drat-trim: {}", e)),
+                steps_checked: None,
+            }),
         }
     }
 
     /// Store a certificate for audit trail
-    pub fn store_certificate(&self, certificate: &mut ProofCertificate, proof_id: &str) -> Result<PathBuf> {
+    pub fn store_certificate(
+        &self,
+        certificate: &mut ProofCertificate,
+        proof_id: &str,
+    ) -> Result<PathBuf> {
         std::fs::create_dir_all(&self.storage_dir)?;
 
         let filename = format!("{}_{}.cert", proof_id, certificate.format_extension());
@@ -212,9 +229,7 @@ impl CertificateVerifier {
         // For now, we do structural validation.
         match step.kind {
             AletheStepKind::Assume => !step.raw.is_empty(),
-            AletheStepKind::Step => {
-                step.raw.contains(":rule") && step.raw.starts_with("(step")
-            }
+            AletheStepKind::Step => step.raw.contains(":rule") && step.raw.starts_with("(step"),
         }
     }
 }
@@ -269,7 +284,8 @@ mod tests {
     fn test_certificate_creation() {
         let cert = ProofCertificate::new(
             CertificateFormat::Alethe,
-            "(assume a1 (= x y))\n(step s1 (cl (= y x)) :rule eq_symmetric :premises (a1))".to_string(),
+            "(assume a1 (= x y))\n(step s1 (cl (= y x)) :rule eq_symmetric :premises (a1))"
+                .to_string(),
             "cvc5",
         );
 
@@ -285,7 +301,8 @@ mod tests {
 
         let cert = ProofCertificate::new(
             CertificateFormat::Alethe,
-            "(assume a1 (= x y))\n(step s1 (cl (= y x)) :rule eq_symmetric :premises (a1))".to_string(),
+            "(assume a1 (= x y))\n(step s1 (cl (= y x)) :rule eq_symmetric :premises (a1))"
+                .to_string(),
             "cvc5",
         );
 
@@ -311,16 +328,10 @@ mod tests {
 
     #[test]
     fn test_certificate_hash_consistency() {
-        let cert1 = ProofCertificate::new(
-            CertificateFormat::DRAT,
-            "1 2 3 0\n".to_string(),
-            "minisat",
-        );
-        let cert2 = ProofCertificate::new(
-            CertificateFormat::DRAT,
-            "1 2 3 0\n".to_string(),
-            "minisat",
-        );
+        let cert1 =
+            ProofCertificate::new(CertificateFormat::DRAT, "1 2 3 0\n".to_string(), "minisat");
+        let cert2 =
+            ProofCertificate::new(CertificateFormat::DRAT, "1 2 3 0\n".to_string(), "minisat");
 
         assert_eq!(cert1.blake3_hash, cert2.blake3_hash);
     }
@@ -328,11 +339,13 @@ mod tests {
     #[test]
     fn test_format_extension() {
         assert_eq!(
-            ProofCertificate::new(CertificateFormat::Alethe, String::new(), "test").format_extension(),
+            ProofCertificate::new(CertificateFormat::Alethe, String::new(), "test")
+                .format_extension(),
             "alethe"
         );
         assert_eq!(
-            ProofCertificate::new(CertificateFormat::LRAT, String::new(), "test").format_extension(),
+            ProofCertificate::new(CertificateFormat::LRAT, String::new(), "test")
+                .format_extension(),
             "lrat"
         );
     }

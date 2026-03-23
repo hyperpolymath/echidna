@@ -44,14 +44,8 @@ fn arb_schema_body() -> impl Strategy<Value = String> {
 /// Generate a complete valid .twasm program with a single region.
 /// Parser requires everything on one line: region NAME { field: type; ... } [COUNT]
 fn arb_valid_twasm() -> impl Strategy<Value = String> {
-    (
-        arb_field_name(),
-        arb_schema_body(),
-        1usize..100,
-    )
-        .prop_map(|(name, body, count)| {
-            format!("region {} {{ {} }} [{}]", name, body, count)
-        })
+    (arb_field_name(), arb_schema_body(), 1usize..100)
+        .prop_map(|(name, body, count)| format!("region {} {{ {} }} [{}]", name, body, count))
 }
 
 /// Generate a region name for multi-module programs.
@@ -326,16 +320,31 @@ fn factory_creates_typed_wasm_backend() {
 
 #[test]
 fn prover_kind_from_str() {
-    assert_eq!("twasm".parse::<ProverKind>().unwrap(), ProverKind::TypedWasm);
-    assert_eq!("typed-wasm".parse::<ProverKind>().unwrap(), ProverKind::TypedWasm);
-    assert_eq!("typed_wasm".parse::<ProverKind>().unwrap(), ProverKind::TypedWasm);
-    assert_eq!("typedwasm".parse::<ProverKind>().unwrap(), ProverKind::TypedWasm);
+    assert_eq!(
+        "twasm".parse::<ProverKind>().unwrap(),
+        ProverKind::TypedWasm
+    );
+    assert_eq!(
+        "typed-wasm".parse::<ProverKind>().unwrap(),
+        ProverKind::TypedWasm
+    );
+    assert_eq!(
+        "typed_wasm".parse::<ProverKind>().unwrap(),
+        ProverKind::TypedWasm
+    );
+    assert_eq!(
+        "typedwasm".parse::<ProverKind>().unwrap(),
+        ProverKind::TypedWasm
+    );
 }
 
 #[test]
 fn typed_wasm_in_all_provers() {
     let all = ProverKind::all();
-    assert!(all.contains(&ProverKind::TypedWasm), "TypedWasm should be in all()");
+    assert!(
+        all.contains(&ProverKind::TypedWasm),
+        "TypedWasm should be in all()"
+    );
 }
 
 #[test]

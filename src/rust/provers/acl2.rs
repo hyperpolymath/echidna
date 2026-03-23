@@ -15,8 +15,8 @@
 //! - Industrial strength (AMD, Intel, etc.)
 //! - Executable specifications
 
-use async_trait::async_trait;
 use anyhow::{anyhow, Context as AnyhowContext, Result};
+use async_trait::async_trait;
 use std::collections::HashMap;
 use std::path::PathBuf;
 use std::process::Stdio;
@@ -24,9 +24,7 @@ use tokio::io::{AsyncBufReadExt, AsyncWriteExt, BufReader};
 use tokio::process::{Child, Command};
 use tokio::sync::Mutex;
 
-use crate::core::{
-    Context, Definition, Goal, ProofState, Tactic, TacticResult, Term, Theorem,
-};
+use crate::core::{Context, Definition, Goal, ProofState, Tactic, TacticResult, Term, Theorem};
 use crate::provers::{ProverBackend, ProverConfig, ProverKind};
 
 /// ACL2 theorem prover backend
@@ -81,9 +79,13 @@ impl SExp {
             SExp::Str(s) => format!("\"{}\"", s.replace('\\', "\\\\").replace('"', "\\\"")),
             SExp::Num(n) => n.to_string(),
             SExp::List(items) => {
-                let inner = items.iter().map(|i| i.to_lisp()).collect::<Vec<_>>().join(" ");
+                let inner = items
+                    .iter()
+                    .map(|i| i.to_lisp())
+                    .collect::<Vec<_>>()
+                    .join(" ");
                 format!("({})", inner)
-            }
+            },
             SExp::Quote(inner) => format!("'{}", inner.to_lisp()),
             SExp::Nil => "nil".to_string(),
         }
@@ -151,7 +153,7 @@ fn parse_sexp_inner(chars: &mut std::iter::Peekable<std::str::Chars>) -> Result<
                     Some(&')') => {
                         chars.next();
                         break;
-                    }
+                    },
                     Some(&'.') => {
                         // Dotted pair - skip for simplicity
                         chars.next();
@@ -162,10 +164,10 @@ fn parse_sexp_inner(chars: &mut std::iter::Peekable<std::str::Chars>) -> Result<
                             return Err(anyhow!("Expected ) after dotted pair"));
                         }
                         break;
-                    }
+                    },
                     _ => {
                         items.push(parse_sexp_inner(chars)?);
-                    }
+                    },
                 }
             }
             if items.is_empty() {
@@ -173,19 +175,19 @@ fn parse_sexp_inner(chars: &mut std::iter::Peekable<std::str::Chars>) -> Result<
             } else {
                 Ok(SExp::List(items))
             }
-        }
+        },
         Some(&')') => Err(anyhow!("Unexpected closing parenthesis")),
         Some(&'\'') => {
             chars.next();
             let inner = parse_sexp_inner(chars)?;
             Ok(SExp::Quote(Box::new(inner)))
-        }
+        },
         Some(&'`') => {
             // Backquote - treat like quote for simplicity
             chars.next();
             let inner = parse_sexp_inner(chars)?;
             Ok(SExp::Quote(Box::new(inner)))
-        }
+        },
         Some(&'"') => {
             // String literal
             chars.next();
@@ -199,11 +201,11 @@ fn parse_sexp_inner(chars: &mut std::iter::Peekable<std::str::Chars>) -> Result<
                     Some(c) => {
                         escape = false;
                         s.push(c);
-                    }
+                    },
                 }
             }
             Ok(SExp::Str(s))
-        }
+        },
         Some(&c) if c == '-' || c.is_ascii_digit() => {
             // Try to parse as number
             let mut num_str = String::new();
@@ -229,7 +231,7 @@ fn parse_sexp_inner(chars: &mut std::iter::Peekable<std::str::Chars>) -> Result<
                 }
                 Ok(SExp::Atom(atom))
             }
-        }
+        },
         Some(_) => {
             // Atom
             let mut atom = String::new();
@@ -247,7 +249,7 @@ fn parse_sexp_inner(chars: &mut std::iter::Peekable<std::str::Chars>) -> Result<
             } else {
                 Ok(SExp::Atom(atom))
             }
-        }
+        },
     }
 }
 
@@ -274,19 +276,13 @@ pub enum ACL2Event {
         events: Vec<ACL2Event>,
     },
     /// Include book
-    IncludeBook {
-        name: String,
-        dir: Option<String>,
-    },
+    IncludeBook { name: String, dir: Option<String> },
     /// In-theory event
     InTheory(SExp),
     /// Mutual recursion
     MutualRecursion(Vec<ACL2Event>),
     /// Constant definition (defconst)
-    Defconst {
-        name: String,
-        value: SExp,
-    },
+    Defconst { name: String, value: SExp },
     /// Macro definition (defmacro)
     Defmacro {
         name: String,
@@ -457,7 +453,7 @@ impl ACL2Backend {
                         // Find end of this S-expression to advance
                         let sexp_len = find_sexp_end(remaining)?;
                         remaining = &remaining[sexp_len..];
-                    }
+                    },
                     Err(e) => {
                         // Try to skip to next top-level form
                         if let Some(pos) = remaining[1..].find("\n(") {
@@ -465,7 +461,7 @@ impl ACL2Backend {
                         } else {
                             return Err(e);
                         }
-                    }
+                    },
                 }
             } else if remaining.starts_with('#') {
                 // Skip reader macros
@@ -605,14 +601,14 @@ impl ACL2Backend {
                             hints = self.parse_hints(&list[i + 1])?;
                             i += 1;
                         }
-                    }
+                    },
                     ":rule-classes" => {
                         if i + 1 < list.len() {
                             rule_classes = Some(list[i + 1].clone());
                             i += 1;
                         }
-                    }
-                    _ => {}
+                    },
+                    _ => {},
                 }
             }
             i += 1;
@@ -673,14 +669,14 @@ impl ACL2Backend {
                     None => vec![value.clone()],
                 };
                 Ok(ACL2Hint::Use(uses))
-            }
+            },
             ":expand" => {
                 let expands = match value.as_list() {
                     Some(l) => l.clone(),
                     None => vec![value.clone()],
                 };
                 Ok(ACL2Hint::Expand(expands))
-            }
+            },
             ":in-theory" => Ok(ACL2Hint::InTheory(value.clone())),
             ":cases" => {
                 let cases = match value.as_list() {
@@ -688,22 +684,31 @@ impl ACL2Backend {
                     None => vec![value.clone()],
                 };
                 Ok(ACL2Hint::Cases(cases))
-            }
+            },
             ":by" => Ok(ACL2Hint::By(value.clone())),
             ":hands-off" => {
                 let fns = match value.as_list() {
-                    Some(l) => l.iter().filter_map(|s| s.as_atom().map(String::from)).collect(),
-                    None => value.as_atom().map(|s| vec![s.to_string()]).unwrap_or_default(),
+                    Some(l) => l
+                        .iter()
+                        .filter_map(|s| s.as_atom().map(String::from))
+                        .collect(),
+                    None => value
+                        .as_atom()
+                        .map(|s| vec![s.to_string()])
+                        .unwrap_or_default(),
                 };
                 Ok(ACL2Hint::HandsOff(fns))
-            }
+            },
             ":do-not" => {
                 let actions = match value.as_list() {
-                    Some(l) => l.iter().filter_map(|s| s.as_atom().map(String::from)).collect(),
+                    Some(l) => l
+                        .iter()
+                        .filter_map(|s| s.as_atom().map(String::from))
+                        .collect(),
                     None => vec![],
                 };
                 Ok(ACL2Hint::DoNot(actions))
-            }
+            },
             ":do-not-induct" => Ok(ACL2Hint::DoNotInduct(true)),
             _ => Ok(ACL2Hint::Other(key.to_string(), value.clone())),
         }
@@ -757,19 +762,18 @@ impl ACL2Backend {
         }
 
         let signatures = match &list[1] {
-            SExp::List(sigs) => {
-                sigs.iter()
-                    .filter_map(|sig| {
-                        if let SExp::List(parts) = sig {
-                            if parts.len() >= 2 {
-                                let name = parts[0].as_atom()?.to_string();
-                                return Some((name, parts[1].clone()));
-                            }
+            SExp::List(sigs) => sigs
+                .iter()
+                .filter_map(|sig| {
+                    if let SExp::List(parts) = sig {
+                        if parts.len() >= 2 {
+                            let name = parts[0].as_atom()?.to_string();
+                            return Some((name, parts[1].clone()));
                         }
-                        None
-                    })
-                    .collect()
-            }
+                    }
+                    None
+                })
+                .collect(),
             SExp::Nil => vec![],
             _ => vec![],
         };
@@ -831,7 +835,7 @@ impl ACL2Backend {
                 } else {
                     Term::Var(s.clone())
                 }
-            }
+            },
             SExp::Str(s) => Term::Const(format!("\"{}\"", s)),
             SExp::Num(n) => Term::Const(n.to_string()),
             SExp::Nil => Term::Const("nil".to_string()),
@@ -852,10 +856,13 @@ impl ACL2Backend {
                                 if items.len() >= 4 {
                                     return Term::App {
                                         func: Box::new(Term::Const("if".to_string())),
-                                        args: items[1..4].iter().map(|i| self.sexp_to_term(i)).collect(),
+                                        args: items[1..4]
+                                            .iter()
+                                            .map(|i| self.sexp_to_term(i))
+                                            .collect(),
                                     };
                                 }
-                            }
+                            },
                             "let" | "let*" => {
                                 if items.len() >= 3 {
                                     // Simplify let to lambda application
@@ -864,7 +871,7 @@ impl ACL2Backend {
                                         return body;
                                     }
                                 }
-                            }
+                            },
                             "lambda" => {
                                 if items.len() >= 3 {
                                     let params = match &items[1] {
@@ -891,7 +898,7 @@ impl ACL2Backend {
                                     }
                                     return result;
                                 }
-                            }
+                            },
                             "implies" => {
                                 if items.len() >= 3 {
                                     return Term::Pi {
@@ -900,14 +907,14 @@ impl ACL2Backend {
                                         body: Box::new(self.sexp_to_term(&items[2])),
                                     };
                                 }
-                            }
+                            },
                             "and" | "or" | "not" | "equal" | "+" | "-" | "*" | "/" => {
                                 return Term::App {
                                     func: Box::new(Term::Const(name.to_string())),
                                     args: items[1..].iter().map(|i| self.sexp_to_term(i)).collect(),
                                 };
-                            }
-                            _ => {}
+                            },
+                            _ => {},
                         }
                     }
 
@@ -917,7 +924,7 @@ impl ACL2Backend {
                         args: items[1..].iter().map(|i| self.sexp_to_term(i)).collect(),
                     }
                 }
-            }
+            },
         }
     }
 
@@ -934,7 +941,7 @@ impl ACL2Backend {
                     items.extend(args.iter().map(|a| self.pattern_to_sexp(a)));
                     SExp::List(items)
                 }
-            }
+            },
         }
     }
 
@@ -948,15 +955,17 @@ impl ACL2Backend {
                 let mut items = vec![self.term_to_sexp(func)];
                 items.extend(args.iter().map(|a| self.term_to_sexp(a)));
                 SExp::List(items)
-            }
-            Term::Lambda { param, body, .. } => {
-                SExp::List(vec![
-                    SExp::Atom("lambda".to_string()),
-                    SExp::List(vec![SExp::Atom(param.clone())]),
-                    self.term_to_sexp(body),
-                ])
-            }
-            Term::Pi { param, param_type, body } => {
+            },
+            Term::Lambda { param, body, .. } => SExp::List(vec![
+                SExp::Atom("lambda".to_string()),
+                SExp::List(vec![SExp::Atom(param.clone())]),
+                self.term_to_sexp(body),
+            ]),
+            Term::Pi {
+                param,
+                param_type,
+                body,
+            } => {
                 if param == "_" {
                     // Non-dependent: implies
                     SExp::List(vec![
@@ -972,18 +981,22 @@ impl ACL2Backend {
                         self.term_to_sexp(body),
                     ])
                 }
-            }
-            Term::Let { name, value, body, .. } => {
-                SExp::List(vec![
-                    SExp::Atom("let".to_string()),
-                    SExp::List(vec![SExp::List(vec![
-                        SExp::Atom(name.clone()),
-                        self.term_to_sexp(value),
-                    ])]),
-                    self.term_to_sexp(body),
-                ])
-            }
-            Term::Match { scrutinee, branches, .. } => {
+            },
+            Term::Let {
+                name, value, body, ..
+            } => SExp::List(vec![
+                SExp::Atom("let".to_string()),
+                SExp::List(vec![SExp::List(vec![
+                    SExp::Atom(name.clone()),
+                    self.term_to_sexp(value),
+                ])]),
+                self.term_to_sexp(body),
+            ]),
+            Term::Match {
+                scrutinee,
+                branches,
+                ..
+            } => {
                 // ACL2 doesn't have pattern matching, approximate with cond
                 let mut cond_clauses = Vec::new();
                 for (pattern, body) in branches {
@@ -1000,110 +1013,84 @@ impl ACL2Backend {
                 let mut items = vec![SExp::Atom("cond".to_string())];
                 items.extend(cond_clauses);
                 SExp::List(items)
-            }
-            Term::Hole(name) => {
-                SExp::List(vec![
-                    SExp::Atom("error".to_string()),
-                    SExp::Str(format!("hole: {}", if name.is_empty() { "_" } else { name })),
-                ])
-            }
-            Term::Type(level) => {
-                SExp::List(vec![
-                    SExp::Atom("quote".to_string()),
-                    SExp::Atom(format!("TYPE-{}", level)),
-                ])
-            }
-            Term::Sort(level) => {
-                SExp::List(vec![
-                    SExp::Atom("quote".to_string()),
-                    SExp::Atom(format!("SORT-{}", level)),
-                ])
-            }
+            },
+            Term::Hole(name) => SExp::List(vec![
+                SExp::Atom("error".to_string()),
+                SExp::Str(format!(
+                    "hole: {}",
+                    if name.is_empty() { "_" } else { name }
+                )),
+            ]),
+            Term::Type(level) => SExp::List(vec![
+                SExp::Atom("quote".to_string()),
+                SExp::Atom(format!("TYPE-{}", level)),
+            ]),
+            Term::Sort(level) => SExp::List(vec![
+                SExp::Atom("quote".to_string()),
+                SExp::Atom(format!("SORT-{}", level)),
+            ]),
             Term::Fix { name, body, .. } => {
                 // ACL2 doesn't have fix, approximate with a recursive label
                 SExp::List(vec![
                     SExp::Atom("labels".to_string()),
-                    SExp::List(vec![
-                        SExp::List(vec![
-                            SExp::Atom(name.clone()),
-                            SExp::List(vec![]),
-                            self.term_to_sexp(body),
-                        ]),
-                    ]),
+                    SExp::List(vec![SExp::List(vec![
+                        SExp::Atom(name.clone()),
+                        SExp::List(vec![]),
+                        self.term_to_sexp(body),
+                    ])]),
                     SExp::Atom(name.clone()),
                 ])
-            }
-            Term::Meta(id) => {
-                SExp::List(vec![
-                    SExp::Atom("error".to_string()),
-                    SExp::Str(format!("meta-{}", id)),
-                ])
-            }
+            },
+            Term::Meta(id) => SExp::List(vec![
+                SExp::Atom("error".to_string()),
+                SExp::Str(format!("meta-{}", id)),
+            ]),
             Term::ProverSpecific { data, .. } => {
                 // Try to represent prover-specific data
                 SExp::List(vec![
                     SExp::Atom("quote".to_string()),
                     SExp::Atom(data.to_string()),
                 ])
-            }
+            },
         }
     }
 
     /// Convert universal Tactic to ACL2 hint
     fn tactic_to_hint(&self, tactic: &Tactic) -> Option<ACL2Hint> {
         match tactic {
-            Tactic::Induction(term) => {
-                Some(ACL2Hint::Induct(self.term_to_sexp(term)))
-            }
-            Tactic::Apply(thm) => {
-                Some(ACL2Hint::Use(vec![SExp::Atom(thm.clone())]))
-            }
-            Tactic::Rewrite(thm) => {
-                Some(ACL2Hint::Use(vec![SExp::Atom(thm.clone())]))
-            }
-            Tactic::Cases(term) => {
-                Some(ACL2Hint::Cases(vec![self.term_to_sexp(term)]))
-            }
-            Tactic::Simplify => {
-                Some(ACL2Hint::InTheory(SExp::List(vec![
-                    SExp::Atom("enable".to_string()),
-                ])))
-            }
-            Tactic::Custom { command, args, .. } => {
-                match command.as_str() {
-                    "induct" => {
-                        let sexp = if args.is_empty() {
-                            SExp::Atom("t".to_string())
-                        } else {
-                            SExp::parse(&args.join(" ")).unwrap_or(SExp::Nil)
-                        };
-                        Some(ACL2Hint::Induct(sexp))
-                    }
-                    "use" => {
-                        let uses = args.iter().map(|a| SExp::Atom(a.clone())).collect();
-                        Some(ACL2Hint::Use(uses))
-                    }
-                    "expand" => {
-                        let expands = args.iter().map(|a| SExp::Atom(a.clone())).collect();
-                        Some(ACL2Hint::Expand(expands))
-                    }
-                    "enable" | "disable" => {
-                        let fns: Vec<SExp> = args.iter().map(|a| SExp::Atom(a.clone())).collect();
-                        let theory = SExp::List(vec![
-                            SExp::Atom(command.clone()),
-                            SExp::List(fns),
-                        ]);
-                        Some(ACL2Hint::InTheory(theory))
-                    }
-                    "hands-off" => {
-                        Some(ACL2Hint::HandsOff(args.clone()))
-                    }
-                    "do-not-induct" => {
-                        Some(ACL2Hint::DoNotInduct(true))
-                    }
-                    _ => None,
-                }
-            }
+            Tactic::Induction(term) => Some(ACL2Hint::Induct(self.term_to_sexp(term))),
+            Tactic::Apply(thm) => Some(ACL2Hint::Use(vec![SExp::Atom(thm.clone())])),
+            Tactic::Rewrite(thm) => Some(ACL2Hint::Use(vec![SExp::Atom(thm.clone())])),
+            Tactic::Cases(term) => Some(ACL2Hint::Cases(vec![self.term_to_sexp(term)])),
+            Tactic::Simplify => Some(ACL2Hint::InTheory(SExp::List(vec![SExp::Atom(
+                "enable".to_string(),
+            )]))),
+            Tactic::Custom { command, args, .. } => match command.as_str() {
+                "induct" => {
+                    let sexp = if args.is_empty() {
+                        SExp::Atom("t".to_string())
+                    } else {
+                        SExp::parse(&args.join(" ")).unwrap_or(SExp::Nil)
+                    };
+                    Some(ACL2Hint::Induct(sexp))
+                },
+                "use" => {
+                    let uses = args.iter().map(|a| SExp::Atom(a.clone())).collect();
+                    Some(ACL2Hint::Use(uses))
+                },
+                "expand" => {
+                    let expands = args.iter().map(|a| SExp::Atom(a.clone())).collect();
+                    Some(ACL2Hint::Expand(expands))
+                },
+                "enable" | "disable" => {
+                    let fns: Vec<SExp> = args.iter().map(|a| SExp::Atom(a.clone())).collect();
+                    let theory = SExp::List(vec![SExp::Atom(command.clone()), SExp::List(fns)]);
+                    Some(ACL2Hint::InTheory(theory))
+                },
+                "hands-off" => Some(ACL2Hint::HandsOff(args.clone())),
+                "do-not-induct" => Some(ACL2Hint::DoNotInduct(true)),
+                _ => None,
+            },
             _ => None,
         }
     }
@@ -1113,29 +1100,43 @@ impl ACL2Backend {
         let hint_str = match hint {
             ACL2Hint::Induct(sexp) => format!(":induct {}", sexp.to_lisp()),
             ACL2Hint::Use(uses) => {
-                let uses_str = uses.iter().map(|u| u.to_lisp()).collect::<Vec<_>>().join(" ");
+                let uses_str = uses
+                    .iter()
+                    .map(|u| u.to_lisp())
+                    .collect::<Vec<_>>()
+                    .join(" ");
                 format!(":use ({})", uses_str)
-            }
+            },
             ACL2Hint::Expand(expands) => {
-                let exp_str = expands.iter().map(|e| e.to_lisp()).collect::<Vec<_>>().join(" ");
+                let exp_str = expands
+                    .iter()
+                    .map(|e| e.to_lisp())
+                    .collect::<Vec<_>>()
+                    .join(" ");
                 format!(":expand ({})", exp_str)
-            }
+            },
             ACL2Hint::InTheory(theory) => format!(":in-theory {}", theory.to_lisp()),
             ACL2Hint::Cases(cases) => {
-                let cases_str = cases.iter().map(|c| c.to_lisp()).collect::<Vec<_>>().join(" ");
+                let cases_str = cases
+                    .iter()
+                    .map(|c| c.to_lisp())
+                    .collect::<Vec<_>>()
+                    .join(" ");
                 format!(":cases ({})", cases_str)
-            }
+            },
             ACL2Hint::By(lemma) => format!(":by {}", lemma.to_lisp()),
             ACL2Hint::HandsOff(fns) => {
                 format!(":hands-off ({})", fns.join(" "))
-            }
+            },
             ACL2Hint::DoNot(actions) => {
                 format!(":do-not '({})", actions.join(" "))
-            }
+            },
             ACL2Hint::DoNotInduct(_) => ":do-not-induct t".to_string(),
-            ACL2Hint::Goal { hints, .. } => {
-                hints.iter().map(|h| self.hint_to_lisp(h, goal_name)).collect::<Vec<_>>().join(" ")
-            }
+            ACL2Hint::Goal { hints, .. } => hints
+                .iter()
+                .map(|h| self.hint_to_lisp(h, goal_name))
+                .collect::<Vec<_>>()
+                .join(" "),
             ACL2Hint::Other(key, value) => format!("{} {}", key, value.to_lisp()),
         };
 
@@ -1185,8 +1186,8 @@ fn find_sexp_end(s: &str) -> Result<usize> {
                 if depth == 0 {
                     return Ok(i + 1);
                 }
-            }
-            _ => {}
+            },
+            _ => {},
         }
     }
 
@@ -1252,7 +1253,7 @@ impl ProverBackend for ACL2Backend {
                         ty: Term::Universe(0), // ACL2 doesn't have explicit types
                         body: body_term,
                     });
-                }
+                },
                 ACL2Event::Defthm {
                     name,
                     formula,
@@ -1285,7 +1286,7 @@ impl ProverBackend for ACL2Backend {
                         target: formula_term,
                         hypotheses: vec![],
                     });
-                }
+                },
                 ACL2Event::Defconst { name, value } => {
                     let value_term = self.sexp_to_term(&value);
                     context.definitions.push(Definition {
@@ -1293,8 +1294,8 @@ impl ProverBackend for ACL2Backend {
                         ty: Term::Universe(0),
                         body: value_term,
                     });
-                }
-                _ => {}
+                },
+                _ => {},
             }
         }
 
@@ -1315,7 +1316,7 @@ impl ProverBackend for ACL2Backend {
                     "Tactic {:?} not supported in ACL2",
                     tactic
                 )));
-            }
+            },
         };
 
         // If we have goals, try to prove with the hint
@@ -1327,7 +1328,10 @@ impl ProverBackend for ACL2Backend {
 
         // Generate defthm with hint
         let defthm = self.generate_defthm(
-            &format!("echidna_goal_{}", uuid::Uuid::new_v4().to_string().replace('-', "")),
+            &format!(
+                "echidna_goal_{}",
+                uuid::Uuid::new_v4().to_string().replace('-', "")
+            ),
             &goal.target,
             &[hint],
         );
@@ -1335,7 +1339,9 @@ impl ProverBackend for ACL2Backend {
         // Try to prove in ACL2
         match self.send_command(&defthm).await {
             Ok(output) => {
-                if output.contains("Q.E.D.") || output.contains("Summary") && output.contains("proved") {
+                if output.contains("Q.E.D.")
+                    || output.contains("Summary") && output.contains("proved")
+                {
                     // Goal proved
                     let mut new_state = state.clone();
                     new_state.goals.remove(0);
@@ -1347,14 +1353,17 @@ impl ProverBackend for ACL2Backend {
                         Ok(TacticResult::Success(new_state))
                     }
                 } else if output.contains("FAILED") || output.contains("Error") {
-                    Ok(TacticResult::Error(format!("ACL2 proof failed: {}", output)))
+                    Ok(TacticResult::Error(format!(
+                        "ACL2 proof failed: {}",
+                        output
+                    )))
                 } else {
                     // Proof in progress
                     let mut new_state = state.clone();
                     new_state.proof_script.push(tactic.clone());
                     Ok(TacticResult::Success(new_state))
                 }
-            }
+            },
             Err(e) => Ok(TacticResult::Error(e.to_string())),
         }
     }
@@ -1367,10 +1376,8 @@ impl ProverBackend for ACL2Backend {
         let content = self.export(state).await?;
 
         // Write to temp file
-        let temp_file = std::env::temp_dir().join(format!(
-            "echidna_acl2_verify_{}.lisp",
-            uuid::Uuid::new_v4()
-        ));
+        let temp_file =
+            std::env::temp_dir().join(format!("echidna_acl2_verify_{}.lisp", uuid::Uuid::new_v4()));
 
         tokio::fs::write(&temp_file, &content)
             .await
@@ -1384,8 +1391,8 @@ impl ProverBackend for ACL2Backend {
             .filter(|s| !s.is_empty())
             .unwrap_or("acl2");
 
-        let stdin_file = std::fs::File::open(&temp_file)
-            .context("Failed to open temp file for ACL2 stdin")?;
+        let stdin_file =
+            std::fs::File::open(&temp_file).context("Failed to open temp file for ACL2 stdin")?;
 
         let output = Command::new(exec)
             .stdin(std::process::Stdio::from(stdin_file))
@@ -1399,7 +1406,8 @@ impl ProverBackend for ACL2Backend {
         let output_str = String::from_utf8_lossy(&output.stdout);
         let err_str = String::from_utf8_lossy(&output.stderr);
         let combined = format!("{}{}", output_str, err_str);
-        Ok(combined.contains("Q.E.D.") || (combined.contains("Summary") && !combined.contains("FAILED")))
+        Ok(combined.contains("Q.E.D.")
+            || (combined.contains("Summary") && !combined.contains("FAILED")))
     }
 
     async fn export(&self, state: &ProofState) -> Result<String> {
@@ -1461,7 +1469,7 @@ impl ProverBackend for ACL2Backend {
                     command: "do-not-induct".to_string(),
                     args: vec![],
                 });
-            }
+            },
             Term::App { func, args } => {
                 if let Term::Const(name) = func.as_ref() {
                     match name.as_str() {
@@ -1473,24 +1481,24 @@ impl ProverBackend for ACL2Backend {
                                 command: "expand".to_string(),
                                 args: vec![],
                             });
-                        }
+                        },
                         "and" => {
                             suggestions.push(Tactic::Custom {
                                 prover: "acl2".to_string(),
                                 command: "do-not-induct".to_string(),
                                 args: vec![],
                             });
-                        }
+                        },
                         _ => {
                             // Try induction on first argument
                             if let Some(arg) = args.first() {
                                 suggestions.push(Tactic::Induction(arg.clone()));
                             }
-                        }
+                        },
                     }
                 }
-            }
-            _ => {}
+            },
+            _ => {},
         }
 
         // Generic suggestions
@@ -1541,7 +1549,7 @@ impl ACL2Backend {
             ACL2Hint::Induct(sexp) => {
                 let term = self.sexp_to_term(sexp);
                 Some(Tactic::Induction(term))
-            }
+            },
             ACL2Hint::Use(uses) => {
                 if let Some(first) = uses.first() {
                     if let Some(name) = first.as_atom() {
@@ -1549,7 +1557,7 @@ impl ACL2Backend {
                     }
                 }
                 None
-            }
+            },
             ACL2Hint::Expand(_) => Some(Tactic::Custom {
                 prover: "acl2".to_string(),
                 command: "expand".to_string(),
@@ -1562,13 +1570,13 @@ impl ACL2Backend {
                     return Some(Tactic::Cases(term));
                 }
                 None
-            }
+            },
             ACL2Hint::By(lemma) => {
                 if let Some(name) = lemma.as_atom() {
                     return Some(Tactic::Apply(name.to_string()));
                 }
                 None
-            }
+            },
             ACL2Hint::HandsOff(fns) => Some(Tactic::Custom {
                 prover: "acl2".to_string(),
                 command: "hands-off".to_string(),
@@ -1592,7 +1600,7 @@ impl ACL2Backend {
                     }
                 }
                 None
-            }
+            },
             ACL2Hint::Other(key, _) => Some(Tactic::Custom {
                 prover: "acl2".to_string(),
                 command: key.clone(),

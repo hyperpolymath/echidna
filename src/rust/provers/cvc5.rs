@@ -11,8 +11,8 @@
 //! - Sets and relations
 //! - Separation logic
 
-use async_trait::async_trait;
 use anyhow::{anyhow, Context as AnyhowContext, Result};
+use async_trait::async_trait;
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use std::io::{BufRead, BufReader, Write};
@@ -87,7 +87,7 @@ impl CVC5Backend {
     fn start_process(&self) -> Result<CVC5Process> {
         let mut cmd = Command::new(&self.config.base.executable);
         cmd.arg("--interactive").arg("--lang=smt2");
-        
+
         if self.config.produce_proofs {
             cmd.arg("--dump-proofs").arg("--proof-mode=full");
         }
@@ -112,11 +112,19 @@ impl CVC5Backend {
             cmd.arg(arg);
         }
 
-        cmd.stdin(Stdio::piped()).stdout(Stdio::piped()).stderr(Stdio::piped());
+        cmd.stdin(Stdio::piped())
+            .stdout(Stdio::piped())
+            .stderr(Stdio::piped());
 
         let mut child = cmd.spawn().context("Failed to spawn CVC5 process")?;
-        let stdin = child.stdin.take().ok_or_else(|| anyhow!("Failed to open CVC5 stdin"))?;
-        let stdout = child.stdout.take().ok_or_else(|| anyhow!("Failed to open CVC5 stdout"))?;
+        let stdin = child
+            .stdin
+            .take()
+            .ok_or_else(|| anyhow!("Failed to open CVC5 stdin"))?;
+        let stdout = child
+            .stdout
+            .take()
+            .ok_or_else(|| anyhow!("Failed to open CVC5 stdout"))?;
 
         Ok(CVC5Process {
             child,
@@ -128,7 +136,10 @@ impl CVC5Backend {
     }
 
     fn get_process(&self) -> Result<std::sync::MutexGuard<'_, Option<CVC5Process>>> {
-        let mut guard = self.process.lock().map_err(|e| anyhow!("Failed to lock process: {}", e))?;
+        let mut guard = self
+            .process
+            .lock()
+            .map_err(|e| anyhow!("Failed to lock process: {}", e))?;
         if guard.is_none() {
             *guard = Some(self.start_process()?);
         }
@@ -137,10 +148,15 @@ impl CVC5Backend {
 
     fn send_command(&self, command: &str) -> Result<String> {
         let mut guard = self.get_process()?;
-        let process = guard.as_mut().ok_or_else(|| anyhow!("CVC5 process not initialized"))?;
+        let process = guard
+            .as_mut()
+            .ok_or_else(|| anyhow!("CVC5 process not initialized"))?;
 
         writeln!(process.stdin, "{}", command).context("Failed to write to CVC5 stdin")?;
-        process.stdin.flush().context("Failed to flush CVC5 stdin")?;
+        process
+            .stdin
+            .flush()
+            .context("Failed to flush CVC5 stdin")?;
         process.command_count += 1;
 
         let mut response = String::new();
@@ -150,7 +166,10 @@ impl CVC5Backend {
 
         loop {
             let mut line = String::new();
-            let bytes_read = process.stdout.read_line(&mut line).context("Failed to read from CVC5 stdout")?;
+            let bytes_read = process
+                .stdout
+                .read_line(&mut line)
+                .context("Failed to read from CVC5 stdout")?;
             if bytes_read == 0 {
                 return Err(anyhow!("CVC5 process closed unexpectedly"));
             }
@@ -171,14 +190,17 @@ impl CVC5Backend {
                         if depth == 0 && !response.trim().is_empty() {
                             return Ok(response.trim().to_string());
                         }
-                    }
-                    _ => {}
+                    },
+                    _ => {},
                 }
             }
 
             if depth == 0 && !response.trim().is_empty() {
                 let trimmed = response.trim();
-                if matches!(trimmed, "sat" | "unsat" | "unknown" | "success" | "unsupported") {
+                if matches!(
+                    trimmed,
+                    "sat" | "unsat" | "unknown" | "success" | "unsupported"
+                ) {
                     return Ok(trimmed.to_string());
                 }
                 if trimmed.starts_with("(error") {
@@ -254,11 +276,16 @@ impl CVC5Backend {
                 if args.is_empty() {
                     Ok(func_str)
                 } else {
-                    let args_str: Result<Vec<String>> = args.iter().map(|arg| self.term_to_smtlib(arg)).collect();
+                    let args_str: Result<Vec<String>> =
+                        args.iter().map(|arg| self.term_to_smtlib(arg)).collect();
                     Ok(format!("({} {})", func_str, args_str?.join(" ")))
                 }
-            }
-            Term::Lambda { param, param_type, body } => {
+            },
+            Term::Lambda {
+                param,
+                param_type,
+                body,
+            } => {
                 let body_str = self.term_to_smtlib(body)?;
                 if let Some(ty) = param_type {
                     let ty_str = self.term_to_smtlib(ty)?;
@@ -266,14 +293,16 @@ impl CVC5Backend {
                 } else {
                     Err(anyhow!("Lambda requires type annotation for SMT-LIB"))
                 }
-            }
+            },
             Term::ProverSpecific { prover, data } => {
                 if prover == "cvc5" || prover == "smtlib" {
-                    data.as_str().map(|s| s.to_string()).ok_or_else(|| anyhow!("Invalid prover-specific term"))
+                    data.as_str()
+                        .map(|s| s.to_string())
+                        .ok_or_else(|| anyhow!("Invalid prover-specific term"))
                 } else {
                     Err(anyhow!("Cannot convert {} term to SMT-LIB", prover))
                 }
-            }
+            },
             _ => Err(anyhow!("Unsupported term type for SMT-LIB: {:?}", term)),
         }
     }
@@ -281,7 +310,12 @@ impl CVC5Backend {
     fn smtlib_to_term(&self, smtlib: &str) -> Result<Term> {
         let trimmed = smtlib.trim();
         if !trimmed.starts_with('(') {
-            if trimmed.chars().next().map(|c| c.is_uppercase()).unwrap_or(false) {
+            if trimmed
+                .chars()
+                .next()
+                .map(|c| c.is_uppercase())
+                .unwrap_or(false)
+            {
                 return Ok(Term::Const(trimmed.to_string()));
             } else {
                 return Ok(Term::Var(trimmed.to_string()));
@@ -308,10 +342,7 @@ impl CVC5Backend {
         let func = Box::new(self.smtlib_to_term(&parts[0])?);
         let args: Result<Vec<Term>> = parts[1..].iter().map(|p| self.smtlib_to_term(p)).collect();
 
-        Ok(Term::App {
-            func,
-            args: args?,
-        })
+        Ok(Term::App { func, args: args? })
     }
 
     fn parse_sexp_parts(s: &str) -> Result<Vec<String>> {
@@ -331,28 +362,28 @@ impl CVC5Backend {
                 '\\' if in_string => {
                     escape_next = true;
                     current.push(ch);
-                }
+                },
                 '"' => {
                     in_string = !in_string;
                     current.push(ch);
-                }
+                },
                 '(' if !in_string => {
                     depth += 1;
                     current.push(ch);
-                }
+                },
                 ')' if !in_string => {
                     depth -= 1;
                     current.push(ch);
-                }
+                },
                 ' ' | '\t' | '\n' if !in_string && depth == 0 => {
                     if !current.is_empty() {
                         parts.push(current.clone());
                         current.clear();
                     }
-                }
+                },
                 _ => {
                     current.push(ch);
-                }
+                },
             }
         }
 
@@ -372,8 +403,12 @@ impl CVC5Backend {
             metadata: HashMap::new(),
         };
 
-        state.metadata.insert("prover".to_string(), serde_json::json!("cvc5"));
-        state.metadata.insert("format".to_string(), serde_json::json!("smtlib2"));
+        state
+            .metadata
+            .insert("prover".to_string(), serde_json::json!("cvc5"));
+        state
+            .metadata
+            .insert("format".to_string(), serde_json::json!("smtlib2"));
 
         let mut assertions = Vec::new();
 
@@ -438,7 +473,10 @@ impl CVC5Backend {
     }
 
     fn reset(&self) -> Result<()> {
-        let mut guard = self.process.lock().map_err(|e| anyhow!("Failed to lock process: {}", e))?;
+        let mut guard = self
+            .process
+            .lock()
+            .map_err(|e| anyhow!("Failed to lock process: {}", e))?;
         if let Some(mut process) = guard.take() {
             let _ = process.child.kill();
             let _ = process.child.wait();
@@ -470,7 +508,9 @@ impl ProverBackend for CVC5Backend {
     }
 
     async fn parse_file(&self, path: PathBuf) -> Result<ProofState> {
-        let content = tokio::fs::read_to_string(&path).await.context(format!("Failed to read file: {:?}", path))?;
+        let content = tokio::fs::read_to_string(&path)
+            .await
+            .context(format!("Failed to read file: {:?}", path))?;
         self.parse_string(&content).await
     }
 
@@ -480,7 +520,11 @@ impl ProverBackend for CVC5Backend {
 
     async fn apply_tactic(&self, state: &ProofState, tactic: &Tactic) -> Result<TacticResult> {
         match tactic {
-            Tactic::Custom { prover, command, args } if prover == "cvc5" || prover == "smt" => {
+            Tactic::Custom {
+                prover,
+                command,
+                args,
+            } if prover == "cvc5" || prover == "smt" => {
                 let full_command = if args.is_empty() {
                     command.clone()
                 } else {
@@ -496,10 +540,14 @@ impl ProverBackend for CVC5Backend {
                             let model = self.get_model().ok();
                             let mut new_state = state.clone();
                             if let Some(m) = model {
-                                new_state.metadata.insert("counterexample".to_string(), serde_json::json!(m));
+                                new_state
+                                    .metadata
+                                    .insert("counterexample".to_string(), serde_json::json!(m));
                             }
-                            Ok(TacticResult::Error("Formula is satisfiable (not a tautology)".to_string()))
-                        }
+                            Ok(TacticResult::Error(
+                                "Formula is satisfiable (not a tautology)".to_string(),
+                            ))
+                        },
                         "unknown" => Ok(TacticResult::Error("Solver returned unknown".to_string())),
                         _ => Ok(TacticResult::Success(state.clone())),
                     }
@@ -507,10 +555,12 @@ impl ProverBackend for CVC5Backend {
                     Ok(TacticResult::Success(state.clone()))
                 } else {
                     let mut new_state = state.clone();
-                    new_state.metadata.insert("last_response".to_string(), serde_json::json!(response));
+                    new_state
+                        .metadata
+                        .insert("last_response".to_string(), serde_json::json!(response));
                     Ok(TacticResult::Success(new_state))
                 }
-            }
+            },
             Tactic::Simplify => Ok(TacticResult::Success(state.clone())),
             _ => Err(anyhow!("Tactic not supported by CVC5: {:?}", tactic)),
         }
@@ -533,8 +583,8 @@ impl ProverBackend for CVC5Backend {
         }
         commands.push_str("(check-sat)\n");
 
-        let temp_file = std::env::temp_dir()
-            .join(format!("echidna_cvc5_verify_{}.smt2", Uuid::new_v4()));
+        let temp_file =
+            std::env::temp_dir().join(format!("echidna_cvc5_verify_{}.smt2", Uuid::new_v4()));
         fs::write(&temp_file, commands)
             .await
             .context("Failed to write CVC5 temp file")?;
@@ -593,17 +643,27 @@ impl ProverBackend for CVC5Backend {
     }
 
     async fn suggest_tactics(&self, _state: &ProofState, limit: usize) -> Result<Vec<Tactic>> {
-        let mut tactics = vec![
-            Tactic::Custom { prover: "cvc5".to_string(), command: "check-sat".to_string(), args: vec![] },
-        ];
+        let mut tactics = vec![Tactic::Custom {
+            prover: "cvc5".to_string(),
+            command: "check-sat".to_string(),
+            args: vec![],
+        }];
         if limit > 1 {
             tactics.push(Tactic::Simplify);
         }
         if limit > 2 {
-            tactics.push(Tactic::Custom { prover: "cvc5".to_string(), command: "get-model".to_string(), args: vec![] });
+            tactics.push(Tactic::Custom {
+                prover: "cvc5".to_string(),
+                command: "get-model".to_string(),
+                args: vec![],
+            });
         }
         if limit > 3 && self.config.produce_proofs {
-            tactics.push(Tactic::Custom { prover: "cvc5".to_string(), command: "get-proof".to_string(), args: vec![] });
+            tactics.push(Tactic::Custom {
+                prover: "cvc5".to_string(),
+                command: "get-proof".to_string(),
+                args: vec![],
+            });
         }
         Ok(tactics.into_iter().take(limit).collect())
     }
@@ -634,7 +694,8 @@ pub mod string_examples {
 (declare-const x String)
 (declare-const y String)
 (assert (= (str.len (str.++ x y)) (+ (str.len x) (str.len y))))
-(check-sat)"#.to_string()
+(check-sat)"#
+            .to_string()
     }
 
     pub fn string_substring() -> String {
@@ -644,7 +705,8 @@ pub mod string_examples {
 (assert (= (str.substr s 0 5) "hello"))
 (assert (= (str.substr s 5 5) "world"))
 (check-sat)
-(get-model)"#.to_string()
+(get-model)"#
+            .to_string()
     }
 
     pub fn string_contains() -> String {
@@ -654,7 +716,8 @@ pub mod string_examples {
 (assert (not (str.contains s "xyz")))
 (assert (< (str.len s) 10))
 (check-sat)
-(get-model)"#.to_string()
+(get-model)"#
+            .to_string()
     }
 
     pub fn regex_match() -> String {
@@ -678,7 +741,8 @@ pub mod sequence_examples {
 (assert (= t (seq.++ s s)))
 (assert (= (seq.len t) 10))
 (check-sat)
-(get-model)"#.to_string()
+(get-model)"#
+            .to_string()
     }
 
     pub fn sequence_contains() -> String {
@@ -689,7 +753,8 @@ pub mod sequence_examples {
 (assert (= (seq.len sub) 3))
 (assert (= (seq.nth sub 0) 42))
 (check-sat)
-(get-model)"#.to_string()
+(get-model)"#
+            .to_string()
     }
 }
 
@@ -704,7 +769,8 @@ pub mod sets_examples {
 (assert (set.member 3 B))
 (assert (= (set.card (set.inter A B)) 1))
 (check-sat)
-(get-model)"#.to_string()
+(get-model)"#
+            .to_string()
     }
 
     pub fn relation_ops() -> String {
@@ -713,7 +779,8 @@ pub mod sets_examples {
 (assert (set.member (tuple 1 2) R))
 (assert (set.member (tuple 2 3) R))
 (assert (set.member (tuple 1 3) (rel.tclosure R)))
-(check-sat)"#.to_string()
+(check-sat)"#
+            .to_string()
     }
 }
 
@@ -724,7 +791,8 @@ pub mod separation_logic_examples {
 (declare-const y Int)
 (assert (sep (pto x 1) (pto y 2)))
 (assert (distinct x y))
-(check-sat)"#.to_string()
+(check-sat)"#
+            .to_string()
     }
 }
 

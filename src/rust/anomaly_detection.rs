@@ -224,9 +224,7 @@ mod tests {
         assert!(!detector.is_complex_theorem("n + 0 = n"));
 
         // Complex theorem (multiple quantifiers)
-        assert!(detector.is_complex_theorem(
-            "forall n m p : nat, forall q r : nat, n + m = m + n"
-        ));
+        assert!(detector.is_complex_theorem("forall n m p : nat, forall q r : nat, n + m = m + n"));
 
         // Long theorem
         assert!(detector.is_complex_theorem(
@@ -260,11 +258,12 @@ mod tests {
 
         // Create a suspicious result
         let result = ProofResult {
-            goal: "forall n m : nat, forall p q : nat, (n + m) + (p + q) = (n + p) + (m + q)".to_string(),
+            goal: "forall n m : nat, forall p q : nat, (n + m) + (p + q) = (n + p) + (m + q)"
+                .to_string(),
             success: true,
             confidence: 0.99, // Too confident for complex theorem!
-            tactic_count: 50,  // Way too many tactics!
-            time_ms: 50000,    // Too slow!
+            tactic_count: 50, // Way too many tactics!
+            time_ms: 50000,   // Too slow!
             premises: vec![],
         };
 

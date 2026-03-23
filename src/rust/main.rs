@@ -12,9 +12,9 @@ use indicatif::{ProgressBar, ProgressStyle};
 use std::path::PathBuf;
 use tracing::{info, warn};
 
+mod output;
 mod repl;
 mod server;
-mod output;
 
 use output::{OutputFormat, OutputFormatter};
 
@@ -173,8 +173,11 @@ async fn main() -> Result<()> {
             executable,
             library,
         } => {
-            prove_command(file, prover, timeout, neural, executable, library, &formatter).await?;
-        }
+            prove_command(
+                file, prover, timeout, neural, executable, library, &formatter,
+            )
+            .await?;
+        },
 
         Commands::Verify {
             file,
@@ -184,7 +187,7 @@ async fn main() -> Result<()> {
             library,
         } => {
             verify_command(file, prover, timeout, executable, library, &formatter).await?;
-        }
+        },
 
         Commands::Search {
             pattern,
@@ -192,7 +195,7 @@ async fn main() -> Result<()> {
             limit,
         } => {
             search_command(pattern, prover, limit, &formatter).await?;
-        }
+        },
 
         Commands::Interactive {
             file,
@@ -200,19 +203,19 @@ async fn main() -> Result<()> {
             neural,
         } => {
             interactive_command(file, prover, neural).await?;
-        }
+        },
 
         Commands::Server { port, host, cors } => {
             server_command(port, host, cors).await?;
-        }
+        },
 
         Commands::ListProvers { detailed } => {
             list_provers_command(detailed, &formatter)?;
-        }
+        },
 
         Commands::Info { prover } => {
             info_command(prover, &formatter)?;
-        }
+        },
     }
 
     Ok(())
@@ -220,8 +223,8 @@ async fn main() -> Result<()> {
 
 /// Initialize tracing/logging
 fn init_tracing(verbose: bool) {
-    use tracing_subscriber::{fmt, prelude::*};
     use tracing_subscriber::filter::EnvFilter;
+    use tracing_subscriber::{fmt, prelude::*};
 
     let filter = if verbose {
         EnvFilter::new("echidna=debug,info")
@@ -278,10 +281,16 @@ async fn prove_command(
 
     // Output result
     if result {
-        formatter.success(&format!("✓ Proof verified successfully for {}", file.display()))?;
+        formatter.success(&format!(
+            "✓ Proof verified successfully for {}",
+            file.display()
+        ))?;
         formatter.output_proof_state(&state)?;
     } else {
-        formatter.error(&format!("✗ Proof verification failed for {}", file.display()))?;
+        formatter.error(&format!(
+            "✗ Proof verification failed for {}",
+            file.display()
+        ))?;
         formatter.output_proof_state(&state)?;
         std::process::exit(1);
     }
@@ -336,7 +345,10 @@ async fn verify_command(
         // Show proof statistics
         formatter.info(&format!("Goals: {}", state.goals.len()))?;
         formatter.info(&format!("Tactics: {}", state.proof_script.len()))?;
-        formatter.info(&format!("Theorems in context: {}", state.context.theorems.len()))?;
+        formatter.info(&format!(
+            "Theorems in context: {}",
+            state.context.theorems.len()
+        ))?;
     } else {
         formatter.error(&format!("✗ Proof is invalid: {}", file.display()))?;
         std::process::exit(1);
@@ -375,7 +387,11 @@ async fn search_command(
         ]
     };
 
-    formatter.info(&format!("Searching {} prover(s) for pattern: {}", provers.len(), pattern))?;
+    formatter.info(&format!(
+        "Searching {} prover(s) for pattern: {}",
+        provers.len(),
+        pattern
+    ))?;
 
     let mut total_results = 0;
 
@@ -394,12 +410,13 @@ async fn search_command(
                     }
 
                     if results.len() > limit {
-                        formatter.info(&format!("  ... and {} more results", results.len() - limit))?;
+                        formatter
+                            .info(&format!("  ... and {} more results", results.len() - limit))?;
                     }
-                }
+                },
                 Err(e) => {
                     warn!("Failed to search {}: {}", kind, e);
-                }
+                },
             }
         }
     }
@@ -471,7 +488,10 @@ fn info_command(prover: ProverKind, formatter: &OutputFormatter) -> Result<()> {
     formatter.section("Classification")?;
     formatter.info(&format!("  Tier: {}", prover.tier()))?;
     formatter.info(&format!("  Complexity: {}/5", prover.complexity()))?;
-    formatter.info(&format!("  Implementation time: {} weeks", prover.implementation_time()))?;
+    formatter.info(&format!(
+        "  Implementation time: {} weeks",
+        prover.implementation_time()
+    ))?;
     formatter.info("")?;
 
     formatter.section("Description")?;
@@ -479,74 +499,78 @@ fn info_command(prover: ProverKind, formatter: &OutputFormatter) -> Result<()> {
         ProverKind::Agda => {
             "Dependently typed functional programming language and proof assistant.\n  \
              Tier 1 prover. Strong type system with universe polymorphism."
-        }
+        },
         ProverKind::Coq => {
             "Interactive theorem prover using the Calculus of Inductive Constructions.\n  \
              Widely used in formal verification and mathematics. Powerful tactic language."
-        }
+        },
         ProverKind::Lean => {
             "Modern theorem prover and programming language with dependent types.\n  \
              Strong community, extensive mathlib. Excellent for formalized mathematics."
-        }
+        },
         ProverKind::Isabelle => {
             "Generic proof assistant supporting multiple logics (mainly HOL).\n  \
              Powerful automation through Sledgehammer. Large Archive of Formal Proofs."
-        }
+        },
         ProverKind::Z3 => {
             "High-performance SMT (Satisfiability Modulo Theories) solver.\n  \
              Excellent for automated reasoning in program verification."
-        }
+        },
         ProverKind::CVC5 => {
             "Automatic SMT solver for first-order logic with theories.\n  \
              Strong support for quantifiers, datatypes, and strings."
-        }
+        },
         ProverKind::Metamath => {
             "Ultra-minimal proof verification system with plain-text proofs.\n  \
              EASIEST to integrate (2/5 complexity). Large database of formalized mathematics."
-        }
+        },
         ProverKind::HOLLight => {
             "Simple, elegant HOL (Higher-Order Logic) proof assistant in OCaml.\n  \
              Part of the 'Big Six' theorem provers. Strong mathematical foundations."
-        }
+        },
         ProverKind::Mizar => {
             "Proof assistant with natural-language-like proof style.\n  \
              Large Mathematical Library. Readable proof documents."
-        }
+        },
         ProverKind::PVS => {
             "Specification and verification system for safety-critical systems.\n  \
              Strong support for dependent types and predicate subtyping."
-        }
+        },
         ProverKind::ACL2 => {
             "Computational Logic for Applicative Common Lisp.\n  \
              Industrial-strength theorem prover for software/hardware verification."
-        }
+        },
         ProverKind::HOL4 => {
             "Interactive theorem prover in the HOL family.\n  \
              Used extensively in hardware verification. ML-based tactic language."
-        }
+        },
         ProverKind::Idris2 => {
             "Dependently typed functional language with quantitative types.\n  \
              First-class type-level computation, elaborator reflection, linear types."
-        }
+        },
         ProverKind::Vampire => {
             "First-order automated theorem prover. Multiple CASC winner.\n  \
              Superposition calculus with excellent performance on CASC benchmarks."
-        }
+        },
         ProverKind::EProver => {
             "Highly optimized first-order theorem prover for clausal logic.\n  \
              CASC winner. Auto mode with sophisticated strategy selection."
-        }
+        },
         ProverKind::SPASS => {
             "First-order theorem prover with sorted logic support.\n  \
              DFG format input. Superposition calculus with sort handling."
-        }
+        },
         ProverKind::AltErgo => {
             "SMT solver with polymorphic first-order logic.\n  \
              Designed for program verification (Why3, Frama-C integration)."
-        }
-        ProverKind::FStar => "F* dependent types with effects. Project Everest/HACL* verified crypto.",
+        },
+        ProverKind::FStar => {
+            "F* dependent types with effects. Project Everest/HACL* verified crypto."
+        },
         ProverKind::Dafny => "Auto-active verifier. Pre/postconditions verified via Boogie and Z3.",
-        ProverKind::Why3 => "Multi-prover orchestration. Dispatches to Z3, CVC5, Alt-Ergo in parallel.",
+        ProverKind::Why3 => {
+            "Multi-prover orchestration. Dispatches to Z3, CVC5, Alt-Ergo in parallel."
+        },
         ProverKind::TLAPS => "TLA+ Proof System. Verifies distributed system properties.",
         ProverKind::Twelf => "Logical framework (LF). Metatheory verification for type systems.",
         ProverKind::Nuprl => "Constructive type theory. Large library of formalized mathematics.",
@@ -557,23 +581,51 @@ fn info_command(prover: ProverKind, formatter: &OutputFormatter) -> Result<()> {
         ProverKind::MiniZinc => "Constraint modelling language with multiple backend solvers.",
         ProverKind::Chuffed => "Lazy clause generation CP solver with SAT-style learning.",
         ProverKind::ORTools => "Google OR-Tools. CP-SAT, routing, linear/integer programming.",
-        ProverKind::TypedWasm => "TypedWasm oracle. 10-level type safety validation for .twasm programs.",
+        ProverKind::TypedWasm => {
+            "TypedWasm oracle. 10-level type safety validation for .twasm programs."
+        },
         ProverKind::SPIN => "SPIN model checker for Promela concurrent system specifications.",
         ProverKind::CBMC => "C Bounded Model Checker. Verifies C programs via bounded unwinding.",
         ProverKind::CaDiCaL => {
             "State-of-the-art CDCL SAT solver. DIMACS CNF input.\n  \
              Multiple SAT Competition winner. Default SAT backend for ECHIDNA."
-        }
+        },
         ProverKind::Kissat => {
             "Fast, highly-optimised CDCL SAT solver. DIMACS CNF input.\n  \
              SAT Competition winner. Designed for raw solving speed."
-        }
-        ProverKind::MiniSat => "Classic DPLL/CDCL SAT solver. DIMACS CNF input. Reference implementation.",
-        ProverKind::NuSMV => "NuSMV/nuXmv symbolic model checker for CTL/LTL verification of finite state systems.",
-        ProverKind::TLC => "TLC model checker for exhaustive state exploration of TLA+ specifications.",
+        },
+        ProverKind::MiniSat => {
+            "Classic DPLL/CDCL SAT solver. DIMACS CNF input. Reference implementation."
+        },
+        ProverKind::NuSMV => {
+            "NuSMV/nuXmv symbolic model checker for CTL/LTL verification of finite state systems."
+        },
+        ProverKind::TLC => {
+            "TLC model checker for exhaustive state exploration of TLA+ specifications."
+        },
         ProverKind::Alloy => "Alloy relational model finder using SAT-based bounded analysis.",
         ProverKind::Prism => "PRISM probabilistic model checker for DTMCs, CTMCs, MDPs, and PTAs.",
-        ProverKind::UPPAAL => "UPPAAL timed automata model checker for real-time system verification.",
+        ProverKind::UPPAAL => {
+            "UPPAAL timed automata model checker for real-time system verification."
+        },
+        ProverKind::FramaC => "Frama-C WP deductive verifier for ACSL-annotated C programs.",
+        ProverKind::SeaHorn => "SeaHorn verification framework for LLVM-based safety checking.",
+        ProverKind::Viper => "Viper permission-based program verifier with separation logic.",
+        ProverKind::Tamarin => {
+            "Tamarin security protocol prover using multiset rewriting in the Dolev-Yao model."
+        },
+        ProverKind::ProVerif => {
+            "ProVerif automatic cryptographic protocol verifier in the Dolev-Yao model."
+        },
+        ProverKind::KeY => {
+            "KeY deductive Java verifier using JavaDL (dynamic logic) with JML contracts."
+        },
+        ProverKind::DReal => {
+            "dReal delta-complete SMT solver for nonlinear real arithmetic over the reals."
+        },
+        ProverKind::ABC => {
+            "ABC sequential logic synthesis and verification system for hardware circuits."
+        },
     };
     formatter.info(&format!("  {}", description))?;
     formatter.info("")?;
@@ -620,6 +672,14 @@ fn info_command(prover: ProverKind, formatter: &OutputFormatter) -> Result<()> {
         ProverKind::Alloy => ".als",
         ProverKind::Prism => ".pm / .prism",
         ProverKind::UPPAAL => ".xml",
+        ProverKind::FramaC => ".c (ACSL-annotated)",
+        ProverKind::SeaHorn => ".bc / .ll (LLVM IR)",
+        ProverKind::Viper => ".vpr",
+        ProverKind::Tamarin => ".spthy",
+        ProverKind::ProVerif => ".pv",
+        ProverKind::KeY => ".java (JML-annotated)",
+        ProverKind::DReal => ".smt2 (QF_NRA/NRA)",
+        ProverKind::ABC => ".blif / .aig",
     };
     formatter.info(&format!("  {}", extension))?;
     formatter.info("")?;
@@ -637,9 +697,7 @@ fn info_command(prover: ProverKind, formatter: &OutputFormatter) -> Result<()> {
         formatter.section("Installation")?;
 
         // Spawn async runtime to check version
-        let version_check = tokio::task::spawn(async move {
-            prover_backend.version().await
-        });
+        let version_check = tokio::task::spawn(async move { prover_backend.version().await });
 
         if let Ok(Ok(version)) = futures::executor::block_on(async { version_check.await }) {
             formatter.success(&format!("  ✓ Installed: {}", version))?;
@@ -657,11 +715,12 @@ fn detect_prover(prover_kind: Option<ProverKind>, file: &PathBuf) -> Result<Prov
         return Ok(kind);
     }
 
-    echidna::provers::ProverFactory::detect_from_file(file)
-        .ok_or_else(|| anyhow::anyhow!(
+    echidna::provers::ProverFactory::detect_from_file(file).ok_or_else(|| {
+        anyhow::anyhow!(
             "Could not detect prover from file extension: {}. Please specify with --prover",
             file.display()
-        ))
+        )
+    })
 }
 
 /// Create prover configuration
@@ -728,6 +787,20 @@ fn get_default_executable(kind: ProverKind) -> PathBuf {
         ProverKind::CBMC => PathBuf::from("cbmc"),
         ProverKind::CaDiCaL => PathBuf::from("cadical"),
         ProverKind::Kissat => PathBuf::from("kissat"),
+        ProverKind::MiniSat => PathBuf::from("minisat"),
+        ProverKind::NuSMV => PathBuf::from("nuXmv"),
+        ProverKind::TLC => PathBuf::from("tlc2.TLC"),
+        ProverKind::Alloy => PathBuf::from("alloy"),
+        ProverKind::Prism => PathBuf::from("prism"),
+        ProverKind::UPPAAL => PathBuf::from("verifyta"),
+        ProverKind::FramaC => PathBuf::from("frama-c"),
+        ProverKind::SeaHorn => PathBuf::from("seahorn"),
+        ProverKind::Viper => PathBuf::from("viper"),
+        ProverKind::Tamarin => PathBuf::from("tamarin-prover"),
+        ProverKind::ProVerif => PathBuf::from("proverif"),
+        ProverKind::KeY => PathBuf::from("key"),
+        ProverKind::DReal => PathBuf::from("dreal"),
+        ProverKind::ABC => PathBuf::from("abc"),
     }
 }
 

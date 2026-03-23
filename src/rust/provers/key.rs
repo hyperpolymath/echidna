@@ -33,15 +33,15 @@
 
 #![allow(dead_code)]
 
-use async_trait::async_trait;
 use anyhow::{anyhow, Context, Result};
+use async_trait::async_trait;
 use std::path::PathBuf;
 use std::process::Stdio;
 use tokio::io::AsyncWriteExt;
 use tokio::process::Command;
 
-use crate::core::{Goal, ProofState, Tactic, TacticResult, Term};
 use super::{ProverBackend, ProverConfig, ProverKind};
+use crate::core::{Goal, ProofState, Tactic, TacticResult, Term};
 
 /// Default KeY proof strategy (automatic symbolic execution + decision procedures)
 const DEFAULT_STRATEGY: &str = "auto";
@@ -147,10 +147,15 @@ impl KeyBackend {
         } else if lower.contains("open goal") || lower.contains("open goals") {
             Ok(false)
         } else if lower.contains("error") || lower.contains("exception") {
-            Err(anyhow!("KeY verification error: {}", Self::extract_error(output)))
+            Err(anyhow!(
+                "KeY verification error: {}",
+                Self::extract_error(output)
+            ))
         } else {
             // If no recognisable status, treat as inconclusive
-            Err(anyhow!("KeY output inconclusive — could not determine proof status"))
+            Err(anyhow!(
+                "KeY output inconclusive — could not determine proof status"
+            ))
         }
     }
 
@@ -183,7 +188,7 @@ impl KeyBackend {
                 } else {
                     format!("{} {}", command, args.join(" "))
                 }
-            }
+            },
         }
     }
 
@@ -223,7 +228,10 @@ impl KeyBackend {
                     .trim_start_matches('*')
                     .trim();
                 if trimmed.contains("@*/") {
-                    let before_close = cleaned.trim_end_matches("@*/").trim_end_matches("*/").trim();
+                    let before_close = cleaned
+                        .trim_end_matches("@*/")
+                        .trim_end_matches("*/")
+                        .trim();
                     if !before_close.is_empty() {
                         jml_block.push_str(before_close);
                         jml_block.push('\n');
@@ -307,7 +315,7 @@ impl KeyBackend {
                     match ch {
                         '{' => brace_depth += 1,
                         '}' => brace_depth -= 1,
-                        _ => {}
+                        _ => {},
                     }
                 }
                 // Grab content after the opening brace
@@ -327,7 +335,7 @@ impl KeyBackend {
                     match ch {
                         '{' => brace_depth += 1,
                         '}' => brace_depth -= 1,
-                        _ => {}
+                        _ => {},
                     }
                 }
 
@@ -395,10 +403,7 @@ impl ProverBackend for KeyBackend {
             .await
             .context(format!("Failed to read KeY input file: {}", path.display()))?;
 
-        let ext = path
-            .extension()
-            .and_then(|e| e.to_str())
-            .unwrap_or("");
+        let ext = path.extension().and_then(|e| e.to_str()).unwrap_or("");
 
         match ext {
             "key" => {
@@ -416,7 +421,7 @@ impl ProverBackend for KeyBackend {
                 };
                 state.context.axioms = axioms;
                 Ok(state)
-            }
+            },
             "java" => {
                 // Parse JML-annotated Java source
                 let goals = self.parse_jml_annotations(&content);
@@ -431,7 +436,7 @@ impl ProverBackend for KeyBackend {
                     goals
                 };
                 Ok(state)
-            }
+            },
             _ => Err(anyhow!(
                 "Unsupported file extension '{}' for KeY backend — expected .key or .java",
                 ext
@@ -490,9 +495,11 @@ impl ProverBackend for KeyBackend {
     async fn apply_tactic(&self, state: &ProofState, tactic: &Tactic) -> Result<TacticResult> {
         match tactic {
             // KeY-specific custom tactics
-            Tactic::Custom { prover, command, args }
-                if prover == "key" =>
-            {
+            Tactic::Custom {
+                prover,
+                command,
+                args,
+            } if prover == "key" => {
                 let tactic_str = if args.is_empty() {
                     command.clone()
                 } else {
@@ -536,10 +543,10 @@ impl ProverBackend for KeyBackend {
                                 let mut new_state = state.clone();
                                 new_state.proof_script.push(tactic.clone());
                                 Ok(TacticResult::Success(new_state))
-                            }
+                            },
                             Err(e) => Ok(TacticResult::Error(e.to_string())),
                         }
-                    }
+                    },
                     "set_strategy" => {
                         // Strategy change is metadata-only, no KeY invocation
                         let strategy_name = args.first().ok_or_else(|| {
@@ -552,27 +559,27 @@ impl ProverBackend for KeyBackend {
                         );
                         new_state.proof_script.push(tactic.clone());
                         Ok(TacticResult::Success(new_state))
-                    }
+                    },
                     "prune" => {
                         // Prune removes the last proof step
                         let mut new_state = state.clone();
                         new_state.proof_script.pop();
                         Ok(TacticResult::Success(new_state))
-                    }
+                    },
                     _ => Ok(TacticResult::Error(format!(
                         "Unknown KeY command '{}'. Supported: apply_rule, apply_macro, \
                          set_strategy, prune, auto",
                         command
                     ))),
                 }
-            }
+            },
 
             // Map generic ECHIDNA tactics to KeY equivalents
             Tactic::Simplify => {
                 let mut new_state = state.clone();
                 new_state.proof_script.push(tactic.clone());
                 Ok(TacticResult::Success(new_state))
-            }
+            },
 
             _ => {
                 // For other generic tactics, record and attempt
@@ -583,7 +590,7 @@ impl ProverBackend for KeyBackend {
                      for KeY-specific commands.",
                     tactic_str
                 )))
-            }
+            },
         }
     }
 
@@ -704,17 +711,38 @@ impl ProverBackend for KeyBackend {
     async fn search_theorems(&self, pattern: &str) -> Result<Vec<String>> {
         let lower = pattern.to_lowercase();
         let known_taclets: Vec<&str> = vec![
-            "andLeft", "andRight", "orLeft", "orRight",
-            "impLeft", "impRight", "notLeft", "notRight",
-            "allLeft", "allRight", "exLeft", "exRight",
-            "cut", "close", "closeTrue", "closeFalse",
-            "assignment", "methodCall", "methodBodyExpand",
-            "loopInvariant", "loopUnwind",
-            "ifElseSplit", "ifThenElse",
-            "pullOut", "simplify", "concrete",
-            "hideLeft", "hideRight",
-            "eqSymm", "eqClose",
-            "induction", "wellOrderedInduction",
+            "andLeft",
+            "andRight",
+            "orLeft",
+            "orRight",
+            "impLeft",
+            "impRight",
+            "notLeft",
+            "notRight",
+            "allLeft",
+            "allRight",
+            "exLeft",
+            "exRight",
+            "cut",
+            "close",
+            "closeTrue",
+            "closeFalse",
+            "assignment",
+            "methodCall",
+            "methodBodyExpand",
+            "loopInvariant",
+            "loopUnwind",
+            "ifElseSplit",
+            "ifThenElse",
+            "pullOut",
+            "simplify",
+            "concrete",
+            "hideLeft",
+            "hideRight",
+            "eqSymm",
+            "eqClose",
+            "induction",
+            "wellOrderedInduction",
         ];
 
         let matches: Vec<String> = known_taclets
@@ -830,10 +858,7 @@ public class Factorial {
             KeyBackend::extract_method_name("void run()"),
             Some("run".to_string())
         );
-        assert_eq!(
-            KeyBackend::extract_method_name("// just a comment"),
-            None
-        );
+        assert_eq!(KeyBackend::extract_method_name("// just a comment"), None);
     }
 
     #[tokio::test]
@@ -872,7 +897,10 @@ public class Factorial {
         let (goals, axioms) = backend.parse_key_file(content);
         assert_eq!(goals.len(), 1);
         assert!(goals[0].target.to_string().contains("forall"));
-        assert!(!axioms.is_empty(), "Should capture \\functions as axiom context");
+        assert!(
+            !axioms.is_empty(),
+            "Should capture \\functions as axiom context"
+        );
     }
 
     #[tokio::test]
@@ -888,7 +916,7 @@ public class Factorial {
         match result {
             TacticResult::Success(new_state) => {
                 assert!(new_state.metadata.contains_key("key_strategy"));
-            }
+            },
             _ => panic!("Expected TacticResult::Success for set_strategy"),
         }
     }
@@ -900,7 +928,7 @@ public class Factorial {
         let tactic = Tactic::Reflexivity;
         let result = backend.apply_tactic(&state, &tactic).await.unwrap();
         match result {
-            TacticResult::Error(_) => {} // Expected
+            TacticResult::Error(_) => {}, // Expected
             _ => panic!("Expected TacticResult::Error for unsupported tactic"),
         }
     }

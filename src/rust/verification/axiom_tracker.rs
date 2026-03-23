@@ -102,98 +102,121 @@ impl AxiomTracker {
         let mut patterns: HashMap<ProverKind, Vec<DangerousPattern>> = HashMap::new();
 
         // Lean4 dangerous constructs
-        patterns.insert(ProverKind::Lean, vec![
-            DangerousPattern {
-                pattern: "sorry".to_string(),
-                danger_level: DangerLevel::Warning,
-                explanation: "Incomplete proof -- 'sorry' is a placeholder for missing proof".to_string(),
-            },
-            DangerousPattern {
-                pattern: "native_decide".to_string(),
-                danger_level: DangerLevel::Warning,
-                explanation: "Uses native code evaluation -- bypasses kernel checking".to_string(),
-            },
-            DangerousPattern {
-                pattern: "Decidable.decide".to_string(),
-                danger_level: DangerLevel::Noted,
-                explanation: "Decision procedure -- may not verify constructively".to_string(),
-            },
-        ]);
+        patterns.insert(
+            ProverKind::Lean,
+            vec![
+                DangerousPattern {
+                    pattern: "sorry".to_string(),
+                    danger_level: DangerLevel::Warning,
+                    explanation: "Incomplete proof -- 'sorry' is a placeholder for missing proof"
+                        .to_string(),
+                },
+                DangerousPattern {
+                    pattern: "native_decide".to_string(),
+                    danger_level: DangerLevel::Warning,
+                    explanation: "Uses native code evaluation -- bypasses kernel checking"
+                        .to_string(),
+                },
+                DangerousPattern {
+                    pattern: "Decidable.decide".to_string(),
+                    danger_level: DangerLevel::Noted,
+                    explanation: "Decision procedure -- may not verify constructively".to_string(),
+                },
+            ],
+        );
 
         // Coq dangerous constructs
-        patterns.insert(ProverKind::Coq, vec![
-            DangerousPattern {
-                pattern: "Admitted".to_string(),
-                danger_level: DangerLevel::Warning,
-                explanation: "Incomplete proof -- 'Admitted' accepts unproven goal".to_string(),
-            },
-            DangerousPattern {
-                pattern: "admit".to_string(),
-                danger_level: DangerLevel::Warning,
-                explanation: "Tactic 'admit' -- leaves goal unproven".to_string(),
-            },
-            DangerousPattern {
-                pattern: "Axiom ".to_string(),
-                danger_level: DangerLevel::Noted,
-                explanation: "User-defined axiom -- not verified by kernel".to_string(),
-            },
-        ]);
+        patterns.insert(
+            ProverKind::Coq,
+            vec![
+                DangerousPattern {
+                    pattern: "Admitted".to_string(),
+                    danger_level: DangerLevel::Warning,
+                    explanation: "Incomplete proof -- 'Admitted' accepts unproven goal".to_string(),
+                },
+                DangerousPattern {
+                    pattern: "admit".to_string(),
+                    danger_level: DangerLevel::Warning,
+                    explanation: "Tactic 'admit' -- leaves goal unproven".to_string(),
+                },
+                DangerousPattern {
+                    pattern: "Axiom ".to_string(),
+                    danger_level: DangerLevel::Noted,
+                    explanation: "User-defined axiom -- not verified by kernel".to_string(),
+                },
+            ],
+        );
 
         // Agda dangerous constructs
-        patterns.insert(ProverKind::Agda, vec![
-            DangerousPattern {
-                pattern: "postulate".to_string(),
-                danger_level: DangerLevel::Warning,
-                explanation: "Postulate -- assumed without proof".to_string(),
-            },
-            DangerousPattern {
-                pattern: "--type-in-type".to_string(),
-                danger_level: DangerLevel::Reject,
-                explanation: "UNSOUND: --type-in-type collapses type hierarchy (Girard's paradox)".to_string(),
-            },
-            DangerousPattern {
-                pattern: "OPTIONS --type-in-type".to_string(),
-                danger_level: DangerLevel::Reject,
-                explanation: "UNSOUND: --type-in-type in pragma collapses type hierarchy".to_string(),
-            },
-        ]);
+        patterns.insert(
+            ProverKind::Agda,
+            vec![
+                DangerousPattern {
+                    pattern: "postulate".to_string(),
+                    danger_level: DangerLevel::Warning,
+                    explanation: "Postulate -- assumed without proof".to_string(),
+                },
+                DangerousPattern {
+                    pattern: "--type-in-type".to_string(),
+                    danger_level: DangerLevel::Reject,
+                    explanation:
+                        "UNSOUND: --type-in-type collapses type hierarchy (Girard's paradox)"
+                            .to_string(),
+                },
+                DangerousPattern {
+                    pattern: "OPTIONS --type-in-type".to_string(),
+                    danger_level: DangerLevel::Reject,
+                    explanation: "UNSOUND: --type-in-type in pragma collapses type hierarchy"
+                        .to_string(),
+                },
+            ],
+        );
 
         // Isabelle dangerous constructs
-        patterns.insert(ProverKind::Isabelle, vec![
-            DangerousPattern {
-                pattern: "sorry".to_string(),
-                danger_level: DangerLevel::Warning,
-                explanation: "Incomplete proof -- 'sorry' skips proof obligation".to_string(),
-            },
-            DangerousPattern {
-                pattern: "oops".to_string(),
-                danger_level: DangerLevel::Warning,
-                explanation: "Isabelle 'oops' -- intentionally incomplete proof".to_string(),
-            },
-        ]);
+        patterns.insert(
+            ProverKind::Isabelle,
+            vec![
+                DangerousPattern {
+                    pattern: "sorry".to_string(),
+                    danger_level: DangerLevel::Warning,
+                    explanation: "Incomplete proof -- 'sorry' skips proof obligation".to_string(),
+                },
+                DangerousPattern {
+                    pattern: "oops".to_string(),
+                    danger_level: DangerLevel::Warning,
+                    explanation: "Isabelle 'oops' -- intentionally incomplete proof".to_string(),
+                },
+            ],
+        );
 
         // HOL4 dangerous constructs
-        patterns.insert(ProverKind::HOL4, vec![
-            DangerousPattern {
+        patterns.insert(
+            ProverKind::HOL4,
+            vec![DangerousPattern {
                 pattern: "mk_thm".to_string(),
                 danger_level: DangerLevel::Reject,
                 explanation: "UNSOUND: mk_thm bypasses HOL4 kernel entirely".to_string(),
-            },
-        ]);
+            }],
+        );
 
         // Idris2 dangerous constructs
-        patterns.insert(ProverKind::Idris2, vec![
-            DangerousPattern {
-                pattern: "believe_me".to_string(),
-                danger_level: DangerLevel::Reject,
-                explanation: "UNSOUND: believe_me asserts any type equality without proof".to_string(),
-            },
-            DangerousPattern {
-                pattern: "assert_total".to_string(),
-                danger_level: DangerLevel::Warning,
-                explanation: "Asserts totality without proof -- may hide non-termination".to_string(),
-            },
-        ]);
+        patterns.insert(
+            ProverKind::Idris2,
+            vec![
+                DangerousPattern {
+                    pattern: "believe_me".to_string(),
+                    danger_level: DangerLevel::Reject,
+                    explanation: "UNSOUND: believe_me asserts any type equality without proof"
+                        .to_string(),
+                },
+                DangerousPattern {
+                    pattern: "assert_total".to_string(),
+                    danger_level: DangerLevel::Warning,
+                    explanation: "Asserts totality without proof -- may hide non-termination"
+                        .to_string(),
+                },
+            ],
+        );
 
         Self { patterns }
     }
@@ -209,12 +232,19 @@ impl AxiomTracker {
                         // Skip if it's in a comment
                         let trimmed = line.trim();
                         let is_comment = match prover {
-                            ProverKind::Lean => trimmed.starts_with("--") || trimmed.starts_with("/-"),
+                            ProverKind::Lean => {
+                                trimmed.starts_with("--") || trimmed.starts_with("/-")
+                            },
                             ProverKind::Coq => trimmed.starts_with("(*"),
-                            ProverKind::Agda => trimmed.starts_with("--") || (trimmed.starts_with("{-") && !trimmed.starts_with("{-#")),
+                            ProverKind::Agda => {
+                                trimmed.starts_with("--")
+                                    || (trimmed.starts_with("{-") && !trimmed.starts_with("{-#"))
+                            },
                             ProverKind::Isabelle => trimmed.starts_with("(*"),
                             ProverKind::HOL4 => trimmed.starts_with("(*"),
-                            ProverKind::Idris2 => trimmed.starts_with("--") || trimmed.starts_with("{-"),
+                            ProverKind::Idris2 => {
+                                trimmed.starts_with("--") || trimmed.starts_with("{-")
+                            },
                             _ => false,
                         };
 
@@ -242,23 +272,28 @@ impl AxiomTracker {
         }
 
         let has_rejected = usages.iter().any(|u| u.danger_level == DangerLevel::Reject);
-        let has_warning = usages.iter().any(|u| u.danger_level == DangerLevel::Warning);
+        let has_warning = usages
+            .iter()
+            .any(|u| u.danger_level == DangerLevel::Warning);
         let has_noted = usages.iter().any(|u| u.danger_level == DangerLevel::Noted);
 
         if has_rejected {
-            let rejected: Vec<AxiomUsage> = usages.iter()
+            let rejected: Vec<AxiomUsage> = usages
+                .iter()
                 .filter(|u| u.danger_level == DangerLevel::Reject)
                 .cloned()
                 .collect();
             AxiomPolicy::Rejected(rejected)
         } else if has_warning {
-            let warnings: Vec<AxiomUsage> = usages.iter()
+            let warnings: Vec<AxiomUsage> = usages
+                .iter()
                 .filter(|u| u.danger_level >= DangerLevel::Warning)
                 .cloned()
                 .collect();
             AxiomPolicy::IncompleteProof(warnings)
         } else if has_noted {
-            let noted: Vec<AxiomUsage> = usages.iter()
+            let noted: Vec<AxiomUsage> = usages
+                .iter()
                 .filter(|u| u.danger_level >= DangerLevel::Noted)
                 .cloned()
                 .collect();

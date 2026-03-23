@@ -14,8 +14,8 @@
 
 #![allow(dead_code)]
 
-use async_trait::async_trait;
 use anyhow::{Context, Result};
+use async_trait::async_trait;
 use std::path::PathBuf;
 use tokio::process::Command;
 
@@ -76,13 +76,9 @@ impl AltErgoBackend {
 
     /// Parse Alt-Ergo output
     fn parse_result(&self, output: &str) -> Result<bool> {
-        if output.contains("Valid")
-            || output.contains("unsat")
-        {
+        if output.contains("Valid") || output.contains("unsat") {
             Ok(true)
-        } else if output.contains("Invalid")
-            || output.contains("sat")
-        {
+        } else if output.contains("Invalid") || output.contains("sat") {
             Ok(false)
         } else {
             Err(anyhow::anyhow!(
@@ -107,7 +103,12 @@ impl ProverBackend for AltErgoBackend {
             .context("Failed to run alt-ergo --version")?;
 
         let stdout = String::from_utf8_lossy(&output.stdout);
-        Ok(stdout.lines().next().unwrap_or("unknown").trim().to_string())
+        Ok(stdout
+            .lines()
+            .next()
+            .unwrap_or("unknown")
+            .trim()
+            .to_string())
     }
 
     async fn parse_file(&self, path: PathBuf) -> Result<ProofState> {
@@ -166,7 +167,8 @@ impl ProverBackend for AltErgoBackend {
             tokio::time::Duration::from_secs(self.config.timeout + 5),
             Command::new(&self.config.executable)
                 .arg(&tmp_file)
-                .arg("--timelimit").arg(format!("{}", self.config.timeout))
+                .arg("--timelimit")
+                .arg(format!("{}", self.config.timeout))
                 .output(),
         )
         .await

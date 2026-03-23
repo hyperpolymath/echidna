@@ -17,17 +17,17 @@ use tracing::{debug, info, warn};
 use crate::core::{Goal, ProofState, Tactic, Term};
 use crate::provers::{ProverBackend, ProverKind};
 
+pub mod actors;
+pub mod explanations;
 pub mod memory;
 pub mod planner;
 pub mod router;
-pub mod actors;
-pub mod explanations;
 
 use memory::ProofMemory;
 use planner::Planner;
 use router::ProverRouter;
 
-pub use actors::{MultiAgentSystem, CoordinatorAgent, ProverAgent, ContextAgent, LemmaAgent};
+pub use actors::{ContextAgent, CoordinatorAgent, LemmaAgent, MultiAgentSystem, ProverAgent};
 pub use explanations::{Explanation, ExplanationGenerator};
 
 /// Priority level for goals
@@ -103,9 +103,7 @@ pub enum GoalResult {
     },
 
     /// Goal was decomposed into sub-goals
-    Decomposed {
-        sub_goals: Vec<AgenticGoal>,
-    },
+    Decomposed { sub_goals: Vec<AgenticGoal> },
 
     /// Goal is pending (needs more work)
     Pending,
@@ -191,7 +189,9 @@ impl AgentCore {
         let mut queue = self.goal_queue.write().await;
 
         // Insert based on priority (higher priority first)
-        let pos = queue.iter().position(|g| g.priority < goal.priority)
+        let pos = queue
+            .iter()
+            .position(|g| g.priority < goal.priority)
             .unwrap_or(queue.len());
         queue.insert(pos, goal);
 
@@ -216,29 +216,41 @@ impl AgentCore {
                     debug!("No goals in queue, waiting...");
                     tokio::time::sleep(tokio::time::Duration::from_secs(1)).await;
                     continue;
-                }
+                },
             };
 
             info!("Processing goal: {}", goal.goal.id);
 
             // Check if we've exceeded max attempts
             if goal.attempts >= self.config.max_attempts {
-                warn!("Goal {} exceeded max attempts ({}), giving up",
-                    goal.goal.id, self.config.max_attempts);
+                warn!(
+                    "Goal {} exceeded max attempts ({}), giving up",
+                    goal.goal.id, self.config.max_attempts
+                );
 
                 // Store failure
-                self.memory.store_failure(&goal, "Max attempts exceeded".to_string()).await?;
+                self.memory
+                    .store_failure(&goal, "Max attempts exceeded".to_string())
+                    .await?;
                 continue;
             }
 
             // Process the goal
             match self.process_goal(goal.clone()).await {
-                Ok(GoalResult::Proved { proof, prover, time_ms }) => {
-                    info!("Goal {} proved with {} in {}ms",
-                        goal.goal.id, prover, time_ms);
+                Ok(GoalResult::Proved {
+                    proof,
+                    prover,
+                    time_ms,
+                }) => {
+                    info!(
+                        "Goal {} proved with {} in {}ms",
+                        goal.goal.id, prover, time_ms
+                    );
 
                     // Store success with elapsed time
-                    self.memory.store_success(&goal, &proof, prover, time_ms).await?;
+                    self.memory
+                        .store_success(&goal, &proof, prover, time_ms)
+                        .await?;
 
                     // Reflect on success (update router scores)
                     if self.config.reflection_enabled {
@@ -264,8 +276,11 @@ impl AgentCore {
                 },
 
                 Ok(GoalResult::Decomposed { sub_goals }) => {
-                    info!("Goal {} decomposed into {} sub-goals",
-                        goal.goal.id, sub_goals.len());
+                    info!(
+                        "Goal {} decomposed into {} sub-goals",
+                        goal.goal.id,
+                        sub_goals.len()
+                    );
 
                     // Add sub-goals to queue
                     for sub_goal in sub_goals {
@@ -283,7 +298,7 @@ impl AgentCore {
 
                     // Store failure
                     self.memory.store_failure(&goal, e.to_string()).await?;
-                }
+                },
             }
         }
     }
@@ -308,22 +323,29 @@ impl AgentCore {
         }
 
         // Step 3: Select prover
-        let prover_kind = goal.preferred_prover.unwrap_or_else(|| {
-            self.router.select(&goal)
-        });
+        let prover_kind = goal
+            .preferred_prover
+            .unwrap_or_else(|| self.router.select(&goal));
 
-        let prover = self.provers.iter()
+        let prover = self
+            .provers
+            .iter()
             .find(|p| p.kind() == prover_kind)
             .ok_or_else(|| anyhow::anyhow!("Prover {:?} not available", prover_kind))?;
 
         // Step 4: Get tactic suggestions (neural guidance)
         let tactics = if self.config.neural_enabled {
-            prover.suggest_tactics(&ProofState {
-                goals: vec![goal.goal.clone()],
-                context: Default::default(),
-                proof_script: vec![],
-                metadata: Default::default(),
-            }, 5).await?
+            prover
+                .suggest_tactics(
+                    &ProofState {
+                        goals: vec![goal.goal.clone()],
+                        context: Default::default(),
+                        proof_script: vec![],
+                        metadata: Default::default(),
+                    },
+                    5,
+                )
+                .await?
         } else {
             vec![Tactic::Assumption] // Fallback
         };
@@ -362,7 +384,10 @@ impl AgentCore {
 
     /// Reflect on successful proof (update router)
     async fn reflect_on_success(&mut self, goal: &AgenticGoal, prover: ProverKind) -> Result<()> {
-        info!("Reflecting on success: goal {} with {:?}", goal.goal.id, prover);
+        info!(
+            "Reflecting on success: goal {} with {:?}",
+            goal.goal.id, prover
+        );
 
         // Update router to prefer this prover for similar goals
         self.router.record_success(goal, prover).await;
@@ -371,9 +396,16 @@ impl AgentCore {
     }
 
     /// Reflect on failed proof (update router)
-    async fn reflect_on_failure(&mut self, goal: &AgenticGoal, prover: Option<ProverKind>) -> Result<()> {
+    async fn reflect_on_failure(
+        &mut self,
+        goal: &AgenticGoal,
+        prover: Option<ProverKind>,
+    ) -> Result<()> {
         if let Some(prover) = prover {
-            info!("Reflecting on failure: goal {} with {:?}", goal.goal.id, prover);
+            info!(
+                "Reflecting on failure: goal {} with {:?}",
+                goal.goal.id, prover
+            );
 
             // Update router to avoid this prover for similar goals
             self.router.record_failure(goal, prover).await;
@@ -388,7 +420,11 @@ impl AgentCore {
 
         let (total_proved, total_failed, success_rate) =
             if let Ok(mem_stats) = self.memory.stats().await {
-                (mem_stats.total_proofs, mem_stats.total_failures, mem_stats.success_rate)
+                (
+                    mem_stats.total_proofs,
+                    mem_stats.total_failures,
+                    mem_stats.success_rate,
+                )
             } else {
                 (0, 0, 0.0)
             };

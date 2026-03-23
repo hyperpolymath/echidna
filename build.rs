@@ -23,8 +23,7 @@ fn main() {
             println!("cargo:rustc-link-lib=dylib=c");
         } else {
             // Also check standard install location
-            let alt_dir = std::path::PathBuf::from(env!("CARGO_MANIFEST_DIR"))
-                .join("lib");
+            let alt_dir = std::path::PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("lib");
             if alt_dir.exists() {
                 println!("cargo:rustc-link-search=native={}", alt_dir.display());
                 println!("cargo:rustc-link-lib=static=echidna_chapel_ffi");

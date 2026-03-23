@@ -10,6 +10,5 @@
 pub mod solver_integrity;
 
 pub use solver_integrity::{
-    IntegrityChecker, IntegrityStatus, SolverIntegrityReport, SolverManifest,
-    SolverManifestEntry,
+    IntegrityChecker, IntegrityStatus, SolverIntegrityReport, SolverManifest, SolverManifestEntry,
 };

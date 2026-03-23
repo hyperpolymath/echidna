@@ -17,8 +17,8 @@
 
 #![allow(dead_code)]
 
-use async_trait::async_trait;
 use anyhow::{Context, Result};
+use async_trait::async_trait;
 use std::path::PathBuf;
 use std::process::Stdio;
 use tokio::io::AsyncWriteExt;
@@ -59,17 +59,11 @@ impl ViperBackend {
             silver.push_str("domain EchidnaAxioms {\n");
 
             for (i, axiom) in state.context.axioms.iter().enumerate() {
-                silver.push_str(&format!(
-                    "  axiom axiom_{} {{ {} }}\n",
-                    i, axiom
-                ));
+                silver.push_str(&format!("  axiom axiom_{} {{ {} }}\n", i, axiom));
             }
 
             for (i, def) in state.context.definitions.iter().enumerate() {
-                silver.push_str(&format!(
-                    "  axiom definition_{} {{ {} }}\n",
-                    i, def
-                ));
+                silver.push_str(&format!("  axiom definition_{} {{ {} }}\n", i, def));
             }
 
             silver.push_str("}\n\n");
@@ -229,7 +223,8 @@ impl ProverBackend for ViperBackend {
         let silver_code = self.to_silver(state)?;
 
         let mut child = Command::new(&self.config.executable)
-            .arg("--timeout").arg(format!("{}", self.config.timeout))
+            .arg("--timeout")
+            .arg(format!("{}", self.config.timeout))
             .args(&self.config.args)
             .stdin(Stdio::piped())
             .stdout(Stdio::piped())
@@ -256,9 +251,8 @@ impl ProverBackend for ViperBackend {
         let stdout = String::from_utf8_lossy(&output.stdout);
         let stderr = String::from_utf8_lossy(&output.stderr);
 
-        self.parse_result(&stdout).or_else(|_| {
-            self.parse_result(&stderr)
-        })
+        self.parse_result(&stdout)
+            .or_else(|_| self.parse_result(&stderr))
     }
 
     /// Export proof state as Silver (.vpr) source code.

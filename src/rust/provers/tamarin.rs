@@ -18,14 +18,14 @@
 
 #![allow(dead_code)]
 
-use async_trait::async_trait;
 use anyhow::{anyhow, Context, Result};
+use async_trait::async_trait;
 use std::path::PathBuf;
 use std::process::Stdio;
 use tokio::process::Command;
 
 use super::{ProverBackend, ProverConfig, ProverKind};
-use crate::core::{Goal, ProofState, Tactic, TacticResult, Term};
+use crate::core::{Definition, Goal, ProofState, Tactic, TacticResult, Term};
 
 /// Tamarin security protocol prover backend
 ///
@@ -64,9 +64,14 @@ impl TamarinBackend {
             .first()
             .map(|g| {
                 // Sanitise goal ID into a valid Tamarin identifier
-                g.id
-                    .chars()
-                    .map(|c| if c.is_alphanumeric() || c == '_' { c } else { '_' })
+                g.id.chars()
+                    .map(|c| {
+                        if c.is_alphanumeric() || c == '_' {
+                            c
+                        } else {
+                            '_'
+                        }
+                    })
                     .collect::<String>()
             })
             .unwrap_or_else(|| "echidna_theory".to_string());
@@ -95,10 +100,7 @@ impl TamarinBackend {
                 spthy.push('\n');
             } else {
                 // Wrap as a commented rule placeholder
-                spthy.push_str(&format!(
-                    "/* axiom_{}: {} */\n",
-                    i, axiom
-                ));
+                spthy.push_str(&format!("/* axiom_{}: {} */\n", i, axiom));
             }
         }
 
@@ -111,13 +113,16 @@ impl TamarinBackend {
             let lemma_name = goal
                 .id
                 .chars()
-                .map(|c| if c.is_alphanumeric() || c == '_' { c } else { '_' })
+                .map(|c| {
+                    if c.is_alphanumeric() || c == '_' {
+                        c
+                    } else {
+                        '_'
+                    }
+                })
                 .collect::<String>();
 
-            spthy.push_str(&format!(
-                "lemma {}:\n  \"{}\"\n\n",
-                lemma_name, target_str
-            ));
+            spthy.push_str(&format!("lemma {}:\n  \"{}\"\n\n", lemma_name, target_str));
         }
 
         spthy.push_str("end\n");
@@ -194,17 +199,29 @@ impl TamarinBackend {
 
             // Detect builtins declarations
             if trimmed.starts_with("builtins:") {
-                state.context.definitions.push(trimmed.to_string());
+                state.context.definitions.push(Definition {
+                    name: "builtins".to_string(),
+                    ty: Term::Const("builtin-declaration".to_string()),
+                    body: Term::Const(trimmed.to_string()),
+                });
             }
 
             // Detect function declarations
             if trimmed.starts_with("functions:") {
-                state.context.definitions.push(trimmed.to_string());
+                state.context.definitions.push(Definition {
+                    name: "functions".to_string(),
+                    ty: Term::Const("function-declaration".to_string()),
+                    body: Term::Const(trimmed.to_string()),
+                });
             }
 
             // Detect equations
             if trimmed.starts_with("equations:") {
-                state.context.definitions.push(trimmed.to_string());
+                state.context.definitions.push(Definition {
+                    name: "equations".to_string(),
+                    ty: Term::Const("equation-declaration".to_string()),
+                    body: Term::Const(trimmed.to_string()),
+                });
             }
 
             // Detect multiset rewriting rules
@@ -279,20 +296,24 @@ impl ProverBackend for TamarinBackend {
     async fn apply_tactic(&self, state: &ProofState, tactic: &Tactic) -> Result<TacticResult> {
         match tactic {
             // AddRule: add a multiset rewriting rule to the protocol model
-            Tactic::Custom { prover, command, args }
-                if prover == "tamarin" && command == "add_rule" =>
-            {
+            Tactic::Custom {
+                prover,
+                command,
+                args,
+            } if prover == "tamarin" && command == "add_rule" => {
                 let rule_text = args.join(" ");
                 let mut new_state = state.clone();
                 new_state.context.axioms.push(format!("rule {}", rule_text));
                 new_state.proof_script.push(tactic.clone());
                 Ok(TacticResult::Success(new_state))
-            }
+            },
 
             // AddLemma: add a security lemma to verify
-            Tactic::Custom { prover, command, args }
-                if prover == "tamarin" && command == "add_lemma" =>
-            {
+            Tactic::Custom {
+                prover,
+                command,
+                args,
+            } if prover == "tamarin" && command == "add_lemma" => {
                 let lemma_text = args.join(" ");
                 let mut new_state = state.clone();
                 new_state.goals.push(Goal {
@@ -302,12 +323,14 @@ impl ProverBackend for TamarinBackend {
                 });
                 new_state.proof_script.push(tactic.clone());
                 Ok(TacticResult::Success(new_state))
-            }
+            },
 
             // AddRestriction: add a trace restriction (constraint on valid traces)
-            Tactic::Custom { prover, command, args }
-                if prover == "tamarin" && command == "add_restriction" =>
-            {
+            Tactic::Custom {
+                prover,
+                command,
+                args,
+            } if prover == "tamarin" && command == "add_restriction" => {
                 let restriction_text = args.join(" ");
                 let mut new_state = state.clone();
                 new_state
@@ -316,21 +339,24 @@ impl ProverBackend for TamarinBackend {
                     .push(format!("restriction {}", restriction_text));
                 new_state.proof_script.push(tactic.clone());
                 Ok(TacticResult::Success(new_state))
-            }
+            },
 
             // AddBuiltin: add a cryptographic builtin (hashing, signing, etc.)
-            Tactic::Custom { prover, command, args }
-                if prover == "tamarin" && command == "add_builtin" =>
-            {
+            Tactic::Custom {
+                prover,
+                command,
+                args,
+            } if prover == "tamarin" && command == "add_builtin" => {
                 let builtin_text = args.join(", ");
                 let mut new_state = state.clone();
-                new_state
-                    .context
-                    .definitions
-                    .push(format!("builtins: {}", builtin_text));
+                new_state.context.definitions.push(Definition {
+                    name: "builtins".to_string(),
+                    ty: Term::Const("builtin-declaration".to_string()),
+                    body: Term::Const(format!("builtins: {}", builtin_text)),
+                });
                 new_state.proof_script.push(tactic.clone());
                 Ok(TacticResult::Success(new_state))
-            }
+            },
 
             _ => Ok(TacticResult::Error(format!(
                 "Tactic {:?} not supported for Tamarin prover",
@@ -343,8 +369,8 @@ impl ProverBackend for TamarinBackend {
         let spthy_code = self.to_spthy(state)?;
 
         // Write .spthy to a temporary file (tamarin-prover requires a file)
-        let tmp_dir = tempfile::tempdir()
-            .context("Failed to create temporary directory for Tamarin")?;
+        let tmp_dir =
+            tempfile::tempdir().context("Failed to create temporary directory for Tamarin")?;
         let tmp_file = tmp_dir.path().join("theory.spthy");
         tokio::fs::write(&tmp_file, &spthy_code)
             .await
@@ -361,10 +387,12 @@ impl ProverBackend for TamarinBackend {
                 .output(),
         )
         .await
-        .map_err(|_| anyhow!(
-            "Tamarin verification timed out after {} seconds",
-            self.config.timeout
-        ))?
+        .map_err(|_| {
+            anyhow!(
+                "Tamarin verification timed out after {} seconds",
+                self.config.timeout
+            )
+        })?
         .context("Failed to execute tamarin-prover")?;
 
         let stdout = String::from_utf8_lossy(&output.stdout);
@@ -438,9 +466,7 @@ mod tests {
         let mut state = ProofState::default();
         state.goals.push(Goal {
             id: "secrecy".to_string(),
-            target: Term::Const(
-                "All x #i. Secret(x) @i ==> not (Ex #j. K(x) @j)".to_string(),
-            ),
+            target: Term::Const("All x #i. Secret(x) @i ==> not (Ex #j. K(x) @j)".to_string()),
             hypotheses: vec![],
         });
 
@@ -493,7 +519,11 @@ end
 
         // Should have found builtins as a definition
         assert!(
-            state.context.definitions.iter().any(|d| d.contains("builtins:")),
+            state
+                .context
+                .definitions
+                .iter()
+                .any(|d| d.name == "builtins"),
             "Should have parsed builtins declaration"
         );
 
@@ -503,7 +533,11 @@ end
             "Should have parsed rules"
         );
         assert!(
-            state.context.axioms.iter().any(|a| a.contains("restriction ")),
+            state
+                .context
+                .axioms
+                .iter()
+                .any(|a| a.contains("restriction ")),
             "Should have parsed restrictions"
         );
 

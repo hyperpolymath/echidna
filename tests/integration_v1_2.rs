@@ -16,7 +16,7 @@ use tempfile::TempDir;
 /// Helper to create a test config
 fn test_config() -> ProverConfig {
     ProverConfig {
-        executable: PathBuf::from("mock"),  // Will be overridden
+        executable: PathBuf::from("mock"), // Will be overridden
         library_paths: vec![],
         args: vec![],
         timeout: 30,
@@ -36,8 +36,8 @@ async fn test_acl2_basic_theorem() -> Result<()> {
         ..test_config()
     };
 
-    let backend = ProverFactory::create(ProverKind::ACL2, config)
-        .context("Failed to create ACL2 backend")?;
+    let backend =
+        ProverFactory::create(ProverKind::ACL2, config).context("Failed to create ACL2 backend")?;
 
     // Simple associativity theorem
     let proof = r#"
@@ -46,10 +46,14 @@ async fn test_acl2_basic_theorem() -> Result<()> {
          (append x (append y z))))
 "#;
 
-    let state = backend.parse_string(proof).await
+    let state = backend
+        .parse_string(proof)
+        .await
         .context("Failed to parse ACL2 proof")?;
 
-    let verified = backend.verify_proof(&state).await
+    let verified = backend
+        .verify_proof(&state)
+        .await
         .context("Failed to verify proof")?;
 
     assert!(verified, "ACL2 proof should verify");
@@ -64,8 +68,8 @@ async fn test_acl2_hint_system() -> Result<()> {
         ..test_config()
     };
 
-    let backend = ProverFactory::create(ProverKind::ACL2, config)
-        .context("Failed to create ACL2 backend")?;
+    let backend =
+        ProverFactory::create(ProverKind::ACL2, config).context("Failed to create ACL2 backend")?;
 
     // Theorem with induction hint
     let proof = r#"
@@ -80,7 +84,9 @@ async fn test_acl2_hint_system() -> Result<()> {
   :hints (("Goal" :induct (len x))))
 "#;
 
-    let state = backend.parse_string(proof).await
+    let state = backend
+        .parse_string(proof)
+        .await
         .context("Failed to parse ACL2 proof with hints")?;
 
     assert!(!state.goals.is_empty(), "Should have parsed goals");
@@ -121,8 +127,8 @@ async fn test_pvs_basic_theory() -> Result<()> {
         ..test_config()
     };
 
-    let backend = ProverFactory::create(ProverKind::PVS, config)
-        .context("Failed to create PVS backend")?;
+    let backend =
+        ProverFactory::create(ProverKind::PVS, config).context("Failed to create PVS backend")?;
 
     // Simple PVS theory
     let theory = r#"
@@ -136,7 +142,9 @@ BEGIN
 END simple_theory
 "#;
 
-    let state = backend.parse_string(theory).await
+    let state = backend
+        .parse_string(theory)
+        .await
         .context("Failed to parse PVS theory")?;
 
     assert!(!state.goals.is_empty(), "Should have lemmas");
@@ -151,8 +159,8 @@ async fn test_pvs_parametric_theory() -> Result<()> {
         ..test_config()
     };
 
-    let backend = ProverFactory::create(ProverKind::PVS, config)
-        .context("Failed to create PVS backend")?;
+    let backend =
+        ProverFactory::create(ProverKind::PVS, config).context("Failed to create PVS backend")?;
 
     // Parametric list theory
     let theory = r#"
@@ -176,7 +184,9 @@ BEGIN
 END list_theory
 "#;
 
-    let state = backend.parse_string(theory).await
+    let state = backend
+        .parse_string(theory)
+        .await
         .context("Failed to parse parametric PVS theory")?;
 
     assert!(!state.goals.is_empty(), "Should have parametric lemmas");
@@ -202,8 +212,8 @@ async fn test_hol4_basic_theorem() -> Result<()> {
         ..test_config()
     };
 
-    let backend = ProverFactory::create(ProverKind::HOL4, config)
-        .context("Failed to create HOL4 backend")?;
+    let backend =
+        ProverFactory::create(ProverKind::HOL4, config).context("Failed to create HOL4 backend")?;
 
     // Simple HOL4 theorem
     let proof = r#"
@@ -214,7 +224,9 @@ val append_nil = Q.store_thm(
 );
 "#;
 
-    let state = backend.parse_string(proof).await
+    let state = backend
+        .parse_string(proof)
+        .await
         .context("Failed to parse HOL4 proof")?;
 
     assert!(!state.goals.is_empty(), "Should have goals");
@@ -229,8 +241,8 @@ async fn test_hol4_datatype() -> Result<()> {
         ..test_config()
     };
 
-    let backend = ProverFactory::create(ProverKind::HOL4, config)
-        .context("Failed to create HOL4 backend")?;
+    let backend =
+        ProverFactory::create(ProverKind::HOL4, config).context("Failed to create HOL4 backend")?;
 
     // Datatype definition
     let datatype_def = r#"
@@ -251,7 +263,9 @@ val tree_size_positive = Q.store_thm(
 );
 "#;
 
-    let state = backend.parse_string(datatype_def).await
+    let state = backend
+        .parse_string(datatype_def)
+        .await
         .context("Failed to parse HOL4 datatype")?;
 
     assert!(!state.goals.is_empty(), "Should have datatype theorems");
@@ -284,9 +298,9 @@ async fn test_all_provers_available() -> Result<()> {
         ProverKind::Metamath,
         ProverKind::HOLLight,
         ProverKind::Mizar,
-        ProverKind::ACL2,      // NEW in v1.2
-        ProverKind::PVS,       // NEW in v1.2
-        ProverKind::HOL4,      // NEW in v1.2
+        ProverKind::ACL2, // NEW in v1.2
+        ProverKind::PVS,  // NEW in v1.2
+        ProverKind::HOL4, // NEW in v1.2
     ];
 
     for kind in provers {
@@ -356,15 +370,21 @@ async fn test_acl2_examples() -> Result<()> {
         ..test_config()
     };
 
-    let backend = ProverFactory::create(ProverKind::ACL2, config)
-        .context("Failed to create ACL2 backend")?;
+    let backend =
+        ProverFactory::create(ProverKind::ACL2, config).context("Failed to create ACL2 backend")?;
 
     for file in example_files {
         let path = PathBuf::from(file);
         if path.exists() {
-            let state = backend.parse_file(path.clone()).await
+            let state = backend
+                .parse_file(path.clone())
+                .await
                 .context(format!("Failed to parse {}", file))?;
-            assert!(!state.goals.is_empty(), "Example {} should have goals", file);
+            assert!(
+                !state.goals.is_empty(),
+                "Example {} should have goals",
+                file
+            );
         }
     }
     Ok(())
@@ -386,15 +406,21 @@ async fn test_pvs_examples() -> Result<()> {
         ..test_config()
     };
 
-    let backend = ProverFactory::create(ProverKind::PVS, config)
-        .context("Failed to create PVS backend")?;
+    let backend =
+        ProverFactory::create(ProverKind::PVS, config).context("Failed to create PVS backend")?;
 
     for file in example_files {
         let path = PathBuf::from(file);
         if path.exists() {
-            let state = backend.parse_file(path.clone()).await
+            let state = backend
+                .parse_file(path.clone())
+                .await
                 .context(format!("Failed to parse {}", file))?;
-            assert!(!state.goals.is_empty(), "Example {} should have goals", file);
+            assert!(
+                !state.goals.is_empty(),
+                "Example {} should have goals",
+                file
+            );
         }
     }
     Ok(())
@@ -416,15 +442,21 @@ async fn test_hol4_examples() -> Result<()> {
         ..test_config()
     };
 
-    let backend = ProverFactory::create(ProverKind::HOL4, config)
-        .context("Failed to create HOL4 backend")?;
+    let backend =
+        ProverFactory::create(ProverKind::HOL4, config).context("Failed to create HOL4 backend")?;
 
     for file in example_files {
         let path = PathBuf::from(file);
         if path.exists() {
-            let state = backend.parse_file(path.clone()).await
+            let state = backend
+                .parse_file(path.clone())
+                .await
                 .context(format!("Failed to parse {}", file))?;
-            assert!(!state.goals.is_empty(), "Example {} should have goals", file);
+            assert!(
+                !state.goals.is_empty(),
+                "Example {} should have goals",
+                file
+            );
         }
     }
     Ok(())
@@ -447,7 +479,11 @@ async fn test_backend_creation_performance() -> Result<()> {
     }
 
     let elapsed = start.elapsed();
-    assert!(elapsed.as_millis() < 100, "Backend creation should be fast (< 100ms), took {:?}", elapsed);
+    assert!(
+        elapsed.as_millis() < 100,
+        "Backend creation should be fast (< 100ms), took {:?}",
+        elapsed
+    );
     Ok(())
 }
 

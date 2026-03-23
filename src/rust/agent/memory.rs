@@ -14,9 +14,9 @@ use std::path::PathBuf;
 use tokio::sync::RwLock;
 use tracing::{debug, info};
 
+use super::AgenticGoal;
 use crate::core::ProofState;
 use crate::provers::ProverKind;
-use super::AgenticGoal;
 
 /// A cached proof entry
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -63,7 +63,13 @@ pub struct FailedAttempt {
 #[async_trait]
 pub trait ProofMemory: Send + Sync {
     /// Store a successful proof with elapsed time in milliseconds
-    async fn store_success(&self, goal: &AgenticGoal, proof: &ProofState, prover: ProverKind, time_ms: u64) -> Result<()>;
+    async fn store_success(
+        &self,
+        goal: &AgenticGoal,
+        proof: &ProofState,
+        prover: ProverKind,
+        time_ms: u64,
+    ) -> Result<()>;
 
     /// Store a failed attempt
     async fn store_failure(&self, goal: &AgenticGoal, reason: String) -> Result<()>;
@@ -112,14 +118,23 @@ impl SqliteMemory {
         // Note: Full SQLite persistence is planned for v2.0.
         // Currently uses in-memory storage backed by Vec<CachedProof>/Vec<FailedAttempt>.
         // The db_path is stored for future migration to on-disk SQLite.
-        info!("Initialized proof memory at {:?} (in-memory mode)", self.db_path);
+        info!(
+            "Initialized proof memory at {:?} (in-memory mode)",
+            self.db_path
+        );
         Ok(())
     }
 }
 
 #[async_trait]
 impl ProofMemory for SqliteMemory {
-    async fn store_success(&self, goal: &AgenticGoal, proof: &ProofState, prover: ProverKind, time_ms: u64) -> Result<()> {
+    async fn store_success(
+        &self,
+        goal: &AgenticGoal,
+        proof: &ProofState,
+        prover: ProverKind,
+        time_ms: u64,
+    ) -> Result<()> {
         let cached = CachedProof {
             goal_id: goal.goal.id.clone(),
             proof: proof.clone(),
@@ -157,7 +172,9 @@ impl ProofMemory for SqliteMemory {
 
         // Simple similarity: check if aspects overlap
         for cached in successes.iter() {
-            let overlap = goal.aspects.iter()
+            let overlap = goal
+                .aspects
+                .iter()
                 .filter(|a| cached.aspects.contains(a))
                 .count();
 
@@ -262,7 +279,8 @@ impl VeriSimDBProofStore {
             .timeout(std::time::Duration::from_secs(5))
             .build()?;
 
-        match http.post(format!("{}/api/encode", julia_url))
+        match http
+            .post(format!("{}/api/encode", julia_url))
             .json(&body)
             .send()
             .await
@@ -270,22 +288,27 @@ impl VeriSimDBProofStore {
             Ok(response) if response.status().is_success() => {
                 let result: serde_json::Value = response.json().await?;
                 if let Some(embedding) = result.get("embedding").and_then(|e| e.as_array()) {
-                    let vec: Vec<f32> = embedding.iter()
+                    let vec: Vec<f32> = embedding
+                        .iter()
                         .filter_map(|v| v.as_f64().map(|f| f as f32))
                         .collect();
-                    debug!("Got {}-dim embedding from Julia for goal {}", vec.len(), goal.id);
+                    debug!(
+                        "Got {}-dim embedding from Julia for goal {}",
+                        vec.len(),
+                        goal.id
+                    );
                     return Ok(vec);
                 }
                 Ok(vec![])
-            }
+            },
             Ok(_) => {
                 debug!("Julia inference returned non-200 for goal {}", goal.id);
                 Ok(vec![])
-            }
+            },
             Err(e) => {
                 debug!("Julia inference unreachable for goal {}: {}", goal.id, e);
                 Ok(vec![])
-            }
+            },
         }
     }
 
@@ -331,7 +354,9 @@ impl ProofMemory for VeriSimDBProofStore {
             use crate::verisimdb_bridge::{ProofOctadBuilder, ProofStatus};
 
             // Fetch goal embedding from Julia inference service (best-effort)
-            let embedding = self.fetch_goal_embedding(&goal.goal).await
+            let embedding = self
+                .fetch_goal_embedding(&goal.goal)
+                .await
                 .unwrap_or_default();
 
             let octad = ProofOctadBuilder::new(&goal.goal.id, &goal.goal, prover)
@@ -347,7 +372,10 @@ impl ProofMemory for VeriSimDBProofStore {
                 .build()?;
 
             if let Err(e) = self.client.create_octad(&octad).await {
-                warn!("Failed to store proof in VeriSimDB (continuing in-memory): {}", e);
+                warn!(
+                    "Failed to store proof in VeriSimDB (continuing in-memory): {}",
+                    e
+                );
             } else {
                 debug!("Stored proof octad {} in VeriSimDB", octad.key);
             }
@@ -392,12 +420,17 @@ impl ProofMemory for VeriSimDBProofStore {
 
         // Check local cache first (fast path)
         for cached in successes.iter() {
-            let overlap = goal.aspects.iter()
+            let overlap = goal
+                .aspects
+                .iter()
                 .filter(|a| cached.aspects.contains(a))
                 .count();
 
             if overlap > 0 {
-                debug!("Found similar proof in local cache: {} aspects overlap", overlap);
+                debug!(
+                    "Found similar proof in local cache: {} aspects overlap",
+                    overlap
+                );
                 return Ok(Some(cached.clone()));
             }
         }
@@ -447,9 +480,9 @@ impl ProofMemory for VeriSimDBProofStore {
 
 #[cfg(test)]
 mod tests {
+    use super::super::{AgenticGoal, Priority};
     use super::*;
     use crate::core::{Goal, Term};
-    use super::super::{AgenticGoal, Priority};
 
     #[tokio::test]
     async fn test_memory_store_and_retrieve() {
@@ -473,7 +506,10 @@ mod tests {
         let proof = ProofState::new(Term::Var("A".to_string()));
 
         // Store success
-        memory.store_success(&goal, &proof, ProverKind::Agda, 42).await.unwrap();
+        memory
+            .store_success(&goal, &proof, ProverKind::Agda, 42)
+            .await
+            .unwrap();
 
         // Retrieve
         let successes = memory.get_successes().await.unwrap();

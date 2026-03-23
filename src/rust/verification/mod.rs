@@ -10,18 +10,18 @@
 //! - Mutation testing for specifications
 //! - Pareto optimality for proof search
 
-pub mod portfolio;
-pub mod certificates;
 pub mod axiom_tracker;
+pub mod certificates;
 pub mod confidence;
 pub mod mutation;
 pub mod pareto;
+pub mod portfolio;
 pub mod statistics;
 
-pub use confidence::TrustLevel;
-pub use portfolio::{PortfolioConfig, PortfolioResult, PortfolioSolver};
-pub use certificates::{CertificateFormat, CertificateVerifier, ProofCertificate};
 pub use axiom_tracker::{AxiomPolicy, AxiomTracker, AxiomUsage, DangerLevel};
+pub use certificates::{CertificateFormat, CertificateVerifier, ProofCertificate};
+pub use confidence::TrustLevel;
 pub use mutation::{MutationKind, MutationResult, MutationTester};
-pub use pareto::{ParetoFrontier, ProofObjective, ProofCandidate};
+pub use pareto::{ParetoFrontier, ProofCandidate, ProofObjective};
+pub use portfolio::{PortfolioConfig, PortfolioResult, PortfolioSolver};
 pub use statistics::StatisticsTracker;

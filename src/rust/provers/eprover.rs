@@ -14,8 +14,8 @@
 
 #![allow(dead_code)]
 
-use async_trait::async_trait;
 use anyhow::{Context, Result};
+use async_trait::async_trait;
 use std::path::PathBuf;
 use std::process::Stdio;
 use tokio::io::AsyncWriteExt;
@@ -87,7 +87,12 @@ impl ProverBackend for EProverBackend {
             .context("Failed to run eprover --version")?;
 
         let stdout = String::from_utf8_lossy(&output.stdout);
-        Ok(stdout.lines().next().unwrap_or("unknown").trim().to_string())
+        Ok(stdout
+            .lines()
+            .next()
+            .unwrap_or("unknown")
+            .trim()
+            .to_string())
     }
 
     async fn parse_file(&self, path: PathBuf) -> Result<ProofState> {
@@ -137,7 +142,8 @@ impl ProverBackend for EProverBackend {
         let mut child = Command::new(&self.config.executable)
             .arg("--auto")
             .arg("--tptp3-format")
-            .arg("--cpu-limit").arg(format!("{}", self.config.timeout))
+            .arg("--cpu-limit")
+            .arg(format!("{}", self.config.timeout))
             .arg("--proof-object=0")
             .arg("-")
             .stdin(Stdio::piped())

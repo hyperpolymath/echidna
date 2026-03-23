@@ -87,7 +87,11 @@ impl DeduktiExporter {
 
         for decl in &module.declarations {
             match decl {
-                DeduktiDeclaration::Symbol { name, ty, is_constant } => {
+                DeduktiDeclaration::Symbol {
+                    name,
+                    ty,
+                    is_constant,
+                } => {
                     if *is_constant {
                         // Constants become axioms/theorems without proof
                         state.context.theorems.push(Theorem {
@@ -104,7 +108,7 @@ impl DeduktiExporter {
                             hypotheses: vec![],
                         });
                     }
-                }
+                },
                 DeduktiDeclaration::Definition { name, ty, .. } => {
                     // Definitions become theorems (they have proofs)
                     state.context.theorems.push(Theorem {
@@ -113,11 +117,11 @@ impl DeduktiExporter {
                         proof: Some(vec![]), // Proof exists but not translated
                         aspects: vec!["dedukti-import".to_string(), "has-definition".to_string()],
                     });
-                }
+                },
                 DeduktiDeclaration::Rule { .. } => {
                     // Rewrite rules are stored as aspects on the module
                     // but don't directly translate to theorems
-                }
+                },
             }
         }
 
@@ -139,20 +143,28 @@ impl DeduktiExporter {
         // Declarations
         for decl in &module.declarations {
             match decl {
-                DeduktiDeclaration::Symbol { name, ty, is_constant } => {
+                DeduktiDeclaration::Symbol {
+                    name,
+                    ty,
+                    is_constant,
+                } => {
                     if *is_constant {
                         output.push_str(&format!("constant symbol {} : {}.\n", name, ty));
                     } else {
                         output.push_str(&format!("symbol {} : {}.\n", name, ty));
                     }
-                }
+                },
                 DeduktiDeclaration::Definition { name, ty, body } => {
                     output.push_str(&format!("symbol {} : {} ≔ {}.\n", name, ty, body));
-                }
-                DeduktiDeclaration::Rule { variables, lhs, rhs } => {
+                },
+                DeduktiDeclaration::Rule {
+                    variables,
+                    lhs,
+                    rhs,
+                } => {
                     let vars = variables.join(", ");
                     output.push_str(&format!("rule [{}] {} ↪ {}.\n", vars, lhs, rhs));
-                }
+                },
             }
         }
 
@@ -170,17 +182,35 @@ impl DeduktiExporter {
                     result = format!("{} ({})", result, Self::term_to_dedukti(arg));
                 }
                 result
-            }
-            Term::Lambda { param, param_type, body } => {
+            },
+            Term::Lambda {
+                param,
+                param_type,
+                body,
+            } => {
                 if let Some(ty) = param_type {
-                    format!("({} : {} => {})", param, Self::term_to_dedukti(ty), Self::term_to_dedukti(body))
+                    format!(
+                        "({} : {} => {})",
+                        param,
+                        Self::term_to_dedukti(ty),
+                        Self::term_to_dedukti(body)
+                    )
                 } else {
                     format!("({} => {})", param, Self::term_to_dedukti(body))
                 }
-            }
-            Term::Pi { param, param_type, body } => {
-                format!("({} : {} -> {})", param, Self::term_to_dedukti(param_type), Self::term_to_dedukti(body))
-            }
+            },
+            Term::Pi {
+                param,
+                param_type,
+                body,
+            } => {
+                format!(
+                    "({} : {} -> {})",
+                    param,
+                    Self::term_to_dedukti(param_type),
+                    Self::term_to_dedukti(body)
+                )
+            },
             Term::Type(level) => format!("Type {}", level),
             Term::Sort(level) => format!("Sort {}", level),
             Term::Universe(level) => format!("Type {}", level),
@@ -219,8 +249,11 @@ impl DeduktiExporter {
                 Term::Const(trimmed.to_string())
             }
         } else if trimmed.starts_with("Type") {
-            let level = trimmed.trim_start_matches("Type").trim()
-                .parse::<usize>().unwrap_or(0);
+            let level = trimmed
+                .trim_start_matches("Type")
+                .trim()
+                .parse::<usize>()
+                .unwrap_or(0);
             Term::Type(level)
         } else {
             // Simple identifier
@@ -230,9 +263,7 @@ impl DeduktiExporter {
 
     /// Sanitize a name for Dedukti (replace invalid characters)
     fn sanitize_name(name: &str) -> String {
-        name.replace('-', "_")
-            .replace('.', "_")
-            .replace(' ', "_")
+        name.replace('-', "_").replace('.', "_").replace(' ', "_")
     }
 }
 

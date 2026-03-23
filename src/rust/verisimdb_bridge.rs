@@ -26,8 +26,8 @@ use std::collections::HashMap;
 use tracing::{debug, info, warn};
 
 use crate::core::{Goal, ProofState, Tactic};
-use crate::provers::ProverKind;
 use crate::proof_encoding;
+use crate::provers::ProverKind;
 
 // ═══════════════════════════════════════════════════════════════════════
 // Octad Payload — the 8-modality structure for VeriSimDB
@@ -356,12 +356,8 @@ impl ProofOctadBuilder {
         let timestamp = now.to_rfc3339();
 
         // Generate identities
-        let octad_key = proof_encoding::proof_identity(
-            &self.theorem_name, &self.goal, self.prover,
-        );
-        let cross_prover_id = proof_encoding::goal_identity(
-            &self.theorem_name, &self.goal,
-        );
+        let octad_key = proof_encoding::proof_identity(&self.theorem_name, &self.goal, self.prover);
+        let cross_prover_id = proof_encoding::goal_identity(&self.theorem_name, &self.goal);
 
         // Semantic modality: CBOR-encode the proof state
         let proof_blob_b64 = if let Some(ref proof) = self.proof_state {
@@ -385,7 +381,9 @@ impl ProofOctadBuilder {
         };
 
         // Temporal modality: initial version
-        let goals_remaining = self.proof_state.as_ref()
+        let goals_remaining = self
+            .proof_state
+            .as_ref()
             .map(|p| p.goals.len())
             .unwrap_or(1);
 
@@ -396,17 +394,20 @@ impl ProofOctadBuilder {
         };
 
         // Provenance modality: creation record + one per tactic
-        let provenance = build_provenance_chain(
-            &self.proof_state, &self.prover, &self.axioms, &timestamp,
-        );
+        let provenance =
+            build_provenance_chain(&self.proof_state, &self.prover, &self.axioms, &timestamp);
 
         // Document modality: searchable text
         let theorem_statement = format!("{}", self.goal.target);
-        let goals_text: Vec<String> = self.proof_state.as_ref()
+        let goals_text: Vec<String> = self
+            .proof_state
+            .as_ref()
             .map(|p| p.goals.iter().map(|g| format!("{}", g.target)).collect())
             .unwrap_or_else(|| vec![theorem_statement.clone()]);
 
-        let tactics_text: Vec<String> = self.proof_state.as_ref()
+        let tactics_text: Vec<String> = self
+            .proof_state
+            .as_ref()
             .map(|p| p.proof_script.iter().map(|t| format!("{:?}", t)).collect())
             .unwrap_or_default();
 
@@ -438,7 +439,11 @@ impl ProofOctadBuilder {
         let dimensions = self.goal_embedding.len();
         let vector = VectorPayload {
             goal_embedding: self.goal_embedding,
-            model: if dimensions > 0 { "echidna-neural-v1".to_string() } else { "none".to_string() },
+            model: if dimensions > 0 {
+                "echidna-neural-v1".to_string()
+            } else {
+                "none".to_string()
+            },
             dimensions,
         };
 
@@ -496,7 +501,9 @@ impl VeriSimDBClient {
     pub async fn create_octad(&self, payload: &OctadPayload) -> Result<()> {
         let url = format!("{}/api/v1/octads", self.base_url);
 
-        let response = self.http.post(&url)
+        let response = self
+            .http
+            .post(&url)
             .json(payload)
             .send()
             .await
@@ -517,13 +524,17 @@ impl VeriSimDBClient {
     pub async fn get_octad(&self, key: &str) -> Result<Option<OctadPayload>> {
         let url = format!("{}/api/v1/octads/{}", self.base_url, key);
 
-        let response = self.http.get(&url)
+        let response = self
+            .http
+            .get(&url)
             .send()
             .await
             .context("Failed to query VeriSimDB")?;
 
         if response.status().is_success() {
-            let octad: OctadPayload = response.json().await
+            let octad: OctadPayload = response
+                .json()
+                .await
                 .context("Failed to parse octad from VeriSimDB")?;
             Ok(Some(octad))
         } else if response.status() == reqwest::StatusCode::NOT_FOUND {
@@ -544,7 +555,9 @@ impl VeriSimDBClient {
     pub async fn delete_octad(&self, key: &str) -> Result<()> {
         let url = format!("{}/api/v1/octads/{}", self.base_url, key);
 
-        let response = self.http.delete(&url)
+        let response = self
+            .http
+            .delete(&url)
             .send()
             .await
             .context("Failed to delete octad from VeriSimDB")?;
@@ -559,7 +572,8 @@ impl VeriSimDBClient {
     /// Check if VeriSimDB is reachable.
     pub async fn health_check(&self) -> bool {
         let url = format!("{}/health", self.base_url);
-        self.http.get(&url)
+        self.http
+            .get(&url)
             .timeout(std::time::Duration::from_secs(2))
             .send()
             .await
@@ -577,16 +591,14 @@ fn classify_goal_type(goal: &Goal) -> String {
     use crate::core::Term;
     match &goal.target {
         Term::Pi { .. } => "universal_quantification".to_string(),
-        Term::App { func, .. } => {
-            match func.as_ref() {
-                Term::Const(name) if name == "eq" || name == "Eq" => "equality".to_string(),
-                Term::Const(name) if name == "and" || name == "And" => "conjunction".to_string(),
-                Term::Const(name) if name == "or" || name == "Or" => "disjunction".to_string(),
-                Term::Const(name) if name == "not" || name == "Not" => "negation".to_string(),
-                Term::Const(name) if name == "exists" || name == "Exists" => "existential".to_string(),
-                _ => "application".to_string(),
-            }
-        }
+        Term::App { func, .. } => match func.as_ref() {
+            Term::Const(name) if name == "eq" || name == "Eq" => "equality".to_string(),
+            Term::Const(name) if name == "and" || name == "And" => "conjunction".to_string(),
+            Term::Const(name) if name == "or" || name == "Or" => "disjunction".to_string(),
+            Term::Const(name) if name == "not" || name == "Not" => "negation".to_string(),
+            Term::Const(name) if name == "exists" || name == "Exists" => "existential".to_string(),
+            _ => "application".to_string(),
+        },
         Term::Lambda { .. } => "lambda".to_string(),
         Term::Var(_) => "variable".to_string(),
         Term::Const(_) => "constant".to_string(),
@@ -649,9 +661,14 @@ fn build_provenance_chain(
 
     // Record 0: Creation
     let creation_data: HashMap<String, serde_json::Value> = [
-        ("prover".to_string(), serde_json::json!(format!("{:?}", prover))),
+        (
+            "prover".to_string(),
+            serde_json::json!(format!("{:?}", prover)),
+        ),
         ("axioms".to_string(), serde_json::json!(axioms)),
-    ].into_iter().collect();
+    ]
+    .into_iter()
+    .collect();
 
     let creation_hash = hash_provenance_record(&parent_hash, "Created", timestamp, &creation_data);
     records.push(ProvenanceRecord {
@@ -667,13 +684,15 @@ fn build_provenance_chain(
     // Record per tactic
     if let Some(ref proof) = proof_state {
         for tactic in &proof.proof_script {
-            let tactic_data: HashMap<String, serde_json::Value> = [
-                ("tactic".to_string(), serde_json::json!(format!("{:?}", tactic))),
-            ].into_iter().collect();
+            let tactic_data: HashMap<String, serde_json::Value> = [(
+                "tactic".to_string(),
+                serde_json::json!(format!("{:?}", tactic)),
+            )]
+            .into_iter()
+            .collect();
 
-            let tactic_hash = hash_provenance_record(
-                &parent_hash, "TacticApplied", timestamp, &tactic_data,
-            );
+            let tactic_hash =
+                hash_provenance_record(&parent_hash, "TacticApplied", timestamp, &tactic_data);
             records.push(ProvenanceRecord {
                 hash: tactic_hash.clone(),
                 parent_hash: parent_hash.clone(),
@@ -688,9 +707,8 @@ fn build_provenance_chain(
         // Final verification record if complete
         if proof.is_complete() {
             let verify_data = HashMap::new();
-            let verify_hash = hash_provenance_record(
-                &parent_hash, "Verified", timestamp, &verify_data,
-            );
+            let verify_hash =
+                hash_provenance_record(&parent_hash, "Verified", timestamp, &verify_data);
             records.push(ProvenanceRecord {
                 hash: verify_hash.clone(),
                 parent_hash,
@@ -768,10 +786,7 @@ mod tests {
                     args: vec![
                         Term::App {
                             func: Box::new(Term::Const("add".to_string())),
-                            args: vec![
-                                Term::Var("n".to_string()),
-                                Term::Const("0".to_string()),
-                            ],
+                            args: vec![Term::Var("n".to_string()), Term::Const("0".to_string())],
                         },
                         Term::Var("n".to_string()),
                     ],
@@ -819,7 +834,10 @@ mod tests {
         // Temporal modality: initial + 3 tactics + QED = 5 versions
         assert_eq!(octad.temporal.versions.len(), 5);
         assert_eq!(octad.temporal.versions[0].actor, "echidna-dispatch");
-        assert_eq!(octad.temporal.versions[4].description, "Proof complete (QED)");
+        assert_eq!(
+            octad.temporal.versions[4].description,
+            "Proof complete (QED)"
+        );
 
         // Provenance modality: creation + 3 tactics + verified = 5 records
         assert_eq!(octad.provenance.records.len(), 5);
@@ -828,7 +846,8 @@ mod tests {
             assert_eq!(
                 octad.provenance.records[i].parent_hash,
                 octad.provenance.records[i - 1].hash,
-                "Hash chain broken at record {}", i,
+                "Hash chain broken at record {}",
+                i,
             );
         }
 
@@ -886,7 +905,10 @@ mod tests {
     fn test_provenance_hash_chain_integrity() {
         let proof = sample_proof_state();
         let prov = build_provenance_chain(
-            &Some(proof), &ProverKind::Agda, &["ax1".to_string()], "2026-03-20T00:00:00Z",
+            &Some(proof),
+            &ProverKind::Agda,
+            &["ax1".to_string()],
+            "2026-03-20T00:00:00Z",
         );
 
         // First record has empty parent

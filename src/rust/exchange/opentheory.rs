@@ -107,10 +107,10 @@ impl OpenTheoryExporter {
                     result = format!("app {} {}", result, Self::term_to_opentheory(arg));
                 }
                 result
-            }
+            },
             Term::Lambda { param, body, .. } => {
                 format!("abs (var \"{}\") {}", param, Self::term_to_opentheory(body))
-            }
+            },
             _ => format!("const \"echidna_opaque\""),
         }
     }
@@ -119,12 +119,14 @@ impl OpenTheoryExporter {
     fn opentheory_to_term(ot: &str) -> Term {
         let trimmed = ot.trim();
         if trimmed.starts_with("var ") {
-            let name = trimmed.trim_start_matches("var ")
+            let name = trimmed
+                .trim_start_matches("var ")
                 .trim_matches('"')
                 .to_string();
             Term::Var(name)
         } else if trimmed.starts_with("const ") {
-            let name = trimmed.trim_start_matches("const ")
+            let name = trimmed
+                .trim_start_matches("const ")
                 .trim_matches('"')
                 .to_string();
             Term::Const(name)
@@ -158,18 +160,14 @@ mod tests {
     fn test_import_creates_state() {
         let article = OpenTheoryArticle {
             name: "test".to_string(),
-            assumptions: vec![
-                OpenTheoryTheorem {
-                    hypotheses: vec![],
-                    conclusion: "const \"True\"".to_string(),
-                },
-            ],
-            conclusions: vec![
-                OpenTheoryTheorem {
-                    hypotheses: vec![],
-                    conclusion: "const \"False\"".to_string(),
-                },
-            ],
+            assumptions: vec![OpenTheoryTheorem {
+                hypotheses: vec![],
+                conclusion: "const \"True\"".to_string(),
+            }],
+            conclusions: vec![OpenTheoryTheorem {
+                hypotheses: vec![],
+                conclusion: "const \"False\"".to_string(),
+            }],
             commands: vec![],
         };
 

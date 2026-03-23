@@ -63,11 +63,14 @@ pub async fn start_repl(
     if let Some(path) = file {
         match load_file(&mut repl_state, &path).await {
             Ok(_) => {
-                println!("{}", format!("✓ Loaded proof file: {}", path.display()).green());
-            }
+                println!(
+                    "{}",
+                    format!("✓ Loaded proof file: {}", path.display()).green()
+                );
+            },
             Err(e) => {
                 eprintln!("{}", format!("✗ Failed to load file: {}", e).red());
-            }
+            },
         }
     }
 
@@ -98,24 +101,24 @@ pub async fn start_repl(
                         if !should_continue {
                             break;
                         }
-                    }
+                    },
                     Err(e) => {
                         eprintln!("{}", format!("Error: {}", e).red());
-                    }
+                    },
                 }
-            }
+            },
             Err(ReadlineError::Interrupted) => {
                 println!("CTRL-C");
                 break;
-            }
+            },
             Err(ReadlineError::Eof) => {
                 println!("CTRL-D");
                 break;
-            }
+            },
             Err(err) => {
                 eprintln!("Error: {:?}", err);
                 break;
-            }
+            },
         }
     }
 
@@ -126,9 +129,20 @@ pub async fn start_repl(
 
 /// Print welcome message
 fn print_welcome(prover: ProverKind) {
-    println!("{}", "╔═══════════════════════════════════════════════════════════╗".cyan());
-    println!("{}", "║  ECHIDNA Interactive Proof Assistant                     ║".cyan().bold());
-    println!("{}", "╚═══════════════════════════════════════════════════════════╝".cyan());
+    println!(
+        "{}",
+        "╔═══════════════════════════════════════════════════════════╗".cyan()
+    );
+    println!(
+        "{}",
+        "║  ECHIDNA Interactive Proof Assistant                     ║"
+            .cyan()
+            .bold()
+    );
+    println!(
+        "{}",
+        "╚═══════════════════════════════════════════════════════════╝".cyan()
+    );
     println!();
     println!("Active prover: {}", format!("{:?}", prover).green().bold());
     println!();
@@ -152,7 +166,8 @@ fn print_welcome(prover: ProverKind) {
 /// Create prompt string
 fn create_prompt(state: &ReplState) -> String {
     let prover = format!("{:?}", state.prover.kind());
-    let goal_count = state.proof_state
+    let goal_count = state
+        .proof_state
         .as_ref()
         .map(|s| s.goals.len())
         .unwrap_or(0);
@@ -190,11 +205,11 @@ async fn handle_meta_command(state: &mut ReplState, input: &str) -> Result<bool>
     match command.as_str() {
         "quit" | "exit" | "q" => {
             return Ok(false);
-        }
+        },
 
         "help" | "h" => {
             print_welcome(state.prover.kind());
-        }
+        },
 
         "load" | "l" => {
             if args.is_empty() {
@@ -204,26 +219,24 @@ async fn handle_meta_command(state: &mut ReplState, input: &str) -> Result<bool>
                 load_file(state, &path).await?;
                 println!("{}", format!("✓ Loaded: {}", path.display()).green());
             }
-        }
+        },
 
         "state" | "s" => {
             show_proof_state(state)?;
-        }
+        },
 
         "goals" | "g" => {
             show_goals(state)?;
-        }
+        },
 
         "context" | "c" => {
             show_context(state)?;
-        }
+        },
 
         "suggest" => {
-            let limit = args.get(0)
-                .and_then(|s| s.parse().ok())
-                .unwrap_or(5);
+            let limit = args.get(0).and_then(|s| s.parse().ok()).unwrap_or(5);
             suggest_tactics(state, limit).await?;
-        }
+        },
 
         "apply" | "a" => {
             if args.is_empty() {
@@ -232,7 +245,7 @@ async fn handle_meta_command(state: &mut ReplState, input: &str) -> Result<bool>
                 let tactic_str = args.join(" ");
                 handle_tactic(state, &tactic_str).await?;
             }
-        }
+        },
 
         "search" => {
             if args.is_empty() {
@@ -241,7 +254,7 @@ async fn handle_meta_command(state: &mut ReplState, input: &str) -> Result<bool>
                 let pattern = args.join(" ");
                 search_theorems(state, &pattern).await?;
             }
-        }
+        },
 
         "switch" => {
             if args.is_empty() {
@@ -249,16 +262,16 @@ async fn handle_meta_command(state: &mut ReplState, input: &str) -> Result<bool>
             } else {
                 eprintln!("{}", "Prover switching not yet implemented".yellow());
             }
-        }
+        },
 
         "export" | "e" => {
             export_proof(state).await?;
-        }
+        },
 
         _ => {
             eprintln!("{}", format!("Unknown command: {}", command).red());
             println!("Type :help for available commands");
-        }
+        },
     }
 
     Ok(true)
@@ -266,7 +279,10 @@ async fn handle_meta_command(state: &mut ReplState, input: &str) -> Result<bool>
 
 /// Load a proof file
 async fn load_file(state: &mut ReplState, path: &PathBuf) -> Result<()> {
-    let proof_state = state.prover.parse_file(path.clone()).await
+    let proof_state = state
+        .prover
+        .parse_file(path.clone())
+        .await
         .context("Failed to parse file")?;
 
     state.proof_state = Some(proof_state);
@@ -310,7 +326,11 @@ fn show_goals(state: &ReplState) -> Result<()> {
 
         println!();
         for (i, goal) in proof_state.goals.iter().enumerate() {
-            println!("{} {}:", "Goal".yellow().bold(), (i + 1).to_string().bright_blue());
+            println!(
+                "{} {}:",
+                "Goal".yellow().bold(),
+                (i + 1).to_string().bright_blue()
+            );
             println!();
 
             if !goal.hypotheses.is_empty() {
@@ -424,17 +444,17 @@ async fn handle_tactic(state: &mut ReplState, tactic_str: &str) -> Result<()> {
                 let goals = state.proof_state.as_ref().unwrap().goals.len();
                 println!("{}", format!("Goals remaining: {}", goals).cyan());
             }
-        }
+        },
 
         TacticResult::Error(msg) => {
             println!("{}", format!("✗ Tactic failed: {}", msg).red());
-        }
+        },
 
         TacticResult::QED => {
             println!();
             println!("{}", "🎉 Proof complete! (QED)".green().bold());
             state.proof_state.as_mut().unwrap().goals.clear();
-        }
+        },
     }
 
     println!();
@@ -460,11 +480,9 @@ fn parse_tactic(s: &str) -> Result<Tactic> {
             } else {
                 Ok(Tactic::Apply(args.join(" ")))
             }
-        }
+        },
 
-        "intro" => {
-            Ok(Tactic::Intro(args.get(0).map(|s| s.to_string())))
-        }
+        "intro" => Ok(Tactic::Intro(args.get(0).map(|s| s.to_string()))),
 
         "rewrite" => {
             if args.is_empty() {
@@ -472,19 +490,13 @@ fn parse_tactic(s: &str) -> Result<Tactic> {
             } else {
                 Ok(Tactic::Rewrite(args.join(" ")))
             }
-        }
+        },
 
-        "simpl" | "simplify" => {
-            Ok(Tactic::Simplify)
-        }
+        "simpl" | "simplify" => Ok(Tactic::Simplify),
 
-        "refl" | "reflexivity" => {
-            Ok(Tactic::Reflexivity)
-        }
+        "refl" | "reflexivity" => Ok(Tactic::Reflexivity),
 
-        "assumption" | "auto" => {
-            Ok(Tactic::Assumption)
-        }
+        "assumption" | "auto" => Ok(Tactic::Assumption),
 
         _ => {
             // Try to parse as custom tactic
@@ -493,7 +505,7 @@ fn parse_tactic(s: &str) -> Result<Tactic> {
                 command: parts[0].to_string(),
                 args: args.iter().map(|s| s.to_string()).collect(),
             })
-        }
+        },
     }
 }
 

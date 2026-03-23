@@ -22,20 +22,31 @@ use async_trait::async_trait;
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use std::path::PathBuf;
+use std::process::Stdio;
 use std::sync::Arc;
 use tokio::io::{AsyncBufReadExt, BufReader};
 use tokio::process::{Child as TokioChild, Command as TokioCommand};
 use tokio::sync::Mutex;
-use std::process::Stdio;
 
 // Isabelle-specific term representation
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
 pub enum IsabelleTerm {
     Var(String),
     Const(String),
-    App { func: Box<IsabelleTerm>, arg: Box<IsabelleTerm> },
-    Lambda { param: String, ty: Option<Box<IsabelleTerm>>, body: Box<IsabelleTerm> },
-    Infix { op: String, left: Box<IsabelleTerm>, right: Box<IsabelleTerm> },
+    App {
+        func: Box<IsabelleTerm>,
+        arg: Box<IsabelleTerm>,
+    },
+    Lambda {
+        param: String,
+        ty: Option<Box<IsabelleTerm>>,
+        body: Box<IsabelleTerm>,
+    },
+    Infix {
+        op: String,
+        left: Box<IsabelleTerm>,
+        right: Box<IsabelleTerm>,
+    },
     List(Vec<IsabelleTerm>),
     Num(i64),
 }
@@ -49,17 +60,26 @@ pub struct PideServer {
 
 impl PideServer {
     pub fn new() -> Self {
-        PideServer { process: None, port: 0 }
+        PideServer {
+            process: None,
+            port: 0,
+        }
     }
 
     pub async fn start(&mut self, executable: &PathBuf) -> Result<()> {
         let mut cmd = TokioCommand::new(executable);
-        cmd.arg("server").stdin(Stdio::piped()).stdout(Stdio::piped()).stderr(Stdio::piped());
+        cmd.arg("server")
+            .stdin(Stdio::piped())
+            .stdout(Stdio::piped())
+            .stderr(Stdio::piped());
         let mut child = cmd.spawn().context("Failed to start Isabelle server")?;
         if let Some(stdout) = child.stdout.take() {
             let mut reader = BufReader::new(stdout);
             let mut line = String::new();
-            reader.read_line(&mut line).await.context("Failed to read server port")?;
+            reader
+                .read_line(&mut line)
+                .await
+                .context("Failed to read server port")?;
             if let Some(port_str) = line.split_whitespace().last() {
                 self.port = port_str.parse().context("Failed to parse server port")?;
             }
@@ -95,31 +115,31 @@ impl IsabelleBackend {
         match term {
             IsabelleTerm::Var(n) => Term::Var(n.clone()),
             IsabelleTerm::Const(n) => Term::Const(n.clone()),
-            IsabelleTerm::App { func, arg } => {
-                Term::App {
-                    func: Box::new(self.isabelle_to_universal(func)),
-                    args: vec![self.isabelle_to_universal(arg)],
-                }
-            }
+            IsabelleTerm::App { func, arg } => Term::App {
+                func: Box::new(self.isabelle_to_universal(func)),
+                args: vec![self.isabelle_to_universal(arg)],
+            },
             IsabelleTerm::Lambda { param, ty, body } => Term::Lambda {
                 param: param.clone(),
                 param_type: ty.as_ref().map(|t| Box::new(self.isabelle_to_universal(t))),
                 body: Box::new(self.isabelle_to_universal(body)),
             },
-            IsabelleTerm::Infix { op, left, right } => {
-                Term::App {
-                    func: Box::new(Term::Const(op.clone())),
-                    args: vec![self.isabelle_to_universal(left), self.isabelle_to_universal(right)],
-                }
-            }
+            IsabelleTerm::Infix { op, left, right } => Term::App {
+                func: Box::new(Term::Const(op.clone())),
+                args: vec![
+                    self.isabelle_to_universal(left),
+                    self.isabelle_to_universal(right),
+                ],
+            },
             IsabelleTerm::List(terms) => {
-                terms.iter().rev().fold(Term::Const("Nil".to_string()), |acc, t| {
-                    Term::App {
+                terms
+                    .iter()
+                    .rev()
+                    .fold(Term::Const("Nil".to_string()), |acc, t| Term::App {
                         func: Box::new(Term::Const("Cons".to_string())),
                         args: vec![self.isabelle_to_universal(t), acc],
-                    }
-                })
-            }
+                    })
+            },
             IsabelleTerm::Num(n) => Term::Const(n.to_string()),
         }
     }
@@ -216,11 +236,16 @@ impl ProverBackend for IsabelleBackend {
                 } else {
                     Ok(TacticResult::QED)
                 }
-            }
-            Tactic::Custom { prover, command, .. } if prover == "isabelle" && command == "sledgehammer" => {
+            },
+            Tactic::Custom {
+                prover, command, ..
+            } if prover == "isabelle" && command == "sledgehammer" => {
                 self.execute_tactic(state).await
-            }
-            _ => Ok(TacticResult::Error(format!("Tactic {:?} not supported", tactic))),
+            },
+            _ => Ok(TacticResult::Error(format!(
+                "Tactic {:?} not supported",
+                tactic
+            ))),
         }
     }
 
@@ -228,12 +253,18 @@ impl ProverBackend for IsabelleBackend {
         if state.goals.is_empty() {
             return Ok(true);
         }
-        if state.goals.iter().all(|g| matches!(&g.target, Term::Const(c) if c == "True")) {
+        if state
+            .goals
+            .iter()
+            .all(|g| matches!(&g.target, Term::Const(c) if c == "True"))
+        {
             return Ok(true);
         }
         let theory_content = self.export_theory(state)?;
         let temp_path = std::env::temp_dir().join("echidna_verify.thy");
-        tokio::fs::write(&temp_path, &theory_content).await.context("Failed to write temp file")?;
+        tokio::fs::write(&temp_path, &theory_content)
+            .await
+            .context("Failed to write temp file")?;
         let output = tokio::process::Command::new(&self.config.executable)
             .arg("build")
             .arg("-D")
@@ -269,7 +300,10 @@ impl ProverBackend for IsabelleBackend {
     }
 
     async fn search_theorems(&self, pattern: &str) -> Result<Vec<String>> {
-        let theorems: Vec<String> = self.context.theorems.iter()
+        let theorems: Vec<String> = self
+            .context
+            .theorems
+            .iter()
             .filter(|t| t.name.contains(pattern))
             .map(|t| t.name.clone())
             .collect();
@@ -313,7 +347,7 @@ mod tests {
             Term::App { func, args } => {
                 assert_eq!(*func, Term::Const("=".to_string()));
                 assert_eq!(args.len(), 2);
-            }
+            },
             _ => panic!("Expected App term"),
         }
     }

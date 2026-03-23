@@ -21,8 +21,8 @@
 
 #![allow(dead_code)]
 
-use async_trait::async_trait;
 use anyhow::{anyhow, Context, Result};
+use async_trait::async_trait;
 use std::path::PathBuf;
 use std::process::Stdio;
 use tokio::process::Command;
@@ -57,7 +57,8 @@ impl PrismBackend {
         model.push_str("// ECHIDNA PRISM Export\n\n");
 
         // Determine model type from metadata or default to DTMC
-        let model_type = state.metadata
+        let model_type = state
+            .metadata
             .get("model_type")
             .and_then(|v| v.as_str())
             .unwrap_or("dtmc");
@@ -193,7 +194,9 @@ impl PrismBackend {
             }
 
             // Detect property specifications (P, R, S operators)
-            if trimmed.starts_with("P") && (trimmed.contains("=?") || trimmed.contains(">=") || trimmed.contains("<=")) {
+            if trimmed.starts_with("P")
+                && (trimmed.contains("=?") || trimmed.contains(">=") || trimmed.contains("<="))
+            {
                 state.goals.push(Goal {
                     id: format!("pctl_{}", state.goals.len()),
                     target: Term::Const(trimmed.to_string()),
@@ -246,9 +249,11 @@ impl ProverBackend for PrismBackend {
     async fn apply_tactic(&self, state: &ProofState, tactic: &Tactic) -> Result<TacticResult> {
         match tactic {
             // AddProperty: add a PCTL/CSL property to check
-            Tactic::Custom { prover, command, args }
-                if prover == "prism" && command == "add_property" =>
-            {
+            Tactic::Custom {
+                prover,
+                command,
+                args,
+            } if prover == "prism" && command == "add_property" => {
                 let prop_text = args.join(" ");
                 let mut new_state = state.clone();
                 new_state.goals.push(Goal {
@@ -258,12 +263,14 @@ impl ProverBackend for PrismBackend {
                 });
                 new_state.proof_script.push(tactic.clone());
                 Ok(TacticResult::Success(new_state))
-            }
+            },
 
             // SetModelType: set the model type (dtmc, ctmc, mdp, pta)
-            Tactic::Custom { prover, command, args }
-                if prover == "prism" && command == "set_model_type" =>
-            {
+            Tactic::Custom {
+                prover,
+                command,
+                args,
+            } if prover == "prism" && command == "set_model_type" => {
                 let model_type = args.first().cloned().unwrap_or_else(|| "dtmc".to_string());
                 let mut new_state = state.clone();
                 new_state.metadata.insert(
@@ -272,18 +279,23 @@ impl ProverBackend for PrismBackend {
                 );
                 new_state.proof_script.push(tactic.clone());
                 Ok(TacticResult::Success(new_state))
-            }
+            },
 
             // AddReward: add a reward structure
-            Tactic::Custom { prover, command, args }
-                if prover == "prism" && command == "add_reward" =>
-            {
+            Tactic::Custom {
+                prover,
+                command,
+                args,
+            } if prover == "prism" && command == "add_reward" => {
                 let reward_text = args.join(" ");
                 let mut new_state = state.clone();
-                new_state.context.axioms.push(format!("rewards {}", reward_text));
+                new_state
+                    .context
+                    .axioms
+                    .push(format!("rewards {}", reward_text));
                 new_state.proof_script.push(tactic.clone());
                 Ok(TacticResult::Success(new_state))
-            }
+            },
 
             _ => Ok(TacticResult::Error(format!(
                 "Tactic {:?} not supported for PRISM model checker",
@@ -297,8 +309,8 @@ impl ProverBackend for PrismBackend {
         let props_code = self.to_prism_properties(state);
 
         // Write model and properties to temporary files
-        let tmp_dir = tempfile::tempdir()
-            .context("Failed to create temporary directory for PRISM")?;
+        let tmp_dir =
+            tempfile::tempdir().context("Failed to create temporary directory for PRISM")?;
         let model_file = tmp_dir.path().join("model.pm");
         let props_file = tmp_dir.path().join("props.pctl");
 
@@ -422,7 +434,10 @@ endmodule
             state.metadata.get("model_type"),
             Some(&serde_json::Value::String("dtmc".to_string()))
         );
-        assert!(!state.context.axioms.is_empty(), "Should have parsed module/transitions");
+        assert!(
+            !state.context.axioms.is_empty(),
+            "Should have parsed module/transitions"
+        );
     }
 
     #[test]

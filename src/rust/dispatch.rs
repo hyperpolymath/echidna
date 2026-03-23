@@ -89,7 +89,11 @@ impl ProverDispatcher {
 
     /// Create a dispatcher with custom configuration
     pub fn with_config(config: DispatchConfig) -> Self {
-        Self { config, integrity_checker: None, llm_advisor: None }
+        Self {
+            config,
+            integrity_checker: None,
+            llm_advisor: None,
+        }
     }
 
     /// Set the integrity checker for solver binary verification
@@ -192,7 +196,8 @@ impl ProverDispatcher {
         let worst_danger = axiom_usages
             .as_ref()
             .map(|usages| {
-                usages.iter()
+                usages
+                    .iter()
                     .map(|u| u.danger_level)
                     .max()
                     .unwrap_or(DangerLevel::Safe)
@@ -208,9 +213,13 @@ impl ProverDispatcher {
         let solver_integrity_ok = if let Some(ref checker) = self.integrity_checker {
             let reports = checker.verify_all().await.unwrap_or_default();
             let prover_name = format!("{:?}", prover_kind).to_lowercase();
-            reports.iter()
+            reports
+                .iter()
                 .find(|r| r.name.to_lowercase() == prover_name)
-                .map(|r| r.status == IntegrityStatus::Verified || r.status == IntegrityStatus::Uninitialized)
+                .map(|r| {
+                    r.status == IntegrityStatus::Verified
+                        || r.status == IntegrityStatus::Uninitialized
+                })
                 .unwrap_or(true) // If prover not in manifest, assume ok
         } else {
             true // No checker configured, assume ok
@@ -288,10 +297,10 @@ impl ProverDispatcher {
                     } else {
                         all_agree = false;
                     }
-                }
+                },
                 Err(e) => {
                     warn!("Cross-check with {:?} failed: {}", additional, e);
-                }
+                },
             }
         }
 
@@ -308,9 +317,13 @@ impl ProverDispatcher {
         let solver_integrity_ok = if let Some(ref checker) = self.integrity_checker {
             let reports = checker.verify_all().await.unwrap_or_default();
             let prover_name = format!("{:?}", primary_prover).to_lowercase();
-            reports.iter()
+            reports
+                .iter()
                 .find(|r| r.name.to_lowercase() == prover_name)
-                .map(|r| r.status == IntegrityStatus::Verified || r.status == IntegrityStatus::Uninitialized)
+                .map(|r| {
+                    r.status == IntegrityStatus::Verified
+                        || r.status == IntegrityStatus::Uninitialized
+                })
                 .unwrap_or(true)
         } else {
             true
@@ -363,15 +376,24 @@ impl ProverDispatcher {
         // Heuristic detection from content
         let content_lower = content.to_lowercase();
 
-        if content_lower.contains("theorem") && content_lower.contains(":=") && content_lower.contains("lean") {
+        if content_lower.contains("theorem")
+            && content_lower.contains(":=")
+            && content_lower.contains("lean")
+        {
             ProverKind::Lean
-        } else if content_lower.contains("theorem") && content_lower.contains("proof") && content_lower.contains("qed") {
+        } else if content_lower.contains("theorem")
+            && content_lower.contains("proof")
+            && content_lower.contains("qed")
+        {
             ProverKind::Coq
         } else if content_lower.contains("(set-logic") || content_lower.contains("(assert") {
             ProverKind::Z3
         } else if content_lower.contains("theory") && content_lower.contains("imports") {
             ProverKind::Isabelle
-        } else if content_lower.contains("module") && content_lower.contains("where") && content_lower.contains("data") {
+        } else if content_lower.contains("module")
+            && content_lower.contains("where")
+            && content_lower.contains("data")
+        {
             ProverKind::Agda
         } else if content_lower.contains("fof(") || content_lower.contains("cnf(") {
             ProverKind::Vampire
@@ -415,7 +437,8 @@ mod tests {
 
     #[test]
     fn test_prover_selection_coq() {
-        let prover = ProverDispatcher::select_prover("Theorem foo : True.\nProof.\nexact I.\nQed.", None);
+        let prover =
+            ProverDispatcher::select_prover("Theorem foo : True.\nProof.\nexact I.\nQed.", None);
         assert_eq!(prover, ProverKind::Coq);
     }
 

@@ -7,8 +7,8 @@
 //! - Dedukti/Lambdapi (universal proof format)
 //! - SMTCoq bridge (SMT proofs replayed in Coq)
 
-pub mod opentheory;
 pub mod dedukti;
+pub mod opentheory;
 
-pub use opentheory::OpenTheoryExporter;
 pub use dedukti::DeduktiExporter;
+pub use opentheory::OpenTheoryExporter;

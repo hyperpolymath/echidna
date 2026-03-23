@@ -11,9 +11,9 @@
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 
+use super::AgenticGoal;
 use crate::core::Term;
 use crate::provers::ProverKind;
-use super::AgenticGoal;
 
 /// Explanation for a proof attempt
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -156,26 +156,22 @@ impl ExplanationGenerator {
 
         // Add context-specific suggestions
         exp = match reason {
-            r if r.contains("timeout") => {
-                exp.with_suggestion("Try decomposing the goal into smaller sub-goals")
-                   .with_suggestion("Use a faster prover (Z3 or CVC5)")
-                   .with_suggestion("Simplify the goal using lemmas")
-            }
-            r if r.contains("No tactic") => {
-                exp.with_suggestion("Try a different prover that may have better tactics")
-                   .with_suggestion("Add more hypotheses to the goal")
-                   .with_suggestion("Break the goal into simpler parts")
-            }
-            r if r.contains("Max attempts") => {
-                exp.with_suggestion("The goal may be too complex - try manual decomposition")
-                   .with_suggestion("Check if the goal is actually provable")
-                   .with_suggestion("Review the goal formulation for errors")
-            }
-            _ => {
-                exp.with_suggestion("Try using a different prover")
-                   .with_suggestion("Check the goal formulation")
-                   .with_suggestion("Add more context or hypotheses")
-            }
+            r if r.contains("timeout") => exp
+                .with_suggestion("Try decomposing the goal into smaller sub-goals")
+                .with_suggestion("Use a faster prover (Z3 or CVC5)")
+                .with_suggestion("Simplify the goal using lemmas"),
+            r if r.contains("No tactic") => exp
+                .with_suggestion("Try a different prover that may have better tactics")
+                .with_suggestion("Add more hypotheses to the goal")
+                .with_suggestion("Break the goal into simpler parts"),
+            r if r.contains("Max attempts") => exp
+                .with_suggestion("The goal may be too complex - try manual decomposition")
+                .with_suggestion("Check if the goal is actually provable")
+                .with_suggestion("Review the goal formulation for errors"),
+            _ => exp
+                .with_suggestion("Try using a different prover")
+                .with_suggestion("Check the goal formulation")
+                .with_suggestion("Add more context or hypotheses"),
         };
 
         exp
@@ -229,7 +225,11 @@ impl ExplanationGenerator {
         for (i, sub_goal) in sub_goals.iter().enumerate() {
             exp = exp.with_detail(
                 &format!("Sub-goal {}", i + 1),
-                &format!("{}: {}", sub_goal.goal.id, self.format_term(&sub_goal.goal.target)),
+                &format!(
+                    "{}: {}",
+                    sub_goal.goal.id,
+                    self.format_term(&sub_goal.goal.target)
+                ),
             );
         }
 
@@ -288,25 +288,45 @@ impl ExplanationGenerator {
             Term::Var(name) => name.clone(),
             Term::Lambda { param, body, .. } => {
                 format!("λ{}. {}", param, self.format_term(body))
-            }
-            Term::Pi { param, param_type, body } => {
-                format!("∀{}:{}. {}", param, self.format_term(param_type), self.format_term(body))
-            }
+            },
+            Term::Pi {
+                param,
+                param_type,
+                body,
+            } => {
+                format!(
+                    "∀{}:{}. {}",
+                    param,
+                    self.format_term(param_type),
+                    self.format_term(body)
+                )
+            },
             Term::App { func, args } => {
                 let args_str: Vec<_> = args.iter().map(|a| self.format_term(a)).collect();
                 format!("({} {})", self.format_term(func), args_str.join(" "))
-            }
+            },
             Term::Type(level) => format!("Type({})", level),
             Term::Sort(level) => format!("Sort({})", level),
-            Term::Let { name, value, body, .. } => {
-                format!("let {} = {} in {}", name, self.format_term(value), self.format_term(body))
-            }
-            Term::Match { scrutinee, branches: _, .. } => {
+            Term::Let {
+                name, value, body, ..
+            } => {
+                format!(
+                    "let {} = {} in {}",
+                    name,
+                    self.format_term(value),
+                    self.format_term(body)
+                )
+            },
+            Term::Match {
+                scrutinee,
+                branches: _,
+                ..
+            } => {
                 format!("match {} with ...", self.format_term(scrutinee))
-            }
+            },
             Term::Fix { name, body, .. } => {
                 format!("fix {}. {}", name, self.format_term(body))
-            }
+            },
             Term::Const(name) => name.clone(),
             Term::Hole(name) => format!("?{}", name),
             Term::Universe(level) => format!("Type{}", level),
@@ -384,7 +404,8 @@ impl ExplanationGenerator {
             "exists" => "Provides a witness for an existential goal.",
             "unfold" => "Unfolds a definition to its underlying form.",
             _ => "A tactic for manipulating the proof state.",
-        }.to_string()
+        }
+        .to_string()
     }
 }
 
@@ -473,7 +494,7 @@ mod tests {
             &goal,
             ProverKind::Lean,
             0.85,
-            "High aspect match for algebra"
+            "High aspect match for algebra",
         );
         let formatted = exp.format();
 

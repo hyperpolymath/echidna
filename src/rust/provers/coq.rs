@@ -8,8 +8,8 @@
 //! Integrates with Coq via SerAPI (sertop) for programmatic interaction.
 //! Supports parsing .v files, executing tactics, and proof verification.
 
-use async_trait::async_trait;
 use anyhow::{anyhow, Context, Result};
+use async_trait::async_trait;
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use std::path::PathBuf;
@@ -61,7 +61,7 @@ impl SExp {
                 } else {
                     s.clone()
                 }
-            }
+            },
             SExp::List(items) => {
                 let inner = items
                     .iter()
@@ -69,7 +69,7 @@ impl SExp {
                     .collect::<Vec<_>>()
                     .join(" ");
                 format!("({})", inner)
-            }
+            },
         }
     }
 
@@ -271,7 +271,7 @@ impl CoqBackend {
                     }
                 }
                 Ok("OK".to_string())
-            }
+            },
             _ => Ok("OK".to_string()),
         }
     }
@@ -321,8 +321,7 @@ impl CoqBackend {
 
             current.push(ch);
 
-            if !in_string && ch == '.' && (i + 1 >= chars.len() || chars[i + 1].is_whitespace())
-            {
+            if !in_string && ch == '.' && (i + 1 >= chars.len() || chars[i + 1].is_whitespace()) {
                 // Statement end
                 let stmt = current.trim().to_string();
                 if !stmt.is_empty() && !stmt.starts_with("(*") {
@@ -366,7 +365,8 @@ impl CoqBackend {
             return Ok(Some(CoqStatement::ProofStart));
         }
 
-        if stmt.starts_with("Qed.") || stmt.starts_with("Defined.") || stmt.starts_with("Admitted.") {
+        if stmt.starts_with("Qed.") || stmt.starts_with("Defined.") || stmt.starts_with("Admitted.")
+        {
             return Ok(Some(CoqStatement::ProofEnd));
         }
 
@@ -616,17 +616,17 @@ impl CoqBackend {
                 '(' => {
                     paren_depth += 1;
                     current.push(ch);
-                }
+                },
                 ')' => {
                     paren_depth -= 1;
                     current.push(ch);
-                }
+                },
                 ' ' if paren_depth == 0 => {
                     if !current.is_empty() {
                         args.push(self.parse_term(&current)?);
                         current.clear();
                     }
-                }
+                },
                 _ => current.push(ch),
             }
         }
@@ -657,7 +657,7 @@ impl CoqBackend {
                 } else {
                     format!("{} {}.", command, args.join(" "))
                 }
-            }
+            },
         }
     }
 
@@ -788,7 +788,7 @@ fn find_top_level_operator(input: &str, op: &str) -> Option<usize> {
                         return Some(i);
                     }
                 }
-            }
+            },
         }
     }
 
@@ -805,7 +805,7 @@ fn find_top_level_space(input: &str) -> Option<usize> {
             '(' => depth += 1,
             ')' => depth -= 1,
             ' ' if depth == 0 && i > 0 => return Some(i),
-            _ => {}
+            _ => {},
         }
     }
 
@@ -854,7 +854,7 @@ impl ProverBackend for CoqBackend {
                         target: ty,
                         hypotheses: vec![],
                     });
-                }
+                },
                 CoqStatement::Definition {
                     name,
                     ty,
@@ -867,13 +867,13 @@ impl ProverBackend for CoqBackend {
                         ty: def_type,
                         body,
                     });
-                }
+                },
                 CoqStatement::Tactic(tactic_str) => {
                     // Convert Coq tactic string to universal tactic
                     if let Some(tactic) = self.parse_coq_tactic(&tactic_str) {
                         proof_tactics.push(tactic);
                     }
-                }
+                },
                 CoqStatement::ProofEnd => {
                     if let Some((name, statement)) = current_theorem.take() {
                         context.theorems.push(Theorem {
@@ -885,8 +885,8 @@ impl ProverBackend for CoqBackend {
                         proof_tactics.clear();
                         goals.clear();
                     }
-                }
-                _ => {}
+                },
+                _ => {},
             }
         }
 
@@ -915,7 +915,7 @@ impl ProverBackend for CoqBackend {
                 } else {
                     Ok(TacticResult::Success(new_state))
                 }
-            }
+            },
             Err(e) => Ok(TacticResult::Error(e.to_string())),
         }
     }
@@ -982,7 +982,7 @@ impl ProverBackend for CoqBackend {
         match &goal.target {
             Term::Pi { .. } => {
                 suggestions.push(Tactic::Intro(None));
-            }
+            },
             Term::App { func, .. } => {
                 if let Term::Const(name) = func.as_ref() {
                     match name.as_str() {
@@ -1002,13 +1002,13 @@ impl ProverBackend for CoqBackend {
                                 command: "right".to_string(),
                                 args: vec![],
                             });
-                        }
+                        },
                         "eq" => suggestions.push(Tactic::Reflexivity),
-                        _ => {}
+                        _ => {},
                     }
                 }
-            }
-            _ => {}
+            },
+            _ => {},
         }
 
         // Add general tactics

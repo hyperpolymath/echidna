@@ -6,8 +6,8 @@ use axum::{
     http::StatusCode,
     response::IntoResponse,
 };
-use echidna::provers::{ProverBackend, ProverConfig, ProverFactory, ProverKind as CoreProverKind};
 use echidna::core::{Tactic as CoreTactic, TacticResult as CoreTacticResult, Term};
+use echidna::provers::{ProverBackend, ProverConfig, ProverFactory, ProverKind as CoreProverKind};
 use std::sync::Arc;
 use tokio::sync::Mutex;
 
@@ -29,7 +29,10 @@ impl FfiProverBackend {
 
 #[async_trait::async_trait]
 impl ProverBackend for FfiProverBackend {
-    async fn parse_file(&self, path: std::path::PathBuf) -> anyhow::Result<echidna::core::ProofState> {
+    async fn parse_file(
+        &self,
+        path: std::path::PathBuf,
+    ) -> anyhow::Result<echidna::core::ProofState> {
         let content = std::fs::read_to_string(&path)?;
         ffi_wrapper::parse_string(self.handle, &content)?;
         Ok(echidna::core::ProofState::new(content))
@@ -44,7 +47,11 @@ impl ProverBackend for FfiProverBackend {
         ffi_wrapper::verify_proof(self.handle)
     }
 
-    async fn apply_tactic(&self, state: &echidna::core::ProofState, tactic: &CoreTactic) -> anyhow::Result<TacticResult> {
+    async fn apply_tactic(
+        &self,
+        state: &echidna::core::ProofState,
+        tactic: &CoreTactic,
+    ) -> anyhow::Result<TacticResult> {
         let tactic_str = format!("{:?}", tactic);
         if ffi_wrapper::apply_tactic(self.handle, &tactic_str)? {
             Ok(TacticResult::Success(Box::new(state.clone())))
@@ -53,15 +60,20 @@ impl ProverBackend for FfiProverBackend {
         }
     }
 
-    async fn suggest_tactics(&self, state: &echidna::core::ProofState, limit: usize) -> anyhow::Result<Vec<CoreTactic>> {
+    async fn suggest_tactics(
+        &self,
+        state: &echidna::core::ProofState,
+        limit: usize,
+    ) -> anyhow::Result<Vec<CoreTactic>> {
         let tactic_names = ffi_wrapper::suggest_tactics(self.handle, limit)?;
-        let tactics = tactic_names.into_iter().map(|name| {
-            CoreTactic::Custom {
+        let tactics = tactic_names
+            .into_iter()
+            .map(|name| CoreTactic::Custom {
                 prover: "ffi".to_string(),
                 command: name,
                 args: vec![],
-            }
-        }).collect();
+            })
+            .collect();
         Ok(tactics)
     }
 
@@ -119,9 +131,7 @@ pub async fn get_prover(
     State(_state): State<AppState>,
     Path(kind_str): Path<String>,
 ) -> Result<Json<ProverInfo>, StatusCode> {
-    let core_kind: CoreProverKind = kind_str
-        .parse()
-        .map_err(|_| StatusCode::NOT_FOUND)?;
+    let core_kind: CoreProverKind = kind_str.parse().map_err(|_| StatusCode::NOT_FOUND)?;
 
     Ok(Json(ProverInfo {
         kind: core_kind_to_rest(&core_kind),
@@ -166,10 +176,7 @@ pub async fn submit_proof(
         .map_err(|e| (StatusCode::BAD_REQUEST, format!("Parse error: {}", e)))?;
 
     // Verify the proof
-    let valid = prover
-        .verify_proof(&proof_state)
-        .await
-        .unwrap_or(false);
+    let valid = prover.verify_proof(&proof_state).await.unwrap_or(false);
 
     let status = if valid {
         ProofStatus::Success
@@ -318,10 +325,7 @@ pub async fn get_proof(
     ),
     tag = "proofs"
 )]
-pub async fn cancel_proof(
-    State(state): State<AppState>,
-    Path(id): Path<String>,
-) -> StatusCode {
+pub async fn cancel_proof(State(state): State<AppState>, Path(id): Path<String>) -> StatusCode {
     let mut sessions = state.sessions.write().await;
     if sessions.remove(&id).is_some() {
         StatusCode::NO_CONTENT
@@ -381,7 +385,7 @@ pub async fn apply_tactic(
                 session.status = ProofStatus::Success;
             }
             (true, session.status)
-        }
+        },
         CoreTacticResult::Error(_msg) => (false, session.status),
         CoreTacticResult::QED => {
             session.status = ProofStatus::Success;
@@ -389,7 +393,7 @@ pub async fn apply_tactic(
                 s.goals.clear();
             }
             (true, ProofStatus::Success)
-        }
+        },
     };
 
     let elapsed = session.start_time.elapsed().as_secs_f64();
@@ -461,7 +465,8 @@ pub async fn suggest_tactics(
         "top_k": limit
     });
 
-    if let Ok(resp) = state.ml_client
+    if let Ok(resp) = state
+        .ml_client
         .post(format!("{}/suggest", state.ml_api_url))
         .json(&julia_req)
         .send()

@@ -93,7 +93,7 @@ impl ProofSearchStrategy for SequentialSearch {
                     // Note: ProverBackend methods are async. Full sequential dispatch
                     // requires the async verify_proof_sequential() path (via ProverDispatcher).
                     // This sync strategy enumerates available provers for reporting.
-                }
+                },
                 Err(_) => continue,
             }
         }
@@ -253,7 +253,11 @@ mod chapel_ffi {
         pub fn available_prover_count() -> u32 {
             // SAFETY: Pure query, no side effects.
             let count = unsafe { echidna_chapel_available_prover_count() };
-            if count >= 0 { count as u32 } else { 0 }
+            if count >= 0 {
+                count as u32
+            } else {
+                0
+            }
         }
     }
 }
@@ -292,10 +296,10 @@ impl StrategySelector {
                     } else {
                         tracing::warn!("Chapel feature enabled but runtime not available");
                     }
-                }
+                },
                 Err(e) => {
                     tracing::warn!("Failed to initialize Chapel: {}", e);
-                }
+                },
             }
         }
 

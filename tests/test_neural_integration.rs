@@ -30,7 +30,10 @@ async fn test_julia_health_check() -> Result<()> {
     let healthy = suggester.check_health().await?;
 
     assert!(healthy, "Julia server should report healthy");
-    assert!(suggester.is_connected(), "Suggester should be connected after health check");
+    assert!(
+        suggester.is_connected(),
+        "Suggester should be connected after health check"
+    );
     Ok(())
 }
 
@@ -61,9 +64,7 @@ async fn test_julia_predict_premises() -> Result<()> {
         ("lemma_2".to_string(), Term::Const("Q -> R".to_string())),
     ];
 
-    let results = suggester
-        .suggest_premises(&goal, &premises, "agda")
-        .await?;
+    let results = suggester.suggest_premises(&goal, &premises, "agda").await?;
 
     assert!(!results.is_empty(), "Should return some premises");
 
@@ -167,7 +168,10 @@ async fn test_connection_failure_graceful() -> Result<()> {
     let state = ProofState::new(goal);
     let tactics = suggester.suggest_tactics(&state).await;
 
-    assert!(tactics.is_empty(), "Should return empty for disconnected suggester");
+    assert!(
+        tactics.is_empty(),
+        "Should return empty for disconnected suggester"
+    );
     Ok(())
 }
 
@@ -226,17 +230,13 @@ async fn test_multiple_provers() -> Result<()> {
     suggester.check_health().await?;
 
     let goal = Term::Const("test".to_string());
-    let premises: Vec<(String, Term)> = vec![
-        ("lem1".to_string(), Term::Const("A".to_string())),
-    ];
+    let premises: Vec<(String, Term)> = vec![("lem1".to_string(), Term::Const("A".to_string()))];
 
     // Test with different provers
     let provers = ["agda", "coq", "lean", "isabelle", "z3", "hol4"];
 
     for prover in provers {
-        let results = suggester
-            .suggest_premises(&goal, &premises, prover)
-            .await?;
+        let results = suggester.suggest_premises(&goal, &premises, prover).await?;
 
         // Should return results for all provers
         assert!(

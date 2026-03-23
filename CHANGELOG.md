@@ -5,6 +5,24 @@ All notable changes to ECHIDNA will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.6.1] - 2026-03-23
+
+### Fixed
+
+- Fixed `tamarin.rs` Definition type (added missing struct fields)
+- Fixed non-exhaustive match arms in `main.rs`
+- Removed unused imports across codebase
+- Fixed `rustfmt.toml` for stable Rust (removed unstable options)
+- Fixed `resolvers.rs` syntax error
+- Applied `cargo fmt` across entire codebase
+
+### Changed
+
+- 389 tests passing (up from 306+)
+- Project now compiles cleanly on stable Rust toolchain
+
+---
+
 ## [1.6.0] - 2026-03-08
 
 ### Major Features
@@ -145,6 +163,7 @@ Complete implementation of 13-component trust-hardening system:
 
 ---
 
+[1.6.1]: https://github.com/hyperpolymath/echidna/compare/v1.6.0...v1.6.1
 [1.6.0]: https://github.com/hyperpolymath/echidna/compare/v1.5.0...v1.6.0
 [1.5.0]: https://github.com/hyperpolymath/echidna/compare/v1.0.0...v1.5.0
 [1.0.0]: https://github.com/hyperpolymath/echidna/releases/tag/v1.0.0

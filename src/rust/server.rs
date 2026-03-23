@@ -7,9 +7,7 @@
 
 use anyhow::Result;
 use axum::{
-    extract::{
-        Path, Query, State,
-    },
+    extract::{Path, Query, State},
     http::StatusCode,
     response::{IntoResponse, Response},
     routing::{get, post},
@@ -52,12 +50,10 @@ const DEFAULT_ML_API_URL: &str = "http://127.0.0.1:8090";
 /// Start the HTTP server
 pub async fn start_server(port: u16, host: String, enable_cors: bool) -> Result<()> {
     // Create HTTP client for Julia ML API
-    let ml_client = Client::builder()
-        .timeout(Duration::from_secs(10))
-        .build()?;
+    let ml_client = Client::builder().timeout(Duration::from_secs(10)).build()?;
 
-    let ml_api_url = std::env::var("ECHIDNA_ML_API_URL")
-        .unwrap_or_else(|_| DEFAULT_ML_API_URL.to_string());
+    let ml_api_url =
+        std::env::var("ECHIDNA_ML_API_URL").unwrap_or_else(|_| DEFAULT_ML_API_URL.to_string());
 
     // Security: Validate that the ML API URL is either local or explicitly allowed
     if !ml_api_url.starts_with("http://127.0.0.1") && !ml_api_url.starts_with("http://localhost") {
@@ -68,10 +64,13 @@ pub async fn start_server(port: u16, host: String, enable_cors: bool) -> Result<
     match ml_client.get(format!("{}/health", ml_api_url)).send().await {
         Ok(resp) if resp.status().is_success() => {
             info!("✓ Connected to Julia ML API at {}", ml_api_url);
-        }
+        },
         _ => {
-            info!("⚠ Julia ML API not available at {} (will use fallback)", ml_api_url);
-        }
+            info!(
+                "⚠ Julia ML API not available at {} (will use fallback)",
+                ml_api_url
+            );
+        },
     }
 
     let state = AppState {
@@ -109,11 +108,25 @@ pub async fn start_server(port: u16, host: String, enable_cors: bool) -> Result<
     // Bind server
     let addr: SocketAddr = format!("{}:{}", host, port).parse()?;
 
-    println!("{}", "╔═══════════════════════════════════════════════════════════╗".cyan());
-    println!("{}", "║  ECHIDNA HTTP API Server                                  ║".cyan().bold());
-    println!("{}", "╚═══════════════════════════════════════════════════════════╝".cyan());
+    println!(
+        "{}",
+        "╔═══════════════════════════════════════════════════════════╗".cyan()
+    );
+    println!(
+        "{}",
+        "║  ECHIDNA HTTP API Server                                  ║"
+            .cyan()
+            .bold()
+    );
+    println!(
+        "{}",
+        "╚═══════════════════════════════════════════════════════════╝".cyan()
+    );
     println!();
-    println!("Server listening on: {}", format!("https://{}", addr).green().bold());
+    println!(
+        "Server listening on: {}",
+        format!("https://{}", addr).green().bold()
+    );
     println!();
     println!("{}", "Endpoints:".yellow().bold());
     println!("  GET  /api/health              - Health check");
@@ -132,8 +145,7 @@ pub async fn start_server(port: u16, host: String, enable_cors: bool) -> Result<
 
     // Start server
     let listener = tokio::net::TcpListener::bind(addr).await?;
-    axum::serve(listener, app)
-        .await?;
+    axum::serve(listener, app).await?;
 
     Ok(())
 }
@@ -163,9 +175,7 @@ async fn list_provers() -> Json<ProversResponse> {
 }
 
 /// Prove theorem endpoint
-async fn prove_handler(
-    Json(req): Json<ProveRequest>,
-) -> Result<Json<ProveResponse>, AppError> {
+async fn prove_handler(Json(req): Json<ProveRequest>) -> Result<Json<ProveResponse>, AppError> {
     info!("Prove request for prover: {:?}", req.prover);
 
     // Create prover
@@ -200,9 +210,7 @@ async fn prove_handler(
 }
 
 /// Verify proof endpoint
-async fn verify_handler(
-    Json(req): Json<VerifyRequest>,
-) -> Result<Json<VerifyResponse>, AppError> {
+async fn verify_handler(Json(req): Json<VerifyRequest>) -> Result<Json<VerifyResponse>, AppError> {
     info!("Verify request for prover: {:?}", req.prover);
 
     // Create prover
@@ -243,7 +251,8 @@ async fn suggest_handler(
         "top_k": req.limit.unwrap_or(5)
     });
 
-    match state.ml_client
+    match state
+        .ml_client
         .post(format!("{}/suggest", state.ml_api_url))
         .json(&julia_req)
         .send()
@@ -263,10 +272,10 @@ async fn suggest_handler(
                     }
                 }
             }
-        }
+        },
         _ => {
             info!("ML API unavailable, using prover fallback");
-        }
+        },
     }
 
     // Fallback: Use prover's built-in suggestions
@@ -284,10 +293,7 @@ async fn suggest_handler(
         .await
         .map_err(|e| AppError::InternalError(e.to_string()))?;
 
-    let suggestions = tactics
-        .iter()
-        .map(|t| format!("{:?}", t))
-        .collect();
+    let suggestions = tactics.iter().map(|t| format!("{:?}", t)).collect();
 
     Ok(Json(SuggestResponse { suggestions }))
 }
@@ -302,7 +308,10 @@ async fn search_handler(
 
     let prover_name = params.get("prover");
 
-    info!("Search request: pattern={}, prover={:?}", pattern, prover_name);
+    info!(
+        "Search request: pattern={}, prover={:?}",
+        pattern, prover_name
+    );
 
     let mut all_results = Vec::new();
 
@@ -380,7 +389,11 @@ async fn get_session_state(
 
     Ok(Json(SessionStateResponse {
         goals: session.state.as_ref().map(|s| s.goals.len()).unwrap_or(0),
-        complete: session.state.as_ref().map(|s| s.is_complete()).unwrap_or(false),
+        complete: session
+            .state
+            .as_ref()
+            .map(|s| s.is_complete())
+            .unwrap_or(false),
         tactics_applied: session.history.len(),
     }))
 }
@@ -403,7 +416,9 @@ async fn apply_tactic_handler(
 
     // Ensure we have a state
     if session.state.is_none() {
-        return Err(AppError::BadRequest("No proof loaded in session".to_string()));
+        return Err(AppError::BadRequest(
+            "No proof loaded in session".to_string(),
+        ));
     }
 
     // Parse tactic (simplified)
@@ -411,7 +426,10 @@ async fn apply_tactic_handler(
 
     // Apply tactic
     let proof_state = session.state.as_ref().unwrap();
-    let result = session.prover.apply_tactic(proof_state, &tactic).await
+    let result = session
+        .prover
+        .apply_tactic(proof_state, &tactic)
+        .await
         .map_err(|e| AppError::InternalError(e.to_string()))?;
 
     match result {
@@ -426,16 +444,14 @@ async fn apply_tactic_handler(
                 goals_remaining: session.state.as_ref().unwrap().goals.len(),
                 message: "Tactic applied successfully".to_string(),
             }))
-        }
+        },
 
-        TacticResult::Error(msg) => {
-            Ok(Json(ApplyTacticResponse {
-                success: false,
-                complete: false,
-                goals_remaining: session.state.as_ref().unwrap().goals.len(),
-                message: msg,
-            }))
-        }
+        TacticResult::Error(msg) => Ok(Json(ApplyTacticResponse {
+            success: false,
+            complete: false,
+            goals_remaining: session.state.as_ref().unwrap().goals.len(),
+            message: msg,
+        })),
 
         TacticResult::QED => {
             session.state.as_mut().unwrap().goals.clear();
@@ -446,7 +462,7 @@ async fn apply_tactic_handler(
                 goals_remaining: 0,
                 message: "Proof complete!".to_string(),
             }))
-        }
+        },
     }
 }
 
@@ -531,7 +547,10 @@ async fn suggest_tactics_ui(
     let prover = req.prover.as_deref().unwrap_or("Coq");
     let top_k = req.top_k.unwrap_or(5);
 
-    info!("UI tactic suggestion request - prover: {}, goal: {}", prover, req.goal);
+    info!(
+        "UI tactic suggestion request - prover: {}, goal: {}",
+        prover, req.goal
+    );
 
     // Call Julia ML API for real AI predictions
     let client = reqwest::Client::new();
@@ -555,7 +574,8 @@ async fn suggest_tactics_ui(
                             .map(|s| {
                                 let confidence = s["confidence"].as_f64().unwrap_or(0.0);
                                 let tactic = s["tactic"].as_str().unwrap_or("auto").to_string();
-                                let premise = s.get("premises")
+                                let premise = s
+                                    .get("premises")
                                     .and_then(|p| p.as_array())
                                     .and_then(|arr| arr.first())
                                     .and_then(|v| v.as_str())
@@ -580,51 +600,45 @@ async fn suggest_tactics_ui(
                             .collect();
 
                         Ok(Json(SuggestTacticsUIResponse { suggestions }))
-                    }
+                    },
                     Err(e) => {
                         info!("Failed to parse Julia response: {}", e);
                         // Fall back to mock data
                         Ok(Json(SuggestTacticsUIResponse {
-                            suggestions: vec![
-                                TacticSuggestion {
-                                    tactic: "auto".to_string(),
-                                    confidence: 0.5,
-                                    premise: None,
-                                    aspect_tags: vec!["automated".to_string()],
-                                }
-                            ]
+                            suggestions: vec![TacticSuggestion {
+                                tactic: "auto".to_string(),
+                                confidence: 0.5,
+                                premise: None,
+                                aspect_tags: vec!["automated".to_string()],
+                            }],
                         }))
-                    }
+                    },
                 }
             } else {
                 info!("Julia API returned error status: {}", response.status());
                 // Fall back to mock data
                 Ok(Json(SuggestTacticsUIResponse {
-                    suggestions: vec![
-                        TacticSuggestion {
-                            tactic: "auto".to_string(),
-                            confidence: 0.5,
-                            premise: None,
-                            aspect_tags: vec!["automated".to_string()],
-                        }
-                    ]
-                }))
-            }
-        }
-        Err(e) => {
-            info!("Failed to connect to Julia ML API: {}", e);
-            // Fall back to mock data if Julia service is down
-            Ok(Json(SuggestTacticsUIResponse {
-                suggestions: vec![
-                    TacticSuggestion {
+                    suggestions: vec![TacticSuggestion {
                         tactic: "auto".to_string(),
                         confidence: 0.5,
                         premise: None,
                         aspect_tags: vec!["automated".to_string()],
-                    }
-                ]
+                    }],
+                }))
+            }
+        },
+        Err(e) => {
+            info!("Failed to connect to Julia ML API: {}", e);
+            // Fall back to mock data if Julia service is down
+            Ok(Json(SuggestTacticsUIResponse {
+                suggestions: vec![TacticSuggestion {
+                    tactic: "auto".to_string(),
+                    confidence: 0.5,
+                    premise: None,
+                    aspect_tags: vec!["automated".to_string()],
+                }],
             }))
-        }
+        },
     }
 }
 
@@ -815,7 +829,7 @@ struct ProofTreeResponse {
 
 #[derive(Deserialize)]
 struct SuggestTacticsUIRequest {
-    goal: String,  // Changed from goal_id to accept goal text directly
+    goal: String, // Changed from goal_id to accept goal text directly
     prover: Option<String>,
     #[allow(dead_code)] // Reserved for future aspect-tag filtering
     active_tags: Option<Vec<String>>,
@@ -857,12 +871,14 @@ impl IntoResponse for AppError {
             AppError::BadRequest(msg) => (StatusCode::BAD_REQUEST, msg),
             AppError::NotFound(msg) => (StatusCode::NOT_FOUND, msg),
             AppError::ParseError(msg) => (StatusCode::BAD_REQUEST, format!("Parse error: {}", msg)),
-            AppError::VerificationError(msg) => {
-                (StatusCode::UNPROCESSABLE_ENTITY, format!("Verification error: {}", msg))
-            }
-            AppError::InternalError(msg) => {
-                (StatusCode::INTERNAL_SERVER_ERROR, format!("Internal error: {}", msg))
-            }
+            AppError::VerificationError(msg) => (
+                StatusCode::UNPROCESSABLE_ENTITY,
+                format!("Verification error: {}", msg),
+            ),
+            AppError::InternalError(msg) => (
+                StatusCode::INTERNAL_SERVER_ERROR,
+                format!("Internal error: {}", msg),
+            ),
         };
 
         let body = Json(serde_json::json!({
@@ -872,4 +888,3 @@ impl IntoResponse for AppError {
         (status, body).into_response()
     }
 }
-

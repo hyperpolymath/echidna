@@ -304,35 +304,73 @@ impl Aspect {
     /// Get category (high-level grouping)
     pub fn category(&self) -> AspectCategory {
         match self {
-            Aspect::PropositionalLogic | Aspect::PredicateLogic | Aspect::ModalLogic
-            | Aspect::TemporalLogic | Aspect::HigherOrderLogic | Aspect::IntuitionisticLogic
+            Aspect::PropositionalLogic
+            | Aspect::PredicateLogic
+            | Aspect::ModalLogic
+            | Aspect::TemporalLogic
+            | Aspect::HigherOrderLogic
+            | Aspect::IntuitionisticLogic
             | Aspect::ClassicalLogic => AspectCategory::Logic,
 
-            Aspect::NaturalNumbers | Aspect::Integers | Aspect::Rationals | Aspect::Reals
-            | Aspect::Complex | Aspect::NumberTheory | Aspect::Arithmetic => AspectCategory::Arithmetic,
+            Aspect::NaturalNumbers
+            | Aspect::Integers
+            | Aspect::Rationals
+            | Aspect::Reals
+            | Aspect::Complex
+            | Aspect::NumberTheory
+            | Aspect::Arithmetic => AspectCategory::Arithmetic,
 
-            Aspect::Groups | Aspect::Rings | Aspect::Fields | Aspect::VectorSpaces
-            | Aspect::Modules | Aspect::Lattices | Aspect::CategoryTheory
+            Aspect::Groups
+            | Aspect::Rings
+            | Aspect::Fields
+            | Aspect::VectorSpaces
+            | Aspect::Modules
+            | Aspect::Lattices
+            | Aspect::CategoryTheory
             | Aspect::UniversalAlgebra => AspectCategory::Algebra,
 
-            Aspect::Limits | Aspect::Continuity | Aspect::Derivatives | Aspect::Integrals
-            | Aspect::Sequences | Aspect::MeasureTheory | Aspect::FunctionalAnalysis => AspectCategory::Analysis,
+            Aspect::Limits
+            | Aspect::Continuity
+            | Aspect::Derivatives
+            | Aspect::Integrals
+            | Aspect::Sequences
+            | Aspect::MeasureTheory
+            | Aspect::FunctionalAnalysis => AspectCategory::Analysis,
 
-            Aspect::MetricSpaces | Aspect::TopologicalSpaces | Aspect::Compactness
-            | Aspect::Connectedness | Aspect::TopologicalContinuity => AspectCategory::Topology,
+            Aspect::MetricSpaces
+            | Aspect::TopologicalSpaces
+            | Aspect::Compactness
+            | Aspect::Connectedness
+            | Aspect::TopologicalContinuity => AspectCategory::Topology,
 
-            Aspect::SetOperations | Aspect::Cardinality | Aspect::Ordinals
-            | Aspect::AxiomOfChoice | Aspect::ZFC => AspectCategory::SetTheory,
+            Aspect::SetOperations
+            | Aspect::Cardinality
+            | Aspect::Ordinals
+            | Aspect::AxiomOfChoice
+            | Aspect::ZFC => AspectCategory::SetTheory,
 
-            Aspect::DependentTypes | Aspect::Universes | Aspect::InductiveTypes
-            | Aspect::CoinductiveTypes | Aspect::Polymorphism | Aspect::TypeEquivalence => AspectCategory::TypeTheory,
+            Aspect::DependentTypes
+            | Aspect::Universes
+            | Aspect::InductiveTypes
+            | Aspect::CoinductiveTypes
+            | Aspect::Polymorphism
+            | Aspect::TypeEquivalence => AspectCategory::TypeTheory,
 
-            Aspect::Algorithms | Aspect::Complexity | Aspect::FormalVerification
-            | Aspect::ProgramSemantics | Aspect::Concurrency | Aspect::Cryptography
-            | Aspect::Automata | Aspect::LambdaCalculus => AspectCategory::ComputerScience,
+            Aspect::Algorithms
+            | Aspect::Complexity
+            | Aspect::FormalVerification
+            | Aspect::ProgramSemantics
+            | Aspect::Concurrency
+            | Aspect::Cryptography
+            | Aspect::Automata
+            | Aspect::LambdaCalculus => AspectCategory::ComputerScience,
 
-            Aspect::Induction | Aspect::Coinduction | Aspect::Recursion | Aspect::CaseAnalysis
-            | Aspect::Contradiction | Aspect::DirectProof => AspectCategory::ProofTechniques,
+            Aspect::Induction
+            | Aspect::Coinduction
+            | Aspect::Recursion
+            | Aspect::CaseAnalysis
+            | Aspect::Contradiction
+            | Aspect::DirectProof => AspectCategory::ProofTechniques,
 
             _ => AspectCategory::Other,
         }
@@ -612,7 +650,9 @@ impl RuleBasedTagger {
             Term::Lambda { body, .. } => {
                 self.extract_symbols_recursive(body, symbols);
             },
-            Term::Pi { param_type, body, .. } => {
+            Term::Pi {
+                param_type, body, ..
+            } => {
                 self.extract_symbols_recursive(param_type, symbols);
                 self.extract_symbols_recursive(body, symbols);
             },
@@ -621,7 +661,11 @@ impl RuleBasedTagger {
                 self.extract_symbols_recursive(value, symbols);
                 self.extract_symbols_recursive(body, symbols);
             },
-            Term::Match { scrutinee, branches, .. } => {
+            Term::Match {
+                scrutinee,
+                branches,
+                ..
+            } => {
                 self.extract_symbols_recursive(scrutinee, symbols);
                 for (_, body) in branches {
                     self.extract_symbols_recursive(body, symbols);
@@ -751,14 +795,18 @@ impl RuleBasedTagger {
                     self.analyze_term(arg, features, depth + 1);
                 }
             },
-            Term::Lambda { param_type, body, .. } => {
+            Term::Lambda {
+                param_type, body, ..
+            } => {
                 features.lambda_depth = features.lambda_depth.max(depth + 1);
                 if let Some(ty) = param_type {
                     self.analyze_term(ty, features, depth + 1);
                 }
                 self.analyze_term(body, features, depth + 1);
             },
-            Term::Pi { param_type, body, .. } => {
+            Term::Pi {
+                param_type, body, ..
+            } => {
                 features.pi_count += 1;
                 self.analyze_term(param_type, features, depth + 1);
                 self.analyze_term(body, features, depth + 1);
@@ -770,7 +818,11 @@ impl RuleBasedTagger {
                 self.analyze_term(value, features, depth + 1);
                 self.analyze_term(body, features, depth + 1);
             },
-            Term::Match { scrutinee, branches, .. } => {
+            Term::Match {
+                scrutinee,
+                branches,
+                ..
+            } => {
                 self.analyze_term(scrutinee, features, depth + 1);
                 for (_, branch_body) in branches {
                     self.analyze_term(branch_body, features, depth + 1);
@@ -968,7 +1020,8 @@ impl AspectTagger for CompositeTagger {
 
                 let mut common_aspects: Option<HashSet<Aspect>> = None;
                 for tagger in &self.taggers {
-                    let aspects: HashSet<_> = tagger.tag(theorem_name, statement).into_iter().collect();
+                    let aspects: HashSet<_> =
+                        tagger.tag(theorem_name, statement).into_iter().collect();
                     common_aspects = Some(match common_aspects {
                         None => aspects,
                         Some(prev) => prev.intersection(&aspects).copied().collect(),
@@ -1025,14 +1078,26 @@ mod tests {
     #[test]
     fn test_aspect_categories() {
         assert_eq!(Aspect::PropositionalLogic.category(), AspectCategory::Logic);
-        assert_eq!(Aspect::NaturalNumbers.category(), AspectCategory::Arithmetic);
+        assert_eq!(
+            Aspect::NaturalNumbers.category(),
+            AspectCategory::Arithmetic
+        );
         assert_eq!(Aspect::Groups.category(), AspectCategory::Algebra);
         assert_eq!(Aspect::Limits.category(), AspectCategory::Analysis);
         assert_eq!(Aspect::MetricSpaces.category(), AspectCategory::Topology);
         assert_eq!(Aspect::SetOperations.category(), AspectCategory::SetTheory);
-        assert_eq!(Aspect::DependentTypes.category(), AspectCategory::TypeTheory);
-        assert_eq!(Aspect::Algorithms.category(), AspectCategory::ComputerScience);
-        assert_eq!(Aspect::Induction.category(), AspectCategory::ProofTechniques);
+        assert_eq!(
+            Aspect::DependentTypes.category(),
+            AspectCategory::TypeTheory
+        );
+        assert_eq!(
+            Aspect::Algorithms.category(),
+            AspectCategory::ComputerScience
+        );
+        assert_eq!(
+            Aspect::Induction.category(),
+            AspectCategory::ProofTechniques
+        );
     }
 
     #[test]
@@ -1095,10 +1160,7 @@ mod tests {
             param_type: Some(Box::new(Term::Const("Nat".to_string()))),
             body: Box::new(Term::App {
                 func: Box::new(Term::Const("add".to_string())),
-                args: vec![
-                    Term::Var("x".to_string()),
-                    Term::Const("1".to_string()),
-                ],
+                args: vec![Term::Var("x".to_string()), Term::Const("1".to_string())],
             }),
         };
 

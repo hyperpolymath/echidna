@@ -100,7 +100,11 @@ end
         "#;
 
         let result = backend.parse_string(content).await;
-        assert!(result.is_ok(), "Failed to parse Isabelle: {:?}", result.err());
+        assert!(
+            result.is_ok(),
+            "Failed to parse Isabelle: {:?}",
+            result.err()
+        );
         Ok(())
     }
 
@@ -171,7 +175,11 @@ wx $f wff x $.
         "#;
 
         let result = backend.parse_string(content).await;
-        assert!(result.is_ok(), "Failed to parse Metamath: {:?}", result.err());
+        assert!(
+            result.is_ok(),
+            "Failed to parse Metamath: {:?}",
+            result.err()
+        );
         Ok(())
     }
 
@@ -190,7 +198,11 @@ let id_theorem = prove(`!x:A. x = x`, REFL_TAC);;
         "#;
 
         let result = backend.parse_string(content).await;
-        assert!(result.is_ok(), "Failed to parse HOL Light: {:?}", result.err());
+        assert!(
+            result.is_ok(),
+            "Failed to parse HOL Light: {:?}",
+            result.err()
+        );
         Ok(())
     }
 
@@ -311,7 +323,11 @@ mod verification_tests {
         let state = backend.parse_string(content).await?;
         let verified = backend.verify_proof(&state).await;
 
-        assert!(verified.is_ok(), "Verification failed: {:?}", verified.err());
+        assert!(
+            verified.is_ok(),
+            "Verification failed: {:?}",
+            verified.err()
+        );
         Ok(())
     }
 
@@ -319,10 +335,19 @@ mod verification_tests {
     async fn test_all_provers_verify() -> Result<()> {
         // Test each prover with a simple theorem
         let provers_and_content = vec![
-            (ProverKind::Agda, "module T where\nid : {A : Set} → A → A\nid x = x"),
-            (ProverKind::Coq, "Theorem t : forall x, x = x. Proof. reflexivity. Qed."),
+            (
+                ProverKind::Agda,
+                "module T where\nid : {A : Set} → A → A\nid x = x",
+            ),
+            (
+                ProverKind::Coq,
+                "Theorem t : forall x, x = x. Proof. reflexivity. Qed.",
+            ),
             (ProverKind::Lean, "theorem t (x : Nat) : x = x := rfl"),
-            (ProverKind::Z3, "(declare-const x Int)\n(assert (= x x))\n(check-sat)"),
+            (
+                ProverKind::Z3,
+                "(declare-const x Int)\n(assert (= x x))\n(check-sat)",
+            ),
         ];
 
         for (kind, content) in provers_and_content {
@@ -370,7 +395,11 @@ mod tactic_tests {
         let state = backend.parse_string(content).await?;
 
         let result = backend.apply_tactic(&state, &Tactic::Reflexivity).await;
-        assert!(result.is_ok(), "Reflexivity tactic failed: {:?}", result.err());
+        assert!(
+            result.is_ok(),
+            "Reflexivity tactic failed: {:?}",
+            result.err()
+        );
         Ok(())
     }
 }
@@ -398,7 +427,10 @@ mod export_tests {
 
         assert!(result.is_ok(), "Export failed: {:?}", result.err());
         let code = result?;
-        assert!(code.contains("module"), "Exported code should contain module declaration");
+        assert!(
+            code.contains("module"),
+            "Exported code should contain module declaration"
+        );
         Ok(())
     }
 

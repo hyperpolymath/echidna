@@ -9,8 +9,8 @@
 //! elaborator reflection, and quantitative type theory (linear types).
 //! This module provides full integration with Idris 2's proof system.
 
-use async_trait::async_trait;
 use anyhow::{anyhow, Context, Result};
+use async_trait::async_trait;
 use nom::{
     branch::alt,
     bytes::complete::{tag, take_until, take_while},
@@ -26,8 +26,8 @@ use tokio::process::Command;
 use tokio::sync::Mutex;
 
 use crate::core::{
-    Context as ProofContext, Definition, Goal, Hypothesis, ProofState, Tactic, TacticResult,
-    Term, Theorem,
+    Context as ProofContext, Definition, Goal, Hypothesis, ProofState, Tactic, TacticResult, Term,
+    Theorem,
 };
 use crate::provers::{ProverBackend, ProverConfig, ProverKind};
 
@@ -43,23 +43,45 @@ enum Idris2Decl {
     /// Module declaration: module Foo.Bar
     Module { name: String },
     /// Namespace block: namespace Foo
-    Namespace { name: String, decls: Vec<Idris2Decl> },
+    Namespace {
+        name: String,
+        decls: Vec<Idris2Decl>,
+    },
     /// Import statement: import Data.Vect
     Import { module: String, public: bool },
     /// Type signature: foo : Type -> Type
     TypeSig { name: String, ty: String },
     /// Function definition (pattern clause)
-    FuncDef { name: String, patterns: Vec<String>, body: String },
+    FuncDef {
+        name: String,
+        patterns: Vec<String>,
+        body: String,
+    },
     /// Data type declaration
-    Data { name: String, ty_params: Vec<String>, constructors: Vec<(String, String)> },
+    Data {
+        name: String,
+        ty_params: Vec<String>,
+        constructors: Vec<(String, String)>,
+    },
     /// Record declaration
-    Record { name: String, ty_params: Vec<String>, fields: Vec<(String, String)> },
+    Record {
+        name: String,
+        ty_params: Vec<String>,
+        fields: Vec<(String, String)>,
+    },
     /// Interface (type class) declaration
-    Interface { name: String, params: Vec<String>, methods: Vec<(String, String)> },
+    Interface {
+        name: String,
+        params: Vec<String>,
+        methods: Vec<(String, String)>,
+    },
     /// Implementation
     Implementation { interface: String, ty: String },
     /// Pragma directive: %default total
-    Pragma { directive: String, args: Vec<String> },
+    Pragma {
+        directive: String,
+        args: Vec<String>,
+    },
     /// Hole: ?hole_name
     Hole { name: String },
 }
@@ -104,8 +126,7 @@ impl Idris2Backend {
 
     /// Parse Idris 2 file content
     fn parse_idris2(&self, content: &str) -> Result<Vec<Idris2Decl>> {
-        let (_, decls) = parse_module(content)
-            .map_err(|e| anyhow!("Parse error: {:?}", e))?;
+        let (_, decls) = parse_module(content).map_err(|e| anyhow!("Parse error: {:?}", e))?;
         Ok(decls)
     }
 
@@ -120,7 +141,9 @@ impl Idris2Backend {
             },
             Idris2Term::Lambda(param, param_type, body) => Term::Lambda {
                 param: param.clone(),
-                param_type: param_type.as_ref().map(|t| Box::new(self.idris2_to_term(t))),
+                param_type: param_type
+                    .as_ref()
+                    .map(|t| Box::new(self.idris2_to_term(t))),
                 body: Box::new(self.idris2_to_term(body)),
             },
             Idris2Term::Pi(param, _mult, param_type, body) => Term::Pi {
@@ -143,7 +166,7 @@ impl Idris2Backend {
                     param_type: Box::new(self.idris2_to_term(from)),
                     body: Box::new(self.idris2_to_term(to)),
                 }
-            }
+            },
             Idris2Term::Implicit(name, ty) | Idris2Term::AutoImplicit(name, ty) => {
                 // Implicit arguments represented as Pi
                 Term::Pi {
@@ -151,7 +174,7 @@ impl Idris2Backend {
                     param_type: Box::new(self.idris2_to_term(ty)),
                     body: Box::new(Term::Type(0)),
                 }
-            }
+            },
         }
     }
 
@@ -180,8 +203,12 @@ impl Idris2Backend {
                         .join(" ");
                     format!("{} {}", func_str, args_str)
                 }
-            }
-            Term::Lambda { param, param_type, body } => {
+            },
+            Term::Lambda {
+                param,
+                param_type,
+                body,
+            } => {
                 let body_str = self.term_to_idris2(body);
                 if let Some(ty) = param_type {
                     let ty_str = self.term_to_idris2(ty);
@@ -189,8 +216,12 @@ impl Idris2Backend {
                 } else {
                     format!("\\{} => {}", param, body_str)
                 }
-            }
-            Term::Pi { param, param_type, body } => {
+            },
+            Term::Pi {
+                param,
+                param_type,
+                body,
+            } => {
                 let param_ty_str = self.term_to_idris2(param_type);
                 let body_str = self.term_to_idris2(body);
                 if param == "_" {
@@ -200,16 +231,21 @@ impl Idris2Backend {
                     // Dependent function type
                     format!("({} : {}) -> {}", param, param_ty_str, body_str)
                 }
-            }
+            },
             Term::Type(level) | Term::Universe(level) => {
                 if *level == 0 {
                     "Type".to_string()
                 } else {
                     format!("Type {}", level)
                 }
-            }
+            },
             Term::Sort(level) => format!("Sort {}", level),
-            Term::Let { name, ty, value, body } => {
+            Term::Let {
+                name,
+                ty,
+                value,
+                body,
+            } => {
                 let value_str = self.term_to_idris2(value);
                 let body_str = self.term_to_idris2(body);
                 if let Some(t) = ty {
@@ -218,8 +254,12 @@ impl Idris2Backend {
                 } else {
                     format!("let {} = {} in {}", name, value_str, body_str)
                 }
-            }
-            Term::Match { scrutinee, branches, .. } => {
+            },
+            Term::Match {
+                scrutinee,
+                branches,
+                ..
+            } => {
                 let scrutinee_str = self.term_to_idris2(scrutinee);
                 let mut result = format!("case {} of\n", scrutinee_str);
                 for (pattern, body) in branches {
@@ -227,19 +267,21 @@ impl Idris2Backend {
                     result.push_str(&format!("  {:?} => {}\n", pattern, body_str));
                 }
                 result
-            }
+            },
             Term::Fix { name, body, .. } => {
                 format!("-- fix point: {}\n{}", name, self.term_to_idris2(body))
-            }
+            },
             Term::Hole(name) => format!("?{}", name),
             Term::Meta(id) => format!("?meta_{}", id),
             Term::ProverSpecific { prover, data } => {
                 if prover == "idris2" {
-                    data.as_str().map(|s| s.to_string()).unwrap_or_else(|| "?hole".to_string())
+                    data.as_str()
+                        .map(|s| s.to_string())
+                        .unwrap_or_else(|| "?hole".to_string())
                 } else {
                     format!("-- prover-specific: {}", prover)
                 }
-            }
+            },
         }
     }
 
@@ -437,7 +479,11 @@ impl ProverBackend for Idris2Backend {
 
         for decl in decls {
             match decl {
-                Idris2Decl::Data { name, ty_params, constructors } => {
+                Idris2Decl::Data {
+                    name,
+                    ty_params,
+                    constructors,
+                } => {
                     // Create type definition
                     let ty_str = if ty_params.is_empty() {
                         "Type".to_string()
@@ -460,8 +506,12 @@ impl ProverBackend for Idris2Backend {
                             aspects: vec!["constructor".to_string()],
                         });
                     }
-                }
-                Idris2Decl::Record { name, ty_params, fields } => {
+                },
+                Idris2Decl::Record {
+                    name,
+                    ty_params,
+                    fields,
+                } => {
                     let ty_str = if ty_params.is_empty() {
                         "Type".to_string()
                     } else {
@@ -483,7 +533,7 @@ impl ProverBackend for Idris2Backend {
                             aspects: vec!["projection".to_string()],
                         });
                     }
-                }
+                },
                 Idris2Decl::TypeSig { name, ty } => {
                     let type_term = self.parse_type_expr(&ty);
                     theorems.push(Theorem {
@@ -492,8 +542,12 @@ impl ProverBackend for Idris2Backend {
                         proof: None,
                         aspects: Vec::new(),
                     });
-                }
-                Idris2Decl::Interface { name, params: _, methods } => {
+                },
+                Idris2Decl::Interface {
+                    name,
+                    params: _,
+                    methods,
+                } => {
                     // Interface as a constraint type
                     context.definitions.push(Definition {
                         name: name.clone(),
@@ -514,14 +568,14 @@ impl ProverBackend for Idris2Backend {
                             aspects: vec!["interface-method".to_string(), name.clone()],
                         });
                     }
-                }
+                },
                 Idris2Decl::Pragma { directive, args: _ } => {
                     // Store pragmas as metadata
                     if directive == "total" || directive == "default" {
                         // Track totality checking
                     }
-                }
-                _ => {}
+                },
+                _ => {},
             }
         }
 
@@ -549,13 +603,13 @@ impl ProverBackend for Idris2Backend {
                 } else {
                     Ok(TacticResult::Success(new_state))
                 }
-            }
+            },
             Tactic::Intro(name) => {
                 let mut new_state = state.clone();
                 if let Some(goal) = new_state.goals.first_mut() {
-                    let param_name = name.clone().unwrap_or_else(|| {
-                        format!("x{}", goal.hypotheses.len())
-                    });
+                    let param_name = name
+                        .clone()
+                        .unwrap_or_else(|| format!("x{}", goal.hypotheses.len()));
 
                     // Add hypothesis
                     goal.hypotheses.push(Hypothesis {
@@ -572,7 +626,7 @@ impl ProverBackend for Idris2Backend {
                     new_state.proof_script.push(tactic.clone());
                 }
                 Ok(TacticResult::Success(new_state))
-            }
+            },
             Tactic::Apply(theorem_name) => {
                 let mut new_state = state.clone();
 
@@ -599,7 +653,7 @@ impl ProverBackend for Idris2Backend {
                         theorem_name
                     )))
                 }
-            }
+            },
             Tactic::Reflexivity => {
                 let mut new_state = state.clone();
                 if let Some(goal) = new_state.goals.first() {
@@ -623,31 +677,31 @@ impl ProverBackend for Idris2Backend {
                 } else {
                     Ok(TacticResult::Success(new_state))
                 }
-            }
+            },
             Tactic::Cases(_scrutinee) => {
                 let mut new_state = state.clone();
                 // Generate case split - creates new goals for each constructor
                 new_state.proof_script.push(tactic.clone());
                 Ok(TacticResult::Success(new_state))
-            }
+            },
             Tactic::Induction(_target) => {
                 let mut new_state = state.clone();
                 // Induction creates base case and inductive step goals
                 new_state.proof_script.push(tactic.clone());
                 Ok(TacticResult::Success(new_state))
-            }
+            },
             Tactic::Rewrite(_eq_name) => {
                 let mut new_state = state.clone();
                 // Rewrite using an equality
                 new_state.proof_script.push(tactic.clone());
                 Ok(TacticResult::Success(new_state))
-            }
+            },
             Tactic::Simplify => {
                 let mut new_state = state.clone();
                 // Normalize/simplify the goal
                 new_state.proof_script.push(tactic.clone());
                 Ok(TacticResult::Success(new_state))
-            }
+            },
             Tactic::Assumption => {
                 let mut new_state = state.clone();
                 // Try to solve with a hypothesis
@@ -666,8 +720,12 @@ impl ProverBackend for Idris2Backend {
                 } else {
                     Ok(TacticResult::Success(new_state))
                 }
-            }
-            Tactic::Custom { prover, command, args: _ } => {
+            },
+            Tactic::Custom {
+                prover,
+                command,
+                args: _,
+            } => {
                 if prover != "idris2" {
                     return Err(anyhow!("Custom tactic for wrong prover: {}", prover));
                 }
@@ -684,28 +742,28 @@ impl ProverBackend for Idris2Backend {
                         } else {
                             Ok(TacticResult::Success(new_state))
                         }
-                    }
+                    },
                     "search" => {
                         // Auto-search for proof
                         let mut new_state = state.clone();
                         new_state.proof_script.push(tactic.clone());
                         Ok(TacticResult::Success(new_state))
-                    }
+                    },
                     "decide" => {
                         // Use decidability
                         let mut new_state = state.clone();
                         new_state.proof_script.push(tactic.clone());
                         Ok(TacticResult::Success(new_state))
-                    }
+                    },
                     "compute" => {
                         // Normalize by computation
                         let mut new_state = state.clone();
                         new_state.proof_script.push(tactic.clone());
                         Ok(TacticResult::Success(new_state))
-                    }
+                    },
                     _ => Err(anyhow!("Unknown Idris 2 tactic: {}", command)),
                 }
-            }
+            },
         }
     }
 
@@ -784,7 +842,7 @@ impl ProverBackend for Idris2Backend {
                 // Pi type -> intro
                 Term::Pi { .. } => {
                     suggestions.push(Tactic::Intro(None));
-                }
+                },
 
                 // Equality -> reflexivity
                 Term::App { func, args } => {
@@ -801,7 +859,7 @@ impl ProverBackend for Idris2Backend {
                             });
                         }
                     }
-                }
+                },
 
                 // Inductive type -> cases/induction
                 Term::Const(name) => {
@@ -809,9 +867,9 @@ impl ProverBackend for Idris2Backend {
                         suggestions.push(Tactic::Cases(goal.target.clone()));
                         suggestions.push(Tactic::Induction(goal.target.clone()));
                     }
-                }
+                },
 
-                _ => {}
+                _ => {},
             }
 
             // Check hypotheses for assumption
@@ -934,10 +992,7 @@ fn parse_pragma(input: &str) -> IResult<&str, Idris2Decl> {
     let (input, directive) = identifier(input)?;
     let (input, _) = space0(input)?;
     let (input, args_str) = take_while(|c| c != '\n')(input)?;
-    let args: Vec<String> = args_str
-        .split_whitespace()
-        .map(String::from)
-        .collect();
+    let args: Vec<String> = args_str.split_whitespace().map(String::from).collect();
     Ok((input, Idris2Decl::Pragma { directive, args }))
 }
 
@@ -1090,7 +1145,7 @@ mod tests {
             Idris2Decl::Import { module, public } => {
                 assert_eq!(module, "Data.Vect");
                 assert!(!public);
-            }
+            },
             _ => panic!("Expected Import"),
         }
     }
@@ -1103,7 +1158,7 @@ mod tests {
             Idris2Decl::Import { module, public } => {
                 assert_eq!(module, "Data.List");
                 assert!(public);
-            }
+            },
             _ => panic!("Expected Import"),
         }
     }
@@ -1116,7 +1171,7 @@ mod tests {
             Idris2Decl::Pragma { directive, args } => {
                 assert_eq!(directive, "default");
                 assert_eq!(args, vec!["total"]);
-            }
+            },
             _ => panic!("Expected Pragma"),
         }
     }
@@ -1129,7 +1184,7 @@ mod tests {
             Idris2Decl::TypeSig { name, ty } => {
                 assert_eq!(name, "foo");
                 assert_eq!(ty, "Nat -> Nat");
-            }
+            },
             _ => panic!("Expected TypeSig"),
         }
     }

@@ -12,15 +12,15 @@
 
 #![allow(dead_code)]
 
-use async_trait::async_trait;
 use anyhow::{anyhow, Context, Result};
+use async_trait::async_trait;
 use std::path::PathBuf;
 use std::process::Stdio;
 use tokio::io::AsyncWriteExt;
 use tokio::process::Command;
 
-use crate::core::{Goal, ProofState, Tactic, TacticResult, Term, Context as ProofContext};
 use super::{ProverBackend, ProverConfig, ProverKind};
+use crate::core::{Goal, ProofState, Tactic, TacticResult, Term};
 
 /// Kissat SAT solver backend
 pub struct KissatBackend {
@@ -56,9 +56,11 @@ impl KissatBackend {
             if line.starts_with("p cnf") {
                 let parts: Vec<&str> = line.split_whitespace().collect();
                 if parts.len() >= 4 {
-                    num_vars = parts[2].parse()
+                    num_vars = parts[2]
+                        .parse()
                         .map_err(|_| anyhow!("Invalid variable count in DIMACS header"))?;
-                    num_clauses = parts[3].parse()
+                    num_clauses = parts[3]
+                        .parse()
                         .map_err(|_| anyhow!("Invalid clause count in DIMACS header"))?;
                     header_found = true;
                 }
@@ -71,7 +73,8 @@ impl KissatBackend {
 
             // Parse clause literals
             for token in line.split_whitespace() {
-                let lit: i64 = token.parse()
+                let lit: i64 = token
+                    .parse()
                     .map_err(|_| anyhow!("Invalid literal in DIMACS: {}", token))?;
                 if lit == 0 {
                     // End of clause
@@ -142,26 +145,27 @@ impl KissatBackend {
                 } else {
                     vec![]
                 }
-            }
+            },
             Term::App { func, args } => {
                 if let Term::Const(f) = func.as_ref() {
                     match f.as_str() {
-                        "or" | "clause" => {
-                            args.iter().flat_map(Self::term_to_clause).collect()
-                        }
+                        "or" | "clause" => args.iter().flat_map(Self::term_to_clause).collect(),
                         "not" | "neg" => {
                             if let Some(inner) = args.first() {
-                                Self::term_to_clause(inner).into_iter().map(|l| -l).collect()
+                                Self::term_to_clause(inner)
+                                    .into_iter()
+                                    .map(|l| -l)
+                                    .collect()
                             } else {
                                 vec![]
                             }
-                        }
+                        },
                         _ => vec![],
                     }
                 } else {
                     vec![]
                 }
-            }
+            },
             _ => vec![],
         }
     }
@@ -192,7 +196,9 @@ impl KissatBackend {
                 return Ok(false);
             }
         }
-        Err(anyhow!("Kissat output inconclusive: no s SATISFIABLE/UNSATISFIABLE line found"))
+        Err(anyhow!(
+            "Kissat output inconclusive: no s SATISFIABLE/UNSATISFIABLE line found"
+        ))
     }
 
     /// Extract model (variable assignments) from `v` lines in solver output.
@@ -243,7 +249,8 @@ impl ProverBackend for KissatBackend {
     }
 
     async fn parse_file(&self, path: PathBuf) -> Result<ProofState> {
-        let content = tokio::fs::read_to_string(&path).await
+        let content = tokio::fs::read_to_string(&path)
+            .await
             .with_context(|| format!("Failed to read DIMACS file: {:?}", path))?;
         self.parse_string(&content).await
     }
@@ -280,13 +287,16 @@ impl ProverBackend for KissatBackend {
 
     async fn apply_tactic(&self, state: &ProofState, tactic: &Tactic) -> Result<TacticResult> {
         match tactic {
-            Tactic::Custom { prover, command, args } if prover == "kissat" => {
+            Tactic::Custom {
+                prover,
+                command,
+                args,
+            } if prover == "kissat" => {
                 match command.as_str() {
                     "add-clause" => {
                         // Parse literals from args
-                        let literals: Result<Vec<i64>, _> = args.iter()
-                            .map(|a| a.parse::<i64>())
-                            .collect();
+                        let literals: Result<Vec<i64>, _> =
+                            args.iter().map(|a| a.parse::<i64>()).collect();
 
                         match literals {
                             Ok(lits) => {
@@ -299,42 +309,44 @@ impl ProverBackend for KissatBackend {
                                 });
                                 new_state.proof_script.push(tactic.clone());
                                 Ok(TacticResult::Success(new_state))
-                            }
+                            },
                             Err(_) => Ok(TacticResult::Error(
-                                "add-clause requires integer literal arguments".to_string()
+                                "add-clause requires integer literal arguments".to_string(),
                             )),
                         }
-                    }
+                    },
 
                     "unit-propagate" => {
                         // Unit propagation: find unit clauses and simplify
                         let mut new_state = state.clone();
                         new_state.proof_script.push(tactic.clone());
                         Ok(TacticResult::Success(new_state))
-                    }
+                    },
 
                     "resolution" => {
                         // Resolution: combine two clauses on a pivot variable
                         let mut new_state = state.clone();
                         new_state.proof_script.push(tactic.clone());
                         Ok(TacticResult::Success(new_state))
-                    }
+                    },
 
-                    _ => Ok(TacticResult::Error(
-                        format!("Unknown Kissat tactic: {}", command)
-                    )),
+                    _ => Ok(TacticResult::Error(format!(
+                        "Unknown Kissat tactic: {}",
+                        command
+                    ))),
                 }
-            }
+            },
 
             Tactic::Simplify => {
                 let mut new_state = state.clone();
                 new_state.proof_script.push(tactic.clone());
                 Ok(TacticResult::Success(new_state))
-            }
+            },
 
-            _ => Ok(TacticResult::Error(
-                format!("Tactic {:?} not supported for Kissat", tactic)
-            )),
+            _ => Ok(TacticResult::Error(format!(
+                "Tactic {:?} not supported for Kissat",
+                tactic
+            ))),
         }
     }
 
@@ -361,7 +373,9 @@ impl ProverBackend for KissatBackend {
             .context("Failed to spawn Kissat process")?;
 
         if let Some(mut stdin) = child.stdin.take() {
-            stdin.write_all(dimacs.as_bytes()).await
+            stdin
+                .write_all(dimacs.as_bytes())
+                .await
                 .context("Failed to write DIMACS to Kissat stdin")?;
             stdin.flush().await?;
             drop(stdin);

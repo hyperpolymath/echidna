@@ -26,18 +26,15 @@
 //! - Stack-based verification
 //! - Substitution and unification
 
-use async_trait::async_trait;
 use anyhow::{anyhow, Context as AnyhowContext, Result};
+use async_trait::async_trait;
 use serde::{Deserialize, Serialize};
 use std::collections::{HashMap, HashSet, VecDeque};
 use std::path::PathBuf;
 use tokio::fs;
 use tracing::{debug, info, trace, warn};
 
-use crate::core::{
-    Context, Goal, ProofState, Tactic, TacticResult, Term, Theorem,
-    Variable,
-};
+use crate::core::{Context, Goal, ProofState, Tactic, TacticResult, Term, Theorem, Variable};
 use crate::provers::{ProverBackend, ProverConfig, ProverKind};
 
 /// Metamath backend implementation
@@ -125,7 +122,7 @@ impl MetamathBackend {
                     result.extend(self.term_to_expr(arg));
                 }
                 result
-            }
+            },
             // For other term types, convert to prover-specific representation
             _ => vec![format!("{}", term)],
         }
@@ -157,7 +154,11 @@ impl MetamathBackend {
         let mut stack: Vec<MetamathExpression> = Vec::new();
         let mut var_types: HashMap<String, String> = HashMap::new();
 
-        trace!("Verifying proof for {} with {} steps", target_label, steps.len());
+        trace!(
+            "Verifying proof for {} with {} steps",
+            target_label,
+            steps.len()
+        );
 
         for step in steps {
             trace!("Processing step: {}", step);
@@ -175,28 +176,40 @@ impl MetamathBackend {
                         typecode: typecode.clone(),
                         tokens: vec![var.clone()],
                     });
-                }
-                MetamathStatement::Essential { typecode, expression, .. } => {
+                },
+                MetamathStatement::Essential {
+                    typecode,
+                    expression,
+                    ..
+                } => {
                     stack.push(MetamathExpression {
                         typecode: typecode.clone(),
                         tokens: expression.clone(),
                     });
-                }
-                MetamathStatement::Axiomatic { typecode, expression, .. } => {
+                },
+                MetamathStatement::Axiomatic {
+                    typecode,
+                    expression,
+                    ..
+                } => {
                     // Pop hypotheses from stack
                     stack.push(MetamathExpression {
                         typecode: typecode.clone(),
                         tokens: expression.clone(),
                     });
-                }
-                MetamathStatement::Provable { typecode, expression, .. } => {
+                },
+                MetamathStatement::Provable {
+                    typecode,
+                    expression,
+                    ..
+                } => {
                     // For now, push the conclusion
                     stack.push(MetamathExpression {
                         typecode: typecode.clone(),
                         tokens: expression.clone(),
                     });
-                }
-                _ => {}
+                },
+                _ => {},
             }
         }
 
@@ -205,7 +218,10 @@ impl MetamathBackend {
             trace!("Proof verification complete - stack has single result");
             Ok(true)
         } else {
-            warn!("Proof verification incomplete - stack has {} elements", stack.len());
+            warn!(
+                "Proof verification incomplete - stack has {} elements",
+                stack.len()
+            );
             Ok(false)
         }
     }
@@ -220,7 +236,7 @@ impl MetamathBackend {
                 } else {
                     Err(anyhow!("Theorem not found: {}", theorem_name))
                 }
-            }
+            },
             Tactic::Reflexivity => {
                 // Look for reflexivity axiom (common: eqid, equid)
                 for name in &["eqid", "equid", "refl"] {
@@ -229,25 +245,25 @@ impl MetamathBackend {
                     }
                 }
                 Err(anyhow!("No reflexivity axiom found in database"))
-            }
+            },
             Tactic::Assumption => {
                 // Use current hypotheses
                 Ok(vec![])
-            }
+            },
             Tactic::Simplify => {
                 // Apply simplification rules
                 Ok(vec![])
-            }
+            },
             Tactic::Custom { command, args, .. } => {
                 // Pass through custom Metamath commands
                 let mut steps = vec![command.clone()];
                 steps.extend(args.clone());
                 Ok(steps)
-            }
+            },
             _ => {
                 warn!("Tactic {:?} not directly supported in Metamath", tactic);
                 Err(anyhow!("Unsupported tactic for Metamath backend"))
-            }
+            },
         }
     }
 }
@@ -283,45 +299,52 @@ impl ProverBackend for MetamathBackend {
         // Extract theorems from database
         for (label, statement) in &db.statements {
             match statement {
-                MetamathStatement::Axiomatic { typecode, expression, .. } => {
+                MetamathStatement::Axiomatic {
+                    typecode,
+                    expression,
+                    ..
+                } => {
                     context.theorems.push(Theorem {
                         name: label.clone(),
                         statement: self.expr_to_term(expression),
                         proof: None,
                         aspects: vec!["axiom".to_string(), typecode.clone()],
                     });
-                }
-                MetamathStatement::Provable { typecode, expression, .. } => {
+                },
+                MetamathStatement::Provable {
+                    typecode,
+                    expression,
+                    ..
+                } => {
                     context.theorems.push(Theorem {
                         name: label.clone(),
                         statement: self.expr_to_term(expression),
                         proof: None, // Could convert proof steps to tactics
                         aspects: vec!["theorem".to_string(), typecode.clone()],
                     });
-                }
+                },
                 MetamathStatement::Floating { var, typecode, .. } => {
                     context.variables.push(Variable {
                         name: var.clone(),
                         ty: Term::Const(typecode.clone()),
                     });
-                }
-                _ => {}
+                },
+                _ => {},
             }
         }
 
         // Create a proof state with the first provable as goal
-        let first_goal = db.statements.iter()
-            .find_map(|(label, stmt)| {
-                if let MetamathStatement::Provable { expression, .. } = stmt {
-                    Some(Goal {
-                        id: label.clone(),
-                        target: self.expr_to_term(expression),
-                        hypotheses: vec![],
-                    })
-                } else {
-                    None
-                }
-            });
+        let first_goal = db.statements.iter().find_map(|(label, stmt)| {
+            if let MetamathStatement::Provable { expression, .. } = stmt {
+                Some(Goal {
+                    id: label.clone(),
+                    target: self.expr_to_term(expression),
+                    hypotheses: vec![],
+                })
+            } else {
+                None
+            }
+        });
 
         let goals = if let Some(goal) = first_goal {
             vec![goal]
@@ -335,10 +358,7 @@ impl ProverBackend for MetamathBackend {
             proof_script: vec![],
             metadata: {
                 let mut meta = HashMap::new();
-                meta.insert(
-                    "prover".to_string(),
-                    serde_json::json!("metamath"),
-                );
+                meta.insert("prover".to_string(), serde_json::json!("metamath"));
                 meta.insert(
                     "statements".to_string(),
                     serde_json::json!(db.statements.len()),
@@ -522,15 +542,11 @@ impl MetamathDatabase {
 enum MetamathStatement {
     /// $c - Constant declaration
     #[allow(dead_code)]
-    Constant {
-        symbols: Vec<String>,
-    },
+    Constant { symbols: Vec<String> },
 
     /// $v - Variable declaration
     #[allow(dead_code)]
-    Variable {
-        symbols: Vec<String>,
-    },
+    Variable { symbols: Vec<String> },
 
     /// $f - Floating hypothesis (variable typing)
     Floating {
@@ -567,9 +583,7 @@ enum MetamathStatement {
 
     /// $d - Disjoint variable constraint
     #[allow(dead_code)]
-    Disjoint {
-        vars: Vec<String>,
-    },
+    Disjoint { vars: Vec<String> },
 }
 
 impl MetamathStatement {
@@ -654,19 +668,19 @@ impl MetamathParser {
                             current_token.clear();
                         }
                         current_token.push('$');
-                    }
+                    },
                     '(' => {
                         in_comment = true;
-                    }
+                    },
                     c if c.is_whitespace() => {
                         if !current_token.is_empty() {
                             tokens.push_back(current_token.clone());
                             current_token.clear();
                         }
-                    }
+                    },
                     c => {
                         current_token.push(c);
-                    }
+                    },
                 }
             }
         }
@@ -702,12 +716,12 @@ impl MetamathParser {
                             _ => {
                                 // Not a statement type - might be end of file
                                 break;
-                            }
+                            },
                         }
                     } else {
                         break;
                     }
-                }
+                },
             }
         }
         Ok(())
@@ -748,13 +762,18 @@ impl MetamathParser {
 
     /// Parse $f floating hypothesis
     fn parse_floating(&mut self, label: Option<String>) -> Result<()> {
-        let label = label.or_else(|| self.tokens.pop_front())
+        let label = label
+            .or_else(|| self.tokens.pop_front())
             .ok_or_else(|| anyhow!("Expected label for $f"))?;
 
-        let typecode = self.tokens.pop_front()
+        let typecode = self
+            .tokens
+            .pop_front()
             .ok_or_else(|| anyhow!("Expected typecode for $f"))?;
 
-        let var = self.tokens.pop_front()
+        let var = self
+            .tokens
+            .pop_front()
             .ok_or_else(|| anyhow!("Expected variable for $f"))?;
 
         // Consume until $.
@@ -783,10 +802,13 @@ impl MetamathParser {
 
     /// Parse $e essential hypothesis
     fn parse_essential(&mut self, label: Option<String>) -> Result<()> {
-        let label = label.or_else(|| self.tokens.pop_front())
+        let label = label
+            .or_else(|| self.tokens.pop_front())
             .ok_or_else(|| anyhow!("Expected label for $e"))?;
 
-        let typecode = self.tokens.pop_front()
+        let typecode = self
+            .tokens
+            .pop_front()
             .ok_or_else(|| anyhow!("Expected typecode for $e"))?;
 
         let mut expression = Vec::new();
@@ -816,10 +838,13 @@ impl MetamathParser {
 
     /// Parse $a axiomatic assertion
     fn parse_axiomatic(&mut self, label: Option<String>) -> Result<()> {
-        let label = label.or_else(|| self.tokens.pop_front())
+        let label = label
+            .or_else(|| self.tokens.pop_front())
             .ok_or_else(|| anyhow!("Expected label for $a"))?;
 
-        let typecode = self.tokens.pop_front()
+        let typecode = self
+            .tokens
+            .pop_front()
             .ok_or_else(|| anyhow!("Expected typecode for $a"))?;
 
         let mut expression = Vec::new();
@@ -845,10 +870,13 @@ impl MetamathParser {
 
     /// Parse $p provable assertion
     fn parse_provable(&mut self, label: Option<String>) -> Result<()> {
-        let label = label.or_else(|| self.tokens.pop_front())
+        let label = label
+            .or_else(|| self.tokens.pop_front())
             .ok_or_else(|| anyhow!("Expected label for $p"))?;
 
-        let typecode = self.tokens.pop_front()
+        let typecode = self
+            .tokens
+            .pop_front()
             .ok_or_else(|| anyhow!("Expected typecode for $p"))?;
 
         let mut expression = Vec::new();
@@ -873,11 +901,7 @@ impl MetamathParser {
             }
         }
 
-        let proof_option = if proof.is_empty() {
-            None
-        } else {
-            Some(proof)
-        };
+        let proof_option = if proof.is_empty() { None } else { Some(proof) };
 
         self.database.statements.insert(
             label.clone(),
@@ -967,7 +991,7 @@ mod tests {
         match term {
             Term::App { func, args } => {
                 assert_eq!(args.len(), 2);
-            }
+            },
             _ => panic!("Expected App term"),
         }
     }

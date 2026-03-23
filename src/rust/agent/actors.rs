@@ -14,9 +14,9 @@ use std::sync::Arc;
 use std::time::Instant;
 use tracing::{debug, info};
 
+use super::AgenticGoal;
 use crate::core::{Goal, ProofState};
 use crate::provers::{ProverBackend, ProverKind};
-use super::AgenticGoal;
 
 /// Message types for actor communication
 #[derive(Message)]
@@ -68,9 +68,7 @@ impl ProverAgent {
 
     /// Start the actor
     pub fn start_actor(kind: ProverKind, backend: Arc<dyn ProverBackend>) -> Addr<Self> {
-        SyncArbiter::start(1, move || {
-            ProverAgent::new(kind, backend.clone())
-        })
+        SyncArbiter::start(1, move || ProverAgent::new(kind, backend.clone()))
     }
 }
 
@@ -86,7 +84,10 @@ impl Handler<ProveGoal> for ProverAgent {
     type Result = Result<ProofState>;
 
     fn handle(&mut self, msg: ProveGoal, _ctx: &mut Self::Context) -> Self::Result {
-        debug!("ProverAgent {:?} attempting goal: {}", self.kind, msg.goal.id);
+        debug!(
+            "ProverAgent {:?} attempting goal: {}",
+            self.kind, msg.goal.id
+        );
 
         let start = Instant::now();
 
@@ -99,11 +100,11 @@ impl Handler<ProveGoal> for ProverAgent {
             Ok(proof) => {
                 info!("ProverAgent {:?} succeeded in {}ms", self.kind, elapsed);
                 Ok(proof)
-            }
+            },
             Err(e) => {
                 debug!("ProverAgent {:?} failed: {}", self.kind, e);
                 Err(e)
-            }
+            },
         }
     }
 }
@@ -158,11 +159,11 @@ impl Handler<GetRelatedConcepts> for ContextAgent {
                 Ok(concepts) => {
                     info!("ContextAgent found {} related concepts", concepts.len());
                     concepts
-                }
+                },
                 Err(e) => {
                     warn!("ContextAgent failed to query ConceptNet: {}", e);
                     Vec::new()
-                }
+                },
             }
         }
 
@@ -252,7 +253,10 @@ impl Actor for CoordinatorAgent {
     type Context = Context<Self>;
 
     fn started(&mut self, _ctx: &mut Self::Context) {
-        info!("CoordinatorAgent started with {} prover agents", self.prover_agents.len());
+        info!(
+            "CoordinatorAgent started with {} prover agents",
+            self.prover_agents.len()
+        );
     }
 }
 
@@ -269,17 +273,22 @@ impl Handler<CoordinateProof> for CoordinatorAgent {
     type Result = ResponseActFuture<Self, Result<(ProofState, ProverKind)>>;
 
     fn handle(&mut self, msg: CoordinateProof, _ctx: &mut Self::Context) -> Self::Result {
-        info!("CoordinatorAgent orchestrating proof for goal: {}", msg.goal.goal.id);
+        info!(
+            "CoordinatorAgent orchestrating proof for goal: {}",
+            msg.goal.goal.id
+        );
 
         // Query ConceptNet for related concepts (optional enrichment)
-        let context_fut = self.context_agent
+        let context_fut = self
+            .context_agent
             .send(GetRelatedConcepts {
                 theorem_text: format!("{:?}", msg.goal.goal.target),
             })
             .into_actor(self);
 
         // Query lemma generator for auxiliary lemmas
-        let lemma_fut = self.lemma_agent
+        let lemma_fut = self
+            .lemma_agent
             .send(GenerateLemmas {
                 goal: msg.goal.goal.clone(),
                 max_lemmas: 5,
@@ -288,7 +297,8 @@ impl Handler<CoordinateProof> for CoordinatorAgent {
 
         if msg.parallel {
             // Parallel mode: send to all provers simultaneously
-            let futures: Vec<_> = self.prover_agents
+            let futures: Vec<_> = self
+                .prover_agents
                 .iter()
                 .map(|(kind, addr)| {
                     let prove_msg = ProveGoal {
@@ -310,7 +320,7 @@ impl Handler<CoordinateProof> for CoordinatorAgent {
                                 match fut.await {
                                     Ok(Ok(proof)) => {
                                         return Ok((proof, kind));
-                                    }
+                                    },
                                     Ok(Err(_)) => continue,
                                     Err(_) => continue,
                                 }
@@ -318,13 +328,14 @@ impl Handler<CoordinateProof> for CoordinatorAgent {
                             Err(anyhow::anyhow!("All provers failed"))
                         }
                         .into_actor(_act)
-                    })
+                    }),
             )
         } else {
             // Sequential mode: try preferred prover first, then others
             let preferred = msg.goal.preferred_prover.unwrap_or(ProverKind::Z3);
 
-            let prover_addr = self.prover_agents
+            let prover_addr = self
+                .prover_agents
                 .iter()
                 .find(|(k, _)| *k == preferred)
                 .map(|(_, addr)| addr.clone());
@@ -338,9 +349,7 @@ impl Handler<CoordinateProof> for CoordinatorAgent {
                 Box::pin(
                     context_fut
                         .then(move |_concepts, _act, _ctx| lemma_fut)
-                        .then(move |_lemmas, _act, _ctx| {
-                            addr.send(prove_msg).into_actor(_act)
-                        })
+                        .then(move |_lemmas, _act, _ctx| addr.send(prove_msg).into_actor(_act))
                         .then(move |result, _act, _ctx| {
                             async move {
                                 match result {
@@ -349,10 +358,12 @@ impl Handler<CoordinateProof> for CoordinatorAgent {
                                 }
                             }
                             .into_actor(_act)
-                        })
+                        }),
                 )
             } else {
-                Box::pin(async move { Err(anyhow::anyhow!("No prover available")) }.into_actor(self))
+                Box::pin(
+                    async move { Err(anyhow::anyhow!("No prover available")) }.into_actor(self),
+                )
             }
         }
     }
@@ -382,17 +393,17 @@ impl MultiAgentSystem {
         let lemma_agent = LemmaAgent::start_actor();
 
         // Start coordinator
-        let coordinator = CoordinatorAgent::start_actor(
-            prover_agents,
-            context_agent,
-            lemma_agent,
-        );
+        let coordinator = CoordinatorAgent::start_actor(prover_agents, context_agent, lemma_agent);
 
         MultiAgentSystem { coordinator }
     }
 
     /// Submit a goal to the multi-agent system
-    pub async fn prove(&self, goal: AgenticGoal, parallel: bool) -> Result<(ProofState, ProverKind)> {
+    pub async fn prove(
+        &self,
+        goal: AgenticGoal,
+        parallel: bool,
+    ) -> Result<(ProofState, ProverKind)> {
         self.coordinator
             .send(CoordinateProof {
                 goal,

@@ -12,8 +12,8 @@
 //! - QF_BV: Bitvectors
 //! - Arrays, datatypes, quantifiers, etc.
 
-use async_trait::async_trait;
 use anyhow::{anyhow, bail, Context as AnyhowContext, Result};
+use async_trait::async_trait;
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use std::path::PathBuf;
@@ -22,8 +22,8 @@ use tokio::io::AsyncWriteExt;
 use tokio::process::{Child, Command};
 use tokio::time::{timeout, Duration};
 
-use crate::core::{Goal, ProofState, Tactic, TacticResult, Term, Context as ProofContext};
 use super::{ProverBackend, ProverConfig, ProverKind};
+use crate::core::{Context as ProofContext, Goal, ProofState, Tactic, TacticResult, Term};
 
 /// Z3 SMT solver backend
 pub struct Z3Backend {
@@ -39,8 +39,8 @@ impl Z3Backend {
     /// Launch Z3 process in interactive mode
     async fn spawn_z3(&self) -> Result<Child> {
         let mut cmd = Command::new(&self.config.executable);
-        cmd.arg("-in")  // Read from stdin
-            .arg("-smt2")  // SMT-LIB 2.0 format
+        cmd.arg("-in") // Read from stdin
+            .arg("-smt2") // SMT-LIB 2.0 format
             .stdin(Stdio::piped())
             .stdout(Stdio::piped())
             .stderr(Stdio::piped());
@@ -58,9 +58,13 @@ impl Z3Backend {
     async fn execute_command(&self, command: &str) -> Result<SmtResult> {
         let mut child = self.spawn_z3().await?;
 
-        let mut stdin = child.stdin.take()
+        let mut stdin = child
+            .stdin
+            .take()
             .ok_or_else(|| anyhow!("Failed to open Z3 stdin"))?;
-        let _stdout = child.stdout.take()
+        let _stdout = child
+            .stdout
+            .take()
             .ok_or_else(|| anyhow!("Failed to open Z3 stdout"))?;
 
         // Write command
@@ -71,7 +75,8 @@ impl Z3Backend {
 
         // Read response with timeout
         let timeout_duration = Duration::from_secs(self.config.timeout);
-        let output = timeout(timeout_duration, child.wait_with_output()).await
+        let output = timeout(timeout_duration, child.wait_with_output())
+            .await
             .map_err(|_| anyhow!("Z3 execution timeout after {} seconds", self.config.timeout))??;
 
         if !output.status.success() {
@@ -101,7 +106,10 @@ impl Z3Backend {
         } else if trimmed.contains("unknown") {
             Ok(SmtResult::Unknown)
         } else if trimmed.starts_with("(error") {
-            let error_msg = trimmed.trim_start_matches("(error").trim_end_matches(')').trim();
+            let error_msg = trimmed
+                .trim_start_matches("(error")
+                .trim_end_matches(')')
+                .trim();
             Ok(SmtResult::Error(error_msg.trim_matches('"').to_string()))
         } else {
             // For other commands (get-model, etc.), return raw output
@@ -121,40 +129,42 @@ impl Z3Backend {
             SmtTerm::Symbol(s) => Term::Var(s.clone()),
             SmtTerm::Numeral(n) => Term::Const(n.to_string()),
             SmtTerm::Bool(b) => Term::Const(b.to_string()),
-            SmtTerm::App { func, args } => {
-                Term::App {
-                    func: Box::new(Term::Const(func.clone())),
-                    args: args.iter().map(|a| self.smt_to_term(a)).collect(),
-                }
-            }
-            SmtTerm::Quantified { quantifier, bindings, body } => {
+            SmtTerm::App { func, args } => Term::App {
+                func: Box::new(Term::Const(func.clone())),
+                args: args.iter().map(|a| self.smt_to_term(a)).collect(),
+            },
+            SmtTerm::Quantified {
+                quantifier,
+                bindings,
+                body,
+            } => {
                 let term_body = self.smt_to_term(body);
-                bindings.iter().rev().fold(term_body, |acc, (var, ty)| {
-                    Term::App {
+                bindings
+                    .iter()
+                    .rev()
+                    .fold(term_body, |acc, (var, ty)| Term::App {
                         func: Box::new(Term::Const(quantifier.clone())),
-                        args: vec![
-                            Term::Lambda {
-                                param: var.clone(),
-                                param_type: Some(Box::new(self.smt_to_term(ty))),
-                                body: Box::new(acc),
-                            }
-                        ],
-                    }
-                })
-            }
+                        args: vec![Term::Lambda {
+                            param: var.clone(),
+                            param_type: Some(Box::new(self.smt_to_term(ty))),
+                            body: Box::new(acc),
+                        }],
+                    })
+            },
             SmtTerm::Let { bindings, body } => {
                 let term_body = self.smt_to_term(body);
-                bindings.iter().rev().fold(term_body, |acc, (var, val)| {
-                    Term::App {
+                bindings
+                    .iter()
+                    .rev()
+                    .fold(term_body, |acc, (var, val)| Term::App {
                         func: Box::new(Term::Lambda {
                             param: var.clone(),
                             param_type: None,
                             body: Box::new(acc),
                         }),
                         args: vec![self.smt_to_term(val)],
-                    }
-                })
-            }
+                    })
+            },
         }
     }
 
@@ -168,15 +178,16 @@ impl Z3Backend {
                     self.term_to_smt(func)
                 } else {
                     let func_str = self.term_to_smt(func);
-                    let args_str: Vec<String> = args.iter()
-                        .map(|a| self.term_to_smt(a))
-                        .collect();
+                    let args_str: Vec<String> = args.iter().map(|a| self.term_to_smt(a)).collect();
                     format!("({} {})", func_str, args_str.join(" "))
                 }
-            }
+            },
             _ => {
-                format!("(:echidna {})", serde_json::to_string(term).unwrap_or_default())
-            }
+                format!(
+                    "(:echidna {})",
+                    serde_json::to_string(term).unwrap_or_default()
+                )
+            },
         }
     }
 
@@ -211,7 +222,8 @@ impl ProverBackend for Z3Backend {
     }
 
     async fn parse_file(&self, path: PathBuf) -> Result<ProofState> {
-        let content = tokio::fs::read_to_string(&path).await
+        let content = tokio::fs::read_to_string(&path)
+            .await
             .with_context(|| format!("Failed to read file: {:?}", path))?;
 
         self.parse_string(&content).await
@@ -246,12 +258,16 @@ impl ProverBackend for Z3Backend {
                         new_state.proof_script.push(tactic.clone());
 
                         Ok(TacticResult::Success(new_state))
-                    }
+                    },
                     _ => Ok(TacticResult::Error("Simplification failed".to_string())),
                 }
-            }
+            },
 
-            Tactic::Custom { prover, command, args } if prover == "z3" => {
+            Tactic::Custom {
+                prover,
+                command,
+                args,
+            } if prover == "z3" => {
                 let smt_command = if args.is_empty() {
                     command.clone()
                 } else {
@@ -264,20 +280,20 @@ impl ProverBackend for Z3Backend {
                     SmtResult::Output(output) => {
                         let mut new_state = state.clone();
                         new_state.proof_script.push(tactic.clone());
-                        new_state.metadata.insert(
-                            "last_result".to_string(),
-                            serde_json::Value::String(output)
-                        );
+                        new_state
+                            .metadata
+                            .insert("last_result".to_string(), serde_json::Value::String(output));
                         Ok(TacticResult::Success(new_state))
-                    }
+                    },
                     SmtResult::Error(e) => Ok(TacticResult::Error(e)),
                     _ => Ok(TacticResult::Error("Unexpected result".to_string())),
                 }
-            }
+            },
 
-            _ => {
-                Ok(TacticResult::Error(format!("Tactic {:?} not supported for Z3", tactic)))
-            }
+            _ => Ok(TacticResult::Error(format!(
+                "Tactic {:?} not supported for Z3",
+                tactic
+            ))),
         }
     }
 
@@ -285,10 +301,18 @@ impl ProverBackend for Z3Backend {
         if state.goals.is_empty() {
             return Ok(true);
         }
-        if state.goals.iter().all(|g| matches!(&g.target, Term::Const(c) if c == "true")) {
+        if state
+            .goals
+            .iter()
+            .all(|g| matches!(&g.target, Term::Const(c) if c == "true"))
+        {
             return Ok(true);
         }
-        if state.goals.iter().any(|g| matches!(&g.target, Term::Const(c) if c == "false")) {
+        if state
+            .goals
+            .iter()
+            .any(|g| matches!(&g.target, Term::Const(c) if c == "false"))
+        {
             return Ok(false);
         }
 
@@ -464,27 +488,27 @@ impl SmtParser {
                         tokens.push(current.clone());
                         current.clear();
                     }
-                }
+                },
                 '"' => {
                     in_string = !in_string;
                     current.push(ch);
-                }
+                },
                 '(' | ')' if !in_string => {
                     if !current.is_empty() {
                         tokens.push(current.clone());
                         current.clear();
                     }
                     tokens.push(ch.to_string());
-                }
+                },
                 ' ' | '\n' | '\t' if !in_string => {
                     if !current.is_empty() {
                         tokens.push(current.clone());
                         current.clear();
                     }
-                }
+                },
                 _ => {
                     current.push(ch);
-                }
+                },
             }
         }
 
@@ -533,7 +557,9 @@ impl SmtParser {
             match self.peek() {
                 Some("declare-const") => {
                     self.next();
-                    let name = self.next().ok_or_else(|| anyhow!("Expected variable name"))?;
+                    let name = self
+                        .next()
+                        .ok_or_else(|| anyhow!("Expected variable name"))?;
                     let ty_term = self.parse_term()?;
                     self.expect(")")?;
 
@@ -541,11 +567,13 @@ impl SmtParser {
                         name: name.clone(),
                         ty: self.smt_to_term(&ty_term),
                     });
-                }
+                },
 
                 Some("declare-fun") => {
                     self.next();
-                    let name = self.next().ok_or_else(|| anyhow!("Expected function name"))?;
+                    let name = self
+                        .next()
+                        .ok_or_else(|| anyhow!("Expected function name"))?;
                     self.expect("(")?;
 
                     let mut param_types = Vec::new();
@@ -569,7 +597,7 @@ impl SmtParser {
                         name: name.clone(),
                         ty,
                     });
-                }
+                },
 
                 Some("assert") => {
                     self.next();
@@ -577,7 +605,7 @@ impl SmtParser {
                     self.expect(")")?;
 
                     assertions.push(assertion);
-                }
+                },
 
                 Some("check-sat") => {
                     self.next();
@@ -590,7 +618,7 @@ impl SmtParser {
                             hypotheses: vec![],
                         });
                     }
-                }
+                },
 
                 Some("set-logic") | Some("set-option") | Some("set-info") => {
                     self.next();
@@ -600,10 +628,10 @@ impl SmtParser {
                             Some(token) if token == "(" => depth += 1,
                             Some(token) if token == ")" => depth -= 1,
                             None => bail!("Unexpected EOF in command"),
-                            _ => {}
+                            _ => {},
                         }
                     }
-                }
+                },
 
                 _ => {
                     let mut depth = 1;
@@ -612,10 +640,10 @@ impl SmtParser {
                             Some(token) if token == "(" => depth += 1,
                             Some(token) if token == ")" => depth -= 1,
                             None => bail!("Unexpected EOF"),
-                            _ => {}
+                            _ => {},
                         }
                     }
-                }
+                },
             }
         }
 
@@ -629,7 +657,9 @@ impl SmtParser {
 
                 match self.peek() {
                     Some("forall") | Some("exists") => {
-                        let quantifier = self.next().ok_or_else(|| anyhow!("unexpected end of tokens"))?;
+                        let quantifier = self
+                            .next()
+                            .ok_or_else(|| anyhow!("unexpected end of tokens"))?;
                         self.expect("(")?;
 
                         let mut bindings = Vec::new();
@@ -645,8 +675,12 @@ impl SmtParser {
                         let body = Box::new(self.parse_term()?);
                         self.expect(")")?;
 
-                        Ok(SmtTerm::Quantified { quantifier, bindings, body })
-                    }
+                        Ok(SmtTerm::Quantified {
+                            quantifier,
+                            bindings,
+                            body,
+                        })
+                    },
 
                     Some("let") => {
                         self.next();
@@ -666,10 +700,12 @@ impl SmtParser {
                         self.expect(")")?;
 
                         Ok(SmtTerm::Let { bindings, body })
-                    }
+                    },
 
                     Some(_) => {
-                        let func = self.next().ok_or_else(|| anyhow!("unexpected end of tokens"))?;
+                        let func = self
+                            .next()
+                            .ok_or_else(|| anyhow!("unexpected end of tokens"))?;
                         let mut args = Vec::new();
 
                         while self.peek() != Some(")") {
@@ -678,31 +714,33 @@ impl SmtParser {
                         self.expect(")")?;
 
                         Ok(SmtTerm::App { func, args })
-                    }
+                    },
 
                     None => bail!("Unexpected EOF"),
                 }
-            }
+            },
 
             Some("true") => {
                 self.next();
                 Ok(SmtTerm::Bool(true))
-            }
+            },
 
             Some("false") => {
                 self.next();
                 Ok(SmtTerm::Bool(false))
-            }
+            },
 
             Some(_) => {
-                let token = self.next().ok_or_else(|| anyhow!("unexpected end of tokens"))?;
+                let token = self
+                    .next()
+                    .ok_or_else(|| anyhow!("unexpected end of tokens"))?;
 
                 if let Ok(n) = token.parse::<i64>() {
                     Ok(SmtTerm::Numeral(n))
                 } else {
                     Ok(SmtTerm::Symbol(token))
                 }
-            }
+            },
 
             None => bail!("Unexpected EOF"),
         }
@@ -713,40 +751,42 @@ impl SmtParser {
             SmtTerm::Symbol(s) => Term::Var(s.clone()),
             SmtTerm::Numeral(n) => Term::Const(n.to_string()),
             SmtTerm::Bool(b) => Term::Const(b.to_string()),
-            SmtTerm::App { func, args } => {
-                Term::App {
-                    func: Box::new(Term::Const(func.clone())),
-                    args: args.iter().map(|a| self.smt_to_term(a)).collect(),
-                }
-            }
-            SmtTerm::Quantified { quantifier, bindings, body } => {
+            SmtTerm::App { func, args } => Term::App {
+                func: Box::new(Term::Const(func.clone())),
+                args: args.iter().map(|a| self.smt_to_term(a)).collect(),
+            },
+            SmtTerm::Quantified {
+                quantifier,
+                bindings,
+                body,
+            } => {
                 let term_body = self.smt_to_term(body);
-                bindings.iter().rev().fold(term_body, |acc, (var, ty)| {
-                    Term::App {
+                bindings
+                    .iter()
+                    .rev()
+                    .fold(term_body, |acc, (var, ty)| Term::App {
                         func: Box::new(Term::Const(quantifier.clone())),
-                        args: vec![
-                            Term::Lambda {
-                                param: var.clone(),
-                                param_type: Some(Box::new(self.smt_to_term(ty))),
-                                body: Box::new(acc),
-                            }
-                        ],
-                    }
-                })
-            }
+                        args: vec![Term::Lambda {
+                            param: var.clone(),
+                            param_type: Some(Box::new(self.smt_to_term(ty))),
+                            body: Box::new(acc),
+                        }],
+                    })
+            },
             SmtTerm::Let { bindings, body } => {
                 let term_body = self.smt_to_term(body);
-                bindings.iter().rev().fold(term_body, |acc, (var, val)| {
-                    Term::App {
+                bindings
+                    .iter()
+                    .rev()
+                    .fold(term_body, |acc, (var, val)| Term::App {
                         func: Box::new(Term::Lambda {
                             param: var.clone(),
                             param_type: None,
                             body: Box::new(acc),
                         }),
                         args: vec![self.smt_to_term(val)],
-                    }
-                })
-            }
+                    })
+            },
         }
     }
 }
@@ -778,7 +818,7 @@ mod tests {
             SmtTerm::App { func, args } => {
                 assert_eq!(func, "+");
                 assert_eq!(args.len(), 2);
-            }
+            },
             _ => panic!("Expected App"),
         }
         Ok(())

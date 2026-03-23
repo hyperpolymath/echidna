@@ -8,8 +8,8 @@ use axum::{
     routing::{delete, get, post},
     Router,
 };
-use echidna::provers::{ProverBackend, ProverConfig, ProverFactory, ProverKind as CoreProverKind};
 use echidna::core::{ProofState, Tactic as CoreTactic, TacticResult};
+use echidna::provers::{ProverBackend, ProverConfig, ProverFactory, ProverKind as CoreProverKind};
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use std::sync::Arc;
@@ -69,10 +69,13 @@ async fn main() {
     match ml_client.get(format!("{}/health", ml_api_url)).send().await {
         Ok(resp) if resp.status().is_success() => {
             tracing::info!("Connected to Julia ML API at {}", ml_api_url);
-        }
+        },
         _ => {
-            tracing::info!("Julia ML API not available at {} (will use fallback)", ml_api_url);
-        }
+            tracing::info!(
+                "Julia ML API not available at {} (will use fallback)",
+                ml_api_url
+            );
+        },
     }
 
     // Initialize FFI layer
@@ -93,24 +96,22 @@ async fn main() {
     let app = Router::new()
         // Health check
         .route("/health", get(health_check))
-
         // Prover endpoints
         .route("/api/v1/provers", get(handlers::list_provers))
         .route("/api/v1/provers/:kind", get(handlers::get_prover))
-
         // Proof endpoints
         .route("/api/v1/proofs", post(handlers::submit_proof))
         .route("/api/v1/proofs", get(handlers::list_proofs))
         .route("/api/v1/proofs/:id", get(handlers::get_proof))
         .route("/api/v1/proofs/:id", delete(handlers::cancel_proof))
-
         // Tactic endpoints
         .route("/api/v1/proofs/:id/tactics", post(handlers::apply_tactic))
-        .route("/api/v1/proofs/:id/tactics/suggest", get(handlers::suggest_tactics))
-
+        .route(
+            "/api/v1/proofs/:id/tactics/suggest",
+            get(handlers::suggest_tactics),
+        )
         // OpenAPI documentation
         .merge(SwaggerUi::new("/swagger-ui").url("/api-docs/openapi.json", ApiDoc::openapi()))
-
         .layer(CorsLayer::permissive())
         .with_state(state);
 

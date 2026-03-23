@@ -106,13 +106,11 @@ impl PortfolioSolver {
 
     /// Reconcile results from multiple solvers
     pub fn reconcile(&self, results: &[SolverResult]) -> PortfolioResult {
-        let completed: Vec<&SolverResult> = results.iter()
-            .filter(|r| r.verified.is_some())
-            .collect();
+        let completed: Vec<&SolverResult> =
+            results.iter().filter(|r| r.verified.is_some()).collect();
 
-        let _timed_out: Vec<&SolverResult> = results.iter()
-            .filter(|r| r.verified.is_none())
-            .collect();
+        let _timed_out: Vec<&SolverResult> =
+            results.iter().filter(|r| r.verified.is_none()).collect();
 
         // All timed out
         if completed.is_empty() {
@@ -167,9 +165,14 @@ impl PortfolioSolver {
     pub fn solvers_for_kind(&self, kind: ProverKind) -> &[ProverKind] {
         match kind {
             ProverKind::Z3 | ProverKind::CVC5 | ProverKind::AltErgo => &self.config.smt_solvers,
-            ProverKind::Vampire | ProverKind::EProver | ProverKind::SPASS => &self.config.atp_solvers,
-            ProverKind::Lean | ProverKind::Coq | ProverKind::Agda
-            | ProverKind::Isabelle | ProverKind::Idris2 => &self.config.itp_solvers,
+            ProverKind::Vampire | ProverKind::EProver | ProverKind::SPASS => {
+                &self.config.atp_solvers
+            },
+            ProverKind::Lean
+            | ProverKind::Coq
+            | ProverKind::Agda
+            | ProverKind::Isabelle
+            | ProverKind::Idris2 => &self.config.itp_solvers,
             _ => &self.config.smt_solvers, // Default
         }
     }

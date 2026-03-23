@@ -14,8 +14,8 @@
 //! - Lake build system for project management
 //! - Native code generation for performance
 
-use async_trait::async_trait;
 use anyhow::{anyhow, Context as AnyhowContext, Result};
+use async_trait::async_trait;
 use nom::{
     branch::alt,
     bytes::complete::{tag, take_while},
@@ -165,9 +165,7 @@ impl LeanBackend {
     /// Run Lean on a file and capture output
     async fn run_lean(&self, args: &[&str]) -> Result<String> {
         let mut cmd = Command::new(self.lean_executable());
-        cmd.args(args)
-            .stdout(Stdio::piped())
-            .stderr(Stdio::piped());
+        cmd.args(args).stdout(Stdio::piped()).stderr(Stdio::piped());
 
         // Add library paths
         for path in &self.config.library_paths {
@@ -201,9 +199,7 @@ impl LeanBackend {
     /// Run Lake command
     async fn run_lake(&self, args: &[&str], cwd: Option<&PathBuf>) -> Result<String> {
         let mut cmd = Command::new(self.lake_executable());
-        cmd.args(args)
-            .stdout(Stdio::piped())
-            .stderr(Stdio::piped());
+        cmd.args(args).stdout(Stdio::piped()).stderr(Stdio::piped());
 
         if let Some(dir) = cwd {
             cmd.current_dir(dir);
@@ -248,7 +244,7 @@ impl LeanBackend {
                 Ok((rest, decl)) => {
                     declarations.push(decl);
                     remaining = rest;
-                }
+                },
                 Err(_) => {
                     // Skip to next line on parse error
                     if let Some(idx) = remaining.find('\n') {
@@ -256,7 +252,7 @@ impl LeanBackend {
                     } else {
                         break;
                     }
-                }
+                },
             }
         }
 
@@ -296,7 +292,7 @@ impl LeanBackend {
                     } else {
                         Term::Sort(self.lean_level_to_usize(level))
                     }
-                }
+                },
                 _ => Term::Sort(self.lean_level_to_usize(level)),
             },
             LeanExpr::Lit(lit) => match lit {
@@ -322,7 +318,7 @@ impl LeanBackend {
                 } else {
                     Term::Sort(self.lean_level_to_usize(level))
                 }
-            }
+            },
             _ => Term::Sort(self.lean_level_to_usize(level)),
         }
     }
@@ -344,7 +340,7 @@ impl LeanBackend {
             Term::App { func, args } => {
                 let args_str: Vec<String> = args.iter().map(|a| self.term_to_lean(a)).collect();
                 format!("({} {})", self.term_to_lean(func), args_str.join(" "))
-            }
+            },
             Term::Lambda {
                 param,
                 param_type,
@@ -360,7 +356,7 @@ impl LeanBackend {
                 } else {
                     format!("(fun {} => {})", param, self.term_to_lean(body))
                 }
-            }
+            },
             Term::Pi {
                 param,
                 param_type,
@@ -372,7 +368,7 @@ impl LeanBackend {
                     self.term_to_lean(param_type),
                     self.term_to_lean(body)
                 )
-            }
+            },
             Term::Let {
                 name,
                 ty,
@@ -395,14 +391,14 @@ impl LeanBackend {
                         self.term_to_lean(body)
                     )
                 }
-            }
+            },
             Term::Type(level) => {
                 if *level == 0 {
                     "Prop".to_string()
                 } else {
                     format!("Type {}", level - 1)
                 }
-            }
+            },
             Term::Sort(level) => format!("Sort {}", level),
             Term::Universe(level) => format!("Type {}", level),
             Term::Match {
@@ -413,7 +409,11 @@ impl LeanBackend {
                 let arms_str: Vec<String> = branches
                     .iter()
                     .map(|(pat, body)| {
-                        format!("| {} => {}", self.pattern_to_lean(pat), self.term_to_lean(body))
+                        format!(
+                            "| {} => {}",
+                            self.pattern_to_lean(pat),
+                            self.term_to_lean(body)
+                        )
                     })
                     .collect();
                 format!(
@@ -421,7 +421,7 @@ impl LeanBackend {
                     self.term_to_lean(scrutinee),
                     arms_str.join(" ")
                 )
-            }
+            },
             Term::Fix { name, ty, body } => {
                 // Lean uses `partial def` or `termination_by` for fixpoints
                 if let Some(t) = ty {
@@ -434,14 +434,14 @@ impl LeanBackend {
                 } else {
                     format!("(partial def {} := {})", name, self.term_to_lean(body))
                 }
-            }
+            },
             Term::Hole(name) => {
                 if name.is_empty() {
                     "_".to_string()
                 } else {
                     format!("?{}", name)
                 }
-            }
+            },
             Term::Meta(id) => format!("?m{}", id),
             Term::ProverSpecific { data, .. } => data.to_string(),
         }
@@ -460,7 +460,7 @@ impl LeanBackend {
                         args.iter().map(|a| self.pattern_to_lean(a)).collect();
                     format!("({} {})", name, args_str.join(" "))
                 }
-            }
+            },
         }
     }
 
@@ -474,7 +474,7 @@ impl LeanBackend {
                 } else {
                     "intro".to_string()
                 }
-            }
+            },
             Tactic::Cases(term) => format!("cases {}", self.term_to_lean(term)),
             Tactic::Induction(term) => format!("induction {}", self.term_to_lean(term)),
             Tactic::Rewrite(rule) => format!("rw [{}]", rule),
@@ -496,7 +496,7 @@ impl LeanBackend {
                 } else {
                     format!("-- prover-specific: {} {}", command, args.join(" "))
                 }
-            }
+            },
         }
     }
 
@@ -634,10 +634,7 @@ impl LeanBackend {
         for decl in declarations {
             match decl {
                 LeanDeclaration::Theorem {
-                    name,
-                    ty,
-                    value,
-                    ..
+                    name, ty, value, ..
                 } => {
                     let statement = self.lean_expr_to_term(ty);
                     let _proof = value.as_ref().map(|v| self.lean_expr_to_term(v));
@@ -647,8 +644,10 @@ impl LeanBackend {
                         proof: None, // Tactics not extracted yet
                         aspects: vec![],
                     });
-                }
-                LeanDeclaration::Definition { name, ty, value, .. } => {
+                },
+                LeanDeclaration::Definition {
+                    name, ty, value, ..
+                } => {
                     let term_ty = self.lean_expr_to_term(ty);
                     let term_val = self.lean_expr_to_term(value);
                     definitions.push(Definition {
@@ -656,7 +655,7 @@ impl LeanBackend {
                         ty: term_ty,
                         body: term_val,
                     });
-                }
+                },
                 LeanDeclaration::Axiom { name, ty, .. } => {
                     // Axioms become theorems without proofs
                     theorems.push(Theorem {
@@ -665,16 +664,16 @@ impl LeanBackend {
                         proof: None,
                         aspects: vec![],
                     });
-                }
+                },
                 LeanDeclaration::Inductive { .. } => {
                     // Handle inductive types as definitions
-                }
+                },
                 LeanDeclaration::Structure { .. } => {
                     // Handle structures as definitions
-                }
+                },
                 LeanDeclaration::Instance { .. } => {
                     // Handle instances
-                }
+                },
             }
         }
 
@@ -779,18 +778,24 @@ fn skip_whitespace_and_comments(input: &str) -> &str {
             while depth > 0 {
                 match chars.next() {
                     Some((i, '/')) => {
-                        if remaining.get(2 + i + 1..).map_or(false, |s| s.starts_with('-')) {
+                        if remaining
+                            .get(2 + i + 1..)
+                            .map_or(false, |s| s.starts_with('-'))
+                        {
                             depth += 1;
                             chars.next();
                         }
-                    }
+                    },
                     Some((i, '-')) => {
-                        if remaining.get(2 + i + 1..).map_or(false, |s| s.starts_with('/')) {
+                        if remaining
+                            .get(2 + i + 1..)
+                            .map_or(false, |s| s.starts_with('/'))
+                        {
                             depth -= 1;
                             chars.next();
                         }
-                    }
-                    Some(_) => {}
+                    },
+                    Some(_) => {},
                     None => return "",
                 }
             }
@@ -1204,9 +1209,7 @@ impl ProverBackend for LeanBackend {
 
     async fn apply_tactic(&self, state: &ProofState, tactic: &Tactic) -> Result<TacticResult> {
         if state.goals.is_empty() {
-            return Ok(TacticResult::Error(
-                "No goals to prove".to_string(),
-            ));
+            return Ok(TacticResult::Error("No goals to prove".to_string()));
         }
 
         // Generate Lean code that applies the tactic
@@ -1241,9 +1244,7 @@ impl ProverBackend for LeanBackend {
             .await
             .context("Failed to write temporary file")?;
 
-        let result = self
-            .run_lean(&[&temp_file.to_string_lossy()])
-            .await;
+        let result = self.run_lean(&[&temp_file.to_string_lossy()]).await;
 
         // Clean up
         let _ = tokio::fs::remove_file(&temp_file).await;
@@ -1279,7 +1280,7 @@ impl ProverBackend for LeanBackend {
                 new_state.proof_script.push(tactic.clone());
 
                 Ok(TacticResult::Success(new_state))
-            }
+            },
             Err(e) => Ok(TacticResult::Error(format!("Tactic failed: {}", e))),
         }
     }
@@ -1499,7 +1500,7 @@ impl ProverBackend for LeanBackend {
                     .map(|s| s.to_string())
                     .collect();
                 Ok(matches)
-            }
+            },
             Err(_) => Ok(Vec::new()),
         }
     }

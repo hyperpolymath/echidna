@@ -12,8 +12,8 @@ use std::collections::HashMap;
 use tokio::sync::RwLock;
 use tracing::{debug, info};
 
-use crate::provers::ProverKind;
 use super::AgenticGoal;
+use crate::provers::ProverKind;
 
 /// Prover performance statistics
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -118,7 +118,9 @@ impl ProverRouter {
     /// Select the best prover with async access to stats
     pub async fn select_async(&self, goal: &AgenticGoal) -> ProverKind {
         // Get primary aspect
-        let primary_aspect = goal.aspects.first()
+        let primary_aspect = goal
+            .aspects
+            .first()
             .cloned()
             .unwrap_or_else(|| "unknown".to_string());
 
@@ -143,14 +145,18 @@ impl ProverRouter {
 
         for prover in provers {
             // Get aspect-specific stats
-            let aspect_stats = stats.get(&(prover, primary_aspect.clone()))
+            let aspect_stats = stats
+                .get(&(prover, primary_aspect.clone()))
                 .or_else(|| global_stats.get(&prover))
                 .cloned()
                 .unwrap_or_else(ProverStats::new);
 
             let score = aspect_stats.score();
 
-            debug!("Prover {:?} score for aspect '{}': {}", prover, primary_aspect, score);
+            debug!(
+                "Prover {:?} score for aspect '{}': {}",
+                prover, primary_aspect, score
+            );
 
             if score > best_score {
                 best_score = score;
@@ -158,7 +164,10 @@ impl ProverRouter {
             }
         }
 
-        info!("Selected prover {:?} (score: {}) for goal {}", best_prover, best_score, goal.goal.id);
+        info!(
+            "Selected prover {:?} (score: {}) for goal {}",
+            best_prover, best_score, goal.goal.id
+        );
 
         best_prover
     }
@@ -181,7 +190,10 @@ impl ProverRouter {
         global_entry.attempts += 1;
         global_entry.successes += 1;
 
-        debug!("Recorded success for {:?} on aspects {:?}", prover, goal.aspects);
+        debug!(
+            "Recorded success for {:?} on aspects {:?}",
+            prover, goal.aspects
+        );
     }
 
     /// Record a failed proof
@@ -202,7 +214,10 @@ impl ProverRouter {
         global_entry.attempts += 1;
         global_entry.failures += 1;
 
-        debug!("Recorded failure for {:?} on aspects {:?}", prover, goal.aspects);
+        debug!(
+            "Recorded failure for {:?} on aspects {:?}",
+            prover, goal.aspects
+        );
     }
 
     /// Get statistics for all provers
@@ -219,9 +234,9 @@ impl Default for ProverRouter {
 
 #[cfg(test)]
 mod tests {
+    use super::super::{AgenticGoal, Priority};
     use super::*;
     use crate::core::{Goal, Term};
-    use super::super::{AgenticGoal, Priority};
 
     #[tokio::test]
     async fn test_router_learning() {

@@ -28,8 +28,8 @@
 
 #![allow(dead_code)]
 
-use async_trait::async_trait;
 use anyhow::{anyhow, Context, Result};
+use async_trait::async_trait;
 use std::path::PathBuf;
 use std::process::Stdio;
 use tokio::process::Command;
@@ -118,23 +118,23 @@ impl AbcBackend {
                         .and_then(|v| v.as_str())
                         .unwrap_or("100");
                     script.push_str(&format!("bmc3 -F {}\n", bound));
-                }
+                },
                 "int" => {
                     script.push_str("int\n");
-                }
+                },
                 "dprove" => {
                     script.push_str("dprove\n");
-                }
+                },
                 "dsec" => {
                     script.push_str("dsec\n");
-                }
+                },
                 "cec" => {
                     script.push_str("cec\n");
-                }
+                },
                 // Default: PDR (IC3) — most commonly used complete engine
                 _ => {
                     script.push_str("pdr\n");
-                }
+                },
             }
         }
 
@@ -188,7 +188,9 @@ impl AbcBackend {
 
             // Undecided — inconclusive result
             if trimmed.contains("UNDECIDED") || trimmed.contains("undecided") {
-                return Err(anyhow!("ABC verification undecided (resource limit reached)"));
+                return Err(anyhow!(
+                    "ABC verification undecided (resource limit reached)"
+                ));
             }
 
             // Error conditions
@@ -359,11 +361,11 @@ impl AbcBackend {
                         target: Term::Const(trimmed.to_string()),
                         hypotheses: vec![],
                     });
-                }
+                },
                 _ => {
                     // Everything else is context (read commands, transforms, etc.)
                     state.context.axioms.push(trimmed.to_string());
-                }
+                },
             }
         }
 
@@ -430,9 +432,11 @@ impl ProverBackend for AbcBackend {
     async fn apply_tactic(&self, state: &ProofState, tactic: &Tactic) -> Result<TacticResult> {
         match tactic {
             // PDR: Property Directed Reachability (IC3 algorithm)
-            Tactic::Custom { prover, command, args }
-                if prover == "abc" && command == "pdr" =>
-            {
+            Tactic::Custom {
+                prover,
+                command,
+                args,
+            } if prover == "abc" && command == "pdr" => {
                 let mut new_state = state.clone();
                 new_state.metadata.insert(
                     "abc_method".to_string(),
@@ -446,30 +450,31 @@ impl ProverBackend for AbcBackend {
                 }
                 new_state.proof_script.push(tactic.clone());
                 Ok(TacticResult::Success(new_state))
-            }
+            },
 
             // BMC: Bounded Model Checking
-            Tactic::Custom { prover, command, args }
-                if prover == "abc" && command == "bmc" =>
-            {
+            Tactic::Custom {
+                prover,
+                command,
+                args,
+            } if prover == "abc" && command == "bmc" => {
                 let mut new_state = state.clone();
                 let bound = args.first().cloned().unwrap_or_else(|| "100".to_string());
                 new_state.metadata.insert(
                     "abc_method".to_string(),
                     serde_json::Value::String("bmc".to_string()),
                 );
-                new_state.metadata.insert(
-                    "bmc_bound".to_string(),
-                    serde_json::Value::String(bound),
-                );
+                new_state
+                    .metadata
+                    .insert("bmc_bound".to_string(), serde_json::Value::String(bound));
                 new_state.proof_script.push(tactic.clone());
                 Ok(TacticResult::Success(new_state))
-            }
+            },
 
             // INT: Interpolation-based model checking
-            Tactic::Custom { prover, command, .. }
-                if prover == "abc" && command == "int" =>
-            {
+            Tactic::Custom {
+                prover, command, ..
+            } if prover == "abc" && command == "int" => {
                 let mut new_state = state.clone();
                 new_state.metadata.insert(
                     "abc_method".to_string(),
@@ -477,12 +482,12 @@ impl ProverBackend for AbcBackend {
                 );
                 new_state.proof_script.push(tactic.clone());
                 Ok(TacticResult::Success(new_state))
-            }
+            },
 
             // DPROVE: Complete multi-engine verification
-            Tactic::Custom { prover, command, .. }
-                if prover == "abc" && command == "dprove" =>
-            {
+            Tactic::Custom {
+                prover, command, ..
+            } if prover == "abc" && command == "dprove" => {
                 let mut new_state = state.clone();
                 new_state.metadata.insert(
                     "abc_method".to_string(),
@@ -490,12 +495,14 @@ impl ProverBackend for AbcBackend {
                 );
                 new_state.proof_script.push(tactic.clone());
                 Ok(TacticResult::Success(new_state))
-            }
+            },
 
             // DSEC: Sequential equivalence checking
-            Tactic::Custom { prover, command, args }
-                if prover == "abc" && command == "dsec" =>
-            {
+            Tactic::Custom {
+                prover,
+                command,
+                args,
+            } if prover == "abc" && command == "dsec" => {
                 let mut new_state = state.clone();
                 new_state.metadata.insert(
                     "abc_method".to_string(),
@@ -510,12 +517,14 @@ impl ProverBackend for AbcBackend {
                 }
                 new_state.proof_script.push(tactic.clone());
                 Ok(TacticResult::Success(new_state))
-            }
+            },
 
             // CEC: Combinational equivalence checking
-            Tactic::Custom { prover, command, args }
-                if prover == "abc" && command == "cec" =>
-            {
+            Tactic::Custom {
+                prover,
+                command,
+                args,
+            } if prover == "abc" && command == "cec" => {
                 let mut new_state = state.clone();
                 new_state.metadata.insert(
                     "abc_method".to_string(),
@@ -529,12 +538,14 @@ impl ProverBackend for AbcBackend {
                 }
                 new_state.proof_script.push(tactic.clone());
                 Ok(TacticResult::Success(new_state))
-            }
+            },
 
             // READ: Load a design file into the ABC framework
-            Tactic::Custom { prover, command, args }
-                if prover == "abc" && command == "read" =>
-            {
+            Tactic::Custom {
+                prover,
+                command,
+                args,
+            } if prover == "abc" && command == "read" => {
                 if args.is_empty() {
                     return Ok(TacticResult::Error(
                         "abc read tactic requires a file path argument".to_string(),
@@ -545,7 +556,7 @@ impl ProverBackend for AbcBackend {
                 new_state.context.axioms.push(format!("read {}", file_path));
                 new_state.proof_script.push(tactic.clone());
                 Ok(TacticResult::Success(new_state))
-            }
+            },
 
             _ => Ok(TacticResult::Error(format!(
                 "Tactic {:?} not supported for ABC logic synthesis/verification system",
@@ -559,8 +570,8 @@ impl ProverBackend for AbcBackend {
 
         // ABC can execute commands via -c flag or from a script file.
         // For multi-line scripts, write to a temp file and use -f.
-        let tmp_dir = tempfile::tempdir()
-            .context("Failed to create temporary directory for ABC")?;
+        let tmp_dir =
+            tempfile::tempdir().context("Failed to create temporary directory for ABC")?;
         let tmp_file = tmp_dir.path().join("verify.abc");
         tokio::fs::write(&tmp_file, &abc_script)
             .await
@@ -667,7 +678,10 @@ mod tests {
         let backend = test_backend();
 
         let mut state = ProofState::default();
-        state.context.axioms.push("read_aiger design.aig".to_string());
+        state
+            .context
+            .axioms
+            .push("read_aiger design.aig".to_string());
         state.goals.push(Goal {
             id: "output_0".to_string(),
             target: Term::Const("safety_property".to_string()),
@@ -688,7 +702,10 @@ mod tests {
         let backend = test_backend();
 
         let mut state = ProofState::default();
-        state.context.axioms.push("read_aiger design.aig".to_string());
+        state
+            .context
+            .axioms
+            .push("read_aiger design.aig".to_string());
         state.metadata.insert(
             "abc_method".to_string(),
             serde_json::Value::String("bmc".to_string()),
@@ -790,7 +807,11 @@ mod tests {
             !state.context.axioms.is_empty(),
             "Should have parsed AIGER header and gates"
         );
-        assert_eq!(state.goals.len(), 1, "Should have 1 output goal from header");
+        assert_eq!(
+            state.goals.len(),
+            1,
+            "Should have 1 output goal from header"
+        );
     }
 
     #[tokio::test]
@@ -807,11 +828,18 @@ pdr
         let state = backend.parse_string(commands).await.unwrap();
 
         assert!(
-            state.context.axioms.iter().any(|a| a.contains("read_aiger")),
+            state
+                .context
+                .axioms
+                .iter()
+                .any(|a| a.contains("read_aiger")),
             "Should have parsed read command as axiom"
         );
         assert!(
-            state.goals.iter().any(|g| g.target.to_string().contains("pdr")),
+            state
+                .goals
+                .iter()
+                .any(|g| g.target.to_string().contains("pdr")),
             "Should have parsed pdr as a verification goal"
         );
     }
@@ -832,10 +860,13 @@ pdr
         match result {
             TacticResult::Success(new_state) => {
                 assert_eq!(
-                    new_state.metadata.get("abc_method").and_then(|v| v.as_str()),
+                    new_state
+                        .metadata
+                        .get("abc_method")
+                        .and_then(|v| v.as_str()),
                     Some("pdr")
                 );
-            }
+            },
             other => panic!("Expected Success, got {:?}", other),
         }
     }
@@ -856,14 +887,17 @@ pdr
         match result {
             TacticResult::Success(new_state) => {
                 assert_eq!(
-                    new_state.metadata.get("abc_method").and_then(|v| v.as_str()),
+                    new_state
+                        .metadata
+                        .get("abc_method")
+                        .and_then(|v| v.as_str()),
                     Some("bmc")
                 );
                 assert_eq!(
                     new_state.metadata.get("bmc_bound").and_then(|v| v.as_str()),
                     Some("500")
                 );
-            }
+            },
             other => panic!("Expected Success, got {:?}", other),
         }
     }
@@ -878,10 +912,12 @@ pdr
 
         // First suggestion should be PDR (most commonly used)
         match &tactics[0] {
-            Tactic::Custom { prover, command, .. } => {
+            Tactic::Custom {
+                prover, command, ..
+            } => {
                 assert_eq!(prover, "abc");
                 assert_eq!(command, "pdr");
-            }
+            },
             other => panic!("Expected Custom tactic, got {:?}", other),
         }
     }
@@ -900,7 +936,7 @@ pdr
         let result = backend.apply_tactic(&state, &tactic).await.unwrap();
 
         match result {
-            TacticResult::Error(_) => {} // Expected
+            TacticResult::Error(_) => {}, // Expected
             other => panic!("Expected Error for unsupported tactic, got {:?}", other),
         }
     }

@@ -34,15 +34,15 @@
 //! region.set REGION .FIELD, VALUE
 //! ```
 
-use async_trait::async_trait;
 use anyhow::{anyhow, Context, Result};
+use async_trait::async_trait;
 use std::collections::HashMap;
 use std::path::PathBuf;
 use tokio::sync::Mutex;
 
 use crate::core::{
-    Context as ProofContext, Definition, Goal, Hypothesis, ProofState, Tactic, TacticResult,
-    Term, Theorem,
+    Context as ProofContext, Definition, Goal, Hypothesis, ProofState, Tactic, TacticResult, Term,
+    Theorem,
 };
 use crate::provers::{ProverBackend, ProverConfig, ProverKind};
 
@@ -246,15 +246,9 @@ enum TwasmInstruction {
         effects: Vec<String>,
     },
     /// Linear resource acquisition: `linear.acquire REGION`
-    LinearAcquire {
-        region: String,
-        line: usize,
-    },
+    LinearAcquire { region: String, line: usize },
     /// Linear resource release: `linear.release REGION`
-    LinearRelease {
-        region: String,
-        line: usize,
-    },
+    LinearRelease { region: String, line: usize },
 }
 
 // ---------------------------------------------------------------------------
@@ -273,15 +267,15 @@ fn parse_wasm_type(s: &str) -> Result<WasmType> {
         _ if s.starts_with('?') => {
             let inner = parse_wasm_type(&s[1..])?;
             Ok(WasmType::Nullable(Box::new(inner)))
-        }
+        },
         _ if s.starts_with("ref(") && s.ends_with(')') => {
             let inner = &s[4..s.len() - 1];
             Ok(WasmType::Ref(inner.to_string()))
-        }
+        },
         _ if s.starts_with("struct(") && s.ends_with(')') => {
             let inner = &s[7..s.len() - 1];
             Ok(WasmType::Struct(inner.to_string()))
-        }
+        },
         _ => Err(anyhow!("Unknown WASM type: {}", s)),
     }
 }
@@ -347,8 +341,12 @@ fn parse_twasm(content: &str) -> Result<Vec<TwasmInstruction>> {
                 .unwrap_or(after_region.len());
             let region_name = after_region[..name_end].trim().to_string();
 
-            let brace_open = line.find('{').ok_or_else(|| anyhow!("Missing '{{' in region def"))?;
-            let brace_close = line.rfind('}').ok_or_else(|| anyhow!("Missing '}}' in region def"))?;
+            let brace_open = line
+                .find('{')
+                .ok_or_else(|| anyhow!("Missing '{{' in region def"))?;
+            let brace_close = line
+                .rfind('}')
+                .ok_or_else(|| anyhow!("Missing '}}' in region def"))?;
             let fields_str = &line[brace_open + 1..brace_close];
             let fields = parse_fields(fields_str)?;
 
@@ -356,7 +354,11 @@ fn parse_twasm(content: &str) -> Result<Vec<TwasmInstruction>> {
             let after_brace = line[brace_close + 1..].trim();
             let count = if after_brace.starts_with('[') && after_brace.ends_with(']') {
                 let num_str = &after_brace[1..after_brace.len() - 1];
-                Some(num_str.parse::<usize>().map_err(|_| anyhow!("Invalid region count"))?)
+                Some(
+                    num_str
+                        .parse::<usize>()
+                        .map_err(|_| anyhow!("Invalid region count"))?,
+                )
             } else {
                 None
             };
@@ -442,7 +444,9 @@ fn parse_twasm(content: &str) -> Result<Vec<TwasmInstruction>> {
             let rest = &line["effect ".len()..];
             let brace_open = rest.find('{').unwrap();
             let region = rest[..brace_open].trim().to_string();
-            let brace_close = rest.rfind('}').ok_or_else(|| anyhow!("Missing '}}' in effect"))?;
+            let brace_close = rest
+                .rfind('}')
+                .ok_or_else(|| anyhow!("Missing '}}' in effect"))?;
             let effects_str = &rest[brace_open + 1..brace_close];
             let effects: Vec<String> = effects_str
                 .split(';')
@@ -574,10 +578,7 @@ fn generate_proof_obligations(instructions: &[TwasmInstruction]) -> Vec<LevelPro
                         level: SafetyLevel::RegionBinding,
                         verified: field_exists,
                         source_line: *line,
-                        description: format!(
-                            "Field '{}' exists in region '{}'",
-                            field, region
-                        ),
+                        description: format!("Field '{}' exists in region '{}'", field, region),
                         witness: if field_exists {
                             Some(format!("schema({}).fields contains '{}'", region, field))
                         } else {
@@ -602,8 +603,7 @@ fn generate_proof_obligations(instructions: &[TwasmInstruction]) -> Vec<LevelPro
                         });
 
                         // Level 4: NullSafe — if the field is nullable, track it
-                        if schema_field.nullable
-                            || matches!(schema_field.ty, WasmType::Nullable(_))
+                        if schema_field.nullable || matches!(schema_field.ty, WasmType::Nullable(_))
                         {
                             obligations.push(LevelProof {
                                 level: SafetyLevel::NullSafe,
@@ -644,10 +644,7 @@ fn generate_proof_obligations(instructions: &[TwasmInstruction]) -> Vec<LevelPro
 
                     // Level 5: BoundsProof — index must be within region count
                     if let Some(idx) = index {
-                        let in_bounds = schema
-                            .count
-                            .map(|count| *idx < count)
-                            .unwrap_or(false);
+                        let in_bounds = schema.count.map(|count| *idx < count).unwrap_or(false);
                         obligations.push(LevelProof {
                             level: SafetyLevel::BoundsProof,
                             verified: in_bounds,
@@ -673,7 +670,7 @@ fn generate_proof_obligations(instructions: &[TwasmInstruction]) -> Vec<LevelPro
                         witness: None,
                     });
                 }
-            }
+            },
 
             // ── region.set ─────────────────────────────────────────────
             TwasmInstruction::RegionSet {
@@ -756,7 +753,7 @@ fn generate_proof_obligations(instructions: &[TwasmInstruction]) -> Vec<LevelPro
                         witness: None,
                     });
                 }
-            }
+            },
 
             // ── linear.acquire / linear.release ────────────────────────
             TwasmInstruction::LinearAcquire { region, line } => {
@@ -776,7 +773,7 @@ fn generate_proof_obligations(instructions: &[TwasmInstruction]) -> Vec<LevelPro
                     linear_acquired.insert(region.clone(), *line);
                     linear_released.remove(region);
                 }
-            }
+            },
 
             TwasmInstruction::LinearRelease { region, line } => {
                 if linear_acquired.contains_key(region) && !linear_released.contains_key(region) {
@@ -786,10 +783,7 @@ fn generate_proof_obligations(instructions: &[TwasmInstruction]) -> Vec<LevelPro
                         level: SafetyLevel::Linear,
                         verified: true,
                         source_line: *line,
-                        description: format!(
-                            "Linear resource '{}' released exactly once",
-                            region
-                        ),
+                        description: format!("Linear resource '{}' released exactly once", region),
                         witness: Some(format!(
                             "acquire@{} -> release@{}",
                             linear_acquired[region], line
@@ -801,10 +795,7 @@ fn generate_proof_obligations(instructions: &[TwasmInstruction]) -> Vec<LevelPro
                         level: SafetyLevel::LifetimeSafe,
                         verified: true,
                         source_line: *line,
-                        description: format!(
-                            "Resource '{}' lifetime ends at release",
-                            region
-                        ),
+                        description: format!("Resource '{}' lifetime ends at release", region),
                         witness: Some("lifetime_ends_at_release".to_string()),
                     });
                 } else {
@@ -820,10 +811,10 @@ fn generate_proof_obligations(instructions: &[TwasmInstruction]) -> Vec<LevelPro
                         witness: None,
                     });
                 }
-            }
+            },
 
             // Other instructions do not directly generate obligations
-            _ => {}
+            _ => {},
         }
     }
 
@@ -956,10 +947,7 @@ impl TypedWasmBackend {
         }
 
         Goal {
-            id: format!(
-                "twasm_L{}_{}_line{}",
-                level, label, obligation.source_line
-            ),
+            id: format!("twasm_L{}_{}_line{}", level, label, obligation.source_line),
             target,
             hypotheses,
         }
@@ -986,14 +974,9 @@ impl TypedWasmBackend {
                     args: schema
                         .fields
                         .iter()
-                        .map(|f| {
-                            Term::App {
-                                func: Box::new(Term::Const("Field".to_string())),
-                                args: vec![
-                                    Term::Const(f.name.clone()),
-                                    Term::Const(f.ty.to_string()),
-                                ],
-                            }
+                        .map(|f| Term::App {
+                            func: Box::new(Term::Const("Field".to_string())),
+                            args: vec![Term::Const(f.name.clone()), Term::Const(f.ty.to_string())],
                         })
                         .collect(),
                 };
@@ -1011,11 +994,7 @@ impl TypedWasmBackend {
         for obligation in obligations {
             if obligation.verified {
                 theorems.push(Theorem {
-                    name: format!(
-                        "L{}_{}",
-                        obligation.level.level(),
-                        obligation.level.label()
-                    ),
+                    name: format!("L{}_{}", obligation.level.level(), obligation.level.label()),
                     statement: Term::Const(obligation.description.clone()),
                     proof: Some(vec![Tactic::Reflexivity]),
                     aspects: vec![
@@ -1110,11 +1089,7 @@ impl ProverBackend for TypedWasmBackend {
         Ok(self.obligations_to_proof_state(&instructions, &obligations))
     }
 
-    async fn apply_tactic(
-        &self,
-        state: &ProofState,
-        tactic: &Tactic,
-    ) -> Result<TacticResult> {
+    async fn apply_tactic(&self, state: &ProofState, tactic: &Tactic) -> Result<TacticResult> {
         // TypedWasm proofs are structural — tactics simply discharge verified goals.
         match tactic {
             Tactic::Reflexivity => {
@@ -1129,13 +1104,15 @@ impl ProverBackend for TypedWasmBackend {
                 let mut new_state = state.clone();
                 new_state.goals = remaining;
                 Ok(TacticResult::Success(new_state))
-            }
-            Tactic::Custom { prover, command, .. } if prover == "typed_wasm" && command == "auto" => {
+            },
+            Tactic::Custom {
+                prover, command, ..
+            } if prover == "typed_wasm" && command == "auto" => {
                 // Auto discharges everything that the oracle verified
                 let mut new_state = state.clone();
                 new_state.goals = Vec::new();
                 Ok(TacticResult::Success(new_state))
-            }
+            },
             Tactic::Assumption => {
                 // Discharge goals where a hypothesis matches the target
                 let remaining: Vec<Goal> = state
@@ -1148,14 +1125,14 @@ impl ProverBackend for TypedWasmBackend {
                 let mut new_state = state.clone();
                 new_state.goals = remaining;
                 Ok(TacticResult::Success(new_state))
-            }
+            },
             _ => {
                 // Other tactics are not supported
                 Ok(TacticResult::Error(format!(
                     "Tactic {:?} not applicable to TypedWasm oracle proofs",
                     tactic
                 )))
-            }
+            },
         }
     }
 
@@ -1176,10 +1153,7 @@ impl ProverBackend for TypedWasmBackend {
         }
 
         // Check that every goal has at least one hypothesis (witness)
-        let all_witnessed = state
-            .goals
-            .iter()
-            .all(|g| !g.hypotheses.is_empty());
+        let all_witnessed = state.goals.iter().all(|g| !g.hypotheses.is_empty());
 
         Ok(all_witnessed)
     }
@@ -1229,11 +1203,7 @@ impl ProverBackend for TypedWasmBackend {
         Ok(output)
     }
 
-    async fn suggest_tactics(
-        &self,
-        state: &ProofState,
-        _limit: usize,
-    ) -> Result<Vec<Tactic>> {
+    async fn suggest_tactics(&self, state: &ProofState, _limit: usize) -> Result<Vec<Tactic>> {
         // For TypedWasm, the useful tactics are Reflexivity, Assumption, and custom auto
         let mut suggestions = Vec::new();
 
@@ -1413,8 +1383,7 @@ region.get Small[99] .val
     fn test_valid_program_all_verified() {
         let instructions = parse_twasm(VALID_TWASM).unwrap();
         let obligations = generate_proof_obligations(&instructions);
-        let failed: Vec<&LevelProof> =
-            obligations.iter().filter(|o| !o.verified).collect();
+        let failed: Vec<&LevelProof> = obligations.iter().filter(|o| !o.verified).collect();
         assert!(
             failed.is_empty(),
             "Valid program should have no failed obligations, but got: {:?}",
@@ -1436,7 +1405,10 @@ region.get Small[99] .val
         let state = backend.parse_string(VALID_TWASM).await.unwrap();
 
         assert!(!state.goals.is_empty(), "Should produce goals");
-        assert!(!state.context.definitions.is_empty(), "Should produce definitions");
+        assert!(
+            !state.context.definitions.is_empty(),
+            "Should produce definitions"
+        );
 
         let all_satisfied = state
             .metadata

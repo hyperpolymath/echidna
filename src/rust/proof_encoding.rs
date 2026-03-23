@@ -24,14 +24,12 @@ use crate::provers::ProverKind;
 ///   - Self-describing (VeriSimDB can introspect without schema)
 ///   - Matches VeriSimDB's semantic modality expectation
 pub fn encode_proof_state_cbor(proof: &ProofState) -> Result<Vec<u8>> {
-    serde_cbor::to_vec(proof)
-        .context("Failed to CBOR-encode ProofState")
+    serde_cbor::to_vec(proof).context("Failed to CBOR-encode ProofState")
 }
 
 /// Decode a ProofState from CBOR bytes.
 pub fn decode_proof_state_cbor(bytes: &[u8]) -> Result<ProofState> {
-    serde_cbor::from_slice(bytes)
-        .context("Failed to CBOR-decode ProofState")
+    serde_cbor::from_slice(bytes).context("Failed to CBOR-decode ProofState")
 }
 
 /// Generate a stable, content-addressed proof identity for use as a VeriSimDB octad key.
@@ -60,11 +58,7 @@ pub fn proof_identity(theorem_name: &str, goal: &Goal, prover: ProverKind) -> St
 /// Used for cross-prover queries: "find all proofs of theorem X regardless of prover".
 /// The VeriSimDB graph modality uses this to link proofs of the same theorem.
 pub fn goal_identity(theorem_name: &str, goal: &Goal) -> String {
-    let input = format!(
-        "echidna:v1:goal:{}:{}",
-        theorem_name,
-        goal.target,
-    );
+    let input = format!("echidna:v1:goal:{}:{}", theorem_name, goal.target,);
     let hash = Sha256::digest(input.as_bytes());
     format!("{:x}", hash)
 }
@@ -74,11 +68,7 @@ pub fn goal_identity(theorem_name: &str, goal: &Goal) -> String {
 /// Uses timestamp + goal ID to create a unique session key for temporal
 /// versioning of proof state snapshots during a single proof attempt.
 pub fn session_identity(goal_id: &str, timestamp: i64) -> String {
-    let input = format!(
-        "echidna:v1:session:{}:{}",
-        goal_id,
-        timestamp,
-    );
+    let input = format!("echidna:v1:session:{}:{}", goal_id, timestamp,);
     let hash = Sha256::digest(input.as_bytes());
     format!("{:x}", hash)
 }
@@ -148,8 +138,12 @@ mod tests {
         let json = serde_json::to_vec(&proof).unwrap();
 
         // CBOR should be smaller (or at worst equal) to JSON
-        assert!(cbor.len() <= json.len(),
-            "CBOR ({} bytes) should be <= JSON ({} bytes)", cbor.len(), json.len());
+        assert!(
+            cbor.len() <= json.len(),
+            "CBOR ({} bytes) should be <= JSON ({} bytes)",
+            cbor.len(),
+            json.len()
+        );
     }
 
     #[test]
@@ -175,7 +169,10 @@ mod tests {
 
         let lean = proof_identity("thm", &goal, ProverKind::Lean4);
         let coq = proof_identity("thm", &goal, ProverKind::Coq);
-        assert_ne!(lean, coq, "Different provers must produce different identities");
+        assert_ne!(
+            lean, coq,
+            "Different provers must produce different identities"
+        );
     }
 
     #[test]
@@ -194,7 +191,10 @@ mod tests {
     fn test_session_identity_unique() {
         let id1 = session_identity("g0", 1000);
         let id2 = session_identity("g0", 1001);
-        assert_ne!(id1, id2, "Different timestamps must produce different session IDs");
+        assert_ne!(
+            id1, id2,
+            "Different timestamps must produce different session IDs"
+        );
     }
 
     #[test]
@@ -204,7 +204,11 @@ mod tests {
         let actual = encode_proof_state_cbor(&proof).unwrap().len();
 
         // Estimate should be within 2x of actual
-        assert!(estimate < actual * 3,
-            "Estimate ({}) should be reasonable vs actual ({})", estimate, actual);
+        assert!(
+            estimate < actual * 3,
+            "Estimate ({}) should be reasonable vs actual ({})",
+            estimate,
+            actual
+        );
     }
 }

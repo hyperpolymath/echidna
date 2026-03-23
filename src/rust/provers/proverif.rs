@@ -25,8 +25,8 @@
 
 #![allow(dead_code)]
 
-use async_trait::async_trait;
 use anyhow::{anyhow, Context, Result};
+use async_trait::async_trait;
 use std::path::PathBuf;
 use std::process::Stdio;
 use tokio::process::Command;
@@ -172,7 +172,11 @@ impl ProVerifBackend {
         pv.push('\n');
 
         // Add a minimal process if none was declared via axioms
-        let has_process = state.context.axioms.iter().any(|a| a.starts_with("process "));
+        let has_process = state
+            .context
+            .axioms
+            .iter()
+            .any(|a| a.starts_with("process "));
         if !has_process {
             pv.push_str("process\n  0\n");
         }
@@ -218,10 +222,7 @@ impl ProVerifBackend {
                 // (all_true remains true)
             } else {
                 // Unexpected RESULT format
-                return Err(anyhow!(
-                    "ProVerif unexpected RESULT format: {}",
-                    trimmed
-                ));
+                return Err(anyhow!("ProVerif unexpected RESULT format: {}", trimmed));
             }
         }
 
@@ -232,9 +233,7 @@ impl ProVerifBackend {
                 output
                     .lines()
                     .filter(|l| {
-                        l.contains("Syntax error")
-                            || l.contains("Error:")
-                            || l.contains("error")
+                        l.contains("Syntax error") || l.contains("Error:") || l.contains("error")
                     })
                     .take(5)
                     .collect::<Vec<_>>()
@@ -374,7 +373,13 @@ impl ProVerifBackend {
 /// Sanitise a string into a valid identifier (alphanumeric + underscore)
 fn sanitise_id(s: &str) -> String {
     s.chars()
-        .map(|c| if c.is_alphanumeric() || c == '_' { c } else { '_' })
+        .map(|c| {
+            if c.is_alphanumeric() || c == '_' {
+                c
+            } else {
+                '_'
+            }
+        })
         .collect()
 }
 
@@ -452,8 +457,8 @@ impl ProverBackend for ProVerifBackend {
         let pv_code = self.to_pv(state)?;
 
         // Write .pv to a temporary file (proverif requires a file path)
-        let tmp_dir = tempfile::tempdir()
-            .context("Failed to create temporary directory for ProVerif")?;
+        let tmp_dir =
+            tempfile::tempdir().context("Failed to create temporary directory for ProVerif")?;
         let tmp_file = tmp_dir.path().join("protocol.pv");
         tokio::fs::write(&tmp_file, &pv_code)
             .await
@@ -469,10 +474,12 @@ impl ProverBackend for ProVerifBackend {
                 .output(),
         )
         .await
-        .map_err(|_| anyhow!(
-            "ProVerif verification timed out after {} seconds",
-            self.config.timeout
-        ))?
+        .map_err(|_| {
+            anyhow!(
+                "ProVerif verification timed out after {} seconds",
+                self.config.timeout
+            )
+        })?
         .context("Failed to execute proverif")?;
 
         let stdout = String::from_utf8_lossy(&output.stdout);
@@ -528,9 +535,7 @@ mod tests {
         let mut state = ProofState::default();
         state.goals.push(Goal {
             id: "secrecy_s".to_string(),
-            target: Term::Const(
-                "query attacker(s).".to_string(),
-            ),
+            target: Term::Const("query attacker(s).".to_string()),
             hypotheses: vec![],
         });
 
@@ -547,9 +552,10 @@ mod tests {
 
         let mut state = ProofState::default();
         state.context.definitions.push(pv_definition("type key."));
-        state.context.definitions.push(pv_definition(
-            "fun senc(bitstring, key): bitstring.",
-        ));
+        state
+            .context
+            .definitions
+            .push(pv_definition("fun senc(bitstring, key): bitstring."));
         state.context.definitions.push(pv_definition(
             "reduc forall m: bitstring, k: key; sdec(senc(m, k), k) = m.",
         ));
@@ -609,31 +615,54 @@ process
 
         // Should have found type, free, fun, reduc as definitions
         assert!(
-            state.context.definitions.iter().any(|d| d.name.contains("type key")),
+            state
+                .context
+                .definitions
+                .iter()
+                .any(|d| d.name.contains("type key")),
             "Should have parsed type declaration"
         );
         assert!(
-            state.context.definitions.iter().any(|d| d.name.contains("free c")),
+            state
+                .context
+                .definitions
+                .iter()
+                .any(|d| d.name.contains("free c")),
             "Should have parsed free channel declaration"
         );
         assert!(
-            state.context.definitions.iter().any(|d| d.name.contains("fun senc")),
+            state
+                .context
+                .definitions
+                .iter()
+                .any(|d| d.name.contains("fun senc")),
             "Should have parsed function declaration"
         );
         assert!(
-            state.context.definitions.iter().any(|d| d.name.starts_with("reduc")),
+            state
+                .context
+                .definitions
+                .iter()
+                .any(|d| d.name.starts_with("reduc")),
             "Should have parsed reduction rule"
         );
 
         // Should have found event declarations as axioms
         assert!(
-            state.context.axioms.iter().any(|a| a.contains("event beginA")),
+            state
+                .context
+                .axioms
+                .iter()
+                .any(|a| a.contains("event beginA")),
             "Should have parsed event declaration"
         );
 
         // Should have found both queries as goals
         assert_eq!(state.goals.len(), 2, "Should have parsed two queries");
-        assert!(state.goals[0].id.contains("secrecy"), "First goal should be secrecy query");
+        assert!(
+            state.goals[0].id.contains("secrecy"),
+            "First goal should be secrecy query"
+        );
         assert!(
             state.goals[1].id.contains("correspondence"),
             "Second goal should be correspondence query"
@@ -743,7 +772,7 @@ RESULT event(endB(x)) ==> event(beginA(x)) is false.\n";
                     msg.contains("fully automated"),
                     "Error message should explain ProVerif is automated"
                 );
-            }
+            },
             _ => panic!("apply_tactic should return TacticResult::Error for ProVerif"),
         }
     }
@@ -754,7 +783,10 @@ RESULT event(endB(x)) ==> event(beginA(x)) is false.\n";
         let state = ProofState::default();
 
         let tactics = backend.suggest_tactics(&state, 10).await.unwrap();
-        assert!(tactics.is_empty(), "ProVerif should suggest no tactics (fully automated)");
+        assert!(
+            tactics.is_empty(),
+            "ProVerif should suggest no tactics (fully automated)"
+        );
     }
 
     #[test]

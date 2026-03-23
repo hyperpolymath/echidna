@@ -17,11 +17,10 @@
 
 #![allow(dead_code)]
 
-use async_trait::async_trait;
 use anyhow::{anyhow, Context, Result};
+use async_trait::async_trait;
 use std::path::PathBuf;
 use std::process::Stdio;
-use tokio::io::AsyncWriteExt;
 use tokio::process::Command;
 
 use super::{ProverBackend, ProverConfig, ProverKind};
@@ -62,10 +61,7 @@ impl SpinBackend {
 
         // Add axioms as process bodies or global assertions
         for (i, axiom) in state.context.axioms.iter().enumerate() {
-            promela.push_str(&format!(
-                "/* axiom_{}: {} */\n",
-                i, axiom
-            ));
+            promela.push_str(&format!("/* axiom_{}: {} */\n", i, axiom));
         }
 
         // Add goals as assertion blocks
@@ -235,9 +231,11 @@ impl ProverBackend for SpinBackend {
     async fn apply_tactic(&self, state: &ProofState, tactic: &Tactic) -> Result<TacticResult> {
         match tactic {
             // AddAssertion: add a new assertion to the model
-            Tactic::Custom { prover, command, args }
-                if prover == "spin" && command == "add_assertion" =>
-            {
+            Tactic::Custom {
+                prover,
+                command,
+                args,
+            } if prover == "spin" && command == "add_assertion" => {
                 let assertion_text = args.join(" ");
                 let mut new_state = state.clone();
                 new_state.goals.push(Goal {
@@ -247,12 +245,14 @@ impl ProverBackend for SpinBackend {
                 });
                 new_state.proof_script.push(tactic.clone());
                 Ok(TacticResult::Success(new_state))
-            }
+            },
 
             // LTLFormula: add an LTL property to verify
-            Tactic::Custom { prover, command, args }
-                if prover == "spin" && command == "ltl_formula" =>
-            {
+            Tactic::Custom {
+                prover,
+                command,
+                args,
+            } if prover == "spin" && command == "ltl_formula" => {
                 let ltl_text = args.join(" ");
                 let mut new_state = state.clone();
                 new_state.goals.push(Goal {
@@ -262,12 +262,14 @@ impl ProverBackend for SpinBackend {
                 });
                 new_state.proof_script.push(tactic.clone());
                 Ok(TacticResult::Success(new_state))
-            }
+            },
 
             // AtomicBlock: wrap existing axioms in an atomic block
-            Tactic::Custom { prover, command, args }
-                if prover == "spin" && command == "atomic_block" =>
-            {
+            Tactic::Custom {
+                prover,
+                command,
+                args,
+            } if prover == "spin" && command == "atomic_block" => {
                 let block_content = args.join(" ");
                 let mut new_state = state.clone();
                 new_state
@@ -276,7 +278,7 @@ impl ProverBackend for SpinBackend {
                     .push(format!("atomic {{ {} }}", block_content));
                 new_state.proof_script.push(tactic.clone());
                 Ok(TacticResult::Success(new_state))
-            }
+            },
 
             _ => Ok(TacticResult::Error(format!(
                 "Tactic {:?} not supported for SPIN model checker",
@@ -289,8 +291,8 @@ impl ProverBackend for SpinBackend {
         let promela_code = self.to_promela(state)?;
 
         // Write Promela to a temporary file (spin -run requires a file)
-        let tmp_dir = tempfile::tempdir()
-            .context("Failed to create temporary directory for SPIN")?;
+        let tmp_dir =
+            tempfile::tempdir().context("Failed to create temporary directory for SPIN")?;
         let tmp_file = tmp_dir.path().join("model.pml");
         tokio::fs::write(&tmp_file, &promela_code)
             .await
@@ -307,7 +309,12 @@ impl ProverBackend for SpinBackend {
                 .output(),
         )
         .await
-        .map_err(|_| anyhow!("SPIN verification timed out after {} seconds", self.config.timeout))?
+        .map_err(|_| {
+            anyhow!(
+                "SPIN verification timed out after {} seconds",
+                self.config.timeout
+            )
+        })?
         .context("Failed to execute SPIN")?;
 
         let stdout = String::from_utf8_lossy(&output.stdout);
@@ -409,7 +416,10 @@ ltl p1 { []<> ready }
         let state = backend.parse_string(promela).await.unwrap();
 
         // Should have found the proctype, channel, and assertion
-        assert!(!state.context.axioms.is_empty(), "Should have parsed axioms");
+        assert!(
+            !state.context.axioms.is_empty(),
+            "Should have parsed axioms"
+        );
         assert!(!state.goals.is_empty(), "Should have parsed goals");
     }
 
