@@ -13,55 +13,55 @@ use std::path::PathBuf;
 
 use crate::core::{ProofState, Tactic, TacticResult};
 
-pub mod agda;
-pub mod coq;
-pub mod lean;
-pub mod isabelle;
-pub mod z3;
-pub mod cvc5;
-pub mod metamath;
-pub mod hol_light;
-pub mod mizar;
-pub mod pvs;
-pub mod acl2;
-pub mod hol4;
-pub mod idris2;
-pub mod vampire;
-pub mod eprover;
-pub mod spass;
-pub mod altergo;
-pub mod fstar;
-pub mod dafny;
-pub mod why3;
-pub mod tlaps;
-pub mod twelf;
-pub mod nuprl;
-pub mod minlog;
-pub mod imandra;
-pub mod glpk;
-pub mod scip;
-pub mod minizinc;
-pub mod chuffed;
-pub mod ortools;
-pub mod typed_wasm;
-pub mod spin_checker;
-pub mod cbmc;
-pub mod seahorn;
-pub mod cadical;
-pub mod kissat;
-pub mod nusmv;
-pub mod tlc;
-pub mod alloy;
-pub mod prism;
-pub mod uppaal;
-pub mod minisat;
-pub mod framac;
-pub mod viper;
-pub mod tamarin;
-pub mod proverif;
-pub mod key;
-pub mod dreal;
 pub mod abc;
+pub mod acl2;
+pub mod agda;
+pub mod alloy;
+pub mod altergo;
+pub mod cadical;
+pub mod cbmc;
+pub mod chuffed;
+pub mod coq;
+pub mod cvc5;
+pub mod dafny;
+pub mod dreal;
+pub mod eprover;
+pub mod framac;
+pub mod fstar;
+pub mod glpk;
+pub mod hol4;
+pub mod hol_light;
+pub mod idris2;
+pub mod imandra;
+pub mod isabelle;
+pub mod key;
+pub mod kissat;
+pub mod lean;
+pub mod metamath;
+pub mod minisat;
+pub mod minizinc;
+pub mod minlog;
+pub mod mizar;
+pub mod nuprl;
+pub mod nusmv;
+pub mod ortools;
+pub mod prism;
+pub mod proverif;
+pub mod pvs;
+pub mod scip;
+pub mod seahorn;
+pub mod spass;
+pub mod spin_checker;
+pub mod tamarin;
+pub mod tlaps;
+pub mod tlc;
+pub mod twelf;
+pub mod typed_wasm;
+pub mod uppaal;
+pub mod vampire;
+pub mod viper;
+pub mod why3;
+pub mod z3;
 
 /// Enumeration of all supported provers
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]
@@ -299,23 +299,23 @@ impl ProverKind {
             ProverKind::ACL2 => 4,
             ProverKind::HOL4 => 5,
             ProverKind::Idris2 => 3,
-            ProverKind::Vampire => 2,  // Automated, relatively simple
-            ProverKind::EProver => 2,  // Similar to Vampire
-            ProverKind::SPASS => 2,    // Automated FOL
-            ProverKind::AltErgo => 2,  // SMT + FOL
-            ProverKind::FStar => 3,    // Dependent types + effects
-            ProverKind::Dafny => 2,    // Auto-active
-            ProverKind::Why3 => 3,     // Multi-prover orchestration
-            ProverKind::TLAPS => 4,    // TLA+ proof system
-            ProverKind::Twelf => 4,    // Logical framework
-            ProverKind::Nuprl => 4,    // Constructive type theory
-            ProverKind::Minlog => 4,   // Minimal logic
-            ProverKind::Imandra => 3,  // ML-based reasoning
-            ProverKind::GLPK => 2,     // LP solver
-            ProverKind::SCIP => 3,     // MINLP solver
-            ProverKind::MiniZinc => 2, // Constraint modelling
-            ProverKind::Chuffed => 2,  // CP solver
-            ProverKind::ORTools => 2,  // Constraint/optimization solver
+            ProverKind::Vampire => 2,   // Automated, relatively simple
+            ProverKind::EProver => 2,   // Similar to Vampire
+            ProverKind::SPASS => 2,     // Automated FOL
+            ProverKind::AltErgo => 2,   // SMT + FOL
+            ProverKind::FStar => 3,     // Dependent types + effects
+            ProverKind::Dafny => 2,     // Auto-active
+            ProverKind::Why3 => 3,      // Multi-prover orchestration
+            ProverKind::TLAPS => 4,     // TLA+ proof system
+            ProverKind::Twelf => 4,     // Logical framework
+            ProverKind::Nuprl => 4,     // Constructive type theory
+            ProverKind::Minlog => 4,    // Minimal logic
+            ProverKind::Imandra => 3,   // ML-based reasoning
+            ProverKind::GLPK => 2,      // LP solver
+            ProverKind::SCIP => 3,      // MINLP solver
+            ProverKind::MiniZinc => 2,  // Constraint modelling
+            ProverKind::Chuffed => 2,   // CP solver
+            ProverKind::ORTools => 2,   // Constraint/optimization solver
             ProverKind::TypedWasm => 3, // Internal oracle, structural analysis
             ProverKind::SPIN => 3,      // Model checker, Promela language
             ProverKind::CBMC => 2,      // Bounded model checker, C input
@@ -332,17 +332,21 @@ impl ProverKind {
             ProverKind::Viper => 3,     // Permission-based verifier (Silver + Silicon/Carbon)
             ProverKind::Tamarin => 3,   // Security protocol verifier, multiset rewriting
             ProverKind::ProVerif => 2,  // Automated protocol verifier, applied pi-calculus
-            ProverKind::KeY => 3,      // Deductive Java verifier (JavaDL + JML), auto + interactive
-            ProverKind::DReal => 2,    // Automated delta-complete SMT solver, NRA
-            ProverKind::ABC => 2,      // Automated hardware verification, AIG-based
+            ProverKind::KeY => 3, // Deductive Java verifier (JavaDL + JML), auto + interactive
+            ProverKind::DReal => 2, // Automated delta-complete SMT solver, NRA
+            ProverKind::ABC => 2, // Automated hardware verification, AIG-based
         }
     }
 
     /// Get tier (1-5)
     pub fn tier(&self) -> u8 {
         match self {
-            ProverKind::Agda | ProverKind::Coq | ProverKind::Lean |
-            ProverKind::Isabelle | ProverKind::Z3 | ProverKind::CVC5 => 1,
+            ProverKind::Agda
+            | ProverKind::Coq
+            | ProverKind::Lean
+            | ProverKind::Isabelle
+            | ProverKind::Z3
+            | ProverKind::CVC5 => 1,
 
             ProverKind::Metamath | ProverKind::HOLLight | ProverKind::Mizar => 2,
 
@@ -360,9 +364,9 @@ impl ProverKind {
             ProverKind::AltErgo => 5,
 
             // Tier 6: Dependent types + effects, auto-active
-            ProverKind::FStar => 1,  // Small kernel, dependent types
-            ProverKind::Dafny => 2,  // Auto-active (relies on Boogie->Z3)
-            ProverKind::Why3 => 2,   // Multi-prover orchestration
+            ProverKind::FStar => 1, // Small kernel, dependent types
+            ProverKind::Dafny => 2, // Auto-active (relies on Boogie->Z3)
+            ProverKind::Why3 => 2,  // Multi-prover orchestration
 
             // Tier 7: Specialized / niche
             ProverKind::TLAPS => 2,
@@ -395,13 +399,13 @@ impl ProverKind {
             ProverKind::Alloy => 5,
             ProverKind::Prism => 5,
             ProverKind::UPPAAL => 5,
-            ProverKind::FramaC => 5,    // Deductive program verifier
-            ProverKind::Viper => 5,     // Permission-based program verifier
-            ProverKind::Tamarin => 5,   // Security protocol verifier
-            ProverKind::ProVerif => 5,  // Security protocol verifier (automated)
-            ProverKind::KeY => 5,       // Deductive Java verifier
-            ProverKind::DReal => 5,     // Delta-complete SMT solver (NRA/ODE)
-            ProverKind::ABC => 5,       // Logic synthesis & hardware verification
+            ProverKind::FramaC => 5,   // Deductive program verifier
+            ProverKind::Viper => 5,    // Permission-based program verifier
+            ProverKind::Tamarin => 5,  // Security protocol verifier
+            ProverKind::ProVerif => 5, // Security protocol verifier (automated)
+            ProverKind::KeY => 5,      // Deductive Java verifier
+            ProverKind::DReal => 5,    // Delta-complete SMT solver (NRA/ODE)
+            ProverKind::ABC => 5,      // Logic synthesis & hardware verification
         }
     }
 
@@ -416,42 +420,42 @@ impl ProverKind {
             ProverKind::PVS | ProverKind::ACL2 => 3.5,
             ProverKind::HOL4 => 4.0,
             ProverKind::Idris2 => 2.5,
-            ProverKind::Vampire => 1.5,  // Automated, TPTP format
-            ProverKind::EProver => 1.5,  // Similar to Vampire
-            ProverKind::SPASS => 1.5,    // DFG format
-            ProverKind::AltErgo => 1.5,  // Native format
-            ProverKind::FStar => 2.5,    // Dependent types + effects
-            ProverKind::Dafny => 2.0,    // Auto-active, Boogie pipeline
-            ProverKind::Why3 => 2.0,     // Multi-prover
-            ProverKind::TLAPS => 2.5,    // TLA+ specific
-            ProverKind::Twelf => 3.0,    // LF framework
-            ProverKind::Nuprl => 3.0,    // Constructive type theory
-            ProverKind::Minlog => 2.5,   // Minimal logic
-            ProverKind::Imandra => 2.0,  // ML-based
-            ProverKind::GLPK => 1.0,     // LP API
-            ProverKind::SCIP => 1.5,     // MINLP API
-            ProverKind::MiniZinc => 1.0, // Constraint modelling
-            ProverKind::Chuffed => 1.0,  // CP solver
-            ProverKind::ORTools => 1.5,  // Constraint/optimization
+            ProverKind::Vampire => 1.5,   // Automated, TPTP format
+            ProverKind::EProver => 1.5,   // Similar to Vampire
+            ProverKind::SPASS => 1.5,     // DFG format
+            ProverKind::AltErgo => 1.5,   // Native format
+            ProverKind::FStar => 2.5,     // Dependent types + effects
+            ProverKind::Dafny => 2.0,     // Auto-active, Boogie pipeline
+            ProverKind::Why3 => 2.0,      // Multi-prover
+            ProverKind::TLAPS => 2.5,     // TLA+ specific
+            ProverKind::Twelf => 3.0,     // LF framework
+            ProverKind::Nuprl => 3.0,     // Constructive type theory
+            ProverKind::Minlog => 2.5,    // Minimal logic
+            ProverKind::Imandra => 2.0,   // ML-based
+            ProverKind::GLPK => 1.0,      // LP API
+            ProverKind::SCIP => 1.5,      // MINLP API
+            ProverKind::MiniZinc => 1.0,  // Constraint modelling
+            ProverKind::Chuffed => 1.0,   // CP solver
+            ProverKind::ORTools => 1.5,   // Constraint/optimization
             ProverKind::TypedWasm => 2.0, // Internal oracle
-            ProverKind::SPIN => 1.5,     // Model checker
-            ProverKind::CBMC => 1.5,     // Bounded model checker
-            ProverKind::SeaHorn => 1.5,  // LLVM-based CHC verifier
-            ProverKind::CaDiCaL => 1.0,  // SAT solver, DIMACS CNF
-            ProverKind::Kissat => 1.0,   // SAT solver, DIMACS CNF
-            ProverKind::MiniSat => 1.0,  // SAT solver, DIMACS CNF
-            ProverKind::NuSMV => 1.5,    // Symbolic model checker
-            ProverKind::TLC => 1.5,      // TLA+ model checker
-            ProverKind::Alloy => 1.5,    // Relational model finder
-            ProverKind::Prism => 1.5,    // Probabilistic model checker
-            ProverKind::UPPAAL => 1.5,   // Timed automata model checker
-            ProverKind::FramaC => 1.5,   // Deductive C verifier
-            ProverKind::Viper => 2.0,    // Permission-based verifier (Silver + two backends)
-            ProverKind::Tamarin => 2.0,  // Security protocol verifier (.spthy)
-            ProverKind::ProVerif => 1.5, // Automated protocol verifier (.pv)
-            ProverKind::KeY => 2.0,     // Deductive Java verifier (JavaDL + JML)
-            ProverKind::DReal => 1.0,   // Automated SMT solver, SMT-LIB input
-            ProverKind::ABC => 1.5,    // Hardware verification, AIGER/BLIF input
+            ProverKind::SPIN => 1.5,      // Model checker
+            ProverKind::CBMC => 1.5,      // Bounded model checker
+            ProverKind::SeaHorn => 1.5,   // LLVM-based CHC verifier
+            ProverKind::CaDiCaL => 1.0,   // SAT solver, DIMACS CNF
+            ProverKind::Kissat => 1.0,    // SAT solver, DIMACS CNF
+            ProverKind::MiniSat => 1.0,   // SAT solver, DIMACS CNF
+            ProverKind::NuSMV => 1.5,     // Symbolic model checker
+            ProverKind::TLC => 1.5,       // TLA+ model checker
+            ProverKind::Alloy => 1.5,     // Relational model finder
+            ProverKind::Prism => 1.5,     // Probabilistic model checker
+            ProverKind::UPPAAL => 1.5,    // Timed automata model checker
+            ProverKind::FramaC => 1.5,    // Deductive C verifier
+            ProverKind::Viper => 2.0,     // Permission-based verifier (Silver + two backends)
+            ProverKind::Tamarin => 2.0,   // Security protocol verifier (.spthy)
+            ProverKind::ProVerif => 1.5,  // Automated protocol verifier (.pv)
+            ProverKind::KeY => 2.0,       // Deductive Java verifier (JavaDL + JML)
+            ProverKind::DReal => 1.0,     // Automated SMT solver, SMT-LIB input
+            ProverKind::ABC => 1.5,       // Hardware verification, AIGER/BLIF input
         }
     }
 
@@ -491,22 +495,22 @@ impl ProverKind {
             ProverKind::TypedWasm => "idris2", // Validates via Idris2 ABI
             ProverKind::SPIN => "spin",
             ProverKind::CBMC => "cbmc",
-            ProverKind::SeaHorn => "sea",       // SeaHorn verification framework CLI
-            ProverKind::CaDiCaL => "cadical",  // CaDiCaL SAT solver
-            ProverKind::Kissat => "kissat",    // Kissat SAT solver
-            ProverKind::MiniSat => "minisat",  // MiniSat SAT solver
-            ProverKind::NuSMV => "nuXmv",      // nuXmv / NuSMV model checker
-            ProverKind::TLC => "tlc2",         // TLA+ model checker (Java)
-            ProverKind::Alloy => "alloy",      // Alloy Analyzer (Java JAR)
-            ProverKind::Prism => "prism",      // PRISM probabilistic model checker
-            ProverKind::UPPAAL => "verifyta",  // UPPAAL verification engine
-            ProverKind::FramaC => "frama-c",   // Frama-C platform (WP plugin)
-            ProverKind::Viper => "silicon",     // Viper Silicon verifier (default backend)
+            ProverKind::SeaHorn => "sea", // SeaHorn verification framework CLI
+            ProverKind::CaDiCaL => "cadical", // CaDiCaL SAT solver
+            ProverKind::Kissat => "kissat", // Kissat SAT solver
+            ProverKind::MiniSat => "minisat", // MiniSat SAT solver
+            ProverKind::NuSMV => "nuXmv", // nuXmv / NuSMV model checker
+            ProverKind::TLC => "tlc2",    // TLA+ model checker (Java)
+            ProverKind::Alloy => "alloy", // Alloy Analyzer (Java JAR)
+            ProverKind::Prism => "prism", // PRISM probabilistic model checker
+            ProverKind::UPPAAL => "verifyta", // UPPAAL verification engine
+            ProverKind::FramaC => "frama-c", // Frama-C platform (WP plugin)
+            ProverKind::Viper => "silicon", // Viper Silicon verifier (default backend)
             ProverKind::Tamarin => "tamarin-prover", // Tamarin security protocol prover
-            ProverKind::ProVerif => "proverif",        // ProVerif protocol verifier
-            ProverKind::KeY => "key",                    // KeY Java verifier (Java, headless mode)
-            ProverKind::DReal => "dreal",                  // dReal delta-complete SMT solver
-            ProverKind::ABC => "abc",                      // Berkeley ABC logic synthesis system
+            ProverKind::ProVerif => "proverif", // ProVerif protocol verifier
+            ProverKind::KeY => "key",     // KeY Java verifier (Java, headless mode)
+            ProverKind::DReal => "dreal", // dReal delta-complete SMT solver
+            ProverKind::ABC => "abc",     // Berkeley ABC logic synthesis system
         }
     }
 }
@@ -536,7 +540,7 @@ impl Default for ProverConfig {
             executable: PathBuf::new(),
             library_paths: vec![],
             args: vec![],
-            timeout: 300,  // 5 minutes
+            timeout: 300, // 5 minutes
             neural_enabled: true,
         }
     }
@@ -558,8 +562,11 @@ pub trait ProverBackend: Send + Sync {
     async fn parse_string(&self, content: &str) -> anyhow::Result<ProofState>;
 
     /// Apply a tactic to current proof state
-    async fn apply_tactic(&self, state: &ProofState, tactic: &Tactic)
-        -> anyhow::Result<TacticResult>;
+    async fn apply_tactic(
+        &self,
+        state: &ProofState,
+        tactic: &Tactic,
+    ) -> anyhow::Result<TacticResult>;
 
     /// Check if a proof is valid
     async fn verify_proof(&self, state: &ProofState) -> anyhow::Result<bool>;
@@ -568,8 +575,11 @@ pub trait ProverBackend: Send + Sync {
     async fn export(&self, state: &ProofState) -> anyhow::Result<String>;
 
     /// Get suggested tactics using neural premise selection
-    async fn suggest_tactics(&self, state: &ProofState, limit: usize)
-        -> anyhow::Result<Vec<Tactic>>;
+    async fn suggest_tactics(
+        &self,
+        state: &ProofState,
+        limit: usize,
+    ) -> anyhow::Result<Vec<Tactic>>;
 
     /// Search for theorems matching a pattern
     async fn search_theorems(&self, pattern: &str) -> anyhow::Result<Vec<String>>;
@@ -596,7 +606,10 @@ pub trait ProverBackend: Send + Sync {
 pub struct ProverFactory;
 
 impl ProverFactory {
-    pub fn create(kind: ProverKind, config: ProverConfig) -> anyhow::Result<Box<dyn ProverBackend>> {
+    pub fn create(
+        kind: ProverKind,
+        config: ProverConfig,
+    ) -> anyhow::Result<Box<dyn ProverBackend>> {
         // Fill in default executable if not specified
         let config = if config.executable.as_os_str().is_empty() {
             ProverConfig {
@@ -667,7 +680,7 @@ impl ProverFactory {
             "v" => Some(ProverKind::Coq),
             "lean" => Some(ProverKind::Lean),
             "thy" => Some(ProverKind::Isabelle),
-            "smt2" => Some(ProverKind::Z3),  // Could be CVC5 too
+            "smt2" => Some(ProverKind::Z3), // Could be CVC5 too
             "mm" => Some(ProverKind::Metamath),
             "ml" => Some(ProverKind::HOLLight),
             "miz" => Some(ProverKind::Mizar),
@@ -675,34 +688,34 @@ impl ProverFactory {
             "lisp" => Some(ProverKind::ACL2),
             "sml" => Some(ProverKind::HOL4),
             "idr" => Some(ProverKind::Idris2),
-            "p" | "tptp" => Some(ProverKind::Vampire),  // TPTP format (could be E too)
-            "dfg" => Some(ProverKind::SPASS),  // SPASS DFG format
-            "ae" => Some(ProverKind::AltErgo),  // Alt-Ergo native format
-            "why" | "mlw" => Some(ProverKind::Why3),  // Why3 / WhyML
-            "fst" | "fsti" => Some(ProverKind::FStar),  // F* source / interface
-            "dfy" => Some(ProverKind::Dafny),  // Dafny format
-            "tla" => Some(ProverKind::TLAPS),  // TLA+ format
-            "elf" => Some(ProverKind::Twelf),  // Twelf LF format
-            "nuprl" => Some(ProverKind::Nuprl),  // Nuprl format
-            "minlog" => Some(ProverKind::Minlog),  // Minlog format
-            "iml" => Some(ProverKind::Imandra),  // Imandra ML format
-            "lp" | "mps" => Some(ProverKind::GLPK),  // LP/MIP format
-            "pip" | "zpl" => Some(ProverKind::SCIP),  // SCIP/ZIMPL format
-            "mzn" | "dzn" => Some(ProverKind::MiniZinc),  // MiniZinc format
-            "fzn" => Some(ProverKind::Chuffed),  // FlatZinc (Chuffed input)
-            "twasm" => Some(ProverKind::TypedWasm),  // TypedWasm program
-            "pml" => Some(ProverKind::SPIN),  // Promela model
-            "smv" => Some(ProverKind::NuSMV),     // SMV specification
-            "als" => Some(ProverKind::Alloy),    // Alloy specification
-            "pm" | "prism" => Some(ProverKind::Prism),  // PRISM model
-            "vpr" => Some(ProverKind::Viper),    // Viper Silver language
-            "spthy" => Some(ProverKind::Tamarin),  // Tamarin security protocol theory
-            "pv" => Some(ProverKind::ProVerif),    // ProVerif applied pi-calculus
-            "cnf" => Some(ProverKind::CaDiCaL),  // DIMACS CNF (default SAT solver)
-            "dr" => Some(ProverKind::DReal),   // dReal SMT-LIB (.dr extension)
-            "aig" => Some(ProverKind::ABC),    // AIGER format (And-Inverter Graph)
-            "blif" => Some(ProverKind::ABC),   // Berkeley Logic Interchange Format
-            "key" => Some(ProverKind::KeY),    // KeY proof problem file (JavaDL)
+            "p" | "tptp" => Some(ProverKind::Vampire), // TPTP format (could be E too)
+            "dfg" => Some(ProverKind::SPASS),          // SPASS DFG format
+            "ae" => Some(ProverKind::AltErgo),         // Alt-Ergo native format
+            "why" | "mlw" => Some(ProverKind::Why3),   // Why3 / WhyML
+            "fst" | "fsti" => Some(ProverKind::FStar), // F* source / interface
+            "dfy" => Some(ProverKind::Dafny),          // Dafny format
+            "tla" => Some(ProverKind::TLAPS),          // TLA+ format
+            "elf" => Some(ProverKind::Twelf),          // Twelf LF format
+            "nuprl" => Some(ProverKind::Nuprl),        // Nuprl format
+            "minlog" => Some(ProverKind::Minlog),      // Minlog format
+            "iml" => Some(ProverKind::Imandra),        // Imandra ML format
+            "lp" | "mps" => Some(ProverKind::GLPK),    // LP/MIP format
+            "pip" | "zpl" => Some(ProverKind::SCIP),   // SCIP/ZIMPL format
+            "mzn" | "dzn" => Some(ProverKind::MiniZinc), // MiniZinc format
+            "fzn" => Some(ProverKind::Chuffed),        // FlatZinc (Chuffed input)
+            "twasm" => Some(ProverKind::TypedWasm),    // TypedWasm program
+            "pml" => Some(ProverKind::SPIN),           // Promela model
+            "smv" => Some(ProverKind::NuSMV),          // SMV specification
+            "als" => Some(ProverKind::Alloy),          // Alloy specification
+            "pm" | "prism" => Some(ProverKind::Prism), // PRISM model
+            "vpr" => Some(ProverKind::Viper),          // Viper Silver language
+            "spthy" => Some(ProverKind::Tamarin),      // Tamarin security protocol theory
+            "pv" => Some(ProverKind::ProVerif),        // ProVerif applied pi-calculus
+            "cnf" => Some(ProverKind::CaDiCaL),        // DIMACS CNF (default SAT solver)
+            "dr" => Some(ProverKind::DReal),           // dReal SMT-LIB (.dr extension)
+            "aig" => Some(ProverKind::ABC),            // AIGER format (And-Inverter Graph)
+            "blif" => Some(ProverKind::ABC),           // Berkeley Logic Interchange Format
+            "key" => Some(ProverKind::KeY),            // KeY proof problem file (JavaDL)
             // Note: .java files with JML annotations can also be detected via content-aware detection
             // Note: .c files only map to CBMC when containing __CPROVER directives
             // Use detect_from_file_content() for content-aware detection
@@ -724,7 +737,8 @@ impl ProverFactory {
         if let Some(ext) = path.extension().and_then(|e| e.to_str()) {
             // Java files with JML annotations → KeY
             if ext == "java" {
-                if content.contains("//@") || content.contains("/*@")
+                if content.contains("//@")
+                    || content.contains("/*@")
                     || content.contains("requires") && content.contains("ensures")
                 {
                     return Some(ProverKind::KeY);

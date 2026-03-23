@@ -147,7 +147,9 @@ mod property_tests {
     }
 
     fn parse_term(s: &str) -> Result<Term, ()> {
-        Ok(Term { value: s.to_string() })
+        Ok(Term {
+            value: s.to_string(),
+        })
     }
 
     fn serialize_term(term: &Term) -> String {
@@ -189,12 +191,12 @@ mod property_tests {
 mod trust_hardening_property_tests {
     use proptest::prelude::*;
 
-    use echidna::verification::confidence::{compute_trust_level, TrustLevel, TrustFactors};
-    use echidna::verification::axiom_tracker::{AxiomTracker, DangerLevel};
-    use echidna::verification::mutation::{MutationTester, MutationResult, MutationKind};
-    use echidna::verification::pareto::{ParetoFrontier, ProofCandidate, ProofObjective};
-    use echidna::provers::ProverKind;
     use echidna::core::Term;
+    use echidna::provers::ProverKind;
+    use echidna::verification::axiom_tracker::{AxiomTracker, DangerLevel};
+    use echidna::verification::confidence::{compute_trust_level, TrustFactors, TrustLevel};
+    use echidna::verification::mutation::{MutationKind, MutationResult, MutationTester};
+    use echidna::verification::pareto::{ParetoFrontier, ProofCandidate, ProofObjective};
 
     // ===== Confidence Scoring Properties =====
 

@@ -23,8 +23,8 @@
 //! - Interactive session management
 //! - Implementation time: ~2 weeks
 
-use async_trait::async_trait;
 use anyhow::{anyhow, Context as AnyhowContext, Result};
+use async_trait::async_trait;
 use std::collections::HashMap;
 use std::path::PathBuf;
 use std::process::Stdio;
@@ -35,8 +35,7 @@ use tokio::sync::Mutex;
 use tracing::{debug, info, trace, warn};
 
 use crate::core::{
-    Context as ProofContext, Definition, Goal, ProofState, Tactic, TacticResult,
-    Term, Theorem,
+    Context as ProofContext, Definition, Goal, ProofState, Tactic, TacticResult, Term, Theorem,
 };
 use crate::provers::{ProverBackend, ProverConfig, ProverKind};
 
@@ -61,7 +60,10 @@ impl HolLightBackend {
         info!("Starting HOL Light OCaml session");
 
         // HOL Light is typically invoked via ocaml with hol.ml loaded
-        let hol_dir = self.config.library_paths.first()
+        let hol_dir = self
+            .config
+            .library_paths
+            .first()
             .cloned()
             .unwrap_or_else(|| PathBuf::from("/usr/local/lib/hol_light"));
 
@@ -76,9 +78,13 @@ impl HolLightBackend {
             .spawn()
             .context("Failed to start OCaml for HOL Light")?;
 
-        let stdin = child.stdin.take()
+        let stdin = child
+            .stdin
+            .take()
             .ok_or_else(|| anyhow!("Failed to capture stdin"))?;
-        let stdout = child.stdout.take()
+        let stdout = child
+            .stdout
+            .take()
             .ok_or_else(|| anyhow!("Failed to capture stdout"))?;
 
         let mut session = HolLightSession {
@@ -90,10 +96,15 @@ impl HolLightBackend {
 
         // Load HOL Light core
         if hol_ml.exists() {
-            session.send_command(&format!("#use \"{}\";;", hol_ml.display())).await?;
+            session
+                .send_command(&format!("#use \"{}\";;", hol_ml.display()))
+                .await?;
             info!("HOL Light core loaded");
         } else {
-            warn!("HOL Light core file not found at {:?}, continuing without it", hol_ml);
+            warn!(
+                "HOL Light core file not found at {:?}, continuing without it",
+                hol_ml
+            );
         }
 
         Ok(session)
@@ -115,7 +126,8 @@ impl HolLightBackend {
         self.get_session().await?;
 
         let mut session_lock = self.session.lock().await;
-        let session = session_lock.as_mut()
+        let session = session_lock
+            .as_mut()
             .ok_or_else(|| anyhow!("No active session"))?;
 
         session.send_command(command).await
@@ -164,31 +176,35 @@ impl HolLightBackend {
     /// Convert HOL Light term to universal Term
     fn hol_to_term(&self, hol_term: &HolTerm) -> Result<Term> {
         match hol_term {
-            HolTerm::Var { name, ty: _ } => {
-                Ok(Term::Var(name.clone()))
-            }
-            HolTerm::Const { name, ty: _ } => {
-                Ok(Term::Const(name.clone()))
-            }
+            HolTerm::Var { name, ty: _ } => Ok(Term::Var(name.clone())),
+            HolTerm::Const { name, ty: _ } => Ok(Term::Const(name.clone())),
             HolTerm::Comb { func, arg } => {
                 let func_term = self.hol_to_term(func)?;
                 let arg_term = self.hol_to_term(arg)?;
 
                 // Check if func is already an App, if so extend args
                 match func_term {
-                    Term::App { func: inner_func, mut args } => {
+                    Term::App {
+                        func: inner_func,
+                        mut args,
+                    } => {
                         args.push(arg_term);
-                        Ok(Term::App { func: inner_func, args })
-                    }
-                    _ => {
                         Ok(Term::App {
-                            func: Box::new(func_term),
-                            args: vec![arg_term],
+                            func: inner_func,
+                            args,
                         })
-                    }
+                    },
+                    _ => Ok(Term::App {
+                        func: Box::new(func_term),
+                        args: vec![arg_term],
+                    }),
                 }
-            }
-            HolTerm::Abs { var, var_type, body } => {
+            },
+            HolTerm::Abs {
+                var,
+                var_type,
+                body,
+            } => {
                 let var_type_term = match var_type {
                     Some(t) => Some(Box::new(self.hol_to_term(t)?)),
                     None => None,
@@ -200,7 +216,7 @@ impl HolLightBackend {
                     param_type: var_type_term,
                     body: body_term,
                 })
-            }
+            },
         }
     }
 
@@ -211,81 +227,98 @@ impl HolLightBackend {
             Term::Const(name) => name.clone(),
             Term::App { func, args } => {
                 let func_str = self.term_to_hol(func);
-                let args_str = args.iter()
+                let args_str = args
+                    .iter()
                     .map(|a| self.term_to_hol(a))
                     .collect::<Vec<_>>()
                     .join(" ");
                 format!("({} {})", func_str, args_str)
-            }
-            Term::Lambda { param, param_type, body } => {
-                let type_annotation = param_type.as_ref()
+            },
+            Term::Lambda {
+                param,
+                param_type,
+                body,
+            } => {
+                let type_annotation = param_type
+                    .as_ref()
                     .map(|t| format!(":{}", self.term_to_hol(t)))
                     .unwrap_or_default();
-                format!("(\\{}{}. {})", param, type_annotation, self.term_to_hol(body))
-            }
-            Term::Pi { param, param_type, body } => {
-                format!("(!{} : {}. {})", param, self.term_to_hol(param_type), self.term_to_hol(body))
-            }
+                format!(
+                    "(\\{}{}. {})",
+                    param,
+                    type_annotation,
+                    self.term_to_hol(body)
+                )
+            },
+            Term::Pi {
+                param,
+                param_type,
+                body,
+            } => {
+                format!(
+                    "(!{} : {}. {})",
+                    param,
+                    self.term_to_hol(param_type),
+                    self.term_to_hol(body)
+                )
+            },
             Term::Universe(level) | Term::Type(level) => format!("Type{}", level),
             Term::Sort(level) => format!("Sort{}", level),
-            Term::Let { name, value, body, .. } => {
-                format!("(let {} = {} in {})", name, self.term_to_hol(value), self.term_to_hol(body))
-            }
+            Term::Let {
+                name, value, body, ..
+            } => {
+                format!(
+                    "(let {} = {} in {})",
+                    name,
+                    self.term_to_hol(value),
+                    self.term_to_hol(body)
+                )
+            },
             Term::Match { scrutinee, .. } => {
                 format!("(match {} with ...)", self.term_to_hol(scrutinee))
-            }
+            },
             Term::Fix { name, body, .. } => {
                 format!("(fix {} = {})", name, self.term_to_hol(body))
-            }
+            },
             Term::Hole(name) => format!("?{}", name),
             Term::Meta(id) => format!("?{}", id),
-            Term::ProverSpecific { data, .. } => {
-                data.as_str().unwrap_or("<term>").to_string()
-            }
+            Term::ProverSpecific { data, .. } => data.as_str().unwrap_or("<term>").to_string(),
         }
     }
 
     /// Map ECHIDNA tactic to HOL Light tactic
     fn tactic_to_hol(&self, tactic: &Tactic) -> Result<String> {
         match tactic {
-            Tactic::Apply(theorem_name) => {
-                Ok(format!("MATCH_MP_TAC {};;", theorem_name))
-            }
-            Tactic::Intro(_name) => {
-                Ok("GEN_TAC;;".to_string())
-            }
+            Tactic::Apply(theorem_name) => Ok(format!("MATCH_MP_TAC {};;", theorem_name)),
+            Tactic::Intro(_name) => Ok("GEN_TAC;;".to_string()),
             Tactic::Cases(term) => {
                 let term_str = self.term_to_hol(term);
                 Ok(format!("STRUCT_CASES_TAC (SPEC {} cases);;", term_str))
-            }
+            },
             Tactic::Induction(term) => {
                 let _term_str = self.term_to_hol(term);
                 Ok(format!("INDUCT_TAC;;"))
-            }
-            Tactic::Rewrite(theorem_name) => {
-                Ok(format!("REWRITE_TAC[{}];;", theorem_name))
-            }
-            Tactic::Simplify => {
-                Ok("SIMP_TAC[];;".to_string())
-            }
-            Tactic::Reflexivity => {
-                Ok("REFL_TAC;;".to_string())
-            }
-            Tactic::Assumption => {
-                Ok("ASM_REWRITE_TAC[];;".to_string())
-            }
+            },
+            Tactic::Rewrite(theorem_name) => Ok(format!("REWRITE_TAC[{}];;", theorem_name)),
+            Tactic::Simplify => Ok("SIMP_TAC[];;".to_string()),
+            Tactic::Reflexivity => Ok("REFL_TAC;;".to_string()),
+            Tactic::Assumption => Ok("ASM_REWRITE_TAC[];;".to_string()),
             Tactic::Exact(term) => {
                 let term_str = self.term_to_hol(term);
                 Ok(format!("ACCEPT_TAC {};;", term_str))
-            }
-            Tactic::Custom { prover, command, args } => {
+            },
+            Tactic::Custom {
+                prover,
+                command,
+                args,
+            } => {
                 if prover != "hol_light" {
                     return Err(anyhow!("Custom tactic not for HOL Light"));
                 }
 
                 let args_str = args.join(" ");
                 Ok(format!("{} {};;", command, args_str))
-            }
+            },
         }
     }
 
@@ -300,7 +333,8 @@ impl HolLightBackend {
 
         // Export definitions
         for def in &state.context.definitions {
-            output.push_str(&format!("let {} = new_definition `{} = {}`;;  \n\n",
+            output.push_str(&format!(
+                "let {} = new_definition `{} = {}`;;  \n\n",
                 def.name,
                 self.term_to_hol(&Term::Const(def.name.clone())),
                 self.term_to_hol(&def.body)
@@ -349,7 +383,7 @@ impl HolLightBackend {
                     Term::ProverSpecific {
                         prover: "hol_light".to_string(),
                         data: serde_json::json!(statement),
-                    }
+                    },
                 ));
             }
         }
@@ -428,8 +462,14 @@ impl ProverBackend for HolLightBackend {
             metadata: {
                 let mut meta = HashMap::new();
                 meta.insert("prover".to_string(), serde_json::json!("hol_light"));
-                meta.insert("theorems".to_string(), serde_json::json!(file.theorems.len()));
-                meta.insert("definitions".to_string(), serde_json::json!(file.definitions.len()));
+                meta.insert(
+                    "theorems".to_string(),
+                    serde_json::json!(file.theorems.len()),
+                );
+                meta.insert(
+                    "definitions".to_string(),
+                    serde_json::json!(file.definitions.len()),
+                );
                 meta
             },
         })
@@ -466,10 +506,8 @@ impl ProverBackend for HolLightBackend {
                         Ok(TacticResult::Success(new_state))
                     }
                 }
-            }
-            Err(e) => {
-                Ok(TacticResult::Error(format!("Tactic failed: {}", e)))
-            }
+            },
+            Err(e) => Ok(TacticResult::Error(format!("Tactic failed: {}", e))),
         }
     }
 
@@ -502,9 +540,7 @@ impl ProverBackend for HolLightBackend {
         let _ = fs::remove_file(&temp_file).await;
 
         match result {
-            Ok(output) => {
-                Ok(output.contains("Theorem") || !output.contains("Exception"))
-            }
+            Ok(output) => Ok(output.contains("Theorem") || !output.contains("Exception")),
             Err(_) => Ok(false),
         }
     }
@@ -527,7 +563,7 @@ impl ProverBackend for HolLightBackend {
         match &goal.target {
             Term::Pi { .. } => {
                 suggestions.push(Tactic::Intro(None));
-            }
+            },
             Term::App { func, .. } => {
                 // Check if it's an equality
                 if let Term::Const(name) = func.as_ref() {
@@ -538,14 +574,19 @@ impl ProverBackend for HolLightBackend {
                 }
 
                 // Suggest applicable theorems
-                for theorem in state.context.theorems.iter().take(limit - suggestions.len()) {
+                for theorem in state
+                    .context
+                    .theorems
+                    .iter()
+                    .take(limit - suggestions.len())
+                {
                     suggestions.push(Tactic::Apply(theorem.name.clone()));
                 }
-            }
+            },
             _ => {
                 suggestions.push(Tactic::Assumption);
                 suggestions.push(Tactic::Simplify);
-            }
+            },
         }
 
         // Always suggest powerful tactics
@@ -586,11 +627,11 @@ impl ProverBackend for HolLightBackend {
 
                 info!("Found {} theorems matching '{}'", results.len(), pattern);
                 Ok(results)
-            }
+            },
             Err(e) => {
                 warn!("Search failed: {}", e);
                 Ok(vec![])
-            }
+            },
         }
     }
 
@@ -646,8 +687,11 @@ impl HolLightSession {
             }
 
             // Check for common completion markers
-            if buffer.contains("val ") || buffer.contains("Exception") ||
-               buffer.contains("Theorem") || buffer.contains("No subgoals") {
+            if buffer.contains("val ")
+                || buffer.contains("Exception")
+                || buffer.contains("Theorem")
+                || buffer.contains("No subgoals")
+            {
                 // Read one more line (likely the prompt)
                 buffer.clear();
                 let _ = self.stdout.read_line(&mut buffer).await;
@@ -657,7 +701,11 @@ impl HolLightSession {
         }
 
         self.command_counter += 1;
-        trace!("Command response ({} lines): {}", lines_read, response.trim());
+        trace!(
+            "Command response ({} lines): {}",
+            lines_read,
+            response.trim()
+        );
 
         Ok(response)
     }
@@ -789,7 +837,8 @@ impl HolLightParser {
     fn parse_let_binding(&mut self) -> Result<LetBinding> {
         self.expect_keyword("let")?;
 
-        let name = self.parse_identifier()
+        let name = self
+            .parse_identifier()
             .ok_or_else(|| anyhow!("Expected identifier after 'let'"))?;
 
         self.skip_whitespace_and_comments();
@@ -965,15 +1014,9 @@ impl HolLightParser {
 
         if let Some(id) = self.parse_identifier() {
             if id.chars().next().map_or(false, |c| c.is_uppercase()) {
-                Ok(HolTerm::Const {
-                    name: id,
-                    ty: None,
-                })
+                Ok(HolTerm::Const { name: id, ty: None })
             } else {
-                Ok(HolTerm::Var {
-                    name: id,
-                    ty: None,
-                })
+                Ok(HolTerm::Var { name: id, ty: None })
             }
         } else {
             Err(anyhow!("Expected term"))
@@ -1023,7 +1066,11 @@ impl HolLightParser {
         self.skip_whitespace_and_comments();
 
         if !self.input[self.pos..].starts_with(keyword) {
-            return Err(anyhow!("Expected keyword '{}' at position {}", keyword, self.pos));
+            return Err(anyhow!(
+                "Expected keyword '{}' at position {}",
+                keyword,
+                self.pos
+            ));
         }
 
         self.pos += keyword.len();
@@ -1152,15 +1199,10 @@ mod tests {
         let config = ProverConfig::default();
         let backend = HolLightBackend::new(config);
 
-        let state = ProofState::new(
-            Term::App {
-                func: Box::new(Term::Const("=".to_string())),
-                args: vec![
-                    Term::Var("x".to_string()),
-                    Term::Var("x".to_string()),
-                ],
-            }
-        );
+        let state = ProofState::new(Term::App {
+            func: Box::new(Term::Const("=".to_string())),
+            args: vec![Term::Var("x".to_string()), Term::Var("x".to_string())],
+        });
 
         let tactics = backend.suggest_tactics(&state, 5).await?;
         assert!(!tactics.is_empty());

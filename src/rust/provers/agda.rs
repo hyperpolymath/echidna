@@ -8,8 +8,8 @@
 //! Agda is a Tier 1 prover in ECHIDNA with dependent type theory support.
 //! This module provides full integration with Agda's dependently-typed proof system.
 
-use async_trait::async_trait;
 use anyhow::{anyhow, Context, Result};
+use async_trait::async_trait;
 use nom::{
     branch::alt,
     bytes::complete::{tag, take_until, take_while},
@@ -23,8 +23,8 @@ use tokio::process::Command;
 use tokio::sync::Mutex;
 
 use crate::core::{
-    Context as ProofContext, Definition, Goal, Hypothesis, ProofState, Tactic, TacticResult,
-    Term, Theorem,
+    Context as ProofContext, Definition, Goal, Hypothesis, ProofState, Tactic, TacticResult, Term,
+    Theorem,
 };
 use crate::provers::{ProverBackend, ProverConfig, ProverKind};
 
@@ -66,8 +66,7 @@ impl AgdaBackend {
 
     /// Parse Agda file content
     fn parse_agda(&self, content: &str) -> Result<Vec<AgdaDecl>> {
-        let (_, decls) = parse_module(content)
-            .map_err(|e| anyhow!("Parse error: {:?}", e))?;
+        let (_, decls) = parse_module(content).map_err(|e| anyhow!("Parse error: {:?}", e))?;
         Ok(decls)
     }
 
@@ -102,7 +101,8 @@ impl AgdaBackend {
             Term::Const(name) => name.clone(),
             Term::App { func, args } => {
                 let func_str = self.term_to_agda(func);
-                let args_str = args.iter()
+                let args_str = args
+                    .iter()
                     .map(|a| self.term_to_agda(a))
                     .collect::<Vec<_>>()
                     .join(" ");
@@ -111,8 +111,12 @@ impl AgdaBackend {
                 } else {
                     format!("({} {})", func_str, args_str)
                 }
-            }
-            Term::Lambda { param, param_type, body } => {
+            },
+            Term::Lambda {
+                param,
+                param_type,
+                body,
+            } => {
                 let body_str = self.term_to_agda(body);
                 if let Some(ty) = param_type {
                     let ty_str = self.term_to_agda(ty);
@@ -120,29 +124,40 @@ impl AgdaBackend {
                 } else {
                     format!("λ {} → {}", param, body_str)
                 }
-            }
-            Term::Pi { param, param_type, body } => {
+            },
+            Term::Pi {
+                param,
+                param_type,
+                body,
+            } => {
                 let param_ty_str = self.term_to_agda(param_type);
                 let body_str = self.term_to_agda(body);
                 format!("({} : {}) → {}", param, param_ty_str, body_str)
-            }
+            },
             Term::Universe(level) | Term::Type(level) => {
                 if *level == 0 {
                     "Set".to_string()
                 } else {
                     format!("Set{}", level)
                 }
-            }
+            },
             Term::Sort(level) => format!("Sort{}", level),
-            Term::Let { name, value, body, .. } => {
-                format!("let {} = {} in {}", name, self.term_to_agda(value), self.term_to_agda(body))
-            }
+            Term::Let {
+                name, value, body, ..
+            } => {
+                format!(
+                    "let {} = {} in {}",
+                    name,
+                    self.term_to_agda(value),
+                    self.term_to_agda(body)
+                )
+            },
             Term::Match { scrutinee, .. } => {
                 format!("(case {} of ...)", self.term_to_agda(scrutinee))
-            }
+            },
             Term::Fix { name, body, .. } => {
                 format!("(fix {} = {})", name, self.term_to_agda(body))
-            }
+            },
             Term::Hole(name) => format!("{{! {} !}}", name),
             Term::Meta(id) => format!("?{}", id),
             Term::ProverSpecific { .. } => "{! !}".to_string(),
@@ -228,7 +243,8 @@ impl ProverBackend for AgdaBackend {
     }
 
     async fn parse_file(&self, path: PathBuf) -> Result<ProofState> {
-        let content = tokio::fs::read_to_string(&path).await
+        let content = tokio::fs::read_to_string(&path)
+            .await
             .context("Failed to read Agda file")?;
         self.parse_string(&content).await
     }
@@ -248,7 +264,7 @@ impl ProverBackend for AgdaBackend {
                         ty: type_term.clone(),
                         body: type_term,
                     });
-                }
+                },
                 AgdaDecl::TypeSig { name, ty } => {
                     let type_term = self.parse_type_expr(&ty);
                     theorems.push(Theorem {
@@ -257,7 +273,7 @@ impl ProverBackend for AgdaBackend {
                         proof: None,
                         aspects: Vec::new(),
                     });
-                }
+                },
                 AgdaDecl::Postulate { name, ty } => {
                     theorems.push(Theorem {
                         name: name.clone(),
@@ -265,8 +281,8 @@ impl ProverBackend for AgdaBackend {
                         proof: None,
                         aspects: vec!["axiom".to_string()],
                     });
-                }
-                _ => {}
+                },
+                _ => {},
             }
         }
 
@@ -293,7 +309,7 @@ impl ProverBackend for AgdaBackend {
                 } else {
                     Ok(TacticResult::Success(new_state))
                 }
-            }
+            },
             Tactic::Intro(name) => {
                 let mut new_state = state.clone();
                 if let Some(goal) = new_state.goals.first_mut() {
@@ -305,7 +321,7 @@ impl ProverBackend for AgdaBackend {
                     });
                 }
                 Ok(TacticResult::Success(new_state))
-            }
+            },
             Tactic::Reflexivity => {
                 let mut new_state = state.clone();
                 if !new_state.goals.is_empty() {
@@ -316,7 +332,7 @@ impl ProverBackend for AgdaBackend {
                 } else {
                     Ok(TacticResult::Success(new_state))
                 }
-            }
+            },
             _ => Err(anyhow!("Tactic not supported in Agda")),
         }
     }
@@ -345,11 +361,19 @@ impl ProverBackend for AgdaBackend {
 
         for def in &state.context.definitions {
             output.push_str(&format!("{} : {}\n", def.name, self.term_to_agda(&def.ty)));
-            output.push_str(&format!("{} = {}\n\n", def.name, self.term_to_agda(&def.body)));
+            output.push_str(&format!(
+                "{} = {}\n\n",
+                def.name,
+                self.term_to_agda(&def.body)
+            ));
         }
 
         for theorem in &state.context.theorems {
-            output.push_str(&format!("{} : {}\n", theorem.name, self.term_to_agda(&theorem.statement)));
+            output.push_str(&format!(
+                "{} : {}\n",
+                theorem.name,
+                self.term_to_agda(&theorem.statement)
+            ));
             output.push_str(&format!("{} = {{! !}}\n\n", theorem.name));
         }
 
@@ -368,8 +392,8 @@ impl ProverBackend for AgdaBackend {
                             suggestions.push(Tactic::Reflexivity);
                         }
                     }
-                }
-                _ => {}
+                },
+                _ => {},
             }
 
             for theorem in &state.context.theorems {
@@ -404,7 +428,8 @@ fn ws(input: &str) -> IResult<&str, ()> {
 
 fn identifier(input: &str) -> IResult<&str, String> {
     let (input, first) = alt((alpha1, tag("_")))(input)?;
-    let (input, rest) = take_while(|c: char| c.is_alphanumeric() || c == '_' || c == '-' || c == '\'')(input)?;
+    let (input, rest) =
+        take_while(|c: char| c.is_alphanumeric() || c == '_' || c == '-' || c == '\'')(input)?;
     Ok((input, format!("{}{}", first, rest)))
 }
 
@@ -423,10 +448,13 @@ fn parse_type_sig(input: &str) -> IResult<&str, AgdaDecl> {
     let (input, _) = tag(":")(input)?;
     let (input, _) = space0(input)?;
     let (input, ty) = take_until("\n")(input)?;
-    Ok((input, AgdaDecl::TypeSig {
-        name,
-        ty: ty.trim().to_string(),
-    }))
+    Ok((
+        input,
+        AgdaDecl::TypeSig {
+            name,
+            ty: ty.trim().to_string(),
+        },
+    ))
 }
 
 fn parse_postulate(input: &str) -> IResult<&str, AgdaDecl> {
@@ -437,19 +465,25 @@ fn parse_postulate(input: &str) -> IResult<&str, AgdaDecl> {
     let (input, _) = tag(":")(input)?;
     let (input, _) = space0(input)?;
     let (input, ty) = take_until("\n")(input)?;
-    Ok((input, AgdaDecl::Postulate {
-        name,
-        ty: ty.trim().to_string(),
-    }))
+    Ok((
+        input,
+        AgdaDecl::Postulate {
+            name,
+            ty: ty.trim().to_string(),
+        },
+    ))
 }
 
 fn parse_import(input: &str) -> IResult<&str, AgdaDecl> {
     let (input, _) = alt((tag("import"), tag("open import")))(input)?;
     let (input, _) = space1(input)?;
     let (input, module) = take_until("\n")(input)?;
-    Ok((input, AgdaDecl::Import {
-        module: module.trim().to_string(),
-    }))
+    Ok((
+        input,
+        AgdaDecl::Import {
+            module: module.trim().to_string(),
+        },
+    ))
 }
 
 fn parse_decl(input: &str) -> IResult<&str, AgdaDecl> {

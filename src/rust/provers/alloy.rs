@@ -20,8 +20,8 @@
 
 #![allow(dead_code)]
 
-use async_trait::async_trait;
 use anyhow::{anyhow, Context, Result};
+use async_trait::async_trait;
 use std::path::PathBuf;
 use std::process::Stdio;
 use tokio::process::Command;
@@ -120,7 +120,10 @@ impl AlloyBackend {
 
         // Check for error
         if output.contains("Syntax error") || output.contains("Type error") {
-            return Err(anyhow!("Alloy error: {}", output.lines().take(10).collect::<Vec<_>>().join("\n")));
+            return Err(anyhow!(
+                "Alloy error: {}",
+                output.lines().take(10).collect::<Vec<_>>().join("\n")
+            ));
         }
 
         Err(anyhow!(
@@ -236,9 +239,11 @@ impl ProverBackend for AlloyBackend {
     async fn apply_tactic(&self, state: &ProofState, tactic: &Tactic) -> Result<TacticResult> {
         match tactic {
             // AddAssertion: add an assertion to check
-            Tactic::Custom { prover, command, args }
-                if prover == "alloy" && command == "add_assertion" =>
-            {
+            Tactic::Custom {
+                prover,
+                command,
+                args,
+            } if prover == "alloy" && command == "add_assertion" => {
                 let assertion_text = args.join(" ");
                 let mut new_state = state.clone();
                 new_state.goals.push(Goal {
@@ -248,32 +253,35 @@ impl ProverBackend for AlloyBackend {
                 });
                 new_state.proof_script.push(tactic.clone());
                 Ok(TacticResult::Success(new_state))
-            }
+            },
 
             // SetScope: set the analysis scope (bound)
-            Tactic::Custom { prover, command, args }
-                if prover == "alloy" && command == "set_scope" =>
-            {
+            Tactic::Custom {
+                prover,
+                command,
+                args,
+            } if prover == "alloy" && command == "set_scope" => {
                 let scope = args.first().cloned().unwrap_or_else(|| "5".to_string());
                 let mut new_state = state.clone();
-                new_state.metadata.insert(
-                    "scope".to_string(),
-                    serde_json::Value::String(scope),
-                );
+                new_state
+                    .metadata
+                    .insert("scope".to_string(), serde_json::Value::String(scope));
                 new_state.proof_script.push(tactic.clone());
                 Ok(TacticResult::Success(new_state))
-            }
+            },
 
             // AddFact: add a fact constraint
-            Tactic::Custom { prover, command, args }
-                if prover == "alloy" && command == "add_fact" =>
-            {
+            Tactic::Custom {
+                prover,
+                command,
+                args,
+            } if prover == "alloy" && command == "add_fact" => {
                 let fact_text = args.join(" ");
                 let mut new_state = state.clone();
                 new_state.context.axioms.push(fact_text);
                 new_state.proof_script.push(tactic.clone());
                 Ok(TacticResult::Success(new_state))
-            }
+            },
 
             _ => Ok(TacticResult::Error(format!(
                 "Tactic {:?} not supported for Alloy model finder",
@@ -286,8 +294,8 @@ impl ProverBackend for AlloyBackend {
         let alloy_code = self.to_alloy(state)?;
 
         // Write Alloy to a temporary file
-        let tmp_dir = tempfile::tempdir()
-            .context("Failed to create temporary directory for Alloy")?;
+        let tmp_dir =
+            tempfile::tempdir().context("Failed to create temporary directory for Alloy")?;
         let tmp_file = tmp_dir.path().join("model.als");
         tokio::fs::write(&tmp_file, &alloy_code)
             .await
@@ -403,9 +411,18 @@ check NoSelfLoop for 5
 
         let state = backend.parse_string(als).await.unwrap();
 
-        assert!(!state.context.axioms.is_empty(), "Should have parsed sigs and facts");
-        assert!(!state.context.definitions.is_empty(), "Should have parsed predicates");
-        assert!(!state.goals.is_empty(), "Should have parsed assertions/checks");
+        assert!(
+            !state.context.axioms.is_empty(),
+            "Should have parsed sigs and facts"
+        );
+        assert!(
+            !state.context.definitions.is_empty(),
+            "Should have parsed predicates"
+        );
+        assert!(
+            !state.goals.is_empty(),
+            "Should have parsed assertions/checks"
+        );
     }
 
     #[test]
@@ -432,7 +449,8 @@ check NoSelfLoop for 5
 
         let backend = AlloyBackend::new(config);
 
-        let failure = "Executing \"Check NoSelfLoop for 5\"\nCounterexample found. Assertion is invalid.\n";
+        let failure =
+            "Executing \"Check NoSelfLoop for 5\"\nCounterexample found. Assertion is invalid.\n";
         assert!(!backend.parse_result(failure).unwrap());
     }
 }

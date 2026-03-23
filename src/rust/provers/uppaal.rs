@@ -20,8 +20,8 @@
 
 #![allow(dead_code)]
 
-use async_trait::async_trait;
 use anyhow::{anyhow, Context, Result};
+use async_trait::async_trait;
 use std::path::PathBuf;
 use std::process::Stdio;
 use tokio::process::Command;
@@ -66,7 +66,11 @@ impl UppaalBackend {
         xml.push_str("  </declaration>\n");
 
         // Check if axioms contain raw XML template definitions
-        let has_raw_xml = state.context.axioms.iter().any(|a| a.contains("<template") || a.contains("<location"));
+        let has_raw_xml = state
+            .context
+            .axioms
+            .iter()
+            .any(|a| a.contains("<template") || a.contains("<location"));
 
         if has_raw_xml {
             for axiom in &state.context.axioms {
@@ -133,7 +137,9 @@ impl UppaalBackend {
             let trimmed = line.trim();
 
             // Property satisfied
-            if trimmed.contains("Property is satisfied") || trimmed.contains("-- Formula is satisfied") {
+            if trimmed.contains("Property is satisfied")
+                || trimmed.contains("-- Formula is satisfied")
+            {
                 found_result = true;
             }
 
@@ -172,8 +178,10 @@ impl UppaalBackend {
             let trimmed = line.trim();
 
             // Detect declarations
-            if trimmed.starts_with("<declaration>") || trimmed.starts_with("clock ")
-                || trimmed.starts_with("int ") || trimmed.starts_with("chan ")
+            if trimmed.starts_with("<declaration>")
+                || trimmed.starts_with("clock ")
+                || trimmed.starts_with("int ")
+                || trimmed.starts_with("chan ")
             {
                 state.context.definitions.push(Definition {
                     name: trimmed.to_string(),
@@ -253,9 +261,11 @@ impl ProverBackend for UppaalBackend {
     async fn apply_tactic(&self, state: &ProofState, tactic: &Tactic) -> Result<TacticResult> {
         match tactic {
             // AddQuery: add a TCTL query to verify
-            Tactic::Custom { prover, command, args }
-                if prover == "uppaal" && command == "add_query" =>
-            {
+            Tactic::Custom {
+                prover,
+                command,
+                args,
+            } if prover == "uppaal" && command == "add_query" => {
                 let query_text = args.join(" ");
                 let mut new_state = state.clone();
                 new_state.goals.push(Goal {
@@ -265,12 +275,14 @@ impl ProverBackend for UppaalBackend {
                 });
                 new_state.proof_script.push(tactic.clone());
                 Ok(TacticResult::Success(new_state))
-            }
+            },
 
             // AddClock: add a clock variable declaration
-            Tactic::Custom { prover, command, args }
-                if prover == "uppaal" && command == "add_clock" =>
-            {
+            Tactic::Custom {
+                prover,
+                command,
+                args,
+            } if prover == "uppaal" && command == "add_clock" => {
                 let clock_name = args.first().cloned().unwrap_or_else(|| "x".to_string());
                 let mut new_state = state.clone();
                 new_state.context.definitions.push(Definition {
@@ -280,12 +292,14 @@ impl ProverBackend for UppaalBackend {
                 });
                 new_state.proof_script.push(tactic.clone());
                 Ok(TacticResult::Success(new_state))
-            }
+            },
 
             // AddChannel: add a synchronisation channel
-            Tactic::Custom { prover, command, args }
-                if prover == "uppaal" && command == "add_channel" =>
-            {
+            Tactic::Custom {
+                prover,
+                command,
+                args,
+            } if prover == "uppaal" && command == "add_channel" => {
                 let chan_name = args.first().cloned().unwrap_or_else(|| "sync".to_string());
                 let mut new_state = state.clone();
                 new_state.context.definitions.push(Definition {
@@ -295,7 +309,7 @@ impl ProverBackend for UppaalBackend {
                 });
                 new_state.proof_script.push(tactic.clone());
                 Ok(TacticResult::Success(new_state))
-            }
+            },
 
             _ => Ok(TacticResult::Error(format!(
                 "Tactic {:?} not supported for UPPAAL model checker",
@@ -309,8 +323,8 @@ impl ProverBackend for UppaalBackend {
         let query_code = self.to_query_file(state);
 
         // Write model and queries to temporary files
-        let tmp_dir = tempfile::tempdir()
-            .context("Failed to create temporary directory for UPPAAL")?;
+        let tmp_dir =
+            tempfile::tempdir().context("Failed to create temporary directory for UPPAAL")?;
         let xml_file = tmp_dir.path().join("model.xml");
         let query_file = tmp_dir.path().join("queries.q");
 
@@ -437,7 +451,10 @@ mod tests {
 
         let state = backend.parse_string(xml).await.unwrap();
 
-        assert!(!state.context.definitions.is_empty(), "Should have parsed declarations");
+        assert!(
+            !state.context.definitions.is_empty(),
+            "Should have parsed declarations"
+        );
         assert_eq!(state.goals.len(), 2, "Should have parsed two queries");
     }
 

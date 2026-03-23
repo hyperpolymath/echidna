@@ -18,8 +18,8 @@
 
 #![allow(dead_code)]
 
-use async_trait::async_trait;
 use anyhow::{anyhow, Context, Result};
+use async_trait::async_trait;
 use std::path::PathBuf;
 use std::process::Stdio;
 use tokio::process::Command;
@@ -129,10 +129,7 @@ impl SeaHornBackend {
 
         for goal in &state.goals {
             let target_str = format!("{}", goal.target);
-            source.push_str(&format!(
-                "    sassert({}); /* {} */\n",
-                target_str, goal.id
-            ));
+            source.push_str(&format!("    sassert({}); /* {} */\n", target_str, goal.id));
         }
 
         source.push_str("    return 0;\n");
@@ -152,9 +149,7 @@ impl SeaHornBackend {
     fn parse_result(&self, output: &str) -> Result<bool> {
         // SeaHorn "sat" means the CHC system is satisfiable, i.e., safe
         if output.contains("BRUNCH_STAT Result TRUE")
-            || output.contains("sat")
-                && !output.contains("unsat")
-                && !output.contains("unknown")
+            || output.contains("sat") && !output.contains("unsat") && !output.contains("unknown")
         {
             return Ok(true);
         }
@@ -217,7 +212,8 @@ impl SeaHornBackend {
             }
 
             // Detect standard assert()
-            if trimmed.contains("assert(") && !trimmed.contains("sassert")
+            if trimmed.contains("assert(")
+                && !trimmed.contains("sassert")
                 && !trimmed.contains("__CPROVER_assert")
             {
                 if let Some(body) = self.extract_call_body(trimmed, "assert") {
@@ -256,13 +252,18 @@ impl SeaHornBackend {
 
             if trimmed.contains("__CPROVER_assume(") || trimmed.contains("__CPROVER_assume (") {
                 if let Some(body) = self.extract_call_body(trimmed, "__CPROVER_assume") {
-                    state.context.axioms.push(format!("__CPROVER_assume({})", body));
+                    state
+                        .context
+                        .axioms
+                        .push(format!("__CPROVER_assume({})", body));
                 }
             }
 
             // Detect function declarations / variable declarations as context
-            if trimmed.starts_with("int ") || trimmed.starts_with("void ")
-                || trimmed.starts_with("unsigned ") || trimmed.starts_with("char ")
+            if trimmed.starts_with("int ")
+                || trimmed.starts_with("void ")
+                || trimmed.starts_with("unsigned ")
+                || trimmed.starts_with("char ")
             {
                 state.context.axioms.push(trimmed.to_string());
             }
@@ -295,8 +296,8 @@ impl SeaHornBackend {
                         end_pos = i;
                         break;
                     }
-                }
-                _ => {}
+                },
+                _ => {},
             }
         }
 
@@ -323,10 +324,10 @@ impl SeaHornBackend {
             SeaHornMode::BMC => {
                 cmd.arg("--bmc");
                 cmd.arg(format!("--bound={}", self.bmc_bound));
-            }
+            },
             SeaHornMode::HornSolve => {
                 cmd.arg("--horn-solve");
-            }
+            },
         }
 
         // Add any extra arguments from config
@@ -371,10 +372,7 @@ impl ProverBackend for SeaHornBackend {
     }
 
     async fn parse_file(&self, path: PathBuf) -> Result<ProofState> {
-        let extension = path
-            .extension()
-            .and_then(|e| e.to_str())
-            .unwrap_or("");
+        let extension = path.extension().and_then(|e| e.to_str()).unwrap_or("");
 
         match extension {
             "c" | "h" => {
@@ -383,7 +381,7 @@ impl ProverBackend for SeaHornBackend {
                     .await
                     .context("Failed to read C source file for SeaHorn")?;
                 self.parse_string(&content).await
-            }
+            },
             "bc" | "ll" => {
                 // LLVM bitcode / IR — we cannot parse assertions directly,
                 // so create a minimal proof state referencing the file
@@ -397,7 +395,7 @@ impl ProverBackend for SeaHornBackend {
                     serde_json::Value::String(extension.to_string()),
                 );
                 Ok(state)
-            }
+            },
             _ => Err(anyhow!(
                 "SeaHorn: unsupported file extension '.{}' (expected .c, .bc, or .ll)",
                 extension
@@ -412,22 +410,24 @@ impl ProverBackend for SeaHornBackend {
     async fn apply_tactic(&self, state: &ProofState, tactic: &Tactic) -> Result<TacticResult> {
         match tactic {
             // set_mode: switch between BMC and HornSolve modes
-            Tactic::Custom { prover, command, args }
-                if prover == "seahorn" && command == "set_mode" =>
-            {
+            Tactic::Custom {
+                prover,
+                command,
+                args,
+            } if prover == "seahorn" && command == "set_mode" => {
                 let mode_str = args.first().ok_or_else(|| {
                     anyhow!("set_mode requires an argument: 'bmc' or 'horn-solve'")
                 })?;
 
                 // Validate mode string
                 match mode_str.as_str() {
-                    "bmc" | "horn-solve" | "horn_solve" => {}
+                    "bmc" | "horn-solve" | "horn_solve" => {},
                     _ => {
                         return Ok(TacticResult::Error(format!(
                             "Unknown SeaHorn mode '{}' (expected 'bmc' or 'horn-solve')",
                             mode_str
                         )));
-                    }
+                    },
                 }
 
                 let mut new_state = state.clone();
@@ -437,18 +437,20 @@ impl ProverBackend for SeaHornBackend {
                 );
                 new_state.proof_script.push(tactic.clone());
                 Ok(TacticResult::Success(new_state))
-            }
+            },
 
             // set_bmc_bound: configure the BMC unrolling bound
-            Tactic::Custom { prover, command, args }
-                if prover == "seahorn" && command == "set_bmc_bound" =>
-            {
-                let bound_str = args.first().ok_or_else(|| {
-                    anyhow!("set_bmc_bound requires a numeric argument")
-                })?;
-                let _bound: u32 = bound_str.parse().map_err(|_| {
-                    anyhow!("Invalid BMC bound: {}", bound_str)
-                })?;
+            Tactic::Custom {
+                prover,
+                command,
+                args,
+            } if prover == "seahorn" && command == "set_bmc_bound" => {
+                let bound_str = args
+                    .first()
+                    .ok_or_else(|| anyhow!("set_bmc_bound requires a numeric argument"))?;
+                let _bound: u32 = bound_str
+                    .parse()
+                    .map_err(|_| anyhow!("Invalid BMC bound: {}", bound_str))?;
 
                 let mut new_state = state.clone();
                 new_state.metadata.insert(
@@ -457,12 +459,14 @@ impl ProverBackend for SeaHornBackend {
                 );
                 new_state.proof_script.push(tactic.clone());
                 Ok(TacticResult::Success(new_state))
-            }
+            },
 
             // add_assumption: add an assume() constraint
-            Tactic::Custom { prover, command, args }
-                if prover == "seahorn" && command == "add_assumption" =>
-            {
+            Tactic::Custom {
+                prover,
+                command,
+                args,
+            } if prover == "seahorn" && command == "add_assumption" => {
                 let assumption_text = args.join(" ");
                 let mut new_state = state.clone();
                 new_state
@@ -471,12 +475,14 @@ impl ProverBackend for SeaHornBackend {
                     .push(format!("assume({})", assumption_text));
                 new_state.proof_script.push(tactic.clone());
                 Ok(TacticResult::Success(new_state))
-            }
+            },
 
             // add_assertion: add a new sassert() goal to verify
-            Tactic::Custom { prover, command, args }
-                if prover == "seahorn" && command == "add_assertion" =>
-            {
+            Tactic::Custom {
+                prover,
+                command,
+                args,
+            } if prover == "seahorn" && command == "add_assertion" => {
                 let assertion_text = args.join(" ");
                 let mut new_state = state.clone();
                 new_state.goals.push(Goal {
@@ -486,12 +492,14 @@ impl ProverBackend for SeaHornBackend {
                 });
                 new_state.proof_script.push(tactic.clone());
                 Ok(TacticResult::Success(new_state))
-            }
+            },
 
             // inline: request function inlining (SeaHorn optimisation flag)
-            Tactic::Custom { prover, command, args }
-                if prover == "seahorn" && command == "inline" =>
-            {
+            Tactic::Custom {
+                prover,
+                command,
+                args,
+            } if prover == "seahorn" && command == "inline" => {
                 let mut new_state = state.clone();
                 let inline_depth = args
                     .first()
@@ -503,7 +511,7 @@ impl ProverBackend for SeaHornBackend {
                 );
                 new_state.proof_script.push(tactic.clone());
                 Ok(TacticResult::Success(new_state))
-            }
+            },
 
             _ => Ok(TacticResult::Error(format!(
                 "Tactic {:?} not supported for SeaHorn verification framework",
@@ -514,8 +522,8 @@ impl ProverBackend for SeaHornBackend {
 
     async fn verify_proof(&self, state: &ProofState) -> Result<bool> {
         // Determine input: either a referenced file or generated C source
-        let tmp_dir = tempfile::tempdir()
-            .context("Failed to create temporary directory for SeaHorn")?;
+        let tmp_dir =
+            tempfile::tempdir().context("Failed to create temporary directory for SeaHorn")?;
 
         let input_path = if let Some(serde_json::Value::String(file_path)) =
             state.metadata.get("seahorn_input_file")
@@ -559,16 +567,14 @@ impl ProverBackend for SeaHornBackend {
             SeaHornMode::BMC => {
                 cmd.arg("--bmc");
                 cmd.arg(format!("--bound={}", effective_bmc_bound));
-            }
+            },
             SeaHornMode::HornSolve => {
                 cmd.arg("--horn-solve");
-            }
+            },
         }
 
         // Add inline depth if specified
-        if let Some(serde_json::Value::Number(depth)) =
-            state.metadata.get("seahorn_inline_depth")
-        {
+        if let Some(serde_json::Value::Number(depth)) = state.metadata.get("seahorn_inline_depth") {
             if let Some(d) = depth.as_u64() {
                 cmd.arg(format!("--inline={}", d));
             }
@@ -712,10 +718,7 @@ int main() {
 
         let state = backend.parse_string(c_code).await.unwrap();
 
-        assert!(
-            !state.goals.is_empty(),
-            "Should have parsed sassert goals"
-        );
+        assert!(!state.goals.is_empty(), "Should have parsed sassert goals");
         assert_eq!(state.goals[0].id, "seahorn_assert_0");
     }
 
@@ -737,7 +740,11 @@ int main() {
             !state.context.axioms.is_empty(),
             "Should have parsed assume axioms"
         );
-        assert!(state.context.axioms.iter().any(|a| a.contains("assume(x > 0)")));
+        assert!(state
+            .context
+            .axioms
+            .iter()
+            .any(|a| a.contains("assume(x > 0)")));
     }
 
     #[test]
@@ -796,10 +803,15 @@ int main() {
         match result {
             TacticResult::Success(new_state) => {
                 assert_eq!(
-                    new_state.metadata.get("seahorn_mode").unwrap().as_str().unwrap(),
+                    new_state
+                        .metadata
+                        .get("seahorn_mode")
+                        .unwrap()
+                        .as_str()
+                        .unwrap(),
                     "bmc"
                 );
-            }
+            },
             other => panic!("Expected TacticResult::Success, got {:?}", other),
         }
     }
@@ -819,10 +831,15 @@ int main() {
         match result {
             TacticResult::Success(new_state) => {
                 assert_eq!(
-                    new_state.metadata.get("seahorn_bmc_bound").unwrap().as_str().unwrap(),
+                    new_state
+                        .metadata
+                        .get("seahorn_bmc_bound")
+                        .unwrap()
+                        .as_str()
+                        .unwrap(),
                     "512"
                 );
-            }
+            },
             other => panic!("Expected TacticResult::Success, got {:?}", other),
         }
     }
@@ -842,11 +859,8 @@ int main() {
         match result {
             TacticResult::Success(new_state) => {
                 assert_eq!(new_state.goals.len(), 1);
-                assert_eq!(
-                    format!("{}", new_state.goals[0].target),
-                    "n >= 0"
-                );
-            }
+                assert_eq!(format!("{}", new_state.goals[0].target), "n >= 0");
+            },
             other => panic!("Expected TacticResult::Success, got {:?}", other),
         }
     }

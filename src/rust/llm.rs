@@ -244,12 +244,12 @@ impl LlmAdvisor {
                     warn!("BoJ server returned {}", response.status());
                 }
                 Ok(self.available)
-            }
+            },
             Err(e) => {
                 debug!("BoJ server not available: {}", e);
                 self.available = false;
                 Ok(false)
-            }
+            },
         }
     }
 
@@ -282,11 +282,11 @@ impl LlmAdvisor {
                         premise_name: None,
                     })
                     .collect()
-            }
+            },
             Err(e) => {
                 warn!("LLM tactic suggestion failed: {}", e);
                 Vec::new()
-            }
+            },
         }
     }
 
@@ -318,19 +318,16 @@ impl LlmAdvisor {
                 // Sort by confidence descending
                 ranked.sort_by(|a, b| b.1.partial_cmp(&a.1).unwrap_or(std::cmp::Ordering::Equal));
                 ranked
-            }
+            },
             Err(e) => {
                 warn!("LLM prover ranking failed: {}", e);
                 Vec::new()
-            }
+            },
         }
     }
 
     /// Suggest goal decomposition
-    pub async fn suggest_decomposition(
-        &self,
-        state: &ProofState,
-    ) -> Option<GoalDecomposition> {
+    pub async fn suggest_decomposition(&self, state: &ProofState) -> Option<GoalDecomposition> {
         if !self.available {
             return None;
         }
@@ -340,12 +337,18 @@ impl LlmAdvisor {
             Err(e) => {
                 warn!("LLM decomposition failed: {}", e);
                 None
-            }
+            },
         }
     }
 
     /// Record a proof attempt for in-context learning
-    pub fn record_attempt(&mut self, prover: ProverKind, tactic: &str, succeeded: bool, time_ms: u64) {
+    pub fn record_attempt(
+        &mut self,
+        prover: ProverKind,
+        tactic: &str,
+        succeeded: bool,
+        time_ms: u64,
+    ) {
         self.history.push(ProofAttemptSummary {
             prover: format!("{:?}", prover),
             tactic: tactic.to_string(),
@@ -363,10 +366,7 @@ impl LlmAdvisor {
     ///
     /// The LLM analyses the proof and suggests optimal dispatch parameters.
     /// The trust pipeline itself is unchanged — only the routing is optimised.
-    pub async fn optimise_dispatch(
-        &self,
-        state: &ProofState,
-    ) -> Option<DispatchOptimisation> {
+    pub async fn optimise_dispatch(&self, state: &ProofState) -> Option<DispatchOptimisation> {
         if !self.available {
             return None;
         }
@@ -393,7 +393,7 @@ impl LlmAdvisor {
                     suggested_timeout: None,
                     reasoning: response.reasoning,
                 })
-            }
+            },
             Err(_) => None,
         }
     }
@@ -427,7 +427,8 @@ impl LlmAdvisor {
 
         // Build the system prompt for structured tactic generation
         let system_prompt = build_system_prompt();
-        let user_prompt = build_user_prompt(&goal_str, &hypotheses, &self.history, self.config.top_k);
+        let user_prompt =
+            build_user_prompt(&goal_str, &hypotheses, &self.history, self.config.top_k);
 
         // Call BoJ cartridge invoke endpoint
         let url = format!("{}/cartridge/echidna-llm/invoke", self.config.boj_url);
@@ -467,8 +468,8 @@ impl LlmAdvisor {
             .result
             .ok_or_else(|| anyhow::anyhow!("Empty BoJ response"))?;
 
-        let mut parsed: TacticSuggestionResponse = serde_json::from_value(result_json)
-            .context("Failed to parse LLM tactic response")?;
+        let mut parsed: TacticSuggestionResponse =
+            serde_json::from_value(result_json).context("Failed to parse LLM tactic response")?;
 
         parsed.latency_ms = start.elapsed().as_millis() as u64;
 
@@ -678,12 +679,7 @@ mod tests {
 
     #[test]
     fn test_build_user_prompt() {
-        let prompt = build_user_prompt(
-            "forall n, n + 0 = n",
-            &["n : nat".to_string()],
-            &[],
-            5,
-        );
+        let prompt = build_user_prompt("forall n, n + 0 = n", &["n : nat".to_string()], &[], 5);
         assert!(prompt.contains("forall n"));
         assert!(prompt.contains("n : nat"));
         assert!(prompt.contains("5 tactics"));
@@ -711,7 +707,9 @@ mod tests {
         let advisor = LlmAdvisor::new();
         let goal = crate::core::Term::Const("test".to_string());
         let state = ProofState::new(goal);
-        let ranked = advisor.rank_provers(&state, &[ProverKind::Lean, ProverKind::Coq]).await;
+        let ranked = advisor
+            .rank_provers(&state, &[ProverKind::Lean, ProverKind::Coq])
+            .await;
         assert!(ranked.is_empty());
     }
 }

@@ -14,8 +14,8 @@
 
 #![allow(dead_code)]
 
-use async_trait::async_trait;
 use anyhow::{Context, Result};
+use async_trait::async_trait;
 use std::path::PathBuf;
 use std::process::Stdio;
 use tokio::io::AsyncWriteExt;
@@ -130,7 +130,10 @@ impl ProverBackend for SPASSBackend {
                 in_axioms = false;
                 in_conjectures = false;
             } else if line.starts_with("formula(") {
-                if let Some(formula) = line.strip_prefix("formula(").and_then(|s| s.strip_suffix(").")) {
+                if let Some(formula) = line
+                    .strip_prefix("formula(")
+                    .and_then(|s| s.strip_suffix(")."))
+                {
                     if in_axioms {
                         state.context.axioms.push(formula.to_string());
                     } else if in_conjectures {
@@ -157,7 +160,8 @@ impl ProverBackend for SPASSBackend {
         let dfg_code = self.to_dfg(state)?;
 
         let mut child = Command::new(&self.config.executable)
-            .arg("-TimeLimit").arg(format!("{}", self.config.timeout))
+            .arg("-TimeLimit")
+            .arg(format!("{}", self.config.timeout))
             .arg("-PGiven=0")
             .arg("-PProblem=0")
             .stdin(Stdio::piped())

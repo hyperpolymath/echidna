@@ -11,8 +11,8 @@ use anyhow::Result;
 use async_trait::async_trait;
 use tracing::{debug, info};
 
-use crate::core::{Goal, Term};
 use super::AgenticGoal;
+use crate::core::{Goal, Term};
 
 /// Trait for goal planning/decomposition
 #[async_trait]
@@ -29,9 +29,7 @@ pub struct RulePlanner {
 
 impl RulePlanner {
     pub fn new() -> Self {
-        RulePlanner {
-            max_depth: 3,
-        }
+        RulePlanner { max_depth: 3 }
     }
 
     /// Check if term is a conjunction (A ∧ B)
@@ -42,7 +40,10 @@ impl RulePlanner {
 
     /// Check if term is an implication (A → B)
     fn is_implication(&self, term: &Term) -> Option<(Term, Term)> {
-        if let Term::Pi { param_type, body, .. } = term {
+        if let Term::Pi {
+            param_type, body, ..
+        } = term
+        {
             Some((*param_type.clone(), *body.clone()))
         } else {
             None

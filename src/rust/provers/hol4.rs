@@ -13,19 +13,19 @@
 //! - Large formalized mathematics library
 //! - Backward-style proof construction
 
+use anyhow::{anyhow, bail, Context, Result};
 use async_trait::async_trait;
-use anyhow::{anyhow, Result, Context, bail};
 use std::collections::HashMap;
 use std::path::PathBuf;
-use tokio::sync::Mutex;
-use tokio::process::Command;
 use tokio::io::{AsyncBufReadExt, AsyncWriteExt, BufReader};
+use tokio::process::Command;
 use tokio::process::{Child, ChildStdin, ChildStdout};
+use tokio::sync::Mutex;
 
+use super::{ProverBackend, ProverConfig, ProverKind};
 use crate::core::{
     Context as CoreContext, Goal, Hypothesis, ProofState, Tactic, TacticResult, Term,
 };
-use super::{ProverBackend, ProverConfig, ProverKind};
 
 // ============================================================================
 // HOL4 AST Types
@@ -35,15 +35,9 @@ use super::{ProverBackend, ProverConfig, ProverKind};
 #[derive(Debug, Clone, PartialEq)]
 pub enum HOL4Term {
     /// Variable: x
-    Var {
-        name: String,
-        ty: Option<HOL4Type>,
-    },
+    Var { name: String, ty: Option<HOL4Type> },
     /// Constant: c
-    Const {
-        name: String,
-        ty: Option<HOL4Type>,
-    },
+    Const { name: String, ty: Option<HOL4Type> },
     /// Application: f x
     App {
         func: Box<HOL4Term>,
@@ -88,10 +82,7 @@ pub enum HOL4Term {
     /// Pair: (a, b)
     Pair(Box<HOL4Term>, Box<HOL4Term>),
     /// Type annotation: t : ty
-    TypeAnnot {
-        term: Box<HOL4Term>,
-        ty: HOL4Type,
-    },
+    TypeAnnot { term: Box<HOL4Term>, ty: HOL4Type },
 }
 
 /// HOL4 quantifier
@@ -246,10 +237,7 @@ pub enum HOL4Declaration {
         expansion: HOL4Type,
     },
     /// Overload: overload_on(...)
-    Overload {
-        name: String,
-        term: HOL4Term,
-    },
+    Overload { name: String, term: HOL4Term },
     /// Infix declaration: set_fixity "op" (Infix(prec, side))
     Infix {
         name: String,
@@ -436,7 +424,7 @@ impl HOL4Parser {
             Some(c) if c.is_alphabetic() || c == '_' || c == '\'' => {
                 name.push(c);
                 self.advance();
-            }
+            },
             _ => bail!("Expected identifier"),
         }
 
@@ -471,7 +459,9 @@ impl HOL4Parser {
             }
         }
 
-        num_str.parse().map_err(|_| anyhow::anyhow!("Invalid number: {}", num_str))
+        num_str
+            .parse()
+            .map_err(|_| anyhow::anyhow!("Invalid number: {}", num_str))
     }
 
     /// Parse a HOL4 term
@@ -543,11 +533,17 @@ impl HOL4Parser {
         let mut left = self.parse_term_add()?;
 
         loop {
-            let op = if self.try_consume("<=") { Some("<=") }
-                else if self.try_consume(">=") { Some(">=") }
-                else if self.try_consume("<") { Some("<") }
-                else if self.try_consume(">") { Some(">") }
-                else { None };
+            let op = if self.try_consume("<=") {
+                Some("<=")
+            } else if self.try_consume(">=") {
+                Some(">=")
+            } else if self.try_consume("<") {
+                Some("<")
+            } else if self.try_consume(">") {
+                Some(">")
+            } else {
+                None
+            };
 
             if let Some(op) = op {
                 let right = self.parse_term_add()?;
@@ -568,9 +564,15 @@ impl HOL4Parser {
         let mut left = self.parse_term_mul()?;
 
         loop {
-            let op = if self.try_consume("+") { Some("+") }
-                else if self.try_consume("-") && !self.peek().map(|c| c.is_ascii_digit()).unwrap_or(false) { Some("-") }
-                else { None };
+            let op = if self.try_consume("+") {
+                Some("+")
+            } else if self.try_consume("-")
+                && !self.peek().map(|c| c.is_ascii_digit()).unwrap_or(false)
+            {
+                Some("-")
+            } else {
+                None
+            };
 
             if let Some(op) = op {
                 let right = self.parse_term_mul()?;
@@ -591,10 +593,15 @@ impl HOL4Parser {
         let mut left = self.parse_term_unary()?;
 
         loop {
-            let op = if self.try_consume("*") { Some("*") }
-                else if self.try_consume("DIV") { Some("DIV") }
-                else if self.try_consume("MOD") { Some("MOD") }
-                else { None };
+            let op = if self.try_consume("*") {
+                Some("*")
+            } else if self.try_consume("DIV") {
+                Some("DIV")
+            } else if self.try_consume("MOD") {
+                Some("MOD")
+            } else {
+                None
+            };
 
             if let Some(op) = op {
                 let right = self.parse_term_unary()?;
@@ -618,7 +625,10 @@ impl HOL4Parser {
         if self.try_consume("~") || self.try_consume("¬") {
             let inner = self.parse_term_unary()?;
             return Ok(HOL4Term::App {
-                func: Box::new(HOL4Term::Const { name: "~".to_string(), ty: None }),
+                func: Box::new(HOL4Term::Const {
+                    name: "~".to_string(),
+                    ty: None,
+                }),
                 arg: Box::new(inner),
             });
         }
@@ -633,8 +643,8 @@ impl HOL4Parser {
             self.skip_whitespace();
             // Check if next token could be an argument
             match self.peek() {
-                Some('(') | Some('[') | Some('"') => {}
-                Some(c) if c.is_alphabetic() || c == '_' || c == '\'' || c.is_ascii_digit() => {}
+                Some('(') | Some('[') | Some('"') => {},
+                Some(c) if c.is_alphabetic() || c == '_' || c == '\'' || c.is_ascii_digit() => {},
                 _ => break,
             }
 
@@ -713,7 +723,11 @@ impl HOL4Parser {
         }
 
         // Number
-        if self.peek().map(|c| c.is_ascii_digit() || c == '-').unwrap_or(false) {
+        if self
+            .peek()
+            .map(|c| c.is_ascii_digit() || c == '-')
+            .unwrap_or(false)
+        {
             let num = self.parse_number()?;
             return Ok(HOL4Term::Numeral(num));
         }
@@ -737,9 +751,15 @@ impl HOL4Parser {
         }
 
         // Determine if it's a constant or variable based on name conventions
-        let is_const = name.chars().next().map(|c| c.is_uppercase()).unwrap_or(false)
-            || ["T", "F", "SUC", "PRE", "HD", "TL", "CONS", "NIL", "FST", "SND", "SOME", "NONE"]
-                .contains(&name.as_str());
+        let is_const = name
+            .chars()
+            .next()
+            .map(|c| c.is_uppercase())
+            .unwrap_or(false)
+            || [
+                "T", "F", "SUC", "PRE", "HD", "TL", "CONS", "NIL", "FST", "SND", "SOME", "NONE",
+            ]
+            .contains(&name.as_str());
 
         if is_const {
             Ok(HOL4Term::Const { name, ty: None })
@@ -946,14 +966,11 @@ impl HOL4Parser {
                             constructor,
                             args: vec![base],
                         });
-                    }
+                    },
                     HOL4Type::TyProd(args) => {
-                        return Ok(HOL4Type::TyApp {
-                            constructor,
-                            args,
-                        });
-                    }
-                    _ => {}
+                        return Ok(HOL4Type::TyApp { constructor, args });
+                    },
+                    _ => {},
                 }
             }
         }
@@ -1347,7 +1364,7 @@ impl HOL4Parser {
                 // Stop if we see a pipe, backtick, End, or the next constructor starts
                 match self.peek() {
                     Some('|') | Some('`') | Some(';') | None => break,
-                    _ => {}
+                    _ => {},
                 }
                 // Check for "End" keyword (colon-style)
                 if use_colon_style && self.matches_keyword_at_pos("End") {
@@ -1413,9 +1430,13 @@ impl Hol4Backend {
             .spawn()
             .context("Failed to start HOL4")?;
 
-        let stdin = process.stdin.take()
+        let stdin = process
+            .stdin
+            .take()
             .ok_or_else(|| anyhow::anyhow!("Failed to get HOL4 stdin"))?;
-        let stdout = process.stdout.take()
+        let stdout = process
+            .stdout
+            .take()
             .ok_or_else(|| anyhow::anyhow!("Failed to get HOL4 stdout"))?;
 
         let session = HOL4Session {
@@ -1440,11 +1461,18 @@ impl Hol4Backend {
     /// Convert universal Term to HOL4 term
     fn term_to_hol4(term: &Term) -> HOL4Term {
         match term {
-            Term::Var(name) => HOL4Term::Var { name: name.clone(), ty: None },
-            Term::Const(name) => HOL4Term::Const { name: name.clone(), ty: None },
-            Term::Universe(_) | Term::Type(_) | Term::Sort(_) => {
-                HOL4Term::Const { name: "univ".to_string(), ty: None }
-            }
+            Term::Var(name) => HOL4Term::Var {
+                name: name.clone(),
+                ty: None,
+            },
+            Term::Const(name) => HOL4Term::Const {
+                name: name.clone(),
+                ty: None,
+            },
+            Term::Universe(_) | Term::Type(_) | Term::Sort(_) => HOL4Term::Const {
+                name: "univ".to_string(),
+                ty: None,
+            },
             Term::App { func, args } => {
                 let mut result = Self::term_to_hol4(func);
                 for arg in args {
@@ -1454,29 +1482,37 @@ impl Hol4Backend {
                     };
                 }
                 result
-            }
-            Term::Lambda { param, param_type, body } => {
-                HOL4Term::Abs {
-                    var: param.clone(),
-                    var_type: param_type.as_ref().map(|t| Self::term_to_type(t)),
-                    body: Box::new(Self::term_to_hol4(body)),
-                }
-            }
-            Term::Pi { param, param_type, body } => {
-                HOL4Term::Quant {
-                    quantifier: HOL4Quantifier::Forall,
-                    var: param.clone(),
-                    var_type: Some(Self::term_to_type(param_type)),
-                    body: Box::new(Self::term_to_hol4(body)),
-                }
-            }
-            Term::Let { name, value, body, .. } => {
-                HOL4Term::Let {
-                    bindings: vec![(name.clone(), Self::term_to_hol4(value))],
-                    body: Box::new(Self::term_to_hol4(body)),
-                }
-            }
-            Term::Match { scrutinee, branches, .. } => {
+            },
+            Term::Lambda {
+                param,
+                param_type,
+                body,
+            } => HOL4Term::Abs {
+                var: param.clone(),
+                var_type: param_type.as_ref().map(|t| Self::term_to_type(t)),
+                body: Box::new(Self::term_to_hol4(body)),
+            },
+            Term::Pi {
+                param,
+                param_type,
+                body,
+            } => HOL4Term::Quant {
+                quantifier: HOL4Quantifier::Forall,
+                var: param.clone(),
+                var_type: Some(Self::term_to_type(param_type)),
+                body: Box::new(Self::term_to_hol4(body)),
+            },
+            Term::Let {
+                name, value, body, ..
+            } => HOL4Term::Let {
+                bindings: vec![(name.clone(), Self::term_to_hol4(value))],
+                body: Box::new(Self::term_to_hol4(body)),
+            },
+            Term::Match {
+                scrutinee,
+                branches,
+                ..
+            } => {
                 // HOL4 doesn't have native pattern matching in terms
                 // Approximate with nested conditionals
                 if branches.is_empty() {
@@ -1503,38 +1539,56 @@ impl Hol4Backend {
                     }
                 }
 
-                result.unwrap_or_else(|| HOL4Term::Const { name: "ARB".to_string(), ty: None })
-            }
-            Term::Hole(name) => {
-                HOL4Term::Var { name: format!("?{}", name), ty: None }
-            }
+                result.unwrap_or_else(|| HOL4Term::Const {
+                    name: "ARB".to_string(),
+                    ty: None,
+                })
+            },
+            Term::Hole(name) => HOL4Term::Var {
+                name: format!("?{}", name),
+                ty: None,
+            },
             Term::Fix { name, body, .. } => {
                 // Approximate fixpoint with application
                 HOL4Term::App {
-                    func: Box::new(HOL4Term::Const { name: "FIX".to_string(), ty: None }),
+                    func: Box::new(HOL4Term::Const {
+                        name: "FIX".to_string(),
+                        ty: None,
+                    }),
                     arg: Box::new(HOL4Term::Abs {
                         var: name.clone(),
                         var_type: None,
                         body: Box::new(Self::term_to_hol4(body)),
                     }),
                 }
-            }
-            Term::Meta(id) => {
-                HOL4Term::Var { name: format!("?{}", id), ty: None }
-            }
-            Term::ProverSpecific { data, .. } => {
-                HOL4Term::Const { name: data.to_string(), ty: None }
-            }
+            },
+            Term::Meta(id) => HOL4Term::Var {
+                name: format!("?{}", id),
+                ty: None,
+            },
+            Term::ProverSpecific { data, .. } => HOL4Term::Const {
+                name: data.to_string(),
+                ty: None,
+            },
         }
     }
 
     /// Convert Pattern to HOL4 term
     fn pattern_to_hol4(pattern: &crate::core::Pattern) -> HOL4Term {
         match pattern {
-            crate::core::Pattern::Wildcard => HOL4Term::Var { name: "_".to_string(), ty: None },
-            crate::core::Pattern::Var(name) => HOL4Term::Var { name: name.clone(), ty: None },
+            crate::core::Pattern::Wildcard => HOL4Term::Var {
+                name: "_".to_string(),
+                ty: None,
+            },
+            crate::core::Pattern::Var(name) => HOL4Term::Var {
+                name: name.clone(),
+                ty: None,
+            },
             crate::core::Pattern::Constructor { name, args } => {
-                let mut result = HOL4Term::Const { name: name.clone(), ty: None };
+                let mut result = HOL4Term::Const {
+                    name: name.clone(),
+                    ty: None,
+                };
                 for arg in args {
                     result = HOL4Term::App {
                         func: Box::new(result),
@@ -1542,7 +1596,7 @@ impl Hol4Backend {
                     };
                 }
                 result
-            }
+            },
         }
     }
 
@@ -1559,13 +1613,13 @@ impl Hol4Backend {
                     constructor,
                     args: args.iter().map(|a| Self::term_to_type(a)).collect(),
                 }
-            }
-            Term::Pi { param_type, body, .. } => {
-                HOL4Type::TyFun {
-                    domain: Box::new(Self::term_to_type(param_type)),
-                    range: Box::new(Self::term_to_type(body)),
-                }
-            }
+            },
+            Term::Pi {
+                param_type, body, ..
+            } => HOL4Type::TyFun {
+                domain: Box::new(Self::term_to_type(param_type)),
+                range: Box::new(Self::term_to_type(body)),
+            },
             _ => HOL4Type::TyCon("'a".to_string()),
         }
     }
@@ -1575,35 +1629,39 @@ impl Hol4Backend {
         match term {
             HOL4Term::Var { name, .. } => Term::Var(name.clone()),
             HOL4Term::Const { name, .. } => Term::Const(name.clone()),
-            HOL4Term::App { func, arg } => {
-                Term::App {
-                    func: Box::new(Self::hol4_to_term(func)),
-                    args: vec![Self::hol4_to_term(arg)],
-                }
-            }
-            HOL4Term::Abs { var, var_type, body } => {
-                Term::Lambda {
-                    param: var.clone(),
-                    param_type: var_type.as_ref().map(|t| Box::new(Self::type_to_term(t))),
-                    body: Box::new(Self::hol4_to_term(body)),
-                }
-            }
-            HOL4Term::Comb { operator, left, right } => {
-                Term::App {
-                    func: Box::new(Term::Const(operator.clone())),
-                    args: vec![Self::hol4_to_term(left), Self::hol4_to_term(right)],
-                }
-            }
-            HOL4Term::Cond { cond, then_branch, else_branch } => {
-                Term::App {
-                    func: Box::new(Term::Const("if".to_string())),
-                    args: vec![
-                        Self::hol4_to_term(cond),
-                        Self::hol4_to_term(then_branch),
-                        Self::hol4_to_term(else_branch),
-                    ],
-                }
-            }
+            HOL4Term::App { func, arg } => Term::App {
+                func: Box::new(Self::hol4_to_term(func)),
+                args: vec![Self::hol4_to_term(arg)],
+            },
+            HOL4Term::Abs {
+                var,
+                var_type,
+                body,
+            } => Term::Lambda {
+                param: var.clone(),
+                param_type: var_type.as_ref().map(|t| Box::new(Self::type_to_term(t))),
+                body: Box::new(Self::hol4_to_term(body)),
+            },
+            HOL4Term::Comb {
+                operator,
+                left,
+                right,
+            } => Term::App {
+                func: Box::new(Term::Const(operator.clone())),
+                args: vec![Self::hol4_to_term(left), Self::hol4_to_term(right)],
+            },
+            HOL4Term::Cond {
+                cond,
+                then_branch,
+                else_branch,
+            } => Term::App {
+                func: Box::new(Term::Const("if".to_string())),
+                args: vec![
+                    Self::hol4_to_term(cond),
+                    Self::hol4_to_term(then_branch),
+                    Self::hol4_to_term(else_branch),
+                ],
+            },
             HOL4Term::Let { bindings, body } => {
                 let mut result = Self::hol4_to_term(body);
                 for (name, value) in bindings.iter().rev() {
@@ -1615,14 +1673,22 @@ impl Hol4Backend {
                     };
                 }
                 result
-            }
-            HOL4Term::Quant { quantifier, var, var_type, body } => {
+            },
+            HOL4Term::Quant {
+                quantifier,
+                var,
+                var_type,
+                body,
+            } => {
                 match quantifier {
                     HOL4Quantifier::Forall => Term::Pi {
                         param: var.clone(),
-                        param_type: Box::new(var_type.as_ref()
-                            .map(|t| Self::type_to_term(t))
-                            .unwrap_or_else(|| Term::Const("'a".to_string()))),
+                        param_type: Box::new(
+                            var_type
+                                .as_ref()
+                                .map(|t| Self::type_to_term(t))
+                                .unwrap_or_else(|| Term::Const("'a".to_string())),
+                        ),
                         body: Box::new(Self::hol4_to_term(body)),
                     },
                     _ => {
@@ -1636,13 +1702,15 @@ impl Hol4Backend {
                             })),
                             args: vec![Term::Lambda {
                                 param: var.clone(),
-                                param_type: var_type.as_ref().map(|t| Box::new(Self::type_to_term(t))),
+                                param_type: var_type
+                                    .as_ref()
+                                    .map(|t| Box::new(Self::type_to_term(t))),
                                 body: Box::new(Self::hol4_to_term(body)),
                             }],
                         }
-                    }
+                    },
                 }
-            }
+            },
             HOL4Term::Numeral(n) => Term::Const(n.to_string()),
             HOL4Term::String(s) => Term::Const(format!("\"{}\"", s)),
             HOL4Term::List(elements) => {
@@ -1654,13 +1722,11 @@ impl Hol4Backend {
                     };
                 }
                 result
-            }
-            HOL4Term::Pair(fst, snd) => {
-                Term::App {
-                    func: Box::new(Term::Const(",".to_string())),
-                    args: vec![Self::hol4_to_term(fst), Self::hol4_to_term(snd)],
-                }
-            }
+            },
+            HOL4Term::Pair(fst, snd) => Term::App {
+                func: Box::new(Term::Const(",".to_string())),
+                args: vec![Self::hol4_to_term(fst), Self::hol4_to_term(snd)],
+            },
             HOL4Term::TypeAnnot { term, .. } => Self::hol4_to_term(term),
         }
     }
@@ -1669,39 +1735,33 @@ impl Hol4Backend {
     fn type_to_term(ty: &HOL4Type) -> Term {
         match ty {
             HOL4Type::TyVar(name) | HOL4Type::TyCon(name) => Term::Const(name.clone()),
-            HOL4Type::TyApp { constructor, args } => {
-                Term::App {
-                    func: Box::new(Term::Const(constructor.clone())),
-                    args: args.iter().map(|a| Self::type_to_term(a)).collect(),
-                }
-            }
-            HOL4Type::TyFun { domain, range } => {
-                Term::Pi {
-                    param: "_".to_string(),
-                    param_type: Box::new(Self::type_to_term(domain)),
-                    body: Box::new(Self::type_to_term(range)),
-                }
-            }
+            HOL4Type::TyApp { constructor, args } => Term::App {
+                func: Box::new(Term::Const(constructor.clone())),
+                args: args.iter().map(|a| Self::type_to_term(a)).collect(),
+            },
+            HOL4Type::TyFun { domain, range } => Term::Pi {
+                param: "_".to_string(),
+                param_type: Box::new(Self::type_to_term(domain)),
+                body: Box::new(Self::type_to_term(range)),
+            },
             HOL4Type::TyProd(types) => {
                 if types.is_empty() {
                     Term::Const("unit".to_string())
                 } else {
                     let mut args: Vec<Term> = types.iter().map(|t| Self::type_to_term(t)).collect();
-                    let last = args.pop().unwrap_or_else(|| Term::Const("unit".to_string()));
-                    args.into_iter().rev().fold(last, |acc, t| {
-                        Term::App {
-                            func: Box::new(Term::Const("#".to_string())),
-                            args: vec![t, acc],
-                        }
+                    let last = args
+                        .pop()
+                        .unwrap_or_else(|| Term::Const("unit".to_string()));
+                    args.into_iter().rev().fold(last, |acc, t| Term::App {
+                        func: Box::new(Term::Const("#".to_string())),
+                        args: vec![t, acc],
                     })
                 }
-            }
-            HOL4Type::TySum { left, right } => {
-                Term::App {
-                    func: Box::new(Term::Const("+".to_string())),
-                    args: vec![Self::type_to_term(left), Self::type_to_term(right)],
-                }
-            }
+            },
+            HOL4Type::TySum { left, right } => Term::App {
+                func: Box::new(Term::Const("+".to_string())),
+                args: vec![Self::type_to_term(left), Self::type_to_term(right)],
+            },
         }
     }
 
@@ -1721,16 +1781,22 @@ impl Hol4Backend {
                 } else {
                     HOL4Tactic::Induct("x".to_string())
                 }
-            }
+            },
             Tactic::Rewrite(name) => HOL4Tactic::Rewrite(vec![name.clone()]),
             Tactic::Simplify => HOL4Tactic::Simp(vec![]),
             Tactic::Reflexivity => HOL4Tactic::Rewrite(vec!["REFL_CLAUSE".to_string()]),
-            Tactic::Assumption => HOL4Tactic::FirstXAssum(Box::new(HOL4Tactic::Assume("_".to_string()))),
+            Tactic::Assumption => {
+                HOL4Tactic::FirstXAssum(Box::new(HOL4Tactic::Assume("_".to_string())))
+            },
             Tactic::Exact(term) => {
                 let hol4_term = Self::term_to_hol4(term);
                 HOL4Tactic::Custom(Self::format_term(&hol4_term))
-            }
-            Tactic::Custom { prover, command, args } => {
+            },
+            Tactic::Custom {
+                prover,
+                command,
+                args,
+            } => {
                 if prover == "HOL4" || prover == "hol4" {
                     HOL4Tactic::Custom(if args.is_empty() {
                         command.clone()
@@ -1748,7 +1814,7 @@ impl Hol4Backend {
                         _ => HOL4Tactic::Custom(command.clone()),
                     }
                 }
-            }
+            },
         }
     }
 
@@ -1765,7 +1831,7 @@ impl Hol4Backend {
                         args: thms.clone(),
                     }
                 }
-            }
+            },
             HOL4Tactic::Simp(_) => Tactic::Simplify,
             HOL4Tactic::FS(_) | HOL4Tactic::RFS(_) | HOL4Tactic::GS(_) => Tactic::Simplify,
             HOL4Tactic::Decide => Tactic::Custom {
@@ -1813,34 +1879,63 @@ impl Hol4Backend {
                 } else {
                     name.clone()
                 }
-            }
+            },
             HOL4Term::App { func, arg } => {
                 format!("({} {})", Self::format_term(func), Self::format_term(arg))
-            }
-            HOL4Term::Abs { var, var_type, body } => {
+            },
+            HOL4Term::Abs {
+                var,
+                var_type,
+                body,
+            } => {
                 let var_str = if let Some(ty) = var_type {
                     format!("({} : {})", var, Self::format_type(ty))
                 } else {
                     var.clone()
                 };
                 format!("(\\{}. {})", var_str, Self::format_term(body))
-            }
-            HOL4Term::Comb { operator, left, right } => {
-                format!("({} {} {})", Self::format_term(left), operator, Self::format_term(right))
-            }
-            HOL4Term::Cond { cond, then_branch, else_branch } => {
-                format!("(if {} then {} else {})",
+            },
+            HOL4Term::Comb {
+                operator,
+                left,
+                right,
+            } => {
+                format!(
+                    "({} {} {})",
+                    Self::format_term(left),
+                    operator,
+                    Self::format_term(right)
+                )
+            },
+            HOL4Term::Cond {
+                cond,
+                then_branch,
+                else_branch,
+            } => {
+                format!(
+                    "(if {} then {} else {})",
                     Self::format_term(cond),
                     Self::format_term(then_branch),
-                    Self::format_term(else_branch))
-            }
+                    Self::format_term(else_branch)
+                )
+            },
             HOL4Term::Let { bindings, body } => {
-                let bindings_str: Vec<String> = bindings.iter()
+                let bindings_str: Vec<String> = bindings
+                    .iter()
                     .map(|(n, v)| format!("{} = {}", n, Self::format_term(v)))
                     .collect();
-                format!("let {} in {}", bindings_str.join(" and "), Self::format_term(body))
-            }
-            HOL4Term::Quant { quantifier, var, var_type, body } => {
+                format!(
+                    "let {} in {}",
+                    bindings_str.join(" and "),
+                    Self::format_term(body)
+                )
+            },
+            HOL4Term::Quant {
+                quantifier,
+                var,
+                var_type,
+                body,
+            } => {
                 let q = match quantifier {
                     HOL4Quantifier::Forall => "!",
                     HOL4Quantifier::Exists => "?",
@@ -1853,21 +1948,19 @@ impl Hol4Backend {
                     var.clone()
                 };
                 format!("({}{}. {})", q, var_str, Self::format_term(body))
-            }
+            },
             HOL4Term::Numeral(n) => n.to_string(),
             HOL4Term::String(s) => format!("\"{}\"", s),
             HOL4Term::List(elements) => {
-                let elems: Vec<String> = elements.iter()
-                    .map(|e| Self::format_term(e))
-                    .collect();
+                let elems: Vec<String> = elements.iter().map(|e| Self::format_term(e)).collect();
                 format!("[{}]", elems.join("; "))
-            }
+            },
             HOL4Term::Pair(fst, snd) => {
                 format!("({}, {})", Self::format_term(fst), Self::format_term(snd))
-            }
+            },
             HOL4Term::TypeAnnot { term, ty } => {
                 format!("({} : {})", Self::format_term(term), Self::format_type(ty))
-            }
+            },
         }
     }
 
@@ -1881,24 +1974,28 @@ impl Hol4Backend {
                 } else if args.len() == 1 {
                     format!("{} {}", Self::format_type(&args[0]), constructor)
                 } else {
-                    let args_str: Vec<String> = args.iter()
-                        .map(|a| Self::format_type(a))
-                        .collect();
+                    let args_str: Vec<String> = args.iter().map(|a| Self::format_type(a)).collect();
                     format!("({}) {}", args_str.join(", "), constructor)
                 }
-            }
+            },
             HOL4Type::TyFun { domain, range } => {
-                format!("({} -> {})", Self::format_type(domain), Self::format_type(range))
-            }
+                format!(
+                    "({} -> {})",
+                    Self::format_type(domain),
+                    Self::format_type(range)
+                )
+            },
             HOL4Type::TyProd(types) => {
-                let types_str: Vec<String> = types.iter()
-                    .map(|t| Self::format_type(t))
-                    .collect();
+                let types_str: Vec<String> = types.iter().map(|t| Self::format_type(t)).collect();
                 format!("({})", types_str.join(" # "))
-            }
+            },
             HOL4Type::TySum { left, right } => {
-                format!("({} + {})", Self::format_type(left), Self::format_type(right))
-            }
+                format!(
+                    "({} + {})",
+                    Self::format_type(left),
+                    Self::format_type(right)
+                )
+            },
         }
     }
 
@@ -1911,35 +2008,35 @@ impl Hol4Backend {
                 } else {
                     format!("rw[{}]", thms.join(", "))
                 }
-            }
+            },
             HOL4Tactic::Simp(thms) => {
                 if thms.is_empty() {
                     "simp[]".to_string()
                 } else {
                     format!("simp[{}]", thms.join(", "))
                 }
-            }
+            },
             HOL4Tactic::FS(thms) => {
                 if thms.is_empty() {
                     "fs[]".to_string()
                 } else {
                     format!("fs[{}]", thms.join(", "))
                 }
-            }
+            },
             HOL4Tactic::RFS(thms) => {
                 if thms.is_empty() {
                     "rfs[]".to_string()
                 } else {
                     format!("rfs[{}]", thms.join(", "))
                 }
-            }
+            },
             HOL4Tactic::GS(thms) => {
                 if thms.is_empty() {
                     "gs[]".to_string()
                 } else {
                     format!("gs[{}]", thms.join(", "))
                 }
-            }
+            },
             HOL4Tactic::Decide => "DECIDE_TAC".to_string(),
             HOL4Tactic::Arith => "ARITH_TAC".to_string(),
             HOL4Tactic::Cases(term) => format!("Cases_on `{}`", Self::format_term(term)),
@@ -1955,14 +2052,14 @@ impl Hol4Backend {
             HOL4Tactic::Assume(thm) => format!("assume_tac {}", thm),
             HOL4Tactic::FirstXAssum(inner) => {
                 format!("first_x_assum ({})", Self::format_tactic(inner))
-            }
+            },
             HOL4Tactic::Metis(thms) => {
                 if thms.is_empty() {
                     "metis_tac[]".to_string()
                 } else {
                     format!("metis_tac[{}]", thms.join(", "))
                 }
-            }
+            },
             HOL4Tactic::BBlast => "blastLib.BBLAST_TAC".to_string(),
             HOL4Tactic::Word => "wordsLib.WORD_TAC".to_string(),
             HOL4Tactic::FMap => "fmapLib.FM_TAC".to_string(),
@@ -1970,27 +2067,39 @@ impl Hol4Backend {
             HOL4Tactic::AllTac => "ALL_TAC".to_string(),
             HOL4Tactic::NoTac => "NO_TAC".to_string(),
             HOL4Tactic::Then(t1, t2) => {
-                format!("({} >> {})", Self::format_tactic(t1), Self::format_tactic(t2))
-            }
+                format!(
+                    "({} >> {})",
+                    Self::format_tactic(t1),
+                    Self::format_tactic(t2)
+                )
+            },
             HOL4Tactic::OrElse(t1, t2) => {
-                format!("({} ORELSE {})", Self::format_tactic(t1), Self::format_tactic(t2))
-            }
+                format!(
+                    "({} ORELSE {})",
+                    Self::format_tactic(t1),
+                    Self::format_tactic(t2)
+                )
+            },
             HOL4Tactic::Repeat(inner) => format!("REPEAT ({})", Self::format_tactic(inner)),
             HOL4Tactic::Try(inner) => format!("TRY ({})", Self::format_tactic(inner)),
             HOL4Tactic::Reverse => "REVERSE".to_string(),
             HOL4Tactic::PopAssum(inner) => {
                 format!("pop_assum ({})", Self::format_tactic(inner))
-            }
+            },
             HOL4Tactic::QSpecThen(term, inner) => {
-                format!("qspec_then `{}` ({})", Self::format_term(term), Self::format_tactic(inner))
-            }
+                format!(
+                    "qspec_then `{}` ({})",
+                    Self::format_term(term),
+                    Self::format_tactic(inner)
+                )
+            },
             HOL4Tactic::OnceRewrite(thms) => {
                 if thms.is_empty() {
                     "once_rewrite_tac[]".to_string()
                 } else {
                     format!("once_rewrite_tac[{}]", thms.join(", "))
                 }
-            }
+            },
             HOL4Tactic::Eval => "EVAL_TAC".to_string(),
             HOL4Tactic::Custom(code) => code.clone(),
         }
@@ -2026,7 +2135,8 @@ impl ProverBackend for Hol4Backend {
     }
 
     async fn parse_file(&self, path: PathBuf) -> Result<ProofState> {
-        let content = tokio::fs::read_to_string(&path).await
+        let content = tokio::fs::read_to_string(&path)
+            .await
             .context("Failed to read HOL4 file")?;
 
         self.parse_string(&content).await
@@ -2042,21 +2152,23 @@ impl ProverBackend for Hol4Backend {
 
         for decl in &theory.declarations {
             match decl {
-                HOL4Declaration::Theorem { name, statement, .. } => {
+                HOL4Declaration::Theorem {
+                    name, statement, ..
+                } => {
                     goals.push(Goal {
                         id: name.clone(),
                         target: Self::hol4_to_term(statement),
                         hypotheses: hypotheses.clone(),
                     });
-                }
+                },
                 HOL4Declaration::Definition { name, body, .. } => {
                     hypotheses.push(Hypothesis {
                         name: name.clone(),
                         ty: Self::hol4_to_term(body),
                         body: None,
                     });
-                }
-                _ => {}
+                },
+                _ => {},
             }
         }
 
@@ -2066,8 +2178,14 @@ impl ProverBackend for Hol4Backend {
             proof_script: vec![],
             metadata: {
                 let mut meta = HashMap::new();
-                meta.insert("theory".to_string(), serde_json::Value::String(theory.name.clone()));
-                meta.insert("prover".to_string(), serde_json::Value::String("HOL4".to_string()));
+                meta.insert(
+                    "theory".to_string(),
+                    serde_json::Value::String(theory.name.clone()),
+                );
+                meta.insert(
+                    "prover".to_string(),
+                    serde_json::Value::String("HOL4".to_string()),
+                );
                 meta
             },
         })
@@ -2080,10 +2198,14 @@ impl ProverBackend for Hol4Backend {
         let mut session_guard = self.session.lock().await;
 
         let session = if session_guard.is_some() {
-            session_guard.as_mut().ok_or_else(|| anyhow!("session not initialized"))?
+            session_guard
+                .as_mut()
+                .ok_or_else(|| anyhow!("session not initialized"))?
         } else {
             *session_guard = Some(self.start_session().await?);
-            session_guard.as_mut().ok_or_else(|| anyhow!("session not initialized"))?
+            session_guard
+                .as_mut()
+                .ok_or_else(|| anyhow!("session not initialized"))?
         };
 
         // Apply the tactic
@@ -2091,9 +2213,9 @@ impl ProverBackend for Hol4Backend {
         let response = Self::send_command(session, &command).await?;
 
         // Check for success
-        let success = !response.contains("Exception") &&
-                      !response.contains("error") &&
-                      !response.contains("FAIL");
+        let success = !response.contains("Exception")
+            && !response.contains("error")
+            && !response.contains("FAIL");
 
         if success {
             let mut new_state = state.clone();
@@ -2119,7 +2241,9 @@ impl ProverBackend for Hol4Backend {
         let mut output = String::new();
 
         // Get theory name from metadata
-        let theory_name = state.metadata.get("theory")
+        let theory_name = state
+            .metadata
+            .get("theory")
             .and_then(|v| v.as_str())
             .unwrap_or("Exported");
 
@@ -2132,10 +2256,12 @@ impl ProverBackend for Hol4Backend {
             for hyp in &goal.hypotheses {
                 output.push_str(&format!("(* Hypothesis: {} *)\n", hyp.name));
                 let hol4_ty = Self::term_to_hol4(&hyp.ty);
-                output.push_str(&format!("val {}_def = Define `{} = {}`;\n\n",
+                output.push_str(&format!(
+                    "val {}_def = Define `{} = {}`;\n\n",
                     hyp.name,
                     hyp.name,
-                    Self::format_term(&hol4_ty)));
+                    Self::format_term(&hol4_ty)
+                ));
             }
 
             // Export goal as theorem
@@ -2181,7 +2307,7 @@ impl ProverBackend for Hol4Backend {
                         command: "gen_tac".to_string(),
                         args: vec![],
                     });
-                }
+                },
                 Term::App { func, .. } => {
                     if let Term::Const(name) = func.as_ref() {
                         match name.as_str() {
@@ -2191,7 +2317,7 @@ impl ProverBackend for Hol4Backend {
                                     command: "conj_tac".to_string(),
                                     args: vec![],
                                 });
-                            }
+                            },
                             "=" => {
                                 suggestions.push(Tactic::Simplify);
                                 suggestions.push(Tactic::Custom {
@@ -2204,7 +2330,7 @@ impl ProverBackend for Hol4Backend {
                                     command: "EVAL_TAC".to_string(),
                                     args: vec![],
                                 });
-                            }
+                            },
                             "==>" | "⇒" => {
                                 suggestions.push(Tactic::Intro(None));
                                 suggestions.push(Tactic::Custom {
@@ -2212,7 +2338,7 @@ impl ProverBackend for Hol4Backend {
                                     command: "STRIP_TAC".to_string(),
                                     args: vec![],
                                 });
-                            }
+                            },
                             "<" | "<=" | ">" | ">=" => {
                                 suggestions.push(Tactic::Custom {
                                     prover: "HOL4".to_string(),
@@ -2224,12 +2350,12 @@ impl ProverBackend for Hol4Backend {
                                     command: "DECIDE_TAC".to_string(),
                                     args: vec![],
                                 });
-                            }
-                            _ => {}
+                            },
+                            _ => {},
                         }
                     }
-                }
-                _ => {}
+                },
+                _ => {},
             }
         }
 
@@ -2261,10 +2387,14 @@ impl ProverBackend for Hol4Backend {
         let mut session_guard = self.session.lock().await;
 
         let session = if session_guard.is_some() {
-            session_guard.as_mut().ok_or_else(|| anyhow!("session not initialized"))?
+            session_guard
+                .as_mut()
+                .ok_or_else(|| anyhow!("session not initialized"))?
         } else {
             *session_guard = Some(self.start_session().await?);
-            session_guard.as_mut().ok_or_else(|| anyhow!("session not initialized"))?
+            session_guard
+                .as_mut()
+                .ok_or_else(|| anyhow!("session not initialized"))?
         };
 
         // Use DB.match_string to search for theorems
@@ -2336,7 +2466,7 @@ mod tests {
                     HOL4Term::Var { name, .. } => assert_eq!(name, "x"),
                     _ => panic!("Expected argument variable"),
                 }
-            }
+            },
             _ => panic!("Expected application"),
         }
         Ok(())
@@ -2353,7 +2483,7 @@ mod tests {
                     HOL4Term::Var { name, .. } => assert_eq!(name, "x"),
                     _ => panic!("Expected variable in body"),
                 }
-            }
+            },
             _ => panic!("Expected lambda abstraction"),
         }
         Ok(())
@@ -2364,10 +2494,12 @@ mod tests {
         let mut parser = HOL4Parser::new("!x. P x");
         let term = parser.parse_term()?;
         match term {
-            HOL4Term::Quant { quantifier, var, .. } => {
+            HOL4Term::Quant {
+                quantifier, var, ..
+            } => {
                 assert_eq!(quantifier, HOL4Quantifier::Forall);
                 assert_eq!(var, "x");
-            }
+            },
             _ => panic!("Expected forall quantification"),
         }
         Ok(())
@@ -2378,10 +2510,12 @@ mod tests {
         let mut parser = HOL4Parser::new("?x. P x");
         let term = parser.parse_term()?;
         match term {
-            HOL4Term::Quant { quantifier, var, .. } => {
+            HOL4Term::Quant {
+                quantifier, var, ..
+            } => {
                 assert_eq!(quantifier, HOL4Quantifier::Exists);
                 assert_eq!(var, "x");
-            }
+            },
             _ => panic!("Expected exists quantification"),
         }
         Ok(())
@@ -2411,7 +2545,7 @@ mod tests {
             HOL4Type::TyFun { domain, range } => {
                 assert_eq!(*domain, HOL4Type::TyCon("num".to_string()));
                 assert_eq!(*range, HOL4Type::TyCon("bool".to_string()));
-            }
+            },
             _ => panic!("Expected function type"),
         }
         Ok(())

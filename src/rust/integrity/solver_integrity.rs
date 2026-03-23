@@ -85,8 +85,8 @@ impl IntegrityChecker {
     pub fn from_manifest_file(path: &Path) -> Result<Self> {
         let content = std::fs::read_to_string(path)
             .with_context(|| format!("Failed to read solver manifest: {}", path.display()))?;
-        let manifest: SolverManifest = toml::from_str(&content)
-            .with_context(|| "Failed to parse solver manifest TOML")?;
+        let manifest: SolverManifest =
+            toml::from_str(&content).with_context(|| "Failed to parse solver manifest TOML")?;
 
         Ok(Self {
             manifest,
@@ -176,10 +176,22 @@ impl IntegrityChecker {
         }
 
         // Summary
-        let verified = results.iter().filter(|r| r.status == IntegrityStatus::Verified).count();
-        let tampered = results.iter().filter(|r| r.status == IntegrityStatus::Tampered).count();
-        let missing = results.iter().filter(|r| r.status == IntegrityStatus::Missing).count();
-        let uninitialized = results.iter().filter(|r| r.status == IntegrityStatus::Uninitialized).count();
+        let verified = results
+            .iter()
+            .filter(|r| r.status == IntegrityStatus::Verified)
+            .count();
+        let tampered = results
+            .iter()
+            .filter(|r| r.status == IntegrityStatus::Tampered)
+            .count();
+        let missing = results
+            .iter()
+            .filter(|r| r.status == IntegrityStatus::Missing)
+            .count();
+        let uninitialized = results
+            .iter()
+            .filter(|r| r.status == IntegrityStatus::Uninitialized)
+            .count();
 
         info!(
             "Solver integrity check: {} verified, {} tampered, {} missing, {} uninitialized",
@@ -187,21 +199,31 @@ impl IntegrityChecker {
         );
 
         if tampered > 0 {
-            error!("CRITICAL: {} solver binaries have been tampered with!", tampered);
+            error!(
+                "CRITICAL: {} solver binaries have been tampered with!",
+                tampered
+            );
         }
 
         Ok(results)
     }
 
     /// Verify a single solver binary
-    async fn verify_solver(&self, name: &str, entry: &SolverManifestEntry) -> SolverIntegrityReport {
+    async fn verify_solver(
+        &self,
+        name: &str,
+        entry: &SolverManifestEntry,
+    ) -> SolverIntegrityReport {
         let now = chrono::Utc::now();
 
         // Find the binary
         let actual_path = match Self::find_solver_binary(entry) {
             Some(path) => path,
             None => {
-                warn!("Solver binary not found: {} (expected at {})", name, entry.path);
+                warn!(
+                    "Solver binary not found: {} (expected at {})",
+                    name, entry.path
+                );
                 return SolverIntegrityReport {
                     name: name.to_string(),
                     status: IntegrityStatus::Missing,
@@ -211,12 +233,15 @@ impl IntegrityChecker {
                     expected_shake3_512: Some(entry.shake3_512.clone()),
                     last_checked: now,
                 };
-            }
+            },
         };
 
         // Check if manifest hash is a placeholder
         if entry.shake3_512.starts_with("PLACEHOLDER") {
-            info!("Solver {} has placeholder hash, computing initial hash", name);
+            info!(
+                "Solver {} has placeholder hash, computing initial hash",
+                name
+            );
 
             let shake3 = Self::compute_shake3_512(&actual_path).ok();
             let blake3 = Self::compute_blake3(&actual_path).ok();
@@ -269,7 +294,7 @@ impl IntegrityChecker {
                     expected_shake3_512: Some(entry.shake3_512.clone()),
                     last_checked: now,
                 }
-            }
+            },
             Err(e) => {
                 error!("Failed to compute hash for solver {}: {}", name, e);
                 SolverIntegrityReport {
@@ -281,7 +306,7 @@ impl IntegrityChecker {
                     expected_shake3_512: Some(entry.shake3_512.clone()),
                     last_checked: now,
                 }
-            }
+            },
         }
     }
 
@@ -289,12 +314,16 @@ impl IntegrityChecker {
     /// Returns true if the binary has not changed since last full verification
     pub async fn quick_reverify(&self, solver_name: &str) -> Result<bool> {
         let cache = self.blake3_cache.read().await;
-        let cached_hash = cache.get(solver_name)
+        let cached_hash = cache
+            .get(solver_name)
             .ok_or_else(|| anyhow::anyhow!("No cached BLAKE3 hash for solver: {}", solver_name))?
             .clone();
         drop(cache);
 
-        let entry = self.manifest.solvers.get(solver_name)
+        let entry = self
+            .manifest
+            .solvers
+            .get(solver_name)
             .ok_or_else(|| anyhow::anyhow!("Unknown solver: {}", solver_name))?;
 
         let actual_path = Self::find_solver_binary(entry)
@@ -303,7 +332,10 @@ impl IntegrityChecker {
         let current_hash = Self::compute_blake3(&actual_path)?;
 
         if current_hash != cached_hash {
-            error!("ALERT: Solver {} binary changed during runtime!", solver_name);
+            error!(
+                "ALERT: Solver {} binary changed during runtime!",
+                solver_name
+            );
             Ok(false)
         } else {
             Ok(true)
@@ -313,7 +345,8 @@ impl IntegrityChecker {
     /// Get the current integrity status of a solver
     pub async fn get_status(&self, solver_name: &str) -> IntegrityStatus {
         let reports = self.reports.read().await;
-        reports.get(solver_name)
+        reports
+            .get(solver_name)
             .map(|r| r.status.clone())
             .unwrap_or(IntegrityStatus::Unchecked)
     }
@@ -321,7 +354,10 @@ impl IntegrityChecker {
     /// Check if a solver is safe to use (verified or uninitialized)
     pub async fn is_solver_safe(&self, solver_name: &str) -> bool {
         let status = self.get_status(solver_name).await;
-        matches!(status, IntegrityStatus::Verified | IntegrityStatus::Uninitialized | IntegrityStatus::Unchecked)
+        matches!(
+            status,
+            IntegrityStatus::Verified | IntegrityStatus::Uninitialized | IntegrityStatus::Unchecked
+        )
     }
 
     /// Get all integrity reports
@@ -333,7 +369,8 @@ impl IntegrityChecker {
     /// Get the number of verified solvers
     pub async fn verified_count(&self) -> usize {
         let reports = self.reports.read().await;
-        reports.values()
+        reports
+            .values()
             .filter(|r| r.status == IntegrityStatus::Verified)
             .count()
     }
@@ -357,8 +394,8 @@ fn hex_encode(bytes: &[u8]) -> String {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use tempfile::NamedTempFile;
     use std::io::Write;
+    use tempfile::NamedTempFile;
 
     #[test]
     fn test_hex_encode() {
@@ -405,7 +442,10 @@ mod tests {
 
         let tampered_hash = IntegrityChecker::compute_blake3(tmp.path())?;
 
-        assert_ne!(original_hash, tampered_hash, "Tampered binary should have different hash");
+        assert_ne!(
+            original_hash, tampered_hash,
+            "Tampered binary should have different hash"
+        );
         Ok(())
     }
 
@@ -418,14 +458,15 @@ mod tests {
     #[tokio::test]
     async fn test_integrity_checker_verify_all() -> Result<()> {
         let manifest = SolverManifest {
-            solvers: HashMap::from([
-                ("test_solver".to_string(), SolverManifestEntry {
+            solvers: HashMap::from([(
+                "test_solver".to_string(),
+                SolverManifestEntry {
                     version: "1.0".to_string(),
                     shake3_512: "PLACEHOLDER_COMPUTE_ON_FIRST_RUN".to_string(),
                     path: "/nonexistent/solver".to_string(),
                     fallback_paths: vec![],
-                }),
-            ]),
+                },
+            )]),
         };
 
         let checker = IntegrityChecker::new(manifest);

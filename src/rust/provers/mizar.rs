@@ -16,8 +16,8 @@
 //! - Multi-phase verification (accommodation, analyzer)
 //! - Extensive library of formalized mathematics
 
-use async_trait::async_trait;
 use anyhow::{anyhow, Context, Result};
+use async_trait::async_trait;
 use std::collections::HashMap;
 use std::path::{Path, PathBuf};
 use std::process::Stdio;
@@ -26,8 +26,8 @@ use tokio::io::AsyncWriteExt;
 use tokio::process::Command;
 
 use crate::core::{
-    Context as ProofContext, Definition, Goal, Hypothesis, ProofState, Tactic, TacticResult,
-    Term, Theorem,
+    Context as ProofContext, Definition, Goal, Hypothesis, ProofState, Tactic, TacticResult, Term,
+    Theorem,
 };
 use crate::provers::{ProverBackend, ProverConfig, ProverKind};
 
@@ -87,7 +87,10 @@ impl MizarBackend {
 
     /// Run mizf (accommodation phase)
     async fn run_mizf(&self, path: &Path) -> Result<MizarPhaseOutput> {
-        let mizf_path = self.config.executable.parent()
+        let mizf_path = self
+            .config
+            .executable
+            .parent()
             .unwrap_or_else(|| Path::new("/usr/local/bin"))
             .join("mizf");
 
@@ -114,7 +117,10 @@ impl MizarBackend {
 
     /// Run verifier (verification phase)
     async fn run_verifier(&self, path: &Path) -> Result<MizarPhaseOutput> {
-        let verifier_path = self.config.executable.parent()
+        let verifier_path = self
+            .config
+            .executable
+            .parent()
             .unwrap_or_else(|| Path::new("/usr/local/bin"))
             .join("verifier");
 
@@ -197,8 +203,13 @@ impl MizarBackend {
                     func: func_term,
                     args: arg_terms?,
                 })
-            }
-            MizarTerm::Quantifier { kind, var, var_type, body } => {
+            },
+            MizarTerm::Quantifier {
+                kind,
+                var,
+                var_type,
+                body,
+            } => {
                 let var_type_term = self.mizar_to_term(var_type)?;
                 let body_term = self.mizar_to_term(body)?;
 
@@ -208,18 +219,16 @@ impl MizarBackend {
                         param_type: Box::new(var_type_term),
                         body: Box::new(body_term),
                     }),
-                    QuantifierKind::Exists => {
-                        Ok(Term::App {
-                            func: Box::new(Term::Const("Exists".to_string())),
-                            args: vec![Term::Lambda {
-                                param: var.clone(),
-                                param_type: Some(Box::new(var_type_term)),
-                                body: Box::new(body_term),
-                            }],
-                        })
-                    }
+                    QuantifierKind::Exists => Ok(Term::App {
+                        func: Box::new(Term::Const("Exists".to_string())),
+                        args: vec![Term::Lambda {
+                            param: var.clone(),
+                            param_type: Some(Box::new(var_type_term)),
+                            body: Box::new(body_term),
+                        }],
+                    }),
                 }
-            }
+            },
             MizarTerm::BinaryOp { op, left, right } => {
                 let left_term = self.mizar_to_term(left)?;
                 let right_term = self.mizar_to_term(right)?;
@@ -227,14 +236,14 @@ impl MizarBackend {
                     func: Box::new(Term::Const(op.to_string())),
                     args: vec![left_term, right_term],
                 })
-            }
+            },
             MizarTerm::UnaryOp { op, operand } => {
                 let operand_term = self.mizar_to_term(operand)?;
                 Ok(Term::App {
                     func: Box::new(Term::Const(op.to_string())),
                     args: vec![operand_term],
                 })
-            }
+            },
         }
     }
 
@@ -251,33 +260,48 @@ impl MizarBackend {
                     .collect::<Vec<_>>()
                     .join(", ");
                 format!("{}({})", func_str, args_str)
-            }
-            Term::Lambda { param, param_type, body } => {
+            },
+            Term::Lambda {
+                param,
+                param_type,
+                body,
+            } => {
                 let type_str = param_type
                     .as_ref()
                     .map(|t| format!(" being {}", self.term_to_mizar(t)))
                     .unwrap_or_default();
                 format!("λ {}{} . {}", param, type_str, self.term_to_mizar(body))
-            }
-            Term::Pi { param, param_type, body } => {
+            },
+            Term::Pi {
+                param,
+                param_type,
+                body,
+            } => {
                 format!(
                     "for {} being {} holds {}",
                     param,
                     self.term_to_mizar(param_type),
                     self.term_to_mizar(body)
                 )
-            }
+            },
             Term::Universe(level) | Term::Type(level) => format!("Type{}", level),
             Term::Sort(level) => format!("Sort{}", level),
-            Term::Let { name, value, body, .. } => {
-                format!("let {} = {} in {}", name, self.term_to_mizar(value), self.term_to_mizar(body))
-            }
+            Term::Let {
+                name, value, body, ..
+            } => {
+                format!(
+                    "let {} = {} in {}",
+                    name,
+                    self.term_to_mizar(value),
+                    self.term_to_mizar(body)
+                )
+            },
             Term::Match { scrutinee, .. } => {
                 format!("(match {} with ...)", self.term_to_mizar(scrutinee))
-            }
+            },
             Term::Fix { name, body, .. } => {
                 format!("(fix {} = {})", name, self.term_to_mizar(body))
-            }
+            },
             Term::Hole(name) => format!("?{}", name),
             Term::Meta(id) => format!("?{}", id),
             Term::ProverSpecific { .. } => "<term>".to_string(),
@@ -403,7 +427,7 @@ impl ProverBackend for MizarBackend {
                 }
                 new_state.proof_script.push(tactic.clone());
                 Ok(TacticResult::Success(new_state))
-            }
+            },
             Tactic::Intro(name) => {
                 if new_state.goals.is_empty() {
                     return Ok(TacticResult::QED);
@@ -414,7 +438,12 @@ impl ProverBackend for MizarBackend {
                     .clone()
                     .unwrap_or_else(|| format!("H{}", goal.hypotheses.len()));
 
-                if let Term::Pi { param: _, param_type, body } = &goal.target {
+                if let Term::Pi {
+                    param: _,
+                    param_type,
+                    body,
+                } = &goal.target
+                {
                     goal.hypotheses.push(Hypothesis {
                         name: hypothesis_name,
                         ty: *param_type.clone(),
@@ -426,24 +455,21 @@ impl ProverBackend for MizarBackend {
                 } else {
                     Err(anyhow!("Cannot introduce: goal is not a Pi type"))
                 }
-            }
+            },
             Tactic::Cases(_term) => {
                 if new_state.goals.is_empty() {
                     return Ok(TacticResult::QED);
                 }
                 new_state.proof_script.push(tactic.clone());
                 Ok(TacticResult::Success(new_state))
-            }
+            },
             Tactic::Assumption => {
                 if new_state.goals.is_empty() {
                     return Ok(TacticResult::QED);
                 }
 
                 let goal = &new_state.goals[0];
-                let found = goal
-                    .hypotheses
-                    .iter()
-                    .any(|h| h.ty == goal.target);
+                let found = goal.hypotheses.iter().any(|h| h.ty == goal.target);
 
                 if found {
                     new_state.goals.remove(0);
@@ -456,7 +482,7 @@ impl ProverBackend for MizarBackend {
                 } else {
                     Err(anyhow!("No matching hypothesis found"))
                 }
-            }
+            },
             Tactic::Exact(term) => {
                 if new_state.goals.is_empty() {
                     return Ok(TacticResult::QED);
@@ -474,8 +500,12 @@ impl ProverBackend for MizarBackend {
                 } else {
                     Err(anyhow!("Exact term does not match goal"))
                 }
-            }
-            Tactic::Custom { prover, command, args: _ } => {
+            },
+            Tactic::Custom {
+                prover,
+                command,
+                args: _,
+            } => {
                 if prover != "mizar" {
                     return Err(anyhow!("Custom tactic not for Mizar"));
                 }
@@ -484,18 +514,18 @@ impl ProverBackend for MizarBackend {
                     "thus" | "hence" => {
                         new_state.proof_script.push(tactic.clone());
                         Ok(TacticResult::Success(new_state))
-                    }
+                    },
                     "per_cases" => {
                         new_state.proof_script.push(tactic.clone());
                         Ok(TacticResult::Success(new_state))
-                    }
+                    },
                     _ => Err(anyhow!("Unknown Mizar tactic: {}", command)),
                 }
-            }
+            },
             _ => {
                 new_state.proof_script.push(tactic.clone());
                 Ok(TacticResult::Success(new_state))
-            }
+            },
         }
     }
 
@@ -544,7 +574,7 @@ impl ProverBackend for MizarBackend {
         match &goal.target {
             Term::Pi { .. } => {
                 suggestions.push(Tactic::Intro(None));
-            }
+            },
             Term::App { func: _, .. } => {
                 for theorem in &state.context.theorems {
                     suggestions.push(Tactic::Apply(theorem.name.clone()));
@@ -552,10 +582,10 @@ impl ProverBackend for MizarBackend {
                         break;
                     }
                 }
-            }
+            },
             _ => {
                 suggestions.push(Tactic::Assumption);
-            }
+            },
         }
 
         suggestions.truncate(limit);
@@ -643,13 +673,33 @@ struct MizarProof {
 
 #[derive(Debug, Clone)]
 enum MizarProofStep {
-    Let { vars: Vec<String>, var_type: String },
-    Assume { label: Option<String>, formula: MizarTerm },
-    Thus { formula: MizarTerm, justification: Option<String> },
-    Hence { formula: MizarTerm, justification: Option<String> },
-    PerCases { cases: Vec<MizarProof> },
-    Take { term: MizarTerm },
-    Consider { vars: Vec<String>, formula: MizarTerm, justification: Option<String> },
+    Let {
+        vars: Vec<String>,
+        var_type: String,
+    },
+    Assume {
+        label: Option<String>,
+        formula: MizarTerm,
+    },
+    Thus {
+        formula: MizarTerm,
+        justification: Option<String>,
+    },
+    Hence {
+        formula: MizarTerm,
+        justification: Option<String>,
+    },
+    PerCases {
+        cases: Vec<MizarProof>,
+    },
+    Take {
+        term: MizarTerm,
+    },
+    Consider {
+        vars: Vec<String>,
+        formula: MizarTerm,
+        justification: Option<String>,
+    },
 }
 
 #[derive(Debug, Clone, PartialEq)]
@@ -717,13 +767,13 @@ impl MizarParser {
             match keyword.as_deref() {
                 Some("theorem") => {
                     theorems.push(self.parse_theorem()?);
-                }
+                },
                 Some("definition") => {
                     definitions.push(self.parse_definition()?);
-                }
+                },
                 Some("scheme") => {
                     schemes.push(self.parse_scheme()?);
-                }
+                },
                 _ => break,
             }
         }
@@ -749,27 +799,27 @@ impl MizarParser {
                 Some("vocabularies") => {
                     self.consume_keyword("vocabularies");
                     environ.vocabularies = self.parse_identifier_list()?;
-                }
+                },
                 Some("notations") => {
                     self.consume_keyword("notations");
                     environ.notations = self.parse_identifier_list()?;
-                }
+                },
                 Some("constructors") => {
                     self.consume_keyword("constructors");
                     environ.constructors = self.parse_identifier_list()?;
-                }
+                },
                 Some("registrations") => {
                     self.consume_keyword("registrations");
                     environ.registrations = self.parse_identifier_list()?;
-                }
+                },
                 Some("theorems") => {
                     self.consume_keyword("theorems");
                     environ.theorems = self.parse_identifier_list()?;
-                }
+                },
                 Some("requirements") => {
                     self.consume_keyword("requirements");
                     environ.requirements = self.parse_identifier_list()?;
-                }
+                },
                 _ => break,
             }
         }
@@ -844,7 +894,8 @@ impl MizarParser {
     fn parse_definition(&mut self) -> Result<MizarDefinition> {
         self.expect_keyword("definition")?;
 
-        let name = self.parse_identifier()
+        let name = self
+            .parse_identifier()
             .ok_or_else(|| anyhow!("Expected definition name"))?;
 
         let def_type = MizarTerm::Constant("Type".to_string());
@@ -871,7 +922,8 @@ impl MizarParser {
     fn parse_scheme(&mut self) -> Result<MizarScheme> {
         self.expect_keyword("scheme")?;
 
-        let name = self.parse_identifier()
+        let name = self
+            .parse_identifier()
             .ok_or_else(|| anyhow!("Expected scheme name"))?;
 
         let parameters = vec![];
@@ -911,25 +963,25 @@ impl MizarParser {
             match keyword.as_deref() {
                 Some("let") => {
                     steps.push(self.parse_let_step()?);
-                }
+                },
                 Some("assume") => {
                     steps.push(self.parse_assume_step()?);
-                }
+                },
                 Some("thus") => {
                     steps.push(self.parse_thus_step()?);
-                }
+                },
                 Some("hence") => {
                     steps.push(self.parse_hence_step()?);
-                }
+                },
                 Some("per") => {
                     steps.push(self.parse_per_cases()?);
-                }
+                },
                 Some("take") => {
                     steps.push(self.parse_take_step()?);
-                }
+                },
                 _ => {
                     self.pos += 1;
-                }
+                },
             }
         }
 
@@ -943,8 +995,10 @@ impl MizarParser {
         self.expect_keyword("let")?;
 
         let mut vars = Vec::new();
-        vars.push(self.parse_identifier()
-            .ok_or_else(|| anyhow!("Expected variable name"))?);
+        vars.push(
+            self.parse_identifier()
+                .ok_or_else(|| anyhow!("Expected variable name"))?,
+        );
 
         while self.check_char(',') {
             self.consume_char(',');
@@ -954,7 +1008,8 @@ impl MizarParser {
         }
 
         self.expect_keyword("be")?;
-        let var_type = self.parse_identifier()
+        let var_type = self
+            .parse_identifier()
             .ok_or_else(|| anyhow!("Expected type name"))?;
 
         self.expect_char(';')?;
@@ -997,7 +1052,10 @@ impl MizarParser {
 
         self.expect_char(';')?;
 
-        Ok(MizarProofStep::Thus { formula, justification })
+        Ok(MizarProofStep::Thus {
+            formula,
+            justification,
+        })
     }
 
     fn parse_hence_step(&mut self) -> Result<MizarProofStep> {
@@ -1014,7 +1072,10 @@ impl MizarParser {
 
         self.expect_char(';')?;
 
-        Ok(MizarProofStep::Hence { formula, justification })
+        Ok(MizarProofStep::Hence {
+            formula,
+            justification,
+        })
     }
 
     fn parse_per_cases(&mut self) -> Result<MizarProofStep> {
@@ -1025,11 +1086,11 @@ impl MizarParser {
 
         while self.check_keyword("suppose") {
             self.expect_keyword("suppose")?;
-            
+
             while !self.check_keyword("end") && self.pos < self.input.len() {
                 self.pos += 1;
             }
-            
+
             cases.push(MizarProof { steps: vec![] });
         }
 
@@ -1058,14 +1119,16 @@ impl MizarParser {
     fn parse_for_formula(&mut self) -> Result<MizarTerm> {
         self.expect_keyword("for")?;
 
-        let var = self.parse_identifier()
+        let var = self
+            .parse_identifier()
             .ok_or_else(|| anyhow!("Expected variable"))?;
 
         let mut var_type = MizarTerm::Constant("set".to_string());
 
         if self.check_keyword("being") {
             self.consume_keyword("being");
-            let type_name = self.parse_identifier()
+            let type_name = self
+                .parse_identifier()
                 .ok_or_else(|| anyhow!("Expected type name"))?;
             var_type = MizarTerm::Constant(type_name);
         }
@@ -1250,8 +1313,14 @@ impl MizarParser {
 
     fn expect_keyword(&mut self, keyword: &str) -> Result<()> {
         self.skip_whitespace_and_comments();
-        if self.pos + keyword.len() > self.input.len() || !self.input[self.pos..].starts_with(keyword) {
-            return Err(anyhow!("Expected keyword '{}' at position {}", keyword, self.pos));
+        if self.pos + keyword.len() > self.input.len()
+            || !self.input[self.pos..].starts_with(keyword)
+        {
+            return Err(anyhow!(
+                "Expected keyword '{}' at position {}",
+                keyword,
+                self.pos
+            ));
         }
         self.pos += keyword.len();
         Ok(())
@@ -1278,7 +1347,12 @@ impl MizarParser {
     fn expect_char(&mut self, ch: char) -> Result<()> {
         self.skip_whitespace_and_comments();
         if self.peek() != Some(ch) {
-            return Err(anyhow!("Expected '{}' at position {}, found {:?}", ch, self.pos, self.peek()));
+            return Err(anyhow!(
+                "Expected '{}' at position {}, found {:?}",
+                ch,
+                self.pos,
+                self.peek()
+            ));
         }
         self.pos += 1;
         Ok(())
@@ -1291,7 +1365,8 @@ impl MizarParser {
             if ch.is_whitespace() {
                 self.pos += 1;
             } else if self.input[self.pos..].starts_with("::") {
-                while self.pos < self.input.len() && self.input.as_bytes()[self.pos] as char != '\n' {
+                while self.pos < self.input.len() && self.input.as_bytes()[self.pos] as char != '\n'
+                {
                     self.pos += 1;
                 }
             } else {

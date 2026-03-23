@@ -1,14 +1,16 @@
 // SPDX-License-Identifier: PMPL-1.0-or-later
 // GraphQL resolvers - wired to ECHIDNA core
 
+use echidna::core::{
+    ProofState as CoreProofState, Tactic as CoreTactic, TacticResult as CoreTacticResult, Term,
+};
 use echidna::provers::{ProverBackend, ProverConfig, ProverFactory, ProverKind as CoreProverKind};
-use echidna::core::{ProofState as CoreProofState, Tactic as CoreTactic, TacticResult as CoreTacticResult, Term};
 use std::collections::HashMap;
 use std::sync::Arc;
 use tokio::sync::{Mutex, RwLock};
 
 // Import FFI wrapper
-use crate::ffi_wrapper;;
+use crate::ffi_wrapper;
 
 /// Wrapper for FFI-based prover backend
 struct FfiProverBackend {
@@ -38,7 +40,11 @@ impl ProverBackend for FfiProverBackend {
         ffi_wrapper::verify_proof(self.handle)
     }
 
-    async fn apply_tactic(&self, state: &CoreProofState, tactic: &CoreTactic) -> anyhow::Result<CoreTacticResult> {
+    async fn apply_tactic(
+        &self,
+        state: &CoreProofState,
+        tactic: &CoreTactic,
+    ) -> anyhow::Result<CoreTacticResult> {
         let tactic_str = format!("{:?}", tactic);
         if ffi_wrapper::apply_tactic(self.handle, &tactic_str)? {
             Ok(CoreTacticResult::Success(Box::new(state.clone())))
@@ -47,15 +53,20 @@ impl ProverBackend for FfiProverBackend {
         }
     }
 
-    async fn suggest_tactics(&self, state: &CoreProofState, limit: usize) -> anyhow::Result<Vec<CoreTactic>> {
+    async fn suggest_tactics(
+        &self,
+        state: &CoreProofState,
+        limit: usize,
+    ) -> anyhow::Result<Vec<CoreTactic>> {
         let tactic_names = ffi_wrapper::suggest_tactics(self.handle, limit)?;
-        let tactics = tactic_names.into_iter().map(|name| {
-            CoreTactic::Custom {
+        let tactics = tactic_names
+            .into_iter()
+            .map(|name| CoreTactic::Custom {
                 prover: "ffi".to_string(),
                 command: name,
                 args: vec![],
-            }
-        }).collect();
+            })
+            .collect();
         Ok(tactics)
     }
 
@@ -207,7 +218,8 @@ impl EchidnaContext {
 
         if self.ffi_initialized {
             // Use FFI path
-            let ffi_kind = ffi_wrapper::prover_kind_to_ffi(&crate::schema::ProverKind::from_core(kind));
+            let ffi_kind =
+                ffi_wrapper::prover_kind_to_ffi(&crate::schema::ProverKind::from_core(kind));
             match ffi_wrapper::create_prover(ffi_kind) {
                 Ok(handle) => {
                     // Parse via FFI
@@ -230,10 +242,10 @@ impl EchidnaContext {
 
                         return Ok(proof_id);
                     }
-                }
+                },
                 Err(e) => {
                     tracing::warn!("FFI path failed, falling back to direct: {}", e);
-                }
+                },
             }
         }
 
@@ -262,7 +274,11 @@ impl EchidnaContext {
         Ok(proof_id)
     }
 
-    pub async fn apply_tactic(&self, proof_id: &str, tactic: CoreTactic) -> anyhow::Result<CoreTacticResult> {
+    pub async fn apply_tactic(
+        &self,
+        proof_id: &str,
+        tactic: CoreTactic,
+    ) -> anyhow::Result<CoreTacticResult> {
         let sessions = self.sessions.read().await;
         let session_arc = sessions
             .get(proof_id)
@@ -286,20 +302,24 @@ impl EchidnaContext {
                 if complete {
                     session.status = SessionStatus::Success;
                 }
-            }
+            },
             CoreTacticResult::QED => {
                 session.status = SessionStatus::Success;
                 if let Some(s) = session.state.as_mut() {
                     s.goals.clear();
                 }
-            }
-            CoreTacticResult::Error(_) => {}
+            },
+            CoreTacticResult::Error(_) => {},
         }
 
         Ok(result)
     }
 
-    pub async fn suggest_tactics(&self, proof_id: &str, limit: usize) -> anyhow::Result<Vec<CoreTactic>> {
+    pub async fn suggest_tactics(
+        &self,
+        proof_id: &str,
+        limit: usize,
+    ) -> anyhow::Result<Vec<CoreTactic>> {
         let sessions = self.sessions.read().await;
         let session_arc = sessions
             .get(proof_id)
@@ -326,7 +346,8 @@ impl EchidnaContext {
             "top_k": limit
         });
 
-        if let Ok(resp) = self.ml_client
+        if let Ok(resp) = self
+            .ml_client
             .post(format!("{}/suggest", self.ml_api_url))
             .json(&julia_req)
             .send()

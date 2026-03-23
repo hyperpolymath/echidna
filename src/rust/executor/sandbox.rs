@@ -51,7 +51,7 @@ pub struct SandboxConfig {
 impl Default for SandboxConfig {
     fn default() -> Self {
         Self {
-            kind: SandboxKind::None, // Default to no sandbox for dev
+            kind: SandboxKind::None,          // Default to no sandbox for dev
             memory_limit: 1024 * 1024 * 1024, // 1 GiB
             cpu_limit: 2,
             time_limit: 300,
@@ -118,9 +118,18 @@ impl SandboxedExecutor {
         input_file: Option<&Path>,
     ) -> Result<SandboxedOutput> {
         match self.config.kind {
-            SandboxKind::Podman => self.execute_podman(solver_path, args, stdin_data, input_file).await,
-            SandboxKind::Bubblewrap => self.execute_bubblewrap(solver_path, args, stdin_data, input_file).await,
-            SandboxKind::None => self.execute_unsandboxed(solver_path, args, stdin_data).await,
+            SandboxKind::Podman => {
+                self.execute_podman(solver_path, args, stdin_data, input_file)
+                    .await
+            },
+            SandboxKind::Bubblewrap => {
+                self.execute_bubblewrap(solver_path, args, stdin_data, input_file)
+                    .await
+            },
+            SandboxKind::None => {
+                self.execute_unsandboxed(solver_path, args, stdin_data)
+                    .await
+            },
         }
     }
 
@@ -152,10 +161,7 @@ impl SandboxedExecutor {
 
         // Mount input file read-only if provided
         if let Some(input) = input_file {
-            cmd.arg(format!(
-                "--volume={}:/input/proof:ro",
-                input.display()
-            ));
+            cmd.arg(format!("--volume={}:/input/proof:ro", input.display()));
         }
 
         cmd.arg(&self.config.container_image)
@@ -182,8 +188,11 @@ impl SandboxedExecutor {
     ) -> Result<SandboxedOutput> {
         let mut cmd = Command::new("bwrap");
 
-        cmd.arg("--ro-bind").arg("/").arg("/")
-            .arg("--tmpfs").arg("/tmp")
+        cmd.arg("--ro-bind")
+            .arg("/")
+            .arg("/")
+            .arg("--tmpfs")
+            .arg("/tmp")
             .arg("--unshare-all")
             .arg("--die-with-parent");
 
@@ -194,8 +203,7 @@ impl SandboxedExecutor {
                 .arg("/input/proof");
         }
 
-        cmd.arg("--")
-            .arg(solver_path.to_str().unwrap_or_default());
+        cmd.arg("--").arg(solver_path.to_str().unwrap_or_default());
 
         for arg in args {
             cmd.arg(arg);
@@ -234,8 +242,7 @@ impl SandboxedExecutor {
         mut cmd: Command,
         stdin_data: Option<&str>,
     ) -> Result<SandboxedOutput> {
-        let mut child = cmd.spawn()
-            .context("Failed to spawn solver process")?;
+        let mut child = cmd.spawn().context("Failed to spawn solver process")?;
 
         // Write stdin data if provided
         if let Some(data) = stdin_data {
@@ -334,22 +341,19 @@ mod tests {
             ..Default::default()
         });
 
-        let result = executor.execute(
-            Path::new("/usr/bin/echo"),
-            &["hello", "world"],
-            None,
-            None,
-        ).await;
+        let result = executor
+            .execute(Path::new("/usr/bin/echo"), &["hello", "world"], None, None)
+            .await;
 
         match result {
             Ok(output) => {
                 assert!(!output.killed);
                 assert!(output.stdout.contains("hello world"));
-            }
+            },
             Err(e) => {
                 // echo might not be at /usr/bin/echo on all systems
                 eprintln!("Test skipped: {}", e);
-            }
+            },
         }
     }
 
@@ -361,21 +365,18 @@ mod tests {
             ..Default::default()
         });
 
-        let result = executor.execute(
-            Path::new("/usr/bin/sleep"),
-            &["60"],
-            None,
-            None,
-        ).await;
+        let result = executor
+            .execute(Path::new("/usr/bin/sleep"), &["60"], None, None)
+            .await;
 
         match result {
             Ok(output) => {
                 assert!(output.killed, "Process should have been killed");
                 assert!(output.kill_reason.is_some());
-            }
+            },
             Err(e) => {
                 eprintln!("Test skipped: {}", e);
-            }
+            },
         }
     }
 

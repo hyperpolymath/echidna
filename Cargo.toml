@@ -73,6 +73,9 @@ sha2 = { version = "0.10", optional = true }
 # Chrono for timestamps
 chrono = { version = "0.4", features = ["serde"] }
 
+# Temporary files (used by prover backends to invoke external solvers)
+tempfile = "3"
+
 [features]
 default = []
 chapel = []       # Enable Chapel parallel proof search (requires Zig FFI library)
@@ -83,7 +86,6 @@ verisimdb = [     # Enable VeriSimDB persistent proof storage (8-modality octads
 
 [dev-dependencies]
 proptest = "1"
-tempfile = "3"
 tokio-test = "0.4"
 which = "7"
 pretty_assertions = "1"

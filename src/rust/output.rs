@@ -26,7 +26,10 @@ impl FromStr for OutputFormat {
         match s.to_lowercase().as_str() {
             "text" => Ok(OutputFormat::Text),
             "json" => Ok(OutputFormat::Json),
-            _ => Err(anyhow::anyhow!("Invalid output format: {}. Must be 'text' or 'json'", s)),
+            _ => Err(anyhow::anyhow!(
+                "Invalid output format: {}. Must be 'text' or 'json'",
+                s
+            )),
         }
     }
 }
@@ -55,13 +58,13 @@ impl OutputFormatter {
         match self.format {
             OutputFormat::Text => {
                 println!("{}", message.green().bold());
-            }
+            },
             OutputFormat::Json => {
                 self.output_json(&JsonMessage {
                     level: "success",
                     message,
                 })?;
-            }
+            },
         }
         Ok(())
     }
@@ -71,13 +74,13 @@ impl OutputFormatter {
         match self.format {
             OutputFormat::Text => {
                 eprintln!("{}", message.red().bold());
-            }
+            },
             OutputFormat::Json => {
                 self.output_json(&JsonMessage {
                     level: "error",
                     message,
                 })?;
-            }
+            },
         }
         Ok(())
     }
@@ -87,13 +90,13 @@ impl OutputFormatter {
         match self.format {
             OutputFormat::Text => {
                 println!("{}", message.yellow());
-            }
+            },
             OutputFormat::Json => {
                 self.output_json(&JsonMessage {
                     level: "warning",
                     message,
                 })?;
-            }
+            },
         }
         Ok(())
     }
@@ -103,13 +106,13 @@ impl OutputFormatter {
         match self.format {
             OutputFormat::Text => {
                 println!("{}", message);
-            }
+            },
             OutputFormat::Json => {
                 self.output_json(&JsonMessage {
                     level: "info",
                     message,
                 })?;
-            }
+            },
         }
         Ok(())
     }
@@ -120,13 +123,13 @@ impl OutputFormatter {
             OutputFormat::Text => {
                 println!("\n{}", title.bold().underline());
                 println!("{}", "=".repeat(title.len()));
-            }
+            },
             OutputFormat::Json => {
                 self.output_json(&JsonMessage {
                     level: "header",
                     message: title,
                 })?;
-            }
+            },
         }
         Ok(())
     }
@@ -136,13 +139,13 @@ impl OutputFormatter {
         match self.format {
             OutputFormat::Text => {
                 println!("\n{}", title.cyan().bold());
-            }
+            },
             OutputFormat::Json => {
                 self.output_json(&JsonMessage {
                     level: "section",
                     message: title,
                 })?;
-            }
+            },
         }
         Ok(())
     }
@@ -152,13 +155,13 @@ impl OutputFormatter {
         match self.format {
             OutputFormat::Text => {
                 println!("{}", item);
-            }
+            },
             OutputFormat::Json => {
                 self.output_json(&JsonMessage {
                     level: "result",
                     message: item,
                 })?;
-            }
+            },
         }
         Ok(())
     }
@@ -168,10 +171,10 @@ impl OutputFormatter {
         match self.format {
             OutputFormat::Text => {
                 self.output_proof_state_text(state)?;
-            }
+            },
             OutputFormat::Json => {
                 self.output_json(state)?;
-            }
+            },
         }
         Ok(())
     }
@@ -209,7 +212,11 @@ impl OutputFormatter {
 
         // Context
         if !state.context.theorems.is_empty() {
-            println!("{} ({}):", "Available Theorems".magenta().bold(), state.context.theorems.len());
+            println!(
+                "{} ({}):",
+                "Available Theorems".magenta().bold(),
+                state.context.theorems.len()
+            );
             for theorem in state.context.theorems.iter().take(10) {
                 print!("  - {}", theorem.name.bright_magenta());
                 if !theorem.aspects.is_empty() {
@@ -225,7 +232,11 @@ impl OutputFormatter {
 
         // Proof script
         if !state.proof_script.is_empty() {
-            println!("{} ({} steps):", "Proof Script".green().bold(), state.proof_script.len());
+            println!(
+                "{} ({} steps):",
+                "Proof Script".green().bold(),
+                state.proof_script.len()
+            );
             for (i, tactic) in state.proof_script.iter().enumerate() {
                 println!("  {}. {:?}", i + 1, tactic);
             }

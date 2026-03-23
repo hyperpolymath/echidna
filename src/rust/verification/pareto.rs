@@ -142,7 +142,13 @@ impl ParetoFrontier {
 mod tests {
     use super::*;
 
-    fn make_candidate(id: &str, time: u64, trust: TrustLevel, mem: u64, steps: usize) -> ProofCandidate {
+    fn make_candidate(
+        id: &str,
+        time: u64,
+        trust: TrustLevel,
+        mem: u64,
+        steps: usize,
+    ) -> ProofCandidate {
         ProofCandidate {
             id: id.to_string(),
             objectives: ProofObjective {
@@ -157,9 +163,13 @@ mod tests {
 
     #[test]
     fn test_single_candidate_is_pareto_optimal() {
-        let mut candidates = vec![
-            make_candidate("lean", 1000, TrustLevel::Level4, 512_000, 50),
-        ];
+        let mut candidates = vec![make_candidate(
+            "lean",
+            1000,
+            TrustLevel::Level4,
+            512_000,
+            50,
+        )];
 
         let frontier = ParetoFrontier::compute(&mut candidates);
         assert_eq!(frontier.len(), 1);

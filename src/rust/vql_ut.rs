@@ -368,8 +368,8 @@ impl QueryExecutor {
     /// meets its declared safety level. Returns the verified level and any
     /// diagnostics. Falls back gracefully if TypeLL is unreachable.
     async fn validate_with_typell(&self, query: &ProofQuery) -> Result<TypeLevel> {
-        let typell_url = std::env::var("TYPELL_URL")
-            .unwrap_or_else(|_| "http://localhost:7800".to_string());
+        let typell_url =
+            std::env::var("TYPELL_URL").unwrap_or_else(|_| "http://localhost:7800".to_string());
 
         let check_body = serde_json::json!({
             "query": serde_json::to_string(query).unwrap_or_default(),
@@ -396,10 +396,7 @@ impl QueryExecutor {
                         .and_then(|ml| ml.as_u64())
                         .unwrap_or(0);
 
-                    let valid = body
-                        .get("valid")
-                        .and_then(|v| v.as_bool())
-                        .unwrap_or(true);
+                    let valid = body.get("valid").and_then(|v| v.as_bool()).unwrap_or(true);
 
                     if !valid {
                         let errors = body
@@ -438,18 +435,21 @@ impl QueryExecutor {
                     debug!("TypeLL returned non-JSON response, falling back");
                     Ok(query.level)
                 }
-            }
+            },
             Ok(resp) => {
                 debug!(
                     "TypeLL returned status {}, falling back to local validation",
                     resp.status()
                 );
                 Ok(query.level)
-            }
+            },
             Err(e) => {
-                debug!("TypeLL unreachable ({}), falling back to local validation", e);
+                debug!(
+                    "TypeLL unreachable ({}), falling back to local validation",
+                    e
+                );
                 Ok(query.level)
-            }
+            },
         }
     }
 
@@ -464,7 +464,10 @@ impl QueryExecutor {
         );
 
         // Pre-flight: validate with TypeLL if available
-        let verified_level = self.validate_with_typell(query).await.unwrap_or(query.level);
+        let verified_level = self
+            .validate_with_typell(query)
+            .await
+            .unwrap_or(query.level);
 
         if (verified_level as u8) < (query.level as u8) {
             anyhow::bail!(
@@ -529,7 +532,9 @@ impl QueryExecutor {
         #[cfg(feature = "verisimdb")]
         {
             // Request a goal embedding from the Julia inference service
-            let embedding = self.fetch_goal_embedding(goal_display).await
+            let embedding = self
+                .fetch_goal_embedding(goal_display)
+                .await
                 .unwrap_or_default();
 
             if !embedding.is_empty() {
@@ -540,15 +545,13 @@ impl QueryExecutor {
                 });
 
                 let url = format!("{}/api/v1/search/vector", self.client.base_url);
-                let response = self.client.http.post(&url)
-                    .json(&search_body)
-                    .send()
-                    .await;
+                let response = self.client.http.post(&url).json(&search_body).send().await;
 
                 if let Ok(resp) = response {
                     if resp.status().is_success() {
                         if let Ok(results) = resp.json::<Vec<serde_json::Value>>().await {
-                            let entries: Vec<QueryResultEntry> = results.iter()
+                            let entries: Vec<QueryResultEntry> = results
+                                .iter()
                                 .filter_map(|r| search_result_to_entry(r))
                                 .take(limit)
                                 .collect();
@@ -588,14 +591,13 @@ impl QueryExecutor {
                 limit,
             );
 
-            let response = self.client.http.get(&url)
-                .send()
-                .await;
+            let response = self.client.http.get(&url).send().await;
 
             if let Ok(resp) = response {
                 if resp.status().is_success() {
                     if let Ok(results) = resp.json::<Vec<serde_json::Value>>().await {
-                        let entries: Vec<QueryResultEntry> = results.iter()
+                        let entries: Vec<QueryResultEntry> = results
+                            .iter()
                             .filter_map(|r| search_result_to_entry(r))
                             .take(limit)
                             .collect();
@@ -682,14 +684,13 @@ impl QueryExecutor {
                         self.client.base_url, key, limit,
                     );
 
-                    let response = self.client.http.get(&url)
-                        .send()
-                        .await;
+                    let response = self.client.http.get(&url).send().await;
 
                     if let Ok(resp) = response {
                         if resp.status().is_success() {
                             if let Ok(results) = resp.json::<Vec<serde_json::Value>>().await {
-                                let entries: Vec<QueryResultEntry> = results.iter()
+                                let entries: Vec<QueryResultEntry> = results
+                                    .iter()
                                     .filter_map(|r| search_result_to_entry(r))
                                     .take(limit)
                                     .collect();
@@ -745,7 +746,10 @@ impl QueryExecutor {
             "model": "default"
         });
 
-        let response = self.client.http.post(format!("{}/api/encode", julia_url))
+        let response = self
+            .client
+            .http
+            .post(format!("{}/api/encode", julia_url))
             .json(&body)
             .timeout(std::time::Duration::from_secs(5))
             .send()
@@ -755,7 +759,8 @@ impl QueryExecutor {
         if response.status().is_success() {
             let result: serde_json::Value = response.json().await?;
             if let Some(embedding) = result.get("embedding").and_then(|e| e.as_array()) {
-                let vec: Vec<f32> = embedding.iter()
+                let vec: Vec<f32> = embedding
+                    .iter()
                     .filter_map(|v| v.as_f64().map(|f| f as f32))
                     .collect();
                 debug!("Got {}-dim embedding from Julia", vec.len());
@@ -773,35 +778,51 @@ impl QueryExecutor {
 fn search_result_to_entry(value: &serde_json::Value) -> Option<QueryResultEntry> {
     Some(QueryResultEntry {
         key: value.get("key")?.as_str()?.to_string(),
-        theorem_name: value.get("theorem_statement")
-            .or_else(|| value.get("document").and_then(|d| d.get("theorem_statement")))
+        theorem_name: value
+            .get("theorem_statement")
+            .or_else(|| {
+                value
+                    .get("document")
+                    .and_then(|d| d.get("theorem_statement"))
+            })
             .and_then(|v| v.as_str())
             .unwrap_or("")
             .to_string(),
-        prover: value.get("prover")
+        prover: value
+            .get("prover")
             .or_else(|| value.get("semantic").and_then(|s| s.get("prover")))
             .and_then(|v| v.as_str())
             .unwrap_or("unknown")
             .to_string(),
-        status: value.get("status")
+        status: value
+            .get("status")
             .or_else(|| value.get("semantic").and_then(|s| s.get("status")))
             .and_then(|v| v.as_str())
             .unwrap_or("unknown")
             .to_string(),
-        time_ms: value.get("time_ms")
-            .and_then(|v| v.as_u64())
-            .unwrap_or(0),
-        aspects: value.get("aspects")
+        time_ms: value.get("time_ms").and_then(|v| v.as_u64()).unwrap_or(0),
+        aspects: value
+            .get("aspects")
             .or_else(|| value.get("document").and_then(|d| d.get("aspects")))
             .and_then(|v| v.as_array())
-            .map(|a| a.iter().filter_map(|v| v.as_str().map(String::from)).collect())
+            .map(|a| {
+                a.iter()
+                    .filter_map(|v| v.as_str().map(String::from))
+                    .collect()
+            })
             .unwrap_or_default(),
-        axioms: value.get("axioms_used")
+        axioms: value
+            .get("axioms_used")
             .or_else(|| value.get("semantic").and_then(|s| s.get("axioms_used")))
             .and_then(|v| v.as_array())
-            .map(|a| a.iter().filter_map(|v| v.as_str().map(String::from)).collect())
+            .map(|a| {
+                a.iter()
+                    .filter_map(|v| v.as_str().map(String::from))
+                    .collect()
+            })
             .unwrap_or_default(),
-        cross_prover_id: value.get("cross_prover_id")
+        cross_prover_id: value
+            .get("cross_prover_id")
             .or_else(|| value.get("graph").and_then(|g| g.get("cross_prover_id")))
             .and_then(|v| v.as_str())
             .unwrap_or("")
@@ -819,11 +840,11 @@ mod urlencoding {
             match byte {
                 b'A'..=b'Z' | b'a'..=b'z' | b'0'..=b'9' | b'-' | b'_' | b'.' | b'~' => {
                     result.push(byte as char);
-                }
+                },
                 _ => {
                     result.push('%');
                     result.push_str(&format!("{:02X}", byte));
-                }
+                },
             }
         }
         result
@@ -870,7 +891,10 @@ mod tests {
             .build();
 
         assert!(result.is_err());
-        assert!(result.unwrap_err().to_string().contains("cardinality limit"));
+        assert!(result
+            .unwrap_err()
+            .to_string()
+            .contains("cardinality limit"));
     }
 
     #[test]
@@ -892,7 +916,10 @@ mod tests {
             .build();
 
         assert!(result.is_err());
-        assert!(result.unwrap_err().to_string().contains("version constraint"));
+        assert!(result
+            .unwrap_err()
+            .to_string()
+            .contains("version constraint"));
     }
 
     #[test]
@@ -923,9 +950,14 @@ mod tests {
     #[test]
     fn test_all_query_ops() {
         for op in [
-            QueryOp::FindProof, QueryOp::FindSimilar, QueryOp::CrossProverSearch,
-            QueryOp::ProvenanceTrace, QueryOp::TemporalHistory, QueryOp::DependencyGraph,
-            QueryOp::AxiomUsage, QueryOp::TacticStats,
+            QueryOp::FindProof,
+            QueryOp::FindSimilar,
+            QueryOp::CrossProverSearch,
+            QueryOp::ProvenanceTrace,
+            QueryOp::TemporalHistory,
+            QueryOp::DependencyGraph,
+            QueryOp::AxiomUsage,
+            QueryOp::TacticStats,
         ] {
             let mut builder = CrossProverQueryBuilder::new(TypeLevel::Parse);
             builder.query.operation = op;

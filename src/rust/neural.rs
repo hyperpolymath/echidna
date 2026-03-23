@@ -181,12 +181,12 @@ impl NeuralSuggester {
                     self.connected = false;
                     Ok(false)
                 }
-            }
+            },
             Err(e) => {
                 debug!("Julia ML server not available: {}", e);
                 self.connected = false;
                 Ok(false)
-            }
+            },
         }
     }
 
@@ -214,7 +214,7 @@ impl NeuralSuggester {
             Err(e) => {
                 warn!("Neural suggestion failed: {}", e);
                 Vec::new()
-            }
+            },
         }
     }
 

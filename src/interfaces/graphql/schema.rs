@@ -1,28 +1,56 @@
 // SPDX-License-Identifier: PMPL-1.0-or-later
 // GraphQL schema definitions - wired to ECHIDNA core
 
-use async_graphql::{Context, Object, Result, SimpleObject, Enum};
-use echidna::provers::ProverKind as CoreProverKind;
+use async_graphql::{Context, Enum, Object, Result, SimpleObject};
 use echidna::core::{Tactic as CoreTactic, TacticResult as CoreTacticResult, Term};
+use echidna::provers::ProverKind as CoreProverKind;
 
 use crate::resolvers::EchidnaContext;
 
 /// Supported theorem provers in ECHIDNA
 #[derive(Debug, Clone, Copy, Enum, Eq, PartialEq)]
 pub enum ProverKind {
-    Agda, Coq, Lean, Isabelle, Z3, CVC5,
-    Metamath, HOLLight, Mizar,
-    PVS, ACL2, HOL4, Idris2,
-    Vampire, EProver, SPASS, AltErgo,
-    FStar, Dafny, Why3,
-    TLAPS, Twelf, Nuprl, Minlog, Imandra,
-    GLPK, SCIP, MiniZinc, Chuffed, ORTools,
+    Agda,
+    Coq,
+    Lean,
+    Isabelle,
+    Z3,
+    CVC5,
+    Metamath,
+    HOLLight,
+    Mizar,
+    PVS,
+    ACL2,
+    HOL4,
+    Idris2,
+    Vampire,
+    EProver,
+    SPASS,
+    AltErgo,
+    FStar,
+    Dafny,
+    Why3,
+    TLAPS,
+    Twelf,
+    Nuprl,
+    Minlog,
+    Imandra,
+    GLPK,
+    SCIP,
+    MiniZinc,
+    Chuffed,
+    ORTools,
 }
 
 /// Status of a proof attempt
 #[derive(Debug, Clone, Copy, Enum, Eq, PartialEq)]
 pub enum ProofStatus {
-    Pending, InProgress, Success, Failed, Timeout, Error,
+    Pending,
+    InProgress,
+    Success,
+    Failed,
+    Timeout,
+    Error,
 }
 
 /// Proof state representation
@@ -122,7 +150,12 @@ impl QueryRoot {
     }
 
     /// List all proof attempts
-    async fn list_proofs(&self, ctx: &Context<'_>, limit: Option<i32>, _status: Option<ProofStatus>) -> Result<Vec<ProofState>> {
+    async fn list_proofs(
+        &self,
+        ctx: &Context<'_>,
+        limit: Option<i32>,
+        _status: Option<ProofStatus>,
+    ) -> Result<Vec<ProofState>> {
         let echidna_ctx = ctx.data::<EchidnaContext>()?;
         let sessions = echidna_ctx.sessions.read().await;
         let max = limit.unwrap_or(100) as usize;
@@ -167,7 +200,12 @@ impl QueryRoot {
     }
 
     /// Get suggested tactics for a proof state
-    async fn suggest_tactics(&self, ctx: &Context<'_>, proof_id: String, limit: Option<i32>) -> Result<Vec<Tactic>> {
+    async fn suggest_tactics(
+        &self,
+        ctx: &Context<'_>,
+        proof_id: String,
+        limit: Option<i32>,
+    ) -> Result<Vec<Tactic>> {
         let echidna_ctx = ctx.data::<EchidnaContext>()?;
         let max = limit.unwrap_or(5) as usize;
 
@@ -198,7 +236,12 @@ pub struct MutationRoot;
 #[Object]
 impl MutationRoot {
     /// Submit a new proof goal
-    async fn submit_proof(&self, ctx: &Context<'_>, goal: String, prover: ProverKind) -> Result<ProofState> {
+    async fn submit_proof(
+        &self,
+        ctx: &Context<'_>,
+        goal: String,
+        prover: ProverKind,
+    ) -> Result<ProofState> {
         let echidna_ctx = ctx.data::<EchidnaContext>()?;
         let core_kind = gql_to_core(&prover);
 
@@ -238,7 +281,13 @@ impl MutationRoot {
     }
 
     /// Apply a tactic to a proof state
-    async fn apply_tactic(&self, ctx: &Context<'_>, proof_id: String, tactic: String, args: Vec<String>) -> Result<ProofState> {
+    async fn apply_tactic(
+        &self,
+        ctx: &Context<'_>,
+        proof_id: String,
+        tactic: String,
+        args: Vec<String>,
+    ) -> Result<ProofState> {
         let echidna_ctx = ctx.data::<EchidnaContext>()?;
 
         let core_tactic = parse_tactic(&tactic, &args);
@@ -250,7 +299,8 @@ impl MutationRoot {
 
         // Fetch updated state
         let sessions = echidna_ctx.sessions.read().await;
-        let session_arc = sessions.get(&proof_id)
+        let session_arc = sessions
+            .get(&proof_id)
             .ok_or_else(|| async_graphql::Error::new("Session not found"))?
             .clone();
         drop(sessions);

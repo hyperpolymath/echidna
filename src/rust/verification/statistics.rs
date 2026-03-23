@@ -132,12 +132,12 @@ impl ProverDomainStats {
                 let min = 1000u64;
                 let max = default_timeout_ms * 10;
                 (estimate as u64).clamp(min, max)
-            }
+            },
             (Some(mean), None) => {
                 // Only one data point; use 2x the observed time
                 let estimate = (mean * 2.0) as u64;
                 estimate.clamp(1000, default_timeout_ms * 10)
-            }
+            },
             _ => default_timeout_ms,
         }
     }
@@ -179,7 +179,10 @@ impl StatisticsTracker {
         self.stats.entry(key).or_default().record_success(time_ms);
 
         let global_key = format!("{:?}", prover);
-        self.global_stats.entry(global_key).or_default().record_success(time_ms);
+        self.global_stats
+            .entry(global_key)
+            .or_default()
+            .record_success(time_ms);
     }
 
     /// Record a timeout
@@ -188,7 +191,10 @@ impl StatisticsTracker {
         self.stats.entry(key).or_default().record_timeout();
 
         let global_key = format!("{:?}", prover);
-        self.global_stats.entry(global_key).or_default().record_timeout();
+        self.global_stats
+            .entry(global_key)
+            .or_default()
+            .record_timeout();
     }
 
     /// Record a failure (not timeout)
@@ -197,7 +203,10 @@ impl StatisticsTracker {
         self.stats.entry(key).or_default().record_failure();
 
         let global_key = format!("{:?}", prover);
-        self.global_stats.entry(global_key).or_default().record_failure();
+        self.global_stats
+            .entry(global_key)
+            .or_default()
+            .record_failure();
     }
 
     /// Get stats for a specific prover and domain
@@ -229,7 +238,9 @@ impl StatisticsTracker {
                     } else {
                         0.5
                     };
-                    let score = stats.success_rate() * (1.0 - stats.timeout_rate()) * (0.7 + 0.3 * speed_factor);
+                    let score = stats.success_rate()
+                        * (1.0 - stats.timeout_rate())
+                        * (0.7 + 0.3 * speed_factor);
                     rankings.push((prover, score));
                 }
             }

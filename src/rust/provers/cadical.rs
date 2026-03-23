@@ -12,15 +12,15 @@
 
 #![allow(dead_code)]
 
-use async_trait::async_trait;
 use anyhow::{anyhow, Context, Result};
+use async_trait::async_trait;
 use std::path::PathBuf;
 use std::process::Stdio;
 use tokio::io::AsyncWriteExt;
 use tokio::process::Command;
 
-use crate::core::{Goal, ProofState, Tactic, TacticResult, Term, Context as ProofContext};
 use super::{ProverBackend, ProverConfig, ProverKind};
+use crate::core::{Goal, ProofState, Tactic, TacticResult, Term};
 
 /// CaDiCaL CDCL SAT solver backend
 pub struct CaDiCaLBackend {
@@ -56,9 +56,11 @@ impl CaDiCaLBackend {
             if line.starts_with("p cnf") {
                 let parts: Vec<&str> = line.split_whitespace().collect();
                 if parts.len() >= 4 {
-                    num_vars = parts[2].parse()
+                    num_vars = parts[2]
+                        .parse()
                         .map_err(|_| anyhow!("Invalid variable count in DIMACS header"))?;
-                    num_clauses = parts[3].parse()
+                    num_clauses = parts[3]
+                        .parse()
                         .map_err(|_| anyhow!("Invalid clause count in DIMACS header"))?;
                     header_found = true;
                 }
@@ -71,7 +73,8 @@ impl CaDiCaLBackend {
 
             // Parse clause literals
             for token in line.split_whitespace() {
-                let lit: i64 = token.parse()
+                let lit: i64 = token
+                    .parse()
                     .map_err(|_| anyhow!("Invalid literal in DIMACS: {}", token))?;
                 if lit == 0 {
                     // End of clause
@@ -143,26 +146,27 @@ impl CaDiCaLBackend {
                 } else {
                     vec![]
                 }
-            }
+            },
             Term::App { func, args } => {
                 if let Term::Const(f) = func.as_ref() {
                     match f.as_str() {
-                        "or" | "clause" => {
-                            args.iter().flat_map(Self::term_to_clause).collect()
-                        }
+                        "or" | "clause" => args.iter().flat_map(Self::term_to_clause).collect(),
                         "not" | "neg" => {
                             if let Some(inner) = args.first() {
-                                Self::term_to_clause(inner).into_iter().map(|l| -l).collect()
+                                Self::term_to_clause(inner)
+                                    .into_iter()
+                                    .map(|l| -l)
+                                    .collect()
                             } else {
                                 vec![]
                             }
-                        }
+                        },
                         _ => vec![],
                     }
                 } else {
                     vec![]
                 }
-            }
+            },
             _ => vec![],
         }
     }
@@ -193,7 +197,9 @@ impl CaDiCaLBackend {
                 return Ok(false);
             }
         }
-        Err(anyhow!("CaDiCaL output inconclusive: no s SATISFIABLE/UNSATISFIABLE line found"))
+        Err(anyhow!(
+            "CaDiCaL output inconclusive: no s SATISFIABLE/UNSATISFIABLE line found"
+        ))
     }
 
     /// Extract model (variable assignments) from `v` lines in solver output.
@@ -244,7 +250,8 @@ impl ProverBackend for CaDiCaLBackend {
     }
 
     async fn parse_file(&self, path: PathBuf) -> Result<ProofState> {
-        let content = tokio::fs::read_to_string(&path).await
+        let content = tokio::fs::read_to_string(&path)
+            .await
             .with_context(|| format!("Failed to read DIMACS file: {:?}", path))?;
         self.parse_string(&content).await
     }
@@ -282,13 +289,16 @@ impl ProverBackend for CaDiCaLBackend {
     async fn apply_tactic(&self, state: &ProofState, tactic: &Tactic) -> Result<TacticResult> {
         match tactic {
             // AddClause: add a new clause to the problem via Custom tactic
-            Tactic::Custom { prover, command, args } if prover == "cadical" => {
+            Tactic::Custom {
+                prover,
+                command,
+                args,
+            } if prover == "cadical" => {
                 match command.as_str() {
                     "add-clause" => {
                         // Parse literals from args
-                        let literals: Result<Vec<i64>, _> = args.iter()
-                            .map(|a| a.parse::<i64>())
-                            .collect();
+                        let literals: Result<Vec<i64>, _> =
+                            args.iter().map(|a| a.parse::<i64>()).collect();
 
                         match literals {
                             Ok(lits) => {
@@ -301,43 +311,45 @@ impl ProverBackend for CaDiCaLBackend {
                                 });
                                 new_state.proof_script.push(tactic.clone());
                                 Ok(TacticResult::Success(new_state))
-                            }
+                            },
                             Err(_) => Ok(TacticResult::Error(
-                                "add-clause requires integer literal arguments".to_string()
+                                "add-clause requires integer literal arguments".to_string(),
                             )),
                         }
-                    }
+                    },
 
                     "unit-propagate" => {
                         // Unit propagation: find unit clauses and simplify
                         let mut new_state = state.clone();
                         new_state.proof_script.push(tactic.clone());
                         Ok(TacticResult::Success(new_state))
-                    }
+                    },
 
                     "resolution" => {
                         // Resolution: combine two clauses on a pivot variable
                         let mut new_state = state.clone();
                         new_state.proof_script.push(tactic.clone());
                         Ok(TacticResult::Success(new_state))
-                    }
+                    },
 
-                    _ => Ok(TacticResult::Error(
-                        format!("Unknown CaDiCaL tactic: {}", command)
-                    )),
+                    _ => Ok(TacticResult::Error(format!(
+                        "Unknown CaDiCaL tactic: {}",
+                        command
+                    ))),
                 }
-            }
+            },
 
             Tactic::Simplify => {
                 // Run CaDiCaL preprocessing (simplification) on the problem
                 let mut new_state = state.clone();
                 new_state.proof_script.push(tactic.clone());
                 Ok(TacticResult::Success(new_state))
-            }
+            },
 
-            _ => Ok(TacticResult::Error(
-                format!("Tactic {:?} not supported for CaDiCaL", tactic)
-            )),
+            _ => Ok(TacticResult::Error(format!(
+                "Tactic {:?} not supported for CaDiCaL",
+                tactic
+            ))),
         }
     }
 
@@ -363,7 +375,9 @@ impl ProverBackend for CaDiCaLBackend {
             .context("Failed to spawn CaDiCaL process")?;
 
         if let Some(mut stdin) = child.stdin.take() {
-            stdin.write_all(dimacs.as_bytes()).await
+            stdin
+                .write_all(dimacs.as_bytes())
+                .await
                 .context("Failed to write DIMACS to CaDiCaL stdin")?;
             stdin.flush().await?;
             drop(stdin);

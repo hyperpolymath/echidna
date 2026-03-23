@@ -16,8 +16,8 @@
 
 #![allow(dead_code)]
 
-use async_trait::async_trait;
 use anyhow::{anyhow, Context, Result};
+use async_trait::async_trait;
 use std::path::PathBuf;
 use std::process::Stdio;
 use tokio::process::Command;
@@ -161,7 +161,10 @@ impl CBMCBackend {
             // Detect __CPROVER_assume
             if trimmed.contains("__CPROVER_assume(") || trimmed.contains("__CPROVER_assume (") {
                 if let Some(body) = self.extract_cprover_call(trimmed, "__CPROVER_assume") {
-                    state.context.axioms.push(format!("__CPROVER_assume({})", body));
+                    state
+                        .context
+                        .axioms
+                        .push(format!("__CPROVER_assume({})", body));
                 }
             }
 
@@ -181,8 +184,10 @@ impl CBMCBackend {
             }
 
             // Detect function declarations as context
-            if trimmed.starts_with("int ") || trimmed.starts_with("void ")
-                || trimmed.starts_with("unsigned ") || trimmed.starts_with("char ")
+            if trimmed.starts_with("int ")
+                || trimmed.starts_with("void ")
+                || trimmed.starts_with("unsigned ")
+                || trimmed.starts_with("char ")
             {
                 state.context.axioms.push(trimmed.to_string());
             }
@@ -210,8 +215,8 @@ impl CBMCBackend {
                         end_pos = i;
                         break;
                     }
-                }
-                _ => {}
+                },
+                _ => {},
             }
         }
 
@@ -254,15 +259,17 @@ impl ProverBackend for CBMCBackend {
     async fn apply_tactic(&self, state: &ProofState, tactic: &Tactic) -> Result<TacticResult> {
         match tactic {
             // SetUnwindBound: adjust the loop unrolling bound
-            Tactic::Custom { prover, command, args }
-                if prover == "cbmc" && command == "set_unwind_bound" =>
-            {
-                let bound_str = args.first().ok_or_else(|| {
-                    anyhow!("set_unwind_bound requires a numeric argument")
-                })?;
-                let _bound: u32 = bound_str.parse().map_err(|_| {
-                    anyhow!("Invalid unwind bound: {}", bound_str)
-                })?;
+            Tactic::Custom {
+                prover,
+                command,
+                args,
+            } if prover == "cbmc" && command == "set_unwind_bound" => {
+                let bound_str = args
+                    .first()
+                    .ok_or_else(|| anyhow!("set_unwind_bound requires a numeric argument"))?;
+                let _bound: u32 = bound_str
+                    .parse()
+                    .map_err(|_| anyhow!("Invalid unwind bound: {}", bound_str))?;
 
                 let mut new_state = state.clone();
                 new_state.metadata.insert(
@@ -271,12 +278,14 @@ impl ProverBackend for CBMCBackend {
                 );
                 new_state.proof_script.push(tactic.clone());
                 Ok(TacticResult::Success(new_state))
-            }
+            },
 
             // AddAssumption: add a __CPROVER_assume constraint
-            Tactic::Custom { prover, command, args }
-                if prover == "cbmc" && command == "add_assumption" =>
-            {
+            Tactic::Custom {
+                prover,
+                command,
+                args,
+            } if prover == "cbmc" && command == "add_assumption" => {
                 let assumption_text = args.join(" ");
                 let mut new_state = state.clone();
                 new_state
@@ -285,12 +294,14 @@ impl ProverBackend for CBMCBackend {
                     .push(format!("__CPROVER_assume({})", assumption_text));
                 new_state.proof_script.push(tactic.clone());
                 Ok(TacticResult::Success(new_state))
-            }
+            },
 
             // AddAssertion: add a new __CPROVER_assert to verify
-            Tactic::Custom { prover, command, args }
-                if prover == "cbmc" && command == "add_assertion" =>
-            {
+            Tactic::Custom {
+                prover,
+                command,
+                args,
+            } if prover == "cbmc" && command == "add_assertion" => {
                 let assertion_text = args.join(" ");
                 let mut new_state = state.clone();
                 new_state.goals.push(Goal {
@@ -300,7 +311,7 @@ impl ProverBackend for CBMCBackend {
                 });
                 new_state.proof_script.push(tactic.clone());
                 Ok(TacticResult::Success(new_state))
-            }
+            },
 
             _ => Ok(TacticResult::Error(format!(
                 "Tactic {:?} not supported for CBMC bounded model checker",
@@ -313,8 +324,8 @@ impl ProverBackend for CBMCBackend {
         let c_source = self.to_c_source(state)?;
 
         // Write C source to a temporary file (CBMC requires a file)
-        let tmp_dir = tempfile::tempdir()
-            .context("Failed to create temporary directory for CBMC")?;
+        let tmp_dir =
+            tempfile::tempdir().context("Failed to create temporary directory for CBMC")?;
         let tmp_file = tmp_dir.path().join("program.c");
         tokio::fs::write(&tmp_file, &c_source)
             .await
@@ -340,7 +351,12 @@ impl ProverBackend for CBMCBackend {
                 .output(),
         )
         .await
-        .map_err(|_| anyhow!("CBMC verification timed out after {} seconds", self.config.timeout))?
+        .map_err(|_| {
+            anyhow!(
+                "CBMC verification timed out after {} seconds",
+                self.config.timeout
+            )
+        })?
         .context("Failed to execute CBMC")?;
 
         let stdout = String::from_utf8_lossy(&output.stdout);
@@ -440,8 +456,14 @@ void foo() {
 
         let state = backend.parse_string(c_code).await.unwrap();
 
-        assert!(!state.goals.is_empty(), "Should have parsed CPROVER_assert goals");
-        assert!(!state.context.axioms.is_empty(), "Should have parsed axioms");
+        assert!(
+            !state.goals.is_empty(),
+            "Should have parsed CPROVER_assert goals"
+        );
+        assert!(
+            !state.context.axioms.is_empty(),
+            "Should have parsed axioms"
+        );
     }
 
     #[test]

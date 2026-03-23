@@ -11,9 +11,9 @@
 
 use serde::{Deserialize, Serialize};
 
-use crate::provers::ProverKind;
 use super::axiom_tracker::DangerLevel;
 use super::portfolio::PortfolioConfidence;
+use crate::provers::ProverKind;
 
 /// Trust level for a proof result (5-level hierarchy)
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash, Serialize, Deserialize)]
@@ -93,10 +93,7 @@ pub fn compute_trust_level(factors: &TrustFactors) -> TrustLevel {
     let is_small_kernel = is_small_kernel_prover(factors.prover);
 
     // Level 5: Cross-checked by 2+ small-kernel systems with certificates
-    if factors.confirming_provers >= 2
-        && factors.certificate_verified
-        && is_small_kernel
-    {
+    if factors.confirming_provers >= 2 && factors.certificate_verified && is_small_kernel {
         return TrustLevel::Level5;
     }
 

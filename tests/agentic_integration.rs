@@ -4,11 +4,11 @@
 //! Integration tests for agentic theorem proving
 
 use echidna::agent::{
-    AgentCore, AgentConfig, AgenticGoal, Priority,
+    explanations::ExplanationGenerator,
     memory::{ProofMemory, SqliteMemory},
     planner::{Planner, RulePlanner},
     router::ProverRouter,
-    explanations::ExplanationGenerator,
+    AgentConfig, AgentCore, AgenticGoal, Priority,
 };
 use echidna::core::{Goal, Term};
 use echidna::provers::{ProverBackend, ProverKind};
@@ -42,7 +42,10 @@ impl ProverBackend for MockProver {
         Ok("MockProver 1.0".to_string())
     }
 
-    async fn parse_file(&self, _path: std::path::PathBuf) -> anyhow::Result<echidna::core::ProofState> {
+    async fn parse_file(
+        &self,
+        _path: std::path::PathBuf,
+    ) -> anyhow::Result<echidna::core::ProofState> {
         Ok(echidna::core::ProofState {
             goals: vec![],
             context: Default::default(),
@@ -65,12 +68,14 @@ impl ProverBackend for MockProver {
         _state: &echidna::core::ProofState,
         _tactic: &echidna::core::Tactic,
     ) -> anyhow::Result<echidna::core::TacticResult> {
-        Ok(echidna::core::TacticResult::Success(echidna::core::ProofState {
-            goals: vec![],
-            context: Default::default(),
-            proof_script: vec![],
-            metadata: Default::default(),
-        }))
+        Ok(echidna::core::TacticResult::Success(
+            echidna::core::ProofState {
+                goals: vec![],
+                context: Default::default(),
+                proof_script: vec![],
+                metadata: Default::default(),
+            },
+        ))
     }
 
     async fn verify_proof(&self, _state: &echidna::core::ProofState) -> anyhow::Result<bool> {
@@ -229,7 +234,10 @@ async fn test_goal_decomposition() {
     };
 
     let sub_goals = planner.decompose(&impl_goal).await.unwrap();
-    assert!(!sub_goals.is_empty(), "Implication should decompose into sub-goals");
+    assert!(
+        !sub_goals.is_empty(),
+        "Implication should decompose into sub-goals"
+    );
 
     // The conclusion sub-goal should target B
     let conclusion = &sub_goals[0];
@@ -290,10 +298,22 @@ async fn test_agent_queue_priority() {
         parent: None,
     };
 
-    agent.add_goal(make_goal("low", Priority::Low)).await.unwrap();
-    agent.add_goal(make_goal("high", Priority::High)).await.unwrap();
-    agent.add_goal(make_goal("critical", Priority::Critical)).await.unwrap();
-    agent.add_goal(make_goal("medium", Priority::Medium)).await.unwrap();
+    agent
+        .add_goal(make_goal("low", Priority::Low))
+        .await
+        .unwrap();
+    agent
+        .add_goal(make_goal("high", Priority::High))
+        .await
+        .unwrap();
+    agent
+        .add_goal(make_goal("critical", Priority::Critical))
+        .await
+        .unwrap();
+    agent
+        .add_goal(make_goal("medium", Priority::Medium))
+        .await
+        .unwrap();
 
     // Critical should come first (highest priority at front)
     let first = agent.next_goal().await.expect("Should have a goal");
@@ -340,35 +360,32 @@ fn test_explanation_generation() {
     assert_eq!(success_exp.details.get("Time"), Some(&"150ms".to_string()));
 
     // Test prover selection explanation
-    let selection_exp = generator.explain_prover_selection(
-        &goal,
-        ProverKind::Z3,
-        0.92,
-        "High aspect similarity"
-    );
+    let selection_exp =
+        generator.explain_prover_selection(&goal, ProverKind::Z3, 0.92, "High aspect similarity");
     assert!(selection_exp.title.contains("Selection"));
     assert!(selection_exp.message.contains("0.92"));
 
     // Test decomposition explanation
-    let sub_goals = vec![
-        AgenticGoal {
-            goal: Goal {
-                id: "sub1".to_string(),
-                target: Term::Var("X".to_string()),
-                hypotheses: vec![],
-            },
-            priority: Priority::Medium,
-            attempts: 0,
-            max_attempts: 3,
-            preferred_prover: None,
-            aspects: vec![],
-            parent: Some(goal.goal.id.clone()),
+    let sub_goals = vec![AgenticGoal {
+        goal: Goal {
+            id: "sub1".to_string(),
+            target: Term::Var("X".to_string()),
+            hypotheses: vec![],
         },
-    ];
+        priority: Priority::Medium,
+        attempts: 0,
+        max_attempts: 3,
+        preferred_prover: None,
+        aspects: vec![],
+        parent: Some(goal.goal.id.clone()),
+    }];
 
     let decomp_exp = generator.explain_decomposition(&goal, &sub_goals, "implication");
     assert!(decomp_exp.title.contains("Decomposition"));
-    assert_eq!(decomp_exp.details.get("Number of Sub-goals"), Some(&"1".to_string()));
+    assert_eq!(
+        decomp_exp.details.get("Number of Sub-goals"),
+        Some(&"1".to_string())
+    );
 }
 
 #[tokio::test]
@@ -406,8 +423,14 @@ async fn test_memory_failure_tracking() {
     };
 
     // Store failures
-    memory.store_failure(&goal1, "timeout".to_string()).await.unwrap();
-    memory.store_failure(&goal2, "unsupported tactic".to_string()).await.unwrap();
+    memory
+        .store_failure(&goal1, "timeout".to_string())
+        .await
+        .unwrap();
+    memory
+        .store_failure(&goal2, "unsupported tactic".to_string())
+        .await
+        .unwrap();
 
     // Verify failures stored
     let failures = memory.get_failures().await.unwrap();
@@ -465,7 +488,9 @@ async fn test_router_aspect_scoring() {
 
     // Coq succeeds on inductive
     for _ in 0..10 {
-        router.record_success(&inductive_goal, ProverKind::Coq).await;
+        router
+            .record_success(&inductive_goal, ProverKind::Coq)
+            .await;
     }
 
     // Z3 fails on inductive

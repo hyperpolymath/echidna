@@ -14,8 +14,8 @@
 
 #![allow(dead_code)]
 
-use async_trait::async_trait;
 use anyhow::{Context, Result};
+use async_trait::async_trait;
 use std::path::PathBuf;
 use std::process::Stdio;
 use tokio::io::AsyncWriteExt;
@@ -63,7 +63,8 @@ impl VampireBackend {
             || output.contains("% Termination reason: Refutation")
         {
             Ok(true)
-        } else if output.contains("Satisfiable") || output.contains("% SZS status CounterSatisfiable")
+        } else if output.contains("Satisfiable")
+            || output.contains("% SZS status CounterSatisfiable")
         {
             Ok(false)
         } else {
@@ -145,11 +146,16 @@ impl ProverBackend for VampireBackend {
         let tptp_code = self.to_tptp(state)?;
 
         let mut child = Command::new(&self.config.executable)
-            .arg("--mode").arg("casc")
-            .arg("--input_syntax").arg("tptp")
-            .arg("--time_limit").arg(format!("{}", self.config.timeout))
-            .arg("--proof").arg("off")
-            .arg("--statistics").arg("brief")
+            .arg("--mode")
+            .arg("casc")
+            .arg("--input_syntax")
+            .arg("tptp")
+            .arg("--time_limit")
+            .arg(format!("{}", self.config.timeout))
+            .arg("--proof")
+            .arg("off")
+            .arg("--statistics")
+            .arg("brief")
             .stdin(Stdio::piped())
             .stdout(Stdio::piped())
             .stderr(Stdio::piped())
@@ -175,9 +181,8 @@ impl ProverBackend for VampireBackend {
         let stdout = String::from_utf8_lossy(&output.stdout);
         let stderr = String::from_utf8_lossy(&output.stderr);
 
-        self.parse_result(&stdout).or_else(|_| {
-            self.parse_result(&stderr)
-        })
+        self.parse_result(&stdout)
+            .or_else(|_| self.parse_result(&stderr))
     }
 
     async fn export(&self, state: &ProofState) -> Result<String> {

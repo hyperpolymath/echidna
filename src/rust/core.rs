@@ -17,10 +17,7 @@ pub enum Term {
     Const(String),
 
     /// Function application f(args...)
-    App {
-        func: Box<Term>,
-        args: Vec<Term>,
-    },
+    App { func: Box<Term>, args: Vec<Term> },
 
     /// Lambda abstraction λx. body
     Lambda {
@@ -88,10 +85,7 @@ pub enum Pattern {
     /// Variable pattern
     Var(String),
     /// Constructor pattern C(p1, p2, ...)
-    Constructor {
-        name: String,
-        args: Vec<Pattern>,
-    },
+    Constructor { name: String, args: Vec<Pattern> },
 }
 
 impl fmt::Display for Term {
@@ -102,25 +96,40 @@ impl fmt::Display for Term {
             Term::App { func, args } => {
                 write!(f, "({} ", func)?;
                 for (i, arg) in args.iter().enumerate() {
-                    if i > 0 { write!(f, " ")?; }
+                    if i > 0 {
+                        write!(f, " ")?;
+                    }
                     write!(f, "{}", arg)?;
                 }
                 write!(f, ")")
             },
-            Term::Lambda { param, param_type, body } => {
+            Term::Lambda {
+                param,
+                param_type,
+                body,
+            } => {
                 if let Some(ty) = param_type {
                     write!(f, "(λ {}: {}. {})", param, ty, body)
                 } else {
                     write!(f, "(λ {}. {})", param, body)
                 }
             },
-            Term::Pi { param, param_type, body } => {
+            Term::Pi {
+                param,
+                param_type,
+                body,
+            } => {
                 write!(f, "(Π {}: {}. {})", param, param_type, body)
             },
             Term::Type(level) => write!(f, "Type{}", level),
             Term::Sort(level) => write!(f, "Sort{}", level),
             Term::Universe(level) => write!(f, "Type{}", level),
-            Term::Let { name, ty, value, body } => {
+            Term::Let {
+                name,
+                ty,
+                value,
+                body,
+            } => {
                 if let Some(t) = ty {
                     write!(f, "(let {} : {} = {} in {})", name, t, value, body)
                 } else {
@@ -204,7 +213,7 @@ pub struct Theorem {
     pub name: String,
     pub statement: Term,
     pub proof: Option<Vec<Tactic>>,
-    pub aspects: Vec<String>,  // Aspect tags
+    pub aspects: Vec<String>, // Aspect tags
 }
 
 /// A type/function definition

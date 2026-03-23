@@ -4,10 +4,10 @@ This document provides guidelines and context for working with Claude Code on th
 
 ## Project Overview
 
-**ECHIDNA** (Extensible Cognitive Hybrid Intelligence for Deductive Neural Assistance) is a trust-hardened neurosymbolic theorem proving platform supporting 30 prover backends with a comprehensive verification pipeline.
+**ECHIDNA** (Extensible Cognitive Hybrid Intelligence for Deductive Neural Assistance) is a trust-hardened neurosymbolic theorem proving platform supporting 48 prover backends with a comprehensive verification pipeline.
 
 **Repository**: https://github.com/hyperpolymath/echidna
-**Version**: 1.5.0
+**Version**: 1.6.0
 **License**: PMPL-1.0-or-later
 
 ## Repository Structure
@@ -15,7 +15,7 @@ This document provides guidelines and context for working with Claude Code on th
 ```
 echidna/
 ├── src/
-│   ├── rust/               # Rust core (30 provers, trust pipeline)
+│   ├── rust/               # Rust core (48 provers, trust pipeline)
 │   │   ├── provers/        # 30 prover backend implementations
 │   │   ├── verification/   # Trust pipeline (portfolio, certificates, axioms, confidence, mutation, pareto, statistics)
 │   │   ├── integrity/      # Solver binary integrity (SHAKE3-512, BLAKE3)
@@ -69,12 +69,12 @@ Follow conventional commit format:
 
 ### Tech Stack
 
-- **Rust**: Core logic, 30 prover backends, trust pipeline, CLI, REPL, API servers
+- **Rust**: Core logic, 48 prover backends, trust pipeline, CLI, REPL, API servers
 - **Julia**: ML inference (tactic prediction, premise selection, port 8090)
 - **ReScript + Deno**: UI components (28 files)
 - **Chapel**: Optional parallel proof dispatch
 
-### Prover Support (30 Total - ALL IMPLEMENTED)
+### Prover Support (48 Total - ALL IMPLEMENTED)
 
 - **Interactive Proof Assistants**: Agda, Coq/Rocq, Lean 4, Isabelle/HOL, Idris2, F*
 - **SMT Solvers**: Z3, CVC5, Alt-Ergo
@@ -100,7 +100,7 @@ The v1.5 trust hardening added:
 
 ### Key Components
 
-- `src/rust/provers/mod.rs`: ProverBackend trait, ProverKind enum (30 variants), ProverFactory
+- `src/rust/provers/mod.rs`: ProverBackend trait, ProverKind enum (48 variants), ProverFactory
 - `src/rust/dispatch.rs`: Full trust-hardening dispatch pipeline
 - `src/rust/verification/`: Portfolio, certificates, axiom tracker, confidence, mutation, pareto, statistics
 - `src/rust/integrity/`: Solver binary integrity (SHAKE3-512, BLAKE3)
@@ -111,14 +111,17 @@ The v1.5 trust hardening added:
 
 ### Current Status
 
-**Completed (v1.5.0)**:
-- 30/30 prover backends
+**Completed (v1.6.0)**:
+- 48/48 prover backends
 - Trust & safety hardening (13 tasks complete)
-- 306+ tests (232 unit, 38 integration, 21 property-based)
+- 389 tests passing
 - 3 API interfaces (GraphQL, gRPC, REST)
 - Julia ML layer (logistic regression)
 - ReScript UI (28 files)
 - 17 CI/CD workflows
+- Zig FFI layer (4 shared libraries)
+- Idris2 ABI formal proofs (7 modules, zero believe_me)
+- Compiles cleanly on stable Rust (cargo fmt + clippy clean)
 
 **Next (v2.0)**:
 - FFI/IPC bridge (API interfaces to Rust prover backends)
@@ -130,7 +133,7 @@ The v1.5 trust hardening added:
 ```bash
 # Build System (Justfile is PRIMARY)
 just build              # Build the project
-just test               # Run tests (306+)
+just test               # Run tests (389)
 just check              # Run all quality checkers
 
 # Cargo commands
@@ -159,5 +162,5 @@ cargo fmt --check                 # Format check
 
 ---
 
-**Last Updated**: 2026-02-08
+**Last Updated**: 2026-03-23
 **Maintained By**: Jonathan D.A. Jewell <j.d.a.jewell@open.ac.uk>

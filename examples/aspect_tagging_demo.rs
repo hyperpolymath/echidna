@@ -4,8 +4,8 @@
 //! Example demonstrating aspect tagging system usage
 
 use echidna::aspect::{
-    Aspect, AspectTagger, RuleBasedTagger, CompositeTagger,
-    AggregationStrategy, NeuralTagger, TheoremFeatures
+    AggregationStrategy, Aspect, AspectTagger, CompositeTagger, NeuralTagger, RuleBasedTagger,
+    TheoremFeatures,
 };
 use echidna::core::Term;
 
@@ -20,17 +20,16 @@ fn main() {
     let theorem_name = "nat_add_comm";
     let statement = Term::App {
         func: Box::new(Term::Const("add".to_string())),
-        args: vec![
-            Term::Var("n".to_string()),
-            Term::Var("m".to_string()),
-        ],
+        args: vec![Term::Var("n".to_string()), Term::Var("m".to_string())],
     };
 
     let aspects = tagger.tag(theorem_name, &statement);
     println!("   Theorem: {}", theorem_name);
     println!("   Aspects: {:?}", aspects);
-    println!("   Categories: {:?}",
-        aspects.iter().map(|a| a.category()).collect::<Vec<_>>());
+    println!(
+        "   Categories: {:?}",
+        aspects.iter().map(|a| a.category()).collect::<Vec<_>>()
+    );
     println!();
 
     // Example 2: Dependent type theorem
@@ -156,17 +155,71 @@ fn count_all_aspects() -> usize {
     // Count using exhaustive match
     use Aspect::*;
     vec![
-        PropositionalLogic, PredicateLogic, ModalLogic, TemporalLogic,
-        HigherOrderLogic, IntuitionisticLogic, ClassicalLogic,
-        NaturalNumbers, Integers, Rationals, Reals, Complex, NumberTheory, Arithmetic,
-        Groups, Rings, Fields, VectorSpaces, Modules, Lattices, CategoryTheory, UniversalAlgebra,
-        Limits, Continuity, Derivatives, Integrals, Sequences, MeasureTheory, FunctionalAnalysis,
-        MetricSpaces, TopologicalSpaces, Compactness, Connectedness, TopologicalContinuity,
-        SetOperations, Cardinality, Ordinals, AxiomOfChoice, ZFC,
-        DependentTypes, Universes, InductiveTypes, CoinductiveTypes, Polymorphism, TypeEquivalence,
-        Algorithms, Complexity, FormalVerification, ProgramSemantics, Concurrency,
-        Cryptography, Automata, LambdaCalculus,
-        Induction, Coinduction, Recursion, CaseAnalysis, Contradiction, DirectProof,
-        Combinatorics, GraphTheory, Probability, GameTheory, Geometry, AbstractNonsense,
-    ].len()
+        PropositionalLogic,
+        PredicateLogic,
+        ModalLogic,
+        TemporalLogic,
+        HigherOrderLogic,
+        IntuitionisticLogic,
+        ClassicalLogic,
+        NaturalNumbers,
+        Integers,
+        Rationals,
+        Reals,
+        Complex,
+        NumberTheory,
+        Arithmetic,
+        Groups,
+        Rings,
+        Fields,
+        VectorSpaces,
+        Modules,
+        Lattices,
+        CategoryTheory,
+        UniversalAlgebra,
+        Limits,
+        Continuity,
+        Derivatives,
+        Integrals,
+        Sequences,
+        MeasureTheory,
+        FunctionalAnalysis,
+        MetricSpaces,
+        TopologicalSpaces,
+        Compactness,
+        Connectedness,
+        TopologicalContinuity,
+        SetOperations,
+        Cardinality,
+        Ordinals,
+        AxiomOfChoice,
+        ZFC,
+        DependentTypes,
+        Universes,
+        InductiveTypes,
+        CoinductiveTypes,
+        Polymorphism,
+        TypeEquivalence,
+        Algorithms,
+        Complexity,
+        FormalVerification,
+        ProgramSemantics,
+        Concurrency,
+        Cryptography,
+        Automata,
+        LambdaCalculus,
+        Induction,
+        Coinduction,
+        Recursion,
+        CaseAnalysis,
+        Contradiction,
+        DirectProof,
+        Combinatorics,
+        GraphTheory,
+        Probability,
+        GameTheory,
+        Geometry,
+        AbstractNonsense,
+    ]
+    .len()
 }

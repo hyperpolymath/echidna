@@ -425,9 +425,11 @@ pub extern "C" fn rust_parse_file(
         Ok(proof_state) => {
             let boxed = Box::new(proof_state);
             // SAFETY: out_state is a valid pointer from the caller.
-            unsafe { *out_state = Box::into_raw(boxed) as *mut c_void; }
+            unsafe {
+                *out_state = Box::into_raw(boxed) as *mut c_void;
+            }
             FfiStatus::Ok as c_int
-        }
+        },
         Err(status) => status as c_int,
     }
 }
@@ -462,9 +464,11 @@ pub extern "C" fn rust_parse_string(
         Ok(proof_state) => {
             let boxed = Box::new(proof_state);
             // SAFETY: out_state is a valid pointer from the caller.
-            unsafe { *out_state = Box::into_raw(boxed) as *mut c_void; }
+            unsafe {
+                *out_state = Box::into_raw(boxed) as *mut c_void;
+            }
             FfiStatus::Ok as c_int
-        }
+        },
         Err(status) => status as c_int,
     }
 }
@@ -508,19 +512,25 @@ pub extern "C" fn rust_apply_tactic(
                 TacticResult::Success(new_state) => {
                     let boxed = Box::new(new_state.clone());
                     // SAFETY: out_result is valid per caller contract.
-                    unsafe { (*out_result).new_state = Box::into_raw(boxed) as *mut c_void; }
+                    unsafe {
+                        (*out_result).new_state = Box::into_raw(boxed) as *mut c_void;
+                    }
                     (FfiTacticResultKind::Success, "Tactic applied")
-                }
+                },
                 TacticResult::Error(msg) => {
                     // SAFETY: out_result is valid per caller contract.
-                    unsafe { (*out_result).new_state = ptr::null_mut(); }
+                    unsafe {
+                        (*out_result).new_state = ptr::null_mut();
+                    }
                     (FfiTacticResultKind::Error, msg.as_str())
-                }
+                },
                 TacticResult::QED => {
                     // SAFETY: out_result is valid per caller contract.
-                    unsafe { (*out_result).new_state = ptr::null_mut(); }
+                    unsafe {
+                        (*out_result).new_state = ptr::null_mut();
+                    }
                     (FfiTacticResultKind::QED, "QED")
-                }
+                },
             };
 
             // SAFETY: out_result is valid per caller contract.
@@ -532,18 +542,14 @@ pub extern "C" fn rust_apply_tactic(
             }
 
             FfiStatus::Ok as c_int
-        }
+        },
         Err(status) => status as c_int,
     }
 }
 
 /// Verify proof callback for Zig FFI
 #[no_mangle]
-pub extern "C" fn rust_verify_proof(
-    kind: u8,
-    state: *mut c_void,
-    out_valid: *mut bool,
-) -> c_int {
+pub extern "C" fn rust_verify_proof(kind: u8, state: *mut c_void, out_valid: *mut bool) -> c_int {
     if state.is_null() || out_valid.is_null() {
         return FfiStatus::ErrorInvalidArgument as c_int;
     }
@@ -565,9 +571,11 @@ pub extern "C" fn rust_verify_proof(
     match run_async(prover.verify_proof(proof_state)) {
         Ok(valid) => {
             // SAFETY: out_valid is valid per caller contract.
-            unsafe { *out_valid = valid; }
+            unsafe {
+                *out_valid = valid;
+            }
             FfiStatus::Ok as c_int
-        }
+        },
         Err(status) => status as c_int,
     }
 }
@@ -600,9 +608,11 @@ pub extern "C" fn rust_export_proof(
     match run_async(prover.export(proof_state)) {
         Ok(content) => {
             // SAFETY: out_content is valid per caller contract.
-            unsafe { *out_content = FfiOwnedString::from_string(content); }
+            unsafe {
+                *out_content = FfiOwnedString::from_string(content);
+            }
             FfiStatus::Ok as c_int
-        }
+        },
         Err(status) => status as c_int,
     }
 }
@@ -662,9 +672,11 @@ pub extern "C" fn rust_suggest_tactics(
             }
 
             // SAFETY: out_count is valid per caller contract.
-            unsafe { *out_count = count as u32; }
+            unsafe {
+                *out_count = count as u32;
+            }
             FfiStatus::Ok as c_int
-        }
+        },
         Err(status) => status as c_int,
     }
 }
@@ -681,7 +693,9 @@ pub fn init() -> Result<(), FfiStatus> {
 
 /// Shutdown the FFI layer
 pub fn shutdown() -> Result<(), FfiStatus> {
-    let mut registry = PROVER_REGISTRY.lock().map_err(|_| FfiStatus::ErrorUnknown)?;
+    let mut registry = PROVER_REGISTRY
+        .lock()
+        .map_err(|_| FfiStatus::ErrorUnknown)?;
     registry.clear();
     Ok(())
 }
@@ -690,7 +704,9 @@ pub fn shutdown() -> Result<(), FfiStatus> {
 pub fn create_prover(kind: ProverKind, config: ProverConfig) -> Result<usize, FfiStatus> {
     let prover = ProverFactory::create(kind, config).map_err(|_| FfiStatus::ErrorProverNotFound)?;
 
-    let mut registry = PROVER_REGISTRY.lock().map_err(|_| FfiStatus::ErrorUnknown)?;
+    let mut registry = PROVER_REGISTRY
+        .lock()
+        .map_err(|_| FfiStatus::ErrorUnknown)?;
     let mut next_id = NEXT_HANDLE_ID.lock().map_err(|_| FfiStatus::ErrorUnknown)?;
 
     let handle_id = *next_id;
@@ -702,7 +718,9 @@ pub fn create_prover(kind: ProverKind, config: ProverConfig) -> Result<usize, Ff
 
 /// Destroy a prover by handle ID
 pub fn destroy_prover(handle_id: usize) -> Result<(), FfiStatus> {
-    let mut registry = PROVER_REGISTRY.lock().map_err(|_| FfiStatus::ErrorUnknown)?;
+    let mut registry = PROVER_REGISTRY
+        .lock()
+        .map_err(|_| FfiStatus::ErrorUnknown)?;
     registry
         .remove(&handle_id)
         .ok_or(FfiStatus::ErrorInvalidHandle)?;
@@ -711,14 +729,13 @@ pub fn destroy_prover(handle_id: usize) -> Result<(), FfiStatus> {
 
 /// Get prover version
 pub async fn get_version(handle_id: usize) -> Result<String, FfiStatus> {
-    let registry = PROVER_REGISTRY.lock().map_err(|_| FfiStatus::ErrorUnknown)?;
+    let registry = PROVER_REGISTRY
+        .lock()
+        .map_err(|_| FfiStatus::ErrorUnknown)?;
     let prover = registry
         .get(&handle_id)
         .ok_or(FfiStatus::ErrorInvalidHandle)?;
-    prover
-        .version()
-        .await
-        .map_err(|_| FfiStatus::ErrorUnknown)
+    prover.version().await.map_err(|_| FfiStatus::ErrorUnknown)
 }
 
 #[cfg(test)]

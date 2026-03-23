@@ -130,11 +130,7 @@ async fn smoke_cross_check_z3_cvc5() -> Result<()> {
 "#;
 
     let result = dispatcher
-        .verify_proof_cross_checked(
-            ProverKind::Z3,
-            content,
-            &[ProverKind::CVC5],
-        )
+        .verify_proof_cross_checked(ProverKind::Z3, content, &[ProverKind::CVC5])
         .await?;
 
     // Cross-checked results should use multiple provers
@@ -143,7 +139,10 @@ async fn smoke_cross_check_z3_cvc5() -> Result<()> {
         "Cross-check should use at least 2 provers, got: {:?}",
         result.provers_used
     );
-    assert!(result.cross_checked, "Result should be marked as cross-checked");
+    assert!(
+        result.cross_checked,
+        "Result should be marked as cross-checked"
+    );
 
     eprintln!(
         "Cross-check E2E: verified={}, trust={}, provers={:?}, time={}ms",
@@ -253,7 +252,8 @@ async fn smoke_trust_level_bounds() -> Result<()> {
     // The proof itself may verify, but the trust level should be below Level3
     eprintln!(
         "Trust bounds E2E: verified={}, trust={}, meets_min={}",
-        result.verified, result.trust_level,
+        result.verified,
+        result.trust_level,
         result.trust_level >= TrustLevel::Level3
     );
 
@@ -269,7 +269,10 @@ async fn smoke_dispatch_config_defaults() {
     let config = DispatchConfig::default();
     assert!(!config.cross_check, "Cross-check should default to false");
     assert!(config.track_axioms, "Axiom tracking should default to true");
-    assert!(!config.generate_certificates, "Certificate gen should default to false");
+    assert!(
+        !config.generate_certificates,
+        "Certificate gen should default to false"
+    );
     assert!(config.timeout > 0, "Timeout should be positive");
 }
 
@@ -289,11 +292,11 @@ async fn smoke_all_31_provers_instantiate() -> Result<()> {
         match ProverFactory::create(kind, config.clone()) {
             Ok(_) => {
                 created += 1;
-            }
+            },
             Err(e) => {
                 failed += 1;
                 eprintln!("  ✗ {:?}: {}", kind, e);
-            }
+            },
         }
     }
 
@@ -306,7 +309,8 @@ async fn smoke_all_31_provers_instantiate() -> Result<()> {
     // All provers should at least instantiate (even if the binary isn't installed)
     assert_eq!(
         created, total,
-        "All {} prover backends should instantiate via ProverFactory", total
+        "All {} prover backends should instantiate via ProverFactory",
+        total
     );
 
     Ok(())
@@ -321,7 +325,10 @@ fn smoke_sequential_strategy_available() {
     use echidna::proof_search::{ProofSearchStrategy, SequentialSearch, StrategySelector};
 
     let strategy = SequentialSearch;
-    assert!(strategy.available(), "Sequential should always be available");
+    assert!(
+        strategy.available(),
+        "Sequential should always be available"
+    );
 
     let selector = StrategySelector::auto();
     let strategies = selector.available_strategies();

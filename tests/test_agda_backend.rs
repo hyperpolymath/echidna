@@ -28,7 +28,11 @@ postulate
     "#;
 
     let result = backend.parse_string(content).await;
-    assert!(result.is_ok(), "Failed to parse Agda file: {:?}", result.err());
+    assert!(
+        result.is_ok(),
+        "Failed to parse Agda file: {:?}",
+        result.err()
+    );
 
     let state = result.unwrap();
     assert!(!state.context.theorems.is_empty(), "No theorems parsed");
@@ -48,10 +52,10 @@ id x = x
 
     let state = backend.parse_string(content).await.unwrap();
     let exported = backend.export(&state).await;
-    
+
     assert!(exported.is_ok());
     let code = exported.unwrap();
-    
+
     // Should generate valid Agda code
     assert!(code.contains("module Generated where"));
     assert!(code.contains("open import"));

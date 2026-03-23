@@ -19,8 +19,8 @@
 
 #![allow(dead_code)]
 
-use async_trait::async_trait;
 use anyhow::{anyhow, Context, Result};
+use async_trait::async_trait;
 use std::path::PathBuf;
 use std::process::Stdio;
 use tokio::process::Command;
@@ -94,7 +94,10 @@ impl NuSMVBackend {
         // Add goals as CTLSPEC or LTLSPEC properties
         for goal in &state.goals {
             let target_str = format!("{}", goal.target);
-            if target_str.starts_with("ltl ") || target_str.contains("F ") || target_str.contains("G ") {
+            if target_str.starts_with("ltl ")
+                || target_str.contains("F ")
+                || target_str.contains("G ")
+            {
                 smv.push_str(&format!("  LTLSPEC {}\n", target_str));
             } else {
                 smv.push_str(&format!("  CTLSPEC {}\n", target_str));
@@ -243,9 +246,11 @@ impl ProverBackend for NuSMVBackend {
     async fn apply_tactic(&self, state: &ProofState, tactic: &Tactic) -> Result<TacticResult> {
         match tactic {
             // AddCTLSpec: add a CTL property specification
-            Tactic::Custom { prover, command, args }
-                if prover == "nusmv" && command == "add_ctlspec" =>
-            {
+            Tactic::Custom {
+                prover,
+                command,
+                args,
+            } if prover == "nusmv" && command == "add_ctlspec" => {
                 let spec_text = args.join(" ");
                 let mut new_state = state.clone();
                 new_state.goals.push(Goal {
@@ -255,12 +260,14 @@ impl ProverBackend for NuSMVBackend {
                 });
                 new_state.proof_script.push(tactic.clone());
                 Ok(TacticResult::Success(new_state))
-            }
+            },
 
             // AddLTLSpec: add an LTL property specification
-            Tactic::Custom { prover, command, args }
-                if prover == "nusmv" && command == "add_ltlspec" =>
-            {
+            Tactic::Custom {
+                prover,
+                command,
+                args,
+            } if prover == "nusmv" && command == "add_ltlspec" => {
                 let spec_text = args.join(" ");
                 let mut new_state = state.clone();
                 new_state.goals.push(Goal {
@@ -270,21 +277,22 @@ impl ProverBackend for NuSMVBackend {
                 });
                 new_state.proof_script.push(tactic.clone());
                 Ok(TacticResult::Success(new_state))
-            }
+            },
 
             // BMC: enable bounded model checking mode
-            Tactic::Custom { prover, command, args }
-                if prover == "nusmv" && command == "bmc" =>
-            {
+            Tactic::Custom {
+                prover,
+                command,
+                args,
+            } if prover == "nusmv" && command == "bmc" => {
                 let mut new_state = state.clone();
                 let bound = args.first().cloned().unwrap_or_else(|| "10".to_string());
-                new_state.metadata.insert(
-                    "bmc_bound".to_string(),
-                    serde_json::Value::String(bound),
-                );
+                new_state
+                    .metadata
+                    .insert("bmc_bound".to_string(), serde_json::Value::String(bound));
                 new_state.proof_script.push(tactic.clone());
                 Ok(TacticResult::Success(new_state))
-            }
+            },
 
             _ => Ok(TacticResult::Error(format!(
                 "Tactic {:?} not supported for NuSMV model checker",
@@ -297,8 +305,8 @@ impl ProverBackend for NuSMVBackend {
         let smv_code = self.to_smv(state)?;
 
         // Write SMV to a temporary file (nuXmv requires a file)
-        let tmp_dir = tempfile::tempdir()
-            .context("Failed to create temporary directory for NuSMV")?;
+        let tmp_dir =
+            tempfile::tempdir().context("Failed to create temporary directory for NuSMV")?;
         let tmp_file = tmp_dir.path().join("model.smv");
         tokio::fs::write(&tmp_file, &smv_code)
             .await
@@ -414,7 +422,10 @@ MODULE main
 
         let state = backend.parse_string(smv).await.unwrap();
 
-        assert!(!state.context.axioms.is_empty(), "Should have parsed module/transitions");
+        assert!(
+            !state.context.axioms.is_empty(),
+            "Should have parsed module/transitions"
+        );
         assert_eq!(state.goals.len(), 2, "Should have parsed CTL and LTL specs");
     }
 

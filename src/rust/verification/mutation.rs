@@ -22,7 +22,10 @@ pub enum MutationKind {
     /// Remove a hypothesis
     RemoveHypothesis { index: usize },
     /// Replace constant with variable
-    ReplaceConstant { original: String, replacement: String },
+    ReplaceConstant {
+        original: String,
+        replacement: String,
+    },
     /// Negate a subterm
     NegateSubterm { position: usize },
 }
@@ -69,9 +72,7 @@ pub struct MutationTester {
 impl MutationTester {
     /// Create a new mutation tester
     pub fn new() -> Self {
-        Self {
-            target_score: 95.0,
-        }
+        Self { target_score: 95.0 }
     }
 
     /// Create with custom target score
@@ -97,27 +98,30 @@ impl MutationTester {
                         },
                     ));
                 }
-            }
+            },
 
             // For Pi types (universal quantification), try weakening
-            Term::Pi { param, param_type, body } => {
+            Term::Pi {
+                param,
+                param_type,
+                body,
+            } => {
                 // Add a disjunct: body -> body | True
                 let weakened = Term::App {
                     func: Box::new(Term::Const("or".to_string())),
-                    args: vec![
-                        *body.clone(),
-                        Term::Const("True".to_string()),
-                    ],
+                    args: vec![*body.clone(), Term::Const("True".to_string())],
                 };
                 mutations.push((
-                    MutationKind::AddDisjunct { added: "True".to_string() },
+                    MutationKind::AddDisjunct {
+                        added: "True".to_string(),
+                    },
                     Term::Pi {
                         param: param.clone(),
                         param_type: param_type.clone(),
                         body: Box::new(weakened),
                     },
                 ));
-            }
+            },
 
             // For constants, try replacing with variables
             Term::Const(name) => {
@@ -128,9 +132,9 @@ impl MutationTester {
                     },
                     Term::Var("x_mutant".to_string()),
                 ));
-            }
+            },
 
-            _ => {}
+            _ => {},
         }
 
         // Always try negation
@@ -193,7 +197,9 @@ mod tests {
                 description: "Negation correctly caught".to_string(),
             },
             MutationResult {
-                kind: MutationKind::AddDisjunct { added: "True".to_string() },
+                kind: MutationKind::AddDisjunct {
+                    added: "True".to_string(),
+                },
                 caught: true,
                 description: "Added disjunct correctly caught".to_string(),
             },
@@ -218,7 +224,9 @@ mod tests {
                 description: "Mutation survived -- spec too weak".to_string(),
             },
             MutationResult {
-                kind: MutationKind::AddDisjunct { added: "True".to_string() },
+                kind: MutationKind::AddDisjunct {
+                    added: "True".to_string(),
+                },
                 caught: false,
                 description: "Mutation survived -- spec too weak".to_string(),
             },
@@ -242,10 +250,7 @@ mod tests {
 
         let term = Term::App {
             func: Box::new(Term::Const("add".to_string())),
-            args: vec![
-                Term::Var("x".to_string()),
-                Term::Var("y".to_string()),
-            ],
+            args: vec![Term::Var("x".to_string()), Term::Var("y".to_string())],
         };
 
         let mutations = tester.generate_mutations(&term);

@@ -28,27 +28,18 @@ fn alpha_equivalent_impl(
             } else {
                 v1 == v2
             }
-        }
+        },
         (Term::Const(c1), Term::Const(c2)) => c1 == c2,
         (Term::Universe(l1), Term::Universe(l2)) => l1 == l2,
         (Term::Meta(m1), Term::Meta(m2)) => m1 == m2,
-        (
-            Term::App {
-                func: f1,
-                args: a1,
-            },
-            Term::App {
-                func: f2,
-                args: a2,
-            },
-        ) => {
+        (Term::App { func: f1, args: a1 }, Term::App { func: f2, args: a2 }) => {
             alpha_equivalent_impl(f1, f2, bindings)
                 && a1.len() == a2.len()
                 && a1
                     .iter()
                     .zip(a2.iter())
                     .all(|(t1, t2)| alpha_equivalent_impl(t1, t2, bindings))
-        }
+        },
         (
             Term::Lambda {
                 param: p1,
@@ -71,7 +62,7 @@ fn alpha_equivalent_impl(
             };
 
             types_match && alpha_equivalent_impl(b1, b2, &mut new_bindings)
-        }
+        },
         (
             Term::Pi {
                 param: p1,
@@ -89,7 +80,7 @@ fn alpha_equivalent_impl(
 
             alpha_equivalent_impl(pt1, pt2, bindings)
                 && alpha_equivalent_impl(b1, b2, &mut new_bindings)
-        }
+        },
         _ => false,
     }
 }
@@ -112,13 +103,15 @@ fn contains_subterm(term: &Term, target: &Term) -> bool {
     match term {
         Term::App { func, args } => {
             contains_subterm(func, target) || args.iter().any(|arg| contains_subterm(arg, target))
-        }
-        Term::Lambda { body, param_type, .. } => {
+        },
+        Term::Lambda {
+            body, param_type, ..
+        } => {
             contains_subterm(body, target)
                 || param_type
                     .as_ref()
                     .map_or(false, |t| contains_subterm(t, target))
-        }
+        },
         Term::Pi {
             param_type, body, ..
         } => contains_subterm(param_type, target) || contains_subterm(body, target),
@@ -129,17 +122,13 @@ fn contains_subterm(term: &Term, target: &Term) -> bool {
 /// Assert that a proof state is valid (all goals have targets)
 pub fn assert_valid_proof_state(state: &ProofState) {
     for (i, goal) in state.goals.iter().enumerate() {
-        assert!(
-            !goal.id.is_empty(),
-            "Goal {} has empty ID",
-            i
-        );
+        assert!(!goal.id.is_empty(), "Goal {} has empty ID", i);
         // Goals should have targets (even if trivial)
         match &goal.target {
             Term::Const(c) if c.is_empty() => {
                 panic!("Goal {} has empty constant as target", i)
-            }
-            _ => {}
+            },
+            _ => {},
         }
     }
 }
@@ -163,26 +152,35 @@ pub fn assert_well_formed_term(term: &Term) {
             for arg in args {
                 assert_well_formed_term(arg);
             }
-        }
-        Term::Lambda { param, body, param_type, .. } => {
+        },
+        Term::Lambda {
+            param,
+            body,
+            param_type,
+            ..
+        } => {
             assert!(!param.is_empty(), "Lambda with empty parameter name");
             assert_well_formed_term(body);
             if let Some(ty) = param_type {
                 assert_well_formed_term(ty);
             }
-        }
-        Term::Pi { param, param_type, body } => {
+        },
+        Term::Pi {
+            param,
+            param_type,
+            body,
+        } => {
             assert!(!param.is_empty(), "Pi type with empty parameter name");
             assert_well_formed_term(param_type);
             assert_well_formed_term(body);
-        }
+        },
         Term::Var(v) => {
             assert!(!v.is_empty(), "Empty variable name");
-        }
+        },
         Term::Const(c) => {
             assert!(!c.is_empty(), "Empty constant name");
-        }
-        _ => {}
+        },
+        _ => {},
     }
 }
 

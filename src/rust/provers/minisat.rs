@@ -15,14 +15,14 @@
 
 #![allow(dead_code)]
 
-use async_trait::async_trait;
 use anyhow::{anyhow, Context, Result};
+use async_trait::async_trait;
 use std::path::PathBuf;
 use std::process::Stdio;
 use tokio::process::Command;
 
-use crate::core::{Goal, ProofState, Tactic, TacticResult, Term, Context as ProofContext};
 use super::{ProverBackend, ProverConfig, ProverKind};
+use crate::core::{Goal, ProofState, Tactic, TacticResult, Term};
 
 /// MiniSat DPLL/CDCL SAT solver backend
 pub struct MiniSatBackend {
@@ -58,9 +58,11 @@ impl MiniSatBackend {
             if line.starts_with("p cnf") {
                 let parts: Vec<&str> = line.split_whitespace().collect();
                 if parts.len() >= 4 {
-                    num_vars = parts[2].parse()
+                    num_vars = parts[2]
+                        .parse()
                         .map_err(|_| anyhow!("Invalid variable count in DIMACS header"))?;
-                    num_clauses = parts[3].parse()
+                    num_clauses = parts[3]
+                        .parse()
                         .map_err(|_| anyhow!("Invalid clause count in DIMACS header"))?;
                     header_found = true;
                 }
@@ -73,7 +75,8 @@ impl MiniSatBackend {
 
             // Parse clause literals
             for token in line.split_whitespace() {
-                let lit: i64 = token.parse()
+                let lit: i64 = token
+                    .parse()
                     .map_err(|_| anyhow!("Invalid literal in DIMACS: {}", token))?;
                 if lit == 0 {
                     // End of clause
@@ -144,26 +147,27 @@ impl MiniSatBackend {
                 } else {
                     vec![]
                 }
-            }
+            },
             Term::App { func, args } => {
                 if let Term::Const(f) = func.as_ref() {
                     match f.as_str() {
-                        "or" | "clause" => {
-                            args.iter().flat_map(Self::term_to_clause).collect()
-                        }
+                        "or" | "clause" => args.iter().flat_map(Self::term_to_clause).collect(),
                         "not" | "neg" => {
                             if let Some(inner) = args.first() {
-                                Self::term_to_clause(inner).into_iter().map(|l| -l).collect()
+                                Self::term_to_clause(inner)
+                                    .into_iter()
+                                    .map(|l| -l)
+                                    .collect()
                             } else {
                                 vec![]
                             }
-                        }
+                        },
                         _ => vec![],
                     }
                 } else {
                     vec![]
                 }
-            }
+            },
             _ => vec![],
         }
     }
@@ -194,7 +198,9 @@ impl MiniSatBackend {
                 return Ok(false);
             }
         }
-        Err(anyhow!("MiniSat output inconclusive: no SATISFIABLE/UNSATISFIABLE line found"))
+        Err(anyhow!(
+            "MiniSat output inconclusive: no SATISFIABLE/UNSATISFIABLE line found"
+        ))
     }
 
     /// Extract model (variable assignments) from MiniSat output.
@@ -216,7 +222,11 @@ impl MiniSatBackend {
 
             // Parse model line (either v-prefixed or bare assignments)
             if found_sat || line.starts_with("v ") {
-                let data = if line.starts_with("v ") { &line[2..] } else { line };
+                let data = if line.starts_with("v ") {
+                    &line[2..]
+                } else {
+                    line
+                };
                 for token in data.split_whitespace() {
                     if let Ok(lit) = token.parse::<i64>() {
                         if lit != 0 {
@@ -261,7 +271,8 @@ impl ProverBackend for MiniSatBackend {
     }
 
     async fn parse_file(&self, path: PathBuf) -> Result<ProofState> {
-        let content = tokio::fs::read_to_string(&path).await
+        let content = tokio::fs::read_to_string(&path)
+            .await
             .with_context(|| format!("Failed to read DIMACS file: {:?}", path))?;
         self.parse_string(&content).await
     }
@@ -298,58 +309,61 @@ impl ProverBackend for MiniSatBackend {
 
     async fn apply_tactic(&self, state: &ProofState, tactic: &Tactic) -> Result<TacticResult> {
         match tactic {
-            Tactic::Custom { prover, command, args } if prover == "minisat" => {
-                match command.as_str() {
-                    "add-clause" => {
-                        let literals: Result<Vec<i64>, _> = args.iter()
-                            .map(|a| a.parse::<i64>())
-                            .collect();
+            Tactic::Custom {
+                prover,
+                command,
+                args,
+            } if prover == "minisat" => match command.as_str() {
+                "add-clause" => {
+                    let literals: Result<Vec<i64>, _> =
+                        args.iter().map(|a| a.parse::<i64>()).collect();
 
-                        match literals {
-                            Ok(lits) => {
-                                let mut new_state = state.clone();
-                                let new_clause = Self::clause_to_term(&lits);
-                                new_state.goals.push(Goal {
-                                    id: format!("clause_{}", new_state.goals.len()),
-                                    target: new_clause,
-                                    hypotheses: vec![],
-                                });
-                                new_state.proof_script.push(tactic.clone());
-                                Ok(TacticResult::Success(new_state))
-                            }
-                            Err(_) => Ok(TacticResult::Error(
-                                "add-clause requires integer literal arguments".to_string()
-                            )),
-                        }
+                    match literals {
+                        Ok(lits) => {
+                            let mut new_state = state.clone();
+                            let new_clause = Self::clause_to_term(&lits);
+                            new_state.goals.push(Goal {
+                                id: format!("clause_{}", new_state.goals.len()),
+                                target: new_clause,
+                                hypotheses: vec![],
+                            });
+                            new_state.proof_script.push(tactic.clone());
+                            Ok(TacticResult::Success(new_state))
+                        },
+                        Err(_) => Ok(TacticResult::Error(
+                            "add-clause requires integer literal arguments".to_string(),
+                        )),
                     }
+                },
 
-                    "unit-propagate" => {
-                        let mut new_state = state.clone();
-                        new_state.proof_script.push(tactic.clone());
-                        Ok(TacticResult::Success(new_state))
-                    }
+                "unit-propagate" => {
+                    let mut new_state = state.clone();
+                    new_state.proof_script.push(tactic.clone());
+                    Ok(TacticResult::Success(new_state))
+                },
 
-                    "resolution" => {
-                        let mut new_state = state.clone();
-                        new_state.proof_script.push(tactic.clone());
-                        Ok(TacticResult::Success(new_state))
-                    }
+                "resolution" => {
+                    let mut new_state = state.clone();
+                    new_state.proof_script.push(tactic.clone());
+                    Ok(TacticResult::Success(new_state))
+                },
 
-                    _ => Ok(TacticResult::Error(
-                        format!("Unknown MiniSat tactic: {}", command)
-                    )),
-                }
-            }
+                _ => Ok(TacticResult::Error(format!(
+                    "Unknown MiniSat tactic: {}",
+                    command
+                ))),
+            },
 
             Tactic::Simplify => {
                 let mut new_state = state.clone();
                 new_state.proof_script.push(tactic.clone());
                 Ok(TacticResult::Success(new_state))
-            }
+            },
 
-            _ => Ok(TacticResult::Error(
-                format!("Tactic {:?} not supported for MiniSat", tactic)
-            )),
+            _ => Ok(TacticResult::Error(format!(
+                "Tactic {:?} not supported for MiniSat",
+                tactic
+            ))),
         }
     }
 
@@ -367,8 +381,8 @@ impl ProverBackend for MiniSatBackend {
         let dimacs = Self::to_dimacs(num_vars, &clauses);
 
         // Write to temporary file (MiniSat typically takes file arguments)
-        let tmp_dir = tempfile::tempdir()
-            .context("Failed to create temporary directory for MiniSat")?;
+        let tmp_dir =
+            tempfile::tempdir().context("Failed to create temporary directory for MiniSat")?;
         let input_file = tmp_dir.path().join("input.cnf");
         let output_file = tmp_dir.path().join("output.txt");
 

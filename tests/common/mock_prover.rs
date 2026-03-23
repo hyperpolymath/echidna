@@ -36,22 +36,34 @@ impl MockProver {
 
     /// Add a parse result to return
     pub fn add_parse_result(&self, result: anyhow::Result<ProofState>) {
-        self.parse_results.lock().unwrap_or_else(|e| e.into_inner()).push(result);
+        self.parse_results
+            .lock()
+            .unwrap_or_else(|e| e.into_inner())
+            .push(result);
     }
 
     /// Add a verify result to return
     pub fn add_verify_result(&self, result: anyhow::Result<bool>) {
-        self.verify_results.lock().unwrap_or_else(|e| e.into_inner()).push(result);
+        self.verify_results
+            .lock()
+            .unwrap_or_else(|e| e.into_inner())
+            .push(result);
     }
 
     /// Add a tactic result to return
     pub fn add_tactic_result(&self, result: anyhow::Result<TacticResult>) {
-        self.tactic_results.lock().unwrap_or_else(|e| e.into_inner()).push(result);
+        self.tactic_results
+            .lock()
+            .unwrap_or_else(|e| e.into_inner())
+            .push(result);
     }
 
     /// Add an export result to return
     pub fn add_export_result(&self, result: anyhow::Result<String>) {
-        self.export_results.lock().unwrap_or_else(|e| e.into_inner()).push(result);
+        self.export_results
+            .lock()
+            .unwrap_or_else(|e| e.into_inner())
+            .push(result);
     }
 
     /// Pop the next parse result
@@ -60,9 +72,7 @@ impl MockProver {
             .lock()
             .map_err(|e| anyhow::anyhow!("lock poisoned: {}", e))?
             .pop()
-            .unwrap_or_else(|| {
-                Ok(crate::common::simple_proof_state())
-            })
+            .unwrap_or_else(|| Ok(crate::common::simple_proof_state()))
     }
 
     /// Pop the next verify result
@@ -80,9 +90,7 @@ impl MockProver {
             .lock()
             .map_err(|e| anyhow::anyhow!("lock poisoned: {}", e))?
             .pop()
-            .unwrap_or_else(|| {
-                Ok(TacticResult::Success(crate::common::simple_proof_state()))
-            })
+            .unwrap_or_else(|| Ok(TacticResult::Success(crate::common::simple_proof_state())))
     }
 
     /// Pop the next export result
@@ -129,7 +137,11 @@ impl ProverBackend for MockProver {
         self.pop_export_result()
     }
 
-    async fn suggest_tactics(&self, _state: &ProofState, _limit: usize) -> anyhow::Result<Vec<Tactic>> {
+    async fn suggest_tactics(
+        &self,
+        _state: &ProofState,
+        _limit: usize,
+    ) -> anyhow::Result<Vec<Tactic>> {
         Ok(vec![])
     }
 

@@ -20,8 +20,8 @@
 //! - **Precision control**: The delta precision parameter controls the trade-off
 //!   between soundness and completeness (smaller delta = tighter bounds).
 
-use async_trait::async_trait;
 use anyhow::{anyhow, bail, Context as AnyhowContext, Result};
+use async_trait::async_trait;
 use serde::{Deserialize, Serialize};
 use std::path::PathBuf;
 use std::process::Stdio;
@@ -29,9 +29,9 @@ use tokio::io::AsyncWriteExt;
 use tokio::process::Command;
 use tokio::time::{timeout, Duration};
 
-use crate::core::{ProofState, Tactic, TacticResult, Term};
-use super::{ProverBackend, ProverConfig, ProverKind};
 use super::z3::SmtParser;
+use super::{ProverBackend, ProverConfig, ProverKind};
+use crate::core::{ProofState, Tactic, TacticResult, Term};
 
 /// Default delta-precision for dReal's decision procedures.
 ///
@@ -146,14 +146,17 @@ impl DRealBackend {
             cmd.arg(arg);
         }
 
-        let mut child = cmd.spawn()
-            .with_context(|| format!(
+        let mut child = cmd.spawn().with_context(|| {
+            format!(
                 "Failed to spawn dReal process: {:?}",
                 self.config.executable
-            ))?;
+            )
+        })?;
 
         // Write SMT-LIB commands to stdin
-        let mut stdin = child.stdin.take()
+        let mut stdin = child
+            .stdin
+            .take()
             .ok_or_else(|| anyhow!("Failed to open dReal stdin"))?;
 
         stdin.write_all(command.as_bytes()).await?;
@@ -163,11 +166,14 @@ impl DRealBackend {
 
         // Wait for output with timeout
         let timeout_duration = Duration::from_secs(self.config.timeout);
-        let output = timeout(timeout_duration, child.wait_with_output()).await
-            .map_err(|_| anyhow!(
-                "dReal execution timeout after {} seconds",
-                self.config.timeout
-            ))??;
+        let output = timeout(timeout_duration, child.wait_with_output())
+            .await
+            .map_err(|_| {
+                anyhow!(
+                    "dReal execution timeout after {} seconds",
+                    self.config.timeout
+                )
+            })??;
 
         if !output.status.success() {
             let stderr = String::from_utf8_lossy(&output.stderr);
@@ -247,15 +253,16 @@ impl DRealBackend {
                     self.term_to_smt(func)
                 } else {
                     let func_str = self.term_to_smt(func);
-                    let args_str: Vec<String> = args.iter()
-                        .map(|a| self.term_to_smt(a))
-                        .collect();
+                    let args_str: Vec<String> = args.iter().map(|a| self.term_to_smt(a)).collect();
                     format!("({} {})", func_str, args_str.join(" "))
                 }
-            }
+            },
             _ => {
-                format!("(:echidna {})", serde_json::to_string(term).unwrap_or_default())
-            }
+                format!(
+                    "(:echidna {})",
+                    serde_json::to_string(term).unwrap_or_default()
+                )
+            },
         }
     }
 
@@ -305,7 +312,8 @@ impl ProverBackend for DRealBackend {
     }
 
     async fn parse_file(&self, path: PathBuf) -> Result<ProofState> {
-        let content = tokio::fs::read_to_string(&path).await
+        let content = tokio::fs::read_to_string(&path)
+            .await
             .with_context(|| format!("Failed to read dReal SMT-LIB file: {:?}", path))?;
 
         self.parse_string(&content).await
@@ -333,10 +341,18 @@ impl ProverBackend for DRealBackend {
         if state.goals.is_empty() {
             return Ok(true);
         }
-        if state.goals.iter().all(|g| matches!(&g.target, Term::Const(c) if c == "true")) {
+        if state
+            .goals
+            .iter()
+            .all(|g| matches!(&g.target, Term::Const(c) if c == "true"))
+        {
             return Ok(true);
         }
-        if state.goals.iter().any(|g| matches!(&g.target, Term::Const(c) if c == "false")) {
+        if state
+            .goals
+            .iter()
+            .any(|g| matches!(&g.target, Term::Const(c) if c == "false"))
+        {
             return Ok(false);
         }
 
@@ -445,8 +461,8 @@ impl ProverBackend for DRealBackend {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::core::{Context as ProofContext, Goal};
     use std::collections::HashMap;
-    use crate::core::{Goal, Context as ProofContext};
 
     /// Verify that the default precision is set correctly
     #[test]
@@ -506,7 +522,7 @@ mod tests {
         match result {
             DRealResult::DeltaSat(delta) => {
                 assert!((delta - 0.001).abs() < f64::EPSILON);
-            }
+            },
             other => panic!("Expected DeltaSat, got {:?}", other),
         }
     }
@@ -575,12 +591,15 @@ mod tests {
             metadata: HashMap::new(),
         };
 
-        let result = backend.apply_tactic(&state, &Tactic::Simplify).await.unwrap();
+        let result = backend
+            .apply_tactic(&state, &Tactic::Simplify)
+            .await
+            .unwrap();
         match result {
             TacticResult::Error(msg) => {
                 assert!(msg.contains("fully automated"));
                 assert!(msg.contains("not supported"));
-            }
+            },
             other => panic!("Expected Error, got {:?}", other),
         }
     }
@@ -617,10 +636,7 @@ mod tests {
                 id: "g0".to_string(),
                 target: Term::App {
                     func: Box::new(Term::Const(">".to_string())),
-                    args: vec![
-                        Term::Var("x".to_string()),
-                        Term::Const("0".to_string()),
-                    ],
+                    args: vec![Term::Var("x".to_string()), Term::Const("0".to_string())],
                 },
                 hypotheses: vec![],
             }],

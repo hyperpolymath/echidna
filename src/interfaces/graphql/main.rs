@@ -6,8 +6,8 @@ use async_graphql_axum::GraphQL;
 use axum::{routing::get, Router};
 use tower_http::cors::CorsLayer;
 
-mod schema;
 mod resolvers;
+mod schema;
 
 use resolvers::EchidnaContext;
 use schema::{MutationRoot, QueryRoot};
@@ -28,7 +28,10 @@ async fn main() {
 
     // Build application with routes
     let app = Router::new()
-        .route("/", get(graphql_playground).post_service(GraphQL::new(schema.clone())))
+        .route(
+            "/",
+            get(graphql_playground).post_service(GraphQL::new(schema.clone())),
+        )
         .route("/health", get(health_check))
         .layer(CorsLayer::permissive());
 

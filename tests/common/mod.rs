@@ -8,9 +8,9 @@ use echidna::provers::{ProverBackend, ProverConfig, ProverKind};
 use std::collections::HashMap;
 use std::path::PathBuf;
 
-pub mod mock_prover;
-pub mod generators;
 pub mod assertions;
+pub mod generators;
+pub mod mock_prover;
 
 /// Create a simple test proof state with one goal
 pub fn simple_proof_state() -> ProofState {
@@ -35,10 +35,7 @@ pub fn multi_goal_proof_state() -> ProofState {
                 hypotheses: vec![],
                 target: Term::App {
                     func: Box::new(Term::Const("eq".to_string())),
-                    args: vec![
-                        Term::Var("x".to_string()),
-                        Term::Var("x".to_string()),
-                    ],
+                    args: vec![Term::Var("x".to_string()), Term::Var("x".to_string())],
                 },
             },
             Goal {
@@ -97,7 +94,7 @@ pub fn test_prover_config(kind: ProverKind) -> ProverConfig {
         executable: PathBuf::from(executable),
         library_paths: vec![],
         args: vec![],
-        timeout: 10, // 10 seconds for tests
+        timeout: 10,           // 10 seconds for tests
         neural_enabled: false, // Disable neural for basic tests
     }
 }
@@ -197,10 +194,7 @@ pub fn find_proof_files(kind: ProverKind) -> Vec<PathBuf> {
 pub fn simple_term() -> Term {
     Term::App {
         func: Box::new(Term::Const("add".to_string())),
-        args: vec![
-            Term::Const("1".to_string()),
-            Term::Const("2".to_string()),
-        ],
+        args: vec![Term::Const("1".to_string()), Term::Const("2".to_string())],
     }
 }
 
@@ -229,19 +223,14 @@ pub fn pi_term() -> Term {
 pub fn complex_term() -> Term {
     Term::App {
         func: Box::new(Term::Const("forall".to_string())),
-        args: vec![
-            Term::Lambda {
-                param: "x".to_string(),
-                param_type: Some(Box::new(Term::Universe(0))),
-                body: Box::new(Term::App {
-                    func: Box::new(Term::Const("eq".to_string())),
-                    args: vec![
-                        Term::Var("x".to_string()),
-                        Term::Var("x".to_string()),
-                    ],
-                }),
-            },
-        ],
+        args: vec![Term::Lambda {
+            param: "x".to_string(),
+            param_type: Some(Box::new(Term::Universe(0))),
+            body: Box::new(Term::App {
+                func: Box::new(Term::Const("eq".to_string())),
+                args: vec![Term::Var("x".to_string()), Term::Var("x".to_string())],
+            }),
+        }],
     }
 }
 

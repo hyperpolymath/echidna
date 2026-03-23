@@ -1,14 +1,14 @@
 // SPDX-License-Identifier: PMPL-1.0-or-later
 // ECHIDNA gRPC Server - wired to core
 
-use tonic::{transport::Server, Request, Response, Status};
+use echidna::core::{Tactic as CoreTactic, TacticResult as CoreTacticResult, Term};
+use echidna::provers::{ProverBackend, ProverConfig, ProverFactory, ProverKind as CoreProverKind};
 use echidna_proto::v1::proof_service_server::{ProofService, ProofServiceServer};
 use echidna_proto::v1::*;
-use echidna::provers::{ProverBackend, ProverConfig, ProverFactory, ProverKind as CoreProverKind};
-use echidna::core::{Tactic as CoreTactic, TacticResult as CoreTacticResult, Term};
 use std::collections::HashMap;
 use std::sync::Arc;
 use tokio::sync::{Mutex, RwLock};
+use tonic::{transport::Server, Request, Response, Status};
 
 // Import FFI wrapper
 use crate::ffi_wrapper;
@@ -32,7 +32,10 @@ impl FfiProverBackend {
 
 #[async_trait::async_trait]
 impl ProverBackend for FfiProverBackend {
-    async fn parse_file(&self, path: std::path::PathBuf) -> anyhow::Result<echidna::core::ProofState> {
+    async fn parse_file(
+        &self,
+        path: std::path::PathBuf,
+    ) -> anyhow::Result<echidna::core::ProofState> {
         let content = std::fs::read_to_string(&path)?;
         ffi_wrapper::parse_string(self.handle, &content)?;
         Ok(echidna::core::ProofState::new(content))
@@ -47,7 +50,11 @@ impl ProverBackend for FfiProverBackend {
         ffi_wrapper::verify_proof(self.handle)
     }
 
-    async fn apply_tactic(&self, state: &echidna::core::ProofState, tactic: &CoreTactic) -> anyhow::Result<TacticResult> {
+    async fn apply_tactic(
+        &self,
+        state: &echidna::core::ProofState,
+        tactic: &CoreTactic,
+    ) -> anyhow::Result<TacticResult> {
         let tactic_str = format!("{:?}", tactic);
         if ffi_wrapper::apply_tactic(self.handle, &tactic_str)? {
             Ok(TacticResult::Success(Box::new(state.clone())))
@@ -56,15 +63,20 @@ impl ProverBackend for FfiProverBackend {
         }
     }
 
-    async fn suggest_tactics(&self, state: &echidna::core::ProofState, limit: usize) -> anyhow::Result<Vec<CoreTactic>> {
+    async fn suggest_tactics(
+        &self,
+        state: &echidna::core::ProofState,
+        limit: usize,
+    ) -> anyhow::Result<Vec<CoreTactic>> {
         let tactic_names = ffi_wrapper::suggest_tactics(self.handle, limit)?;
-        let tactics = tactic_names.into_iter().map(|name| {
-            CoreTactic::Custom {
+        let tactics = tactic_names
+            .into_iter()
+            .map(|name| CoreTactic::Custom {
                 prover: "ffi".to_string(),
                 command: name,
                 args: vec![],
-            }
-        }).collect();
+            })
+            .collect();
         Ok(tactics)
     }
 
@@ -141,52 +153,50 @@ impl ProofService for ProofServiceImpl {
         // Try FFI path first if available
         if self.ffi_initialized {
             match ffi_wrapper::proto_kind_to_ffi(req.prover) {
-                Ok(ffi_kind) => {
-                    match ffi_wrapper::create_prover(ffi_kind) {
-                        Ok(handle) => {
-                            if ffi_wrapper::parse_string(handle, &req.goal).is_ok() {
-                                let valid = ffi_wrapper::verify_proof(handle).unwrap_or(false);
-                                
-                                let status = if valid {
-                                    ProofStatus::Success as i32
-                                } else {
-                                    ProofStatus::InProgress as i32
-                                };
+                Ok(ffi_kind) => match ffi_wrapper::create_prover(ffi_kind) {
+                    Ok(handle) => {
+                        if ffi_wrapper::parse_string(handle, &req.goal).is_ok() {
+                            let valid = ffi_wrapper::verify_proof(handle).unwrap_or(false);
 
-                                let session = ProofSession {
-                                    prover_kind: core_kind,
-                                    prover: Box::new(FfiProverBackend::new(handle)),
-                                    state: Some(echidna::core::ProofState::new(req.goal.clone())),
-                                    goal: req.goal.clone(),
-                                    status,
-                                    history: vec![],
-                                    start_time: std::time::Instant::now(),
-                                };
+                            let status = if valid {
+                                ProofStatus::Success as i32
+                            } else {
+                                ProofStatus::InProgress as i32
+                            };
 
-                                self.sessions
-                                    .write()
-                                    .await
-                                    .insert(proof_id.clone(), Arc::new(Mutex::new(session)));
+                            let session = ProofSession {
+                                prover_kind: core_kind,
+                                prover: Box::new(FfiProverBackend::new(handle)),
+                                state: Some(echidna::core::ProofState::new(req.goal.clone())),
+                                goal: req.goal.clone(),
+                                status,
+                                history: vec![],
+                                start_time: std::time::Instant::now(),
+                            };
 
-                                return Ok(Response::new(ProofResponse {
-                                    proof_id,
-                                    prover: req.prover,
-                                    goal: req.goal,
-                                    status,
-                                    proof_script: vec![],
-                                    time_elapsed: None,
-                                    error_message: None,
-                                }));
-                            }
+                            self.sessions
+                                .write()
+                                .await
+                                .insert(proof_id.clone(), Arc::new(Mutex::new(session)));
+
+                            return Ok(Response::new(ProofResponse {
+                                proof_id,
+                                prover: req.prover,
+                                goal: req.goal,
+                                status,
+                                proof_script: vec![],
+                                time_elapsed: None,
+                                error_message: None,
+                            }));
                         }
-                        Err(e) => {
-                            tracing::warn!("FFI prover creation failed: {}", e);
-                        }
-                    }
-                }
+                    },
+                    Err(e) => {
+                        tracing::warn!("FFI prover creation failed: {}", e);
+                    },
+                },
                 Err(e) => {
                     tracing::warn!("FFI kind conversion failed: {}", e);
-                }
+                },
             }
         }
 
@@ -298,36 +308,44 @@ impl ProofService for ProofServiceImpl {
             let status = session.status;
 
             // Send initial status
-            let _ = tx.send(Ok(ProofUpdate {
-                proof_id: proof_id.clone(),
-                status,
-                message: "Proof session active".to_string(),
-                progress: Some(0.0),
-            })).await;
+            let _ = tx
+                .send(Ok(ProofUpdate {
+                    proof_id: proof_id.clone(),
+                    status,
+                    message: "Proof session active".to_string(),
+                    progress: Some(0.0),
+                }))
+                .await;
 
             // Send current state
             if let Some(state) = &session.state {
                 let goals = state.goals.len();
                 let progress = if goals == 0 { 1.0 } else { 0.5 };
 
-                let _ = tx.send(Ok(ProofUpdate {
-                    proof_id: proof_id.clone(),
-                    status,
-                    message: format!("{} goals remaining", goals),
-                    progress: Some(progress),
-                })).await;
+                let _ = tx
+                    .send(Ok(ProofUpdate {
+                        proof_id: proof_id.clone(),
+                        status,
+                        message: format!("{} goals remaining", goals),
+                        progress: Some(progress),
+                    }))
+                    .await;
             }
 
             // Send completion
-            let _ = tx.send(Ok(ProofUpdate {
-                proof_id,
-                status,
-                message: "Stream complete".to_string(),
-                progress: Some(1.0),
-            })).await;
+            let _ = tx
+                .send(Ok(ProofUpdate {
+                    proof_id,
+                    status,
+                    message: "Stream complete".to_string(),
+                    progress: Some(1.0),
+                }))
+                .await;
         });
 
-        Ok(Response::new(tokio_stream::wrappers::ReceiverStream::new(rx)))
+        Ok(Response::new(tokio_stream::wrappers::ReceiverStream::new(
+            rx,
+        )))
     }
 
     async fn apply_tactic(
@@ -367,14 +385,14 @@ impl ProofService for ProofServiceImpl {
                     session.status = ProofStatus::Success as i32;
                 }
                 true
-            }
+            },
             CoreTacticResult::QED => {
                 session.status = ProofStatus::Success as i32;
                 if let Some(s) = session.state.as_mut() {
                     s.goals.clear();
                 }
                 true
-            }
+            },
             CoreTacticResult::Error(_) => false,
         };
 

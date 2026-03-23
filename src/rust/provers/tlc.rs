@@ -19,8 +19,8 @@
 
 #![allow(dead_code)]
 
-use async_trait::async_trait;
 use anyhow::{anyhow, Context, Result};
+use async_trait::async_trait;
 use std::path::PathBuf;
 use std::process::Stdio;
 use tokio::process::Command;
@@ -131,7 +131,10 @@ impl TLCBackend {
 
         // Check for generic error
         if output.contains("Error:") || output.contains("TLC threw") {
-            return Err(anyhow!("TLC error: {}", output.lines().take(10).collect::<Vec<_>>().join("\n")));
+            return Err(anyhow!(
+                "TLC error: {}",
+                output.lines().take(10).collect::<Vec<_>>().join("\n")
+            ));
         }
 
         Err(anyhow!(
@@ -149,7 +152,11 @@ impl TLCBackend {
             let trimmed = line.trim();
 
             // Skip empty lines and comments
-            if trimmed.is_empty() || trimmed.starts_with("\\*") || trimmed.starts_with("----") || trimmed.starts_with("====") {
+            if trimmed.is_empty()
+                || trimmed.starts_with("\\*")
+                || trimmed.starts_with("----")
+                || trimmed.starts_with("====")
+            {
                 continue;
             }
 
@@ -229,9 +236,11 @@ impl ProverBackend for TLCBackend {
     async fn apply_tactic(&self, state: &ProofState, tactic: &Tactic) -> Result<TacticResult> {
         match tactic {
             // AddInvariant: add an invariant to check
-            Tactic::Custom { prover, command, args }
-                if prover == "tlc" && command == "add_invariant" =>
-            {
+            Tactic::Custom {
+                prover,
+                command,
+                args,
+            } if prover == "tlc" && command == "add_invariant" => {
                 let inv_text = args.join(" ");
                 let mut new_state = state.clone();
                 new_state.goals.push(Goal {
@@ -241,12 +250,14 @@ impl ProverBackend for TLCBackend {
                 });
                 new_state.proof_script.push(tactic.clone());
                 Ok(TacticResult::Success(new_state))
-            }
+            },
 
             // AddProperty: add a temporal property to check
-            Tactic::Custom { prover, command, args }
-                if prover == "tlc" && command == "add_property" =>
-            {
+            Tactic::Custom {
+                prover,
+                command,
+                args,
+            } if prover == "tlc" && command == "add_property" => {
                 let prop_text = args.join(" ");
                 let mut new_state = state.clone();
                 new_state.goals.push(Goal {
@@ -256,12 +267,14 @@ impl ProverBackend for TLCBackend {
                 });
                 new_state.proof_script.push(tactic.clone());
                 Ok(TacticResult::Success(new_state))
-            }
+            },
 
             // SetConstraint: add a state constraint to reduce the state space
-            Tactic::Custom { prover, command, args }
-                if prover == "tlc" && command == "set_constraint" =>
-            {
+            Tactic::Custom {
+                prover,
+                command,
+                args,
+            } if prover == "tlc" && command == "set_constraint" => {
                 let constraint = args.join(" ");
                 let mut new_state = state.clone();
                 new_state.metadata.insert(
@@ -270,7 +283,7 @@ impl ProverBackend for TLCBackend {
                 );
                 new_state.proof_script.push(tactic.clone());
                 Ok(TacticResult::Success(new_state))
-            }
+            },
 
             _ => Ok(TacticResult::Error(format!(
                 "Tactic {:?} not supported for TLC model checker",
@@ -284,8 +297,8 @@ impl ProverBackend for TLCBackend {
         let cfg_code = self.to_cfg(state);
 
         // Write TLA+ and CFG to temporary files
-        let tmp_dir = tempfile::tempdir()
-            .context("Failed to create temporary directory for TLC")?;
+        let tmp_dir =
+            tempfile::tempdir().context("Failed to create temporary directory for TLC")?;
         let tla_file = tmp_dir.path().join("EchidnaModel.tla");
         let cfg_file = tmp_dir.path().join("EchidnaModel.cfg");
 
@@ -408,7 +421,10 @@ THEOREM Spec => []<>(counter > 10)
 
         let state = backend.parse_string(tla).await.unwrap();
 
-        assert!(!state.context.definitions.is_empty(), "Should have parsed definitions");
+        assert!(
+            !state.context.definitions.is_empty(),
+            "Should have parsed definitions"
+        );
         assert!(!state.goals.is_empty(), "Should have parsed theorem");
     }
 
