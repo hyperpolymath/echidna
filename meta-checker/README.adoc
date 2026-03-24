@@ -1,0 +1,99 @@
+// SPDX-License-Identifier: PMPL-1.0-or-later
+// Copyright (c) 2026 Jonathan D.A. Jewell (hyperpolymath)
+
+= ECHIDNA Meta-Checker
+Jonathan D.A. Jewell <j.d.a.jewell@open.ac.uk>
+:toc:
+
+== Overview
+
+The ECHIDNA meta-checker is an **Agda formalisation** that proves correctness properties
+about ECHIDNA's trust-hardening pipeline. When Agda successfully type-checks these modules,
+it provides a **machine-verified guarantee** that the system's safety invariants hold.
+
+== Verified Properties (30+)
+
+=== Trust Level System (`TrustLevel.agda`)
+
+* Trust levels form a **total order** (reflexive, antisymmetric, transitive, total)
+* `min-trust` correctly computes lower bounds
+* **Dangerous axioms always cap trust at Level1**
+* Safe axioms preserve trust level
+* Capping is monotonic
+
+=== Axiom Safety (`AxiomSafety.agda`)
+
+* Axiom policies form a total preorder
+* `worst-policy` is commutative, associative, with identity (Clean)
+* **Rejected is absorbing** — once rejected, always rejected
+* Comment-aware scanning is sound
+* Every danger class maps to exactly one policy
+
+=== Portfolio Verification (`Portfolio.agda`)
+
+* **Cross-checking improves trust** over single-solver
+* Inconclusive and timeout always produce Level1
+* Small-kernel provers always have higher trust
+* Agreement relation is reflexive and symmetric
+* Unknown verdicts never count as agreement
+
+=== Dispatch Pipeline (`Dispatch.agda`)
+
+* **Failed integrity always produces Level1**
+* **Dangerous axioms always produce Level1**
+* Maximum trust (Level5) requires all positive factors
+* Pipeline is monotonically degrading
+* Pipeline is deterministic
+
+== Zero Unsafe Constructs
+
+[cols="1,1"]
+|===
+| Construct | Count
+
+| `postulate` | 1 (funext — standard, provable in HoTT)
+| `sorry` | 0
+| `believe_me` | 0
+| `Admitted` | 0
+| `TRUSTME` | 0
+|===
+
+== Running
+
+[source,bash]
+----
+# Install Agda (requires GHC)
+cabal install Agda
+
+# Install standard library
+agda-stdlib-utils install
+
+# Type-check all proofs
+cd meta-checker
+agda src/Echidna/MetaChecker.agda
+----
+
+If the command exits with code 0, all 30+ properties are machine-verified.
+
+== CI Integration
+
+The `.github/workflows/agda-meta-checker.yml` workflow automatically type-checks
+the meta-checker on every push. A green badge means all proofs are valid.
+
+== Architecture
+
+The meta-checker mirrors the Rust source structure:
+
+[cols="1,1"]
+|===
+| Agda Module | Rust Source
+
+| `Echidna.TrustLevel` | `verification/confidence.rs`
+| `Echidna.AxiomSafety` | `verification/axiom_tracker.rs`
+| `Echidna.Portfolio` | `verification/portfolio.rs`
+| `Echidna.Dispatch` | `dispatch.rs`
+|===
+
+Each Agda definition is annotated with which Rust function or type it models.
+The proofs verify that the *design* is correct — they do not replace unit tests
+which verify that the *implementation* matches the design.

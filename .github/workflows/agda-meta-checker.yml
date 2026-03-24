@@ -1,0 +1,62 @@
+# SPDX-License-Identifier: PMPL-1.0-or-later
+# CI workflow for ECHIDNA Agda meta-checker
+# Type-checks all formal proofs verifying trust pipeline correctness
+
+name: Agda Meta-Checker
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'meta-checker/**'
+  pull_request:
+    branches: [main]
+    paths:
+      - 'meta-checker/**'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  verify-proofs:
+    name: Type-check Agda proofs
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5  # v4
+
+      - name: Setup Haskell
+        uses: haskell-actions/setup@v2
+        with:
+          ghc-version: '9.6'
+          cabal-version: '3.10'
+
+      - name: Cache Agda
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cabal
+            ~/.agda
+          key: agda-${{ runner.os }}-${{ hashFiles('meta-checker/**/*.agda') }}
+
+      - name: Install Agda
+        run: |
+          cabal update
+          cabal install Agda-2.7.0.1
+
+      - name: Install Agda standard library
+        run: |
+          mkdir -p ~/.agda
+          cd /tmp
+          wget -q https://github.com/agda/agda-stdlib/archive/refs/tags/v2.1.tar.gz
+          tar xzf v2.1.tar.gz
+          echo "/tmp/agda-stdlib-2.1/standard-library.agda-lib" > ~/.agda/libraries
+          echo "standard-library" > ~/.agda/defaults
+
+      - name: Type-check meta-checker
+        run: |
+          cd meta-checker
+          echo "$PWD/echidna-meta.agda-lib" >> ~/.agda/libraries
+          agda src/Echidna/MetaChecker.agda
+          echo "✓ All 30+ properties machine-verified"
