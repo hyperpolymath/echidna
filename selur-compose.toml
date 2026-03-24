@@ -1,0 +1,56 @@
+# SPDX-License-Identifier: PMPL-1.0-or-later
+# Copyright (c) 2026 Jonathan D.A. Jewell (hyperpolymath) <j.d.a.jewell@open.ac.uk>
+#
+# ECHIDNA — Stapeln/Selur service definition.
+#
+# Multi-stage Rust build with Z3 SMT solver + Lean 4 prover.
+# Exposes HTTP API on port 8080 (GraphQL/gRPC/REST interfaces).
+#
+# Usage:
+#   podman-compose -f selur-compose.toml up -d
+#   just stack-up
+#
+# The Containerfile uses three build stages:
+#   1. rust-builder      — Compiles echidna binary from Rust source
+#   2. prover-installer  — Downloads Z3 4.13.4 + installs Lean 4 via elan
+#   3. runtime           — Chainguard wolfi-base with binaries + provers
+
+[project]
+name = "echidna"
+
+# =============================================================================
+# ECHIDNA — Neurosymbolic theorem proving platform
+# =============================================================================
+[services.app]
+build = { context = ".", dockerfile = "Containerfile" }
+restart = "unless-stopped"
+ports = ["8080:8080"]
+networks = ["echidna-internal"]
+environment = [
+  "ECHIDNA_PROVER_PATH=/opt",
+  "RUST_LOG=info",
+]
+volumes = [
+  "echidna-proofs:/app/proofs",
+  "echidna-config:/app/config",
+  "echidna-logs:/app/logs",
+]
+healthcheck = { test = "/app/bin/echidna --version || exit 1", interval = "30s", timeout = "10s", retries = 3 }
+
+# =============================================================================
+# Networks
+# =============================================================================
+[networks.echidna-internal]
+driver = "bridge"
+
+# =============================================================================
+# Volumes
+# =============================================================================
+[volumes.echidna-proofs]
+driver = "local"
+
+[volumes.echidna-config]
+driver = "local"
+
+[volumes.echidna-logs]
+driver = "local"
