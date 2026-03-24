@@ -364,7 +364,7 @@ lazy_static::lazy_static! {
 // ============================================================================
 
 /// Helper: convert u8 kind to ProverKind
-fn kind_from_u8(kind: u8) -> Option<ProverKind> {
+pub fn kind_from_u8(kind: u8) -> Option<ProverKind> {
     match kind {
         // Tier 1: Original + SMT
         0 => Some(ProverKind::Agda),
