@@ -541,4 +541,133 @@ mod tests {
             _ => panic!("Expected Pi type"),
         }
     }
+
+    #[test]
+    fn test_agda_to_term_var() {
+        let config = ProverConfig::default();
+        let backend = AgdaBackend::new(config);
+
+        let term = backend.agda_to_term(&AgdaTerm::Var("x".to_string()));
+        assert_eq!(term, Term::Var("x".to_string()));
+    }
+
+    #[test]
+    fn test_agda_to_term_const() {
+        let config = ProverConfig::default();
+        let backend = AgdaBackend::new(config);
+
+        let term = backend.agda_to_term(&AgdaTerm::Const("Nat".to_string()));
+        assert_eq!(term, Term::Const("Nat".to_string()));
+    }
+
+    #[test]
+    fn test_agda_to_term_set() {
+        let config = ProverConfig::default();
+        let backend = AgdaBackend::new(config);
+
+        let term = backend.agda_to_term(&AgdaTerm::Set(0));
+        assert_eq!(term, Term::Universe(0));
+
+        let term = backend.agda_to_term(&AgdaTerm::Set(1));
+        assert_eq!(term, Term::Universe(1));
+    }
+
+    #[test]
+    fn test_agda_to_term_hole() {
+        let config = ProverConfig::default();
+        let backend = AgdaBackend::new(config);
+
+        let term = backend.agda_to_term(&AgdaTerm::Hole("42".to_string()));
+        assert_eq!(term, Term::Meta(42));
+    }
+
+    #[test]
+    fn test_agda_to_term_lambda() {
+        let config = ProverConfig::default();
+        let backend = AgdaBackend::new(config);
+
+        let agda_term = AgdaTerm::Lambda(
+            "x".to_string(),
+            Some(Box::new(AgdaTerm::Const("Nat".to_string()))),
+            Box::new(AgdaTerm::Var("x".to_string())),
+        );
+
+        let term = backend.agda_to_term(&agda_term);
+        match term {
+            Term::Lambda { param, .. } => assert_eq!(param, "x"),
+            _ => panic!("Expected Lambda"),
+        }
+    }
+
+    #[test]
+    fn test_agda_to_term_app() {
+        let config = ProverConfig::default();
+        let backend = AgdaBackend::new(config);
+
+        let agda_term = AgdaTerm::App(
+            Box::new(AgdaTerm::Const("suc".to_string())),
+            vec![AgdaTerm::Var("n".to_string())],
+        );
+
+        let term = backend.agda_to_term(&agda_term);
+        match term {
+            Term::App { func, args } => {
+                assert_eq!(*func, Term::Const("suc".to_string()));
+                assert_eq!(args.len(), 1);
+            },
+            _ => panic!("Expected App"),
+        }
+    }
+
+    #[test]
+    fn test_term_to_agda_set() {
+        let config = ProverConfig::default();
+        let backend = AgdaBackend::new(config);
+
+        assert_eq!(backend.term_to_agda(&Term::Universe(0)), "Set");
+        assert_eq!(backend.term_to_agda(&Term::Universe(1)), "Set1");
+    }
+
+    #[test]
+    fn test_term_to_agda_var() {
+        let config = ProverConfig::default();
+        let backend = AgdaBackend::new(config);
+
+        assert_eq!(backend.term_to_agda(&Term::Var("x".to_string())), "x");
+    }
+
+    #[test]
+    fn test_term_to_agda_meta() {
+        let config = ProverConfig::default();
+        let backend = AgdaBackend::new(config);
+
+        assert_eq!(backend.term_to_agda(&Term::Meta(5)), "?5");
+    }
+
+    #[test]
+    fn test_term_to_agda_hole() {
+        let config = ProverConfig::default();
+        let backend = AgdaBackend::new(config);
+
+        let result = backend.term_to_agda(&Term::Hole("todo".to_string()));
+        assert!(result.contains("todo"));
+    }
+
+    #[test]
+    fn test_parse_type_expr_set() {
+        let config = ProverConfig::default();
+        let backend = AgdaBackend::new(config);
+
+        let term = backend.parse_type_expr("Set");
+        assert_eq!(term, Term::Universe(0));
+    }
+
+    #[test]
+    fn test_parse_type_expr_const() {
+        let config = ProverConfig::default();
+        let backend = AgdaBackend::new(config);
+
+        let term = backend.parse_type_expr("Nat");
+        assert_eq!(term, Term::Const("Nat".to_string()));
+    }
 }

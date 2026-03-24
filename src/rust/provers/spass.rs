@@ -207,3 +207,101 @@ impl ProverBackend for SPASSBackend {
         self.config = config;
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_spass_kind() {
+        let config = ProverConfig {
+            executable: PathBuf::from("SPASS"),
+            timeout: 30,
+            ..Default::default()
+        };
+        let backend = SPASSBackend::new(config);
+        assert_eq!(backend.kind(), ProverKind::SPASS);
+    }
+
+    #[test]
+    fn test_spass_dfg_export() {
+        let config = ProverConfig::default();
+        let backend = SPASSBackend::new(config);
+
+        let mut state = ProofState::default();
+        state.context.axioms.push("p(a)".to_string());
+        state.goals.push(Goal {
+            id: "goal_0".to_string(),
+            target: Term::Const("p(a)".to_string()),
+            hypotheses: vec![],
+        });
+
+        let dfg = backend.to_dfg(&state).unwrap();
+        assert!(dfg.contains("begin_problem(Generated)"));
+        assert!(dfg.contains("list_of_formulae(axioms)"));
+        assert!(dfg.contains("list_of_formulae(conjectures)"));
+        assert!(dfg.contains("end_problem"));
+    }
+
+    #[test]
+    fn test_spass_parse_result_proof_found() {
+        let config = ProverConfig::default();
+        let backend = SPASSBackend::new(config);
+
+        assert!(backend.parse_result("SPASS beiseite: Proof found.\n").unwrap());
+        assert!(backend.parse_result("Proof found for clause set.\n").unwrap());
+    }
+
+    #[test]
+    fn test_spass_parse_result_completion() {
+        let config = ProverConfig::default();
+        let backend = SPASSBackend::new(config);
+
+        assert!(!backend.parse_result("Completion found.\n").unwrap());
+    }
+
+    #[test]
+    fn test_spass_parse_result_inconclusive() {
+        let config = ProverConfig::default();
+        let backend = SPASSBackend::new(config);
+
+        assert!(backend.parse_result("ran out of time\n").is_err());
+    }
+
+    #[tokio::test]
+    async fn test_spass_parse_string() {
+        let config = ProverConfig::default();
+        let backend = SPASSBackend::new(config);
+
+        let dfg = "begin_problem(Test).\n\
+                    list_of_formulae(axioms).\n\
+                    formula(p(a)).\n\
+                    end_of_list.\n\
+                    list_of_formulae(conjectures).\n\
+                    formula(p(a)).\n\
+                    end_of_list.\n\
+                    end_problem.\n";
+
+        let state = backend.parse_string(dfg).await.unwrap();
+        assert_eq!(state.context.axioms.len(), 1);
+        assert_eq!(state.goals.len(), 1);
+    }
+
+    #[tokio::test]
+    async fn test_spass_export_roundtrip() {
+        let config = ProverConfig::default();
+        let backend = SPASSBackend::new(config);
+
+        let mut state = ProofState::default();
+        state.context.axioms.push("implies(p, q)".to_string());
+        state.goals.push(Goal {
+            id: "goal_0".to_string(),
+            target: Term::Const("q".to_string()),
+            hypotheses: vec![],
+        });
+
+        let dfg = backend.export(&state).await.unwrap();
+        assert!(dfg.contains("implies(p, q)"));
+        assert!(dfg.contains("q"));
+    }
+}

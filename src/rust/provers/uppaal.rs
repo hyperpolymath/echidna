@@ -485,4 +485,70 @@ mod tests {
         let failure = "Verifying formula 1 at line 1.\n -- Property is NOT satisfied.\n";
         assert!(!backend.parse_result(failure).unwrap());
     }
+
+    #[test]
+    fn test_uppaal_parse_result_syntax_error() {
+        let config = ProverConfig::default();
+        let backend = UppaalBackend::new(config);
+
+        let output = "syntax error at line 3\n";
+        assert!(backend.parse_result(output).is_err());
+    }
+
+    #[test]
+    fn test_uppaal_parse_result_inconclusive() {
+        let config = ProverConfig::default();
+        let backend = UppaalBackend::new(config);
+
+        let output = "no property output\n";
+        assert!(backend.parse_result(output).is_err());
+    }
+
+    #[test]
+    fn test_uppaal_kind() {
+        let config = ProverConfig::default();
+        let backend = UppaalBackend::new(config);
+        assert_eq!(backend.kind(), ProverKind::UPPAAL);
+    }
+
+    #[test]
+    fn test_uppaal_query_file_generation() {
+        let config = ProverConfig::default();
+        let backend = UppaalBackend::new(config);
+
+        let mut state = ProofState::default();
+        state.goals.push(Goal {
+            id: "q1".to_string(),
+            target: Term::Const("A[] not deadlock".to_string()),
+            hypotheses: vec![],
+        });
+        state.goals.push(Goal {
+            id: "q2".to_string(),
+            target: Term::Const("E<> Process.done".to_string()),
+            hypotheses: vec![],
+        });
+
+        let queries = backend.to_query_file(&state);
+        assert!(queries.contains("A[] not deadlock"));
+        assert!(queries.contains("E<> Process.done"));
+    }
+
+    #[tokio::test]
+    async fn test_uppaal_suggest_tactics() {
+        let config = ProverConfig::default();
+        let backend = UppaalBackend::new(config);
+        let state = ProofState::default();
+
+        let tactics = backend.suggest_tactics(&state, 3).await.unwrap();
+        assert_eq!(tactics.len(), 3);
+    }
+
+    #[tokio::test]
+    async fn test_uppaal_parse_empty_xml() {
+        let config = ProverConfig::default();
+        let backend = UppaalBackend::new(config);
+
+        let state = backend.parse_string("").await.unwrap();
+        assert!(state.goals.is_empty());
+    }
 }
