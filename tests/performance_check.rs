@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: PMPL-1.0-or-later
 // Simple performance check for prover backends
 
-use echidna::provers::{ProverBackend, ProverConfig, ProverFactory, ProverKind};
+use echidna::provers::{ProverConfig, ProverFactory, ProverKind};
 use std::time::Instant;
 
 #[tokio::test]

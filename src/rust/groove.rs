@@ -166,4 +166,33 @@ mod tests {
     fn groove_port_is_9000() {
         assert_eq!(GROOVE_PORT, 9000);
     }
+
+    #[test]
+    fn manifest_consumes_octad_storage() {
+        let m = manifest();
+        let consumes = m["consumes"].as_array().unwrap();
+        assert!(consumes.iter().any(|v| v == "octad-storage"));
+    }
+
+    #[test]
+    fn manifest_has_proof_verification_type() {
+        let m = manifest();
+        assert_eq!(
+            m["capabilities"]["proof_verification"]["type"],
+            "proof-verification"
+        );
+    }
+
+    #[test]
+    fn manifest_health_endpoint() {
+        let m = manifest();
+        assert_eq!(m["health"], "/health");
+    }
+
+    #[test]
+    fn manifest_service_version_not_empty() {
+        let m = manifest();
+        let version = m["service_version"].as_str().unwrap();
+        assert!(!version.is_empty());
+    }
 }

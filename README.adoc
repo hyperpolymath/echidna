@@ -132,7 +132,7 @@ The verification pipeline applies the following checks to every proof:
 * *Agentic Proof Search*: Actor-based autonomous proof exploration
 * *Chapel Parallel Layer* (optional): Coforall-based parallel proof dispatch
 * *3 API Interfaces*:
-  - GraphQL (async-graphql, port 8080)
+  - GraphQL (async-graphql, port 8081)
   - gRPC (tonic + Protocol Buffers, port 50051)
   - REST (axum + OpenAPI/Swagger, port 8000)
 * *ReScript UI*: 28 compiled components for proof exploration

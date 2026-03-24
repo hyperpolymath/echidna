@@ -12,7 +12,7 @@ trap cleanup TERM INT
 
 echo "Starting echidna..."
 echo "  Host: ${APP_HOST:-[::]}"
-echo "  Port: ${APP_PORT:-8080}"
+echo "  Port: ${APP_PORT:-8081}"
 echo "  Data: ${APP_DATA_DIR:-/data}"
 echo "  Log:  ${APP_LOG_FORMAT:-json}"
 
@@ -22,4 +22,4 @@ if [ -d "${APP_DATA_DIR:-/data}" ]; then
     fi
 fi
 
-exec /app/bin/echidna serve --host "${APP_HOST:-[::]}" --port "${APP_PORT:-8080}" "$@"
+exec /app/bin/echidna serve --host "${APP_HOST:-[::]}" --port "${APP_PORT:-8081}" "$@"

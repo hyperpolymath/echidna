@@ -304,4 +304,72 @@ mod tests {
         assert_eq!(portfolio.confidence, PortfolioConfidence::AllTimedOut);
         assert!(portfolio.needs_review);
     }
+
+    #[test]
+    fn test_portfolio_config_defaults() {
+        let config = PortfolioConfig::default();
+        assert!(!config.enabled);
+        assert_eq!(config.solver_timeout, 300);
+        assert_eq!(config.wait_factor, 2.0);
+        assert_eq!(config.complexity_threshold, 5);
+        assert_eq!(config.smt_solvers.len(), 3);
+    }
+
+    #[test]
+    fn test_portfolio_confidence_serialization() {
+        let json = serde_json::to_string(&PortfolioConfidence::CrossChecked).unwrap();
+        let deserialized: PortfolioConfidence = serde_json::from_str(&json).unwrap();
+        assert_eq!(deserialized, PortfolioConfidence::CrossChecked);
+    }
+
+    #[test]
+    fn test_solver_result_serialization() {
+        let result = SolverResult {
+            prover: ProverKind::Z3,
+            verified: Some(true),
+            time_ms: 100,
+            has_certificate: true,
+            error: None,
+        };
+
+        let json = serde_json::to_string(&result).unwrap();
+        assert!(json.contains("Z3"));
+        assert!(json.contains("100"));
+    }
+
+    #[test]
+    fn test_both_solvers_agree_false() {
+        let solver = PortfolioSolver::with_defaults();
+
+        let results = vec![
+            SolverResult {
+                prover: ProverKind::Z3,
+                verified: Some(false),
+                time_ms: 100,
+                has_certificate: false,
+                error: None,
+            },
+            SolverResult {
+                prover: ProverKind::CVC5,
+                verified: Some(false),
+                time_ms: 150,
+                has_certificate: false,
+                error: None,
+            },
+        ];
+
+        let portfolio = solver.reconcile(&results);
+        assert_eq!(portfolio.verified, Some(false));
+        assert_eq!(portfolio.confidence, PortfolioConfidence::CrossChecked);
+    }
+
+    #[test]
+    fn test_empty_results() {
+        let solver = PortfolioSolver::with_defaults();
+        let results = vec![];
+
+        let portfolio = solver.reconcile(&results);
+        assert_eq!(portfolio.confidence, PortfolioConfidence::AllTimedOut);
+        assert!(portfolio.needs_review);
+    }
 }

@@ -539,4 +539,60 @@ mod tests {
         let service = IntegrationService::new("http://localhost:8000".to_string());
         assert_eq!(service.ml_endpoint, "http://localhost:8000");
     }
+
+    #[test]
+    fn test_prove_request_serialize() {
+        let req = ProveRequest {
+            prover: ProverKind::Z3,
+            goal: "(> x 0)".to_string(),
+            context: vec!["(declare-const x Int)".to_string()],
+            tactics: vec![],
+            use_neural: false,
+        };
+
+        let json = serde_json::to_string(&req).unwrap();
+        assert!(json.contains("Z3"));
+        assert!(json.contains("(> x 0)"));
+    }
+
+    #[test]
+    fn test_proof_state_dto_serialize() {
+        let dto = ProofStateDTO {
+            goals: vec!["goal1".to_string()],
+            hypotheses: vec!["h1".to_string()],
+            proof_script: vec!["intro".to_string()],
+        };
+
+        let json = serde_json::to_string(&dto).unwrap();
+        assert!(json.contains("goal1"));
+        assert!(json.contains("h1"));
+        assert!(json.contains("intro"));
+    }
+
+    #[test]
+    fn test_proof_step_serialize() {
+        let step = ProofStep {
+            step: 1,
+            tactic: "apply".to_string(),
+            goals_after: 0,
+            time_ms: 50,
+            result: StepResult::Success,
+        };
+
+        let json = serde_json::to_string(&step).unwrap();
+        assert!(json.contains("apply"));
+        assert!(json.contains("50"));
+    }
+
+    #[test]
+    fn test_tactic_suggestion_confidence_range() {
+        let suggestion = TacticSuggestion {
+            tactic: "reflexivity".to_string(),
+            confidence: 0.95,
+            explanation: "Term is reflexive".to_string(),
+        };
+
+        assert!(suggestion.confidence >= 0.0);
+        assert!(suggestion.confidence <= 1.0);
+    }
 }

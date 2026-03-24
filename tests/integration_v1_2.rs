@@ -9,9 +9,8 @@
 //! - HOL4 (Tier 4)
 
 use anyhow::{Context, Result};
-use echidna::provers::{ProverBackend, ProverConfig, ProverFactory, ProverKind};
+use echidna::provers::{ProverConfig, ProverFactory, ProverKind};
 use std::path::PathBuf;
-use tempfile::TempDir;
 
 /// Helper to create a test config
 fn test_config() -> ProverConfig {

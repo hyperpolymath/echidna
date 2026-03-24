@@ -35,6 +35,6 @@ USER echidna
 
 WORKDIR /home/echidna
 
-EXPOSE 8080
+EXPOSE 8081
 
 ENTRYPOINT ["/usr/local/bin/echidnabot"]

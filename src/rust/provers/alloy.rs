@@ -453,4 +453,77 @@ check NoSelfLoop for 5
             "Executing \"Check NoSelfLoop for 5\"\nCounterexample found. Assertion is invalid.\n";
         assert!(!backend.parse_result(failure).unwrap());
     }
+
+    #[test]
+    fn test_alloy_parse_result_unsatisfiable() {
+        let config = ProverConfig::default();
+        let backend = AlloyBackend::new(config);
+
+        let output = "Unsatisfiable. No instance found.\n";
+        assert!(backend.parse_result(output).unwrap());
+    }
+
+    #[test]
+    fn test_alloy_parse_result_syntax_error() {
+        let config = ProverConfig::default();
+        let backend = AlloyBackend::new(config);
+
+        let output = "Syntax error at line 5\n";
+        assert!(backend.parse_result(output).is_err());
+    }
+
+    #[test]
+    fn test_alloy_parse_result_instance_found() {
+        let config = ProverConfig::default();
+        let backend = AlloyBackend::new(config);
+
+        let output = "Instance found. Predicate is consistent.\n";
+        assert!(!backend.parse_result(output).unwrap());
+    }
+
+    #[test]
+    fn test_alloy_kind() {
+        let config = ProverConfig::default();
+        let backend = AlloyBackend::new(config);
+        assert_eq!(backend.kind(), ProverKind::Alloy);
+    }
+
+    #[tokio::test]
+    async fn test_alloy_export_with_axioms() {
+        let config = ProverConfig::default();
+        let backend = AlloyBackend::new(config);
+
+        let mut state = ProofState::default();
+        state.context.axioms.push("no iden & next".to_string());
+        state.goals.push(Goal {
+            id: "no_cycles".to_string(),
+            target: Term::Const("all n: Node | n not in n.^next".to_string()),
+            hypotheses: vec![],
+        });
+
+        let als = backend.to_alloy(&state).unwrap();
+        assert!(als.contains("fact Constraints"));
+        assert!(als.contains("no iden & next"));
+    }
+
+    #[tokio::test]
+    async fn test_alloy_parse_fun_definitions() {
+        let config = ProverConfig::default();
+        let backend = AlloyBackend::new(config);
+
+        let als = "fun f[n: Node] : set Node { n.^next }\n";
+        let state = backend.parse_string(als).await.unwrap();
+
+        assert_eq!(state.context.definitions.len(), 1);
+    }
+
+    #[tokio::test]
+    async fn test_alloy_suggest_tactics() {
+        let config = ProverConfig::default();
+        let backend = AlloyBackend::new(config);
+        let state = ProofState::default();
+
+        let tactics = backend.suggest_tactics(&state, 3).await.unwrap();
+        assert_eq!(tactics.len(), 3);
+    }
 }

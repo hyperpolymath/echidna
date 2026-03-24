@@ -51,7 +51,7 @@ secondary = "Julia (ML inference, port 8090), ReScript+Deno (UI, 28 files)"
 optional = "Chapel (parallel proof dispatch)"
 abi = "Idris2 (7 modules, zero believe_me)"
 ffi = "Zig (4 shared libraries)"
-interfaces = "GraphQL (8080), gRPC (50051), REST (8000)"
+interfaces = "GraphQL (8081), gRPC (50051), REST (8000)"
 build = "Justfile (primary), Cargo workspace"
 container = "Podman + Containerfile"
 

@@ -3,7 +3,7 @@
 
 //! Integration tests for Agda backend
 
-use echidna::provers::{ProverBackend, ProverConfig, ProverFactory, ProverKind};
+use echidna::provers::{ProverConfig, ProverFactory, ProverKind};
 use std::path::PathBuf;
 
 #[tokio::test]

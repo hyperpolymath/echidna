@@ -968,7 +968,7 @@ mod tests {
 
     #[tokio::test]
     async fn test_executor_find_proof_empty() {
-        let executor = QueryExecutor::new("http://localhost:8080");
+        let executor = QueryExecutor::new("http://localhost:8081");
         let query = CrossProverQueryBuilder::new(TypeLevel::ResultType)
             .find_proof("nonexistent")
             .build()

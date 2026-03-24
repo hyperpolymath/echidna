@@ -23,7 +23,7 @@ ECHIDNA v1.3 completes the **end-to-end neurosymbolic proving stack**. All three
          ✓ Connected
          │
 ┌─────────────────┐
-│  Rust Backend   │  Port 8080
+│  Rust Backend   │  Port 8081
 │  (HTTP Server)  │  → reqwest
 └────────┬────────┘
          │
@@ -88,7 +88,7 @@ ECHIDNA v1.3 completes the **end-to-end neurosymbolic proving stack**. All three
 
 **Components:**
 - `Main.res` - App shell with state management
-- `Client.res` - API client (calls Rust backend on port 8080)
+- `Client.res` - API client (calls Rust backend on port 8081)
 - `components/` - 6 UI components:
   - ProofViewer
   - TacticSuggester
@@ -159,7 +159,7 @@ Test 5: Rust Backend → Julia ML Integration
 **Start All Services (3 commands):**
 ```bash
 julia src/julia/api_server.jl &
-./target/release/echidna server --port 8080 --enable-cors &
+./target/release/echidna server --port 8081 --enable-cors &
 cd src/rescript && python3 -m http.server 3000 &
 ```
 
@@ -204,7 +204,7 @@ cd src/rescript && python3 -m http.server 3000 &
 
 **Get Tactic Suggestions:**
 ```bash
-curl -X POST http://127.0.0.1:8080/api/tactics/suggest \
+curl -X POST http://127.0.0.1:8081/api/tactics/suggest \
   -H "Content-Type: application/json" \
   -d '{
     "goal": "forall n : nat, n + 0 = n",
@@ -267,7 +267,7 @@ None - v1.3 is fully backward compatible with v1.2.
 - Rust 1.75+
 - Python 3.8+ (dev server)
 - 512MB RAM minimum (1GB recommended)
-- Ports 3000, 8080, 9000 available
+- Ports 3000, 8081, 9000 available
 
 ### Production Checklist
 
@@ -275,7 +275,7 @@ None - v1.3 is fully backward compatible with v1.2.
 - [ ] Compile ReScript UI: `cd src/rescript && npm run build`
 - [ ] Train models if needed: `julia src/julia/train_models.jl`
 - [ ] Start Julia ML API: `julia src/julia/api_server.jl`
-- [ ] Start Rust backend: `./target/release/echidna server --port 8080`
+- [ ] Start Rust backend: `./target/release/echidna server --port 8081`
 - [ ] Serve UI (production: nginx, dev: python http.server)
 - [ ] Run integration tests: `./tests/integration_test.sh`
 
@@ -291,7 +291,7 @@ services:
 
   rust-backend:
     build: ./docker/rust
-    ports: ["8080:8080"]
+    ports: ["8081:8081"]
     depends_on: ["julia-ml"]
     environment:
       JULIA_ML_URL: "http://julia-ml:9000"
@@ -320,11 +320,11 @@ services:
 - Models dir: `models/` (relative to repo root)
 
 **Rust Backend:**
-- Port: 8080 (default, CLI: `--port`)
+- Port: 8081 (default, CLI: `--port`)
 - Julia URL: `http://127.0.0.1:9000` (hardcoded in server.rs:48)
 
 **ReScript UI:**
-- API base: `http://localhost:8080/api` (src/rescript/src/api/Client.res:12)
+- API base: `http://localhost:8081/api` (src/rescript/src/api/Client.res:12)
 
 ## Contributors
 

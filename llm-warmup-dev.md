@@ -50,7 +50,7 @@ Three workspace members under `src/interfaces/`:
 
 | Dir | Tech | Port | Notes |
 |-----|------|------|-------|
-| `graphql/` | async-graphql | 8080 | Query/Mutation/Subscription |
+| `graphql/` | async-graphql | 8081 | Query/Mutation/Subscription |
 | `grpc/` | tonic | 50051 | 4 services |
 | `rest/` | axum + utoipa | 8000 | OpenAPI spec |
 

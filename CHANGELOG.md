@@ -115,7 +115,7 @@ Complete implementation of 13-component trust-hardening system:
 - Constraint Solvers: GLPK, SCIP, MiniZinc, Chuffed, OR-Tools
 
 **API Interfaces**:
-- GraphQL API (async-graphql, port 8080)
+- GraphQL API (async-graphql, port 8081)
 - gRPC API (tonic, port 50051)
 - REST API (axum + OpenAPI, port 8000)
 

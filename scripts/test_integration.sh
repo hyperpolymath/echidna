@@ -97,12 +97,12 @@ echo "Phase 3: Testing service startup..."
 echo "──────────────────────────────────────"
 
 # Start Rust backend
-echo -n "  Starting Rust backend (port 8080)... "
+echo -n "  Starting Rust backend (port 8081)... "
 cargo run --release server >/dev/null 2>&1 &
 RUST_PID=$!
 sleep 2
 
-if curl -s http://localhost:8080/api/health >/dev/null 2>&1; then
+if curl -s http://localhost:8081/api/health >/dev/null 2>&1; then
     echo -e "${GREEN}✓${NC}"
 else
     echo -e "${YELLOW}⚠${NC} Backend started but health check failed"
@@ -133,7 +133,7 @@ echo "────────────────────────�
 
 # Test list provers
 echo -n "  GET /api/provers... "
-PROVERS_RESPONSE=$(curl -s --max-time 10 http://localhost:8080/api/provers)
+PROVERS_RESPONSE=$(curl -s --max-time 10 http://localhost:8081/api/provers)
 PROVER_COUNT=$(echo "$PROVERS_RESPONSE" | grep -o "name" | wc -l)
 
 if [ "$PROVER_COUNT" -eq 12 ]; then
@@ -152,7 +152,7 @@ PROOF_REQUEST='{
 PROVE_RESPONSE=$(curl -s -X POST \
   -H "Content-Type: application/json" \
   -d "$PROOF_REQUEST" \
-  http://localhost:8080/api/prove)
+  http://localhost:8081/api/prove)
 
 if echo "$PROVE_RESPONSE" | grep -q "success\|result"; then
     echo -e "${GREEN}✓${NC}"
@@ -200,7 +200,7 @@ test_prover() {
     local response=$(curl -s --max-time 5 -X POST \
       -H "Content-Type: application/json" \
       -d "$request" \
-      http://localhost:8080/api/verify 2>/dev/null || echo '{"error": "failed"}')
+      http://localhost:8081/api/verify 2>/dev/null || echo '{"error": "failed"}')
 
     if echo "$response" | grep -q "valid\|success\|verified\|parsed\|error"; then
         echo -e "${GREEN}✓${NC}"

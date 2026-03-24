@@ -16,7 +16,7 @@ Successfully integrated Julia machine learning models with the Rust backend, com
 ReScript UI (React)
     ↓ HTTP (port 3000)
 Rust HTTP Server (Axum)
-    ↓ HTTP (port 8080 → 9000)
+    ↓ HTTP (port 8081 → 9000)
 Julia ML API (HTTP.jl)
     ↓ Model Inference
 Trained Models
@@ -133,7 +133,7 @@ $ curl -X POST http://127.0.0.1:9000/suggest \
 ### 3. End-to-End Integration Test
 
 ```bash
-$ curl -X POST http://127.0.0.1:8080/api/tactics/suggest \
+$ curl -X POST http://127.0.0.1:8081/api/tactics/suggest \
   -d '{"goal": "forall n m : nat, n + m = m + n", "prover": "Coq", "top_k": 5}'
 
 {
@@ -226,7 +226,7 @@ Serving HTTP on 0.0.0.0 port 3000
 **Input:** User enters goal in UI
 **Path:**
 1. ReScript component calls `Client.getTacticSuggestions(goal, prover)`
-2. Fetch API sends POST to `http://127.0.0.1:8080/api/tactics/suggest`
+2. Fetch API sends POST to `http://127.0.0.1:8081/api/tactics/suggest`
 3. Rust handler constructs Julia request
 4. HTTP client POSTs to `http://127.0.0.1:9000/suggest`
 5. Julia server tokenizes goal, runs inference, returns predictions

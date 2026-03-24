@@ -116,7 +116,7 @@ just watch-ui    # ReScript compiler
 just dev-ui      # Deno dev server
 ```
 
-The UI will be available at `http://localhost:8080`
+The UI will be available at `http://localhost:8081`
 
 ### Building for Production
 

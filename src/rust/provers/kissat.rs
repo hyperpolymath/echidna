@@ -208,8 +208,8 @@ impl KissatBackend {
         let mut model = Vec::new();
         for line in output.lines() {
             let line = line.trim();
-            if line.starts_with("v ") {
-                for token in line[2..].split_whitespace() {
+            if let Some(rest) = line.strip_prefix("v ") {
+                for token in rest.split_whitespace() {
                     if let Ok(lit) = token.parse::<i64>() {
                         if lit != 0 {
                             model.push(lit);

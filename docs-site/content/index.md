@@ -37,7 +37,7 @@ curl -X POST https://localhost:8000/api/v1/proofs \
   -d '{"prover": "coq", "goal": "forall n, n + 0 = n"}'
 ```
 
-### GraphQL (Port 8080)
+### GraphQL (Port 8081)
 
 Query provers and submit proofs via the GraphQL playground.
 

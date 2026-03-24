@@ -21,7 +21,7 @@ mod property_tests {
         #[test]
         fn confidence_in_valid_range(goal in "[a-z ]+") {
             let confidence = calculate_confidence(&goal);
-            prop_assert!(confidence >= 0.0 && confidence <= 1.0);
+            prop_assert!((0.0..=1.0).contains(&confidence));
         }
     }
 
@@ -300,7 +300,7 @@ mod trust_hardening_property_tests {
 
             let level = compute_trust_level(&factors);
             let value = level.value();
-            prop_assert!(value >= 1 && value <= 5,
+            prop_assert!((1..=5).contains(&value),
                 "Trust level must be 1-5, got {}", value);
         }
     }
@@ -492,7 +492,7 @@ mod trust_hardening_property_tests {
     proptest! {
         #[test]
         fn proof_state_serde_roundtrip(name in "[a-z]+") {
-            use echidna::core::{ProofState, Theorem, Context};
+            use echidna::core::{ProofState, Theorem};
 
             let mut state = ProofState::default();
             state.context.theorems.push(Theorem {

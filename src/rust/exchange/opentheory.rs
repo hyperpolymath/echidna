@@ -111,7 +111,7 @@ impl OpenTheoryExporter {
             Term::Lambda { param, body, .. } => {
                 format!("abs (var \"{}\") {}", param, Self::term_to_opentheory(body))
             },
-            _ => format!("const \"echidna_opaque\""),
+            _ => "const \"echidna_opaque\"".to_string(),
         }
     }
 
@@ -191,5 +191,61 @@ mod tests {
         let reimported = OpenTheoryExporter::import(&article).unwrap();
 
         assert_eq!(reimported.context.theorems.len(), 1);
+    }
+
+    #[test]
+    fn test_export_empty_state() {
+        let state = ProofState::default();
+        let article = OpenTheoryExporter::export(&state).unwrap();
+
+        assert_eq!(article.name, "echidna-export");
+        assert!(article.assumptions.is_empty());
+        assert!(article.conclusions.is_empty());
+        assert!(article.commands.contains(&"version 6".to_string()));
+    }
+
+    #[test]
+    fn test_export_with_goals() {
+        let mut state = ProofState::default();
+        state.goals.push(crate::core::Goal {
+            id: "g1".to_string(),
+            target: Term::Const("True".to_string()),
+            hypotheses: vec![],
+        });
+
+        let article = OpenTheoryExporter::export(&state).unwrap();
+        assert_eq!(article.conclusions.len(), 1);
+    }
+
+    #[test]
+    fn test_import_empty_article() {
+        let article = OpenTheoryArticle {
+            name: "empty".to_string(),
+            assumptions: vec![],
+            conclusions: vec![],
+            commands: vec![],
+        };
+
+        let state = OpenTheoryExporter::import(&article).unwrap();
+        assert!(state.context.theorems.is_empty());
+        assert!(state.goals.is_empty());
+    }
+
+    #[test]
+    fn test_term_to_opentheory_pi() {
+        let term = Term::Pi {
+            param: "x".to_string(),
+            param_type: Box::new(Term::Const("Nat".to_string())),
+            body: Box::new(Term::Const("Bool".to_string())),
+        };
+        let ot = OpenTheoryExporter::term_to_opentheory(&term);
+        assert!(!ot.is_empty());
+    }
+
+    #[test]
+    fn test_term_to_opentheory_const() {
+        let term = Term::Const("True".to_string());
+        let ot = OpenTheoryExporter::term_to_opentheory(&term);
+        assert!(ot.contains("True"));
     }
 }

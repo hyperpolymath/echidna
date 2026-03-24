@@ -62,7 +62,7 @@ cat > dist/echidna/start.sh << 'STARTUP'
 
 # Start backend
 echo "Starting ECHIDNA backend..."
-./bin/echidna server --port 8080 --cors &
+./bin/echidna server --port 8081 --cors &
 BACKEND_PID=$!
 
 # Wait for backend to be ready
@@ -79,7 +79,7 @@ echo "╔═══════════════════════�
 echo "║              ECHIDNA is now running!                       ║"
 echo "╠════════════════════════════════════════════════════════════╣"
 echo "║  UI:  http://127.0.0.1:3000                                ║"
-echo "║  API: http://127.0.0.1:8080/api                            ║"
+echo "║  API: http://127.0.0.1:8081/api                            ║"
 echo "╚════════════════════════════════════════════════════════════╝"
 echo ""
 echo "Press Ctrl+C to stop both servers"
@@ -126,7 +126,7 @@ Then open http://127.0.0.1:3000 in your browser.
 
 Backend:
 ```bash
-./bin/echidna server --port 8080 --cors
+./bin/echidna server --port 8081 --cors
 ```
 
 Frontend:

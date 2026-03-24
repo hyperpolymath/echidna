@@ -31,6 +31,12 @@ pub struct ProverStats {
     pub total_time_ms: u64,
 }
 
+impl Default for ProverStats {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl ProverStats {
     /// Create new empty stats
     pub fn new() -> Self {
@@ -274,5 +280,146 @@ mod tests {
         let stats = router.get_all_stats().await;
         assert!(stats.contains_key(&ProverKind::Z3));
         assert_eq!(stats[&ProverKind::Z3].successes, 10);
+    }
+
+    #[test]
+    fn test_prover_stats_default() {
+        let stats = ProverStats::new();
+        assert_eq!(stats.attempts, 0);
+        assert_eq!(stats.successes, 0);
+        assert_eq!(stats.failures, 0);
+        assert_eq!(stats.total_time_ms, 0);
+    }
+
+    #[test]
+    fn test_prover_stats_success_rate_no_data() {
+        let stats = ProverStats::new();
+        assert_eq!(stats.success_rate(), 0.5); // Default 50% when no data
+    }
+
+    #[test]
+    fn test_prover_stats_success_rate_with_data() {
+        let stats = ProverStats {
+            attempts: 10,
+            successes: 8,
+            failures: 2,
+            total_time_ms: 5000,
+        };
+        assert!((stats.success_rate() - 0.8).abs() < f64::EPSILON);
+    }
+
+    #[test]
+    fn test_prover_stats_success_rate_zero_attempts() {
+        let stats = ProverStats {
+            attempts: 0,
+            successes: 0,
+            failures: 0,
+            total_time_ms: 0,
+        };
+        assert_eq!(stats.success_rate(), 0.5);
+    }
+
+    #[test]
+    fn test_router_select_arithmetic() {
+        let router = ProverRouter::new();
+        let goal = AgenticGoal {
+            goal: Goal {
+                id: "test".to_string(),
+                target: Term::Var("A".to_string()),
+                hypotheses: vec![],
+            },
+            priority: Priority::High,
+            attempts: 0,
+            max_attempts: 3,
+            preferred_prover: None,
+            aspects: vec!["arithmetic".to_string()],
+            parent: None,
+        };
+
+        assert_eq!(router.select(&goal), ProverKind::Z3);
+    }
+
+    #[test]
+    fn test_router_select_inductive() {
+        let router = ProverRouter::new();
+        let goal = AgenticGoal {
+            goal: Goal {
+                id: "test".to_string(),
+                target: Term::Var("A".to_string()),
+                hypotheses: vec![],
+            },
+            priority: Priority::High,
+            attempts: 0,
+            max_attempts: 3,
+            preferred_prover: None,
+            aspects: vec!["inductive".to_string()],
+            parent: None,
+        };
+
+        assert_eq!(router.select(&goal), ProverKind::Coq);
+    }
+
+    #[test]
+    fn test_router_select_type_theory() {
+        let router = ProverRouter::new();
+        let goal = AgenticGoal {
+            goal: Goal {
+                id: "test".to_string(),
+                target: Term::Var("A".to_string()),
+                hypotheses: vec![],
+            },
+            priority: Priority::High,
+            attempts: 0,
+            max_attempts: 3,
+            preferred_prover: None,
+            aspects: vec!["type_theory".to_string()],
+            parent: None,
+        };
+
+        assert_eq!(router.select(&goal), ProverKind::Lean);
+    }
+
+    #[test]
+    fn test_router_select_default() {
+        let router = ProverRouter::new();
+        let goal = AgenticGoal {
+            goal: Goal {
+                id: "test".to_string(),
+                target: Term::Var("A".to_string()),
+                hypotheses: vec![],
+            },
+            priority: Priority::Medium,
+            attempts: 0,
+            max_attempts: 3,
+            preferred_prover: None,
+            aspects: vec![],
+            parent: None,
+        };
+
+        assert_eq!(router.select(&goal), ProverKind::Metamath);
+    }
+
+    #[tokio::test]
+    async fn test_router_record_failure() {
+        let router = ProverRouter::new();
+        let goal = AgenticGoal {
+            goal: Goal {
+                id: "test".to_string(),
+                target: Term::Var("A".to_string()),
+                hypotheses: vec![],
+            },
+            priority: Priority::Medium,
+            attempts: 0,
+            max_attempts: 3,
+            preferred_prover: None,
+            aspects: vec!["logic".to_string()],
+            parent: None,
+        };
+
+        router.record_failure(&goal, ProverKind::Lean).await;
+
+        let stats = router.get_all_stats().await;
+        assert_eq!(stats[&ProverKind::Lean].failures, 1);
+        assert_eq!(stats[&ProverKind::Lean].attempts, 1);
     }
 }

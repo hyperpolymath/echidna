@@ -9,7 +9,7 @@
 
 use async_trait::async_trait;
 use serde::{Deserialize, Serialize};
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
 
 use crate::core::{ProofState, Tactic, TacticResult};
 
@@ -674,7 +674,7 @@ impl ProverFactory {
     }
 
     /// Detect prover from file extension
-    pub fn detect_from_file(path: &PathBuf) -> Option<ProverKind> {
+    pub fn detect_from_file(path: &Path) -> Option<ProverKind> {
         path.extension()?.to_str().and_then(|ext| match ext {
             "agda" => Some(ProverKind::Agda),
             "v" => Some(ProverKind::Coq),
@@ -727,7 +727,7 @@ impl ProverFactory {
     ///
     /// For .c files, checks whether the source contains __CPROVER directives
     /// to determine if CBMC is the appropriate prover.
-    pub fn detect_from_file_content(path: &PathBuf, content: &str) -> Option<ProverKind> {
+    pub fn detect_from_file_content(path: &Path, content: &str) -> Option<ProverKind> {
         // First try extension-based detection
         if let Some(kind) = Self::detect_from_file(path) {
             return Some(kind);
@@ -736,14 +736,13 @@ impl ProverFactory {
         // Content-aware fallback for .java and .c files
         if let Some(ext) = path.extension().and_then(|e| e.to_str()) {
             // Java files with JML annotations → KeY
-            if ext == "java" {
-                if content.contains("//@")
+            if ext == "java"
+                && (content.contains("//@")
                     || content.contains("/*@")
-                    || content.contains("requires") && content.contains("ensures")
+                    || content.contains("requires") && content.contains("ensures"))
                 {
                     return Some(ProverKind::KeY);
                 }
-            }
 
             if ext == "c" || ext == "h" {
                 // Frama-C ACSL annotations take priority (deductive verification)

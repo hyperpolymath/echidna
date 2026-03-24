@@ -378,9 +378,9 @@ impl IntegrityChecker {
 
 /// Expand ~ to home directory in paths
 fn expand_tilde(path: &str) -> PathBuf {
-    if path.starts_with("~/") {
+    if let Some(rest) = path.strip_prefix("~/") {
         if let Some(home) = std::env::var_os("HOME") {
-            return PathBuf::from(home).join(&path[2..]);
+            return PathBuf::from(home).join(rest);
         }
     }
     PathBuf::from(path)

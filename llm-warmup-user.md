@@ -88,7 +88,7 @@ Provers run in sandboxes:
 | Interface | Port | Tech |
 |-----------|------|------|
 | REST | 8000 | axum + OpenAPI |
-| GraphQL | 8080 | async-graphql |
+| GraphQL | 8081 | async-graphql |
 | gRPC | 50051 | tonic |
 
 ## Container images

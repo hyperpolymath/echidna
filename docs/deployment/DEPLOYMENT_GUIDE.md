@@ -285,7 +285,7 @@ echidna search "natural.*addition"
 echidna interactive --prover lean
 
 # Start HTTP server
-echidna server --port 8080
+echidna server --port 8081
 ```
 
 ### REPL Commands

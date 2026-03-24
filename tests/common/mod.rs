@@ -2,9 +2,10 @@
 // SPDX-License-Identifier: PMPL-1.0-or-later
 
 //! Common test utilities for ECHIDNA test suite
+#![allow(dead_code)]
 
-use echidna::core::{Context, Goal, Hypothesis, ProofState, Tactic, TacticResult, Term, Theorem};
-use echidna::provers::{ProverBackend, ProverConfig, ProverKind};
+use echidna::core::{Context, Goal, Hypothesis, ProofState, Term};
+use echidna::provers::{ProverConfig, ProverKind};
 use std::collections::HashMap;
 use std::path::PathBuf;
 
@@ -88,6 +89,24 @@ pub fn test_prover_config(kind: ProverKind) -> ProverConfig {
         ProverKind::Chuffed => "fzn-chuffed",
         ProverKind::ORTools => "ortools_solve",
         ProverKind::TypedWasm => "typed-wasm",
+        ProverKind::SPIN => "spin",
+        ProverKind::CBMC => "cbmc",
+        ProverKind::SeaHorn => "seahorn",
+        ProverKind::CaDiCaL => "cadical",
+        ProverKind::Kissat => "kissat",
+        ProverKind::MiniSat => "minisat",
+        ProverKind::NuSMV => "NuSMV",
+        ProverKind::TLC => "tlc",
+        ProverKind::Alloy => "alloy",
+        ProverKind::Prism => "prism",
+        ProverKind::UPPAAL => "uppaal",
+        ProverKind::FramaC => "frama-c",
+        ProverKind::Viper => "viper",
+        ProverKind::Tamarin => "tamarin-prover",
+        ProverKind::ProVerif => "proverif",
+        ProverKind::KeY => "key",
+        ProverKind::DReal => "dreal",
+        ProverKind::ABC => "abc",
     };
 
     ProverConfig {
@@ -133,6 +152,24 @@ pub fn proof_examples_dir(kind: ProverKind) -> PathBuf {
         ProverKind::Chuffed => "chuffed",
         ProverKind::ORTools => "ortools",
         ProverKind::TypedWasm => "typed_wasm",
+        ProverKind::SPIN => "spin",
+        ProverKind::CBMC => "cbmc",
+        ProverKind::SeaHorn => "seahorn",
+        ProverKind::CaDiCaL => "cadical",
+        ProverKind::Kissat => "kissat",
+        ProverKind::MiniSat => "minisat",
+        ProverKind::NuSMV => "nusmv",
+        ProverKind::TLC => "tlc",
+        ProverKind::Alloy => "alloy",
+        ProverKind::Prism => "prism",
+        ProverKind::UPPAAL => "uppaal",
+        ProverKind::FramaC => "framac",
+        ProverKind::Viper => "viper",
+        ProverKind::Tamarin => "tamarin",
+        ProverKind::ProVerif => "proverif",
+        ProverKind::KeY => "key",
+        ProverKind::DReal => "dreal",
+        ProverKind::ABC => "abc",
     };
 
     PathBuf::from("/home/user/echidna/proofs").join(subdir)
@@ -174,6 +211,22 @@ pub fn find_proof_files(kind: ProverKind) -> Vec<PathBuf> {
         ProverKind::Chuffed => vec!["fzn"],
         ProverKind::ORTools => vec!["or", "proto"],
         ProverKind::TypedWasm => vec!["wasm", "wat"],
+        ProverKind::SPIN => vec!["pml", "promela"],
+        ProverKind::CBMC => vec!["c", "i"],
+        ProverKind::SeaHorn => vec!["c", "bc", "ll"],
+        ProverKind::CaDiCaL | ProverKind::Kissat | ProverKind::MiniSat => vec!["cnf", "dimacs"],
+        ProverKind::NuSMV => vec!["smv"],
+        ProverKind::TLC => vec!["tla"],
+        ProverKind::Alloy => vec!["als"],
+        ProverKind::Prism => vec!["prism", "nm", "pm"],
+        ProverKind::UPPAAL => vec!["xml", "xta"],
+        ProverKind::FramaC => vec!["c", "i"],
+        ProverKind::Viper => vec!["vpr", "sil"],
+        ProverKind::Tamarin => vec!["spthy"],
+        ProverKind::ProVerif => vec!["pv"],
+        ProverKind::KeY => vec!["java", "key"],
+        ProverKind::DReal => vec!["smt2", "dr"],
+        ProverKind::ABC => vec!["blif", "aig"],
     };
 
     let mut files = vec![];

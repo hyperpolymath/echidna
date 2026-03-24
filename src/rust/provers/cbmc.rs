@@ -493,4 +493,117 @@ void foo() {
         let failure_output = "** 1 of 1 failed\nVERIFICATION FAILED\n";
         assert!(!backend.parse_result(failure_output).unwrap());
     }
+
+    #[test]
+    fn test_cbmc_parse_result_parsing_error() {
+        let config = ProverConfig {
+            executable: PathBuf::from("cbmc"),
+            timeout: 30,
+            ..Default::default()
+        };
+        let backend = CBMCBackend::new(config);
+
+        let error_output = "PARSING ERROR: syntax error\n";
+        assert!(backend.parse_result(error_output).is_err());
+    }
+
+    #[test]
+    fn test_cbmc_parse_result_inconclusive() {
+        let config = ProverConfig {
+            executable: PathBuf::from("cbmc"),
+            timeout: 30,
+            ..Default::default()
+        };
+        let backend = CBMCBackend::new(config);
+
+        let output = "some random output\n";
+        assert!(backend.parse_result(output).is_err());
+    }
+
+    #[test]
+    fn test_cbmc_kind() {
+        let config = ProverConfig {
+            executable: PathBuf::from("cbmc"),
+            timeout: 30,
+            ..Default::default()
+        };
+        let backend = CBMCBackend::new(config);
+        assert_eq!(backend.kind(), ProverKind::CBMC);
+    }
+
+    #[test]
+    fn test_cbmc_default_unwind_bound() {
+        let config = ProverConfig {
+            executable: PathBuf::from("cbmc"),
+            timeout: 30,
+            ..Default::default()
+        };
+        let backend = CBMCBackend::new(config);
+        assert_eq!(backend.unwind_bound, DEFAULT_UNWIND_BOUND);
+    }
+
+    #[test]
+    fn test_cbmc_extract_cprover_call_nested() {
+        let config = ProverConfig {
+            executable: PathBuf::from("cbmc"),
+            timeout: 30,
+            ..Default::default()
+        };
+        let backend = CBMCBackend::new(config);
+
+        let line = "__CPROVER_assert(f(g(x)), \"nested\");";
+        let result = backend.extract_cprover_call(line, "__CPROVER_assert");
+        assert!(result.is_some());
+        assert_eq!(result.unwrap(), "f(g(x)), \"nested\"");
+    }
+
+    #[test]
+    fn test_cbmc_extract_cprover_call_missing() {
+        let config = ProverConfig {
+            executable: PathBuf::from("cbmc"),
+            timeout: 30,
+            ..Default::default()
+        };
+        let backend = CBMCBackend::new(config);
+
+        let line = "int x = 5;";
+        let result = backend.extract_cprover_call(line, "__CPROVER_assert");
+        assert!(result.is_none());
+    }
+
+    #[tokio::test]
+    async fn test_cbmc_c_export_with_axioms() {
+        let config = ProverConfig {
+            executable: PathBuf::from("cbmc"),
+            timeout: 30,
+            ..Default::default()
+        };
+        let backend = CBMCBackend::new(config);
+
+        let mut state = ProofState::default();
+        state.context.axioms.push("int x = 5;".to_string());
+        state.goals.push(Goal {
+            id: "assert_0".to_string(),
+            target: Term::Const("x > 0".to_string()),
+            hypotheses: vec![],
+        });
+
+        let c_source = backend.to_c_source(&state).unwrap();
+        assert!(c_source.contains("int x = 5;"));
+        assert!(c_source.contains("__CPROVER_assert(x > 0"));
+    }
+
+    #[tokio::test]
+    async fn test_cbmc_suggest_tactics() {
+        let config = ProverConfig {
+            executable: PathBuf::from("cbmc"),
+            timeout: 30,
+            ..Default::default()
+        };
+        let backend = CBMCBackend::new(config);
+        let state = ProofState::default();
+
+        let tactics = backend.suggest_tactics(&state, 1).await.unwrap();
+        assert_eq!(tactics.len(), 1);
+    }
 }

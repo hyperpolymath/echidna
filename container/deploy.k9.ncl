@@ -58,7 +58,7 @@ let deployment = {
   },
   container = {
     image = "ghcr.io/hyperpolymath/echidna",
-    port = 8080,
+    port = 8081,
     health_check = "/health",
     readiness_check = "/ready",
   },

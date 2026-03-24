@@ -456,4 +456,67 @@ MODULE main
         let failure = "-- specification AG (x = 1) is false\n-- as demonstrated by the following execution sequence\n";
         assert!(!backend.parse_result(failure).unwrap());
     }
+
+    #[test]
+    fn test_nusmv_parse_result_error() {
+        let config = ProverConfig::default();
+        let backend = NuSMVBackend::new(config);
+
+        let output = "*** error in model specification\n";
+        assert!(backend.parse_result(output).is_err());
+    }
+
+    #[test]
+    fn test_nusmv_parse_result_inconclusive() {
+        let config = ProverConfig::default();
+        let backend = NuSMVBackend::new(config);
+
+        let output = "no property results here\n";
+        assert!(backend.parse_result(output).is_err());
+    }
+
+    #[test]
+    fn test_nusmv_kind() {
+        let config = ProverConfig::default();
+        let backend = NuSMVBackend::new(config);
+        assert_eq!(backend.kind(), ProverKind::NuSMV);
+    }
+
+    #[tokio::test]
+    async fn test_nusmv_smv_export_with_ltlspec() {
+        let config = ProverConfig::default();
+        let backend = NuSMVBackend::new(config);
+
+        let mut state = ProofState::default();
+        state.goals.push(Goal {
+            id: "ltl_0".to_string(),
+            target: Term::Const("G F ready".to_string()),
+            hypotheses: vec![],
+        });
+
+        let smv = backend.to_smv(&state).unwrap();
+        assert!(smv.contains("LTLSPEC"));
+        assert!(smv.contains("G F ready"));
+    }
+
+    #[tokio::test]
+    async fn test_nusmv_parse_smv_trans() {
+        let config = ProverConfig::default();
+        let backend = NuSMVBackend::new(config);
+
+        let smv = "TRANS next(state) = !state\n";
+        let state = backend.parse_string(smv).await.unwrap();
+
+        assert!(!state.context.axioms.is_empty());
+    }
+
+    #[tokio::test]
+    async fn test_nusmv_suggest_tactics() {
+        let config = ProverConfig::default();
+        let backend = NuSMVBackend::new(config);
+        let state = ProofState::default();
+
+        let tactics = backend.suggest_tactics(&state, 2).await.unwrap();
+        assert_eq!(tactics.len(), 2);
+    }
 }

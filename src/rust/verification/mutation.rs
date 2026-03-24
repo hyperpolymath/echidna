@@ -275,4 +275,65 @@ mod tests {
         let summary = tester.compute_summary(vec![]);
         assert_eq!(summary.mutation_score, 100.0);
     }
+
+    #[test]
+    fn test_mutation_tester_default_target() {
+        let tester = MutationTester::new();
+        assert_eq!(tester.target_score, 95.0);
+    }
+
+    #[test]
+    fn test_mutation_tester_custom_target() {
+        let tester = MutationTester::with_target(80.0);
+        assert_eq!(tester.target_score, 80.0);
+    }
+
+    #[test]
+    fn test_generate_mutations_for_pi() {
+        let tester = MutationTester::new();
+
+        let term = Term::Pi {
+            param: "x".to_string(),
+            param_type: Box::new(Term::Const("Nat".to_string())),
+            body: Box::new(Term::Const("Bool".to_string())),
+        };
+
+        let mutations = tester.generate_mutations(&term);
+        // Should generate at least a negation mutation
+        assert!(!mutations.is_empty());
+    }
+
+    #[test]
+    fn test_generate_mutations_for_const() {
+        let tester = MutationTester::new();
+        let term = Term::Const("True".to_string());
+        let mutations = tester.generate_mutations(&term);
+
+        // Const should get at least negation mutation
+        assert!(!mutations.is_empty());
+    }
+
+    #[test]
+    fn test_mutation_summary_partial_catch() {
+        let tester = MutationTester::new();
+
+        let results = vec![
+            MutationResult {
+                kind: MutationKind::NegateSubterm { position: 0 },
+                caught: true,
+                description: "Caught".to_string(),
+            },
+            MutationResult {
+                kind: MutationKind::RemoveHypothesis { index: 0 },
+                caught: false,
+                description: "Survived".to_string(),
+            },
+        ];
+
+        let summary = tester.compute_summary(results);
+        assert_eq!(summary.total_mutations, 2);
+        assert_eq!(summary.mutations_caught, 1);
+        assert_eq!(summary.mutations_survived, 1);
+        assert_eq!(summary.mutation_score, 50.0);
+    }
 }

@@ -453,4 +453,147 @@ ltl p1 { []<> ready }
         let deadlock_output = "pan: invalid end state (at depth 7)\nerrors: 1\n";
         assert!(!backend.parse_result(deadlock_output).unwrap());
     }
+
+    #[test]
+    fn test_spin_parse_result_acceptance_cycle() {
+        let config = ProverConfig {
+            executable: PathBuf::from("spin"),
+            timeout: 30,
+            ..Default::default()
+        };
+        let backend = SpinBackend::new(config);
+
+        let output = "pan:1: acceptance cycle (at depth 12)\nerrors: 1\n";
+        assert!(!backend.parse_result(output).unwrap());
+    }
+
+    #[test]
+    fn test_spin_parse_result_inconclusive() {
+        let config = ProverConfig {
+            executable: PathBuf::from("spin"),
+            timeout: 30,
+            ..Default::default()
+        };
+        let backend = SpinBackend::new(config);
+
+        let output = "some random output with no markers\n";
+        assert!(backend.parse_result(output).is_err());
+    }
+
+    #[test]
+    fn test_spin_kind() {
+        let config = ProverConfig {
+            executable: PathBuf::from("spin"),
+            timeout: 30,
+            ..Default::default()
+        };
+        let backend = SpinBackend::new(config);
+        assert_eq!(backend.kind(), ProverKind::SPIN);
+    }
+
+    #[test]
+    fn test_spin_config_access() {
+        let config = ProverConfig {
+            executable: PathBuf::from("/usr/bin/spin"),
+            timeout: 60,
+            ..Default::default()
+        };
+        let backend = SpinBackend::new(config.clone());
+        assert_eq!(backend.config().executable, PathBuf::from("/usr/bin/spin"));
+        assert_eq!(backend.config().timeout, 60);
+    }
+
+    #[tokio::test]
+    async fn test_spin_promela_empty_state() {
+        let config = ProverConfig {
+            executable: PathBuf::from("spin"),
+            timeout: 30,
+            ..Default::default()
+        };
+        let backend = SpinBackend::new(config);
+        let state = ProofState::default();
+        let promela = backend.to_promela(&state).unwrap();
+
+        assert!(promela.contains("ECHIDNA SPIN Export"));
+        // Empty state should still generate init block
+        assert!(promela.contains("init"));
+    }
+
+    #[tokio::test]
+    async fn test_spin_promela_with_raw_proctype() {
+        let config = ProverConfig {
+            executable: PathBuf::from("spin"),
+            timeout: 30,
+            ..Default::default()
+        };
+        let backend = SpinBackend::new(config);
+
+        let mut state = ProofState::default();
+        state.context.axioms.push("proctype P() { skip }".to_string());
+
+        let promela = backend.to_promela(&state).unwrap();
+        assert!(promela.contains("proctype P()"));
+        // Should NOT add init block since proctype exists
+        assert!(!promela.contains("init {"));
+    }
+
+    #[tokio::test]
+    async fn test_spin_parse_channel_declaration() {
+        let config = ProverConfig {
+            executable: PathBuf::from("spin"),
+            timeout: 30,
+            ..Default::default()
+        };
+        let backend = SpinBackend::new(config);
+
+        let promela = "chan c = [1] of { int };\nassert(true);\n";
+        let state = backend.parse_promela(promela).unwrap();
+
+        assert!(!state.context.axioms.is_empty(), "Should parse channel");
+        assert!(!state.goals.is_empty(), "Should parse assertion");
+    }
+
+    #[tokio::test]
+    async fn test_spin_parse_ltl_formula() {
+        let config = ProverConfig {
+            executable: PathBuf::from("spin"),
+            timeout: 30,
+            ..Default::default()
+        };
+        let backend = SpinBackend::new(config);
+
+        let promela = "ltl p1 { []<> ready }\n";
+        let state = backend.parse_promela(promela).unwrap();
+
+        assert_eq!(state.goals.len(), 1);
+        assert!(state.goals[0].id.starts_with("ltl_"));
+    }
+
+    #[tokio::test]
+    async fn test_spin_parse_empty_input() {
+        let config = ProverConfig {
+            executable: PathBuf::from("spin"),
+            timeout: 30,
+            ..Default::default()
+        };
+        let backend = SpinBackend::new(config);
+
+        let state = backend.parse_promela("").unwrap();
+        assert!(state.goals.is_empty());
+        assert!(state.context.axioms.is_empty());
+    }
+
+    #[tokio::test]
+    async fn test_spin_suggest_tactics() {
+        let config = ProverConfig {
+            executable: PathBuf::from("spin"),
+            timeout: 30,
+            ..Default::default()
+        };
+        let backend = SpinBackend::new(config);
+        let state = ProofState::default();
+
+        let tactics = backend.suggest_tactics(&state, 2).await.unwrap();
+        assert_eq!(tactics.len(), 2);
+    }
 }

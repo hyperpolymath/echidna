@@ -263,7 +263,7 @@ impl DeduktiExporter {
 
     /// Sanitize a name for Dedukti (replace invalid characters)
     fn sanitize_name(name: &str) -> String {
-        name.replace('-', "_").replace('.', "_").replace(' ', "_")
+        name.replace(['-', '.', ' '], "_")
     }
 }
 
@@ -359,5 +359,77 @@ mod tests {
     fn test_sanitize_name() {
         assert_eq!(DeduktiExporter::sanitize_name("my-theorem"), "my_theorem");
         assert_eq!(DeduktiExporter::sanitize_name("mod.thm"), "mod_thm");
+    }
+
+    #[test]
+    fn test_export_empty_state() {
+        let state = ProofState::default();
+        let module = DeduktiExporter::export(&state).unwrap();
+
+        assert_eq!(module.name, "echidna.export");
+        assert_eq!(module.requires, vec!["echidna.prelude".to_string()]);
+        assert!(module.declarations.is_empty());
+    }
+
+    #[test]
+    fn test_export_with_goals() {
+        let mut state = ProofState::default();
+        state.goals.push(crate::core::Goal {
+            id: "my-goal".to_string(),
+            target: Term::Const("Prop".to_string()),
+            hypotheses: vec![],
+        });
+
+        let module = DeduktiExporter::export(&state).unwrap();
+        assert_eq!(module.declarations.len(), 1);
+    }
+
+    #[test]
+    fn test_render_rule_declaration() {
+        let module = DeduktiModule {
+            name: "test".to_string(),
+            requires: vec![],
+            declarations: vec![DeduktiDeclaration::Rule {
+                variables: vec!["x".to_string()],
+                lhs: "plus 0 x".to_string(),
+                rhs: "x".to_string(),
+            }],
+        };
+
+        let rendered = DeduktiExporter::render(&module);
+        assert!(rendered.contains("[x]"));
+        assert!(rendered.contains("plus 0 x"));
+        assert!(rendered.contains("x"));
+    }
+
+    #[test]
+    fn test_term_to_dedukti_const() {
+        let term = Term::Const("Nat".to_string());
+        let dk = DeduktiExporter::term_to_dedukti(&term);
+        assert_eq!(dk, "Nat");
+    }
+
+    #[test]
+    fn test_term_to_dedukti_var() {
+        let term = Term::Var("x".to_string());
+        let dk = DeduktiExporter::term_to_dedukti(&term);
+        assert_eq!(dk, "x");
+    }
+
+    #[test]
+    fn test_import_with_definition() {
+        let module = DeduktiModule {
+            name: "test".to_string(),
+            requires: vec![],
+            declarations: vec![DeduktiDeclaration::Definition {
+                name: "id".to_string(),
+                ty: "Nat -> Nat".to_string(),
+                body: "(x => x)".to_string(),
+            }],
+        };
+
+        let state = DeduktiExporter::import(&module).unwrap();
+        assert_eq!(state.context.theorems.len(), 1);
+        assert!(state.context.theorems[0].proof.is_some());
     }
 }

@@ -357,7 +357,7 @@ impl ProverBackend for Z3Backend {
             output.push_str(&format!("(declare-const {} {})\n", var.name, ty_smt));
         }
 
-        output.push_str("\n");
+        output.push('\n');
 
         for theorem in &state.context.theorems {
             let stmt_smt = self.term_to_smt(&theorem.statement);

@@ -7,7 +7,7 @@ This document provides guidelines and context for working with Claude Code on th
 **ECHIDNA** (Extensible Cognitive Hybrid Intelligence for Deductive Neural Assistance) is a trust-hardened neurosymbolic theorem proving platform supporting 48 prover backends with a comprehensive verification pipeline.
 
 **Repository**: https://github.com/hyperpolymath/echidna
-**Version**: 1.6.0
+**Version**: 2.0.0
 **License**: PMPL-1.0-or-later
 
 ## Repository Structure
@@ -33,7 +33,7 @@ echidna/
 │   │   ├── main.rs         # CLI entry point
 │   │   └── lib.rs          # Library root
 │   ├── interfaces/         # API interfaces (workspace members)
-│   │   ├── graphql/        # GraphQL (async-graphql, port 8080)
+│   │   ├── graphql/        # GraphQL (async-graphql, port 8081)
 │   │   ├── grpc/           # gRPC (tonic, port 50051)
 │   │   └── rest/           # REST (axum + OpenAPI, port 8000)
 │   ├── julia/              # Julia ML components
@@ -111,21 +111,23 @@ The v1.5 trust hardening added:
 
 ### Current Status
 
-**Completed (v1.6.0)**:
-- 48/48 prover backends
+**Completed (v2.0.0)**:
+- 48/48 prover backends across 10 tiers
 - Trust & safety hardening (13 tasks complete)
-- 389 tests passing
-- 3 API interfaces (GraphQL, gRPC, REST)
-- Julia ML layer (logistic regression)
-- ReScript UI (28 files)
-- 17 CI/CD workflows
+- 638+ tests passing (528 unit + 38 integration + 21 property + interface)
+- 3 API interfaces (GraphQL, gRPC, REST) with real prover backend invocation
+- Agda meta-checker: 30+ formally verified trust pipeline properties
+- Criterion benchmarks: 13 functions covering all critical paths
+- FFI bridge: complete C-compatible API for all 48 provers
+- Julia ML layer (logistic regression, MRR 0.66)
+- 26 CI/CD workflows (including Agda meta-checker)
 - Zig FFI layer (4 shared libraries)
-- Idris2 ABI formal proofs (7 modules, zero believe_me)
-- Compiles cleanly on stable Rust (cargo fmt + clippy clean)
+- Idris2 ABI formal proofs (16 modules, zero believe_me)
+- 0 clippy warnings, 0 compiler errors on stable Rust
 
-**Next (v2.0)**:
-- FFI/IPC bridge (API interfaces to Rust prover backends)
+**Next (v2.1+)**:
 - Deep learning models (Transformers via Flux.jl)
+- Chapel → Rust C FFI bridge
 - Tamarin/ProVerif bridge
 
 ## Useful Commands
@@ -133,7 +135,7 @@ The v1.5 trust hardening added:
 ```bash
 # Build System (Justfile is PRIMARY)
 just build              # Build the project
-just test               # Run tests (389)
+just test               # Run tests (638+)
 just check              # Run all quality checkers
 
 # Cargo commands

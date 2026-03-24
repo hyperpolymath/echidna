@@ -43,7 +43,7 @@ nix profile install github:hyperpolymath/echidnabot
 
 ```bash
 podman pull ghcr.io/hyperpolymath/echidnabot:latest
-podman run -p 8080:8080 ghcr.io/hyperpolymath/echidnabot:latest
+podman run -p 8081:8081 ghcr.io/hyperpolymath/echidnabot:latest
 ```
 
 ## Quick Start
@@ -182,7 +182,7 @@ mode = "advisor"
 
 ```bash
 # Start webhook server
-echidnabot serve --port 8080
+echidnabot serve --port 8081
 
 # Register a repository
 echidnabot register --platform github --repo owner/name

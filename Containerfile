@@ -87,7 +87,7 @@ ENV ECHIDNA_PROVER_PATH="/opt"
 
 RUN mkdir -p /app/proofs /app/config /app/logs
 
-EXPOSE 8080
+EXPOSE 8081
 
 HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
     CMD ["/app/bin/echidna", "--version"]

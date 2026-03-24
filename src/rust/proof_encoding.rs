@@ -211,4 +211,75 @@ mod tests {
             actual
         );
     }
+
+    #[test]
+    fn test_cbor_empty_state_roundtrip() {
+        let proof = ProofState::default();
+        let encoded = encode_proof_state_cbor(&proof).unwrap();
+        let decoded = decode_proof_state_cbor(&encoded).unwrap();
+
+        assert!(decoded.goals.is_empty());
+        assert!(decoded.context.theorems.is_empty());
+    }
+
+    #[test]
+    fn test_cbor_decode_invalid_bytes() {
+        let bad_bytes = vec![0xFF, 0xFE, 0x00, 0x01];
+        let result = decode_proof_state_cbor(&bad_bytes);
+        assert!(result.is_err());
+    }
+
+    #[test]
+    fn test_proof_identity_hex_format() {
+        let goal = Goal {
+            id: "g0".to_string(),
+            target: Term::Const("True".to_string()),
+            hypotheses: vec![],
+        };
+
+        let id = proof_identity("thm", &goal, ProverKind::Lean);
+        // Should be a valid hex string
+        assert!(id.chars().all(|c| c.is_ascii_hexdigit()));
+        assert_eq!(id.len(), 64);
+    }
+
+    #[test]
+    fn test_goal_identity_deterministic() {
+        let goal = Goal {
+            id: "g0".to_string(),
+            target: Term::Const("P".to_string()),
+            hypotheses: vec![],
+        };
+
+        let id1 = goal_identity("thm", &goal);
+        let id2 = goal_identity("thm", &goal);
+        assert_eq!(id1, id2);
+    }
+
+    #[test]
+    fn test_goal_identity_differs_by_name() {
+        let goal = Goal {
+            id: "g0".to_string(),
+            target: Term::Const("P".to_string()),
+            hypotheses: vec![],
+        };
+
+        let id1 = goal_identity("thm_a", &goal);
+        let id2 = goal_identity("thm_b", &goal);
+        assert_ne!(id1, id2);
+    }
+
+    #[test]
+    fn test_session_identity_deterministic() {
+        let id1 = session_identity("g0", 12345);
+        let id2 = session_identity("g0", 12345);
+        assert_eq!(id1, id2);
+    }
+
+    #[test]
+    fn test_estimate_cbor_size_positive() {
+        let proof = ProofState::default();
+        let estimate = estimate_cbor_size(&proof);
+        assert!(estimate > 0);
+    }
 }

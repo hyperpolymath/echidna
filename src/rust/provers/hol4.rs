@@ -993,7 +993,7 @@ impl HOL4Parser {
             self.expect_char(')')?;
 
             if types.len() == 1 {
-                return Ok(types.pop().ok_or_else(|| anyhow!("empty type stack"))?);
+                return types.pop().ok_or_else(|| anyhow!("empty type stack"));
             } else {
                 return Ok(HOL4Type::TyProd(types));
             }
@@ -1611,7 +1611,7 @@ impl Hol4Backend {
                 };
                 HOL4Type::TyApp {
                     constructor,
-                    args: args.iter().map(|a| Self::term_to_type(a)).collect(),
+                    args: args.iter().map(Self::term_to_type).collect(),
                 }
             },
             Term::Pi {
@@ -1686,7 +1686,7 @@ impl Hol4Backend {
                         param_type: Box::new(
                             var_type
                                 .as_ref()
-                                .map(|t| Self::type_to_term(t))
+                                .map(Self::type_to_term)
                                 .unwrap_or_else(|| Term::Const("'a".to_string())),
                         ),
                         body: Box::new(Self::hol4_to_term(body)),
@@ -1737,7 +1737,7 @@ impl Hol4Backend {
             HOL4Type::TyVar(name) | HOL4Type::TyCon(name) => Term::Const(name.clone()),
             HOL4Type::TyApp { constructor, args } => Term::App {
                 func: Box::new(Term::Const(constructor.clone())),
-                args: args.iter().map(|a| Self::type_to_term(a)).collect(),
+                args: args.iter().map(Self::type_to_term).collect(),
             },
             HOL4Type::TyFun { domain, range } => Term::Pi {
                 param: "_".to_string(),
@@ -1748,7 +1748,7 @@ impl Hol4Backend {
                 if types.is_empty() {
                     Term::Const("unit".to_string())
                 } else {
-                    let mut args: Vec<Term> = types.iter().map(|t| Self::type_to_term(t)).collect();
+                    let mut args: Vec<Term> = types.iter().map(Self::type_to_term).collect();
                     let last = args
                         .pop()
                         .unwrap_or_else(|| Term::Const("unit".to_string()));
@@ -1952,7 +1952,7 @@ impl Hol4Backend {
             HOL4Term::Numeral(n) => n.to_string(),
             HOL4Term::String(s) => format!("\"{}\"", s),
             HOL4Term::List(elements) => {
-                let elems: Vec<String> = elements.iter().map(|e| Self::format_term(e)).collect();
+                let elems: Vec<String> = elements.iter().map(Self::format_term).collect();
                 format!("[{}]", elems.join("; "))
             },
             HOL4Term::Pair(fst, snd) => {
@@ -1974,7 +1974,7 @@ impl Hol4Backend {
                 } else if args.len() == 1 {
                     format!("{} {}", Self::format_type(&args[0]), constructor)
                 } else {
-                    let args_str: Vec<String> = args.iter().map(|a| Self::format_type(a)).collect();
+                    let args_str: Vec<String> = args.iter().map(Self::format_type).collect();
                     format!("({}) {}", args_str.join(", "), constructor)
                 }
             },
@@ -1986,7 +1986,7 @@ impl Hol4Backend {
                 )
             },
             HOL4Type::TyProd(types) => {
-                let types_str: Vec<String> = types.iter().map(|t| Self::format_type(t)).collect();
+                let types_str: Vec<String> = types.iter().map(Self::format_type).collect();
                 format!("({})", types_str.join(" # "))
             },
             HOL4Type::TySum { left, right } => {
@@ -2252,7 +2252,7 @@ impl ProverBackend for Hol4Backend {
         output.push_str(&format!("val _ = new_theory \"{}\";\n\n", theory_name));
 
         // Export hypotheses as definitions
-        for (_i, goal) in state.goals.iter().enumerate() {
+        for goal in state.goals.iter() {
             for hyp in &goal.hypotheses {
                 output.push_str(&format!("(* Hypothesis: {} *)\n", hyp.name));
                 let hol4_ty = Self::term_to_hol4(&hyp.ty);

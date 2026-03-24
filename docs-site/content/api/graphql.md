@@ -6,9 +6,9 @@ template: default
 
 # GraphQL API Reference
 
-Endpoint: `https://localhost:8080/graphql`
+Endpoint: `https://localhost:8081/graphql`
 
-Playground: `https://localhost:8080/playground`
+Playground: `https://localhost:8081/playground`
 
 ## Schema
 
