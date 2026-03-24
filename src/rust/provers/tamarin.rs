@@ -240,7 +240,7 @@ impl TamarinBackend {
                 let after_lemma = trimmed.trim_start_matches("lemma ");
                 // Lemma name ends at ':' or '[' (for annotations like [reuse])
                 let name_end = after_lemma
-                    .find(|c: char| c == ':' || c == '[' || c == ' ')
+                    .find([':', '[', ' '])
                     .unwrap_or(after_lemma.len());
                 let lemma_name = after_lemma[..name_end].trim().to_string();
 

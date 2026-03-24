@@ -98,7 +98,7 @@ impl FfiStringSlice {
         }
     }
 
-    pub fn from_str(s: &str) -> Self {
+    pub fn from_string_slice(s: &str) -> Self {
         FfiStringSlice {
             ptr: s.as_ptr(),
             len: s.len(),
@@ -212,7 +212,7 @@ impl FfiProverConfig {
             executable,
             library_paths,
             args: vec![],
-            timeout: (self.timeout_ms / 1000) as u64,
+            timeout: (self.timeout_ms / 1000),
             neural_enabled: self.neural_enabled,
         }
     }
@@ -639,8 +639,13 @@ pub unsafe extern "C" fn rust_export_proof(
 }
 
 /// Suggest tactics callback for Zig FFI
+///
+/// # Safety
+/// - `state` must be a valid pointer previously returned by `rust_parse_file`/`rust_parse_string`.
+/// - `out_tactics` must point to a caller-allocated buffer of at least `limit` `FfiTactic` elements.
+/// - `out_count` must be a valid, non-null, writable pointer.
 #[no_mangle]
-pub extern "C" fn rust_suggest_tactics(
+pub unsafe extern "C" fn rust_suggest_tactics(
     kind: u8,
     state: *mut c_void,
     limit: u32,
@@ -749,6 +754,7 @@ pub fn destroy_prover(handle_id: usize) -> Result<(), FfiStatus> {
 }
 
 /// Get prover version
+#[allow(clippy::await_holding_lock)] // MutexGuard held across await is intentional: ProverBackend is not Clone
 pub async fn get_version(handle_id: usize) -> Result<String, FfiStatus> {
     let registry = PROVER_REGISTRY
         .lock()
@@ -766,7 +772,7 @@ mod tests {
     #[test]
     fn test_ffi_string_slice() {
         let s = "hello";
-        let slice = FfiStringSlice::from_str(s);
+        let slice = FfiStringSlice::from_string_slice(s);
         // SAFETY: slice was created from a valid &str that is still in scope.
         unsafe {
             assert_eq!(slice.to_str(), Some("hello"));

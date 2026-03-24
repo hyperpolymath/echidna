@@ -31,6 +31,12 @@ pub struct ProverStats {
     pub total_time_ms: u64,
 }
 
+impl Default for ProverStats {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl ProverStats {
     /// Create new empty stats
     pub fn new() -> Self {

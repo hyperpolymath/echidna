@@ -295,15 +295,15 @@ impl Idris2Backend {
         }
 
         // Numbered type universe
-        if expr.starts_with("Type ") {
-            if let Ok(level) = expr[5..].trim().parse::<usize>() {
+        if let Some(rest) = expr.strip_prefix("Type ") {
+            if let Ok(level) = rest.trim().parse::<usize>() {
                 return Term::Type(level);
             }
         }
 
         // Hole
-        if expr.starts_with('?') {
-            return Term::Hole(expr[1..].to_string());
+        if let Some(rest) = expr.strip_prefix('?') {
+            return Term::Hole(rest.to_string());
         }
 
         // Linear arrow: a -@ b
@@ -338,8 +338,8 @@ impl Idris2Backend {
                     let param_name = implicit_part[..colon_pos].trim();
                     let param_type = implicit_part[colon_pos + 3..].trim();
 
-                    if rest.starts_with("-> ") {
-                        let body = &rest[3..].trim();
+                    if let Some(body_str) = rest.strip_prefix("-> ") {
+                        let body = &body_str.trim();
                         return Term::Pi {
                             param: param_name.to_string(),
                             param_type: Box::new(self.parse_type_expr(param_type)),
@@ -360,8 +360,8 @@ impl Idris2Backend {
                     let param_name = param_part[..colon_pos].trim();
                     let param_type = param_part[colon_pos + 3..].trim();
 
-                    if rest.starts_with("-> ") {
-                        let body = &rest[3..].trim();
+                    if let Some(body_str) = rest.strip_prefix("-> ") {
+                        let body = &body_str.trim();
                         return Term::Pi {
                             param: param_name.to_string(),
                             param_type: Box::new(self.parse_type_expr(param_type)),
@@ -392,7 +392,7 @@ impl Idris2Backend {
         }
 
         // Constant or variable
-        if expr.chars().next().map_or(false, |c| c.is_uppercase()) {
+        if expr.chars().next().is_some_and(|c| c.is_uppercase()) {
             Term::Const(expr.to_string())
         } else {
             Term::Var(expr.to_string())
@@ -660,11 +660,10 @@ impl ProverBackend for Idris2Backend {
                     // Check if goal is an equality that can be solved by Refl
                     if let Term::App { func, args } = &goal.target {
                         if let Term::Const(name) = func.as_ref() {
-                            if name == "Equal" || name == "=" || name == "(=)" {
-                                if args.len() >= 2 {
+                            if (name == "Equal" || name == "=" || name == "(=)")
+                                && args.len() >= 2 {
                                     // Could check if args are equal here
                                 }
-                            }
                         }
                     }
                 }

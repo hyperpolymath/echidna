@@ -263,7 +263,7 @@ impl DeduktiExporter {
 
     /// Sanitize a name for Dedukti (replace invalid characters)
     fn sanitize_name(name: &str) -> String {
-        name.replace('-', "_").replace('.', "_").replace(' ', "_")
+        name.replace(['-', '.', ' '], "_")
     }
 }
 

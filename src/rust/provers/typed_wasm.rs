@@ -395,8 +395,7 @@ fn parse_twasm(content: &str) -> Result<Vec<TwasmInstruction>> {
         // ── region.get ─────────────────────────────────────────────────
         // region.get REGION[INDEX] .FIELD
         // region.get REGION .FIELD
-        if line.starts_with("region.get ") {
-            let rest = &line["region.get ".len()..];
+        if let Some(rest) = line.strip_prefix("region.get ") {
             let (region, index, after) = parse_region_ref(rest)?;
             let field = after
                 .trim()
@@ -416,8 +415,7 @@ fn parse_twasm(content: &str) -> Result<Vec<TwasmInstruction>> {
 
         // ── region.set ─────────────────────────────────────────────────
         // region.set REGION .FIELD, VALUE
-        if line.starts_with("region.set ") {
-            let rest = &line["region.set ".len()..];
+        if let Some(rest) = line.strip_prefix("region.set ") {
             let (region, _index, after) = parse_region_ref(rest)?;
             let after = after.trim();
             let field_and_value = after
@@ -459,16 +457,16 @@ fn parse_twasm(content: &str) -> Result<Vec<TwasmInstruction>> {
         }
 
         // ── linear acquire/release ─────────────────────────────────────
-        if line.starts_with("linear.acquire ") {
-            let region = line["linear.acquire ".len()..].trim().to_string();
+        if let Some(rest) = line.strip_prefix("linear.acquire ") {
+            let region = rest.trim().to_string();
             instructions.push(TwasmInstruction::LinearAcquire {
                 region,
                 line: line_idx + 1,
             });
             continue;
         }
-        if line.starts_with("linear.release ") {
-            let region = line["linear.release ".len()..].trim().to_string();
+        if let Some(rest) = line.strip_prefix("linear.release ") {
+            let region = rest.trim().to_string();
             instructions.push(TwasmInstruction::LinearRelease {
                 region,
                 line: line_idx + 1,

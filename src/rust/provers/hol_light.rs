@@ -297,7 +297,7 @@ impl HolLightBackend {
             },
             Tactic::Induction(term) => {
                 let _term_str = self.term_to_hol(term);
-                Ok(format!("INDUCT_TAC;;"))
+                Ok("INDUCT_TAC;;".to_string())
             },
             Tactic::Rewrite(theorem_name) => Ok(format!("REWRITE_TAC[{}];;", theorem_name)),
             Tactic::Simplify => Ok("SIMP_TAC[];;".to_string()),
@@ -357,7 +357,7 @@ impl HolLightBackend {
                 output.push_str("   (* Proof to be completed *)\n");
                 output.push_str("   ADMIT_TAC);;\n");
             }
-            output.push_str("\n");
+            output.push('\n');
         }
 
         // Export goals
@@ -1013,7 +1013,7 @@ impl HolLightParser {
         self.skip_whitespace_and_comments();
 
         if let Some(id) = self.parse_identifier() {
-            if id.chars().next().map_or(false, |c| c.is_uppercase()) {
+            if id.chars().next().is_some_and(|c| c.is_uppercase()) {
                 Ok(HolTerm::Const { name: id, ty: None })
             } else {
                 Ok(HolTerm::Var { name: id, ty: None })

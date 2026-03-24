@@ -136,12 +136,10 @@ pub fn is_small_kernel_prover(prover: ProverKind) -> bool {
 }
 
 /// Get the default trust level for a given prover (without certificates)
-pub fn default_trust_for_prover(prover: ProverKind) -> TrustLevel {
-    if is_small_kernel_prover(prover) {
-        TrustLevel::Level2
-    } else {
-        TrustLevel::Level2
-    }
+pub fn default_trust_for_prover(_prover: ProverKind) -> TrustLevel {
+    // Small-kernel provers get Level2 by default; all others also start at Level2.
+    // Trust can be elevated via certificates, cross-checking, etc.
+    TrustLevel::Level2
 }
 
 #[cfg(test)]

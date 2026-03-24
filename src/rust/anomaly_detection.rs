@@ -77,6 +77,12 @@ pub struct AnomalyDetector {
     baseline: BaselineMetrics,
 }
 
+impl Default for AnomalyDetector {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl AnomalyDetector {
     pub fn new() -> Self {
         Self {
@@ -124,7 +130,7 @@ impl AnomalyDetector {
         }
 
         // Check 4: Circular reasoning
-        if let Some(circular_premise) = self.check_circular_reasoning(&result) {
+        if let Some(circular_premise) = self.check_circular_reasoning(result) {
             anomalies.push(Anomaly::CircularReasoning {
                 goal: result.goal.clone(),
                 suspicious_premise: circular_premise,

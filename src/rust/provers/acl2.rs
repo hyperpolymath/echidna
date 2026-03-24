@@ -496,16 +496,16 @@ impl ACL2Backend {
         };
 
         match head.as_str() {
-            "defun" | "defund" => self.parse_defun(&list),
-            "defthm" | "defthmd" => self.parse_defthm(&list),
-            "defconst" => self.parse_defconst(&list),
-            "defmacro" => self.parse_defmacro(&list),
-            "encapsulate" => self.parse_encapsulate(&list),
-            "include-book" => self.parse_include_book(&list),
+            "defun" | "defund" => self.parse_defun(list),
+            "defthm" | "defthmd" => self.parse_defthm(list),
+            "defconst" => self.parse_defconst(list),
+            "defmacro" => self.parse_defmacro(list),
+            "encapsulate" => self.parse_encapsulate(list),
+            "include-book" => self.parse_include_book(list),
             "in-theory" => Ok(Some(ACL2Event::InTheory(
                 list.get(1).cloned().unwrap_or(SExp::Nil),
             ))),
-            "mutual-recursion" => self.parse_mutual_recursion(&list),
+            "mutual-recursion" => self.parse_mutual_recursion(list),
             _ => Ok(Some(ACL2Event::Other(sexp.clone()))),
         }
     }
@@ -535,8 +535,8 @@ impl ACL2Backend {
         let mut guard = None;
 
         // Check for declare forms
-        for i in 3..list.len() {
-            if let SExp::List(decl) = &list[i] {
+        for item in list.iter().skip(3) {
+            if let SExp::List(decl) = item {
                 if let Some(head) = decl.first().and_then(|h| h.as_atom()) {
                     if head.eq_ignore_ascii_case("declare") {
                         // Look for xargs with guard
@@ -564,7 +564,7 @@ impl ACL2Backend {
                     }
                 }
             }
-            body = list[i].clone();
+            body = item.clone();
         }
 
         Ok(Some(ACL2Event::Defun {
@@ -828,9 +828,7 @@ impl ACL2Backend {
     fn sexp_to_term(&self, sexp: &SExp) -> Term {
         match sexp {
             SExp::Atom(s) => {
-                if s.starts_with(':') {
-                    Term::Const(s.clone())
-                } else if s.chars().next().map(|c| c.is_uppercase()).unwrap_or(false) {
+                if s.starts_with(':') || s.chars().next().map(|c| c.is_uppercase()).unwrap_or(false) {
                     Term::Const(s.clone())
                 } else {
                     Term::Var(s.clone())

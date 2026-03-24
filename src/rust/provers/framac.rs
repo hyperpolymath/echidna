@@ -91,8 +91,8 @@ impl FramaCBackend {
             }
 
             // Detect single-line ACSL annotations: //@ ...
-            if trimmed.starts_with("//@") {
-                let acsl_text = trimmed[3..].trim();
+            if let Some(rest) = trimmed.strip_prefix("//@") {
+                let acsl_text = rest.trim();
                 self.process_acsl_clause(
                     acsl_text,
                     &current_function,

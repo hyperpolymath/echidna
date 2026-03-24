@@ -583,7 +583,7 @@ impl LeanBackend {
             if parts.len() == 2 {
                 let domain = self.parse_lean_expr_simple(parts[0])?;
                 let codomain =
-                    self.parse_lean_expr_simple(parts[1].trim_start_matches(|c| c == '>'))?;
+                    self.parse_lean_expr_simple(parts[1].trim_start_matches('>'))?;
                 return Ok(LeanExpr::Pi(
                     "_".to_string(),
                     Box::new(domain),
@@ -607,8 +607,8 @@ impl LeanBackend {
         }
 
         // Otherwise treat as a constant or variable
-        if input.starts_with('?') {
-            Ok(LeanExpr::MVar(input[1..].to_string()))
+        if let Some(rest) = input.strip_prefix('?') {
+            Ok(LeanExpr::MVar(rest.to_string()))
         } else if input
             .chars()
             .next()
@@ -780,7 +780,7 @@ fn skip_whitespace_and_comments(input: &str) -> &str {
                     Some((i, '/')) => {
                         if remaining
                             .get(2 + i + 1..)
-                            .map_or(false, |s| s.starts_with('-'))
+                            .is_some_and(|s| s.starts_with('-'))
                         {
                             depth += 1;
                             chars.next();
@@ -789,7 +789,7 @@ fn skip_whitespace_and_comments(input: &str) -> &str {
                     Some((i, '-')) => {
                         if remaining
                             .get(2 + i + 1..)
-                            .map_or(false, |s| s.starts_with('/'))
+                            .is_some_and(|s| s.starts_with('/'))
                         {
                             depth -= 1;
                             chars.next();
@@ -1364,7 +1364,7 @@ impl ProverBackend for LeanBackend {
                     self.term_to_lean(&hyp.ty)
                 ));
             }
-            output.push_str("\n");
+            output.push('\n');
         }
 
         Ok(output)

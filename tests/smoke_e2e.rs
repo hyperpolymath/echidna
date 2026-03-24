@@ -12,7 +12,7 @@
 mod common;
 
 use anyhow::Result;
-use echidna::dispatch::{DispatchConfig, DispatchResult, ProverDispatcher};
+use echidna::dispatch::{DispatchConfig, ProverDispatcher};
 use echidna::provers::ProverKind;
 use echidna::verification::confidence::TrustLevel;
 

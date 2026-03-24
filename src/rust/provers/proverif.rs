@@ -392,7 +392,7 @@ fn pv_definition(line: &str) -> Definition {
     // e.g. "type key." → "type key", "fun senc(bitstring, key): bitstring." → "fun senc"
     let clean = line.trim_end_matches('.');
     let name = clean
-        .split(|c: char| c == '(' || c == ':')
+        .split(['(', ':'])
         .next()
         .unwrap_or(clean)
         .trim()

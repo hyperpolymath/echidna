@@ -146,12 +146,12 @@ impl ExplanationGenerator {
 
         let mut exp = Explanation::new(title, message)
             .with_detail("Goal ID", &goal.goal.id)
-            .with_detail("Target", &self.format_term(&goal.goal.target))
-            .with_detail("Attempts", &goal.attempts.to_string())
-            .with_detail("Priority", &format!("{:?}", goal.priority));
+            .with_detail("Target", self.format_term(&goal.goal.target))
+            .with_detail("Attempts", goal.attempts.to_string())
+            .with_detail("Priority", format!("{:?}", goal.priority));
 
         if let Some(prover) = prover {
-            exp = exp.with_detail("Prover", &format!("{:?}", prover));
+            exp = exp.with_detail("Prover", format!("{:?}", prover));
         }
 
         // Add context-specific suggestions
@@ -194,9 +194,9 @@ impl ExplanationGenerator {
 
         Explanation::new(title, message)
             .with_detail("Goal ID", &goal.goal.id)
-            .with_detail("Prover", &format!("{:?}", prover))
-            .with_detail("Score", &format!("{:.2}", score))
-            .with_detail("Aspects", &goal.aspects.join(", "))
+            .with_detail("Prover", format!("{:?}", prover))
+            .with_detail("Score", format!("{:.2}", score))
+            .with_detail("Aspects", goal.aspects.join(", "))
             .with_suggestion(self.prover_characteristics(prover))
     }
 
@@ -218,14 +218,14 @@ impl ExplanationGenerator {
 
         let mut exp = Explanation::new(title, message)
             .with_detail("Original Goal", &goal.goal.id)
-            .with_detail("Number of Sub-goals", &sub_goals.len().to_string())
+            .with_detail("Number of Sub-goals", sub_goals.len().to_string())
             .with_detail("Strategy", strategy);
 
         // List sub-goals
         for (i, sub_goal) in sub_goals.iter().enumerate() {
             exp = exp.with_detail(
-                &format!("Sub-goal {}", i + 1),
-                &format!(
+                format!("Sub-goal {}", i + 1),
+                format!(
                     "{}: {}",
                     sub_goal.goal.id,
                     self.format_term(&sub_goal.goal.target)
@@ -257,7 +257,7 @@ impl ExplanationGenerator {
         Explanation::new(title, message)
             .with_detail("Goal ID", &goal.goal.id)
             .with_detail("Tactic", tactic)
-            .with_detail("Confidence", &format!("{:.2}", confidence))
+            .with_detail("Confidence", format!("{:.2}", confidence))
             .with_suggestion(self.tactic_explanation(tactic))
     }
 
@@ -277,9 +277,9 @@ impl ExplanationGenerator {
 
         Explanation::new(title, message)
             .with_detail("Goal ID", &goal.goal.id)
-            .with_detail("Prover", &format!("{:?}", prover))
-            .with_detail("Time", &format!("{}ms", time_ms))
-            .with_detail("Attempts", &goal.attempts.to_string())
+            .with_detail("Prover", format!("{:?}", prover))
+            .with_detail("Time", format!("{}ms", time_ms))
+            .with_detail("Attempts", goal.attempts.to_string())
     }
 
     /// Format a term for display

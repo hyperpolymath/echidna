@@ -1868,7 +1868,7 @@ impl PVSBackend {
             } => {
                 let func_term = Self::expr_to_term(function);
                 let arg_terms: Vec<Term> =
-                    arguments.iter().map(|a| Self::expr_to_term(a)).collect();
+                    arguments.iter().map(Self::expr_to_term).collect();
                 Term::App {
                     func: Box::new(func_term),
                     args: arg_terms,
@@ -1946,7 +1946,7 @@ impl PVSBackend {
             },
             PVSExpr::Tuple(elements) => Term::App {
                 func: Box::new(Term::Const("tuple".to_string())),
-                args: elements.iter().map(|e| Self::expr_to_term(e)).collect(),
+                args: elements.iter().map(Self::expr_to_term).collect(),
             },
             PVSExpr::Record(fields) => {
                 let field_terms: Vec<Term> = fields
@@ -2000,7 +2000,7 @@ impl PVSBackend {
             },
             PVSExpr::SetEnumeration(elements) => Term::App {
                 func: Box::new(Term::Const("set_enum".to_string())),
-                args: elements.iter().map(|e| Self::expr_to_term(e)).collect(),
+                args: elements.iter().map(Self::expr_to_term).collect(),
             },
             PVSExpr::SetComprehension { binding, predicate } => Term::App {
                 func: Box::new(Term::Const("set_comprehension".to_string())),
@@ -2023,7 +2023,7 @@ impl PVSBackend {
             PVSType::Application { base, arguments } => {
                 let base_str = Self::type_to_string(base);
                 let args_str: Vec<String> =
-                    arguments.iter().map(|a| Self::type_to_string(a)).collect();
+                    arguments.iter().map(Self::type_to_string).collect();
                 format!("{}[{}]", base_str, args_str.join(", "))
             },
             PVSType::Function { domain, range } => {
@@ -2035,7 +2035,7 @@ impl PVSBackend {
             },
             PVSType::Product(types) => {
                 let type_strs: Vec<String> =
-                    types.iter().map(|t| Self::type_to_string(t)).collect();
+                    types.iter().map(Self::type_to_string).collect();
                 format!("[{}]", type_strs.join(", "))
             },
             PVSType::Record(fields) => {
@@ -2074,7 +2074,7 @@ impl PVSBackend {
             },
             Term::App { func, args } => PVSExpr::Application {
                 function: Box::new(Self::term_to_expr(func)),
-                arguments: args.iter().map(|a| Self::term_to_expr(a)).collect(),
+                arguments: args.iter().map(Self::term_to_expr).collect(),
             },
             Term::Lambda {
                 param,
@@ -2165,7 +2165,7 @@ impl PVSBackend {
             Term::Var(name) | Term::Const(name) => PVSType::Name(name.clone()),
             Term::App { func, args } => PVSType::Application {
                 base: Box::new(Self::term_to_type(func)),
-                arguments: args.iter().map(|a| Self::term_to_type(a)).collect(),
+                arguments: args.iter().map(Self::term_to_type).collect(),
             },
             Term::Pi {
                 param,
@@ -2193,7 +2193,7 @@ impl PVSBackend {
                 } else {
                     PVSPattern::Constructor {
                         name: name.clone(),
-                        args: args.iter().map(|p| Self::pattern_to_string(p)).collect(),
+                        args: args.iter().map(Self::pattern_to_string).collect(),
                     }
                 }
             },
@@ -2340,7 +2340,7 @@ impl PVSBackend {
             PVSStrategy::Custom { name, args } => Tactic::Custom {
                 prover: "PVS".to_string(),
                 command: name.clone(),
-                args: args.iter().map(|a| Self::format_expr(a)).collect(),
+                args: args.iter().map(Self::format_expr).collect(),
             },
             _ => Tactic::Custom {
                 prover: "PVS".to_string(),
@@ -2366,7 +2366,7 @@ impl PVSBackend {
                     func
                 } else {
                     let args: Vec<String> =
-                        arguments.iter().map(|a| Self::format_expr(a)).collect();
+                        arguments.iter().map(Self::format_expr).collect();
                     format!("{}({})", func, args.join(", "))
                 }
             },
@@ -2423,7 +2423,7 @@ impl PVSBackend {
                 format!("LET {} IN {}", lets.join(", "), Self::format_expr(body))
             },
             PVSExpr::Tuple(elements) => {
-                let elems: Vec<String> = elements.iter().map(|e| Self::format_expr(e)).collect();
+                let elems: Vec<String> = elements.iter().map(Self::format_expr).collect();
                 format!("({})", elems.join(", "))
             },
             PVSExpr::Record(fields) => {
@@ -2444,14 +2444,14 @@ impl PVSBackend {
                     .iter()
                     .map(|(indices, value)| {
                         let idx_str: Vec<String> =
-                            indices.iter().map(|i| Self::format_expr(i)).collect();
+                            indices.iter().map(Self::format_expr).collect();
                         format!("({}) := {}", idx_str.join(", "), Self::format_expr(value))
                     })
                     .collect();
                 format!("{} WITH [{}]", Self::format_expr(base), updates.join(", "))
             },
             PVSExpr::SetEnumeration(elements) => {
-                let elems: Vec<String> = elements.iter().map(|e| Self::format_expr(e)).collect();
+                let elems: Vec<String> = elements.iter().map(Self::format_expr).collect();
                 format!("{{{}}}", elems.join(", "))
             },
             PVSExpr::SetComprehension { binding, predicate } => {
@@ -2614,13 +2614,13 @@ impl PVSBackend {
             PVSStrategy::Try(strategies) => {
                 let strs: Vec<String> = strategies
                     .iter()
-                    .map(|s| Self::format_strategy(s))
+                    .map(Self::format_strategy)
                     .collect();
                 format!("(try {})", strs.join(" "))
             },
             PVSStrategy::Branch(main, branches) => {
                 let branch_strs: Vec<String> =
-                    branches.iter().map(|s| Self::format_strategy(s)).collect();
+                    branches.iter().map(Self::format_strategy).collect();
                 format!(
                     "(branch {} ({}))",
                     Self::format_strategy(main),
@@ -2630,7 +2630,7 @@ impl PVSBackend {
             PVSStrategy::Then(strategies) => {
                 let strs: Vec<String> = strategies
                     .iter()
-                    .map(|s| Self::format_strategy(s))
+                    .map(Self::format_strategy)
                     .collect();
                 format!("(then {})", strs.join(" "))
             },
@@ -2652,7 +2652,7 @@ impl PVSBackend {
                 if args.is_empty() {
                     format!("({})", name)
                 } else {
-                    let arg_strs: Vec<String> = args.iter().map(|a| Self::format_expr(a)).collect();
+                    let arg_strs: Vec<String> = args.iter().map(Self::format_expr).collect();
                     format!("({} {})", name, arg_strs.join(" "))
                 }
             },
@@ -2733,19 +2733,20 @@ impl ProverBackend for PVSBackend {
                 PVSDeclaration::ConstDecl {
                     name,
                     declared_type: _,
-                    definition,
+                    definition: Some(def),
                 } => {
-                    if let Some(def) = definition {
-                        let def_term = Term::App {
-                            func: Box::new(Term::Const("=".to_string())),
-                            args: vec![Term::Var(name.clone()), Self::expr_to_term(def)],
-                        };
-                        hypotheses.push(Hypothesis {
-                            name: format!("{}_def", name),
-                            ty: def_term,
-                            body: Some(Self::expr_to_term(def)),
-                        });
-                    }
+                    let def_term = Term::App {
+                        func: Box::new(Term::Const("=".to_string())),
+                        args: vec![Term::Var(name.clone()), Self::expr_to_term(def)],
+                    };
+                    hypotheses.push(Hypothesis {
+                        name: format!("{}_def", name),
+                        ty: def_term,
+                        body: Some(Self::expr_to_term(def)),
+                    });
+                },
+                PVSDeclaration::ConstDecl { definition: None, .. } => {
+                    // No definition — nothing to add as hypothesis
                 },
                 PVSDeclaration::TCC { name, formula, .. } => {
                     goals.push(Goal {
@@ -2975,7 +2976,7 @@ mod tests {
 
         match expr {
             PVSExpr::Application {
-                function,
+                function: _,
                 arguments,
             } => {
                 assert_eq!(arguments.len(), 2);

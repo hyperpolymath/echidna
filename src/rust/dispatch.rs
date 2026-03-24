@@ -164,8 +164,10 @@ impl ProverDispatcher {
         let start = Instant::now();
 
         // Step 1: Create the prover
-        let mut prover_config = ProverConfig::default();
-        prover_config.timeout = self.config.timeout;
+        let prover_config = ProverConfig {
+            timeout: self.config.timeout,
+            ..Default::default()
+        };
 
         let prover = ProverFactory::create(prover_kind, prover_config)
             .context("Failed to create prover backend")?;

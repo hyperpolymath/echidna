@@ -3,11 +3,12 @@
 //
 // Property-based tests and fuzzing targets for the TypedWasm prover oracle.
 //
+#![allow(dead_code)]
 // Validates that the 10-level type safety system is both necessary and
 // sufficient: safe programs verify, unsafe programs are rejected, and
 // weakening any level breaks verification.
 
-use echidna::provers::typed_wasm::{TypedWasmBackend, WasmType};
+use echidna::provers::typed_wasm::TypedWasmBackend;
 use echidna::provers::{ProverBackend, ProverConfig, ProverFactory, ProverKind};
 use proptest::prelude::*;
 

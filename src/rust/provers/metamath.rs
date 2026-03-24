@@ -989,7 +989,7 @@ mod tests {
         let term = backend.expr_to_term(&expr);
 
         match term {
-            Term::App { func, args } => {
+            Term::App { func: _, args } => {
                 assert_eq!(args.len(), 2);
             },
             _ => panic!("Expected App term"),

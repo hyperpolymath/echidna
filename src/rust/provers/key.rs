@@ -409,31 +409,35 @@ impl ProverBackend for KeyBackend {
             "key" => {
                 // Parse .key proof problem file
                 let (goals, axioms) = self.parse_key_file(&content);
-                let mut state = ProofState::default();
-                state.goals = if goals.is_empty() {
-                    vec![Goal {
-                        id: "key_goal_0".to_string(),
-                        target: Term::Const("true".to_string()),
-                        hypotheses: vec![],
-                    }]
-                } else {
-                    goals
+                let state = ProofState {
+                    goals: if goals.is_empty() {
+                        vec![Goal {
+                            id: "key_goal_0".to_string(),
+                            target: Term::Const("true".to_string()),
+                            hypotheses: vec![],
+                        }]
+                    } else {
+                        goals
+                    },
+                    context: crate::core::Context { axioms, ..Default::default() },
+                    ..Default::default()
                 };
-                state.context.axioms = axioms;
                 Ok(state)
             },
             "java" => {
                 // Parse JML-annotated Java source
                 let goals = self.parse_jml_annotations(&content);
-                let mut state = ProofState::default();
-                state.goals = if goals.is_empty() {
-                    vec![Goal {
-                        id: "java_goal_0".to_string(),
-                        target: Term::Const("true".to_string()),
-                        hypotheses: vec![],
-                    }]
-                } else {
-                    goals
+                let state = ProofState {
+                    goals: if goals.is_empty() {
+                        vec![Goal {
+                            id: "java_goal_0".to_string(),
+                            target: Term::Const("true".to_string()),
+                            hypotheses: vec![],
+                        }]
+                    } else {
+                        goals
+                    },
+                    ..Default::default()
                 };
                 Ok(state)
             },
@@ -447,9 +451,8 @@ impl ProverBackend for KeyBackend {
     /// Parse a proof problem from a raw string (assumes `.key` format)
     async fn parse_string(&self, content: &str) -> Result<ProofState> {
         let (goals, axioms) = self.parse_key_file(content);
-        let mut state = ProofState::default();
 
-        state.goals = if goals.is_empty() {
+        let computed_goals = if goals.is_empty() {
             // Fallback: treat each non-empty, non-comment line as a goal
             let mut fallback_goals = Vec::new();
             for line in content.lines() {
@@ -476,7 +479,11 @@ impl ProverBackend for KeyBackend {
             goals
         };
 
-        state.context.axioms = axioms;
+        let state = ProofState {
+            goals: computed_goals,
+            context: crate::core::Context { axioms, ..Default::default() },
+            ..Default::default()
+        };
 
         Ok(state)
     }
@@ -511,7 +518,7 @@ impl ProverBackend for KeyBackend {
                         // These tactics invoke KeY's proof engine
                         let input = self.to_key_format(state)?;
                         let mut child = Command::new(&self.config.executable)
-                            .args(&["--auto", "--script"])
+                            .args(["--auto", "--script"])
                             .arg(&tactic_str)
                             .stdin(Stdio::piped())
                             .stdout(Stdio::piped())
@@ -602,8 +609,8 @@ impl ProverBackend for KeyBackend {
         let input = self.to_key_format(state)?;
 
         let mut child = Command::new(&self.config.executable)
-            .args(&["--auto", "--no-gui"])
-            .args(&["--max-steps", &self.max_steps.to_string()])
+            .args(["--auto", "--no-gui"])
+            .args(["--max-steps", &self.max_steps.to_string()])
             .stdin(Stdio::piped())
             .stdout(Stdio::piped())
             .stderr(Stdio::piped())

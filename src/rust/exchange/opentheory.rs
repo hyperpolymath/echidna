@@ -111,7 +111,7 @@ impl OpenTheoryExporter {
             Term::Lambda { param, body, .. } => {
                 format!("abs (var \"{}\") {}", param, Self::term_to_opentheory(body))
             },
-            _ => format!("const \"echidna_opaque\""),
+            _ => "const \"echidna_opaque\"".to_string(),
         }
     }
 
