@@ -349,4 +349,65 @@ mod tests {
             "lrat"
         );
     }
+
+    #[test]
+    fn test_format_extension_drat() {
+        assert_eq!(
+            ProofCertificate::new(CertificateFormat::DRAT, String::new(), "test")
+                .format_extension(),
+            "drat"
+        );
+    }
+
+    #[test]
+    fn test_format_extension_tstp() {
+        assert_eq!(
+            ProofCertificate::new(CertificateFormat::TSTP, String::new(), "test")
+                .format_extension(),
+            "tstp"
+        );
+    }
+
+    #[test]
+    fn test_certificate_hash_different_content() {
+        let cert1 =
+            ProofCertificate::new(CertificateFormat::DRAT, "1 2 3 0\n".to_string(), "minisat");
+        let cert2 =
+            ProofCertificate::new(CertificateFormat::DRAT, "4 5 6 0\n".to_string(), "minisat");
+
+        assert_ne!(cert1.blake3_hash, cert2.blake3_hash);
+    }
+
+    #[test]
+    fn test_certificate_not_verified_by_default() {
+        let cert =
+            ProofCertificate::new(CertificateFormat::Alethe, "test content".to_string(), "cvc5");
+        assert!(!cert.verified);
+        assert!(cert.storage_path.is_none());
+    }
+
+    #[test]
+    fn test_certificate_format_serialization() {
+        let json = serde_json::to_string(&CertificateFormat::Alethe).unwrap();
+        assert!(json.contains("Alethe"));
+
+        let deserialized: CertificateFormat = serde_json::from_str(&json).unwrap();
+        assert_eq!(deserialized, CertificateFormat::Alethe);
+    }
+
+    #[test]
+    fn test_verification_result_serialization() {
+        let result = CertificateVerificationResult {
+            valid: true,
+            checker: "drat-trim".to_string(),
+            time_ms: 100,
+            error: None,
+            steps_checked: Some(42),
+        };
+
+        let json = serde_json::to_string(&result).unwrap();
+        let deserialized: CertificateVerificationResult = serde_json::from_str(&json).unwrap();
+        assert!(deserialized.valid);
+        assert_eq!(deserialized.steps_checked, Some(42));
+    }
 }

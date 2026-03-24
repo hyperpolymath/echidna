@@ -219,4 +219,70 @@ mod tests {
         assert!(tptp.contains("fof(axiom_1, axiom, p)."));
         assert!(tptp.contains("fof(conjecture, conjecture, q)."));
     }
+
+    #[test]
+    fn test_eprover_kind() {
+        let config = ProverConfig::default();
+        let backend = EProverBackend::new(config);
+        assert_eq!(backend.kind(), ProverKind::EProver);
+    }
+
+    #[test]
+    fn test_eprover_parse_result_theorem() {
+        let config = ProverConfig::default();
+        let backend = EProverBackend::new(config);
+
+        assert!(backend.parse_result("# Proof found!\n# SZS status Theorem\n").unwrap());
+        assert!(backend.parse_result("# SZS status Unsatisfiable\n").unwrap());
+    }
+
+    #[test]
+    fn test_eprover_parse_result_counter_satisfiable() {
+        let config = ProverConfig::default();
+        let backend = EProverBackend::new(config);
+
+        assert!(!backend.parse_result("# SZS status CounterSatisfiable\n").unwrap());
+        assert!(!backend.parse_result("# SZS status Satisfiable\n").unwrap());
+    }
+
+    #[test]
+    fn test_eprover_parse_result_inconclusive() {
+        let config = ProverConfig::default();
+        let backend = EProverBackend::new(config);
+
+        assert!(backend.parse_result("# SZS status ResourceOut\n").is_err());
+    }
+
+    #[tokio::test]
+    async fn test_eprover_parse_string_tptp() {
+        let config = ProverConfig::default();
+        let backend = EProverBackend::new(config);
+
+        let tptp = "fof(ax1, axiom, p(a)).\nfof(conj, conjecture, p(a)).\n";
+        let state = backend.parse_string(tptp).await.unwrap();
+
+        assert_eq!(state.context.axioms.len(), 1);
+        assert_eq!(state.goals.len(), 1);
+    }
+
+    #[tokio::test]
+    async fn test_eprover_parse_string_empty() {
+        let config = ProverConfig::default();
+        let backend = EProverBackend::new(config);
+
+        let state = backend.parse_string("").await.unwrap();
+        assert!(state.goals.is_empty());
+        assert!(state.context.axioms.is_empty());
+    }
+
+    #[tokio::test]
+    async fn test_eprover_parse_string_with_comments() {
+        let config = ProverConfig::default();
+        let backend = EProverBackend::new(config);
+
+        let tptp = "% This is a comment\nfof(ax1, axiom, p(a)).\n# Another comment\n";
+        let state = backend.parse_string(tptp).await.unwrap();
+
+        assert_eq!(state.context.axioms.len(), 1);
+    }
 }

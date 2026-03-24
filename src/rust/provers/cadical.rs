@@ -486,4 +486,90 @@ mod tests {
             Some(&serde_json::Value::Number(serde_json::Number::from(2)))
         );
     }
+
+    #[test]
+    fn test_cadical_kind() {
+        let config = ProverConfig::default();
+        let backend = CaDiCaLBackend::new(config);
+        assert_eq!(backend.kind(), ProverKind::CaDiCaL);
+    }
+
+    #[test]
+    fn test_parse_dimacs_comments_only() {
+        let dimacs = "c comment line 1\nc comment line 2\n";
+        let result = CaDiCaLBackend::parse_dimacs(dimacs);
+        assert!(result.is_ok());
+        let (vars, _, clauses) = result.unwrap();
+        assert_eq!(vars, 0);
+        assert!(clauses.is_empty());
+    }
+
+    #[test]
+    fn test_parse_dimacs_empty() {
+        let dimacs = "";
+        let result = CaDiCaLBackend::parse_dimacs(dimacs);
+        assert!(result.is_ok());
+    }
+
+    #[test]
+    fn test_parse_model_from_output() {
+        let output = "s SATISFIABLE\nv 1 -2 3 0\nv 4 -5 0\n";
+        let model = CaDiCaLBackend::parse_model(output);
+        assert_eq!(model, vec![1, -2, 3, 4, -5]);
+    }
+
+    #[test]
+    fn test_parse_model_empty_output() {
+        let output = "s UNSATISFIABLE\n";
+        let model = CaDiCaLBackend::parse_model(output);
+        assert!(model.is_empty());
+    }
+
+    #[test]
+    fn test_term_to_clause_const() {
+        let term = Term::Const("42".to_string());
+        let clause = CaDiCaLBackend::term_to_clause(&term);
+        assert_eq!(clause, vec![42]);
+    }
+
+    #[test]
+    fn test_term_to_clause_or_app() {
+        let term = Term::App {
+            func: Box::new(Term::Const("or".to_string())),
+            args: vec![
+                Term::Const("1".to_string()),
+                Term::Const("2".to_string()),
+            ],
+        };
+        let clause = CaDiCaLBackend::term_to_clause(&term);
+        assert_eq!(clause, vec![1, 2]);
+    }
+
+    #[test]
+    fn test_term_to_clause_negation() {
+        let term = Term::App {
+            func: Box::new(Term::Const("not".to_string())),
+            args: vec![Term::Const("3".to_string())],
+        };
+        let clause = CaDiCaLBackend::term_to_clause(&term);
+        assert_eq!(clause, vec![-3]);
+    }
+
+    #[test]
+    fn test_clause_to_term_single() {
+        let term = CaDiCaLBackend::clause_to_term(&[5]);
+        assert_eq!(term, Term::Const("5".to_string()));
+    }
+
+    #[test]
+    fn test_clause_to_term_multiple() {
+        let term = CaDiCaLBackend::clause_to_term(&[1, -2, 3]);
+        match term {
+            Term::App { func, args } => {
+                assert_eq!(*func, Term::Const("or".to_string()));
+                assert_eq!(args.len(), 3);
+            },
+            _ => panic!("Expected App term"),
+        }
+    }
 }

@@ -473,4 +473,69 @@ mod tests {
         let json = serde_json::to_string(&result).unwrap();
         assert!(json.contains("Level4"));
     }
+
+    #[test]
+    fn test_dispatch_result_deserialization() {
+        let json = r#"{"verified":false,"trust_level":"Level1","provers_used":["Z3"],"proof_time_ms":100,"goals_remaining":1,"axiom_report":null,"certificate_hash":null,"message":"Failed","cross_checked":false}"#;
+        let result: DispatchResult = serde_json::from_str(json).unwrap();
+        assert!(!result.verified);
+        assert_eq!(result.trust_level, TrustLevel::Level1);
+        assert_eq!(result.goals_remaining, 1);
+    }
+
+    #[test]
+    fn test_prover_selection_agda() {
+        let prover = ProverDispatcher::select_prover(
+            "module MyModule where\ndata Nat : Set where",
+            None,
+        );
+        assert_eq!(prover, ProverKind::Agda);
+    }
+
+    #[test]
+    fn test_prover_selection_isabelle() {
+        let prover = ProverDispatcher::select_prover(
+            "theory MyTheory\nimports Main",
+            None,
+        );
+        assert_eq!(prover, ProverKind::Isabelle);
+    }
+
+    #[test]
+    fn test_prover_selection_cnf_tptp() {
+        let prover = ProverDispatcher::select_prover("cnf(ax1, axiom, p(a)).", None);
+        assert_eq!(prover, ProverKind::Vampire);
+    }
+
+    #[test]
+    fn test_dispatch_config_custom() {
+        let config = DispatchConfig {
+            cross_check: true,
+            min_trust_level: TrustLevel::Level4,
+            track_axioms: false,
+            generate_certificates: true,
+            timeout: 600,
+        };
+        assert!(config.cross_check);
+        assert_eq!(config.min_trust_level, TrustLevel::Level4);
+        assert!(!config.track_axioms);
+        assert!(config.generate_certificates);
+        assert_eq!(config.timeout, 600);
+    }
+
+    #[test]
+    fn test_prover_dispatcher_default() {
+        let dispatcher = ProverDispatcher::default();
+        assert!(!dispatcher.config.cross_check);
+    }
+
+    #[test]
+    fn test_prover_dispatcher_with_config() {
+        let config = DispatchConfig {
+            cross_check: true,
+            ..Default::default()
+        };
+        let dispatcher = ProverDispatcher::with_config(config);
+        assert!(dispatcher.config.cross_check);
+    }
 }

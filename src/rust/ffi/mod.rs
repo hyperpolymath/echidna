@@ -1018,7 +1018,7 @@ pub extern "C" fn echidna_last_error() -> *const u8 {
 /// Get ECHIDNA version string.
 #[no_mangle]
 pub extern "C" fn echidna_version() -> *const u8 {
-    b"1.6.0\0".as_ptr()
+    c"1.6.0".as_ptr().cast()
 }
 
 /// Map ProverKind to u8 for FFI (reverse of kind_from_u8)

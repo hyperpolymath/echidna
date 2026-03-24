@@ -356,4 +356,41 @@ mod tests {
         let result = strategy.search("forall n, n + 0 = n", Duration::from_secs(5));
         assert!(result.is_ok());
     }
+
+    #[test]
+    fn test_proof_result_fields() {
+        let result = ProofResult {
+            success: true,
+            prover_name: Some("Lean".to_string()),
+            time_seconds: 1.5,
+            tactic_count: 3,
+            error_message: None,
+            strategy_used: "Sequential".to_string(),
+        };
+        assert!(result.success);
+        assert_eq!(result.prover_name.unwrap(), "Lean");
+        assert_eq!(result.tactic_count, 3);
+        assert!(result.error_message.is_none());
+    }
+
+    #[test]
+    fn test_proof_result_failure() {
+        let result = ProofResult {
+            success: false,
+            prover_name: None,
+            time_seconds: 5.0,
+            tactic_count: 0,
+            error_message: Some("Timeout".to_string()),
+            strategy_used: "Sequential".to_string(),
+        };
+        assert!(!result.success);
+        assert!(result.prover_name.is_none());
+        assert_eq!(result.error_message.unwrap(), "Timeout");
+    }
+
+    #[test]
+    fn test_sequential_search_name() {
+        let strategy = SequentialSearch;
+        assert_eq!(strategy.name(), "Sequential");
+    }
 }
