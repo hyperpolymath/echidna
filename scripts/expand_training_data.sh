@@ -88,7 +88,7 @@ Next Steps:
 ===========
 
 1. Extract from existing proofs (5 minutes):
-   cd /var/home/hyper/Documents/hyperpolymath-repos/echidna
+   cd "$ECHIDNA_ROOT"
    julia --project=src/julia src/julia/extract_training_data.jl
 
 2. Extract from CoqGym (if downloaded, 30 minutes):

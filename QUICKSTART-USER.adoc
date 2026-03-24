@@ -1,0 +1,181 @@
+// SPDX-License-Identifier: PMPL-1.0-or-later
+// Copyright (c) 2026 Jonathan D.A. Jewell (hyperpolymath) <j.d.a.jewell@open.ac.uk>
+= ECHIDNA: Quickstart Guide
+:toc: macro
+:icons: font
+:source-highlighter: rouge
+
+Neurosymbolic theorem proving platform with 48 prover backends, trust-hardened
+verification pipeline, and sandboxed execution.
+
+toc::[]
+
+== Prerequisites
+
+[cols="1,1,2"]
+|===
+| Tool | Version | Install
+
+| Rust
+| nightly (>= 1.80)
+| `asdf install rust nightly` or https://rustup.rs
+
+| just
+| >= 1.0
+| `cargo install just` or https://just.systems
+
+| Podman
+| >= 4.0
+| `dnf install podman` / `apt install podman`
+
+| pkg-config + openssl-devel
+| system
+| `dnf install pkg-config openssl-devel` / `apt install pkg-config libssl-dev`
+|===
+
+Optional (for full stack):
+
+* Idris2 >= 0.7.0 (for ABI definitions in `src/abi/`)
+* Zig >= 0.13.0 (for FFI bridge in `ffi/zig/`)
+* Julia >= 1.10 (for ML layer in `src/julia/`)
+* Chapel (for parallel proof dispatch in `chapel_poc/`)
+* Deno >= 2.0 (for ReScript UI in `src/rescript/`)
+
+== Clone and build
+
+[source,bash]
+----
+cd ~/Documents/hyperpolymath-repos
+git clone https://github.com/hyperpolymath/echidna.git
+cd echidna
+
+just build
+----
+
+Expected output:
+
+----
+   Compiling echidna v1.5.0 (/home/you/.../echidna)
+    Finished `dev` profile [unoptimized + debuginfo] target(s) in 45s
+----
+
+== Run tests
+
+[source,bash]
+----
+# Unit tests (232)
+just test
+
+# All tests including integration (389)
+just test-all
+----
+
+Expected:
+
+----
+running 232 tests
+...
+test result: ok. 232 passed; 0 failed; 0 ignored
+----
+
+== Launch the REPL
+
+[source,bash]
+----
+just run repl
+----
+
+Example session:
+
+----
+echidna> :prove 1 + 1 = 2
+[z3] Proved in 0.003s (confidence: 0.99)
+echidna> :backends
+48 backends available (6 interactive, 3 SMT, 3 ATP, ...)
+echidna> :quit
+----
+
+== Launch the API server
+
+[source,bash]
+----
+# REST API on port 8000
+just run serve --port 8000
+----
+
+Then in another terminal:
+
+[source,bash]
+----
+curl http://localhost:8000/api/v1/health
+# {"status":"ok","provers":48,"version":"1.5.0"}
+----
+
+== Build container image
+
+[source,bash]
+----
+# Minimal (Z3, CVC5, Lean, Idris2)
+just container-build
+
+# Full (all provers + Julia)
+just container-build-full
+----
+
+== Quick reference
+
+[cols="1,2"]
+|===
+| Command | Purpose
+
+| `just build`
+| Build debug binary
+
+| `just build-release`
+| Build optimised release binary
+
+| `just test`
+| Run unit tests (232)
+
+| `just test-all`
+| Run all tests (389)
+
+| `just lint`
+| Run clippy lints
+
+| `just fmt`
+| Format Rust code
+
+| `just pre-commit`
+| Format check + lint + test
+
+| `just run repl`
+| Launch interactive REPL
+
+| `just container-build`
+| Build minimal container
+
+| `just assail`
+| Run panic-attacker pre-commit scan
+
+| `just doctor`
+| Check all required tools are installed
+
+| `just tour`
+| Guided walkthrough of the repo
+|===
+
+== Troubleshooting
+
+`openssl-sys build failure`::
+  Install `openssl-devel` (Fedora) or `libssl-dev` (Debian/Ubuntu).
+
+`cargo: command not found`::
+  Install Rust via `asdf install rust nightly` or https://rustup.rs.
+
+`389 tests but some fail on timeout`::
+  Some integration tests need solver binaries (z3, cvc5). Install them or run
+  `just test` for unit tests only.
+
+Container build fails::
+  Ensure Podman is installed (`podman --version`). ECHIDNA uses Podman, not Docker.

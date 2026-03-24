@@ -81,6 +81,9 @@ pub async fn start_server(port: u16, host: String, enable_cors: bool) -> Result<
 
     // Build router
     let mut app = Router::new()
+        // Groove discovery endpoint — returns capability manifest for service mesh.
+        // See Groove.idr echidnaManifest for the canonical ABI definition.
+        .route("/.well-known/groove", get(groove_manifest))
         // REST API endpoints
         .route("/api/health", get(health_check))
         .route("/api/provers", get(list_provers))
@@ -129,6 +132,7 @@ pub async fn start_server(port: u16, host: String, enable_cors: bool) -> Result<
     );
     println!();
     println!("{}", "Endpoints:".yellow().bold());
+    println!("  GET  /.well-known/groove       - Groove discovery manifest");
     println!("  GET  /api/health              - Health check");
     println!("  GET  /api/provers             - List available provers");
     println!("  POST /api/prove               - Prove a theorem");
@@ -148,6 +152,46 @@ pub async fn start_server(port: u16, host: String, enable_cors: bool) -> Result<
     axum::serve(listener, app).await?;
 
     Ok(())
+}
+
+// ========== Groove Discovery ==========
+
+/// Groove capability manifest for ECHIDNA.
+///
+/// Returns the service's capabilities in the standard Groove format so that
+/// Gossamer, PanLL, and other groove-aware systems can discover ECHIDNA by
+/// probing GET /.well-known/groove. See Groove.idr echidnaManifest for the
+/// canonical ABI definition.
+///
+/// Capabilities offered:
+///   - theorem-proving: Multi-backend theorem proving (48 provers)
+///
+/// Capabilities consumed:
+///   - octad-storage (VeriSimDB): Persist proof artifacts as octad entities
+///   - scanning (Hypatia): Trigger re-verification after codebase changes
+async fn groove_manifest() -> Json<serde_json::Value> {
+    Json(json!({
+        "groove_version": "1",
+        "service_id": "echidna",
+        "service_version": env!("CARGO_PKG_VERSION"),
+        "capabilities": {
+            "theorem_proving": {
+                "type": "theorem-proving",
+                "description": "Neurosymbolic theorem proving with 48 prover backends",
+                "protocol": "http",
+                "endpoint": "/api/v1/prove",
+                "requires_auth": false,
+                "panel_compatible": true
+            }
+        },
+        "consumes": ["octad-storage", "scanning"],
+        "endpoints": {
+            "api": "http://localhost:9000/api",
+            "health": "http://localhost:9000/api/health"
+        },
+        "health": "/api/health",
+        "applicability": ["individual", "team"]
+    }))
 }
 
 // ========== REST API Handlers ==========

@@ -238,7 +238,7 @@ end
 #!/bin/bash
 # download_proof_corpora.sh
 
-ECHIDNA_ROOT="/var/home/hyper/Documents/hyperpolymath-repos/echidna"
+ECHIDNA_ROOT="${ECHIDNA_ROOT:-$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)}"
 DATA_DIR="$ECHIDNA_ROOT/external_corpora"
 
 mkdir -p "$DATA_DIR"
@@ -456,7 +456,7 @@ lean_proof = "intro. rfl"
 
 ### Immediate (Today)
 ```bash
-cd /var/home/hyper/Documents/hyperpolymath-repos/echidna
+cd "$ECHIDNA_ROOT"  # Set ECHIDNA_ROOT or run from repo root
 
 # 1. Mine existing proof files
 julia --project=src/julia -e 'include("src/julia/extract_training_data.jl");

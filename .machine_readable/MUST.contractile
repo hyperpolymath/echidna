@@ -1,0 +1,86 @@
+; SPDX-License-Identifier: PMPL-1.0-or-later
+; MUST.contractile — Baseline invariants for echidna
+; These constraints MUST NOT be violated. K9 validators enforce them.
+
+(must-contractile
+  (version "1.0.0")
+  (repo "echidna")
+
+  ; === Universal Invariants (apply to ALL repos) ===
+
+  (invariants
+    ; Paths
+    (must "no hardcoded absolute paths (/home/*, /mnt/*, /var/mnt/*)")
+    (must "all paths use env vars, XDG dirs, or relative references")
+
+    ; Language policy
+    (must "no new TypeScript files")
+    (must "no new Python files")
+    (must "no new Go files")
+    (must "no npm/bun/yarn/pnpm dependencies — Deno only")
+
+    ; Dangerous patterns
+    (must "no believe_me (Idris2)")
+    (must "no assert_total (Idris2)")
+    (must "no Admitted (Coq)")
+    (must "no sorry (Lean)")
+    (must "no unsafeCoerce (Haskell)")
+    (must "no Obj.magic (OCaml)")
+    (must "no unsafe {} blocks without safety comment (Rust)")
+
+    ; License
+    (must "SPDX-License-Identifier header on every source file")
+    (must "no removal or modification of LICENSE file")
+
+    ; Structure
+    (must ".machine_readable/ directory preserved")
+    (must "0-AI-MANIFEST.a2ml preserved")
+    (must "no SCM files in repo root — only in .machine_readable/")
+
+    ; CI
+    (must "no removal of CI workflows without explicit approval")
+    (must "all GitHub Actions SHA-pinned")
+
+    ; Code quality
+    (must "tests must not be deleted or weakened")
+    (must "generated code in generated/ directory only")
+    (must "no introduction of OWASP top 10 vulnerabilities")
+
+    ; ABI/FFI (if applicable)
+    (must "no modification of ABI contracts without proof update")
+    (must "no removal of formal verification proofs")
+  )
+
+  ; === Project-Specific Invariants (echidna) ===
+
+  (invariants
+    ; Trust pipeline integrity
+    (must "trust-hardening dispatch pipeline must not be bypassed or weakened")
+    (must "solver binary integrity checks (SHAKE3-512 + BLAKE3) must remain enabled")
+    (must "proof certificate checking (Alethe, DRAT/LRAT, TSTP) must not be disabled")
+    (must "axiom usage tracking with 4 danger levels must be preserved")
+
+    ; Prover backends
+    (must "48 prover backends must not be removed — only added or improved")
+    (must "ProverBackend trait interface must remain stable across versions")
+    (must "sandboxed solver execution (Podman/bubblewrap) must not be downgraded to 'none'")
+
+    ; 5-level trust hierarchy
+    (must "confidence scoring must use the 5-level trust hierarchy — no shortcuts")
+    (must "mutation testing for specifications must remain active")
+    (must "cross-prover proof exchange (OpenTheory, Dedukti) must not be removed")
+
+    ; Idris2 ABI
+    (must "src/abi/*.idr formal proofs must have zero believe_me (7 modules)")
+    (must "Zig FFI layer (4 shared libraries) must maintain C ABI compatibility")
+
+    ; API interfaces
+    (must "GraphQL, gRPC, and REST interfaces must remain operational")
+    (must "no removal of any of the 389+ tests")
+  )
+
+  (enforcement
+    (k9-validator "contractiles/k9/must-check.k9.ncl")
+    (ci "quality.yml runs must-check on every PR")
+  )
+)

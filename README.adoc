@@ -3,6 +3,7 @@
 
 = ECHIDNA
 
+image:https://img.shields.io/badge/OpenSSF-Best_Practices-green?logo=opensourcesecurity[OpenSSF Best Practices,link="https://www.bestpractices.dev/en/projects/new?repo_url=https://github.com/hyperpolymath/echidna"]
 image:https://img.shields.io/badge/License-PMPL--1.0-blue.svg[License: PMPL-1.0,link="https://github.com/hyperpolymath/palimpsest-license"]
 image:https://img.shields.io/badge/Provers-30-green.svg[Provers: 30]
 image:https://img.shields.io/badge/Tests-306%2B-brightgreen.svg[Tests: 306+]

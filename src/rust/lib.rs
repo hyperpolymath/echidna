@@ -14,6 +14,7 @@ pub mod dispatch;
 pub mod exchange;
 pub mod executor;
 pub mod ffi;
+pub mod groove; // Gossamer Groove discovery endpoint (port 9000)
 pub mod integrity;
 pub mod llm; // Frontier LLM advisor (via BoJ Server)
 pub mod neural;

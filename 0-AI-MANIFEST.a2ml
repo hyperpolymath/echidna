@@ -1,70 +1,103 @@
 # SPDX-License-Identifier: PMPL-1.0-or-later
+# SPDX-FileCopyrightText: 2026 Jonathan D.A. Jewell (hyperpolymath)
+#
 # 0-AI-MANIFEST.a2ml — Universal AI Agent Entry Point
 # ECHIDNA: Extensible Cognitive Hybrid Intelligence for Deductive Neural Assistance
 #
 # READ THIS FILE FIRST. This is the canonical entry point for all AI agents.
 
 [manifest]
-version = "1.0"
+version = "1.1"
 project = "echidna"
 type = "neurosymbolic-theorem-prover"
+full-version = "1.6.0"
+license = "PMPL-1.0-or-later"
+author = "Jonathan D.A. Jewell <j.d.a.jewell@open.ac.uk>"
+repo = "https://github.com/hyperpolymath/echidna"
+
+[context-tiers]
+# Tier 0 (always load): This file + .claude/CLAUDE.md — orientation only
+# Tier 1 (load if working on code): README.adoc, EXPLAINME.adoc, Justfile, Cargo.toml
+# Tier 2 (load on demand): .machine_readable/6a2/*.a2ml, docs/
+# Tier 3 (never load unless asked): tests/, generated/, proofs/
+#
+# DO NOT READ unless specifically asked:
+#   tests/           — test files (run them, don't read them)
+#   target/          — Rust build output
+#   _build/          — Elixir build output
+#   generated/       — auto-generated code
+#   proofs/          — formal proof files (verify, don't read)
+#   *.lock           — lock files
+#   node_modules/    — dependencies
 
 [canonical-locations]
-# Machine-readable state files — ONLY in .machine_readable/
 state-files = ".machine_readable/"
-# Anchors
+state = ".machine_readable/6a2/STATE.a2ml"
+meta = ".machine_readable/6a2/META.a2ml"
+ecosystem = ".machine_readable/6a2/ECOSYSTEM.a2ml"
 anchors = ".machine_readable/anchors/"
-# Policies
 policies = ".machine_readable/policies/"
-# Contractiles (trust, dust, k9, lust, must)
 contractiles = ".machine_readable/contractiles/"
-# Bot directives
 bot-directives = ".machine_readable/bot_directives/"
-# AI configuration
-ai-config = ".machine_readable/ai/"
-# Community metadata
-community = ".github/"
-# Container ecosystem (Stapeln)
-container = "container/"
-# Source code
 source = "src/"
-# ABI definitions (Idris2)
 abi = "src/abi/"
-# FFI bridge (Zig)
 ffi = "ffi/zig/"
-# Formal proofs
 proofs = "proofs/"
+container = "container/"
+
+[tech-stack]
+primary = "Rust (48 prover backends, trust pipeline, CLI, REPL, API servers)"
+secondary = "Julia (ML inference, port 8090), ReScript+Deno (UI, 28 files)"
+optional = "Chapel (parallel proof dispatch)"
+abi = "Idris2 (7 modules, zero believe_me)"
+ffi = "Zig (4 shared libraries)"
+interfaces = "GraphQL (8080), gRPC (50051), REST (8000)"
+build = "Justfile (primary), Cargo workspace"
+container = "Podman + Containerfile"
+
+[architecture]
+# Trust-hardened neurosymbolic theorem proving with 48 prover backends
+core = "src/rust/"                  # 48 provers, trust pipeline, dispatch
+verification = "src/rust/verification/" # Portfolio, certificates, axiom tracker, confidence, mutation, pareto, statistics
+integrity = "src/rust/integrity/"   # Solver binary integrity (SHAKE3-512, BLAKE3)
+executor = "src/rust/executor/"     # Sandboxed execution (Podman, bubblewrap)
+exchange = "src/rust/exchange/"     # Cross-prover proof exchange (OpenTheory, Dedukti)
+agent = "src/rust/agent/"           # Agentic proof search (actor model)
+interfaces = "src/interfaces/"      # GraphQL + gRPC + REST (workspace members)
+julia-ml = "src/julia/"             # Neural premise selection
+rescript-ui = "src/rescript/"       # UI components
+
+[trust-pipeline]
+# 11-step trust hardening (v1.5+)
+step-1 = "Solver binary integrity (SHAKE3-512 + BLAKE3)"
+step-2 = "SMT portfolio solving / cross-checking"
+step-3 = "Proof certificate checking (Alethe, DRAT/LRAT, TSTP)"
+step-4 = "Axiom usage tracking (4 danger levels)"
+step-5 = "Solver sandboxing (Podman, bubblewrap)"
+step-6 = "5-level trust hierarchy for confidence scoring"
+step-7 = "Mutation testing for specifications"
+step-8 = "Prover dispatch pipeline"
+step-9 = "Cross-prover proof exchange"
+step-10 = "Pareto frontier (multi-objective proof search)"
+step-11 = "Bayesian timeout estimation"
 
 [critical-invariants]
-# Rules that MUST NEVER be violated
-invariant-1 = "State files (.machine_readable/6a2/STATE.a2ml, .machine_readable/6a2/META.a2ml, .machine_readable/6a2/ECOSYSTEM.a2ml, .machine_readable/6a2/AGENTIC.a2ml, .machine_readable/6a2/NEUROSYM.a2ml, .machine_readable/6a2/PLAYBOOK.a2ml) exist in .machine_readable/ ONLY — never in root"
-invariant-2 = "All interfaces stay under src/interfaces/ — never extract to separate repos"
+invariant-1 = "State files in .machine_readable/ ONLY — never in root"
+invariant-2 = "All interfaces under src/interfaces/ — never extract to separate repos"
 invariant-3 = "When adding provers: update all 3 layers (Rust, Julia, Chapel)"
 invariant-4 = "Original name: 'Cognitive Hybrid' not 'Computational Heuristic'"
-invariant-5 = "License: PMPL-1.0-or-later throughout"
-invariant-6 = "Author: Jonathan D.A. Jewell (hyperpolymath) <j.d.a.jewell@open.ac.uk>"
-invariant-7 = "Container files use 'Containerfile' never 'Dockerfile'"
-invariant-8 = "Container runtime is Podman never Docker"
-
-[structure]
-# Key directories
-src-rust = "src/rust/"           # Core Rust implementation (30 prover backends)
-src-julia = "src/julia/"         # Neural ML layer
-src-interfaces = "src/interfaces/"  # GraphQL + gRPC + REST (consolidated)
-src-rescript = "src/rescript/"   # UI components
-src-abi = "src/abi/"             # Idris2 ABI definitions
-ffi-zig = "ffi/zig/"             # Zig FFI bridge
-chapel-poc = "chapel_poc/"      # Chapel parallel layer
-echidnabot = "echidnabot/"      # Echidnabot satellite
-echidna-playground = "echidna-playground/"  # Playground
+invariant-5 = "PMPL-1.0-or-later throughout"
+invariant-6 = "Container: Containerfile not Dockerfile, Podman not Docker"
+invariant-7 = "Justfile is primary build system — not Make"
+invariant-8 = "No Python — Julia for ML, Rust for systems, ReScript for apps"
+invariant-9 = "Zero believe_me in Idris2 ABI (src/abi/)"
 
 [session-protocol]
 on-enter = [
   "Read this manifest",
-  "Read `.machine_readable/6a2/STATE.a2ml` for current status",
-  "Read `.machine_readable/6a2/META.a2ml` for architecture decisions",
-  "Read `.machine_readable/6a2/ECOSYSTEM.a2ml` for ecosystem position",
+  "Read .machine_readable/6a2/STATE.a2ml for current status",
+  "Read .claude/CLAUDE.md for build commands and conventions",
 ]
 on-exit = [
-  "Update `.machine_readable/6a2/STATE.a2ml` with progress",
+  "Update .machine_readable/6a2/STATE.a2ml with progress",
 ]

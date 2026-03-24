@@ -6,7 +6,7 @@
 
 == Executive Summary
 
-This report documents the testing of the ECHIDNA (Extensible Cognitive Hybrid Intelligence for Deductive Neural Assistance) Rust project at `/var/home/hyper/repos/echidna`.
+This report documents the testing of the ECHIDNA (Extensible Cognitive Hybrid Intelligence for Deductive Neural Assistance) Rust project.
 
 [cols="1,3"]
 |===
@@ -250,5 +250,5 @@ Hol4         - Tier 4 | Complexity 5/5 | 4 weeks
 |Platform |Linux 6.17.12-300.fc43.x86_64
 |Rust Version |See Cargo.toml
 |Date |2025-12-29
-|Repository |/var/home/hyper/repos/echidna
+|Repository |https://github.com/hyperpolymath/echidna
 |===
