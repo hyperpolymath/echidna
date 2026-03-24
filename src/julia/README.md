@@ -185,25 +185,25 @@ using EchidnaML
 # Start server
 start_api_server(
     "trained_models/echidna_v1",
-    port=8080,
+    port=8081,
     host="0.0.0.0",
     cache_size=1000,
     async=true
 )
 
-# Server runs at http://localhost:8080
+# Server runs at http://localhost:8081
 ```
 
 #### API Endpoints
 
 **Health Check**
 ```bash
-curl http://localhost:8080/health
+curl http://localhost:8081/health
 ```
 
 **Predict Premises**
 ```bash
-curl -X POST http://localhost:8080/predict \
+curl -X POST http://localhost:8081/predict \
   -H "Content-Type: application/json" \
   -d '{
     "goal": "∀ x, P x → Q x",
@@ -222,7 +222,7 @@ curl -X POST http://localhost:8080/predict \
 
 **Interactive Suggestion**
 ```bash
-curl -X POST http://localhost:8080/suggest \
+curl -X POST http://localhost:8081/suggest \
   -H "Content-Type: application/json" \
   -d '{
     "goal": "theorem_statement",
@@ -238,12 +238,12 @@ curl -X POST http://localhost:8080/suggest \
 
 **List Provers**
 ```bash
-curl http://localhost:8080/provers
+curl http://localhost:8081/provers
 ```
 
 **Metrics**
 ```bash
-curl http://localhost:8080/metrics
+curl http://localhost:8081/metrics
 ```
 
 ## Architecture Details
@@ -411,7 +411,7 @@ let response = await fetch("/predict", {
 podman build -t echidna-ml -f Containerfile.julia .
 
 # Run server
-podman run -p 8080:8080 \
+podman run -p 8081:8081 \
   -v ./trained_models:/models:ro \
   echidna-ml \
   julia --project=/app -e 'using EchidnaML; start_api_server("/models/echidna_v1")'

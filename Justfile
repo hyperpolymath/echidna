@@ -286,7 +286,7 @@ tour:
     echo "     src/rust/agent/           - Agentic proof search (actor model)"
     echo ""
     echo "2. API INTERFACES: src/interfaces/"
-    echo "     graphql/   - async-graphql (port 8080)"
+    echo "     graphql/   - async-graphql (port 8081)"
     echo "     grpc/      - tonic gRPC (port 50051)"
     echo "     rest/       - axum + OpenAPI (port 8000)"
     echo ""

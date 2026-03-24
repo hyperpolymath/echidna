@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: PMPL-1.0-or-later
 // Quick test of UI API connectivity
-const apiBase = 'http://127.0.0.1:8080/api';
+const apiBase = 'http://127.0.0.1:8081/api';
 
 async function testAPI() {
   console.log('Testing ECHIDNA API connectivity...\n');

@@ -64,7 +64,7 @@ fn default_host() -> String {
 }
 
 fn default_port() -> u16 {
-    8080
+    8081
 }
 
 #[derive(Debug, Deserialize, Clone)]
@@ -124,11 +124,11 @@ impl Default for EchidnaConfig {
 }
 
 fn default_echidna_endpoint() -> String {
-    "http://localhost:8080/graphql".to_string()
+    "http://localhost:8081/graphql".to_string()
 }
 
 fn default_echidna_rest_endpoint() -> String {
-    "http://localhost:8080".to_string()
+    "http://localhost:8081".to_string()
 }
 
 fn default_echidna_mode() -> EchidnaApiMode {

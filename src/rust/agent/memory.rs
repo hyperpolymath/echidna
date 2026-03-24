@@ -253,7 +253,7 @@ impl VeriSimDBProofStore {
     /// Create a new VeriSimDB proof store.
     ///
     /// # Arguments
-    /// * `verisimdb_url` — Base URL of the VeriSimDB instance (e.g., "http://localhost:8080")
+    /// * `verisimdb_url` — Base URL of the VeriSimDB instance (e.g., "http://localhost:8081")
     pub fn new(verisimdb_url: &str) -> Self {
         VeriSimDBProofStore {
             client: crate::verisimdb_bridge::VeriSimDBClient::new(verisimdb_url),

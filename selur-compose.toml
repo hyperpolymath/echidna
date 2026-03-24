@@ -4,7 +4,7 @@
 # ECHIDNA — Stapeln/Selur service definition.
 #
 # Multi-stage Rust build with Z3 SMT solver + Lean 4 prover.
-# Exposes HTTP API on port 8080 (GraphQL/gRPC/REST interfaces).
+# Exposes HTTP API on port 8081 (GraphQL/gRPC/REST interfaces).
 #
 # Usage:
 #   podman-compose -f selur-compose.toml up -d
@@ -24,7 +24,7 @@ name = "echidna"
 [services.app]
 build = { context = ".", dockerfile = "Containerfile" }
 restart = "unless-stopped"
-ports = ["8080:8080"]
+ports = ["8081:8081"]
 networks = ["echidna-internal"]
 environment = [
   "ECHIDNA_PROVER_PATH=/opt",

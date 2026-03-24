@@ -35,7 +35,7 @@ K9!
     port
       | Number
       | std.contract.from_predicate (fun p => p > 0 && p < 65536)
-      = 8080,
+      = 8081,
 
     # Example: Boolean flag
     enabled | Bool = true,

@@ -154,7 +154,7 @@ mode = "auto"
 [source,bash]
 ----
 # Start the webhook server
-echidnabot serve --port 8080
+echidnabot serve --port 8081
 
 # Register a repository
 echidnabot register --platform github --repo owner/name
@@ -299,7 +299,7 @@ podman build -t echidnabot:latest .
 
 # Run with environment config
 podman run -d \
-  -p 8080:8080 \
+  -p 8081:8081 \
   -e ECHIDNABOT_DATABASE_URL=postgres://... \
   -e ECHIDNABOT_ECHIDNA_ENDPOINT=https://... \
   -e GITHUB_WEBHOOK_SECRET=... \

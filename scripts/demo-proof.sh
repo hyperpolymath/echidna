@@ -4,7 +4,7 @@
 
 set -e
 
-API="http://127.0.0.1:8080/api"
+API="http://127.0.0.1:8081/api"
 
 echo "╔════════════════════════════════════════════════════════════╗"
 echo "║         ECHIDNA Live Demo - Interactive Proof              ║"

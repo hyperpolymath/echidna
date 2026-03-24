@@ -221,7 +221,7 @@ end
 # Start HTTP service
 using HTTP, JSON
 
-function serve_classifier(classifier, port=8080)
+function serve_classifier(classifier, port=8081)
     HTTP.serve(port) do request
         embedding = JSON.parse(String(request.body))["embedding"]
         aspects = predict_aspects(classifier, embedding)

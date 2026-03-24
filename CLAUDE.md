@@ -33,7 +33,7 @@ echidna/
 │   │   ├── main.rs         # CLI entry point
 │   │   └── lib.rs          # Library root
 │   ├── interfaces/         # API interfaces (workspace members)
-│   │   ├── graphql/        # GraphQL (async-graphql, port 8080)
+│   │   ├── graphql/        # GraphQL (async-graphql, port 8081)
 │   │   ├── grpc/           # gRPC (tonic, port 50051)
 │   │   └── rest/           # REST (axum + OpenAPI, port 8000)
 │   ├── julia/              # Julia ML components

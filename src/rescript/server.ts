@@ -10,7 +10,7 @@ import { serve } from "@std/http";
 import { serveDir } from "https://deno.land/std@0.211.0/http/file_server.ts";
 import { join } from "@std/path";
 
-const PORT = 8080;
+const PORT = 8081;
 const API_BACKEND = Deno.env.get("ECHIDNA_API_URL") || "http://localhost:3000";
 
 console.log(`🦔 ECHIDNA UI Server starting on port ${PORT}`);

@@ -62,8 +62,8 @@ COPY --from=julia-builder /app/models /app/models
 COPY src/rescript/index.html /app/ui/
 COPY src/rescript/src/*.bs.js /app/ui/
 
-EXPOSE 8080 3000
-CMD ["/usr/local/bin/echidna", "server", "--port", "8080", "--host", "0.0.0.0", "--cors"]
+EXPOSE 8081 3000
+CMD ["/usr/local/bin/echidna", "server", "--port", "8081", "--host", "0.0.0.0", "--cors"]
 ```
 
 ### Docker Compose
@@ -75,7 +75,7 @@ services:
   echidna-backend:
     build: .
     ports:
-      - "8080:8080"
+      - "8081:8081"
     environment:
       - RUST_LOG=info
     volumes:
@@ -108,7 +108,7 @@ After=network.target
 Type=simple
 User=echidna
 WorkingDirectory=/opt/echidna
-ExecStart=/opt/echidna/bin/echidna server --port 8080 --host 0.0.0.0 --cors
+ExecStart=/opt/echidna/bin/echidna server --port 8081 --host 0.0.0.0 --cors
 Restart=always
 RestartSec=10
 
@@ -154,7 +154,7 @@ cd echidna
 ./build-production.sh
 
 # Configure firewall
-sudo ufw allow 8080/tcp
+sudo ufw allow 8081/tcp
 sudo ufw allow 3000/tcp
 ```
 
@@ -198,7 +198,7 @@ server {
 
     # Backend API
     location /api/ {
-        proxy_pass http://127.0.0.1:8080/api/;
+        proxy_pass http://127.0.0.1:8081/api/;
         proxy_http_version 1.1;
         proxy_set_header Upgrade $http_upgrade;
         proxy_set_header Connection 'upgrade';
@@ -212,7 +212,7 @@ server {
 
     # WebSocket (future)
     location /ws/ {
-        proxy_pass http://127.0.0.1:8080/ws/;
+        proxy_pass http://127.0.0.1:8081/ws/;
         proxy_http_version 1.1;
         proxy_set_header Upgrade $http_upgrade;
         proxy_set_header Connection "upgrade";
@@ -268,7 +268,7 @@ export ECHIDNA_MAX_SESSIONS=100
 
 ```bash
 # Add to monitoring system
-curl http://localhost:8080/api/health
+curl http://localhost:8081/api/health
 
 # Expected response:
 # {"status":"ok","version":"1.0.0"}
@@ -341,7 +341,7 @@ sudo systemctl restart echidna
 sudo journalctl -u echidna -n 50
 
 # Check port availability
-sudo netstat -tlnp | grep 8080
+sudo netstat -tlnp | grep 8081
 
 # Verify binary
 /opt/echidna/bin/echidna --version

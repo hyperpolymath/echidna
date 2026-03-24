@@ -25,7 +25,7 @@ All integration tests passed successfully. The full neurosymbolic theorem provin
                      HTTP/JSON API
                             ↓
 ┌─────────────────────────────────────────────────────────────┐
-│                  Rust HTTP Server (:8080)                    │
+│                  Rust HTTP Server (:8081)                    │
 │  ┌──────────────────────────────────────────────────────┐  │
 │  │  /api/health  │  /api/provers  │  /api/session/*    │  │
 │  │  /api/tactics │  /api/theorems │  /api/proof-tree   │  │
@@ -61,7 +61,7 @@ All integration tests passed successfully. The full neurosymbolic theorem provin
 
 **Server Details:**
 - Host: `127.0.0.1`
-- Port: `8080`
+- Port: `8081`
 - CORS: Enabled
 - Build: Release mode (optimized)
 - Warnings: 148 (non-blocking)
@@ -90,7 +90,7 @@ All integration tests passed successfully. The full neurosymbolic theorem provin
 
 **Test 1: Prover List**
 ```bash
-$ curl http://127.0.0.1:8080/api/provers
+$ curl http://127.0.0.1:8081/api/provers
 {
   "provers": [
     {"name":"Agda","tier":1,"complexity":3},
@@ -112,7 +112,7 @@ $ curl http://127.0.0.1:8080/api/provers
 
 **Test 2: Session Creation**
 ```bash
-$ curl -X POST http://127.0.0.1:8080/api/session/create \
+$ curl -X POST http://127.0.0.1:8081/api/session/create \
   -H "Content-Type: application/json" \
   -d '{"prover":"Coq"}'
 {
@@ -123,7 +123,7 @@ $ curl -X POST http://127.0.0.1:8080/api/session/create \
 
 **Test 3: Health Check**
 ```bash
-$ curl http://127.0.0.1:8080/api/health
+$ curl http://127.0.0.1:8081/api/health
 {"status":"ok","version":"1.0.0"}
 ```
 ✅ **PASS** - Server healthy

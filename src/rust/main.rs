@@ -121,7 +121,7 @@ enum Commands {
     /// Start HTTP API server
     Server {
         /// Port to bind to
-        #[arg(short, long, default_value = "8080")]
+        #[arg(short, long, default_value = "8081")]
         port: u16,
 
         /// Host to bind to

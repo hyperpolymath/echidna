@@ -7,7 +7,7 @@
 #   podman build -t ghcr.io/hyperpolymath/echidna:latest -f container/Containerfile .
 #
 # Run:
-#   podman run -p 8080:8080 ghcr.io/hyperpolymath/echidna:latest
+#   podman run -p 8081:8081 ghcr.io/hyperpolymath/echidna:latest
 
 # =============================================================================
 # Stage 1: Builder
@@ -64,7 +64,7 @@ RUN mkdir -p /data /app/proofs /app/config /app/logs && \
     chown -R appuser:appuser /app /data
 
 ENV APP_HOST=[::]
-ENV APP_PORT=8080
+ENV APP_PORT=8081
 ENV APP_LOG_FORMAT=json
 ENV APP_DATA_DIR=/data
 
@@ -72,7 +72,7 @@ VOLUME ["/data"]
 
 USER appuser
 
-EXPOSE 8080
+EXPOSE 8081
 
 HEALTHCHECK --interval=30s --timeout=5s --start-period=10s --retries=3 \
     CMD curl -sf http://localhost:${APP_PORT}/health || exit 1

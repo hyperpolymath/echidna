@@ -15,22 +15,22 @@ version = "1.0"
 
 [services.echidna]
 image = "ghcr.io/hyperpolymath/echidna:latest.ctp"
-ports = ["8080:8080"]
+ports = ["8081:8081"]
 environment = {
   APP_HOST = "[::]",
-  APP_PORT = "8080",
+  APP_PORT = "8081",
   APP_LOG_FORMAT = "json",
   APP_DATA_DIR = "/data",
 }
 volumes = ["echidna-data:/data"]
 restart = "always"
-healthcheck = { test = "curl -sf http://localhost:8080/health", interval = "30s", timeout = "5s", retries = 3 }
+healthcheck = { test = "curl -sf http://localhost:8081/health", interval = "30s", timeout = "5s", retries = 3 }
 
 [services.svalinn]
 image = "ghcr.io/hyperpolymath/svalinn:latest.ctp"
 ports = ["443:443", "80:80"]
 environment = {
-  SVALINN_BACKEND = "http://echidna:8080",
+  SVALINN_BACKEND = "http://echidna:8081",
   SVALINN_POLICY_FILE = "/etc/svalinn/gatekeeper.yaml",
   SVALINN_TLS_AUTO = "true",
 }

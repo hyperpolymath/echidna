@@ -20,7 +20,7 @@ RSR (Rhodium Standard Repository) practices with formal verification emphasis.
 | ABI | Idris2 | Formal interface definitions with dependent types
 | FFI | Zig | C-compatible bridge layer
 | UI | ReScript | Proof exploration frontend (28 components)
-| Interfaces | Rust (axum/tonic) | GraphQL (8080), gRPC (50051), REST (8000)
+| Interfaces | Rust (axum/tonic) | GraphQL (8081), gRPC (50051), REST (8000)
 |===
 
 == Build & Test
