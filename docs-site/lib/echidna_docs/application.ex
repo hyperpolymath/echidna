@@ -13,7 +13,7 @@ defmodule EchidnaDocs.Application do
 
   @impl true
   def start(_type, _args) do
-    port = System.get_env("PORT", "4040") |> String.to_integer()
+    port = System.get_env("PORT", "4070") |> String.to_integer()
 
     children = [
       {Plug.Cowboy, scheme: :http, plug: EchidnaDocs.Router, options: [port: port]}

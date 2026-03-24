@@ -42,7 +42,7 @@ Jonathan D.A. Jewell <j.d.a.jewell@open.ac.uk>
 == v1.4 -- Interfaces and Extended Provers (COMPLETE)
 
 * [x] 5 new provers (Vampire, E Prover, SPASS, Alt-Ergo, Idris2) -- total 17
-* [x] GraphQL interface (async-graphql, port 8080)
+* [x] GraphQL interface (async-graphql, port 8081)
 * [x] gRPC interface (tonic + Protocol Buffers, port 50051)
 * [x] REST interface (axum + OpenAPI/Swagger, port 8000)
 * [x] All 3 layers (Rust, Julia, Chapel) support 17 provers

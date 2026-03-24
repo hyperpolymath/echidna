@@ -18,7 +18,7 @@ The main configuration file, located in your repository root or at `~/.config/ec
 # Server configuration
 [server]
 host = "0.0.0.0"
-port = 8080
+port = 8081
 workers = 4
 
 # Database configuration
@@ -132,10 +132,10 @@ services:
     image: ghcr.io/hyperpolymath/echidnabot:latest
     environment:
       - ECHIDNABOT_DATABASE_URL=postgres://user:pass@db/echidnabot
-      - ECHIDNABOT_ECHIDNA_ENDPOINT=http://echidna:8080/graphql
+      - ECHIDNABOT_ECHIDNA_ENDPOINT=http://echidna:8081/graphql
       - GITHUB_WEBHOOK_SECRET=${GITHUB_WEBHOOK_SECRET}
     ports:
-      - "8080:8080"
+      - "8081:8081"
     volumes:
       - ./config:/etc/echidnabot
 ```

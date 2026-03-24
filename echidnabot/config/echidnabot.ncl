@@ -14,7 +14,7 @@ let EchidnaMode = [| 'auto, 'graphql, 'rest |] in
 
 let ServerConfig = {
   host | String | default = "0.0.0.0",
-  port | Number | default = 8080,
+  port | Number | default = 8081,
   workers | Number | default = 4,
 } in
 
@@ -83,7 +83,7 @@ let Config = {
 {
   server = {
     host = "127.0.0.1",
-    port = 8080,
+    port = 8081,
     workers = 2,
   },
   database = {
@@ -91,8 +91,8 @@ let Config = {
     max_connections = 5,
   },
   echidna = {
-    endpoint = "http://localhost:8080/graphql",
-    rest_endpoint = "http://localhost:8080",
+    endpoint = "http://localhost:8081/graphql",
+    rest_endpoint = "http://localhost:8081",
     mode = 'auto,
     timeout_seconds = 120,
   },

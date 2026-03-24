@@ -35,7 +35,7 @@ async fn main() {
         .route("/health", get(health_check))
         .layer(CorsLayer::permissive());
 
-    let addr = "127.0.0.1:8080";
+    let addr = "127.0.0.1:8081";
     tracing::info!("GraphQL server listening on http://{}", addr);
     tracing::info!("GraphQL playground available at http://{}/", addr);
 

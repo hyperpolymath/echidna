@@ -5,7 +5,7 @@
 # Host to bind to (0.0.0.0 for all interfaces)
 host = "0.0.0.0"
 # Port to listen on
-port = 8080
+port = 8081
 
 [database]
 # SQLite for development, PostgreSQL for production
@@ -17,9 +17,9 @@ max_connections = 5
 
 [echidna]
 # ECHIDNA Core GraphQL endpoint
-endpoint = "http://localhost:8080/graphql"
+endpoint = "http://localhost:8081/graphql"
 # ECHIDNA Core REST endpoint
-rest_endpoint = "http://localhost:8080"
+rest_endpoint = "http://localhost:8081"
 # API mode: auto, graphql, rest
 mode = "auto"
 # Timeout for proof verification (seconds)

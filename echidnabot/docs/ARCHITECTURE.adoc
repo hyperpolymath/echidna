@@ -505,7 +505,7 @@ RUN cargo build --release
 
 FROM debian:bookworm-slim
 COPY --from=builder /app/target/release/echidnabot /usr/local/bin/
-EXPOSE 8080
+EXPOSE 8081
 CMD ["echidnabot", "serve"]
 ----
 
@@ -517,7 +517,7 @@ CMD ["echidnabot", "serve"]
   (echidnabot-configuration
     (echidna-endpoint "http://localhost:3000/graphql")
     (database-path "/var/lib/echidnabot/db.sqlite")
-    (webhook-port 8080)))
+    (webhook-port 8081)))
 ----
 
 === Option C: Systemd (Fallback)

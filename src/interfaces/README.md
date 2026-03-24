@@ -6,8 +6,8 @@ This directory contains all interface implementations for ECHIDNA theorem provin
 
 ### GraphQL (`graphql/`)
 - **Framework:** Rust + async-graphql + axum
-- **Port:** 8080
-- **Playground:** http://localhost:8080/
+- **Port:** 8081
+- **Playground:** http://localhost:8081/
 - **Features:**
   - Type-safe schema with all 17 provers
   - Queries: provers, proof_state, list_proofs, suggest_tactics
@@ -67,7 +67,7 @@ ECHIDNA Core (Rust)
 └── Parallel Layer (Chapel)
     ↓
 Interface Layer
-├── GraphQL Server → Port 8080
+├── GraphQL Server → Port 8081
 ├── gRPC Server → Port 50051
 └── REST Server → Port 8000
     ↓

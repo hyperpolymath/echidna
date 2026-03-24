@@ -396,8 +396,12 @@ where
 }
 
 /// Parse file callback for Zig FFI
+///
+/// # Safety
+/// - `path` must contain a valid UTF-8 pointer of the specified length.
+/// - `out_state` must be a valid, non-null, writable pointer.
 #[no_mangle]
-pub extern "C" fn rust_parse_file(
+pub unsafe extern "C" fn rust_parse_file(
     kind: u8,
     path: FfiStringSlice,
     out_state: *mut *mut c_void,
@@ -435,8 +439,12 @@ pub extern "C" fn rust_parse_file(
 }
 
 /// Parse string callback for Zig FFI
+///
+/// # Safety
+/// - `content` must contain a valid UTF-8 pointer of the specified length.
+/// - `out_state` must be a valid, non-null, writable pointer.
 #[no_mangle]
-pub extern "C" fn rust_parse_string(
+pub unsafe extern "C" fn rust_parse_string(
     kind: u8,
     content: FfiStringSlice,
     out_state: *mut *mut c_void,
@@ -474,8 +482,13 @@ pub extern "C" fn rust_parse_string(
 }
 
 /// Apply tactic callback for Zig FFI
+///
+/// # Safety
+/// - `state` must be a valid pointer previously returned by `rust_parse_file`/`rust_parse_string`.
+/// - `tactic` must point to a valid `FfiTactic` with valid inner pointers.
+/// - `out_result` must be a valid, non-null, writable pointer.
 #[no_mangle]
-pub extern "C" fn rust_apply_tactic(
+pub unsafe extern "C" fn rust_apply_tactic(
     kind: u8,
     state: *mut c_void,
     tactic: *const FfiTactic,
@@ -548,8 +561,12 @@ pub extern "C" fn rust_apply_tactic(
 }
 
 /// Verify proof callback for Zig FFI
+///
+/// # Safety
+/// - `state` must be a valid pointer previously returned by `rust_parse_file`/`rust_parse_string`.
+/// - `out_valid` must be a valid, non-null, writable pointer.
 #[no_mangle]
-pub extern "C" fn rust_verify_proof(kind: u8, state: *mut c_void, out_valid: *mut bool) -> c_int {
+pub unsafe extern "C" fn rust_verify_proof(kind: u8, state: *mut c_void, out_valid: *mut bool) -> c_int {
     if state.is_null() || out_valid.is_null() {
         return FfiStatus::ErrorInvalidArgument as c_int;
     }
@@ -581,8 +598,12 @@ pub extern "C" fn rust_verify_proof(kind: u8, state: *mut c_void, out_valid: *mu
 }
 
 /// Export proof callback for Zig FFI
+///
+/// # Safety
+/// - `state` must be a valid pointer previously returned by `rust_parse_file`/`rust_parse_string`.
+/// - `out_content` must be a valid, non-null, writable pointer.
 #[no_mangle]
-pub extern "C" fn rust_export_proof(
+pub unsafe extern "C" fn rust_export_proof(
     kind: u8,
     state: *mut c_void,
     out_content: *mut FfiOwnedString,

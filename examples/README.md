@@ -20,7 +20,7 @@ This directory contains example proofs demonstrating ECHIDNA's capabilities acro
 
 ```bash
 # Verify the proof via API
-curl -X POST http://127.0.0.1:8080/api/verify \
+curl -X POST http://127.0.0.1:8081/api/verify \
   -H "Content-Type: application/json" \
   -d @- << JSON
 {

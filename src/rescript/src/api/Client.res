@@ -3,13 +3,13 @@
 
 /**
  * API client for ECHIDNA Rust backend (v1.3)
- * Connects to HTTP server on port 8080
+ * Connects to HTTP server on port 8081
  */
 
 open Store
 
 // API configuration - connects to Rust backend
-let apiBase = "http://localhost:8080/api"
+let apiBase = "http://localhost:8081/api"
 
 // Session ID tracking (using ref for mutability)
 let currentSessionId: ref<option<string>> = ref(None)

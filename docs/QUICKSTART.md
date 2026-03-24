@@ -15,8 +15,8 @@
 # 1. Start Julia ML API (port 9000)
 julia src/julia/api_server.jl &
 
-# 2. Start Rust backend (port 8080)
-./target/release/echidna server --port 8080 --enable-cors &
+# 2. Start Rust backend (port 8081)
+./target/release/echidna server --port 8081 --enable-cors &
 
 # 3. Start UI dev server (port 3000)
 cd src/rescript && python3 -m http.server 3000 &
@@ -47,7 +47,7 @@ Expected output:
          │
          v
 ┌─────────────────┐
-│  Rust Backend   │  Port 8080
+│  Rust Backend   │  Port 8081
 │  (HTTP Server)  │  → reqwest
 └────────┬────────┘
          │
@@ -70,7 +70,7 @@ Expected output:
 ### Via REST API
 
 ```bash
-curl -X POST http://127.0.0.1:8080/api/tactics/suggest \
+curl -X POST http://127.0.0.1:8081/api/tactics/suggest \
   -H "Content-Type: application/json" \
   -d '{
     "goal": "forall n : nat, n + 0 = n",
@@ -128,7 +128,7 @@ Training data: **332 proofs** across 12 provers (1,603 tactics)
 | Service | Port | Purpose | Tech |
 |---------|------|---------|------|
 | Julia ML API | 9000 | Neural inference | Julia + HTTP.jl |
-| Rust Backend | 8080 | REST API, sessions | Rust + Axum |
+| Rust Backend | 8081 | REST API, sessions | Rust + Axum |
 | UI Dev Server | 3000 | Static files | Python http.server |
 
 ## REST API Endpoints
@@ -201,7 +201,7 @@ See [TRUST_AND_VALIDATION_FRAMEWORK.md](./TRUST_AND_VALIDATION_FRAMEWORK.md)
 
 ### "Rust backend not responding"
 - Build failed? Check: `cargo build --release`
-- Check port 8080 is free: `lsof -i :8080`
+- Check port 8081 is free: `lsof -i :8081`
 - Check logs: `tail -f /tmp/claude/-var-home-hyper/tasks/*/output`
 
 ### "ReScript UI not loading"

@@ -38,7 +38,7 @@
             <!-- Test 3: Rust API Health -->
             <div class="test-result test-pending rounded-lg p-6" id="test-rust-health">
                 <h3 class="text-xl font-semibold mb-2">3. Rust HTTP API Health</h3>
-                <p class="text-gray-400 mb-4">Testing: http://127.0.0.1:8080/api/health</p>
+                <p class="text-gray-400 mb-4">Testing: http://127.0.0.1:8081/api/health</p>
                 <div class="status text-sm">Waiting...</div>
             </div>
 
@@ -134,13 +134,13 @@
         }
 
         async function testRustHealth() {
-            const response = await fetch('http://127.0.0.1:8080/api/health');
+            const response = await fetch('http://127.0.0.1:8081/api/health');
             if (!response.ok) throw new Error('Rust API health check failed');
             return await response.json();
         }
 
         async function testE2E() {
-            const response = await fetch('http://127.0.0.1:8080/api/tactics/suggest', {
+            const response = await fetch('http://127.0.0.1:8081/api/tactics/suggest', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
@@ -168,7 +168,7 @@
             resultDiv.innerHTML = '<p class="text-gray-400">Loading...</p>';
 
             try {
-                const response = await fetch('http://127.0.0.1:8080/api/tactics/suggest', {
+                const response = await fetch('http://127.0.0.1:8081/api/tactics/suggest', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ goal, prover, top_k: 5 })

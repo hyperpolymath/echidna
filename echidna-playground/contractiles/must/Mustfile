@@ -10,7 +10,7 @@ metadata:
   description: "Invariant checks for config, policy, gateway, logs, and schema."
 
 parameters:
-  gateway_port: "8080"
+  gateway_port: "8081"
   schema_version: "v0.0.1"
 
 checks:
@@ -24,7 +24,7 @@ checks:
 
   - name: gateway-exposes-port
     description: "Service must expose the configured port."
-    run: "bash -uc 'ss -lnt | rg \":${GATEWAY_PORT:-8080}\"'"
+    run: "bash -uc 'ss -lnt | rg \":${GATEWAY_PORT:-8081}\"'"
 
   - name: logs-are-json
     description: "Logs must be JSON."

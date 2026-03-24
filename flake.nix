@@ -106,7 +106,7 @@
               "RUST_LOG=info"
             ];
             ExposedPorts = {
-              "8080/tcp" = {};
+              "8081/tcp" = {};
             };
           };
         };

@@ -201,7 +201,7 @@ RUN mkdir -p /app/proofs /app/config /app/logs
 # REST API
 EXPOSE 8000
 # GraphQL
-EXPOSE 8080
+EXPOSE 8081
 # gRPC
 EXPOSE 50051
 # Julia ML
