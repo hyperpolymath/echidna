@@ -5,12 +5,15 @@
 Jonathan D.A. Jewell <j.d.a.jewell@open.ac.uk>
 :toc:
 
-== Current Status (v1.5.0)
+== Current Status (v2.0.0)
 
-* *30 prover backends operational* across 8 tiers
+* *48 prover backends operational* across 10 tiers
 * *Trust & safety hardening complete* (13 tasks)
-* *306+ tests passing* (232 unit, 38 integration, 21 property-based, + interface tests)
+* *638+ tests passing* (528 unit, 38 integration, 21 property-based, + interface tests)
 * *3 API interfaces* consolidated into monorepo (GraphQL, gRPC, REST)
+* *Agda meta-checker*: 30+ formally verified properties of trust pipeline
+* *Criterion benchmarks*: 13 functions covering all critical paths
+* *FFI bridge*: complete C-compatible API for all 48 provers
 * Julia ML layer with logistic regression tactic prediction
 * Chapel parallel dispatch layer
 * ReScript UI: 28 compiled components
@@ -129,36 +132,31 @@ Jonathan D.A. Jewell <j.d.a.jewell@open.ac.uk>
 * [x] JSON serialisation for persistence
 * [x] Prover ranking by composite score
 
-== v2.0 -- Core Integration + Neural Upgrade (Next)
+== v2.0 -- Core Integration + Formal Verification (COMPLETE)
 
-=== Core Integration Layer (HIGH PRIORITY)
+=== Core Integration Layer (COMPLETE)
+* [x] FFI/IPC bridge for all 48 provers (kind_from_u8/kind_to_u8 roundtrip-verified)
+* [x] C-compatible API (echidna_init, echidna_create_prover, echidna_parse_string, etc.)
+* [x] GraphQL/gRPC/REST call real prover backends via ProverFactory
 
-Current interfaces cannot call Rust prover backends -- no FFI/IPC layer exists.
+=== Agda Meta-Checker (COMPLETE)
+* [x] TrustLevel: total order proofs (reflexive, antisymmetric, transitive, total)
+* [x] AxiomSafety: policy ordering, worst-case composition (commutative, associative)
+* [x] Portfolio: cross-checking improvement proof, disagreement detection
+* [x] Dispatch: integrity failure → Level1, dangerous axioms → Level1, determinism
+* [x] 30+ formally verified properties, 0 postulates/sorry/believe_me
 
-* [ ] Implement FFI/IPC bridge for interfaces -> Rust core
-* [ ] Enable GraphQL/gRPC/REST to invoke real prover backends
-* [ ] Production deployment configuration
+=== Benchmarks + Testing (COMPLETE)
+* [x] Criterion.rs benchmarks: 13 functions (core, provers, trust, verification, FFI)
+* [x] 528 unit tests (was 232), 38 integration, 21 property-based
+* [x] 0 clippy warnings, 0 compiler errors on stable Rust
 
-=== Neural Upgrade
-* [ ] Add Flux.jl to Julia Project.toml
-* [ ] Train GNN encoder on proof graphs
+=== Remaining (v2.1+)
+* [ ] Train GNN encoder on proof graphs (Flux.jl)
 * [ ] Train Transformer premise selector
-* [ ] Expand training corpus to 600+ proofs
-* [ ] Baseline performance benchmarks with Criterion.rs
-
-=== Chapel Integration
 * [ ] Chapel -> Rust C FFI bridge
-* [ ] Chapel neural-guided beam search (Julia HTTP integration)
-* [ ] Multi-prover consensus voting via Chapel parallelism
-
-=== Knowledge Integration
 * [ ] OpenCyc domain knowledge integration
-* [ ] Proof explanation in natural language
-* [ ] End-to-end correctness certification pipeline
-
-=== Security Bridge
 * [ ] Tamarin/ProVerif bridge for cipherbot
-* [ ] Julia Axiom.jl self-verification integration
 
 == v3.0 -- Autonomous Proving
 
