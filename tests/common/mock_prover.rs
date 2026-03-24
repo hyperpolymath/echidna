@@ -4,7 +4,7 @@
 //! Mock prover backend for testing
 
 use async_trait::async_trait;
-use echidna::core::{ProofState, Tactic, TacticResult, Term};
+use echidna::core::{ProofState, Tactic, TacticResult};
 use echidna::provers::{ProverBackend, ProverConfig, ProverKind};
 use std::path::PathBuf;
 use std::sync::{Arc, Mutex};

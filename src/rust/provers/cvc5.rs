@@ -438,8 +438,8 @@ impl CVC5Backend {
                     .trim();
                 assertions.push(inner.to_string());
             }
-            if trimmed.starts_with("(check-sat") {
-                if !assertions.is_empty() {
+            if trimmed.starts_with("(check-sat")
+                && !assertions.is_empty() {
                     let combined = if assertions.len() == 1 {
                         assertions[0].clone()
                     } else {
@@ -452,7 +452,6 @@ impl CVC5Backend {
                         hypotheses: vec![],
                     });
                 }
-            }
         }
 
         if state.goals.is_empty() && !assertions.is_empty() {
@@ -622,13 +621,13 @@ impl ProverBackend for CVC5Backend {
         if self.config.produce_proofs {
             output.push_str("(set-option :produce-proofs true)\n");
         }
-        output.push_str("\n");
+        output.push('\n');
         for def in &state.context.definitions {
             let ty = self.term_to_smtlib(&def.ty)?;
             let body = self.term_to_smtlib(&def.body)?;
             output.push_str(&format!("(define-fun {} () {} {})\n", def.name, ty, body));
         }
-        output.push_str("\n");
+        output.push('\n');
         for goal in &state.goals {
             let smtlib = self.term_to_smtlib(&goal.target)?;
             output.push_str(&format!("; Goal: {}\n", goal.id));

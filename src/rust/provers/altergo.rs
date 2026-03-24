@@ -43,7 +43,7 @@ impl AltErgoBackend {
             ae.push_str(&format!("axiom axiom_{} : {};\n", i, axiom));
         }
 
-        ae.push_str("\n");
+        ae.push('\n');
 
         // Goal
         if let Some(goal) = state.goals.first() {

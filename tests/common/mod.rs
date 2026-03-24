@@ -2,9 +2,10 @@
 // SPDX-License-Identifier: PMPL-1.0-or-later
 
 //! Common test utilities for ECHIDNA test suite
+#![allow(dead_code)]
 
-use echidna::core::{Context, Goal, Hypothesis, ProofState, Tactic, TacticResult, Term, Theorem};
-use echidna::provers::{ProverBackend, ProverConfig, ProverKind};
+use echidna::core::{Context, Goal, Hypothesis, ProofState, Term};
+use echidna::provers::{ProverConfig, ProverKind};
 use std::collections::HashMap;
 use std::path::PathBuf;
 

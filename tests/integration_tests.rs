@@ -6,8 +6,7 @@
 mod common;
 
 use anyhow::Result;
-use echidna::provers::{ProverBackend, ProverConfig, ProverFactory, ProverKind};
-use std::path::PathBuf;
+use echidna::provers::{ProverBackend, ProverFactory, ProverKind};
 
 /// Test all tier 1 provers
 #[cfg(test)]

@@ -124,7 +124,7 @@ impl ContextAgent {
     }
 
     pub fn start_actor() -> Addr<Self> {
-        SyncArbiter::start(1, || ContextAgent::new())
+        SyncArbiter::start(1, ContextAgent::new)
     }
 }
 
@@ -184,7 +184,7 @@ impl LemmaAgent {
     }
 
     pub fn start_actor() -> Addr<Self> {
-        SyncArbiter::start(1, || LemmaAgent::new())
+        SyncArbiter::start(1, LemmaAgent::new)
     }
 }
 

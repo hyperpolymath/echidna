@@ -58,6 +58,12 @@ pub struct PideServer {
     port: u16,
 }
 
+impl Default for PideServer {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl PideServer {
     pub fn new() -> Self {
         PideServer {

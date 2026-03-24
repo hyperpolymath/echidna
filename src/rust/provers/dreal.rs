@@ -236,7 +236,7 @@ impl DRealBackend {
         // dReal typically outputs: "delta-sat with delta = 0.001"
         if let Some(pos) = output.find("delta =") {
             let after_eq = &output[pos + "delta =".len()..];
-            let value_str = after_eq.trim().split_whitespace().next().unwrap_or("");
+            let value_str = after_eq.split_whitespace().next().unwrap_or("");
             value_str.parse::<f64>().unwrap_or(self.precision)
         } else {
             self.precision

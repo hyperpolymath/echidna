@@ -222,8 +222,8 @@ impl MiniSatBackend {
 
             // Parse model line (either v-prefixed or bare assignments)
             if found_sat || line.starts_with("v ") {
-                let data = if line.starts_with("v ") {
-                    &line[2..]
+                let data = if let Some(rest) = line.strip_prefix("v ") {
+                    rest
                 } else {
                     line
                 };

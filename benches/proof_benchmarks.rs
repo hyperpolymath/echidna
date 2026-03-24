@@ -20,7 +20,7 @@ fn bench_simple_arithmetic(c: &mut Criterion) {
 fn bench_proof_state(c: &mut Criterion) {
     c.bench_function("proof_state_creation", |b| {
         b.iter(|| {
-            let hypotheses = vec!["H1: P".to_string(), "H2: Q".to_string()];
+            let hypotheses = ["H1: P".to_string(), "H2: Q".to_string()];
             let conclusion = "P /\\ Q";
             // Simulate proof state construction
             black_box(hypotheses.len() + conclusion.len())

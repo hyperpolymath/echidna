@@ -782,9 +782,7 @@ impl RuleBasedTagger {
                 features.symbols.insert(name.clone());
 
                 // Check for quantifiers
-                if name == "forall" || name == "∀" {
-                    features.quantifier_count += 1;
-                } else if name == "exists" || name == "∃" {
+                if name == "forall" || name == "∀" || name == "exists" || name == "∃" {
                     features.quantifier_count += 1;
                 }
             },

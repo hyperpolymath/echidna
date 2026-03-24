@@ -699,7 +699,7 @@ fn info_command(prover: ProverKind, formatter: &OutputFormatter) -> Result<()> {
         // Spawn async runtime to check version
         let version_check = tokio::task::spawn(async move { prover_backend.version().await });
 
-        if let Ok(Ok(version)) = futures::executor::block_on(async { version_check.await }) {
+        if let Ok(Ok(version)) = futures::executor::block_on(version_check) {
             formatter.success(&format!("  ✓ Installed: {}", version))?;
         } else {
             formatter.warning("  ✗ Not detected (may not be installed or not in PATH)")?;
@@ -710,7 +710,7 @@ fn info_command(prover: ProverKind, formatter: &OutputFormatter) -> Result<()> {
 }
 
 /// Detect prover from file extension or use specified prover
-fn detect_prover(prover_kind: Option<ProverKind>, file: &PathBuf) -> Result<ProverKind> {
+fn detect_prover(prover_kind: Option<ProverKind>, file: &std::path::Path) -> Result<ProverKind> {
     if let Some(kind) = prover_kind {
         return Ok(kind);
     }
@@ -731,20 +731,17 @@ fn create_config(
     executable: Option<PathBuf>,
     library: Vec<PathBuf>,
 ) -> Result<ProverConfig> {
-    let mut config = ProverConfig::default();
-    config.timeout = timeout;
-    config.neural_enabled = neural;
-
-    if let Some(exec) = executable {
-        config.executable = exec;
-    } else {
-        // Set default executable path based on prover
-        config.executable = get_default_executable(kind);
-    }
-
-    if !library.is_empty() {
-        config.library_paths = library;
-    }
+    let config = ProverConfig {
+        timeout,
+        neural_enabled: neural,
+        executable: executable.unwrap_or_else(|| get_default_executable(kind)),
+        library_paths: if library.is_empty() {
+            ProverConfig::default().library_paths
+        } else {
+            library
+        },
+        ..ProverConfig::default()
+    };
 
     Ok(config)
 }
@@ -818,4 +815,3 @@ fn create_progress_bar(message: &str) -> ProgressBar {
 }
 
 // We need to add futures crate for the executor
-use futures;

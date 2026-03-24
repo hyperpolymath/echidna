@@ -212,7 +212,7 @@ impl AgdaBackend {
             };
         }
 
-        if expr.chars().next().map_or(false, |c| c.is_uppercase()) {
+        if expr.chars().next().is_some_and(|c| c.is_uppercase()) {
             Term::Const(expr.to_string())
         } else {
             Term::Var(expr.to_string())

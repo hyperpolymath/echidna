@@ -110,7 +110,7 @@ fn contains_subterm(term: &Term, target: &Term) -> bool {
             contains_subterm(body, target)
                 || param_type
                     .as_ref()
-                    .map_or(false, |t| contains_subterm(t, target))
+                    .is_some_and(|t| contains_subterm(t, target))
         },
         Term::Pi {
             param_type, body, ..

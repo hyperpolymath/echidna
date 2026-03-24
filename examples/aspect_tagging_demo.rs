@@ -5,7 +5,6 @@
 
 use echidna::aspect::{
     AggregationStrategy, Aspect, AspectTagger, CompositeTagger, NeuralTagger, RuleBasedTagger,
-    TheoremFeatures,
 };
 use echidna::core::Term;
 

@@ -277,10 +277,11 @@ pub struct StrategySelector {
 impl StrategySelector {
     /// Auto-detect and register all available strategies
     pub fn auto() -> Self {
-        let mut strategies: Vec<Box<dyn ProofSearchStrategy>> = vec![];
-
-        // Always add sequential (fallback)
-        strategies.push(Box::new(SequentialSearch));
+        #[allow(unused_mut)] // mut needed when chapel feature is enabled
+        let mut strategies: Vec<Box<dyn ProofSearchStrategy>> = vec![
+            // Always add sequential (fallback)
+            Box::new(SequentialSearch),
+        ];
 
         // Try to add Chapel (if feature enabled and runtime available)
         #[cfg(feature = "chapel")]

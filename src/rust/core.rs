@@ -151,6 +151,7 @@ impl fmt::Display for Term {
 
 /// Current state of a proof
 #[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Default)]
 pub struct ProofState {
     /// Current goals to prove
     pub goals: Vec<Goal>,
@@ -282,16 +283,6 @@ pub enum TacticResult {
     QED,
 }
 
-impl Default for ProofState {
-    fn default() -> Self {
-        ProofState {
-            goals: vec![],
-            context: Context::default(),
-            proof_script: vec![],
-            metadata: HashMap::new(),
-        }
-    }
-}
 
 impl fmt::Display for Definition {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {

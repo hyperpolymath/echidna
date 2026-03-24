@@ -223,9 +223,11 @@ async fn prove_handler(Json(req): Json<ProveRequest>) -> Result<Json<ProveRespon
     info!("Prove request for prover: {:?}", req.prover);
 
     // Create prover
-    let mut config = ProverConfig::default();
-    config.timeout = req.timeout.unwrap_or(300);
-    config.neural_enabled = req.neural.unwrap_or(true);
+    let config = ProverConfig {
+        timeout: req.timeout.unwrap_or(300),
+        neural_enabled: req.neural.unwrap_or(true),
+        ..ProverConfig::default()
+    };
 
     let prover = echidna::provers::ProverFactory::create(req.prover, config)
         .map_err(|e| AppError::InternalError(e.to_string()))?;

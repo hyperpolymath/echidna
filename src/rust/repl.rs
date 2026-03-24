@@ -50,8 +50,10 @@ pub async fn start_repl(
     };
 
     // Create configuration
-    let mut config = ProverConfig::default();
-    config.neural_enabled = neural;
+    let config = ProverConfig {
+        neural_enabled: neural,
+        ..ProverConfig::default()
+    };
 
     // Create prover
     let prover = echidna::provers::ProverFactory::create(kind, config)
@@ -234,7 +236,7 @@ async fn handle_meta_command(state: &mut ReplState, input: &str) -> Result<bool>
         },
 
         "suggest" => {
-            let limit = args.get(0).and_then(|s| s.parse().ok()).unwrap_or(5);
+            let limit = args.first().and_then(|s| s.parse().ok()).unwrap_or(5);
             suggest_tactics(state, limit).await?;
         },
 
@@ -278,15 +280,15 @@ async fn handle_meta_command(state: &mut ReplState, input: &str) -> Result<bool>
 }
 
 /// Load a proof file
-async fn load_file(state: &mut ReplState, path: &PathBuf) -> Result<()> {
+async fn load_file(state: &mut ReplState, path: &std::path::Path) -> Result<()> {
     let proof_state = state
         .prover
-        .parse_file(path.clone())
+        .parse_file(path.to_path_buf())
         .await
         .context("Failed to parse file")?;
 
     state.proof_state = Some(proof_state);
-    state.current_file = Some(path.clone());
+    state.current_file = Some(path.to_path_buf());
 
     Ok(())
 }
@@ -482,7 +484,7 @@ fn parse_tactic(s: &str) -> Result<Tactic> {
             }
         },
 
-        "intro" => Ok(Tactic::Intro(args.get(0).map(|s| s.to_string()))),
+        "intro" => Ok(Tactic::Intro(args.first().map(|s| s.to_string()))),
 
         "rewrite" => {
             if args.is_empty() {
