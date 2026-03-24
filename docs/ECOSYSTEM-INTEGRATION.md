@@ -89,9 +89,9 @@ fleet.complete(findings.len(), errors, files_analyzed)?;
 
 **Command**:
 ```bash
-cd /var/mnt/eclipse/repos/echidna
+cd "$REPOS_DIR/echidna"        # Set REPOS_DIR to your local repos root
 panic-attack assail . --output /tmp/echidna-scan.json
-cd ~/Documents/hyperpolymath-repos/verisimdb-data
+cd "$REPOS_DIR/verisimdb-data"
 ./scripts/ingest-scan.sh echidna /tmp/echidna-scan.json
 git push && git push gitlab main
 ```
@@ -111,8 +111,8 @@ git push && git push gitlab main
 
 **Command**:
 ```bash
-cd /var/mnt/eclipse/repos/gitbot-fleet
-./fleet-coordinator.sh run-scan /var/mnt/eclipse/repos/echidna
+cd "$REPOS_DIR/gitbot-fleet"
+./fleet-coordinator.sh run-scan "$REPOS_DIR/echidna"
 ./fleet-coordinator.sh process-findings
 ./fleet-coordinator.sh generate-rules
 ```
@@ -170,12 +170,12 @@ cd /var/mnt/eclipse/repos/gitbot-fleet
 
 ## References
 
-- Gitbot-fleet: `/var/mnt/eclipse/repos/gitbot-fleet/`
-- Echidnabot: `/var/mnt/eclipse/repos/echidna/echidnabot/`
-- Panic-attacker: `/var/mnt/eclipse/repos/panic-attacker/`
-- VeriSimDB: `/var/mnt/eclipse/repos/verisimdb-data/`
-- Hypatia: `/var/mnt/eclipse/repos/hypatia/`
-- Git-private-farm: `/var/mnt/eclipse/repos/.git-private-farm/`
+- Gitbot-fleet: `$REPOS_DIR/gitbot-fleet/`
+- Echidnabot: `$REPOS_DIR/echidna/echidnabot/`
+- Panic-attacker: `$REPOS_DIR/panic-attacker/`
+- VeriSimDB: `$REPOS_DIR/verisimdb-data/`
+- Hypatia: `$REPOS_DIR/hypatia/`
+- Git-private-farm: `$REPOS_DIR/.git-private-farm/`
 
 ---
 

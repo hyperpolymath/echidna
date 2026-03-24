@@ -1,0 +1,57 @@
+; SPDX-License-Identifier: PMPL-1.0-or-later
+; INTENT.contractile — Purpose and scope for echidna
+; Helps LLM/SLM agents understand what this repo IS and IS NOT.
+
+(intent-contractile
+  (version "1.0.0")
+  (repo "echidna")
+
+  ; === Purpose (what this repo IS) ===
+  (purpose
+    "ECHIDNA (Extensible Cognitive Hybrid Intelligence for Deductive Neural Assistance)
+     is a trust-hardened neurosymbolic theorem proving platform supporting 48 prover
+     backends. It provides a comprehensive verification pipeline including solver binary
+     integrity (SHAKE3-512 + BLAKE3), proof certificate checking, axiom usage tracking,
+     sandboxed execution, cross-prover proof exchange (OpenTheory, Dedukti), mutation
+     testing, and Bayesian confidence estimation. It serves as the formal verification
+     backbone for the entire hyperpolymath ecosystem."
+  )
+
+  ; === Anti-Purpose (what this repo is NOT — prevents scope creep) ===
+  (anti-purpose
+    "ECHIDNA is NOT a theorem prover itself — it orchestrates and validates results from
+     48 external provers. It is NOT a general-purpose build system or CI/CD tool (that
+     is Hypatia's role). It is NOT a code linter or style checker. It does NOT implement
+     its own proof logic — it delegates to Coq, Lean, Isabelle, Z3, etc. and validates
+     their output through the trust pipeline."
+  )
+
+  ; === Key Architectural Decisions That Must Not Be Reversed ===
+  (architectural-invariants
+    "Rust core — 48 prover backends implemented as ProverBackend trait objects"
+    "5-level trust hierarchy for confidence scoring — no shortcuts"
+    "sandboxed solver execution via Podman/bubblewrap — security boundary"
+    "cross-prover proof exchange via OpenTheory and Dedukti — interoperability"
+    "Idris2 ABI with 7 modules and zero believe_me — formal correctness"
+    "Zig FFI producing 4 shared libraries — C ABI bridge layer"
+    "Julia for ML inference (tactic prediction, premise selection)"
+    "ReScript + Deno for UI (28 files)"
+  )
+
+  ; === Sensitive Areas (if in doubt, ask) ===
+  (ask-before-touching
+    "src/rust/verification/ — trust pipeline; changes affect proof confidence"
+    "src/rust/integrity/ — solver binary integrity; weakening enables supply chain attacks"
+    "src/rust/executor/ — sandboxed execution; changes affect isolation guarantees"
+    "src/abi/*.idr — Idris2 formal proofs; must maintain zero believe_me"
+    "src/rust/dispatch.rs — full trust-hardening dispatch pipeline"
+    ".machine_readable/ — checkpoint files, format is specified"
+  )
+
+  ; === Ecosystem Position ===
+  (ecosystem
+    (belongs-to "standalone")
+    (depends-on ("proven" "z3" "cvc5" "lean4" "coq" "isabelle" "idris2" "zig"))
+    (depended-on-by ("hypatia" "panll"))
+  )
+)
