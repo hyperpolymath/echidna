@@ -1,0 +1,5 @@
+-- SPDX-License-Identifier: PMPL-1.0-or-later
+-- Agda library file for ECHIDNA meta-checker
+name: echidna-meta
+depend: standard-library
+include: src
