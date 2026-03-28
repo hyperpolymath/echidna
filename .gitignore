@@ -161,3 +161,6 @@ CORPUS_MAXIMIZATION_REPORT.md
 FINAL_CORPUS_COMPLETENESS_REPORT.md
 PROVER_EXPANSION_ROADMAP.md
 models/neural/
+
+# asdf version manager
+.tool-versions
