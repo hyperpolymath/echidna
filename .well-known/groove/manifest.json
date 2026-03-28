@@ -1,0 +1,23 @@
+{
+  "groove_version": "1",
+  "service_id": "echidna",
+  "service_version": "0.1.0",
+  "capabilities": {
+    "theorem-proving": {
+      "type": "theorem-proving",
+      "description": "Multi-backend theorem proving (Coq, Lean4, Idris2, Z3, HOL, Mizar, etc.)",
+      "protocol": "http",
+      "endpoint": "/api/prove",
+      "requires_auth": false,
+      "panel_compatible": true
+    }
+  },
+  "consumes": ["octad-storage", "scanning"],
+  "endpoints": {
+    "health": "/health",
+    "groove": "/.well-known/groove",
+    "graphql": "/graphql"
+  },
+  "health": "/health",
+  "applicability": ["individual", "team"]
+}
