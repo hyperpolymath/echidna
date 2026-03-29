@@ -1,34 +1,28 @@
-#!/usr/bin/env python3
-# SPDX-FileCopyrightText: 2026 ECHIDNA Project Team
+#!/usr/bin/env julia
 # SPDX-License-Identifier: PMPL-1.0-or-later
+# SPDX-FileCopyrightText: 2026 ECHIDNA Project Team
+#
+# Generate high-quality synthetic proofs for provers with tiny communities
+# where downloadable corpora are unavailable or extremely limited.
+#
+# Covers: Nuprl, Minlog, Twelf, Imandra
+#
+# Each prover gets 100+ synthetic proofs based on:
+# - Known theorems from their documentation and papers
+# - Standard mathematical facts adapted to each prover's syntax
+# - Realistic tactic/proof term sequences for that specific prover
+#
+# Output: training_data/proof_states_{prover}.jsonl
+# ID ranges:
+#   Nuprl:  88000+
+#   Minlog: 88500+
+#   Twelf:  89000+
+#   Imandra: 89500+
 
-"""
-Generate high-quality synthetic proofs for provers with tiny communities
-where downloadable corpora are unavailable or extremely limited.
+using JSON3
 
-Covers: Nuprl, Minlog, Twelf, Imandra
-
-Each prover gets 100+ synthetic proofs based on:
-- Known theorems from their documentation and papers
-- Standard mathematical facts adapted to each prover's syntax
-- Realistic tactic/proof term sequences for that specific prover
-
-Output: training_data/proof_states_{prover}.jsonl
-ID ranges:
-  Nuprl:  88000+
-  Minlog: 88500+
-  Twelf:  89000+
-  Imandra: 89500+
-"""
-
-import json
-import os
-import re
-from typing import Dict, List, Any
-
-REPO_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-OUTPUT_DIR = os.path.join(REPO_ROOT, "training_data")
-
+const REPO_ROOT = dirname(dirname(abspath(@__FILE__)))
+const OUTPUT_DIR = joinpath(REPO_ROOT, "training_data")
 
 # ---------------------------------------------------------------------------
 # Nuprl (Cornell)
@@ -36,9 +30,12 @@ OUTPUT_DIR = os.path.join(REPO_ROOT, "training_data")
 # Nuprl uses a constructive type theory (Martin-Loef style) with a rich
 # tactic language. Proofs are extracted as programs.
 
-def generate_nuprl() -> List[Dict[str, Any]]:
-    """Generate Nuprl synthetic proofs."""
+"""
+    generate_nuprl() -> Vector{Dict{String,Any}}
 
+Generate Nuprl synthetic proofs.
+"""
+function generate_nuprl()::Vector{Dict{String,Any}}
     arithmetic = [
         ("add_comm", "all x,y:Int. (x + y) = (y + x)", "Auto"),
         ("add_assoc", "all x,y,z:Int. ((x + y) + z) = (x + (y + z))", "Auto"),
@@ -112,21 +109,28 @@ def generate_nuprl() -> List[Dict[str, Any]]:
         ("constructive", constructive),
     ]
 
-    proofs = []
-    for category, entries in all_categories:
-        for name, goal, tactic in entries:
-            tactic_names = [t.strip() for t in re.split(r'[;\[\]|]', tactic) if t.strip() and t.strip()[0].isupper()]
-            proofs.append({
-                "id": 0,
-                "prover": "Nuprl",
-                "theorem": name,
-                "goal": goal,
-                "context": list(dict.fromkeys(tactic_names))[:20],
-                "tactic_proof": tactic,
-                "source": f"nuprl_synthetic/{category}",
-            })
+    proofs = Dict{String,Any}[]
+    for (category, entries) in all_categories
+        for (name, goal, tactic) in entries
+            tactic_names = [strip(t) for t in split(tactic, r"[;\[\]|]") if !isempty(strip(t)) && isuppercase(first(strip(t)))]
+            seen = Set{String}(); unique_t = String[]
+            for t in tactic_names
+                t ∉ seen && (push!(seen, t); push!(unique_t, t))
+                length(unique_t) >= 20 && break
+            end
+            push!(proofs, Dict{String,Any}(
+                "id" => 0,
+                "prover" => "Nuprl",
+                "theorem" => name,
+                "goal" => goal,
+                "context" => unique_t,
+                "tactic_proof" => tactic,
+                "source" => "nuprl_synthetic/$(category)",
+            ))
+        end
+    end
     return proofs
-
+end
 
 # ---------------------------------------------------------------------------
 # Minlog (Munich)
@@ -134,9 +138,12 @@ def generate_nuprl() -> List[Dict[str, Any]]:
 # Minlog is a proof assistant based on minimal logic, focused on program
 # extraction from proofs. Uses natural deduction with normalization.
 
-def generate_minlog() -> List[Dict[str, Any]]:
-    """Generate Minlog synthetic proofs."""
+"""
+    generate_minlog() -> Vector{Dict{String,Any}}
 
+Generate Minlog synthetic proofs.
+"""
+function generate_minlog()::Vector{Dict{String,Any}}
     natural_deduction = [
         ("imp_refl", "A -> A", "assume A; exact A"),
         ("imp_trans", "(A -> B) -> (B -> C) -> A -> C", "assume f; assume g; assume a; exact (g (f a))"),
@@ -202,21 +209,28 @@ def generate_minlog() -> List[Dict[str, Any]]:
         ("realizability", realizability),
     ]
 
-    proofs = []
-    for category, entries in all_categories:
-        for name, goal, tactic in entries:
-            tactic_names = [t.strip() for t in re.split(r'[;\[\]|]', tactic) if t.strip() and len(t.strip()) > 1]
-            proofs.append({
-                "id": 0,
-                "prover": "Minlog",
-                "theorem": name,
-                "goal": goal,
-                "context": list(dict.fromkeys(tactic_names))[:20],
-                "tactic_proof": tactic,
-                "source": f"minlog_synthetic/{category}",
-            })
+    proofs = Dict{String,Any}[]
+    for (category, entries) in all_categories
+        for (name, goal, tactic) in entries
+            tactic_names = [strip(t) for t in split(tactic, r"[;\[\]|]") if !isempty(strip(t)) && length(strip(t)) > 1]
+            seen = Set{String}(); unique_t = String[]
+            for t in tactic_names
+                t ∉ seen && (push!(seen, t); push!(unique_t, t))
+                length(unique_t) >= 20 && break
+            end
+            push!(proofs, Dict{String,Any}(
+                "id" => 0,
+                "prover" => "Minlog",
+                "theorem" => name,
+                "goal" => goal,
+                "context" => unique_t,
+                "tactic_proof" => tactic,
+                "source" => "minlog_synthetic/$(category)",
+            ))
+        end
+    end
     return proofs
-
+end
 
 # ---------------------------------------------------------------------------
 # Twelf (CMU)
@@ -224,9 +238,12 @@ def generate_minlog() -> List[Dict[str, Any]]:
 # Twelf is a logic programming language for defining and reasoning about
 # deductive systems using the logical framework LF (Edinburgh LF).
 
-def generate_twelf() -> List[Dict[str, Any]]:
-    """Generate Twelf synthetic proofs using LF encoding style."""
+"""
+    generate_twelf() -> Vector{Dict{String,Any}}
 
+Generate Twelf synthetic proofs using LF encoding style.
+"""
+function generate_twelf()::Vector{Dict{String,Any}}
     natural_numbers = [
         ("nat", "nat : type.", "z : nat.\ns : nat -> nat."),
         ("plus", "plus : nat -> nat -> nat -> type.", "plus-z : plus z N N.\nplus-s : plus (s M) N (s P) <- plus M N P."),
@@ -279,20 +296,23 @@ def generate_twelf() -> List[Dict[str, Any]]:
         ("logic_framework", logic_framework),
     ]
 
-    proofs = []
-    for category, entries in all_categories:
-        for name, sig, impl in entries:
-            proofs.append({
-                "id": 0,
-                "prover": "Twelf",
-                "theorem": name,
-                "goal": sig,
-                "context": re.findall(r'\b(\w+-\w+|\w+)\s*:', sig)[:10],
-                "tactic_proof": impl,
-                "source": f"twelf_synthetic/{category}",
-            })
+    proofs = Dict{String,Any}[]
+    for (category, entries) in all_categories
+        for (name, sig, impl) in entries
+            context = [m.captures[1] for m in eachmatch(r"\b(\w+-\w+|\w+)\s*:", sig)]
+            push!(proofs, Dict{String,Any}(
+                "id" => 0,
+                "prover" => "Twelf",
+                "theorem" => name,
+                "goal" => sig,
+                "context" => context[1:min(10, length(context))],
+                "tactic_proof" => impl,
+                "source" => "twelf_synthetic/$(category)",
+            ))
+        end
+    end
     return proofs
-
+end
 
 # ---------------------------------------------------------------------------
 # Imandra (Aesthetic Integration)
@@ -300,9 +320,12 @@ def generate_twelf() -> List[Dict[str, Any]]:
 # Imandra is an automated reasoning system for OCaml programs, combining
 # automated theorem proving with counterexample generation.
 
-def generate_imandra() -> List[Dict[str, Any]]:
-    """Generate Imandra synthetic proofs using OCaml-like syntax."""
+"""
+    generate_imandra() -> Vector{Dict{String,Any}}
 
+Generate Imandra synthetic proofs using OCaml-like syntax.
+"""
+function generate_imandra()::Vector{Dict{String,Any}}
     arithmetic = [
         ("add_comm", "theorem add_comm x y = x + y = y + x", "[@@auto]"),
         ("add_assoc", "theorem add_assoc x y z = (x + y) + z = x + (y + z)", "[@@auto]"),
@@ -373,62 +396,83 @@ def generate_imandra() -> List[Dict[str, Any]]:
         ("counterexamples", counterexamples),
     ]
 
-    proofs = []
-    for category, entries in all_categories:
-        for name, goal, tactic in entries:
-            keywords = re.findall(r'\[@@(\w+)\]', tactic)
-            if not keywords:
+    proofs = Dict{String,Any}[]
+    for (category, entries) in all_categories
+        for (name, goal, tactic) in entries
+            keywords = [m.captures[1] for m in eachmatch(r"\[@@(\w+)\]", tactic)]
+            if isempty(keywords)
                 keywords = ["auto"]
-            proofs.append({
-                "id": 0,
-                "prover": "Imandra",
-                "theorem": name,
-                "goal": goal,
-                "context": list(dict.fromkeys(keywords))[:20],
-                "tactic_proof": tactic,
-                "source": f"imandra_synthetic/{category}",
-            })
+            end
+            seen = Set{String}(); unique_kw = String[]
+            for kw in keywords
+                kw ∉ seen && (push!(seen, kw); push!(unique_kw, kw))
+                length(unique_kw) >= 20 && break
+            end
+            push!(proofs, Dict{String,Any}(
+                "id" => 0,
+                "prover" => "Imandra",
+                "theorem" => name,
+                "goal" => goal,
+                "context" => unique_kw,
+                "tactic_proof" => tactic,
+                "source" => "imandra_synthetic/$(category)",
+            ))
+        end
+    end
     return proofs
-
+end
 
 # ---------------------------------------------------------------------------
 # Main
 # ---------------------------------------------------------------------------
 
-def write_prover(prover_name: str, entries: List[Dict[str, Any]], start_id: int) -> int:
-    """Write entries for a single prover, assigning IDs. Returns count."""
-    output_file = os.path.join(OUTPUT_DIR, f"proof_states_{prover_name.lower()}.jsonl")
-    stats_file = os.path.join(OUTPUT_DIR, f"stats_{prover_name.lower()}.json")
+"""
+    write_prover(prover_name::String, entries::Vector{Dict{String,Any}}, start_id::Int) -> Int
+
+Write entries for a single prover, assigning IDs. Returns count.
+"""
+function write_prover(prover_name::String, entries::Vector{Dict{String,Any}}, start_id::Int)::Int
+    output_file = joinpath(OUTPUT_DIR, "proof_states_$(lowercase(prover_name)).jsonl")
+    stats_file = joinpath(OUTPUT_DIR, "stats_$(lowercase(prover_name)).json")
 
     current_id = start_id
-    for entry in entries:
+    for entry in entries
         entry["id"] = current_id
         current_id += 1
+    end
 
-    with open(output_file, "w", encoding="utf-8") as fh:
-        for entry in entries:
-            fh.write(json.dumps(entry, ensure_ascii=False) + "\n")
+    open(output_file, "w") do fh
+        for entry in entries
+            println(fh, JSON3.write(entry))
+        end
+    end
 
-    stats = {
-        "prover": prover_name,
-        "total_proofs": len(entries),
-        "all_synthetic": True,
-        "id_range": [start_id, current_id - 1],
-        "output_file": output_file,
-    }
-    with open(stats_file, "w", encoding="utf-8") as fh:
-        json.dump(stats, fh, indent=2)
+    stats = Dict{String,Any}(
+        "prover" => prover_name,
+        "total_proofs" => length(entries),
+        "all_synthetic" => true,
+        "id_range" => [start_id, current_id - 1],
+        "output_file" => output_file,
+    )
+    open(stats_file, "w") do fh
+        JSON3.pretty(fh, stats)
+    end
 
-    print(f"  [{prover_name}] {len(entries)} proofs -> {output_file}")
-    return len(entries)
+    println("  [$(prover_name)] $(length(entries)) proofs -> $(output_file)")
+    return length(entries)
+end
 
 
-def run():
-    """Generate synthetic proofs for all small-community provers."""
-    os.makedirs(OUTPUT_DIR, exist_ok=True)
+"""
+    run() -> Int
 
-    print("[Synthetic Provers] Generating proofs for small-community provers ...")
-    print("=" * 60)
+Generate synthetic proofs for all small-community provers.
+"""
+function run()::Int
+    mkpath(OUTPUT_DIR)
+
+    println("[Synthetic Provers] Generating proofs for small-community provers ...")
+    println("=" ^ 60)
 
     total = 0
 
@@ -444,10 +488,11 @@ def run():
     imandra = generate_imandra()
     total += write_prover("Imandra", imandra, 89500)
 
-    print("=" * 60)
-    print(f"[Synthetic Provers] TOTAL: {total} proofs across 4 provers")
+    println("=" ^ 60)
+    println("[Synthetic Provers] TOTAL: $(total) proofs across 4 provers")
     return total
+end
 
-
-if __name__ == "__main__":
+if abspath(PROGRAM_FILE) == abspath(@__FILE__)
     run()
+end

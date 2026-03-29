@@ -1,37 +1,34 @@
-#!/usr/bin/env python3
-# SPDX-FileCopyrightText: 2026 ECHIDNA Project Team
+#!/usr/bin/env julia
 # SPDX-License-Identifier: PMPL-1.0-or-later
+# SPDX-FileCopyrightText: 2026 ECHIDNA Project Team
+#
+# Extract proofs from HOL4 corpus and convert to ECHIDNA training format.
+#
+# Attempts to download HOL4 example files from GitHub. Falls back to generating
+# high-quality synthetic HOL4 proofs from standard theories (arithmetic, lists,
+# sets, booleans, strings, CakeML-style verification).
+#
+# HOL4 is an interactive proof assistant in the HOL family, used extensively in
+# the CakeML project (verified ML compiler) and seL4 (verified OS kernel).
+#
+# Output: training_data/proof_states_hol4.jsonl
+# ID range: 91000+
 
-"""
-Extract proofs from HOL4 corpus and convert to ECHIDNA training format.
+using JSON3
 
-Attempts to download HOL4 example files from GitHub. Falls back to generating
-high-quality synthetic HOL4 proofs from standard theories (arithmetic, lists,
-sets, booleans, strings, CakeML-style verification).
+# ---------------------------------------------------------------------------
+# Constants
+# ---------------------------------------------------------------------------
 
-HOL4 is an interactive proof assistant in the HOL family, used extensively in
-the CakeML project (verified ML compiler) and seL4 (verified OS kernel).
+const REPO_ROOT = dirname(dirname(abspath(@__FILE__)))
+const EXTERNAL_DIR = joinpath(REPO_ROOT, "external_corpora", "hol4")
+const OUTPUT_DIR = joinpath(REPO_ROOT, "training_data")
+const OUTPUT_FILE = joinpath(OUTPUT_DIR, "proof_states_hol4.jsonl")
+const STATS_FILE = joinpath(OUTPUT_DIR, "stats_hol4.json")
+const START_ID = 91000
 
-Output: training_data/proof_states_hol4.jsonl
-ID range: 91000+
-"""
-
-import json
-import os
-import re
-import urllib.request
-import urllib.error
-from typing import Dict, List, Any, Tuple
-
-REPO_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-EXTERNAL_DIR = os.path.join(REPO_ROOT, "external_corpora", "hol4")
-OUTPUT_DIR = os.path.join(REPO_ROOT, "training_data")
-OUTPUT_FILE = os.path.join(OUTPUT_DIR, "proof_states_hol4.jsonl")
-STATS_FILE = os.path.join(OUTPUT_DIR, "stats_hol4.json")
-START_ID = 91000
-
-HOL4_RAW_BASE = "https://raw.githubusercontent.com/HOL-Theorem-Prover/HOL/develop"
-HOL4_FILES = [
+const HOL4_RAW_BASE = "https://raw.githubusercontent.com/HOL-Theorem-Prover/HOL/develop"
+const HOL4_FILES = [
     "examples/algebra/groupScript.sml",
     "examples/algebra/ringScript.sml",
     "examples/algorithms/sortingScript.sml",
@@ -44,96 +41,118 @@ HOL4_FILES = [
     "src/real/realScript.sml",
 ]
 
+# ---------------------------------------------------------------------------
+# Parser
+# ---------------------------------------------------------------------------
 
-def parse_hol4_file(filepath: str) -> List[Dict[str, Any]]:
-    """
-    Parse a HOL4 *Script.sml file and extract theorem definitions.
+"""
+    parse_hol4_file(filepath::String) -> Vector{Dict{String,Any}}
 
-    HOL4 theorems typically look like:
-        val THEOREM_NAME = store_thm("THEOREM_NAME",
-          ``goal_term``,
-          tactic_sequence);
+Parse a HOL4 *Script.sml file and extract theorem definitions.
 
-    Or the newer style:
-        Theorem THEOREM_NAME:
-          goal_term
-        Proof
-          tactic_sequence
-        QED
-    """
-    results = []
-    try:
-        with open(filepath, "r", encoding="utf-8", errors="replace") as fh:
-            content = fh.read()
-    except OSError:
+HOL4 theorems typically look like:
+    val THEOREM_NAME = store_thm("THEOREM_NAME",
+      ``goal_term``,
+      tactic_sequence);
+
+Or the newer style:
+    Theorem THEOREM_NAME:
+      goal_term
+    Proof
+      tactic_sequence
+    QED
+"""
+function parse_hol4_file(filepath::String)::Vector{Dict{String,Any}}
+    results = Dict{String,Any}[]
+    content = try
+        read(filepath, String)
+    catch
         return results
+    end
 
     # Pattern 1: store_thm style
-    pattern1 = re.compile(
-        r'store_thm\s*\(\s*"(\w+)"\s*,\s*``([^`]+)``\s*,\s*(.*?)\)\s*;',
-        re.DOTALL
-    )
-    for m in pattern1.finditer(content):
-        name = m.group(1).strip()
-        goal = re.sub(r'\s+', ' ', m.group(2).strip())
-        tactic = re.sub(r'\s+', ' ', m.group(3).strip())
-        tactic_names = re.findall(r'\b(\w+_TAC|Induct_on|rw|fs|simp|metis_tac|decide_tac|PROVE_TAC)\b', tactic, re.IGNORECASE)
-        results.append({
-            "theorem": name,
-            "goal": goal,
-            "tactic_proof": tactic[:500],
-            "tactics": list(dict.fromkeys(tactic_names))[:20],
-            "source": f"hol4/{os.path.basename(filepath)}",
-        })
+    for m in eachmatch(r"store_thm\s*\(\s*\"(\w+)\"\s*,\s*``([^`]+)``\s*,\s*(.*?)\)\s*;"s, content)
+        name = strip(m.captures[1])
+        goal = replace(strip(m.captures[2]), r"\s+" => " ")
+        tactic = replace(strip(m.captures[3]), r"\s+" => " ")
+        tactic_names = [k.match for k in eachmatch(r"\b(\w+_TAC|Induct_on|rw|fs|simp|metis_tac|decide_tac|PROVE_TAC)\b"i, tactic)]
+        seen = Set{String}(); unique_t = String[]
+        for t in tactic_names
+            t ∉ seen && (push!(seen, t); push!(unique_t, t))
+            length(unique_t) >= 20 && break
+        end
+        push!(results, Dict{String,Any}(
+            "theorem" => name,
+            "goal" => goal,
+            "tactic_proof" => first(tactic, 500),
+            "tactics" => unique_t,
+            "source" => "hol4/$(basename(filepath))",
+        ))
+    end
 
     # Pattern 2: Theorem/Proof/QED style
-    pattern2 = re.compile(
-        r'Theorem\s+(\w+)\s*:\s*(.*?)\s*Proof\s*(.*?)\s*QED',
-        re.DOTALL
-    )
-    for m in pattern2.finditer(content):
-        name = m.group(1).strip()
-        goal = re.sub(r'\s+', ' ', m.group(2).strip())
-        tactic = re.sub(r'\s+', ' ', m.group(3).strip())
-        tactic_names = re.findall(r'\b(\w+_TAC|Induct_on|rw|fs|simp|metis_tac|decide_tac|PROVE_TAC)\b', tactic, re.IGNORECASE)
-        results.append({
-            "theorem": name,
-            "goal": goal,
-            "tactic_proof": tactic[:500],
-            "tactics": list(dict.fromkeys(tactic_names))[:20],
-            "source": f"hol4/{os.path.basename(filepath)}",
-        })
+    for m in eachmatch(r"Theorem\s+(\w+)\s*:\s*(.*?)\s*Proof\s*(.*?)\s*QED"s, content)
+        name = strip(m.captures[1])
+        goal = replace(strip(m.captures[2]), r"\s+" => " ")
+        tactic = replace(strip(m.captures[3]), r"\s+" => " ")
+        tactic_names = [k.match for k in eachmatch(r"\b(\w+_TAC|Induct_on|rw|fs|simp|metis_tac|decide_tac|PROVE_TAC)\b"i, tactic)]
+        seen = Set{String}(); unique_t = String[]
+        for t in tactic_names
+            t ∉ seen && (push!(seen, t); push!(unique_t, t))
+            length(unique_t) >= 20 && break
+        end
+        push!(results, Dict{String,Any}(
+            "theorem" => name,
+            "goal" => goal,
+            "tactic_proof" => first(tactic, 500),
+            "tactics" => unique_t,
+            "source" => "hol4/$(basename(filepath))",
+        ))
+    end
 
     return results
+end
 
+# ---------------------------------------------------------------------------
+# Downloader
+# ---------------------------------------------------------------------------
 
-def download_hol4_files() -> int:
-    """Attempt to download HOL4 source files from GitHub."""
+"""
+    download_hol4_files() -> Int
+
+Attempt to download HOL4 source files from GitHub.
+"""
+function download_hol4_files()::Int
     downloaded = 0
-    for rel_path in HOL4_FILES:
-        url = f"{HOL4_RAW_BASE}/{rel_path}"
-        local_path = os.path.join(EXTERNAL_DIR, os.path.basename(rel_path))
-        if os.path.exists(local_path):
+    for rel_path in HOL4_FILES
+        url = "$(HOL4_RAW_BASE)/$(rel_path)"
+        local_path = joinpath(EXTERNAL_DIR, basename(rel_path))
+        if isfile(local_path)
             downloaded += 1
             continue
-        try:
-            req = urllib.request.Request(url, headers={"User-Agent": "ECHIDNA/1.5"})
-            with urllib.request.urlopen(req, timeout=15) as resp:
-                data = resp.read()
-            with open(local_path, "wb") as fh:
-                fh.write(data)
+        end
+        try
+            download(url, local_path)
             downloaded += 1
-            print(f"  Downloaded: {rel_path}")
-        except (urllib.error.URLError, OSError, TimeoutError) as exc:
-            print(f"  Skipped {rel_path}: {exc}")
+            println("  Downloaded: $(rel_path)")
+        catch exc
+            println("  Skipped $(rel_path): $(exc)")
+        end
+    end
     return downloaded
+end
 
+# ---------------------------------------------------------------------------
+# Synthetic generation
+# ---------------------------------------------------------------------------
 
-def generate_synthetic_hol4() -> List[Dict[str, Any]]:
-    """
-    Generate high-quality synthetic HOL4 proofs using realistic SML
-    tactic syntax and standard HOL4 library theorems.
-    """
+"""
+    generate_synthetic_hol4() -> Vector{Dict{String,Any}}
+
+Generate high-quality synthetic HOL4 proofs using realistic SML
+tactic syntax and standard HOL4 library theorems.
+"""
+function generate_synthetic_hol4()::Vector{Dict{String,Any}}
     arithmetic = [
         ("ADD_COMM", "!m n. m + n = n + m", "Induct_on `m` >> rw[ADD_CLAUSES]"),
         ("ADD_ASSOC", "!m n p. m + (n + p) = (m + n) + p", "Induct_on `m` >> rw[ADD_CLAUSES]"),
@@ -241,91 +260,115 @@ def generate_synthetic_hol4() -> List[Dict[str, Any]]:
         ("cakeml_style", cakeml_style),
     ]
 
-    proofs = []
-    for category, theorems in all_categories:
-        for name, goal, tactic in theorems:
-            tactic_names = re.findall(
-                r'\b(Induct_on|Cases_on|rw|fs|simp|metis_tac|decide_tac|PROVE_TAC|rpt|strip_tac|gen_tac|MATCH_MP_TAC)\b',
-                tactic, re.IGNORECASE
-            )
-            proofs.append({
-                "theorem": name,
-                "goal": goal,
-                "tactic_proof": tactic,
-                "tactics": list(dict.fromkeys(tactic_names))[:20],
-                "source": f"hol4_synthetic/{category}",
-            })
+    proofs = Dict{String,Any}[]
+    for (category, theorems) in all_categories
+        for (name, goal, tactic) in theorems
+            tactic_names = [k.match for k in eachmatch(
+                r"\b(Induct_on|Cases_on|rw|fs|simp|metis_tac|decide_tac|PROVE_TAC|rpt|strip_tac|gen_tac|MATCH_MP_TAC)\b"i,
+                tactic
+            )]
+            seen = Set{String}(); unique_t = String[]
+            for t in tactic_names
+                t ∉ seen && (push!(seen, t); push!(unique_t, t))
+                length(unique_t) >= 20 && break
+            end
+            push!(proofs, Dict{String,Any}(
+                "theorem" => name,
+                "goal" => goal,
+                "tactic_proof" => tactic,
+                "tactics" => unique_t,
+                "source" => "hol4_synthetic/$(category)",
+            ))
+        end
+    end
     return proofs
+end
 
+# ---------------------------------------------------------------------------
+# Main pipeline
+# ---------------------------------------------------------------------------
 
-def run() -> Tuple[int, int]:
-    """Run the full extraction pipeline."""
-    os.makedirs(OUTPUT_DIR, exist_ok=True)
-    os.makedirs(EXTERNAL_DIR, exist_ok=True)
+"""
+    run() -> Tuple{Int,Int}
 
-    all_entries: List[Dict[str, Any]] = []
+Run the full extraction pipeline. Returns (extracted_count, synthetic_count).
+"""
+function run()::Tuple{Int,Int}
+    mkpath(OUTPUT_DIR)
+    mkpath(EXTERNAL_DIR)
+
+    all_entries = Dict{String,Any}[]
     extracted_count = 0
 
-    print("[HOL4] Phase 1: Attempting to download from GitHub ...")
+    println("[HOL4] Phase 1: Attempting to download from GitHub ...")
     downloaded = download_hol4_files()
-    print(f"  Downloaded/cached {downloaded} files")
+    println("  Downloaded/cached $(downloaded) files")
 
-    for fname in os.listdir(EXTERNAL_DIR):
-        if fname.endswith(".sml"):
-            fpath = os.path.join(EXTERNAL_DIR, fname)
+    for fname in readdir(EXTERNAL_DIR)
+        if endswith(fname, ".sml")
+            fpath = joinpath(EXTERNAL_DIR, fname)
             parsed = parse_hol4_file(fpath)
-            for entry in parsed:
-                all_entries.append(entry)
-            if parsed:
-                print(f"  Parsed {len(parsed)} theorems from {fname}")
-    extracted_count = len(all_entries)
+            append!(all_entries, parsed)
+            if !isempty(parsed)
+                println("  Parsed $(length(parsed)) theorems from $(fname)")
+            end
+        end
+    end
+    extracted_count = length(all_entries)
 
-    print(f"[HOL4] Phase 2: Generating synthetic proofs ...")
+    println("[HOL4] Phase 2: Generating synthetic proofs ...")
     synthetic = generate_synthetic_hol4()
-    existing_names = {e["theorem"] for e in all_entries}
+    existing_names = Set(e["theorem"] for e in all_entries)
     added = 0
-    for entry in synthetic:
-        if entry["theorem"] not in existing_names:
-            all_entries.append(entry)
-            existing_names.add(entry["theorem"])
+    for entry in synthetic
+        if entry["theorem"] ∉ existing_names
+            push!(all_entries, entry)
+            push!(existing_names, entry["theorem"])
             added += 1
-    print(f"  Generated {added} unique synthetic proofs")
+        end
+    end
+    println("  Generated $(added) unique synthetic proofs")
 
     current_id = START_ID
-    output_records = []
-    for entry in all_entries:
-        record = {
-            "id": current_id,
-            "prover": "HOL4",
-            "theorem": entry["theorem"],
-            "goal": entry["goal"],
-            "context": entry.get("tactics", []),
-            "tactic_proof": entry.get("tactic_proof", ""),
-            "source": entry.get("source", "hol4"),
-        }
-        output_records.append(record)
+    output_records = Dict{String,Any}[]
+    for entry in all_entries
+        record = Dict{String,Any}(
+            "id" => current_id,
+            "prover" => "HOL4",
+            "theorem" => entry["theorem"],
+            "goal" => entry["goal"],
+            "context" => get(entry, "tactics", String[]),
+            "tactic_proof" => get(entry, "tactic_proof", ""),
+            "source" => get(entry, "source", "hol4"),
+        )
+        push!(output_records, record)
         current_id += 1
+    end
 
-    with open(OUTPUT_FILE, "w", encoding="utf-8") as fh:
-        for rec in output_records:
-            fh.write(json.dumps(rec, ensure_ascii=False) + "\n")
+    open(OUTPUT_FILE, "w") do fh
+        for rec in output_records
+            println(fh, JSON3.write(rec))
+        end
+    end
 
-    stats = {
-        "prover": "HOL4",
-        "total_proofs": len(output_records),
-        "extracted_from_source": extracted_count,
-        "synthetic_added": len(output_records) - extracted_count,
-        "id_range": [START_ID, current_id - 1],
-        "output_file": OUTPUT_FILE,
-    }
-    with open(STATS_FILE, "w", encoding="utf-8") as fh:
-        json.dump(stats, fh, indent=2)
+    stats = Dict{String,Any}(
+        "prover" => "HOL4",
+        "total_proofs" => length(output_records),
+        "extracted_from_source" => extracted_count,
+        "synthetic_added" => length(output_records) - extracted_count,
+        "id_range" => [START_ID, current_id - 1],
+        "output_file" => OUTPUT_FILE,
+    )
+    open(STATS_FILE, "w") do fh
+        JSON3.pretty(fh, stats)
+    end
 
-    print(f"\n[HOL4] COMPLETE: {len(output_records)} proofs written to {OUTPUT_FILE}")
-    print(f"  Extracted from source: {extracted_count}")
-    print(f"  Synthetic: {len(output_records) - extracted_count}")
-    return extracted_count, len(output_records) - extracted_count
+    println("\n[HOL4] COMPLETE: $(length(output_records)) proofs written to $(OUTPUT_FILE)")
+    println("  Extracted from source: $(extracted_count)")
+    println("  Synthetic: $(length(output_records) - extracted_count)")
+    return (extracted_count, length(output_records) - extracted_count)
+end
 
-
-if __name__ == "__main__":
+if abspath(PROGRAM_FILE) == abspath(@__FILE__)
     run()
+end

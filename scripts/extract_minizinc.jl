@@ -1,38 +1,35 @@
-#!/usr/bin/env python3
-# SPDX-FileCopyrightText: 2026 ECHIDNA Project Team
+#!/usr/bin/env julia
 # SPDX-License-Identifier: PMPL-1.0-or-later
+# SPDX-FileCopyrightText: 2026 ECHIDNA Project Team
+#
+# Extract constraint models from MiniZinc benchmarks and generate training data
+# for constraint solver backends: MiniZinc, Chuffed, OR-Tools, SCIP, GLPK.
+#
+# Attempts to download from the MiniZinc Challenge benchmarks on GitHub.
+# Falls back to generating high-quality synthetic constraint models.
+#
+# These provers solve optimization/satisfaction problems rather than logical
+# theorems, so the schema is adapted: "theorem" = model name, "goal" = objective,
+# "context" = constraints.
+#
+# Output: training_data/proof_states_minizinc.jsonl (covers all 5 solvers)
+# ID range: 99000+
 
-"""
-Extract constraint models from MiniZinc benchmarks and generate training data
-for constraint solver backends: MiniZinc, Chuffed, OR-Tools, SCIP, GLPK.
+using JSON3
 
-Attempts to download from the MiniZinc Challenge benchmarks on GitHub.
-Falls back to generating high-quality synthetic constraint models.
+# ---------------------------------------------------------------------------
+# Constants
+# ---------------------------------------------------------------------------
 
-These provers solve optimization/satisfaction problems rather than logical
-theorems, so the schema is adapted: "theorem" = model name, "goal" = objective,
-"context" = constraints.
+const REPO_ROOT = dirname(dirname(abspath(@__FILE__)))
+const EXTERNAL_DIR = joinpath(REPO_ROOT, "external_corpora", "minizinc")
+const OUTPUT_DIR = joinpath(REPO_ROOT, "training_data")
+const OUTPUT_FILE = joinpath(OUTPUT_DIR, "proof_states_minizinc.jsonl")
+const STATS_FILE = joinpath(OUTPUT_DIR, "stats_minizinc.json")
+const START_ID = 99000
 
-Output: training_data/proof_states_minizinc.jsonl (covers all 5 solvers)
-ID range: 99000+
-"""
-
-import json
-import os
-import re
-import urllib.request
-import urllib.error
-from typing import Dict, List, Any, Tuple
-
-REPO_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-EXTERNAL_DIR = os.path.join(REPO_ROOT, "external_corpora", "minizinc")
-OUTPUT_DIR = os.path.join(REPO_ROOT, "training_data")
-OUTPUT_FILE = os.path.join(OUTPUT_DIR, "proof_states_minizinc.jsonl")
-STATS_FILE = os.path.join(OUTPUT_DIR, "stats_minizinc.json")
-START_ID = 99000
-
-MZN_RAW = "https://raw.githubusercontent.com/MiniZinc/minizinc-benchmarks/master"
-MZN_FILES = [
+const MZN_RAW = "https://raw.githubusercontent.com/MiniZinc/minizinc-benchmarks/master"
+const MZN_FILES = [
     "golomb/golomb.mzn",
     "queens/queens.mzn",
     "knapsack/knapsack.mzn",
@@ -50,73 +47,93 @@ MZN_FILES = [
     "rcpsp/rcpsp.mzn",
 ]
 
+# ---------------------------------------------------------------------------
+# Parser
+# ---------------------------------------------------------------------------
 
-def parse_mzn_file(filepath: str) -> List[Dict[str, Any]]:
-    """Parse a MiniZinc .mzn file and extract model structure."""
-    results = []
-    try:
-        with open(filepath, "r", encoding="utf-8", errors="replace") as fh:
-            content = fh.read()
-    except OSError:
+"""
+    parse_mzn_file(filepath::String) -> Vector{Dict{String,Any}}
+
+Parse a MiniZinc .mzn file and extract model structure.
+"""
+function parse_mzn_file(filepath::String)::Vector{Dict{String,Any}}
+    results = Dict{String,Any}[]
+    content = try
+        read(filepath, String)
+    catch
         return results
+    end
 
-    model_name = os.path.splitext(os.path.basename(filepath))[0]
+    model_name = splitext(basename(filepath))[1]
 
     # Extract variables
-    var_pattern = re.compile(r'var\s+([\w.]+)\s*:\s*(\w+)', re.IGNORECASE)
-    variables = [(m.group(2), m.group(1)) for m in var_pattern.finditer(content)]
+    variables = [(m.captures[2], m.captures[1]) for m in eachmatch(r"var\s+([\w.]+)\s*:\s*(\w+)"i, content)]
 
     # Extract constraints
-    constraint_pattern = re.compile(r'constraint\s+(.*?)\s*;', re.DOTALL)
-    constraints = [re.sub(r'\s+', ' ', m.group(1).strip())[:200] for m in constraint_pattern.finditer(content)]
+    constraints = [first(replace(strip(m.captures[1]), r"\s+" => " "), 200)
+                   for m in eachmatch(r"constraint\s+(.*?)\s*;"s, content)]
 
     # Extract objective
-    solve_pattern = re.compile(r'solve\s+(.*?)\s*;', re.DOTALL)
     objective = "satisfy"
-    for m in solve_pattern.finditer(content):
-        objective = re.sub(r'\s+', ' ', m.group(1).strip())[:200]
+    for m in eachmatch(r"solve\s+(.*?)\s*;"s, content)
+        objective = first(replace(strip(m.captures[1]), r"\s+" => " "), 200)
+    end
 
-    if variables or constraints:
-        results.append({
-            "theorem": model_name,
-            "goal": objective,
-            "variables": [f"{v[0]}: {v[1]}" for v in variables[:20]],
-            "constraints": constraints[:30],
-            "source": f"minizinc/{os.path.basename(filepath)}",
-        })
+    if !isempty(variables) || !isempty(constraints)
+        push!(results, Dict{String,Any}(
+            "theorem" => model_name,
+            "goal" => objective,
+            "variables" => ["$(v[1]): $(v[2])" for v in variables[1:min(20, length(variables))]],
+            "constraints" => constraints[1:min(30, length(constraints))],
+            "source" => "minizinc/$(basename(filepath))",
+        ))
+    end
 
     return results
+end
 
+# ---------------------------------------------------------------------------
+# Downloader
+# ---------------------------------------------------------------------------
 
-def download_mzn_files() -> int:
-    """Attempt to download MiniZinc benchmark files."""
+"""
+    download_mzn_files() -> Int
+
+Attempt to download MiniZinc benchmark files.
+"""
+function download_mzn_files()::Int
     downloaded = 0
-    for rel_path in MZN_FILES:
-        url = f"{MZN_RAW}/{rel_path}"
-        local_path = os.path.join(EXTERNAL_DIR, os.path.basename(rel_path))
-        if os.path.exists(local_path):
+    for rel_path in MZN_FILES
+        url = "$(MZN_RAW)/$(rel_path)"
+        local_path = joinpath(EXTERNAL_DIR, basename(rel_path))
+        if isfile(local_path)
             downloaded += 1
             continue
-        try:
-            req = urllib.request.Request(url, headers={"User-Agent": "ECHIDNA/1.5"})
-            with urllib.request.urlopen(req, timeout=15) as resp:
-                data = resp.read()
-            with open(local_path, "wb") as fh:
-                fh.write(data)
+        end
+        try
+            download(url, local_path)
             downloaded += 1
-            print(f"  Downloaded: {rel_path}")
-        except (urllib.error.URLError, OSError, TimeoutError) as exc:
-            print(f"  Skipped {rel_path}: {exc}")
+            println("  Downloaded: $(rel_path)")
+        catch exc
+            println("  Skipped $(rel_path): $(exc)")
+        end
+    end
     return downloaded
+end
 
+# ---------------------------------------------------------------------------
+# Synthetic generation
+# ---------------------------------------------------------------------------
 
-def generate_synthetic_constraint_models() -> List[Dict[str, Any]]:
-    """
-    Generate synthetic constraint satisfaction and optimization models.
+"""
+    generate_synthetic_constraint_models() -> Vector{Dict{String,Any}}
 
-    Each model is assigned to one of the 5 solver backends in round-robin
-    fashion to ensure coverage: MiniZinc, Chuffed, ORTools, SCIP, GLPK.
-    """
+Generate synthetic constraint satisfaction and optimization models.
+
+Each model is assigned to one of the 5 solver backends in round-robin
+fashion to ensure coverage: MiniZinc, Chuffed, ORTools, SCIP, GLPK.
+"""
+function generate_synthetic_constraint_models()::Vector{Dict{String,Any}}
     solvers = ["MiniZinc", "Chuffed", "ORTools", "SCIP", "GLPK"]
 
     scheduling = [
@@ -257,107 +274,127 @@ def generate_synthetic_constraint_models() -> List[Dict[str, Any]]:
         ("optimization", optimization),
     ]
 
-    proofs = []
+    proofs = Dict{String,Any}[]
     solver_idx = 0
-    for category, models in all_categories:
-        for entry in models:
-            model_name = entry[0]
-            objective = entry[1]
-            variables = entry[2]
-            constraints = entry[3]
+    for (category, models) in all_categories
+        for entry in models
+            model_name = entry[1]
+            objective = entry[2]
+            variables = entry[3]
+            constraints = entry[4]
 
-            solver = solvers[solver_idx % len(solvers)]
+            solver = solvers[(solver_idx % length(solvers)) + 1]
             solver_idx += 1
 
-            proofs.append({
-                "theorem": model_name,
-                "goal": objective,
-                "variables": variables,
-                "constraints": constraints,
-                "solver": solver,
-                "source": f"constraint_synthetic/{category}",
-            })
+            push!(proofs, Dict{String,Any}(
+                "theorem" => model_name,
+                "goal" => objective,
+                "variables" => variables,
+                "constraints" => constraints,
+                "solver" => solver,
+                "source" => "constraint_synthetic/$(category)",
+            ))
+        end
+    end
 
     return proofs
+end
 
+# ---------------------------------------------------------------------------
+# Main pipeline
+# ---------------------------------------------------------------------------
 
-def run() -> Tuple[int, int]:
-    """Run the full extraction pipeline."""
-    os.makedirs(OUTPUT_DIR, exist_ok=True)
-    os.makedirs(EXTERNAL_DIR, exist_ok=True)
+"""
+    run() -> Tuple{Int,Int}
 
-    all_entries: List[Dict[str, Any]] = []
+Run the full extraction pipeline. Returns (extracted_count, synthetic_count).
+"""
+function run()::Tuple{Int,Int}
+    mkpath(OUTPUT_DIR)
+    mkpath(EXTERNAL_DIR)
+
+    all_entries = Dict{String,Any}[]
     extracted_count = 0
 
-    print("[MiniZinc/Constraint Solvers] Phase 1: Attempting to download benchmarks ...")
+    println("[MiniZinc/Constraint Solvers] Phase 1: Attempting to download benchmarks ...")
     downloaded = download_mzn_files()
-    print(f"  Downloaded/cached {downloaded} files")
+    println("  Downloaded/cached $(downloaded) files")
 
-    for fname in os.listdir(EXTERNAL_DIR):
-        if fname.endswith(".mzn"):
-            fpath = os.path.join(EXTERNAL_DIR, fname)
+    for fname in readdir(EXTERNAL_DIR)
+        if endswith(fname, ".mzn")
+            fpath = joinpath(EXTERNAL_DIR, fname)
             parsed = parse_mzn_file(fpath)
-            for entry in parsed:
-                all_entries.append(entry)
-            if parsed:
-                print(f"  Parsed {len(parsed)} models from {fname}")
-    extracted_count = len(all_entries)
+            append!(all_entries, parsed)
+            if !isempty(parsed)
+                println("  Parsed $(length(parsed)) models from $(fname)")
+            end
+        end
+    end
+    extracted_count = length(all_entries)
 
-    print(f"[MiniZinc/Constraint Solvers] Phase 2: Generating synthetic models ...")
+    println("[MiniZinc/Constraint Solvers] Phase 2: Generating synthetic models ...")
     synthetic = generate_synthetic_constraint_models()
-    existing_names = {e["theorem"] for e in all_entries}
+    existing_names = Set(e["theorem"] for e in all_entries)
     added = 0
-    for entry in synthetic:
-        if entry["theorem"] not in existing_names:
-            all_entries.append(entry)
-            existing_names.add(entry["theorem"])
+    for entry in synthetic
+        if entry["theorem"] ∉ existing_names
+            push!(all_entries, entry)
+            push!(existing_names, entry["theorem"])
             added += 1
-    print(f"  Generated {added} unique synthetic models")
+        end
+    end
+    println("  Generated $(added) unique synthetic models")
 
     # Assign IDs and normalize schema
     # Distribute across solvers for downloaded models
     solvers_cycle = ["MiniZinc", "Chuffed", "ORTools", "SCIP", "GLPK"]
     current_id = START_ID
-    output_records = []
+    output_records = Dict{String,Any}[]
 
-    for i, entry in enumerate(all_entries):
-        solver = entry.get("solver", solvers_cycle[i % len(solvers_cycle)])
-        record = {
-            "id": current_id,
-            "prover": solver,
-            "theorem": entry["theorem"],
-            "goal": entry["goal"],
-            "context": entry.get("constraints", entry.get("variables", [])),
-            "tactic_proof": json.dumps({"variables": entry.get("variables", []), "constraints": entry.get("constraints", [])}),
-            "source": entry.get("source", "minizinc"),
-        }
-        output_records.append(record)
+    for (i, entry) in enumerate(all_entries)
+        solver = get(entry, "solver", solvers_cycle[((i - 1) % length(solvers_cycle)) + 1])
+        record = Dict{String,Any}(
+            "id" => current_id,
+            "prover" => solver,
+            "theorem" => entry["theorem"],
+            "goal" => entry["goal"],
+            "context" => get(entry, "constraints", get(entry, "variables", String[])),
+            "tactic_proof" => JSON3.write(Dict("variables" => get(entry, "variables", String[]), "constraints" => get(entry, "constraints", String[]))),
+            "source" => get(entry, "source", "minizinc"),
+        )
+        push!(output_records, record)
         current_id += 1
+    end
 
-    with open(OUTPUT_FILE, "w", encoding="utf-8") as fh:
-        for rec in output_records:
-            fh.write(json.dumps(rec, ensure_ascii=False) + "\n")
+    open(OUTPUT_FILE, "w") do fh
+        for rec in output_records
+            println(fh, JSON3.write(rec))
+        end
+    end
 
     # Count per solver
-    solver_counts = {}
-    for rec in output_records:
-        solver_counts[rec["prover"]] = solver_counts.get(rec["prover"], 0) + 1
+    solver_counts = Dict{String,Int}()
+    for rec in output_records
+        solver_counts[rec["prover"]] = get(solver_counts, rec["prover"], 0) + 1
+    end
 
-    stats = {
-        "total_models": len(output_records),
-        "extracted_from_source": extracted_count,
-        "synthetic_added": len(output_records) - extracted_count,
-        "id_range": [START_ID, current_id - 1],
-        "solver_distribution": solver_counts,
-        "output_file": OUTPUT_FILE,
-    }
-    with open(STATS_FILE, "w", encoding="utf-8") as fh:
-        json.dump(stats, fh, indent=2)
+    stats = Dict{String,Any}(
+        "total_models" => length(output_records),
+        "extracted_from_source" => extracted_count,
+        "synthetic_added" => length(output_records) - extracted_count,
+        "id_range" => [START_ID, current_id - 1],
+        "solver_distribution" => solver_counts,
+        "output_file" => OUTPUT_FILE,
+    )
+    open(STATS_FILE, "w") do fh
+        JSON3.pretty(fh, stats)
+    end
 
-    print(f"\n[Constraint Solvers] COMPLETE: {len(output_records)} models written to {OUTPUT_FILE}")
-    print(f"  Solver distribution: {solver_counts}")
-    return extracted_count, len(output_records) - extracted_count
+    println("\n[Constraint Solvers] COMPLETE: $(length(output_records)) models written to $(OUTPUT_FILE)")
+    println("  Solver distribution: $(solver_counts)")
+    return (extracted_count, length(output_records) - extracted_count)
+end
 
-
-if __name__ == "__main__":
+if abspath(PROGRAM_FILE) == abspath(@__FILE__)
     run()
+end

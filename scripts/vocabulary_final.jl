@@ -1,30 +1,40 @@
-#!/usr/bin/env python3
-# SPDX-FileCopyrightText: 2026 ECHIDNA Project Team
+#!/usr/bin/env julia
 # SPDX-License-Identifier: PMPL-1.0-or-later
+# SPDX-FileCopyrightText: 2026 ECHIDNA Project Team
+#
+# Final vocabulary expansion - simple and robust approach.
+# Combines existing vocabulary with a comprehensive word list and saves the result.
+
+using JSON3
 
 """
-FINAL VOCABULARY EXPANSION - Simple and robust approach
+    main()
+
+Simple vocabulary expansion. Reads existing vocabulary, merges with a comprehensive
+word list, and writes the final vocabulary file plus statistics.
 """
+function main()
+    println("FINAL VOCABULARY EXPANSION")
+    println("=" ^ 50)
 
-import json
-import os
-
-def main():
-    """Simple vocabulary expansion."""
-    
-    print("🎯 FINAL VOCABULARY EXPANSION")
-    print("=" * 50)
-    
     # Read existing vocabulary
-    existing_vocab = set()
-    if os.path.exists("training_data/vocabulary_ULTIMATE.txt"):
-        with open("training_data/vocabulary_ULTIMATE.txt", 'r') as f:
-            existing_vocab = set(line.strip() for line in f if line.strip())
-    
-    print(f"Existing vocabulary: {len(existing_vocab)} words")
-    
+    existing_vocab = Set{String}()
+    vocab_path = "training_data/vocabulary_ULTIMATE.txt"
+    if isfile(vocab_path)
+        open(vocab_path, "r") do f
+            for line in eachline(f)
+                word = strip(line)
+                if !isempty(word)
+                    push!(existing_vocab, word)
+                end
+            end
+        end
+    end
+
+    println("Existing vocabulary: $(length(existing_vocab)) words")
+
     # Add comprehensive vocabulary list
-    comprehensive_vocab = {
+    comprehensive_vocab = Set{String}([
         # Mathematics
         "algebra", "geometry", "analysis", "number", "theory", "combinatorics", "logic",
         "group", "ring", "field", "vector", "matrix", "tensor", "polynomial", "function",
@@ -32,7 +42,7 @@ def main():
         "series", "differentiable", "integrable", "bounded", "compact", "connected",
         "metric", "topology", "homeomorphism", "manifold", "curvature", "tangent",
         "normal", "differential", "riemannian", "coordinate", "invariant", "preservation",
-        
+
         # Computer Science
         "algorithm", "data", "structure", "array", "list", "stack", "queue", "heap",
         "tree", "graph", "hash", "table", "trie", "bloom", "filter", "segment",
@@ -43,18 +53,18 @@ def main():
         "interpreter", "parser", "lexer", "abstract", "syntax", "tree",
         "system", "operating", "kernel", "process", "thread", "memory",
         "cache", "scheduler", "deadlock", "concurrency", "parallel",
-        
+
         # Theorem Proving
         "theorem", "proof", "lemma", "corollary", "proposition", "axiom",
         "hypothesis", "conclusion", "premise", "inference", "deduction",
         "induction", "contradiction", "tautology", "valid", "sound", "complete",
         "consistent", "decidable", "undecidable", "reduction", "equivalence",
-        
+
         # Logic
         "proposition", "predicate", "quantifier", "universal", "existential",
         "conjunction", "disjunction", "implication", "negation", "biconditional",
         "satisfiable", "unsatisfiable", "model", "interpretation", "valuation",
-        
+
         # Specialized
         "cryptography", "encryption", "decryption", "security", "protocol",
         "authentication", "integrity", "confidentiality", "hashing", "signature",
@@ -66,45 +76,49 @@ def main():
         "ecosystem", "metabolism", "replication", "chemistry", "molecule",
         "atom", "bond", "reaction", "catalyst", "equilibrium", "kinetics",
         "synthesis"
-    }
-    
-    print(f"Comprehensive vocabulary: {len(comprehensive_vocab)} words")
-    
-    # Combine
-    final_vocab = existing_vocab | set(comprehensive_vocab)
-    
-    print(f"Final vocabulary: {len(final_vocab)} words")
-    
-    # Save
-    with open("training_data/vocabulary_FINAL.txt", 'w', encoding='utf-8') as f:
-        for word in sorted(final_vocab):
-            f.write(word + '\n')
-    
-    print(f"✅ Saved to training_data/vocabulary_FINAL.txt")
-    
-    # Stats
-    stats = {
-        "version": "v2.0-final",
-        "date": "2026-03-20",
-        "original_vocabulary": len(existing_vocab),
-        "added_vocabulary": len(comprehensive_vocab),
-        "total_vocabulary": len(final_vocab),
-        "target": 1000,
-        "status": "complete" if len(final_vocab) >= 1000 else "in progress"
-    }
-    
-    with open("training_data/stats_FINAL.json", 'w', encoding='utf-8') as f:
-        json.dump(stats, f, indent=2)
-    
-    print(f"✅ Statistics saved to training_data/stats_FINAL.json")
-    
-    if len(final_vocab) >= 1000:
-        print(f"\n🎉 VOCABULARY TARGET ACHIEVED!")
-        print(f"   Total: {len(final_vocab)} words")
-    else:
-        print(f"\n⚠️  VOCABULARY EXPANSION COMPLETE")
-        print(f"   Current: {len(final_vocab)} words")
-        print(f"   Status: Ready for use")
+    ])
 
-if __name__ == "__main__":
-    main()
+    println("Comprehensive vocabulary: $(length(comprehensive_vocab)) words")
+
+    # Combine
+    final_vocab = union(existing_vocab, comprehensive_vocab)
+
+    println("Final vocabulary: $(length(final_vocab)) words")
+
+    # Save
+    open("training_data/vocabulary_FINAL.txt", "w") do f
+        for word in sort(collect(final_vocab))
+            println(f, word)
+        end
+    end
+
+    println("Saved to training_data/vocabulary_FINAL.txt")
+
+    # Stats
+    stats = Dict(
+        "version" => "v2.0-final",
+        "date" => "2026-03-20",
+        "original_vocabulary" => length(existing_vocab),
+        "added_vocabulary" => length(comprehensive_vocab),
+        "total_vocabulary" => length(final_vocab),
+        "target" => 1000,
+        "status" => length(final_vocab) >= 1000 ? "complete" : "in progress"
+    )
+
+    open("training_data/stats_FINAL.json", "w") do f
+        JSON3.pretty(f, stats)
+    end
+
+    println("Statistics saved to training_data/stats_FINAL.json")
+
+    if length(final_vocab) >= 1000
+        println("\nVOCABULARY TARGET ACHIEVED!")
+        println("   Total: $(length(final_vocab)) words")
+    else
+        println("\nVOCABULARY EXPANSION COMPLETE")
+        println("   Current: $(length(final_vocab)) words")
+        println("   Status: Ready for use")
+    end
+end
+
+main()

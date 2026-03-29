@@ -1,37 +1,35 @@
-#!/usr/bin/env python3
-# SPDX-FileCopyrightText: 2026 ECHIDNA Project Team
+#!/usr/bin/env julia
 # SPDX-License-Identifier: PMPL-1.0-or-later
+# Copyright (c) 2026 Jonathan D.A. Jewell (hyperpolymath)
+#
+# Extract proofs from F* (Project Everest) and convert to ECHIDNA training format.
+#
+# Attempts to download from the F* GitHub repository (examples/ dir). Falls back
+# to generating high-quality synthetic F* proofs.
+#
+# F* is a general-purpose ML-like functional programming language with effects
+# aimed at program verification. It is used in Project Everest for verified
+# cryptographic libraries (HACL*, EverCrypt, miTLS).
+#
+# Output: training_data/proof_states_fstar.jsonl
+# ID range: 97000+
 
-"""
-Extract proofs from F* (Project Everest) and convert to ECHIDNA training format.
+using JSON3
+using Downloads
 
-Attempts to download from the F* GitHub repository (examples/ dir). Falls back
-to generating high-quality synthetic F* proofs.
+# ---------------------------------------------------------------------------
+# Configuration
+# ---------------------------------------------------------------------------
 
-F* is a general-purpose ML-like functional programming language with effects
-aimed at program verification. It is used in Project Everest for verified
-cryptographic libraries (HACL*, EverCrypt, miTLS).
+const REPO_ROOT = dirname(dirname(abspath(@__FILE__)))
+const EXTERNAL_DIR = joinpath(REPO_ROOT, "external_corpora", "fstar")
+const OUTPUT_DIR = joinpath(REPO_ROOT, "training_data")
+const OUTPUT_FILE = joinpath(OUTPUT_DIR, "proof_states_fstar.jsonl")
+const STATS_FILE = joinpath(OUTPUT_DIR, "stats_fstar.json")
+const START_ID = 97000
 
-Output: training_data/proof_states_fstar.jsonl
-ID range: 97000+
-"""
-
-import json
-import os
-import re
-import urllib.request
-import urllib.error
-from typing import Dict, List, Any, Tuple
-
-REPO_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-EXTERNAL_DIR = os.path.join(REPO_ROOT, "external_corpora", "fstar")
-OUTPUT_DIR = os.path.join(REPO_ROOT, "training_data")
-OUTPUT_FILE = os.path.join(OUTPUT_DIR, "proof_states_fstar.jsonl")
-STATS_FILE = os.path.join(OUTPUT_DIR, "stats_fstar.json")
-START_ID = 97000
-
-FSTAR_RAW = "https://raw.githubusercontent.com/FStarLang/FStar/master"
-FSTAR_FILES = [
+const FSTAR_RAW = "https://raw.githubusercontent.com/FStarLang/FStar/master"
+const FSTAR_FILES = [
     "examples/algorithms/BinarySearch.fst",
     "examples/algorithms/InsertionSort.fst",
     "examples/algorithms/QuickSort.fst",
@@ -48,79 +46,89 @@ FSTAR_FILES = [
     "ulib/FStar.Math.Lemmas.fst",
 ]
 
+"""
+    parse_fstar_file(filepath::String) -> Vector{Dict{String,Any}}
 
-def parse_fstar_file(filepath: str) -> List[Dict[str, Any]]:
-    """Parse an F* .fst file and extract val/let definitions with specs."""
-    results = []
-    try:
-        with open(filepath, "r", encoding="utf-8", errors="replace") as fh:
-            content = fh.read()
-    except OSError:
+Parse an F* .fst file and extract val/let definitions with specs.
+"""
+function parse_fstar_file(filepath::String)::Vector{Dict{String,Any}}
+    results = Dict{String,Any}[]
+    local content::String
+    try
+        content = read(filepath, String)
+    catch
         return results
+    end
 
     # val declarations with refinement types
-    val_pattern = re.compile(
-        r'val\s+(\w+)\s*:\s*(.*?)(?=\nval\s|\nlet\s|\ntype\s|\nopen\s|\nmodule\s|\Z)',
-        re.DOTALL
-    )
-    for m in val_pattern.finditer(content):
-        name = m.group(1).strip()
-        sig = re.sub(r'\s+', ' ', m.group(2).strip())[:400]
-        if not sig or len(sig) < 5:
+    val_pattern = r"val\s+(\w+)\s*:\s*(.*?)(?=\nval\s|\nlet\s|\ntype\s|\nopen\s|\nmodule\s|\z)"s
+    for m in eachmatch(Regex(val_pattern, "s"), content)
+        name = strip(m.captures[1])
+        sig = replace(strip(m.captures[2]), r"\s+" => " ")
+        sig = sig[1:min(400, length(sig))]
+        if isempty(sig) || length(sig) < 5
             continue
-        keywords = re.findall(r'\b(Tot|Lemma|Pure|ST|Stack|GTot|requires|ensures|decreases|modifies)\b', sig)
-        results.append({
-            "theorem": name,
-            "goal": sig,
-            "tactics": list(dict.fromkeys(keywords))[:20],
-            "source": f"fstar/{os.path.basename(filepath)}",
-        })
+        end
+        keywords = [m_.match for m_ in eachmatch(r"\b(Tot|Lemma|Pure|ST|Stack|GTot|requires|ensures|decreases|modifies)\b", sig)]
+        push!(results, Dict{String,Any}(
+            "theorem" => name,
+            "goal" => sig,
+            "tactics" => unique(keywords)[1:min(20, length(unique(keywords)))],
+            "source" => "fstar/$(basename(filepath))",
+        ))
+    end
 
     # let with refinement types or Lemma
-    let_pattern = re.compile(
-        r'let\s+(?:rec\s+)?(\w+)\s*(?::.*?)?\s*=\s*(.*?)(?=\nlet\s|\nval\s|\ntype\s|\Z)',
-        re.DOTALL
-    )
-    for m in let_pattern.finditer(content):
-        name = m.group(1).strip()
-        body = re.sub(r'\s+', ' ', m.group(2).strip())[:300]
-        if 'Lemma' in body or 'assert' in body or 'calc' in body:
-            keywords = re.findall(r'\b(Lemma|assert|calc|assume|admit|Classical)\b', body)
-            results.append({
-                "theorem": f"{name}_impl",
-                "goal": body[:200],
-                "tactics": list(dict.fromkeys(keywords))[:20],
-                "source": f"fstar/{os.path.basename(filepath)}",
-            })
+    let_pattern = r"let\s+(?:rec\s+)?(\w+)\s*(?::.*?)?\s*=\s*(.*?)(?=\nlet\s|\nval\s|\ntype\s|\z)"s
+    for m in eachmatch(Regex(let_pattern, "s"), content)
+        name = strip(m.captures[1])
+        body = replace(strip(m.captures[2]), r"\s+" => " ")
+        body = body[1:min(300, length(body))]
+        if occursin("Lemma", body) || occursin("assert", body) || occursin("calc", body)
+            keywords = [m_.match for m_ in eachmatch(r"\b(Lemma|assert|calc|assume|admit|Classical)\b", body)]
+            push!(results, Dict{String,Any}(
+                "theorem" => "$(name)_impl",
+                "goal" => body[1:min(200, length(body))],
+                "tactics" => unique(keywords)[1:min(20, length(unique(keywords)))],
+                "source" => "fstar/$(basename(filepath))",
+            ))
+        end
+    end
 
     return results
+end
 
+"""
+    download_fstar_files() -> Int
 
-def download_fstar_files() -> int:
-    """Attempt to download F* source files."""
+Attempt to download F* source files.
+"""
+function download_fstar_files()::Int
     downloaded = 0
-    for rel_path in FSTAR_FILES:
-        url = f"{FSTAR_RAW}/{rel_path}"
-        local_path = os.path.join(EXTERNAL_DIR, os.path.basename(rel_path))
-        if os.path.exists(local_path):
+    for rel_path in FSTAR_FILES
+        url = "$FSTAR_RAW/$rel_path"
+        local_path = joinpath(EXTERNAL_DIR, basename(rel_path))
+        if isfile(local_path)
             downloaded += 1
             continue
-        try:
-            req = urllib.request.Request(url, headers={"User-Agent": "ECHIDNA/1.5"})
-            with urllib.request.urlopen(req, timeout=15) as resp:
-                data = resp.read()
-            with open(local_path, "wb") as fh:
-                fh.write(data)
+        end
+        try
+            Downloads.download(url, local_path; timeout=15)
             downloaded += 1
-            print(f"  Downloaded: {rel_path}")
-        except (urllib.error.URLError, OSError, TimeoutError) as exc:
-            print(f"  Skipped {rel_path}: {exc}")
+            println("  Downloaded: $rel_path")
+        catch exc
+            println("  Skipped $rel_path: $exc")
+        end
+    end
     return downloaded
+end
 
+"""
+    generate_synthetic_fstar() -> Vector{Dict{String,Any}}
 
-def generate_synthetic_fstar() -> List[Dict[str, Any]]:
-    """Generate high-quality synthetic F* proofs."""
-
+Generate high-quality synthetic F* proofs.
+"""
+function generate_synthetic_fstar()::Vector{Dict{String,Any}}
     arithmetic = [
         ("add_comm", "val add_comm: a:int -> b:int -> Lemma (a + b == b + a)", "let add_comm a b = ()"),
         ("add_assoc", "val add_assoc: a:int -> b:int -> c:int -> Lemma ((a + b) + c == a + (b + c))", "let add_assoc a b c = ()"),
@@ -192,89 +200,104 @@ def generate_synthetic_fstar() -> List[Dict[str, Any]]:
         ("termination", termination),
     ]
 
-    proofs = []
-    for category, entries in all_categories:
-        for entry in entries:
-            name = entry[0]
-            sig = entry[1]
-            impl = entry[2] if len(entry) > 2 else ""
+    proofs = Dict{String,Any}[]
+    for (category, entries) in all_categories
+        for entry in entries
+            name = entry[1]
+            sig = entry[2]
+            impl = length(entry) > 2 ? entry[3] : ""
 
-            keywords = re.findall(r'\b(Lemma|Tot|Pure|ST|GTot|requires|ensures|decreases|modifies|SMTPat)\b', sig)
-            proofs.append({
-                "theorem": name,
-                "goal": sig,
-                "tactic_proof": impl,
-                "tactics": list(dict.fromkeys(keywords))[:20],
-                "source": f"fstar_synthetic/{category}",
-            })
+            keywords = [m_.match for m_ in eachmatch(r"\b(Lemma|Tot|Pure|ST|GTot|requires|ensures|decreases|modifies|SMTPat)\b", sig)]
+            push!(proofs, Dict{String,Any}(
+                "theorem" => name,
+                "goal" => sig,
+                "tactic_proof" => impl,
+                "tactics" => unique(keywords)[1:min(20, length(unique(keywords)))],
+                "source" => "fstar_synthetic/$category",
+            ))
+        end
+    end
     return proofs
+end
 
+"""
+    run() -> Tuple{Int,Int}
 
-def run() -> Tuple[int, int]:
-    """Run the full extraction pipeline."""
-    os.makedirs(OUTPUT_DIR, exist_ok=True)
-    os.makedirs(EXTERNAL_DIR, exist_ok=True)
+Run the full extraction pipeline.
+"""
+function run()::Tuple{Int,Int}
+    mkpath(OUTPUT_DIR)
+    mkpath(EXTERNAL_DIR)
 
-    all_entries: List[Dict[str, Any]] = []
+    all_entries = Dict{String,Any}[]
     extracted_count = 0
 
-    print("[F*] Phase 1: Attempting to download from GitHub ...")
+    println("[F*] Phase 1: Attempting to download from GitHub ...")
     downloaded = download_fstar_files()
-    print(f"  Downloaded/cached {downloaded} files")
+    println("  Downloaded/cached $downloaded files")
 
-    for fname in os.listdir(EXTERNAL_DIR):
-        if fname.endswith(".fst"):
-            fpath = os.path.join(EXTERNAL_DIR, fname)
+    for fname in readdir(EXTERNAL_DIR)
+        if endswith(fname, ".fst")
+            fpath = joinpath(EXTERNAL_DIR, fname)
             parsed = parse_fstar_file(fpath)
-            for entry in parsed:
-                all_entries.append(entry)
-            if parsed:
-                print(f"  Parsed {len(parsed)} from {fname}")
-    extracted_count = len(all_entries)
+            append!(all_entries, parsed)
+            if !isempty(parsed)
+                println("  Parsed $(length(parsed)) from $fname")
+            end
+        end
+    end
+    extracted_count = length(all_entries)
 
-    print(f"[F*] Phase 2: Generating synthetic proofs ...")
+    println("[F*] Phase 2: Generating synthetic proofs ...")
     synthetic = generate_synthetic_fstar()
-    existing_names = {e["theorem"] for e in all_entries}
+    existing_names = Set(e["theorem"] for e in all_entries)
     added = 0
-    for entry in synthetic:
-        if entry["theorem"] not in existing_names:
-            all_entries.append(entry)
-            existing_names.add(entry["theorem"])
+    for entry in synthetic
+        if entry["theorem"] ∉ existing_names
+            push!(all_entries, entry)
+            push!(existing_names, entry["theorem"])
             added += 1
-    print(f"  Generated {added} unique synthetic proofs")
+        end
+    end
+    println("  Generated $added unique synthetic proofs")
 
     current_id = START_ID
-    output_records = []
-    for entry in all_entries:
-        record = {
-            "id": current_id,
-            "prover": "FStar",
-            "theorem": entry["theorem"],
-            "goal": entry["goal"],
-            "context": entry.get("tactics", []),
-            "tactic_proof": entry.get("tactic_proof", ""),
-            "source": entry.get("source", "fstar"),
-        }
-        output_records.append(record)
+    output_records = Dict{String,Any}[]
+    for entry in all_entries
+        record = Dict{String,Any}(
+            "id" => current_id,
+            "prover" => "FStar",
+            "theorem" => entry["theorem"],
+            "goal" => entry["goal"],
+            "context" => get(entry, "tactics", String[]),
+            "tactic_proof" => get(entry, "tactic_proof", ""),
+            "source" => get(entry, "source", "fstar"),
+        )
+        push!(output_records, record)
         current_id += 1
+    end
 
-    with open(OUTPUT_FILE, "w", encoding="utf-8") as fh:
-        for rec in output_records:
-            fh.write(json.dumps(rec, ensure_ascii=False) + "\n")
+    open(OUTPUT_FILE, "w") do fh
+        for rec in output_records
+            println(fh, JSON3.write(rec))
+        end
+    end
 
-    stats = {
-        "prover": "FStar",
-        "total_proofs": len(output_records),
-        "extracted_from_source": extracted_count,
-        "synthetic_added": len(output_records) - extracted_count,
-        "id_range": [START_ID, current_id - 1],
-    }
-    with open(STATS_FILE, "w", encoding="utf-8") as fh:
-        json.dump(stats, fh, indent=2)
+    stats = Dict{String,Any}(
+        "prover" => "FStar",
+        "total_proofs" => length(output_records),
+        "extracted_from_source" => extracted_count,
+        "synthetic_added" => length(output_records) - extracted_count,
+        "id_range" => [START_ID, current_id - 1],
+    )
+    open(STATS_FILE, "w") do fh
+        write(fh, JSON3.write(stats))
+    end
 
-    print(f"\n[F*] COMPLETE: {len(output_records)} proofs written to {OUTPUT_FILE}")
-    return extracted_count, len(output_records) - extracted_count
+    println("\n[F*] COMPLETE: $(length(output_records)) proofs written to $OUTPUT_FILE")
+    return extracted_count, length(output_records) - extracted_count
+end
 
-
-if __name__ == "__main__":
+if abspath(PROGRAM_FILE) == @__FILE__
     run()
+end
