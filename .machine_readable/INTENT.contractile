@@ -35,7 +35,7 @@
     "Idris2 ABI with 7 modules and zero believe_me — formal correctness"
     "Zig FFI producing 4 shared libraries — C ABI bridge layer"
     "Julia for ML inference (tactic prediction, premise selection)"
-    "ReScript + Deno for UI (28 files)"
+    "ReScript + Deno for UI (33 files, zero TypeScript)"
   )
 
   ; === Sensitive Areas (if in doubt, ask) ===

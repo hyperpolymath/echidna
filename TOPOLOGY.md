@@ -97,7 +97,7 @@ TRUST PIPELINE
 LAYERS & INTERFACES
   Neural Layer (Julia)              ██████████ 100%    Logistic regression stable
   3 API Interfaces                  ██████████ 100%    GraphQL, gRPC, REST active
-  ReScript UI (28 components)       ██████████ 100%    Proof exploration stable
+  ReScript UI (33 components)       ██████████ 100%    Proof exploration stable
 
 FFI / ABI LAYER
   Idris2 ABI (8 modules)           ██████████ 100%    Type-checked, zero believe_me

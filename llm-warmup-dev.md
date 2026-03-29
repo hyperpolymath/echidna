@@ -80,7 +80,7 @@ Future: Flux.jl Transformer models.
 
 ### ReScript UI (src/rescript/)
 
-28 files. Deno runtime.
+33 .res files. Deno runtime. Zero TypeScript.
 
 ### Chapel PoC (chapel_poc/)
 
