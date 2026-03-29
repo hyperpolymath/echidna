@@ -37,7 +37,7 @@ echidna/
 │   │   ├── grpc/           # gRPC (tonic, port 50051)
 │   │   └── rest/           # REST (axum + OpenAPI, port 8000)
 │   ├── julia/              # Julia ML components
-│   ├── rescript/           # ReScript+Deno UI (28 files)
+│   ├── rescript/           # ReScript+Deno UI (33 files)
 │   └── mercury/            # Mercury/Logtalk logic (optional)
 ├── .machine_readable/      # SCM files (STATE.scm, META.scm, ECOSYSTEM.scm)
 ├── .github/workflows/      # 17 CI/CD workflows
@@ -71,7 +71,7 @@ Follow conventional commit format:
 
 - **Rust**: Core logic, 48 prover backends, trust pipeline, CLI, REPL, API servers
 - **Julia**: ML inference (tactic prediction, premise selection, port 8090)
-- **ReScript + Deno**: UI components (28 files)
+- **ReScript + Deno**: UI components (33 files, zero TypeScript)
 - **Chapel**: Optional parallel proof dispatch
 
 ### Prover Support (48 Total - ALL IMPLEMENTED)

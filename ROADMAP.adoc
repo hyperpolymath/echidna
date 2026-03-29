@@ -16,7 +16,7 @@ Jonathan D.A. Jewell <j.d.a.jewell@open.ac.uk>
 * *FFI bridge*: complete C-compatible API for all 48 provers
 * Julia ML layer with logistic regression tactic prediction
 * Chapel parallel dispatch layer
-* ReScript UI: 28 compiled components
+* ReScript UI: 33 compiled components (zero TypeScript)
 * Training data: 332 proofs, 1,603 tactics
 * License standardised: PMPL-1.0-or-later throughout
 
@@ -39,7 +39,7 @@ Jonathan D.A. Jewell <j.d.a.jewell@open.ac.uk>
 
 * [x] 99 unit tests + 38 integration tests
 * [x] Neural training pipeline
-* [x] ReScript UI functional (28 files, 6 components)
+* [x] ReScript UI functional (33 files, zero TypeScript)
 * [x] RSR/CCCP compliance templates
 
 == v1.4 -- Interfaces and Extended Provers (COMPLETE)

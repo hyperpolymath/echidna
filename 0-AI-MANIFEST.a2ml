@@ -47,7 +47,7 @@ container = "container/"
 
 [tech-stack]
 primary = "Rust (48 prover backends, trust pipeline, CLI, REPL, API servers)"
-secondary = "Julia (ML inference, port 8090), ReScript+Deno (UI, 28 files)"
+secondary = "Julia (ML inference, port 8090), ReScript+Deno (UI, 33 files, zero TypeScript)"
 optional = "Chapel (parallel proof dispatch)"
 abi = "Idris2 (7 modules, zero believe_me)"
 ffi = "Zig (4 shared libraries)"

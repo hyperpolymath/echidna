@@ -298,7 +298,7 @@ tour:
     echo "     ffi/zig/   - Zig FFI bridge (4 shared libraries)"
     echo ""
     echo "5. UI: src/rescript/"
-    echo "   ReScript + Deno frontend (28 files)."
+    echo "   ReScript + Deno frontend (33 files, zero TypeScript)."
     echo ""
     echo "6. BUILD SYSTEM:"
     echo "   Cargo.toml   - Rust workspace"

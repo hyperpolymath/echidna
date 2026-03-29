@@ -19,7 +19,7 @@ RSR (Rhodium Standard Repository) practices with formal verification emphasis.
 | Parallel | Chapel | HPC distributed proof search
 | ABI | Idris2 | Formal interface definitions with dependent types
 | FFI | Zig | C-compatible bridge layer
-| UI | ReScript | Proof exploration frontend (28 components)
+| UI | ReScript | Proof exploration frontend (33 components)
 | Interfaces | Rust (axum/tonic) | GraphQL (8081), gRPC (50051), REST (8000)
 |===
 

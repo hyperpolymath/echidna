@@ -135,7 +135,7 @@ The verification pipeline applies the following checks to every proof:
   - GraphQL (async-graphql, port 8081)
   - gRPC (tonic + Protocol Buffers, port 50051)
   - REST (axum + OpenAPI/Swagger, port 8000)
-* *ReScript UI*: 28 compiled components for proof exploration
+* *ReScript UI*: 33 compiled components for proof exploration (zero TypeScript)
 * *REPL*: Interactive proof session via rustyline
 
 == Quick Start
@@ -295,7 +295,7 @@ just mvp        # MVP smoke checks (reports missing provers, non-fatal)
 | Property tests | 21 passing (PropTest)
 | API interfaces | GraphQL, gRPC, REST
 | ML layer | Julia logistic regression
-| UI | ReScript, 28 components
+| UI | ReScript, 33 components
 | CI/CD | 17 workflows
 |===
 
