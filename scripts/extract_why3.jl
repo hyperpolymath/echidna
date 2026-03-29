@@ -1,37 +1,34 @@
-#!/usr/bin/env python3
-# SPDX-FileCopyrightText: 2026 ECHIDNA Project Team
+#!/usr/bin/env julia
 # SPDX-License-Identifier: PMPL-1.0-or-later
+# SPDX-FileCopyrightText: 2026 ECHIDNA Project Team
+#
+# Extract proofs from Why3 examples and convert to ECHIDNA training format.
+#
+# Attempts to download from the Why3 GitLab repository (examples/ dir).
+# Falls back to generating high-quality synthetic Why3 proofs.
+#
+# Why3 is a platform for deductive program verification, featuring a rich
+# specification language (WhyML) and integration with many automated and
+# interactive provers.
+#
+# Output: training_data/proof_states_why3.jsonl
+# ID range: 95000+
 
-"""
-Extract proofs from Why3 examples and convert to ECHIDNA training format.
+using JSON3
 
-Attempts to download from the Why3 GitLab repository (examples/ dir).
-Falls back to generating high-quality synthetic Why3 proofs.
+# ---------------------------------------------------------------------------
+# Constants
+# ---------------------------------------------------------------------------
 
-Why3 is a platform for deductive program verification, featuring a rich
-specification language (WhyML) and integration with many automated and
-interactive provers.
+const REPO_ROOT = dirname(dirname(abspath(@__FILE__)))
+const EXTERNAL_DIR = joinpath(REPO_ROOT, "external_corpora", "why3")
+const OUTPUT_DIR = joinpath(REPO_ROOT, "training_data")
+const OUTPUT_FILE = joinpath(OUTPUT_DIR, "proof_states_why3.jsonl")
+const STATS_FILE = joinpath(OUTPUT_DIR, "stats_why3.json")
+const START_ID = 95000
 
-Output: training_data/proof_states_why3.jsonl
-ID range: 95000+
-"""
-
-import json
-import os
-import re
-import urllib.request
-import urllib.error
-from typing import Dict, List, Any, Tuple
-
-REPO_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-EXTERNAL_DIR = os.path.join(REPO_ROOT, "external_corpora", "why3")
-OUTPUT_DIR = os.path.join(REPO_ROOT, "training_data")
-OUTPUT_FILE = os.path.join(OUTPUT_DIR, "proof_states_why3.jsonl")
-STATS_FILE = os.path.join(OUTPUT_DIR, "stats_why3.json")
-START_ID = 95000
-
-WHY3_RAW = "https://gitlab.inria.fr/why3/why3/-/raw/master"
-WHY3_FILES = [
+const WHY3_RAW = "https://gitlab.inria.fr/why3/why3/-/raw/master"
+const WHY3_FILES = [
     "examples/euler001.mlw",
     "examples/fibonacci.mlw",
     "examples/insertion_sort.mlw",
@@ -50,89 +47,114 @@ WHY3_FILES = [
     "examples/same_fringe.mlw",
 ]
 
+# ---------------------------------------------------------------------------
+# Parser
+# ---------------------------------------------------------------------------
 
-def parse_why3_file(filepath: str) -> List[Dict[str, Any]]:
-    """
-    Parse a Why3 .mlw file and extract lemma/goal/predicate patterns.
+"""
+    parse_why3_file(filepath::String) -> Vector{Dict{String,Any}}
 
-    Why3 files contain modules with:
-        lemma name: formula
-        goal name: formula
-        let rec function ... = ... ensures { ... }
-    """
-    results = []
-    try:
-        with open(filepath, "r", encoding="utf-8", errors="replace") as fh:
-            content = fh.read()
-    except OSError:
+Parse a Why3 .mlw file and extract lemma/goal/predicate patterns.
+
+Why3 files contain modules with:
+    lemma name: formula
+    goal name: formula
+    let rec function ... = ... ensures { ... }
+"""
+function parse_why3_file(filepath::String)::Vector{Dict{String,Any}}
+    results = Dict{String,Any}[]
+    content = try
+        read(filepath, String)
+    catch
         return results
+    end
 
     # Extract lemma/goal declarations
-    pattern = re.compile(
-        r'(lemma|goal|axiom)\s+(\w+)\s*:\s*(.*?)(?=\n\s*(?:lemma|goal|axiom|let|val|predicate|function|end|use|module)|\Z)',
-        re.DOTALL | re.IGNORECASE
-    )
-    for m in pattern.finditer(content):
-        kind = m.group(1).strip()
-        name = m.group(2).strip()
-        body = re.sub(r'\s+', ' ', m.group(3).strip())[:300]
-        keywords = re.findall(r'\b(forall|exists|ensures|requires|invariant|variant|raises|reads|writes|diverges)\b', body, re.IGNORECASE)
-        results.append({
-            "theorem": name,
-            "goal": body,
-            "kind": kind,
-            "tactics": list(dict.fromkeys(k.lower() for k in keywords)),
-            "source": f"why3/{os.path.basename(filepath)}",
-        })
+    pattern = r"(lemma|goal|axiom)\s+(\w+)\s*:\s*(.*?)(?=\n\s*(?:lemma|goal|axiom|let|val|predicate|function|end|use|module)|\z)"si
+    for m in eachmatch(Regex(pattern), content)
+        kind = strip(m.captures[1])
+        name = strip(m.captures[2])
+        body = first(replace(strip(m.captures[3]), r"\s+" => " "), 300)
+        keywords = [lowercase(k.match) for k in eachmatch(r"\b(forall|exists|ensures|requires|invariant|variant|raises|reads|writes|diverges)\b"i, body)]
+        # Deduplicate preserving order
+        seen = Set{String}()
+        unique_kw = String[]
+        for kw in keywords
+            if kw ∉ seen
+                push!(seen, kw)
+                push!(unique_kw, kw)
+            end
+        end
+        push!(results, Dict{String,Any}(
+            "theorem" => name,
+            "goal" => body,
+            "kind" => kind,
+            "tactics" => unique_kw,
+            "source" => "why3/$(basename(filepath))",
+        ))
+    end
 
     # Extract function specs (ensures/requires)
-    func_pattern = re.compile(
-        r'let\s+(?:rec\s+)?(\w+).*?(?:requires\s*\{(.*?)\})?.*?(?:ensures\s*\{(.*?)\})',
-        re.DOTALL
-    )
-    for m in func_pattern.finditer(content):
-        name = m.group(1)
-        requires = m.group(2)
-        ensures = m.group(3)
-        if ensures:
-            ensures_clean = re.sub(r'\s+', ' ', ensures.strip())[:200]
-            results.append({
-                "theorem": f"{name}_spec",
-                "goal": f"ensures {{ {ensures_clean} }}",
-                "kind": "function_spec",
-                "tactics": ["ensures", "requires"] if requires else ["ensures"],
-                "source": f"why3/{os.path.basename(filepath)}",
-            })
+    func_pattern = r"let\s+(?:rec\s+)?(\w+).*?(?:requires\s*\{(.*?)\})?.*?(?:ensures\s*\{(.*?)\})"s
+    for m in eachmatch(Regex(func_pattern), content)
+        name = m.captures[1]
+        requires = m.captures[2]
+        ensures = m.captures[3]
+        if ensures !== nothing
+            ensures_clean = first(replace(strip(ensures), r"\s+" => " "), 200)
+            tactics = requires !== nothing ? ["ensures", "requires"] : ["ensures"]
+            push!(results, Dict{String,Any}(
+                "theorem" => "$(name)_spec",
+                "goal" => "ensures { $(ensures_clean) }",
+                "kind" => "function_spec",
+                "tactics" => tactics,
+                "source" => "why3/$(basename(filepath))",
+            ))
+        end
+    end
 
     return results
+end
 
+# ---------------------------------------------------------------------------
+# Downloader
+# ---------------------------------------------------------------------------
 
-def download_why3_files() -> int:
-    """Attempt to download Why3 example files."""
+"""
+    download_why3_files() -> Int
+
+Attempt to download Why3 example files. Returns count of downloaded/cached files.
+"""
+function download_why3_files()::Int
     downloaded = 0
-    for rel_path in WHY3_FILES:
-        url = f"{WHY3_RAW}/{rel_path}"
-        local_path = os.path.join(EXTERNAL_DIR, os.path.basename(rel_path))
-        if os.path.exists(local_path):
+    for rel_path in WHY3_FILES
+        url = "$(WHY3_RAW)/$(rel_path)"
+        local_path = joinpath(EXTERNAL_DIR, basename(rel_path))
+        if isfile(local_path)
             downloaded += 1
             continue
-        try:
-            req = urllib.request.Request(url, headers={"User-Agent": "ECHIDNA/1.5"})
-            with urllib.request.urlopen(req, timeout=15) as resp:
-                data = resp.read()
-            with open(local_path, "wb") as fh:
-                fh.write(data)
+        end
+        try
+            data = download(url, local_path)
             downloaded += 1
-            print(f"  Downloaded: {rel_path}")
-        except (urllib.error.URLError, OSError, TimeoutError) as exc:
-            print(f"  Skipped {rel_path}: {exc}")
+            println("  Downloaded: $(rel_path)")
+        catch exc
+            println("  Skipped $(rel_path): $(exc)")
+        end
+    end
     return downloaded
+end
 
+# ---------------------------------------------------------------------------
+# Synthetic generation
+# ---------------------------------------------------------------------------
 
-def generate_synthetic_why3() -> List[Dict[str, Any]]:
-    """
-    Generate high-quality synthetic Why3 proofs using WhyML syntax.
-    """
+"""
+    generate_synthetic_why3() -> Vector{Dict{String,Any}}
+
+Generate high-quality synthetic Why3 proofs using WhyML syntax.
+"""
+function generate_synthetic_why3()::Vector{Dict{String,Any}}
     arithmetic = [
         ("add_comm", "forall x y: int. x + y = y + x", ""),
         ("add_assoc", "forall x y z: int. (x + y) + z = x + (y + z)", ""),
@@ -216,90 +238,119 @@ def generate_synthetic_why3() -> List[Dict[str, Any]]:
         ("graph_algorithms", graph_algorithms),
     ]
 
-    proofs = []
-    for category, theorems in all_categories:
-        for entry in theorems:
-            name, goal = entry[0], entry[1]
-            spec = entry[2] if len(entry) > 2 else ""
-            keywords = re.findall(r'\b(forall|exists|ensures|requires|invariant|variant|raises|sorted|permut|mem|length)\b', goal + " " + spec, re.IGNORECASE)
-            proofs.append({
-                "theorem": name,
-                "goal": goal,
-                "tactic_proof": spec,
-                "tactics": list(dict.fromkeys(k.lower() for k in keywords))[:20],
-                "source": f"why3_synthetic/{category}",
-            })
+    proofs = Dict{String,Any}[]
+    for (category, theorems) in all_categories
+        for entry in theorems
+            name, goal = entry[1], entry[2]
+            spec = length(entry) > 2 ? entry[3] : ""
+            keywords = [lowercase(k.match) for k in eachmatch(r"\b(forall|exists|ensures|requires|invariant|variant|raises|sorted|permut|mem|length)\b"i, goal * " " * spec)]
+            # Deduplicate preserving order, limit to 20
+            seen = Set{String}()
+            unique_kw = String[]
+            for kw in keywords
+                if kw ∉ seen
+                    push!(seen, kw)
+                    push!(unique_kw, kw)
+                end
+                length(unique_kw) >= 20 && break
+            end
+            push!(proofs, Dict{String,Any}(
+                "theorem" => name,
+                "goal" => goal,
+                "tactic_proof" => spec,
+                "tactics" => unique_kw,
+                "source" => "why3_synthetic/$(category)",
+            ))
+        end
+    end
     return proofs
+end
 
+# ---------------------------------------------------------------------------
+# Main pipeline
+# ---------------------------------------------------------------------------
 
-def run() -> Tuple[int, int]:
-    """Run the full extraction pipeline."""
-    os.makedirs(OUTPUT_DIR, exist_ok=True)
-    os.makedirs(EXTERNAL_DIR, exist_ok=True)
+"""
+    run() -> Tuple{Int,Int}
 
-    all_entries: List[Dict[str, Any]] = []
+Run the full extraction pipeline. Returns (extracted_count, synthetic_count).
+"""
+function run()::Tuple{Int,Int}
+    mkpath(OUTPUT_DIR)
+    mkpath(EXTERNAL_DIR)
+
+    all_entries = Dict{String,Any}[]
     extracted_count = 0
 
-    print("[Why3] Phase 1: Attempting to download from GitLab ...")
+    println("[Why3] Phase 1: Attempting to download from GitLab ...")
     downloaded = download_why3_files()
-    print(f"  Downloaded/cached {downloaded} files")
+    println("  Downloaded/cached $(downloaded) files")
 
-    for fname in os.listdir(EXTERNAL_DIR):
-        if fname.endswith(".mlw"):
-            fpath = os.path.join(EXTERNAL_DIR, fname)
+    for fname in readdir(EXTERNAL_DIR)
+        if endswith(fname, ".mlw")
+            fpath = joinpath(EXTERNAL_DIR, fname)
             parsed = parse_why3_file(fpath)
-            for entry in parsed:
-                all_entries.append(entry)
-            if parsed:
-                print(f"  Parsed {len(parsed)} theorems from {fname}")
-    extracted_count = len(all_entries)
+            append!(all_entries, parsed)
+            if !isempty(parsed)
+                println("  Parsed $(length(parsed)) theorems from $(fname)")
+            end
+        end
+    end
+    extracted_count = length(all_entries)
 
-    print(f"[Why3] Phase 2: Generating synthetic proofs ...")
+    println("[Why3] Phase 2: Generating synthetic proofs ...")
     synthetic = generate_synthetic_why3()
-    existing_names = {e["theorem"] for e in all_entries}
+    existing_names = Set(e["theorem"] for e in all_entries)
     added = 0
-    for entry in synthetic:
-        if entry["theorem"] not in existing_names:
-            all_entries.append(entry)
-            existing_names.add(entry["theorem"])
+    for entry in synthetic
+        if entry["theorem"] ∉ existing_names
+            push!(all_entries, entry)
+            push!(existing_names, entry["theorem"])
             added += 1
-    print(f"  Generated {added} unique synthetic proofs")
+        end
+    end
+    println("  Generated $(added) unique synthetic proofs")
 
     current_id = START_ID
-    output_records = []
-    for entry in all_entries:
-        record = {
-            "id": current_id,
-            "prover": "Why3",
-            "theorem": entry["theorem"],
-            "goal": entry["goal"],
-            "context": entry.get("tactics", []),
-            "tactic_proof": entry.get("tactic_proof", ""),
-            "source": entry.get("source", "why3"),
-        }
-        output_records.append(record)
+    output_records = Dict{String,Any}[]
+    for entry in all_entries
+        record = Dict{String,Any}(
+            "id" => current_id,
+            "prover" => "Why3",
+            "theorem" => entry["theorem"],
+            "goal" => entry["goal"],
+            "context" => get(entry, "tactics", String[]),
+            "tactic_proof" => get(entry, "tactic_proof", ""),
+            "source" => get(entry, "source", "why3"),
+        )
+        push!(output_records, record)
         current_id += 1
+    end
 
-    with open(OUTPUT_FILE, "w", encoding="utf-8") as fh:
-        for rec in output_records:
-            fh.write(json.dumps(rec, ensure_ascii=False) + "\n")
+    open(OUTPUT_FILE, "w") do fh
+        for rec in output_records
+            println(fh, JSON3.write(rec))
+        end
+    end
 
-    stats = {
-        "prover": "Why3",
-        "total_proofs": len(output_records),
-        "extracted_from_source": extracted_count,
-        "synthetic_added": len(output_records) - extracted_count,
-        "id_range": [START_ID, current_id - 1],
-        "output_file": OUTPUT_FILE,
-    }
-    with open(STATS_FILE, "w", encoding="utf-8") as fh:
-        json.dump(stats, fh, indent=2)
+    stats = Dict{String,Any}(
+        "prover" => "Why3",
+        "total_proofs" => length(output_records),
+        "extracted_from_source" => extracted_count,
+        "synthetic_added" => length(output_records) - extracted_count,
+        "id_range" => [START_ID, current_id - 1],
+        "output_file" => OUTPUT_FILE,
+    )
+    open(STATS_FILE, "w") do fh
+        JSON3.pretty(fh, stats)
+    end
 
-    print(f"\n[Why3] COMPLETE: {len(output_records)} proofs written to {OUTPUT_FILE}")
-    print(f"  Extracted from source: {extracted_count}")
-    print(f"  Synthetic: {len(output_records) - extracted_count}")
-    return extracted_count, len(output_records) - extracted_count
+    println("\n[Why3] COMPLETE: $(length(output_records)) proofs written to $(OUTPUT_FILE)")
+    println("  Extracted from source: $(extracted_count)")
+    println("  Synthetic: $(length(output_records) - extracted_count)")
+    return (extracted_count, length(output_records) - extracted_count)
+end
 
-
-if __name__ == "__main__":
+if abspath(PROGRAM_FILE) == abspath(@__FILE__)
     run()
+end

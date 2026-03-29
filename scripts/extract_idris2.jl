@@ -1,37 +1,35 @@
-#!/usr/bin/env python3
-# SPDX-FileCopyrightText: 2026 ECHIDNA Project Team
+#!/usr/bin/env julia
 # SPDX-License-Identifier: PMPL-1.0-or-later
+# Copyright (c) 2026 Jonathan D.A. Jewell (hyperpolymath)
+#
+# Extract proofs from Idris2 stdlib and tests, convert to ECHIDNA training format.
+#
+# Attempts to download from the Idris2 GitHub repository (libs/ and tests/ dirs).
+# Falls back to generating high-quality synthetic Idris2 proofs.
+#
+# Idris2 is a dependently-typed functional programming language with first-class
+# support for theorem proving. It features linear types (Quantities) and an
+# elaborator reflection system for metaprogramming.
+#
+# Output: training_data/proof_states_idris2.jsonl
+# ID range: 98000+
 
-"""
-Extract proofs from Idris2 stdlib and tests, convert to ECHIDNA training format.
+using JSON3
+using Downloads
 
-Attempts to download from the Idris2 GitHub repository (libs/ and tests/ dirs).
-Falls back to generating high-quality synthetic Idris2 proofs.
+# ---------------------------------------------------------------------------
+# Configuration
+# ---------------------------------------------------------------------------
 
-Idris2 is a dependently-typed functional programming language with first-class
-support for theorem proving. It features linear types (Quantities) and an
-elaborator reflection system for metaprogramming.
+const REPO_ROOT = dirname(dirname(abspath(@__FILE__)))
+const EXTERNAL_DIR = joinpath(REPO_ROOT, "external_corpora", "idris2")
+const OUTPUT_DIR = joinpath(REPO_ROOT, "training_data")
+const OUTPUT_FILE = joinpath(OUTPUT_DIR, "proof_states_idris2.jsonl")
+const STATS_FILE = joinpath(OUTPUT_DIR, "stats_idris2.json")
+const START_ID = 98000
 
-Output: training_data/proof_states_idris2.jsonl
-ID range: 98000+
-"""
-
-import json
-import os
-import re
-import urllib.request
-import urllib.error
-from typing import Dict, List, Any, Tuple
-
-REPO_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-EXTERNAL_DIR = os.path.join(REPO_ROOT, "external_corpora", "idris2")
-OUTPUT_DIR = os.path.join(REPO_ROOT, "training_data")
-OUTPUT_FILE = os.path.join(OUTPUT_DIR, "proof_states_idris2.jsonl")
-STATS_FILE = os.path.join(OUTPUT_DIR, "stats_idris2.json")
-START_ID = 98000
-
-IDRIS2_RAW = "https://raw.githubusercontent.com/idris-lang/Idris2/main"
-IDRIS2_FILES = [
+const IDRIS2_RAW = "https://raw.githubusercontent.com/idris-lang/Idris2/main"
+const IDRIS2_FILES = [
     "libs/prelude/Prelude/Types.idr",
     "libs/prelude/Prelude/Basics.idr",
     "libs/prelude/Prelude/EqOrd.idr",
@@ -50,69 +48,80 @@ IDRIS2_FILES = [
     "tests/idris2/basic/basic002/Test.idr",
 ]
 
+"""
+    parse_idris2_file(filepath::String) -> Vector{Dict{String,Any}}
 
-def parse_idris2_file(filepath: str) -> List[Dict[str, Any]]:
-    """Parse an Idris2 .idr file and extract public export function/data patterns."""
-    results = []
-    try:
-        with open(filepath, "r", encoding="utf-8", errors="replace") as fh:
-            content = fh.read()
-    except OSError:
+Parse an Idris2 .idr file and extract public export function/data patterns.
+"""
+function parse_idris2_file(filepath::String)::Vector{Dict{String,Any}}
+    results = Dict{String,Any}[]
+    local content::String
+    try
+        content = read(filepath, String)
+    catch
         return results
+    end
 
     # Type signature followed by implementation
-    # Pattern: name : type\nname args = body
-    sig_pattern = re.compile(
-        r'^(\w+)\s*:\s*(.*?)$',
-        re.MULTILINE
-    )
+    # Pattern: name : type
+    sig_pattern = r"^(\w+)\s*:\s*(.*?)$"m
 
-    for m in sig_pattern.finditer(content):
-        name = m.group(1).strip()
-        sig = re.sub(r'\s+', ' ', m.group(2).strip())[:300]
+    for m in eachmatch(sig_pattern, content)
+        name = strip(m.captures[1])
+        sig = replace(strip(m.captures[2]), r"\s+" => " ")
+        sig = sig[1:min(300, length(sig))]
 
         # Skip imports, module declarations, etc.
-        if name in ('module', 'import', 'data', 'record', 'interface', 'implementation', 'where', 'namespace', 'mutual', 'parameters'):
+        if name in ("module", "import", "data", "record", "interface", "implementation", "where", "namespace", "mutual", "parameters")
             continue
+        end
 
         # Look for proof-relevant types
-        if any(kw in sig for kw in ['Void', 'Dec', 'Equal', 'So', 'LTE', 'GTE', 'Elem', 'contra', 'Refl', 'DecEq', 'Uninhabited']):
-            keywords = re.findall(r'\b(Void|Dec|Equal|So|LTE|GTE|Elem|Refl|DecEq|Uninhabited|Vect|Nat|Fin|DPair|Not)\b', sig)
-            results.append({
-                "theorem": name,
-                "goal": sig,
-                "tactics": list(dict.fromkeys(keywords))[:20],
-                "source": f"idris2/{os.path.basename(filepath)}",
-            })
+        if any(kw -> occursin(kw, sig), ["Void", "Dec", "Equal", "So", "LTE", "GTE", "Elem", "contra", "Refl", "DecEq", "Uninhabited"])
+            keywords = [m_.match for m_ in eachmatch(r"\b(Void|Dec|Equal|So|LTE|GTE|Elem|Refl|DecEq|Uninhabited|Vect|Nat|Fin|DPair|Not)\b", sig)]
+            push!(results, Dict{String,Any}(
+                "theorem" => name,
+                "goal" => sig,
+                "tactics" => unique(keywords)[1:min(20, length(unique(keywords)))],
+                "source" => "idris2/$(basename(filepath))",
+            ))
+        end
+    end
 
     return results
+end
 
+"""
+    download_idris2_files() -> Int
 
-def download_idris2_files() -> int:
-    """Attempt to download Idris2 source files."""
+Attempt to download Idris2 source files.
+"""
+function download_idris2_files()::Int
     downloaded = 0
-    for rel_path in IDRIS2_FILES:
-        url = f"{IDRIS2_RAW}/{rel_path}"
-        local_path = os.path.join(EXTERNAL_DIR, os.path.basename(rel_path))
-        if os.path.exists(local_path):
+    for rel_path in IDRIS2_FILES
+        url = "$IDRIS2_RAW/$rel_path"
+        local_path = joinpath(EXTERNAL_DIR, basename(rel_path))
+        if isfile(local_path)
             downloaded += 1
             continue
-        try:
-            req = urllib.request.Request(url, headers={"User-Agent": "ECHIDNA/1.5"})
-            with urllib.request.urlopen(req, timeout=15) as resp:
-                data = resp.read()
-            with open(local_path, "wb") as fh:
-                fh.write(data)
+        end
+        try
+            Downloads.download(url, local_path; timeout=15)
             downloaded += 1
-            print(f"  Downloaded: {rel_path}")
-        except (urllib.error.URLError, OSError, TimeoutError) as exc:
-            print(f"  Skipped {rel_path}: {exc}")
+            println("  Downloaded: $rel_path")
+        catch exc
+            println("  Skipped $rel_path: $exc")
+        end
+    end
     return downloaded
+end
 
+"""
+    generate_synthetic_idris2() -> Vector{Dict{String,Any}}
 
-def generate_synthetic_idris2() -> List[Dict[str, Any]]:
-    """Generate high-quality synthetic Idris2 proofs using dependent types."""
-
+Generate high-quality synthetic Idris2 proofs using dependent types.
+"""
+function generate_synthetic_idris2()::Vector{Dict{String,Any}}
     equality_proofs = [
         ("plusZeroRightNeutral", "plusZeroRightNeutral : (n : Nat) -> n + 0 = n", "plusZeroRightNeutral Z = Refl\nplusZeroRightNeutral (S k) = cong S (plusZeroRightNeutral k)"),
         ("plusSuccRightSucc", "plusSuccRightSucc : (left : Nat) -> (right : Nat) -> S (left + right) = left + S right", "plusSuccRightSucc Z right = Refl\nplusSuccRightSucc (S k) right = cong S (plusSuccRightSucc k right)"),
@@ -199,89 +208,104 @@ def generate_synthetic_idris2() -> List[Dict[str, Any]]:
         ("interfaces", interfaces),
     ]
 
-    proofs = []
-    for category, entries in all_categories:
-        for entry in entries:
-            name = entry[0]
-            sig = entry[1]
-            impl = entry[2] if len(entry) > 2 else ""
+    proofs = Dict{String,Any}[]
+    for (category, entries) in all_categories
+        for entry in entries
+            name = entry[1]
+            sig = entry[2]
+            impl = length(entry) > 2 ? entry[3] : ""
 
-            keywords = re.findall(r'\b(Vect|Nat|Fin|Dec|LTE|GTE|DPair|Refl|Void|So|Equal|List|Bool|Maybe|IO)\b', sig)
-            proofs.append({
-                "theorem": name,
-                "goal": sig,
-                "tactic_proof": impl,
-                "tactics": list(dict.fromkeys(keywords))[:20],
-                "source": f"idris2_synthetic/{category}",
-            })
+            keywords = [m_.match for m_ in eachmatch(r"\b(Vect|Nat|Fin|Dec|LTE|GTE|DPair|Refl|Void|So|Equal|List|Bool|Maybe|IO)\b", sig)]
+            push!(proofs, Dict{String,Any}(
+                "theorem" => name,
+                "goal" => sig,
+                "tactic_proof" => impl,
+                "tactics" => unique(keywords)[1:min(20, length(unique(keywords)))],
+                "source" => "idris2_synthetic/$category",
+            ))
+        end
+    end
     return proofs
+end
 
+"""
+    run() -> Tuple{Int,Int}
 
-def run() -> Tuple[int, int]:
-    """Run the full extraction pipeline."""
-    os.makedirs(OUTPUT_DIR, exist_ok=True)
-    os.makedirs(EXTERNAL_DIR, exist_ok=True)
+Run the full extraction pipeline.
+"""
+function run()::Tuple{Int,Int}
+    mkpath(OUTPUT_DIR)
+    mkpath(EXTERNAL_DIR)
 
-    all_entries: List[Dict[str, Any]] = []
+    all_entries = Dict{String,Any}[]
     extracted_count = 0
 
-    print("[Idris2] Phase 1: Attempting to download from GitHub ...")
+    println("[Idris2] Phase 1: Attempting to download from GitHub ...")
     downloaded = download_idris2_files()
-    print(f"  Downloaded/cached {downloaded} files")
+    println("  Downloaded/cached $downloaded files")
 
-    for fname in os.listdir(EXTERNAL_DIR):
-        if fname.endswith(".idr"):
-            fpath = os.path.join(EXTERNAL_DIR, fname)
+    for fname in readdir(EXTERNAL_DIR)
+        if endswith(fname, ".idr")
+            fpath = joinpath(EXTERNAL_DIR, fname)
             parsed = parse_idris2_file(fpath)
-            for entry in parsed:
-                all_entries.append(entry)
-            if parsed:
-                print(f"  Parsed {len(parsed)} from {fname}")
-    extracted_count = len(all_entries)
+            append!(all_entries, parsed)
+            if !isempty(parsed)
+                println("  Parsed $(length(parsed)) from $fname")
+            end
+        end
+    end
+    extracted_count = length(all_entries)
 
-    print(f"[Idris2] Phase 2: Generating synthetic proofs ...")
+    println("[Idris2] Phase 2: Generating synthetic proofs ...")
     synthetic = generate_synthetic_idris2()
-    existing_names = {e["theorem"] for e in all_entries}
+    existing_names = Set(e["theorem"] for e in all_entries)
     added = 0
-    for entry in synthetic:
-        if entry["theorem"] not in existing_names:
-            all_entries.append(entry)
-            existing_names.add(entry["theorem"])
+    for entry in synthetic
+        if entry["theorem"] ∉ existing_names
+            push!(all_entries, entry)
+            push!(existing_names, entry["theorem"])
             added += 1
-    print(f"  Generated {added} unique synthetic proofs")
+        end
+    end
+    println("  Generated $added unique synthetic proofs")
 
     current_id = START_ID
-    output_records = []
-    for entry in all_entries:
-        record = {
-            "id": current_id,
-            "prover": "Idris2",
-            "theorem": entry["theorem"],
-            "goal": entry["goal"],
-            "context": entry.get("tactics", []),
-            "tactic_proof": entry.get("tactic_proof", ""),
-            "source": entry.get("source", "idris2"),
-        }
-        output_records.append(record)
+    output_records = Dict{String,Any}[]
+    for entry in all_entries
+        record = Dict{String,Any}(
+            "id" => current_id,
+            "prover" => "Idris2",
+            "theorem" => entry["theorem"],
+            "goal" => entry["goal"],
+            "context" => get(entry, "tactics", String[]),
+            "tactic_proof" => get(entry, "tactic_proof", ""),
+            "source" => get(entry, "source", "idris2"),
+        )
+        push!(output_records, record)
         current_id += 1
+    end
 
-    with open(OUTPUT_FILE, "w", encoding="utf-8") as fh:
-        for rec in output_records:
-            fh.write(json.dumps(rec, ensure_ascii=False) + "\n")
+    open(OUTPUT_FILE, "w") do fh
+        for rec in output_records
+            println(fh, JSON3.write(rec))
+        end
+    end
 
-    stats = {
-        "prover": "Idris2",
-        "total_proofs": len(output_records),
-        "extracted_from_source": extracted_count,
-        "synthetic_added": len(output_records) - extracted_count,
-        "id_range": [START_ID, current_id - 1],
-    }
-    with open(STATS_FILE, "w", encoding="utf-8") as fh:
-        json.dump(stats, fh, indent=2)
+    stats = Dict{String,Any}(
+        "prover" => "Idris2",
+        "total_proofs" => length(output_records),
+        "extracted_from_source" => extracted_count,
+        "synthetic_added" => length(output_records) - extracted_count,
+        "id_range" => [START_ID, current_id - 1],
+    )
+    open(STATS_FILE, "w") do fh
+        write(fh, JSON3.write(stats))
+    end
 
-    print(f"\n[Idris2] COMPLETE: {len(output_records)} proofs written to {OUTPUT_FILE}")
-    return extracted_count, len(output_records) - extracted_count
+    println("\n[Idris2] COMPLETE: $(length(output_records)) proofs written to $OUTPUT_FILE")
+    return extracted_count, length(output_records) - extracted_count
+end
 
-
-if __name__ == "__main__":
+if abspath(PROGRAM_FILE) == @__FILE__
     run()
+end

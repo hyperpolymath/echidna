@@ -1,223 +1,182 @@
 #!/usr/bin/env julia
 # SPDX-License-Identifier: PMPL-1.0-or-later
-# Extract proofs from Metamath set.mm for ECHIDNA training corpus
+# SPDX-FileCopyrightText: 2026 ECHIDNA Project Team
+#
+# Metamath proof extractor.
+# Line-by-line extraction of theorems from Metamath set.mm into ECHIDNA training format.
 
 using JSON3
 using Dates
 
-struct MetamathProof
-    theorem_name::String
+"""
+    Theorem
+
+Represents a single Metamath theorem with its name, statement, and proof text.
+"""
+struct Theorem
+    name::String
     statement::String
     proof::String
-    proof_length::Int
-    proof_steps::Int
 end
 
 """
-Parse a Metamath proof string and count steps
-"""
-function parse_proof(proof_str::String)::Tuple{String, Int, Int}
-    # Remove comments and whitespace
-    clean_proof = replace(proof_str, r"\$\{.*?\}\$" => s"")
-    clean_proof = replace(clean_proof, r"\$\\.*?\$" => s"")
-    clean_proof = replace(clean_proof, r"\s+" => s" ")
-    clean_proof = strip(clean_proof)
-    
-    # Count proof steps (compressed proof format)
-    proof_steps = length(split(clean_proof, r"\s+"))
-    proof_length = length(clean_proof)
-    
-    return (clean_proof, proof_length, proof_steps)
-end
+    extract_theorems(file_path::String) -> Vector{Theorem}
 
+Extract theorems from a Metamath set.mm file by scanning line-by-line for `\$p`
+declarations, extracting the statement and proof portions.
 """
-Extract theorems from Metamath .mm file
-"""
-function extract_metamath_proofs(file_path::String)::Vector{MetamathProof}
-    proofs = MetamathProof[]
-    
-    current_theorem = ""
-    current_statement = ""
-    current_proof = ""
-    in_proof = false
-    
-    for line in eachline(file_path)
-        # Skip comments and empty lines
-        if startswith(line, '$') || isempty(strip(line))
-            continue
-        end
-        
-        # Theorem declaration
-        if startswith(line, '$') && occursin(r"^\$\{.*?\}\$", line)
-            # Extract theorem name
-            theorem_match = match(r"^\$\{([^}]+)\}\$", line)
-            if theorem_match !== nothing
-                current_theorem = theorem_match.captures[1]
-                current_statement = ""
-                current_proof = ""
-                in_proof = false
+function extract_theorems(file_path::String)::Vector{Theorem}
+    theorems = Theorem[]
+
+    open(file_path, "r") do f
+        for line in eachline(f)
+            # Skip comment blocks and empty lines
+            if startswith(line, "\$( ") || startswith(line, "\$)") || isempty(strip(line))
+                continue
             end
-        
-        # Statement (between $a and $p)
-        elseif occursin(r"^\$a\s+", line) || occursin(r"^\$e\s+", line)
-            if current_theorem != ""
-                statement_line = replace(line, r"^\$[ae]\s+" => s"")
-                current_statement *= " " * statement_line
-            end
-        
-        # Proof start
-        elseif occursin(r"^\$p\s+", line)
-            in_proof = true
-            proof_line = replace(line, r"^\$p\s+" => s"")
-            current_proof *= " " * proof_line
-        
-        # Proof continuation
-        elseif in_proof && !isempty(strip(line))
-            current_proof *= " " * strip(line)
-        
-        # Proof end (empty line or next theorem)
-        elseif in_proof && (isempty(strip(line)) || startswith(strip(line), '$'))
-            if current_theorem != "" && current_proof != ""
-                clean_proof, proof_length, proof_steps = parse_proof(current_proof)
-                
-                push!(proofs, MetamathProof(
-                    current_theorem,
-                    current_statement,
-                    clean_proof,
-                    proof_length,
-                    proof_steps
-                ))
-                
-                current_theorem = ""
-                current_statement = ""
-                current_proof = ""
-                in_proof = false
+
+            # Theorem declaration line (contains $p)
+            if occursin("\$p", line)
+                # Extract theorem name (before $p)
+                parts = split(line, "\$p"; limit=2)
+                if length(parts) > 1
+                    name_part = strip(parts[1])
+                    # Remove any trailing $.
+                    name_part = replace(name_part, r"\$\." => "")
+                    current_name = strip(name_part)
+
+                    # Extract statement (between $p and $=)
+                    statement_part = parts[2]
+                    statement_match = match(r"^\s*([^$]+)\$=", statement_part)
+                    current_statement = if !isnothing(statement_match)
+                        strip(statement_match.captures[1])
+                    else
+                        ""
+                    end
+
+                    # Extract proof (after $=)
+                    proof_match = match(r"\$=\s*([^$]+)\$\.", statement_part)
+                    if !isnothing(proof_match)
+                        current_proof = strip(proof_match.captures[1])
+
+                        # Save theorem
+                        if !isempty(current_name) && !isempty(current_proof)
+                            push!(theorems, Theorem(current_name, current_statement, current_proof))
+                        end
+                    end
+                end
             end
         end
     end
-    
-    return proofs
+
+    return theorems
 end
 
 """
-Convert Metamath proofs to ECHIDNA training format
+    save_as_training_data(theorems::Vector{Theorem}) -> Int
+
+Save extracted theorems as JSONL training data files (proof states and tactics).
+Returns the number of theorems saved.
 """
-function convert_to_training_data(proofs::Vector{MetamathProof})::Vector{Dict}
-    training_examples = Dict[]
-    
-    for (i, proof) in enumerate(proofs)
-        # Create proof state
-        proof_state = Dict(
-            "id" => i,
+function save_as_training_data(theorems::Vector{Theorem})::Int
+    proof_states = Dict{String,Any}[]
+    tactics = Dict{String,Any}[]
+
+    for (i, theorem) in enumerate(theorems)
+        # Proof state
+        state = Dict{String,Any}(
+            "id" => i - 1 + 1000,  # Start from 1000 to avoid conflicts
             "prover" => "Metamath",
-            "theorem" => proof.theorem_name,
-            "goal" => proof.statement,
-            "context" => String[],
-            "proof_length" => proof.proof_length,
-            "proof_steps" => proof.proof_steps
+            "theorem" => theorem.name,
+            "goal" => theorem.statement,
+            "context" => Any[],
+            "source" => "Metamath",
+            "proof_steps" => length(split(theorem.proof))
         )
-        
-        push!(training_examples, proof_state)
-        
-        # Create tactic sequence (Metamath proofs are single-step)
-        tactic = Dict(
-            "proof_id" => i,
+        push!(proof_states, state)
+
+        # Tactic
+        tactic = Dict{String,Any}(
+            "proof_id" => i - 1 + 1000,
             "step" => 1,
             "tactic" => "metamath_prove",
             "prover" => "Metamath",
-            "proof_text" => proof.proof
+            "proof_text" => theorem.proof
         )
-        
-        push!(training_examples, tactic)
+        push!(tactics, tactic)
     end
-    
-    return training_examples
-end
 
-"""
-Save training data to JSONL files
-"""
-function save_training_data(examples::Vector{Dict}, output_dir::String = "training_data")
-    mkpath(output_dir)
-    
-    # Separate proof states and tactics
-    proof_states = Dict[]
-    tactics = Dict[]
-    
-    for example in examples
-        if haskey(example, "goal")
-            push!(proof_states, example)
-        elseif haskey(example, "tactic")
-            push!(tactics, example)
-        end
-    end
-    
-    # Save proof states
-    open(joinpath(output_dir, "proof_states_metamath.jsonl"), "w") do io
+    # Save to files
+    training_dir = "training_data"
+    mkpath(training_dir)
+
+    open(joinpath(training_dir, "proof_states_metamath.jsonl"), "w") do f
         for state in proof_states
-            println(io, JSON3.write(state))
+            println(f, JSON3.write(state))
         end
     end
-    
-    # Save tactics
-    open(joinpath(output_dir, "tactics_metamath.jsonl"), "w") do io
+
+    open(joinpath(training_dir, "tactics_metamath.jsonl"), "w") do f
         for tactic in tactics
-            println(io, JSON3.write(tactic))
+            println(f, JSON3.write(tactic))
         end
     end
-    
+
     # Save stats
-    stats = Dict(
-        "version" => "v2.0-metamath",
+    stats = Dict{String,Any}(
+        "version" => "v2.0-metamath-python",
+        "extraction_date" => string(now()),
+        "total_proofs" => length(theorems),
+        "total_tactics" => length(theorems),
         "source" => "Metamath set.mm",
-        "extraction_date" => Dates.now(),
-        "total_proofs" => length(proof_states),
-        "total_tactics" => length(tactics),
         "prover" => "Metamath"
     )
-    
-    open(joinpath(output_dir, "stats_metamath.json"), "w") do io
-        JSON3.pretty(io, stats)
+
+    open(joinpath(training_dir, "stats_metamath.json"), "w") do f
+        JSON3.pretty(f, stats)
     end
-    
-    println("✓ Metamath extraction complete!")
-    println("  Proofs extracted: $(length(proof_states))")
-    println("  Tactics extracted: $(length(tactics))")
-    println("  Files saved to: $output_dir")
-    println("\nTo merge with main training data:")
-    println("  cat proof_states_metamath.jsonl >> proof_states.jsonl")
-    println("  cat tactics_metamath.jsonl >> tactics.jsonl")
-    
-    return (length(proof_states), length(tactics))
+
+    println("Extracted $(length(theorems)) theorems from Metamath")
+    if !isempty(theorems)
+        println("  Sample theorem: $(theorems[1].name)")
+    end
+    println("  Files saved: proof_states_metamath.jsonl, tactics_metamath.jsonl")
+
+    return length(theorems)
 end
 
 """
-Main extraction function
+    main()
+
+Entry point. Reads Metamath set.mm, extracts theorems line-by-line, and saves
+training data.
 """
-function extract_metamath()
-    println("Metamath Proof Extraction")
-    println("=========================")
-    
+function main()
+    println("Metamath Proof Extractor")
+    println("========================")
+
     file_path = "external_corpora/metamath/set.mm"
-    
+
     if !isfile(file_path)
-        error("Metamath set.mm not found at $file_path")
+        println("Error: File not found: $file_path")
+        return 1
     end
-    
-    println("\nExtracting proofs from $file_path...")
-    proofs = extract_metamath_proofs(file_path)
-    println("  Found $(length(proofs)) theorems with proofs")
-    
-    println("\nConverting to training format...")
-    examples = convert_to_training_data(proofs)
-    
+
+    println("\nExtracting from $file_path...")
+    theorems = extract_theorems(file_path)
+    println("Found $(length(theorems)) theorems")
+
+    if !isempty(theorems)
+        println("\nFirst few theorems:")
+        for (i, theorem) in enumerate(first(theorems, 5))
+            println("  $i. $(theorem.name)")
+        end
+    end
+
     println("\nSaving training data...")
-    save_training_data(examples)
-    
-    return proofs
+    save_as_training_data(theorems)
+
+    return 0
 end
 
-# Run if executed directly
-if abspath(PROGRAM_FILE) == @__FILE__
-    extract_metamath()
-end
+main()

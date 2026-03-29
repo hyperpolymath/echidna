@@ -1,38 +1,36 @@
-#!/usr/bin/env python3
-# SPDX-FileCopyrightText: 2026 ECHIDNA Project Team
+#!/usr/bin/env julia
 # SPDX-License-Identifier: PMPL-1.0-or-later
+# Copyright (c) 2026 Jonathan D.A. Jewell (hyperpolymath)
+#
+# Extract proofs from Dafny test suite and convert to ECHIDNA training format.
+#
+# Attempts to download from the Dafny GitHub repository (Test/ and
+# Source/IntegrationTests/ directories). Falls back to generating high-quality
+# synthetic Dafny proofs.
+#
+# Dafny is an auto-active verification language that uses Z3 as its backend
+# solver. It features method/lemma/function constructs with requires/ensures
+# contracts, loop invariants, and termination measures.
+#
+# Output: training_data/proof_states_dafny.jsonl
+# ID range: 96000+
 
-"""
-Extract proofs from Dafny test suite and convert to ECHIDNA training format.
+using JSON3
+using Downloads
 
-Attempts to download from the Dafny GitHub repository (Test/ and
-Source/IntegrationTests/ directories). Falls back to generating high-quality
-synthetic Dafny proofs.
+# ---------------------------------------------------------------------------
+# Configuration
+# ---------------------------------------------------------------------------
 
-Dafny is an auto-active verification language that uses Z3 as its backend
-solver. It features method/lemma/function constructs with requires/ensures
-contracts, loop invariants, and termination measures.
+const REPO_ROOT = dirname(dirname(abspath(@__FILE__)))
+const EXTERNAL_DIR = joinpath(REPO_ROOT, "external_corpora", "dafny")
+const OUTPUT_DIR = joinpath(REPO_ROOT, "training_data")
+const OUTPUT_FILE = joinpath(OUTPUT_DIR, "proof_states_dafny.jsonl")
+const STATS_FILE = joinpath(OUTPUT_DIR, "stats_dafny.json")
+const START_ID = 96000
 
-Output: training_data/proof_states_dafny.jsonl
-ID range: 96000+
-"""
-
-import json
-import os
-import re
-import urllib.request
-import urllib.error
-from typing import Dict, List, Any, Tuple
-
-REPO_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-EXTERNAL_DIR = os.path.join(REPO_ROOT, "external_corpora", "dafny")
-OUTPUT_DIR = os.path.join(REPO_ROOT, "training_data")
-OUTPUT_FILE = os.path.join(OUTPUT_DIR, "proof_states_dafny.jsonl")
-STATS_FILE = os.path.join(OUTPUT_DIR, "stats_dafny.json")
-START_ID = 96000
-
-DAFNY_RAW = "https://raw.githubusercontent.com/dafny-lang/dafny/master"
-DAFNY_FILES = [
+const DAFNY_RAW = "https://raw.githubusercontent.com/dafny-lang/dafny/master"
+const DAFNY_FILES = [
     "Test/dafny0/Basics.dfy",
     "Test/dafny0/Array.dfy",
     "Test/dafny0/Datatypes.dfy",
@@ -49,72 +47,80 @@ DAFNY_FILES = [
     "Test/dafny4/Leq.dfy",
 ]
 
+"""
+    parse_dafny_file(filepath::String) -> Vector{Dict{String,Any}}
 
-def parse_dafny_file(filepath: str) -> List[Dict[str, Any]]:
-    """Parse a Dafny .dfy file and extract lemma/method/function specs."""
-    results = []
-    try:
-        with open(filepath, "r", encoding="utf-8", errors="replace") as fh:
-            content = fh.read()
-    except OSError:
+Parse a Dafny .dfy file and extract lemma/method/function specs.
+"""
+function parse_dafny_file(filepath::String)::Vector{Dict{String,Any}}
+    results = Dict{String,Any}[]
+    local content::String
+    try
+        content = read(filepath, String)
+    catch
         return results
+    end
 
     # Extract lemma/method/function declarations with specs
-    pattern = re.compile(
-        r'(lemma|method|function|ghost method|ghost function)\s+(\w+)\s*(?:<[^>]*>)?\s*\((.*?)\)(?:\s*:\s*(\S+))?\s*((?:\s*(?:requires|ensures|decreases|modifies|reads|invariant)\s+.*?)*?)(?:\s*\{)',
-        re.DOTALL
-    )
+    pattern = r"(lemma|method|function|ghost method|ghost function)\s+(\w+)\s*(?:<[^>]*>)?\s*\((.*?)\)(?:\s*:\s*(\S+))?\s*((?:\s*(?:requires|ensures|decreases|modifies|reads|invariant)\s+.*?)*?)(?:\s*\{)"s
 
-    for m in pattern.finditer(content):
-        kind = m.group(1).strip()
-        name = m.group(2).strip()
-        params = re.sub(r'\s+', ' ', m.group(3).strip())
-        ret_type = m.group(4) or ""
-        specs = m.group(5).strip()
+    for m in eachmatch(Regex(pattern, "s"), content)
+        kind = strip(m.captures[1])
+        name = strip(m.captures[2])
+        params = replace(strip(something(m.captures[3], "")), r"\s+" => " ")
+        ret_type = something(m.captures[4], "")
+        specs = strip(something(m.captures[5], ""))
 
-        if not specs:
-            continue
+        isempty(specs) && continue
 
-        specs_clean = re.sub(r'\s+', ' ', specs)[:400]
-        spec_keywords = re.findall(r'\b(requires|ensures|decreases|modifies|reads|invariant)\b', specs, re.IGNORECASE)
+        specs_clean = replace(specs, r"\s+" => " ")
+        specs_clean = specs_clean[1:min(400, length(specs_clean))]
+        spec_keywords = [lowercase(m_.match) for m_ in eachmatch(r"\b(requires|ensures|decreases|modifies|reads|invariant)\b"i, specs)]
 
-        results.append({
-            "theorem": name,
-            "goal": specs_clean,
-            "kind": kind,
-            "params": params[:200],
-            "tactics": list(dict.fromkeys(k.lower() for k in spec_keywords)),
-            "source": f"dafny/{os.path.basename(filepath)}",
-        })
+        push!(results, Dict{String,Any}(
+            "theorem" => name,
+            "goal" => specs_clean,
+            "kind" => kind,
+            "params" => params[1:min(200, length(params))],
+            "tactics" => unique(spec_keywords),
+            "source" => "dafny/$(basename(filepath))",
+        ))
+    end
 
     return results
+end
 
+"""
+    download_dafny_files() -> Int
 
-def download_dafny_files() -> int:
-    """Attempt to download Dafny test files."""
+Attempt to download Dafny test files.
+"""
+function download_dafny_files()::Int
     downloaded = 0
-    for rel_path in DAFNY_FILES:
-        url = f"{DAFNY_RAW}/{rel_path}"
-        local_path = os.path.join(EXTERNAL_DIR, os.path.basename(rel_path))
-        if os.path.exists(local_path):
+    for rel_path in DAFNY_FILES
+        url = "$DAFNY_RAW/$rel_path"
+        local_path = joinpath(EXTERNAL_DIR, basename(rel_path))
+        if isfile(local_path)
             downloaded += 1
             continue
-        try:
-            req = urllib.request.Request(url, headers={"User-Agent": "ECHIDNA/1.5"})
-            with urllib.request.urlopen(req, timeout=15) as resp:
-                data = resp.read()
-            with open(local_path, "wb") as fh:
-                fh.write(data)
+        end
+        try
+            Downloads.download(url, local_path; timeout=15)
             downloaded += 1
-            print(f"  Downloaded: {rel_path}")
-        except (urllib.error.URLError, OSError, TimeoutError) as exc:
-            print(f"  Skipped {rel_path}: {exc}")
+            println("  Downloaded: $rel_path")
+        catch exc
+            println("  Skipped $rel_path: $exc")
+        end
+    end
     return downloaded
+end
 
+"""
+    generate_synthetic_dafny() -> Vector{Dict{String,Any}}
 
-def generate_synthetic_dafny() -> List[Dict[str, Any]]:
-    """Generate high-quality synthetic Dafny proofs."""
-
+Generate high-quality synthetic Dafny proofs.
+"""
+function generate_synthetic_dafny()::Vector{Dict{String,Any}}
     arithmetic_lemmas = [
         ("AddComm", "lemma AddComm(x: int, y: int)\n  ensures x + y == y + x\n{}", ["ensures"]),
         ("AddAssoc", "lemma AddAssoc(x: int, y: int, z: int)\n  ensures (x + y) + z == x + (y + z)\n{}", ["ensures"]),
@@ -190,93 +196,108 @@ def generate_synthetic_dafny() -> List[Dict[str, Any]]:
         ("termination", termination),
     ]
 
-    proofs = []
-    for category, entries in all_categories:
-        for entry in entries:
-            name = entry[0]
-            body = entry[1]
-            tactics = entry[2] if len(entry) > 2 else []
+    proofs = Dict{String,Any}[]
+    for (category, entries) in all_categories
+        for entry in entries
+            name = entry[1]
+            body = entry[2]
+            entry_tactics = length(entry) > 2 ? entry[3] : String[]
 
             # Extract goal from body
-            spec_lines = [l.strip() for l in body.split('\n') if any(k in l for k in ['requires', 'ensures', 'decreases', 'modifies', 'invariant'])]
-            goal = '; '.join(spec_lines) if spec_lines else body.split('\n')[0]
+            spec_lines = [strip(l) for l in split(body, '\n') if any(k -> occursin(k, l), ["requires", "ensures", "decreases", "modifies", "invariant"])]
+            goal = !isempty(spec_lines) ? join(spec_lines, "; ") : split(body, '\n')[1]
 
-            proofs.append({
-                "theorem": name,
-                "goal": goal,
-                "tactic_proof": body,
-                "tactics": tactics,
-                "source": f"dafny_synthetic/{category}",
-            })
+            push!(proofs, Dict{String,Any}(
+                "theorem" => name,
+                "goal" => goal,
+                "tactic_proof" => body,
+                "tactics" => entry_tactics,
+                "source" => "dafny_synthetic/$category",
+            ))
+        end
+    end
     return proofs
+end
 
+"""
+    run() -> Tuple{Int,Int}
 
-def run() -> Tuple[int, int]:
-    """Run the full extraction pipeline."""
-    os.makedirs(OUTPUT_DIR, exist_ok=True)
-    os.makedirs(EXTERNAL_DIR, exist_ok=True)
+Run the full extraction pipeline.
+"""
+function run()::Tuple{Int,Int}
+    mkpath(OUTPUT_DIR)
+    mkpath(EXTERNAL_DIR)
 
-    all_entries: List[Dict[str, Any]] = []
+    all_entries = Dict{String,Any}[]
     extracted_count = 0
 
-    print("[Dafny] Phase 1: Attempting to download from GitHub ...")
+    println("[Dafny] Phase 1: Attempting to download from GitHub ...")
     downloaded = download_dafny_files()
-    print(f"  Downloaded/cached {downloaded} files")
+    println("  Downloaded/cached $downloaded files")
 
-    for fname in os.listdir(EXTERNAL_DIR):
-        if fname.endswith(".dfy"):
-            fpath = os.path.join(EXTERNAL_DIR, fname)
+    for fname in readdir(EXTERNAL_DIR)
+        if endswith(fname, ".dfy")
+            fpath = joinpath(EXTERNAL_DIR, fname)
             parsed = parse_dafny_file(fpath)
-            for entry in parsed:
-                all_entries.append(entry)
-            if parsed:
-                print(f"  Parsed {len(parsed)} from {fname}")
-    extracted_count = len(all_entries)
+            append!(all_entries, parsed)
+            if !isempty(parsed)
+                println("  Parsed $(length(parsed)) from $fname")
+            end
+        end
+    end
+    extracted_count = length(all_entries)
 
-    print(f"[Dafny] Phase 2: Generating synthetic proofs ...")
+    println("[Dafny] Phase 2: Generating synthetic proofs ...")
     synthetic = generate_synthetic_dafny()
-    existing_names = {e["theorem"] for e in all_entries}
+    existing_names = Set(e["theorem"] for e in all_entries)
     added = 0
-    for entry in synthetic:
-        if entry["theorem"] not in existing_names:
-            all_entries.append(entry)
-            existing_names.add(entry["theorem"])
+    for entry in synthetic
+        if entry["theorem"] ∉ existing_names
+            push!(all_entries, entry)
+            push!(existing_names, entry["theorem"])
             added += 1
-    print(f"  Generated {added} unique synthetic proofs")
+        end
+    end
+    println("  Generated $added unique synthetic proofs")
 
     current_id = START_ID
-    output_records = []
-    for entry in all_entries:
-        record = {
-            "id": current_id,
-            "prover": "Dafny",
-            "theorem": entry["theorem"],
-            "goal": entry["goal"],
-            "context": entry.get("tactics", []),
-            "tactic_proof": entry.get("tactic_proof", ""),
-            "source": entry.get("source", "dafny"),
-        }
-        output_records.append(record)
+    output_records = Dict{String,Any}[]
+    for entry in all_entries
+        record = Dict{String,Any}(
+            "id" => current_id,
+            "prover" => "Dafny",
+            "theorem" => entry["theorem"],
+            "goal" => entry["goal"],
+            "context" => get(entry, "tactics", String[]),
+            "tactic_proof" => get(entry, "tactic_proof", ""),
+            "source" => get(entry, "source", "dafny"),
+        )
+        push!(output_records, record)
         current_id += 1
+    end
 
-    with open(OUTPUT_FILE, "w", encoding="utf-8") as fh:
-        for rec in output_records:
-            fh.write(json.dumps(rec, ensure_ascii=False) + "\n")
+    open(OUTPUT_FILE, "w") do fh
+        for rec in output_records
+            println(fh, JSON3.write(rec))
+        end
+    end
 
-    stats = {
-        "prover": "Dafny",
-        "total_proofs": len(output_records),
-        "extracted_from_source": extracted_count,
-        "synthetic_added": len(output_records) - extracted_count,
-        "id_range": [START_ID, current_id - 1],
-        "output_file": OUTPUT_FILE,
-    }
-    with open(STATS_FILE, "w", encoding="utf-8") as fh:
-        json.dump(stats, fh, indent=2)
+    stats = Dict{String,Any}(
+        "prover" => "Dafny",
+        "total_proofs" => length(output_records),
+        "extracted_from_source" => extracted_count,
+        "synthetic_added" => length(output_records) - extracted_count,
+        "id_range" => [START_ID, current_id - 1],
+        "output_file" => OUTPUT_FILE,
+    )
+    open(STATS_FILE, "w") do fh
+        write(fh, JSON3.write(stats))
+    end
 
-    print(f"\n[Dafny] COMPLETE: {len(output_records)} proofs written to {OUTPUT_FILE}")
-    return extracted_count, len(output_records) - extracted_count
+    println("\n[Dafny] COMPLETE: $(length(output_records)) proofs written to $OUTPUT_FILE")
+    return extracted_count, length(output_records) - extracted_count
+end
 
-
-if __name__ == "__main__":
+if abspath(PROGRAM_FILE) == @__FILE__
     run()
+end

@@ -1,0 +1,367 @@
+#!/usr/bin/env julia
+# SPDX-License-Identifier: PMPL-1.0-or-later
+# Copyright (c) 2026 Jonathan D.A. Jewell (hyperpolymath)
+#
+# SMT-LIB benchmark extractor for ECHIDNA training data.
+# Reads .smt2 files from the SMT-LIB benchmark suite and extracts
+# proof states for SMT solver backends: Z3, CVC5, Alt-Ergo.
+#
+# Input:  external_corpora/smtlib/ (SMT-LIB benchmark files)
+# Output: training_data/proof_states_smtlib.jsonl
+#         training_data/tactics_smtlib.jsonl
+#         training_data/stats_smtlib.json
+
+using JSON3
+using Dates
+
+# ---------------------------------------------------------------------------
+# Constants
+# ---------------------------------------------------------------------------
+
+# ID range for SMT-LIB-sourced proof states
+const ID_BASE = 80000
+
+# Three SMT backends we target, round-robined for balance
+const PROVERS = ["Z3", "CVC5", "AltErgo"]
+
+# SMT-LIB logics grouped by category for metadata
+const LOGIC_CATEGORIES = Dict{String,String}(
+    "QF_LIA" => "linear integer arithmetic",
+    "QF_LRA" => "linear real arithmetic",
+    "QF_NIA" => "nonlinear integer arithmetic",
+    "QF_NRA" => "nonlinear real arithmetic",
+    "QF_BV" => "bitvectors",
+    "QF_UF" => "uninterpreted functions",
+    "QF_UFLIA" => "UF + linear integer arithmetic",
+    "QF_UFLRA" => "UF + linear real arithmetic",
+    "QF_AUFLIA" => "arrays + UF + LIA",
+    "QF_ABV" => "arrays + bitvectors",
+    "QF_AUFBV" => "arrays + UF + bitvectors",
+    "LIA" => "linear integer arithmetic",
+    "LRA" => "linear real arithmetic",
+    "UFLIA" => "UF + linear integer arithmetic",
+    "AUFLIRA" => "arrays + UF + LIA + LRA",
+    "AUFNIRA" => "arrays + UF + nonlinear mixed arithmetic",
+)
+
+# ---------------------------------------------------------------------------
+# Parser
+# ---------------------------------------------------------------------------
+
+"""
+    parse_smt2_file(filepath::String) -> Union{Dict{String,Any}, Nothing}
+
+Parse a single .smt2 SMT-LIB benchmark file.
+
+Returns a dict with:
+    name          - benchmark name (from filename or set-info)
+    logic         - declared logic (e.g. QF_LIA)
+    status        - expected result (sat/unsat/unknown)
+    assertions    - list of (assert ...) expressions
+    declarations  - list of (declare-fun/sort/const ...) expressions
+    check_sat     - whether (check-sat) is present
+"""
+function parse_smt2_file(filepath::String)::Union{Dict{String,Any}, Nothing}
+    name = splitext(basename(filepath))[1]
+    logic = "UNKNOWN"
+    status = "unknown"
+    assertions = String[]
+    declarations = String[]
+    has_check_sat = false
+
+    content = try
+        read(filepath, String)
+    catch
+        return nothing
+    end
+
+    # Extract logic
+    logic_match = match(r"\(\s*set-logic\s+(\S+)\s*\)", content)
+    if logic_match !== nothing
+        logic = logic_match.captures[1]
+    end
+
+    # Extract status from set-info
+    status_match = match(r":status\s+(sat|unsat|unknown)"i, content)
+    if status_match !== nothing
+        status = lowercase(status_match.captures[1])
+    end
+
+    # Extract declarations (declare-fun, declare-sort, declare-const,
+    # define-fun, define-sort)
+    decl_pat = r"\(\s*(declare-fun|declare-sort|declare-const|define-fun|define-sort)\s+([^)]*(?:\([^)]*\))*[^)]*)\)"
+    for m in eachmatch(Regex(decl_pat), content)
+        decl_text = "($(m.captures[1]) $(m.captures[2]))"
+        # Keep declarations concise (truncate very long ones)
+        if length(decl_text) <= 500
+            push!(declarations, decl_text)
+        end
+    end
+
+    # Extract assertions using balanced-paren matching
+    assertions = extract_balanced_sexps(content, "assert")
+
+    # Check for (check-sat)
+    has_check_sat = occursin(r"\(\s*check-sat\s*\)", content)
+
+    return Dict{String,Any}(
+        "name" => name,
+        "logic" => logic,
+        "status" => status,
+        "assertions" => assertions,
+        "declarations" => declarations,
+        "check_sat" => has_check_sat,
+    )
+end
+
+
+"""
+    extract_balanced_sexps(text::String, keyword::String) -> Vector{String}
+
+Extract top-level S-expressions starting with (keyword ...).
+Uses a simple balanced-parenthesis counter. Returns a list of
+the inner expression strings (without the outer keyword wrapper).
+"""
+function extract_balanced_sexps(text::String, keyword::String)::Vector{String}
+    results = String[]
+    pat = Regex("\\(\\s*" * replace(keyword, r"([.*+?^${}()|[\]\\])" => s"\\\1") * "\\s+")
+
+    for m in eachmatch(pat, text)
+        start = m.offset
+        depth = 0
+        i = start
+        inner_start = m.offset + length(m.match)
+        while i <= length(text)
+            ch = text[i]
+            if ch == '('
+                depth += 1
+            elseif ch == ')'
+                depth -= 1
+                if depth == 0
+                    # Full expression from start to i (inclusive)
+                    inner = strip(text[inner_start:i-1])
+                    # Truncate very large assertions
+                    if length(inner) <= 1000
+                        push!(results, inner)
+                    else
+                        push!(results, first(inner, 997) * "...")
+                    end
+                    break
+                end
+            end
+            i = nextind(text, i)
+        end
+    end
+
+    return results
+end
+
+# ---------------------------------------------------------------------------
+# Extraction pipeline
+# ---------------------------------------------------------------------------
+
+"""
+    find_smt2_files(base_dir::String; max_files::Int=50000) -> Vector{String}
+
+Recursively find .smt2 files, capped at max_files for sanity.
+"""
+function find_smt2_files(base_dir::String; max_files::Int=50000)::Vector{String}
+    results = String[]
+    for (root, dirs, files) in walkdir(base_dir)
+        for fname in sort(files)
+            if endswith(fname, ".smt2")
+                push!(results, joinpath(root, fname))
+                length(results) >= max_files && return sort(results)
+            end
+        end
+    end
+    return sort(results)
+end
+
+
+"""
+    extract_all(base_dir::String) -> Tuple
+
+Extract training data from the SMT-LIB corpus.
+Returns (proof_states, tactics, stats_dict).
+"""
+function extract_all(base_dir::String)
+    files = find_smt2_files(base_dir)
+    println("Found $(length(files)) .smt2 files in $(base_dir)")
+
+    proof_states = Dict{String,Any}[]
+    tactics = Dict{String,Any}[]
+    prover_counts = Dict{String,Int}(p => 0 for p in PROVERS)
+    logic_counts = Dict{String,Int}()
+    status_counts = Dict{String,Int}("sat" => 0, "unsat" => 0, "unknown" => 0)
+    skipped = 0
+    errors = 0
+
+    for (idx, fpath) in enumerate(files)
+        parsed = parse_smt2_file(fpath)
+        if parsed === nothing
+            errors += 1
+            continue
+        end
+
+        # We want benchmarks that actually have assertions
+        if isempty(parsed["assertions"])
+            skipped += 1
+            continue
+        end
+
+        record_id = ID_BASE + length(proof_states)
+
+        # Round-robin prover assignment
+        prover = PROVERS[(length(proof_states) % length(PROVERS)) + 1]
+
+        # Build the goal from the primary assertion(s)
+        goal = parsed["assertions"][1]
+
+        # Context: declarations + remaining assertions (limit for size)
+        context = parsed["declarations"][1:min(10, length(parsed["declarations"]))]
+        if length(parsed["assertions"]) > 1
+            append!(context, parsed["assertions"][2:min(10, length(parsed["assertions"]))])
+        end
+
+        state = Dict{String,Any}(
+            "id" => record_id,
+            "prover" => prover,
+            "theorem" => parsed["name"],
+            "goal" => goal,
+            "context" => context,
+            "source" => "SMT-LIB",
+            "logic" => parsed["logic"],
+            "status" => parsed["status"],
+            "proof_steps" => length(parsed["assertions"]),
+        )
+        push!(proof_states, state)
+        prover_counts[prover] += 1
+
+        # Track logic distribution
+        logic = parsed["logic"]
+        logic_counts[logic] = get(logic_counts, logic, 0) + 1
+
+        # Track status distribution
+        s = parsed["status"]
+        if haskey(status_counts, s)
+            status_counts[s] += 1
+        end
+
+        # Tactic record
+        tactic = Dict{String,Any}(
+            "proof_id" => record_id,
+            "step" => 1,
+            "tactic" => "smt_solve_$(lowercase(prover))",
+            "prover" => prover,
+            "proof_text" => "; SMT-LIB $(parsed["logic"]) $(parsed["status"]) via $(prover)",
+        )
+        push!(tactics, tactic)
+
+        # Progress indicator every 5000
+        if idx % 5000 == 0
+            println("  processed $(idx)/$(length(files)) files ...")
+        end
+    end
+
+    # Sort logic_counts by value descending
+    sorted_logics = sort(collect(logic_counts), by=x -> -x.second)
+
+    stats = Dict{String,Any}(
+        "version" => "v2.0-smtlib",
+        "extraction_date" => string(Dates.now()),
+        "total_files_scanned" => length(files),
+        "total_proofs" => length(proof_states),
+        "total_tactics" => length(tactics),
+        "skipped_no_assertions" => skipped,
+        "read_errors" => errors,
+        "prover_distribution" => prover_counts,
+        "logic_distribution" => Dict(sorted_logics),
+        "status_distribution" => status_counts,
+        "source" => "SMT-LIB Benchmarks",
+        "id_range" => isempty(proof_states) ? "none" : "$(ID_BASE)-$(ID_BASE + length(proof_states) - 1)",
+    )
+
+    return proof_states, tactics, stats
+end
+
+
+"""
+    save_results(proof_states, tactics, stats; output_dir="training_data")
+
+Write extraction results to JSONL / JSON files.
+"""
+function save_results(proof_states, tactics, stats; output_dir="training_data")
+    mkpath(output_dir)
+
+    open(joinpath(output_dir, "proof_states_smtlib.jsonl"), "w") do fh
+        for rec in proof_states
+            println(fh, JSON3.write(rec))
+        end
+    end
+
+    open(joinpath(output_dir, "tactics_smtlib.jsonl"), "w") do fh
+        for rec in tactics
+            println(fh, JSON3.write(rec))
+        end
+    end
+
+    open(joinpath(output_dir, "stats_smtlib.json"), "w") do fh
+        JSON3.pretty(fh, stats)
+    end
+
+    println("\nSaved $(length(proof_states)) proof states -> $(output_dir)/proof_states_smtlib.jsonl")
+    println("Saved $(length(tactics)) tactics        -> $(output_dir)/tactics_smtlib.jsonl")
+    println("Saved stats                        -> $(output_dir)/stats_smtlib.json")
+end
+
+# ---------------------------------------------------------------------------
+# Main
+# ---------------------------------------------------------------------------
+
+function main()::Int
+    println("=" ^ 60)
+    println("ECHIDNA SMT-LIB Extractor")
+    println("Covers: Z3, CVC5, Alt-Ergo")
+    println("=" ^ 60)
+
+    base_dir = "external_corpora/smtlib"
+    if !isdir(base_dir)
+        println("ERROR: Corpus directory not found: $(base_dir)")
+        println("Download SMT-LIB benchmarks first (see CORPUS_EXPANSION_PLAN.md).")
+        return 1
+    end
+
+    proof_states, tactics, stats = extract_all(base_dir)
+
+    if isempty(proof_states)
+        println("\nWARNING: No proof states extracted. Check corpus contents.")
+        return 1
+    end
+
+    save_results(proof_states, tactics, stats)
+
+    println("\nProver distribution:")
+    for (prover, count) in stats["prover_distribution"]
+        println("  $(rpad(prover, 12)): $(count)")
+    end
+
+    println("\nTop logics:")
+    sorted_logics = sort(collect(stats["logic_distribution"]), by=x -> -x.second)
+    for (logic, count) in first(sorted_logics, 10)
+        desc = get(LOGIC_CATEGORIES, logic, "")
+        println("  $(rpad(logic, 15)): $(lpad(string(count), 6))  $(desc)")
+    end
+
+    println("\nStatus distribution:")
+    for (s, count) in stats["status_distribution"]
+        println("  $(rpad(s, 10)): $(count)")
+    end
+
+    println("\nTotal: $(stats["total_proofs"]) proof states (ID range $(stats["id_range"]))")
+    return 0
+end
+
+if abspath(PROGRAM_FILE) == abspath(@__FILE__)
+    exit(main())
+end

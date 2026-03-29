@@ -1,37 +1,35 @@
-#!/usr/bin/env python3
-# SPDX-FileCopyrightText: 2026 ECHIDNA Project Team
+#!/usr/bin/env julia
 # SPDX-License-Identifier: PMPL-1.0-or-later
+# Copyright (c) 2026 Jonathan D.A. Jewell (hyperpolymath)
+#
+# Extract proofs from NASA PVS library and convert to ECHIDNA training format.
+#
+# Attempts to download from the NASA PVS library on GitHub. Falls back to
+# generating high-quality synthetic PVS proofs from standard theories.
+#
+# PVS (Prototype Verification System) is a specification language and theorem
+# prover developed at SRI International, used extensively by NASA for
+# verifying flight-critical systems and air traffic management algorithms.
+#
+# Output: training_data/proof_states_pvs.jsonl
+# ID range: 93000+
 
-"""
-Extract proofs from NASA PVS library and convert to ECHIDNA training format.
+using JSON3
+using Downloads
 
-Attempts to download from the NASA PVS library on GitHub. Falls back to
-generating high-quality synthetic PVS proofs from standard theories.
+# ---------------------------------------------------------------------------
+# Configuration
+# ---------------------------------------------------------------------------
 
-PVS (Prototype Verification System) is a specification language and theorem
-prover developed at SRI International, used extensively by NASA for
-verifying flight-critical systems and air traffic management algorithms.
+const REPO_ROOT = dirname(dirname(abspath(@__FILE__)))
+const EXTERNAL_DIR = joinpath(REPO_ROOT, "external_corpora", "pvs")
+const OUTPUT_DIR = joinpath(REPO_ROOT, "training_data")
+const OUTPUT_FILE = joinpath(OUTPUT_DIR, "proof_states_pvs.jsonl")
+const STATS_FILE = joinpath(OUTPUT_DIR, "stats_pvs.json")
+const START_ID = 93000
 
-Output: training_data/proof_states_pvs.jsonl
-ID range: 93000+
-"""
-
-import json
-import os
-import re
-import urllib.request
-import urllib.error
-from typing import Dict, List, Any, Tuple
-
-REPO_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-EXTERNAL_DIR = os.path.join(REPO_ROOT, "external_corpora", "pvs")
-OUTPUT_DIR = os.path.join(REPO_ROOT, "training_data")
-OUTPUT_FILE = os.path.join(OUTPUT_DIR, "proof_states_pvs.jsonl")
-STATS_FILE = os.path.join(OUTPUT_DIR, "stats_pvs.json")
-START_ID = 93000
-
-NASA_PVS_RAW = "https://raw.githubusercontent.com/nasa/pvslib/master"
-NASA_PVS_FILES = [
+const NASA_PVS_RAW = "https://raw.githubusercontent.com/nasa/pvslib/master"
+const NASA_PVS_FILES = [
     "reals/sq.pvs",
     "reals/abs_lems.pvs",
     "reals/real_fun_ops.pvs",
@@ -54,78 +52,84 @@ NASA_PVS_FILES = [
     "ints/gcd.pvs",
 ]
 
+"""
+    parse_pvs_file(filepath::String) -> Vector{Dict{String,Any}}
 
-def parse_pvs_file(filepath: str) -> List[Dict[str, Any]]:
-    """
-    Parse a PVS .pvs file and extract LEMMA, THEOREM, and PROPOSITION forms.
+Parse a PVS .pvs file and extract LEMMA, THEOREM, and PROPOSITION forms.
 
-    PVS declarations look like:
-        theorem_name: THEOREM body
-        lemma_name: LEMMA body
-    """
-    results = []
-    try:
-        with open(filepath, "r", encoding="utf-8", errors="replace") as fh:
-            content = fh.read()
-    except OSError:
+PVS declarations look like:
+    theorem_name: THEOREM body
+    lemma_name: LEMMA body
+"""
+function parse_pvs_file(filepath::String)::Vector{Dict{String,Any}}
+    results = Dict{String,Any}[]
+    local content::String
+    try
+        content = read(filepath, String)
+    catch
         return results
+    end
 
     # Pattern: name : THEOREM|LEMMA|PROPOSITION body
-    pattern = re.compile(
-        r'(\w+)\s*:\s*(THEOREM|LEMMA|PROPOSITION|COROLLARY|AXIOM)\s+(.*?)(?=\n\s*\w+\s*:\s*(?:THEOREM|LEMMA|PROPOSITION|COROLLARY|AXIOM|TYPE|VAR|IMPORTING)|END\s+\w+|\Z)',
-        re.DOTALL | re.IGNORECASE
-    )
+    pattern = r"(\w+)\s*:\s*(THEOREM|LEMMA|PROPOSITION|COROLLARY|AXIOM)\s+(.*?)(?=\n\s*\w+\s*:\s*(?:THEOREM|LEMMA|PROPOSITION|COROLLARY|AXIOM|TYPE|VAR|IMPORTING)|END\s+\w+|\z)"si
 
-    for m in pattern.finditer(content):
-        name = m.group(1).strip()
-        kind = m.group(2).strip().upper()
-        body = re.sub(r'\s+', ' ', m.group(3).strip())[:300]
+    for m in eachmatch(pattern, content)
+        name = strip(m.captures[1])
+        kind = uppercase(strip(m.captures[2]))
+        body = replace(strip(m.captures[3]), r"\s+" => " ")
+        body = body[1:min(300, length(body))]
 
         # Extract PVS proof strategy hints from body
-        strategies = re.findall(r'\b(FORALL|EXISTS|IF|THEN|ELSE|AND|OR|NOT|IMPLIES|IFF|LAMBDA|LET|IN|WITH)\b', body, re.IGNORECASE)
-        strategies_unique = list(dict.fromkeys(s.upper() for s in strategies))
+        strategies = [uppercase(m_.match) for m_ in eachmatch(r"\b(FORALL|EXISTS|IF|THEN|ELSE|AND|OR|NOT|IMPLIES|IFF|LAMBDA|LET|IN|WITH)\b"i, body)]
+        strategies_unique = unique(strategies)
 
-        results.append({
-            "theorem": name,
-            "goal": body,
-            "kind": kind,
-            "tactics": strategies_unique,
-            "source": f"pvs/{os.path.basename(filepath)}",
-        })
+        push!(results, Dict{String,Any}(
+            "theorem" => name,
+            "goal" => body,
+            "kind" => kind,
+            "tactics" => strategies_unique,
+            "source" => "pvs/$(basename(filepath))",
+        ))
+    end
 
     return results
+end
 
+"""
+    download_pvs_files() -> Int
 
-def download_pvs_files() -> int:
-    """Attempt to download NASA PVS library files."""
+Attempt to download NASA PVS library files.
+"""
+function download_pvs_files()::Int
     downloaded = 0
-    for rel_path in NASA_PVS_FILES:
-        url = f"{NASA_PVS_RAW}/{rel_path}"
-        local_path = os.path.join(EXTERNAL_DIR, os.path.basename(rel_path))
-        if os.path.exists(local_path):
+    for rel_path in NASA_PVS_FILES
+        url = "$NASA_PVS_RAW/$rel_path"
+        local_path = joinpath(EXTERNAL_DIR, basename(rel_path))
+        if isfile(local_path)
             downloaded += 1
             continue
-        try:
-            req = urllib.request.Request(url, headers={"User-Agent": "ECHIDNA/1.5"})
-            with urllib.request.urlopen(req, timeout=15) as resp:
-                data = resp.read()
-            with open(local_path, "wb") as fh:
-                fh.write(data)
+        end
+        try
+            Downloads.download(url, local_path; timeout=15)
             downloaded += 1
-            print(f"  Downloaded: {rel_path}")
-        except (urllib.error.URLError, OSError, TimeoutError) as exc:
-            print(f"  Skipped {rel_path}: {exc}")
+            println("  Downloaded: $rel_path")
+        catch exc
+            println("  Skipped $rel_path: $exc")
+        end
+    end
     return downloaded
+end
 
+"""
+    generate_synthetic_pvs() -> Vector{Dict{String,Any}}
 
-def generate_synthetic_pvs() -> List[Dict[str, Any]]:
-    """
-    Generate high-quality synthetic PVS proofs.
+Generate high-quality synthetic PVS proofs.
 
-    PVS proof strategies include: (grind), (assert), (induct),
-    (skolem!), (inst), (lemma), (expand), (lift-if), (prop),
-    (typepred), (use), (replace).
-    """
+PVS proof strategies include: (grind), (assert), (induct),
+(skolem!), (inst), (lemma), (expand), (lift-if), (prop),
+(typepred), (use), (replace).
+"""
+function generate_synthetic_pvs()::Vector{Dict{String,Any}}
     real_analysis = [
         ("sq_nonneg", "FORALL (x: real): sq(x) >= 0", "(grind)"),
         ("sq_zero", "FORALL (x: real): sq(x) = 0 IFF x = 0", "(grind)"),
@@ -206,88 +210,103 @@ def generate_synthetic_pvs() -> List[Dict[str, Any]]:
         ("graphs", graphs),
     ]
 
-    proofs = []
-    for category, theorems in all_categories:
-        for name, goal, strategy in theorems:
-            strat_names = re.findall(r'\((\w[\w-]*)', strategy)
-            proofs.append({
-                "theorem": name,
-                "goal": f"{name}: LEMMA {goal}",
-                "tactic_proof": strategy,
-                "tactics": list(dict.fromkeys(strat_names))[:20],
-                "source": f"pvs_synthetic/{category}",
-            })
+    proofs = Dict{String,Any}[]
+    for (category, theorems) in all_categories
+        for (name, goal, strategy) in theorems
+            strat_names = [m_.captures[1] for m_ in eachmatch(r"\((\w[\w-]*)", strategy)]
+            push!(proofs, Dict{String,Any}(
+                "theorem" => name,
+                "goal" => "$name: LEMMA $goal",
+                "tactic_proof" => strategy,
+                "tactics" => unique(strat_names)[1:min(20, length(unique(strat_names)))],
+                "source" => "pvs_synthetic/$category",
+            ))
+        end
+    end
     return proofs
+end
 
+"""
+    run() -> Tuple{Int,Int}
 
-def run() -> Tuple[int, int]:
-    """Run the full extraction pipeline."""
-    os.makedirs(OUTPUT_DIR, exist_ok=True)
-    os.makedirs(EXTERNAL_DIR, exist_ok=True)
+Run the full extraction pipeline.
+"""
+function run()::Tuple{Int,Int}
+    mkpath(OUTPUT_DIR)
+    mkpath(EXTERNAL_DIR)
 
-    all_entries: List[Dict[str, Any]] = []
+    all_entries = Dict{String,Any}[]
     extracted_count = 0
 
-    print("[PVS] Phase 1: Attempting to download NASA PVS library ...")
+    println("[PVS] Phase 1: Attempting to download NASA PVS library ...")
     downloaded = download_pvs_files()
-    print(f"  Downloaded/cached {downloaded} files")
+    println("  Downloaded/cached $downloaded files")
 
-    for fname in os.listdir(EXTERNAL_DIR):
-        if fname.endswith(".pvs"):
-            fpath = os.path.join(EXTERNAL_DIR, fname)
+    for fname in readdir(EXTERNAL_DIR)
+        if endswith(fname, ".pvs")
+            fpath = joinpath(EXTERNAL_DIR, fname)
             parsed = parse_pvs_file(fpath)
-            for entry in parsed:
-                all_entries.append(entry)
-            if parsed:
-                print(f"  Parsed {len(parsed)} theorems from {fname}")
-    extracted_count = len(all_entries)
+            append!(all_entries, parsed)
+            if !isempty(parsed)
+                println("  Parsed $(length(parsed)) theorems from $fname")
+            end
+        end
+    end
+    extracted_count = length(all_entries)
 
-    print(f"[PVS] Phase 2: Generating synthetic proofs ...")
+    println("[PVS] Phase 2: Generating synthetic proofs ...")
     synthetic = generate_synthetic_pvs()
-    existing_names = {e["theorem"] for e in all_entries}
+    existing_names = Set(e["theorem"] for e in all_entries)
     added = 0
-    for entry in synthetic:
-        if entry["theorem"] not in existing_names:
-            all_entries.append(entry)
-            existing_names.add(entry["theorem"])
+    for entry in synthetic
+        if entry["theorem"] ∉ existing_names
+            push!(all_entries, entry)
+            push!(existing_names, entry["theorem"])
             added += 1
-    print(f"  Generated {added} unique synthetic proofs")
+        end
+    end
+    println("  Generated $added unique synthetic proofs")
 
     current_id = START_ID
-    output_records = []
-    for entry in all_entries:
-        record = {
-            "id": current_id,
-            "prover": "PVS",
-            "theorem": entry["theorem"],
-            "goal": entry["goal"],
-            "context": entry.get("tactics", []),
-            "tactic_proof": entry.get("tactic_proof", ""),
-            "source": entry.get("source", "pvs"),
-        }
-        output_records.append(record)
+    output_records = Dict{String,Any}[]
+    for entry in all_entries
+        record = Dict{String,Any}(
+            "id" => current_id,
+            "prover" => "PVS",
+            "theorem" => entry["theorem"],
+            "goal" => entry["goal"],
+            "context" => get(entry, "tactics", String[]),
+            "tactic_proof" => get(entry, "tactic_proof", ""),
+            "source" => get(entry, "source", "pvs"),
+        )
+        push!(output_records, record)
         current_id += 1
+    end
 
-    with open(OUTPUT_FILE, "w", encoding="utf-8") as fh:
-        for rec in output_records:
-            fh.write(json.dumps(rec, ensure_ascii=False) + "\n")
+    open(OUTPUT_FILE, "w") do fh
+        for rec in output_records
+            println(fh, JSON3.write(rec))
+        end
+    end
 
-    stats = {
-        "prover": "PVS",
-        "total_proofs": len(output_records),
-        "extracted_from_source": extracted_count,
-        "synthetic_added": len(output_records) - extracted_count,
-        "id_range": [START_ID, current_id - 1],
-        "output_file": OUTPUT_FILE,
-    }
-    with open(STATS_FILE, "w", encoding="utf-8") as fh:
-        json.dump(stats, fh, indent=2)
+    stats = Dict{String,Any}(
+        "prover" => "PVS",
+        "total_proofs" => length(output_records),
+        "extracted_from_source" => extracted_count,
+        "synthetic_added" => length(output_records) - extracted_count,
+        "id_range" => [START_ID, current_id - 1],
+        "output_file" => OUTPUT_FILE,
+    )
+    open(STATS_FILE, "w") do fh
+        write(fh, JSON3.write(stats))
+    end
 
-    print(f"\n[PVS] COMPLETE: {len(output_records)} proofs written to {OUTPUT_FILE}")
-    print(f"  Extracted from source: {extracted_count}")
-    print(f"  Synthetic: {len(output_records) - extracted_count}")
-    return extracted_count, len(output_records) - extracted_count
+    println("\n[PVS] COMPLETE: $(length(output_records)) proofs written to $OUTPUT_FILE")
+    println("  Extracted from source: $extracted_count")
+    println("  Synthetic: $(length(output_records) - extracted_count)")
+    return extracted_count, length(output_records) - extracted_count
+end
 
-
-if __name__ == "__main__":
+if abspath(PROGRAM_FILE) == @__FILE__
     run()
+end
