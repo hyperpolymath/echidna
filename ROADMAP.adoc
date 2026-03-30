@@ -151,9 +151,64 @@ Jonathan D.A. Jewell <j.d.a.jewell@open.ac.uk>
 * [x] 528 unit tests (was 232), 38 integration, 21 property-based
 * [x] 0 clippy warnings, 0 compiler errors on stable Rust
 
-=== Remaining (v2.1+)
+== v2.1 -- GNN Integration (IN PROGRESS)
+
+=== GNN Proof Graph Construction (COMPLETE)
+* [x] Proof graph builder (`src/rust/gnn/graph.rs`): converts ProofState to typed directed graph
+* [x] 7 node kinds (Goal, Hypothesis, Premise, Subterm, TypeExpr, Binder, Constant)
+* [x] 8 edge kinds (Contains, References, Implies, HasType, BindsOver, SharedStructure, DependsOn, UsefulFor)
+* [x] Recursive term expansion with configurable depth limit
+* [x] Constant deduplication across terms
+* [x] Shared-structure edge detection between premises (Jaccard similarity)
+* [x] Sparse adjacency matrix export for Julia GNN encoder
+
+=== GNN Term Embeddings (COMPLETE)
+* [x] Local feature extraction (`src/rust/gnn/embeddings.rs`): 32-dim feature vectors
+* [x] Node kind one-hot + term kind one-hot + structural features
+* [x] Symbol frequency counting (normalised across graph)
+* [x] Standalone term embedding with cosine similarity
+* [x] Two-pass feature extraction (frequency counting then encoding)
+
+=== GNN Inference Client (COMPLETE)
+* [x] HTTP client (`src/rust/gnn/client.rs`) for Julia ML server
+* [x] JSON serialisation matching Julia TheoremGraph format
+* [x] Graceful degradation when server unavailable
+* [x] Health check, rank, and embed endpoints
+
+=== GNN-Guided Proof Search (COMPLETE)
+* [x] Hybrid search strategy (`src/rust/gnn/guided_search.rs`)
+* [x] GNN + symbolic score combination with configurable weights (default 70/30)
+* [x] Tactic inference from premise names (Apply, Rewrite, Induction, Cases)
+* [x] Premise embedding cache for repeated queries
+* [x] Search statistics tracking (total calls, GNN vs fallback)
+
+=== Julia GNN Server Endpoints (COMPLETE)
+* [x] POST /gnn/rank endpoint (`src/julia/api/gnn_endpoint.jl`)
+* [x] GET /gnn/health endpoint
+* [x] Cosine similarity fallback when model not trained
+* [x] Route registration for existing API server
+
+=== Idris2 Formal Proofs for GNN (COMPLETE)
+* [x] `src/abi/EchidnaABI/Gnn.idr`: 7 proven properties
+* [x] Feature dimension positivity proof
+* [x] Sparse adjacency length consistency
+* [x] Node/edge kind index injectivity (no collisions)
+* [x] Depth expansion monotonicity (termination)
+* [x] DependsOn/UsefulFor duality
+* [x] Combined score boundedness
+* [x] 0 believe_me, 0 postulates
+
+=== Testing (COMPLETE)
+* [x] 28 new unit tests for GNN module
+* [x] 0 clippy warnings on GNN code
+* [x] `#![forbid(unsafe_code)]` on all GNN modules
+
+=== Remaining (v2.1)
 * [ ] Train GNN encoder on proof graphs (Flux.jl)
 * [ ] Train Transformer premise selector
+* [ ] Wire GNN scores into ProverDispatcher confidence
+
+=== Remaining (v2.2+)
 * [ ] Chapel -> Rust C FFI bridge
 * [ ] OpenCyc domain knowledge integration
 * [ ] Tamarin/ProVerif bridge for cipherbot
