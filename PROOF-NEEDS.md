@@ -1,12 +1,20 @@
 # Proof Requirements
 
+## Template ABI Cleanup (2026-03-29)
+Template ABI removed -- was creating false impression of formal verification.
+The removed files (Types.idr, Layout.idr, Foreign.idr) contained only RSR template
+scaffolding with unresolved {{PROJECT}}/{{AUTHOR}} placeholders and no domain-specific proofs.
+
+When this project needs formal ABI verification, create domain-specific Idris2 proofs
+following the pattern in repos like `typed-wasm`, `proven`, `echidna`, or `boj-server`.
+
 ## Current state
 - Extensive Idris2 ABI: `EchidnaABI/Types.idr` (655 lines), `EchidnaABI/Foreign.idr` (445 lines), `EchidnaABI/Layout.idr` (236 lines)
-- Prover-specific ABI: `EchidnaABI/Provers/` — InteractiveAssistants, SmtSolvers, FirstOrderAtp, DeclarativeProvers, AutoActive, ConstraintSolvers
-- `EchidnaABI/VqlUt.idr`, `EchidnaABI/Gnn.idr` — VQL and GNN type definitions
-- `src/rust/verification/axiom_tracker.rs` — Tracks `sorry`/`Admitted` patterns (detection, not usage)
-- `src/rust/provers/lean.rs` — Generates `sorry` as placeholder in Lean proof scaffolding (intentional — feeds goals to provers)
-- `src/rust/provers/coq.rs` — Parses `Admitted` in Coq output (detection, not usage)
+- Prover-specific ABI: `EchidnaABI/Provers/` - InteractiveAssistants, SmtSolvers, FirstOrderAtp, DeclarativeProvers, AutoActive, ConstraintSolvers
+- `EchidnaABI/VqlUt.idr`, `EchidnaABI/Gnn.idr` - VQL and GNN type definitions
+- `src/rust/verification/axiom_tracker.rs` - Tracks `sorry`/`Admitted` patterns (detection, not usage)
+- `src/rust/provers/lean.rs` - Generates `sorry` as placeholder in Lean proof scaffolding (intentional - feeds goals to provers)
+- `src/rust/provers/coq.rs` - Parses `Admitted` in Coq output (detection, not usage)
 - No `believe_me` or `sorry` in the Idris2 ABI layer itself
 
 ## What needs proving
@@ -23,10 +31,4 @@
 - **Agda** for metatheoretic properties of proof composition
 
 ## Priority
-- **HIGH** — ECHIDNA is a proof verification orchestrator. A tool that checks proofs MUST itself be provably correct, or its guarantees are hollow. The axiom tracker and confidence scorer are the most critical targets.
-
-## Template ABI Cleanup (2026-03-29)
-
-Template ABI removed -- was creating false impression of formal verification.
-The removed files (Types.idr, Layout.idr, Foreign.idr) contained only RSR template
-scaffolding with unresolved {{PROJECT}}/{{AUTHOR}} placeholders and no domain-specific proofs.
+- **HIGH** - ECHIDNA is a proof verification orchestrator. A tool that checks proofs MUST itself be provably correct, or its guarantees are hollow. The axiom tracker and confidence scorer are the most critical targets.
