@@ -7,7 +7,7 @@ This document provides guidelines and context for working with Claude Code on th
 **ECHIDNA** (Extensible Cognitive Hybrid Intelligence for Deductive Neural Assistance) is a trust-hardened neurosymbolic theorem proving platform supporting 48 prover backends with a comprehensive verification pipeline.
 
 **Repository**: https://github.com/hyperpolymath/echidna
-**Version**: 2.0.0
+**Version**: 2.1.0
 **License**: PMPL-1.0-or-later
 
 ## Repository Structure
@@ -23,7 +23,8 @@ echidna/
 │   │   ├── exchange/       # Cross-prover proof exchange (OpenTheory, Dedukti)
 │   │   ├── dispatch.rs     # Full trust-hardening dispatch pipeline
 │   │   ├── agent/          # Agentic proof search (actor model)
-│   │   ├── neural.rs       # Neural premise selection
+│   │   ├── gnn/            # GNN integration (graph construction, embeddings, client, guided search)
+│   │   ├── neural.rs       # Neural premise selection (text-based, complements GNN)
 │   │   ├── aspect.rs       # Aspect tagging
 │   │   ├── core.rs         # Core types (Term, ProofState, Tactic, Goal)
 │   │   ├── parsers/        # Proof file parsers
@@ -107,6 +108,7 @@ The v1.5 trust hardening added:
 - `src/rust/executor/`: Sandboxed solver execution
 - `src/rust/exchange/`: OpenTheory, Dedukti proof exchange
 - `src/rust/core.rs`: Core types (Term, ProofState, Tactic, Goal, Context, Theorem)
+- `src/rust/gnn/`: GNN integration (graph construction, embeddings, inference client, guided search)
 - `src/rust/agent/`: Agentic proof search (actor model)
 
 ### Current Status
@@ -125,8 +127,16 @@ The v1.5 trust hardening added:
 - Idris2 ABI formal proofs (16 modules, zero believe_me)
 - 0 clippy warnings, 0 compiler errors on stable Rust
 
-**Next (v2.1+)**:
-- Deep learning models (Transformers via Flux.jl)
+**v2.1 (GNN Integration)**:
+- GNN proof graph construction (7 node kinds, 8 edge kinds)
+- 32-dim local term embeddings + GNN inference client
+- GNN-guided proof search (hybrid GNN + symbolic scoring)
+- Julia /gnn/rank endpoint with cosine fallback
+- Idris2 formal proofs: 7 GNN properties (0 believe_me)
+- 28 new tests, 0 clippy warnings
+
+**Next (v2.2+)**:
+- Train GNN/Transformer on larger corpus (Flux.jl)
 - Chapel → Rust C FFI bridge
 - Tamarin/ProVerif bridge
 
