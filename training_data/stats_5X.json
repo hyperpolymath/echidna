@@ -1,0 +1,13 @@
+{
+    "expansion_ratio": 11.1,
+    "prover_specific_added": 645,
+    "mathematics_added": 645,
+    "previous_comprehensive": 6555,
+    "date": "2026-03-30",
+    "total_vocabulary": 72557,
+    "proof_terms_added": 122,
+    "math_domains": 10,
+    "version": "v2.1-5x-expansion",
+    "previous_unified": 71962,
+    "provers_covered": 48
+}
