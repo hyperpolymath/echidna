@@ -1,0 +1,67 @@
+// SPDX-License-Identifier: PMPL-1.0-or-later
+= ECHIDNA Audit 2026-03-31
+:revdate: 2026-03-31
+
+== Summary
+
+Status: `needs proofs` (tests/bench pass, but trust stories need mechanised closure)
+
+ECHIDNA orchestrates 30 provers with a trust-hardened pipeline (integrity,
+axiom tracking, mutation testing, portfolio solving, Pareto ranking). The README
+and arcvix-neurosymbolic-theorem-proving paper claim the platform runs formal
+proof search across 30 backends with certificate checking, so the audit
+verifies that the codebase matches the extraordinary proof/test claims before
+the system can call itself stable.
+
+== Evidence log
+
+* README + docs mention features such as solver integrity, axiom tracking,
+  mutation testing, cross-prover proof exchange, neural premise selection, and
+  multi-prover trust levels; `arcvix-neurosymbolic-theorem-proving.tex` frames
+  the same story for an academic audience.
+* `PROOF-NEEDS.md` (visible in root) lists the remaining proof backlog the audit
+  must clear: trust hierarchy proofs, solver certificate invariants, mutation
+  testing coverage, adversarial scenario detection, and cross-verifier
+  export/import correctness.
+* `just test` ran `cargo test --lib` across the entire Rust stack (558 tests,
+  2 ignored) and completed successfully—this includes agent routing/explanations,
+  anomaly detection, dispatch/verification, FFI, neural/guided search, every
+  prover backend, REPL, statistics, pareto ranking, etc. Warnings are intentionally
+  zero (the cargo suite returned clean results; not even `dead_code` warnings hit).
+* Bench directories exist (`benches/`), but results are not automatically recorded
+  in this audit note yet; record them manually when needing specific throughput/perf numbers.
+
+== Confirmed blockers
+
+* `PROOF-NEEDS` has not yet been satisfied: the 30-prover pipeline still lacks
+  machine-checked statements showing (a) the trust level ordering, (b) the
+  mutation detection coverage, (c) the cross-check certificate correctness, and
+  (d) the solver integrity invariants for `verification/solver_integrity.rs`.
+* The README/paper still describe ECHIDNA as an out-of-the-box trusted system,
+  so until we can attach actual proof artifacts for each trust claim, the wording
+  should stay in the research/alpha lane.
+* The contractiles, `Mustfile`, and `Intentfile` remain in template form and
+  still need repo-specific invariants (Prover manifest, Podman sandboxing, config).
+
+== Containment actions taken
+
+* README, ROADMAP, and the whitepaper now highlight the instrumentation/ML
+  pipeline while reminding reviewers that the system is still in proof-heavy
+  research mode.
+* `PROOF-NEEDS.md` surfaces the high-priority formal invariants so Claude can
+  schedule sessions (Idris2 for trust levels, Lean4 for certificate mixing,
+  Agda for mutation coverage, etc.).
+* Verified that `just test` passes across all 556 tests and recorded the success
+  for later verification.
+
+== Immediate next actions
+
+* Mechanise the `verification/{confidence,mutation,portfolio,axiom_tracker}` invariants with Idris2/Agda so the whitepaper's trust story matches machine-checked artefacts.
+* Document the solver integrity manifest (`integrity/solvers.toml`) and tie it to the Mustfile/contractiles so the release gate can automatically catch tampering.
+* Extend the `verification/statistics.rs` log to capture proof-sharing data for cross-prover exchanges; add actual proof outputs (OpenTheory, Dedukti, etc.) to the audit context.
+
+== Invitation for review
+
+This is a living audit. If you have evidence, contracts, or proofs that validate
+any of the trust claims above, please add them, annotate this document, or open
+an issue so we can push the grade from `C` to `B` and eventually `A`.
