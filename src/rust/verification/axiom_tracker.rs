@@ -122,6 +122,11 @@ impl AxiomTracker {
                     danger_level: DangerLevel::Noted,
                     explanation: "Decision procedure -- may not verify constructively".to_string(),
                 },
+                DangerousPattern {
+                    pattern: "axiom ".to_string(),
+                    danger_level: DangerLevel::Noted,
+                    explanation: "User-defined axiom -- not verified by kernel".to_string(),
+                },
             ],
         );
 
@@ -155,6 +160,11 @@ impl AxiomTracker {
                     pattern: "postulate".to_string(),
                     danger_level: DangerLevel::Warning,
                     explanation: "Postulate -- assumed without proof".to_string(),
+                },
+                DangerousPattern {
+                    pattern: "{!!}".to_string(),
+                    danger_level: DangerLevel::Warning,
+                    explanation: "Agda hole -- incomplete proof term".to_string(),
                 },
                 DangerousPattern {
                     pattern: "--type-in-type".to_string(),
@@ -215,6 +225,47 @@ impl AxiomTracker {
                     explanation: "Asserts totality without proof -- may hide non-termination"
                         .to_string(),
                 },
+                DangerousPattern {
+                    pattern: "assert_smaller".to_string(),
+                    danger_level: DangerLevel::Warning,
+                    explanation:
+                        "assert_smaller bypasses termination checker without proof".to_string(),
+                },
+                DangerousPattern {
+                    pattern: "unsafePerformIO".to_string(),
+                    danger_level: DangerLevel::Reject,
+                    explanation:
+                        "unsafePerformIO breaks referential transparency in Idris2".to_string(),
+                },
+                DangerousPattern {
+                    pattern: "really_believe_me".to_string(),
+                    danger_level: DangerLevel::Reject,
+                    explanation:
+                        "UNSOUND: really_believe_me is even more dangerous than believe_me — bypasses all checks".to_string(),
+                },
+                DangerousPattern {
+                    pattern: "prim__crash".to_string(),
+                    danger_level: DangerLevel::Reject,
+                    explanation:
+                        "prim__crash unconditionally crashes — masks proof obligations".to_string(),
+                },
+            ],
+        );
+
+        // F* dangerous constructs
+        patterns.insert(
+            ProverKind::FStar,
+            vec![
+                DangerousPattern {
+                    pattern: "admit".to_string(),
+                    danger_level: DangerLevel::Warning,
+                    explanation: "F* admit accepts goal without proof".to_string(),
+                },
+                DangerousPattern {
+                    pattern: "assume".to_string(),
+                    danger_level: DangerLevel::Warning,
+                    explanation: "F* assume introduces unverified assumption".to_string(),
+                },
             ],
         );
 
@@ -244,6 +295,9 @@ impl AxiomTracker {
                             ProverKind::HOL4 => trimmed.starts_with("(*"),
                             ProverKind::Idris2 => {
                                 trimmed.starts_with("--") || trimmed.starts_with("{-")
+                            },
+                            ProverKind::FStar => {
+                                trimmed.starts_with("(*") || trimmed.starts_with("//")
                             },
                             _ => false,
                         };
