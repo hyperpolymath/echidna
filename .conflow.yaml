@@ -1,0 +1,38 @@
+# conflow pipeline - Full generate → validate → export
+version: "1"
+name: "echidna"
+
+stages:
+  - name: "generate"
+    description: "Generate configuration using Nickel"
+    tool:
+      type: nickel
+      command: export
+      file: configs/config.ncl
+      format: json
+    input: "configs/config.ncl"
+    output: generated/config.json
+
+  - name: "validate"
+    description: "Validate against CUE schema"
+    tool:
+      type: cue
+      command: vet
+      schemas:
+        - schemas/config.cue
+    input:
+      from_stage: generate
+    depends_on:
+      - generate
+
+  - name: "export"
+    description: "Export final configuration as YAML"
+    tool:
+      type: cue
+      command: export
+      out_format: yaml
+    input:
+      from_stage: generate
+    output: deploy/config.yaml
+    depends_on:
+      - validate
