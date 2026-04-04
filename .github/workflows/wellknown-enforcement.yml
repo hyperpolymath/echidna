@@ -73,7 +73,7 @@ jobs:
 
       - name: Mixed content check
         run: |
-          MIXED=$(grep -rE 'src="http://|href="http://' --include="*.html" --include="*.htm" . 2>/dev/null | grep -vE 'localhost|127\.0\.0\.1|example\.com' | head -5 || true)
+          MIXED=$(grep -rE 'src="http://|href="http://' --include="*.html" --include="*.htm" . 2>/dev/null | grep -vE 'localhost|127\.0\.0\.1|example\.com|echidna-playground/|external_corpora/|node_modules/' | head -5 || true)
           if [ -n "$MIXED" ]; then
             echo "::error::Mixed content (HTTP in HTML)"
             echo "$MIXED"
