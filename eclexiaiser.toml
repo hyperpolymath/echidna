@@ -1,0 +1,19 @@
+# SPDX-License-Identifier: PMPL-1.0-or-later
+# eclexiaiser manifest for echidna
+
+[project]
+name = "echidna"
+
+[[functions]]
+name = "scan"
+source = "src/main.rs"
+energy-budget-mj = 120.0
+
+[carbon]
+provider = "static"
+region = "GB"
+static-intensity = 200.0
+
+[report]
+format = "text"
+include-recommendations = true
