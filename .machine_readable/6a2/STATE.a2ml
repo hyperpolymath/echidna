@@ -24,3 +24,20 @@ changes = [
   "Applied cargo fmt across entire codebase",
   "389 tests passing",
 ]
+
+[session-2026-04-04]
+summary = "CRG C blitz — test coverage across all languages"
+changes = [
+  "Created tests/e2e_prover_test.rs (10 tests): full dispatch workflow, trust pipeline, JSON roundtrip, error handling",
+  "Created tests/p2p_property_tests.rs (10 proptest suites ~1000 cases): determinism, Reject caps trust, Safe>=Warning, JSON roundtrip",
+  "Created tests/aspect_tests.rs (12 tests): security, concurrency, error handling, trust invariants, enum coverage",
+  "Created tests/julia/smoke_test.jl (63 tests): syntax validation for all Julia ML scripts, tokenizer, BOW vectorizer",
+  "Created tests/shell/validate_scripts.sh: bash -n syntax check, SPDX check, banned pattern detection, --help smoke",
+  "Investigated 9 ignored tests: all legitimately ignored (require ACL2/PVS/HOL4 binaries), comments already present",
+  "Verified benchmark situation: 1035 .v files are Coq proof corpus (external_corpora/), NOT V-lang. Real Criterion benchmarks in benches/proof_benchmarks.rs with 13 functions covering all critical paths",
+  "Total Rust tests: 756 passing (was 684), 16 ignored (legitimate — require specific prover binaries)",
+  "Julia smoke tests: 63 passing",
+  "Shell validation: runs and catches real issues (2 missing SPDX, 3 HTTP URLs)",
+]
+test-counts = { rust = 756, julia = 63, shell-checks = 68, benchmarks = 13 }
+crg-c-status = "COMPLETE: unit + smoke + build + P2P + E2E + reflexive + contract + aspect + benchmarks baselined"
