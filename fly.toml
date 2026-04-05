@@ -1,0 +1,54 @@
+# SPDX-License-Identifier: PMPL-1.0-or-later
+# fly.io deployment for echidna (Phase E3 nesy-solver playground backend).
+#
+# Deploy:
+#   flyctl launch --no-deploy --copy-config --name echidna-nesy
+#   flyctl deploy -c fly.toml -f .containerization/Containerfile.full
+#
+# Internal-only: echidna is reached via echidna-nesy.internal:8090 from
+# proven-nesy-solver-api; no public http_service.
+#
+# NB: Container is LARGE (2-4 GB) — Julia + Idris2 + Agda + Lean toolchains.
+# Memory must be >=2GB; shared-cpu-2x is the cheapest size that fits.
+
+app = "echidna-nesy"
+primary_region = "lhr"
+kill_signal = "SIGTERM"
+kill_timeout = "10s"
+
+[build]
+  dockerfile = ".containerization/Containerfile.full"
+
+[env]
+  # echidna listens on port 8090 when launched with `server --port 8090`.
+  # The ENTRYPOINT is `/app/bin/echidna`; CMD gets overridden below.
+  RUST_LOG = "info"
+  ECHIDNA_HOST = "[::]"
+  ECHIDNA_PORT = "8090"
+
+[processes]
+  app = "server --port 8090 --host [::] --cors"
+
+# Internal-only TCP on :8090
+[[services]]
+  protocol = "tcp"
+  internal_port = 8090
+  auto_stop_machines = "stop"
+  auto_start_machines = true
+  min_machines_running = 0
+  processes = ["app"]
+
+  [[services.ports]]
+    port = 8090
+    handlers = []
+
+  [[services.tcp_checks]]
+    interval = "30s"
+    timeout = "5s"
+    grace_period = "30s"
+
+[[vm]]
+  size = "shared-cpu-2x"
+  memory = "2048mb"  # Julia + Agda need real RAM
+  cpu_kind = "shared"
+  cpus = 2
