@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: PMPL-1.0-or-later
+// SPDX-FileCopyrightText: 2025 Jonathan D.A. Jewell
 //! GraphQL schema and resolvers
 
 use async_graphql::{Context, EmptySubscription, Object, Schema, SimpleObject, ID};
@@ -275,6 +277,30 @@ pub struct RegisterRepoInput {
     pub enabled_provers: Option<Vec<ProverKind>>,
 }
 
+/// Input for submitting a proof obligation from an external scanner (e.g. hypatia)
+#[derive(async_graphql::InputObject)]
+pub struct ProofObligationInput {
+    /// Repository in "owner/name" format
+    pub repo: String,
+    /// Human-readable claim that must be proved
+    pub claim: String,
+    /// Original context/description from pattern detection
+    pub context: String,
+    /// Optional prover hint. When supplied (e.g. by hypatia's proof-strategy
+    /// rule picking the historically-best prover for this obligation class),
+    /// it overrides the default. Omitted → default Lean.
+    pub prover: Option<ProverKind>,
+}
+
+/// Result of submitting a proof obligation
+#[derive(SimpleObject, Clone)]
+pub struct ProofObligationResult {
+    /// Whether the obligation was successfully recorded
+    pub success: bool,
+    /// Scheduler job ID assigned to this obligation (UUID string), or empty on failure
+    pub proof_id: String,
+}
+
 /// Input for repository settings
 #[derive(async_graphql::InputObject)]
 pub struct RepoSettingsInput {
@@ -367,6 +393,95 @@ impl MutationRoot {
 
         let job = first_job.ok_or_else(|| async_graphql::Error::new("No jobs enqueued"))?;
         Ok(ProofJobRecord::from(job).into())
+    }
+
+    /// Record a proof obligation submitted by an external tool (e.g. hypatia fleet_dispatcher).
+    ///
+    /// This mutation RECORDS the obligation as a pending scheduler job — it does NOT immediately
+    /// invoke a prover. The scheduler will pick it up on its normal cycle. The repo must already
+    /// be registered with echidnabot; if it is not, this returns `success: false`.
+    ///
+    /// The `repo` argument must be in "owner/name" format. The mutation searches all platforms
+    /// for a matching registered repository and uses the first match found.
+    async fn submit_proof_obligation(
+        &self,
+        ctx: &Context<'_>,
+        input: ProofObligationInput,
+    ) -> async_graphql::Result<ProofObligationResult> {
+        let state = ctx.data::<GraphQLState>()?;
+
+        // Parse "owner/name" format
+        let (owner, name) = {
+            let parts: Vec<&str> = input.repo.splitn(2, '/').collect();
+            if parts.len() != 2 || parts[0].is_empty() || parts[1].is_empty() {
+                return Ok(ProofObligationResult {
+                    success: false,
+                    proof_id: String::new(),
+                });
+            }
+            (parts[0].to_string(), parts[1].to_string())
+        };
+
+        // Find a matching registered repository across all platforms
+        let repos = state
+            .store
+            .list_repositories(None)
+            .await
+            .map_err(|e| async_graphql::Error::new(e.to_string()))?;
+
+        let repo = repos
+            .into_iter()
+            .find(|r| r.owner == owner && r.name == name);
+
+        let repo = match repo {
+            Some(r) => r,
+            None => {
+                return Ok(ProofObligationResult {
+                    success: false,
+                    proof_id: String::new(),
+                });
+            }
+        };
+
+        // Encode claim + context into the file_paths slot so the scheduler has access to the
+        // obligation text without requiring a schema migration. The synthetic commit SHA
+        // "manual-obligation" signals that no real git commit is associated.
+        let obligation_entry = format!(
+            "obligation.claim:{}|context:{}",
+            input.claim.replace('|', "\\|"),
+            input.context.replace('|', "\\|"),
+        );
+
+        let chosen_prover = input
+            .prover
+            .map(map_prover_kind_to_core)
+            .unwrap_or(CoreProverKind::Lean);
+
+        let job = crate::scheduler::ProofJob::new(
+            repo.id,
+            "manual-obligation".to_string(),
+            chosen_prover,
+            vec![obligation_entry],
+        )
+        .with_priority(JobPriority::Normal);
+
+        let record = crate::store::models::ProofJobRecord::from(job.clone());
+        state
+            .store
+            .create_job(&record)
+            .await
+            .map_err(|e| async_graphql::Error::new(e.to_string()))?;
+
+        let _ = state
+            .scheduler
+            .enqueue(job.clone())
+            .await
+            .map_err(|e| async_graphql::Error::new(e.to_string()))?;
+
+        Ok(ProofObligationResult {
+            success: true,
+            proof_id: job.id.0.to_string(),
+        })
     }
 
     /// Request ML-powered tactic suggestions

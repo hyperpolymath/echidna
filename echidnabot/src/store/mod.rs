@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: PMPL-1.0-or-later
+// SPDX-FileCopyrightText: 2025 Jonathan D.A. Jewell
 //! Persistent state store
 
 pub mod models;

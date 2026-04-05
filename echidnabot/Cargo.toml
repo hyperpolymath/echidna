@@ -2,12 +2,12 @@
 name = "echidnabot"
 version = "0.1.0"
 edition = "2021"
-license = "PMPL-1.0"
+license = "PMPL-1.0-or-later"
 description = "Proof-aware CI bot that orchestrates ECHIDNA for theorem proof verification"
 repository = "https://github.com/hyperpolymath/echidnabot"
 keywords = ["theorem-prover", "formal-verification", "ci", "bot", "echidna"]
 categories = ["development-tools", "science"]
-authors = ["Jonathan D.A. Jewell <jonathan.jewell@gmail.com>"]
+authors = ["Jonathan D.A. Jewell <j.d.a.jewell@open.ac.uk>"]
 readme = "README.adoc"
 
 [lib]
@@ -54,6 +54,8 @@ anyhow = "1"
 tracing = "0.1"
 tracing-subscriber = { version = "0.3", features = ["env-filter", "json"] }
 
+rand = "0.8"
+
 # Crypto for webhook verification
 hmac = "0.12"
 sha2 = "0.10"
@@ -68,10 +70,14 @@ config = "0.15"
 # Filesystem utilities
 tempfile = "3"
 
+# URL encoding for GitLab/Bitbucket APIs
+urlencoding = "2"
+
 # Gitbot Fleet integration
 gitbot-shared-context = { path = "../../gitbot-fleet/shared-context" }
 
 [dev-dependencies]
+criterion = { version = "0.5", features = ["html_reports"] }
 tokio-test = "0.4"
 axum-test = "18"
 mockall = "0.14"

@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: PMPL-1.0-or-later
+// SPDX-FileCopyrightText: 2025 Jonathan D.A. Jewell
 //! Job queue management
 
 use std::collections::VecDeque;
@@ -8,6 +10,7 @@ use uuid::Uuid;
 
 use super::{JobId, ProofJob};
 use crate::error::Result;
+use crate::fleet::FleetCoordinator;
 
 /// Job scheduler managing the verification queue
 pub struct JobScheduler {
@@ -25,6 +28,9 @@ pub struct JobScheduler {
 
     /// Maximum queue size
     max_queue_size: usize,
+
+    /// Fleet coordinator for publishing findings
+    fleet: Arc<Mutex<FleetCoordinator>>,
 }
 
 impl JobScheduler {
@@ -36,7 +42,34 @@ impl JobScheduler {
             active_count: AtomicUsize::new(0),
             max_concurrent,
             max_queue_size,
+            fleet: Arc::new(Mutex::new(FleetCoordinator::new())),
         }
+    }
+
+    /// Connect to fleet for a repository session
+    pub async fn connect_to_fleet(&self, repo_name: &str, repo_path: impl Into<std::path::PathBuf>) -> Result<()> {
+        let mut fleet = self.fleet.lock().await;
+        fleet.connect(repo_name, repo_path)
+    }
+
+    /// Disconnect from fleet at end of session
+    pub async fn disconnect_from_fleet(&self) -> Result<()> {
+        let mut fleet = self.fleet.lock().await;
+
+        // Count findings
+        let (findings_count, errors_count) = if let Some(ctx) = fleet.context() {
+            let errors = ctx.findings.errors().len();
+            let total = ctx.findings.len();
+            (total, errors)
+        } else {
+            (0, 0)
+        };
+
+        // Count files analyzed from all running/completed jobs
+        let running = self.running.lock().await;
+        let files_analyzed: usize = running.iter().map(|j| j.file_paths.len()).sum();
+
+        fleet.disconnect(findings_count, errors_count, files_analyzed)
     }
 
     /// Enqueue a new proof job
@@ -102,27 +135,28 @@ impl JobScheduler {
         Some(job)
     }
 
-    /// Mark a job as completed
-    pub async fn complete_job(&self, job_id: JobId, success: bool, message: String) {
+    /// Mark a job as completed and publish findings to fleet
+    pub async fn complete_job(&self, job_id: JobId, result: super::JobResult) {
         let mut running = self.running.lock().await;
 
         if let Some(pos) = running.iter().position(|j| j.id == job_id) {
             let mut job = running.remove(pos);
-            job.complete(super::JobResult {
-                success,
-                message,
-                prover_output: String::new(),
-                duration_ms: job.duration_ms().unwrap_or(0),
-                verified_files: vec![],
-                failed_files: vec![],
-            });
+
+            // Publish findings to fleet before completing
+            let mut fleet = self.fleet.lock().await;
+            if let Err(e) = fleet.publish_finding(&job, &result) {
+                tracing::warn!("Failed to publish finding to fleet: {}", e);
+            }
+            drop(fleet); // Release lock before completing job
+
+            job.complete(result.clone());
 
             self.active_count.fetch_sub(1, Ordering::Relaxed);
 
             tracing::info!(
                 "Completed job {} (success: {}, active: {})",
                 job_id,
-                success,
+                result.success,
                 self.active_count.load(Ordering::Relaxed)
             );
         }
@@ -172,10 +206,7 @@ impl JobScheduler {
         {
             let mut queue = self.queue.lock().await;
             if let Some(pos) = queue.iter().position(|j| j.id == job_id) {
-                let mut job = match queue.remove(pos) {
-                    Some(j) => j,
-                    None => return false,
-                };
+                let mut job = queue.remove(pos).unwrap();
                 job.cancel();
                 tracing::info!("Cancelled queued job {}", job_id);
                 return true;

@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: PMPL-1.0-or-later
+// SPDX-FileCopyrightText: 2025 Jonathan D.A. Jewell
 //! echidnabot CLI and server entry point
 
 use clap::{Parser, Subcommand};
@@ -45,8 +47,8 @@ enum Commands {
         #[arg(short = 'H', long, default_value = "0.0.0.0")]
         host: String,
 
-        /// Port to bind to
-        #[arg(short, long, default_value = "8081")]
+        /// Port to bind to (canonical: 9001)
+        #[arg(short, long, default_value = "9001")]
         port: u16,
     },
 
@@ -456,7 +458,7 @@ async fn run_scheduler_loop(
             }
 
             scheduler
-                .complete_job(job.id, result.success, result.message.clone())
+                .complete_job(job.id, result)
                 .await;
         } else {
             sleep(Duration::from_millis(250)).await;
