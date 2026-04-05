@@ -7,8 +7,59 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased] - 2026-04-05
 
+### Changed
+
+- **VQL → VCL + verisimdb → verisim rename** (ecosystem-wide, 2026-04-05).
+  Internal code, docs, module names, and machine-readable manifests
+  adopt the new ecosystem terminology. `verisim_bridge.rs` (was
+  `verisimdb_bridge.rs`), `vcl_ut.rs` and `vcl_ut.zig` (were `vql_ut.*`),
+  `verisim.a2ml` integration manifest (was `verisimdb.a2ml`). GitHub URL
+  `hyperpolymath/verisimdb` preserved.
+
+### Added
+
+- **F\* corpus** (`proofs/fstar/`): 5 arithmetic lemmas (AddComm,
+  AddAssoc, MulZero, NonNeg, Refl) discharged by F\*'s SMT backend.
+- **TPTP corpus** (`proofs/tptp/`): 8 first-order problems for
+  Vampire + E Prover, with known SZS statuses.
+- **DIMACS corpus** (`proofs/dimacs/`): 5 SAT/UNSAT problems for
+  CaDiCaL + Kissat.
+- **Metamath seeds** (`proofs/metamath/tiny.mm`, `broken.mm`):
+  smallest valid + deliberate-fail for the `run_metamath` runner.
+- **Agda witness** (`proofs/agda/IdentityLaws.agda`): known-good
+  natural-number identity proofs against agda-stdlib v2.3.
+- **BasicTotality.idr**: small totality proofs that pass
+  `idris2 --check` with no external dependencies.
+
 ### Fixed
 
+- **Three broken Idris2 proofs repaired** (5/5 now type-check):
+  - `AxiomCompleteness.idr`: 23× `prf = impossible` (invalid RHS)
+    rewritten to `Refl impossible`.
+  - `DispatchOrdering.idr`: rewritten as a minimal working proof
+    (6-stage dispatch pipeline with LT witnesses for adjacent stages).
+    Original had invalid constructor signatures with named args in
+    return-type position.
+  - `ProverKindInjectivity.idr`: replaced 48× `lteSuccRight $ ... $
+    LTERefl` chains (unification failed) with direct `LTESucc (...)`
+    constructor nesting. Type signature switched from
+    `maxDiscriminant` alias to literal `48` so Idris2 can unfold
+    `S ?right`. Added `import Data.Nat`.
+- **Agda scoping bugs** in `Basic.agda`, `List.agda`, `Nat.agda`,
+  `Propositional.agda`: files defined datatypes inside `where`
+  clauses, putting them out of scope for outer signatures. All four
+  rewritten as clean agda-stdlib-backed proofs (5/6 `.agda` files
+  now compile).
+- **TPTP precedence** in `proofs/tptp/transitivity.p`: added explicit
+  parens around `(lt(X,Y) & lt(Y,Z))` before `=>` so E Prover parses
+  it. Now Theorem-certified by both Vampire and E Prover.
+- **`/api/verify` false-positive guard**: server-level check in
+  `prove_handler` and `verify_handler` now returns `valid: false`
+  when `parse_string` produces an empty `ProofState` (no goals,
+  theorems, definitions, axioms, or variables) on non-empty input.
+  Partial fix for the parse+export round-trip bug documented in
+  `TEST-NEEDS.md`. Verified live: garbage to Coq/Lean now returns
+  `valid: false` (was `true`); real proofs unaffected.
 - **Isabelle prover backend de-stubbed** (`src/rust/provers/isabelle.rs`).
   `parse_string` previously discarded its `content` argument and always
   emitted a single `Term::Const("True")` goal, which `verify_proof` then
