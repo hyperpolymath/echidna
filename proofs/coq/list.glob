@@ -1,0 +1,341 @@
+DIGEST 0bf9bbab8c3fa9f56c16986ccf79dece
+Flist
+R335:338 Stdlib.Lists.List <> <> lib
+R348:360 Stdlib.Lists.List ListNotations <> mod
+R378:382 Stdlib.Arith.Arith <> <> lib
+R400:402 Stdlib.micromega.Lia <> <> lib
+prf 531:539 <> app_nil_r
+binder 551:551 <> A:1
+R566:569 Corelib.Init.Datatypes <> list ind
+R571:571 list <> A:1 var
+binder 562:562 <> l:2
+R584:586 Corelib.Init.Logic <> ::type_scope:x_'='_x not
+R578:581 Corelib.Init.Datatypes <> ::list_scope:x_'++'_x not
+R577:577 list <> l:2 var
+R582:583 Stdlib.Lists.List ListNotations ::list_scope:'['_']' not
+R587:587 list <> l:2 var
+prf 870:878 <> app_assoc
+binder 890:890 <> A:3
+R912:915 Corelib.Init.Datatypes <> list ind
+R917:917 list <> A:3 var
+binder 901:902 <> l1:4
+binder 904:905 <> l2:5
+binder 907:908 <> l3:6
+R939:941 Corelib.Init.Logic <> ::type_scope:x_'='_x not
+R923:923 Corelib.Init.Datatypes <> ::list_scope:x_'++'_x not
+R932:936 Corelib.Init.Datatypes <> ::list_scope:x_'++'_x not
+R926:929 Corelib.Init.Datatypes <> ::list_scope:x_'++'_x not
+R924:925 list <> l1:4 var
+R930:931 list <> l2:5 var
+R937:938 list <> l3:6 var
+R944:948 Corelib.Init.Datatypes <> ::list_scope:x_'++'_x not
+R957:957 Corelib.Init.Datatypes <> ::list_scope:x_'++'_x not
+R942:943 list <> l1:4 var
+R951:954 Corelib.Init.Datatypes <> ::list_scope:x_'++'_x not
+R949:950 list <> l2:5 var
+R955:956 list <> l3:6 var
+prf 1221:1228 <> cons_app
+binder 1240:1240 <> A:7
+R1255:1255 list <> A:7 var
+binder 1251:1251 <> x:8
+R1263:1266 Corelib.Init.Datatypes <> list ind
+R1268:1268 list <> A:7 var
+binder 1259:1259 <> l:9
+R1280:1282 Corelib.Init.Logic <> ::type_scope:x_'='_x not
+R1275:1278 Corelib.Init.Datatypes <> ::list_scope:x_'::'_x not
+R1274:1274 list <> x:8 var
+R1279:1279 list <> l:9 var
+R1286:1289 Corelib.Init.Datatypes <> ::list_scope:x_'++'_x not
+R1283:1283 Stdlib.Lists.List ListNotations ::list_scope:'['_x_']' not
+R1285:1285 Stdlib.Lists.List ListNotations ::list_scope:'['_x_']' not
+R1284:1284 list <> x:8 var
+R1290:1290 list <> l:9 var
+prf 1445:1454 <> length_app
+binder 1466:1466 <> A:10
+R1485:1488 Corelib.Init.Datatypes <> list ind
+R1490:1490 list <> A:10 var
+binder 1477:1478 <> l1:11
+binder 1480:1481 <> l2:12
+R1513:1515 Corelib.Init.Logic <> ::type_scope:x_'='_x not
+R1496:1501 Corelib.Init.Datatypes <> length def
+R1506:1509 Corelib.Init.Datatypes <> ::list_scope:x_'++'_x not
+R1504:1505 list <> l1:11 var
+R1510:1511 list <> l2:12 var
+R1525:1527 Corelib.Init.Peano <> ::nat_scope:x_'+'_x not
+R1516:1521 Corelib.Init.Datatypes <> length def
+R1523:1524 list <> l1:11 var
+R1528:1533 Corelib.Init.Datatypes <> length def
+R1535:1536 list <> l2:12 var
+prf 1870:1880 <> length_cons
+binder 1892:1892 <> A:13
+R1907:1907 list <> A:13 var
+binder 1903:1903 <> x:14
+R1915:1918 Corelib.Init.Datatypes <> list ind
+R1920:1920 list <> A:13 var
+binder 1911:1911 <> l:15
+R1941:1943 Corelib.Init.Logic <> ::type_scope:x_'='_x not
+R1926:1931 Corelib.Init.Datatypes <> length def
+R1935:1938 Corelib.Init.Datatypes <> ::list_scope:x_'::'_x not
+R1934:1934 list <> x:14 var
+R1939:1939 list <> l:15 var
+R1944:1944 Corelib.Init.Datatypes <> S constr
+R1947:1952 Corelib.Init.Datatypes <> length def
+R1954:1954 list <> l:15 var
+prf 2045:2054 <> length_nil
+binder 2066:2066 <> A:16
+R2094:2096 Corelib.Init.Logic <> ::type_scope:x_'='_x not
+R2079:2084 Corelib.Init.Datatypes <> length def
+R2088:2090 Corelib.Init.Datatypes <> nil constr
+R2092:2092 list <> A:16 var
+prf 2214:2226 <> rev_app_distr
+binder 2238:2238 <> A:17
+R2257:2260 Corelib.Init.Datatypes <> list ind
+R2262:2262 list <> A:17 var
+binder 2249:2250 <> l1:18
+binder 2252:2253 <> l2:19
+R2282:2284 Corelib.Init.Logic <> ::type_scope:x_'='_x not
+R2268:2270 Stdlib.Lists.List <> rev def
+R2275:2278 Corelib.Init.Datatypes <> ::list_scope:x_'++'_x not
+R2273:2274 list <> l1:18 var
+R2279:2280 list <> l2:19 var
+R2291:2294 Corelib.Init.Datatypes <> ::list_scope:x_'++'_x not
+R2285:2287 Stdlib.Lists.List <> rev def
+R2289:2290 list <> l2:19 var
+R2295:2297 Stdlib.Lists.List <> rev def
+R2299:2300 list <> l1:18 var
+R2401:2409 list <> app_nil_r thm
+R2401:2409 list <> app_nil_r thm
+R2401:2409 list <> app_nil_r thm
+R2493:2501 list <> app_assoc thm
+R2493:2501 list <> app_assoc thm
+R2493:2501 list <> app_assoc thm
+prf 2585:2598 <> rev_involutive
+binder 2610:2610 <> A:20
+R2625:2628 Corelib.Init.Datatypes <> list ind
+R2630:2630 list <> A:20 var
+binder 2621:2621 <> l:21
+R2647:2649 Corelib.Init.Logic <> ::type_scope:x_'='_x not
+R2636:2638 Stdlib.Lists.List <> rev def
+R2641:2643 Stdlib.Lists.List <> rev def
+R2645:2645 list <> l:21 var
+R2650:2650 list <> l:21 var
+R2836:2848 list <> rev_app_distr thm
+R2836:2848 list <> rev_app_distr thm
+R2836:2848 list <> rev_app_distr thm
+prf 2965:2974 <> length_rev
+binder 2986:2986 <> A:22
+R3001:3004 Corelib.Init.Datatypes <> list ind
+R3006:3006 list <> A:22 var
+binder 2997:2997 <> l:23
+R3026:3028 Corelib.Init.Logic <> ::type_scope:x_'='_x not
+R3012:3017 Corelib.Init.Datatypes <> length def
+R3020:3022 Stdlib.Lists.List <> rev def
+R3024:3024 list <> l:23 var
+R3029:3034 Corelib.Init.Datatypes <> length def
+R3036:3036 list <> l:23 var
+R3174:3183 list <> length_app thm
+R3174:3183 list <> length_app thm
+R3174:3183 list <> length_app thm
+prf 3323:3332 <> map_length
+binder 3344:3344 <> A:24
+binder 3346:3346 <> B:25
+R3362:3365 Corelib.Init.Logic <> ::type_scope:x_'->'_x not
+R3361:3361 list <> A:24 var
+R3366:3366 list <> B:25 var
+binder 3357:3357 <> f:26
+R3374:3377 Corelib.Init.Datatypes <> list ind
+R3379:3379 list <> A:24 var
+binder 3370:3370 <> l:27
+R3401:3403 Corelib.Init.Logic <> ::type_scope:x_'='_x not
+R3385:3390 Corelib.Init.Datatypes <> length def
+R3393:3395 Corelib.Lists.ListDef <> map def
+R3399:3399 list <> l:27 var
+R3397:3397 list <> f:26 var
+R3404:3409 Corelib.Init.Datatypes <> length def
+R3411:3411 list <> l:27 var
+prf 3668:3674 <> map_app
+binder 3686:3686 <> A:28
+binder 3688:3688 <> B:29
+R3704:3707 Corelib.Init.Logic <> ::type_scope:x_'->'_x not
+R3703:3703 list <> A:28 var
+R3708:3708 list <> B:29 var
+binder 3699:3699 <> f:30
+R3720:3723 Corelib.Init.Datatypes <> list ind
+R3725:3725 list <> A:28 var
+binder 3712:3713 <> l1:31
+binder 3715:3716 <> l2:32
+R3747:3749 Corelib.Init.Logic <> ::type_scope:x_'='_x not
+R3731:3733 Corelib.Lists.ListDef <> map def
+R3740:3743 Corelib.Init.Datatypes <> ::list_scope:x_'++'_x not
+R3738:3739 list <> l1:31 var
+R3744:3745 list <> l2:32 var
+R3735:3735 list <> f:30 var
+R3758:3761 Corelib.Init.Datatypes <> ::list_scope:x_'++'_x not
+R3750:3752 Corelib.Lists.ListDef <> map def
+R3756:3757 list <> l1:31 var
+R3754:3754 list <> f:30 var
+R3762:3764 Corelib.Lists.ListDef <> map def
+R3768:3769 list <> l2:32 var
+R3766:3766 list <> f:30 var
+prf 4013:4019 <> map_map
+binder 4031:4031 <> A:33
+binder 4033:4033 <> B:34
+binder 4035:4035 <> C:35
+R4051:4054 Corelib.Init.Logic <> ::type_scope:x_'->'_x not
+R4050:4050 list <> A:33 var
+R4055:4055 list <> B:34 var
+binder 4046:4046 <> f:36
+R4064:4067 Corelib.Init.Logic <> ::type_scope:x_'->'_x not
+R4063:4063 list <> B:34 var
+R4068:4068 list <> C:35 var
+binder 4059:4059 <> g:37
+R4076:4079 Corelib.Init.Datatypes <> list ind
+R4081:4081 list <> A:33 var
+binder 4072:4072 <> l:38
+R4102:4104 Corelib.Init.Logic <> ::type_scope:x_'='_x not
+R4087:4089 Corelib.Lists.ListDef <> map def
+R4094:4096 Corelib.Lists.ListDef <> map def
+R4100:4100 list <> l:38 var
+R4098:4098 list <> f:36 var
+R4091:4091 list <> g:37 var
+R4105:4107 Corelib.Lists.ListDef <> map def
+R4128:4128 list <> l:38 var
+binder 4114:4114 <> x:39
+R4119:4119 list <> g:37 var
+R4122:4122 list <> f:36 var
+R4124:4124 list <> x:39 var
+prf 4355:4360 <> map_id
+binder 4372:4372 <> A:40
+R4387:4390 Corelib.Init.Datatypes <> list ind
+R4392:4392 list <> A:40 var
+binder 4383:4383 <> l:41
+R4416:4418 Corelib.Init.Logic <> ::type_scope:x_'='_x not
+R4398:4400 Corelib.Lists.ListDef <> map def
+R4415:4415 list <> l:41 var
+binder 4407:4407 <> x:42
+R4412:4412 list <> x:42 var
+R4419:4419 list <> l:41 var
+prf 4627:4633 <> map_rev
+binder 4645:4645 <> A:43
+binder 4647:4647 <> B:44
+R4663:4666 Corelib.Init.Logic <> ::type_scope:x_'->'_x not
+R4662:4662 list <> A:43 var
+R4667:4667 list <> B:44 var
+binder 4658:4658 <> f:45
+R4675:4678 Corelib.Init.Datatypes <> list ind
+R4680:4680 list <> A:43 var
+binder 4671:4671 <> l:46
+R4699:4701 Corelib.Init.Logic <> ::type_scope:x_'='_x not
+R4686:4688 Corelib.Lists.ListDef <> map def
+R4693:4695 Stdlib.Lists.List <> rev def
+R4697:4697 list <> l:46 var
+R4690:4690 list <> f:45 var
+R4702:4704 Stdlib.Lists.List <> rev def
+R4707:4709 Corelib.Lists.ListDef <> map def
+R4713:4713 list <> l:46 var
+R4711:4711 list <> f:45 var
+R4856:4862 list <> map_app thm
+R4856:4862 list <> map_app thm
+R4856:4862 list <> map_app thm
+prf 4975:4988 <> fold_right_nil
+binder 5000:5000 <> A:47
+binder 5002:5002 <> B:48
+R5018:5021 Corelib.Init.Logic <> ::type_scope:x_'->'_x not
+R5017:5017 list <> A:47 var
+R5023:5026 Corelib.Init.Logic <> ::type_scope:x_'->'_x not
+R5022:5022 list <> B:48 var
+R5027:5027 list <> B:48 var
+binder 5013:5013 <> f:49
+R5037:5037 list <> B:48 var
+binder 5031:5033 <> acc:50
+R5062:5064 Corelib.Init.Logic <> ::type_scope:x_'='_x not
+R5043:5052 Stdlib.Lists.List <> fold_right def
+R5060:5061 Stdlib.Lists.List ListNotations ::list_scope:'['_']' not
+R5056:5058 list <> acc:50 var
+R5054:5054 list <> f:49 var
+R5065:5067 list <> acc:50 var
+prf 5156:5170 <> fold_right_cons
+binder 5182:5182 <> A:51
+binder 5184:5184 <> B:52
+R5200:5203 Corelib.Init.Logic <> ::type_scope:x_'->'_x not
+R5199:5199 list <> A:51 var
+R5205:5208 Corelib.Init.Logic <> ::type_scope:x_'->'_x not
+R5204:5204 list <> B:52 var
+R5209:5209 list <> B:52 var
+binder 5195:5195 <> f:53
+R5219:5219 list <> B:52 var
+binder 5213:5215 <> acc:54
+R5227:5227 list <> A:51 var
+binder 5223:5223 <> h:55
+R5235:5238 Corelib.Init.Datatypes <> list ind
+R5240:5240 list <> A:51 var
+binder 5231:5231 <> t:56
+R5271:5273 Corelib.Init.Logic <> ::type_scope:x_'='_x not
+R5246:5255 Stdlib.Lists.List <> fold_right def
+R5265:5268 Corelib.Init.Datatypes <> ::list_scope:x_'::'_x not
+R5264:5264 list <> h:55 var
+R5269:5269 list <> t:56 var
+R5259:5261 list <> acc:54 var
+R5257:5257 list <> f:53 var
+R5274:5274 list <> f:53 var
+R5279:5288 Stdlib.Lists.List <> fold_right def
+R5296:5296 list <> t:56 var
+R5292:5294 list <> acc:54 var
+R5290:5290 list <> f:53 var
+R5276:5276 list <> h:55 var
+prf 5393:5406 <> fold_right_app
+binder 5418:5418 <> A:57
+binder 5420:5420 <> B:58
+R5436:5439 Corelib.Init.Logic <> ::type_scope:x_'->'_x not
+R5435:5435 list <> A:57 var
+R5441:5444 Corelib.Init.Logic <> ::type_scope:x_'->'_x not
+R5440:5440 list <> B:58 var
+R5445:5445 list <> B:58 var
+binder 5431:5431 <> f:59
+R5455:5455 list <> B:58 var
+binder 5449:5451 <> acc:60
+R5467:5470 Corelib.Init.Datatypes <> list ind
+R5472:5472 list <> A:57 var
+binder 5459:5460 <> l1:61
+binder 5462:5463 <> l2:62
+R5505:5507 Corelib.Init.Logic <> ::type_scope:x_'='_x not
+R5478:5487 Stdlib.Lists.List <> fold_right def
+R5498:5501 Corelib.Init.Datatypes <> ::list_scope:x_'++'_x not
+R5496:5497 list <> l1:61 var
+R5502:5503 list <> l2:62 var
+R5491:5493 list <> acc:60 var
+R5489:5489 list <> f:59 var
+R5508:5517 Stdlib.Lists.List <> fold_right def
+R5543:5544 list <> l1:61 var
+R5522:5531 Stdlib.Lists.List <> fold_right def
+R5539:5540 list <> l2:62 var
+R5535:5537 list <> acc:60 var
+R5533:5533 list <> f:59 var
+R5519:5519 list <> f:59 var
+def 5767:5774 <> sum_list
+R5781:5784 Corelib.Init.Datatypes <> list ind
+R5786:5788 Corelib.Init.Datatypes <> nat ind
+binder 5777:5777 <> l:63
+R5793:5795 Corelib.Init.Datatypes <> nat ind
+R5802:5811 Stdlib.Lists.List <> fold_right def
+R5820:5820 list <> l:63 var
+R5813:5816 Corelib.Init.Peano <> plus abbrev
+prf 5832:5843 <> sum_list_app
+R5862:5865 Corelib.Init.Datatypes <> list ind
+R5867:5869 Corelib.Init.Datatypes <> nat ind
+binder 5854:5855 <> l1:64
+binder 5857:5858 <> l2:65
+R5893:5895 Corelib.Init.Logic <> ::type_scope:x_'='_x not
+R5874:5881 list <> sum_list def
+R5886:5889 Corelib.Init.Datatypes <> ::list_scope:x_'++'_x not
+R5884:5885 list <> l1:64 var
+R5890:5891 list <> l2:65 var
+R5907:5909 Corelib.Init.Peano <> ::nat_scope:x_'+'_x not
+R5896:5903 list <> sum_list def
+R5905:5906 list <> l1:64 var
+R5910:5917 list <> sum_list def
+R5919:5920 list <> l2:65 var
+R5955:5962 list <> sum_list def
+R5975:5988 list <> fold_right_app thm
+R5975:5988 list <> fold_right_app thm
+R5975:5988 list <> fold_right_app thm

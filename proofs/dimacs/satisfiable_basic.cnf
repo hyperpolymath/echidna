@@ -1,0 +1,7 @@
+c SPDX-License-Identifier: PMPL-1.0-or-later
+c Basic satisfiable instance: (x1 OR x2) AND (NOT x1 OR x2) AND (x1 OR NOT x2)
+c Expected: SATISFIABLE (solution x1=T, x2=T)
+p cnf 2 3
+1 2 0
+-1 2 0
+1 -2 0

@@ -3,8 +3,17 @@
 #
 # EchidnaBuddy.jl — Stochastic Meta-Prover Buddy
 #
-# Implements Simulated Annealing and Tactic Swarming to break out of
+# Implements Simulated Annealing over tactic sequences to break out of
 # local minima in formal proof searches.
+#
+# STATUS (2026-04-05): minimal, NOT wired to echidna's dispatch pipeline.
+# The `anneal_tactic_selection` function requires the caller to supply an
+# `evaluator::Function` that scores (goal, tactics) pairs; no default
+# scorer is provided. `stabilize_perspectives` is a trivial goal-hash
+# consensus check, not a full multi-solver merge.
+#
+# NOT YET IMPLEMENTED (previously overclaimed): particle-swarm optimization,
+# genetic algorithms, actual k9-svc / A2ML integration, regression tests.
 
 module EchidnaBuddy
 

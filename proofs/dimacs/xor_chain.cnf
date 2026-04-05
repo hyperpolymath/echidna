@@ -1,0 +1,10 @@
+c SPDX-License-Identifier: PMPL-1.0-or-later
+c XOR chain: x1 ⊕ x2 = 1, x2 ⊕ x3 = 1, x3 ⊕ x4 = 1 (SATISFIABLE)
+c Encoded as CNF: for each XOR clause, two 2-clauses
+p cnf 4 6
+1 2 0
+-1 -2 0
+2 3 0
+-2 -3 0
+3 4 0
+-3 -4 0

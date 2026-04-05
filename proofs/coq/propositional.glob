@@ -1,0 +1,277 @@
+DIGEST 6bcfd32afd3ce0aa23a071992139f39a
+Fpropositional
+prf 688:698 <> de_morgan_1
+binder 709:709 <> A:1
+binder 711:711 <> B:2
+R732:736 Corelib.Init.Logic <> ::type_scope:x_'->'_x not
+R745:745 Corelib.Init.Logic <> ::type_scope:x_'->'_x not
+R723:724 Corelib.Init.Logic <> ::type_scope:'~'_x not
+R731:731 Corelib.Init.Logic <> ::type_scope:'~'_x not
+R726:729 Corelib.Init.Logic <> ::type_scope:x_'\/'_x not
+R725:725 propositional <> A:1 var
+R730:730 propositional <> B:2 var
+R739:742 Corelib.Init.Logic <> ::type_scope:x_'/\'_x not
+R737:737 Corelib.Init.Logic <> ::type_scope:'~'_x not
+R738:738 propositional <> A:1 var
+R743:743 Corelib.Init.Logic <> ::type_scope:'~'_x not
+R744:744 propositional <> B:2 var
+prf 1081:1095 <> de_morgan_1_rev
+binder 1106:1106 <> A:3
+binder 1108:1108 <> B:4
+R1120:1120 Corelib.Init.Logic <> ::type_scope:x_'->'_x not
+R1129:1133 Corelib.Init.Logic <> ::type_scope:x_'->'_x not
+R1123:1126 Corelib.Init.Logic <> ::type_scope:x_'/\'_x not
+R1121:1121 Corelib.Init.Logic <> ::type_scope:'~'_x not
+R1122:1122 propositional <> A:3 var
+R1127:1127 Corelib.Init.Logic <> ::type_scope:'~'_x not
+R1128:1128 propositional <> B:4 var
+R1134:1135 Corelib.Init.Logic <> ::type_scope:'~'_x not
+R1142:1142 Corelib.Init.Logic <> ::type_scope:'~'_x not
+R1137:1140 Corelib.Init.Logic <> ::type_scope:x_'\/'_x not
+R1136:1136 propositional <> A:3 var
+R1141:1141 propositional <> B:4 var
+prf 1681:1704 <> de_morgan_2_constructive
+binder 1715:1715 <> A:5
+binder 1717:1717 <> B:6
+R1729:1729 Corelib.Init.Logic <> ::type_scope:x_'->'_x not
+R1738:1742 Corelib.Init.Logic <> ::type_scope:x_'->'_x not
+R1732:1735 Corelib.Init.Logic <> ::type_scope:x_'\/'_x not
+R1730:1730 Corelib.Init.Logic <> ::type_scope:'~'_x not
+R1731:1731 propositional <> A:5 var
+R1736:1736 Corelib.Init.Logic <> ::type_scope:'~'_x not
+R1737:1737 propositional <> B:6 var
+R1743:1744 Corelib.Init.Logic <> ::type_scope:'~'_x not
+R1751:1751 Corelib.Init.Logic <> ::type_scope:'~'_x not
+R1746:1749 Corelib.Init.Logic <> ::type_scope:x_'/\'_x not
+R1745:1745 propositional <> A:5 var
+R1750:1750 propositional <> B:6 var
+R2057:2065 Stdlib.Logic.Classical <> <> lib
+prf 2077:2097 <> de_morgan_2_classical
+binder 2108:2108 <> A:7
+binder 2110:2110 <> B:8
+R2131:2135 Corelib.Init.Logic <> ::type_scope:x_'->'_x not
+R2144:2144 Corelib.Init.Logic <> ::type_scope:x_'->'_x not
+R2122:2123 Corelib.Init.Logic <> ::type_scope:'~'_x not
+R2130:2130 Corelib.Init.Logic <> ::type_scope:'~'_x not
+R2125:2128 Corelib.Init.Logic <> ::type_scope:x_'/\'_x not
+R2124:2124 propositional <> A:7 var
+R2129:2129 propositional <> B:8 var
+R2138:2141 Corelib.Init.Logic <> ::type_scope:x_'\/'_x not
+R2136:2136 Corelib.Init.Logic <> ::type_scope:'~'_x not
+R2137:2137 propositional <> A:7 var
+R2142:2142 Corelib.Init.Logic <> ::type_scope:'~'_x not
+R2143:2143 propositional <> B:8 var
+R2223:2229 Stdlib.Logic.Classical_Prop <> classic prfax
+R2223:2229 Stdlib.Logic.Classical_Prop <> classic prfax
+prf 2534:2554 <> double_negation_intro
+binder 2565:2565 <> A:9
+R2578:2581 Corelib.Init.Logic <> ::type_scope:x_'->'_x not
+R2577:2577 propositional <> A:9 var
+R2582:2582 Corelib.Init.Logic <> ::type_scope:'~'_x not
+R2583:2583 Corelib.Init.Logic <> ::type_scope:'~'_x not
+R2584:2584 propositional <> A:9 var
+prf 2846:2865 <> double_negation_elim
+binder 2876:2876 <> A:10
+R2891:2894 Corelib.Init.Logic <> ::type_scope:x_'->'_x not
+R2888:2888 Corelib.Init.Logic <> ::type_scope:'~'_x not
+R2889:2889 Corelib.Init.Logic <> ::type_scope:'~'_x not
+R2890:2890 propositional <> A:10 var
+R2895:2895 propositional <> A:10 var
+R2941:2947 Stdlib.Logic.Classical_Prop <> classic prfax
+R2941:2947 Stdlib.Logic.Classical_Prop <> classic prfax
+prf 3283:3297 <> lem_implies_dne
+R3303:3303 Corelib.Init.Logic <> ::type_scope:x_'->'_x not
+R3328:3333 Corelib.Init.Logic <> ::type_scope:x_'->'_x not
+R3359:3359 Corelib.Init.Logic <> ::type_scope:x_'->'_x not
+binder 3311:3311 <> A:11
+R3322:3325 Corelib.Init.Logic <> ::type_scope:x_'\/'_x not
+R3321:3321 propositional <> A:11 var
+R3326:3326 Corelib.Init.Logic <> ::type_scope:'~'_x not
+R3327:3327 propositional <> A:11 var
+binder 3341:3341 <> B:12
+R3354:3357 Corelib.Init.Logic <> ::type_scope:x_'->'_x not
+R3351:3351 Corelib.Init.Logic <> ::type_scope:'~'_x not
+R3352:3352 Corelib.Init.Logic <> ::type_scope:'~'_x not
+R3353:3353 propositional <> B:12 var
+R3358:3358 propositional <> B:12 var
+prf 3659:3668 <> peirce_law
+binder 3679:3679 <> A:13
+binder 3681:3681 <> B:14
+R3693:3693 Corelib.Init.Logic <> ::type_scope:x_'->'_x not
+R3707:3711 Corelib.Init.Logic <> ::type_scope:x_'->'_x not
+R3694:3694 Corelib.Init.Logic <> ::type_scope:x_'->'_x not
+R3701:3705 Corelib.Init.Logic <> ::type_scope:x_'->'_x not
+R3696:3699 Corelib.Init.Logic <> ::type_scope:x_'->'_x not
+R3695:3695 propositional <> A:13 var
+R3700:3700 propositional <> B:14 var
+R3706:3706 propositional <> A:13 var
+R3712:3712 propositional <> A:13 var
+R3750:3756 Stdlib.Logic.Classical_Prop <> classic prfax
+R3750:3756 Stdlib.Logic.Classical_Prop <> classic prfax
+prf 4012:4025 <> contrapositive
+binder 4036:4036 <> A:15
+binder 4038:4038 <> B:16
+R4050:4050 Corelib.Init.Logic <> ::type_scope:x_'->'_x not
+R4057:4062 Corelib.Init.Logic <> ::type_scope:x_'->'_x not
+R4071:4071 Corelib.Init.Logic <> ::type_scope:x_'->'_x not
+R4052:4055 Corelib.Init.Logic <> ::type_scope:x_'->'_x not
+R4051:4051 propositional <> A:15 var
+R4056:4056 propositional <> B:16 var
+R4065:4068 Corelib.Init.Logic <> ::type_scope:x_'->'_x not
+R4063:4063 Corelib.Init.Logic <> ::type_scope:'~'_x not
+R4064:4064 propositional <> B:16 var
+R4069:4069 Corelib.Init.Logic <> ::type_scope:'~'_x not
+R4070:4070 propositional <> A:15 var
+prf 4286:4307 <> contrapositive_reverse
+binder 4318:4318 <> A:17
+binder 4320:4320 <> B:18
+R4332:4332 Corelib.Init.Logic <> ::type_scope:x_'->'_x not
+R4341:4346 Corelib.Init.Logic <> ::type_scope:x_'->'_x not
+R4353:4353 Corelib.Init.Logic <> ::type_scope:x_'->'_x not
+R4335:4338 Corelib.Init.Logic <> ::type_scope:x_'->'_x not
+R4333:4333 Corelib.Init.Logic <> ::type_scope:'~'_x not
+R4334:4334 propositional <> B:18 var
+R4339:4339 Corelib.Init.Logic <> ::type_scope:'~'_x not
+R4340:4340 propositional <> A:17 var
+R4348:4351 Corelib.Init.Logic <> ::type_scope:x_'->'_x not
+R4347:4347 propositional <> A:17 var
+R4352:4352 propositional <> B:18 var
+R4402:4408 Stdlib.Logic.Classical_Prop <> classic prfax
+R4402:4408 Stdlib.Logic.Classical_Prop <> classic prfax
+prf 4615:4628 <> or_commutative
+binder 4639:4639 <> A:19
+binder 4641:4641 <> B:20
+R4659:4662 Corelib.Init.Logic <> ::type_scope:x_'->'_x not
+R4654:4657 Corelib.Init.Logic <> ::type_scope:x_'\/'_x not
+R4653:4653 propositional <> A:19 var
+R4658:4658 propositional <> B:20 var
+R4664:4667 Corelib.Init.Logic <> ::type_scope:x_'\/'_x not
+R4663:4663 propositional <> B:20 var
+R4668:4668 propositional <> A:19 var
+prf 4857:4870 <> or_associative
+binder 4881:4881 <> A:21
+binder 4883:4883 <> B:22
+binder 4885:4885 <> C:23
+R4910:4913 Corelib.Init.Logic <> ::type_scope:x_'->'_x not
+R4897:4897 Corelib.Init.Logic <> ::type_scope:x_'\/'_x not
+R4904:4908 Corelib.Init.Logic <> ::type_scope:x_'\/'_x not
+R4899:4902 Corelib.Init.Logic <> ::type_scope:x_'\/'_x not
+R4898:4898 propositional <> A:21 var
+R4903:4903 propositional <> B:22 var
+R4909:4909 propositional <> C:23 var
+R4915:4919 Corelib.Init.Logic <> ::type_scope:x_'\/'_x not
+R4926:4926 Corelib.Init.Logic <> ::type_scope:x_'\/'_x not
+R4914:4914 propositional <> A:21 var
+R4921:4924 Corelib.Init.Logic <> ::type_scope:x_'\/'_x not
+R4920:4920 propositional <> B:22 var
+R4925:4925 propositional <> C:23 var
+prf 5194:5208 <> and_associative
+binder 5219:5219 <> A:24
+binder 5221:5221 <> B:25
+binder 5223:5223 <> C:26
+R5248:5251 Corelib.Init.Logic <> ::type_scope:x_'->'_x not
+R5235:5235 Corelib.Init.Logic <> ::type_scope:x_'/\'_x not
+R5242:5246 Corelib.Init.Logic <> ::type_scope:x_'/\'_x not
+R5237:5240 Corelib.Init.Logic <> ::type_scope:x_'/\'_x not
+R5236:5236 propositional <> A:24 var
+R5241:5241 propositional <> B:25 var
+R5247:5247 propositional <> C:26 var
+R5253:5257 Corelib.Init.Logic <> ::type_scope:x_'/\'_x not
+R5264:5264 Corelib.Init.Logic <> ::type_scope:x_'/\'_x not
+R5252:5252 propositional <> A:24 var
+R5259:5262 Corelib.Init.Logic <> ::type_scope:x_'/\'_x not
+R5258:5258 propositional <> B:25 var
+R5263:5263 propositional <> C:26 var
+prf 5408:5426 <> and_associative_rev
+binder 5437:5437 <> A:27
+binder 5439:5439 <> B:28
+binder 5441:5441 <> C:29
+R5466:5469 Corelib.Init.Logic <> ::type_scope:x_'->'_x not
+R5454:5458 Corelib.Init.Logic <> ::type_scope:x_'/\'_x not
+R5465:5465 Corelib.Init.Logic <> ::type_scope:x_'/\'_x not
+R5453:5453 propositional <> A:27 var
+R5460:5463 Corelib.Init.Logic <> ::type_scope:x_'/\'_x not
+R5459:5459 propositional <> B:28 var
+R5464:5464 propositional <> C:29 var
+R5470:5470 Corelib.Init.Logic <> ::type_scope:x_'/\'_x not
+R5477:5481 Corelib.Init.Logic <> ::type_scope:x_'/\'_x not
+R5472:5475 Corelib.Init.Logic <> ::type_scope:x_'/\'_x not
+R5471:5471 propositional <> A:27 var
+R5476:5476 propositional <> B:28 var
+R5482:5482 propositional <> C:29 var
+prf 5755:5777 <> and_distributes_over_or
+binder 5788:5788 <> A:30
+binder 5790:5790 <> B:31
+binder 5792:5792 <> C:32
+R5817:5820 Corelib.Init.Logic <> ::type_scope:x_'->'_x not
+R5805:5809 Corelib.Init.Logic <> ::type_scope:x_'/\'_x not
+R5816:5816 Corelib.Init.Logic <> ::type_scope:x_'/\'_x not
+R5804:5804 propositional <> A:30 var
+R5811:5814 Corelib.Init.Logic <> ::type_scope:x_'\/'_x not
+R5810:5810 propositional <> B:31 var
+R5815:5815 propositional <> C:32 var
+R5821:5821 Corelib.Init.Logic <> ::type_scope:x_'\/'_x not
+R5828:5833 Corelib.Init.Logic <> ::type_scope:x_'\/'_x not
+R5840:5840 Corelib.Init.Logic <> ::type_scope:x_'\/'_x not
+R5823:5826 Corelib.Init.Logic <> ::type_scope:x_'/\'_x not
+R5822:5822 propositional <> A:30 var
+R5827:5827 propositional <> B:31 var
+R5835:5838 Corelib.Init.Logic <> ::type_scope:x_'/\'_x not
+R5834:5834 propositional <> A:30 var
+R5839:5839 propositional <> C:32 var
+prf 6001:6027 <> and_distributes_over_or_rev
+binder 6038:6038 <> A:33
+binder 6040:6040 <> B:34
+binder 6042:6042 <> C:35
+R6074:6077 Corelib.Init.Logic <> ::type_scope:x_'->'_x not
+R6054:6054 Corelib.Init.Logic <> ::type_scope:x_'\/'_x not
+R6061:6066 Corelib.Init.Logic <> ::type_scope:x_'\/'_x not
+R6073:6073 Corelib.Init.Logic <> ::type_scope:x_'\/'_x not
+R6056:6059 Corelib.Init.Logic <> ::type_scope:x_'/\'_x not
+R6055:6055 propositional <> A:33 var
+R6060:6060 propositional <> B:34 var
+R6068:6071 Corelib.Init.Logic <> ::type_scope:x_'/\'_x not
+R6067:6067 propositional <> A:33 var
+R6072:6072 propositional <> C:35 var
+R6079:6083 Corelib.Init.Logic <> ::type_scope:x_'/\'_x not
+R6090:6090 Corelib.Init.Logic <> ::type_scope:x_'/\'_x not
+R6078:6078 propositional <> A:33 var
+R6085:6088 Corelib.Init.Logic <> ::type_scope:x_'\/'_x not
+R6084:6084 propositional <> B:34 var
+R6089:6089 propositional <> C:35 var
+prf 6376:6398 <> or_distributes_over_and
+binder 6409:6409 <> A:36
+binder 6411:6411 <> B:37
+binder 6413:6413 <> C:38
+R6438:6441 Corelib.Init.Logic <> ::type_scope:x_'->'_x not
+R6426:6430 Corelib.Init.Logic <> ::type_scope:x_'\/'_x not
+R6437:6437 Corelib.Init.Logic <> ::type_scope:x_'\/'_x not
+R6425:6425 propositional <> A:36 var
+R6432:6435 Corelib.Init.Logic <> ::type_scope:x_'/\'_x not
+R6431:6431 propositional <> B:37 var
+R6436:6436 propositional <> C:38 var
+R6442:6442 Corelib.Init.Logic <> ::type_scope:x_'/\'_x not
+R6449:6454 Corelib.Init.Logic <> ::type_scope:x_'/\'_x not
+R6461:6461 Corelib.Init.Logic <> ::type_scope:x_'/\'_x not
+R6444:6447 Corelib.Init.Logic <> ::type_scope:x_'\/'_x not
+R6443:6443 propositional <> A:36 var
+R6448:6448 propositional <> B:37 var
+R6456:6459 Corelib.Init.Logic <> ::type_scope:x_'\/'_x not
+R6455:6455 propositional <> A:36 var
+R6460:6460 propositional <> C:38 var
+prf 6858:6879 <> proof_by_contradiction
+binder 6890:6890 <> A:39
+R6902:6902 Corelib.Init.Logic <> ::type_scope:x_'->'_x not
+R6914:6918 Corelib.Init.Logic <> ::type_scope:x_'->'_x not
+R6905:6908 Corelib.Init.Logic <> ::type_scope:x_'->'_x not
+R6903:6903 Corelib.Init.Logic <> ::type_scope:'~'_x not
+R6904:6904 propositional <> A:39 var
+R6909:6913 Corelib.Init.Logic <> False ind
+R6919:6919 propositional <> A:39 var
+R6955:6961 Stdlib.Logic.Classical_Prop <> classic prfax
+R6955:6961 Stdlib.Logic.Classical_Prop <> classic prfax
+prf 7164:7171 <> ex_falso
+binder 7182:7182 <> A:40
+R7199:7202 Corelib.Init.Logic <> ::type_scope:x_'->'_x not
+R7194:7198 Corelib.Init.Logic <> False ind
+R7203:7203 propositional <> A:40 var
