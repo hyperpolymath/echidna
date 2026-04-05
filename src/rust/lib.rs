@@ -20,14 +20,14 @@ pub mod integrity;
 pub mod llm; // Frontier LLM advisor (via BoJ Server)
 pub mod neural;
 pub mod parsers;
-#[cfg(feature = "verisimdb")]
+#[cfg(feature = "verisim")]
 pub mod proof_encoding; // CBOR encoding + proof identity hashing
 pub mod proof_search; // Chapel parallel proof search (optional feature)
 pub mod provers;
 pub mod verification;
-#[cfg(feature = "verisimdb")]
-pub mod verisimdb_bridge; // VeriSimDB 8-modality octad integration
-pub mod vql_ut; // VQL-UT: 10-level type-safe cross-prover query language
+#[cfg(feature = "verisim")]
+pub mod verisim_bridge; // VeriSimDB 8-modality octad integration
+pub mod vcl_ut; // VCL-UT: 10-level type-safe cross-prover query language
 
 pub use agent::{AgentConfig, AgentCore};
 pub use core::{ProofState, Tactic, TacticResult, Term};

@@ -13,7 +13,7 @@ following the pattern in repos like `typed-wasm`, `proven`, `echidna`, or `boj-s
 - **Axiom tracking completeness**: Proven in `verification/proofs/idris2/AxiomCompleteness.idr`. (23 patterns, no false negatives). `unsafeCoerce` added to `axiom_tracker.rs`.
 - **Prover dispatch correctness**: Proven in `verification/proofs/idris2/DispatchCorrectness.idr`. (Logic family compatibility). `DispatchOrdering.idr` (Pipeline stages).
 - **Proof composition**: Proven in `proofs/agda/ProofComposition.agda`. (Soundness preservation, axiom conflict detection).
-- **VQL-UT query safety**: Proven in `EchidnaABI/VqlUt.idr`. (L5 Injection-free, L3 Type-safe boundary).
+- **VCL-UT query safety**: Proven in `EchidnaABI/VqlUt.idr`. (L5 Injection-free, L3 Type-safe boundary).
 - **GNN embedding faithfulness**: Documented in `EchidnaABI/Gnn.idr`. (Structural properties, feature bounds, score normalisation).
 - Extensive Idris2 ABI: `EchidnaABI/Types.idr` (655 lines), `EchidnaABI/Foreign.idr` (445 lines), `EchidnaABI/Layout.idr` (236 lines)
 
@@ -22,7 +22,7 @@ following the pattern in repos like `typed-wasm`, `proven`, `echidna`, or `boj-s
 - **Axiom tracking completeness**: Prove `axiom_tracker.rs` detects ALL dangerous patterns (no false negatives for `sorry`, `Admitted`, `believe_me`, `postulate`, `assert_total`, `unsafeCoerce`)
 - **Prover dispatch correctness**: Prove that proof goals are dispatched to compatible provers (e.g., linear logic goals do not go to first-order ATP)
 - **GNN embedding faithfulness**: Prove that proof-graph GNN embeddings preserve structural properties of the original proof tree
-- **VQL-UT query safety**: Prove VQL queries are injection-free and type-safe at the ABI boundary
+- **VCL-UT query safety**: Prove VCL queries are injection-free and type-safe at the ABI boundary
 - **Proof composition**: Prove that combining sub-proofs from different provers preserves overall soundness (no implicit axiom conflicts)
 
 ## Recommended prover

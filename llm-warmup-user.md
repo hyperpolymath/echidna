@@ -106,4 +106,4 @@ PMPL-1.0-or-later. Author: Jonathan D.A. Jewell.
 
 - **Depends on**: proven (verified safety), Z3/CVC5/Lean/etc. (solver binaries)
 - **Used by**: hypatia (CI/CD intelligence), ecosystem-wide proof checking
-- **Siblings**: panic-attacker (scanning), verisimdb (data layer)
+- **Siblings**: panic-attacker (scanning), verisim (data layer)

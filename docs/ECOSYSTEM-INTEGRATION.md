@@ -83,15 +83,15 @@ fleet.complete(findings.len(), errors, files_analyzed)?;
 **How It Works**:
 1. Run `panic-attack assail` on echidna repo
 2. Generate JSON output with weak points
-3. Run `verisimdb-data/scripts/ingest-scan.sh echidna /tmp/scan.json`
-4. Push to verisimdb-data repo
+3. Run `verisim-data/scripts/ingest-scan.sh echidna /tmp/scan.json`
+4. Push to verisim-data repo
 5. Hypatia processes findings and learns patterns
 
 **Command**:
 ```bash
 cd "$REPOS_DIR/echidna"        # Set REPOS_DIR to your local repos root
 panic-attack assail . --output /tmp/echidna-scan.json
-cd "$REPOS_DIR/verisimdb-data"
+cd "$REPOS_DIR/verisim-data"
 ./scripts/ingest-scan.sh echidna /tmp/echidna-scan.json
 git push && git push gitlab main
 ```
@@ -173,7 +173,7 @@ cd "$REPOS_DIR/gitbot-fleet"
 - Gitbot-fleet: `$REPOS_DIR/gitbot-fleet/`
 - Echidnabot: `$REPOS_DIR/echidna/echidnabot/`
 - Panic-attacker: `$REPOS_DIR/panic-attacker/`
-- VeriSimDB: `$REPOS_DIR/verisimdb-data/`
+- VeriSimDB: `$REPOS_DIR/verisim-data/`
 - Hypatia: `$REPOS_DIR/hypatia/`
 - Git-private-farm: `$REPOS_DIR/.git-private-farm/`
 
