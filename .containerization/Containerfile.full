@@ -28,6 +28,7 @@ WORKDIR /build
 COPY Cargo.toml Cargo.lock ./
 COPY src/rust ./src/rust
 COPY src/interfaces ./src/interfaces
+COPY benches ./benches
 
 RUN cargo build --release --bin echidna
 
