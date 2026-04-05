@@ -17,7 +17,7 @@
 //!   - **Spatial**: Reserved for proof origin metadata (future)
 //!
 //! The bridge uses VeriSimDB's HTTP API via reqwest. For BoJ-integrated deployments,
-//! the V-lang adapter (`echidna_llm_verisimdb.v`) routes through verisimdb.zig FFI.
+//! the V-lang adapter (`echidna_llm_verisimdb.v`) routes through verisim.zig FFI.
 
 use anyhow::{Context, Result};
 use chrono::Utc;

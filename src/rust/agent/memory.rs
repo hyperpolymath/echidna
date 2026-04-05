@@ -234,11 +234,11 @@ impl ProofMemory for SqliteMemory {
 /// while maintaining an in-memory cache for fast find_similar lookups.
 /// Falls back gracefully to in-memory-only if VeriSimDB is unreachable.
 ///
-/// Enabled with `--features verisimdb` in Cargo.toml.
-#[cfg(feature = "verisimdb")]
+/// Enabled with `--features verisim` in Cargo.toml.
+#[cfg(feature = "verisim")]
 pub struct VeriSimDBProofStore {
     /// VeriSimDB HTTP client
-    client: crate::verisimdb_bridge::VeriSimDBClient,
+    client: crate::verisim_bridge::VeriSimDBClient,
 
     /// In-memory cache (fast lookups + fallback)
     local_successes: RwLock<Vec<CachedProof>>,
@@ -248,15 +248,15 @@ pub struct VeriSimDBProofStore {
     connected: RwLock<bool>,
 }
 
-#[cfg(feature = "verisimdb")]
+#[cfg(feature = "verisim")]
 impl VeriSimDBProofStore {
     /// Create a new VeriSimDB proof store.
     ///
     /// # Arguments
-    /// * `verisimdb_url` — Base URL of the VeriSimDB instance (e.g., "http://localhost:8081")
-    pub fn new(verisimdb_url: &str) -> Self {
+    /// * `verisim_url` — Base URL of the VeriSimDB instance (e.g., "http://localhost:8081")
+    pub fn new(verisim_url: &str) -> Self {
         VeriSimDBProofStore {
-            client: crate::verisimdb_bridge::VeriSimDBClient::new(verisimdb_url),
+            client: crate::verisim_bridge::VeriSimDBClient::new(verisim_url),
             local_successes: RwLock::new(Vec::new()),
             local_failures: RwLock::new(Vec::new()),
             connected: RwLock::new(false),
@@ -327,7 +327,7 @@ impl VeriSimDBProofStore {
     }
 }
 
-#[cfg(feature = "verisimdb")]
+#[cfg(feature = "verisim")]
 #[async_trait]
 impl ProofMemory for VeriSimDBProofStore {
     async fn store_success(
@@ -351,7 +351,7 @@ impl ProofMemory for VeriSimDBProofStore {
 
         // Build octad and send to VeriSimDB (best-effort)
         if *self.connected.read().await {
-            use crate::verisimdb_bridge::{ProofOctadBuilder, ProofStatus};
+            use crate::verisim_bridge::{ProofOctadBuilder, ProofStatus};
 
             // Fetch goal embedding from Julia inference service (best-effort)
             let embedding = self
@@ -398,7 +398,7 @@ impl ProofMemory for VeriSimDBProofStore {
 
         // Store failure in VeriSimDB (best-effort)
         if *self.connected.read().await {
-            use crate::verisimdb_bridge::{ProofOctadBuilder, ProofStatus};
+            use crate::verisim_bridge::{ProofOctadBuilder, ProofStatus};
 
             let prover = goal.preferred_prover.unwrap_or(ProverKind::Z3);
             let octad = ProofOctadBuilder::new(&goal.goal.id, &goal.goal, prover)

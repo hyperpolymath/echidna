@@ -73,7 +73,7 @@ fn default_host() -> String {
 fn default_port() -> u16 {
     // 9001 is echidnabot's canonical port in the hyperpolymath port map.
     // (9000 = echidna core, 9001 = echidnabot, 9090 = hypatia.)
-    // Was 8080 which collided with verisimdb and gitbot-fleet.
+    // Was 8080 which collided with verisim and gitbot-fleet.
     9001
 }
 

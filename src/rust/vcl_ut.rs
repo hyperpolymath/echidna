@@ -1,11 +1,11 @@
 // SPDX-FileCopyrightText: 2026 Jonathan D.A. Jewell (hyperpolymath) <j.d.a.jewell@open.ac.uk>
 // SPDX-License-Identifier: PMPL-1.0-or-later
 
-//! VQL-UT: Cross-Prover Query Language for ECHIDNA
+//! VCL-UT: Cross-Prover Query Language for ECHIDNA
 //!
 //! Typed query builder and executor for querying proof state across all 30
 //! prover backends via VeriSimDB's octad storage. Implements a subset of
-//! VQL-UT with progressive type safety enforcement.
+//! VCL-UT with progressive type safety enforcement.
 //!
 //! Query types:
 //!   - `FindProof` — retrieve a specific proof by theorem + prover
@@ -26,10 +26,10 @@ use tracing::{debug, info};
 
 use crate::provers::ProverKind;
 
-#[cfg(feature = "verisimdb")]
+#[cfg(feature = "verisim")]
 use crate::proof_encoding;
-#[cfg(feature = "verisimdb")]
-use crate::verisimdb_bridge::{OctadPayload, VeriSimDBClient};
+#[cfg(feature = "verisim")]
+use crate::verisim_bridge::{OctadPayload, VeriSimDBClient};
 
 // ═══════════════════════════════════════════════════════════════════════
 // Type Safety Levels
@@ -300,7 +300,7 @@ impl CrossProverQueryBuilder {
         // Level 7: Cardinality — must have a limit
         if level >= 7 && self.query.limit.is_none() {
             anyhow::bail!(
-                "VQL-UT Level {} requires a cardinality limit (use .with_limit())",
+                "VCL-UT Level {} requires a cardinality limit (use .with_limit())",
                 level
             );
         }
@@ -311,7 +311,7 @@ impl CrossProverQueryBuilder {
         // Level 9: Temporal safety — must have a version constraint
         if level >= 9 && self.query.min_version.is_none() {
             anyhow::bail!(
-                "VQL-UT Level {} requires a version constraint (use .with_min_version())",
+                "VCL-UT Level {} requires a version constraint (use .with_min_version())",
                 level
             );
         }
@@ -320,7 +320,7 @@ impl CrossProverQueryBuilder {
         // (enforced by VeriSimDB's provenance modality)
 
         debug!(
-            "VQL-UT query built: {:?} at level {} for {:?}",
+            "VCL-UT query built: {:?} at level {} for {:?}",
             self.query.operation, level, self.query.theorem_name,
         );
 
@@ -332,37 +332,37 @@ impl CrossProverQueryBuilder {
 // Query Executor
 // ═══════════════════════════════════════════════════════════════════════
 
-/// Executes VQL-UT queries against VeriSimDB.
+/// Executes VCL-UT queries against VeriSimDB.
 ///
-/// Uses the VeriSimDBClient from the verisimdb_bridge module when
-/// the `verisimdb` feature is enabled. Falls back to a no-op executor
+/// Uses the VeriSimDBClient from the verisim_bridge module when
+/// the `verisim` feature is enabled. Falls back to a no-op executor
 /// when VeriSimDB is not available.
 pub struct QueryExecutor {
-    #[cfg(feature = "verisimdb")]
+    #[cfg(feature = "verisim")]
     client: VeriSimDBClient,
 
-    #[cfg(not(feature = "verisimdb"))]
+    #[cfg(not(feature = "verisim"))]
     _phantom: std::marker::PhantomData<()>,
 }
 
 impl QueryExecutor {
     /// Create a new query executor.
-    #[cfg(feature = "verisimdb")]
-    pub fn new(verisimdb_url: &str) -> Self {
+    #[cfg(feature = "verisim")]
+    pub fn new(verisim_url: &str) -> Self {
         QueryExecutor {
-            client: VeriSimDBClient::new(verisimdb_url),
+            client: VeriSimDBClient::new(verisim_url),
         }
     }
 
     /// Create a new query executor (no VeriSimDB — stub mode).
-    #[cfg(not(feature = "verisimdb"))]
+    #[cfg(not(feature = "verisim"))]
     pub fn new(_verisimdb_url: &str) -> Self {
         QueryExecutor {
             _phantom: std::marker::PhantomData,
         }
     }
 
-    /// Validate a query against TypeLL's VQL-UT 10-level type checker.
+    /// Validate a query against TypeLL's VCL-UT 10-level type checker.
     ///
     /// Calls the TypeLL server at localhost:7800 to verify that the query
     /// meets its declared safety level. Returns the verified level and any
@@ -383,7 +383,7 @@ impl QueryExecutor {
             .context("Failed to create HTTP client for TypeLL")?;
 
         match client
-            .post(format!("{}/api/v1/vql-ut/check", typell_url))
+            .post(format!("{}/api/v1/vcl-ut/check", typell_url))
             .json(&check_body)
             .send()
             .await
@@ -409,11 +409,11 @@ impl QueryExecutor {
                                     .join("; ")
                             })
                             .unwrap_or_default();
-                        anyhow::bail!("TypeLL VQL-UT validation failed: {}", errors);
+                        anyhow::bail!("TypeLL VCL-UT validation failed: {}", errors);
                     }
 
                     info!(
-                        "TypeLL verified VQL-UT level {}/10 for {:?}",
+                        "TypeLL verified VCL-UT level {}/10 for {:?}",
                         max_level, query.operation,
                     );
 
@@ -459,7 +459,7 @@ impl QueryExecutor {
     /// execution. Falls back to local validation if TypeLL is unreachable.
     pub async fn execute(&self, query: &ProofQuery) -> Result<QueryResult> {
         info!(
-            "Executing VQL-UT query: {:?} at level {:?}",
+            "Executing VCL-UT query: {:?} at level {:?}",
             query.operation, query.level,
         );
 
@@ -493,7 +493,7 @@ impl QueryExecutor {
     async fn execute_find_proof(&self, query: &ProofQuery) -> Result<QueryResult> {
         let _theorem = query.theorem_name.as_deref().unwrap_or("");
 
-        #[cfg(feature = "verisimdb")]
+        #[cfg(feature = "verisim")]
         if let Some(prover) = query.prover {
             // Generate the octad key and look it up directly
             if let Some(ref goal_display) = query.goal_display {
@@ -529,7 +529,7 @@ impl QueryExecutor {
         let limit = query.limit.unwrap_or(10);
         let goal_display = query.goal_display.as_deref().unwrap_or("");
 
-        #[cfg(feature = "verisimdb")]
+        #[cfg(feature = "verisim")]
         {
             // Request a goal embedding from the Julia inference service
             let embedding = self
@@ -582,7 +582,7 @@ impl QueryExecutor {
         let theorem = query.theorem_name.as_deref().unwrap_or("");
         let limit = query.limit.unwrap_or(100);
 
-        #[cfg(feature = "verisimdb")]
+        #[cfg(feature = "verisim")]
         {
             let url = format!(
                 "{}/api/v1/search/text?q={}&limit={}",
@@ -624,7 +624,7 @@ impl QueryExecutor {
     /// Get the provenance trace for a proof.
     /// Calls VeriSimDB GET /api/v1/octads/{key} and extracts provenance modality.
     async fn execute_provenance(&self, query: &ProofQuery) -> Result<QueryResult> {
-        #[cfg(feature = "verisimdb")]
+        #[cfg(feature = "verisim")]
         if let Some(ref theorem) = query.theorem_name {
             if let Some(ref goal_display) = query.goal_display {
                 if let Some(prover) = query.prover {
@@ -668,7 +668,7 @@ impl QueryExecutor {
     async fn execute_dependency(&self, query: &ProofQuery) -> Result<QueryResult> {
         let limit = query.limit.unwrap_or(50);
 
-        #[cfg(feature = "verisimdb")]
+        #[cfg(feature = "verisim")]
         if let Some(ref theorem) = query.theorem_name {
             if let Some(ref goal_display) = query.goal_display {
                 if let Some(prover) = query.prover {
@@ -736,7 +736,7 @@ impl QueryExecutor {
 
     /// Fetch a goal embedding from the Julia inference service (port 8090).
     /// Returns a 512-dim f32 vector, or empty vec on failure.
-    #[cfg(feature = "verisimdb")]
+    #[cfg(feature = "verisim")]
     async fn fetch_goal_embedding(&self, goal_display: &str) -> Result<Vec<f32>> {
         let julia_url = std::env::var("ECHIDNA_JULIA_URL")
             .unwrap_or_else(|_| "http://localhost:8090".to_string());
@@ -774,7 +774,7 @@ impl QueryExecutor {
 }
 
 /// Convert a VeriSimDB search result JSON value to a QueryResultEntry.
-#[cfg(feature = "verisimdb")]
+#[cfg(feature = "verisim")]
 fn search_result_to_entry(value: &serde_json::Value) -> Option<QueryResultEntry> {
     Some(QueryResultEntry {
         key: value.get("key")?.as_str()?.to_string(),
@@ -852,7 +852,7 @@ mod urlencoding {
 }
 
 /// Convert an OctadPayload to a QueryResultEntry.
-#[cfg(feature = "verisimdb")]
+#[cfg(feature = "verisim")]
 fn octad_to_entry(octad: &OctadPayload) -> QueryResultEntry {
     QueryResultEntry {
         key: octad.key.clone(),
