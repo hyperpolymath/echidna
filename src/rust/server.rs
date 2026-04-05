@@ -238,6 +238,19 @@ async fn prove_handler(Json(req): Json<ProveRequest>) -> Result<Json<ProveRespon
         .await
         .map_err(|e| AppError::ParseError(e.to_string()))?;
 
+    // Fail-fast on empty parse results (fixes false-positive: unrecognised
+    // content produced an empty ProofState that re-exported to an empty file
+    // which the backend prover then happily accepted). Require at least one
+    // goal, theorem, definition, or axiom before we claim "parse succeeded".
+    if is_empty_state(&state) && !req.content.trim().is_empty() {
+        return Ok(Json(ProveResponse {
+            success: false,
+            goals: 0,
+            message: "Parse produced no goals, theorems, definitions, or axioms — \
+                     content not recognised by the selected prover backend".to_string(),
+        }));
+    }
+
     // Verify proof
     let valid = prover
         .verify_proof(&state)
@@ -270,6 +283,15 @@ async fn verify_handler(Json(req): Json<VerifyRequest>) -> Result<Json<VerifyRes
         .await
         .map_err(|e| AppError::ParseError(e.to_string()))?;
 
+    // Fail-fast on empty parse results (see prove_handler comment).
+    if is_empty_state(&state) && !req.content.trim().is_empty() {
+        return Ok(Json(VerifyResponse {
+            valid: false,
+            goals_remaining: 0,
+            tactics_used: 0,
+        }));
+    }
+
     // Verify
     let valid = prover
         .verify_proof(&state)
@@ -281,6 +303,19 @@ async fn verify_handler(Json(req): Json<VerifyRequest>) -> Result<Json<VerifyRes
         goals_remaining: state.goals.len(),
         tactics_used: state.proof_script.len(),
     }))
+}
+
+/// Return true if the parsed ProofState contains no meaningful structure.
+/// Used to detect the parse+export round-trip bug: a prover backend's
+/// `parse_string` returns an empty state on unrecognised input, then
+/// `verify_proof` regenerates an empty file which the real backend binary
+/// then accepts vacuously (false positive).
+fn is_empty_state(state: &echidna::core::ProofState) -> bool {
+    state.goals.is_empty()
+        && state.context.theorems.is_empty()
+        && state.context.axioms.is_empty()
+        && state.context.definitions.is_empty()
+        && state.context.variables.is_empty()
 }
 
 /// Get tactic suggestions

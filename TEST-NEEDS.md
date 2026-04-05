@@ -242,6 +242,16 @@ Idris2 has the mirror-image bug (false-negative): `parse_string` parses
 - Add regression tests: `verify` on garbage, empty, cross-prover content
   must all return `valid: false`.
 
+**Partial fix (2026-04-05):** server-level guard in `prove_handler` and
+`verify_handler` now returns `valid: false` when `parse_string` produces
+an empty `ProofState` (no goals, theorems, definitions, axioms, or variables)
+on non-empty input. Verified live:
+  - garbage to Coq/Lean: `valid: false` (was `true`)
+  - cross-prover (SMT to Coq): `valid: false`
+  - real Coq/Z3 proofs: still work correctly
+The deeper fix — making each prover backend preserve original content
+instead of round-tripping through ProofState — remains outstanding.
+
 ## Priority
 - **CRG C COMPLETE** as of 2026-04-04
 - Next priority: Fix 5 shell issues found by validation
