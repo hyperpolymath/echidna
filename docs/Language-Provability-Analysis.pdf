@@ -1,0 +1,176 @@
+%PDF-1.7
+%¨¨¨¨
+1 0 obj
+<< /Type /Catalog /Pages 2 0 R >>
+endobj
+2 0 obj
+<< /Type /Pages /Kids [3 0 R] /Count 1 >>
+endobj
+3 0 obj
+<< /Type /Page /Parent 2 0 R /Resources << /Font << /F1 4 0 R >> >> /MediaBox [0 0 612 792] /Contents 5 0 R >>
+endobj
+4 0 obj
+<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>
+endobj
+5 0 obj
+<< /Length 6 0 R >>
+stream
+BT
+/F1 24 Tf
+50 700 Td
+(Language Provability Analysis - Echidna Framework) Tj
+ET
+BT
+/F1 18 Tf
+50 650 Td
+(Comprehensive Guide to Formal Verification Across Language Ecosystems) Tj
+ET
+BT
+/F1 14 Tf
+50 600 Td
+(Prepared for: Jonathan D.A. Jewell (hyperpolymath)) Tj
+ET
+BT
+/F1 14 Tf
+50 580 Td
+(Date: 2026-04-04) Tj
+ET
+BT
+/F1 16 Tf
+50 540 Td
+(Table of Contents) Tj
+ET
+BT
+/F1 12 Tf
+70 520 Td
+(1. Language Provability Spectrum) Tj
+ET
+BT
+/F1 12 Tf
+70 500 Td
+(2. Your Specific Questions Answered) Tj
+ET
+BT
+/F1 12 Tf
+70 480 Td
+(3. Recommended Strategy) Tj
+ET
+BT
+/F1 12 Tf
+70 460 Td
+(4. Estimated Reuse Potential) Tj
+ET
+BT
+/F1 12 Tf
+70 440 Td
+(5. Optimal Architecture) Tj
+ET
+BT
+/F1 12 Tf
+70 420 Td
+(6. Conclusion and Recommendations) Tj
+ET
+BT
+/F1 16 Tf
+50 380 Td
+(1. Language Provability Spectrum) Tj
+ET
+BT
+/F1 12 Tf
+50 360 Td
+(Tier 1: Fully Provable Languages) Tj
+ET
+BT
+/F1 10 Tf
+70 340 Td
+(• Idris2, Agda, Coq, Lean) Tj
+ET
+BT
+/F1 10 Tf
+70 320 Td
+(• Full dependent types, compile-time proof checking) Tj
+ET
+BT
+/F1 10 Tf
+70 300 Td
+(• Best for: Core algorithms, security-critical logic) Tj
+ET
+BT
+/F1 12 Tf
+50 260 Td
+(Tier 2: Partially Provable Languages) Tj
+ET
+BT
+/F1 10 Tf
+70 240 Td
+(• Zig, V, Rust, Swift) Tj
+ET
+BT
+/F1 10 Tf
+70 220 Td
+(• Strong type systems, memory safety) Tj
+ET
+BT
+/F1 10 Tf
+70 200 Td
+(• Best for: Systems programming, performance-critical code) Tj
+ET
+BT
+/F1 12 Tf
+50 160 Td
+(Tier 3: Runtime Verification Languages) Tj
+ET
+BT
+/F1 10 Tf
+70 140 Td
+(• JavaScript/TypeScript, Python, Ruby) Tj
+ET
+BT
+/F1 10 Tf
+70 120 Td
+(• Runtime type checking, contract programming) Tj
+ET
+BT
+/F1 10 Tf
+70 100 Td
+(• Best for: Prototyping, scripting) Tj
+ET
+BT
+/F1 16 Tf
+50 60 Td
+(2. Your Specific Questions Answered) Tj
+ET
+BT
+/F1 12 Tf
+50 40 Td
+(Is Zig slop?) Tj
+ET
+BT
+/F1 10 Tf
+70 20 Td
+(No! Zig is excellent for memory safety and explicit control) Tj
+ET
+BT
+/F1 10 Tf
+70 0 Td
+(But lacks dependent types - different strengths than Idris2) Tj
+ET
+endstream
+endobj
+6 0 obj
+1200
+endobj
+xref
+0 7
+0000000000 65535 f 
+0000000010 00000 n 
+0000000057 00000 n 
+0000000118 00000 n 
+0000000201 00000 n 
+0000000285 00000 n 
+0000015237 00000 n 
+trailer
+<< /Size 7 /Root 1 0 R >>
+startxref
+15345
+%%EOF
