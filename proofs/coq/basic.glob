@@ -1,0 +1,188 @@
+DIGEST 6ce7438fa2096eadc5f6feaa2a894e8a
+Fbasic
+prf 580:587 <> identity
+binder 598:598 <> A:1
+R609:612 Corelib.Init.Logic <> ::type_scope:x_'->'_x not
+R608:608 basic <> A:1 var
+R613:613 basic <> A:1 var
+prf 787:795 <> identity'
+binder 806:806 <> A:2
+R817:820 Corelib.Init.Logic <> ::type_scope:x_'->'_x not
+R816:816 basic <> A:2 var
+R821:821 basic <> A:2 var
+prf 1143:1154 <> modus_ponens
+binder 1165:1165 <> A:3
+binder 1167:1167 <> B:4
+R1177:1177 Corelib.Init.Logic <> ::type_scope:x_'->'_x not
+R1184:1188 Corelib.Init.Logic <> ::type_scope:x_'->'_x not
+R1179:1182 Corelib.Init.Logic <> ::type_scope:x_'->'_x not
+R1178:1178 basic <> A:3 var
+R1183:1183 basic <> B:4 var
+R1190:1193 Corelib.Init.Logic <> ::type_scope:x_'->'_x not
+R1189:1189 basic <> A:3 var
+R1194:1194 basic <> B:4 var
+prf 1518:1530 <> modus_ponens'
+binder 1541:1541 <> A:5
+binder 1543:1543 <> B:6
+R1553:1553 Corelib.Init.Logic <> ::type_scope:x_'->'_x not
+R1560:1564 Corelib.Init.Logic <> ::type_scope:x_'->'_x not
+R1555:1558 Corelib.Init.Logic <> ::type_scope:x_'->'_x not
+R1554:1554 basic <> A:5 var
+R1559:1559 basic <> B:6 var
+R1566:1569 Corelib.Init.Logic <> ::type_scope:x_'->'_x not
+R1565:1565 basic <> A:5 var
+R1570:1570 basic <> B:6 var
+prf 1716:1729 <> modus_ponens''
+binder 1740:1740 <> A:7
+binder 1742:1742 <> B:8
+R1752:1752 Corelib.Init.Logic <> ::type_scope:x_'->'_x not
+R1759:1763 Corelib.Init.Logic <> ::type_scope:x_'->'_x not
+R1754:1757 Corelib.Init.Logic <> ::type_scope:x_'->'_x not
+R1753:1753 basic <> A:7 var
+R1758:1758 basic <> B:8 var
+R1765:1768 Corelib.Init.Logic <> ::type_scope:x_'->'_x not
+R1764:1764 basic <> A:7 var
+R1769:1769 basic <> B:8 var
+prf 2079:2090 <> transitivity
+binder 2101:2101 <> A:9
+binder 2103:2103 <> B:10
+binder 2105:2105 <> C:11
+R2117:2117 Corelib.Init.Logic <> ::type_scope:x_'->'_x not
+R2124:2128 Corelib.Init.Logic <> ::type_scope:x_'->'_x not
+R2119:2122 Corelib.Init.Logic <> ::type_scope:x_'->'_x not
+R2118:2118 basic <> A:9 var
+R2123:2123 basic <> B:10 var
+R2129:2129 Corelib.Init.Logic <> ::type_scope:x_'->'_x not
+R2136:2141 Corelib.Init.Logic <> ::type_scope:x_'->'_x not
+R2148:2148 Corelib.Init.Logic <> ::type_scope:x_'->'_x not
+R2131:2134 Corelib.Init.Logic <> ::type_scope:x_'->'_x not
+R2130:2130 basic <> B:10 var
+R2135:2135 basic <> C:11 var
+R2143:2146 Corelib.Init.Logic <> ::type_scope:x_'->'_x not
+R2142:2142 basic <> A:9 var
+R2147:2147 basic <> C:11 var
+prf 2472:2484 <> transitivity'
+binder 2495:2495 <> A:12
+binder 2497:2497 <> B:13
+binder 2499:2499 <> C:14
+R2511:2511 Corelib.Init.Logic <> ::type_scope:x_'->'_x not
+R2518:2522 Corelib.Init.Logic <> ::type_scope:x_'->'_x not
+R2513:2516 Corelib.Init.Logic <> ::type_scope:x_'->'_x not
+R2512:2512 basic <> A:12 var
+R2517:2517 basic <> B:13 var
+R2523:2523 Corelib.Init.Logic <> ::type_scope:x_'->'_x not
+R2530:2535 Corelib.Init.Logic <> ::type_scope:x_'->'_x not
+R2542:2542 Corelib.Init.Logic <> ::type_scope:x_'->'_x not
+R2525:2528 Corelib.Init.Logic <> ::type_scope:x_'->'_x not
+R2524:2524 basic <> B:13 var
+R2529:2529 basic <> C:14 var
+R2537:2540 Corelib.Init.Logic <> ::type_scope:x_'->'_x not
+R2536:2536 basic <> A:12 var
+R2541:2541 basic <> C:14 var
+prf 2771:2779 <> and_intro
+binder 2790:2790 <> A:15
+binder 2792:2792 <> B:16
+R2803:2806 Corelib.Init.Logic <> ::type_scope:x_'->'_x not
+R2802:2802 basic <> A:15 var
+R2808:2811 Corelib.Init.Logic <> ::type_scope:x_'->'_x not
+R2807:2807 basic <> B:16 var
+R2813:2816 Corelib.Init.Logic <> ::type_scope:x_'/\'_x not
+R2812:2812 basic <> A:15 var
+R2817:2817 basic <> B:16 var
+prf 3084:3096 <> and_elim_left
+binder 3107:3107 <> A:17
+binder 3109:3109 <> B:18
+R3125:3128 Corelib.Init.Logic <> ::type_scope:x_'->'_x not
+R3120:3123 Corelib.Init.Logic <> ::type_scope:x_'/\'_x not
+R3119:3119 basic <> A:17 var
+R3124:3124 basic <> B:18 var
+R3129:3129 basic <> A:17 var
+prf 3332:3345 <> and_elim_right
+binder 3356:3356 <> A:19
+binder 3358:3358 <> B:20
+R3374:3377 Corelib.Init.Logic <> ::type_scope:x_'->'_x not
+R3369:3372 Corelib.Init.Logic <> ::type_scope:x_'/\'_x not
+R3368:3368 basic <> A:19 var
+R3373:3373 basic <> B:20 var
+R3378:3378 basic <> B:20 var
+prf 3541:3555 <> and_commutative
+binder 3566:3566 <> A:21
+binder 3568:3568 <> B:22
+R3584:3587 Corelib.Init.Logic <> ::type_scope:x_'->'_x not
+R3579:3582 Corelib.Init.Logic <> ::type_scope:x_'/\'_x not
+R3578:3578 basic <> A:21 var
+R3583:3583 basic <> B:22 var
+R3589:3592 Corelib.Init.Logic <> ::type_scope:x_'/\'_x not
+R3588:3588 basic <> B:22 var
+R3593:3593 basic <> A:21 var
+prf 3790:3802 <> or_intro_left
+binder 3813:3813 <> A:23
+binder 3815:3815 <> B:24
+R3826:3829 Corelib.Init.Logic <> ::type_scope:x_'->'_x not
+R3825:3825 basic <> A:23 var
+R3831:3834 Corelib.Init.Logic <> ::type_scope:x_'\/'_x not
+R3830:3830 basic <> A:23 var
+R3835:3835 basic <> B:24 var
+prf 4037:4050 <> or_intro_right
+binder 4061:4061 <> A:25
+binder 4063:4063 <> B:26
+R4074:4077 Corelib.Init.Logic <> ::type_scope:x_'->'_x not
+R4073:4073 basic <> B:26 var
+R4079:4082 Corelib.Init.Logic <> ::type_scope:x_'\/'_x not
+R4078:4078 basic <> A:25 var
+R4083:4083 basic <> B:26 var
+prf 4304:4310 <> or_elim
+binder 4321:4321 <> A:27
+binder 4323:4323 <> B:28
+binder 4325:4325 <> C:29
+R4343:4346 Corelib.Init.Logic <> ::type_scope:x_'->'_x not
+R4338:4341 Corelib.Init.Logic <> ::type_scope:x_'\/'_x not
+R4337:4337 basic <> A:27 var
+R4342:4342 basic <> B:28 var
+R4347:4347 Corelib.Init.Logic <> ::type_scope:x_'->'_x not
+R4354:4358 Corelib.Init.Logic <> ::type_scope:x_'->'_x not
+R4349:4352 Corelib.Init.Logic <> ::type_scope:x_'->'_x not
+R4348:4348 basic <> A:27 var
+R4353:4353 basic <> C:29 var
+R4359:4359 Corelib.Init.Logic <> ::type_scope:x_'->'_x not
+R4366:4370 Corelib.Init.Logic <> ::type_scope:x_'->'_x not
+R4361:4364 Corelib.Init.Logic <> ::type_scope:x_'->'_x not
+R4360:4360 basic <> B:28 var
+R4365:4365 basic <> C:29 var
+R4371:4371 basic <> C:29 var
+prf 4711:4715 <> curry
+binder 4726:4726 <> A:30
+binder 4728:4728 <> B:31
+binder 4730:4730 <> C:32
+R4742:4742 Corelib.Init.Logic <> ::type_scope:x_'->'_x not
+R4756:4761 Corelib.Init.Logic <> ::type_scope:x_'->'_x not
+R4773:4773 Corelib.Init.Logic <> ::type_scope:x_'->'_x not
+R4743:4743 Corelib.Init.Logic <> ::type_scope:x_'->'_x not
+R4750:4754 Corelib.Init.Logic <> ::type_scope:x_'->'_x not
+R4745:4748 Corelib.Init.Logic <> ::type_scope:x_'/\'_x not
+R4744:4744 basic <> A:30 var
+R4749:4749 basic <> B:31 var
+R4755:4755 basic <> C:32 var
+R4763:4766 Corelib.Init.Logic <> ::type_scope:x_'->'_x not
+R4762:4762 basic <> A:30 var
+R4768:4771 Corelib.Init.Logic <> ::type_scope:x_'->'_x not
+R4767:4767 basic <> B:31 var
+R4772:4772 basic <> C:32 var
+prf 4969:4975 <> uncurry
+binder 4986:4986 <> A:33
+binder 4988:4988 <> B:34
+binder 4990:4990 <> C:35
+R5002:5002 Corelib.Init.Logic <> ::type_scope:x_'->'_x not
+R5014:5019 Corelib.Init.Logic <> ::type_scope:x_'->'_x not
+R5033:5033 Corelib.Init.Logic <> ::type_scope:x_'->'_x not
+R5004:5007 Corelib.Init.Logic <> ::type_scope:x_'->'_x not
+R5003:5003 basic <> A:33 var
+R5009:5012 Corelib.Init.Logic <> ::type_scope:x_'->'_x not
+R5008:5008 basic <> B:34 var
+R5013:5013 basic <> C:35 var
+R5020:5020 Corelib.Init.Logic <> ::type_scope:x_'->'_x not
+R5027:5031 Corelib.Init.Logic <> ::type_scope:x_'->'_x not
+R5022:5025 Corelib.Init.Logic <> ::type_scope:x_'/\'_x not
+R5021:5021 basic <> A:33 var
+R5026:5026 basic <> B:34 var
+R5032:5032 basic <> C:35 var

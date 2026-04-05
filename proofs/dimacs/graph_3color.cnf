@@ -1,0 +1,30 @@
+c SPDX-License-Identifier: PMPL-1.0-or-later
+c 3-colouring of a triangle (K_3): vertices v1,v2,v3, colours r,g,b
+c Variables 1..9 indexed as (v-1)*3+c for v∈{1,2,3}, c∈{1=r,2=g,3=b}
+c Each vertex gets at least one colour:
+c   v1: 1∨2∨3,  v2: 4∨5∨6,  v3: 7∨8∨9
+c Each vertex has at most one colour (3 × 3 pairwise):
+c Adjacent vertices don't share colour (3 edges × 3 colours):
+c Expected: SATISFIABLE (any proper 3-colouring)
+p cnf 9 21
+1 2 3 0
+4 5 6 0
+7 8 9 0
+-1 -2 0
+-1 -3 0
+-2 -3 0
+-4 -5 0
+-4 -6 0
+-5 -6 0
+-7 -8 0
+-7 -9 0
+-8 -9 0
+-1 -4 0
+-2 -5 0
+-3 -6 0
+-1 -7 0
+-2 -8 0
+-3 -9 0
+-4 -7 0
+-5 -8 0
+-6 -9 0

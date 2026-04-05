@@ -1,0 +1,5 @@
+(set-logic ALL)
+(declare-datatypes ((List 0)) (((nil) (cons (hd Int) (tl List)))))
+(declare-const xs List)
+(assert (not (=> ((_ is cons) xs) (=> (= (tl xs) nil) (= xs (cons (hd xs) nil))))))
+(check-sat)

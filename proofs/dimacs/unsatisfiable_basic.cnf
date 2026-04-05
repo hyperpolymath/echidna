@@ -1,0 +1,6 @@
+c SPDX-License-Identifier: PMPL-1.0-or-later
+c Contradiction: x1 AND NOT x1
+c Expected: UNSATISFIABLE
+p cnf 1 2
+1 0
+-1 0
