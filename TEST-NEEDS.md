@@ -193,6 +193,55 @@ server running on port 8081.)
 - [ ] Echidnabot self-scan
 - [ ] Prover correctness validation suite
 
+## Known Issues
+
+### /api/verify false-positive on unparseable input (2026-04-05)
+
+**Bug:** `POST /api/verify` returns `valid: true` for content that a prover's
+`parse_string` cannot interpret, even when that content is syntactically
+invalid for the target prover.
+
+Reproduction:
+```bash
+curl -X POST http://localhost:8090/api/verify \
+  -H 'Content-Type: application/json' \
+  -d '{"prover":"Coq","content":"absolute garbage @#$ not coq"}'
+# → {"valid":true,"goals_remaining":0,"tactics_used":0}
+```
+
+Also affected: empty content, cross-prover content (Lean syntax to Coq),
+anything the per-prover `parse_string` cannot extract structure from.
+
+**Root cause:** the verification pipeline is:
+
+1. `parse_string(content)` → `ProofState` (partial parse; empty state on
+   unrecognised input, no failure propagated).
+2. `verify_proof(&state)` calls `state.export()` to regenerate prover source
+   from the `ProofState`, writes it to a temp file, then runs the real
+   backend binary (`coqc`, `lean`, `idris2 --check`).
+3. Empty `ProofState` → empty exported file → prover returns exit 0 →
+   `valid: true`.
+
+**Impact:** any downstream system treating `valid: true` as ground truth
+will accumulate false positives. Observed externally: the hyperpolymath
+`proof_attempts` learning loop was polluted with 29 false-success rows
+before the bug was spotted; fix was to bypass `/api/verify` and shell out
+to prover binaries directly in the batch driver.
+
+Idris2 has the mirror-image bug (false-negative): `parse_string` parses
+`main = putStrLn "ok"` but `export()` regenerates the body as `?main_todo`
+(a hole), so `idris2 --check` always fails. See the generated file at
+`/tmp/echidna_idris2/Verify.idr` after any Idris2 API call.
+
+**Fix direction:**
+- `parse_string` should return `Err` on unrecognised input rather than
+  silently producing an empty state.
+- `verify_proof` for each prover should either preserve original content
+  (write `content` directly, not `export(state)`) or treat an empty
+  `ProofState` as a parse failure.
+- Add regression tests: `verify` on garbage, empty, cross-prover content
+  must all return `valid: false`.
+
 ## Priority
 - **CRG C COMPLETE** as of 2026-04-04
 - Next priority: Fix 5 shell issues found by validation
