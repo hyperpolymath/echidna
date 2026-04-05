@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: PMPL-1.0-or-later
+// SPDX-FileCopyrightText: 2025 Jonathan D.A. Jewell
 //! GitHub platform adapter using Octocrab
 
 use async_trait::async_trait;

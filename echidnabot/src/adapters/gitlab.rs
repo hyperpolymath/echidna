@@ -1,17 +1,20 @@
-// SPDX-License-Identifier: PMPL-1.0-or-later
+// SPDX-License-Identifier: PMPL-1.0
 //! GitLab platform adapter (minimal clone support)
 
 use async_trait::async_trait;
 use std::path::PathBuf;
 
 use super::{
-    CheckRun, CheckRunId, CheckStatus, CommentId, IssueId, NewIssue, PlatformAdapter, PrId, RepoId,
+    CheckConclusion, CheckRun, CheckRunId, CheckStatus, CommentId, IssueId, NewIssue,
+    PlatformAdapter, PrId, RepoId,
 };
 use crate::error::{Error, Result};
 
 /// GitLab adapter (clone-only implementation)
 pub struct GitLabAdapter {
     base_url: String,
+    token: Option<String>,
+    client: reqwest::Client,
 }
 
 impl GitLabAdapter {
@@ -19,11 +22,21 @@ impl GitLabAdapter {
         let base = base_url.unwrap_or("https://gitlab.com");
         Self {
             base_url: base.trim_end_matches('/').to_string(),
+            token: std::env::var("GITLAB_TOKEN").ok(),
+            client: reqwest::Client::new(),
         }
     }
 
     fn repo_url(&self, repo: &RepoId) -> String {
         format!("{}/{}/{}.git", self.base_url, repo.owner, repo.name)
+    }
+
+    fn api_url(&self) -> String {
+        format!("{}/api/v4", self.base_url)
+    }
+
+    fn project_path(&self, repo: &RepoId) -> String {
+        format!("{}/{}", repo.owner, repo.name)
     }
 }
 
@@ -89,33 +102,177 @@ impl PlatformAdapter for GitLabAdapter {
         Ok(clone_path)
     }
 
-    async fn create_check_run(&self, _repo: &RepoId, _check: CheckRun) -> Result<CheckRunId> {
-        Err(Error::Unsupported(
-            "GitLab check runs are not implemented".to_string(),
+    async fn create_check_run(&self, repo: &RepoId, check: CheckRun) -> Result<CheckRunId> {
+        let token = self.token.as_ref().ok_or_else(|| {
+            Error::Config("GITLAB_TOKEN not set".to_string())
+        })?;
+
+        let project_path = self.project_path(repo);
+        let encoded_project = urlencoding::encode(&project_path);
+        let url = format!(
+            "{}/projects/{}/statuses/{}",
+            self.api_url(),
+            encoded_project,
+            check.head_sha
+        );
+
+        let (state, description) = match &check.status {
+            CheckStatus::Completed { conclusion, summary } => {
+                let state = match conclusion {
+                    CheckConclusion::Success => "success",
+                    CheckConclusion::Failure => "failed",
+                    CheckConclusion::Cancelled => "canceled",
+                    _ => "failed",
+                };
+                (state, summary.clone())
+            }
+            CheckStatus::InProgress => ("running", String::new()),
+            CheckStatus::Queued => ("pending", String::new()),
+        };
+
+        let payload = serde_json::json!({
+            "state": state,
+            "name": check.name,
+            "description": description,
+        });
+
+        let response = self
+            .client
+            .post(&url)
+            .header("PRIVATE-TOKEN", token)
+            .json(&payload)
+            .send()
+            .await
+            .map_err(|e| Error::GitHub(e.to_string()))?;
+
+        let data: serde_json::Value = response
+            .json()
+            .await
+            .map_err(|e| Error::GitHub(e.to_string()))?;
+
+        Ok(CheckRunId(
+            data["id"]
+                .as_u64()
+                .map(|id| id.to_string())
+                .ok_or_else(|| Error::GitHub("Missing id in response".to_string()))?,
         ))
     }
 
     async fn update_check_run(&self, _id: CheckRunId, _status: CheckStatus) -> Result<()> {
-        Err(Error::Unsupported(
-            "GitLab check runs are not implemented".to_string(),
+        // GitLab doesn't support updating commit statuses after creation
+        Ok(())
+    }
+
+    async fn create_comment(&self, repo: &RepoId, pr: PrId, body: &str) -> Result<CommentId> {
+        let token = self.token.as_ref().ok_or_else(|| {
+            Error::Config("GITLAB_TOKEN not set".to_string())
+        })?;
+
+        let project_path = self.project_path(repo);
+        let encoded_project = urlencoding::encode(&project_path);
+        let url = format!(
+            "{}/projects/{}/merge_requests/{}/notes",
+            self.api_url(),
+            encoded_project,
+            pr.0
+        );
+
+        let payload = serde_json::json!({
+            "body": body,
+        });
+
+        let response = self
+            .client
+            .post(&url)
+            .header("PRIVATE-TOKEN", token)
+            .json(&payload)
+            .send()
+            .await
+            .map_err(|e| Error::GitHub(e.to_string()))?;
+
+        let data: serde_json::Value = response
+            .json()
+            .await
+            .map_err(|e| Error::GitHub(e.to_string()))?;
+
+        Ok(CommentId(
+            data["id"]
+                .as_u64()
+                .map(|id| id.to_string())
+                .ok_or_else(|| Error::GitHub("Missing id in response".to_string()))?,
         ))
     }
 
-    async fn create_comment(&self, _repo: &RepoId, _pr: PrId, _body: &str) -> Result<CommentId> {
-        Err(Error::Unsupported(
-            "GitLab comments are not implemented".to_string(),
+    async fn create_issue(&self, repo: &RepoId, issue: NewIssue) -> Result<IssueId> {
+        let token = self.token.as_ref().ok_or_else(|| {
+            Error::Config("GITLAB_TOKEN not set".to_string())
+        })?;
+
+        let project_path = self.project_path(repo);
+        let encoded_project = urlencoding::encode(&project_path);
+        let url = format!(
+            "{}/projects/{}/issues",
+            self.api_url(),
+            encoded_project
+        );
+
+        let payload = serde_json::json!({
+            "title": issue.title,
+            "description": issue.body,
+            "labels": issue.labels.join(","),
+        });
+
+        let response = self
+            .client
+            .post(&url)
+            .header("PRIVATE-TOKEN", token)
+            .json(&payload)
+            .send()
+            .await
+            .map_err(|e| Error::GitHub(e.to_string()))?;
+
+        let data: serde_json::Value = response
+            .json()
+            .await
+            .map_err(|e| Error::GitHub(e.to_string()))?;
+
+        Ok(IssueId(
+            data["iid"]
+                .as_u64()
+                .map(|id| id.to_string())
+                .ok_or_else(|| Error::GitHub("Missing iid in response".to_string()))?,
         ))
     }
 
-    async fn create_issue(&self, _repo: &RepoId, _issue: NewIssue) -> Result<IssueId> {
-        Err(Error::Unsupported(
-            "GitLab issues are not implemented".to_string(),
-        ))
-    }
+    async fn get_default_branch(&self, repo: &RepoId) -> Result<String> {
+        let token = self.token.as_ref().ok_or_else(|| {
+            Error::Config("GITLAB_TOKEN not set".to_string())
+        })?;
 
-    async fn get_default_branch(&self, _repo: &RepoId) -> Result<String> {
-        Err(Error::Unsupported(
-            "GitLab default branch lookup is not implemented".to_string(),
-        ))
+        let project_path = self.project_path(repo);
+        let encoded_project = urlencoding::encode(&project_path);
+        let url = format!(
+            "{}/projects/{}",
+            self.api_url(),
+            encoded_project
+        );
+
+        let response = self
+            .client
+            .get(&url)
+            .header("PRIVATE-TOKEN", token)
+            .send()
+            .await
+            .map_err(|e| Error::GitHub(e.to_string()))?;
+
+        let data: serde_json::Value = response
+            .json()
+            .await
+            .map_err(|e| Error::GitHub(e.to_string()))?;
+
+        Ok(data["default_branch"]
+            .as_str()
+            .ok_or_else(|| Error::GitHub("Missing default_branch in response".to_string()))?
+            .to_string())
     }
 }

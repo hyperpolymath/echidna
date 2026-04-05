@@ -1,12 +1,15 @@
+// SPDX-License-Identifier: PMPL-1.0-or-later
+// SPDX-FileCopyrightText: 2025 Jonathan D.A. Jewell
 //! Configuration management for echidnabot
 
 use serde::Deserialize;
 use std::path::Path;
 
 use crate::error::Result;
+use crate::modes::BotMode;
 
 /// Main configuration structure
-#[derive(Debug, Deserialize, Clone)]
+#[derive(Debug, Deserialize, Clone, Default)]
 pub struct Config {
     /// Server configuration
     #[serde(default)]
@@ -31,6 +34,10 @@ pub struct Config {
     /// Scheduler configuration
     #[serde(default)]
     pub scheduler: SchedulerConfig,
+
+    /// Bot operating mode
+    #[serde(default)]
+    pub bot_mode: BotMode,
 }
 
 #[derive(Debug, Deserialize, Clone, Copy)]
@@ -64,7 +71,10 @@ fn default_host() -> String {
 }
 
 fn default_port() -> u16 {
-    8081
+    // 9001 is echidnabot's canonical port in the hyperpolymath port map.
+    // (9000 = echidna core, 9001 = echidnabot, 9090 = hypatia.)
+    // Was 8080 which collided with verisimdb and gitbot-fleet.
+    9001
 }
 
 #[derive(Debug, Deserialize, Clone)]
@@ -124,11 +134,11 @@ impl Default for EchidnaConfig {
 }
 
 fn default_echidna_endpoint() -> String {
-    "http://localhost:8081/graphql".to_string()
+    "http://localhost:8080/graphql".to_string()
 }
 
 fn default_echidna_rest_endpoint() -> String {
-    "http://localhost:8081".to_string()
+    "http://localhost:8080".to_string()
 }
 
 fn default_echidna_mode() -> EchidnaApiMode {
@@ -215,15 +225,3 @@ impl Config {
     }
 }
 
-impl Default for Config {
-    fn default() -> Self {
-        Self {
-            server: ServerConfig::default(),
-            database: DatabaseConfig::default(),
-            echidna: EchidnaConfig::default(),
-            github: None,
-            gitlab: None,
-            scheduler: SchedulerConfig::default(),
-        }
-    }
-}

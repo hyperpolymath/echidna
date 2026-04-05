@@ -1,4 +1,4 @@
-// SPDX-License-Identifier: PMPL-1.0-or-later
+// SPDX-License-Identifier: PMPL-1.0
 //! Platform adapters for GitHub, GitLab, Bitbucket
 
 use serde::{Deserialize, Serialize};

@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: PMPL-1.0-or-later
+// SPDX-FileCopyrightText: 2025 Jonathan D.A. Jewell
 //! Error types for echidnabot
 
 use thiserror::Error;
@@ -13,6 +15,12 @@ pub enum Error {
 
     #[error("Database error: {0}")]
     Database(#[from] sqlx::Error),
+
+    #[error("SQL error: {0}")]
+    Sqlx(sqlx::Error),
+
+    #[error("Invalid input: {0}")]
+    InvalidInput(String),
 
     #[error("HTTP error: {0}")]
     Http(#[from] reqwest::Error),
@@ -46,9 +54,6 @@ pub enum Error {
 
     #[error("Proof verification timeout")]
     Timeout,
-
-    #[error("Fleet coordination error: {0}")]
-    Fleet(String),
 
     #[error("Internal error: {0}")]
     Internal(String),
