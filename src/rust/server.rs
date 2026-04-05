@@ -25,7 +25,7 @@ use std::sync::Arc;
 use std::time::Duration;
 use tokio::sync::{Mutex, RwLock};
 use tower_http::cors::CorsLayer;
-use tracing::info;
+use tracing::{info, instrument};
 
 /// Application state shared across handlers
 #[derive(Clone)]
@@ -89,6 +89,7 @@ pub async fn start_server(port: u16, host: String, enable_cors: bool) -> Result<
         .route("/api/provers", get(list_provers))
         .route("/api/prove", post(prove_handler))
         .route("/api/verify", post(verify_handler))
+        .route("/api/verify_raw", post(verify_raw_handler))
         .route("/api/suggest", post(suggest_handler))
         .route("/api/search", get(search_handler))
         .route("/api/session/create", post(create_session))
@@ -303,6 +304,183 @@ async fn verify_handler(Json(req): Json<VerifyRequest>) -> Result<Json<VerifyRes
         goals_remaining: state.goals.len(),
         tactics_used: state.proof_script.len(),
     }))
+}
+
+/// `/api/verify_raw` — writes the original `content` to a temp file with
+/// the right extension for the prover, then invokes the backend binary
+/// directly. Bypasses `parse_string`/`export` round-trip entirely — the
+/// content you send is the content the prover sees.
+///
+/// This is the real fix for the parse+export round-trip bug: no
+/// information is lost between the wire and the prover binary.
+/// Currently supports: z3, cvc5, coq, lean, agda, idris2, vampire,
+/// eprover. Other provers fall through to the legacy verify_handler path.
+#[instrument(skip(req))]
+async fn verify_raw_handler(
+    Json(req): Json<VerifyRequest>,
+) -> Result<Json<VerifyRawResponse>, AppError> {
+    use tokio::process::Command;
+
+    info!("Verify_raw request for prover: {:?}", req.prover);
+
+    if req.content.trim().is_empty() {
+        return Ok(Json(VerifyRawResponse {
+            valid: false,
+            exit_code: -1,
+            stdout: String::new(),
+            stderr: String::new(),
+            message: "empty content".to_string(),
+        }));
+    }
+
+    let (ext, program, args, interpret): (
+        &str,
+        &str,
+        Vec<String>,
+        fn(i32, &str, &str) -> (bool, String),
+    ) = match req.prover {
+        echidna::provers::ProverKind::Z3 => (
+            "smt2",
+            "z3",
+            vec!["-smt2".to_string()],
+            |rc, stdout, _stderr| {
+                let produced = stdout.contains("sat")
+                    || stdout.contains("unsat")
+                    || stdout.contains("unknown");
+                (rc == 0 && produced, format!("exit={} smt-output", rc))
+            },
+        ),
+        echidna::provers::ProverKind::CVC5 => (
+            "smt2",
+            "cvc5",
+            vec![],
+            |rc, stdout, _stderr| {
+                let produced = stdout.contains("sat")
+                    || stdout.contains("unsat")
+                    || stdout.contains("unknown");
+                (rc == 0 && produced, format!("exit={} smt-output", rc))
+            },
+        ),
+        echidna::provers::ProverKind::Coq => (
+            "v",
+            "coqc",
+            vec!["-q".to_string()],
+            |rc, _stdout, _stderr| (rc == 0, format!("exit={}", rc)),
+        ),
+        echidna::provers::ProverKind::Lean => (
+            "lean",
+            "lean",
+            vec![],
+            |rc, _stdout, _stderr| (rc == 0, format!("exit={}", rc)),
+        ),
+        echidna::provers::ProverKind::Agda => (
+            "agda",
+            "agda",
+            vec![],
+            |rc, _stdout, _stderr| (rc == 0, format!("exit={}", rc)),
+        ),
+        echidna::provers::ProverKind::Idris2 => (
+            "idr",
+            "idris2",
+            vec!["--check".to_string()],
+            |rc, _stdout, _stderr| (rc == 0, format!("exit={}", rc)),
+        ),
+        echidna::provers::ProverKind::Vampire => (
+            "p",
+            "vampire",
+            vec!["--mode".to_string(), "casc".to_string()],
+            |rc, stdout, _stderr| {
+                let theorem = stdout.contains("SZS status Theorem")
+                    || stdout.contains("SZS status Unsatisfiable");
+                (rc == 0 || theorem, "szs-status".to_string())
+            },
+        ),
+        echidna::provers::ProverKind::EProver => (
+            "p",
+            "eprover",
+            vec!["--auto-schedule".to_string()],
+            |rc, stdout, _stderr| {
+                let theorem = stdout.contains("SZS status Theorem")
+                    || stdout.contains("SZS status Unsatisfiable")
+                    || stdout.contains("SZS status ContradictoryAxioms");
+                (rc == 0 && theorem, "szs-status".to_string())
+            },
+        ),
+        _ => {
+            return Ok(Json(VerifyRawResponse {
+                valid: false,
+                exit_code: -1,
+                stdout: String::new(),
+                stderr: String::new(),
+                message: format!(
+                    "verify_raw not yet implemented for {:?} — use /api/verify",
+                    req.prover
+                ),
+            }));
+        }
+    };
+
+    // Write content to a unique temp file with the right extension.
+    let tmpdir = std::env::temp_dir().join(format!(
+        "echidna_verify_raw_{}",
+        std::process::id()
+    ));
+    if let Err(e) = tokio::fs::create_dir_all(&tmpdir).await {
+        return Ok(Json(VerifyRawResponse {
+            valid: false,
+            exit_code: -1,
+            stdout: String::new(),
+            stderr: String::new(),
+            message: format!("tmpdir create failed: {}", e),
+        }));
+    }
+    let filename = format!("Input.{}", ext);
+    let path = tmpdir.join(&filename);
+    if let Err(e) = tokio::fs::write(&path, req.content.as_bytes()).await {
+        return Ok(Json(VerifyRawResponse {
+            valid: false,
+            exit_code: -1,
+            stdout: String::new(),
+            stderr: String::new(),
+            message: format!("write failed: {}", e),
+        }));
+    }
+
+    // Run the prover. cd to tmpdir for provers that care about module
+    // name = filename (agda, coq, idris2, lean).
+    let mut cmd = Command::new(program);
+    cmd.current_dir(&tmpdir);
+    for arg in &args {
+        cmd.arg(arg);
+    }
+    cmd.arg(&filename);
+
+    let output_result = cmd.output().await;
+    // Best-effort cleanup; ignore errors.
+    let _ = tokio::fs::remove_dir_all(&tmpdir).await;
+
+    match output_result {
+        Ok(output) => {
+            let exit_code = output.status.code().unwrap_or(-1);
+            let stdout = String::from_utf8_lossy(&output.stdout).to_string();
+            let stderr = String::from_utf8_lossy(&output.stderr).to_string();
+            let (valid, message) = interpret(exit_code, &stdout, &stderr);
+            Ok(Json(VerifyRawResponse {
+                valid,
+                exit_code,
+                stdout: stdout.chars().take(1024).collect(),
+                stderr: stderr.chars().take(1024).collect(),
+                message,
+            }))
+        }
+        Err(e) => Ok(Json(VerifyRawResponse {
+            valid: false,
+            exit_code: -1,
+            stdout: String::new(),
+            stderr: String::new(),
+            message: format!("spawn failed: {} (is the '{}' binary on PATH?)", e, program),
+        })),
+    }
 }
 
 /// Return true if the parsed ProofState contains no meaningful structure.
@@ -823,6 +1001,17 @@ struct VerifyResponse {
     valid: bool,
     goals_remaining: usize,
     tactics_used: usize,
+}
+
+/// Raw-content verification response. Skips `parse_string`/`export` round
+/// trip and invokes the prover binary directly on the supplied content.
+#[derive(Serialize)]
+struct VerifyRawResponse {
+    valid: bool,
+    exit_code: i32,
+    stdout: String,
+    stderr: String,
+    message: String,
 }
 
 #[derive(Deserialize)]
