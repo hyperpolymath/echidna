@@ -237,29 +237,29 @@ fstarDetectionComplete FStarAssume = Refl
 public export
 noFalseNegatives : {p : TrackedProver} -> (pat : DangerousPattern p) ->
                    Not (classify pat = Safe)
-noFalseNegatives LeanSorry             prf = impossible
-noFalseNegatives LeanNativeDecide      prf = impossible
-noFalseNegatives LeanDecidableDecide   prf = impossible
-noFalseNegatives LeanAxiom             prf = impossible
-noFalseNegatives CoqAdmitted           prf = impossible
-noFalseNegatives CoqAdmit              prf = impossible
-noFalseNegatives CoqAxiom              prf = impossible
-noFalseNegatives AgdaPostulate         prf = impossible
-noFalseNegatives AgdaHole              prf = impossible
-noFalseNegatives AgdaTypeInType        prf = impossible
-noFalseNegatives AgdaTypeInTypePragma  prf = impossible
-noFalseNegatives IsabelleSorry         prf = impossible
-noFalseNegatives IsabelleOops          prf = impossible
-noFalseNegatives HOL4MkThm             prf = impossible
-noFalseNegatives Idris2BelieveMe       prf = impossible
-noFalseNegatives Idris2AssertTotal     prf = impossible
-noFalseNegatives Idris2AssertSmaller   prf = impossible
-noFalseNegatives Idris2UnsafePerformIO prf = impossible
-noFalseNegatives Idris2ReallyBelieveMe prf = impossible
-noFalseNegatives Idris2PrimCrash       prf = impossible
-noFalseNegatives Idris2UnsafeCoerce    prf = impossible
-noFalseNegatives FStarAdmit            prf = impossible
-noFalseNegatives FStarAssume           prf = impossible
+noFalseNegatives LeanSorry             Refl impossible
+noFalseNegatives LeanNativeDecide      Refl impossible
+noFalseNegatives LeanDecidableDecide   Refl impossible
+noFalseNegatives LeanAxiom             Refl impossible
+noFalseNegatives CoqAdmitted           Refl impossible
+noFalseNegatives CoqAdmit              Refl impossible
+noFalseNegatives CoqAxiom              Refl impossible
+noFalseNegatives AgdaPostulate         Refl impossible
+noFalseNegatives AgdaHole              Refl impossible
+noFalseNegatives AgdaTypeInType        Refl impossible
+noFalseNegatives AgdaTypeInTypePragma  Refl impossible
+noFalseNegatives IsabelleSorry         Refl impossible
+noFalseNegatives IsabelleOops          Refl impossible
+noFalseNegatives HOL4MkThm             Refl impossible
+noFalseNegatives Idris2BelieveMe       Refl impossible
+noFalseNegatives Idris2AssertTotal     Refl impossible
+noFalseNegatives Idris2AssertSmaller   Refl impossible
+noFalseNegatives Idris2UnsafePerformIO Refl impossible
+noFalseNegatives Idris2ReallyBelieveMe Refl impossible
+noFalseNegatives Idris2PrimCrash       Refl impossible
+noFalseNegatives Idris2UnsafeCoerce    Refl impossible
+noFalseNegatives FStarAdmit            Refl impossible
+noFalseNegatives FStarAssume           Refl impossible
 
 -- ==========================================================================
 -- Section 8: Reject patterns are never downgraded
