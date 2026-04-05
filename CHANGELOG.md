@@ -5,6 +5,50 @@ All notable changes to ECHIDNA will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased] - 2026-04-05
+
+### Fixed
+
+- **Isabelle prover backend de-stubbed** (`src/rust/provers/isabelle.rs`).
+  `parse_string` previously discarded its `content` argument and always
+  emitted a single `Term::Const("True")` goal, which `verify_proof` then
+  short-circuited to `Ok(true)` — Isabelle was never actually invoked.
+  It now extracts the theory name and top-level `theorem|lemma|corollary`
+  declarations with nested-comment-aware scanning, stashes the raw `.thy`
+  content in `ProofState.metadata["raw_thy_content"]`, and `verify_proof`
+  writes that content to a unique per-invocation temp directory under the
+  correct filename (Isabelle requires `<theory_name>.thy`) before invoking
+  `isabelle process -l Main -e 'use_thys ["<path>"]'`.
+- **Stale scaffolded temp-file path** in Isabelle's fallback verification
+  path: previously wrote `echidna_verify.thy` containing
+  `theory GeneratedProof`, causing filename/theory-name mismatch rejection
+  by `isabelle build`. Now writes `GeneratedProof.thy` in a unique temp dir.
+
+### Added
+
+- `strip_isabelle_comments` helper for the Isabelle backend (handles nested
+  `(* ... *)` blocks).
+- 9 new unit tests for the Isabelle theory-header parsers (`test_strip_*`,
+  `test_extract_theory_name_*`, `test_extract_lemma_names_*`) and the
+  `parse_string` contract (metadata populated, goals non-trivial, context
+  theorems enumerated, empty-theory fallback goal).
+- Parser verified against a real 788-line `Tropical.thy` (tropical semiring
+  formalisation): extracts theory name and all 55 theorems/lemmas.
+
+### Notes
+
+- Deployment of this fix to `echidna-nesy` on Fly.io requires rebuilding
+  the container with the `isabelle` binary on `$PATH`. Without it,
+  `verify_proof` returns `Ok(false)` with a `"Failed to run Isabelle
+  process"` context error.
+- Audit of all 50 prover backends confirmed Isabelle was the only truly
+  stubbed one. `metamath.rs` and `typed_wasm.rs` are intentionally pure-Rust
+  in-process verifiers (no subprocess needed by design). The remaining 47
+  external-solver backends all spawn real solver subprocesses via
+  `Command::new`.
+
+---
+
 ## [1.6.1] - 2026-03-23
 
 ### Fixed

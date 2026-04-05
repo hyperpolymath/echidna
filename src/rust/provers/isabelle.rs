@@ -15,7 +15,7 @@
 //! - Support for apply-style and Isar proofs
 //! - Term conversion between HOL and universal representation
 
-use crate::core::{Context, Goal, Hypothesis, ProofState, Tactic, TacticResult, Term};
+use crate::core::{Context, Goal, Hypothesis, ProofState, Tactic, TacticResult, Term, Theorem};
 use crate::provers::{ProverBackend, ProverConfig, ProverKind};
 use anyhow::{Context as AnyhowContext, Result};
 use async_trait::async_trait;
@@ -27,6 +27,138 @@ use std::sync::Arc;
 use tokio::io::{AsyncBufReadExt, BufReader};
 use tokio::process::{Child as TokioChild, Command as TokioCommand};
 use tokio::sync::Mutex;
+
+// ---------------------------------------------------------------------------
+// Theory-file header parsing
+// ---------------------------------------------------------------------------
+//
+// These helpers do not attempt to parse Isabelle term syntax — that is left
+// to Isabelle itself.  They only locate the theory declaration and the top-
+// level `theorem|lemma|corollary NAME:` introductions so that ProofState can
+// be populated with meaningful goals (bypassing `verify_proof`'s short-circuit
+// on trivial-True goals) and so downstream inspection tools see real lemma
+// names in `Context.theorems`.
+
+/// Strip Isabelle's `(* ... *)` block comments and `\<comment> ...` line
+/// comments from `src`, so lemma-header scanning is not fooled by names that
+/// appear only inside commentary.  Block comments nest; line comments end at
+/// the next newline.
+fn strip_isabelle_comments(src: &str) -> String {
+    let bytes = src.as_bytes();
+    let mut out = String::with_capacity(src.len());
+    let mut i = 0;
+    let mut depth: usize = 0;
+    while i < bytes.len() {
+        if depth == 0 && i + 1 < bytes.len() && bytes[i] == b'(' && bytes[i + 1] == b'*' {
+            depth = 1;
+            i += 2;
+            continue;
+        }
+        if depth > 0 {
+            if i + 1 < bytes.len() && bytes[i] == b'(' && bytes[i + 1] == b'*' {
+                depth += 1;
+                i += 2;
+                continue;
+            }
+            if i + 1 < bytes.len() && bytes[i] == b'*' && bytes[i + 1] == b')' {
+                depth -= 1;
+                i += 2;
+                continue;
+            }
+            i += 1;
+            continue;
+        }
+        out.push(bytes[i] as char);
+        i += 1;
+    }
+    out
+}
+
+/// Return the first `theory NAME` identifier in `content`, if present.
+/// Isabelle requires a theory header before any other declarations, so the
+/// first occurrence is authoritative.
+fn extract_theory_name(content: &str) -> Option<String> {
+    let cleaned = strip_isabelle_comments(content);
+    for line in cleaned.lines() {
+        let trimmed = line.trim_start();
+        if let Some(rest) = trimmed.strip_prefix("theory") {
+            // Require whitespace immediately after `theory` so we do not
+            // match identifiers like `theoryless`.
+            if let Some(first) = rest.chars().next() {
+                if !first.is_whitespace() {
+                    continue;
+                }
+            } else {
+                continue;
+            }
+            let name = rest
+                .split_whitespace()
+                .next()
+                .map(|s| s.to_string());
+            if name.is_some() {
+                return name;
+            }
+        }
+    }
+    None
+}
+
+/// Return the names introduced by every top-level `theorem|lemma|corollary`
+/// declaration in the theory.  A declaration is recognised as one of the
+/// keywords appearing at the start of a (trimmed) line and followed by an
+/// identifier and a `:`.  Anonymous `lemma "..."` forms (no name) are skipped.
+fn extract_lemma_names(content: &str) -> Vec<String> {
+    const KWS: &[&str] = &["theorem", "lemma", "corollary"];
+    let cleaned = strip_isabelle_comments(content);
+    let mut out = Vec::new();
+    for line in cleaned.lines() {
+        let trimmed = line.trim_start();
+        for kw in KWS {
+            if let Some(rest) = trimmed.strip_prefix(kw) {
+                // The keyword must be followed by whitespace to avoid
+                // matching prefixes (e.g. `lemmas`).
+                match rest.chars().next() {
+                    Some(c) if c.is_whitespace() => {},
+                    _ => continue,
+                }
+                // First token after the keyword is the candidate name.
+                let after_kw = rest.trim_start();
+                // Ignore anonymous forms like `lemma "P x"` and attribute-
+                // bracket forms like `lemma [simp]:` — these do not introduce
+                // a name we can cite downstream.
+                if after_kw.starts_with('"') || after_kw.starts_with('[') {
+                    continue;
+                }
+                // Name = leading identifier chars (alphanumeric, `_`, `'`).
+                let name: String = after_kw
+                    .chars()
+                    .take_while(|c| c.is_alphanumeric() || *c == '_' || *c == '\'')
+                    .collect();
+                if name.is_empty() {
+                    continue;
+                }
+                // Require a `:` after the name (optionally with whitespace
+                // and/or attribute brackets) to confirm this is a declaration.
+                let tail = &after_kw[name.len()..];
+                let tail = tail.trim_start();
+                let tail = if let Some(rest) = tail.strip_prefix('[') {
+                    // Skip the attribute bracket contents.
+                    match rest.find(']') {
+                        Some(close) => rest[close + 1..].trim_start(),
+                        None => continue,
+                    }
+                } else {
+                    tail
+                };
+                if tail.starts_with(':') {
+                    out.push(name);
+                }
+                break;
+            }
+        }
+    }
+    out
+}
 
 // Isabelle-specific term representation
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
@@ -201,18 +333,67 @@ impl ProverBackend for IsabelleBackend {
         self.parse_string(&content).await
     }
 
-    async fn parse_string(&self, _content: &str) -> Result<ProofState> {
-        // Simplified parsing - extract lemma statements
-        let goal = Term::Const("True".to_string());
-        Ok(ProofState {
-            goals: vec![Goal {
-                id: "goal_0".to_string(),
-                target: goal,
+    async fn parse_string(&self, content: &str) -> Result<ProofState> {
+        // Lightweight structural parse: identify the theory name and the
+        // top-level `theorem|lemma|corollary NAME:` declarations.  We do not
+        // attempt to parse HOL term bodies — that is delegated to Isabelle
+        // itself when `verify_proof` writes the raw content back out and runs
+        // `isabelle process`.
+        let theory_name = extract_theory_name(content).unwrap_or_else(|| "UserThy".to_string());
+        let lemma_names = extract_lemma_names(content);
+
+        let theorems: Vec<Theorem> = lemma_names
+            .iter()
+            .map(|name| Theorem {
+                name: name.clone(),
+                // The statement body is not re-parsed into the universal
+                // Term representation — a placeholder keeps the Theorem
+                // well-formed while downstream code relies on the raw .thy
+                // content stashed in metadata.
+                statement: Term::Const(format!("<isabelle:{}>", name)),
+                proof: None,
+                aspects: vec![],
+            })
+            .collect();
+
+        // One goal per lemma keeps `verify_proof`'s short-circuits from
+        // firing; if no lemmas were found we still emit a single marker goal
+        // so the real verification path runs.
+        let goals: Vec<Goal> = if lemma_names.is_empty() {
+            vec![Goal {
+                id: format!("check_theory:{}", theory_name),
+                target: Term::Const(format!("<check:{}>", theory_name)),
                 hypotheses: vec![],
-            }],
-            context: Context::default(),
+            }]
+        } else {
+            lemma_names
+                .iter()
+                .map(|name| Goal {
+                    id: format!("lemma:{}", name),
+                    target: Term::Const(format!("<isabelle:{}>", name)),
+                    hypotheses: vec![],
+                })
+                .collect()
+        };
+
+        let mut metadata: HashMap<String, serde_json::Value> = HashMap::new();
+        metadata.insert(
+            "raw_thy_content".to_string(),
+            serde_json::Value::String(content.to_string()),
+        );
+        metadata.insert(
+            "theory_name".to_string(),
+            serde_json::Value::String(theory_name),
+        );
+
+        Ok(ProofState {
+            goals,
+            context: Context {
+                theorems,
+                ..Context::default()
+            },
             proof_script: vec![],
-            metadata: HashMap::new(),
+            metadata,
         })
     }
 
@@ -269,18 +450,81 @@ impl ProverBackend for IsabelleBackend {
         {
             return Ok(true);
         }
+
+        // Preferred path: `parse_string` stashed the user's raw theory content
+        // in metadata.  Write it to a unique temp directory under the correct
+        // filename (Isabelle requires filename == theory name) and ask the
+        // `isabelle` binary to check it via `isabelle process -l Main -e use_thys`.
+        if let Some(serde_json::Value::String(raw)) = state.metadata.get("raw_thy_content") {
+            let theory_name = state
+                .metadata
+                .get("theory_name")
+                .and_then(|v| v.as_str())
+                .unwrap_or("UserThy")
+                .to_string();
+
+            // Unique per-invocation directory — pid + monotonic nanos avoid
+            // collisions under concurrent calls.
+            let nanos = std::time::SystemTime::now()
+                .duration_since(std::time::UNIX_EPOCH)
+                .map(|d| d.as_nanos())
+                .unwrap_or(0);
+            let temp_dir = std::env::temp_dir()
+                .join(format!("echidna_isabelle_{}_{}", std::process::id(), nanos));
+            tokio::fs::create_dir_all(&temp_dir)
+                .await
+                .context("Failed to create Isabelle temp dir")?;
+            let thy_path = temp_dir.join(format!("{}.thy", theory_name));
+            tokio::fs::write(&thy_path, raw)
+                .await
+                .context("Failed to write raw theory file")?;
+
+            // `use_thys` loads the .thy file against the Main image; exit
+            // status reflects whether all proofs in the theory closed.
+            let thy_stem = temp_dir.join(&theory_name);
+            let use_thys_arg = format!("use_thys [\"{}\"]", thy_stem.to_string_lossy());
+
+            let output = tokio::process::Command::new(&self.config.executable)
+                .arg("process")
+                .arg("-l")
+                .arg("Main")
+                .arg("-e")
+                .arg(&use_thys_arg)
+                .output()
+                .await
+                .context("Failed to run Isabelle process")?;
+
+            // Best-effort cleanup; leaving stale temp dirs is not a safety issue.
+            let _ = tokio::fs::remove_dir_all(&temp_dir).await;
+
+            return Ok(output.status.success());
+        }
+
+        // Fallback: scaffolded export for states assembled programmatically
+        // (no raw .thy available).  The exported filename must match the
+        // theory name declared inside, hence `GeneratedProof.thy`.
         let theory_content = self.export_theory(state)?;
-        let temp_path = std::env::temp_dir().join("echidna_verify.thy");
+        let temp_dir = std::env::temp_dir()
+            .join(format!("echidna_isabelle_gen_{}", std::process::id()));
+        tokio::fs::create_dir_all(&temp_dir)
+            .await
+            .context("Failed to create Isabelle temp dir")?;
+        let temp_path = temp_dir.join("GeneratedProof.thy");
         tokio::fs::write(&temp_path, &theory_content)
             .await
             .context("Failed to write temp file")?;
+        let thy_stem = temp_dir.join("GeneratedProof");
+        let use_thys_arg = format!("use_thys [\"{}\"]", thy_stem.to_string_lossy());
         let output = tokio::process::Command::new(&self.config.executable)
-            .arg("build")
-            .arg("-D")
-            .arg(temp_path.parent().unwrap())
+            .arg("process")
+            .arg("-l")
+            .arg("Main")
+            .arg("-e")
+            .arg(&use_thys_arg)
             .output()
             .await
-            .context("Failed to run Isabelle build")?;
+            .context("Failed to run Isabelle process")?;
+        let _ = tokio::fs::remove_dir_all(&temp_dir).await;
         Ok(output.status.success())
     }
 
@@ -359,5 +603,130 @@ mod tests {
             },
             _ => panic!("Expected App term"),
         }
+    }
+
+    #[test]
+    fn test_strip_comments_block_and_nested() {
+        let src = "theory Foo (* outer (* nested *) still outer *) imports Main";
+        let out = strip_isabelle_comments(src);
+        assert!(!out.contains("outer"));
+        assert!(!out.contains("nested"));
+        assert!(out.contains("theory Foo"));
+        assert!(out.contains("imports Main"));
+    }
+
+    #[test]
+    fn test_extract_theory_name_basic() {
+        let src = "theory Tropical\n  imports Main\nbegin\nend\n";
+        assert_eq!(extract_theory_name(src).as_deref(), Some("Tropical"));
+    }
+
+    #[test]
+    fn test_extract_theory_name_ignores_comment() {
+        let src = "(* theory NotThis imports X *)\ntheory Real imports Main\nbegin\nend\n";
+        assert_eq!(extract_theory_name(src).as_deref(), Some("Real"));
+    }
+
+    #[test]
+    fn test_extract_theory_name_absent() {
+        assert_eq!(extract_theory_name("imports Main\nbegin\nend\n"), None);
+    }
+
+    #[test]
+    fn test_extract_theory_name_not_prefix_match() {
+        // `theoryless` must not be accepted as a theory name.
+        let src = "theoryless: foo\ntheory Actual imports Main\nbegin\nend\n";
+        assert_eq!(extract_theory_name(src).as_deref(), Some("Actual"));
+    }
+
+    #[test]
+    fn test_extract_lemma_names_basic() {
+        let src = r#"
+            theory T imports Main begin
+            lemma foo: "P"
+              by auto
+            theorem bar: "Q"
+              by simp
+            corollary baz: "R"
+              by blast
+            lemmas collected = foo bar
+            end
+        "#;
+        let names = extract_lemma_names(src);
+        assert_eq!(names, vec!["foo", "bar", "baz"]);
+    }
+
+    #[test]
+    fn test_extract_lemma_names_with_attributes() {
+        // Isabelle attributes follow the name: `lemma NAME [attr]:`.
+        // An anonymous attributed form `lemma [simp]: "..."` has no name to
+        // collect and must be skipped.
+        let src = r#"
+            lemma simp_rule [simp]: "x = x" by simp
+            theorem intro_rule [intro, simp]: "True" by auto
+            lemma [simp]: "True" by simp
+        "#;
+        let names = extract_lemma_names(src);
+        assert_eq!(names, vec!["simp_rule", "intro_rule"]);
+    }
+
+    #[test]
+    fn test_extract_lemma_names_skips_anonymous() {
+        // Anonymous `lemma "P"` forms have no name to collect.
+        let src = r#"
+            lemma "True" by simp
+            lemma named: "True" by simp
+        "#;
+        let names = extract_lemma_names(src);
+        assert_eq!(names, vec!["named"]);
+    }
+
+    #[test]
+    fn test_extract_lemma_names_ignores_commented_out() {
+        let src = r#"
+            (* lemma hidden: "P" *)
+            lemma visible: "True" by simp
+        "#;
+        let names = extract_lemma_names(src);
+        assert_eq!(names, vec!["visible"]);
+    }
+
+    #[tokio::test]
+    async fn test_parse_string_populates_metadata_and_goals() {
+        let config = ProverConfig::default();
+        let backend = IsabelleBackend::new(config);
+        let src = "theory Demo\n  imports Main\nbegin\nlemma one: \"True\" by simp\nend\n";
+        let state = backend.parse_string(src).await.expect("parse");
+        // One non-trivial goal per lemma, so verify_proof's short-circuits don't fire.
+        assert_eq!(state.goals.len(), 1);
+        assert!(matches!(&state.goals[0].target, Term::Const(c) if !c.is_empty() && c != "True"));
+        // Raw content + theory name were stashed.
+        assert_eq!(
+            state.metadata.get("theory_name").and_then(|v| v.as_str()),
+            Some("Demo")
+        );
+        assert_eq!(
+            state
+                .metadata
+                .get("raw_thy_content")
+                .and_then(|v| v.as_str()),
+            Some(src)
+        );
+        // The single lemma is reflected in context.theorems.
+        assert_eq!(state.context.theorems.len(), 1);
+        assert_eq!(state.context.theorems[0].name, "one");
+    }
+
+    #[tokio::test]
+    async fn test_parse_string_empty_theory_still_produces_marker_goal() {
+        let config = ProverConfig::default();
+        let backend = IsabelleBackend::new(config);
+        let src = "theory Empty\n  imports Main\nbegin\nend\n";
+        let state = backend.parse_string(src).await.expect("parse");
+        // No lemmas, but a marker goal is still present so verify_proof takes
+        // the real-verification branch rather than short-circuiting.
+        assert_eq!(state.goals.len(), 1);
+        assert!(matches!(&state.goals[0].target, Term::Const(c) if c.starts_with("<check:")));
+        assert_eq!(state.context.theorems.len(), 0);
     }
 }
