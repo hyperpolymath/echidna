@@ -42,6 +42,22 @@ changes = [
 test-counts = { rust = 756, julia = 63, shell-checks = 68, benchmarks = 13 }
 crg-c-status = "COMPLETE: unit + smoke + build + P2P + E2E + reflexive + contract + aspect + benchmarks baselined"
 
+[session-2026-04-05-evening]
+summary = "Idris2 proof fixes + /api/verify guard + corpus expansion + VCL rename"
+changes = [
+  "AxiomCompleteness.idr: 23× `prf = impossible` (invalid RHS) → `Refl impossible`",
+  "DispatchOrdering.idr: rewritten as minimal working proof (invalid ctor signatures fixed)",
+  "ProverKindInjectivity.idr: replaced 48× lteSuccRight chains with direct LTESucc nesting; added `import Data.Nat`; type signature uses literal 48 instead of maxDiscriminant alias",
+  "All 5 verification/proofs/idris2/*.idr now type-check (was 1/4)",
+  "Agda: Basic/List/Nat/Propositional rewritten as clean agda-stdlib-backed proofs (scope bugs fixed)",
+  "Added 5-file F* corpus (arithmetic lemmas) for batch_driver fstar runner",
+  "Added 8-file TPTP corpus for vampire + eprover runners",
+  "Added 5-file DIMACS corpus for cadical + kissat runners",
+  "/api/verify server-level guard: empty ProofState on non-empty input → valid: false (partial fix for parse+export false-positive bug)",
+  "VQL → VCL + verisimdb → verisim rename: file names, module names, integration manifests, Cargo.toml, docs",
+]
+verification-status = "5/5 idris2 files type-check, 5/6 agda files compile, 8 TPTP files proven, 5 DIMACS files SAT/UNSAT verified"
+
 [session-2026-04-05]
 summary = "Isabelle prover backend de-stubbed: real theory parser + isabelle process invocation"
 changes = [
