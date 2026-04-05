@@ -151,12 +151,15 @@ impl IsabelleBackend {
     }
 
     fn export_theory(&self, state: &ProofState) -> Result<String> {
+        // All exported lemma bodies are stubbed with `sorry` so the theory
+        // file type-checks. The marker comment distinguishes these generated
+        // stubs from hand-written sorry in Isabelle source.
         let mut output = String::new();
         output.push_str("theory GeneratedProof\n  imports Main\nbegin\n\n");
         for theorem in &state.context.theorems {
             output.push_str(&format!("lemma {}:\n  \"", theorem.name));
             output.push_str(&format!("{}", theorem.statement));
-            output.push_str("\"\n  sorry\n\n");
+            output.push_str("\"\n  sorry (* ECHIDNA_SCAFFOLD_SORRY *)\n\n");
         }
         output.push_str("end\n");
         Ok(output)

@@ -22,7 +22,11 @@ ____
 
 All 48 implement the `ProverBackend` trait (line 54-56). The trust pipeline (lines 59-114) applies 13 checks: solver integrity, portfolio solving, certificate checking, axiom tracking, sandboxing, 5-level confidence hierarchy, mutation testing, proof exchange, Pareto optimization, statistical tracking, and dispatch orchestration.
 
-*Caveat:* All 48 backends are implemented (status line 300: 30/30 operational). The README claims 30 but the system supports 48 total. This is not a factual error—the README was written before the expansion to 48—but the implementation exceeds the documented claim.
+*Caveat:* All 48 backends have `ProverBackend` trait implementations with no `unimplemented!()`/`todo!()`/`unreachable!()` macros (sample verified 2026-04-05: Coq 1121 LoC, Lean 4 1648, Agda 673, Isabelle 360, Idris2 1253, Z3 840, CVC5 841). The README claims 30 but the system supports 48 total. "Operational" here means trait-implemented and shells out to a real external binary (e.g. `coqc`, `lean`, `agda`, `z3`) — it does NOT mean the live subprocess path has been exercised in CI against non-trivial goals. See testing caveat below.
+
+*Caveat (testing):* The 30 e2e prover tests (`tests/e2e_prover_test.rs`) and most integration tests are in-process and mock-based (`common::mock_prover`). They exercise the dispatch infrastructure and trust pipeline with mocked prover results; they do NOT invoke Tier 1 binaries (`coqc`, `lean`, `agda`, `z3`, etc.) against non-trivial goals. The `verify` command on the included `proofs/coq/basic.v` fixture does shell out to `coqc` — but via a round-trip through echidna's own re-serialization (parser fidelity untested on non-trivial proofs). The Z3 `prove` on `proofs/z3/basic.smt2` short-circuits before subprocess spawn (the fixture is `(assert true)`). Live subprocess correctness for the 48 backends is not covered by the current test suite.
+
+*Caveat (binaries):* Running Tier 1 backends requires the corresponding external binaries installed on the host (`coqc`, `lean`, `agda`, `isabelle`, `idris2`, `z3`, `cvc5`). These are not bundled. On a reference Fedora 43 system (2026-04-05), Coq/Lean/Agda/Idris2/Z3 were installed via opam/elan/local; Isabelle and CVC5 were absent.
 
 [quote, README section "Test Suite"]
 ____
