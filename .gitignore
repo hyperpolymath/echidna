@@ -164,3 +164,12 @@ models/neural/
 
 # asdf version manager
 .tool-versions
+
+# Prover build artifacts (added 2026-04-05)
+proofs/coq/**/*.vo
+proofs/coq/**/*.vos
+proofs/coq/**/*.vok
+proofs/coq/**/*.glob
+proofs/coq/**/.*.aux
+proofs/agda/**/*.agdai
+proofs/metamath/.metamath*
