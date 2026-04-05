@@ -1229,9 +1229,12 @@ impl ProverBackend for LeanBackend {
             ));
         }
 
-        // Create a theorem to prove
+        // Create a theorem to prove. The trailing `sorry` is a scaffold —
+        // the axiom tracker flags any sorry emitted by echidna with the
+        // marker below so it isn't confused with a real proof hole in
+        // hand-written Lean code.
         lean_code.push_str(&format!(
-            "\ntheorem _echidna_goal : {} := by\n  {}\n  sorry\n",
+            "\ntheorem _echidna_goal : {} := by\n  {}\n  sorry -- ECHIDNA_SCAFFOLD_SORRY\n",
             self.term_to_lean(&goal.target),
             lean_tactic
         ));
@@ -1332,11 +1335,13 @@ impl ProverBackend for LeanBackend {
             ));
         }
 
-        // Export theorems
+        // Export theorems. Exported theorems with no Lean rendering get a
+        // sorry-stubbed body so the file type-checks; the marker
+        // distinguishes these generated stubs from hand-written `sorry`.
         for thm in &state.context.theorems {
             if thm.proof.is_some() {
                 output.push_str(&format!(
-                    "theorem {} : {} := by\n  sorry\n\n",
+                    "theorem {} : {} := by\n  sorry -- ECHIDNA_SCAFFOLD_SORRY\n\n",
                     thm.name,
                     self.term_to_lean(&thm.statement),
                 ));

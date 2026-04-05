@@ -580,6 +580,108 @@ impl VeriSimDBClient {
             .map(|r| r.status().is_success())
             .unwrap_or(false)
     }
+
+    /// Record a proof attempt in VeriSimDB's proof_attempts table.
+    ///
+    /// Posts to `/api/v1/proof_attempts` which writes a row to ClickHouse.
+    /// The row is visible to hypatia's proof_strategy_selection rule (H3) via
+    /// the mv_prover_success_by_class materialised view, closing the learning
+    /// loop: attempt → table → MV → hypatia recommendation → next attempt.
+    ///
+    /// Returns the `attempt_id` on success. Propagates HTTP errors so callers
+    /// can decide whether to retry or continue without persistence.
+    pub async fn record_proof_attempt(&self, attempt: &ProofAttempt) -> Result<String> {
+        let url = format!("{}/api/v1/proof_attempts", self.base_url);
+
+        let response = self
+            .http
+            .post(&url)
+            .json(attempt)
+            .send()
+            .await
+            .context("Failed to post proof_attempt to VeriSimDB")?;
+
+        if response.status().is_success() {
+            debug!(
+                "Recorded proof_attempt {} (prover={}, outcome={}) in VeriSimDB",
+                attempt.attempt_id, attempt.prover_used, attempt.outcome
+            );
+            Ok(attempt.attempt_id.clone())
+        } else {
+            let status = response.status();
+            let body = response.text().await.unwrap_or_default();
+            warn!("VeriSimDB proof_attempts returned {}: {}", status, body);
+            anyhow::bail!("VeriSimDB proof_attempts returned {}: {}", status, body)
+        }
+    }
+}
+
+// ═══════════════════════════════════════════════════════════════════════
+// ProofAttempt — row written to VeriSimDB's proof_attempts table
+// ═══════════════════════════════════════════════════════════════════════
+
+/// A single proof attempt record. Matches the JSON body expected by
+/// `POST /api/v1/proof_attempts` on verisim-api.
+///
+/// Field names use snake_case; prover/outcome use lowercase strings matching
+/// the ClickHouse Enum8 values ("coq", "lean", ..., "success", "timeout", ...).
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct ProofAttempt {
+    /// UUID v4 unique to this attempt.
+    pub attempt_id: String,
+    /// Stable hash of (repo, file, claim) — groups retries of the same obligation.
+    pub obligation_id: String,
+    /// Repository identifier, e.g. "hyperpolymath/echidna".
+    pub repo: String,
+    /// File path within the repo, e.g. "proofs/coq/basic.v".
+    pub file: String,
+    /// Human-readable obligation text.
+    pub claim: String,
+    /// Obligation class for strategy lookup, e.g. "linearity", "termination".
+    pub obligation_class: String,
+    /// Prover used ("coq", "lean", "agda", "isabelle", "idris2", "z3", etc.).
+    pub prover_used: String,
+    /// Outcome ("success", "timeout", "failure", "unknown").
+    pub outcome: String,
+    pub duration_ms: u64,
+    /// Confidence score in [0.0, 1.0].
+    pub confidence: f32,
+    /// Prior attempt on the same obligation (for retries), or None.
+    pub parent_attempt_id: Option<String>,
+    /// Strategy used, e.g. "portfolio", "gnn-guided", "manual", "retry".
+    pub strategy_tag: String,
+    /// ISO-8601 UTC timestamp when the attempt started.
+    pub started_at: String,
+    /// ISO-8601 UTC timestamp when the attempt completed.
+    pub completed_at: String,
+    /// Truncated prover stdout/stderr (<=8 KiB recommended).
+    pub prover_output: String,
+    /// Error message if outcome != success, else None.
+    pub error_message: Option<String>,
+}
+
+/// Map an echidna `ProverKind` to the lowercase string the endpoint expects.
+/// Unknown variants map to "other" — the endpoint's fallback enum value.
+pub fn prover_kind_to_str(kind: ProverKind) -> &'static str {
+    match kind {
+        ProverKind::Coq => "coq",
+        ProverKind::Lean => "lean",
+        ProverKind::Agda => "agda",
+        ProverKind::Isabelle => "isabelle",
+        ProverKind::Idris2 => "idris2",
+        ProverKind::Z3 => "z3",
+        ProverKind::CVC5 => "cvc5",
+        ProverKind::AltErgo => "altergo",
+        ProverKind::Metamath => "metamath",
+        ProverKind::HOLLight => "hol_light",
+        ProverKind::Mizar => "mizar",
+        ProverKind::HOL4 => "hol4",
+        ProverKind::PVS => "pvs",
+        ProverKind::ACL2 => "acl2",
+        ProverKind::Vampire => "vampire",
+        ProverKind::EProver => "eprover",
+        _ => "other",
+    }
 }
 
 // ═══════════════════════════════════════════════════════════════════════
