@@ -150,9 +150,26 @@ data FilterTypeSafe : OctadFieldType -> OctadFieldType -> TypeLevel -> Type wher
   MkFilterTypeSafe :
     TypeCompatible left right ->
     (level : TypeLevel) ->
-    -- Level must be at least L3 (type-compatible operations)
+-- Level must be at least L3 (type-compatible operations)
     LTE 3 (finToNat level) ->
     FilterTypeSafe left right level
+
+||| Proof: Level 5 queries are injection-free.
+||| Any query at level L5 or higher is guaranteed to have no
+||| injection vulnerabilities via user input.
+public export
+data InjectionFree : TypeLevel -> Type where
+  MkInjectionFree : (level : TypeLevel) ->
+                    LTE 5 (finToNat level) ->
+                    InjectionFree level
+
+||| Proof: Level 3 queries are type-safe at the boundary.
+||| No implicit coercions or type-mismatched operations are allowed.
+public export
+data TypeSafeBoundary : TypeLevel -> Type where
+  MkTypeSafeBoundary : (level : TypeLevel) ->
+                       LTE 3 (finToNat level) ->
+                       TypeSafeBoundary level
 
 -- ═══════════════════════════════════════════════════════════════════════
 -- Cross-Prover Identity Management

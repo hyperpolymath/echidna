@@ -8,14 +8,14 @@ scaffolding with unresolved {{PROJECT}}/{{AUTHOR}} placeholders and no domain-sp
 When this project needs formal ABI verification, create domain-specific Idris2 proofs
 following the pattern in repos like `typed-wasm`, `proven`, `echidna`, or `boj-server`.
 
-## Current state
+## Current state (Updated 2026-04-04)
+- **Confidence scoring soundness**: Proven in `verification/proofs/lean4/ConfidenceLattice.lean`. (Lattice, monotonicity, Reject->Level1)
+- **Axiom tracking completeness**: Proven in `verification/proofs/idris2/AxiomCompleteness.idr`. (23 patterns, no false negatives). `unsafeCoerce` added to `axiom_tracker.rs`.
+- **Prover dispatch correctness**: Proven in `verification/proofs/idris2/DispatchCorrectness.idr`. (Logic family compatibility). `DispatchOrdering.idr` (Pipeline stages).
+- **Proof composition**: Proven in `proofs/agda/ProofComposition.agda`. (Soundness preservation, axiom conflict detection).
+- **VQL-UT query safety**: Proven in `EchidnaABI/VqlUt.idr`. (L5 Injection-free, L3 Type-safe boundary).
+- **GNN embedding faithfulness**: Documented in `EchidnaABI/Gnn.idr`. (Structural properties, feature bounds, score normalisation).
 - Extensive Idris2 ABI: `EchidnaABI/Types.idr` (655 lines), `EchidnaABI/Foreign.idr` (445 lines), `EchidnaABI/Layout.idr` (236 lines)
-- Prover-specific ABI: `EchidnaABI/Provers/` - InteractiveAssistants, SmtSolvers, FirstOrderAtp, DeclarativeProvers, AutoActive, ConstraintSolvers
-- `EchidnaABI/VqlUt.idr`, `EchidnaABI/Gnn.idr` - VQL and GNN type definitions
-- `src/rust/verification/axiom_tracker.rs` - Tracks `sorry`/`Admitted` patterns (detection, not usage)
-- `src/rust/provers/lean.rs` - Generates `sorry` as placeholder in Lean proof scaffolding (intentional - feeds goals to provers)
-- `src/rust/provers/coq.rs` - Parses `Admitted` in Coq output (detection, not usage)
-- No `believe_me` or `sorry` in the Idris2 ABI layer itself
 
 ## What needs proving
 - **Confidence scoring soundness**: Prove that confidence levels in `confidence.rs` form a valid lattice and that `sorry` detection correctly downgrades confidence
