@@ -273,6 +273,26 @@ async fn prove_handler(Json(req): Json<ProveRequest>) -> Result<Json<ProveRespon
 async fn verify_handler(Json(req): Json<VerifyRequest>) -> Result<Json<VerifyResponse>, AppError> {
     info!("Verify request for prover: {:?}", req.prover);
 
+    // SMT query mode: when users send raw SMT-LIB with (check-sat) to Z3/CVC5,
+    // run passthrough evaluation instead of proof-obligation negation semantics.
+    if should_passthrough_smt_eval(&req) {
+        let Json(raw) = verify_raw_handler(Json(req.clone())).await?;
+        let smt_status = extract_smt_status(&raw.stdout).or_else(|| extract_smt_status(&raw.stderr));
+        let goals_remaining = if matches!(smt_status.as_deref(), Some("unsat")) {
+            0
+        } else {
+            1
+        };
+
+        return Ok(Json(VerifyResponse {
+            valid: raw.valid,
+            goals_remaining,
+            tactics_used: 0,
+            mode: Some("smt-query".to_string()),
+            smt_status,
+        }));
+    }
+
     // Create prover
     let config = ProverConfig::default();
     let prover = echidna::provers::ProverFactory::create(req.prover, config)
@@ -290,6 +310,8 @@ async fn verify_handler(Json(req): Json<VerifyRequest>) -> Result<Json<VerifyRes
             valid: false,
             goals_remaining: 0,
             tactics_used: 0,
+            mode: None,
+            smt_status: None,
         }));
     }
 
@@ -303,6 +325,8 @@ async fn verify_handler(Json(req): Json<VerifyRequest>) -> Result<Json<VerifyRes
         valid,
         goals_remaining: state.goals.len(),
         tactics_used: state.proof_script.len(),
+        mode: None,
+        smt_status: None,
     }))
 }
 
@@ -494,6 +518,24 @@ fn is_empty_state(state: &echidna::core::ProofState) -> bool {
         && state.context.axioms.is_empty()
         && state.context.definitions.is_empty()
         && state.context.variables.is_empty()
+}
+
+fn should_passthrough_smt_eval(req: &VerifyRequest) -> bool {
+    matches!(req.prover, ProverKind::Z3 | ProverKind::CVC5)
+        && req.content.to_ascii_lowercase().contains("(check-sat")
+}
+
+fn extract_smt_status(text: &str) -> Option<String> {
+    let lower = text.to_ascii_lowercase();
+    if lower.contains("unsat") {
+        Some("unsat".to_string())
+    } else if lower.contains("sat") {
+        Some("sat".to_string())
+    } else if lower.contains("unknown") {
+        Some("unknown".to_string())
+    } else {
+        None
+    }
 }
 
 /// Get tactic suggestions
@@ -990,7 +1032,7 @@ struct ProveResponse {
     message: String,
 }
 
-#[derive(Deserialize)]
+#[derive(Clone, Deserialize)]
 struct VerifyRequest {
     prover: ProverKind,
     content: String,
@@ -1001,6 +1043,10 @@ struct VerifyResponse {
     valid: bool,
     goals_remaining: usize,
     tactics_used: usize,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    mode: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    smt_status: Option<String>,
 }
 
 /// Raw-content verification response. Skips `parse_string`/`export` round

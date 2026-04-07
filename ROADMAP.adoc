@@ -207,6 +207,8 @@ Jonathan D.A. Jewell <j.d.a.jewell@open.ac.uk>
 * [ ] Train GNN encoder on proof graphs (Flux.jl)
 * [ ] Train Transformer premise selector
 * [ ] Wire GNN scores into ProverDispatcher confidence
+* [ ] Fix `/api/verify` SMT-LIB handling so valid user queries are not rejected as malformed proof obligations (Issue #10: https://github.com/hyperpolymath/echidna/issues/10)
+* [ ] Align `Containerfile.full` claims with shipped prover set (either include all claimed tier 1-4 provers or narrow wording) (Issue #11: https://github.com/hyperpolymath/echidna/issues/11)
 
 === Remaining (v2.2+)
 * [ ] Chapel -> Rust C FFI bridge
