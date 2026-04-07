@@ -1,7 +1,8 @@
 # SPDX-License-Identifier: PMPL-1.0-or-later
 # SPDX-FileCopyrightText: 2024-2025 Jonathan D.A. Jewell <jonathan.jewell@open.ac.uk>
 #
-# ECHIDNA Full Containerfile - Includes all Tier 1-4 provers
+# ECHIDNA Full Containerfile - Includes a curated prover set
+# Current bundled provers: Z3, Agda, Lean 4, Metamath, Isabelle2025-2
 # Uses chainguard base images for supply chain security.
 # For a minimal image with Z3/CVC5/Lean only, see Containerfile
 #
@@ -83,7 +84,7 @@ COPY src/julia ./src/julia
 RUN julia --project=. -e 'using Pkg; Pkg.instantiate(); Pkg.precompile()' || true
 
 # =============================================================================
-# Stage 4: Prover Installer (Tier 1-4)
+# Stage 4: Prover Installer (curated subset)
 # =============================================================================
 FROM docker.io/library/debian:bookworm-slim AS prover-installer
 
@@ -150,22 +151,49 @@ RUN if [ ! -f /channel/echidna/echidna.scm ]; then \
     fi
 
 # =============================================================================
+# Stage 5b: Isabelle2025-2 installer
+# =============================================================================
+# Upstream tarball: ~660 MB download, ~5 GB extracted.  We strip the bundled
+# docs and pre-build the Main heap image so the first verify call at runtime
+# is fast (otherwise Isabelle spends ~2 min building Main on first use).
+FROM docker.io/library/debian:bookworm-slim AS isabelle-installer
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    curl ca-certificates perl fontconfig \
+    && rm -rf /var/lib/apt/lists/*
+RUN curl -fsSL --retry 3 \
+      "https://isabelle.in.tum.de/dist/Isabelle2025-2_linux.tar.gz" \
+      -o /tmp/isabelle.tar.gz \
+    && tar -xzf /tmp/isabelle.tar.gz -C /opt/ \
+    && rm /tmp/isabelle.tar.gz \
+    && rm -rf /opt/Isabelle2025-2/doc \
+    && /opt/Isabelle2025-2/bin/isabelle version
+# Pre-build the Main heap so runtime doesn't pay the cost on first use.
+# Heap lands in /root/.isabelle/Isabelle2025-2/heaps/ — we COPY it into the
+# runtime image alongside the Isabelle installation.
+RUN /opt/Isabelle2025-2/bin/isabelle build -b Main \
+    && rm -rf /root/.isabelle/Isabelle2025-2/log \
+             /root/.isabelle/Isabelle2025-2/browser_info
+
+# =============================================================================
 # Stage 6: Runtime Image (Full)
 # =============================================================================
 FROM docker.io/library/debian:bookworm-slim
 
 LABEL maintainer="Jonathan D.A. Jewell <jonathan.jewell@open.ac.uk>"
 LABEL org.opencontainers.image.source="https://github.com/hyperpolymath/echidna"
-LABEL org.opencontainers.image.description="ECHIDNA Full - All provers + VeriSimDB + Guix"
+LABEL org.opencontainers.image.description="ECHIDNA Full - Curated prover set + VeriSimDB + Guix"
 LABEL org.opencontainers.image.licenses="PMPL-1.0-or-later"
 LABEL org.opencontainers.image.version="1.5.0"
 LABEL org.opencontainers.image.vendor="hyperpolymath"
 
-# Runtime dependencies only
+# Runtime dependencies only.
+# `perl` + `fontconfig` are Isabelle's launcher-script requirements.
 RUN apt-get update && apt-get install -y --no-install-recommends \
     ca-certificates \
     libssl3 \
     libgmp10 \
+    perl \
+    fontconfig \
     z3 \
     && rm -rf /var/lib/apt/lists/*
 
@@ -185,13 +213,17 @@ COPY --from=julia-builder /build /app/julia
 COPY --from=prover-installer /usr/local/bin/metamath /usr/local/bin/metamath
 COPY --from=prover-installer /root/.elan /opt/elan
 
+# Copy Isabelle + pre-built Main heap
+COPY --from=isabelle-installer /opt/Isabelle2025-2 /opt/Isabelle2025-2/
+COPY --from=isabelle-installer /root/.isabelle /root/.isabelle/
+
 # Copy Guix channel
 COPY --from=guix-channel /channel /app/guix-channel
 
 # Copy docs-site assets
 COPY docs-site/.well-known /app/well-known
 
-ENV PATH="/app/bin:/opt/idris2/bin:/opt/elan/toolchains/stable/bin:/opt/julia/bin:${PATH}"
+ENV PATH="/app/bin:/opt/idris2/bin:/opt/elan/toolchains/stable/bin:/opt/julia/bin:/opt/Isabelle2025-2/bin:${PATH}"
 ENV IDRIS2_PREFIX="/opt/idris2"
 ENV JULIA_PROJECT="/app/julia"
 ENV ECHIDNA_PROVER_PATH="/opt"
