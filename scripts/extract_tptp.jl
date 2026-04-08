@@ -7,12 +7,13 @@
 # for first-order ATP backends: Vampire, E Prover, SPASS.
 #
 # Input:  external_corpora/tptp/ (TPTP problem files)
-# Output: training_data/proof_states_tptp.jsonl
-#         training_data/tactics_tptp.jsonl
-#         training_data/stats_tptp.json
+# Output: training_data/proof_states_tptp.a2ml
+#         training_data/tactics_tptp.a2ml
+#         training_data/stats_tptp.a2ml
 
-using JSON3
 using Dates
+include("a2ml_emit.jl")
+using .A2MLEmit
 
 # ---------------------------------------------------------------------------
 # Constants
@@ -86,7 +87,13 @@ function parse_tptp_file(filepath::String)
     axioms = String[]
     includes = [m.captures[1] for m in eachmatch(r"include\(\s*'([^']+)'\s*\)", cleaned)]
 
-    for m in eachmatch(Regex(formula_pat, "s"), cleaned)
+    matches = try
+        collect(eachmatch(formula_pat, cleaned))
+    catch e
+        # PCRE match-limit / catastrophic backtracking on huge files — skip
+        return nothing
+    end
+    for m in matches
         _lang, _fname, role, body = m.captures
         role = strip(lowercase(role))
         body = join(split(body), ' ')  # normalise whitespace
@@ -224,25 +231,29 @@ Write extraction results to JSONL / JSON files.
 function save_results(proof_states, tactics, stats; output_dir::String="training_data")
     mkpath(output_dir)
 
-    open(joinpath(output_dir, "proof_states_tptp.jsonl"), "w") do fh
-        for rec in proof_states
-            println(fh, JSON3.write(rec))
-        end
+    write_records_file(
+        joinpath(output_dir, "proof_states_tptp.a2ml"),
+        stats, proof_states, "proof-state";
+        header="TPTP proof-state records (first-order ATP training data)",
+    )
+
+    write_records_file(
+        joinpath(output_dir, "tactics_tptp.a2ml"),
+        stats, tactics, "tactic";
+        header="TPTP tactic records (one per proof-state)",
+    )
+
+    # Stats as a standalone metadata-only A2ML file
+    open(joinpath(output_dir, "stats_tptp.a2ml"), "w") do fh
+        println(fh, "# SPDX-License-Identifier: PMPL-1.0-or-later")
+        println(fh, "# TPTP extraction statistics")
+        println(fh)
+        A2MLEmit.write_metadata_table(fh, stats)
     end
 
-    open(joinpath(output_dir, "tactics_tptp.jsonl"), "w") do fh
-        for rec in tactics
-            println(fh, JSON3.write(rec))
-        end
-    end
-
-    open(joinpath(output_dir, "stats_tptp.json"), "w") do fh
-        write(fh, JSON3.write(stats; allow_inf=true))
-    end
-
-    println("\nSaved $(length(proof_states)) proof states -> $output_dir/proof_states_tptp.jsonl")
-    println("Saved $(length(tactics)) tactics        -> $output_dir/tactics_tptp.jsonl")
-    println("Saved stats                        -> $output_dir/stats_tptp.json")
+    println("\nSaved $(length(proof_states)) proof states -> $output_dir/proof_states_tptp.a2ml")
+    println("Saved $(length(tactics)) tactics        -> $output_dir/tactics_tptp.a2ml")
+    println("Saved stats                        -> $output_dir/stats_tptp.a2ml")
 end
 
 # ---------------------------------------------------------------------------

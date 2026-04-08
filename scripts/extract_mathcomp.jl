@@ -1,0 +1,200 @@
+#!/usr/bin/env julia
+# SPDX-License-Identifier: PMPL-1.0-or-later
+# Copyright (c) 2026 Jonathan D.A. Jewell (hyperpolymath)
+#
+# Mathematical Components (mathcomp) extractor for ECHIDNA training data.
+# Reads .v Coq/ssreflect source files and extracts Lemma/Theorem statements
+# together with their proofs (ssreflect tactics).
+#
+# Input:  external_corpora/mathcomp/ (git clone of math-comp/math-comp)
+# Output: training_data/proof_states_mathcomp.a2ml
+#         training_data/tactics_mathcomp.a2ml
+#         training_data/stats_mathcomp.a2ml
+
+using Dates
+include("a2ml_emit.jl")
+using .A2MLEmit
+
+const ID_BASE = 200000
+const PROVER = "Coq"   # mathcomp targets Rocq/Coq
+
+# Match Lemma/Theorem/Corollary/Fact/Proposition/Remark <name> <binders>? : <stmt>.
+# We keep statement capture short-circuited at the first top-level period followed
+# by whitespace or newline — imperfect but fast.
+const STMT_PAT = r"(Lemma|Theorem|Corollary|Fact|Proposition|Remark)\s+([A-Za-z_][A-Za-z0-9_']*)\s*([^:.]*?):\s*(.*?)\.\s*\n"s
+
+const PROOF_PAT = r"Proof\.(.*?)(Qed|Defined|Admitted)\s*\."s
+
+"""
+    split_tactics(proof_body::AbstractString) -> Vector{String}
+
+Split ssreflect proof body into tactic steps at top-level periods.
+Balanced brackets are respected so `case: (foo x).` stays together.
+"""
+function split_tactics(proof_body::AbstractString)::Vector{String}
+    tactics = String[]
+    buf = IOBuffer()
+    depth = 0
+    for c in proof_body
+        if c == '(' || c == '[' || c == '{'
+            depth += 1; print(buf, c)
+        elseif c == ')' || c == ']' || c == '}'
+            depth = max(0, depth - 1); print(buf, c)
+        elseif c == '.' && depth == 0
+            s = strip(String(take!(buf)))
+            isempty(s) || push!(tactics, s)
+        else
+            print(buf, c)
+        end
+    end
+    s = strip(String(take!(buf)))
+    isempty(s) || push!(tactics, s)
+    return tactics
+end
+
+function find_v_files(base_dir::String)::Vector{String}
+    files = String[]
+    for (root, _dirs, fs) in walkdir(base_dir)
+        for f in fs
+            endswith(f, ".v") && push!(files, joinpath(root, f))
+        end
+    end
+    sort!(files)
+    return files
+end
+
+function extract_all(base_dir::String)
+    files = find_v_files(base_dir)
+    println("Found $(length(files)) .v files in $base_dir")
+
+    proof_states = Dict{String,Any}[]
+    tactics = Dict{String,Any}[]
+    skipped_noproof = 0
+    errors = 0
+
+    for (idx, fpath) in enumerate(files)
+        content = try
+            read(fpath, String)
+        catch
+            errors += 1
+            continue
+        end
+
+        theorem_matches = try
+            collect(eachmatch(STMT_PAT, content))
+        catch
+            errors += 1
+            continue
+        end
+
+        for tm in theorem_matches
+            kind, name, binders, stmt = tm.captures
+            record_id = ID_BASE + length(proof_states)
+
+            # Look for Proof block immediately after the theorem statement
+            proof_start = tm.offset + length(tm.match)
+            rest = content[min(proof_start, lastindex(content)):end]
+            pm = try
+                match(PROOF_PAT, rest)
+            catch
+                nothing
+            end
+
+            if pm === nothing
+                skipped_noproof += 1
+                continue
+            end
+
+            proof_body = pm.captures[1]
+            terminator = pm.captures[2]
+            steps = split_tactics(proof_body)
+            isempty(steps) && continue
+
+            theorem = String(strip(name))
+            goal = String(strip(stmt))
+            # Join binders into goal if present
+            bstr = String(strip(binders))
+            isempty(bstr) || (goal = bstr * " : " * goal)
+
+            rel = relpath(fpath, base_dir)
+            push!(proof_states, Dict{String,Any}(
+                "id" => record_id,
+                "prover" => PROVER,
+                "theorem" => theorem,
+                "goal" => goal,
+                "context" => String[],
+                "source" => "mathcomp",
+                "kind" => String(kind),
+                "terminator" => String(terminator),
+                "file" => rel,
+                "proof_steps" => length(steps),
+            ))
+
+            for (step_idx, tac) in enumerate(steps)
+                push!(tactics, Dict{String,Any}(
+                    "proof_id" => record_id,
+                    "step" => step_idx,
+                    "tactic" => tac,
+                    "prover" => PROVER,
+                ))
+            end
+        end
+
+        idx % 200 == 0 && println("  processed $idx/$(length(files)) files ...")
+    end
+
+    id_range = isempty(proof_states) ? "none" : "$(ID_BASE)-$(ID_BASE + length(proof_states) - 1)"
+    stats = Dict{String,Any}(
+        "version" => "v2.0-mathcomp",
+        "extraction_date" => Dates.format(now(), dateformat"yyyy-mm-ddTHH:MM:SS"),
+        "total_files_scanned" => length(files),
+        "total_proofs" => length(proof_states),
+        "total_tactics" => length(tactics),
+        "skipped_no_proof" => skipped_noproof,
+        "read_errors" => errors,
+        "source" => "Mathematical Components (math-comp/math-comp)",
+        "id_range" => id_range,
+    )
+    return proof_states, tactics, stats
+end
+
+function save_results(proof_states, tactics, stats; output_dir="training_data")
+    mkpath(output_dir)
+    write_records_file(
+        joinpath(output_dir, "proof_states_mathcomp.a2ml"),
+        stats, proof_states, "proof-state";
+        header="mathcomp proof-state records (Coq/ssreflect training data)")
+    write_records_file(
+        joinpath(output_dir, "tactics_mathcomp.a2ml"),
+        stats, tactics, "tactic";
+        header="mathcomp tactic records (ssreflect tactics per step)")
+    open(joinpath(output_dir, "stats_mathcomp.a2ml"), "w") do fh
+        println(fh, "# SPDX-License-Identifier: PMPL-1.0-or-later")
+        println(fh, "# mathcomp extraction statistics"); println(fh)
+        A2MLEmit.write_metadata_table(fh, stats)
+    end
+    println("\nSaved $(length(proof_states)) proof states, $(length(tactics)) tactics -> $output_dir/*_mathcomp.a2ml")
+end
+
+function main()::Int
+    println("=" ^ 60)
+    println("ECHIDNA Mathcomp Extractor")
+    println("=" ^ 60)
+    base_dir = "external_corpora/mathcomp"
+    if !isdir(base_dir)
+        println("ERROR: Corpus directory not found: $base_dir")
+        return 1
+    end
+    proof_states, tactics, stats = extract_all(base_dir)
+    if isempty(proof_states)
+        println("\nWARNING: No proof states extracted.")
+        return 1
+    end
+    save_results(proof_states, tactics, stats)
+    println("\nTotal: $(stats["total_proofs"]) proofs / $(stats["total_tactics"]) tactics (IDs $(stats["id_range"]))")
+    return 0
+end
+
+if abspath(PROGRAM_FILE) == @__FILE__
+    exit(main())
+end

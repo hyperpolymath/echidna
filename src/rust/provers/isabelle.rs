@@ -160,6 +160,21 @@ fn extract_lemma_names(content: &str) -> Vec<String> {
     out
 }
 
+/// Return a unique temp directory path for a single Isabelle invocation.
+/// Uses pid + nanosecond timestamp so concurrent calls do not collide.
+fn build_isabelle_temp_dir(tag: &str) -> Result<std::path::PathBuf> {
+    let nanos = std::time::SystemTime::now()
+        .duration_since(std::time::UNIX_EPOCH)
+        .map(|d| d.as_nanos())
+        .unwrap_or(0);
+    Ok(std::env::temp_dir().join(format!(
+        "echidna_isabelle_{}_{}_{}",
+        tag,
+        std::process::id(),
+        nanos
+    )))
+}
+
 // Isabelle-specific term representation
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
 pub enum IsabelleTerm {
@@ -453,8 +468,9 @@ impl ProverBackend for IsabelleBackend {
 
         // Preferred path: `parse_string` stashed the user's raw theory content
         // in metadata.  Write it to a unique temp directory under the correct
-        // filename (Isabelle requires filename == theory name) and ask the
-        // `isabelle` binary to check it via `isabelle process -l Main -e use_thys`.
+        // filename (Isabelle requires filename == theory name), write a ROOT
+        // session file declaring it, and ask the `isabelle` binary to check
+        // via `isabelle build -D <dir>`.
         if let Some(serde_json::Value::String(raw)) = state.metadata.get("raw_thy_content") {
             let theory_name = state
                 .metadata
@@ -463,67 +479,84 @@ impl ProverBackend for IsabelleBackend {
                 .unwrap_or("UserThy")
                 .to_string();
 
-            // Unique per-invocation directory — pid + monotonic nanos avoid
-            // collisions under concurrent calls.
-            let nanos = std::time::SystemTime::now()
-                .duration_since(std::time::UNIX_EPOCH)
-                .map(|d| d.as_nanos())
-                .unwrap_or(0);
-            let temp_dir = std::env::temp_dir()
-                .join(format!("echidna_isabelle_{}_{}", std::process::id(), nanos));
+            let temp_dir = build_isabelle_temp_dir("usr")?;
             tokio::fs::create_dir_all(&temp_dir)
                 .await
                 .context("Failed to create Isabelle temp dir")?;
-            let thy_path = temp_dir.join(format!("{}.thy", theory_name));
-            tokio::fs::write(&thy_path, raw)
+
+            tokio::fs::write(temp_dir.join(format!("{}.thy", theory_name)), raw)
                 .await
                 .context("Failed to write raw theory file")?;
-
-            // `use_thys` loads the .thy file against the Main image; exit
-            // status reflects whether all proofs in the theory closed.
-            let thy_stem = temp_dir.join(&theory_name);
-            let use_thys_arg = format!("use_thys [\"{}\"]", thy_stem.to_string_lossy());
+            let root = format!(
+                "session UserSession = HOL +\n  theories\n    {}\n",
+                theory_name
+            );
+            tokio::fs::write(temp_dir.join("ROOT"), root)
+                .await
+                .context("Failed to write ROOT file")?;
 
             let output = tokio::process::Command::new(&self.config.executable)
-                .arg("process")
-                .arg("-l")
-                .arg("Main")
-                .arg("-e")
-                .arg(&use_thys_arg)
+                .arg("build")
+                .arg("-D")
+                .arg(&temp_dir)
+                .arg("-o")
+                .arg("document=false")
+                .arg("-o")
+                .arg("browser_info=false")
                 .output()
                 .await
-                .context("Failed to run Isabelle process")?;
+                .context("Failed to run Isabelle build")?;
+
+            let success = output.status.success();
+            if !success {
+                // Log stdout+stderr tails so runtime failures are debuggable
+                // without attaching to the container.  Isabelle prints failure
+                // diagnostics to stdout; stderr carries JVM warnings.
+                let stdout = String::from_utf8_lossy(&output.stdout);
+                let stderr = String::from_utf8_lossy(&output.stderr);
+                tracing::warn!(
+                    exit = ?output.status.code(),
+                    stdout = %stdout.lines().rev().take(10).collect::<Vec<_>>().into_iter().rev().collect::<Vec<_>>().join(" | "),
+                    stderr = %stderr.lines().rev().take(5).collect::<Vec<_>>().into_iter().rev().collect::<Vec<_>>().join(" | "),
+                    "Isabelle build reported non-success"
+                );
+            }
 
             // Best-effort cleanup; leaving stale temp dirs is not a safety issue.
             let _ = tokio::fs::remove_dir_all(&temp_dir).await;
 
-            return Ok(output.status.success());
+            return Ok(success);
         }
 
         // Fallback: scaffolded export for states assembled programmatically
-        // (no raw .thy available).  The exported filename must match the
-        // theory name declared inside, hence `GeneratedProof.thy`.
+        // (no raw .thy available).  The exported theory declares itself as
+        // `GeneratedProof`, so the filename must match.
         let theory_content = self.export_theory(state)?;
-        let temp_dir = std::env::temp_dir()
-            .join(format!("echidna_isabelle_gen_{}", std::process::id()));
+        let temp_dir = build_isabelle_temp_dir("gen")?;
         tokio::fs::create_dir_all(&temp_dir)
             .await
             .context("Failed to create Isabelle temp dir")?;
-        let temp_path = temp_dir.join("GeneratedProof.thy");
-        tokio::fs::write(&temp_path, &theory_content)
+        tokio::fs::write(temp_dir.join("GeneratedProof.thy"), &theory_content)
             .await
             .context("Failed to write temp file")?;
-        let thy_stem = temp_dir.join("GeneratedProof");
-        let use_thys_arg = format!("use_thys [\"{}\"]", thy_stem.to_string_lossy());
+        tokio::fs::write(
+            temp_dir.join("ROOT"),
+            "session UserSession = HOL +\n  theories\n    GeneratedProof\n",
+        )
+        .await
+        .context("Failed to write ROOT file")?;
+
         let output = tokio::process::Command::new(&self.config.executable)
-            .arg("process")
-            .arg("-l")
-            .arg("Main")
-            .arg("-e")
-            .arg(&use_thys_arg)
+            .arg("build")
+            .arg("-D")
+            .arg(&temp_dir)
+            .arg("-o")
+            .arg("document=false")
+            .arg("-o")
+            .arg("browser_info=false")
             .output()
             .await
-            .context("Failed to run Isabelle process")?;
+            .context("Failed to run Isabelle build")?;
         let _ = tokio::fs::remove_dir_all(&temp_dir).await;
         Ok(output.status.success())
     }

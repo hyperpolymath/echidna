@@ -8,8 +8,9 @@
 # Internal-only: echidna is reached via echidna-nesy.internal:8090 from
 # proven-nesy-solver-api; no public http_service.
 #
-# NB: Container is LARGE (2-4 GB) — Julia + Idris2 + Agda + Lean toolchains.
-# Memory must be >=2GB; shared-cpu-2x is the cheapest size that fits.
+# NB: Container is LARGE (~6-8 GB) — Julia + Idris2 + Agda + Lean + Isabelle.
+# Memory must be >=4GB (Isabelle Main heap ~1GB); shared-cpu-2x is the
+# cheapest size that fits.
 
 app = "echidna-nesy"
 primary_region = "lhr"
@@ -49,6 +50,6 @@ kill_timeout = "10s"
 
 [[vm]]
   size = "shared-cpu-2x"
-  memory = "2048mb"  # Julia + Agda need real RAM
+  memory = "4096mb"  # Julia + Agda + Isabelle Main heap need real RAM
   cpu_kind = "shared"
   cpus = 2
