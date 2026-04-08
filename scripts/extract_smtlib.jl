@@ -7,12 +7,13 @@
 # proof states for SMT solver backends: Z3, CVC5, Alt-Ergo.
 #
 # Input:  external_corpora/smtlib/ (SMT-LIB benchmark files)
-# Output: training_data/proof_states_smtlib.jsonl
-#         training_data/tactics_smtlib.jsonl
-#         training_data/stats_smtlib.json
+# Output: training_data/proof_states_smtlib.a2ml
+#         training_data/tactics_smtlib.a2ml
+#         training_data/stats_smtlib.a2ml
 
-using JSON3
 using Dates
+include("a2ml_emit.jl")
+using .A2MLEmit
 
 # ---------------------------------------------------------------------------
 # Constants
@@ -90,7 +91,7 @@ function parse_smt2_file(filepath::String)::Union{Dict{String,Any}, Nothing}
     # Extract declarations (declare-fun, declare-sort, declare-const,
     # define-fun, define-sort)
     decl_pat = r"\(\s*(declare-fun|declare-sort|declare-const|define-fun|define-sort)\s+([^)]*(?:\([^)]*\))*[^)]*)\)"
-    for m in eachmatch(Regex(decl_pat), content)
+    for m in eachmatch(decl_pat, content)
         decl_text = "($(m.captures[1]) $(m.captures[2]))"
         # Keep declarations concise (truncate very long ones)
         if length(decl_text) <= 500
@@ -294,25 +295,28 @@ Write extraction results to JSONL / JSON files.
 function save_results(proof_states, tactics, stats; output_dir="training_data")
     mkpath(output_dir)
 
-    open(joinpath(output_dir, "proof_states_smtlib.jsonl"), "w") do fh
-        for rec in proof_states
-            println(fh, JSON3.write(rec))
-        end
+    write_records_file(
+        joinpath(output_dir, "proof_states_smtlib.a2ml"),
+        stats, proof_states, "proof-state";
+        header="SMT-LIB proof-state records (SMT solver training data)",
+    )
+
+    write_records_file(
+        joinpath(output_dir, "tactics_smtlib.a2ml"),
+        stats, tactics, "tactic";
+        header="SMT-LIB tactic records (one per proof-state)",
+    )
+
+    open(joinpath(output_dir, "stats_smtlib.a2ml"), "w") do fh
+        println(fh, "# SPDX-License-Identifier: PMPL-1.0-or-later")
+        println(fh, "# SMT-LIB extraction statistics")
+        println(fh)
+        A2MLEmit.write_metadata_table(fh, stats)
     end
 
-    open(joinpath(output_dir, "tactics_smtlib.jsonl"), "w") do fh
-        for rec in tactics
-            println(fh, JSON3.write(rec))
-        end
-    end
-
-    open(joinpath(output_dir, "stats_smtlib.json"), "w") do fh
-        JSON3.pretty(fh, stats)
-    end
-
-    println("\nSaved $(length(proof_states)) proof states -> $(output_dir)/proof_states_smtlib.jsonl")
-    println("Saved $(length(tactics)) tactics        -> $(output_dir)/tactics_smtlib.jsonl")
-    println("Saved stats                        -> $(output_dir)/stats_smtlib.json")
+    println("\nSaved $(length(proof_states)) proof states -> $(output_dir)/proof_states_smtlib.a2ml")
+    println("Saved $(length(tactics)) tactics        -> $(output_dir)/tactics_smtlib.a2ml")
+    println("Saved stats                        -> $(output_dir)/stats_smtlib.a2ml")
 end
 
 # ---------------------------------------------------------------------------
