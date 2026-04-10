@@ -60,6 +60,10 @@ clean:
 run *ARGS:
     cargo run -- {{ARGS}}
 
+# Run Invariant Path overlay tools for this repository
+invariant-path *ARGS:
+    ./scripts/invariant-path.sh {{ARGS}}
+
 # Generate docs
 doc:
     cargo doc --no-deps --open
