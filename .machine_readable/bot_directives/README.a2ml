@@ -1,0 +1,21 @@
+# SPDX-License-Identifier: PMPL-1.0-or-later
+# Copyright (c) 2026 Jonathan D.A. Jewell (hyperpolymath) <j.d.a.jewell@open.ac.uk>
+#
+# README.a2ml — index for .machine_readable/bot_directives/
+
+[index]
+version = "1.0"
+format = "a2ml"  # migrated from .scm on 2026-04-11
+
+[notes]
+purpose = "Per-bot rules and constraints for this repository."
+policy = "Bots must follow these directives in addition to global policies."
+
+[files]
+echidnabot       = "echidnabot.a2ml"
+finishbot        = "finishbot.a2ml"
+glambot          = "glambot.a2ml"
+rhodibot         = "rhodibot.a2ml"
+robot-repo-automaton = "robot-repo-automaton.a2ml"
+seambot          = "seambot.a2ml"
+sustainabot      = "sustainabot.a2ml"
