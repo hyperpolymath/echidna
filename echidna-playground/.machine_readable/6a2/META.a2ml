@@ -1,3 +1,27 @@
-;; SPDX-License-Identifier: PMPL-1.0-or-later
-(meta (metadata (version "0.1.0") (last-updated "2026-02-08"))
-  (project-info (type monorepo) (languages (zig ada gleam idris2 julia ocaml rescript rust swift)) (license "PMPL-1.0-or-later")))
+# SPDX-License-Identifier: PMPL-1.0-or-later
+# Copyright (c) 2026 Jonathan D.A. Jewell (hyperpolymath) <j.d.a.jewell@open.ac.uk>
+#
+# META.a2ml — Echidna Playground meta-level information
+[metadata]
+version = "0.1.0"
+last-updated = "2026-02-08"
+
+[project-info]
+license = "PMPL-1.0-or-later"
+author = "Jonathan D.A. Jewell (hyperpolymath)"
+
+[architecture-decisions]
+decisions = [
+  # No ADRs recorded
+]
+
+[development-practices]
+versioning = "SemVer"
+documentation = "AsciiDoc"
+build-tool = "just"
+
+[maintenance-axes]
+scoping-first = true
+axis-1 = "must > intend > like"
+axis-2 = "corrective > adaptive > perfective"
+axis-3 = "systems > compliance > effects"

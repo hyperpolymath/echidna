@@ -1,45 +1,40 @@
-;; SPDX-License-Identifier: PMPL-1.0-or-later
-;; STATE.scm — HOL-o-extension project state
+# SPDX-License-Identifier: PMPL-1.0-or-later
+# Copyright (c) 2026 Jonathan D.A. Jewell (hyperpolymath) <j.d.a.jewell@open.ac.uk>
+#
+# STATE.a2ml — HOL O Extension project state
+[metadata]
+project = "HOL-o-extension"
+version = "0.1.0"
+last-updated = "2026-03-07"
+status = "active"
+session = "converted from scheme — 2026-04-11"
 
-(state
-  ((metadata
-     ((version . "0.1.0")
-      (last-updated . "2026-03-07")
-      (author . "Jonathan D.A. Jewell")))
+[project-context]
+name = "HOL O Extension"
+purpose = """activate.sh sets environment for HOL load path extension"""
+completion-percentage = 0
 
-   (project-context
-     ((name . "HOL-o-extension")
-      (type . "o-extension")
-      (base . "HOL4 Theorem Prover")
-      (parent . "ECHIDNA")))
+[position]
+phase = "scaffolding"   # design | implementation | testing | maintenance | archived
+maturity = "experimental"  # experimental | alpha | beta | production | lts
 
-   (current-position
-     ((phase . "scaffolding")
-      (completion . 5)
-      (status . "Directory structure and overlay protocol declared. Theories and tactics not yet populated.")))
+[route-to-mvp]
+milestones = [
+  { name = "HOL-o-extension", completion = 5 },
+]
 
-   (route-to-mvp
-     ((milestone-1
-        ((name . "Activation mechanism")
-         (status . "complete")
-         (description . "activate.sh sets environment for HOL load path extension")))
-      (milestone-2
-        ((name . "First custom theory")
-         (status . "pending")
-         (description . "Create an ECHIDNA-specific HOL4 theory (e.g., trust levels, confidence types)")))
-      (milestone-3
-        ((name . "First custom tactic")
-         (status . "pending")
-         (description . "Create an ECHIDNA-specific HOL4 tactic (e.g., neurosymbolic_suggest)")))
-      (milestone-4
-        ((name . "ECHIDNA HOL4 backend integration")
-         (status . "pending")
-         (description . "Wire o-extension into ECHIDNA's HOL4 prover backend")))))
+[blockers-and-issues]
+issues = [
+  # No blockers recorded
+]
 
-   (blockers-and-issues
-     ((none-currently . #t)))
+[critical-next-actions]
+actions = [
+  "Define first custom HOL4 theory for ECHIDNA trust types",
+  "Create neurosymbolic tactic stubs",
+  "Test activate/deactivate cycle end-to-end",
+]
 
-   (critical-next-actions
-     (("Define first custom HOL4 theory for ECHIDNA trust types"
-       "Create neurosymbolic tactic stubs"
-       "Test activate/deactivate cycle end-to-end")))))
+[maintenance-status]
+last-run-utc = "2026-03-07T00:00:00Z"
+last-result = "unknown"  # unknown | pass | warn | fail
