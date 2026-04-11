@@ -62,12 +62,9 @@ impl Z3Backend {
             .stdin
             .take()
             .ok_or_else(|| anyhow!("Failed to open Z3 stdin"))?;
-        let _stdout = child
-            .stdout
-            .take()
-            .ok_or_else(|| anyhow!("Failed to open Z3 stdout"))?;
+        // NOTE: do NOT take() child.stdout — wait_with_output() needs it intact.
 
-        // Write command
+        // Write command and signal EOF so Z3 knows to terminate.
         stdin.write_all(command.as_bytes()).await?;
         stdin.write_all(b"\n(exit)\n").await?;
         stdin.flush().await?;
@@ -95,25 +92,37 @@ impl Z3Backend {
         self.parse_smt_result(&stdout_str)
     }
 
-    /// Parse SMT-LIB result from Z3 output
+    /// Parse SMT-LIB result from Z3 output.
+    ///
+    /// Z3 may emit `success` acknowledgements for each command before the final
+    /// `check-sat` result. We take the **last non-empty line** as the answer;
+    /// matching on the whole output with `contains()` would misclassify output
+    /// containing both "success" lines and "unsat".
     fn parse_smt_result(&self, output: &str) -> Result<SmtResult> {
-        let trimmed = output.trim();
+        // Find the last non-empty line — that is Z3's answer to (check-sat).
+        let last = output
+            .lines()
+            .rev()
+            .map(str::trim)
+            .find(|l| !l.is_empty())
+            .unwrap_or("");
 
-        if trimmed.contains("sat") && !trimmed.contains("unsat") {
-            Ok(SmtResult::Sat)
-        } else if trimmed.contains("unsat") {
+        if last == "unsat" {
             Ok(SmtResult::Unsat)
-        } else if trimmed.contains("unknown") {
+        } else if last == "sat" {
+            Ok(SmtResult::Sat)
+        } else if last == "unknown" {
             Ok(SmtResult::Unknown)
-        } else if trimmed.starts_with("(error") {
-            let error_msg = trimmed
+        } else if last.starts_with("(error") {
+            let error_msg = last
                 .trim_start_matches("(error")
                 .trim_end_matches(')')
-                .trim();
-            Ok(SmtResult::Error(error_msg.trim_matches('"').to_string()))
+                .trim()
+                .trim_matches('"');
+            Ok(SmtResult::Error(error_msg.to_string()))
         } else {
-            // For other commands (get-model, etc.), return raw output
-            Ok(SmtResult::Output(trimmed.to_string()))
+            // Other output (get-model, get-value, etc.) — return verbatim.
+            Ok(SmtResult::Output(last.to_string()))
         }
     }
 
@@ -342,6 +351,179 @@ impl ProverBackend for Z3Backend {
             SmtResult::Unknown => Ok(false),
             SmtResult::Error(e) => bail!("Verification error: {}", e),
             SmtResult::Output(_) => Ok(false),
+        }
+    }
+
+    /// Typed verification with precise outcome classification.
+    ///
+    /// This override distinguishes:
+    /// - `Proved` (negation of goal is UNSAT with hypotheses)
+    /// - `InconsistentPremises` (hypotheses alone are UNSAT, making any proof trivial)
+    /// - `NoProofFound` with `reason: Some("counterexample")` (SAT result)
+    /// - `NoProofFound` with `reason: Some("SMT unknown")` (decidability limit)
+    /// - `Timeout` (Z3 process timed out before producing an answer)
+    /// - `InvalidInput` (Z3 reported `(error ...)` for a user input problem)
+    /// - `ProverError` (Z3 reported an internal error)
+    /// - `SystemError` (Z3 process could not be spawned)
+    async fn check(
+        &self,
+        state: &ProofState,
+    ) -> anyhow::Result<super::outcome::ProverOutcome> {
+        use super::outcome::ProverOutcome;
+        use std::time::Instant;
+        let start = Instant::now();
+
+        // Vacuous case: no goals at all → trivially proved (no outstanding obligations).
+        if state.goals.is_empty() {
+            return Ok(ProverOutcome::Proved { elapsed_ms: 0 });
+        }
+
+        // Step 1: Consistency pre-check — must run before any trivial-goal
+        // short-circuit so that P∧¬P is never silently rubber-stamped as PROVED.
+        //
+        // Two sub-checks:
+        //   (a) Axiom consistency: assert all axioms; if UNSAT, premises alone
+        //       are contradictory — any goal follows trivially.
+        //   (b) Goal consistency: assert all goals (without negation); if UNSAT,
+        //       the goal set is self-contradictory (e.g. prove P and prove ¬P
+        //       simultaneously). This is a weaker signal but still suspect.
+        //
+        // Either condition surfaces as InconsistentPremises so the caller knows
+        // the result cannot be trusted.
+
+        // Build the common preamble (variable declarations) once.
+        let mut preamble = String::from("(set-logic ALL)\n");
+        for var in &state.context.variables {
+            preamble.push_str(&format!(
+                "(declare-const {} {})\n",
+                var.name,
+                self.term_to_smt(&var.ty)
+            ));
+        }
+
+        // (a) Axiom consistency.
+        let axioms_inconsistent = if !state.context.axioms.is_empty() {
+            let mut hyp_check = preamble.clone();
+            for axiom in &state.context.axioms {
+                hyp_check.push_str(&format!("(assert {})\n", axiom));
+            }
+            hyp_check.push_str("(check-sat)\n");
+            matches!(self.execute_command(&hyp_check).await, Ok(SmtResult::Unsat))
+        } else {
+            false
+        };
+
+        // (b) Goal consistency — only worth checking when axioms are fine, to
+        // avoid masking the more informative axiom-level diagnosis.
+        let goals_inconsistent = if !axioms_inconsistent {
+            let mut goal_check = preamble.clone();
+            for axiom in &state.context.axioms {
+                goal_check.push_str(&format!("(assert {})\n", axiom));
+            }
+            for goal in &state.goals {
+                // Assert goals as-is (no negation): if UNSAT, the goals themselves
+                // cannot all be true simultaneously.
+                goal_check.push_str(&format!("(assert {})\n", self.term_to_smt(&goal.target)));
+            }
+            goal_check.push_str("(check-sat)\n");
+            matches!(self.execute_command(&goal_check).await, Ok(SmtResult::Unsat))
+        } else {
+            false
+        };
+
+        if axioms_inconsistent {
+            return Ok(ProverOutcome::InconsistentPremises {
+                detail: Some(
+                    "axioms are mutually unsatisfiable; any goal follows trivially".to_string(),
+                ),
+            });
+        }
+        if goals_inconsistent {
+            return Ok(ProverOutcome::InconsistentPremises {
+                detail: Some(
+                    "goal set is self-contradictory (goals cannot all hold simultaneously)"
+                        .to_string(),
+                ),
+            });
+        }
+
+        // Trivial-goal short-circuit: only reached when premises are consistent
+        // (or there are no axioms at all).
+        if state
+            .goals
+            .iter()
+            .all(|g| matches!(&g.target, Term::Const(c) if c == "true"))
+        {
+            return Ok(ProverOutcome::Proved { elapsed_ms: 0 });
+        }
+
+        // Step 2: Build the main validity query.
+        // Reuse the preamble (variables already declared), add axioms and the
+        // negation of each goal. UNSAT → goal follows from axioms → PROVED.
+        let mut commands = preamble;
+        for axiom in &state.context.axioms {
+            commands.push_str(&format!("(assert {})\n", axiom));
+        }
+        for goal in &state.goals {
+            commands.push_str(&format!("(assert (not {}))\n", self.term_to_smt(&goal.target)));
+        }
+        commands.push_str("(check-sat)\n");
+
+        let elapsed = || start.elapsed().as_millis() as u64;
+
+        match self.execute_command(&commands).await {
+            // `inconsistent` is always false here (we returned early above if true).
+            Ok(SmtResult::Unsat) => {
+                Ok(ProverOutcome::Proved { elapsed_ms: elapsed() })
+            },
+            Ok(SmtResult::Sat) => Ok(ProverOutcome::NoProofFound {
+                elapsed_ms: elapsed(),
+                reason: Some("Z3 found a counterexample (SAT)".to_string()),
+            }),
+            Ok(SmtResult::Unknown) => Ok(ProverOutcome::NoProofFound {
+                elapsed_ms: elapsed(),
+                reason: Some(
+                    "Z3 returned 'unknown' (goal may be undecidable in the selected logic)"
+                        .to_string(),
+                ),
+            }),
+            Ok(SmtResult::Error(e)) => {
+                // Z3 `(error ...)` is almost always a user input problem.
+                if e.to_lowercase().contains("unknown")
+                    || e.to_lowercase().contains("unsupported")
+                    || e.to_lowercase().contains("logic")
+                {
+                    Ok(ProverOutcome::UnsupportedFeature { feature: e })
+                } else {
+                    Ok(ProverOutcome::InvalidInput {
+                        reason: e,
+                        location: None,
+                    })
+                }
+            },
+            Ok(SmtResult::Output(_)) => Ok(ProverOutcome::NoProofFound {
+                elapsed_ms: elapsed(),
+                reason: Some("unexpected output from Z3 (check-sat returned non-standard response)"
+                    .to_string()),
+            }),
+            Err(e) => {
+                let msg = e.to_string().to_lowercase();
+                if msg.contains("timeout") || msg.contains("timed out") {
+                    Ok(ProverOutcome::Timeout {
+                        limit_secs: self.config.timeout,
+                    })
+                } else if msg.contains("failed to spawn")
+                    || msg.contains("no such file")
+                    || msg.contains("os error")
+                {
+                    Ok(ProverOutcome::SystemError { detail: e.to_string() })
+                } else {
+                    Ok(ProverOutcome::ProverError {
+                        detail: e.to_string(),
+                        exit_code: None,
+                    })
+                }
+            },
         }
     }
 

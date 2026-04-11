@@ -18,15 +18,55 @@ pub struct ProofResult {
     pub artifacts: Vec<String>,
 }
 
-/// Proof verification status
+/// Proof verification status — mirrors ECHIDNA's ProverOutcome taxonomy.
+///
+/// The full 8-variant set maps directly to `ProverOutcome::status_str()` on
+/// the ECHIDNA side. `Verified`/`Failed` are backward-compatible aliases
+/// kept for callers that only care about the boolean outcome.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "SCREAMING_SNAKE_CASE")]
 pub enum ProofStatus {
+    /// ECHIDNA `PROVED` — goal valid, hypotheses consistent.
+    Proved,
+    /// Backward-compatible alias for `Proved` (used by GraphQL/REST responses
+    /// that still emit "VERIFIED" or "SUCCESS").
     Verified,
+    /// ECHIDNA `NO_PROOF_FOUND` — prover could not establish validity.
+    NoProofFound,
+    /// Backward-compatible alias for `NoProofFound`.
     Failed,
+    /// ECHIDNA `INVALID_INPUT` — parse or syntax error in the submitted content.
+    InvalidInput,
+    /// ECHIDNA `UNSUPPORTED_FEATURE` — syntactically valid but logic/feature
+    /// not supported by the selected prover.
+    UnsupportedFeature,
+    /// ECHIDNA `TIMEOUT` — prover hit its configured time limit.
     Timeout,
-    Error,
+    /// ECHIDNA `INCONSISTENT_PREMISES` — axiom/hypothesis set is unsatisfiable;
+    /// any goal follows trivially. Result is epistemically worthless.
+    InconsistentPremises,
+    /// ECHIDNA `PROVER_ERROR` — prover binary ran but reported an internal error.
+    ProverError,
+    /// ECHIDNA `SYSTEM_ERROR` — ECHIDNA could not communicate with the prover.
+    SystemError,
+    /// Status string was not recognised (future-proofing).
     Unknown,
+}
+
+impl ProofStatus {
+    /// Returns true if this status represents a successful, trustworthy proof.
+    ///
+    /// Specifically, `Proved` and `Verified` return true. `InconsistentPremises`
+    /// intentionally returns false even though a prover may have returned "proved" —
+    /// the result is not epistemically meaningful.
+    pub fn is_verified(self) -> bool {
+        matches!(self, ProofStatus::Proved | ProofStatus::Verified)
+    }
+
+    /// Returns true if the failure was transient and the request may be retried.
+    pub fn is_retryable(self) -> bool {
+        matches!(self, ProofStatus::Timeout | ProofStatus::SystemError)
+    }
 }
 
 /// Prover kind matching ECHIDNA's supported backends

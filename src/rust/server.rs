@@ -284,8 +284,10 @@ async fn verify_handler(Json(req): Json<VerifyRequest>) -> Result<Json<VerifyRes
             1
         };
 
+        let outcome_str = if raw.valid { "PROVED" } else { "NO_PROOF_FOUND" };
         return Ok(Json(VerifyResponse {
             valid: raw.valid,
+            outcome: outcome_str.to_string(),
             goals_remaining,
             tactics_used: 0,
             mode: Some("smt-query".to_string()),
@@ -298,16 +300,28 @@ async fn verify_handler(Json(req): Json<VerifyRequest>) -> Result<Json<VerifyRes
     let prover = echidna::provers::ProverFactory::create(req.prover, config)
         .map_err(|e| AppError::InternalError(e.to_string()))?;
 
-    // Parse proof
-    let state = prover
-        .parse_string(&req.content)
-        .await
-        .map_err(|e| AppError::ParseError(e.to_string()))?;
+    // Parse proof — parse errors surface as INVALID_INPUT in the outcome.
+    // We intentionally don't forward the raw error message to the response
+    // body (it may leak internal paths or prover internals).
+    let state = match prover.parse_string(&req.content).await {
+        Ok(s) => s,
+        Err(_) => {
+            return Ok(Json(VerifyResponse {
+                valid: false,
+                outcome: "INVALID_INPUT".to_string(),
+                goals_remaining: 0,
+                tactics_used: 0,
+                mode: None,
+                smt_status: None,
+            }));
+        }
+    };
 
     // Fail-fast on empty parse results (see prove_handler comment).
     if is_empty_state(&state) && !req.content.trim().is_empty() {
         return Ok(Json(VerifyResponse {
             valid: false,
+            outcome: "INVALID_INPUT".to_string(),
             goals_remaining: 0,
             tactics_used: 0,
             mode: None,
@@ -315,15 +329,16 @@ async fn verify_handler(Json(req): Json<VerifyRequest>) -> Result<Json<VerifyRes
         }));
     }
 
-    // Verify
-    let valid = prover
-        .verify_proof(&state)
+    // Use check() for the typed outcome taxonomy instead of the bool verify_proof().
+    let outcome = prover
+        .check(&state)
         .await
         .map_err(|e| AppError::VerificationError(e.to_string()))?;
 
     Ok(Json(VerifyResponse {
-        valid,
-        goals_remaining: state.goals.len(),
+        valid: outcome.is_proved(),
+        outcome: outcome.status_str().to_string(),
+        goals_remaining: if outcome.is_proved() { 0 } else { state.goals.len() },
         tactics_used: state.proof_script.len(),
         mode: None,
         smt_status: None,
@@ -1041,6 +1056,13 @@ struct VerifyRequest {
 #[derive(Serialize)]
 struct VerifyResponse {
     valid: bool,
+    /// Typed outcome from the prover — one of PROVED, NO_PROOF_FOUND,
+    /// INVALID_INPUT, UNSUPPORTED_FEATURE, TIMEOUT, INCONSISTENT_PREMISES,
+    /// PROVER_ERROR, SYSTEM_ERROR.
+    ///
+    /// This is the primary result field; `valid` is a backward-compatible bool
+    /// summary derived from it (true iff outcome == PROVED).
+    outcome: String,
     goals_remaining: usize,
     tactics_used: usize,
     #[serde(skip_serializing_if = "Option::is_none")]

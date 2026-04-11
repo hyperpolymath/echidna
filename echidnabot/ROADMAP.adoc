@@ -1,22 +1,75 @@
 // SPDX-License-Identifier: PMPL-1.0-or-later
 = Echidnabot Roadmap
 
-== Current Status
+== Current Status (v0.1.x)
 
-Initial development phase.
+Core dispatch, trust pipeline integration, and GitOps proof-verification flow
+operational. Communicates with ECHIDNA over REST and GraphQL.
+
+=== Done
+* [x] `EchidnaClient` — REST + GraphQL with `Auto` fallback
+* [x] `ProofStatus` extended to full 8-variant taxonomy matching ECHIDNA's
+      `ProverOutcome` (PROVED / NO_PROOF_FOUND / INVALID_INPUT /
+      UNSUPPORTED_FEATURE / TIMEOUT / INCONSISTENT_PREMISES / PROVER_ERROR /
+      SYSTEM_ERROR)
+* [x] `parse_proof_status()` handles both new taxonomy strings and legacy strings
+* [x] REST response deserialization upgraded: reads `outcome` field when present
+      (ECHIDNA v2.2+), falls back to `valid: bool` for older servers
+* [x] `ProofStatus::is_verified()` and `is_retryable()` helpers
 
 == Milestones
 
-=== v0.1.0 - Foundation
-* [ ] Core functionality
-* [ ] Basic documentation
-* [ ] CI/CD pipeline
+=== v0.2.0 — Session-based Z3 (single-process round-trip)
 
-=== v1.0.0 - Stable Release
-* [ ] Full feature set
-* [ ] Comprehensive tests
-* [ ] Production ready
+Replace the two-process `execute_command()` pattern in ECHIDNA Z3 backend with
+a single Z3 session using `(push)/(pop)`. This makes the inconsistency pre-check
+and validity check atomic (one process, no races) and halves subprocess overhead.
 
-== Future Directions
+Echidnabot impact: faster response times for Z3-backed proofs; TIMEOUT outcome
+more reliable (single process, single wall-clock budget).
 
-_To be determined based on community feedback._
+* [ ] ECHIDNA: session-based `Z3Backend::execute_session()` with push/pop
+* [ ] ECHIDNA: retire two-call pattern in `check()`
+* [ ] echidnabot: no code change needed — outcome taxonomy unchanged
+
+=== v0.3.0 — Typed override coverage for priority backends
+
+ECHIDNA's `check()` default falls back to heuristic string matching for 46 of 48
+backends. Priority overrides (each surfaces full taxonomy without guessing):
+
+* [ ] CVC5 — heavily used alongside Z3, same SMT-LIB surface
+* [ ] Lean 4 — most common interactive backend
+* [ ] Coq/Rocq — second most common; `InconsistentPremises` detection via
+      `tauto` + `exfalso`
+* [ ] Isabelle — `INCONSISTENT_PREMISES` from `simp` failure pattern
+
+Echidnabot impact: `INCONSISTENT_PREMISES` and `UNSUPPORTED_FEATURE` reported
+accurately instead of `NO_PROOF_FOUND` for these backends.
+
+=== v0.4.0 — `check_raw_smt()` API surface
+
+Add a `check_raw_smt(raw: &str) -> ProverOutcome` method to `ProverBackend` for
+backends that accept pre-built content directly (Z3, CVC5, Why3). Avoids the
+lossy `parse_string()` → ProofState → reconstruct round-trip.
+
+ECHIDNA's `/api/verify` REST handler uses this path when the content is raw
+SMT-LIB (already detected via `should_passthrough_smt_eval`), making the
+`outcome` field accurate for raw-mode requests.
+
+Echidnabot impact: `verify_proof_rest()` receives meaningful `outcome` even
+for SMT-LIB passthroughs (currently gets a synthesised PROVED/NO_PROOF_FOUND).
+
+=== v1.0.0 — Production stable
+
+* [ ] `gitbot-fleet/shared-context` submodule pinned and shipped
+* [ ] All above milestones complete
+* [ ] Comprehensive integration tests against live ECHIDNA instance
+* [ ] Deployment documentation
+
+== Architectural direction
+
+The long-term direction is: **every failure surfaced by echidnabot carries enough
+information for the proof author to act on it without reading logs.**
+
+The taxonomy established in ECHIDNA v2.2 is the foundation. Each subsequent
+milestone makes more of that taxonomy reachable through the bot's output.
