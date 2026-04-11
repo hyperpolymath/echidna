@@ -71,7 +71,7 @@ enum Commands {
 
     /// Manually trigger a proof check
     Check {
-        /// Repository in format owner/name
+        /// Repository in format owner/name, or path to a proof file
         #[arg(short, long)]
         repo: String,
 
@@ -82,6 +82,12 @@ enum Commands {
         /// Specific prover to use
         #[arg(short, long)]
         prover: Option<String>,
+
+        /// Repository slug for VeriSimDB recording (owner/name).
+        /// Defaults to the repo arg when it looks like owner/name,
+        /// otherwise "local/adhoc".
+        #[arg(long)]
+        slug: Option<String>,
     },
 
     /// Show status of a repository or job
@@ -131,9 +137,10 @@ async fn main() -> Result<()> {
             repo,
             commit,
             prover,
+            slug,
         } => {
             tracing::info!("Triggering check for {} at {:?}", repo, commit);
-            check(&config, &repo, commit.as_deref(), prover.as_deref()).await
+            check(&config, &repo, commit.as_deref(), prover.as_deref(), slug.as_deref()).await
         }
         Commands::Status { target } => {
             tracing::info!("Getting status for {}", target);
@@ -250,7 +257,13 @@ async fn register(config: &Config, repo: &str, platform: &str, provers: &str) ->
     Ok(())
 }
 
-async fn check(config: &Config, repo: &str, commit: Option<&str>, prover: Option<&str>) -> Result<()> {
+async fn check(
+    config: &Config,
+    repo: &str,
+    commit: Option<&str>,
+    prover: Option<&str>,
+    slug: Option<&str>,
+) -> Result<()> {
     let client = EchidnaClient::new(&config.echidna);
     let health = client.health_check().await?;
     tracing::info!("ECHIDNA health check: {}", if health { "ok" } else { "unhealthy" });
@@ -268,9 +281,7 @@ async fn check(config: &Config, repo: &str, commit: Option<&str>, prover: Option
         (None, None)
     };
 
-    let selected_prover = prover
-        .and_then(parse_prover_arg)
-        .or(inferred_prover);
+    let selected_prover = prover.and_then(parse_prover_arg).or(inferred_prover);
 
     if let Some(kind) = selected_prover {
         let status = client.prover_status(kind).await?;
@@ -283,6 +294,7 @@ async fn check(config: &Config, repo: &str, commit: Option<&str>, prover: Option
 
     if let Some(content) = proof_content {
         let kind = selected_prover.unwrap_or(ProverKind::Metamath);
+        let attempt_started = Utc::now();
         let result = client.verify_proof(kind, &content).await?;
         tracing::info!(
             "Proof result: {:?} ({} ms)",
@@ -299,6 +311,22 @@ async fn check(config: &Config, repo: &str, commit: Option<&str>, prover: Option
         if let Some(commit) = commit {
             tracing::info!("Checked commit {}", commit);
         }
+
+        // Derive slug: explicit arg > owner/name-shaped repo arg > fallback.
+        let repo_slug = slug
+            .map(str::to_string)
+            .unwrap_or_else(|| {
+                if repo.contains('/') && !repo.starts_with('/') && !repo.starts_with('.') {
+                    repo.to_string()
+                } else {
+                    "local/adhoc".to_string()
+                }
+            });
+
+        let verisim_writer = VeriSimWriter::from_env();
+        verisim_writer
+            .record(&result, kind, &repo_slug, repo, attempt_started)
+            .await;
     } else {
         tracing::warn!(
             "Repo '{}' is not a proof file; pass a local proof file path to run verification",

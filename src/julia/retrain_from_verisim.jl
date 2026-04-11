@@ -369,7 +369,7 @@ function train_logistic(
 
         if epoch % 10 == 0 || epoch == epochs
             avg_loss = total_loss / n_samples
-            @info "  Epoch $(lpad(epoch, 3)/epochs): loss=$(round(avg_loss, digits=4))"
+            @info "  Epoch $(lpad(epoch, 3))/$(epochs): loss=$(round(avg_loss, digits=4))"
         end
     end
 
@@ -440,8 +440,8 @@ function main(args=ARGS)
     println("║  ECHIDNA — VeriSimDB-driven premise-selector retrain  ║")
     println("╚═══════════════════════════════════════════════════════╝")
     println()
-    @info "Config" verisim_url=opts[:verisim_url] ml_url=opts[:ml_url] \
-          models_dir=opts[:models_dir] limit=opts[:limit]
+    @info "Config" verisim_url=opts[:verisim_url]
+    @info "Config" ml_url=opts[:ml_url] models_dir=opts[:models_dir] limit=opts[:limit]
     println()
 
     models_dir = opts[:models_dir]
@@ -474,7 +474,7 @@ function main(args=ARGS)
     println("═══════════════════════════════════════════════════════")
     println("Step 3/6 — Growing vocabulary from successful traces")
     println("═══════════════════════════════════════════════════════")
-    vocab = grow_vocab(existing_vocab, rows; max_vocab=2000)
+    vocab = grow_vocab(existing_vocab, rows, 2000)
     println()
 
     # ── Step 4: Prepare weighted training data ────────────────────────────────

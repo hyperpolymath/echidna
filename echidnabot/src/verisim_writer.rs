@@ -180,8 +180,8 @@ impl VeriSimWriter {
             confidence,
             parent_attempt_id: None,
             strategy_tag: "echidnabot".to_string(),
-            started_at: started_at.to_rfc3339(),
-            completed_at: completed_at.to_rfc3339(),
+            started_at: started_at.format("%Y-%m-%dT%H:%M:%S%.3f").to_string(),
+            completed_at: completed_at.format("%Y-%m-%dT%H:%M:%S%.3f").to_string(),
             prover_output: truncate_utf8(&result.prover_output, 8 * 1024),
             error_message: if result.status == ProofStatus::Verified {
                 None
