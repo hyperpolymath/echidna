@@ -5,8 +5,9 @@
 #   flyctl launch --no-deploy --copy-config --name echidna-nesy
 #   flyctl deploy -c fly.toml -f .containerization/Containerfile.full
 #
-# Internal-only: echidna is reached via echidna-nesy.internal:8090 from
+# Internal-only: echidna is reached via echidna-nesy.flycast:8090 from
 # proven-nesy-solver-api; no public http_service.
+# Use .flycast (not .internal) so Fly auto-wakes the machine on first connection.
 #
 # NB: Container is LARGE (~6-8 GB) — Julia + Idris2 + Agda + Lean + Isabelle.
 # Memory must be >=4GB (Isabelle Main heap ~1GB); shared-cpu-2x is the
@@ -43,10 +44,15 @@ kill_timeout = "10s"
     port = 8090
     handlers = []
 
-  [[services.tcp_checks]]
+  # HTTP check on /api/health — tests the server is serving, not just the port.
+  # grace_period must be generous: Isabelle Main heap maps ~1-2 GB on first load
+  # and Julia has JIT overhead on first prover call.  90s is the minimum safe value.
+  [[services.http_checks]]
     interval = "30s"
-    timeout = "5s"
-    grace_period = "30s"
+    timeout = "10s"
+    grace_period = "90s"
+    method = "GET"
+    path = "/api/health"
 
 [[vm]]
   size = "shared-cpu-2x"
