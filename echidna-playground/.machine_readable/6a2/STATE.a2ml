@@ -1,4 +1,38 @@
-;; SPDX-License-Identifier: PMPL-1.0-or-later
-(state (metadata (version "0.1.0") (last-updated "2026-02-08") (status active))
-  (project-context (name "language-bridges") (purpose "FFI bridges between languages via Zig") (completion-percentage 20))
-  (components (component "ada-zig-ffi") (component "gleam-zig-ffi") (component "idris2-zig-ffi") (component "julia-zig-ffi") (component "ocaml-zig-ffi") (component "rescript-zig-ffi") (component "rust-zig-ffi") (component "swift-zig-ffi") (component "zig-c-ffi") (component "zig-container-ffi") (component "zig-fuse-ext") (component "zig-libgit2-ffi") (component "zig-nickel-ffi") (component "zig-systemd-ffi") (component "zig-wireguard")))
+# SPDX-License-Identifier: PMPL-1.0-or-later
+# Copyright (c) 2026 Jonathan D.A. Jewell (hyperpolymath) <j.d.a.jewell@open.ac.uk>
+#
+# STATE.a2ml — Echidna Playground project state
+[metadata]
+project = "echidna-playground"
+version = "0.1.0"
+last-updated = "2026-02-08"
+status = "active"
+session = "converted from scheme — 2026-04-11"
+
+[project-context]
+name = "Echidna Playground"
+purpose = """FFI bridges between languages via Zig"""
+completion-percentage = 20
+
+[position]
+phase = "initial"   # design | implementation | testing | maintenance | archived
+maturity = "experimental"  # experimental | alpha | beta | production | lts
+
+[route-to-mvp]
+milestones = [
+  # No milestones recorded
+]
+
+[blockers-and-issues]
+issues = [
+  # No blockers recorded
+]
+
+[critical-next-actions]
+actions = [
+  # No actions recorded
+]
+
+[maintenance-status]
+last-run-utc = "2026-02-08T00:00:00Z"
+last-result = "unknown"  # unknown | pass | warn | fail

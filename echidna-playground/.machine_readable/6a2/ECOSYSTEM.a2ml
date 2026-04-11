@@ -1,3 +1,20 @@
-;; SPDX-License-Identifier: PMPL-1.0-or-later
-(ecosystem (metadata (version "0.1.0") (last-updated "2026-02-08"))
-  (project (name "language-bridges") (purpose "FFI bridges between languages via Zig") (role ffi-infrastructure)))
+# SPDX-License-Identifier: PMPL-1.0-or-later
+# Copyright (c) 2026 Jonathan D.A. Jewell (hyperpolymath) <j.d.a.jewell@open.ac.uk>
+#
+# ECOSYSTEM.a2ml — Echidna Playground ecosystem position
+[metadata]
+version = "0.1.0"
+last-updated = "2026-02-08"
+
+[project]
+name = "Echidna Playground"
+purpose = "FFI bridges between languages via Zig"
+role = ""
+
+[position-in-ecosystem]
+category = ""
+
+[related-projects]
+projects = [
+  # No related projects recorded
+]
