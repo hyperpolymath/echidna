@@ -163,7 +163,7 @@ Each file corresponds to different proof aspects:
 
 - [x] Basic.lean - Type-checks with Lean 4.13.0
 - [x] Propositional.lean - Type-checks with Lean 4.13.0
-- [x] Nat.lean - Type-checks with Lean 4.13.0 (1 `sorry` for advanced theorem)
+- [x] Nat.lean - Type-checks with Lean 4.13.0 (all theorems fully proven, zero sorry)
 - [x] List.lean - Type-checks with Lean 4.13.0
 
 ## Dependencies

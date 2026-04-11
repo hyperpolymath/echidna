@@ -1,10 +1,25 @@
 {
   "version": "v2.0-expanded",
-  "total_proofs": 47273,
+  "total_proofs": 47370,
   "total_tactics": 47751,
   "total_premises": 150,
   "unique_theorems": 47165,
-  "proofs_by_prover": {"CVC5":1,"Lean":5,"Isabelle":4,"Mizar":7,"Coq":75,"ACL2":11,"Agda":4,"Z3":1,"Metamath":47165},
-  "extraction_date": "2026-03-20T18:13:33.301465",
-  "merged_from": ["v1.3.1-expanded (332 proofs)", "v2.0-extraction (108 proofs)", "metamath (47165 proofs)"]
+  "proofs_by_prover": {
+    "CVC5": 1,
+    "Lean": 5,
+    "Isabelle": 101,
+    "Mizar": 7,
+    "Coq": 75,
+    "ACL2": 11,
+    "Agda": 4,
+    "Z3": 1,
+    "Metamath": 47165
+  },
+  "extraction_date": "2026-04-11",
+  "merged_from": [
+    "v1.3.1-expanded (332 proofs)",
+    "v2.0-extraction (108 proofs)",
+    "metamath (47165 proofs)",
+    "isabelle_tropical (97 proofs)"
+  ]
 }

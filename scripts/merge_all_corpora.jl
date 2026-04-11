@@ -32,6 +32,9 @@ const FILE_PATTERNS = [
     
     # mathlib4 extraction
     ("proof_states", ["proof_states_mathlib4.jsonl"]),
+
+    # Isabelle/HOL: tropical semiring extraction
+    ("proof_states", ["proof_states_isabelle.jsonl"]),
     ("tactics", ["tactics_mathlib4.jsonl"]),
 ]
 
