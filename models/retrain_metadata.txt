@@ -1,0 +1,6 @@
+retrained_at: 2026-04-11T17:14:13.558
+source: VeriSimDB proof_attempts
+rows_fetched: 1233
+vocab_size: 422
+classes: agda,altergo,cadical,coq,cvc5,eprover,fstar,idris2,kissat,lean,metamath,vampire,z3
+training_accuracy: 53.7%
