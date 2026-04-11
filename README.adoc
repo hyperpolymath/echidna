@@ -299,9 +299,32 @@ just mvp        # MVP smoke checks (reports missing provers, non-fatal)
 | CI/CD | 17 workflows
 |===
 
-*Planned for v2.0*:
+*Completed in v2.2 (epistemic hardening)*:
 
-* Full API-to-prover FFI/IPC integration
+* Typed `ProverOutcome` taxonomy — 8 mutually-exclusive statuses replacing `Result<bool>`
+* Z3 `check()` override: inconsistency pre-check before trivial-goal short-circuit
+* Z3 output parsing uses last non-empty line (not whole-output `contains()`)
+* Z3 goal-set inconsistency detection (goals cannot all hold simultaneously)
+* Why3 timeout bug fixed (+5s undocumented slack removed)
+* Pre-colleague sanity suite: 37 tests covering full taxonomy with Z3 integration
+* `/api/verify` REST endpoint now returns typed `outcome` field alongside `valid: bool`
+* echidnabot `ProofStatus` extended to full 8-variant taxonomy, backward compatible
+
+*Roadmap — v2.3 (single-session Z3)*:
+
+* Replace two-process inconsistency check with single Z3 session using `(push)/(pop)` —
+  atomic, halves subprocess overhead
+* `check_raw_smt()` trait method for backends that accept pre-built content directly
+  (bypasses lossy `parse_string()` round-trip)
+
+*Roadmap — v2.4 (typed override coverage)*:
+
+Priority backends for typed `check()` overrides (currently use heuristic fallback):
+CVC5, Lean 4, Coq/Rocq, Isabelle. Each adds accurate `INCONSISTENT_PREMISES` and
+`UNSUPPORTED_FEATURE` detection for that backend.
+
+*Planned for v3.0*:
+
 * Deep learning models (Transformers via Flux.jl)
 * Production deployment configuration
 * Tamarin/ProVerif bridge for cipherbot

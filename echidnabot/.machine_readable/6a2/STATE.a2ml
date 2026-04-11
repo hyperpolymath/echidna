@@ -2,63 +2,37 @@
 # Copyright (c) 2026 Jonathan D.A. Jewell (hyperpolymath) <j.d.a.jewell@open.ac.uk>
 #
 # STATE.a2ml — Echidnabot project state
-
 [metadata]
 project = "echidnabot"
-version = "0.1.0"
-last-updated = "2026-04-11"
+version = "0.0.1"
+last-updated = "2026-01-03"
 status = "active"
-session = "VeriSimDB coupling + dogfood run — 2026-04-11"
+session = "converted from scheme — 2026-04-11"
 
 [project-context]
 name = "Echidnabot"
-purpose = """
-Proof-aware CI bot for theorem prover repositories. Calls ECHIDNA Core
-to verify proof files, records every attempt (success + failure) to
-VeriSimDB via the VeriSimWriter adapter, and feeds the Hypatia learning
-loop through the proof_attempts ClickHouse table.
-"""
-completion-percentage = 72
+purpose = """"""
+completion-percentage = 0
 
 [position]
-phase = "implementation"   # design | implementation | testing | maintenance | archived
-maturity = "alpha"         # experimental | alpha | beta | production | lts
+phase = "initial"   # design | implementation | testing | maintenance | archived
+maturity = "experimental"  # experimental | alpha | beta | production | lts
 
 [route-to-mvp]
 milestones = [
-  { id = "M1", title = "Core prover dispatch (48 provers)", status = "done" },
-  { id = "M2", title = "VeriSimWriter — proof_attempts recording", status = "done" },
-  { id = "M3", title = "check --slug for ad-hoc dogfood runs", status = "done" },
-  { id = "M4", title = "Webhook server + scheduler", status = "done" },
-  { id = "M5", title = "Register/check/status CLI commands", status = "done" },
-  { id = "M6", title = "GitHub / GitLab / Bitbucket adapters", status = "in-progress" },
-  { id = "M7", title = "Production hardening (retry, backoff, circuit-break)", status = "planned" },
-  { id = "M8", title = "Prover availability detection (not just status)", status = "planned" },
+  # No milestones recorded
 ]
 
 [blockers-and-issues]
 issues = [
-  { id = "B1", description = "Agda/Coq/Isabelle provers report status=unavailable when not installed locally; proof attempts write failure rows correctly but classification could be improved", severity = "low" },
-  { id = "B2", description = "GitHub adapter not yet wired with real webhook signing validation", severity = "medium" },
+  # No blockers recorded
 ]
 
 [critical-next-actions]
 actions = [
-  "Wire GitHub PAT for production webhook dispatch",
-  "Add prover-not-installed vs proof-failed distinction in outcome classification",
-  "Test process_job path end-to-end with a real GitHub webhook",
+  # No actions recorded
 ]
 
-[session-history]
-# 2026-04-11: VeriSimDB coupling complete. VeriSimWriter records every verify_proof
-#             result to POST /api/v1/proof_attempts (ClickHouse via verisim-api).
-#             Fixed timestamp format to DateTime64(3) without Z suffix.
-#             Added --slug flag to check command so ad-hoc file checks also populate
-#             proof_attempts. Dogfood run: 4 echidna proof files verified, all rows
-#             landed in ClickHouse (lean=success, agda/coq=failure, correct timestamps).
-# 2026-04-05: V4 coupling: VeriSimWriter stub present but not wired into process_job.
-#             echidnabot compiles, 0 clippy warnings.
-
 [maintenance-status]
-last-run-utc = "2026-04-11T17:11:17Z"
-last-result = "pass"
+last-run-utc = "2026-01-03T00:00:00Z"
+last-result = "unknown"  # unknown | pass | warn | fail

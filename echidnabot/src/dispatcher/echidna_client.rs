@@ -319,17 +319,16 @@ impl EchidnaClient {
         }
 
         let data: RestVerifyResponse = response.json().await.map_err(Error::Http)?;
+        // Use typed outcome when ECHIDNA v2.2+ sends it; fall back to bool for
+        // older servers.
+        let status = match data.outcome.as_deref() {
+            Some(s) => parse_proof_status(s),
+            None => if data.valid { ProofStatus::Verified } else { ProofStatus::Failed },
+        };
+        let message = format!("{:?}", status);
         Ok(ProofResult {
-            status: if data.valid {
-                ProofStatus::Verified
-            } else {
-                ProofStatus::Failed
-            },
-            message: if data.valid {
-                "Proof verified successfully".to_string()
-            } else {
-                "Proof verification failed".to_string()
-            },
+            status,
+            message,
             prover_output: String::new(),
             duration_ms: 0,
             artifacts: Vec::new(),
@@ -437,6 +436,10 @@ struct RestVerifyRequest {
 #[derive(Deserialize)]
 struct RestVerifyResponse {
     valid: bool,
+    /// Typed outcome string from ProverOutcome::status_str() (added in v2.2).
+    /// Absent in older ECHIDNA versions — fall back to `valid` boolean when None.
+    #[serde(default)]
+    outcome: Option<String>,
     #[allow(dead_code)]
     goals_remaining: usize,
     #[allow(dead_code)]
@@ -560,12 +563,24 @@ pub enum ProverStatus {
     Unknown,
 }
 
+/// Map an ECHIDNA status string (from `ProverOutcome::status_str()`) to
+/// `ProofStatus`. Handles both the new 8-variant taxonomy and legacy strings
+/// for backward compatibility.
 fn parse_proof_status(s: &str) -> ProofStatus {
     match s.to_uppercase().as_str() {
+        // New taxonomy (ProverOutcome::status_str())
+        "PROVED" => ProofStatus::Proved,
+        "NO_PROOF_FOUND" => ProofStatus::NoProofFound,
+        "INVALID_INPUT" => ProofStatus::InvalidInput,
+        "UNSUPPORTED_FEATURE" => ProofStatus::UnsupportedFeature,
+        "TIMEOUT" => ProofStatus::Timeout,
+        "INCONSISTENT_PREMISES" => ProofStatus::InconsistentPremises,
+        "PROVER_ERROR" => ProofStatus::ProverError,
+        "SYSTEM_ERROR" => ProofStatus::SystemError,
+        // Legacy strings (older ECHIDNA versions / other API consumers)
         "VERIFIED" | "PASS" | "SUCCESS" => ProofStatus::Verified,
         "FAILED" | "FAIL" => ProofStatus::Failed,
-        "TIMEOUT" => ProofStatus::Timeout,
-        "ERROR" => ProofStatus::Error,
+        "ERROR" => ProofStatus::ProverError,
         _ => ProofStatus::Unknown,
     }
 }
