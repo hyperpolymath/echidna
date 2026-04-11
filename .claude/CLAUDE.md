@@ -8,6 +8,22 @@ The following files in `.machine_readable/` contain structured project metadata:
 - `.machine_readable/6a2/AGENTIC.a2ml` - AI agent interaction patterns
 - `.machine_readable/6a2/NEUROSYM.a2ml` - Neurosymbolic integration config
 - `.machine_readable/6a2/PLAYBOOK.a2ml` - Operational runbook
+- `.machine_readable/bot_directives/*.a2ml` - Per-bot permission and scope rules
+
+### CRITICAL: .scm metadata files are DEPRECATED
+
+**All `.scm` state/metadata files have been replaced by `.a2ml`.**
+
+If you find any `.scm` file under `.machine_readable/` (e.g. `STATE.scm`, `META.scm`,
+`ECOSYSTEM.scm`, `AGENTIC.scm`, `NEUROSYM.scm`, `PLAYBOOK.scm`, bot directive `.scm`
+files, or similar), you MUST:
+
+1. Check whether an equivalent `.a2ml` file already exists
+2. If yes — delete the `.scm` file immediately (`git rm`)
+3. If no — convert its content to A2ML format first, then delete the `.scm` original
+
+**Exception:** `guix.scm` files and files under `guix/` or `guix-channel/` are Guix
+package definitions (not metadata files) and must NOT be deleted.
 
 ---
 
