@@ -188,6 +188,7 @@ LABEL org.opencontainers.image.vendor="hyperpolymath"
 
 # Runtime dependencies only.
 # `perl` + `fontconfig` are Isabelle's launcher-script requirements.
+# `curl` is needed for the HEALTHCHECK below.
 RUN apt-get update && apt-get install -y --no-install-recommends \
     ca-certificates \
     libssl3 \
@@ -195,6 +196,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     perl \
     fontconfig \
     z3 \
+    curl \
     && rm -rf /var/lib/apt/lists/*
 
 WORKDIR /app
@@ -240,8 +242,9 @@ EXPOSE 50051
 # Julia ML
 EXPOSE 8090
 
-HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
-    CMD ["/app/bin/echidna", "--version"]
+# start-period=90s: Isabelle Main heap (~1-2 GB) + Julia JIT take time on cold start.
+HEALTHCHECK --interval=30s --timeout=10s --start-period=90s --retries=3 \
+    CMD curl -fs http://localhost:8090/api/health || exit 1
 
 ENTRYPOINT ["/app/bin/echidna"]
 CMD ["--help"]
