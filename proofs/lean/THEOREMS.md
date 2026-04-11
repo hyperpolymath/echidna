@@ -123,7 +123,7 @@ Quick reference guide for all theorems and definitions in the Lean proof files.
 - `right_distrib` - (m + n) * k = m * k + n * k
 
 ### Induction Examples
-- `sum_first_n` - Sum formula (contains sorry)
+- `sumTo_formula` - Sum formula (fully proven via omega)
 - `double_add` - n + n = 2 * n
 - `pow2_ge` - 2^n ≥ n for n ≥ 1
 
@@ -291,7 +291,7 @@ Quick reference guide for all theorems and definitions in the Lean proof files.
 ### Test Coverage
 - **Tier 1**: Basic logic and arithmetic (100%)
 - **Tier 2**: Induction and data structures (100%)
-- **Tier 3**: Advanced proofs (50% - some contain `sorry`)
+- **Tier 3**: Advanced proofs (100% - all sorry instances resolved)
 
 ### Performance Benchmarks
 - Small proofs (<10 lines): ~0.1s
