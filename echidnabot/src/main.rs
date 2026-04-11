@@ -10,11 +10,13 @@ use echidnabot::adapters::github::GitHubAdapter;
 use echidnabot::adapters::gitlab::GitLabAdapter;
 use echidnabot::api::graphql::GraphQLState;
 use echidnabot::api::{create_schema, webhook_router};
+use chrono::Utc;
 use echidnabot::dispatcher::{EchidnaClient, ProverKind};
 use echidnabot::dispatcher::echidna_client::ProverStatus;
 use echidnabot::scheduler::{JobScheduler, ProofJob};
 use echidnabot::store::{SqliteStore, Store};
 use echidnabot::store::models::{ProofResultRecord, Repository as StoreRepository};
+use echidnabot::verisim_writer::VeriSimWriter;
 use std::path::{Path, PathBuf};
 use std::sync::Arc;
 use std::time::Instant;
@@ -580,6 +582,10 @@ async fn process_job(
     let mut failed = Vec::new();
     let mut prover_output = String::new();
 
+    // Construct once per job — reads HYPATIA_VERISIM_URL; no-op if unset.
+    let repo_slug = format!("{}/{}", repo.owner, repo.name);
+    let verisim_writer = VeriSimWriter::from_env();
+
     for path in &file_paths {
         let full_path = if Path::new(path).is_absolute() {
             PathBuf::from(path)
@@ -587,7 +593,14 @@ async fn process_job(
             repo_path.join(path)
         };
         let content = fs::read_to_string(&full_path).await?;
+        let attempt_started = Utc::now();
         let result = echidna.verify_proof(job.prover, &content).await?;
+
+        // Record to VeriSimDB — non-fatal, log-only on error.
+        verisim_writer
+            .record(&result, job.prover, &repo_slug, path, attempt_started)
+            .await;
+
         if result.status == echidnabot::dispatcher::ProofStatus::Verified {
             verified.push(path.to_string());
         } else {

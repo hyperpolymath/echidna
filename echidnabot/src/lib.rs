@@ -25,6 +25,7 @@ pub mod result_formatter; // Bridge between dispatcher results and bot modes
 pub mod scheduler;
 pub mod store;
 pub mod trust; // ECHIDNA Trust Bridge (confidence, integrity, axiom tracking)
+pub mod verisim_writer; // Records proof attempts to VeriSimDB (closes learning loop)
 
 pub use config::Config;
 pub use error::{Error, Result};
