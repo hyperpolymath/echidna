@@ -4,8 +4,8 @@
 
 [metadata]
 project = "echidna"
-version = "2.0.0"
-last-updated = "2026-04-05"
+version = "2.1.1"
+last-updated = "2026-04-11"
 status = "active"
 
 [project-context]
@@ -73,3 +73,13 @@ changes = [
 ]
 test-counts = { rust = 765, julia = 63, shell-checks = 68, benchmarks = 13, isabelle-module = 13 }
 stub-audit-result = "Only Isabelle was truly stubbed; all other 47 external-solver backends spawn real subprocesses. 2 backends (metamath, typed_wasm) are intentionally pure-Rust in-process verifiers."
+
+[session-2026-04-11]
+summary = "Fly.io cold-start hardening for echidna-nesy deployment"
+changes = [
+  "fly.toml: [[services.tcp_checks]] → [[services.http_checks]] on /api/health; grace_period 30s → 90s; timeout 5s → 10s; added comment explaining Isabelle heap + Julia JIT warm-up requirement",
+  ".containerization/Containerfile.full: added curl to runtime apt-get layer; HEALTHCHECK switched from --version flag to curl -fs http://localhost:8090/api/health; --start-period 5s → 90s",
+  "Both echidna standalone and neural-foundations satellite copies updated identically",
+  "server.v (proven-nesy-solver-api): call_echidna_verify read_timeout raised to 90s to tolerate echidna cold-start",
+]
+rationale = "Isabelle Main heap maps ~1-2GB at first use; Julia JIT runs on first inference call. Without 90s grace the Fly health probe would kill the machine before it was ready, causing cascading restart loops."
