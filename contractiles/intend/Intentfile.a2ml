@@ -8,7 +8,9 @@ Declared intent and purpose for Echidna.
 
 ## Purpose
 
-Echidna — // SPDX-License-Identifier: PMPL-1.0-or-later
+Echidna is a trust-hardened neurosymbolic theorem proving platform.
+It supports 48 prover backends, records every proof attempt to VeriSimDB,
+and feeds the Hypatia learning loop so the fleet gets smarter over time.
 
 ## Anti-Purpose
 
