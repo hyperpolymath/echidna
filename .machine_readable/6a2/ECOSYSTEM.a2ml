@@ -1,10 +1,40 @@
 # SPDX-License-Identifier: PMPL-1.0-or-later
-# ECOSYSTEM.a2ml — Ecosystem position
-# Converted from ECOSYSTEM.scm on 2026-03-15
+# Copyright (c) 2026 Jonathan D.A. Jewell (hyperpolymath) <j.d.a.jewell@open.ac.uk>
+#
+# ECOSYSTEM.a2ml — Ecosystem position for echidna
 
 [metadata]
+version = "0.2.0"
+last-updated = "2026-04-11"
 project = "echidna"
 ecosystem = "hyperpolymath"
 
+[project]
+name = "ECHIDNA"
+full-name = "Extensible Cognitive Hybrid Intelligence for Deductive Neural Assistance"
+purpose = """Trust-hardened neurosymbolic theorem proving platform. 48 prover backends
+(Agda, Lean4, Isabelle, Coq, Idris2, F*, Z3, CVC5, Vampire, and 39 more). Sandboxed
+solver execution (Podman/bubblewrap), proof certificate checking, axiom tracking,
+GNN-guided proof search, Julia ML inference layer."""
+role = "prover-dispatcher"
+
 [position]
+tier = "core-infrastructure"
 type = "component"
+
+[related-projects]
+projects = [
+  { name = "proven-servers (nesy-solver-api)", relationship = "consumer", notes = "nesy-solver-api calls /api/verify on echidna-nesy.flycast:8090. Cold-start grace 90s." },
+  { name = "hypatia", relationship = "sibling-neurosym", notes = "Hypatia performs neurosymbolic CI scanning; echidna does theorem proving. Both are Tier 2 formal verification tools." },
+  { name = "verisimdb", relationship = "planned-integration", notes = "Proof attempt results should feed VeriSimDB for longitudinal tracking." },
+  { name = "neural-foundations", relationship = "monorepo-satellite", notes = "echidna is mirrored as a submodule/satellite inside neural-foundations." },
+  { name = "maa-framework", relationship = "sibling", notes = "Absolute-zero and related MA/ML tools in same neurosymbolic tier." },
+]
+
+[deployment]
+fly-app = "echidna-nesy"
+region = "lhr"
+url = "http://echidna-nesy.flycast:8090 (private 6PN — auto-wake via .flycast)"
+health-endpoint = "/api/health"
+grace-period = "90s"
+cold-start-note = "Isabelle Main heap ~1-2GB maps at first use; Julia JIT runs on first inference. Minimum 90s grace."
