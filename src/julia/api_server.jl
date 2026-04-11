@@ -253,6 +253,45 @@ function handle_model_info(req::HTTP.Request)::HTTP.Response
     return HTTP.Response(200, JSON3.write(info))
 end
 
+# API endpoint: Hot-reload models from disk.
+#
+# Called by retrain_from_verisim.jl after it writes updated model artefacts.
+# Reloads both TACTIC_MODEL and PREMISE_MODEL in place so the server serves
+# the new weights without a process restart. Reload is atomic from the
+# caller's perspective: the old globals remain live until the new ones are
+# assigned, so in-flight /suggest requests are never interrupted mid-model.
+#
+# Returns 200 with {"status":"reloaded","vocab_size":N,"classes":["..."]}
+# on success, or 500 with {"status":"error","message":"..."} on failure.
+function handle_reload(req::HTTP.Request)::HTTP.Response
+    @info "POST /reload — reloading models from $(MODELS_DIR)"
+    try
+        new_tactic  = load_tactic_model(MODELS_DIR)
+        new_premise = load_premise_model(MODELS_DIR)
+
+        # Atomic assignment — each Ref write is a single store, so the
+        # server never holds a mix of old-tactic / new-premise.
+        TACTIC_MODEL[]  = new_tactic
+        PREMISE_MODEL[] = new_premise
+
+        @info "  Reload complete: $(length(new_tactic.classes)) classes, " *
+              "$(length(new_tactic.vocab)) vocab words"
+
+        return HTTP.Response(200, JSON3.write(Dict(
+            "status"     => "reloaded",
+            "vocab_size" => length(new_tactic.vocab),
+            "classes"    => new_tactic.classes
+        )))
+    catch e
+        msg = string(e)
+        @error "Reload failed" exception=(e, catch_backtrace())
+        return HTTP.Response(500, JSON3.write(Dict(
+            "status"  => "error",
+            "message" => msg
+        )))
+    end
+end
+
 # Router
 function handle_request(req::HTTP.Request)::HTTP.Response
     # CORS headers
@@ -273,6 +312,8 @@ function handle_request(req::HTTP.Request)::HTTP.Response
         handle_suggest_tactics(req)
     elseif req.target == "/info"
         handle_model_info(req)
+    elseif req.target == "/reload" && req.method == "POST"
+        handle_reload(req)
     else
         HTTP.Response(404, JSON3.write(Dict("error" => "Not found")))
     end
@@ -306,6 +347,7 @@ function start_server(; port::Int=PORT, host::String=HOST, models_dir::String=MO
     @info "  GET  /health  - Health check"
     @info "  POST /suggest - Get tactic suggestions"
     @info "  GET  /info    - Model information"
+    @info "  POST /reload  - Hot-swap models from disk (called by retrain_from_verisim.jl)"
     @info "\nPress Ctrl+C to stop\n"
 
     # Start HTTP server
