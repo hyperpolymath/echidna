@@ -28,6 +28,10 @@
 //! (e.g. `http://localhost:8080`). If the variable is absent or empty,
 //! the writer is disabled and every call to `record` is a no-op.
 //!
+//! If verisim-api sets `VERISIM_PROOF_ATTEMPTS_TOKEN`, set the same value in
+//! the echidnabot process environment so writes include
+//! `X-Proof-Attempts-Token`.
+//!
 //! # Prover-agnosticism
 //!
 //! `prover_to_str` maps every `ProverKind` variant to the lowercase
@@ -104,6 +108,7 @@ pub struct VeriSimWriter {
     base_url: String,
     http: Client,
     enabled: bool,
+    write_token: Option<String>,
 }
 
 impl VeriSimWriter {
@@ -122,6 +127,10 @@ impl VeriSimWriter {
                     base_url: url.trim_end_matches('/').to_string(),
                     http,
                     enabled: true,
+                    write_token: std::env::var("VERISIM_PROOF_ATTEMPTS_TOKEN")
+                        .ok()
+                        .map(|s| s.trim().to_string())
+                        .filter(|s| !s.is_empty()),
                 }
             }
             _ => {
@@ -132,6 +141,7 @@ impl VeriSimWriter {
                     base_url: String::new(),
                     http: Client::new(),
                     enabled: false,
+                    write_token: None,
                 }
             }
         }
@@ -163,9 +173,10 @@ impl VeriSimWriter {
 
         let completed_at = Utc::now();
         let obligation_class = classify_obligation_from_path(file_path, prover);
-        let outcome = outcome_str(&result.status);
+        let outcome = outcome_str(result);
         let confidence = confidence_from_status(&result.status);
         let prover_str = prover_to_str(prover);
+        let verified = result.status.is_verified();
 
         let row = ProofAttemptRow {
             attempt_id: Uuid::new_v4().to_string(),
@@ -183,16 +194,16 @@ impl VeriSimWriter {
             started_at: started_at.format("%Y-%m-%dT%H:%M:%S%.3f").to_string(),
             completed_at: completed_at.format("%Y-%m-%dT%H:%M:%S%.3f").to_string(),
             prover_output: truncate_utf8(&result.prover_output, 8 * 1024),
-            error_message: if result.status == ProofStatus::Verified {
-                None
-            } else {
-                Some(result.message.clone())
-            },
+            error_message: if verified { None } else { Some(build_error_message(result)) },
         };
 
         let url = format!("{}/api/v1/proof_attempts", self.base_url);
+        let mut request = self.http.post(&url).json(&row);
+        if let Some(token) = &self.write_token {
+            request = request.header("X-Proof-Attempts-Token", token);
+        }
 
-        match self.http.post(&url).json(&row).send().await {
+        match request.send().await {
             Ok(resp) if resp.status().is_success() => {
                 debug!(
                     attempt_id = %row.attempt_id,
@@ -228,11 +239,21 @@ impl VeriSimWriter {
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
 /// Map `ProofStatus` to the lowercase ClickHouse Enum8 outcome string.
-fn outcome_str(status: &ProofStatus) -> String {
-    match status {
-        ProofStatus::Verified => "success",
+fn outcome_str(result: &ProofResult) -> String {
+    if result.status.is_verified() {
+        return "success".to_string();
+    }
+
+    match result.status {
+        ProofStatus::Proved | ProofStatus::Verified => "success",
+        ProofStatus::NoProofFound | ProofStatus::Failed => "failure",
+        ProofStatus::InvalidInput
+        | ProofStatus::UnsupportedFeature
+        | ProofStatus::InconsistentPremises
+        | ProofStatus::ProverError => "failure",
         ProofStatus::Timeout => "timeout",
-        ProofStatus::Failed | ProofStatus::Error => "failure",
+        ProofStatus::SystemError if is_prover_unavailable(result) => "unknown",
+        ProofStatus::SystemError => "failure",
         ProofStatus::Unknown => "unknown",
     }
     .to_string()
@@ -272,12 +293,37 @@ fn classify_obligation_from_path(file_path: &str, prover: ProverKind) -> String 
 /// is per-attempt metadata, not a prediction.
 fn confidence_from_status(status: &ProofStatus) -> f32 {
     match status {
-        ProofStatus::Verified => 0.95,
-        ProofStatus::Failed => 0.10,
+        ProofStatus::Proved | ProofStatus::Verified => 0.95,
+        ProofStatus::NoProofFound | ProofStatus::Failed => 0.10,
+        ProofStatus::InvalidInput | ProofStatus::UnsupportedFeature => 0.20,
+        ProofStatus::InconsistentPremises => 0.05,
         ProofStatus::Timeout => 0.05,
-        ProofStatus::Error => 0.10,
+        ProofStatus::ProverError | ProofStatus::SystemError => 0.05,
         ProofStatus::Unknown => 0.50,
     }
+}
+
+fn build_error_message(result: &ProofResult) -> String {
+    if is_prover_unavailable(result) {
+        format!("prover_unavailable: {}", result.message)
+    } else {
+        result.message.clone()
+    }
+}
+
+fn is_prover_unavailable(result: &ProofResult) -> bool {
+    matches!(result.status, ProofStatus::SystemError)
+        && {
+            let merged = format!(
+                "{}\n{}",
+                result.message.to_lowercase(),
+                result.prover_output.to_lowercase()
+            );
+            merged.contains("not installed")
+                || merged.contains("not available")
+                || merged.contains("unavailable")
+                || merged.contains("missing prover")
+        }
 }
 
 /// Stable 16-char hex obligation ID derived from `(repo, file)`.

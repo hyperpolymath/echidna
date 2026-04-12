@@ -40,7 +40,7 @@ queue_size = 100
 # # Option 2: Personal Access Token (simpler for testing)
 # token = "ghp_xxxxxxxxxxxxxxxxxxxx"
 #
-# # Webhook secret for signature verification
+# # Webhook secret for signature verification (required if serving /webhooks/github)
 # webhook_secret = "your-webhook-secret"
 
 # GitLab Integration (optional)
@@ -56,3 +56,4 @@ queue_size = 100
 # ECHIDNABOT__ECHIDNA__REST_ENDPOINT=http://...
 # ECHIDNABOT__ECHIDNA__MODE=rest
 # ECHIDNABOT__GITHUB__TOKEN=ghp_...
+# VERISIM_PROOF_ATTEMPTS_TOKEN=...   # only if verisim-api enables token auth

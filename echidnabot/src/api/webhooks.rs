@@ -48,14 +48,26 @@ async fn handle_github_webhook(
 ) -> impl IntoResponse {
     tracing::info!("Received GitHub webhook");
 
-    // Verify signature if secret is configured
-    if let Some(ref gh_config) = state.config.github {
-        if let Some(ref secret) = gh_config.webhook_secret {
-            if let Err(e) = verify_github_signature(&headers, &body, secret) {
-                tracing::warn!("GitHub webhook signature verification failed: {}", e);
-                return (StatusCode::UNAUTHORIZED, "Invalid signature");
-            }
-        }
+    // Always require signature validation for GitHub webhooks.
+    let github_secret = state
+        .config
+        .github
+        .as_ref()
+        .and_then(|c| c.webhook_secret.as_deref())
+        .map(str::trim)
+        .filter(|s| !s.is_empty());
+
+    let Some(secret) = github_secret else {
+        tracing::error!("GitHub webhook secret missing; refusing unsigned webhook");
+        return (
+            StatusCode::SERVICE_UNAVAILABLE,
+            "GitHub webhook secret not configured",
+        );
+    };
+
+    if let Err(e) = verify_github_signature(&headers, &body, secret) {
+        tracing::warn!("GitHub webhook signature verification failed: {}", e);
+        return (StatusCode::UNAUTHORIZED, "Invalid signature");
     }
 
     // Parse event type
