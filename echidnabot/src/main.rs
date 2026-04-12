@@ -11,7 +11,7 @@ use echidnabot::adapters::gitlab::GitLabAdapter;
 use echidnabot::api::graphql::GraphQLState;
 use echidnabot::api::{create_schema, webhook_router};
 use chrono::Utc;
-use echidnabot::dispatcher::{EchidnaClient, ProverKind};
+use echidnabot::dispatcher::{EchidnaClient, ProofResult, ProofStatus, ProverKind};
 use echidnabot::dispatcher::echidna_client::ProverStatus;
 use echidnabot::scheduler::{JobScheduler, ProofJob};
 use echidnabot::store::{SqliteStore, Store};
@@ -556,11 +556,36 @@ async fn process_job(
 
     let status = echidna.prover_status(job.prover).await?;
     if status != ProverStatus::Available {
-        return Err(echidnabot::Error::Echidna(format!(
+        let message = format!(
             "Prover {} not available (status: {})",
             job.prover.display_name(),
             format_prover_status(status)
-        )));
+        );
+
+        // Record a synthetic attempt so strategy learning can distinguish
+        // missing/unavailable prover infrastructure from proof-level failures.
+        if let Some(repo_record) = store.get_repository(job.repo_id).await? {
+            let verisim_writer = VeriSimWriter::from_env();
+            let synthetic = ProofResult {
+                status: ProofStatus::SystemError,
+                message: message.clone(),
+                prover_output: String::new(),
+                duration_ms: start.elapsed().as_millis() as u64,
+                artifacts: Vec::new(),
+            };
+            let repo_slug = format!("{}/{}", repo_record.owner, repo_record.name);
+            verisim_writer
+                .record(
+                    &synthetic,
+                    job.prover,
+                    &repo_slug,
+                    "__prover_unavailable__",
+                    Utc::now(),
+                )
+                .await;
+        }
+
+        return Err(echidnabot::Error::Echidna(message));
     }
 
     let repo = store
@@ -629,7 +654,7 @@ async fn process_job(
             .record(&result, job.prover, &repo_slug, path, attempt_started)
             .await;
 
-        if result.status == echidnabot::dispatcher::ProofStatus::Verified {
+        if result.status.is_verified() {
             verified.push(path.to_string());
         } else {
             failed.push(path.to_string());
