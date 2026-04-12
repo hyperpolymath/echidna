@@ -141,7 +141,7 @@ let reducer = (state, action) =>
         ...state,
         proofState: Some({
           ...ps,
-          proofScript: Array.concat(list{ps.proofScript, [tactic]}),
+          proofScript: Array.concat(ps.proofScript, [tactic]),
         }),
       }
     | None => state

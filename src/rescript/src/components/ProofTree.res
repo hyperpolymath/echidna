@@ -15,17 +15,17 @@ let make = () => {
   // Fetch proof tree on mount
   React.useEffect(() => {
     setIsLoading(_ => true)
-    let _ = Client.getProofTree()|> Js.Promise.then_(result => {
+    let _ = Client.getProofTree()->Promise.then(result => {
       switch result {
       | Ok(data) => {
           setTreeData(_ => Some(data))
           setIsLoading(_ => false)
-          Js.Promise.resolve(())
+          Promise.resolve(())
         }
       | Error(_) => {
           setTreeData(_ => None)
           setIsLoading(_ => false)
-          Js.Promise.resolve(())
+          Promise.resolve(())
         }
       }
     })
@@ -34,34 +34,34 @@ let make = () => {
 
   let toggleNode = nodeId => {
     setExpandedNodes(prev => {
-      if Belt.Set.String.has(prev, nodeId) {
-        Belt.Set.String.remove(prev, nodeId)
+      if prev->Belt.Set.String.has(nodeId) {
+        prev->Belt.Set.String.remove(nodeId)
       } else {
-        Belt.Set.String.add(prev, nodeId)
+        prev->Belt.Set.String.add(nodeId)
       }
     })
   }
 
   // JSON decode helpers
   let getStringField = (dict, key) =>
-    Belt.Option.flatMap(Js.Dict.get(dict, key), Js.Json.decodeString)
+    dict->Dict.get(key)->Belt.Option.flatMap(JSON.Decode.string)
     ->Belt.Option.getWithDefault("")
 
   let getArrayField = (dict, key) =>
-    Belt.Option.flatMap(Js.Dict.get(dict, key), Js.Json.decodeArray)
+    dict->Dict.get(key)->Belt.Option.flatMap(JSON.Decode.array)
     ->Belt.Option.getWithDefault([])
 
-  let rec renderTreeNode = (~node: Js.Json.t, ~depth: int) => {
-    switch Js.Json.decodeObject(node) {
+  let rec renderTreeNode = (~node: JSON.t, ~depth: int) => {
+    switch node->JSON.Decode.object {
     | Some(dict) => {
         let nodeId = getStringField(dict, "id")
         let nodeType = getStringField(dict, "type")
         let label = getStringField(dict, "label")
         let children = getArrayField(dict, "children")
 
-        let hasChildren = Array.length(children) > 0
-        let isExpanded = Belt.Set.String.has(expandedNodes, nodeId)
-        let indent = Belt.Int.toString(depth * 20) ++ "px"
+        let hasChildren = children->Array.length > 0
+        let isExpanded = expandedNodes->Belt.Set.String.has(nodeId)
+        let indent = (depth * 20)->Belt.Int.toString ++ "px"
 
         let nodeColor = switch nodeType {
         | "goal" => "bg-blue-100 border-blue-500"
@@ -87,7 +87,7 @@ let make = () => {
               <span className="mr-2 text-gray-400"> {React.string("•")} </span>
             }}
             <span className="text-xs font-semibold text-gray-600 mr-2">
-              {React.string(Js.String.toUpperCase(nodeType))}
+              {React.string(nodeType->String.toUpperCase)}
             </span>
             <code className="text-sm font-mono text-gray-900"> {React.string(label)} </code>
           </div>
@@ -95,7 +95,7 @@ let make = () => {
 
         {if hasChildren && isExpanded {
           <div className="node-children mt-2">
-            {Belt.Array.map(children, child => renderTreeNode(~node=child, ~depth=depth + 1))->React.array}
+            {children->Belt.Array.map(child => renderTreeNode(~node=child, ~depth=depth + 1))->React.array}
           </div>
         } else {
           React.null
@@ -108,18 +108,17 @@ let make = () => {
 
   let expandAll = () => {
     // Recursively collect all node IDs
-    let rec collectIds = (node: Js.Json.t): array<string> => {
-      switch Js.Json.decodeObject(node) {
+    let rec collectIds = (node: JSON.t): array<string> => {
+      switch node->JSON.Decode.object {
       | Some(dict) => {
           let id = getStringField(dict, "id")
           let children = getArrayField(dict, "children")
-          let childIds = Belt.Array.map(children, collectIds)->Belt.Array.concatMany
-          Belt.Array.concat([id], childIds)
+          let childIds = children->Belt.Array.map(collectIds)->Belt.Array.concatMany
+          [id]->Belt.Array.concat(childIds)
         }
       | None => []
       }
     }
-
     switch treeData {
     | Some(data) => {
         let allIds = collectIds(data)

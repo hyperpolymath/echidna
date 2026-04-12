@@ -22,17 +22,17 @@ let make = (~onApplyTactic: string => unit, ~goalId: option<string>) => {
           ->Belt.Array.keep(tag => tag.active)
           ->Belt.Array.map(tag => tag.name)
 
-        let _ = Client.getTacticSuggestions(id, activeTags) |> Js.Promise.then_(result => {
+        let _ = Client.getTacticSuggestions(id, activeTags)->Promise.then(result => {
           switch result {
           | Ok(suggestions) => {
               dispatch(UpdateTacticSuggestions(suggestions))
               setIsRefreshing(_ => false)
-              Js.Promise.resolve(())
+              Promise.resolve(())
             }
           | Error(err) => {
               dispatch(SetError(Some(err)))
               setIsRefreshing(_ => false)
-              Js.Promise.resolve(())
+              Promise.resolve(())
             }
           }
         })
@@ -52,7 +52,7 @@ let make = (~onApplyTactic: string => unit, ~goalId: option<string>) => {
     }
 
   let confidenceBar = (confidence: float) => {
-    let width = Belt.Float.toString(confidence *. 100.0) ++ "%"
+    let width = (confidence *. 100.0)->Belt.Float.toString ++ "%"
     let bgColor = if confidence >= 0.8 {
       "bg-green-500"
     } else if confidence >= 0.5 {
@@ -74,10 +74,10 @@ let make = (~onApplyTactic: string => unit, ~goalId: option<string>) => {
     </span>
 
   let renderSuggestion = (index: int, suggestion: tacticSuggestion) => {
-    let confidencePercent = Belt.Int.toString(Belt.Float.toInt(suggestion.confidence *. 100.0)) ++ "%"
+    let confidencePercent = (suggestion.confidence *. 100.0)->Belt.Float.toInt->Belt.Int.toString ++ "%"
 
     <div
-      key={Belt.Int.toString(index)}
+      key={index->Belt.Int.toString}
       className="suggestion-card p-4 mb-3 bg-white border border-gray-300 rounded-lg hover:shadow-md transition-shadow">
       <div className="flex justify-between items-start mb-2">
         <div className="flex-1">
@@ -115,7 +115,7 @@ let make = (~onApplyTactic: string => unit, ~goalId: option<string>) => {
       | None => React.null
       }}
 
-      {if Array.length(suggestion.aspectTags) > 0 {
+      {if suggestion.aspectTags->Array.length > 0 {
         <div className="aspect-tags mt-3">
           <p className="text-xs font-semibold text-gray-600 mb-1">
             {React.string("Aspect Tags:")}
@@ -156,7 +156,7 @@ let make = (~onApplyTactic: string => unit, ~goalId: option<string>) => {
         <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4" />
         <p className="text-gray-600"> {React.string("Generating suggestions...")} </p>
       </div>
-    } else if Array.length(state.tacticSuggestions) == 0 {
+    } else if state.tacticSuggestions->Array.length == 0 {
       <div className="no-suggestions p-8 text-center bg-gray-50 border border-gray-300 rounded-lg">
         <p className="text-gray-600"> {React.string("No suggestions available")} </p>
         <p className="text-sm text-gray-500 mt-2">
@@ -168,6 +168,7 @@ let make = (~onApplyTactic: string => unit, ~goalId: option<string>) => {
         {state.tacticSuggestions->Belt.Array.mapWithIndex(renderSuggestion)->React.array}
       </div>
     }}
+
 
     <div className="info-box mt-4 p-4 bg-purple-50 border border-purple-200 rounded-lg">
       <h3 className="font-bold text-sm text-purple-900 mb-2">

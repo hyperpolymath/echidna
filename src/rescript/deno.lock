@@ -1,0 +1,72 @@
+{
+  "version": "5",
+  "remote": {
+    "https://deno.land/std@0.211.0/assert/assert.ts": "bec068b2fccdd434c138a555b19a2c2393b71dfaada02b7d568a01541e67cdc5",
+    "https://deno.land/std@0.211.0/assert/assertion_error.ts": "9f689a101ee586c4ce92f52fa7ddd362e86434ffdf1f848e45987dc7689976b8",
+    "https://deno.land/std@0.211.0/cli/parse_args.ts": "91dfad92c32c4c7f50bc5f476030cc84d0b8ad69f66cde219ddfd49516cbbdcf",
+    "https://deno.land/std@0.211.0/encoding/_util.ts": "beacef316c1255da9bc8e95afb1fa56ed69baef919c88dc06ae6cb7a6103d376",
+    "https://deno.land/std@0.211.0/encoding/base64.ts": "0ec6d6e6b68fc38f6396277e5184bcd47c1a9db0222fd0b563487eb67e352741",
+    "https://deno.land/std@0.211.0/fmt/bytes.ts": "38e98ba7fbc775c8b04fd5339bc2e41be4848a8545e82b429527ffdc50ff2499",
+    "https://deno.land/std@0.211.0/fmt/colors.ts": "be082d6a6bbb2980ae7b2bf8c23c6bb2811ba90a06a9bcb861344a71784c5a99",
+    "https://deno.land/std@0.211.0/http/etag.ts": "8570289ed16c6e76aa9aa0af07c9e33842f82fc1518378739696ca95753acd1c",
+    "https://deno.land/std@0.211.0/http/file_server.ts": "5927ddba6e28e036a422f3fc84403b16b5d4c3b2cf58d52adfe9fd0db9eece51",
+    "https://deno.land/std@0.211.0/http/status.ts": "716c63e9f7a8d109ea3a28f9c81f895d5c30522cdaf39be87b13dfba162cdb3d",
+    "https://deno.land/std@0.211.0/media_types/_db.ts": "1d695d9fe1c785e523d6de7191b33f33ecc7866db77358a4f966221cca56e2f9",
+    "https://deno.land/std@0.211.0/media_types/_util.ts": "97198fcf0fea9f3613e5294944114ab04788f709bea999e31123321f449dd098",
+    "https://deno.land/std@0.211.0/media_types/content_type.ts": "ec2325c8f8c2ce6a081620e145b6e842f98b28ca4cfb88acfc82c74d071bbbf4",
+    "https://deno.land/std@0.211.0/media_types/format_media_type.ts": "9fc070ec4dcc3193a9c048b3a20375b311685d22bf4ccf9311970b9dc1fb2ec7",
+    "https://deno.land/std@0.211.0/media_types/get_charset.ts": "678383f268db650da0f053655c5cce87cf3b7028f62436bafaf0b2dbf9e761e1",
+    "https://deno.land/std@0.211.0/media_types/parse_media_type.ts": "6cecc445f1a47adaeb1e163af7f20d29a1b6be68185c6e78eb12c04fc2dfe3ea",
+    "https://deno.land/std@0.211.0/media_types/type_by_extension.ts": "27fb0c5c306ce6c115b071b1a6fca4f1061572e214e3023775680fbe9199f7e8",
+    "https://deno.land/std@0.211.0/media_types/vendor/mime-db.v1.52.0.ts": "0218d2c7d900e8cd6fa4a866e0c387712af4af9a1bae55d6b2546c73d273a1e6",
+    "https://deno.land/std@0.211.0/path/_common/assert_path.ts": "2ca275f36ac1788b2acb60fb2b79cb06027198bc2ba6fb7e163efaedde98c297",
+    "https://deno.land/std@0.211.0/path/_common/constants.ts": "dc5f8057159f4b48cd304eb3027e42f1148cf4df1fb4240774d3492b5d12ac0c",
+    "https://deno.land/std@0.211.0/path/_common/normalize.ts": "684df4aa71a04bbcc346c692c8485594fc8a90b9408dfbc26ff32cf3e0c98cc8",
+    "https://deno.land/std@0.211.0/path/_common/normalize_string.ts": "dfdf657a1b1a7db7999f7c575ee7e6b0551d9c20f19486c6c3f5ff428384c965",
+    "https://deno.land/std@0.211.0/path/_common/relative.ts": "faa2753d9b32320ed4ada0733261e3357c186e5705678d9dd08b97527deae607",
+    "https://deno.land/std@0.211.0/path/_os.ts": "8fb9b90fb6b753bd8c77cfd8a33c2ff6c5f5bc185f50de8ca4ac6a05710b2c15",
+    "https://deno.land/std@0.211.0/path/extname.ts": "593303db8ae8c865cbd9ceec6e55d4b9ac5410c1e276bfd3131916591b954441",
+    "https://deno.land/std@0.211.0/path/join.ts": "ae2ec5ca44c7e84a235fd532e4a0116bfb1f2368b394db1c4fb75e3c0f26a33a",
+    "https://deno.land/std@0.211.0/path/posix/_util.ts": "1e3937da30f080bfc99fe45d7ed23c47dd8585c5e473b2d771380d3a6937cf9d",
+    "https://deno.land/std@0.211.0/path/posix/extname.ts": "8d36ae0082063c5e1191639699e6f77d3acf501600a3d87b74943f0ae5327427",
+    "https://deno.land/std@0.211.0/path/posix/join.ts": "aef88d5fa3650f7516730865dbb951594d1a955b785e2450dbee93b8e32694f3",
+    "https://deno.land/std@0.211.0/path/posix/normalize.ts": "baeb49816a8299f90a0237d214cef46f00ba3e95c0d2ceb74205a6a584b58a91",
+    "https://deno.land/std@0.211.0/path/posix/relative.ts": "3907d6eda41f0ff723d336125a1ad4349112cd4d48f693859980314d5b9da31c",
+    "https://deno.land/std@0.211.0/path/posix/resolve.ts": "bac20d9921beebbbb2b73706683b518b1d0c1b1da514140cee409e90d6b2913a",
+    "https://deno.land/std@0.211.0/path/relative.ts": "ab739d727180ed8727e34ed71d976912461d98e2b76de3d3de834c1066667add",
+    "https://deno.land/std@0.211.0/path/resolve.ts": "a6f977bdb4272e79d8d0ed4333e3d71367cc3926acf15ac271f1d059c8494d8d",
+    "https://deno.land/std@0.211.0/path/separator.ts": "2b5a590d4f1942e70650ee7421d161c24ec7d3b94b49981e4138ae07397fb2d2",
+    "https://deno.land/std@0.211.0/path/windows/_util.ts": "d5f47363e5293fced22c984550d5e70e98e266cc3f31769e1710511803d04808",
+    "https://deno.land/std@0.211.0/path/windows/extname.ts": "165a61b00d781257fda1e9606a48c78b06815385e7d703232548dbfc95346bef",
+    "https://deno.land/std@0.211.0/path/windows/join.ts": "e0b3356615c1a75c56ebb6a7311157911659e11fd533d80d724800126b761ac3",
+    "https://deno.land/std@0.211.0/path/windows/normalize.ts": "78126170ab917f0ca355a9af9e65ad6bfa5be14d574c5fb09bb1920f52577780",
+    "https://deno.land/std@0.211.0/path/windows/relative.ts": "3e1abc7977ee6cc0db2730d1f9cb38be87b0ce4806759d271a70e4997fc638d7",
+    "https://deno.land/std@0.211.0/path/windows/resolve.ts": "75b2e3e1238d840782cee3d8864d82bfaa593c7af8b22f19c6422cf82f330ab3",
+    "https://deno.land/std@0.211.0/streams/byte_slice_stream.ts": "5bbdcadb118390affa9b3d0a0f73ef8e83754f59bb89df349add669dd9369713",
+    "https://deno.land/std@0.211.0/version.ts": "46f833faaf024c7f0b0b902bf004065de0bb873cbd4bcf088ac673eab97d897d"
+  },
+  "workspace": {
+    "dependencies": [
+      "jsr:@std/http@1",
+      "jsr:@std/media-types@1",
+      "jsr:@std/path@1",
+      "npm:@rescript/core@^1.2.0",
+      "npm:@rescript/react@~0.13.1",
+      "npm:@rescript/runtime@^12.2.0",
+      "npm:react-dom@^18.2.0",
+      "npm:react@^18.2.0",
+      "npm:rescript-webapi@0.10",
+      "npm:rescript@^12.2.0"
+    ],
+    "packageJson": {
+      "dependencies": [
+        "npm:@rescript/core@^1.2.0",
+        "npm:@rescript/react@~0.13.1",
+        "npm:react-dom@^18.2.0",
+        "npm:react@^18.2.0",
+        "npm:rescript-webapi@0.10",
+        "npm:rescript@12"
+      ]
+    }
+  }
+}

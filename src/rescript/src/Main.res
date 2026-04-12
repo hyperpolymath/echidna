@@ -21,7 +21,7 @@ let make = () => {
 
   // Load aspect tags on mount
   React.useEffect(() => {
-    let _ = Client.getAspectTags()|> Js.Promise.then_(result => {
+    let _ = Client.getAspectTags()->Promise.then(result => {
       switch result {
       | Ok(tags) => {
           dispatch(UpdateProofState({
@@ -40,9 +40,9 @@ let make = () => {
               completed: false,
             }),
           )
-          Js.Promise.resolve()
+          Promise.resolve()
         }
-      | Error(_) => Js.Promise.resolve()
+      | Error(_) => Promise.resolve()
       }
     })
     None
@@ -50,18 +50,18 @@ let make = () => {
 
   let handleSelectProver = prover => {
     dispatch(SetLoading(true))
-    let _ = Client.initProofSession(prover)|> Js.Promise.then_(result => {
+    let _ = Client.initProofSession(prover)->Promise.then(result => {
       switch result {
       | Ok(proofState) => {
           dispatch(UpdateProofState(proofState))
           dispatch(SetLoading(false))
           setCurrentView(_ => ProofSession)
-          Js.Promise.resolve()
+          Promise.resolve()
         }
       | Error(err) => {
           dispatch(SetError(Some(err)))
           dispatch(SetLoading(false))
-          Js.Promise.resolve()
+          Promise.resolve()
         }
       }
     })
@@ -73,17 +73,17 @@ let make = () => {
         dispatch(SetLoading(true))
         dispatch(ApplyTactic(tactic))
 
-        let _ = Client.applyTactic(tactic, goalId)|> Js.Promise.then_(result => {
+        let _ = Client.applyTactic(tactic, goalId)->Promise.then(result => {
           switch result {
           | Ok(newState) => {
               dispatch(UpdateProofState(newState))
               dispatch(SetLoading(false))
-              Js.Promise.resolve()
+              Promise.resolve()
             }
           | Error(err) => {
               dispatch(SetError(Some(err)))
               dispatch(SetLoading(false))
-              Js.Promise.resolve()
+              Promise.resolve()
             }
           }
         })

@@ -76,6 +76,48 @@ update:
 audit:
     cargo audit
 
+# ── UI Management ──────────────────────────────────────────
+
+# Build ReScript frontend (Deno caches npm: deps automatically — no install step)
+build-ui:
+    cd src/rescript && deno task res:build && deno task build
+
+# Start ReScript compiler in watch mode
+watch-ui:
+    cd src/rescript && deno task res:dev
+
+# Start Deno dev server for UI
+dev-ui:
+    cd src/rescript && deno task dev
+
+# Serve production UI build
+serve-ui:
+    cd src/rescript && deno task serve
+
+# Launch full ECHIDNA GUI (Backend + UI + Browser)
+gui:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    echo "Launching ECHIDNA GUI..."
+    # Start backend
+    cargo run -- server --port 8081 --cors > /dev/null 2>&1 & BACKEND_PID=$!
+    echo "Started backend (PID $BACKEND_PID)"
+    # Start UI server
+    cd src/rescript && deno task serve > /dev/null 2>&1 & UI_PID=$!
+    echo "Started UI server (PID $UI_PID)"
+    # Cleanup on exit
+    trap "kill $BACKEND_PID $UI_PID 2>/dev/null || true" EXIT
+    # Wait for servers to start
+    echo "Waiting for servers to initialize..."
+    sleep 2
+    # Open browser
+    URL="http://localhost:3000"
+    echo "Opening $URL..."
+    xdg-open "$URL" > /dev/null 2>&1 || open "$URL" > /dev/null 2>&1 || echo "Please open $URL in your browser"
+    echo "ECHIDNA GUI is running. Press Ctrl+C in this terminal to stop."
+    # Wait for background processes
+    wait
+
 # All checks before commit
 pre-commit: fmt-check lint test
     @echo "All checks passed!"

@@ -10,10 +10,9 @@
     "jsx": "react-jsx",
     "jsxImportSource": "react"
   },
-  "importMap": "./import_map.json",
   "tasks": {
-    "dev": "deno run --allow-net --allow-read --allow-env --watch server.ts",
-    "serve": "deno run --allow-net --allow-read --allow-env server.ts",
+    "dev": "deno run --allow-net --allow-read --allow-env --watch src/Server.bs.js",
+    "serve": "deno run --allow-net --allow-read --allow-env src/Server.bs.js",
     "build": "deno run --allow-read --allow-write --allow-env build.ts",
     "res:build": "rescript build",
     "res:dev": "rescript build -w",
@@ -52,9 +51,15 @@
   "imports": {
     "react": "npm:react@^18.2.0",
     "react-dom": "npm:react-dom@^18.2.0",
+    "react-dom/client": "npm:react-dom@^18.2.0/client",
+    "react/jsx-runtime": "npm:react@^18.2.0/jsx-runtime",
     "rescript-webapi": "npm:rescript-webapi@^0.10.0",
     "@rescript/core": "npm:@rescript/core@^1.2.0",
-    "@rescript/react": "npm:@rescript/react@^0.12.1",
-    "rescript": "^12.0.0"
+    "@rescript/react": "npm:@rescript/react@^0.13.1",
+    "@rescript/runtime/": "npm:@rescript/runtime@^12.2.0/",
+    "rescript": "npm:rescript@^12.2.0",
+    "@std/http": "jsr:@std/http@^1.0.0",
+    "@std/path": "jsr:@std/path@^1.0.0",
+    "@std/media-types": "jsr:@std/media-types@^1.0.0"
   }
 }

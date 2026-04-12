@@ -23,17 +23,17 @@ let make = (~onSelectTheorem: string => unit) => {
         ->Belt.Array.keep(tag => tag.active)
         ->Belt.Array.map(tag => tag.name)
 
-      let _ = Client.searchTheorems(searchInput, activeTags)|> Js.Promise.then_(result => {
+      let _ = Client.searchTheorems(searchInput, activeTags)->Promise.then(result => {
         switch result {
         | Ok(results) => {
             dispatch(UpdateSearchResults(results))
             setIsSearching(_ => false)
-            Js.Promise.resolve(())
+            Promise.resolve(())
           }
         | Error(err) => {
             dispatch(SetError(Some(err)))
             setIsSearching(_ => false)
-            Js.Promise.resolve(())
+            Promise.resolve(())
           }
         }
       })
@@ -41,7 +41,7 @@ let make = (~onSelectTheorem: string => unit) => {
   }
 
   let handleKeyPress = event => {
-    if ReactEvent.Keyboard.key(event) == "Enter" {
+    if event->ReactEvent.Keyboard.key == "Enter" {
       handleSearch()
     }
   }
@@ -65,7 +65,7 @@ let make = (~onSelectTheorem: string => unit) => {
 
   let renderResult = (index: int, theorem: string) =>
     <div
-      key={Belt.Int.toString(index)}
+      key={index->Belt.Int.toString}
       className="result-card p-4 mb-3 bg-white border border-gray-300 rounded-lg hover:shadow-md transition-shadow cursor-pointer"
       onClick={_ => onSelectTheorem(theorem)}>
       <div className="flex justify-between items-start">
@@ -73,7 +73,7 @@ let make = (~onSelectTheorem: string => unit) => {
         <button
           className="ml-4 px-3 py-1 bg-blue-600 text-white text-sm rounded hover:bg-blue-700 transition-colors"
           onClick={e => {
-            ReactEvent.Mouse.stopPropagation(e)
+            e->ReactEvent.Mouse.stopPropagation
             onSelectTheorem(theorem)
           }}>
           {React.string("Use")}
@@ -84,22 +84,23 @@ let make = (~onSelectTheorem: string => unit) => {
   let renderAspectFilters = () => {
     // Group tags by category
     let categories = state.aspectTags->Belt.Array.reduce(Belt.Map.String.empty, (acc, tag) => {
-      let existing = Belt.Map.String.get(acc, tag.category)->Belt.Option.getWithDefault([])
-      Belt.Map.String.set(acc, tag.category, Belt.Array.concat(existing, [tag]))
+      let existing = acc->Belt.Map.String.get(tag.category)->Belt.Option.getWithDefault([])
+      acc->Belt.Map.String.set(tag.category, existing->Belt.Array.concat([tag]))
     })
 
-    if Belt.Map.String.size(categories) == 0 {
+    if categories->Belt.Map.String.size == 0 {
       React.null
     } else {
       <div className="aspect-filters mb-4">
         <h3 className="text-sm font-bold text-gray-700 mb-2">
           {React.string("Filter by Aspect Tags")}
         </h3>
-        {Belt.Map.String.toArray(categories)
+        {categories
+          ->Belt.Map.String.toArray
           ->Belt.Array.map(((category, tags)) =>
             <div key=category className="category-group mb-3">
               <p className="text-xs font-semibold text-gray-600 mb-1">
-                {React.string(Js.String.toUpperCase(category))}
+                {React.string(category->String.toUpperCase)}
               </p>
               <div className="flex flex-wrap gap-2">
                 {tags->Belt.Array.map(renderAspectTag)->React.array}
