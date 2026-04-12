@@ -5,6 +5,11 @@
 node_modules/
 .pnp
 .pnp.js
+package-lock.json
+yarn.lock
+
+# OCaml compilation artefacts (rescript compiler output)
+lib/ocaml/
 
 # ReScript build output
 *.bs.js

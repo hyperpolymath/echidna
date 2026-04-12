@@ -29,61 +29,62 @@ type proverInfo = {
 
 type proversResponse = {provers: array<proverInfo>}
 
-// JSON decoding helpers using Js.Json
+// JSON decoding helpers using RescriptCore JSON
 module Decode = {
   let getString = (dict, key) =>
-    Belt.Option.flatMap(Js.Dict.get(dict, key), Js.Json.decodeString)
+    dict->Dict.get(key)->Belt.Option.flatMap(JSON.Decode.string)
 
   let getInt = (dict, key) =>
-    Belt.Option.flatMap(Js.Dict.get(dict, key), Js.Json.decodeNumber)
+    dict->Dict.get(key)
+    ->Belt.Option.flatMap(JSON.Decode.float)
     ->Belt.Option.map(Belt.Float.toInt)
 
   let getFloat = (dict, key) =>
-    Belt.Option.flatMap(Js.Dict.get(dict, key), Js.Json.decodeNumber)
+    dict->Dict.get(key)->Belt.Option.flatMap(JSON.Decode.float)
 
   let getBool = (dict, key) =>
-    Belt.Option.flatMap(Js.Dict.get(dict, key), Js.Json.decodeBoolean)
+    dict->Dict.get(key)->Belt.Option.flatMap(JSON.Decode.bool)
 
   let getArray = (dict, key) =>
-    Belt.Option.flatMap(Js.Dict.get(dict, key), Js.Json.decodeArray)
+    dict->Dict.get(key)->Belt.Option.flatMap(JSON.Decode.array)
 
   let goal = (json): option<goal> => {
-    Js.Json.decodeObject(json)->Belt.Option.map(dict => {
+    json->JSON.Decode.object->Belt.Option.map(dict => {
       {
         id: getString(dict, "id")->Belt.Option.getWithDefault(""),
         hypotheses: getArray(dict, "hypotheses")
-          ->Belt.Option.map(arr => Belt.Array.keepMap(arr, Js.Json.decodeString))
+          ->Belt.Option.map(arr => arr->Belt.Array.keepMap(JSON.Decode.string))
           ->Belt.Option.getWithDefault([]),
         conclusion: getString(dict, "conclusion")->Belt.Option.getWithDefault(""),
         context: getArray(dict, "context")
-          ->Belt.Option.map(arr => Belt.Array.keepMap(arr, Js.Json.decodeString))
+          ->Belt.Option.map(arr => arr->Belt.Array.keepMap(JSON.Decode.string))
           ->Belt.Option.getWithDefault([]),
       }
     })
   }
 
   let tacticSuggestion = (json): option<tacticSuggestion> => {
-    Js.Json.decodeObject(json)->Belt.Option.map(dict => {
+    json->JSON.Decode.object->Belt.Option.map(dict => {
       {
         tactic: getString(dict, "tactic")->Belt.Option.getWithDefault(""),
         confidence: getFloat(dict, "confidence")->Belt.Option.getWithDefault(0.0),
         premise: getString(dict, "premise"),
         aspectTags: getArray(dict, "aspect_tags")
-          ->Belt.Option.map(arr => Belt.Array.keepMap(arr, Js.Json.decodeString))
+          ->Belt.Option.map(arr => arr->Belt.Array.keepMap(JSON.Decode.string))
           ->Belt.Option.getWithDefault([]),
       }
     })
   }
 
   let proofState = (json): option<proofState> => {
-    Js.Json.decodeObject(json)->Belt.Option.map(dict => {
+    json->JSON.Decode.object->Belt.Option.map(dict => {
       {
         goals: getArray(dict, "goals")
-          ->Belt.Option.map(arr => Belt.Array.keepMap(arr, goal))
+          ->Belt.Option.map(arr => arr->Belt.Array.keepMap(goal))
           ->Belt.Option.getWithDefault([]),
         currentGoalIndex: getInt(dict, "current_goal_index")->Belt.Option.getWithDefault(0),
         proofScript: getArray(dict, "proof_script")
-          ->Belt.Option.map(arr => Belt.Array.keepMap(arr, Js.Json.decodeString))
+          ->Belt.Option.map(arr => arr->Belt.Array.keepMap(JSON.Decode.string))
           ->Belt.Option.getWithDefault([]),
         completed: getBool(dict, "completed")->Belt.Option.getWithDefault(false),
       }
@@ -91,7 +92,7 @@ module Decode = {
   }
 
   let aspectTag = (json): option<aspectTag> => {
-    Js.Json.decodeObject(json)->Belt.Option.map(dict => {
+    json->JSON.Decode.object->Belt.Option.map(dict => {
       {
         name: getString(dict, "name")->Belt.Option.getWithDefault(""),
         category: getString(dict, "category")->Belt.Option.getWithDefault(""),
@@ -101,7 +102,7 @@ module Decode = {
   }
 
   let proverInfo = (json): option<proverInfo> => {
-    Js.Json.decodeObject(json)->Belt.Option.map(dict => {
+    json->JSON.Decode.object->Belt.Option.map(dict => {
       {
         name: getString(dict, "name")->Belt.Option.getWithDefault(""),
         tier: getInt(dict, "tier")->Belt.Option.getWithDefault(0),
@@ -112,38 +113,38 @@ module Decode = {
 }
 
 module Encode = {
-  let createSessionRequest = (prover: prover): Js.Json.t => {
-    let dict = Js.Dict.empty()
-    Js.Dict.set(dict, "prover", Js.Json.string(proverToString(prover)))
-    Js.Dict.set(dict, "goal", Js.Json.string(""))
-    Js.Json.object_(dict)
+  let createSessionRequest = (prover: prover): JSON.t => {
+    let dict = Dict.make()
+    dict->Dict.set("prover", JSON.Encode.string(proverToString(prover)))
+    dict->Dict.set("goal", JSON.Encode.string(""))
+    JSON.Encode.object(dict)
   }
 
-  let applyTacticRequest = (tactic: string): Js.Json.t => {
-    let dict = Js.Dict.empty()
-    Js.Dict.set(dict, "tactic", Js.Json.string(tactic))
-    Js.Json.object_(dict)
+  let applyTacticRequest = (tactic: string): JSON.t => {
+    let dict = Dict.make()
+    dict->Dict.set("tactic", JSON.Encode.string(tactic))
+    JSON.Encode.object(dict)
   }
 
-  let searchQuery = (query: string): Js.Json.t => {
-    let dict = Js.Dict.empty()
-    Js.Dict.set(dict, "q", Js.Json.string(query))
-    Js.Json.object_(dict)
+  let searchQuery = (query: string): JSON.t => {
+    let dict = Dict.make()
+    dict->Dict.set("q", JSON.Encode.string(query))
+    JSON.Encode.object(dict)
   }
 }
 
 // API helper functions
-let handleResponse = (response: Webapi.Fetch.Response.t): promise<apiResponse<Js.Json.t>> => {
+let handleResponse = (response: Webapi.Fetch.Response.t): promise<apiResponse<JSON.t>> => {
   if response->Webapi.Fetch.Response.ok {
     response->Webapi.Fetch.Response.json
-    |> Js.Promise.then_(json => Js.Promise.resolve({data: Some(json), error: None}))
-    |> Js.Promise.catch(_ => Js.Promise.resolve({
+    ->Promise.then(json => Promise.resolve({data: Some(json), error: None}))
+    ->Promise.catch(_ => Promise.resolve({
       data: None,
       error: Some("Failed to parse response"),
     }))
   } else {
     let status = response->Webapi.Fetch.Response.status
-    Js.Promise.resolve({
+    Promise.resolve({
       data: None,
       error: Some(`API error: ${Belt.Int.toString(status)}`),
     })
@@ -153,103 +154,103 @@ let handleResponse = (response: Webapi.Fetch.Response.t): promise<apiResponse<Js
 // Get available provers
 let getProvers = (): promise<result<array<proverInfo>, string>> => {
   Webapi.Fetch.fetch(`${apiBase}/provers`)
-  |> Js.Promise.then_(handleResponse)
-  |> Js.Promise.then_(result => {
+  ->Promise.then(handleResponse)
+  ->Promise.then(result => {
     switch result {
     | {data: Some(json), error: None} =>
-      switch Js.Json.decodeObject(json) {
+      switch json->JSON.Decode.object {
       | Some(dict) =>
-        switch Js.Dict.get(dict, "provers") {
+        switch dict->Dict.get("provers") {
         | Some(proversJson) =>
-          switch Js.Json.decodeArray(proversJson) {
+          switch proversJson->JSON.Decode.array {
           | Some(arr) =>
-            let provers = Belt.Array.keepMap(arr, Decode.proverInfo)
-            Js.Promise.resolve(Ok(provers))
-          | None => Js.Promise.resolve(Error("Failed to decode provers array"))
+            let provers = arr->Belt.Array.keepMap(Decode.proverInfo)
+            Promise.resolve(Ok(provers))
+          | None => Promise.resolve(Error("Failed to decode provers array"))
           }
-        | None => Js.Promise.resolve(Error("Missing 'provers' field"))
+        | None => Promise.resolve(Error("Missing 'provers' field"))
         }
-      | None => Js.Promise.resolve(Error("Invalid JSON response"))
+      | None => Promise.resolve(Error("Invalid JSON response"))
       }
-    | {error: Some(err)} => Js.Promise.resolve(Error(err))
-    | _ => Js.Promise.resolve(Error("Unknown error"))
+    | {error: Some(err)} => Promise.resolve(Error(err))
+    | _ => Promise.resolve(Error("Unknown error"))
     }
   })
-  |> Js.Promise.catch(_ => Js.Promise.resolve(Error("Network error")))
+  ->Promise.catch(_ => Promise.resolve(Error("Network error")))
 }
 
 // Initialize proof session (creates new session)
 let initProofSession = (prover: prover): promise<result<proofState, string>> => {
   let init = Webapi.Fetch.RequestInit.make(
     ~method_=Post,
-    ~body=Webapi.Fetch.BodyInit.make(Encode.createSessionRequest(prover)->Js.Json.stringify),
+    ~body=Webapi.Fetch.BodyInit.make(Encode.createSessionRequest(prover)->JSON.stringify),
     ~headers=Webapi.Fetch.HeadersInit.make({"Content-Type": "application/json"}),
     (),
   )
 
   Webapi.Fetch.fetchWithInit(`${apiBase}/session/create`, init)
-  |> Js.Promise.then_(handleResponse)
-  |> Js.Promise.then_(result => {
+  ->Promise.then(handleResponse)
+  ->Promise.then(result => {
     switch result {
     | {data: Some(json), error: None} =>
-      switch Js.Json.decodeObject(json) {
+      switch json->JSON.Decode.object {
       | Some(dict) =>
         switch Decode.getString(dict, "session_id") {
         | Some(sessionId) =>
           currentSessionId := Some(sessionId)
-          switch Js.Dict.get(dict, "state") {
+          switch dict->Dict.get("state") {
           | Some(stateJson) =>
             switch Decode.proofState(stateJson) {
-            | Some(state) => Js.Promise.resolve(Ok(state))
-            | None => Js.Promise.resolve(Error("Failed to decode proof state"))
+            | Some(state) => Promise.resolve(Ok(state))
+            | None => Promise.resolve(Error("Failed to decode proof state"))
             }
-          | None => Js.Promise.resolve(Error("Missing 'state' field"))
+          | None => Promise.resolve(Error("Missing 'state' field"))
           }
-        | None => Js.Promise.resolve(Error("Missing 'session_id' field"))
+        | None => Promise.resolve(Error("Missing 'session_id' field"))
         }
-      | None => Js.Promise.resolve(Error("Invalid JSON response"))
+      | None => Promise.resolve(Error("Invalid JSON response"))
       }
-    | {error: Some(err)} => Js.Promise.resolve(Error(err))
-    | _ => Js.Promise.resolve(Error("Unknown error"))
+    | {error: Some(err)} => Promise.resolve(Error(err))
+    | _ => Promise.resolve(Error("Unknown error"))
     }
   })
-  |> Js.Promise.catch(_ => Js.Promise.resolve(Error("Network error")))
+  ->Promise.catch(_ => Promise.resolve(Error("Network error")))
 }
 
 // Apply tactic to current session
 let applyTactic = (tactic: string, _goalId: string): promise<result<proofState, string>> => {
   switch currentSessionId.contents {
-  | None => Js.Promise.resolve(Error("No active session"))
+  | None => Promise.resolve(Error("No active session"))
   | Some(sessionId) =>
     let init = Webapi.Fetch.RequestInit.make(
       ~method_=Post,
-      ~body=Webapi.Fetch.BodyInit.make(Encode.applyTacticRequest(tactic)->Js.Json.stringify),
+      ~body=Webapi.Fetch.BodyInit.make(Encode.applyTacticRequest(tactic)->JSON.stringify),
       ~headers=Webapi.Fetch.HeadersInit.make({"Content-Type": "application/json"}),
       (),
     )
 
     Webapi.Fetch.fetchWithInit(`${apiBase}/session/${sessionId}/apply`, init)
-    |> Js.Promise.then_(handleResponse)
-    |> Js.Promise.then_(result => {
+    ->Promise.then(handleResponse)
+    ->Promise.then(result => {
       switch result {
       | {data: Some(json), error: None} =>
-        switch Js.Json.decodeObject(json) {
+        switch json->JSON.Decode.object {
         | Some(dict) =>
-          switch Js.Dict.get(dict, "state") {
+          switch dict->Dict.get("state") {
           | Some(stateJson) =>
             switch Decode.proofState(stateJson) {
-            | Some(state) => Js.Promise.resolve(Ok(state))
-            | None => Js.Promise.resolve(Error("Failed to decode proof state"))
+            | Some(state) => Promise.resolve(Ok(state))
+            | None => Promise.resolve(Error("Failed to decode proof state"))
             }
-          | None => Js.Promise.resolve(Error("Missing 'state' field"))
+          | None => Promise.resolve(Error("Missing 'state' field"))
           }
-        | None => Js.Promise.resolve(Error("Invalid JSON response"))
+        | None => Promise.resolve(Error("Invalid JSON response"))
         }
-      | {error: Some(err)} => Js.Promise.resolve(Error(err))
-      | _ => Js.Promise.resolve(Error("Unknown error"))
+      | {error: Some(err)} => Promise.resolve(Error(err))
+      | _ => Promise.resolve(Error("Unknown error"))
       }
     })
-    |> Js.Promise.catch(_ => Js.Promise.resolve(Error("Network error")))
+    ->Promise.catch(_ => Promise.resolve(Error("Network error")))
   }
 }
 
@@ -259,7 +260,7 @@ let getTacticSuggestions = (
   _aspectTags: array<string>,
 ): promise<result<array<tacticSuggestion>, string>> => {
   switch currentSessionId.contents {
-  | None => Js.Promise.resolve(Error("No active session"))
+  | None => Promise.resolve(Error("No active session"))
   | Some(_sessionId) =>
     let init = Webapi.Fetch.RequestInit.make(
       ~method_=Post,
@@ -269,29 +270,29 @@ let getTacticSuggestions = (
     )
 
     Webapi.Fetch.fetchWithInit(`${apiBase}/suggest`, init)
-    |> Js.Promise.then_(handleResponse)
-    |> Js.Promise.then_(result => {
+    ->Promise.then(handleResponse)
+    ->Promise.then(result => {
       switch result {
       | {data: Some(json), error: None} =>
-        switch Js.Json.decodeObject(json) {
+        switch json->JSON.Decode.object {
         | Some(dict) =>
-          switch Js.Dict.get(dict, "suggestions") {
+          switch dict->Dict.get("suggestions") {
           | Some(suggestionsJson) =>
-            switch Js.Json.decodeArray(suggestionsJson) {
+            switch suggestionsJson->JSON.Decode.array {
             | Some(arr) =>
-              let suggestions = Belt.Array.keepMap(arr, Decode.tacticSuggestion)
-              Js.Promise.resolve(Ok(suggestions))
-            | None => Js.Promise.resolve(Error("Failed to decode suggestions array"))
+              let suggestions = arr->Belt.Array.keepMap(Decode.tacticSuggestion)
+              Promise.resolve(Ok(suggestions))
+            | None => Promise.resolve(Error("Failed to decode suggestions array"))
             }
-          | None => Js.Promise.resolve(Error("Missing 'suggestions' field"))
+          | None => Promise.resolve(Error("Missing 'suggestions' field"))
           }
-        | None => Js.Promise.resolve(Error("Invalid JSON response"))
+        | None => Promise.resolve(Error("Invalid JSON response"))
         }
-      | {error: Some(err)} => Js.Promise.resolve(Error(err))
-      | _ => Js.Promise.resolve(Error("Unknown error"))
+      | {error: Some(err)} => Promise.resolve(Error(err))
+      | _ => Promise.resolve(Error("Unknown error"))
       }
     })
-    |> Js.Promise.catch(_ => Js.Promise.resolve(Error("Network error")))
+    ->Promise.catch(_ => Promise.resolve(Error("Network error")))
   }
 }
 
@@ -302,29 +303,29 @@ let searchTheorems = (query: string, _aspectTags: array<string>): promise<
   let url = `${apiBase}/search?q=${query}`
 
   Webapi.Fetch.fetch(url)
-  |> Js.Promise.then_(handleResponse)
-  |> Js.Promise.then_(result => {
+  ->Promise.then(handleResponse)
+  ->Promise.then(result => {
     switch result {
     | {data: Some(json), error: None} =>
-      switch Js.Json.decodeObject(json) {
+      switch json->JSON.Decode.object {
       | Some(dict) =>
-        switch Js.Dict.get(dict, "results") {
+        switch dict->Dict.get("results") {
         | Some(resultsJson) =>
-          switch Js.Json.decodeArray(resultsJson) {
+          switch resultsJson->JSON.Decode.array {
           | Some(arr) =>
-            let theorems = Belt.Array.keepMap(arr, Js.Json.decodeString)
-            Js.Promise.resolve(Ok(theorems))
-          | None => Js.Promise.resolve(Error("Failed to decode results array"))
+            let theorems = arr->Belt.Array.keepMap(JSON.Decode.string)
+            Promise.resolve(Ok(theorems))
+          | None => Promise.resolve(Error("Failed to decode results array"))
           }
-        | None => Js.Promise.resolve(Error("Missing 'results' field"))
+        | None => Promise.resolve(Error("Missing 'results' field"))
         }
-      | None => Js.Promise.resolve(Error("Invalid JSON response"))
+      | None => Promise.resolve(Error("Invalid JSON response"))
       }
-    | {error: Some(err)} => Js.Promise.resolve(Error(err))
-    | _ => Js.Promise.resolve(Error("Unknown error"))
+    | {error: Some(err)} => Promise.resolve(Error(err))
+    | _ => Promise.resolve(Error("Unknown error"))
     }
   })
-  |> Js.Promise.catch(_ => Js.Promise.resolve(Error("Network error")))
+  ->Promise.catch(_ => Promise.resolve(Error("Network error")))
 }
 
 // Get aspect tags (mock for now - not yet implemented in backend)
@@ -335,24 +336,24 @@ let getAspectTags = (): promise<result<array<aspectTag>, string>> => {
     {name: "computational", category: "type", active: false},
     {name: "algebraic", category: "domain", active: false},
   ]
-  Js.Promise.resolve(Ok(mockTags))
+  Promise.resolve(Ok(mockTags))
 }
 
 // Get proof tree structure (mock for now)
-let getProofTree = (): promise<result<Js.Json.t, string>> => {
+let getProofTree = (): promise<result<JSON.t, string>> => {
   // Return empty tree until backend implements this
-  Js.Promise.resolve(Ok(Js.Json.object_(Js.Dict.empty())))
+  Promise.resolve(Ok(JSON.Encode.object(Dict.make())))
 }
 
 // Health check
 let checkHealth = (): promise<result<bool, string>> => {
   Webapi.Fetch.fetch(`${apiBase}/health`)
-  |> Js.Promise.then_(response => {
+  ->Promise.then(response => {
     if response->Webapi.Fetch.Response.ok {
-      Js.Promise.resolve(Ok(true))
+      Promise.resolve(Ok(true))
     } else {
-      Js.Promise.resolve(Error("Backend not healthy"))
+      Promise.resolve(Error("Backend not healthy"))
     }
   })
-  |> Js.Promise.catch(_ => Js.Promise.resolve(Error("Network error")))
+  ->Promise.catch(_ => Promise.resolve(Error("Network error")))
 }

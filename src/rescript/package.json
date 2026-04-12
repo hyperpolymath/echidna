@@ -8,9 +8,9 @@
     "res:build": "rescript build",
     "res:dev": "rescript build -w",
     "res:clean": "rescript clean",
-    "dev": "deno run --allow-net --allow-read --watch server.ts",
-    "build": "rescript build && deno bundle src/Main.bs.js dist/bundle.js",
-    "serve": "deno run --allow-net --allow-read server.ts",
+    "dev": "deno run --allow-net --allow-read --allow-env --watch src/Server.bs.js",
+    "build": "rescript build",
+    "serve": "deno run --allow-net --allow-read --allow-env src/Server.bs.js",
     "check": "rescript build && deno check src/Main.bs.js"
   },
   "keywords": [
@@ -22,7 +22,7 @@
   ],
   "devDependencies": {
     "@rescript/core": "^1.2.0",
-    "@rescript/react": "^0.12.1",
+    "@rescript/react": "^0.13.1",
     "rescript": "^12.0.0"
   },
   "dependencies": {
