@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ECHIDNA — Neurosymbolic Theorem Prover</title>
+    <style>
+        body {
+            font-family: 'Fira Code', 'JetBrains Mono', monospace;
+            background-color: #0d1117;
+            color: #c9d1d9;
+            padding: 40px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+        #app {
+            background-color: #161b22;
+            border: 1px solid #30363d;
+            border-radius: 6px;
+            padding: 30px;
+            width: 100%;
+            max-width: 800px;
+            margin-bottom: 30px;
+            text-align: left;
+            font-size: 1.1em;
+            box-shadow: 0 8px 24px rgba(0,0,0,0.3);
+            border-top: 4px solid #58a6ff;
+        }
+        .controls {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            justify-content: center;
+            width: 100%;
+            max-width: 800px;
+        }
+        button {
+            background-color: #21262d;
+            color: #58a6ff;
+            border: 1px solid #30363d;
+            padding: 10px 20px;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: all 0.2s;
+            font-family: inherit;
+        }
+        button:hover {
+            background-color: #30363d;
+            border-color: #8b949e;
+        }
+        #btn-back {
+            background-color: #2a1215;
+            color: #f85149;
+        }
+        #btn-back:hover {
+            background-color: #da3633;
+            color: white;
+        }
+        h1 {
+            color: #58a6ff;
+            font-weight: 400;
+            margin-bottom: 30px;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+        }
+        .status-bar {
+            margin-top: 20px;
+            font-size: 0.8em;
+            color: #8b949e;
+            border-top: 1px solid #30363d;
+            padding-top: 10px;
+        }
+    </style>
+</head>
+<body>
+    <h1>ECHIDNA ENGINE</h1>
+    <div id="app">
+        <div id="view-content">Initialising proof environment...</div>
+        <div class="status-bar">Kernel status: ACTIVE | Proof mode: NEUROSYMBOLIC</div>
+    </div>
+    
+    <div class="controls">
+        <button id="btn-provers">Provers</button>
+        <button id="btn-trust">Trust Hardening</button>
+        <button id="btn-neural">Neural Search</button>
+        <button id="btn-formal">Formal Specs</button>
+        <button id="btn-back">Undo Last State</button>
+    </div>
+
+    <script type="module">
+        import { load, Msg, Department } from '../tea/echidna_tea.js';
+
+        async function main() {
+            try {
+                const tea = await load('./assets/wasm/echidna_gui.wasm');
+                
+                let currentModel = tea.init();
+                const viewDiv = document.getElementById('view-content');
+                
+                function render() {
+                    viewDiv.textContent = "> " + tea.view(currentModel);
+                }
+
+                function dispatch(msg) {
+                    currentModel = tea.update(msg, currentModel);
+                    render();
+                }
+
+                document.getElementById('btn-provers').addEventListener('click', () => dispatch(Msg.Navigate(Department.Provers)));
+                document.getElementById('btn-trust').addEventListener('click', () => dispatch(Msg.Navigate(Department.TrustPipeline)));
+                document.getElementById('btn-neural').addEventListener('click', () => dispatch(Msg.Navigate(Department.NeuralSearch)));
+                document.getElementById('btn-formal').addEventListener('click', () => dispatch(Msg.Navigate(Department.FormalSpecs)));
+                document.getElementById('btn-back').addEventListener('click', () => dispatch(Msg.PopState()));
+
+                render();
+            } catch (err) {
+                console.error("Echidna Runtime Error:", err);
+                viewDiv.textContent = "CRITICAL ERROR: " + err.message;
+            }
+        }
+
+        main();
+    </script>
+</body>
+</html>
