@@ -1073,6 +1073,19 @@ pub fn kind_to_u8(kind: ProverKind) -> u8 {
         ProverKind::KeY => 46,
         ProverKind::DReal => 47,
         ProverKind::ABC => 48,
+        // HP ecosystem (Tier 11)
+        ProverKind::TypeLL => 49,
+        ProverKind::KatagoriaVerifier => 50,
+        ProverKind::TropicalTypeChecker => 51,
+        ProverKind::ChoreographicTypeChecker => 52,
+        ProverKind::EpistemicTypeChecker => 53,
+        ProverKind::EchoTypeChecker => 54,
+        ProverKind::SessionTypeChecker => 55,
+        ProverKind::ModalTypeChecker => 56,
+        ProverKind::QTTTypeChecker => 57,
+        ProverKind::EffectRowTypeChecker => 58,
+        ProverKind::DependentTypeChecker => 59,
+        ProverKind::RefinementTypeChecker => 60,
     }
 }
 
