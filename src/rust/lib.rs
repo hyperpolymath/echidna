@@ -17,6 +17,7 @@ pub mod ffi;
 pub mod gnn; // Graph Neural Network integration for proof search guidance
 pub mod groove; // Gossamer Groove discovery endpoint (port 9000)
 pub mod integrity;
+pub mod learning; // Continuous self-learning loop (MCTS + self-play + curriculum + daemon)
 pub mod llm; // Frontier LLM advisor (via BoJ Server)
 pub mod neural;
 pub mod parsers;
