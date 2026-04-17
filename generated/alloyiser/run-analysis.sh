@@ -4,7 +4,7 @@
 # Requires: java, alloy.jar
 
 ALLOY_JAR="alloy.jar"
-MODEL="/var/mnt/eclipse/repos/echidna/generated/alloyiser/echidna.als"
+MODEL="/var/mnt/eclipse/repos/verification-ecosystem/echidna/generated/alloyiser/echidna.als"
 SOLVER="sat4j"
 TIMEOUT="300"
 

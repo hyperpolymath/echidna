@@ -7,17 +7,17 @@ name = "echidna"
 
 [[specs]]
 name = "echidna-rest"
-source = "/var/mnt/eclipse/repos/echidna/src/interfaces/rest/models.rs"
+source = "/var/mnt/eclipse/repos/verification-ecosystem/echidna/src/interfaces/rest/models.rs"
 format = "openapi"
 
 [[specs]]
 name = "echidna-graphql"
-source = "/var/mnt/eclipse/repos/echidna/src/interfaces/graphql/schema.rs"
+source = "/var/mnt/eclipse/repos/verification-ecosystem/echidna/src/interfaces/graphql/schema.rs"
 format = "graphql"
 
 [[specs]]
 name = "echidna-grpc"
-source = "/var/mnt/eclipse/repos/echidna/src/interfaces/grpc/proto/echidna.proto"
+source = "/var/mnt/eclipse/repos/verification-ecosystem/echidna/src/interfaces/grpc/proto/echidna.proto"
 format = "openapi"
 
 [[assertions]]
