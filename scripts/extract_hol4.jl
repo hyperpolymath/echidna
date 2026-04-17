@@ -29,6 +29,7 @@ const START_ID = 91000
 
 const HOL4_RAW_BASE = "https://raw.githubusercontent.com/HOL-Theorem-Prover/HOL/develop"
 const HOL4_FILES = [
+    # Original ten — kept for continuity.
     "examples/algebra/groupScript.sml",
     "examples/algebra/ringScript.sml",
     "examples/algorithms/sortingScript.sml",
@@ -39,6 +40,56 @@ const HOL4_FILES = [
     "src/string/stringScript.sml",
     "src/pred_set/src/pred_setScript.sml",
     "src/real/realScript.sml",
+    # Core theories — dense with named theorems.
+    "src/num/theories/whileScript.sml",
+    "src/num/theories/prim_recScript.sml",
+    "src/num/theories/numeralScript.sml",
+    "src/num/extra_theories/numpairScript.sml",
+    "src/num/extra_theories/divScript.sml",
+    "src/num/extra_theories/gcdScript.sml",
+    "src/integer/integerScript.sml",
+    "src/integer/int_arithScript.sml",
+    "src/real/realaxScript.sml",
+    "src/real/realSimpsScript.sml",
+    "src/rational/ratScript.sml",
+    "src/relation/relationScript.sml",
+    "src/path/pathScript.sml",
+    "src/res_quan/src/res_quanScript.sml",
+    "src/list/src/rich_listScript.sml",
+    "src/list/src/sortingScript.sml",
+    "src/list/src/indexedListsScript.sml",
+    "src/string/asciiScript.sml",
+    "src/pred_set/src/pred_setpp.sml",
+    "src/finite_map/finite_mapScript.sml",
+    "src/sort/sortingScript.sml",
+    "src/quotient/src/quotientScript.sml",
+    "src/bag/bagScript.sml",
+    # Algebra examples — long, many theorems.
+    "examples/algebra/lib/groupIsoScript.sml",
+    "examples/algebra/lib/groupMapScript.sml",
+    "examples/algebra/lib/monoidScript.sml",
+    "examples/algebra/lib/fieldScript.sml",
+    "examples/algebra/lib/polyScript.sml",
+    "examples/algebra/lib/polyFieldScript.sml",
+    "examples/algebra/lib/polyRingScript.sml",
+    "examples/algebra/finite_group/finiteGroupScript.sml",
+    "examples/algebra/finite_group/subGroupScript.sml",
+    # Number theory, graph theory, combinatorics.
+    "examples/numberTheory/primeScript.sml",
+    "examples/numberTheory/divisibilityScript.sml",
+    "examples/graph/dag_graphScript.sml",
+    # CakeML-adjacent verification.
+    "examples/ARM/v7/arm_coretypesScript.sml",
+    "examples/bootstrap/cakemlScript.sml",
+    # Probability, measure, logic.
+    "examples/probability/probabilityScript.sml",
+    "examples/probability/sigma_algebraScript.sml",
+    "examples/probability/lebesgueScript.sml",
+    "examples/logic/modal-logic/modalLogicScript.sml",
+    "examples/logic/temporal-deep/TemporalScript.sml",
+    # seL4 / verified-systems style.
+    "examples/separation-logic/stack/stackScript.sml",
+    "examples/separation-logic/hoare-triple/hoare_logicScript.sml",
 ]
 
 # ---------------------------------------------------------------------------
@@ -62,6 +113,33 @@ Or the newer style:
       tactic_sequence
     QED
 """
+# Phase 1 widening (2026-04-17): HOL4 extractor previously used a
+# narrow tactic-keyword gate (`\w+_TAC|Induct_on|rw|fs|simp|metis_tac|
+# decide_tac|PROVE_TAC`). That gate dropped every tactic-name NOT on
+# the list — qsuff_tac, spose_not_then, drule_then, gvs, rpt, etc. —
+# leaving the `tactics` field effectively empty for most theorems.
+# We now accept any lower-snake-case or CamelCase identifier plus the
+# full set of HOL4 tacticals, and only drop obvious noise (single-letter
+# tokens, string literals).
+const HOL4_TACTIC_PAT = r"\b([a-z][a-z0-9_]{2,}|[A-Z][a-zA-Z0-9_]+)\b"
+
+"""
+    hol4_tactic_names(tactic::String) -> Vector{String}
+
+Pull plausible tactic / tactical identifiers out of a proof body.
+Deduplicated, order-preserving, capped at 40 entries (raised from 20
+to reflect the widened gate).
+"""
+function hol4_tactic_names(tactic::String)::Vector{String}
+    matches = [k.match for k in eachmatch(HOL4_TACTIC_PAT, tactic)]
+    seen = Set{String}(); unique_t = String[]
+    for t in matches
+        t ∉ seen && (push!(seen, t); push!(unique_t, t))
+        length(unique_t) >= 40 && break
+    end
+    return unique_t
+end
+
 function parse_hol4_file(filepath::String)::Vector{Dict{String,Any}}
     results = Dict{String,Any}[]
     content = try
@@ -70,43 +148,103 @@ function parse_hol4_file(filepath::String)::Vector{Dict{String,Any}}
         return results
     end
 
+    fname = basename(filepath)
+
     # Pattern 1: store_thm style
     for m in eachmatch(r"store_thm\s*\(\s*\"(\w+)\"\s*,\s*``([^`]+)``\s*,\s*(.*?)\)\s*;"s, content)
         name = strip(m.captures[1])
         goal = replace(strip(m.captures[2]), r"\s+" => " ")
         tactic = replace(strip(m.captures[3]), r"\s+" => " ")
-        tactic_names = [k.match for k in eachmatch(r"\b(\w+_TAC|Induct_on|rw|fs|simp|metis_tac|decide_tac|PROVE_TAC)\b"i, tactic)]
-        seen = Set{String}(); unique_t = String[]
-        for t in tactic_names
-            t ∉ seen && (push!(seen, t); push!(unique_t, t))
-            length(unique_t) >= 20 && break
-        end
         push!(results, Dict{String,Any}(
             "theorem" => name,
             "goal" => goal,
-            "tactic_proof" => first(tactic, 500),
-            "tactics" => unique_t,
-            "source" => "hol4/$(basename(filepath))",
+            "tactic_proof" => first(tactic, 8000),
+            "tactics" => hol4_tactic_names(tactic),
+            "source" => "hol4/$(fname)",
         ))
     end
 
-    # Pattern 2: Theorem/Proof/QED style
-    for m in eachmatch(r"Theorem\s+(\w+)\s*:\s*(.*?)\s*Proof\s*(.*?)\s*QED"s, content)
+    # Pattern 2: Theorem/Proof/QED style (plus optional [simp] tag).
+    for m in eachmatch(r"Theorem\s+(\w+)(?:\s*\[[^\]]*\])?\s*:\s*(.*?)\s*Proof\s*(.*?)\s*QED"s, content)
         name = strip(m.captures[1])
         goal = replace(strip(m.captures[2]), r"\s+" => " ")
         tactic = replace(strip(m.captures[3]), r"\s+" => " ")
-        tactic_names = [k.match for k in eachmatch(r"\b(\w+_TAC|Induct_on|rw|fs|simp|metis_tac|decide_tac|PROVE_TAC)\b"i, tactic)]
-        seen = Set{String}(); unique_t = String[]
-        for t in tactic_names
-            t ∉ seen && (push!(seen, t); push!(unique_t, t))
-            length(unique_t) >= 20 && break
-        end
         push!(results, Dict{String,Any}(
             "theorem" => name,
             "goal" => goal,
-            "tactic_proof" => first(tactic, 500),
-            "tactics" => unique_t,
-            "source" => "hol4/$(basename(filepath))",
+            "tactic_proof" => first(tactic, 8000),
+            "tactics" => hol4_tactic_names(tactic),
+            "source" => "hol4/$(fname)",
+        ))
+    end
+
+    # Pattern 2b: Triviality (same shape as Theorem but lightweight).
+    for m in eachmatch(r"Triviality\s+(\w+)(?:\s*\[[^\]]*\])?\s*:\s*(.*?)\s*Proof\s*(.*?)\s*QED"s, content)
+        name = strip(m.captures[1])
+        goal = replace(strip(m.captures[2]), r"\s+" => " ")
+        tactic = replace(strip(m.captures[3]), r"\s+" => " ")
+        push!(results, Dict{String,Any}(
+            "theorem" => name,
+            "goal" => goal,
+            "tactic_proof" => first(tactic, 8000),
+            "tactics" => hol4_tactic_names(tactic),
+            "source" => "hol4/$(fname)",
+        ))
+    end
+
+    # Pattern 3: Definition / End — named definitions carry a
+    # meaningful equation that is training context for HOL4.
+    for m in eachmatch(r"Definition\s+(\w+)(?:\s*\[[^\]]*\])?\s*:\s*(.*?)\s*(?:Termination.*?)?End"s, content)
+        name = strip(m.captures[1])
+        body = replace(strip(m.captures[2]), r"\s+" => " ")
+        push!(results, Dict{String,Any}(
+            "theorem" => name,
+            "goal" => body,
+            "tactic_proof" => "",
+            "tactics" => ["Definition"],
+            "source" => "hol4/$(fname)",
+        ))
+    end
+
+    # Pattern 3b: Inductive / CoInductive (same End terminator).
+    for m in eachmatch(r"(Co)?Inductive\s+(\w+)\s*:\s*(.*?)\s*End"s, content)
+        coflag = m.captures[1] === nothing ? "" : "Co"
+        name = strip(m.captures[2])
+        body = replace(strip(m.captures[3]), r"\s+" => " ")
+        push!(results, Dict{String,Any}(
+            "theorem" => name,
+            "goal" => body,
+            "tactic_proof" => "",
+            "tactics" => ["$(coflag)Inductive"],
+            "source" => "hol4/$(fname)",
+        ))
+    end
+
+    # Pattern 4: val NAME = prove (older style with () terminator).
+    for m in eachmatch(r"val\s+(\w+)\s*=\s*prove\s*\(\s*``([^`]+)``\s*,\s*(.*?)\)\s*;"s, content)
+        name = strip(m.captures[1])
+        goal = replace(strip(m.captures[2]), r"\s+" => " ")
+        tactic = replace(strip(m.captures[3]), r"\s+" => " ")
+        push!(results, Dict{String,Any}(
+            "theorem" => name,
+            "goal" => goal,
+            "tactic_proof" => first(tactic, 8000),
+            "tactics" => hol4_tactic_names(tactic),
+            "source" => "hol4/$(fname)",
+        ))
+    end
+
+    # Pattern 4b: val NAME = Q.prove / Q.store_thm (Quotation variants).
+    for m in eachmatch(r"val\s+(\w+)\s*=\s*Q\.(?:prove|store_thm)\s*\(\s*(?:\"\w+\"\s*,\s*)?`([^`]+)`\s*,\s*(.*?)\)\s*;"s, content)
+        name = strip(m.captures[1])
+        goal = replace(strip(m.captures[2]), r"\s+" => " ")
+        tactic = replace(strip(m.captures[3]), r"\s+" => " ")
+        push!(results, Dict{String,Any}(
+            "theorem" => name,
+            "goal" => goal,
+            "tactic_proof" => first(tactic, 8000),
+            "tactics" => hol4_tactic_names(tactic),
+            "source" => "hol4/$(fname)",
         ))
     end
 
@@ -263,20 +401,11 @@ function generate_synthetic_hol4()::Vector{Dict{String,Any}}
     proofs = Dict{String,Any}[]
     for (category, theorems) in all_categories
         for (name, goal, tactic) in theorems
-            tactic_names = [k.match for k in eachmatch(
-                r"\b(Induct_on|Cases_on|rw|fs|simp|metis_tac|decide_tac|PROVE_TAC|rpt|strip_tac|gen_tac|MATCH_MP_TAC)\b"i,
-                tactic
-            )]
-            seen = Set{String}(); unique_t = String[]
-            for t in tactic_names
-                t ∉ seen && (push!(seen, t); push!(unique_t, t))
-                length(unique_t) >= 20 && break
-            end
             push!(proofs, Dict{String,Any}(
                 "theorem" => name,
                 "goal" => goal,
                 "tactic_proof" => tactic,
-                "tactics" => unique_t,
+                "tactics" => hol4_tactic_names(tactic),
                 "source" => "hol4_synthetic/$(category)",
             ))
         end
