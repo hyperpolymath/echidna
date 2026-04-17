@@ -158,6 +158,11 @@ pub enum ProverKind {
     // unified HPEcosystemBackend that routes to the real HP upstreams
     // (TypeLL, Katagoria, tropical-resource-typing). They are
     // type-discipline views rather than separate binaries.
+    //
+    // Exhaustive enumeration of every type discipline we intend to support.
+    // Adding a variant here is cheap (dispatch-level only); the goal is to
+    // never have to re-open this enum once the ecosystem grows. See
+    // `src/rust/disciplines/` for the family grouping and katagoria pipeline.
     TypeLL,
     KatagoriaVerifier,
     TropicalTypeChecker,
@@ -170,6 +175,44 @@ pub enum ProverKind {
     EffectRowTypeChecker,
     DependentTypeChecker,
     RefinementTypeChecker,
+    // Foundations
+    OrdinaryTypeChecker,
+    // Polymorphism family
+    PhantomTypeChecker,
+    PolymorphicTypeChecker,
+    ExistentialTypeChecker,
+    HigherKindedTypeChecker,
+    RowTypeChecker,
+    // Subtyping family
+    SubtypingTypeChecker,
+    IntersectionTypeChecker,
+    UnionTypeChecker,
+    GradualTypeChecker,
+    // Dependent / refinement family (siblings of Dependent/Refinement)
+    HoareTypeChecker,
+    IndexedTypeChecker,
+    // Substructural family (siblings / specialisations of QTT)
+    LinearTypeChecker,
+    AffineTypeChecker,
+    RelevantTypeChecker,
+    OrderedTypeChecker,
+    UniquenessTypeChecker,
+    // Mutability / capability family
+    ImmutableTypeChecker,
+    CapabilityTypeChecker,
+    BunchedTypeChecker,
+    // Modal family (siblings of Modal/Epistemic)
+    TemporalTypeChecker,
+    ProvabilityTypeChecker,
+    // Effects / coeffects family (siblings of EffectRow)
+    ImpureTypeChecker,
+    CoeffectTypeChecker,
+    ProbabilisticTypeChecker,
+    // Process / communication family (siblings of Session/Choreographic/Echo)
+    DyadicTypeChecker,
+    // Homotopy foundations
+    HomotopyTypeChecker,
+    CubicalTypeChecker,
 }
 
 impl ProverKind {
@@ -189,6 +232,34 @@ impl ProverKind {
                 | ProverKind::EffectRowTypeChecker
                 | ProverKind::DependentTypeChecker
                 | ProverKind::RefinementTypeChecker
+                | ProverKind::OrdinaryTypeChecker
+                | ProverKind::PhantomTypeChecker
+                | ProverKind::PolymorphicTypeChecker
+                | ProverKind::ExistentialTypeChecker
+                | ProverKind::HigherKindedTypeChecker
+                | ProverKind::RowTypeChecker
+                | ProverKind::SubtypingTypeChecker
+                | ProverKind::IntersectionTypeChecker
+                | ProverKind::UnionTypeChecker
+                | ProverKind::GradualTypeChecker
+                | ProverKind::HoareTypeChecker
+                | ProverKind::IndexedTypeChecker
+                | ProverKind::LinearTypeChecker
+                | ProverKind::AffineTypeChecker
+                | ProverKind::RelevantTypeChecker
+                | ProverKind::OrderedTypeChecker
+                | ProverKind::UniquenessTypeChecker
+                | ProverKind::ImmutableTypeChecker
+                | ProverKind::CapabilityTypeChecker
+                | ProverKind::BunchedTypeChecker
+                | ProverKind::TemporalTypeChecker
+                | ProverKind::ProvabilityTypeChecker
+                | ProverKind::ImpureTypeChecker
+                | ProverKind::CoeffectTypeChecker
+                | ProverKind::ProbabilisticTypeChecker
+                | ProverKind::DyadicTypeChecker
+                | ProverKind::HomotopyTypeChecker
+                | ProverKind::CubicalTypeChecker
         )
     }
 }
@@ -267,6 +338,74 @@ impl std::str::FromStr for ProverKind {
             }
             "dependenttypechecker" | "dependent" => Ok(ProverKind::DependentTypeChecker),
             "refinementtypechecker" | "refinement" => Ok(ProverKind::RefinementTypeChecker),
+            "ordinarytypechecker" | "ordinary" | "simple" | "simply-typed" | "stlc" => {
+                Ok(ProverKind::OrdinaryTypeChecker)
+            }
+            "phantomtypechecker" | "phantom" => Ok(ProverKind::PhantomTypeChecker),
+            "polymorphictypechecker" | "polymorphic" | "systemf" | "system-f" | "parametric" => {
+                Ok(ProverKind::PolymorphicTypeChecker)
+            }
+            "existentialtypechecker" | "existential" | "packed" => {
+                Ok(ProverKind::ExistentialTypeChecker)
+            }
+            "higherkindedtypechecker" | "higher-kinded" | "higherkinded" | "hkt" | "hk" => {
+                Ok(ProverKind::HigherKindedTypeChecker)
+            }
+            "rowtypechecker" | "row" | "row-polymorphic" | "row-polymorphism" => {
+                Ok(ProverKind::RowTypeChecker)
+            }
+            "subtypingtypechecker" | "subtyping" | "sub" => Ok(ProverKind::SubtypingTypeChecker),
+            "intersectiontypechecker" | "intersection" | "inter" => {
+                Ok(ProverKind::IntersectionTypeChecker)
+            }
+            "uniontypechecker" | "union" => Ok(ProverKind::UnionTypeChecker),
+            "gradualtypechecker" | "gradual" | "gradual-typing" => {
+                Ok(ProverKind::GradualTypeChecker)
+            }
+            "hoaretypechecker" | "hoare" | "hoare-types" => Ok(ProverKind::HoareTypeChecker),
+            "indexedtypechecker" | "indexed" | "indexed-monad" | "indexed-monads" => {
+                Ok(ProverKind::IndexedTypeChecker)
+            }
+            "lineartypechecker" | "linear" | "linear-types" => Ok(ProverKind::LinearTypeChecker),
+            "affinetypechecker" | "affine" | "affine-types" => Ok(ProverKind::AffineTypeChecker),
+            "relevanttypechecker" | "relevant" | "relevant-types" => {
+                Ok(ProverKind::RelevantTypeChecker)
+            }
+            "orderedtypechecker" | "ordered" | "ordered-logic" | "no-exchange" => {
+                Ok(ProverKind::OrderedTypeChecker)
+            }
+            "uniquenesstypechecker" | "uniqueness" | "unique" | "unique-types" => {
+                Ok(ProverKind::UniquenessTypeChecker)
+            }
+            "immutabletypechecker" | "immutable" | "frozen" | "const-types" => {
+                Ok(ProverKind::ImmutableTypeChecker)
+            }
+            "capabilitytypechecker" | "capability" | "cap" | "capability-types" => {
+                Ok(ProverKind::CapabilityTypeChecker)
+            }
+            "bunchedtypechecker" | "bunched" | "bi" | "bi-logic" | "separation" => {
+                Ok(ProverKind::BunchedTypeChecker)
+            }
+            "temporaltypechecker" | "temporal" | "ltl" | "ctl" => {
+                Ok(ProverKind::TemporalTypeChecker)
+            }
+            "provabilitytypechecker" | "provability" | "lob" | "löb" | "gl" => {
+                Ok(ProverKind::ProvabilityTypeChecker)
+            }
+            "impuretypechecker" | "impure" | "effect-tracked" => {
+                Ok(ProverKind::ImpureTypeChecker)
+            }
+            "coeffecttypechecker" | "coeffect" | "graded-context" | "coeffects" => {
+                Ok(ProverKind::CoeffectTypeChecker)
+            }
+            "probabilistictypechecker" | "probabilistic" | "prob" | "prob-types" => {
+                Ok(ProverKind::ProbabilisticTypeChecker)
+            }
+            "dyadictypechecker" | "dyadic" | "binary-channel" | "dyadic-session" => {
+                Ok(ProverKind::DyadicTypeChecker)
+            }
+            "homotopytypechecker" | "homotopy" | "hott" => Ok(ProverKind::HomotopyTypeChecker),
+            "cubicaltypechecker" | "cubical" | "cubical-tt" => Ok(ProverKind::CubicalTypeChecker),
             _ => Err(anyhow::anyhow!("Unknown prover: {}", s)),
         }
     }
@@ -396,6 +535,7 @@ impl ProverKind {
             ProverKind::ABC => 2, // Automated hardware verification, AIG-based
             // HP type-checker ecosystem: complexity 3 — they are real
             // type-checkers with non-trivial unification/elaboration.
+            // Heavier disciplines (HoTT/Cubical, Hoare) rate 4.
             ProverKind::TypeLL
             | ProverKind::KatagoriaVerifier
             | ProverKind::TropicalTypeChecker
@@ -407,7 +547,38 @@ impl ProverKind {
             | ProverKind::QTTTypeChecker
             | ProverKind::EffectRowTypeChecker
             | ProverKind::DependentTypeChecker
-            | ProverKind::RefinementTypeChecker => 3,
+            | ProverKind::RefinementTypeChecker
+            | ProverKind::PhantomTypeChecker
+            | ProverKind::PolymorphicTypeChecker
+            | ProverKind::ExistentialTypeChecker
+            | ProverKind::HigherKindedTypeChecker
+            | ProverKind::RowTypeChecker
+            | ProverKind::SubtypingTypeChecker
+            | ProverKind::IntersectionTypeChecker
+            | ProverKind::UnionTypeChecker
+            | ProverKind::GradualTypeChecker
+            | ProverKind::IndexedTypeChecker
+            | ProverKind::LinearTypeChecker
+            | ProverKind::AffineTypeChecker
+            | ProverKind::RelevantTypeChecker
+            | ProverKind::OrderedTypeChecker
+            | ProverKind::UniquenessTypeChecker
+            | ProverKind::ImmutableTypeChecker
+            | ProverKind::CapabilityTypeChecker
+            | ProverKind::BunchedTypeChecker
+            | ProverKind::TemporalTypeChecker
+            | ProverKind::ProvabilityTypeChecker
+            | ProverKind::ImpureTypeChecker
+            | ProverKind::CoeffectTypeChecker
+            | ProverKind::ProbabilisticTypeChecker
+            | ProverKind::DyadicTypeChecker => 3,
+            // Heavier disciplines: Hoare triples (SL proofs), HoTT (univalence),
+            // Cubical (interval primitives).
+            ProverKind::HoareTypeChecker
+            | ProverKind::HomotopyTypeChecker
+            | ProverKind::CubicalTypeChecker => 4,
+            // Baseline: simply-typed lambda calculus — cheap to check.
+            ProverKind::OrdinaryTypeChecker => 2,
         }
     }
 
@@ -493,7 +664,35 @@ impl ProverKind {
             | ProverKind::QTTTypeChecker
             | ProverKind::EffectRowTypeChecker
             | ProverKind::DependentTypeChecker
-            | ProverKind::RefinementTypeChecker => 3,
+            | ProverKind::RefinementTypeChecker
+            | ProverKind::OrdinaryTypeChecker
+            | ProverKind::PhantomTypeChecker
+            | ProverKind::PolymorphicTypeChecker
+            | ProverKind::ExistentialTypeChecker
+            | ProverKind::HigherKindedTypeChecker
+            | ProverKind::RowTypeChecker
+            | ProverKind::SubtypingTypeChecker
+            | ProverKind::IntersectionTypeChecker
+            | ProverKind::UnionTypeChecker
+            | ProverKind::GradualTypeChecker
+            | ProverKind::HoareTypeChecker
+            | ProverKind::IndexedTypeChecker
+            | ProverKind::LinearTypeChecker
+            | ProverKind::AffineTypeChecker
+            | ProverKind::RelevantTypeChecker
+            | ProverKind::OrderedTypeChecker
+            | ProverKind::UniquenessTypeChecker
+            | ProverKind::ImmutableTypeChecker
+            | ProverKind::CapabilityTypeChecker
+            | ProverKind::BunchedTypeChecker
+            | ProverKind::TemporalTypeChecker
+            | ProverKind::ProvabilityTypeChecker
+            | ProverKind::ImpureTypeChecker
+            | ProverKind::CoeffectTypeChecker
+            | ProverKind::ProbabilisticTypeChecker
+            | ProverKind::DyadicTypeChecker
+            | ProverKind::HomotopyTypeChecker
+            | ProverKind::CubicalTypeChecker => 3,
         }
     }
 
@@ -555,7 +754,35 @@ impl ProverKind {
             | ProverKind::QTTTypeChecker
             | ProverKind::EffectRowTypeChecker
             | ProverKind::DependentTypeChecker
-            | ProverKind::RefinementTypeChecker => 2.0, // HP ecosystem
+            | ProverKind::RefinementTypeChecker
+            | ProverKind::OrdinaryTypeChecker
+            | ProverKind::PhantomTypeChecker
+            | ProverKind::PolymorphicTypeChecker
+            | ProverKind::ExistentialTypeChecker
+            | ProverKind::HigherKindedTypeChecker
+            | ProverKind::RowTypeChecker
+            | ProverKind::SubtypingTypeChecker
+            | ProverKind::IntersectionTypeChecker
+            | ProverKind::UnionTypeChecker
+            | ProverKind::GradualTypeChecker
+            | ProverKind::HoareTypeChecker
+            | ProverKind::IndexedTypeChecker
+            | ProverKind::LinearTypeChecker
+            | ProverKind::AffineTypeChecker
+            | ProverKind::RelevantTypeChecker
+            | ProverKind::OrderedTypeChecker
+            | ProverKind::UniquenessTypeChecker
+            | ProverKind::ImmutableTypeChecker
+            | ProverKind::CapabilityTypeChecker
+            | ProverKind::BunchedTypeChecker
+            | ProverKind::TemporalTypeChecker
+            | ProverKind::ProvabilityTypeChecker
+            | ProverKind::ImpureTypeChecker
+            | ProverKind::CoeffectTypeChecker
+            | ProverKind::ProbabilisticTypeChecker
+            | ProverKind::DyadicTypeChecker
+            | ProverKind::HomotopyTypeChecker
+            | ProverKind::CubicalTypeChecker => 2.0, // HP ecosystem
         }
     }
 
@@ -626,6 +853,34 @@ impl ProverKind {
             ProverKind::EffectRowTypeChecker => "typell",
             ProverKind::DependentTypeChecker => "typell",
             ProverKind::RefinementTypeChecker => "typell",
+            ProverKind::OrdinaryTypeChecker
+            | ProverKind::PhantomTypeChecker
+            | ProverKind::PolymorphicTypeChecker
+            | ProverKind::ExistentialTypeChecker
+            | ProverKind::HigherKindedTypeChecker
+            | ProverKind::RowTypeChecker
+            | ProverKind::SubtypingTypeChecker
+            | ProverKind::IntersectionTypeChecker
+            | ProverKind::UnionTypeChecker
+            | ProverKind::GradualTypeChecker
+            | ProverKind::HoareTypeChecker
+            | ProverKind::IndexedTypeChecker
+            | ProverKind::LinearTypeChecker
+            | ProverKind::AffineTypeChecker
+            | ProverKind::RelevantTypeChecker
+            | ProverKind::OrderedTypeChecker
+            | ProverKind::UniquenessTypeChecker
+            | ProverKind::ImmutableTypeChecker
+            | ProverKind::CapabilityTypeChecker
+            | ProverKind::BunchedTypeChecker
+            | ProverKind::TemporalTypeChecker
+            | ProverKind::ProvabilityTypeChecker
+            | ProverKind::ImpureTypeChecker
+            | ProverKind::CoeffectTypeChecker
+            | ProverKind::ProbabilisticTypeChecker
+            | ProverKind::DyadicTypeChecker
+            | ProverKind::HomotopyTypeChecker
+            | ProverKind::CubicalTypeChecker => "typell",
         }
     }
 }
@@ -796,7 +1051,35 @@ impl ProverFactory {
             | ProverKind::QTTTypeChecker
             | ProverKind::EffectRowTypeChecker
             | ProverKind::DependentTypeChecker
-            | ProverKind::RefinementTypeChecker => Ok(Box::new(
+            | ProverKind::RefinementTypeChecker
+            | ProverKind::OrdinaryTypeChecker
+            | ProverKind::PhantomTypeChecker
+            | ProverKind::PolymorphicTypeChecker
+            | ProverKind::ExistentialTypeChecker
+            | ProverKind::HigherKindedTypeChecker
+            | ProverKind::RowTypeChecker
+            | ProverKind::SubtypingTypeChecker
+            | ProverKind::IntersectionTypeChecker
+            | ProverKind::UnionTypeChecker
+            | ProverKind::GradualTypeChecker
+            | ProverKind::HoareTypeChecker
+            | ProverKind::IndexedTypeChecker
+            | ProverKind::LinearTypeChecker
+            | ProverKind::AffineTypeChecker
+            | ProverKind::RelevantTypeChecker
+            | ProverKind::OrderedTypeChecker
+            | ProverKind::UniquenessTypeChecker
+            | ProverKind::ImmutableTypeChecker
+            | ProverKind::CapabilityTypeChecker
+            | ProverKind::BunchedTypeChecker
+            | ProverKind::TemporalTypeChecker
+            | ProverKind::ProvabilityTypeChecker
+            | ProverKind::ImpureTypeChecker
+            | ProverKind::CoeffectTypeChecker
+            | ProverKind::ProbabilisticTypeChecker
+            | ProverKind::DyadicTypeChecker
+            | ProverKind::HomotopyTypeChecker
+            | ProverKind::CubicalTypeChecker => Ok(Box::new(
                 hp_ecosystem::HPEcosystemBackend::new(kind, config),
             )),
         }
