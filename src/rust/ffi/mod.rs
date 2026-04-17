@@ -431,6 +431,50 @@ pub fn kind_from_u8(kind: u8) -> Option<ProverKind> {
         47 => Some(ProverKind::DReal),
         // Logic synthesis & hardware verification
         48 => Some(ProverKind::ABC),
+        // HP ecosystem — tier 11 type-checker views (the TypeDiscipline family).
+        // Codes 49–60 were reserved but previously missing from this function,
+        // causing kind_to_u8 / kind_from_u8 to be non-invertible across the
+        // HP ecosystem. Filled in alongside the 61–88 transition expansion.
+        49 => Some(ProverKind::TypeLL),
+        50 => Some(ProverKind::KatagoriaVerifier),
+        51 => Some(ProverKind::TropicalTypeChecker),
+        52 => Some(ProverKind::ChoreographicTypeChecker),
+        53 => Some(ProverKind::EpistemicTypeChecker),
+        54 => Some(ProverKind::EchoTypeChecker),
+        55 => Some(ProverKind::SessionTypeChecker),
+        56 => Some(ProverKind::ModalTypeChecker),
+        57 => Some(ProverKind::QTTTypeChecker),
+        58 => Some(ProverKind::EffectRowTypeChecker),
+        59 => Some(ProverKind::DependentTypeChecker),
+        60 => Some(ProverKind::RefinementTypeChecker),
+        61 => Some(ProverKind::OrdinaryTypeChecker),
+        62 => Some(ProverKind::PhantomTypeChecker),
+        63 => Some(ProverKind::PolymorphicTypeChecker),
+        64 => Some(ProverKind::ExistentialTypeChecker),
+        65 => Some(ProverKind::HigherKindedTypeChecker),
+        66 => Some(ProverKind::RowTypeChecker),
+        67 => Some(ProverKind::SubtypingTypeChecker),
+        68 => Some(ProverKind::IntersectionTypeChecker),
+        69 => Some(ProverKind::UnionTypeChecker),
+        70 => Some(ProverKind::GradualTypeChecker),
+        71 => Some(ProverKind::HoareTypeChecker),
+        72 => Some(ProverKind::IndexedTypeChecker),
+        73 => Some(ProverKind::LinearTypeChecker),
+        74 => Some(ProverKind::AffineTypeChecker),
+        75 => Some(ProverKind::RelevantTypeChecker),
+        76 => Some(ProverKind::OrderedTypeChecker),
+        77 => Some(ProverKind::UniquenessTypeChecker),
+        78 => Some(ProverKind::ImmutableTypeChecker),
+        79 => Some(ProverKind::CapabilityTypeChecker),
+        80 => Some(ProverKind::BunchedTypeChecker),
+        81 => Some(ProverKind::TemporalTypeChecker),
+        82 => Some(ProverKind::ProvabilityTypeChecker),
+        83 => Some(ProverKind::ImpureTypeChecker),
+        84 => Some(ProverKind::CoeffectTypeChecker),
+        85 => Some(ProverKind::ProbabilisticTypeChecker),
+        86 => Some(ProverKind::DyadicTypeChecker),
+        87 => Some(ProverKind::HomotopyTypeChecker),
+        88 => Some(ProverKind::CubicalTypeChecker),
         _ => None,
     }
 }
@@ -1086,6 +1130,35 @@ pub fn kind_to_u8(kind: ProverKind) -> u8 {
         ProverKind::EffectRowTypeChecker => 58,
         ProverKind::DependentTypeChecker => 59,
         ProverKind::RefinementTypeChecker => 60,
+        // HP ecosystem — TypeDiscipline transition (codes 61–88).
+        ProverKind::OrdinaryTypeChecker => 61,
+        ProverKind::PhantomTypeChecker => 62,
+        ProverKind::PolymorphicTypeChecker => 63,
+        ProverKind::ExistentialTypeChecker => 64,
+        ProverKind::HigherKindedTypeChecker => 65,
+        ProverKind::RowTypeChecker => 66,
+        ProverKind::SubtypingTypeChecker => 67,
+        ProverKind::IntersectionTypeChecker => 68,
+        ProverKind::UnionTypeChecker => 69,
+        ProverKind::GradualTypeChecker => 70,
+        ProverKind::HoareTypeChecker => 71,
+        ProverKind::IndexedTypeChecker => 72,
+        ProverKind::LinearTypeChecker => 73,
+        ProverKind::AffineTypeChecker => 74,
+        ProverKind::RelevantTypeChecker => 75,
+        ProverKind::OrderedTypeChecker => 76,
+        ProverKind::UniquenessTypeChecker => 77,
+        ProverKind::ImmutableTypeChecker => 78,
+        ProverKind::CapabilityTypeChecker => 79,
+        ProverKind::BunchedTypeChecker => 80,
+        ProverKind::TemporalTypeChecker => 81,
+        ProverKind::ProvabilityTypeChecker => 82,
+        ProverKind::ImpureTypeChecker => 83,
+        ProverKind::CoeffectTypeChecker => 84,
+        ProverKind::ProbabilisticTypeChecker => 85,
+        ProverKind::DyadicTypeChecker => 86,
+        ProverKind::HomotopyTypeChecker => 87,
+        ProverKind::CubicalTypeChecker => 88,
     }
 }
 
@@ -1133,9 +1206,12 @@ mod tests {
     }
 
     #[test]
-    fn test_kind_roundtrip_all_48() {
-        // Verify that kind_to_u8 and kind_from_u8 are inverses for all 49 provers
+    fn test_kind_roundtrip_all() {
+        // Verify that kind_to_u8 and kind_from_u8 are inverses for every
+        // registered prover — the 49 classic backends plus the 40 HP
+        // ecosystem TypeDiscipline variants (codes 49–88).
         let all_kinds = [
+            // Classic backends (0–48).
             ProverKind::Agda, ProverKind::Coq, ProverKind::Lean,
             ProverKind::Isabelle, ProverKind::Z3, ProverKind::CVC5,
             ProverKind::Metamath, ProverKind::HOLLight, ProverKind::Mizar,
@@ -1153,7 +1229,30 @@ mod tests {
             ProverKind::FramaC, ProverKind::Viper, ProverKind::Tamarin,
             ProverKind::ProVerif, ProverKind::KeY, ProverKind::DReal,
             ProverKind::ABC,
+            // HP ecosystem: original 12 (49–60).
+            ProverKind::TypeLL, ProverKind::KatagoriaVerifier,
+            ProverKind::TropicalTypeChecker, ProverKind::ChoreographicTypeChecker,
+            ProverKind::EpistemicTypeChecker, ProverKind::EchoTypeChecker,
+            ProverKind::SessionTypeChecker, ProverKind::ModalTypeChecker,
+            ProverKind::QTTTypeChecker, ProverKind::EffectRowTypeChecker,
+            ProverKind::DependentTypeChecker, ProverKind::RefinementTypeChecker,
+            // HP ecosystem: TypeDiscipline transition (61–88).
+            ProverKind::OrdinaryTypeChecker, ProverKind::PhantomTypeChecker,
+            ProverKind::PolymorphicTypeChecker, ProverKind::ExistentialTypeChecker,
+            ProverKind::HigherKindedTypeChecker, ProverKind::RowTypeChecker,
+            ProverKind::SubtypingTypeChecker, ProverKind::IntersectionTypeChecker,
+            ProverKind::UnionTypeChecker, ProverKind::GradualTypeChecker,
+            ProverKind::HoareTypeChecker, ProverKind::IndexedTypeChecker,
+            ProverKind::LinearTypeChecker, ProverKind::AffineTypeChecker,
+            ProverKind::RelevantTypeChecker, ProverKind::OrderedTypeChecker,
+            ProverKind::UniquenessTypeChecker, ProverKind::ImmutableTypeChecker,
+            ProverKind::CapabilityTypeChecker, ProverKind::BunchedTypeChecker,
+            ProverKind::TemporalTypeChecker, ProverKind::ProvabilityTypeChecker,
+            ProverKind::ImpureTypeChecker, ProverKind::CoeffectTypeChecker,
+            ProverKind::ProbabilisticTypeChecker, ProverKind::DyadicTypeChecker,
+            ProverKind::HomotopyTypeChecker, ProverKind::CubicalTypeChecker,
         ];
+        assert_eq!(all_kinds.len(), 89, "expected 89 total ProverKind variants");
         for kind in &all_kinds {
             let u8_val = kind_to_u8(*kind);
             let roundtripped = kind_from_u8(u8_val)
@@ -1168,7 +1267,9 @@ mod tests {
 
     #[test]
     fn test_kind_from_u8_out_of_range() {
-        assert!(kind_from_u8(49).is_none());
+        // 0–88 are valid; 89+ are out of range.
+        assert!(kind_from_u8(89).is_none());
+        assert!(kind_from_u8(128).is_none());
         assert!(kind_from_u8(255).is_none());
     }
 

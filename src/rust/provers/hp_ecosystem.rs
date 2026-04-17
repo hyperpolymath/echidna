@@ -3,29 +3,36 @@
 
 //! Unified HP type-checker ecosystem backend.
 //!
-//! The HP stack ships thirteen type-discipline "provers" that are really
-//! views on three upstream projects:
+//! The HP stack ships forty type-discipline "provers" that are really
+//! views on three upstream projects. Two are named entry points and the
+//! remainder are discipline flags passed to `typell`:
 //!
-//! | Discipline                  | Upstream                                        |
-//! |-----------------------------|-------------------------------------------------|
-//! | `TypeLL`                    | `verification-ecosystem/typell`                 |
-//! | `KatagoriaVerifier`         | `developer-ecosystem/katagoria`                 |
-//! | `TropicalTypeChecker`       | `verification-ecosystem/tropical-resource-typing` |
-//! | `ChoreographicTypeChecker`  | typell (discipline flag)                        |
-//! | `EpistemicTypeChecker`      | typell                                          |
-//! | `EchoTypeChecker`           | typell                                          |
-//! | `SessionTypeChecker`        | typell                                          |
-//! | `ModalTypeChecker`          | typell                                          |
-//! | `QTTTypeChecker`            | typell                                          |
-//! | `EffectRowTypeChecker`      | typell                                          |
-//! | `DependentTypeChecker`      | typell                                          |
-//! | `RefinementTypeChecker`     | typell                                          |
+//! | Upstream                                          | CLI                     |
+//! |---------------------------------------------------|-------------------------|
+//! | `developer-ecosystem/katagoria`                   | `katagoria`             |
+//! | `verification-ecosystem/tropical-resource-typing` | `tropical-type-check`   |
+//! | `verification-ecosystem/typell` (all others)      | `typell --discipline=X` |
 //!
-//! Rather than maintain thirteen shell-out wrappers, this single backend
+//! The forty disciplines, grouped by family (see `src/rust/disciplines/`
+//! for authoritative taxonomy):
+//!
+//! - **Entry points**: TypeLL, KatagoriaVerifier, TropicalTypeChecker
+//! - **Foundations**: Ordinary
+//! - **Polymorphism**: Phantom, Polymorphic, Existential, HigherKinded, Row
+//! - **Subtyping**: Subtyping, Intersection, Union, Gradual
+//! - **Dependent/refinement**: Dependent, Refinement, Hoare, Indexed
+//! - **Substructural**: QTT, Linear, Affine, Relevant, Ordered, Uniqueness
+//! - **Mutability/capability**: Immutable, Capability, Bunched
+//! - **Modal**: Modal, Epistemic, Temporal, Provability
+//! - **Effects/coeffects**: EffectRow, Impure, Coeffect, Probabilistic
+//! - **Process/communication**: Session, Choreographic, Dyadic, Echo
+//! - **Homotopy**: Homotopy, Cubical
+//!
+//! Rather than maintain forty shell-out wrappers, this single backend
 //! dispatches on its `ProverKind` at method boundaries and injects the
 //! right discipline flag when it shells out to the underlying tool.
 //!
-//! All thirteen ProverKind variants register through
+//! All forty ProverKind variants register through
 //! `ProverFactory::create` -> `HPEcosystemBackend::new`.
 
 #![allow(dead_code)]
@@ -67,6 +74,44 @@ impl HPEcosystemBackend {
             ProverKind::EffectRowTypeChecker => ("typell", "effect-row"),
             ProverKind::DependentTypeChecker => ("typell", "dependent"),
             ProverKind::RefinementTypeChecker => ("typell", "refinement"),
+            // Foundations
+            ProverKind::OrdinaryTypeChecker => ("typell", "ordinary"),
+            // Polymorphism family
+            ProverKind::PhantomTypeChecker => ("typell", "phantom"),
+            ProverKind::PolymorphicTypeChecker => ("typell", "polymorphic"),
+            ProverKind::ExistentialTypeChecker => ("typell", "existential"),
+            ProverKind::HigherKindedTypeChecker => ("typell", "higher-kinded"),
+            ProverKind::RowTypeChecker => ("typell", "row"),
+            // Subtyping family
+            ProverKind::SubtypingTypeChecker => ("typell", "subtyping"),
+            ProverKind::IntersectionTypeChecker => ("typell", "intersection"),
+            ProverKind::UnionTypeChecker => ("typell", "union"),
+            ProverKind::GradualTypeChecker => ("typell", "gradual"),
+            // Dependent / refinement family
+            ProverKind::HoareTypeChecker => ("typell", "hoare"),
+            ProverKind::IndexedTypeChecker => ("typell", "indexed"),
+            // Substructural family
+            ProverKind::LinearTypeChecker => ("typell", "linear"),
+            ProverKind::AffineTypeChecker => ("typell", "affine"),
+            ProverKind::RelevantTypeChecker => ("typell", "relevant"),
+            ProverKind::OrderedTypeChecker => ("typell", "ordered"),
+            ProverKind::UniquenessTypeChecker => ("typell", "uniqueness"),
+            // Mutability / capability family
+            ProverKind::ImmutableTypeChecker => ("typell", "immutable"),
+            ProverKind::CapabilityTypeChecker => ("typell", "capability"),
+            ProverKind::BunchedTypeChecker => ("typell", "bunched"),
+            // Modal family
+            ProverKind::TemporalTypeChecker => ("typell", "temporal"),
+            ProverKind::ProvabilityTypeChecker => ("typell", "provability"),
+            // Effects / coeffects family
+            ProverKind::ImpureTypeChecker => ("typell", "impure"),
+            ProverKind::CoeffectTypeChecker => ("typell", "coeffect"),
+            ProverKind::ProbabilisticTypeChecker => ("typell", "probabilistic"),
+            // Process / communication family
+            ProverKind::DyadicTypeChecker => ("typell", "dyadic"),
+            // Homotopy foundations
+            ProverKind::HomotopyTypeChecker => ("typell", "homotopy"),
+            ProverKind::CubicalTypeChecker => ("typell", "cubical"),
             other => {
                 debug_assert!(false, "non-HP kind routed to HPEcosystemBackend: {:?}", other);
                 ("typell", "typell")
@@ -276,9 +321,54 @@ mod tests {
     }
 
     #[test]
-    fn all_thirteen_discipline_kinds_are_hp() {
+    fn all_discipline_kinds_are_hp() {
         use ProverKind::*;
-        for k in [
+        let all = all_hp_discipline_kinds();
+        assert_eq!(
+            all.len(),
+            40,
+            "expected forty HP ecosystem discipline variants, got {}",
+            all.len()
+        );
+        for k in all {
+            assert!(k.is_hp_ecosystem(), "{:?} should be hp_ecosystem", k);
+            // Every discipline must route to a known CLI.
+            let backend = HPEcosystemBackend::new(k, ProverConfig::default());
+            let (cli, tag) = backend.upstream();
+            assert!(
+                matches!(cli, "typell" | "katagoria" | "tropical-type-check"),
+                "{:?} routed to unexpected CLI {}",
+                k,
+                cli
+            );
+            assert!(!tag.is_empty(), "{:?} has empty discipline tag", k);
+        }
+        // Spot-check specific disciplines.
+        let linear = HPEcosystemBackend::new(LinearTypeChecker, ProverConfig::default());
+        assert_eq!(linear.discipline_tag(), "linear");
+        let cubical = HPEcosystemBackend::new(CubicalTypeChecker, ProverConfig::default());
+        assert_eq!(cubical.discipline_tag(), "cubical");
+        let dyadic = HPEcosystemBackend::new(DyadicTypeChecker, ProverConfig::default());
+        assert_eq!(dyadic.discipline_tag(), "dyadic");
+    }
+
+    #[test]
+    fn discipline_tags_are_unique() {
+        let mut tags: Vec<&'static str> = all_hp_discipline_kinds()
+            .iter()
+            .map(|k| HPEcosystemBackend::new(*k, ProverConfig::default()).discipline_tag())
+            .collect();
+        tags.sort_unstable();
+        let before = tags.len();
+        tags.dedup();
+        assert_eq!(before, tags.len(), "duplicate discipline tag detected");
+    }
+
+    /// Canonical list of every HP ecosystem discipline variant. Kept in sync
+    /// with `ProverKind::is_hp_ecosystem` and the `upstream()` dispatch table.
+    fn all_hp_discipline_kinds() -> Vec<ProverKind> {
+        use ProverKind::*;
+        vec![
             TypeLL,
             KatagoriaVerifier,
             TropicalTypeChecker,
@@ -291,8 +381,34 @@ mod tests {
             EffectRowTypeChecker,
             DependentTypeChecker,
             RefinementTypeChecker,
-        ] {
-            assert!(k.is_hp_ecosystem(), "{:?} should be hp_ecosystem", k);
-        }
+            OrdinaryTypeChecker,
+            PhantomTypeChecker,
+            PolymorphicTypeChecker,
+            ExistentialTypeChecker,
+            HigherKindedTypeChecker,
+            RowTypeChecker,
+            SubtypingTypeChecker,
+            IntersectionTypeChecker,
+            UnionTypeChecker,
+            GradualTypeChecker,
+            HoareTypeChecker,
+            IndexedTypeChecker,
+            LinearTypeChecker,
+            AffineTypeChecker,
+            RelevantTypeChecker,
+            OrderedTypeChecker,
+            UniquenessTypeChecker,
+            ImmutableTypeChecker,
+            CapabilityTypeChecker,
+            BunchedTypeChecker,
+            TemporalTypeChecker,
+            ProvabilityTypeChecker,
+            ImpureTypeChecker,
+            CoeffectTypeChecker,
+            ProbabilisticTypeChecker,
+            DyadicTypeChecker,
+            HomotopyTypeChecker,
+            CubicalTypeChecker,
+        ]
     }
 }
