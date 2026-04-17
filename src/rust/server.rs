@@ -329,16 +329,21 @@ async fn verify_handler(Json(req): Json<VerifyRequest>) -> Result<Json<VerifyRes
         }));
     }
 
-    // Use check() for the typed outcome taxonomy instead of the bool verify_proof().
-    let outcome = prover
-        .check(&state)
+    // NOTE: a richer `.check()` call returning a `ProverOutcome` taxonomy
+    // lived here until 2026-04-17 but the typed-outcome module was never
+    // committed (see z3.rs note). Reverted to `verify_proof()` so the HTTP
+    // API is no worse than it was before the dropped refactor; the outcome
+    // string is a two-valued approximation of the planned taxonomy.
+    // Tracked in AI-WORK-todo.md phase-2 followups.
+    let valid = prover
+        .verify_proof(&state)
         .await
         .map_err(|e| AppError::VerificationError(e.to_string()))?;
 
     Ok(Json(VerifyResponse {
-        valid: outcome.is_proved(),
-        outcome: outcome.status_str().to_string(),
-        goals_remaining: if outcome.is_proved() { 0 } else { state.goals.len() },
+        valid,
+        outcome: if valid { "PROVED".to_string() } else { "NO_PROOF_FOUND".to_string() },
+        goals_remaining: if valid { 0 } else { state.goals.len() },
         tactics_used: state.proof_script.len(),
         mode: None,
         smt_status: None,
