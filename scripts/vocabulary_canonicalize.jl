@@ -162,6 +162,10 @@ function main()
         "COMPREHENSIVE" => load_if_exists(joinpath(td, "vocabulary_COMPREHENSIVE.txt")),
         "FINAL"         => load_if_exists(joinpath(td, "vocabulary_FINAL.txt")),
         "ULTIMATE"      => load_if_exists(joinpath(td, "vocabulary_ULTIMATE.txt")),
+        # Frequency-filtered identifiers mined from the actual proof
+        # corpora (see scripts/vocabulary_mine_corpus.jl). Counts as
+        # curated because the min-freq gate eliminates junk.
+        "mined"         => load_if_exists(joinpath(td, "vocabulary_mined.txt")),
     )
 
     raw_surveyed = Dict{String, Int}(
@@ -230,4 +234,6 @@ function main()
     println("DONE — vocabulary_CANON.txt is the single source of truth.")
 end
 
-main()
+if abspath(PROGRAM_FILE) == @__FILE__
+    main()
+end
