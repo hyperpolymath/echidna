@@ -42,7 +42,7 @@ const OUTPUT_DIR       = joinpath(REPO_ROOT, "training_data")
 const OUTPUT_FILE      = joinpath(OUTPUT_DIR, "proof_states_afp.jsonl")
 const STATS_FILE       = joinpath(OUTPUT_DIR, "stats_afp.json")
 const START_ID         = 220000
-const MAX_PER_ARTICLE  = 25   # keep the corpus balanced across AFP entries
+const MAX_PER_ARTICLE  = 70   # target ~50K (893 articles, many <70 lemmas)
 
 # Keyword that introduces a theorem-shaped declaration.
 const THM_KW = raw"(?:lemma|theorem|corollary|proposition|schematic_goal)"

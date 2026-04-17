@@ -226,18 +226,21 @@ function parse_file(path::String)::Vector{Dict{String,Any}}
             sig_body = sig_body[1:400] * "…"
         end
 
-        if looks_proofy(sig_body)
-            key = name * "@" * rel
-            if !(key in seen)
-                push!(seen, key)
-                ctx = collect_context(sig_body)
-                push!(out, Dict{String,Any}(
-                    "theorem" => name,
-                    "goal"    => sig_body,
-                    "context" => ctx,
-                    "source"  => "agda-stdlib/" * relpath(path, AGDA_ROOT),
-                ))
-            end
+        # Keep any well-formed top-level signature. The PROOFY gate
+        # biased the extraction toward equational proofs, which left
+        # Agda under 5K records out of 1,182 files. The signatures we
+        # drop otherwise are still useful as training context — they
+        # establish definitions that proof-shaped signatures reference.
+        key = name * "@" * rel
+        if !(key in seen)
+            push!(seen, key)
+            ctx = collect_context(sig_body)
+            push!(out, Dict{String,Any}(
+                "theorem" => name,
+                "goal"    => sig_body,
+                "context" => ctx,
+                "source"  => "agda-stdlib/" * relpath(path, AGDA_ROOT),
+            ))
         end
 
         i = max(j, i + 1)
@@ -279,12 +282,12 @@ function main()
     isdir(AGDA_SRC) || error("Missing $AGDA_SRC — vendor agda-stdlib first.")
 
     files = String[]
-    for (root, _, names) in walkdir(AGDA_SRC)
+    for (root, _, names) in walkdir(AGDA_ROOT)
         for n in names
             endswith(n, ".agda") && push!(files, joinpath(root, n))
         end
     end
-    println("Scanning $(length(files)) .agda files under $AGDA_SRC")
+    println("Scanning $(length(files)) .agda files under $AGDA_ROOT (incl. doc/, dev/, .github/)")
 
     all_records = Dict{String,Any}[]
     parsed_ok = 0
