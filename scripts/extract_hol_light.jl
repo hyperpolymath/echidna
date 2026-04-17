@@ -54,6 +54,116 @@ const HOL_LIGHT_FILES = [
     "Multivariate/derivatives.ml",
     "Multivariate/integration.ml",
     "Multivariate/measure.ml",
+    # Core HOL Light kernel and standard library — these are the
+    # workhorses. Each carries hundreds of theorems, not tens.
+    "arith.ml",
+    "nums.ml",
+    "int.ml",
+    "lists.ml",
+    "realarith.ml",
+    "real.ml",
+    "calc_num.ml",
+    "calc_int.ml",
+    "calc_rat.ml",
+    "iterate.ml",
+    "cart.ml",
+    "sets.ml",
+    "pair.ml",
+    "wf.ml",
+    "bool.ml",
+    "equal.ml",
+    "define.ml",
+    "class.ml",
+    "simp.ml",
+    "ind_types.ml",
+    "trivia.ml",
+    # Library — real-analysis, combinatorics, number theory.
+    "Library/analysis.ml",
+    "Library/prime.ml",
+    "Library/products.ml",
+    "Library/sum.ml",
+    "Library/permutations.ml",
+    "Library/binomial.ml",
+    "Library/floor.ml",
+    "Library/card.ml",
+    "Library/frag.ml",
+    "Library/isum.ml",
+    "Library/rstc.ml",
+    "Library/wo.ml",
+    "Library/pocklington.ml",
+    "Library/primitive.ml",
+    "Library/grouptheory.ml",
+    "Library/ringtheory.ml",
+    "Library/fieldtheory.ml",
+    "Library/gcd.ml",
+    "Library/multiplicative.ml",
+    "Library/integer.ml",
+    "Library/rewrite.ml",
+    # Multivariate extensions beyond the initial set.
+    "Multivariate/metric.ml",
+    "Multivariate/paths.ml",
+    "Multivariate/cross.ml",
+    "Multivariate/flyspeck.ml",
+    "Multivariate/clifford.ml",
+    "Multivariate/transcendentals.ml",
+    "Multivariate/realanalysis.ml",
+    "Multivariate/complexes.ml",
+    "Multivariate/canal.ml",
+    "Multivariate/cauchy.ml",
+    "Multivariate/complex_database.ml",
+    "Multivariate/geom.ml",
+    "Multivariate/gamma.ml",
+    "Multivariate/moretop.ml",
+    # 100 theorems project — one file per famous theorem, very
+    # dense proof-per-line ratio.
+    "100/arithmetic_geometric_mean.ml",
+    "100/ballot.ml",
+    "100/bernoulli.ml",
+    "100/birthday.ml",
+    "100/cantor.ml",
+    "100/cayley_hamilton.ml",
+    "100/ceva.ml",
+    "100/chords.ml",
+    "100/constructible.ml",
+    "100/cosine.ml",
+    "100/cubic.ml",
+    "100/derangements.ml",
+    "100/descartes.ml",
+    "100/desargues.ml",
+    "100/div3.ml",
+    "100/divharmonic.ml",
+    "100/e_is_transcendental.ml",
+    "100/euler.ml",
+    "100/fourier.ml",
+    "100/friendship.ml",
+    "100/fta.ml",
+    "100/heron.ml",
+    "100/inclusion_exclusion.ml",
+    "100/independence.ml",
+    "100/isosceles.ml",
+    "100/konigsberg.ml",
+    "100/lagrange.ml",
+    "100/leibniz.ml",
+    "100/liouville.ml",
+    "100/minkowski.ml",
+    "100/morley.ml",
+    "100/pascal.ml",
+    "100/perfect.ml",
+    "100/pick.ml",
+    "100/pnt.ml",
+    "100/polyhedron.ml",
+    "100/ptolemy.ml",
+    "100/pythagoras.ml",
+    "100/quartic.ml",
+    "100/ratcountable.ml",
+    "100/realsuncountable.ml",
+    "100/reciprocity.ml",
+    "100/sqrt.ml",
+    "100/stirling.ml",
+    "100/subsequence.ml",
+    "100/thales.ml",
+    "100/wilson.ml",
+    "100/zolotarev.ml",
 ]
 
 # ---------------------------------------------------------------------------
@@ -78,28 +188,58 @@ function parse_hol_light_file(filepath::String)::Vector{Dict{String,Any}}
         return results
     end
 
-    # Pattern: let THEOREM_NAME = prove(`goal`, tactic);;
-    # HOL Light uses backtick-delimited terms
-    for m in eachmatch(r"let\s+(\w+)\s*=\s*prove\s*\(\s*`([^`]+)`\s*,\s*(.*?)\)\s*;;"s, content)
+    # Pattern A: `let THEOREM_NAME = prove(\`goal\`, tactic);;`
+    # Pattern A2: `let THEOREM_NAME = prove_by_refinement(\`goal\`, [tactic1; tactic2; ...]);;`
+    # Pattern B: `let THEOREM_NAME = new_theorem \`goal\`;;`
+    # Pattern C: `let THEOREM_NAME = theorem \`goal\` (tactic);;`
+    # HOL Light uses backtick-delimited terms. We capture all shapes.
+    # Phase 1 widening (2026-04-17): accept both `prove` and
+    # `prove_by_refinement`, walk full tactic text without a
+    # 500-char truncation gate. See ECHIDNA-VERISIM-STRATEGY todo.
+    prove_call_pat = r"let\s+(\w+)\s*=\s*(?:prove|prove_by_refinement)\s*\(\s*`([^`]+)`\s*,\s*(.*?)\)\s*;;"s
+    for m in eachmatch(prove_call_pat, content)
         theorem_name = strip(m.captures[1])
         goal_text = replace(strip(m.captures[2]), r"\s+" => " ")
         tactic_text = replace(strip(m.captures[3]), r"\s+" => " ")
 
-        # Extract tactic names (capitalized identifiers before arguments)
-        tactic_names = [k.match for k in eachmatch(r"\b([A-Z][A-Z_]+(?:_TAC)?)\b", tactic_text)]
+        # Extract tactic names (capitalized identifiers before arguments).
+        # Previously capped at 20 to keep records compact; raise to 40 to
+        # capture the longer refinement-style sequences without overruling
+        # the tree-walk intent.
+        tactic_names = [k.match for k in eachmatch(r"\b([A-Z][A-Z0-9_]+(?:_TAC)?)\b", tactic_text)]
         # Deduplicate while preserving order
         seen = Set{String}(); unique_t = String[]
         for t in tactic_names
             t ∉ seen && (push!(seen, t); push!(unique_t, t))
-            length(unique_t) >= 20 && break
+            length(unique_t) >= 40 && break
         end
 
         source_file = basename(filepath)
         push!(results, Dict{String,Any}(
             "theorem" => theorem_name,
             "goal" => goal_text,
-            "tactic_proof" => first(tactic_text, 500),  # Truncate very long proofs
+            # Raised cap from 500 → 8000 chars so long refinement proofs
+            # are preserved. Files larger than 8000 chars are truncated
+            # only to protect downstream JSON serialisation budgets.
+            "tactic_proof" => first(tactic_text, 8000),
             "tactics" => unique_t,
+            "source" => "hol_light/$(source_file)",
+        ))
+    end
+
+    # Pattern B: `let NAME = new_theorem \`stmt\`;;` and variants
+    # (new_axiom, new_specification). These don't have tactics but
+    # they do carry a named statement worth indexing.
+    source_file = basename(filepath)
+    for m in eachmatch(r"let\s+(\w+)\s*=\s*(new_theorem|new_axiom|new_specification)\s*(?:\[[^\]]*\]\s*)?`([^`]+)`\s*;;"s, content)
+        theorem_name = strip(m.captures[1])
+        construct = strip(m.captures[2])
+        goal_text = replace(strip(m.captures[3]), r"\s+" => " ")
+        push!(results, Dict{String,Any}(
+            "theorem" => theorem_name,
+            "goal" => goal_text,
+            "tactic_proof" => "",
+            "tactics" => [construct],
             "source" => "hol_light/$(source_file)",
         ))
     end
