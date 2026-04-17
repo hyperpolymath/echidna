@@ -66,10 +66,12 @@ run *ARGS:
 invariant-path *ARGS:
     ./scripts/invariant-path.sh {{ARGS}}
 
-# Rebuild the curated seed vocabulary (training_data/vocabulary_CANON.txt)
-# from scripts/vocabulary_5x_expansion.jl + the hand-curated vocab files.
-# Consumed by src/julia/training/dataloader.jl:build_vocabulary_from_data.
+# Rebuild the canonical seed vocabulary (training_data/vocabulary_CANON.txt).
+# Two stages: (1) mine frequency-filtered identifiers from the per-prover
+# proof corpora, then (2) union with the hand-curated sets. Consumed by
+# src/julia/training/dataloader.jl:build_vocabulary_from_data.
 vocab-canon:
+    julia scripts/vocabulary_mine_corpus.jl
     julia scripts/vocabulary_canonicalize.jl
 
 # Report corpus balance across provers from stats_UNIFIED.json.

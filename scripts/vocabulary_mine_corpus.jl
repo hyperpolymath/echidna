@@ -52,6 +52,12 @@ include(joinpath(REPO_ROOT, "scripts", "vocabulary_canonicalize.jl"))
 # identifiers that recur across proofs in a family.
 const MIN_FREQ = 3
 
+# Hard cap on the mined vocabulary so the final CANON (mined ∪ curated
+# ≈ 9K) lands at roughly 100K tokens. After the freq filter, keep the
+# top N tokens by descending frequency; the tail is long but
+# diminishing-return. Passing 0 disables the cap.
+const MAX_MINED = 95_000
+
 # Per-prover authoritative corpus files — mirrors merge_corpus.jl.
 # Aggregate/merged files (UNIFIED, COMPLETE, BALANCED, ULTIMATE, etc.)
 # are excluded deliberately to avoid double-counting.
@@ -166,14 +172,21 @@ function mine()
     println("Records ingested: $records_in")
     println("Raw unique tokens: $(length(counts))")
 
-    kept = String[]
+    kept_pairs = Tuple{String, Int}[]
     for (tok, c) in counts
         c >= MIN_FREQ || continue
         is_valid_token(tok) || continue
-        push!(kept, tok)
+        push!(kept_pairs, (tok, c))
     end
-    sort!(kept)
-    println("After freq>=$MIN_FREQ + filter: $(length(kept)) tokens")
+    n_pre_cap = length(kept_pairs)
+    println("After freq>=$MIN_FREQ + filter: $n_pre_cap tokens")
+
+    if MAX_MINED > 0 && length(kept_pairs) > MAX_MINED
+        sort!(kept_pairs; by = x -> -x[2])
+        kept_pairs = kept_pairs[1:MAX_MINED]
+        println("Capped to top $MAX_MINED by frequency.")
+    end
+    kept = sort!([p[1] for p in kept_pairs])
 
     open(OUTPUT_FILE, "w") do fh
         for t in kept
@@ -183,14 +196,16 @@ function mine()
     println("Wrote $OUTPUT_FILE")
 
     stats = Dict{String, Any}(
-        "version"           => "mined-v1",
+        "version"           => "mined-v2",
         "generated_at"      => string(now()),
         "generator"         => "scripts/vocabulary_mine_corpus.jl",
         "min_freq"          => MIN_FREQ,
+        "max_mined"         => MAX_MINED,
         "files_seen"        => files_seen,
         "files_missing"     => files_miss,
         "records_ingested"  => records_in,
         "raw_unique_tokens" => length(counts),
+        "kept_before_cap"   => n_pre_cap,
         "kept_tokens"       => length(kept),
     )
     open(STATS_FILE, "w") do fh
