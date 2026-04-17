@@ -54,3 +54,9 @@ coverage/
 
 # Production builds
 *.tsbuildinfo
+target/
+_build/
+deps/
+.elixir_ls/
+*.log
+*.tmp

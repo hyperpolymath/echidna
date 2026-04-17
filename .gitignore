@@ -173,3 +173,11 @@ proofs/coq/**/*.glob
 proofs/coq/**/.*.aux
 proofs/agda/**/*.agdai
 proofs/metamath/.metamath*
+target/
+node_modules/
+_build/
+deps/
+.elixir_ls/
+.cache/
+build/
+dist/
