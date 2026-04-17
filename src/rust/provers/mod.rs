@@ -57,6 +57,7 @@ pub mod tlaps;
 pub mod tlc;
 pub mod twelf;
 pub mod typed_wasm;
+pub mod hp_ecosystem;
 pub mod uppaal;
 pub mod vampire;
 pub mod viper;
@@ -152,6 +153,44 @@ pub enum ProverKind {
 
     // Tier 10: Logic synthesis & hardware verification
     ABC,
+
+    // Tier 11: HP type-checker ecosystem. These dispatch through one
+    // unified HPEcosystemBackend that routes to the real HP upstreams
+    // (TypeLL, Katagoria, tropical-resource-typing). They are
+    // type-discipline views rather than separate binaries.
+    TypeLL,
+    KatagoriaVerifier,
+    TropicalTypeChecker,
+    ChoreographicTypeChecker,
+    EpistemicTypeChecker,
+    EchoTypeChecker,
+    SessionTypeChecker,
+    ModalTypeChecker,
+    QTTTypeChecker,
+    EffectRowTypeChecker,
+    DependentTypeChecker,
+    RefinementTypeChecker,
+}
+
+impl ProverKind {
+    /// True if this kind is served by the unified HP-ecosystem backend.
+    pub fn is_hp_ecosystem(&self) -> bool {
+        matches!(
+            self,
+            ProverKind::TypeLL
+                | ProverKind::KatagoriaVerifier
+                | ProverKind::TropicalTypeChecker
+                | ProverKind::ChoreographicTypeChecker
+                | ProverKind::EpistemicTypeChecker
+                | ProverKind::EchoTypeChecker
+                | ProverKind::SessionTypeChecker
+                | ProverKind::ModalTypeChecker
+                | ProverKind::QTTTypeChecker
+                | ProverKind::EffectRowTypeChecker
+                | ProverKind::DependentTypeChecker
+                | ProverKind::RefinementTypeChecker
+        )
+    }
 }
 
 impl std::str::FromStr for ProverKind {
@@ -208,6 +247,26 @@ impl std::str::FromStr for ProverKind {
             "key" | "key-project" | "javadl" => Ok(ProverKind::KeY),
             "dreal" | "d-real" | "dreal4" => Ok(ProverKind::DReal),
             "abc" | "berkeley-abc" => Ok(ProverKind::ABC),
+            "typell" | "type-ll" | "typell-kernel" => Ok(ProverKind::TypeLL),
+            "katagoria" | "katagoriaverifier" | "katagoria-verifier" => {
+                Ok(ProverKind::KatagoriaVerifier)
+            }
+            "tropicaltypechecker" | "tropical" | "tropical-type-checker" => {
+                Ok(ProverKind::TropicalTypeChecker)
+            }
+            "choreographictypechecker" | "choreographic" => {
+                Ok(ProverKind::ChoreographicTypeChecker)
+            }
+            "epistemictypechecker" | "epistemic" => Ok(ProverKind::EpistemicTypeChecker),
+            "echotypechecker" | "echo" => Ok(ProverKind::EchoTypeChecker),
+            "sessiontypechecker" | "session" => Ok(ProverKind::SessionTypeChecker),
+            "modaltypechecker" | "modal" => Ok(ProverKind::ModalTypeChecker),
+            "qtttypechecker" | "qtt" | "quantitative" => Ok(ProverKind::QTTTypeChecker),
+            "effectrowtypechecker" | "effect-row" | "effectrow" => {
+                Ok(ProverKind::EffectRowTypeChecker)
+            }
+            "dependenttypechecker" | "dependent" => Ok(ProverKind::DependentTypeChecker),
+            "refinementtypechecker" | "refinement" => Ok(ProverKind::RefinementTypeChecker),
             _ => Err(anyhow::anyhow!("Unknown prover: {}", s)),
         }
     }
@@ -335,6 +394,20 @@ impl ProverKind {
             ProverKind::KeY => 3, // Deductive Java verifier (JavaDL + JML), auto + interactive
             ProverKind::DReal => 2, // Automated delta-complete SMT solver, NRA
             ProverKind::ABC => 2, // Automated hardware verification, AIG-based
+            // HP type-checker ecosystem: complexity 3 — they are real
+            // type-checkers with non-trivial unification/elaboration.
+            ProverKind::TypeLL
+            | ProverKind::KatagoriaVerifier
+            | ProverKind::TropicalTypeChecker
+            | ProverKind::ChoreographicTypeChecker
+            | ProverKind::EpistemicTypeChecker
+            | ProverKind::EchoTypeChecker
+            | ProverKind::SessionTypeChecker
+            | ProverKind::ModalTypeChecker
+            | ProverKind::QTTTypeChecker
+            | ProverKind::EffectRowTypeChecker
+            | ProverKind::DependentTypeChecker
+            | ProverKind::RefinementTypeChecker => 3,
         }
     }
 
@@ -406,6 +479,21 @@ impl ProverKind {
             ProverKind::KeY => 5,      // Deductive Java verifier
             ProverKind::DReal => 5,    // Delta-complete SMT solver (NRA/ODE)
             ProverKind::ABC => 5,      // Logic synthesis & hardware verification
+            // HP ecosystem — tier 11 (beyond the existing 10-tier scheme
+            // but placed as 3 here to share the ML guidance budget with
+            // dependent/interactive provers).
+            ProverKind::TypeLL
+            | ProverKind::KatagoriaVerifier
+            | ProverKind::TropicalTypeChecker
+            | ProverKind::ChoreographicTypeChecker
+            | ProverKind::EpistemicTypeChecker
+            | ProverKind::EchoTypeChecker
+            | ProverKind::SessionTypeChecker
+            | ProverKind::ModalTypeChecker
+            | ProverKind::QTTTypeChecker
+            | ProverKind::EffectRowTypeChecker
+            | ProverKind::DependentTypeChecker
+            | ProverKind::RefinementTypeChecker => 3,
         }
     }
 
@@ -456,6 +544,18 @@ impl ProverKind {
             ProverKind::KeY => 2.0,       // Deductive Java verifier (JavaDL + JML)
             ProverKind::DReal => 1.0,     // Automated SMT solver, SMT-LIB input
             ProverKind::ABC => 1.5,       // Hardware verification, AIGER/BLIF input
+            ProverKind::TypeLL
+            | ProverKind::KatagoriaVerifier
+            | ProverKind::TropicalTypeChecker
+            | ProverKind::ChoreographicTypeChecker
+            | ProverKind::EpistemicTypeChecker
+            | ProverKind::EchoTypeChecker
+            | ProverKind::SessionTypeChecker
+            | ProverKind::ModalTypeChecker
+            | ProverKind::QTTTypeChecker
+            | ProverKind::EffectRowTypeChecker
+            | ProverKind::DependentTypeChecker
+            | ProverKind::RefinementTypeChecker => 2.0, // HP ecosystem
         }
     }
 
@@ -511,6 +611,21 @@ impl ProverKind {
             ProverKind::KeY => "key",     // KeY Java verifier (Java, headless mode)
             ProverKind::DReal => "dreal", // dReal delta-complete SMT solver
             ProverKind::ABC => "abc",     // Berkeley ABC logic synthesis system
+            // HP ecosystem — all route through the TypeLL kernel CLI;
+            // the discipline field on HPEcosystemBackend selects the
+            // actual upstream (typell / katagoria / tropical-resource-typing).
+            ProverKind::TypeLL => "typell",
+            ProverKind::KatagoriaVerifier => "katagoria",
+            ProverKind::TropicalTypeChecker => "tropical-type-check",
+            ProverKind::ChoreographicTypeChecker => "typell",
+            ProverKind::EpistemicTypeChecker => "typell",
+            ProverKind::EchoTypeChecker => "typell",
+            ProverKind::SessionTypeChecker => "typell",
+            ProverKind::ModalTypeChecker => "typell",
+            ProverKind::QTTTypeChecker => "typell",
+            ProverKind::EffectRowTypeChecker => "typell",
+            ProverKind::DependentTypeChecker => "typell",
+            ProverKind::RefinementTypeChecker => "typell",
         }
     }
 }
@@ -670,6 +785,20 @@ impl ProverFactory {
             ProverKind::KeY => Ok(Box::new(key::KeyBackend::new(config))),
             ProverKind::DReal => Ok(Box::new(dreal::DRealBackend::new(config))),
             ProverKind::ABC => Ok(Box::new(abc::AbcBackend::new(config))),
+            ProverKind::TypeLL
+            | ProverKind::KatagoriaVerifier
+            | ProverKind::TropicalTypeChecker
+            | ProverKind::ChoreographicTypeChecker
+            | ProverKind::EpistemicTypeChecker
+            | ProverKind::EchoTypeChecker
+            | ProverKind::SessionTypeChecker
+            | ProverKind::ModalTypeChecker
+            | ProverKind::QTTTypeChecker
+            | ProverKind::EffectRowTypeChecker
+            | ProverKind::DependentTypeChecker
+            | ProverKind::RefinementTypeChecker => Ok(Box::new(
+                hp_ecosystem::HPEcosystemBackend::new(kind, config),
+            )),
         }
     }
 
