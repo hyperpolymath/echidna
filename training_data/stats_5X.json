@@ -1,13 +1,14 @@
 {
-    "expansion_ratio": 11.1,
+    "typechecker_research_added": 3000,
+    "expansion_ratio": 12.4,
     "prover_specific_added": 645,
     "mathematics_added": 645,
     "previous_comprehensive": 6555,
-    "date": "2026-03-30",
-    "total_vocabulary": 72557,
+    "date": "2026-04-17",
+    "total_vocabulary": 81047,
     "proof_terms_added": 122,
-    "math_domains": 10,
+    "math_domains": 14,
     "version": "v2.1-5x-expansion",
-    "previous_unified": 71962,
-    "provers_covered": 48
+    "previous_unified": 79402,
+    "provers_covered": 60
 }
