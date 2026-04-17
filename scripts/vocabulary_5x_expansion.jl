@@ -11,6 +11,11 @@
 # Run: julia scripts/vocabulary_5x_expansion.jl
 # Output: training_data/vocabulary_5X.txt
 
+const REPO_ROOT = dirname(dirname(abspath(@__FILE__)))
+const TYPELL_ROOT = abspath(joinpath(REPO_ROOT, "..", "typell"))
+const KATAGORIA_ROOT = abspath(joinpath(REPO_ROOT, "..", "..", "developer-ecosystem", "katagoria"))
+const TROPICAL_ROOT = abspath(joinpath(REPO_ROOT, "..", "tropical-resource-typing"))
+
 """
     prover_specific_vocabulary() -> Set{String}
 
@@ -601,6 +606,82 @@ function proof_term_vocabulary()::Set{String}
 end
 
 """
+    typechecker_research_vocabulary() -> Set{String}
+
+Add high-priority vocabulary for typechecker-heavy ecosystems and extract
+additional terms directly from TypeLL, Katagoria, and tropical-resource-typing.
+"""
+function typechecker_research_vocabulary()::Set{String}
+    curated = Set{String}([
+        # Requested type families
+        "choreographic", "choreography", "endpoint", "endpoint-projection",
+        "global-type", "local-type", "multiparty", "session-fidelity",
+        "epistemic", "knowledge", "belief", "common-knowledge",
+        "noninterference", "declassification", "accessibility-relation",
+        "tropical", "semiring", "dioid", "kleene-star", "path-weight",
+        "max-plus", "min-plus", "resource-budget", "latency", "throughput",
+        "echo-type", "echo-types", "echo-check", "feedback-typing",
+        "reflection-safety", "trace-stability",
+        # Typechecker coverage
+        "typechecker", "bidirectional", "synthesis", "checking", "elaboration",
+        "constraint-solving", "constraint-generation", "occurs-check",
+        "principal-type", "subsumption", "coercion", "kind-checking",
+        "effect-row", "row-polymorphism", "effect-safety", "handler",
+        "modal", "necessity", "possibility", "box", "dia", "phase-context",
+        "transaction-scope", "security-level", "context-access",
+        "qtt", "quantitative", "usage-quantifier", "bounded-usage",
+        "affine", "linear", "omega-usage", "consumption-check",
+        "dependent-index", "index-equality", "proof-obligation",
+        "refinement", "predicate-subtyping", "solver-backed",
+        "session-duality", "protocol-completeness", "branch-coverage",
+        "resource-typing", "tropical-session", "typed-wasm-cost",
+        "invariant-preservation", "progress", "preservation", "soundness",
+        "completeness", "consistency", "termination", "totality",
+    ])
+
+    source_files = [
+        joinpath(TYPELL_ROOT, "spec/type-system/dependent.adoc"),
+        joinpath(TYPELL_ROOT, "spec/type-system/linear.adoc"),
+        joinpath(TYPELL_ROOT, "spec/type-system/session.adoc"),
+        joinpath(TYPELL_ROOT, "spec/type-system/modal.adoc"),
+        joinpath(TYPELL_ROOT, "spec/type-system/effects.adoc"),
+        joinpath(TYPELL_ROOT, "spec/type-system/qtt.adoc"),
+        joinpath(TYPELL_ROOT, "spec/proof/proof-system.adoc"),
+        joinpath(TYPELL_ROOT, "crates/typell-core/src/types.rs"),
+        joinpath(TYPELL_ROOT, "crates/typell-core/src/session.rs"),
+        joinpath(TYPELL_ROOT, "crates/typell-core/src/effects.rs"),
+        joinpath(KATAGORIA_ROOT, "research/tropical/TropicalKleene.idr"),
+        joinpath(KATAGORIA_ROOT, "verification/proofs/idris2/Types.idr"),
+        joinpath(KATAGORIA_ROOT, "verification/proofs/lean4/ApiTypes.lean"),
+        joinpath(KATAGORIA_ROOT, "verification/proofs/coq/TypeSafety.v"),
+        joinpath(TROPICAL_ROOT, "Tropical_v2.thy"),
+        joinpath(TROPICAL_ROOT, "Tropical_Kleene.thy"),
+        joinpath(TROPICAL_ROOT, "Tropical_CNO.thy"),
+        joinpath(TROPICAL_ROOT, "TropicalSessionTypes.lean"),
+    ]
+
+    stop = Set([
+        "the", "and", "for", "with", "that", "this", "from", "into", "where",
+        "have", "has", "are", "was", "were", "using", "then", "else", "when",
+        "true", "false", "type", "types", "proof", "theorem", "lemma",
+    ])
+
+    extracted = Set{String}()
+    for path in source_files
+        isfile(path) || continue
+        text = read(path, String)
+        for m in eachmatch(r"[A-Za-z][A-Za-z0-9_+-]{3,}", text)
+            token = lowercase(m.match)
+            length(token) > 40 && continue
+            token in stop && continue
+            push!(extracted, token)
+        end
+    end
+
+    return union(curated, extracted)
+end
+
+"""
     main()
 
 Generate the 5× expanded vocabulary file.
@@ -634,8 +715,18 @@ function main()
     proof_vocab = proof_term_vocabulary()
     println("Proof term vocabulary: $(length(proof_vocab)) terms")
 
+    typechecker_vocab = typechecker_research_vocabulary()
+    println("Typechecker/research vocabulary: $(length(typechecker_vocab)) terms")
+
     # Combine everything
-    combined = union(existing, comprehensive, prover_vocab, math_vocab, proof_vocab)
+    combined = union(
+        existing,
+        comprehensive,
+        prover_vocab,
+        math_vocab,
+        proof_vocab,
+        typechecker_vocab,
+    )
 
     println("\nCombined vocabulary: $(length(combined)) tokens")
     println("New tokens added: $(length(combined) - length(existing))")
@@ -660,10 +751,11 @@ function main()
         "prover_specific_added" => length(prover_vocab),
         "mathematics_added" => length(math_vocab),
         "proof_terms_added" => length(proof_vocab),
+        "typechecker_research_added" => length(typechecker_vocab),
         "total_vocabulary" => length(combined),
         "expansion_ratio" => round(length(combined) / max(length(comprehensive), 1); digits=1),
-        "provers_covered" => 48,
-        "math_domains" => 10,
+        "provers_covered" => 60,
+        "math_domains" => 14,
     )
 
     open("training_data/stats_5X.json", "w") do f
