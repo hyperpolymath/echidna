@@ -74,6 +74,13 @@ vocab-canon:
     julia scripts/vocabulary_mine_corpus.jl
     julia scripts/vocabulary_canonicalize.jl
 
+# Run the eight-axis metrics suite against the current corpus and post
+# results to VeriSimDB. Falls back to training_data/metrics_<run_id>.jsonl
+# if VERISIM_URL is unreachable. Target values are documented in
+# metrics/README.md.
+metrics:
+    julia --project=src/julia metrics/run_all.jl
+
 # Report corpus balance across provers from stats_UNIFIED.json.
 corpus-stats:
     @julia -e 'using JSON3, Printf; \
