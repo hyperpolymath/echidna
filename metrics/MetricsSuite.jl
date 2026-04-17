@@ -19,8 +19,10 @@ include("tactic_cluster_purity.jl")
 include("msc_taxonomy_coverage.jl")
 include("prover_floor.jl")
 include("zipf_s.jl")
+include("floor_progress.jl")
 
 using .VeriSimSink: emit_metric, metric_row
+using .FloorProgress: record_progress, FLOOR_TARGET, MILESTONE_STEP
 using .TriangulationRate
 using .AlignmentRate
 using .OOVRate
@@ -66,6 +68,8 @@ function run_metrics(training_dir::AbstractString,
         emit_metric(row; verisim_url = verisim_url)
         push!(results, (; metric = M.NAME, r.value, r.unit, r.context))
     end
+    prog = record_progress(idx; training_dir, run_id)
+    println("Phase-1 floor: $(prog.count_at) / $(prog.total_provers) provers at $(FLOOR_TARGET)")
     return results
 end
 
