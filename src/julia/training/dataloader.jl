@@ -282,13 +282,46 @@ end
 # ============================================================================
 
 """
-    build_vocabulary_from_data(proof_states::Vector{RawProofState};
-                               min_freq::Int=2, max_vocab::Int=50000)
+    load_canon_seed(path::AbstractString) -> Vector{String}
 
-Build a ProverVocabulary from proof state goals and contexts.
+Load the curated canonical vocabulary seed produced by
+`scripts/vocabulary_canonicalize.jl`. Missing file → empty vector (fatal
+nowhere: the trainer falls back to a pure frequency-built vocab).
+"""
+function load_canon_seed(path::AbstractString)::Vector{String}
+    isfile(path) || return String[]
+    out = String[]
+    open(path, "r") do f
+        for line in eachline(f)
+            tok = String(strip(line))
+            isempty(tok) || push!(out, tok)
+        end
+    end
+    return out
+end
+
+"""
+    build_vocabulary_from_data(proof_states::Vector{RawProofState};
+                               min_freq::Int=2, max_vocab::Int=50000,
+                               seed_path::AbstractString =
+                                   joinpath(dirname(dirname(dirname(@__DIR__))),
+                                            "training_data",
+                                            "vocabulary_CANON.txt"))
+
+Build a ProverVocabulary from proof state goals and contexts, seeded
+with the curated canonical vocabulary (see
+`scripts/vocabulary_canonicalize.jl`). The seed is frequency-exempt: it
+guarantees that hand-curated prover / math / proof tokens survive the
+`min_freq` cutoff even when the corpus under-represents them.
+
+Pass `seed_path=""` to disable seeding.
 """
 function build_vocabulary_from_data(proof_states::Vector{RawProofState};
-                                    min_freq::Int=2, max_vocab::Int=50000)
+                                    min_freq::Int=2, max_vocab::Int=50000,
+                                    seed_path::AbstractString =
+                                        joinpath(dirname(dirname(dirname(@__DIR__))),
+                                                 "training_data",
+                                                 "vocabulary_CANON.txt"))
     # Collect all text
     corpus = String[]
     for ps in proof_states
@@ -296,7 +329,13 @@ function build_vocabulary_from_data(proof_states::Vector{RawProofState};
         append!(corpus, ps.context)
     end
 
-    return create_vocabulary(corpus; min_freq=min_freq, max_vocab=max_vocab)
+    seed = isempty(seed_path) ? String[] : load_canon_seed(seed_path)
+    if !isempty(seed)
+        @info "Seeding vocabulary with $(length(seed)) canonical tokens" path=seed_path
+    end
+
+    return create_vocabulary(corpus; min_freq=min_freq, max_vocab=max_vocab,
+                             seed_tokens=seed)
 end
 
 # ============================================================================
@@ -387,4 +426,4 @@ end
 
 export load_jsonl_proof_states, load_jsonl_premises, load_jsonl_tactics
 export build_premise_index, build_training_examples
-export build_vocabulary_from_data, load_training_data
+export build_vocabulary_from_data, load_canon_seed, load_training_data

@@ -768,4 +768,6 @@ end
 using Dates
 using JSON3
 
-main()
+if abspath(PROGRAM_FILE) == @__FILE__
+    main()
+end
