@@ -37,6 +37,11 @@ const PER_PROVER_FILES = [
     "proof_states_typechecker_ecosystem.jsonl",
 ]
 
+# TPTP is stored in A2ML/TOML-like blocks, not JSONL. It carries
+# Vampire / EProver / SPASS records and must be parsed by a separate
+# path in load_corpus.
+const TPTP_A2ML = "proof_states_tptp.a2ml"
+
 struct CorpusRecord
     id::Int
     prover::String
@@ -95,7 +100,67 @@ function load_corpus(training_dir::AbstractString)::CorpusIndex
             end
         end
     end
+    # Parse TPTP's A2ML block format separately.
+    tptp_path = joinpath(training_dir, TPTP_A2ML)
+    if isfile(tptp_path)
+        for cr in _parse_tptp_a2ml(tptp_path)
+            bucket = get!(idx, cr.prover, CorpusRecord[])
+            push!(bucket, cr)
+        end
+    end
     return idx
+end
+
+# Minimal A2ML parser for `[[proof-state]] … key = "value"` blocks.
+# Each block becomes one CorpusRecord. Unknown keys are ignored.
+function _parse_tptp_a2ml(path::AbstractString)::Vector{CorpusRecord}
+    out = CorpusRecord[]
+    current = Dict{String, Any}()
+    in_block = false
+    function flush!()
+        if in_block && !isempty(current)
+            id_raw = get(current, "id", "0")
+            id_val = id_raw isa Integer ? Int(id_raw) :
+                     something(tryparse(Int, String(id_raw)), 0)
+            push!(out, CorpusRecord(
+                id_val,
+                String(get(current, "prover", "unknown")),
+                String(get(current, "theorem", "")),
+                String(get(current, "goal", "")),
+                String[],
+                String(get(current, "proof_steps", "")),
+                String(get(current, "source", "TPTP")),
+            ))
+        end
+        empty!(current)
+    end
+    open(path, "r") do fh
+        for line in eachline(fh)
+            s = strip(line)
+            (isempty(s) || startswith(s, "#")) && continue
+            if s == "[[proof-state]]"
+                flush!()
+                in_block = true
+                continue
+            end
+            if startswith(s, "[") && s != "[[proof-state]]"
+                flush!()
+                in_block = false
+                continue
+            end
+            in_block || continue
+            eq = findfirst('=', s)
+            eq === nothing && continue
+            k = strip(s[1:prevind(s, eq)])
+            v = strip(s[nextind(s, eq):end])
+            if startswith(v, "\"") && endswith(v, "\"") && length(v) >= 2
+                v = v[nextind(v, firstindex(v)):prevind(v, lastindex(v))]
+            end
+            current[String(k)] = v
+        end
+        flush!()
+    end
+    return out
 end
 
 end
