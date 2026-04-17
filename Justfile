@@ -66,6 +66,25 @@ run *ARGS:
 invariant-path *ARGS:
     ./scripts/invariant-path.sh {{ARGS}}
 
+# Rebuild the curated seed vocabulary (training_data/vocabulary_CANON.txt)
+# from scripts/vocabulary_5x_expansion.jl + the hand-curated vocab files.
+# Consumed by src/julia/training/dataloader.jl:build_vocabulary_from_data.
+vocab-canon:
+    julia scripts/vocabulary_canonicalize.jl
+
+# Report corpus balance across provers from stats_UNIFIED.json.
+corpus-stats:
+    @julia -e 'using JSON3, Printf; \
+      s = JSON3.read(read("training_data/stats_UNIFIED.json", String)); \
+      counts = s.per_prover_counts; \
+      pairs = sort(collect(counts), by = x -> -x[2]); \
+      total = sum(last.(pairs)); \
+      println("Total proofs: ", total, "   provers with data: ", length(pairs)); \
+      println("Rank  Prover                     Count    Share"); \
+      for (i,(p,c)) in enumerate(pairs); \
+          @printf("%3d   %-25s  %7d   %5.2f%%\n", i, p, c, 100c/total); \
+      end'
+
 # Generate docs
 doc:
     cargo doc --no-deps --open

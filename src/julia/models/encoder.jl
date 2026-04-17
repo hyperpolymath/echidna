@@ -49,11 +49,21 @@ mutable struct ProverVocabulary
 end
 
 """
-    create_vocabulary(corpus::Vector{String}; min_freq=2, max_vocab=50000)
+    create_vocabulary(corpus::Vector{String}; min_freq=2, max_vocab=50000,
+                      seed_tokens=String[])
 
-Build vocabulary from training corpus with prover-specific tokens.
+Build vocabulary from `corpus` (counted against `min_freq`) and a
+frequency-exempt `seed_tokens` set.
+
+Seed tokens are always included regardless of their corpus frequency —
+this lets the training pipeline carry hand-curated prover/math/proof
+vocabulary (see scripts/vocabulary_canonicalize.jl) so that rare but
+meaningful identifiers are not silently dropped by the min-frequency
+cutoff. Seeds still obey `max_vocab`; in the event of overflow, corpus
+tokens yield to seeds.
 """
-function create_vocabulary(corpus::Vector{String}; min_freq=2, max_vocab=50000)
+function create_vocabulary(corpus::Vector{String}; min_freq=2, max_vocab=50000,
+                           seed_tokens::AbstractVector{<:AbstractString} = String[])
     # Initialize with special tokens
     special_tokens = ["<PAD>", "<UNK>", "<CLS>", "<SEP>", "<MASK>"]
 
@@ -65,13 +75,33 @@ function create_vocabulary(corpus::Vector{String}; min_freq=2, max_vocab=50000)
         end
     end
 
-    # Filter by frequency and limit size
+    # Filter corpus tokens by frequency, then rank by count descending.
     filtered_tokens = [t for (t, c) in token_counts if c >= min_freq]
     sort!(filtered_tokens, by=t -> token_counts[t], rev=true)
-    filtered_tokens = filtered_tokens[1:min(length(filtered_tokens), max_vocab - length(special_tokens))]
 
-    # Build vocabulary
-    all_tokens = vcat(special_tokens, filtered_tokens)
+    # De-duplicated seed set (preserves insertion order so we can inspect it).
+    seed_set = String[]
+    seed_seen = Set{String}(special_tokens)
+    for s in seed_tokens
+        s_str = String(strip(String(s)))
+        (isempty(s_str) || s_str in seed_seen) && continue
+        push!(seed_set, s_str)
+        push!(seed_seen, s_str)
+    end
+
+    # Budget: specials + seeds first (seeds are frequency-exempt), then the
+    # top corpus tokens that aren't already in the seed set.
+    headroom = max_vocab - length(special_tokens) - length(seed_set)
+    headroom = max(headroom, 0)
+    corpus_kept = String[]
+    for t in filtered_tokens
+        length(corpus_kept) >= headroom && break
+        t in seed_seen && continue
+        push!(corpus_kept, t)
+    end
+
+    # Build vocabulary — specials, then seeds, then corpus top-ups.
+    all_tokens = vcat(special_tokens, seed_set, corpus_kept)
     token_to_id = Dict(t => i for (i, t) in enumerate(all_tokens))
     id_to_token = Dict(i => t for (i, t) in enumerate(all_tokens))
 
