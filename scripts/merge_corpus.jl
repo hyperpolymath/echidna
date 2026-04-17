@@ -44,6 +44,8 @@ const PER_PROVER_FILES = [
     "proof_states_imandra.jsonl",        # Imandra (synthetic)
     "proof_states_minizinc.jsonl",       # MiniZinc / constraint solvers
     "proof_states_isabelle.jsonl",       # Isabelle (tropical + theory extraction)
+    "proof_states_afp.jsonl",            # Isabelle AFP (extract_afp.jl, 20K+)
+    "proof_states_agda.jsonl",           # Agda stdlib (extract_agda.jl, 5K+)
     "proof_states_tptp.a2ml",            # Vampire / EProver / SPASS from TPTP
     "proof_states_typechecker_ecosystem.jsonl", # Typechecker/prover expansion
     "proof_states_mathlib4.jsonl",       # Additional mathlib4 (smaller set)
