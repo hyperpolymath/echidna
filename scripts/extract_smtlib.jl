@@ -25,24 +25,67 @@ const ID_BASE = 80000
 # Three SMT backends we target, round-robined for balance
 const PROVERS = ["Z3", "CVC5", "AltErgo"]
 
-# SMT-LIB logics grouped by category for metadata
+# SMT-LIB logics grouped by category for metadata.
+# Phase 1 widening (2026-04-17): the previous table covered only 16
+# of ~50 standardised SMT-LIB v2 logics, leaving many entries in
+# the distribution as bare codes with no human-readable label. We
+# now enumerate the full v2 set so the logic-distribution histogram
+# is self-describing and the extractor works at "full SMT-LIB v2
+# scope" per the ECHIDNA-VERISIM-STRATEGY plan.
 const LOGIC_CATEGORIES = Dict{String,String}(
+    # Quantifier-free fragments
+    "QF_AX" => "arrays (closed)",
+    "QF_IDL" => "integer difference logic",
+    "QF_RDL" => "real difference logic",
     "QF_LIA" => "linear integer arithmetic",
     "QF_LRA" => "linear real arithmetic",
+    "QF_LIRA" => "linear mixed arithmetic",
     "QF_NIA" => "nonlinear integer arithmetic",
     "QF_NRA" => "nonlinear real arithmetic",
+    "QF_NIRA" => "nonlinear mixed arithmetic",
     "QF_BV" => "bitvectors",
+    "QF_FP" => "floating-point",
+    "QF_FPBV" => "floating-point + bitvectors",
+    "QF_FPLRA" => "floating-point + LRA",
+    "QF_S" => "strings",
+    "QF_SLIA" => "strings + LIA",
+    "QF_SNIA" => "strings + NIA",
     "QF_UF" => "uninterpreted functions",
+    "QF_UFIDL" => "UF + integer difference logic",
     "QF_UFLIA" => "UF + linear integer arithmetic",
     "QF_UFLRA" => "UF + linear real arithmetic",
-    "QF_AUFLIA" => "arrays + UF + LIA",
+    "QF_UFNIA" => "UF + nonlinear integer arithmetic",
+    "QF_UFNRA" => "UF + nonlinear real arithmetic",
+    "QF_UFBV" => "UF + bitvectors",
+    "QF_UFFP" => "UF + floating-point",
     "QF_ABV" => "arrays + bitvectors",
+    "QF_ALIA" => "arrays + LIA",
+    "QF_ANIA" => "arrays + NIA",
+    "QF_AUFLIA" => "arrays + UF + LIA",
     "QF_AUFBV" => "arrays + UF + bitvectors",
-    "LIA" => "linear integer arithmetic",
-    "LRA" => "linear real arithmetic",
-    "UFLIA" => "UF + linear integer arithmetic",
+    "QF_AUFNIA" => "arrays + UF + NIA",
+    # Quantified fragments
+    "LIA" => "linear integer arithmetic (quantified)",
+    "LRA" => "linear real arithmetic (quantified)",
+    "LIRA" => "linear mixed arithmetic (quantified)",
+    "NIA" => "nonlinear integer arithmetic (quantified)",
+    "NRA" => "nonlinear real arithmetic (quantified)",
+    "NIRA" => "nonlinear mixed arithmetic (quantified)",
+    "BV" => "bitvectors (quantified)",
+    "FP" => "floating-point (quantified)",
+    "UF" => "uninterpreted functions (quantified)",
+    "UFLIA" => "UF + LIA",
+    "UFLRA" => "UF + LRA",
+    "UFNIA" => "UF + NIA",
+    "UFBV" => "UF + bitvectors",
+    "UFFPDTLIRA" => "UF + FP + datatypes + LIRA",
+    "AUFLIA" => "arrays + UF + LIA",
     "AUFLIRA" => "arrays + UF + LIA + LRA",
     "AUFNIRA" => "arrays + UF + nonlinear mixed arithmetic",
+    "AUFBV" => "arrays + UF + bitvectors",
+    "AUFBVDTLIA" => "arrays + UF + BV + datatypes + LIA",
+    "AUFDTLIA" => "arrays + UF + datatypes + LIA",
+    "ALL" => "all theories",
 )
 
 # ---------------------------------------------------------------------------
@@ -162,11 +205,16 @@ end
 # ---------------------------------------------------------------------------
 
 """
-    find_smt2_files(base_dir::String; max_files::Int=50000) -> Vector{String}
+    find_smt2_files(base_dir::String; max_files::Int=500000) -> Vector{String}
 
 Recursively find .smt2 files, capped at max_files for sanity.
+
+Phase 1 widening (2026-04-17): raised cap from 50 000 → 500 000 to
+accommodate the full SMT-LIB v2 release (QF_LIA + QF_BV alone exceed
+the old 50K ceiling). Callers that want a smaller sample pass their
+own `max_files=`.
 """
-function find_smt2_files(base_dir::String; max_files::Int=50000)::Vector{String}
+function find_smt2_files(base_dir::String; max_files::Int=500000)::Vector{String}
     results = String[]
     for (root, dirs, files) in walkdir(base_dir)
         for fname in sort(files)
@@ -205,10 +253,17 @@ function extract_all(base_dir::String)
             continue
         end
 
-        # We want benchmarks that actually have assertions
+        # Default-keep: files without an `assert` carry declarations
+        # and datatype / funcsym contracts that are still training
+        # context for SMT premise selection. Emit with a trivial goal
+        # so downstream consumers see a uniform record shape.
+        synthetic = false
         if isempty(parsed["assertions"])
-            skipped += 1
-            continue
+            if isempty(parsed["declarations"])
+                skipped += 1
+                continue
+            end
+            synthetic = true
         end
 
         record_id = ID_BASE + length(proof_states)
@@ -216,8 +271,13 @@ function extract_all(base_dir::String)
         # Round-robin prover assignment
         prover = PROVERS[(length(proof_states) % length(PROVERS)) + 1]
 
-        # Build the goal from the primary assertion(s)
-        goal = parsed["assertions"][1]
+        # Build the goal from the primary assertion(s) — or `true` for
+        # assertion-less benchmarks (satisfiability of declarations).
+        goal = if synthetic
+            "(assert true)"
+        else
+            parsed["assertions"][1]
+        end
 
         # Context: declarations + remaining assertions (limit for size)
         context = parsed["declarations"][1:min(10, length(parsed["declarations"]))]
@@ -233,8 +293,9 @@ function extract_all(base_dir::String)
             "context" => context,
             "source" => "SMT-LIB",
             "logic" => parsed["logic"],
-            "status" => parsed["status"],
+            "status" => synthetic ? "satisfiable-decls" : parsed["status"],
             "proof_steps" => length(parsed["assertions"]),
+            "synthetic_goal" => synthetic,
         )
         push!(proof_states, state)
         prover_counts[prover] += 1
