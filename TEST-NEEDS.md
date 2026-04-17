@@ -18,7 +18,7 @@
 ### Target Details
 
 **1. echidna own Coq proofs (baseline)**
-- Command: `echidna verify /var/mnt/eclipse/repos/echidna/proofs/coq/basic.v`
+- Command: `echidna verify /var/mnt/eclipse/repos/verification-ecosystem/echidna/proofs/coq/basic.v`
 - Key findings: Valid proof. 43 tactics detected. Baseline verification working correctly.
 
 **2. nextgen-languages/wokelang (Coq)**
