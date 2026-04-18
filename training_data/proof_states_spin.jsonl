@@ -1,0 +1,351 @@
+{"prover":"SPIN","kind":"inline","theorem":"phase","id":2000000,"goal":"msg, good_ack, bad_ack","context":[],"source_file":"Examples/abp.pml"}
+{"prover":"SPIN","kind":"inline","theorem":"recv","id":2000001,"goal":"cur_msg, cur_ack, lst_msg, lst_ack","context":[],"source_file":"Examples/abp.pml"}
+{"prover":"SPIN","kind":"mtype","theorem":"mtype_1","id":2000002,"goal":"msg0, msg1, ack0, ack1","context":[],"source_file":"Examples/abp.pml"}
+{"prover":"SPIN","kind":"proctype","theorem":"Sender","id":2000003,"goal":"proctype Sender","context":[],"source_file":"Examples/abp.pml"}
+{"prover":"SPIN","kind":"proctype","theorem":"Receiver","id":2000004,"goal":"proctype Receiver","context":[],"source_file":"Examples/abp.pml"}
+{"prover":"SPIN","kind":"mtype","theorem":"mtype_1","id":2000005,"goal":"operator, value","context":[],"source_file":"Examples/calculator.pml"}
+{"prover":"SPIN","kind":"define","theorem":"N","id":2000006,"goal":"12","context":[],"source_file":"Examples/calculator.pml"}
+{"prover":"SPIN","kind":"proctype","theorem":"calc","id":2000007,"goal":"proctype calc","context":[],"source_file":"Examples/calculator.pml"}
+{"prover":"SPIN","kind":"init","theorem":"init","id":2000008,"goal":"init block","context":[],"source_file":"Examples/calculator.pml"}
+{"prover":"SPIN","kind":"assert","theorem":"assert_1","id":2000009,"goal":"rgt != 0)\n\t\t\t       you!(lft/rgt)\n\t\t:: else -> assert(false)\n\t\tfi\n\t:: f?value(s) -> you!s\n\tfi\n}\n\ninit {\n\tchan me = [0] of { int }\n\tint result\n\n\tf!operator('+')\n\tf!operator('/')\n\tf!value(84)\n\tf!value(2)\n\tf!operator('-')\n\tf!value(36)\n\tf!operator('*')\n\tf!value(3)\n\tf!value(4)\n\n\trun calc(me","context":[],"source_file":"Examples/calculator.pml"}
+{"prover":"SPIN","kind":"mtype","theorem":"mtype_1","id":2000010,"goal":"RDY, NOTRDY, DATA, NODATA, RESET","context":[],"source_file":"Examples/cambridge.pml"}
+{"prover":"SPIN","kind":"define","theorem":"LOSS","id":2000011,"goal":"1","context":[],"source_file":"Examples/cambridge.pml"}
+{"prover":"SPIN","kind":"define","theorem":"RELAXED","id":2000012,"goal":"1","context":[],"source_file":"Examples/cambridge.pml"}
+{"prover":"SPIN","kind":"define","theorem":"QSZ","id":2000013,"goal":"6\t/* length of message queues - should be 6 */","context":[],"source_file":"Examples/cambridge.pml"}
+{"prover":"SPIN","kind":"proctype","theorem":"Sender","id":2000014,"goal":"proctype Sender","context":[],"source_file":"Examples/cambridge.pml"}
+{"prover":"SPIN","kind":"proctype","theorem":"Receiver","id":2000015,"goal":"proctype Receiver","context":[],"source_file":"Examples/cambridge.pml"}
+{"prover":"SPIN","kind":"assert","theorem":"assert_1","id":2000016,"goal":"m == (n+1)%4","context":[],"source_file":"Examples/cambridge.pml"}
+{"prover":"SPIN","kind":"assert","theorem":"assert_2","id":2000017,"goal":"m == (n+1)%4","context":[],"source_file":"Examples/cambridge.pml"}
+{"prover":"SPIN","kind":"assert","theorem":"assert_3","id":2000018,"goal":"m == n","context":[],"source_file":"Examples/cambridge.pml"}
+{"prover":"SPIN","kind":"assert","theorem":"assert_4","id":2000019,"goal":"m == Nexp","context":[],"source_file":"Examples/cambridge.pml"}
+{"prover":"SPIN","kind":"assert","theorem":"assert_5","id":2000020,"goal":"m == n","context":[],"source_file":"Examples/cambridge.pml"}
+{"prover":"SPIN","kind":"assert","theorem":"assert_6","id":2000021,"goal":"(m+1)%4 == n","context":[],"source_file":"Examples/cambridge.pml"}
+{"prover":"SPIN","kind":"mtype","theorem":"mtype_1","id":2000022,"goal":"/*1*/\tack,\n/*2*/\tcan,\n/*3*/\tcrcck,\t\t/* checksum error */\n/*4*/\tdata8,\n/*5*/\tlast8,\n/*6*/\tnak,\n/*7*/\tquery8,\n/*8*/\trvnak,\n/*9*/\tzak","context":[],"source_file":"Examples/dtp.pml"}
+{"prover":"SPIN","kind":"proctype","theorem":"channel","id":2000023,"goal":"proctype channel","context":[],"source_file":"Examples/dtp.pml"}
+{"prover":"SPIN","kind":"proctype","theorem":"sender","id":2000024,"goal":"proctype sender","context":[],"source_file":"Examples/dtp.pml"}
+{"prover":"SPIN","kind":"proctype","theorem":"receiver","id":2000025,"goal":"proctype receiver","context":[],"source_file":"Examples/dtp.pml"}
+{"prover":"SPIN","kind":"init","theorem":"init","id":2000026,"goal":"init block","context":[],"source_file":"Examples/dtp.pml"}
+{"prover":"SPIN","kind":"assert","theorem":"assert_1","id":2000027,"goal":"0","context":[],"source_file":"Examples/dtp.pml"}
+{"prover":"SPIN","kind":"assert","theorem":"assert_2","id":2000028,"goal":"0","context":[],"source_file":"Examples/dtp.pml"}
+{"prover":"SPIN","kind":"mtype","theorem":"mtype_1","id":2000029,"goal":"number, eof","context":[],"source_file":"Examples/eratosthenes.pml"}
+{"prover":"SPIN","kind":"define","theorem":"MAX","id":2000030,"goal":"25","context":[],"source_file":"Examples/eratosthenes.pml"}
+{"prover":"SPIN","kind":"proctype","theorem":"sieve","id":2000031,"goal":"proctype sieve","context":[],"source_file":"Examples/eratosthenes.pml"}
+{"prover":"SPIN","kind":"init","theorem":"init","id":2000032,"goal":"init block","context":[],"source_file":"Examples/eratosthenes.pml"}
+{"prover":"SPIN","kind":"init","theorem":"init","id":2000033,"goal":"init block","context":[],"source_file":"Examples/for_example.pml"}
+{"prover":"SPIN","kind":"define","theorem":"N","id":2000034,"goal":"10","context":[],"source_file":"Examples/for_select_example.pml"}
+{"prover":"SPIN","kind":"init","theorem":"init","id":2000035,"goal":"init block","context":[],"source_file":"Examples/for_select_example.pml"}
+{"prover":"SPIN","kind":"assert","theorem":"assert_1","id":2000036,"goal":"i != 21","context":[],"source_file":"Examples/for_select_example.pml"}
+{"prover":"SPIN","kind":"define","theorem":"MAX","id":2000037,"goal":"8","context":[],"source_file":"Examples/hajek.pml"}
+{"prover":"SPIN","kind":"proctype","theorem":"station","id":2000038,"goal":"proctype station","context":[],"source_file":"Examples/hajek.pml"}
+{"prover":"SPIN","kind":"init","theorem":"init","id":2000039,"goal":"init block","context":[],"source_file":"Examples/hajek.pml"}
+{"prover":"SPIN","kind":"assert","theorem":"assert_1","id":2000040,"goal":"din == (prev_din+1)%MAX","context":[],"source_file":"Examples/hajek.pml"}
+{"prover":"SPIN","kind":"init","theorem":"init","id":2000041,"goal":"init block","context":[],"source_file":"Examples/hello.pml"}
+{"prover":"SPIN","kind":"mtype","theorem":"mtype_1","id":2000042,"goal":"one, two, winner","context":[],"source_file":"Examples/leader0.pml"}
+{"prover":"SPIN","kind":"define","theorem":"N","id":2000043,"goal":"5\t/* nr of processes (use 5 for demos) */","context":[],"source_file":"Examples/leader0.pml"}
+{"prover":"SPIN","kind":"define","theorem":"I","id":2000044,"goal":"3\t/* node given the smallest number    */","context":[],"source_file":"Examples/leader0.pml"}
+{"prover":"SPIN","kind":"define","theorem":"L","id":2000045,"goal":"10\t/* size of buffer  (>= 2*N) */","context":[],"source_file":"Examples/leader0.pml"}
+{"prover":"SPIN","kind":"proctype","theorem":"node","id":2000046,"goal":"proctype node","context":[],"source_file":"Examples/leader0.pml"}
+{"prover":"SPIN","kind":"init","theorem":"init","id":2000047,"goal":"init block","context":[],"source_file":"Examples/leader0.pml"}
+{"prover":"SPIN","kind":"assert","theorem":"assert_1","id":2000048,"goal":"nr == N","context":[],"source_file":"Examples/leader0.pml"}
+{"prover":"SPIN","kind":"mtype","theorem":"mtype_1","id":2000049,"goal":"one, two, winner","context":[],"source_file":"Examples/leader_trace.pml"}
+{"prover":"SPIN","kind":"define","theorem":"N","id":2000050,"goal":"5\t/* nr of processes (use 5 for demos) */","context":[],"source_file":"Examples/leader_trace.pml"}
+{"prover":"SPIN","kind":"define","theorem":"I","id":2000051,"goal":"3\t/* node given the smallest number    */","context":[],"source_file":"Examples/leader_trace.pml"}
+{"prover":"SPIN","kind":"define","theorem":"L","id":2000052,"goal":"10\t/* size of buffer  (>= 2*N) */","context":[],"source_file":"Examples/leader_trace.pml"}
+{"prover":"SPIN","kind":"proctype","theorem":"node","id":2000053,"goal":"proctype node","context":[],"source_file":"Examples/leader_trace.pml"}
+{"prover":"SPIN","kind":"init","theorem":"init","id":2000054,"goal":"init block","context":[],"source_file":"Examples/leader_trace.pml"}
+{"prover":"SPIN","kind":"assert","theorem":"assert_1","id":2000055,"goal":"nr == N","context":[],"source_file":"Examples/leader_trace.pml"}
+{"prover":"SPIN","kind":"inline","theorem":"print_board","id":2000056,"goal":"","context":[],"source_file":"Examples/life.pml"}
+{"prover":"SPIN","kind":"define","theorem":"MAX","id":2000057,"goal":"5","context":[],"source_file":"Examples/life.pml"}
+{"prover":"SPIN","kind":"proctype","theorem":"cell","id":2000058,"goal":"proctype cell","context":[],"source_file":"Examples/life.pml"}
+{"prover":"SPIN","kind":"init","theorem":"init","id":2000059,"goal":"init block","context":[],"source_file":"Examples/life.pml"}
+{"prover":"SPIN","kind":"proctype","theorem":"loop","id":2000060,"goal":"proctype loop","context":[],"source_file":"Examples/loops.pml"}
+{"prover":"SPIN","kind":"proctype","theorem":"server","id":2000061,"goal":"proctype server","context":[],"source_file":"Examples/manna_pnueli.pml"}
+{"prover":"SPIN","kind":"proctype","theorem":"client","id":2000062,"goal":"proctype client","context":[],"source_file":"Examples/manna_pnueli.pml"}
+{"prover":"SPIN","kind":"mtype","theorem":"mtype_1","id":2000063,"goal":"free, busy, idle, waiting, running","context":[],"source_file":"Examples/pathfinder.pml"}
+{"prover":"SPIN","kind":"proctype","theorem":"user","id":2000064,"goal":"proctype user","context":[],"source_file":"Examples/peterson.pml"}
+{"prover":"SPIN","kind":"assert","theorem":"assert_1","id":2000065,"goal":"_pid == 0 || _pid == 1","context":[],"source_file":"Examples/peterson.pml"}
+{"prover":"SPIN","kind":"assert","theorem":"assert_2","id":2000066,"goal":"ncrit == 1","context":[],"source_file":"Examples/peterson.pml"}
+{"prover":"SPIN","kind":"proctype","theorem":"A","id":2000067,"goal":"proctype A","context":[],"source_file":"Examples/priorities.pml"}
+{"prover":"SPIN","kind":"init","theorem":"init","id":2000068,"goal":"init block","context":[],"source_file":"Examples/priorities.pml"}
+{"prover":"SPIN","kind":"assert","theorem":"assert_1","id":2000069,"goal":"_priority == 1 && cnt == 2","context":[],"source_file":"Examples/rtos1.pml"}
+{"prover":"SPIN","kind":"proctype","theorem":"P","id":2000070,"goal":"proctype P","context":[],"source_file":"Examples/sat.pml"}
+{"prover":"SPIN","kind":"mtype","theorem":"mtype_1","id":2000071,"goal":"r, w, raw,\n\t\tRD, WR, RX,\n\t\tMX, MXdone,\n\t\treq0, req1,\n\t\tCtoB, BtoC,\n\t\tgrant, done","context":[],"source_file":"Examples/snoopy.pml"}
+{"prover":"SPIN","kind":"define","theorem":"QSZ","id":2000072,"goal":"2","context":[],"source_file":"Examples/snoopy.pml"}
+{"prover":"SPIN","kind":"define","theorem":"W","id":2000073,"goal":"1","context":[],"source_file":"Examples/snoopy.pml"}
+{"prover":"SPIN","kind":"define","theorem":"R","id":2000074,"goal":"2","context":[],"source_file":"Examples/snoopy.pml"}
+{"prover":"SPIN","kind":"define","theorem":"X","id":2000075,"goal":"3","context":[],"source_file":"Examples/snoopy.pml"}
+{"prover":"SPIN","kind":"proctype","theorem":"cpu0","id":2000076,"goal":"proctype cpu0","context":[],"source_file":"Examples/snoopy.pml"}
+{"prover":"SPIN","kind":"proctype","theorem":"cpu1","id":2000077,"goal":"proctype cpu1","context":[],"source_file":"Examples/snoopy.pml"}
+{"prover":"SPIN","kind":"proctype","theorem":"cache0","id":2000078,"goal":"proctype cache0","context":[],"source_file":"Examples/snoopy.pml"}
+{"prover":"SPIN","kind":"proctype","theorem":"cache1","id":2000079,"goal":"proctype cache1","context":[],"source_file":"Examples/snoopy.pml"}
+{"prover":"SPIN","kind":"proctype","theorem":"busarbiter","id":2000080,"goal":"proctype busarbiter","context":[],"source_file":"Examples/snoopy.pml"}
+{"prover":"SPIN","kind":"init","theorem":"init","id":2000081,"goal":"init block","context":[],"source_file":"Examples/snoopy.pml"}
+{"prover":"SPIN","kind":"define","theorem":"N","id":2000082,"goal":"7\t\t\t/* Number of Proc */","context":[],"source_file":"Examples/sort.pml"}
+{"prover":"SPIN","kind":"define","theorem":"L","id":2000083,"goal":"10\t\t\t/* Size of buffer queues */","context":[],"source_file":"Examples/sort.pml"}
+{"prover":"SPIN","kind":"define","theorem":"RANDOM","id":2000084,"goal":"(seed * 3 + 14) % 100\t/* Calculate \"random\" number */","context":[],"source_file":"Examples/sort.pml"}
+{"prover":"SPIN","kind":"proctype","theorem":"middle","id":2000085,"goal":"proctype middle","context":[],"source_file":"Examples/sort.pml"}
+{"prover":"SPIN","kind":"init","theorem":"init","id":2000086,"goal":"init block","context":[],"source_file":"Examples/sort.pml"}
+{"prover":"SPIN","kind":"mtype","theorem":"fruit","id":2000087,"goal":"appel, pear, banana","context":[],"source_file":"Examples/test_mtype.pml"}
+{"prover":"SPIN","kind":"mtype","theorem":"sizes","id":2000088,"goal":"small, medium, large","context":[],"source_file":"Examples/test_mtype.pml"}
+{"prover":"SPIN","kind":"proctype","theorem":"recipient","id":2000089,"goal":"proctype recipient","context":[],"source_file":"Examples/test_mtype.pml"}
+{"prover":"SPIN","kind":"init","theorem":"init","id":2000090,"goal":"init block","context":[],"source_file":"Examples/test_mtype.pml"}
+{"prover":"SPIN","kind":"proctype","theorem":"cr","id":2000091,"goal":"proctype cr","context":[],"source_file":"Examples/welfare.pml"}
+{"prover":"SPIN","kind":"define","theorem":"MAXTIME","id":2000092,"goal":"9","context":[],"source_file":"Examples/werkplaats.pml"}
+{"prover":"SPIN","kind":"proctype","theorem":"j1","id":2000093,"goal":"proctype j1","context":[],"source_file":"Examples/werkplaats.pml"}
+{"prover":"SPIN","kind":"proctype","theorem":"j2","id":2000094,"goal":"proctype j2","context":[],"source_file":"Examples/werkplaats.pml"}
+{"prover":"SPIN","kind":"proctype","theorem":"j3","id":2000095,"goal":"proctype j3","context":[],"source_file":"Examples/werkplaats.pml"}
+{"prover":"SPIN","kind":"init","theorem":"init","id":2000096,"goal":"init block","context":[],"source_file":"Examples/wordcount.pml"}
+{"prover":"SPIN","kind":"assert","theorem":"assert_1","id":2000097,"goal":"nc >= nl","context":[],"source_file":"Examples/wordcount.pml"}
+{"prover":"SPIN","kind":"init","theorem":"init","id":2000098,"goal":"init block","context":[],"source_file":"Examples/Book_1991/App.F.pftp.pml"}
+{"prover":"SPIN","kind":"proctype","theorem":"A","id":2000099,"goal":"proctype A","context":[],"source_file":"Examples/Book_1991/p101.pml"}
+{"prover":"SPIN","kind":"proctype","theorem":"B","id":2000100,"goal":"proctype B","context":[],"source_file":"Examples/Book_1991/p101.pml"}
+{"prover":"SPIN","kind":"init","theorem":"init","id":2000101,"goal":"init block","context":[],"source_file":"Examples/Book_1991/p101.pml"}
+{"prover":"SPIN","kind":"proctype","theorem":"A","id":2000102,"goal":"proctype A","context":[],"source_file":"Examples/Book_1991/p102.pml"}
+{"prover":"SPIN","kind":"proctype","theorem":"B","id":2000103,"goal":"proctype B","context":[],"source_file":"Examples/Book_1991/p102.pml"}
+{"prover":"SPIN","kind":"proctype","theorem":"C","id":2000104,"goal":"proctype C","context":[],"source_file":"Examples/Book_1991/p102.pml"}
+{"prover":"SPIN","kind":"init","theorem":"init","id":2000105,"goal":"init block","context":[],"source_file":"Examples/Book_1991/p102.pml"}
+{"prover":"SPIN","kind":"define","theorem":"N","id":2000106,"goal":"128","context":[],"source_file":"Examples/Book_1991/p104.1.pml"}
+{"prover":"SPIN","kind":"proctype","theorem":"split","id":2000107,"goal":"proctype split","context":[],"source_file":"Examples/Book_1991/p104.1.pml"}
+{"prover":"SPIN","kind":"init","theorem":"init","id":2000108,"goal":"init block","context":[],"source_file":"Examples/Book_1991/p104.1.pml"}
+{"prover":"SPIN","kind":"define","theorem":"N","id":2000109,"goal":"128","context":[],"source_file":"Examples/Book_1991/p104.2.pml"}
+{"prover":"SPIN","kind":"proctype","theorem":"split","id":2000110,"goal":"proctype split","context":[],"source_file":"Examples/Book_1991/p104.2.pml"}
+{"prover":"SPIN","kind":"proctype","theorem":"merge","id":2000111,"goal":"proctype merge","context":[],"source_file":"Examples/Book_1991/p104.2.pml"}
+{"prover":"SPIN","kind":"init","theorem":"init","id":2000112,"goal":"init block","context":[],"source_file":"Examples/Book_1991/p104.2.pml"}
+{"prover":"SPIN","kind":"proctype","theorem":"dijkstra","id":2000113,"goal":"proctype dijkstra","context":[],"source_file":"Examples/Book_1991/p105.1.pml"}
+{"prover":"SPIN","kind":"proctype","theorem":"user","id":2000114,"goal":"proctype user","context":[],"source_file":"Examples/Book_1991/p105.1.pml"}
+{"prover":"SPIN","kind":"init","theorem":"init","id":2000115,"goal":"init block","context":[],"source_file":"Examples/Book_1991/p105.1.pml"}
+{"prover":"SPIN","kind":"proctype","theorem":"fact","id":2000116,"goal":"proctype fact","context":[],"source_file":"Examples/Book_1991/p105.2.pml"}
+{"prover":"SPIN","kind":"init","theorem":"init","id":2000117,"goal":"init block","context":[],"source_file":"Examples/Book_1991/p105.2.pml"}
+{"prover":"SPIN","kind":"mtype","theorem":"mtype_1","id":2000118,"goal":"ack, nak, err, next, accept","context":[],"source_file":"Examples/Book_1991/p107.pml"}
+{"prover":"SPIN","kind":"proctype","theorem":"transfer","id":2000119,"goal":"proctype transfer","context":[],"source_file":"Examples/Book_1991/p107.pml"}
+{"prover":"SPIN","kind":"init","theorem":"init","id":2000120,"goal":"init block","context":[],"source_file":"Examples/Book_1991/p107.pml"}
+{"prover":"SPIN","kind":"proctype","theorem":"ack","id":2000121,"goal":"proctype ack","context":[],"source_file":"Examples/Book_1991/p108.pml"}
+{"prover":"SPIN","kind":"init","theorem":"init","id":2000122,"goal":"init block","context":[],"source_file":"Examples/Book_1991/p108.pml"}
+{"prover":"SPIN","kind":"proctype","theorem":"A","id":2000123,"goal":"proctype A","context":[],"source_file":"Examples/Book_1991/p116.pml"}
+{"prover":"SPIN","kind":"proctype","theorem":"B","id":2000124,"goal":"proctype B","context":[],"source_file":"Examples/Book_1991/p116.pml"}
+{"prover":"SPIN","kind":"init","theorem":"init","id":2000125,"goal":"init block","context":[],"source_file":"Examples/Book_1991/p116.pml"}
+{"prover":"SPIN","kind":"assert","theorem":"assert_1","id":2000126,"goal":"state == 0)\n}\ninit { run A(","context":[],"source_file":"Examples/Book_1991/p116.pml"}
+{"prover":"SPIN","kind":"proctype","theorem":"dijkstra","id":2000127,"goal":"proctype dijkstra","context":[],"source_file":"Examples/Book_1991/p117.pml"}
+{"prover":"SPIN","kind":"proctype","theorem":"user","id":2000128,"goal":"proctype user","context":[],"source_file":"Examples/Book_1991/p117.pml"}
+{"prover":"SPIN","kind":"proctype","theorem":"monitor","id":2000129,"goal":"proctype monitor","context":[],"source_file":"Examples/Book_1991/p117.pml"}
+{"prover":"SPIN","kind":"init","theorem":"init","id":2000130,"goal":"init block","context":[],"source_file":"Examples/Book_1991/p117.pml"}
+{"prover":"SPIN","kind":"assert","theorem":"assert_1","id":2000131,"goal":"count == 0 || count == 1) }\ninit\n{\tatomic {\n\t\trun dijkstra(","context":[],"source_file":"Examples/Book_1991/p117.pml"}
+{"prover":"SPIN","kind":"mtype","theorem":"mtype_1","id":2000132,"goal":"msg0, msg1, ack0, ack1","context":[],"source_file":"Examples/Book_1991/p123.pml"}
+{"prover":"SPIN","kind":"define","theorem":"MAX","id":2000133,"goal":"3","context":[],"source_file":"Examples/Book_1991/p123.pml"}
+{"prover":"SPIN","kind":"proctype","theorem":"Sender","id":2000134,"goal":"proctype Sender","context":[],"source_file":"Examples/Book_1991/p123.pml"}
+{"prover":"SPIN","kind":"proctype","theorem":"Receiver","id":2000135,"goal":"proctype Receiver","context":[],"source_file":"Examples/Book_1991/p123.pml"}
+{"prover":"SPIN","kind":"init","theorem":"init","id":2000136,"goal":"init block","context":[],"source_file":"Examples/Book_1991/p123.pml"}
+{"prover":"SPIN","kind":"proctype","theorem":"fact","id":2000137,"goal":"proctype fact","context":[],"source_file":"Examples/Book_1991/p248.pml"}
+{"prover":"SPIN","kind":"init","theorem":"init","id":2000138,"goal":"init block","context":[],"source_file":"Examples/Book_1991/p248.pml"}
+{"prover":"SPIN","kind":"mtype","theorem":"mtype_1","id":2000139,"goal":"ack, nak, err","context":[],"source_file":"Examples/Book_1991/p312.pml"}
+{"prover":"SPIN","kind":"define","theorem":"MIN","id":2000140,"goal":"9\t/* first data message to send */","context":[],"source_file":"Examples/Book_1991/p312.pml"}
+{"prover":"SPIN","kind":"define","theorem":"MAX","id":2000141,"goal":"12\t/* last  data message to send */","context":[],"source_file":"Examples/Book_1991/p312.pml"}
+{"prover":"SPIN","kind":"define","theorem":"FILL","id":2000142,"goal":"99\t/* filler message */","context":[],"source_file":"Examples/Book_1991/p312.pml"}
+{"prover":"SPIN","kind":"proctype","theorem":"transfer","id":2000143,"goal":"proctype transfer","context":[],"source_file":"Examples/Book_1991/p312.pml"}
+{"prover":"SPIN","kind":"proctype","theorem":"channel","id":2000144,"goal":"proctype channel","context":[],"source_file":"Examples/Book_1991/p312.pml"}
+{"prover":"SPIN","kind":"init","theorem":"init","id":2000145,"goal":"init block","context":[],"source_file":"Examples/Book_1991/p312.pml"}
+{"prover":"SPIN","kind":"assert","theorem":"assert_1","id":2000146,"goal":"i == last_i+1","context":[],"source_file":"Examples/Book_1991/p312.pml"}
+{"prover":"SPIN","kind":"mtype","theorem":"mtype_1","id":2000147,"goal":"start, attention, data, stop","context":[],"source_file":"Examples/Book_1991/p319.pml"}
+{"prover":"SPIN","kind":"proctype","theorem":"station","id":2000148,"goal":"proctype station","context":[],"source_file":"Examples/Book_1991/p319.pml"}
+{"prover":"SPIN","kind":"init","theorem":"init","id":2000149,"goal":"init block","context":[],"source_file":"Examples/Book_1991/p319.pml"}
+{"prover":"SPIN","kind":"proctype","theorem":"A","id":2000150,"goal":"proctype A","context":[],"source_file":"Examples/Book_1991/p320.pml"}
+{"prover":"SPIN","kind":"proctype","theorem":"B","id":2000151,"goal":"proctype B","context":[],"source_file":"Examples/Book_1991/p320.pml"}
+{"prover":"SPIN","kind":"init","theorem":"init","id":2000152,"goal":"init block","context":[],"source_file":"Examples/Book_1991/p320.pml"}
+{"prover":"SPIN","kind":"assert","theorem":"assert_1","id":2000153,"goal":"bin == false","context":[],"source_file":"Examples/Book_1991/p320.pml"}
+{"prover":"SPIN","kind":"assert","theorem":"assert_2","id":2000154,"goal":"ain == false","context":[],"source_file":"Examples/Book_1991/p320.pml"}
+{"prover":"SPIN","kind":"mtype","theorem":"mtype_1","id":2000155,"goal":"red, white, blue,\n\tabort, accept, ack, sync_ack, close, connect,\n\tcreate, data, eof, open, reject, sync, transfer,\n\tFATAL, NON_FATAL, COMPLETE","context":[],"source_file":"Examples/Book_1991/p329.pml"}
+{"prover":"SPIN","kind":"define","theorem":"LOSS","id":2000156,"goal":"0\t/* message loss   */","context":[],"source_file":"Examples/Book_1991/p329.pml"}
+{"prover":"SPIN","kind":"define","theorem":"DUPS","id":2000157,"goal":"0\t/* duplicate msgs */","context":[],"source_file":"Examples/Book_1991/p329.pml"}
+{"prover":"SPIN","kind":"define","theorem":"QSZ","id":2000158,"goal":"2\t/* queue size     */","context":[],"source_file":"Examples/Book_1991/p329.pml"}
+{"prover":"SPIN","kind":"init","theorem":"init","id":2000159,"goal":"init block","context":[],"source_file":"Examples/Book_1991/p329.pml"}
+{"prover":"SPIN","kind":"mtype","theorem":"mtype_1","id":2000160,"goal":"red, white, blue,\n\tabort, accept, ack, sync_ack, close, connect,\n\tcreate, data, eof, open, reject, sync, transfer,\n\tFATAL, NON_FATAL, COMPLETE","context":[],"source_file":"Examples/Book_1991/p330.pml"}
+{"prover":"SPIN","kind":"define","theorem":"LOSS","id":2000161,"goal":"0\t/* message loss   */","context":[],"source_file":"Examples/Book_1991/p330.pml"}
+{"prover":"SPIN","kind":"define","theorem":"DUPS","id":2000162,"goal":"0\t/* duplicate msgs */","context":[],"source_file":"Examples/Book_1991/p330.pml"}
+{"prover":"SPIN","kind":"define","theorem":"QSZ","id":2000163,"goal":"2\t/* queue size     */","context":[],"source_file":"Examples/Book_1991/p330.pml"}
+{"prover":"SPIN","kind":"init","theorem":"init","id":2000164,"goal":"init block","context":[],"source_file":"Examples/Book_1991/p330.pml"}
+{"prover":"SPIN","kind":"init","theorem":"init","id":2000165,"goal":"init block","context":[],"source_file":"Examples/Book_1991/p337.pftp.ses.pml"}
+{"prover":"SPIN","kind":"init","theorem":"init","id":2000166,"goal":"init block","context":[],"source_file":"Examples/Book_1991/p347.pftp.ses5.pml"}
+{"prover":"SPIN","kind":"proctype","theorem":"A","id":2000167,"goal":"proctype A","context":[],"source_file":"Examples/Book_1991/p94.pml"}
+{"prover":"SPIN","kind":"proctype","theorem":"B","id":2000168,"goal":"proctype B","context":[],"source_file":"Examples/Book_1991/p94.pml"}
+{"prover":"SPIN","kind":"init","theorem":"init","id":2000169,"goal":"init block","context":[],"source_file":"Examples/Book_1991/p94.pml"}
+{"prover":"SPIN","kind":"init","theorem":"init","id":2000170,"goal":"init block","context":[],"source_file":"Examples/Book_1991/p95.1.pml"}
+{"prover":"SPIN","kind":"proctype","theorem":"A","id":2000171,"goal":"proctype A","context":[],"source_file":"Examples/Book_1991/p95.2.pml"}
+{"prover":"SPIN","kind":"init","theorem":"init","id":2000172,"goal":"init block","context":[],"source_file":"Examples/Book_1991/p95.2.pml"}
+{"prover":"SPIN","kind":"proctype","theorem":"A","id":2000173,"goal":"proctype A","context":[],"source_file":"Examples/Book_1991/p96.1.pml"}
+{"prover":"SPIN","kind":"proctype","theorem":"B","id":2000174,"goal":"proctype B","context":[],"source_file":"Examples/Book_1991/p96.1.pml"}
+{"prover":"SPIN","kind":"init","theorem":"init","id":2000175,"goal":"init block","context":[],"source_file":"Examples/Book_1991/p96.1.pml"}
+{"prover":"SPIN","kind":"proctype","theorem":"A","id":2000176,"goal":"proctype A","context":[],"source_file":"Examples/Book_1991/p96.2.pml"}
+{"prover":"SPIN","kind":"proctype","theorem":"B","id":2000177,"goal":"proctype B","context":[],"source_file":"Examples/Book_1991/p96.2.pml"}
+{"prover":"SPIN","kind":"init","theorem":"init","id":2000178,"goal":"init block","context":[],"source_file":"Examples/Book_1991/p96.2.pml"}
+{"prover":"SPIN","kind":"proctype","theorem":"A","id":2000179,"goal":"proctype A","context":[],"source_file":"Examples/Book_1991/p97.1.pml"}
+{"prover":"SPIN","kind":"proctype","theorem":"B","id":2000180,"goal":"proctype B","context":[],"source_file":"Examples/Book_1991/p97.1.pml"}
+{"prover":"SPIN","kind":"init","theorem":"init","id":2000181,"goal":"init block","context":[],"source_file":"Examples/Book_1991/p97.1.pml"}
+{"prover":"SPIN","kind":"proctype","theorem":"nr","id":2000182,"goal":"proctype nr","context":[],"source_file":"Examples/Book_1991/p97.2.pml"}
+{"prover":"SPIN","kind":"init","theorem":"init","id":2000183,"goal":"init block","context":[],"source_file":"Examples/Book_1991/p97.2.pml"}
+{"prover":"SPIN","kind":"proctype","theorem":"A","id":2000184,"goal":"proctype A","context":[],"source_file":"Examples/Book_1991/p99.pml"}
+{"prover":"SPIN","kind":"proctype","theorem":"B","id":2000185,"goal":"proctype B","context":[],"source_file":"Examples/Book_1991/p99.pml"}
+{"prover":"SPIN","kind":"init","theorem":"init","id":2000186,"goal":"init block","context":[],"source_file":"Examples/Book_1991/p99.pml"}
+{"prover":"SPIN","kind":"init","theorem":"init","id":2000187,"goal":"init block","context":[],"source_file":"Examples/Exercises/ex_1a.pml"}
+{"prover":"SPIN","kind":"define","theorem":"N","id":2000188,"goal":"2","context":[],"source_file":"Examples/Exercises/ex_1f.pml"}
+{"prover":"SPIN","kind":"init","theorem":"init","id":2000189,"goal":"init block","context":[],"source_file":"Examples/Exercises/ex_1f.pml"}
+{"prover":"SPIN","kind":"mtype","theorem":"mtype_1","id":2000190,"goal":"a0, a1, b0, b1, err","context":[],"source_file":"Examples/Exercises/ex_2.pml"}
+{"prover":"SPIN","kind":"proctype","theorem":"A","id":2000191,"goal":"proctype A","context":[],"source_file":"Examples/Exercises/ex_2.pml"}
+{"prover":"SPIN","kind":"proctype","theorem":"B","id":2000192,"goal":"proctype B","context":[],"source_file":"Examples/Exercises/ex_2.pml"}
+{"prover":"SPIN","kind":"ltl","theorem":"invariant","id":2000193,"goal":"[] (!p[0]@CS || !p[1]@CS)","context":[],"source_file":"Examples/Exercises/ex_3a.pml"}
+{"prover":"SPIN","kind":"proctype","theorem":"user","id":2000194,"goal":"proctype user","context":[],"source_file":"Examples/Exercises/ex_3b.pml"}
+{"prover":"SPIN","kind":"proctype","theorem":"user","id":2000195,"goal":"proctype user","context":[],"source_file":"Examples/Exercises/ex_3c.pml"}
+{"prover":"SPIN","kind":"init","theorem":"init","id":2000196,"goal":"init block","context":[],"source_file":"Examples/Exercises/ex_4.pml"}
+{"prover":"SPIN","kind":"mtype","theorem":"mtype_1","id":2000197,"goal":"Wakeme, Running","context":[],"source_file":"Examples/Exercises/ex_5.pml"}
+{"prover":"SPIN","kind":"proctype","theorem":"client","id":2000198,"goal":"proctype client","context":[],"source_file":"Examples/Exercises/ex_5.pml"}
+{"prover":"SPIN","kind":"ltl","theorem":"p1","id":2000199,"goal":"(<> sent_r -> <> (received_r && !received_b))","context":[],"source_file":"Examples/Exercises/ex_6.pml"}
+{"prover":"SPIN","kind":"mtype","theorem":"mtype_1","id":2000200,"goal":"none, red, white, blue","context":[],"source_file":"Examples/Exercises/ex_6.pml"}
+{"prover":"SPIN","kind":"proctype","theorem":"p5","id":2000201,"goal":"proctype p5","context":[],"source_file":"Examples/Exercises/ex_6.pml"}
+{"prover":"SPIN","kind":"proctype","theorem":"Source","id":2000202,"goal":"proctype Source","context":[],"source_file":"Examples/Exercises/ex_6.pml"}
+{"prover":"SPIN","kind":"ltl","theorem":"invariant","id":2000203,"goal":"[] ((P@CS) -> (mutex == 1))","context":[],"source_file":"Examples/LTL/bakery.pml"}
+{"prover":"SPIN","kind":"proctype","theorem":"P","id":2000204,"goal":"proctype P","context":[],"source_file":"Examples/LTL/bakery.pml"}
+{"prover":"SPIN","kind":"ltl","theorem":"p","id":2000205,"goal":"[] (client_busy[1] -> <> !client_busy[1])","context":[],"source_file":"Examples/LTL/diskhead.pml"}
+{"prover":"SPIN","kind":"inline","theorem":"disk_io","id":2000206,"goal":"","context":[],"source_file":"Examples/LTL/diskhead.pml"}
+{"prover":"SPIN","kind":"inline","theorem":"Serve_client","id":2000207,"goal":"x","context":[],"source_file":"Examples/LTL/diskhead.pml"}
+{"prover":"SPIN","kind":"inline","theorem":"Handle","id":2000208,"goal":"","context":[],"source_file":"Examples/LTL/diskhead.pml"}
+{"prover":"SPIN","kind":"proctype","theorem":"disk_sched","id":2000209,"goal":"proctype disk_sched","context":[],"source_file":"Examples/LTL/diskhead.pml"}
+{"prover":"SPIN","kind":"ltl","theorem":"p0","id":2000210,"goal":"<> (nr_leaders > 0)","context":[],"source_file":"Examples/LTL/leader.pml"}
+{"prover":"SPIN","kind":"ltl","theorem":"p1","id":2000211,"goal":"<>[] (nr_leaders == 1)","context":[],"source_file":"Examples/LTL/leader.pml"}
+{"prover":"SPIN","kind":"ltl","theorem":"p2","id":2000212,"goal":"[] (nr_leaders == 0 U nr_leaders == 1)","context":[],"source_file":"Examples/LTL/leader.pml"}
+{"prover":"SPIN","kind":"ltl","theorem":"p3","id":2000213,"goal":"![] (nr_leaders == 0)","context":[],"source_file":"Examples/LTL/leader.pml"}
+{"prover":"SPIN","kind":"mtype","theorem":"mtype_1","id":2000214,"goal":"one, two, winner","context":[],"source_file":"Examples/LTL/leader.pml"}
+{"prover":"SPIN","kind":"define","theorem":"N","id":2000215,"goal":"5\t/* number of processes in the ring */","context":[],"source_file":"Examples/LTL/leader.pml"}
+{"prover":"SPIN","kind":"define","theorem":"L","id":2000216,"goal":"10\t/* 2xN */","context":[],"source_file":"Examples/LTL/leader.pml"}
+{"prover":"SPIN","kind":"proctype","theorem":"nnode","id":2000217,"goal":"proctype nnode","context":[],"source_file":"Examples/LTL/leader.pml"}
+{"prover":"SPIN","kind":"init","theorem":"init","id":2000218,"goal":"init block","context":[],"source_file":"Examples/LTL/leader.pml"}
+{"prover":"SPIN","kind":"ltl","theorem":"p0","id":2000219,"goal":"<> (nr_leaders > 0)","context":[],"source_file":"Examples/LTL/leader_pre.pml"}
+{"prover":"SPIN","kind":"ltl","theorem":"p1","id":2000220,"goal":"<>[] (nr_leaders == 1)","context":[],"source_file":"Examples/LTL/leader_pre.pml"}
+{"prover":"SPIN","kind":"ltl","theorem":"p2","id":2000221,"goal":"[] ((nr_leaders == 0) U (nr_leaders == 1))","context":[],"source_file":"Examples/LTL/leader_pre.pml"}
+{"prover":"SPIN","kind":"ltl","theorem":"p3","id":2000222,"goal":"![] (nr_leaders == 0)","context":[],"source_file":"Examples/LTL/leader_pre.pml"}
+{"prover":"SPIN","kind":"mtype","theorem":"mtype_1","id":2000223,"goal":"one, two, winner","context":[],"source_file":"Examples/LTL/leader_pre.pml"}
+{"prover":"SPIN","kind":"define","theorem":"N","id":2000224,"goal":"5\t/* number of processes in the ring */","context":[],"source_file":"Examples/LTL/leader_pre.pml"}
+{"prover":"SPIN","kind":"define","theorem":"L","id":2000225,"goal":"10\t/* 2xN */","context":[],"source_file":"Examples/LTL/leader_pre.pml"}
+{"prover":"SPIN","kind":"proctype","theorem":"nnode","id":2000226,"goal":"proctype nnode","context":[],"source_file":"Examples/LTL/leader_pre.pml"}
+{"prover":"SPIN","kind":"init","theorem":"init","id":2000227,"goal":"init block","context":[],"source_file":"Examples/LTL/leader_pre.pml"}
+{"prover":"SPIN","kind":"ltl","theorem":"name","id":2000228,"goal":"always eventually (p > 5)","context":[],"source_file":"Examples/LTL/ltl_always_eventually.pml"}
+{"prover":"SPIN","kind":"init","theorem":"init","id":2000229,"goal":"init block","context":[],"source_file":"Examples/LTL/ltl_always_eventually.pml"}
+{"prover":"SPIN","kind":"ltl","theorem":"c6","id":2000230,"goal":"[] ( (len(q) < 2) -> (len(q) > 0) )","context":[],"source_file":"Examples/LTL/ltl_example.pml"}
+{"prover":"SPIN","kind":"init","theorem":"init","id":2000231,"goal":"init block","context":[],"source_file":"Examples/LTL/ltl_example.pml"}
+{"prover":"SPIN","kind":"mtype","theorem":"mtype_1","id":2000232,"goal":"NoOp, UnOp, BiOp","context":[],"source_file":"Examples/LTL/ltl_gen.pml"}
+{"prover":"SPIN","kind":"mtype","theorem":"mtype_2","id":2000233,"goal":"Always, Eventually, Next, Not, Until, And, Or, Implies, Equiv","context":[],"source_file":"Examples/LTL/ltl_gen.pml"}
+{"prover":"SPIN","kind":"define","theorem":"DEPTH_LIMIT","id":2000234,"goal":"4","context":[],"source_file":"Examples/LTL/ltl_gen.pml"}
+{"prover":"SPIN","kind":"define","theorem":"NUMBER_OF_NODES","id":2000235,"goal":"31 /* worst case: 1 + 2 + 4 + 8 binops + 16 leaves   */","context":[],"source_file":"Examples/LTL/ltl_gen.pml"}
+{"prover":"SPIN","kind":"proctype","theorem":"view","id":2000236,"goal":"proctype view","context":[],"source_file":"Examples/LTL/ltl_gen.pml"}
+{"prover":"SPIN","kind":"init","theorem":"init","id":2000237,"goal":"init block","context":[],"source_file":"Examples/LTL/ltl_gen.pml"}
+{"prover":"SPIN","kind":"assert","theorem":"assert_1","id":2000238,"goal":"this != NUMBER_OF_NODES","context":[],"source_file":"Examples/LTL/ltl_gen.pml"}
+{"prover":"SPIN","kind":"mtype","theorem":"mtype_1","id":2000239,"goal":"data, ho_cmd, ho_com, ho_acc, ho_fail, ch_rel, white, red, blue","context":[],"source_file":"Examples/LTL/mobile1.pml"}
+{"prover":"SPIN","kind":"proctype","theorem":"P","id":2000240,"goal":"proctype P","context":[],"source_file":"Examples/LTL/mobile1.pml"}
+{"prover":"SPIN","kind":"proctype","theorem":"Q","id":2000241,"goal":"proctype Q","context":[],"source_file":"Examples/LTL/mobile1.pml"}
+{"prover":"SPIN","kind":"proctype","theorem":"System","id":2000242,"goal":"proctype System","context":[],"source_file":"Examples/LTL/mobile1.pml"}
+{"prover":"SPIN","kind":"proctype","theorem":"top","id":2000243,"goal":"proctype top","context":[],"source_file":"Examples/LTL/mobile1.pml"}
+{"prover":"SPIN","kind":"proctype","theorem":"bot","id":2000244,"goal":"proctype bot","context":[],"source_file":"Examples/LTL/mobile1.pml"}
+{"prover":"SPIN","kind":"mtype","theorem":"mtype_1","id":2000245,"goal":"data, ho_cmd, ho_com, ho_acc, ho_fail, ch_rel, white, red, blue","context":[],"source_file":"Examples/LTL/mobile2.pml"}
+{"prover":"SPIN","kind":"proctype","theorem":"System","id":2000246,"goal":"proctype System","context":[],"source_file":"Examples/LTL/mobile2.pml"}
+{"prover":"SPIN","kind":"proctype","theorem":"Out","id":2000247,"goal":"proctype Out","context":[],"source_file":"Examples/LTL/mobile2.pml"}
+{"prover":"SPIN","kind":"ltl","theorem":"a1","id":2000248,"goal":"[](!P)","context":[],"source_file":"Examples/LTL/patterns.pml"}
+{"prover":"SPIN","kind":"ltl","theorem":"a2","id":2000249,"goal":"<>R -> (!P U R)","context":[],"source_file":"Examples/LTL/patterns.pml"}
+{"prover":"SPIN","kind":"ltl","theorem":"a3","id":2000250,"goal":"[](Q -> [](!P))","context":[],"source_file":"Examples/LTL/patterns.pml"}
+{"prover":"SPIN","kind":"ltl","theorem":"a4","id":2000251,"goal":"[]((Q && !R && <> R) -> (!P U R))","context":[],"source_file":"Examples/LTL/patterns.pml"}
+{"prover":"SPIN","kind":"ltl","theorem":"a5","id":2000252,"goal":"[](Q && !R -> (!P W R))","context":[],"source_file":"Examples/LTL/patterns.pml"}
+{"prover":"SPIN","kind":"ltl","theorem":"e1","id":2000253,"goal":"<>(P)","context":[],"source_file":"Examples/LTL/patterns.pml"}
+{"prover":"SPIN","kind":"ltl","theorem":"e2","id":2000254,"goal":"!R W (P && !R)","context":[],"source_file":"Examples/LTL/patterns.pml"}
+{"prover":"SPIN","kind":"ltl","theorem":"e3","id":2000255,"goal":"[](!Q || <>(Q && <>P))","context":[],"source_file":"Examples/LTL/patterns.pml"}
+{"prover":"SPIN","kind":"ltl","theorem":"e4","id":2000256,"goal":"[](Q && !R -> (!R W (P && !R)))","context":[],"source_file":"Examples/LTL/patterns.pml"}
+{"prover":"SPIN","kind":"ltl","theorem":"e5","id":2000257,"goal":"[](Q && !R -> (!R U (P && !R)))","context":[],"source_file":"Examples/LTL/patterns.pml"}
+{"prover":"SPIN","kind":"ltl","theorem":"be1","id":2000258,"goal":"(!P W (P W (!P W (P W []!P))))","context":[],"source_file":"Examples/LTL/patterns.pml"}
+{"prover":"SPIN","kind":"ltl","theorem":"be2","id":2000259,"goal":"<>R -> ((!P && !R U (R || ((P && !R) U (R || ((!P && !R U (R || ((P && !R) U (R || (!P U R)))))))))))","context":[],"source_file":"Examples/LTL/patterns.pml"}
+{"prover":"SPIN","kind":"ltl","theorem":"be3","id":2000260,"goal":"<>Q -> (!Q U (Q && (!P W (P W (!P W (P W []!P))))))","context":[],"source_file":"Examples/LTL/patterns.pml"}
+{"prover":"SPIN","kind":"ltl","theorem":"be4","id":2000261,"goal":"[]((Q && <>R-> ((!P && !R U (R || ((P && !R) U (R || ((!P && !R U (R || ((P && !R) U (R || (!P U R)))))))))))))","context":[],"source_file":"Examples/LTL/patterns.pml"}
+{"prover":"SPIN","kind":"ltl","theorem":"be5","id":2000262,"goal":"[](Q -> ((!P && !R U (R || ((P && !R) U (R || ((!P && !R U (R || ((P && !R) U (R || (!P W R || []P))))))))))))","context":[],"source_file":"Examples/LTL/patterns.pml"}
+{"prover":"SPIN","kind":"ltl","theorem":"u1","id":2000263,"goal":"[](P)","context":[],"source_file":"Examples/LTL/patterns.pml"}
+{"prover":"SPIN","kind":"ltl","theorem":"u2","id":2000264,"goal":"<>R -> (P U R)","context":[],"source_file":"Examples/LTL/patterns.pml"}
+{"prover":"SPIN","kind":"ltl","theorem":"u3","id":2000265,"goal":"[](Q -> [](P))","context":[],"source_file":"Examples/LTL/patterns.pml"}
+{"prover":"SPIN","kind":"ltl","theorem":"u4","id":2000266,"goal":"[]((Q && !R && <> R-> (P U R)))","context":[],"source_file":"Examples/LTL/patterns.pml"}
+{"prover":"SPIN","kind":"ltl","theorem":"u5","id":2000267,"goal":"[](Q && !R -> (P W R))","context":[],"source_file":"Examples/LTL/patterns.pml"}
+{"prover":"SPIN","kind":"ltl","theorem":"p1","id":2000268,"goal":"!P W S","context":[],"source_file":"Examples/LTL/patterns.pml"}
+{"prover":"SPIN","kind":"ltl","theorem":"p2","id":2000269,"goal":"<>R -> (!P U (S || R))","context":[],"source_file":"Examples/LTL/patterns.pml"}
+{"prover":"SPIN","kind":"ltl","theorem":"p3","id":2000270,"goal":"[]!Q || <>(Q && (!P W S))","context":[],"source_file":"Examples/LTL/patterns.pml"}
+{"prover":"SPIN","kind":"ltl","theorem":"p4","id":2000271,"goal":"[]((Q && !R && <>R) -> (!P U (S || R)))","context":[],"source_file":"Examples/LTL/patterns.pml"}
+{"prover":"SPIN","kind":"ltl","theorem":"p5","id":2000272,"goal":"[](Q && !R -> (!P W (S || R)))","context":[],"source_file":"Examples/LTL/patterns.pml"}
+{"prover":"SPIN","kind":"ltl","theorem":"r1","id":2000273,"goal":"[](P -> <>S)","context":[],"source_file":"Examples/LTL/patterns.pml"}
+{"prover":"SPIN","kind":"ltl","theorem":"r2","id":2000274,"goal":"<>R -> (P -> (!R U (S && !R))) U R","context":[],"source_file":"Examples/LTL/patterns.pml"}
+{"prover":"SPIN","kind":"ltl","theorem":"r3","id":2000275,"goal":"[](Q -> [](P -> <>S))","context":[],"source_file":"Examples/LTL/patterns.pml"}
+{"prover":"SPIN","kind":"ltl","theorem":"r4","id":2000276,"goal":"[]((Q && !R && <>R) -> (P -> (!R U (S && !R))) U R)","context":[],"source_file":"Examples/LTL/patterns.pml"}
+{"prover":"SPIN","kind":"ltl","theorem":"r5","id":2000277,"goal":"[](Q && !R -> ((P -> (!R U (S && !R))) W R))","context":[],"source_file":"Examples/LTL/patterns.pml"}
+{"prover":"SPIN","kind":"ltl","theorem":"pc1","id":2000278,"goal":"<>P -> (!P U (S && !P && X(!P U T)))","context":[],"source_file":"Examples/LTL/patterns.pml"}
+{"prover":"SPIN","kind":"ltl","theorem":"pc2","id":2000279,"goal":"<>R -> (!P U (R || (S && !P && X(!P U T))))","context":[],"source_file":"Examples/LTL/patterns.pml"}
+{"prover":"SPIN","kind":"ltl","theorem":"pc3","id":2000280,"goal":"([]!Q || (!Q U (Q && <>P -> (!P U (S && !P && X(!P U T))))))","context":[],"source_file":"Examples/LTL/patterns.pml"}
+{"prover":"SPIN","kind":"ltl","theorem":"pc4","id":2000281,"goal":"[]((Q && <>R-> (!P U (R || (S && !P && X(!P U T))))))","context":[],"source_file":"Examples/LTL/patterns.pml"}
+{"prover":"SPIN","kind":"ltl","theorem":"pc5","id":2000282,"goal":"[](Q -> (<>P -> (!P U (R || (S && !P && X(!P U T))))))","context":[],"source_file":"Examples/LTL/patterns.pml"}
+{"prover":"SPIN","kind":"ltl","theorem":"pc6","id":2000283,"goal":"(<>(S && X<>T) -> ((!S) U P))","context":[],"source_file":"Examples/LTL/patterns.pml"}
+{"prover":"SPIN","kind":"ltl","theorem":"pc7","id":2000284,"goal":"<>R -> ((!(S && (!R && X(!R U (T && !R)))) U (R || P)))","context":[],"source_file":"Examples/LTL/patterns.pml"}
+{"prover":"SPIN","kind":"ltl","theorem":"pc8","id":2000285,"goal":"([]!Q || ((!Q) U (Q && ((<>(S && X<>T)) -> ((!S) U P)))))","context":[],"source_file":"Examples/LTL/patterns.pml"}
+{"prover":"SPIN","kind":"ltl","theorem":"pc9","id":2000286,"goal":"[]((Q && <>R) -> ((!(S && (!R) && X(!R U (T && !R)))) U (R || P)))","context":[],"source_file":"Examples/LTL/patterns.pml"}
+{"prover":"SPIN","kind":"ltl","theorem":"pc10","id":2000287,"goal":"[](Q -> (!(S && (!R& X(!R U (T && !R))) U (R || P) || [](!(S && X<>T)))))","context":[],"source_file":"Examples/LTL/patterns.pml"}
+{"prover":"SPIN","kind":"ltl","theorem":"rc1","id":2000288,"goal":"[] (S && X<> T -> X(<>(T && <> P)))","context":[],"source_file":"Examples/LTL/patterns.pml"}
+{"prover":"SPIN","kind":"ltl","theorem":"rc2","id":2000289,"goal":"<>R -> (S && X(!R U T-> X(!R U (T && <> P))) U R)","context":[],"source_file":"Examples/LTL/patterns.pml"}
+{"prover":"SPIN","kind":"ltl","theorem":"rc3","id":2000290,"goal":"[] (Q -> [] (S && X<> T -> X(!T U (T && <> P))))","context":[],"source_file":"Examples/LTL/patterns.pml"}
+{"prover":"SPIN","kind":"ltl","theorem":"rc4","id":2000291,"goal":"[] ((Q && <>R) -> (S && X(!R U T) -> X(!R U (T && <> P))U R))","context":[],"source_file":"Examples/LTL/patterns.pml"}
+{"prover":"SPIN","kind":"ltl","theorem":"rc5","id":2000292,"goal":"[] (Q -> (S && X(!R U T-> X(!R U (T && <> P))) U (R || [] (S && X(!R U T-> X(!R U (T && <> P)))))))","context":[],"source_file":"Examples/LTL/patterns.pml"}
+{"prover":"SPIN","kind":"ltl","theorem":"rc6","id":2000293,"goal":"[] (P -> <>(S && X<>T))","context":[],"source_file":"Examples/LTL/patterns.pml"}
+{"prover":"SPIN","kind":"ltl","theorem":"rc7","id":2000294,"goal":"<>R -> (P -> (!R U (S && !R && X(!R U T))) U R)","context":[],"source_file":"Examples/LTL/patterns.pml"}
+{"prover":"SPIN","kind":"ltl","theorem":"rc8","id":2000295,"goal":"[] (Q -> [] (P -> (S && X<> T)))","context":[],"source_file":"Examples/LTL/patterns.pml"}
+{"prover":"SPIN","kind":"ltl","theorem":"rc9","id":2000296,"goal":"[] ((Q && <>R)-> (P -> (!R U (S && !R && X(!R U T)))) U R)","context":[],"source_file":"Examples/LTL/patterns.pml"}
+{"prover":"SPIN","kind":"ltl","theorem":"rc10","id":2000297,"goal":"[] (Q -> (P -> (!R U (S && !R && X(!R U T)))U (R || [] (P -> (S && X<> T)))))","context":[],"source_file":"Examples/LTL/patterns.pml"}
+{"prover":"SPIN","kind":"ltl","theorem":"cc1","id":2000298,"goal":"[] (P -> <>(S && !Z && X(!Z U T)))","context":[],"source_file":"Examples/LTL/patterns.pml"}
+{"prover":"SPIN","kind":"ltl","theorem":"cc2","id":2000299,"goal":"<>R -> (P -> (!R U (S && !R && !Z && X((!R && !Z U T)))) U R)","context":[],"source_file":"Examples/LTL/patterns.pml"}
+{"prover":"SPIN","kind":"ltl","theorem":"cc3","id":2000300,"goal":"[] (Q -> [] (P -> (S && !Z && X(!Z U T))))","context":[],"source_file":"Examples/LTL/patterns.pml"}
+{"prover":"SPIN","kind":"ltl","theorem":"cc4","id":2000301,"goal":"[] ((Q && <>R)-> (P -> (!R U (S && !R && !Z && X((!R && !Z U T)))) U R))","context":[],"source_file":"Examples/LTL/patterns.pml"}
+{"prover":"SPIN","kind":"ltl","theorem":"cc5","id":2000302,"goal":"[] (Q -> (P -> (!R U (S && !R && !Z && X((!R && !Z U T)))) U (R || [] (P -> (S && !Z && X(!Z U T))))))","context":[],"source_file":"Examples/LTL/patterns.pml"}
+{"prover":"SPIN","kind":"init","theorem":"init","id":2000303,"goal":"init block","context":[],"source_file":"Examples/LTL/patterns.pml"}
+{"prover":"SPIN","kind":"ltl","theorem":"bounded_bypass","id":2000304,"goal":"user[1]@again -> <> user[1]@cs","context":[],"source_file":"Examples/LTL/petersonN.pml"}
+{"prover":"SPIN","kind":"define","theorem":"N","id":2000305,"goal":"5\t/* nr of processes */","context":[],"source_file":"Examples/LTL/petersonN.pml"}
+{"prover":"SPIN","kind":"proctype","theorem":"user","id":2000306,"goal":"proctype user","context":[],"source_file":"Examples/LTL/petersonN.pml"}
+{"prover":"SPIN","kind":"assert","theorem":"assert_1","id":2000307,"goal":"ncrit == 1","context":[],"source_file":"Examples/LTL/petersonN.pml"}
+{"prover":"SPIN","kind":"ltl","theorem":"p1","id":2000308,"goal":"( len(flow_to_ses[1]) > 0 -> flow_to_ses[1]?[white]) U ( flow_to_ses[1]?[red] )","context":[],"source_file":"Examples/LTL/pftp.pml"}
+{"prover":"SPIN","kind":"ltl","theorem":"p2","id":2000309,"goal":"(!(flow_to_ses[1]?[blue])) U (flow_to_ses[1]?[red])","context":[],"source_file":"Examples/LTL/pftp.pml"}
+{"prover":"SPIN","kind":"ltl","theorem":"p3","id":2000310,"goal":"<> (flow_to_ses[1]?[blue])","context":[],"source_file":"Examples/LTL/pftp.pml"}
+{"prover":"SPIN","kind":"mtype","theorem":"mtype_1","id":2000311,"goal":"red, white, blue,\n\tabort, accept, ack, sync_ack, close, connect,\n\tcreate, data, eof, open, reject, sync, transfer,\n\tFATAL, NON_FATAL, COMPLETE","context":[],"source_file":"Examples/LTL/pftp.pml"}
+{"prover":"SPIN","kind":"define","theorem":"LOSS","id":2000312,"goal":"1\t/* message loss   */","context":[],"source_file":"Examples/LTL/pftp.pml"}
+{"prover":"SPIN","kind":"define","theorem":"DUPS","id":2000313,"goal":"0\t/* duplicate msgs */","context":[],"source_file":"Examples/LTL/pftp.pml"}
+{"prover":"SPIN","kind":"define","theorem":"QSZ","id":2000314,"goal":"2\t/* queue size     */","context":[],"source_file":"Examples/LTL/pftp.pml"}
+{"prover":"SPIN","kind":"define","theorem":"M","id":2000315,"goal":"4\t/* range sequence numbers   */","context":[],"source_file":"Examples/LTL/pftp.pml"}
+{"prover":"SPIN","kind":"define","theorem":"W","id":2000316,"goal":"2\t/* window size: M/2         */","context":[],"source_file":"Examples/LTL/pftp.pml"}
+{"prover":"SPIN","kind":"proctype","theorem":"fc","id":2000317,"goal":"proctype fc","context":[],"source_file":"Examples/LTL/pftp.pml"}
+{"prover":"SPIN","kind":"proctype","theorem":"upper_s","id":2000318,"goal":"proctype upper_s","context":[],"source_file":"Examples/LTL/pftp.pml"}
+{"prover":"SPIN","kind":"proctype","theorem":"upper_r","id":2000319,"goal":"proctype upper_r","context":[],"source_file":"Examples/LTL/pftp.pml"}
+{"prover":"SPIN","kind":"init","theorem":"init","id":2000320,"goal":"init block","context":[],"source_file":"Examples/LTL/pftp.pml"}
+{"prover":"SPIN","kind":"assert","theorem":"assert_1","id":2000321,"goal":"0)\n\t:: f2s1?blue,0 -> assert(0)\n\tod\n}\n\ninit\n{\n\tatomic {\n\t  run fc(ses_to_flow[0], dll_to_flow[1], flow_to_ses[0], dll_to_flow[0]","context":[],"source_file":"Examples/LTL/pftp.pml"}
+{"prover":"SPIN","kind":"ltl","theorem":"p","id":2000322,"goal":"[] ((seen < N) || (tour > MAX))","context":[],"source_file":"Examples/LTL/salesman1.pml"}
+{"prover":"SPIN","kind":"inline","theorem":"travel2","id":2000323,"goal":"dest","context":[],"source_file":"Examples/LTL/salesman1.pml"}
+{"prover":"SPIN","kind":"define","theorem":"N","id":2000324,"goal":"4","context":[],"source_file":"Examples/LTL/salesman1.pml"}
+{"prover":"SPIN","kind":"define","theorem":"MAX","id":2000325,"goal":"97","context":[],"source_file":"Examples/LTL/salesman1.pml"}
+{"prover":"SPIN","kind":"init","theorem":"init","id":2000326,"goal":"init block","context":[],"source_file":"Examples/LTL/salesman1.pml"}
+{"prover":"SPIN","kind":"ltl","theorem":"p","id":2000327,"goal":"[] ((seen < N) || (tour > MAX))","context":[],"source_file":"Examples/LTL/salesman2.pml"}
+{"prover":"SPIN","kind":"inline","theorem":"travel2","id":2000328,"goal":"dest","context":[],"source_file":"Examples/LTL/salesman2.pml"}
+{"prover":"SPIN","kind":"define","theorem":"N","id":2000329,"goal":"4","context":[],"source_file":"Examples/LTL/salesman2.pml"}
+{"prover":"SPIN","kind":"define","theorem":"MAX","id":2000330,"goal":"97","context":[],"source_file":"Examples/LTL/salesman2.pml"}
+{"prover":"SPIN","kind":"init","theorem":"init","id":2000331,"goal":"init block","context":[],"source_file":"Examples/LTL/salesman2.pml"}
+{"prover":"SPIN","kind":"ltl","theorem":"c1","id":2000332,"goal":"[]<> (gate@Occupied)","context":[],"source_file":"Examples/LTL/train.pml"}
+{"prover":"SPIN","kind":"ltl","theorem":"c2","id":2000333,"goal":"[]<> (train[0]@Crossed)","context":[],"source_file":"Examples/LTL/train.pml"}
+{"prover":"SPIN","kind":"ltl","theorem":"c3","id":2000334,"goal":"[]<> (train[0]@Crossed && train[1]@Stopped)","context":[],"source_file":"Examples/LTL/train.pml"}
+{"prover":"SPIN","kind":"ltl","theorem":"c4","id":2000335,"goal":"[]<> (train[0]@Crossed && train[1]@Stopped && train[2]@Stopped && train[3]@Stopped)","context":[],"source_file":"Examples/LTL/train.pml"}
+{"prover":"SPIN","kind":"ltl","theorem":"c5","id":2000336,"goal":"[] (train[0]@Crossed + train[1]@Crossed + train[2]@Crossed + train[3]@Crossed <= 1)","context":[],"source_file":"Examples/LTL/train.pml"}
+{"prover":"SPIN","kind":"ltl","theorem":"c6","id":2000337,"goal":"[] (len(list) < N)","context":[],"source_file":"Examples/LTL/train.pml"}
+{"prover":"SPIN","kind":"ltl","theorem":"c7","id":2000338,"goal":"[] (((gate@Add1 || gate@Add2)) -> (len(list) < N))","context":[],"source_file":"Examples/LTL/train.pml"}
+{"prover":"SPIN","kind":"ltl","theorem":"c8","id":2000339,"goal":"[] (train[0]@Approaching) -> <> (train[0]@Crossed)","context":[],"source_file":"Examples/LTL/train.pml"}
+{"prover":"SPIN","kind":"mtype","theorem":"mtype_1","id":2000340,"goal":"appr, leave, go, stop, Empty, Notempty, add, rem, hd","context":[],"source_file":"Examples/LTL/train.pml"}
+{"prover":"SPIN","kind":"define","theorem":"N","id":2000341,"goal":"4","context":[],"source_file":"Examples/LTL/train.pml"}
+{"prover":"SPIN","kind":"proctype","theorem":"train","id":2000342,"goal":"proctype train","context":[],"source_file":"Examples/LTL/train.pml"}
+{"prover":"SPIN","kind":"proctype","theorem":"gate","id":2000343,"goal":"proctype gate","context":[],"source_file":"Examples/LTL/train.pml"}
+{"prover":"SPIN","kind":"proctype","theorem":"queue","id":2000344,"goal":"proctype queue","context":[],"source_file":"Examples/LTL/train.pml"}
+{"prover":"SPIN","kind":"assert","theorem":"assert_1","id":2000345,"goal":"_pid >= 0 && _pid < N","context":[],"source_file":"Examples/LTL/train.pml"}
+{"prover":"SPIN","kind":"assert","theorem":"assert_2","id":2000346,"goal":"x == who","context":[],"source_file":"Examples/LTL/train.pml"}
+{"prover":"SPIN","kind":"ltl","theorem":"p1","id":2000347,"goal":"[] (( zune@S ) -> ( <> zune@E ) )","context":[],"source_file":"Examples/LTL/zune.pml"}
+{"prover":"SPIN","kind":"proctype","theorem":"zune","id":2000348,"goal":"proctype zune","context":[],"source_file":"Examples/LTL/zune.pml"}
+{"prover":"SPIN","kind":"init","theorem":"init","id":2000349,"goal":"init block","context":[],"source_file":"Examples/LTL/zune.pml"}
+{"prover":"SPIN","kind":"assert","theorem":"assert_1","id":2000350,"goal":"days >= 1 && days <= 366","context":[],"source_file":"Examples/LTL/zune.pml"}

@@ -1,0 +1,70 @@
+{"prover":"UPPAAL","theorem":"tctl_2900000","id":2900000,"goal":"A[] not ( andGate.consistent and orGate.consistent and a==false and b==true and t==true and x==true)","context":[],"source_file":"AndOr/AndOr.q"}
+{"prover":"UPPAAL","theorem":"tctl_2900001","id":2900001,"goal":"A<> stTC == TC_ENDED &&  stP == P_ENDED","context":[],"source_file":"BAwCC/BAwCC.q"}
+{"prover":"UPPAAL","theorem":"tctl_2900002","id":2900002,"goal":"E<> !overflow && (tc.INVALID || par.INVALID)","context":[],"source_file":"BAwCC/BAwCC.q"}
+{"prover":"UPPAAL","theorem":"tctl_2900003","id":2900003,"goal":"E<> overflow","context":[],"source_file":"BAwCC/BAwCC.q"}
+{"prover":"UPPAAL","theorem":"tctl_2900004","id":2900004,"goal":"A<> (stTC == TC_ENDED_FAILED || stTC == TC_ENDED_EXITED || stTC == TC_ENDED_NOTCOMPLETED  || stTC == TC_ENDED) &&  (stP == P_ENDED_CANCELED || stP == P_ENDED_CLOSED || stP == P_ENDED_COMPENSATED || stP == P_ENDED)","context":[],"source_file":"BAwCC/enhancedBAwCC.q"}
+{"prover":"UPPAAL","theorem":"tctl_2900005","id":2900005,"goal":"E<> !overflow && (tc.INVALID || par.INVALID)","context":[],"source_file":"BAwCC/enhancedBAwCC.q"}
+{"prover":"UPPAAL","theorem":"tctl_2900006","id":2900006,"goal":"E<> overflow","context":[],"source_file":"BAwCC/enhancedBAwCC.q"}
+{"prover":"UPPAAL","theorem":"tctl_2900007","id":2900007,"goal":"A[]((A_eof == 1 imply (A_diff == 0 and B_res == 0)) and (B_eof == 1 imply (B_diff == 0 and A_res == 0)))","context":[],"source_file":"BangOlufsen/bando.q"}
+{"prover":"UPPAAL","theorem":"tctl_2900008","id":2900008,"goal":"A[]((A_eof == 1 imply (A_diff == 0 and B_res == 0)) and (B_eof == 1 imply (B_diff == 0 and A_res == 0)))","context":[],"source_file":"BangOlufsen/bangOlufsen.q"}
+{"prover":"UPPAAL","theorem":"tctl_2900009","id":2900009,"goal":"A[]((A_eof == 1 imply (A_diff == 0 and B_res == 0)) and (B_eof == 1 imply (B_diff == 0 and A_res == 0)))","context":[],"source_file":"BangOlufsen/bocdp.q"}
+{"prover":"UPPAAL","theorem":"tctl_2900010","id":2900010,"goal":"A[]((A_eof == 1 imply (A_diff == 0 and B_res == 0)) and (B_eof == 1 imply (B_diff == 0 and A_res == 0)))","context":[],"source_file":"BangOlufsen/bocdpFIXED.q"}
+{"prover":"UPPAAL","theorem":"tctl_2900011","id":2900011,"goal":"E<> ProdCell(1).error","context":[],"source_file":"critical/critical.q"}
+{"prover":"UPPAAL","theorem":"tctl_2900012","id":2900012,"goal":"A[] not (Station(0).transm && Station(1).transm && Station(0).x>2*SIGMA)","context":[],"source_file":"csma/csma.q"}
+{"prover":"UPPAAL","theorem":"tctl_2900013","id":2900013,"goal":"E<> GearControl.GearChanged","context":[],"source_file":"engine/engine.q"}
+{"prover":"UPPAAL","theorem":"tctl_2900014","id":2900014,"goal":"E<> Interface.Gear5","context":[],"source_file":"engine/engine.q"}
+{"prover":"UPPAAL","theorem":"tctl_2900015","id":2900015,"goal":"E<> Interface.GearR","context":[],"source_file":"engine/engine.q"}
+{"prover":"UPPAAL","theorem":"tctl_2900016","id":2900016,"goal":"E<> ( GearControl.GearChanged and ( SysTimer<=1000 ) )","context":[],"source_file":"engine/engine.q"}
+{"prover":"UPPAAL","theorem":"tctl_2900017","id":2900017,"goal":"A[] not ( GearBox.Neutral and \\","context":[],"source_file":"engine/engine.q"}
+{"prover":"UPPAAL","theorem":"tctl_2900018","id":2900018,"goal":"A[] not ( GearBox.Idle and Interface.GearN )","context":[],"source_file":"engine/engine.q"}
+{"prover":"UPPAAL","theorem":"tctl_2900019","id":2900019,"goal":"A[] ( Interface.GearN imply GearBox.Neutral )","context":[],"source_file":"engine/engine.q"}
+{"prover":"UPPAAL","theorem":"tctl_2900020","id":2900020,"goal":"A[] ( ( ErrStat==0 and UseCase==0 and SysTimer>=900 ) imply \\","context":[],"source_file":"engine/engine.q"}
+{"prover":"UPPAAL","theorem":"tctl_2900021","id":2900021,"goal":"E<> ( ErrStat==0 and UseCase==0 and SysTimer>899 and SysTimer<900 and \\","context":[],"source_file":"engine/engine.q"}
+{"prover":"UPPAAL","theorem":"tctl_2900022","id":2900022,"goal":"A[] ( ( ErrStat==0 and UseCase==0 and ( SysTimer<150 ) ) imply \\","context":[],"source_file":"engine/engine.q"}
+{"prover":"UPPAAL","theorem":"tctl_2900023","id":2900023,"goal":"E<> ( ErrStat==0 and UseCase==0 and GearControl.GearChanged and \\","context":[],"source_file":"engine/engine.q"}
+{"prover":"UPPAAL","theorem":"tctl_2900024","id":2900024,"goal":"A[] ( ( ErrStat==0 and UseCase==0 and FromGear>0 and ToGear>0 and \\","context":[],"source_file":"engine/engine.q"}
+{"prover":"UPPAAL","theorem":"tctl_2900025","id":2900025,"goal":"E<> ( ErrStat==0 and UseCase==0 and FromGear>0 and ToGear>0 and \\","context":[],"source_file":"engine/engine.q"}
+{"prover":"UPPAAL","theorem":"tctl_2900026","id":2900026,"goal":"A[] ( ( ErrStat==0 and UseCase==1 and SysTimer>1055 ) imply \\","context":[],"source_file":"engine/engine.q"}
+{"prover":"UPPAAL","theorem":"tctl_2900027","id":2900027,"goal":"E<> ( ErrStat==0 and UseCase==1 and SysTimer==1055 and \\","context":[],"source_file":"engine/engine.q"}
+{"prover":"UPPAAL","theorem":"tctl_2900028","id":2900028,"goal":"A[] ( ( ErrStat==0 and UseCase==1 and SysTimer<550 ) imply \\","context":[],"source_file":"engine/engine.q"}
+{"prover":"UPPAAL","theorem":"tctl_2900029","id":2900029,"goal":"E<> ( ErrStat==0 and UseCase==1 and GearControl.GearChanged and \\","context":[],"source_file":"engine/engine.q"}
+{"prover":"UPPAAL","theorem":"tctl_2900030","id":2900030,"goal":"A[] ( ( ErrStat==0 and UseCase==1 and FromGear>0 and ToGear>0 and \\","context":[],"source_file":"engine/engine.q"}
+{"prover":"UPPAAL","theorem":"tctl_2900031","id":2900031,"goal":"E<> ( ErrStat==0 and UseCase==1 and FromGear>0 and ToGear>0 and \\","context":[],"source_file":"engine/engine.q"}
+{"prover":"UPPAAL","theorem":"tctl_2900032","id":2900032,"goal":"A[] ( ( ErrStat==0 and UseCase==2 and SysTimer>=1205 ) imply \\","context":[],"source_file":"engine/engine.q"}
+{"prover":"UPPAAL","theorem":"tctl_2900033","id":2900033,"goal":"E<> ( ErrStat==0 and UseCase==2 and SysTimer>1204 and SysTimer<1205 and \\","context":[],"source_file":"engine/engine.q"}
+{"prover":"UPPAAL","theorem":"tctl_2900034","id":2900034,"goal":"A[] ( ( UseCase==2 and ( SysTimer<450 ) ) imply \\","context":[],"source_file":"engine/engine.q"}
+{"prover":"UPPAAL","theorem":"tctl_2900035","id":2900035,"goal":"E<> ( UseCase==2 and GearControl.GearChanged and \\","context":[],"source_file":"engine/engine.q"}
+{"prover":"UPPAAL","theorem":"tctl_2900036","id":2900036,"goal":"A[] ( ( ErrStat==0 and UseCase==2 and FromGear>0 and ToGear>0 and \\","context":[],"source_file":"engine/engine.q"}
+{"prover":"UPPAAL","theorem":"tctl_2900037","id":2900037,"goal":"E<> ( ErrStat==0 and UseCase==2 and FromGear>0 and ToGear>0 and \\","context":[],"source_file":"engine/engine.q"}
+{"prover":"UPPAAL","theorem":"tctl_2900038","id":2900038,"goal":"A[] ( ( Clutch.ErrorClose and ( GCTimer>200 ) ) imply \\","context":[],"source_file":"engine/engine.q"}
+{"prover":"UPPAAL","theorem":"tctl_2900039","id":2900039,"goal":"A[] ( GearControl.CCloseError imply Clutch.ErrorClose )","context":[],"source_file":"engine/engine.q"}
+{"prover":"UPPAAL","theorem":"tctl_2900040","id":2900040,"goal":"A[] ( ( Clutch.ErrorOpen and ( GCTimer>200 ) ) imply GearControl.COpenError )","context":[],"source_file":"engine/engine.q"}
+{"prover":"UPPAAL","theorem":"tctl_2900041","id":2900041,"goal":"A[] ( ( GearControl.COpenError ) imply Clutch.ErrorOpen )","context":[],"source_file":"engine/engine.q"}
+{"prover":"UPPAAL","theorem":"tctl_2900042","id":2900042,"goal":"A[] ( ( GearBox.ErrorIdle and ( GCTimer>350 ) ) imply GearControl.GSetError )","context":[],"source_file":"engine/engine.q"}
+{"prover":"UPPAAL","theorem":"tctl_2900043","id":2900043,"goal":"A[] ( ( GearControl.GSetError ) imply GearBox.ErrorIdle )","context":[],"source_file":"engine/engine.q"}
+{"prover":"UPPAAL","theorem":"tctl_2900044","id":2900044,"goal":"A[] ( ( GearBox.ErrorNeu and ( GCTimer>200 ) ) imply GearControl.GNeuError )","context":[],"source_file":"engine/engine.q"}
+{"prover":"UPPAAL","theorem":"tctl_2900045","id":2900045,"goal":"A[] ( ( GearControl.GNeuError ) imply GearBox.ErrorNeu )","context":[],"source_file":"engine/engine.q"}
+{"prover":"UPPAAL","theorem":"tctl_2900046","id":2900046,"goal":"A[] not ( ErrStat==0 and Engine.ErrorSpeed )","context":[],"source_file":"engine/engine.q"}
+{"prover":"UPPAAL","theorem":"tctl_2900047","id":2900047,"goal":"A[] ( Interface.GearN imply \\","context":[],"source_file":"engine/engine.q"}
+{"prover":"UPPAAL","theorem":"tctl_2900048","id":2900048,"goal":"A[] ( ( GearControl.Gear and Interface.GearR ) imply Engine.Torque )","context":[],"source_file":"engine/engine.q"}
+{"prover":"UPPAAL","theorem":"tctl_2900049","id":2900049,"goal":"A[] ( ( GearControl.Gear and Interface.Gear1 ) imply Engine.Torque )","context":[],"source_file":"engine/engine.q"}
+{"prover":"UPPAAL","theorem":"tctl_2900050","id":2900050,"goal":"A[] ( ( GearControl.Gear and Interface.Gear2 ) imply Engine.Torque )","context":[],"source_file":"engine/engine.q"}
+{"prover":"UPPAAL","theorem":"tctl_2900051","id":2900051,"goal":"A[] ( ( GearControl.Gear and Interface.Gear3 ) imply Engine.Torque )","context":[],"source_file":"engine/engine.q"}
+{"prover":"UPPAAL","theorem":"tctl_2900052","id":2900052,"goal":"A[] ( ( GearControl.Gear and Interface.Gear4 ) imply Engine.Torque )","context":[],"source_file":"engine/engine.q"}
+{"prover":"UPPAAL","theorem":"tctl_2900053","id":2900053,"goal":"A[] ( ( GearControl.Gear and Interface.Gear5 ) imply Engine.Torque )","context":[],"source_file":"engine/engine.q"}
+{"prover":"UPPAAL","theorem":"tctl_2900054","id":2900054,"goal":"A[] ( Clutch.Open imply \\","context":[],"source_file":"engine/engine.q"}
+{"prover":"UPPAAL","theorem":"tctl_2900055","id":2900055,"goal":"A[] ( Clutch.Closed imply \\","context":[],"source_file":"engine/engine.q"}
+{"prover":"UPPAAL","theorem":"tctl_2900056","id":2900056,"goal":"A[] ( GearBox.Idle imply \\","context":[],"source_file":"engine/engine.q"}
+{"prover":"UPPAAL","theorem":"tctl_2900057","id":2900057,"goal":"A[] ( GearBox.Neutral imply \\","context":[],"source_file":"engine/engine.q"}
+{"prover":"UPPAAL","theorem":"tctl_2900058","id":2900058,"goal":"A[] ( Engine.Torque imply Clutch.Closed )","context":[],"source_file":"engine/engine.q"}
+{"prover":"UPPAAL","theorem":"tctl_2900059","id":2900059,"goal":"A[] not A.qBad","context":[],"source_file":"exSITH/exSITH.q"}
+{"prover":"UPPAAL","theorem":"tctl_2900060","id":2900060,"goal":"A[] not (P(1).cs && P(2).cs)","context":[],"source_file":"fischer/fischer.q"}
+{"prover":"UPPAAL","theorem":"tctl_2900061","id":2900061,"goal":"A[] not (P(1).CS7 && P(2).CS7)","context":[],"source_file":"lynch/lynch.q"}
+{"prover":"UPPAAL","theorem":"tctl_2900062","id":2900062,"goal":"E<> (job1.End1 && job2.End2 && job3.End3 && job4.End4)","context":[],"source_file":"maler/maler.q"}
+{"prover":"UPPAAL","theorem":"tctl_2900063","id":2900063,"goal":"E<> (S1.I_am_unsafe and S2.I_am_unsafe)","context":[],"source_file":"mutex/mutex.q"}
+{"prover":"UPPAAL","theorem":"tctl_2900064","id":2900064,"goal":"A<> s1o.S1oEnd","context":[],"source_file":"rcp/rcp.q"}
+{"prover":"UPPAAL","theorem":"tctl_2900065","id":2900065,"goal":"A[] forall (i : t_id) not Task(i).Error","context":[],"source_file":"schedule/schedule.q"}
+{"prover":"UPPAAL","theorem":"tctl_2900066","id":2900066,"goal":"E<> E.Escape","context":[],"source_file":"soldiers/soldiers.q"}
+{"prover":"UPPAAL","theorem":"tctl_2900067","id":2900067,"goal":"A[](AKT1_signal>0 or AKT2_signal>0 or PLC_SPS1.starting)","context":[],"source_file":"stls/STLS.q"}
+{"prover":"UPPAAL","theorem":"tctl_2900068","id":2900068,"goal":"E<> (AKT1.Driving and AKT2.Driving )","context":[],"source_file":"stls/STLS.q"}
+{"prover":"UPPAAL","theorem":"tctl_2900069","id":2900069,"goal":"A[] not (controller.controller3 && cnt>0)","context":[],"source_file":"train/TrainAHV93-2.q"}
