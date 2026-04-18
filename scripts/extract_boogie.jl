@@ -34,27 +34,126 @@ function extract_boogie_programs()
     end
     println("Found $(length(bpl_files)) Boogie .bpl files")
 
-    # Boogie: procedure NAME(args) returns(...) { … }; requires / ensures
-    proc_pattern = r"procedure\s+([a-zA-Z0-9_]+)\s*\([^)]*\)\s*(?:returns\s*\([^)]*\))?\s*(.*?)(?:\{|;)"s
+    # Widening (2026-04-18): previous extractor only matched
+    # `procedure`, leaving implementations, functions, axioms,
+    # constants and type declarations on the floor. Boogie files
+    # typically carry 3-5× more of those than of `procedure`
+    # declarations, so the gate was the main limiter.
+    #
+    # Attributes like `{:extern}` or `{:inline 1}` may precede the
+    # name in all forms.
+    attr = "(?:\\{:[^}]*\\}\\s*)*"
+    proc_pattern = Regex(
+        "procedure\\s+$(attr)([a-zA-Z0-9_.]+)\\s*" *
+        "\\([^)]*\\)\\s*(?:returns\\s*\\([^)]*\\))?\\s*(.*?)(?:\\{|;)", "s")
+    impl_pattern = Regex(
+        "implementation\\s+$(attr)([a-zA-Z0-9_.]+)\\s*" *
+        "\\([^)]*\\)\\s*(?:returns\\s*\\([^)]*\\))?\\s*(.*?)\\{", "s")
+    func_pattern = Regex(
+        "function\\s+$(attr)([a-zA-Z0-9_.]+)\\s*" *
+        "\\([^)]*\\)\\s*(?:returns\\s*\\([^)]*\\))?\\s*(.*?)(?:\\{|;)", "s")
+    axiom_pattern = r"axiom\s+(?:\{:[^}]*\}\s*)*(.*?);"s
+    const_pattern = r"const\s+(?:unique\s+)?(?:\{:[^}]*\}\s*)*([a-zA-Z0-9_.]+)\s*:\s*([^;]+);"
+    type_pattern = r"type\s+(?:\{:[^}]*\}\s*)*([a-zA-Z0-9_.]+)\s*(?:<[^>]*>\s*)?(?:=([^;]+))?;"
 
     for f in bpl_files
-        try
-            content = read(f, String)
-            for m in eachmatch(proc_pattern, content)
-                name = strip(m.captures[1])
-                contract = strip(m.captures[2])
-                if !isempty(name)
-                    push!(proof_states, Dict{String,Any}(
-                        "id" => current_id, "prover" => "Boogie",
-                        "source_file" => relpath(f, BOOGIE_DIR),
-                        "theorem" => name, "goal" => contract,
-                        "context" => Any[],
-                    ))
-                    current_id += 1
-                end
-            end
-        catch e
-            println("Warning: $f: $e")
+        content = try
+            read(f, String)
+        catch
+            continue
+        end
+        rel = relpath(f, BOOGIE_DIR)
+        # Each regex wrapped in try/catch so a pathological file
+        # skips that pattern rather than aborting the whole run.
+        matches = try
+            collect(eachmatch(proc_pattern, content))
+        catch; Any[] end
+        for m in matches
+            name = strip(m.captures[1])
+            contract = first(strip(m.captures[2]), 2000)
+            isempty(name) && continue
+            push!(proof_states, Dict{String,Any}(
+                "id" => current_id, "prover" => "Boogie",
+                "kind" => "procedure",
+                "source_file" => rel,
+                "theorem" => name, "goal" => contract,
+                "context" => Any[]))
+            current_id += 1
+        end
+        matches = try
+            collect(eachmatch(impl_pattern, content))
+        catch; Any[] end
+        for m in matches
+            name = strip(m.captures[1])
+            body_head = first(strip(m.captures[2]), 2000)
+            isempty(name) && continue
+            push!(proof_states, Dict{String,Any}(
+                "id" => current_id, "prover" => "Boogie",
+                "kind" => "implementation",
+                "source_file" => rel,
+                "theorem" => name, "goal" => body_head,
+                "context" => Any[]))
+            current_id += 1
+        end
+        matches = try
+            collect(eachmatch(func_pattern, content))
+        catch; Any[] end
+        for m in matches
+            name = strip(m.captures[1])
+            sig = first(strip(m.captures[2]), 2000)
+            isempty(name) && continue
+            push!(proof_states, Dict{String,Any}(
+                "id" => current_id, "prover" => "Boogie",
+                "kind" => "function",
+                "source_file" => rel,
+                "theorem" => name, "goal" => sig,
+                "context" => Any[]))
+            current_id += 1
+        end
+        matches = try
+            collect(eachmatch(axiom_pattern, content))
+        catch; Any[] end
+        for (i, m) in enumerate(matches)
+            body = first(strip(m.captures[1]), 2000)
+            isempty(body) && continue
+            push!(proof_states, Dict{String,Any}(
+                "id" => current_id, "prover" => "Boogie",
+                "kind" => "axiom",
+                "source_file" => rel,
+                "theorem" => "axiom_$(i)", "goal" => body,
+                "context" => Any[]))
+            current_id += 1
+        end
+        matches = try
+            collect(eachmatch(const_pattern, content))
+        catch; Any[] end
+        for m in matches
+            name = strip(m.captures[1])
+            ty = first(strip(m.captures[2]), 400)
+            isempty(name) && continue
+            push!(proof_states, Dict{String,Any}(
+                "id" => current_id, "prover" => "Boogie",
+                "kind" => "const",
+                "source_file" => rel,
+                "theorem" => name, "goal" => ty,
+                "context" => Any[]))
+            current_id += 1
+        end
+        matches = try
+            collect(eachmatch(type_pattern, content))
+        catch; Any[] end
+        for m in matches
+            name = strip(m.captures[1])
+            rhs_raw = m.captures[2] === nothing ? "" : strip(m.captures[2])
+            isempty(name) && continue
+            push!(proof_states, Dict{String,Any}(
+                "id" => current_id, "prover" => "Boogie",
+                "kind" => "type",
+                "source_file" => rel,
+                "theorem" => name,
+                "goal" => isempty(rhs_raw) ? "type $(name)" : first(rhs_raw, 400),
+                "context" => Any[]))
+            current_id += 1
         end
     end
     return proof_states, tactics, premises
