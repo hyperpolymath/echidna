@@ -50,9 +50,17 @@ function extract_lean3_proofs()
     premises = Dict{String,Any}[]
     current_id = START_ID
 
+    # Widening (2026-04-18): walk mathlib3 plus additional Lean 3
+    # community libraries (lean-liquid, flt-regular) to push toward
+    # the 100K ML threshold.
+    roots = String[]
     mathlib3_src = joinpath(MATHLIB3_DIR, "src")
-
-    if !isdir(mathlib3_src)
+    isdir(mathlib3_src) && push!(roots, mathlib3_src)
+    for sibling in ("lean-liquid", "flt-regular")
+        p = joinpath(dirname(MATHLIB3_DIR), sibling)
+        isdir(p) && push!(roots, p)
+    end
+    if isempty(roots)
         println("mathlib3 source directory not found: $mathlib3_src")
         println("Clone with: git clone https://github.com/leanprover-community/mathlib " *
                 "$MATHLIB3_DIR")
@@ -60,15 +68,17 @@ function extract_lean3_proofs()
     end
 
     lean_files = String[]
-    for (root, _dirs, files) in walkdir(mathlib3_src)
-        for file in files
-            if endswith(file, ".lean")
-                push!(lean_files, joinpath(root, file))
+    for root in roots
+        for (rr, _dirs, files) in walkdir(root)
+            for file in files
+                if endswith(file, ".lean")
+                    push!(lean_files, joinpath(rr, file))
+                end
             end
         end
     end
 
-    println("Found $(length(lean_files)) Lean 3 files in mathlib3")
+    println("Found $(length(lean_files)) Lean 3 files across $(length(roots)) root(s)")
 
     # Lean 3 theorem-with-tactic-proof: `theorem NAME STATEMENT := begin … end`
     # Also matches `lemma`, `protected theorem`, etc. The `[^:]*?` eats the
