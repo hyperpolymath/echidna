@@ -103,3 +103,32 @@ remaining-phase1-work = [
   "Constraint solvers: rewrite extract_minizinc.jl with synthetic generator",
   "HP type-checker ecosystem (11 provers): synthetic type-derivation generator",
 ]
+
+[session-2026-04-18-100k-campaign]
+summary = "100 K-per-prover campaign kick-off — first three Tier A wins"
+umbrella-issue = "https://github.com/hyperpolymath/echidna/issues/12"
+tier-a-issues-opened = [
+  "https://github.com/hyperpolymath/echidna/issues/13 — Coq extractor bug",
+  "https://github.com/hyperpolymath/echidna/issues/14 — Mizar MML vendor",
+  "https://github.com/hyperpolymath/echidna/issues/15 — Dafny corpus",
+  "https://github.com/hyperpolymath/echidna/issues/16 — HOL Light Flyspeck",
+  "https://github.com/hyperpolymath/echidna/issues/17 — Agda cubical/unimath",
+  "https://github.com/hyperpolymath/echidna/issues/18 — SMT-LIB full release",
+]
+changes = [
+  "fix(Coq): rewrite extract_coqgym.jl (commit 839335f). Three compounding bugs — 100-file cap, Q\\. proof-end pattern, only matching Theorem — rewritten with comment-stripping, balanced-paren scan, all 8 intro keywords. 14 → 85 190 proofs (6 085×). Closed #13.",
+  "feat(Mizar): clone MizarSystem/MML (1 153 .miz files) + walk recursively (commit 76696cf). 66 → 59 030 proofs (894×). Closed #14.",
+  "feat(Agda): clone agda-cubical + agda-unimath, accept .lagda.md, multi-corpus walk (commit 583fe60). 9 312 → 19 829 proofs (2.1×). Fixed multi-byte UTF-8 crash in signature truncation. Partial progress on #17 — literate-markdown parser still needed for unimath's full contribution.",
+]
+cumulative-new-records = 154657
+top-corpus-by-count = [
+  "Lean        131 770",
+  "Coq          85 190  (was 14)",
+  "Mizar        59 030  (was 66)",
+  "Isabelle     50 137",
+  "Metamath     47 165",
+  "TPTP/each    26 177",
+  "HOL Light    22 577",
+  "SMT/each     20 527 (rerun in progress)",
+  "Agda         19 829  (was 9 312)",
+]
