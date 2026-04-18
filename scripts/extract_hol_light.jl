@@ -448,15 +448,37 @@ function run()::Tuple{Int,Int}
     downloaded = download_hol_light_files()
     println("  Downloaded/cached $(downloaded) files")
 
-    # Parse whatever we got
+    # Parse whatever we got.
+    # Phase 1 widening (2026-04-18, echidna#16): in addition to the
+    # downloader's flat cache, also walk any sibling corpus
+    # `external_corpora/hol_light_flyspeck/` — Flyspeck (formal
+    # proof of the Kepler conjecture) ships hundreds of .hl files
+    # across text_formalization/{fan,tame,packing,…}. Both .hl and
+    # .ml sources are accepted.
+    hol_sources = String[]
     for fname in readdir(EXTERNAL_DIR)
-        if endswith(fname, ".ml")
-            fpath = joinpath(EXTERNAL_DIR, fname)
-            parsed = parse_hol_light_file(fpath)
-            append!(all_entries, parsed)
-            if !isempty(parsed)
-                println("  Parsed $(length(parsed)) theorems from $(fname)")
+        endswith(fname, ".ml") && push!(hol_sources, joinpath(EXTERNAL_DIR, fname))
+    end
+    flyspeck_root = joinpath(dirname(EXTERNAL_DIR), "hol_light_flyspeck")
+    if isdir(flyspeck_root)
+        println("[HOL Light] Walking Flyspeck clone at $(flyspeck_root) ...")
+        for (root, _dirs, files) in walkdir(flyspeck_root)
+            for fname in files
+                if endswith(fname, ".hl") || endswith(fname, ".ml")
+                    push!(hol_sources, joinpath(root, fname))
+                end
             end
+        end
+    end
+    println("  $(length(hol_sources)) HOL Light source files to parse")
+
+    processed = 0
+    for fpath in hol_sources
+        parsed = parse_hol_light_file(fpath)
+        append!(all_entries, parsed)
+        processed += 1
+        if processed % 100 == 0
+            println("  processed $(processed)/$(length(hol_sources)) files — running count: $(length(all_entries))")
         end
     end
     extracted_count = length(all_entries)
