@@ -2,14 +2,14 @@
 # TPTP extraction statistics
 
 [metadata]
-id_range = "70000-86842"
-extraction_date = "2026-04-05T18:48:08"
-total_proofs = 16843
-skipped_no_conjecture = 9386
+id_range = "70000-148530"
+extraction_date = "2026-04-18T08:38:10"
+total_proofs = 78531
+skipped_no_conjecture = 52
 read_errors = 35
 source = "TPTP Problem Library"
-prover_distribution = {EProver = 5614, SPASS = 5614, Vampire = 5615}
+prover_distribution = {EProver = 26177, SPASS = 26177, Vampire = 26177}
 total_files_scanned = 26264
-total_tactics = 16843
+total_tactics = 78531
 version = "v2.0-tptp"
 

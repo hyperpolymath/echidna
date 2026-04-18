@@ -147,6 +147,10 @@ training_data/vocabulary_*.txt
 training_data/proof_states_UNIFIED.jsonl
 training_data/proof_states_smtlib.jsonl
 training_data/tactics_smtlib.jsonl
+# TPTP full-share output exceeds 100MB (reproducible via scripts/extract_tptp.jl)
+training_data/proof_states_tptp.a2ml
+# KeY output exceeds 100MB (reproducible via scripts/extract_key.jl)
+training_data/proof_states_key.jsonl
 
 # Root-level merged artifacts
 premises_merged.jsonl

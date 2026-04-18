@@ -378,25 +378,49 @@ function run()::Tuple{Int,Int}
     end
     println("  Generated $(added) unique synthetic models")
 
-    # Assign IDs and normalize schema
-    # Distribute across solvers for downloaded models
+    # Full-share (2026-04-18): every MiniZinc model is solvable by
+    # every constraint solver in the fleet. Emit one record per
+    # (model, solver) pair — 5× the per-solver coverage without any
+    # new data. Synthetic entries retain their specific `solver`
+    # assignment so sub-family statistics stay accurate.
     solvers_cycle = ["MiniZinc", "Chuffed", "ORTools", "SCIP", "GLPK"]
     current_id = START_ID
     output_records = Dict{String,Any}[]
 
-    for (i, entry) in enumerate(all_entries)
-        solver = get(entry, "solver", solvers_cycle[((i - 1) % length(solvers_cycle)) + 1])
-        record = Dict{String,Any}(
-            "id" => current_id,
-            "prover" => solver,
-            "theorem" => entry["theorem"],
-            "goal" => entry["goal"],
-            "context" => get(entry, "constraints", get(entry, "variables", String[])),
-            "tactic_proof" => JSON3.write(Dict("variables" => get(entry, "variables", String[]), "constraints" => get(entry, "constraints", String[]))),
-            "source" => get(entry, "source", "minizinc"),
-        )
-        push!(output_records, record)
-        current_id += 1
+    for entry in all_entries
+        if haskey(entry, "solver")
+            # Synthetic entry — keep single-solver assignment.
+            record = Dict{String,Any}(
+                "id" => current_id,
+                "prover" => entry["solver"],
+                "theorem" => entry["theorem"],
+                "goal" => entry["goal"],
+                "context" => get(entry, "constraints", get(entry, "variables", String[])),
+                "tactic_proof" => JSON3.write(Dict(
+                    "variables" => get(entry, "variables", String[]),
+                    "constraints" => get(entry, "constraints", String[]))),
+                "source" => get(entry, "source", "minizinc"),
+            )
+            push!(output_records, record)
+            current_id += 1
+        else
+            # Real benchmark — emit for every solver.
+            for solver in solvers_cycle
+                record = Dict{String,Any}(
+                    "id" => current_id,
+                    "prover" => solver,
+                    "theorem" => entry["theorem"],
+                    "goal" => entry["goal"],
+                    "context" => get(entry, "constraints", get(entry, "variables", String[])),
+                    "tactic_proof" => JSON3.write(Dict(
+                        "variables" => get(entry, "variables", String[]),
+                        "constraints" => get(entry, "constraints", String[]))),
+                    "source" => get(entry, "source", "minizinc"),
+                )
+                push!(output_records, record)
+                current_id += 1
+            end
+        end
     end
 
     open(OUTPUT_FILE, "w") do fh
