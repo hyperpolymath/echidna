@@ -11,22 +11,53 @@ function run_extract()
     ps, ts, pm = Dict{String,Any}[], Dict{String,Any}[], Dict{String,Any}[]; id = START_ID
     if !isdir(DIR); println("λProlog corpus not found: $DIR"); println("Vendor source into $DIR and rerun."); return ps, ts, pm; end
     files = String[]
-    for (root, _, fs) in walkdir(DIR); for f in fs; endswith(f, ".mod") && push!(files, joinpath(root, f)); end; end
-    println("Found $(length(files)) .mod files")
-    pat = r"([a-zA-Z0-9_]+)\s+([^.:]*?)\s*:-"s
-    for f in files
-        try
-            c = read(f, String)
-            for m in eachmatch(pat, c)
-                n = length(m.captures) >= 1 ? strip(String(m.captures[1])) : ""
-                g = length(m.captures) >= 2 ? strip(String(m.captures[2])) : ""
-                if !isempty(n)
-                    push!(ps, Dict{String,Any}("id"=>id, "prover"=>"lambda_prolog",
-                        "source_file"=>relpath(f, DIR), "theorem"=>n, "goal"=>g, "context"=>Any[]))
-                    id += 1
-                end
+    for (root, _, fs) in walkdir(DIR)
+        for f in fs
+            # Widening (2026-04-18): also accept .elpi (ELPI
+            # implementation of λProlog) and .sig (Teyjus signatures).
+            if endswith(f, ".mod") || endswith(f, ".elpi") ||
+               endswith(f, ".sig")
+                push!(files, joinpath(root, f))
             end
-        catch e; println("Warning: $f: $e"); end
+        end
+    end
+    println("Found $(length(files)) λProlog source files")
+
+    # Hornish clause head: `name args :- body` — original pattern.
+    head_pat = r"([a-zA-Z_][a-zA-Z0-9_]*)\s+([^.:]*?)\s*:-"s
+    # Declarations in Teyjus signatures: `kind N type.`, `type NAME T.`,
+    # `pred NAME ...`, plus ELPI's `kind`, `type`, `pred`, `macro`,
+    # `mode`, `accumulate` forms.
+    decl_pat = r"(kind|type|pred|macro|mode|accumulate|namespace|module|sig)\s+([a-zA-Z_][a-zA-Z0-9_']*)\s+(.*?)\.\s*$"sm
+
+    for f in files
+        c = try
+            read(f, String)
+        catch
+            continue
+        end
+        rel = relpath(f, DIR)
+        matches = try collect(eachmatch(head_pat, c)) catch; Any[] end
+        for m in matches
+            n = strip(String(m.captures[1]))
+            g = first(strip(String(m.captures[2])), 600)
+            isempty(n) && continue
+            push!(ps, Dict{String,Any}("id"=>id, "prover"=>"lambda_prolog",
+                "source_file"=>rel, "theorem"=>n, "goal"=>g,
+                "kind"=>"clause", "context"=>Any[]))
+            id += 1
+        end
+        matches = try collect(eachmatch(decl_pat, c)) catch; Any[] end
+        for m in matches
+            kind = strip(String(m.captures[1]))
+            name = strip(String(m.captures[2]))
+            body = first(strip(String(m.captures[3])), 600)
+            isempty(name) && continue
+            push!(ps, Dict{String,Any}("id"=>id, "prover"=>"lambda_prolog",
+                "source_file"=>rel, "theorem"=>name, "goal"=>body,
+                "kind"=>kind, "context"=>Any[]))
+            id += 1
+        end
     end
     ps, ts, pm
 end
