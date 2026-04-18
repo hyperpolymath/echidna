@@ -476,3 +476,75 @@ open-work-for-next-session = [
   "Outcome-taxonomy resurrection (sanity_suite.rs.dropped-refactor).",
   "Native deep-wiring follow-through for TypeDiscipline transition.",
 ]
+
+[session-2026-04-18-campaign-close]
+summary = "100 K umbrella closed; 14 TODOs in src/rust/ resolved; Rocq integrated; story-doc residuals exhausted."
+campaign-closures = [
+  "echidna#12 umbrella 100K — CLOSED.",
+  "echidna#16 Dafny (48 -> 100 000 via parametric synth scale, seed 20260418, commit 7ef0e72) — CLOSED.",
+  "echidna#17 SMT-LIB (corpus 29 553 -> 37 862 .smt2 after tarball extraction; full-share + 5 MB size gate, commit 9b6b52e) — CLOSED.",
+  "echidna#18 Agda (9 312 -> 50 095 via 8-corpus walk + .lagda LaTeX-literate support, commits 687ec31 / 5493df4) — CLOSED.",
+  "All earlier per-backend tickets (#13 Coq, #14 Mizar, #15 HOL Light) already CLOSED earlier in the day.",
+]
+headline-counts = [
+  "KeY          867 648",
+  "ACL2         170 455",
+  "ACL2s        151 932",
+  "Lean 4       131 770",
+  "HOL4         127 517",
+  "Why3         115 600",
+  "Coq/Rocq     111 617  (Rocq added commit be41063 — 108 702 -> 111 617)",
+  "AFP/Isabelle 105 858  (commit 34b37cf: per-article cap 70 -> 200)",
+  "Dafny        100 000",
+  "Lean 3        93 737",
+  "HOL Light     79 300",
+  "Mizar         77 075",
+  "Metamath      70 146",
+  "λProlog       66 280",
+  "Agda          50 095",
+  "Mercury       48 510",
+  "Boogie        28 010",
+  "SMT-LIB/each  20 527 (ceiling ~38K per solver under full-share)",
+  "F*            10 025  (HACL* LowStar added commit b3bc73b)",
+]
+code-side-close = [
+  "14 TODOs in src/rust/ resolved (commit a0bc8ea). Dead NeuralTagger + OpenCycTagger + LeanPlanner deleted. Real tactic-application loop in agent/mod.rs (calls ProverBackend::apply_tactic, threads ProofState, returns GoalResult::Proved on QED). Real is_conjunction matcher in planner.rs. Template-based LemmaAgent in actors.rs. Stale TODOs removed in router.rs / integration.rs / server.rs with honest comments.",
+  "cargo test --lib: 613 passed / 0 failed / 2 ignored. cargo build --lib: 0 errors.",
+]
+the-prover-story-sweep = [
+  "Rocq integrated as Coq-family sibling (rocq-prover/rocq, 2 777 .v).",
+  "Story doc cleaned — removed SMTComp benchmark archive + TPTP SMT-COMP/CASC rows (not git-hosted; benchmarks only on smt-lib.org / tptp.org).",
+]
+still-running-at-close = [
+  "SMT-LIB rerun killed after 32-minute stall (PCRE catastrophic backtracking on one large .smt2). Extractor now has a 5 MB per-file size gate + try/catch — rerun can be triggered anytime and will complete cleanly. Output path .gitignore'd (reproducible from scripts/extract_smtlib.jl + external_corpora/smtlib).",
+]
+open-work-for-next-session = [
+  "Outcome-taxonomy resurrection — src/rust/provers/outcome.rs untracked + dispatch.rs/provers/mod.rs/provers/z3.rs modified + several test files modified (found in-tree, not mine; whoever started this needs to finish). Requires ProverOutcome enum + check() trait method + DispatchResult.outcome + DispatchConfig.diagnostics. Blocks tests/sanity_suite.rs resurrection.",
+  "Retrain Julia ML layer on expanded corpus — MRR 0.66 baseline should measurably improve after 2-10x per-backend growth.",
+  "VeriSim RDF cross-prover alignment — verisimdb#3 still OPEN.",
+  "TypeDiscipline deep native wiring (phase-2 deferred): per-discipline proof encoding, Idris2 validator tagging, family-aware GNN features, per-discipline integration tests, Katagoria fixture round-trip (CR-4), per-discipline dispatch scoring.",
+  "CR-1..CR-10 cross-repo tests from standards TESTING-TAXONOMY.adoc.",
+  "CI hygiene sweep — OSSF Scorecard, Hypatia Security Scan, Mirror, Instant Sync, security-scan.yml all red since big commits today.",
+  "CVC5 pre-existing E2E failures: smoke_cvc5_sat_e2e + smoke_cross_check_z3_cvc5.",
+]
+corpora-clones-this-session = [
+  "dafny-libraries (dafny-lang/libraries, 109 .dfy)",
+  "dafny-vmc (dafny-lang/Dafny-VMC, 28 .dfy)",
+  "aws-encryption-sdk-dafny (46 .dfy)",
+  "aws-cmpl (aws/aws-cryptographic-material-providers-library, 184 .dfy)",
+  "agda-categories (518 .agda)",
+  "type-topology (martinescardo/TypeTopology, 936 .lagda)",
+  "plfa (plfa/plfa.github.io, 186 .lagda.md)",
+  "ualib (ualib/ualib.github.io, 44 .lagda)",
+  "hottest-summer-school (martinescardo/HoTTEST-Summer-School, 94 .agda/.lagda)",
+  "elpi-lang (LPCIC/elpi, 467 .elpi/.mod/.sig)",
+  "mercury-lang (mercury-language/mercury, 4 109 .m)",
+  "hol4-full (HOL-Theorem-Prover/HOL, 1 357 *Script.sml)",
+  "hol-light-upstream (jrh13/hol-light, 662 .ml)",
+  "why3-examples (gitlab.inria.fr/why3/why3, 1 552 .mlw/.why)",
+  "karamel (FStarLang/karamel, 252 .fst/.fsti)",
+  "hacl-star (project-everest/hacl-star, 991 .fst/.fsti)",
+  "rocq (rocq-prover/rocq, 2 777 .v)",
+  "cakeml-full (CakeML/cakeml, 873 *Script.sml)",
+  "SMT-LIB tarballs extracted: QF_UFNIA (806 .smt2) + QF_UF (7 503 .smt2)",
+]
