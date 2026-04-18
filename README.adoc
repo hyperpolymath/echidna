@@ -5,18 +5,18 @@
 
 image:https://img.shields.io/badge/OpenSSF-Best_Practices-green?logo=opensourcesecurity[OpenSSF Best Practices,link="https://www.bestpractices.dev/en/projects/new?repo_url=https://github.com/hyperpolymath/echidna"]
 image:https://img.shields.io/badge/License-PMPL--1.0-blue.svg[License: PMPL-1.0,link="https://github.com/hyperpolymath/palimpsest-license"]
-image:https://img.shields.io/badge/Provers-30-green.svg[Provers: 30]
-image:https://img.shields.io/badge/Tests-306%2B-brightgreen.svg[Tests: 306+]
+image:https://img.shields.io/badge/Provers-48-green.svg[Provers: 48]
+image:https://img.shields.io/badge/Tests-613%2B-brightgreen.svg[Tests: 613+]
 image:https://api.thegreenwebfoundation.org/greencheckimage/nesy-prover.dev[Green Hosting,link="https://www.thegreenwebfoundation.org/green-web-check/?url=nesy-prover.dev"]
 
 *E*xtensible *C*ognitive *H*ybrid *I*ntelligence for *D*eductive *N*eural *A*ssistance
 
-A neurosymbolic theorem proving platform with 30 prover backends,
+A neurosymbolic theorem proving platform with 48 prover backends,
 trust-hardened verification pipeline, and multi-objective proof search.
 
 == Overview
 
-ECHIDNA orchestrates 30 theorem provers, SMT solvers, first-order ATPs, and
+ECHIDNA orchestrates 48 theorem provers, SMT solvers, first-order ATPs, and
 constraint solvers through a unified Rust core. Every proof result passes
 through a trust-hardening pipeline that checks solver integrity, tracks axiom
 usage, verifies proof certificates, and assigns a 5-level confidence score.
@@ -26,7 +26,7 @@ always have the final word. ECHIDNA never produces unsound proofs.
 
 == Features
 
-=== 30 Prover Backends
+=== 48 Prover Backends
 
 [cols="1,4", options="header"]
 |===
@@ -51,7 +51,7 @@ always have the final word. ECHIDNA never produces unsound proofs.
 | GLPK, SCIP, MiniZinc, Chuffed, OR-Tools
 |===
 
-All 30 backends implement the `ProverBackend` trait: parse, verify, export,
+All 48 backends implement the `ProverBackend` trait: parse, verify, export,
 tactic suggestion, and theorem search. File extension detection covers 30+
 formats (`.v`, `.lean`, `.smt2`, `.tptp`, `.dfy`, `.mzn`, etc.).
 
@@ -160,7 +160,7 @@ cd echidna
 just build
 # or: cargo build
 
-# Run all tests (306+ passing)
+# Run all tests (613+ passing)
 just test
 # or: cargo test
 
@@ -190,7 +190,7 @@ podman run -it echidna:latest
 [source]
 ----
 src/rust/
-  provers/          # 30 prover backend implementations (ProverBackend trait)
+  provers/          # 48 prover backend implementations (ProverBackend trait)
   verification/     # Trust-hardening subsystem
     portfolio.rs    # SMT portfolio solving / cross-checking
     certificates.rs # Proof certificate checking (Alethe, DRAT/LRAT, TSTP)
@@ -253,10 +253,10 @@ println!("Verified: {}, Trust: {}", result.verified, result.trust_level);
 
 == Test Suite
 
-306+ tests passing across the codebase:
+613+ library tests passing (`cargo test --lib`, 2 ignored).
 
-* 232 unit tests (lib)
-* 38 integration tests
+* ~528 unit tests across provers, verification, integrity, executor, agent
+* 38 integration tests (with 2 pre-existing CVC5 E2E failures tracked separately)
 * 21 property-based tests (PropTest)
 * Additional interface and neural integration tests
 
