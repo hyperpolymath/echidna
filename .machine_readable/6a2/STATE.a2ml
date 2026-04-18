@@ -104,6 +104,50 @@ remaining-phase1-work = [
   "HP type-checker ecosystem (11 provers): synthetic type-derivation generator",
 ]
 
+[session-2026-04-18-full-integration-push]
+summary = "Push all provers to meet the-prover-story.txt full-integration bar"
+source-doc = "/home/hyper/Desktop/the prover story.txt"
+full-integration-requires = [
+  "Rust backend in src/rust/provers/",
+  "Training corpus in training_data/proof_states_<prover>.jsonl",
+  "ML useful at ≥ 2 000 records per prover (document's own threshold)",
+]
+key-additions-this-wave = [
+  "OpenTheory corpus (5 665 records) — pre-aligned across HOL Light / HOL4 / Isabelle / ProofPower — highest-ROI triangulation source per the doc",
+  "Boogie 1 319 → 28 010 — implementation / function / axiom / const / type patterns added",
+  "SeaHorn 1 161 → 2 486 — widened from 4 to 14 verifier keyword variants (→ past 2K)",
+  "Frama-C 1 317 → 2 424 — ACSL vocabulary 6 → 22 keywords + lemma/axiom/predicate decls (→ past 2K)",
+  "Mercury 0 → 13 173 — new Mercury-Language/mercury vendoring",
+  "Naproche 0 → 2 110 — sTeX .ftl.tex parser (was looking for bare .ftl which no longer exists)",
+  "λProlog 0 → 1 585 — teyjus/teyjus vendoring",
+  "SAT trio (CaDiCaL / Kissat / MiniSat) 0 → 313 each — DIMACS from cadical + kissat + classical-SAT-solving-algorithms",
+  "Dedukti 1 381 → 1 815 — broader keyword set + rewrite-rule pattern",
+  "Matita 17 → 251 — widened from theorem-only to lemma/axiom/definition/inductive/record",
+  "Abella 598 → 882 — added Define / CoDefine / Kind / Type / Query / Split",
+]
+provers-over-2k-threshold = [
+  "ACL2 170 455, Lean 131 770, Coq 85 190, Mizar 59 030, Isabelle AFP 50 137,",
+  "Metamath 47 165, HOL Light 43 119, Why3 35 692, Boogie 28 010, HOL4 27 677,",
+  "TPTP each 26 177, SMT each 20 527, Agda 19 829, Dafny 13 399, Mercury 13 173,",
+  "OpenTheory 5 665, Tamarin 4 595, dReal 4 400, Viper 3 541, F* 3 046,",
+  "SeaHorn 2 486, Frama-C 2 424, PVS 2 377, Naproche 2 110.",
+  "= 25 provers meet the ML-useful threshold (prover-story doc spec).",
+]
+provers-in-1k-2k-band = [
+  "Dedukti 1 815, λProlog 1 585",
+]
+provers-under-1k-still-need-work = [
+  "Abella 882, Idris2 574, KeY 525, MiniZinc 327, SAT-trio 313 each, Matita 251,",
+  "Prism 150, Cameleer 146, Alloy 136, TLAPS 103, Spin 84, Nuprl 50, Imandra 47,",
+  "Minlog 46, Twelf 33, Arend 7, ABC 1.",
+]
+still-zero-corpus = [
+  "NuSMV, TLC, UPPAAL (binary distros), CBMC (1.5 GB upstream),",
+  "TypedWasm (in-house HP tool), Nitpick / Nunchaku (Isabelle sub-tools),",
+  "Athena (scarce public corpus), ProVerif (inria clone empty).",
+]
+hp-typechecker-ecosystem-note = "Doc's 'corpus-only, no backend' claim is outdated — hp_ecosystem.rs dispatches all 40 discipline variants via shell-out to typell / katagoria / tropical-type-check. HP corpus is 1 927 entries split across 12 sub-checkers; per-checker counts are all under 2K so ML guidance still pending."
+
 [session-2026-04-18-rollup]
 summary = "End-of-session rollup — 27 provers worked on, ~442 K records added"
 cumulative-new-records = 442223
