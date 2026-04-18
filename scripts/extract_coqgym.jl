@@ -266,7 +266,14 @@ function extract_coqgym_proofs()
     isdir(base) && push!(roots, base)
     for sibling in ("CompCert", "bedrock2", "hott-coq",
                     "mathcomp-analysis", "interaction-trees",
-                    "category-theory")
+                    "category-theory",
+                    # 2026-04-18 (the-prover-story.txt): Rocq is
+                    # the post-rename divergent upstream of Coq —
+                    # ~2 777 .v files distinct in provenance from
+                    # the CoqGym snapshot even when much of the
+                    # content still tracks Coq closely. Include
+                    # for triangulation rather than raw volume.
+                    "rocq")
         p = joinpath(dirname(COQGYM_DIR), sibling)
         isdir(p) && push!(roots, p)
     end
