@@ -49,36 +49,105 @@ function extract_dedukti_proofs()
 
     # Dedukti declarations: `NAME : TYPE.` or `def NAME : TYPE := TERM.`
     # Lambdapi: `symbol NAME : TYPE;` / `theorem NAME : TYPE begin … end;`
-    decl_pattern = r"(?:def|symbol|theorem)\s+([a-zA-Z0-9_.']+)\s*:\s*(.*?)\s*(?::=|\bbegin\b|;|\.)"s
+    #
+    # Widening (2026-04-18): original only matched def|symbol|theorem.
+    # Actual Dedukti/Lambdapi vocabulary is richer:
+    #   - constant : prop-constant declarations
+    #   - injective : injective symbol declarations
+    #   - opaque : opaque symbol declarations
+    #   - rule : rewrite-rule declarations
+    #   - definition : alternative of def
+    #   - inductive : inductive-type declarations
+    # Also accept plain `NAME : TYPE.` (without leading keyword) which
+    # is the base Dedukti form for any well-typed constant.
+    kw_decl_pattern = r"(?:def|definition|symbol|theorem|constant|injective|opaque|inductive)(?:\s+(?:\{[^}]*\}|\[[^\]]*\]))?\s+([a-zA-Z0-9_.']+)\s*:\s*(.*?)\s*(?::=|\bbegin\b|;|\.)"s
+    # Plain declaration at top level: name followed by `:` then type
+    # then `.` or `;` terminator. Requires it to be on its own line.
+    plain_decl_pattern = r"(?:^|\n)\s*([a-zA-Z_][a-zA-Z0-9_.']*)\s*:\s*((?:(?!:=).)*?)\.(?=\s|\z)"s
+    rule_pattern = r"rule\s+(.+?)\s*-->\s*(.+?)\s*(?:;|\.)"s
     require_pattern = r"require\s+([a-zA-Z0-9_.]+)"
 
     for f in dk_files
-        try
-            content = read(f, String)
-            for m in eachmatch(require_pattern, content)
-                push!(premises, Dict{String,Any}(
-                    "source_file" => relpath(f, DEDUKTI_DIR),
-                    "requires" => m.captures[1],
+        content = try
+            read(f, String)
+        catch
+            continue
+        end
+        rel = relpath(f, DEDUKTI_DIR)
+        # Each pattern wrapped in try/catch — Dedukti files can be
+        # huge (translated HOL/Coq libraries) and some regexes may
+        # catastrophically backtrack.
+        matches = try
+            collect(eachmatch(require_pattern, content))
+        catch; Any[] end
+        for m in matches
+            push!(premises, Dict{String,Any}(
+                "source_file" => rel,
+                "requires" => m.captures[1],
+                "prover" => "Dedukti",
+            ))
+        end
+        matches = try
+            collect(eachmatch(kw_decl_pattern, content))
+        catch; Any[] end
+        seen_names = Set{String}()
+        for m in matches
+            name = strip(m.captures[1])
+            type_ = first(strip(m.captures[2]), 1500)
+            if !isempty(name) && !isempty(type_) && name ∉ seen_names
+                push!(seen_names, name)
+                push!(proof_states, Dict{String,Any}(
+                    "id" => current_id,
                     "prover" => "Dedukti",
+                    "source_file" => rel,
+                    "theorem" => name,
+                    "goal" => type_,
+                    "context" => Any[],
                 ))
+                current_id += 1
             end
-            for m in eachmatch(decl_pattern, content)
-                name = strip(m.captures[1])
-                type_ = strip(m.captures[2])
-                if !isempty(name) && !isempty(type_)
-                    push!(proof_states, Dict{String,Any}(
-                        "id" => current_id,
-                        "prover" => "Dedukti",
-                        "source_file" => relpath(f, DEDUKTI_DIR),
-                        "theorem" => name,
-                        "goal" => type_,
-                        "context" => Any[],
-                    ))
-                    current_id += 1
-                end
+        end
+        matches = try
+            collect(eachmatch(plain_decl_pattern, content))
+        catch; Any[] end
+        for m in matches
+            name = strip(m.captures[1])
+            type_ = first(strip(m.captures[2]), 1500)
+            # Skip obvious false positives — short type-like keywords
+            # that are themselves Dedukti syntax, and names we already
+            # captured with the keyword form.
+            name in ("Type", "def", "symbol", "theorem", "rule",
+                     "require", "open", "begin", "end") && continue
+            if !isempty(name) && !isempty(type_) && name ∉ seen_names
+                push!(seen_names, name)
+                push!(proof_states, Dict{String,Any}(
+                    "id" => current_id,
+                    "prover" => "Dedukti",
+                    "source_file" => rel,
+                    "theorem" => name,
+                    "goal" => type_,
+                    "context" => Any[],
+                ))
+                current_id += 1
             end
-        catch e
-            println("Warning: $f: $e")
+        end
+        matches = try
+            collect(eachmatch(rule_pattern, content))
+        catch; Any[] end
+        for (i, m) in enumerate(matches)
+            lhs = first(strip(m.captures[1]), 600)
+            rhs = first(strip(m.captures[2]), 600)
+            (isempty(lhs) || isempty(rhs)) && continue
+            push!(proof_states, Dict{String,Any}(
+                "id" => current_id,
+                "prover" => "Dedukti",
+                "source_file" => rel,
+                "theorem" => "rule_$(i)",
+                "goal" => "$(lhs) --> $(rhs)",
+                "kind" => "rewrite_rule",
+                "context" => Any[],
+            ))
+            current_id += 1
         end
     end
     return proof_states, tactics, premises

@@ -9,20 +9,39 @@ function run_extract()
     ps, ts, pm = Dict{String,Any}[], Dict{String,Any}[], Dict{String,Any}[]; id = START_ID
     if !isdir(DIR); println("SeaHorn not found: $DIR"); println("Clone: git clone https://github.com/seahorn/seahorn external_corpora/seahorn"); return ps, ts, pm; end
     c_files = String[]
-    for (root, _, fs) in walkdir(DIR); for f in fs; (endswith(f, ".c") || endswith(f, ".ll")) && push!(c_files, joinpath(root, f)); end; end
+    for (root, _, fs) in walkdir(DIR); for f in fs; (endswith(f, ".c") || endswith(f, ".ll") || endswith(f, ".i")) && push!(c_files, joinpath(root, f)); end; end
     println("Found $(length(c_files)) SeaHorn input files")
-    pat = r"(sassert|assume|verifier_error|__VERIFIER_assert)\s*\(\s*(.+?)\s*\)"s
+    # Widening (2026-04-18): original pattern picked up only 4 keyword
+    # variants. SV-COMP / SeaHorn C code in practice uses a much wider
+    # vocabulary: assert, __VERIFIER_assume, __VERIFIER_nondet_{int,
+    # uint,bool,char,short,long,ushort,ulong,uchar,float,double},
+    # assume_abort_if_not, __CPROVER_assert, __CPROVER_assume,
+    # klee_assert, klee_assume, ldv_assert. Also pick up `extern
+    # __VERIFIER_*` declarations so the context field is populated.
+    pat = r"(sassert|assert|assume|verifier_error|__VERIFIER_assert|__VERIFIER_assume|__VERIFIER_nondet_\w+|__CPROVER_assert|__CPROVER_assume|assume_abort_if_not|klee_assert|klee_assume|ldv_assert)\s*\(\s*(.+?)\s*\)"s
     for f in c_files
-        try
-            c = read(f, String)
-            for m in eachmatch(pat, c)
-                push!(ps, Dict{String,Any}("id"=>id, "prover"=>"SeaHorn",
-                    "source_file"=>relpath(f, DIR),
-                    "theorem"=>"$(m.captures[1])_$(id)", "goal"=>strip(m.captures[2]),
-                    "annotation_kind"=>m.captures[1], "context"=>Any[]))
-                id += 1
-            end
-        catch e; println("Warning: $f: $e"); end
+        c = try
+            read(f, String)
+        catch
+            continue
+        end
+        matches = try
+            collect(eachmatch(pat, c))
+        catch
+            Any[]
+        end
+        rel = relpath(f, DIR)
+        for m in matches
+            kind = m.captures[1]
+            body = first(strip(m.captures[2]), 1000)
+            # Skip pure declarations (no call args) and empty goals.
+            isempty(body) && continue
+            push!(ps, Dict{String,Any}("id"=>id, "prover"=>"SeaHorn",
+                "source_file"=>rel,
+                "theorem"=>"$(kind)_$(id)", "goal"=>body,
+                "annotation_kind"=>kind, "context"=>Any[]))
+            id += 1
+        end
     end
     ps, ts, pm
 end
