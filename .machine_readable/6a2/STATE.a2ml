@@ -5,7 +5,7 @@
 [metadata]
 project = "echidna"
 version = "2.1.1"
-last-updated = "2026-04-11"
+last-updated = "2026-04-18"
 status = "active"
 
 [project-context]
@@ -83,3 +83,23 @@ changes = [
   "server.v (proven-nesy-solver-api): call_echidna_verify read_timeout raised to 90s to tolerate echidna cold-start",
 ]
 rationale = "Isabelle Main heap maps ~1-2GB at first use; Julia JIT runs on first inference call. Without 90s grace the Fly health probe would kill the machine before it was ready, causing cascading restart loops."
+
+[session-2026-04-17-phase1-extractor-widening]
+summary = "Phase 1 of ECHIDNA × VeriSim triangulation plan — four low-cost extractor widenings"
+plan-document = "docs/design/ECHIDNA-VERISIM-TRIANGULATION-2026-04-17.adoc"
+verisim-issue = "https://github.com/hyperpolymath/verisimdb/issues/3"
+changes = [
+  "scripts/extract_hol_light.jl: accept prove_by_refinement; tactic_proof cap 500 → 8000 chars; unique-tactic cap 20 → 40; digits allowed in tactic identifiers (commit 4a2652d)",
+  "scripts/extract_hol4.jl: remove narrow 7-keyword tactic gate; new hol4_tactic_names helper; add Triviality / (Co)Inductive / Q.prove / Q.store_thm patterns; Definition tolerates [simp] + Termination blocks (commit aa88649)",
+  "scripts/extract_tptp.jl: only skip when conjecture AND axioms AND includes are all empty; include-only files now carry their include list as context (commit 64d8cb4)",
+  "scripts/extract_smtlib.jl: enumerate all 50 standard SMT-LIB v2 logics in LOGIC_CATEGORIES (was 16); raise find_smt2_files cap 50 000 → 500 000 (commit e9d3289)",
+]
+rerun-deltas = { hol_light = "22577 → 22577 (richer metadata only; prove_by_refinement absent from current download set)", hol4 = "4898 → 5039 (+141)", tptp = "25965 → 26177 (+212); skipped dropped 264 → <100", smtlib = "rerun in progress (5.8 GB corpus, ~29k files)" }
+remaining-phase1-work = [
+  "Agda: vendor agda-categories + cubical + unimath",
+  "Why3 / PVS / ACL2: relax extractor strictness + vendor libraries",
+  "Mizar: vendor MML (Mizar Mathematical Library)",
+  "F* / Idris2 / Dafny: vendor public stdlibs + examples",
+  "Constraint solvers: rewrite extract_minizinc.jl with synthetic generator",
+  "HP type-checker ecosystem (11 provers): synthetic type-derivation generator",
+]
