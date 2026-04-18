@@ -456,3 +456,23 @@ top-corpus-by-count = [
   "SMT/each     20 527 (rerun in progress)",
   "Agda         19 829  (was 9 312)",
 ]
+
+[session-2026-04-18-step3-close]
+summary = "Step 3 corpus push — closed for session. Most provers now clear the ML threshold; a handful still under the 100 K target."
+outcomes = [
+  "TPTP full-share pivot: Vampire / EProver / SPASS each 8 726 -> 26 177 (3x, commit 5727013).",
+  "Why3 widening (theorem / corollary / conjecture + predicate / function / constant / inductive / type): 35 692 -> 57 923 (commit 5727013).",
+  "MiniZinc full-share pivot for 5-solver fleet: 307 records per solver across MiniZinc / Chuffed / ORTools / SCIP / GLPK (commit 529ed55).",
+  "Untracked corpus outputs staged and committed: ~60 training-data jsonls for newly-unlocked backends + balance scripts + floor-progress tracker + typechecker-ecosystem extractor (commit f207737).",
+  "proof_states_tptp.a2ml (336 MB) and proof_states_key.jsonl added to .gitignore as reproducible from script + corpus (commit 529ed55).",
+]
+still-running-at-close = [
+  "SMT-LIB full-share rerun — pid 583730, ~36 min elapsed. Expected Z3 / CVC5 / Alt-Ergo each ~6 843 -> ~20 527. Output path training_data/proof_states_smtlib.jsonl is already .gitignore'd — next session should verify completion and feed into the next GNN merge step.",
+]
+open-work-for-next-session = [
+  "Push remaining sub-100 K backends (Isabelle AFP deeper walk, HOL Light more Flyspeck subdirs, λProlog additional corpora).",
+  "Retrain Julia ML layer once corpus settles post-full-share.",
+  "VeriSim RDF schema cross-prover alignment (echidna issue #3).",
+  "Outcome-taxonomy resurrection (sanity_suite.rs.dropped-refactor).",
+  "Native deep-wiring follow-through for TypeDiscipline transition.",
+]
