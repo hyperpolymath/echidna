@@ -37,7 +37,8 @@ Base.Threads.@spawn begin
 end
 
 const TRAINING_DATA_DIR = "training_data"
-const MODELS_DIR = "models"
+const MODELS_DIR = get(ENV, "ECHIDNA_MODELS_DIR", "models")
+const TRAIN_EPOCHS = parse(Int, get(ENV, "ECHIDNA_TRAIN_EPOCHS", "50"))
 const USE_COMPREHENSIVE_DATA = false  # Set to true to use merged corpus
 const USE_MAX_DATA = false  # Set to true to use MAXIMUM corpus
 const USE_COMPLETE_DATA = true  # Set to true to use COMPLETE corpus
@@ -330,7 +331,7 @@ function train_tactic_predictor(data_dir::String=TRAINING_DATA_DIR)
     model = LogisticRegression(tactic_vocab.size, prover_labels)
 
     @info "  Training model ($(model.num_features) features, $(model.num_classes) classes)..."
-    train_logistic!(model, X, y; learning_rate=0.01, epochs=50, batch_size=16)
+    train_logistic!(model, X, y; learning_rate=0.01, epochs=TRAIN_EPOCHS, batch_size=16)
 
     @info "✓ Tactic predictor model trained"
 
