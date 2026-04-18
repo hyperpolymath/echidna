@@ -272,10 +272,13 @@ impl IntegrationService {
         Ok(suggestions)
     }
 
-    /// Parse tactic string to Tactic enum
+    /// Parse tactic string to Tactic enum.
+    ///
+    /// Generic across backends — `apply X` / `intro` / `rewrite X` cover the
+    /// common vocabulary; anything else falls through to `Tactic::Custom`
+    /// so prover-specific keywords survive the round-trip without a
+    /// dedicated parser per backend.
     fn parse_tactic(&self, tactic_str: &str) -> Result<Tactic> {
-        // Simple parser for common tactics
-        // TODO: Make this prover-specific
         if tactic_str.starts_with("apply") {
             Ok(Tactic::Apply {
                 theorem: tactic_str.strip_prefix("apply ").unwrap_or("").to_string(),

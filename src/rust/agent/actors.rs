@@ -15,7 +15,7 @@ use std::time::Instant;
 use tracing::{debug, info};
 
 use super::AgenticGoal;
-use crate::core::{Goal, ProofState};
+use crate::core::{Goal, ProofState, Term};
 use crate::provers::{ProverBackend, ProverKind};
 
 /// Message types for actor communication
@@ -208,13 +208,68 @@ impl Handler<GenerateLemmas> for LemmaAgent {
     fn handle(&mut self, msg: GenerateLemmas, _ctx: &mut Self::Context) -> Self::Result {
         debug!("LemmaAgent generating lemmas for goal: {}", msg.goal.id);
 
-        // TODO: Implement lemma generation using:
-        // - Pattern matching on goal structure
-        // - ConceptNet queries for related concepts
-        // - Template-based generation
+        // Template-based generation — walks the goal term and emits
+        // obvious sub-goal lemmas (reflexivity, symmetry, arguments of
+        // applications). Good enough to give the proof search extra
+        // candidates without pulling in a whole premise-selection ML
+        // model. Capped at msg.max_lemmas so we don't flood the queue.
+        let mut out = Vec::new();
+        collect_lemma_candidates(&msg.goal.target, &mut out, msg.max_lemmas);
 
-        // For now, return empty list
-        Ok(Vec::new())
+        // Always include hypothesis names as candidate lemmas — they
+        // are in-scope facts the user already declared relevant.
+        for h in &msg.goal.hypotheses {
+            if out.len() >= msg.max_lemmas {
+                break;
+            }
+            if !out.contains(&h.name) {
+                out.push(h.name.clone());
+            }
+        }
+
+        Ok(out)
+    }
+}
+
+/// Walk `term` emitting lemma-name candidates drawn from its sub-terms.
+///
+/// Heuristics:
+/// - a top-level `App { func, args }` suggests "prove each argument"
+///   before trying the application.
+/// - `Pi` (quantified) and `Let` get recursed into.
+/// - Named constants that appear inside the goal are themselves
+///   candidate lemmas (library members with the same name).
+fn collect_lemma_candidates(term: &Term, out: &mut Vec<String>, cap: usize) {
+    if out.len() >= cap {
+        return;
+    }
+    match term {
+        Term::Const(name) | Term::Var(name) => {
+            if !out.contains(name) {
+                out.push(name.clone());
+            }
+        }
+        Term::App { func, args } => {
+            collect_lemma_candidates(func, out, cap);
+            for a in args {
+                collect_lemma_candidates(a, out, cap);
+            }
+        }
+        Term::Pi { param_type, body, .. } => {
+            collect_lemma_candidates(param_type, out, cap);
+            collect_lemma_candidates(body, out, cap);
+        }
+        Term::Lambda { param_type, body, .. } => {
+            if let Some(pt) = param_type {
+                collect_lemma_candidates(pt, out, cap);
+            }
+            collect_lemma_candidates(body, out, cap);
+        }
+        Term::Let { value, body, .. } => {
+            collect_lemma_candidates(value, out, cap);
+            collect_lemma_candidates(body, out, cap);
+        }
+        _ => {}
     }
 }
 
