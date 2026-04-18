@@ -107,6 +107,63 @@ function parse_mizar_file(filepath::String)::Vector{Dict{String,Any}}
         end
     end
 
+    # Widening (2026-04-18): Mizar has many more named constructs
+    # than `theorem` + `registration`. Capture `definition`, `scheme`,
+    # `notation`, `reserve`, and the full-paragraph `theorem :: NAME`
+    # form without a proof (axioms / held-as-obvious claims).
+    def_pat = r"definition\s*(.*?)\s*end\s*;"si
+    scheme_pat = r"scheme\s+(\w+)\s*\{(.*?)\}\s*:\s*(.*?)\s*proof\s*(.*?)\s*end\s*;"si
+    notation_pat = r"notation\s*(.*?)\s*end\s*;"si
+    reserve_pat = r"reserve\s+(.+?)\s+for\s+(.+?);"s
+    axiom_thm_pat = r"theorem\s+(?:(\w+)\s*:)?\s*(.*?);(?!\s*proof)"s
+
+    for (i, m) in enumerate(eachmatch(def_pat, content))
+        body = first(replace(strip(m.captures[1]), r"\s+" => " "), 400)
+        isempty(body) && continue
+        push!(results, Dict{String,Any}(
+            "theorem" => "definition_$(basename(filepath))_$(i)",
+            "goal" => body,
+            "tactic_proof" => "",
+            "tactics" => ["definition"],
+            "source" => "mizar/$(basename(filepath))",
+        ))
+    end
+    for m in eachmatch(scheme_pat, content)
+        name = strip(m.captures[1])
+        args = first(replace(strip(m.captures[2]), r"\s+" => " "), 200)
+        stmt = first(replace(strip(m.captures[3]), r"\s+" => " "), 300)
+        push!(results, Dict{String,Any}(
+            "theorem" => name,
+            "goal" => stmt,
+            "tactic_proof" => first(replace(strip(m.captures[4]), r"\s+" => " "), 500),
+            "tactics" => ["scheme"],
+            "scheme_args" => args,
+            "source" => "mizar/$(basename(filepath))",
+        ))
+    end
+    for (i, m) in enumerate(eachmatch(notation_pat, content))
+        body = first(replace(strip(m.captures[1]), r"\s+" => " "), 300)
+        isempty(body) && continue
+        push!(results, Dict{String,Any}(
+            "theorem" => "notation_$(basename(filepath))_$(i)",
+            "goal" => body,
+            "tactic_proof" => "",
+            "tactics" => ["notation"],
+            "source" => "mizar/$(basename(filepath))",
+        ))
+    end
+    for (i, m) in enumerate(eachmatch(reserve_pat, content))
+        vars = strip(String(m.captures[1]))
+        ty = strip(String(m.captures[2]))
+        push!(results, Dict{String,Any}(
+            "theorem" => "reserve_$(basename(filepath))_$(i)",
+            "goal" => "$(vars) for $(ty)",
+            "tactic_proof" => "",
+            "tactics" => ["reserve"],
+            "source" => "mizar/$(basename(filepath))",
+        ))
+    end
+
     return results
 end
 
