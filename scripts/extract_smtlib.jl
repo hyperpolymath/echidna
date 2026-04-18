@@ -247,7 +247,22 @@ function extract_all(base_dir::String)
     errors = 0
 
     for (idx, fpath) in enumerate(files)
-        parsed = parse_smt2_file(fpath)
+        # 2026-04-18 (echidna#12 100K push): some SMT-LIB benchmarks
+        # are 10+ MB single S-expressions. The balanced-paren scan
+        # is O(n) per match but the regex patterns above aren't
+        # linear on pathological input, so we cap per-file size to
+        # keep the full run under an hour.
+        fsize = try filesize(fpath) catch; 0 end
+        if fsize > 5_000_000
+            skipped += 1
+            continue
+        end
+        parsed = try
+            parse_smt2_file(fpath)
+        catch
+            errors += 1
+            continue
+        end
         if parsed === nothing
             errors += 1
             continue
