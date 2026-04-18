@@ -13,20 +13,43 @@ function run_extract()
     files = String[]
     for (root, _, fs) in walkdir(DIR); for f in fs; endswith(f, ".ma") && push!(files, joinpath(root, f)); end; end
     println("Found $(length(files)) .ma files")
-    pat = r"theorem\s+([A-Za-z0-9_]+)\s*:\s*(.*?)\s*:="s
+    # Widening (2026-04-18): prior pattern matched only `theorem X : T := ...`
+    # which is the rarer form. Matita's standard library overwhelmingly
+    # uses `lemma`, `definition`, `inductive`, `record`, `axiom`, plus
+    # the `qed.`-terminated tactical style.
+    kw_pattern = r"(theorem|lemma|axiom|definition|inductive|record|coinductive)\s+([A-Za-z0-9_']+)\s*:\s*(.*?)\s*(?::=|\.\s*(?:qed|end)\.?|\.\s*$)"s
+    let_pattern = r"let\s+rec\s+([A-Za-z_][A-Za-z0-9_']*)\s*(.*?):\s*(.*?)\s*:="s
     for f in files
-        try
-            c = read(f, String)
-            for m in eachmatch(pat, c)
-                n = length(m.captures) >= 1 ? strip(String(m.captures[1])) : ""
-                g = length(m.captures) >= 2 ? strip(String(m.captures[2])) : ""
-                if !isempty(n)
-                    push!(ps, Dict{String,Any}("id"=>id, "prover"=>"matita",
-                        "source_file"=>relpath(f, DIR), "theorem"=>n, "goal"=>g, "context"=>Any[]))
-                    id += 1
-                end
-            end
-        catch e; println("Warning: $f: $e"); end
+        c = try
+            read(f, String)
+        catch
+            continue
+        end
+        rel = relpath(f, DIR)
+        matches = try collect(eachmatch(kw_pattern, c)) catch; Any[] end
+        seen = Set{String}()
+        for m in matches
+            kind = strip(m.captures[1])
+            name = strip(String(m.captures[2]))
+            goal = first(strip(String(m.captures[3])), 1000)
+            (isempty(name) || name in seen) && continue
+            push!(seen, name)
+            push!(ps, Dict{String,Any}("id"=>id, "prover"=>"matita",
+                "source_file"=>rel, "theorem"=>name, "goal"=>goal,
+                "kind"=>kind, "context"=>Any[]))
+            id += 1
+        end
+        matches = try collect(eachmatch(let_pattern, c)) catch; Any[] end
+        for m in matches
+            name = strip(String(m.captures[1]))
+            sig = first(strip(String(m.captures[3])), 1000)
+            (isempty(name) || name in seen) && continue
+            push!(seen, name)
+            push!(ps, Dict{String,Any}("id"=>id, "prover"=>"matita",
+                "source_file"=>rel, "theorem"=>name, "goal"=>sig,
+                "kind"=>"let rec", "context"=>Any[]))
+            id += 1
+        end
     end
     ps, ts, pm
 end
