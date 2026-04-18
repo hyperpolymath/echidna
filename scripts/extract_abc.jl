@@ -7,18 +7,41 @@ include("extractor_save_common.jl")
 const DIR = "external_corpora/abc"; const OUT = "training_data"; const START_ID = 3_100_000
 function run_extract()
     ps, ts, pm = Dict{String,Any}[], Dict{String,Any}[], Dict{String,Any}[]; id = START_ID
-    if !isdir(DIR); println("ABC not found: $DIR"); println("Clone: git clone https://github.com/berkeley-abc/abc $DIR"); return ps, ts, pm; end
+    # Widening (2026-04-18): walk both the ABC source repo and any
+    # sibling hardware-benchmark corpora (hwmcc20, hwmcc24).
+    roots = String[]
+    isdir(DIR) && push!(roots, DIR)
+    for sibling in ("hwmcc20", "hwmcc24")
+        p = joinpath(dirname(DIR), sibling)
+        isdir(p) && push!(roots, p)
+    end
+    if isempty(roots)
+        println("ABC / HWMCC corpora not found.")
+        println("Clone: git clone https://github.com/berkeley-abc/abc $DIR")
+        return ps, ts, pm
+    end
     hw_files = String[]
-    for (root, _, fs) in walkdir(DIR); for f in fs; (endswith(f, ".aig") || endswith(f, ".aag") || endswith(f, ".blif")) && push!(hw_files, joinpath(root, f)); end; end
-    println("Found $(length(hw_files)) hardware files")
-    # For binary .aig we record metadata only; .aag (ASCII) can be summarised.
+    for root in roots
+        for (rr, _, fs) in walkdir(root)
+            for f in fs
+                # AIG variants (binary + ASCII), BLIF, Bench, Btor2.
+                if endswith(f, ".aig") || endswith(f, ".aag") ||
+                   endswith(f, ".blif") || endswith(f, ".bench") ||
+                   endswith(f, ".btor") || endswith(f, ".btor2")
+                    push!(hw_files, joinpath(rr, f))
+                end
+            end
+        end
+    end
+    println("Found $(length(hw_files)) hardware files across $(length(roots)) root(s)")
     for f in hw_files
         try
-            size = filesize(f)
+            sz = filesize(f)
             push!(ps, Dict{String,Any}("id"=>id, "prover"=>"ABC",
-                "source_file"=>relpath(f, DIR),
+                "source_file"=>relpath(f, dirname(DIR)),
                 "theorem"=>basename(f),
-                "goal"=>"$(splitext(f)[2][2:end])_circuit size=$size",
+                "goal"=>"$(splitext(f)[2][2:end])_circuit size=$(sz)",
+                "kind"=>splitext(f)[2][2:end],
                 "context"=>Any[]))
             id += 1
         catch e; println("Warning: $f: $e"); end
