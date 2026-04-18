@@ -104,6 +104,66 @@ remaining-phase1-work = [
   "HP type-checker ecosystem (11 provers): synthetic type-derivation generator",
 ]
 
+[session-2026-04-18-100k-campaign-continued]
+summary = "100 K campaign — 10 provers widened, +252 284 records"
+umbrella-issue = "https://github.com/hyperpolymath/echidna/issues/12"
+closed-issues = [
+  "https://github.com/hyperpolymath/echidna/issues/13 — Coq (14 → 85 190)",
+  "https://github.com/hyperpolymath/echidna/issues/14 — Mizar (66 → 59 030)",
+  "https://github.com/hyperpolymath/echidna/issues/15 — HOL Light Flyspeck (22 577 → 43 119)",
+]
+open-issues-with-progress = [
+  "https://github.com/hyperpolymath/echidna/issues/16 — Dafny (48 → 13 399); 100 K needs IronFleet/CIVL/IVy",
+  "https://github.com/hyperpolymath/echidna/issues/17 — SMT-LIB full corpus rerun still in progress",
+  "https://github.com/hyperpolymath/echidna/issues/18 — Agda (9 312 → 19 829); 50 K needs .lagda.md literate parser",
+]
+corpus-additions-on-disk = [
+  "external_corpora/hol_light_flyspeck/  — flyspeck/flyspeck (614 .hl/.ml)",
+  "external_corpora/hol4_cakeml/         — CakeML sparse (570 *Script.sml)",
+  "external_corpora/mizar/mml/           — MizarSystem/MML (1 153 .miz)",
+  "external_corpora/agda-cubical/        — agda/cubical (1 172 .agda)",
+  "external_corpora/agda-unimath/        — UniMath/agda-unimath (2 981 .agda/.lagda.md)",
+  "external_corpora/dafny/               — dafny-lang/dafny sparse (1 952 .dfy)",
+  "external_corpora/why3_full/           — gitlab.inria.fr/why3/why3 (1 539 .mlw/.why)",
+  "external_corpora/pvs_full/            — SRI-CSL/PVS (214 .pvs)",
+  "external_corpora/fstar_full/          — FStarLang/FStar sparse (448 .fst)",
+  "external_corpora/idris2_full/         — idris-lang/Idris2 sparse (1 596 .idr)",
+]
+per-prover-deltas = [
+  "Coq       14       → 85 190  (+85 176, 6 085×)",
+  "Mizar     66       → 59 030  (+58 964,   894×)",
+  "HOL Light 22 577   → 43 119  (+20 542,   1.9×)",
+  "HOL4      5 039    → 27 677  (+22 638,   5.5×)",
+  "Why3      199      → 35 692  (+35 493,   179×)",
+  "Agda      9 312    → 19 829  (+10 517,   2.1×)",
+  "Dafny     48       → 13 399  (+13 351,   279×)",
+  "F*        76       →  3 046  (+ 2 970,    40×)",
+  "PVS       231      →  2 377  (+ 2 146,  10.3×)",
+  "Idris2    87       →    574  (+   487,   6.6×)",
+]
+bugs-fixed-along-the-way = [
+  "extract_coqgym.jl: 100-file cap, Q\\. proof-end regex, only-Theorem keyword — all three rewritten (commit 839335f)",
+  "extract_fstar.jl, extract_why3.jl: Regex(Regex, ...) double-wrap crash",
+  "extract_dafny.jl: same Regex double-wrap crash + restrictive spec gate dropping body-only declarations",
+  "extract_why3.jl: wrap eachmatch of catastrophic-backtracking func_pattern in try/catch",
+  "extract_agda.jl + extract_dafny.jl: byte-indexed string slice crashing on multi-byte UTF-8 (≡, …) → switched to first(s, n)",
+]
+cumulative-session-new-records = 252284
+top-corpus-by-count = [
+  "Lean      131 770",
+  "Coq        85 190  (was 14)",
+  "Mizar      59 030  (was 66)",
+  "Isabelle   50 137",
+  "Metamath   47 165",
+  "HOL Light  43 119  (was 22 577)",
+  "Why3       35 692  (was 199)",
+  "HOL4       27 677  (was 5 039)",
+  "TPTP/each  26 177",
+  "SMT/each   20 527  (rerun pending)",
+  "Agda       19 829  (was 9 312)",
+  "Dafny      13 399  (was 48)",
+]
+
 [session-2026-04-18-100k-campaign]
 summary = "100 K-per-prover campaign kick-off — first three Tier A wins"
 umbrella-issue = "https://github.com/hyperpolymath/echidna/issues/12"
