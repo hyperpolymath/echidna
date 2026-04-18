@@ -478,6 +478,11 @@ pub fn kind_from_u8(kind: u8) -> Option<ProverKind> {
         89 => Some(ProverKind::Lean3),
         90 => Some(ProverKind::NominalTypeChecker),
         91 => Some(ProverKind::Abella),
+        92 => Some(ProverKind::Dedukti),
+        93 => Some(ProverKind::Cameleer),
+        94 => Some(ProverKind::ACL2s),
+        95 => Some(ProverKind::IsabelleZF),
+        96 => Some(ProverKind::Boogie),
         _ => None,
     }
 }
@@ -1170,6 +1175,13 @@ pub fn kind_to_u8(kind: ProverKind) -> u8 {
         ProverKind::NominalTypeChecker => 90,
         // Abella — classical Axis-1 prover for nominal logic / HOAS.
         ProverKind::Abella => 91,
+        // Phase 4 acquisition batch (2026-04-18): Dedukti-as-prover,
+        // Cameleer, ACL2s, Isabelle/ZF, Boogie.
+        ProverKind::Dedukti => 92,
+        ProverKind::Cameleer => 93,
+        ProverKind::ACL2s => 94,
+        ProverKind::IsabelleZF => 95,
+        ProverKind::Boogie => 96,
     }
 }
 
@@ -1266,8 +1278,11 @@ mod tests {
             ProverKind::NominalTypeChecker, ProverKind::Abella,
             // Classical sibling provers (post-HP-band).
             ProverKind::Lean3,
+            // Phase 4 acquisition batch (2026-04-18).
+            ProverKind::Dedukti, ProverKind::Cameleer, ProverKind::ACL2s,
+            ProverKind::IsabelleZF, ProverKind::Boogie,
         ];
-        assert_eq!(all_kinds.len(), 92, "expected 92 total ProverKind variants");
+        assert_eq!(all_kinds.len(), 97, "expected 97 total ProverKind variants");
         for kind in &all_kinds {
             let u8_val = kind_to_u8(*kind);
             let roundtripped = kind_from_u8(u8_val)
@@ -1282,8 +1297,8 @@ mod tests {
 
     #[test]
     fn test_kind_from_u8_out_of_range() {
-        // 0–91 are valid; 92+ are out of range.
-        assert!(kind_from_u8(92).is_none());
+        // 0–96 are valid; 97+ are out of range.
+        assert!(kind_from_u8(97).is_none());
         assert!(kind_from_u8(128).is_none());
         assert!(kind_from_u8(255).is_none());
     }

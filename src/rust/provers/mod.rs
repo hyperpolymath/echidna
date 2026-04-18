@@ -16,6 +16,11 @@ use crate::core::{ProofState, Tactic, TacticResult};
 pub mod abc;
 pub mod abella;
 pub mod acl2;
+pub mod acl2s;
+pub mod boogie;
+pub mod cameleer;
+pub mod dedukti;
+pub mod isabelle_zf;
 pub mod agda;
 pub mod alloy;
 pub mod altergo;
@@ -231,6 +236,31 @@ pub enum ProverKind {
     /// the ∇ generic quantifier). Sibling to Twelf in logical framework
     /// style but with distinct proof theory.
     Abella,
+    /// Dedukti — universal λΠ-modulo framework. Already in echidna as
+    /// a proof-exchange format (`src/rust/exchange/dedukti.rs`); this
+    /// variant adds the prover-as-solver role (invoking `dkcheck` /
+    /// `lambdapi` to typecheck a `.dk` source end-to-end).
+    Dedukti,
+    /// Cameleer — OCaml front-end for Why3 via GOSPEL contracts.
+    /// Thin pipeline over Why3's solver fleet; own variant so the
+    /// OCaml-proofs niche gets its own corpus slot and port-pairs
+    /// with F*/Dafny are trackable for the arbiter.
+    Cameleer,
+    /// ACL2s — sibling dialect to ACL2 with richer type annotations.
+    /// Different binary, different default libraries, different
+    /// tactic distributions; separate variant keeps the corpus slot
+    /// distinct from ACL2 proper.
+    ACL2s,
+    /// Isabelle/ZF — Isabelle with Zermelo-Fraenkel set-theory
+    /// object logic. Same `isabelle` binary as Isabelle/HOL but
+    /// different session name and stdlib; distinct proof style
+    /// and theorem namespace warrant a distinct slot.
+    IsabelleZF,
+    /// Boogie — intermediate verification language standalone
+    /// backend. Currently reached via Viper; exposing directly lets
+    /// echidna consume `.bpl` programs without a Viper wrapper
+    /// (e.g. Dafny-generated output, Chalice, VCC front-ends).
+    Boogie,
 }
 
 impl ProverKind {
@@ -430,6 +460,13 @@ impl std::str::FromStr for ProverKind {
                 Ok(ProverKind::NominalTypeChecker)
             }
             "abella" => Ok(ProverKind::Abella),
+            "dedukti" | "dkcheck" | "lambdapi" => Ok(ProverKind::Dedukti),
+            "cameleer" | "gospel" => Ok(ProverKind::Cameleer),
+            "acl2s" | "acl2-s" => Ok(ProverKind::ACL2s),
+            "isabellezf" | "isabelle-zf" | "isabelle/zf" | "zf" => {
+                Ok(ProverKind::IsabelleZF)
+            }
+            "boogie" | "bpl" => Ok(ProverKind::Boogie),
             _ => Err(anyhow::anyhow!("Unknown prover: {}", s)),
         }
     }
@@ -524,6 +561,11 @@ impl ProverKind {
             ProverKind::Idris2 => 3,
             ProverKind::Lean3 => 3, // Same complexity as Lean 4.
             ProverKind::Abella => 3, // Two-level logic, HOAS proof state.
+            ProverKind::Dedukti => 3, // λΠ-modulo framework.
+            ProverKind::Cameleer => 2, // Thin OCaml→Why3 pipeline.
+            ProverKind::ACL2s => 4, // Sibling to ACL2.
+            ProverKind::IsabelleZF => 4, // Sibling to Isabelle/HOL.
+            ProverKind::Boogie => 2, // Intermediate verification language.
             ProverKind::Vampire => 2,   // Automated, relatively simple
             ProverKind::EProver => 2,   // Similar to Vampire
             ProverKind::SPASS => 2,     // Automated FOL
@@ -631,6 +673,11 @@ impl ProverKind {
             ProverKind::Lean3 => 1, // Sibling to Lean 4.
             // Tier 7 niche: specialized proof framework for HOAS / nominal.
             ProverKind::Abella => 2,
+            ProverKind::Dedukti => 2, // Logical framework tier.
+            ProverKind::Cameleer => 2, // Auto-active via Why3.
+            ProverKind::ACL2s => 3, // Sibling to ACL2 (tier 3).
+            ProverKind::IsabelleZF => 1, // Sibling to Isabelle (tier 1).
+            ProverKind::Boogie => 5, // Deductive program verifier tier.
 
             // Tier 5: First-Order ATPs
             ProverKind::Vampire => 5,
@@ -741,6 +788,11 @@ impl ProverKind {
             ProverKind::Idris2 => 2.5,
             ProverKind::Lean3 => 1.0, // Thin fork of Lean 4 backend.
             ProverKind::Abella => 2.0, // New parser, HOAS proof state model.
+            ProverKind::Dedukti => 1.5, // Extends existing exchange module.
+            ProverKind::Cameleer => 1.0, // Thin wrapper over Why3.
+            ProverKind::ACL2s => 1.0, // Thin fork of ACL2.
+            ProverKind::IsabelleZF => 1.0, // Thin variant of Isabelle.
+            ProverKind::Boogie => 1.5, // Extract from Viper internals.
             ProverKind::Vampire => 1.5,   // Automated, TPTP format
             ProverKind::EProver => 1.5,   // Similar to Vampire
             ProverKind::SPASS => 1.5,     // DFG format
@@ -839,6 +891,11 @@ impl ProverKind {
             ProverKind::Idris2 => "idris2",
             ProverKind::Lean3 => "lean3",
             ProverKind::Abella => "abella",
+            ProverKind::Dedukti => "dkcheck",
+            ProverKind::Cameleer => "cameleer",
+            ProverKind::ACL2s => "acl2s",
+            ProverKind::IsabelleZF => "isabelle", // Same binary, different session.
+            ProverKind::Boogie => "boogie",
             ProverKind::Vampire => "vampire",
             ProverKind::EProver => "eprover",
             ProverKind::SPASS => "SPASS",
@@ -1044,6 +1101,11 @@ impl ProverFactory {
             ProverKind::Idris2 => Ok(Box::new(idris2::Idris2Backend::new(config))),
             ProverKind::Lean3 => Ok(Box::new(lean3::Lean3Backend::new(config))),
             ProverKind::Abella => Ok(Box::new(abella::AbellaBackend::new(config))),
+            ProverKind::Dedukti => Ok(Box::new(dedukti::DeduktiBackend::new(config))),
+            ProverKind::Cameleer => Ok(Box::new(cameleer::CameleerBackend::new(config))),
+            ProverKind::ACL2s => Ok(Box::new(acl2s::Acl2sBackend::new(config))),
+            ProverKind::IsabelleZF => Ok(Box::new(isabelle_zf::IsabelleZfBackend::new(config))),
+            ProverKind::Boogie => Ok(Box::new(boogie::BoogieBackend::new(config))),
             ProverKind::Vampire => Ok(Box::new(vampire::VampireBackend::new(config))),
             ProverKind::EProver => Ok(Box::new(eprover::EProverBackend::new(config))),
             ProverKind::SPASS => Ok(Box::new(spass::SPASSBackend::new(config))),
@@ -1175,6 +1237,8 @@ impl ProverFactory {
             // Use detect_from_file_content() for Lean 3 vs 4 disambiguation.
             "lean3" => Some(ProverKind::Lean3), // explicit extension
             "thm" => Some(ProverKind::Abella), // Abella .thm files
+            "dk" | "lp" => Some(ProverKind::Dedukti), // Dedukti / λΠ
+            "bpl" => Some(ProverKind::Boogie), // Boogie intermediate language
             _ => None,
         })
     }
