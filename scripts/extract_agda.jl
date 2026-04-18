@@ -170,10 +170,46 @@ function looks_proofy(sig::AbstractString)::Bool
 end
 
 """
-    parse_file(path) -> Vector{Dict{String,Any}}
+    preprocess_literate(lines) -> Vector{String}
 
-Pull keepable declarations out of one Agda source file.
+For `.lagda.md` sources, keep only content inside fenced ```` ```agda ````
+blocks and dedent each block to column 0 so the signature parser
+(which requires non-indented top-level lines) sees the Agda code as
+top-level. Non-literate `.agda` files pass through unchanged.
 """
+function preprocess_literate(lines::Vector{String})::Vector{String}
+    out = String[]
+    in_block = false
+    block_buf = String[]
+    for raw in lines
+        if startswith(lstrip(raw), "```agda")
+            in_block = true
+            block_buf = String[]
+            continue
+        elseif startswith(lstrip(raw), "```") && in_block
+            # Flush block: compute common indent, dedent, emit.
+            if !isempty(block_buf)
+                # Compute minimum leading whitespace across non-empty lines.
+                min_ind = typemax(Int)
+                for l in block_buf
+                    isempty(strip(l)) && continue
+                    n = line_indent(l)
+                    n < min_ind && (min_ind = n)
+                end
+                min_ind == typemax(Int) && (min_ind = 0)
+                for l in block_buf
+                    push!(out, length(l) >= min_ind ? l[min_ind+1:end] : l)
+                end
+                push!(out, "")  # separator
+            end
+            in_block = false
+            continue
+        end
+        in_block && push!(block_buf, raw)
+    end
+    return out
+end
+
 function parse_file(path::String, corpus_root::String="", corpus_label::String="")::Vector{Dict{String,Any}}
     out = Dict{String,Any}[]
     local lines::Vector{String}
@@ -181,6 +217,16 @@ function parse_file(path::String, corpus_root::String="", corpus_label::String="
         lines = readlines(path)
     catch
         return out
+    end
+
+    # Widening (2026-04-18): .lagda.md files wrap Agda code inside
+    # fenced code blocks; extract + dedent those before parsing.
+    # Also relax the top-level-only gate for literate files — unimath
+    # puts nearly every declaration inside `module _ where` blocks
+    # at indent 2, so requiring column 0 drops the bulk of the corpus.
+    is_literate = endswith(path, ".lagda.md")
+    if is_literate
+        lines = preprocess_literate(lines)
     end
 
     i = 1
@@ -192,8 +238,8 @@ function parse_file(path::String, corpus_root::String="", corpus_label::String="
         raw = lines[i]
         stripped = lstrip(raw)
 
-        # Top-level only: skip anything indented or skippable.
-        if line_indent(raw) != 0 || is_skippable(stripped)
+        # Literate: accept any indent. Non-literate: top-level only.
+        if (!is_literate && line_indent(raw) != 0) || is_skippable(stripped)
             i += 1
             continue
         end
