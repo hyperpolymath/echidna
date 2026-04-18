@@ -548,3 +548,21 @@ corpora-clones-this-session = [
   "cakeml-full (CakeML/cakeml, 873 *Script.sml)",
   "SMT-LIB tarballs extracted: QF_UFNIA (806 .smt2) + QF_UF (7 503 .smt2)",
 ]
+
+[session-2026-04-18-downstream-landings]
+summary = "Orthogonal work landed by parallel sessions; residual list shrinks."
+concurrent-commits = [
+  "e2a58d2 feat(outcome): re-land ProverOutcome taxonomy + restore sanity_suite — closes the outcome-taxonomy-resurrection residual flagged in the earlier session block.",
+  "64ab26f fix(cvc5): handle declare-fun nullary + stop greedy trim-end of assert — closes the two pre-existing CVC5 E2E failures (smoke_cvc5_sat_e2e + smoke_cross_check_z3_cvc5) noted as long-standing.",
+]
+test-state-post-merge = [
+  "cargo test --lib: 613 passed / 0 failed / 2 ignored.",
+  "cargo test --test integration_tests: 38 passed / 0 failed / 0 ignored.",
+]
+open-work-remaining = [
+  "Retrain Julia ML layer on the expanded corpus (MRR 0.66 baseline; 2-10x per-backend corpus growth should measurably improve it).",
+  "VeriSim RDF cross-prover alignment — verisimdb#3 still OPEN.",
+  "TypeDiscipline deep native wiring (phase-2 deferred).",
+  "CR-1..CR-10 cross-repo tests from standards TESTING-TAXONOMY.adoc.",
+  "CI hygiene sweep — OSSF Scorecard / Hypatia / Mirror / Instant Sync / security-scan.yml still red since the big commits today.",
+]
