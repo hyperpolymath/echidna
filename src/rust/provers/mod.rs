@@ -13,6 +13,9 @@ use std::path::{Path, PathBuf};
 
 use crate::core::{ProofState, Tactic, TacticResult};
 
+pub mod outcome;
+pub use outcome::{classify_anyhow_error, ProverOutcome};
+
 pub mod abc;
 pub mod abella;
 pub mod acl2;
@@ -1120,6 +1123,33 @@ pub trait ProverBackend: Send + Sync {
 
     /// Check if a proof is valid
     async fn verify_proof(&self, state: &ProofState) -> anyhow::Result<bool>;
+
+    /// Rich variant of `verify_proof` — returns a `ProverOutcome` describing
+    /// exactly *what kind* of result was produced (proved, no-proof-found,
+    /// timeout, input error, inconsistent premises, prover crash, system
+    /// failure).
+    ///
+    /// The default implementation wraps `verify_proof`: on `Ok(true)` it
+    /// returns `Proved`, on `Ok(false)` `NoProofFound`, and on `Err(e)` it
+    /// hands the error to `classify_anyhow_error` so the system distinguishes
+    /// timeouts, parse errors, and prover crashes from each other.  Backends
+    /// that can observe richer signals (e.g. the Z3 backend can spot
+    /// `assertions` produce UNSAT in isolation → `InconsistentPremises`)
+    /// override this method to produce better classifications.
+    async fn check(&self, state: &ProofState) -> anyhow::Result<ProverOutcome> {
+        let start = std::time::Instant::now();
+        let limit = self.config().timeout;
+        match self.verify_proof(state).await {
+            Ok(true) => Ok(ProverOutcome::Proved {
+                elapsed_ms: start.elapsed().as_millis() as u64,
+            }),
+            Ok(false) => Ok(ProverOutcome::NoProofFound {
+                elapsed_ms: start.elapsed().as_millis() as u64,
+                reason: None,
+            }),
+            Err(e) => Ok(classify_anyhow_error(&e, limit)),
+        }
+    }
 
     /// Export proof to prover-specific format
     async fn export(&self, state: &ProofState) -> anyhow::Result<String>;
