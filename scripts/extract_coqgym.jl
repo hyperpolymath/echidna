@@ -264,7 +264,9 @@ function extract_coqgym_proofs()
     roots = String[]
     base = joinpath(COQGYM_DIR, "coq_projects")
     isdir(base) && push!(roots, base)
-    for sibling in ("CompCert", "bedrock2", "hott-coq")
+    for sibling in ("CompCert", "bedrock2", "hott-coq",
+                    "mathcomp-analysis", "interaction-trees",
+                    "category-theory")
         p = joinpath(dirname(COQGYM_DIR), sibling)
         isdir(p) && push!(roots, p)
     end
