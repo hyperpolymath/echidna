@@ -215,8 +215,8 @@ function train_premise_selector(data_dir::String=TRAINING_DATA_DIR)
     open(states_file) do io
         for line in eachline(io)
             # Extract goal field
-            goal_match = match(r"\"goal\":\"([^\"]*(?:\\.[^\"]*)*)\"", line)
-            prover_match = match(r"\"prover\":\"([^\"]+)\"", line)
+            goal_match = match(r"\"goal\":\s*\"([^\"]*(?:\\.[^\"]*)*)\"", line)
+            prover_match = match(r"\"prover\":\s*\"([^\"]+)\"", line)
             if goal_match !== nothing && prover_match !== nothing
                 push!(states, (goal=goal_match.captures[1], prover=prover_match.captures[1]))
             end
@@ -273,8 +273,8 @@ function train_tactic_predictor(data_dir::String=TRAINING_DATA_DIR)
     tactics = []
     open(tactics_file) do io
         for line in eachline(io)
-            tactic_match = match(r"\"tactic\":\"([^\"]*(?:\\.[^\"]*)*)\"", line)
-            prover_match = match(r"\"prover\":\"([^\"]+)\"", line)
+            tactic_match = match(r"\"tactic\":\s*\"([^\"]*(?:\\.[^\"]*)*)\"", line)
+            prover_match = match(r"\"prover\":\s*\"([^\"]+)\"", line)
             if tactic_match !== nothing && prover_match !== nothing
                 push!(tactics, (tactic=tactic_match.captures[1], prover=prover_match.captures[1]))
             end
