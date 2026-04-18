@@ -5,19 +5,33 @@
 using JSON3, Dates
 include("extractor_save_common.jl")
 const DIR = "external_corpora/lambda_prolog"
+# 2026-04-18 (echidna#12 100K push): also walk sibling ELPI clone
+# (LPCIC/elpi — the dominant λProlog implementation in active use;
+# ships ~467 .elpi / .mod / .sig files of stdlib + regressions +
+# examples).
+const EXTRA_DIRS = [
+    "external_corpora/elpi-lang",
+]
 const OUT = "training_data"
 const START_ID = 3_600_000
 function run_extract()
     ps, ts, pm = Dict{String,Any}[], Dict{String,Any}[], Dict{String,Any}[]; id = START_ID
-    if !isdir(DIR); println("λProlog corpus not found: $DIR"); println("Vendor source into $DIR and rerun."); return ps, ts, pm; end
+    roots = String[]
+    isdir(DIR) && push!(roots, DIR)
+    for d in EXTRA_DIRS
+        isdir(d) && push!(roots, d)
+    end
+    if isempty(roots); println("λProlog corpus not found: $DIR"); println("Vendor source into $DIR and rerun."); return ps, ts, pm; end
     files = String[]
-    for (root, _, fs) in walkdir(DIR)
-        for f in fs
-            # Widening (2026-04-18): also accept .elpi (ELPI
-            # implementation of λProlog) and .sig (Teyjus signatures).
-            if endswith(f, ".mod") || endswith(f, ".elpi") ||
-               endswith(f, ".sig")
-                push!(files, joinpath(root, f))
+    for root_dir in roots
+        for (root, _, fs) in walkdir(root_dir)
+            for f in fs
+                # Widening (2026-04-18): also accept .elpi (ELPI
+                # implementation of λProlog) and .sig (Teyjus signatures).
+                if endswith(f, ".mod") || endswith(f, ".elpi") ||
+                   endswith(f, ".sig")
+                    push!(files, joinpath(root, f))
+                end
             end
         end
     end

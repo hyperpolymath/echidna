@@ -5,13 +5,26 @@
 using JSON3, Dates
 include("extractor_save_common.jl")
 const DIR = "external_corpora/mercury"
+# 2026-04-18 (echidna#12 100K push): also walk sibling mercury-lang
+# clone (mercury-language/mercury — the full Mercury distribution,
+# ~4 100 .m files of stdlib + runtime + compiler modules).
+const EXTRA_DIRS = [
+    "external_corpora/mercury-lang",
+]
 const OUT = "training_data"
 const START_ID = 3_700_000
 function run_extract()
     ps, ts, pm = Dict{String,Any}[], Dict{String,Any}[], Dict{String,Any}[]; id = START_ID
-    if !isdir(DIR); println("Mercury corpus not found: $DIR"); println("Vendor source into $DIR and rerun."); return ps, ts, pm; end
+    roots = String[]
+    isdir(DIR) && push!(roots, DIR)
+    for d in EXTRA_DIRS
+        isdir(d) && push!(roots, d)
+    end
+    if isempty(roots); println("Mercury corpus not found: $DIR"); println("Vendor source into $DIR and rerun."); return ps, ts, pm; end
     files = String[]
-    for (root, _, fs) in walkdir(DIR); for f in fs; endswith(f, ".m") && push!(files, joinpath(root, f)); end; end
+    for root_dir in roots
+        for (root, _, fs) in walkdir(root_dir); for f in fs; endswith(f, ".m") && push!(files, joinpath(root, f)); end; end
+    end
     println("Found $(length(files)) .m files")
     pat = r":-\s*pred\s+([a-zA-Z0-9_]+)\((.*?)\)"s
     for f in files

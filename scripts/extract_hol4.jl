@@ -451,6 +451,19 @@ function run()::Tuple{Int,Int}
             end
         end
     end
+    # 2026-04-18 (echidna#12 100K push): HOL4 full tree at
+    # HOL-Theorem-Prover/HOL ships ~1 357 *Script.sml files — the
+    # main HOL4 distribution, separate from the CakeML-specific
+    # clone above. Walk it too when present.
+    hol4_full = joinpath(dirname(EXTERNAL_DIR), "hol4-full")
+    if isdir(hol4_full)
+        println("[HOL4] Walking HOL4 full-tree clone at $(hol4_full) ...")
+        for (root, _dirs, files) in walkdir(hol4_full)
+            for fname in files
+                endswith(fname, ".sml") && push!(sml_files, joinpath(root, fname))
+            end
+        end
+    end
     println("  $(length(sml_files)) HOL4 source files to parse")
 
     processed = 0
