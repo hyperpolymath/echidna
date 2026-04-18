@@ -104,6 +104,25 @@ remaining-phase1-work = [
   "HP type-checker ecosystem (11 provers): synthetic type-derivation generator",
 ]
 
+[session-2026-04-18-tier-c-wave-2]
+summary = "Second Tier C vendoring wave — 4 more provers unlocked from zero"
+extractor-changes = "none — only corpus vendoring at expected paths"
+provers-unlocked = [
+  "Spin      0 → 84       (nimble-code/Spin)",
+  "SeaHorn   0 → 1 161    (seahorn/seahorn)",
+  "KeY       0 → 525      (KeYProject/key, key.ui/examples symlinked to /examples)",
+  "Prism     0 → 150      (prismmodelchecker/prism sparse)",
+]
+still-empty-needs-attention = [
+  "ProVerif — gitlab.inria.fr/bblanche/proverif sparse clone empty; need non-sparse clone or per-branch checkout",
+  "NuSMV    — no git-hosted upstream; need http://nusmv.fbk.eu/distrib archive download",
+  "UPPAAL   — binary distribution only; no git corpus available",
+  "CBMC     — upstream is 1.5 GB; sparse clone on diffblue/cbmc regression/ still viable",
+  "Chuffed, GLPK, OR-Tools, SCIP — constraint solvers; share MiniZinc corpus",
+  "Dedukti, dReal, Matita, Mercury, Naproche, Nitpick, Nunchaku — extractors present, corpora missing",
+  "Arend, Abella, Athena, Cameleer — extractors present, corpora missing",
+]
+
 [session-2026-04-18-tier-c-vendoring]
 summary = "Vendored 6 Tier C + 2 Tier A upstream corpora — unlocked 11 011 records and 170 178 ACL2 records"
 note = "Corpora cloned on local disk (each gitignored); training_data/*.jsonl outputs are too large (> 100 MB) for GitHub's per-file limit and are not committed. Extractors themselves unchanged — only corpus vendoring needed."
