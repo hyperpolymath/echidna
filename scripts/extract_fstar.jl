@@ -65,7 +65,7 @@ function parse_fstar_file(filepath::String)::Vector{Dict{String,Any}}
     for m in eachmatch(val_pattern, content)
         name = strip(m.captures[1])
         sig = replace(strip(m.captures[2]), r"\s+" => " ")
-        sig = sig[1:min(400, length(sig))]
+        sig = first(sig, 400)
         if isempty(sig) || length(sig) < 5
             continue
         end
@@ -83,12 +83,12 @@ function parse_fstar_file(filepath::String)::Vector{Dict{String,Any}}
     for m in eachmatch(let_pattern, content)
         name = strip(m.captures[1])
         body = replace(strip(m.captures[2]), r"\s+" => " ")
-        body = body[1:min(300, length(body))]
+        body = first(body, 300)
         if occursin("Lemma", body) || occursin("assert", body) || occursin("calc", body)
             keywords = [m_.match for m_ in eachmatch(r"\b(Lemma|assert|calc|assume|admit|Classical)\b", body)]
             push!(results, Dict{String,Any}(
                 "theorem" => "$(name)_impl",
-                "goal" => body[1:min(200, length(body))],
+                "goal" => first(body, 200),
                 "tactics" => unique(keywords)[1:min(20, length(unique(keywords)))],
                 "source" => "fstar/$(basename(filepath))",
             ))
@@ -244,7 +244,10 @@ function run()::Tuple{Int,Int}
         (endswith(fname, ".fst") || endswith(fname, ".fsti")) &&
             push!(src_files, joinpath(EXTERNAL_DIR, fname))
     end
-    for sibling in ("fstar_full", "karamel")
+    # 2026-04-18 (echidna#12 100K / the-prover-story.txt): hacl-star
+    # ships ~991 .fst/.fsti files of verified crypto (HACL*, Vale,
+    # EverCrypt) — the canonical industrial F* / LowStar workload.
+    for sibling in ("fstar_full", "karamel", "hacl-star")
         full_root = joinpath(dirname(EXTERNAL_DIR), sibling)
         if isdir(full_root)
             println("[F*] Walking $(sibling) clone at $(full_root) ...")
