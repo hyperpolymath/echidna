@@ -352,18 +352,35 @@ function run()::Tuple{Int,Int}
     all_entries = Dict{String,Any}[]
     extracted_count = 0
 
-    println("[Mizar] Phase 1: Attempting to download MML articles ...")
-    downloaded = download_mizar_files()
-    println("  Downloaded/cached $(downloaded) files")
+    # Phase 1 strategy (2026-04-18, echidna#14): prefer a full MML
+    # clone (MizarSystem/MML on GitHub, ~ 1 150 .miz files under
+    # `mml/`) over the legacy hand-picked downloader list. If the full
+    # clone isn't present, fall back to the narrow downloader so the
+    # extractor still does something.
+    mml_subdir = joinpath(EXTERNAL_DIR, "mml")
+    if isdir(mml_subdir)
+        println("[Mizar] Phase 1: Walking full MML clone at $(mml_subdir) ...")
+    else
+        println("[Mizar] Phase 1: No MML clone found — falling back to curated downloader ...")
+        downloaded = download_mizar_files()
+        println("  Downloaded/cached $(downloaded) files")
+    end
 
-    for fname in readdir(EXTERNAL_DIR)
-        if endswith(fname, ".miz")
-            fpath = joinpath(EXTERNAL_DIR, fname)
-            parsed = parse_mizar_file(fpath)
-            append!(all_entries, parsed)
-            if !isempty(parsed)
-                println("  Parsed $(length(parsed)) theorems from $(fname)")
-            end
+    miz_files = String[]
+    for (root, _dirs, files) in walkdir(EXTERNAL_DIR)
+        for fname in files
+            endswith(fname, ".miz") && push!(miz_files, joinpath(root, fname))
+        end
+    end
+    println("  Found $(length(miz_files)) .miz files under $(EXTERNAL_DIR)")
+
+    processed = 0
+    for fpath in miz_files
+        parsed = parse_mizar_file(fpath)
+        append!(all_entries, parsed)
+        processed += 1
+        if processed % 200 == 0
+            println("  processed $(processed)/$(length(miz_files)) files — running theorem count: $(length(all_entries))")
         end
     end
     extracted_count = length(all_entries)
