@@ -433,14 +433,33 @@ function run()::Tuple{Int,Int}
     downloaded = download_hol4_files()
     println("  Downloaded/cached $(downloaded) files")
 
+    # Phase 1 widening (2026-04-18, echidna follow-up): additionally
+    # walk a CakeML clone at external_corpora/hol4_cakeml/ when
+    # present. CakeML is a verified ML compiler written in HOL4;
+    # its basis / compiler / semantics / translator / candle trees
+    # hold hundreds of *Script.sml files with real HOL4 proofs.
+    sml_files = String[]
     for fname in readdir(EXTERNAL_DIR)
-        if endswith(fname, ".sml")
-            fpath = joinpath(EXTERNAL_DIR, fname)
-            parsed = parse_hol4_file(fpath)
-            append!(all_entries, parsed)
-            if !isempty(parsed)
-                println("  Parsed $(length(parsed)) theorems from $(fname)")
+        endswith(fname, ".sml") && push!(sml_files, joinpath(EXTERNAL_DIR, fname))
+    end
+    cakeml_root = joinpath(dirname(EXTERNAL_DIR), "hol4_cakeml")
+    if isdir(cakeml_root)
+        println("[HOL4] Walking CakeML clone at $(cakeml_root) ...")
+        for (root, _dirs, files) in walkdir(cakeml_root)
+            for fname in files
+                endswith(fname, ".sml") && push!(sml_files, joinpath(root, fname))
             end
+        end
+    end
+    println("  $(length(sml_files)) HOL4 source files to parse")
+
+    processed = 0
+    for fpath in sml_files
+        parsed = parse_hol4_file(fpath)
+        append!(all_entries, parsed)
+        processed += 1
+        if processed % 100 == 0
+            println("  processed $(processed)/$(length(sml_files)) files — running count: $(length(all_entries))")
         end
     end
     extracted_count = length(all_entries)
