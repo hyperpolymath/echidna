@@ -16,6 +16,26 @@ using LinearAlgebra
 using Random
 using Dates
 
+# When run with stdout/stderr redirected to a file (nohup, systemd, …),
+# Julia's default ConsoleLogger wraps stderr in its own buffered stream
+# that only flushes on tty writes, so @info is invisible for the whole
+# run. Replace it with a SimpleLogger that writes directly to a
+# line-buffered IOContext over stderr.
+using Logging
+global_logger(SimpleLogger(IOContext(stderr, :color => false), Logging.Info))
+
+# Defensive flush loop: also drive explicit flushes every second in
+# case anything still routes through the default stream.
+Base.Threads.@spawn begin
+    while true
+        try
+            flush(stdout); flush(stderr)
+        catch
+        end
+        sleep(1)
+    end
+end
+
 const TRAINING_DATA_DIR = "training_data"
 const MODELS_DIR = "models"
 const USE_COMPREHENSIVE_DATA = false  # Set to true to use merged corpus
