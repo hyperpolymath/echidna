@@ -160,7 +160,7 @@ function train_logistic!(model::LogisticRegression,
                 grad[y[idx]] -= 1.0
 
                 # Update weights
-                model.weights .- learning_rate .* (grad * X[:, idx]')
+                model.weights .-= learning_rate .* (grad * X[:, idx]')
                 model.bias .-= learning_rate .* grad
             end
         end
