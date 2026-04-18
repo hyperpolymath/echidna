@@ -112,6 +112,8 @@ impl HPEcosystemBackend {
             // Homotopy foundations
             ProverKind::HomotopyTypeChecker => ("typell", "homotopy"),
             ProverKind::CubicalTypeChecker => ("typell", "cubical"),
+            // Binder-management family (nominal logic / HOAS / λ-tree syntax).
+            ProverKind::NominalTypeChecker => ("typell", "nominal"),
             other => {
                 debug_assert!(false, "non-HP kind routed to HPEcosystemBackend: {:?}", other);
                 ("typell", "typell")
@@ -326,8 +328,8 @@ mod tests {
         let all = all_hp_discipline_kinds();
         assert_eq!(
             all.len(),
-            40,
-            "expected forty HP ecosystem discipline variants, got {}",
+            41,
+            "expected forty-one HP ecosystem discipline variants, got {}",
             all.len()
         );
         for k in all {
@@ -409,6 +411,7 @@ mod tests {
             DyadicTypeChecker,
             HomotopyTypeChecker,
             CubicalTypeChecker,
+            NominalTypeChecker,
         ]
     }
 }
