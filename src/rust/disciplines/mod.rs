@@ -1,28 +1,53 @@
 // SPDX-License-Identifier: PMPL-1.0-or-later
 // Copyright (c) 2026 Jonathan D.A. Jewell (hyperpolymath) <j.d.a.jewell@open.ac.uk>
 
-//! Canonical type-discipline taxonomy for echidna.
+//! Type-discipline taxonomy — **Axis 2** of echidna's prover classification.
 //!
-//! This module is the single source of truth for every type discipline that
-//! echidna can route, encode, validate, or reason about. It is the downstream
-//! target for `developer-ecosystem/katagoria/` — when katagoria graduates a
-//! new level in its type-theory pipeline (`katagoria → typell → typed-wasm
-//! → PanLL`), the corresponding variant should already exist here.
+//! # Two orthogonal axes
 //!
-//! # Design
+//! Echidna classifies proving tools along two independent axes:
+//!
+//! * **Axis 1 — `ProverKind`** in `src/rust/provers/mod.rs`. The thing
+//!   people type into a search box: *Agda*, *Coq*, *Lean 4*, *Z3*, *CVC5*,
+//!   *Isabelle*, *HOL Light*, *Idris2*, *F\**, … Real binaries with
+//!   websites, papers, and communities of practice.
+//! * **Axis 2 — `TypeDiscipline`** (this module). The thing the prover is
+//!   *applied to*: dependent types, linear types, modal logic, session
+//!   types, tropical resource typing, homotopy type theory, algebraic
+//!   effects, … The semantic shape of the reasoning problem.
+//!
+//! Both axes must be first-class. A user arriving from "Agda" wants to see
+//! that Agda serves the dependent, indexed, higher-kinded, cubical, and
+//! homotopy disciplines. A user arriving from "linear types" wants to see
+//! that Idris2 (via QTT) and the HP-ecosystem `LinearTypeChecker` can
+//! serve it. Cross-links in both directions: discipline → provers via
+//! [`TypeDiscipline::provers_serving`]; prover → disciplines via the
+//! convention that `ProverKind::*TypeChecker` is the HP dispatch route and
+//! classical provers have their discipline coverage listed in the mapping
+//! below.
+//!
+//! # Relationship to katagoria
+//!
+//! This module is the downstream target for `developer-ecosystem/katagoria/`.
+//! When katagoria graduates a new level in its type-theory pipeline
+//! (`katagoria → typell → typed-wasm → PanLL`), the corresponding variant
+//! is expected to already exist here.
+//!
+//! # Design notes
 //!
 //! The enum is deliberately exhaustive up-front. Opening it again is
 //! expensive: `ProverKind::*TypeChecker` is referenced in six exhaustive
 //! match arms in `src/rust/provers/mod.rs` plus the HP-ecosystem dispatch
-//! table. Every variant added here has an immediate 1:1 mapping to a
-//! `ProverKind::*TypeChecker` — adding a discipline means adding both.
+//! table. Every variant here has an immediate 1:1 mapping to a
+//! `ProverKind::*TypeChecker` via [`TypeDiscipline::prover_kind`] — adding
+//! a discipline means adding both.
 //!
-//! Phase 1 (this transition) keeps wiring at the dispatch level only — each
-//! discipline routes to `typell --discipline=<tag>` (or the two named
-//! upstreams for `Tropical` / `Katagoria`). Phase 2 followups (see
-//! `AI-WORK-todo.md`) deepen the support: per-discipline proof encoding,
-//! Idris2 validator tagging, family-aware GNN features, discipline-tagged
-//! corpus fixtures.
+//! Phase 1 (the transition landed 2026-04-17) keeps wiring at the dispatch
+//! level only — each discipline routes to `typell --discipline=<tag>` (or
+//! the two named upstreams for `Tropical` / `Katagoria`). Phase 2 followups
+//! (see `AI-WORK-todo.md`) deepen the support: per-discipline proof
+//! encoding, Idris2 validator tagging, family-aware GNN features,
+//! discipline-tagged corpus fixtures.
 //!
 //! # Family grouping
 //!
@@ -344,6 +369,123 @@ impl TypeDiscipline {
         }
     }
 
+    /// Which **classical** (Axis-1) provers can natively serve this
+    /// discipline, beyond the HP-ecosystem dispatch route.
+    ///
+    /// Returned kinds are the real binaries a user would reach for if they
+    /// searched for this discipline by name — Agda for dependent types, NuSMV
+    /// for temporal logic, Viper for separation, and so on. The HP-ecosystem
+    /// dispatcher (available through [`prover_kind`]) is always a valid route
+    /// and is intentionally *not* listed here — this helper exists to power
+    /// Axis-1-first discovery.
+    ///
+    /// An empty `Vec` means no classical prover in echidna's current lineup
+    /// has mainstream coverage of the discipline; the HP dispatcher is the
+    /// only known route. That is not a judgement on the discipline's
+    /// importance — several communication-style disciplines (Session,
+    /// Choreographic, Echo, Dyadic) live entirely in the research-prototype
+    /// world that the HP stack is specifically here to serve.
+    ///
+    /// Conservative by construction: a prover is only listed when its
+    /// mainstream documentation explicitly advertises the discipline, or
+    /// when a widely-used published encoding exists. Extend carefully;
+    /// spurious entries mislead users worse than empty lists.
+    pub fn provers_serving(self) -> Vec<ProverKind> {
+        use ProverKind as P;
+        use TypeDiscipline as D;
+        match self {
+            // Foundation — simply-typed lambda calculus. Everyone who
+            // supports anything supports this; listing the proof assistants
+            // that have explicit STLC tutorials.
+            D::Ordinary => {
+                vec![P::Agda, P::Coq, P::Lean, P::Isabelle, P::Idris2, P::FStar]
+            }
+
+            // Polymorphism family.
+            D::Polymorphic => vec![
+                P::Agda,
+                P::Coq,
+                P::Lean,
+                P::Isabelle,
+                P::Idris2,
+                P::FStar,
+                P::HOL4,
+                P::HOLLight,
+                P::PVS,
+            ],
+            D::Existential => vec![P::Agda, P::Coq, P::Lean, P::Idris2, P::FStar],
+            D::HigherKinded => vec![P::Agda, P::Coq, P::Lean, P::Idris2, P::FStar],
+            D::Row => vec![], // Koka-native; none in echidna's classical lineup.
+            D::Phantom => vec![
+                P::Agda, P::Coq, P::Lean, P::Idris2, P::FStar, P::Dafny,
+            ],
+
+            // Subtyping family.
+            D::Subtyping => vec![P::FStar, P::Dafny],
+            D::Intersection => vec![], // Flow / Typed Racket territory; none classical.
+            D::Union => vec![P::FStar, P::Dafny],
+            D::Gradual => vec![], // Grift / Reticulated Python; none in echidna.
+
+            // Dependent / refinement family.
+            D::Dependent => vec![P::Agda, P::Coq, P::Lean, P::Idris2, P::FStar, P::PVS],
+            // LiquidHaskell is the canonical refinement-type home but is
+            // not in echidna's classical lineup, so it's intentionally
+            // absent here.
+            D::Refinement => vec![P::FStar, P::Dafny, P::Why3],
+            D::Hoare => vec![P::Dafny, P::Viper, P::FramaC, P::KeY, P::Why3],
+            D::Indexed => vec![P::Agda, P::Coq, P::Idris2],
+
+            // Substructural family. Mainstream support is thin; Idris2 via
+            // QTT is the canonical route for Linear/Affine, the rest are
+            // research-prototype (routed through the HP dispatcher).
+            D::Qtt => vec![P::Idris2],
+            D::Linear => vec![P::Idris2],
+            D::Affine => vec![P::Idris2],
+            D::Relevant => vec![],
+            D::Ordered => vec![],
+            D::Uniqueness => vec![], // Clean is canonical but not in echidna.
+
+            // Mutability / capability.
+            D::Immutable => vec![P::Dafny, P::Viper, P::FramaC, P::KeY],
+            D::Capability => vec![P::Viper],
+            D::Bunched => vec![P::Viper], // Separation-logic flavoured.
+
+            // Modal family.
+            D::Modal => vec![P::Isabelle], // Isabelle/ModalHOL + other instances.
+            D::Epistemic => vec![], // DEL / S5 tooling lives outside echidna's current lineup.
+            D::Temporal => vec![
+                P::NuSMV, P::TLC, P::SPIN, P::UPPAAL, P::Prism, P::TLAPS,
+            ],
+            D::Provability => vec![], // GL logic, mostly research.
+
+            // Effects / coeffects.
+            D::EffectRow => vec![P::FStar], // F* effect algebras.
+            D::Impure => vec![P::FStar, P::Dafny], // Stateful-program verifiers.
+            D::Coeffect => vec![], // Granule; not in echidna.
+            D::Probabilistic => vec![P::Prism, P::DReal],
+
+            // Process / communication — the HP stack is specifically here
+            // to serve these. No classical prover in echidna advertises
+            // first-class session / choreographic / echo / dyadic typing.
+            D::Session => vec![],
+            D::Choreographic => vec![],
+            D::Dyadic => vec![],
+            D::Echo => vec![],
+
+            // Resource semirings — Tropical is an HP-stack specialty.
+            D::Tropical => vec![],
+
+            // Homotopy foundations.
+            D::Homotopy => vec![P::Agda, P::Lean], // HoTT libraries on both.
+            D::Cubical => vec![P::Agda], // Cubical Agda is the canonical home.
+
+            // Entry-point kernels: these are the HP gateways themselves;
+            // they don't correspond to a classical prover in the Axis-1
+            // sense.
+            D::TypeLl | D::Katagoria => vec![],
+        }
+    }
+
     /// Inverse of [`prover_kind`]. Returns `None` for non-HP-ecosystem kinds.
     pub fn from_prover_kind(kind: ProverKind) -> Option<TypeDiscipline> {
         use ProverKind as P;
@@ -509,6 +651,82 @@ mod tests {
                 assert!(steps < 16, "umbrella chain too deep from {:?}", d);
             }
         }
+    }
+
+    #[test]
+    fn provers_serving_only_lists_classical_kinds() {
+        // Axis-1-first discovery: `provers_serving` must never list
+        // the HP-ecosystem dispatcher (which is already reachable via
+        // `prover_kind`). Otherwise a user arriving via "which prover
+        // serves linear types?" sees `LinearTypeChecker` in the list
+        // and is no better off than when they started.
+        for &d in TypeDiscipline::ALL.iter() {
+            for kind in d.provers_serving() {
+                assert!(
+                    !kind.is_hp_ecosystem(),
+                    "{:?} lists HP-ecosystem kind {:?} in provers_serving; should be classical only",
+                    d,
+                    kind
+                );
+            }
+        }
+    }
+
+    #[test]
+    fn provers_serving_is_deduplicated() {
+        for &d in TypeDiscipline::ALL.iter() {
+            let list = d.provers_serving();
+            let mut sorted: Vec<ProverKind> = list.clone();
+            sorted.sort_by_key(|k| format!("{:?}", k));
+            let before = sorted.len();
+            sorted.dedup();
+            assert_eq!(
+                before,
+                sorted.len(),
+                "{:?} has duplicates in provers_serving: {:?}",
+                d,
+                list
+            );
+        }
+    }
+
+    #[test]
+    fn provers_serving_canonical_spot_checks() {
+        // Ground-truth spot checks anchored in mainstream usage.
+        // Breaking these should be a deliberate taxonomy decision.
+        use TypeDiscipline as D;
+
+        let dep = D::Dependent.provers_serving();
+        assert!(dep.contains(&ProverKind::Agda));
+        assert!(dep.contains(&ProverKind::Coq));
+        assert!(dep.contains(&ProverKind::Lean));
+        assert!(dep.contains(&ProverKind::Idris2));
+
+        let linear = D::Linear.provers_serving();
+        assert!(linear.contains(&ProverKind::Idris2)); // QTT.
+
+        let cubical = D::Cubical.provers_serving();
+        assert!(cubical.contains(&ProverKind::Agda)); // Cubical Agda.
+
+        let temporal = D::Temporal.provers_serving();
+        assert!(temporal.contains(&ProverKind::NuSMV));
+        assert!(temporal.contains(&ProverKind::SPIN));
+        assert!(temporal.contains(&ProverKind::TLC));
+
+        let hoare = D::Hoare.provers_serving();
+        assert!(hoare.contains(&ProverKind::Dafny));
+        assert!(hoare.contains(&ProverKind::Viper));
+        assert!(hoare.contains(&ProverKind::KeY));
+
+        // Communication-style disciplines: HP stack is their home.
+        assert!(D::Session.provers_serving().is_empty());
+        assert!(D::Choreographic.provers_serving().is_empty());
+        assert!(D::Dyadic.provers_serving().is_empty());
+        assert!(D::Echo.provers_serving().is_empty());
+
+        // Entry-point kernels don't have a classical counterpart.
+        assert!(D::TypeLl.provers_serving().is_empty());
+        assert!(D::Katagoria.provers_serving().is_empty());
     }
 
     #[test]
