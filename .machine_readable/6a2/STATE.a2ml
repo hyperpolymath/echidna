@@ -104,6 +104,16 @@ remaining-phase1-work = [
   "HP type-checker ecosystem (11 provers): synthetic type-derivation generator",
 ]
 
+[session-2026-04-18-tier-c-wave-3]
+summary = "Third Tier C vendoring wave — 5 more provers unlocked from zero"
+provers-unlocked = [
+  "dReal     0 → 4 400    (dreal/dreal4)",
+  "Cameleer  0 →   146    (ocaml-gospel/cameleer)",
+  "Abella    0 →   598    (abella-prover/abella)",
+  "Dedukti   0 → 1 381    (Deducteam/lambdapi)",
+  "Arend     0 →     7    (JetBrains/Arend — low count; extractor may need .ard file detection tuning)",
+]
+
 [session-2026-04-18-tier-c-wave-2]
 summary = "Second Tier C vendoring wave — 4 more provers unlocked from zero"
 extractor-changes = "none — only corpus vendoring at expected paths"
