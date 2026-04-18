@@ -475,6 +475,7 @@ pub fn kind_from_u8(kind: u8) -> Option<ProverKind> {
         86 => Some(ProverKind::DyadicTypeChecker),
         87 => Some(ProverKind::HomotopyTypeChecker),
         88 => Some(ProverKind::CubicalTypeChecker),
+        89 => Some(ProverKind::Lean3),
         _ => None,
     }
 }
@@ -1159,6 +1160,10 @@ pub fn kind_to_u8(kind: ProverKind) -> u8 {
         ProverKind::DyadicTypeChecker => 86,
         ProverKind::HomotopyTypeChecker => 87,
         ProverKind::CubicalTypeChecker => 88,
+        // Sibling prover to Lean 4. Code 89 extends the roster past the
+        // HP-ecosystem TypeDiscipline band (49–88) with classical
+        // backends again.
+        ProverKind::Lean3 => 89,
     }
 }
 
@@ -1251,8 +1256,10 @@ mod tests {
             ProverKind::ImpureTypeChecker, ProverKind::CoeffectTypeChecker,
             ProverKind::ProbabilisticTypeChecker, ProverKind::DyadicTypeChecker,
             ProverKind::HomotopyTypeChecker, ProverKind::CubicalTypeChecker,
+            // Classical sibling provers (post-HP-band).
+            ProverKind::Lean3,
         ];
-        assert_eq!(all_kinds.len(), 89, "expected 89 total ProverKind variants");
+        assert_eq!(all_kinds.len(), 90, "expected 90 total ProverKind variants");
         for kind in &all_kinds {
             let u8_val = kind_to_u8(*kind);
             let roundtripped = kind_from_u8(u8_val)
@@ -1267,8 +1274,8 @@ mod tests {
 
     #[test]
     fn test_kind_from_u8_out_of_range() {
-        // 0–88 are valid; 89+ are out of range.
-        assert!(kind_from_u8(89).is_none());
+        // 0–89 are valid; 90+ are out of range.
+        assert!(kind_from_u8(90).is_none());
         assert!(kind_from_u8(128).is_none());
         assert!(kind_from_u8(255).is_none());
     }
