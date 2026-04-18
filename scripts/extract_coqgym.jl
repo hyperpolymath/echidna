@@ -257,19 +257,31 @@ end
 # ---------------------------------------------------------------------------
 
 function extract_coqgym_proofs()
-    coq_dir = joinpath(COQGYM_DIR, "coq_projects")
-    if !isdir(coq_dir)
-        println("CoqGym coq_projects directory not found: $(coq_dir)")
+    # Widening (2026-04-18): walk CoqGym + sibling Coq-family corpora.
+    # Each sibling is a separate repository root that also ships .v
+    # files — CompCert (verified C compiler), bedrock2 (verified
+    # low-level code), hott-coq (homotopy type theory Coq book).
+    roots = String[]
+    base = joinpath(COQGYM_DIR, "coq_projects")
+    isdir(base) && push!(roots, base)
+    for sibling in ("CompCert", "bedrock2", "hott-coq")
+        p = joinpath(dirname(COQGYM_DIR), sibling)
+        isdir(p) && push!(roots, p)
+    end
+    if isempty(roots)
+        println("CoqGym + Coq-family corpora not found")
         return Dict{String,Any}[], Dict{String,Any}[], Dict{String,Any}[]
     end
 
     v_files = String[]
-    for (root, _dirs, files) in walkdir(coq_dir)
-        for f in files
-            endswith(f, ".v") && push!(v_files, joinpath(root, f))
+    for root in roots
+        for (rr, _dirs, files) in walkdir(root)
+            for f in files
+                endswith(f, ".v") && push!(v_files, joinpath(rr, f))
+            end
         end
     end
-    println("Found $(length(v_files)) .v files under $(coq_dir)")
+    println("Found $(length(v_files)) .v files across $(length(roots)) Coq-family root(s)")
 
     all_theorems = Dict{String,Any}[]
     all_tactics = Dict{String,Any}[]

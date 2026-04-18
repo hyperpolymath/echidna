@@ -244,13 +244,15 @@ function run()::Tuple{Int,Int}
         (endswith(fname, ".fst") || endswith(fname, ".fsti")) &&
             push!(src_files, joinpath(EXTERNAL_DIR, fname))
     end
-    full_root = joinpath(dirname(EXTERNAL_DIR), "fstar_full")
-    if isdir(full_root)
-        println("[F*] Walking full clone at $(full_root) ...")
-        for (root, _dirs, files) in walkdir(full_root)
-            for fname in files
-                (endswith(fname, ".fst") || endswith(fname, ".fsti")) &&
-                    push!(src_files, joinpath(root, fname))
+    for sibling in ("fstar_full", "karamel")
+        full_root = joinpath(dirname(EXTERNAL_DIR), sibling)
+        if isdir(full_root)
+            println("[F*] Walking $(sibling) clone at $(full_root) ...")
+            for (root, _dirs, files) in walkdir(full_root)
+                for fname in files
+                    (endswith(fname, ".fst") || endswith(fname, ".fsti")) &&
+                        push!(src_files, joinpath(root, fname))
+                end
             end
         end
     end
