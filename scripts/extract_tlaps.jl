@@ -15,21 +15,59 @@ function run_extract()
         return ps, ts, pm
     end
     files = String[]
-    for (root, _, fs) in walkdir(DIR); for f in fs; endswith(f, ".tla") && push!(files, joinpath(root, f)); end; end
+    for (root, _, fs) in walkdir(DIR); for f in fs; (endswith(f, ".tla") || endswith(f, ".cfg")) && push!(files, joinpath(root, f)); end; end
     println("Found $(length(files)) TLA+ files")
-    # THEOREM Name == Statement   or   THEOREM Name : Statement
-    pat = r"THEOREM\s+([A-Za-z0-9_]+)\s*(?:==|:)\s*(.*?)(?=\n(?:THEOREM|LEMMA|AXIOM|DEFINE|====)|$)"s
+    # Widening (2026-04-18): TLA+ has more named top-level items than
+    # just THEOREM. Capture LEMMA, AXIOM, ASSUME, and top-level
+    # `Name == ...` definitions (which are the bulk of any TLA+ spec).
+    thm_pat = r"(THEOREM|LEMMA|COROLLARY|PROPOSITION)\s+([A-Za-z0-9_]+)\s*(?:==|:)\s*(.*?)(?=\n(?:THEOREM|LEMMA|COROLLARY|PROPOSITION|AXIOM|ASSUME|DEFINE|VARIABLE|CONSTANT|=====)|\z)"s
+    axiom_pat = r"(AXIOM|ASSUME)\s+([A-Za-z0-9_]+)\s*(?:==|:)?\s*(.*?)(?=\n(?:THEOREM|LEMMA|AXIOM|ASSUME|DEFINE|=====)|\z)"s
+    def_pat = r"(?:^|\n)([A-Za-z][A-Za-z0-9_]*)\s*(?:\([^)]*\))?\s*==\s*(.*?)(?=\n[A-Za-z][A-Za-z0-9_]*\s*(?:\([^)]*\))?\s*==|\n(?:THEOREM|LEMMA|AXIOM|ASSUME|VARIABLE|CONSTANT|MODULE|=====)|\z)"s
+
     for f in files
-        try
-            c = read(f, String)
-            for m in eachmatch(pat, c)
-                n, s = strip(m.captures[1]), strip(m.captures[2])
-                if !isempty(n) && !isempty(s)
-                    push!(ps, Dict{String,Any}("id"=>id, "prover"=>"TLAPS", "source_file"=>relpath(f, DIR), "theorem"=>n, "goal"=>s, "context"=>Any[]))
+        c = try
+            read(f, String)
+        catch
+            continue
+        end
+        rel = relpath(f, DIR)
+        seen = Set{String}()
+        for (pat, expected_captures) in ((thm_pat, 3), (axiom_pat, 3))
+            matches = try collect(eachmatch(pat, c)) catch; Any[] end
+            for m in matches
+                kind = strip(String(m.captures[1]))
+                name = strip(String(m.captures[2]))
+                body = first(strip(String(m.captures[3])), 1500)
+                isempty(name) && continue
+                key = "$(kind):$(name)"
+                key in seen && continue
+                push!(seen, key)
+                push!(ps, Dict{String,Any}("id"=>id, "prover"=>"TLAPS",
+                    "source_file"=>rel, "theorem"=>name,
+                    "goal"=>body, "kind"=>kind, "context"=>Any[]))
+                id += 1
+            end
+        end
+        matches = try collect(eachmatch(def_pat, c)) catch; Any[] end
+        for m in matches
+            name = strip(String(m.captures[1]))
+            body = first(strip(String(m.captures[2])), 1500)
+            if !isempty(name) && !isempty(body) &&
+               !(name in ("MODULE", "EXTENDS", "INSTANCE", "LOCAL",
+                          "VARIABLE", "VARIABLES", "CONSTANT",
+                          "CONSTANTS", "RECURSIVE", "ASSUME",
+                          "THEOREM", "LEMMA", "AXIOM"))
+                key = "def:$(name)"
+                if key ∉ seen
+                    push!(seen, key)
+                    push!(ps, Dict{String,Any}("id"=>id, "prover"=>"TLAPS",
+                        "source_file"=>rel, "theorem"=>name,
+                        "goal"=>body, "kind"=>"definition",
+                        "context"=>Any[]))
                     id += 1
                 end
             end
-        catch e; println("Warning: $f: $e"); end
+        end
     end
     ps, ts, pm
 end
