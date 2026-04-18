@@ -104,6 +104,63 @@ remaining-phase1-work = [
   "HP type-checker ecosystem (11 provers): synthetic type-derivation generator",
 ]
 
+[session-2026-04-18-rollup]
+summary = "End-of-session rollup — 27 provers worked on, ~442 K records added"
+cumulative-new-records = 442223
+provers-touched = 27
+tier-breakdown = [
+  "Tier A (Coq, Mizar, HOL Light, HOL4, Dafny, Agda, +Flyspeck, +CakeML):  6 provers, +211 188",
+  "Tier B (Why3, PVS, F*, Idris2):                                         4 provers, +41 096",
+  "ACL2 + MiniZinc:                                                         2 provers, +170 476",
+  "Tier C wave 1 (TLAPS, Alloy, Boogie, Frama-C, Viper, Tamarin):           6 provers, +11 011",
+  "Tier C wave 2 (Spin, SeaHorn, KeY, Prism):                               4 provers, +1 920",
+  "Tier C wave 3 (dReal, Cameleer, Abella, Dedukti, Arend):                 5 provers, +6 532",
+]
+tried-but-low-yield = [
+  "Naproche: 19 .ftl files → 0 records — extractor gate too tight",
+  "Matita: 238 .ma files → 17 records — extractor gate too tight",
+  "Arend: 1 .ard file → 7 records — extractor extension filter narrow",
+]
+known-still-missing = [
+  "ProVerif: inria sparse clone empty — retry with full clone",
+  "NuSMV / UPPAAL: binary distributions, not git — need archive fetch",
+  "CBMC: diffblue/cbmc 1.5 GB — sparse regression/ viable",
+  "ABC, CaDiCaL, Kissat, MiniSat, TLC: SAT-adjacent; share sat_benchmarks possibly",
+  "Isabelle_ZF, Nitpick, Nunchaku, Mercury, Athena: corpora need sourcing",
+]
+top-corpus-after-session = [
+  "Lean      131 770",
+  "ACL2      170 455  (was 277;    #2 now)",
+  "Coq        85 190  (was 14)",
+  "Mizar      59 030  (was 66)",
+  "Isabelle   50 137",
+  "Metamath   47 165",
+  "HOL Light  43 119  (was 22 577)",
+  "Why3       35 692  (was 199)",
+  "HOL4       27 677  (was 5 039)",
+  "TPTP/each  26 177",
+  "Agda       19 829  (was 9 312)",
+  "Dafny      13 399  (was 48)",
+  "Tamarin     4 595  (was 0)",
+  "dReal       4 400  (was 0)",
+  "Viper       3 541  (was 0)",
+  "F*          3 046  (was 76)",
+  "PVS         2 377  (was 231)",
+  "Dedukti     1 381  (was 0)",
+  "Boogie      1 319  (was 0)",
+  "Frama-C     1 317  (was 0)",
+  "SeaHorn     1 161  (was 0)",
+  "Abella        598  (was 0)",
+  "Idris2        574  (was 87)",
+  "KeY           525  (was 0)",
+  "MiniZinc      327  (was 29)",
+  "Prism         150  (was 0)",
+  "Cameleer      146  (was 0)",
+  "Alloy         136  (was 0)",
+  "TLAPS         103  (was 0)",
+  "Spin           84  (was 0)",
+]
+
 [session-2026-04-18-tier-c-wave-3]
 summary = "Third Tier C vendoring wave — 5 more provers unlocked from zero"
 provers-unlocked = [
