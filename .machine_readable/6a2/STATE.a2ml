@@ -104,6 +104,45 @@ remaining-phase1-work = [
   "HP type-checker ecosystem (11 provers): synthetic type-derivation generator",
 ]
 
+[session-2026-04-18-full-integration-push-2]
+summary = "Second full-integration wave — 9 more provers past 2K; 5 more unlocked from zero"
+source-doc = "/home/hyper/Desktop/the prover story.txt"
+provers-pushed-past-2k-this-wave = [
+  "KeY       525 → 867 648  (1 653×)  — proof-step / JML / \\functions / \\predicates / \\programVariables",
+  "TLAPS     103 →   4 064  ( 39×)   — LEMMA / COROLLARY / ASSUME / AXIOM + top-level `Name ==` defs",
+  "Prism     150 →   3 115  ( 21×)   — walks model files + formula / const / reward / module",
+  "Arend       7 →   6 050  (864×)   — swapped JetBrains/Arend→arend-lib clone; \\data / \\class / \\instance / \\lemma",
+  "CBMC        0 →   6 576           — sparse clone of diffblue/cbmc regression/",
+  "Nitpick     0 →   4 366           — walks external_corpora/afp for `nitpick` calls w/ lemma context",
+  "Boogie  1 319 →  28 010  ( 21×)   — implementation / function / axiom / const / type patterns (from wave 1)",
+  "SeaHorn 1 161 →   2 486  (2.1×)   — vocabulary widened from 4 to 14 verifier keywords (wave 1)",
+  "Frama-C 1 317 →   2 424  (1.8×)   — ACSL vocab 6 → 22 + lemma/axiom/predicate (wave 1)",
+]
+provers-unlocked-from-zero-this-wave = [
+  "CBMC       0 → 6 576    (past 2K)",
+  "ProVerif   0 → 1 238",
+  "TLC        0 →   352",
+  "Nitpick    0 → 4 366    (past 2K)",
+  "Nunchaku   0 →     2",
+  "NuSMV      0 →     3    (only 11 .smv files in mirror)",
+]
+provers-significantly-lifted-but-still-sub-2k = [
+  "Alloy      136 → 1 483  (was at 10% of threshold — now 74%)",
+  "Cameleer   146 →   321  (ocaml-gospel/cameleer full walk, val/type/gospel)",
+  "Spin        84 →   351  (Promela corpus ceiling ~500; proctype/inline/mtype/assert)",
+  "Matita      17 →   251  (kw pattern expanded)",
+  "ABC          1 → 1 279  (added HWMCC20 .btor files — close to 2K)",
+]
+still-zero-corpus = [
+  "UPPAAL   — distributor-only, no git mirror",
+  "TypedWasm — in-house tool, extractor already targets tests/ fixtures",
+  "Athena    — no public corpus found on GitHub",
+]
+synthetic-only-tail-under-100 = [
+  "Nuprl 50, Imandra 47, Minlog 46, Twelf 33  — doc flagged as source-gated",
+]
+cumulative-sessions-deltas = "Across both full-integration waves today, ~40 of 48 Rust-backend provers now carry ≥ 2K training records — effectively all the Tier 1-6 prover fleet. Only the distributor-only / in-house / scarce-public tail remains below threshold."
+
 [session-2026-04-18-full-integration-push]
 summary = "Push all provers to meet the-prover-story.txt full-integration bar"
 source-doc = "/home/hyper/Desktop/the prover story.txt"
