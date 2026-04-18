@@ -71,7 +71,7 @@ function parse_why3_file(filepath::String)::Vector{Dict{String,Any}}
 
     # Extract lemma/goal declarations
     pattern = r"(lemma|goal|axiom)\s+(\w+)\s*:\s*(.*?)(?=\n\s*(?:lemma|goal|axiom|let|val|predicate|function|end|use|module)|\z)"si
-    for m in eachmatch(Regex(pattern), content)
+    for m in eachmatch(pattern, content)
         kind = strip(m.captures[1])
         name = strip(m.captures[2])
         body = first(replace(strip(m.captures[3]), r"\s+" => " "), 300)
@@ -94,9 +94,17 @@ function parse_why3_file(filepath::String)::Vector{Dict{String,Any}}
         ))
     end
 
-    # Extract function specs (ensures/requires)
+    # Extract function specs (ensures/requires). Wrap in try/catch:
+    # the `.*?` chains in func_pattern can catastrophically backtrack
+    # on large amalgamated library files — skipping the whole file on
+    # PCRE match-limit error is strictly better than aborting the run.
     func_pattern = r"let\s+(?:rec\s+)?(\w+).*?(?:requires\s*\{(.*?)\})?.*?(?:ensures\s*\{(.*?)\})"s
-    for m in eachmatch(Regex(func_pattern), content)
+    func_matches = try
+        collect(eachmatch(func_pattern, content))
+    catch e
+        Any[]
+    end
+    for m in func_matches
         name = m.captures[1]
         requires = m.captures[2]
         ensures = m.captures[3]
@@ -286,14 +294,34 @@ function run()::Tuple{Int,Int}
     downloaded = download_why3_files()
     println("  Downloaded/cached $(downloaded) files")
 
+    # Widening (2026-04-18): additionally walk a full clone of the
+    # Why3 project at external_corpora/why3_full/ (canonical source
+    # is gitlab.inria.fr/why3/why3.git). Accepts .mlw (source) and
+    # .why (library) files.
+    src_files = String[]
     for fname in readdir(EXTERNAL_DIR)
-        if endswith(fname, ".mlw")
-            fpath = joinpath(EXTERNAL_DIR, fname)
-            parsed = parse_why3_file(fpath)
-            append!(all_entries, parsed)
-            if !isempty(parsed)
-                println("  Parsed $(length(parsed)) theorems from $(fname)")
+        (endswith(fname, ".mlw") || endswith(fname, ".why")) &&
+            push!(src_files, joinpath(EXTERNAL_DIR, fname))
+    end
+    full_root = joinpath(dirname(EXTERNAL_DIR), "why3_full")
+    if isdir(full_root)
+        println("[Why3] Walking full clone at $(full_root) ...")
+        for (root, _dirs, files) in walkdir(full_root)
+            for fname in files
+                (endswith(fname, ".mlw") || endswith(fname, ".why")) &&
+                    push!(src_files, joinpath(root, fname))
             end
+        end
+    end
+    println("  $(length(src_files)) Why3 source files to parse")
+
+    processed = 0
+    for fpath in src_files
+        parsed = parse_why3_file(fpath)
+        append!(all_entries, parsed)
+        processed += 1
+        if processed % 200 == 0
+            println("  processed $(processed)/$(length(src_files)) files — running count: $(length(all_entries))")
         end
     end
     extracted_count = length(all_entries)
