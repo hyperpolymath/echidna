@@ -481,8 +481,13 @@ impl ProofOctadBuilder {
 /// Uses reqwest for async HTTP. Falls back gracefully if VeriSimDB
 /// is unavailable (proof memory continues in-memory).
 pub struct VeriSimDBClient {
-    base_url: String,
-    http: reqwest::Client,
+    // pub(crate) — the sibling vcl_ut module composes queries directly
+    // against the base URL + shared HTTP client rather than going through
+    // a narrowed accessor surface. Keeping the crate-local visibility
+    // documents that intent without leaking the fields to downstream
+    // crates.
+    pub(crate) base_url: String,
+    pub(crate) http: reqwest::Client,
 }
 
 impl VeriSimDBClient {
