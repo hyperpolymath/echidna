@@ -566,3 +566,16 @@ open-work-remaining = [
   "CR-1..CR-10 cross-repo tests from standards TESTING-TAXONOMY.adoc.",
   "CI hygiene sweep — OSSF Scorecard / Hypatia / Mirror / Instant Sync / security-scan.yml still red since the big commits today.",
 ]
+
+[session-2026-04-18-ci-hygiene]
+summary = "Code-side CI hygiene closed by parallel session; remaining failures are infra/secrets."
+commit = "0e46943 chore(ci): fix workflow references + stale action SHAs + dependabot crates"
+closed-code-side = [
+  "security-scan.yml: fixed panic-attacker -> panic-attack rename reference.",
+  "hypatia-scan.yml: replaced stale upload-artifact SHA with canonical v4 SHA.",
+  "scorecard.yml: replaced stale codeql-action/upload-sarif SHA with v3.28.1 SHA.",
+  "cargo update -p rustls-webpki -p rand: rustls-webpki 0.103.10 -> 0.103.12 + rand 0.8.5 -> 0.8.6 + rand 0.9.2 -> 0.9.4. Closes the 6 low-severity Dependabot alerts.",
+]
+remaining-ci = [
+  "Mirror to Git Forges + Instant Sync: infra/secrets (Bitbucket / GitLab / etc. tokens) — human-owned blocker in ~/Desktop/YOUR-ACTIONS-todo.md.",
+]
