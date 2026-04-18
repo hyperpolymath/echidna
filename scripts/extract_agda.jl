@@ -42,12 +42,21 @@ using JSON3
 using Dates
 
 const REPO_ROOT   = dirname(dirname(abspath(@__FILE__)))
-const AGDA_ROOT   = joinpath(REPO_ROOT, "external_corpora", "agda-stdlib")
-const AGDA_SRC    = joinpath(AGDA_ROOT, "src")
 const OUTPUT_DIR  = joinpath(REPO_ROOT, "training_data")
 const OUTPUT_FILE = joinpath(OUTPUT_DIR, "proof_states_agda.jsonl")
 const STATS_FILE  = joinpath(OUTPUT_DIR, "stats_agda.json")
 const START_ID    = 210000
+
+# Multiple Agda corpus roots. Added 2026-04-18 (echidna#17): the
+# extractor previously walked only agda-stdlib. We now additionally
+# ingest agda-cubical (HoTT / cubical type theory) and agda-unimath
+# (UniMath's Agda port of univalent foundations) when present. Each
+# entry maps (directory → prefix used in source labels).
+const AGDA_CORPORA = [
+    (joinpath(REPO_ROOT, "external_corpora", "agda-stdlib"),  "agda-stdlib"),
+    (joinpath(REPO_ROOT, "external_corpora", "agda-cubical"), "agda-cubical"),
+    (joinpath(REPO_ROOT, "external_corpora", "agda-unimath"), "agda-unimath"),
+]
 
 # Signature-level filters.
 const PROOFY = [
@@ -164,7 +173,7 @@ end
 
 Pull keepable declarations out of one Agda source file.
 """
-function parse_file(path::String)::Vector{Dict{String,Any}}
+function parse_file(path::String, corpus_root::String="", corpus_label::String="")::Vector{Dict{String,Any}}
     out = Dict{String,Any}[]
     local lines::Vector{String}
     try
@@ -222,8 +231,11 @@ function parse_file(path::String)::Vector{Dict{String,Any}}
 
         sig_body = replace(join(buf, " "), r"\s+" => " ")
         # Bound the recorded signature length to keep JSONL rows compact.
+        # Use `first(s, n)` for a character-count slice that is safe
+        # against multi-byte UTF-8 (cubical / unimath use many Unicode
+        # symbols — `sig_body[1:400]` would crash mid-glyph).
         if length(sig_body) > 400
-            sig_body = sig_body[1:400] * "…"
+            sig_body = first(sig_body, 400) * "…"
         end
 
         # Keep any well-formed top-level signature. The PROOFY gate
@@ -239,7 +251,9 @@ function parse_file(path::String)::Vector{Dict{String,Any}}
                 "theorem" => name,
                 "goal"    => sig_body,
                 "context" => ctx,
-                "source"  => "agda-stdlib/" * relpath(path, AGDA_ROOT),
+                "source"  => isempty(corpus_label) ?
+                    ("agda-stdlib/" * relpath(path, REPO_ROOT)) :
+                    (corpus_label * "/" * relpath(path, corpus_root)),
             ))
         end
 
@@ -279,24 +293,40 @@ function main()
     println("EXTRACT AGDA")
     println("=" ^ 60)
 
-    isdir(AGDA_SRC) || error("Missing $AGDA_SRC — vendor agda-stdlib first.")
-
-    files = String[]
-    for (root, _, names) in walkdir(AGDA_ROOT)
-        for n in names
-            endswith(n, ".agda") && push!(files, joinpath(root, n))
+    # Walk every Agda corpus that is present on disk. At least one
+    # must exist — agda-stdlib remains the canonical minimum.
+    corpus_file_lists = Tuple{String,String,Vector{String}}[]
+    for (corpus_root, corpus_label) in AGDA_CORPORA
+        isdir(corpus_root) || continue
+        these = String[]
+        for (root, _, names) in walkdir(corpus_root)
+            for n in names
+                if endswith(n, ".agda") || endswith(n, ".lagda.md")
+                    push!(these, joinpath(root, n))
+                end
+            end
         end
+        push!(corpus_file_lists, (corpus_root, corpus_label, these))
+        println("  $(corpus_label): $(length(these)) files under $(corpus_root)")
     end
-    println("Scanning $(length(files)) .agda files under $AGDA_ROOT (incl. doc/, dev/, .github/)")
+    if isempty(corpus_file_lists)
+        error("No Agda corpora found — vendor agda-stdlib (minimum) first.")
+    end
+    total_files = sum(length(xs[3]) for xs in corpus_file_lists)
+    println("Scanning $(total_files) Agda source files across $(length(corpus_file_lists)) corpora")
 
     all_records = Dict{String,Any}[]
     parsed_ok = 0
-    for f in files
-        recs = parse_file(f)
-        if !isempty(recs)
-            parsed_ok += 1
-            append!(all_records, recs)
+    for (corpus_root, corpus_label, files) in corpus_file_lists
+        corpus_start = length(all_records)
+        for f in files
+            recs = parse_file(f, corpus_root, corpus_label)
+            if !isempty(recs)
+                parsed_ok += 1
+                append!(all_records, recs)
+            end
         end
+        println("  $(corpus_label): $(length(all_records) - corpus_start) declarations kept")
     end
     println("Files with keepable decls: $parsed_ok")
     println("Raw declarations:          $(length(all_records))")
@@ -323,10 +353,10 @@ function main()
     stats = Dict{String,Any}(
         "prover"          => "Agda",
         "total_proofs"    => total,
-        "files_scanned"   => length(files),
+        "files_scanned"   => total_files,
         "files_with_proofs" => parsed_ok,
         "id_range"        => [START_ID, nid - 1],
-        "source"          => "external_corpora/agda-stdlib",
+        "corpora"         => [label for (_root, label) in AGDA_CORPORA if isdir(_root)],
         "extraction_date" => string(today()),
         "extractor"       => "scripts/extract_agda.jl",
     )
