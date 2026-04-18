@@ -66,17 +66,30 @@ function parse_mzn_file(filepath::String)::Vector{Dict{String,Any}}
 
     model_name = splitext(basename(filepath))[1]
 
-    # Extract variables
-    variables = [(m.captures[2], m.captures[1]) for m in eachmatch(r"var\s+([\w.]+)\s*:\s*(\w+)"i, content)]
+    # Each of these regexes can catastrophically backtrack on large
+    # data files or amalgamated benchmarks. Wrap each collection in
+    # a try/catch so a single pathological file just skips — the rest
+    # of the corpus still extracts.
+    variables = try
+        [(m.captures[2], m.captures[1]) for m in eachmatch(r"var\s+([\w.]+)\s*:\s*(\w+)"i, content)]
+    catch
+        Tuple{Any,Any}[]
+    end
 
-    # Extract constraints
-    constraints = [first(replace(strip(m.captures[1]), r"\s+" => " "), 200)
-                   for m in eachmatch(r"constraint\s+(.*?)\s*;"s, content)]
+    constraints = try
+        [first(replace(strip(m.captures[1]), r"\s+" => " "), 200)
+         for m in eachmatch(r"constraint\s+(.*?)\s*;"s, content)]
+    catch
+        String[]
+    end
 
-    # Extract objective
     objective = "satisfy"
-    for m in eachmatch(r"solve\s+(.*?)\s*;"s, content)
-        objective = first(replace(strip(m.captures[1]), r"\s+" => " "), 200)
+    try
+        for m in eachmatch(r"solve\s+(.*?)\s*;"s, content)
+            objective = first(replace(strip(m.captures[1]), r"\s+" => " "), 200)
+        end
+    catch
+        # keep default
     end
 
     if !isempty(variables) || !isempty(constraints)
@@ -320,14 +333,34 @@ function run()::Tuple{Int,Int}
     downloaded = download_mzn_files()
     println("  Downloaded/cached $(downloaded) files")
 
+    # Widening (2026-04-18): walk MiniZinc/minizinc-benchmarks at
+    # external_corpora/minizinc_full/ — the official benchmark suite
+    # with hundreds of real-world constraint models. Accepts .mzn
+    # (model) and .dzn (data) files.
+    src_files = String[]
     for fname in readdir(EXTERNAL_DIR)
-        if endswith(fname, ".mzn")
-            fpath = joinpath(EXTERNAL_DIR, fname)
-            parsed = parse_mzn_file(fpath)
-            append!(all_entries, parsed)
-            if !isempty(parsed)
-                println("  Parsed $(length(parsed)) models from $(fname)")
+        (endswith(fname, ".mzn") || endswith(fname, ".dzn")) &&
+            push!(src_files, joinpath(EXTERNAL_DIR, fname))
+    end
+    full_root = joinpath(dirname(EXTERNAL_DIR), "minizinc_full")
+    if isdir(full_root)
+        println("[MiniZinc] Walking full benchmark clone at $(full_root) ...")
+        for (root, _dirs, files) in walkdir(full_root)
+            for fname in files
+                (endswith(fname, ".mzn") || endswith(fname, ".dzn")) &&
+                    push!(src_files, joinpath(root, fname))
             end
+        end
+    end
+    println("  $(length(src_files)) MiniZinc source files to parse")
+
+    processed = 0
+    for fpath in src_files
+        parsed = parse_mzn_file(fpath)
+        append!(all_entries, parsed)
+        processed += 1
+        if processed % 500 == 0
+            println("  processed $(processed)/$(length(src_files)) files — running count: $(length(all_entries))")
         end
     end
     extracted_count = length(all_entries)
