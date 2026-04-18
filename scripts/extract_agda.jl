@@ -56,6 +56,7 @@ const AGDA_CORPORA = [
     (joinpath(REPO_ROOT, "external_corpora", "agda-stdlib"),  "agda-stdlib"),
     (joinpath(REPO_ROOT, "external_corpora", "agda-cubical"), "agda-cubical"),
     (joinpath(REPO_ROOT, "external_corpora", "agda-unimath"), "agda-unimath"),
+    (joinpath(REPO_ROOT, "external_corpora", "hott-agda"),    "hott-agda"),
 ]
 
 # Signature-level filters.
