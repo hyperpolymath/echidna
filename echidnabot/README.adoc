@@ -198,7 +198,7 @@ echidnabot/
 │   └── main.rs           # CLI entry point
 ├── docs/                 # Documentation site
 ├── wiki/                 # GitHub Wiki content
-└── justfile              # Task automation
+└── Justfile              # Task automation
 ----
 
 == API

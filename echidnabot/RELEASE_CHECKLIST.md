@@ -7,7 +7,7 @@ Complete checklist for making echidnabot a perfect release.
 ### Done
 - [x] README.adoc - SEO-optimized, project-focused
 - [x] BRANDING.md - Visual identity and LLM art prompts
-- [x] justfile - RSR canonical task runner
+- [x] Justfile - RSR canonical task runner
 - [x] Nickel configuration (config/echidnabot.ncl)
 - [x] MCP configuration (.claude/settings/mcp.json)
 - [x] STATE.scm - Project checkpoint
@@ -137,7 +137,7 @@ Complete checklist for making echidnabot a perfect release.
 - [x] Cargo.toml metadata complete
 - [x] guix.scm package definition
 - [x] Containerfile for Docker/Podman
-- [x] justfile for task automation
+- [x] Justfile for task automation
 
 ### To Add
 - [ ] flake.nix for Nix users
