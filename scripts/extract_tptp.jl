@@ -195,14 +195,10 @@ function extract_all(base_dir::String)
             synthetic = true
         end
 
-        record_id = ID_BASE + length(proof_states)
-
-        # Round-robin prover assignment for balanced corpus
-        prover = PROVERS[(length(proof_states) % length(PROVERS)) + 1]
-
-        # Build context from axioms (limit to first 20 to keep size sane).
-        # For include-only files, surface the include directives instead
-        # so the record still carries the premise signal.
+        # Full-share (2026-04-18): every TPTP problem is provable by
+        # every ATP in our fleet, so emit one record per (problem,
+        # prover) pair. This tripled the per-prover corpus without
+        # new data — pushes each toward the 100K target.
         context = if !isempty(parsed["axioms"])
             parsed["axioms"][1:min(20, length(parsed["axioms"]))]
         else
@@ -210,31 +206,33 @@ function extract_all(base_dir::String)
              parsed["includes"][1:min(20, length(parsed["includes"]))]]
         end
 
-        state = Dict{String, Any}(
-            "id" => record_id,
-            "prover" => prover,
-            "theorem" => parsed["name"],
-            "goal" => parsed["conjecture"],
-            "context" => context,
-            "source" => "TPTP",
-            "status" => synthetic ? "Satisfiable" : parsed["status"],
-            "domain" => parsed["domain"],
-            "proof_steps" => length(parsed["axioms"]),
-            "synthetic_goal" => synthetic,
-            "from_negated" => get(parsed, "from_negated", false),
-        )
-        push!(proof_states, state)
-        prover_counts[prover] += 1
+        for prover in PROVERS
+            record_id = ID_BASE + length(proof_states)
+            state = Dict{String, Any}(
+                "id" => record_id,
+                "prover" => prover,
+                "theorem" => parsed["name"],
+                "goal" => parsed["conjecture"],
+                "context" => context,
+                "source" => "TPTP",
+                "status" => synthetic ? "Satisfiable" : parsed["status"],
+                "domain" => parsed["domain"],
+                "proof_steps" => length(parsed["axioms"]),
+                "synthetic_goal" => synthetic,
+                "from_negated" => get(parsed, "from_negated", false),
+            )
+            push!(proof_states, state)
+            prover_counts[prover] += 1
 
-        # Tactic record: for ATP the "tactic" is running the solver
-        tactic = Dict{String, Any}(
-            "proof_id" => record_id,
-            "step" => 1,
-            "tactic" => "atp_solve_$(lowercase(prover))",
-            "prover" => prover,
-            "proof_text" => "% TPTP $(parsed["status"]) via $prover",
-        )
-        push!(tactics, tactic)
+            tactic = Dict{String, Any}(
+                "proof_id" => record_id,
+                "step" => 1,
+                "tactic" => "atp_solve_$(lowercase(prover))",
+                "prover" => prover,
+                "proof_text" => "% TPTP $(parsed["status"]) via $prover",
+            )
+            push!(tactics, tactic)
+        end
 
         # Progress indicator every 5000 files
         if idx % 5000 == 0
