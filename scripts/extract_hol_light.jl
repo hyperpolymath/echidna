@@ -470,6 +470,21 @@ function run()::Tuple{Int,Int}
             end
         end
     end
+    # 2026-04-18 (echidna#12 100K push): also walk the full upstream
+    # jrh13/hol-light clone (hol-light-upstream) — adds ~662 .ml
+    # source files including Library/, Multivariate/, 100/ — many
+    # beyond the curated flat cache.
+    upstream_root = joinpath(dirname(EXTERNAL_DIR), "hol-light-upstream")
+    if isdir(upstream_root)
+        println("[HOL Light] Walking upstream clone at $(upstream_root) ...")
+        for (root, _dirs, files) in walkdir(upstream_root)
+            for fname in files
+                if endswith(fname, ".ml") || endswith(fname, ".hl")
+                    push!(hol_sources, joinpath(root, fname))
+                end
+            end
+        end
+    end
     println("  $(length(hol_sources)) HOL Light source files to parse")
 
     processed = 0

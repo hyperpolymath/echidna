@@ -331,6 +331,20 @@ function run()::Tuple{Int,Int}
             end
         end
     end
+    # 2026-04-18 (echidna#12 100K push): also walk the sibling
+    # gitlab.inria.fr/why3/why3 clone (why3-examples) — adds ~1 552
+    # further .mlw/.why files from the main upstream project (beyond
+    # the curated why3_full/ clone).
+    examples_root = joinpath(dirname(EXTERNAL_DIR), "why3-examples")
+    if isdir(examples_root)
+        println("[Why3] Walking why3-examples clone at $(examples_root) ...")
+        for (root, _dirs, files) in walkdir(examples_root)
+            for fname in files
+                (endswith(fname, ".mlw") || endswith(fname, ".why")) &&
+                    push!(src_files, joinpath(root, fname))
+            end
+        end
+    end
     println("  $(length(src_files)) Why3 source files to parse")
 
     processed = 0

@@ -468,7 +468,19 @@ function run()::Tuple{Int,Int}
 
     processed = 0
     for fpath in sml_files
-        parsed = parse_hol4_file(fpath)
+        # 2026-04-18 (echidna#12 100K push): large auto-generated
+        # machine-code model files (arm/mips/riscv/cheri/x64) trigger
+        # PCRE catastrophic backtracking; skip anything >2 MB.
+        fsize = try filesize(fpath) catch; 0 end
+        if fsize > 2_000_000
+            processed += 1
+            continue
+        end
+        parsed = try
+            parse_hol4_file(fpath)
+        catch
+            Dict{String,Any}[]
+        end
         append!(all_entries, parsed)
         processed += 1
         if processed % 100 == 0
