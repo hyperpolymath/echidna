@@ -104,6 +104,36 @@ remaining-phase1-work = [
   "HP type-checker ecosystem (11 provers): synthetic type-derivation generator",
 ]
 
+[session-2026-04-18-tier-c-vendoring]
+summary = "Vendored 6 Tier C + 2 Tier A upstream corpora — unlocked 11 011 records and 170 178 ACL2 records"
+note = "Corpora cloned on local disk (each gitignored); training_data/*.jsonl outputs are too large (> 100 MB) for GitHub's per-file limit and are not committed. Extractors themselves unchanged — only corpus vendoring needed."
+tier-c-provers-unlocked = [
+  "TLAPS     0 → 103       (tlaplus/Examples)",
+  "Alloy     0 → 136       (AlloyTools/models)",
+  "Boogie    0 → 1 319     (boogie-org/boogie Test/)",
+  "Frama-C   0 → 1 317     (Frama-C/Frama-C-snapshot tests/)",
+  "Viper     0 → 3 541     (viperproject/silver src/test/)",
+  "Tamarin   0 → 4 595     (tamarin-prover/tamarin-prover examples/)",
+]
+tier-a-boost = [
+  "ACL2      277    → 170 455  (acl2/acl2 books/, ~ 13 478 .lisp files)  → #2 corpus overall",
+  "MiniZinc  29     →     327  (MiniZinc/minizinc-benchmarks)",
+]
+extractor-bugs-fixed = [
+  "extract_acl2.jl:    byte-index slice crash on multi-byte UTF-8 → first(s, n)",
+  "extract_minizinc.jl: 3 eachmatch calls wrapped in try/catch — PCRE match-limit on large data files",
+]
+new-corpora-on-disk = [
+  "external_corpora/acl2_full/           — acl2/acl2 books/ (1.5 GB)",
+  "external_corpora/minizinc_full/       — MiniZinc/minizinc-benchmarks (251 MB)",
+  "external_corpora/tlaplus_examples/    — tlaplus/Examples (34 MB)",
+  "external_corpora/alloy/               — AlloyTools/models (928 KB)",
+  "external_corpora/boogie/              — boogie-org/boogie Test/ (22 MB)",
+  "external_corpora/frama-c/             — Frama-C/Frama-C-snapshot tests/ (26 MB)",
+  "external_corpora/viper/               — viperproject/silver src/test/ (8 MB)",
+  "external_corpora/tamarin/             — tamarin-prover/tamarin-prover (360 MB)",
+]
+
 [session-2026-04-18-100k-campaign-continued]
 summary = "100 K campaign — 10 provers widened, +252 284 records"
 umbrella-issue = "https://github.com/hyperpolymath/echidna/issues/12"
