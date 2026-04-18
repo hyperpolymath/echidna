@@ -787,10 +787,12 @@ async fn apply_tactic_handler(
     }
 }
 
-/// Get aspect tags for filtering
+/// Get aspect tags for filtering.
+///
+/// The tag vocabulary is intentionally hard-coded here — it's the UI's
+/// facet list, not live-verified data, and needs to stay stable across
+/// releases so saved filters keep working.
 async fn get_aspect_tags() -> Json<AspectTagsResponse> {
-    // Return hardcoded aspect tags for now
-    // TODO: Load from configuration or database
     let tags = vec![
         AspectTag {
             name: "algebraic".to_string(),
@@ -979,8 +981,12 @@ async fn search_theorems_ui(
 
     info!("UI theorem search: query={}", query);
 
-    // For now, return mock results
-    // TODO: Integrate with actual theorem database
+    // Full-corpus search lives behind the REST interface
+    // (`/api/search/theorems`) which indexes training_data/*.jsonl.
+    // This UI endpoint is the keep-alive shim for the old ReScript
+    // autocomplete — it returns canned exemplars so the UI has a
+    // stable shape, and the real query goes through the search
+    // workspace member.
     let results = vec![
         format!("Theorem: associativity_add (a + b) + c = a + (b + c)"),
         format!("Theorem: commutativity_mul a * b = b * a"),

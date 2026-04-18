@@ -14,7 +14,7 @@ use std::collections::VecDeque;
 use tokio::sync::RwLock;
 use tracing::{debug, info, warn};
 
-use crate::core::{Goal, ProofState, Tactic, Term};
+use crate::core::{Goal, ProofState, Tactic, TacticResult, Term};
 use crate::provers::{ProverBackend, ProverKind};
 
 pub mod actors;
@@ -350,14 +350,44 @@ impl AgentCore {
             vec![Tactic::Assumption] // Fallback
         };
 
-        // Step 5: Try tactics
-        let _start = std::time::Instant::now();
+        // Step 5: Try tactics against the chosen backend.
+        //
+        // Each candidate is applied via the `ProverBackend::apply_tactic`
+        // FFI and the resulting state either yields the full proof (QED),
+        // advances the state (Success — we fall through to next tactic,
+        // keeping this step-thin), or errors out.
+        let start = std::time::Instant::now();
+        let mut current_state = ProofState {
+            goals: vec![goal.goal.clone()],
+            context: Default::default(),
+            proof_script: vec![],
+            metadata: Default::default(),
+        };
 
         for tactic in tactics {
             debug!("Trying tactic {:?} for goal {}", tactic, goal.goal.id);
 
-            // TODO: Actually apply tactic and check result
-            // For now, this is a stub that returns failure
+            match prover.apply_tactic(&current_state, &tactic).await {
+                Ok(TacticResult::QED) => {
+                    current_state.proof_script.push(tactic.clone());
+                    let time_ms = start.elapsed().as_millis() as u64;
+                    return Ok(GoalResult::Proved {
+                        proof: current_state,
+                        prover: prover_kind,
+                        time_ms,
+                    });
+                }
+                Ok(TacticResult::Success(new_state)) => {
+                    current_state = new_state;
+                    current_state.proof_script.push(tactic.clone());
+                }
+                Ok(TacticResult::Error(msg)) => {
+                    debug!("Tactic {:?} rejected: {}", tactic, msg);
+                }
+                Err(e) => {
+                    debug!("Backend error on tactic {:?}: {}", tactic, e);
+                }
+            }
         }
 
         Ok(GoalResult::Failed {

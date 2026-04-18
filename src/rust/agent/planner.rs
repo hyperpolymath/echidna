@@ -32,10 +32,24 @@ impl RulePlanner {
         RulePlanner { max_depth: 3 }
     }
 
-    /// Check if term is a conjunction (A ∧ B)
-    fn is_conjunction(&self, _term: &Term) -> Option<(Term, Term)> {
-        // TODO: Implement proper pattern matching for conjunction
-        None
+    /// Check if term is a conjunction (A ∧ B).
+    ///
+    /// Accepts the common surface encodings seen across backends:
+    /// `And a b`, `and a b`, `∧ a b`, `/\ a b`, `Conj a b`.
+    fn is_conjunction(&self, term: &Term) -> Option<(Term, Term)> {
+        if let Term::App { func, args } = term {
+            if args.len() != 2 {
+                return None;
+            }
+            let head = match func.as_ref() {
+                Term::Const(name) | Term::Var(name) => name.as_str(),
+                _ => return None,
+            };
+            matches!(head, "And" | "and" | "∧" | "/\\" | "Conj")
+                .then(|| (args[0].clone(), args[1].clone()))
+        } else {
+            None
+        }
     }
 
     /// Check if term is an implication (A → B)
@@ -134,17 +148,6 @@ impl Planner for RulePlanner {
         // Rule 3: If goal is complex but we can't decompose, return it as-is
         debug!("Cannot decompose goal, returning unchanged");
         Ok(vec![goal.clone()])
-    }
-}
-
-/// Lean-based planner (stub for future implementation)
-pub struct LeanPlanner;
-
-#[async_trait]
-impl Planner for LeanPlanner {
-    async fn decompose(&self, _goal: &AgenticGoal) -> Result<Vec<AgenticGoal>> {
-        // TODO: Use Lean's meta-programming to decompose goals
-        Ok(vec![])
     }
 }
 
