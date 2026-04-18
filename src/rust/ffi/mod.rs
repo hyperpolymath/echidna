@@ -483,6 +483,14 @@ pub fn kind_from_u8(kind: u8) -> Option<ProverKind> {
         94 => Some(ProverKind::ACL2s),
         95 => Some(ProverKind::IsabelleZF),
         96 => Some(ProverKind::Boogie),
+        97 => Some(ProverKind::Naproche),
+        98 => Some(ProverKind::Matita),
+        99 => Some(ProverKind::Arend),
+        100 => Some(ProverKind::Athena),
+        101 => Some(ProverKind::LambdaProlog),
+        102 => Some(ProverKind::Mercury),
+        103 => Some(ProverKind::Nitpick),
+        104 => Some(ProverKind::Nunchaku),
         _ => None,
     }
 }
@@ -1182,6 +1190,16 @@ pub fn kind_to_u8(kind: ProverKind) -> u8 {
         ProverKind::ACL2s => 94,
         ProverKind::IsabelleZF => 95,
         ProverKind::Boogie => 96,
+        // Phase 4 "variety" batch (2026-04-18): Naproche, Matita, Arend,
+        // Athena, λProlog, Mercury, Nitpick, Nunchaku.
+        ProverKind::Naproche => 97,
+        ProverKind::Matita => 98,
+        ProverKind::Arend => 99,
+        ProverKind::Athena => 100,
+        ProverKind::LambdaProlog => 101,
+        ProverKind::Mercury => 102,
+        ProverKind::Nitpick => 103,
+        ProverKind::Nunchaku => 104,
     }
 }
 
@@ -1281,8 +1299,12 @@ mod tests {
             // Phase 4 acquisition batch (2026-04-18).
             ProverKind::Dedukti, ProverKind::Cameleer, ProverKind::ACL2s,
             ProverKind::IsabelleZF, ProverKind::Boogie,
+            // Phase 4 "variety" batch (2026-04-18).
+            ProverKind::Naproche, ProverKind::Matita, ProverKind::Arend,
+            ProverKind::Athena, ProverKind::LambdaProlog, ProverKind::Mercury,
+            ProverKind::Nitpick, ProverKind::Nunchaku,
         ];
-        assert_eq!(all_kinds.len(), 97, "expected 97 total ProverKind variants");
+        assert_eq!(all_kinds.len(), 105, "expected 105 total ProverKind variants");
         for kind in &all_kinds {
             let u8_val = kind_to_u8(*kind);
             let roundtripped = kind_from_u8(u8_val)
@@ -1297,8 +1319,8 @@ mod tests {
 
     #[test]
     fn test_kind_from_u8_out_of_range() {
-        // 0–96 are valid; 97+ are out of range.
-        assert!(kind_from_u8(97).is_none());
+        // 0–104 are valid; 105+ are out of range.
+        assert!(kind_from_u8(105).is_none());
         assert!(kind_from_u8(128).is_none());
         assert!(kind_from_u8(255).is_none());
     }
