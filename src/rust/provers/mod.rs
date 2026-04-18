@@ -37,6 +37,7 @@ pub mod isabelle;
 pub mod key;
 pub mod kissat;
 pub mod lean;
+pub mod lean3;
 pub mod metamath;
 pub mod minisat;
 pub mod minizinc;
@@ -89,6 +90,11 @@ pub enum ProverKind {
 
     // Extended: Additional provers
     Idris2,
+    /// Lean 3 — sibling prover to Lean 4 (not a version of it).
+    /// mathlib3 preserves a substantial corpus that never fully ported
+    /// to mathlib4; port-pairs between mathlib3 and mathlib4 give the
+    /// arbiter ready-made cross-system evidence for the same theorem.
+    Lean3,
 
     // Tier 5: First-Order ATPs
     Vampire,
@@ -282,6 +288,7 @@ impl std::str::FromStr for ProverKind {
             "acl2" => Ok(ProverKind::ACL2),
             "hol4" => Ok(ProverKind::HOL4),
             "idris2" | "idris" => Ok(ProverKind::Idris2),
+            "lean3" | "lean-3" | "lean3-legacy" | "mathlib3" => Ok(ProverKind::Lean3),
             "vampire" => Ok(ProverKind::Vampire),
             "eprover" | "e" => Ok(ProverKind::EProver),
             "spass" => Ok(ProverKind::SPASS),
@@ -441,6 +448,7 @@ impl ProverKind {
         let mut provers = Self::all_core();
         provers.extend_from_slice(&[
             ProverKind::Idris2,
+            ProverKind::Lean3,
             ProverKind::Vampire,
             ProverKind::EProver,
             ProverKind::SPASS,
@@ -497,6 +505,7 @@ impl ProverKind {
             ProverKind::ACL2 => 4,
             ProverKind::HOL4 => 5,
             ProverKind::Idris2 => 3,
+            ProverKind::Lean3 => 3, // Same complexity as Lean 4.
             ProverKind::Vampire => 2,   // Automated, relatively simple
             ProverKind::EProver => 2,   // Similar to Vampire
             ProverKind::SPASS => 2,     // Automated FOL
@@ -600,6 +609,7 @@ impl ProverKind {
 
             // Extended tier (same as Tier 1 in capability)
             ProverKind::Idris2 => 1,
+            ProverKind::Lean3 => 1, // Sibling to Lean 4.
 
             // Tier 5: First-Order ATPs
             ProverKind::Vampire => 5,
@@ -707,6 +717,7 @@ impl ProverKind {
             ProverKind::PVS | ProverKind::ACL2 => 3.5,
             ProverKind::HOL4 => 4.0,
             ProverKind::Idris2 => 2.5,
+            ProverKind::Lean3 => 1.0, // Thin fork of Lean 4 backend.
             ProverKind::Vampire => 1.5,   // Automated, TPTP format
             ProverKind::EProver => 1.5,   // Similar to Vampire
             ProverKind::SPASS => 1.5,     // DFG format
@@ -802,6 +813,7 @@ impl ProverKind {
             ProverKind::ACL2 => "acl2",
             ProverKind::HOL4 => "hol",
             ProverKind::Idris2 => "idris2",
+            ProverKind::Lean3 => "lean3",
             ProverKind::Vampire => "vampire",
             ProverKind::EProver => "eprover",
             ProverKind::SPASS => "SPASS",
@@ -1004,6 +1016,7 @@ impl ProverFactory {
             ProverKind::ACL2 => Ok(Box::new(acl2::ACL2Backend::new(config))),
             ProverKind::HOL4 => Ok(Box::new(hol4::Hol4Backend::new(config))),
             ProverKind::Idris2 => Ok(Box::new(idris2::Idris2Backend::new(config))),
+            ProverKind::Lean3 => Ok(Box::new(lean3::Lean3Backend::new(config))),
             ProverKind::Vampire => Ok(Box::new(vampire::VampireBackend::new(config))),
             ProverKind::EProver => Ok(Box::new(eprover::EProverBackend::new(config))),
             ProverKind::SPASS => Ok(Box::new(spass::SPASSBackend::new(config))),
@@ -1130,7 +1143,9 @@ impl ProverFactory {
             "key" => Some(ProverKind::KeY),            // KeY proof problem file (JavaDL)
             // Note: .java files with JML annotations can also be detected via content-aware detection
             // Note: .c files only map to CBMC when containing __CPROVER directives
-            // Use detect_from_file_content() for content-aware detection
+            // Note: .lean is shared between Lean 3 and Lean 4; default is Lean 4.
+            // Use detect_from_file_content() for Lean 3 vs 4 disambiguation.
+            "lean3" => Some(ProverKind::Lean3), // explicit extension
             _ => None,
         })
     }
@@ -1138,9 +1153,39 @@ impl ProverFactory {
     /// Content-aware prover detection for ambiguous file extensions
     ///
     /// For .c files, checks whether the source contains __CPROVER directives
-    /// to determine if CBMC is the appropriate prover.
+    /// to determine if CBMC is the appropriate prover. For .lean files,
+    /// checks for Lean 3 vs Lean 4 syntax markers.
     pub fn detect_from_file_content(path: &Path, content: &str) -> Option<ProverKind> {
-        // First try extension-based detection
+        // Lean 3 / Lean 4 disambiguation — both share `.lean`. Lean 4
+        // introduced `by` tactic blocks in place of `begin … end`, uses
+        // `section`/`namespace` with `end <name>` trailers, and commonly
+        // imports from `Mathlib.*` (capitalised). Lean 3 uses lowercase
+        // `mathlib` paths, `begin … end` blocks, and `universes u v`
+        // without the `u v : Level` annotation.
+        if let Some(ext) = path.extension().and_then(|e| e.to_str()) {
+            if ext == "lean" {
+                let is_lean3 = content.contains("begin\n")
+                    || content.contains("\nbegin ")
+                    || content.contains("\nend.")
+                    || (content.contains("universes ") && !content.contains(" : Level"))
+                    || content.contains("import data.")
+                    || content.contains("import tactic.");
+                let is_lean4 = content.contains("import Mathlib.")
+                    || content.contains(":= by\n")
+                    || content.contains(":= by ")
+                    || content.contains("theorem ") && content.contains("= by");
+                if is_lean3 && !is_lean4 {
+                    return Some(ProverKind::Lean3);
+                }
+                if is_lean4 {
+                    return Some(ProverKind::Lean);
+                }
+                // Ambiguous → default to Lean 4 (current).
+                return Some(ProverKind::Lean);
+            }
+        }
+
+        // First try extension-based detection for non-Lean cases.
         if let Some(kind) = Self::detect_from_file(path) {
             return Some(kind);
         }
