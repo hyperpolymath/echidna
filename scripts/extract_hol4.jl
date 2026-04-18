@@ -464,6 +464,18 @@ function run()::Tuple{Int,Int}
             end
         end
     end
+    # 2026-04-18 late: also walk the current CakeML/cakeml clone
+    # (cakeml-full, ~873 *Script.sml files) — the original
+    # hol4_cakeml checkout is an older snapshot (~570 files).
+    cakeml_full = joinpath(dirname(EXTERNAL_DIR), "cakeml-full")
+    if isdir(cakeml_full)
+        println("[HOL4] Walking CakeML current clone at $(cakeml_full) ...")
+        for (root, _dirs, files) in walkdir(cakeml_full)
+            for fname in files
+                endswith(fname, ".sml") && push!(sml_files, joinpath(root, fname))
+            end
+        end
+    end
     println("  $(length(sml_files)) HOL4 source files to parse")
 
     processed = 0
