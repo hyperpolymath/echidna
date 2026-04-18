@@ -497,14 +497,14 @@ impl TypeDiscipline {
 
             // Homotopy foundations.
             D::Homotopy => vec![P::Agda, P::Lean], // HoTT libraries on both.
-            D::Cubical => vec![P::Agda], // Cubical Agda is the canonical home.
+            D::Cubical => vec![P::Agda, P::Arend], // Cubical Agda + JetBrains's Arend.
 
-            // Binder-management / HOAS / nominal logic — Abella is the
-            // canonical classical home. Twelf (LF) has HOAS flavour but
-            // its primary classification is elsewhere and its discipline
-            // coverage is in other rows; listing it here too would double-
-            // count, so we don't.
-            D::Nominal => vec![P::Abella],
+            // Binder-management / HOAS / nominal logic. Abella covers the
+            // reasoning side; λProlog (Teyjus/Elpi) covers the specification
+            // side. Twelf (LF) has HOAS flavour but its primary
+            // classification is elsewhere; not cross-listed to avoid
+            // double-counting.
+            D::Nominal => vec![P::Abella, P::LambdaProlog],
 
             // Entry-point kernels: these are the HP gateways themselves;
             // they don't correspond to a classical prover in the Axis-1

@@ -17,10 +17,18 @@ pub mod abc;
 pub mod abella;
 pub mod acl2;
 pub mod acl2s;
+pub mod arend;
+pub mod athena;
 pub mod boogie;
 pub mod cameleer;
 pub mod dedukti;
 pub mod isabelle_zf;
+pub mod lambda_prolog;
+pub mod matita;
+pub mod mercury;
+pub mod naproche;
+pub mod nitpick;
+pub mod nunchaku;
 pub mod agda;
 pub mod alloy;
 pub mod altergo;
@@ -261,6 +269,41 @@ pub enum ProverKind {
     /// echidna consume `.bpl` programs without a Viper wrapper
     /// (e.g. Dafny-generated output, Chalice, VCC front-ends).
     Boogie,
+    // Phase 4 "variety" batch (2026-04-18) — from the prover story's
+    // unique-and-unusual + pure-variety lists. Each genuinely distinct
+    // from what echidna already covers; skipping Coq-variants
+    // (Edukera, Bedrock2, CompCert) and F*-libraries (LowStar) since
+    // those don't warrant new ProverKind slots.
+    /// Naproche — controlled natural-language (ForTheL) proof checker.
+    /// Only text-style prover in echidna's roster; token distribution
+    /// unlike any other.
+    Naproche,
+    /// Matita — Bologna's Calculus of Inductive Constructions variant.
+    /// Coq-adjacent but semantically distinct enough to deserve its
+    /// own corpus slot.
+    Matita,
+    /// Arend — JetBrains's cubical HoTT prover. Distinct from Cubical
+    /// Agda in having path primitives as first-class syntax and IDE
+    /// tooling. Co-serves `TypeDiscipline::Cubical`.
+    Arend,
+    /// Athena — Arkoudas's denotational-proof-language with
+    /// intermixed deductive and computational phases.
+    Athena,
+    /// λProlog — higher-order logic programming with HOAS (Teyjus /
+    /// Elpi implementations). Co-serves `TypeDiscipline::Nominal`
+    /// alongside Abella.
+    LambdaProlog,
+    /// Mercury — pure logic programming with static types and modes.
+    /// Proof-adjacent via termination and determinism proofs.
+    Mercury,
+    /// Nitpick — Isabelle-integrated counter-example finder.
+    /// Produces refutations; corpus records are negative-class data
+    /// balancing the otherwise positive-only proof corpus.
+    Nitpick,
+    /// Nunchaku — standalone model / counter-example finder for HOL.
+    /// Sibling to Nitpick; same negative-class story but not
+    /// Isabelle-coupled, wider input format range.
+    Nunchaku,
 }
 
 impl ProverKind {
@@ -467,6 +510,16 @@ impl std::str::FromStr for ProverKind {
                 Ok(ProverKind::IsabelleZF)
             }
             "boogie" | "bpl" => Ok(ProverKind::Boogie),
+            "naproche" | "forthel" | "ftl" => Ok(ProverKind::Naproche),
+            "matita" => Ok(ProverKind::Matita),
+            "arend" => Ok(ProverKind::Arend),
+            "athena" => Ok(ProverKind::Athena),
+            "lambdaprolog" | "lambda-prolog" | "teyjus" | "elpi" => {
+                Ok(ProverKind::LambdaProlog)
+            }
+            "mercury" | "mmc" => Ok(ProverKind::Mercury),
+            "nitpick" => Ok(ProverKind::Nitpick),
+            "nunchaku" => Ok(ProverKind::Nunchaku),
             _ => Err(anyhow::anyhow!("Unknown prover: {}", s)),
         }
     }
@@ -566,6 +619,14 @@ impl ProverKind {
             ProverKind::ACL2s => 4, // Sibling to ACL2.
             ProverKind::IsabelleZF => 4, // Sibling to Isabelle/HOL.
             ProverKind::Boogie => 2, // Intermediate verification language.
+            ProverKind::Naproche => 3, // Controlled-NL parsing non-trivial.
+            ProverKind::Matita => 3, // CIC variant, same family as Coq.
+            ProverKind::Arend => 3, // Cubical HoTT.
+            ProverKind::Athena => 4, // Denotational + rewriting engine.
+            ProverKind::LambdaProlog => 3, // HOAS logic programming.
+            ProverKind::Mercury => 3, // Logic programming with types/modes.
+            ProverKind::Nitpick => 2, // Isabelle-wrapped counter-example finder.
+            ProverKind::Nunchaku => 2, // Standalone counter-example finder.
             ProverKind::Vampire => 2,   // Automated, relatively simple
             ProverKind::EProver => 2,   // Similar to Vampire
             ProverKind::SPASS => 2,     // Automated FOL
@@ -678,6 +739,14 @@ impl ProverKind {
             ProverKind::ACL2s => 3, // Sibling to ACL2 (tier 3).
             ProverKind::IsabelleZF => 1, // Sibling to Isabelle (tier 1).
             ProverKind::Boogie => 5, // Deductive program verifier tier.
+            ProverKind::Naproche => 2, // Specialised, text-style.
+            ProverKind::Matita => 1, // Coq-adjacent, Tier 1 capability.
+            ProverKind::Arend => 1, // Cubical HoTT, Tier 1.
+            ProverKind::Athena => 4, // Niche framework.
+            ProverKind::LambdaProlog => 4, // Logical framework / HOAS.
+            ProverKind::Mercury => 4, // Specialised logic programming.
+            ProverKind::Nitpick => 5, // Counter-example finder tier.
+            ProverKind::Nunchaku => 5, // Counter-example finder tier.
 
             // Tier 5: First-Order ATPs
             ProverKind::Vampire => 5,
@@ -793,6 +862,14 @@ impl ProverKind {
             ProverKind::ACL2s => 1.0, // Thin fork of ACL2.
             ProverKind::IsabelleZF => 1.0, // Thin variant of Isabelle.
             ProverKind::Boogie => 1.5, // Extract from Viper internals.
+            ProverKind::Naproche => 2.0, // Controlled-NL parser wrapper.
+            ProverKind::Matita => 2.0, // Coq-parser fork.
+            ProverKind::Arend => 2.0, // Cubical parser + elaborator.
+            ProverKind::Athena => 2.5, // Rich denotational framework.
+            ProverKind::LambdaProlog => 2.0, // HOAS parser + unifier.
+            ProverKind::Mercury => 2.0, // Logic programming interpreter bridge.
+            ProverKind::Nitpick => 1.0, // Thin wrapper over Isabelle.
+            ProverKind::Nunchaku => 1.5, // Standalone counter-example tool.
             ProverKind::Vampire => 1.5,   // Automated, TPTP format
             ProverKind::EProver => 1.5,   // Similar to Vampire
             ProverKind::SPASS => 1.5,     // DFG format
@@ -896,6 +973,14 @@ impl ProverKind {
             ProverKind::ACL2s => "acl2s",
             ProverKind::IsabelleZF => "isabelle", // Same binary, different session.
             ProverKind::Boogie => "boogie",
+            ProverKind::Naproche => "naproche",
+            ProverKind::Matita => "matitac",
+            ProverKind::Arend => "arend",
+            ProverKind::Athena => "athena",
+            ProverKind::LambdaProlog => "tjsim",
+            ProverKind::Mercury => "mmc",
+            ProverKind::Nitpick => "isabelle", // Shared binary via `isabelle process -e nitpick`.
+            ProverKind::Nunchaku => "nunchaku",
             ProverKind::Vampire => "vampire",
             ProverKind::EProver => "eprover",
             ProverKind::SPASS => "SPASS",
@@ -1106,6 +1191,16 @@ impl ProverFactory {
             ProverKind::ACL2s => Ok(Box::new(acl2s::Acl2sBackend::new(config))),
             ProverKind::IsabelleZF => Ok(Box::new(isabelle_zf::IsabelleZfBackend::new(config))),
             ProverKind::Boogie => Ok(Box::new(boogie::BoogieBackend::new(config))),
+            ProverKind::Naproche => Ok(Box::new(naproche::NaprocheBackend::new(config))),
+            ProverKind::Matita => Ok(Box::new(matita::MatitaBackend::new(config))),
+            ProverKind::Arend => Ok(Box::new(arend::ArendBackend::new(config))),
+            ProverKind::Athena => Ok(Box::new(athena::AthenaBackend::new(config))),
+            ProverKind::LambdaProlog => {
+                Ok(Box::new(lambda_prolog::LambdaPrologBackend::new(config)))
+            }
+            ProverKind::Mercury => Ok(Box::new(mercury::MercuryBackend::new(config))),
+            ProverKind::Nitpick => Ok(Box::new(nitpick::NitpickBackend::new(config))),
+            ProverKind::Nunchaku => Ok(Box::new(nunchaku::NunchakuBackend::new(config))),
             ProverKind::Vampire => Ok(Box::new(vampire::VampireBackend::new(config))),
             ProverKind::EProver => Ok(Box::new(eprover::EProverBackend::new(config))),
             ProverKind::SPASS => Ok(Box::new(spass::SPASSBackend::new(config))),
@@ -1239,6 +1334,15 @@ impl ProverFactory {
             "thm" => Some(ProverKind::Abella), // Abella .thm files
             "dk" | "lp" => Some(ProverKind::Dedukti), // Dedukti / λΠ
             "bpl" => Some(ProverKind::Boogie), // Boogie intermediate language
+            "ftl" => Some(ProverKind::Naproche), // Naproche controlled-NL
+            "ma" => Some(ProverKind::Matita), // Matita proof file
+            "ard" => Some(ProverKind::Arend), // Arend cubical HoTT
+            "ath" => Some(ProverKind::Athena), // Athena
+            "mod" | "sig" => Some(ProverKind::LambdaProlog), // λProlog module / signature
+            "nun" => Some(ProverKind::Nunchaku), // Nunchaku input
+            // Mercury uses .m which collides with OCaml conventions in
+            // some file sets; content-aware detection deferred to
+            // phase 2 (look for Mercury `:- module`, `:- pred`, etc).
             _ => None,
         })
     }
