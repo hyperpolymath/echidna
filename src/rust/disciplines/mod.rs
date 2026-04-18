@@ -124,6 +124,15 @@ pub enum TypeDiscipline {
     // Homotopy foundations.
     Homotopy,
     Cubical,
+    // Nominal logic / HOAS / λ-tree syntax family. Added 2026-04-18 as an
+    // honest one-time correction — nominal logic was missed in the original
+    // 40-variant exhaustive enumeration. Abella is the canonical classical
+    // prover; λProlog / Twelf also have HOAS flavour but their primary
+    // classification is elsewhere. Name-binding, permutation actions,
+    // freshness predicates, and the ∇ generic quantifier are the defining
+    // machinery — distinct from polymorphism, modal logic, and every other
+    // discipline family here.
+    Nominal,
 }
 
 /// High-level family grouping. Disciplines in the same family share
@@ -156,12 +165,15 @@ pub enum DisciplineFamily {
     ResourceSemiring,
     /// Homotopy type theory and cubical type theory.
     Homotopy,
+    /// Nominal logic / HOAS / λ-tree syntax — name-binding, permutations,
+    /// freshness, the ∇ quantifier. Abella is the canonical home.
+    BinderManagement,
 }
 
 impl TypeDiscipline {
     /// Every discipline the echidna TypeDiscipline transition admits.
     /// Kept in sync with `ProverKind::is_hp_ecosystem`.
-    pub const ALL: [TypeDiscipline; 40] = [
+    pub const ALL: [TypeDiscipline; 41] = [
         TypeDiscipline::TypeLl,
         TypeDiscipline::Katagoria,
         TypeDiscipline::Ordinary,
@@ -202,6 +214,7 @@ impl TypeDiscipline {
         TypeDiscipline::Tropical,
         TypeDiscipline::Homotopy,
         TypeDiscipline::Cubical,
+        TypeDiscipline::Nominal,
     ];
 
     /// Which family this discipline belongs to.
@@ -225,6 +238,7 @@ impl TypeDiscipline {
             D::Session | D::Choreographic | D::Dyadic | D::Echo => Process,
             D::Tropical => ResourceSemiring,
             D::Homotopy | D::Cubical => Homotopy,
+            D::Nominal => BinderManagement,
         }
     }
 
@@ -274,6 +288,7 @@ impl TypeDiscipline {
             D::Echo => "echo",
             D::Homotopy => "homotopy",
             D::Cubical => "cubical",
+            D::Nominal => "nominal",
         }
     }
 
@@ -302,6 +317,10 @@ impl TypeDiscipline {
             D::Intersection | D::Union | D::Gradual => Some(D::Subtyping),
             // Cubical is a model of Homotopy.
             D::Cubical => Some(D::Homotopy),
+            // Nominal has no umbrella in the current family tree — it is
+            // itself the anchor of the binder-management family. Future
+            // variants (de Bruijn, locally-nameless) would fall back to it.
+            D::Nominal => None,
             // Capability/Bunched refine Immutable's concern (aliasing).
             D::Capability | D::Bunched => Some(D::Immutable),
             // Kernels / umbrellas have no fallback.
@@ -366,6 +385,7 @@ impl TypeDiscipline {
             D::Dyadic => P::DyadicTypeChecker,
             D::Homotopy => P::HomotopyTypeChecker,
             D::Cubical => P::CubicalTypeChecker,
+            D::Nominal => P::NominalTypeChecker,
         }
     }
 
@@ -479,6 +499,13 @@ impl TypeDiscipline {
             D::Homotopy => vec![P::Agda, P::Lean], // HoTT libraries on both.
             D::Cubical => vec![P::Agda], // Cubical Agda is the canonical home.
 
+            // Binder-management / HOAS / nominal logic — Abella is the
+            // canonical classical home. Twelf (LF) has HOAS flavour but
+            // its primary classification is elsewhere and its discipline
+            // coverage is in other rows; listing it here too would double-
+            // count, so we don't.
+            D::Nominal => vec![P::Abella],
+
             // Entry-point kernels: these are the HP gateways themselves;
             // they don't correspond to a classical prover in the Axis-1
             // sense.
@@ -531,6 +558,7 @@ impl TypeDiscipline {
             P::DyadicTypeChecker => D::Dyadic,
             P::HomotopyTypeChecker => D::Homotopy,
             P::CubicalTypeChecker => D::Cubical,
+            P::NominalTypeChecker => D::Nominal,
             _ => return None,
         })
     }
@@ -542,7 +570,7 @@ mod tests {
 
     #[test]
     fn all_has_expected_size() {
-        assert_eq!(TypeDiscipline::ALL.len(), 40);
+        assert_eq!(TypeDiscipline::ALL.len(), 41);
     }
 
     #[test]
@@ -627,8 +655,9 @@ mod tests {
             ProverKind::DyadicTypeChecker,
             ProverKind::HomotopyTypeChecker,
             ProverKind::CubicalTypeChecker,
+            ProverKind::NominalTypeChecker,
         ];
-        assert_eq!(all_hp.len(), 40);
+        assert_eq!(all_hp.len(), 41);
         for k in all_hp {
             assert!(k.is_hp_ecosystem(), "{:?} should be hp_ecosystem", k);
             assert!(

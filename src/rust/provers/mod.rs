@@ -14,6 +14,7 @@ use std::path::{Path, PathBuf};
 use crate::core::{ProofState, Tactic, TacticResult};
 
 pub mod abc;
+pub mod abella;
 pub mod acl2;
 pub mod agda;
 pub mod alloy;
@@ -219,6 +220,17 @@ pub enum ProverKind {
     // Homotopy foundations
     HomotopyTypeChecker,
     CubicalTypeChecker,
+    /// Nominal logic / HOAS / λ-tree syntax dispatcher. Added 2026-04-18 as
+    /// an honest one-time correction — nominal logic was missed in the
+    /// original 40-variant exhaustive enumeration. See
+    /// `src/rust/disciplines/mod.rs :: TypeDiscipline::Nominal` for the
+    /// full rationale.
+    NominalTypeChecker,
+    /// Abella — classical Axis-1 prover for nominal logic / HOAS.
+    /// Two-level logic (λProlog specification + sequent reasoning with
+    /// the ∇ generic quantifier). Sibling to Twelf in logical framework
+    /// style but with distinct proof theory.
+    Abella,
 }
 
 impl ProverKind {
@@ -266,6 +278,7 @@ impl ProverKind {
                 | ProverKind::DyadicTypeChecker
                 | ProverKind::HomotopyTypeChecker
                 | ProverKind::CubicalTypeChecker
+                | ProverKind::NominalTypeChecker
         )
     }
 }
@@ -413,6 +426,10 @@ impl std::str::FromStr for ProverKind {
             }
             "homotopytypechecker" | "homotopy" | "hott" => Ok(ProverKind::HomotopyTypeChecker),
             "cubicaltypechecker" | "cubical" | "cubical-tt" => Ok(ProverKind::CubicalTypeChecker),
+            "nominaltypechecker" | "nominal" | "hoas" | "lambda-tree" => {
+                Ok(ProverKind::NominalTypeChecker)
+            }
+            "abella" => Ok(ProverKind::Abella),
             _ => Err(anyhow::anyhow!("Unknown prover: {}", s)),
         }
     }
@@ -506,6 +523,7 @@ impl ProverKind {
             ProverKind::HOL4 => 5,
             ProverKind::Idris2 => 3,
             ProverKind::Lean3 => 3, // Same complexity as Lean 4.
+            ProverKind::Abella => 3, // Two-level logic, HOAS proof state.
             ProverKind::Vampire => 2,   // Automated, relatively simple
             ProverKind::EProver => 2,   // Similar to Vampire
             ProverKind::SPASS => 2,     // Automated FOL
@@ -585,7 +603,8 @@ impl ProverKind {
             // Cubical (interval primitives).
             ProverKind::HoareTypeChecker
             | ProverKind::HomotopyTypeChecker
-            | ProverKind::CubicalTypeChecker => 4,
+            | ProverKind::CubicalTypeChecker
+            | ProverKind::NominalTypeChecker => 4,
             // Baseline: simply-typed lambda calculus — cheap to check.
             ProverKind::OrdinaryTypeChecker => 2,
         }
@@ -610,6 +629,8 @@ impl ProverKind {
             // Extended tier (same as Tier 1 in capability)
             ProverKind::Idris2 => 1,
             ProverKind::Lean3 => 1, // Sibling to Lean 4.
+            // Tier 7 niche: specialized proof framework for HOAS / nominal.
+            ProverKind::Abella => 2,
 
             // Tier 5: First-Order ATPs
             ProverKind::Vampire => 5,
@@ -702,7 +723,8 @@ impl ProverKind {
             | ProverKind::ProbabilisticTypeChecker
             | ProverKind::DyadicTypeChecker
             | ProverKind::HomotopyTypeChecker
-            | ProverKind::CubicalTypeChecker => 3,
+            | ProverKind::CubicalTypeChecker
+            | ProverKind::NominalTypeChecker => 3,
         }
     }
 
@@ -718,6 +740,7 @@ impl ProverKind {
             ProverKind::HOL4 => 4.0,
             ProverKind::Idris2 => 2.5,
             ProverKind::Lean3 => 1.0, // Thin fork of Lean 4 backend.
+            ProverKind::Abella => 2.0, // New parser, HOAS proof state model.
             ProverKind::Vampire => 1.5,   // Automated, TPTP format
             ProverKind::EProver => 1.5,   // Similar to Vampire
             ProverKind::SPASS => 1.5,     // DFG format
@@ -793,7 +816,8 @@ impl ProverKind {
             | ProverKind::ProbabilisticTypeChecker
             | ProverKind::DyadicTypeChecker
             | ProverKind::HomotopyTypeChecker
-            | ProverKind::CubicalTypeChecker => 2.0, // HP ecosystem
+            | ProverKind::CubicalTypeChecker
+            | ProverKind::NominalTypeChecker => 2.0, // HP ecosystem
         }
     }
 
@@ -814,6 +838,7 @@ impl ProverKind {
             ProverKind::HOL4 => "hol",
             ProverKind::Idris2 => "idris2",
             ProverKind::Lean3 => "lean3",
+            ProverKind::Abella => "abella",
             ProverKind::Vampire => "vampire",
             ProverKind::EProver => "eprover",
             ProverKind::SPASS => "SPASS",
@@ -892,7 +917,8 @@ impl ProverKind {
             | ProverKind::ProbabilisticTypeChecker
             | ProverKind::DyadicTypeChecker
             | ProverKind::HomotopyTypeChecker
-            | ProverKind::CubicalTypeChecker => "typell",
+            | ProverKind::CubicalTypeChecker
+            | ProverKind::NominalTypeChecker => "typell",
         }
     }
 }
@@ -1017,6 +1043,7 @@ impl ProverFactory {
             ProverKind::HOL4 => Ok(Box::new(hol4::Hol4Backend::new(config))),
             ProverKind::Idris2 => Ok(Box::new(idris2::Idris2Backend::new(config))),
             ProverKind::Lean3 => Ok(Box::new(lean3::Lean3Backend::new(config))),
+            ProverKind::Abella => Ok(Box::new(abella::AbellaBackend::new(config))),
             ProverKind::Vampire => Ok(Box::new(vampire::VampireBackend::new(config))),
             ProverKind::EProver => Ok(Box::new(eprover::EProverBackend::new(config))),
             ProverKind::SPASS => Ok(Box::new(spass::SPASSBackend::new(config))),
@@ -1092,7 +1119,8 @@ impl ProverFactory {
             | ProverKind::ProbabilisticTypeChecker
             | ProverKind::DyadicTypeChecker
             | ProverKind::HomotopyTypeChecker
-            | ProverKind::CubicalTypeChecker => Ok(Box::new(
+            | ProverKind::CubicalTypeChecker
+            | ProverKind::NominalTypeChecker => Ok(Box::new(
                 hp_ecosystem::HPEcosystemBackend::new(kind, config),
             )),
         }
@@ -1146,6 +1174,7 @@ impl ProverFactory {
             // Note: .lean is shared between Lean 3 and Lean 4; default is Lean 4.
             // Use detect_from_file_content() for Lean 3 vs 4 disambiguation.
             "lean3" => Some(ProverKind::Lean3), // explicit extension
+            "thm" => Some(ProverKind::Abella), // Abella .thm files
             _ => None,
         })
     }

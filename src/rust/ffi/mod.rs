@@ -476,6 +476,8 @@ pub fn kind_from_u8(kind: u8) -> Option<ProverKind> {
         87 => Some(ProverKind::HomotopyTypeChecker),
         88 => Some(ProverKind::CubicalTypeChecker),
         89 => Some(ProverKind::Lean3),
+        90 => Some(ProverKind::NominalTypeChecker),
+        91 => Some(ProverKind::Abella),
         _ => None,
     }
 }
@@ -1164,6 +1166,10 @@ pub fn kind_to_u8(kind: ProverKind) -> u8 {
         // HP-ecosystem TypeDiscipline band (49–88) with classical
         // backends again.
         ProverKind::Lean3 => 89,
+        // Nominal-logic dispatcher (HP ecosystem, TypeDiscipline::Nominal).
+        ProverKind::NominalTypeChecker => 90,
+        // Abella — classical Axis-1 prover for nominal logic / HOAS.
+        ProverKind::Abella => 91,
     }
 }
 
@@ -1256,10 +1262,12 @@ mod tests {
             ProverKind::ImpureTypeChecker, ProverKind::CoeffectTypeChecker,
             ProverKind::ProbabilisticTypeChecker, ProverKind::DyadicTypeChecker,
             ProverKind::HomotopyTypeChecker, ProverKind::CubicalTypeChecker,
+            // Nominal-logic / HOAS family.
+            ProverKind::NominalTypeChecker, ProverKind::Abella,
             // Classical sibling provers (post-HP-band).
             ProverKind::Lean3,
         ];
-        assert_eq!(all_kinds.len(), 90, "expected 90 total ProverKind variants");
+        assert_eq!(all_kinds.len(), 92, "expected 92 total ProverKind variants");
         for kind in &all_kinds {
             let u8_val = kind_to_u8(*kind);
             let roundtripped = kind_from_u8(u8_val)
@@ -1274,8 +1282,8 @@ mod tests {
 
     #[test]
     fn test_kind_from_u8_out_of_range() {
-        // 0–89 are valid; 90+ are out of range.
-        assert!(kind_from_u8(90).is_none());
+        // 0–91 are valid; 92+ are out of range.
+        assert!(kind_from_u8(92).is_none());
         assert!(kind_from_u8(128).is_none());
         assert!(kind_from_u8(255).is_none());
     }
