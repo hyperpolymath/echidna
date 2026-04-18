@@ -1,0 +1,2 @@
+{"prover":"nunchaku","kind":"nunchaku","opts":"","theorem":"nunchaku_1","id":3900000,"goal":"","context":[],"source_file":"afp/thys/GewirthPGCProof/GewirthArgument.thy"}
+{"prover":"nunchaku","kind":"nunchaku","opts":"satisfy","theorem":"nunchaku_2","id":3900001,"goal":"","context":[],"source_file":"afp/thys/GewirthPGCProof/GewirthArgument.thy"}
