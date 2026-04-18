@@ -248,10 +248,24 @@ function run()::Tuple{Int,Int}
     # dafny-lang/dafny sparse clone (`Test/` + `Source/IntegrationTests/`)
     # — thousands of .dfy files. Fall back to the curated downloader
     # only if nothing is on disk.
+    #
+    # Phase 2 widening (2026-04-18 late): also walk sibling vendored
+    # corpora that ship significant real-world Dafny proofs — AWS
+    # Encryption SDK, AWS Cryptographic Material Providers Library,
+    # Dafny-VMC (randomised programs), and the dafny-lang/libraries
+    # standard library. Each adds hundreds of proofs.
+    dfy_roots = String[EXTERNAL_DIR]
+    for sibling in ("dafny-libraries", "dafny-vmc",
+                     "aws-encryption-sdk-dafny", "aws-cmpl")
+        cand = joinpath(dirname(EXTERNAL_DIR), sibling)
+        isdir(cand) && push!(dfy_roots, cand)
+    end
     dfy_files = String[]
-    for (root, _dirs, files) in walkdir(EXTERNAL_DIR)
-        for f in files
-            endswith(f, ".dfy") && push!(dfy_files, joinpath(root, f))
+    for root_dir in dfy_roots
+        for (root, _dirs, files) in walkdir(root_dir)
+            for f in files
+                endswith(f, ".dfy") && push!(dfy_files, joinpath(root, f))
+            end
         end
     end
     if isempty(dfy_files)

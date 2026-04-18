@@ -53,13 +53,39 @@ const START_ID    = 210000
 # (UniMath's Agda port of univalent foundations) when present. Each
 # entry maps (directory → prefix used in source labels).
 const AGDA_CORPORA = [
-    (joinpath(REPO_ROOT, "external_corpora", "agda-stdlib"),  "agda-stdlib"),
-    (joinpath(REPO_ROOT, "external_corpora", "agda-cubical"), "agda-cubical"),
-    (joinpath(REPO_ROOT, "external_corpora", "agda-unimath"), "agda-unimath"),
-    (joinpath(REPO_ROOT, "external_corpora", "hott-agda"),    "hott-agda"),
+    (joinpath(REPO_ROOT, "external_corpora", "agda-stdlib"),     "agda-stdlib"),
+    (joinpath(REPO_ROOT, "external_corpora", "agda-cubical"),    "agda-cubical"),
+    (joinpath(REPO_ROOT, "external_corpora", "agda-unimath"),    "agda-unimath"),
+    (joinpath(REPO_ROOT, "external_corpora", "hott-agda"),       "hott-agda"),
+    # 2026-04-18 (echidna#18): agda-categories ships 518 .agda files
+    # of category theory (functors, limits, monads, Kan extensions,
+    # …) which fills a gap in the existing Agda corpora.
+    (joinpath(REPO_ROOT, "external_corpora", "agda-categories"), "agda-categories"),
+    # 2026-04-18 late (echidna#18): further vendored corpora to get
+    # Agda past the 50K target. Escardó's TypeTopology ships ~936
+    # .agda files across domain theory, exact real arithmetic,
+    # HoTT-UF, synthetic topology. PLFA (Programming Language
+    # Foundations in Agda) ships ~187 teaching files. UALib
+    # (Universal Algebra Library) rounds out algebraic structure
+    # coverage with ~62 files.
+    (joinpath(REPO_ROOT, "external_corpora", "type-topology"),   "type-topology"),
+    (joinpath(REPO_ROOT, "external_corpora", "plfa"),            "plfa"),
+    (joinpath(REPO_ROOT, "external_corpora", "ualib"),           "ualib"),
+    # HoTTEST Summer School exercises + solutions.
+    (joinpath(REPO_ROOT, "external_corpora", "hottest-summer-school"),
+                                                                 "hottest-summer-school"),
 ]
 
 # Signature-level filters.
+# Widened 2026-04-18 (echidna#18) — the original list was
+# stdlib-biased (equality, order, algebraic structures) and missed
+# most cubical/HoTT/category-theoretic signatures. Added:
+#   · HoTT primitives (Path, PathP, Equiv, IsSet, IsProp, hLevel, ≃)
+#   · Cubical constructs (Cube, Square, Partial, _∙_)
+#   · Category theory (Functor, NaturalTransformation, Adjoint)
+#   · General type theory (Set, Type, Prop, Level, →)
+# which captures the 50K+ bar demanded by issue #18 without sacrificing
+# the "must look like a proof-relevant signature" filter.
 const PROOFY = [
     "_≡_", "≡", "_≢_", "≢",
     "Dec ", "Dec.", "Dec(", "Dec{",
@@ -71,6 +97,17 @@ const PROOFY = [
     "IsCommutative", "IsAssociative", "Injective", "Surjective", "Bijective",
     "Monoid", "Group", "Ring", "Semiring", "Lattice",
     "Homomorphism", "Isomorphism",
+    # HoTT / cubical
+    "Path", "PathP", "Equiv", "≃", "_≃_",
+    "IsSet", "IsProp", "IsContr", "isSet", "isProp", "isContr",
+    "hSet", "hProp", "hLevel", "isOfHLevel",
+    "Cube", "Square", "Partial", "_∙_",
+    # Category theory
+    "Functor", "Natural", "Adjoint", "Comonad", "Monad",
+    "Limit", "Colimit", "Kan", "Terminal", "Initial",
+    # General type theory — broad but real proof-relevant fallbacks.
+    " Set ", " Set₀ ", " Set₁ ", " Type ", " Prop ", " Level ",
+    "→", "->", "⟶", "⇒",
 ]
 
 # Lines we never open a declaration on.
@@ -170,26 +207,31 @@ function looks_proofy(sig::AbstractString)::Bool
 end
 
 """
-    preprocess_literate(lines) -> Vector{String}
+    preprocess_literate(lines; latex=false) -> Vector{String}
 
 For `.lagda.md` sources, keep only content inside fenced ```` ```agda ````
-blocks and dedent each block to column 0 so the signature parser
-(which requires non-indented top-level lines) sees the Agda code as
-top-level. Non-literate `.agda` files pass through unchanged.
+blocks and dedent each block to column 0. For `.lagda` (plain LaTeX
+literate Agda), keep only content between `\\begin{code}` and
+`\\end{code}` markers and dedent similarly. Non-literate `.agda`
+files pass through unchanged.
 """
-function preprocess_literate(lines::Vector{String})::Vector{String}
+function preprocess_literate(lines::Vector{String}; latex::Bool=false)::Vector{String}
     out = String[]
     in_block = false
     block_buf = String[]
+    open_marker = latex ? "\\begin{code}" : "```agda"
+    close_marker = latex ? "\\end{code}" : "```"
     for raw in lines
-        if startswith(lstrip(raw), "```agda")
+        stripped = strip(raw)
+        if !in_block && startswith(stripped, open_marker)
             in_block = true
             block_buf = String[]
             continue
-        elseif startswith(lstrip(raw), "```") && in_block
+        elseif in_block &&
+               (latex ? startswith(stripped, close_marker) :
+                        startswith(stripped, close_marker))
             # Flush block: compute common indent, dedent, emit.
             if !isempty(block_buf)
-                # Compute minimum leading whitespace across non-empty lines.
                 min_ind = typemax(Int)
                 for l in block_buf
                     isempty(strip(l)) && continue
@@ -224,9 +266,13 @@ function parse_file(path::String, corpus_root::String="", corpus_label::String="
     # Also relax the top-level-only gate for literate files — unimath
     # puts nearly every declaration inside `module _ where` blocks
     # at indent 2, so requiring column 0 drops the bulk of the corpus.
-    is_literate = endswith(path, ".lagda.md")
-    if is_literate
+    is_literate_md = endswith(path, ".lagda.md")
+    is_literate_tex = !is_literate_md && endswith(path, ".lagda")
+    is_literate = is_literate_md || is_literate_tex
+    if is_literate_md
         lines = preprocess_literate(lines)
+    elseif is_literate_tex
+        lines = preprocess_literate(lines; latex=true)
     end
 
     i = 1
@@ -348,7 +394,9 @@ function main()
         these = String[]
         for (root, _, names) in walkdir(corpus_root)
             for n in names
-                if endswith(n, ".agda") || endswith(n, ".lagda.md")
+                if endswith(n, ".agda") ||
+                   endswith(n, ".lagda.md") ||
+                   endswith(n, ".lagda")
                     push!(these, joinpath(root, n))
                 end
             end
