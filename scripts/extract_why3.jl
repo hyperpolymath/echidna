@@ -69,14 +69,15 @@ function parse_why3_file(filepath::String)::Vector{Dict{String,Any}}
         return results
     end
 
-    # Extract lemma/goal declarations
-    pattern = r"(lemma|goal|axiom)\s+(\w+)\s*:\s*(.*?)(?=\n\s*(?:lemma|goal|axiom|let|val|predicate|function|end|use|module)|\z)"si
+    # Widening (2026-04-18): Why3 has more named constructs than
+    # lemma/goal/axiom alone. Capture also predicate / function /
+    # constant / type / inductive / meta declarations.
+    pattern = r"(lemma|goal|axiom|theorem|corollary|conjecture)\s+(\w+)\s*:\s*(.*?)(?=\n\s*(?:lemma|goal|axiom|theorem|corollary|conjecture|let|val|predicate|function|constant|type|inductive|meta|end|use|module|scope)|\z)"si
     for m in eachmatch(pattern, content)
         kind = strip(m.captures[1])
         name = strip(m.captures[2])
         body = first(replace(strip(m.captures[3]), r"\s+" => " "), 300)
         keywords = [lowercase(k.match) for k in eachmatch(r"\b(forall|exists|ensures|requires|invariant|variant|raises|reads|writes|diverges)\b"i, body)]
-        # Deduplicate preserving order
         seen = Set{String}()
         unique_kw = String[]
         for kw in keywords
@@ -90,6 +91,23 @@ function parse_why3_file(filepath::String)::Vector{Dict{String,Any}}
             "goal" => body,
             "kind" => kind,
             "tactics" => unique_kw,
+            "source" => "why3/$(basename(filepath))",
+        ))
+    end
+
+    # Additional declaration forms common in Why3 stdlib + examples.
+    extra_pat = r"(predicate|function|constant|inductive|type)\s+(\w+)\s+(.*?)(?=\n\s*(?:lemma|goal|axiom|theorem|corollary|conjecture|let|val|predicate|function|constant|type|inductive|meta|end|use|module|scope)|\z)"si
+    ex_matches = try collect(eachmatch(extra_pat, content)) catch; Any[] end
+    for m in ex_matches
+        kind = strip(String(m.captures[1]))
+        name = strip(String(m.captures[2]))
+        body = first(replace(strip(String(m.captures[3])), r"\s+" => " "), 300)
+        isempty(name) && continue
+        push!(results, Dict{String,Any}(
+            "theorem" => name,
+            "goal" => body,
+            "kind" => kind,
+            "tactics" => String[kind],
             "source" => "why3/$(basename(filepath))",
         ))
     end
