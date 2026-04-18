@@ -104,6 +104,45 @@ remaining-phase1-work = [
   "HP type-checker ecosystem (11 provers): synthetic type-derivation generator",
 ]
 
+[session-2026-04-18-phase-abc]
+summary = "Phase A + B + C — all 48 backends wired + 4 provers past 100K"
+source-doc = "/home/hyper/Desktop/the prover story.txt"
+phase-a-no-stats-unlocks = [
+  "Lean 3            → 89 907   (leanprover-community/mathlib)",
+  "ACL2s             → 151 932  (symlinked to acl2_full)",
+  "Mathcomp          → 15 741   (math-comp/math-comp)",
+  "Isabelle ZF       → 3 577    (mirror-isabelle sparse src/ZF/)",
+  "Isabelle Tropical → 25       (in-house synthesis)",
+]
+phase-b-variety-shortlist = [
+  "Coq += CompCert + bedrock2 + hott-coq (+13 893)",
+  "F* += karamel (+231)",
+  "Agda += hott-agda (+1 581)",
+  "Skipped: Rocq (same as Coq), Edukera (no git corpus), Lean 3 (Phase A)",
+]
+phase-c-100k-pushes = [
+  "Coq  99 083 → 108 702  (+ mathcomp-analysis + InteractionTrees + category-theory)",
+  "Mizar 59 030 → 77 075  (+definition/scheme/notation/reserve patterns)",
+  "Metamath 47 165 → 70 146 (rewrote extractor — multi-line $p/$=/$. + walk all 9 .mm databases)",
+]
+provers-over-100k = [
+  "ACL2     170 455",
+  "ACL2s    151 932  (shared corpus via symlink)",
+  "Lean 4   131 770",
+  "Coq      108 702",
+]
+provers-in-70k-100k = [
+  "Lean 3    89 907  (close — +~10K needed from community libs)",
+  "Mizar     77 075  (MML corpus ceiling)",
+  "Metamath  70 146  (could add community databases)",
+]
+provers-in-20k-70k = [
+  "Isabelle AFP  50 137", "HOL Light  43 119", "Why3  35 692",
+  "λProlog  34 753", "Boogie  28 010", "HOL4  27 677",
+  "TPTP (each)  26 177", "Agda  21 410", "SMT-LIB (each)  20 527",
+]
+note-on-full-100k-fleet = "Getting all 48 provers to 100K is a multi-month undertaking per the original estimate. This session landed 4 at the bar, 3 more in the 70K-90K band, and every other prover at ≥ 2K (the ML-useful threshold). Further 100K pushes need: (a) full SMT-COMP/CASC competition archives (GBs each), (b) synthetic augmentation across all sub-100K provers, (c) vendoring additional domain-specific libraries per prover. All of which are tractable but not a single-session task."
+
 [session-2026-04-18-full-integration-complete]
 summary = "All 48 provers now clear the-prover-story.txt ≥ 2K ML-useful threshold"
 source-doc = "/home/hyper/Desktop/the prover story.txt"
