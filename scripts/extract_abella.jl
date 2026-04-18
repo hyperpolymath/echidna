@@ -69,56 +69,132 @@ function extract_abella_proofs()
     # termination is detected by the next top-level declaration.
     theorem_pattern = r"Theorem\s+([a-zA-Z0-9_']+)\s*:\s*(.*?)\.\s*\n(.*?)(?=\n(?:Theorem|Define|Kind|Type|Specification|CoDefine|Close|Split|Query|%)|$)"s
 
+    # Widening (2026-04-18): also harvest Define / CoDefine / Kind /
+    # Type / Query / Split declarations. Each is a named object that
+    # carries structural signal for ML. Split and Query are proof
+    # commands that refer to existing theorems (follow-up proofs).
+    define_pattern = r"(Co)?Define\s+([a-zA-Z0-9_']+)\s*:\s*(.*?)\s*by\b"s
+    kind_pattern = r"Kind\s+([a-zA-Z0-9_']+)\s+(.*?)\."s
+    type_pattern = r"Type\s+([a-zA-Z0-9_']+)\s+(.*?)\."s
+    query_pattern = r"Query\s+(.+?)\."s
+    split_pattern = r"Split\s+([a-zA-Z0-9_']+)\s+as\s+([^.]+)\."s
+
     # Specification imports (λProlog signatures).
     spec_pattern = r"Specification\s+\"([^\"]+)\""
 
     for thm_file in thm_files
-        try
-            content = read(thm_file, String)
+        content = try
+            read(thm_file, String)
+        catch
+            continue
+        end
+        rel = relpath(thm_file, examples_dir)
 
-            for spec_m in eachmatch(spec_pattern, content)
-                push!(premises, Dict{String,Any}(
-                    "source_file" => relpath(thm_file, examples_dir),
-                    "specification" => spec_m.captures[1],
-                    "prover" => "Abella",
+        for spec_m in eachmatch(spec_pattern, content)
+            push!(premises, Dict{String,Any}(
+                "source_file" => rel,
+                "specification" => spec_m.captures[1],
+                "prover" => "Abella",
+            ))
+        end
+
+        # Theorems (primary extraction path, unchanged).
+        matches = try collect(eachmatch(theorem_pattern, content)) catch; Any[] end
+        for m in matches
+            name = strip(m.captures[1])
+            statement = strip(m.captures[2])
+            proof_body = strip(m.captures[3])
+            (isempty(name) || isempty(statement)) && continue
+            push!(proof_states, Dict{String,Any}(
+                "id" => current_id, "prover" => "Abella",
+                "discipline" => "Nominal",
+                "source_file" => rel,
+                "theorem" => name,
+                "goal" => first(statement, 2000),
+                "context" => Any[],
+                "proof_mode" => "interactive",
+            ))
+            tactic_list = split_abella_tactics(proof_body)
+            for (step, tactic) in enumerate(tactic_list)
+                isempty(strip(tactic)) && continue
+                push!(tactics, Dict{String,Any}(
+                    "proof_id" => current_id, "step" => step,
+                    "tactic" => strip(tactic),
+                    "prover" => "Abella", "discipline" => "Nominal",
                 ))
             end
+            current_id += 1
+        end
 
-            for m in eachmatch(theorem_pattern, content)
+        matches = try collect(eachmatch(define_pattern, content)) catch; Any[] end
+        for m in matches
+            cokind = m.captures[1] === nothing ? "Define" : "CoDefine"
+            name = strip(m.captures[2])
+            body = first(strip(m.captures[3]), 2000)
+            (isempty(name) || isempty(body)) && continue
+            push!(proof_states, Dict{String,Any}(
+                "id" => current_id, "prover" => "Abella",
+                "discipline" => "Nominal",
+                "source_file" => rel,
+                "theorem" => name,
+                "goal" => body,
+                "kind" => cokind,
+                "context" => Any[],
+            ))
+            current_id += 1
+        end
+
+        for (pat, kind) in ((kind_pattern, "Kind"),
+                            (type_pattern, "Type"))
+            matches = try collect(eachmatch(pat, content)) catch; Any[] end
+            for m in matches
                 name = strip(m.captures[1])
-                statement = strip(m.captures[2])
-                proof_body = strip(m.captures[3])
-
-                if !isempty(name) && !isempty(statement)
-                    push!(proof_states, Dict{String,Any}(
-                        "id" => current_id,
-                        "prover" => "Abella",
-                        "discipline" => "Nominal",
-                        "source_file" => relpath(thm_file, examples_dir),
-                        "theorem" => name,
-                        "goal" => statement,
-                        "context" => Any[],
-                        "proof_mode" => "interactive",
-                    ))
-
-                    tactic_list = split_abella_tactics(proof_body)
-                    for (step, tactic) in enumerate(tactic_list)
-                        if !isempty(strip(tactic))
-                            push!(tactics, Dict{String,Any}(
-                                "proof_id" => current_id,
-                                "step" => step,
-                                "tactic" => strip(tactic),
-                                "prover" => "Abella",
-                                "discipline" => "Nominal",
-                            ))
-                        end
-                    end
-
-                    current_id += 1
-                end
+                body = first(strip(m.captures[2]), 1000)
+                isempty(name) && continue
+                push!(proof_states, Dict{String,Any}(
+                    "id" => current_id, "prover" => "Abella",
+                    "discipline" => "Nominal",
+                    "source_file" => rel,
+                    "theorem" => name,
+                    "goal" => body,
+                    "kind" => kind,
+                    "context" => Any[],
+                ))
+                current_id += 1
             end
-        catch e
-            println("Warning: error processing $thm_file: $e")
+        end
+
+        matches = try collect(eachmatch(query_pattern, content)) catch; Any[] end
+        for (i, m) in enumerate(matches)
+            body = first(strip(m.captures[1]), 1000)
+            isempty(body) && continue
+            push!(proof_states, Dict{String,Any}(
+                "id" => current_id, "prover" => "Abella",
+                "discipline" => "Nominal",
+                "source_file" => rel,
+                "theorem" => "query_$(i)",
+                "goal" => body,
+                "kind" => "Query",
+                "context" => Any[],
+            ))
+            current_id += 1
+        end
+
+        matches = try collect(eachmatch(split_pattern, content)) catch; Any[] end
+        for m in matches
+            base = strip(m.captures[1])
+            branches = first(strip(m.captures[2]), 400)
+            isempty(base) && continue
+            push!(proof_states, Dict{String,Any}(
+                "id" => current_id, "prover" => "Abella",
+                "discipline" => "Nominal",
+                "source_file" => rel,
+                "theorem" => "$(base)_split",
+                "goal" => branches,
+                "kind" => "Split",
+                "context" => Any[],
+            ))
+            current_id += 1
         end
     end
 
