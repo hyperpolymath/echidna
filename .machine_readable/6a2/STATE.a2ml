@@ -579,3 +579,36 @@ closed-code-side = [
 remaining-ci = [
   "Mirror to Git Forges + Instant Sync: infra/secrets (Bitbucket / GitLab / etc. tokens) — human-owned blocker in ~/Desktop/YOUR-ACTIONS-todo.md.",
 ]
+
+[session-2026-04-19-production-wiring-kickoff]
+summary = "Kickoff of three-phase production wiring plan: L3 live-prover CI, L1 Cap'n Proto, L2 Chapel maximal."
+user-directive = "Make wiring deep and holistic across Rust/Julia/Chapel; address mock-only CI to full production; Cap'n Proto chosen over Bebop3; Chapel maximised; Guix primary, Nix fallback; order = 3, 1, 2."
+decisions-locked = [
+  "D1: Cap'n Proto for internal IPC (Rust<->Julia<->Chapel<->ReScript) — chosen over Bebop3 for dependability/maturity/zero-copy reads.",
+  "D2: Chapel promoted from POC (chapel_poc/parallel_proof_search.chpl, 420 LoC) to first-class hot-path execution layer across 7 sub-waves.",
+  "D3: Guix primary, Nix fallback, per project CLAUDE.md package-management policy.",
+  "D4: Execution order L3 -> L1 -> L2 (live-prover CI first to surface real bugs mocks hide, then protocol swap, then Chapel).",
+  "D5: Live-prover CI tiered — Tier-1 every PR, Tier-2 nightly, Tier-3 weekly, Tier-4 quarterly allow-fail.",
+  "D6: No-JSON rule applies; Cap'n Proto kills HTTP+JSON on Rust<->Julia hot path.",
+]
+handover-artefacts = [
+  "~/Desktop/ECHIDNA-PRODUCTION-WIRING-PLAN.md — master plan",
+  "~/Desktop/ECHIDNA-L3-LIVE-PROVER-CI-PROMPT.md — L3 continuation prompt",
+  "~/Desktop/ECHIDNA-L1-CAPNPROTO-PROMPT.md — L1 continuation prompt",
+  "~/Desktop/ECHIDNA-L2-CHAPEL-PROMPT.md — L2 continuation prompt",
+]
+l3-wave-1-artefacts = [
+  "manifests/live-provers.scm — Guix manifest covering Tier-1 + Tier-2 prover binaries",
+  "flake.nix — expanded liveProverDeps matching Guix set (fallback path)",
+  ".github/workflows/live-provers.yml — tiered CI workflow (PR/nightly/weekly/quarterly)",
+  "tests/live_prover_suite.rs — Rust test harness with canonical micro-goals for Tier-1",
+  "tests/live_goals/ — canonical goal fixtures (Tier-1 seeded)",
+]
+audit-findings-2026-04-19 = [
+  "Wiring protocol today: HTTP+JSON on Rust<->Julia via src/rust/gnn/client.rs (:1-195) -> src/julia/api_server.jl (:8090). Violates no_json_emit.",
+  "Chapel layer: README-only in dispatch path; POC is standalone, not in src/rust/dispatch.rs.",
+  "Prover depth sample: Deep (Z3, CVC5, Coq SerAPI, Lean4, Idris2); Medium (Agda, Vampire); Dafny is only 165 LoC — flag as thin.",
+  "Live-binary tests in CI: ZERO. All 638+ tests use MockProver. No live-provers.yml workflow exists (before this session).",
+]
+next-session-start = "Continue L3 Wave-2 (Tier-2 backends) per ~/Desktop/ECHIDNA-L3-LIVE-PROVER-CI-PROMPT.md"
+
