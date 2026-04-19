@@ -155,17 +155,71 @@ jobs:
           set -euo pipefail
           sudo apt-get update
           case "${{ matrix.backend }}" in
-            coq)        sudo apt-get install -y coq ;;
-            agda)       sudo apt-get install -y agda ;;
-            idris2)     echo "idris2 Wave-2 TODO: install via upstream installer or flake" ;;
-            lean4)      curl -sSL https://raw.githubusercontent.com/leanprover/elan/master/elan-init.sh | sh -s -- -y --default-toolchain leanprover/lean4:stable
-                        echo "$HOME/.elan/bin" >> "$GITHUB_PATH" ;;
-            isabelle)   echo "isabelle Wave-2 TODO: install Isabelle2024+ tarball" ;;
-            why3)       sudo apt-get install -y why3 ;;
-            dafny)      echo "dafny Wave-2 TODO: install via dotnet" ;;
-            fstar)      echo "fstar Wave-2 TODO" ;;
-            hol-light)  echo "hol-light Wave-2 TODO" ;;
-            tlaps)      echo "tlaps Wave-2 TODO" ;;
+            coq)
+              sudo apt-get install -y coq
+              ;;
+            agda)
+              sudo apt-get install -y agda
+              ;;
+            idris2)
+              # Idris2 has no apt package; build from the self-hosting tarball.
+              # Chez Scheme is the recommended backend.
+              sudo apt-get install -y chezscheme make
+              curl -fsSL -o /tmp/idris2.tar.gz https://github.com/idris-lang/Idris2/releases/latest/download/idris2-src-latest.tgz || \
+                curl -fsSL -o /tmp/idris2.tar.gz https://www.idris-lang.org/download/idris2-0.7.0.tgz
+              mkdir -p /tmp/idris2-src
+              tar xzf /tmp/idris2.tar.gz -C /tmp/idris2-src --strip-components=1
+              (cd /tmp/idris2-src && make bootstrap SCHEME=scheme && sudo make install PREFIX=/usr/local)
+              ;;
+            lean4)
+              curl -sSL https://raw.githubusercontent.com/leanprover/elan/master/elan-init.sh | sh -s -- -y --default-toolchain leanprover/lean4:stable
+              echo "$HOME/.elan/bin" >> "$GITHUB_PATH"
+              ;;
+            isabelle)
+              # Isabelle2024 tarball (~500MB); keep on nightly only.
+              curl -fsSL -o /tmp/isabelle.tar.gz https://isabelle.in.tum.de/dist/Isabelle2024_linux.tar.gz
+              sudo mkdir -p /opt
+              sudo tar xzf /tmp/isabelle.tar.gz -C /opt
+              sudo ln -sf /opt/Isabelle2024/bin/isabelle /usr/local/bin/isabelle
+              ;;
+            why3)
+              sudo apt-get install -y why3
+              ;;
+            dafny)
+              # Dafny 4.x is distributed as a standalone .NET global tool.
+              # ubuntu-latest ships dotnet-sdk 8 in setup images; install via apt if absent.
+              command -v dotnet >/dev/null 2>&1 || sudo apt-get install -y dotnet-sdk-8.0
+              dotnet tool install --global Dafny
+              echo "$HOME/.dotnet/tools" >> "$GITHUB_PATH"
+              ;;
+            fstar)
+              # F* ships prebuilt Linux binaries; binary is `fstar.exe` even on Linux.
+              curl -fsSL -o /tmp/fstar.tar.gz https://github.com/FStarLang/FStar/releases/latest/download/fstar-linux_x86_64.tar.gz
+              sudo mkdir -p /opt/fstar
+              sudo tar xzf /tmp/fstar.tar.gz -C /opt/fstar --strip-components=1
+              sudo ln -sf /opt/fstar/bin/fstar.exe /usr/local/bin/fstar.exe
+              ;;
+            hol-light)
+              # No prebuilt binary; opam build is ~20min and pulls camlp5.
+              # Deferred to Wave-3 (container-based provisioning) per the
+              # production-wiring plan.
+              echo "hol-light deferred to Wave-3 container provisioning"
+              exit 0
+              ;;
+            tlaps)
+              # TLA+ Proof System ships a self-extracting installer; provides tlapm.
+              curl -fsSL -o /tmp/tlaps.sh https://github.com/tlaplus/tlapm/releases/latest/download/tlaps-installer-linux-x86_64.sh
+              chmod +x /tmp/tlaps.sh
+              sudo /tmp/tlaps.sh --prefix=/opt/tlaps
+              sudo ln -sf /opt/tlaps/bin/tlapm /usr/local/bin/tlapm
+              ;;
+          esac
+          # Best-effort version probe for the matrix log.
+          case "${{ matrix.backend }}" in
+            fstar)     fstar.exe --version || true ;;
+            tlaps)     tlapm --version || true ;;
+            hol-light) true ;;
+            *)         "${{ matrix.backend }}" --version 2>/dev/null || true ;;
           esac
       - name: Run live test for ${{ matrix.backend }} (allow-fail while Wave-2 wires up)
         continue-on-error: true
