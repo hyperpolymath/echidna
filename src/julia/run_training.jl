@@ -10,6 +10,14 @@
 #   data_dir  = training_data/
 #   save_dir  = models/neural/
 #
+# Environment overrides (see below):
+#   ECHIDNA_MAX_PROOF_STATES — cap on proof states loaded (default 200000 on
+#     GPU, 50000 on CPU).  Set to 0 to disable the cap and consume the entire
+#     expanded corpus; required when re-baselining after corpus growth.
+#   ECHIDNA_NUM_EPOCHS      — training epochs (default 30).
+#   ECHIDNA_NUM_NEGATIVES   — hard-negative premise samples per example
+#     (default 20).
+#
 # This script:
 #   1. Loads JSONL training data (proof states + premises)
 #   2. Builds vocabulary from the corpus
@@ -74,10 +82,24 @@ println("═══════════════════════�
 println("Loading training data...")
 println("═══════════════════════════════════════════════════════════")
 
+# Default cap: 200k on GPU (enough to exercise the expanded corpus without
+# OOM on a 24GB card), 50k on CPU (keeps wall-clock finite).  An operator
+# re-baselining after corpus growth sets ECHIDNA_MAX_PROOF_STATES=0 to lift
+# the cap entirely.
+default_cap = has_gpu ? 200_000 : 50_000
+cap_env = get(ENV, "ECHIDNA_MAX_PROOF_STATES", "")
+max_proof_states = isempty(cap_env) ? default_cap : parse(Int, cap_env)
+# `load_training_data` treats any value `<= 0` as "load everything".
+cap_label = max_proof_states <= 0 ? "unlimited" : string(max_proof_states)
+println("  max_proof_states = $cap_label")
+
+num_negatives = parse(Int, get(ENV, "ECHIDNA_NUM_NEGATIVES", "20"))
+println("  num_negatives    = $num_negatives")
+
 train_data, val_data, vocab = load_training_data(data_dir;
     train_split=0.8f0,
-    max_proof_states=50000,  # Cap for reasonable training time
-    num_negatives=20
+    max_proof_states=max_proof_states,
+    num_negatives=num_negatives,
 )
 
 if isempty(train_data.examples)
@@ -101,8 +123,9 @@ println("Model created successfully")
 println()
 
 # Configure training
+num_epochs = parse(Int, get(ENV, "ECHIDNA_NUM_EPOCHS", "30"))
 training_config = TrainingConfig(
-    num_epochs=30,
+    num_epochs=num_epochs,
     learning_rate=1f-4,
     lr_schedule=:cosine,
     weight_decay=1f-5,

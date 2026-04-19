@@ -226,21 +226,127 @@ jobs:
         run: cargo test --test live_prover_suite --features live-provers -- --nocapture ${{ matrix.backend }}
 
   # ============================================================================
-  # Tier 3 — weekly.  Container-provisioned provers.  Wave-3 placeholder.
+  # Tier 3 — weekly.  Heavier upstream provers, best-effort provisioning.
+  #
+  # Backends grouped as:
+  #   A — live-provisioned today via apt / upstream tarball (tamarin, proverif,
+  #       metamath, twelf, ortools).  Version-check runs, skip-if-absent.
+  #   B — heavy-build deferred (hol4, acl2, scip) and proprietary (imandra).
+  #       Provisioning step emits a skip note; test step runs the suite with
+  #       continue-on-error so the matrix stays green and the binary's absence
+  #       is logged as SKIP by the suite's `which` probe.
   # ============================================================================
   tier3:
-    name: T3 container provers
+    name: T3 / ${{ matrix.backend }}
     if: github.event_name == 'schedule' && github.event.schedule == '0 5 * * 0' || (github.event_name == 'workflow_dispatch' && (inputs.tier == '3' || inputs.tier == 'all'))
     runs-on: ubuntu-latest
     continue-on-error: true
+    strategy:
+      fail-fast: false
+      matrix:
+        backend:
+          - tamarin
+          - proverif
+          - metamath
+          - twelf
+          - ortools
+          - hol4
+          - acl2
+          - scip
+          - imandra
     steps:
       - name: Checkout
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
-      - name: Announce Wave-3 TODO
+      - name: Install Rust
+        uses: dtolnay/rust-toolchain@4be9e76fd7c4901c61fb841f559994984270fce7 # stable
+      - name: Cache Cargo
+        uses: Swatinem/rust-cache@779680da715d629ac1d338a641029a2f4372abb5 # v2
+      - name: Provision ${{ matrix.backend }} (best-effort)
+        continue-on-error: true
         run: |
-          echo "Tier-3 backends (Tamarin, ProVerif, Imandra, SCIP, OR-Tools, HOL4, ACL2, Twelf, Metamath)"
-          echo "are provisioned via per-backend Containerfiles in Wave-3 of L3."
-          echo "See ~/Desktop/ECHIDNA-L3-LIVE-PROVER-CI-PROMPT.md for scope."
+          set -euo pipefail
+          sudo apt-get update
+          case "${{ matrix.backend }}" in
+            tamarin)
+              # Tamarin publishes prebuilt Linux x86_64 tarballs.
+              curl -fsSL -o /tmp/tamarin.tar.gz \
+                https://github.com/tamarin-prover/tamarin-prover/releases/latest/download/tamarin-prover-linux64-ubuntu.tar.gz || \
+                curl -fsSL -o /tmp/tamarin.tar.gz \
+                https://github.com/tamarin-prover/tamarin-prover/releases/download/1.10.0/tamarin-prover-1.10.0-linux64-ubuntu.tar.gz
+              sudo mkdir -p /opt/tamarin
+              sudo tar xzf /tmp/tamarin.tar.gz -C /opt/tamarin
+              # The tarball lays down tamarin-prover directly or in a version dir; link whichever we find.
+              TAMARIN_BIN="$(find /opt/tamarin -type f -name tamarin-prover | head -n 1)"
+              [ -n "$TAMARIN_BIN" ] && sudo ln -sf "$TAMARIN_BIN" /usr/local/bin/tamarin-prover
+              ;;
+            proverif)
+              # ProVerif is in the Ubuntu/Debian main repos.
+              sudo apt-get install -y proverif
+              ;;
+            metamath)
+              # metamath-exe is small; apt-installable on Ubuntu with build fallback.
+              sudo apt-get install -y metamath || {
+                sudo apt-get install -y build-essential git autoconf automake
+                git clone --depth=1 https://github.com/metamath/metamath-exe.git /tmp/mm
+                (cd /tmp/mm && ./build.sh) || \
+                  (cd /tmp/mm && autoreconf -i && ./configure && make)
+                sudo install -m 0755 /tmp/mm/metamath /usr/local/bin/metamath
+              }
+              ;;
+            twelf)
+              # Twelf is in Debian with SML/NJ; on Ubuntu it may live in universe.
+              sudo apt-get install -y twelf || \
+                echo "twelf unavailable via apt on this runner; test will SKIP."
+              ;;
+            ortools)
+              # Google OR-Tools ships prebuilt Linux tarballs.  The binary we
+              # expose to echidna is a small wrapper that invokes the solver CLI.
+              OR_URL="https://github.com/google/or-tools/releases/latest/download/or-tools_amd64_ubuntu-22.04_cpp_v9.11.4210.tar.gz"
+              curl -fsSL -o /tmp/ortools.tar.gz "$OR_URL" || {
+                echo "OR-Tools tarball unavailable at expected URL; test will SKIP."
+                exit 0
+              }
+              sudo mkdir -p /opt/ortools
+              sudo tar xzf /tmp/ortools.tar.gz -C /opt/ortools --strip-components=1
+              # Echidna's ORTools backend invokes `ortools_solve`.  The release
+              # ships `bin/solve` or similar; create the expected symlink.
+              OR_BIN="$(find /opt/ortools -type f \( -name ortools_solve -o -name solve \) | head -n 1)"
+              [ -n "$OR_BIN" ] && sudo ln -sf "$OR_BIN" /usr/local/bin/ortools_solve
+              ;;
+            hol4)
+              # HOL4 requires Poly/ML and a full tree build (~15min+); defer to
+              # container provisioning.  Test step will SKIP on this runner.
+              echo "hol4: heavy Poly/ML build deferred to Containerfile provisioning."
+              ;;
+            acl2)
+              # ACL2 requires a Common Lisp image (CCL/SBCL) and a 10min+ build;
+              # defer to container provisioning.  Test step will SKIP.
+              echo "acl2: heavy SBCL+image build deferred to Containerfile."
+              ;;
+            scip)
+              # SCIP Optimization Suite needs a full cmake build (~10min).  The
+              # upstream tarball requires a form-gated download, so CI defers to
+              # Containerfile provisioning.  Test step will SKIP.
+              echo "scip: form-gated upstream tarball; deferred to Containerfile."
+              ;;
+            imandra)
+              # Imandra is proprietary; no public Linux binary.  Handled via
+              # vendor-supplied container where a licence is available.
+              echo "imandra: proprietary; no public CI provisioning available."
+              ;;
+          esac
+          # Best-effort version probe for the matrix log.
+          case "${{ matrix.backend }}" in
+            tamarin)    tamarin-prover --version 2>&1 | head -n 1 || true ;;
+            proverif)   proverif --version 2>&1 | head -n 1 || true ;;
+            metamath)   echo exit | metamath 2>&1 | head -n 1 || true ;;
+            twelf)      twelf-server --help 2>&1 | head -n 1 || true ;;
+            ortools)    ortools_solve --help 2>&1 | head -n 1 || true ;;
+            hol4|acl2|scip|imandra) true ;;
+          esac
+      - name: Run live test for ${{ matrix.backend }} (allow-fail while Wave-3 wires up)
+        continue-on-error: true
+        run: cargo test --test live_prover_suite --features live-provers -- --nocapture ${{ matrix.backend }}
 
   # ============================================================================
   # Tier 4 — quarterly, best-effort / allow-fail.
