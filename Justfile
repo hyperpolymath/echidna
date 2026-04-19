@@ -74,6 +74,40 @@ vocab-canon:
     julia scripts/vocabulary_mine_corpus.jl
     julia scripts/vocabulary_canonicalize.jl
 
+# ── Corpus / training pipeline ─────────────────────────────────
+#
+# Three steps in order: provision upstream mirrors, run every extractor,
+# then retrain.  Each step is idempotent; re-running only touches what
+# has changed.  See scripts/provision_corpora.sh --list for the source
+# catalogue.
+
+# Clone every upstream prover corpus into external_corpora/.
+# Pass specific names to provision a subset: `just provision-corpora metamath mathlib4`.
+provision-corpora *NAMES:
+    @if [ -z "{{NAMES}}" ]; then \
+        scripts/provision_corpora.sh --all; \
+    else \
+        scripts/provision_corpora.sh {{NAMES}}; \
+    fi
+
+# Report which upstream corpora are on disk and their sizes.
+corpora-status:
+    scripts/provision_corpora.sh --status
+
+# Run every scripts/extract_*.jl against the provisioned corpora.
+# Pass names to run a subset: `just extract-corpora metamath mathlib4`.
+extract-corpora *NAMES:
+    scripts/extract_all.sh {{NAMES}}
+
+# Full retrain from provisioned corpora.  Honours ECHIDNA_MAX_PROOF_STATES
+# (0 = unlimited), ECHIDNA_NUM_EPOCHS, ECHIDNA_NUM_NEGATIVES.
+retrain:
+    julia --project=src/julia src/julia/run_training.jl
+
+# End-to-end pipeline: provision → extract → retrain.
+# Use `ECHIDNA_MAX_PROOF_STATES=0 just corpus-refresh` to lift the sample cap.
+corpus-refresh: provision-corpora extract-corpora retrain
+
 # Run the eight-axis metrics suite against the current corpus and post
 # results to VeriSimDB. Falls back to training_data/metrics_<run_id>.jsonl
 # if VERISIM_URL is unreachable. Target values are documented in
