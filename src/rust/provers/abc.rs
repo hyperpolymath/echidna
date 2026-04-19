@@ -269,6 +269,7 @@ impl AbcBackend {
                         name: input_name.to_string(),
                         ty: Term::Const("BLIF_INPUT".to_string()),
                         body: Term::Const(input_name.to_string()),
+                        type_info: None,
                     });
                 }
             }
