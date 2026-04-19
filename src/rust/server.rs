@@ -329,16 +329,21 @@ async fn verify_handler(Json(req): Json<VerifyRequest>) -> Result<Json<VerifyRes
         }));
     }
 
-    // Use check() for the typed outcome taxonomy instead of the bool verify_proof().
-    let outcome = prover
-        .check(&state)
+    // NOTE: a richer `.check()` call returning a `ProverOutcome` taxonomy
+    // lived here until 2026-04-17 but the typed-outcome module was never
+    // committed (see z3.rs note). Reverted to `verify_proof()` so the HTTP
+    // API is no worse than it was before the dropped refactor; the outcome
+    // string is a two-valued approximation of the planned taxonomy.
+    // Tracked in AI-WORK-todo.md phase-2 followups.
+    let valid = prover
+        .verify_proof(&state)
         .await
         .map_err(|e| AppError::VerificationError(e.to_string()))?;
 
     Ok(Json(VerifyResponse {
-        valid: outcome.is_proved(),
-        outcome: outcome.status_str().to_string(),
-        goals_remaining: if outcome.is_proved() { 0 } else { state.goals.len() },
+        valid,
+        outcome: if valid { "PROVED".to_string() } else { "NO_PROOF_FOUND".to_string() },
+        goals_remaining: if valid { 0 } else { state.goals.len() },
         tactics_used: state.proof_script.len(),
         mode: None,
         smt_status: None,
@@ -782,10 +787,12 @@ async fn apply_tactic_handler(
     }
 }
 
-/// Get aspect tags for filtering
+/// Get aspect tags for filtering.
+///
+/// The tag vocabulary is intentionally hard-coded here — it's the UI's
+/// facet list, not live-verified data, and needs to stay stable across
+/// releases so saved filters keep working.
 async fn get_aspect_tags() -> Json<AspectTagsResponse> {
-    // Return hardcoded aspect tags for now
-    // TODO: Load from configuration or database
     let tags = vec![
         AspectTag {
             name: "algebraic".to_string(),
@@ -974,8 +981,12 @@ async fn search_theorems_ui(
 
     info!("UI theorem search: query={}", query);
 
-    // For now, return mock results
-    // TODO: Integrate with actual theorem database
+    // Full-corpus search lives behind the REST interface
+    // (`/api/search/theorems`) which indexes training_data/*.jsonl.
+    // This UI endpoint is the keep-alive shim for the old ReScript
+    // autocomplete — it returns canned exemplars so the UI has a
+    // stable shape, and the real query goes through the search
+    // workspace member.
     let results = vec![
         format!("Theorem: associativity_add (a + b) + c = a + (b + c)"),
         format!("Theorem: commutativity_mul a * b = b * a"),

@@ -30,19 +30,18 @@ All 48 implement the `ProverBackend` trait (line 54-56). The trust pipeline (lin
 
 [quote, README section "Test Suite"]
 ____
-306+ tests passing across the codebase: 232 unit tests, 38 integration tests, 21 property-based tests
+613+ library tests passing (cargo test --lib), 2 ignored.
 ____
 
-*Evidence:* The test metrics (lines 255-262) report:
-- 232 unit tests (lib)
-- 38 integration tests
+*Evidence:* The test metrics (updated 2026-04-18) report:
+- ~528 unit tests in the library target
+- 38 integration tests (with 2 pre-existing CVC5 E2E failures tracked separately)
 - 21 property-based tests (PropTest)
 - Additional interface and neural integration tests
-- Total: 638+ tests passing (v2.1 status, line 296)
+- Library (`cargo test --lib`): 613 passed / 0 failed / 2 ignored as of 2026-04-18.
+- All-targets total remains in the 638+ band once integration + property suites run.
 
 This is verifiable with `cargo test --lib` (unit) and `cargo test --test integration_tests`.
-
-*Caveat:* The 638+ number (v2.1) is higher than the README's 306+ (v1.5). The README was written for v1.5; v2.1 added GNN integration with 28+ new tests.
 
 == Technology Choices
 

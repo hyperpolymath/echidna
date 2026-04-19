@@ -22,10 +22,12 @@
 
 use anyhow::{Context, Result};
 use serde::{Deserialize, Serialize};
-use tracing::{debug, info};
+use tracing::{debug, info, warn};
 
 use crate::provers::ProverKind;
 
+#[cfg(feature = "verisim")]
+use crate::core::Goal;
 #[cfg(feature = "verisim")]
 use crate::proof_encoding;
 #[cfg(feature = "verisim")]
@@ -491,7 +493,7 @@ impl QueryExecutor {
 
     /// Find a specific proof by theorem name and optional prover.
     async fn execute_find_proof(&self, query: &ProofQuery) -> Result<QueryResult> {
-        let _theorem = query.theorem_name.as_deref().unwrap_or("");
+        let theorem = query.theorem_name.as_deref().unwrap_or("");
 
         #[cfg(feature = "verisim")]
         if let Some(prover) = query.prover {

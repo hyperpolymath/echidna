@@ -74,7 +74,7 @@ function parse_acl2_file(filepath::String)::Vector{Dict{String,Any}}
         body = strip(m.captures[2])
         # Clean up body
         body_clean = replace(body, r"\s+" => " ")
-        body_clean = body_clean[1:min(300, length(body_clean))]
+        body_clean = first(body_clean, 300)
 
         # Extract hints
         hints_match = match(r":hints\s*\((.*?)\)"s, body)
@@ -251,14 +251,35 @@ function run()::Tuple{Int,Int}
     downloaded = download_acl2_files()
     println("  Downloaded/cached $downloaded files")
 
+    # Widening (2026-04-18): walk a sparse acl2/acl2 clone at
+    # external_corpora/acl2_full/ (only `books/` checked out). The
+    # ACL2 Community Books are the canonical proof corpus and hold
+    # tens of thousands of named theorems across hundreds of books.
+    # Accept .lisp and .acl2 files.
+    src_files = String[]
     for fname in readdir(EXTERNAL_DIR)
-        if endswith(fname, ".lisp")
-            fpath = joinpath(EXTERNAL_DIR, fname)
-            parsed = parse_acl2_file(fpath)
-            append!(all_entries, parsed)
-            if !isempty(parsed)
-                println("  Parsed $(length(parsed)) theorems from $fname")
+        (endswith(fname, ".lisp") || endswith(fname, ".acl2")) &&
+            push!(src_files, joinpath(EXTERNAL_DIR, fname))
+    end
+    full_root = joinpath(dirname(EXTERNAL_DIR), "acl2_full")
+    if isdir(full_root)
+        println("[ACL2] Walking full clone at $(full_root) ...")
+        for (root, _dirs, files) in walkdir(full_root)
+            for fname in files
+                (endswith(fname, ".lisp") || endswith(fname, ".acl2")) &&
+                    push!(src_files, joinpath(root, fname))
             end
+        end
+    end
+    println("  $(length(src_files)) ACL2 source files to parse")
+
+    processed = 0
+    for fpath in src_files
+        parsed = parse_acl2_file(fpath)
+        append!(all_entries, parsed)
+        processed += 1
+        if processed % 500 == 0
+            println("  processed $(processed)/$(length(src_files)) files — running count: $(length(all_entries))")
         end
     end
     extracted_count = length(all_entries)

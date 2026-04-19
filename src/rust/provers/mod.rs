@@ -13,8 +13,25 @@ use std::path::{Path, PathBuf};
 
 use crate::core::{ProofState, Tactic, TacticResult};
 
+pub mod outcome;
+pub use outcome::{classify_anyhow_error, ProverOutcome};
+
 pub mod abc;
+pub mod abella;
 pub mod acl2;
+pub mod acl2s;
+pub mod arend;
+pub mod athena;
+pub mod boogie;
+pub mod cameleer;
+pub mod dedukti;
+pub mod isabelle_zf;
+pub mod lambda_prolog;
+pub mod matita;
+pub mod mercury;
+pub mod naproche;
+pub mod nitpick;
+pub mod nunchaku;
 pub mod agda;
 pub mod alloy;
 pub mod altergo;
@@ -37,6 +54,7 @@ pub mod isabelle;
 pub mod key;
 pub mod kissat;
 pub mod lean;
+pub mod lean3;
 pub mod metamath;
 pub mod minisat;
 pub mod minizinc;
@@ -57,6 +75,7 @@ pub mod tlaps;
 pub mod tlc;
 pub mod twelf;
 pub mod typed_wasm;
+pub mod hp_ecosystem;
 pub mod uppaal;
 pub mod vampire;
 pub mod viper;
@@ -88,6 +107,11 @@ pub enum ProverKind {
 
     // Extended: Additional provers
     Idris2,
+    /// Lean 3 — sibling prover to Lean 4 (not a version of it).
+    /// mathlib3 preserves a substantial corpus that never fully ported
+    /// to mathlib4; port-pairs between mathlib3 and mathlib4 give the
+    /// arbiter ready-made cross-system evidence for the same theorem.
+    Lean3,
 
     // Tier 5: First-Order ATPs
     Vampire,
@@ -152,6 +176,187 @@ pub enum ProverKind {
 
     // Tier 10: Logic synthesis & hardware verification
     ABC,
+
+    // Tier 11: HP type-checker ecosystem. These dispatch through one
+    // unified HPEcosystemBackend that routes to the real HP upstreams
+    // (TypeLL, Katagoria, tropical-resource-typing). They are
+    // type-discipline views rather than separate binaries.
+    //
+    // Exhaustive enumeration of every type discipline we intend to support.
+    // Adding a variant here is cheap (dispatch-level only); the goal is to
+    // never have to re-open this enum once the ecosystem grows. See
+    // `src/rust/disciplines/` for the family grouping and katagoria pipeline.
+    TypeLL,
+    KatagoriaVerifier,
+    TropicalTypeChecker,
+    ChoreographicTypeChecker,
+    EpistemicTypeChecker,
+    EchoTypeChecker,
+    SessionTypeChecker,
+    ModalTypeChecker,
+    QTTTypeChecker,
+    EffectRowTypeChecker,
+    DependentTypeChecker,
+    RefinementTypeChecker,
+    // Foundations
+    OrdinaryTypeChecker,
+    // Polymorphism family
+    PhantomTypeChecker,
+    PolymorphicTypeChecker,
+    ExistentialTypeChecker,
+    HigherKindedTypeChecker,
+    RowTypeChecker,
+    // Subtyping family
+    SubtypingTypeChecker,
+    IntersectionTypeChecker,
+    UnionTypeChecker,
+    GradualTypeChecker,
+    // Dependent / refinement family (siblings of Dependent/Refinement)
+    HoareTypeChecker,
+    IndexedTypeChecker,
+    // Substructural family (siblings / specialisations of QTT)
+    LinearTypeChecker,
+    AffineTypeChecker,
+    RelevantTypeChecker,
+    OrderedTypeChecker,
+    UniquenessTypeChecker,
+    // Mutability / capability family
+    ImmutableTypeChecker,
+    CapabilityTypeChecker,
+    BunchedTypeChecker,
+    // Modal family (siblings of Modal/Epistemic)
+    TemporalTypeChecker,
+    ProvabilityTypeChecker,
+    // Effects / coeffects family (siblings of EffectRow)
+    ImpureTypeChecker,
+    CoeffectTypeChecker,
+    ProbabilisticTypeChecker,
+    // Process / communication family (siblings of Session/Choreographic/Echo)
+    DyadicTypeChecker,
+    // Homotopy foundations
+    HomotopyTypeChecker,
+    CubicalTypeChecker,
+    /// Nominal logic / HOAS / λ-tree syntax dispatcher. Added 2026-04-18 as
+    /// an honest one-time correction — nominal logic was missed in the
+    /// original 40-variant exhaustive enumeration. See
+    /// `src/rust/disciplines/mod.rs :: TypeDiscipline::Nominal` for the
+    /// full rationale.
+    NominalTypeChecker,
+    /// Abella — classical Axis-1 prover for nominal logic / HOAS.
+    /// Two-level logic (λProlog specification + sequent reasoning with
+    /// the ∇ generic quantifier). Sibling to Twelf in logical framework
+    /// style but with distinct proof theory.
+    Abella,
+    /// Dedukti — universal λΠ-modulo framework. Already in echidna as
+    /// a proof-exchange format (`src/rust/exchange/dedukti.rs`); this
+    /// variant adds the prover-as-solver role (invoking `dkcheck` /
+    /// `lambdapi` to typecheck a `.dk` source end-to-end).
+    Dedukti,
+    /// Cameleer — OCaml front-end for Why3 via GOSPEL contracts.
+    /// Thin pipeline over Why3's solver fleet; own variant so the
+    /// OCaml-proofs niche gets its own corpus slot and port-pairs
+    /// with F*/Dafny are trackable for the arbiter.
+    Cameleer,
+    /// ACL2s — sibling dialect to ACL2 with richer type annotations.
+    /// Different binary, different default libraries, different
+    /// tactic distributions; separate variant keeps the corpus slot
+    /// distinct from ACL2 proper.
+    ACL2s,
+    /// Isabelle/ZF — Isabelle with Zermelo-Fraenkel set-theory
+    /// object logic. Same `isabelle` binary as Isabelle/HOL but
+    /// different session name and stdlib; distinct proof style
+    /// and theorem namespace warrant a distinct slot.
+    IsabelleZF,
+    /// Boogie — intermediate verification language standalone
+    /// backend. Currently reached via Viper; exposing directly lets
+    /// echidna consume `.bpl` programs without a Viper wrapper
+    /// (e.g. Dafny-generated output, Chalice, VCC front-ends).
+    Boogie,
+    // Phase 4 "variety" batch (2026-04-18) — from the prover story's
+    // unique-and-unusual + pure-variety lists. Each genuinely distinct
+    // from what echidna already covers; skipping Coq-variants
+    // (Edukera, Bedrock2, CompCert) and F*-libraries (LowStar) since
+    // those don't warrant new ProverKind slots.
+    /// Naproche — controlled natural-language (ForTheL) proof checker.
+    /// Only text-style prover in echidna's roster; token distribution
+    /// unlike any other.
+    Naproche,
+    /// Matita — Bologna's Calculus of Inductive Constructions variant.
+    /// Coq-adjacent but semantically distinct enough to deserve its
+    /// own corpus slot.
+    Matita,
+    /// Arend — JetBrains's cubical HoTT prover. Distinct from Cubical
+    /// Agda in having path primitives as first-class syntax and IDE
+    /// tooling. Co-serves `TypeDiscipline::Cubical`.
+    Arend,
+    /// Athena — Arkoudas's denotational-proof-language with
+    /// intermixed deductive and computational phases.
+    Athena,
+    /// λProlog — higher-order logic programming with HOAS (Teyjus /
+    /// Elpi implementations). Co-serves `TypeDiscipline::Nominal`
+    /// alongside Abella.
+    LambdaProlog,
+    /// Mercury — pure logic programming with static types and modes.
+    /// Proof-adjacent via termination and determinism proofs.
+    Mercury,
+    /// Nitpick — Isabelle-integrated counter-example finder.
+    /// Produces refutations; corpus records are negative-class data
+    /// balancing the otherwise positive-only proof corpus.
+    Nitpick,
+    /// Nunchaku — standalone model / counter-example finder for HOL.
+    /// Sibling to Nitpick; same negative-class story but not
+    /// Isabelle-coupled, wider input format range.
+    Nunchaku,
+}
+
+impl ProverKind {
+    /// True if this kind is served by the unified HP-ecosystem backend.
+    pub fn is_hp_ecosystem(&self) -> bool {
+        matches!(
+            self,
+            ProverKind::TypeLL
+                | ProverKind::KatagoriaVerifier
+                | ProverKind::TropicalTypeChecker
+                | ProverKind::ChoreographicTypeChecker
+                | ProverKind::EpistemicTypeChecker
+                | ProverKind::EchoTypeChecker
+                | ProverKind::SessionTypeChecker
+                | ProverKind::ModalTypeChecker
+                | ProverKind::QTTTypeChecker
+                | ProverKind::EffectRowTypeChecker
+                | ProverKind::DependentTypeChecker
+                | ProverKind::RefinementTypeChecker
+                | ProverKind::OrdinaryTypeChecker
+                | ProverKind::PhantomTypeChecker
+                | ProverKind::PolymorphicTypeChecker
+                | ProverKind::ExistentialTypeChecker
+                | ProverKind::HigherKindedTypeChecker
+                | ProverKind::RowTypeChecker
+                | ProverKind::SubtypingTypeChecker
+                | ProverKind::IntersectionTypeChecker
+                | ProverKind::UnionTypeChecker
+                | ProverKind::GradualTypeChecker
+                | ProverKind::HoareTypeChecker
+                | ProverKind::IndexedTypeChecker
+                | ProverKind::LinearTypeChecker
+                | ProverKind::AffineTypeChecker
+                | ProverKind::RelevantTypeChecker
+                | ProverKind::OrderedTypeChecker
+                | ProverKind::UniquenessTypeChecker
+                | ProverKind::ImmutableTypeChecker
+                | ProverKind::CapabilityTypeChecker
+                | ProverKind::BunchedTypeChecker
+                | ProverKind::TemporalTypeChecker
+                | ProverKind::ProvabilityTypeChecker
+                | ProverKind::ImpureTypeChecker
+                | ProverKind::CoeffectTypeChecker
+                | ProverKind::ProbabilisticTypeChecker
+                | ProverKind::DyadicTypeChecker
+                | ProverKind::HomotopyTypeChecker
+                | ProverKind::CubicalTypeChecker
+                | ProverKind::NominalTypeChecker
+        )
+    }
 }
 
 impl std::str::FromStr for ProverKind {
@@ -172,6 +377,7 @@ impl std::str::FromStr for ProverKind {
             "acl2" => Ok(ProverKind::ACL2),
             "hol4" => Ok(ProverKind::HOL4),
             "idris2" | "idris" => Ok(ProverKind::Idris2),
+            "lean3" | "lean-3" | "lean3-legacy" | "mathlib3" => Ok(ProverKind::Lean3),
             "vampire" => Ok(ProverKind::Vampire),
             "eprover" | "e" => Ok(ProverKind::EProver),
             "spass" => Ok(ProverKind::SPASS),
@@ -208,6 +414,115 @@ impl std::str::FromStr for ProverKind {
             "key" | "key-project" | "javadl" => Ok(ProverKind::KeY),
             "dreal" | "d-real" | "dreal4" => Ok(ProverKind::DReal),
             "abc" | "berkeley-abc" => Ok(ProverKind::ABC),
+            "typell" | "type-ll" | "typell-kernel" => Ok(ProverKind::TypeLL),
+            "katagoria" | "katagoriaverifier" | "katagoria-verifier" => {
+                Ok(ProverKind::KatagoriaVerifier)
+            }
+            "tropicaltypechecker" | "tropical" | "tropical-type-checker" => {
+                Ok(ProverKind::TropicalTypeChecker)
+            }
+            "choreographictypechecker" | "choreographic" => {
+                Ok(ProverKind::ChoreographicTypeChecker)
+            }
+            "epistemictypechecker" | "epistemic" => Ok(ProverKind::EpistemicTypeChecker),
+            "echotypechecker" | "echo" => Ok(ProverKind::EchoTypeChecker),
+            "sessiontypechecker" | "session" => Ok(ProverKind::SessionTypeChecker),
+            "modaltypechecker" | "modal" => Ok(ProverKind::ModalTypeChecker),
+            "qtttypechecker" | "qtt" | "quantitative" => Ok(ProverKind::QTTTypeChecker),
+            "effectrowtypechecker" | "effect-row" | "effectrow" => {
+                Ok(ProverKind::EffectRowTypeChecker)
+            }
+            "dependenttypechecker" | "dependent" => Ok(ProverKind::DependentTypeChecker),
+            "refinementtypechecker" | "refinement" => Ok(ProverKind::RefinementTypeChecker),
+            "ordinarytypechecker" | "ordinary" | "simple" | "simply-typed" | "stlc" => {
+                Ok(ProverKind::OrdinaryTypeChecker)
+            }
+            "phantomtypechecker" | "phantom" => Ok(ProverKind::PhantomTypeChecker),
+            "polymorphictypechecker" | "polymorphic" | "systemf" | "system-f" | "parametric" => {
+                Ok(ProverKind::PolymorphicTypeChecker)
+            }
+            "existentialtypechecker" | "existential" | "packed" => {
+                Ok(ProverKind::ExistentialTypeChecker)
+            }
+            "higherkindedtypechecker" | "higher-kinded" | "higherkinded" | "hkt" | "hk" => {
+                Ok(ProverKind::HigherKindedTypeChecker)
+            }
+            "rowtypechecker" | "row" | "row-polymorphic" | "row-polymorphism" => {
+                Ok(ProverKind::RowTypeChecker)
+            }
+            "subtypingtypechecker" | "subtyping" | "sub" => Ok(ProverKind::SubtypingTypeChecker),
+            "intersectiontypechecker" | "intersection" | "inter" => {
+                Ok(ProverKind::IntersectionTypeChecker)
+            }
+            "uniontypechecker" | "union" => Ok(ProverKind::UnionTypeChecker),
+            "gradualtypechecker" | "gradual" | "gradual-typing" => {
+                Ok(ProverKind::GradualTypeChecker)
+            }
+            "hoaretypechecker" | "hoare" | "hoare-types" => Ok(ProverKind::HoareTypeChecker),
+            "indexedtypechecker" | "indexed" | "indexed-monad" | "indexed-monads" => {
+                Ok(ProverKind::IndexedTypeChecker)
+            }
+            "lineartypechecker" | "linear" | "linear-types" => Ok(ProverKind::LinearTypeChecker),
+            "affinetypechecker" | "affine" | "affine-types" => Ok(ProverKind::AffineTypeChecker),
+            "relevanttypechecker" | "relevant" | "relevant-types" => {
+                Ok(ProverKind::RelevantTypeChecker)
+            }
+            "orderedtypechecker" | "ordered" | "ordered-logic" | "no-exchange" => {
+                Ok(ProverKind::OrderedTypeChecker)
+            }
+            "uniquenesstypechecker" | "uniqueness" | "unique" | "unique-types" => {
+                Ok(ProverKind::UniquenessTypeChecker)
+            }
+            "immutabletypechecker" | "immutable" | "frozen" | "const-types" => {
+                Ok(ProverKind::ImmutableTypeChecker)
+            }
+            "capabilitytypechecker" | "capability" | "cap" | "capability-types" => {
+                Ok(ProverKind::CapabilityTypeChecker)
+            }
+            "bunchedtypechecker" | "bunched" | "bi" | "bi-logic" | "separation" => {
+                Ok(ProverKind::BunchedTypeChecker)
+            }
+            "temporaltypechecker" | "temporal" | "ltl" | "ctl" => {
+                Ok(ProverKind::TemporalTypeChecker)
+            }
+            "provabilitytypechecker" | "provability" | "lob" | "löb" | "gl" => {
+                Ok(ProverKind::ProvabilityTypeChecker)
+            }
+            "impuretypechecker" | "impure" | "effect-tracked" => {
+                Ok(ProverKind::ImpureTypeChecker)
+            }
+            "coeffecttypechecker" | "coeffect" | "graded-context" | "coeffects" => {
+                Ok(ProverKind::CoeffectTypeChecker)
+            }
+            "probabilistictypechecker" | "probabilistic" | "prob" | "prob-types" => {
+                Ok(ProverKind::ProbabilisticTypeChecker)
+            }
+            "dyadictypechecker" | "dyadic" | "binary-channel" | "dyadic-session" => {
+                Ok(ProverKind::DyadicTypeChecker)
+            }
+            "homotopytypechecker" | "homotopy" | "hott" => Ok(ProverKind::HomotopyTypeChecker),
+            "cubicaltypechecker" | "cubical" | "cubical-tt" => Ok(ProverKind::CubicalTypeChecker),
+            "nominaltypechecker" | "nominal" | "hoas" | "lambda-tree" => {
+                Ok(ProverKind::NominalTypeChecker)
+            }
+            "abella" => Ok(ProverKind::Abella),
+            "dedukti" | "dkcheck" | "lambdapi" => Ok(ProverKind::Dedukti),
+            "cameleer" | "gospel" => Ok(ProverKind::Cameleer),
+            "acl2s" | "acl2-s" => Ok(ProverKind::ACL2s),
+            "isabellezf" | "isabelle-zf" | "isabelle/zf" | "zf" => {
+                Ok(ProverKind::IsabelleZF)
+            }
+            "boogie" | "bpl" => Ok(ProverKind::Boogie),
+            "naproche" | "forthel" | "ftl" => Ok(ProverKind::Naproche),
+            "matita" => Ok(ProverKind::Matita),
+            "arend" => Ok(ProverKind::Arend),
+            "athena" => Ok(ProverKind::Athena),
+            "lambdaprolog" | "lambda-prolog" | "teyjus" | "elpi" => {
+                Ok(ProverKind::LambdaProlog)
+            }
+            "mercury" | "mmc" => Ok(ProverKind::Mercury),
+            "nitpick" => Ok(ProverKind::Nitpick),
+            "nunchaku" => Ok(ProverKind::Nunchaku),
             _ => Err(anyhow::anyhow!("Unknown prover: {}", s)),
         }
     }
@@ -243,6 +558,7 @@ impl ProverKind {
         let mut provers = Self::all_core();
         provers.extend_from_slice(&[
             ProverKind::Idris2,
+            ProverKind::Lean3,
             ProverKind::Vampire,
             ProverKind::EProver,
             ProverKind::SPASS,
@@ -299,6 +615,21 @@ impl ProverKind {
             ProverKind::ACL2 => 4,
             ProverKind::HOL4 => 5,
             ProverKind::Idris2 => 3,
+            ProverKind::Lean3 => 3, // Same complexity as Lean 4.
+            ProverKind::Abella => 3, // Two-level logic, HOAS proof state.
+            ProverKind::Dedukti => 3, // λΠ-modulo framework.
+            ProverKind::Cameleer => 2, // Thin OCaml→Why3 pipeline.
+            ProverKind::ACL2s => 4, // Sibling to ACL2.
+            ProverKind::IsabelleZF => 4, // Sibling to Isabelle/HOL.
+            ProverKind::Boogie => 2, // Intermediate verification language.
+            ProverKind::Naproche => 3, // Controlled-NL parsing non-trivial.
+            ProverKind::Matita => 3, // CIC variant, same family as Coq.
+            ProverKind::Arend => 3, // Cubical HoTT.
+            ProverKind::Athena => 4, // Denotational + rewriting engine.
+            ProverKind::LambdaProlog => 3, // HOAS logic programming.
+            ProverKind::Mercury => 3, // Logic programming with types/modes.
+            ProverKind::Nitpick => 2, // Isabelle-wrapped counter-example finder.
+            ProverKind::Nunchaku => 2, // Standalone counter-example finder.
             ProverKind::Vampire => 2,   // Automated, relatively simple
             ProverKind::EProver => 2,   // Similar to Vampire
             ProverKind::SPASS => 2,     // Automated FOL
@@ -335,6 +666,53 @@ impl ProverKind {
             ProverKind::KeY => 3, // Deductive Java verifier (JavaDL + JML), auto + interactive
             ProverKind::DReal => 2, // Automated delta-complete SMT solver, NRA
             ProverKind::ABC => 2, // Automated hardware verification, AIG-based
+            // HP type-checker ecosystem: complexity 3 — they are real
+            // type-checkers with non-trivial unification/elaboration.
+            // Heavier disciplines (HoTT/Cubical, Hoare) rate 4.
+            ProverKind::TypeLL
+            | ProverKind::KatagoriaVerifier
+            | ProverKind::TropicalTypeChecker
+            | ProverKind::ChoreographicTypeChecker
+            | ProverKind::EpistemicTypeChecker
+            | ProverKind::EchoTypeChecker
+            | ProverKind::SessionTypeChecker
+            | ProverKind::ModalTypeChecker
+            | ProverKind::QTTTypeChecker
+            | ProverKind::EffectRowTypeChecker
+            | ProverKind::DependentTypeChecker
+            | ProverKind::RefinementTypeChecker
+            | ProverKind::PhantomTypeChecker
+            | ProverKind::PolymorphicTypeChecker
+            | ProverKind::ExistentialTypeChecker
+            | ProverKind::HigherKindedTypeChecker
+            | ProverKind::RowTypeChecker
+            | ProverKind::SubtypingTypeChecker
+            | ProverKind::IntersectionTypeChecker
+            | ProverKind::UnionTypeChecker
+            | ProverKind::GradualTypeChecker
+            | ProverKind::IndexedTypeChecker
+            | ProverKind::LinearTypeChecker
+            | ProverKind::AffineTypeChecker
+            | ProverKind::RelevantTypeChecker
+            | ProverKind::OrderedTypeChecker
+            | ProverKind::UniquenessTypeChecker
+            | ProverKind::ImmutableTypeChecker
+            | ProverKind::CapabilityTypeChecker
+            | ProverKind::BunchedTypeChecker
+            | ProverKind::TemporalTypeChecker
+            | ProverKind::ProvabilityTypeChecker
+            | ProverKind::ImpureTypeChecker
+            | ProverKind::CoeffectTypeChecker
+            | ProverKind::ProbabilisticTypeChecker
+            | ProverKind::DyadicTypeChecker => 3,
+            // Heavier disciplines: Hoare triples (SL proofs), HoTT (univalence),
+            // Cubical (interval primitives).
+            ProverKind::HoareTypeChecker
+            | ProverKind::HomotopyTypeChecker
+            | ProverKind::CubicalTypeChecker
+            | ProverKind::NominalTypeChecker => 4,
+            // Baseline: simply-typed lambda calculus — cheap to check.
+            ProverKind::OrdinaryTypeChecker => 2,
         }
     }
 
@@ -356,6 +734,22 @@ impl ProverKind {
 
             // Extended tier (same as Tier 1 in capability)
             ProverKind::Idris2 => 1,
+            ProverKind::Lean3 => 1, // Sibling to Lean 4.
+            // Tier 7 niche: specialized proof framework for HOAS / nominal.
+            ProverKind::Abella => 2,
+            ProverKind::Dedukti => 2, // Logical framework tier.
+            ProverKind::Cameleer => 2, // Auto-active via Why3.
+            ProverKind::ACL2s => 3, // Sibling to ACL2 (tier 3).
+            ProverKind::IsabelleZF => 1, // Sibling to Isabelle (tier 1).
+            ProverKind::Boogie => 5, // Deductive program verifier tier.
+            ProverKind::Naproche => 2, // Specialised, text-style.
+            ProverKind::Matita => 1, // Coq-adjacent, Tier 1 capability.
+            ProverKind::Arend => 1, // Cubical HoTT, Tier 1.
+            ProverKind::Athena => 4, // Niche framework.
+            ProverKind::LambdaProlog => 4, // Logical framework / HOAS.
+            ProverKind::Mercury => 4, // Specialised logic programming.
+            ProverKind::Nitpick => 5, // Counter-example finder tier.
+            ProverKind::Nunchaku => 5, // Counter-example finder tier.
 
             // Tier 5: First-Order ATPs
             ProverKind::Vampire => 5,
@@ -406,6 +800,50 @@ impl ProverKind {
             ProverKind::KeY => 5,      // Deductive Java verifier
             ProverKind::DReal => 5,    // Delta-complete SMT solver (NRA/ODE)
             ProverKind::ABC => 5,      // Logic synthesis & hardware verification
+            // HP ecosystem — tier 11 (beyond the existing 10-tier scheme
+            // but placed as 3 here to share the ML guidance budget with
+            // dependent/interactive provers).
+            ProverKind::TypeLL
+            | ProverKind::KatagoriaVerifier
+            | ProverKind::TropicalTypeChecker
+            | ProverKind::ChoreographicTypeChecker
+            | ProverKind::EpistemicTypeChecker
+            | ProverKind::EchoTypeChecker
+            | ProverKind::SessionTypeChecker
+            | ProverKind::ModalTypeChecker
+            | ProverKind::QTTTypeChecker
+            | ProverKind::EffectRowTypeChecker
+            | ProverKind::DependentTypeChecker
+            | ProverKind::RefinementTypeChecker
+            | ProverKind::OrdinaryTypeChecker
+            | ProverKind::PhantomTypeChecker
+            | ProverKind::PolymorphicTypeChecker
+            | ProverKind::ExistentialTypeChecker
+            | ProverKind::HigherKindedTypeChecker
+            | ProverKind::RowTypeChecker
+            | ProverKind::SubtypingTypeChecker
+            | ProverKind::IntersectionTypeChecker
+            | ProverKind::UnionTypeChecker
+            | ProverKind::GradualTypeChecker
+            | ProverKind::HoareTypeChecker
+            | ProverKind::IndexedTypeChecker
+            | ProverKind::LinearTypeChecker
+            | ProverKind::AffineTypeChecker
+            | ProverKind::RelevantTypeChecker
+            | ProverKind::OrderedTypeChecker
+            | ProverKind::UniquenessTypeChecker
+            | ProverKind::ImmutableTypeChecker
+            | ProverKind::CapabilityTypeChecker
+            | ProverKind::BunchedTypeChecker
+            | ProverKind::TemporalTypeChecker
+            | ProverKind::ProvabilityTypeChecker
+            | ProverKind::ImpureTypeChecker
+            | ProverKind::CoeffectTypeChecker
+            | ProverKind::ProbabilisticTypeChecker
+            | ProverKind::DyadicTypeChecker
+            | ProverKind::HomotopyTypeChecker
+            | ProverKind::CubicalTypeChecker
+            | ProverKind::NominalTypeChecker => 3,
         }
     }
 
@@ -420,6 +858,21 @@ impl ProverKind {
             ProverKind::PVS | ProverKind::ACL2 => 3.5,
             ProverKind::HOL4 => 4.0,
             ProverKind::Idris2 => 2.5,
+            ProverKind::Lean3 => 1.0, // Thin fork of Lean 4 backend.
+            ProverKind::Abella => 2.0, // New parser, HOAS proof state model.
+            ProverKind::Dedukti => 1.5, // Extends existing exchange module.
+            ProverKind::Cameleer => 1.0, // Thin wrapper over Why3.
+            ProverKind::ACL2s => 1.0, // Thin fork of ACL2.
+            ProverKind::IsabelleZF => 1.0, // Thin variant of Isabelle.
+            ProverKind::Boogie => 1.5, // Extract from Viper internals.
+            ProverKind::Naproche => 2.0, // Controlled-NL parser wrapper.
+            ProverKind::Matita => 2.0, // Coq-parser fork.
+            ProverKind::Arend => 2.0, // Cubical parser + elaborator.
+            ProverKind::Athena => 2.5, // Rich denotational framework.
+            ProverKind::LambdaProlog => 2.0, // HOAS parser + unifier.
+            ProverKind::Mercury => 2.0, // Logic programming interpreter bridge.
+            ProverKind::Nitpick => 1.0, // Thin wrapper over Isabelle.
+            ProverKind::Nunchaku => 1.5, // Standalone counter-example tool.
             ProverKind::Vampire => 1.5,   // Automated, TPTP format
             ProverKind::EProver => 1.5,   // Similar to Vampire
             ProverKind::SPASS => 1.5,     // DFG format
@@ -456,6 +909,47 @@ impl ProverKind {
             ProverKind::KeY => 2.0,       // Deductive Java verifier (JavaDL + JML)
             ProverKind::DReal => 1.0,     // Automated SMT solver, SMT-LIB input
             ProverKind::ABC => 1.5,       // Hardware verification, AIGER/BLIF input
+            ProverKind::TypeLL
+            | ProverKind::KatagoriaVerifier
+            | ProverKind::TropicalTypeChecker
+            | ProverKind::ChoreographicTypeChecker
+            | ProverKind::EpistemicTypeChecker
+            | ProverKind::EchoTypeChecker
+            | ProverKind::SessionTypeChecker
+            | ProverKind::ModalTypeChecker
+            | ProverKind::QTTTypeChecker
+            | ProverKind::EffectRowTypeChecker
+            | ProverKind::DependentTypeChecker
+            | ProverKind::RefinementTypeChecker
+            | ProverKind::OrdinaryTypeChecker
+            | ProverKind::PhantomTypeChecker
+            | ProverKind::PolymorphicTypeChecker
+            | ProverKind::ExistentialTypeChecker
+            | ProverKind::HigherKindedTypeChecker
+            | ProverKind::RowTypeChecker
+            | ProverKind::SubtypingTypeChecker
+            | ProverKind::IntersectionTypeChecker
+            | ProverKind::UnionTypeChecker
+            | ProverKind::GradualTypeChecker
+            | ProverKind::HoareTypeChecker
+            | ProverKind::IndexedTypeChecker
+            | ProverKind::LinearTypeChecker
+            | ProverKind::AffineTypeChecker
+            | ProverKind::RelevantTypeChecker
+            | ProverKind::OrderedTypeChecker
+            | ProverKind::UniquenessTypeChecker
+            | ProverKind::ImmutableTypeChecker
+            | ProverKind::CapabilityTypeChecker
+            | ProverKind::BunchedTypeChecker
+            | ProverKind::TemporalTypeChecker
+            | ProverKind::ProvabilityTypeChecker
+            | ProverKind::ImpureTypeChecker
+            | ProverKind::CoeffectTypeChecker
+            | ProverKind::ProbabilisticTypeChecker
+            | ProverKind::DyadicTypeChecker
+            | ProverKind::HomotopyTypeChecker
+            | ProverKind::CubicalTypeChecker
+            | ProverKind::NominalTypeChecker => 2.0, // HP ecosystem
         }
     }
 
@@ -475,6 +969,21 @@ impl ProverKind {
             ProverKind::ACL2 => "acl2",
             ProverKind::HOL4 => "hol",
             ProverKind::Idris2 => "idris2",
+            ProverKind::Lean3 => "lean3",
+            ProverKind::Abella => "abella",
+            ProverKind::Dedukti => "dkcheck",
+            ProverKind::Cameleer => "cameleer",
+            ProverKind::ACL2s => "acl2s",
+            ProverKind::IsabelleZF => "isabelle", // Same binary, different session.
+            ProverKind::Boogie => "boogie",
+            ProverKind::Naproche => "naproche",
+            ProverKind::Matita => "matitac",
+            ProverKind::Arend => "arend",
+            ProverKind::Athena => "athena",
+            ProverKind::LambdaProlog => "tjsim",
+            ProverKind::Mercury => "mmc",
+            ProverKind::Nitpick => "isabelle", // Shared binary via `isabelle process -e nitpick`.
+            ProverKind::Nunchaku => "nunchaku",
             ProverKind::Vampire => "vampire",
             ProverKind::EProver => "eprover",
             ProverKind::SPASS => "SPASS",
@@ -511,6 +1020,50 @@ impl ProverKind {
             ProverKind::KeY => "key",     // KeY Java verifier (Java, headless mode)
             ProverKind::DReal => "dreal", // dReal delta-complete SMT solver
             ProverKind::ABC => "abc",     // Berkeley ABC logic synthesis system
+            // HP ecosystem — all route through the TypeLL kernel CLI;
+            // the discipline field on HPEcosystemBackend selects the
+            // actual upstream (typell / katagoria / tropical-resource-typing).
+            ProverKind::TypeLL => "typell",
+            ProverKind::KatagoriaVerifier => "katagoria",
+            ProverKind::TropicalTypeChecker => "tropical-type-check",
+            ProverKind::ChoreographicTypeChecker => "typell",
+            ProverKind::EpistemicTypeChecker => "typell",
+            ProverKind::EchoTypeChecker => "typell",
+            ProverKind::SessionTypeChecker => "typell",
+            ProverKind::ModalTypeChecker => "typell",
+            ProverKind::QTTTypeChecker => "typell",
+            ProverKind::EffectRowTypeChecker => "typell",
+            ProverKind::DependentTypeChecker => "typell",
+            ProverKind::RefinementTypeChecker => "typell",
+            ProverKind::OrdinaryTypeChecker
+            | ProverKind::PhantomTypeChecker
+            | ProverKind::PolymorphicTypeChecker
+            | ProverKind::ExistentialTypeChecker
+            | ProverKind::HigherKindedTypeChecker
+            | ProverKind::RowTypeChecker
+            | ProverKind::SubtypingTypeChecker
+            | ProverKind::IntersectionTypeChecker
+            | ProverKind::UnionTypeChecker
+            | ProverKind::GradualTypeChecker
+            | ProverKind::HoareTypeChecker
+            | ProverKind::IndexedTypeChecker
+            | ProverKind::LinearTypeChecker
+            | ProverKind::AffineTypeChecker
+            | ProverKind::RelevantTypeChecker
+            | ProverKind::OrderedTypeChecker
+            | ProverKind::UniquenessTypeChecker
+            | ProverKind::ImmutableTypeChecker
+            | ProverKind::CapabilityTypeChecker
+            | ProverKind::BunchedTypeChecker
+            | ProverKind::TemporalTypeChecker
+            | ProverKind::ProvabilityTypeChecker
+            | ProverKind::ImpureTypeChecker
+            | ProverKind::CoeffectTypeChecker
+            | ProverKind::ProbabilisticTypeChecker
+            | ProverKind::DyadicTypeChecker
+            | ProverKind::HomotopyTypeChecker
+            | ProverKind::CubicalTypeChecker
+            | ProverKind::NominalTypeChecker => "typell",
         }
     }
 }
@@ -570,6 +1123,33 @@ pub trait ProverBackend: Send + Sync {
 
     /// Check if a proof is valid
     async fn verify_proof(&self, state: &ProofState) -> anyhow::Result<bool>;
+
+    /// Rich variant of `verify_proof` — returns a `ProverOutcome` describing
+    /// exactly *what kind* of result was produced (proved, no-proof-found,
+    /// timeout, input error, inconsistent premises, prover crash, system
+    /// failure).
+    ///
+    /// The default implementation wraps `verify_proof`: on `Ok(true)` it
+    /// returns `Proved`, on `Ok(false)` `NoProofFound`, and on `Err(e)` it
+    /// hands the error to `classify_anyhow_error` so the system distinguishes
+    /// timeouts, parse errors, and prover crashes from each other.  Backends
+    /// that can observe richer signals (e.g. the Z3 backend can spot
+    /// `assertions` produce UNSAT in isolation → `InconsistentPremises`)
+    /// override this method to produce better classifications.
+    async fn check(&self, state: &ProofState) -> anyhow::Result<ProverOutcome> {
+        let start = std::time::Instant::now();
+        let limit = self.config().timeout;
+        match self.verify_proof(state).await {
+            Ok(true) => Ok(ProverOutcome::Proved {
+                elapsed_ms: start.elapsed().as_millis() as u64,
+            }),
+            Ok(false) => Ok(ProverOutcome::NoProofFound {
+                elapsed_ms: start.elapsed().as_millis() as u64,
+                reason: None,
+            }),
+            Err(e) => Ok(classify_anyhow_error(&e, limit)),
+        }
+    }
 
     /// Export proof to prover-specific format
     async fn export(&self, state: &ProofState) -> anyhow::Result<String>;
@@ -634,6 +1214,23 @@ impl ProverFactory {
             ProverKind::ACL2 => Ok(Box::new(acl2::ACL2Backend::new(config))),
             ProverKind::HOL4 => Ok(Box::new(hol4::Hol4Backend::new(config))),
             ProverKind::Idris2 => Ok(Box::new(idris2::Idris2Backend::new(config))),
+            ProverKind::Lean3 => Ok(Box::new(lean3::Lean3Backend::new(config))),
+            ProverKind::Abella => Ok(Box::new(abella::AbellaBackend::new(config))),
+            ProverKind::Dedukti => Ok(Box::new(dedukti::DeduktiBackend::new(config))),
+            ProverKind::Cameleer => Ok(Box::new(cameleer::CameleerBackend::new(config))),
+            ProverKind::ACL2s => Ok(Box::new(acl2s::Acl2sBackend::new(config))),
+            ProverKind::IsabelleZF => Ok(Box::new(isabelle_zf::IsabelleZfBackend::new(config))),
+            ProverKind::Boogie => Ok(Box::new(boogie::BoogieBackend::new(config))),
+            ProverKind::Naproche => Ok(Box::new(naproche::NaprocheBackend::new(config))),
+            ProverKind::Matita => Ok(Box::new(matita::MatitaBackend::new(config))),
+            ProverKind::Arend => Ok(Box::new(arend::ArendBackend::new(config))),
+            ProverKind::Athena => Ok(Box::new(athena::AthenaBackend::new(config))),
+            ProverKind::LambdaProlog => {
+                Ok(Box::new(lambda_prolog::LambdaPrologBackend::new(config)))
+            }
+            ProverKind::Mercury => Ok(Box::new(mercury::MercuryBackend::new(config))),
+            ProverKind::Nitpick => Ok(Box::new(nitpick::NitpickBackend::new(config))),
+            ProverKind::Nunchaku => Ok(Box::new(nunchaku::NunchakuBackend::new(config))),
             ProverKind::Vampire => Ok(Box::new(vampire::VampireBackend::new(config))),
             ProverKind::EProver => Ok(Box::new(eprover::EProverBackend::new(config))),
             ProverKind::SPASS => Ok(Box::new(spass::SPASSBackend::new(config))),
@@ -670,6 +1267,49 @@ impl ProverFactory {
             ProverKind::KeY => Ok(Box::new(key::KeyBackend::new(config))),
             ProverKind::DReal => Ok(Box::new(dreal::DRealBackend::new(config))),
             ProverKind::ABC => Ok(Box::new(abc::AbcBackend::new(config))),
+            ProverKind::TypeLL
+            | ProverKind::KatagoriaVerifier
+            | ProverKind::TropicalTypeChecker
+            | ProverKind::ChoreographicTypeChecker
+            | ProverKind::EpistemicTypeChecker
+            | ProverKind::EchoTypeChecker
+            | ProverKind::SessionTypeChecker
+            | ProverKind::ModalTypeChecker
+            | ProverKind::QTTTypeChecker
+            | ProverKind::EffectRowTypeChecker
+            | ProverKind::DependentTypeChecker
+            | ProverKind::RefinementTypeChecker
+            | ProverKind::OrdinaryTypeChecker
+            | ProverKind::PhantomTypeChecker
+            | ProverKind::PolymorphicTypeChecker
+            | ProverKind::ExistentialTypeChecker
+            | ProverKind::HigherKindedTypeChecker
+            | ProverKind::RowTypeChecker
+            | ProverKind::SubtypingTypeChecker
+            | ProverKind::IntersectionTypeChecker
+            | ProverKind::UnionTypeChecker
+            | ProverKind::GradualTypeChecker
+            | ProverKind::HoareTypeChecker
+            | ProverKind::IndexedTypeChecker
+            | ProverKind::LinearTypeChecker
+            | ProverKind::AffineTypeChecker
+            | ProverKind::RelevantTypeChecker
+            | ProverKind::OrderedTypeChecker
+            | ProverKind::UniquenessTypeChecker
+            | ProverKind::ImmutableTypeChecker
+            | ProverKind::CapabilityTypeChecker
+            | ProverKind::BunchedTypeChecker
+            | ProverKind::TemporalTypeChecker
+            | ProverKind::ProvabilityTypeChecker
+            | ProverKind::ImpureTypeChecker
+            | ProverKind::CoeffectTypeChecker
+            | ProverKind::ProbabilisticTypeChecker
+            | ProverKind::DyadicTypeChecker
+            | ProverKind::HomotopyTypeChecker
+            | ProverKind::CubicalTypeChecker
+            | ProverKind::NominalTypeChecker => Ok(Box::new(
+                hp_ecosystem::HPEcosystemBackend::new(kind, config),
+            )),
         }
     }
 
@@ -718,7 +1358,21 @@ impl ProverFactory {
             "key" => Some(ProverKind::KeY),            // KeY proof problem file (JavaDL)
             // Note: .java files with JML annotations can also be detected via content-aware detection
             // Note: .c files only map to CBMC when containing __CPROVER directives
-            // Use detect_from_file_content() for content-aware detection
+            // Note: .lean is shared between Lean 3 and Lean 4; default is Lean 4.
+            // Use detect_from_file_content() for Lean 3 vs 4 disambiguation.
+            "lean3" => Some(ProverKind::Lean3), // explicit extension
+            "thm" => Some(ProverKind::Abella), // Abella .thm files
+            "dk" | "lp" => Some(ProverKind::Dedukti), // Dedukti / λΠ
+            "bpl" => Some(ProverKind::Boogie), // Boogie intermediate language
+            "ftl" => Some(ProverKind::Naproche), // Naproche controlled-NL
+            "ma" => Some(ProverKind::Matita), // Matita proof file
+            "ard" => Some(ProverKind::Arend), // Arend cubical HoTT
+            "ath" => Some(ProverKind::Athena), // Athena
+            "mod" | "sig" => Some(ProverKind::LambdaProlog), // λProlog module / signature
+            "nun" => Some(ProverKind::Nunchaku), // Nunchaku input
+            // Mercury uses .m which collides with OCaml conventions in
+            // some file sets; content-aware detection deferred to
+            // phase 2 (look for Mercury `:- module`, `:- pred`, etc).
             _ => None,
         })
     }
@@ -726,9 +1380,39 @@ impl ProverFactory {
     /// Content-aware prover detection for ambiguous file extensions
     ///
     /// For .c files, checks whether the source contains __CPROVER directives
-    /// to determine if CBMC is the appropriate prover.
+    /// to determine if CBMC is the appropriate prover. For .lean files,
+    /// checks for Lean 3 vs Lean 4 syntax markers.
     pub fn detect_from_file_content(path: &Path, content: &str) -> Option<ProverKind> {
-        // First try extension-based detection
+        // Lean 3 / Lean 4 disambiguation — both share `.lean`. Lean 4
+        // introduced `by` tactic blocks in place of `begin … end`, uses
+        // `section`/`namespace` with `end <name>` trailers, and commonly
+        // imports from `Mathlib.*` (capitalised). Lean 3 uses lowercase
+        // `mathlib` paths, `begin … end` blocks, and `universes u v`
+        // without the `u v : Level` annotation.
+        if let Some(ext) = path.extension().and_then(|e| e.to_str()) {
+            if ext == "lean" {
+                let is_lean3 = content.contains("begin\n")
+                    || content.contains("\nbegin ")
+                    || content.contains("\nend.")
+                    || (content.contains("universes ") && !content.contains(" : Level"))
+                    || content.contains("import data.")
+                    || content.contains("import tactic.");
+                let is_lean4 = content.contains("import Mathlib.")
+                    || content.contains(":= by\n")
+                    || content.contains(":= by ")
+                    || content.contains("theorem ") && content.contains("= by");
+                if is_lean3 && !is_lean4 {
+                    return Some(ProverKind::Lean3);
+                }
+                if is_lean4 {
+                    return Some(ProverKind::Lean);
+                }
+                // Ambiguous → default to Lean 4 (current).
+                return Some(ProverKind::Lean);
+            }
+        }
+
+        // First try extension-based detection for non-Lean cases.
         if let Some(kind) = Self::detect_from_file(path) {
             return Some(kind);
         }

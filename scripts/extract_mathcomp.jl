@@ -91,9 +91,17 @@ function extract_all(base_dir::String)
             kind, name, binders, stmt = tm.captures
             record_id = ID_BASE + length(proof_states)
 
-            # Look for Proof block immediately after the theorem statement
+            # Look for Proof block immediately after the theorem statement.
+            # Use thisind/nextind to keep the slice on a valid UTF-8
+            # character boundary — raw byte indices crash on multi-
+            # byte glyphs (° µ ε Σ etc. appear in mathcomp-analysis).
             proof_start = tm.offset + length(tm.match)
-            rest = content[min(proof_start, lastindex(content)):end]
+            rest = if proof_start > lastindex(content)
+                ""
+            else
+                idx = thisind(content, min(proof_start, lastindex(content)))
+                content[idx:end]
+            end
             pm = try
                 match(PROOF_PAT, rest)
             catch
@@ -180,12 +188,36 @@ function main()::Int
     println("=" ^ 60)
     println("ECHIDNA Mathcomp Extractor")
     println("=" ^ 60)
-    base_dir = "external_corpora/mathcomp"
-    if !isdir(base_dir)
-        println("ERROR: Corpus directory not found: $base_dir")
+    # Widening (2026-04-18): walk the main math-comp repo plus
+    # additional mathcomp-family libraries to push past 20K.
+    candidates = [
+        "external_corpora/mathcomp",
+        "external_corpora/mathcomp-analysis",
+        "external_corpora/mathcomp-finmap",
+        "external_corpora/mathcomp-algebra-tactics",
+        "external_corpora/mathcomp-mczify",
+    ]
+    roots = filter(isdir, candidates)
+    if isempty(roots)
+        println("ERROR: No mathcomp corpus directories found")
         return 1
     end
-    proof_states, tactics, stats = extract_all(base_dir)
+    println("Walking $(length(roots)) mathcomp roots: $(join(basename.(roots), ", "))")
+    base_dir = roots[1]
+    # Override extract_all to scan every root.
+    proof_states = Dict{String,Any}[]
+    tactics = Dict{String,Any}[]
+    stats = Dict{String,Any}()
+    for root in roots
+        ps, ts, st = extract_all(root)
+        append!(proof_states, ps)
+        append!(tactics, ts)
+        stats = st  # keep last
+    end
+    stats["total_proofs"] = length(proof_states)
+    stats["total_tactics"] = length(tactics)
+    stats["id_range"] = isempty(proof_states) ? "none" :
+        "$(ID_BASE)-$(ID_BASE + length(proof_states) - 1)"
     if isempty(proof_states)
         println("\nWARNING: No proof states extracted.")
         return 1

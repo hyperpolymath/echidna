@@ -16,7 +16,7 @@ This document provides guidelines and context for working with Claude Code on th
 echidna/
 ├── src/
 │   ├── rust/               # Rust core (48 provers, trust pipeline)
-│   │   ├── provers/        # 30 prover backend implementations
+│   │   ├── provers/        # 48 prover backend implementations
 │   │   ├── verification/   # Trust pipeline (portfolio, certificates, axioms, confidence, mutation, pareto, statistics)
 │   │   ├── integrity/      # Solver binary integrity (SHAKE3-512, BLAKE3)
 │   │   ├── executor/       # Sandboxed solver execution (Podman, bubblewrap)

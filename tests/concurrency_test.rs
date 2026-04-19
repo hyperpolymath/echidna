@@ -343,6 +343,7 @@ async fn concurrency_dispatch_config_shared_read() {
         track_axioms: true,
         generate_certificates: false,
         timeout: 30,
+        diagnostics: false,
     });
 
     let mut handles = vec![];

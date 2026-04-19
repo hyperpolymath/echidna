@@ -242,14 +242,30 @@ function run()::Tuple{Int,Int}
     downloaded = download_pvs_files()
     println("  Downloaded/cached $downloaded files")
 
+    # Widening (2026-04-18): also walk a full SRI-CSL/PVS clone at
+    # external_corpora/pvs_full/ when present.
+    src_files = String[]
     for fname in readdir(EXTERNAL_DIR)
-        if endswith(fname, ".pvs")
-            fpath = joinpath(EXTERNAL_DIR, fname)
-            parsed = parse_pvs_file(fpath)
-            append!(all_entries, parsed)
-            if !isempty(parsed)
-                println("  Parsed $(length(parsed)) theorems from $fname")
+        endswith(fname, ".pvs") && push!(src_files, joinpath(EXTERNAL_DIR, fname))
+    end
+    full_root = joinpath(dirname(EXTERNAL_DIR), "pvs_full")
+    if isdir(full_root)
+        println("[PVS] Walking full clone at $(full_root) ...")
+        for (root, _dirs, files) in walkdir(full_root)
+            for fname in files
+                endswith(fname, ".pvs") && push!(src_files, joinpath(root, fname))
             end
+        end
+    end
+    println("  $(length(src_files)) PVS source files to parse")
+
+    processed = 0
+    for fpath in src_files
+        parsed = parse_pvs_file(fpath)
+        append!(all_entries, parsed)
+        processed += 1
+        if processed % 50 == 0
+            println("  processed $(processed)/$(length(src_files)) files — running count: $(length(all_entries))")
         end
     end
     extracted_count = length(all_entries)

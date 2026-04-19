@@ -61,27 +61,40 @@ function parse_dafny_file(filepath::String)::Vector{Dict{String,Any}}
         return results
     end
 
-    # Extract lemma/method/function declarations with specs
-    pattern = r"(lemma|method|function|ghost method|ghost function)\s+(\w+)\s*(?:<[^>]*>)?\s*\((.*?)\)(?:\s*:\s*(\S+))?\s*((?:\s*(?:requires|ensures|decreases|modifies|reads|invariant)\s+.*?)*?)(?:\s*\{)"s
+    # Phase 1 widening (2026-04-18, echidna#16): previously the
+    # extractor skipped every declaration that did not carry at least
+    # one spec clause, dropping body-only lemmas and methods whose
+    # postconditions are implicit. The signature alone (name, params,
+    # return type) is still valuable training signal; keep it even
+    # when no requires/ensures/decreases clauses are present.
+    pattern = r"(lemma|method|function|predicate|twostate lemma|ghost method|ghost function|least lemma|greatest lemma)\s+(\w+)\s*(?:<[^>]*>)?\s*\((.*?)\)(?:\s*:\s*([^{]+?))?\s*((?:\s*(?:requires|ensures|decreases|modifies|reads|invariant)\s+[^{]*?)*?)(?:\s*\{|\s*$)"s
 
-    for m in eachmatch(Regex(pattern, "s"), content)
+    for m in eachmatch(pattern, content)
         kind = strip(m.captures[1])
         name = strip(m.captures[2])
         params = replace(strip(something(m.captures[3], "")), r"\s+" => " ")
-        ret_type = something(m.captures[4], "")
+        ret_type_raw = something(m.captures[4], "")
+        ret_type = replace(strip(ret_type_raw), r"\s+" => " ")
         specs = strip(something(m.captures[5], ""))
 
-        isempty(specs) && continue
-
         specs_clean = replace(specs, r"\s+" => " ")
-        specs_clean = specs_clean[1:min(400, length(specs_clean))]
-        spec_keywords = [lowercase(m_.match) for m_ in eachmatch(r"\b(requires|ensures|decreases|modifies|reads|invariant)\b"i, specs)]
+        # `first(s, n)` is safe for multi-byte strings; the prior
+        # `specs_clean[1:min(400, length(specs_clean))]` would crash
+        # on any UTF-8 char straddling the truncation boundary.
+        specs_clean = first(specs_clean, 400)
+        spec_keywords = [lowercase(m_.match) for m_ in eachmatch(
+            r"\b(requires|ensures|decreases|modifies|reads|invariant)\b"i, specs)]
+
+        goal = isempty(specs_clean) ?
+            "$(kind) $(name)$(isempty(ret_type) ? "" : " : " * ret_type)" :
+            specs_clean
 
         push!(results, Dict{String,Any}(
             "theorem" => name,
-            "goal" => specs_clean,
+            "goal" => goal,
             "kind" => kind,
-            "params" => params[1:min(200, length(params))],
+            "params" => first(params, 200),
+            "return_type" => first(ret_type, 80),
             "tactics" => unique(spec_keywords),
             "source" => "dafny/$(basename(filepath))",
         ))
@@ -231,18 +244,48 @@ function run()::Tuple{Int,Int}
     all_entries = Dict{String,Any}[]
     extracted_count = 0
 
-    println("[Dafny] Phase 1: Attempting to download from GitHub ...")
-    downloaded = download_dafny_files()
-    println("  Downloaded/cached $downloaded files")
-
-    for fname in readdir(EXTERNAL_DIR)
-        if endswith(fname, ".dfy")
-            fpath = joinpath(EXTERNAL_DIR, fname)
-            parsed = parse_dafny_file(fpath)
-            append!(all_entries, parsed)
-            if !isempty(parsed)
-                println("  Parsed $(length(parsed)) from $fname")
+    # Phase 1 strategy (2026-04-18, echidna#16): prefer a full
+    # dafny-lang/dafny sparse clone (`Test/` + `Source/IntegrationTests/`)
+    # — thousands of .dfy files. Fall back to the curated downloader
+    # only if nothing is on disk.
+    #
+    # Phase 2 widening (2026-04-18 late): also walk sibling vendored
+    # corpora that ship significant real-world Dafny proofs — AWS
+    # Encryption SDK, AWS Cryptographic Material Providers Library,
+    # Dafny-VMC (randomised programs), and the dafny-lang/libraries
+    # standard library. Each adds hundreds of proofs.
+    dfy_roots = String[EXTERNAL_DIR]
+    for sibling in ("dafny-libraries", "dafny-vmc",
+                     "aws-encryption-sdk-dafny", "aws-cmpl")
+        cand = joinpath(dirname(EXTERNAL_DIR), sibling)
+        isdir(cand) && push!(dfy_roots, cand)
+    end
+    dfy_files = String[]
+    for root_dir in dfy_roots
+        for (root, _dirs, files) in walkdir(root_dir)
+            for f in files
+                endswith(f, ".dfy") && push!(dfy_files, joinpath(root, f))
             end
+        end
+    end
+    if isempty(dfy_files)
+        println("[Dafny] Phase 1: No corpus found — running curated downloader ...")
+        downloaded = download_dafny_files()
+        println("  Downloaded/cached $downloaded files")
+        for f in readdir(EXTERNAL_DIR)
+            endswith(f, ".dfy") && push!(dfy_files, joinpath(EXTERNAL_DIR, f))
+        end
+    else
+        println("[Dafny] Phase 1: Found $(length(dfy_files)) .dfy files under $(EXTERNAL_DIR) ...")
+    end
+
+    processed = 0
+    for fpath in dfy_files
+        parsed = parse_dafny_file(fpath)
+        append!(all_entries, parsed)
+        processed += 1
+        if processed % 200 == 0
+            println("  processed $(processed)/$(length(dfy_files)) files — running count: $(length(all_entries))")
         end
     end
     extracted_count = length(all_entries)

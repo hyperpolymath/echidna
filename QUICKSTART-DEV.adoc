@@ -27,6 +27,26 @@ just tour      # understand the codebase
 just help-me   # see available commands
 ----
 
+== Optional: Chapel Parallel Proof Search
+
+The Rust core exposes an optional parallel-search path that calls into
+Chapel via a Zig FFI bridge. It is feature-gated and off by default.
+
+[source,bash]
+----
+cd src/zig_ffi && zig build    # builds libechidna_chapel_ffi.{a,so}
+                               # default -Dstubs=true bundles chapel_stubs.c
+                               # so Rust links cleanly without Chapel
+cd ../..
+cargo build --features chapel
+cargo test  --features chapel --lib proof_search
+----
+
+With Chapel actually installed and `libechidna_chapel.so` built from
+`chapel_poc/`, pass `-Dstubs=false` to the Zig build and link the
+Chapel library alongside. Stubs return "Chapel unavailable" at runtime
+so `cargo test --features chapel` still passes on hosts without Chapel.
+
 == Before Committing
 
 [source,bash]

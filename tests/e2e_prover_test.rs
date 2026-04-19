@@ -450,6 +450,8 @@ fn e2e_dispatch_result_json_roundtrip() {
         certificate_hash: Some("abc123def456".to_string()),
         message: "Proof verified with Level3".to_string(),
         cross_checked: true,
+        outcome: echidna::provers::outcome::ProverOutcome::Proved { elapsed_ms: 42 },
+        diagnostics: None,
     };
 
     let json = serde_json::to_string(&original)

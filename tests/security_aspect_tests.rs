@@ -260,6 +260,8 @@ fn security_cross_checked_requires_two_provers() {
         certificate_hash: None,
         message: "cross-checked ok".to_string(),
         cross_checked: true,
+        outcome: echidna::provers::outcome::ProverOutcome::Proved { elapsed_ms: 100 },
+        diagnostics: None,
     };
     assert!(good.provers_used.len() >= 2, "cross_checked result requires ≥2 provers");
 
@@ -285,6 +287,8 @@ fn security_single_prover_not_cross_checked() {
         certificate_hash: None,
         message: "verified".to_string(),
         cross_checked: false,
+        outcome: echidna::provers::outcome::ProverOutcome::Proved { elapsed_ms: 50 },
+        diagnostics: None,
     };
     assert!(!result.cross_checked, "Single-prover result must not be cross_checked");
     assert_eq!(result.provers_used.len(), 1);

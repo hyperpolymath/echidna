@@ -1,0 +1,366 @@
+# SPDX-License-Identifier: PMPL-1.0-or-later
+# ECHIDNA — Live-Prover CI
+#
+# Exercises real prover binaries against canonical micro-goals. Complements
+# rust-ci.yml (which runs mock tests on every PR) with live-subprocess coverage.
+#
+# Tiering (matches ~/Desktop/ECHIDNA-PRODUCTION-WIRING-PLAN.md + manifests/live-provers.scm):
+#   T1 — trivial    — every PR + push to main
+#   T2 — build      — nightly
+#   T3 — container  — weekly
+#   T4 — niche      — quarterly, allow-fail
+#
+# Reproducibility paths (both tried; at least one must succeed):
+#   1. Guix manifest (PRIMARY, per project CLAUDE.md): manifests/live-provers.scm
+#   2. Nix flake (fallback):                            nix develop .#live-provers
+#   3. apt-get (expedient bootstrap for T1 only):       jobs below
+
+name: Live Provers
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  schedule:
+    - cron: '0 3 * * *'    # Tier-2 nightly at 03:00 UTC
+    - cron: '0 5 * * 0'    # Tier-3 weekly  Sunday 05:00 UTC
+    - cron: '0 6 1 */3 *'  # Tier-4 quarterly 1st of Jan/Apr/Jul/Oct 06:00 UTC
+  workflow_dispatch:
+    inputs:
+      tier:
+        description: 'Which tier to run (1|2|3|4|all)'
+        required: false
+        default: '1'
+
+permissions:
+  contents: read
+
+env:
+  CARGO_TERM_COLOR: always
+  RUST_BACKTRACE: 1
+  ECHIDNA_LIVE_PROVERS: '1'
+
+jobs:
+
+  # ============================================================================
+  # Tier 1 — every PR.  Apt-installable provers.  Must stay green.
+  # ============================================================================
+  tier1:
+    name: T1 / ${{ matrix.backend }}
+    if: github.event_name != 'schedule' || github.event.schedule == '0 3 * * *'
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        backend:
+          - z3
+          - cvc5
+          - vampire
+          - eprover
+          - spass
+          - alt-ergo
+          - glpk
+          - minizinc
+          - chuffed
+    steps:
+      - name: Checkout
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+
+      - name: Install Rust
+        uses: dtolnay/rust-toolchain@4be9e76fd7c4901c61fb841f559994984270fce7 # stable
+
+      - name: Cache Cargo
+        uses: Swatinem/rust-cache@779680da715d629ac1d338a641029a2f4372abb5 # v2
+
+      - name: Provision prover (${{ matrix.backend }})
+        run: |
+          set -euo pipefail
+          sudo apt-get update
+          case "${{ matrix.backend }}" in
+            z3)         sudo apt-get install -y z3 ;;
+            cvc5)       curl -sSL -o /tmp/cvc5 https://github.com/cvc5/cvc5/releases/latest/download/cvc5-Linux-static
+                        chmod +x /tmp/cvc5
+                        sudo install -m 0755 /tmp/cvc5 /usr/local/bin/cvc5 ;;
+            vampire)    curl -sSL -o /tmp/vampire.zip https://github.com/vprover/vampire/releases/latest/download/vampire-Linux-x86_64.zip
+                        unzip -j -o /tmp/vampire.zip -d /tmp
+                        sudo install -m 0755 /tmp/vampire /usr/local/bin/vampire ;;
+            eprover)    sudo apt-get install -y eprover ;;
+            spass)      sudo apt-get install -y spass ;;
+            alt-ergo)   sudo apt-get install -y alt-ergo ;;
+            glpk)       sudo apt-get install -y glpk-utils ;;
+            minizinc)   sudo apt-get install -y minizinc ;;
+            chuffed)    sudo apt-get install -y minizinc # chuffed bundled with minizinc-ide on recent ubuntu
+                        ;;
+          esac
+          "${{ matrix.backend }}" --version 2>/dev/null || "${{ matrix.backend }}" --help 2>/dev/null || true
+
+      - name: Run live test for ${{ matrix.backend }}
+        run: cargo test --test live_prover_suite --features live-provers -- --nocapture ${{ matrix.backend }}
+
+  # ============================================================================
+  # Tier 1 reproducibility check — ensure Guix manifest actually resolves.
+  # Allow-fail: this is additional proof, not a gate (Guix-on-Ubuntu is flaky
+  # without dedicated setup).
+  # ============================================================================
+  tier1-guix-reproducibility:
+    name: T1 Guix manifest check
+    if: github.event_name != 'schedule'
+    runs-on: ubuntu-latest
+    continue-on-error: true
+    steps:
+      - name: Checkout
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+      - name: Install Guix
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y guix
+      - name: Resolve manifest (doesn't run tests — just proves the .scm parses)
+        run: |
+          guix describe || true
+          guix package -m manifests/live-provers.scm --dry-run || \
+            echo "NOTE: Guix manifest resolution failed — non-blocking reproducibility signal."
+
+  # ============================================================================
+  # Tier 2 — nightly.  Larger build-from-source provers.
+  # ============================================================================
+  tier2:
+    name: T2 / ${{ matrix.backend }}
+    if: github.event_name == 'schedule' && github.event.schedule == '0 3 * * *' || (github.event_name == 'workflow_dispatch' && (inputs.tier == '2' || inputs.tier == 'all'))
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        backend:
+          - coq
+          - agda
+          - idris2
+          - lean4
+          - isabelle
+          - why3
+          - dafny
+          - fstar
+          - hol-light
+          - tlaps
+    steps:
+      - name: Checkout
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+      - name: Install Rust
+        uses: dtolnay/rust-toolchain@4be9e76fd7c4901c61fb841f559994984270fce7 # stable
+      - name: Cache Cargo
+        uses: Swatinem/rust-cache@779680da715d629ac1d338a641029a2f4372abb5 # v2
+      - name: Provision ${{ matrix.backend }} (best-effort via apt / upstream release)
+        continue-on-error: true
+        run: |
+          set -euo pipefail
+          sudo apt-get update
+          case "${{ matrix.backend }}" in
+            coq)
+              sudo apt-get install -y coq
+              ;;
+            agda)
+              sudo apt-get install -y agda
+              ;;
+            idris2)
+              # Idris2 has no apt package; build from the self-hosting tarball.
+              # Chez Scheme is the recommended backend.
+              sudo apt-get install -y chezscheme make
+              curl -fsSL -o /tmp/idris2.tar.gz https://github.com/idris-lang/Idris2/releases/latest/download/idris2-src-latest.tgz || \
+                curl -fsSL -o /tmp/idris2.tar.gz https://www.idris-lang.org/download/idris2-0.7.0.tgz
+              mkdir -p /tmp/idris2-src
+              tar xzf /tmp/idris2.tar.gz -C /tmp/idris2-src --strip-components=1
+              (cd /tmp/idris2-src && make bootstrap SCHEME=scheme && sudo make install PREFIX=/usr/local)
+              ;;
+            lean4)
+              curl -sSL https://raw.githubusercontent.com/leanprover/elan/master/elan-init.sh | sh -s -- -y --default-toolchain leanprover/lean4:stable
+              echo "$HOME/.elan/bin" >> "$GITHUB_PATH"
+              ;;
+            isabelle)
+              # Isabelle2024 tarball (~500MB); keep on nightly only.
+              curl -fsSL -o /tmp/isabelle.tar.gz https://isabelle.in.tum.de/dist/Isabelle2024_linux.tar.gz
+              sudo mkdir -p /opt
+              sudo tar xzf /tmp/isabelle.tar.gz -C /opt
+              sudo ln -sf /opt/Isabelle2024/bin/isabelle /usr/local/bin/isabelle
+              ;;
+            why3)
+              sudo apt-get install -y why3
+              ;;
+            dafny)
+              # Dafny 4.x is distributed as a standalone .NET global tool.
+              # ubuntu-latest ships dotnet-sdk 8 in setup images; install via apt if absent.
+              command -v dotnet >/dev/null 2>&1 || sudo apt-get install -y dotnet-sdk-8.0
+              dotnet tool install --global Dafny
+              echo "$HOME/.dotnet/tools" >> "$GITHUB_PATH"
+              ;;
+            fstar)
+              # F* ships prebuilt Linux binaries; binary is `fstar.exe` even on Linux.
+              curl -fsSL -o /tmp/fstar.tar.gz https://github.com/FStarLang/FStar/releases/latest/download/fstar-linux_x86_64.tar.gz
+              sudo mkdir -p /opt/fstar
+              sudo tar xzf /tmp/fstar.tar.gz -C /opt/fstar --strip-components=1
+              sudo ln -sf /opt/fstar/bin/fstar.exe /usr/local/bin/fstar.exe
+              ;;
+            hol-light)
+              # No prebuilt binary; opam build is ~20min and pulls camlp5.
+              # Deferred to Wave-3 (container-based provisioning) per the
+              # production-wiring plan.
+              echo "hol-light deferred to Wave-3 container provisioning"
+              exit 0
+              ;;
+            tlaps)
+              # TLA+ Proof System ships a self-extracting installer; provides tlapm.
+              curl -fsSL -o /tmp/tlaps.sh https://github.com/tlaplus/tlapm/releases/latest/download/tlaps-installer-linux-x86_64.sh
+              chmod +x /tmp/tlaps.sh
+              sudo /tmp/tlaps.sh --prefix=/opt/tlaps
+              sudo ln -sf /opt/tlaps/bin/tlapm /usr/local/bin/tlapm
+              ;;
+          esac
+          # Best-effort version probe for the matrix log.
+          case "${{ matrix.backend }}" in
+            fstar)     fstar.exe --version || true ;;
+            tlaps)     tlapm --version || true ;;
+            hol-light) true ;;
+            *)         "${{ matrix.backend }}" --version 2>/dev/null || true ;;
+          esac
+      - name: Run live test for ${{ matrix.backend }} (allow-fail while Wave-2 wires up)
+        continue-on-error: true
+        run: cargo test --test live_prover_suite --features live-provers -- --nocapture ${{ matrix.backend }}
+
+  # ============================================================================
+  # Tier 3 — weekly.  Heavier upstream provers, best-effort provisioning.
+  #
+  # Backends grouped as:
+  #   A — live-provisioned today via apt / upstream tarball (tamarin, proverif,
+  #       metamath, twelf, ortools).  Version-check runs, skip-if-absent.
+  #   B — heavy-build deferred (hol4, acl2, scip) and proprietary (imandra).
+  #       Provisioning step emits a skip note; test step runs the suite with
+  #       continue-on-error so the matrix stays green and the binary's absence
+  #       is logged as SKIP by the suite's `which` probe.
+  # ============================================================================
+  tier3:
+    name: T3 / ${{ matrix.backend }}
+    if: github.event_name == 'schedule' && github.event.schedule == '0 5 * * 0' || (github.event_name == 'workflow_dispatch' && (inputs.tier == '3' || inputs.tier == 'all'))
+    runs-on: ubuntu-latest
+    continue-on-error: true
+    strategy:
+      fail-fast: false
+      matrix:
+        backend:
+          - tamarin
+          - proverif
+          - metamath
+          - twelf
+          - ortools
+          - hol4
+          - acl2
+          - scip
+          - imandra
+    steps:
+      - name: Checkout
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+      - name: Install Rust
+        uses: dtolnay/rust-toolchain@4be9e76fd7c4901c61fb841f559994984270fce7 # stable
+      - name: Cache Cargo
+        uses: Swatinem/rust-cache@779680da715d629ac1d338a641029a2f4372abb5 # v2
+      - name: Provision ${{ matrix.backend }} (best-effort)
+        continue-on-error: true
+        run: |
+          set -euo pipefail
+          sudo apt-get update
+          case "${{ matrix.backend }}" in
+            tamarin)
+              # Tamarin publishes prebuilt Linux x86_64 tarballs.
+              curl -fsSL -o /tmp/tamarin.tar.gz \
+                https://github.com/tamarin-prover/tamarin-prover/releases/latest/download/tamarin-prover-linux64-ubuntu.tar.gz || \
+                curl -fsSL -o /tmp/tamarin.tar.gz \
+                https://github.com/tamarin-prover/tamarin-prover/releases/download/1.10.0/tamarin-prover-1.10.0-linux64-ubuntu.tar.gz
+              sudo mkdir -p /opt/tamarin
+              sudo tar xzf /tmp/tamarin.tar.gz -C /opt/tamarin
+              # The tarball lays down tamarin-prover directly or in a version dir; link whichever we find.
+              TAMARIN_BIN="$(find /opt/tamarin -type f -name tamarin-prover | head -n 1)"
+              [ -n "$TAMARIN_BIN" ] && sudo ln -sf "$TAMARIN_BIN" /usr/local/bin/tamarin-prover
+              ;;
+            proverif)
+              # ProVerif is in the Ubuntu/Debian main repos.
+              sudo apt-get install -y proverif
+              ;;
+            metamath)
+              # metamath-exe is small; apt-installable on Ubuntu with build fallback.
+              sudo apt-get install -y metamath || {
+                sudo apt-get install -y build-essential git autoconf automake
+                git clone --depth=1 https://github.com/metamath/metamath-exe.git /tmp/mm
+                (cd /tmp/mm && ./build.sh) || \
+                  (cd /tmp/mm && autoreconf -i && ./configure && make)
+                sudo install -m 0755 /tmp/mm/metamath /usr/local/bin/metamath
+              }
+              ;;
+            twelf)
+              # Twelf is in Debian with SML/NJ; on Ubuntu it may live in universe.
+              sudo apt-get install -y twelf || \
+                echo "twelf unavailable via apt on this runner; test will SKIP."
+              ;;
+            ortools)
+              # Google OR-Tools ships prebuilt Linux tarballs.  The binary we
+              # expose to echidna is a small wrapper that invokes the solver CLI.
+              OR_URL="https://github.com/google/or-tools/releases/latest/download/or-tools_amd64_ubuntu-22.04_cpp_v9.11.4210.tar.gz"
+              curl -fsSL -o /tmp/ortools.tar.gz "$OR_URL" || {
+                echo "OR-Tools tarball unavailable at expected URL; test will SKIP."
+                exit 0
+              }
+              sudo mkdir -p /opt/ortools
+              sudo tar xzf /tmp/ortools.tar.gz -C /opt/ortools --strip-components=1
+              # Echidna's ORTools backend invokes `ortools_solve`.  The release
+              # ships `bin/solve` or similar; create the expected symlink.
+              OR_BIN="$(find /opt/ortools -type f \( -name ortools_solve -o -name solve \) | head -n 1)"
+              [ -n "$OR_BIN" ] && sudo ln -sf "$OR_BIN" /usr/local/bin/ortools_solve
+              ;;
+            hol4)
+              # HOL4 requires Poly/ML and a full tree build (~15min+); defer to
+              # container provisioning.  Test step will SKIP on this runner.
+              echo "hol4: heavy Poly/ML build deferred to Containerfile provisioning."
+              ;;
+            acl2)
+              # ACL2 requires a Common Lisp image (CCL/SBCL) and a 10min+ build;
+              # defer to container provisioning.  Test step will SKIP.
+              echo "acl2: heavy SBCL+image build deferred to Containerfile."
+              ;;
+            scip)
+              # SCIP Optimization Suite needs a full cmake build (~10min).  The
+              # upstream tarball requires a form-gated download, so CI defers to
+              # Containerfile provisioning.  Test step will SKIP.
+              echo "scip: form-gated upstream tarball; deferred to Containerfile."
+              ;;
+            imandra)
+              # Imandra is proprietary; no public Linux binary.  Handled via
+              # vendor-supplied container where a licence is available.
+              echo "imandra: proprietary; no public CI provisioning available."
+              ;;
+          esac
+          # Best-effort version probe for the matrix log.
+          case "${{ matrix.backend }}" in
+            tamarin)    tamarin-prover --version 2>&1 | head -n 1 || true ;;
+            proverif)   proverif --version 2>&1 | head -n 1 || true ;;
+            metamath)   echo exit | metamath 2>&1 | head -n 1 || true ;;
+            twelf)      twelf-server --help 2>&1 | head -n 1 || true ;;
+            ortools)    ortools_solve --help 2>&1 | head -n 1 || true ;;
+            hol4|acl2|scip|imandra) true ;;
+          esac
+      - name: Run live test for ${{ matrix.backend }} (allow-fail while Wave-3 wires up)
+        continue-on-error: true
+        run: cargo test --test live_prover_suite --features live-provers -- --nocapture ${{ matrix.backend }}
+
+  # ============================================================================
+  # Tier 4 — quarterly, best-effort / allow-fail.
+  # ============================================================================
+  tier4:
+    name: T4 niche provers
+    if: github.event_name == 'schedule' && github.event.schedule == '0 6 1 */3 *' || (github.event_name == 'workflow_dispatch' && (inputs.tier == '4' || inputs.tier == 'all'))
+    runs-on: ubuntu-latest
+    continue-on-error: true
+    steps:
+      - name: Checkout
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+      - name: Announce Wave-4 TODO
+        run: |
+          echo "Tier-4 backends (Mizar, Nuprl, PVS, Minlog, Dedukti, Arend, KeY, Prism, UPPAAL,"
+          echo "ViPER, NuSMV, Spin, TLC, CBMC, Seahorn, dReal, Boogie, Kissat, Alloy) are"
+          echo "retained as mock-only unless a maintainer volunteers a Containerfile."
