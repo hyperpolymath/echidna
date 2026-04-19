@@ -8,10 +8,12 @@ context tracked in version control.
 
 | File | Scope |
 |------|-------|
-| `PRODUCTION-WIRING-PLAN.md` | Master plan (L1 Cap'n Proto + L2 Chapel maximal + L3 live-prover CI) |
-| `L1-CAPNPROTO-PROMPT.md`    | L1 — swap HTTP+JSON Rust↔Julia for Cap'n Proto |
-| `L2-CHAPEL-PROMPT.md`       | L2 — promote Chapel POC to first-class parallel dispatch layer |
-| `L3-LIVE-PROVER-CI-PROMPT.md` | L3 — live subprocess CI tiered across 48 prover backends |
+| **`TODO.md`**               | **Tight actionable backlog, P0→P4, across L1+L2+L3.** Start here. |
+| **`STATE.md`**              | **Where we are now vs forward vision — per-phase status + decisions D1–D6.** |
+| `PRODUCTION-WIRING-PLAN.md` | Master plan (L1 Cap'n Proto + L2 Chapel maximal + L3 live-prover CI) — full rationale |
+| `L1-CAPNPROTO-PROMPT.md`    | L1 — swap HTTP+JSON Rust↔Julia for Cap'n Proto — full prompt |
+| `L2-CHAPEL-PROMPT.md`       | L2 — promote Chapel POC to first-class parallel dispatch layer — full prompt |
+| `L3-LIVE-PROVER-CI-PROMPT.md` | L3 — live subprocess CI tiered across 48 prover backends — full prompt (marked Wave-2 DONE) |
 
 ## Source of truth
 
