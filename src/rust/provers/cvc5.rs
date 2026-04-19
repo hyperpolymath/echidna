@@ -427,6 +427,7 @@ impl CVC5Backend {
                     state.context.variables.push(crate::core::Variable {
                         name: name.to_string(),
                         ty: Term::Const(ty.trim().to_string()),
+                        type_info: None,
                     });
                 }
                 continue;

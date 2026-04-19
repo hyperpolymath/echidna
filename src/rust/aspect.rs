@@ -419,6 +419,9 @@ pub struct TheoremFeatures {
     /// Pi type (dependent function) count
     pub pi_count: usize,
 
+    /// Sigma type (dependent pair) count
+    pub sigma_count: usize,
+
     /// Universe levels used
     pub universe_levels: HashSet<usize>,
 
@@ -652,6 +655,9 @@ impl RuleBasedTagger {
             },
             Term::Pi {
                 param_type, body, ..
+            }
+            | Term::Sigma {
+                param_type, body, ..
             } => {
                 self.extract_symbols_recursive(param_type, symbols);
                 self.extract_symbols_recursive(body, symbols);
@@ -748,6 +754,11 @@ impl AspectTagger for RuleBasedTagger {
             total_matches += features.pi_count;
         }
 
+        if features.sigma_count > 0 {
+            *aspect_counts.entry(Aspect::DependentTypes).or_insert(0) += features.sigma_count;
+            total_matches += features.sigma_count;
+        }
+
         if !features.universe_levels.is_empty() {
             *aspect_counts.entry(Aspect::Universes).or_insert(0) += 1;
             total_matches += 1;
@@ -806,6 +817,13 @@ impl RuleBasedTagger {
                 param_type, body, ..
             } => {
                 features.pi_count += 1;
+                self.analyze_term(param_type, features, depth + 1);
+                self.analyze_term(body, features, depth + 1);
+            },
+            Term::Sigma {
+                param_type, body, ..
+            } => {
+                features.sigma_count += 1;
                 self.analyze_term(param_type, features, depth + 1);
                 self.analyze_term(body, features, depth + 1);
             },

@@ -372,6 +372,23 @@ impl ProofGraphBuilder {
                 }
                 Some(nid)
             }
+            Term::Sigma {
+                param,
+                param_type,
+                body,
+            } => {
+                let label = format!("sigma_{}", param);
+                let nid = self.add_node(NodeKind::Binder, &label, depth);
+                self.add_edge(parent_id, nid, EdgeKind::Contains, 1.0);
+
+                if let Some(tid) = self.expand_term(param_type, nid, depth + 1) {
+                    self.add_edge(nid, tid, EdgeKind::HasType, 1.0);
+                }
+                if let Some(bid) = self.expand_term(body, nid, depth + 1) {
+                    self.add_edge(nid, bid, EdgeKind::BindsOver, 1.0);
+                }
+                Some(nid)
+            }
             Term::Type(level) | Term::Sort(level) | Term::Universe(level) => {
                 let label = format!("Type{}", level);
                 let nid = self.add_or_get_node(NodeKind::TypeExpr, &label, depth);
@@ -642,6 +659,7 @@ mod tests {
             name: "h_nat".to_string(),
             ty: Term::Const("Nat".to_string()),
             body: None,
+            type_info: None,
         };
 
         let theorem = Theorem {
@@ -687,6 +705,7 @@ mod tests {
                 variables: vec![Variable {
                     name: "n".to_string(),
                     ty: Term::Const("Nat".to_string()),
+                    type_info: None,
                 }],
             },
             proof_script: Vec::new(),

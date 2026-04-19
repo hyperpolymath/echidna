@@ -161,6 +161,7 @@ impl AlloyBackend {
                     name: trimmed.to_string(),
                     ty: Term::Const("ALLOY_DEF".to_string()),
                     body: Term::Const(trimmed.to_string()),
+                    type_info: None,
                 });
             }
 
@@ -170,6 +171,7 @@ impl AlloyBackend {
                     name: trimmed.to_string(),
                     ty: Term::Const("ALLOY_DEF".to_string()),
                     body: Term::Const(trimmed.to_string()),
+                    type_info: None,
                 });
             }
 

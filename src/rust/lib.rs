@@ -24,6 +24,7 @@ pub mod parsers;
 pub mod proof_encoding; // CBOR encoding + proof identity hashing
 pub mod proof_search; // Chapel parallel proof search (optional feature)
 pub mod provers;
+pub mod types; // Native type-system decorations (multiplicity, effects, modality, temporal, semiring, …)
 pub mod verification;
 #[cfg(feature = "verisim")]
 pub mod verisim_bridge; // VeriSimDB 8-modality octad integration

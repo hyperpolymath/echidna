@@ -168,6 +168,7 @@ impl NuSMVBackend {
                     name: trimmed.to_string(),
                     ty: Term::Const("SMV_VAR".to_string()),
                     body: Term::Const(trimmed.to_string()),
+                    type_info: None,
                 });
             }
 

@@ -1502,6 +1502,17 @@ impl Hol4Backend {
                 var_type: Some(Self::term_to_type(param_type)),
                 body: Box::new(Self::term_to_hol4(body)),
             },
+            Term::Sigma {
+                param,
+                param_type,
+                body,
+            } => HOL4Term::Quant {
+                // HOL4 has no dependent pair; approximate with Exists.
+                quantifier: HOL4Quantifier::Exists,
+                var: param.clone(),
+                var_type: Some(Self::term_to_type(param_type)),
+                body: Box::new(Self::term_to_hol4(body)),
+            },
             Term::Let {
                 name, value, body, ..
             } => HOL4Term::Let {
@@ -2166,6 +2177,7 @@ impl ProverBackend for Hol4Backend {
                         name: name.clone(),
                         ty: Self::hol4_to_term(body),
                         body: None,
+                        type_info: None,
                     });
                 },
                 _ => {},

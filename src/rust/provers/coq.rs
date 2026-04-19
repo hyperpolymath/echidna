@@ -866,6 +866,7 @@ impl ProverBackend for CoqBackend {
                         name,
                         ty: def_type,
                         body,
+                        type_info: None,
                     });
                 },
                 CoqStatement::Tactic(tactic_str) => {
