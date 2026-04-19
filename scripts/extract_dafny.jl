@@ -187,6 +187,64 @@ function generate_synthetic_dafny()::Vector{Dict{String,Any}}
         ("McCarthyNinetyOne", "function McCarthy91(n: int): int\n  requires n >= 0\n  ensures n > 100 ==> McCarthy91(n) == n - 10\n  ensures n <= 100 ==> McCarthy91(n) == 91\n  decreases 101 - n\n{\n  if n > 100 then n - 10 else McCarthy91(McCarthy91(n + 11))\n}", ["requires", "ensures", "decreases"]),
     ]
 
+    map_lemmas = [
+        ("MapPutGet", "method MapPutGet<K,V>(m: map<K,V>, k: K, v: V)\n  ensures k in m[k := v]\n  ensures m[k := v][k] == v\n{}", ["ensures"]),
+        ("MapRemoveAbsent", "lemma MapRemoveAbsent<K,V>(m: map<K,V>, k: K)\n  requires k !in m\n  ensures m - {k} == m\n{}", ["requires", "ensures"]),
+        ("MapDomainSubset", "lemma MapDomainSubset<K,V>(m1: map<K,V>, m2: map<K,V>)\n  requires forall k :: k in m1 ==> k in m2 && m1[k] == m2[k]\n  ensures m1.Keys <= m2.Keys\n{}", ["requires", "ensures"]),
+        ("MapDisjointMerge", "lemma MapDisjointMerge<K,V>(m1: map<K,V>, m2: map<K,V>)\n  requires m1.Keys !! m2.Keys\n  ensures |m1 + m2| == |m1| + |m2|\n{}", ["requires", "ensures"]),
+        ("MapKeysValues", "lemma MapKeysValues<K,V>(m: map<K,V>)\n  ensures |m.Keys| == |m.Values|\n{}", ["ensures"]),
+        ("MapContainsAfterUpdate", "lemma MapContainsAfterUpdate<K,V>(m: map<K,V>, k: K, v: V, k': K)\n  requires k' in m\n  ensures k' in m[k := v]\n{}", ["requires", "ensures"]),
+        ("MapEmptyKeys", "lemma MapEmptyKeys<K,V>()\n  ensures (map[]: map<K,V>).Keys == {}\n{}", ["ensures"]),
+        ("MapUpdateIdempotent", "lemma MapUpdateIdempotent<K,V>(m: map<K,V>, k: K, v: V)\n  ensures m[k := v][k := v] == m[k := v]\n{}", ["ensures"]),
+    ]
+
+    loop_invariants = [
+        ("LinearSearch", "method LinearSearch(a: array<int>, key: int) returns (idx: int)\n  ensures 0 <= idx ==> idx < a.Length && a[idx] == key\n  ensures idx < 0 ==> forall i :: 0 <= i < a.Length ==> a[i] != key\n{\n  var i := 0;\n  while i < a.Length\n    invariant 0 <= i <= a.Length\n    invariant forall j :: 0 <= j < i ==> a[j] != key\n  {\n    if a[i] == key { return i; }\n    i := i + 1;\n  }\n  return -1;\n}", ["ensures", "invariant"]),
+        ("SumArray", "method SumArray(a: array<int>) returns (s: int)\n  ensures s == Sum(a[..], 0, a.Length)\n{\n  s := 0;\n  var i := 0;\n  while i < a.Length\n    invariant 0 <= i <= a.Length\n    invariant s == Sum(a[..], 0, i)\n  {\n    s := s + a[i];\n    i := i + 1;\n  }\n}", ["ensures", "invariant"]),
+        ("MaxElement", "method MaxElement(a: array<int>) returns (m: int)\n  requires a.Length > 0\n  ensures forall i :: 0 <= i < a.Length ==> a[i] <= m\n  ensures exists i :: 0 <= i < a.Length && a[i] == m\n{\n  m := a[0];\n  var i := 1;\n  while i < a.Length\n    invariant 1 <= i <= a.Length\n    invariant forall j :: 0 <= j < i ==> a[j] <= m\n    invariant exists j :: 0 <= j < i && a[j] == m\n  {\n    if a[i] > m { m := a[i]; }\n    i := i + 1;\n  }\n}", ["requires", "ensures", "invariant"]),
+        ("CountOccurrences", "method CountOccurrences(a: array<int>, key: int) returns (c: int)\n  ensures c == |set i | 0 <= i < a.Length && a[i] == key|\n{\n  c := 0;\n  var i := 0;\n  while i < a.Length\n    invariant 0 <= i <= a.Length\n    invariant c == |set j | 0 <= j < i && a[j] == key|\n  {\n    if a[i] == key { c := c + 1; }\n    i := i + 1;\n  }\n}", ["ensures", "invariant"]),
+        ("ReverseInPlace", "method ReverseInPlace(a: array<int>)\n  modifies a\n  ensures forall i :: 0 <= i < a.Length ==> a[i] == old(a[a.Length - 1 - i])\n{\n  var lo, hi := 0, a.Length - 1;\n  while lo < hi\n    invariant 0 <= lo && hi < a.Length\n    invariant lo + hi == a.Length - 1\n    invariant forall i :: 0 <= i < lo ==> a[i] == old(a[a.Length - 1 - i])\n    invariant forall i :: hi < i < a.Length ==> a[i] == old(a[a.Length - 1 - i])\n    invariant forall i :: lo <= i <= hi ==> a[i] == old(a[i])\n  {\n    a[lo], a[hi] := a[hi], a[lo];\n    lo, hi := lo + 1, hi - 1;\n  }\n}", ["modifies", "ensures", "invariant"]),
+        ("CopyArray", "method CopyArray(src: array<int>) returns (dst: array<int>)\n  ensures dst.Length == src.Length\n  ensures forall i :: 0 <= i < src.Length ==> dst[i] == src[i]\n  ensures fresh(dst)\n{\n  dst := new int[src.Length];\n  var i := 0;\n  while i < src.Length\n    invariant 0 <= i <= src.Length\n    invariant forall j :: 0 <= j < i ==> dst[j] == src[j]\n  {\n    dst[i] := src[i];\n    i := i + 1;\n  }\n}", ["ensures", "invariant"]),
+        ("Partition", "method Partition(a: array<int>, lo: int, hi: int) returns (p: int)\n  requires 0 <= lo < hi <= a.Length\n  modifies a\n  ensures lo <= p < hi\n  ensures forall i :: lo <= i < p ==> a[i] <= a[p]\n  ensures forall i :: p < i < hi ==> a[i] > a[p]\n  ensures multiset(a[lo..hi]) == multiset(old(a[lo..hi]))\n{}", ["requires", "modifies", "ensures"]),
+        ("TwoSum", "method TwoSum(a: array<int>, target: int) returns (i: int, j: int)\n  requires Sorted(a, 0, a.Length)\n  ensures 0 <= i < j < a.Length ==> a[i] + a[j] == target\n{\n  i, j := 0, a.Length - 1;\n  while i < j\n    invariant 0 <= i && j < a.Length\n    invariant forall p, q :: 0 <= p < i && i <= q < a.Length ==> a[p] + a[q] != target\n  {\n    if a[i] + a[j] == target { return; }\n    else if a[i] + a[j] < target { i := i + 1; }\n    else { j := j - 1; }\n  }\n  return -1, -1;\n}", ["requires", "ensures", "invariant"]),
+    ]
+
+    inductive_proofs = [
+        ("SumFormula", "lemma SumFormula(n: nat)\n  ensures 2 * SumTo(n) == n * (n + 1)\n  decreases n\n{\n  if n == 0 { } else { SumFormula(n - 1); }\n}", ["ensures", "decreases"]),
+        ("PowerMonotone", "lemma PowerMonotone(b: nat, m: nat, n: nat)\n  requires b >= 2 && m <= n\n  ensures Pow(b, m) <= Pow(b, n)\n  decreases n - m\n{\n  if m == n { } else { PowerMonotone(b, m, n - 1); }\n}", ["requires", "ensures", "decreases"]),
+        ("ListFlatten", "lemma ListFlatten<T>(l1: List<T>, l2: List<T>)\n  ensures Length(Append(l1, l2)) == Length(l1) + Length(l2)\n  decreases l1\n{\n  match l1 { case Nil => case Cons(_, tl) => ListFlatten(tl, l2); }\n}", ["ensures", "decreases"]),
+        ("TreeHeight", "lemma TreeHeight(t: Tree)\n  ensures Height(t) >= 0\n  decreases t\n{\n  match t {\n    case Leaf => {}\n    case Node(l, _, r) => { TreeHeight(l); TreeHeight(r); }\n  }\n}", ["ensures", "decreases"]),
+        ("FibMonotone", "lemma FibMonotone(m: nat, n: nat)\n  requires m <= n && m >= 1\n  ensures Fib(m) <= Fib(n)\n  decreases n - m\n{\n  if m == n { } else { FibMonotone(m, n - 1); FibPositive(n - 2); }\n}", ["requires", "ensures", "decreases"]),
+        ("StrongInduction", "lemma StrongInduction(n: nat, P: nat -> bool)\n  requires forall k: nat :: (forall j: nat :: j < k ==> P(j)) ==> P(k)\n  ensures P(n)\n  decreases n\n{\n  forall j: nat | j < n ensures P(j) { StrongInduction(j, P); }\n}", ["requires", "ensures", "decreases"]),
+        ("BinomialTheorem", "lemma BinomialTheorem(x: int, y: int, n: nat)\n  ensures Pow(x + y, n) == Sum(k => Choose(n, k) * Pow(x, n - k) * Pow(y, k), 0, n)\n  decreases n\n{}", ["ensures", "decreases"]),
+    ]
+
+    ghost_state = [
+        ("GhostCounter", "method GhostCounter(n: nat) returns (r: nat)\n  ensures r == n\n{\n  r := 0;\n  ghost var g := 0;\n  while r < n\n    invariant r == g && r <= n\n  {\n    r := r + 1;\n    g := g + 1;\n  }\n}", ["ensures", "invariant"]),
+        ("FrameCondition", "method FrameCondition(a: array<int>, b: array<int>, i: nat)\n  requires a != b && i < a.Length\n  modifies a\n  ensures b[..] == old(b[..])\n  ensures forall j :: 0 <= j < a.Length && j != i ==> a[j] == old(a[j])\n{\n  a[i] := a[i] + 1;\n}", ["requires", "modifies", "ensures"]),
+        ("ReprValid", "class Node {\n  var val: int\n  var next: Node?\n  ghost var repr: set<Node>\n  predicate Valid()\n    reads this, repr\n  {\n    this in repr &&\n    (next != null ==> next in repr && next.repr < repr && next.Valid())\n  }\n}", ["reads"]),
+        ("AllocFresh", "method AllocFresh() returns (r: array<int>)\n  ensures fresh(r)\n  ensures r.Length == 10\n  ensures forall i :: 0 <= i < 10 ==> r[i] == 0\n{\n  r := new int[10];\n}", ["ensures"]),
+        ("GhostSequence", "method GhostSequence(a: array<int>)\n  modifies a\n  ensures a[..] == Reverse(old(a[..]))\n{\n  ghost var original := a[..];\n  ReverseInPlace(a);\n}", ["modifies", "ensures"]),
+    ]
+
+    type_refinement = [
+        ("NonNullArray", "type NonNullArray = a: array<int> | a.Length > 0 witness *", []),
+        ("PositiveInt", "type Positive = n: int | n > 0 witness 1", []),
+        ("BoundedInt", "type Bounded = n: int | 0 <= n < 256 witness 0", []),
+        ("EvenNat", "type EvenNat = n: nat | n % 2 == 0 witness 0", []),
+        ("SortedSeq", "type SortedSeq = s: seq<int> | forall i, j :: 0 <= i < j < |s| ==> s[i] <= s[j] witness []", []),
+        ("NonEmptySeq", "type NonEmptySeq<T> = s: seq<T> | |s| > 0 witness *", []),
+        ("UniqueSeq", "type UniqueSeq<T(==)> = s: seq<T> | forall i, j :: 0 <= i < j < |s| ==> s[i] != s[j] witness []", []),
+        ("Percentage", "type Percentage = r: real | 0.0 <= r <= 100.0 witness 0.0", []),
+    ]
+
+    concurrency_specs = [
+        ("MutexSpec", "class Mutex {\n  ghost var locked: bool\n  method Acquire()\n    requires !locked\n    modifies this\n    ensures locked\n  {\n    locked := true;\n  }\n  method Release()\n    requires locked\n    modifies this\n    ensures !locked\n  {\n    locked := false;\n  }\n}", ["requires", "modifies", "ensures"]),
+        ("TokenRing", "method TokenRing(nodes: array<bool>, holder: nat)\n  requires holder < nodes.Length\n  requires nodes[holder] == true\n  requires forall i :: 0 <= i < nodes.Length && i != holder ==> nodes[i] == false\n  modifies nodes\n  ensures nodes[(holder + 1) % nodes.Length] == true\n  ensures forall i :: 0 <= i < nodes.Length && i != (holder + 1) % nodes.Length ==> nodes[i] == false\n{}", ["requires", "modifies", "ensures"]),
+        ("AtomicIncrement", "method AtomicIncrement(x: int) returns (y: int)\n  ensures y == x + 1\n{\n  y := x + 1;\n}", ["ensures"]),
+        ("CompareAndSwap", "method CAS(r: ref<int>, expected: int, desired: int) returns (success: bool)\n  modifies r\n  ensures success ==> old(r.val) == expected && r.val == desired\n  ensures !success ==> r.val == old(r.val)\n{}", ["modifies", "ensures"]),
+    ]
+
     all_categories = [
         ("arithmetic", arithmetic_lemmas),
         ("sequences", sequence_lemmas),
@@ -194,6 +252,12 @@ function generate_synthetic_dafny()::Vector{Dict{String,Any}}
         ("sorting", sorting_search),
         ("data_structures", data_structures),
         ("termination", termination),
+        ("maps", map_lemmas),
+        ("loops", loop_invariants),
+        ("induction", inductive_proofs),
+        ("ghost", ghost_state),
+        ("types", type_refinement),
+        ("concurrency", concurrency_specs),
     ]
 
     proofs = Dict{String,Any}[]
