@@ -252,7 +252,7 @@ pub struct SpatialPayload {
 ///
 /// Usage:
 /// ```ignore
-/// let octad = ProofOctadBuilder::new("my_theorem", &goal, ProverKind::Lean4)
+/// let octad = ProofOctadBuilder::new("my_theorem", &goal, ProverKind::Lean)
 ///     .with_proof_state(&proof_state)
 ///     .with_axioms(vec!["Classical.em".to_string()])
 ///     .with_aspects(vec!["logic".to_string()])
@@ -921,7 +921,7 @@ mod tests {
         let goal = sample_goal();
         let proof = sample_proof_state();
 
-        let octad = ProofOctadBuilder::new("nat_add_zero", &goal, ProverKind::Lean4)
+        let octad = ProofOctadBuilder::new("nat_add_zero", &goal, ProverKind::Lean)
             .with_proof_state(&proof)
             .with_axioms(vec!["Nat.rec".to_string()])
             .with_aspects(vec!["arithmetic".to_string(), "induction".to_string()])
@@ -932,9 +932,10 @@ mod tests {
         // Key should be a 64-char hex digest
         assert_eq!(octad.key.len(), 64);
 
-        // Semantic modality
+        // Semantic modality (ProverKind::Lean is the Lean 4 variant; Lean 3
+        // is a sibling ProverKind::Lean3.)
         assert_eq!(octad.semantic.status, ProofStatus::Complete);
-        assert_eq!(octad.semantic.prover, "Lean4");
+        assert_eq!(octad.semantic.prover, "Lean");
         assert!(!octad.semantic.proof_blob_b64.is_empty());
         assert_eq!(octad.semantic.axioms_used, vec!["Nat.rec"]);
 
@@ -964,7 +965,7 @@ mod tests {
 
         // Graph modality
         assert_eq!(octad.graph.cross_prover_id.len(), 64);
-        assert!(octad.graph.prover_id.contains("Lean4"));
+        assert!(octad.graph.prover_id.contains("Lean"));
 
         // Tensor modality
         assert_eq!(*octad.tensor.metrics.get("time_ms").unwrap(), 42.0);
