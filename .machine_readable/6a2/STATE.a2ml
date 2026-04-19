@@ -632,3 +632,28 @@ remaining-gaps = [
   "Real-Chapel CI path — chapel-ci.yml currently tests against stubs only; no job yet builds real libechidna_chapel and links it with -Dstubs=false. Easy follow-up.",
 ]
 
+[session-2026-04-19-l3-wave-2]
+summary = "L3 Wave-2 (Tier-2 nightly) live-prover provisioning filled in; 2 new live tests added."
+changes = [
+  ".github/workflows/live-provers.yml Tier-2 matrix: real provisioning commands for idris2 (source bootstrap against Chez Scheme), isabelle (Isabelle2024 tarball), dafny (dotnet tool install), fstar (GitHub release tarball; binary fstar.exe even on Linux), tlaps (self-extracting tlapm installer). hol-light deferred to Wave-3 container path — no prebuilt binary and opam build is ~20 min + camlp5.",
+  "tests/live_prover_suite.rs: added live_fstar_version + live_tlaps_version tests; extended kind_label with FStar/TLAPS; added library_paths to live_config's ProverConfig literal (missing field had silently broken the test file build).",
+  "Verification: cargo test --test live_prover_suite --features live-provers → 18/18 pass. 13 backends returned real versions on this host (Z3 4.13.4, CVC5 1.3.3, EProver 3.3.1, Alt-Ergo 2.4.3, Why3 1.8.2, Vampire 5.0.1, Dafny 4.11.0, Isabelle2025-1, Idris2 0.8.0, F* 2025.12.15, Coq, Agda, Lean4); 5 auto-skipped (GLPK/SPASS/MiniZinc/TLAPS/Chuffed).",
+]
+l3-status-after-wave-2 = [
+  "Wave-1 (Tier-1, every PR, 9 backends): DONE — landed in b022bf4.",
+  "Wave-2 (Tier-2, nightly, 10 backends): DONE for 9; hol-light deferred to Wave-3.",
+  "Wave-3 (Tier-3, weekly, 9 backends: Tamarin, ProVerif, Imandra, SCIP, OR-Tools, HOL4, ACL2, Twelf, Metamath): SCAFFOLD ONLY — placeholder job announces Wave-3 TODO. Needs per-backend Containerfiles (Podman, not Docker).",
+  "Wave-4 (Tier-4, quarterly, 19 backends): SCAFFOLD ONLY — placeholder. Retained as mock-only unless a maintainer volunteers.",
+]
+wave-3-handover-hints = [
+  "Tamarin: Haskell Stack build; prebuilt binaries from github.com/tamarin-prover/tamarin-prover/releases may work.",
+  "ProVerif: OCaml build via opam; consider the Docker image from INRIA.",
+  "Imandra: proprietary binary; needs signed registration before download.",
+  "SCIP: academic license now lifted; prebuilt .deb from scipopt.org.",
+  "OR-Tools: large C++ build; use the official ortools Python wheel's bundled binaries or the official .tar.gz release.",
+  "HOL4: Poly/ML + Moscow ML build; tractable but slow.",
+  "ACL2: Common Lisp (SBCL/CCL); prebuilt SBCL image + `make` is easiest.",
+  "Twelf: SML/NJ build.",
+  "Metamath: in-process pure-Rust verifier per stub-audit-result; external metamath binary is optional smoke-test scope only.",
+]
+
