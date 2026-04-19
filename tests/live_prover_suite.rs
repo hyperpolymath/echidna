@@ -41,6 +41,7 @@ fn binary_on_path(name: &str) -> Option<PathBuf> {
 fn live_config(executable: &str) -> ProverConfig {
     ProverConfig {
         executable: PathBuf::from(executable),
+        library_paths: vec![],
         args: vec![],
         timeout: 30,
         neural_enabled: false,
@@ -107,6 +108,8 @@ fn kind_label(kind: ProverKind) -> &'static str {
         ProverKind::Isabelle => "Isabelle",
         ProverKind::Why3 => "Why3",
         ProverKind::Dafny => "Dafny",
+        ProverKind::FStar => "F*",
+        ProverKind::TLAPS => "TLAPS",
         _ => "<other>",
     }
 }
@@ -197,4 +200,17 @@ async fn live_why3_version() {
 #[tokio::test]
 async fn live_dafny_version() {
     assert_version_reachable(ProverKind::Dafny, "dafny").await;
+}
+
+#[tokio::test]
+async fn live_fstar_version() {
+    // Canonical binary name is `fstar.exe` (per ProverKind::FStar executable()
+    // in src/rust/provers/mod.rs — F* uses the `.exe` suffix even on Linux).
+    assert_version_reachable(ProverKind::FStar, "fstar.exe").await;
+}
+
+#[tokio::test]
+async fn live_tlaps_version() {
+    // TLA+ Proof System's prover is `tlapm` (per provers/mod.rs).
+    assert_version_reachable(ProverKind::TLAPS, "tlapm").await;
 }
