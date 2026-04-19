@@ -612,3 +612,23 @@ audit-findings-2026-04-19 = [
 ]
 next-session-start = "Continue L3 Wave-2 (Tier-2 backends) per ~/Desktop/ECHIDNA-L3-LIVE-PROVER-CI-PROMPT.md"
 
+[session-2026-04-19-gaps-refresh-and-chapel-stub-link]
+summary = "Refreshed stale gaps list + made cargo build --features chapel self-link against stubs."
+changes = [
+  "src/zig_ffi/build.zig: added -Dstubs=<bool> option (default true) so both the shared and static libechidna_chapel_ffi bundle chapel_stubs.c. Pass -Dstubs=false when linking against the real libechidna_chapel built from chapel_poc/. Fixes chapel-ci.yml Job 3 (rust-chapel-feature) which previously downloaded a Zig lib with unresolved chapel_* externs.",
+  "src/zig_ffi/build.zig: pass -fno-sanitize=undefined to the C stub compile; Zig defaults UBSan on for C and the __ubsan_* symbols are not in Rust's linker search path, which broke cargo test --features chapel.",
+  "src/rust/proof_search.rs: pre-existing compile error fixed — anyhow::Context trait not in scope inside chapel_ffi submodule; added `use anyhow::Context;`. Without this `cargo build --features chapel` errored before reaching the link step.",
+  "Verified: cargo build --features chapel OK (0 errors, 5 pre-existing warnings); cargo test --features chapel --lib proof_search → 6/6 pass.",
+]
+stale-gap-list-corrections = [
+  "Tamarin bridge: NOT planned — fully wired. src/rust/provers/tamarin.rs (592 LoC) implements ProverBackend with to_spthy/parse_spthy/parse_result; ProverFactory dispatch at provers/mod.rs:1265; kind_from_u8/kind_to_u8 at ffi/mod.rs:426/1131; 4 unit tests.",
+  "ProVerif bridge: NOT planned — fully wired. src/rust/provers/proverif.rs (799 LoC) with equivalent structure; ProverFactory dispatch at provers/mod.rs:1266; kind_from_u8/kind_to_u8 at ffi/mod.rs:427/1132.",
+  "No TODO/FIXME in Rust core: verified — Grep over src/rust/ for TODO|FIXME|XXX|HACK|unimplemented|todo!() returned 0 matches.",
+  "Chapel→Rust C FFI bridge: symbol names and struct layouts were already correct (src/zig_ffi/chapel_bridge.zig exports the echidna_* names Rust imports; CProofResultForRust matches Rust's CProofResult field-for-field). The real gap was link-time: Zig static lib had unresolved chapel_* externs with no stubs bundled — fixed this session.",
+]
+remaining-gaps = [
+  "Live subprocess CI across 105 registered ProverKind variants — partial (see session-2026-04-19-production-wiring-kickoff L3 Wave-1 + live-provers.yml). Tier-2/3/4 backends unimplemented.",
+  "Flux.jl larger-corpus GNN training — v2.2 milestone, unchanged.",
+  "Real-Chapel CI path — chapel-ci.yml currently tests against stubs only; no job yet builds real libechidna_chapel and links it with -Dstubs=false. Easy follow-up.",
+]
+

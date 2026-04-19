@@ -129,6 +129,7 @@ impl ProofSearchStrategy for SequentialSearch {
 #[cfg(feature = "chapel")]
 mod chapel_ffi {
     use super::*;
+    use anyhow::Context;
     use std::ffi::{CStr, CString};
     use std::os::raw::{c_char, c_double, c_int};
 
