@@ -103,7 +103,16 @@ Speedup: 1.51x
 
 ## Next Steps
 
-1. **Integration**: Add FFI bindings to call from Rust
+1. ~~**Integration**: Add FFI bindings to call from Rust~~ — **DONE**.
+   Chapel `export` functions in `chapel_ffi_exports.chpl` are wrapped by
+   the Zig bridge at `../src/zig_ffi/chapel_bridge.zig`, which in turn
+   exports the `echidna_*` C ABI consumed by
+   `../src/rust/proof_search.rs` under `#[cfg(feature = "chapel")]`.
+   Build the Zig bridge with `cd ../src/zig_ffi && zig build` (default
+   `-Dstubs=true` bundles `chapel_stubs.c` so Rust links without a
+   Chapel install); then `cargo build --features chapel` from the repo
+   root. Pass `-Dstubs=false` to the Zig build to link against the real
+   `libechidna_chapel.so` produced in this directory.
 2. **Real Provers**: Replace mock with actual prover backends
 3. **Distributed**: Run on multi-node cluster
 4. **ML Integration**: Parallel model training
