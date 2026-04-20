@@ -33,7 +33,7 @@ const START_ID        = 200000
 
 # Path to the tropical-resource-typing repo (sibling of neural-foundations).
 # Adjust if your checkout differs.
-const TROPICAL_REPO   = abspath(joinpath(REPO_ROOT, "..", "..", "..", "..", "tropical-resource-typing"))
+const TROPICAL_REPO   = abspath(joinpath(REPO_ROOT, "..", "tropical-resource-typing"))
 
 const THY_FILES = [
     ("Tropical_v2.thy",            "tropical_v2"),
@@ -527,7 +527,7 @@ function synthetic_isabelle_algebra()::Vector{IsabelleEntry}
          "\"dim_row A = n \\<Longrightarrow> dim_col A = m \\<Longrightarrow>\n  c \\<cdot>\\<^sub>m (d \\<cdot>\\<^sub>m A) = (c * d) \\<cdot>\\<^sub>m (A :: 'a :: semiring_0 mat)\"",
          "by (rule smult_smult_assoc)"),
         ("matrix_row_col",
-         "\"i < dim_row A \\<Longrightarrow> j < dim_col A \\<Longrightarrow>\n  (A :: 'a mat) $$ (i, j) = row A i $ j\"",
+         "\"i < dim_row A \\<Longrightarrow> j < dim_col A \\<Longrightarrow>\n  (A :: 'a mat) \$\$ (i, j) = row A i \$ j\"",
          "by (simp add: row_def)"),
         ("matrix_dim_mult",
          "\"dim_row (A * B) = dim_row A\"",
