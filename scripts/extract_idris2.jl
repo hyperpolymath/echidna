@@ -259,6 +259,61 @@ function generate_synthetic_idris2()::Vector{Dict{String,Any}}
         ("chunksOfLength", "chunksOfLength : (k : Nat) -> {auto ok : NonZero k} -> (xs : Vect n a) -> length (chunksOf k xs) = divCeilNZ n k ok", ""),
     ]
 
+    bool_proofs = [
+        ("andCommutative", "andCommutative : (a, b : Bool) -> a && b = b && a", "andCommutative True True = Refl\nandCommutative True False = Refl\nandCommutative False True = Refl\nandCommutative False False = Refl"),
+        ("orCommutative", "orCommutative : (a, b : Bool) -> a || b = b || a", "orCommutative True True = Refl\norCommutative True False = Refl\norCommutative False True = Refl\norCommutative False False = Refl"),
+        ("andAssociative", "andAssociative : (a, b, c : Bool) -> (a && b) && c = a && (b && c)", "andAssociative True b c = Refl\nandAssociative False b c = Refl"),
+        ("orAssociative", "orAssociative : (a, b, c : Bool) -> (a || b) || c = a || (b || c)", "orAssociative True b c = Refl\norAssociative False b c = Refl"),
+        ("andTrueNeutral", "andTrueNeutral : (a : Bool) -> a && True = a", "andTrueNeutral True = Refl\nandTrueNeutral False = Refl"),
+        ("orFalseNeutral", "orFalseNeutral : (a : Bool) -> a || False = a", "orFalseNeutral True = Refl\norFalseNeutral False = Refl"),
+        ("notInvolutive", "notInvolutive : (a : Bool) -> not (not a) = a", "notInvolutive True = Refl\nnotInvolutive False = Refl"),
+        ("deMorganAnd", "deMorganAnd : (a, b : Bool) -> not (a && b) = not a || not b", "deMorganAnd True True = Refl\ndeMorganAnd True False = Refl\ndeMorganAnd False True = Refl\ndeMorganAnd False False = Refl"),
+    ]
+
+    pair_proofs = [
+        ("pairEta", "pairEta : (p : (a, b)) -> p = (fst p, snd p)", "pairEta (x, y) = Refl"),
+        ("mapFstId", "mapFstId : (p : (a, b)) -> mapFst id p = p", "mapFstId (x, y) = Refl"),
+        ("mapSndId", "mapSndId : (p : (a, b)) -> mapSnd id p = p", "mapSndId (x, y) = Refl"),
+        ("bimap_id", "bimap_id : (p : (a, b)) -> bimap id id p = p", "bimap_id (x, y) = Refl"),
+        ("swapSwap", "swapSwap : (p : (a, b)) -> swap (swap p) = p", "swapSwap (x, y) = Refl"),
+        ("mapFstCompose", "mapFstCompose : (f : b -> c) -> (g : a -> b) -> (p : (a, d)) -> mapFst f (mapFst g p) = mapFst (f . g) p", "mapFstCompose f g (x, y) = Refl"),
+    ]
+
+    snoclist_proofs = [
+        ("snocListAppend", "snocListAppend : (xs : SnocList a) -> (ys : SnocList a) -> length (xs ++ ys) = length xs + length ys", ""),
+        ("snocListReverse", "snocListReverse : (xs : SnocList a) -> cast (reverse (reverse xs)) = xs", ""),
+        ("snocListMap", "snocListMap : (f : a -> b) -> (xs : SnocList a) -> length (map f xs) = length xs", ""),
+        ("snocNil", "snocNil : (xs : SnocList a) -> xs ++ [<] = xs", ""),
+        ("snocCast", "snocCast : (xs : List a) -> cast (cast xs : SnocList a) = xs", ""),
+    ]
+
+    proof_search = [
+        ("autoRefl", "autoRefl : {auto prf : x = x} -> x = x", "autoRefl {prf} = prf"),
+        ("autoLTE", "autoLTE : {auto prf : LTE n m} -> LTE n m", "autoLTE {prf} = prf"),
+        ("decideEq", "decideEq : DecEq a => (x, y : a) -> Either (x = y) (Not (x = y))", "decideEq x y = case decEq x y of { Yes prf => Left prf; No contra => Right contra }"),
+        ("searchNat", "searchNat : (n : Nat ** LTE 10 n, LTE n 20)", "searchNat = (15 ** (LTESucc (LTESucc (LTESucc (LTESucc (LTESucc (LTESucc (LTESucc (LTESucc (LTESucc (LTESucc LTEZero))))))))), LTESucc (LTESucc (LTESucc (LTESucc (LTESucc LTEZero))))))"),
+        ("autoShow", "autoShow : Show a => a -> String", "autoShow x = show x"),
+    ]
+
+    with_views = [
+        ("filterView", "filterView : (p : a -> Bool) -> (xs : List a) -> List a", "filterView p [] = []\nfilterView p (x :: xs) with (p x)\n  _ | True = x :: filterView p xs\n  _ | False = filterView p xs"),
+        ("lookupView", "lookupView : DecEq k => k -> List (k, v) -> Maybe v", "lookupView key [] = Nothing\nlookupView key ((k, v) :: xs) with (decEq key k)\n  _ | Yes _ = Just v\n  _ | No _ = lookupView key xs"),
+        ("insertSorted", "insertSorted : Ord a => a -> List a -> List a", "insertSorted x [] = [x]\ninsertSorted x (y :: ys) with (compare x y)\n  _ | LT = x :: y :: ys\n  _ | EQ = x :: y :: ys\n  _ | GT = y :: insertSorted x ys"),
+        ("splitAt", "splitAt : (n : Nat) -> (xs : Vect (n + m) a) -> (Vect n a, Vect m a)", "splitAt Z xs = ([], xs)\nsplitAt (S k) (x :: xs) = let (ys, zs) = splitAt k xs in (x :: ys, zs)"),
+        ("mergeView", "mergeView : Ord a => List a -> List a -> List a", "mergeView [] ys = ys\nmergeView xs [] = xs\nmergeView (x :: xs) (y :: ys) with (compare x y)\n  _ | LT = x :: mergeView xs (y :: ys)\n  _ | _ = y :: mergeView (x :: xs) ys"),
+        ("groupByView", "groupByView : (a -> a -> Bool) -> List a -> List (List a)", ""),
+    ]
+
+    cong_rewrite = [
+        ("congSucc", "congSucc : n = m -> S n = S m", "congSucc Refl = Refl"),
+        ("congPlus", "congPlus : a = b -> c = d -> a + c = b + d", "congPlus Refl Refl = Refl"),
+        ("congMap", "congMap : (f : a -> b) -> x = y -> f x = f y", "congMap f Refl = Refl"),
+        ("transEq", "transEq : a = b -> b = c -> a = c", "transEq Refl Refl = Refl"),
+        ("symEq", "symEq : a = b -> b = a", "symEq Refl = Refl"),
+        ("replaceEq", "replaceEq : (0 p : a -> Type) -> x = y -> p x -> p y", "replaceEq p Refl px = px"),
+        ("voidAbsurd2", "voidAbsurd2 : Void -> a", "voidAbsurd2 v = absurd v"),
+    ]
+
     all_categories = [
         ("equality", equality_proofs),
         ("decidable", decidable),
@@ -274,6 +329,12 @@ function generate_synthetic_idris2()::Vector{Dict{String,Any}}
         ("streams", stream_proofs),
         ("universe", universe_proofs),
         ("type_level", type_level),
+        ("bool", bool_proofs),
+        ("pairs", pair_proofs),
+        ("snoclist", snoclist_proofs),
+        ("proof_search", proof_search),
+        ("with_views", with_views),
+        ("cong_rewrite", cong_rewrite),
     ]
 
     proofs = Dict{String,Any}[]

@@ -254,6 +254,71 @@ function generate_synthetic_fstar()::Vector{Dict{String,Any}}
         ("coercion_lemma", "val coercion_lemma: #a:Type -> #p:(a -> Type0) -> #q:(a -> Type0) -> x:a{p x} -> Lemma (requires forall (y:a). p y ==> q y) (ensures q x)", "let coercion_lemma #a #p #q x = ()"),
     ]
 
+    machine_integers = [
+        ("u8_add_mod", "val u8_add_mod: a:UInt8.t -> b:UInt8.t -> Lemma (UInt8.v (UInt8.add_mod a b) == (UInt8.v a + UInt8.v b) % 256)", "let u8_add_mod a b = ()"),
+        ("u32_shift_left", "val u32_shift_left: a:UInt32.t -> s:UInt32.t{UInt32.v s < 32} -> Lemma (UInt32.v (UInt32.shift_left a s) == (UInt32.v a * pow2 (UInt32.v s)) % pow2 32)", ""),
+        ("u64_logand_comm", "val u64_logand_comm: a:UInt64.t -> b:UInt64.t -> Lemma (UInt64.logand a b == UInt64.logand b a)", "let u64_logand_comm a b = UInt64.logand_commutative a b"),
+        ("i32_add_overflow", "val i32_add_overflow: a:Int32.t -> b:Int32.t -> Lemma (requires Int32.v a + Int32.v b < pow2 31 /\\ Int32.v a + Int32.v b >= -(pow2 31)) (ensures Int32.v (Int32.add a b) == Int32.v a + Int32.v b)", ""),
+        ("cast_u8_u32", "val cast_u8_u32: a:UInt8.t -> Lemma (UInt32.v (FStar.Int.Cast.uint8_to_uint32 a) == UInt8.v a)", ""),
+        ("u32_sub_mod", "val u32_sub_mod: a:UInt32.t -> b:UInt32.t -> Lemma (UInt32.v (UInt32.sub_mod a b) == (UInt32.v a - UInt32.v b) % pow2 32)", ""),
+        ("bytes_of_u32", "val bytes_of_u32: n:UInt32.t -> Lemma (ensures length (uint32_to_bytes n) == 4)", ""),
+        ("u16_max_bound", "val u16_max_bound: a:UInt16.t -> Lemma (UInt16.v a < 65536)", "let u16_max_bound a = ()"),
+    ]
+
+    parser_combinators = [
+        ("parser_ret", "val parser_ret: #a:Type -> v:a -> parser a", "let parser_ret #a v = fun input -> Some (v, input)"),
+        ("parser_bind", "val parser_bind: #a:Type -> #b:Type -> p:parser a -> f:(a -> parser b) -> parser b", "let parser_bind #a #b p f = fun input -> match p input with | None -> None | Some (v, rest) -> f v rest"),
+        ("parser_map", "val parser_map: #a:Type -> #b:Type -> f:(a -> b) -> p:parser a -> parser b", "let parser_map #a #b f p = parser_bind p (fun v -> parser_ret (f v))"),
+        ("parser_alt", "val parser_alt: #a:Type -> p1:parser a -> p2:parser a -> parser a", "let parser_alt #a p1 p2 = fun input -> match p1 input with | Some r -> Some r | None -> p2 input"),
+        ("parser_many", "val parser_many: #a:Type -> p:parser a -> parser (list a)", "let rec parser_many #a p = parser_alt (parser_bind p (fun v -> parser_bind (parser_many p) (fun vs -> parser_ret (v :: vs)))) (parser_ret [])"),
+        ("parser_char", "val parser_char: c:char -> parser char", "let parser_char c = fun input -> if Seq.length input > 0 && Seq.index input 0 = c then Some (c, Seq.slice input 1 (Seq.length input)) else None"),
+        ("parser_digit", "val parser_digit: parser nat", "let parser_digit = parser_bind (parser_satisfy is_digit) (fun c -> parser_ret (char_to_nat c))"),
+        ("parser_satisfy", "val parser_satisfy: (char -> bool) -> parser char", "let parser_satisfy f = fun input -> if Seq.length input > 0 && f (Seq.index input 0) then Some (Seq.index input 0, Seq.slice input 1 (Seq.length input)) else None"),
+    ]
+
+    state_machine = [
+        ("sm_transition", "val sm_transition: st:state -> ev:event -> Tot state", "let sm_transition st ev = match st, ev with | Init, Start -> Running | Running, Stop -> Done | s, _ -> s"),
+        ("sm_invariant", "val sm_invariant: st:state -> Tot bool", "let sm_invariant st = st <> Error"),
+        ("sm_step_preserves", "val sm_step_preserves: st:state -> ev:event -> Lemma (requires sm_invariant st) (ensures sm_invariant (sm_transition st ev))", "let sm_step_preserves st ev = ()"),
+        ("sm_reachable", "val sm_reachable: events:list event -> Tot state (decreases events)", "let rec sm_reachable events = match events with | [] -> Init | e :: es -> sm_transition (sm_reachable es) e"),
+        ("sm_trace_valid", "val sm_trace_valid: events:list event -> Lemma (ensures sm_invariant (sm_reachable events)) (decreases events)", "let rec sm_trace_valid events = match events with | [] -> () | e :: es -> sm_trace_valid es; sm_step_preserves (sm_reachable es) e"),
+        ("sm_deadlock_free", "val sm_deadlock_free: st:state -> Lemma (requires st <> Done) (ensures exists (ev:event). sm_transition st ev <> st)", ""),
+    ]
+
+    protocol_verification = [
+        ("handshake_complete", "val handshake_complete: c:client -> s:server -> Lemma (requires valid_hello c /\\ valid_hello s) (ensures handshake_result c s == Success)", ""),
+        ("message_integrity", "val message_integrity: k:key -> m:msg -> Lemma (ensures verify k m (mac k m) == true)", "let message_integrity k m = ()"),
+        ("nonce_fresh", "val nonce_fresh: n:nonce -> log:list nonce -> Lemma (requires not (mem n log)) (ensures fresh n log)", "let nonce_fresh n log = ()"),
+        ("session_key_derive", "val session_key_derive: psk:key -> c_rand:bytes -> s_rand:bytes -> Lemma (ensures length (derive psk c_rand s_rand) == 32)", ""),
+        ("replay_protection", "val replay_protection: n:nonce -> log:list nonce -> Lemma (requires mem n log) (ensures reject n log)", "let replay_protection n log = ()"),
+        ("forward_secrecy", "val forward_secrecy: sk:key -> pk:key -> Lemma (requires ephemeral sk) (ensures not (recoverable sk pk))", ""),
+    ]
+
+    arrays_matrices = [
+        ("array_swap", "val array_swap: #a:Type -> b:buffer a -> i:nat -> j:nat -> ST unit (requires fun h -> live h b /\\ i < length b /\\ j < length b) (ensures fun h0 _ h1 -> modifies (loc_buffer b) h0 h1 /\\ get h1 b i == get h0 b j /\\ get h1 b j == get h0 b i)", ""),
+        ("array_fill", "val array_fill: b:buffer UInt8.t -> v:UInt8.t -> ST unit (requires fun h -> live h b) (ensures fun h0 _ h1 -> modifies (loc_buffer b) h0 h1 /\\ (forall (i:nat). i < length b ==> get h1 b i == v))", ""),
+        ("matrix_index", "val matrix_index: #n:nat -> #m:nat -> mx:matrix n m -> i:nat{i < n} -> j:nat{j < m} -> Tot elem", "let matrix_index #n #m mx i j = Seq.index (Seq.index mx i) j"),
+        ("matrix_transpose", "val matrix_transpose: #n:nat -> #m:nat -> mx:matrix n m -> Tot (matrix m n)", ""),
+        ("dot_product", "val dot_product: #n:nat -> v1:vector n -> v2:vector n -> Tot int", "let dot_product #n v1 v2 = fold_left (+) 0 (map2 ( * ) v1 v2)"),
+        ("array_sum_nonneg", "val array_sum_nonneg: b:buffer nat -> Lemma (requires forall (i:nat). i < length b ==> get h b i >= 0) (ensures array_sum b >= 0)", ""),
+    ]
+
+    monad_laws = [
+        ("option_left_id", "val option_left_id: #a:Type -> #b:Type -> x:a -> f:(a -> option b) -> Lemma (bind (Some x) f == f x)", "let option_left_id #a #b x f = ()"),
+        ("option_right_id", "val option_right_id: #a:Type -> x:option a -> Lemma (bind x Some == x)", "let option_right_id #a x = match x with | None -> () | Some _ -> ()"),
+        ("option_assoc", "val option_assoc: #a:Type -> #b:Type -> #c:Type -> x:option a -> f:(a -> option b) -> g:(b -> option c) -> Lemma (bind (bind x f) g == bind x (fun y -> bind (f y) g))", "let option_assoc #a #b #c x f g = match x with | None -> () | Some _ -> ()"),
+        ("either_left_id", "val either_left_id: #e:Type -> #a:Type -> #b:Type -> x:a -> f:(a -> either e b) -> Lemma (either_bind (Right x) f == f x)", "let either_left_id #e #a #b x f = ()"),
+        ("either_right_id", "val either_right_id: #e:Type -> #a:Type -> x:either e a -> Lemma (either_bind x Right == x)", "let either_right_id #e #a x = match x with | Left _ -> () | Right _ -> ()"),
+        ("state_left_id", "val state_left_id: #s:Type -> #a:Type -> #b:Type -> x:a -> f:(a -> state s b) -> Lemma (state_bind (state_return x) f == f x)", "let state_left_id #s #a #b x f = ()"),
+    ]
+
+    string_processing = [
+        ("string_length_append", "val string_length_append: s1:string -> s2:string -> Lemma (String.length (s1 ^ s2) == String.length s1 + String.length s2)", ""),
+        ("string_sub_valid", "val string_sub_valid: s:string -> i:nat -> j:nat -> Lemma (requires i <= j /\\ j <= String.length s) (ensures String.length (String.sub s i j) == j - i)", ""),
+        ("utf8_encode_decode", "val utf8_encode_decode: s:string -> Lemma (utf8_decode (utf8_encode s) == Some s)", ""),
+        ("split_join", "val split_join: s:string -> sep:string -> Lemma (requires String.length sep > 0) (ensures String.concat sep (String.split sep s) == s)", ""),
+    ]
+
     all_categories = [
         ("arithmetic", arithmetic),
         ("lists", lists),
@@ -266,6 +331,13 @@ function generate_synthetic_fstar()::Vector{Dict{String,Any}}
         ("monotonic_state", monotonic_state),
         ("tactics", tactics),
         ("dependent_types", dependent_types),
+        ("machine_integers", machine_integers),
+        ("parser_combinators", parser_combinators),
+        ("state_machine", state_machine),
+        ("protocol", protocol_verification),
+        ("arrays_matrices", arrays_matrices),
+        ("monad_laws", monad_laws),
+        ("string_processing", string_processing),
     ]
 
     proofs = Dict{String,Any}[]
