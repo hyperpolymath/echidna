@@ -348,6 +348,7 @@ fn term_kind_index(term: &Term) -> usize {
         Term::Hole(_) => 10,
         Term::Meta(_) => 11,
         Term::ProverSpecific { .. } => 12,
+        Term::Sigma { .. } => 13,
     }
 }
 
@@ -373,6 +374,9 @@ fn term_depth(term: &Term) -> usize {
             1 + pt.max(term_depth(body))
         },
         Term::Pi {
+            param_type, body, ..
+        }
+        | Term::Sigma {
             param_type, body, ..
         } => 1 + term_depth(param_type).max(term_depth(body)),
         Term::Let {
@@ -421,7 +425,7 @@ fn term_arity(term: &Term) -> usize {
                 1
             }
         },
-        Term::Pi { .. } => 2, // param_type + body
+        Term::Pi { .. } | Term::Sigma { .. } => 2, // param_type + body
         Term::Let { ty, .. } => {
             if ty.is_some() {
                 3

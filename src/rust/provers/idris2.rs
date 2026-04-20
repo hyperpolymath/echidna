@@ -233,6 +233,15 @@ impl Idris2Backend {
                     format!("({} : {}) -> {}", param, param_ty_str, body_str)
                 }
             },
+            Term::Sigma {
+                param,
+                param_type,
+                body,
+            } => {
+                let param_ty_str = self.term_to_idris2(param_type);
+                let body_str = self.term_to_idris2(body);
+                format!("({} : {} ** {})", param, param_ty_str, body_str)
+            },
             Term::Type(level) | Term::Universe(level) => {
                 if *level == 0 {
                     "Type".to_string()
@@ -496,6 +505,7 @@ impl ProverBackend for Idris2Backend {
                         name: name.clone(),
                         ty: self.parse_type_expr(&ty_str),
                         body: Term::Const(name.clone()),
+                        type_info: None,
                     });
 
                     // Add constructors as theorems
@@ -523,6 +533,7 @@ impl ProverBackend for Idris2Backend {
                         name: name.clone(),
                         ty: self.parse_type_expr(&ty_str),
                         body: Term::Const(name.clone()),
+                        type_info: None,
                     });
 
                     // Add field projections
@@ -558,6 +569,7 @@ impl ProverBackend for Idris2Backend {
                             body: Box::new(Term::Type(0)),
                         },
                         body: Term::Const(name.clone()),
+                        type_info: None,
                     });
 
                     // Methods as theorems
@@ -617,6 +629,7 @@ impl ProverBackend for Idris2Backend {
                         name: param_name.clone(),
                         ty: Term::Type(0), // Placeholder
                         body: None,
+                        type_info: None,
                     });
 
                     // Update goal target if it's a Pi type

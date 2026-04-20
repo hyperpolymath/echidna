@@ -493,6 +493,7 @@ impl QueryExecutor {
 
     /// Find a specific proof by theorem name and optional prover.
     async fn execute_find_proof(&self, query: &ProofQuery) -> Result<QueryResult> {
+            type_info: None,
         let theorem = query.theorem_name.as_deref().unwrap_or("");
 
         #[cfg(feature = "verisim")]
