@@ -315,6 +315,7 @@ fn aspect_error_handling_config_validation() {
         generate_certificates: false,
         timeout: 1,
         min_trust_level: TrustLevel::Level1,
+        diagnostics: false,
     };
     // Dispatcher must accept any valid DispatchConfig without panic
     let _dispatcher = ProverDispatcher::with_config(config);
@@ -336,6 +337,8 @@ fn aspect_error_handling_dispatch_result_edge_cases() {
             certificate_hash: None,
             message: String::new(),
             cross_checked: false,
+            outcome: echidna::provers::outcome::ProverOutcome::default(),
+            diagnostics: None,
         },
         // Maximum fields populated
         DispatchResult {
@@ -348,6 +351,8 @@ fn aspect_error_handling_dispatch_result_edge_cases() {
             certificate_hash: Some("0".repeat(128)),
             message: "x".repeat(10_000),
             cross_checked: true,
+            outcome: echidna::provers::outcome::ProverOutcome::Proved { elapsed_ms: u64::MAX },
+            diagnostics: None,
         },
         // Unicode in message
         DispatchResult {
@@ -360,6 +365,8 @@ fn aspect_error_handling_dispatch_result_edge_cases() {
             certificate_hash: None,
             message: "∀x. x ≡ x — proved by reflexivity ✓".to_string(),
             cross_checked: false,
+            outcome: echidna::provers::outcome::ProverOutcome::default(),
+            diagnostics: None,
         },
     ];
 

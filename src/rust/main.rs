@@ -626,6 +626,15 @@ fn info_command(prover: ProverKind, formatter: &OutputFormatter) -> Result<()> {
         ProverKind::ABC => {
             "ABC sequential logic synthesis and verification system for hardware circuits."
         },
+        // HP ecosystem type-disciplines (TypeDiscipline transition, 2026-04-17).
+        // A single-line fallback for the forty discipline views; per-discipline
+        // descriptions are a phase-2 followup tracked in AI-WORK-todo.md.
+        k if k.is_hp_ecosystem() => {
+            "HP ecosystem type-discipline view. Dispatches through typell / \n  \
+             katagoria / tropical-resource-typing. See disciplines/ for the \n  \
+             40-variant taxonomy (linear, affine, phantom, modal, etc.)."
+        },
+        _ => "No description available for this prover.",
     };
     formatter.info(&format!("  {}", description))?;
     formatter.info("")?;
@@ -680,6 +689,10 @@ fn info_command(prover: ProverKind, formatter: &OutputFormatter) -> Result<()> {
         ProverKind::KeY => ".java (JML-annotated)",
         ProverKind::DReal => ".smt2 (QF_NRA/NRA)",
         ProverKind::ABC => ".blif / .aig",
+        // HP ecosystem: discipline-tagged source lives in typell; no fixed
+        // extension. See HPEcosystemBackend for the actual dispatch.
+        k if k.is_hp_ecosystem() => "typell discipline source (.tll / #discipline header)",
+        _ => "unknown",
     };
     formatter.info(&format!("  {}", extension))?;
     formatter.info("")?;
@@ -798,6 +811,11 @@ fn get_default_executable(kind: ProverKind) -> PathBuf {
         ProverKind::KeY => PathBuf::from("key"),
         ProverKind::DReal => PathBuf::from("dreal"),
         ProverKind::ABC => PathBuf::from("abc"),
+        // HP ecosystem: route through the TypeLL kernel CLI, with two named
+        // exceptions (katagoria, tropical-type-check). Mirrors provers/mod.rs
+        // default_executable() — source of truth is that function.
+        kind if kind.is_hp_ecosystem() => PathBuf::from(kind.default_executable()),
+        _ => PathBuf::from(kind.default_executable()),
     }
 }
 

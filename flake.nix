@@ -38,15 +38,48 @@
           jq
         ];
 
-        # Runtime prover dependencies
+        # Runtime prover dependencies (minimal — devShell default)
         proverDeps = with pkgs; [
           z3
           cvc5
           idris2
         ];
 
+        # Live-prover CI dependencies — mirror of manifests/live-provers.scm
+        # (Guix is PRIMARY per project CLAUDE.md; this flake is the fallback
+        # path for contributors without Guix and for cases where nixpkgs has a
+        # package Guix upstream doesn't yet — e.g. lean4, dafny.)
+        #
+        # Tiering mirrors ~/Desktop/ECHIDNA-PRODUCTION-WIRING-PLAN.md.
+        liveProverDeps = with pkgs; [
+          # --- Tier 1 — trivial (every PR)
+          z3                # SMT, deep wiring
+          cvc5              # SMT (nixpkgs has cvc5; Guix has cvc4 as stand-in)
+          alt-ergo          # SMT
+          vampire           # first-order ATP
+          eprover           # first-order ATP
+          spass             # first-order ATP
+          glpk              # LP/MIP constraint solver (glpsol)
+          minizinc          # constraint modelling
+          chuffed           # CP solver (FlatZinc)
+          # --- Tier 2 — build-from-source / larger deps (nightly)
+          coq               # Coq/Rocq
+          agda              # dependent-type proof assistant
+          idris2            # dependent-type proof assistant
+          isabelle          # HOL proof assistant
+          why3              # auto-active verifier
+          lean4             # Lean 4 — NOT in Guix upstream, so this is primary path
+          dafny             # Dafny — NOT in Guix (dotnet dep), so this is primary
+          # hol-light       # uncomment when nixpkgs attribute stable
+          # tlaps           # uncomment when nixpkgs attribute stable
+          # fstar           # uncomment when nixpkgs attribute stable
+          # --- Harness prerequisites
+          which
+          coreutils
+        ];
+
       in {
-        # Development shell
+        # Development shell (minimal — for day-to-day work)
         devShells.default = pkgs.mkShell {
           buildInputs = [ rustToolchain ] ++ buildDeps ++ devTools ++ proverDeps;
 
@@ -60,6 +93,21 @@
             echo "  just test-all    - Run all tests"
             echo "  just lint        - Run clippy"
             echo "  just pre-commit  - All checks"
+          '';
+        };
+
+        # Live-prover development shell — mirrors manifests/live-provers.scm.
+        # Use when running the live-prover test suite locally without Guix:
+        #   nix develop .#live-provers -c cargo test --test live_prover_suite --features live-provers
+        devShells.live-provers = pkgs.mkShell {
+          buildInputs = [ rustToolchain ] ++ buildDeps ++ devTools ++ liveProverDeps;
+          shellHook = ''
+            export RUST_LOG=echidna=debug,info
+            export ECHIDNA_LIVE_PROVERS=1
+            echo "ECHIDNA live-prover environment (Nix fallback; Guix is primary)"
+            echo ""
+            echo "Run:"
+            echo "  cargo test --test live_prover_suite --features live-provers"
           '';
         };
 

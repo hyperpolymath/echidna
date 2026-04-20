@@ -107,6 +107,11 @@ pub fn test_prover_config(kind: ProverKind) -> ProverConfig {
         ProverKind::KeY => "key",
         ProverKind::DReal => "dreal",
         ProverKind::ABC => "abc",
+        // HP ecosystem: route through typell (or the two named exceptions).
+        // Delegated to the lib-level default_executable so the test harness
+        // stays in sync with provers/mod.rs automatically.
+        k if k.is_hp_ecosystem() => k.default_executable(),
+        _ => "unknown",
     };
 
     ProverConfig {
@@ -170,6 +175,11 @@ pub fn proof_examples_dir(kind: ProverKind) -> PathBuf {
         ProverKind::KeY => "key",
         ProverKind::DReal => "dreal",
         ProverKind::ABC => "abc",
+        // HP ecosystem: route through typell (or the two named exceptions).
+        // Delegated to the lib-level default_executable so the test harness
+        // stays in sync with provers/mod.rs automatically.
+        k if k.is_hp_ecosystem() => k.default_executable(),
+        _ => "unknown",
     };
 
     PathBuf::from("/home/user/echidna/proofs").join(subdir)
@@ -227,6 +237,9 @@ pub fn find_proof_files(kind: ProverKind) -> Vec<PathBuf> {
         ProverKind::KeY => vec!["java", "key"],
         ProverKind::DReal => vec!["smt2", "dr"],
         ProverKind::ABC => vec!["blif", "aig"],
+        // HP ecosystem: discipline-tagged source, no fixed extension.
+        k if k.is_hp_ecosystem() => vec!["tll"],
+        _ => vec![],
     };
 
     let mut files = vec![];

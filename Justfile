@@ -66,6 +66,34 @@ run *ARGS:
 invariant-path *ARGS:
     ./scripts/invariant-path.sh {{ARGS}}
 
+# Rebuild the canonical seed vocabulary (training_data/vocabulary_CANON.txt).
+# Two stages: (1) mine frequency-filtered identifiers from the per-prover
+# proof corpora, then (2) union with the hand-curated sets. Consumed by
+# src/julia/training/dataloader.jl:build_vocabulary_from_data.
+vocab-canon:
+    julia scripts/vocabulary_mine_corpus.jl
+    julia scripts/vocabulary_canonicalize.jl
+
+# Run the eight-axis metrics suite against the current corpus and post
+# results to VeriSimDB. Falls back to training_data/metrics_<run_id>.jsonl
+# if VERISIM_URL is unreachable. Target values are documented in
+# metrics/README.md.
+metrics:
+    julia --project=src/julia metrics/run_all.jl
+
+# Report corpus balance across provers from stats_UNIFIED.json.
+corpus-stats:
+    @julia -e 'using JSON3, Printf; \
+      s = JSON3.read(read("training_data/stats_UNIFIED.json", String)); \
+      counts = s.per_prover_counts; \
+      pairs = sort(collect(counts), by = x -> -x[2]); \
+      total = sum(last.(pairs)); \
+      println("Total proofs: ", total, "   provers with data: ", length(pairs)); \
+      println("Rank  Prover                     Count    Share"); \
+      for (i,(p,c)) in enumerate(pairs); \
+          @printf("%3d   %-25s  %7d   %5.2f%%\n", i, p, c, 100c/total); \
+      end'
+
 # Generate docs
 doc:
     cargo doc --no-deps --open

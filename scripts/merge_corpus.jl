@@ -18,6 +18,8 @@ using Dates
 # ---------------------------------------------------------------------------
 
 const TRAINING_DIR = joinpath(dirname(dirname(abspath(@__FILE__))), "training_data")
+const BALANCED_OUTPUT_FILE = joinpath(TRAINING_DIR, "proof_states_UNIFIED_BALANCED.jsonl")
+const BALANCED_CAP_PER_PROVER = 12_000
 
 # Per-prover source files -- the authoritative extractions.
 # We list them explicitly to avoid pulling in aggregate/merged files
@@ -41,6 +43,11 @@ const PER_PROVER_FILES = [
     "proof_states_twelf.jsonl",          # Twelf (synthetic)
     "proof_states_imandra.jsonl",        # Imandra (synthetic)
     "proof_states_minizinc.jsonl",       # MiniZinc / constraint solvers
+    "proof_states_isabelle.jsonl",       # Isabelle (tropical + theory extraction)
+    "proof_states_afp.jsonl",            # Isabelle AFP (extract_afp.jl, 20K+)
+    "proof_states_agda.jsonl",           # Agda stdlib (extract_agda.jl, 5K+)
+    "proof_states_tptp.a2ml",            # Vampire / EProver / SPASS from TPTP
+    "proof_states_typechecker_ecosystem.jsonl", # Typechecker/prover expansion
     "proof_states_mathlib4.jsonl",       # Additional mathlib4 (smaller set)
     "proof_states_coqgym.jsonl",         # Additional CoqGym (smaller set)
     "proof_states_2026-03-20.jsonl",     # Dated snapshot
@@ -55,6 +62,11 @@ const ALL_PROVERS = Set([
     "TLAPS", "Twelf", "Nuprl", "Minlog", "Imandra",
     "Vampire", "EProver", "E Prover", "SPASS",
     "GLPK", "SCIP", "MiniZinc", "Chuffed", "ORTools", "OR-Tools",
+    # Typechecker-native and research prover/tool families
+    "TypeLL", "KatagoriaVerifier", "TropicalTypeChecker",
+    "ChoreographicTypeChecker", "EpistemicTypeChecker", "EchoTypeChecker",
+    "SessionTypeChecker", "ModalTypeChecker", "QTTTypeChecker",
+    "EffectRowTypeChecker", "DependentTypeChecker", "RefinementTypeChecker",
 ])
 
 # Canonical prover name mapping (normalise variants).
@@ -69,8 +81,8 @@ const PROVER_CANONICAL = Dict(
     "OR-Tools" => "ORTools",
 )
 
-# Total expected backend count for coverage calculation.
-const TOTAL_BACKENDS = 30
+# Total expected backend/tool count for coverage calculation.
+const TOTAL_BACKENDS = 60
 
 """
     canonical_prover(name::String) -> String
@@ -118,21 +130,162 @@ end
 Load a JSONL file, skipping malformed lines.
 """
 function load_jsonl(filepath::String)::Vector{Dict{String,Any}}
+    if endswith(lowercase(filepath), ".a2ml")
+        return load_tptp_a2ml(filepath)
+    end
+
     entries = Dict{String,Any}[]
     if !isfile(filepath)
         return entries
     end
+    malformed = 0
     for (lineno, line) in enumerate(eachline(filepath))
         stripped = strip(line)
         isempty(stripped) && continue
         try
-            entry = Dict{String,Any}(pairs(JSON3.read(stripped)))
+            entry = JSON3.read(stripped, Dict{String,Any})
             push!(entries, entry)
         catch
-            println("  WARN: Skipped malformed JSON at $(basename(filepath)):$lineno")
+            malformed += 1
+            if malformed <= 5
+                println("  WARN: Skipped malformed JSON at $(basename(filepath)):$lineno")
+            end
         end
     end
+    if malformed > 5
+        println("  WARN: Suppressed $(malformed - 5) additional malformed lines in $(basename(filepath))")
+    end
     return entries
+end
+
+"""
+    parse_a2ml_value(raw::String) -> Any
+
+Parse a basic A2ML scalar/list value used in proof-state blocks.
+"""
+function parse_a2ml_value(raw::String)::Any
+    value = strip(raw)
+    if startswith(value, "\"") && endswith(value, "\"") && length(value) >= 2
+        return replace(value[2:end-1], "\\\"" => "\"")
+    elseif value == "[]"
+        return Any[]
+    elseif occursin(r"^-?\d+$", value)
+        try
+            return parse(Int, value)
+        catch
+            return value
+        end
+    else
+        return value
+    end
+end
+
+"""
+    load_tptp_a2ml(filepath::String) -> Vector{Dict{String,Any}}
+
+Load TPTP proof-state blocks from an A2ML file.
+"""
+function load_tptp_a2ml(filepath::String)::Vector{Dict{String,Any}}
+    entries = Dict{String,Any}[]
+    if !isfile(filepath)
+        return entries
+    end
+
+    current = Dict{String,Any}()
+    in_block = false
+
+    for line in eachline(filepath)
+        stripped = strip(line)
+        isempty(stripped) && continue
+        startswith(stripped, "#") && continue
+
+        if stripped == "[[proof-state]]"
+            if in_block && !isempty(current)
+                push!(entries, current)
+            end
+            current = Dict{String,Any}()
+            in_block = true
+            continue
+        end
+
+        !in_block && continue
+        m = match(r"^([A-Za-z0-9_.-]+)\s*=\s*(.+)$", stripped)
+        m === nothing && continue
+        key = String(m.captures[1])
+        raw = String(m.captures[2])
+        current[key] = parse_a2ml_value(raw)
+    end
+
+    if in_block && !isempty(current)
+        push!(entries, current)
+    end
+
+    return entries
+end
+
+"""
+    evenly_sample(entries::Vector{Dict{String,Any}}, target::Int) -> Vector{Dict{String,Any}}
+
+Sample approximately evenly across a sorted list, preserving breadth.
+"""
+function evenly_sample(entries::Vector{Dict{String,Any}}, target::Int)::Vector{Dict{String,Any}}
+    n = length(entries)
+    n <= target && return entries
+    target <= 0 && return Dict{String,Any}[]
+
+    step = n / target
+    sampled = Dict{String,Any}[]
+    seen = Set{Int}()
+    for i in 1:target
+        idx = clamp(floor(Int, (i - 1) * step) + 1, 1, n)
+        if idx ∉ seen
+            push!(sampled, entries[idx])
+            push!(seen, idx)
+        end
+    end
+    return sampled
+end
+
+"""
+    write_balanced_subset(deduped::Vector{Dict{String,Any}})
+
+Write a capped per-prover balanced subset to reduce dominance by top provers.
+"""
+function write_balanced_subset(deduped::Vector{Dict{String,Any}})::Dict{String,Int}
+    grouped = Dict{String,Vector{Dict{String,Any}}}()
+    for entry in deduped
+        prover = string(get(entry, "prover", "Unknown"))
+        if !haskey(grouped, prover)
+            grouped[prover] = Dict{String,Any}[]
+        end
+        push!(grouped[prover], entry)
+    end
+
+    balanced = Dict{String,Any}[]
+    balanced_counts = Dict{String,Int}()
+
+    for prover in sort(collect(keys(grouped)))
+        entries = grouped[prover]
+        sort!(entries, by=e -> (string(get(e, "theorem", "")), string(get(e, "source", ""))))
+        selected = evenly_sample(entries, BALANCED_CAP_PER_PROVER)
+        append!(balanced, selected)
+        balanced_counts[prover] = length(selected)
+    end
+
+    # Fresh IDs for balanced file only.
+    sort!(balanced, by=e -> (string(get(e, "prover", "")), string(get(e, "theorem", ""))))
+    for (idx, entry) in enumerate(balanced)
+        entry["id"] = idx
+    end
+
+    open(BALANCED_OUTPUT_FILE, "w") do fh
+        for entry in balanced
+            println(fh, JSON3.write(entry))
+        end
+    end
+
+    println("Wrote balanced corpus to $BALANCED_OUTPUT_FILE ($(length(balanced)) proofs)")
+    return balanced_counts
 end
 
 """
@@ -143,7 +296,7 @@ Split on non-alphanumeric, keep tokens >= 3 chars that are alphabetic.
 """
 function extract_words(text::String)::Set{String}
     tokens = split(text, r"[^a-zA-Z]+")
-    return Set(lowercase(t) for t in tokens if length(t) >= 3 && all(isalpha, t))
+    return Set(lowercase(t) for t in tokens if length(t) >= 3 && all(isletter, t))
 end
 
 function main()::Int
@@ -210,6 +363,11 @@ function main()::Int
     println("\nWrote $(length(deduped)) proofs to $unified_path")
 
     # ------------------------------------------------------------------
+    # 4b. Write capped balanced subset (per-prover cap)
+    # ------------------------------------------------------------------
+    balanced_counts = write_balanced_subset(deduped)
+
+    # ------------------------------------------------------------------
     # 5. Compute statistics
     # ------------------------------------------------------------------
     prover_counts = Dict{String,Int}()
@@ -250,6 +408,12 @@ function main()::Int
         "total_backends" => TOTAL_BACKENDS,
         "coverage_percentage" => coverage_pct,
         "per_prover_counts" => per_prover,
+        "balanced_output_file" => basename(BALANCED_OUTPUT_FILE),
+        "balanced_cap_per_prover" => BALANCED_CAP_PER_PROVER,
+        "balanced_total_proofs" => sum(values(balanced_counts)),
+        "balanced_per_prover_counts" => Dict(
+            k => v for (k, v) in sort(collect(balanced_counts); by=x -> -x[2])
+        ),
         "per_source_counts_top50" => per_source_top50,
         "vocabulary_size" => length(vocab),
         "source_files_used" => file_counts,
@@ -283,6 +447,8 @@ function main()::Int
     println("  Vocabulary words:    $(lpad(string(length(vocab)), 10))")
     println("  Provers with data:   $(lpad(string(provers_with_data), 10)) / $TOTAL_BACKENDS")
     println("  Coverage:            $(lpad(string(coverage_pct), 9))%")
+    println("  Balanced proofs:     $(lpad(string(sum(values(balanced_counts))), 10))")
+    println("  Cap per prover:      $(lpad(string(BALANCED_CAP_PER_PROVER), 10))")
     println()
     println("  Per-prover breakdown:")
     for (prover, count) in sorted_prover_counts

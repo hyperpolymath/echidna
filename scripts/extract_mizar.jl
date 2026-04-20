@@ -107,6 +107,63 @@ function parse_mizar_file(filepath::String)::Vector{Dict{String,Any}}
         end
     end
 
+    # Widening (2026-04-18): Mizar has many more named constructs
+    # than `theorem` + `registration`. Capture `definition`, `scheme`,
+    # `notation`, `reserve`, and the full-paragraph `theorem :: NAME`
+    # form without a proof (axioms / held-as-obvious claims).
+    def_pat = r"definition\s*(.*?)\s*end\s*;"si
+    scheme_pat = r"scheme\s+(\w+)\s*\{(.*?)\}\s*:\s*(.*?)\s*proof\s*(.*?)\s*end\s*;"si
+    notation_pat = r"notation\s*(.*?)\s*end\s*;"si
+    reserve_pat = r"reserve\s+(.+?)\s+for\s+(.+?);"s
+    axiom_thm_pat = r"theorem\s+(?:(\w+)\s*:)?\s*(.*?);(?!\s*proof)"s
+
+    for (i, m) in enumerate(eachmatch(def_pat, content))
+        body = first(replace(strip(m.captures[1]), r"\s+" => " "), 400)
+        isempty(body) && continue
+        push!(results, Dict{String,Any}(
+            "theorem" => "definition_$(basename(filepath))_$(i)",
+            "goal" => body,
+            "tactic_proof" => "",
+            "tactics" => ["definition"],
+            "source" => "mizar/$(basename(filepath))",
+        ))
+    end
+    for m in eachmatch(scheme_pat, content)
+        name = strip(m.captures[1])
+        args = first(replace(strip(m.captures[2]), r"\s+" => " "), 200)
+        stmt = first(replace(strip(m.captures[3]), r"\s+" => " "), 300)
+        push!(results, Dict{String,Any}(
+            "theorem" => name,
+            "goal" => stmt,
+            "tactic_proof" => first(replace(strip(m.captures[4]), r"\s+" => " "), 500),
+            "tactics" => ["scheme"],
+            "scheme_args" => args,
+            "source" => "mizar/$(basename(filepath))",
+        ))
+    end
+    for (i, m) in enumerate(eachmatch(notation_pat, content))
+        body = first(replace(strip(m.captures[1]), r"\s+" => " "), 300)
+        isempty(body) && continue
+        push!(results, Dict{String,Any}(
+            "theorem" => "notation_$(basename(filepath))_$(i)",
+            "goal" => body,
+            "tactic_proof" => "",
+            "tactics" => ["notation"],
+            "source" => "mizar/$(basename(filepath))",
+        ))
+    end
+    for (i, m) in enumerate(eachmatch(reserve_pat, content))
+        vars = strip(String(m.captures[1]))
+        ty = strip(String(m.captures[2]))
+        push!(results, Dict{String,Any}(
+            "theorem" => "reserve_$(basename(filepath))_$(i)",
+            "goal" => "$(vars) for $(ty)",
+            "tactic_proof" => "",
+            "tactics" => ["reserve"],
+            "source" => "mizar/$(basename(filepath))",
+        ))
+    end
+
     return results
 end
 
@@ -500,18 +557,35 @@ function run()::Tuple{Int,Int}
     all_entries = Dict{String,Any}[]
     extracted_count = 0
 
-    println("[Mizar] Phase 1: Attempting to download MML articles ...")
-    downloaded = download_mizar_files()
-    println("  Downloaded/cached $(downloaded) files")
+    # Phase 1 strategy (2026-04-18, echidna#14): prefer a full MML
+    # clone (MizarSystem/MML on GitHub, ~ 1 150 .miz files under
+    # `mml/`) over the legacy hand-picked downloader list. If the full
+    # clone isn't present, fall back to the narrow downloader so the
+    # extractor still does something.
+    mml_subdir = joinpath(EXTERNAL_DIR, "mml")
+    if isdir(mml_subdir)
+        println("[Mizar] Phase 1: Walking full MML clone at $(mml_subdir) ...")
+    else
+        println("[Mizar] Phase 1: No MML clone found — falling back to curated downloader ...")
+        downloaded = download_mizar_files()
+        println("  Downloaded/cached $(downloaded) files")
+    end
 
-    for fname in readdir(EXTERNAL_DIR)
-        if endswith(fname, ".miz")
-            fpath = joinpath(EXTERNAL_DIR, fname)
-            parsed = parse_mizar_file(fpath)
-            append!(all_entries, parsed)
-            if !isempty(parsed)
-                println("  Parsed $(length(parsed)) theorems from $(fname)")
-            end
+    miz_files = String[]
+    for (root, _dirs, files) in walkdir(EXTERNAL_DIR)
+        for fname in files
+            endswith(fname, ".miz") && push!(miz_files, joinpath(root, fname))
+        end
+    end
+    println("  Found $(length(miz_files)) .miz files under $(EXTERNAL_DIR)")
+
+    processed = 0
+    for fpath in miz_files
+        parsed = parse_mizar_file(fpath)
+        append!(all_entries, parsed)
+        processed += 1
+        if processed % 200 == 0
+            println("  processed $(processed)/$(length(miz_files)) files — running theorem count: $(length(all_entries))")
         end
     end
     extracted_count = length(all_entries)

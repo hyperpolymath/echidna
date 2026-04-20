@@ -62,10 +62,10 @@ function parse_fstar_file(filepath::String)::Vector{Dict{String,Any}}
 
     # val declarations with refinement types
     val_pattern = r"val\s+(\w+)\s*:\s*(.*?)(?=\nval\s|\nlet\s|\ntype\s|\nopen\s|\nmodule\s|\z)"s
-    for m in eachmatch(Regex(val_pattern, "s"), content)
+    for m in eachmatch(val_pattern, content)
         name = strip(m.captures[1])
         sig = replace(strip(m.captures[2]), r"\s+" => " ")
-        sig = sig[1:min(400, length(sig))]
+        sig = first(sig, 400)
         if isempty(sig) || length(sig) < 5
             continue
         end
@@ -80,15 +80,15 @@ function parse_fstar_file(filepath::String)::Vector{Dict{String,Any}}
 
     # let with refinement types or Lemma
     let_pattern = r"let\s+(?:rec\s+)?(\w+)\s*(?::.*?)?\s*=\s*(.*?)(?=\nlet\s|\nval\s|\ntype\s|\z)"s
-    for m in eachmatch(Regex(let_pattern, "s"), content)
+    for m in eachmatch(let_pattern, content)
         name = strip(m.captures[1])
         body = replace(strip(m.captures[2]), r"\s+" => " ")
-        body = body[1:min(300, length(body))]
+        body = first(body, 300)
         if occursin("Lemma", body) || occursin("assert", body) || occursin("calc", body)
             keywords = [m_.match for m_ in eachmatch(r"\b(Lemma|assert|calc|assume|admit|Classical)\b", body)]
             push!(results, Dict{String,Any}(
                 "theorem" => "$(name)_impl",
-                "goal" => body[1:min(200, length(body))],
+                "goal" => first(body, 200),
                 "tactics" => unique(keywords)[1:min(20, length(unique(keywords)))],
                 "source" => "fstar/$(basename(filepath))",
             ))
@@ -376,14 +376,38 @@ function run()::Tuple{Int,Int}
     downloaded = download_fstar_files()
     println("  Downloaded/cached $downloaded files")
 
+    # Widening (2026-04-18): also walk a sparse FStarLang/FStar clone
+    # at external_corpora/fstar_full/ with ulib/ + examples/ checked
+    # out. Accepts .fst (source) and .fsti (interface) files.
+    src_files = String[]
     for fname in readdir(EXTERNAL_DIR)
-        if endswith(fname, ".fst")
-            fpath = joinpath(EXTERNAL_DIR, fname)
-            parsed = parse_fstar_file(fpath)
-            append!(all_entries, parsed)
-            if !isempty(parsed)
-                println("  Parsed $(length(parsed)) from $fname")
+        (endswith(fname, ".fst") || endswith(fname, ".fsti")) &&
+            push!(src_files, joinpath(EXTERNAL_DIR, fname))
+    end
+    # 2026-04-18 (echidna#12 100K / the-prover-story.txt): hacl-star
+    # ships ~991 .fst/.fsti files of verified crypto (HACL*, Vale,
+    # EverCrypt) — the canonical industrial F* / LowStar workload.
+    for sibling in ("fstar_full", "karamel", "hacl-star")
+        full_root = joinpath(dirname(EXTERNAL_DIR), sibling)
+        if isdir(full_root)
+            println("[F*] Walking $(sibling) clone at $(full_root) ...")
+            for (root, _dirs, files) in walkdir(full_root)
+                for fname in files
+                    (endswith(fname, ".fst") || endswith(fname, ".fsti")) &&
+                        push!(src_files, joinpath(root, fname))
+                end
             end
+        end
+    end
+    println("  $(length(src_files)) F* source files to parse")
+
+    processed = 0
+    for fpath in src_files
+        parsed = parse_fstar_file(fpath)
+        append!(all_entries, parsed)
+        processed += 1
+        if processed % 100 == 0
+            println("  processed $(processed)/$(length(src_files)) files — running count: $(length(all_entries))")
         end
     end
     extracted_count = length(all_entries)

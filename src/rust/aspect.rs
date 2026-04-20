@@ -11,8 +11,6 @@
 //!
 //! Multiple tagging strategies are supported:
 //! - Rule-based: Keyword and pattern matching
-//! - Neural: ML-based classification (integrates with Julia)
-//! - OpenCyc: Ontology-based semantic tagging
 //! - Composite: Combines multiple strategies
 
 use crate::core::Term;
@@ -832,118 +830,6 @@ impl RuleBasedTagger {
             Term::Hole(_) | Term::Meta(_) => {},
             Term::ProverSpecific { .. } => {},
         }
-    }
-}
-
-/// Neural tagger using ML-based classification
-///
-/// This integrates with Julia ML components for neural aspect classification.
-/// The neural model is trained on a corpus of tagged theorems.
-#[allow(dead_code)]
-pub struct NeuralTagger {
-    /// Confidence threshold for aspect prediction
-    threshold: f64,
-
-    /// URL of Julia ML service (if remote)
-    service_url: Option<String>,
-}
-
-impl NeuralTagger {
-    /// Create new neural tagger
-    pub fn new() -> Self {
-        NeuralTagger {
-            threshold: 0.5,
-            service_url: None,
-        }
-    }
-
-    /// Create with custom threshold
-    pub fn with_threshold(threshold: f64) -> Self {
-        NeuralTagger {
-            threshold,
-            service_url: None,
-        }
-    }
-
-    /// Set Julia ML service URL
-    pub fn with_service_url(mut self, url: String) -> Self {
-        self.service_url = Some(url);
-        self
-    }
-
-    /// Get embeddings for a term (to be implemented with Julia integration)
-    #[allow(dead_code)]
-    async fn get_embeddings(&self, _statement: &Term) -> Vec<f64> {
-        // TODO: Implement Julia FFI or HTTP call to Julia ML service
-        // For now, return dummy embeddings
-        vec![0.0; 128]
-    }
-
-    /// Classify embeddings into aspects (to be implemented)
-    #[allow(dead_code)]
-    async fn classify_embeddings(&self, _embeddings: &[f64]) -> HashMap<Aspect, f64> {
-        // TODO: Implement Julia FFI or HTTP call to Julia ML service
-        // For now, return empty predictions
-        HashMap::new()
-    }
-}
-
-impl Default for NeuralTagger {
-    fn default() -> Self {
-        Self::new()
-    }
-}
-
-impl AspectTagger for NeuralTagger {
-    fn tag(&self, _theorem_name: &str, _statement: &Term) -> Vec<Aspect> {
-        // TODO: Implement async neural tagging
-        // For now, return empty (requires Julia integration)
-        Vec::new()
-    }
-
-    fn tag_with_confidence(&self, _theorem_name: &str, _statement: &Term) -> HashMap<Aspect, f64> {
-        // TODO: Implement async neural tagging with confidence scores
-        // This will call Julia ML service for predictions
-        HashMap::new()
-    }
-}
-
-/// OpenCyc ontology-based tagger
-///
-/// Maps mathematical concepts to OpenCyc ontology and uses semantic relationships
-/// to infer aspects.
-#[allow(dead_code)]
-pub struct OpenCycTagger {
-    /// OpenCyc service URL
-    service_url: String,
-
-    /// Cached concept mappings
-    concept_cache: HashMap<String, Vec<Aspect>>,
-}
-
-impl OpenCycTagger {
-    /// Create new OpenCyc tagger
-    pub fn new(service_url: String) -> Self {
-        OpenCycTagger {
-            service_url,
-            concept_cache: HashMap::new(),
-        }
-    }
-
-    /// Query OpenCyc for concept relationships
-    #[allow(dead_code)]
-    async fn query_concept(&self, _concept: &str) -> Option<Vec<Aspect>> {
-        // TODO: Implement OpenCyc API integration
-        // For now, return None
-        None
-    }
-}
-
-impl AspectTagger for OpenCycTagger {
-    fn tag(&self, _theorem_name: &str, _statement: &Term) -> Vec<Aspect> {
-        // TODO: Implement OpenCyc ontology-based tagging
-        // For now, return empty (requires OpenCyc integration)
-        Vec::new()
     }
 }
 

@@ -154,6 +154,7 @@ fn e2e_dispatch_config_timeout_propagated() {
         track_axioms: false,
         generate_certificates: false,
         min_trust_level: TrustLevel::Level1,
+        diagnostics: false,
     };
 
     let dispatcher = echidna::dispatch::ProverDispatcher::with_config(config.clone());
@@ -184,6 +185,8 @@ fn e2e_dispatch_result_invariants() {
         certificate_hash: None,
         message: "verified successfully".to_string(),
         cross_checked: false,
+        outcome: echidna::provers::outcome::ProverOutcome::Proved { elapsed_ms: 42 },
+        diagnostics: None,
     };
 
     assert!(result.proof_time_ms > 0, "Proof time must be positive for verified results");

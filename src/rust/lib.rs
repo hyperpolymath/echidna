@@ -10,6 +10,7 @@ pub mod agent;
 pub mod anomaly_detection;
 pub mod aspect;
 pub mod core;
+pub mod disciplines; // Canonical TypeDiscipline taxonomy (katagoria transition)
 pub mod dispatch;
 pub mod exchange;
 pub mod executor;
@@ -17,6 +18,7 @@ pub mod ffi;
 pub mod gnn; // Graph Neural Network integration for proof search guidance
 pub mod groove; // Gossamer Groove discovery endpoint (port 9000)
 pub mod integrity;
+pub mod learning; // Continuous self-learning loop (MCTS + self-play + curriculum + daemon)
 pub mod llm; // Frontier LLM advisor (via BoJ Server)
 pub mod neural;
 pub mod parsers;
@@ -31,6 +33,7 @@ pub mod vcl_ut; // VCL-UT: 10-level type-safe cross-prover query language
 
 pub use agent::{AgentConfig, AgentCore};
 pub use core::{ProofState, Tactic, TacticResult, Term};
+pub use disciplines::{DisciplineFamily, TypeDiscipline};
 pub use gnn::{GnnClient, GnnGuidedSearch, ProofGraph, ProofGraphBuilder};
 pub use llm::{LlmAdvisor, LlmConfig};
 pub use provers::{ProverBackend, ProverConfig, ProverKind};

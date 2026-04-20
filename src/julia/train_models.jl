@@ -16,8 +16,29 @@ using LinearAlgebra
 using Random
 using Dates
 
+# When run with stdout/stderr redirected to a file (nohup, systemd, …),
+# Julia's default ConsoleLogger wraps stderr in its own buffered stream
+# that only flushes on tty writes, so @info is invisible for the whole
+# run. Replace it with a SimpleLogger that writes directly to a
+# line-buffered IOContext over stderr.
+using Logging
+global_logger(SimpleLogger(IOContext(stderr, :color => false), Logging.Info))
+
+# Defensive flush loop: also drive explicit flushes every second in
+# case anything still routes through the default stream.
+Base.Threads.@spawn begin
+    while true
+        try
+            flush(stdout); flush(stderr)
+        catch
+        end
+        sleep(1)
+    end
+end
+
 const TRAINING_DATA_DIR = "training_data"
-const MODELS_DIR = "models"
+const MODELS_DIR = get(ENV, "ECHIDNA_MODELS_DIR", "models")
+const TRAIN_EPOCHS = parse(Int, get(ENV, "ECHIDNA_TRAIN_EPOCHS", "50"))
 const USE_COMPREHENSIVE_DATA = false  # Set to true to use merged corpus
 const USE_MAX_DATA = false  # Set to true to use MAXIMUM corpus
 const USE_COMPLETE_DATA = true  # Set to true to use COMPLETE corpus
@@ -139,7 +160,7 @@ function train_logistic!(model::LogisticRegression,
                 grad[y[idx]] -= 1.0
 
                 # Update weights
-                model.weights .- learning_rate .* (grad * X[:, idx]')
+                model.weights .-= learning_rate .* (grad * X[:, idx]')
                 model.bias .-= learning_rate .* grad
             end
         end
@@ -215,8 +236,8 @@ function train_premise_selector(data_dir::String=TRAINING_DATA_DIR)
     open(states_file) do io
         for line in eachline(io)
             # Extract goal field
-            goal_match = match(r"\"goal\":\"([^\"]*(?:\\.[^\"]*)*)\"", line)
-            prover_match = match(r"\"prover\":\"([^\"]+)\"", line)
+            goal_match = match(r"\"goal\":\s*\"([^\"]*(?:\\.[^\"]*)*)\"", line)
+            prover_match = match(r"\"prover\":\s*\"([^\"]+)\"", line)
             if goal_match !== nothing && prover_match !== nothing
                 push!(states, (goal=goal_match.captures[1], prover=prover_match.captures[1]))
             end
@@ -273,8 +294,8 @@ function train_tactic_predictor(data_dir::String=TRAINING_DATA_DIR)
     tactics = []
     open(tactics_file) do io
         for line in eachline(io)
-            tactic_match = match(r"\"tactic\":\"([^\"]*(?:\\.[^\"]*)*)\"", line)
-            prover_match = match(r"\"prover\":\"([^\"]+)\"", line)
+            tactic_match = match(r"\"tactic\":\s*\"([^\"]*(?:\\.[^\"]*)*)\"", line)
+            prover_match = match(r"\"prover\":\s*\"([^\"]+)\"", line)
             if tactic_match !== nothing && prover_match !== nothing
                 push!(tactics, (tactic=tactic_match.captures[1], prover=prover_match.captures[1]))
             end
@@ -310,7 +331,7 @@ function train_tactic_predictor(data_dir::String=TRAINING_DATA_DIR)
     model = LogisticRegression(tactic_vocab.size, prover_labels)
 
     @info "  Training model ($(model.num_features) features, $(model.num_classes) classes)..."
-    train_logistic!(model, X, y; learning_rate=0.01, epochs=50, batch_size=16)
+    train_logistic!(model, X, y; learning_rate=0.01, epochs=TRAIN_EPOCHS, batch_size=16)
 
     @info "✓ Tactic predictor model trained"
 

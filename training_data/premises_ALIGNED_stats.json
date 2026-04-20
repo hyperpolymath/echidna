@@ -1,0 +1,214 @@
+{
+    "per_source": {
+        "premises_isabelle_zf.jsonl": {
+            "dropped": 0,
+            "written": 0
+        },
+        "premises_nitpick.jsonl": {
+            "dropped": 0,
+            "written": 0
+        },
+        "premises_arend.jsonl": {
+            "dropped": 0,
+            "written": 0
+        },
+        "premises_dreal.jsonl": {
+            "dropped": 0,
+            "written": 0
+        },
+        "premises_proverif.jsonl": {
+            "dropped": 0,
+            "written": 0
+        },
+        "premises_prism.jsonl": {
+            "dropped": 0,
+            "written": 0
+        },
+        "premises_dedukti.jsonl": {
+            "dropped": 158,
+            "written": 0
+        },
+        "premises_all.jsonl": {
+            "dropped": 0,
+            "written": 300
+        },
+        "premises_uppaal.jsonl": {
+            "dropped": 0,
+            "written": 0
+        },
+        "premises_boogie.jsonl": {
+            "dropped": 0,
+            "written": 0
+        },
+        "premises_spin.jsonl": {
+            "dropped": 0,
+            "written": 0
+        },
+        "premises_framac.jsonl": {
+            "dropped": 0,
+            "written": 0
+        },
+        "premises_matita.jsonl": {
+            "dropped": 0,
+            "written": 0
+        },
+        "premises_abc.jsonl": {
+            "dropped": 0,
+            "written": 0
+        },
+        "premises_coqgym_max.jsonl": {
+            "dropped": 0,
+            "written": 0
+        },
+        "premises_key.jsonl": {
+            "dropped": 0,
+            "written": 0
+        },
+        "premises_kissat.jsonl": {
+            "dropped": 0,
+            "written": 0
+        },
+        "premises_coqgym.jsonl": {
+            "dropped": 0,
+            "written": 76705
+        },
+        "premises_seahorn.jsonl": {
+            "dropped": 0,
+            "written": 0
+        },
+        "premises_tlc.jsonl": {
+            "dropped": 0,
+            "written": 0
+        },
+        "premises_tlaps.jsonl": {
+            "dropped": 0,
+            "written": 0
+        },
+        "premises_typed_wasm.jsonl": {
+            "dropped": 0,
+            "written": 0
+        },
+        "premises_naproche.jsonl": {
+            "dropped": 0,
+            "written": 0
+        },
+        "premises_lambda_prolog.jsonl": {
+            "dropped": 0,
+            "written": 0
+        },
+        "premises_minisat.jsonl": {
+            "dropped": 0,
+            "written": 0
+        },
+        "premises_cbmc.jsonl": {
+            "dropped": 0,
+            "written": 0
+        },
+        "premises_nunchaku.jsonl": {
+            "dropped": 0,
+            "written": 0
+        },
+        "premises_acl2s.jsonl": {
+            "dropped": 0,
+            "written": 0
+        },
+        "premises_abella.jsonl": {
+            "dropped": 42,
+            "written": 0
+        },
+        "premises_viper.jsonl": {
+            "dropped": 0,
+            "written": 0
+        },
+        "premises_mathlib4_max.jsonl": {
+            "dropped": 0,
+            "written": 2083077
+        },
+        "premises_mathlib4.jsonl": {
+            "dropped": 0,
+            "written": 0
+        },
+        "premises_athena.jsonl": {
+            "dropped": 0,
+            "written": 0
+        },
+        "premises_nusmv.jsonl": {
+            "dropped": 0,
+            "written": 0
+        },
+        "premises_tamarin.jsonl": {
+            "dropped": 0,
+            "written": 0
+        },
+        "premises_cameleer.jsonl": {
+            "dropped": 0,
+            "written": 0
+        },
+        "premises_mercury.jsonl": {
+            "dropped": 0,
+            "written": 0
+        },
+        "premises_lean3.jsonl": {
+            "dropped": 10434,
+            "written": 0
+        },
+        "premises_cadical.jsonl": {
+            "dropped": 0,
+            "written": 0
+        },
+        "premises_alloy.jsonl": {
+            "dropped": 0,
+            "written": 0
+        }
+    },
+    "dropped_no_theorem": 10634,
+    "dropped_no_match": 0,
+    "dropped_malformed": 0,
+    "written": 2160082,
+    "match_rate_percent": 99.51011555634177,
+    "unified_path": "/var/mnt/eclipse/repos/verification-ecosystem/echidna/training_data/proof_states_UNIFIED.jsonl",
+    "output_path": "/var/mnt/eclipse/repos/verification-ecosystem/echidna/training_data/premises_COMPLETE.jsonl",
+    "unified_index_size": 871731,
+    "sources": [
+        "premises_abc.jsonl",
+        "premises_abella.jsonl",
+        "premises_acl2s.jsonl",
+        "premises_all.jsonl",
+        "premises_alloy.jsonl",
+        "premises_arend.jsonl",
+        "premises_athena.jsonl",
+        "premises_boogie.jsonl",
+        "premises_cadical.jsonl",
+        "premises_cameleer.jsonl",
+        "premises_cbmc.jsonl",
+        "premises_coqgym.jsonl",
+        "premises_coqgym_max.jsonl",
+        "premises_dedukti.jsonl",
+        "premises_dreal.jsonl",
+        "premises_framac.jsonl",
+        "premises_isabelle_zf.jsonl",
+        "premises_key.jsonl",
+        "premises_kissat.jsonl",
+        "premises_lambda_prolog.jsonl",
+        "premises_lean3.jsonl",
+        "premises_mathlib4.jsonl",
+        "premises_mathlib4_max.jsonl",
+        "premises_matita.jsonl",
+        "premises_mercury.jsonl",
+        "premises_minisat.jsonl",
+        "premises_naproche.jsonl",
+        "premises_nitpick.jsonl",
+        "premises_nunchaku.jsonl",
+        "premises_nusmv.jsonl",
+        "premises_prism.jsonl",
+        "premises_proverif.jsonl",
+        "premises_seahorn.jsonl",
+        "premises_spin.jsonl",
+        "premises_tamarin.jsonl",
+        "premises_tlaps.jsonl",
+        "premises_tlc.jsonl",
+        "premises_typed_wasm.jsonl",
+        "premises_uppaal.jsonl",
+        "premises_viper.jsonl"
+    ]
+}

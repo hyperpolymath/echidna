@@ -27,46 +27,44 @@ declarations, extracting the statement and proof portions.
 """
 function extract_theorems(file_path::String)::Vector{Theorem}
     theorems = Theorem[]
+    content = try
+        read(file_path, String)
+    catch
+        return theorems
+    end
 
-    open(file_path, "r") do f
-        for line in eachline(f)
-            # Skip comment blocks and empty lines
-            if startswith(line, "\$( ") || startswith(line, "\$)") || isempty(strip(line))
-                continue
-            end
-
-            # Theorem declaration line (contains $p)
-            if occursin("\$p", line)
-                # Extract theorem name (before $p)
-                parts = split(line, "\$p"; limit=2)
-                if length(parts) > 1
-                    name_part = strip(parts[1])
-                    # Remove any trailing $.
-                    name_part = replace(name_part, r"\$\." => "")
-                    current_name = strip(name_part)
-
-                    # Extract statement (between $p and $=)
-                    statement_part = parts[2]
-                    statement_match = match(r"^\s*([^$]+)\$=", statement_part)
-                    current_statement = if !isnothing(statement_match)
-                        strip(statement_match.captures[1])
-                    else
-                        ""
-                    end
-
-                    # Extract proof (after $=)
-                    proof_match = match(r"\$=\s*([^$]+)\$\.", statement_part)
-                    if !isnothing(proof_match)
-                        current_proof = strip(proof_match.captures[1])
-
-                        # Save theorem
-                        if !isempty(current_name) && !isempty(current_proof)
-                            push!(theorems, Theorem(current_name, current_statement, current_proof))
-                        end
-                    end
-                end
-            end
+    # Strip comments (Metamath `$( ... $)`, possibly nested).
+    stripped = IOBuffer()
+    depth = 0
+    i = firstindex(content)
+    lastidx = lastindex(content)
+    while i <= lastidx
+        if depth == 0 && i < lastidx && content[i] == '$' && content[nextind(content, i)] == '('
+            depth += 1
+            i = nextind(content, nextind(content, i))
+        elseif depth > 0 && i < lastidx && content[i] == '$' && content[nextind(content, i)] == ')'
+            depth -= 1
+            i = nextind(content, nextind(content, i))
+        elseif depth == 0
+            print(stripped, content[i])
+            i = nextind(content, i)
+        else
+            i = nextind(content, i)
         end
+    end
+    text = String(take!(stripped))
+
+    # Match NAME $p STMT $= PROOF $.
+    # Names are /[A-Za-z0-9_-]+/. Statement/proof bodies can span
+    # lines; [^$]+ handles that since $ delimits everything in
+    # Metamath syntax.
+    pat = r"(\S+)\s+\$p\s+([^$]+?)\s+\$=\s*([^$]+?)\s*\$\."s
+    for m in eachmatch(pat, text)
+        name = strip(String(m.captures[1]))
+        stmt = replace(strip(String(m.captures[2])), r"\s+" => " ")
+        proof = replace(strip(String(m.captures[3])), r"\s+" => " ")
+        (isempty(name) || isempty(proof)) && continue
+        push!(theorems, Theorem(name, first(stmt, 1500), first(proof, 1500)))
     end
 
     return theorems
@@ -155,26 +153,43 @@ function main()
     println("Metamath Proof Extractor")
     println("========================")
 
-    file_path = "external_corpora/metamath/set.mm"
-
-    if !isfile(file_path)
-        println("Error: File not found: $file_path")
+    # Widening (2026-04-18): walk every .mm database in the Metamath
+    # corpus, not just set.mm. The metamath/set.mm GitHub repo ships
+    # multiple databases: set.mm (main, ~47K theorems), iset.mm
+    # (intuitionistic, ~25K), nf.mm (New Foundations), hol.mm
+    # (HOL-in-metamath), ql.mm (quantum logic), peano.mm,
+    # big-unifier.mm, demo0.mm, miu.mm. Each adds orthogonal content.
+    corpus_dir = "external_corpora/metamath"
+    if !isdir(corpus_dir)
+        println("Error: corpus directory not found: $(corpus_dir)")
         return 1
     end
 
-    println("\nExtracting from $file_path...")
-    theorems = extract_theorems(file_path)
-    println("Found $(length(theorems)) theorems")
+    mm_files = String[]
+    for f in readdir(corpus_dir; join=true)
+        endswith(f, ".mm") && push!(mm_files, f)
+    end
+    println("Found $(length(mm_files)) .mm databases in $(corpus_dir)")
 
-    if !isempty(theorems)
+    all_theorems = Theorem[]
+    for mm in mm_files
+        println("\nExtracting from $(basename(mm))...")
+        ts = extract_theorems(mm)
+        println("  $(length(ts)) theorems")
+        append!(all_theorems, ts)
+    end
+
+    println("\nTotal theorems across $(length(mm_files)) databases: $(length(all_theorems))")
+
+    if !isempty(all_theorems)
         println("\nFirst few theorems:")
-        for (i, theorem) in enumerate(first(theorems, 5))
+        for (i, theorem) in enumerate(first(all_theorems, 5))
             println("  $i. $(theorem.name)")
         end
     end
 
     println("\nSaving training data...")
-    save_as_training_data(theorems)
+    save_as_training_data(all_theorems)
 
     return 0
 end

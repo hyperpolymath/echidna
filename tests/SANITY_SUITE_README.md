@@ -1,0 +1,1 @@
+# sanity_suite.rs taken out of build 2026-04-17 — depends on the dropped ProverOutcome taxonomy, DispatchConfig.diagnostics, DispatchResult.outcome fields that were never committed. See AI-WORK-todo.md phase-2 followups.
