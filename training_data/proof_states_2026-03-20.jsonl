@@ -1,8 +1,8 @@
-{"id":1,"prover":"Lean","theorem":"zero_is_even","goal":"is_even 0","context":[]}
-{"id":2,"prover":"Lean","theorem":"one_is_odd","goal":"is_odd 1","context":[]}
-{"id":3,"prover":"Lean","theorem":"two_is_even","goal":"is_even 2","context":[]}
-{"id":4,"prover":"Lean","theorem":"not_true","goal":"¬True → False","context":[]}
-{"id":5,"prover":"Lean","theorem":"not_not_false","goal":"¬¬False → False","context":[]}
+{"id":1,"prover":"Lean3","theorem":"zero_is_even","goal":"is_even 0","context":[]}
+{"id":2,"prover":"Lean3","theorem":"one_is_odd","goal":"is_odd 1","context":[]}
+{"id":3,"prover":"Lean3","theorem":"two_is_even","goal":"is_even 2","context":[]}
+{"id":4,"prover":"Lean3","theorem":"not_true","goal":"¬True → False","context":[]}
+{"id":5,"prover":"Lean3","theorem":"not_not_false","goal":"¬¬False → False","context":[]}
 {"id":6,"prover":"Mizar","theorem":"generic_example","goal":"extracted_from_Mizar","context":[]}
 {"id":7,"prover":"Mizar","theorem":"generic_example","goal":"extracted_from_Mizar","context":[]}
 {"id":8,"prover":"Mizar","theorem":"generic_example","goal":"extracted_from_Mizar","context":[]}

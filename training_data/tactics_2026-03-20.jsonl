@@ -1,8 +1,8 @@
-{"proof_id":1,"step":1,"tactic":"use 0","prover":"Lean"}
-{"proof_id":2,"step":1,"tactic":"use 0","prover":"Lean"}
-{"proof_id":3,"step":1,"tactic":"use 1","prover":"Lean"}
-{"proof_id":4,"step":1,"tactic":"intro h","prover":"Lean"}
-{"proof_id":5,"step":1,"tactic":"intro h","prover":"Lean"}
+{"proof_id":1,"step":1,"tactic":"use 0","prover":"Lean3"}
+{"proof_id":2,"step":1,"tactic":"use 0","prover":"Lean3"}
+{"proof_id":3,"step":1,"tactic":"use 1","prover":"Lean3"}
+{"proof_id":4,"step":1,"tactic":"intro h","prover":"Lean3"}
+{"proof_id":5,"step":1,"tactic":"intro h","prover":"Lean3"}
 {"proof_id":6,"step":1,"tactic":"auto","prover":"Mizar"}
 {"proof_id":7,"step":1,"tactic":"auto","prover":"Mizar"}
 {"proof_id":8,"step":1,"tactic":"auto","prover":"Mizar"}

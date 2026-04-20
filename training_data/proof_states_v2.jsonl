@@ -1,332 +1,332 @@
-{"id":1,"prover":"pvs","goal":"fib(n: nat): RECURSIVE nat =","theorem":"n","file":"arithmetic.pvs"}
-{"id":2,"prover":"pvs","goal":"1: 1","theorem":"1","file":"arithmetic.pvs"}
-{"id":3,"prover":"pvs","goal":"% SPDX-License-Identifier: MIT OR Palimpsest-0.6","theorem":"Identifier","file":"list_theory.pvs"}
-{"id":4,"prover":"pvs","goal":"append(l1, l2: list): RECURSIVE list =","theorem":"l2","file":"list_theory.pvs"}
-{"id":5,"prover":"pvs","goal":"null: l2,","theorem":"null","file":"list_theory.pvs"}
-{"id":6,"prover":"pvs","goal":"length(l: list): RECURSIVE nat =","theorem":"l","file":"list_theory.pvs"}
-{"id":7,"prover":"pvs","goal":"null: 0,","theorem":"null","file":"list_theory.pvs"}
-{"id":8,"prover":"pvs","goal":"sorted?(l: list): RECURSIVE bool =","theorem":"l","file":"sorting.pvs"}
-{"id":9,"prover":"pvs","goal":"null: TRUE,","theorem":"null","file":"sorting.pvs"}
-{"id":10,"prover":"pvs","goal":"null: TRUE,","theorem":"null","file":"sorting.pvs"}
-{"id":11,"prover":"pvs","goal":"insert(x: T, l: list): RECURSIVE list =","theorem":"x","file":"sorting.pvs"}
-{"id":12,"prover":"pvs","goal":"null: cons(x, null),","theorem":"null","file":"sorting.pvs"}
-{"id":13,"prover":"pvs","goal":"insertion_sort(l: list): RECURSIVE list =","theorem":"l","file":"sorting.pvs"}
-{"id":14,"prover":"pvs","goal":"null: null,","theorem":"null","file":"sorting.pvs"}
-{"id":15,"prover":"pvs","goal":"occurrences(x: T, l: list): RECURSIVE nat =","theorem":"x","file":"sorting.pvs"}
-{"id":16,"prover":"pvs","goal":"null: 0,","theorem":"null","file":"sorting.pvs"}
-{"id":17,"prover":"hol4","goal":"Theorem FACT_POSITIVE:","theorem":"FACT_POSITIVE","file":"arithmetic.sml"}
-{"id":18,"prover":"hol4","goal":"Theorem FACT_MONO:","theorem":"FACT_MONO","file":"arithmetic.sml"}
-{"id":19,"prover":"hol4","goal":"Theorem EXP_ADD:","theorem":"EXP_ADD","file":"arithmetic.sml"}
-{"id":20,"prover":"hol4","goal":"Theorem EXP_MULT:","theorem":"EXP_MULT","file":"arithmetic.sml"}
-{"id":21,"prover":"hol4","goal":"Theorem SUM_TO_FORMULA:","theorem":"SUM_TO_FORMULA","file":"arithmetic.sml"}
-{"id":22,"prover":"hol4","goal":"Theorem MIRROR_MIRROR:","theorem":"MIRROR_MIRROR","file":"binary_tree.sml"}
-{"id":23,"prover":"hol4","goal":"Theorem MIRROR_SIZE:","theorem":"MIRROR_SIZE","file":"binary_tree.sml"}
-{"id":24,"prover":"hol4","goal":"Theorem MIRROR_HEIGHT:","theorem":"MIRROR_HEIGHT","file":"binary_tree.sml"}
-{"id":25,"prover":"hol4","goal":"Theorem SIZE_INORDER:","theorem":"SIZE_INORDER","file":"binary_tree.sml"}
-{"id":26,"prover":"hol4","goal":"Theorem PERFECT_SIZE:","theorem":"PERFECT_SIZE","file":"binary_tree.sml"}
-{"id":27,"prover":"hol4","goal":"Theorem LENGTH_APPEND_THM:","theorem":"LENGTH_APPEND_THM","file":"list_append.sml"}
-{"id":28,"prover":"hol4","goal":"Theorem APPEND_ASSOC_THM:","theorem":"APPEND_ASSOC_THM","file":"list_append.sml"}
-{"id":29,"prover":"hol4","goal":"Theorem APPEND_NIL_RIGHT:","theorem":"APPEND_NIL_RIGHT","file":"list_append.sml"}
-{"id":30,"prover":"hol4","goal":"Theorem REVERSE_APPEND:","theorem":"REVERSE_APPEND","file":"list_append.sml"}
-{"id":31,"prover":"hol4","goal":"Theorem REVERSE_REVERSE:","theorem":"REVERSE_REVERSE","file":"list_append.sml"}
-{"id":32,"prover":"hol4","goal":"Theorem DE_MORGAN_UNION:","theorem":"DE_MORGAN_UNION","file":"set_theory.sml"}
-{"id":33,"prover":"hol4","goal":"Theorem DE_MORGAN_INTER:","theorem":"DE_MORGAN_INTER","file":"set_theory.sml"}
-{"id":34,"prover":"hol4","goal":"Theorem UNION_OVER_INTER:","theorem":"UNION_OVER_INTER","file":"set_theory.sml"}
-{"id":35,"prover":"hol4","goal":"Theorem INTER_OVER_UNION:","theorem":"INTER_OVER_UNION","file":"set_theory.sml"}
-{"id":36,"prover":"hol4","goal":"Theorem SUBSET_REFLEXIVE:","theorem":"SUBSET_REFLEXIVE","file":"set_theory.sml"}
-{"id":37,"prover":"hol4","goal":"Theorem SUBSET_ANTISYM:","theorem":"SUBSET_ANTISYM","file":"set_theory.sml"}
-{"id":38,"prover":"hol4","goal":"Theorem SUBSET_TRANSITIVE:","theorem":"SUBSET_TRANSITIVE","file":"set_theory.sml"}
-{"id":39,"prover":"hol4","goal":"Theorem IN_POWERSET:","theorem":"IN_POWERSET","file":"set_theory.sml"}
-{"id":40,"prover":"hol4","goal":"Theorem EMPTY_IN_POWERSET:","theorem":"EMPTY_IN_POWERSET","file":"set_theory.sml"}
-{"id":41,"prover":"hol4","goal":"Theorem SELF_IN_POWERSET:","theorem":"SELF_IN_POWERSET","file":"set_theory.sml"}
-{"id":42,"prover":"hol4","goal":"Theorem CARD_SUBSET:","theorem":"CARD_SUBSET","file":"set_theory.sml"}
-{"id":43,"prover":"hol4","goal":"Theorem INSERT_SORTED:","theorem":"INSERT_SORTED","file":"sorting.sml"}
-{"id":44,"prover":"hol4","goal":"Theorem ISORT_SORTED:","theorem":"ISORT_SORTED","file":"sorting.sml"}
-{"id":45,"prover":"hol4","goal":"Theorem INSERT_COUNT:","theorem":"INSERT_COUNT","file":"sorting.sml"}
-{"id":46,"prover":"hol4","goal":"Theorem ISORT_COUNT:","theorem":"ISORT_COUNT","file":"sorting.sml"}
-{"id":47,"prover":"hol4","goal":"Theorem QSORT_SORTED:","theorem":"QSORT_SORTED","file":"sorting.sml"}
-{"id":48,"prover":"mizar","goal":"theorem Th3:","theorem":"Th3","file":"basic.miz"}
-{"id":49,"prover":"mizar","goal":"theorem Th4:","theorem":"Th4","file":"basic.miz"}
-{"id":50,"prover":"mizar","goal":"theorem Th5:","theorem":"Th5","file":"basic.miz"}
-{"id":51,"prover":"mizar","goal":"theorem Th6:","theorem":"Th6","file":"basic.miz"}
-{"id":52,"prover":"mizar","goal":"theorem Th7:","theorem":"Th7","file":"basic.miz"}
-{"id":53,"prover":"mizar","goal":"theorem Th8:","theorem":"Th8","file":"basic.miz"}
-{"id":54,"prover":"mizar","goal":"theorem Nat1:","theorem":"Nat1","file":"numbers.miz"}
-{"id":55,"prover":"mizar","goal":"theorem OrderTrans:","theorem":"OrderTrans","file":"numbers.miz"}
-{"id":56,"prover":"mizar","goal":"theorem OrderAntiSymm:","theorem":"OrderAntiSymm","file":"numbers.miz"}
-{"id":57,"prover":"mizar","goal":"theorem AddMonotone:","theorem":"AddMonotone","file":"numbers.miz"}
-{"id":58,"prover":"mizar","goal":"theorem MultMonotone:","theorem":"MultMonotone","file":"numbers.miz"}
-{"id":59,"prover":"mizar","goal":"theorem AddCancelLeft:","theorem":"AddCancelLeft","file":"numbers.miz"}
-{"id":60,"prover":"mizar","goal":"theorem AddCancelRight:","theorem":"AddCancelRight","file":"numbers.miz"}
-{"id":61,"prover":"mizar","goal":"theorem MultCancelLeft:","theorem":"MultCancelLeft","file":"numbers.miz"}
-{"id":62,"prover":"mizar","goal":"theorem MultCancelRight:","theorem":"MultCancelRight","file":"numbers.miz"}
-{"id":63,"prover":"mizar","goal":"theorem DiffSquares:","theorem":"DiffSquares","file":"numbers.miz"}
-{"id":64,"prover":"mizar","goal":"theorem PositiveSum:","theorem":"PositiveSum","file":"numbers.miz"}
-{"id":65,"prover":"mizar","goal":"theorem PositiveProduct:","theorem":"PositiveProduct","file":"numbers.miz"}
-{"id":66,"prover":"mizar","goal":"theorem MinSymmetric:","theorem":"MinSymmetric","file":"numbers.miz"}
-{"id":67,"prover":"mizar","goal":"theorem MaxSymmetric:","theorem":"MaxSymmetric","file":"numbers.miz"}
-{"id":68,"prover":"mizar","goal":"theorem MinMax:","theorem":"MinMax","file":"numbers.miz"}
-{"id":69,"prover":"mizar","goal":"theorem DeMorgan1:","theorem":"DeMorgan1","file":"propositional.miz"}
-{"id":70,"prover":"mizar","goal":"theorem DeMorgan2:","theorem":"DeMorgan2","file":"propositional.miz"}
-{"id":71,"prover":"mizar","goal":"theorem Distributive1:","theorem":"Distributive1","file":"propositional.miz"}
-{"id":72,"prover":"mizar","goal":"theorem Distributive2:","theorem":"Distributive2","file":"propositional.miz"}
-{"id":73,"prover":"mizar","goal":"theorem Commutative1:","theorem":"Commutative1","file":"propositional.miz"}
-{"id":74,"prover":"mizar","goal":"theorem Commutative2:","theorem":"Commutative2","file":"propositional.miz"}
-{"id":75,"prover":"mizar","goal":"theorem Associative1:","theorem":"Associative1","file":"propositional.miz"}
-{"id":76,"prover":"mizar","goal":"theorem Associative2:","theorem":"Associative2","file":"propositional.miz"}
-{"id":77,"prover":"coq","goal":"Theorem identity : forall A : Prop, A -> A.","theorem":"identity","file":"basic.v"}
-{"id":78,"prover":"coq","goal":"Theorem modus_ponens : forall A B : Prop, (A -> B) -> A -> B.","theorem":"modus_ponens","file":"basic.v"}
-{"id":79,"prover":"coq","goal":"Theorem transitivity : forall A B C : Prop,","theorem":"transitivity","file":"basic.v"}
-{"id":80,"prover":"coq","goal":"Theorem and_intro : forall A B : Prop, A -> B -> A /\\ B.","theorem":"and_intro","file":"basic.v"}
-{"id":81,"prover":"coq","goal":"Theorem and_elim_left : forall A B : Prop, A /\\ B -> A.","theorem":"and_elim_left","file":"basic.v"}
-{"id":82,"prover":"coq","goal":"Theorem and_elim_right : forall A B : Prop, A /\\ B -> B.","theorem":"and_elim_right","file":"basic.v"}
-{"id":83,"prover":"coq","goal":"Theorem and_commutative : forall A B : Prop, A /\\ B -> B /\\ A.","theorem":"and_commutative","file":"basic.v"}
-{"id":84,"prover":"coq","goal":"Theorem or_intro_left : forall A B : Prop, A -> A \\/ B.","theorem":"or_intro_left","file":"basic.v"}
-{"id":85,"prover":"coq","goal":"Theorem or_intro_right : forall A B : Prop, B -> A \\/ B.","theorem":"or_intro_right","file":"basic.v"}
-{"id":86,"prover":"coq","goal":"Theorem or_elim : forall A B C : Prop,","theorem":"or_elim","file":"basic.v"}
-{"id":87,"prover":"coq","goal":"Theorem curry : forall A B C : Prop,","theorem":"curry","file":"basic.v"}
-{"id":88,"prover":"coq","goal":"Theorem uncurry : forall A B C : Prop,","theorem":"uncurry","file":"basic.v"}
-{"id":89,"prover":"coq","goal":"Theorem app_nil_r : forall {A : Type} (l : list A),","theorem":"app_nil_r","file":"list.v"}
-{"id":90,"prover":"coq","goal":"Theorem app_assoc : forall {A : Type} (l1 l2 l3 : list A),","theorem":"app_assoc","file":"list.v"}
-{"id":91,"prover":"coq","goal":"Theorem cons_app : forall {A : Type} (x : A) (l : list A),","theorem":"cons_app","file":"list.v"}
-{"id":92,"prover":"coq","goal":"Theorem length_app : forall {A : Type} (l1 l2 : list A),","theorem":"length_app","file":"list.v"}
-{"id":93,"prover":"coq","goal":"Theorem length_cons : forall {A : Type} (x : A) (l : list A),","theorem":"length_cons","file":"list.v"}
-{"id":94,"prover":"coq","goal":"Theorem length_nil : forall {A : Type},","theorem":"length_nil","file":"list.v"}
-{"id":95,"prover":"coq","goal":"Theorem rev_app_distr : forall {A : Type} (l1 l2 : list A),","theorem":"rev_app_distr","file":"list.v"}
-{"id":96,"prover":"coq","goal":"Theorem rev_involutive : forall {A : Type} (l : list A),","theorem":"rev_involutive","file":"list.v"}
-{"id":97,"prover":"coq","goal":"Theorem length_rev : forall {A : Type} (l : list A),","theorem":"length_rev","file":"list.v"}
-{"id":98,"prover":"coq","goal":"Theorem map_length : forall {A B : Type} (f : A -> B) (l : list A),","theorem":"map_length","file":"list.v"}
-{"id":99,"prover":"coq","goal":"Theorem map_app : forall {A B : Type} (f : A -> B) (l1 l2 : list A),","theorem":"map_app","file":"list.v"}
-{"id":100,"prover":"coq","goal":"Theorem map_map : forall {A B C : Type} (f : A -> B) (g : B -> C) (l : list A),","theorem":"map_map","file":"list.v"}
-{"id":101,"prover":"coq","goal":"Theorem map_id : forall {A : Type} (l : list A),","theorem":"map_id","file":"list.v"}
-{"id":102,"prover":"coq","goal":"Theorem map_rev : forall {A B : Type} (f : A -> B) (l : list A),","theorem":"map_rev","file":"list.v"}
-{"id":103,"prover":"coq","goal":"Theorem fold_right_nil : forall {A B : Type} (f : A -> B -> B) (acc : B),","theorem":"fold_right_nil","file":"list.v"}
-{"id":104,"prover":"coq","goal":"Theorem fold_right_cons : forall {A B : Type} (f : A -> B -> B) (acc : B) (h : A) (t : list A),","theorem":"fold_right_cons","file":"list.v"}
-{"id":105,"prover":"coq","goal":"Theorem fold_right_app : forall {A B : Type} (f : A -> B -> B) (acc : B) (l1 l2 : list A),","theorem":"fold_right_app","file":"list.v"}
-{"id":106,"prover":"coq","goal":"Theorem sum_list_app : forall l1 l2 : list nat,","theorem":"sum_list_app","file":"list.v"}
-{"id":107,"prover":"coq","goal":"Theorem filter_app : forall {A : Type} (f : A -> bool) (l1 l2 : list A),","theorem":"filter_app","file":"list.v"}
-{"id":108,"prover":"coq","goal":"Theorem filter_length : forall {A : Type} (f : A -> bool) (l : list A),","theorem":"filter_length","file":"list.v"}
-{"id":109,"prover":"coq","goal":"Theorem nth_app_l : forall {A : Type} (l1 l2 : list A) (n : nat) (d : A),","theorem":"nth_app_l","file":"list.v"}
-{"id":110,"prover":"coq","goal":"Theorem nth_app_r : forall {A : Type} (l1 l2 : list A) (n : nat) (d : A),","theorem":"nth_app_r","file":"list.v"}
-{"id":111,"prover":"coq","goal":"Theorem in_app_iff : forall {A : Type} (x : A) (l1 l2 : list A),","theorem":"in_app_iff","file":"list.v"}
-{"id":112,"prover":"coq","goal":"Theorem in_map : forall {A B : Type} (f : A -> B) (l : list A) (x : A),","theorem":"in_map","file":"list.v"}
-{"id":113,"prover":"coq","goal":"Theorem in_filter : forall {A : Type} (f : A -> bool) (l : list A) (x : A),","theorem":"in_filter","file":"list.v"}
-{"id":114,"prover":"coq","goal":"Theorem plus_comm : forall n m : nat,","theorem":"plus_comm","file":"nat.v"}
-{"id":115,"prover":"coq","goal":"Theorem plus_assoc : forall n m p : nat,","theorem":"plus_assoc","file":"nat.v"}
-{"id":116,"prover":"coq","goal":"Theorem plus_0_r : forall n : nat,","theorem":"plus_0_r","file":"nat.v"}
-{"id":117,"prover":"coq","goal":"Theorem plus_succ_r : forall n m : nat,","theorem":"plus_succ_r","file":"nat.v"}
-{"id":118,"prover":"coq","goal":"Theorem mult_0_r : forall n : nat,","theorem":"mult_0_r","file":"nat.v"}
-{"id":119,"prover":"coq","goal":"Theorem mult_comm : forall n m : nat,","theorem":"mult_comm","file":"nat.v"}
-{"id":120,"prover":"coq","goal":"Theorem mult_plus_distr_l : forall n m p : nat,","theorem":"mult_plus_distr_l","file":"nat.v"}
-{"id":121,"prover":"coq","goal":"Theorem mult_assoc : forall n m p : nat,","theorem":"mult_assoc","file":"nat.v"}
-{"id":122,"prover":"coq","goal":"Theorem le_refl : forall n : nat,","theorem":"le_refl","file":"nat.v"}
-{"id":123,"prover":"coq","goal":"Theorem le_trans : forall n m p : nat,","theorem":"le_trans","file":"nat.v"}
-{"id":124,"prover":"coq","goal":"Theorem plus_le_compat_r : forall n m p : nat,","theorem":"plus_le_compat_r","file":"nat.v"}
-{"id":125,"prover":"coq","goal":"Theorem sum_formula : forall n : nat,","theorem":"sum_formula","file":"nat.v"}
-{"id":126,"prover":"coq","goal":"Theorem power_of_2_positive : forall n : nat,","theorem":"power_of_2_positive","file":"nat.v"}
-{"id":127,"prover":"coq","goal":"Theorem power_of_2_grows : forall n : nat,","theorem":"power_of_2_grows","file":"nat.v"}
-{"id":128,"prover":"coq","goal":"Theorem factorial_positive : forall n : nat,","theorem":"factorial_positive","file":"nat.v"}
-{"id":129,"prover":"coq","goal":"Theorem factorial_ge_power_of_2 : forall n : nat,","theorem":"factorial_ge_power_of_2","file":"nat.v"}
-{"id":130,"prover":"coq","goal":"Theorem even_or_odd : forall n : nat,","theorem":"even_or_odd","file":"nat.v"}
-{"id":131,"prover":"coq","goal":"Theorem even_plus_even : forall n m : nat,","theorem":"even_plus_even","file":"nat.v"}
-{"id":132,"prover":"coq","goal":"Theorem de_morgan_1 : forall A B : Prop,","theorem":"de_morgan_1","file":"propositional.v"}
-{"id":133,"prover":"coq","goal":"Theorem de_morgan_1_rev : forall A B : Prop,","theorem":"de_morgan_1_rev","file":"propositional.v"}
-{"id":134,"prover":"coq","goal":"Theorem de_morgan_2_constructive : forall A B : Prop,","theorem":"de_morgan_2_constructive","file":"propositional.v"}
-{"id":135,"prover":"coq","goal":"Theorem de_morgan_2_classical : forall A B : Prop,","theorem":"de_morgan_2_classical","file":"propositional.v"}
-{"id":136,"prover":"coq","goal":"Theorem double_negation_intro : forall A : Prop,","theorem":"double_negation_intro","file":"propositional.v"}
-{"id":137,"prover":"coq","goal":"Theorem double_negation_elim : forall A : Prop,","theorem":"double_negation_elim","file":"propositional.v"}
-{"id":138,"prover":"coq","goal":"Theorem lem_implies_dne :","theorem":"lem_implies_dne","file":"propositional.v"}
-{"id":139,"prover":"coq","goal":"Theorem peirce_law : forall A B : Prop,","theorem":"peirce_law","file":"propositional.v"}
-{"id":140,"prover":"coq","goal":"Theorem contrapositive : forall A B : Prop,","theorem":"contrapositive","file":"propositional.v"}
-{"id":141,"prover":"coq","goal":"Theorem contrapositive_reverse : forall A B : Prop,","theorem":"contrapositive_reverse","file":"propositional.v"}
-{"id":142,"prover":"coq","goal":"Theorem or_commutative : forall A B : Prop,","theorem":"or_commutative","file":"propositional.v"}
-{"id":143,"prover":"coq","goal":"Theorem or_associative : forall A B C : Prop,","theorem":"or_associative","file":"propositional.v"}
-{"id":144,"prover":"coq","goal":"Theorem and_associative : forall A B C : Prop,","theorem":"and_associative","file":"propositional.v"}
-{"id":145,"prover":"coq","goal":"Theorem and_associative_rev : forall A B C : Prop,","theorem":"and_associative_rev","file":"propositional.v"}
-{"id":146,"prover":"coq","goal":"Theorem and_distributes_over_or : forall A B C : Prop,","theorem":"and_distributes_over_or","file":"propositional.v"}
-{"id":147,"prover":"coq","goal":"Theorem and_distributes_over_or_rev : forall A B C : Prop,","theorem":"and_distributes_over_or_rev","file":"propositional.v"}
-{"id":148,"prover":"coq","goal":"Theorem or_distributes_over_and : forall A B C : Prop,","theorem":"or_distributes_over_and","file":"propositional.v"}
-{"id":149,"prover":"coq","goal":"Theorem proof_by_contradiction : forall A : Prop,","theorem":"proof_by_contradiction","file":"propositional.v"}
-{"id":150,"prover":"coq","goal":"Theorem ex_falso : forall A : Prop,","theorem":"ex_falso","file":"propositional.v"}
-{"id":151,"prover":"lean","goal":"theorem identity (A : Prop) : A → A := by","theorem":"identity","file":"Basic.lean"}
-{"id":152,"prover":"lean","goal":"theorem identity_type {α : Type} (x : α) : x = x := by","theorem":"identity_type","file":"Basic.lean"}
-{"id":153,"prover":"lean","goal":"theorem modus_ponens (A B : Prop) : (A → B) → A → B := by","theorem":"modus_ponens","file":"Basic.lean"}
-{"id":154,"prover":"lean","goal":"theorem transitivity (A B C : Prop) : (A → B) → (B → C) → (A → C) := by","theorem":"transitivity","file":"Basic.lean"}
-{"id":155,"prover":"lean","goal":"theorem transitivity' (A B C : Prop) : (A → B) → (B → C) → (A → C) :=","theorem":"transitivity","file":"Basic.lean"}
-{"id":156,"prover":"lean","goal":"theorem and_intro (A B : Prop) : A → B → (A ∧ B) := by","theorem":"and_intro","file":"Basic.lean"}
-{"id":157,"prover":"lean","goal":"theorem and_elim_left (A B : Prop) : (A ∧ B) → A := by","theorem":"and_elim_left","file":"Basic.lean"}
-{"id":158,"prover":"lean","goal":"theorem and_elim_right (A B : Prop) : (A ∧ B) → B := by","theorem":"and_elim_right","file":"Basic.lean"}
-{"id":159,"prover":"lean","goal":"theorem and_comm (A B : Prop) : (A ∧ B) → (B ∧ A) := by","theorem":"and_comm","file":"Basic.lean"}
-{"id":160,"prover":"lean","goal":"theorem or_intro_left (A B : Prop) : A → (A ∨ B) := by","theorem":"or_intro_left","file":"Basic.lean"}
-{"id":161,"prover":"lean","goal":"theorem or_intro_right (A B : Prop) : B → (A ∨ B) := by","theorem":"or_intro_right","file":"Basic.lean"}
-{"id":162,"prover":"lean","goal":"theorem or_comm (A B : Prop) : (A ∨ B) → (B ∨ A) := by","theorem":"or_comm","file":"Basic.lean"}
-{"id":163,"prover":"lean","goal":"theorem hypothetical_syllogism (A B C : Prop) :","theorem":"hypothetical_syllogism","file":"Basic.lean"}
-{"id":164,"prover":"lean","goal":"theorem triple_transitivity (A B C D : Prop) :","theorem":"triple_transitivity","file":"Basic.lean"}
-{"id":165,"prover":"lean","goal":"theorem and_or_distrib_left (A B C : Prop) :","theorem":"and_or_distrib_left","file":"Basic.lean"}
-{"id":166,"prover":"lean","goal":"theorem and_or_distrib_right (A B C : Prop) :","theorem":"and_or_distrib_right","file":"Basic.lean"}
-{"id":167,"prover":"lean","goal":"theorem compose_assoc {α β γ δ : Type}","theorem":"compose_assoc","file":"Basic.lean"}
-{"id":168,"prover":"lean","goal":"theorem length_nil {α : Type} : List.length ([] : List α) = 0 := by","theorem":"length_nil","file":"List.lean"}
-{"id":169,"prover":"lean","goal":"theorem length_singleton {α : Type} (x : α) : List.length [x] = 1 := by","theorem":"length_singleton","file":"List.lean"}
-{"id":170,"prover":"lean","goal":"theorem length_cons {α : Type} (x : α) (xs : List α) :","theorem":"length_cons","file":"List.lean"}
-{"id":171,"prover":"lean","goal":"theorem append_nil {α : Type} (xs : List α) : xs ++ [] = xs := by","theorem":"append_nil","file":"List.lean"}
-{"id":172,"prover":"lean","goal":"theorem nil_append {α : Type} (xs : List α) : [] ++ xs = xs := by","theorem":"nil_append","file":"List.lean"}
-{"id":173,"prover":"lean","goal":"theorem append_assoc {α : Type} (xs ys zs : List α) :","theorem":"append_assoc","file":"List.lean"}
-{"id":174,"prover":"lean","goal":"theorem length_append {α : Type} (xs ys : List α) :","theorem":"length_append","file":"List.lean"}
-{"id":175,"prover":"lean","goal":"theorem reverse_nil {α : Type} : List.reverse ([] : List α) = [] := by","theorem":"reverse_nil","file":"List.lean"}
-{"id":176,"prover":"lean","goal":"theorem reverse_singleton {α : Type} (x : α) : List.reverse [x] = [x] := by","theorem":"reverse_singleton","file":"List.lean"}
-{"id":177,"prover":"lean","goal":"theorem reverse_reverse {α : Type} (xs : List α) :","theorem":"reverse_reverse","file":"List.lean"}
-{"id":178,"prover":"lean","goal":"theorem length_reverse {α : Type} (xs : List α) :","theorem":"length_reverse","file":"List.lean"}
-{"id":179,"prover":"lean","goal":"theorem reverse_append {α : Type} (xs ys : List α) :","theorem":"reverse_append","file":"List.lean"}
-{"id":180,"prover":"lean","goal":"theorem map_nil {α β : Type} (f : α → β) : List.map f [] = [] := by","theorem":"map_nil","file":"List.lean"}
-{"id":181,"prover":"lean","goal":"theorem map_cons {α β : Type} (f : α → β) (x : α) (xs : List α) :","theorem":"map_cons","file":"List.lean"}
-{"id":182,"prover":"lean","goal":"theorem length_map {α β : Type} (f : α → β) (xs : List α) :","theorem":"length_map","file":"List.lean"}
-{"id":183,"prover":"lean","goal":"theorem map_append {α β : Type} (f : α → β) (xs ys : List α) :","theorem":"map_append","file":"List.lean"}
-{"id":184,"prover":"lean","goal":"theorem map_id {α : Type} (xs : List α) : List.map id xs = xs := by","theorem":"map_id","file":"List.lean"}
-{"id":185,"prover":"lean","goal":"theorem map_map {α β γ : Type} (f : α → β) (g : β → γ) (xs : List α) :","theorem":"map_map","file":"List.lean"}
-{"id":186,"prover":"lean","goal":"theorem filter_nil {α : Type} (p : α → Bool) : List.filter p [] = [] := by","theorem":"filter_nil","file":"List.lean"}
-{"id":187,"prover":"lean","goal":"theorem length_filter_le {α : Type} (p : α → Bool) (xs : List α) :","theorem":"length_filter_le","file":"List.lean"}
-{"id":188,"prover":"lean","goal":"theorem filter_append {α : Type} (p : α → Bool) (xs ys : List α) :","theorem":"filter_append","file":"List.lean"}
-{"id":189,"prover":"lean","goal":"theorem foldr_nil {α β : Type} (f : α → β → β) (init : β) :","theorem":"foldr_nil","file":"List.lean"}
-{"id":190,"prover":"lean","goal":"theorem foldr_cons {α β : Type} (f : α → β → β) (init : β) (x : α) (xs : List α) :","theorem":"foldr_cons","file":"List.lean"}
-{"id":191,"prover":"lean","goal":"theorem foldr_append {α β : Type} (f : α → β → β) (init : β) (xs ys : List α) :","theorem":"foldr_append","file":"List.lean"}
-{"id":192,"prover":"lean","goal":"theorem foldl_nil {α β : Type} (f : β → α → β) (init : β) :","theorem":"foldl_nil","file":"List.lean"}
-{"id":193,"prover":"lean","goal":"theorem foldl_cons {α β : Type} (f : β → α → β) (init : β) (x : α) (xs : List α) :","theorem":"foldl_cons","file":"List.lean"}
-{"id":194,"prover":"lean","goal":"theorem sum_nil : List.sum ([] : List Nat) = 0 := by","theorem":"sum_nil","file":"List.lean"}
-{"id":195,"prover":"lean","goal":"theorem sum_cons (x : Nat) (xs : List Nat) :","theorem":"sum_cons","file":"List.lean"}
-{"id":196,"prover":"lean","goal":"theorem sum_append (xs ys : List Nat) :","theorem":"sum_append","file":"List.lean"}
-{"id":197,"prover":"lean","goal":"theorem mem_nil {α : Type} (x : α) : x ∉ ([] : List α) := by","theorem":"mem_nil","file":"List.lean"}
-{"id":198,"prover":"lean","goal":"theorem mem_cons_self {α : Type} (x : α) (xs : List α) : x ∈ (x :: xs) := by","theorem":"mem_cons_self","file":"List.lean"}
-{"id":199,"prover":"lean","goal":"theorem mem_cons_of_mem {α : Type} (x y : α) (xs : List α) :","theorem":"mem_cons_of_mem","file":"List.lean"}
-{"id":200,"prover":"lean","goal":"theorem mem_append_left {α : Type} (x : α) (xs ys : List α) :","theorem":"mem_append_left","file":"List.lean"}
-{"id":201,"prover":"lean","goal":"theorem mem_append_right {α : Type} (x : α) (xs ys : List α) :","theorem":"mem_append_right","file":"List.lean"}
-{"id":202,"prover":"lean","goal":"theorem take_zero {α : Type} (xs : List α) : List.take 0 xs = [] := by","theorem":"take_zero","file":"List.lean"}
-{"id":203,"prover":"lean","goal":"theorem take_nil {α : Type} (n : Nat) : List.take n ([] : List α) = [] := by","theorem":"take_nil","file":"List.lean"}
-{"id":204,"prover":"lean","goal":"theorem drop_zero {α : Type} (xs : List α) : List.drop 0 xs = xs := by","theorem":"drop_zero","file":"List.lean"}
-{"id":205,"prover":"lean","goal":"theorem drop_nil {α : Type} (n : Nat) : List.drop n ([] : List α) = [] := by","theorem":"drop_nil","file":"List.lean"}
-{"id":206,"prover":"lean","goal":"theorem take_append_drop {α : Type} (n : Nat) (xs : List α) :","theorem":"take_append_drop","file":"List.lean"}
-{"id":207,"prover":"lean","goal":"theorem zip_nil_left {α β : Type} (ys : List β) :","theorem":"zip_nil_left","file":"List.lean"}
-{"id":208,"prover":"lean","goal":"theorem zip_nil_right {α β : Type} (xs : List α) :","theorem":"zip_nil_right","file":"List.lean"}
-{"id":209,"prover":"lean","goal":"theorem length_zip {α β : Type} (xs : List α) (ys : List β) :","theorem":"length_zip","file":"List.lean"}
-{"id":210,"prover":"lean","goal":"theorem all_nil {α : Type} (p : α → Bool) : List.all [] p = true := by","theorem":"all_nil","file":"List.lean"}
-{"id":211,"prover":"lean","goal":"theorem any_nil {α : Type} (p : α → Bool) : List.any [] p = false := by","theorem":"any_nil","file":"List.lean"}
-{"id":212,"prover":"lean","goal":"theorem all_append {α : Type} (p : α → Bool) (xs ys : List α) :","theorem":"all_append","file":"List.lean"}
-{"id":213,"prover":"lean","goal":"theorem replicate_zero {α : Type} (x : α) : List.replicate 0 x = [] := by","theorem":"replicate_zero","file":"List.lean"}
-{"id":214,"prover":"lean","goal":"theorem length_replicate {α : Type} (n : Nat) (x : α) :","theorem":"length_replicate","file":"List.lean"}
-{"id":215,"prover":"lean","goal":"theorem add_zero (n : Nat) : n + 0 = n := by","theorem":"add_zero","file":"Nat.lean"}
-{"id":216,"prover":"lean","goal":"theorem zero_add (n : Nat) : 0 + n = n := by","theorem":"zero_add","file":"Nat.lean"}
-{"id":217,"prover":"lean","goal":"theorem mul_one (n : Nat) : n * 1 = n := by","theorem":"mul_one","file":"Nat.lean"}
-{"id":218,"prover":"lean","goal":"theorem one_mul (n : Nat) : 1 * n = n := by","theorem":"one_mul","file":"Nat.lean"}
-{"id":219,"prover":"lean","goal":"theorem mul_zero (n : Nat) : n * 0 = 0 := by","theorem":"mul_zero","file":"Nat.lean"}
-{"id":220,"prover":"lean","goal":"theorem zero_mul (n : Nat) : 0 * n = 0 := by","theorem":"zero_mul","file":"Nat.lean"}
-{"id":221,"prover":"lean","goal":"theorem add_comm (m n : Nat) : m + n = n + m := by","theorem":"add_comm","file":"Nat.lean"}
-{"id":222,"prover":"lean","goal":"theorem mul_comm (m n : Nat) : m * n = n * m := by","theorem":"mul_comm","file":"Nat.lean"}
-{"id":223,"prover":"lean","goal":"theorem add_assoc (m n k : Nat) : (m + n) + k = m + (n + k) := by","theorem":"add_assoc","file":"Nat.lean"}
-{"id":224,"prover":"lean","goal":"theorem mul_assoc (m n k : Nat) : (m * n) * k = m * (n * k) := by","theorem":"mul_assoc","file":"Nat.lean"}
-{"id":225,"prover":"lean","goal":"theorem left_distrib (m n k : Nat) : m * (n + k) = m * n + m * k := by","theorem":"left_distrib","file":"Nat.lean"}
-{"id":226,"prover":"lean","goal":"theorem right_distrib (m n k : Nat) : (m + n) * k = m * k + n * k := by","theorem":"right_distrib","file":"Nat.lean"}
-{"id":227,"prover":"lean","goal":"theorem sum_first_n (n : Nat) : 2 * (Fin.sum n id) = n * (n + 1) := by","theorem":"sum_first_n","file":"Nat.lean"}
-{"id":228,"prover":"lean","goal":"theorem double_add (n : Nat) : n + n = 2 * n := by","theorem":"double_add","file":"Nat.lean"}
-{"id":229,"prover":"lean","goal":"theorem pow2_ge (n : Nat) : n ≥ 1 → 2^n ≥ n := by","theorem":"pow2_ge","file":"Nat.lean"}
-{"id":230,"prover":"lean","goal":"theorem le_refl (n : Nat) : n ≤ n := by","theorem":"le_refl","file":"Nat.lean"}
-{"id":231,"prover":"lean","goal":"theorem le_antisymm (m n : Nat) : m ≤ n → n ≤ m → m = n := by","theorem":"le_antisymm","file":"Nat.lean"}
-{"id":232,"prover":"lean","goal":"theorem le_trans (m n k : Nat) : m ≤ n → n ≤ k → m ≤ k := by","theorem":"le_trans","file":"Nat.lean"}
-{"id":233,"prover":"lean","goal":"theorem lt_succ_self (n : Nat) : n < n + 1 := by","theorem":"lt_succ_self","file":"Nat.lean"}
-{"id":234,"prover":"lean","goal":"theorem zero_le (n : Nat) : 0 ≤ n := by","theorem":"zero_le","file":"Nat.lean"}
-{"id":235,"prover":"lean","goal":"theorem add_left_cancel (k m n : Nat) : k + m = k + n → m = n := by","theorem":"add_left_cancel","file":"Nat.lean"}
-{"id":236,"prover":"lean","goal":"theorem add_right_cancel (k m n : Nat) : m + k = n + k → m = n := by","theorem":"add_right_cancel","file":"Nat.lean"}
-{"id":237,"prover":"lean","goal":"theorem add_le_add_left (m n k : Nat) : m ≤ n → k + m ≤ k + n := by","theorem":"add_le_add_left","file":"Nat.lean"}
-{"id":238,"prover":"lean","goal":"theorem add_le_add_right (m n k : Nat) : m ≤ n → m + k ≤ n + k := by","theorem":"add_le_add_right","file":"Nat.lean"}
-{"id":239,"prover":"lean","goal":"theorem mul_succ (m n : Nat) : m * (n + 1) = m * n + m := by","theorem":"mul_succ","file":"Nat.lean"}
-{"id":240,"prover":"lean","goal":"theorem succ_mul (m n : Nat) : (m + 1) * n = m * n + n := by","theorem":"succ_mul","file":"Nat.lean"}
-{"id":241,"prover":"lean","goal":"theorem mul_left_cancel (k m n : Nat) : k > 0 → k * m = k * n → m = n := by","theorem":"mul_left_cancel","file":"Nat.lean"}
-{"id":242,"prover":"lean","goal":"theorem sub_zero (n : Nat) : n - 0 = n := by","theorem":"sub_zero","file":"Nat.lean"}
-{"id":243,"prover":"lean","goal":"theorem sub_self (n : Nat) : n - n = 0 := by","theorem":"sub_self","file":"Nat.lean"}
-{"id":244,"prover":"lean","goal":"theorem sub_add_cancel (m n : Nat) : n ≤ m → (m - n) + n = m := by","theorem":"sub_add_cancel","file":"Nat.lean"}
-{"id":245,"prover":"lean","goal":"theorem zero_is_even : is_even 0 := by","theorem":"zero_is_even","file":"Nat.lean"}
-{"id":246,"prover":"lean","goal":"theorem one_is_odd : is_odd 1 := by","theorem":"one_is_odd","file":"Nat.lean"}
-{"id":247,"prover":"lean","goal":"theorem two_is_even : is_even 2 := by","theorem":"two_is_even","file":"Nat.lean"}
-{"id":248,"prover":"lean","goal":"theorem even_add_even (m n : Nat) : is_even m → is_even n → is_even (m + n) := by","theorem":"even_add_even","file":"Nat.lean"}
-{"id":249,"prover":"lean","goal":"theorem mul_even (m n : Nat) : is_even n → is_even (m * n) := by","theorem":"mul_even","file":"Nat.lean"}
-{"id":250,"prover":"lean","goal":"theorem div_one (n : Nat) : n / 1 = n := by","theorem":"div_one","file":"Nat.lean"}
-{"id":251,"prover":"lean","goal":"theorem div_self (n : Nat) : n > 0 → n / n = 1 := by","theorem":"div_self","file":"Nat.lean"}
-{"id":252,"prover":"lean","goal":"theorem mod_one (n : Nat) : n % 1 = 0 := by","theorem":"mod_one","file":"Nat.lean"}
-{"id":253,"prover":"lean","goal":"theorem mod_self (n : Nat) : n > 0 → n % n = 0 := by","theorem":"mod_self","file":"Nat.lean"}
-{"id":254,"prover":"lean","goal":"theorem mod_lt (m n : Nat) : n > 0 → m % n < n := by","theorem":"mod_lt","file":"Nat.lean"}
-{"id":255,"prover":"lean","goal":"theorem gcd_comm (m n : Nat) : Nat.gcd m n = Nat.gcd n m := by","theorem":"gcd_comm","file":"Nat.lean"}
-{"id":256,"prover":"lean","goal":"theorem gcd_zero_right (n : Nat) : Nat.gcd n 0 = n := by","theorem":"gcd_zero_right","file":"Nat.lean"}
-{"id":257,"prover":"lean","goal":"theorem gcd_self (n : Nat) : Nat.gcd n n = n := by","theorem":"gcd_self","file":"Nat.lean"}
-{"id":258,"prover":"lean","goal":"theorem de_morgan_1 (A B : Prop) : ¬(A ∧ B) → (¬A ∨ ¬B) := by","theorem":"de_morgan_1","file":"Propositional.lean"}
-{"id":259,"prover":"lean","goal":"theorem de_morgan_1_rev (A B : Prop) : (¬A ∨ ¬B) → ¬(A ∧ B) := by","theorem":"de_morgan_1_rev","file":"Propositional.lean"}
-{"id":260,"prover":"lean","goal":"theorem de_morgan_2 (A B : Prop) : ¬(A ∨ B) → (¬A ∧ ¬B) := by","theorem":"de_morgan_2","file":"Propositional.lean"}
-{"id":261,"prover":"lean","goal":"theorem de_morgan_2_rev (A B : Prop) : (¬A ∧ ¬B) → ¬(A ∨ B) := by","theorem":"de_morgan_2_rev","file":"Propositional.lean"}
-{"id":262,"prover":"lean","goal":"theorem double_neg_intro (A : Prop) : A → ¬¬A := by","theorem":"double_neg_intro","file":"Propositional.lean"}
-{"id":263,"prover":"lean","goal":"theorem double_neg_elim (A : Prop) : ¬¬A → A := by","theorem":"double_neg_elim","file":"Propositional.lean"}
-{"id":264,"prover":"lean","goal":"theorem triple_neg (A : Prop) : ¬¬¬A → ¬A := by","theorem":"triple_neg","file":"Propositional.lean"}
-{"id":265,"prover":"lean","goal":"theorem excluded_middle (A : Prop) : A ∨ ¬A := by","theorem":"excluded_middle","file":"Propositional.lean"}
-{"id":266,"prover":"lean","goal":"theorem peirce (A B : Prop) : ((A → B) → A) → A := by","theorem":"peirce","file":"Propositional.lean"}
-{"id":267,"prover":"lean","goal":"theorem double_neg_excluded_middle (A : Prop) : ¬¬(A ∨ ¬A) := by","theorem":"double_neg_excluded_middle","file":"Propositional.lean"}
-{"id":268,"prover":"lean","goal":"theorem contrapositive (A B : Prop) : (A → B) → (¬B → ¬A) := by","theorem":"contrapositive","file":"Propositional.lean"}
-{"id":269,"prover":"lean","goal":"theorem contrapositive_rev (A B : Prop) : (¬B → ¬A) → (A → B) := by","theorem":"contrapositive_rev","file":"Propositional.lean"}
-{"id":270,"prover":"lean","goal":"theorem proof_by_contradiction (A : Prop) : (¬A → False) → A := by","theorem":"proof_by_contradiction","file":"Propositional.lean"}
-{"id":271,"prover":"lean","goal":"theorem material_impl_fwd (A B : Prop) : (A → B) → (¬A ∨ B) := by","theorem":"material_impl_fwd","file":"Propositional.lean"}
-{"id":272,"prover":"lean","goal":"theorem material_impl_rev (A B : Prop) : (¬A ∨ B) → (A → B) := by","theorem":"material_impl_rev","file":"Propositional.lean"}
-{"id":273,"prover":"lean","goal":"theorem impl_trans (A B C : Prop) : (A → B) → (B → C) → (A → C) := by","theorem":"impl_trans","file":"Propositional.lean"}
-{"id":274,"prover":"lean","goal":"theorem curry (A B C : Prop) : (A ∧ B → C) → (A → B → C) := by","theorem":"curry","file":"Propositional.lean"}
-{"id":275,"prover":"lean","goal":"theorem uncurry (A B C : Prop) : (A → B → C) → (A ∧ B → C) := by","theorem":"uncurry","file":"Propositional.lean"}
-{"id":276,"prover":"lean","goal":"theorem ex_falso (A : Prop) : False → A := by","theorem":"ex_falso","file":"Propositional.lean"}
-{"id":277,"prover":"lean","goal":"theorem not_true : ¬True → False := by","theorem":"not_true","file":"Propositional.lean"}
-{"id":278,"prover":"lean","goal":"theorem not_not_false : ¬¬False → False := by","theorem":"not_not_false","file":"Propositional.lean"}
-{"id":279,"prover":"lean","goal":"theorem and_distrib_or (A B C : Prop) :","theorem":"and_distrib_or","file":"Propositional.lean"}
-{"id":280,"prover":"lean","goal":"theorem or_distrib_and (A B C : Prop) :","theorem":"or_distrib_and","file":"Propositional.lean"}
-{"id":281,"prover":"lean","goal":"theorem iff_refl (A : Prop) : A ↔ A := by","theorem":"iff_refl","file":"Propositional.lean"}
-{"id":282,"prover":"lean","goal":"theorem iff_symm (A B : Prop) : (A ↔ B) → (B ↔ A) := by","theorem":"iff_symm","file":"Propositional.lean"}
-{"id":283,"prover":"lean","goal":"theorem iff_trans (A B C : Prop) : (A ↔ B) → (B ↔ C) → (A ↔ C) := by","theorem":"iff_trans","file":"Propositional.lean"}
-{"id":284,"prover":"isabelle","goal":"Part of the ECHIDNA theorem proving platform","theorem":"proving","file":"Basic.thy"}
-{"id":285,"prover":"isabelle","goal":"Part of the ECHIDNA theorem proving platform","theorem":"proving","file":"List.thy"}
-{"id":286,"prover":"isabelle","goal":"Part of the ECHIDNA theorem proving platform","theorem":"proving","file":"Nat.thy"}
-{"id":287,"prover":"isabelle","goal":"Part of the ECHIDNA theorem proving platform","theorem":"proving","file":"Propositional.thy"}
-{"id":288,"prover":"agda","goal":"-- SPDX-License-Identifier: MIT AND Palimpsest-0.6","theorem":"Identifier","file":"Basic.agda"}
-{"id":289,"prover":"agda","goal":"-- Type: A → A","theorem":"Type","file":"Basic.agda"}
-{"id":290,"prover":"agda","goal":"suc  : ℕ → ℕ","theorem":"suc","file":"Basic.agda"}
-{"id":291,"prover":"agda","goal":"-- Modus ponens: if we have A → B and we have A, then we can derive B","theorem":"ponens","file":"Basic.agda"}
-{"id":292,"prover":"agda","goal":"-- Example: applying modus ponens with concrete propositions","theorem":"Example","file":"Basic.agda"}
-{"id":293,"prover":"agda","goal":"-- Example: if ⊤ → ⊤ and we have ⊤, we get ⊤","theorem":"Example","file":"Basic.agda"}
-{"id":294,"prover":"agda","goal":"trans : {A B C : Set} → (A → B) → (B → C) → (A → C)","theorem":"trans","file":"Basic.agda"}
-{"id":295,"prover":"agda","goal":"SKK : {A : Set} → (x : A) → S const const x ≡ id x","theorem":"SKK","file":"Basic.agda"}
-{"id":296,"prover":"agda","goal":"-- SPDX-License-Identifier: MIT AND Palimpsest-0.6","theorem":"Identifier","file":"List.agda"}
-{"id":297,"prover":"agda","goal":"filter : {A : Set} → (A → Bool) → List A → List A","theorem":"filter","file":"List.agda"}
-{"id":298,"prover":"agda","goal":"reverse : {A : Set} → List A → List A","theorem":"reverse","file":"List.agda"}
-{"id":299,"prover":"agda","goal":"reverse′ : {A : Set} → List A → List A","theorem":"A","file":"List.agda"}
-{"id":300,"prover":"agda","goal":"drop : {A : Set} → ℕ → List A → List A","theorem":"drop","file":"List.agda"}
-{"id":301,"prover":"agda","goal":"foldr : {A B : Set} → (A → B → B) → B → List A → B","theorem":"foldr","file":"List.agda"}
-{"id":302,"prover":"agda","goal":"foldl : {A B : Set} → (B → A → B) → B → List A → B","theorem":"foldl","file":"List.agda"}
-{"id":303,"prover":"agda","goal":"sum : List ℕ → ℕ","theorem":"sum","file":"List.agda"}
-{"id":304,"prover":"agda","goal":"product : List ℕ → ℕ","theorem":"product","file":"List.agda"}
-{"id":305,"prover":"agda","goal":"concat : {A : Set} → List (List A) → List A","theorem":"concat","file":"List.agda"}
-{"id":306,"prover":"agda","goal":"++-identityʳ : {A : Set} → (xs : List A) → xs ++ [] ≡ xs","theorem":"identityʳ","file":"List.agda"}
-{"id":307,"prover":"agda","goal":"map-compose : {A B C : Set} → (f : A → B) → (g : B → C) → (xs : List A)","theorem":"compose","file":"List.agda"}
-{"id":308,"prover":"agda","goal":"reverse-involutive : {A : Set} → (xs : List A)","theorem":"involutive","file":"List.agda"}
-{"id":309,"prover":"agda","goal":"foldr-id : {A : Set} → (xs : List A) → foldr _∷_ [] xs ≡ xs","theorem":"id","file":"List.agda"}
-{"id":310,"prover":"agda","goal":"foldr-++ : {A B : Set} → (f : A → B → B) → (z : B) → (xs ys : List A)","theorem":"B","file":"List.agda"}
-{"id":311,"prover":"agda","goal":"map-foldr : {A B : Set} → (f : A → B) → (xs : List A)","theorem":"foldr","file":"List.agda"}
-{"id":312,"prover":"agda","goal":"++-foldr : {A : Set} → (xs ys : List A)","theorem":"foldr","file":"List.agda"}
-{"id":313,"prover":"agda","goal":"length-foldr : {A : Set} → (xs : List A)","theorem":"foldr","file":"List.agda"}
-{"id":314,"prover":"agda","goal":"there : {x : A} {xs : List A} → Any P xs → Any P (x ∷ xs)","theorem":"there","file":"List.agda"}
-{"id":315,"prover":"agda","goal":"Any-++ : {A : Set} {P : A → Set} {xs ys : List A}","theorem":"A","file":"List.agda"}
-{"id":316,"prover":"agda","goal":"-- SPDX-License-Identifier: MIT AND Palimpsest-0.6","theorem":"Identifier","file":"Nat.agda"}
-{"id":317,"prover":"agda","goal":"subst : {A : Set} {x y : A} → (P : A → Set) → x ≡ y → P x → P y","theorem":"subst","file":"Nat.agda"}
-{"id":318,"prover":"agda","goal":"_+_ : ℕ → ℕ → ℕ","theorem":"_","file":"Nat.agda"}
-{"id":319,"prover":"agda","goal":"+-zero : (n : ℕ) → n + zero ≡ n","theorem":"zero","file":"Nat.agda"}
-{"id":320,"prover":"agda","goal":"+-identityʳ : (n : ℕ) → n + zero ≡ n","theorem":"identityʳ","file":"Nat.agda"}
-{"id":321,"prover":"agda","goal":"_*_ : ℕ → ℕ → ℕ","theorem":"_","file":"Nat.agda"}
-{"id":322,"prover":"agda","goal":"*-zero : (n : ℕ) → n * zero ≡ zero","theorem":"zero","file":"Nat.agda"}
-{"id":323,"prover":"agda","goal":"_∎ : {A : Set} → (x : A) → x ≡ x","theorem":"A","file":"Nat.agda"}
-{"id":324,"prover":"agda","goal":"s≤s : {m n : ℕ} → m ≤ n → suc m ≤ suc n","theorem":"s","file":"Nat.agda"}
-{"id":325,"prover":"agda","goal":"min-comm : (m n : ℕ) → min m n ≡ min n m","theorem":"comm","file":"Nat.agda"}
-{"id":326,"prover":"agda","goal":"even-or-odd : (n : ℕ) → Even n ⊎ Odd n","theorem":"odd","file":"Nat.agda"}
-{"id":327,"prover":"agda","goal":"-- SPDX-License-Identifier: MIT AND Palimpsest-0.6","theorem":"Identifier","file":"Propositional.agda"}
-{"id":328,"prover":"agda","goal":"tt : ⊤","theorem":"tt","file":"Propositional.agda"}
-{"id":329,"prover":"agda","goal":"-- Ex falso quodlibet: from falsehood, anything follows","theorem":"quodlibet","file":"Propositional.agda"}
-{"id":330,"prover":"agda","goal":"de-morgan₂-iff : {A B : Set} → ¬ (A ∨ B) ⇔ (¬ A ∧ ¬ B)","theorem":"iff","file":"Propositional.agda"}
-{"id":331,"prover":"agda","goal":"-- Note: This is actually provable constructively by always choosing inr","theorem":"Note","file":"Propositional.agda"}
-{"id":332,"prover":"agda","goal":"lem→dne : LEM → DNE","theorem":"dne","file":"Propositional.agda"}
+{"id":1,"prover":"PVS","goal":"fib(n: nat): RECURSIVE nat =","theorem":"n","file":"arithmetic.pvs"}
+{"id":2,"prover":"PVS","goal":"1: 1","theorem":"1","file":"arithmetic.pvs"}
+{"id":3,"prover":"PVS","goal":"% SPDX-License-Identifier: MIT OR Palimpsest-0.6","theorem":"Identifier","file":"list_theory.pvs"}
+{"id":4,"prover":"PVS","goal":"append(l1, l2: list): RECURSIVE list =","theorem":"l2","file":"list_theory.pvs"}
+{"id":5,"prover":"PVS","goal":"null: l2,","theorem":"null","file":"list_theory.pvs"}
+{"id":6,"prover":"PVS","goal":"length(l: list): RECURSIVE nat =","theorem":"l","file":"list_theory.pvs"}
+{"id":7,"prover":"PVS","goal":"null: 0,","theorem":"null","file":"list_theory.pvs"}
+{"id":8,"prover":"PVS","goal":"sorted?(l: list): RECURSIVE bool =","theorem":"l","file":"sorting.pvs"}
+{"id":9,"prover":"PVS","goal":"null: TRUE,","theorem":"null","file":"sorting.pvs"}
+{"id":10,"prover":"PVS","goal":"null: TRUE,","theorem":"null","file":"sorting.pvs"}
+{"id":11,"prover":"PVS","goal":"insert(x: T, l: list): RECURSIVE list =","theorem":"x","file":"sorting.pvs"}
+{"id":12,"prover":"PVS","goal":"null: cons(x, null),","theorem":"null","file":"sorting.pvs"}
+{"id":13,"prover":"PVS","goal":"insertion_sort(l: list): RECURSIVE list =","theorem":"l","file":"sorting.pvs"}
+{"id":14,"prover":"PVS","goal":"null: null,","theorem":"null","file":"sorting.pvs"}
+{"id":15,"prover":"PVS","goal":"occurrences(x: T, l: list): RECURSIVE nat =","theorem":"x","file":"sorting.pvs"}
+{"id":16,"prover":"PVS","goal":"null: 0,","theorem":"null","file":"sorting.pvs"}
+{"id":17,"prover":"HOL4","goal":"Theorem FACT_POSITIVE:","theorem":"FACT_POSITIVE","file":"arithmetic.sml"}
+{"id":18,"prover":"HOL4","goal":"Theorem FACT_MONO:","theorem":"FACT_MONO","file":"arithmetic.sml"}
+{"id":19,"prover":"HOL4","goal":"Theorem EXP_ADD:","theorem":"EXP_ADD","file":"arithmetic.sml"}
+{"id":20,"prover":"HOL4","goal":"Theorem EXP_MULT:","theorem":"EXP_MULT","file":"arithmetic.sml"}
+{"id":21,"prover":"HOL4","goal":"Theorem SUM_TO_FORMULA:","theorem":"SUM_TO_FORMULA","file":"arithmetic.sml"}
+{"id":22,"prover":"HOL4","goal":"Theorem MIRROR_MIRROR:","theorem":"MIRROR_MIRROR","file":"binary_tree.sml"}
+{"id":23,"prover":"HOL4","goal":"Theorem MIRROR_SIZE:","theorem":"MIRROR_SIZE","file":"binary_tree.sml"}
+{"id":24,"prover":"HOL4","goal":"Theorem MIRROR_HEIGHT:","theorem":"MIRROR_HEIGHT","file":"binary_tree.sml"}
+{"id":25,"prover":"HOL4","goal":"Theorem SIZE_INORDER:","theorem":"SIZE_INORDER","file":"binary_tree.sml"}
+{"id":26,"prover":"HOL4","goal":"Theorem PERFECT_SIZE:","theorem":"PERFECT_SIZE","file":"binary_tree.sml"}
+{"id":27,"prover":"HOL4","goal":"Theorem LENGTH_APPEND_THM:","theorem":"LENGTH_APPEND_THM","file":"list_append.sml"}
+{"id":28,"prover":"HOL4","goal":"Theorem APPEND_ASSOC_THM:","theorem":"APPEND_ASSOC_THM","file":"list_append.sml"}
+{"id":29,"prover":"HOL4","goal":"Theorem APPEND_NIL_RIGHT:","theorem":"APPEND_NIL_RIGHT","file":"list_append.sml"}
+{"id":30,"prover":"HOL4","goal":"Theorem REVERSE_APPEND:","theorem":"REVERSE_APPEND","file":"list_append.sml"}
+{"id":31,"prover":"HOL4","goal":"Theorem REVERSE_REVERSE:","theorem":"REVERSE_REVERSE","file":"list_append.sml"}
+{"id":32,"prover":"HOL4","goal":"Theorem DE_MORGAN_UNION:","theorem":"DE_MORGAN_UNION","file":"set_theory.sml"}
+{"id":33,"prover":"HOL4","goal":"Theorem DE_MORGAN_INTER:","theorem":"DE_MORGAN_INTER","file":"set_theory.sml"}
+{"id":34,"prover":"HOL4","goal":"Theorem UNION_OVER_INTER:","theorem":"UNION_OVER_INTER","file":"set_theory.sml"}
+{"id":35,"prover":"HOL4","goal":"Theorem INTER_OVER_UNION:","theorem":"INTER_OVER_UNION","file":"set_theory.sml"}
+{"id":36,"prover":"HOL4","goal":"Theorem SUBSET_REFLEXIVE:","theorem":"SUBSET_REFLEXIVE","file":"set_theory.sml"}
+{"id":37,"prover":"HOL4","goal":"Theorem SUBSET_ANTISYM:","theorem":"SUBSET_ANTISYM","file":"set_theory.sml"}
+{"id":38,"prover":"HOL4","goal":"Theorem SUBSET_TRANSITIVE:","theorem":"SUBSET_TRANSITIVE","file":"set_theory.sml"}
+{"id":39,"prover":"HOL4","goal":"Theorem IN_POWERSET:","theorem":"IN_POWERSET","file":"set_theory.sml"}
+{"id":40,"prover":"HOL4","goal":"Theorem EMPTY_IN_POWERSET:","theorem":"EMPTY_IN_POWERSET","file":"set_theory.sml"}
+{"id":41,"prover":"HOL4","goal":"Theorem SELF_IN_POWERSET:","theorem":"SELF_IN_POWERSET","file":"set_theory.sml"}
+{"id":42,"prover":"HOL4","goal":"Theorem CARD_SUBSET:","theorem":"CARD_SUBSET","file":"set_theory.sml"}
+{"id":43,"prover":"HOL4","goal":"Theorem INSERT_SORTED:","theorem":"INSERT_SORTED","file":"sorting.sml"}
+{"id":44,"prover":"HOL4","goal":"Theorem ISORT_SORTED:","theorem":"ISORT_SORTED","file":"sorting.sml"}
+{"id":45,"prover":"HOL4","goal":"Theorem INSERT_COUNT:","theorem":"INSERT_COUNT","file":"sorting.sml"}
+{"id":46,"prover":"HOL4","goal":"Theorem ISORT_COUNT:","theorem":"ISORT_COUNT","file":"sorting.sml"}
+{"id":47,"prover":"HOL4","goal":"Theorem QSORT_SORTED:","theorem":"QSORT_SORTED","file":"sorting.sml"}
+{"id":48,"prover":"Mizar","goal":"theorem Th3:","theorem":"Th3","file":"basic.miz"}
+{"id":49,"prover":"Mizar","goal":"theorem Th4:","theorem":"Th4","file":"basic.miz"}
+{"id":50,"prover":"Mizar","goal":"theorem Th5:","theorem":"Th5","file":"basic.miz"}
+{"id":51,"prover":"Mizar","goal":"theorem Th6:","theorem":"Th6","file":"basic.miz"}
+{"id":52,"prover":"Mizar","goal":"theorem Th7:","theorem":"Th7","file":"basic.miz"}
+{"id":53,"prover":"Mizar","goal":"theorem Th8:","theorem":"Th8","file":"basic.miz"}
+{"id":54,"prover":"Mizar","goal":"theorem Nat1:","theorem":"Nat1","file":"numbers.miz"}
+{"id":55,"prover":"Mizar","goal":"theorem OrderTrans:","theorem":"OrderTrans","file":"numbers.miz"}
+{"id":56,"prover":"Mizar","goal":"theorem OrderAntiSymm:","theorem":"OrderAntiSymm","file":"numbers.miz"}
+{"id":57,"prover":"Mizar","goal":"theorem AddMonotone:","theorem":"AddMonotone","file":"numbers.miz"}
+{"id":58,"prover":"Mizar","goal":"theorem MultMonotone:","theorem":"MultMonotone","file":"numbers.miz"}
+{"id":59,"prover":"Mizar","goal":"theorem AddCancelLeft:","theorem":"AddCancelLeft","file":"numbers.miz"}
+{"id":60,"prover":"Mizar","goal":"theorem AddCancelRight:","theorem":"AddCancelRight","file":"numbers.miz"}
+{"id":61,"prover":"Mizar","goal":"theorem MultCancelLeft:","theorem":"MultCancelLeft","file":"numbers.miz"}
+{"id":62,"prover":"Mizar","goal":"theorem MultCancelRight:","theorem":"MultCancelRight","file":"numbers.miz"}
+{"id":63,"prover":"Mizar","goal":"theorem DiffSquares:","theorem":"DiffSquares","file":"numbers.miz"}
+{"id":64,"prover":"Mizar","goal":"theorem PositiveSum:","theorem":"PositiveSum","file":"numbers.miz"}
+{"id":65,"prover":"Mizar","goal":"theorem PositiveProduct:","theorem":"PositiveProduct","file":"numbers.miz"}
+{"id":66,"prover":"Mizar","goal":"theorem MinSymmetric:","theorem":"MinSymmetric","file":"numbers.miz"}
+{"id":67,"prover":"Mizar","goal":"theorem MaxSymmetric:","theorem":"MaxSymmetric","file":"numbers.miz"}
+{"id":68,"prover":"Mizar","goal":"theorem MinMax:","theorem":"MinMax","file":"numbers.miz"}
+{"id":69,"prover":"Mizar","goal":"theorem DeMorgan1:","theorem":"DeMorgan1","file":"propositional.miz"}
+{"id":70,"prover":"Mizar","goal":"theorem DeMorgan2:","theorem":"DeMorgan2","file":"propositional.miz"}
+{"id":71,"prover":"Mizar","goal":"theorem Distributive1:","theorem":"Distributive1","file":"propositional.miz"}
+{"id":72,"prover":"Mizar","goal":"theorem Distributive2:","theorem":"Distributive2","file":"propositional.miz"}
+{"id":73,"prover":"Mizar","goal":"theorem Commutative1:","theorem":"Commutative1","file":"propositional.miz"}
+{"id":74,"prover":"Mizar","goal":"theorem Commutative2:","theorem":"Commutative2","file":"propositional.miz"}
+{"id":75,"prover":"Mizar","goal":"theorem Associative1:","theorem":"Associative1","file":"propositional.miz"}
+{"id":76,"prover":"Mizar","goal":"theorem Associative2:","theorem":"Associative2","file":"propositional.miz"}
+{"id":77,"prover":"Coq","goal":"Theorem identity : forall A : Prop, A -> A.","theorem":"identity","file":"basic.v"}
+{"id":78,"prover":"Coq","goal":"Theorem modus_ponens : forall A B : Prop, (A -> B) -> A -> B.","theorem":"modus_ponens","file":"basic.v"}
+{"id":79,"prover":"Coq","goal":"Theorem transitivity : forall A B C : Prop,","theorem":"transitivity","file":"basic.v"}
+{"id":80,"prover":"Coq","goal":"Theorem and_intro : forall A B : Prop, A -> B -> A /\\ B.","theorem":"and_intro","file":"basic.v"}
+{"id":81,"prover":"Coq","goal":"Theorem and_elim_left : forall A B : Prop, A /\\ B -> A.","theorem":"and_elim_left","file":"basic.v"}
+{"id":82,"prover":"Coq","goal":"Theorem and_elim_right : forall A B : Prop, A /\\ B -> B.","theorem":"and_elim_right","file":"basic.v"}
+{"id":83,"prover":"Coq","goal":"Theorem and_commutative : forall A B : Prop, A /\\ B -> B /\\ A.","theorem":"and_commutative","file":"basic.v"}
+{"id":84,"prover":"Coq","goal":"Theorem or_intro_left : forall A B : Prop, A -> A \\/ B.","theorem":"or_intro_left","file":"basic.v"}
+{"id":85,"prover":"Coq","goal":"Theorem or_intro_right : forall A B : Prop, B -> A \\/ B.","theorem":"or_intro_right","file":"basic.v"}
+{"id":86,"prover":"Coq","goal":"Theorem or_elim : forall A B C : Prop,","theorem":"or_elim","file":"basic.v"}
+{"id":87,"prover":"Coq","goal":"Theorem curry : forall A B C : Prop,","theorem":"curry","file":"basic.v"}
+{"id":88,"prover":"Coq","goal":"Theorem uncurry : forall A B C : Prop,","theorem":"uncurry","file":"basic.v"}
+{"id":89,"prover":"Coq","goal":"Theorem app_nil_r : forall {A : Type} (l : list A),","theorem":"app_nil_r","file":"list.v"}
+{"id":90,"prover":"Coq","goal":"Theorem app_assoc : forall {A : Type} (l1 l2 l3 : list A),","theorem":"app_assoc","file":"list.v"}
+{"id":91,"prover":"Coq","goal":"Theorem cons_app : forall {A : Type} (x : A) (l : list A),","theorem":"cons_app","file":"list.v"}
+{"id":92,"prover":"Coq","goal":"Theorem length_app : forall {A : Type} (l1 l2 : list A),","theorem":"length_app","file":"list.v"}
+{"id":93,"prover":"Coq","goal":"Theorem length_cons : forall {A : Type} (x : A) (l : list A),","theorem":"length_cons","file":"list.v"}
+{"id":94,"prover":"Coq","goal":"Theorem length_nil : forall {A : Type},","theorem":"length_nil","file":"list.v"}
+{"id":95,"prover":"Coq","goal":"Theorem rev_app_distr : forall {A : Type} (l1 l2 : list A),","theorem":"rev_app_distr","file":"list.v"}
+{"id":96,"prover":"Coq","goal":"Theorem rev_involutive : forall {A : Type} (l : list A),","theorem":"rev_involutive","file":"list.v"}
+{"id":97,"prover":"Coq","goal":"Theorem length_rev : forall {A : Type} (l : list A),","theorem":"length_rev","file":"list.v"}
+{"id":98,"prover":"Coq","goal":"Theorem map_length : forall {A B : Type} (f : A -> B) (l : list A),","theorem":"map_length","file":"list.v"}
+{"id":99,"prover":"Coq","goal":"Theorem map_app : forall {A B : Type} (f : A -> B) (l1 l2 : list A),","theorem":"map_app","file":"list.v"}
+{"id":100,"prover":"Coq","goal":"Theorem map_map : forall {A B C : Type} (f : A -> B) (g : B -> C) (l : list A),","theorem":"map_map","file":"list.v"}
+{"id":101,"prover":"Coq","goal":"Theorem map_id : forall {A : Type} (l : list A),","theorem":"map_id","file":"list.v"}
+{"id":102,"prover":"Coq","goal":"Theorem map_rev : forall {A B : Type} (f : A -> B) (l : list A),","theorem":"map_rev","file":"list.v"}
+{"id":103,"prover":"Coq","goal":"Theorem fold_right_nil : forall {A B : Type} (f : A -> B -> B) (acc : B),","theorem":"fold_right_nil","file":"list.v"}
+{"id":104,"prover":"Coq","goal":"Theorem fold_right_cons : forall {A B : Type} (f : A -> B -> B) (acc : B) (h : A) (t : list A),","theorem":"fold_right_cons","file":"list.v"}
+{"id":105,"prover":"Coq","goal":"Theorem fold_right_app : forall {A B : Type} (f : A -> B -> B) (acc : B) (l1 l2 : list A),","theorem":"fold_right_app","file":"list.v"}
+{"id":106,"prover":"Coq","goal":"Theorem sum_list_app : forall l1 l2 : list nat,","theorem":"sum_list_app","file":"list.v"}
+{"id":107,"prover":"Coq","goal":"Theorem filter_app : forall {A : Type} (f : A -> bool) (l1 l2 : list A),","theorem":"filter_app","file":"list.v"}
+{"id":108,"prover":"Coq","goal":"Theorem filter_length : forall {A : Type} (f : A -> bool) (l : list A),","theorem":"filter_length","file":"list.v"}
+{"id":109,"prover":"Coq","goal":"Theorem nth_app_l : forall {A : Type} (l1 l2 : list A) (n : nat) (d : A),","theorem":"nth_app_l","file":"list.v"}
+{"id":110,"prover":"Coq","goal":"Theorem nth_app_r : forall {A : Type} (l1 l2 : list A) (n : nat) (d : A),","theorem":"nth_app_r","file":"list.v"}
+{"id":111,"prover":"Coq","goal":"Theorem in_app_iff : forall {A : Type} (x : A) (l1 l2 : list A),","theorem":"in_app_iff","file":"list.v"}
+{"id":112,"prover":"Coq","goal":"Theorem in_map : forall {A B : Type} (f : A -> B) (l : list A) (x : A),","theorem":"in_map","file":"list.v"}
+{"id":113,"prover":"Coq","goal":"Theorem in_filter : forall {A : Type} (f : A -> bool) (l : list A) (x : A),","theorem":"in_filter","file":"list.v"}
+{"id":114,"prover":"Coq","goal":"Theorem plus_comm : forall n m : nat,","theorem":"plus_comm","file":"nat.v"}
+{"id":115,"prover":"Coq","goal":"Theorem plus_assoc : forall n m p : nat,","theorem":"plus_assoc","file":"nat.v"}
+{"id":116,"prover":"Coq","goal":"Theorem plus_0_r : forall n : nat,","theorem":"plus_0_r","file":"nat.v"}
+{"id":117,"prover":"Coq","goal":"Theorem plus_succ_r : forall n m : nat,","theorem":"plus_succ_r","file":"nat.v"}
+{"id":118,"prover":"Coq","goal":"Theorem mult_0_r : forall n : nat,","theorem":"mult_0_r","file":"nat.v"}
+{"id":119,"prover":"Coq","goal":"Theorem mult_comm : forall n m : nat,","theorem":"mult_comm","file":"nat.v"}
+{"id":120,"prover":"Coq","goal":"Theorem mult_plus_distr_l : forall n m p : nat,","theorem":"mult_plus_distr_l","file":"nat.v"}
+{"id":121,"prover":"Coq","goal":"Theorem mult_assoc : forall n m p : nat,","theorem":"mult_assoc","file":"nat.v"}
+{"id":122,"prover":"Coq","goal":"Theorem le_refl : forall n : nat,","theorem":"le_refl","file":"nat.v"}
+{"id":123,"prover":"Coq","goal":"Theorem le_trans : forall n m p : nat,","theorem":"le_trans","file":"nat.v"}
+{"id":124,"prover":"Coq","goal":"Theorem plus_le_compat_r : forall n m p : nat,","theorem":"plus_le_compat_r","file":"nat.v"}
+{"id":125,"prover":"Coq","goal":"Theorem sum_formula : forall n : nat,","theorem":"sum_formula","file":"nat.v"}
+{"id":126,"prover":"Coq","goal":"Theorem power_of_2_positive : forall n : nat,","theorem":"power_of_2_positive","file":"nat.v"}
+{"id":127,"prover":"Coq","goal":"Theorem power_of_2_grows : forall n : nat,","theorem":"power_of_2_grows","file":"nat.v"}
+{"id":128,"prover":"Coq","goal":"Theorem factorial_positive : forall n : nat,","theorem":"factorial_positive","file":"nat.v"}
+{"id":129,"prover":"Coq","goal":"Theorem factorial_ge_power_of_2 : forall n : nat,","theorem":"factorial_ge_power_of_2","file":"nat.v"}
+{"id":130,"prover":"Coq","goal":"Theorem even_or_odd : forall n : nat,","theorem":"even_or_odd","file":"nat.v"}
+{"id":131,"prover":"Coq","goal":"Theorem even_plus_even : forall n m : nat,","theorem":"even_plus_even","file":"nat.v"}
+{"id":132,"prover":"Coq","goal":"Theorem de_morgan_1 : forall A B : Prop,","theorem":"de_morgan_1","file":"propositional.v"}
+{"id":133,"prover":"Coq","goal":"Theorem de_morgan_1_rev : forall A B : Prop,","theorem":"de_morgan_1_rev","file":"propositional.v"}
+{"id":134,"prover":"Coq","goal":"Theorem de_morgan_2_constructive : forall A B : Prop,","theorem":"de_morgan_2_constructive","file":"propositional.v"}
+{"id":135,"prover":"Coq","goal":"Theorem de_morgan_2_classical : forall A B : Prop,","theorem":"de_morgan_2_classical","file":"propositional.v"}
+{"id":136,"prover":"Coq","goal":"Theorem double_negation_intro : forall A : Prop,","theorem":"double_negation_intro","file":"propositional.v"}
+{"id":137,"prover":"Coq","goal":"Theorem double_negation_elim : forall A : Prop,","theorem":"double_negation_elim","file":"propositional.v"}
+{"id":138,"prover":"Coq","goal":"Theorem lem_implies_dne :","theorem":"lem_implies_dne","file":"propositional.v"}
+{"id":139,"prover":"Coq","goal":"Theorem peirce_law : forall A B : Prop,","theorem":"peirce_law","file":"propositional.v"}
+{"id":140,"prover":"Coq","goal":"Theorem contrapositive : forall A B : Prop,","theorem":"contrapositive","file":"propositional.v"}
+{"id":141,"prover":"Coq","goal":"Theorem contrapositive_reverse : forall A B : Prop,","theorem":"contrapositive_reverse","file":"propositional.v"}
+{"id":142,"prover":"Coq","goal":"Theorem or_commutative : forall A B : Prop,","theorem":"or_commutative","file":"propositional.v"}
+{"id":143,"prover":"Coq","goal":"Theorem or_associative : forall A B C : Prop,","theorem":"or_associative","file":"propositional.v"}
+{"id":144,"prover":"Coq","goal":"Theorem and_associative : forall A B C : Prop,","theorem":"and_associative","file":"propositional.v"}
+{"id":145,"prover":"Coq","goal":"Theorem and_associative_rev : forall A B C : Prop,","theorem":"and_associative_rev","file":"propositional.v"}
+{"id":146,"prover":"Coq","goal":"Theorem and_distributes_over_or : forall A B C : Prop,","theorem":"and_distributes_over_or","file":"propositional.v"}
+{"id":147,"prover":"Coq","goal":"Theorem and_distributes_over_or_rev : forall A B C : Prop,","theorem":"and_distributes_over_or_rev","file":"propositional.v"}
+{"id":148,"prover":"Coq","goal":"Theorem or_distributes_over_and : forall A B C : Prop,","theorem":"or_distributes_over_and","file":"propositional.v"}
+{"id":149,"prover":"Coq","goal":"Theorem proof_by_contradiction : forall A : Prop,","theorem":"proof_by_contradiction","file":"propositional.v"}
+{"id":150,"prover":"Coq","goal":"Theorem ex_falso : forall A : Prop,","theorem":"ex_falso","file":"propositional.v"}
+{"id":151,"prover":"Lean3","goal":"theorem identity (A : Prop) : A → A := by","theorem":"identity","file":"Basic.lean"}
+{"id":152,"prover":"Lean3","goal":"theorem identity_type {α : Type} (x : α) : x = x := by","theorem":"identity_type","file":"Basic.lean"}
+{"id":153,"prover":"Lean3","goal":"theorem modus_ponens (A B : Prop) : (A → B) → A → B := by","theorem":"modus_ponens","file":"Basic.lean"}
+{"id":154,"prover":"Lean3","goal":"theorem transitivity (A B C : Prop) : (A → B) → (B → C) → (A → C) := by","theorem":"transitivity","file":"Basic.lean"}
+{"id":155,"prover":"Lean3","goal":"theorem transitivity' (A B C : Prop) : (A → B) → (B → C) → (A → C) :=","theorem":"transitivity","file":"Basic.lean"}
+{"id":156,"prover":"Lean3","goal":"theorem and_intro (A B : Prop) : A → B → (A ∧ B) := by","theorem":"and_intro","file":"Basic.lean"}
+{"id":157,"prover":"Lean3","goal":"theorem and_elim_left (A B : Prop) : (A ∧ B) → A := by","theorem":"and_elim_left","file":"Basic.lean"}
+{"id":158,"prover":"Lean3","goal":"theorem and_elim_right (A B : Prop) : (A ∧ B) → B := by","theorem":"and_elim_right","file":"Basic.lean"}
+{"id":159,"prover":"Lean3","goal":"theorem and_comm (A B : Prop) : (A ∧ B) → (B ∧ A) := by","theorem":"and_comm","file":"Basic.lean"}
+{"id":160,"prover":"Lean3","goal":"theorem or_intro_left (A B : Prop) : A → (A ∨ B) := by","theorem":"or_intro_left","file":"Basic.lean"}
+{"id":161,"prover":"Lean3","goal":"theorem or_intro_right (A B : Prop) : B → (A ∨ B) := by","theorem":"or_intro_right","file":"Basic.lean"}
+{"id":162,"prover":"Lean3","goal":"theorem or_comm (A B : Prop) : (A ∨ B) → (B ∨ A) := by","theorem":"or_comm","file":"Basic.lean"}
+{"id":163,"prover":"Lean3","goal":"theorem hypothetical_syllogism (A B C : Prop) :","theorem":"hypothetical_syllogism","file":"Basic.lean"}
+{"id":164,"prover":"Lean3","goal":"theorem triple_transitivity (A B C D : Prop) :","theorem":"triple_transitivity","file":"Basic.lean"}
+{"id":165,"prover":"Lean3","goal":"theorem and_or_distrib_left (A B C : Prop) :","theorem":"and_or_distrib_left","file":"Basic.lean"}
+{"id":166,"prover":"Lean3","goal":"theorem and_or_distrib_right (A B C : Prop) :","theorem":"and_or_distrib_right","file":"Basic.lean"}
+{"id":167,"prover":"Lean3","goal":"theorem compose_assoc {α β γ δ : Type}","theorem":"compose_assoc","file":"Basic.lean"}
+{"id":168,"prover":"Lean3","goal":"theorem length_nil {α : Type} : List.length ([] : List α) = 0 := by","theorem":"length_nil","file":"List.lean"}
+{"id":169,"prover":"Lean3","goal":"theorem length_singleton {α : Type} (x : α) : List.length [x] = 1 := by","theorem":"length_singleton","file":"List.lean"}
+{"id":170,"prover":"Lean3","goal":"theorem length_cons {α : Type} (x : α) (xs : List α) :","theorem":"length_cons","file":"List.lean"}
+{"id":171,"prover":"Lean3","goal":"theorem append_nil {α : Type} (xs : List α) : xs ++ [] = xs := by","theorem":"append_nil","file":"List.lean"}
+{"id":172,"prover":"Lean3","goal":"theorem nil_append {α : Type} (xs : List α) : [] ++ xs = xs := by","theorem":"nil_append","file":"List.lean"}
+{"id":173,"prover":"Lean3","goal":"theorem append_assoc {α : Type} (xs ys zs : List α) :","theorem":"append_assoc","file":"List.lean"}
+{"id":174,"prover":"Lean3","goal":"theorem length_append {α : Type} (xs ys : List α) :","theorem":"length_append","file":"List.lean"}
+{"id":175,"prover":"Lean3","goal":"theorem reverse_nil {α : Type} : List.reverse ([] : List α) = [] := by","theorem":"reverse_nil","file":"List.lean"}
+{"id":176,"prover":"Lean3","goal":"theorem reverse_singleton {α : Type} (x : α) : List.reverse [x] = [x] := by","theorem":"reverse_singleton","file":"List.lean"}
+{"id":177,"prover":"Lean3","goal":"theorem reverse_reverse {α : Type} (xs : List α) :","theorem":"reverse_reverse","file":"List.lean"}
+{"id":178,"prover":"Lean3","goal":"theorem length_reverse {α : Type} (xs : List α) :","theorem":"length_reverse","file":"List.lean"}
+{"id":179,"prover":"Lean3","goal":"theorem reverse_append {α : Type} (xs ys : List α) :","theorem":"reverse_append","file":"List.lean"}
+{"id":180,"prover":"Lean3","goal":"theorem map_nil {α β : Type} (f : α → β) : List.map f [] = [] := by","theorem":"map_nil","file":"List.lean"}
+{"id":181,"prover":"Lean3","goal":"theorem map_cons {α β : Type} (f : α → β) (x : α) (xs : List α) :","theorem":"map_cons","file":"List.lean"}
+{"id":182,"prover":"Lean3","goal":"theorem length_map {α β : Type} (f : α → β) (xs : List α) :","theorem":"length_map","file":"List.lean"}
+{"id":183,"prover":"Lean3","goal":"theorem map_append {α β : Type} (f : α → β) (xs ys : List α) :","theorem":"map_append","file":"List.lean"}
+{"id":184,"prover":"Lean3","goal":"theorem map_id {α : Type} (xs : List α) : List.map id xs = xs := by","theorem":"map_id","file":"List.lean"}
+{"id":185,"prover":"Lean3","goal":"theorem map_map {α β γ : Type} (f : α → β) (g : β → γ) (xs : List α) :","theorem":"map_map","file":"List.lean"}
+{"id":186,"prover":"Lean3","goal":"theorem filter_nil {α : Type} (p : α → Bool) : List.filter p [] = [] := by","theorem":"filter_nil","file":"List.lean"}
+{"id":187,"prover":"Lean3","goal":"theorem length_filter_le {α : Type} (p : α → Bool) (xs : List α) :","theorem":"length_filter_le","file":"List.lean"}
+{"id":188,"prover":"Lean3","goal":"theorem filter_append {α : Type} (p : α → Bool) (xs ys : List α) :","theorem":"filter_append","file":"List.lean"}
+{"id":189,"prover":"Lean3","goal":"theorem foldr_nil {α β : Type} (f : α → β → β) (init : β) :","theorem":"foldr_nil","file":"List.lean"}
+{"id":190,"prover":"Lean3","goal":"theorem foldr_cons {α β : Type} (f : α → β → β) (init : β) (x : α) (xs : List α) :","theorem":"foldr_cons","file":"List.lean"}
+{"id":191,"prover":"Lean3","goal":"theorem foldr_append {α β : Type} (f : α → β → β) (init : β) (xs ys : List α) :","theorem":"foldr_append","file":"List.lean"}
+{"id":192,"prover":"Lean3","goal":"theorem foldl_nil {α β : Type} (f : β → α → β) (init : β) :","theorem":"foldl_nil","file":"List.lean"}
+{"id":193,"prover":"Lean3","goal":"theorem foldl_cons {α β : Type} (f : β → α → β) (init : β) (x : α) (xs : List α) :","theorem":"foldl_cons","file":"List.lean"}
+{"id":194,"prover":"Lean3","goal":"theorem sum_nil : List.sum ([] : List Nat) = 0 := by","theorem":"sum_nil","file":"List.lean"}
+{"id":195,"prover":"Lean3","goal":"theorem sum_cons (x : Nat) (xs : List Nat) :","theorem":"sum_cons","file":"List.lean"}
+{"id":196,"prover":"Lean3","goal":"theorem sum_append (xs ys : List Nat) :","theorem":"sum_append","file":"List.lean"}
+{"id":197,"prover":"Lean3","goal":"theorem mem_nil {α : Type} (x : α) : x ∉ ([] : List α) := by","theorem":"mem_nil","file":"List.lean"}
+{"id":198,"prover":"Lean3","goal":"theorem mem_cons_self {α : Type} (x : α) (xs : List α) : x ∈ (x :: xs) := by","theorem":"mem_cons_self","file":"List.lean"}
+{"id":199,"prover":"Lean3","goal":"theorem mem_cons_of_mem {α : Type} (x y : α) (xs : List α) :","theorem":"mem_cons_of_mem","file":"List.lean"}
+{"id":200,"prover":"Lean3","goal":"theorem mem_append_left {α : Type} (x : α) (xs ys : List α) :","theorem":"mem_append_left","file":"List.lean"}
+{"id":201,"prover":"Lean3","goal":"theorem mem_append_right {α : Type} (x : α) (xs ys : List α) :","theorem":"mem_append_right","file":"List.lean"}
+{"id":202,"prover":"Lean3","goal":"theorem take_zero {α : Type} (xs : List α) : List.take 0 xs = [] := by","theorem":"take_zero","file":"List.lean"}
+{"id":203,"prover":"Lean3","goal":"theorem take_nil {α : Type} (n : Nat) : List.take n ([] : List α) = [] := by","theorem":"take_nil","file":"List.lean"}
+{"id":204,"prover":"Lean3","goal":"theorem drop_zero {α : Type} (xs : List α) : List.drop 0 xs = xs := by","theorem":"drop_zero","file":"List.lean"}
+{"id":205,"prover":"Lean3","goal":"theorem drop_nil {α : Type} (n : Nat) : List.drop n ([] : List α) = [] := by","theorem":"drop_nil","file":"List.lean"}
+{"id":206,"prover":"Lean3","goal":"theorem take_append_drop {α : Type} (n : Nat) (xs : List α) :","theorem":"take_append_drop","file":"List.lean"}
+{"id":207,"prover":"Lean3","goal":"theorem zip_nil_left {α β : Type} (ys : List β) :","theorem":"zip_nil_left","file":"List.lean"}
+{"id":208,"prover":"Lean3","goal":"theorem zip_nil_right {α β : Type} (xs : List α) :","theorem":"zip_nil_right","file":"List.lean"}
+{"id":209,"prover":"Lean3","goal":"theorem length_zip {α β : Type} (xs : List α) (ys : List β) :","theorem":"length_zip","file":"List.lean"}
+{"id":210,"prover":"Lean3","goal":"theorem all_nil {α : Type} (p : α → Bool) : List.all [] p = true := by","theorem":"all_nil","file":"List.lean"}
+{"id":211,"prover":"Lean3","goal":"theorem any_nil {α : Type} (p : α → Bool) : List.any [] p = false := by","theorem":"any_nil","file":"List.lean"}
+{"id":212,"prover":"Lean3","goal":"theorem all_append {α : Type} (p : α → Bool) (xs ys : List α) :","theorem":"all_append","file":"List.lean"}
+{"id":213,"prover":"Lean3","goal":"theorem replicate_zero {α : Type} (x : α) : List.replicate 0 x = [] := by","theorem":"replicate_zero","file":"List.lean"}
+{"id":214,"prover":"Lean3","goal":"theorem length_replicate {α : Type} (n : Nat) (x : α) :","theorem":"length_replicate","file":"List.lean"}
+{"id":215,"prover":"Lean3","goal":"theorem add_zero (n : Nat) : n + 0 = n := by","theorem":"add_zero","file":"Nat.lean"}
+{"id":216,"prover":"Lean3","goal":"theorem zero_add (n : Nat) : 0 + n = n := by","theorem":"zero_add","file":"Nat.lean"}
+{"id":217,"prover":"Lean3","goal":"theorem mul_one (n : Nat) : n * 1 = n := by","theorem":"mul_one","file":"Nat.lean"}
+{"id":218,"prover":"Lean3","goal":"theorem one_mul (n : Nat) : 1 * n = n := by","theorem":"one_mul","file":"Nat.lean"}
+{"id":219,"prover":"Lean3","goal":"theorem mul_zero (n : Nat) : n * 0 = 0 := by","theorem":"mul_zero","file":"Nat.lean"}
+{"id":220,"prover":"Lean3","goal":"theorem zero_mul (n : Nat) : 0 * n = 0 := by","theorem":"zero_mul","file":"Nat.lean"}
+{"id":221,"prover":"Lean3","goal":"theorem add_comm (m n : Nat) : m + n = n + m := by","theorem":"add_comm","file":"Nat.lean"}
+{"id":222,"prover":"Lean3","goal":"theorem mul_comm (m n : Nat) : m * n = n * m := by","theorem":"mul_comm","file":"Nat.lean"}
+{"id":223,"prover":"Lean3","goal":"theorem add_assoc (m n k : Nat) : (m + n) + k = m + (n + k) := by","theorem":"add_assoc","file":"Nat.lean"}
+{"id":224,"prover":"Lean3","goal":"theorem mul_assoc (m n k : Nat) : (m * n) * k = m * (n * k) := by","theorem":"mul_assoc","file":"Nat.lean"}
+{"id":225,"prover":"Lean3","goal":"theorem left_distrib (m n k : Nat) : m * (n + k) = m * n + m * k := by","theorem":"left_distrib","file":"Nat.lean"}
+{"id":226,"prover":"Lean3","goal":"theorem right_distrib (m n k : Nat) : (m + n) * k = m * k + n * k := by","theorem":"right_distrib","file":"Nat.lean"}
+{"id":227,"prover":"Lean3","goal":"theorem sum_first_n (n : Nat) : 2 * (Fin.sum n id) = n * (n + 1) := by","theorem":"sum_first_n","file":"Nat.lean"}
+{"id":228,"prover":"Lean3","goal":"theorem double_add (n : Nat) : n + n = 2 * n := by","theorem":"double_add","file":"Nat.lean"}
+{"id":229,"prover":"Lean3","goal":"theorem pow2_ge (n : Nat) : n ≥ 1 → 2^n ≥ n := by","theorem":"pow2_ge","file":"Nat.lean"}
+{"id":230,"prover":"Lean3","goal":"theorem le_refl (n : Nat) : n ≤ n := by","theorem":"le_refl","file":"Nat.lean"}
+{"id":231,"prover":"Lean3","goal":"theorem le_antisymm (m n : Nat) : m ≤ n → n ≤ m → m = n := by","theorem":"le_antisymm","file":"Nat.lean"}
+{"id":232,"prover":"Lean3","goal":"theorem le_trans (m n k : Nat) : m ≤ n → n ≤ k → m ≤ k := by","theorem":"le_trans","file":"Nat.lean"}
+{"id":233,"prover":"Lean3","goal":"theorem lt_succ_self (n : Nat) : n < n + 1 := by","theorem":"lt_succ_self","file":"Nat.lean"}
+{"id":234,"prover":"Lean3","goal":"theorem zero_le (n : Nat) : 0 ≤ n := by","theorem":"zero_le","file":"Nat.lean"}
+{"id":235,"prover":"Lean3","goal":"theorem add_left_cancel (k m n : Nat) : k + m = k + n → m = n := by","theorem":"add_left_cancel","file":"Nat.lean"}
+{"id":236,"prover":"Lean3","goal":"theorem add_right_cancel (k m n : Nat) : m + k = n + k → m = n := by","theorem":"add_right_cancel","file":"Nat.lean"}
+{"id":237,"prover":"Lean3","goal":"theorem add_le_add_left (m n k : Nat) : m ≤ n → k + m ≤ k + n := by","theorem":"add_le_add_left","file":"Nat.lean"}
+{"id":238,"prover":"Lean3","goal":"theorem add_le_add_right (m n k : Nat) : m ≤ n → m + k ≤ n + k := by","theorem":"add_le_add_right","file":"Nat.lean"}
+{"id":239,"prover":"Lean3","goal":"theorem mul_succ (m n : Nat) : m * (n + 1) = m * n + m := by","theorem":"mul_succ","file":"Nat.lean"}
+{"id":240,"prover":"Lean3","goal":"theorem succ_mul (m n : Nat) : (m + 1) * n = m * n + n := by","theorem":"succ_mul","file":"Nat.lean"}
+{"id":241,"prover":"Lean3","goal":"theorem mul_left_cancel (k m n : Nat) : k > 0 → k * m = k * n → m = n := by","theorem":"mul_left_cancel","file":"Nat.lean"}
+{"id":242,"prover":"Lean3","goal":"theorem sub_zero (n : Nat) : n - 0 = n := by","theorem":"sub_zero","file":"Nat.lean"}
+{"id":243,"prover":"Lean3","goal":"theorem sub_self (n : Nat) : n - n = 0 := by","theorem":"sub_self","file":"Nat.lean"}
+{"id":244,"prover":"Lean3","goal":"theorem sub_add_cancel (m n : Nat) : n ≤ m → (m - n) + n = m := by","theorem":"sub_add_cancel","file":"Nat.lean"}
+{"id":245,"prover":"Lean3","goal":"theorem zero_is_even : is_even 0 := by","theorem":"zero_is_even","file":"Nat.lean"}
+{"id":246,"prover":"Lean3","goal":"theorem one_is_odd : is_odd 1 := by","theorem":"one_is_odd","file":"Nat.lean"}
+{"id":247,"prover":"Lean3","goal":"theorem two_is_even : is_even 2 := by","theorem":"two_is_even","file":"Nat.lean"}
+{"id":248,"prover":"Lean3","goal":"theorem even_add_even (m n : Nat) : is_even m → is_even n → is_even (m + n) := by","theorem":"even_add_even","file":"Nat.lean"}
+{"id":249,"prover":"Lean3","goal":"theorem mul_even (m n : Nat) : is_even n → is_even (m * n) := by","theorem":"mul_even","file":"Nat.lean"}
+{"id":250,"prover":"Lean3","goal":"theorem div_one (n : Nat) : n / 1 = n := by","theorem":"div_one","file":"Nat.lean"}
+{"id":251,"prover":"Lean3","goal":"theorem div_self (n : Nat) : n > 0 → n / n = 1 := by","theorem":"div_self","file":"Nat.lean"}
+{"id":252,"prover":"Lean3","goal":"theorem mod_one (n : Nat) : n % 1 = 0 := by","theorem":"mod_one","file":"Nat.lean"}
+{"id":253,"prover":"Lean3","goal":"theorem mod_self (n : Nat) : n > 0 → n % n = 0 := by","theorem":"mod_self","file":"Nat.lean"}
+{"id":254,"prover":"Lean3","goal":"theorem mod_lt (m n : Nat) : n > 0 → m % n < n := by","theorem":"mod_lt","file":"Nat.lean"}
+{"id":255,"prover":"Lean3","goal":"theorem gcd_comm (m n : Nat) : Nat.gcd m n = Nat.gcd n m := by","theorem":"gcd_comm","file":"Nat.lean"}
+{"id":256,"prover":"Lean3","goal":"theorem gcd_zero_right (n : Nat) : Nat.gcd n 0 = n := by","theorem":"gcd_zero_right","file":"Nat.lean"}
+{"id":257,"prover":"Lean3","goal":"theorem gcd_self (n : Nat) : Nat.gcd n n = n := by","theorem":"gcd_self","file":"Nat.lean"}
+{"id":258,"prover":"Lean3","goal":"theorem de_morgan_1 (A B : Prop) : ¬(A ∧ B) → (¬A ∨ ¬B) := by","theorem":"de_morgan_1","file":"Propositional.lean"}
+{"id":259,"prover":"Lean3","goal":"theorem de_morgan_1_rev (A B : Prop) : (¬A ∨ ¬B) → ¬(A ∧ B) := by","theorem":"de_morgan_1_rev","file":"Propositional.lean"}
+{"id":260,"prover":"Lean3","goal":"theorem de_morgan_2 (A B : Prop) : ¬(A ∨ B) → (¬A ∧ ¬B) := by","theorem":"de_morgan_2","file":"Propositional.lean"}
+{"id":261,"prover":"Lean3","goal":"theorem de_morgan_2_rev (A B : Prop) : (¬A ∧ ¬B) → ¬(A ∨ B) := by","theorem":"de_morgan_2_rev","file":"Propositional.lean"}
+{"id":262,"prover":"Lean3","goal":"theorem double_neg_intro (A : Prop) : A → ¬¬A := by","theorem":"double_neg_intro","file":"Propositional.lean"}
+{"id":263,"prover":"Lean3","goal":"theorem double_neg_elim (A : Prop) : ¬¬A → A := by","theorem":"double_neg_elim","file":"Propositional.lean"}
+{"id":264,"prover":"Lean3","goal":"theorem triple_neg (A : Prop) : ¬¬¬A → ¬A := by","theorem":"triple_neg","file":"Propositional.lean"}
+{"id":265,"prover":"Lean3","goal":"theorem excluded_middle (A : Prop) : A ∨ ¬A := by","theorem":"excluded_middle","file":"Propositional.lean"}
+{"id":266,"prover":"Lean3","goal":"theorem peirce (A B : Prop) : ((A → B) → A) → A := by","theorem":"peirce","file":"Propositional.lean"}
+{"id":267,"prover":"Lean3","goal":"theorem double_neg_excluded_middle (A : Prop) : ¬¬(A ∨ ¬A) := by","theorem":"double_neg_excluded_middle","file":"Propositional.lean"}
+{"id":268,"prover":"Lean3","goal":"theorem contrapositive (A B : Prop) : (A → B) → (¬B → ¬A) := by","theorem":"contrapositive","file":"Propositional.lean"}
+{"id":269,"prover":"Lean3","goal":"theorem contrapositive_rev (A B : Prop) : (¬B → ¬A) → (A → B) := by","theorem":"contrapositive_rev","file":"Propositional.lean"}
+{"id":270,"prover":"Lean3","goal":"theorem proof_by_contradiction (A : Prop) : (¬A → False) → A := by","theorem":"proof_by_contradiction","file":"Propositional.lean"}
+{"id":271,"prover":"Lean3","goal":"theorem material_impl_fwd (A B : Prop) : (A → B) → (¬A ∨ B) := by","theorem":"material_impl_fwd","file":"Propositional.lean"}
+{"id":272,"prover":"Lean3","goal":"theorem material_impl_rev (A B : Prop) : (¬A ∨ B) → (A → B) := by","theorem":"material_impl_rev","file":"Propositional.lean"}
+{"id":273,"prover":"Lean3","goal":"theorem impl_trans (A B C : Prop) : (A → B) → (B → C) → (A → C) := by","theorem":"impl_trans","file":"Propositional.lean"}
+{"id":274,"prover":"Lean3","goal":"theorem curry (A B C : Prop) : (A ∧ B → C) → (A → B → C) := by","theorem":"curry","file":"Propositional.lean"}
+{"id":275,"prover":"Lean3","goal":"theorem uncurry (A B C : Prop) : (A → B → C) → (A ∧ B → C) := by","theorem":"uncurry","file":"Propositional.lean"}
+{"id":276,"prover":"Lean3","goal":"theorem ex_falso (A : Prop) : False → A := by","theorem":"ex_falso","file":"Propositional.lean"}
+{"id":277,"prover":"Lean3","goal":"theorem not_true : ¬True → False := by","theorem":"not_true","file":"Propositional.lean"}
+{"id":278,"prover":"Lean3","goal":"theorem not_not_false : ¬¬False → False := by","theorem":"not_not_false","file":"Propositional.lean"}
+{"id":279,"prover":"Lean3","goal":"theorem and_distrib_or (A B C : Prop) :","theorem":"and_distrib_or","file":"Propositional.lean"}
+{"id":280,"prover":"Lean3","goal":"theorem or_distrib_and (A B C : Prop) :","theorem":"or_distrib_and","file":"Propositional.lean"}
+{"id":281,"prover":"Lean3","goal":"theorem iff_refl (A : Prop) : A ↔ A := by","theorem":"iff_refl","file":"Propositional.lean"}
+{"id":282,"prover":"Lean3","goal":"theorem iff_symm (A B : Prop) : (A ↔ B) → (B ↔ A) := by","theorem":"iff_symm","file":"Propositional.lean"}
+{"id":283,"prover":"Lean3","goal":"theorem iff_trans (A B C : Prop) : (A ↔ B) → (B ↔ C) → (A ↔ C) := by","theorem":"iff_trans","file":"Propositional.lean"}
+{"id":284,"prover":"Isabelle","goal":"Part of the ECHIDNA theorem proving platform","theorem":"proving","file":"Basic.thy"}
+{"id":285,"prover":"Isabelle","goal":"Part of the ECHIDNA theorem proving platform","theorem":"proving","file":"List.thy"}
+{"id":286,"prover":"Isabelle","goal":"Part of the ECHIDNA theorem proving platform","theorem":"proving","file":"Nat.thy"}
+{"id":287,"prover":"Isabelle","goal":"Part of the ECHIDNA theorem proving platform","theorem":"proving","file":"Propositional.thy"}
+{"id":288,"prover":"Agda","goal":"-- SPDX-License-Identifier: MIT AND Palimpsest-0.6","theorem":"Identifier","file":"Basic.agda"}
+{"id":289,"prover":"Agda","goal":"-- Type: A → A","theorem":"Type","file":"Basic.agda"}
+{"id":290,"prover":"Agda","goal":"suc  : ℕ → ℕ","theorem":"suc","file":"Basic.agda"}
+{"id":291,"prover":"Agda","goal":"-- Modus ponens: if we have A → B and we have A, then we can derive B","theorem":"ponens","file":"Basic.agda"}
+{"id":292,"prover":"Agda","goal":"-- Example: applying modus ponens with concrete propositions","theorem":"Example","file":"Basic.agda"}
+{"id":293,"prover":"Agda","goal":"-- Example: if ⊤ → ⊤ and we have ⊤, we get ⊤","theorem":"Example","file":"Basic.agda"}
+{"id":294,"prover":"Agda","goal":"trans : {A B C : Set} → (A → B) → (B → C) → (A → C)","theorem":"trans","file":"Basic.agda"}
+{"id":295,"prover":"Agda","goal":"SKK : {A : Set} → (x : A) → S const const x ≡ id x","theorem":"SKK","file":"Basic.agda"}
+{"id":296,"prover":"Agda","goal":"-- SPDX-License-Identifier: MIT AND Palimpsest-0.6","theorem":"Identifier","file":"List.agda"}
+{"id":297,"prover":"Agda","goal":"filter : {A : Set} → (A → Bool) → List A → List A","theorem":"filter","file":"List.agda"}
+{"id":298,"prover":"Agda","goal":"reverse : {A : Set} → List A → List A","theorem":"reverse","file":"List.agda"}
+{"id":299,"prover":"Agda","goal":"reverse′ : {A : Set} → List A → List A","theorem":"A","file":"List.agda"}
+{"id":300,"prover":"Agda","goal":"drop : {A : Set} → ℕ → List A → List A","theorem":"drop","file":"List.agda"}
+{"id":301,"prover":"Agda","goal":"foldr : {A B : Set} → (A → B → B) → B → List A → B","theorem":"foldr","file":"List.agda"}
+{"id":302,"prover":"Agda","goal":"foldl : {A B : Set} → (B → A → B) → B → List A → B","theorem":"foldl","file":"List.agda"}
+{"id":303,"prover":"Agda","goal":"sum : List ℕ → ℕ","theorem":"sum","file":"List.agda"}
+{"id":304,"prover":"Agda","goal":"product : List ℕ → ℕ","theorem":"product","file":"List.agda"}
+{"id":305,"prover":"Agda","goal":"concat : {A : Set} → List (List A) → List A","theorem":"concat","file":"List.agda"}
+{"id":306,"prover":"Agda","goal":"++-identityʳ : {A : Set} → (xs : List A) → xs ++ [] ≡ xs","theorem":"identityʳ","file":"List.agda"}
+{"id":307,"prover":"Agda","goal":"map-compose : {A B C : Set} → (f : A → B) → (g : B → C) → (xs : List A)","theorem":"compose","file":"List.agda"}
+{"id":308,"prover":"Agda","goal":"reverse-involutive : {A : Set} → (xs : List A)","theorem":"involutive","file":"List.agda"}
+{"id":309,"prover":"Agda","goal":"foldr-id : {A : Set} → (xs : List A) → foldr _∷_ [] xs ≡ xs","theorem":"id","file":"List.agda"}
+{"id":310,"prover":"Agda","goal":"foldr-++ : {A B : Set} → (f : A → B → B) → (z : B) → (xs ys : List A)","theorem":"B","file":"List.agda"}
+{"id":311,"prover":"Agda","goal":"map-foldr : {A B : Set} → (f : A → B) → (xs : List A)","theorem":"foldr","file":"List.agda"}
+{"id":312,"prover":"Agda","goal":"++-foldr : {A : Set} → (xs ys : List A)","theorem":"foldr","file":"List.agda"}
+{"id":313,"prover":"Agda","goal":"length-foldr : {A : Set} → (xs : List A)","theorem":"foldr","file":"List.agda"}
+{"id":314,"prover":"Agda","goal":"there : {x : A} {xs : List A} → Any P xs → Any P (x ∷ xs)","theorem":"there","file":"List.agda"}
+{"id":315,"prover":"Agda","goal":"Any-++ : {A : Set} {P : A → Set} {xs ys : List A}","theorem":"A","file":"List.agda"}
+{"id":316,"prover":"Agda","goal":"-- SPDX-License-Identifier: MIT AND Palimpsest-0.6","theorem":"Identifier","file":"Nat.agda"}
+{"id":317,"prover":"Agda","goal":"subst : {A : Set} {x y : A} → (P : A → Set) → x ≡ y → P x → P y","theorem":"subst","file":"Nat.agda"}
+{"id":318,"prover":"Agda","goal":"_+_ : ℕ → ℕ → ℕ","theorem":"_","file":"Nat.agda"}
+{"id":319,"prover":"Agda","goal":"+-zero : (n : ℕ) → n + zero ≡ n","theorem":"zero","file":"Nat.agda"}
+{"id":320,"prover":"Agda","goal":"+-identityʳ : (n : ℕ) → n + zero ≡ n","theorem":"identityʳ","file":"Nat.agda"}
+{"id":321,"prover":"Agda","goal":"_*_ : ℕ → ℕ → ℕ","theorem":"_","file":"Nat.agda"}
+{"id":322,"prover":"Agda","goal":"*-zero : (n : ℕ) → n * zero ≡ zero","theorem":"zero","file":"Nat.agda"}
+{"id":323,"prover":"Agda","goal":"_∎ : {A : Set} → (x : A) → x ≡ x","theorem":"A","file":"Nat.agda"}
+{"id":324,"prover":"Agda","goal":"s≤s : {m n : ℕ} → m ≤ n → suc m ≤ suc n","theorem":"s","file":"Nat.agda"}
+{"id":325,"prover":"Agda","goal":"min-comm : (m n : ℕ) → min m n ≡ min n m","theorem":"comm","file":"Nat.agda"}
+{"id":326,"prover":"Agda","goal":"even-or-odd : (n : ℕ) → Even n ⊎ Odd n","theorem":"odd","file":"Nat.agda"}
+{"id":327,"prover":"Agda","goal":"-- SPDX-License-Identifier: MIT AND Palimpsest-0.6","theorem":"Identifier","file":"Propositional.agda"}
+{"id":328,"prover":"Agda","goal":"tt : ⊤","theorem":"tt","file":"Propositional.agda"}
+{"id":329,"prover":"Agda","goal":"-- Ex falso quodlibet: from falsehood, anything follows","theorem":"quodlibet","file":"Propositional.agda"}
+{"id":330,"prover":"Agda","goal":"de-morgan₂-iff : {A B : Set} → ¬ (A ∨ B) ⇔ (¬ A ∧ ¬ B)","theorem":"iff","file":"Propositional.agda"}
+{"id":331,"prover":"Agda","goal":"-- Note: This is actually provable constructively by always choosing inr","theorem":"Note","file":"Propositional.agda"}
+{"id":332,"prover":"Agda","goal":"lem→dne : LEM → DNE","theorem":"dne","file":"Propositional.agda"}
