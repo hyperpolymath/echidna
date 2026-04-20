@@ -203,7 +203,6 @@ impl TamarinBackend {
                     name: "builtins".to_string(),
                     ty: Term::Const("builtin-declaration".to_string()),
                     body: Term::Const(trimmed.to_string()),
-                    type_info: None,
                 });
             }
 
@@ -213,7 +212,6 @@ impl TamarinBackend {
                     name: "functions".to_string(),
                     ty: Term::Const("function-declaration".to_string()),
                     body: Term::Const(trimmed.to_string()),
-                    type_info: None,
                 });
             }
 
@@ -223,7 +221,6 @@ impl TamarinBackend {
                     name: "equations".to_string(),
                     ty: Term::Const("equation-declaration".to_string()),
                     body: Term::Const(trimmed.to_string()),
-                    type_info: None,
                 });
             }
 
@@ -356,7 +353,6 @@ impl ProverBackend for TamarinBackend {
                     name: "builtins".to_string(),
                     ty: Term::Const("builtin-declaration".to_string()),
                     body: Term::Const(format!("builtins: {}", builtin_text)),
-                    type_info: None,
                 });
                 new_state.proof_script.push(tactic.clone());
                 Ok(TacticResult::Success(new_state))

@@ -68,9 +68,7 @@ use crate::provers::ProverKind;
 ///
 /// Order is stable; inserting a new variant should always append, never
 /// re-order, because downstream consumers serialise by discriminant.
-#[derive(
-    Debug, Clone, Copy, PartialEq, Eq, Hash, PartialOrd, Ord, Serialize, Deserialize,
-)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, PartialOrd, Ord, Serialize, Deserialize)]
 pub enum TypeDiscipline {
     // Entry points / kernels.
     TypeLl,
@@ -224,14 +222,12 @@ impl TypeDiscipline {
         match self {
             D::TypeLl | D::Katagoria => EntryPoint,
             D::Ordinary => Foundation,
-            D::Phantom | D::Polymorphic | D::Existential | D::HigherKinded | D::Row => {
-                Polymorphism
-            }
+            D::Phantom | D::Polymorphic | D::Existential | D::HigherKinded | D::Row => Polymorphism,
             D::Subtyping | D::Intersection | D::Union | D::Gradual => Subtyping,
             D::Dependent | D::Refinement | D::Hoare | D::Indexed => DependentRefinement,
             D::Qtt | D::Linear | D::Affine | D::Relevant | D::Ordered | D::Uniqueness => {
                 Substructural
-            }
+            },
             D::Immutable | D::Capability | D::Bunched => MutabilityCapability,
             D::Modal | D::Epistemic | D::Temporal | D::Provability => Modal,
             D::EffectRow | D::Impure | D::Coeffect | D::Probabilistic => EffectsCoeffects,
@@ -419,7 +415,7 @@ impl TypeDiscipline {
             // that have explicit STLC tutorials.
             D::Ordinary => {
                 vec![P::Agda, P::Coq, P::Lean, P::Isabelle, P::Idris2, P::FStar]
-            }
+            },
 
             // Polymorphism family.
             D::Polymorphic => vec![
@@ -436,9 +432,7 @@ impl TypeDiscipline {
             D::Existential => vec![P::Agda, P::Coq, P::Lean, P::Idris2, P::FStar],
             D::HigherKinded => vec![P::Agda, P::Coq, P::Lean, P::Idris2, P::FStar],
             D::Row => vec![], // Koka-native; none in echidna's classical lineup.
-            D::Phantom => vec![
-                P::Agda, P::Coq, P::Lean, P::Idris2, P::FStar, P::Dafny,
-            ],
+            D::Phantom => vec![P::Agda, P::Coq, P::Lean, P::Idris2, P::FStar, P::Dafny],
 
             // Subtyping family.
             D::Subtyping => vec![P::FStar, P::Dafny],
@@ -473,15 +467,13 @@ impl TypeDiscipline {
             // Modal family.
             D::Modal => vec![P::Isabelle], // Isabelle/ModalHOL + other instances.
             D::Epistemic => vec![], // DEL / S5 tooling lives outside echidna's current lineup.
-            D::Temporal => vec![
-                P::NuSMV, P::TLC, P::SPIN, P::UPPAAL, P::Prism, P::TLAPS,
-            ],
+            D::Temporal => vec![P::NuSMV, P::TLC, P::SPIN, P::UPPAAL, P::Prism, P::TLAPS],
             D::Provability => vec![], // GL logic, mostly research.
 
             // Effects / coeffects.
             D::EffectRow => vec![P::FStar], // F* effect algebras.
             D::Impure => vec![P::FStar, P::Dafny], // Stateful-program verifiers.
-            D::Coeffect => vec![], // Granule; not in echidna.
+            D::Coeffect => vec![],          // Granule; not in echidna.
             D::Probabilistic => vec![P::Prism, P::DReal],
 
             // Process / communication — the HP stack is specifically here
@@ -584,8 +576,7 @@ mod tests {
 
     #[test]
     fn tags_are_unique() {
-        let mut tags: Vec<&'static str> =
-            TypeDiscipline::ALL.iter().map(|d| d.tag()).collect();
+        let mut tags: Vec<&'static str> = TypeDiscipline::ALL.iter().map(|d| d.tag()).collect();
         tags.sort_unstable();
         let before = tags.len();
         tags.dedup();

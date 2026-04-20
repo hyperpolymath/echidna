@@ -327,7 +327,6 @@ impl ProverBackend for MetamathBackend {
                     context.variables.push(Variable {
                         name: var.clone(),
                         ty: Term::Const(typecode.clone()),
-                        type_info: None,
                     });
                 },
                 _ => {},
@@ -1021,7 +1020,6 @@ mod tests {
         state.context.variables.push(Variable {
             name: "x".to_string(),
             ty: Term::Const("nat".to_string()),
-            type_info: None,
         });
 
         let exported = backend.export(&state).await.unwrap();

@@ -262,19 +262,6 @@ impl HolLightBackend {
                     self.term_to_hol(body)
                 )
             },
-            Term::Sigma {
-                param,
-                param_type,
-                body,
-            } => {
-                // HOL Light has no dependent pairs; use existential approximation
-                format!(
-                    "(?{} : {}. {})",
-                    param,
-                    self.term_to_hol(param_type),
-                    self.term_to_hol(body)
-                )
-            },
             Term::Universe(level) | Term::Type(level) => format!("Type{}", level),
             Term::Sort(level) => format!("Sort{}", level),
             Term::Let {
@@ -465,7 +452,6 @@ impl ProverBackend for HolLightBackend {
                     data: serde_json::json!(def.def_type.clone()),
                 },
                 body: def_term,
-                type_info: None,
             });
         }
 

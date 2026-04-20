@@ -154,8 +154,8 @@ mod tests {
             hypotheses: vec![],
         };
 
-        let id1 = proof_identity("my_theorem", &goal, ProverKind::Lean);
-        let id2 = proof_identity("my_theorem", &goal, ProverKind::Lean);
+        let id1 = proof_identity("my_theorem", &goal, ProverKind::Lean4);
+        let id2 = proof_identity("my_theorem", &goal, ProverKind::Lean4);
         assert_eq!(id1, id2, "Same inputs must produce same identity");
     }
 
@@ -167,7 +167,7 @@ mod tests {
             hypotheses: vec![],
         };
 
-        let lean = proof_identity("thm", &goal, ProverKind::Lean);
+        let lean = proof_identity("thm", &goal, ProverKind::Lean4);
         let coq = proof_identity("thm", &goal, ProverKind::Coq);
         assert_ne!(
             lean, coq,

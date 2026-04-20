@@ -313,8 +313,8 @@ impl AxiomTracker {
                         // (ECHIDNA_SCAFFOLD_SORRY) so the tracker can tell them
                         // apart from real hand-written proof holes. See the
                         // emission sites in src/rust/provers/{lean,isabelle}.rs.
-                        let is_echidna_scaffold = pattern.pattern == "sorry"
-                            && line.contains("ECHIDNA_SCAFFOLD_SORRY");
+                        let is_echidna_scaffold =
+                            pattern.pattern == "sorry" && line.contains("ECHIDNA_SCAFFOLD_SORRY");
 
                         if !is_comment && !is_echidna_scaffold {
                             usages.push(AxiomUsage {

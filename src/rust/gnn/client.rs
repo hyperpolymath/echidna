@@ -219,12 +219,12 @@ impl GnnClient {
                     self.server_available = false;
                     Ok(false)
                 }
-            }
+            },
             Err(e) => {
                 debug!("GNN server not available: {}", e);
                 self.server_available = false;
                 Ok(false)
-            }
+            },
         }
     }
 
@@ -259,7 +259,7 @@ impl GnnClient {
                     inference_time_ms: 0.0,
                     from_server: false,
                 }
-            }
+            },
         }
     }
 
@@ -319,11 +319,7 @@ impl GnnClient {
 
         let node_labels: Vec<String> = graph.nodes.iter().map(|n| n.label.clone()).collect();
 
-        let feature_dim = graph
-            .nodes
-            .first()
-            .map(|n| n.features.len())
-            .unwrap_or(0);
+        let feature_dim = graph.nodes.first().map(|n| n.features.len()).unwrap_or(0);
 
         let goal_node_idx = graph
             .goal_node_id

@@ -211,18 +211,6 @@ impl DeduktiExporter {
                     Self::term_to_dedukti(body)
                 )
             },
-            Term::Sigma {
-                param,
-                param_type,
-                body,
-            } => {
-                format!(
-                    "(dk_sigma {} ({} => {}))",
-                    Self::term_to_dedukti(param_type),
-                    param,
-                    Self::term_to_dedukti(body)
-                )
-            },
             Term::Type(level) => format!("Type {}", level),
             Term::Sort(level) => format!("Sort {}", level),
             Term::Universe(level) => format!("Type {}", level),
@@ -236,32 +224,6 @@ impl DeduktiExporter {
         if trimmed.starts_with('(') && trimmed.ends_with(')') {
             // Unwrap parentheses and recurse
             Self::dedukti_to_term(&trimmed[1..trimmed.len() - 1])
-        } else if trimmed.starts_with("dk_sigma ") {
-            // Sigma type: dk_sigma A (x => B)
-            let rest = trimmed.trim_start_matches("dk_sigma ").trim();
-            // Split into the type part and the binder part (x => B)
-            if let Some(paren_start) = rest.find('(') {
-                let type_part = rest[..paren_start].trim();
-                let binder_part = rest[paren_start..].trim();
-                let inner = if binder_part.starts_with('(') && binder_part.ends_with(')') {
-                    &binder_part[1..binder_part.len() - 1]
-                } else {
-                    binder_part
-                };
-                if let Some(arrow_pos) = inner.find("=>") {
-                    let param = inner[..arrow_pos].trim().to_string();
-                    let body_str = inner[arrow_pos + 2..].trim();
-                    Term::Sigma {
-                        param,
-                        param_type: Box::new(Self::dedukti_to_term(type_part)),
-                        body: Box::new(Self::dedukti_to_term(body_str)),
-                    }
-                } else {
-                    Term::Const(trimmed.to_string())
-                }
-            } else {
-                Term::Const(trimmed.to_string())
-            }
         } else if trimmed.contains("->") {
             // Pi type: A -> B
             let parts: Vec<&str> = trimmed.splitn(2, "->").collect();
@@ -452,28 +414,6 @@ mod tests {
         let term = Term::Var("x".to_string());
         let dk = DeduktiExporter::term_to_dedukti(&term);
         assert_eq!(dk, "x");
-    }
-
-    #[test]
-    fn test_term_to_dedukti_sigma() {
-        let term = Term::Sigma {
-            param: "x".to_string(),
-            param_type: Box::new(Term::Const("Nat".to_string())),
-            body: Box::new(Term::Const("Prop".to_string())),
-        };
-        let dk = DeduktiExporter::term_to_dedukti(&term);
-        assert!(dk.contains("dk_sigma"), "Sigma should render as dk_sigma, got: {}", dk);
-        assert!(dk.contains("Nat"), "Sigma param type should appear, got: {}", dk);
-    }
-
-    #[test]
-    fn test_dedukti_to_term_sigma() {
-        let dk = "dk_sigma Nat (x => Prop)";
-        let term = DeduktiExporter::dedukti_to_term(dk);
-        match term {
-            Term::Sigma { ref param, .. } => assert_eq!(param, "x"),
-            _ => panic!("Expected Sigma term, got: {:?}", term),
-        }
     }
 
     #[test]

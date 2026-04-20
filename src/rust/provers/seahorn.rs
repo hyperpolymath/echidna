@@ -34,8 +34,7 @@ const DEFAULT_BMC_BOUND: u32 = 256;
 ///
 /// SeaHorn supports multiple front-end analysis strategies. The two primary
 /// modes are bounded model checking and CHC-based horn solving.
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
-#[derive(Default)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
 pub enum SeaHornMode {
     /// Bounded model checking (`--bmc`): unrolls loops up to a bound
     BMC,
@@ -45,7 +44,6 @@ pub enum SeaHornMode {
     #[default]
     HornSolve,
 }
-
 
 /// SeaHorn LLVM-based verification framework backend
 ///

@@ -171,7 +171,6 @@ impl TLCBackend {
                     name: trimmed.to_string(),
                     ty: Term::Const("TLA_OP".to_string()),
                     body: Term::Const(trimmed.to_string()),
-                    type_info: None,
                 });
             }
 

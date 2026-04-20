@@ -197,6 +197,123 @@ function generate_synthetic_idris2()::Vector{Dict{String,Any}}
         ("monadAssoc", "monadAssoc : Monad m => (ma : m a) -> (f : a -> m b) -> (g : b -> m c) -> ((ma >>= f) >>= g) = (ma >>= (\\x => f x >>= g))", ""),
     ]
 
+    maybe_proofs = [
+        ("maybeMap", "maybeMap : (f : a -> b) -> Maybe a -> Maybe b", "maybeMap f Nothing = Nothing\nmaybeMap f (Just x) = Just (f x)"),
+        ("maybeMapCompose", "maybeMapCompose : (f : b -> c) -> (g : a -> b) -> (mx : Maybe a) -> maybeMap f (maybeMap g mx) = maybeMap (f . g) mx", "maybeMapCompose f g Nothing = Refl\nmaybeMapCompose f g (Just x) = Refl"),
+        ("maybeBind", "maybeBind : Maybe a -> (a -> Maybe b) -> Maybe b", "maybeBind Nothing f = Nothing\nmaybeBind (Just x) f = f x"),
+        ("maybeBindAssoc", "maybeBindAssoc : (mx : Maybe a) -> (f : a -> Maybe b) -> (g : b -> Maybe c) -> maybeBind (maybeBind mx f) g = maybeBind mx (\\x => maybeBind (f x) g)", "maybeBindAssoc Nothing f g = Refl\nmaybeBindAssoc (Just x) f g = Refl"),
+        ("isJustFromJust", "isJustFromJust : (mx : Maybe a) -> isJust mx = True -> DPair a (\\x => mx = Just x)", "isJustFromJust (Just x) Refl = (x ** Refl)\nisJustFromJust Nothing Refl impossible"),
+        ("nothingAbsurd", "nothingAbsurd : the (Maybe a) Nothing = Just x -> Void", "nothingAbsurd Refl impossible"),
+        ("maybeToList", "maybeToList : Maybe a -> List a", "maybeToList Nothing = []\nmaybeToList (Just x) = [x]"),
+        ("fromMaybeDefault", "fromMaybeDefault : (def : a) -> (mx : Maybe a) -> mx = Nothing -> fromMaybe def mx = def", "fromMaybeDefault def Nothing Refl = Refl\nfromMaybeDefault def (Just _) Refl impossible"),
+    ]
+
+    either_proofs = [
+        ("eitherMap", "eitherMap : (f : a -> c) -> (g : b -> d) -> Either a b -> Either c d", "eitherMap f g (Left x) = Left (f x)\neitherMap f g (Right y) = Right (g y)"),
+        ("eitherMapCompose", "eitherMapCompose : (f1 : c -> e) -> (f2 : a -> c) -> (g1 : d -> f) -> (g2 : b -> d) -> (e : Either a b) -> eitherMap f1 g1 (eitherMap f2 g2 e) = eitherMap (f1 . f2) (g1 . g2) e", "eitherMapCompose f1 f2 g1 g2 (Left x) = Refl\neitherMapCompose f1 f2 g1 g2 (Right y) = Refl"),
+        ("eitherBimap", "eitherBimap : (f : a -> c) -> (g : b -> d) -> Either a b -> Either c d", "eitherBimap f g (Left x) = Left (f x)\neitherBimap f g (Right y) = Right (g y)"),
+        ("eitherSwap", "eitherSwap : Either a b -> Either b a", "eitherSwap (Left x) = Right x\neitherSwap (Right y) = Left y"),
+        ("eitherAssoc", "eitherAssoc : Either (Either a b) c -> Either a (Either b c)", "eitherAssoc (Left (Left x)) = Left x\neitherAssoc (Left (Right y)) = Right (Left y)\neitherAssoc (Right z) = Right (Right z)"),
+        ("partitionEithers", "partitionEithers : List (Either a b) -> (List a, List b)", "partitionEithers [] = ([], [])\npartitionEithers (Left x :: xs) = let (ls, rs) = partitionEithers xs in (x :: ls, rs)\npartitionEithers (Right y :: xs) = let (ls, rs) = partitionEithers xs in (ls, y :: rs)"),
+        ("leftsAppend", "leftsAppend : (xs, ys : List (Either a b)) -> fst (partitionEithers (xs ++ ys)) = fst (partitionEithers xs) ++ fst (partitionEithers ys)", ""),
+        ("rightsAppend", "rightsAppend : (xs, ys : List (Either a b)) -> snd (partitionEithers (xs ++ ys)) = snd (partitionEithers xs) ++ snd (partitionEithers ys)", ""),
+    ]
+
+    nat_order = [
+        ("lteRefl", "lteRefl : (n : Nat) -> LTE n n", "lteRefl Z = LTEZero\nlteRefl (S k) = LTESucc (lteRefl k)"),
+        ("lteAntisym", "lteAntisym : LTE m n -> LTE n m -> m = n", "lteAntisym LTEZero LTEZero = Refl\nlteAntisym (LTESucc p) (LTESucc q) = cong S (lteAntisym p q)"),
+        ("lteTrans", "lteTrans : LTE l c -> LTE c r -> LTE l r", "lteTrans LTEZero _ = LTEZero\nlteTrans (LTESucc p) (LTESucc q) = LTESucc (lteTrans p q)"),
+        ("lteSuccRight", "lteSuccRight : LTE m n -> LTE m (S n)", "lteSuccRight LTEZero = LTEZero\nlteSuccRight (LTESucc p) = LTESucc (lteSuccRight p)"),
+        ("lteAddRight", "lteAddRight : (m : Nat) -> (n : Nat) -> LTE m (m + n)", "lteAddRight Z n = LTEZero\nlteAddRight (S k) n = LTESucc (lteAddRight k n)"),
+        ("notLteToGt", "notLteToGt : Not (LTE m n) -> LT n m", "notLteToGt {m = Z} contra = absurd (contra LTEZero)\nnotLteToGt {m = S k} {n = Z} _ = LTESucc LTEZero\nnotLteToGt {m = S k} {n = S j} contra = LTESucc (notLteToGt (\\p => contra (LTESucc p)))"),
+        ("ltToLte", "ltToLte : LT m n -> LTE m n", "ltToLte (LTESucc p) = lteSuccRight p"),
+        ("maxComm", "maxComm : (m, n : Nat) -> max m n = max n m", ""),
+    ]
+
+    stream_proofs = [
+        ("takeLength", "takeLength : (n : Nat) -> (s : Stream a) -> length (take n s) = n", "takeLength Z s = Refl\ntakeLength (S k) (x :: xs) = cong S (takeLength k xs)"),
+        ("iterateHead", "iterateHead : (f : a -> a) -> (x : a) -> head (iterate f x) = x", "iterateHead f x = Refl"),
+        ("repeatHead", "repeatHead : (x : a) -> head (repeat x) = x", "repeatHead x = Refl"),
+        ("cycleNonEmpty", "cycleNonEmpty : (xs : List a) -> NonEmpty xs -> Stream a", "cycleNonEmpty (x :: xs) IsNonEmpty = cycle (x :: xs)"),
+        ("zipWithLength", "zipWithLength : (f : a -> b -> c) -> (n : Nat) -> (s1 : Stream a) -> (s2 : Stream b) -> length (take n (zipWith f s1 s2)) = n", "zipWithLength f Z s1 s2 = Refl\nzipWithLength f (S k) (x :: xs) (y :: ys) = cong S (zipWithLength f k xs ys)"),
+        ("mapStream", "mapStream : (f : a -> b) -> (n : Nat) -> (s : Stream a) -> take n (map f s) = map f (take n s)", "mapStream f Z s = Refl\nmapStream f (S k) (x :: xs) = cong (f x ::) (mapStream f k xs)"),
+    ]
+
+    universe_proofs = [
+        ("voidAbsurd", "voidAbsurd : Void -> a", "voidAbsurd v = absurd v"),
+        ("unitUnique", "unitUnique : (x, y : ()) -> x = y", "unitUnique () () = Refl"),
+        ("boolDec", "boolDec : (b : Bool) -> Dec (b = True)", "boolDec True = Yes Refl\nboolDec False = No absurd"),
+        ("notNotBool", "notNotBool : (b : Bool) -> not (not b) = b", "notNotBool True = Refl\nnotNotBool False = Refl"),
+        ("decElim", "decElim : (a -> b) -> (Not a -> b) -> Dec a -> b", "decElim f g (Yes prf) = f prf\ndecElim f g (No contra) = g contra"),
+        ("eitherCommIso", "eitherCommIso : Either a b -> Either b a", "eitherCommIso (Left x) = Right x\neitherCommIso (Right y) = Left y"),
+    ]
+
+    type_level = [
+        ("lengthReplicate", "lengthReplicate : (n : Nat) -> (x : a) -> length (replicate n x) = n", "lengthReplicate Z x = Refl\nlengthReplicate (S k) x = cong S (lengthReplicate k x)"),
+        ("transposeInvolutive", "transposeInvolutive : (xss : Vect m (Vect n a)) -> transpose (transpose xss) = xss", ""),
+        ("diagonalZip", "diagonalZip : (xs : Vect n a) -> map (\\i => index i xs) range = xs", ""),
+        ("tabulateIndex", "tabulateIndex : (f : Fin n -> a) -> (i : Fin n) -> index i (tabulate f) = f i", "tabulateIndex f FZ = Refl\ntabulateIndex f (FS k) = tabulateIndex (f . FS) k"),
+        ("generateLength", "generateLength : (n : Nat) -> (f : Fin n -> a) -> length (toList (tabulate f)) = n", ""),
+        ("concatMapLength", "concatMapLength : (f : a -> Vect m b) -> (xs : Vect n a) -> length (concat (map f xs)) = n * m", "concatMapLength f [] = Refl\nconcatMapLength f (x :: xs) = rewrite concatMapLength f xs in vectAppendLength (f x) (concat (map f xs))"),
+        ("intersperse", "intersperse : a -> Vect n a -> Vect (n + pred n) a", "intersperse sep [] = []\nintersperse sep [x] = [x]\nintersperse sep (x :: y :: ys) = x :: sep :: intersperse sep (y :: ys)"),
+        ("chunksOfLength", "chunksOfLength : (k : Nat) -> {auto ok : NonZero k} -> (xs : Vect n a) -> length (chunksOf k xs) = divCeilNZ n k ok", ""),
+    ]
+
+    bool_proofs = [
+        ("andCommutative", "andCommutative : (a, b : Bool) -> a && b = b && a", "andCommutative True True = Refl\nandCommutative True False = Refl\nandCommutative False True = Refl\nandCommutative False False = Refl"),
+        ("orCommutative", "orCommutative : (a, b : Bool) -> a || b = b || a", "orCommutative True True = Refl\norCommutative True False = Refl\norCommutative False True = Refl\norCommutative False False = Refl"),
+        ("andAssociative", "andAssociative : (a, b, c : Bool) -> (a && b) && c = a && (b && c)", "andAssociative True b c = Refl\nandAssociative False b c = Refl"),
+        ("orAssociative", "orAssociative : (a, b, c : Bool) -> (a || b) || c = a || (b || c)", "orAssociative True b c = Refl\norAssociative False b c = Refl"),
+        ("andTrueNeutral", "andTrueNeutral : (a : Bool) -> a && True = a", "andTrueNeutral True = Refl\nandTrueNeutral False = Refl"),
+        ("orFalseNeutral", "orFalseNeutral : (a : Bool) -> a || False = a", "orFalseNeutral True = Refl\norFalseNeutral False = Refl"),
+        ("notInvolutive", "notInvolutive : (a : Bool) -> not (not a) = a", "notInvolutive True = Refl\nnotInvolutive False = Refl"),
+        ("deMorganAnd", "deMorganAnd : (a, b : Bool) -> not (a && b) = not a || not b", "deMorganAnd True True = Refl\ndeMorganAnd True False = Refl\ndeMorganAnd False True = Refl\ndeMorganAnd False False = Refl"),
+    ]
+
+    pair_proofs = [
+        ("pairEta", "pairEta : (p : (a, b)) -> p = (fst p, snd p)", "pairEta (x, y) = Refl"),
+        ("mapFstId", "mapFstId : (p : (a, b)) -> mapFst id p = p", "mapFstId (x, y) = Refl"),
+        ("mapSndId", "mapSndId : (p : (a, b)) -> mapSnd id p = p", "mapSndId (x, y) = Refl"),
+        ("bimap_id", "bimap_id : (p : (a, b)) -> bimap id id p = p", "bimap_id (x, y) = Refl"),
+        ("swapSwap", "swapSwap : (p : (a, b)) -> swap (swap p) = p", "swapSwap (x, y) = Refl"),
+        ("mapFstCompose", "mapFstCompose : (f : b -> c) -> (g : a -> b) -> (p : (a, d)) -> mapFst f (mapFst g p) = mapFst (f . g) p", "mapFstCompose f g (x, y) = Refl"),
+    ]
+
+    snoclist_proofs = [
+        ("snocListAppend", "snocListAppend : (xs : SnocList a) -> (ys : SnocList a) -> length (xs ++ ys) = length xs + length ys", ""),
+        ("snocListReverse", "snocListReverse : (xs : SnocList a) -> cast (reverse (reverse xs)) = xs", ""),
+        ("snocListMap", "snocListMap : (f : a -> b) -> (xs : SnocList a) -> length (map f xs) = length xs", ""),
+        ("snocNil", "snocNil : (xs : SnocList a) -> xs ++ [<] = xs", ""),
+        ("snocCast", "snocCast : (xs : List a) -> cast (cast xs : SnocList a) = xs", ""),
+    ]
+
+    proof_search = [
+        ("autoRefl", "autoRefl : {auto prf : x = x} -> x = x", "autoRefl {prf} = prf"),
+        ("autoLTE", "autoLTE : {auto prf : LTE n m} -> LTE n m", "autoLTE {prf} = prf"),
+        ("decideEq", "decideEq : DecEq a => (x, y : a) -> Either (x = y) (Not (x = y))", "decideEq x y = case decEq x y of { Yes prf => Left prf; No contra => Right contra }"),
+        ("searchNat", "searchNat : (n : Nat ** LTE 10 n, LTE n 20)", "searchNat = (15 ** (LTESucc (LTESucc (LTESucc (LTESucc (LTESucc (LTESucc (LTESucc (LTESucc (LTESucc (LTESucc LTEZero))))))))), LTESucc (LTESucc (LTESucc (LTESucc (LTESucc LTEZero))))))"),
+        ("autoShow", "autoShow : Show a => a -> String", "autoShow x = show x"),
+    ]
+
+    with_views = [
+        ("filterView", "filterView : (p : a -> Bool) -> (xs : List a) -> List a", "filterView p [] = []\nfilterView p (x :: xs) with (p x)\n  _ | True = x :: filterView p xs\n  _ | False = filterView p xs"),
+        ("lookupView", "lookupView : DecEq k => k -> List (k, v) -> Maybe v", "lookupView key [] = Nothing\nlookupView key ((k, v) :: xs) with (decEq key k)\n  _ | Yes _ = Just v\n  _ | No _ = lookupView key xs"),
+        ("insertSorted", "insertSorted : Ord a => a -> List a -> List a", "insertSorted x [] = [x]\ninsertSorted x (y :: ys) with (compare x y)\n  _ | LT = x :: y :: ys\n  _ | EQ = x :: y :: ys\n  _ | GT = y :: insertSorted x ys"),
+        ("splitAt", "splitAt : (n : Nat) -> (xs : Vect (n + m) a) -> (Vect n a, Vect m a)", "splitAt Z xs = ([], xs)\nsplitAt (S k) (x :: xs) = let (ys, zs) = splitAt k xs in (x :: ys, zs)"),
+        ("mergeView", "mergeView : Ord a => List a -> List a -> List a", "mergeView [] ys = ys\nmergeView xs [] = xs\nmergeView (x :: xs) (y :: ys) with (compare x y)\n  _ | LT = x :: mergeView xs (y :: ys)\n  _ | _ = y :: mergeView (x :: xs) ys"),
+        ("groupByView", "groupByView : (a -> a -> Bool) -> List a -> List (List a)", ""),
+    ]
+
+    cong_rewrite = [
+        ("congSucc", "congSucc : n = m -> S n = S m", "congSucc Refl = Refl"),
+        ("congPlus", "congPlus : a = b -> c = d -> a + c = b + d", "congPlus Refl Refl = Refl"),
+        ("congMap", "congMap : (f : a -> b) -> x = y -> f x = f y", "congMap f Refl = Refl"),
+        ("transEq", "transEq : a = b -> b = c -> a = c", "transEq Refl Refl = Refl"),
+        ("symEq", "symEq : a = b -> b = a", "symEq Refl = Refl"),
+        ("replaceEq", "replaceEq : (0 p : a -> Type) -> x = y -> p x -> p y", "replaceEq p Refl px = px"),
+        ("voidAbsurd2", "voidAbsurd2 : Void -> a", "voidAbsurd2 v = absurd v"),
+    ]
+
     all_categories = [
         ("equality", equality_proofs),
         ("decidable", decidable),
@@ -206,6 +323,18 @@ function generate_synthetic_idris2()::Vector{Dict{String,Any}}
         ("linear", linear_types),
         ("dpair", dependent_pairs),
         ("interfaces", interfaces),
+        ("maybe", maybe_proofs),
+        ("either", either_proofs),
+        ("nat_order", nat_order),
+        ("streams", stream_proofs),
+        ("universe", universe_proofs),
+        ("type_level", type_level),
+        ("bool", bool_proofs),
+        ("pairs", pair_proofs),
+        ("snoclist", snoclist_proofs),
+        ("proof_search", proof_search),
+        ("with_views", with_views),
+        ("cong_rewrite", cong_rewrite),
     ]
 
     proofs = Dict{String,Any}[]

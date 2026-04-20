@@ -227,7 +227,10 @@ mod tests {
         let backend = AltErgoBackend::new(config);
 
         let mut state = ProofState::default();
-        state.context.axioms.push("forall x: int. x >= 0".to_string());
+        state
+            .context
+            .axioms
+            .push("forall x: int. x >= 0".to_string());
         state.goals.push(Goal {
             id: "goal_0".to_string(),
             target: Term::Const("true".to_string()),

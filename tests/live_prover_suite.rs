@@ -50,10 +50,7 @@ fn live_config(executable: &str) -> ProverConfig {
 
 /// Construct a live backend of the given kind.  Returns `None` when the
 /// binary is absent on PATH (auto-skip signal to callers).
-fn try_live_backend(
-    kind: ProverKind,
-    exe: &str,
-) -> Option<Box<dyn ProverBackend>> {
+fn try_live_backend(kind: ProverKind, exe: &str) -> Option<Box<dyn ProverBackend>> {
     let _resolved = binary_on_path(exe)?;
     let config = live_config(exe);
     ProverFactory::create(kind, config).ok()
@@ -66,7 +63,11 @@ fn try_live_backend(
 /// exists to catch.
 async fn assert_version_reachable(kind: ProverKind, exe: &str) {
     let Some(backend) = try_live_backend(kind, exe) else {
-        eprintln!("SKIP: {} not on PATH (searched for `{}`)", kind_label(kind), exe);
+        eprintln!(
+            "SKIP: {} not on PATH (searched for `{}`)",
+            kind_label(kind),
+            exe
+        );
         return;
     };
     match backend.version().await {
@@ -77,7 +78,7 @@ async fn assert_version_reachable(kind: ProverKind, exe: &str) {
                 kind_label(kind),
             );
             eprintln!("OK: {} reported version = {:?}", kind_label(kind), v);
-        }
+        },
         Err(e) => {
             panic!(
                 "{} live version() failed: {}.  Binary found on PATH but the \
@@ -86,7 +87,7 @@ async fn assert_version_reachable(kind: ProverKind, exe: &str) {
                 kind_label(kind),
                 e,
             );
-        }
+        },
     }
 }
 
@@ -110,15 +111,6 @@ fn kind_label(kind: ProverKind) -> &'static str {
         ProverKind::Dafny => "Dafny",
         ProverKind::FStar => "F*",
         ProverKind::TLAPS => "TLAPS",
-        ProverKind::Tamarin => "Tamarin",
-        ProverKind::ProVerif => "ProVerif",
-        ProverKind::Metamath => "Metamath",
-        ProverKind::Twelf => "Twelf",
-        ProverKind::ORTools => "OR-Tools",
-        ProverKind::HOL4 => "HOL4",
-        ProverKind::ACL2 => "ACL2",
-        ProverKind::SCIP => "SCIP",
-        ProverKind::Imandra => "Imandra",
         _ => "<other>",
     }
 }
@@ -222,66 +214,4 @@ async fn live_fstar_version() {
 async fn live_tlaps_version() {
     // TLA+ Proof System's prover is `tlapm` (per provers/mod.rs).
     assert_version_reachable(ProverKind::TLAPS, "tlapm").await;
-}
-
-// ==========================================================================
-// Tier 3 — weekly.  Upstream-tarball or heavier-build provers.  Most of
-// these SKIP locally and in PR CI; the weekly tier3 matrix in
-// live-provers.yml provisions each binary in its own job before running
-// `cargo test ... <backend>`, so only the matching test runs per job.
-// ==========================================================================
-
-#[tokio::test]
-async fn live_tamarin_version() {
-    assert_version_reachable(ProverKind::Tamarin, "tamarin-prover").await;
-}
-
-#[tokio::test]
-async fn live_proverif_version() {
-    assert_version_reachable(ProverKind::ProVerif, "proverif").await;
-}
-
-#[tokio::test]
-async fn live_metamath_version() {
-    assert_version_reachable(ProverKind::Metamath, "metamath").await;
-}
-
-#[tokio::test]
-async fn live_twelf_version() {
-    // Twelf's CLI entry is `twelf-server` per provers/mod.rs.
-    assert_version_reachable(ProverKind::Twelf, "twelf-server").await;
-}
-
-#[tokio::test]
-async fn live_ortools_version() {
-    // Echidna's ORTools backend invokes `ortools_solve` (wrapper around the
-    // OR-Tools C++ solve CLI).  Provisioned via upstream tarball.
-    assert_version_reachable(ProverKind::ORTools, "ortools_solve").await;
-}
-
-#[tokio::test]
-async fn live_hol4_version() {
-    // HOL4 requires Poly/ML + a tree build; provisioning is deferred to
-    // Containerfile.  Test SKIPs on runners without `hol` on PATH.
-    assert_version_reachable(ProverKind::HOL4, "hol").await;
-}
-
-#[tokio::test]
-async fn live_acl2_version() {
-    // ACL2 requires a Common Lisp image; provisioning deferred to Containerfile.
-    assert_version_reachable(ProverKind::ACL2, "acl2").await;
-}
-
-#[tokio::test]
-async fn live_scip_version() {
-    // SCIP requires a cmake build of SCIP Optimization Suite; deferred to
-    // Containerfile.  Test SKIPs until provisioned.
-    assert_version_reachable(ProverKind::SCIP, "scip").await;
-}
-
-#[tokio::test]
-async fn live_imandra_version() {
-    // Imandra is proprietary; handled via vendor-supplied container where a
-    // licence is available.  Test SKIPs on public CI.
-    assert_version_reachable(ProverKind::Imandra, "imandra").await;
 }

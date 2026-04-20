@@ -56,30 +56,25 @@ fn arb_term(depth: u32) -> impl Strategy<Value = Term> {
 
 /// Generate an arbitrary ProofState with 0-3 goals
 fn arb_proof_state() -> impl Strategy<Value = ProofState> {
-    prop::collection::vec(
-        (
-            "[a-z_]{1,10}".prop_map(String::from),
-            arb_term(1),
-        ),
-        0..3,
+    prop::collection::vec(("[a-z_]{1,10}".prop_map(String::from), arb_term(1)), 0..3).prop_map(
+        |goals| {
+            let goals = goals
+                .into_iter()
+                .enumerate()
+                .map(|(_i, (id, target))| Goal {
+                    id,
+                    hypotheses: vec![],
+                    target,
+                })
+                .collect();
+            ProofState {
+                goals,
+                context: Context::default(),
+                proof_script: vec![],
+                metadata: HashMap::new(),
+            }
+        },
     )
-    .prop_map(|goals| {
-        let goals = goals
-            .into_iter()
-            .enumerate()
-            .map(|(_i, (id, target))| Goal {
-                id,
-                hypotheses: vec![],
-                target,
-            })
-            .collect();
-        ProofState {
-            goals,
-            context: Context::default(),
-            proof_script: vec![],
-            metadata: HashMap::new(),
-        }
-    })
 }
 
 /// Generate a ProverKind (subset that always instantiates cleanly)
@@ -90,7 +85,7 @@ fn arb_prover_kind() -> impl Strategy<Value = ProverKind> {
         Just(ProverKind::Lean),
         Just(ProverKind::Coq),
         Just(ProverKind::Isabelle),
-        Just(ProverKind::Z3),     // weighted higher as most available
+        Just(ProverKind::Z3), // weighted higher as most available
         Just(ProverKind::Agda),
         Just(ProverKind::Idris2),
         Just(ProverKind::Vampire),

@@ -16,8 +16,6 @@ pub mod confidence;
 pub mod mutation;
 pub mod pareto;
 pub mod portfolio;
-#[cfg(feature = "verisim")]
-pub mod proof;
 pub mod statistics;
 
 pub use axiom_tracker::{AxiomPolicy, AxiomTracker, AxiomUsage, DangerLevel};
@@ -26,8 +24,4 @@ pub use confidence::TrustLevel;
 pub use mutation::{MutationKind, MutationResult, MutationTester};
 pub use pareto::{ParetoFrontier, ProofCandidate, ProofObjective};
 pub use portfolio::{PortfolioConfig, PortfolioResult, PortfolioSolver};
-#[cfg(feature = "verisim")]
-pub use proof::{
-    theorem_identity, Proof, ProofStateRecord, ProofVersion, TacticApplication, TacticStatus,
-};
 pub use statistics::StatisticsTracker;

@@ -56,7 +56,7 @@ impl ProverBackend for CameleerBackend {
         match output {
             Ok(out) if out.status.success() => {
                 Ok(String::from_utf8_lossy(&out.stdout).trim().to_string())
-            }
+            },
             Ok(_) => Ok("cameleer@unavailable".to_string()),
             Err(_) => Ok("cameleer@not-installed".to_string()),
         }
@@ -109,7 +109,9 @@ impl ProverBackend for CameleerBackend {
             .await
             .context("Cameleer: writing input")?;
         let mut cmd = Command::new(self.binary());
-        cmd.arg(&input).stdout(Stdio::piped()).stderr(Stdio::piped());
+        cmd.arg(&input)
+            .stdout(Stdio::piped())
+            .stderr(Stdio::piped());
         for arg in &self.config.args {
             cmd.arg(arg);
         }

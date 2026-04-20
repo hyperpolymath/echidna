@@ -380,8 +380,11 @@ mod tests {
 
     #[test]
     fn test_certificate_not_verified_by_default() {
-        let cert =
-            ProofCertificate::new(CertificateFormat::Alethe, "test content".to_string(), "cvc5");
+        let cert = ProofCertificate::new(
+            CertificateFormat::Alethe,
+            "test content".to_string(),
+            "cvc5",
+        );
         assert!(!cert.verified);
         assert!(cert.storage_path.is_none());
     }

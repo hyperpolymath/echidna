@@ -3,7 +3,6 @@
 
 //! Core types and abstractions for ECHIDNA theorem proving
 
-use crate::types::TypeInfo;
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use std::fmt;
@@ -29,17 +28,6 @@ pub enum Term {
 
     /// Dependent product (Pi type) Π(x: A). B
     Pi {
-        param: String,
-        param_type: Box<Term>,
-        body: Box<Term>,
-    },
-
-    /// Dependent pair / sum (Sigma type) Σ(x: A). B
-    ///
-    /// Represents dependent pairs where the type of the second component may
-    /// depend on the value of the first. Non-dependent pairs are expressible
-    /// as `Sigma { body }` where `body` does not mention `param`.
-    Sigma {
         param: String,
         param_type: Box<Term>,
         body: Box<Term>,
@@ -133,13 +121,6 @@ impl fmt::Display for Term {
             } => {
                 write!(f, "(Π {}: {}. {})", param, param_type, body)
             },
-            Term::Sigma {
-                param,
-                param_type,
-                body,
-            } => {
-                write!(f, "(Σ {}: {}. {})", param, param_type, body)
-            },
             Term::Type(level) => write!(f, "Type{}", level),
             Term::Sort(level) => write!(f, "Sort{}", level),
             Term::Universe(level) => write!(f, "Type{}", level),
@@ -169,8 +150,7 @@ impl fmt::Display for Term {
 }
 
 /// Current state of a proof
-#[derive(Debug, Clone, Serialize, Deserialize)]
-#[derive(Default)]
+#[derive(Debug, Clone, Serialize, Deserialize, Default)]
 pub struct ProofState {
     /// Current goals to prove
     pub goals: Vec<Goal>,
@@ -209,26 +189,6 @@ pub struct Hypothesis {
 
     /// Optional body (for definitions)
     pub body: Option<Term>,
-
-    /// Optional native type-system decoration (multiplicity, effects, modality,
-    /// refinement, semiring, …). `None` is semantically equivalent to a plain
-    /// unannotated hypothesis — backends that don't understand the decoration
-    /// safely ignore it.
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub type_info: Option<TypeInfo>,
-}
-
-impl Hypothesis {
-    /// Construct a plain hypothesis with no type decoration.
-    pub fn new(name: impl Into<String>, ty: Term) -> Self {
-        Self { name: name.into(), ty, body: None, type_info: None }
-    }
-
-    /// Attach a [`TypeInfo`] decoration.
-    pub fn with_type_info(mut self, info: TypeInfo) -> Self {
-        self.type_info = Some(info);
-        self
-    }
 }
 
 /// Proof context with available premises
@@ -262,23 +222,6 @@ pub struct Definition {
     pub name: String,
     pub ty: Term,
     pub body: Term,
-
-    /// Optional native type-system decoration (see [`TypeInfo`]).
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub type_info: Option<TypeInfo>,
-}
-
-impl Definition {
-    /// Construct a plain definition with no type decoration.
-    pub fn new(name: impl Into<String>, ty: Term, body: Term) -> Self {
-        Self { name: name.into(), ty, body, type_info: None }
-    }
-
-    /// Attach a [`TypeInfo`] decoration.
-    pub fn with_type_info(mut self, info: TypeInfo) -> Self {
-        self.type_info = Some(info);
-        self
-    }
 }
 
 /// A variable declaration
@@ -286,23 +229,6 @@ impl Definition {
 pub struct Variable {
     pub name: String,
     pub ty: Term,
-
-    /// Optional native type-system decoration (see [`TypeInfo`]).
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub type_info: Option<TypeInfo>,
-}
-
-impl Variable {
-    /// Construct a plain variable with no type decoration.
-    pub fn new(name: impl Into<String>, ty: Term) -> Self {
-        Self { name: name.into(), ty, type_info: None }
-    }
-
-    /// Attach a [`TypeInfo`] decoration.
-    pub fn with_type_info(mut self, info: TypeInfo) -> Self {
-        self.type_info = Some(info);
-        self
-    }
 }
 
 /// A proof tactic/command
@@ -355,7 +281,6 @@ pub enum TacticResult {
     /// Proof complete!
     QED,
 }
-
 
 impl fmt::Display for Definition {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {

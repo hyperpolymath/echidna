@@ -369,19 +369,6 @@ impl LeanBackend {
                     self.term_to_lean(body)
                 )
             },
-            Term::Sigma {
-                param,
-                param_type,
-                body,
-            } => {
-                // Lean 4: Sigma types are `(x : A) × B x` or `Sigma (fun x => ...)`
-                format!(
-                    "(({} : {}) × {})",
-                    param,
-                    self.term_to_lean(param_type),
-                    self.term_to_lean(body)
-                )
-            },
             Term::Let {
                 name,
                 ty,
@@ -595,8 +582,7 @@ impl LeanBackend {
             let parts: Vec<&str> = input.splitn(2, &['→', '-'][..]).collect();
             if parts.len() == 2 {
                 let domain = self.parse_lean_expr_simple(parts[0])?;
-                let codomain =
-                    self.parse_lean_expr_simple(parts[1].trim_start_matches('>'))?;
+                let codomain = self.parse_lean_expr_simple(parts[1].trim_start_matches('>'))?;
                 return Ok(LeanExpr::Pi(
                     "_".to_string(),
                     Box::new(domain),
@@ -667,7 +653,6 @@ impl LeanBackend {
                         name: name.clone(),
                         ty: term_ty,
                         body: term_val,
-                        type_info: None,
                     });
                 },
                 LeanDeclaration::Axiom { name, ty, .. } => {
@@ -703,7 +688,6 @@ impl LeanBackend {
                         name: h.name.clone(),
                         ty: self.lean_expr_to_term(&h.ty),
                         body: h.value.as_ref().map(|v| self.lean_expr_to_term(v)),
-                        type_info: None,
                     })
                     .collect();
 
@@ -1291,7 +1275,6 @@ impl ProverBackend for LeanBackend {
                                 name: h.name.clone(),
                                 ty: self.lean_expr_to_term(&h.ty),
                                 body: h.value.as_ref().map(|v| self.lean_expr_to_term(v)),
-                                type_info: None,
                             })
                             .collect(),
                     })

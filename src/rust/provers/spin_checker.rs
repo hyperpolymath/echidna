@@ -529,7 +529,10 @@ ltl p1 { []<> ready }
         let backend = SpinBackend::new(config);
 
         let mut state = ProofState::default();
-        state.context.axioms.push("proctype P() { skip }".to_string());
+        state
+            .context
+            .axioms
+            .push("proctype P() { skip }".to_string());
 
         let promela = backend.to_promela(&state).unwrap();
         assert!(promela.contains("proctype P()"));

@@ -30,7 +30,6 @@ use crate::core::{
     Theorem,
 };
 use crate::provers::{ProverBackend, ProverConfig, ProverKind};
-use crate::types::Multiplicity;
 
 /// Idris 2 backend implementation
 pub struct Idris2Backend {
@@ -106,6 +105,17 @@ enum Idris2Term {
     AutoImplicit(String, Box<Idris2Term>),
 }
 
+/// Quantitative type theory multiplicities
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+enum Multiplicity {
+    /// Unrestricted (0, 1, or many uses)
+    Unrestricted,
+    /// Linear (exactly 1 use)
+    Linear,
+    /// Erased (0 uses at runtime)
+    Erased,
+}
+
 impl Idris2Backend {
     pub fn new(config: ProverConfig) -> Self {
         Idris2Backend {
@@ -168,17 +178,6 @@ impl Idris2Backend {
         }
     }
 
-    /// Convert a [`Multiplicity`] to the Idris 2 QTT annotation string.
-    fn multiplicity_to_idris2(m: &Multiplicity) -> &'static str {
-        match m {
-            Multiplicity::Zero => "0",
-            Multiplicity::One | Multiplicity::Linear => "1",
-            Multiplicity::Omega | Multiplicity::Shared => "",
-            Multiplicity::Affine => "1", // closest QTT approximation
-            Multiplicity::Graded(_) => "",
-        }
-    }
-
     /// Convert universal Term to Idris 2 syntax
     fn term_to_idris2(&self, term: &Term) -> String {
         match term {
@@ -232,16 +231,6 @@ impl Idris2Backend {
                     // Dependent function type
                     format!("({} : {}) -> {}", param, param_ty_str, body_str)
                 }
-            },
-            Term::Sigma {
-                param,
-                param_type,
-                body,
-            } => {
-                // Idris2: (x : A ** B x) is dependent-pair syntax
-                let param_ty_str = self.term_to_idris2(param_type);
-                let body_str = self.term_to_idris2(body);
-                format!("({} : {} ** {})", param, param_ty_str, body_str)
             },
             Term::Type(level) | Term::Universe(level) => {
                 if *level == 0 {
@@ -506,7 +495,6 @@ impl ProverBackend for Idris2Backend {
                         name: name.clone(),
                         ty: self.parse_type_expr(&ty_str),
                         body: Term::Const(name.clone()),
-                        type_info: None,
                     });
 
                     // Add constructors as theorems
@@ -534,7 +522,6 @@ impl ProverBackend for Idris2Backend {
                         name: name.clone(),
                         ty: self.parse_type_expr(&ty_str),
                         body: Term::Const(name.clone()),
-                        type_info: None,
                     });
 
                     // Add field projections
@@ -570,7 +557,6 @@ impl ProverBackend for Idris2Backend {
                             body: Box::new(Term::Type(0)),
                         },
                         body: Term::Const(name.clone()),
-                        type_info: None,
                     });
 
                     // Methods as theorems
@@ -630,7 +616,6 @@ impl ProverBackend for Idris2Backend {
                         name: param_name.clone(),
                         ty: Term::Type(0), // Placeholder
                         body: None,
-                        type_info: None,
                     });
 
                     // Update goal target if it's a Pi type
@@ -675,10 +660,10 @@ impl ProverBackend for Idris2Backend {
                     // Check if goal is an equality that can be solved by Refl
                     if let Term::App { func, args } = &goal.target {
                         if let Term::Const(name) = func.as_ref() {
-                            if (name == "Equal" || name == "=" || name == "(=)")
-                                && args.len() >= 2 {
-                                    // Could check if args are equal here
-                                }
+                            if (name == "Equal" || name == "=" || name == "(=)") && args.len() >= 2
+                            {
+                                // Could check if args are equal here
+                            }
                         }
                     }
                 }
@@ -816,17 +801,11 @@ impl ProverBackend for Idris2Backend {
         output.push_str("import Data.Vect\n");
         output.push_str("import Data.Nat\n\n");
 
-        // Definitions (emit QTT multiplicity annotations when present)
+        // Definitions
         for def in &state.context.definitions {
             let ty_str = self.term_to_idris2(&def.ty);
             let body_str = self.term_to_idris2(&def.body);
-            let mult_prefix = def
-                .type_info
-                .as_ref()
-                .and_then(|ti| ti.multiplicity.as_ref())
-                .map(|m| format!("{} ", Self::multiplicity_to_idris2(m)))
-                .unwrap_or_default();
-            output.push_str(&format!("{}{} : {}\n", mult_prefix, def.name, ty_str));
+            output.push_str(&format!("{} : {}\n", def.name, ty_str));
             output.push_str(&format!("{} = {}\n\n", def.name, body_str));
         }
 
@@ -1217,7 +1196,7 @@ mod tests {
         // Test Pi type
         let pi_term = Idris2Term::Pi(
             "a".to_string(),
-            Multiplicity::Omega,
+            Multiplicity::Unrestricted,
             Box::new(Idris2Term::Type),
             Box::new(Idris2Term::Var("a".to_string())),
         );

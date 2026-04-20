@@ -38,11 +38,8 @@ pub const UCB1_C: f64 = 1.4;
 /// `suggest_tactics` is a fine substitute.
 #[async_trait]
 pub trait TacticPolicy: Send + Sync {
-    async fn propose(
-        &self,
-        state: &ProofState,
-        top_k: usize,
-    ) -> anyhow::Result<Vec<(Tactic, f64)>>;
+    async fn propose(&self, state: &ProofState, top_k: usize)
+        -> anyhow::Result<Vec<(Tactic, f64)>>;
 }
 
 /// Abstract value head: given a state, return an estimate of
@@ -163,7 +160,11 @@ impl<'a> Search<'a> {
         if let Some(&idx) = self.state_index.get(&key) {
             return idx;
         }
-        let terminal = if state.goals.is_empty() { Some(true) } else { None };
+        let terminal = if state.goals.is_empty() {
+            Some(true)
+        } else {
+            None
+        };
         let idx = self.nodes.len();
         self.nodes.push(Node {
             state,
@@ -179,9 +180,7 @@ impl<'a> Search<'a> {
     }
 
     fn select(&self, mut node: usize) -> usize {
-        while !self.nodes[node].children.is_empty()
-            && self.nodes[node].terminal.is_none()
-        {
+        while !self.nodes[node].children.is_empty() && self.nodes[node].terminal.is_none() {
             let parent_visits = self.nodes[node].visits.max(1);
             let mut best_child = None;
             let mut best_score = f64::NEG_INFINITY;
@@ -228,7 +227,7 @@ impl<'a> Search<'a> {
                     closed.goals.clear();
                     closed.proof_script.push(tactic.clone());
                     closed
-                }
+                },
             };
             let child = self.register(next_state, Some(leaf), prior);
             self.nodes[leaf].children.push((tactic, child));
@@ -279,7 +278,11 @@ impl<'a> Search<'a> {
 }
 
 fn state_key(state: &ProofState) -> String {
-    let goals: Vec<_> = state.goals.iter().map(|g| format!("{}", g.target)).collect();
+    let goals: Vec<_> = state
+        .goals
+        .iter()
+        .map(|g| format!("{}", g.target))
+        .collect();
     goals.join("||")
 }
 

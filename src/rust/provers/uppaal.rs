@@ -187,7 +187,6 @@ impl UppaalBackend {
                     name: trimmed.to_string(),
                     ty: Term::Const("UPPAAL_DECL".to_string()),
                     body: Term::Const(trimmed.to_string()),
-                    type_info: None,
                 });
             }
 
@@ -290,7 +289,6 @@ impl ProverBackend for UppaalBackend {
                     name: clock_name.clone(),
                     ty: Term::Const("clock".to_string()),
                     body: Term::Const(format!("clock {};", clock_name)),
-                    type_info: None,
                 });
                 new_state.proof_script.push(tactic.clone());
                 Ok(TacticResult::Success(new_state))
@@ -308,7 +306,6 @@ impl ProverBackend for UppaalBackend {
                     name: chan_name.clone(),
                     ty: Term::Const("chan".to_string()),
                     body: Term::Const(format!("chan {};", chan_name)),
-                    type_info: None,
                 });
                 new_state.proof_script.push(tactic.clone());
                 Ok(TacticResult::Success(new_state))

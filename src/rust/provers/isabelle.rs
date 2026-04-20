@@ -91,10 +91,7 @@ fn extract_theory_name(content: &str) -> Option<String> {
             } else {
                 continue;
             }
-            let name = rest
-                .split_whitespace()
-                .next()
-                .map(|s| s.to_string());
+            let name = rest.split_whitespace().next().map(|s| s.to_string());
             if name.is_some() {
                 return name;
             }
@@ -431,7 +428,6 @@ impl ProverBackend for IsabelleBackend {
                                 name: "IH".to_string(),
                                 ty: goal.target.clone(),
                                 body: None,
-                                type_info: None,
                             });
                             hyps
                         },

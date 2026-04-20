@@ -76,7 +76,10 @@ impl SelfPlayGenerator {
         Some(Variant {
             kind: VariantKind::AlphaRename,
             state: new_state,
-            rationale: format!("alpha-renamed bound variables (cycle {})", self.alpha_counter),
+            rationale: format!(
+                "alpha-renamed bound variables (cycle {})",
+                self.alpha_counter
+            ),
         })
     }
 

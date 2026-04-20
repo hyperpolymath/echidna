@@ -402,7 +402,6 @@ fn pv_definition(line: &str) -> Definition {
         name,
         ty: Term::Const("proverif_decl".to_string()),
         body: Term::Const(clean.to_string()),
-        type_info: None,
     }
 }
 

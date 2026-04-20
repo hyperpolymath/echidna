@@ -248,28 +248,32 @@ fn collect_lemma_candidates(term: &Term, out: &mut Vec<String>, cap: usize) {
             if !out.contains(name) {
                 out.push(name.clone());
             }
-        }
+        },
         Term::App { func, args } => {
             collect_lemma_candidates(func, out, cap);
             for a in args {
                 collect_lemma_candidates(a, out, cap);
             }
-        }
-        Term::Pi { param_type, body, .. } => {
+        },
+        Term::Pi {
+            param_type, body, ..
+        } => {
             collect_lemma_candidates(param_type, out, cap);
             collect_lemma_candidates(body, out, cap);
-        }
-        Term::Lambda { param_type, body, .. } => {
+        },
+        Term::Lambda {
+            param_type, body, ..
+        } => {
             if let Some(pt) = param_type {
                 collect_lemma_candidates(pt, out, cap);
             }
             collect_lemma_candidates(body, out, cap);
-        }
+        },
         Term::Let { value, body, .. } => {
             collect_lemma_candidates(value, out, cap);
             collect_lemma_candidates(body, out, cap);
-        }
-        _ => {}
+        },
+        _ => {},
     }
 }
 

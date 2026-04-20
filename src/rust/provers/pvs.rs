@@ -1867,8 +1867,7 @@ impl PVSBackend {
                 arguments,
             } => {
                 let func_term = Self::expr_to_term(function);
-                let arg_terms: Vec<Term> =
-                    arguments.iter().map(Self::expr_to_term).collect();
+                let arg_terms: Vec<Term> = arguments.iter().map(Self::expr_to_term).collect();
                 Term::App {
                     func: Box::new(func_term),
                     args: arg_terms,
@@ -2022,8 +2021,7 @@ impl PVSBackend {
             PVSType::Name(n) => n.clone(),
             PVSType::Application { base, arguments } => {
                 let base_str = Self::type_to_string(base);
-                let args_str: Vec<String> =
-                    arguments.iter().map(Self::type_to_string).collect();
+                let args_str: Vec<String> = arguments.iter().map(Self::type_to_string).collect();
                 format!("{}[{}]", base_str, args_str.join(", "))
             },
             PVSType::Function { domain, range } => {
@@ -2034,8 +2032,7 @@ impl PVSBackend {
                 )
             },
             PVSType::Product(types) => {
-                let type_strs: Vec<String> =
-                    types.iter().map(Self::type_to_string).collect();
+                let type_strs: Vec<String> = types.iter().map(Self::type_to_string).collect();
                 format!("[{}]", type_strs.join(", "))
             },
             PVSType::Record(fields) => {
@@ -2099,20 +2096,6 @@ impl PVSBackend {
             } => {
                 // Pi types map to FORALL in PVS
                 PVSExpr::Forall {
-                    bindings: vec![PVSBinding {
-                        name: param.clone(),
-                        var_type: Box::new(Self::term_to_type(param_type)),
-                    }],
-                    body: Box::new(Self::term_to_expr(body)),
-                }
-            },
-            Term::Sigma {
-                param,
-                param_type,
-                body,
-            } => {
-                // Sigma types approximate as EXISTS in PVS (no native dep pairs)
-                PVSExpr::Exists {
                     bindings: vec![PVSBinding {
                         name: param.clone(),
                         var_type: Box::new(Self::term_to_type(param_type)),
@@ -2379,8 +2362,7 @@ impl PVSBackend {
                 if arguments.is_empty() {
                     func
                 } else {
-                    let args: Vec<String> =
-                        arguments.iter().map(Self::format_expr).collect();
+                    let args: Vec<String> = arguments.iter().map(Self::format_expr).collect();
                     format!("{}({})", func, args.join(", "))
                 }
             },
@@ -2457,8 +2439,7 @@ impl PVSBackend {
                 let updates: Vec<String> = assignments
                     .iter()
                     .map(|(indices, value)| {
-                        let idx_str: Vec<String> =
-                            indices.iter().map(Self::format_expr).collect();
+                        let idx_str: Vec<String> = indices.iter().map(Self::format_expr).collect();
                         format!("({}) := {}", idx_str.join(", "), Self::format_expr(value))
                     })
                     .collect();
@@ -2626,15 +2607,11 @@ impl PVSBackend {
             PVSStrategy::Simplify => "(simplify)".to_string(),
             PVSStrategy::Beta => "(beta)".to_string(),
             PVSStrategy::Try(strategies) => {
-                let strs: Vec<String> = strategies
-                    .iter()
-                    .map(Self::format_strategy)
-                    .collect();
+                let strs: Vec<String> = strategies.iter().map(Self::format_strategy).collect();
                 format!("(try {})", strs.join(" "))
             },
             PVSStrategy::Branch(main, branches) => {
-                let branch_strs: Vec<String> =
-                    branches.iter().map(Self::format_strategy).collect();
+                let branch_strs: Vec<String> = branches.iter().map(Self::format_strategy).collect();
                 format!(
                     "(branch {} ({}))",
                     Self::format_strategy(main),
@@ -2642,10 +2619,7 @@ impl PVSBackend {
                 )
             },
             PVSStrategy::Then(strategies) => {
-                let strs: Vec<String> = strategies
-                    .iter()
-                    .map(Self::format_strategy)
-                    .collect();
+                let strs: Vec<String> = strategies.iter().map(Self::format_strategy).collect();
                 format!("(then {})", strs.join(" "))
             },
             PVSStrategy::Repeat(inner) => {
@@ -2728,7 +2702,6 @@ impl ProverBackend for PVSBackend {
                             name: name.clone(),
                             ty: Self::expr_to_term(formula),
                             body: None,
-                            type_info: None,
                         });
                     },
                     PVSFormulaKind::Lemma
@@ -2758,10 +2731,11 @@ impl ProverBackend for PVSBackend {
                         name: format!("{}_def", name),
                         ty: def_term,
                         body: Some(Self::expr_to_term(def)),
-                        type_info: None,
                     });
                 },
-                PVSDeclaration::ConstDecl { definition: None, .. } => {
+                PVSDeclaration::ConstDecl {
+                    definition: None, ..
+                } => {
                     // No definition — nothing to add as hypothesis
                 },
                 PVSDeclaration::TCC { name, formula, .. } => {
