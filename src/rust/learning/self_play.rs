@@ -192,6 +192,7 @@ mod tests {
                 name: "h0".to_string(),
                 ty: Term::Const("P".to_string()),
                 body: None,
+                type_info: None,
             }],
         });
         s

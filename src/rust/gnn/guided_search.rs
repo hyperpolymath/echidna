@@ -384,6 +384,7 @@ mod tests {
                     name: "h".to_string(),
                     ty: Term::Const("Nat".to_string()),
                     body: None,
+                    type_info: None,
                 }],
             }],
             context: Context {
@@ -393,6 +394,7 @@ mod tests {
                 variables: vec![Variable {
                     name: "n".to_string(),
                     ty: Term::Const("Nat".to_string()),
+                    type_info: None,
                 }],
             },
             proof_script: Vec::new(),

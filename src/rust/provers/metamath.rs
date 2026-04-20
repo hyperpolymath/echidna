@@ -1021,6 +1021,7 @@ mod tests {
         state.context.variables.push(Variable {
             name: "x".to_string(),
             ty: Term::Const("nat".to_string()),
+            type_info: None,
         });
 
         let exported = backend.export(&state).await.unwrap();

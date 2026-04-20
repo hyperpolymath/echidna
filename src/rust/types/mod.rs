@@ -456,8 +456,7 @@ mod tests {
     #[test]
     fn hypothesis_with_type_info_roundtrips() {
         use crate::core::Hypothesis;
-        let h = Hypothesis::new("h", Term::Const("Nat".to_string()))
-            .with_type_info(TypeInfo::new().with_multiplicity(Multiplicity::Linear));
+        let h = Hypothesis { name: "h".into(), ty: Term::Const("Nat".to_string()), body: None, type_info: Some(TypeInfo::new().with_multiplicity(Multiplicity::Linear)) };
         let json = serde_json::to_string(&h).expect("serialize");
         assert!(json.contains("Linear"));
         let back: Hypothesis = serde_json::from_str(&json).expect("deserialize");

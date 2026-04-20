@@ -736,6 +736,7 @@ mod tests {
             name: "h_nat".to_string(),
             ty: Term::Const("Nat".to_string()),
             body: None,
+            type_info: None,
         };
 
         let theorem = Theorem {
@@ -778,6 +779,7 @@ mod tests {
                 variables: vec![Variable {
                     name: "n".to_string(),
                     ty: Term::Const("Nat".to_string()),
+                    type_info: None,
                 }],
             },
             proof_script: Vec::new(),
