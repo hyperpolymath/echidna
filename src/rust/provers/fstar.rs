@@ -17,6 +17,7 @@ use tokio::process::Command;
 
 use super::{ProverBackend, ProverConfig, ProverKind};
 use crate::core::{Goal, ProofState, Tactic, TacticResult, Term};
+use crate::types::{Effect, TypeInfo};
 
 /// F* backend
 pub struct FStarBackend {
@@ -33,10 +34,49 @@ impl FStarBackend {
         for (i, axiom) in state.context.axioms.iter().enumerate() {
             input.push_str(&format!("assume val axiom_{} : {}\n", i, axiom));
         }
+        // Emit definitions with effect and refinement annotations from TypeInfo
+        for def in &state.context.definitions {
+            let effect_str = def
+                .type_info
+                .as_ref()
+                .map(Self::effect_to_fstar)
+                .unwrap_or_default();
+            let refinement_str = def
+                .type_info
+                .as_ref()
+                .and_then(|ti| ti.refinement.as_ref())
+                .map(|pred| format!("{{v:{} | {}}}", def.ty, pred))
+                .unwrap_or_else(|| format!("{}", def.ty));
+            input.push_str(&format!("val {} : {}{}\n", def.name, effect_str, refinement_str));
+        }
         if let Some(goal) = state.goals.first() {
             input.push_str(&format!("\nval goal : {}\n", goal.target));
         }
         Ok(input)
+    }
+
+    /// Convert effect row from [`TypeInfo`] to an F* effect annotation prefix.
+    fn effect_to_fstar(ti: &TypeInfo) -> String {
+        if ti.effects.is_empty() {
+            return String::new();
+        }
+        let effect_name = ti
+            .effects
+            .effects
+            .first()
+            .map(|e| match e {
+                Effect::Pure | Effect::Tot => "Tot",
+                Effect::IO => "IO",
+                Effect::State => "ST",
+                Effect::Exception => "Exn",
+                Effect::Div => "Div",
+                Effect::Ghost => "GTot",
+                Effect::NonDet => "ALL",
+                Effect::Async => "ALL",
+                Effect::Custom(s) => s.as_str(),
+            })
+            .unwrap_or("Tot");
+        format!("{} ", effect_name)
     }
 
     fn parse_result(&self, output: &str) -> Result<bool> {

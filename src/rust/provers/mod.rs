@@ -64,6 +64,7 @@ pub mod nunchaku;
 pub mod nuprl;
 pub mod nusmv;
 pub mod ortools;
+pub mod outcome;
 pub mod prism;
 pub mod proverif;
 pub mod pvs;

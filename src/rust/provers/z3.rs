@@ -22,7 +22,6 @@ use tokio::io::AsyncWriteExt;
 use tokio::process::{Child, Command};
 use tokio::time::{timeout, Duration};
 
-use super::outcome::{classify_anyhow_error, ProverOutcome};
 use super::{ProverBackend, ProverConfig, ProverKind};
 use crate::core::{Context as ProofContext, Goal, ProofState, Tactic, TacticResult, Term};
 
@@ -212,6 +211,142 @@ impl Z3Backend {
 
         self.execute_command(&commands).await
     }
+
+    /// Typed verification with precise outcome classification.
+    pub async fn check(
+        &self,
+        state: &ProofState,
+    ) -> anyhow::Result<super::outcome::ProverOutcome> {
+        use super::outcome::ProverOutcome;
+        use std::time::Instant;
+        let start = Instant::now();
+
+        if state.goals.is_empty() {
+            return Ok(ProverOutcome::Proved { elapsed_ms: 0 });
+        }
+
+        let mut preamble = String::from("(set-logic ALL)\n");
+        for var in &state.context.variables {
+            preamble.push_str(&format!(
+                "(declare-const {} {})\n",
+                var.name,
+                self.term_to_smt(&var.ty)
+            ));
+        }
+
+        let axioms_inconsistent = if !state.context.axioms.is_empty() {
+            let mut hyp_check = preamble.clone();
+            for axiom in &state.context.axioms {
+                hyp_check.push_str(&format!("(assert {})\n", axiom));
+            }
+            hyp_check.push_str("(check-sat)\n");
+            matches!(self.execute_command(&hyp_check).await, Ok(SmtResult::Unsat))
+        } else {
+            false
+        };
+
+        let goals_inconsistent = if !axioms_inconsistent {
+            let mut goal_check = preamble.clone();
+            for axiom in &state.context.axioms {
+                goal_check.push_str(&format!("(assert {})\n", axiom));
+            }
+            for goal in &state.goals {
+                goal_check.push_str(&format!("(assert {})\n", self.term_to_smt(&goal.target)));
+            }
+            goal_check.push_str("(check-sat)\n");
+            matches!(self.execute_command(&goal_check).await, Ok(SmtResult::Unsat))
+        } else {
+            false
+        };
+
+        if axioms_inconsistent {
+            return Ok(ProverOutcome::InconsistentPremises {
+                detail: Some(
+                    "axioms are mutually unsatisfiable; any goal follows trivially".to_string(),
+                ),
+            });
+        }
+        if goals_inconsistent {
+            return Ok(ProverOutcome::InconsistentPremises {
+                detail: Some(
+                    "goal set is self-contradictory (goals cannot all hold simultaneously)"
+                        .to_string(),
+                ),
+            });
+        }
+
+        if state
+            .goals
+            .iter()
+            .all(|g| matches!(&g.target, Term::Const(c) if c == "true"))
+        {
+            return Ok(ProverOutcome::Proved { elapsed_ms: 0 });
+        }
+
+        let mut commands = preamble;
+        for axiom in &state.context.axioms {
+            commands.push_str(&format!("(assert {})\n", axiom));
+        }
+        for goal in &state.goals {
+            commands.push_str(&format!("(assert (not {}))\n", self.term_to_smt(&goal.target)));
+        }
+        commands.push_str("(check-sat)\n");
+
+        let elapsed = || start.elapsed().as_millis() as u64;
+
+        match self.execute_command(&commands).await {
+            Ok(SmtResult::Unsat) => {
+                Ok(ProverOutcome::Proved { elapsed_ms: elapsed() })
+            },
+            Ok(SmtResult::Sat) => Ok(ProverOutcome::NoProofFound {
+                elapsed_ms: elapsed(),
+                reason: Some("Z3 found a counterexample (SAT)".to_string()),
+            }),
+            Ok(SmtResult::Unknown) => Ok(ProverOutcome::NoProofFound {
+                elapsed_ms: elapsed(),
+                reason: Some(
+                    "Z3 returned 'unknown' (goal may be undecidable in the selected logic)"
+                        .to_string(),
+                ),
+            }),
+            Ok(SmtResult::Error(e)) => {
+                if e.to_lowercase().contains("unknown")
+                    || e.to_lowercase().contains("unsupported")
+                    || e.to_lowercase().contains("logic")
+                {
+                    Ok(ProverOutcome::UnsupportedFeature { feature: e })
+                } else {
+                    Ok(ProverOutcome::InvalidInput {
+                        reason: e,
+                        location: None,
+                    })
+                }
+            },
+            Ok(SmtResult::Output(_)) => Ok(ProverOutcome::NoProofFound {
+                elapsed_ms: elapsed(),
+                reason: Some("unexpected output from Z3 (check-sat returned non-standard response)"
+                    .to_string()),
+            }),
+            Err(e) => {
+                let msg = e.to_string().to_lowercase();
+                if msg.contains("timeout") || msg.contains("timed out") {
+                    Ok(ProverOutcome::Timeout {
+                        limit_secs: self.config.timeout,
+                    })
+                } else if msg.contains("failed to spawn")
+                    || msg.contains("no such file")
+                    || msg.contains("os error")
+                {
+                    Ok(ProverOutcome::SystemError { detail: e.to_string() })
+                } else {
+                    Ok(ProverOutcome::ProverError {
+                        detail: e.to_string(),
+                        exit_code: None,
+                    })
+                }
+            },
+        }
+    }
 }
 
 #[async_trait]
@@ -352,132 +487,6 @@ impl ProverBackend for Z3Backend {
             SmtResult::Unknown => Ok(false),
             SmtResult::Error(e) => bail!("Verification error: {}", e),
             SmtResult::Output(_) => Ok(false),
-        }
-    }
-
-    async fn check(&self, state: &ProofState) -> Result<ProverOutcome> {
-        let start = std::time::Instant::now();
-        let limit = self.config.timeout;
-
-        // Short-circuit trivial cases exactly as `verify_proof` does.
-        if state.goals.is_empty() {
-            return Ok(ProverOutcome::Proved {
-                elapsed_ms: start.elapsed().as_millis() as u64,
-            });
-        }
-        if state
-            .goals
-            .iter()
-            .all(|g| matches!(&g.target, Term::Const(c) if c == "true"))
-        {
-            return Ok(ProverOutcome::Proved {
-                elapsed_ms: start.elapsed().as_millis() as u64,
-            });
-        }
-
-        // Premise-consistency probe: assert the axioms alone and see if
-        // they are unsatisfiable.  If they are, the premise set is
-        // inconsistent — returning PROVED in that case would be a vacuous
-        // truth and epistemically worthless.
-        let mut probe = String::new();
-        probe.push_str("(set-logic ALL)\n");
-        for var in &state.context.variables {
-            let ty_smt = self.term_to_smt(&var.ty);
-            probe.push_str(&format!("(declare-const {} {})\n", var.name, ty_smt));
-        }
-        let has_premises = !state.context.axioms.is_empty() || state.goals.len() > 1;
-        if has_premises {
-            for ax in &state.context.axioms {
-                probe.push_str(&format!("(assert {})\n", ax));
-            }
-            // Goal-set inconsistency: asserting every goal simultaneously
-            // is a sibling test — if the user asks us to prove both P and
-            // ¬P, those can't jointly hold.
-            if state.goals.len() > 1 {
-                for g in &state.goals {
-                    probe.push_str(&format!("(assert {})\n", self.term_to_smt(&g.target)));
-                }
-            }
-            probe.push_str("(check-sat)\n");
-            match self.execute_command(&probe).await {
-                Ok(SmtResult::Unsat) => {
-                    return Ok(ProverOutcome::InconsistentPremises {
-                        detail: Some(
-                            "axiom set (or combined goal set) is unsatisfiable".to_string(),
-                        ),
-                    });
-                },
-                Ok(SmtResult::Error(e)) => {
-                    // Fall through to the normal path — the probe failed
-                    // for parsing reasons, which the main path will also
-                    // catch and classify.
-                    tracing::debug!("premise probe error: {}", e);
-                },
-                Ok(_) | Err(_) => {
-                    // Sat / unknown / transient: premises are consistent
-                    // (or we can't tell) — proceed with the validity check.
-                },
-            }
-        }
-
-        // Main validity check: assert the negation of each goal (only
-        // useful when we have exactly one goal; the inconsistency probe
-        // above already covers the multi-goal case).
-        let mut commands = String::new();
-        commands.push_str("(set-logic ALL)\n");
-        for var in &state.context.variables {
-            let ty_smt = self.term_to_smt(&var.ty);
-            commands.push_str(&format!("(declare-const {} {})\n", var.name, ty_smt));
-        }
-        for ax in &state.context.axioms {
-            commands.push_str(&format!("(assert {})\n", ax));
-        }
-        let goal_for_negation = if state.goals.len() == 1 {
-            &state.goals[0]
-        } else {
-            // Multi-goal: prove the conjunction by negating it.
-            // We already handled the inconsistency case above; here we
-            // assert the negation of all goals together.
-            &state.goals[0]
-        };
-        let smt_goal = self.term_to_smt(&goal_for_negation.target);
-        commands.push_str(&format!("(assert (not {}))\n", smt_goal));
-        commands.push_str("(check-sat)\n");
-
-        let elapsed_ms = |start: std::time::Instant| start.elapsed().as_millis() as u64;
-        match self.execute_command(&commands).await {
-            Ok(SmtResult::Unsat) => Ok(ProverOutcome::Proved {
-                elapsed_ms: elapsed_ms(start),
-            }),
-            Ok(SmtResult::Sat) => Ok(ProverOutcome::NoProofFound {
-                elapsed_ms: elapsed_ms(start),
-                reason: Some("Z3 returned sat for the negated goal".to_string()),
-            }),
-            Ok(SmtResult::Unknown) => Ok(ProverOutcome::NoProofFound {
-                elapsed_ms: elapsed_ms(start),
-                reason: Some("Z3 returned unknown".to_string()),
-            }),
-            Ok(SmtResult::Error(e)) => {
-                let lower = e.to_lowercase();
-                if lower.contains("unsupported") || lower.contains("not supported") {
-                    Ok(ProverOutcome::UnsupportedFeature { feature: e })
-                } else if lower.contains("parse") || lower.contains("not declared") {
-                    Ok(ProverOutcome::InvalidInput {
-                        reason: e,
-                        location: None,
-                    })
-                } else {
-                    Ok(ProverOutcome::ProverError {
-                        detail: e,
-                        exit_code: None,
-                    })
-                }
-            },
-            Ok(SmtResult::Output(o)) => Ok(ProverOutcome::ProverError {
-                detail: format!("unexpected Z3 output: {}", o),
-                exit_code: None,
-            }),
-            Err(e) => Ok(classify_anyhow_error(&e, limit)),
         }
     }
 
@@ -702,6 +711,7 @@ impl SmtParser {
                     state.context.variables.push(crate::core::Variable {
                         name: name.clone(),
                         ty: self.smt_to_term(&ty_term),
+                        type_info: None,
                     });
                 },
 
@@ -732,6 +742,7 @@ impl SmtParser {
                     state.context.variables.push(crate::core::Variable {
                         name: name.clone(),
                         ty,
+                        type_info: None,
                     });
                 },
 
