@@ -152,6 +152,20 @@ pub enum ProverKind {
 
     // Tier 10: Logic synthesis & hardware verification
     ABC,
+
+    // Tier 11: Type-system validators (structural type checkers)
+    TypeLL,
+    TropicalTypeChecker,
+    EffectRowTypeChecker,
+    QTTTypeChecker,
+    DependentTypeChecker,
+    SessionTypeChecker,
+    ChoreographicTypeChecker,
+    ModalTypeChecker,
+    KatagoriaVerifier,
+    RefinementTypeChecker,
+    EpistemicTypeChecker,
+    EchoTypeChecker,
 }
 
 impl std::str::FromStr for ProverKind {
@@ -208,6 +222,18 @@ impl std::str::FromStr for ProverKind {
             "key" | "key-project" | "javadl" => Ok(ProverKind::KeY),
             "dreal" | "d-real" | "dreal4" => Ok(ProverKind::DReal),
             "abc" | "berkeley-abc" => Ok(ProverKind::ABC),
+            "typell" | "type-ll" | "linear-logic-types" => Ok(ProverKind::TypeLL),
+            "tropicaltypechecker" | "tropical" | "tropical-type-checker" => Ok(ProverKind::TropicalTypeChecker),
+            "effectrowtypechecker" | "effect-row" | "algebraic-effects" => Ok(ProverKind::EffectRowTypeChecker),
+            "qtttypechecker" | "qtt" | "quantitative-tt" => Ok(ProverKind::QTTTypeChecker),
+            "dependenttypechecker" | "dependent-type-checker" | "dtt" => Ok(ProverKind::DependentTypeChecker),
+            "sessiontypechecker" | "session-types" | "mpst" => Ok(ProverKind::SessionTypeChecker),
+            "choreographictypechecker" | "choreographic" | "chor" => Ok(ProverKind::ChoreographicTypeChecker),
+            "modaltypechecker" | "modal-types" | "modal-logic-types" => Ok(ProverKind::ModalTypeChecker),
+            "katagoriaverifier" | "katagoria" | "category-verifier" => Ok(ProverKind::KatagoriaVerifier),
+            "refinementtypechecker" | "refinement-types" | "liquid" => Ok(ProverKind::RefinementTypeChecker),
+            "epistemictypechecker" | "epistemic" | "knowledge-types" => Ok(ProverKind::EpistemicTypeChecker),
+            "echotypechecker" | "echo" | "echo-types" => Ok(ProverKind::EchoTypeChecker),
             _ => Err(anyhow::anyhow!("Unknown prover: {}", s)),
         }
     }
@@ -279,6 +305,18 @@ impl ProverKind {
             ProverKind::KeY,
             ProverKind::DReal,
             ProverKind::ABC,
+            ProverKind::TypeLL,
+            ProverKind::TropicalTypeChecker,
+            ProverKind::EffectRowTypeChecker,
+            ProverKind::QTTTypeChecker,
+            ProverKind::DependentTypeChecker,
+            ProverKind::SessionTypeChecker,
+            ProverKind::ChoreographicTypeChecker,
+            ProverKind::ModalTypeChecker,
+            ProverKind::KatagoriaVerifier,
+            ProverKind::RefinementTypeChecker,
+            ProverKind::EpistemicTypeChecker,
+            ProverKind::EchoTypeChecker,
         ]);
         provers
     }
@@ -335,6 +373,18 @@ impl ProverKind {
             ProverKind::KeY => 3, // Deductive Java verifier (JavaDL + JML), auto + interactive
             ProverKind::DReal => 2, // Automated delta-complete SMT solver, NRA
             ProverKind::ABC => 2, // Automated hardware verification, AIG-based
+            ProverKind::TypeLL => 3,
+            ProverKind::TropicalTypeChecker => 3,
+            ProverKind::EffectRowTypeChecker => 3,
+            ProverKind::QTTTypeChecker => 4,
+            ProverKind::DependentTypeChecker => 3,
+            ProverKind::SessionTypeChecker => 3,
+            ProverKind::ChoreographicTypeChecker => 4,
+            ProverKind::ModalTypeChecker => 3,
+            ProverKind::KatagoriaVerifier => 4,
+            ProverKind::RefinementTypeChecker => 3,
+            ProverKind::EpistemicTypeChecker => 3,
+            ProverKind::EchoTypeChecker => 1,
         }
     }
 
@@ -406,6 +456,20 @@ impl ProverKind {
             ProverKind::KeY => 5,      // Deductive Java verifier
             ProverKind::DReal => 5,    // Delta-complete SMT solver (NRA/ODE)
             ProverKind::ABC => 5,      // Logic synthesis & hardware verification
+
+            // Tier 11: Type-system validators
+            ProverKind::TypeLL => 5,
+            ProverKind::TropicalTypeChecker => 5,
+            ProverKind::EffectRowTypeChecker => 5,
+            ProverKind::QTTTypeChecker => 5,
+            ProverKind::DependentTypeChecker => 5,
+            ProverKind::SessionTypeChecker => 5,
+            ProverKind::ChoreographicTypeChecker => 5,
+            ProverKind::ModalTypeChecker => 5,
+            ProverKind::KatagoriaVerifier => 5,
+            ProverKind::RefinementTypeChecker => 5,
+            ProverKind::EpistemicTypeChecker => 5,
+            ProverKind::EchoTypeChecker => 5,
         }
     }
 
@@ -456,6 +520,18 @@ impl ProverKind {
             ProverKind::KeY => 2.0,       // Deductive Java verifier (JavaDL + JML)
             ProverKind::DReal => 1.0,     // Automated SMT solver, SMT-LIB input
             ProverKind::ABC => 1.5,       // Hardware verification, AIGER/BLIF input
+            ProverKind::TypeLL
+            | ProverKind::TropicalTypeChecker
+            | ProverKind::EffectRowTypeChecker
+            | ProverKind::QTTTypeChecker
+            | ProverKind::DependentTypeChecker
+            | ProverKind::SessionTypeChecker
+            | ProverKind::ChoreographicTypeChecker
+            | ProverKind::ModalTypeChecker
+            | ProverKind::KatagoriaVerifier
+            | ProverKind::RefinementTypeChecker
+            | ProverKind::EpistemicTypeChecker
+            | ProverKind::EchoTypeChecker => 1.0,
         }
     }
 
@@ -511,6 +587,18 @@ impl ProverKind {
             ProverKind::KeY => "key",     // KeY Java verifier (Java, headless mode)
             ProverKind::DReal => "dreal", // dReal delta-complete SMT solver
             ProverKind::ABC => "abc",     // Berkeley ABC logic synthesis system
+            ProverKind::TypeLL => "typell",
+            ProverKind::TropicalTypeChecker => "tropical-check",
+            ProverKind::EffectRowTypeChecker => "effect-row-check",
+            ProverKind::QTTTypeChecker => "qtt-check",
+            ProverKind::DependentTypeChecker => "dtt-check",
+            ProverKind::SessionTypeChecker => "session-check",
+            ProverKind::ChoreographicTypeChecker => "chor-check",
+            ProverKind::ModalTypeChecker => "modal-check",
+            ProverKind::KatagoriaVerifier => "katagoria",
+            ProverKind::RefinementTypeChecker => "refinement-check",
+            ProverKind::EpistemicTypeChecker => "epistemic-check",
+            ProverKind::EchoTypeChecker => "echo-check",
         }
     }
 }
@@ -670,6 +758,20 @@ impl ProverFactory {
             ProverKind::KeY => Ok(Box::new(key::KeyBackend::new(config))),
             ProverKind::DReal => Ok(Box::new(dreal::DRealBackend::new(config))),
             ProverKind::ABC => Ok(Box::new(abc::AbcBackend::new(config))),
+            ProverKind::TypeLL
+            | ProverKind::TropicalTypeChecker
+            | ProverKind::EffectRowTypeChecker
+            | ProverKind::QTTTypeChecker
+            | ProverKind::DependentTypeChecker
+            | ProverKind::SessionTypeChecker
+            | ProverKind::ChoreographicTypeChecker
+            | ProverKind::ModalTypeChecker
+            | ProverKind::KatagoriaVerifier
+            | ProverKind::RefinementTypeChecker
+            | ProverKind::EpistemicTypeChecker
+            | ProverKind::EchoTypeChecker => {
+                Err(anyhow::anyhow!("Type-checker backend {:?} not yet implemented", kind))
+            }
         }
     }
 

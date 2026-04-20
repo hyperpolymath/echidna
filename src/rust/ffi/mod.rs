@@ -1073,6 +1073,18 @@ pub fn kind_to_u8(kind: ProverKind) -> u8 {
         ProverKind::KeY => 46,
         ProverKind::DReal => 47,
         ProverKind::ABC => 48,
+        ProverKind::TypeLL => 49,
+        ProverKind::TropicalTypeChecker => 50,
+        ProverKind::EffectRowTypeChecker => 51,
+        ProverKind::QTTTypeChecker => 52,
+        ProverKind::DependentTypeChecker => 53,
+        ProverKind::SessionTypeChecker => 54,
+        ProverKind::ChoreographicTypeChecker => 55,
+        ProverKind::ModalTypeChecker => 56,
+        ProverKind::KatagoriaVerifier => 57,
+        ProverKind::RefinementTypeChecker => 58,
+        ProverKind::EpistemicTypeChecker => 59,
+        ProverKind::EchoTypeChecker => 60,
     }
 }
 
