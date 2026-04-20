@@ -619,7 +619,7 @@ echidnabot ──── HTTP/GraphQL ────▶ ECHIDNA Core
 echidnabot/
 ├── Cargo.toml
 ├── guix.scm
-├── justfile
+├── Justfile
 ├── src/
 │   ├── lib.rs
 │   ├── main.rs

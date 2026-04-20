@@ -15,8 +15,38 @@ use tracing::{info, warn};
 use crate::integrity::solver_integrity::{IntegrityChecker, IntegrityStatus};
 use crate::llm::LlmAdvisor;
 use crate::provers::{ProverConfig, ProverFactory, ProverKind};
+use crate::provers::outcome::{classify_anyhow_error, ProverOutcome};
 use crate::verification::axiom_tracker::{AxiomTracker, AxiomUsage, DangerLevel};
 use crate::verification::confidence::{compute_trust_level, TrustFactors, TrustLevel};
+
+/// Per-prover record inside `RunDiagnostics`.  Captures what a single
+/// backend returned during a dispatch run — used by the sanity suite and
+/// by the Julia ML arbiter to reason about why a prover ruled one way.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct PerProverRecord {
+    /// Prover name (matches `format!("{:?}", ProverKind)`).
+    pub prover: String,
+    /// Exact outcome produced by this prover's `check()` call.
+    pub outcome: ProverOutcome,
+    /// Wall-clock time this prover spent, in milliseconds.
+    pub elapsed_ms: u64,
+}
+
+/// Diagnostics payload attached to a `DispatchResult` when
+/// `DispatchConfig.diagnostics` is `true`.  Holds the information needed
+/// to audit the pipeline post-hoc — the normalised input actually sent to
+/// the prover, which provers were tried, and what each one returned.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct RunDiagnostics {
+    /// The input after any echidna-side normalisation (whitespace trim,
+    /// set-logic injection, etc.).  Exactly what the prover saw.
+    pub normalized_input: String,
+    /// Human-readable names of the provers that were actually invoked,
+    /// in the order they ran.
+    pub provers_selected: Vec<String>,
+    /// One record per prover invocation.
+    pub per_prover: Vec<PerProverRecord>,
+}
 
 /// Result of a dispatched proof verification
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -39,6 +69,16 @@ pub struct DispatchResult {
     pub message: String,
     /// Whether cross-checking was used
     pub cross_checked: bool,
+    /// Rich outcome of the *primary* prover — distinguishes proved from
+    /// no-proof-found, timeout, inconsistent premises, etc.  Callers that
+    /// only care about yes/no should still read `verified`.
+    #[serde(default)]
+    pub outcome: ProverOutcome,
+    /// Populated only when the dispatcher was constructed with
+    /// `DispatchConfig.diagnostics = true`.  Contains the normalised
+    /// input and per-prover records.
+    #[serde(default)]
+    pub diagnostics: Option<RunDiagnostics>,
 }
 
 /// Configuration for the dispatch pipeline
@@ -54,6 +94,11 @@ pub struct DispatchConfig {
     pub generate_certificates: bool,
     /// Timeout per prover in seconds
     pub timeout: u64,
+    /// When `true`, attach a `RunDiagnostics` payload to every
+    /// `DispatchResult`.  Costs a small amount of memory and allocation;
+    /// default is `false` so production callers pay nothing.
+    #[serde(default)]
+    pub diagnostics: bool,
 }
 
 impl Default for DispatchConfig {
@@ -64,6 +109,7 @@ impl Default for DispatchConfig {
             track_axioms: true,
             generate_certificates: false,
             timeout: 300,
+            diagnostics: false,
         }
     }
 }
@@ -174,17 +220,54 @@ impl ProverDispatcher {
 
         info!("Dispatching proof to {:?}", prover_kind);
 
-        // Step 2: Parse the proof content
-        let state = prover
-            .parse_string(content)
-            .await
-            .context("Failed to parse proof content")?;
+        // Step 2: Parse the proof content.
+        // Parse failures MUST be classified as `InvalidInput`, not as
+        // pipeline errors — the taxonomy test
+        // `sanity_dispatch_parse_failure_is_invalid_input` asserts this.
+        let prover_started = Instant::now();
+        let state = match prover.parse_string(content).await {
+            Ok(s) => s,
+            Err(e) => {
+                let outcome = classify_anyhow_error(&e, self.config.timeout);
+                let elapsed_ms = prover_started.elapsed().as_millis() as u64;
+                let diagnostics = if self.config.diagnostics {
+                    Some(RunDiagnostics {
+                        normalized_input: content.trim().to_string(),
+                        provers_selected: vec![format!("{:?}", prover_kind)],
+                        per_prover: vec![PerProverRecord {
+                            prover: format!("{:?}", prover_kind),
+                            outcome: outcome.clone(),
+                            elapsed_ms,
+                        }],
+                    })
+                } else {
+                    None
+                };
+                return Ok(DispatchResult {
+                    verified: false,
+                    trust_level: TrustLevel::Level1,
+                    provers_used: vec![format!("{:?}", prover_kind)],
+                    proof_time_ms: elapsed_ms,
+                    goals_remaining: 0,
+                    axiom_report: None,
+                    certificate_hash: None,
+                    message: format!("Parse failure: {}", e),
+                    cross_checked: false,
+                    outcome,
+                    diagnostics,
+                });
+            }
+        };
 
-        // Step 3: Run verification
-        let verified = prover
-            .verify_proof(&state)
+        // Step 3: Run the rich `check()` variant — gives us a full outcome
+        // classification in one pass.  The boolean `verified` flag is
+        // derived from `outcome.is_proved()` so the two views stay in sync.
+        let outcome = prover
+            .check(&state)
             .await
             .context("Failed to verify proof")?;
+        let verified = outcome.is_proved();
+        let prover_elapsed_ms = prover_started.elapsed().as_millis() as u64;
 
         // Step 4: Track axiom usage
         let axiom_usages = if self.config.track_axioms {
@@ -256,6 +339,20 @@ impl ProverDispatcher {
             format!("Proof verified with {}", trust_level)
         };
 
+        let diagnostics = if self.config.diagnostics {
+            Some(RunDiagnostics {
+                normalized_input: content.trim().to_string(),
+                provers_selected: vec![format!("{:?}", prover_kind)],
+                per_prover: vec![PerProverRecord {
+                    prover: format!("{:?}", prover_kind),
+                    outcome: outcome.clone(),
+                    elapsed_ms: prover_elapsed_ms,
+                }],
+            })
+        } else {
+            None
+        };
+
         Ok(DispatchResult {
             verified: verified && meets_minimum,
             trust_level,
@@ -266,6 +363,8 @@ impl ProverDispatcher {
             certificate_hash: None,
             message,
             cross_checked: false,
+            outcome,
+            diagnostics,
         })
     }
 
@@ -468,6 +567,8 @@ mod tests {
             certificate_hash: None,
             message: "OK".to_string(),
             cross_checked: false,
+            outcome: ProverOutcome::Proved { elapsed_ms: 1500 },
+            diagnostics: None,
         };
 
         let json = serde_json::to_string(&result).unwrap();
@@ -515,6 +616,7 @@ mod tests {
             track_axioms: false,
             generate_certificates: true,
             timeout: 600,
+            diagnostics: false,
         };
         assert!(config.cross_check);
         assert_eq!(config.min_trust_level, TrustLevel::Level4);

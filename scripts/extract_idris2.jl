@@ -244,14 +244,31 @@ function run()::Tuple{Int,Int}
     downloaded = download_idris2_files()
     println("  Downloaded/cached $downloaded files")
 
+    # Widening (2026-04-18): also walk a sparse idris-lang/Idris2
+    # clone at external_corpora/idris2_full/ with libs/ + tests/
+    # checked out.
+    src_files = String[]
     for fname in readdir(EXTERNAL_DIR)
-        if endswith(fname, ".idr")
-            fpath = joinpath(EXTERNAL_DIR, fname)
-            parsed = parse_idris2_file(fpath)
-            append!(all_entries, parsed)
-            if !isempty(parsed)
-                println("  Parsed $(length(parsed)) from $fname")
+        endswith(fname, ".idr") && push!(src_files, joinpath(EXTERNAL_DIR, fname))
+    end
+    full_root = joinpath(dirname(EXTERNAL_DIR), "idris2_full")
+    if isdir(full_root)
+        println("[Idris2] Walking full clone at $(full_root) ...")
+        for (root, _dirs, files) in walkdir(full_root)
+            for fname in files
+                endswith(fname, ".idr") && push!(src_files, joinpath(root, fname))
             end
+        end
+    end
+    println("  $(length(src_files)) Idris2 source files to parse")
+
+    processed = 0
+    for fpath in src_files
+        parsed = parse_idris2_file(fpath)
+        append!(all_entries, parsed)
+        processed += 1
+        if processed % 200 == 0
+            println("  processed $(processed)/$(length(src_files)) files — running count: $(length(all_entries))")
         end
     end
     extracted_count = length(all_entries)

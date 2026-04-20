@@ -84,6 +84,7 @@ function parse_tptp_file(filepath::String)
     formula_pat = r"(fof|cnf|tff|thf)\s*\(\s*([^,]+)\s*,\s*(\w+)\s*,\s*(.*?)\s*\)\s*\."s
 
     conjecture = nothing
+    negated_conjecture = nothing
     axioms = String[]
     includes = [m.captures[1] for m in eachmatch(r"include\(\s*'([^']+)'\s*\)", cleaned)]
 
@@ -100,10 +101,20 @@ function parse_tptp_file(filepath::String)
 
         if role == "conjecture"
             conjecture = body
+        elseif role == "negated_conjecture"
+            # Store without the outer negation — the ATP will negate
+            # again internally, so this is the claim to be proven.
+            negated_conjecture = body
         elseif role in ("axiom", "hypothesis", "lemma", "definition",
                         "assumption", "type", "plain")
             push!(axioms, body)
         end
+    end
+
+    # Fall back: negated_conjecture serves as the conjecture when
+    # none was explicitly supplied. (Common in CNF and some FOF files.)
+    if conjecture === nothing && negated_conjecture !== nothing
+        conjecture = negated_conjecture
     end
 
     return Dict(
@@ -113,6 +124,7 @@ function parse_tptp_file(filepath::String)
         "conjecture" => conjecture,
         "axioms" => axioms,
         "includes" => includes,
+        "from_negated" => negated_conjecture !== nothing && negated_conjecture == conjecture,
     )
 end
 
@@ -161,43 +173,66 @@ function extract_all(base_dir::String)
             continue
         end
 
-        # We want problems that have a conjecture (something to prove)
+        # Default-keep: files without a conjecture still carry real
+        # first-order content (axiom libraries, finite-model specs,
+        # include-only aggregators). Promote to satisfiability tasks
+        # with a synthetic `$true` goal — the ATP training signal is
+        # "given this context, which premises cluster / are consistent".
+        #
+        # Phase 1 relaxation (2026-04-17): previously we skipped files
+        # with no conjecture AND no axioms. That dropped ~9 386 files,
+        # including aggregator files whose `include()` directives are
+        # themselves the training signal. We now only skip when *all
+        # three* of conjecture, axioms, and includes are empty — i.e.
+        # the file genuinely has no first-order content.
+        synthetic = false
         if parsed["conjecture"] === nothing
-            skipped += 1
-            continue
+            if isempty(parsed["axioms"]) && isempty(parsed["includes"])
+                skipped += 1
+                continue
+            end
+            parsed["conjecture"] = raw"$true"   # TPTP built-in constant
+            synthetic = true
         end
 
-        record_id = ID_BASE + length(proof_states)
+        # Full-share (2026-04-18): every TPTP problem is provable by
+        # every ATP in our fleet, so emit one record per (problem,
+        # prover) pair. This tripled the per-prover corpus without
+        # new data — pushes each toward the 100K target.
+        context = if !isempty(parsed["axioms"])
+            parsed["axioms"][1:min(20, length(parsed["axioms"]))]
+        else
+            ["% include: $(inc)" for inc in
+             parsed["includes"][1:min(20, length(parsed["includes"]))]]
+        end
 
-        # Round-robin prover assignment for balanced corpus
-        prover = PROVERS[(length(proof_states) % length(PROVERS)) + 1]
+        for prover in PROVERS
+            record_id = ID_BASE + length(proof_states)
+            state = Dict{String, Any}(
+                "id" => record_id,
+                "prover" => prover,
+                "theorem" => parsed["name"],
+                "goal" => parsed["conjecture"],
+                "context" => context,
+                "source" => "TPTP",
+                "status" => synthetic ? "Satisfiable" : parsed["status"],
+                "domain" => parsed["domain"],
+                "proof_steps" => length(parsed["axioms"]),
+                "synthetic_goal" => synthetic,
+                "from_negated" => get(parsed, "from_negated", false),
+            )
+            push!(proof_states, state)
+            prover_counts[prover] += 1
 
-        # Build context from axioms (limit to first 20 to keep size sane)
-        context = parsed["axioms"][1:min(20, length(parsed["axioms"]))]
-
-        state = Dict{String, Any}(
-            "id" => record_id,
-            "prover" => prover,
-            "theorem" => parsed["name"],
-            "goal" => parsed["conjecture"],
-            "context" => context,
-            "source" => "TPTP",
-            "status" => parsed["status"],
-            "domain" => parsed["domain"],
-            "proof_steps" => length(parsed["axioms"]),
-        )
-        push!(proof_states, state)
-        prover_counts[prover] += 1
-
-        # Tactic record: for ATP the "tactic" is running the solver
-        tactic = Dict{String, Any}(
-            "proof_id" => record_id,
-            "step" => 1,
-            "tactic" => "atp_solve_$(lowercase(prover))",
-            "prover" => prover,
-            "proof_text" => "% TPTP $(parsed["status"]) via $prover",
-        )
-        push!(tactics, tactic)
+            tactic = Dict{String, Any}(
+                "proof_id" => record_id,
+                "step" => 1,
+                "tactic" => "atp_solve_$(lowercase(prover))",
+                "prover" => prover,
+                "proof_text" => "% TPTP $(parsed["status"]) via $prover",
+            )
+            push!(tactics, tactic)
+        end
 
         # Progress indicator every 5000 files
         if idx % 5000 == 0

@@ -66,6 +66,83 @@ run *ARGS:
 invariant-path *ARGS:
     ./scripts/invariant-path.sh {{ARGS}}
 
+# Rebuild the canonical seed vocabulary (training_data/vocabulary_CANON.txt).
+# Two stages: (1) mine frequency-filtered identifiers from the per-prover
+# proof corpora, then (2) union with the hand-curated sets. Consumed by
+# src/julia/training/dataloader.jl:build_vocabulary_from_data.
+vocab-canon:
+    julia scripts/vocabulary_mine_corpus.jl
+    julia scripts/vocabulary_canonicalize.jl
+
+# ── Corpus / training pipeline ─────────────────────────────────
+#
+# Five steps in order: provision upstream mirrors, run every extractor,
+# merge per-prover proof_states into UNIFIED, align the premise files
+# to UNIFIED's fresh ids, then retrain.  Each step is idempotent;
+# re-running only touches what has changed.  See
+# scripts/provision_corpora.sh --list for the source catalogue.
+
+# Clone every upstream prover corpus into external_corpora/.
+# Pass specific names to provision a subset: `just provision-corpora metamath mathlib4`.
+provision-corpora *NAMES:
+    @if [ -z "{{NAMES}}" ]; then \
+        scripts/provision_corpora.sh --all; \
+    else \
+        scripts/provision_corpora.sh {{NAMES}}; \
+    fi
+
+# Report which upstream corpora are on disk and their sizes.
+corpora-status:
+    scripts/provision_corpora.sh --status
+
+# Run every scripts/extract_*.jl against the provisioned corpora.
+# Pass names to run a subset: `just extract-corpora metamath mathlib4`.
+extract-corpora *NAMES:
+    scripts/extract_all.sh {{NAMES}}
+
+# Merge per-prover proof_states_*.jsonl into proof_states_UNIFIED.jsonl
+# with fresh sequential ids (dedupes by prover+theorem).
+merge-corpora:
+    julia --project=src/julia scripts/merge_corpus.jl
+
+# Rebuild premises_COMPLETE.jsonl with proof_ids that match UNIFIED.
+# merge-corpora rewrites every proof_state id to a fresh sequential
+# counter; the premise files keep the original extractor ids, so this
+# step re-joins premises to UNIFIED via (prover, theorem) — the durable
+# key merge_corpus.jl already dedupes on.  Without this step the
+# dataloader's proof_id join matches ~0% of records.
+align-premises:
+    julia --project=src/julia scripts/align_premises.jl
+
+# Full retrain from provisioned corpora.  Honours ECHIDNA_MAX_PROOF_STATES
+# (0 = unlimited), ECHIDNA_NUM_EPOCHS, ECHIDNA_NUM_NEGATIVES.
+retrain:
+    julia --project=src/julia src/julia/run_training.jl
+
+# End-to-end pipeline: provision → extract → merge → align → retrain.
+# Use `ECHIDNA_MAX_PROOF_STATES=0 just corpus-refresh` to lift the sample cap.
+corpus-refresh: provision-corpora extract-corpora merge-corpora align-premises retrain
+
+# Run the eight-axis metrics suite against the current corpus and post
+# results to VeriSimDB. Falls back to training_data/metrics_<run_id>.jsonl
+# if VERISIM_URL is unreachable. Target values are documented in
+# metrics/README.md.
+metrics:
+    julia --project=src/julia metrics/run_all.jl
+
+# Report corpus balance across provers from stats_UNIFIED.json.
+corpus-stats:
+    @julia -e 'using JSON3, Printf; \
+      s = JSON3.read(read("training_data/stats_UNIFIED.json", String)); \
+      counts = s.per_prover_counts; \
+      pairs = sort(collect(counts), by = x -> -x[2]); \
+      total = sum(last.(pairs)); \
+      println("Total proofs: ", total, "   provers with data: ", length(pairs)); \
+      println("Rank  Prover                     Count    Share"); \
+      for (i,(p,c)) in enumerate(pairs); \
+          @printf("%3d   %-25s  %7d   %5.2f%%\n", i, p, c, 100c/total); \
+      end'
+
 # Generate docs
 doc:
     cargo doc --no-deps --open

@@ -1,0 +1,218 @@
+= ECHIDNA Continuous Self-Learning Architecture
+:author: Jonathan D.A. Jewell
+:email: j.d.a.jewell@open.ac.uk
+:revdate: 2026-04-17
+:toc: preamble
+
+// SPDX-License-Identifier: PMPL-1.0-or-later
+
+== Problem
+
+ECHIDNA's supervised training (`scripts/retrain_from_verisim.jl`)
+fits a premise-selection head on a frozen corpus. That saturates
+quickly: the model gets competent at problems resembling the training
+distribution, but the distribution *itself* does not grow. To get to
+a regime where each day's model is stronger than yesterday's, the
+training pipeline must generate its own new problems and its own new
+training data.
+
+This document describes the four-piece architecture we have wired
+into `src/rust/learning/` for that purpose, drawing on the designs
+that AlphaProof, HyperTree Proof Search, and DeepSeek-Prover have
+published in the past three years.
+
+== The four pieces
+
+[cols="1,3,3"]
+|===
+| Piece | Purpose | Module
+
+| Curriculum scheduler
+| Keeps the average difficulty of attempted proofs in the
+  `[0.3, 0.7]` success-rate band. Too easy = no gradient.
+  Too hard = no gradient either.
+| `learning::curriculum`
+
+| Self-play generator
+| Given a proven theorem, emit variant lemmas via three
+  cheap transforms (alpha-rename, weaken-hypothesis,
+  lemma-lift). Successes graduate back into training data.
+| `learning::self_play`
+
+| Monte Carlo Tree Search
+| UCB1 over tactic space with a neural prior
+  (policy head) and value estimate (value head).
+  Escapes local minima the pure policy cannot.
+| `learning::mcts`
+
+| Continuous daemon
+| Long-lived async task that ties the above to
+  VeriSimDB's proof-attempts log and triggers retraining
+  when the success rate drifts.
+| `learning::daemon`
+|===
+
+== How the pieces fit
+
+[source]
+----
+  ┌──────────────┐   generate   ┌──────────────┐
+  │  Curriculum  │─────────────▶│  Self-Play   │
+  │  scheduler   │              │  generator   │
+  └──────────────┘              └──────┬───────┘
+          ▲                            │ candidate lemma
+          │                            ▼
+   curriculum                   ┌──────────────┐
+   adjustment                   │     MCTS     │
+          │                     │   tactic     │
+          │                     │   search     │
+          │                     └──────┬───────┘
+          │                            │ proof attempt
+          │                            ▼
+          │                     ┌──────────────┐
+          │                     │ Verifier (48 │
+          │                     │  prover      │
+          │                     │  backends)   │
+          │                     └──────┬───────┘
+          │                            │ success / fail / timeout
+          │                            ▼
+          │                     ┌──────────────┐
+          └─────────────────────│   VeriSim    │
+            difficulty signal   │   attempts   │
+                                │   log        │
+                                └──────┬───────┘
+                                       │ every N attempts
+                                       ▼
+                                ┌──────────────┐
+                                │   Expert     │  (Julia:
+                                │  iteration   │   retrain_from_verisim.jl
+                                │  (retrain)   │   POST /reload)
+                                └──────────────┘
+----
+
+The verifier is the 48-prover dispatch layer we already have. The
+expert-iteration leg is the Julia retrain script we already have.
+The daemon's novel job is to drive the data-generation side continuously.
+
+== Interfaces
+
+=== `TacticPolicy`
+
+Abstracted at `learning::mcts::TacticPolicy`. The cold-start
+implementation defers to each prover backend's `suggest_tactics`.
+The warm implementation calls the Julia ML server's `/tactic/rank`
+endpoint (already present in `src/julia/`). Swapping the policy is a
+one-line change.
+
+=== `ValueHead`
+
+Abstracted at `learning::mcts::ValueHead`. The cold-start
+implementation returns a constant `0.5`. The warm implementation
+calls the Julia ML server's value-head endpoint (to be added when
+the first value network is trained — expected after one full
+expert-iteration cycle).
+
+=== `VeriSimDB`
+
+Attempts are POSTed to `/api/v1/proof_attempts` as they complete.
+The schema matches the `retrain_from_verisim.jl` reader.
+
+== Lifecycle
+
+[arabic]
+. The daemon is seeded with `N` proven ProofStates from the corpus
+  (top of the Lean / Isabelle / Metamath ranking).
+. Each tick, the curriculum picks one variant, MCTS tries to prove
+  it under the time budget.
+. Outcome is recorded to VeriSimDB. Success → emit fresh variants
+  into the pool.
+. Every 100 attempts, fire a `retrain_from_verisim.jl` run.
+  The new weights hot-swap via the ML server's `/reload`.
+. The loop never terminates. Compute headroom determines the rate.
+
+== Failure-mode defences
+
+[cols="1,2"]
+|===
+| Mode | Defence
+
+| Pool explodes
+| `DaemonConfig.max_pool_size` caps at 10 000 variants. New ones
+  are dropped at the boundary.
+
+| Success rate → 0 (too hard)
+| `Curriculum::regime() == TooHard` → picker selects the easiest
+  variants. Sustained `TooHard` for 500 attempts should trigger
+  a reseed from known-good proofs (future extension).
+
+| Success rate → 1 (saturation)
+| `Regime::TooEasy` → picker selects the hardest variants. If the
+  model is actually saturated, the *corpus* needs to grow — that's
+  Phase 1 of the corpus plan, not the daemon's job.
+
+| MCTS stuck on a pathological branch
+| `SearchConfig.budget` is a hard time ceiling. The tree is
+  rebuilt from scratch for each attempt — no cross-attempt state.
+
+| Prover backend missing
+| The daemon logs and continues. A missing backend is a config
+  problem, not a runtime one.
+
+| VeriSimDB unreachable
+| The POST failure is logged, the attempt is dropped.
+  Future extension: buffer attempts to disk, flush on reconnect.
+|===
+
+== Wiring the daemon into production
+
+There is intentionally no `main()` that starts the daemon at boot —
+it is a *library* module. A thin launcher under `src/rust/bin/` or
+a systemd unit on the compute host drives it. Sketch:
+
+[source,rust]
+----
+use echidna::learning::daemon::{Daemon, DaemonConfig, cold_start_value};
+use std::sync::Arc;
+
+let cfg = DaemonConfig::default();
+let mut d = Daemon::new(cfg);
+for seed in initial_proven_states() {
+    d.seed(&seed);
+}
+let policy = Arc::new(cold_start_policy());
+let value = cold_start_value();
+d.run(policy, value).await?;
+----
+
+== Relationship to existing ECHIDNA components
+
+[cols="1,3"]
+|===
+| Component | Role in the loop
+
+| `src/rust/provers/`          | The verifier (48 backends).
+| `src/rust/agent/`            | Alternative higher-level coordinator — can wrap the daemon or be wrapped by it.
+| `src/rust/gnn/`              | Candidate for replacing the cold-start policy head with a GNN-based one.
+| `scripts/retrain_from_verisim.jl` | The expert-iteration step. Invoked out-of-process on a separate schedule.
+| `metrics/` (Julia)           | Measures triangulation / OOV / Heap's β on the growing corpus — tells us when the loop is producing genuinely new vocabulary vs just churning.
+|===
+
+== Non-goals (explicitly)
+
+* The daemon does NOT train models in-process. Julia owns training.
+* The daemon does NOT decide which prover backend is "best". That
+  belongs to the dispatch layer.
+* The daemon does NOT generate proofs from scratch. It transforms
+  existing ones and attempts the transformed variants.
+
+== Next steps
+
+[arabic]
+. Wire a real `TacticPolicy` that calls the Julia `/tactic/rank`
+  endpoint, removing the cold-start fallback.
+. Train and wire a value head (currently constant 0.5).
+. Add a disk-buffered fallback for VeriSim-unreachable windows.
+. Expose per-prover daemon instances so the loop is not Lean-only.
+. Measure `heaps_beta` before and after 1 000, 10 000, 100 000
+  daemon attempts to see whether self-play actually pushes the
+  vocabulary horizon or only recirculates known tokens.

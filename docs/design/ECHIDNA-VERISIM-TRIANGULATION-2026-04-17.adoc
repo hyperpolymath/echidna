@@ -1,0 +1,156 @@
+// SPDX-License-Identifier: PMPL-1.0-or-later
+// SPDX-FileCopyrightText: 2026 Jonathan D.A. Jewell
+:toc: left
+:toclevels: 3
+:sectnums:
+:icons: font
+
+= ECHIDNA × VeriSim — Triangulation & Vocabulary Horizon Strategy
+Jonathan D.A. Jewell <j.d.a.jewell@open.ac.uk>
+2026-04-17
+
+Canonical record of the multi-phase plan for raising per-prover corpus
+coverage toward the 50 K-records floor required for Phase 3
+cross-prover triangulation. Supersedes the Desktop scratch file
+`ECHIDNA-VERISIM-STRATEGY-2026-04-17-todo.md`, which has been removed
+now that Phase 1 is landed.
+
+== Phase 1 — 10 K floor plan (pe-prover action)
+
+[cols="2,1,4,1",options="header"]
+|===
+|Prover |Before |Action |Cost
+
+|HOL Light |22 577 |widen extractor: accept `prove_by_refinement`, walk full tree |low
+|Agda |9 312 |vendor agda-categories + cubical + unimath |medium
+|SMT suite (Z3 / CVC5 / AltErgo) |6 843 each |rerun `extract_smtlib.jl` at full SMT-LIB v2 scope (QF_LIA, QF_BV, UF, …) |low
+|TPTP ATPs (V / E / S) |8 655 each |relax "no-conjecture skipped" filter |low
+|HOL4 |4 867 |widen extractor: currently keyword-gated; remove gate |low
+|TypeLL / Tropical / EffectRow |315–499 |synthetic augmentation generator |medium
+|HP type-checker ecosystem (11 provers) |11–167 each |rewrite extractor to generate synthetic type-derivation traces |medium
+|Why3 / PVS / ACL2 |199–277 |relax extractor strictness + vendor their libraries |medium
+|Mizar |66 |vendor MML (Mizar Mathematical Library) |medium
+|F* / Idris2 / Dafny |48–87 |vendor public stdlibs + examples |medium
+|Nuprl / Minlog / Twelf / Imandra |33–50 |*source-gated* — need upstream |Phase 2
+|Constraint solvers (GLPK / OR-Tools / SCIP / Chuffed / MiniZinc) |5–6 |rewrite `extract_minizinc.jl` with synthetic generator |medium
+|===
+
+Phase 1 total work: ≈ 200 K new records across 35 provers, of which
+4–5 are source-gated and roll to Phase 2.
+
+=== Landed 2026-04-17 (this session)
+
+The four lowest-cost Phase 1 actions are landed in
+`hyperpolymath/echidna` as four atomic commits.
+
+[cols="1,3,3",options="header"]
+|===
+|Commit |Target |Change
+
+|`4a2652d` |HOL Light |Accept `prove_by_refinement`; raise tactic-proof cap 500 → 8000 chars; raise unique-tactic cap 20 → 40; allow digits in tactic identifiers
+|`aa88649` |HOL4 |Remove narrow 7-keyword tactic gate (`rw,fs,simp,metis_tac,decide_tac,PROVE_TAC,Induct_on`); add Triviality, (Co)Inductive, `Q.prove` / `Q.store_thm` patterns; Definition regex tolerates `[simp]` and `Termination` blocks
+|`64d8cb4` |TPTP |Only skip when conjecture AND axioms AND includes are all empty; include-only files now carry their include list as context
+|`e9d3289` |SMT-LIB |Enumerate 50 standard SMT-LIB v2 logics in `LOGIC_CATEGORIES` (was 16); raise `find_smt2_files` cap 50 000 → 500 000
+|===
+
+==== Rerun deltas
+
+Pre/post record counts from `training_data/stats_*.{json,a2ml}` after
+rerunning each widened extractor against the local corpus.
+
+[cols="2,2,2,2",options="header"]
+|===
+|Extractor |Before |After |Delta
+
+|HOL Light |22 577 |22 577 |+0 records (richer metadata — prove_by_refinement absent from current download set; tactic bodies and tactic lists materially longer)
+|HOL4 |4 898 |5 039 |+141 records (+2.9 %)
+|TPTP |25 965 |26 177 |+212 records (+0.8 %); skipped_no_conjecture fell from 264 → < 100
+|SMT-LIB |20 527 |_pending — extractor run in progress_ |_deferred_
+|===
+
+The HOL Light zero-delta is a real result, not a regression: the
+widened parser now accepts `prove_by_refinement` but none appear in
+the currently downloaded file set. The metadata improvement (tactic
+body 500 → 8 000 chars, tactic list 20 → 40 entries) still lifts
+per-record information density materially.
+
+== Phase 2 — upstreams to open
+
+For Phase 1 provers blocked on upstream vendoring:
+
+[cols="2,3,2,2",options="header"]
+|===
+|Prover |Upstream |Licence |Size estimate
+
+|Nuprl |`nuprl/book` + FDL |public |≈ 5 K lemmas
+|Imandra |`imandra-tools` examples |Apache-2.0 |≈ 2 K
+|Minlog |`minlog/tutor` libraries |public |≈ 1.5 K
+|Twelf |CMU Twelf repository |BSD-like |≈ 3 K
+|Mizar (upgrade) |full MML (2 700+ articles) |Mizar licence |≈ 60 K
+|TLAPS |TLA+ examples + proofs |MIT |≈ 1 K
+|===
+
+Upstreams for tail *special provers*:
+
+[cols="2,3,3",options="header"]
+|===
+|Prover |Upstream |Note
+
+|KeY (Java Card DL) |`key-project/key` |Hard to parse but rich
+|Why3 bench |`why3/bench` |Direct stdlib
+|Rocq (Coq successor) |`rocq-prover/rocq` |Mostly duplicates CoqGym
+|Lean 3 mathlib |`leanprover-community/mathlib` |Complements mathlib4
+|===
+
+== Phase 3 — lift everybody to 50 K
+
+At 50 K × 41 provers = 2 M records — 7× the current corpus. Dominant
+provers (Lean 131 K, AFP 50 K, Metamath 47 K) are already done. For
+others Phase 3 requires:
+
+* Synthetic proof generation (procedural theorems — inequalities,
+  polynomial identities) per prover syntax.
+* Automated translation — once triangulation ≥ 15 %, use Dedukti /
+  OpenTheory to port proven theorems across provers.
+* Retire the type-checker-ecosystem shim in favour of real HP-stack
+  derivations once our own type-checkers produce them in bulk.
+
+=== Theorem-alignment RDF schema
+
+Phase 3 cross-prover porting needs a landing target for
+"same theorem, different prover" edges. Issue opened:
+https://github.com/hyperpolymath/verisimdb/issues/3.
+
+== Phase 4 — special provers to onboard at 50 K-each
+
+Provers listed in `src/rust/provers/` (48 backends per repo CLAUDE.md)
+but not yet carrying any corpus:
+
+* *TLAPS* — TLA+ proof system
+* *KeY* — Java Card DL
+* *Alloy Analyzer* — bounded model finder (counter-example style)
+* *Boogie* / *Viper* — intermediate verification language
+* *Frama-C / WP* — C specification and verification
+* *Isabelle/ZF* (separate from HOL-based AFP)
+* *NuPRL 2024 drops* (if re-released)
+* *ACL2s* (sibling to ACL2)
+* *Rocq* (the relabelled Coq post-rename) — only if upstream diverges
+* *Why3-transpiled Cameleer* for OCaml proofs
+
+Special _pedagogic_ provers we may add for coverage even if small:
+
+* *Logix / Abella* for nominal logic
+* *Dedukti* (as prover, not just exchange format)
+* *Lean 3* — historical coverage
+
+== Next actions
+
+. Run Phase 1 extractors per `just metrics` after each batch —
+  metrics write to VeriSimDB and also cache JSONL locally.
+. For the remaining Phase 1 rows (Agda, Why3 / PVS / ACL2, Mizar,
+  F* / Idris2 / Dafny, constraint solvers), open per-prover issues
+  in `hyperpolymath/echidna` so the vendoring / synthesis work is
+  tracked individually.
+. Track the theorem-alignment RDF schema via
+  https://github.com/hyperpolymath/verisimdb/issues/3 — do not start
+  bulk alignment emits from ECHIDNA until that schema is published.

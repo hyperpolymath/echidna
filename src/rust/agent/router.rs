@@ -94,11 +94,11 @@ impl ProverRouter {
         }
     }
 
-    /// Select the best prover for a goal
+    /// Select the best prover for a goal (synchronous fast path).
+    ///
+    /// Aspect-only heuristic; history-weighted selection is available
+    /// via `select_async`, which reads the routing stats tables.
     pub fn select(&self, goal: &AgenticGoal) -> ProverKind {
-        // For now, use a simple heuristic
-        // TODO: Implement actual scoring based on aspects and history
-
         // If goal has aspects, try to match
         if !goal.aspects.is_empty() {
             // SMT solvers for arithmetic

@@ -432,10 +432,46 @@ impl CVC5Backend {
                 }
                 continue;
             }
+            // SMT-LIB `(declare-fun x () T)` is syntactic sugar for
+            // `(declare-const x T)` when the parameter list is empty.
+            // Tests use this form — previously it was silently dropped,
+            // so CVC5 later rejected `x` with "Symbol 'x' not declared"
+            // and the cross-prover smoke test failed even though Z3
+            // accepted the same input.
+            if trimmed.starts_with("(declare-fun") {
+                let inner = trimmed
+                    .trim_start_matches("(declare-fun")
+                    .trim_end_matches(')')
+                    .trim();
+                // Expect: "<name> ( <params>... ) <return-type>"
+                if let Some(name_end) = inner.find(char::is_whitespace) {
+                    let name = inner[..name_end].trim();
+                    let rest = inner[name_end..].trim();
+                    if let Some(params_end) = rest.find(')') {
+                        let params = rest[..=params_end].trim();
+                        let return_ty = rest[params_end + 1..].trim();
+                        // Only nullary functions map cleanly to variables.
+                        if params == "()" && !name.is_empty() && !return_ty.is_empty() {
+                            state.context.variables.push(crate::core::Variable {
+                                name: name.to_string(),
+                                ty: Term::Const(return_ty.to_string()),
+                            });
+                        }
+                    }
+                }
+                continue;
+            }
             if trimmed.starts_with("(assert") {
+                // `trim_end_matches(')')` is greedy — it strips ALL trailing
+                // `)` chars, which corrupts balanced forms.  `(assert (= x x))`
+                // would become `(= x x` and the outer parser then misses one
+                // argument (producing `(= x)`).  Strip exactly one closing
+                // paren, matching the one the `(assert` opened.
                 let inner = trimmed
                     .trim_start_matches("(assert")
-                    .trim_end_matches(')')
+                    .trim()
+                    .strip_suffix(')')
+                    .unwrap_or(trimmed.trim_start_matches("(assert").trim())
                     .trim();
                 assertions.push(inner.to_string());
             }

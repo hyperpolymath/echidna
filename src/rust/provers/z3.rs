@@ -22,6 +22,7 @@ use tokio::io::AsyncWriteExt;
 use tokio::process::{Child, Command};
 use tokio::time::{timeout, Duration};
 
+use super::outcome::{classify_anyhow_error, ProverOutcome};
 use super::{ProverBackend, ProverConfig, ProverKind};
 use crate::core::{Context as ProofContext, Goal, ProofState, Tactic, TacticResult, Term};
 

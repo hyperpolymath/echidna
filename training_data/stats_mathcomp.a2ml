@@ -1,0 +1,14 @@
+# SPDX-License-Identifier: PMPL-1.0-or-later
+# mathcomp extraction statistics
+
+[metadata]
+id_range = "200000-223901"
+extraction_date = "2026-04-18T08:20:22"
+total_proofs = 23902
+read_errors = 0
+source = "Mathematical Components (math-comp/math-comp)"
+total_files_scanned = 9
+total_tactics = 77947
+version = "v2.0-mathcomp"
+skipped_no_proof = 0
+
