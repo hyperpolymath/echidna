@@ -33,6 +33,13 @@ pub enum Term {
         body: Box<Term>,
     },
 
+    /// Dependent pair / sum (Sigma type) Σ(x: A). B
+    Sigma {
+        param: String,
+        param_type: Box<Term>,
+        body: Box<Term>,
+    },
+
     /// Type universe at level
     Type(usize),
 
@@ -121,6 +128,13 @@ impl fmt::Display for Term {
             } => {
                 write!(f, "(Π {}: {}. {})", param, param_type, body)
             },
+            Term::Sigma {
+                param,
+                param_type,
+                body,
+            } => {
+                write!(f, "(Σ {}: {}. {})", param, param_type, body)
+            },
             Term::Type(level) => write!(f, "Type{}", level),
             Term::Sort(level) => write!(f, "Sort{}", level),
             Term::Universe(level) => write!(f, "Type{}", level),
@@ -150,8 +164,7 @@ impl fmt::Display for Term {
 }
 
 /// Current state of a proof
-#[derive(Debug, Clone, Serialize, Deserialize)]
-#[derive(Default)]
+#[derive(Debug, Clone, Serialize, Deserialize, Default)]
 pub struct ProofState {
     /// Current goals to prove
     pub goals: Vec<Goal>,
@@ -190,6 +203,10 @@ pub struct Hypothesis {
 
     /// Optional body (for definitions)
     pub body: Option<Term>,
+
+    /// Optional native type-system decoration.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub type_info: Option<crate::types::TypeInfo>,
 }
 
 /// Proof context with available premises
@@ -223,6 +240,8 @@ pub struct Definition {
     pub name: String,
     pub ty: Term,
     pub body: Term,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub type_info: Option<crate::types::TypeInfo>,
 }
 
 /// A variable declaration
@@ -230,6 +249,8 @@ pub struct Definition {
 pub struct Variable {
     pub name: String,
     pub ty: Term,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub type_info: Option<crate::types::TypeInfo>,
 }
 
 /// A proof tactic/command
@@ -282,7 +303,6 @@ pub enum TacticResult {
     /// Proof complete!
     QED,
 }
-
 
 impl fmt::Display for Definition {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {

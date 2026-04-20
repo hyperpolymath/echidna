@@ -941,6 +941,7 @@ impl TypedWasmBackend {
                 name: format!("{}_witness", label),
                 ty: Term::Const(format!("Witness({})", witness)),
                 body: None,
+                type_info: None,
             });
         }
 
@@ -983,6 +984,7 @@ impl TypedWasmBackend {
                     name: format!("region_{}", schema.name),
                     ty: Term::Const("Schema".to_string()),
                     body: fields_term,
+                    type_info: None,
                 });
             }
         }

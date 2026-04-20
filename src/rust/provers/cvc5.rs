@@ -427,6 +427,7 @@ impl CVC5Backend {
                     state.context.variables.push(crate::core::Variable {
                         name: name.to_string(),
                         ty: Term::Const(ty.trim().to_string()),
+                        type_info: None,
                     });
                 }
                 continue;
@@ -454,6 +455,7 @@ impl CVC5Backend {
                             state.context.variables.push(crate::core::Variable {
                                 name: name.to_string(),
                                 ty: Term::Const(return_ty.to_string()),
+                                type_info: None,
                             });
                         }
                     }
@@ -474,20 +476,19 @@ impl CVC5Backend {
                     .trim();
                 assertions.push(inner.to_string());
             }
-            if trimmed.starts_with("(check-sat")
-                && !assertions.is_empty() {
-                    let combined = if assertions.len() == 1 {
-                        assertions[0].clone()
-                    } else {
-                        format!("(and {})", assertions.join(" "))
-                    };
-                    let goal_term = self.smtlib_to_term(&combined)?;
-                    state.goals.push(Goal {
-                        id: "smt_goal".to_string(),
-                        target: goal_term,
-                        hypotheses: vec![],
-                    });
-                }
+            if trimmed.starts_with("(check-sat") && !assertions.is_empty() {
+                let combined = if assertions.len() == 1 {
+                    assertions[0].clone()
+                } else {
+                    format!("(and {})", assertions.join(" "))
+                };
+                let goal_term = self.smtlib_to_term(&combined)?;
+                state.goals.push(Goal {
+                    id: "smt_goal".to_string(),
+                    target: goal_term,
+                    hypotheses: vec![],
+                });
+            }
         }
 
         if state.goals.is_empty() && !assertions.is_empty() {

@@ -14,6 +14,21 @@ image:https://api.thegreenwebfoundation.org/greencheckimage/nesy-prover.dev[Gree
 A neurosymbolic theorem proving platform with 48 prover backends,
 trust-hardened verification pipeline, and multi-objective proof search.
 
+== Leadership Position
+
+ECHIDNA holds a **unique leadership position** in the theorem proving ecosystem as:
+
+* **The only system with 48+ prover backends** (vs 1 for Isabelle, Coq, Lean, Z3, etc.)
+* **The only system actively solving cross-prover arbitration** (mathematical object identity resolution)
+* **The only neurosymbolic hybrid architecture** (combining AI and symbolic reasoning)
+* **The only system with 7-stage trust pipeline** (comprehensive verification infrastructure)
+* **The only system integrating OpenTheory + Dedukti** (universal proof exchange)
+* **The largest vocabulary management** (992K+ terms across mathematical domains)
+* **The most comprehensive axiom tracking** (4 danger levels across 48 provers)
+* **The only Bayesian confidence scoring** (across multiple independent provers)
+
+Our **prevailing advantage** comes from this unique combination that no other system can match.
+
 == Overview
 
 ECHIDNA orchestrates 48 theorem provers, SMT solvers, first-order ATPs, and

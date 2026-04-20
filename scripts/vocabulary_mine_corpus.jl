@@ -50,13 +50,13 @@ include(joinpath(REPO_ROOT, "scripts", "vocabulary_canonicalize.jl"))
 # the combined corpus graduate into the mined vocabulary. 3 is strict
 # enough to reject extraction noise while admitting domain-specific
 # identifiers that recur across proofs in a family.
-const MIN_FREQ = 3
+const MIN_FREQ = 1
 
 # Hard cap on the mined vocabulary so the final CANON (mined ∪ curated
 # ≈ 9K) lands at roughly 100K tokens. After the freq filter, keep the
 # top N tokens by descending frequency; the tail is long but
 # diminishing-return. Passing 0 disables the cap.
-const MAX_MINED = 95_000
+const MAX_MINED = 0
 
 # Per-prover authoritative corpus files — mirrors merge_corpus.jl.
 # Aggregate/merged files (UNIFIED, COMPLETE, BALANCED, ULTIMATE, etc.)

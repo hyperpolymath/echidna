@@ -3,7 +3,7 @@
 
 [metadata]
 id_range = "200000-223901"
-extraction_date = "2026-04-18T08:20:22"
+extraction_date = "2026-04-20T08:30:19"
 total_proofs = 23902
 read_errors = 0
 source = "Mathematical Components (math-comp/math-comp)"

@@ -17,7 +17,7 @@
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 
-use crate::core::{Context, Goal, Hypothesis, ProofState, Term, Theorem};
+use crate::core::{Context, Definition, Goal, Hypothesis, ProofState, Term, Theorem};
 
 /// Kind of node in the proof graph.
 ///
@@ -63,6 +63,12 @@ pub enum EdgeKind {
     DependsOn,
     /// Reverse of DependsOn (premise is useful for goal)
     UsefulFor,
+    /// Source has the target as its QTT multiplicity annotation
+    HasMultiplicity,
+    /// Source has the target as its algebraic effect annotation
+    HasEffect,
+    /// Source has the target as its modal decoration
+    HasModality,
 }
 
 /// A single node in the proof graph.
@@ -185,17 +191,24 @@ impl ProofGraphBuilder {
         // Phase 2: Add hypothesis nodes from context
         let hyp_ids = self.add_hypotheses_from_context(&state.context);
 
+        // Phase 2b: Add definition nodes from context
+        let def_ids = self.add_definitions_from_context(&state.context);
+
         // Phase 3: Add premise/theorem nodes from context
         for theorem in &state.context.theorems {
             let pid = self.add_premise(theorem);
             premise_node_ids.push(pid);
         }
 
-        // Phase 4: Add dependency edges from goals to hypotheses/premises
+        // Phase 4: Add dependency edges from goals to hypotheses/definitions/premises
         if let Some(gid) = goal_node_id {
             for &hid in &hyp_ids {
                 self.add_edge(gid, hid, EdgeKind::DependsOn, 1.0);
                 self.add_edge(hid, gid, EdgeKind::UsefulFor, 1.0);
+            }
+            for &did in &def_ids {
+                self.add_edge(gid, did, EdgeKind::DependsOn, 0.9);
+                self.add_edge(did, gid, EdgeKind::UsefulFor, 0.9);
             }
             for &pid in &premise_node_ids {
                 self.add_edge(gid, pid, EdgeKind::DependsOn, 0.8);
@@ -278,6 +291,11 @@ impl ProofGraphBuilder {
             self.expand_term(body, hid, 1);
         }
 
+        // Wire type_info annotations as edges
+        if let Some(ref info) = hyp.type_info {
+            self.add_type_info_edges(hid, info);
+        }
+
         hid
     }
 
@@ -288,9 +306,47 @@ impl ProofGraphBuilder {
             let label = format!("{}: {}", var.name, var.ty);
             let vid = self.add_node(NodeKind::Hypothesis, &label, 0);
             self.expand_term(&var.ty, vid, 1);
+
+            // Wire type_info annotations as edges
+            if let Some(ref info) = var.type_info {
+                self.add_type_info_edges(vid, info);
+            }
+
             ids.push(vid);
         }
         ids
+    }
+
+    /// Add definition nodes from the global context.
+    fn add_definitions_from_context(&mut self, ctx: &Context) -> Vec<usize> {
+        let mut ids = Vec::new();
+        for def in &ctx.definitions {
+            let did = self.add_definition(def);
+            ids.push(did);
+        }
+        ids
+    }
+
+    /// Add a definition node.
+    fn add_definition(&mut self, def: &Definition) -> usize {
+        let label = format!("{}: {}", def.name, def.ty);
+        let did = self.add_node(NodeKind::Hypothesis, &label, 0);
+
+        // Expand the definition type
+        let type_id = self.expand_term(&def.ty, did, 1);
+        if let Some(tid) = type_id {
+            self.add_edge(did, tid, EdgeKind::HasType, 1.0);
+        }
+
+        // Expand the definition body
+        self.expand_term(&def.body, did, 1);
+
+        // Wire type_info annotations as edges
+        if let Some(ref info) = def.type_info {
+            self.add_type_info_edges(did, info);
+        }
+
+        did
     }
 
     /// Add a premise (theorem/lemma) node.
@@ -318,12 +374,12 @@ impl ProofGraphBuilder {
                 let nid = self.add_or_get_node(NodeKind::Subterm, name, depth);
                 self.add_edge(parent_id, nid, EdgeKind::Contains, 1.0);
                 Some(nid)
-            }
+            },
             Term::Const(name) => {
                 let nid = self.add_or_get_node(NodeKind::Constant, name, depth);
                 self.add_edge(parent_id, nid, EdgeKind::References, 1.0);
                 Some(nid)
-            }
+            },
             Term::App { func, args } => {
                 let label = format!("app@{}", depth);
                 let nid = self.add_node(NodeKind::Subterm, &label, depth);
@@ -335,7 +391,7 @@ impl ProofGraphBuilder {
                     self.expand_term(arg, nid, depth + 1);
                 }
                 Some(nid)
-            }
+            },
             Term::Lambda {
                 param,
                 param_type,
@@ -354,7 +410,7 @@ impl ProofGraphBuilder {
                     self.add_edge(nid, bid, EdgeKind::BindsOver, 1.0);
                 }
                 Some(nid)
-            }
+            },
             Term::Pi {
                 param,
                 param_type,
@@ -371,15 +427,35 @@ impl ProofGraphBuilder {
                     self.add_edge(nid, bid, EdgeKind::BindsOver, 1.0);
                 }
                 Some(nid)
-            }
+            },
+            Term::Sigma {
+                param,
+                param_type,
+                body,
+            } => {
+                let label = format!("sigma_{}", param);
+                let nid = self.add_node(NodeKind::Binder, &label, depth);
+                self.add_edge(parent_id, nid, EdgeKind::Contains, 1.0);
+
+                if let Some(tid) = self.expand_term(param_type, nid, depth + 1) {
+                    self.add_edge(nid, tid, EdgeKind::HasType, 1.0);
+                }
+                if let Some(bid) = self.expand_term(body, nid, depth + 1) {
+                    self.add_edge(nid, bid, EdgeKind::BindsOver, 1.0);
+                }
+                Some(nid)
+            },
             Term::Type(level) | Term::Sort(level) | Term::Universe(level) => {
                 let label = format!("Type{}", level);
                 let nid = self.add_or_get_node(NodeKind::TypeExpr, &label, depth);
                 self.add_edge(parent_id, nid, EdgeKind::Contains, 1.0);
                 Some(nid)
-            }
+            },
             Term::Let {
-                name, ty, value, body,
+                name,
+                ty,
+                value,
+                body,
             } => {
                 let label = format!("let_{}", name);
                 let nid = self.add_node(NodeKind::Binder, &label, depth);
@@ -395,14 +471,14 @@ impl ProofGraphBuilder {
                     self.add_edge(nid, bid, EdgeKind::BindsOver, 1.0);
                 }
                 Some(nid)
-            }
+            },
             Term::Match { scrutinee, .. } => {
                 let label = format!("match@{}", depth);
                 let nid = self.add_node(NodeKind::Subterm, &label, depth);
                 self.add_edge(parent_id, nid, EdgeKind::Contains, 1.0);
                 self.expand_term(scrutinee, nid, depth + 1);
                 Some(nid)
-            }
+            },
             Term::Fix { name, ty, body } => {
                 let label = format!("fix_{}", name);
                 let nid = self.add_node(NodeKind::Binder, &label, depth);
@@ -417,25 +493,51 @@ impl ProofGraphBuilder {
                     self.add_edge(nid, bid, EdgeKind::BindsOver, 1.0);
                 }
                 Some(nid)
-            }
+            },
             Term::Hole(name) => {
                 let label = format!("?{}", name);
                 let nid = self.add_node(NodeKind::Subterm, &label, depth);
                 self.add_edge(parent_id, nid, EdgeKind::Contains, 1.0);
                 Some(nid)
-            }
+            },
             Term::Meta(id) => {
                 let label = format!("?meta_{}", id);
                 let nid = self.add_node(NodeKind::Subterm, &label, depth);
                 self.add_edge(parent_id, nid, EdgeKind::Contains, 1.0);
                 Some(nid)
-            }
+            },
             Term::ProverSpecific { prover, .. } => {
                 let label = format!("<{}-opaque>", prover);
                 let nid = self.add_node(NodeKind::Subterm, &label, depth);
                 self.add_edge(parent_id, nid, EdgeKind::Contains, 1.0);
                 Some(nid)
+            },
+        }
+    }
+
+    /// Add edges from a node to represent its [`TypeInfo`] annotations.
+    ///
+    /// Creates labelled subterm nodes for multiplicity, effect, and modality
+    /// decorations and connects them with the appropriate edge kind.
+    fn add_type_info_edges(&mut self, node_id: usize, info: &crate::types::TypeInfo) {
+        if let Some(ref mult) = info.multiplicity {
+            let label = format!("mult:{:?}", mult);
+            let mid = self.add_node(NodeKind::Subterm, &label, 1);
+            self.add_edge(node_id, mid, EdgeKind::HasMultiplicity, 1.0);
+        }
+
+        if !info.effects.is_empty() {
+            for eff in &info.effects.effects {
+                let label = format!("effect:{:?}", eff);
+                let eid = self.add_node(NodeKind::Subterm, &label, 1);
+                self.add_edge(node_id, eid, EdgeKind::HasEffect, 1.0);
             }
+        }
+
+        if let Some(ref modality) = info.modality {
+            let label = format!("modality:{:?}", modality);
+            let mid = self.add_node(NodeKind::Subterm, &label, 1);
+            self.add_edge(node_id, mid, EdgeKind::HasModality, 1.0);
         }
     }
 
@@ -481,12 +583,7 @@ impl ProofGraphBuilder {
     }
 
     /// Walk edges from a node to collect reachable Constant node ids.
-    fn collect_reachable_constants(
-        &self,
-        node_id: usize,
-        constants: &mut Vec<usize>,
-        depth: u32,
-    ) {
+    fn collect_reachable_constants(&self, node_id: usize, constants: &mut Vec<usize>, depth: u32) {
         if depth > self.max_depth {
             return;
         }
@@ -630,10 +727,7 @@ mod tests {
                 func: Box::new(Term::Const("is_even".to_string())),
                 args: vec![Term::App {
                     func: Box::new(Term::Const("add".to_string())),
-                    args: vec![
-                        Term::Var("n".to_string()),
-                        Term::Var("n".to_string()),
-                    ],
+                    args: vec![Term::Var("n".to_string()), Term::Var("n".to_string())],
                 }],
             }),
         };
@@ -653,10 +747,7 @@ mod tests {
                     func: Box::new(Term::Const("is_even".to_string())),
                     args: vec![Term::App {
                         func: Box::new(Term::Const("add".to_string())),
-                        args: vec![
-                            Term::Var("m".to_string()),
-                            Term::Var("m".to_string()),
-                        ],
+                        args: vec![Term::Var("m".to_string()), Term::Var("m".to_string())],
                     }],
                 }),
             },
@@ -701,7 +792,11 @@ mod tests {
         let graph = builder.build_from_proof_state(&state);
 
         // Must have at least: 1 goal + 1 hyp + 2 premises + subterms
-        assert!(graph.num_nodes() >= 4, "Expected at least 4 nodes, got {}", graph.num_nodes());
+        assert!(
+            graph.num_nodes() >= 4,
+            "Expected at least 4 nodes, got {}",
+            graph.num_nodes()
+        );
         assert!(graph.num_edges() > 0, "Expected at least 1 edge");
         assert!(graph.goal_node_id.is_some(), "Must have a goal node");
         assert_eq!(graph.premise_node_ids.len(), 2, "Must have 2 premise nodes");

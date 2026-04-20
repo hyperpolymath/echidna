@@ -59,8 +59,11 @@ impl ProverBackend for DeduktiBackend {
         match output {
             Ok(out) if out.status.success() => {
                 Ok(String::from_utf8_lossy(&out.stdout).trim().to_string())
-            }
-            Ok(out) => Ok(format!("dedukti@unavailable (status {:?})", out.status.code())),
+            },
+            Ok(out) => Ok(format!(
+                "dedukti@unavailable (status {:?})",
+                out.status.code()
+            )),
             Err(_) => Ok("dedukti@not-installed".to_string()),
         }
     }
@@ -112,7 +115,10 @@ impl ProverBackend for DeduktiBackend {
             .await
             .context("Dedukti: writing input")?;
         let mut cmd = Command::new(self.binary());
-        cmd.arg("-q").arg(&input).stdout(Stdio::piped()).stderr(Stdio::piped());
+        cmd.arg("-q")
+            .arg(&input)
+            .stdout(Stdio::piped())
+            .stderr(Stdio::piped());
         for arg in &self.config.args {
             cmd.arg(arg);
         }

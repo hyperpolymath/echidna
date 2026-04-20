@@ -64,8 +64,11 @@ impl ProverBackend for AbellaBackend {
         match output {
             Ok(out) if out.status.success() => {
                 Ok(String::from_utf8_lossy(&out.stdout).trim().to_string())
-            }
-            Ok(out) => Ok(format!("abella@unavailable (status {:?})", out.status.code())),
+            },
+            Ok(out) => Ok(format!(
+                "abella@unavailable (status {:?})",
+                out.status.code()
+            )),
             Err(_) => Ok("abella@not-installed".to_string()),
         }
     }
@@ -144,13 +147,13 @@ impl ProverBackend for AbellaBackend {
                 // partial scripts).
                 let stdout = String::from_utf8_lossy(&out.stdout);
                 Ok(stdout.contains("Proof completed.") || !stdout.contains("Error"))
-            }
+            },
             Ok(out) => {
                 let stderr = String::from_utf8_lossy(&out.stderr);
                 tracing::debug!(status = ?out.status.code(), "Abella: verify_proof rejected");
                 tracing::trace!(stderr = %stderr);
                 Ok(false)
-            }
+            },
             Err(e) => Err(anyhow!("Abella: binary not runnable: {}", e)),
         }
     }

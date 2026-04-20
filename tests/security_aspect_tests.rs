@@ -42,7 +42,8 @@ fn security_proof_forgery_single_bit_flip_detected() {
     let h_forged = hash(&forged).to_hex();
 
     assert_ne!(
-        h_original.as_str(), h_forged.as_str(),
+        h_original.as_str(),
+        h_forged.as_str(),
         "Single-bit modification must change the proof hash"
     );
 }
@@ -104,7 +105,8 @@ fn security_model_injection_trust_level_immutable() {
     for payload in &payloads {
         // Config must be unchanged regardless of what we would put in proof content.
         assert_eq!(
-            config.min_trust_level, TrustLevel::Level5,
+            config.min_trust_level,
+            TrustLevel::Level5,
             "min_trust_level must not be mutable via payload: '{}'",
             payload
         );
@@ -125,7 +127,11 @@ fn security_trust_level_capped_at_level5() {
     };
 
     let trust = compute_trust_level(&factors);
-    assert!(trust <= TrustLevel::Level5, "Trust must never exceed Level5, got {:?}", trust);
+    assert!(
+        trust <= TrustLevel::Level5,
+        "Trust must never exceed Level5, got {:?}",
+        trust
+    );
 }
 
 // ---------------------------------------------------------------------------
@@ -136,18 +142,22 @@ fn security_trust_level_capped_at_level5() {
 #[test]
 fn security_agent_config_no_privilege_escalation_markers() {
     let config = AgentConfig::default();
-    let json = serde_json::to_string(&config)
-        .expect("AgentConfig must be serialisable");
+    let json = serde_json::to_string(&config).expect("AgentConfig must be serialisable");
 
     let forbidden = [
-        "root", "sudo", "unrestricted", "privilege_escalation", "all_capabilities",
+        "root",
+        "sudo",
+        "unrestricted",
+        "privilege_escalation",
+        "all_capabilities",
     ];
 
     for marker in &forbidden {
         assert!(
             !json.to_lowercase().contains(marker),
             "AgentConfig must not contain escalation marker '{}': {}",
-            marker, json
+            marker,
+            json
         );
     }
 }
@@ -161,7 +171,10 @@ fn security_agent_config_clone_preserves_restrictions() {
     let json_orig = serde_json::to_string(&original).unwrap();
     let json_clone = serde_json::to_string(&cloned).unwrap();
 
-    assert_eq!(json_orig, json_clone, "Cloned config must be identical to original");
+    assert_eq!(
+        json_orig, json_clone,
+        "Cloned config must be identical to original"
+    );
 }
 
 // ---------------------------------------------------------------------------
@@ -183,7 +196,11 @@ fn security_reject_axiom_always_yields_level1() {
     };
 
     let safe_trust = compute_trust_level(&positive);
-    assert!(safe_trust >= TrustLevel::Level3, "Baseline should be Level3+: {:?}", safe_trust);
+    assert!(
+        safe_trust >= TrustLevel::Level3,
+        "Baseline should be Level3+: {:?}",
+        safe_trust
+    );
 
     // Add Reject axioms — must collapse to Level1.
     let reject_factors = TrustFactors {
@@ -192,7 +209,8 @@ fn security_reject_axiom_always_yields_level1() {
     };
     let reject_trust = compute_trust_level(&reject_factors);
     assert_eq!(
-        reject_trust, TrustLevel::Level1,
+        reject_trust,
+        TrustLevel::Level1,
         "Reject axioms must always yield Level1, got {:?}",
         reject_trust
     );
@@ -210,7 +228,10 @@ fn security_noted_axiom_does_not_raise_trust() {
         solver_integrity_ok: true,
         portfolio_confidence: None,
     };
-    let noted = TrustFactors { worst_axiom_danger: DangerLevel::Noted, ..base.clone() };
+    let noted = TrustFactors {
+        worst_axiom_danger: DangerLevel::Noted,
+        ..base.clone()
+    };
 
     assert!(
         compute_trust_level(&noted) <= compute_trust_level(&base),
@@ -234,7 +255,10 @@ fn security_integrity_failure_never_raises_trust() {
         solver_integrity_ok: true,
         portfolio_confidence: None,
     };
-    let failing = TrustFactors { solver_integrity_ok: false, ..passing.clone() };
+    let failing = TrustFactors {
+        solver_integrity_ok: false,
+        ..passing.clone()
+    };
 
     assert!(
         compute_trust_level(&failing) <= compute_trust_level(&passing),
@@ -263,7 +287,10 @@ fn security_cross_checked_requires_two_provers() {
         outcome: echidna::provers::outcome::ProverOutcome::Proved { elapsed_ms: 100 },
         diagnostics: None,
     };
-    assert!(good.provers_used.len() >= 2, "cross_checked result requires ≥2 provers");
+    assert!(
+        good.provers_used.len() >= 2,
+        "cross_checked result requires ≥2 provers"
+    );
 
     // Detect violation: cross_checked=true but only 1 prover.
     let bad = DispatchResult {
@@ -271,7 +298,10 @@ fn security_cross_checked_requires_two_provers() {
         ..good.clone()
     };
     let is_valid = !bad.cross_checked || bad.provers_used.len() >= 2;
-    assert!(!is_valid, "cross_checked=true with 1 prover must be detected as invalid");
+    assert!(
+        !is_valid,
+        "cross_checked=true with 1 prover must be detected as invalid"
+    );
 }
 
 /// Single-prover result must not be marked cross-checked.
@@ -290,7 +320,10 @@ fn security_single_prover_not_cross_checked() {
         outcome: echidna::provers::outcome::ProverOutcome::Proved { elapsed_ms: 50 },
         diagnostics: None,
     };
-    assert!(!result.cross_checked, "Single-prover result must not be cross_checked");
+    assert!(
+        !result.cross_checked,
+        "Single-prover result must not be cross_checked"
+    );
     assert_eq!(result.provers_used.len(), 1);
 }
 
@@ -300,7 +333,10 @@ fn security_single_prover_not_cross_checked() {
 
 #[tokio::test]
 async fn security_control_chars_in_proof_no_panic() {
-    let config = ProverConfig { timeout: 2, ..Default::default() };
+    let config = ProverConfig {
+        timeout: 2,
+        ..Default::default()
+    };
     let prover = ProverFactory::create(ProverKind::Z3, config).unwrap();
 
     let malicious_inputs = [

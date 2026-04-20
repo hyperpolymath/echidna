@@ -57,10 +57,9 @@ fn bench_routing_decision_latency(c: &mut Criterion) {
             |b, content| {
                 b.iter(|| {
                     // Deterministic hash-based prover selection — the routing hot path.
-                    let hash: usize = content
-                        .as_bytes()
-                        .iter()
-                        .fold(0usize, |acc, &byte| acc.wrapping_mul(31).wrapping_add(byte as usize));
+                    let hash: usize = content.as_bytes().iter().fold(0usize, |acc, &byte| {
+                        acc.wrapping_mul(31).wrapping_add(byte as usize)
+                    });
                     let provers = black_box(ProverKind::all());
                     let selected = provers[hash % provers.len()];
                     black_box(selected)
@@ -239,9 +238,7 @@ fn bench_agentic_config_throughput(c: &mut Criterion) {
     // Benchmark: clone from existing config.
     let base_config = AgentConfig::default();
     group.bench_function("agent_config_clone", |b| {
-        b.iter(|| {
-            black_box(base_config.clone())
-        })
+        b.iter(|| black_box(base_config.clone()))
     });
 
     // Benchmark: JSON serialisation (used for config logging and audit).

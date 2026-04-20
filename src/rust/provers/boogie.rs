@@ -52,7 +52,7 @@ impl ProverBackend for BoogieBackend {
         match output {
             Ok(out) if out.status.success() => {
                 Ok(String::from_utf8_lossy(&out.stdout).trim().to_string())
-            }
+            },
             Ok(_) => Ok("boogie@unavailable".to_string()),
             Err(_) => Ok("boogie@not-installed".to_string()),
         }
@@ -105,7 +105,9 @@ impl ProverBackend for BoogieBackend {
             .await
             .context("Boogie: writing input")?;
         let mut cmd = Command::new(self.binary());
-        cmd.arg(&input).stdout(Stdio::piped()).stderr(Stdio::piped());
+        cmd.arg(&input)
+            .stdout(Stdio::piped())
+            .stderr(Stdio::piped());
         for arg in &self.config.args {
             cmd.arg(arg);
         }
@@ -114,8 +116,9 @@ impl ProverBackend for BoogieBackend {
                 // Boogie prints "0 errors" on full success; non-zero errors
                 // in stdout even with exit 0 means verification failed.
                 let stdout = String::from_utf8_lossy(&out.stdout);
-                Ok(stdout.contains("0 errors") || stdout.contains("Boogie program verifier finished with"))
-            }
+                Ok(stdout.contains("0 errors")
+                    || stdout.contains("Boogie program verifier finished with"))
+            },
             Ok(_) => Ok(false),
             Err(e) => Err(anyhow!("Boogie: binary not runnable: {}", e)),
         }

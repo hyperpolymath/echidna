@@ -26,11 +26,11 @@
 mod common;
 
 use echidna::core::{Context, Goal, ProofState, Term, Variable};
+use echidna::dispatch::{DispatchConfig, ProverDispatcher};
 use echidna::provers::{
     outcome::{classify_anyhow_error, ProverOutcome},
     ProverConfig, ProverFactory, ProverKind,
 };
-use echidna::dispatch::{DispatchConfig, ProverDispatcher};
 use std::path::PathBuf;
 
 // ─── ProofState construction helpers ────────────────────────────────────────
@@ -121,16 +121,32 @@ fn sanity_outcome_taxonomy_complete() {
     // All 8 statuses exist and are distinct strings
     let statuses: Vec<&str> = vec![
         ProverOutcome::Proved { elapsed_ms: 0 }.status_str(),
-        ProverOutcome::NoProofFound { elapsed_ms: 0, reason: None }.status_str(),
-        ProverOutcome::InvalidInput { reason: "".into(), location: None }.status_str(),
+        ProverOutcome::NoProofFound {
+            elapsed_ms: 0,
+            reason: None,
+        }
+        .status_str(),
+        ProverOutcome::InvalidInput {
+            reason: "".into(),
+            location: None,
+        }
+        .status_str(),
         ProverOutcome::UnsupportedFeature { feature: "".into() }.status_str(),
         ProverOutcome::Timeout { limit_secs: 0 }.status_str(),
         ProverOutcome::InconsistentPremises { detail: None }.status_str(),
-        ProverOutcome::ProverError { detail: "".into(), exit_code: None }.status_str(),
+        ProverOutcome::ProverError {
+            detail: "".into(),
+            exit_code: None,
+        }
+        .status_str(),
         ProverOutcome::SystemError { detail: "".into() }.status_str(),
     ];
     let unique: std::collections::HashSet<&&str> = statuses.iter().collect();
-    assert_eq!(statuses.len(), unique.len(), "Every status_str must be unique");
+    assert_eq!(
+        statuses.len(),
+        unique.len(),
+        "Every status_str must be unique"
+    );
 }
 
 /// Default is SystemError (never silently passes as success/failure).
@@ -147,11 +163,20 @@ fn sanity_default_is_system_error() {
 fn sanity_is_proved_exclusive() {
     assert!(ProverOutcome::Proved { elapsed_ms: 10 }.is_proved());
     let non_proved = vec![
-        ProverOutcome::NoProofFound { elapsed_ms: 0, reason: None },
+        ProverOutcome::NoProofFound {
+            elapsed_ms: 0,
+            reason: None,
+        },
         ProverOutcome::Timeout { limit_secs: 5 },
-        ProverOutcome::InvalidInput { reason: "bad".into(), location: None },
+        ProverOutcome::InvalidInput {
+            reason: "bad".into(),
+            location: None,
+        },
         ProverOutcome::InconsistentPremises { detail: None },
-        ProverOutcome::ProverError { detail: "".into(), exit_code: None },
+        ProverOutcome::ProverError {
+            detail: "".into(),
+            exit_code: None,
+        },
         ProverOutcome::SystemError { detail: "".into() },
     ];
     for o in non_proved {
@@ -163,13 +188,25 @@ fn sanity_is_proved_exclusive() {
 #[test]
 fn sanity_is_conclusive_semantics() {
     assert!(ProverOutcome::Proved { elapsed_ms: 0 }.is_conclusive());
-    assert!(ProverOutcome::NoProofFound { elapsed_ms: 0, reason: None }.is_conclusive());
+    assert!(ProverOutcome::NoProofFound {
+        elapsed_ms: 0,
+        reason: None
+    }
+    .is_conclusive());
     assert!(ProverOutcome::InconsistentPremises { detail: None }.is_conclusive());
 
     assert!(!ProverOutcome::Timeout { limit_secs: 0 }.is_conclusive());
-    assert!(!ProverOutcome::InvalidInput { reason: "".into(), location: None }.is_conclusive());
+    assert!(!ProverOutcome::InvalidInput {
+        reason: "".into(),
+        location: None
+    }
+    .is_conclusive());
     assert!(!ProverOutcome::UnsupportedFeature { feature: "".into() }.is_conclusive());
-    assert!(!ProverOutcome::ProverError { detail: "".into(), exit_code: None }.is_conclusive());
+    assert!(!ProverOutcome::ProverError {
+        detail: "".into(),
+        exit_code: None
+    }
+    .is_conclusive());
     assert!(!ProverOutcome::SystemError { detail: "".into() }.is_conclusive());
 }
 
@@ -178,8 +215,16 @@ fn sanity_is_conclusive_semantics() {
 fn sanity_retryable_is_timeout_only() {
     assert!(ProverOutcome::Timeout { limit_secs: 30 }.is_retryable());
     assert!(!ProverOutcome::Proved { elapsed_ms: 0 }.is_retryable());
-    assert!(!ProverOutcome::ProverError { detail: "".into(), exit_code: None }.is_retryable());
-    assert!(!ProverOutcome::NoProofFound { elapsed_ms: 0, reason: None }.is_retryable());
+    assert!(!ProverOutcome::ProverError {
+        detail: "".into(),
+        exit_code: None
+    }
+    .is_retryable());
+    assert!(!ProverOutcome::NoProofFound {
+        elapsed_ms: 0,
+        reason: None
+    }
+    .is_retryable());
 }
 
 /// Error classification correctly identifies timeout, parse, system, and prover errors.
@@ -189,8 +234,14 @@ fn sanity_error_classification() {
         ("Z3 execution timeout after 30 seconds", "TIMEOUT"),
         ("Why3 timed out", "TIMEOUT"),
         ("parse error: unexpected token ')'", "INVALID_INPUT"),
-        ("syntax error at line 5: expected identifier", "INVALID_INPUT"),
-        ("Failed to spawn Z3 process: no such file or directory", "SYSTEM_ERROR"),
+        (
+            "syntax error at line 5: expected identifier",
+            "INVALID_INPUT",
+        ),
+        (
+            "Failed to spawn Z3 process: no such file or directory",
+            "SYSTEM_ERROR",
+        ),
         ("OS error: permission denied", "SYSTEM_ERROR"),
         ("Z3 failed with segmentation fault", "PROVER_ERROR"),
         ("internal verification error", "PROVER_ERROR"),
@@ -363,9 +414,9 @@ async fn sanity_universal_quantifier_proved() {
     // check() will assert: (not (forall ((x Bool)) (=> x x)))
     // Z3 with set-logic ALL returns unsat → PROVED.
     let state = make_proof_state(
-        &[],                                        // no free variables
-        &[],                                        // no premises
-        "(forall ((x Bool)) (=> x x))",             // the tautology to prove
+        &[],                            // no free variables
+        &[],                            // no premises
+        "(forall ((x Bool)) (=> x x))", // the tautology to prove
     );
     let outcome = backend.check(&state).await.expect("check must not error");
 
@@ -395,9 +446,9 @@ async fn sanity_contradiction_is_inconsistent_premises() {
     // Any goal follows; we use a trivially-true one to stress-test that
     // we detect the inconsistency even before reaching a trivial-goal short-circuit.
     let state = make_proof_state(
-        &["P"],              // declare-const P Bool
-        &["P", "(not P)"],   // (assert P); (assert (not P)) — UNSAT hypothesis set
-        "P",                 // goal is irrelevant — inconsistency is detected first
+        &["P"],            // declare-const P Bool
+        &["P", "(not P)"], // (assert P); (assert (not P)) — UNSAT hypothesis set
+        "P",               // goal is irrelevant — inconsistency is detected first
     );
     let outcome = backend.check(&state).await.expect("check must not error");
 
@@ -426,8 +477,8 @@ async fn sanity_equality_reflexivity_proved() {
     // Declare a as Int; prove (= a a).
     // check() asserts (not (= a a)); Z3 returns unsat → PROVED.
     let state = make_proof_state_int(
-        &["a"],   // declare-const a Int
-        &[],      // no premises
+        &["a"],    // declare-const a Int
+        &[],       // no premises
         "(= a a)", // goal: a = a
     );
     let outcome = backend.check(&state).await.expect("check must not error");
@@ -509,11 +560,7 @@ async fn sanity_cross_prover_comparison() {
 
     // Valid modus ponens: P, (P => Q) ⊢ Q
     // Both Z3 and CVC5 should prove this if their binary is available.
-    let mp_state = make_proof_state(
-        &["P", "Q"],
-        &["P", "(=> P Q)"],
-        "Q",
-    );
+    let mp_state = make_proof_state(&["P", "Q"], &["P", "(=> P Q)"], "Q");
 
     let mut per_prover_outcomes: Vec<(ProverKind, ProverOutcome)> = Vec::new();
 
@@ -613,10 +660,7 @@ async fn sanity_diagnostics_populated_when_enabled() {
         "provers_selected must not be empty"
     );
     assert_eq!(diag.per_prover.len(), 1, "one prover invoked → one record");
-    assert_eq!(
-        diag.per_prover[0].prover, "Z3",
-        "record must name Z3"
-    );
+    assert_eq!(diag.per_prover[0].prover, "Z3", "record must name Z3");
 }
 
 /// Parse failures produce INVALID_INPUT (not PROVER_ERROR or SYSTEM_ERROR)
@@ -644,10 +688,7 @@ async fn sanity_dispatch_parse_failure_is_invalid_input() {
         .expect("dispatch must return Ok even for bad input");
 
     // The pipeline must not silently return PROVED for broken input
-    assert!(
-        !result.verified,
-        "broken input must not be verified"
-    );
+    assert!(!result.verified, "broken input must not be verified");
 
     // The outcome should be INVALID_INPUT or PROVER_ERROR (Z3 may accept some
     // malformed inputs as valid). What it must NOT be is PROVED or SYSTEM_ERROR.

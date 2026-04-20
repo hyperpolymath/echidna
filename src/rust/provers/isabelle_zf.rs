@@ -107,8 +107,10 @@ impl ProverBackend for IsabelleZfBackend {
             .context("Isabelle/ZF: writing input")?;
         let mut cmd = Command::new(self.binary());
         cmd.arg("build")
-            .arg("-d").arg(tmp_dir.path())
-            .arg("-l").arg("ZF") // ZF object logic
+            .arg("-d")
+            .arg(tmp_dir.path())
+            .arg("-l")
+            .arg("ZF") // ZF object logic
             .arg("Check")
             .stdout(Stdio::piped())
             .stderr(Stdio::piped());

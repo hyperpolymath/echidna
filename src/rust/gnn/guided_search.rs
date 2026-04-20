@@ -144,11 +144,11 @@ impl GnnGuidedSearch {
                     debug!("GNN server not available, will use symbolic fallback");
                 }
                 available
-            }
+            },
             Err(e) => {
                 debug!("GNN health check failed: {}", e);
                 false
-            }
+            },
         }
     }
 
@@ -341,14 +341,20 @@ fn infer_tactic(name: &str, statement: &Term) -> Tactic {
     }
 
     // Induction hints: names containing "ind", "rec", "induction"
-    if name_lower.contains("_ind") || name_lower.contains("_rec") || name_lower.contains("induction") {
+    if name_lower.contains("_ind")
+        || name_lower.contains("_rec")
+        || name_lower.contains("induction")
+    {
         if let Term::Pi { param_type, .. } = statement {
             return Tactic::Induction(*param_type.clone());
         }
     }
 
     // Cases hints: names containing "cases", "destruct", "elim"
-    if name_lower.contains("cases") || name_lower.contains("destruct") || name_lower.contains("elim") {
+    if name_lower.contains("cases")
+        || name_lower.contains("destruct")
+        || name_lower.contains("elim")
+    {
         if let Term::Pi { param_type, .. } = statement {
             return Tactic::Cases(*param_type.clone());
         }
@@ -371,10 +377,7 @@ mod tests {
                     func: Box::new(Term::Const("is_even".to_string())),
                     args: vec![Term::App {
                         func: Box::new(Term::Const("add".to_string())),
-                        args: vec![
-                            Term::Var("n".to_string()),
-                            Term::Var("n".to_string()),
-                        ],
+                        args: vec![Term::Var("n".to_string()), Term::Var("n".to_string())],
                     }],
                 },
                 hypotheses: vec![Hypothesis {
@@ -408,10 +411,7 @@ mod tests {
                         func: Box::new(Term::Const("is_even".to_string())),
                         args: vec![Term::App {
                             func: Box::new(Term::Const("add".to_string())),
-                            args: vec![
-                                Term::Var("m".to_string()),
-                                Term::Var("m".to_string()),
-                            ],
+                            args: vec![Term::Var("m".to_string()), Term::Var("m".to_string())],
                         }],
                     }),
                 },

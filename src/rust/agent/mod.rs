@@ -376,17 +376,17 @@ impl AgentCore {
                         prover: prover_kind,
                         time_ms,
                     });
-                }
+                },
                 Ok(TacticResult::Success(new_state)) => {
                     current_state = new_state;
                     current_state.proof_script.push(tactic.clone());
-                }
+                },
                 Ok(TacticResult::Error(msg)) => {
                     debug!("Tactic {:?} rejected: {}", tactic, msg);
-                }
+                },
                 Err(e) => {
                     debug!("Backend error on tactic {:?}: {}", tactic, e);
-                }
+                },
             }
         }
 

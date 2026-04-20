@@ -13,17 +13,17 @@
 
 mod common;
 
-use std::sync::Arc;
 use std::sync::atomic::{AtomicUsize, Ordering};
+use std::sync::Arc;
 use std::time::Duration;
 
-use tokio::time::timeout;
 use echidna::agent::AgentConfig;
 use echidna::dispatch::DispatchConfig;
 use echidna::provers::{ProverConfig, ProverFactory, ProverKind};
 use echidna::verification::axiom_tracker::AxiomTracker;
-use echidna::verification::confidence::{compute_trust_level, TrustFactors, TrustLevel};
 use echidna::verification::axiom_tracker::DangerLevel;
+use echidna::verification::confidence::{compute_trust_level, TrustFactors, TrustLevel};
+use tokio::time::timeout;
 
 // ---------------------------------------------------------------------------
 // Concurrency invariant 1: Parallel proof instantiation — no shared-state corruption
@@ -42,14 +42,17 @@ async fn concurrency_parallel_prover_factory_no_corruption() {
     for _i in 0..16 {
         let counter = Arc::clone(&success_count);
         let handle = tokio::spawn(async move {
-            let config = ProverConfig { timeout: 5, ..Default::default() };
+            let config = ProverConfig {
+                timeout: 5,
+                ..Default::default()
+            };
             match ProverFactory::create(ProverKind::Z3, config) {
                 Ok(_prover) => {
                     counter.fetch_add(1, Ordering::Relaxed);
-                }
+                },
                 Err(e) => {
                     eprintln!("Task failed to create Z3 backend: {}", e);
-                }
+                },
             }
         });
         handles.push(handle);
@@ -63,7 +66,10 @@ async fn concurrency_parallel_prover_factory_no_corruption() {
     })
     .await;
 
-    assert!(result.is_ok(), "All parallel factory tasks must complete within 10s");
+    assert!(
+        result.is_ok(),
+        "All parallel factory tasks must complete within 10s"
+    );
     assert_eq!(
         success_count.load(Ordering::Relaxed),
         16,
@@ -126,11 +132,17 @@ async fn concurrency_all_routing_requests_complete_no_starvation() {
     for i in 0..32 {
         let counter = Arc::clone(&completed);
         let handle = tokio::spawn(async move {
-            let config = ProverConfig { timeout: 5, ..Default::default() };
+            let config = ProverConfig {
+                timeout: 5,
+                ..Default::default()
+            };
             // Alternate between Z3 and Lean to exercise different backends.
-            let kind = if i % 2 == 0 { ProverKind::Z3 } else { ProverKind::Lean };
-            let prover = ProverFactory::create(kind, config)
-                .expect("Backend must instantiate");
+            let kind = if i % 2 == 0 {
+                ProverKind::Z3
+            } else {
+                ProverKind::Lean
+            };
+            let prover = ProverFactory::create(kind, config).expect("Backend must instantiate");
 
             let content = format!(
                 "(set-logic QF_LIA)(declare-fun x{} () Int)(assert (= x{} x{}))(check-sat)",
@@ -150,7 +162,10 @@ async fn concurrency_all_routing_requests_complete_no_starvation() {
     })
     .await;
 
-    assert!(result.is_ok(), "All 32 concurrent routing requests must complete within 30s");
+    assert!(
+        result.is_ok(),
+        "All 32 concurrent routing requests must complete within 30s"
+    );
     assert_eq!(
         completed.load(Ordering::Relaxed),
         32,
@@ -273,7 +288,10 @@ async fn concurrency_agent_config_clone_across_tasks() {
             local.max_concurrent = i;
 
             // Verify the local mutation.
-            assert_eq!(local.max_concurrent, i, "Local mutation must be independent");
+            assert_eq!(
+                local.max_concurrent, i,
+                "Local mutation must be independent"
+            );
             // Original must be unchanged (we test this via Arc — actual shared ref).
             assert_eq!(config.max_concurrent, 8, "Shared config must be unchanged");
         });
@@ -285,7 +303,10 @@ async fn concurrency_agent_config_clone_across_tasks() {
     }
 
     // The base config must still be intact after all tasks ran.
-    assert_eq!(base.max_concurrent, 8, "Base config must not be mutated by any task");
+    assert_eq!(
+        base.max_concurrent, 8,
+        "Base config must not be mutated by any task"
+    );
 }
 
 // ---------------------------------------------------------------------------

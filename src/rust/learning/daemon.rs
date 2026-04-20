@@ -131,12 +131,8 @@ impl Daemon {
         let backend = ProverFactory::create(self.cfg.prover_kind, prover_config)
             .context("daemon: create backend")?;
 
-        let mut search = super::mcts::Search::new(
-            backend.as_ref(),
-            policy,
-            value,
-            self.cfg.search.clone(),
-        );
+        let mut search =
+            super::mcts::Search::new(backend.as_ref(), policy, value, self.cfg.search.clone());
         let outcome = search.run(chosen.state.clone()).await?;
 
         self.curriculum.record_outcome(outcome.proof_found);
@@ -205,14 +201,18 @@ impl Daemon {
     ) -> Result<()> {
         loop {
             let regime = self.curriculum.regime();
-            tracing::debug!(?regime, attempts = self.attempts, pool = self.pool.len(),
-                           "daemon tick");
+            tracing::debug!(
+                ?regime,
+                attempts = self.attempts,
+                pool = self.pool.len(),
+                "daemon tick"
+            );
             match self.step(policy.clone(), value.clone()).await? {
-                Some(_) => {}
+                Some(_) => {},
                 None => {
                     tracing::info!("daemon: pool exhausted — pausing");
                     sleep(self.cfg.tick_pause * 10).await;
-                }
+                },
             }
             if self.cfg.tick_pause > Duration::ZERO {
                 sleep(self.cfg.tick_pause).await;

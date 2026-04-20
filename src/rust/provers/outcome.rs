@@ -61,21 +61,15 @@ pub enum ProverOutcome {
     /// The prover reports that the input uses a logic / feature it does
     /// not support. Distinct from `InvalidInput` — the syntax is legal but
     /// the semantics are out of scope for this backend.
-    UnsupportedFeature {
-        feature: String,
-    },
+    UnsupportedFeature { feature: String },
     /// The prover was interrupted by the configured timeout.
     /// Retryable with a larger budget.
-    Timeout {
-        limit_secs: u64,
-    },
+    Timeout { limit_secs: u64 },
     /// The premises (axioms / hypotheses / goal set) are mutually
     /// unsatisfiable.  Anything follows trivially, so an unqualified
     /// PROVED would be epistemically worthless.  The system flags this
     /// explicitly so that callers can decide what to do.
-    InconsistentPremises {
-        detail: Option<String>,
-    },
+    InconsistentPremises { detail: Option<String> },
     /// The prover itself failed (crash, internal assertion, non-zero exit
     /// without a recognised error token).
     ProverError {
@@ -84,9 +78,7 @@ pub enum ProverOutcome {
     },
     /// The surrounding system failed (binary not found, IO error,
     /// permission denied, etc.) — nothing to do with the prover's logic.
-    SystemError {
-        detail: String,
-    },
+    SystemError { detail: String },
 }
 
 impl Default for ProverOutcome {
@@ -158,7 +150,7 @@ impl fmt::Display for ProverOutcome {
         match self {
             ProverOutcome::Proved { elapsed_ms } => {
                 write!(f, "PROVED in {}ms", elapsed_ms)
-            }
+            },
             ProverOutcome::NoProofFound { elapsed_ms, reason } => match reason {
                 Some(r) => write!(f, "NO_PROOF_FOUND in {}ms ({})", elapsed_ms, r),
                 None => write!(f, "NO_PROOF_FOUND in {}ms", elapsed_ms),
@@ -169,10 +161,10 @@ impl fmt::Display for ProverOutcome {
             },
             ProverOutcome::UnsupportedFeature { feature } => {
                 write!(f, "UNSUPPORTED_FEATURE: {}", feature)
-            }
+            },
             ProverOutcome::Timeout { limit_secs } => {
                 write!(f, "TIMEOUT after {}s", limit_secs)
-            }
+            },
             ProverOutcome::InconsistentPremises { detail } => match detail {
                 Some(d) => write!(f, "INCONSISTENT_PREMISES: {}", d),
                 None => write!(f, "INCONSISTENT_PREMISES"),

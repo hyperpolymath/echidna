@@ -678,7 +678,11 @@ pub unsafe extern "C" fn rust_apply_tactic(
 /// - `state` must be a valid pointer previously returned by `rust_parse_file`/`rust_parse_string`.
 /// - `out_valid` must be a valid, non-null, writable pointer.
 #[no_mangle]
-pub unsafe extern "C" fn rust_verify_proof(kind: u8, state: *mut c_void, out_valid: *mut bool) -> c_int {
+pub unsafe extern "C" fn rust_verify_proof(
+    kind: u8,
+    state: *mut c_void,
+    out_valid: *mut bool,
+) -> c_int {
     if state.is_null() || out_valid.is_null() {
         return FfiStatus::ErrorInvalidArgument as c_int;
     }
@@ -909,14 +913,14 @@ pub extern "C" fn echidna_create_prover(kind: u8) -> c_int {
         None => {
             set_last_error(&format!("Unknown prover kind: {kind}"));
             return FfiStatus::ErrorInvalidArgument as c_int;
-        }
+        },
     };
     match create_prover(prover_kind, ProverConfig::default()) {
         Ok(handle) => handle as c_int,
         Err(status) => {
             set_last_error(&format!("Failed to create prover: {kind}"));
             status as c_int
-        }
+        },
     }
 }
 
@@ -939,7 +943,7 @@ pub unsafe extern "C" fn echidna_parse_string(
         Err(_) => {
             set_last_error("Invalid UTF-8 content");
             return FfiStatus::ErrorInvalidArgument as c_int;
-        }
+        },
     };
     let registry = match PROVER_REGISTRY.lock() {
         Ok(r) => r,
@@ -950,14 +954,14 @@ pub unsafe extern "C" fn echidna_parse_string(
         None => {
             set_last_error(&format!("Invalid handle: {handle}"));
             return FfiStatus::ErrorInvalidHandle as c_int;
-        }
+        },
     };
     match run_async(prover.parse_string(content_str)) {
         Ok(_state) => FfiStatus::Ok as c_int,
         Err(status) => {
             set_last_error("Parse failed");
             status as c_int
-        }
+        },
     }
 }
 
@@ -972,11 +976,11 @@ pub extern "C" fn echidna_verify_proof(handle: c_int) -> c_int {
         Some(_prover) => {
             // Verify requires a proof state — return OK for handle validity check
             FfiStatus::Ok as c_int
-        }
+        },
         None => {
             set_last_error(&format!("Invalid handle: {handle}"));
             FfiStatus::ErrorInvalidHandle as c_int
-        }
+        },
     }
 }
 
@@ -1034,7 +1038,7 @@ pub unsafe extern "C" fn echidna_suggest_tactics(
             std::ptr::copy_nonoverlapping(json.as_ptr(), out, copy_len);
             *out_len = copy_len;
             FfiStatus::Ok as c_int
-        }
+        },
         None => FfiStatus::ErrorInvalidHandle as c_int,
     }
 }
@@ -1061,7 +1065,7 @@ pub unsafe extern "C" fn echidna_export_proof(
         Some(_prover) => {
             *out_len = 0;
             FfiStatus::Ok as c_int
-        }
+        },
         None => FfiStatus::ErrorInvalidHandle as c_int,
     }
 }
@@ -1253,58 +1257,123 @@ mod tests {
         // ecosystem TypeDiscipline variants (codes 49–88).
         let all_kinds = [
             // Classic backends (0–48).
-            ProverKind::Agda, ProverKind::Coq, ProverKind::Lean,
-            ProverKind::Isabelle, ProverKind::Z3, ProverKind::CVC5,
-            ProverKind::Metamath, ProverKind::HOLLight, ProverKind::Mizar,
-            ProverKind::PVS, ProverKind::ACL2, ProverKind::HOL4,
-            ProverKind::Idris2, ProverKind::Vampire, ProverKind::EProver,
-            ProverKind::SPASS, ProverKind::AltErgo, ProverKind::FStar,
-            ProverKind::Dafny, ProverKind::Why3, ProverKind::TLAPS,
-            ProverKind::Twelf, ProverKind::Nuprl, ProverKind::Minlog,
-            ProverKind::Imandra, ProverKind::GLPK, ProverKind::SCIP,
-            ProverKind::MiniZinc, ProverKind::Chuffed, ProverKind::ORTools,
-            ProverKind::TypedWasm, ProverKind::SPIN, ProverKind::CBMC,
-            ProverKind::SeaHorn, ProverKind::CaDiCaL, ProverKind::Kissat,
-            ProverKind::MiniSat, ProverKind::NuSMV, ProverKind::TLC,
-            ProverKind::Alloy, ProverKind::Prism, ProverKind::UPPAAL,
-            ProverKind::FramaC, ProverKind::Viper, ProverKind::Tamarin,
-            ProverKind::ProVerif, ProverKind::KeY, ProverKind::DReal,
+            ProverKind::Agda,
+            ProverKind::Coq,
+            ProverKind::Lean,
+            ProverKind::Isabelle,
+            ProverKind::Z3,
+            ProverKind::CVC5,
+            ProverKind::Metamath,
+            ProverKind::HOLLight,
+            ProverKind::Mizar,
+            ProverKind::PVS,
+            ProverKind::ACL2,
+            ProverKind::HOL4,
+            ProverKind::Idris2,
+            ProverKind::Vampire,
+            ProverKind::EProver,
+            ProverKind::SPASS,
+            ProverKind::AltErgo,
+            ProverKind::FStar,
+            ProverKind::Dafny,
+            ProverKind::Why3,
+            ProverKind::TLAPS,
+            ProverKind::Twelf,
+            ProverKind::Nuprl,
+            ProverKind::Minlog,
+            ProverKind::Imandra,
+            ProverKind::GLPK,
+            ProverKind::SCIP,
+            ProverKind::MiniZinc,
+            ProverKind::Chuffed,
+            ProverKind::ORTools,
+            ProverKind::TypedWasm,
+            ProverKind::SPIN,
+            ProverKind::CBMC,
+            ProverKind::SeaHorn,
+            ProverKind::CaDiCaL,
+            ProverKind::Kissat,
+            ProverKind::MiniSat,
+            ProverKind::NuSMV,
+            ProverKind::TLC,
+            ProverKind::Alloy,
+            ProverKind::Prism,
+            ProverKind::UPPAAL,
+            ProverKind::FramaC,
+            ProverKind::Viper,
+            ProverKind::Tamarin,
+            ProverKind::ProVerif,
+            ProverKind::KeY,
+            ProverKind::DReal,
             ProverKind::ABC,
             // HP ecosystem: original 12 (49–60).
-            ProverKind::TypeLL, ProverKind::KatagoriaVerifier,
-            ProverKind::TropicalTypeChecker, ProverKind::ChoreographicTypeChecker,
-            ProverKind::EpistemicTypeChecker, ProverKind::EchoTypeChecker,
-            ProverKind::SessionTypeChecker, ProverKind::ModalTypeChecker,
-            ProverKind::QTTTypeChecker, ProverKind::EffectRowTypeChecker,
-            ProverKind::DependentTypeChecker, ProverKind::RefinementTypeChecker,
+            ProverKind::TypeLL,
+            ProverKind::KatagoriaVerifier,
+            ProverKind::TropicalTypeChecker,
+            ProverKind::ChoreographicTypeChecker,
+            ProverKind::EpistemicTypeChecker,
+            ProverKind::EchoTypeChecker,
+            ProverKind::SessionTypeChecker,
+            ProverKind::ModalTypeChecker,
+            ProverKind::QTTTypeChecker,
+            ProverKind::EffectRowTypeChecker,
+            ProverKind::DependentTypeChecker,
+            ProverKind::RefinementTypeChecker,
             // HP ecosystem: TypeDiscipline transition (61–88).
-            ProverKind::OrdinaryTypeChecker, ProverKind::PhantomTypeChecker,
-            ProverKind::PolymorphicTypeChecker, ProverKind::ExistentialTypeChecker,
-            ProverKind::HigherKindedTypeChecker, ProverKind::RowTypeChecker,
-            ProverKind::SubtypingTypeChecker, ProverKind::IntersectionTypeChecker,
-            ProverKind::UnionTypeChecker, ProverKind::GradualTypeChecker,
-            ProverKind::HoareTypeChecker, ProverKind::IndexedTypeChecker,
-            ProverKind::LinearTypeChecker, ProverKind::AffineTypeChecker,
-            ProverKind::RelevantTypeChecker, ProverKind::OrderedTypeChecker,
-            ProverKind::UniquenessTypeChecker, ProverKind::ImmutableTypeChecker,
-            ProverKind::CapabilityTypeChecker, ProverKind::BunchedTypeChecker,
-            ProverKind::TemporalTypeChecker, ProverKind::ProvabilityTypeChecker,
-            ProverKind::ImpureTypeChecker, ProverKind::CoeffectTypeChecker,
-            ProverKind::ProbabilisticTypeChecker, ProverKind::DyadicTypeChecker,
-            ProverKind::HomotopyTypeChecker, ProverKind::CubicalTypeChecker,
+            ProverKind::OrdinaryTypeChecker,
+            ProverKind::PhantomTypeChecker,
+            ProverKind::PolymorphicTypeChecker,
+            ProverKind::ExistentialTypeChecker,
+            ProverKind::HigherKindedTypeChecker,
+            ProverKind::RowTypeChecker,
+            ProverKind::SubtypingTypeChecker,
+            ProverKind::IntersectionTypeChecker,
+            ProverKind::UnionTypeChecker,
+            ProverKind::GradualTypeChecker,
+            ProverKind::HoareTypeChecker,
+            ProverKind::IndexedTypeChecker,
+            ProverKind::LinearTypeChecker,
+            ProverKind::AffineTypeChecker,
+            ProverKind::RelevantTypeChecker,
+            ProverKind::OrderedTypeChecker,
+            ProverKind::UniquenessTypeChecker,
+            ProverKind::ImmutableTypeChecker,
+            ProverKind::CapabilityTypeChecker,
+            ProverKind::BunchedTypeChecker,
+            ProverKind::TemporalTypeChecker,
+            ProverKind::ProvabilityTypeChecker,
+            ProverKind::ImpureTypeChecker,
+            ProverKind::CoeffectTypeChecker,
+            ProverKind::ProbabilisticTypeChecker,
+            ProverKind::DyadicTypeChecker,
+            ProverKind::HomotopyTypeChecker,
+            ProverKind::CubicalTypeChecker,
             // Nominal-logic / HOAS family.
-            ProverKind::NominalTypeChecker, ProverKind::Abella,
+            ProverKind::NominalTypeChecker,
+            ProverKind::Abella,
             // Classical sibling provers (post-HP-band).
             ProverKind::Lean3,
             // Phase 4 acquisition batch (2026-04-18).
-            ProverKind::Dedukti, ProverKind::Cameleer, ProverKind::ACL2s,
-            ProverKind::IsabelleZF, ProverKind::Boogie,
+            ProverKind::Dedukti,
+            ProverKind::Cameleer,
+            ProverKind::ACL2s,
+            ProverKind::IsabelleZF,
+            ProverKind::Boogie,
             // Phase 4 "variety" batch (2026-04-18).
-            ProverKind::Naproche, ProverKind::Matita, ProverKind::Arend,
-            ProverKind::Athena, ProverKind::LambdaProlog, ProverKind::Mercury,
-            ProverKind::Nitpick, ProverKind::Nunchaku,
+            ProverKind::Naproche,
+            ProverKind::Matita,
+            ProverKind::Arend,
+            ProverKind::Athena,
+            ProverKind::LambdaProlog,
+            ProverKind::Mercury,
+            ProverKind::Nitpick,
+            ProverKind::Nunchaku,
         ];
-        assert_eq!(all_kinds.len(), 105, "expected 105 total ProverKind variants");
+        assert_eq!(
+            all_kinds.len(),
+            105,
+            "expected 105 total ProverKind variants"
+        );
         for kind in &all_kinds {
             let u8_val = kind_to_u8(*kind);
             let roundtripped = kind_from_u8(u8_val)

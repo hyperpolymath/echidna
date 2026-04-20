@@ -14,9 +14,9 @@ use echidna::verification::axiom_tracker::AxiomTracker;
 use echidna::verification::confidence::{compute_trust_level, TrustFactors, TrustLevel};
 use echidna::verification::mutation::MutationTester;
 use echidna::verification::pareto::{ParetoFrontier, ProofCandidate, ProofObjective};
+use echidna::verification::portfolio::PortfolioConfidence;
 use echidna::verification::statistics::StatisticsTracker;
 use echidna::verification::DangerLevel;
-use echidna::verification::portfolio::PortfolioConfidence;
 
 use std::collections::HashMap;
 
@@ -192,7 +192,11 @@ fn bench_trust_computation(c: &mut Criterion) {
 /// Benchmark axiom danger scanning
 fn bench_axiom_scanning(c: &mut Criterion) {
     let test_contents = [
-        ("clean_lean", ProverKind::Lean, "theorem foo : True := trivial"),
+        (
+            "clean_lean",
+            ProverKind::Lean,
+            "theorem foo : True := trivial",
+        ),
         (
             "sorry_lean",
             ProverKind::Lean,
@@ -237,10 +241,7 @@ fn bench_mutation_generation(c: &mut Criterion) {
                     args: vec![
                         Term::App {
                             func: Box::new(Term::Const("add".to_string())),
-                            args: vec![
-                                Term::Var("x".to_string()),
-                                Term::Const("0".to_string()),
-                            ],
+                            args: vec![Term::Var("x".to_string()), Term::Const("0".to_string())],
                         },
                         Term::Var("x".to_string()),
                     ],
@@ -258,27 +259,23 @@ fn bench_mutation_generation(c: &mut Criterion) {
 fn bench_pareto_frontier(c: &mut Criterion) {
     let mut group = c.benchmark_group("pareto_frontier");
     for n_points in [10, 50, 100] {
-        group.bench_with_input(
-            BenchmarkId::from_parameter(n_points),
-            &n_points,
-            |b, &n| {
-                b.iter(|| {
-                    let mut candidates: Vec<ProofCandidate> = (0..n)
-                        .map(|i| ProofCandidate {
-                            id: format!("candidate_{i}"),
-                            objectives: ProofObjective {
-                                proof_time_ms: (i as u64) * 100,
-                                trust_level: TrustLevel::Level3,
-                                memory_bytes: (n as u64 - i as u64) * 1024,
-                                proof_steps: i * 5,
-                            },
-                            is_pareto_optimal: false,
-                        })
-                        .collect();
-                    black_box(ParetoFrontier::compute(&mut candidates))
-                })
-            },
-        );
+        group.bench_with_input(BenchmarkId::from_parameter(n_points), &n_points, |b, &n| {
+            b.iter(|| {
+                let mut candidates: Vec<ProofCandidate> = (0..n)
+                    .map(|i| ProofCandidate {
+                        id: format!("candidate_{i}"),
+                        objectives: ProofObjective {
+                            proof_time_ms: (i as u64) * 100,
+                            trust_level: TrustLevel::Level3,
+                            memory_bytes: (n as u64 - i as u64) * 1024,
+                            proof_steps: i * 5,
+                        },
+                        is_pareto_optimal: false,
+                    })
+                    .collect();
+                black_box(ParetoFrontier::compute(&mut candidates))
+            })
+        });
     }
     group.finish();
 }
@@ -329,11 +326,7 @@ criterion_group!(
     bench_prover_detection,
 );
 
-criterion_group!(
-    trust_benches,
-    bench_trust_computation,
-    bench_axiom_scanning,
-);
+criterion_group!(trust_benches, bench_trust_computation, bench_axiom_scanning,);
 
 criterion_group!(
     verification_benches,

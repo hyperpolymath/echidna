@@ -248,7 +248,8 @@ async fn prove_handler(Json(req): Json<ProveRequest>) -> Result<Json<ProveRespon
             success: false,
             goals: 0,
             message: "Parse produced no goals, theorems, definitions, or axioms — \
-                     content not recognised by the selected prover backend".to_string(),
+                     content not recognised by the selected prover backend"
+                .to_string(),
         }));
     }
 
@@ -277,14 +278,19 @@ async fn verify_handler(Json(req): Json<VerifyRequest>) -> Result<Json<VerifyRes
     // run passthrough evaluation instead of proof-obligation negation semantics.
     if should_passthrough_smt_eval(&req) {
         let Json(raw) = verify_raw_handler(Json(req.clone())).await?;
-        let smt_status = extract_smt_status(&raw.stdout).or_else(|| extract_smt_status(&raw.stderr));
+        let smt_status =
+            extract_smt_status(&raw.stdout).or_else(|| extract_smt_status(&raw.stderr));
         let goals_remaining = if matches!(smt_status.as_deref(), Some("unsat")) {
             0
         } else {
             1
         };
 
-        let outcome_str = if raw.valid { "PROVED" } else { "NO_PROOF_FOUND" };
+        let outcome_str = if raw.valid {
+            "PROVED"
+        } else {
+            "NO_PROOF_FOUND"
+        };
         return Ok(Json(VerifyResponse {
             valid: raw.valid,
             outcome: outcome_str.to_string(),
@@ -314,7 +320,7 @@ async fn verify_handler(Json(req): Json<VerifyRequest>) -> Result<Json<VerifyRes
                 mode: None,
                 smt_status: None,
             }));
-        }
+        },
     };
 
     // Fail-fast on empty parse results (see prove_handler comment).
@@ -342,7 +348,11 @@ async fn verify_handler(Json(req): Json<VerifyRequest>) -> Result<Json<VerifyRes
 
     Ok(Json(VerifyResponse {
         valid,
-        outcome: if valid { "PROVED".to_string() } else { "NO_PROOF_FOUND".to_string() },
+        outcome: if valid {
+            "PROVED".to_string()
+        } else {
+            "NO_PROOF_FOUND".to_string()
+        },
         goals_remaining: if valid { 0 } else { state.goals.len() },
         tactics_used: state.proof_script.len(),
         mode: None,
@@ -394,35 +404,23 @@ async fn verify_raw_handler(
                 (rc == 0 && produced, format!("exit={} smt-output", rc))
             },
         ),
-        echidna::provers::ProverKind::CVC5 => (
-            "smt2",
-            "cvc5",
-            vec![],
-            |rc, stdout, _stderr| {
-                let produced = stdout.contains("sat")
-                    || stdout.contains("unsat")
-                    || stdout.contains("unknown");
-                (rc == 0 && produced, format!("exit={} smt-output", rc))
-            },
-        ),
+        echidna::provers::ProverKind::CVC5 => ("smt2", "cvc5", vec![], |rc, stdout, _stderr| {
+            let produced =
+                stdout.contains("sat") || stdout.contains("unsat") || stdout.contains("unknown");
+            (rc == 0 && produced, format!("exit={} smt-output", rc))
+        }),
         echidna::provers::ProverKind::Coq => (
             "v",
             "coqc",
             vec!["-q".to_string()],
             |rc, _stdout, _stderr| (rc == 0, format!("exit={}", rc)),
         ),
-        echidna::provers::ProverKind::Lean => (
-            "lean",
-            "lean",
-            vec![],
-            |rc, _stdout, _stderr| (rc == 0, format!("exit={}", rc)),
-        ),
-        echidna::provers::ProverKind::Agda => (
-            "agda",
-            "agda",
-            vec![],
-            |rc, _stdout, _stderr| (rc == 0, format!("exit={}", rc)),
-        ),
+        echidna::provers::ProverKind::Lean => ("lean", "lean", vec![], |rc, _stdout, _stderr| {
+            (rc == 0, format!("exit={}", rc))
+        }),
+        echidna::provers::ProverKind::Agda => ("agda", "agda", vec![], |rc, _stdout, _stderr| {
+            (rc == 0, format!("exit={}", rc))
+        }),
         echidna::provers::ProverKind::Idris2 => (
             "idr",
             "idris2",
@@ -461,14 +459,11 @@ async fn verify_raw_handler(
                     req.prover
                 ),
             }));
-        }
+        },
     };
 
     // Write content to a unique temp file with the right extension.
-    let tmpdir = std::env::temp_dir().join(format!(
-        "echidna_verify_raw_{}",
-        std::process::id()
-    ));
+    let tmpdir = std::env::temp_dir().join(format!("echidna_verify_raw_{}", std::process::id()));
     if let Err(e) = tokio::fs::create_dir_all(&tmpdir).await {
         return Ok(Json(VerifyRawResponse {
             valid: false,
@@ -516,7 +511,7 @@ async fn verify_raw_handler(
                 stderr: stderr.chars().take(1024).collect(),
                 message,
             }))
-        }
+        },
         Err(e) => Ok(Json(VerifyRawResponse {
             valid: false,
             exit_code: -1,

@@ -13,10 +13,10 @@
 
 mod common;
 
-use proptest::prelude::*;
 use echidna::provers::{ProverConfig, ProverFactory, ProverKind};
-use echidna::verification::confidence::{compute_trust_level, TrustFactors, TrustLevel};
 use echidna::verification::axiom_tracker::{AxiomTracker, DangerLevel};
+use echidna::verification::confidence::{compute_trust_level, TrustFactors, TrustLevel};
+use proptest::prelude::*;
 
 // ---------------------------------------------------------------------------
 // Deterministic mock embedding and prover selector
@@ -53,9 +53,9 @@ fn cosine_similarity(a: &[f64], b: &[f64]) -> f64 {
 
 /// Deterministic prover selector: maps content → prover via hash.
 fn deterministic_prover_select(content: &str) -> ProverKind {
-    let hash: usize = content
-        .bytes()
-        .fold(0usize, |acc, b| acc.wrapping_mul(31).wrapping_add(b as usize));
+    let hash: usize = content.bytes().fold(0usize, |acc, b| {
+        acc.wrapping_mul(31).wrapping_add(b as usize)
+    });
     let provers = ProverKind::all();
     provers[hash % provers.len()]
 }
@@ -248,16 +248,26 @@ fn prop_prover_kind_all_no_duplicates() {
     let mut seen = std::collections::HashSet::new();
     for kind in &all {
         let key = format!("{:?}", kind);
-        assert!(seen.insert(key.clone()), "ProverKind::all() duplicate: {}", key);
+        assert!(
+            seen.insert(key.clone()),
+            "ProverKind::all() duplicate: {}",
+            key
+        );
     }
     // Verify count is consistent (the exact number is 49 per current implementation).
     assert_eq!(
-        all.len(), seen.len(),
+        all.len(),
+        seen.len(),
         "ProverKind::all() must have no duplicates: {} variants, {} unique",
-        all.len(), seen.len()
+        all.len(),
+        seen.len()
     );
     // Must have at least 30 backends (as documented).
-    assert!(all.len() >= 30, "ProverKind::all() must have at least 30 variants, got {}", all.len());
+    assert!(
+        all.len() >= 30,
+        "ProverKind::all() must have at least 30 variants, got {}",
+        all.len()
+    );
 }
 
 /// DangerLevel::Reject must be the maximum, DangerLevel::Safe the minimum.
@@ -266,7 +276,11 @@ fn prop_danger_level_extremes() {
     for level in [DangerLevel::Noted, DangerLevel::Warning, DangerLevel::Safe] {
         assert!(DangerLevel::Reject > level, "Reject must be > {:?}", level);
     }
-    for level in [DangerLevel::Noted, DangerLevel::Warning, DangerLevel::Reject] {
+    for level in [
+        DangerLevel::Noted,
+        DangerLevel::Warning,
+        DangerLevel::Reject,
+    ] {
         assert!(DangerLevel::Safe < level, "Safe must be < {:?}", level);
     }
 }

@@ -90,10 +90,8 @@ impl Curriculum {
         if candidates.is_empty() {
             return None;
         }
-        let mut sorted: Vec<(&Variant, u8)> = candidates
-            .iter()
-            .map(|v| (v, difficulty_hint(v)))
-            .collect();
+        let mut sorted: Vec<(&Variant, u8)> =
+            candidates.iter().map(|v| (v, difficulty_hint(v))).collect();
         sorted.sort_by_key(|(_, d)| *d);
 
         let pick_idx = match self.regime() {
