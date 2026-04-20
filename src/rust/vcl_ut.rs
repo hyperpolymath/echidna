@@ -22,7 +22,9 @@
 
 use anyhow::{Context, Result};
 use serde::{Deserialize, Serialize};
-use tracing::{debug, info, warn};
+use tracing::{debug, info};
+#[cfg(feature = "verisim")]
+use tracing::warn;
 
 use crate::provers::ProverKind;
 
@@ -493,12 +495,11 @@ impl QueryExecutor {
 
     /// Find a specific proof by theorem name and optional prover.
     async fn execute_find_proof(&self, query: &ProofQuery) -> Result<QueryResult> {
-        let theorem = query.theorem_name.as_deref().unwrap_or("");
-
         #[cfg(feature = "verisim")]
         if let Some(prover) = query.prover {
             // Generate the octad key and look it up directly
             if let Some(ref goal_display) = query.goal_display {
+                let theorem = query.theorem_name.as_deref().unwrap_or("");
                 let goal = Goal {
                     id: "query".to_string(),
                     target: crate::core::Term::Var(goal_display.clone()),
