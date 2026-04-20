@@ -76,10 +76,11 @@ vocab-canon:
 
 # ── Corpus / training pipeline ─────────────────────────────────
 #
-# Three steps in order: provision upstream mirrors, run every extractor,
-# then retrain.  Each step is idempotent; re-running only touches what
-# has changed.  See scripts/provision_corpora.sh --list for the source
-# catalogue.
+# Five steps in order: provision upstream mirrors, run every extractor,
+# merge per-prover proof_states into UNIFIED, align the premise files
+# to UNIFIED's fresh ids, then retrain.  Each step is idempotent;
+# re-running only touches what has changed.  See
+# scripts/provision_corpora.sh --list for the source catalogue.
 
 # Clone every upstream prover corpus into external_corpora/.
 # Pass specific names to provision a subset: `just provision-corpora metamath mathlib4`.
@@ -99,14 +100,28 @@ corpora-status:
 extract-corpora *NAMES:
     scripts/extract_all.sh {{NAMES}}
 
+# Merge per-prover proof_states_*.jsonl into proof_states_UNIFIED.jsonl
+# with fresh sequential ids (dedupes by prover+theorem).
+merge-corpora:
+    julia --project=src/julia scripts/merge_corpus.jl
+
+# Rebuild premises_COMPLETE.jsonl with proof_ids that match UNIFIED.
+# merge-corpora rewrites every proof_state id to a fresh sequential
+# counter; the premise files keep the original extractor ids, so this
+# step re-joins premises to UNIFIED via (prover, theorem) — the durable
+# key merge_corpus.jl already dedupes on.  Without this step the
+# dataloader's proof_id join matches ~0% of records.
+align-premises:
+    julia --project=src/julia scripts/align_premises.jl
+
 # Full retrain from provisioned corpora.  Honours ECHIDNA_MAX_PROOF_STATES
 # (0 = unlimited), ECHIDNA_NUM_EPOCHS, ECHIDNA_NUM_NEGATIVES.
 retrain:
     julia --project=src/julia src/julia/run_training.jl
 
-# End-to-end pipeline: provision → extract → retrain.
+# End-to-end pipeline: provision → extract → merge → align → retrain.
 # Use `ECHIDNA_MAX_PROOF_STATES=0 just corpus-refresh` to lift the sample cap.
-corpus-refresh: provision-corpora extract-corpora retrain
+corpus-refresh: provision-corpora extract-corpora merge-corpora align-premises retrain
 
 # Run the eight-axis metrics suite against the current corpus and post
 # results to VeriSimDB. Falls back to training_data/metrics_<run_id>.jsonl
