@@ -350,6 +350,7 @@ fn term_kind_index(term: &Term) -> usize {
         Term::Hole(_) => 10,
         Term::Meta(_) => 11,
         Term::ProverSpecific { .. } => 12,
+        Term::Sigma { .. } => 13,
     }
 }
 
@@ -367,7 +368,8 @@ fn term_depth(term: &Term) -> usize {
             let pt = param_type.as_ref().map(|t| term_depth(t)).unwrap_or(0);
             1 + pt.max(term_depth(body))
         }
-        Term::Pi { param_type, body, .. } => {
+        Term::Pi { param_type, body, .. }
+        | Term::Sigma { param_type, body, .. } => {
             1 + term_depth(param_type).max(term_depth(body))
         }
         Term::Let { ty, value, body, .. } => {
@@ -394,7 +396,7 @@ fn term_arity(term: &Term) -> usize {
         | Term::Universe(_) | Term::Hole(_) | Term::Meta(_) | Term::ProverSpecific { .. } => 0,
         Term::App { args, .. } => 1 + args.len(), // func + args
         Term::Lambda { param_type, .. } => if param_type.is_some() { 2 } else { 1 },
-        Term::Pi { .. } => 2, // param_type + body
+        Term::Pi { .. } | Term::Sigma { .. } => 2, // param_type + body
         Term::Let { ty, .. } => if ty.is_some() { 3 } else { 2 },
         Term::Match { branches, .. } => 1 + branches.len(),
         Term::Fix { ty, .. } => if ty.is_some() { 2 } else { 1 },

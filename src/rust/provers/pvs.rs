@@ -2106,6 +2106,20 @@ impl PVSBackend {
                     body: Box::new(Self::term_to_expr(body)),
                 }
             },
+            Term::Sigma {
+                param,
+                param_type,
+                body,
+            } => {
+                // Sigma types approximate as EXISTS in PVS (no native dep pairs)
+                PVSExpr::Exists {
+                    bindings: vec![PVSBinding {
+                        name: param.clone(),
+                        var_type: Box::new(Self::term_to_type(param_type)),
+                    }],
+                    body: Box::new(Self::term_to_expr(body)),
+                }
+            },
             Term::Let {
                 name, value, body, ..
             } => PVSExpr::Let {
@@ -2714,6 +2728,7 @@ impl ProverBackend for PVSBackend {
                             name: name.clone(),
                             ty: Self::expr_to_term(formula),
                             body: None,
+                            type_info: None,
                         });
                     },
                     PVSFormulaKind::Lemma
@@ -2743,6 +2758,7 @@ impl ProverBackend for PVSBackend {
                         name: format!("{}_def", name),
                         ty: def_term,
                         body: Some(Self::expr_to_term(def)),
+                        type_info: None,
                     });
                 },
                 PVSDeclaration::ConstDecl { definition: None, .. } => {

@@ -301,6 +301,18 @@ impl ExplanationGenerator {
                     self.format_term(body)
                 )
             },
+            Term::Sigma {
+                param,
+                param_type,
+                body,
+            } => {
+                format!(
+                    "∃{}:{}. {}",
+                    param,
+                    self.format_term(param_type),
+                    self.format_term(body)
+                )
+            },
             Term::App { func, args } => {
                 let args_str: Vec<_> = args.iter().map(|a| self.format_term(a)).collect();
                 format!("({} {})", self.format_term(func), args_str.join(" "))

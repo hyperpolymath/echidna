@@ -284,6 +284,19 @@ impl MizarBackend {
                     self.term_to_mizar(body)
                 )
             },
+            Term::Sigma {
+                param,
+                param_type,
+                body,
+            } => {
+                // Mizar has no dependent pairs; approximate with existential.
+                format!(
+                    "ex {} being {} st {}",
+                    param,
+                    self.term_to_mizar(param_type),
+                    self.term_to_mizar(body)
+                )
+            },
             Term::Universe(level) | Term::Type(level) => format!("Type{}", level),
             Term::Sort(level) => format!("Sort{}", level),
             Term::Let {
@@ -406,6 +419,7 @@ impl ProverBackend for MizarBackend {
                 name: def.name.clone(),
                 ty: def_type,
                 body: def_body,
+                type_info: None,
             });
         }
 
@@ -448,6 +462,7 @@ impl ProverBackend for MizarBackend {
                         name: hypothesis_name,
                         ty: *param_type.clone(),
                         body: None,
+                        type_info: None,
                     });
                     goal.target = *body.clone();
                     new_state.proof_script.push(tactic.clone());
