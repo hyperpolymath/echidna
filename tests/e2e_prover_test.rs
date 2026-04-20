@@ -323,7 +323,7 @@ async fn e2e_z3_full_dispatch_workflow() -> Result<()> {
     );
     // Invariant: trust level must be a valid level (not beyond enum bounds)
     let _ = result.trust_level; // just access to ensure it deserializes cleanly
-    // Invariant: cross_checked must be false for single-prover dispatch
+                                // Invariant: cross_checked must be false for single-prover dispatch
     assert!(
         !result.cross_checked,
         "Single-prover dispatch should not set cross_checked"
@@ -353,10 +353,10 @@ async fn e2e_malformed_input_returns_error_not_panic() -> Result<()> {
 
     let long_input = "x".repeat(100_000);
     let malformed_inputs: Vec<&str> = vec![
-        "",                   // empty
-        "((((unclosed",        // unbalanced parens
-        "\x00\x01\x02",       // binary garbage
-        &long_input,          // pathologically long input
+        "",                                            // empty
+        "((((unclosed",                                // unbalanced parens
+        "\x00\x01\x02",                                // binary garbage
+        &long_input,                                   // pathologically long input
         "SELECT * FROM proofs; DROP TABLE proofs; --", // SQL injection attempt (should be a no-op)
     ];
 
@@ -414,11 +414,11 @@ async fn e2e_missing_binary_returns_error() -> Result<()> {
                 // We do NOT assert verified=false here because some backends
                 // may return mock/stub results in CI — that's the backend's
                 // responsibility to handle. We just verify no panic.
-            }
+            },
             Err(e) => {
                 eprintln!("  {:?}: Err({}) — expected when binary absent", kind, e);
                 // This is the expected case
-            }
+            },
         }
     }
     Ok(())
@@ -454,8 +454,7 @@ fn e2e_dispatch_result_json_roundtrip() {
         diagnostics: None,
     };
 
-    let json = serde_json::to_string(&original)
-        .expect("DispatchResult must serialise to JSON");
+    let json = serde_json::to_string(&original).expect("DispatchResult must serialise to JSON");
 
     let roundtripped: DispatchResult =
         serde_json::from_str(&json).expect("DispatchResult must deserialise from JSON");
@@ -537,7 +536,10 @@ fn e2e_select_prover_heuristic_coverage() {
         ("theorem id : ∀ x, x = x := rfl", Some("lean")),
         ("Theorem id : True. Proof. trivial. Qed.", Some("v")),
         ("module Test where\nid : a -> a", Some("agda")),
-        ("(set-logic QF_LIA)\n(assert true)\n(check-sat)", Some("smt2")),
+        (
+            "(set-logic QF_LIA)\n(assert true)\n(check-sat)",
+            Some("smt2"),
+        ),
         // No extension — heuristic only
         ("", None),
         ("random content", None),
@@ -547,6 +549,11 @@ fn e2e_select_prover_heuristic_coverage() {
         let kind = ProverDispatcher::select_prover(content, ext);
         // Result must be a valid ProverKind — if it doesn't panic, it's valid
         let _ = format!("{:?}", kind); // just ensure it's printable
-        eprintln!("select_prover({:?}, {:?}) -> {:?}", &content[..content.len().min(30)], ext, kind);
+        eprintln!(
+            "select_prover({:?}, {:?}) -> {:?}",
+            &content[..content.len().min(30)],
+            ext,
+            kind
+        );
     }
 }

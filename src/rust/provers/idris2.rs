@@ -660,10 +660,10 @@ impl ProverBackend for Idris2Backend {
                     // Check if goal is an equality that can be solved by Refl
                     if let Term::App { func, args } = &goal.target {
                         if let Term::Const(name) = func.as_ref() {
-                            if (name == "Equal" || name == "=" || name == "(=)")
-                                && args.len() >= 2 {
-                                    // Could check if args are equal here
-                                }
+                            if (name == "Equal" || name == "=" || name == "(=)") && args.len() >= 2
+                            {
+                                // Could check if args are equal here
+                            }
                         }
                     }
                 }

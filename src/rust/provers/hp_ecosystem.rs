@@ -115,9 +115,13 @@ impl HPEcosystemBackend {
             // Binder-management family (nominal logic / HOAS / λ-tree syntax).
             ProverKind::NominalTypeChecker => ("typell", "nominal"),
             other => {
-                debug_assert!(false, "non-HP kind routed to HPEcosystemBackend: {:?}", other);
+                debug_assert!(
+                    false,
+                    "non-HP kind routed to HPEcosystemBackend: {:?}",
+                    other
+                );
                 ("typell", "typell")
-            }
+            },
         }
     }
 
@@ -170,8 +174,11 @@ impl ProverBackend for HPEcosystemBackend {
                 } else {
                     Ok(s)
                 }
-            }
-            Err(_) => Ok(format!("{}@hp-ecosystem:unreachable", self.discipline_tag())),
+            },
+            Err(_) => Ok(format!(
+                "{}@hp-ecosystem:unreachable",
+                self.discipline_tag()
+            )),
         }
     }
 
@@ -186,7 +193,9 @@ impl ProverBackend for HPEcosystemBackend {
     /// header line `#discipline: <tag>` followed by the body; if absent,
     /// we inject one using this backend's discipline.
     async fn parse_string(&self, content: &str) -> Result<ProofState> {
-        let has_header = content.lines().next()
+        let has_header = content
+            .lines()
+            .next()
             .map(|l| l.trim_start().starts_with("#discipline:"))
             .unwrap_or(false);
         let body = if has_header {
@@ -241,7 +250,9 @@ impl ProverBackend for HPEcosystemBackend {
             .prefix("echidna-hp-")
             .tempdir()
             .context("HP ecosystem: tempdir")?;
-        let input = tmp_dir.path().join(format!("check.{}.src", self.discipline_tag()));
+        let input = tmp_dir
+            .path()
+            .join(format!("check.{}.src", self.discipline_tag()));
         tokio::fs::write(&input, body.as_bytes())
             .await
             .context("HP ecosystem: writing input")?;
@@ -258,7 +269,7 @@ impl ProverBackend for HPEcosystemBackend {
                 );
                 tracing::trace!(discipline = self.discipline_tag(), stderr = %stderr);
                 Ok(false)
-            }
+            },
             Err(e) => Err(anyhow!(
                 "HP ecosystem ({}): upstream CLI not runnable: {}",
                 self.discipline_tag(),
@@ -312,7 +323,8 @@ mod tests {
     fn upstream_routing_distinguishes_disciplines() {
         let tll = HPEcosystemBackend::new(ProverKind::TypeLL, ProverConfig::default());
         let kat = HPEcosystemBackend::new(ProverKind::KatagoriaVerifier, ProverConfig::default());
-        let trop = HPEcosystemBackend::new(ProverKind::TropicalTypeChecker, ProverConfig::default());
+        let trop =
+            HPEcosystemBackend::new(ProverKind::TropicalTypeChecker, ProverConfig::default());
         let modal = HPEcosystemBackend::new(ProverKind::ModalTypeChecker, ProverConfig::default());
 
         assert_eq!(tll.upstream().0, "typell");

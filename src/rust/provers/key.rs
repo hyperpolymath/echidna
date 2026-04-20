@@ -419,7 +419,10 @@ impl ProverBackend for KeyBackend {
                     } else {
                         goals
                     },
-                    context: crate::core::Context { axioms, ..Default::default() },
+                    context: crate::core::Context {
+                        axioms,
+                        ..Default::default()
+                    },
                     ..Default::default()
                 };
                 Ok(state)
@@ -481,7 +484,10 @@ impl ProverBackend for KeyBackend {
 
         let state = ProofState {
             goals: computed_goals,
-            context: crate::core::Context { axioms, ..Default::default() },
+            context: crate::core::Context {
+                axioms,
+                ..Default::default()
+            },
             ..Default::default()
         };
 

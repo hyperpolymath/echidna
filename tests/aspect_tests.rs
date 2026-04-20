@@ -35,12 +35,12 @@ fn aspect_security_malicious_input_no_high_trust() {
     // wrapped in innocent-looking syntax — trust pipeline must still detect them.
     let injection_attempts = vec![
         // Attempt to sneak 'sorry' past a simple string search
-        "theorem t : True := by\n  sor\x72y",   // unicode escape in 'sorry'
-        "theorem t : True := by {- sorry -}",    // Lean block comment wrapping
+        "theorem t : True := by\n  sor\x72y", // unicode escape in 'sorry'
+        "theorem t : True := by {- sorry -}", // Lean block comment wrapping
         "Admitted. (* hidden *) Theorem t : True. Proof. trivial. Qed.", // Coq
-        "foo = believe_me {- hidden -} True",    // Idris2 believe_me
-        "$(sorry); echo pwned",                  // Shell injection in content
-        "'; DROP TABLE proofs; --",              // SQL injection attempt
+        "foo = believe_me {- hidden -} True", // Idris2 believe_me
+        "$(sorry); echo pwned",               // Shell injection in content
+        "'; DROP TABLE proofs; --",           // SQL injection attempt
         "\x00\x01\x7f theorem t : True := rfl", // Binary prefix + valid code
     ];
 
@@ -101,7 +101,11 @@ fn aspect_security_no_proof_cert_from_arbitrary_string() {
             let _ = format!("{:?}", usage.danger_level);
         }
         // The key invariant: scanning garbage never panics
-        eprintln!("Security scan of {:?}: {} usages", &content[..content.len().min(40)], usages.len());
+        eprintln!(
+            "Security scan of {:?}: {} usages",
+            &content[..content.len().min(40)],
+            usages.len()
+        );
     }
 }
 
@@ -182,18 +186,20 @@ async fn aspect_concurrency_parallel_dispatches_isolated() -> Result<()> {
                     i
                 );
                 successes += 1;
-            }
+            },
             Err(e) => {
-                eprintln!("Parallel dispatch {}: Err({}) — acceptable under load", i, e);
+                eprintln!(
+                    "Parallel dispatch {}: Err({}) — acceptable under load",
+                    i, e
+                );
                 _errors += 1;
-            }
+            },
         }
     }
 
     eprintln!(
         "Concurrency aspect: {}/{} parallel dispatches succeeded",
-        successes,
-        PARALLEL_COUNT
+        successes, PARALLEL_COUNT
     );
     // At least half must succeed under parallel load
     assert!(
@@ -216,7 +222,10 @@ async fn aspect_concurrency_axiom_tracker_stateless() {
     let proofs = vec![
         (ProverKind::Lean, "theorem foo : True := by sorry"),
         (ProverKind::Coq, "Theorem bar : True. Proof. Admitted."),
-        (ProverKind::Lean, "theorem clean : ∀ x : Nat, x = x := fun x => rfl"),
+        (
+            ProverKind::Lean,
+            "theorem clean : ∀ x : Nat, x = x := fun x => rfl",
+        ),
     ];
 
     // Collect baseline results sequentially
@@ -239,8 +248,7 @@ async fn aspect_concurrency_axiom_tracker_stateless() {
                 for (i, (kind, content)) in proofs_ref.iter().enumerate() {
                     let count = tracker.scan(*kind, content).len();
                     assert_eq!(
-                        count,
-                        baselines_ref[i],
+                        count, baselines_ref[i],
                         "Concurrent scan of proof {i} produced different count"
                     );
                 }
@@ -351,7 +359,9 @@ fn aspect_error_handling_dispatch_result_edge_cases() {
             certificate_hash: Some("0".repeat(128)),
             message: "x".repeat(10_000),
             cross_checked: true,
-            outcome: echidna::provers::outcome::ProverOutcome::Proved { elapsed_ms: u64::MAX },
+            outcome: echidna::provers::outcome::ProverOutcome::Proved {
+                elapsed_ms: u64::MAX,
+            },
             diagnostics: None,
         },
         // Unicode in message
@@ -497,8 +507,11 @@ fn aspect_prover_kind_json_stable() {
             json_str, decoded, expected_kind
         );
         // Roundtrip
-        let re_encoded =
-            serde_json::to_string(&expected_kind).expect("ProverKind must serialise");
-        assert_eq!(re_encoded, json_str, "Re-encoded {:?} != {}", expected_kind, json_str);
+        let re_encoded = serde_json::to_string(&expected_kind).expect("ProverKind must serialise");
+        assert_eq!(
+            re_encoded, json_str,
+            "Re-encoded {:?} != {}",
+            expected_kind, json_str
+        );
     }
 }

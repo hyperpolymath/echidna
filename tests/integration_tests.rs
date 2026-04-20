@@ -479,12 +479,14 @@ mod error_tests {
             Ok(state) => {
                 // If parsing succeeded, the state should reflect the input was not meaningful
                 // (e.g. no goals extracted from invalid syntax)
-                assert!(state.goals.is_empty() || state.goals.len() <= 1,
-                    "Invalid syntax should not produce multiple meaningful goals");
-            }
+                assert!(
+                    state.goals.is_empty() || state.goals.len() <= 1,
+                    "Invalid syntax should not produce multiple meaningful goals"
+                );
+            },
             Err(_) => {
                 // Error is the expected outcome for invalid syntax
-            }
+            },
         }
         Ok(())
     }

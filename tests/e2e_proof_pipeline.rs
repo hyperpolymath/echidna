@@ -55,7 +55,10 @@ fn unsat_problem() -> &'static str {
 #[tokio::test]
 async fn e2e_proof_pipeline_z3_mock_success() -> Result<()> {
     // Instantiate the Z3 backend — succeeds regardless of whether z3 is installed.
-    let config = ProverConfig { timeout: 5, ..Default::default() };
+    let config = ProverConfig {
+        timeout: 5,
+        ..Default::default()
+    };
     let prover = ProverFactory::create(ProverKind::Z3, config)?;
 
     // Parse stage: must not error on well-formed input.
@@ -103,20 +106,37 @@ async fn e2e_all_prover_backends_instantiate() -> Result<()> {
 /// Both Z3 and Lean prover backends must instantiate and parse successfully.
 #[tokio::test]
 async fn e2e_two_backends_z3_and_lean_parse() -> Result<()> {
-    let config = ProverConfig { timeout: 5, ..Default::default() };
+    let config = ProverConfig {
+        timeout: 5,
+        ..Default::default()
+    };
 
     // Z3 backend: SMT2 input
     let z3 = ProverFactory::create(ProverKind::Z3, config.clone())?;
     let z3_result = z3.parse_string(simple_sat_problem()).await;
-    assert!(z3_result.is_ok(), "Z3 parse must succeed: {:?}", z3_result.err());
+    assert!(
+        z3_result.is_ok(),
+        "Z3 parse must succeed: {:?}",
+        z3_result.err()
+    );
 
     // Lean backend: Lean 4 syntax
     let lean = ProverFactory::create(ProverKind::Lean, config.clone())?;
-    let lean_result = lean.parse_string("theorem rfl_example (x : Nat) : x = x := rfl").await;
-    assert!(lean_result.is_ok(), "Lean parse must succeed: {:?}", lean_result.err());
+    let lean_result = lean
+        .parse_string("theorem rfl_example (x : Nat) : x = x := rfl")
+        .await;
+    assert!(
+        lean_result.is_ok(),
+        "Lean parse must succeed: {:?}",
+        lean_result.err()
+    );
 
     // Both backends should have distinct kinds.
-    assert_ne!(z3.kind(), lean.kind(), "Z3 and Lean must be distinct backends");
+    assert_ne!(
+        z3.kind(),
+        lean.kind(),
+        "Z3 and Lean must be distinct backends"
+    );
 
     Ok(())
 }
@@ -128,13 +148,18 @@ async fn e2e_two_backends_z3_and_lean_parse() -> Result<()> {
 /// A completely garbled input must produce an Err (not a panic).
 #[tokio::test]
 async fn e2e_malformed_input_no_panic() -> Result<()> {
-    let config = ProverConfig { timeout: 5, ..Default::default() };
+    let config = ProverConfig {
+        timeout: 5,
+        ..Default::default()
+    };
 
     for kind in [ProverKind::Z3, ProverKind::Lean, ProverKind::Coq] {
         let prover = ProverFactory::create(kind, config.clone())?;
         // We do not assert is_err because some backends speculatively accept any
         // string and fail later. We only assert no panic occurs.
-        let _result = prover.parse_string("\x00\x01\x02 gibberish {{ ??? }}").await;
+        let _result = prover
+            .parse_string("\x00\x01\x02 gibberish {{ ??? }}")
+            .await;
         // Reaching here = no panic. That is the contract.
     }
 
@@ -189,10 +214,19 @@ fn e2e_dispatch_result_invariants() {
         diagnostics: None,
     };
 
-    assert!(result.proof_time_ms > 0, "Proof time must be positive for verified results");
-    assert!(!result.provers_used.is_empty(), "At least one prover must be listed");
+    assert!(
+        result.proof_time_ms > 0,
+        "Proof time must be positive for verified results"
+    );
+    assert!(
+        !result.provers_used.is_empty(),
+        "At least one prover must be listed"
+    );
     assert!(!result.message.is_empty(), "Message must not be empty");
-    assert!(result.trust_level >= TrustLevel::Level1, "Trust level must be valid");
+    assert!(
+        result.trust_level >= TrustLevel::Level1,
+        "Trust level must be valid"
+    );
 
     // Cross-checked result must list ≥2 provers.
     let cross_checked_result = DispatchResult {
@@ -240,7 +274,10 @@ fn e2e_trust_level_ordering_is_correct() {
 fn e2e_all_prover_kinds_have_debug_names() {
     for kind in ProverKind::all() {
         let name = format!("{:?}", kind);
-        assert!(!name.is_empty(), "ProverKind must have non-empty debug name");
+        assert!(
+            !name.is_empty(),
+            "ProverKind must have non-empty debug name"
+        );
         assert!(
             name.is_ascii(),
             "ProverKind name '{}' must be ASCII for safe use in logs and filenames",
@@ -256,12 +293,19 @@ fn e2e_all_prover_kinds_have_debug_names() {
 /// Parsing an unsatisfiable formula must not panic.
 #[tokio::test]
 async fn e2e_unsolvable_problem_graceful_failure() -> Result<()> {
-    let config = ProverConfig { timeout: 5, ..Default::default() };
+    let config = ProverConfig {
+        timeout: 5,
+        ..Default::default()
+    };
     let prover = ProverFactory::create(ProverKind::Z3, config)?;
 
     // Parsing should succeed — it's syntactically valid even if unsat.
     let state = prover.parse_string(unsat_problem()).await;
-    assert!(state.is_ok(), "Unsat problem should parse without error: {:?}", state.err());
+    assert!(
+        state.is_ok(),
+        "Unsat problem should parse without error: {:?}",
+        state.err()
+    );
 
     // If verification runs, it must return a result (not panic).
     let proof_state = state.unwrap();
@@ -282,7 +326,10 @@ fn e2e_sequential_strategy_always_available() {
     use echidna::proof_search::{ProofSearchStrategy, SequentialSearch, StrategySelector};
 
     let strategy = SequentialSearch;
-    assert!(strategy.available(), "Sequential strategy must always be available");
+    assert!(
+        strategy.available(),
+        "Sequential strategy must always be available"
+    );
 
     let selector = StrategySelector::auto();
     let strategies = selector.available_strategies();

@@ -828,7 +828,8 @@ impl ACL2Backend {
     fn sexp_to_term(&self, sexp: &SExp) -> Term {
         match sexp {
             SExp::Atom(s) => {
-                if s.starts_with(':') || s.chars().next().map(|c| c.is_uppercase()).unwrap_or(false) {
+                if s.starts_with(':') || s.chars().next().map(|c| c.is_uppercase()).unwrap_or(false)
+                {
                     Term::Const(s.clone())
                 } else {
                     Term::Var(s.clone())

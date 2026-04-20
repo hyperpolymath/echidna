@@ -26,10 +26,10 @@ pub mod parsers;
 pub mod proof_encoding; // CBOR encoding + proof identity hashing
 pub mod proof_search; // Chapel parallel proof search (optional feature)
 pub mod provers;
+pub mod vcl_ut;
 pub mod verification;
 #[cfg(feature = "verisim")]
-pub mod verisim_bridge; // VeriSimDB 8-modality octad integration
-pub mod vcl_ut; // VCL-UT: 10-level type-safe cross-prover query language
+pub mod verisim_bridge; // VeriSimDB 8-modality octad integration // VCL-UT: 10-level type-safe cross-prover query language
 
 pub use agent::{AgentConfig, AgentCore};
 pub use core::{ProofState, Tactic, TacticResult, Term};

@@ -232,8 +232,12 @@ mod tests {
         let config = ProverConfig::default();
         let backend = EProverBackend::new(config);
 
-        assert!(backend.parse_result("# Proof found!\n# SZS status Theorem\n").unwrap());
-        assert!(backend.parse_result("# SZS status Unsatisfiable\n").unwrap());
+        assert!(backend
+            .parse_result("# Proof found!\n# SZS status Theorem\n")
+            .unwrap());
+        assert!(backend
+            .parse_result("# SZS status Unsatisfiable\n")
+            .unwrap());
     }
 
     #[test]
@@ -241,7 +245,9 @@ mod tests {
         let config = ProverConfig::default();
         let backend = EProverBackend::new(config);
 
-        assert!(!backend.parse_result("# SZS status CounterSatisfiable\n").unwrap());
+        assert!(!backend
+            .parse_result("# SZS status CounterSatisfiable\n")
+            .unwrap());
         assert!(!backend.parse_result("# SZS status Satisfiable\n").unwrap());
     }
 

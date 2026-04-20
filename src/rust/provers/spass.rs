@@ -248,8 +248,12 @@ mod tests {
         let config = ProverConfig::default();
         let backend = SPASSBackend::new(config);
 
-        assert!(backend.parse_result("SPASS beiseite: Proof found.\n").unwrap());
-        assert!(backend.parse_result("Proof found for clause set.\n").unwrap());
+        assert!(backend
+            .parse_result("SPASS beiseite: Proof found.\n")
+            .unwrap());
+        assert!(backend
+            .parse_result("Proof found for clause set.\n")
+            .unwrap());
     }
 
     #[test]

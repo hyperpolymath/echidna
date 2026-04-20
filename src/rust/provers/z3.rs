@@ -406,17 +406,17 @@ impl ProverBackend for Z3Backend {
                             "axiom set (or combined goal set) is unsatisfiable".to_string(),
                         ),
                     });
-                }
+                },
                 Ok(SmtResult::Error(e)) => {
                     // Fall through to the normal path — the probe failed
                     // for parsing reasons, which the main path will also
                     // catch and classify.
                     tracing::debug!("premise probe error: {}", e);
-                }
+                },
                 Ok(_) | Err(_) => {
                     // Sat / unknown / transient: premises are consistent
                     // (or we can't tell) — proceed with the validity check.
-                }
+                },
             }
         }
 
@@ -472,7 +472,7 @@ impl ProverBackend for Z3Backend {
                         exit_code: None,
                     })
                 }
-            }
+            },
             Ok(SmtResult::Output(o)) => Ok(ProverOutcome::ProverError {
                 detail: format!("unexpected Z3 output: {}", o),
                 exit_code: None,

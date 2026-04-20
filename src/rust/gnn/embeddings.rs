@@ -72,12 +72,7 @@ impl TermFeatureExtractor {
                 *self.symbol_frequencies.entry(sym).or_insert(0) += 1;
             }
         }
-        self.max_frequency = self
-            .symbol_frequencies
-            .values()
-            .copied()
-            .max()
-            .unwrap_or(1);
+        self.max_frequency = self.symbol_frequencies.values().copied().max().unwrap_or(1);
 
         // Pass 2: compute feature vectors
         let num_nodes = graph.nodes.len();
@@ -161,12 +156,11 @@ impl TermFeatureExtractor {
 
         // Feature [26]: Is a top-level node (goal or premise)?
         if offset < FEATURE_DIM {
-            features[offset] =
-                if node.kind == NodeKind::Goal || node.kind == NodeKind::Premise {
-                    1.0
-                } else {
-                    0.0
-                };
+            features[offset] = if node.kind == NodeKind::Goal || node.kind == NodeKind::Premise {
+                1.0
+            } else {
+                0.0
+            };
         }
         offset += 1;
 
@@ -356,33 +350,50 @@ fn term_kind_index(term: &Term) -> usize {
 /// Compute the maximum depth of a term tree.
 fn term_depth(term: &Term) -> usize {
     match term {
-        Term::Var(_) | Term::Const(_) | Term::Type(_) | Term::Sort(_)
-        | Term::Universe(_) | Term::Hole(_) | Term::Meta(_) => 0,
+        Term::Var(_)
+        | Term::Const(_)
+        | Term::Type(_)
+        | Term::Sort(_)
+        | Term::Universe(_)
+        | Term::Hole(_)
+        | Term::Meta(_) => 0,
         Term::App { func, args } => {
             let func_depth = term_depth(func);
             let max_arg = args.iter().map(term_depth).max().unwrap_or(0);
             1 + func_depth.max(max_arg)
-        }
-        Term::Lambda { param_type, body, .. } => {
+        },
+        Term::Lambda {
+            param_type, body, ..
+        } => {
             let pt = param_type.as_ref().map(|t| term_depth(t)).unwrap_or(0);
             1 + pt.max(term_depth(body))
-        }
-        Term::Pi { param_type, body, .. } => {
-            1 + term_depth(param_type).max(term_depth(body))
-        }
-        Term::Let { ty, value, body, .. } => {
+        },
+        Term::Pi {
+            param_type, body, ..
+        } => 1 + term_depth(param_type).max(term_depth(body)),
+        Term::Let {
+            ty, value, body, ..
+        } => {
             let t = ty.as_ref().map(|t| term_depth(t)).unwrap_or(0);
             1 + t.max(term_depth(value)).max(term_depth(body))
-        }
-        Term::Match { scrutinee, branches, .. } => {
+        },
+        Term::Match {
+            scrutinee,
+            branches,
+            ..
+        } => {
             let s = term_depth(scrutinee);
-            let b = branches.iter().map(|(_, t)| term_depth(t)).max().unwrap_or(0);
+            let b = branches
+                .iter()
+                .map(|(_, t)| term_depth(t))
+                .max()
+                .unwrap_or(0);
             1 + s.max(b)
-        }
+        },
         Term::Fix { ty, body, .. } => {
             let t = ty.as_ref().map(|t| term_depth(t)).unwrap_or(0);
             1 + t.max(term_depth(body))
-        }
+        },
         Term::ProverSpecific { .. } => 0,
     }
 }
@@ -390,14 +401,38 @@ fn term_depth(term: &Term) -> usize {
 /// Compute the arity of a term (number of direct subterms).
 fn term_arity(term: &Term) -> usize {
     match term {
-        Term::Var(_) | Term::Const(_) | Term::Type(_) | Term::Sort(_)
-        | Term::Universe(_) | Term::Hole(_) | Term::Meta(_) | Term::ProverSpecific { .. } => 0,
+        Term::Var(_)
+        | Term::Const(_)
+        | Term::Type(_)
+        | Term::Sort(_)
+        | Term::Universe(_)
+        | Term::Hole(_)
+        | Term::Meta(_)
+        | Term::ProverSpecific { .. } => 0,
         Term::App { args, .. } => 1 + args.len(), // func + args
-        Term::Lambda { param_type, .. } => if param_type.is_some() { 2 } else { 1 },
+        Term::Lambda { param_type, .. } => {
+            if param_type.is_some() {
+                2
+            } else {
+                1
+            }
+        },
         Term::Pi { .. } => 2, // param_type + body
-        Term::Let { ty, .. } => if ty.is_some() { 3 } else { 2 },
+        Term::Let { ty, .. } => {
+            if ty.is_some() {
+                3
+            } else {
+                2
+            }
+        },
         Term::Match { branches, .. } => 1 + branches.len(),
-        Term::Fix { ty, .. } => if ty.is_some() { 2 } else { 1 },
+        Term::Fix { ty, .. } => {
+            if ty.is_some() {
+                2
+            } else {
+                1
+            }
+        },
     }
 }
 

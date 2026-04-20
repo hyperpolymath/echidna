@@ -536,10 +536,7 @@ mod tests {
     fn test_term_to_clause_or_app() {
         let term = Term::App {
             func: Box::new(Term::Const("or".to_string())),
-            args: vec![
-                Term::Const("1".to_string()),
-                Term::Const("2".to_string()),
-            ],
+            args: vec![Term::Const("1".to_string()), Term::Const("2".to_string())],
         };
         let clause = CaDiCaLBackend::term_to_clause(&term);
         assert_eq!(clause, vec![1, 2]);

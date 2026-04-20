@@ -50,10 +50,7 @@ fn live_config(executable: &str) -> ProverConfig {
 
 /// Construct a live backend of the given kind.  Returns `None` when the
 /// binary is absent on PATH (auto-skip signal to callers).
-fn try_live_backend(
-    kind: ProverKind,
-    exe: &str,
-) -> Option<Box<dyn ProverBackend>> {
+fn try_live_backend(kind: ProverKind, exe: &str) -> Option<Box<dyn ProverBackend>> {
     let _resolved = binary_on_path(exe)?;
     let config = live_config(exe);
     ProverFactory::create(kind, config).ok()
@@ -66,7 +63,11 @@ fn try_live_backend(
 /// exists to catch.
 async fn assert_version_reachable(kind: ProverKind, exe: &str) {
     let Some(backend) = try_live_backend(kind, exe) else {
-        eprintln!("SKIP: {} not on PATH (searched for `{}`)", kind_label(kind), exe);
+        eprintln!(
+            "SKIP: {} not on PATH (searched for `{}`)",
+            kind_label(kind),
+            exe
+        );
         return;
     };
     match backend.version().await {
@@ -77,7 +78,7 @@ async fn assert_version_reachable(kind: ProverKind, exe: &str) {
                 kind_label(kind),
             );
             eprintln!("OK: {} reported version = {:?}", kind_label(kind), v);
-        }
+        },
         Err(e) => {
             panic!(
                 "{} live version() failed: {}.  Binary found on PATH but the \
@@ -86,7 +87,7 @@ async fn assert_version_reachable(kind: ProverKind, exe: &str) {
                 kind_label(kind),
                 e,
             );
-        }
+        },
     }
 }
 

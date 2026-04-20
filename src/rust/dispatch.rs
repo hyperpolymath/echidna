@@ -14,8 +14,8 @@ use tracing::{info, warn};
 
 use crate::integrity::solver_integrity::{IntegrityChecker, IntegrityStatus};
 use crate::llm::LlmAdvisor;
-use crate::provers::{ProverConfig, ProverFactory, ProverKind};
 use crate::provers::outcome::{classify_anyhow_error, ProverOutcome};
+use crate::provers::{ProverConfig, ProverFactory, ProverKind};
 use crate::verification::axiom_tracker::{AxiomTracker, AxiomUsage, DangerLevel};
 use crate::verification::confidence::{compute_trust_level, TrustFactors, TrustLevel};
 
@@ -256,7 +256,7 @@ impl ProverDispatcher {
                     outcome,
                     diagnostics,
                 });
-            }
+            },
         };
 
         // Step 3: Run the rich `check()` variant — gives us a full outcome
@@ -586,19 +586,14 @@ mod tests {
 
     #[test]
     fn test_prover_selection_agda() {
-        let prover = ProverDispatcher::select_prover(
-            "module MyModule where\ndata Nat : Set where",
-            None,
-        );
+        let prover =
+            ProverDispatcher::select_prover("module MyModule where\ndata Nat : Set where", None);
         assert_eq!(prover, ProverKind::Agda);
     }
 
     #[test]
     fn test_prover_selection_isabelle() {
-        let prover = ProverDispatcher::select_prover(
-            "theory MyTheory\nimports Main",
-            None,
-        );
+        let prover = ProverDispatcher::select_prover("theory MyTheory\nimports Main", None);
         assert_eq!(prover, ProverKind::Isabelle);
     }
 

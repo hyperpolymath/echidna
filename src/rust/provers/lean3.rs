@@ -68,7 +68,7 @@ impl ProverBackend for Lean3Backend {
         match output {
             Ok(out) if out.status.success() => {
                 Ok(String::from_utf8_lossy(&out.stdout).trim().to_string())
-            }
+            },
             Ok(out) => Ok(format!(
                 "lean3@unavailable (status {:?})",
                 out.status.code()
@@ -157,7 +157,7 @@ impl ProverBackend for Lean3Backend {
                 );
                 tracing::trace!(stderr = %stderr);
                 Ok(false)
-            }
+            },
             Err(e) => Err(anyhow!("Lean 3: binary not runnable: {}", e)),
         }
     }

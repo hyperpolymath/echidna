@@ -318,12 +318,12 @@ impl ProofGraphBuilder {
                 let nid = self.add_or_get_node(NodeKind::Subterm, name, depth);
                 self.add_edge(parent_id, nid, EdgeKind::Contains, 1.0);
                 Some(nid)
-            }
+            },
             Term::Const(name) => {
                 let nid = self.add_or_get_node(NodeKind::Constant, name, depth);
                 self.add_edge(parent_id, nid, EdgeKind::References, 1.0);
                 Some(nid)
-            }
+            },
             Term::App { func, args } => {
                 let label = format!("app@{}", depth);
                 let nid = self.add_node(NodeKind::Subterm, &label, depth);
@@ -335,7 +335,7 @@ impl ProofGraphBuilder {
                     self.expand_term(arg, nid, depth + 1);
                 }
                 Some(nid)
-            }
+            },
             Term::Lambda {
                 param,
                 param_type,
@@ -354,7 +354,7 @@ impl ProofGraphBuilder {
                     self.add_edge(nid, bid, EdgeKind::BindsOver, 1.0);
                 }
                 Some(nid)
-            }
+            },
             Term::Pi {
                 param,
                 param_type,
@@ -371,15 +371,18 @@ impl ProofGraphBuilder {
                     self.add_edge(nid, bid, EdgeKind::BindsOver, 1.0);
                 }
                 Some(nid)
-            }
+            },
             Term::Type(level) | Term::Sort(level) | Term::Universe(level) => {
                 let label = format!("Type{}", level);
                 let nid = self.add_or_get_node(NodeKind::TypeExpr, &label, depth);
                 self.add_edge(parent_id, nid, EdgeKind::Contains, 1.0);
                 Some(nid)
-            }
+            },
             Term::Let {
-                name, ty, value, body,
+                name,
+                ty,
+                value,
+                body,
             } => {
                 let label = format!("let_{}", name);
                 let nid = self.add_node(NodeKind::Binder, &label, depth);
@@ -395,14 +398,14 @@ impl ProofGraphBuilder {
                     self.add_edge(nid, bid, EdgeKind::BindsOver, 1.0);
                 }
                 Some(nid)
-            }
+            },
             Term::Match { scrutinee, .. } => {
                 let label = format!("match@{}", depth);
                 let nid = self.add_node(NodeKind::Subterm, &label, depth);
                 self.add_edge(parent_id, nid, EdgeKind::Contains, 1.0);
                 self.expand_term(scrutinee, nid, depth + 1);
                 Some(nid)
-            }
+            },
             Term::Fix { name, ty, body } => {
                 let label = format!("fix_{}", name);
                 let nid = self.add_node(NodeKind::Binder, &label, depth);
@@ -417,25 +420,25 @@ impl ProofGraphBuilder {
                     self.add_edge(nid, bid, EdgeKind::BindsOver, 1.0);
                 }
                 Some(nid)
-            }
+            },
             Term::Hole(name) => {
                 let label = format!("?{}", name);
                 let nid = self.add_node(NodeKind::Subterm, &label, depth);
                 self.add_edge(parent_id, nid, EdgeKind::Contains, 1.0);
                 Some(nid)
-            }
+            },
             Term::Meta(id) => {
                 let label = format!("?meta_{}", id);
                 let nid = self.add_node(NodeKind::Subterm, &label, depth);
                 self.add_edge(parent_id, nid, EdgeKind::Contains, 1.0);
                 Some(nid)
-            }
+            },
             Term::ProverSpecific { prover, .. } => {
                 let label = format!("<{}-opaque>", prover);
                 let nid = self.add_node(NodeKind::Subterm, &label, depth);
                 self.add_edge(parent_id, nid, EdgeKind::Contains, 1.0);
                 Some(nid)
-            }
+            },
         }
     }
 
@@ -481,12 +484,7 @@ impl ProofGraphBuilder {
     }
 
     /// Walk edges from a node to collect reachable Constant node ids.
-    fn collect_reachable_constants(
-        &self,
-        node_id: usize,
-        constants: &mut Vec<usize>,
-        depth: u32,
-    ) {
+    fn collect_reachable_constants(&self, node_id: usize, constants: &mut Vec<usize>, depth: u32) {
         if depth > self.max_depth {
             return;
         }
@@ -630,10 +628,7 @@ mod tests {
                 func: Box::new(Term::Const("is_even".to_string())),
                 args: vec![Term::App {
                     func: Box::new(Term::Const("add".to_string())),
-                    args: vec![
-                        Term::Var("n".to_string()),
-                        Term::Var("n".to_string()),
-                    ],
+                    args: vec![Term::Var("n".to_string()), Term::Var("n".to_string())],
                 }],
             }),
         };
@@ -653,10 +648,7 @@ mod tests {
                     func: Box::new(Term::Const("is_even".to_string())),
                     args: vec![Term::App {
                         func: Box::new(Term::Const("add".to_string())),
-                        args: vec![
-                            Term::Var("m".to_string()),
-                            Term::Var("m".to_string()),
-                        ],
+                        args: vec![Term::Var("m".to_string()), Term::Var("m".to_string())],
                     }],
                 }),
             },
@@ -701,7 +693,11 @@ mod tests {
         let graph = builder.build_from_proof_state(&state);
 
         // Must have at least: 1 goal + 1 hyp + 2 premises + subterms
-        assert!(graph.num_nodes() >= 4, "Expected at least 4 nodes, got {}", graph.num_nodes());
+        assert!(
+            graph.num_nodes() >= 4,
+            "Expected at least 4 nodes, got {}",
+            graph.num_nodes()
+        );
         assert!(graph.num_edges() > 0, "Expected at least 1 edge");
         assert!(graph.goal_node_id.is_some(), "Must have a goal node");
         assert_eq!(graph.premise_node_ids.len(), 2, "Must have 2 premise nodes");

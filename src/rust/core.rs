@@ -150,8 +150,7 @@ impl fmt::Display for Term {
 }
 
 /// Current state of a proof
-#[derive(Debug, Clone, Serialize, Deserialize)]
-#[derive(Default)]
+#[derive(Debug, Clone, Serialize, Deserialize, Default)]
 pub struct ProofState {
     /// Current goals to prove
     pub goals: Vec<Goal>,
@@ -282,7 +281,6 @@ pub enum TacticResult {
     /// Proof complete!
     QED,
 }
-
 
 impl fmt::Display for Definition {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {

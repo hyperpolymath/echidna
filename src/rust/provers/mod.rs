@@ -20,27 +20,20 @@ pub mod abc;
 pub mod abella;
 pub mod acl2;
 pub mod acl2s;
-pub mod arend;
-pub mod athena;
-pub mod boogie;
-pub mod cameleer;
-pub mod dedukti;
-pub mod isabelle_zf;
-pub mod lambda_prolog;
-pub mod matita;
-pub mod mercury;
-pub mod naproche;
-pub mod nitpick;
-pub mod nunchaku;
 pub mod agda;
 pub mod alloy;
 pub mod altergo;
+pub mod arend;
+pub mod athena;
+pub mod boogie;
 pub mod cadical;
+pub mod cameleer;
 pub mod cbmc;
 pub mod chuffed;
 pub mod coq;
 pub mod cvc5;
 pub mod dafny;
+pub mod dedukti;
 pub mod dreal;
 pub mod eprover;
 pub mod framac;
@@ -48,18 +41,26 @@ pub mod fstar;
 pub mod glpk;
 pub mod hol4;
 pub mod hol_light;
+pub mod hp_ecosystem;
 pub mod idris2;
 pub mod imandra;
 pub mod isabelle;
+pub mod isabelle_zf;
 pub mod key;
 pub mod kissat;
+pub mod lambda_prolog;
 pub mod lean;
 pub mod lean3;
+pub mod matita;
+pub mod mercury;
 pub mod metamath;
 pub mod minisat;
 pub mod minizinc;
 pub mod minlog;
 pub mod mizar;
+pub mod naproche;
+pub mod nitpick;
+pub mod nunchaku;
 pub mod nuprl;
 pub mod nusmv;
 pub mod ortools;
@@ -75,7 +76,6 @@ pub mod tlaps;
 pub mod tlc;
 pub mod twelf;
 pub mod typed_wasm;
-pub mod hp_ecosystem;
 pub mod uppaal;
 pub mod vampire;
 pub mod viper;
@@ -417,13 +417,13 @@ impl std::str::FromStr for ProverKind {
             "typell" | "type-ll" | "typell-kernel" => Ok(ProverKind::TypeLL),
             "katagoria" | "katagoriaverifier" | "katagoria-verifier" => {
                 Ok(ProverKind::KatagoriaVerifier)
-            }
+            },
             "tropicaltypechecker" | "tropical" | "tropical-type-checker" => {
                 Ok(ProverKind::TropicalTypeChecker)
-            }
+            },
             "choreographictypechecker" | "choreographic" => {
                 Ok(ProverKind::ChoreographicTypeChecker)
-            }
+            },
             "epistemictypechecker" | "epistemic" => Ok(ProverKind::EpistemicTypeChecker),
             "echotypechecker" | "echo" => Ok(ProverKind::EchoTypeChecker),
             "sessiontypechecker" | "session" => Ok(ProverKind::SessionTypeChecker),
@@ -431,95 +431,89 @@ impl std::str::FromStr for ProverKind {
             "qtttypechecker" | "qtt" | "quantitative" => Ok(ProverKind::QTTTypeChecker),
             "effectrowtypechecker" | "effect-row" | "effectrow" => {
                 Ok(ProverKind::EffectRowTypeChecker)
-            }
+            },
             "dependenttypechecker" | "dependent" => Ok(ProverKind::DependentTypeChecker),
             "refinementtypechecker" | "refinement" => Ok(ProverKind::RefinementTypeChecker),
             "ordinarytypechecker" | "ordinary" | "simple" | "simply-typed" | "stlc" => {
                 Ok(ProverKind::OrdinaryTypeChecker)
-            }
+            },
             "phantomtypechecker" | "phantom" => Ok(ProverKind::PhantomTypeChecker),
             "polymorphictypechecker" | "polymorphic" | "systemf" | "system-f" | "parametric" => {
                 Ok(ProverKind::PolymorphicTypeChecker)
-            }
+            },
             "existentialtypechecker" | "existential" | "packed" => {
                 Ok(ProverKind::ExistentialTypeChecker)
-            }
+            },
             "higherkindedtypechecker" | "higher-kinded" | "higherkinded" | "hkt" | "hk" => {
                 Ok(ProverKind::HigherKindedTypeChecker)
-            }
+            },
             "rowtypechecker" | "row" | "row-polymorphic" | "row-polymorphism" => {
                 Ok(ProverKind::RowTypeChecker)
-            }
+            },
             "subtypingtypechecker" | "subtyping" | "sub" => Ok(ProverKind::SubtypingTypeChecker),
             "intersectiontypechecker" | "intersection" | "inter" => {
                 Ok(ProverKind::IntersectionTypeChecker)
-            }
+            },
             "uniontypechecker" | "union" => Ok(ProverKind::UnionTypeChecker),
             "gradualtypechecker" | "gradual" | "gradual-typing" => {
                 Ok(ProverKind::GradualTypeChecker)
-            }
+            },
             "hoaretypechecker" | "hoare" | "hoare-types" => Ok(ProverKind::HoareTypeChecker),
             "indexedtypechecker" | "indexed" | "indexed-monad" | "indexed-monads" => {
                 Ok(ProverKind::IndexedTypeChecker)
-            }
+            },
             "lineartypechecker" | "linear" | "linear-types" => Ok(ProverKind::LinearTypeChecker),
             "affinetypechecker" | "affine" | "affine-types" => Ok(ProverKind::AffineTypeChecker),
             "relevanttypechecker" | "relevant" | "relevant-types" => {
                 Ok(ProverKind::RelevantTypeChecker)
-            }
+            },
             "orderedtypechecker" | "ordered" | "ordered-logic" | "no-exchange" => {
                 Ok(ProverKind::OrderedTypeChecker)
-            }
+            },
             "uniquenesstypechecker" | "uniqueness" | "unique" | "unique-types" => {
                 Ok(ProverKind::UniquenessTypeChecker)
-            }
+            },
             "immutabletypechecker" | "immutable" | "frozen" | "const-types" => {
                 Ok(ProverKind::ImmutableTypeChecker)
-            }
+            },
             "capabilitytypechecker" | "capability" | "cap" | "capability-types" => {
                 Ok(ProverKind::CapabilityTypeChecker)
-            }
+            },
             "bunchedtypechecker" | "bunched" | "bi" | "bi-logic" | "separation" => {
                 Ok(ProverKind::BunchedTypeChecker)
-            }
+            },
             "temporaltypechecker" | "temporal" | "ltl" | "ctl" => {
                 Ok(ProverKind::TemporalTypeChecker)
-            }
+            },
             "provabilitytypechecker" | "provability" | "lob" | "löb" | "gl" => {
                 Ok(ProverKind::ProvabilityTypeChecker)
-            }
-            "impuretypechecker" | "impure" | "effect-tracked" => {
-                Ok(ProverKind::ImpureTypeChecker)
-            }
+            },
+            "impuretypechecker" | "impure" | "effect-tracked" => Ok(ProverKind::ImpureTypeChecker),
             "coeffecttypechecker" | "coeffect" | "graded-context" | "coeffects" => {
                 Ok(ProverKind::CoeffectTypeChecker)
-            }
+            },
             "probabilistictypechecker" | "probabilistic" | "prob" | "prob-types" => {
                 Ok(ProverKind::ProbabilisticTypeChecker)
-            }
+            },
             "dyadictypechecker" | "dyadic" | "binary-channel" | "dyadic-session" => {
                 Ok(ProverKind::DyadicTypeChecker)
-            }
+            },
             "homotopytypechecker" | "homotopy" | "hott" => Ok(ProverKind::HomotopyTypeChecker),
             "cubicaltypechecker" | "cubical" | "cubical-tt" => Ok(ProverKind::CubicalTypeChecker),
             "nominaltypechecker" | "nominal" | "hoas" | "lambda-tree" => {
                 Ok(ProverKind::NominalTypeChecker)
-            }
+            },
             "abella" => Ok(ProverKind::Abella),
             "dedukti" | "dkcheck" | "lambdapi" => Ok(ProverKind::Dedukti),
             "cameleer" | "gospel" => Ok(ProverKind::Cameleer),
             "acl2s" | "acl2-s" => Ok(ProverKind::ACL2s),
-            "isabellezf" | "isabelle-zf" | "isabelle/zf" | "zf" => {
-                Ok(ProverKind::IsabelleZF)
-            }
+            "isabellezf" | "isabelle-zf" | "isabelle/zf" | "zf" => Ok(ProverKind::IsabelleZF),
             "boogie" | "bpl" => Ok(ProverKind::Boogie),
             "naproche" | "forthel" | "ftl" => Ok(ProverKind::Naproche),
             "matita" => Ok(ProverKind::Matita),
             "arend" => Ok(ProverKind::Arend),
             "athena" => Ok(ProverKind::Athena),
-            "lambdaprolog" | "lambda-prolog" | "teyjus" | "elpi" => {
-                Ok(ProverKind::LambdaProlog)
-            }
+            "lambdaprolog" | "lambda-prolog" | "teyjus" | "elpi" => Ok(ProverKind::LambdaProlog),
             "mercury" | "mmc" => Ok(ProverKind::Mercury),
             "nitpick" => Ok(ProverKind::Nitpick),
             "nunchaku" => Ok(ProverKind::Nunchaku),
@@ -615,54 +609,54 @@ impl ProverKind {
             ProverKind::ACL2 => 4,
             ProverKind::HOL4 => 5,
             ProverKind::Idris2 => 3,
-            ProverKind::Lean3 => 3, // Same complexity as Lean 4.
-            ProverKind::Abella => 3, // Two-level logic, HOAS proof state.
-            ProverKind::Dedukti => 3, // λΠ-modulo framework.
-            ProverKind::Cameleer => 2, // Thin OCaml→Why3 pipeline.
-            ProverKind::ACL2s => 4, // Sibling to ACL2.
-            ProverKind::IsabelleZF => 4, // Sibling to Isabelle/HOL.
-            ProverKind::Boogie => 2, // Intermediate verification language.
-            ProverKind::Naproche => 3, // Controlled-NL parsing non-trivial.
-            ProverKind::Matita => 3, // CIC variant, same family as Coq.
-            ProverKind::Arend => 3, // Cubical HoTT.
-            ProverKind::Athena => 4, // Denotational + rewriting engine.
+            ProverKind::Lean3 => 3,        // Same complexity as Lean 4.
+            ProverKind::Abella => 3,       // Two-level logic, HOAS proof state.
+            ProverKind::Dedukti => 3,      // λΠ-modulo framework.
+            ProverKind::Cameleer => 2,     // Thin OCaml→Why3 pipeline.
+            ProverKind::ACL2s => 4,        // Sibling to ACL2.
+            ProverKind::IsabelleZF => 4,   // Sibling to Isabelle/HOL.
+            ProverKind::Boogie => 2,       // Intermediate verification language.
+            ProverKind::Naproche => 3,     // Controlled-NL parsing non-trivial.
+            ProverKind::Matita => 3,       // CIC variant, same family as Coq.
+            ProverKind::Arend => 3,        // Cubical HoTT.
+            ProverKind::Athena => 4,       // Denotational + rewriting engine.
             ProverKind::LambdaProlog => 3, // HOAS logic programming.
-            ProverKind::Mercury => 3, // Logic programming with types/modes.
-            ProverKind::Nitpick => 2, // Isabelle-wrapped counter-example finder.
-            ProverKind::Nunchaku => 2, // Standalone counter-example finder.
-            ProverKind::Vampire => 2,   // Automated, relatively simple
-            ProverKind::EProver => 2,   // Similar to Vampire
-            ProverKind::SPASS => 2,     // Automated FOL
-            ProverKind::AltErgo => 2,   // SMT + FOL
-            ProverKind::FStar => 3,     // Dependent types + effects
-            ProverKind::Dafny => 2,     // Auto-active
-            ProverKind::Why3 => 3,      // Multi-prover orchestration
-            ProverKind::TLAPS => 4,     // TLA+ proof system
-            ProverKind::Twelf => 4,     // Logical framework
-            ProverKind::Nuprl => 4,     // Constructive type theory
-            ProverKind::Minlog => 4,    // Minimal logic
-            ProverKind::Imandra => 3,   // ML-based reasoning
-            ProverKind::GLPK => 2,      // LP solver
-            ProverKind::SCIP => 3,      // MINLP solver
-            ProverKind::MiniZinc => 2,  // Constraint modelling
-            ProverKind::Chuffed => 2,   // CP solver
-            ProverKind::ORTools => 2,   // Constraint/optimization solver
-            ProverKind::TypedWasm => 3, // Internal oracle, structural analysis
-            ProverKind::SPIN => 3,      // Model checker, Promela language
-            ProverKind::CBMC => 2,      // Bounded model checker, C input
-            ProverKind::SeaHorn => 2,   // LLVM-based verifier, abstract interpretation + CHC
-            ProverKind::CaDiCaL => 1,   // SAT solver, DIMACS CNF
-            ProverKind::Kissat => 1,    // SAT solver, DIMACS CNF
-            ProverKind::MiniSat => 1,   // SAT solver, DIMACS CNF
-            ProverKind::NuSMV => 3,     // Symbolic model checker, SMV language
-            ProverKind::TLC => 3,       // TLA+ model checker
-            ProverKind::Alloy => 3,     // Relational model finder
-            ProverKind::Prism => 3,     // Probabilistic model checker
-            ProverKind::UPPAAL => 3,    // Timed automata model checker
-            ProverKind::FramaC => 3,    // Deductive C verifier (ACSL + WP)
-            ProverKind::Viper => 3,     // Permission-based verifier (Silver + Silicon/Carbon)
-            ProverKind::Tamarin => 3,   // Security protocol verifier, multiset rewriting
-            ProverKind::ProVerif => 2,  // Automated protocol verifier, applied pi-calculus
+            ProverKind::Mercury => 3,      // Logic programming with types/modes.
+            ProverKind::Nitpick => 2,      // Isabelle-wrapped counter-example finder.
+            ProverKind::Nunchaku => 2,     // Standalone counter-example finder.
+            ProverKind::Vampire => 2,      // Automated, relatively simple
+            ProverKind::EProver => 2,      // Similar to Vampire
+            ProverKind::SPASS => 2,        // Automated FOL
+            ProverKind::AltErgo => 2,      // SMT + FOL
+            ProverKind::FStar => 3,        // Dependent types + effects
+            ProverKind::Dafny => 2,        // Auto-active
+            ProverKind::Why3 => 3,         // Multi-prover orchestration
+            ProverKind::TLAPS => 4,        // TLA+ proof system
+            ProverKind::Twelf => 4,        // Logical framework
+            ProverKind::Nuprl => 4,        // Constructive type theory
+            ProverKind::Minlog => 4,       // Minimal logic
+            ProverKind::Imandra => 3,      // ML-based reasoning
+            ProverKind::GLPK => 2,         // LP solver
+            ProverKind::SCIP => 3,         // MINLP solver
+            ProverKind::MiniZinc => 2,     // Constraint modelling
+            ProverKind::Chuffed => 2,      // CP solver
+            ProverKind::ORTools => 2,      // Constraint/optimization solver
+            ProverKind::TypedWasm => 3,    // Internal oracle, structural analysis
+            ProverKind::SPIN => 3,         // Model checker, Promela language
+            ProverKind::CBMC => 2,         // Bounded model checker, C input
+            ProverKind::SeaHorn => 2,      // LLVM-based verifier, abstract interpretation + CHC
+            ProverKind::CaDiCaL => 1,      // SAT solver, DIMACS CNF
+            ProverKind::Kissat => 1,       // SAT solver, DIMACS CNF
+            ProverKind::MiniSat => 1,      // SAT solver, DIMACS CNF
+            ProverKind::NuSMV => 3,        // Symbolic model checker, SMV language
+            ProverKind::TLC => 3,          // TLA+ model checker
+            ProverKind::Alloy => 3,        // Relational model finder
+            ProverKind::Prism => 3,        // Probabilistic model checker
+            ProverKind::UPPAAL => 3,       // Timed automata model checker
+            ProverKind::FramaC => 3,       // Deductive C verifier (ACSL + WP)
+            ProverKind::Viper => 3,        // Permission-based verifier (Silver + Silicon/Carbon)
+            ProverKind::Tamarin => 3,      // Security protocol verifier, multiset rewriting
+            ProverKind::ProVerif => 2,     // Automated protocol verifier, applied pi-calculus
             ProverKind::KeY => 3, // Deductive Java verifier (JavaDL + JML), auto + interactive
             ProverKind::DReal => 2, // Automated delta-complete SMT solver, NRA
             ProverKind::ABC => 2, // Automated hardware verification, AIG-based
@@ -737,19 +731,19 @@ impl ProverKind {
             ProverKind::Lean3 => 1, // Sibling to Lean 4.
             // Tier 7 niche: specialized proof framework for HOAS / nominal.
             ProverKind::Abella => 2,
-            ProverKind::Dedukti => 2, // Logical framework tier.
-            ProverKind::Cameleer => 2, // Auto-active via Why3.
-            ProverKind::ACL2s => 3, // Sibling to ACL2 (tier 3).
-            ProverKind::IsabelleZF => 1, // Sibling to Isabelle (tier 1).
-            ProverKind::Boogie => 5, // Deductive program verifier tier.
-            ProverKind::Naproche => 2, // Specialised, text-style.
-            ProverKind::Matita => 1, // Coq-adjacent, Tier 1 capability.
-            ProverKind::Arend => 1, // Cubical HoTT, Tier 1.
-            ProverKind::Athena => 4, // Niche framework.
+            ProverKind::Dedukti => 2,      // Logical framework tier.
+            ProverKind::Cameleer => 2,     // Auto-active via Why3.
+            ProverKind::ACL2s => 3,        // Sibling to ACL2 (tier 3).
+            ProverKind::IsabelleZF => 1,   // Sibling to Isabelle (tier 1).
+            ProverKind::Boogie => 5,       // Deductive program verifier tier.
+            ProverKind::Naproche => 2,     // Specialised, text-style.
+            ProverKind::Matita => 1,       // Coq-adjacent, Tier 1 capability.
+            ProverKind::Arend => 1,        // Cubical HoTT, Tier 1.
+            ProverKind::Athena => 4,       // Niche framework.
             ProverKind::LambdaProlog => 4, // Logical framework / HOAS.
-            ProverKind::Mercury => 4, // Specialised logic programming.
-            ProverKind::Nitpick => 5, // Counter-example finder tier.
-            ProverKind::Nunchaku => 5, // Counter-example finder tier.
+            ProverKind::Mercury => 4,      // Specialised logic programming.
+            ProverKind::Nitpick => 5,      // Counter-example finder tier.
+            ProverKind::Nunchaku => 5,     // Counter-example finder tier.
 
             // Tier 5: First-Order ATPs
             ProverKind::Vampire => 5,
@@ -858,57 +852,57 @@ impl ProverKind {
             ProverKind::PVS | ProverKind::ACL2 => 3.5,
             ProverKind::HOL4 => 4.0,
             ProverKind::Idris2 => 2.5,
-            ProverKind::Lean3 => 1.0, // Thin fork of Lean 4 backend.
-            ProverKind::Abella => 2.0, // New parser, HOAS proof state model.
-            ProverKind::Dedukti => 1.5, // Extends existing exchange module.
-            ProverKind::Cameleer => 1.0, // Thin wrapper over Why3.
-            ProverKind::ACL2s => 1.0, // Thin fork of ACL2.
-            ProverKind::IsabelleZF => 1.0, // Thin variant of Isabelle.
-            ProverKind::Boogie => 1.5, // Extract from Viper internals.
-            ProverKind::Naproche => 2.0, // Controlled-NL parser wrapper.
-            ProverKind::Matita => 2.0, // Coq-parser fork.
-            ProverKind::Arend => 2.0, // Cubical parser + elaborator.
-            ProverKind::Athena => 2.5, // Rich denotational framework.
+            ProverKind::Lean3 => 1.0,        // Thin fork of Lean 4 backend.
+            ProverKind::Abella => 2.0,       // New parser, HOAS proof state model.
+            ProverKind::Dedukti => 1.5,      // Extends existing exchange module.
+            ProverKind::Cameleer => 1.0,     // Thin wrapper over Why3.
+            ProverKind::ACL2s => 1.0,        // Thin fork of ACL2.
+            ProverKind::IsabelleZF => 1.0,   // Thin variant of Isabelle.
+            ProverKind::Boogie => 1.5,       // Extract from Viper internals.
+            ProverKind::Naproche => 2.0,     // Controlled-NL parser wrapper.
+            ProverKind::Matita => 2.0,       // Coq-parser fork.
+            ProverKind::Arend => 2.0,        // Cubical parser + elaborator.
+            ProverKind::Athena => 2.5,       // Rich denotational framework.
             ProverKind::LambdaProlog => 2.0, // HOAS parser + unifier.
-            ProverKind::Mercury => 2.0, // Logic programming interpreter bridge.
-            ProverKind::Nitpick => 1.0, // Thin wrapper over Isabelle.
-            ProverKind::Nunchaku => 1.5, // Standalone counter-example tool.
-            ProverKind::Vampire => 1.5,   // Automated, TPTP format
-            ProverKind::EProver => 1.5,   // Similar to Vampire
-            ProverKind::SPASS => 1.5,     // DFG format
-            ProverKind::AltErgo => 1.5,   // Native format
-            ProverKind::FStar => 2.5,     // Dependent types + effects
-            ProverKind::Dafny => 2.0,     // Auto-active, Boogie pipeline
-            ProverKind::Why3 => 2.0,      // Multi-prover
-            ProverKind::TLAPS => 2.5,     // TLA+ specific
-            ProverKind::Twelf => 3.0,     // LF framework
-            ProverKind::Nuprl => 3.0,     // Constructive type theory
-            ProverKind::Minlog => 2.5,    // Minimal logic
-            ProverKind::Imandra => 2.0,   // ML-based
-            ProverKind::GLPK => 1.0,      // LP API
-            ProverKind::SCIP => 1.5,      // MINLP API
-            ProverKind::MiniZinc => 1.0,  // Constraint modelling
-            ProverKind::Chuffed => 1.0,   // CP solver
-            ProverKind::ORTools => 1.5,   // Constraint/optimization
-            ProverKind::TypedWasm => 2.0, // Internal oracle
-            ProverKind::SPIN => 1.5,      // Model checker
-            ProverKind::CBMC => 1.5,      // Bounded model checker
-            ProverKind::SeaHorn => 1.5,   // LLVM-based CHC verifier
-            ProverKind::CaDiCaL => 1.0,   // SAT solver, DIMACS CNF
-            ProverKind::Kissat => 1.0,    // SAT solver, DIMACS CNF
-            ProverKind::MiniSat => 1.0,   // SAT solver, DIMACS CNF
-            ProverKind::NuSMV => 1.5,     // Symbolic model checker
-            ProverKind::TLC => 1.5,       // TLA+ model checker
-            ProverKind::Alloy => 1.5,     // Relational model finder
-            ProverKind::Prism => 1.5,     // Probabilistic model checker
-            ProverKind::UPPAAL => 1.5,    // Timed automata model checker
-            ProverKind::FramaC => 1.5,    // Deductive C verifier
-            ProverKind::Viper => 2.0,     // Permission-based verifier (Silver + two backends)
-            ProverKind::Tamarin => 2.0,   // Security protocol verifier (.spthy)
-            ProverKind::ProVerif => 1.5,  // Automated protocol verifier (.pv)
-            ProverKind::KeY => 2.0,       // Deductive Java verifier (JavaDL + JML)
-            ProverKind::DReal => 1.0,     // Automated SMT solver, SMT-LIB input
-            ProverKind::ABC => 1.5,       // Hardware verification, AIGER/BLIF input
+            ProverKind::Mercury => 2.0,      // Logic programming interpreter bridge.
+            ProverKind::Nitpick => 1.0,      // Thin wrapper over Isabelle.
+            ProverKind::Nunchaku => 1.5,     // Standalone counter-example tool.
+            ProverKind::Vampire => 1.5,      // Automated, TPTP format
+            ProverKind::EProver => 1.5,      // Similar to Vampire
+            ProverKind::SPASS => 1.5,        // DFG format
+            ProverKind::AltErgo => 1.5,      // Native format
+            ProverKind::FStar => 2.5,        // Dependent types + effects
+            ProverKind::Dafny => 2.0,        // Auto-active, Boogie pipeline
+            ProverKind::Why3 => 2.0,         // Multi-prover
+            ProverKind::TLAPS => 2.5,        // TLA+ specific
+            ProverKind::Twelf => 3.0,        // LF framework
+            ProverKind::Nuprl => 3.0,        // Constructive type theory
+            ProverKind::Minlog => 2.5,       // Minimal logic
+            ProverKind::Imandra => 2.0,      // ML-based
+            ProverKind::GLPK => 1.0,         // LP API
+            ProverKind::SCIP => 1.5,         // MINLP API
+            ProverKind::MiniZinc => 1.0,     // Constraint modelling
+            ProverKind::Chuffed => 1.0,      // CP solver
+            ProverKind::ORTools => 1.5,      // Constraint/optimization
+            ProverKind::TypedWasm => 2.0,    // Internal oracle
+            ProverKind::SPIN => 1.5,         // Model checker
+            ProverKind::CBMC => 1.5,         // Bounded model checker
+            ProverKind::SeaHorn => 1.5,      // LLVM-based CHC verifier
+            ProverKind::CaDiCaL => 1.0,      // SAT solver, DIMACS CNF
+            ProverKind::Kissat => 1.0,       // SAT solver, DIMACS CNF
+            ProverKind::MiniSat => 1.0,      // SAT solver, DIMACS CNF
+            ProverKind::NuSMV => 1.5,        // Symbolic model checker
+            ProverKind::TLC => 1.5,          // TLA+ model checker
+            ProverKind::Alloy => 1.5,        // Relational model finder
+            ProverKind::Prism => 1.5,        // Probabilistic model checker
+            ProverKind::UPPAAL => 1.5,       // Timed automata model checker
+            ProverKind::FramaC => 1.5,       // Deductive C verifier
+            ProverKind::Viper => 2.0,        // Permission-based verifier (Silver + two backends)
+            ProverKind::Tamarin => 2.0,      // Security protocol verifier (.spthy)
+            ProverKind::ProVerif => 1.5,     // Automated protocol verifier (.pv)
+            ProverKind::KeY => 2.0,          // Deductive Java verifier (JavaDL + JML)
+            ProverKind::DReal => 1.0,        // Automated SMT solver, SMT-LIB input
+            ProverKind::ABC => 1.5,          // Hardware verification, AIGER/BLIF input
             ProverKind::TypeLL
             | ProverKind::KatagoriaVerifier
             | ProverKind::TropicalTypeChecker
@@ -1227,7 +1221,7 @@ impl ProverFactory {
             ProverKind::Athena => Ok(Box::new(athena::AthenaBackend::new(config))),
             ProverKind::LambdaProlog => {
                 Ok(Box::new(lambda_prolog::LambdaPrologBackend::new(config)))
-            }
+            },
             ProverKind::Mercury => Ok(Box::new(mercury::MercuryBackend::new(config))),
             ProverKind::Nitpick => Ok(Box::new(nitpick::NitpickBackend::new(config))),
             ProverKind::Nunchaku => Ok(Box::new(nunchaku::NunchakuBackend::new(config))),
@@ -1361,13 +1355,13 @@ impl ProverFactory {
             // Note: .lean is shared between Lean 3 and Lean 4; default is Lean 4.
             // Use detect_from_file_content() for Lean 3 vs 4 disambiguation.
             "lean3" => Some(ProverKind::Lean3), // explicit extension
-            "thm" => Some(ProverKind::Abella), // Abella .thm files
+            "thm" => Some(ProverKind::Abella),  // Abella .thm files
             "dk" | "lp" => Some(ProverKind::Dedukti), // Dedukti / λΠ
-            "bpl" => Some(ProverKind::Boogie), // Boogie intermediate language
+            "bpl" => Some(ProverKind::Boogie),  // Boogie intermediate language
             "ftl" => Some(ProverKind::Naproche), // Naproche controlled-NL
-            "ma" => Some(ProverKind::Matita), // Matita proof file
-            "ard" => Some(ProverKind::Arend), // Arend cubical HoTT
-            "ath" => Some(ProverKind::Athena), // Athena
+            "ma" => Some(ProverKind::Matita),   // Matita proof file
+            "ard" => Some(ProverKind::Arend),   // Arend cubical HoTT
+            "ath" => Some(ProverKind::Athena),  // Athena
             "mod" | "sig" => Some(ProverKind::LambdaProlog), // λProlog module / signature
             "nun" => Some(ProverKind::Nunchaku), // Nunchaku input
             // Mercury uses .m which collides with OCaml conventions in
@@ -1424,9 +1418,9 @@ impl ProverFactory {
                 && (content.contains("//@")
                     || content.contains("/*@")
                     || content.contains("requires") && content.contains("ensures"))
-                {
-                    return Some(ProverKind::KeY);
-                }
+            {
+                return Some(ProverKind::KeY);
+            }
 
             if ext == "c" || ext == "h" {
                 // Frama-C ACSL annotations take priority (deductive verification)
