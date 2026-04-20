@@ -4,6 +4,24 @@
 
 [metadata]
 project = "echidna"
+full-name = "Extensible Cognitive Hybrid Intelligence for Deductive Neural Assistance"
 author = "Jonathan D.A. Jewell <j.d.a.jewell@open.ac.uk>"
 license = "PMPL-1.0-or-later"
 standard = "RSR 2026"
+version = "2.1.1"
+last-updated = "2026-04-20"
+status = "active"
+
+[project-context]
+name = "echidna"
+completion-percentage = 92
+phase = "v2.1.1 - Production Ready"
+
+[dependencies]
+primary = ["Rust", "Julia", "ReScript", "Idris2", "Zig"]
+secondary = ["Chapel", "Deno", "Guix", "Nix"]
+
+[interfaces]
+graphql = 8081
+grpc = 50051
+rest = 8000

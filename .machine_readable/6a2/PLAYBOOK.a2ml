@@ -5,19 +5,41 @@
 # Runbooks, incident response, deployment procedures.
 
 [metadata]
-version = "0.1.0"
-last-updated = "2026-03-16"
+version = "1.0.0"
+last-updated = "2026-04-20"
 
 [deployment]
-# method = "gitops"
-# target = "container"
+method = "gitops"
+target = "container"
+container-manager = "podman"
+image-registry = "ghcr.io/hyperpolymath/echidna"
 
 [incident-response]
-# 1. Check .machine_readable/STATE.a2ml for current status
-# 2. Review recent commits and CI results
-# 3. Run just validate to check compliance
+steps = [
+  "Check .machine_readable/STATE.a2ml for current status",
+  "Review recent commits and CI results",
+  "Run just validate to check compliance",
+  "Check Fly.io deployment logs for cold-start issues",
+  "Verify Isabelle heap and Julia JIT warm-up"
+]
 
 [release-process]
-# 1. Update version in STATE.a2ml, META.a2ml
-# 2. Run just quality (format, lint, test)
-# 3. Tag and push
+steps = [
+  "Update version in STATE.a2ml and META.a2ml",
+  "Run just quality (format, lint, test)",
+  "Tag the release with git tag vX.X.X",
+  "Push the tag to origin",
+  "Deploy to Fly.io with fly deploy"
+]
+
+[rollback-process]
+steps = [
+  "Identify the last stable tag",
+  "Revert to the stable tag with git revert",
+  "Deploy the reverted version to Fly.io"
+]
+
+[monitoring]
+health-endpoint = "/api/health"
+grace-period = "90s"
+cold-start-note = "Isabelle Main heap ~1-2GB maps at first use; Julia JIT runs on first inference."

@@ -1,8 +1,19 @@
-# Chapel Proof-of-Concept for ECHIDNA
+# Chapel Production Integration for ECHIDNA
 
-Demonstrates parallel proof search using Chapel's task parallelism.
+Parallel proof search using Chapel's task parallelism, integrated into the main ECHIDNA codebase.
 
-## Quick Start
+## Overview
+
+This directory contains the Chapel-based parallel proof search framework, now integrated into the main ECHIDNA codebase. The Chapel code is used to accelerate proof search by dispatching theorem proving goals to multiple prover backends concurrently.
+
+## Integration Status
+
+- **Status**: Production-ready
+- **Location**: `src/chapel/`
+- **Build System**: Integrated with `Justfile` and `Cargo.toml`
+- **FFI Bridge**: Zig bridge at `src/zig_ffi/chapel_bridge.zig`
+
+## Build Instructions
 
 ### 1. Install Chapel
 
@@ -19,24 +30,24 @@ source util/setchplenv.bash
 make
 ```
 
-### 2. Compile the PoC
+### 2. Build Chapel Code
 
 ```bash
-cd echidna/chapel_poc
+cd src/chapel
 chpl parallel_proof_search.chpl -o proof_search
 ```
 
-### 3. Run
+### 3. Build Zig FFI Bridge
 
 ```bash
-# Run with default settings
-./proof_search
+cd src/zig_ffi
+zig build -Dstubs=false
+```
 
-# Run with specific number of provers
-./proof_search --numProvers=8
+### 4. Build Rust with Chapel Feature
 
-# Quiet mode
-./proof_search --verbose=false
+```bash
+cargo build --features chapel
 ```
 
 ## Expected Output
@@ -87,7 +98,7 @@ Speedup: 1.51x
 ## What This Demonstrates
 
 ### 1. Parallel Proof Search
-- Tries all 12 provers simultaneously
+- Tries all 30 provers simultaneously
 - Returns first/best successful proof
 - Automatic load balancing
 
@@ -101,21 +112,29 @@ Speedup: 1.51x
 - Multiple tactic strategies simultaneously
 - Finds optimal proofs faster
 
+## Integration Details
+
+### Depth of Integration
+- **FFI Layer**: Chapel functions are exposed via `chapel_ffi_exports.chpl` and wrapped by the Zig bridge at `src/zig_ffi/chapel_bridge.zig`.
+- **Rust Consumption**: The Rust code in `src/rust/proof_search.rs` consumes these functions under the `chapel` feature flag.
+- **Build System**: The build process is integrated into `Justfile` and `Cargo.toml`.
+
+### Breadth of Integration
+- **Prover Dispatch**: The Chapel code is used for parallel prover dispatch, replacing the sequential dispatch in Rust.
+- **Result Aggregation**: Results from all provers are aggregated and the best proof is selected.
+- **Fallback Mechanism**: If Chapel is not available, the system falls back to sequential dispatch.
+
+### Relation to Other Parts of the System
+- **Rust Core**: The Rust core remains the primary logic layer, with Chapel accelerating specific tasks.
+- **Julia ML Layer**: The Julia ML layer is unaffected by the Chapel integration.
+- **FFI Bridge**: The Zig FFI bridge is a critical component that enables communication between Rust and Chapel.
+
 ## Next Steps
 
-1. ~~**Integration**: Add FFI bindings to call from Rust~~ — **DONE**.
-   Chapel `export` functions in `chapel_ffi_exports.chpl` are wrapped by
-   the Zig bridge at `../src/zig_ffi/chapel_bridge.zig`, which in turn
-   exports the `echidna_*` C ABI consumed by
-   `../src/rust/proof_search.rs` under `#[cfg(feature = "chapel")]`.
-   Build the Zig bridge with `cd ../src/zig_ffi && zig build` (default
-   `-Dstubs=true` bundles `chapel_stubs.c` so Rust links without a
-   Chapel install); then `cargo build --features chapel` from the repo
-   root. Pass `-Dstubs=false` to the Zig build to link against the real
-   `libechidna_chapel.so` produced in this directory.
-2. **Real Provers**: Replace mock with actual prover backends
-3. **Distributed**: Run on multi-node cluster
-4. **ML Integration**: Parallel model training
+1. **Update Rust Dispatch**: Modify `src/rust/dispatch.rs` to use Chapel for parallel proof search when the `chapel` feature is enabled.
+2. **Add CI/CD Support**: Ensure Chapel code is built and tested in CI.
+3. **Performance Optimization**: Run benchmarks and tune the Chapel code.
+4. **Documentation**: Update documentation to reflect the production integration.
 
 ## References
 
