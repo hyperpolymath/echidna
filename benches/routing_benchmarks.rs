@@ -305,6 +305,7 @@ fn bench_dispatch_config_construction(c: &mut Criterion) {
                 track_axioms: true,
                 generate_certificates: true,
                 timeout: 60,
+                diagnostics: false,
             })
         })
     });

@@ -1355,9 +1355,13 @@ impl ProverFactory {
             // Note: .lean is shared between Lean 3 and Lean 4; default is Lean 4.
             // Use detect_from_file_content() for Lean 3 vs 4 disambiguation.
             "lean3" => Some(ProverKind::Lean3), // explicit extension
-            "thm" => Some(ProverKind::Abella),  // Abella .thm files
-            "dk" | "lp" => Some(ProverKind::Dedukti), // Dedukti / λΠ
-            "bpl" => Some(ProverKind::Boogie),  // Boogie intermediate language
+            "thm" => Some(ProverKind::Abella), // Abella .thm files
+            // Dedukti uses .dk; .lp (lambdapi dialect) is shadowed by GLPK above
+            // since LP/MIP files dominate that extension in the wild — a .lp
+            // input ambiguous between lambdapi and linear programming is
+            // resolved as GLPK.  Use detect_from_file_content() to disambiguate.
+            "dk" => Some(ProverKind::Dedukti), // Dedukti / λΠ
+            "bpl" => Some(ProverKind::Boogie), // Boogie intermediate language
             "ftl" => Some(ProverKind::Naproche), // Naproche controlled-NL
             "ma" => Some(ProverKind::Matita),   // Matita proof file
             "ard" => Some(ProverKind::Arend),   // Arend cubical HoTT

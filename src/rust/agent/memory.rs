@@ -12,7 +12,9 @@ use async_trait::async_trait;
 use serde::{Deserialize, Serialize};
 use std::path::PathBuf;
 use tokio::sync::RwLock;
-use tracing::{debug, info, warn};
+use tracing::{debug, info};
+#[cfg(feature = "verisim")]
+use tracing::warn;
 
 use super::AgenticGoal;
 use crate::core::ProofState;
