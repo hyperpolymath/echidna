@@ -4,10 +4,10 @@ This document provides guidelines and context for working with Claude Code on th
 
 ## Project Overview
 
-**ECHIDNA** (Extensible Cognitive Hybrid Intelligence for Deductive Neural Assistance) is a trust-hardened neurosymbolic theorem proving platform supporting 48 prover backends with a comprehensive verification pipeline.
+**ECHIDNA** (Extensible Cognitive Hybrid Intelligence for Deductive Neural Assistance) is a trust-hardened neurosymbolic theorem proving platform supporting 105 prover backends with a comprehensive verification pipeline.
 
 **Repository**: https://github.com/hyperpolymath/echidna
-**Version**: 2.1.0
+**Version**: 2.3.0
 **License**: PMPL-1.0-or-later
 
 ## Repository Structure
@@ -15,8 +15,8 @@ This document provides guidelines and context for working with Claude Code on th
 ```
 echidna/
 ├── src/
-│   ├── rust/               # Rust core (48 provers, trust pipeline)
-│   │   ├── provers/        # 48 prover backend implementations
+│   ├── rust/               # Rust core (105 provers, trust pipeline)
+│   │   ├── provers/        # 105 prover backend implementations
 │   │   ├── verification/   # Trust pipeline (portfolio, certificates, axioms, confidence, mutation, pareto, statistics)
 │   │   ├── integrity/      # Solver binary integrity (SHAKE3-512, BLAKE3)
 │   │   ├── executor/       # Sandboxed solver execution (Podman, bubblewrap)
@@ -70,12 +70,12 @@ Follow conventional commit format:
 
 ### Tech Stack
 
-- **Rust**: Core logic, 48 prover backends, trust pipeline, CLI, REPL, API servers
+- **Rust**: Core logic, 105 prover backends, trust pipeline, CLI, REPL, API servers
 - **Julia**: ML inference (tactic prediction, premise selection, port 8090)
 - **ReScript + Deno**: UI components (33 files, zero TypeScript)
 - **Chapel**: Optional parallel proof dispatch
 
-### Prover Support (48 Total - ALL IMPLEMENTED)
+### Prover Support (105 Total - ALL IMPLEMENTED)
 
 - **Interactive Proof Assistants**: Agda, Coq/Rocq, Lean 4, Isabelle/HOL, Idris2, F*
 - **SMT Solvers**: Z3, CVC5, Alt-Ergo
@@ -101,7 +101,7 @@ The v1.5 trust hardening added:
 
 ### Key Components
 
-- `src/rust/provers/mod.rs`: ProverBackend trait, ProverKind enum (48 variants), ProverFactory
+- `src/rust/provers/mod.rs`: ProverBackend trait, ProverKind enum (105 variants), ProverFactory
 - `src/rust/dispatch.rs`: Full trust-hardening dispatch pipeline
 - `src/rust/verification/`: Portfolio, certificates, axiom tracker, confidence, mutation, pareto, statistics
 - `src/rust/integrity/`: Solver binary integrity (SHAKE3-512, BLAKE3)
@@ -114,13 +114,13 @@ The v1.5 trust hardening added:
 ### Current Status
 
 **Completed (v2.0.0)**:
-- 48/48 prover backends across 10 tiers
+- 105/105 prover backends across 10 tiers
 - Trust & safety hardening (13 tasks complete)
 - 638+ tests passing (528 unit + 38 integration + 21 property + interface)
 - 3 API interfaces (GraphQL, gRPC, REST) with real prover backend invocation
 - Agda meta-checker: 30+ formally verified trust pipeline properties
 - Criterion benchmarks: 13 functions covering all critical paths
-- FFI bridge: complete C-compatible API for all 48 provers
+- FFI bridge: complete C-compatible API for all 105 provers
 - Julia ML layer (logistic regression, MRR 0.66)
 - 26 CI/CD workflows (including Agda meta-checker)
 - Zig FFI layer (4 shared libraries)

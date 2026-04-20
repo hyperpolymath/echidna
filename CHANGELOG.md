@@ -5,7 +5,16 @@ All notable changes to ECHIDNA will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [Unreleased] - 2026-04-05
+## [Unreleased] - 2026-04-20
+
+### Added
+- **105 ProverKind variants** (exhaustive HP type-checker ecosystem).
+- Updated `ProverKindInjectivity.idr` to prove injectivity for all 105 variants.
+- Expanded Isabelle synthetic proof corpus (105 entries).
+- Resolved security alerts: Binary-Artifacts (#13), rand (#11, #10), rustls-webpki (#13, #12).
+- Atomic repush consolidating corpus expansion and security hardening.
+
+## [2.2.0] - 2026-04-05
 
 ### Changed
 
