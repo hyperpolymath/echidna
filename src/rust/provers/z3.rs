@@ -702,6 +702,7 @@ impl SmtParser {
                     state.context.variables.push(crate::core::Variable {
                         name: name.clone(),
                         ty: self.smt_to_term(&ty_term),
+                        type_info: None,
                     });
                 },
 
@@ -732,6 +733,7 @@ impl SmtParser {
                     state.context.variables.push(crate::core::Variable {
                         name: name.clone(),
                         ty,
+                        type_info: None,
                     });
                 },
 

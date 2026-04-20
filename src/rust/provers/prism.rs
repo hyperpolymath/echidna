@@ -185,6 +185,7 @@ impl PrismBackend {
                     name: trimmed.to_string(),
                     ty: Term::Const("PRISM_VAR".to_string()),
                     body: Term::Const(trimmed.to_string()),
+                    type_info: None,
                 });
             }
 

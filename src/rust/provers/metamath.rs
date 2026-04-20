@@ -327,6 +327,7 @@ impl ProverBackend for MetamathBackend {
                     context.variables.push(Variable {
                         name: var.clone(),
                         ty: Term::Const(typecode.clone()),
+                        type_info: None,
                     });
                 },
                 _ => {},

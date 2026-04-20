@@ -26,6 +26,7 @@ pub mod parsers;
 pub mod proof_encoding; // CBOR encoding + proof identity hashing
 pub mod proof_search; // Chapel parallel proof search (optional feature)
 pub mod provers;
+pub mod types;
 pub mod vcl_ut;
 pub mod verification;
 #[cfg(feature = "verisim")]

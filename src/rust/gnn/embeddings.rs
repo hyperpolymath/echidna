@@ -184,9 +184,11 @@ impl TermFeatureExtractor {
         // Feature [29]: Contains quantifier (forall, exists, pi)
         if offset < FEATURE_DIM {
             features[offset] = if node.label.contains("pi_")
+                || node.label.contains("sigma_")
                 || node.label.contains("forall")
                 || node.label.contains("exists")
                 || node.label.contains("Pi")
+                || node.label.contains("Sigma")
             {
                 1.0
             } else {
@@ -304,6 +306,8 @@ fn infer_term_kind_from_label(label: &str) -> usize {
         3 // Lambda
     } else if label.starts_with("pi_") {
         4 // Pi
+    } else if label.starts_with("sigma_") {
+        13 // Sigma
     } else if label.starts_with("let_") {
         7 // Let
     } else if label.starts_with("fix_") {
@@ -344,6 +348,7 @@ fn term_kind_index(term: &Term) -> usize {
         Term::Hole(_) => 10,
         Term::Meta(_) => 11,
         Term::ProverSpecific { .. } => 12,
+        Term::Sigma { .. } => 13,
     }
 }
 
@@ -369,6 +374,9 @@ fn term_depth(term: &Term) -> usize {
             1 + pt.max(term_depth(body))
         },
         Term::Pi {
+            param_type, body, ..
+        }
+        | Term::Sigma {
             param_type, body, ..
         } => 1 + term_depth(param_type).max(term_depth(body)),
         Term::Let {
@@ -417,7 +425,7 @@ fn term_arity(term: &Term) -> usize {
                 1
             }
         },
-        Term::Pi { .. } => 2, // param_type + body
+        Term::Pi { .. } | Term::Sigma { .. } => 2, // param_type + body
         Term::Let { ty, .. } => {
             if ty.is_some() {
                 3

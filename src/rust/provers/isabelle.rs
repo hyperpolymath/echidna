@@ -428,6 +428,7 @@ impl ProverBackend for IsabelleBackend {
                                 name: "IH".to_string(),
                                 ty: goal.target.clone(),
                                 body: None,
+                                type_info: None,
                             });
                             hyps
                         },

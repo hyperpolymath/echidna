@@ -981,6 +981,16 @@ impl ACL2Backend {
                     ])
                 }
             },
+            Term::Sigma {
+                param_type, body, ..
+            } => {
+                // Sigma types approximated as conjunction (and A B)
+                SExp::List(vec![
+                    SExp::Atom("and".to_string()),
+                    self.term_to_sexp(param_type),
+                    self.term_to_sexp(body),
+                ])
+            },
             Term::Let {
                 name, value, body, ..
             } => SExp::List(vec![
@@ -1251,6 +1261,7 @@ impl ProverBackend for ACL2Backend {
                         name,
                         ty: Term::Universe(0), // ACL2 doesn't have explicit types
                         body: body_term,
+                        type_info: None,
                     });
                 },
                 ACL2Event::Defthm {
@@ -1292,6 +1303,7 @@ impl ProverBackend for ACL2Backend {
                         name,
                         ty: Term::Universe(0),
                         body: value_term,
+                        type_info: None,
                     });
                 },
                 _ => {},

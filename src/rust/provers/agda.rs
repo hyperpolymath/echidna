@@ -134,6 +134,15 @@ impl AgdaBackend {
                 let body_str = self.term_to_agda(body);
                 format!("({} : {}) → {}", param, param_ty_str, body_str)
             },
+            Term::Sigma {
+                param,
+                param_type,
+                body,
+            } => {
+                let param_ty_str = self.term_to_agda(param_type);
+                let body_str = self.term_to_agda(body);
+                format!("Σ {} λ {} → {}", param_ty_str, param, body_str)
+            },
             Term::Universe(level) | Term::Type(level) => {
                 if *level == 0 {
                     "Set".to_string()
@@ -263,6 +272,7 @@ impl ProverBackend for AgdaBackend {
                         name: name.clone(),
                         ty: type_term.clone(),
                         body: type_term,
+                        type_info: None,
                     });
                 },
                 AgdaDecl::TypeSig { name, ty } => {
@@ -318,6 +328,7 @@ impl ProverBackend for AgdaBackend {
                         name: param_name,
                         ty: Term::Universe(0),
                         body: None,
+                        type_info: None,
                     });
                 }
                 Ok(TacticResult::Success(new_state))
