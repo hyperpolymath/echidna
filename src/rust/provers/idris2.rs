@@ -30,6 +30,7 @@ use crate::core::{
     Theorem,
 };
 use crate::provers::{ProverBackend, ProverConfig, ProverKind};
+use crate::types::Multiplicity;
 
 /// Idris 2 backend implementation
 pub struct Idris2Backend {
@@ -105,17 +106,6 @@ enum Idris2Term {
     AutoImplicit(String, Box<Idris2Term>),
 }
 
-/// Quantitative type theory multiplicities
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
-enum Multiplicity {
-    /// Unrestricted (0, 1, or many uses)
-    Unrestricted,
-    /// Linear (exactly 1 use)
-    Linear,
-    /// Erased (0 uses at runtime)
-    Erased,
-}
-
 impl Idris2Backend {
     pub fn new(config: ProverConfig) -> Self {
         Idris2Backend {
@@ -175,6 +165,17 @@ impl Idris2Backend {
                     body: Box::new(Term::Type(0)),
                 }
             },
+        }
+    }
+
+    /// Convert a [`Multiplicity`] to the Idris 2 QTT annotation string.
+    fn multiplicity_to_idris2(m: &Multiplicity) -> &'static str {
+        match m {
+            Multiplicity::Zero => "0",
+            Multiplicity::One | Multiplicity::Linear => "1",
+            Multiplicity::Omega | Multiplicity::Shared => "",
+            Multiplicity::Affine => "1", // closest QTT approximation
+            Multiplicity::Graded(_) => "",
         }
     }
 
@@ -815,11 +816,17 @@ impl ProverBackend for Idris2Backend {
         output.push_str("import Data.Vect\n");
         output.push_str("import Data.Nat\n\n");
 
-        // Definitions
+        // Definitions (emit QTT multiplicity annotations when present)
         for def in &state.context.definitions {
             let ty_str = self.term_to_idris2(&def.ty);
             let body_str = self.term_to_idris2(&def.body);
-            output.push_str(&format!("{} : {}\n", def.name, ty_str));
+            let mult_prefix = def
+                .type_info
+                .as_ref()
+                .and_then(|ti| ti.multiplicity.as_ref())
+                .map(|m| format!("{} ", Self::multiplicity_to_idris2(m)))
+                .unwrap_or_default();
+            output.push_str(&format!("{}{} : {}\n", mult_prefix, def.name, ty_str));
             output.push_str(&format!("{} = {}\n\n", def.name, body_str));
         }
 
@@ -1210,7 +1217,7 @@ mod tests {
         // Test Pi type
         let pi_term = Idris2Term::Pi(
             "a".to_string(),
-            Multiplicity::Unrestricted,
+            Multiplicity::Omega,
             Box::new(Idris2Term::Type),
             Box::new(Idris2Term::Var("a".to_string())),
         );

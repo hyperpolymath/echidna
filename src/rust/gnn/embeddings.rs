@@ -190,9 +190,11 @@ impl TermFeatureExtractor {
         // Feature [29]: Contains quantifier (forall, exists, pi)
         if offset < FEATURE_DIM {
             features[offset] = if node.label.contains("pi_")
+                || node.label.contains("sigma_")
                 || node.label.contains("forall")
                 || node.label.contains("exists")
                 || node.label.contains("Pi")
+                || node.label.contains("Sigma")
             {
                 1.0
             } else {
@@ -310,6 +312,8 @@ fn infer_term_kind_from_label(label: &str) -> usize {
         3 // Lambda
     } else if label.starts_with("pi_") {
         4 // Pi
+    } else if label.starts_with("sigma_") {
+        13 // Sigma
     } else if label.starts_with("let_") {
         7 // Let
     } else if label.starts_with("fix_") {
