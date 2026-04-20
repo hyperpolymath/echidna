@@ -193,4 +193,3 @@ deps/
 .cache/
 build/
 dist/
-*.stale-*
