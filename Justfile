@@ -116,7 +116,19 @@ align-premises:
 
 # Full retrain from provisioned corpora.  Honours ECHIDNA_MAX_PROOF_STATES
 # (0 = unlimited), ECHIDNA_NUM_EPOCHS, ECHIDNA_NUM_NEGATIVES.
-retrain:
+#
+# Depends on align-premises: without that step the dataloader joins
+# premise.proof_id against proof_state.id and fails at ~0% match because
+# merge_corpus.jl rewrites proof_state ids to fresh sequential counters
+# while the premise files keep the original per-extractor ids.  Running
+# align-premises is idempotent and cheap (seconds on a 2M premise set).
+retrain: align-premises
+    julia --project=src/julia src/julia/run_training.jl
+
+# Retrain without the align-premises prerequisite — use only when you
+# know premises_COMPLETE.jsonl is already aligned (e.g. you just ran
+# just align-premises manually and want to iterate on model code).
+retrain-skip-align:
     julia --project=src/julia src/julia/run_training.jl
 
 # End-to-end pipeline: provision → extract → merge → align → retrain.
