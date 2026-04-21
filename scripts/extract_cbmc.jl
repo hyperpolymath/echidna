@@ -17,9 +17,18 @@ function run_extract()
         try
             c = read(f, String)
             for m in eachmatch(pat, c)
+                goal_text = strip(m.captures[1])
+                thm_name = strip(m.captures[2])
                 push!(ps, Dict{String,Any}("id"=>id, "prover"=>"CBMC",
                     "source_file"=>relpath(f, DIR),
-                    "theorem"=>strip(m.captures[2]), "goal"=>strip(m.captures[1]), "context"=>Any[]))
+                    "theorem"=>thm_name, "goal"=>goal_text, "context"=>Any[]))
+                # Emit premises: C identifiers in assert condition
+                for hm in eachmatch(r"\b([a-zA-Z_][a-zA-Z0-9_]{1,40})\b", goal_text)
+                    h = strip(hm.captures[1])
+                    !isempty(h) && length(h) < 50 && push!(pm, Dict{String,Any}(
+                        "proof_id"=>id, "premise"=>h,
+                        "prover"=>"CBMC", "theorem"=>thm_name, "source"=>"cbmc"))
+                end
                 id += 1
             end
         catch e; println("Warning: $f: $e"); end

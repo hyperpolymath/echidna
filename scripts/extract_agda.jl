@@ -43,8 +43,9 @@ using Dates
 
 const REPO_ROOT   = dirname(dirname(abspath(@__FILE__)))
 const OUTPUT_DIR  = joinpath(REPO_ROOT, "training_data")
-const OUTPUT_FILE = joinpath(OUTPUT_DIR, "proof_states_agda.jsonl")
-const STATS_FILE  = joinpath(OUTPUT_DIR, "stats_agda.json")
+const OUTPUT_FILE    = joinpath(OUTPUT_DIR, "proof_states_agda.jsonl")
+const PREMISES_FILE  = joinpath(OUTPUT_DIR, "premises_agda.jsonl")
+const STATS_FILE     = joinpath(OUTPUT_DIR, "stats_agda.json")
 const START_ID    = 210000
 
 # Multiple Agda corpus roots. Added 2026-04-18 (echidna#17): the
@@ -426,9 +427,18 @@ function main()
     println("Files with keepable decls: $parsed_ok")
     println("Raw declarations:          $(length(all_records))")
 
+    # Agda premise patterns: with/where bindings, pattern-lambda vars
+    agda_hyp_patterns = [
+        r"with\s+([a-zA-Z0-9_]+)",
+        r"\bwhere\s+([a-zA-Z0-9_]+)\s*=",
+        r"let\s+([a-zA-Z0-9_]+)\s*=",
+        r"\bin\s+([a-zA-Z0-9_]+)\b",
+    ]
+
     # Assign IDs and write JSONL.
     mkpath(OUTPUT_DIR)
     nid = START_ID
+    premises_out = Dict{String,Any}[]
     open(OUTPUT_FILE, "w") do fh
         for rec in all_records
             rec["id"]           = nid
@@ -438,9 +448,32 @@ function main()
                                       # referenced in rec["source"].
             JSON3.write(fh, rec)
             println(fh)
+            # Emit premise records from the signature body (goal field)
+            sig_text = get(rec, "goal", "")
+            thm_name = get(rec, "theorem", "")
+            for hyp_pattern in agda_hyp_patterns
+                for hyp_match in eachmatch(hyp_pattern, sig_text)
+                    hyp = strip(hyp_match.captures[1])
+                    if !isempty(hyp) && length(hyp) < 50
+                        push!(premises_out, Dict{String,Any}(
+                            "proof_id" => nid,
+                            "premise" => String(hyp),
+                            "prover" => "Agda",
+                            "theorem" => thm_name,
+                            "source" => "agda",
+                        ))
+                    end
+                end
+            end
             nid += 1
         end
     end
+    open(PREMISES_FILE, "w") do fh
+        for p in premises_out
+            JSON3.write(fh, p); println(fh)
+        end
+    end
+    println("Wrote $(length(premises_out)) premise records to $PREMISES_FILE")
     total = nid - START_ID
     println("Wrote $total records to $OUTPUT_FILE")
 

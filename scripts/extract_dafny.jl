@@ -26,6 +26,7 @@ const REPO_ROOT = dirname(dirname(abspath(@__FILE__)))
 const EXTERNAL_DIR = joinpath(REPO_ROOT, "external_corpora", "dafny")
 const OUTPUT_DIR = joinpath(REPO_ROOT, "training_data")
 const OUTPUT_FILE = joinpath(OUTPUT_DIR, "proof_states_dafny.jsonl")
+const PREMISES_FILE = joinpath(OUTPUT_DIR, "premises_dafny.jsonl")
 const STATS_FILE = joinpath(OUTPUT_DIR, "stats_dafny.json")
 const START_ID = 96000
 
@@ -367,8 +368,17 @@ function run()::Tuple{Int,Int}
     end
     println("  Generated $added unique synthetic proofs")
 
+    # Dafny premise patterns: requires/ensures/invariant/modifies clauses
+    dafny_hyp_patterns = [
+        r"\brequires\s+([a-zA-Z][a-zA-Z0-9_]*)\b",
+        r"\bensures\s+([a-zA-Z][a-zA-Z0-9_]*)\b",
+        r"\binvariant\s+([a-zA-Z][a-zA-Z0-9_]*)\b",
+        r"\bmodifies\s+([a-zA-Z][a-zA-Z0-9_]*)\b",
+    ]
+
     current_id = START_ID
     output_records = Dict{String,Any}[]
+    premises = Dict{String,Any}[]
     for entry in all_entries
         record = Dict{String,Any}(
             "id" => current_id,
@@ -380,12 +390,33 @@ function run()::Tuple{Int,Int}
             "source" => get(entry, "source", "dafny"),
         )
         push!(output_records, record)
+        spec_text = get(entry, "goal", "") * " " * get(entry, "tactic_proof", "")
+        thm_name = entry["theorem"]
+        for hyp_pattern in dafny_hyp_patterns
+            for hyp_match in eachmatch(hyp_pattern, spec_text)
+                hyp = strip(hyp_match.captures[1])
+                if !isempty(hyp) && length(hyp) < 50
+                    push!(premises, Dict{String,Any}(
+                        "proof_id" => current_id,
+                        "premise" => String(hyp),
+                        "prover" => "Dafny",
+                        "theorem" => thm_name,
+                        "source" => get(entry, "source", "dafny"),
+                    ))
+                end
+            end
+        end
         current_id += 1
     end
 
     open(OUTPUT_FILE, "w") do fh
         for rec in output_records
             println(fh, JSON3.write(rec))
+        end
+    end
+    open(PREMISES_FILE, "w") do fh
+        for p in premises
+            println(fh, JSON3.write(p))
         end
     end
 

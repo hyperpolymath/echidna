@@ -25,6 +25,7 @@ const REPO_ROOT = dirname(dirname(abspath(@__FILE__)))
 const EXTERNAL_DIR = joinpath(REPO_ROOT, "external_corpora", "minizinc")
 const OUTPUT_DIR = joinpath(REPO_ROOT, "training_data")
 const OUTPUT_FILE = joinpath(OUTPUT_DIR, "proof_states_minizinc.jsonl")
+const PREMISES_FILE = joinpath(OUTPUT_DIR, "premises_minizinc.jsonl")
 const STATS_FILE = joinpath(OUTPUT_DIR, "stats_minizinc.json")
 const START_ID = 99000
 

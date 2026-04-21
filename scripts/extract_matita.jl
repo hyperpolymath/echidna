@@ -37,6 +37,13 @@ function run_extract()
             push!(ps, Dict{String,Any}("id"=>id, "prover"=>"matita",
                 "source_file"=>rel, "theorem"=>name, "goal"=>goal,
                 "kind"=>kind, "context"=>Any[]))
+            # Emit premises: Matita/Coq-style identifiers in goal type
+            for hm in eachmatch(r"\b([a-zA-Z_][a-zA-Z0-9_']{1,40})\b", goal)
+                h = strip(hm.captures[1])
+                !isempty(h) && length(h) < 50 && push!(pm, Dict{String,Any}(
+                    "proof_id"=>id, "premise"=>h,
+                    "prover"=>"matita", "theorem"=>name, "source"=>"matita"))
+            end
             id += 1
         end
         matches = try collect(eachmatch(let_pattern, c)) catch; Any[] end

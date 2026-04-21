@@ -56,6 +56,14 @@ function extract_boogie_programs()
     const_pattern = r"const\s+(?:unique\s+)?(?:\{:[^}]*\}\s*)*([a-zA-Z0-9_.]+)\s*:\s*([^;]+);"
     type_pattern = r"type\s+(?:\{:[^}]*\}\s*)*([a-zA-Z0-9_.]+)\s*(?:<[^>]*>\s*)?(?:=([^;]+))?;"
 
+    # Boogie premise patterns: requires/ensures/modifies + called procedure names
+    boogie_hyp_patterns = [
+        r"\brequires\s+([a-zA-Z][a-zA-Z0-9_.]*)\b",
+        r"\bensures\s+([a-zA-Z][a-zA-Z0-9_.]*)\b",
+        r"\binvariant\s+([a-zA-Z][a-zA-Z0-9_.]*)\b",
+        r"\bcall\s+([a-zA-Z][a-zA-Z0-9_.]*)\b",
+    ]
+
     for f in bpl_files
         content = try
             read(f, String)
@@ -78,6 +86,14 @@ function extract_boogie_programs()
                 "source_file" => rel,
                 "theorem" => name, "goal" => contract,
                 "context" => Any[]))
+            for hyp_pattern in boogie_hyp_patterns
+                for hm in eachmatch(hyp_pattern, contract)
+                    h = strip(hm.captures[1])
+                    !isempty(h) && length(h) < 50 && push!(premises, Dict{String,Any}(
+                        "proof_id"=>current_id, "premise"=>h,
+                        "prover"=>"Boogie", "theorem"=>name, "source"=>"boogie"))
+                end
+            end
             current_id += 1
         end
         matches = try

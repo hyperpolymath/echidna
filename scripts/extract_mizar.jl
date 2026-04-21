@@ -25,6 +25,7 @@ const REPO_ROOT = dirname(dirname(abspath(@__FILE__)))
 const EXTERNAL_DIR = joinpath(REPO_ROOT, "external_corpora", "mizar")
 const OUTPUT_DIR = joinpath(REPO_ROOT, "training_data")
 const OUTPUT_FILE = joinpath(OUTPUT_DIR, "proof_states_mizar.jsonl")
+const PREMISES_FILE = joinpath(OUTPUT_DIR, "premises_mizar.jsonl")
 const STATS_FILE = joinpath(OUTPUT_DIR, "stats_mizar.json")
 const START_ID = 94000
 
@@ -455,8 +456,17 @@ function run()::Tuple{Int,Int}
     end
     println("  Generated $(added) unique synthetic proofs")
 
+    # Mizar premise patterns: assume/let/consider/per cases keywords
+    mizar_hyp_patterns = [
+        r"\bassume\s+([A-Za-z][A-Za-z0-9_]*)\b",
+        r"\blet\s+([A-Za-z][A-Za-z0-9_]*)\b",
+        r"\bconsider\s+([A-Za-z][A-Za-z0-9_]*)\b",
+        r"\bset\s+([A-Za-z][A-Za-z0-9_]*)\s*=",
+    ]
+
     current_id = START_ID
     output_records = Dict{String,Any}[]
+    premises = Dict{String,Any}[]
     for entry in all_entries
         record = Dict{String,Any}(
             "id" => current_id,
@@ -468,12 +478,33 @@ function run()::Tuple{Int,Int}
             "source" => get(entry, "source", "mizar"),
         )
         push!(output_records, record)
+        proof_text = get(entry, "tactic_proof", "")
+        thm_name = entry["theorem"]
+        for hyp_pattern in mizar_hyp_patterns
+            for hyp_match in eachmatch(hyp_pattern, proof_text)
+                hyp = strip(hyp_match.captures[1])
+                if !isempty(hyp) && length(hyp) < 50
+                    push!(premises, Dict{String,Any}(
+                        "proof_id" => current_id,
+                        "premise" => String(hyp),
+                        "prover" => "Mizar",
+                        "theorem" => thm_name,
+                        "source" => get(entry, "source", "mizar"),
+                    ))
+                end
+            end
+        end
         current_id += 1
     end
 
     open(OUTPUT_FILE, "w") do fh
         for rec in output_records
             println(fh, JSON3.write(rec))
+        end
+    end
+    open(PREMISES_FILE, "w") do fh
+        for p in premises
+            println(fh, JSON3.write(p))
         end
     end
 

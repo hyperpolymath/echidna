@@ -60,6 +60,14 @@ function run_extract()
                 push!(ps, Dict{String,Any}("id"=>id, "prover"=>"arend",
                     "source_file"=>rel, "theorem"=>name,
                     "kind"=>kind, "goal"=>body, "context"=>Any[]))
+                # Emit premises: \\func/\\lemma names referenced in body
+                for hm in eachmatch(r"\b([A-Za-z][A-Za-z0-9_'-]{1,40})\b", body)
+                    h = strip(hm.captures[1])
+                    if !isempty(h) && length(h) < 50
+                        push!(pm, Dict{String,Any}("proof_id"=>id, "premise"=>h,
+                            "prover"=>"arend", "theorem"=>name, "source"=>"arend"))
+                    end
+                end
                 id += 1
             end
         end

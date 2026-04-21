@@ -36,6 +36,13 @@ function run_extract()
                 if !isempty(n)
                     push!(ps, Dict{String,Any}("id"=>id, "prover"=>"mercury",
                         "source_file"=>relpath(f, DIR), "theorem"=>n, "goal"=>g, "context"=>Any[]))
+                    # Emit premises: type names in predicate signature
+                    for hm in eachmatch(r"\b([a-zA-Z_][a-zA-Z0-9_]{1,40})\b", g)
+                        h = strip(hm.captures[1])
+                        !isempty(h) && length(h) < 50 && push!(pm, Dict{String,Any}(
+                            "proof_id"=>id, "premise"=>h,
+                            "prover"=>"mercury", "theorem"=>n, "source"=>"mercury"))
+                    end
                     id += 1
                 end
             end

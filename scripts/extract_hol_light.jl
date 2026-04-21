@@ -24,6 +24,7 @@ const REPO_ROOT = dirname(dirname(abspath(@__FILE__)))
 const EXTERNAL_DIR = joinpath(REPO_ROOT, "external_corpora", "hol_light")
 const OUTPUT_DIR = joinpath(REPO_ROOT, "training_data")
 const OUTPUT_FILE = joinpath(OUTPUT_DIR, "proof_states_hol_light.jsonl")
+const PREMISES_FILE = joinpath(OUTPUT_DIR, "premises_hol_light.jsonl")
 const STATS_FILE = joinpath(OUTPUT_DIR, "stats_hol_light.json")
 const START_ID = 90000
 
@@ -513,9 +514,18 @@ function run()::Tuple{Int,Int}
     end
     println("  Generated $(added) unique synthetic proofs")
 
+    # HOL Light premise patterns: REWRITE_TAC/MESON_TAC/ASSUME theorem names
+    hol_light_hyp_patterns = [
+        r"REWRITE_TAC\s*\[([A-Z_][A-Z0-9_\s,;]+)\]",
+        r"MESON_TAC\s*\[([A-Z_][A-Z0-9_\s,;]+)\]",
+        r"ASSUME\s+`([a-zA-Z][a-zA-Z0-9_']*)`",
+        r"\bASM_REWRITE_TAC\s*\[([A-Z_][A-Z0-9_\s,;]+)\]",
+    ]
+
     # Assign IDs and normalise schema
     current_id = START_ID
     output_records = Dict{String,Any}[]
+    premises = Dict{String,Any}[]
     for entry in all_entries
         record = Dict{String,Any}(
             "id" => current_id,
@@ -527,6 +537,24 @@ function run()::Tuple{Int,Int}
             "source" => get(entry, "source", "hol_light"),
         )
         push!(output_records, record)
+        proof_text = get(entry, "tactic_proof", "")
+        thm_name = entry["theorem"]
+        for hyp_pattern in hol_light_hyp_patterns
+            for hyp_match in eachmatch(hyp_pattern, proof_text)
+                hyps = [strip(h) for h in split(hyp_match.captures[1], r"[,;]")]
+                for hyp in hyps
+                    if !isempty(hyp) && length(hyp) < 50
+                        push!(premises, Dict{String,Any}(
+                            "proof_id" => current_id,
+                            "premise" => String(hyp),
+                            "prover" => "HOLLight",
+                            "theorem" => thm_name,
+                            "source" => get(entry, "source", "hol_light"),
+                        ))
+                    end
+                end
+            end
+        end
         current_id += 1
     end
 
@@ -534,6 +562,11 @@ function run()::Tuple{Int,Int}
     open(OUTPUT_FILE, "w") do fh
         for rec in output_records
             println(fh, JSON3.write(rec))
+        end
+    end
+    open(PREMISES_FILE, "w") do fh
+        for p in premises
+            println(fh, JSON3.write(p))
         end
     end
 
