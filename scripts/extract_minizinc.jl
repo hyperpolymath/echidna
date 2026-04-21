@@ -709,9 +709,13 @@ function run()::Tuple{Int,Int}
     # (model, solver) pair — 5× the per-solver coverage without any
     # new data. Synthetic entries retain their specific `solver`
     # assignment so sub-family statistics stay accurate.
+    # MiniZinc premise patterns: constraint/variable identifiers
+    mzn_hyp_pat = r"\b([a-zA-Z_][a-zA-Z0-9_]{1,40})\b"
+
     solvers_cycle = ["MiniZinc", "Chuffed", "ORTools", "SCIP", "GLPK"]
     current_id = START_ID
     output_records = Dict{String,Any}[]
+    premises_out = Dict{String,Any}[]
 
     for entry in all_entries
         if haskey(entry, "solver")
@@ -749,9 +753,27 @@ function run()::Tuple{Int,Int}
         end
     end
 
+    # Emit premises: constraint/variable names per record
+    for rec in output_records
+        goal_text = get(rec, "goal", "")
+        thm_name = get(rec, "theorem", "")
+        for hm in eachmatch(mzn_hyp_pat, goal_text)
+            h = strip(hm.captures[1])
+            !isempty(h) && length(h) < 50 && push!(premises_out, Dict{String,Any}(
+                "proof_id"=>rec["id"], "premise"=>h,
+                "prover"=>get(rec, "prover", "MiniZinc"),
+                "theorem"=>thm_name, "source"=>"minizinc"))
+        end
+    end
+
     open(OUTPUT_FILE, "w") do fh
         for rec in output_records
             println(fh, JSON3.write(rec))
+        end
+    end
+    open(PREMISES_FILE, "w") do fh
+        for p in premises_out
+            println(fh, JSON3.write(p))
         end
     end
 
