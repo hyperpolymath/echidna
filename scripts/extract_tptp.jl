@@ -11,7 +11,7 @@
 #         training_data/tactics_tptp.a2ml
 #         training_data/stats_tptp.a2ml
 
-using Dates
+using Dates, JSON3
 include("a2ml_emit.jl")
 using .A2MLEmit
 
@@ -162,6 +162,7 @@ function extract_all(base_dir::String)
 
     proof_states = Dict{String, Any}[]
     tactics = Dict{String, Any}[]
+    premises = Dict{String, Any}[]
     prover_counts = Dict(p => 0 for p in PROVERS)
     skipped = 0
     errors = 0
@@ -222,6 +223,14 @@ function extract_all(base_dir::String)
                 "from_negated" => get(parsed, "from_negated", false),
             )
             push!(proof_states, state)
+            # Emit premises: TPTP identifiers from conjecture
+            conj = parsed["conjecture"]
+            for hm in eachmatch(r"\b([a-zA-Z_][a-zA-Z0-9_]{1,40})\b", conj)
+                h = strip(hm.captures[1])
+                !isempty(h) && length(h) < 50 && push!(premises, Dict{String,Any}(
+                    "proof_id"=>record_id, "premise"=>h,
+                    "prover"=>prover, "theorem"=>parsed["name"], "source"=>"tptp"))
+            end
             prover_counts[prover] += 1
 
             tactic = Dict{String, Any}(
@@ -255,15 +264,15 @@ function extract_all(base_dir::String)
         "id_range" => id_range,
     )
 
-    return proof_states, tactics, stats
+    return proof_states, tactics, premises, stats
 end
 
 """
-    save_results(proof_states, tactics, stats; output_dir="training_data")
+    save_results(proof_states, tactics, premises, stats; output_dir="training_data")
 
 Write extraction results to JSONL / JSON files.
 """
-function save_results(proof_states, tactics, stats; output_dir::String="training_data")
+function save_results(proof_states, tactics, premises, stats; output_dir::String="training_data")
     mkpath(output_dir)
 
     write_records_file(
@@ -286,8 +295,13 @@ function save_results(proof_states, tactics, stats; output_dir::String="training
         A2MLEmit.write_metadata_table(fh, stats)
     end
 
+    open(joinpath(output_dir, "premises_tptp.jsonl"), "w") do fh
+        for p in premises; println(fh, JSON3.write(p)); end
+    end
+
     println("\nSaved $(length(proof_states)) proof states -> $output_dir/proof_states_tptp.a2ml")
     println("Saved $(length(tactics)) tactics        -> $output_dir/tactics_tptp.a2ml")
+    println("Saved $(length(premises)) premises       -> $output_dir/premises_tptp.jsonl")
     println("Saved stats                        -> $output_dir/stats_tptp.a2ml")
 end
 
@@ -308,14 +322,14 @@ function main()::Int
         return 1
     end
 
-    proof_states, tactics, stats = extract_all(base_dir)
+    proof_states, tactics, premises, stats = extract_all(base_dir)
 
     if isempty(proof_states)
         println("\nWARNING: No proof states extracted. Check corpus contents.")
         return 1
     end
 
-    save_results(proof_states, tactics, stats)
+    save_results(proof_states, tactics, premises, stats)
 
     println("\nProver distribution:")
     for (prover, count) in stats["prover_distribution"]

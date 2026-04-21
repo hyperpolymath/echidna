@@ -40,6 +40,13 @@ function run_extract()
                 "source_file"=>rel,
                 "theorem"=>"$(kind)_$(id)", "goal"=>body,
                 "annotation_kind"=>kind, "context"=>Any[]))
+            # Emit premises: C identifiers from assertion body
+            for hm in eachmatch(r"\b([a-zA-Z_][a-zA-Z0-9_]{1,40})\b", body)
+                h = strip(hm.captures[1])
+                !isempty(h) && length(h) < 50 && push!(pm, Dict{String,Any}(
+                    "proof_id"=>id, "premise"=>h,
+                    "prover"=>"SeaHorn", "theorem"=>"$(kind)_$(id)", "source"=>"seahorn"))
+            end
             id += 1
         end
     end

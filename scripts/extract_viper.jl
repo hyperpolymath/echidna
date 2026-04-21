@@ -21,6 +21,13 @@ function run_extract()
                 spec = m.captures[2] === nothing ? "" : strip(m.captures[2])
                 push!(ps, Dict{String,Any}("id"=>id, "prover"=>"Viper",
                     "source_file"=>relpath(f, DIR), "theorem"=>n, "goal"=>spec, "context"=>Any[]))
+                # Emit premises: identifiers from method spec (requires/ensures)
+                for hm in eachmatch(r"\b([a-zA-Z_][a-zA-Z0-9_]{1,40})\b", spec)
+                    h = strip(hm.captures[1])
+                    !isempty(h) && length(h) < 50 && push!(pm, Dict{String,Any}(
+                        "proof_id"=>id, "premise"=>h,
+                        "prover"=>"Viper", "theorem"=>n, "source"=>"viper"))
+                end
                 id += 1
             end
         catch e; println("Warning: $f: $e"); end

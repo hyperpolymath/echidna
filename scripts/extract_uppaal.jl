@@ -21,6 +21,13 @@ function run_extract()
                     "source_file"=>relpath(f, DIR),
                     "theorem"=>"tctl_$(id)", "goal"=>strip(m.match),
                     "context"=>Any[]))
+                # Emit premises: identifiers from TCTL query
+                for hm in eachmatch(r"\b([A-Za-z_][A-Za-z0-9_]{1,40})\b", m.match)
+                    h = strip(hm.captures[1])
+                    !isempty(h) && length(h) < 50 && push!(pm, Dict{String,Any}(
+                        "proof_id"=>id, "premise"=>h,
+                        "prover"=>"UPPAAL", "theorem"=>"tctl_$(id)", "source"=>"uppaal"))
+                end
                 id += 1
             end
         catch e; println("Warning: $f: $e"); end

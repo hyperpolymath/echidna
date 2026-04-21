@@ -43,6 +43,14 @@ function run_extract()
                 "goal"=>"$(splitext(f)[2][2:end])_circuit size=$(sz)",
                 "kind"=>splitext(f)[2][2:end],
                 "context"=>Any[]))
+            # Emit premises: identifiers from circuit filename stem
+            stem = splitext(basename(f))[1]
+            for hm in eachmatch(r"\b([a-zA-Z_][a-zA-Z0-9_]{1,40})\b", stem)
+                h = strip(hm.captures[1])
+                !isempty(h) && length(h) < 50 && push!(pm, Dict{String,Any}(
+                    "proof_id"=>id, "premise"=>h,
+                    "prover"=>"ABC", "theorem"=>basename(f), "source"=>"abc"))
+            end
             id += 1
         catch e; println("Warning: $f: $e"); end
     end

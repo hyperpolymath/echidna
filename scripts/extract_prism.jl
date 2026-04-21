@@ -48,6 +48,13 @@ function run_extract()
                 "theorem"=>"prob_$(id)", "goal"=>goal,
                 "kind"=>"property", "operator"=>String(m.captures[1]),
                 "context"=>Any[]))
+            # Emit premises: identifiers from property formula
+            for hm in eachmatch(r"\b([A-Za-z_][A-Za-z0-9_]{1,40})\b", goal)
+                h = strip(hm.captures[1])
+                !isempty(h) && length(h) < 50 && push!(pm, Dict{String,Any}(
+                    "proof_id"=>id, "premise"=>h,
+                    "prover"=>"Prism", "theorem"=>"prob_$(id)", "source"=>"prism"))
+            end
             id += 1
         end
         for (pat, kind) in ((named_prop_pat, "named_property"),
@@ -65,6 +72,13 @@ function run_extract()
                     "source_file"=>rel,
                     "theorem"=>name, "goal"=>goal, "kind"=>kind,
                     "context"=>Any[]))
+                # Emit premises: identifiers from module/formula body
+                for hm in eachmatch(r"\b([A-Za-z_][A-Za-z0-9_]{1,40})\b", goal)
+                    h = strip(hm.captures[1])
+                    !isempty(h) && length(h) < 50 && push!(pm, Dict{String,Any}(
+                        "proof_id"=>id, "premise"=>h,
+                        "prover"=>"Prism", "theorem"=>name, "source"=>"prism"))
+                end
                 id += 1
             end
         end

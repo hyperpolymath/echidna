@@ -48,6 +48,13 @@ function extract_acl2s_proofs()
                         "theorem" => name, "goal" => statement,
                         "context" => Any[],
                     ))
+                    # Emit premises: ACL2s identifiers from theorem statement
+                    for hm in eachmatch(r"\b([a-zA-Z][a-zA-Z0-9_\-]{1,40})\b", statement)
+                        h = strip(hm.captures[1])
+                        !isempty(h) && length(h) < 50 && push!(premises, Dict{String,Any}(
+                            "proof_id"=>current_id, "premise"=>h,
+                            "prover"=>"ACL2s", "theorem"=>name, "source"=>"acl2s"))
+                    end
                     current_id += 1
                 end
             end

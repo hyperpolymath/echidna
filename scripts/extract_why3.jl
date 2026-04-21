@@ -24,6 +24,7 @@ const REPO_ROOT = dirname(dirname(abspath(@__FILE__)))
 const EXTERNAL_DIR = joinpath(REPO_ROOT, "external_corpora", "why3")
 const OUTPUT_DIR = joinpath(REPO_ROOT, "training_data")
 const OUTPUT_FILE = joinpath(OUTPUT_DIR, "proof_states_why3.jsonl")
+const PREMISES_FILE = joinpath(OUTPUT_DIR, "premises_why3.jsonl")
 const STATS_FILE = joinpath(OUTPUT_DIR, "stats_why3.json")
 const START_ID = 95000
 
@@ -373,6 +374,7 @@ function run()::Tuple{Int,Int}
 
     current_id = START_ID
     output_records = Dict{String,Any}[]
+    premises_records = Dict{String,Any}[]
     for entry in all_entries
         record = Dict{String,Any}(
             "id" => current_id,
@@ -384,6 +386,14 @@ function run()::Tuple{Int,Int}
             "source" => get(entry, "source", "why3"),
         )
         push!(output_records, record)
+        # Emit premises: Why3 identifiers from goal body
+        goal_text = entry["goal"]
+        for hm in eachmatch(r"\b([a-zA-Z_][a-zA-Z0-9_']{1,40})\b", goal_text)
+            h = strip(hm.captures[1])
+            !isempty(h) && length(h) < 50 && push!(premises_records, Dict{String,Any}(
+                "proof_id"=>current_id, "premise"=>h,
+                "prover"=>"Why3", "theorem"=>entry["theorem"], "source"=>"why3"))
+        end
         current_id += 1
     end
 
@@ -393,9 +403,16 @@ function run()::Tuple{Int,Int}
         end
     end
 
+    open(PREMISES_FILE, "w") do fh
+        for p in premises_records
+            println(fh, JSON3.write(p))
+        end
+    end
+
     stats = Dict{String,Any}(
         "prover" => "Why3",
         "total_proofs" => length(output_records),
+        "premises_count" => length(premises_records),
         "extracted_from_source" => extracted_count,
         "synthetic_added" => length(output_records) - extracted_count,
         "id_range" => [START_ID, current_id - 1],

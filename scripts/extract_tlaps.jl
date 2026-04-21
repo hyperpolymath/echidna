@@ -45,6 +45,13 @@ function run_extract()
                 push!(ps, Dict{String,Any}("id"=>id, "prover"=>"TLAPS",
                     "source_file"=>rel, "theorem"=>name,
                     "goal"=>body, "kind"=>kind, "context"=>Any[]))
+                # Emit premises: TLA+ identifiers from theorem body
+                for hm in eachmatch(r"\b([A-Za-z_][A-Za-z0-9_]{1,40})\b", body)
+                    h = strip(hm.captures[1])
+                    !isempty(h) && length(h) < 50 && push!(pm, Dict{String,Any}(
+                        "proof_id"=>id, "premise"=>h,
+                        "prover"=>"TLAPS", "theorem"=>name, "source"=>"tlaps"))
+                end
                 id += 1
             end
         end
@@ -64,6 +71,13 @@ function run_extract()
                         "source_file"=>rel, "theorem"=>name,
                         "goal"=>body, "kind"=>"definition",
                         "context"=>Any[]))
+                    # Emit premises: TLA+ identifiers from definition body
+                    for hm in eachmatch(r"\b([A-Za-z_][A-Za-z0-9_]{1,40})\b", body)
+                        h = strip(hm.captures[1])
+                        !isempty(h) && length(h) < 50 && push!(pm, Dict{String,Any}(
+                            "proof_id"=>id, "premise"=>h,
+                            "prover"=>"TLAPS", "theorem"=>name, "source"=>"tlaps"))
+                    end
                     id += 1
                 end
             end
