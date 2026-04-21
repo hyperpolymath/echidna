@@ -34,11 +34,19 @@ function run_extract()
         for m in matches
             body = first(strip(m.captures[2]), 800)
             isempty(body) && continue
+            thm_name = "$(m.captures[1])_$(id)"
             push!(ps, Dict{String,Any}("id"=>id, "prover"=>"FramaC",
                 "source_file"=>rel,
-                "theorem"=>"$(m.captures[1])_$(id)", "goal"=>body,
+                "theorem"=>thm_name, "goal"=>body,
                 "annotation_kind"=>strip(replace(m.captures[1], r"\s+"=>"_")),
                 "context"=>Any[]))
+            # Emit premises: C identifiers in ACSL clause body
+            for hm in eachmatch(r"\b([a-zA-Z_][a-zA-Z0-9_]{1,40})\b", body)
+                h = strip(hm.captures[1])
+                !isempty(h) && length(h) < 50 && push!(pm, Dict{String,Any}(
+                    "proof_id"=>id, "premise"=>h,
+                    "prover"=>"FramaC", "theorem"=>thm_name, "source"=>"framac"))
+            end
             id += 1
         end
         matches = try

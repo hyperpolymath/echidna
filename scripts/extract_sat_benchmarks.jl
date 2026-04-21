@@ -38,6 +38,14 @@ function collect_for(prover::String, start_id::Int)
                 "theorem"=>basename(f),
                 "goal"=>"cnf vars=$nvar clauses=$nclause",
                 "context"=>Any[]))
+            # Emit premises: identifiers from benchmark filename stem
+            stem = splitext(basename(f))[1]
+            for hm in eachmatch(r"\b([a-zA-Z][a-zA-Z0-9_]{1,40})\b", stem)
+                h = strip(hm.captures[1])
+                !isempty(h) && length(h) < 50 && push!(pm, Dict{String,Any}(
+                    "proof_id"=>id, "premise"=>h,
+                    "prover"=>prover, "theorem"=>basename(f), "source"=>"sat_benchmarks"))
+            end
             id += 1
         catch e; println("Warning: $f: $e"); end
     end

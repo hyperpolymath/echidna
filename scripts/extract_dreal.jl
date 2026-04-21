@@ -21,6 +21,13 @@ function run_extract()
                     "source_file"=>relpath(f, DIR),
                     "theorem"=>"dreal_$(id)", "goal"=>strip(m.captures[1]),
                     "context"=>Any[]))
+                # Emit premises: SMT-LIB identifiers from assertion body
+                for hm in eachmatch(r"\b([a-zA-Z_][a-zA-Z0-9_]{1,40})\b", m.captures[1])
+                    h = strip(hm.captures[1])
+                    !isempty(h) && length(h) < 50 && push!(pm, Dict{String,Any}(
+                        "proof_id"=>id, "premise"=>h,
+                        "prover"=>"DReal", "theorem"=>"dreal_$(id)", "source"=>"dreal"))
+                end
                 id += 1
             end
         catch e; println("Warning: $f: $e"); end

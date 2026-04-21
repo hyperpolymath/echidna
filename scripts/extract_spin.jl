@@ -41,6 +41,13 @@ function run_extract()
                 push!(ps, Dict{String,Any}("id"=>id, "prover"=>"SPIN",
                     "source_file"=>rel, "theorem"=>name,
                     "goal"=>goal, "kind"=>kind, "context"=>Any[]))
+                # Emit premises: identifiers from LTL/inline/mtype/define body
+                for hm in eachmatch(r"\b([A-Za-z_][A-Za-z0-9_]{1,40})\b", goal)
+                    h = strip(hm.captures[1])
+                    !isempty(h) && length(h) < 50 && push!(pm, Dict{String,Any}(
+                        "proof_id"=>id, "premise"=>h,
+                        "prover"=>"SPIN", "theorem"=>name, "source"=>"spin"))
+                end
                 id += 1
             end
         end

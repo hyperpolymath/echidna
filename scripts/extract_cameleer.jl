@@ -49,6 +49,9 @@ function extract_cameleer_proofs()
     type_pat = r"type\s+([a-zA-Z0-9_']+)\s+(?:[^=]*?=\s*([^(]+?))?\s*(?:\(\*@\s*(.*?)\s*\*\))"s
     standalone_pat = r"\(\*@\s*(requires|ensures|modifies|consumes|invariant|variant|raises|diverges|equivalent)\s+(.+?)\s*\*\)"s
 
+    # Cameleer/GOSPEL premise patterns: requires/ensures identifiers
+    cameleer_hyp_pat = r"\b(requires|ensures|modifies|invariant|variant)\s+([a-zA-Z][a-zA-Z0-9_']*)\b"
+
     for f in src_files
         content = try
             read(f, String)
@@ -66,6 +69,12 @@ function extract_cameleer_proofs()
                 "source_file" => rel,
                 "theorem" => name, "goal" => spec,
                 "kind" => "let_spec", "context" => Any[]))
+            for hm in eachmatch(cameleer_hyp_pat, spec)
+                h = strip(hm.captures[2])
+                !isempty(h) && length(h) < 50 && push!(premises, Dict{String,Any}(
+                    "proof_id"=>current_id, "premise"=>h,
+                    "prover"=>"Cameleer", "theorem"=>name, "source"=>"cameleer"))
+            end
             current_id += 1
         end
         for (pat, kind) in ((val_pat, "val"), (type_pat, "type"))

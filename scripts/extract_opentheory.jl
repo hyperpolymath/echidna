@@ -29,6 +29,7 @@ const OT_ROOT = joinpath(REPO_ROOT, "external_corpora", "opentheory")
 const OT_THEORIES = joinpath(OT_ROOT, "data", "theories")
 const OUTPUT_DIR = joinpath(REPO_ROOT, "training_data")
 const OUTPUT_FILE = joinpath(OUTPUT_DIR, "proof_states_opentheory.jsonl")
+const PREMISES_FILE = joinpath(OUTPUT_DIR, "premises_opentheory.jsonl")
 const STATS_FILE = joinpath(OUTPUT_DIR, "stats_opentheory.json")
 const START_ID = 2_500_000
 
@@ -190,6 +191,7 @@ function save_results(packages::Vector, theorems::Vector)
     # aligned HOL-family provers listed — downstream VeriSim will
     # materialise per-prover alignment edges from this.
     current_id = START_ID
+    premises_records = Dict{String,Any}[]
     open(OUTPUT_FILE, "w") do fh
         for pkg in packages
             name = get(pkg, "name", "unknown")
@@ -206,6 +208,13 @@ function save_results(packages::Vector, theorems::Vector)
                 "source" => get(pkg, "__path", "opentheory/unknown.thy"),
             )
             println(fh, JSON3.write(rec))
+            # Emit premises: dotted name components from package name
+            for part in split(name, '.')
+                h = strip(part)
+                !isempty(h) && length(h) < 50 && push!(premises_records, Dict{String,Any}(
+                    "proof_id"=>current_id, "premise"=>h,
+                    "prover"=>"OpenTheory", "theorem"=>name, "source"=>"opentheory"))
+            end
             current_id += 1
         end
         for thm in theorems
@@ -222,8 +231,20 @@ function save_results(packages::Vector, theorems::Vector)
                 "source" => thm["source"],
             )
             println(fh, JSON3.write(rec))
+            # Emit premises: identifiers from theorem name and goal hint
+            for text in (thm["theorem"], thm["goal"])
+                for hm in eachmatch(r"\b([A-Za-z][A-Za-z0-9_'.]{1,40})\b", text)
+                    h = strip(hm.captures[1])
+                    !isempty(h) && length(h) < 50 && push!(premises_records, Dict{String,Any}(
+                        "proof_id"=>current_id, "premise"=>h,
+                        "prover"=>"OpenTheory", "theorem"=>thm["theorem"], "source"=>"opentheory"))
+                end
+            end
             current_id += 1
         end
+    end
+    open(PREMISES_FILE, "w") do fh
+        for p in premises_records; println(fh, JSON3.write(p)); end
     end
 
     stats = Dict{String,Any}(

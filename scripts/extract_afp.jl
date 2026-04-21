@@ -40,6 +40,7 @@ const REPO_ROOT        = dirname(dirname(abspath(@__FILE__)))
 const AFP_ROOT         = joinpath(REPO_ROOT, "external_corpora", "afp", "thys")
 const OUTPUT_DIR       = joinpath(REPO_ROOT, "training_data")
 const OUTPUT_FILE      = joinpath(OUTPUT_DIR, "proof_states_afp.jsonl")
+const PREMISES_FILE    = joinpath(OUTPUT_DIR, "premises_afp.jsonl")
 const STATS_FILE       = joinpath(OUTPUT_DIR, "stats_afp.json")
 const START_ID         = 220000
 const MAX_PER_ARTICLE  = 200  # target ~100K+ (893 articles, raw pool 217 593)
@@ -302,8 +303,17 @@ function main()
     println("After per-article cap:    $(length(all_recs))  (cap=$MAX_PER_ARTICLE)")
     println("Articles represented:     $(length(per_article))")
 
+    # Isabelle premise patterns: assume/fix/obtain/case keywords
+    isabelle_hyp_patterns = [
+        r"assume\s+\"([a-zA-Z0-9_\s]+)\"",
+        r"\bfix\s+([a-zA-Z0-9_\s]+)",
+        r"obtain\s+([a-zA-Z0-9_\s]+)\s+where",
+        r"\bcase\s+([a-zA-Z0-9_]+)",
+    ]
+
     mkpath(OUTPUT_DIR)
     nid = START_ID
+    premises_out = Dict{String,Any}[]
     open(OUTPUT_FILE, "w") do fh
         for rec in all_recs
             delete!(rec, "_article")
@@ -311,9 +321,34 @@ function main()
             rec["prover"] = "Isabelle"
             JSON3.write(fh, rec)
             println(fh)
+            # Emit premise records from tactic_proof text
+            proof_text = get(rec, "tactic_proof", "")
+            thm_name = get(rec, "theorem", "")
+            for hyp_pattern in isabelle_hyp_patterns
+                for hyp_match in eachmatch(hyp_pattern, proof_text)
+                    hyps = [strip(h) for h in split(hyp_match.captures[1], ',')]
+                    for hyp in hyps
+                        if !isempty(hyp) && length(hyp) < 50
+                            push!(premises_out, Dict{String,Any}(
+                                "proof_id" => nid,
+                                "premise" => String(hyp),
+                                "prover" => "Isabelle",
+                                "theorem" => thm_name,
+                                "source" => "afp",
+                            ))
+                        end
+                    end
+                end
+            end
             nid += 1
         end
     end
+    open(PREMISES_FILE, "w") do fh
+        for p in premises_out
+            JSON3.write(fh, p); println(fh)
+        end
+    end
+    println("Wrote $(length(premises_out)) premise records to $PREMISES_FILE")
     total = nid - START_ID
     println("Wrote $total records to $OUTPUT_FILE")
 

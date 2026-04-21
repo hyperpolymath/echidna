@@ -23,6 +23,7 @@ using JSON3
 const REPO_ROOT = dirname(dirname(abspath(@__FILE__)))
 const TRAINING_DIR = joinpath(REPO_ROOT, "training_data")
 const OUTPUT_FILE = joinpath(TRAINING_DIR, "proof_states_typechecker_ecosystem.jsonl")
+const PREMISES_FILE = joinpath(TRAINING_DIR, "premises_typechecker_ecosystem.jsonl")
 const STATS_FILE = joinpath(TRAINING_DIR, "stats_typechecker_ecosystem.json")
 const START_ID = 320000
 const TARGET_PER_TOOL = 220
@@ -368,10 +369,12 @@ function write_output(entries::Vector{Entry})::Dict{String,Int}
     prover_counts = Dict{String,Int}()
 
     mkpath(TRAINING_DIR)
+    premises_records = Dict{String,Any}[]
     open(OUTPUT_FILE, "w") do fh
         for (idx, e) in enumerate(entries)
+            record_id = START_ID + idx - 1
             record = Dict{String,Any}(
-                "id" => START_ID + idx - 1,
+                "id" => record_id,
                 "prover" => e.prover,
                 "theorem" => e.theorem,
                 "goal" => e.goal,
@@ -380,8 +383,18 @@ function write_output(entries::Vector{Entry})::Dict{String,Int}
                 "source" => e.source,
             )
             println(fh, JSON3.write(record))
+            # Emit premises: identifiers from typechecker goal snippet
+            for hm in eachmatch(r"\b([a-zA-Z][a-zA-Z0-9_\-]{1,40})\b", e.goal)
+                h = strip(hm.captures[1])
+                !isempty(h) && length(h) < 50 && push!(premises_records, Dict{String,Any}(
+                    "proof_id"=>record_id, "premise"=>h,
+                    "prover"=>e.prover, "theorem"=>e.theorem, "source"=>"typechecker_ecosystem"))
+            end
             prover_counts[e.prover] = get(prover_counts, e.prover, 0) + 1
         end
+    end
+    open(PREMISES_FILE, "w") do fh
+        for p in premises_records; println(fh, JSON3.write(p)); end
     end
     return prover_counts
 end

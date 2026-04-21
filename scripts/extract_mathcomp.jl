@@ -11,7 +11,7 @@
 #         training_data/tactics_mathcomp.a2ml
 #         training_data/stats_mathcomp.a2ml
 
-using Dates
+using Dates, JSON3
 include("a2ml_emit.jl")
 using .A2MLEmit
 
@@ -69,8 +69,18 @@ function extract_all(base_dir::String)
 
     proof_states = Dict{String,Any}[]
     tactics = Dict{String,Any}[]
+    premises = Dict{String,Any}[]
     skipped_noproof = 0
     errors = 0
+
+    # Coq/ssreflect premise patterns: intro/apply/have/pose/specialize
+    coq_hyp_patterns = [
+        r"\bintro\s+([a-zA-Z0-9_']+)",
+        r"\bintros\s+([a-zA-Z0-9_'\s]+)",
+        r"\bhave\s+([a-zA-Z0-9_']+)\s*:",
+        r"\bpose\s+([a-zA-Z0-9_']+)\s*:=",
+        r"\bspecialize\s+\(?([a-zA-Z0-9_']+)\b",
+    ]
 
     for (idx, fpath) in enumerate(files)
         content = try
@@ -138,6 +148,25 @@ function extract_all(base_dir::String)
                 "proof_steps" => length(steps),
             ))
 
+            # Emit premise records from proof body
+            proof_body_text = String(proof_body)
+            for hyp_pattern in coq_hyp_patterns
+                for hyp_match in eachmatch(hyp_pattern, proof_body_text)
+                    hyps = [strip(h) for h in split(hyp_match.captures[1], ' ')]
+                    for hyp in hyps
+                        if !isempty(hyp) && length(hyp) < 50
+                            push!(premises, Dict{String,Any}(
+                                "proof_id" => record_id,
+                                "premise" => String(hyp),
+                                "prover" => PROVER,
+                                "theorem" => theorem,
+                                "source" => "mathcomp",
+                            ))
+                        end
+                    end
+                end
+            end
+
             for (step_idx, tac) in enumerate(steps)
                 push!(tactics, Dict{String,Any}(
                     "proof_id" => record_id,
@@ -158,15 +187,16 @@ function extract_all(base_dir::String)
         "total_files_scanned" => length(files),
         "total_proofs" => length(proof_states),
         "total_tactics" => length(tactics),
+        "total_premises" => length(premises),
         "skipped_no_proof" => skipped_noproof,
         "read_errors" => errors,
         "source" => "Mathematical Components (math-comp/math-comp)",
         "id_range" => id_range,
     )
-    return proof_states, tactics, stats
+    return proof_states, tactics, premises, stats
 end
 
-function save_results(proof_states, tactics, stats; output_dir="training_data")
+function save_results(proof_states, tactics, premises, stats; output_dir="training_data")
     mkpath(output_dir)
     write_records_file(
         joinpath(output_dir, "proof_states_mathcomp.a2ml"),
@@ -176,12 +206,17 @@ function save_results(proof_states, tactics, stats; output_dir="training_data")
         joinpath(output_dir, "tactics_mathcomp.a2ml"),
         stats, tactics, "tactic";
         header="mathcomp tactic records (ssreflect tactics per step)")
+    open(joinpath(output_dir, "premises_mathcomp.jsonl"), "w") do fh
+        for p in premises
+            JSON3.write(fh, p); println(fh)
+        end
+    end
     open(joinpath(output_dir, "stats_mathcomp.a2ml"), "w") do fh
         println(fh, "# SPDX-License-Identifier: PMPL-1.0-or-later")
         println(fh, "# mathcomp extraction statistics"); println(fh)
         A2MLEmit.write_metadata_table(fh, stats)
     end
-    println("\nSaved $(length(proof_states)) proof states, $(length(tactics)) tactics -> $output_dir/*_mathcomp.a2ml")
+    println("\nSaved $(length(proof_states)) proof states, $(length(tactics)) tactics, $(length(premises)) premises -> $output_dir/*_mathcomp.*")
 end
 
 function main()::Int
@@ -207,22 +242,25 @@ function main()::Int
     # Override extract_all to scan every root.
     proof_states = Dict{String,Any}[]
     tactics = Dict{String,Any}[]
+    premises = Dict{String,Any}[]
     stats = Dict{String,Any}()
     for root in roots
-        ps, ts, st = extract_all(root)
+        ps, ts, pm, st = extract_all(root)
         append!(proof_states, ps)
         append!(tactics, ts)
+        append!(premises, pm)
         stats = st  # keep last
     end
     stats["total_proofs"] = length(proof_states)
     stats["total_tactics"] = length(tactics)
+    stats["total_premises"] = length(premises)
     stats["id_range"] = isempty(proof_states) ? "none" :
         "$(ID_BASE)-$(ID_BASE + length(proof_states) - 1)"
     if isempty(proof_states)
         println("\nWARNING: No proof states extracted.")
         return 1
     end
-    save_results(proof_states, tactics, stats)
+    save_results(proof_states, tactics, premises, stats)
     println("\nTotal: $(stats["total_proofs"]) proofs / $(stats["total_tactics"]) tactics (IDs $(stats["id_range"]))")
     return 0
 end

@@ -74,6 +74,13 @@ function run_extract()
                 "source_file"=>rel, "theorem"=>theorem,
                 "goal"=>first(lemma_body, 600),
                 "opts"=>opts, "kind"=>kind, "context"=>Any[]))
+            # Emit premises: Isabelle identifiers from lemma body
+            for hm in eachmatch(r"\b([A-Za-z][A-Za-z0-9_']{1,40})\b", lemma_body)
+                h = strip(hm.captures[1])
+                !isempty(h) && length(h) < 50 && push!(pm, Dict{String,Any}(
+                    "proof_id"=>id, "premise"=>h,
+                    "prover"=>"nitpick", "theorem"=>theorem, "source"=>"nitpick"))
+            end
             id += 1
         end
     end

@@ -69,6 +69,14 @@ function run_extract()
                 push!(ps, Dict{String,Any}("id"=>id, "prover"=>"athena",
                     "source_file"=>rel, "theorem"=>name, "goal"=>body,
                     "kind"=>kind, "context"=>Any[]))
+                # Emit premises: Athena define/assert identifiers in body
+                for hm in eachmatch(r"\b([A-Za-z][A-Za-z0-9_'-]{1,40})\b", body)
+                    h = strip(hm.captures[1])
+                    if !isempty(h) && length(h) < 50
+                        push!(pm, Dict{String,Any}("proof_id"=>id, "premise"=>h,
+                            "prover"=>"athena", "theorem"=>name, "source"=>"athena"))
+                    end
+                end
                 id += 1
             end
         end

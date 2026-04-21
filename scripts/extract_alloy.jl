@@ -50,6 +50,14 @@ function run_extract()
                     "source_file"=>rel,
                     "theorem"=>name, "goal"=>goal,
                     "kind"=>kind, "context"=>Any[]))
+                # Emit premises: Alloy pred/sig names referenced in body
+                for hm in eachmatch(r"\b([A-Za-z][A-Za-z0-9_]+)\b", goal)
+                    h = strip(hm.captures[1])
+                    if !isempty(h) && length(h) < 50
+                        push!(pm, Dict{String,Any}("proof_id"=>id, "premise"=>h,
+                            "prover"=>"Alloy", "theorem"=>name, "source"=>"alloy"))
+                    end
+                end
                 id += 1
             end
         end

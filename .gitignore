@@ -193,3 +193,6 @@ deps/
 .cache/
 build/
 dist/
+
+# Subagent worktrees (isolation mode)
+.claude/worktrees/

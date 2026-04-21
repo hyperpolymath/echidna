@@ -98,6 +98,32 @@ function extract_mathlib4_proofs()
                             end
                         end
 
+                        # Extract premises/hypotheses from proof body
+                        hyp_patterns = [
+                            r"intro\s+([a-zA-Z0-9_\s]+)",
+                            r"intros\s+([a-zA-Z0-9_\s]+)",
+                            r"⟨([a-zA-Z0-9_\s,]+)⟩",
+                            r"let\s+([a-zA-Z0-9_]+)\s*:=",
+                            r"have\s+([a-zA-Z0-9_]+)\s*:=",
+                        ]
+                        proof_text = !isnothing(by_match) ? strip(by_match.captures[1]) : ""
+                        for hyp_pattern in hyp_patterns
+                            for hyp_match in eachmatch(Regex(hyp_pattern), proof_text)
+                                hyps = [strip(h) for h in split(hyp_match.captures[1], ',')]
+                                for hyp in hyps
+                                    if !isempty(hyp) && length(hyp) < 50
+                                        push!(premises, Dict{String,Any}(
+                                            "proof_id" => current_id,
+                                            "premise" => String(hyp),
+                                            "prover" => "Lean",
+                                            "theorem" => name,
+                                            "source" => "mathlib4",
+                                        ))
+                                    end
+                                end
+                            end
+                        end
+
                         current_id += 1
                     end
                 end

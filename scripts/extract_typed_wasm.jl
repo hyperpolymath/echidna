@@ -154,6 +154,14 @@ function run_extract()
             rec["id"] = id
             rec["prover"] = "TypedWasm"
             push!(ps, rec)
+            # Emit premises: Rust identifiers from proptest goal/args
+            goal_text = get(rec, "goal", "")
+            for hm in eachmatch(r"\b([a-zA-Z_][a-zA-Z0-9_]{1,40})\b", goal_text)
+                h = strip(hm.captures[1])
+                !isempty(h) && length(h) < 50 && push!(pm, Dict{String,Any}(
+                    "proof_id"=>id, "premise"=>h,
+                    "prover"=>"TypedWasm", "theorem"=>rec["theorem"], "source"=>"typed_wasm"))
+            end
             id += 1
             real_count += 1
         end

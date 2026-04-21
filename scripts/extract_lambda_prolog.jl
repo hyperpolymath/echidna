@@ -59,6 +59,13 @@ function run_extract()
             push!(ps, Dict{String,Any}("id"=>id, "prover"=>"lambda_prolog",
                 "source_file"=>rel, "theorem"=>n, "goal"=>g,
                 "kind"=>"clause", "context"=>Any[]))
+            # Emit premises: predicate names in clause args
+            for hm in eachmatch(r"\b([a-zA-Z_][a-zA-Z0-9_']{1,40})\b", g)
+                h = strip(hm.captures[1])
+                !isempty(h) && length(h) < 50 && push!(pm, Dict{String,Any}(
+                    "proof_id"=>id, "premise"=>h,
+                    "prover"=>"lambda_prolog", "theorem"=>n, "source"=>"lambda_prolog"))
+            end
             id += 1
         end
         matches = try collect(eachmatch(decl_pat, c)) catch; Any[] end

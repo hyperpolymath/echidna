@@ -56,6 +56,13 @@ function run_extract()
                 push!(ps, Dict{String,Any}("id"=>id, "prover"=>"nunchaku",
                     "source_file"=>rel, "theorem"=>n, "goal"=>g,
                     "kind"=>"goal", "context"=>Any[]))
+                # Emit premises: identifiers from goal body
+                for hm in eachmatch(r"\b([A-Za-z][A-Za-z0-9_']{1,40})\b", g)
+                    h = strip(hm.captures[1])
+                    !isempty(h) && length(h) < 50 && push!(pm, Dict{String,Any}(
+                        "proof_id"=>id, "premise"=>h,
+                        "prover"=>"nunchaku", "theorem"=>n, "source"=>"nunchaku"))
+                end
                 id += 1
             end
         else
@@ -83,6 +90,13 @@ function run_extract()
                     "source_file"=>rel, "theorem"=>theorem,
                     "goal"=>first(lemma_body, 600),
                     "opts"=>opts, "kind"=>kind, "context"=>Any[]))
+                # Emit premises: Isabelle identifiers from lemma body
+                for hm in eachmatch(r"\b([A-Za-z][A-Za-z0-9_']{1,40})\b", lemma_body)
+                    h = strip(hm.captures[1])
+                    !isempty(h) && length(h) < 50 && push!(pm, Dict{String,Any}(
+                        "proof_id"=>id, "premise"=>h,
+                        "prover"=>"nunchaku", "theorem"=>theorem, "source"=>"nunchaku"))
+                end
                 id += 1
             end
         end

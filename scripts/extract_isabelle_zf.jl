@@ -56,6 +56,13 @@ function extract_isabelle_zf_proofs()
                         "theorem" => name, "goal" => statement,
                         "context" => Any[],
                     ))
+                    # Emit premises: Isabelle/ZF identifiers from theorem statement
+                    for hm in eachmatch(r"\b([A-Za-z][A-Za-z0-9_']{1,40})\b", statement)
+                        h = strip(hm.captures[1])
+                        !isempty(h) && length(h) < 50 && push!(premises, Dict{String,Any}(
+                            "proof_id"=>current_id, "premise"=>h,
+                            "prover"=>"IsabelleZF", "theorem"=>name, "source"=>"isabelle_zf"))
+                    end
                     current_id += 1
                 end
             end

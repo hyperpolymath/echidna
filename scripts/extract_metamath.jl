@@ -79,11 +79,16 @@ Returns the number of theorems saved.
 function save_as_training_data(theorems::Vector{Theorem})::Int
     proof_states = Dict{String,Any}[]
     tactics = Dict{String,Any}[]
+    premises = Dict{String,Any}[]
+
+    # Metamath premises are proof-step labels (space-separated identifiers in proof)
+    metamath_step_pat = r"\b([a-z][a-z0-9.-]{1,30})\b"
 
     for (i, theorem) in enumerate(theorems)
+        rec_id = i - 1 + 1000
         # Proof state
         state = Dict{String,Any}(
-            "id" => i - 1 + 1000,  # Start from 1000 to avoid conflicts
+            "id" => rec_id,
             "prover" => "Metamath",
             "theorem" => theorem.name,
             "goal" => theorem.statement,
@@ -95,13 +100,28 @@ function save_as_training_data(theorems::Vector{Theorem})::Int
 
         # Tactic
         tactic = Dict{String,Any}(
-            "proof_id" => i - 1 + 1000,
+            "proof_id" => rec_id,
             "step" => 1,
             "tactic" => "metamath_prove",
             "prover" => "Metamath",
             "proof_text" => theorem.proof
         )
         push!(tactics, tactic)
+
+        # Emit premise records: each proof-step label is a referenced lemma
+        seen_steps = Set{String}()
+        for hyp_match in eachmatch(metamath_step_pat, theorem.proof)
+            step = hyp_match.captures[1]
+            step ∈ seen_steps && continue
+            push!(seen_steps, step)
+            step != theorem.name && push!(premises, Dict{String,Any}(
+                "proof_id" => rec_id,
+                "premise" => step,
+                "prover" => "Metamath",
+                "theorem" => theorem.name,
+                "source" => "Metamath",
+            ))
+        end
     end
 
     # Save to files
@@ -117,6 +137,12 @@ function save_as_training_data(theorems::Vector{Theorem})::Int
     open(joinpath(training_dir, "tactics_metamath.jsonl"), "w") do f
         for tactic in tactics
             println(f, JSON3.write(tactic))
+        end
+    end
+
+    open(joinpath(training_dir, "premises_metamath.jsonl"), "w") do f
+        for p in premises
+            println(f, JSON3.write(p))
         end
     end
 

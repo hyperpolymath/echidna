@@ -11,7 +11,7 @@
 #         training_data/tactics_smtlib.a2ml
 #         training_data/stats_smtlib.a2ml
 
-using Dates
+using Dates, JSON3
 include("a2ml_emit.jl")
 using .A2MLEmit
 
@@ -240,6 +240,7 @@ function extract_all(base_dir::String)
 
     proof_states = Dict{String,Any}[]
     tactics = Dict{String,Any}[]
+    premises = Dict{String,Any}[]
     prover_counts = Dict{String,Int}(p => 0 for p in PROVERS)
     logic_counts = Dict{String,Int}()
     status_counts = Dict{String,Int}("sat" => 0, "unsat" => 0, "unknown" => 0)
@@ -313,6 +314,13 @@ function extract_all(base_dir::String)
                 "synthetic_goal" => synthetic,
             )
             push!(proof_states, state)
+            # Emit premises: SMT-LIB identifiers from assertion goal
+            for hm in eachmatch(r"\b([a-zA-Z_][a-zA-Z0-9_\-]{1,40})\b", goal)
+                h = strip(hm.captures[1])
+                !isempty(h) && length(h) < 50 && push!(premises, Dict{String,Any}(
+                    "proof_id"=>record_id, "premise"=>h,
+                    "prover"=>prover, "theorem"=>parsed["name"], "source"=>"smtlib"))
+            end
             prover_counts[prover] += 1
         end
 
@@ -363,7 +371,7 @@ function extract_all(base_dir::String)
         "id_range" => isempty(proof_states) ? "none" : "$(ID_BASE)-$(ID_BASE + length(proof_states) - 1)",
     )
 
-    return proof_states, tactics, stats
+    return proof_states, tactics, premises, stats
 end
 
 
@@ -372,7 +380,7 @@ end
 
 Write extraction results to JSONL / JSON files.
 """
-function save_results(proof_states, tactics, stats; output_dir="training_data")
+function save_results(proof_states, tactics, premises, stats; output_dir="training_data")
     mkpath(output_dir)
 
     write_records_file(
@@ -394,8 +402,13 @@ function save_results(proof_states, tactics, stats; output_dir="training_data")
         A2MLEmit.write_metadata_table(fh, stats)
     end
 
+    open(joinpath(output_dir, "premises_smtlib.jsonl"), "w") do fh
+        for p in premises; println(fh, JSON3.write(p)); end
+    end
+
     println("\nSaved $(length(proof_states)) proof states -> $(output_dir)/proof_states_smtlib.a2ml")
     println("Saved $(length(tactics)) tactics        -> $(output_dir)/tactics_smtlib.a2ml")
+    println("Saved $(length(premises)) premises       -> $(output_dir)/premises_smtlib.jsonl")
     println("Saved stats                        -> $(output_dir)/stats_smtlib.a2ml")
 end
 
@@ -416,14 +429,14 @@ function main()::Int
         return 1
     end
 
-    proof_states, tactics, stats = extract_all(base_dir)
+    proof_states, tactics, premises, stats = extract_all(base_dir)
 
     if isempty(proof_states)
         println("\nWARNING: No proof states extracted. Check corpus contents.")
         return 1
     end
 
-    save_results(proof_states, tactics, stats)
+    save_results(proof_states, tactics, premises, stats)
 
     println("\nProver distribution:")
     for (prover, count) in stats["prover_distribution"]

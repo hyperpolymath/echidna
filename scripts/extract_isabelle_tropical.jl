@@ -19,7 +19,7 @@
 # Schema matches existing ECHIDNA corpus records:
 #   { "id", "prover", "theorem", "goal", "context", "tactic_proof", "source" }
 
-using JSON3
+using JSON3, Dates
 
 # ---------------------------------------------------------------------------
 # Configuration
@@ -28,6 +28,7 @@ using JSON3
 const REPO_ROOT       = dirname(dirname(abspath(@__FILE__)))
 const OUTPUT_DIR      = joinpath(REPO_ROOT, "training_data")
 const OUTPUT_FILE     = joinpath(OUTPUT_DIR, "proof_states_isabelle.jsonl")
+const PREMISES_FILE   = joinpath(OUTPUT_DIR, "premises_isabelle_tropical.jsonl")
 const STATS_FILE      = joinpath(OUTPUT_DIR, "stats_isabelle_tropical.json")
 const START_ID        = 200000
 
@@ -650,6 +651,7 @@ function run()
 
     # Emit JSONL
     current_id = START_ID
+    premises_records = Dict{String,Any}[]
     open(OUTPUT_FILE, "w") do fh
         for e in unique_entries
             record = Dict{String,Any}(
@@ -662,8 +664,18 @@ function run()
                 "source"       => "tropical_resource_typing/$(e.source_file)",
             )
             println(fh, JSON3.write(record))
+            # Emit premises: Isabelle identifiers from goal
+            for hm in eachmatch(r"\b([A-Za-z][A-Za-z0-9_']{1,40})\b", e.goal)
+                h = strip(hm.captures[1])
+                !isempty(h) && length(h) < 50 && push!(premises_records, Dict{String,Any}(
+                    "proof_id"=>current_id, "premise"=>h,
+                    "prover"=>"Isabelle", "theorem"=>e.name, "source"=>"isabelle_tropical"))
+            end
             current_id += 1
         end
+    end
+    open(PREMISES_FILE, "w") do fh
+        for p in premises_records; println(fh, JSON3.write(p)); end
     end
     println("[Isabelle] Written to $(OUTPUT_FILE)")
 
@@ -671,6 +683,7 @@ function run()
     stats = Dict{String,Any}(
         "prover"          => "Isabelle",
         "total_proofs"    => length(unique_entries),
+        "premises_count"  => length(premises_records),
         "from_thy_files"  => length(unique_entries) - added,
         "synthetic_added" => added,
         "id_range"        => [START_ID, current_id - 1],

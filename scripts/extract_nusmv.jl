@@ -20,6 +20,13 @@ function run_extract()
                     "source_file"=>relpath(f, DIR),
                     "theorem"=>"$(m.captures[1])_$(id)", "goal"=>strip(m.captures[2]),
                     "spec_kind"=>m.captures[1], "context"=>Any[]))
+                # Emit premises: identifiers from CTL/LTL formula
+                for hm in eachmatch(r"\b([A-Za-z_][A-Za-z0-9_]{1,40})\b", m.captures[2])
+                    h = strip(hm.captures[1])
+                    !isempty(h) && length(h) < 50 && push!(pm, Dict{String,Any}(
+                        "proof_id"=>id, "premise"=>h,
+                        "prover"=>"NuSMV", "theorem"=>"$(m.captures[1])_$(id)", "source"=>"nusmv"))
+                end
                 id += 1
             end
         catch e; println("Warning: $f: $e"); end

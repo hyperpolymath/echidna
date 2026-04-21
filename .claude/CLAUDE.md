@@ -10,6 +10,70 @@ The following files in `.machine_readable/` contain structured project metadata:
 - `.machine_readable/6a2/PLAYBOOK.a2ml` - Operational runbook
 - `.machine_readable/bot_directives/*.a2ml` - Per-bot permission and scope rules
 
+## Canonical Roadmap
+
+See [`docs/ROADMAP.md`](../docs/ROADMAP.md) for the single source of truth on
+where ECHIDNA is going: the 8‑stage map, row‑by‑row endpoint targets,
+current sprint (S1–S5), and agent‑tier guidance.  Record decisions
+there, not in chat.
+
+## Supervised Multi-Agent Execution
+
+When a supervising agent (Opus) plans work that will be implemented by
+a focused executor (Sonnet) or a mechanical bulk agent (Haiku), the
+supervisor MUST run a **Haiku scout pass** immediately before spawning
+the implementation agent, unless the scope is strictly single‑file
+and under ten lines of change.
+
+### Scout pattern
+
+**Purpose**: clear obvious cruft (unused imports, stale comments,
+dead stubs, broken references) so the implementation agent arrives
+to clean ground and does not burn tokens on trivial lint.
+
+**When to run**: once per upcoming step, after the step's scope is
+locked and before the implementation agent is launched.
+
+**Prompt template** (copy this verbatim, fill in the file list):
+
+```
+Haiku scout, scope = <exact file list for the step>
+
+1. Confirm each file compiles in isolation (cargo check --lib / julia -e).
+2. Scan for: unused imports, dead code, `todo!()/FIXME/XXX`,
+   orphan type references, stale doc comments referring to
+   renamed symbols, broken `mod.rs` exports.
+3. Trivially fix:
+   - unused imports (remove)
+   - obvious typos in comments
+   - unused `_var` renames
+4. DO NOT fix — FLAG to me:
+   - any TODO with semantic content (may be load-bearing)
+   - anything requiring judgement about intent
+   - any cross-module change
+5. Report: <20 lines. Green-light or list of blockers.
+```
+
+**Caveats**:
+
+- Scout is **not** a full audit.  Full audits remain the periodic
+  cross‑module sweep (cf. the Agent A + Agent B pattern in session
+  history); scout is narrow prep for an imminent step.
+- Scout must **not over‑fix**.  TODO/FIXME comments sometimes
+  contain the spec for the upcoming work — flag, don't delete.
+- Scout is **idempotent**.  Re‑running on unchanged code should
+  produce the same report.
+- If scout flags a blocker, the supervisor decides whether to
+  resolve it inline, expand the step's scope, or defer.  The
+  implementation agent does not launch until the supervisor
+  green‑lights.
+
+**Commit convention** (when the scout applied trivial fixes):
+
+```
+chore(<scope>): scout-pass trivial cleanup ahead of <step id>
+```
+
 ### CRITICAL: .scm metadata files are DEPRECATED
 
 **All `.scm` state/metadata files have been replaced by `.a2ml`.**
