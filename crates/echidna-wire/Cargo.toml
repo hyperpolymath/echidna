@@ -1,0 +1,17 @@
+# SPDX-License-Identifier: PMPL-1.0-or-later
+
+[package]
+name        = "echidna-wire"
+version     = "0.1.0"
+edition     = "2021"
+authors     = ["Jonathan D.A. Jewell <j.d.a.jewell@open.ac.uk>"]
+license     = "PMPL-1.0-or-later"
+description = "L1 IPC wire types for ECHIDNA (Cap'n Proto schemas + generated bindings)"
+repository  = "https://github.com/hyperpolymath/echidna"
+build       = "build.rs"
+
+[dependencies]
+capnp = "0.20"
+
+[build-dependencies]
+capnpc = "0.20"
