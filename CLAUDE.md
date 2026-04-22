@@ -137,7 +137,13 @@ The v1.5 trust hardening added:
 **Next (v2.2+)**:
 - Train GNN/Transformer on larger corpus (Flux.jl)
 - Chapel → Rust C FFI bridge
-- Tamarin/ProVerif bridge
+
+Note: Tamarin (`provers/tamarin.rs`, 596 LoC, 5 tests) and ProVerif
+(`provers/proverif.rs`, 800 LoC, 8 tests) are already shipped as real
+backends inside the 105 prover count — an earlier "v2.2+ Tamarin/ProVerif
+bridge" entry was stale doc. Corpus fixtures (`.spthy` / `.pv` samples)
+and CI provisioning of `tamarin-prover` / `proverif` binaries are tracked
+as Wave-3 work in `docs/handover/TODO.md`.
 
 ## Useful Commands
 
