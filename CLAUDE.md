@@ -38,9 +38,8 @@ echidna/
 │   │   ├── grpc/           # gRPC (tonic, port 50051)
 │   │   └── rest/           # REST (axum + OpenAPI, port 8000)
 │   ├── julia/              # Julia ML components
-│   ├── rescript/           # ReScript+Deno UI (10 files — built locally, not yet shipped)
-│   └── mercury/            # Mercury/Logtalk logic (optional)
-├── .machine_readable/      # SCM files (STATE.scm, META.scm, ECOSYSTEM.scm)
+│   └── rescript/           # ReScript+Deno UI (10 files — built locally, not yet shipped)
+├── .machine_readable/      # A2ML metadata (STATE.a2ml, META.a2ml, ECOSYSTEM.a2ml, …)
 ├── .github/workflows/      # 17 CI/CD workflows
 ├── Cargo.toml              # Rust workspace root
 ├── Justfile                # Primary build system
