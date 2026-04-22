@@ -107,17 +107,18 @@ package definitions (not metadata files) and must NOT be deleted.
 | **Chapel** | Optional parallel proof dispatch | Wired via Cargo `chapel` feature |
 | **Guile Scheme** | Guix package definitions (`guix.scm`, `manifests/*.scm`) | `.scm` metadata files are deprecated — see below |
 | **Bash/POSIX Shell** | Build scripts, CI glue | Keep minimal |
-| **ReScript** | UI components (compiled to JS, served via Deno) | `src/rescript/` |
-| **Deno** | Runtime for compiled ReScript UI | Replaces Node/npm/bun |
+| **AffineScript** | UI components (TEA architecture, compiled to typed-wasm / wasm, served via Deno) | Replaces ReScript per `docs/ROADMAP.md`; migration in progress at `src/rescript/` |
+| **Deno** | Runtime for compiled AffineScript-TEA UI | Replaces Node/npm/bun |
 | **JavaScript** | Build tooling only (Tailwind config, test harness) | Not for business logic |
-| **OCaml** | AffineScript / Ephapax compiler host (planned) | No files yet — retain pending source-language decision |
-| **Nickel** | Configuration language (planned) | `.k9.ncl` scaffold exists but not yet wired |
+| **OCaml** | AffineScript compiler host | Decision locked — AffineScript selected for UI |
+| **Nickel** | Configuration language | Used across `configs/`, `echidna-playground/contractiles/k9/`, `.machine_readable/`, `echidnabot/config/` (11+ `.ncl` files) |
 
 ### BANNED - Do Not Use
 
 | Banned | Replacement |
 |--------|-------------|
-| TypeScript | ReScript |
+| TypeScript | AffineScript |
+| ReScript | AffineScript |
 | Node.js | Deno |
 | npm / Bun / pnpm / yarn | Deno |
 | Go | Rust |
@@ -125,7 +126,7 @@ package definitions (not metadata files) and must NOT be deleted.
 
 ### Enforcement Rules
 
-1. **No new TypeScript files** - Convert existing TS to ReScript
+1. **No new TypeScript or ReScript files** - Use AffineScript-TEA; migrate existing `src/rescript/` to AffineScript per `docs/ROADMAP.md`
 2. **No package.json for runtime deps** - Use deno.json imports
 3. **No node_modules in production** - Deno caches deps automatically
 4. **No Go code** - Use Rust instead
