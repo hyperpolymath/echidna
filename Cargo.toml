@@ -35,7 +35,7 @@ thiserror = "2"
 # CLI
 clap = { version = "4", features = ["derive"] }
 colored = "3"
-indicatif = "0.17"
+indicatif = "0.18"
 
 # Logging
 tracing = "0.1"
@@ -67,7 +67,7 @@ uuid = { version = "1", features = ["v4", "serde"] }
 lazy_static = "1"
 
 # VeriSimDB integration (optional — behind "verisim" feature)
-serde_cbor = { version = "0.11", optional = true }
+ciborium = { version = "0.2", optional = true }
 sha2 = { version = "0.10", optional = true }
 
 # Chrono for timestamps
@@ -86,7 +86,7 @@ typed-wasm = { path = "crates/typed_wasm" }
 default = []
 chapel = []       # Enable Chapel parallel proof search (requires Zig FFI library)
 verisim = [     # Enable VeriSimDB persistent proof storage (8-modality octads)
-    "dep:serde_cbor",
+    "dep:ciborium",
     "dep:sha2",
 ]
 # Enable the live-prover test suite (tests/live_prover_suite.rs). Gated so that

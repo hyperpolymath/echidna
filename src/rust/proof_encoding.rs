@@ -24,12 +24,14 @@ use crate::provers::ProverKind;
 ///   - Self-describing (VeriSimDB can introspect without schema)
 ///   - Matches VeriSimDB's semantic modality expectation
 pub fn encode_proof_state_cbor(proof: &ProofState) -> Result<Vec<u8>> {
-    serde_cbor::to_vec(proof).context("Failed to CBOR-encode ProofState")
+    let mut buf = Vec::new();
+    ciborium::into_writer(proof, &mut buf).context("Failed to CBOR-encode ProofState")?;
+    Ok(buf)
 }
 
 /// Decode a ProofState from CBOR bytes.
 pub fn decode_proof_state_cbor(bytes: &[u8]) -> Result<ProofState> {
-    serde_cbor::from_slice(bytes).context("Failed to CBOR-decode ProofState")
+    ciborium::from_reader(bytes).context("Failed to CBOR-decode ProofState")
 }
 
 /// Generate a stable, content-addressed proof identity for use as a VeriSimDB octad key.
