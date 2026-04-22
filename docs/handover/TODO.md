@@ -40,6 +40,16 @@ Handover hints live in `.machine_readable/6a2/STATE.a2ml [wave-3-handover-hints]
 
 Mizar, Nuprl, PVS, Minlog, Dedukti, Arend, KeY, Prism, UPPAAL, ViPER, NuSMV, Spin, TLC, CBMC, Seahorn, dReal, Boogie, Kissat, Alloy. Retain as mock-only unless a maintainer volunteers a Containerfile. Document why each stays mock in a per-backend one-liner.
 
+### Wave-5 (new backend targets, no adapter yet)
+
+Backends not yet scaffolded in `src/rust/provers/`; ProverKind enum, factory dispatch, `kind_to_u8` discriminant, Idris2 injectivity proof, FFI table all need entries before any CI work. Tracked here so they are not forgotten:
+
+| Backend | Scaffold plan | Accessibility |
+|---------|---------------|---------------|
+| Andromeda | New `provers/andromeda.rs` adapter shelling out to `andromeda` CLI; OCaml source build required | Open-source (MIT), build from source |
+| Theorema | Deferred — requires Mathematica licence (commercial) | Access-blocked in OSS CI; revisit if a maintainer has a licence |
+| Globular | Not a CLI prover (web UI for higher category theory) — skipped unless scoped to graphical proof capture | N/A |
+
 ### L3 hygiene
 
 - **Dafny deep-wiring upgrade** — `src/rust/provers/dafny.rs` is 165 LoC; live version-check passes but subprocess wrapper is stub-ish. Upgrade during L3 so live test measures real wiring, not a broken wrapper.

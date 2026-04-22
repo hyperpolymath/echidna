@@ -112,6 +112,7 @@ harness = false
 
 [workspace]
 members = [
+    "crates/echidna-mcp",
     "crates/echidna-wire",
     "crates/typed_wasm",
     "src/interfaces/graphql",
