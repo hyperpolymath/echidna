@@ -134,10 +134,34 @@ The v1.5 trust hardening added:
 - Idris2 formal proofs: 7 GNN properties (0 believe_me)
 - 28 new tests, 0 clippy warnings
 
-**Next (v2.2+)**:
-- Train GNN/Transformer on larger corpus (Flux.jl)
-- Chapel → Rust C FFI bridge
-- Tamarin/ProVerif bridge
+**Next (v2.2+)** (precise status):
+
+- **Chapel → Rust C FFI bridge (L2, half-done)**. Zig shim
+  (`src/zig_ffi/`, 738 LoC, 4 files) and Chapel POC (`src/chapel/`,
+  970 LoC) in place behind `--features chapel`; `cargo build --features
+  chapel` works standalone, 6/6 `proof_search` tests pass. The gap:
+  `dispatch.rs` still bypasses the feature-gated `ChapelParallelSearch`
+  strategy in `proof_search.rs`. Integration is split into 7 L2 sub-waves
+  tracked in `docs/handover/TODO.md`, gated on L1 Cap'n Proto completion.
+  Direct Rust↔Chapel today goes through Zig (no shortcut path).
+
+- **Train GNN/Transformer on larger corpus (Flux.jl, scaffold-only)**.
+  Flux.jl is declared in `src/julia/Project.toml` and imported across
+  9 files; ~1.4k LoC of training scaffolds exist
+  (`train_advanced_models.jl`, `training/train.jl`,
+  `models/neural_solver.jl`). **Never invoked on real data**:
+  `models/neural/` does not exist, `models/model_metadata.txt` reads
+  `0 words, 0 classes`, and `src/julia/api/gnn_endpoint.jl:40-114`
+  falls back to cosine similarity when no trained model is found.
+  Corpus ready: `training_data/` 553 MB, 66,674 proofs / 179,933 tactics
+  across 16 prover systems — untouched.
+
+Note: Tamarin (`provers/tamarin.rs`, 596 LoC, 5 tests) and ProVerif
+(`provers/proverif.rs`, 800 LoC, 8 tests) were previously listed under
+v2.2+ as "bridge" work — in fact both are already shipped real backends
+inside the 105 prover count. Remaining Wave-3 work for these is corpus
+fixtures (`.spthy` / `.pv` samples) and CI provisioning of upstream
+binaries, tracked in `docs/handover/TODO.md`.
 
 ## Useful Commands
 
