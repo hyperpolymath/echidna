@@ -1007,6 +1007,7 @@ dependencies = [
  "tower-http",
  "tracing",
  "tracing-subscriber",
+ "typed-wasm",
  "uuid",
  "which",
 ]
@@ -3617,6 +3618,13 @@ dependencies = [
  "rand 0.9.4",
  "sha1",
  "thiserror",
+]
+
+[[package]]
+name = "typed-wasm"
+version = "0.1.0"
+dependencies = [
+ "anyhow",
 ]
 
 [[package]]

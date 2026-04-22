@@ -76,6 +76,12 @@ chrono = { version = "0.4", features = ["serde"] }
 # Temporary files (used by prover backends to invoke external solvers)
 tempfile = "3"
 
+# TypedWasm engine — standalone crate at crates/typed_wasm.
+# Provides the pure parse/analyse engine; provers/typed_wasm.rs is a thin
+# adapter that maps its `Analysis` onto echidna core types, and routes the
+# 39 *TypeChecker discipline variants through discipline-specific TypeInfo.
+typed-wasm = { path = "crates/typed_wasm" }
+
 [features]
 default = []
 chapel = []       # Enable Chapel parallel proof search (requires Zig FFI library)
@@ -106,6 +112,7 @@ harness = false
 
 [workspace]
 members = [
+    "crates/typed_wasm",
     "src/interfaces/graphql",
     "src/interfaces/grpc",
     "src/interfaces/rest",
