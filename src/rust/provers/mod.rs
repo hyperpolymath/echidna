@@ -1261,9 +1261,17 @@ impl ProverFactory {
             ProverKind::KeY => Ok(Box::new(key::KeyBackend::new(config))),
             ProverKind::DReal => Ok(Box::new(dreal::DRealBackend::new(config))),
             ProverKind::ABC => Ok(Box::new(abc::AbcBackend::new(config))),
-            ProverKind::TypeLL
-            | ProverKind::KatagoriaVerifier
-            | ProverKind::TropicalTypeChecker
+            // TypeLL and KatagoriaVerifier are real HP upstream binaries —
+            // they continue to dispatch through HPEcosystemBackend.
+            ProverKind::TypeLL | ProverKind::KatagoriaVerifier => Ok(Box::new(
+                hp_ecosystem::HPEcosystemBackend::new(kind, config),
+            )),
+
+            // S3 extraction (2026-04-22): the 39 *TypeChecker discipline
+            // variants all route through the unified TypedWasm engine,
+            // parametrised by a discipline-specific TypeInfo. See
+            // `typed_wasm::type_info_for` for the level-set mapping.
+            ProverKind::TropicalTypeChecker
             | ProverKind::ChoreographicTypeChecker
             | ProverKind::EpistemicTypeChecker
             | ProverKind::EchoTypeChecker
@@ -1301,9 +1309,9 @@ impl ProverFactory {
             | ProverKind::DyadicTypeChecker
             | ProverKind::HomotopyTypeChecker
             | ProverKind::CubicalTypeChecker
-            | ProverKind::NominalTypeChecker => Ok(Box::new(
-                hp_ecosystem::HPEcosystemBackend::new(kind, config),
-            )),
+            | ProverKind::NominalTypeChecker => {
+                Ok(Box::new(typed_wasm::TypedWasmBackend::for_kind(kind, config)))
+            },
         }
     }
 
