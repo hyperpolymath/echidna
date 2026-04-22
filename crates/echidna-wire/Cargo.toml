@@ -11,7 +11,7 @@ repository  = "https://github.com/hyperpolymath/echidna"
 build       = "build.rs"
 
 [dependencies]
-capnp = "0.20"
+capnp = "0.25"
 
 [build-dependencies]
-capnpc = "0.20"
+capnpc = "0.25"
