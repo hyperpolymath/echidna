@@ -369,13 +369,13 @@ impl ProverBackend for SeaHornBackend {
     async fn parse_file(&self, path: PathBuf) -> Result<ProofState> {
         let extension = path.extension().and_then(|e| e.to_str()).unwrap_or("");
 
-        match extension {
+        let mut state = match extension {
             "c" | "h" => {
                 // Parse C source to extract assertions and assumptions
                 let content = tokio::fs::read_to_string(&path)
                     .await
                     .context("Failed to read C source file for SeaHorn")?;
-                self.parse_string(&content).await
+                self.parse_string(&content).await?
             },
             "bc" | "ll" => {
                 // LLVM bitcode / IR — we cannot parse assertions directly,
@@ -389,17 +389,29 @@ impl ProverBackend for SeaHornBackend {
                     "seahorn_input_type".to_string(),
                     serde_json::Value::String(extension.to_string()),
                 );
-                Ok(state)
+                state
             },
-            _ => Err(anyhow!(
-                "SeaHorn: unsupported file extension '.{}' (expected .c, .bc, or .ll)",
-                extension
-            )),
-        }
+            _ => {
+                return Err(anyhow!(
+                    "SeaHorn: unsupported file extension '.{}' (expected .c, .bc, or .ll)",
+                    extension
+                ));
+            },
+        };
+        state.metadata.insert(
+            "source_path".to_string(),
+            serde_json::Value::String(path.to_string_lossy().into_owned()),
+        );
+        Ok(state)
     }
 
     async fn parse_string(&self, content: &str) -> Result<ProofState> {
-        self.parse_c_source(content)
+        let mut state = self.parse_c_source(content)?;
+        state.metadata.insert(
+            "seahorn_source".to_string(),
+            serde_json::Value::String(content.to_string()),
+        );
+        Ok(state)
     }
 
     async fn apply_tactic(&self, state: &ProofState, tactic: &Tactic) -> Result<TacticResult> {
@@ -520,11 +532,25 @@ impl ProverBackend for SeaHornBackend {
         let tmp_dir =
             tempfile::tempdir().context("Failed to create temporary directory for SeaHorn")?;
 
-        let input_path = if let Some(serde_json::Value::String(file_path)) =
+        let input_path = if let Some(path) =
+            state.metadata.get("source_path").and_then(|v| v.as_str())
+        {
+            PathBuf::from(path)
+        } else if let Some(serde_json::Value::String(file_path)) =
             state.metadata.get("seahorn_input_file")
         {
             // Use the referenced input file directly (bitcode or C source)
             PathBuf::from(file_path)
+        } else if let Some(src) = state
+            .metadata
+            .get("seahorn_source")
+            .and_then(|v| v.as_str())
+        {
+            let tmp_file = tmp_dir.path().join("program.c");
+            tokio::fs::write(&tmp_file, src)
+                .await
+                .context("Failed to write temporary C file for SeaHorn")?;
+            tmp_file
         } else {
             // Generate C source from proof state
             let c_source = self.to_c_source(state)?;

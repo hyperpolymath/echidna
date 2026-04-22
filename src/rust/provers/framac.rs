@@ -541,11 +541,21 @@ impl ProverBackend for FramaCBackend {
         let content = tokio::fs::read_to_string(&path)
             .await
             .with_context(|| format!("Failed to read ACSL-annotated C file: {:?}", path))?;
-        self.parse_string(&content).await
+        let mut state = self.parse_string(&content).await?;
+        state.metadata.insert(
+            "source_path".to_string(),
+            serde_json::Value::String(path.to_string_lossy().into_owned()),
+        );
+        Ok(state)
     }
 
     async fn parse_string(&self, content: &str) -> Result<ProofState> {
-        self.parse_acsl_source(content)
+        let mut state = self.parse_acsl_source(content)?;
+        state.metadata.insert(
+            "framac_source".to_string(),
+            serde_json::Value::String(content.to_string()),
+        );
+        Ok(state)
     }
 
     async fn apply_tactic(&self, state: &ProofState, tactic: &Tactic) -> Result<TacticResult> {
@@ -667,20 +677,6 @@ impl ProverBackend for FramaCBackend {
     }
 
     async fn verify_proof(&self, state: &ProofState) -> Result<bool> {
-        if state.goals.is_empty() {
-            return Ok(true);
-        }
-
-        let acsl_source = self.to_acsl_source(state)?;
-
-        // Write ACSL-annotated C source to a temporary file
-        let tmp_dir =
-            tempfile::tempdir().context("Failed to create temporary directory for Frama-C")?;
-        let tmp_file = tmp_dir.path().join("program.c");
-        tokio::fs::write(&tmp_file, &acsl_source)
-            .await
-            .context("Failed to write temporary ACSL-annotated C file")?;
-
         // Read WP prover from metadata (may have been changed via tactic)
         let wp_prover = state
             .metadata
@@ -702,6 +698,64 @@ impl ProverBackend for FramaCBackend {
                     .map(|n| n as u32)
             })
             .unwrap_or(self.wp_timeout);
+
+        // Prefer the original ACSL-annotated .c file; `to_acsl_source` is
+        // lossy for anything beyond trivial function stubs.
+        if let Some(path) = state.metadata.get("source_path").and_then(|v| v.as_str()) {
+            let output = tokio::time::timeout(
+                tokio::time::Duration::from_secs(self.config.timeout + 10),
+                Command::new(&self.config.executable)
+                    .arg("-wp")
+                    .arg("-wp-prover")
+                    .arg(wp_prover)
+                    .arg("-wp-timeout")
+                    .arg(format!("{}", wp_timeout))
+                    .arg(path)
+                    .stdout(Stdio::piped())
+                    .stderr(Stdio::piped())
+                    .output(),
+            )
+            .await
+            .map_err(|_| {
+                anyhow!(
+                    "Frama-C WP verification timed out after {} seconds",
+                    self.config.timeout
+                )
+            })?
+            .context("Failed to execute Frama-C")?;
+            let stdout = String::from_utf8_lossy(&output.stdout);
+            let stderr = String::from_utf8_lossy(&output.stderr);
+            let combined = format!("{}\n{}", stdout, stderr);
+            return Self::parse_wp_result(&combined);
+        }
+
+        if state.goals.is_empty()
+            && state
+                .metadata
+                .get("framac_source")
+                .and_then(|v| v.as_str())
+                .is_none()
+        {
+            return Ok(true);
+        }
+
+        let acsl_source = if let Some(src) = state
+            .metadata
+            .get("framac_source")
+            .and_then(|v| v.as_str())
+        {
+            src.to_string()
+        } else {
+            self.to_acsl_source(state)?
+        };
+
+        // Write ACSL-annotated C source to a temporary file
+        let tmp_dir =
+            tempfile::tempdir().context("Failed to create temporary directory for Frama-C")?;
+        let tmp_file = tmp_dir.path().join("program.c");
+        tokio::fs::write(&tmp_file, &acsl_source)
+            .await
+            .context("Failed to write temporary ACSL-annotated C file")?;
 
         // Run: frama-c -wp -wp-prover <prover> -wp-timeout <timeout> <file>
         let output = tokio::time::timeout(

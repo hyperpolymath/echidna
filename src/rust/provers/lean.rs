@@ -1177,7 +1177,15 @@ impl ProverBackend for LeanBackend {
             },
         };
 
-        let state = self.build_proof_state(&declarations, &tactic_state);
+        let mut state = self.build_proof_state(&declarations, &tactic_state);
+        state.metadata.insert(
+            "lean_source".to_string(),
+            serde_json::Value::String(content.clone()),
+        );
+        state.metadata.insert(
+            "source_path".to_string(),
+            serde_json::Value::String(path.to_string_lossy().into_owned()),
+        );
 
         Ok(state)
     }
@@ -1216,7 +1224,11 @@ impl ProverBackend for LeanBackend {
             },
         };
 
-        let state = self.build_proof_state(&declarations, &tactic_state);
+        let mut state = self.build_proof_state(&declarations, &tactic_state);
+        state.metadata.insert(
+            "lean_source".to_string(),
+            serde_json::Value::String(content.to_string()),
+        );
         Ok(state)
     }
 
@@ -1303,6 +1315,31 @@ impl ProverBackend for LeanBackend {
     }
 
     async fn verify_proof(&self, state: &ProofState) -> Result<bool> {
+        // Prefer the original .lean file — the Term IR round-trip loses
+        // tactic structure that Lean's elaborator depends on.
+        if let Some(path) = state.metadata.get("source_path").and_then(|v| v.as_str()) {
+            let result = self.run_lean(&["--run", path]).await;
+            return match result {
+                Ok(_) => Ok(true),
+                Err(_) => Ok(false),
+            };
+        }
+        if let Some(source) = state.metadata.get("lean_source").and_then(|v| v.as_str()) {
+            let temp_file = std::env::temp_dir()
+                .join(format!("echidna_lean_verify_{}.lean", uuid::Uuid::new_v4()));
+            tokio::fs::write(&temp_file, source)
+                .await
+                .context("Failed to write temporary file")?;
+            let result = self
+                .run_lean(&["--run", &temp_file.to_string_lossy()])
+                .await;
+            let _ = tokio::fs::remove_file(&temp_file).await;
+            return match result {
+                Ok(_) => Ok(true),
+                Err(_) => Ok(false),
+            };
+        }
+
         if state.goals.is_empty() {
             return Ok(true);
         }

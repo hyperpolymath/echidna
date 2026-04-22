@@ -434,14 +434,24 @@ impl ProverBackend for ProVerifBackend {
     }
 
     async fn parse_file(&self, path: PathBuf) -> Result<ProofState> {
-        let content = tokio::fs::read_to_string(path)
+        let content = tokio::fs::read_to_string(&path)
             .await
             .context("Failed to read .pv file")?;
-        self.parse_string(&content).await
+        let mut state = self.parse_string(&content).await?;
+        state.metadata.insert(
+            "source_path".to_string(),
+            serde_json::Value::String(path.to_string_lossy().into_owned()),
+        );
+        Ok(state)
     }
 
     async fn parse_string(&self, content: &str) -> Result<ProofState> {
-        self.parse_pv(content)
+        let mut state = self.parse_pv(content)?;
+        state.metadata.insert(
+            "proverif_source".to_string(),
+            serde_json::Value::String(content.to_string()),
+        );
+        Ok(state)
     }
 
     async fn apply_tactic(&self, _state: &ProofState, tactic: &Tactic) -> Result<TacticResult> {
@@ -455,7 +465,37 @@ impl ProverBackend for ProVerifBackend {
     }
 
     async fn verify_proof(&self, state: &ProofState) -> Result<bool> {
-        let pv_code = self.to_pv(state)?;
+        if let Some(path) = state.metadata.get("source_path").and_then(|v| v.as_str()) {
+            let output = tokio::time::timeout(
+                tokio::time::Duration::from_secs(self.config.timeout + 10),
+                Command::new(&self.config.executable)
+                    .arg(path)
+                    .stdout(Stdio::piped())
+                    .stderr(Stdio::piped())
+                    .output(),
+            )
+            .await
+            .map_err(|_| {
+                anyhow!(
+                    "ProVerif verification timed out after {} seconds",
+                    self.config.timeout
+                )
+            })?
+            .context("Failed to execute proverif")?;
+            let stdout = String::from_utf8_lossy(&output.stdout);
+            let stderr = String::from_utf8_lossy(&output.stderr);
+            let combined = format!("{}\n{}", stdout, stderr);
+            return self.parse_result(&combined);
+        }
+        let pv_code = if let Some(src) = state
+            .metadata
+            .get("proverif_source")
+            .and_then(|v| v.as_str())
+        {
+            src.to_string()
+        } else {
+            self.to_pv(state)?
+        };
 
         // Write .pv to a temporary file (proverif requires a file path)
         let tmp_dir =

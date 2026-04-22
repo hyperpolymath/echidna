@@ -51,11 +51,20 @@ impl ProverBackend for ImandraBackend {
             .to_string())
     }
     async fn parse_file(&self, path: PathBuf) -> Result<ProofState> {
-        self.parse_string(&tokio::fs::read_to_string(path).await?)
-            .await
+        let content = tokio::fs::read_to_string(&path).await?;
+        let mut state = self.parse_string(&content).await?;
+        state.metadata.insert(
+            "source_path".to_string(),
+            serde_json::Value::String(path.to_string_lossy().into_owned()),
+        );
+        Ok(state)
     }
     async fn parse_string(&self, content: &str) -> Result<ProofState> {
         let mut state = ProofState::default();
+        state.metadata.insert(
+            "imandra_source".to_string(),
+            serde_json::Value::String(content.to_string()),
+        );
         for line in content.lines() {
             let l = line.trim();
             if !l.is_empty() && !l.starts_with("(*") {
@@ -79,7 +88,32 @@ impl ProverBackend for ImandraBackend {
         Err(anyhow::anyhow!("Imandra: use verify/instance"))
     }
     async fn verify_proof(&self, state: &ProofState) -> Result<bool> {
-        let input = self.to_input_format(state)?;
+        if let Some(path) = state.metadata.get("source_path").and_then(|v| v.as_str()) {
+            let output = tokio::time::timeout(
+                tokio::time::Duration::from_secs(self.config.timeout + 5),
+                Command::new(&self.config.executable)
+                    .arg(path)
+                    .stdout(Stdio::piped())
+                    .stderr(Stdio::piped())
+                    .output(),
+            )
+            .await
+            .context("Imandra timed out")??;
+            return self.parse_result(&format!(
+                "{}\n{}",
+                String::from_utf8_lossy(&output.stdout),
+                String::from_utf8_lossy(&output.stderr)
+            ));
+        }
+        let input = if let Some(src) = state
+            .metadata
+            .get("imandra_source")
+            .and_then(|v| v.as_str())
+        {
+            src.to_string()
+        } else {
+            self.to_input_format(state)?
+        };
         let mut child = Command::new(&self.config.executable)
             .stdin(Stdio::piped())
             .stdout(Stdio::piped())

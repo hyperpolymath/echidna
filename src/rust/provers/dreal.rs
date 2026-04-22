@@ -316,13 +316,23 @@ impl ProverBackend for DRealBackend {
             .await
             .with_context(|| format!("Failed to read dReal SMT-LIB file: {:?}", path))?;
 
-        self.parse_string(&content).await
+        let mut state = self.parse_string(&content).await?;
+        state.metadata.insert(
+            "source_path".to_string(),
+            serde_json::Value::String(path.to_string_lossy().into_owned()),
+        );
+        Ok(state)
     }
 
     async fn parse_string(&self, content: &str) -> Result<ProofState> {
         // Reuse the Z3 SMT-LIB parser since dReal accepts SMT-LIB 2.0 format
         let mut parser = SmtParser::new(content);
-        parser.parse()
+        let mut state = parser.parse()?;
+        state.metadata.insert(
+            "dreal_source".to_string(),
+            serde_json::Value::String(content.to_string()),
+        );
+        Ok(state)
     }
 
     /// dReal is a fully automated solver — interactive tactic application is
@@ -337,6 +347,31 @@ impl ProverBackend for DRealBackend {
     }
 
     async fn verify_proof(&self, state: &ProofState) -> Result<bool> {
+        // Prefer the original SMT-LIB source — `build_verification_query`
+        // reconstructs from the parsed Term IR, which is lossy for any
+        // non-trivial dReal problem.
+        if let Some(path) = state.metadata.get("source_path").and_then(|v| v.as_str()) {
+            let source = tokio::fs::read_to_string(path).await?;
+            let result = self.execute_command(&source).await?;
+            return match result {
+                DRealResult::Unsat => Ok(true),
+                DRealResult::DeltaSat(_) => Ok(false),
+                DRealResult::Unknown => Ok(false),
+                DRealResult::Error(e) => bail!("dReal verification error: {}", e),
+                DRealResult::Output(_) => Ok(false),
+            };
+        }
+        if let Some(source) = state.metadata.get("dreal_source").and_then(|v| v.as_str()) {
+            let result = self.execute_command(source).await?;
+            return match result {
+                DRealResult::Unsat => Ok(true),
+                DRealResult::DeltaSat(_) => Ok(false),
+                DRealResult::Unknown => Ok(false),
+                DRealResult::Error(e) => bail!("dReal verification error: {}", e),
+                DRealResult::Output(_) => Ok(false),
+            };
+        }
+
         // Trivial cases: no goals or all goals are true
         if state.goals.is_empty() {
             return Ok(true);

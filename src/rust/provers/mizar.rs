@@ -422,11 +422,16 @@ impl ProverBackend for MizarBackend {
             });
         }
 
+        let mut metadata = HashMap::new();
+        metadata.insert(
+            "mizar_source".to_string(),
+            serde_json::Value::String(content.to_string()),
+        );
         Ok(ProofState {
             goals,
             context,
             proof_script: vec![],
-            metadata: HashMap::new(),
+            metadata,
         })
     }
 
@@ -544,16 +549,33 @@ impl ProverBackend for MizarBackend {
     }
 
     async fn verify_proof(&self, state: &ProofState) -> Result<bool> {
-        if !state.is_complete() {
-            return Ok(false);
-        }
-
+        // Prefer the original .miz file — `export_to_mizar(state)` is
+        // lossy for anything beyond trivial theorems.  The previous
+        // `is_complete()` short-circuit produced spurious false results
+        // when parse_string left open goals (Mizar's own checker is the
+        // authority, not our IR).
         if let Some(serde_json::Value::String(path)) = state.metadata.get("source_path") {
             let path = Path::new(path);
             if path.exists() {
                 let result = self.verify_file(path).await?;
                 return Ok(result.success);
             }
+        }
+
+        if let Some(source) = state.metadata.get("mizar_source").and_then(|v| v.as_str()) {
+            let temp_dir = std::env::temp_dir();
+            let temp_file = temp_dir.join(format!("echidna_{}.miz", uuid::Uuid::new_v4()));
+            let mut file = fs::File::create(&temp_file).await?;
+            file.write_all(source.as_bytes()).await?;
+            file.sync_all().await?;
+            drop(file);
+            let result = self.verify_file(&temp_file).await?;
+            let _ = fs::remove_file(&temp_file).await;
+            return Ok(result.success);
+        }
+
+        if !state.is_complete() {
+            return Ok(false);
         }
 
         let mizar_content = self.export_to_mizar(state)?;

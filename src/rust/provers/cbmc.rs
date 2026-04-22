@@ -246,14 +246,24 @@ impl ProverBackend for CBMCBackend {
     }
 
     async fn parse_file(&self, path: PathBuf) -> Result<ProofState> {
-        let content = tokio::fs::read_to_string(path)
+        let content = tokio::fs::read_to_string(&path)
             .await
             .context("Failed to read C source file")?;
-        self.parse_string(&content).await
+        let mut state = self.parse_string(&content).await?;
+        state.metadata.insert(
+            "source_path".to_string(),
+            serde_json::Value::String(path.to_string_lossy().into_owned()),
+        );
+        Ok(state)
     }
 
     async fn parse_string(&self, content: &str) -> Result<ProofState> {
-        self.parse_c_source(content)
+        let mut state = self.parse_c_source(content)?;
+        state.metadata.insert(
+            "cbmc_source".to_string(),
+            serde_json::Value::String(content.to_string()),
+        );
+        Ok(state)
     }
 
     async fn apply_tactic(&self, state: &ProofState, tactic: &Tactic) -> Result<TacticResult> {
@@ -321,7 +331,47 @@ impl ProverBackend for CBMCBackend {
     }
 
     async fn verify_proof(&self, state: &ProofState) -> Result<bool> {
-        let c_source = self.to_c_source(state)?;
+        // Determine unwind bound from metadata or use default
+        let unwind = state
+            .metadata
+            .get("cbmc_unwind_bound")
+            .and_then(|v| v.as_str())
+            .and_then(|s| s.parse::<u32>().ok())
+            .unwrap_or(self.unwind_bound);
+
+        // Prefer the original .c source — `to_c_source(state)` round-trips
+        // through the generic Term IR and silently mangles anything real.
+        if let Some(path) = state.metadata.get("source_path").and_then(|v| v.as_str()) {
+            let output = tokio::time::timeout(
+                tokio::time::Duration::from_secs(self.config.timeout + 10),
+                Command::new(&self.config.executable)
+                    .arg("--unwind")
+                    .arg(format!("{}", unwind))
+                    .arg(path)
+                    .stdout(Stdio::piped())
+                    .stderr(Stdio::piped())
+                    .output(),
+            )
+            .await
+            .map_err(|_| {
+                anyhow!(
+                    "CBMC verification timed out after {} seconds",
+                    self.config.timeout
+                )
+            })?
+            .context("Failed to execute CBMC")?;
+            let stdout = String::from_utf8_lossy(&output.stdout);
+            let stderr = String::from_utf8_lossy(&output.stderr);
+            let combined = format!("{}\n{}", stdout, stderr);
+            return self.parse_result(&combined);
+        }
+
+        let c_source = if let Some(src) = state.metadata.get("cbmc_source").and_then(|v| v.as_str())
+        {
+            src.to_string()
+        } else {
+            self.to_c_source(state)?
+        };
 
         // Write C source to a temporary file (CBMC requires a file)
         let tmp_dir =
@@ -330,14 +380,6 @@ impl ProverBackend for CBMCBackend {
         tokio::fs::write(&tmp_file, &c_source)
             .await
             .context("Failed to write temporary C file")?;
-
-        // Determine unwind bound from metadata or use default
-        let unwind = state
-            .metadata
-            .get("cbmc_unwind_bound")
-            .and_then(|v| v.as_str())
-            .and_then(|s| s.parse::<u32>().ok())
-            .unwrap_or(self.unwind_bound);
 
         // Run cbmc with unwind bound
         let output = tokio::time::timeout(

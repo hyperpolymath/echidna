@@ -134,10 +134,15 @@ impl ProverBackend for ViperBackend {
     }
 
     async fn parse_file(&self, path: PathBuf) -> Result<ProofState> {
-        let content = tokio::fs::read_to_string(path)
+        let content = tokio::fs::read_to_string(&path)
             .await
             .context("Failed to read proof file")?;
-        self.parse_string(&content).await
+        let mut state = self.parse_string(&content).await?;
+        state.metadata.insert(
+            "source_path".to_string(),
+            serde_json::Value::String(path.to_string_lossy().into_owned()),
+        );
+        Ok(state)
     }
 
     /// Parse a Silver (.vpr) program into a ProofState.
@@ -146,6 +151,10 @@ impl ProverBackend for ViperBackend {
     /// into goals. Comments (// and /* */) are skipped.
     async fn parse_string(&self, content: &str) -> Result<ProofState> {
         let mut state = ProofState::default();
+        state.metadata.insert(
+            "viper_source".to_string(),
+            serde_json::Value::String(content.to_string()),
+        );
 
         for line in content.lines() {
             let line = line.trim();
@@ -220,7 +229,32 @@ impl ProverBackend for ViperBackend {
     /// the configured timeout. Both Silicon and Carbon are supported via
     /// the `--backend` flag (configurable through extra args).
     async fn verify_proof(&self, state: &ProofState) -> Result<bool> {
-        let silver_code = self.to_silver(state)?;
+        if let Some(path) = state.metadata.get("source_path").and_then(|v| v.as_str()) {
+            let output = tokio::time::timeout(
+                tokio::time::Duration::from_secs(self.config.timeout + 5),
+                Command::new(&self.config.executable)
+                    .arg("--timeout")
+                    .arg(format!("{}", self.config.timeout))
+                    .args(&self.config.args)
+                    .arg(path)
+                    .stdout(Stdio::piped())
+                    .stderr(Stdio::piped())
+                    .output(),
+            )
+            .await
+            .context("Viper timed out")??;
+            let stdout = String::from_utf8_lossy(&output.stdout);
+            let stderr = String::from_utf8_lossy(&output.stderr);
+            return self
+                .parse_result(&stdout)
+                .or_else(|_| self.parse_result(&stderr));
+        }
+        let silver_code = if let Some(src) = state.metadata.get("viper_source").and_then(|v| v.as_str())
+        {
+            src.to_string()
+        } else {
+            self.to_silver(state)?
+        };
 
         let mut child = Command::new(&self.config.executable)
             .arg("--timeout")
