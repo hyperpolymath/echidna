@@ -422,7 +422,12 @@ impl ProverBackend for HolLightBackend {
             .await
             .with_context(|| format!("Failed to read file: {:?}", path))?;
 
-        self.parse_string(&content).await
+        let mut state = self.parse_string(&content).await?;
+        state.metadata.insert(
+            "source_path".to_string(),
+            serde_json::Value::String(path.to_string_lossy().into_owned()),
+        );
+        Ok(state)
     }
 
     async fn parse_string(&self, content: &str) -> Result<ProofState> {
@@ -483,6 +488,10 @@ impl ProverBackend for HolLightBackend {
                     "definitions".to_string(),
                     serde_json::json!(file.definitions.len()),
                 );
+                meta.insert(
+                    "hol_light_source".to_string(),
+                    serde_json::Value::String(content.to_string()),
+                );
                 meta
             },
         })
@@ -526,6 +535,33 @@ impl ProverBackend for HolLightBackend {
 
     async fn verify_proof(&self, state: &ProofState) -> Result<bool> {
         info!("Verifying HOL Light proof");
+
+        // Prefer the original .ml source — `export_to_hol(state)` loses
+        // structure for any non-trivial file.
+        if let Some(path) = state.metadata.get("source_path").and_then(|v| v.as_str()) {
+            let load_cmd = format!("#use \"{}\";;", path);
+            let result = self.execute_command(&load_cmd).await;
+            return match result {
+                Ok(output) => Ok(output.contains("Theorem") || !output.contains("Exception")),
+                Err(_) => Ok(false),
+            };
+        }
+        if let Some(source) = state
+            .metadata
+            .get("hol_light_source")
+            .and_then(|v| v.as_str())
+        {
+            let temp_dir = std::env::temp_dir();
+            let temp_file = temp_dir.join(format!("echidna_{}.ml", uuid::Uuid::new_v4()));
+            fs::write(&temp_file, source).await?;
+            let load_cmd = format!("#use \"{}\";;", temp_file.display());
+            let result = self.execute_command(&load_cmd).await;
+            let _ = fs::remove_file(&temp_file).await;
+            return match result {
+                Ok(output) => Ok(output.contains("Theorem") || !output.contains("Exception")),
+                Err(_) => Ok(false),
+            };
+        }
 
         if state.goals.is_empty() {
             return Ok(true);

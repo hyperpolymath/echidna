@@ -286,14 +286,24 @@ impl ProverBackend for TamarinBackend {
     }
 
     async fn parse_file(&self, path: PathBuf) -> Result<ProofState> {
-        let content = tokio::fs::read_to_string(path)
+        let content = tokio::fs::read_to_string(&path)
             .await
             .context("Failed to read .spthy file")?;
-        self.parse_string(&content).await
+        let mut state = self.parse_string(&content).await?;
+        state.metadata.insert(
+            "source_path".to_string(),
+            serde_json::Value::String(path.to_string_lossy().into_owned()),
+        );
+        Ok(state)
     }
 
     async fn parse_string(&self, content: &str) -> Result<ProofState> {
-        self.parse_spthy(content)
+        let mut state = self.parse_spthy(content)?;
+        state.metadata.insert(
+            "tamarin_source".to_string(),
+            serde_json::Value::String(content.to_string()),
+        );
+        Ok(state)
     }
 
     async fn apply_tactic(&self, state: &ProofState, tactic: &Tactic) -> Result<TacticResult> {
@@ -370,7 +380,38 @@ impl ProverBackend for TamarinBackend {
     }
 
     async fn verify_proof(&self, state: &ProofState) -> Result<bool> {
-        let spthy_code = self.to_spthy(state)?;
+        if let Some(path) = state.metadata.get("source_path").and_then(|v| v.as_str()) {
+            let output = tokio::time::timeout(
+                tokio::time::Duration::from_secs(self.config.timeout + 10),
+                Command::new(&self.config.executable)
+                    .arg("--prove")
+                    .arg(path)
+                    .stdout(Stdio::piped())
+                    .stderr(Stdio::piped())
+                    .output(),
+            )
+            .await
+            .map_err(|_| {
+                anyhow!(
+                    "Tamarin verification timed out after {} seconds",
+                    self.config.timeout
+                )
+            })?
+            .context("Failed to execute tamarin-prover")?;
+            let stdout = String::from_utf8_lossy(&output.stdout);
+            let stderr = String::from_utf8_lossy(&output.stderr);
+            let combined = format!("{}\n{}", stdout, stderr);
+            return self.parse_result(&combined);
+        }
+        let spthy_code = if let Some(src) = state
+            .metadata
+            .get("tamarin_source")
+            .and_then(|v| v.as_str())
+        {
+            src.to_string()
+        } else {
+            self.to_spthy(state)?
+        };
 
         // Write .spthy to a temporary file (tamarin-prover requires a file)
         let tmp_dir =

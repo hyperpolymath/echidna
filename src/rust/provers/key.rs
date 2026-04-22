@@ -405,11 +405,11 @@ impl ProverBackend for KeyBackend {
 
         let ext = path.extension().and_then(|e| e.to_str()).unwrap_or("");
 
-        match ext {
+        let mut state = match ext {
             "key" => {
                 // Parse .key proof problem file
                 let (goals, axioms) = self.parse_key_file(&content);
-                let state = ProofState {
+                ProofState {
                     goals: if goals.is_empty() {
                         vec![Goal {
                             id: "key_goal_0".to_string(),
@@ -424,13 +424,12 @@ impl ProverBackend for KeyBackend {
                         ..Default::default()
                     },
                     ..Default::default()
-                };
-                Ok(state)
+                }
             },
             "java" => {
                 // Parse JML-annotated Java source
                 let goals = self.parse_jml_annotations(&content);
-                let state = ProofState {
+                ProofState {
                     goals: if goals.is_empty() {
                         vec![Goal {
                             id: "java_goal_0".to_string(),
@@ -441,14 +440,24 @@ impl ProverBackend for KeyBackend {
                         goals
                     },
                     ..Default::default()
-                };
-                Ok(state)
+                }
             },
-            _ => Err(anyhow!(
-                "Unsupported file extension '{}' for KeY backend — expected .key or .java",
-                ext
-            )),
-        }
+            _ => {
+                return Err(anyhow!(
+                    "Unsupported file extension '{}' for KeY backend — expected .key or .java",
+                    ext
+                ));
+            },
+        };
+        state.metadata.insert(
+            "key_source".to_string(),
+            serde_json::Value::String(content.clone()),
+        );
+        state.metadata.insert(
+            "source_path".to_string(),
+            serde_json::Value::String(path.to_string_lossy().into_owned()),
+        );
+        Ok(state)
     }
 
     /// Parse a proof problem from a raw string (assumes `.key` format)
@@ -482,7 +491,7 @@ impl ProverBackend for KeyBackend {
             goals
         };
 
-        let state = ProofState {
+        let mut state = ProofState {
             goals: computed_goals,
             context: crate::core::Context {
                 axioms,
@@ -490,6 +499,10 @@ impl ProverBackend for KeyBackend {
             },
             ..Default::default()
         };
+        state.metadata.insert(
+            "key_source".to_string(),
+            serde_json::Value::String(content.to_string()),
+        );
 
         Ok(state)
     }
@@ -612,7 +625,34 @@ impl ProverBackend for KeyBackend {
     /// Spawns the KeY prover in headless/batch mode, feeds it the proof problem,
     /// and parses the output for "Proof closed" (success) or "open goals" (failure).
     async fn verify_proof(&self, state: &ProofState) -> Result<bool> {
-        let input = self.to_key_format(state)?;
+        // Prefer the original .key/.java file — `to_key_format(state)` is
+        // lossy for anything beyond trivial goals.
+        if let Some(path) = state.metadata.get("source_path").and_then(|v| v.as_str()) {
+            let output = tokio::time::timeout(
+                tokio::time::Duration::from_secs(self.config.timeout + 5),
+                Command::new(&self.config.executable)
+                    .args(["--auto", "--no-gui"])
+                    .args(["--max-steps", &self.max_steps.to_string()])
+                    .arg(path)
+                    .stdout(Stdio::piped())
+                    .stderr(Stdio::piped())
+                    .output(),
+            )
+            .await
+            .context("KeY verification timed out")??;
+            let combined = format!(
+                "{}\n{}",
+                String::from_utf8_lossy(&output.stdout),
+                String::from_utf8_lossy(&output.stderr)
+            );
+            return self.parse_result(&combined);
+        }
+
+        let input = if let Some(src) = state.metadata.get("key_source").and_then(|v| v.as_str()) {
+            src.to_string()
+        } else {
+            self.to_key_format(state)?
+        };
 
         let mut child = Command::new(&self.config.executable)
             .args(["--auto", "--no-gui"])

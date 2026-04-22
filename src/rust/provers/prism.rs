@@ -237,14 +237,24 @@ impl ProverBackend for PrismBackend {
     }
 
     async fn parse_file(&self, path: PathBuf) -> Result<ProofState> {
-        let content = tokio::fs::read_to_string(path)
+        let content = tokio::fs::read_to_string(&path)
             .await
             .context("Failed to read PRISM file")?;
-        self.parse_string(&content).await
+        let mut state = self.parse_string(&content).await?;
+        state.metadata.insert(
+            "source_path".to_string(),
+            serde_json::Value::String(path.to_string_lossy().into_owned()),
+        );
+        Ok(state)
     }
 
     async fn parse_string(&self, content: &str) -> Result<ProofState> {
-        self.parse_prism(content)
+        let mut state = self.parse_prism(content)?;
+        state.metadata.insert(
+            "prism_source".to_string(),
+            serde_json::Value::String(content.to_string()),
+        );
+        Ok(state)
     }
 
     async fn apply_tactic(&self, state: &ProofState, tactic: &Tactic) -> Result<TacticResult> {
@@ -306,6 +316,49 @@ impl ProverBackend for PrismBackend {
     }
 
     async fn verify_proof(&self, state: &ProofState) -> Result<bool> {
+        // Prefer the original .pm/.prism file — reconstructing both
+        // model and properties from the Term IR is lossy.
+        if let Some(path) = state.metadata.get("source_path").and_then(|v| v.as_str()) {
+            let output = tokio::time::timeout(
+                tokio::time::Duration::from_secs(self.config.timeout),
+                Command::new(&self.config.executable)
+                    .arg(path)
+                    .stdout(Stdio::piped())
+                    .stderr(Stdio::piped())
+                    .output(),
+            )
+            .await
+            .map_err(|_| anyhow!("PRISM timed out after {} seconds", self.config.timeout))?
+            .context("Failed to execute PRISM")?;
+            let stdout = String::from_utf8_lossy(&output.stdout);
+            let stderr = String::from_utf8_lossy(&output.stderr);
+            let combined = format!("{}\n{}", stdout, stderr);
+            return self.parse_result(&combined);
+        }
+        if let Some(src) = state.metadata.get("prism_source").and_then(|v| v.as_str()) {
+            let tmp_dir =
+                tempfile::tempdir().context("Failed to create temporary directory for PRISM")?;
+            let model_file = tmp_dir.path().join("model.pm");
+            tokio::fs::write(&model_file, src)
+                .await
+                .context("Failed to write temporary PRISM model file")?;
+            let output = tokio::time::timeout(
+                tokio::time::Duration::from_secs(self.config.timeout),
+                Command::new(&self.config.executable)
+                    .arg(&model_file)
+                    .stdout(Stdio::piped())
+                    .stderr(Stdio::piped())
+                    .output(),
+            )
+            .await
+            .map_err(|_| anyhow!("PRISM timed out after {} seconds", self.config.timeout))?
+            .context("Failed to execute PRISM")?;
+            let stdout = String::from_utf8_lossy(&output.stdout);
+            let stderr = String::from_utf8_lossy(&output.stderr);
+            let combined = format!("{}\n{}", stdout, stderr);
+            return self.parse_result(&combined);
+        }
+
         let model_code = self.to_prism_model(state)?;
         let props_code = self.to_prism_properties(state);
 

@@ -342,7 +342,12 @@ impl ProverBackend for IsabelleBackend {
         let content = tokio::fs::read_to_string(&path)
             .await
             .context("Failed to read theory file")?;
-        self.parse_string(&content).await
+        let mut state = self.parse_string(&content).await?;
+        state.metadata.insert(
+            "source_path".to_string(),
+            serde_json::Value::String(path.to_string_lossy().into_owned()),
+        );
+        Ok(state)
     }
 
     async fn parse_string(&self, content: &str) -> Result<ProofState> {
@@ -391,6 +396,10 @@ impl ProverBackend for IsabelleBackend {
         let mut metadata: HashMap<String, serde_json::Value> = HashMap::new();
         metadata.insert(
             "raw_thy_content".to_string(),
+            serde_json::Value::String(content.to_string()),
+        );
+        metadata.insert(
+            "isabelle_source".to_string(),
             serde_json::Value::String(content.to_string()),
         );
         metadata.insert(

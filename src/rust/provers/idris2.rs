@@ -478,7 +478,12 @@ impl ProverBackend for Idris2Backend {
         let content = tokio::fs::read_to_string(&path)
             .await
             .context("Failed to read Idris 2 file")?;
-        self.parse_string(&content).await
+        let mut state = self.parse_string(&content).await?;
+        state.metadata.insert(
+            "source_path".to_string(),
+            serde_json::Value::String(path.to_string_lossy().into_owned()),
+        );
+        Ok(state)
     }
 
     async fn parse_string(&self, content: &str) -> Result<ProofState> {
@@ -595,11 +600,16 @@ impl ProverBackend for Idris2Backend {
         context.theorems = theorems;
         let goals = self.extract_goals(content).await?;
 
+        let mut metadata = HashMap::new();
+        metadata.insert(
+            "idris2_source".to_string(),
+            serde_json::Value::String(content.to_string()),
+        );
         Ok(ProofState {
             goals,
             context,
             proof_script: Vec::new(),
-            metadata: HashMap::new(),
+            metadata,
         })
     }
 
@@ -781,6 +791,39 @@ impl ProverBackend for Idris2Backend {
     }
 
     async fn verify_proof(&self, state: &ProofState) -> Result<bool> {
+        // Prefer the original .idr file — `export(state)` reconstructs
+        // from the Term IR and loses most of Idris 2's QTT structure.
+        if let Some(path) = state.metadata.get("source_path").and_then(|v| v.as_str()) {
+            let p = std::path::Path::new(path);
+            let mut cmd = Command::new(&self.config.executable);
+            if let Some(parent) = p.parent() {
+                cmd.current_dir(parent);
+            }
+            let output = cmd
+                .arg("--check")
+                .arg(p.file_name().map(std::path::Path::new).unwrap_or(p))
+                .output()
+                .await?;
+            return Ok(output.status.success());
+        }
+        if let Some(source) = state.metadata.get("idris2_source").and_then(|v| v.as_str()) {
+            let temp_dir = std::env::temp_dir().join(format!(
+                "echidna_idris2_{}",
+                uuid::Uuid::new_v4()
+            ));
+            tokio::fs::create_dir_all(&temp_dir).await?;
+            let temp_file = temp_dir.join("Verify.idr");
+            tokio::fs::write(&temp_file, source).await?;
+            let output = Command::new(&self.config.executable)
+                .arg("--check")
+                .arg(&temp_file)
+                .current_dir(&temp_dir)
+                .output()
+                .await?;
+            let _ = tokio::fs::remove_dir_all(&temp_dir).await;
+            return Ok(output.status.success());
+        }
+
         // Generate Idris 2 code and type-check it
         let temp_dir = std::env::temp_dir().join("echidna_idris2");
         tokio::fs::create_dir_all(&temp_dir).await?;
