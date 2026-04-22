@@ -834,7 +834,12 @@ impl ProverBackend for CoqBackend {
             .await
             .context("Failed to read file")?;
 
-        self.parse_string(&content).await
+        let mut state = self.parse_string(&content).await?;
+        state.metadata.insert(
+            "source_path".to_string(),
+            serde_json::Value::String(path.to_string_lossy().into_owned()),
+        );
+        Ok(state)
     }
 
     async fn parse_string(&self, content: &str) -> Result<ProofState> {
@@ -891,11 +896,16 @@ impl ProverBackend for CoqBackend {
             }
         }
 
+        let mut metadata = HashMap::new();
+        metadata.insert(
+            "coq_source".to_string(),
+            serde_json::Value::String(content.to_string()),
+        );
         Ok(ProofState {
             goals,
             context,
             proof_script: proof_tactics,
-            metadata: HashMap::new(),
+            metadata,
         })
     }
 
@@ -922,10 +932,36 @@ impl ProverBackend for CoqBackend {
     }
 
     async fn verify_proof(&self, state: &ProofState) -> Result<bool> {
-        // Export the proof and try to check it
-        let proof_script = self.export(state).await?;
+        // Prefer the original file when parse_file stashed its path — runs
+        // coqc on exactly what the user wrote, avoiding the lossy export
+        // round-trip (the Coq parser's Term IR is incomplete for anything
+        // beyond trivial syntax).
+        if let Some(path) = state.metadata.get("source_path").and_then(|v| v.as_str()) {
+            let output = Command::new("coqc")
+                .arg(path)
+                .output()
+                .await
+                .context("Failed to run coqc")?;
+            return Ok(output.status.success());
+        }
+        if let Some(source) = state.metadata.get("coq_source").and_then(|v| v.as_str()) {
+            let temp_file = std::env::temp_dir()
+                .join(format!("echidna_coq_verify_{}.v", uuid::Uuid::new_v4()));
+            tokio::fs::write(&temp_file, source)
+                .await
+                .context("Failed to write temp file")?;
+            let output = Command::new("coqc")
+                .arg(&temp_file)
+                .output()
+                .await
+                .context("Failed to run coqc")?;
+            let _ = tokio::fs::remove_file(&temp_file).await;
+            return Ok(output.status.success());
+        }
 
-        // Write to temporary file and check with coqc
+        // Fallback: reconstruct from IR. Lossy; only hit for synthetic states
+        // that were never parsed from real Coq source.
+        let proof_script = self.export(state).await?;
         let temp_file = std::env::temp_dir().join("echidna_coq_verify.v");
         tokio::fs::write(&temp_file, proof_script)
             .await

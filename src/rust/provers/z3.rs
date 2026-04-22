@@ -236,11 +236,21 @@ impl ProverBackend for Z3Backend {
             .await
             .with_context(|| format!("Failed to read file: {:?}", path))?;
 
-        self.parse_string(&content).await
+        let mut state = self.parse_string(&content).await?;
+        state.metadata.insert(
+            "source_path".to_string(),
+            serde_json::Value::String(path.to_string_lossy().into_owned()),
+        );
+        Ok(state)
     }
 
     async fn parse_string(&self, content: &str) -> Result<ProofState> {
-        self.parse_smt_file(content)
+        let mut state = self.parse_smt_file(content)?;
+        state.metadata.insert(
+            "z3_source".to_string(),
+            serde_json::Value::String(content.to_string()),
+        );
+        Ok(state)
     }
 
     async fn apply_tactic(&self, state: &ProofState, tactic: &Tactic) -> Result<TacticResult> {
@@ -308,6 +318,15 @@ impl ProverBackend for Z3Backend {
     }
 
     async fn verify_proof(&self, state: &ProofState) -> Result<bool> {
+        // Prefer the original SMT-LIB source when it was stashed by
+        // parse_file / parse_string.  Running Z3 on the raw user input
+        // avoids the lossy parse → Term IR → term_to_smt round-trip,
+        // which silently corrupts anything beyond trivial inputs.
+        if let Some(source) = state.metadata.get("z3_source").and_then(|v| v.as_str()) {
+            let result = self.execute_command(source).await?;
+            return Ok(matches!(result, SmtResult::Unsat));
+        }
+
         if state.goals.is_empty() {
             return Ok(true);
         }
@@ -326,17 +345,17 @@ impl ProverBackend for Z3Backend {
             return Ok(false);
         }
 
-        // Build complete SMT-LIB query with variable declarations
+        // Fallback: reconstruct an SMT-LIB query from the parsed IR.
+        // Lossy for anything complex; only reached when no raw source
+        // was captured (e.g. synthetic ProofState built at runtime).
         let mut commands = String::new();
         commands.push_str("(set-logic ALL)\n");
 
-        // Include variable declarations from context
         for var in &state.context.variables {
             let ty_smt = self.term_to_smt(&var.ty);
             commands.push_str(&format!("(declare-const {} {})\n", var.name, ty_smt));
         }
 
-        // Assert negation of each goal (if unsat, goal is valid)
         for goal in &state.goals {
             let smt_goal = self.term_to_smt(&goal.target);
             commands.push_str(&format!("(assert (not {}))\n", smt_goal));

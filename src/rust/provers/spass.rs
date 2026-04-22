@@ -18,7 +18,6 @@ use anyhow::{Context, Result};
 use async_trait::async_trait;
 use std::path::PathBuf;
 use std::process::Stdio;
-use tokio::io::AsyncWriteExt;
 use tokio::process::Command;
 
 use super::{ProverBackend, ProverConfig, ProverKind};
@@ -105,14 +104,23 @@ impl ProverBackend for SPASSBackend {
     }
 
     async fn parse_file(&self, path: PathBuf) -> Result<ProofState> {
-        let content = tokio::fs::read_to_string(path)
+        let content = tokio::fs::read_to_string(&path)
             .await
             .context("Failed to read proof file")?;
-        self.parse_string(&content).await
+        let mut state = self.parse_string(&content).await?;
+        state.metadata.insert(
+            "source_path".to_string(),
+            serde_json::Value::String(path.to_string_lossy().into_owned()),
+        );
+        Ok(state)
     }
 
     async fn parse_string(&self, content: &str) -> Result<ProofState> {
         let mut state = ProofState::default();
+        state.metadata.insert(
+            "spass_source".to_string(),
+            serde_json::Value::String(content.to_string()),
+        );
 
         let mut in_axioms = false;
         let mut in_conjectures = false;
@@ -157,28 +165,47 @@ impl ProverBackend for SPASSBackend {
     }
 
     async fn verify_proof(&self, state: &ProofState) -> Result<bool> {
-        let dfg_code = self.to_dfg(state)?;
+        // Prefer the original DFG source when parse_file / parse_string
+        // stashed it.  `to_dfg(state)` reconstructs DFG from the parsed
+        // conjecture list, which silently mangles anything beyond toy
+        // single-atom formulae.  If a real path is available, pass that
+        // directly; otherwise materialise the stashed source (or the
+        // lossy reconstruction) to a temp file.
+        //
+        // SPASS rejects input on stdin — the upstream binary parses the
+        // stdin stream as additional command-line flags — so we always
+        // pass a file path as the final positional argument.
+        let path_to_check: PathBuf =
+            if let Some(p) = state.metadata.get("source_path").and_then(|v| v.as_str()) {
+                PathBuf::from(p)
+            } else {
+                let dfg_code = state
+                    .metadata
+                    .get("spass_source")
+                    .and_then(|v| v.as_str())
+                    .map(ToOwned::to_owned)
+                    .map(Ok)
+                    .unwrap_or_else(|| self.to_dfg(state))?;
+                let tmp = std::env::temp_dir()
+                    .join(format!("echidna_spass_{}.dfg", uuid::Uuid::new_v4()));
+                tokio::fs::write(&tmp, dfg_code).await?;
+                tmp
+            };
 
-        let mut child = Command::new(&self.config.executable)
-            .arg("-TimeLimit")
-            .arg(format!("{}", self.config.timeout))
-            .arg("-PGiven=0")
-            .arg("-PProblem=0")
-            .stdin(Stdio::piped())
-            .stdout(Stdio::piped())
-            .stderr(Stdio::piped())
-            .spawn()
-            .context("Failed to spawn SPASS process")?;
-
-        if let Some(mut stdin) = child.stdin.take() {
-            stdin.write_all(dfg_code.as_bytes()).await?;
-            stdin.flush().await?;
-            drop(stdin);
-        }
-
+        // Don't pass -PGiven=0 / -PProblem=0 here: those suppress the
+        // "SPASS beiseite: Proof found." banner that `parse_result`
+        // matches on.
+        // SPASS flag syntax is `-Name=Value` (not `-Name Value`).  Passing
+        // them separated makes SPASS parse the number as a filename and
+        // exit with "Error in opening file N for reading".
         let output = tokio::time::timeout(
             tokio::time::Duration::from_secs(self.config.timeout + 5),
-            child.wait_with_output(),
+            Command::new(&self.config.executable)
+                .arg(format!("-TimeLimit={}", self.config.timeout))
+                .arg(&path_to_check)
+                .stdout(Stdio::piped())
+                .stderr(Stdio::piped())
+                .output(),
         )
         .await
         .context("SPASS timed out")??;
