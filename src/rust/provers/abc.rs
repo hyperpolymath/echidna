@@ -414,20 +414,34 @@ impl ProverBackend for AbcBackend {
             .context("Failed to read ABC input file")?;
 
         let extension = path.extension().and_then(|e| e.to_str());
-        self.parse_design(&content, extension)
+        let mut state = self.parse_design(&content, extension)?;
+        state.metadata.insert(
+            "abc_source".to_string(),
+            serde_json::Value::String(content.clone()),
+        );
+        state.metadata.insert(
+            "source_path".to_string(),
+            serde_json::Value::String(path.to_string_lossy().into_owned()),
+        );
+        Ok(state)
     }
 
     async fn parse_string(&self, content: &str) -> Result<ProofState> {
         // Without file extension context, try ABC command script first,
         // then fall back to AIGER ASCII if header starts with "aag"/"aig"
         let trimmed = content.trim();
-        if trimmed.starts_with("aag") || trimmed.starts_with("aig") {
-            self.parse_design(content, Some("aig"))
+        let mut state = if trimmed.starts_with("aag") || trimmed.starts_with("aig") {
+            self.parse_design(content, Some("aig"))?
         } else if trimmed.starts_with(".model") || trimmed.starts_with(".inputs") {
-            self.parse_design(content, Some("blif"))
+            self.parse_design(content, Some("blif"))?
         } else {
-            self.parse_design(content, None)
-        }
+            self.parse_design(content, None)?
+        };
+        state.metadata.insert(
+            "abc_source".to_string(),
+            serde_json::Value::String(content.to_string()),
+        );
+        Ok(state)
     }
 
     async fn apply_tactic(&self, state: &ProofState, tactic: &Tactic) -> Result<TacticResult> {
@@ -567,6 +581,131 @@ impl ProverBackend for AbcBackend {
     }
 
     async fn verify_proof(&self, state: &ProofState) -> Result<bool> {
+        // Prefer the original source — parsing ABC/BLIF/AIGER into the
+        // generic Term IR and reconstructing via `to_abc_script` loses
+        // structure for anything beyond a one-command script.
+        let method = state
+            .metadata
+            .get("abc_method")
+            .and_then(|v| v.as_str())
+            .unwrap_or("pdr");
+        let bmc_bound = state
+            .metadata
+            .get("bmc_bound")
+            .and_then(|v| v.as_str())
+            .unwrap_or("100");
+        let verify_cmd = match method {
+            "bmc" | "bmc3" => format!("bmc3 -F {}", bmc_bound),
+            "int" => "int".to_string(),
+            "dprove" => "dprove".to_string(),
+            "dsec" => "dsec".to_string(),
+            "cec" => "cec".to_string(),
+            _ => "pdr".to_string(),
+        };
+
+        if let Some(path) = state.metadata.get("source_path").and_then(|v| v.as_str()) {
+            let p = std::path::Path::new(path);
+            let read_cmd = match p.extension().and_then(|e| e.to_str()) {
+                Some("aig") => format!("read_aiger {}", path),
+                Some("blif") => format!("read_blif {}", path),
+                Some("v") => format!("read_verilog {}", path),
+                _ => format!("read {}", path),
+            };
+            let script = format!("{}\n{}\nprint_status\nquit\n", read_cmd, verify_cmd);
+            let tmp_dir =
+                tempfile::tempdir().context("Failed to create temporary directory for ABC")?;
+            let tmp_file = tmp_dir.path().join("verify.abc");
+            tokio::fs::write(&tmp_file, &script)
+                .await
+                .context("Failed to write temporary ABC script file")?;
+            let output = tokio::time::timeout(
+                tokio::time::Duration::from_secs(self.config.timeout),
+                Command::new(&self.config.executable)
+                    .arg("-f")
+                    .arg(&tmp_file)
+                    .stdout(Stdio::piped())
+                    .stderr(Stdio::piped())
+                    .output(),
+            )
+            .await
+            .map_err(|_| anyhow!("ABC timed out after {} seconds", self.config.timeout))?
+            .context("Failed to execute ABC")?;
+            let stdout = String::from_utf8_lossy(&output.stdout);
+            let stderr = String::from_utf8_lossy(&output.stderr);
+            let combined = format!("{}\n{}", stdout, stderr);
+            return self.parse_result(&combined);
+        }
+
+        if let Some(source) = state.metadata.get("abc_source").and_then(|v| v.as_str()) {
+            let trimmed = source.trim();
+            let (ext, read_cmd_base) =
+                if trimmed.starts_with("aag") || trimmed.starts_with("aig") {
+                    (".aig", "read_aiger")
+                } else if trimmed.starts_with(".model") || trimmed.starts_with(".inputs") {
+                    (".blif", "read_blif")
+                } else {
+                    // Inline script — just execute it directly.
+                    ("", "")
+                };
+            let tmp_dir =
+                tempfile::tempdir().context("Failed to create temporary directory for ABC")?;
+            if ext.is_empty() {
+                let tmp_file = tmp_dir.path().join("verify.abc");
+                let script = format!("{}\n{}\nprint_status\nquit\n", source, verify_cmd);
+                tokio::fs::write(&tmp_file, &script)
+                    .await
+                    .context("Failed to write temporary ABC script file")?;
+                let output = tokio::time::timeout(
+                    tokio::time::Duration::from_secs(self.config.timeout),
+                    Command::new(&self.config.executable)
+                        .arg("-f")
+                        .arg(&tmp_file)
+                        .stdout(Stdio::piped())
+                        .stderr(Stdio::piped())
+                        .output(),
+                )
+                .await
+                .map_err(|_| anyhow!("ABC timed out after {} seconds", self.config.timeout))?
+                .context("Failed to execute ABC")?;
+                let stdout = String::from_utf8_lossy(&output.stdout);
+                let stderr = String::from_utf8_lossy(&output.stderr);
+                let combined = format!("{}\n{}", stdout, stderr);
+                return self.parse_result(&combined);
+            } else {
+                let design_file = tmp_dir.path().join(format!("design{}", ext));
+                tokio::fs::write(&design_file, source)
+                    .await
+                    .context("Failed to write temporary ABC design file")?;
+                let script_file = tmp_dir.path().join("verify.abc");
+                let script = format!(
+                    "{} {}\n{}\nprint_status\nquit\n",
+                    read_cmd_base,
+                    design_file.display(),
+                    verify_cmd
+                );
+                tokio::fs::write(&script_file, &script)
+                    .await
+                    .context("Failed to write temporary ABC script file")?;
+                let output = tokio::time::timeout(
+                    tokio::time::Duration::from_secs(self.config.timeout),
+                    Command::new(&self.config.executable)
+                        .arg("-f")
+                        .arg(&script_file)
+                        .stdout(Stdio::piped())
+                        .stderr(Stdio::piped())
+                        .output(),
+                )
+                .await
+                .map_err(|_| anyhow!("ABC timed out after {} seconds", self.config.timeout))?
+                .context("Failed to execute ABC")?;
+                let stdout = String::from_utf8_lossy(&output.stdout);
+                let stderr = String::from_utf8_lossy(&output.stderr);
+                let combined = format!("{}\n{}", stdout, stderr);
+                return self.parse_result(&combined);
+            }
+        }
+
+        // Fallback: reconstruct an ABC script from the parsed IR.
         let abc_script = self.to_abc_script(state)?;
 
         // ABC can execute commands via -c flag or from a script file.

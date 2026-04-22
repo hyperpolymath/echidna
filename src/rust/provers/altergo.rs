@@ -112,14 +112,23 @@ impl ProverBackend for AltErgoBackend {
     }
 
     async fn parse_file(&self, path: PathBuf) -> Result<ProofState> {
-        let content = tokio::fs::read_to_string(path)
+        let content = tokio::fs::read_to_string(&path)
             .await
             .context("Failed to read proof file")?;
-        self.parse_string(&content).await
+        let mut state = self.parse_string(&content).await?;
+        state.metadata.insert(
+            "source_path".to_string(),
+            serde_json::Value::String(path.to_string_lossy().into_owned()),
+        );
+        Ok(state)
     }
 
     async fn parse_string(&self, content: &str) -> Result<ProofState> {
         let mut state = ProofState::default();
+        state.metadata.insert(
+            "altergo_source".to_string(),
+            serde_json::Value::String(content.to_string()),
+        );
 
         for line in content.lines() {
             let line = line.trim();
@@ -154,19 +163,36 @@ impl ProverBackend for AltErgoBackend {
     }
 
     async fn verify_proof(&self, state: &ProofState) -> Result<bool> {
-        let ae_code = self.to_altergo(state)?;
-
-        // Write to temp file since Alt-Ergo prefers file input
-        let tmp_dir = std::env::temp_dir();
-        let tmp_file = tmp_dir.join("echidna_altergo_input.ae");
-        tokio::fs::write(&tmp_file, ae_code.as_bytes())
-            .await
-            .context("Failed to write temp file")?;
+        // Prefer the original .ae source — `to_altergo(state)` round-trips
+        // Alt-Ergo syntax through the generic Term IR, which mangles
+        // anything beyond toy inputs.
+        let (path_to_check, is_temp): (PathBuf, bool) =
+            if let Some(p) = state.metadata.get("source_path").and_then(|v| v.as_str()) {
+                (PathBuf::from(p), false)
+            } else if let Some(src) = state
+                .metadata
+                .get("altergo_source")
+                .and_then(|v| v.as_str())
+            {
+                let tmp = std::env::temp_dir()
+                    .join(format!("echidna_altergo_{}.ae", uuid::Uuid::new_v4()));
+                tokio::fs::write(&tmp, src)
+                    .await
+                    .context("Failed to write temp file")?;
+                (tmp, true)
+            } else {
+                let ae_code = self.to_altergo(state)?;
+                let tmp = std::env::temp_dir().join("echidna_altergo_input.ae");
+                tokio::fs::write(&tmp, ae_code.as_bytes())
+                    .await
+                    .context("Failed to write temp file")?;
+                (tmp, true)
+            };
 
         let output = tokio::time::timeout(
             tokio::time::Duration::from_secs(self.config.timeout + 5),
             Command::new(&self.config.executable)
-                .arg(&tmp_file)
+                .arg(&path_to_check)
                 .arg("--timelimit")
                 .arg(format!("{}", self.config.timeout))
                 .output(),
@@ -174,8 +200,9 @@ impl ProverBackend for AltErgoBackend {
         .await
         .context("Alt-Ergo timed out")??;
 
-        // Clean up temp file
-        let _ = tokio::fs::remove_file(&tmp_file).await;
+        if is_temp {
+            let _ = tokio::fs::remove_file(&path_to_check).await;
+        }
 
         let stdout = String::from_utf8_lossy(&output.stdout);
         self.parse_result(&stdout)
