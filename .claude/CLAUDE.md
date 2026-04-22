@@ -99,19 +99,19 @@ package definitions (not metadata files) and must NOT be deleted.
 
 | Language/Tool | Use Case | Notes |
 |---------------|----------|-------|
-| **ReScript** | Primary application code | Compiles to JS, type-safe |
-| **Deno** | Runtime & package management | Replaces Node/npm/bun |
-| **Rust** | Performance-critical, systems, WASM | Preferred for CLI tools |
-| **Tauri 2.0+** | Mobile apps (iOS/Android) | Rust backend + web UI |
-| **Dioxus** | Mobile apps (native UI) | Pure Rust, React-like |
-| **Gleam** | Backend services | Runs on BEAM or compiles to JS |
-| **Bash/POSIX Shell** | Scripts, automation | Keep minimal |
-| **JavaScript** | Only where ReScript cannot | MCP protocol glue, Deno APIs |
-| **Nickel** | Configuration language | For complex configs |
-| **Guile Scheme** | State/meta files | .machine_readable/6a2/STATE.a2ml, .machine_readable/6a2/META.a2ml, .machine_readable/6a2/ECOSYSTEM.a2ml |
-| **Julia** | Batch scripts, data processing | Per RSR |
-| **OCaml** | AffineScript compiler | Language-specific |
-| **Ada** | Safety-critical systems | Where required |
+| **Rust** | Core systems, prover backends, trust pipeline, CLI, WASM | Primary implementation language |
+| **Julia** | ML inference, batch data processing, extract scripts | Per RSR |
+| **Idris2** | ABI formal proofs (zero `believe_me`) | `src/abi/` — 16 modules, constructive |
+| **Agda** | Trust-pipeline meta-checker proofs | `proofs/agda/` |
+| **Zig** | FFI shim between Rust and Chapel | `src/zig_ffi/` |
+| **Chapel** | Optional parallel proof dispatch | Wired via Cargo `chapel` feature |
+| **Guile Scheme** | Guix package definitions (`guix.scm`, `manifests/*.scm`) | `.scm` metadata files are deprecated — see below |
+| **Bash/POSIX Shell** | Build scripts, CI glue | Keep minimal |
+| **ReScript** | UI components (compiled to JS, served via Deno) | `src/rescript/` |
+| **Deno** | Runtime for compiled ReScript UI | Replaces Node/npm/bun |
+| **JavaScript** | Build tooling only (Tailwind config, test harness) | Not for business logic |
+| **OCaml** | AffineScript / Ephapax compiler host (planned) | No files yet — retain pending source-language decision |
+| **Nickel** | Configuration language (planned) | `.k9.ncl` scaffold exists but not yet wired |
 
 ### BANNED - Do Not Use
 
@@ -119,24 +119,9 @@ package definitions (not metadata files) and must NOT be deleted.
 |--------|-------------|
 | TypeScript | ReScript |
 | Node.js | Deno |
-| npm | Deno |
-| Bun | Deno |
-| pnpm/yarn | Deno |
+| npm / Bun / pnpm / yarn | Deno |
 | Go | Rust |
-| Python | Julia/Rust/ReScript |
-| Java/Kotlin | Rust/Tauri/Dioxus |
-| Swift | Tauri/Dioxus |
-| React Native | Tauri/Dioxus |
-| Flutter/Dart | Tauri/Dioxus |
-
-### Mobile Development
-
-**No exceptions for Kotlin/Swift** - use Rust-first approach:
-
-1. **Tauri 2.0+** - Web UI (ReScript) + Rust backend, MIT/Apache-2.0
-2. **Dioxus** - Pure Rust native UI, MIT/Apache-2.0
-
-Both are FOSS with independent governance (no Big Tech).
+| Python | Julia / Rust |
 
 ### Enforcement Rules
 
@@ -144,8 +129,7 @@ Both are FOSS with independent governance (no Big Tech).
 2. **No package.json for runtime deps** - Use deno.json imports
 3. **No node_modules in production** - Deno caches deps automatically
 4. **No Go code** - Use Rust instead
-5. **No Python anywhere** - Use Julia for data/batch, Rust for systems, ReScript for apps
-6. **No Kotlin/Swift for mobile** - Use Tauri 2.0+ or Dioxus
+5. **No Python anywhere** - Use Julia for data/batch, Rust for systems
 
 ### Package Management
 
