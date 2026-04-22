@@ -255,7 +255,12 @@ impl ProverBackend for AgdaBackend {
         let content = tokio::fs::read_to_string(&path)
             .await
             .context("Failed to read Agda file")?;
-        self.parse_string(&content).await
+        let mut state = self.parse_string(&content).await?;
+        state.metadata.insert(
+            "source_path".to_string(),
+            serde_json::Value::String(path.to_string_lossy().into_owned()),
+        );
+        Ok(state)
     }
 
     async fn parse_string(&self, content: &str) -> Result<ProofState> {
@@ -299,11 +304,16 @@ impl ProverBackend for AgdaBackend {
         context.theorems = theorems;
         let goals = self.extract_goals(content).await?;
 
+        let mut metadata = HashMap::new();
+        metadata.insert(
+            "agda_source".to_string(),
+            serde_json::Value::String(content.to_string()),
+        );
         Ok(ProofState {
             goals,
             context,
             proof_script: Vec::new(),
-            metadata: HashMap::new(),
+            metadata,
         })
     }
 
@@ -349,6 +359,51 @@ impl ProverBackend for AgdaBackend {
     }
 
     async fn verify_proof(&self, state: &ProofState) -> Result<bool> {
+        // Prefer the original .agda file when parse_file stashed its path.
+        // The previous `state.goals.is_empty() → Ok(true)` shortcut produced
+        // fake-success — Agda's parser doesn't populate goals the way the
+        // generic pipeline expects, so genuine files hit it without the
+        // solver ever running.
+        //
+        // Agda checks that the top-level module name matches the file path
+        // *relative to its CWD*, so we spawn the process from the file's
+        // parent directory — otherwise every non-trivial file trips
+        // "module … does not match file name".
+        if let Some(path) = state.metadata.get("source_path").and_then(|v| v.as_str()) {
+            let p = std::path::Path::new(path);
+            let mut cmd = Command::new(&self.config.executable);
+            if let Some(parent) = p.parent() {
+                cmd.current_dir(parent);
+            }
+            let output = cmd
+                .arg(p.file_name().map(std::path::Path::new).unwrap_or(p))
+                .output()
+                .await?;
+            return Ok(output.status.success());
+        }
+        if let Some(source) = state.metadata.get("agda_source").and_then(|v| v.as_str()) {
+            let temp_file = std::env::temp_dir()
+                .join(format!("echidna_agda_verify_{}.agda", uuid::Uuid::new_v4()));
+            tokio::fs::write(&temp_file, source).await?;
+            let mut cmd = Command::new(&self.config.executable);
+            if let Some(parent) = temp_file.parent() {
+                cmd.current_dir(parent);
+            }
+            let output = cmd
+                .arg(
+                    temp_file
+                        .file_name()
+                        .map(std::path::Path::new)
+                        .unwrap_or(&temp_file),
+                )
+                .output()
+                .await?;
+            let _ = tokio::fs::remove_file(&temp_file).await;
+            return Ok(output.status.success());
+        }
+
+        // Fallback: reconstruct from IR (lossy). Only hit for synthetic
+        // states never backed by real source.
         if state.goals.is_empty() {
             return Ok(true);
         }

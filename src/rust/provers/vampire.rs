@@ -102,14 +102,23 @@ impl ProverBackend for VampireBackend {
     }
 
     async fn parse_file(&self, path: PathBuf) -> Result<ProofState> {
-        let content = tokio::fs::read_to_string(path)
+        let content = tokio::fs::read_to_string(&path)
             .await
             .context("Failed to read proof file")?;
-        self.parse_string(&content).await
+        let mut state = self.parse_string(&content).await?;
+        state.metadata.insert(
+            "source_path".to_string(),
+            serde_json::Value::String(path.to_string_lossy().into_owned()),
+        );
+        Ok(state)
     }
 
     async fn parse_string(&self, content: &str) -> Result<ProofState> {
         let mut state = ProofState::default();
+        state.metadata.insert(
+            "vampire_source".to_string(),
+            serde_json::Value::String(content.to_string()),
+        );
 
         for line in content.lines() {
             let line = line.trim();
@@ -143,7 +152,45 @@ impl ProverBackend for VampireBackend {
     }
 
     async fn verify_proof(&self, state: &ProofState) -> Result<bool> {
-        let tptp_code = self.to_tptp(state)?;
+        // Prefer the original TPTP source — `to_tptp(state)` round-trips
+        // through the generic Term IR and silently mangles non-trivial
+        // inputs.
+        if let Some(path) = state.metadata.get("source_path").and_then(|v| v.as_str()) {
+            let output = tokio::time::timeout(
+                tokio::time::Duration::from_secs(self.config.timeout + 5),
+                Command::new(&self.config.executable)
+                    .arg("--mode")
+                    .arg("casc")
+                    .arg("--input_syntax")
+                    .arg("tptp")
+                    .arg("--time_limit")
+                    .arg(format!("{}", self.config.timeout))
+                    .arg("--proof")
+                    .arg("off")
+                    .arg("--statistics")
+                    .arg("brief")
+                    .arg(path)
+                    .stdout(Stdio::piped())
+                    .stderr(Stdio::piped())
+                    .output(),
+            )
+            .await
+            .context("Vampire timed out")??;
+            let stdout = String::from_utf8_lossy(&output.stdout);
+            let stderr = String::from_utf8_lossy(&output.stderr);
+            return self
+                .parse_result(&stdout)
+                .or_else(|_| self.parse_result(&stderr));
+        }
+        let tptp_code = if let Some(src) = state
+            .metadata
+            .get("vampire_source")
+            .and_then(|v| v.as_str())
+        {
+            src.to_string()
+        } else {
+            self.to_tptp(state)?
+        };
 
         let mut child = Command::new(&self.config.executable)
             .arg("--mode")

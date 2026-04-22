@@ -2149,7 +2149,16 @@ impl ProverBackend for Hol4Backend {
             .await
             .context("Failed to read HOL4 file")?;
 
-        self.parse_string(&content).await
+        let mut state = self.parse_string(&content).await?;
+        state.metadata.insert(
+            "source_path".to_string(),
+            serde_json::Value::String(path.to_string_lossy().into_owned()),
+        );
+        state.metadata.insert(
+            "hol4_source".to_string(),
+            serde_json::Value::String(content),
+        );
+        Ok(state)
     }
 
     async fn parse_string(&self, content: &str) -> Result<ProofState> {
@@ -2245,6 +2254,28 @@ impl ProverBackend for Hol4Backend {
     }
 
     async fn verify_proof(&self, state: &ProofState) -> Result<bool> {
+        // Previously `Ok(state.goals.is_empty())` — fake success without
+        // ever invoking HOL4.  When parse_file stashed the path, feed the
+        // file to HOL4 via Holmake (the standard batch build driver).
+        if let Some(path) = state.metadata.get("source_path").and_then(|v| v.as_str()) {
+            let p = std::path::Path::new(path);
+            let mut cmd = Command::new(&self.config.executable);
+            if let Some(parent) = p.parent() {
+                cmd.current_dir(parent);
+            }
+            cmd.arg("--holdir")
+                .arg(p.file_name().map(std::path::Path::new).unwrap_or(p));
+            let output = cmd.output().await.context("Failed to invoke HOL4")?;
+            let combined = format!(
+                "{}{}",
+                String::from_utf8_lossy(&output.stdout),
+                String::from_utf8_lossy(&output.stderr)
+            );
+            let verified = output.status.success()
+                && !combined.to_lowercase().contains("exception")
+                && !combined.to_lowercase().contains("error");
+            return Ok(verified);
+        }
         Ok(state.goals.is_empty())
     }
 

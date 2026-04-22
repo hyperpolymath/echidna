@@ -2692,7 +2692,16 @@ impl ProverBackend for PVSBackend {
             .await
             .context("Failed to read PVS file")?;
 
-        self.parse_string(&content).await
+        let mut state = self.parse_string(&content).await?;
+        state.metadata.insert(
+            "source_path".to_string(),
+            serde_json::Value::String(path.to_string_lossy().into_owned()),
+        );
+        state.metadata.insert(
+            "pvs_source".to_string(),
+            serde_json::Value::String(content),
+        );
+        Ok(state)
     }
 
     async fn parse_string(&self, content: &str) -> Result<ProofState> {
@@ -2824,6 +2833,29 @@ impl ProverBackend for PVSBackend {
     }
 
     async fn verify_proof(&self, state: &ProofState) -> Result<bool> {
+        // The previous impl was a hollow stub — `Ok(state.goals.is_empty())`
+        // would happily report SUCCESS on a file that never went near PVS.
+        // Shell out to PVS in batch mode against the original source when
+        // it was stashed by parse_file; fall through to the legacy "empty
+        // goals == ok" shortcut only for synthetic ProofStates.
+        if let Some(path) = state.metadata.get("source_path").and_then(|v| v.as_str()) {
+            let output = Command::new(&self.config.executable)
+                .arg("-batch")
+                .arg("-typecheck")
+                .arg(path)
+                .output()
+                .await
+                .context("Failed to invoke PVS")?;
+            let combined = format!(
+                "{}{}",
+                String::from_utf8_lossy(&output.stdout),
+                String::from_utf8_lossy(&output.stderr)
+            );
+            let verified = output.status.success()
+                && !combined.to_lowercase().contains("error")
+                && !combined.to_lowercase().contains("typecheck failed");
+            return Ok(verified);
+        }
         Ok(state.goals.is_empty())
     }
 

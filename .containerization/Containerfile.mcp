@@ -1,0 +1,149 @@
+# SPDX-License-Identifier: PMPL-1.0-or-later
+# SPDX-FileCopyrightText: 2026 Jonathan D.A. Jewell <j.d.a.jewell@open.ac.uk>
+#
+# ECHIDNA MCP Container — exposes ECHIDNA as a Model Context Protocol server
+# over stdio so any MCP-capable AI agent (Claude Code, Claude Desktop, Claude
+# API with tool use, other clients) can call `prove({file, prover, timeout_secs})`
+# and get a real solver verdict.
+#
+# Bundled MVP prover set: Z3, CVC5, Coq, Agda, Metamath, SPASS (all apt), plus
+# Lean 4 (via elan), Isabelle, F*, and Mizar where upstream distributions
+# cooperate with an unprivileged build environment.
+#
+# Build:  podman build -f .containerization/Containerfile.mcp -t echidna:mcp .
+# Run:    podman run --rm -i echidna:mcp           # stdio MCP transport
+# Use:    {"mcpServers":{"echidna":{"command":"podman",
+#           "args":["run","--rm","-i","echidna:mcp"]}}}
+
+# =============================================================================
+# Stage 1: Rust builder — echidna + echidna-mcp + echidna-wire + typed_wasm
+# =============================================================================
+FROM docker.io/library/rust:1.85-slim-bookworm AS rust-builder
+
+RUN apt-get update && apt-get install -y --no-install-recommends \
+        build-essential \
+        pkg-config \
+        libssl-dev \
+        capnproto \
+    && rm -rf /var/lib/apt/lists/*
+
+WORKDIR /build
+
+COPY Cargo.toml Cargo.lock ./
+COPY src/rust ./src/rust
+COPY src/interfaces ./src/interfaces
+COPY crates ./crates
+COPY benches ./benches
+
+# Build both the CLI (echidna) and the MCP server (echidna-mcp). The MCP
+# server shells out to the CLI via the ECHIDNA_BIN env var.
+RUN cargo build --release --bin echidna -p echidna-mcp
+
+# =============================================================================
+# Stage 2: MVP prover installer (Debian apt-available set)
+# =============================================================================
+FROM docker.io/library/debian:bookworm-slim AS mvp-installer
+
+RUN apt-get update && apt-get install -y --no-install-recommends \
+        z3 \
+        cvc5 \
+        coq \
+        agda-bin \
+        metamath \
+        spass \
+    && rm -rf /var/lib/apt/lists/*
+
+# =============================================================================
+# Stage 3: Lean 4 installer (elan + stable toolchain)
+# =============================================================================
+FROM docker.io/library/debian:bookworm-slim AS lean-installer
+RUN apt-get update && apt-get install -y --no-install-recommends \
+        curl ca-certificates bash \
+    && rm -rf /var/lib/apt/lists/*
+RUN curl -fsSL https://raw.githubusercontent.com/leanprover/elan/master/elan-init.sh \
+        | bash -s -- -y --default-toolchain stable \
+    && . "$HOME/.elan/env" \
+    && lean --version
+
+# =============================================================================
+# Stage 4: Isabelle 2025 installer (tarball + pre-built Main heap)
+# =============================================================================
+FROM docker.io/library/debian:bookworm-slim AS isabelle-installer
+RUN apt-get update && apt-get install -y --no-install-recommends \
+        curl ca-certificates perl fontconfig \
+    && rm -rf /var/lib/apt/lists/*
+RUN curl -fsSL --retry 3 \
+        "https://isabelle.in.tum.de/dist/Isabelle2025-2_linux.tar.gz" \
+        -o /tmp/isabelle.tar.gz \
+    && tar -xzf /tmp/isabelle.tar.gz -C /opt/ \
+    && rm /tmp/isabelle.tar.gz \
+    && rm -rf /opt/Isabelle2025-2/doc \
+    && /opt/Isabelle2025-2/bin/isabelle version \
+    && /opt/Isabelle2025-2/bin/isabelle build -b Main \
+    && rm -rf /root/.isabelle/Isabelle2025-2/log \
+              /root/.isabelle/Isabelle2025-2/browser_info
+
+# =============================================================================
+# Stage 5: F* installer (binary release)
+# =============================================================================
+FROM docker.io/library/debian:bookworm-slim AS fstar-installer
+RUN apt-get update && apt-get install -y --no-install-recommends \
+        curl ca-certificates jq tar gzip \
+    && rm -rf /var/lib/apt/lists/*
+# Resolve the latest F* Linux x86_64 release tarball via the GitHub API
+# (asset naming varies between releases; don't hard-code a version).
+RUN set -eu; \
+    url=$(curl -fsSL https://api.github.com/repos/FStarLang/FStar/releases/latest \
+            | jq -r '.assets[]|select(.name|test("Linux|linux.*x86_64"))|.browser_download_url' \
+            | head -1); \
+    if [ -n "$url" ]; then \
+        curl -fsSL "$url" -o /tmp/fstar.tar.gz \
+        && mkdir -p /opt/fstar \
+        && tar -xzf /tmp/fstar.tar.gz -C /opt/fstar --strip-components=1 \
+        && /opt/fstar/bin/fstar.exe --version || true; \
+    else \
+        mkdir -p /opt/fstar/bin; \
+        echo "WARN: no F* linux asset found; stage empty" >&2; \
+    fi
+
+# =============================================================================
+# Stage 6: Runtime image
+# =============================================================================
+FROM docker.io/library/debian:bookworm-slim
+
+LABEL maintainer="Jonathan D.A. Jewell <j.d.a.jewell@open.ac.uk>"
+LABEL org.opencontainers.image.source="https://github.com/hyperpolymath/echidna"
+LABEL org.opencontainers.image.description="ECHIDNA MCP server — AI-agent-callable theorem proving over stdio"
+LABEL org.opencontainers.image.licenses="PMPL-1.0-or-later"
+LABEL org.opencontainers.image.version="2.1.0"
+
+# Runtime deps: the MVP provers + dynamic libs + perl/fontconfig for Isabelle.
+RUN apt-get update && apt-get install -y --no-install-recommends \
+        ca-certificates \
+        libssl3 \
+        libgmp10 \
+        libstdc++6 \
+        perl \
+        fontconfig \
+        z3 \
+        cvc5 \
+        coq \
+        agda-bin \
+        metamath \
+        spass \
+    && rm -rf /var/lib/apt/lists/*
+
+WORKDIR /app
+
+COPY --from=rust-builder  /build/target/release/echidna     /app/bin/echidna
+COPY --from=rust-builder  /build/target/release/echidna-mcp /app/bin/echidna-mcp
+COPY --from=lean-installer /root/.elan                      /opt/elan
+COPY --from=isabelle-installer /opt/Isabelle2025-2          /opt/Isabelle2025-2
+COPY --from=isabelle-installer /root/.isabelle              /root/.isabelle
+COPY --from=fstar-installer /opt/fstar                      /opt/fstar
+
+ENV PATH="/app/bin:/opt/elan/toolchains/stable/bin:/opt/Isabelle2025-2/bin:/opt/fstar/bin:${PATH}"
+ENV ECHIDNA_BIN="/app/bin/echidna"
+
+# Stdio transport — no ports. The client connects via podman run -i.
+ENTRYPOINT ["/app/bin/echidna-mcp"]

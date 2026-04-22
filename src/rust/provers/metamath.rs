@@ -287,7 +287,12 @@ impl ProverBackend for MetamathBackend {
         let content = fs::read_to_string(&path)
             .await
             .with_context(|| format!("Failed to read file: {:?}", path))?;
-        self.parse_string(&content).await
+        let mut state = self.parse_string(&content).await?;
+        state.metadata.insert(
+            "source_path".to_string(),
+            serde_json::Value::String(path.to_string_lossy().into_owned()),
+        );
+        Ok(state)
     }
 
     async fn parse_string(&self, content: &str) -> Result<ProofState> {
@@ -397,13 +402,54 @@ impl ProverBackend for MetamathBackend {
     async fn verify_proof(&self, state: &ProofState) -> Result<bool> {
         info!("Verifying Metamath proof with {} goals", state.goals.len());
 
-        if !state.goals.is_empty() {
-            debug!("Proof incomplete: {} goals remaining", state.goals.len());
-            return Ok(false);
+        // Real verification path: shell out to the `metamath` CLI and run
+        // its `verify proof *` command over the original source.  The
+        // previous stub — returning `Ok(state.goals.is_empty())` — never
+        // invoked the solver at all.
+        let source_path = state
+            .metadata
+            .get("source_path")
+            .and_then(|v| v.as_str())
+            .map(PathBuf::from);
+
+        if let Some(path) = source_path {
+            use tokio::io::AsyncWriteExt;
+            use tokio::process::Command;
+
+            let mut child = Command::new(&self.config.executable)
+                .stdin(std::process::Stdio::piped())
+                .stdout(std::process::Stdio::piped())
+                .stderr(std::process::Stdio::piped())
+                .spawn()
+                .context("Failed to spawn metamath")?;
+
+            if let Some(mut stdin) = child.stdin.take() {
+                let script = format!(
+                    "read \"{}\"\nverify proof *\nexit\n",
+                    path.display()
+                );
+                stdin.write_all(script.as_bytes()).await?;
+                stdin.flush().await?;
+                drop(stdin);
+            }
+
+            let output = child.wait_with_output().await?;
+            let stdout = String::from_utf8_lossy(&output.stdout);
+            let stderr = String::from_utf8_lossy(&output.stderr);
+            let combined = format!("{}{}", stdout, stderr);
+
+            // metamath prints either "All proofs in the database were
+            // verified" on success, or "?Error" / "proof is incomplete"
+            // on failure.
+            let verified = combined.contains("All proofs in the database were verified")
+                && !combined.contains("?Error")
+                && !combined.to_lowercase().contains("proof is incomplete");
+            return Ok(verified);
         }
 
-        // All goals satisfied
-        Ok(true)
+        // Fallback when no source path was stashed (synthetic ProofState):
+        // all we can say is "no goals left means OK".
+        Ok(state.goals.is_empty())
     }
 
     async fn export(&self, state: &ProofState) -> Result<String> {

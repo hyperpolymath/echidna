@@ -1239,7 +1239,12 @@ impl ProverBackend for ACL2Backend {
             .await
             .context("Failed to read ACL2 file")?;
 
-        self.parse_string(&content).await
+        let mut state = self.parse_string(&content).await?;
+        state.metadata.insert(
+            "source_path".to_string(),
+            serde_json::Value::String(path.to_string_lossy().into_owned()),
+        );
+        Ok(state)
     }
 
     async fn parse_string(&self, content: &str) -> Result<ProofState> {
@@ -1310,11 +1315,16 @@ impl ProverBackend for ACL2Backend {
             }
         }
 
+        let mut metadata = HashMap::new();
+        metadata.insert(
+            "acl2_source".to_string(),
+            serde_json::Value::String(content.to_string()),
+        );
         Ok(ProofState {
             goals,
             context,
             proof_script: vec![],
-            metadata: HashMap::new(),
+            metadata,
         })
     }
 
@@ -1380,6 +1390,47 @@ impl ProverBackend for ACL2Backend {
     }
 
     async fn verify_proof(&self, state: &ProofState) -> Result<bool> {
+        let exec = self
+            .config
+            .executable
+            .to_str()
+            .filter(|s| !s.is_empty())
+            .unwrap_or("acl2");
+
+        // Prefer the original Lisp source — ACL2's `term_to_sexp`
+        // round-trip is lossy for anything beyond trivial arithmetic.
+        let source_file: Option<PathBuf> =
+            if let Some(p) = state.metadata.get("source_path").and_then(|v| v.as_str()) {
+                Some(PathBuf::from(p))
+            } else if let Some(src) = state.metadata.get("acl2_source").and_then(|v| v.as_str()) {
+                let tmp = std::env::temp_dir()
+                    .join(format!("echidna_acl2_verify_{}.lisp", uuid::Uuid::new_v4()));
+                tokio::fs::write(&tmp, src)
+                    .await
+                    .context("Failed to write temp file")?;
+                Some(tmp)
+            } else {
+                None
+            };
+
+        if let Some(path) = source_file {
+            let stdin_file = std::fs::File::open(&path)
+                .context("Failed to open source file for ACL2 stdin")?;
+            let output = Command::new(exec)
+                .stdin(std::process::Stdio::from(stdin_file))
+                .output()
+                .await
+                .context("Failed to run ACL2")?;
+            if state.metadata.get("source_path").is_none() {
+                let _ = tokio::fs::remove_file(&path).await;
+            }
+            let output_str = String::from_utf8_lossy(&output.stdout);
+            let err_str = String::from_utf8_lossy(&output.stderr);
+            let combined = format!("{}{}", output_str, err_str);
+            return Ok(combined.contains("Q.E.D.")
+                || (combined.contains("Summary") && !combined.contains("FAILED")));
+        }
+
         if state.goals.is_empty() {
             return Ok(true);
         }
@@ -1393,14 +1444,6 @@ impl ProverBackend for ACL2Backend {
         tokio::fs::write(&temp_file, &content)
             .await
             .context("Failed to write temp file")?;
-
-        // Run ACL2 in batch mode
-        let exec = self
-            .config
-            .executable
-            .to_str()
-            .filter(|s| !s.is_empty())
-            .unwrap_or("acl2");
 
         let stdin_file =
             std::fs::File::open(&temp_file).context("Failed to open temp file for ACL2 stdin")?;

@@ -547,11 +547,21 @@ impl ProverBackend for CVC5Backend {
         let content = tokio::fs::read_to_string(&path)
             .await
             .context(format!("Failed to read file: {:?}", path))?;
-        self.parse_string(&content).await
+        let mut state = self.parse_string(&content).await?;
+        state.metadata.insert(
+            "source_path".to_string(),
+            serde_json::Value::String(path.to_string_lossy().into_owned()),
+        );
+        Ok(state)
     }
 
     async fn parse_string(&self, content: &str) -> Result<ProofState> {
-        self.parse_smtlib_content(content).await
+        let mut state = self.parse_smtlib_content(content).await?;
+        state.metadata.insert(
+            "cvc5_source".to_string(),
+            serde_json::Value::String(content.to_string()),
+        );
+        Ok(state)
     }
 
     async fn apply_tactic(&self, state: &ProofState, tactic: &Tactic) -> Result<TacticResult> {
@@ -603,21 +613,30 @@ impl ProverBackend for CVC5Backend {
     }
 
     async fn verify_proof(&self, state: &ProofState) -> Result<bool> {
-        if state.goals.is_empty() {
-            return Ok(true);
-        }
-
-        let mut commands = String::new();
-        commands.push_str("(set-logic ALL)\n");
-        for var in &state.context.variables {
-            let ty = self.term_to_smtlib(&var.ty)?;
-            commands.push_str(&format!("(declare-const {} {})\n", var.name, ty));
-        }
-        for goal in &state.goals {
-            let smtlib = self.term_to_smtlib(&goal.target)?;
-            commands.push_str(&format!("(assert (not {}))\n", smtlib));
-        }
-        commands.push_str("(check-sat)\n");
+        // Prefer the original SMT-LIB source when parse_file / parse_string
+        // stashed it.  Skipping the Term IR round-trip is the only way to
+        // keep non-trivial CVC5 inputs intact.
+        let commands = if let Some(source) =
+            state.metadata.get("cvc5_source").and_then(|v| v.as_str())
+        {
+            source.to_string()
+        } else {
+            if state.goals.is_empty() {
+                return Ok(true);
+            }
+            let mut s = String::new();
+            s.push_str("(set-logic ALL)\n");
+            for var in &state.context.variables {
+                let ty = self.term_to_smtlib(&var.ty)?;
+                s.push_str(&format!("(declare-const {} {})\n", var.name, ty));
+            }
+            for goal in &state.goals {
+                let smtlib = self.term_to_smtlib(&goal.target)?;
+                s.push_str(&format!("(assert (not {}))\n", smtlib));
+            }
+            s.push_str("(check-sat)\n");
+            s
+        };
 
         let temp_file =
             std::env::temp_dir().join(format!("echidna_cvc5_verify_{}.smt2", Uuid::new_v4()));
