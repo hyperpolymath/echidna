@@ -3,7 +3,9 @@
     "allow": [
       "Bash(iwconfig)",
       "Bash(nmcli radio:*)",
-      "Bash(nmcli:*)"
+      "Bash(nmcli:*)",
+      "Bash(git restore *)",
+      "Bash(rm -f tests/live_goals/.broken.aux tests/live_goals/.identity.aux tests/live_goals/Identity.agdai tests/live_goals/broken.glob)"
     ]
   }
 }
