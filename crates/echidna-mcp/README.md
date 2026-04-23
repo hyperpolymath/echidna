@@ -1,3 +1,6 @@
+<!-- SPDX-License-Identifier: PMPL-1.0-or-later -->
+<!-- SPDX-FileCopyrightText: 2026 Jonathan D.A. Jewell <j.d.a.jewell@open.ac.uk> -->
+
 # echidna-mcp
 
 Model Context Protocol server that exposes [ECHIDNA](https://github.com/hyperpolymath/echidna)'s
@@ -80,6 +83,38 @@ Prove a theorem from a file using one of ECHIDNA's 105 backends.
 | `.dfg` | SPASS |
 | `.mm` | Metamath |
 
+### `check_prover`
+
+Check whether a named prover backend is installed and reachable on the current system.
+
+| Parameter | Type | Required | Description |
+|-----------|------|----------|-------------|
+| `prover` | string | yes | Prover backend name (case-sensitive). Examples: `Z3`, `Lean`, `Coq`, `Vampire`. |
+
+**Returns** a JSON object:
+```json
+{
+  "available": true,
+  "message": "Z3 is available"
+}
+```
+
+### `list_provers`
+
+List all 105 prover backends supported by ECHIDNA. Takes no parameters.
+
+**Returns** a JSON object:
+```json
+{
+  "total": 105,
+  "provers": {
+    "Z3": "SMT solver (Microsoft Research)",
+    "Lean": "Lean 4 interactive proof assistant",
+    "...": "..."
+  }
+}
+```
+
 ## Example JSON-RPC exchanges
 
 ### Prove a trivial SMT goal with Z3
@@ -122,23 +157,36 @@ Response:
 }
 ```
 
-### Auto-detect prover from extension
+### Check that Z3 is installed
 
+Request:
 ```json
 {
   "jsonrpc": "2.0",
   "id": 2,
   "method": "tools/call",
   "params": {
-    "name": "prove",
+    "name": "check_prover",
     "arguments": {
-      "file": "/workspace/lemmas/associativity.v"
+      "prover": "Z3"
     }
   }
 }
 ```
 
-ECHIDNA detects `.v` → Coq and routes accordingly.
+Response:
+```json
+{
+  "jsonrpc": "2.0",
+  "id": 2,
+  "result": {
+    "content": [{
+      "type": "text",
+      "text": "{\n  \"available\": true,\n  \"message\": \"Z3 is available\"\n}"
+    }]
+  }
+}
+```
 
 ## Troubleshooting
 
@@ -146,7 +194,7 @@ ECHIDNA detects `.v` → Coq and routes accordingly.
 : The `echidna` binary is not on PATH. Either install it or set `ECHIDNA_BIN=/full/path/echidna` in the MCP server env config.
 
 **`verified: false` with empty `message`**
-: The prover binary itself is missing. Confirm the target prover is installed: `which z3`, `which coqc`, etc. The `echidna check-prover <Name>` command also reports availability.
+: The prover binary itself is missing. Confirm the target prover is installed: `which z3`, `which coqc`, etc. The `check_prover` tool also reports availability.
 
 **Timeout / `verified: false` with partial output**
 : Increase `timeout_secs`. Complex goals in interactive provers (Isabelle, Coq) may need 60–600 s. Default is 300 s.
