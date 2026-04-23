@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: PMPL-1.0-or-later
 // ECHIDNA gRPC Server - wired to core
 
-use echidna::core::{Tactic as CoreTactic, TacticResult as CoreTacticResult, Term};
+use echidna::core::{Tactic as CoreTactic, TacticResult, Term};
 use echidna::provers::{ProverBackend, ProverConfig, ProverFactory, ProverKind as CoreProverKind};
 use echidna_proto::v1::proof_service_server::{ProofService, ProofServiceServer};
 use echidna_proto::v1::*;
@@ -10,8 +10,8 @@ use std::sync::Arc;
 use tokio::sync::{Mutex, RwLock};
 use tonic::{transport::Server, Request, Response, Status};
 
-// Import FFI wrapper
-use crate::ffi_wrapper;
+// FFI wrapper module — file lives next to main.rs.
+mod ffi_wrapper;
 
 pub mod echidna_proto {
     pub mod v1 {
@@ -22,11 +22,15 @@ pub mod echidna_proto {
 /// Wrapper for FFI-based prover backend
 struct FfiProverBackend {
     handle: i32,
+    config: ProverConfig,
 }
 
 impl FfiProverBackend {
     pub fn new(handle: i32) -> Self {
-        FfiProverBackend { handle }
+        FfiProverBackend {
+            handle,
+            config: ProverConfig::default(),
+        }
     }
 }
 
@@ -38,15 +42,29 @@ impl ProverBackend for FfiProverBackend {
     ) -> anyhow::Result<echidna::core::ProofState> {
         let content = std::fs::read_to_string(&path)?;
         ffi_wrapper::parse_string(self.handle, &content)?;
-        Ok(echidna::core::ProofState::new(content))
+        let mut state = echidna::core::ProofState::new(Term::Hole(content.clone()));
+        state.metadata.insert(
+            "source_path".to_string(),
+            serde_json::Value::String(path.to_string_lossy().into_owned()),
+        );
+        state.metadata.insert(
+            "ffi_source".to_string(),
+            serde_json::Value::String(content),
+        );
+        Ok(state)
     }
 
     async fn parse_string(&self, content: &str) -> anyhow::Result<echidna::core::ProofState> {
         ffi_wrapper::parse_string(self.handle, content)?;
-        Ok(echidna::core::ProofState::new(content.to_string()))
+        let mut state = echidna::core::ProofState::new(Term::Hole(content.to_string()));
+        state.metadata.insert(
+            "ffi_source".to_string(),
+            serde_json::Value::String(content.to_string()),
+        );
+        Ok(state)
     }
 
-    async fn verify_proof(&self, state: &echidna::core::ProofState) -> anyhow::Result<bool> {
+    async fn verify_proof(&self, _state: &echidna::core::ProofState) -> anyhow::Result<bool> {
         ffi_wrapper::verify_proof(self.handle)
     }
 
@@ -57,7 +75,7 @@ impl ProverBackend for FfiProverBackend {
     ) -> anyhow::Result<TacticResult> {
         let tactic_str = format!("{:?}", tactic);
         if ffi_wrapper::apply_tactic(self.handle, &tactic_str)? {
-            Ok(TacticResult::Success(Box::new(state.clone())))
+            Ok(TacticResult::Success(state.clone()))
         } else {
             Ok(TacticResult::Error("Tactic failed".to_string()))
         }
@@ -65,7 +83,7 @@ impl ProverBackend for FfiProverBackend {
 
     async fn suggest_tactics(
         &self,
-        state: &echidna::core::ProofState,
+        _state: &echidna::core::ProofState,
         limit: usize,
     ) -> anyhow::Result<Vec<CoreTactic>> {
         let tactic_names = ffi_wrapper::suggest_tactics(self.handle, limit)?;
@@ -80,7 +98,13 @@ impl ProverBackend for FfiProverBackend {
         Ok(tactics)
     }
 
-    async fn export(&self, state: &echidna::core::ProofState) -> anyhow::Result<String> {
+    async fn search_theorems(&self, _pattern: &str) -> anyhow::Result<Vec<String>> {
+        // FFI layer doesn't expose theorem search yet; return empty so the
+        // gRPC service can still satisfy the trait contract.
+        Ok(Vec::new())
+    }
+
+    async fn export(&self, _state: &echidna::core::ProofState) -> anyhow::Result<String> {
         ffi_wrapper::export_proof(self.handle)
     }
 
@@ -91,6 +115,14 @@ impl ProverBackend for FfiProverBackend {
     fn kind(&self) -> CoreProverKind {
         // This is a bit simplified - in a real implementation we'd track the kind
         CoreProverKind::Lean // Default, would need to be set during creation
+    }
+
+    fn config(&self) -> &ProverConfig {
+        &self.config
+    }
+
+    fn set_config(&mut self, config: ProverConfig) {
+        self.config = config;
     }
 }
 
@@ -167,7 +199,9 @@ impl ProofService for ProofServiceImpl {
                             let session = ProofSession {
                                 prover_kind: core_kind,
                                 prover: Box::new(FfiProverBackend::new(handle)),
-                                state: Some(echidna::core::ProofState::new(req.goal.clone())),
+                                state: Some(echidna::core::ProofState::new(Term::Hole(
+                                    req.goal.clone(),
+                                ))),
                                 goal: req.goal.clone(),
                                 status,
                                 history: vec![],
@@ -377,7 +411,7 @@ impl ProofService for ProofServiceImpl {
             .map_err(|e| Status::internal(e.to_string()))?;
 
         let success = match &result {
-            CoreTacticResult::Success(new_state) => {
+            TacticResult::Success(new_state) => {
                 let complete = new_state.is_complete();
                 session.state = Some(new_state.clone());
                 session.history.push(format!("{:?}", tactic));
@@ -386,14 +420,14 @@ impl ProofService for ProofServiceImpl {
                 }
                 true
             },
-            CoreTacticResult::QED => {
+            TacticResult::QED => {
                 session.status = ProofStatus::Success as i32;
                 if let Some(s) = session.state.as_mut() {
                     s.goals.clear();
                 }
                 true
             },
-            CoreTacticResult::Error(_) => false,
+            TacticResult::Error(_) => false,
         };
 
         let elapsed = session.start_time.elapsed().as_secs_f64();
@@ -413,7 +447,7 @@ impl ProofService for ProofServiceImpl {
                 proof_script: script,
                 time_elapsed: Some(elapsed),
                 error_message: match &result {
-                    CoreTacticResult::Error(msg) => Some(msg.clone()),
+                    TacticResult::Error(msg) => Some(msg.clone()),
                     _ => None,
                 },
             }),

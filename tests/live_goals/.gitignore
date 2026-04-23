@@ -1,0 +1,8 @@
+# Coq compilation artifacts — generated when coqc runs on .v fixtures.
+*.vo
+*.vok
+*.vos
+*.glob
+.*.aux
+# Agda compilation artifacts
+*.agdai
