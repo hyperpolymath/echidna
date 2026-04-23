@@ -4,7 +4,7 @@
 //! Example demonstrating aspect tagging system usage
 
 use echidna::aspect::{
-    AggregationStrategy, Aspect, AspectTagger, CompositeTagger, NeuralTagger, RuleBasedTagger,
+    AggregationStrategy, Aspect, AspectTagger, CompositeTagger, RuleBasedTagger,
 };
 use echidna::core::Term;
 
@@ -101,7 +101,7 @@ fn main() {
     println!("6. Composite Tagger:");
     let composite = CompositeTagger::new(AggregationStrategy::WeightedVoting)
         .add_tagger(Box::new(RuleBasedTagger::new()), 1.0)
-        .add_tagger(Box::new(NeuralTagger::new()), 0.5); // Neural tagger stub
+        .add_tagger(Box::new(RuleBasedTagger::with_threshold(0.3)), 0.5);
 
     let theorem_name = "functor_category_theory";
     let statement = Term::Const("functor".to_string());

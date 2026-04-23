@@ -53,6 +53,7 @@ fn make_proof_state(bool_vars: &[&str], axioms: &[&str], goal_term: &str) -> Pro
         ctx.variables.push(Variable {
             name: v.to_string(),
             ty: Term::Const("Bool".to_string()),
+            type_info: None,
         });
     }
     for ax in axioms {
@@ -76,6 +77,7 @@ fn make_proof_state_int(int_vars: &[&str], axioms: &[&str], goal_term: &str) -> 
         ctx.variables.push(Variable {
             name: v.to_string(),
             ty: Term::Const("Int".to_string()),
+            type_info: None,
         });
     }
     for ax in axioms {
@@ -510,6 +512,7 @@ async fn sanity_goal_set_inconsistency() {
     ctx.variables.push(echidna::core::Variable {
         name: "P".to_string(),
         ty: echidna::core::Term::Const("Bool".to_string()),
+        type_info: None,
     });
     let state = ProofState {
         goals: vec![

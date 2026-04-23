@@ -72,6 +72,7 @@ pub fn arb_hypothesis() -> impl Strategy<Value = Hypothesis> {
         name,
         ty,
         body,
+        type_info: None,
     })
 }
 
@@ -95,6 +96,7 @@ pub fn arb_definition() -> impl Strategy<Value = Definition> {
         name,
         ty,
         body,
+        type_info: None,
     })
 }
 
@@ -110,7 +112,7 @@ pub fn arb_theorem() -> impl Strategy<Value = Theorem> {
 
 /// Strategy for generating a variable
 pub fn arb_variable() -> impl Strategy<Value = Variable> {
-    (var_name(), arb_term()).prop_map(|(name, ty)| Variable { name, ty })
+    (var_name(), arb_term()).prop_map(|(name, ty)| Variable { name, ty, type_info: None })
 }
 
 /// Strategy for generating contexts
