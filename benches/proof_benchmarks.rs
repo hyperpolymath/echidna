@@ -40,6 +40,7 @@ fn bench_proof_state_construction(c: &mut Criterion) {
                                 name: format!("h_{i}"),
                                 ty: Term::Const("Prop".to_string()),
                                 body: None,
+                                type_info: None,
                             }],
                             target: Term::App {
                                 func: Box::new(Term::Const("eq".to_string())),
