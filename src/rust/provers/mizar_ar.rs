@@ -91,7 +91,7 @@ impl ProverBackend for MizARBackend {
 
     async fn apply_tactic(
         &self,
-        state: &ProofState,
+        _state: &ProofState,
         _tactic: &Tactic,
     ) -> Result<TacticResult> {
         Ok(TacticResult::Error(

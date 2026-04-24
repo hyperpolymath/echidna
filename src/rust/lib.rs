@@ -9,7 +9,12 @@
 pub mod agent;
 pub mod anomaly_detection;
 pub mod aspect;
-pub mod core;
+// `core` and `types` live in the `echidna-core` crate so vcl-ut and other
+// proof-exchange clients can consume the canonical Term / Goal / ProofState /
+// Tactic / TypeInfo types without depending on the full echidna binary.
+// Re-exported as modules so existing `crate::core::*` and `crate::types::*`
+// paths throughout this crate keep resolving unchanged.
+pub use echidna_core::{core, types};
 pub mod disciplines; // Canonical TypeDiscipline taxonomy (katagoria transition)
 pub mod dispatch;
 pub mod exchange;
@@ -26,7 +31,6 @@ pub mod parsers;
 pub mod proof_encoding; // CBOR encoding + proof identity hashing
 pub mod proof_search; // Chapel parallel proof search (optional feature)
 pub mod provers;
-pub mod types;
 pub mod vcl_ut;
 pub mod verification;
 #[cfg(feature = "verisim")]

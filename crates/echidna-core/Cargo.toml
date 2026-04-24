@@ -1,0 +1,14 @@
+# SPDX-License-Identifier: PMPL-1.0-or-later
+
+[package]
+name = "echidna-core"
+version = "0.1.0"
+edition = "2021"
+authors = ["Jonathan D.A. Jewell <j.d.a.jewell@open.ac.uk>"]
+license = "PMPL-1.0-or-later"
+description = "Canonical Term / Goal / ProofState / Tactic types for ECHIDNA, re-used by vcl-ut and any future proof-exchange client without depending on the full echidna binary."
+repository = "https://github.com/hyperpolymath/echidna"
+
+[dependencies]
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"

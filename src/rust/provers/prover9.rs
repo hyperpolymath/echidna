@@ -101,7 +101,7 @@ impl ProverBackend for Prover9Backend {
 
     async fn apply_tactic(
         &self,
-        state: &ProofState,
+        _state: &ProofState,
         _tactic: &Tactic,
     ) -> Result<TacticResult> {
         Ok(TacticResult::Error(
