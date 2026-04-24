@@ -35,6 +35,33 @@ data DangerLevel
   | Warning -- incomplete proof marker (sorry, Admitted); warning issued
   | Reject  -- known unsound construct; proof REJECTED
 
+public export
+Eq DangerLevel where
+  Safe    == Safe    = True
+  Noted   == Noted   = True
+  Warning == Warning = True
+  Reject  == Reject  = True
+  _       == _       = False
+
+public export
+DecidableEq DangerLevel where
+  decEq Safe    Safe    = Yes Refl
+  decEq Noted   Noted   = Yes Refl
+  decEq Warning Warning = Yes Refl
+  decEq Reject  Reject  = Yes Refl
+  decEq Safe    Noted   = No (\case Refl impossible)
+  decEq Safe    Warning = No (\case Refl impossible)
+  decEq Safe    Reject  = No (\case Refl impossible)
+  decEq Noted   Safe    = No (\case Refl impossible)
+  decEq Noted   Warning = No (\case Refl impossible)
+  decEq Noted   Reject  = No (\case Refl impossible)
+  decEq Warning Safe    = No (\case Refl impossible)
+  decEq Warning Noted   = No (\case Refl impossible)
+  decEq Warning Reject  = No (\case Refl impossible)
+  decEq Reject  Safe    = No (\case Refl impossible)
+  decEq Reject  Noted   = No (\case Refl impossible)
+  decEq Reject  Warning = No (\case Refl impossible)
+
 -- C-ABI wire encoding (u8 discriminant, matches Rust PartialOrd order)
 public export
 dangerToU8 : DangerLevel -> Bits8
@@ -114,16 +141,25 @@ soundness
   -> Elem Reject usages
   -> enforcePolicySpec usages = PolicyRejected
 soundness usages prf =
-  -- 'any (== Reject) usages' is True whenever Reject is an element
   rewrite anyRejectIsTrue usages prf in Refl
   where
+    -- Prove any (== Reject) us = True given Reject ∈ us.
+    -- We case-split on the head constructor so that 'x == Reject' reduces
+    -- definitionally before applying the induction hypothesis via rewrite.
     anyRejectIsTrue
       : (us : List DangerLevel)
       -> Elem Reject us
       -> any (== Reject) us = True
-    anyRejectIsTrue (Reject :: _)  Here       = Refl
-    anyRejectIsTrue (_ :: rest)    (There p)  = anyRejectIsTrue rest p
-    anyRejectIsTrue []             p           = absurd p
+    anyRejectIsTrue []             p            = absurd p
+    anyRejectIsTrue (Reject :: _)  Here         = Refl
+    anyRejectIsTrue (Safe    :: xs) (There p)   =
+      let ih := anyRejectIsTrue xs p in rewrite ih in Refl
+    anyRejectIsTrue (Noted   :: xs) (There p)   =
+      let ih := anyRejectIsTrue xs p in rewrite ih in Refl
+    anyRejectIsTrue (Warning :: xs) (There p)   =
+      let ih := anyRejectIsTrue xs p in rewrite ih in Refl
+    anyRejectIsTrue (Reject  :: xs) (There p)   =
+      let ih := anyRejectIsTrue xs p in rewrite ih in Refl
 
 -- ────────────────────────────────────────────────────────────────────────────
 -- Invariant 2 (Precision): no Reject-in → not PolicyRejected-out
@@ -136,22 +172,36 @@ precision
   -> ((e : DangerLevel) -> Elem e usages -> Not (e = Reject))
   -> Not (enforcePolicySpec usages = PolicyRejected)
 precision usages noReject prf =
-  -- If enforcePolicySpec returns PolicyRejected, then 'any (== Reject) usages'
-  -- must have been True, so there is a Reject in the list — contradicting noReject.
-  let anyFalse = noRejectMeansAnyFalse usages noReject
-  in rewrite anyFalse in absurd prf
+  -- Derive any (== Reject) usages = False from the no-Reject hypothesis.
+  -- Then case-split on all three 'any' booleans so enforcePolicySpec usages
+  -- reduces definitionally in each branch; each non-Rejected result gives a
+  -- constructor mismatch with prf : ... = PolicyRejected.
+  let anyFalse := noRejectMeansAnyFalse usages noReject
+  in case any (== Reject) usages of
+       True  => absurd anyFalse                   -- anyFalse : True  = False
+       False =>
+         case any (== Warning) usages of
+           True  => case prf of { Refl impossible }  -- PolicyIncomplete ≠ PolicyRejected
+           False =>
+             case any (== Noted) usages of
+               True  => case prf of { Refl impossible }  -- PolicyClassical ≠ PolicyRejected
+               False => case prf of { Refl impossible }  -- PolicyClean ≠ PolicyRejected
   where
+    -- Case-split on each constructor so 'x == Reject' reduces definitionally,
+    -- making 'False || any (== Reject) xs = any (== Reject) xs' automatic.
     noRejectMeansAnyFalse
       : (us : List DangerLevel)
       -> ((e : DangerLevel) -> Elem e us -> Not (e = Reject))
       -> any (== Reject) us = False
     noRejectMeansAnyFalse [] _ = Refl
-    noRejectMeansAnyFalse (x :: xs) noR =
-      case decEq x Reject of
-        Yes Refl => absurd (noR Reject Here Refl)
-        No  _    =>
-          let rest = noRejectMeansAnyFalse xs (\e p => noR e (There p))
-          in rewrite rest in Refl
+    noRejectMeansAnyFalse (Safe    :: xs) noR =
+      noRejectMeansAnyFalse xs (\e p => noR e (There p))
+    noRejectMeansAnyFalse (Noted   :: xs) noR =
+      noRejectMeansAnyFalse xs (\e p => noR e (There p))
+    noRejectMeansAnyFalse (Warning :: xs) noR =
+      noRejectMeansAnyFalse xs (\e p => noR e (There p))
+    noRejectMeansAnyFalse (Reject  :: xs) noR =
+      void (noR Reject Here Refl)
 
 -- ════════════════════════════════════════════════════════════════════════════
 -- ABI Layout declarations  (for Zig/Rust bridge validation)

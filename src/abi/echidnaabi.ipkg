@@ -18,7 +18,9 @@ sourcedir = "."
 depends = base
         , contrib
 
-modules = EchidnaABI.Types
+modules = EchidnaABI.AxiomTracker
+        , EchidnaABI.Gnn
+        , EchidnaABI.Types
         , EchidnaABI.Layout
         , EchidnaABI.Foreign
         , EchidnaABI.Provers
