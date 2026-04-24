@@ -188,6 +188,7 @@ include("training/dataloader.jl")
 include("training/train.jl")
 include("inference/predict.jl")
 include("api/server.jl")
+include("api/gnn_endpoint.jl")
 
 # Initialization
 function __init__()
