@@ -7,7 +7,7 @@ on:
       - 'src/zig_ffi/**'
       - 'src/rust/proof_search.rs'
       - 'src/rust/dispatch.rs'
-      - 'chapel_poc/**'
+      - 'src/chapel/**'
       - 'Cargo.toml'
       - '.github/workflows/chapel-ci.yml'
   pull_request:
@@ -15,7 +15,7 @@ on:
       - 'src/zig_ffi/**'
       - 'src/rust/proof_search.rs'
       - 'src/rust/dispatch.rs'
-      - 'chapel_poc/**'
+      - 'src/chapel/**'
       - 'Cargo.toml'
       - '.github/workflows/chapel-ci.yml'
 
@@ -40,7 +40,7 @@ jobs:
 
       - name: Compile Chapel proof search module
         run: |
-          cd chapel_poc
+          cd src/chapel
           chpl --library --dynamic \
             -o libechidna_chapel \
             chapel_ffi_exports.chpl parallel_proof_search.chpl
@@ -48,7 +48,7 @@ jobs:
 
       - name: Run Chapel standalone test
         run: |
-          cd chapel_poc
+          cd src/chapel
           chpl -o chapel_test parallel_proof_search.chpl
           # Run with verbose output, will show prover availability
           timeout 30 ./chapel_test --verbose=true || true
@@ -57,7 +57,7 @@ jobs:
         uses: actions/upload-artifact@b4b15b8c7c6ac21ea08fcf65892d2ee8f75cf882 # v4
         with:
           name: chapel-lib
-          path: chapel_poc/libechidna_chapel*
+          path: src/chapel/libechidna_chapel*
 
   # Job 2: Build and test Zig FFI bridge (always uses stubs)
   zig-ffi:
@@ -67,7 +67,7 @@ jobs:
       - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
 
       - name: Install Zig
-        uses: goto-bus-stop/setup-zig@7ab2955eb728f5440978d7e4f60155e5e3a9e02f # v2
+        uses: mlugg/setup-zig@d1434d08867e3ee9daa34448df10607b98908d29 # v2.2.1
         with:
           version: 0.13.0
 
