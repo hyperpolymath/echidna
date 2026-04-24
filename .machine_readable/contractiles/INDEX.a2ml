@@ -1,0 +1,133 @@
+# SPDX-License-Identifier: PMPL-1.0-or-later
+# INDEX.a2ml — Contractile Registry
+# Author: Jonathan D.A. Jewell <j.d.a.jewell@open.ac.uk>
+#
+# Machine-readable catalogue of all contractile verbs in this template set.
+# Consumers (CI scripts, the contractile CLI, Hypatia rules) SHOULD read this
+# file to discover available verbs rather than hard-coding the list.
+#
+# See: docs/CONTRACTILE-SPEC.adoc §Registry
+
+---
+id = "contractiles-registry"
+version = "2.0.0"   # 2.0.0 (2026-04-18): all 6 verbs on trident shape; verb set complete.
+spec = "docs/CONTRACTILE-SPEC.adoc"
+last_updated = "2026-04-18"
+base_schema = ".machine_readable/contractiles/_base.ncl"
+meta_schema_status = "pending — see CONTRACTILE-SPEC §validator-meta-schema"
+
+## Verbs
+
+[[verbs]]
+name = "adjust"
+semantics = "drift tolerances + corrective actions"
+trident = [
+  "adjust/Adjustfile.a2ml",
+  "adjust/adjust.ncl",
+  "adjust/adjust.k9.ncl",
+]
+manifest = "adjust/adjust.manifest.a2ml"
+status = "active"
+tier = "Yard"
+authority = "advisory"
+gating = "advisory (continue-with-warnings)"
+cardinality = "one per repo"
+notes = "Fifth trident instance (2026-04-18). First (Yard, advisory) authority pattern. Specialises in cumulative-drift catchment — tolerance bands + trend tracking across sessions. auto_fix_when_available applies deterministic patches; advisory otherwise."
+
+[[verbs]]
+name = "bust"
+semantics = "hard-stop / expiry / must-not-run declarations"
+trident = [
+  "bust/Bustfile.a2ml",
+  "bust/bust.ncl",
+  "bust/bust.k9.ncl",
+]
+manifest = "bust/bust.manifest.a2ml"
+status = "active"
+tier = "Hunt-read-only"
+authority = "blocking"
+gating = "hard (exit-nonzero)"
+cardinality = "one per repo"
+notes = "Fourth trident instance (2026-04-18). Completes the blocking-authority triple (must + trust + bust). Specialises in deprecated-path-reintroduction catchment. Injects failures via declared probes and verifies recovery paths."
+
+[[verbs]]
+name = "dust"
+semantics = "rollback / recovery / deprecation / audit-trail preservation"
+trident = [
+  "dust/Dustfile.a2ml",
+  "dust/dust.ncl",
+  "dust/dust.k9.ncl",
+]
+manifest = "dust/dust.manifest.a2ml"
+status = "active"
+tier = "Yard"
+authority = "advisory"
+gating = "advisory (continue-with-warnings)"
+cardinality = "one per repo"
+notes = "Sixth and FINAL trident instance (2026-04-18) — completes the full verb set. Specialises in audit-trail preservation + rollback-path verification. Destructive actions gated behind --apply flag + per-item approval; dry-run default."
+
+[[verbs]]
+name = "intend"
+semantics = "north-star (commitments + aspirations)"
+trident = [
+  "intend/Intentfile.a2ml",
+  "intend/intend.ncl",
+  "intend/intend.k9.ncl",
+]
+manifest = "intend/intend.manifest.a2ml"
+status = "active"
+tier = "Hunt"
+authority = "reporting"
+gating = "non-gating (continue)"
+cardinality = "one per repo"
+notes = "First trident instance in the estate (2026-04-18). Reports progress toward committed next-actions AND lists horizon aspirations. Absorbed the deprecated `lust` verb 2026-04-18. Never blocks. Remaining 5 verbs still on file_pair shape until tridents are built."
+
+[[verbs]]
+name = "k9"
+semantics = "trust-tier templates (EXCEPTION to one-verbfile rule)"
+file_pair = [
+  "k9/template-hunt.k9.ncl",
+  "k9/template-kennel.k9.ncl",
+  "k9/template-yard.k9.ncl",
+]
+status = "exception"
+gating = "not applicable"
+notes = "k9 is service-automation meta-infrastructure, not a verb contractile. Three trust-tier templates (Kennel/Yard/Hunt). Does not have a Verbfile.a2ml. See CONTRACTILE-SPEC §k9-exception."
+
+# [[verbs]] lust REMOVED 2026-04-18 — name had unwanted associations;
+# the horizon/aspiration semantics were always meant to live inside `intend`
+# (the north-star verb). The [[wishes]] schema was absorbed into
+# intend/Intentfile.a2ml. Any `lust/` dir found in an estate repo is drift
+# and should be deleted.
+
+[[verbs]]
+name = "must"
+semantics = "invariant assertion — release-blocking"
+trident = [
+  "must/Mustfile.a2ml",
+  "must/must.ncl",
+  "must/must.k9.ncl",
+]
+manifest = "must/must.manifest.a2ml"
+status = "active"
+tier = "Hunt-read-only"
+authority = "blocking"
+gating = "hard (exit-nonzero)"
+cardinality = "one per repo"
+notes = "Third trident instance (2026-04-18). Completes the blocking-authority pair with trust: must = concrete + persistent invariants; trust = concrete + ephemeral transactions. Specialises in subtle invariant-erosion (tracking per-session trend; flagging silent regression). Single failure blocks merge. Simplest and most commonly populated verb."
+
+[[verbs]]
+name = "trust"
+semantics = "security + provenance + safe-hacking"
+trident = [
+  "trust/Trustfile.a2ml",
+  "trust/trust.ncl",
+  "trust/trust.k9.ncl",
+]
+manifest = "trust/trust.manifest.a2ml"
+status = "active"
+tier = "Hunt"
+authority = "blocking"
+gating = "hard (exit-nonzero)"
+cardinality = "one per repo"
+notes = "Second trident instance (2026-04-18). First (Hunt, blocking) verb — hard gate. Primary defense against threat-model misclassification (B1) and 'turn off the firewall' capability-collapse (C2). Inherits on_open negotiation+accountability+translation from intend.k9.ncl v2.0.0; adds threat_model_foregrounding + block_session_close_on_critical_drift."
