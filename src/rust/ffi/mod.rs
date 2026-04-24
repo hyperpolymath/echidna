@@ -1410,8 +1410,11 @@ mod tests {
 
     #[test]
     fn test_kind_from_u8_out_of_range() {
-        // 0–104 are valid; 105+ are out of range.
-        assert!(kind_from_u8(105).is_none());
+        // 0–112 are valid; 113+ are out of range.
+        // (Boundary moved 104→112 in commit c8c0acf which added 8 new ProverKind
+        //  variants: CubicalAgda, Zipperposition, Prover9, OpenSMT, SmtRat,
+        //  Rocq, UppaalStratego, MizAR.)
+        assert!(kind_from_u8(113).is_none());
         assert!(kind_from_u8(128).is_none());
         assert!(kind_from_u8(255).is_none());
     }
