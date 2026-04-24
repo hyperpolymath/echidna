@@ -74,9 +74,12 @@ function extract_mathlib4_proofs()
                         )
                         push!(proof_states, proof_state)
 
-                        # Look for proof tactics (simplified)
-                        proof_start = m.offset + length(m.match)
-                        remaining_content = content[min(proof_start, end):end]
+                        # Look for proof tactics (simplified).  Use byte lengths:
+                        # `length(m.match)` counts characters, not bytes, and indexing
+                        # a `String` by a char index that lands mid-UTF-8 throws
+                        # StringIndexError — common for mathlib4 files with Unicode.
+                        proof_start = m.offset + ncodeunits(m.match)
+                        remaining_content = content[min(proof_start, ncodeunits(content)+1):end]
 
                         # Extract tactics from the "by" clause
                         by_match = match(r"by\s+([^\n]+)", remaining_content)
