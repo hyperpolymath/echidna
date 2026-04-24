@@ -678,3 +678,22 @@ pkg-5-open-followups = [
   "run_training.jl cap semantics: document that `ECHIDNA_MAX_PROOF_STATES=N` reads the first N proof_states from UNIFIED.jsonl — which is sorted by prover and happens to put ACL2 first (no premise matches).  Either shuffle before cap, or filter to proof_ids that exist in premises_COMPLETE.jsonl before capping.",
 ]
 
+
+[session-2026-04-24-pkg4-close]
+summary = "Package 4 closed — vcl-ut ↔ echidna binding end-to-end. Shared types crate, async REST client, proof-exchange bridge, per-prover matrix CI."
+commits = [
+  "c8c0acf feat(provers): wire 8 new backends + extracted crates/echidna-core/ (echidna — Package 4 shared-types layer mis-labelled as Package 3)",
+  "69745de feat(interface): vcltotal-interface re-exports echidna-core proof-surface types (vcl-ut)",
+  "345bf53 feat(echidna-client): async REST client (vcl-ut)",
+  "64b8ff6 feat(echidna-client): OpenTheory/Dedukti exchange endpoints + round-trip tests (vcl-ut)",
+  "2fbfbc6 feat(provers): provers.a2ml catalogue + gen-provers-a2ml.sh generator (echidna)",
+  "8d26b84 feat(ci): backend-matrix.yml — per-prover smoke matrix (vcl-ut)",
+]
+pkg-4-shared-types = "Rust workspace now has crates/echidna-core exporting Term, Goal, ProofState, Tactic, Theorem as the canonical shared-types layer. vcl-ut re-exports via vcltotal-interface. No duplication — one canonical source."
+pkg-4-transport = "vcltotal-echidna-client ships as an async REST client keyed to echidna's REST surface (port 8000). Wiremock round-trip tests cover /api/verify, /api/prove, exchange endpoints (/api/exchange/opentheory, /api/exchange/dedukti). 5 round-trip tests green."
+pkg-4-matrix-ci = "backend-matrix.yml runs 113 jobs (one per ProverKind variant) with max-parallel=3. Prep job parses echidna's .machine_readable/provers.a2ml at runtime to emit matrix JSON as an ephemeral GHA output — no committed JSON per the 'no JSON emit' estate rule. Today each job runs the same wiremock suite; when REST surface expands beyond its current 17-prover subset, jobs can diverge per slug without restructuring."
+pkg-4-open-followups = [
+  "echidna REST endpoints on HEAD: src/interfaces/rest/{handlers,main,models}.rs have Session C's export/import wiring but are blocked on a pre-existing FfiProverBackend breakage on HEAD. Syntactically clean, cannot commit onto broken base. Next owner: whoever resolves the FfiProverBackend adapter.",
+  "Matrix CI realism: only 17 of 113 provers currently exposed via REST. Today's matrix runs a uniform wiremock suite per slug (work-convergent) — upgrade path is either (a) expand echidna REST handlers to cover all 113, or (b) specialise per-job wiremock per slug. Tracked as Package 4 step 7.",
+  "Session C's Package 4 step 6 (FfiProverBackend adapter fix) not attempted — Session C asked and was told to fix in isolated commit, but stalled on the pre-existing HEAD breakage rather than the adapter itself.",
+]
