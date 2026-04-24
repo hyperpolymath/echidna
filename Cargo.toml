@@ -85,6 +85,7 @@ typed-wasm = { path = "crates/typed_wasm" }
 [features]
 default = []
 chapel = []       # Enable Chapel parallel proof search (requires Zig FFI library)
+spark = []        # Enable SPARK-verified axiom-policy (requires libechidna_spark from GPRbuild)
 verisim = [     # Enable VeriSimDB persistent proof storage (8-modality octads)
     "dep:ciborium",
     "dep:sha2",

@@ -1,13 +1,56 @@
 // SPDX-License-Identifier: PMPL-1.0-or-later
 //! Build script for ECHIDNA
 //!
-//! When the `chapel` feature is enabled, this links against the Zig-built
-//! Chapel FFI bridge library (libechidna_chapel_ffi).
+//! Chapel:  Chapel (.chpl) → Zig bridge → Rust
+//! SPARK:   Ada/SPARK (echidna_spark.gpr) → Zig bridge → Rust
 //!
-//! Build order: Chapel (.chpl) → C headers → Zig (chapel_bridge.zig) → Rust (proof_search.rs)
+//! SPARK build order:
+//!   1. gprbuild -P src/ada/spark/echidna_spark.gpr
+//!   2. cd src/zig && zig build -Dspark
+//!   3. cargo build --features spark
 
 fn main() {
-    // Only link Chapel FFI when the feature is enabled
+    // SPARK axiom-policy bridge (requires GPRbuild + Zig; see just spark-all)
+    #[cfg(feature = "spark")]
+    {
+        let spark_zig_dir = std::path::PathBuf::from(env!("CARGO_MANIFEST_DIR"))
+            .join("src")
+            .join("zig")
+            .join("zig-out")
+            .join("lib");
+
+        let spark_ada_dir = std::path::PathBuf::from(env!("CARGO_MANIFEST_DIR"))
+            .join("lib")
+            .join("spark");
+
+        if spark_zig_dir.exists() {
+            println!("cargo:rustc-link-search=native={}", spark_zig_dir.display());
+            println!("cargo:rustc-link-lib=static=echidna_spark_zig");
+        } else {
+            println!(
+                "cargo:warning=SPARK Zig bridge not found. \
+                 Build with: cd src/zig && zig build -Dspark"
+            );
+        }
+
+        if spark_ada_dir.exists() {
+            println!("cargo:rustc-link-search=native={}", spark_ada_dir.display());
+            println!("cargo:rustc-link-lib=static=echidna_spark");
+            println!("cargo:rustc-link-lib=dylib=gnat");
+        } else {
+            println!(
+                "cargo:warning=SPARK Ada library not found. \
+                 Build with: gprbuild -P src/ada/spark/echidna_spark.gpr"
+            );
+        }
+
+        println!("cargo:rustc-link-lib=dylib=c");
+        println!("cargo:rerun-if-changed=src/ada/spark/axiom_policy.adb");
+        println!("cargo:rerun-if-changed=src/ada/spark/axiom_policy.ads");
+        println!("cargo:rerun-if-changed=src/zig/ffi/axiom_spark_bridge.zig");
+    }
+
+    // Chapel parallel proof search bridge
     #[cfg(feature = "chapel")]
     {
         // Look for the Zig-built library in src/zig_ffi/zig-out/lib/

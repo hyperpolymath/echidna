@@ -1,0 +1,47 @@
+-- SPDX-License-Identifier: PMPL-1.0-or-later
+-- (MPL-2.0 is automatic legal fallback until PMPL is formally recognised)
+--
+-- GPRbuild project for ECHIDNA SPARK layer.
+--
+-- Build:  gprbuild -P echidna_spark.gpr
+-- Prove:  gnatprove -P echidna_spark.gpr --level=2 --prover=z3,cvc5,altergo
+--
+-- Output: libechidna_spark.a  (linked by Zig bridge, then by Rust)
+
+project Echidna_Spark is
+
+   for Source_Dirs use (".");
+   for Object_Dir  use "obj";
+   for Library_Dir use "../../../lib/spark";
+   for Library_Name use "echidna_spark";
+   for Library_Kind use "Static";
+
+   package Compiler is
+      for Default_Switches ("Ada") use
+        ("-O2",          -- optimise for production
+         "-gnaty",       -- style checks
+         "-gnatVa",      -- validity checks all
+         "-gnat2022",    -- Ada 2022 dialect
+         "-gnateS");     -- store source info in .ali files for GNATprove
+   end Compiler;
+
+   package Prove is
+      for Proof_Dir use "proof";
+      for Switches use
+        ("--mode=prove",        -- full proof mode (not just flow)
+         "--level=2",           -- medium effort
+         "--prover=z3,cvc5,altergo",
+         "--timeout=30",
+         "--report=fail",       -- only report unproven items
+         "-j0");                -- parallel
+   end Prove;
+
+   package Binder is
+      for Switches ("Ada") use ("-static");
+   end Binder;
+
+   package Linker is
+      for Switches use ("-static-libgnat", "-static-libgcc");
+   end Linker;
+
+end Echidna_Spark;
