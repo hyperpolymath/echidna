@@ -108,7 +108,7 @@ function extract_mathlib4_proofs()
                         ]
                         proof_text = !isnothing(by_match) ? strip(by_match.captures[1]) : ""
                         for hyp_pattern in hyp_patterns
-                            for hyp_match in eachmatch(Regex(hyp_pattern), proof_text)
+                            for hyp_match in eachmatch(hyp_pattern, proof_text)
                                 hyps = [strip(h) for h in split(hyp_match.captures[1], ',')]
                                 for hyp in hyps
                                     if !isempty(hyp) && length(hyp) < 50
