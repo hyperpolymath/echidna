@@ -223,6 +223,7 @@ function build_training_examples(proof_states::Vector{RawProofState},
     end
 
     premises_set = Set(all_premises_pool)
+    pool_len = length(all_premises_pool)
 
     for ps in proof_states
         prover = safe_parse_prover(ps.prover)
@@ -238,10 +239,27 @@ function build_training_examples(proof_states::Vector{RawProofState},
             push!(positive_premises, Premise(name, "", prover, nothing, 1.0f0, 1.0f0))
         end
 
-        # Sample negative premises (not used in this proof)
-        negative_names = setdiff(all_premises_pool, used_names)
-        num_neg = min(num_negatives, length(negative_names))
-        sampled_negatives = num_neg > 0 ? sample(collect(negative_names), num_neg; replace=false) : String[]
+        # Sample negative premises by rejection sampling.  Direct
+        # `setdiff(all_premises_pool, used_names)` builds a fresh
+        # `Vector{String}` of length ~|pool| per proof_state — on a
+        # 56k-premise / 138k-proof corpus that is ~8 GB of GC churn
+        # before the first epoch starts.  Sample-and-reject gives the
+        # same distribution in O(num_negatives × |used|) per call.
+        used_set = Set(used_names)
+        num_neg = min(num_negatives, pool_len - length(used_set))
+        sampled_negatives = String[]
+        if num_neg > 0
+            picked = Set{String}()
+            attempts = 0
+            max_attempts = num_neg * 8
+            while length(sampled_negatives) < num_neg && attempts < max_attempts
+                cand = all_premises_pool[rand(1:pool_len)]
+                attempts += 1
+                (cand in used_set || cand in picked) && continue
+                push!(picked, cand)
+                push!(sampled_negatives, cand)
+            end
+        end
 
         negative_premises = Premise[]
         for name in sampled_negatives
