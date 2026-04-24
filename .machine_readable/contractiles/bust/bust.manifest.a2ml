@@ -1,0 +1,47 @@
+# SPDX-License-Identifier: PMPL-1.0-or-later
+# bust.manifest.a2ml — Trident coherence manifest for the bust verb.
+# Author: Jonathan D.A. Jewell <j.d.a.jewell@open.ac.uk>
+#
+# Third trident instance. (Hunt, blocking) authority pattern —
+# part of the blocking triple (must + trust + bust) that enforces
+# invariants across the repository lifecycle.
+
+---
+trident_version = "1.0.0"
+verb = "bust"
+semantics = "error handling + failure recovery"
+cardinality = "one per repo"
+authority = "blocking (fail-on-violation)"
+
+[[files]]
+role = "declaration"
+path = "Bustfile.a2ml"
+sha256 = "pending-first-verify"
+size_bytes = "pending-first-verify"
+
+[[files]]
+role = "runner"
+path = "bust.ncl"
+sha256 = "pending-first-verify"
+size_bytes = "pending-first-verify"
+
+[[files]]
+role = "k9_component"
+path = "bust.k9.ncl"
+sha256 = "pending-first-verify"
+size_bytes = "pending-first-verify"
+
+[cross_refs]
+runner_paired_xfile = "Bustfile.a2ml"
+k9_paired_xfile     = "../bust/Bustfile.a2ml"
+k9_paired_runner    = "../bust/bust.ncl"
+
+[signed_by]
+user    = "Jonathan D.A. Jewell"
+date    = "2026-04-18"
+context = "bust trident — third Trident instance. (Hunt, blocking) authority pattern. Specialises in failure-mode injection and recovery verification; hard-gates on any undeclared or unverified failure mode."
+
+[[history]]
+date = "2026-04-18"
+event = "trident-born"
+note = "Bustfile.a2ml and bust.ncl pre-existed. This manifest + bust.k9.ncl complete the trident. Part of the blocking (Hunt) triple alongside must + trust."

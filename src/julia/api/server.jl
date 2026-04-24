@@ -145,7 +145,11 @@ function handle_predict(req::HTTP.Request)
     state = get_state()
     state.request_count += 1
 
-    body = JSON3.read(String(req.body))
+    body = try
+        JSON3.read(String(req.body))
+    catch e
+        return HTTP.Response(400, JSON3.write(Dict("error" => "Invalid JSON: $(e)")))
+    end
 
     prover = parse_prover(get(body, :prover, "lean"))
     goal_text = get(body, :goal, "")
@@ -212,7 +216,11 @@ function handle_suggest(req::HTTP.Request)
     state = get_state()
     state.request_count += 1
 
-    body = JSON3.read(String(req.body))
+    body = try
+        JSON3.read(String(req.body))
+    catch e
+        return HTTP.Response(400, JSON3.write(Dict("error" => "Invalid JSON: $(e)")))
+    end
     goal_text = get(body, :goal, "")
     prover_str = get(body, :prover, "lean")
     top_k = get(body, :top_k, 5)
@@ -265,14 +273,25 @@ function start_api_server(model_path::String;
 
     init_server_state(model_path; cache_size=cache_size, port=port, host=host)
 
+    # Wire the GNN endpoint into the trained solver so /gnn/rank uses it
+    # instead of falling back to cosine similarity.  The solver loaded by
+    # `init_server_state` is a full NeuralSolver (text_encoder + premise_ranker);
+    # publish it as the GNN model and combine the route table.
+    GNN_MODEL[] = SERVER_STATE[].solver
+    GNN_VOCAB[] = SERVER_STATE[].vocabulary
+    @info "GNN endpoint wired to trained solver at $model_path"
+
     @info "Endpoints:"
     @info "  GET  /health"
     @info "  GET  /metrics"
     @info "  GET  /provers"
     @info "  POST /predict"
     @info "  POST /suggest"
+    @info "  POST /gnn/rank"
+    @info "  GET  /gnn/health"
 
-    server = HTTP.serve(handle_request, host, port)
+    combined = register_gnn_routes!(handle_request)
+    server = HTTP.serve(combined, host, port)
     return server
 end
 

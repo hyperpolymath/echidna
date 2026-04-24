@@ -8,6 +8,41 @@ pub fn build(b: *std.Build) void {
     const optimize = b.standardOptimizeOption(.{});
 
     // ========================================================================
+    // SPARK axiom-policy bridge (optional — requires libechidna_spark.a)
+    //
+    // Build order:
+    //   1. gprbuild -P src/ada/spark/echidna_spark.gpr
+    //      → lib/spark/libechidna_spark.a
+    //   2. zig build -Dspark (this step)
+    //      → zig-out/lib/libechidna_spark_zig.a
+    //   3. cargo build --features spark
+    //      → links both libraries into the Rust binary
+    //
+    // Enabled with -Dspark=true (default: false so no-SPARK machines compile)
+    // ========================================================================
+    const build_spark = b.option(bool, "spark", "Build SPARK axiom-policy bridge") orelse false;
+
+    if (build_spark) {
+        const spark_lib_dir = b.pathFromRoot("../../lib/spark");
+
+        const spark_static = b.addStaticLibrary(.{
+            .name = "echidna_spark_zig",
+            .root_source_file = b.path("ffi/axiom_spark_bridge.zig"),
+            .target = target,
+            .optimize = optimize,
+        });
+
+        spark_static.linkLibC();
+        // Link against the GPRbuild-produced SPARK runtime library
+        spark_static.addLibraryPath(.{ .cwd_relative = spark_lib_dir });
+        spark_static.linkSystemLibrary("echidna_spark");
+        // GNAT runtime (required by all Ada programs)
+        spark_static.linkSystemLibrary("gnat");
+
+        b.installArtifact(spark_static);
+    }
+
+    // ========================================================================
     // Static Library (for linking into Rust)
     // ========================================================================
     const static_lib = b.addStaticLibrary(.{

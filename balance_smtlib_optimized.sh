@@ -17,10 +17,12 @@ REPLICA_DIR="$SMTLIB_DIR/replica"
 mkdir -p "$REPLICA_DIR"
 
 # Get a list of all .smt2 files and store in a temporary file
-find "$SMTLIB_DIR" -name "*.smt2" > /tmp/smtlib_files.txt
+SMTLIB_TMPFILE=$(mktemp)
+trap 'rm -f "$SMTLIB_TMPFILE"' EXIT
+find "$SMTLIB_DIR" -name "*.smt2" > "$SMTLIB_TMPFILE"
 
 # Read the list into an array
-mapfile -t FILES < /tmp/smtlib_files.txt
+mapfile -t FILES < "$SMTLIB_TMPFILE"
 
 # Replicate files in batches to avoid timeout
 echo "Starting replication of $FILES_TO_ADD files..."

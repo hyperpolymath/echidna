@@ -31,6 +31,7 @@ pub mod cameleer;
 pub mod cbmc;
 pub mod chuffed;
 pub mod coq;
+pub mod cubical_agda;
 pub mod cvc5;
 pub mod dafny;
 pub mod dedukti;
@@ -58,18 +59,23 @@ pub mod minisat;
 pub mod minizinc;
 pub mod minlog;
 pub mod mizar;
+pub mod mizar_ar;
 pub mod naproche;
 pub mod nitpick;
 pub mod nunchaku;
 pub mod nuprl;
 pub mod nusmv;
+pub mod opensmt;
 pub mod ortools;
 pub mod prism;
+pub mod prover9;
 pub mod proverif;
 pub mod pvs;
+pub mod rocq;
 pub mod scip;
 pub mod seahorn;
 pub mod spass;
+pub mod smtrat;
 pub mod spin_checker;
 pub mod tamarin;
 pub mod tlaps;
@@ -77,10 +83,12 @@ pub mod tlc;
 pub mod twelf;
 pub mod typed_wasm;
 pub mod uppaal;
+pub mod uppaal_stratego;
 pub mod vampire;
 pub mod viper;
 pub mod why3;
 pub mod z3;
+pub mod zipperposition;
 
 /// Enumeration of all supported provers
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]
@@ -307,6 +315,22 @@ pub enum ProverKind {
     /// Sibling to Nitpick; same negative-class story but not
     /// Isabelle-coupled, wider input format range.
     Nunchaku,
+    /// Cubical Agda — Agda in --cubical mode; HIT, univalence, path types.
+    CubicalAgda,
+    /// Zipperposition — first-order + higher-order ATP (TPTP/TSTP output).
+    Zipperposition,
+    /// Prover9 — equational/clause-based ATP (McCune); pairs with Mace4.
+    Prover9,
+    /// OpenSMT — SMT solver with Craig interpolant generation.
+    OpenSmt,
+    /// SMT-RAT — nonlinear arithmetic SMT (NIA/NRA) from RWTH Aachen.
+    SmtRat,
+    /// Rocq — the 2024 Coq community rename; detects `rocq` binary first.
+    Rocq,
+    /// UPPAAL Stratego — strategy synthesis + stochastic model checking.
+    UppaalStratego,
+    /// MizAR — automated reasoning integrated with the Mizar Mathematical Library.
+    MizAR,
 }
 
 impl ProverKind {
@@ -517,6 +541,14 @@ impl std::str::FromStr for ProverKind {
             "mercury" | "mmc" => Ok(ProverKind::Mercury),
             "nitpick" => Ok(ProverKind::Nitpick),
             "nunchaku" => Ok(ProverKind::Nunchaku),
+            "cubicalagda" | "cubical-agda" | "agda-cubical" => Ok(ProverKind::CubicalAgda),
+            "zipperposition" => Ok(ProverKind::Zipperposition),
+            "prover9" => Ok(ProverKind::Prover9),
+            "opensmt" | "open-smt" => Ok(ProverKind::OpenSmt),
+            "smtrat" | "smt-rat" => Ok(ProverKind::SmtRat),
+            "rocq" | "rocq-compile" => Ok(ProverKind::Rocq),
+            "uppaal-stratego" | "stratego" => Ok(ProverKind::UppaalStratego),
+            "mizar-ar" | "mizatp" | "mizar-atp" => Ok(ProverKind::MizAR),
             _ => Err(anyhow::anyhow!("Unknown prover: {}", s)),
         }
     }
@@ -589,6 +621,14 @@ impl ProverKind {
             ProverKind::KeY,
             ProverKind::DReal,
             ProverKind::ABC,
+            ProverKind::CubicalAgda,
+            ProverKind::Zipperposition,
+            ProverKind::Prover9,
+            ProverKind::OpenSmt,
+            ProverKind::SmtRat,
+            ProverKind::Rocq,
+            ProverKind::UppaalStratego,
+            ProverKind::MizAR,
         ]);
         provers
     }
@@ -624,6 +664,14 @@ impl ProverKind {
             ProverKind::Mercury => 3,      // Logic programming with types/modes.
             ProverKind::Nitpick => 2,      // Isabelle-wrapped counter-example finder.
             ProverKind::Nunchaku => 2,     // Standalone counter-example finder.
+            ProverKind::CubicalAgda => 4,  // Cubical HoTT; harder than plain Agda.
+            ProverKind::Zipperposition => 2, // Automated ATP.
+            ProverKind::Prover9 => 2,      // Classic equational ATP.
+            ProverKind::OpenSmt => 2,      // SMT solver.
+            ProverKind::SmtRat => 3,       // Nonlinear arithmetic needs careful encoding.
+            ProverKind::Rocq => 3,         // Same as Coq.
+            ProverKind::UppaalStratego => 4, // Strategy synthesis is hard.
+            ProverKind::MizAR => 3,        // Mizar with ATP assist.
             ProverKind::Vampire => 2,      // Automated, relatively simple
             ProverKind::EProver => 2,      // Similar to Vampire
             ProverKind::SPASS => 2,        // Automated FOL
@@ -744,6 +792,14 @@ impl ProverKind {
             ProverKind::Mercury => 4,      // Specialised logic programming.
             ProverKind::Nitpick => 5,      // Counter-example finder tier.
             ProverKind::Nunchaku => 5,     // Counter-example finder tier.
+            ProverKind::CubicalAgda => 2,   // Tier 2: HoTT proof assistant.
+            ProverKind::Zipperposition => 3, // Tier 3: HO-ATP.
+            ProverKind::Prover9 => 4,       // Tier 4: classic ATP.
+            ProverKind::OpenSmt => 3,       // Tier 3: interpolant SMT.
+            ProverKind::SmtRat => 5,        // Tier 5: research NL SMT.
+            ProverKind::Rocq => 1,          // Tier 1: Coq rename.
+            ProverKind::UppaalStratego => 4, // Tier 4: strategy synthesis.
+            ProverKind::MizAR => 3,         // Tier 3: ATP-assisted Mizar.
 
             // Tier 5: First-Order ATPs
             ProverKind::Vampire => 5,
@@ -867,6 +923,14 @@ impl ProverKind {
             ProverKind::Mercury => 2.0,      // Logic programming interpreter bridge.
             ProverKind::Nitpick => 1.0,      // Thin wrapper over Isabelle.
             ProverKind::Nunchaku => 1.5,     // Standalone counter-example tool.
+            ProverKind::CubicalAgda => 2.5,  // Thin fork of Agda backend.
+            ProverKind::Zipperposition => 1.5, // TSTP-output ATP.
+            ProverKind::Prover9 => 1.5,      // Simple output parsing.
+            ProverKind::OpenSmt => 1.5,      // SMT-LIB2 like CVC5.
+            ProverKind::SmtRat => 1.5,       // Same pattern.
+            ProverKind::Rocq => 1.0,         // Alias for Coq.
+            ProverKind::UppaalStratego => 2.0, // Fork of UPPAAL backend.
+            ProverKind::MizAR => 2.0,        // Mizar ATP integration.
             ProverKind::Vampire => 1.5,      // Automated, TPTP format
             ProverKind::EProver => 1.5,      // Similar to Vampire
             ProverKind::SPASS => 1.5,        // DFG format
@@ -1014,6 +1078,14 @@ impl ProverKind {
             ProverKind::KeY => "key",     // KeY Java verifier (Java, headless mode)
             ProverKind::DReal => "dreal", // dReal delta-complete SMT solver
             ProverKind::ABC => "abc",     // Berkeley ABC logic synthesis system
+            ProverKind::CubicalAgda => "agda",
+            ProverKind::Zipperposition => "zipperposition",
+            ProverKind::Prover9 => "prover9",
+            ProverKind::OpenSmt => "opensmt",
+            ProverKind::SmtRat => "smtrat",
+            ProverKind::Rocq => "rocq",
+            ProverKind::UppaalStratego => "stratego",
+            ProverKind::MizAR => "mizar-atp",
             // HP ecosystem — all route through the TypeLL kernel CLI;
             // the discipline field on HPEcosystemBackend selects the
             // actual upstream (typell / katagoria / tropical-resource-typing).
@@ -1261,6 +1333,14 @@ impl ProverFactory {
             ProverKind::KeY => Ok(Box::new(key::KeyBackend::new(config))),
             ProverKind::DReal => Ok(Box::new(dreal::DRealBackend::new(config))),
             ProverKind::ABC => Ok(Box::new(abc::AbcBackend::new(config))),
+            ProverKind::CubicalAgda => Ok(Box::new(cubical_agda::CubicalAgdaBackend::new(config))),
+            ProverKind::Zipperposition => Ok(Box::new(zipperposition::ZipperpositionBackend::new(config))),
+            ProverKind::Prover9 => Ok(Box::new(prover9::Prover9Backend::new(config))),
+            ProverKind::OpenSmt => Ok(Box::new(opensmt::OpenSmtBackend::new(config))),
+            ProverKind::SmtRat => Ok(Box::new(smtrat::SmtRatBackend::new(config))),
+            ProverKind::Rocq => Ok(Box::new(rocq::RocqBackend::new(config))),
+            ProverKind::UppaalStratego => Ok(Box::new(uppaal_stratego::UppaalStrategoBackend::new(config))),
+            ProverKind::MizAR => Ok(Box::new(mizar_ar::MizARBackend::new(config))),
             // TypeLL and KatagoriaVerifier are real HP upstream binaries —
             // they continue to dispatch through HPEcosystemBackend.
             ProverKind::TypeLL | ProverKind::KatagoriaVerifier => Ok(Box::new(

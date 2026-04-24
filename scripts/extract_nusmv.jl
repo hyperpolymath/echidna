@@ -1,7 +1,7 @@
 #!/usr/bin/env julia
 # SPDX-License-Identifier: PMPL-1.0-or-later
 # Extract NuSMV / nuXmv model-checker CTL/LTL properties.
-# Vendor: http://nusmv.fbk.eu/distrib/ (examples ship with distribution).
+# Vendor: https://nusmv.fbk.eu/distrib/ (examples ship with distribution).
 using JSON3, Dates
 include("extractor_save_common.jl")
 const DIR = "external_corpora/nusmv"; const OUT = "training_data"; const START_ID = 2_600_000

@@ -82,9 +82,17 @@ tempfile = "3"
 # 39 *TypeChecker discipline variants through discipline-specific TypeInfo.
 typed-wasm = { path = "crates/typed_wasm" }
 
+# Canonical Term / Goal / ProofState / Tactic / TypeInfo types.
+# Extracted so vcl-ut (and any other proof-exchange client) can share them
+# without pulling in the full echidna binary. The `core` and `types`
+# modules in this crate are re-exported from lib.rs so downstream
+# `use crate::core::*` / `use crate::types::*` paths keep working.
+echidna-core = { path = "crates/echidna-core" }
+
 [features]
 default = []
 chapel = []       # Enable Chapel parallel proof search (requires Zig FFI library)
+spark = []        # Enable SPARK-verified axiom-policy (requires libechidna_spark from GPRbuild)
 verisim = [     # Enable VeriSimDB persistent proof storage (8-modality octads)
     "dep:ciborium",
     "dep:sha2",
@@ -112,6 +120,7 @@ harness = false
 
 [workspace]
 members = [
+    "crates/echidna-core",
     "crates/echidna-mcp",
     "crates/echidna-wire",
     "crates/typed_wasm",

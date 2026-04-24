@@ -1009,6 +1009,7 @@ dependencies = [
  "clap",
  "colored",
  "criterion",
+ "echidna-core",
  "futures",
  "indicatif",
  "lazy_static",
@@ -1033,6 +1034,14 @@ dependencies = [
  "typed-wasm",
  "uuid",
  "which",
+]
+
+[[package]]
+name = "echidna-core"
+version = "0.1.0"
+dependencies = [
+ "serde",
+ "serde_json",
 ]
 
 [[package]]

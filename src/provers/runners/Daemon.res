@@ -162,7 +162,10 @@ let emit = async (daemon: t, event: daemonEvent): unit => {
   let handlers = daemon.eventHandlers
   for i in 0 to Array.length(handlers) - 1 {
     try {
-      await (handlers->Array.getUnsafe(i))(event)
+      switch handlers->Array.get(i) {
+      | Some(handler) => await handler(event)
+      | None => ()
+      }
     } catch {
     | exn => consoleError("[Daemon] Event handler error:", exn)
     }

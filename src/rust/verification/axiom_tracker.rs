@@ -376,6 +376,27 @@ impl AxiomTracker {
         let usages = self.scan(prover, content);
         self.enforce_policy(&usages)
     }
+
+    /// SPARK cross-check: run enforce_policy in Rust, then call the SPARK
+    /// bridge and assert both agree.  Active only under `--features spark`.
+    ///
+    /// Returns the Rust result on success; panics in debug builds if the
+    /// results diverge (indicates a SPARK/Rust synchronisation bug).
+    #[cfg(feature = "spark")]
+    pub fn enforce_policy_with_spark_crosscheck(
+        &self,
+        usages: &[AxiomUsage],
+    ) -> Result<AxiomPolicy, crate::ffi::spark_axiom::SparkError> {
+        let rust_policy = self.enforce_policy(usages);
+
+        crate::ffi::spark_axiom::crosscheck_enforce_policy(usages, &rust_policy)
+            .unwrap_or_else(|e| {
+                // Divergence is a critical soundness bug — abort loudly.
+                panic!("SPARK/Rust axiom-policy divergence (soundness violation): {e}");
+            });
+
+        Ok(rust_policy)
+    }
 }
 
 impl Default for AxiomTracker {
