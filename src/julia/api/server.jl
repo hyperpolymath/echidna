@@ -145,7 +145,11 @@ function handle_predict(req::HTTP.Request)
     state = get_state()
     state.request_count += 1
 
-    body = JSON3.read(String(req.body))
+    body = try
+        JSON3.read(String(req.body))
+    catch e
+        return HTTP.Response(400, JSON3.write(Dict("error" => "Invalid JSON: $(e)")))
+    end
 
     prover = parse_prover(get(body, :prover, "lean"))
     goal_text = get(body, :goal, "")
@@ -212,7 +216,11 @@ function handle_suggest(req::HTTP.Request)
     state = get_state()
     state.request_count += 1
 
-    body = JSON3.read(String(req.body))
+    body = try
+        JSON3.read(String(req.body))
+    catch e
+        return HTTP.Response(400, JSON3.write(Dict("error" => "Invalid JSON: $(e)")))
+    end
     goal_text = get(body, :goal, "")
     prover_str = get(body, :prover, "lean")
     top_k = get(body, :top_k, 5)
