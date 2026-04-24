@@ -203,7 +203,7 @@ init:
     echo "  2. Remove template cruft: rm .machine_readable/ai/PLACEHOLDERS.adoc"
     echo "  3. Customize README.adoc for your project"
     echo "  4. Commit: git add -A && git commit -m 'feat: initialize from RSR template'"
-    echo "  5. Push: git remote add origin git@github.com:{{OWNER}}/{{REPO}}.git && git push -u origin main"
+    echo "  5. Push: git remote add origin git@github.com:$OWNER/$REPO.git && git push -u origin main"
 
 # Build debug
 build:
