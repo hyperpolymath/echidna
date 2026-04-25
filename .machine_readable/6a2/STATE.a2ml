@@ -828,6 +828,24 @@ panic-attack-followups = [
 ]
 consult-deployment-status = "/api/v1/consult code-merged (1195cb0 + 6c878a1). End-to-end exercise against a running echidna server has NOT been done — needs a separate session with podman + boj-server + echidna stood up, then `curl POST /api/v1/consult` with a real question. Branch protection allowed the push through; the 6 required CI checks are presumably running in the background as of this session close."
 
+[session-2026-04-25-late-evening]
+summary = "All four deferred follow-ups from earlier session closed. Detector fixes pushed to panic-attack; bounded-read helper + 25 prover migrations + consult URL fix pushed to echidna."
+commits = [
+  "panic-attack 945e5f9 fix(assail): skip .ipkg in Idris ProofDrift; add Chapel detector",
+  "echidna 4241abf fix(provers): bounded_read_proof_file helper + 25 wrapper migrations",
+  "echidna 1b613c2 fix(rest+llm): /api/v1/consult e2e wiring — env-var port + cartridge name",
+]
+ipkg-detector-fix = "panic-attack analyze_idris now short-circuits on file_path.ends_with('.ipkg') — manifests share idr/ipkg routing but contain string-literal banned-pattern names ('zero believe_me' in package brief) that tripped substring detection. Verified: src/abi rescan drops to 0 ProofDrift findings."
+chapel-detector-fix = "panic-attack Language enum + extension map gain Chapel/.chpl. Routes through analyze_generic fallback (Chapel-specific patterns deferred — no Chapel-original code in echidna yet to dogfood). Verified: src/chapel rescan produces 6-entry AssailReport instead of erroring."
+prover-bounded-read = "src/rust/provers/io.rs ships bounded_read_proof_file with 64 MiB cap via AsyncReadExt::take(N+1) (TOCTOU-safe, errors on overflow). 25 prover backends migrated from bare tokio::fs::read_to_string. Re-scan confirms UnboundedAllocation findings 26 → 1 (only solver_integrity.rs TOML manifest read remains, separate threat shape — operator-controlled path, not a prover wrapper). 47 unflagged backends use the same pattern but already pass detector heuristic via 'limit' word presence; deferred for an estate-wide pass to avoid scope creep."
+consult-e2e-result = "Verified end-to-end up to BoJ boundary. Run echidna-rest under ECHIDNA_REST_ADDR=127.0.0.1:8765, BoJ already running on localhost:7700 in skeleton mode (cartridges_loaded=106 incl. echidna-llm-mcp). Curl POST /api/v1/consult returns: empty question → 400; valid question → 502 with 'BoJ consult returned 500 Internal Server Error' (BoJ skeleton mode self-declares invocation as placeholder). Echidna handler chain fully wired: validate → check_health → consult → POST → translate. Discovered + fixed cartridge URL bug (echidna-llm → echidna-llm-mcp) on the way."
+remaining-followups = [
+  "BoJ-side: echidna-llm-mcp cartridge invoke is a placeholder; BoJ /health self-declares 'mode: skeleton, note: invocation is a placeholder'. Real LLM responses need work in boj-server, not echidna.",
+  "47 unflagged prover wrappers still use bare tokio::fs::read_to_string — scoped out of this session. Single sed pass when the estate-wide round comes.",
+  "integrity/solver_integrity.rs TOML manifest read (sync std::fs::read_to_string) — different threat shape than proof files, deferred.",
+]
+in-flight-uncommitted-not-mine = "On entry to session, working tree had uncommitted changes by another agent: src/rust/dispatch.rs (health_status field + record_prover_result), src/rust/diagnostics/mod.rs (re-export additions), src/rust/server.rs, src/rust/main.rs, repl/ split (repl.rs deletion + repl/mod.rs + repl/proof.rs). Coherent fault-tolerance + repl-modularization work mid-flight by 87f49a4 author. NOT touched in any of my commits."
+
 # ─── Migration roadmap audit 2026-04-25 ─────────────────────────────────────
 [migration-roadmap]
 date = "2026-04-25"
