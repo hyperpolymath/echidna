@@ -19,9 +19,7 @@ use tower_http::cors::CorsLayer;
 use utoipa::OpenApi;
 use utoipa_swagger_ui::SwaggerUi;
 
-// Import FFI wrapper
-use crate::ffi_wrapper;
-
+mod ffi_wrapper;
 mod handlers;
 mod models;
 
@@ -38,6 +36,10 @@ pub struct AppState {
     pub ml_api_url: String,
     /// Whether FFI layer is initialized
     pub ffi_initialized: bool,
+    /// LLM advisor — drives /api/v1/consult, talks to BoJ's
+    /// model-router-mcp cartridge for cost-aware model selection.
+    /// Mutex-wrapped because check_health takes &mut self.
+    pub llm_advisor: Arc<Mutex<echidna::llm::LlmAdvisor>>,
 }
 
 /// A proof session
@@ -91,6 +93,7 @@ async fn main() {
         ml_client,
         ml_api_url,
         ffi_initialized,
+        llm_advisor: Arc::new(Mutex::new(echidna::llm::LlmAdvisor::new())),
     };
 
     let app = Router::new()
@@ -114,6 +117,9 @@ async fn main() {
         // Export is session-scoped; import is stateless.
         .route("/api/v1/proofs/:id/export", get(handlers::export_proof))
         .route("/api/v1/exchange/import", post(handlers::import_proof))
+        // Consultant-mode Q&A — free-form question + optional context →
+        // LLM-shaped markdown answer via BoJ's cartridge router.
+        .route("/api/v1/consult", post(handlers::consult))
         // OpenAPI documentation
         .merge(SwaggerUi::new("/swagger-ui").url("/api-docs/openapi.json", ApiDoc::openapi()))
         .layer(CorsLayer::permissive())

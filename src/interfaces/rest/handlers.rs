@@ -694,3 +694,53 @@ pub async fn import_proof(
 
     Ok(Json(ImportResponse { proof_state }))
 }
+
+/// `POST /api/v1/consult` — free-form Q&A endpoint.
+///
+/// Used by echidnabot's Consultant mode and the BoJ
+/// `cartridges/echidna-llm-mcp/consultant_qa` tool when it prefers a
+/// native answer over its compose-of-search+suggest fallback.
+///
+/// Routes through the existing `LlmAdvisor` (which talks to BoJ's
+/// model-router-mcp cartridge for cost-aware model selection). Returns
+/// 503 when BoJ is unreachable so callers know to fall back.
+pub async fn consult(
+    State(state): State<AppState>,
+    Json(req): Json<ConsultRequest>,
+) -> Result<Json<ConsultResponse>, (StatusCode, String)> {
+    if req.question.trim().is_empty() {
+        return Err((
+            StatusCode::BAD_REQUEST,
+            "question must not be empty".to_string(),
+        ));
+    }
+
+    // Borrow the advisor + ensure it's healthy. The advisor's check_health
+    // is &mut, so we lock the AppState's advisor mutex briefly to run it.
+    let mut advisor = state.llm_advisor.lock().await;
+    if !advisor.is_available() {
+        if let Err(e) = advisor.check_health().await {
+            return Err((
+                StatusCode::SERVICE_UNAVAILABLE,
+                format!("LLM advisor health check failed: {}", e),
+            ));
+        }
+        if !advisor.is_available() {
+            return Err((
+                StatusCode::SERVICE_UNAVAILABLE,
+                "LLM advisor unavailable (BoJ unreachable)".to_string(),
+            ));
+        }
+    }
+
+    let llm_response = advisor
+        .consult(&req.question, req.context.as_deref())
+        .await
+        .map_err(|e| (StatusCode::BAD_GATEWAY, format!("BoJ consult failed: {}", e)))?;
+
+    Ok(Json(ConsultResponse {
+        answer: llm_response.answer,
+        model: llm_response.model,
+        latency_ms: llm_response.latency_ms,
+    }))
+}

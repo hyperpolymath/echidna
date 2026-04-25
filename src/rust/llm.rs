@@ -163,6 +163,17 @@ pub struct GoalDecomposition {
     pub recommended_order: Vec<usize>,
 }
 
+/// Free-form Q&A response from /api/v1/consult.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct ConsultResponse {
+    /// Markdown-formatted answer suitable for direct display.
+    pub answer: String,
+    /// Which model BoJ routed to (cost-aware tier vs frontier).
+    pub model: Option<String>,
+    /// Round-trip latency including LLM inference (milliseconds).
+    pub latency_ms: u64,
+}
+
 /// Request to BoJ cartridge
 #[allow(dead_code)]
 #[derive(Debug, Serialize)]
@@ -502,6 +513,82 @@ impl LlmAdvisor {
 
         // Return empty response as fallback — the main flow handles this gracefully
         bail!("LLM model-router fallback not yet fully wired")
+    }
+
+    /// Free-form Q&A consultation. The /api/consult endpoint takes a
+    /// natural-language question + optional context (recent jobs, current
+    /// proof state summary) and returns a markdown-formatted answer.
+    ///
+    /// Routes through BoJ's cartridge invoke endpoint with operation
+    /// `consult`. The cartridge can dispatch to whichever LLM is
+    /// classified as "right-sized" for the question (cheap models for
+    /// routine status queries, frontier models for proof-strategy
+    /// reasoning) — that classification is BoJ's job, not echidna's.
+    ///
+    /// Returns Err when BoJ is unreachable / cartridge is unconfigured;
+    /// callers should treat this as "no LLM enrichment available".
+    pub async fn consult(
+        &self,
+        question: &str,
+        context: Option<&str>,
+    ) -> Result<ConsultResponse> {
+        let start = Instant::now();
+
+        if !self.available {
+            bail!("LLM advisor not available — call check_health() first");
+        }
+
+        let url = format!("{}/cartridge/echidna-llm/invoke", self.config.boj_url);
+
+        let request_body = serde_json::json!({
+            "operation": "consult",
+            "params": {
+                "question": question,
+                "context": context.unwrap_or(""),
+                "model": self.config.preferred_model,
+                "max_tokens": self.config.max_tokens,
+                "temperature": self.config.temperature,
+                "response_format": "markdown"
+            }
+        });
+
+        let response = self
+            .client
+            .post(&url)
+            .json(&request_body)
+            .send()
+            .await
+            .context("Failed to reach BoJ LLM endpoint for consult")?;
+
+        if !response.status().is_success() {
+            bail!("BoJ consult returned {}", response.status());
+        }
+
+        let boj_response: BojCartridgeResponse = response.json().await?;
+
+        if let Some(error) = boj_response.error {
+            bail!("BoJ consult error: {}", error);
+        }
+
+        let result_json = boj_response
+            .result
+            .ok_or_else(|| anyhow::anyhow!("Empty BoJ consult response"))?;
+
+        let answer = result_json
+            .get("answer")
+            .and_then(|v| v.as_str())
+            .ok_or_else(|| anyhow::anyhow!("BoJ consult: missing 'answer' field"))?
+            .to_string();
+        let model = result_json
+            .get("model")
+            .and_then(|v| v.as_str())
+            .map(String::from);
+
+        Ok(ConsultResponse {
+            answer,
+            model,
+            latency_ms: start.elapsed().as_millis() as u64,
+        })
     }
 
     /// Whether the LLM advisor is available

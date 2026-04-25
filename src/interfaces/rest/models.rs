@@ -146,3 +146,29 @@ pub struct ImportRequest {
 pub struct ImportResponse {
     pub proof_state: serde_json::Value,
 }
+
+/// Body of `POST /api/v1/consult` request. Free-form Q&A over a proof
+/// situation — used by echidnabot's Consultant mode (and any other
+/// caller that wants LLM-shaped reasoning about a proof state without
+/// the structure of `suggest_tactics`).
+#[derive(Debug, Clone, Serialize, Deserialize, ToSchema)]
+pub struct ConsultRequest {
+    /// The natural-language question.
+    pub question: String,
+    /// Optional context — recent jobs, current proof state summary,
+    /// related proofs from the corpus. Passed verbatim to the LLM
+    /// system prompt.
+    #[serde(default)]
+    pub context: Option<String>,
+}
+
+/// Body of `POST /api/v1/consult` response. Markdown answer + provenance.
+#[derive(Debug, Clone, Serialize, Deserialize, ToSchema)]
+pub struct ConsultResponse {
+    /// Markdown-formatted answer suitable for direct PR-comment display.
+    pub answer: String,
+    /// Which model BoJ routed to (cost-aware tier vs frontier).
+    pub model: Option<String>,
+    /// Round-trip latency including LLM inference (milliseconds).
+    pub latency_ms: u64,
+}
