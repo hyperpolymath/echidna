@@ -125,11 +125,11 @@ async fn main() {
         .layer(CorsLayer::permissive())
         .with_state(state);
 
-    let addr = "127.0.0.1:8000";
+    let addr = std::env::var("ECHIDNA_REST_ADDR").unwrap_or_else(|_| "127.0.0.1:8000".to_string());
     tracing::info!("REST API listening on http://{}", addr);
     tracing::info!("Swagger UI available at http://{}/swagger-ui", addr);
 
-    let listener = tokio::net::TcpListener::bind(addr).await.unwrap();
+    let listener = tokio::net::TcpListener::bind(&addr).await.unwrap();
     axum::serve(listener, app).await.unwrap();
 }
 

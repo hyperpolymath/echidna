@@ -442,7 +442,7 @@ impl LlmAdvisor {
             build_user_prompt(&goal_str, &hypotheses, &self.history, self.config.top_k);
 
         // Call BoJ cartridge invoke endpoint
-        let url = format!("{}/cartridge/echidna-llm/invoke", self.config.boj_url);
+        let url = format!("{}/cartridge/echidna-llm-mcp/invoke", self.config.boj_url);
 
         let request_body = serde_json::json!({
             "operation": "suggest_tactics",
@@ -538,7 +538,7 @@ impl LlmAdvisor {
             bail!("LLM advisor not available — call check_health() first");
         }
 
-        let url = format!("{}/cartridge/echidna-llm/invoke", self.config.boj_url);
+        let url = format!("{}/cartridge/echidna-llm-mcp/invoke", self.config.boj_url);
 
         let request_body = serde_json::json!({
             "operation": "consult",
