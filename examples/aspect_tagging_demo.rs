@@ -104,7 +104,8 @@ fn main() {
     // were dead. Removed 2026-04-25. Re-add when a real neural tagger
     // ships (likely via the Julia /predict endpoint or src/rust/neural.rs).
     let composite = CompositeTagger::new(AggregationStrategy::WeightedVoting)
-        .add_tagger(Box::new(RuleBasedTagger::new()), 1.0);
+        .add_tagger(Box::new(RuleBasedTagger::new()), 1.0)
+        .add_tagger(Box::new(RuleBasedTagger::with_threshold(0.3)), 0.5);
 
     let theorem_name = "functor_category_theory";
     let statement = Term::Const("functor".to_string());

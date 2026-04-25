@@ -112,11 +112,7 @@ pub fn arb_theorem() -> impl Strategy<Value = Theorem> {
 
 /// Strategy for generating a variable
 pub fn arb_variable() -> impl Strategy<Value = Variable> {
-    (var_name(), arb_term()).prop_map(|(name, ty)| Variable {
-        name,
-        ty,
-        type_info: None,
-    })
+    (var_name(), arb_term()).prop_map(|(name, ty)| Variable { name, ty, type_info: None })
 }
 
 /// Strategy for generating contexts
