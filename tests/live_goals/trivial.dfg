@@ -1,0 +1,17 @@
+begin_problem(Trivial).
+list_of_descriptions.
+name({*Trivial*}).
+author({*ECHIDNA test suite*}).
+status(unsatisfiable).
+description({*p implies p — discharged by resolution*}).
+end_of_list.
+list_of_symbols.
+predicates[(p,0)].
+end_of_list.
+list_of_formulae(axioms).
+formula(p).
+end_of_list.
+list_of_formulae(conjectures).
+formula(p).
+end_of_list.
+end_problem.
