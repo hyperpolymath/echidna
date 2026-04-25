@@ -4,7 +4,7 @@
 `ECHIDNA-TODO.md` (actionable backlog) and the full continuation
 prompts at `verification-ecosystem/echidna/docs/handover/`.
 
-Last updated: 2026-04-20.
+Last updated: 2026-04-26.
 
 ---
 
@@ -103,7 +103,7 @@ Also corrected 2026-04-19 (were mis-listed as "planned"):
 - **Optional**: Chapel (parallel proof dispatch).
 - **ABI**: Idris2 (7+ modules, zero `believe_me`).
 - **FFI**: Zig (4 shared libraries).
-- **Interfaces**: GraphQL (8081), gRPC (50051), REST (8000).
+- **Interfaces**: GraphQL (8081), gRPC (50051), REST (8000). All three interface crates build clean as of 2026-04-26.
 - **Build**: Justfile primary, Cargo workspace.
 - **Container**: Podman + Containerfile.
 
@@ -136,6 +136,13 @@ Also corrected 2026-04-19 (were mis-listed as "planned"):
 | `verification-ecosystem/echidna/docs/handover/L3-LIVE-PROVER-CI-PROMPT.md` | L3 live-prover continuation prompt (marked Wave-2 DONE, pointing to Wave-3) |
 | `verification-ecosystem/echidna/.machine_readable/6a2/STATE.a2ml` | Session ledger incl. `[l3-status-after-wave-2]` + `[wave-3-handover-hints]` |
 | `verification-ecosystem/echidna/docs/handover/README.md` | Index + drift-handling policy |
+
+## Session log highlights (2026-04-26)
+
+- **echidna-graphql build fixed** (`5aec9d5`) — ProverKind enum expanded from 30 → 113 variants (exhaustive, no catch-all) across schema.rs + resolvers.rs + ffi_wrapper.rs; FfiProverBackend trait wired (config/set_config/search_theorems); FFI pointer casts corrected. `cargo build -p echidna-graphql` now clean.
+- **FFI boundary audit** (`b4d682b`) — `audits/audit-ffi-boundary.md` (4-section per-module safety review) + `audits/assail-classifications.a2ml` (7 classifications suppressing legitimate UnsafeCode at all three interface ffi_wrapper.rs files + core ffi/ + proof_search.rs). panic-attack findings drop from active to classified.
+- **bounded_read_config helper** — `src/rust/integrity/io.rs` ships sync 1 MiB-capped read helper; `solver_integrity.rs` migrated. Remaining UnboundedAllocation finding resolved.
+- **F5 deferred** — `boj-server` `echidna-llm-mcp` cartridge real invocation is the one remaining open item. BoJ currently operates in skeleton mode for this cartridge; echidna REST layer is fully wired to its boundary.
 
 ## Session log highlights (2026-04-19)
 

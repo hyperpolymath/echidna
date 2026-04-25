@@ -4,12 +4,19 @@
 we are) and the full continuation prompts at
 `verification-ecosystem/echidna/docs/handover/{L1,L2,L3,PRODUCTION-WIRING-PLAN}.md`.
 
-Last updated: 2026-04-20.
+Last updated: 2026-04-26.
 
 Execution order from the master plan: **L3 → L1 → L2.** L3 blocks L1;
 L1 blocks L2 (because Chapel consumes Cap'n Proto schemas).
 
 ---
+
+## Completed items (2026-04-26)
+
+- ✅ **`echidna-graphql` build** — ProverKind 30→113 variants, trait stubs, FFI casts fixed (`5aec9d5`). All three interface crates now build clean.
+- ✅ **FFI boundary audit** — `audits/audit-ffi-boundary.md` + `audits/assail-classifications.a2ml` classifying all legitimate UnsafeCode at FFI boundaries (`b4d682b`).
+- ✅ **`bounded_read_config`** — sync 1 MiB-capped read helper in `src/rust/integrity/io.rs`; `solver_integrity.rs` migrated.
+- ⏳ **F5 (boj-server `echidna-llm-mcp`)** — deferred to separate dispatch. BoJ in skeleton mode for this cartridge.
 
 ## P0 — Immediate pickup
 
