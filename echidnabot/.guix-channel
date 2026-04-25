@@ -1,7 +1,0 @@
-;; echidnabot - Guix Channel
-;; Add to ~/.config/guix/channels.scm
-
-(channel
- (version 0)
- (url "https://github.com/hyperpolymath/echidnabot")
- (branch "main"))
