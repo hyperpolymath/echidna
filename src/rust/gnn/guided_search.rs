@@ -27,11 +27,13 @@
 
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
+use std::time::Instant;
 use tracing::{debug, info};
 
 use crate::core::{ProofState, Tactic, Term, Theorem};
 use crate::gnn::client::{GnnClient, GnnConfig};
 use crate::gnn::embeddings::{TermEmbedding, TermFeatureExtractor};
+use crate::gnn::fallback_monitor::{FallbackMonitor, FallbackSlaConfig};
 use crate::gnn::graph::ProofGraphBuilder;
 
 /// Configuration for GNN-guided search.
@@ -99,6 +101,8 @@ pub struct GnnGuidedSearch {
     premise_embedding_cache: HashMap<String, TermEmbedding>,
     /// Statistics about search performance
     stats: SearchStats,
+    /// Monitor for cosine similarity fallback SLA compliance
+    fallback_monitor: FallbackMonitor,
 }
 
 /// Statistics about GNN-guided search performance.
@@ -125,12 +129,14 @@ impl GnnGuidedSearch {
     /// Create a new GNN-guided search with custom configuration.
     pub fn with_config(config: GuidedSearchConfig) -> Self {
         let gnn_client = GnnClient::with_config(config.gnn_config.clone());
+        let fallback_monitor = FallbackMonitor::with_config(FallbackSlaConfig::default());
         Self {
             config,
             gnn_client,
             feature_extractor: TermFeatureExtractor::new(),
             premise_embedding_cache: HashMap::new(),
             stats: SearchStats::default(),
+            fallback_monitor,
         }
     }
 
@@ -253,7 +259,8 @@ impl GnnGuidedSearch {
     /// Compute symbolic similarity scores between the goal and premises.
     ///
     /// Uses cosine similarity of local term embeddings as a fast heuristic
-    /// that works without the GNN server.
+    /// that works without the GNN server. Tracks latency and cache hits
+    /// via fallback_monitor for SLA compliance.
     fn compute_symbolic_scores(
         &mut self,
         state: &ProofState,
@@ -264,6 +271,8 @@ impl GnnGuidedSearch {
         if !self.config.use_cosine_fallback {
             return scores;
         }
+
+        let fallback_start = Instant::now();
 
         // Embed the goal term
         let goal_embedding = state
@@ -276,17 +285,34 @@ impl GnnGuidedSearch {
             None => return scores,
         };
 
+        let mut cache_hits = 0;
+        let mut cache_misses = 0;
+
         // Score each premise by cosine similarity to the goal
         for theorem in premises {
+            let is_cache_hit = self.premise_embedding_cache.contains_key(&theorem.name);
+
             let premise_emb = self
                 .premise_embedding_cache
                 .entry(theorem.name.clone())
                 .or_insert_with(|| TermEmbedding::from_term(&theorem.statement))
                 .clone();
 
+            if is_cache_hit {
+                cache_hits += 1;
+            } else {
+                cache_misses += 1;
+            }
+
             let similarity = goal_emb.cosine_similarity(&premise_emb);
             scores.insert(theorem.name.clone(), similarity);
         }
+
+        // Record fallback operation metrics
+        let fallback_latency_ms = fallback_start.elapsed().as_millis() as u64;
+        let is_cache_hit = cache_hits > 0 && cache_misses == 0;
+        self.fallback_monitor.record_fallback(fallback_latency_ms, is_cache_hit);
+        self.fallback_monitor.set_cache_size(self.premise_embedding_cache.len());
 
         scores
     }
@@ -314,6 +340,31 @@ impl GnnGuidedSearch {
     /// Whether the GNN server is available.
     pub fn gnn_available(&self) -> bool {
         self.gnn_client.is_available()
+    }
+
+    /// Get fallback monitor for accessing SLA metrics
+    pub fn fallback_monitor(&self) -> &FallbackMonitor {
+        &self.fallback_monitor
+    }
+
+    /// Whether fallback is currently meeting SLA
+    pub fn fallback_meets_sla(&self) -> bool {
+        self.fallback_monitor.meets_sla()
+    }
+
+    /// Get fallback cache hit rate
+    pub fn fallback_cache_hit_rate(&self) -> f64 {
+        self.fallback_monitor.cache_hit_rate()
+    }
+
+    /// Get fallback average latency (ms)
+    pub fn fallback_avg_latency_ms(&self) -> f64 {
+        self.fallback_monitor.metrics().avg_latency_ms
+    }
+
+    /// Get fallback max latency (ms)
+    pub fn fallback_max_latency_ms(&self) -> u64 {
+        self.fallback_monitor.metrics().max_latency_ms
     }
 }
 

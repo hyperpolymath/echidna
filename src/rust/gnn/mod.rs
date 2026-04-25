@@ -45,10 +45,12 @@
 
 pub mod client;
 pub mod embeddings;
+pub mod fallback_monitor;
 pub mod graph;
 pub mod guided_search;
 
 pub use client::{GnnClient, GnnConfig, GnnInferenceResult};
 pub use embeddings::{TermEmbedding, TermFeatureExtractor};
+pub use fallback_monitor::{FallbackMetrics, FallbackMonitor, FallbackSlaConfig};
 pub use graph::{EdgeKind, NodeKind, ProofGraph, ProofGraphBuilder};
 pub use guided_search::{GnnGuidedSearch, GuidedSearchConfig, ScoredPremise};
