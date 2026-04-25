@@ -54,7 +54,7 @@ impl UppaalBackend {
 
         xml.push_str("<?xml version=\"1.0\" encoding=\"utf-8\"?>\n");
         xml.push_str("<!DOCTYPE nta PUBLIC '-//Uppaal Team//DTD Flat System 1.1//EN'\n");
-        xml.push_str("  'http://www.it.uu.se/research/group/darts/uppaal/flat-1_2.dtd'>\n");
+        xml.push_str("  'https://www.it.uu.se/research/group/darts/uppaal/flat-1_2.dtd'>\n");
         xml.push_str("<!-- ECHIDNA UPPAAL Export -->\n");
         xml.push_str("<nta>\n");
 

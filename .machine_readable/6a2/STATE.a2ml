@@ -811,6 +811,23 @@ pkg-4-open-followups = [
   "cargo check --all-targets reveals pre-existing type_info field gap in 4 test binaries (neural_property_tests, aspect_tests, e2e_prover_test, security_aspect_tests): echidna::core::{Hypothesis,Definition,Variable} gained a type_info field but test fixtures were not updated. Independent of Package 4. Needs a separate fix pass.",
 ]
 
+# ─── Session 2026-04-25 evening: rest-crate fix + chunked panic-attack sweep ─
+[session-2026-04-25-evening]
+summary = "Two follow-ups closed at end of long session: echidna-rest pre-existing 37 errors fixed (unblocks /api/v1/consult), and the panic-attack full-repo run that had timed out at 180s replaced with a 14-chunk per-subdir sweep."
+commits = [
+  "6c878a1 fix(rest): unblock /api/v1/consult — 37 pre-existing rest-crate errors",
+  "4dbe74f chore(reports): chunked panic-attack sweep — replaces 180s-timeout single-run",
+  "<pending> fix(uppaal): https for the UPPAAL flat-DTD URI",
+]
+rest-crate-fix = "models::ProverKind gains 13 variants (FStar, Dafny, Why3, TLAPS, Twelf, Nuprl, Minlog, Imandra, GLPK, SCIP, MiniZinc, Chuffed, ORTools) so the FFI ordinal table 17..29 round-trips through the REST schema. core_kind_to_rest / rest_kind_to_core wired both ways; drops the '_ => Vampire' mistargeting fallback for ord ≤ 29. FfiProverBackend now implements search_theorems (empty-vec stub), config / set_config (stores ProverConfig). apply_tactic returns CoreTacticResult::Success(state.clone()) (no Box). ProofState::new wrapping in Term::Var to match the new Term-typed core API. c_char ↔ u8 raw-pointer casts at the Zig FFI boundary. 637 lib tests still passing."
+panic-attack-sweep = "14 per-subdir chunks (src/rust, src/interfaces, src/julia, src/abi, src/zig, src/zig_ffi, src/idris, src/ada, src/ui, src/rescript, crates/echidna-{core,mcp,wire}, crates/typed_wasm). Combined wall time ~60s; previously single-run timed out at 180s. 44 findings — 41 are in existing memory-rule classes (file-level UnboundedAllocation in 26 prover wrappers, legitimate-FFI UnsafeCode/UnsafeFFI in interface ffi_wrappers + zig bridges, ProofDrift on .ipkg). 3 actionable: SupplyChain on echidna-mcp Cargo.toml (false-positive — workspace Cargo.lock is at root, panic-attack scans crate in isolation), PanicPath on z3.rs (false-positive — the 'expect calls' are parser-helper self.expect(...)? ; the one panic! is a #[test] assertion), InsecureProtocol on uppaal.rs (real, fixed: UPPAAL flat-DTD URI flipped http:// → https://; uu.se 301-redirects already, https returns 200). Reports retained at reports/panic-attack-chunks/*.json + SUMMARY.md."
+panic-attack-followups = [
+  "echidnaabi.ipkg ProofDrift is a detector miss on a config file — worth a panic-attack memory entry to skip .ipkg for ProofDrift class.",
+  "26 prover-wrapper UnboundedAllocation flags are file-level aggregations per the existing memory rule — per-backend audit pass is its own multi-session work, not a one-shot.",
+  "src/chapel returned 'Could not detect language' — panic-attack has no Chapel detector. Track separately if Chapel hardening becomes a goal.",
+]
+consult-deployment-status = "/api/v1/consult code-merged (1195cb0 + 6c878a1). End-to-end exercise against a running echidna server has NOT been done — needs a separate session with podman + boj-server + echidna stood up, then `curl POST /api/v1/consult` with a real question. Branch protection allowed the push through; the 6 required CI checks are presumably running in the background as of this session close."
+
 # ─── Migration roadmap audit 2026-04-25 ─────────────────────────────────────
 [migration-roadmap]
 date = "2026-04-25"
