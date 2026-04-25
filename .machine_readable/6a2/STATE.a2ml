@@ -810,3 +810,69 @@ pkg-4-open-followups = [
   "Matrix CI realism: only 17 of 113 provers currently exposed via REST. Today's matrix runs a uniform wiremock suite per slug (work-convergent) — upgrade path is either (a) expand echidna REST handlers to cover all 113, or (b) specialise per-job wiremock per slug. Tracked as Package 4 step 7.",
   "cargo check --all-targets reveals pre-existing type_info field gap in 4 test binaries (neural_property_tests, aspect_tests, e2e_prover_test, security_aspect_tests): echidna::core::{Hypothesis,Definition,Variable} gained a type_info field but test fixtures were not updated. Independent of Package 4. Needs a separate fix pass.",
 ]
+
+# ─── Migration roadmap audit 2026-04-25 ─────────────────────────────────────
+[migration-roadmap]
+date = "2026-04-25"
+purpose = """
+Two outstanding migrations identified by user 2026-04-25 in the
+session-close sweep. Both are multi-day to multi-week scope; documenting
+here so the work has clear targets when picked up.
+"""
+
+[migration-roadmap.rescript-to-affinescript]
+status = "in-progress (per docs/ROADMAP.md), 30 files outstanding"
+inventory = """
+echidna/src/rescript/ — 30 .res files split between:
+  src/rescript/src/                 — 10 production files (Main, Server,
+                                       api/Client, components/{GoalList,
+                                       ProofTree, ProofViewer, ProverSelector,
+                                       TacticSuggester, TheoremSearch},
+                                       state/Store)
+  src/rescript/lib/ocaml/           — 10 generated/compiled mirrors
+  + 10 ancillary
+"""
+target = "AffineScript-TEA per docs/ROADMAP.md (compiled to typed-wasm, served via Deno)"
+prereqs = """
+- AffineScript compiler stable enough to handle React-equivalent component
+  primitives (rsr-template-repo/affinescript/ has working examples but the
+  surface used in echidna/src/rescript/components/ is wider).
+- Migration script or manual port — no automatic ReScript→AffineScript
+  transpiler exists today.
+"""
+suggested-order = """
+1. Migrate src/rescript/src/api/Client.res first (smallest, no UI deps).
+2. Then src/rescript/src/state/Store.res (TEA store — drives the rest).
+3. Then components in dependency order: ProverSelector → GoalList →
+   TacticSuggester → ProofViewer → ProofTree → TheoremSearch.
+4. Finally Main + Server.
+"""
+estimate = "Multi-day if AffineScript has the needed primitives; multi-week if it gains new compiler features along the way."
+
+[migration-roadmap.rust-to-rust-spark]
+status = "scoping pending"
+note = """
+Memory rule "Rust always means Rust/SPARK" calls for new Rust projects
+to admit SPARK/Ada modules via Idris2-ABI + Zig-FFI. Echidna pre-dates
+this rule; the wholesale transition is multi-week. Realistic plan:
+identify highest-leverage modules + add SPARK companions over time.
+"""
+candidate-modules = [
+  "src/rust/verification/axiom_tracker.rs — security-critical: tracks 4-level danger classification (Safe/Noted/Warning/Reject); SPARK proofs of monotonicity + cap-at-Reject would make the trust hierarchy provably sound rather than test-verified.",
+  "src/rust/integrity/solver_integrity.rs — SHAKE3-512 + BLAKE3 binary integrity verification; SPARK proofs that hash mismatch always yields IntegrityStatus::Failed (no silent pass) would close the dispatch trust loop.",
+  "src/rust/verification/certificates.rs — proof certificate validation (Alethe, DRAT, TSTP, OpenTheory); SPARK would prove certificate parsing is total + the verifier doesn't accept malformed certs.",
+]
+non-candidates = [
+  "src/rust/provers/* — these are CLI shellouts to external prover binaries; Rust's safety adds little here vs SPARK overhead.",
+  "src/julia/ — Julia ML; SPARK not applicable.",
+  "src/interfaces/* — REST/GraphQL/gRPC adapters; standard web tier, low SPARK ROI.",
+]
+estimate = "Per-module: 3-7 days each (formal-spec → SPARK port → proof of equivalence with the Rust implementation)."
+
+[migration-roadmap.applies-to-other-repos]
+note = """
+Same migration framings apply to echidnabot (no ReScript so RS→AS not
+applicable; SPARK candidates are src/api/webhooks.rs HMAC verification
++ src/store/sqlite.rs schema migration safety) and vcl-ut (no ReScript;
+SPARK candidate is src/interface/lint/ which gates queries pre-execution).
+"""
