@@ -24,6 +24,22 @@ pub enum ProverKind {
     EProver,
     Spass,
     AltErgo,
+    FStar,
+    Dafny,
+    Why3,
+    #[serde(rename = "tlaps")]
+    TLAPS,
+    Twelf,
+    Nuprl,
+    Minlog,
+    Imandra,
+    #[serde(rename = "glpk")]
+    GLPK,
+    #[serde(rename = "scip")]
+    SCIP,
+    MiniZinc,
+    Chuffed,
+    ORTools,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, ToSchema)]

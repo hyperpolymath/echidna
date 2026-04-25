@@ -22,11 +22,15 @@ use crate::{models::*, AppState, ProofSession};
 /// Wrapper for FFI-based prover backend
 struct FfiProverBackend {
     handle: i32,
+    config: ProverConfig,
 }
 
 impl FfiProverBackend {
     pub fn new(handle: i32) -> Self {
-        FfiProverBackend { handle }
+        FfiProverBackend {
+            handle,
+            config: ProverConfig::default(),
+        }
     }
 }
 
@@ -38,15 +42,15 @@ impl ProverBackend for FfiProverBackend {
     ) -> anyhow::Result<echidna::core::ProofState> {
         let content = std::fs::read_to_string(&path)?;
         ffi_wrapper::parse_string(self.handle, &content)?;
-        Ok(echidna::core::ProofState::new(content))
+        Ok(echidna::core::ProofState::new(Term::Var(content)))
     }
 
     async fn parse_string(&self, content: &str) -> anyhow::Result<echidna::core::ProofState> {
         ffi_wrapper::parse_string(self.handle, content)?;
-        Ok(echidna::core::ProofState::new(content.to_string()))
+        Ok(echidna::core::ProofState::new(Term::Var(content.to_string())))
     }
 
-    async fn verify_proof(&self, state: &echidna::core::ProofState) -> anyhow::Result<bool> {
+    async fn verify_proof(&self, _state: &echidna::core::ProofState) -> anyhow::Result<bool> {
         ffi_wrapper::verify_proof(self.handle)
     }
 
@@ -54,18 +58,18 @@ impl ProverBackend for FfiProverBackend {
         &self,
         state: &echidna::core::ProofState,
         tactic: &CoreTactic,
-    ) -> anyhow::Result<TacticResult> {
+    ) -> anyhow::Result<CoreTacticResult> {
         let tactic_str = format!("{:?}", tactic);
         if ffi_wrapper::apply_tactic(self.handle, &tactic_str)? {
-            Ok(TacticResult::Success(Box::new(state.clone())))
+            Ok(CoreTacticResult::Success(state.clone()))
         } else {
-            Ok(TacticResult::Error("Tactic failed".to_string()))
+            Ok(CoreTacticResult::Error("Tactic failed".to_string()))
         }
     }
 
     async fn suggest_tactics(
         &self,
-        state: &echidna::core::ProofState,
+        _state: &echidna::core::ProofState,
         limit: usize,
     ) -> anyhow::Result<Vec<CoreTactic>> {
         let tactic_names = ffi_wrapper::suggest_tactics(self.handle, limit)?;
@@ -80,7 +84,7 @@ impl ProverBackend for FfiProverBackend {
         Ok(tactics)
     }
 
-    async fn export(&self, state: &echidna::core::ProofState) -> anyhow::Result<String> {
+    async fn export(&self, _state: &echidna::core::ProofState) -> anyhow::Result<String> {
         ffi_wrapper::export_proof(self.handle)
     }
 
@@ -91,6 +95,20 @@ impl ProverBackend for FfiProverBackend {
     fn kind(&self) -> CoreProverKind {
         // This is a bit simplified - in a real implementation we'd track the kind
         CoreProverKind::Lean // Default, would need to be set during creation
+    }
+
+    async fn search_theorems(&self, _pattern: &str) -> anyhow::Result<Vec<String>> {
+        // FFI shim doesn't expose theorem search yet. Return empty list rather
+        // than failing so portfolio/search callers degrade gracefully.
+        Ok(Vec::new())
+    }
+
+    fn config(&self) -> &ProverConfig {
+        &self.config
+    }
+
+    fn set_config(&mut self, config: ProverConfig) {
+        self.config = config;
     }
 }
 
@@ -558,7 +576,20 @@ fn core_kind_to_rest(kind: &CoreProverKind) -> ProverKind {
         CoreProverKind::EProver => ProverKind::EProver,
         CoreProverKind::SPASS => ProverKind::Spass,
         CoreProverKind::AltErgo => ProverKind::AltErgo,
-        _ => ProverKind::Vampire, // fallback for remaining provers
+        CoreProverKind::FStar => ProverKind::FStar,
+        CoreProverKind::Dafny => ProverKind::Dafny,
+        CoreProverKind::Why3 => ProverKind::Why3,
+        CoreProverKind::TLAPS => ProverKind::TLAPS,
+        CoreProverKind::Twelf => ProverKind::Twelf,
+        CoreProverKind::Nuprl => ProverKind::Nuprl,
+        CoreProverKind::Minlog => ProverKind::Minlog,
+        CoreProverKind::Imandra => ProverKind::Imandra,
+        CoreProverKind::GLPK => ProverKind::GLPK,
+        CoreProverKind::SCIP => ProverKind::SCIP,
+        CoreProverKind::MiniZinc => ProverKind::MiniZinc,
+        CoreProverKind::Chuffed => ProverKind::Chuffed,
+        CoreProverKind::ORTools => ProverKind::ORTools,
+        _ => ProverKind::Vampire, // fallback for remaining provers (>30 in core)
     }
 }
 
@@ -581,6 +612,19 @@ fn rest_kind_to_core(kind: &ProverKind) -> CoreProverKind {
         ProverKind::EProver => CoreProverKind::EProver,
         ProverKind::Spass => CoreProverKind::SPASS,
         ProverKind::AltErgo => CoreProverKind::AltErgo,
+        ProverKind::FStar => CoreProverKind::FStar,
+        ProverKind::Dafny => CoreProverKind::Dafny,
+        ProverKind::Why3 => CoreProverKind::Why3,
+        ProverKind::TLAPS => CoreProverKind::TLAPS,
+        ProverKind::Twelf => CoreProverKind::Twelf,
+        ProverKind::Nuprl => CoreProverKind::Nuprl,
+        ProverKind::Minlog => CoreProverKind::Minlog,
+        ProverKind::Imandra => CoreProverKind::Imandra,
+        ProverKind::GLPK => CoreProverKind::GLPK,
+        ProverKind::SCIP => CoreProverKind::SCIP,
+        ProverKind::MiniZinc => CoreProverKind::MiniZinc,
+        ProverKind::Chuffed => CoreProverKind::Chuffed,
+        ProverKind::ORTools => CoreProverKind::ORTools,
     }
 }
 
