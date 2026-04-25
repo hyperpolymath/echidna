@@ -73,6 +73,9 @@ sha2 = { version = "0.10", optional = true }
 # Chrono for timestamps
 chrono = { version = "0.4", features = ["serde"] }
 
+# Random number generation (for resilience jitter)
+rand = "0.8"
+
 # Temporary files (used by prover backends to invoke external solvers)
 tempfile = "3"
 

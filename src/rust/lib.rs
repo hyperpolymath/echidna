@@ -16,9 +16,11 @@ pub mod aspect;
 // paths throughout this crate keep resolving unchanged.
 pub use echidna_core::{core, types};
 pub mod disciplines; // Canonical TypeDiscipline taxonomy (katagoria transition)
+pub mod diagnostics; // Health monitoring and diagnostics
 pub mod dispatch;
 pub mod exchange;
 pub mod executor;
+pub mod fault_tolerance; // Circuit breakers, retries, bulkheads
 pub mod ffi;
 pub mod gnn; // Graph Neural Network integration for proof search guidance
 pub mod groove; // Gossamer Groove discovery endpoint (port 9000)
