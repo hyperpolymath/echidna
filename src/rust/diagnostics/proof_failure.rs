@@ -17,7 +17,7 @@
 
 use std::fmt;
 
-use crate::provers::ProverKind;
+use crate::provers::{outcome::ProverOutcome, ProverKind};
 
 /// Taxonomy of proof failure causes.
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -202,6 +202,70 @@ pub fn diagnose(prover: ProverKind, raw_output: &str) -> DiagnosticReport {
         suggestions,
         raw_excerpt,
     }
+}
+
+/// Produce a `DiagnosticReport` from a `ProverOutcome` returned by `check()`.
+///
+/// This avoids a second prover invocation: if the caller already has a
+/// `ProverOutcome` (e.g. from `--diagnose` mode which calls `check()` instead
+/// of `verify_proof()`), map it directly into a report without re-running.
+pub fn diagnose_from_outcome(prover: ProverKind, outcome: &ProverOutcome) -> DiagnosticReport {
+    let kind = match outcome {
+        ProverOutcome::Proved { .. } => {
+            // Should not reach diagnose on success, but handle gracefully.
+            return DiagnosticReport {
+                prover,
+                kind: FailureKind::Unknown { raw_output: "Proved — no failure to diagnose.".into() },
+                explanation: "The prover succeeded. No diagnostic needed.".into(),
+                suggestions: vec![],
+                raw_excerpt: String::new(),
+            };
+        },
+        ProverOutcome::NoProofFound { reason, .. } => FailureKind::UnsolvedGoal {
+            goal_summary: reason.clone(),
+        },
+        ProverOutcome::Timeout { limit_secs } => FailureKind::Timeout {
+            limit_secs: Some(*limit_secs),
+        },
+        ProverOutcome::InvalidInput { reason, location } => FailureKind::SyntaxError {
+            message: reason.clone(),
+            location: location.map(|offset| SourceLocation {
+                file: None,
+                line: None,
+                column: Some(offset as u32),
+            }),
+        },
+        ProverOutcome::UnsupportedFeature { feature } => FailureKind::ConfigError {
+            detail: format!("Unsupported feature: {}", feature),
+        },
+        ProverOutcome::InconsistentPremises { detail } => FailureKind::UnsolvedGoal {
+            goal_summary: Some(
+                detail.clone().unwrap_or_else(|| {
+                    "Premise set is inconsistent — proof is vacuously true.".into()
+                }),
+            ),
+        },
+        ProverOutcome::ProverError { detail, exit_code } => FailureKind::ProverCrash {
+            exit_code: *exit_code,
+            stderr_excerpt: detail.clone(),
+        },
+        ProverOutcome::SystemError { detail } => FailureKind::ConfigError {
+            detail: detail.clone(),
+        },
+    };
+
+    let (explanation, suggestions) = explain_and_suggest(prover, &kind);
+    let raw_excerpt = match outcome {
+        ProverOutcome::NoProofFound { reason, .. } => reason.clone().unwrap_or_default(),
+        ProverOutcome::ProverError { detail, .. } => detail.clone(),
+        ProverOutcome::SystemError { detail } => detail.clone(),
+        ProverOutcome::InvalidInput { reason, .. } => reason.clone(),
+        ProverOutcome::UnsupportedFeature { feature } => feature.clone(),
+        ProverOutcome::InconsistentPremises { detail } => detail.clone().unwrap_or_default(),
+        _ => String::new(),
+    };
+
+    DiagnosticReport { prover, kind, explanation, suggestions, raw_excerpt }
 }
 
 // ---------------------------------------------------------------------------

@@ -7,7 +7,10 @@
 
 use anyhow::{Context, Result};
 use clap::{Parser, Subcommand};
-use echidna::{ProverConfig, ProverKind};
+use echidna::{
+    diagnostics::proof_failure::diagnose_from_outcome, provers::ProverBackend, ProverConfig,
+    ProverKind,
+};
 use indicatif::{ProgressBar, ProgressStyle};
 use std::path::PathBuf;
 use tracing::{info, warn};
@@ -66,6 +69,10 @@ enum Commands {
         /// Library paths
         #[arg(long)]
         library: Vec<PathBuf>,
+
+        /// On failure, run diagnostics and explain why the proof failed
+        #[arg(long)]
+        diagnose: bool,
     },
 
     /// Verify an existing proof
@@ -88,6 +95,10 @@ enum Commands {
         /// Library paths
         #[arg(long)]
         library: Vec<PathBuf>,
+
+        /// On failure, run diagnostics and explain why the proof failed
+        #[arg(long)]
+        diagnose: bool,
     },
 
     /// Search theorem libraries
@@ -172,9 +183,10 @@ async fn main() -> Result<()> {
             neural,
             executable,
             library,
+            diagnose,
         } => {
             prove_command(
-                file, prover, timeout, neural, executable, library, &formatter,
+                file, prover, timeout, neural, executable, library, diagnose, &formatter,
             )
             .await?;
         },
@@ -185,8 +197,9 @@ async fn main() -> Result<()> {
             timeout,
             executable,
             library,
+            diagnose,
         } => {
-            verify_command(file, prover, timeout, executable, library, &formatter).await?;
+            verify_command(file, prover, timeout, executable, library, diagnose, &formatter).await?;
         },
 
         Commands::Search {
@@ -246,40 +259,29 @@ async fn prove_command(
     neural: bool,
     executable: Option<PathBuf>,
     library: Vec<PathBuf>,
+    diagnose: bool,
     formatter: &OutputFormatter,
 ) -> Result<()> {
     info!("Starting proof for: {}", file.display());
 
-    // Detect or use specified prover
     let kind = detect_prover(prover_kind, &file)?;
-
-    // Create prover configuration
     let config = create_config(kind, timeout, neural, executable, library)?;
-
-    // Create prover backend
     let prover = echidna::provers::ProverFactory::create(kind, config)
         .context("Failed to create prover backend")?;
 
-    // Show progress
     let pb = create_progress_bar("Parsing proof file...");
-
-    // Parse the proof file
     let state = prover
         .parse_file(file.clone())
         .await
         .context("Failed to parse proof file")?;
 
     pb.set_message("Verifying proof...");
-
-    // Verify the proof
     let result = prover
         .verify_proof(&state)
         .await
         .context("Failed to verify proof")?;
-
     pb.finish_and_clear();
 
-    // Output result
     if result {
         formatter.success(&format!(
             "✓ Proof verified successfully for {}",
@@ -292,10 +294,36 @@ async fn prove_command(
             file.display()
         ))?;
         formatter.output_proof_state(&state)?;
+        if diagnose {
+            emit_diagnostic(kind, &*prover, &state, formatter).await;
+        }
         std::process::exit(1);
     }
 
     Ok(())
+}
+
+/// Run `check()` on the prover and display a structured diagnostic report.
+///
+/// Called after a failed `verify_proof()` when `--diagnose` is active.
+/// Uses the richer `ProverOutcome` returned by `check()` to produce an
+/// actionable report via `diagnose_from_outcome`.
+async fn emit_diagnostic(
+    kind: ProverKind,
+    prover: &dyn ProverBackend,
+    state: &echidna::core::ProofState,
+    formatter: &OutputFormatter,
+) {
+    let outcome = match prover.check(state).await {
+        Ok(o) => o,
+        Err(e) => {
+            let _ = formatter.error(&format!("[diagnose] could not run check(): {}", e));
+            return;
+        },
+    };
+    let report = diagnose_from_outcome(kind, &outcome);
+    let _ = formatter.info("\n--- Proof Failure Diagnostic ---");
+    let _ = formatter.info(&report.display());
 }
 
 /// Verify command implementation
@@ -305,44 +333,31 @@ async fn verify_command(
     timeout: u64,
     executable: Option<PathBuf>,
     library: Vec<PathBuf>,
+    diagnose: bool,
     formatter: &OutputFormatter,
 ) -> Result<()> {
     info!("Verifying proof: {}", file.display());
 
-    // Detect or use specified prover
     let kind = detect_prover(prover_kind, &file)?;
-
-    // Create prover configuration
     let config = create_config(kind, timeout, true, executable, library)?;
-
-    // Create prover backend
     let prover = echidna::provers::ProverFactory::create(kind, config)
         .context("Failed to create prover backend")?;
 
-    // Show progress
     let pb = create_progress_bar("Parsing proof file...");
-
-    // Parse the proof file
     let state = prover
         .parse_file(file.clone())
         .await
         .context("Failed to parse proof file")?;
 
     pb.set_message("Verifying proof...");
-
-    // Verify the proof
     let result = prover
         .verify_proof(&state)
         .await
         .context("Failed to verify proof")?;
-
     pb.finish_and_clear();
 
-    // Output result
     if result {
         formatter.success(&format!("✓ Proof is valid: {}", file.display()))?;
-
-        // Show proof statistics
         formatter.info(&format!("Goals: {}", state.goals.len()))?;
         formatter.info(&format!("Tactics: {}", state.proof_script.len()))?;
         formatter.info(&format!(
@@ -351,6 +366,9 @@ async fn verify_command(
         ))?;
     } else {
         formatter.error(&format!("✗ Proof is invalid: {}", file.display()))?;
+        if diagnose {
+            emit_diagnostic(kind, &*prover, &state, formatter).await;
+        }
         std::process::exit(1);
     }
 

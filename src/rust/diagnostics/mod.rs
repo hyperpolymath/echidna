@@ -9,4 +9,4 @@ pub mod proof_failure;
 pub use corpus_monitor::{CorpusMetrics, CorpusMonitor};
 pub use health::{HealthStatus, ProverHealth, ModelHealth, CorpusHealth, DegradationMode};
 pub use gnn_training::{GnnTrainingMetrics, load_training_metrics, update_health_with_metrics};
-pub use proof_failure::{diagnose, DiagnosticReport, FailureKind, SourceLocation};
+pub use proof_failure::{diagnose, diagnose_from_outcome, DiagnosticReport, FailureKind, SourceLocation};
