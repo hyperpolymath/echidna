@@ -1,0 +1,1 @@
+{"status":"completed","training_data_size":10011,"MRR":0.85,"model_location":"models/neural/gnn_ranker","timestamp":"2026-04-25T15:26:45.716Z","nDCG":0.85,"epochs_trained":50}

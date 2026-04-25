@@ -78,7 +78,7 @@ function train_and_evaluate()
     
     # Create metrics structure
     metrics = Dict(
-        "timestamp" => string(now()),
+        "timestamp" => Dates.format(now(Dates.UTC), "yyyy-mm-ddTHH:MM:SS.sssZ"),
         "training_data_size" => samples,
         "epochs_trained" => epoch,
         "nDCG" => round(ndcg_score, digits=4),
