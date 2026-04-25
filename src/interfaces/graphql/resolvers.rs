@@ -15,11 +15,12 @@ use crate::ffi_wrapper;
 /// Wrapper for FFI-based prover backend
 struct FfiProverBackend {
     handle: i32,
+    config: ProverConfig,
 }
 
 impl FfiProverBackend {
     pub fn new(handle: i32) -> Self {
-        FfiProverBackend { handle }
+        FfiProverBackend { handle, config: ProverConfig::default() }
     }
 }
 

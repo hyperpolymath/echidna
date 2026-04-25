@@ -62,6 +62,7 @@ pub struct ModelHealth {
     pub fallback_cache_hit_rate: f64,
     pub fallback_cache_size: usize,
     pub fallback_max_latency_ms: f64,
+    pub fallback_sla_met: bool,  // Whether cosine fallback meets SLA thresholds
 }
 
 /// Health of training corpus
@@ -105,6 +106,7 @@ impl HealthStatus {
                 fallback_cache_hit_rate: 0.0,
                 fallback_cache_size: 0,
                 fallback_max_latency_ms: 0.0,
+                fallback_sla_met: true,  // Start as met until proven otherwise
             },
             corpus_health: CorpusHealth {
                 total_proofs: 0,
@@ -137,6 +139,15 @@ impl HealthStatus {
         if !self.gnn_model_health.is_loaded || !self.gnn_model_health.nDCG_meets_threshold {
             // GNN model not available or not meeting quality threshold
             self.system_degradation = DegradationMode::CosineOnly;
+        } else if !self.gnn_model_health.fallback_sla_met {
+            // Fallback cosine similarity is violating SLA (latency or success rate)
+            // Transition from Normal → IncreasingFallback, or escalate if already degraded
+            if self.system_degradation == DegradationMode::Normal {
+                self.system_degradation = DegradationMode::IncreasingFallback;
+            } else if self.system_degradation == DegradationMode::IncreasingFallback {
+                self.system_degradation = DegradationMode::CosineOnly;
+            }
+            // If already CosineOnly or ReadOnly, stay there (escalation only, no downgrade)
         } else if failed_provers >= 3 {
             // Too many failed provers
             self.system_degradation = DegradationMode::CosineOnly;
@@ -294,5 +305,48 @@ mod tests {
         let critical = health.critical_provers();
         assert_eq!(critical.len(), 1);
         assert_eq!(critical[0], "coq");
+    }
+
+    #[test]
+    fn test_fallback_sla_enforcement_normal_to_degraded() {
+        let mut health = HealthStatus::new();
+
+        // Start in Normal mode
+        health.gnn_model_health.is_loaded = true;
+        health.gnn_model_health.nDCG_meets_threshold = true;
+        health.gnn_model_health.fallback_sla_met = true;
+        health.gnn_model_health.fallback_cache_hit_rate = 0.75;  // Warm cache to avoid IncreasingFallback trigger
+        health.system_degradation = DegradationMode::Normal;
+
+        // Add at least 3 provers to avoid ReadOnly trigger
+        for i in 0..5 {
+            health.prover_health.insert(
+                format!("prover{}", i),
+                ProverHealth {
+                    name: format!("prover{}", i),
+                    is_available: true,
+                    circuit_breaker_state: CircuitBreakerStateSnapshot::Closed,
+                    last_successful_proof: None,
+                    consecutive_failures: 0,
+                    avg_latency_ms: 50.0,
+                    success_rate: 1.0,
+                    total_invocations: 10,
+                    total_failures: 0,
+                },
+            );
+        }
+
+        // Verify system is normal
+        health.compute_degradation_mode();
+        assert_eq!(health.system_degradation, DegradationMode::Normal);
+
+        // Fallback SLA violation → transition to IncreasingFallback
+        health.gnn_model_health.fallback_sla_met = false;
+        health.compute_degradation_mode();
+        assert_eq!(health.system_degradation, DegradationMode::IncreasingFallback);
+
+        // If already degraded and SLA still violated → escalate
+        health.compute_degradation_mode();
+        assert_eq!(health.system_degradation, DegradationMode::CosineOnly);
     }
 }

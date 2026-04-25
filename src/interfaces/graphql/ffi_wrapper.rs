@@ -2,8 +2,7 @@
 // GraphQL FFI Wrapper - Connects GraphQL interface to ECHIDNA Rust core via Zig FFI
 
 use std::ffi::{CString, CStr};
-use std::os::raw::{c_int, c_void};
-use std::ptr;
+use std::os::raw::{c_char, c_int};
 use anyhow::{Result, anyhow};
 
 // Re-export FFI types from core
@@ -33,7 +32,7 @@ pub fn init_ffi() -> Result<()> {
             let err_msg = if err_ptr.is_null() {
                 "Unknown FFI initialization error".to_string()
             } else {
-                CStr::from_ptr(err_ptr).to_string_lossy().into_owned()
+                CStr::from_ptr(err_ptr as *const c_char).to_string_lossy().into_owned()
             };
             return Err(anyhow!("FFI initialization failed: {}", err_msg));
         }
@@ -48,7 +47,7 @@ pub fn get_version() -> Result<String> {
         if ptr.is_null() {
             return Err(anyhow!("FFI version pointer is null"));
         }
-        let version = CStr::from_ptr(ptr).to_string_lossy().into_owned();
+        let version = CStr::from_ptr(ptr as *const c_char).to_string_lossy().into_owned();
         Ok(version)
     }
 }
@@ -60,7 +59,7 @@ pub fn get_last_error() -> Result<String> {
         if ptr.is_null() {
             return Err(anyhow!("No error message available"));
         }
-        let error = CStr::from_ptr(ptr).to_string_lossy().into_owned();
+        let error = CStr::from_ptr(ptr as *const c_char).to_string_lossy().into_owned();
         Ok(error)
     }
 }
@@ -89,7 +88,7 @@ pub fn destroy_prover(handle: i32) -> Result<()> {
 pub fn parse_string(handle: i32, content: &str) -> Result<()> {
     unsafe {
         let c_content = CString::new(content)?;
-        let rc = echidna_parse_string(handle, c_content.as_ptr(), content.len());
+        let rc = echidna_parse_string(handle, c_content.as_ptr() as *const u8, content.len());
         if rc != 0 {
             let error = get_last_error()?;
             return Err(anyhow!("Parse failed: {}", error));
@@ -110,7 +109,7 @@ pub fn verify_proof(handle: i32) -> Result<bool> {
 pub fn apply_tactic(handle: i32, tactic: &str) -> Result<bool> {
     unsafe {
         let c_tactic = CString::new(tactic)?;
-        let rc = echidna_apply_tactic(handle, c_tactic.as_ptr(), tactic.len());
+        let rc = echidna_apply_tactic(handle, c_tactic.as_ptr() as *const u8, tactic.len());
         Ok(rc == 0)
     }
 }

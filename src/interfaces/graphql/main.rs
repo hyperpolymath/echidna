@@ -6,6 +6,7 @@ use async_graphql_axum::GraphQL;
 use axum::{routing::get, Router};
 use tower_http::cors::CorsLayer;
 
+mod ffi_wrapper;
 mod resolvers;
 mod schema;
 
