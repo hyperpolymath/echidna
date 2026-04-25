@@ -1,0 +1,39 @@
+# SPDX-License-Identifier: PMPL-1.0-or-later
+# Copyright (c) 2026 Jonathan D.A. Jewell <j.d.a.jewell@open.ac.uk>
+#
+# echidnabot directive for the echidna repo.
+#
+# Read by echidnabot's mode-resolver cascade
+# (see echidnabot/src/modes/directives.rs::resolve_mode):
+#   1. this file (target-repo override)            ← canonical
+#   2. .machine_readable/bot_directives/all.a2ml   (fleet-wide fallback)
+#   3. echidnabot's `repositories.mode` DB column
+#   4. BotMode::default() = Verifier
+
+[metadata]
+version = "1.0.0"
+last-updated = "2026-04-25"
+
+[bot]
+# echidna ships proof contracts that downstream consumers depend on
+# (proven-servers, vcl-ut, echidnabot itself). A failing proof is a
+# correctness regression — Regulator-mode block on the merge gate.
+mode = "regulator"
+
+[regulator]
+# Threshold leaves a small flake budget. echidna's CI exercises 113
+# prover backends; transient ECHIDNA-binary unavailability or upstream
+# prover-binary install hiccups should not block the entire merge gate
+# when the rest of the matrix is solid.
+coverage-threshold = 90  # percent; merge releases at 90/100 provers passing
+
+[notes]
+# - Echidnabot reads this directive at job-finalize time. Cascade is
+#   directive > DB column > daemon default.
+# - When BoJ revives and supports the double-loop feedback protocol,
+#   echidnabot-mcp folds back into the BoJ cartridge per echidnabot's
+#   AGENTIC.a2ml [exceptions.boj-only-mcp] sunset clause; this directive
+#   stays in place — only the transport changes.
+# - Directive format is A2ML (TOML-flavoured); legacy Scheme directives
+#   at `.bot_directives/echidnabot.scm` are deprecated estate-wide
+#   per the 2026-04-12 .scm→.a2ml migration.
