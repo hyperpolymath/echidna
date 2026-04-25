@@ -19,6 +19,9 @@ use crate::provers::{ProverConfig, ProverFactory, ProverKind};
 use crate::verification::axiom_tracker::{AxiomTracker, AxiomUsage, DangerLevel};
 use crate::verification::confidence::{compute_trust_level, TrustFactors, TrustLevel};
 
+#[cfg(feature = "chapel")]
+use crate::proof_search::{ChapelParallelSearch, ProofSearchStrategy};
+
 /// Per-prover record inside `RunDiagnostics`.  Captures what a single
 /// backend returned during a dispatch run — used by the sanity suite and
 /// by the Julia ML arbiter to reason about why a prover ruled one way.
@@ -464,6 +467,176 @@ impl ProverDispatcher {
         Ok(primary_result)
     }
 
+    /// Dispatch a proof through Chapel's parallel prover search (L2 Wave 1).
+    ///
+    /// With `--features chapel` **and** the Chapel runtime available, fans out
+    /// to up to 30 prover backends in parallel via the Zig FFI bridge and
+    /// returns the first successful result through the standard trust pipeline
+    /// (axiom tracking, integrity check, trust-level scoring).
+    ///
+    /// Falls back to sequential `verify_proof` (with `select_prover` heuristic)
+    /// when:
+    /// - the `chapel` Cargo feature is not compiled in, or
+    /// - `ChapelParallelSearch::new()` reports the runtime unavailable, or
+    /// - the parallel search returns a non-verified result (so the caller
+    ///   still gets a real pipeline answer rather than a bare failure).
+    ///
+    /// The trust level for a Chapel-parallel win is computed as a single
+    /// confirming prover — parallel-first-wins is a dispatch speedup, **not**
+    /// cross-checking. Callers wanting cross-checking should use
+    /// `verify_proof_cross_checked` (Wave-2 territory will extend Chapel to
+    /// portfolio quorum).
+    pub async fn verify_proof_parallel(&self, content: &str) -> Result<DispatchResult> {
+        #[cfg(feature = "chapel")]
+        {
+            let chapel = match ChapelParallelSearch::new() {
+                Ok(c) => c,
+                Err(e) => {
+                    warn!(
+                        "Chapel parallel search unavailable ({}); falling back to sequential",
+                        e
+                    );
+                    let fallback_kind = Self::select_prover(content, None);
+                    return self.verify_proof(fallback_kind, content).await;
+                },
+            };
+
+            if !chapel.available() {
+                warn!("Chapel runtime reported unavailable; falling back to sequential");
+                let fallback_kind = Self::select_prover(content, None);
+                return self.verify_proof(fallback_kind, content).await;
+            }
+
+            let start = Instant::now();
+            let timeout = std::time::Duration::from_secs(self.config.timeout);
+
+            let parallel = match chapel.search(content, timeout) {
+                Ok(r) => r,
+                Err(e) => {
+                    warn!(
+                        "Chapel parallel search errored ({}); falling back to sequential",
+                        e
+                    );
+                    let fallback_kind = Self::select_prover(content, None);
+                    return self.verify_proof(fallback_kind, content).await;
+                },
+            };
+
+            if !parallel.success {
+                info!("Chapel parallel search returned no winner; sequential fallback");
+                let fallback_kind = Self::select_prover(content, None);
+                return self.verify_proof(fallback_kind, content).await;
+            }
+
+            let winning_kind: ProverKind = parallel
+                .prover_name
+                .as_deref()
+                .and_then(|n| n.parse().ok())
+                .unwrap_or_else(|| Self::select_prover(content, None));
+
+            let axiom_usages = if self.config.track_axioms {
+                Some(AxiomTracker::new().scan(winning_kind, content))
+            } else {
+                None
+            };
+
+            let worst_danger = axiom_usages
+                .as_ref()
+                .map(|u| {
+                    u.iter()
+                        .map(|x| x.danger_level)
+                        .max()
+                        .unwrap_or(DangerLevel::Safe)
+                })
+                .unwrap_or(DangerLevel::Safe);
+
+            let axiom_report = axiom_usages.as_ref().and_then(|u| u.first().cloned());
+
+            let solver_integrity_ok = if let Some(ref checker) = self.integrity_checker {
+                let reports = checker.verify_all().await.unwrap_or_default();
+                let prover_name = format!("{:?}", winning_kind).to_lowercase();
+                reports
+                    .iter()
+                    .find(|r| r.name.to_lowercase() == prover_name)
+                    .map(|r| {
+                        r.status == IntegrityStatus::Verified
+                            || r.status == IntegrityStatus::Uninitialized
+                    })
+                    .unwrap_or(true)
+            } else {
+                true
+            };
+
+            let trust_factors = TrustFactors {
+                prover: winning_kind,
+                confirming_provers: 1,
+                has_certificate: false,
+                certificate_verified: false,
+                worst_axiom_danger: worst_danger,
+                solver_integrity_ok,
+                portfolio_confidence: Some(
+                    crate::verification::portfolio::PortfolioConfidence::SingleSolver,
+                ),
+            };
+
+            let trust_level = compute_trust_level(&trust_factors);
+            let meets_minimum = trust_level >= self.config.min_trust_level;
+            let elapsed = start.elapsed().as_millis() as u64;
+
+            let prover_elapsed_ms = (parallel.time_seconds * 1000.0) as u64;
+            let outcome = ProverOutcome::Proved {
+                elapsed_ms: prover_elapsed_ms,
+            };
+
+            let diagnostics = if self.config.diagnostics {
+                Some(RunDiagnostics {
+                    normalized_input: content.trim().to_string(),
+                    provers_selected: vec![format!("{:?}", winning_kind)],
+                    per_prover: vec![PerProverRecord {
+                        prover: format!("{:?}", winning_kind),
+                        outcome: outcome.clone(),
+                        elapsed_ms: prover_elapsed_ms,
+                    }],
+                })
+            } else {
+                None
+            };
+
+            let message = if !meets_minimum {
+                format!(
+                    "Chapel parallel proof verified but trust level {} below minimum {}",
+                    trust_level, self.config.min_trust_level
+                )
+            } else {
+                format!(
+                    "Chapel parallel proof verified by {:?} with {}",
+                    winning_kind, trust_level
+                )
+            };
+
+            return Ok(DispatchResult {
+                verified: meets_minimum,
+                trust_level,
+                provers_used: vec![format!("{:?}", winning_kind)],
+                proof_time_ms: elapsed,
+                goals_remaining: 0,
+                axiom_report,
+                certificate_hash: None,
+                message,
+                cross_checked: false,
+                outcome,
+                diagnostics,
+            });
+        }
+
+        #[cfg(not(feature = "chapel"))]
+        {
+            info!("Chapel feature not compiled in; dispatching sequentially");
+            let fallback_kind = Self::select_prover(content, None);
+            self.verify_proof(fallback_kind, content).await
+        }
+    }
+
     /// Select the best prover for a given proof type
     pub fn select_prover(content: &str, file_extension: Option<&str>) -> ProverKind {
         // Try to detect from file extension first
@@ -634,5 +807,38 @@ mod tests {
         };
         let dispatcher = ProverDispatcher::with_config(config);
         assert!(dispatcher.config.cross_check);
+    }
+
+    #[cfg(not(feature = "chapel"))]
+    #[tokio::test]
+    async fn test_verify_proof_parallel_falls_back_without_chapel() {
+        // Without the chapel feature the parallel entry point must still
+        // return a DispatchResult via the sequential path. We only assert
+        // the call returns Ok — prover execution itself is exercised in
+        // other tests.
+        let dispatcher = ProverDispatcher::new();
+        let result = dispatcher
+            .verify_proof_parallel("(set-logic QF_LIA)\n(assert (> x 0))")
+            .await;
+        assert!(
+            result.is_ok(),
+            "parallel dispatch should fall back cleanly without chapel feature"
+        );
+    }
+
+    #[cfg(feature = "chapel")]
+    #[tokio::test]
+    async fn test_verify_proof_parallel_chapel_path() {
+        // With the chapel feature enabled, the parallel entry point should
+        // reach either the Chapel runtime (30-prover fanout) or the
+        // sequential fallback — both must yield a DispatchResult.
+        let dispatcher = ProverDispatcher::new();
+        let result = dispatcher
+            .verify_proof_parallel("(set-logic QF_LIA)\n(assert (> x 0))")
+            .await;
+        assert!(
+            result.is_ok(),
+            "Chapel parallel dispatch must return Ok (either Chapel or fallback)"
+        );
     }
 }

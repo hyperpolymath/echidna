@@ -7,6 +7,9 @@ use axum::{
     response::IntoResponse,
 };
 use echidna::core::{Tactic as CoreTactic, TacticResult as CoreTacticResult, Term};
+use echidna::exchange::{
+    dedukti::DeduktiModule, opentheory::OpenTheoryArticle, DeduktiExporter, OpenTheoryExporter,
+};
 use echidna::provers::{ProverBackend, ProverConfig, ProverFactory, ProverKind as CoreProverKind};
 use std::sync::Arc;
 use tokio::sync::Mutex;
@@ -579,4 +582,115 @@ fn rest_kind_to_core(kind: &ProverKind) -> CoreProverKind {
         ProverKind::Spass => CoreProverKind::SPASS,
         ProverKind::AltErgo => CoreProverKind::AltErgo,
     }
+}
+
+/// Export an existing proof session to a cross-prover exchange format
+/// (OpenTheory or Dedukti). The session's current `ProofState` is fed to
+/// the selected exporter; the result is serde-serialized and wrapped in
+/// `ExportResponse.content`.
+///
+/// Returns 404 if the session id is unknown or 400 if the session has no
+/// proof state loaded yet.
+#[utoipa::path(
+    get,
+    path = "/api/v1/proofs/{id}/export",
+    params(
+        ("id" = String, Path, description = "Proof session id"),
+        ("format" = ExchangeFormat, Query, description = "Target exchange format")
+    ),
+    responses(
+        (status = 200, description = "Exported article / module", body = ExportResponse),
+        (status = 400, description = "Session has no proof state"),
+        (status = 404, description = "Session not found"),
+        (status = 500, description = "Exporter error")
+    ),
+    tag = "exchange"
+)]
+pub async fn export_proof(
+    State(state): State<AppState>,
+    Path(id): Path<String>,
+    Query(query): Query<ExportQuery>,
+) -> Result<Json<ExportResponse>, (StatusCode, String)> {
+    let sessions = state.sessions.read().await;
+    let session_arc = sessions
+        .get(&id)
+        .ok_or((StatusCode::NOT_FOUND, "Proof not found".to_string()))?
+        .clone();
+    drop(sessions);
+
+    let session = session_arc.lock().await;
+    let proof_state = session
+        .state
+        .as_ref()
+        .ok_or((StatusCode::BAD_REQUEST, "No proof state loaded".to_string()))?;
+
+    let content = match query.format {
+        ExchangeFormat::OpenTheory => {
+            let article = OpenTheoryExporter::export(proof_state)
+                .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+            serde_json::to_value(&article)
+                .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?
+        },
+        ExchangeFormat::Dedukti => {
+            let module = DeduktiExporter::export(proof_state)
+                .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+            serde_json::to_value(&module)
+                .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?
+        },
+    };
+
+    Ok(Json(ExportResponse {
+        format: query.format,
+        content,
+    }))
+}
+
+/// Import an OpenTheory article or Dedukti module and return the
+/// resulting `ProofState` as JSON. Stateless — does not create a
+/// session. Used by round-trip tests and by clients that already have
+/// proof artefacts they want echidna to parse.
+///
+/// Returns 400 if the content payload does not deserialize into the
+/// expected format, or 500 if the importer rejects the structure.
+#[utoipa::path(
+    post,
+    path = "/api/v1/exchange/import",
+    request_body = ImportRequest,
+    responses(
+        (status = 200, description = "Imported ProofState as JSON", body = ImportResponse),
+        (status = 400, description = "Content does not match declared format"),
+        (status = 500, description = "Importer error")
+    ),
+    tag = "exchange"
+)]
+pub async fn import_proof(
+    Json(req): Json<ImportRequest>,
+) -> Result<Json<ImportResponse>, (StatusCode, String)> {
+    let proof_state = match req.format {
+        ExchangeFormat::OpenTheory => {
+            let article: OpenTheoryArticle = serde_json::from_value(req.content).map_err(|e| {
+                (
+                    StatusCode::BAD_REQUEST,
+                    format!("OpenTheoryArticle parse: {}", e),
+                )
+            })?;
+            OpenTheoryExporter::import(&article)
+                .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?
+        },
+        ExchangeFormat::Dedukti => {
+            let module: DeduktiModule = serde_json::from_value(req.content).map_err(|e| {
+                (
+                    StatusCode::BAD_REQUEST,
+                    format!("DeduktiModule parse: {}", e),
+                )
+            })?;
+            DeduktiExporter::import(&module)
+                .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?
+        },
+    };
+
+    let proof_state = serde_json::to_value(&proof_state)
+        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+
+    Ok(Json(ImportResponse { proof_state }))
 }

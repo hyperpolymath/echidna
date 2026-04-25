@@ -90,7 +90,7 @@ CATALOGUE=(
     "seahorn|git|https://github.com/seahorn/seahorn"
     "spin|git|https://github.com/nimble-code/Spin"
     "prism|git|https://github.com/prismmodelchecker/prism-examples"
-    "nusmv|skip|http://nusmv.fbk.eu/distrib/" # distro ships examples
+    "nusmv|skip|https://nusmv.fbk.eu/distrib/" # distro ships examples
     "uppaal|skip|https://uppaal.org/documentation/" # commercial; examples gated
     "tlaplus_examples|git|https://github.com/tlaplus/Examples"
 

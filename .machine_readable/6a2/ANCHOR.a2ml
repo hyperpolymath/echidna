@@ -1,0 +1,20 @@
+# ⚓ ANCHOR: rsr-template-repo
+# Canonical authority and project recalibration trigger for rsr-template-repo.
+# Template from: https://github.com/hyperpolymath/standards
+
+id: "org.hyperpolymath.rsr-template-repo"
+version: "1.0.0"
+clade: "infrastructure"
+status: "active"
+
+# SSG Configuration (Unified boj-server build)
+ssg:
+  engine: "casket"
+  output_dir: "public"
+  boj_trigger: true
+  cartridge: "ssg-mcp"
+
+# Relationships
+parents:
+  - "org.hyperpolymath.standards"
+  - "org.hyperpolymath.boj-server"

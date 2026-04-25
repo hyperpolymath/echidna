@@ -110,6 +110,10 @@ async fn main() {
             "/api/v1/proofs/:id/tactics/suggest",
             get(handlers::suggest_tactics),
         )
+        // Cross-prover exchange endpoints (OpenTheory / Dedukti).
+        // Export is session-scoped; import is stateless.
+        .route("/api/v1/proofs/:id/export", get(handlers::export_proof))
+        .route("/api/v1/exchange/import", post(handlers::import_proof))
         // OpenAPI documentation
         .merge(SwaggerUi::new("/swagger-ui").url("/api-docs/openapi.json", ApiDoc::openapi()))
         .layer(CorsLayer::permissive())
@@ -138,14 +142,17 @@ async fn health_check() -> &'static str {
         handlers::cancel_proof,
         handlers::apply_tactic,
         handlers::suggest_tactics,
+        handlers::export_proof,
+        handlers::import_proof,
     ),
     components(
-        schemas(ProverKind, ProverInfo, ProofStatus, ProofRequest, ProofResponse, TacticRequest, TacticResponse)
+        schemas(ProverKind, ProverInfo, ProofStatus, ProofRequest, ProofResponse, TacticRequest, TacticResponse, ExchangeFormat, ExportResponse, ImportRequest, ImportResponse)
     ),
     tags(
         (name = "provers", description = "Theorem prover management"),
         (name = "proofs", description = "Proof submission and management"),
-        (name = "tactics", description = "Tactic application and suggestions")
+        (name = "tactics", description = "Tactic application and suggestions"),
+        (name = "exchange", description = "Cross-prover proof exchange (OpenTheory, Dedukti)")
     )
 )]
 struct ApiDoc;

@@ -45,6 +45,7 @@ pub fn multi_goal_proof_state() -> ProofState {
                     name: "h".to_string(),
                     ty: Term::Const("P".to_string()),
                     body: None,
+                    type_info: None,
                 }],
                 target: Term::Const("Q".to_string()),
             },

@@ -1,7 +1,7 @@
 #!/usr/bin/env julia
 # SPDX-License-Identifier: PMPL-1.0-or-later
 # Extract SPIN model-checker LTL properties from Promela models.
-# Vendor: http://spinroot.com/spin/Examples or nimble-code/Spin
+# Vendor: https://spinroot.com/spin/Examples or nimble-code/Spin
 using JSON3, Dates
 include("extractor_save_common.jl")
 const DIR = "external_corpora/spin"; const OUT = "training_data"; const START_ID = 2_000_000

@@ -542,6 +542,9 @@ function run()::Tuple{Int,Int}
         thm_name = entry["theorem"]
         for hyp_pattern in hol4_hyp_patterns
             for hyp_match in eachmatch(hyp_pattern, proof_text)
+                # `DISCH_TAC` et al. match without capturing; skip rather than
+                # indexing into an empty captures vector (BoundsError).
+                isempty(hyp_match.captures) && continue
                 raw = hyp_match.captures[1] === nothing ? "" : hyp_match.captures[1]
                 hyps = [strip(h) for h in split(raw, ',')]
                 for hyp in hyps
