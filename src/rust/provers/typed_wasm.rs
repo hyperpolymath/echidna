@@ -340,7 +340,7 @@ impl ProverBackend for TypedWasmBackend {
     }
 
     async fn parse_file(&self, path: PathBuf) -> Result<ProofState> {
-        let content = tokio::fs::read_to_string(&path)
+        let content = super::bounded_read_proof_file(&path)
             .await
             .context("Failed to read .twasm file")?;
         self.parse_string(&content).await

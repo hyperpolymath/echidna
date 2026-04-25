@@ -78,7 +78,7 @@ impl ProverBackend for Lean3Backend {
     }
 
     async fn parse_file(&self, path: PathBuf) -> Result<ProofState> {
-        let content = tokio::fs::read_to_string(&path)
+        let content = super::bounded_read_proof_file(&path)
             .await
             .with_context(|| format!("Lean 3: reading {}", path.display()))?;
         self.parse_string(&content).await

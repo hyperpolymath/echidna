@@ -48,7 +48,7 @@ impl ProverBackend for NunchakuBackend {
         }
     }
     async fn parse_file(&self, p: PathBuf) -> Result<ProofState> {
-        let c = tokio::fs::read_to_string(&p)
+        let c = super::bounded_read_proof_file(&p)
             .await
             .with_context(|| format!("Nunchaku: reading {}", p.display()))?;
         self.parse_string(&c).await

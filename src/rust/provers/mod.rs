@@ -16,6 +16,9 @@ use crate::core::{ProofState, Tactic, TacticResult};
 pub mod outcome;
 pub use outcome::{classify_anyhow_error, ProverOutcome};
 
+pub mod io;
+pub use io::{bounded_read_proof_file, MAX_PROOF_BYTES};
+
 pub mod abc;
 pub mod abella;
 pub mod acl2;

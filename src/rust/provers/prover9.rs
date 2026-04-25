@@ -84,7 +84,7 @@ impl ProverBackend for Prover9Backend {
     }
 
     async fn parse_file(&self, path: PathBuf) -> Result<ProofState> {
-        let content = tokio::fs::read_to_string(&path).await?;
+        let content = super::bounded_read_proof_file(&path).await?;
         self.parse_string(&content).await
     }
 

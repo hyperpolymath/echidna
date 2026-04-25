@@ -60,7 +60,7 @@ impl ProverBackend for IsabelleZfBackend {
     }
 
     async fn parse_file(&self, path: PathBuf) -> Result<ProofState> {
-        let content = tokio::fs::read_to_string(&path)
+        let content = super::bounded_read_proof_file(&path)
             .await
             .with_context(|| format!("Isabelle/ZF: reading {}", path.display()))?;
         self.parse_string(&content).await
