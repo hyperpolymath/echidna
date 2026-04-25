@@ -1,14 +1,245 @@
 # SPDX-License-Identifier: PMPL-1.0-or-later
 # Copyright (c) 2026 Jonathan D.A. Jewell (hyperpolymath) <j.d.a.jewell@open.ac.uk>
 #
-# NEUROSYM.a2ml — Neurosymbolic integration metadata
-# Configuration for Hypatia scanning and symbolic reasoning.
+# NEUROSYM.a2ml — Neurosymbolic semantics for proof-solving operations
+# Formal definitions of operation semantics, proof obligations, and composition rules
+# for the echidna 105-prover dispatch and GNN-guided proof search engine.
 
 [metadata]
-version = "0.1.0"
-last-updated = "2026-03-16"
+version = "0.3.0"
+last-updated = "2026-04-25"
+spec-version = "NEUROSYM-FORMAT v0.1.0"
+authority = "Jonathan D.A. Jewell (hyperpolymath)"
+conformance = "NEUROSYM-FORMAT-SPEC-compliant"
 
+# === OPERATION DEFINITIONS ===
+# For every core operation, declare: forward semantics, inverse, claim-type, entropy-contribution, pre/postconditions
+
+[operation-definitions.proof-submission]
+forward-semantics = "Submit goal + context to prover backend; solver executes; return proof_state or error"
+inverse = "Retract proof claim from proof_memory; mark as pending re-verification"
+claim-type = "unverified (until portfolio-solve and certificate-check complete)"
+entropy-contribution = 25
+preconditions = [
+  "goal is well-typed (type-checker trace available)",
+  "context contains no contradictions (invariant from parser)",
+  "prover binary has valid signature (SHAKE3-512 from integrity/ module)"
+]
+postconditions = [
+  "proof_state in {pending, succeeded, failed, timeout}",
+  "decision recorded in agentic_decisions",
+  "result cached in proof_memory.db"
+]
+
+[operation-definitions.portfolio-solve]
+forward-semantics = "Submit same goal to N prover backends in parallel (portfolio strategy); cross-check results"
+inverse = "Mark solvers as untrusted; downgrade claim-type to unverified"
+claim-type = "verified (if ≥2 solvers agree and axioms within SafeNote level)"
+entropy-contribution = 40
+preconditions = [
+  "goal is well-formed",
+  "portfolio strategy selected (dispatch.rs routing)",
+  "solver binaries are isolated (Podman/bubblewrap)"
+]
+postconditions = [
+  "proof_state = succeeded or failed (no timeout if multiple solvers)",
+  "axiom-usage recorded with danger level (Safe/Noted/Warning/Reject)",
+  "confidence score computed (5-level hierarchy: Untrusted..Trusted)"
+]
+
+[operation-definitions.gnn-guided-search]
+forward-semantics = "Construct proof graph from goal; embed terms via GNN (32-dim); rank premise candidates; dispatch to prover"
+inverse = "Ignore GNN scores; fall back to cosine similarity (always possible)"
+claim-type = "unverified (GNN is heuristic; claim-type depends on downstream solver)"
+entropy-contribution = 30
+preconditions = [
+  "goal graph constructible (7 node kinds, 8 edge kinds supported)",
+  "GNN model loaded or cosine fallback available",
+  "premise pool non-empty"
+]
+postconditions = [
+  "top-K premises ranked by GNN score (or cosine if model unavailable)",
+  "tactic suggestions available from neural.rs or aspect.rs",
+  "solver invocation logged with premise-selection rationale"
+]
+
+[operation-definitions.cross-prover-exchange]
+forward-semantics = "Convert proof certificate from solver A (Alethe/DRAT) to solver B's format (OpenTheory/Dedukti)"
+inverse = "Mark certificate as untranslatable; require re-verification by solver B"
+claim-type = "compensable (if exchange succeeds; irreversible if all exchange attempts fail)"
+entropy-contribution = 35
+preconditions = [
+  "proof certificate from solver A (Alethe, DRAT, LRAT, or TSTP format)",
+  "solver B supports target format",
+  "exchange module (src/rust/exchange/) operational"
+]
+postconditions = [
+  "certificate_state in {exchanged_verified, exchange_failed}",
+  "fallback: re-verify via solver B from scratch (compensates for exchange failure)"
+]
+
+[operation-definitions.mutation-test]
+forward-semantics = "Mutate specification; re-verify with solver; mutation is strong iff proof fails on mutant"
+inverse = "Restore original spec (always possible; mutation is ephemeral)"
+claim-type = "unverified (mutation results feed into confidence scoring, not proof claim)"
+entropy-contribution = 50
+preconditions = [
+  "original proof succeeded (mutation requires ground truth)",
+  "specification is syntactically decomposable (mutation.rs patterns)"
+]
+postconditions = [
+  "mutation_results recorded (strong/weak/killed per mutant)",
+  "confidence score updated (Bayesian incorporation of mutation strength)"
+]
+
+[operation-definitions.axiom-usage-track]
+forward-semantics = "Extract axioms used in proof; classify by danger level (Safe/Noted/Warning/Reject)"
+inverse = "Forget axiom classifications (always possible; reclassification on next solve)"
+claim-type = "unverified for Reject-level axioms, verified for Safe/Noted (Warning is downgraded)"
+entropy-contribution = 15
+preconditions = [
+  "proof_state is succeeded (requires prover output)",
+  "axiom-extractor (src/rust/verification/axioms.rs) available"
+]
+postconditions = [
+  "axiom_danger_level assigned to each axiom used",
+  "claim-type downgraded if any axiom is Reject-level",
+  "audit log updated with axiom rationale"
+]
+
+# === COMPOSITION RULES ===
+# Sequential, parallel, and conditional composition with entropy-behavior and claim-propagation
+
+[composition-rules.sequential]
+pattern = "Op1; Op2; Op3 (chained operations)"
+entropy-behavior = "sum (each op contributes independently)"
+claim-propagation = "weakest (overall claim = weakest of all ops)"
+example = "portfolio-solve; axiom-usage-track; confidence-update"
+semantics = "Op2 starts only if Op1 succeeded; Op3 only if Op1+Op2 both succeeded"
+
+[composition-rules.parallel-portfolio]
+pattern = "prover-1 || prover-2 || ... || prover-N (concurrent)"
+entropy-behavior = "max-plus-overhead (cost is max(N solvers) + 10 for coordination)"
+claim-propagation = "strongest (claim upgraded if ≥2 solvers verify, downgraded to unverified if all fail)"
+example = "portfolio-solve (5 provers in parallel)"
+semantics = "All N provers execute; results cross-checked (consensus voting)"
+
+[composition-rules.parallel-gnn-fallback]
+pattern = "gnn-guided-search || cosine-fallback (race)"
+entropy-behavior = "max (faster completes; slower cancelled)"
+claim-propagation = "branch-taken (claim-type depends on which branch completed)"
+example = "GNN search vs cosine fallback (auto-selection in api/gnn_endpoint.jl)"
+semantics = "GNN launches; if model unavailable, cosine similarity immediately kicks in"
+
+[composition-rules.conditional-axiom]
+pattern = "IF axiom-usage ∈ {Warning, Reject} THEN downgrade-claim ELSE upgrade-claim"
+entropy-behavior = "no-cost (conditional is metadata, not execution)"
+claim-propagation = "special (claims follow axiom classification, not solver verification)"
+example = "axiom-usage-track decides claim-type"
+semantics = "Proof claim conditionally weakened by axiom danger level"
+
+[composition-rules.conditional-timeout]
+pattern = "IF solver-timeout THEN compensate ELSE accept-proof"
+entropy-behavior = "high-if-compensate (mutation + exchange costs apply)"
+claim-propagation = "compensable (compensation action determines final claim-type)"
+example = "cross-prover-exchange as compensation for timeout"
+semantics = "Timeout triggers automatic re-solve via alternative strategy or solver"
+
+# === PROOF OBLIGATIONS ===
+# For every claimed property, a named obligation with verification-method and failure-action
+
+[proof-obligations.portfolio-consensus]
+name = "At least 2 of 5 solvers must agree on proof result"
+claim-type = "verified"
+verification-method = "Voting logic in dispatch.rs:portfolio_consensus()"
+discharge-requirements = [
+  "solver.A proof ≡ solver.B proof (certificate comparison)",
+  "Both solvers within entropy budget",
+  "No timeout"
+]
+failure-action = "downgrade-to-unverified (mark as inconclusive; flag for human review)"
+
+[proof-obligations.axiom-safety]
+name = "No Reject-level axioms may appear in verified proof"
+claim-type = "verified"
+verification-method = "axiom-usage-track; danger-level classification"
+discharge-requirements = [
+  "axioms extracted via axiom.rs:extract_axioms()",
+  "each axiom ∈ {Safe, Noted, Warning} (Reject ⇒ failure)"
+]
+failure-action = "downgrade-to-unverified (proof valid, but axioms unsafe for external use)"
+
+[proof-obligations.certificate-validity]
+name = "Proof certificate must parse and verify under target solver"
+claim-type = "verified"
+verification-method = "certificate.rs:verify_certificate()"
+discharge-requirements = [
+  "certificate format ∈ {Alethe, DRAT, LRAT, TSTP}",
+  "certificate parses without error",
+  "solver can verify independently"
+]
+failure-action = "abort-operation (certificate is broken; proof claim invalidated)"
+
+[proof-obligations.gnn-soundness]
+name = "GNN premise ranking must be conservative (include ground-truth premise in top-K)"
+claim-type = "unverified (GNN is heuristic, not sound)"
+verification-method = "gnn.rs:evaluate_recall_at_k()"
+discharge-requirements = [
+  "MRR (Mean Reciprocal Rank) ≥ 0.66 on validation set",
+  "nDCG (Normalized DCG) ≥ 0.60"
+]
+failure-action = "rollback-to-cosine (GNN model undershoots quality threshold; fall back to symbolic scoring)"
+
+[proof-obligations.abi-integrity]
+name = "Idris2 ABI proofs must contain zero believe_me or unsafeCoerce"
+claim-type = "verified (trust kernel)"
+verification-method = "panic-attack scan (code-only grep, not comments)"
+discharge-requirements = [
+  "no believe_me in src/abi/*.idr",
+  "no unsafeCoerce in src/idris/*.idr",
+  "no Admitted except designated Parameter-axiom stubs"
+]
+failure-action = "abort-operation (ABI corruption suspected; human audit required)"
+
+# === TYPE SYSTEM ===
+# Base types for inputs/outputs, and operation signatures
+
+[type-system.base-types]
+Goal = "{ name: String, conclusion: Term, context: Context }"
+Term = "{ ast: ProofTerm, type-trace: TypeTrace, precedence: Int }"
+ProofState = "{ goal: Goal, status: {pending|succeeded|failed|timeout}, proof: Proof option, confidence: ConfidenceScore }"
+Proof = "{ certificate: ProofCertificate, solver: ProverKind, axioms: Axiom list, tactics: Tactic list }"
+ConfidenceScore = "{ level: {Untrusted|Suspicious|Neutral|Trusted|HighlyTrusted}, rationale: String }"
+ProverKind = "{ name: String, version: String, solver-signature: Hash }"
+ProofCertificate = "{ format: {Alethe|DRAT|LRAT|TSTP}, content: String, verifier: ProverKind }"
+Axiom = "{ name: String, source: String, danger-level: {Safe|Noted|Warning|Reject} }"
+
+[type-system.operation-signatures]
+proof-submission = "Goal × ProverKind → ProofState (may fail)"
+portfolio-solve = "Goal × ProverKind list → ProofState (robust; never fails if any solver succeeds)"
+gnn-guided-search = "Goal → Premise list (sorted by score) (always succeeds; fallback available)"
+cross-prover-exchange = "ProofCertificate × ProverKind_src × ProverKind_dst → ProofCertificate option (may fail)"
+mutation-test = "Specification × MutationStrategy → MutationResult list (always succeeds)"
+axiom-usage-track = "Proof → Axiom list with danger-levels (always succeeds)"
+confidence-update = "ProofState → ConfidenceScore (idempotent; deterministic)"
+
+[type-system.may-fail-operations]
+operations-that-may-fail = [
+  "proof-submission (solver crashes, timeout, syntax error)",
+  "cross-prover-exchange (unsupported format, incompatible semantics)",
+  "certificate-validity-check (malformed certificate)"
+]
+operations-that-never-fail = [
+  "gnn-guided-search (cosine fallback always available)",
+  "mutation-test (always generates results, even if all mutants killed)",
+  "axiom-usage-track (safe extraction from any proof)"
+]
+
+# === HYPATIA INTEGRATION (for CI/CD scanning) ===
 [hypatia-config]
 scan-enabled = true
 scan-depth = "standard"
-report-format = "logtalk"
+report-format = "JSON (AssailReport)"
+proof-obligations-check = "panic-attack (code-only grep; no comments)"
+banned-patterns = ["believe_me", "unsafeCoerce", "Admitted", "sorry"]
+neurosym-rules-file = "standards-repo/neurosym-a2ml/hypatia-ruleset.json"

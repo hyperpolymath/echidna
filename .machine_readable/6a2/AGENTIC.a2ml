@@ -1,12 +1,181 @@
 # SPDX-License-Identifier: PMPL-1.0-or-later
 # Copyright (c) 2026 Jonathan D.A. Jewell (hyperpolymath) <j.d.a.jewell@open.ac.uk>
 #
-# AGENTIC.a2ml — AI agent constraints and capabilities
-# Defines what AI agents can and cannot do in this repository.
+# AGENTIC.a2ml — AI agent operational gating and proof-solving dispatch
+# Defines safety constraints, entropy budgets, and explicit-intent gating for AI agents
+# working in echidna (proof-solving service with 105 prover backends, 3GB training corpus).
 
 [metadata]
-version = "0.1.0"
-last-updated = "2026-03-16"
+version = "0.3.0"
+last-updated = "2026-04-25"
+spec-version = "AGENTIC-FORMAT v0.1.0"
+authority = "Jonathan D.A. Jewell (hyperpolymath)"
+conformance = "AGENTIC-FORMAT-SPEC-compliant"
+
+# === GATING POLICIES ===
+# Per-operation-class rules: when may an action proceed?
+# Four operation classes: file (read/write), network (API calls), state-mutation, credentials
+
+[gating-policies]
+file-write = { mode = "auto", entropy-cost = 10, description = "Creating/modifying source files" }
+file-read = { mode = "auto", entropy-cost = 1, description = "Reading source files" }
+network-external = { mode = "require-confirmation", entropy-cost = 50, description = "Calling external APIs (e.g. GitHub, Vercel)" }
+network-internal = { mode = "auto", entropy-cost = 20, description = "Internal echidna API calls (proof dispatch, prover invocation)" }
+state-mutation = { mode = "require-confirmation", entropy-cost = 30, description = "Modifying persistent state (config, proof cache, learned models)" }
+credentials-write = { mode = "require-explicit-intent", entropy-cost = 100, description = "Storing or transmitting credentials" }
+credentials-read = { mode = "require-confirmation", entropy-cost = 75, description = "Accessing stored credentials" }
+prover-execute = { mode = "auto", entropy-cost = 25, description = "Executing a theorem prover (auto-gated; isolation is runtime concern)" }
+sandbox-policy = { mode = "auto", entropy-cost = 5, description = "Choosing solver sandbox level (none/bubblewrap/podman)" }
+
+# === ENTROPY BUDGETS ===
+# Session-scoped risk tracking: accumulated cost per operation type, with four threshold levels
+
+[entropy-budgets.operations]
+session-max = 500
+threshold-low = 100
+threshold-medium = 200
+threshold-high = 350
+threshold-critical = 500
+
+proof-solve-job = 40         # Cost to submit a single proof to echidna
+proof-batch-submit = 120     # Cost to submit 10+ proofs at once
+network-api-call = 50        # Cost to call external service
+file-write-source = 10       # Cost per source file modification
+file-write-critical = 75     # Cost per critical file (dispatch.rs, agentic.rs, abi/*)
+state-clear-cache = 60       # Cost to clear proof cache
+model-retrain = 150          # Cost to trigger ML model training
+credential-provision = 100   # Cost to set up new secret/token
+emergency-override = 200     # Cost to override a gating decision
+
+[entropy-budgets.thresholds]
+low = "Routine operations (read, small writes, proof dispatch to auto-isolated provers)"
+medium = "Elevated risk (state mutations, external API, untrained model updates)"
+high = "Sensitive operations (credential management, model retraining, cache clearing)"
+critical = "Reserved for emergency overrides only"
+
+# === RISK THRESHOLDS ===
+# Four severity bands with classification rules keyed to operation patterns
+
+[risk-thresholds.low]
+entropy-range = [0, 100]
+operations = ["file-read", "prover-execute (with sandbox auto-selection)", "proof-solve-job"]
+user-confirmation-required = false
+audit-log-level = "info"
+override-allowed = true
+
+[risk-thresholds.medium]
+entropy-range = [101, 200]
+operations = ["file-write", "network-internal", "proof-batch-submit", "sandbox-policy (manual selection)"]
+user-confirmation-required = false
+audit-log-level = "warning"
+override-allowed = true
+override-requires = "explicit-present-intent"
+
+[risk-thresholds.high]
+entropy-range = [201, 350]
+operations = ["state-mutation", "network-external", "credentials-read", "model-retrain"]
+user-confirmation-required = true
+audit-log-level = "critical"
+override-allowed = true
+override-requires = ["explicit-present-intent", "META-permit"]
+
+[risk-thresholds.critical]
+entropy-range = [351, 500]
+operations = ["credentials-write", "emergency-override", "cache-clear"]
+user-confirmation-required = true
+audit-log-level = "critical"
+override-allowed = false
+never-override-actions = ["credential-exfiltration", "proof-falsification", "ABI-corruption", "sandbox-bypass"]
+
+# === OVERRIDE PATHS ===
+# Documented bypass routes when user provides explicit present intent + META permit
+
+[override-paths.bypass-1]
+condition = "User types: 'yes, I intend to <action>'"
+scope = "Any low/medium/high entropy operation"
+requires = ["explicit-present-intent-in-current-turn", "META-permit"]
+audit = "Must record user's exact intent phrase + timestamp"
+never-applies-to = ["credential-exfiltration", "proof-falsification", "sandbox-bypass"]
+
+[override-paths.bypass-2]
+condition = "PLAYBOOK.a2ml explicitly schedules <action> with user's prior written intent"
+scope = "Pre-authorized scheduled operations (e.g. weekly model retraining)"
+requires = ["META-permit", "PLAYBOOK entry with timestamp"]
+audit = "Reference PLAYBOOK by section + date; log override use"
+never-applies-to = ["credential-exfiltration", "proof-falsification", "sandbox-bypass"]
+
+[override-paths.never-override]
+actions = [
+  "credential-exfiltration (storing secrets in clear text, sending creds to untrusted service)",
+  "proof-falsification (claiming a proof succeeded when it failed, silencing verifier errors)",
+  "sandbox-bypass (executing prover code outside container/sandbox)",
+  "ABI-corruption (modifying Idris2 ABI definitions without formal proof of preservation)",
+  "system-file-modification (writing to /etc, /sys, /proc outside container)"
+]
+reason = "These actions irreversibly compromise echidna's trust model. No override path exists."
+
+# === DECISION RECORDING ===
+# Full audit log of every gate decision: timestamp, action, gate result, entropy cost, intent classification
+
+[decision-recording]
+enabled = true
+backend = "SQLite (proof_memory.db)"
+table = "agentic_decisions"
+columns = [
+  "timestamp (ISO 8601)",
+  "action_type (file-write, prover-execute, etc.)",
+  "operation_id (unique key for this invocation)",
+  "gate_result (allowed | denied)",
+  "entropy_cost (numeric)",
+  "entropy_before (session running total before this action)",
+  "entropy_after (session running total after this action)",
+  "risk_threshold_applied (low | medium | high | critical)",
+  "user_intent_type (explicit-present | inferred-from-memory | none)",
+  "override_used (true | false)",
+  "override_path (bypass-1 | bypass-2 | none)",
+  "audit_note (freetext; mandatory for denied/overridden actions)"
+]
+retention = "Indefinite; auditable via proof_memory.db"
+access-control = "Read-only to agents; write-only to agentic gating engine"
+
+# === MAINTENANCE INTEGRITY ===
+# Session-level and cross-session integrity constraints
+
+[maintenance-integrity]
+session-max-entropy = 500
+session-timeout = "24 hours (inactivity) or hard 48-hour limit"
+reset-conditions = [
+  "User explicitly says: 'reset entropy budget'",
+  "End of calendar day (daily reset to 0)",
+  "After every release deployment (entropy-aware CI/CD)"
+]
+proof-memory-consistency = "SQLite integrity checks on every read; schema versioning in provers.a2ml"
+agentic-dispatch-invariant = "Every ProofJob dispatch must be recorded in agentic_decisions before execution"
+
+# === AUTOMATION HOOKS ===
+# Automated responses to specific gate outcomes or risk thresholds
+
+[automation-hooks.high-entropy-warning]
+trigger = "entropy > threshold-high (350)"
+action = "Log warning to stderr + proof_memory.db + email user"
+suppression = "User may suppress with explicit 'ack-risk' token"
+
+[automation-hooks.critical-entropy-halt]
+trigger = "entropy >= threshold-critical (500)"
+action = "Deny next operation + reset entropy to 0 + require user confirmation before resume"
+suppression = "None; design failure if this occurs in practice"
+
+[automation-hooks.nightly-audit-report]
+trigger = "Cron: 02:00 UTC daily"
+action = "Generate agentic_decisions report for last 24h; email to maintainer; log to STATE.a2ml"
+suppression = "None; audit is mandatory"
+
+[automation-hooks.proof-falsification-detector]
+trigger = "Verifier detects: claimed proof succeeded but solver's output contradicts it"
+action = "Mark operation as denied retroactively + log security event + escalate to human"
+suppression = "None; this is a security invariant violation"
+
+# === AGENT PERMISSIONS & CONSTRAINTS ===
 
 [agent-permissions]
 can-edit-source = true
@@ -14,11 +183,23 @@ can-edit-tests = true
 can-edit-docs = true
 can-edit-config = true
 can-create-files = true
+can-dispatch-proofs = true
+can-read-proof-memory = true
+can-access-training-data = true
 
 [agent-constraints]
-# What AI agents must NOT do:
-# - Never use banned language patterns (believe_me, unsafeCoerce, etc.)
-# - Never commit secrets or credentials
-# - Never use banned languages (TypeScript, Python, Go, etc.)
-# - Never place state files in repository root (must be in .machine_readable/)
-# - Never use AGPL license (use PMPL-1.0-or-later)
+never-use = [
+  "believe_me, unsafeCoerce, sorry, assert_total, Admitted (Idris2 banned patterns)",
+  "TypeScript, Python, Go, V-lang, ATS2 (banned languages)",
+  "hardcoded secrets or credentials",
+  "AGPL license (use PMPL-1.0-or-later)",
+  "state files in repository root (use .machine_readable/ only)",
+  "subprocess execution outside prover-execute gate",
+  "direct filesystem access to /home, /tmp without sandbox"
+]
+always-do = [
+  "Check entropy budget before operation (early gate)",
+  "Record decision in agentic_decisions (before execution)",
+  "Validate Idris2 ABI proofs before modifying trust pipeline",
+  "Run panic-attack on Rust code before commit"
+]
