@@ -83,7 +83,7 @@ pub struct IntegrityChecker {
 impl IntegrityChecker {
     /// Create a new integrity checker from a manifest file
     pub fn from_manifest_file(path: &Path) -> Result<Self> {
-        let content = std::fs::read_to_string(path)
+        let content = super::io::bounded_read_config(path)
             .with_context(|| format!("Failed to read solver manifest: {}", path.display()))?;
         let manifest: SolverManifest =
             toml::from_str(&content).with_context(|| "Failed to parse solver manifest TOML")?;

@@ -7,8 +7,10 @@
 //! known-good manifest. If a mismatch is detected, the solver is marked as
 //! untrusted and will not be used.
 
+pub mod io;
 pub mod solver_integrity;
 
+pub use io::bounded_read_config;
 pub use solver_integrity::{
     IntegrityChecker, IntegrityStatus, SolverIntegrityReport, SolverManifest, SolverManifestEntry,
 };
