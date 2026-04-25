@@ -1,0 +1,126 @@
+# SPDX-License-Identifier: PMPL-1.0-or-later
+# SPDX-FileCopyrightText: 2026 Jonathan D.A. Jewell <j.d.a.jewell@open.ac.uk>
+#
+# ECHIDNA OR-Tools Containerfile
+# Build: podman build -f .containerization/Containerfile.or-tools -t echidna:or-tools .
+# Seal:  selur seal echidna:or-tools
+# Sign:  cerro-torre sign echidna:or-tools
+#
+# Google OR-Tools: combinatorial optimisation (CP-SAT, linear programming, routing).
+# NOTE: OR-Tools does NOT ship a standalone CLI binary. The artefact installed
+# here is the C++ shared library (libortools.so) for ECHIDNA's FFI use.
+# ECHIDNA calls OR-Tools through the Rust FFI bridge in src/rust/ffi/or_tools.rs.
+# Strategy: download the official prebuilt C++ release tarball from
+# https://github.com/google/or-tools/releases — avoids a CMake build
+# (which takes ~30 min and needs ~4 GB RAM).
+# Library target: libortools.so in /usr/local/lib
+
+# =============================================================================
+# Stage 1: Rust Builder
+# =============================================================================
+FROM docker.io/library/rust:1.85-slim-bookworm AS rust-builder
+
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    build-essential \
+    pkg-config \
+    libssl-dev \
+    && rm -rf /var/lib/apt/lists/*
+
+RUN rustup toolchain install nightly && rustup default nightly
+
+WORKDIR /build
+
+COPY Cargo.toml Cargo.lock ./
+COPY src/rust ./src/rust
+COPY src/interfaces ./src/interfaces
+
+RUN cargo build --release --bin echidna
+
+# =============================================================================
+# Stage 2: OR-Tools C++ Library Installer
+# =============================================================================
+FROM docker.io/library/debian:bookworm-slim AS ortools-installer
+
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    curl \
+    ca-certificates \
+    tar \
+    gzip \
+    && rm -rf /var/lib/apt/lists/*
+
+WORKDIR /opt/or-tools
+
+# Download the prebuilt C++ release tarball for Debian 12 (bookworm) / amd64.
+# The tarball ships include headers, shared libraries, and CMake config files.
+# Check https://github.com/google/or-tools/releases for the latest version.
+ARG ORTOOLS_VERSION="9.12"
+ARG ORTOOLS_ARCHIVE="or-tools_amd64_debian-12_cpp_v${ORTOOLS_VERSION}.tar.gz"
+ARG ORTOOLS_URL="https://github.com/google/or-tools/releases/download/v${ORTOOLS_VERSION}/${ORTOOLS_ARCHIVE}"
+
+RUN set -eux; \
+    curl -fsSL --retry 3 "${ORTOOLS_URL}" -o /tmp/or-tools.tar.gz \
+    && tar -xzf /tmp/or-tools.tar.gz -C /opt/or-tools --strip-components=1 \
+    && rm /tmp/or-tools.tar.gz \
+    && ls /opt/or-tools/lib/ \
+    || { \
+        echo "WARNING: OR-Tools prebuilt tarball download failed."; \
+        echo "Verify the version and URL at https://github.com/google/or-tools/releases"; \
+        mkdir -p /opt/or-tools/lib; \
+    }
+
+# Copy shared libraries and headers to system locations
+RUN mkdir -p /usr/local/lib /usr/local/include && \
+    cp -r /opt/or-tools/lib/. /usr/local/lib/ && \
+    cp -r /opt/or-tools/include/. /usr/local/include/ && \
+    ldconfig || true
+
+# =============================================================================
+# Stage 3: Runtime Image
+# =============================================================================
+FROM docker.io/library/debian:bookworm-slim
+
+LABEL maintainer="Jonathan D.A. Jewell <j.d.a.jewell@open.ac.uk>"
+LABEL org.opencontainers.image.source="https://github.com/hyperpolymath/echidna"
+LABEL org.opencontainers.image.description="ECHIDNA + OR-Tools C++ library - combinatorial optimisation via FFI"
+LABEL org.opencontainers.image.licenses="PMPL-1.0-or-later"
+LABEL org.opencontainers.image.version="2.3.0"
+LABEL org.opencontainers.image.vendor="hyperpolymath"
+
+# OR-Tools runtime dependencies: abseil, protobuf, re2, zlib.
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    ca-certificates \
+    libssl3 \
+    libgmp10 \
+    libabsl20230125t64 \
+    libprotobuf32t64 \
+    libre2-10t64 \
+    zlib1g \
+    && rm -rf /var/lib/apt/lists/*
+
+WORKDIR /app
+
+COPY --from=rust-builder /build/target/release/echidna /app/bin/echidna
+
+# Copy OR-Tools shared libraries into the runtime image.
+# libortools.so and its dependencies (libCoinUtils, libClp, etc.) live in /usr/local/lib.
+COPY --from=ortools-installer /usr/local/lib /usr/local/lib/
+COPY --from=ortools-installer /usr/local/include/ortools /usr/local/include/ortools/
+
+ENV PATH="/app/bin:${PATH}"
+ENV ECHIDNA_PROVER_PATH="/usr/local/lib"
+ENV LD_LIBRARY_PATH="/usr/local/lib:${LD_LIBRARY_PATH}"
+
+RUN mkdir -p /app/proofs /app/config /app/logs && ldconfig
+
+# REST API
+EXPOSE 8000
+# GraphQL
+EXPOSE 8081
+# gRPC
+EXPOSE 50051
+
+HEALTHCHECK --interval=30s --timeout=10s --start-period=15s --retries=3 \
+    CMD ["/app/bin/echidna", "--version"]
+
+ENTRYPOINT ["/app/bin/echidna"]
+CMD ["--help"]

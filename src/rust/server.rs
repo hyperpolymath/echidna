@@ -15,6 +15,7 @@ use axum::{
 };
 use colored::Colorize;
 use echidna::core::{ProofState, Tactic, TacticResult};
+use echidna::dispatch::ProverDispatcher;
 use echidna::{ProverBackend, ProverConfig, ProverKind};
 use reqwest::Client;
 use serde::{Deserialize, Serialize};
@@ -89,6 +90,7 @@ pub async fn start_server(port: u16, host: String, enable_cors: bool) -> Result<
         .route("/api/provers", get(list_provers))
         .route("/api/prove", post(prove_handler))
         .route("/api/verify", post(verify_handler))
+        .route("/api/verify_parallel", post(verify_parallel_handler))
         .route("/api/verify_raw", post(verify_raw_handler))
         .route("/api/suggest", post(suggest_handler))
         .route("/api/search", get(search_handler))
@@ -358,6 +360,41 @@ async fn verify_handler(Json(req): Json<VerifyRequest>) -> Result<Json<VerifyRes
         mode: None,
         smt_status: None,
     }))
+}
+
+/// `/api/verify_parallel` — L2 Chapel parallel dispatch.
+///
+/// Fans out to multiple prover backends simultaneously (when the `chapel`
+/// Cargo feature is compiled in and the Chapel runtime is available).
+/// Returns the first successful result through the standard trust pipeline.
+/// Falls back to sequential `select_prover` heuristic when Chapel is
+/// unavailable. Callers that want a specific prover should use `/api/verify`.
+async fn verify_parallel_handler(
+    Json(req): Json<serde_json::Value>,
+) -> Result<Json<serde_json::Value>, AppError> {
+    let content = req
+        .get("content")
+        .and_then(|v| v.as_str())
+        .ok_or_else(|| AppError::BadRequest("Missing 'content' field".to_string()))?;
+
+    info!("verify_parallel request ({} bytes)", content.len());
+
+    let dispatcher = ProverDispatcher::new();
+    let result = dispatcher
+        .verify_proof_parallel(content)
+        .await
+        .map_err(|e| AppError::VerificationError(e.to_string()))?;
+
+    Ok(Json(serde_json::json!({
+        "valid": result.verified,
+        "outcome": result.outcome.status_str(),
+        "provers_used": result.provers_used,
+        "trust_level": result.trust_level as u8,
+        "proof_time_ms": result.proof_time_ms,
+        "goals_remaining": result.goals_remaining,
+        "cross_checked": result.cross_checked,
+        "message": result.message,
+    })))
 }
 
 /// `/api/verify_raw` — writes the original `content` to a temp file with

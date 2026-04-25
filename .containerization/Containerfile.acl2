@@ -1,0 +1,124 @@
+# SPDX-License-Identifier: PMPL-1.0-or-later
+# SPDX-FileCopyrightText: 2026 Jonathan D.A. Jewell <j.d.a.jewell@open.ac.uk>
+#
+# ECHIDNA ACL2 Containerfile
+# Build: podman build -f .containerization/Containerfile.acl2 -t echidna:acl2 .
+# Seal:  selur seal echidna:acl2
+# Sign:  cerro-torre sign echidna:acl2
+#
+# ACL2: A Computational Logic for Applicative Common Lisp.
+# Industrial-strength theorem prover used in hardware verification (AMD, Intel).
+# Strategy: use SBCL (Steel Bank Common Lisp) prebuilt Debian package + build
+# ACL2 from source (acl2/acl2 on GitHub).  The ACL2 build compiles itself
+# into a saved image using SBCL.
+# Build time: ~20-40 min.
+# Binary: acl2 (shell wrapper script created by the build process)
+
+# =============================================================================
+# Stage 1: Rust Builder
+# =============================================================================
+FROM docker.io/library/rust:1.85-slim-bookworm AS rust-builder
+
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    build-essential \
+    pkg-config \
+    libssl-dev \
+    && rm -rf /var/lib/apt/lists/*
+
+RUN rustup toolchain install nightly && rustup default nightly
+
+WORKDIR /build
+
+COPY Cargo.toml Cargo.lock ./
+COPY src/rust ./src/rust
+COPY src/interfaces ./src/interfaces
+
+RUN cargo build --release --bin echidna
+
+# =============================================================================
+# Stage 2: ACL2 Builder (SBCL + ACL2 from source)
+# =============================================================================
+FROM docker.io/library/debian:bookworm-slim AS acl2-builder
+
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    sbcl \
+    curl \
+    ca-certificates \
+    git \
+    build-essential \
+    make \
+    # ACL2 uses a small amount of C for foreign-call support
+    gcc \
+    && rm -rf /var/lib/apt/lists/*
+
+WORKDIR /build
+
+# Clone ACL2 from the official GitHub mirror.
+# Use a versioned tag for reproducibility.
+# Check https://github.com/acl2/acl2/releases for the latest version.
+ARG ACL2_VERSION="8.6"
+RUN git clone --depth 1 --branch "v${ACL2_VERSION}" \
+      https://github.com/acl2/acl2.git /build/acl2 \
+    || git clone --depth 1 \
+      https://github.com/acl2/acl2.git /build/acl2
+
+WORKDIR /build/acl2
+
+# Build ACL2 using SBCL.  The `make` target `LISP=sbcl` compiles ACL2 and
+# saves a SBCL core image.  The resulting saved_acl2 is the executable image.
+RUN make LISP=sbcl -j"$(nproc)" \
+    && test -f /build/acl2/saved_acl2 \
+    && echo "ACL2 build succeeded"
+
+# Create the acl2 wrapper script (mirrors the standard install convention)
+RUN printf '#!/bin/sh\nexec /opt/acl2/saved_acl2 "$@"\n' > /usr/local/bin/acl2 \
+    && chmod +x /usr/local/bin/acl2
+
+# =============================================================================
+# Stage 3: Runtime Image
+# =============================================================================
+FROM docker.io/library/debian:bookworm-slim
+
+LABEL maintainer="Jonathan D.A. Jewell <j.d.a.jewell@open.ac.uk>"
+LABEL org.opencontainers.image.source="https://github.com/hyperpolymath/echidna"
+LABEL org.opencontainers.image.description="ECHIDNA + ACL2 - applicative Common Lisp logic prover"
+LABEL org.opencontainers.image.licenses="PMPL-1.0-or-later"
+LABEL org.opencontainers.image.version="2.3.0"
+LABEL org.opencontainers.image.vendor="hyperpolymath"
+
+# ACL2 at runtime runs a saved SBCL core image; only SBCL's C runtime is needed.
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    ca-certificates \
+    libssl3 \
+    sbcl \
+    && rm -rf /var/lib/apt/lists/*
+
+WORKDIR /app
+
+COPY --from=rust-builder /build/target/release/echidna /app/bin/echidna
+
+# Copy ACL2 saved image and source tree (ACL2 loads books from its source tree)
+COPY --from=acl2-builder /build/acl2 /opt/acl2
+
+# Install the acl2 wrapper script
+RUN printf '#!/bin/sh\nexec /opt/acl2/saved_acl2 "$@"\n' > /usr/local/bin/acl2 \
+    && chmod +x /usr/local/bin/acl2
+
+ENV PATH="/app/bin:/usr/local/bin:${PATH}"
+ENV ACL2_SYSTEM_BOOKS="/opt/acl2/books"
+ENV ECHIDNA_PROVER_PATH="/usr/local/bin"
+
+RUN mkdir -p /app/proofs /app/config /app/logs
+
+# REST API
+EXPOSE 8000
+# GraphQL
+EXPOSE 8081
+# gRPC
+EXPOSE 50051
+
+HEALTHCHECK --interval=30s --timeout=15s --start-period=30s --retries=3 \
+    CMD ["/app/bin/echidna", "--version"]
+
+ENTRYPOINT ["/app/bin/echidna"]
+CMD ["--help"]

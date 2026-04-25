@@ -1,0 +1,109 @@
+# SPDX-License-Identifier: PMPL-1.0-or-later
+# SPDX-FileCopyrightText: 2026 Jonathan D.A. Jewell <j.d.a.jewell@open.ac.uk>
+#
+# ECHIDNA ProVerif Containerfile
+# Build: podman build -f .containerization/Containerfile.proverif -t echidna:proverif .
+# Seal:  selur seal echidna:proverif
+# Sign:  cerro-torre sign echidna:proverif
+#
+# ProVerif: automated cryptographic protocol verifier.
+# Strategy: install OCaml + opam, then `opam install proverif`.
+# ProVerif is released on opam and compiles cleanly on Debian bookworm.
+# Binary: proverif
+
+# =============================================================================
+# Stage 1: Rust Builder
+# =============================================================================
+FROM docker.io/library/rust:1.85-slim-bookworm AS rust-builder
+
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    build-essential \
+    pkg-config \
+    libssl-dev \
+    && rm -rf /var/lib/apt/lists/*
+
+RUN rustup toolchain install nightly && rustup default nightly
+
+WORKDIR /build
+
+COPY Cargo.toml Cargo.lock ./
+COPY src/rust ./src/rust
+COPY src/interfaces ./src/interfaces
+
+RUN cargo build --release --bin echidna
+
+# =============================================================================
+# Stage 2: ProVerif Builder (OCaml + opam)
+# =============================================================================
+FROM docker.io/library/debian:bookworm-slim AS proverif-builder
+
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    curl \
+    ca-certificates \
+    build-essential \
+    git \
+    ocaml \
+    opam \
+    libgmp-dev \
+    m4 \
+    pkg-config \
+    bubblewrap \
+    && rm -rf /var/lib/apt/lists/*
+
+# Initialise opam (no sandbox inside container — use --disable-sandboxing)
+RUN opam init --disable-sandboxing --bare --no-setup -y
+
+# Install proverif via opam.
+# proverif 2.x requires OCaml >= 4.05; bookworm ships OCaml 4.13.
+RUN opam switch create default --packages=ocaml-base-compiler \
+    && eval "$(opam env)" \
+    && opam install -y proverif \
+    && proverif -help 2>&1 | head -5 || true
+
+# Copy binary to a well-known location for the runtime stage
+RUN eval "$(opam env)" && \
+    PROVERIF_BIN="$(opam var bin)/proverif" && \
+    install -m 0755 "${PROVERIF_BIN}" /usr/local/bin/proverif
+
+# =============================================================================
+# Stage 3: Runtime Image
+# =============================================================================
+FROM docker.io/library/debian:bookworm-slim
+
+LABEL maintainer="Jonathan D.A. Jewell <j.d.a.jewell@open.ac.uk>"
+LABEL org.opencontainers.image.source="https://github.com/hyperpolymath/echidna"
+LABEL org.opencontainers.image.description="ECHIDNA + ProVerif - cryptographic protocol verification"
+LABEL org.opencontainers.image.licenses="PMPL-1.0-or-later"
+LABEL org.opencontainers.image.version="2.3.0"
+LABEL org.opencontainers.image.vendor="hyperpolymath"
+
+# ProVerif at runtime is a statically-linked OCaml binary; it needs no
+# OCaml runtime.  Only libgmp is needed for big-integer arithmetic.
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    ca-certificates \
+    libssl3 \
+    libgmp10 \
+    && rm -rf /var/lib/apt/lists/*
+
+WORKDIR /app
+
+COPY --from=rust-builder /build/target/release/echidna /app/bin/echidna
+COPY --from=proverif-builder /usr/local/bin/proverif /usr/local/bin/proverif
+
+ENV PATH="/app/bin:/usr/local/bin:${PATH}"
+ENV ECHIDNA_PROVER_PATH="/usr/local/bin"
+
+RUN mkdir -p /app/proofs /app/config /app/logs
+
+# REST API
+EXPOSE 8000
+# GraphQL
+EXPOSE 8081
+# gRPC
+EXPOSE 50051
+
+HEALTHCHECK --interval=30s --timeout=10s --start-period=15s --retries=3 \
+    CMD ["/app/bin/echidna", "--version"]
+
+ENTRYPOINT ["/app/bin/echidna"]
+CMD ["--help"]

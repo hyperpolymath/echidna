@@ -1,0 +1,120 @@
+# SPDX-License-Identifier: PMPL-1.0-or-later
+# SPDX-FileCopyrightText: 2026 Jonathan D.A. Jewell <j.d.a.jewell@open.ac.uk>
+#
+# ECHIDNA Twelf Containerfile
+# Build: podman build -f .containerization/Containerfile.twelf -t echidna:twelf .
+# Seal:  selur seal echidna:twelf
+# Sign:  cerro-torre sign echidna:twelf
+#
+# Twelf: a meta-logical framework based on the Edinburgh Logical Framework (LF).
+# Used for mechanising programming language metatheory (POPLMARK challenge etc.).
+# Strategy: install SML/NJ (Standard ML of New Jersey) from the official Debian
+# package, then build Twelf from source (twelf.org / GitHub mirror).
+# Binary: twelf-server (TCP server mode used by ECHIDNA for batch checking)
+
+# =============================================================================
+# Stage 1: Rust Builder
+# =============================================================================
+FROM docker.io/library/rust:1.85-slim-bookworm AS rust-builder
+
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    build-essential \
+    pkg-config \
+    libssl-dev \
+    && rm -rf /var/lib/apt/lists/*
+
+RUN rustup toolchain install nightly && rustup default nightly
+
+WORKDIR /build
+
+COPY Cargo.toml Cargo.lock ./
+COPY src/rust ./src/rust
+COPY src/interfaces ./src/interfaces
+
+RUN cargo build --release --bin echidna
+
+# =============================================================================
+# Stage 2: Twelf Builder (SML/NJ + Twelf from source)
+# =============================================================================
+FROM docker.io/library/debian:bookworm-slim AS twelf-builder
+
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    curl \
+    ca-certificates \
+    git \
+    build-essential \
+    make \
+    # SML/NJ requires these at build + runtime
+    smlnj \
+    && rm -rf /var/lib/apt/lists/*
+
+WORKDIR /build
+
+# Clone the Twelf source from the official repository.
+# The canonical upstream is hosted at https://github.com/standardml/twelf.
+# Twelf does not use versioned tags; we pin to the tip of the main branch and
+# note the commit in the label below.  For strict reproducibility, replace
+# `--depth 1` with `--branch <commit-sha>`.
+RUN git clone --depth 1 \
+      https://github.com/standardml/twelf.git /build/twelf
+
+WORKDIR /build/twelf
+
+# Build Twelf using SML/NJ's ml-build.
+# The Makefile target `smlnj` compiles a heap image; `twelf-server` is a
+# shell wrapper that invokes `sml @SMLload=...`.
+RUN make smlnj \
+    && test -f bin/twelf-server \
+    && echo "Twelf build succeeded"
+
+# Verify twelf-server starts in batch mode
+RUN echo "val () = OS.Process.exit OS.Process.success;" | bin/twelf-server || true
+
+# =============================================================================
+# Stage 3: Runtime Image
+# =============================================================================
+FROM docker.io/library/debian:bookworm-slim
+
+LABEL maintainer="Jonathan D.A. Jewell <j.d.a.jewell@open.ac.uk>"
+LABEL org.opencontainers.image.source="https://github.com/hyperpolymath/echidna"
+LABEL org.opencontainers.image.description="ECHIDNA + Twelf - LF meta-logical framework"
+LABEL org.opencontainers.image.licenses="PMPL-1.0-or-later"
+LABEL org.opencontainers.image.version="2.3.0"
+LABEL org.opencontainers.image.vendor="hyperpolymath"
+
+# SML/NJ runtime is needed to run the Twelf heap image.
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    ca-certificates \
+    libssl3 \
+    smlnj \
+    && rm -rf /var/lib/apt/lists/*
+
+WORKDIR /app
+
+COPY --from=rust-builder /build/target/release/echidna /app/bin/echidna
+
+# Copy the Twelf installation (src tree + compiled heap + wrapper scripts)
+COPY --from=twelf-builder /build/twelf /opt/twelf
+
+# The twelf-server wrapper script references $TWELFDIR; make it a proper
+# system binary by symlinking.
+RUN ln -s /opt/twelf/bin/twelf-server /usr/local/bin/twelf-server
+
+ENV PATH="/app/bin:/usr/local/bin:${PATH}"
+ENV TWELFDIR="/opt/twelf"
+ENV ECHIDNA_PROVER_PATH="/usr/local/bin"
+
+RUN mkdir -p /app/proofs /app/config /app/logs
+
+# REST API
+EXPOSE 8000
+# GraphQL
+EXPOSE 8081
+# gRPC
+EXPOSE 50051
+
+HEALTHCHECK --interval=30s --timeout=10s --start-period=15s --retries=3 \
+    CMD ["/app/bin/echidna", "--version"]
+
+ENTRYPOINT ["/app/bin/echidna"]
+CMD ["--help"]

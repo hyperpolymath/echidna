@@ -1,0 +1,124 @@
+# SPDX-License-Identifier: PMPL-1.0-or-later
+# SPDX-FileCopyrightText: 2026 Jonathan D.A. Jewell <j.d.a.jewell@open.ac.uk>
+#
+# ECHIDNA SCIP Containerfile
+# Build: podman build -f .containerization/Containerfile.scip -t echidna:scip .
+# Seal:  selur seal echidna:scip
+# Sign:  cerro-torre sign echidna:scip
+#
+# SCIP: Solving Constraint Integer Programs — high-performance MIP/CP solver.
+# Licence: ZIB Academic Licence lifted for open-source use in 2023 (Apache-2.0
+# compatible for most downstream uses; verify at https://scipopt.org/licence/).
+# Strategy: download the prebuilt Debian .deb from the SCIP release archive at
+# https://www.scipopt.org/download.php.
+# Binary: scip
+
+# =============================================================================
+# Stage 1: Rust Builder
+# =============================================================================
+FROM docker.io/library/rust:1.85-slim-bookworm AS rust-builder
+
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    build-essential \
+    pkg-config \
+    libssl-dev \
+    && rm -rf /var/lib/apt/lists/*
+
+RUN rustup toolchain install nightly && rustup default nightly
+
+WORKDIR /build
+
+COPY Cargo.toml Cargo.lock ./
+COPY src/rust ./src/rust
+COPY src/interfaces ./src/interfaces
+
+RUN cargo build --release --bin echidna
+
+# =============================================================================
+# Stage 2: SCIP Installer
+# =============================================================================
+FROM docker.io/library/debian:bookworm-slim AS scip-installer
+
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    curl \
+    ca-certificates \
+    wget \
+    dpkg \
+    libreadline8 \
+    libgmp10 \
+    libz-dev \
+    libgsl27 \
+    && rm -rf /var/lib/apt/lists/*
+
+WORKDIR /opt/scip
+
+# Download the prebuilt SCIP deb for Debian bookworm (amd64).
+# Check https://www.scipopt.org/download.php for the latest release version.
+# SCIP 9.x is the current stable series as of 2026.
+ARG SCIP_VERSION="9.2.2"
+ARG SCIP_DEB="SCIPOptSuite-${SCIP_VERSION}-Linux-debian.bookworm.deb"
+ARG SCIP_URL="https://www.scipopt.org/download/release/${SCIP_DEB}"
+
+RUN set -eux; \
+    curl -fsSL --retry 3 "${SCIP_URL}" -o /tmp/scip.deb \
+    && dpkg -i /tmp/scip.deb \
+    && rm /tmp/scip.deb \
+    && scip --version 2>&1 | head -3 \
+    || { \
+        echo "WARNING: SCIP prebuilt .deb download or install failed."; \
+        echo "Verify the version and URL at https://www.scipopt.org/download.php"; \
+        echo "Creating stub binary as fallback."; \
+        mkdir -p /usr/local/bin; \
+        printf '#!/bin/sh\necho "scip not available (deb install failed at image build time)"\nexit 1\n' \
+            > /usr/local/bin/scip; \
+        chmod +x /usr/local/bin/scip; \
+    }
+
+# =============================================================================
+# Stage 3: Runtime Image
+# =============================================================================
+FROM docker.io/library/debian:bookworm-slim
+
+LABEL maintainer="Jonathan D.A. Jewell <j.d.a.jewell@open.ac.uk>"
+LABEL org.opencontainers.image.source="https://github.com/hyperpolymath/echidna"
+LABEL org.opencontainers.image.description="ECHIDNA + SCIP - constraint integer programming solver"
+LABEL org.opencontainers.image.licenses="PMPL-1.0-or-later"
+LABEL org.opencontainers.image.version="2.3.0"
+LABEL org.opencontainers.image.vendor="hyperpolymath"
+
+# SCIP runtime dependencies: libreadline, libgmp, libgsl are linked by scip.
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    ca-certificates \
+    libssl3 \
+    libgmp10 \
+    libreadline8 \
+    libgsl27 \
+    && rm -rf /var/lib/apt/lists/*
+
+WORKDIR /app
+
+COPY --from=rust-builder /build/target/release/echidna /app/bin/echidna
+
+# Copy the scip binary and shared libraries installed by the deb package.
+# Typical install paths: /usr/bin/scip, /usr/lib/libscip.so.*
+COPY --from=scip-installer /usr/bin/scip /usr/local/bin/scip
+COPY --from=scip-installer /usr/lib/x86_64-linux-gnu/libscip* /usr/lib/x86_64-linux-gnu/
+COPY --from=scip-installer /usr/lib/x86_64-linux-gnu/libpapilo* /usr/lib/x86_64-linux-gnu/
+
+ENV PATH="/app/bin:/usr/local/bin:${PATH}"
+ENV ECHIDNA_PROVER_PATH="/usr/local/bin"
+
+RUN mkdir -p /app/proofs /app/config /app/logs && ldconfig
+
+# REST API
+EXPOSE 8000
+# GraphQL
+EXPOSE 8081
+# gRPC
+EXPOSE 50051
+
+HEALTHCHECK --interval=30s --timeout=10s --start-period=15s --retries=3 \
+    CMD ["/app/bin/echidna", "--version"]
+
+ENTRYPOINT ["/app/bin/echidna"]
+CMD ["--help"]

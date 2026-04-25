@@ -1,0 +1,125 @@
+# SPDX-License-Identifier: PMPL-1.0-or-later
+# SPDX-FileCopyrightText: 2026 Jonathan D.A. Jewell <j.d.a.jewell@open.ac.uk>
+#
+# ECHIDNA Tamarin Containerfile
+# Build: podman build -f .containerization/Containerfile.tamarin -t echidna:tamarin .
+# Seal:  selur seal echidna:tamarin
+# Sign:  cerro-torre sign echidna:tamarin
+#
+# Tamarin Prover: symbolic security protocol analysis.
+# Strategy: download the prebuilt static binary from GitHub releases
+# (tamarin-prover/tamarin-prover). Fallback: build via Haskell Stack
+# (commented below — multi-hour build, only needed if prebuilt is unavailable).
+
+# =============================================================================
+# Stage 1: Rust Builder
+# =============================================================================
+FROM docker.io/library/rust:1.85-slim-bookworm AS rust-builder
+
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    build-essential \
+    pkg-config \
+    libssl-dev \
+    && rm -rf /var/lib/apt/lists/*
+
+RUN rustup toolchain install nightly && rustup default nightly
+
+WORKDIR /build
+
+COPY Cargo.toml Cargo.lock ./
+COPY src/rust ./src/rust
+COPY src/interfaces ./src/interfaces
+
+RUN cargo build --release --bin echidna
+
+# =============================================================================
+# Stage 2: Tamarin Prover Installer
+# =============================================================================
+FROM docker.io/library/debian:bookworm-slim AS tamarin-installer
+
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    curl \
+    ca-certificates \
+    wget \
+    file \
+    && rm -rf /var/lib/apt/lists/*
+
+WORKDIR /opt/tamarin
+
+# Download prebuilt static binary from the tamarin-prover/tamarin-prover GitHub releases.
+# The release tarball contains a static Linux x86_64 binary that runs without Haskell.
+# Check https://github.com/tamarin-prover/tamarin-prover/releases for the latest version.
+ARG TAMARIN_VERSION="1.8.0"
+RUN set -eux; \
+    TARBALL="tamarin-prover-${TAMARIN_VERSION}-linux64-ubuntu.tar.gz"; \
+    URL="https://github.com/tamarin-prover/tamarin-prover/releases/download/${TAMARIN_VERSION}/${TARBALL}"; \
+    curl -fsSL --retry 3 "${URL}" -o /tmp/tamarin.tar.gz \
+    && tar -xzf /tmp/tamarin.tar.gz -C /opt/tamarin \
+    && rm /tmp/tamarin.tar.gz \
+    && chmod +x /opt/tamarin/tamarin-prover \
+    && /opt/tamarin/tamarin-prover --version \
+    || { \
+        echo "WARNING: Prebuilt tamarin-prover binary download failed."; \
+        echo "Fallback: build via Haskell Stack (uncomment the block below)."; \
+        echo "Stack build takes several hours and ~8 GB RAM."; \
+        echo "See: https://tamarin-prover.com/installation/"; \
+        mkdir -p /opt/tamarin; \
+        printf '#!/bin/sh\necho "tamarin-prover not available (prebuilt download failed at image build time)"\nexit 1\n' \
+            > /opt/tamarin/tamarin-prover; \
+        chmod +x /opt/tamarin/tamarin-prover; \
+    }
+
+# --- Fallback: Haskell Stack build (uncomment if prebuilt binary is unavailable) ---
+# RUN apt-get update && apt-get install -y --no-install-recommends \
+#     curl ca-certificates build-essential zlib1g-dev libtinfo-dev \
+#     && rm -rf /var/lib/apt/lists/*
+# RUN curl -sSL https://get.haskellstack.org/ | sh
+# RUN git clone --depth 1 https://github.com/tamarin-prover/tamarin-prover.git /src/tamarin \
+#     && cd /src/tamarin \
+#     && stack install --local-bin-path /opt/tamarin \
+#     && /opt/tamarin/tamarin-prover --version
+
+# =============================================================================
+# Stage 3: Runtime Image
+# =============================================================================
+FROM docker.io/library/debian:bookworm-slim
+
+LABEL maintainer="Jonathan D.A. Jewell <j.d.a.jewell@open.ac.uk>"
+LABEL org.opencontainers.image.source="https://github.com/hyperpolymath/echidna"
+LABEL org.opencontainers.image.description="ECHIDNA + Tamarin Prover - security protocol analysis"
+LABEL org.opencontainers.image.licenses="PMPL-1.0-or-later"
+LABEL org.opencontainers.image.version="2.3.0"
+LABEL org.opencontainers.image.vendor="hyperpolymath"
+
+# Tamarin runtime deps: graphviz for its visualisation outputs, maude is the
+# underlying rewriting engine tamarin links against (bundled in the static
+# binary but maude files are loaded from the filesystem).
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    ca-certificates \
+    libssl3 \
+    libgmp10 \
+    graphviz \
+    && rm -rf /var/lib/apt/lists/*
+
+WORKDIR /app
+
+COPY --from=rust-builder /build/target/release/echidna /app/bin/echidna
+COPY --from=tamarin-installer /opt/tamarin/tamarin-prover /usr/local/bin/tamarin-prover
+
+ENV PATH="/app/bin:/usr/local/bin:${PATH}"
+ENV ECHIDNA_PROVER_PATH="/usr/local/bin"
+
+RUN mkdir -p /app/proofs /app/config /app/logs
+
+# REST API
+EXPOSE 8000
+# GraphQL
+EXPOSE 8081
+# gRPC
+EXPOSE 50051
+
+HEALTHCHECK --interval=30s --timeout=10s --start-period=15s --retries=3 \
+    CMD ["/app/bin/echidna", "--version"]
+
+ENTRYPOINT ["/app/bin/echidna"]
+CMD ["--help"]

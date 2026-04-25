@@ -1,0 +1,157 @@
+# SPDX-License-Identifier: PMPL-1.0-or-later
+# SPDX-FileCopyrightText: 2026 Jonathan D.A. Jewell <j.d.a.jewell@open.ac.uk>
+#
+# ECHIDNA HOL4 Containerfile
+# Build: podman build -f .containerization/Containerfile.hol4 -t echidna:hol4 .
+# Seal:  selur seal echidna:hol4
+# Sign:  cerro-torre sign echidna:hol4
+#
+# HOL4: Higher-Order Logic theorem prover, successor to HOL88/HOL90.
+# Strategy: build from source using Poly/ML (Standard ML implementation).
+# Build time: ~30-60 min on 4 cores; needs ~4 GB RAM at peak.
+# Use BuildKit / Podman layer caching aggressively — the HOL4 source checkout
+# and Poly/ML build layers are stable and rarely change.
+# Binary: hol (shell wrapper in HOL4/bin/hol)
+
+# =============================================================================
+# Stage 1: Rust Builder
+# =============================================================================
+FROM docker.io/library/rust:1.85-slim-bookworm AS rust-builder
+
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    build-essential \
+    pkg-config \
+    libssl-dev \
+    && rm -rf /var/lib/apt/lists/*
+
+RUN rustup toolchain install nightly && rustup default nightly
+
+WORKDIR /build
+
+COPY Cargo.toml Cargo.lock ./
+COPY src/rust ./src/rust
+COPY src/interfaces ./src/interfaces
+
+RUN cargo build --release --bin echidna
+
+# =============================================================================
+# Stage 2a: Poly/ML Builder
+# HOL4 requires Poly/ML >= 5.9; bookworm ships 5.9, which works but 5.10+ is
+# preferred.  We build 5.9 from the Debian package for speed; upgrade the ARG
+# below to build from source if a newer version is needed.
+# =============================================================================
+FROM docker.io/library/debian:bookworm-slim AS polyml-builder
+
+# BuildKit cache hint: Poly/ML sources change rarely — cache this layer hard.
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    build-essential \
+    curl \
+    ca-certificates \
+    git \
+    libgmp-dev \
+    # Poly/ML build dependencies
+    libffi-dev \
+    && rm -rf /var/lib/apt/lists/*
+
+WORKDIR /build/polyml
+
+# Download and build Poly/ML from source.
+# Poly/ML 5.9.1 is the latest stable release known to work with HOL4.
+ARG POLYML_VERSION="5.9.1"
+RUN curl -fsSL --retry 3 \
+      "https://github.com/polyml/polyml/releases/download/v${POLYML_VERSION}/polyml-${POLYML_VERSION}.tar.gz" \
+      -o /tmp/polyml.tar.gz \
+    && tar -xzf /tmp/polyml.tar.gz -C /build/polyml --strip-components=1 \
+    && rm /tmp/polyml.tar.gz
+
+RUN ./configure --prefix=/opt/polyml \
+    && make -j"$(nproc)" \
+    && make install \
+    && /opt/polyml/bin/poly --version
+
+# =============================================================================
+# Stage 2b: HOL4 Builder
+# Long build — runs `poly < tools/smart-configure.sml` then `bin/build`.
+# Layer caching on the git clone keeps re-builds fast when only HOL4 changes.
+# =============================================================================
+FROM docker.io/library/debian:bookworm-slim AS hol4-builder
+
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    build-essential \
+    git \
+    ca-certificates \
+    libgmp10 \
+    && rm -rf /var/lib/apt/lists/*
+
+# Copy Poly/ML installation
+COPY --from=polyml-builder /opt/polyml /opt/polyml
+
+ENV PATH="/opt/polyml/bin:${PATH}"
+
+WORKDIR /build
+
+# Clone HOL4; use a pinned commit tag for reproducibility.
+# Check https://github.com/HOL-Theorem-Prover/HOL/releases for latest.
+ARG HOL4_VERSION="kananaskis-15"
+RUN git clone --depth 1 --branch "${HOL4_VERSION}" \
+      https://github.com/HOL-Theorem-Prover/HOL.git /build/HOL4
+
+WORKDIR /build/HOL4
+
+# Configure HOL4 against the Poly/ML we just built, then build all theories.
+# The smart-configure step auto-detects poly.  The `bin/build` step compiles
+# the core theories (takes ~30-60 min on 4 vCPUs).
+RUN poly < tools/smart-configure.sml \
+    && bin/build
+
+# Verify hol wrapper script exists
+RUN test -f /build/HOL4/bin/hol && echo "HOL4 build succeeded"
+
+# =============================================================================
+# Stage 3: Runtime Image
+# =============================================================================
+FROM docker.io/library/debian:bookworm-slim
+
+LABEL maintainer="Jonathan D.A. Jewell <j.d.a.jewell@open.ac.uk>"
+LABEL org.opencontainers.image.source="https://github.com/hyperpolymath/echidna"
+LABEL org.opencontainers.image.description="ECHIDNA + HOL4 - higher-order logic theorem prover"
+LABEL org.opencontainers.image.licenses="PMPL-1.0-or-later"
+LABEL org.opencontainers.image.version="2.3.0"
+LABEL org.opencontainers.image.vendor="hyperpolymath"
+
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    ca-certificates \
+    libssl3 \
+    libgmp10 \
+    libffi8 \
+    && rm -rf /var/lib/apt/lists/*
+
+WORKDIR /app
+
+COPY --from=rust-builder /build/target/release/echidna /app/bin/echidna
+
+# Copy Poly/ML runtime (HOL4 loads ML code via poly at runtime)
+COPY --from=polyml-builder /opt/polyml /opt/polyml
+
+# Copy HOL4 installation (includes pre-built heap images)
+COPY --from=hol4-builder /build/HOL4 /opt/HOL4
+
+ENV PATH="/app/bin:/opt/polyml/bin:/opt/HOL4/bin:${PATH}"
+ENV HOLDIR="/opt/HOL4"
+ENV ECHIDNA_PROVER_PATH="/opt/HOL4/bin"
+
+RUN mkdir -p /app/proofs /app/config /app/logs
+
+# REST API
+EXPOSE 8000
+# GraphQL
+EXPOSE 8081
+# gRPC
+EXPOSE 50051
+
+# HOL4 cold-start is slow (loads heap image); give generous start-period.
+HEALTHCHECK --interval=30s --timeout=15s --start-period=120s --retries=3 \
+    CMD ["/app/bin/echidna", "--version"]
+
+ENTRYPOINT ["/app/bin/echidna"]
+CMD ["--help"]

@@ -1,0 +1,127 @@
+# SPDX-License-Identifier: PMPL-1.0-or-later
+# SPDX-FileCopyrightText: 2026 Jonathan D.A. Jewell <j.d.a.jewell@open.ac.uk>
+#
+# ECHIDNA Metamath Containerfile
+# Build: podman build -f .containerization/Containerfile.metamath -t echidna:metamath .
+# Seal:  selur seal echidna:metamath
+# Sign:  cerro-torre sign echidna:metamath
+#
+# Metamath: a tiny language for expressing formal proofs with a proof checker.
+# Notable: set.mm (the Metamath Set Theory database) contains 40,000+ theorems.
+#
+# NOTE: Metamath is implemented as a pure-Rust in-process verifier in ECHIDNA;
+# no external binary is required.  ECHIDNA reads and verifies Metamath (.mm)
+# database files directly using the metamath-rs crate via the Rust verifier in
+# src/rust/provers/metamath.rs.  This Containerfile therefore focuses on:
+#   1. Building the ECHIDNA binary with full Metamath support compiled in.
+#   2. Bundling the key Metamath database files (set.mm, iset.mm, ql.mm) so
+#      they are available at runtime without a network call.
+#
+# If you need the standalone C metamath program for interactive use, see
+# Containerfile.full (which builds metamath-exe from source in the prover-installer stage).
+
+# =============================================================================
+# Stage 1: Rust Builder (Metamath support compiled in via metamath-rs crate)
+# =============================================================================
+FROM docker.io/library/rust:1.85-slim-bookworm AS rust-builder
+
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    build-essential \
+    pkg-config \
+    libssl-dev \
+    && rm -rf /var/lib/apt/lists/*
+
+RUN rustup toolchain install nightly && rustup default nightly
+
+WORKDIR /build
+
+COPY Cargo.toml Cargo.lock ./
+COPY src/rust ./src/rust
+COPY src/interfaces ./src/interfaces
+COPY benches ./benches
+
+# Build with all features so Metamath verifier is active.
+# The metamath-rs integration is always compiled in (no feature gate needed).
+RUN cargo build --release --bin echidna
+
+# =============================================================================
+# Stage 2: Metamath Database Fetcher
+# Fetches the canonical Metamath databases so they are available offline.
+# set.mm is the main database (ZFC set theory, analysis, topology, algebra).
+# iset.mm is the intuitionistic logic database.
+# ql.mm is the quantum logic database.
+# =============================================================================
+FROM docker.io/library/debian:bookworm-slim AS mm-db-fetcher
+
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    curl \
+    ca-certificates \
+    git \
+    && rm -rf /var/lib/apt/lists/*
+
+WORKDIR /opt/metamath-db
+
+# Clone the metamath-set-mm repository (set.mm + iset.mm + others).
+# Use depth 1 for a fast, small clone.
+RUN git clone --depth 1 \
+      https://github.com/metamath/set.mm.git /opt/metamath-db/set.mm-repo \
+    && cp /opt/metamath-db/set.mm-repo/set.mm /opt/metamath-db/set.mm \
+    && cp /opt/metamath-db/set.mm-repo/iset.mm /opt/metamath-db/iset.mm \
+    || { \
+        echo "WARNING: set.mm clone failed; databases will not be bundled."; \
+        echo "ECHIDNA can still verify .mm files supplied at runtime."; \
+        mkdir -p /opt/metamath-db; \
+    }
+
+# Fetch ql.mm separately (different repository)
+RUN curl -fsSL --retry 3 \
+      "https://raw.githubusercontent.com/metamath/ql.mm/master/ql.mm" \
+      -o /opt/metamath-db/ql.mm \
+    || echo "ql.mm fetch skipped"
+
+# =============================================================================
+# Stage 3: Runtime Image
+# =============================================================================
+FROM docker.io/library/debian:bookworm-slim
+
+LABEL maintainer="Jonathan D.A. Jewell <j.d.a.jewell@open.ac.uk>"
+LABEL org.opencontainers.image.source="https://github.com/hyperpolymath/echidna"
+LABEL org.opencontainers.image.description="ECHIDNA + Metamath - pure-Rust in-process verifier with bundled databases"
+LABEL org.opencontainers.image.licenses="PMPL-1.0-or-later"
+LABEL org.opencontainers.image.version="2.3.0"
+LABEL org.opencontainers.image.vendor="hyperpolymath"
+
+# Metamath is a pure-Rust verifier with no external binary; runtime deps
+# are only those needed by the ECHIDNA binary itself.
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    ca-certificates \
+    libssl3 \
+    libgmp10 \
+    && rm -rf /var/lib/apt/lists/*
+
+WORKDIR /app
+
+COPY --from=rust-builder /build/target/release/echidna /app/bin/echidna
+
+# Bundle the canonical Metamath databases at a well-known path.
+# ECHIDNA reads ECHIDNA_METAMATH_DB_DIR at startup to pre-index databases.
+COPY --from=mm-db-fetcher /opt/metamath-db /app/metamath-db
+
+ENV PATH="/app/bin:${PATH}"
+ENV ECHIDNA_METAMATH_DB_DIR="/app/metamath-db"
+ENV ECHIDNA_PROVER_PATH="/app/bin"
+
+RUN mkdir -p /app/proofs /app/config /app/logs
+
+# REST API
+EXPOSE 8000
+# GraphQL
+EXPOSE 8081
+# gRPC
+EXPOSE 50051
+
+HEALTHCHECK --interval=30s --timeout=10s --start-period=10s --retries=3 \
+    CMD ["/app/bin/echidna", "--version"]
+
+ENTRYPOINT ["/app/bin/echidna"]
+CMD ["--help"]
