@@ -1,0 +1,497 @@
+# SPDX-License-Identifier: PMPL-1.0-or-later
+# Copyright (c) 2026 Jonathan D.A. Jewell (hyperpolymath) <j.d.a.jewell@open.ac.uk>
+#
+# ROADMAP.a2ml — 8-Stage Service Architecture for Echidna
+# From autonomous proof-solving to public-facing proof-as-a-service platform.
+# Canonical roadmap; all decisions should be recorded here (not in chat).
+
+[metadata]
+version = "1.0.0"
+last-updated = "2026-04-25"
+status = "Stage 1 active"
+maintainer = "Jonathan D.A. Jewell (hyperpolymath)"
+next-review = "2026-05-25"
+
+[vision]
+summary = """
+Echidna evolves from a proof-solving library (105 provers + neurosymbolic guidance)
+into a distributed, trustworthy proof-as-a-service platform accessible to the
+entire hyperpolymath estate and beyond.
+
+Core invariants across all stages:
+- Trust hardening via portfolio solvers, certificate checking, and axiom tracking
+- Agentic gating (entropy budgets, explicit intent, decision recording)
+- Neurosymbolic semantics (GNN-guided search, confidence scoring, mutation testing)
+- Formal verification (Idris2 ABI proofs, zero believe_me)
+- Modularity (echidna-core as service; echidnabot as autonomous consumer; cartridges for external access)
+"""
+
+# === STAGE 1: ECHIDNA EXECUTES PRE-WRITTEN PROOFS ===
+# (CURRENT: 2026-04-25)
+# Goal: Prove echidna can solve a proof handed to it, end-to-end.
+
+[stage-1]
+name = "Autonomous Proof Execution"
+status = "active"
+completion-estimate = "2026-05-15"
+
+goal = """
+Take a pre-written proof file (any format: Lean, Coq, Agda, etc.).
+Hand it to echidna. Get back: proof_state (succeeded|failed), confidence score, axiom usage.
+No human in the loop; no additional proof generation. Pure execution.
+
+Definition of done:
+1. Echidna accepts proof file via CLI, REST API, or gRPC
+2. Correctly dispatches to appropriate prover backend (105 supported)
+3. Isolates solver execution (Podman sandbox, bubblewrap, or none per policy)
+4. Verifies proof certificate (Alethe, DRAT, TSTP, OpenTheory formats)
+5. Tracks axiom usage with 4-level danger classification
+6. Computes confidence score (5-level hierarchy: Untrusted..HighlyTrusted)
+7. Returns structured proof_state with full traceability
+8. Integration test: submit 10 hand-written proofs across 5 different proof systems; all solve correctly
+"""
+
+prerequisites = [
+  "✓ 105 prover backends implemented (done 2026-02-20)",
+  "✓ 3.0 GB training corpus (done 2026-03-01)",
+  "✓ 1.43M vocabulary (done 2026-03-10)",
+  "✓ Zig FFI layer (done 2026-03-15)",
+  "✓ Idris2 ABI formal proofs (done 2026-03-22)",
+  "✓ Trust pipeline: portfolio, certificates, axioms, confidence, mutation (done 2026-04-01)",
+  "✓ API surfaces: REST, GraphQL, gRPC (done 2026-04-10)",
+  "✓ Bebop3 serialization (gRPC proto + axum, done 2026-04-15)",
+  "✓ A2ML conformance (AGENTIC, NEUROSYM, done 2026-04-25)",
+  "⚠ Container isolation hardening (IN-PROGRESS; blocks production release)"
+]
+
+blockers = [
+  "🔴 CRITICAL: Container isolation (echidnabot executor without bubblewrap/Podman wrapping)",
+  "🟡 HIGH: GNN model training (scaffolds exist, never ran on real corpus; fallback is cosine)",
+  "🟡 HIGH: Bot-modes wiring (only Verifier mode works; Advisor/Consultant/Regulator stubs)"
+]
+
+deliverables = [
+  "CLI: echidna solve --proof file.lean --format Lean4",
+  "REST: POST /api/v1/proof with proof file + metadata",
+  "gRPC: ProofService::SubmitProof RPC",
+  "Integration test suite: 50+ proofs across 5 proof systems",
+  "Proof memory backend: SQLite proof_memory.db with full audit trail",
+  "Container isolation working (Podman by default, bubblewrap fallback, none for dev)"
+]
+
+# === STAGE 2: ECHIDNABOT DETECTS & SOLVES PROOFS IN REPOS ===
+# (PLANNED: 2026-05-20)
+
+[stage-2]
+name = "Bot-Driven Repository Automation"
+status = "planned"
+completion-estimate = "2026-06-30"
+
+goal = """
+EchidnaBot walks into a repository. It finds proof artifacts (Lean goals, Coq tactics, etc.).
+It calls echidna to solve them. It commits the verdict back (proof succeeded, axioms used, confidence).
+
+Definition of done:
+1. Echidnabot can parse ≥4 proof formats (Lean, Coq, Agda, Isabelle)
+2. Detects proof files and inline proof blocks (todo!(), sorry, _)
+3. Invokes echidna API (not running echidna inline)
+4. Records results in repo (markdown report, proof cache, commit message)
+5. Handles failures gracefully (timeouts, unsolvable proofs)
+6. Integration test: Run echidnabot on 3 real repos (my-lang, standards-repo, IDApTIK); verify correct detection and solving
+"""
+
+prerequisites = [
+  "✓ Stage 1 complete (echidna solves proofs autonomously)",
+  "✓ Echidnabot repo structure finalized (moved to gitbot-fleet)",
+  "✓ Echo nabandboat bot-modes enum defined (Verifier, Advisor, Consultant, Regulator)",
+  "⚠ Echidnabot webhook dispatch wired only for Verifier (Advisor/Consultant stubs)",
+  "⚠ Echidna-llm-mcp cartridge separated from boj-server (pending extraction)"
+]
+
+blockers = [
+  "🟡 HIGH: Bot-modes partial implementation (need Advisor/Consultant/Regulator dispatch)",
+  "🟡 HIGH: Dual-truth repo (echidnabot exists in 2 places; resolution pending)"
+]
+
+deliverables = [
+  "Echidnabot webhook handler for pull requests",
+  "Proof detection across Lean/Coq/Agda/Isabelle (4 parsers)",
+  "Echidna API invocation (REST or gRPC)",
+  "Proof verdict recording (markdown report + commit)",
+  "Failure modes (timeout, unsolvable, API errors) handled",
+  "Integration test: 3 repos, ≥100 proofs detected and solved"
+]
+
+# === STAGE 3: ESTATE-WIDE SERVICE DISCOVERY ===
+# (PLANNED: 2026-07-15)
+
+[stage-3]
+name = "Proof-Solving as Estate Service"
+status = "planned"
+completion-estimate = "2026-08-15"
+
+goal = """
+Any bot anywhere in the hyperpolymath estate can reach echidna.
+Via Groove service discovery, authenticated endpoints, network policy.
+Echidna is not just a library; it's a service running somewhere, accessible to all.
+
+Definition of done:
+1. Echidna published to Groove service registry (endpoint, capabilities, SLA)
+2. All bots have authenticated tokens (Rokur/RGTV credential broker)
+3. Network policy allows echidna API calls across repos
+4. Rate limiting per caller (prevent abuse)
+5. Proof memory shared (cross-repo proof cache deduplicates work)
+6. Integration test: 5 different bots call echidna; all succeed"
+"""
+
+prerequisites = [
+  "✓ Stage 2 complete (echidnabot calls echidna via API)",
+  "✓ Groove service discovery operational",
+  "✓ Rokur/RGTV credential broker deployed",
+  "⚠ HTTP-capability-gateway (NOT YET; design required)"
+]
+
+blockers = [
+  "🟠 MEDIUM: HTTP-capability-gateway missing (v2 federation, non-critical for Stage 3)",
+  "🟠 MEDIUM: Rate limiting policy (design + implementation needed)"
+]
+
+deliverables = [
+  "Groove manifest for echidna (capabilities, endpoint, SLA)",
+  "Authenticated REST/gRPC endpoints",
+  "Rate limit enforcer (per-caller tokens)",
+  "Proof memory deduplication (shared cache across repos)",
+  "Integration test: 5 bots, cross-repo proof cache hit rates"
+]
+
+# === STAGE 4: EXPERT/BOT PROGRAMMATIC API ===
+# (PLANNED: 2026-08-30)
+
+[stage-4]
+name = "Versioned Developer API"
+status = "planned"
+completion-estimate = "2026-09-15"
+
+goal = """
+Stable, versioned API that experts and bots can rely on.
+Multiple protocol options (REST, gRPC, GraphQL), client libraries (Rust, Julia, ReScript).
+API contract: version bumps only break on major version increment.
+
+Definition of done:
+1. REST API v1.0 (OpenAPI spec published)
+2. gRPC service v1.0 (protobuf definitions, SLA guarantees)
+3. GraphQL query/mutation set (stable schema)
+4. Client SDKs (Rust, Julia, ReScript)
+5. API documentation (tutorials, examples, error codes)
+6. Backwards compatibility policy documented
+"""
+
+prerequisites = [
+  "✓ Stage 3 complete (service discovery, authentication)",
+  "✓ Three API surfaces operational (REST, gRPC, GraphQL)",
+  "✓ OpenAPI / protobuf specifications complete"
+]
+
+blockers = []
+
+deliverables = [
+  "OpenAPI 3.0 specification (REST API)",
+  "Protobuf service definition (gRPC)",
+  "GraphQL schema (query/mutation/subscription)",
+  "Rust SDK (github.com/hyperpolymath/echidna-sdk-rust)",
+  "Julia SDK (registered as EchidnaSDK.jl)",
+  "ReScript SDK (@hyperpolymath/echidna-sdk-rescript)",
+  "API documentation website",
+  "Backwards compatibility SLA"
+]
+
+# === STAGE 5: [SKIPPED BY USER] ===
+# User's numbering jumps from Stage 4 to Stage 6
+
+[stage-5]
+name = "SKIPPED"
+status = "skipped"
+reason = "User's numbering intentionally jumps to Stage 6"
+
+# === STAGE 6: FRONTEND UI ===
+# (PLANNED: 2026-10-01)
+
+[stage-6]
+name = "Human-Facing Web Interface"
+status = "planned"
+completion-estimate = "2026-10-31"
+
+goal = """
+A web interface where humans can submit proof problems, see echidna solving them in real-time,
+and understand the results (confidence, axiom usage, solver choice rationale).
+
+Definition of done:
+1. Form to paste proof (Lean/Coq/Agda/Isabelle with context)
+2. Real-time proof-solving (WebSocket updates as solver progresses)
+3. Results dashboard (proof status, confidence, axioms, solver metrics)
+4. Proof history (past proofs searchable by goal, solver, date)
+5. Integration test: User submits 5 proofs via UI; all solve and display correctly
+"""
+
+prerequisites = [
+  "✓ Stage 4 complete (stable API)",
+  "✓ AffineScript-TEA framework selected (UI language)",
+  "✓ Deno runtime deployed"
+]
+
+blockers = []
+
+deliverables = [
+  "Proof submission form (multi-format: Lean, Coq, Agda, Isabelle)",
+  "Real-time WebSocket proof-solving UI (progress updates)",
+  "Results dashboard (status, confidence, axioms, timings)",
+  "Proof history search (by goal, solver, date range)",
+  "Frontend PWA-ready (offline-capable, installable)",
+  "AffineScript-TEA implementation (10 components)"
+]
+
+# === STAGE 7: EXTERNAL API (PUBLIC FACING) ===
+# (PLANNED: 2026-11-15)
+
+[stage-7]
+name = "Public Proof-as-a-Service API"
+status = "planned"
+completion-estimate = "2026-12-01"
+
+goal = """
+Echidna becomes a public service. External users (researchers, students, companies)
+can call the API with rate limits, SLA, uptime monitoring, etc.
+
+Definition of done:
+1. Public API endpoint (echidna.hyperpolymath.org or similar)
+2. Rate limiting per API key (free tier, paid tiers)
+3. SLA: 99.5% uptime, <5s proof turnaround (for small proofs)
+4. Security: HTTPS, CSRF protection, input validation, DDoS mitigation
+5. ToS and privacy policy
+6. Monitoring: metrics dashboard (request volume, success rate, average latency)
+7. Integration test: External integration test suite (public API validation)
+"""
+
+prerequisites = [
+  "✓ Stage 6 complete (frontend UI)",
+  "✓ HTTP-capability-gateway operational (security enforcer)",
+  "✓ Kubernetes deployment (auto-scaling)",
+  "✓ Monitoring: Prometheus + Grafana"
+]
+
+blockers = [
+  "🟠 MEDIUM: HTTP-capability-gateway required for Stage 7 (security gating)"
+]
+
+deliverables = [
+  "Public API endpoint with HTTPS",
+  "API key provisioning system",
+  "Rate limiting per key (free/pro/enterprise tiers)",
+  "SLA contract (99.5% uptime, latency SLA)",
+  "DDoS protection (Cloudflare or equivalent)",
+  "ToS and privacy policy",
+  "Metrics dashboard (public status page)",
+  "Integration test suite (external validation)",
+  "Monitoring alerts (uptime, error rate, latency thresholds)"
+]
+
+# === STAGE 8: PUBLIC WEB + PWA ===
+# (PLANNED: 2026-12-15)
+
+[stage-8]
+name = "Cross-Platform Proof-Solving Interface"
+status = "planned"
+completion-estimate = "2027-01-15"
+
+goal = """
+Echidna accessible not just from the web, but as a progressive web app (PWA)
+on mobile (iOS, Android) and desktop (macOS, Linux, Windows).
+Offline-capable; real-time sync when online.
+
+Definition of done:
+1. Desktop app (Windows via Tauri, macOS via Tauri, Linux via Tauri)
+2. Mobile app (iOS via PWA, Android via PWA)
+3. Offline mode: queue proofs locally; sync when online
+4. Real-time sync: WebSocket or Server-Sent Events
+5. Integration test: Mobile device submits proof, completes offline, syncs when online
+"""
+
+prerequisites = [
+  "✓ Stage 7 complete (public API)",
+  "✓ Frontend PWA-ready (from Stage 6)",
+  "✓ Tauri 2.0+ selected (desktop)",
+  "✓ Service worker caching strategy defined"
+]
+
+blockers = []
+
+deliverables = [
+  "Tauri desktop app (Windows, macOS, Linux)",
+  "PWA mobile app (iOS Safari, Android Chrome)",
+  "Service worker (offline caching, background sync)",
+  "IndexedDB proof cache (local storage)",
+  "Real-time sync (WebSocket reconnection logic)",
+  "Platform-specific installers (macOS .dmg, Windows .msi, Linux .deb, etc.)",
+  "Integration test: Offline solve + online sync"
+]
+
+# === CRITICAL BLOCKERS (ACROSS ALL STAGES) ===
+
+[blockers.critical]
+
+blocker-1 = {
+  name = "Container Isolation",
+  severity = "CRITICAL",
+  stage-gate = "Stage 1 (production release)",
+  description = "Echidnabot executor running proofs without Podman/bubblewrap sandbox = arbitrary code execution risk",
+  status = "ACTIVE DEV (Session B branch)",
+  fix = "Implement container.rs isolation wrapper; pass --sandbox={none|bubblewrap|podman} to all ProverBackend::execute() calls",
+  timeline = "Should land by 2026-05-05 (blocks Stage 1 production release)"
+}
+
+blocker-2 = {
+  name = "GNN Model Training",
+  severity = "HIGH",
+  stage-gate = "Stage 3 (service quality)",
+  description = "GNN model scaffolds exist but never trained on 553MB corpus; fallback is cosine similarity (works, but suboptimal)",
+  status = "PENDING",
+  fix = "Run Flux.jl training script (src/julia/training/train.jl) on proof_states_UNIFIED_BALANCED.jsonl; validate MRR≥0.66, nDCG≥0.60; save model weights",
+  timeline = "Recommend: 2 weeks post-Stage-1 (mid-May 2026)"
+}
+
+blocker-3 = {
+  name = "Bot-Modes Wiring",
+  severity = "HIGH",
+  stage-gate = "Stage 2",
+  description = "BotMode enum defined (Verifier/Advisor/Consultant/Regulator) but only Verifier dispatch wired; Advisor/Consultant/Regulator are stubs",
+  status = "PENDING",
+  fix = "Add dispatch branches in echidnabot/src/webhook_handlers.rs for each mode; route proof-solving requests accordingly",
+  timeline = "1 week (should be done before Stage 2)"
+}
+
+blocker-4 = {
+  name = "Echidnabot Dual-Truth Repo",
+  severity = "MEDIUM",
+  stage-gate = "Stage 2",
+  description = "Echidnabot exists as standalone git repo at verification-ecosystem/echidnabot AND as stale plain dir inside gitbot-fleet/bots/echidnabot",
+  status = "PENDING REORGANISATION",
+  fix = "Move standalone repo to gitbot-fleet/bots/echidnabot; delete stale plain dir; verify GitHub remote unchanged",
+  timeline = "This session (2026-04-25)"
+}
+
+blocker-5 = {
+  name = "Chapel Dispatch Routing",
+  severity = "HIGH",
+  stage-gate = "Stage 3+ (parallel proof search)",
+  description = "Zig shim (src/zig_ffi/chapel_bridge.zig) + Chapel POC (src/chapel/) compile and test (6/6 tests pass), but dispatch.rs still bypasses the feature-gated ChapelParallelSearch strategy",
+  status = "PENDING INTEGRATION",
+  fix = "Add dispatch branch in dispatch.rs to route to Chapel when feature-enabled and prover supports parallel; implement Cap'n Proto serialization (L1 task, not yet started)",
+  timeline = "L1 work (not Stage 1 critical); estimated 2026-06 for Cap'n Proto"
+}
+
+blocker-6 = {
+  name = "HTTP-Capability-Gateway",
+  severity = "MEDIUM",
+  stage-gate = "Stage 7 (public API security)",
+  description = "Groove service discovery exists; standalone capability-based security gateway NOT YET IMPLEMENTED",
+  status = "DESIGN PENDING",
+  fix = "Design + implement reverse proxy enforcing principle-of-least-privilege per caller; sit in front of all API surfaces",
+  timeline = "v2 federation work; not critical for Stage 1-6"
+}
+
+blocker-7 = {
+  name = "Contractile Verbs (3/6 complete)",
+  severity = "MEDIUM",
+  stage-gate = "Standards compliance (all stages)",
+  description = "Echidnabot has trust/must/dust contractiles but missing intend/bust/adjust",
+  status = "PENDING",
+  fix = "Add three missing contractile verb dirs with .a2ml + .ncl runner files per contractile layout rules",
+  timeline = "This session (2026-04-25)"
+}
+
+# === INFRASTRUCTURE CHECKLIST ===
+# What must be in place for each stage
+
+[infrastructure-prereqs]
+
+stage-1-requirements = [
+  "✓ 105 provers",
+  "✓ 3GB corpus",
+  "✓ 1.43M vocab",
+  "✓ Zig FFI",
+  "✓ Idris2 ABI (zero believe_me)",
+  "✓ Trust pipeline (portfolio, certificates, axioms, confidence, mutation)",
+  "✓ REST/gRPC/GraphQL APIs",
+  "✓ A2ML conformance (AGENTIC, NEUROSYM)",
+  "⚠ Container isolation (IN-PROGRESS)"
+]
+
+stage-3-requirements = [
+  "✓ Stage 1 complete",
+  "✓ Groove service discovery",
+  "✓ Rokur/RGTV credential broker",
+  "✓ Network policy enforcement",
+  "⚠ Proof memory deduplication (new; not yet done)"
+]
+
+stage-7-requirements = [
+  "✓ Stage 6 complete",
+  "✓ HTTP-capability-gateway",
+  "✓ DDoS protection (Cloudflare)",
+  "✓ Kubernetes auto-scaling",
+  "✓ Prometheus + Grafana monitoring",
+  "✓ ToS + privacy policy (legal)"
+]
+
+# === DECISION LOG ===
+# Archived decisions and rationales (reference only; not for active debate)
+
+[decisions]
+
+decision-echidna-structure = {
+  date = "2026-04-25",
+  decision = "Move echidna to top-level; echidnabot to gitbot-fleet; separate echidna-llm-mcp cartridge",
+  rationale = "Echidna is a core estate service; echidnabot is a bot (belongs in gitbot-fleet); modularity requires independent cartridge repos",
+  status = "APPROVED; implementation in progress"
+}
+
+decision-agentic-neurosym-conformance = {
+  date = "2026-04-25",
+  decision = "Populate AGENTIC.a2ml and NEUROSYM.a2ml with full spec conformance (gating, entropy, composition rules, proofs)",
+  rationale = "Underlying impl is mature; A2ML declarations were stubs. Conformance closes the gap between what echidna does and what it claims to do",
+  status = "APPROVED; completed 2026-04-25"
+}
+
+decision-zig-ffi-as-standard = {
+  date = "2026-04-10",
+  decision = "Zig as FFI layer; Idris2 as ABI formal proofs; Rust/SPARK as implementation",
+  rationale = "Hyperpolymath standard (ABI/FFI universal); proven effective across echidna, standards-repo, IDApTIK",
+  status = "APPROVED; active policy"
+}
+
+# === NEXT REVIEW ===
+[next-actions]
+
+immediate-2026-04-25 = [
+  "Move echidnabot to gitbot-fleet (resolve dual-truth)",
+  "Extract echidna-llm-mcp from boj-server",
+  "Add missing contractile verbs (intend/bust/adjust) to echidnabot"
+]
+
+pre-stage-1-2026-05-05 = [
+  "Land container isolation (Session B branch)",
+  "Run Stage 1 integration test (10 proofs across 5 proof systems)",
+  "Gate: no production deployment until container isolation lands"
+]
+
+stage-2-2026-06-30 = [
+  "Wire bot-modes dispatch (Advisor/Consultant/Regulator)",
+  "Proof detection parsers (Lean/Coq/Agda/Isabelle)",
+  "Echidna API invocation from echidnabot"
+]
+
+stage-3-2026-08-15 = [
+  "Train GNN on corpus (MRR≥0.66, nDCG≥0.60)",
+  "Proof memory deduplication (cross-repo cache)",
+  "Rate limiting policy"
+]
