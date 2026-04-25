@@ -1,0 +1,36 @@
+{
+  "program_path": "crates/echidna-wire",
+  "language": "rust",
+  "frameworks": [],
+  "weak_points": [],
+  "statistics": {
+    "total_lines": 109,
+    "unsafe_blocks": 0,
+    "panic_sites": 0,
+    "unwrap_calls": 1,
+    "allocation_sites": 0,
+    "io_operations": 0,
+    "threading_constructs": 0
+  },
+  "file_statistics": [
+    {
+      "file_path": "build.rs",
+      "lines": 12,
+      "unsafe_blocks": 0,
+      "panic_sites": 0,
+      "unwrap_calls": 1,
+      "allocation_sites": 0,
+      "io_operations": 0,
+      "threading_constructs": 0
+    }
+  ],
+  "recommended_attacks": [
+    "cpu"
+  ],
+  "dependency_graph": {
+    "edges": []
+  },
+  "taint_matrix": {
+    "rows": []
+  }
+}

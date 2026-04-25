@@ -1,0 +1,253 @@
+{
+  "program_path": "src/interfaces",
+  "language": "rust",
+  "frameworks": [],
+  "weak_points": [
+    {
+      "category": "UnsafeCode",
+      "location": "graphql/ffi_wrapper.rs",
+      "file": "graphql/ffi_wrapper.rs",
+      "severity": "High",
+      "description": "10 unsafe blocks in graphql/ffi_wrapper.rs",
+      "recommended_attack": [
+        "memory",
+        "concurrency"
+      ]
+    },
+    {
+      "category": "UnsafeCode",
+      "location": "graphql/ffi_wrapper.rs",
+      "file": "graphql/ffi_wrapper.rs",
+      "severity": "High",
+      "description": "Raw pointer cast in graphql/ffi_wrapper.rs",
+      "recommended_attack": [
+        "memory",
+        "concurrency"
+      ]
+    },
+    {
+      "category": "UnsafeCode",
+      "location": "grpc/ffi_wrapper.rs",
+      "file": "grpc/ffi_wrapper.rs",
+      "severity": "High",
+      "description": "10 unsafe blocks in grpc/ffi_wrapper.rs",
+      "recommended_attack": [
+        "memory",
+        "concurrency"
+      ]
+    },
+    {
+      "category": "UnsafeCode",
+      "location": "grpc/ffi_wrapper.rs",
+      "file": "grpc/ffi_wrapper.rs",
+      "severity": "High",
+      "description": "Raw pointer cast in grpc/ffi_wrapper.rs",
+      "recommended_attack": [
+        "memory",
+        "concurrency"
+      ]
+    },
+    {
+      "category": "UnsafeCode",
+      "location": "rest/ffi_wrapper.rs",
+      "file": "rest/ffi_wrapper.rs",
+      "severity": "High",
+      "description": "10 unsafe blocks in rest/ffi_wrapper.rs",
+      "recommended_attack": [
+        "memory",
+        "concurrency"
+      ]
+    },
+    {
+      "category": "UnsafeCode",
+      "location": "rest/ffi_wrapper.rs",
+      "file": "rest/ffi_wrapper.rs",
+      "severity": "High",
+      "description": "Raw pointer cast in rest/ffi_wrapper.rs",
+      "recommended_attack": [
+        "memory",
+        "concurrency"
+      ]
+    }
+  ],
+  "statistics": {
+    "total_lines": 8308,
+    "unsafe_blocks": 30,
+    "panic_sites": 0,
+    "unwrap_calls": 7,
+    "allocation_sites": 20,
+    "io_operations": 3,
+    "threading_constructs": 4
+  },
+  "file_statistics": [
+    {
+      "file_path": "graphql/ffi_wrapper.rs",
+      "lines": 247,
+      "unsafe_blocks": 10,
+      "panic_sites": 0,
+      "unwrap_calls": 0,
+      "allocation_sites": 2,
+      "io_operations": 0,
+      "threading_constructs": 0
+    },
+    {
+      "file_path": "graphql/main.rs",
+      "lines": 54,
+      "unsafe_blocks": 0,
+      "panic_sites": 0,
+      "unwrap_calls": 2,
+      "allocation_sites": 0,
+      "io_operations": 0,
+      "threading_constructs": 0
+    },
+    {
+      "file_path": "graphql/resolvers.rs",
+      "lines": 382,
+      "unsafe_blocks": 0,
+      "panic_sites": 0,
+      "unwrap_calls": 1,
+      "allocation_sites": 4,
+      "io_operations": 1,
+      "threading_constructs": 1
+    },
+    {
+      "file_path": "graphql/schema.rs",
+      "lines": 440,
+      "unsafe_blocks": 0,
+      "panic_sites": 0,
+      "unwrap_calls": 1,
+      "allocation_sites": 2,
+      "io_operations": 0,
+      "threading_constructs": 0
+    },
+    {
+      "file_path": "grpc/ffi_wrapper.rs",
+      "lines": 244,
+      "unsafe_blocks": 10,
+      "panic_sites": 0,
+      "unwrap_calls": 0,
+      "allocation_sites": 2,
+      "io_operations": 0,
+      "threading_constructs": 0
+    },
+    {
+      "file_path": "grpc/main.rs",
+      "lines": 606,
+      "unsafe_blocks": 0,
+      "panic_sites": 0,
+      "unwrap_calls": 0,
+      "allocation_sites": 4,
+      "io_operations": 1,
+      "threading_constructs": 1
+    },
+    {
+      "file_path": "rest/ffi_wrapper.rs",
+      "lines": 246,
+      "unsafe_blocks": 10,
+      "panic_sites": 0,
+      "unwrap_calls": 0,
+      "allocation_sites": 2,
+      "io_operations": 0,
+      "threading_constructs": 0
+    },
+    {
+      "file_path": "rest/handlers.rs",
+      "lines": 790,
+      "unsafe_blocks": 0,
+      "panic_sites": 0,
+      "unwrap_calls": 0,
+      "allocation_sites": 4,
+      "io_operations": 1,
+      "threading_constructs": 1
+    },
+    {
+      "file_path": "rest/main.rs",
+      "lines": 164,
+      "unsafe_blocks": 0,
+      "panic_sites": 0,
+      "unwrap_calls": 3,
+      "allocation_sites": 0,
+      "io_operations": 0,
+      "threading_constructs": 1
+    }
+  ],
+  "recommended_attacks": [
+    "concurrency",
+    "memory",
+    "cpu"
+  ],
+  "dependency_graph": {
+    "edges": [
+      {
+        "from": "rest/ffi_wrapper.rs",
+        "to": "rest/handlers.rs",
+        "relation": "shared_dir:rest",
+        "weight": 1.0
+      },
+      {
+        "from": "rest/handlers.rs",
+        "to": "rest/main.rs",
+        "relation": "shared_dir:rest",
+        "weight": 1.0
+      },
+      {
+        "from": "graphql/ffi_wrapper.rs",
+        "to": "graphql/main.rs",
+        "relation": "shared_dir:graphql",
+        "weight": 1.0
+      },
+      {
+        "from": "graphql/main.rs",
+        "to": "graphql/resolvers.rs",
+        "relation": "shared_dir:graphql",
+        "weight": 1.0
+      },
+      {
+        "from": "graphql/resolvers.rs",
+        "to": "graphql/schema.rs",
+        "relation": "shared_dir:graphql",
+        "weight": 1.0
+      },
+      {
+        "from": "grpc/ffi_wrapper.rs",
+        "to": "grpc/main.rs",
+        "relation": "shared_dir:grpc",
+        "weight": 1.0
+      }
+    ]
+  },
+  "taint_matrix": {
+    "rows": [
+      {
+        "source_category": "UnsafeCode",
+        "sink_axis": "concurrency",
+        "severity_value": 3.5,
+        "files": [
+          "graphql/ffi_wrapper.rs",
+          "graphql/ffi_wrapper.rs",
+          "grpc/ffi_wrapper.rs",
+          "grpc/ffi_wrapper.rs",
+          "rest/ffi_wrapper.rs",
+          "rest/ffi_wrapper.rs"
+        ],
+        "frameworks": [],
+        "relation": "UnsafeCode->Concurrency"
+      },
+      {
+        "source_category": "UnsafeCode",
+        "sink_axis": "memory",
+        "severity_value": 3.5,
+        "files": [
+          "graphql/ffi_wrapper.rs",
+          "graphql/ffi_wrapper.rs",
+          "grpc/ffi_wrapper.rs",
+          "grpc/ffi_wrapper.rs",
+          "rest/ffi_wrapper.rs",
+          "rest/ffi_wrapper.rs"
+        ],
+        "frameworks": [],
+        "relation": "UnsafeCode->Memory"
+      }
+    ]
+  }
+}

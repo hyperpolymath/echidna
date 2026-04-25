@@ -1,0 +1,36 @@
+{
+  "program_path": "crates/typed_wasm",
+  "language": "rust",
+  "frameworks": [],
+  "weak_points": [],
+  "statistics": {
+    "total_lines": 1030,
+    "unsafe_blocks": 0,
+    "panic_sites": 0,
+    "unwrap_calls": 2,
+    "allocation_sites": 10,
+    "io_operations": 0,
+    "threading_constructs": 0
+  },
+  "file_statistics": [
+    {
+      "file_path": "src/lib.rs",
+      "lines": 1030,
+      "unsafe_blocks": 0,
+      "panic_sites": 0,
+      "unwrap_calls": 2,
+      "allocation_sites": 10,
+      "io_operations": 0,
+      "threading_constructs": 0
+    }
+  ],
+  "recommended_attacks": [
+    "cpu"
+  ],
+  "dependency_graph": {
+    "edges": []
+  },
+  "taint_matrix": {
+    "rows": []
+  }
+}

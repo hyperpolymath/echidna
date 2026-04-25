@@ -1,0 +1,36 @@
+{
+  "program_path": "src/ui",
+  "language": "javascript",
+  "frameworks": [],
+  "weak_points": [],
+  "statistics": {
+    "total_lines": 67,
+    "unsafe_blocks": 0,
+    "panic_sites": 0,
+    "unwrap_calls": 0,
+    "allocation_sites": 0,
+    "io_operations": 1,
+    "threading_constructs": 0
+  },
+  "file_statistics": [
+    {
+      "file_path": "tea/echidna_tea.js",
+      "lines": 67,
+      "unsafe_blocks": 0,
+      "panic_sites": 0,
+      "unwrap_calls": 0,
+      "allocation_sites": 0,
+      "io_operations": 1,
+      "threading_constructs": 0
+    }
+  ],
+  "recommended_attacks": [
+    "cpu"
+  ],
+  "dependency_graph": {
+    "edges": []
+  },
+  "taint_matrix": {
+    "rows": []
+  }
+}

@@ -1,0 +1,36 @@
+{
+  "program_path": "src/ada",
+  "language": "ada",
+  "frameworks": [],
+  "weak_points": [],
+  "statistics": {
+    "total_lines": 434,
+    "unsafe_blocks": 0,
+    "panic_sites": 0,
+    "unwrap_calls": 0,
+    "allocation_sites": 1,
+    "io_operations": 0,
+    "threading_constructs": 0
+  },
+  "file_statistics": [
+    {
+      "file_path": "spark/axiom_c_bridge.adb",
+      "lines": 158,
+      "unsafe_blocks": 0,
+      "panic_sites": 0,
+      "unwrap_calls": 0,
+      "allocation_sites": 1,
+      "io_operations": 0,
+      "threading_constructs": 0
+    }
+  ],
+  "recommended_attacks": [
+    "cpu"
+  ],
+  "dependency_graph": {
+    "edges": []
+  },
+  "taint_matrix": {
+    "rows": []
+  }
+}

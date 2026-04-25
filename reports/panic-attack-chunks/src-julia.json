@@ -1,0 +1,218 @@
+{
+  "program_path": "src/julia",
+  "language": "julia",
+  "frameworks": [],
+  "weak_points": [],
+  "statistics": {
+    "total_lines": 7063,
+    "unsafe_blocks": 0,
+    "panic_sites": 0,
+    "unwrap_calls": 0,
+    "allocation_sites": 0,
+    "io_operations": 83,
+    "threading_constructs": 1
+  },
+  "file_statistics": [
+    {
+      "file_path": "api/gnn_endpoint.jl",
+      "lines": 286,
+      "unsafe_blocks": 0,
+      "panic_sites": 0,
+      "unwrap_calls": 0,
+      "allocation_sites": 0,
+      "io_operations": 4,
+      "threading_constructs": 0
+    },
+    {
+      "file_path": "api/server.jl",
+      "lines": 299,
+      "unsafe_blocks": 0,
+      "panic_sites": 0,
+      "unwrap_calls": 0,
+      "allocation_sites": 0,
+      "io_operations": 11,
+      "threading_constructs": 0
+    },
+    {
+      "file_path": "api_server.jl",
+      "lines": 360,
+      "unsafe_blocks": 0,
+      "panic_sites": 0,
+      "unwrap_calls": 0,
+      "allocation_sites": 0,
+      "io_operations": 13,
+      "threading_constructs": 0
+    },
+    {
+      "file_path": "extract_all_proofs.jl",
+      "lines": 266,
+      "unsafe_blocks": 0,
+      "panic_sites": 0,
+      "unwrap_calls": 0,
+      "allocation_sites": 0,
+      "io_operations": 4,
+      "threading_constructs": 0
+    },
+    {
+      "file_path": "extract_training_data.jl",
+      "lines": 431,
+      "unsafe_blocks": 0,
+      "panic_sites": 0,
+      "unwrap_calls": 0,
+      "allocation_sites": 0,
+      "io_operations": 5,
+      "threading_constructs": 0
+    },
+    {
+      "file_path": "retrain_from_verisim.jl",
+      "lines": 548,
+      "unsafe_blocks": 0,
+      "panic_sites": 0,
+      "unwrap_calls": 0,
+      "allocation_sites": 0,
+      "io_operations": 6,
+      "threading_constructs": 0
+    },
+    {
+      "file_path": "test_server.jl",
+      "lines": 156,
+      "unsafe_blocks": 0,
+      "panic_sites": 0,
+      "unwrap_calls": 0,
+      "allocation_sites": 0,
+      "io_operations": 8,
+      "threading_constructs": 0
+    },
+    {
+      "file_path": "train_advanced_models.jl",
+      "lines": 242,
+      "unsafe_blocks": 0,
+      "panic_sites": 0,
+      "unwrap_calls": 0,
+      "allocation_sites": 0,
+      "io_operations": 3,
+      "threading_constructs": 0
+    },
+    {
+      "file_path": "train_complete_final.jl",
+      "lines": 265,
+      "unsafe_blocks": 0,
+      "panic_sites": 0,
+      "unwrap_calls": 0,
+      "allocation_sites": 0,
+      "io_operations": 8,
+      "threading_constructs": 0
+    },
+    {
+      "file_path": "train_final_models.jl",
+      "lines": 102,
+      "unsafe_blocks": 0,
+      "panic_sites": 0,
+      "unwrap_calls": 0,
+      "allocation_sites": 0,
+      "io_operations": 4,
+      "threading_constructs": 0
+    },
+    {
+      "file_path": "train_models.jl",
+      "lines": 431,
+      "unsafe_blocks": 0,
+      "panic_sites": 0,
+      "unwrap_calls": 0,
+      "allocation_sites": 0,
+      "io_operations": 8,
+      "threading_constructs": 1
+    },
+    {
+      "file_path": "training/dataloader.jl",
+      "lines": 447,
+      "unsafe_blocks": 0,
+      "panic_sites": 0,
+      "unwrap_calls": 0,
+      "allocation_sites": 0,
+      "io_operations": 7,
+      "threading_constructs": 0
+    },
+    {
+      "file_path": "training/train.jl",
+      "lines": 598,
+      "unsafe_blocks": 0,
+      "panic_sites": 0,
+      "unwrap_calls": 0,
+      "allocation_sites": 0,
+      "io_operations": 2,
+      "threading_constructs": 0
+    }
+  ],
+  "recommended_attacks": [
+    "cpu",
+    "disk"
+  ],
+  "dependency_graph": {
+    "edges": [
+      {
+        "from": "api_server.jl",
+        "to": "extract_all_proofs.jl",
+        "relation": "shared_dir:",
+        "weight": 1.0
+      },
+      {
+        "from": "extract_all_proofs.jl",
+        "to": "extract_training_data.jl",
+        "relation": "shared_dir:",
+        "weight": 1.0
+      },
+      {
+        "from": "extract_training_data.jl",
+        "to": "retrain_from_verisim.jl",
+        "relation": "shared_dir:",
+        "weight": 1.0
+      },
+      {
+        "from": "retrain_from_verisim.jl",
+        "to": "test_server.jl",
+        "relation": "shared_dir:",
+        "weight": 1.0
+      },
+      {
+        "from": "test_server.jl",
+        "to": "train_advanced_models.jl",
+        "relation": "shared_dir:",
+        "weight": 1.0
+      },
+      {
+        "from": "train_advanced_models.jl",
+        "to": "train_complete_final.jl",
+        "relation": "shared_dir:",
+        "weight": 1.0
+      },
+      {
+        "from": "train_complete_final.jl",
+        "to": "train_final_models.jl",
+        "relation": "shared_dir:",
+        "weight": 1.0
+      },
+      {
+        "from": "train_final_models.jl",
+        "to": "train_models.jl",
+        "relation": "shared_dir:",
+        "weight": 1.0
+      },
+      {
+        "from": "training/dataloader.jl",
+        "to": "training/train.jl",
+        "relation": "shared_dir:training",
+        "weight": 1.0
+      },
+      {
+        "from": "api/gnn_endpoint.jl",
+        "to": "api/server.jl",
+        "relation": "shared_dir:api",
+        "weight": 1.0
+      }
+    ]
+  },
+  "taint_matrix": {
+    "rows": []
+  }
+}

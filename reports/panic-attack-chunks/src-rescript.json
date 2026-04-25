@@ -1,0 +1,782 @@
+{
+  "program_path": "src/rescript",
+  "language": "rescript",
+  "frameworks": [],
+  "weak_points": [],
+  "statistics": {
+    "total_lines": 10508,
+    "unsafe_blocks": 12,
+    "panic_sites": 0,
+    "unwrap_calls": 0,
+    "allocation_sites": 3,
+    "io_operations": 29,
+    "threading_constructs": 0
+  },
+  "file_statistics": [
+    {
+      "file_path": "src/api/Client.bs.js",
+      "lines": 477,
+      "unsafe_blocks": 0,
+      "panic_sites": 0,
+      "unwrap_calls": 0,
+      "allocation_sites": 0,
+      "io_operations": 6,
+      "threading_constructs": 0
+    },
+    {
+      "file_path": "src/api/Client.res",
+      "lines": 359,
+      "unsafe_blocks": 0,
+      "panic_sites": 0,
+      "unwrap_calls": 0,
+      "allocation_sites": 1,
+      "io_operations": 3,
+      "threading_constructs": 0
+    },
+    {
+      "file_path": "src/Server.bs.js",
+      "lines": 66,
+      "unsafe_blocks": 0,
+      "panic_sites": 0,
+      "unwrap_calls": 0,
+      "allocation_sites": 0,
+      "io_operations": 1,
+      "threading_constructs": 0
+    },
+    {
+      "file_path": "src/Server.res",
+      "lines": 114,
+      "unsafe_blocks": 4,
+      "panic_sites": 0,
+      "unwrap_calls": 0,
+      "allocation_sites": 0,
+      "io_operations": 1,
+      "threading_constructs": 0
+    },
+    {
+      "file_path": "lib/bs/src/api/Client.res",
+      "lines": 359,
+      "unsafe_blocks": 0,
+      "panic_sites": 0,
+      "unwrap_calls": 0,
+      "allocation_sites": 1,
+      "io_operations": 3,
+      "threading_constructs": 0
+    },
+    {
+      "file_path": "lib/bs/src/api/Client.bs.js",
+      "lines": 477,
+      "unsafe_blocks": 0,
+      "panic_sites": 0,
+      "unwrap_calls": 0,
+      "allocation_sites": 0,
+      "io_operations": 6,
+      "threading_constructs": 0
+    },
+    {
+      "file_path": "lib/bs/src/Server.res",
+      "lines": 114,
+      "unsafe_blocks": 4,
+      "panic_sites": 0,
+      "unwrap_calls": 0,
+      "allocation_sites": 0,
+      "io_operations": 1,
+      "threading_constructs": 0
+    },
+    {
+      "file_path": "lib/bs/src/Server.bs.js",
+      "lines": 66,
+      "unsafe_blocks": 0,
+      "panic_sites": 0,
+      "unwrap_calls": 0,
+      "allocation_sites": 0,
+      "io_operations": 1,
+      "threading_constructs": 0
+    },
+    {
+      "file_path": "lib/ocaml/Client.res",
+      "lines": 359,
+      "unsafe_blocks": 0,
+      "panic_sites": 0,
+      "unwrap_calls": 0,
+      "allocation_sites": 1,
+      "io_operations": 3,
+      "threading_constructs": 0
+    },
+    {
+      "file_path": "lib/ocaml/Server.res",
+      "lines": 114,
+      "unsafe_blocks": 4,
+      "panic_sites": 0,
+      "unwrap_calls": 0,
+      "allocation_sites": 0,
+      "io_operations": 1,
+      "threading_constructs": 0
+    },
+    {
+      "file_path": "test-ui.js",
+      "lines": 43,
+      "unsafe_blocks": 0,
+      "panic_sites": 0,
+      "unwrap_calls": 0,
+      "allocation_sites": 0,
+      "io_operations": 3,
+      "threading_constructs": 0
+    }
+  ],
+  "recommended_attacks": [
+    "disk",
+    "cpu"
+  ],
+  "dependency_graph": {
+    "edges": [
+      {
+        "from": "lib/bs/src/api/Client.res",
+        "to": "lib/bs/src/api/Client.bs.js",
+        "relation": "shared_dir:lib/bs/src/api",
+        "weight": 1.0
+      },
+      {
+        "from": "lib/ocaml/Client.res",
+        "to": "lib/ocaml/Server.res",
+        "relation": "shared_dir:lib/ocaml",
+        "weight": 1.0
+      },
+      {
+        "from": "src/Server.bs.js",
+        "to": "src/Server.res",
+        "relation": "shared_dir:src",
+        "weight": 1.0
+      },
+      {
+        "from": "lib/bs/src/Server.res",
+        "to": "lib/bs/src/Server.bs.js",
+        "relation": "shared_dir:lib/bs/src",
+        "weight": 1.0
+      },
+      {
+        "from": "src/api/Client.bs.js",
+        "to": "src/api/Client.res",
+        "relation": "shared_dir:src/api",
+        "weight": 1.0
+      }
+    ]
+  },
+  "taint_matrix": {
+    "rows": []
+  },
+  "migration_metrics": {
+    "deprecated_api_count": 324,
+    "modern_api_count": 861,
+    "api_migration_ratio": 0.7265822784810126,
+    "health_score": 0.76,
+    "config_format": "RescriptJson",
+    "version_bracket": "V12Stable",
+    "file_count": 30,
+    "rescript_lines": 5625,
+    "deprecated_patterns": [
+      {
+        "pattern": "Belt.Array",
+        "replacement": "Array",
+        "file_path": "src/api/Client.res",
+        "line_number": 0,
+        "category": "BeltApi",
+        "count": 8
+      },
+      {
+        "pattern": "Belt.Option",
+        "replacement": "Option",
+        "file_path": "src/api/Client.res",
+        "line_number": 0,
+        "category": "BeltApi",
+        "count": 33
+      },
+      {
+        "pattern": "Belt.Int",
+        "replacement": "Int",
+        "file_path": "src/api/Client.res",
+        "line_number": 0,
+        "category": "BeltApi",
+        "count": 1
+      },
+      {
+        "pattern": "Belt.Float",
+        "replacement": "Float",
+        "file_path": "src/api/Client.res",
+        "line_number": 0,
+        "category": "BeltApi",
+        "count": 1
+      },
+      {
+        "pattern": "Belt.Array",
+        "replacement": "Array",
+        "file_path": "src/components/GoalList.res",
+        "line_number": 0,
+        "category": "BeltApi",
+        "count": 3
+      },
+      {
+        "pattern": "Belt.Int",
+        "replacement": "Int",
+        "file_path": "src/components/GoalList.res",
+        "line_number": 0,
+        "category": "BeltApi",
+        "count": 4
+      },
+      {
+        "pattern": "Belt.Array",
+        "replacement": "Array",
+        "file_path": "src/components/ProofTree.res",
+        "line_number": 0,
+        "category": "BeltApi",
+        "count": 4
+      },
+      {
+        "pattern": "Belt.Set",
+        "replacement": "Set",
+        "file_path": "src/components/ProofTree.res",
+        "line_number": 0,
+        "category": "BeltApi",
+        "count": 7
+      },
+      {
+        "pattern": "Belt.Option",
+        "replacement": "Option",
+        "file_path": "src/components/ProofTree.res",
+        "line_number": 0,
+        "category": "BeltApi",
+        "count": 4
+      },
+      {
+        "pattern": "Belt.Int",
+        "replacement": "Int",
+        "file_path": "src/components/ProofTree.res",
+        "line_number": 0,
+        "category": "BeltApi",
+        "count": 1
+      },
+      {
+        "pattern": "Belt.Array",
+        "replacement": "Array",
+        "file_path": "src/components/ProofViewer.res",
+        "line_number": 0,
+        "category": "BeltApi",
+        "count": 4
+      },
+      {
+        "pattern": "Belt.Int",
+        "replacement": "Int",
+        "file_path": "src/components/ProofViewer.res",
+        "line_number": 0,
+        "category": "BeltApi",
+        "count": 4
+      },
+      {
+        "pattern": "Belt.Float",
+        "replacement": "Float",
+        "file_path": "src/components/ProofViewer.res",
+        "line_number": 0,
+        "category": "BeltApi",
+        "count": 1
+      },
+      {
+        "pattern": "Belt.Array",
+        "replacement": "Array",
+        "file_path": "src/components/ProverSelector.res",
+        "line_number": 0,
+        "category": "BeltApi",
+        "count": 3
+      },
+      {
+        "pattern": "Belt.Array",
+        "replacement": "Array",
+        "file_path": "src/components/TacticSuggester.res",
+        "line_number": 0,
+        "category": "BeltApi",
+        "count": 4
+      },
+      {
+        "pattern": "Belt.Int",
+        "replacement": "Int",
+        "file_path": "src/components/TacticSuggester.res",
+        "line_number": 0,
+        "category": "BeltApi",
+        "count": 2
+      },
+      {
+        "pattern": "Belt.Float",
+        "replacement": "Float",
+        "file_path": "src/components/TacticSuggester.res",
+        "line_number": 0,
+        "category": "BeltApi",
+        "count": 2
+      },
+      {
+        "pattern": "Belt.Array",
+        "replacement": "Array",
+        "file_path": "src/components/TheoremSearch.res",
+        "line_number": 0,
+        "category": "BeltApi",
+        "count": 10
+      },
+      {
+        "pattern": "Belt.Map",
+        "replacement": "Map",
+        "file_path": "src/components/TheoremSearch.res",
+        "line_number": 0,
+        "category": "BeltApi",
+        "count": 5
+      },
+      {
+        "pattern": "Belt.Option",
+        "replacement": "Option",
+        "file_path": "src/components/TheoremSearch.res",
+        "line_number": 0,
+        "category": "BeltApi",
+        "count": 1
+      },
+      {
+        "pattern": "Belt.Int",
+        "replacement": "Int",
+        "file_path": "src/components/TheoremSearch.res",
+        "line_number": 0,
+        "category": "BeltApi",
+        "count": 2
+      },
+      {
+        "pattern": "Belt.Array",
+        "replacement": "Array",
+        "file_path": "src/state/Store.res",
+        "line_number": 0,
+        "category": "BeltApi",
+        "count": 1
+      },
+      {
+        "pattern": "Js.Console.",
+        "replacement": "Console",
+        "file_path": "src/Main.res",
+        "line_number": 0,
+        "category": "OldConsole",
+        "count": 1
+      },
+      {
+        "pattern": "Belt.Array",
+        "replacement": "Array",
+        "file_path": "src/Main.res",
+        "line_number": 0,
+        "category": "BeltApi",
+        "count": 1
+      },
+      {
+        "pattern": "Belt.Option",
+        "replacement": "Option",
+        "file_path": "src/Main.res",
+        "line_number": 0,
+        "category": "BeltApi",
+        "count": 1
+      },
+      {
+        "pattern": "Belt.Array",
+        "replacement": "Array",
+        "file_path": "lib/bs/src/components/GoalList.res",
+        "line_number": 0,
+        "category": "BeltApi",
+        "count": 3
+      },
+      {
+        "pattern": "Belt.Int",
+        "replacement": "Int",
+        "file_path": "lib/bs/src/components/GoalList.res",
+        "line_number": 0,
+        "category": "BeltApi",
+        "count": 4
+      },
+      {
+        "pattern": "Belt.Array",
+        "replacement": "Array",
+        "file_path": "lib/bs/src/components/ProverSelector.res",
+        "line_number": 0,
+        "category": "BeltApi",
+        "count": 3
+      },
+      {
+        "pattern": "Belt.Array",
+        "replacement": "Array",
+        "file_path": "lib/bs/src/components/ProofViewer.res",
+        "line_number": 0,
+        "category": "BeltApi",
+        "count": 4
+      },
+      {
+        "pattern": "Belt.Int",
+        "replacement": "Int",
+        "file_path": "lib/bs/src/components/ProofViewer.res",
+        "line_number": 0,
+        "category": "BeltApi",
+        "count": 4
+      },
+      {
+        "pattern": "Belt.Float",
+        "replacement": "Float",
+        "file_path": "lib/bs/src/components/ProofViewer.res",
+        "line_number": 0,
+        "category": "BeltApi",
+        "count": 1
+      },
+      {
+        "pattern": "Belt.Array",
+        "replacement": "Array",
+        "file_path": "lib/bs/src/components/TacticSuggester.res",
+        "line_number": 0,
+        "category": "BeltApi",
+        "count": 4
+      },
+      {
+        "pattern": "Belt.Int",
+        "replacement": "Int",
+        "file_path": "lib/bs/src/components/TacticSuggester.res",
+        "line_number": 0,
+        "category": "BeltApi",
+        "count": 2
+      },
+      {
+        "pattern": "Belt.Float",
+        "replacement": "Float",
+        "file_path": "lib/bs/src/components/TacticSuggester.res",
+        "line_number": 0,
+        "category": "BeltApi",
+        "count": 2
+      },
+      {
+        "pattern": "Belt.Array",
+        "replacement": "Array",
+        "file_path": "lib/bs/src/components/TheoremSearch.res",
+        "line_number": 0,
+        "category": "BeltApi",
+        "count": 10
+      },
+      {
+        "pattern": "Belt.Map",
+        "replacement": "Map",
+        "file_path": "lib/bs/src/components/TheoremSearch.res",
+        "line_number": 0,
+        "category": "BeltApi",
+        "count": 5
+      },
+      {
+        "pattern": "Belt.Option",
+        "replacement": "Option",
+        "file_path": "lib/bs/src/components/TheoremSearch.res",
+        "line_number": 0,
+        "category": "BeltApi",
+        "count": 1
+      },
+      {
+        "pattern": "Belt.Int",
+        "replacement": "Int",
+        "file_path": "lib/bs/src/components/TheoremSearch.res",
+        "line_number": 0,
+        "category": "BeltApi",
+        "count": 2
+      },
+      {
+        "pattern": "Belt.Array",
+        "replacement": "Array",
+        "file_path": "lib/bs/src/components/ProofTree.res",
+        "line_number": 0,
+        "category": "BeltApi",
+        "count": 4
+      },
+      {
+        "pattern": "Belt.Set",
+        "replacement": "Set",
+        "file_path": "lib/bs/src/components/ProofTree.res",
+        "line_number": 0,
+        "category": "BeltApi",
+        "count": 7
+      },
+      {
+        "pattern": "Belt.Option",
+        "replacement": "Option",
+        "file_path": "lib/bs/src/components/ProofTree.res",
+        "line_number": 0,
+        "category": "BeltApi",
+        "count": 4
+      },
+      {
+        "pattern": "Belt.Int",
+        "replacement": "Int",
+        "file_path": "lib/bs/src/components/ProofTree.res",
+        "line_number": 0,
+        "category": "BeltApi",
+        "count": 1
+      },
+      {
+        "pattern": "Belt.Array",
+        "replacement": "Array",
+        "file_path": "lib/bs/src/api/Client.res",
+        "line_number": 0,
+        "category": "BeltApi",
+        "count": 8
+      },
+      {
+        "pattern": "Belt.Option",
+        "replacement": "Option",
+        "file_path": "lib/bs/src/api/Client.res",
+        "line_number": 0,
+        "category": "BeltApi",
+        "count": 33
+      },
+      {
+        "pattern": "Belt.Int",
+        "replacement": "Int",
+        "file_path": "lib/bs/src/api/Client.res",
+        "line_number": 0,
+        "category": "BeltApi",
+        "count": 1
+      },
+      {
+        "pattern": "Belt.Float",
+        "replacement": "Float",
+        "file_path": "lib/bs/src/api/Client.res",
+        "line_number": 0,
+        "category": "BeltApi",
+        "count": 1
+      },
+      {
+        "pattern": "Belt.Array",
+        "replacement": "Array",
+        "file_path": "lib/bs/src/state/Store.res",
+        "line_number": 0,
+        "category": "BeltApi",
+        "count": 1
+      },
+      {
+        "pattern": "Js.Console.",
+        "replacement": "Console",
+        "file_path": "lib/bs/src/Main.res",
+        "line_number": 0,
+        "category": "OldConsole",
+        "count": 1
+      },
+      {
+        "pattern": "Belt.Array",
+        "replacement": "Array",
+        "file_path": "lib/bs/src/Main.res",
+        "line_number": 0,
+        "category": "BeltApi",
+        "count": 1
+      },
+      {
+        "pattern": "Belt.Option",
+        "replacement": "Option",
+        "file_path": "lib/bs/src/Main.res",
+        "line_number": 0,
+        "category": "BeltApi",
+        "count": 1
+      },
+      {
+        "pattern": "Belt.Array",
+        "replacement": "Array",
+        "file_path": "lib/ocaml/TacticSuggester.res",
+        "line_number": 0,
+        "category": "BeltApi",
+        "count": 4
+      },
+      {
+        "pattern": "Belt.Int",
+        "replacement": "Int",
+        "file_path": "lib/ocaml/TacticSuggester.res",
+        "line_number": 0,
+        "category": "BeltApi",
+        "count": 2
+      },
+      {
+        "pattern": "Belt.Float",
+        "replacement": "Float",
+        "file_path": "lib/ocaml/TacticSuggester.res",
+        "line_number": 0,
+        "category": "BeltApi",
+        "count": 2
+      },
+      {
+        "pattern": "Belt.Array",
+        "replacement": "Array",
+        "file_path": "lib/ocaml/TheoremSearch.res",
+        "line_number": 0,
+        "category": "BeltApi",
+        "count": 10
+      },
+      {
+        "pattern": "Belt.Map",
+        "replacement": "Map",
+        "file_path": "lib/ocaml/TheoremSearch.res",
+        "line_number": 0,
+        "category": "BeltApi",
+        "count": 5
+      },
+      {
+        "pattern": "Belt.Option",
+        "replacement": "Option",
+        "file_path": "lib/ocaml/TheoremSearch.res",
+        "line_number": 0,
+        "category": "BeltApi",
+        "count": 1
+      },
+      {
+        "pattern": "Belt.Int",
+        "replacement": "Int",
+        "file_path": "lib/ocaml/TheoremSearch.res",
+        "line_number": 0,
+        "category": "BeltApi",
+        "count": 2
+      },
+      {
+        "pattern": "Belt.Array",
+        "replacement": "Array",
+        "file_path": "lib/ocaml/Client.res",
+        "line_number": 0,
+        "category": "BeltApi",
+        "count": 8
+      },
+      {
+        "pattern": "Belt.Option",
+        "replacement": "Option",
+        "file_path": "lib/ocaml/Client.res",
+        "line_number": 0,
+        "category": "BeltApi",
+        "count": 33
+      },
+      {
+        "pattern": "Belt.Int",
+        "replacement": "Int",
+        "file_path": "lib/ocaml/Client.res",
+        "line_number": 0,
+        "category": "BeltApi",
+        "count": 1
+      },
+      {
+        "pattern": "Belt.Float",
+        "replacement": "Float",
+        "file_path": "lib/ocaml/Client.res",
+        "line_number": 0,
+        "category": "BeltApi",
+        "count": 1
+      },
+      {
+        "pattern": "Belt.Array",
+        "replacement": "Array",
+        "file_path": "lib/ocaml/GoalList.res",
+        "line_number": 0,
+        "category": "BeltApi",
+        "count": 3
+      },
+      {
+        "pattern": "Belt.Int",
+        "replacement": "Int",
+        "file_path": "lib/ocaml/GoalList.res",
+        "line_number": 0,
+        "category": "BeltApi",
+        "count": 4
+      },
+      {
+        "pattern": "Js.Console.",
+        "replacement": "Console",
+        "file_path": "lib/ocaml/Main.res",
+        "line_number": 0,
+        "category": "OldConsole",
+        "count": 1
+      },
+      {
+        "pattern": "Belt.Array",
+        "replacement": "Array",
+        "file_path": "lib/ocaml/Main.res",
+        "line_number": 0,
+        "category": "BeltApi",
+        "count": 1
+      },
+      {
+        "pattern": "Belt.Option",
+        "replacement": "Option",
+        "file_path": "lib/ocaml/Main.res",
+        "line_number": 0,
+        "category": "BeltApi",
+        "count": 1
+      },
+      {
+        "pattern": "Belt.Array",
+        "replacement": "Array",
+        "file_path": "lib/ocaml/ProofTree.res",
+        "line_number": 0,
+        "category": "BeltApi",
+        "count": 4
+      },
+      {
+        "pattern": "Belt.Set",
+        "replacement": "Set",
+        "file_path": "lib/ocaml/ProofTree.res",
+        "line_number": 0,
+        "category": "BeltApi",
+        "count": 7
+      },
+      {
+        "pattern": "Belt.Option",
+        "replacement": "Option",
+        "file_path": "lib/ocaml/ProofTree.res",
+        "line_number": 0,
+        "category": "BeltApi",
+        "count": 4
+      },
+      {
+        "pattern": "Belt.Int",
+        "replacement": "Int",
+        "file_path": "lib/ocaml/ProofTree.res",
+        "line_number": 0,
+        "category": "BeltApi",
+        "count": 1
+      },
+      {
+        "pattern": "Belt.Array",
+        "replacement": "Array",
+        "file_path": "lib/ocaml/ProofViewer.res",
+        "line_number": 0,
+        "category": "BeltApi",
+        "count": 4
+      },
+      {
+        "pattern": "Belt.Int",
+        "replacement": "Int",
+        "file_path": "lib/ocaml/ProofViewer.res",
+        "line_number": 0,
+        "category": "BeltApi",
+        "count": 4
+      },
+      {
+        "pattern": "Belt.Float",
+        "replacement": "Float",
+        "file_path": "lib/ocaml/ProofViewer.res",
+        "line_number": 0,
+        "category": "BeltApi",
+        "count": 1
+      },
+      {
+        "pattern": "Belt.Array",
+        "replacement": "Array",
+        "file_path": "lib/ocaml/ProverSelector.res",
+        "line_number": 0,
+        "category": "BeltApi",
+        "count": 3
+      },
+      {
+        "pattern": "Belt.Array",
+        "replacement": "Array",
+        "file_path": "lib/ocaml/Store.res",
+        "line_number": 0,
+        "category": "BeltApi",
+        "count": 1
+      }
+    ],
+    "jsx_version": 4,
+    "uncurried": false
+  }
+}

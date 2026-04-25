@@ -1,0 +1,25 @@
+{
+  "program_path": "src/idris",
+  "language": "idris",
+  "frameworks": [],
+  "weak_points": [],
+  "statistics": {
+    "total_lines": 337,
+    "unsafe_blocks": 0,
+    "panic_sites": 0,
+    "unwrap_calls": 0,
+    "allocation_sites": 0,
+    "io_operations": 0,
+    "threading_constructs": 0
+  },
+  "file_statistics": [],
+  "recommended_attacks": [
+    "cpu"
+  ],
+  "dependency_graph": {
+    "edges": []
+  },
+  "taint_matrix": {
+    "rows": []
+  }
+}

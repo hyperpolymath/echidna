@@ -1,0 +1,92 @@
+{
+  "program_path": "src/zig",
+  "language": "zig",
+  "frameworks": [],
+  "weak_points": [
+    {
+      "category": "UnsafeFFI",
+      "location": "ffi/axiom_spark_bridge.zig",
+      "file": "ffi/axiom_spark_bridge.zig",
+      "severity": "High",
+      "description": "1 C interop imports in ffi/axiom_spark_bridge.zig",
+      "recommended_attack": [
+        "memory"
+      ]
+    }
+  ],
+  "statistics": {
+    "total_lines": 1462,
+    "unsafe_blocks": 1,
+    "panic_sites": 0,
+    "unwrap_calls": 0,
+    "allocation_sites": 3,
+    "io_operations": 0,
+    "threading_constructs": 0
+  },
+  "file_statistics": [
+    {
+      "file_path": "ffi/echidna_ffi.h",
+      "lines": 506,
+      "unsafe_blocks": 0,
+      "panic_sites": 0,
+      "unwrap_calls": 0,
+      "allocation_sites": 1,
+      "io_operations": 0,
+      "threading_constructs": 0
+    },
+    {
+      "file_path": "ffi/echidna_ffi.zig",
+      "lines": 711,
+      "unsafe_blocks": 0,
+      "panic_sites": 0,
+      "unwrap_calls": 0,
+      "allocation_sites": 2,
+      "io_operations": 0,
+      "threading_constructs": 0
+    },
+    {
+      "file_path": "ffi/axiom_spark_bridge.zig",
+      "lines": 133,
+      "unsafe_blocks": 1,
+      "panic_sites": 0,
+      "unwrap_calls": 0,
+      "allocation_sites": 0,
+      "io_operations": 0,
+      "threading_constructs": 0
+    }
+  ],
+  "recommended_attacks": [
+    "cpu",
+    "memory"
+  ],
+  "dependency_graph": {
+    "edges": [
+      {
+        "from": "ffi/echidna_ffi.h",
+        "to": "ffi/echidna_ffi.zig",
+        "relation": "shared_dir:ffi",
+        "weight": 1.0
+      },
+      {
+        "from": "ffi/echidna_ffi.zig",
+        "to": "ffi/axiom_spark_bridge.zig",
+        "relation": "shared_dir:ffi",
+        "weight": 1.0
+      }
+    ]
+  },
+  "taint_matrix": {
+    "rows": [
+      {
+        "source_category": "UnsafeFFI",
+        "sink_axis": "memory",
+        "severity_value": 3.5,
+        "files": [
+          "ffi/axiom_spark_bridge.zig"
+        ],
+        "frameworks": [],
+        "relation": "UnsafeFFI->Memory"
+      }
+    ]
+  }
+}
