@@ -271,7 +271,7 @@ impl ProverBackend for MiniSatBackend {
     }
 
     async fn parse_file(&self, path: PathBuf) -> Result<ProofState> {
-        let content = tokio::fs::read_to_string(&path)
+        let content = super::bounded_read_proof_file(&path)
             .await
             .with_context(|| format!("Failed to read DIMACS file: {:?}", path))?;
         self.parse_string(&content).await
@@ -408,7 +408,7 @@ impl ProverBackend for MiniSatBackend {
         let stdout = String::from_utf8_lossy(&output.stdout);
 
         // Try output file first, then stdout
-        let result_text = if let Ok(file_content) = tokio::fs::read_to_string(&output_file).await {
+        let result_text = if let Ok(file_content) = super::bounded_read_proof_file(&output_file).await {
             file_content
         } else {
             stdout.to_string()

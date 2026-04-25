@@ -434,7 +434,7 @@ impl ProverBackend for ProVerifBackend {
     }
 
     async fn parse_file(&self, path: PathBuf) -> Result<ProofState> {
-        let content = tokio::fs::read_to_string(&path)
+        let content = super::bounded_read_proof_file(&path)
             .await
             .context("Failed to read .pv file")?;
         let mut state = self.parse_string(&content).await?;

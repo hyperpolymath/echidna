@@ -399,7 +399,7 @@ impl ProverBackend for KeyBackend {
 
     /// Parse a `.key` or `.java` file into an ECHIDNA proof state
     async fn parse_file(&self, path: PathBuf) -> Result<ProofState> {
-        let content = tokio::fs::read_to_string(&path)
+        let content = super::bounded_read_proof_file(&path)
             .await
             .context(format!("Failed to read KeY input file: {}", path.display()))?;
 

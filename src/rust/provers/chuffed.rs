@@ -46,7 +46,7 @@ impl ProverBackend for ChuffedBackend {
         Ok("chuffed".to_string())
     }
     async fn parse_file(&self, path: PathBuf) -> Result<ProofState> {
-        let content = tokio::fs::read_to_string(&path).await?;
+        let content = super::bounded_read_proof_file(&path).await?;
         let mut state = self.parse_string(&content).await?;
         state.metadata.insert(
             "source_path".to_string(),

@@ -249,7 +249,7 @@ impl ProverBackend for KissatBackend {
     }
 
     async fn parse_file(&self, path: PathBuf) -> Result<ProofState> {
-        let content = tokio::fs::read_to_string(&path)
+        let content = super::bounded_read_proof_file(&path)
             .await
             .with_context(|| format!("Failed to read DIMACS file: {:?}", path))?;
         self.parse_string(&content).await

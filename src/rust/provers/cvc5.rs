@@ -544,7 +544,7 @@ impl ProverBackend for CVC5Backend {
     }
 
     async fn parse_file(&self, path: PathBuf) -> Result<ProofState> {
-        let content = tokio::fs::read_to_string(&path)
+        let content = super::bounded_read_proof_file(&path)
             .await
             .context(format!("Failed to read file: {:?}", path))?;
         let mut state = self.parse_string(&content).await?;

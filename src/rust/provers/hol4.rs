@@ -2145,7 +2145,7 @@ impl ProverBackend for Hol4Backend {
     }
 
     async fn parse_file(&self, path: PathBuf) -> Result<ProofState> {
-        let content = tokio::fs::read_to_string(&path)
+        let content = super::bounded_read_proof_file(&path)
             .await
             .context("Failed to read HOL4 file")?;
 

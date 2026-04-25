@@ -312,7 +312,7 @@ impl ProverBackend for DRealBackend {
     }
 
     async fn parse_file(&self, path: PathBuf) -> Result<ProofState> {
-        let content = tokio::fs::read_to_string(&path)
+        let content = super::bounded_read_proof_file(&path)
             .await
             .with_context(|| format!("Failed to read dReal SMT-LIB file: {:?}", path))?;
 
@@ -351,7 +351,7 @@ impl ProverBackend for DRealBackend {
         // reconstructs from the parsed Term IR, which is lossy for any
         // non-trivial dReal problem.
         if let Some(path) = state.metadata.get("source_path").and_then(|v| v.as_str()) {
-            let source = tokio::fs::read_to_string(path).await?;
+            let source = super::bounded_read_proof_file(path).await?;
             let result = self.execute_command(&source).await?;
             return match result {
                 DRealResult::Unsat => Ok(true),

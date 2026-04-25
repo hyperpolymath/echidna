@@ -1154,7 +1154,7 @@ impl ProverBackend for LeanBackend {
         let output = self.run_lean(&["--run", &path_str]).await;
 
         // Read the file content for parsing
-        let content = tokio::fs::read_to_string(&path)
+        let content = super::bounded_read_proof_file(&path)
             .await
             .context("Failed to read Lean file")?;
 
