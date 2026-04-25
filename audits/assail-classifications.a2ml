@@ -1,0 +1,60 @@
+; SPDX-License-Identifier: PMPL-1.0-or-later
+; Copyright (c) 2026 Jonathan D.A. Jewell (hyperpolymath) <j.d.a.jewell@open.ac.uk>
+;
+; Classification registry for panic-attack assail findings that are confirmed
+; legitimate patterns and should not be treated as actionable weak-points.
+;
+; Format mirrors the panic-attack user-classification registry protocol.
+; Cross-reference: audits/audit-ffi-boundary.md
+
+(assail-classifications
+
+  ; ─── src/rust/ffi/mod.rs — C-ABI exports + raw-pointer handling ──────────
+  (classification
+    (file "src/rust/ffi/mod.rs")
+    (category "UnsafeCode")
+    (audit "audits/audit-ffi-boundary.md §1")
+    (rationale "C-ABI exports for the Zig FFI layer; 24 documented unsafe blocks reviewed in linked audit"))
+
+  (classification
+    (file "src/rust/ffi/mod.rs")
+    (category "ResourceLeak")
+    (audit "audits/audit-ffi-boundary.md §1")
+    (rationale "Box::into_raw ownership-transfer to Zig caller; Zig calls rust_free_* to drop — not an actual leak"))
+
+  ; ─── src/rust/ffi/spark_axiom.rs — Rust→SPARK via C ABI ─────────────────
+  (classification
+    (file "src/rust/ffi/spark_axiom.rs")
+    (category "UnsafeCode")
+    (audit "audits/audit-ffi-boundary.md §2")
+    (rationale "extern C callouts to SPARK-compiled policy enforcement; pointer preconditions enforced by Ada contracts"))
+
+  ; ─── src/rust/proof_search.rs — Chapel FFI, feature-gated ───────────────
+  (classification
+    (file "src/rust/proof_search.rs")
+    (category "UnsafeCode")
+    (audit "audits/audit-ffi-boundary.md §3")
+    (rationale "Chapel parallel-search FFI behind #[cfg(feature = chapel)]; all 7 unsafe blocks reviewed in linked audit"))
+
+  ; ─── src/interfaces/graphql/ffi_wrapper.rs ────────────────────────────────
+  (classification
+    (file "src/interfaces/graphql/ffi_wrapper.rs")
+    (category "UnsafeCode")
+    (audit "audits/audit-ffi-boundary.md §4")
+    (rationale "Interface-layer wrapper over src/rust/ffi/mod.rs C-ABI; CStr/raw-pointer patterns identical to §1"))
+
+  ; ─── src/interfaces/grpc/ffi_wrapper.rs ───────────────────────────────────
+  (classification
+    (file "src/interfaces/grpc/ffi_wrapper.rs")
+    (category "UnsafeCode")
+    (audit "audits/audit-ffi-boundary.md §4")
+    (rationale "Interface-layer wrapper over src/rust/ffi/mod.rs C-ABI; CStr/raw-pointer patterns identical to §1"))
+
+  ; ─── src/interfaces/rest/ffi_wrapper.rs ───────────────────────────────────
+  (classification
+    (file "src/interfaces/rest/ffi_wrapper.rs")
+    (category "UnsafeCode")
+    (audit "audits/audit-ffi-boundary.md §4")
+    (rationale "Interface-layer wrapper over src/rust/ffi/mod.rs C-ABI; CStr/raw-pointer patterns identical to §1"))
+
+)
