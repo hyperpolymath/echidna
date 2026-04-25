@@ -911,3 +911,30 @@ applicable; SPARK candidates are src/api/webhooks.rs HMAC verification
 + src/store/sqlite.rs schema migration safety) and vcl-ut (no ReScript;
 SPARK candidate is src/interface/lint/ which gates queries pre-execution).
 """
+
+[session-2026-04-26-followup-batch]
+summary = "F1/F2/F3/F4/F6 follow-up batch from ECHIDNA-FOLLOWUPS-2026-04-25-LATE.md. F5 (boj-server) deferred per handoff."
+commits = [
+  "echidna F1: no-op (prover migration already done by another agent at 1b2390d)",
+  "echidna F2: chore(integrity): bounded_read_config helper for operator TOML manifests — pre-existing commit from prior session via b4d682b chain",
+  "echidna F3: fix(graphql): migrate to current core API — mirror of 6c878a1 (commit 5aec9d5)",
+  "echidna F4: no-op (panic-attack test fixtures already fixed at db603c3)",
+  "echidna F6: audit/classify FFI UnsafeCode — pre-existing commit b4d682b (Haiku agent)",
+]
+f1-result = "Prover bounded_read migration already complete. Commit 1b2390d had migrated all 47 backends before this session started. sed pass was run but produced no diff."
+f2-result = "bounded_read_config (sync, 1 MiB cap, std::io::Read::take) created in src/rust/integrity/io.rs; solver_integrity.rs migrated from bare read_to_string. Committed prior session; verified present."
+f3-result = """
+echidna-graphql binary now builds clean. Changes:
+- ProverKind enum expanded from 30 → 113 variants (exhaustive, no catch-all)
+- ffi_wrapper.rs prover_kind_to_ffi / ffi_to_prover_kind cover all 113 ordinals (0–112)
+- FfiProverBackend gains config field + config()/set_config() methods
+- ProofState::new call sites fixed: Term::Var wrapping (3 sites)
+- CoreTacticResult::Success: Box::new removed
+- CStr/CString pointer casts fixed in ffi_wrapper
+- from_core/to_core in resolvers expanded for all 83 new ProverKind variants
+panic-attack assail: 4 weak points (ffi_wrapper.rs UnsafeCode — expected FFI boundary; covered by assail-classifications.a2ml)
+"""
+f4-result = "panic-attack test suite was already 200/0 pass (db603c3 fixed schema_version + safe_unwrap_calls fixtures). No changes needed."
+f6-result = "audits/audit-ffi-boundary.md (4-section safety audit) + audits/assail-classifications.a2ml (7 classifications: ffi/mod.rs ×2, spark_axiom.rs, proof_search.rs, graphql/grpc/rest ffi_wrapper.rs) committed at b4d682b."
+workspace-build = "cargo build -p echidna -p echidna-graphql -p echidna-grpc -p echidna-rest: Finished clean (warnings only). echidna-wire fails on capnp system binary missing — pre-existing, not caused by this batch."
+metadata.last-updated = "2026-04-26"
