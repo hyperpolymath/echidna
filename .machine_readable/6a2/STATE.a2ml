@@ -13,6 +13,118 @@ name = "echidna"
 completion-percentage = 100
 phase = "v1.6.0 Released - Production Ready"
 
+# ═══════════════════════════════════════════════════════════════════════════════
+# CRG (Critical Reception Grade) advancement — D→C→B
+# Per memory rule: B-grade requires [external-targets]≥6, [issues-fed-back],
+# [field-signal] populated.
+# ═══════════════════════════════════════════════════════════════════════════════
+
+[external-targets]
+# External-to-this-repo systems that depend on or consume echidna.
+# Derived from ECOSYSTEM.a2ml + grep across hyperpolymath estate (2026-04-25).
+[[external-targets.target]]
+name = "proven-servers (nesy-solver-api)"
+relationship = "consumer"
+contract = "REST /api/verify on echidna-nesy.flycast:8090, 90s cold-start grace"
+discovered = "2026-04-11 — Fly.io deployment hardening session"
+
+[[external-targets.target]]
+name = "boj-server / cartridges / echidna-llm-mcp"
+relationship = "consumer-via-cartridge"
+contract = "REST endpoints documented in cartridge docs/CALL-PROTOCOL.adoc; 113 ProverKind slugs addressable"
+discovered = "Package 8 close-out (cartridge audit 2026-04-24)"
+
+[[external-targets.target]]
+name = "vcl-ut (vcltotal-echidna-client)"
+relationship = "consumer"
+contract = "Async REST client using crates/echidna-core shared types; per-prover matrix CI reads provers.a2ml at runtime"
+discovered = "Package 4 close-out (commit 2fbfbc6 + vcl-ut/8d26b84)"
+
+[[external-targets.target]]
+name = "echidnabot"
+relationship = "consumer"
+contract = "REST + GraphQL via dispatcher/echidna_client.rs; 12 of 113 provers exposed via echidnabot's enum (drift acknowledged)"
+discovered = "echidnabot SONNET-TASKS.md"
+
+[[external-targets.target]]
+name = "hypatia"
+relationship = "sibling-neurosym"
+contract = "Both Tier-2 formal verification components; Hypatia consumes echidna's verification outputs as part of CI scanning"
+discovered = "ECOSYSTEM.a2ml + estate-wide neurosymbolic CI design"
+
+[[external-targets.target]]
+name = "verisimdb / verisim-modular-experiment"
+relationship = "planned-integration"
+contract = "Octad proof storage via src/rust/verisim_bridge.rs; 8-modality rows (Prover, Trust, Axioms, Time, Certificates, Tactics, Dependencies, Confidence)"
+discovered = "STATE.a2ml session-2026-04-05-evening (VCL rename)"
+
+[[external-targets.target]]
+name = "neural-foundations"
+relationship = "monorepo-satellite"
+contract = "echidna mirrored as a satellite inside neural-foundations; corpus + GNN code shared"
+discovered = "ECOSYSTEM.a2ml [related-projects]"
+
+[issues-fed-back]
+# Issues / drift / requests received FROM downstream consumers and fed back
+# into echidna's roadmap. Populate from real reports as they land.
+[[issues-fed-back.issue]]
+source = "echidnabot SONNET-TASKS.md"
+date = "2026-04-24"
+issue = "12-prover enum drift — echidnabot only exposes 12 of 113 provers, blocking advisor/regulator modes from reaching full surface"
+status = "acknowledged; planned via slug-based addressing in cartridge (ADR-CART-003)"
+
+[[issues-fed-back.issue]]
+source = "vcl-ut Package 4 step 6"
+date = "2026-04-24"
+issue = "REST handlers (export/import for OpenTheory + Dedukti exchange) blocked on phantom FfiProverBackend breakage"
+status = "resolved — landed as commit 1b32576 after audit confirmed no actual breakage"
+
+[[issues-fed-back.issue]]
+source = "echidnabot CorpusDelta writer (7b-3)"
+date = "2026-04-24"
+issue = "merge_corpus.jl PER_PROVER_FILES whitelist did not include date-stamped feedback files; echidnabot deltas ignored on corpus-refresh"
+status = "resolved — added glob ingestion in commit d16347d (2026-04-25)"
+
+[[issues-fed-back.issue]]
+source = "Fly.io echidna-nesy production deployment"
+date = "2026-04-11"
+issue = "Cold-start beyond default grace caused proven-servers timeouts on first call after deploy"
+status = "resolved — documented 90s grace, .flycast auto-wake, Isabelle Main heap warm-up note"
+
+[field-signal]
+# Production / field signal — what echidna is actually telling us from the wild.
+[[field-signal.signal]]
+source = "Fly.io echidna-nesy"
+metric = "cold-start latency"
+value = "60-90s typical; 1-2GB Isabelle Main heap maps at first use; Julia JIT runs on first inference"
+collected = "2026-04-11 ongoing"
+
+[[field-signal.signal]]
+source = "merge_corpus.jl pipeline runs"
+metric = "trainable corpus size"
+value = "138,071 examples post-alignment (vs 82,617 pre-2026-04-24); breakdown: Lean 71,267; HOL4 29,299; HOLLight 25,908; Coq 11,353; Agda 206; Isabelle 38"
+collected = "session-2026-04-24-pkg5-close"
+
+[[field-signal.signal]]
+source = "Julia /gnn/rank smoke test (commit ab0823b)"
+metric = "trained-model path verification"
+value = "POST /gnn/rank now hits rank_with_trained_model (returns 500 DimensionMismatch) instead of cosine-similarity fallback (positive evidence — fallback would have returned 200 with cosine scores)"
+collected = "session-2026-04-24-pkg5-close"
+
+[[field-signal.signal]]
+source = "Dependabot scanner"
+metric = "open vulnerability count"
+value = "0 open / 15 fixed (post 7b5191e cargo update + dcaf52c NeuralTagger fix)"
+collected = "2026-04-25 (gh api dependabot/alerts)"
+
+[[field-signal.signal]]
+source = "cargo test --lib"
+metric = "test pass rate"
+value = "637/637 (2 ignored — require external prover binaries not on CI)"
+collected = "2026-04-25 (post-type_info fixture fix bde23ab)"
+
+# ═══════════════════════════════════════════════════════════════════════════════
+
 [session-2026-03-23]
 summary = "Compilation fixes and code cleanup for stable Rust"
 changes = [
