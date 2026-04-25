@@ -95,35 +95,52 @@ impl Z3Backend {
 
     /// Parse SMT-LIB result from Z3 output.
     ///
-    /// Z3 may emit `success` acknowledgements for each command before the final
-    /// `check-sat` result. We take the **last non-empty line** as the answer;
-    /// matching on the whole output with `contains()` would misclassify output
-    /// containing both "success" lines and "unsat".
+    /// Z3 may emit `success` acknowledgements and model/value output after a
+    /// `check-sat` result. Scanning for the **last non-empty line** is wrong
+    /// when `(get-value ...)` or `(get-model)` output follows the final
+    /// `check-sat` answer — the last line is then a model term, not `sat`/`unsat`.
+    ///
+    /// We scan backward for the last line that is exactly one of the three
+    /// `check-sat` answers (`sat`, `unsat`, `unknown`) or an `(error ...)`.
+    /// Model and value lines start with `(` but are not `(error ...`, so they
+    /// are skipped.  If no answer token is found we fall back to the last
+    /// non-empty line (e.g. for standalone `(simplify ...)` output).
     fn parse_smt_result(&self, output: &str) -> Result<SmtResult> {
-        // Find the last non-empty line — that is Z3's answer to (check-sat).
-        let last = output
+        // Prefer the last line that looks like a check-sat answer.
+        let answer_line = output
             .lines()
             .rev()
             .map(str::trim)
-            .find(|l| !l.is_empty())
-            .unwrap_or("");
+            .find(|l| {
+                !l.is_empty()
+                    && (matches!(*l, "sat" | "unsat" | "unknown") || l.starts_with("(error"))
+            });
 
-        if last == "unsat" {
+        let answer = answer_line.unwrap_or_else(|| {
+            output
+                .lines()
+                .rev()
+                .map(str::trim)
+                .find(|l| !l.is_empty())
+                .unwrap_or("")
+        });
+
+        if answer == "unsat" {
             Ok(SmtResult::Unsat)
-        } else if last == "sat" {
+        } else if answer == "sat" {
             Ok(SmtResult::Sat)
-        } else if last == "unknown" {
+        } else if answer == "unknown" {
             Ok(SmtResult::Unknown)
-        } else if last.starts_with("(error") {
-            let error_msg = last
+        } else if answer.starts_with("(error") {
+            let error_msg = answer
                 .trim_start_matches("(error")
                 .trim_end_matches(')')
                 .trim()
                 .trim_matches('"');
             Ok(SmtResult::Error(error_msg.to_string()))
         } else {
-            // Other output (get-model, get-value, etc.) — return verbatim.
-            Ok(SmtResult::Output(last.to_string()))
+            // Other output (simplify result, etc.) — return verbatim.
+            Ok(SmtResult::Output(answer.to_string()))
         }
     }
 

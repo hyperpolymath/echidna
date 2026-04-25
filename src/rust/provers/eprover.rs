@@ -53,15 +53,19 @@ impl EProverBackend {
         Ok(tptp)
     }
 
-    /// Parse E output to determine proof success
+    /// Parse E output to determine proof success.
+    ///
+    /// EProver uses `%` as its comment/output prefix for SZS status lines.
+    /// A common mistake is checking for `# SZS status ...` (shell comment)
+    /// instead of `% SZS status ...` (EProver's actual format).
     fn parse_result(&self, output: &str) -> Result<bool> {
-        if output.contains("# Proof found!")
-            || output.contains("# SZS status Theorem")
-            || output.contains("# SZS status Unsatisfiable")
+        if output.contains("% Proof found!")
+            || output.contains("% SZS status Theorem")
+            || output.contains("% SZS status Unsatisfiable")
         {
             Ok(true)
-        } else if output.contains("# SZS status CounterSatisfiable")
-            || output.contains("# SZS status Satisfiable")
+        } else if output.contains("% SZS status CounterSatisfiable")
+            || output.contains("% SZS status Satisfiable")
         {
             Ok(false)
         } else {
@@ -271,11 +275,12 @@ mod tests {
         let config = ProverConfig::default();
         let backend = EProverBackend::new(config);
 
+        // EProver uses '%' as its output prefix, not '#' (which is a shell comment).
         assert!(backend
-            .parse_result("# Proof found!\n# SZS status Theorem\n")
+            .parse_result("% Proof found!\n% SZS status Theorem\n")
             .unwrap());
         assert!(backend
-            .parse_result("# SZS status Unsatisfiable\n")
+            .parse_result("% SZS status Unsatisfiable\n")
             .unwrap());
     }
 
@@ -285,9 +290,9 @@ mod tests {
         let backend = EProverBackend::new(config);
 
         assert!(!backend
-            .parse_result("# SZS status CounterSatisfiable\n")
+            .parse_result("% SZS status CounterSatisfiable\n")
             .unwrap());
-        assert!(!backend.parse_result("# SZS status Satisfiable\n").unwrap());
+        assert!(!backend.parse_result("% SZS status Satisfiable\n").unwrap());
     }
 
     #[test]
@@ -295,7 +300,7 @@ mod tests {
         let config = ProverConfig::default();
         let backend = EProverBackend::new(config);
 
-        assert!(backend.parse_result("# SZS status ResourceOut\n").is_err());
+        assert!(backend.parse_result("% SZS status ResourceOut\n").is_err());
     }
 
     #[tokio::test]
