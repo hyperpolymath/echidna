@@ -322,6 +322,30 @@ function main()::Int
         append!(all_entries, entries)
     end
 
+    # ------------------------------------------------------------------
+    # 1b. Ingest echidnabot feedback corpus (7b-3 bridge).
+    #     Files are written by echidnabot-mcp's CorpusDelta on successful
+    #     proofs and follow proof_states_echidnabot_<date>.jsonl naming.
+    #     Adding by glob (rather than fixing one filename in the static
+    #     PER_PROVER_FILES list) lets new days drop into corpus-refresh
+    #     automatically without future Cargo-style edits.
+    # ------------------------------------------------------------------
+    if isdir(TRAINING_DIR)
+        feedback_files = filter(
+            f -> startswith(f, "proof_states_echidnabot_") && endswith(f, ".jsonl"),
+            readdir(TRAINING_DIR; sort=false),
+        )
+        for fname in feedback_files
+            fpath = joinpath(TRAINING_DIR, fname)
+            entries = load_jsonl(fpath)
+            file_counts[fname] = length(entries)
+            if !isempty(entries)
+                println("  Loaded $(lpad(string(length(entries)), 7)) feedback proofs from $fname")
+            end
+            append!(all_entries, entries)
+        end
+    end
+
     println("\nTotal raw entries loaded: $(length(all_entries))")
 
     # ------------------------------------------------------------------
