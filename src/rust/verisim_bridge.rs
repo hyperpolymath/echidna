@@ -1,1042 +1,309 @@
-// SPDX-FileCopyrightText: 2026 Jonathan D.A. Jewell (hyperpolymath) <j.d.a.jewell@open.ac.uk>
 // SPDX-License-Identifier: PMPL-1.0-or-later
+// VeriSimDB bridge: octad proof metadata storage and query interface
 
-//! VeriSimDB Bridge — Maps ECHIDNA proof state to VeriSimDB's 8-modality octad.
-//!
-//! This module bridges ECHIDNA's proof pipeline to VeriSimDB for persistent,
-//! queryable, federated proof storage. Each proof attempt is stored as an octad
-//! with data distributed across 8 modalities:
-//!
-//!   - **Semantic**: CBOR-encoded ProofState + type metadata + axiom list
-//!   - **Temporal**: Version chain tracking proof evolution (initial → tactics → QED)
-//!   - **Provenance**: Hash-chain audit trail (who ran what prover, what tactic, when)
-//!   - **Document**: Full-text searchable proof text (goals, tactics, theorems)
-//!   - **Graph**: Dependency links (theorem → lemmas used, goal → subgoals)
-//!   - **Vector**: Goal embeddings for similarity search (find related proofs)
-//!   - **Tensor**: Reserved for multi-dimensional proof metrics (future)
-//!   - **Spatial**: Reserved for proof origin metadata (future)
-//!
-//! The bridge uses VeriSimDB's HTTP API via reqwest. For BoJ-integrated deployments,
-//! the V-lang adapter (`echidna_llm_verisimdb.v`) routes through verisim.zig FFI.
-
-use anyhow::{Context, Result};
-use chrono::Utc;
+use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
-use tracing::{debug, warn};
 
-use crate::core::{Goal, ProofState};
-use crate::proof_encoding;
-use crate::provers::ProverKind;
-
-// ═══════════════════════════════════════════════════════════════════════
-// Octad Payload — the 8-modality structure for VeriSimDB
-// ═══════════════════════════════════════════════════════════════════════
-
-/// A complete octad payload ready to send to VeriSimDB.
-#[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct OctadPayload {
-    /// Octad key (SHA-256 proof identity)
-    pub key: String,
-
-    /// Semantic modality: CBOR proof blob + type metadata
-    pub semantic: SemanticPayload,
-
-    /// Temporal modality: version chain of proof evolution
-    pub temporal: TemporalPayload,
-
-    /// Provenance modality: audit trail of proof steps
-    pub provenance: ProvenancePayload,
-
-    /// Document modality: full-text searchable proof text
-    pub document: DocumentPayload,
-
-    /// Graph modality: dependency links
-    pub graph: GraphPayload,
-
-    /// Vector modality: goal embeddings for similarity search
-    pub vector: VectorPayload,
-
-    /// Tensor modality: multi-dimensional proof metrics (reserved)
-    pub tensor: TensorPayload,
-
-    /// Spatial modality: origin metadata (reserved)
-    pub spatial: SpatialPayload,
-}
-
-/// Semantic modality — the core proof data.
-#[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct SemanticPayload {
-    /// CBOR-encoded ProofState (base64 for JSON transport)
-    pub proof_blob_b64: String,
-
-    /// Proof status
-    pub status: ProofStatus,
-
-    /// Goal type classification
-    pub goal_type: String,
-
-    /// Prover that produced this proof
-    pub prover: String,
-
-    /// Axioms used in the proof
-    pub axioms_used: Vec<String>,
-
-    /// Model tier used for LLM advisory (if any)
-    pub llm_model: Option<String>,
-
-    /// Whether this proof is advisory-only (LLM-suggested, not verified)
-    pub advisory_only: bool,
-}
-
-/// Proof status in the octad.
-#[derive(Debug, Clone, Copy, Serialize, Deserialize, PartialEq, Eq)]
-pub enum ProofStatus {
-    /// Proof complete (all goals discharged)
-    Complete,
-    /// Proof in progress (some goals remain)
-    Partial,
-    /// Proof attempt failed
-    Failed,
-    /// Proof cached from memory (replay)
-    Cached,
-}
-
-/// Temporal modality — version chain of proof evolution.
-#[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct TemporalPayload {
-    /// Ordered list of proof snapshots (initial, after each tactic, final)
-    pub versions: Vec<ProofVersion>,
-}
-
-/// A single version in the proof's temporal chain.
-#[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct ProofVersion {
-    /// Version number (monotonically increasing)
-    pub version: u64,
-
-    /// ISO 8601 timestamp
-    pub timestamp: String,
-
-    /// Actor that produced this version (prover name or "echidna-dispatch")
-    pub actor: String,
-
-    /// Description of what changed
-    pub description: String,
-
-    /// Number of remaining goals at this version
-    pub goals_remaining: usize,
-
-    /// Tactic applied (if any)
-    pub tactic: Option<String>,
-}
-
-/// Provenance modality — hash-chain audit trail.
-#[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct ProvenancePayload {
-    /// Ordered list of provenance records forming a hash chain
-    pub records: Vec<ProvenanceRecord>,
-}
-
-/// A single provenance record in the hash chain.
-#[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct ProvenanceRecord {
-    /// SHA-256 hash of this record's content
-    pub hash: String,
-
-    /// Hash of the previous record (empty for first record)
-    pub parent_hash: String,
-
-    /// Event type
-    pub event: ProvenanceEvent,
-
-    /// Actor (prover, agent, dispatcher)
-    pub actor: String,
-
-    /// ISO 8601 timestamp
-    pub timestamp: String,
-
-    /// Additional event-specific data
-    pub data: HashMap<String, serde_json::Value>,
-}
-
-/// Provenance event types.
-#[derive(Debug, Clone, Serialize, Deserialize)]
-pub enum ProvenanceEvent {
-    /// Proof attempt created
-    Created,
-    /// Tactic applied
-    TacticApplied,
-    /// Sub-goal spawned
-    SubGoalSpawned,
-    /// Prover dispatched
-    ProverDispatched,
-    /// Proof verified
-    Verified,
-    /// Proof failed
-    Failed,
-    /// LLM consulted
-    LlmConsulted,
-    /// Cross-checked with another prover
-    CrossChecked,
-}
-
-/// Document modality — full-text searchable proof text.
-#[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct DocumentPayload {
-    /// Theorem statement (human-readable)
-    pub theorem_statement: String,
-
-    /// Current goals (human-readable)
-    pub goals_text: Vec<String>,
-
-    /// Tactics applied so far
-    pub tactics_text: Vec<String>,
-
-    /// Aspect tags for search
-    pub aspects: Vec<String>,
-
-    /// Free-text searchable content (concatenation of above)
-    pub searchable_text: String,
-}
-
-/// Graph modality — dependency links.
-#[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct GraphPayload {
-    /// Theorems/lemmas this proof depends on (octad keys)
-    pub depends_on: Vec<String>,
-
-    /// Sub-goal proof IDs
-    pub sub_goals: Vec<String>,
-
-    /// Cross-prover identity (goal-only hash, prover-agnostic)
-    pub cross_prover_id: String,
-
-    /// Prover that produced this proof
-    pub prover_id: String,
-}
-
-/// Vector modality — goal embeddings for similarity search.
-#[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct VectorPayload {
-    /// Goal embedding (f32 vector from neural premise selection)
-    /// Empty if neural module is not available.
-    pub goal_embedding: Vec<f32>,
-
-    /// Embedding model identifier
-    pub model: String,
-
-    /// Embedding dimensions
-    pub dimensions: usize,
-}
-
-/// Tensor modality — reserved for multi-dimensional proof metrics.
-#[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct TensorPayload {
-    /// Placeholder: proof complexity metrics per tactic
-    pub metrics: HashMap<String, f64>,
-}
-
-/// Spatial modality — reserved for proof origin metadata.
-#[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct SpatialPayload {
-    /// Placeholder: proof system origin (e.g., "lean4-mathlib")
-    pub origin: String,
-}
-
-// ═══════════════════════════════════════════════════════════════════════
-// ProofOctadBuilder — constructs an octad from ECHIDNA proof state
-// ═══════════════════════════════════════════════════════════════════════
-
-/// Builds a VeriSimDB octad payload from ECHIDNA proof state.
+/// Octad proof metadata (8 modalities)
 ///
-/// Usage:
-/// ```ignore
-/// let octad = ProofOctadBuilder::new("my_theorem", &goal, ProverKind::Lean)
-///     .with_proof_state(&proof_state)
-///     .with_axioms(vec!["Classical.em".to_string()])
-///     .with_aspects(vec!["logic".to_string()])
-///     .with_time_ms(42)
-///     .build()?;
-/// ```
-pub struct ProofOctadBuilder {
-    theorem_name: String,
-    goal: Goal,
-    prover: ProverKind,
-    proof_state: Option<ProofState>,
-    status: ProofStatus,
-    axioms: Vec<String>,
-    aspects: Vec<String>,
-    time_ms: u64,
-    llm_model: Option<String>,
-    parent_proofs: Vec<String>,
-    sub_goals: Vec<String>,
-    goal_embedding: Vec<f32>,
+/// Each proof stored in VeriSimDB as an 8-dimensional record capturing:
+/// - Prover: which backend proved it
+/// - Trust: confidence/trust score (0.0-1.0)
+/// - Axioms: axioms invoked
+/// - Time: latency of proof
+/// - Certificates: verification proofs (Alethe, DRAT/LRAT, TSTP)
+/// - Tactics: proof tactics used
+/// - Dependencies: other proofs this proof depends on
+/// - Confidence: overall confidence score after trust pipeline
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct ProofOctad {
+    /// Unique proof identifier
+    pub proof_id: String,
+
+    /// Modality 1: Prover backend
+    pub prover: ProverModality,
+
+    /// Modality 2: Trust level
+    pub trust: TrustModality,
+
+    /// Modality 3: Axioms used
+    pub axioms: AxiomsModality,
+
+    /// Modality 4: Time (latency)
+    pub time: TimeModality,
+
+    /// Modality 5: Verification certificates
+    pub certificates: CertificatesModality,
+
+    /// Modality 6: Proof tactics
+    pub tactics: TacticsModality,
+
+    /// Modality 7: Dependencies
+    pub dependencies: DependenciesModality,
+
+    /// Modality 8: Overall confidence
+    pub confidence: ConfidenceModality,
+
+    /// Metadata timestamp
+    pub stored_at: DateTime<Utc>,
 }
 
-impl ProofOctadBuilder {
-    /// Create a new builder for a proof octad.
-    pub fn new(theorem_name: &str, goal: &Goal, prover: ProverKind) -> Self {
-        ProofOctadBuilder {
-            theorem_name: theorem_name.to_string(),
-            goal: goal.clone(),
-            prover,
-            proof_state: None,
-            status: ProofStatus::Partial,
-            axioms: Vec::new(),
-            aspects: Vec::new(),
-            time_ms: 0,
-            llm_model: None,
-            parent_proofs: Vec::new(),
-            sub_goals: Vec::new(),
-            goal_embedding: Vec::new(),
-        }
-    }
+/// Modality 1: Prover backend identification
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct ProverModality {
+    /// Prover backend name (e.g., "z3", "cvc5", "lean4")
+    pub prover_kind: String,
+    /// Version of the prover
+    pub prover_version: String,
+    /// Solver binary hash (BLAKE3 or SHA256)
+    pub solver_hash: Option<String>,
+}
 
-    /// Set the proof state (required for semantic + temporal modalities).
-    pub fn with_proof_state(mut self, proof: &ProofState) -> Self {
-        self.proof_state = Some(proof.clone());
-        if proof.is_complete() {
-            self.status = ProofStatus::Complete;
-        }
-        self
-    }
+/// Modality 2: Trust score from trust pipeline
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct TrustModality {
+    /// Trust level (0.0 = unknown, 1.0 = fully trusted)
+    pub trust_score: f32,
+    /// Reason for trust assessment
+    pub reason: String,
+    /// Sandbox level used (none, bubblewrap, podman)
+    pub sandbox_level: String,
+}
 
-    /// Set the proof status explicitly.
-    pub fn with_status(mut self, status: ProofStatus) -> Self {
-        self.status = status;
-        self
-    }
+/// Modality 3: Axioms invoked in proof
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct AxiomsModality {
+    /// Axioms used in this proof
+    pub axioms: Vec<String>,
+    /// Danger level (Safe, Noted, Warning, Reject)
+    pub danger_level: String,
+}
 
-    /// Set axioms used in the proof.
-    pub fn with_axioms(mut self, axioms: Vec<String>) -> Self {
-        self.axioms = axioms;
-        self
-    }
+/// Modality 4: Proof latency
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct TimeModality {
+    /// Latency in milliseconds
+    pub latency_ms: u64,
+    /// Wall-clock time proof was generated
+    pub timestamp: DateTime<Utc>,
+}
 
-    /// Set aspect tags for search.
-    pub fn with_aspects(mut self, aspects: Vec<String>) -> Self {
-        self.aspects = aspects;
-        self
-    }
+/// Modality 5: Verification certificates
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct CertificatesModality {
+    /// Certificate format (Alethe, DRAT, LRAT, TSTP, etc.)
+    pub format: String,
+    /// Certificate content (may be empty if not collected)
+    pub certificate: Option<String>,
+    /// Certificate verification status
+    pub verified: bool,
+}
 
-    /// Set the proof time in milliseconds.
-    pub fn with_time_ms(mut self, ms: u64) -> Self {
-        self.time_ms = ms;
-        self
-    }
+/// Modality 6: Proof tactics
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct TacticsModality {
+    /// Tactics applied
+    pub tactics: Vec<String>,
+    /// Was GNN guidance used?
+    pub gnn_guided: bool,
+    /// Was symbolic fallback used?
+    pub fallback_used: bool,
+}
 
-    /// Set the LLM model tier used for advisory.
-    pub fn with_llm_model(mut self, model: &str) -> Self {
-        self.llm_model = Some(model.to_string());
-        self
-    }
+/// Modality 7: Proof dependencies
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct DependenciesModality {
+    /// IDs of proofs this proof depends on
+    pub proof_dependencies: Vec<String>,
+    /// Theorems/lemmas used
+    pub lemmas_used: Vec<String>,
+}
 
-    /// Set parent proof dependencies (octad keys).
-    pub fn with_dependencies(mut self, deps: Vec<String>) -> Self {
-        self.parent_proofs = deps;
-        self
-    }
+/// Modality 8: Overall confidence after trust pipeline
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct ConfidenceModality {
+    /// Final confidence score (0.0-1.0)
+    pub confidence_score: f32,
+    /// Factors contributing to confidence
+    pub factors: HashMap<String, f32>,
+}
 
-    /// Set sub-goal proof IDs.
-    pub fn with_sub_goals(mut self, subs: Vec<String>) -> Self {
-        self.sub_goals = subs;
-        self
-    }
-
-    /// Set the neural goal embedding for similarity search.
-    pub fn with_embedding(mut self, embedding: Vec<f32>) -> Self {
-        self.goal_embedding = embedding;
-        self
-    }
-
-    /// Build the octad payload.
-    pub fn build(self) -> Result<OctadPayload> {
-        let now = Utc::now();
-        let timestamp = now.to_rfc3339();
-
-        // Generate identities
-        let octad_key = proof_encoding::proof_identity(&self.theorem_name, &self.goal, self.prover);
-        let cross_prover_id = proof_encoding::goal_identity(&self.theorem_name, &self.goal);
-
-        // Semantic modality: CBOR-encode the proof state
-        let proof_blob_b64 = if let Some(ref proof) = self.proof_state {
-            let cbor = proof_encoding::encode_proof_state_cbor(proof)
-                .context("Failed to encode proof for semantic modality")?;
-            base64_encode(&cbor)
-        } else {
-            String::new()
-        };
-
-        let goal_type = classify_goal_type(&self.goal);
-
-        let semantic = SemanticPayload {
-            proof_blob_b64,
-            status: self.status,
-            goal_type,
-            prover: format!("{:?}", self.prover),
-            axioms_used: self.axioms.clone(),
-            llm_model: self.llm_model.clone(),
-            advisory_only: self.llm_model.is_some() && self.status != ProofStatus::Complete,
-        };
-
-        // Temporal modality: initial version
-        let goals_remaining = self
-            .proof_state
-            .as_ref()
-            .map(|p| p.goals.len())
-            .unwrap_or(1);
-
-        let tactic_versions = build_tactic_versions(&self.proof_state, &self.prover, &timestamp);
-
-        let temporal = TemporalPayload {
-            versions: tactic_versions,
-        };
-
-        // Provenance modality: creation record + one per tactic
-        let provenance =
-            build_provenance_chain(&self.proof_state, &self.prover, &self.axioms, &timestamp);
-
-        // Document modality: searchable text
-        let theorem_statement = format!("{}", self.goal.target);
-        let goals_text: Vec<String> = self
-            .proof_state
-            .as_ref()
-            .map(|p| p.goals.iter().map(|g| format!("{}", g.target)).collect())
-            .unwrap_or_else(|| vec![theorem_statement.clone()]);
-
-        let tactics_text: Vec<String> = self
-            .proof_state
-            .as_ref()
-            .map(|p| p.proof_script.iter().map(|t| format!("{:?}", t)).collect())
-            .unwrap_or_default();
-
-        let searchable_text = format!(
-            "{} {} {} {}",
-            self.theorem_name,
-            theorem_statement,
-            goals_text.join(" "),
-            tactics_text.join(" "),
-        );
-
-        let document = DocumentPayload {
-            theorem_statement,
-            goals_text,
-            tactics_text,
-            aspects: self.aspects.clone(),
-            searchable_text,
-        };
-
-        // Graph modality: dependencies
-        let graph = GraphPayload {
-            depends_on: self.parent_proofs,
-            sub_goals: self.sub_goals,
-            cross_prover_id,
-            prover_id: format!("echidna:prover:{:?}", self.prover),
-        };
-
-        // Vector modality: embeddings
-        let dimensions = self.goal_embedding.len();
-        let vector = VectorPayload {
-            goal_embedding: self.goal_embedding,
-            model: if dimensions > 0 {
-                "echidna-neural-v1".to_string()
-            } else {
-                "none".to_string()
+impl ProofOctad {
+    /// Create a new proof octad with default modalities
+    pub fn new(proof_id: impl Into<String>) -> Self {
+        Self {
+            proof_id: proof_id.into(),
+            prover: ProverModality {
+                prover_kind: String::new(),
+                prover_version: String::new(),
+                solver_hash: None,
             },
-            dimensions,
-        };
-
-        // Tensor + Spatial: reserved
-        let mut metrics = HashMap::new();
-        metrics.insert("time_ms".to_string(), self.time_ms as f64);
-        metrics.insert("goals_remaining".to_string(), goals_remaining as f64);
-
-        let tensor = TensorPayload { metrics };
-        let spatial = SpatialPayload {
-            origin: format!("echidna-v{}", env!("CARGO_PKG_VERSION")),
-        };
-
-        Ok(OctadPayload {
-            key: octad_key,
-            semantic,
-            temporal,
-            provenance,
-            document,
-            graph,
-            vector,
-            tensor,
-            spatial,
-        })
+            trust: TrustModality {
+                trust_score: 0.0,
+                reason: "uninitialized".to_string(),
+                sandbox_level: "none".to_string(),
+            },
+            axioms: AxiomsModality {
+                axioms: Vec::new(),
+                danger_level: "Safe".to_string(),
+            },
+            time: TimeModality {
+                latency_ms: 0,
+                timestamp: Utc::now(),
+            },
+            certificates: CertificatesModality {
+                format: String::new(),
+                certificate: None,
+                verified: false,
+            },
+            tactics: TacticsModality {
+                tactics: Vec::new(),
+                gnn_guided: false,
+                fallback_used: false,
+            },
+            dependencies: DependenciesModality {
+                proof_dependencies: Vec::new(),
+                lemmas_used: Vec::new(),
+            },
+            confidence: ConfidenceModality {
+                confidence_score: 0.0,
+                factors: HashMap::new(),
+            },
+            stored_at: Utc::now(),
+        }
     }
 }
 
-// ═══════════════════════════════════════════════════════════════════════
-// VeriSimDB HTTP Client
-// ═══════════════════════════════════════════════════════════════════════
-
-/// Client for VeriSimDB's HTTP API.
+/// VeriSimDB client interface (scaffolding)
 ///
-/// Sends octad payloads to VeriSimDB for persistent storage.
-/// Uses reqwest for async HTTP. Falls back gracefully if VeriSimDB
-/// is unavailable (proof memory continues in-memory).
+/// TODO(verisimdb-phase-1): Implement once VeriSimDB public API is stable.
+/// Expected methods:
+/// - store_octad(octad: &ProofOctad) -> Result<ProofId>
+/// - query_by_modality(modality: &str, value: &str) -> Result<Vec<ProofOctad>>
+/// - update_confidence(proof_id: &str, confidence: &ConfidenceModality) -> Result<()>
 pub struct VeriSimDBClient {
-    // pub(crate) — the sibling vcl_ut module composes queries directly
-    // against the base URL + shared HTTP client rather than going through
-    // a narrowed accessor surface. Keeping the crate-local visibility
-    // documents that intent without leaking the fields to downstream
-    // crates.
-    pub(crate) base_url: String,
-    pub(crate) http: reqwest::Client,
+    // TODO: Add connection pool / client initialization
 }
 
 impl VeriSimDBClient {
-    /// Create a new VeriSimDB client.
-    pub fn new(base_url: &str) -> Self {
-        VeriSimDBClient {
-            base_url: base_url.trim_end_matches('/').to_string(),
-            http: reqwest::Client::builder()
-                .timeout(std::time::Duration::from_secs(10))
-                .build()
-                .expect("Failed to create HTTP client"),
+    /// Create a new VeriSimDB client
+    /// TODO: Implement with actual connection details
+    pub fn new() -> Self {
+        Self {
+            // Placeholder
         }
     }
 
-    /// Store an octad payload in VeriSimDB.
-    pub async fn create_octad(&self, payload: &OctadPayload) -> Result<()> {
-        let url = format!("{}/api/v1/octads", self.base_url);
-
-        let response = self
-            .http
-            .post(&url)
-            .json(payload)
-            .send()
-            .await
-            .context("Failed to send octad to VeriSimDB")?;
-
-        if response.status().is_success() {
-            debug!("Stored octad {} in VeriSimDB", payload.key);
-            Ok(())
-        } else {
-            let status = response.status();
-            let body = response.text().await.unwrap_or_default();
-            warn!("VeriSimDB returned {}: {}", status, body);
-            anyhow::bail!("VeriSimDB returned {}: {}", status, body)
-        }
+    /// Store a proof octad in VeriSimDB
+    /// TODO: Implement once VeriSimDB API is available
+    #[allow(dead_code)]
+    pub async fn store_octad(&self, _octad: &ProofOctad) -> Result<String, String> {
+        Err("VeriSimDB integration not yet implemented".to_string())
     }
 
-    /// Retrieve an octad by key.
-    pub async fn get_octad(&self, key: &str) -> Result<Option<OctadPayload>> {
-        let url = format!("{}/api/v1/octads/{}", self.base_url, key);
-
-        let response = self
-            .http
-            .get(&url)
-            .send()
-            .await
-            .context("Failed to query VeriSimDB")?;
-
-        if response.status().is_success() {
-            let octad: OctadPayload = response
-                .json()
-                .await
-                .context("Failed to parse octad from VeriSimDB")?;
-            Ok(Some(octad))
-        } else if response.status() == reqwest::StatusCode::NOT_FOUND {
-            Ok(None)
-        } else {
-            let status = response.status();
-            anyhow::bail!("VeriSimDB returned {} for key {}", status, key)
-        }
+    /// Query proofs by a specific modality
+    /// TODO: Implement once VeriSimDB API is available
+    #[allow(dead_code)]
+    pub async fn query_by_modality(
+        &self,
+        _modality: &str,
+        _value: &str,
+    ) -> Result<Vec<ProofOctad>, String> {
+        Err("VeriSimDB integration not yet implemented".to_string())
     }
 
-    /// Update an existing octad.
-    pub async fn update_octad(&self, payload: &OctadPayload) -> Result<()> {
-        // VeriSimDB uses POST for create-or-update
-        self.create_octad(payload).await
+    /// Update confidence modality for a proof
+    /// TODO: Implement once VeriSimDB API is available
+    #[allow(dead_code)]
+    pub async fn update_confidence(
+        &self,
+        _proof_id: &str,
+        _confidence: &ConfidenceModality,
+    ) -> Result<(), String> {
+        Err("VeriSimDB integration not yet implemented".to_string())
     }
 
-    /// Delete an octad by key.
-    pub async fn delete_octad(&self, key: &str) -> Result<()> {
-        let url = format!("{}/api/v1/octads/{}", self.base_url, key);
-
-        let response = self
-            .http
-            .delete(&url)
-            .send()
-            .await
-            .context("Failed to delete octad from VeriSimDB")?;
-
-        if response.status().is_success() || response.status() == reqwest::StatusCode::NOT_FOUND {
-            Ok(())
-        } else {
-            anyhow::bail!("VeriSimDB delete failed: {}", response.status())
-        }
-    }
-
-    /// Check if VeriSimDB is reachable.
-    pub async fn health_check(&self) -> bool {
-        let url = format!("{}/health", self.base_url);
-        self.http
-            .get(&url)
-            .timeout(std::time::Duration::from_secs(2))
-            .send()
-            .await
-            .map(|r| r.status().is_success())
-            .unwrap_or(false)
-    }
-
-    /// Record a proof attempt in VeriSimDB's proof_attempts table.
-    ///
-    /// Posts to `/api/v1/proof_attempts` which writes a row to ClickHouse.
-    /// The row is visible to hypatia's proof_strategy_selection rule (H3) via
-    /// the mv_prover_success_by_class materialised view, closing the learning
-    /// loop: attempt → table → MV → hypatia recommendation → next attempt.
-    ///
-    /// Returns the `attempt_id` on success. Propagates HTTP errors so callers
-    /// can decide whether to retry or continue without persistence.
-    pub async fn record_proof_attempt(&self, attempt: &ProofAttempt) -> Result<String> {
-        let url = format!("{}/api/v1/proof_attempts", self.base_url);
-
-        let response = self
-            .http
-            .post(&url)
-            .json(attempt)
-            .send()
-            .await
-            .context("Failed to post proof_attempt to VeriSimDB")?;
-
-        if response.status().is_success() {
-            debug!(
-                "Recorded proof_attempt {} (prover={}, outcome={}) in VeriSimDB",
-                attempt.attempt_id, attempt.prover_used, attempt.outcome
-            );
-            Ok(attempt.attempt_id.clone())
-        } else {
-            let status = response.status();
-            let body = response.text().await.unwrap_or_default();
-            warn!("VeriSimDB proof_attempts returned {}: {}", status, body);
-            anyhow::bail!("VeriSimDB proof_attempts returned {}: {}", status, body)
-        }
+    /// Query corpus health via VeriSimDB
+    /// TODO: Implement once VeriSimDB API is available
+    #[allow(dead_code)]
+    pub async fn corpus_health_snapshot(&self) -> Result<CorpusHealthSnapshot, String> {
+        Err("VeriSimDB integration not yet implemented".to_string())
     }
 }
 
-// ═══════════════════════════════════════════════════════════════════════
-// ProofAttempt — row written to VeriSimDB's proof_attempts table
-// ═══════════════════════════════════════════════════════════════════════
-
-/// A single proof attempt record. Matches the JSON body expected by
-/// `POST /api/v1/proof_attempts` on verisim-api.
-///
-/// Field names use snake_case; prover/outcome use lowercase strings matching
-/// the ClickHouse Enum8 values ("coq", "lean", ..., "success", "timeout", ...).
-#[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct ProofAttempt {
-    /// UUID v4 unique to this attempt.
-    pub attempt_id: String,
-    /// Stable hash of (repo, file, claim) — groups retries of the same obligation.
-    pub obligation_id: String,
-    /// Repository identifier, e.g. "hyperpolymath/echidna".
-    pub repo: String,
-    /// File path within the repo, e.g. "proofs/coq/basic.v".
-    pub file: String,
-    /// Human-readable obligation text.
-    pub claim: String,
-    /// Obligation class for strategy lookup, e.g. "linearity", "termination".
-    pub obligation_class: String,
-    /// Prover used ("coq", "lean", "agda", "isabelle", "idris2", "z3", etc.).
-    pub prover_used: String,
-    /// Outcome ("success", "timeout", "failure", "unknown").
-    pub outcome: String,
-    pub duration_ms: u64,
-    /// Confidence score in [0.0, 1.0].
-    pub confidence: f32,
-    /// Prior attempt on the same obligation (for retries), or None.
-    pub parent_attempt_id: Option<String>,
-    /// Strategy used, e.g. "portfolio", "gnn-guided", "manual", "retry".
-    pub strategy_tag: String,
-    /// ISO-8601 UTC timestamp when the attempt started.
-    pub started_at: String,
-    /// ISO-8601 UTC timestamp when the attempt completed.
-    pub completed_at: String,
-    /// Truncated prover stdout/stderr (<=8 KiB recommended).
-    pub prover_output: String,
-    /// Error message if outcome != success, else None.
-    pub error_message: Option<String>,
-}
-
-/// Map an echidna `ProverKind` to the lowercase string the endpoint expects.
-/// Unknown variants map to "other" — the endpoint's fallback enum value.
-pub fn prover_kind_to_str(kind: ProverKind) -> &'static str {
-    match kind {
-        ProverKind::Coq => "coq",
-        ProverKind::Lean => "lean",
-        ProverKind::Agda => "agda",
-        ProverKind::Isabelle => "isabelle",
-        ProverKind::Idris2 => "idris2",
-        ProverKind::Z3 => "z3",
-        ProverKind::CVC5 => "cvc5",
-        ProverKind::AltErgo => "altergo",
-        ProverKind::Metamath => "metamath",
-        ProverKind::HOLLight => "hol_light",
-        ProverKind::Mizar => "mizar",
-        ProverKind::HOL4 => "hol4",
-        ProverKind::PVS => "pvs",
-        ProverKind::ACL2 => "acl2",
-        ProverKind::Vampire => "vampire",
-        ProverKind::EProver => "eprover",
-        _ => "other",
+impl Default for VeriSimDBClient {
+    fn default() -> Self {
+        Self::new()
     }
 }
 
-// ═══════════════════════════════════════════════════════════════════════
-// Helper functions
-// ═══════════════════════════════════════════════════════════════════════
-
-/// Classify the goal type for the semantic modality.
-fn classify_goal_type(goal: &Goal) -> String {
-    use crate::core::Term;
-    match &goal.target {
-        Term::Pi { .. } => "universal_quantification".to_string(),
-        Term::App { func, .. } => match func.as_ref() {
-            Term::Const(name) if name == "eq" || name == "Eq" => "equality".to_string(),
-            Term::Const(name) if name == "and" || name == "And" => "conjunction".to_string(),
-            Term::Const(name) if name == "or" || name == "Or" => "disjunction".to_string(),
-            Term::Const(name) if name == "not" || name == "Not" => "negation".to_string(),
-            Term::Const(name) if name == "exists" || name == "Exists" => "existential".to_string(),
-            _ => "application".to_string(),
-        },
-        Term::Lambda { .. } => "lambda".to_string(),
-        Term::Var(_) => "variable".to_string(),
-        Term::Const(_) => "constant".to_string(),
-        _ => "other".to_string(),
-    }
-}
-
-/// Build the temporal version chain from a proof state's tactic history.
-fn build_tactic_versions(
-    proof_state: &Option<ProofState>,
-    prover: &ProverKind,
-    timestamp: &str,
-) -> Vec<ProofVersion> {
-    let mut versions = vec![ProofVersion {
-        version: 0,
-        timestamp: timestamp.to_string(),
-        actor: "echidna-dispatch".to_string(),
-        description: "Proof attempt initialised".to_string(),
-        goals_remaining: proof_state.as_ref().map(|p| p.goals.len()).unwrap_or(1),
-        tactic: None,
-    }];
-
-    if let Some(ref proof) = proof_state {
-        for (i, tactic) in proof.proof_script.iter().enumerate() {
-            versions.push(ProofVersion {
-                version: (i + 1) as u64,
-                timestamp: timestamp.to_string(),
-                actor: format!("{:?}", prover),
-                description: format!("Applied tactic: {:?}", tactic),
-                goals_remaining: proof.goals.len(), // approximate
-                tactic: Some(format!("{:?}", tactic)),
-            });
-        }
-
-        // Final version if proof is complete
-        if proof.is_complete() {
-            versions.push(ProofVersion {
-                version: (proof.proof_script.len() + 1) as u64,
-                timestamp: timestamp.to_string(),
-                actor: "echidna-verify".to_string(),
-                description: "Proof complete (QED)".to_string(),
-                goals_remaining: 0,
-                tactic: None,
-            });
-        }
-    }
-
-    versions
-}
-
-/// Build the provenance hash chain from a proof state.
-fn build_provenance_chain(
-    proof_state: &Option<ProofState>,
-    prover: &ProverKind,
-    axioms: &[String],
-    timestamp: &str,
-) -> ProvenancePayload {
-    let mut records = Vec::new();
-    let mut parent_hash = String::new();
-
-    // Record 0: Creation
-    let creation_data: HashMap<String, serde_json::Value> = [
-        (
-            "prover".to_string(),
-            serde_json::json!(format!("{:?}", prover)),
-        ),
-        ("axioms".to_string(), serde_json::json!(axioms)),
-    ]
-    .into_iter()
-    .collect();
-
-    let creation_hash = hash_provenance_record(&parent_hash, "Created", timestamp, &creation_data);
-    records.push(ProvenanceRecord {
-        hash: creation_hash.clone(),
-        parent_hash: parent_hash.clone(),
-        event: ProvenanceEvent::Created,
-        actor: "echidna-dispatch".to_string(),
-        timestamp: timestamp.to_string(),
-        data: creation_data,
-    });
-    parent_hash = creation_hash;
-
-    // Record per tactic
-    if let Some(ref proof) = proof_state {
-        for tactic in &proof.proof_script {
-            let tactic_data: HashMap<String, serde_json::Value> = [(
-                "tactic".to_string(),
-                serde_json::json!(format!("{:?}", tactic)),
-            )]
-            .into_iter()
-            .collect();
-
-            let tactic_hash =
-                hash_provenance_record(&parent_hash, "TacticApplied", timestamp, &tactic_data);
-            records.push(ProvenanceRecord {
-                hash: tactic_hash.clone(),
-                parent_hash: parent_hash.clone(),
-                event: ProvenanceEvent::TacticApplied,
-                actor: format!("{:?}", prover),
-                timestamp: timestamp.to_string(),
-                data: tactic_data,
-            });
-            parent_hash = tactic_hash;
-        }
-
-        // Final verification record if complete
-        if proof.is_complete() {
-            let verify_data = HashMap::new();
-            let verify_hash =
-                hash_provenance_record(&parent_hash, "Verified", timestamp, &verify_data);
-            records.push(ProvenanceRecord {
-                hash: verify_hash.clone(),
-                parent_hash,
-                event: ProvenanceEvent::Verified,
-                actor: "echidna-verify".to_string(),
-                timestamp: timestamp.to_string(),
-                data: verify_data,
-            });
-        }
-    }
-
-    ProvenancePayload { records }
-}
-
-/// Hash a provenance record for the hash chain.
-fn hash_provenance_record(
-    parent_hash: &str,
-    event: &str,
-    timestamp: &str,
-    data: &HashMap<String, serde_json::Value>,
-) -> String {
-    use sha2::{Digest, Sha256};
-    let input = format!(
-        "{}:{}:{}:{}",
-        parent_hash,
-        event,
-        timestamp,
-        serde_json::to_string(data).unwrap_or_default(),
-    );
-    format!("{:x}", Sha256::digest(input.as_bytes()))
-}
-
-/// Base64-encode bytes (no padding, URL-safe).
-fn base64_encode(bytes: &[u8]) -> String {
-    // Simple base64 encoding using standard alphabet
-    // In production, use the `base64` crate; here we use a compact implementation
-    // that avoids adding another dependency.
-    const ALPHABET: &[u8; 64] = b"ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
-    let mut result = String::with_capacity((bytes.len() + 2) / 3 * 4);
-
-    for chunk in bytes.chunks(3) {
-        let b0 = chunk[0] as u32;
-        let b1 = chunk.get(1).copied().unwrap_or(0) as u32;
-        let b2 = chunk.get(2).copied().unwrap_or(0) as u32;
-        let triple = (b0 << 16) | (b1 << 8) | b2;
-
-        result.push(ALPHABET[((triple >> 18) & 0x3F) as usize] as char);
-        result.push(ALPHABET[((triple >> 12) & 0x3F) as usize] as char);
-
-        if chunk.len() > 1 {
-            result.push(ALPHABET[((triple >> 6) & 0x3F) as usize] as char);
-        }
-        if chunk.len() > 2 {
-            result.push(ALPHABET[(triple & 0x3F) as usize] as char);
-        }
-    }
-
-    result
+/// Corpus health snapshot from VeriSimDB
+/// TODO: Populate from actual octad queries once VeriSimDB is available
+#[derive(Debug, Clone, Serialize, Deserialize, Default)]
+pub struct CorpusHealthSnapshot {
+    /// Total proofs in corpus
+    pub total_proofs: usize,
+    /// Proofs by prover backend
+    pub proofs_by_prover: HashMap<String, usize>,
+    /// Average trust score
+    pub avg_trust_score: f32,
+    /// Average confidence score
+    pub avg_confidence_score: f32,
+    /// Proofs with verified certificates
+    pub verified_certificates: usize,
+    /// Snapshot timestamp
+    pub snapshot_at: DateTime<Utc>,
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::core::{Context, Tactic, Term};
-    use std::collections::HashMap;
 
-    fn sample_goal() -> Goal {
-        Goal {
-            id: "goal_0".to_string(),
-            target: Term::Pi {
-                param: "n".to_string(),
-                param_type: Box::new(Term::Const("Nat".to_string())),
-                body: Box::new(Term::App {
-                    func: Box::new(Term::Const("eq".to_string())),
-                    args: vec![
-                        Term::App {
-                            func: Box::new(Term::Const("add".to_string())),
-                            args: vec![Term::Var("n".to_string()), Term::Const("0".to_string())],
-                        },
-                        Term::Var("n".to_string()),
-                    ],
-                }),
-            },
-            hypotheses: vec![],
-        }
-    }
-
-    fn sample_proof_state() -> ProofState {
-        ProofState {
-            goals: vec![],
-            context: Context::default(),
-            proof_script: vec![
-                Tactic::Induction(Term::Var("n".to_string())),
-                Tactic::Simplify,
-                Tactic::Reflexivity,
-            ],
-            metadata: HashMap::new(),
-        }
+    #[test]
+    fn test_octad_creation() {
+        let octad = ProofOctad::new("proof_123");
+        assert_eq!(octad.proof_id, "proof_123");
+        assert_eq!(octad.trust.trust_score, 0.0);
+        assert_eq!(octad.confidence.confidence_score, 0.0);
     }
 
     #[test]
-    fn test_build_complete_octad() {
-        let goal = sample_goal();
-        let proof = sample_proof_state();
+    fn test_octad_serialization() {
+        let octad = ProofOctad::new("proof_456");
+        let json = serde_json::to_string(&octad).expect("Should serialize");
+        assert!(json.contains("proof_456"));
 
-        let octad = ProofOctadBuilder::new("nat_add_zero", &goal, ProverKind::Lean)
-            .with_proof_state(&proof)
-            .with_axioms(vec!["Nat.rec".to_string()])
-            .with_aspects(vec!["arithmetic".to_string(), "induction".to_string()])
-            .with_time_ms(42)
-            .build()
-            .expect("Failed to build octad");
-
-        // Key should be a 64-char hex digest
-        assert_eq!(octad.key.len(), 64);
-
-        // Semantic modality (ProverKind::Lean is the Lean 4 variant; Lean 3
-        // is a sibling ProverKind::Lean3.)
-        assert_eq!(octad.semantic.status, ProofStatus::Complete);
-        assert_eq!(octad.semantic.prover, "Lean");
-        assert!(!octad.semantic.proof_blob_b64.is_empty());
-        assert_eq!(octad.semantic.axioms_used, vec!["Nat.rec"]);
-
-        // Temporal modality: initial + 3 tactics + QED = 5 versions
-        assert_eq!(octad.temporal.versions.len(), 5);
-        assert_eq!(octad.temporal.versions[0].actor, "echidna-dispatch");
-        assert_eq!(
-            octad.temporal.versions[4].description,
-            "Proof complete (QED)"
-        );
-
-        // Provenance modality: creation + 3 tactics + verified = 5 records
-        assert_eq!(octad.provenance.records.len(), 5);
-        // Hash chain integrity: each record's parent_hash matches previous record's hash
-        for i in 1..octad.provenance.records.len() {
-            assert_eq!(
-                octad.provenance.records[i].parent_hash,
-                octad.provenance.records[i - 1].hash,
-                "Hash chain broken at record {}",
-                i,
-            );
-        }
-
-        // Document modality
-        assert!(octad.document.searchable_text.contains("nat_add_zero"));
-        assert_eq!(octad.document.aspects, vec!["arithmetic", "induction"]);
-
-        // Graph modality
-        assert_eq!(octad.graph.cross_prover_id.len(), 64);
-        assert!(octad.graph.prover_id.contains("Lean"));
-
-        // Tensor modality
-        assert_eq!(*octad.tensor.metrics.get("time_ms").unwrap(), 42.0);
+        let deserialized: ProofOctad =
+            serde_json::from_str(&json).expect("Should deserialize");
+        assert_eq!(deserialized.proof_id, "proof_456");
     }
 
     #[test]
-    fn test_build_partial_octad() {
-        let goal = sample_goal();
-
-        let octad = ProofOctadBuilder::new("partial_thm", &goal, ProverKind::Coq)
-            .with_status(ProofStatus::Failed)
-            .build()
-            .expect("Failed to build partial octad");
-
-        assert_eq!(octad.semantic.status, ProofStatus::Failed);
-        assert!(octad.semantic.proof_blob_b64.is_empty());
-        assert_eq!(octad.temporal.versions.len(), 1); // Only initial version
+    fn test_client_creation() {
+        let _client = VeriSimDBClient::new();
     }
 
     #[test]
-    fn test_classify_goal_type() {
-        let eq_goal = Goal {
-            id: "g".to_string(),
-            target: Term::App {
-                func: Box::new(Term::Const("eq".to_string())),
-                args: vec![Term::Var("a".to_string()), Term::Var("b".to_string())],
-            },
-            hypotheses: vec![],
+    fn test_prover_modality() {
+        let modality = ProverModality {
+            prover_kind: "z3".to_string(),
+            prover_version: "4.13.0".to_string(),
+            solver_hash: Some("abc123".to_string()),
         };
-        assert_eq!(classify_goal_type(&eq_goal), "equality");
+        assert_eq!(modality.prover_kind, "z3");
+    }
 
-        let pi_goal = Goal {
-            id: "g".to_string(),
-            target: Term::Pi {
-                param: "x".to_string(),
-                param_type: Box::new(Term::Const("A".to_string())),
-                body: Box::new(Term::Var("x".to_string())),
-            },
-            hypotheses: vec![],
+    #[test]
+    fn test_confidence_with_factors() {
+        let mut confidence = ConfidenceModality {
+            confidence_score: 0.85,
+            factors: HashMap::new(),
         };
-        assert_eq!(classify_goal_type(&pi_goal), "universal_quantification");
-    }
+        confidence.factors.insert("gnn_score".to_string(), 0.9);
+        confidence.factors.insert("trust_score".to_string(), 0.8);
 
-    #[test]
-    fn test_provenance_hash_chain_integrity() {
-        let proof = sample_proof_state();
-        let prov = build_provenance_chain(
-            &Some(proof),
-            &ProverKind::Agda,
-            &["ax1".to_string()],
-            "2026-03-20T00:00:00Z",
-        );
-
-        // First record has empty parent
-        assert_eq!(prov.records[0].parent_hash, "");
-
-        // Each subsequent record links to previous
-        for i in 1..prov.records.len() {
-            assert_eq!(prov.records[i].parent_hash, prov.records[i - 1].hash);
-        }
-
-        // All hashes are 64-char hex
-        for record in &prov.records {
-            assert_eq!(record.hash.len(), 64);
-        }
-    }
-
-    #[test]
-    fn test_base64_encode() {
-        assert_eq!(base64_encode(b"hello"), "aGVsbG8");
-        assert_eq!(base64_encode(b""), "");
-        assert_eq!(base64_encode(b"a"), "YQ");
+        assert_eq!(confidence.factors.len(), 2);
+        assert_eq!(confidence.confidence_score, 0.85);
     }
 }
