@@ -29,12 +29,12 @@ impl ProverBackend for FfiProverBackend {
     async fn parse_file(&self, path: std::path::PathBuf) -> anyhow::Result<CoreProofState> {
         let content = std::fs::read_to_string(&path)?;
         ffi_wrapper::parse_string(self.handle, &content)?;
-        Ok(CoreProofState::new(content))
+        Ok(CoreProofState::new(Term::Var(content)))
     }
 
     async fn parse_string(&self, content: &str) -> anyhow::Result<CoreProofState> {
         ffi_wrapper::parse_string(self.handle, content)?;
-        Ok(CoreProofState::new(content.to_string()))
+        Ok(CoreProofState::new(Term::Var(content.to_string())))
     }
 
     async fn verify_proof(&self, state: &CoreProofState) -> anyhow::Result<bool> {
@@ -48,7 +48,7 @@ impl ProverBackend for FfiProverBackend {
     ) -> anyhow::Result<CoreTacticResult> {
         let tactic_str = format!("{:?}", tactic);
         if ffi_wrapper::apply_tactic(self.handle, &tactic_str)? {
-            Ok(CoreTacticResult::Success(Box::new(state.clone())))
+            Ok(CoreTacticResult::Success(state.clone()))
         } else {
             Ok(CoreTacticResult::Error("Tactic failed".to_string()))
         }
@@ -80,8 +80,19 @@ impl ProverBackend for FfiProverBackend {
     }
 
     fn kind(&self) -> CoreProverKind {
-        // This is a bit simplified - in a real implementation we'd track the kind
-        CoreProverKind::Lean // Default, would need to be set during creation
+        CoreProverKind::Lean
+    }
+
+    async fn search_theorems(&self, _pattern: &str) -> anyhow::Result<Vec<String>> {
+        Ok(Vec::new())
+    }
+
+    fn config(&self) -> &ProverConfig {
+        &self.config
+    }
+
+    fn set_config(&mut self, config: ProverConfig) {
+        self.config = config;
     }
 }
 
@@ -124,6 +135,89 @@ impl ProverKindExt for crate::schema::ProverKind {
             CoreProverKind::MiniZinc => crate::schema::ProverKind::MiniZinc,
             CoreProverKind::Chuffed => crate::schema::ProverKind::Chuffed,
             CoreProverKind::ORTools => crate::schema::ProverKind::ORTools,
+            CoreProverKind::Lean3 => crate::schema::ProverKind::Lean3,
+            CoreProverKind::TypedWasm => crate::schema::ProverKind::TypedWasm,
+            CoreProverKind::SPIN => crate::schema::ProverKind::SPIN,
+            CoreProverKind::CBMC => crate::schema::ProverKind::CBMC,
+            CoreProverKind::SeaHorn => crate::schema::ProverKind::SeaHorn,
+            CoreProverKind::CaDiCaL => crate::schema::ProverKind::CaDiCaL,
+            CoreProverKind::Kissat => crate::schema::ProverKind::Kissat,
+            CoreProverKind::MiniSat => crate::schema::ProverKind::MiniSat,
+            CoreProverKind::NuSMV => crate::schema::ProverKind::NuSMV,
+            CoreProverKind::TLC => crate::schema::ProverKind::TLC,
+            CoreProverKind::Alloy => crate::schema::ProverKind::Alloy,
+            CoreProverKind::Prism => crate::schema::ProverKind::Prism,
+            CoreProverKind::UPPAAL => crate::schema::ProverKind::UPPAAL,
+            CoreProverKind::FramaC => crate::schema::ProverKind::FramaC,
+            CoreProverKind::Viper => crate::schema::ProverKind::Viper,
+            CoreProverKind::Tamarin => crate::schema::ProverKind::Tamarin,
+            CoreProverKind::ProVerif => crate::schema::ProverKind::ProVerif,
+            CoreProverKind::KeY => crate::schema::ProverKind::KeY,
+            CoreProverKind::DReal => crate::schema::ProverKind::DReal,
+            CoreProverKind::ABC => crate::schema::ProverKind::ABC,
+            CoreProverKind::TypeLL => crate::schema::ProverKind::TypeLL,
+            CoreProverKind::KatagoriaVerifier => crate::schema::ProverKind::KatagoriaVerifier,
+            CoreProverKind::TropicalTypeChecker => crate::schema::ProverKind::TropicalTypeChecker,
+            CoreProverKind::ChoreographicTypeChecker => crate::schema::ProverKind::ChoreographicTypeChecker,
+            CoreProverKind::EpistemicTypeChecker => crate::schema::ProverKind::EpistemicTypeChecker,
+            CoreProverKind::EchoTypeChecker => crate::schema::ProverKind::EchoTypeChecker,
+            CoreProverKind::SessionTypeChecker => crate::schema::ProverKind::SessionTypeChecker,
+            CoreProverKind::ModalTypeChecker => crate::schema::ProverKind::ModalTypeChecker,
+            CoreProverKind::QTTTypeChecker => crate::schema::ProverKind::QTTTypeChecker,
+            CoreProverKind::EffectRowTypeChecker => crate::schema::ProverKind::EffectRowTypeChecker,
+            CoreProverKind::DependentTypeChecker => crate::schema::ProverKind::DependentTypeChecker,
+            CoreProverKind::RefinementTypeChecker => crate::schema::ProverKind::RefinementTypeChecker,
+            CoreProverKind::OrdinaryTypeChecker => crate::schema::ProverKind::OrdinaryTypeChecker,
+            CoreProverKind::PhantomTypeChecker => crate::schema::ProverKind::PhantomTypeChecker,
+            CoreProverKind::PolymorphicTypeChecker => crate::schema::ProverKind::PolymorphicTypeChecker,
+            CoreProverKind::ExistentialTypeChecker => crate::schema::ProverKind::ExistentialTypeChecker,
+            CoreProverKind::HigherKindedTypeChecker => crate::schema::ProverKind::HigherKindedTypeChecker,
+            CoreProverKind::RowTypeChecker => crate::schema::ProverKind::RowTypeChecker,
+            CoreProverKind::SubtypingTypeChecker => crate::schema::ProverKind::SubtypingTypeChecker,
+            CoreProverKind::IntersectionTypeChecker => crate::schema::ProverKind::IntersectionTypeChecker,
+            CoreProverKind::UnionTypeChecker => crate::schema::ProverKind::UnionTypeChecker,
+            CoreProverKind::GradualTypeChecker => crate::schema::ProverKind::GradualTypeChecker,
+            CoreProverKind::HoareTypeChecker => crate::schema::ProverKind::HoareTypeChecker,
+            CoreProverKind::IndexedTypeChecker => crate::schema::ProverKind::IndexedTypeChecker,
+            CoreProverKind::LinearTypeChecker => crate::schema::ProverKind::LinearTypeChecker,
+            CoreProverKind::AffineTypeChecker => crate::schema::ProverKind::AffineTypeChecker,
+            CoreProverKind::RelevantTypeChecker => crate::schema::ProverKind::RelevantTypeChecker,
+            CoreProverKind::OrderedTypeChecker => crate::schema::ProverKind::OrderedTypeChecker,
+            CoreProverKind::UniquenessTypeChecker => crate::schema::ProverKind::UniquenessTypeChecker,
+            CoreProverKind::ImmutableTypeChecker => crate::schema::ProverKind::ImmutableTypeChecker,
+            CoreProverKind::CapabilityTypeChecker => crate::schema::ProverKind::CapabilityTypeChecker,
+            CoreProverKind::BunchedTypeChecker => crate::schema::ProverKind::BunchedTypeChecker,
+            CoreProverKind::TemporalTypeChecker => crate::schema::ProverKind::TemporalTypeChecker,
+            CoreProverKind::ProvabilityTypeChecker => crate::schema::ProverKind::ProvabilityTypeChecker,
+            CoreProverKind::ImpureTypeChecker => crate::schema::ProverKind::ImpureTypeChecker,
+            CoreProverKind::CoeffectTypeChecker => crate::schema::ProverKind::CoeffectTypeChecker,
+            CoreProverKind::ProbabilisticTypeChecker => crate::schema::ProverKind::ProbabilisticTypeChecker,
+            CoreProverKind::DyadicTypeChecker => crate::schema::ProverKind::DyadicTypeChecker,
+            CoreProverKind::HomotopyTypeChecker => crate::schema::ProverKind::HomotopyTypeChecker,
+            CoreProverKind::CubicalTypeChecker => crate::schema::ProverKind::CubicalTypeChecker,
+            CoreProverKind::NominalTypeChecker => crate::schema::ProverKind::NominalTypeChecker,
+            CoreProverKind::Abella => crate::schema::ProverKind::Abella,
+            CoreProverKind::Dedukti => crate::schema::ProverKind::Dedukti,
+            CoreProverKind::Cameleer => crate::schema::ProverKind::Cameleer,
+            CoreProverKind::ACL2s => crate::schema::ProverKind::ACL2s,
+            CoreProverKind::IsabelleZF => crate::schema::ProverKind::IsabelleZF,
+            CoreProverKind::Boogie => crate::schema::ProverKind::Boogie,
+            CoreProverKind::Naproche => crate::schema::ProverKind::Naproche,
+            CoreProverKind::Matita => crate::schema::ProverKind::Matita,
+            CoreProverKind::Arend => crate::schema::ProverKind::Arend,
+            CoreProverKind::Athena => crate::schema::ProverKind::Athena,
+            CoreProverKind::LambdaProlog => crate::schema::ProverKind::LambdaProlog,
+            CoreProverKind::Mercury => crate::schema::ProverKind::Mercury,
+            CoreProverKind::Nitpick => crate::schema::ProverKind::Nitpick,
+            CoreProverKind::Nunchaku => crate::schema::ProverKind::Nunchaku,
+            CoreProverKind::CubicalAgda => crate::schema::ProverKind::CubicalAgda,
+            CoreProverKind::Zipperposition => crate::schema::ProverKind::Zipperposition,
+            CoreProverKind::Prover9 => crate::schema::ProverKind::Prover9,
+            CoreProverKind::OpenSmt => crate::schema::ProverKind::OpenSmt,
+            CoreProverKind::SmtRat => crate::schema::ProverKind::SmtRat,
+            CoreProverKind::Rocq => crate::schema::ProverKind::Rocq,
+            CoreProverKind::UppaalStratego => crate::schema::ProverKind::UppaalStratego,
+            CoreProverKind::MizAR => crate::schema::ProverKind::MizAR,
         }
     }
 
@@ -159,6 +253,89 @@ impl ProverKindExt for crate::schema::ProverKind {
             crate::schema::ProverKind::MiniZinc => CoreProverKind::MiniZinc,
             crate::schema::ProverKind::Chuffed => CoreProverKind::Chuffed,
             crate::schema::ProverKind::ORTools => CoreProverKind::ORTools,
+            crate::schema::ProverKind::Lean3 => CoreProverKind::Lean3,
+            crate::schema::ProverKind::TypedWasm => CoreProverKind::TypedWasm,
+            crate::schema::ProverKind::SPIN => CoreProverKind::SPIN,
+            crate::schema::ProverKind::CBMC => CoreProverKind::CBMC,
+            crate::schema::ProverKind::SeaHorn => CoreProverKind::SeaHorn,
+            crate::schema::ProverKind::CaDiCaL => CoreProverKind::CaDiCaL,
+            crate::schema::ProverKind::Kissat => CoreProverKind::Kissat,
+            crate::schema::ProverKind::MiniSat => CoreProverKind::MiniSat,
+            crate::schema::ProverKind::NuSMV => CoreProverKind::NuSMV,
+            crate::schema::ProverKind::TLC => CoreProverKind::TLC,
+            crate::schema::ProverKind::Alloy => CoreProverKind::Alloy,
+            crate::schema::ProverKind::Prism => CoreProverKind::Prism,
+            crate::schema::ProverKind::UPPAAL => CoreProverKind::UPPAAL,
+            crate::schema::ProverKind::FramaC => CoreProverKind::FramaC,
+            crate::schema::ProverKind::Viper => CoreProverKind::Viper,
+            crate::schema::ProverKind::Tamarin => CoreProverKind::Tamarin,
+            crate::schema::ProverKind::ProVerif => CoreProverKind::ProVerif,
+            crate::schema::ProverKind::KeY => CoreProverKind::KeY,
+            crate::schema::ProverKind::DReal => CoreProverKind::DReal,
+            crate::schema::ProverKind::ABC => CoreProverKind::ABC,
+            crate::schema::ProverKind::TypeLL => CoreProverKind::TypeLL,
+            crate::schema::ProverKind::KatagoriaVerifier => CoreProverKind::KatagoriaVerifier,
+            crate::schema::ProverKind::TropicalTypeChecker => CoreProverKind::TropicalTypeChecker,
+            crate::schema::ProverKind::ChoreographicTypeChecker => CoreProverKind::ChoreographicTypeChecker,
+            crate::schema::ProverKind::EpistemicTypeChecker => CoreProverKind::EpistemicTypeChecker,
+            crate::schema::ProverKind::EchoTypeChecker => CoreProverKind::EchoTypeChecker,
+            crate::schema::ProverKind::SessionTypeChecker => CoreProverKind::SessionTypeChecker,
+            crate::schema::ProverKind::ModalTypeChecker => CoreProverKind::ModalTypeChecker,
+            crate::schema::ProverKind::QTTTypeChecker => CoreProverKind::QTTTypeChecker,
+            crate::schema::ProverKind::EffectRowTypeChecker => CoreProverKind::EffectRowTypeChecker,
+            crate::schema::ProverKind::DependentTypeChecker => CoreProverKind::DependentTypeChecker,
+            crate::schema::ProverKind::RefinementTypeChecker => CoreProverKind::RefinementTypeChecker,
+            crate::schema::ProverKind::OrdinaryTypeChecker => CoreProverKind::OrdinaryTypeChecker,
+            crate::schema::ProverKind::PhantomTypeChecker => CoreProverKind::PhantomTypeChecker,
+            crate::schema::ProverKind::PolymorphicTypeChecker => CoreProverKind::PolymorphicTypeChecker,
+            crate::schema::ProverKind::ExistentialTypeChecker => CoreProverKind::ExistentialTypeChecker,
+            crate::schema::ProverKind::HigherKindedTypeChecker => CoreProverKind::HigherKindedTypeChecker,
+            crate::schema::ProverKind::RowTypeChecker => CoreProverKind::RowTypeChecker,
+            crate::schema::ProverKind::SubtypingTypeChecker => CoreProverKind::SubtypingTypeChecker,
+            crate::schema::ProverKind::IntersectionTypeChecker => CoreProverKind::IntersectionTypeChecker,
+            crate::schema::ProverKind::UnionTypeChecker => CoreProverKind::UnionTypeChecker,
+            crate::schema::ProverKind::GradualTypeChecker => CoreProverKind::GradualTypeChecker,
+            crate::schema::ProverKind::HoareTypeChecker => CoreProverKind::HoareTypeChecker,
+            crate::schema::ProverKind::IndexedTypeChecker => CoreProverKind::IndexedTypeChecker,
+            crate::schema::ProverKind::LinearTypeChecker => CoreProverKind::LinearTypeChecker,
+            crate::schema::ProverKind::AffineTypeChecker => CoreProverKind::AffineTypeChecker,
+            crate::schema::ProverKind::RelevantTypeChecker => CoreProverKind::RelevantTypeChecker,
+            crate::schema::ProverKind::OrderedTypeChecker => CoreProverKind::OrderedTypeChecker,
+            crate::schema::ProverKind::UniquenessTypeChecker => CoreProverKind::UniquenessTypeChecker,
+            crate::schema::ProverKind::ImmutableTypeChecker => CoreProverKind::ImmutableTypeChecker,
+            crate::schema::ProverKind::CapabilityTypeChecker => CoreProverKind::CapabilityTypeChecker,
+            crate::schema::ProverKind::BunchedTypeChecker => CoreProverKind::BunchedTypeChecker,
+            crate::schema::ProverKind::TemporalTypeChecker => CoreProverKind::TemporalTypeChecker,
+            crate::schema::ProverKind::ProvabilityTypeChecker => CoreProverKind::ProvabilityTypeChecker,
+            crate::schema::ProverKind::ImpureTypeChecker => CoreProverKind::ImpureTypeChecker,
+            crate::schema::ProverKind::CoeffectTypeChecker => CoreProverKind::CoeffectTypeChecker,
+            crate::schema::ProverKind::ProbabilisticTypeChecker => CoreProverKind::ProbabilisticTypeChecker,
+            crate::schema::ProverKind::DyadicTypeChecker => CoreProverKind::DyadicTypeChecker,
+            crate::schema::ProverKind::HomotopyTypeChecker => CoreProverKind::HomotopyTypeChecker,
+            crate::schema::ProverKind::CubicalTypeChecker => CoreProverKind::CubicalTypeChecker,
+            crate::schema::ProverKind::NominalTypeChecker => CoreProverKind::NominalTypeChecker,
+            crate::schema::ProverKind::Abella => CoreProverKind::Abella,
+            crate::schema::ProverKind::Dedukti => CoreProverKind::Dedukti,
+            crate::schema::ProverKind::Cameleer => CoreProverKind::Cameleer,
+            crate::schema::ProverKind::ACL2s => CoreProverKind::ACL2s,
+            crate::schema::ProverKind::IsabelleZF => CoreProverKind::IsabelleZF,
+            crate::schema::ProverKind::Boogie => CoreProverKind::Boogie,
+            crate::schema::ProverKind::Naproche => CoreProverKind::Naproche,
+            crate::schema::ProverKind::Matita => CoreProverKind::Matita,
+            crate::schema::ProverKind::Arend => CoreProverKind::Arend,
+            crate::schema::ProverKind::Athena => CoreProverKind::Athena,
+            crate::schema::ProverKind::LambdaProlog => CoreProverKind::LambdaProlog,
+            crate::schema::ProverKind::Mercury => CoreProverKind::Mercury,
+            crate::schema::ProverKind::Nitpick => CoreProverKind::Nitpick,
+            crate::schema::ProverKind::Nunchaku => CoreProverKind::Nunchaku,
+            crate::schema::ProverKind::CubicalAgda => CoreProverKind::CubicalAgda,
+            crate::schema::ProverKind::Zipperposition => CoreProverKind::Zipperposition,
+            crate::schema::ProverKind::Prover9 => CoreProverKind::Prover9,
+            crate::schema::ProverKind::OpenSmt => CoreProverKind::OpenSmt,
+            crate::schema::ProverKind::SmtRat => CoreProverKind::SmtRat,
+            crate::schema::ProverKind::Rocq => CoreProverKind::Rocq,
+            crate::schema::ProverKind::UppaalStratego => CoreProverKind::UppaalStratego,
+            crate::schema::ProverKind::MizAR => CoreProverKind::MizAR,
         }
     }
 }
@@ -229,7 +406,7 @@ impl EchidnaContext {
                             id: proof_id.clone(),
                             prover_kind: kind,
                             prover: Box::new(FfiProverBackend::new(handle)),
-                            state: Some(CoreProofState::new(goal.to_string())),
+                            state: Some(CoreProofState::new(Term::Var(goal.to_string()))),
                             goal: goal.to_string(),
                             status: SessionStatus::InProgress,
                             history: vec![],
