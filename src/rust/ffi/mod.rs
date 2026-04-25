@@ -34,6 +34,10 @@
 //! panic-attack flagged these as "High" severity because they use unsafe,
 //! but they are LEGITIMATE and NECESSARY for C interoperability.
 
+// SPARK-verified axiom-policy bindings (requires --features spark + libechidna_spark)
+#[cfg(feature = "spark")]
+pub mod spark_axiom;
+
 use std::ffi::{c_int, c_void};
 use std::path::PathBuf;
 use std::ptr;
@@ -491,6 +495,15 @@ pub fn kind_from_u8(kind: u8) -> Option<ProverKind> {
         102 => Some(ProverKind::Mercury),
         103 => Some(ProverKind::Nitpick),
         104 => Some(ProverKind::Nunchaku),
+        // 2026-04-24 batch: 8 new backends
+        105 => Some(ProverKind::CubicalAgda),
+        106 => Some(ProverKind::Zipperposition),
+        107 => Some(ProverKind::Prover9),
+        108 => Some(ProverKind::OpenSmt),
+        109 => Some(ProverKind::SmtRat),
+        110 => Some(ProverKind::Rocq),
+        111 => Some(ProverKind::UppaalStratego),
+        112 => Some(ProverKind::MizAR),
         _ => None,
     }
 }
@@ -1204,6 +1217,15 @@ pub fn kind_to_u8(kind: ProverKind) -> u8 {
         ProverKind::Mercury => 102,
         ProverKind::Nitpick => 103,
         ProverKind::Nunchaku => 104,
+        // 2026-04-24 batch: 8 new backends (Cubical Agda, Zipperposition, Prover9, OpenSMT, SMT-RAT, Rocq, UPPAAL Stratego, MizAR)
+        ProverKind::CubicalAgda => 105,
+        ProverKind::Zipperposition => 106,
+        ProverKind::Prover9 => 107,
+        ProverKind::OpenSmt => 108,
+        ProverKind::SmtRat => 109,
+        ProverKind::Rocq => 110,
+        ProverKind::UppaalStratego => 111,
+        ProverKind::MizAR => 112,
     }
 }
 
@@ -1388,8 +1410,11 @@ mod tests {
 
     #[test]
     fn test_kind_from_u8_out_of_range() {
-        // 0–104 are valid; 105+ are out of range.
-        assert!(kind_from_u8(105).is_none());
+        // 0–112 are valid; 113+ are out of range.
+        // (Boundary moved 104→112 in commit c8c0acf which added 8 new ProverKind
+        //  variants: CubicalAgda, Zipperposition, Prover9, OpenSMT, SmtRat,
+        //  Rocq, UppaalStratego, MizAR.)
+        assert!(kind_from_u8(113).is_none());
         assert!(kind_from_u8(128).is_none());
         assert!(kind_from_u8(255).is_none());
     }

@@ -32,3 +32,18 @@ release-claim-requires-hard-pass = true
 # on-enter: Read 0-AI-MANIFEST.a2ml, then STATE.a2ml
 # on-exit: Update STATE.a2ml with session outcomes
 # on-commit: Run just validate-rsr
+
+[exceptions]
+# Carve-outs from estate-wide standing rules, justified and time-bound.
+# Each exception MUST declare: rule, reason, scope, sunset-condition, decision-date.
+
+[exceptions.boj-only-mcp]
+rule            = "BoJ-only MCP (all MCP routes through BoJ; no standalone MCPs)"
+status          = "approved"
+decision-date   = "2026-04-24"
+decided-by      = "Jonathan D.A. Jewell <j.d.a.jewell@open.ac.uk>"
+reason          = "direct-callable for proof-op agents — echidnabot wraps the panic-attack CLI and is invoked synchronously by proof-operation agents (Sonnet executors, Haiku scouts) that need call-and-response semantics the BoJ cartridge's async message-bus does not currently provide."
+scope           = "this repo only (echidnabot)"
+sunset-condition = "when the BoJ cartridge supports the double-loop feedback protocol (synchronous call-and-response with bidirectional calibration signals, matching the Bullshit Field design)."
+sunset-action   = "migrate echidnabot invocations onto the BoJ double-loop transport, verify parity against the current direct-callable surface, then delete this [exceptions.boj-only-mcp] block."
+upstream-tracking = "BoJ double-loop protocol is tracked in boj-server's STATE.a2ml; review quarterly."

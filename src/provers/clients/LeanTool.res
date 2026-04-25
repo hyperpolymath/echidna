@@ -5,11 +5,11 @@
  * ECHIDNA LeanTool Client
  * Lean 4 theorem proving via OpenAI-compatible API.
  * Uses the LeanTool OpenAI-compatible API server.
- * Demo: http://www.codeproofarena.com:8800/v1
+ * Demo: https://www.codeproofarena.com:8800/v1
  */
 
 /** Default LeanTool API endpoint */
-let leantoolDefaultEndpoint = "http://www.codeproofarena.com:8800/v1"
+let leantoolDefaultEndpoint = "https://www.codeproofarena.com:8800/v1"
 
 /** Lean Playground endpoint for fallback */
 let leanPlaygroundUrl = "https://live.lean-lang.org"

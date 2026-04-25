@@ -1,0 +1,47 @@
+# SPDX-License-Identifier: PMPL-1.0-or-later
+# adjust.manifest.a2ml — Trident coherence manifest for the adjust verb.
+# Author: Jonathan D.A. Jewell <j.d.a.jewell@open.ac.uk>
+#
+# Fifth trident instance. First (Yard, advisory) authority pattern —
+# complements the (Hunt, blocking) triple (must + trust + bust) and
+# the (Hunt, reporting) north-star (intend).
+
+---
+trident_version = "1.0.0"
+verb = "adjust"
+semantics = "drift tolerances + corrective actions"
+cardinality = "one per repo"
+authority = "advisory (continue-with-warnings)"
+
+[[files]]
+role = "declaration"
+path = "Adjustfile.a2ml"
+sha256 = "pending-first-verify"
+size_bytes = "pending-first-verify"
+
+[[files]]
+role = "runner"
+path = "adjust.ncl"
+sha256 = "pending-first-verify"
+size_bytes = "pending-first-verify"
+
+[[files]]
+role = "k9_component"
+path = "adjust.k9.ncl"
+sha256 = "pending-first-verify"
+size_bytes = "pending-first-verify"
+
+[cross_refs]
+runner_paired_xfile = "Adjustfile.a2ml"
+k9_paired_xfile     = "../adjust/Adjustfile.a2ml"
+k9_paired_runner    = "../adjust/adjust.ncl"
+
+[signed_by]
+user    = "Jonathan D.A. Jewell"
+date    = "2026-04-18"
+context = "adjust trident — fifth Trident instance. First (Yard, advisory) authority pattern. Specialises in cumulative-drift catchment — tolerance bands + trend tracking + auto-fix-where-declared."
+
+[[history]]
+date = "2026-04-18"
+event = "trident-born"
+note = "Adjustfile.a2ml and adjust.ncl pre-existed. This manifest + adjust.k9.ncl complete the trident. Exercises the Yard tier + advisory authority for the first time; on_exceeded = 'warn_and_attempt_fix rather than 'fail. adjust-specific track_drift_trend_over_sessions + flag_accelerating_drift."

@@ -1,0 +1,363 @@
+# SPDX-License-Identifier: PMPL-1.0-or-later
+# SPDX-FileCopyrightText: 2026 Jonathan D.A. Jewell <j.d.a.jewell@open.ac.uk>
+#
+# provers.a2ml — Authoritative enumeration of ECHIDNA prover backends.
+#
+# Generated from src/rust/provers/mod.rs::ProverKind. One section per
+# variant, keyed by the variant's PascalCase name for stability against
+# slug-format drift. `slug` is the snake_case identifier used on the
+# wire (matches serde's rename_all = "snake_case" default).
+#
+# Downstream consumers:
+#   - .github/workflows/backend-matrix.yml (vcl-ut) reads this file to
+#     build its matrix strategy, one job per prover.
+#   - Future sync check fails CI if this file drifts from ProverKind::all().
+#
+# SYNC SOURCE-OF-TRUTH: `pub enum ProverKind` in src/rust/provers/mod.rs.
+# If that enum changes, regenerate with scripts/gen-provers-a2ml.sh.
+
+[metadata]
+version = "1.0.0"
+source  = "src/rust/provers/mod.rs::ProverKind"
+date    = "2026-04-24"
+count   = 113
+
+[prover.ABC]
+slug = "abc"
+
+[prover.Abella]
+slug = "abella"
+
+[prover.ACL2]
+slug = "acl2"
+
+[prover.ACL2s]
+slug = "acl2s"
+
+[prover.AffineTypeChecker]
+slug = "affine_type_checker"
+
+[prover.Agda]
+slug = "agda"
+
+[prover.Alloy]
+slug = "alloy"
+
+[prover.AltErgo]
+slug = "alt_ergo"
+
+[prover.Arend]
+slug = "arend"
+
+[prover.Athena]
+slug = "athena"
+
+[prover.Boogie]
+slug = "boogie"
+
+[prover.BunchedTypeChecker]
+slug = "bunched_type_checker"
+
+[prover.CaDiCaL]
+slug = "ca_di_ca_l"
+
+[prover.Cameleer]
+slug = "cameleer"
+
+[prover.CapabilityTypeChecker]
+slug = "capability_type_checker"
+
+[prover.CBMC]
+slug = "cbmc"
+
+[prover.ChoreographicTypeChecker]
+slug = "choreographic_type_checker"
+
+[prover.Chuffed]
+slug = "chuffed"
+
+[prover.CoeffectTypeChecker]
+slug = "coeffect_type_checker"
+
+[prover.Coq]
+slug = "coq"
+
+[prover.CubicalAgda]
+slug = "cubical_agda"
+
+[prover.CubicalTypeChecker]
+slug = "cubical_type_checker"
+
+[prover.CVC5]
+slug = "cvc5"
+
+[prover.Dafny]
+slug = "dafny"
+
+[prover.Dedukti]
+slug = "dedukti"
+
+[prover.DependentTypeChecker]
+slug = "dependent_type_checker"
+
+[prover.DReal]
+slug = "d_real"
+
+[prover.DyadicTypeChecker]
+slug = "dyadic_type_checker"
+
+[prover.EchoTypeChecker]
+slug = "echo_type_checker"
+
+[prover.EffectRowTypeChecker]
+slug = "effect_row_type_checker"
+
+[prover.EpistemicTypeChecker]
+slug = "epistemic_type_checker"
+
+[prover.EProver]
+slug = "e_prover"
+
+[prover.ExistentialTypeChecker]
+slug = "existential_type_checker"
+
+[prover.FramaC]
+slug = "frama_c"
+
+[prover.FStar]
+slug = "f_star"
+
+[prover.GLPK]
+slug = "glpk"
+
+[prover.GradualTypeChecker]
+slug = "gradual_type_checker"
+
+[prover.HigherKindedTypeChecker]
+slug = "higher_kinded_type_checker"
+
+[prover.HoareTypeChecker]
+slug = "hoare_type_checker"
+
+[prover.HOL4]
+slug = "hol4"
+
+[prover.HOLLight]
+slug = "hol_light"
+
+[prover.HomotopyTypeChecker]
+slug = "homotopy_type_checker"
+
+[prover.Idris2]
+slug = "idris2"
+
+[prover.Imandra]
+slug = "imandra"
+
+[prover.ImmutableTypeChecker]
+slug = "immutable_type_checker"
+
+[prover.ImpureTypeChecker]
+slug = "impure_type_checker"
+
+[prover.IndexedTypeChecker]
+slug = "indexed_type_checker"
+
+[prover.IntersectionTypeChecker]
+slug = "intersection_type_checker"
+
+[prover.Isabelle]
+slug = "isabelle"
+
+[prover.IsabelleZF]
+slug = "isabelle_zf"
+
+[prover.KatagoriaVerifier]
+slug = "katagoria_verifier"
+
+[prover.KeY]
+slug = "ke_y"
+
+[prover.Kissat]
+slug = "kissat"
+
+[prover.LambdaProlog]
+slug = "lambda_prolog"
+
+[prover.Lean]
+slug = "lean"
+
+[prover.Lean3]
+slug = "lean3"
+
+[prover.LinearTypeChecker]
+slug = "linear_type_checker"
+
+[prover.Matita]
+slug = "matita"
+
+[prover.Mercury]
+slug = "mercury"
+
+[prover.Metamath]
+slug = "metamath"
+
+[prover.MiniSat]
+slug = "mini_sat"
+
+[prover.MiniZinc]
+slug = "mini_zinc"
+
+[prover.Minlog]
+slug = "minlog"
+
+[prover.Mizar]
+slug = "mizar"
+
+[prover.MizAR]
+slug = "miz_ar"
+
+[prover.ModalTypeChecker]
+slug = "modal_type_checker"
+
+[prover.Naproche]
+slug = "naproche"
+
+[prover.Nitpick]
+slug = "nitpick"
+
+[prover.NominalTypeChecker]
+slug = "nominal_type_checker"
+
+[prover.Nunchaku]
+slug = "nunchaku"
+
+[prover.Nuprl]
+slug = "nuprl"
+
+[prover.NuSMV]
+slug = "nu_smv"
+
+[prover.OpenSmt]
+slug = "open_smt"
+
+[prover.OrderedTypeChecker]
+slug = "ordered_type_checker"
+
+[prover.OrdinaryTypeChecker]
+slug = "ordinary_type_checker"
+
+[prover.ORTools]
+slug = "or_tools"
+
+[prover.PhantomTypeChecker]
+slug = "phantom_type_checker"
+
+[prover.PolymorphicTypeChecker]
+slug = "polymorphic_type_checker"
+
+[prover.Prism]
+slug = "prism"
+
+[prover.ProbabilisticTypeChecker]
+slug = "probabilistic_type_checker"
+
+[prover.ProvabilityTypeChecker]
+slug = "provability_type_checker"
+
+[prover.Prover9]
+slug = "prover9"
+
+[prover.ProVerif]
+slug = "pro_verif"
+
+[prover.PVS]
+slug = "pvs"
+
+[prover.QTTTypeChecker]
+slug = "qtt_type_checker"
+
+[prover.RefinementTypeChecker]
+slug = "refinement_type_checker"
+
+[prover.RelevantTypeChecker]
+slug = "relevant_type_checker"
+
+[prover.Rocq]
+slug = "rocq"
+
+[prover.RowTypeChecker]
+slug = "row_type_checker"
+
+[prover.SCIP]
+slug = "scip"
+
+[prover.SeaHorn]
+slug = "sea_horn"
+
+[prover.SessionTypeChecker]
+slug = "session_type_checker"
+
+[prover.SmtRat]
+slug = "smt_rat"
+
+[prover.SPASS]
+slug = "spass"
+
+[prover.SPIN]
+slug = "spin"
+
+[prover.SubtypingTypeChecker]
+slug = "subtyping_type_checker"
+
+[prover.Tamarin]
+slug = "tamarin"
+
+[prover.TemporalTypeChecker]
+slug = "temporal_type_checker"
+
+[prover.TLAPS]
+slug = "tlaps"
+
+[prover.TLC]
+slug = "tlc"
+
+[prover.TropicalTypeChecker]
+slug = "tropical_type_checker"
+
+[prover.Twelf]
+slug = "twelf"
+
+[prover.TypedWasm]
+slug = "typed_wasm"
+
+[prover.TypeLL]
+slug = "type_ll"
+
+[prover.UnionTypeChecker]
+slug = "union_type_checker"
+
+[prover.UniquenessTypeChecker]
+slug = "uniqueness_type_checker"
+
+[prover.UPPAAL]
+slug = "uppaal"
+
+[prover.UppaalStratego]
+slug = "uppaal_stratego"
+
+[prover.Vampire]
+slug = "vampire"
+
+[prover.Viper]
+slug = "viper"
+
+[prover.Why3]
+slug = "why3"
+
+[prover.Z3]
+slug = "z3"
+
+[prover.Zipperposition]
+slug = "zipperposition"
+

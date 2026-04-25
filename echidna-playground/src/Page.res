@@ -61,7 +61,7 @@ let primeExampleSection = (): string => {
       `We don't provide a Coq tutorial (yet), but as a showcase, we `,
       `display a proof of the infinitude of primes in Coq. The proof relies `,
       `in the Mathematical Components library by the `,
-      Html.a(~href="http://ssr.msr-inria.inria.fr/", "MSR/Inria"),
+      Html.a(~href="https://ssr.msr-inria.inria.fr/", "MSR/Inria"),
       ` team led by Georges Gonthier, so our first step will be to load it and `,
       `set a few Coq options:`,
     ]),

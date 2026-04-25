@@ -121,7 +121,7 @@ module TeamSection = {
       url: "",
       affiliations: [
         ("CRI", "https://www.cri.ensmp.fr/"),
-        ("MINES ParisTech", "http://www.mines-paristech.eu"),
+        ("MINES ParisTech", "https://www.minesparis.psl.eu"),
       ],
     },
   ]

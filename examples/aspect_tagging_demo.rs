@@ -99,6 +99,10 @@ fn main() {
 
     // Example 6: Composite tagger with multiple strategies
     println!("6. Composite Tagger:");
+    // NOTE: a NeuralTagger was previously composed in here. It was a stub
+    // never landed in src/rust/aspect.rs, so the import + add_tagger call
+    // were dead. Removed 2026-04-25. Re-add when a real neural tagger
+    // ships (likely via the Julia /predict endpoint or src/rust/neural.rs).
     let composite = CompositeTagger::new(AggregationStrategy::WeightedVoting)
         .add_tagger(Box::new(RuleBasedTagger::new()), 1.0)
         .add_tagger(Box::new(RuleBasedTagger::with_threshold(0.3)), 0.5);

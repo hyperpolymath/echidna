@@ -1,0 +1,39 @@
+{"prover":"Isabelle","source":"afp","premise":"i","theorem":"index_of_pqueueD3","proof_id":224645}
+{"prover":"Isabelle","source":"afp","premise":"impl_model_check","theorem":"impl_model_check_correct","proof_id":229476}
+{"prover":"Isabelle","source":"afp","premise":"res","theorem":"fun_evaluate_length","proof_id":231123}
+{"prover":"Isabelle","source":"afp","premise":"of","theorem":"in_id_succg_rel_iff","proof_id":234726}
+{"prover":"Isabelle","source":"afp","premise":"trace","theorem":"eq_trace_conv","proof_id":237595}
+{"prover":"Isabelle","source":"afp","premise":"trace","theorem":"self_conv","proof_id":237596}
+{"prover":"Isabelle","source":"afp","premise":"quotient_of","theorem":"farey_fractions_bij","proof_id":245982}
+{"prover":"Isabelle","source":"afp","premise":"x","theorem":"ad_agr_map","proof_id":248550}
+{"prover":"Isabelle","source":"afp","premise":"not_not","theorem":"fut_terminate","proof_id":253710}
+{"prover":"Isabelle","source":"afp","premise":"x","theorem":"map_graph_preserves_restricted","proof_id":256736}
+{"prover":"Isabelle","source":"afp","premise":"h","theorem":"frees_tm","proof_id":259916}
+{"prover":"Isabelle","source":"afp","premise":"h","theorem":"consts_tm","proof_id":259917}
+{"prover":"Isabelle","source":"afp","premise":"h","theorem":"subst_tm","proof_id":259918}
+{"prover":"Isabelle","source":"afp","premise":"a","theorem":"case_prod_cong","proof_id":267430}
+{"prover":"Isabelle","source":"afp","premise":"b","theorem":"case_prod_cong","proof_id":267430}
+{"prover":"Isabelle","source":"afp","premise":"f","theorem":"check_values_neq_NoneI","proof_id":275499}
+{"prover":"Isabelle","source":"afp","premise":"right","theorem":"subtract_shifted","proof_id":275693}
+{"prover":"Isabelle","source":"afp","premise":"x","theorem":"automation","proof_id":280856}
+{"prover":"Isabelle","source":"afp","premise":"x","theorem":"monomial_poly_split","proof_id":287604}
+{"prover":"Isabelle","source":"afp","premise":"a b x assume A","theorem":"Pring_smult_l_distr","proof_id":287649}
+{"prover":"Isabelle","source":"afp","premise":"a x y m assume A","theorem":"Pring_smult_r_distr","proof_id":287650}
+{"prover":"Isabelle","source":"afp","premise":"a b x m  assume A","theorem":"Pring_smult_assoc1","proof_id":287651}
+{"prover":"Isabelle","source":"afp","premise":"x show","theorem":"coeff_simp","proof_id":287726}
+{"prover":"Isabelle","source":"afp","premise":"x","theorem":"trms_of_deg_leq_iter","proof_id":287920}
+{"prover":"Isabelle","source":"afp","premise":"of_nat_power","theorem":"solution_of_nat_of_nat","proof_id":289182}
+{"prover":"Isabelle","source":"afp","premise":"distinction","theorem":"maintain_S_precise_and_connected","proof_id":292125}
+{"prover":"Isabelle","source":"afp","premise":"x","theorem":"rel_prod_simp_asym","proof_id":293182}
+{"prover":"Isabelle","source":"afp","premise":"1","theorem":"imp_sim","proof_id":295162}
+{"prover":"Isabelle","source":"afp","premise":"1","theorem":"nand_sim","proof_id":295165}
+{"prover":"Isabelle","source":"afp","premise":"1","theorem":"HC_contrapos_nn","proof_id":295166}
+{"prover":"Isabelle","source":"afp","premise":"1","theorem":"not_imp","proof_id":295169}
+{"prover":"Isabelle","source":"afp","premise":"branch_gen","theorem":"get_all_valuations_alt","proof_id":297143}
+{"prover":"Isabelle","source":"afp","premise":"nat_of_string","theorem":"inj_show_nat","proof_id":309480}
+{"prover":"Isabelle","source":"afp","premise":"int_of_string","theorem":"inj_show_int","proof_id":309481}
+{"prover":"Isabelle","source":"afp","premise":"a","theorem":"generalized_sfw_simps","proof_id":310397}
+{"prover":"Isabelle","source":"afp","premise":"polC","theorem":"nv2L_simps","proof_id":312136}
+{"prover":"Isabelle","source":"afp","premise":"d","theorem":"traverse_tree_simps","proof_id":313563}
+{"prover":"Isabelle","source":"afp","premise":"of","theorem":"noreps_singleton","proof_id":316640}
+{"prover":"Isabelle","source":"afp","premise":"ti","theorem":"TBOUND_VEBT_case","proof_id":322133}

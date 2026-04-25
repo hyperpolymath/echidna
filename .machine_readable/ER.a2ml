@@ -1,0 +1,850 @@
+# SPDX-License-Identifier: PMPL-1.0-or-later
+# SPDX-FileCopyrightText: 2026 Jonathan D.A. Jewell <j.d.a.jewell@open.ac.uk>
+#
+# ER.a2ml — Canonical Entity-Relationship model for ECHIDNA
+#
+# Covers all eleven primary entities from the task spec plus the supporting
+# entities found by walking every prover's result pipeline end-to-end.
+#
+# Source cross-references:
+#   core         = src/rust/core.rs
+#   proof_enc    = src/rust/proof_encoding.rs
+#   proof_ent    = src/rust/verification/proof.rs       [feature = verisim]
+#   axiom        = src/rust/verification/axiom_tracker.rs
+#   certs        = src/rust/verification/certificates.rs
+#   confidence   = src/rust/verification/confidence.rs
+#   mutation     = src/rust/verification/mutation.rs
+#   pareto       = src/rust/verification/pareto.rs
+#   portfolio    = src/rust/verification/portfolio.rs
+#   statistics   = src/rust/verification/statistics.rs
+#   dispatch     = src/rust/dispatch.rs
+#   integrity    = src/rust/integrity/solver_integrity.rs
+#
+# ─── READING GUIDE ──────────────────────────────────────────────────────────
+# Sections:
+#   [entity.*]      — one section per entity, with PK, fields, source refs
+#   [relationship.*]— directed 1:N (or noted cardinality) between entities
+#   [pipeline-walk] — ordered pipeline trace verifying nothing was missed
+#   [coverage-audit]— explicit list of every named struct/enum in sources and
+#                     which entity absorbs it
+# ─────────────────────────────────────────────────────────────────────────────
+
+[metadata]
+model   = "ECHIDNA Canonical ER"
+version = "1.0.0"
+author  = "Jonathan D.A. Jewell <j.d.a.jewell@open.ac.uk>"
+date    = "2026-04-24"
+scope   = "src/rust/core.rs + src/rust/verification/* + src/rust/dispatch.rs"
+
+# ═══════════════════════════════════════════════════════════════════════════════
+#  PRIMARY ENTITIES  (those named in the task spec)
+# ═══════════════════════════════════════════════════════════════════════════════
+
+# ─── 1. Term ──────────────────────────────────────────────────────────────────
+# Universal mathematical term representation shared across all 105 prover
+# backends.  An ADT with 15 variants; self-referential via boxed children.
+#
+# No explicit integer PK — terms are compared structurally (PartialEq) or
+# via Display serialisation for hashing in proof_encoding.rs.
+[entity.Term]
+source       = "core:12-85"
+kind         = "enum-adt"
+pk           = "(none — structural identity via Display)"
+variants     = [
+  "Var(name: String)",
+  "Const(name: String)",
+  "App { func: Box<Term>, args: Vec<Term> }",
+  "Lambda { param: String, param_type: Option<Box<Term>>, body: Box<Term> }",
+  "Pi { param: String, param_type: Box<Term>, body: Box<Term> }",
+  "Sigma { param: String, param_type: Box<Term>, body: Box<Term> }",
+  "Type(level: usize)",
+  "Sort(level: usize)",
+  "Universe(level: usize)   -- legacy alias for Type",
+  "Let { name: String, ty: Option<Box<Term>>, value: Box<Term>, body: Box<Term> }",
+  "Match { scrutinee: Box<Term>, return_type: Option<Box<Term>>, branches: Vec<(Pattern, Term)> }",
+  "Fix { name: String, ty: Option<Box<Term>>, body: Box<Term> }",
+  "Hole(name: String)        -- open goal marker",
+  "Meta(id: usize)           -- unification metavariable",
+  "ProverSpecific { prover: String, data: serde_json::Value }",
+]
+self_referential = true   # App.func, App.args, Lambda.body, Pi.body, etc.
+notes = "Pattern (core:88-96) is an auxiliary ADT used only inside Term::Match branches"
+
+# ─── 2. Goal ──────────────────────────────────────────────────────────────────
+# A single proof obligation within a ProofState.  Carries its own local
+# hypotheses so tactic steps can be applied independently.
+[entity.Goal]
+source = "core:183-193"
+kind   = "struct"
+pk     = "id: String  (within a ProofState; globally unique when hashed via goal_identity)"
+fields = [
+  "id:           String",
+  "target:       Term           -- the proposition to prove",
+  "hypotheses:   Vec<Hypothesis>",
+]
+notes = "goal_identity (proof_enc:60-64) produces a prover-agnostic SHA-256 of (theorem_name, goal.target)"
+
+# ─── 3. ProofState ────────────────────────────────────────────────────────────
+# Mutable snapshot of the current proof attempt.  Contains all open goals,
+# the shared context, and the tactic script executed so far.
+[entity.ProofState]
+source = "core:167-180"
+kind   = "struct"
+pk     = "(none inline — content-addressed via encode_proof_state_cbor / proof_identity)"
+fields = [
+  "goals:        Vec<Goal>",
+  "context:      Context        -- shared lemma/axiom/definition namespace",
+  "proof_script: Vec<Tactic>   -- ordered tactic log applied so far",
+  "metadata:     HashMap<String, serde_json::Value>",
+]
+invariants = [
+  "is_complete() <=> goals.is_empty()",
+  "new(goal) initialises with id='goal_0' and empty context",
+]
+
+# ─── 4. Context ───────────────────────────────────────────────────────────────
+# The ambient namespace available during proof search.  Embedded 1:1 inside
+# ProofState; also re-used as the shared library for portfolio solving.
+[entity.Context]
+source = "core:213-226"
+kind   = "struct"
+pk     = "(none — embedded inside ProofState)"
+fields = [
+  "theorems:    Vec<Theorem>",
+  "axioms:      Vec<String>  -- bare axiom names for prover backends that track them",
+  "definitions: Vec<Definition>",
+  "variables:   Vec<Variable>",
+]
+
+# ─── 5. Tactic ────────────────────────────────────────────────────────────────
+# A proof tactic/command applied to a goal.  Produced by the planner/agent
+# layer and logged in ProofState.proof_script; also stored per-step in
+# TacticApplication for the Verisim E-R schema.
+[entity.Tactic]
+source = "core:257-292"
+kind   = "enum-adt"
+pk     = "(none — value type; identified by proof_id + step in TacticApplication)"
+variants = [
+  "Apply(name: String)",
+  "Intro(name: Option<String>)",
+  "Cases(term: Term)",
+  "Induction(term: Term)",
+  "Rewrite(name: String)",
+  "Simplify",
+  "Reflexivity",
+  "Assumption",
+  "Exact(term: Term)",
+  "Custom { prover: String, command: String, args: Vec<String> }",
+]
+notes = "TacticResult (core:295-305) is a transient outcome enum; not persisted as an entity"
+
+# ─── 6. Theorem ───────────────────────────────────────────────────────────────
+# A named theorem or lemma available in the proof context.  The proof field
+# is optional so a Theorem can represent both axioms and proved statements.
+[entity.Theorem]
+source = "core:229-235"
+kind   = "struct"
+pk     = "name: String  (human-readable display); theorem_hash (proof_ent:52-54) is the stable SHA-256 PK"
+fields = [
+  "name:      String",
+  "statement: Term           -- the proposition being asserted",
+  "proof:     Option<Vec<Tactic>>",
+  "aspects:   Vec<String>   -- aspect-tag labels (security, concurrency, etc.)",
+]
+notes = "theorem_identity(name) = SHA-256 of 'echidna:v1:theorem:{name}' (proof_ent:52-54)"
+
+# ─── 7. AxiomTracking ─────────────────────────────────────────────────────────
+# Consolidates the axiom-danger pipeline: pattern scanning (AxiomTracker),
+# per-occurrence records (AxiomUsage), the 4-level danger taxonomy
+# (DangerLevel), and the policy enforcement verdict (AxiomPolicy).
+[entity.AxiomTracking]
+source = "axiom:14-86"
+kind   = "composite-entity"
+pk     = "(prover: ProverKind, construct: String, line: Option<usize>)  — per-AxiomUsage"
+sub-types = [
+  "DangerLevel  enum { Safe, Noted, Warning, Reject }  (axiom:15-25)",
+  "AxiomUsage   { prover, construct, danger_level, explanation, line }  (axiom:29-40)",
+  "AxiomPolicy  enum { Clean, ClassicalAxioms(Vec<AxiomUsage>), IncompleteProof(Vec<AxiomUsage>), Rejected(Vec<AxiomUsage>) }  (axiom:44-53)",
+  "AxiomTracker { patterns: HashMap<ProverKind, Vec<DangerousPattern>> }  (axiom:83-97) — scanner",
+]
+danger-levels = { Safe = 0, Noted = 1, Warning = 2, Reject = 3 }
+policy-acceptability = "Clean|ClassicalAxioms|IncompleteProof => acceptable; Rejected => NOT acceptable"
+prover-coverage = [
+  "Lean4:    sorry, native_decide, Decidable.decide, axiom",
+  "Coq/Rocq: Admitted, admit, Axiom",
+  "Agda:     postulate, {!!}, --type-in-type",
+  "Isabelle: sorry, oops",
+  "HOL4:     mk_thm (REJECT)",
+  "Idris2:   believe_me, assert_total, assert_smaller, unsafePerformIO, really_believe_me, prim__crash, unsafeCoerce",
+  "F*:       admit, assume",
+]
+special-case = "scaffold-sorry lines carrying ECHIDNA_SCAFFOLD_SORRY marker are exempted from flagging (axiom:312-318)"
+
+# ─── 8. ProofCertificate ──────────────────────────────────────────────────────
+# An independently-verifiable proof artefact produced by a solver backend.
+# Formats: Alethe (CVC5), DRAT/LRAT (SAT), Lean4Kernel, CoqKernel, TSTP.
+[entity.ProofCertificate]
+source = "certs:37-50"
+kind   = "struct"
+pk     = "blake3_hash: String  (BLAKE3 of raw certificate content)"
+fields = [
+  "format:        CertificateFormat  enum { Alethe, DRAT, LRAT, Lean4Kernel, CoqKernel, TSTP }",
+  "content:       String",
+  "blake3_hash:   String",
+  "source_solver: String",
+  "verified:      bool",
+  "storage_path:  Option<PathBuf>",
+]
+sub-types = [
+  "CertificateFormat  (certs:19-33)",
+  "CertificateVerificationResult { valid, checker, time_ms, error, steps_checked }  (certs:53-65)",
+  "CertificateVerifier            (certs:68-79)  — stateless checker service",
+]
+notes = [
+  "ProofCertificate.new() computes blake3_hash at construction time (certs:239-250)",
+  "store_certificate() persists to disk and sets storage_path (certs:183-197)",
+  "CertificateVerificationResult is 0:1 per ProofCertificate (produced by verify_* methods)",
+]
+
+# ─── 9. ConfidenceScore ───────────────────────────────────────────────────────
+# The 5-level trust hierarchy assigned to a proof result based on seven
+# input factors.  Computed by compute_trust_level(TrustFactors).
+[entity.ConfidenceScore]
+source = "confidence:17-143"
+kind   = "composite-entity"
+pk     = "(derived — not stored standalone; embedded in DispatchResult and Proof pipeline)"
+sub-types = [
+  "TrustLevel  enum { Level1=1 .. Level5=5 }  (confidence:19-31)",
+  "TrustFactors { prover, confirming_provers, has_certificate, certificate_verified, worst_axiom_danger, solver_integrity_ok, portfolio_confidence }  (confidence:58-74)",
+]
+trust-rules = [
+  "worst_axiom_danger == Reject  => Level1",
+  "worst_axiom_danger == Warning => Level1",
+  "!solver_integrity_ok          => Level1",
+  "confirming_provers >= 2 AND certificate_verified AND small_kernel => Level5",
+  "small_kernel AND certificate_verified                              => Level4",
+  "has_certificate AND certificate_verified                          => Level3",
+  "confirming_provers >= 2                                           => Level3",
+  "default (single prover, safe axioms)                             => Level2",
+]
+small-kernel-provers = ["Lean", "Coq", "Isabelle", "Agda", "Metamath", "HOLLight", "HOL4", "Idris2", "FStar", "Twelf", "Nuprl", "Minlog"]
+
+# ─── 10. MutationTest ─────────────────────────────────────────────────────────
+# Deliberate weakening of a specification to verify that the pipeline catches
+# it.  Covers mutation generation, per-mutation outcomes, and score summary.
+[entity.MutationTest]
+source = "mutation:14-171"
+kind   = "composite-entity"
+pk     = "(theorem identity + mutation index within a test run)"
+sub-types = [
+  "MutationKind  enum { RemovePrecondition{index}, WeakenPostcondition{original,weakened}, AddDisjunct{added}, RemoveHypothesis{index}, ReplaceConstant{original,replacement}, NegateSubterm{position} }  (mutation:15-31)",
+  "MutationResult  { kind: MutationKind, caught: bool, description: String }  (mutation:35-42)",
+  "MutationTestSummary  { total_mutations, mutations_caught, mutations_survived, mutation_score: f64, results: Vec<MutationResult> }  (mutation:46-57)",
+  "MutationTester  { target_score: f64 }  (mutation:67-70)  — generator + scorer",
+]
+target-score  = "95.0% (default; configurable via with_target)"
+generation-rules = [
+  "Term::App with ≥2 args => remove each arg in turn (RemovePrecondition)",
+  "Term::Pi              => add or-True disjunct (AddDisjunct)",
+  "Term::Const           => replace with fresh variable (ReplaceConstant)",
+  "all variants          => negate the whole term (NegateSubterm)",
+]
+
+# ─── 11. ParetoFrontier ────────────────────────────────────────────────────────
+# Multi-objective optimality ranking over a set of proof candidates.
+# Four objectives: proof_time_ms (min), trust_level (max), memory_bytes (min),
+# proof_steps (min).
+[entity.ParetoFrontier]
+source = "pareto:14-139"
+kind   = "composite-entity"
+pk     = "(not stored — computed on demand over a Vec<ProofCandidate>)"
+sub-types = [
+  "ProofObjective  { proof_time_ms: u64, trust_level: TrustLevel, memory_bytes: u64, proof_steps: usize }  (pareto:16-25)",
+  "ProofCandidate  { id: String, objectives: ProofObjective, is_pareto_optimal: bool }  (pareto:29-36)",
+  "ParetoFrontier  — unit struct with static methods compute() and weighted_rank()  (pareto:39)",
+]
+dominance = "A dominates B <=> A is at least as good on ALL four objectives AND strictly better on at least one"
+weighted-rank = "Inverse-normalised score: sum of (weight_x * 1/metric) for time/memory/steps; weight_trust * (level/5) for trust"
+
+# ═══════════════════════════════════════════════════════════════════════════════
+#  SUPPORTING ENTITIES  (found by walking the prover result pipeline)
+# ═══════════════════════════════════════════════════════════════════════════════
+
+[entity.Proof]
+source = "proof_ent:71-99"
+kind   = "struct"
+feature = "verisim"
+pk     = "id: String  (proof_identity SHA-256 of 'echidna:v1:{theorem}:{goal_target}:{prover}')"
+fields = [
+  "id:           String  -- PK, content-addressed",
+  "goal_hash:    String  -- prover-agnostic goal_identity SHA-256 (cross-prover joins)",
+  "theorem_hash: String  -- theorem_identity SHA-256",
+  "theorem_name: String  -- display only; joins use theorem_hash",
+  "prover:       ProverKind",
+  "first_seen:   String  -- ISO-8601 timestamp",
+]
+notes = "All three hashes computed atomically in Proof::new() — no caller can supply mismatched set"
+
+[entity.TacticApplication]
+source = "proof_ent:123-166"
+kind   = "struct"
+feature = "verisim"
+pk     = "(proof_id: String, step: u32)"
+fields = [
+  "proof_id:   String        -- FK → Proof.id",
+  "step:       u32           -- 0-based monotonic index within proof",
+  "tactic:     Tactic",
+  "goal_hash:  String        -- goal_identity of the targeted goal",
+  "status:     TacticStatus  enum { Success, Closed, Error(String) }",
+  "goals_after: u32          -- 0 = QED for this branch",
+  "duration_ms: u64",
+  "applied_at: String        -- ISO-8601",
+]
+
+[entity.ProofVersion]
+source = "proof_ent:179-229"
+kind   = "struct"
+feature = "verisim"
+pk     = "(proof_id: String, version: u32)"
+fields = [
+  "proof_id:        String   -- FK → Proof.id",
+  "version:         u32      -- monotonic, 0 = initial state",
+  "snapshot_id:     String   -- session_identity hash unique per (proof_id, version)",
+  "goals_remaining: u32",
+  "is_qed:          bool",
+  "actor:           String   -- 'echidna-auto' | 'mcts' | 'user:<id>'",
+  "recorded_at:     String   -- ISO-8601",
+]
+
+[entity.ProofStateRecord]
+source = "proof_ent:253-276"
+kind   = "struct"
+feature = "verisim"
+pk     = "(proof_id: String, step: u32)"
+fields = [
+  "proof_id:          String         -- FK → Proof.id",
+  "step:              u32            -- matches TacticApplication.step",
+  "goal_hash:         String",
+  "prover:            String",
+  "prover_version:    String",
+  "state_cbor_b64:    String         -- CBOR-encoded ProofState, base64",
+  "features:          Option<Vec<f32>>",
+  "relevant_premises: Vec<String>    -- premise-selection label",
+  "label_confidence:  f32            -- 0.0 = heuristic; 1.0 = human-verified",
+  "source:            String         -- upstream corpus path",
+]
+
+[entity.PortfolioResult]
+source = "portfolio:43-56"
+kind   = "struct"
+pk     = "(no stored PK — transient dispatch output; persisted via DispatchResult)"
+fields = [
+  "verified:             Option<bool>",
+  "confidence:           PortfolioConfidence  enum { CrossChecked, SingleSolver, Inconclusive, AllTimedOut }",
+  "solver_results:       Vec<SolverResult>",
+  "agreeing_solvers:     Vec<ProverKind>",
+  "disagreeing_solvers:  Vec<ProverKind>",
+  "needs_review:         bool",
+]
+
+[entity.SolverResult]
+source = "portfolio:28-39"
+kind   = "struct"
+pk     = "(prover: ProverKind)  within a PortfolioResult"
+fields = [
+  "prover:          ProverKind",
+  "verified:        Option<bool>  -- None = timed out",
+  "time_ms:         u64",
+  "has_certificate: bool",
+  "error:           Option<String>",
+]
+
+[entity.DispatchResult]
+source = "dispatch:53-82"
+kind   = "struct"
+pk     = "(no stored PK — API response type)"
+fields = [
+  "verified:          bool",
+  "trust_level:       TrustLevel",
+  "provers_used:      Vec<String>",
+  "proof_time_ms:     u64",
+  "goals_remaining:   usize",
+  "axiom_report:      Option<AxiomUsage>",
+  "certificate_hash:  Option<String>",
+  "message:           String",
+  "cross_checked:     bool",
+  "outcome:           ProverOutcome",
+  "diagnostics:       Option<RunDiagnostics>",
+]
+
+[entity.ProverDomainStats]
+source = "statistics:17-57"
+kind   = "struct"
+pk     = "(prover: ProverKind, domain: String)  composite key in StatisticsTracker"
+fields = [
+  "attempts:           u64",
+  "successes:          u64",
+  "timeouts:           u64",
+  "failures:           u64",
+  "total_time_ms:      u64",
+  "total_time_sq_ms:   u128   -- for variance / std_dev",
+  "min_time_ms:        u64",
+  "max_time_ms:        u64",
+]
+derived-methods = [
+  "success_rate()        -> f64",
+  "timeout_rate()        -> f64",
+  "mean_time_ms()        -> Option<f64>",
+  "std_dev_time_ms()     -> Option<f64>",
+  "estimated_timeout_ms(default) -> u64  -- Bayesian: mean + 2*std_dev",
+]
+
+[entity.Hypothesis]
+source = "core:196-210"
+kind   = "struct"
+pk     = "name: String  within a Goal"
+fields = [
+  "name:      String",
+  "ty:        Term         -- the hypothesis type/statement",
+  "body:      Option<Term> -- optional definition body",
+  "type_info: Option<TypeInfo>",
+]
+
+[entity.Definition]
+source = "core:238-245"
+kind   = "struct"
+pk     = "name: String  within a Context"
+fields = [
+  "name:      String",
+  "ty:        Term",
+  "body:      Term",
+  "type_info: Option<TypeInfo>",
+]
+
+[entity.Variable]
+source = "core:248-254"
+kind   = "struct"
+pk     = "name: String  within a Context"
+fields = [
+  "name:      String",
+  "ty:        Term",
+  "type_info: Option<TypeInfo>",
+]
+
+# ═══════════════════════════════════════════════════════════════════════════════
+#  RELATIONSHIPS  (1:N unless otherwise noted)
+# ═══════════════════════════════════════════════════════════════════════════════
+
+# ─── Core types ───────────────────────────────────────────────────────────────
+
+[relationship.Term-self]
+from  = "Term"
+to    = "Term"
+card  = "recursive"
+note  = "App.func, App.args, Lambda.param_type, Lambda.body, Pi.*, Sigma.*, Let.*, Match.scrutinee, Fix.body — all Box<Term>/Vec<Term>"
+
+[relationship.Term-Pattern]
+from  = "Term"
+to    = "Pattern"
+card  = "1:N"
+path  = "Term::Match.branches — each branch is (Pattern, Term)"
+source = "core:63-65"
+
+[relationship.ProofState-Goal]
+from  = "ProofState"
+to    = "Goal"
+card  = "1:N"
+path  = "ProofState.goals: Vec<Goal>"
+source = "core:170"
+note  = "0-goals <=> proof complete (ProofState.is_complete())"
+
+[relationship.ProofState-Context]
+from  = "ProofState"
+to    = "Context"
+card  = "1:1"
+path  = "ProofState.context: Context"
+source = "core:173"
+
+[relationship.ProofState-Tactic]
+from  = "ProofState"
+to    = "Tactic"
+card  = "1:N (ordered)"
+path  = "ProofState.proof_script: Vec<Tactic>"
+source = "core:176"
+note  = "Append-only tactic log; ordering is semantically significant"
+
+[relationship.Goal-Term-target]
+from  = "Goal"
+to    = "Term"
+card  = "1:1"
+path  = "Goal.target: Term"
+source = "core:188"
+note  = "The proposition to be proven by this goal"
+
+[relationship.Goal-Hypothesis]
+from  = "Goal"
+to    = "Hypothesis"
+card  = "1:N"
+path  = "Goal.hypotheses: Vec<Hypothesis>"
+source = "core:191"
+
+[relationship.Context-Theorem]
+from  = "Context"
+to    = "Theorem"
+card  = "1:N"
+path  = "Context.theorems: Vec<Theorem>"
+source = "core:217"
+
+[relationship.Context-Definition]
+from  = "Context"
+to    = "Definition"
+card  = "1:N"
+path  = "Context.definitions: Vec<Definition>"
+source = "core:221"
+
+[relationship.Context-Variable]
+from  = "Context"
+to    = "Variable"
+card  = "1:N"
+path  = "Context.variables: Vec<Variable>"
+source = "core:224"
+
+[relationship.Hypothesis-Term-type]
+from  = "Hypothesis"
+to    = "Term"
+card  = "1:1"
+path  = "Hypothesis.ty: Term"
+source = "core:201"
+
+[relationship.Hypothesis-Term-body]
+from  = "Hypothesis"
+to    = "Term"
+card  = "0:1"
+path  = "Hypothesis.body: Option<Term>"
+source = "core:204"
+
+[relationship.Theorem-Term-statement]
+from  = "Theorem"
+to    = "Term"
+card  = "1:1"
+path  = "Theorem.statement: Term"
+source = "core:231"
+
+[relationship.Theorem-Tactic-proof]
+from  = "Theorem"
+to    = "Tactic"
+card  = "0:N"
+path  = "Theorem.proof: Option<Vec<Tactic>>"
+source = "core:232"
+
+# ─── Proof entity (verisim feature) ───────────────────────────────────────────
+
+[relationship.Proof-Theorem]
+from  = "Proof"
+to    = "Theorem"
+card  = "N:1"
+path  = "Proof.theorem_hash = theorem_identity(theorem_name)"
+source = "proof_ent:73,52-54"
+note  = "Multiple provers can each have a Proof for the same Theorem; shared theorem_hash enables cross-prover joins"
+
+[relationship.Proof-TacticApplication]
+from  = "Proof"
+to    = "TacticApplication"
+card  = "1:N (ordered by step)"
+path  = "TacticApplication.proof_id = Proof.id"
+source = "proof_ent:126"
+
+[relationship.Proof-ProofVersion]
+from  = "Proof"
+to    = "ProofVersion"
+card  = "1:N (append-only, ordered by version)"
+path  = "ProofVersion.proof_id = Proof.id"
+source = "proof_ent:183"
+
+[relationship.Proof-ProofCertificate]
+from  = "Proof"
+to    = "ProofCertificate"
+card  = "0:N"
+path  = "ProofCertificate.source_solver resolved via Proof.prover"
+note  = "A single proof attempt may produce 0 or more certificates (e.g. DRAT + LRAT)"
+
+[relationship.Proof-AxiomTracking]
+from  = "Proof"
+to    = "AxiomTracking"
+card  = "1:1 (policy) + 0:N (individual AxiomUsage)"
+path  = "AxiomTracker.scan(prover, content) → Vec<AxiomUsage>; enforce_policy → AxiomPolicy"
+source = "axiom:282-379"
+
+[relationship.Proof-ConfidenceScore]
+from  = "Proof"
+to    = "ConfidenceScore"
+card  = "1:1"
+path  = "compute_trust_level(TrustFactors{ prover=Proof.prover, ... }) → TrustLevel"
+source = "confidence:77-117"
+
+[relationship.Proof-ProofStateRecord]
+from  = "Proof"
+to    = "ProofStateRecord"
+card  = "1:N"
+path  = "ProofStateRecord.proof_id = Proof.id; one record per (proof_id, step)"
+source = "proof_ent:254"
+
+[relationship.TacticApplication-Tactic]
+from  = "TacticApplication"
+to    = "Tactic"
+card  = "1:1"
+path  = "TacticApplication.tactic: Tactic"
+source = "proof_ent:129"
+
+[relationship.TacticApplication-Goal-via-hash]
+from  = "TacticApplication"
+to    = "Goal"
+card  = "N:1"
+path  = "TacticApplication.goal_hash = goal_identity(theorem_name, goal)"
+source = "proof_ent:160"
+note  = "Hash-based join; the Goal is identified prover-agnostically"
+
+# ─── Verification pipeline ────────────────────────────────────────────────────
+
+[relationship.ProofCertificate-VerificationResult]
+from  = "ProofCertificate"
+to    = "CertificateVerificationResult"
+card  = "0:1"
+path  = "CertificateVerifier.verify_alethe/verify_drat(certificate) → CertificateVerificationResult"
+source = "certs:93-179"
+note  = "Verification is optional; a certificate may exist but not yet have been checked"
+
+[relationship.AxiomTracking-DangerLevel]
+from  = "AxiomTracking(AxiomUsage)"
+to    = "DangerLevel"
+card  = "N:1"
+path  = "AxiomUsage.danger_level: DangerLevel"
+source = "axiom:35"
+
+[relationship.AxiomPolicy-AxiomUsage]
+from  = "AxiomPolicy"
+to    = "AxiomUsage"
+card  = "0:N"
+path  = "AxiomPolicy::ClassicalAxioms(Vec<AxiomUsage>) | IncompleteProof | Rejected"
+source = "axiom:44-53"
+
+[relationship.ConfidenceScore-AxiomTracking]
+from  = "ConfidenceScore(TrustFactors)"
+to    = "AxiomTracking(DangerLevel)"
+card  = "N:1"
+path  = "TrustFactors.worst_axiom_danger: DangerLevel"
+source = "confidence:69"
+
+[relationship.ConfidenceScore-PortfolioResult]
+from  = "ConfidenceScore(TrustFactors)"
+to    = "PortfolioResult"
+card  = "0:1"
+path  = "TrustFactors.portfolio_confidence: Option<PortfolioConfidence>"
+source = "confidence:73"
+
+[relationship.MutationTest-Theorem]
+from  = "MutationTest"
+to    = "Theorem"
+card  = "N:1"
+path  = "MutationTester.generate_mutations(term) where term = Theorem.statement"
+source = "mutation:84-150"
+note  = "The mutated Term is derived from Theorem.statement; results scored against the full pipeline"
+
+[relationship.MutationTest-MutationResult]
+from  = "MutationTest"
+to    = "MutationResult"
+card  = "1:N"
+path  = "MutationTestSummary.results: Vec<MutationResult>"
+source = "mutation:56"
+
+[relationship.ParetoFrontier-ProofCandidate]
+from  = "ParetoFrontier"
+to    = "ProofCandidate"
+card  = "1:N  (computes a subset as Pareto-optimal)"
+path  = "ParetoFrontier::compute(&mut Vec<ProofCandidate>) marks is_pareto_optimal"
+source = "pareto:50-69"
+
+[relationship.ProofCandidate-ProofObjective]
+from  = "ProofCandidate"
+to    = "ProofObjective"
+card  = "1:1"
+path  = "ProofCandidate.objectives: ProofObjective"
+source = "pareto:32"
+
+[relationship.ProofObjective-ConfidenceScore]
+from  = "ProofObjective"
+to    = "ConfidenceScore(TrustLevel)"
+card  = "N:1"
+path  = "ProofObjective.trust_level: TrustLevel"
+source = "pareto:22"
+
+# ─── Portfolio solving ────────────────────────────────────────────────────────
+
+[relationship.PortfolioResult-SolverResult]
+from  = "PortfolioResult"
+to    = "SolverResult"
+card  = "1:N"
+path  = "PortfolioResult.solver_results: Vec<SolverResult>"
+source = "portfolio:49"
+
+[relationship.PortfolioSolver-PortfolioResult]
+from  = "PortfolioSolver"
+to    = "PortfolioResult"
+card  = "1:1 per reconcile() call"
+path  = "PortfolioSolver.reconcile(&[SolverResult]) → PortfolioResult"
+source = "portfolio:108-162"
+
+# ─── Statistics ───────────────────────────────────────────────────────────────
+
+[relationship.StatisticsTracker-ProverDomainStats]
+from  = "StatisticsTracker"
+to    = "ProverDomainStats"
+card  = "1:N"
+path  = "StatisticsTracker.stats: HashMap<'prover::domain', ProverDomainStats>"
+source = "statistics:148-153"
+note  = "global_stats (HashMap<'prover', ProverDomainStats>) is a separate 1:N for prover-wide rollup"
+
+# ─── Dispatch output ──────────────────────────────────────────────────────────
+
+[relationship.DispatchResult-ConfidenceScore]
+from  = "DispatchResult"
+to    = "ConfidenceScore(TrustLevel)"
+card  = "1:1"
+path  = "DispatchResult.trust_level: TrustLevel"
+source = "dispatch:56"
+
+[relationship.DispatchResult-AxiomTracking]
+from  = "DispatchResult"
+to    = "AxiomTracking(AxiomUsage)"
+card  = "0:1"
+path  = "DispatchResult.axiom_report: Option<AxiomUsage>"
+source = "dispatch:65"
+
+[relationship.DispatchResult-ProofCertificate]
+from  = "DispatchResult"
+to    = "ProofCertificate"
+card  = "0:1"
+path  = "DispatchResult.certificate_hash: Option<String>  — BLAKE3 reference to stored cert"
+source = "dispatch:68"
+
+# ═══════════════════════════════════════════════════════════════════════════════
+#  PIPELINE WALK — ordered trace verifying coverage
+# ═══════════════════════════════════════════════════════════════════════════════
+#
+# Every prover invocation follows this 11-step path (0-AI-MANIFEST.a2ml):
+#
+# Step  Entity touched                           Relationship
+# ────  ──────────────────────────────────────  ──────────────────────────────
+# 0     ProofState + Goal + Term                Input; ProofState 1:N Goal
+#       Context + Theorem                       Context 1:N Theorem
+#       Tactic (proof_script so far)            ProofState 1:N Tactic
+# 1     IntegrityStatus (integrity/)            ConfidenceScore.solver_integrity_ok (confidence:89)
+# 2     PortfolioResult + SolverResult           PortfolioResult 1:N SolverResult
+#       PortfolioConfidence                     ConfidenceScore.portfolio_confidence
+# 3     ProofCertificate                        Proof 0:N ProofCertificate
+#       CertificateVerificationResult           ProofCertificate 0:1 VerificationResult
+# 4     AxiomTracking: AxiomUsage + AxiomPolicy  Proof 1:1 AxiomPolicy; 0:N AxiomUsage
+# 5     (Sandbox — executor metadata, no ER entity; affects IntegrityStatus)
+# 6     ConfidenceScore: TrustFactors → TrustLevel  Proof 1:1 ConfidenceScore
+# 7     MutationTest: MutationResult + Summary  MutationTest N:1 Theorem; 1:N MutationResult
+# 8     (Dispatch routing, DispatchConfig — config only, no stored entity)
+# 9     ParetoFrontier: ProofCandidate + ProofObjective  ParetoFrontier 1:N ProofCandidate
+# 10    StatisticsTracker → ProverDomainStats   StatisticsTracker 1:N ProverDomainStats
+# 11    DispatchResult                           Top-level output; embeds TrustLevel + AxiomUsage
+#       Proof + TacticApplication (verisim)     Proof 1:N TacticApplication (step log)
+#       ProofVersion (verisim)                  Proof 1:N ProofVersion (snapshot log)
+#       ProofStateRecord (verisim)              Proof 1:N ProofStateRecord (training corpus)
+
+[pipeline-walk]
+step-0  = "Input materialisation: ProofState{goals,context,proof_script}; Context{theorems,defs,vars}"
+step-1  = "Integrity: IntegrityChecker (integrity/) → IntegrityStatus; feeds TrustFactors.solver_integrity_ok"
+step-2  = "Portfolio: PortfolioSolver.reconcile → PortfolioResult{confidence,solver_results}; feeds TrustFactors.portfolio_confidence + confirming_provers"
+step-3  = "Certificates: CertificateVerifier.verify_* → CertificateVerificationResult; feeds TrustFactors.{has_certificate,certificate_verified}"
+step-4  = "Axiom scan: AxiomTracker.analyze → AxiomPolicy{usages}; feeds TrustFactors.worst_axiom_danger"
+step-5  = "Sandbox: executor/ metadata only (Podman/bubblewrap); no new ER entity"
+step-6  = "Trust: compute_trust_level(TrustFactors) → TrustLevel; stored in DispatchResult.trust_level"
+step-7  = "Mutation: MutationTester on Theorem.statement → MutationTestSummary; 0:N per Theorem"
+step-8  = "Pareto: ParetoFrontier.compute over ProofCandidates → frontier indices; used for selection"
+step-9  = "Statistics: StatisticsTracker.record_* → ProverDomainStats; estimated_timeout_ms for next run"
+step-10 = "Output: DispatchResult assembled; optional Proof+TacticApplication+ProofVersion+ProofStateRecord persisted (verisim feature)"
+
+# ═══════════════════════════════════════════════════════════════════════════════
+#  COVERAGE AUDIT — every named struct/enum accounted for
+# ═══════════════════════════════════════════════════════════════════════════════
+
+[coverage-audit]
+# core.rs
+Term                    = "entity.Term"
+Pattern                 = "absorbed into entity.Term (Match branches)"
+ProofState              = "entity.ProofState"
+Goal                    = "entity.Goal"
+Hypothesis              = "entity.Hypothesis"
+Context                 = "entity.Context"
+Theorem                 = "entity.Theorem"
+Definition              = "entity.Definition"
+Variable                = "entity.Variable"
+Tactic                  = "entity.Tactic"
+TacticResult            = "transient — not persisted; omitted per design"
+
+# verification/axiom_tracker.rs
+DangerLevel             = "entity.AxiomTracking sub-type"
+AxiomUsage              = "entity.AxiomTracking sub-type"
+AxiomPolicy             = "entity.AxiomTracking sub-type"
+AxiomTracker            = "entity.AxiomTracking sub-type (scanner service)"
+DangerousPattern        = "private struct inside AxiomTracker; not an ER entity"
+
+# verification/certificates.rs
+CertificateFormat       = "entity.ProofCertificate sub-type (enum)"
+ProofCertificate        = "entity.ProofCertificate"
+CertificateVerificationResult = "entity.ProofCertificate sub-type"
+CertificateVerifier     = "entity.ProofCertificate sub-type (checker service)"
+AletheStep              = "private struct inside CertificateVerifier; not an ER entity"
+AletheStepKind          = "private enum inside CertificateVerifier; not an ER entity"
+
+# verification/confidence.rs
+TrustLevel              = "entity.ConfidenceScore sub-type"
+TrustFactors            = "entity.ConfidenceScore sub-type"
+compute_trust_level     = "function; part of entity.ConfidenceScore"
+is_small_kernel_prover  = "function; part of entity.ConfidenceScore"
+
+# verification/mutation.rs
+MutationKind            = "entity.MutationTest sub-type"
+MutationResult          = "entity.MutationTest sub-type"
+MutationTestSummary     = "entity.MutationTest sub-type"
+MutationTester          = "entity.MutationTest sub-type (service)"
+
+# verification/pareto.rs
+ProofObjective          = "entity.ParetoFrontier sub-type"
+ProofCandidate          = "entity.ParetoFrontier sub-type"
+ParetoFrontier          = "entity.ParetoFrontier"
+
+# verification/portfolio.rs
+PortfolioConfidence     = "entity.PortfolioResult sub-type (absorbed into ConfidenceScore)"
+SolverResult            = "entity.SolverResult"
+PortfolioResult         = "entity.PortfolioResult"
+PortfolioConfig         = "config struct — not an ER entity"
+PortfolioSolver         = "service — not an ER entity"
+
+# verification/statistics.rs
+ProverDomainStats       = "entity.ProverDomainStats"
+StatisticsTracker       = "service wrapper over ProverDomainStats; named as entity for clarity"
+
+# verification/proof.rs  [feature = verisim]
+Proof                   = "entity.Proof"
+TacticStatus            = "entity.TacticApplication sub-type"
+TacticApplication       = "entity.TacticApplication"
+ProofVersion            = "entity.ProofVersion"
+ProofStateRecord        = "entity.ProofStateRecord"
+theorem_identity        = "function returning PK for entity.Theorem"
+
+# dispatch.rs
+PerProverRecord         = "absorbed into entity.DispatchResult (RunDiagnostics)"
+RunDiagnostics          = "entity.DispatchResult sub-type"
+DispatchResult          = "entity.DispatchResult"
+DispatchConfig          = "config struct — not an ER entity"
+
+# proof_encoding.rs
+proof_identity          = "PK generator for entity.Proof"
+goal_identity           = "FK generator (Proof.goal_hash, TacticApplication.goal_hash)"
+session_identity        = "PK generator for ProofVersion.snapshot_id"
+encode_proof_state_cbor = "serialisation utility — not an ER entity"
