@@ -157,6 +157,20 @@ function extract_from_file(prover::String, filepath::String)::Vector{ProofExampl
         examples = extract_proofpower_proofs(filepath, content)
     elseif prover in ["ACL2s", "ACL2-Sedan"]
         examples = extract_acl2s_proofs(filepath, content)
+    elseif prover in ["Kissat", "DIMACS", "SAT"]
+        examples = extract_kissat_proofs(filepath, content)
+    elseif prover in ["Athena"]
+        examples = extract_athena_proofs(filepath, content)
+    elseif prover in ["FramaC", "Frama-C", "ACSL"]
+        examples = extract_framac_proofs(filepath, content)
+    elseif prover in ["Eprime", "Essence", "EssencePrime"]
+        examples = extract_eprime_proofs(filepath, content)
+    elseif prover in ["Albatross"]
+        examples = extract_albatross_proofs(filepath, content)
+    elseif prover in ["HOL", "HOLZero", "ProofPowerHOL"]
+        examples = extract_hol_proofs(filepath, content)
+    elseif prover in ["Rocq"]
+        examples = extract_coq_proofs(filepath, content)
     else
         # Generic extraction for other provers
         examples = extract_generic_proofs(prover, filepath, content)
@@ -2596,6 +2610,482 @@ function extract_acl2s_proofs(filepath::String, content::String)::Vector{ProofEx
         end
     catch
         # Skip malformed test? forms
+    end
+
+    return examples
+end
+
+"""
+Extract Kissat / DIMACS CNF SAT problems
+
+Parses DIMACS CNF format used by Kissat and other SAT solvers:
+- `p cnf <nvars> <nclauses>` header → goal summarising the instance
+- Clause lines (space-separated integers ending in `0`) → clause premises
+- `c assert: <msg>` comment lines → named assertion premises
+- No tactics (push-button SAT solving)
+"""
+function extract_kissat_proofs(filepath::String, content::String)::Vector{ProofExample}
+    examples = ProofExample[]
+
+    goal     = ""
+    premises = String[]
+    clauses  = 0
+
+    # Parse header: p cnf <nvars> <nclauses>
+    try
+        hm = match(r"^p\s+cnf\s+(\d+)\s+(\d+)"m, content)
+        if hm !== nothing
+            nvars    = hm.captures[1]
+            nclauses = hm.captures[2]
+            clauses  = parse(Int, nclauses)
+            goal     = "cnf_satisfiability: $(nvars) vars, $(nclauses) clauses"
+        end
+    catch
+        # Malformed header — leave goal empty
+    end
+
+    # Skip files without a CNF header
+    isempty(goal) && return examples
+
+    # Clause lines: one or more integers ending with 0
+    try
+        for m in eachmatch(r"^((?:-?\d+\s+)+-?\d+\s+0)\s*$"m, content)
+            clause_str = strip(m.captures[1])
+            # Remove trailing 0 for a cleaner premise string
+            lits = join(filter(!=(0), parse.(Int, split(clause_str))), " ")
+            isempty(lits) || push!(premises, lits)
+        end
+    catch
+        # Continue
+    end
+
+    # Named assertions from `c assert: <msg>` comments
+    try
+        for m in eachmatch(r"^c\s+assert:\s*(.+)$"m, content)
+            push!(premises, strip(m.captures[1]))
+        end
+    catch
+        # Continue
+    end
+
+    push!(examples, ProofExample(
+        "Kissat",
+        filepath,
+        "cnf_instance",
+        goal,
+        String[],          # No tactics — SAT is push-button
+        unique(premises),
+        true
+    ))
+
+    return examples
+end
+
+"""
+Extract Athena proofs
+
+Handles Athena natural-deduction proof scripts:
+- `conclude <name> <formula>` → goal is formula, name is theorem name
+- `(!claim <formula>)` → anonymous goal
+- `assume <name> := <formula>` → named premise
+- `by-induction` / `induct-on` → induction tactics
+- `(!mp <lemma1> <lemma2>)` → premises from lemma names
+"""
+function extract_athena_proofs(filepath::String, content::String)::Vector{ProofExample}
+    examples = ProofExample[]
+
+    # Collect file-level assume premises
+    global_premises = String[]
+    try
+        for m in eachmatch(r"assume\s+(\w+)\s*:=\s*(.+?)(?:\s*\n|\s+(?:conclude|by-|induct))"s, content)
+            push!(global_premises, m.captures[1])
+        end
+    catch
+        # Continue
+    end
+
+    # Collect induction tactics present in the file
+    tactics = String[]
+    occursin(r"\bby-induction\b", content)  && push!(tactics, "by-induction")
+    occursin(r"\binduct-on\b",    content)  && push!(tactics, "induct-on")
+
+    # Collect (!mp lemma1 lemma2) premises
+    mp_premises = String[]
+    try
+        for m in eachmatch(r"\(!mp\s+(\w+)\s+(\w+)\)", content)
+            push!(mp_premises, m.captures[1])
+            push!(mp_premises, m.captures[2])
+        end
+    catch
+        # Continue
+    end
+
+    all_premises = unique(vcat(global_premises, mp_premises))
+
+    # conclude <name> <formula>
+    try
+        for m in eachmatch(r"\bconclude\s+(\w+)\s+(.+?)(?=\n|\bconclude\b|\(\!)"s, content)
+            thm_name = m.captures[1]
+            formula  = strip(m.captures[2])
+            push!(examples, ProofExample(
+                "Athena",
+                filepath,
+                thm_name,
+                formula,
+                tactics,
+                all_premises,
+                true
+            ))
+        end
+    catch
+        # Continue
+    end
+
+    # Anonymous (!claim <formula>) goals
+    try
+        for m in eachmatch(r"\(!claim\s+(.+?)\)"s, content)
+            formula = strip(m.captures[1])
+            push!(examples, ProofExample(
+                "Athena",
+                filepath,
+                "claim",
+                formula,
+                tactics,
+                all_premises,
+                true
+            ))
+        end
+    catch
+        # Continue
+    end
+
+    return examples
+end
+
+"""
+Extract Frama-C / ACSL proof annotations
+
+Parses C source files annotated with ACSL (ANSI/ISO C Specification Language):
+- `/*@ requires <cond>; */` → precondition premise
+- `/*@ ensures <cond>; */` → postcondition goal
+- `/*@ invariant <cond>; */` → loop invariant goal
+- `/*@ assigns <locs>; */` → assignment clause (informational premise)
+- `/*@ lemma <name>: <formula>; */` → named lemma goal
+"""
+function extract_framac_proofs(filepath::String, content::String)::Vector{ProofExample}
+    examples = ProofExample[]
+
+    # Collect requires clauses as premises
+    premises = String[]
+    try
+        for m in eachmatch(r"/\*@\s*requires\s+([^;]+);\s*\*/"s, content)
+            push!(premises, strip(m.captures[1]))
+        end
+    catch
+        # Continue
+    end
+
+    # assigns clauses are informational premises
+    try
+        for m in eachmatch(r"/\*@\s*assigns\s+([^;]+);\s*\*/"s, content)
+            push!(premises, "assigns: " * strip(m.captures[1]))
+        end
+    catch
+        # Continue
+    end
+
+    all_premises = unique(premises)
+
+    # ensures clauses → postcondition goals
+    try
+        for m in eachmatch(r"/\*@\s*ensures\s+([^;]+);\s*\*/"s, content)
+            cond = strip(m.captures[1])
+            push!(examples, ProofExample(
+                "FramaC",
+                filepath,
+                "postcondition",
+                cond,
+                String[],
+                all_premises,
+                true
+            ))
+        end
+    catch
+        # Continue
+    end
+
+    # invariant clauses → loop invariant goals
+    try
+        for m in eachmatch(r"/\*@\s*invariant\s+([^;]+);\s*\*/"s, content)
+            inv = strip(m.captures[1])
+            push!(examples, ProofExample(
+                "FramaC",
+                filepath,
+                "loop_invariant",
+                inv,
+                String[],
+                all_premises,
+                true
+            ))
+        end
+    catch
+        # Continue
+    end
+
+    # lemma <name>: <formula>; → named lemma goals
+    try
+        for m in eachmatch(r"/\*@\s*lemma\s+(\w+)\s*:\s*([^;]+);\s*\*/"s, content)
+            lemma_name = m.captures[1]
+            formula    = strip(m.captures[2])
+            push!(examples, ProofExample(
+                "FramaC",
+                filepath,
+                lemma_name,
+                formula,
+                String[],
+                all_premises,
+                true
+            ))
+        end
+    catch
+        # Continue
+    end
+
+    return examples
+end
+
+"""
+Extract Essence Prime (.eprime) constraint-satisfaction problems
+
+Parses Essence Prime files used by Savile Row and related CP solvers:
+- `given <param>: <type>` declarations → parameter names as premises
+- `find <var>: <domain>` declarations → variable names as premises
+- `such that <constraint>` → constraint expressions as goals
+- `maximising <expr>` / `minimising <expr>` → optimisation objective goal
+"""
+function extract_eprime_proofs(filepath::String, content::String)::Vector{ProofExample}
+    examples = ProofExample[]
+
+    # given parameter declarations → premises
+    param_premises = String[]
+    try
+        for m in eachmatch(r"\bgiven\s+(\w+)\s*:\s*(.+?)(?=\n|\bgiven\b|\bfind\b|\bsuch\b)"s, content)
+            push!(param_premises, m.captures[1])
+        end
+    catch
+        # Continue
+    end
+
+    # find variable declarations → premises
+    var_premises = String[]
+    try
+        for m in eachmatch(r"\bfind\s+(\w+)\s*:\s*(.+?)(?=\n|\bfind\b|\bsuch\b|\bmaxi)"s, content)
+            push!(var_premises, m.captures[1])
+        end
+    catch
+        # Continue
+    end
+
+    all_premises = unique(vcat(param_premises, var_premises))
+
+    # such that ... blocks → constraint goals
+    try
+        for m in eachmatch(r"\bsuch\s+that\b\s*\n((?:[^\n]+\n?)+?)(?=\n\n|\bmaxi|\bmini|\z)"s, content)
+            block = strip(m.captures[1])
+            for constraint in split(block, r",\s*\n|,\s*(?=\S)")
+                c = strip(constraint)
+                isempty(c) && continue
+                push!(examples, ProofExample(
+                    "Eprime",
+                    filepath,
+                    "constraint",
+                    c,
+                    String[],
+                    all_premises,
+                    true
+                ))
+            end
+        end
+    catch
+        # Continue
+    end
+
+    # maximising / minimising → objective goal
+    try
+        for m in eachmatch(r"\b(maximising|minimising)\s+(.+?)(?=\n|\z)"s, content)
+            direction = m.captures[1]
+            expr      = strip(m.captures[2])
+            push!(examples, ProofExample(
+                "Eprime",
+                filepath,
+                "$(direction)_objective",
+                "$(direction): $(expr)",
+                String[],
+                all_premises,
+                true
+            ))
+        end
+    catch
+        # Continue
+    end
+
+    return examples
+end
+
+"""
+Extract Albatross (.al) proofs
+
+Handles the Albatross theorem prover (an Eiffel-inspired verifier):
+- `theorem <name> (args): <rettype>` declarations → goal is rettype
+- `require <formula>` → precondition premise
+- `ensure <formula>` → postcondition goal
+- `proof` ... `end` blocks: `via <name>` → premise name; bare tactic identifiers
+"""
+function extract_albatross_proofs(filepath::String, content::String)::Vector{ProofExample}
+    examples = ProofExample[]
+
+    try
+        # theorem name (...): rettype  ...  end
+        for m in eachmatch(r"\btheorem\s+(\w+)\s*(?:\([^)]*\))?\s*:\s*(.+?)\b(?:require|proof|end)"s, content)
+            thm_name = m.captures[1]
+            rettype  = strip(m.captures[2])
+
+            # Find the body between the theorem header and its `end`
+            body_start = m.offset + length(m.match)
+            body_end   = findnext("end", content, body_start)
+            body       = body_end === nothing ? "" : content[body_start:first(body_end)-1]
+
+            # require clauses → premises
+            req_premises = String[]
+            try
+                for rm in eachmatch(r"\brequire\s+(.+?)(?=\n|\brequire\b|\bensure\b|\bproof\b)"s, body)
+                    push!(req_premises, strip(rm.captures[1]))
+                end
+            catch
+                # Continue
+            end
+
+            # via <name> in proof block → premises
+            via_premises = String[]
+            try
+                for vm in eachmatch(r"\bvia\s+(\w+)", body)
+                    push!(via_premises, vm.captures[1])
+                end
+            catch
+                # Continue
+            end
+
+            # bare tactic identifiers (lines with single word inside proof block)
+            tactics = String[]
+            try
+                for line in split(body, '\n')
+                    s = strip(line)
+                    if !isempty(s) && match(r"^\w+$", s) !== nothing
+                        push!(tactics, s)
+                    end
+                end
+            catch
+                # Continue
+            end
+
+            # ensure clauses → goals (one ProofExample per postcondition)
+            ensure_goals = String[]
+            try
+                for em in eachmatch(r"\bensure\s+(.+?)(?=\n|\bensure\b|\bend\b)"s, body)
+                    push!(ensure_goals, strip(em.captures[1]))
+                end
+            catch
+                # Continue
+            end
+
+            all_premises = unique(vcat(req_premises, via_premises))
+
+            if !isempty(ensure_goals)
+                for g in ensure_goals
+                    push!(examples, ProofExample(
+                        "Albatross",
+                        filepath,
+                        thm_name,
+                        g,
+                        tactics,
+                        all_premises,
+                        true
+                    ))
+                end
+            else
+                push!(examples, ProofExample(
+                    "Albatross",
+                    filepath,
+                    thm_name,
+                    rettype,
+                    tactics,
+                    all_premises,
+                    true
+                ))
+            end
+        end
+    catch
+        # Skip malformed theorem blocks
+    end
+
+    return examples
+end
+
+"""
+Extract generic HOL proofs (HOL Zero, ProofPower HOL)
+
+Delegates to `extract_hol_light_proofs` — HOL Zero and ProofPower HOL share
+the same LCF-style SML surface syntax as HOL Light:
+- `val thm = TAC_PROOF((asl, goal), tactic_list)` → goal term
+- `ASSUME_TAC thm_name` → premise name
+- `REWRITE_RULE`, `CONV_RULE`, `MATCH_MP` → tactic strings
+
+Any HOL-family pattern not matched by the HOL Light extractor is handled
+generically so the caller always gets a `ProofExample[]` (never throws).
+"""
+function extract_hol_proofs(filepath::String, content::String)::Vector{ProofExample}
+    # Delegate to the HOL Light extractor — identical syntax family
+    examples = try
+        extract_hol_light_proofs(filepath, content)
+    catch
+        ProofExample[]
+    end
+
+    # Supplement: TAC_PROOF((asl, goal), tac) form used in HOL Zero
+    try
+        for m in eachmatch(r"\bTAC_PROOF\s*\(\s*\(\s*\[([^\]]*)\]\s*,\s*`([^`]+)`\s*\)\s*,\s*(.+?)\)"s, content)
+            asl_str  = m.captures[1]
+            goal     = strip(m.captures[2])
+            tac_body = m.captures[3]
+
+            # Premises from ASSUME_TAC calls in the tactic body
+            assume_premises = String[]
+            try
+                for am in eachmatch(r"ASSUME_TAC\s+(\w+)", tac_body)
+                    push!(assume_premises, am.captures[1])
+                end
+            catch; end
+
+            # Tactic names from REWRITE_RULE / CONV_RULE / MATCH_MP
+            tactics = String[]
+            try
+                for tm in eachmatch(r"\b(REWRITE_RULE|CONV_RULE|MATCH_MP|ONCE_REWRITE_RULE)\b", tac_body)
+                    push!(tactics, tm.captures[1])
+                end
+            catch; end
+
+            push!(examples, ProofExample(
+                "HOL",
+                filepath,
+                "tac_proof",
+                goal,
+                unique(tactics),
+                unique(assume_premises),
+                true
+            ))
+        end
+    catch
+        # Continue
     end
 
     return examples
