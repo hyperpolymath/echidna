@@ -8,7 +8,7 @@ scaffolding with unresolved {{PROJECT}}/{{AUTHOR}} placeholders and no domain-sp
 When this project needs formal ABI verification, create domain-specific Idris2 proofs
 following the pattern in repos like `typed-wasm`, `proven`, `echidna`, or `boj-server`.
 
-## Current state (Updated 2026-04-11)
+## Current state (Updated 2026-04-26)
 
 ### Completed proofs
 
@@ -21,6 +21,7 @@ following the pattern in repos like `typed-wasm`, `proven`, `echidna`, or `boj-s
 | E6 ProverKind discriminant injectivity | `verification/proofs/idris2/ProverKindInjectivity.idr` | 105 variants, no collisions in kind_to_u8 | I2 |
 | E7 GNN embedding faithfulness | `src/abi/EchidnaABI/Gnn.idr` | Structural properties, feature bounds, score normalisation | I2 |
 | E9 Proof composition soundness | `proofs/agda/ProofComposition.agda` | Soundness preservation, axiom conflict detection | Agda |
+| E12 ProofState serialization losslessness | `verification/proofs/idris2/ProofStateSerialisation.idr` | Term/Goal/ProofState round-trip; encode injective; SExpr wire model; zero believe_me | I2 |
 | VCL-UT query safety | `src/abi/EchidnaABI/VqlUt.idr` | L5 injection-free, L3 type-safe boundary | I2 |
 | Extensive ABI | `src/abi/EchidnaABI/Types.idr`, `Foreign.idr`, `Layout.idr` | All ABI types, no believe_me | I2 |
 
@@ -32,7 +33,6 @@ following the pattern in repos like `typed-wasm`, `proven`, `echidna`, or `boj-s
 | E8 | VQL-UT query safety (SEC, deeper layer) | I2 | Partially covered by VqlUt.idr |
 | E10 | Pareto frontier maximality | L4 | Not started |
 | E11 | SHAKE3-512/BLAKE3 integrity | L4 | Not started |
-| E12 | ProofState serialization losslessness | I2 | Not started |
 | E13 | Portfolio cross-checking completeness | L4 | Not started |
 
 ## Recommended prover
