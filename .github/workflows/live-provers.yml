@@ -175,17 +175,29 @@ jobs:
               sudo apt-get install -y --fix-missing agda
               ;;
             idris2)
-              # Idris2 has no apt package; build from the self-hosting tarball.
-              # Chez Scheme is the recommended backend.
-              sudo apt-get install -y chezscheme make
-              curl -fsSL -o /tmp/idris2.tar.gz https://github.com/idris-lang/Idris2/releases/latest/download/idris2-src-latest.tgz || \
-                curl -fsSL -o /tmp/idris2.tar.gz https://www.idris-lang.org/download/idris2-0.7.0.tgz
-              mkdir -p /tmp/idris2-src
-              tar xzf /tmp/idris2.tar.gz -C /tmp/idris2-src --strip-components=1
-              (cd /tmp/idris2-src && make bootstrap SCHEME=scheme && sudo make install PREFIX=/usr/local)
+              # Idris2 v0.8.0 has no pre-built Linux release binary (assets array
+              # is empty on the GitHub release). Try apt first (available as idris2
+              # in Ubuntu 24.04 universe); fall back to building from the source
+              # archive.  The old idris2-src-latest.tgz URL is a 404 on releases
+              # without assets — use the GitHub archive API instead, which always
+              # resolves for any tag.
+              sudo apt-get install -y --fix-missing idris2 2>/dev/null || {
+                IDRIS2_VER="v0.8.0"
+                sudo apt-get install -y --fix-missing chezscheme make libgmp-dev
+                curl -fsSL --max-time 300 --retry 2 \
+                  -o /tmp/idris2.tar.gz \
+                  "https://github.com/idris-lang/Idris2/archive/refs/tags/${IDRIS2_VER}.tar.gz"
+                mkdir -p /tmp/idris2-src
+                tar xzf /tmp/idris2.tar.gz -C /tmp/idris2-src --strip-components=1
+                (cd /tmp/idris2-src && make bootstrap SCHEME=scheme && sudo make install PREFIX=/usr/local)
+              }
               ;;
             lean4)
-              curl -sSL https://raw.githubusercontent.com/leanprover/elan/master/elan-init.sh | sh -s -- -y --default-toolchain leanprover/lean4:stable
+              # elan bootstraps the Lean toolchain manager and downloads lean4:stable.
+              # --max-time guards the pipe against a stalled download.
+              curl -sSL --max-time 120 \
+                https://raw.githubusercontent.com/leanprover/elan/master/elan-init.sh \
+                | sh -s -- -y --default-toolchain leanprover/lean4:stable
               echo "$HOME/.elan/bin" >> "$GITHUB_PATH"
               ;;
             isabelle)
@@ -205,9 +217,11 @@ jobs:
               sudo apt-get install -y --fix-missing why3
               ;;
             dafny)
-              # Dafny 4.x is distributed as a standalone .NET global tool.
-              # ubuntu-latest ships dotnet-sdk 8 in setup images; install via apt if absent.
-              command -v dotnet >/dev/null 2>&1 || sudo apt-get install -y dotnet-sdk-8.0
+              # Dafny 4.x is distributed as a .NET global tool.
+              # ubuntu-latest ships dotnet-sdk-8.0 in the default image; install
+              # via apt only if absent (--fix-missing guards against mirror lag).
+              command -v dotnet >/dev/null 2>&1 || \
+                sudo apt-get install -y --fix-missing dotnet-sdk-8.0
               dotnet tool install --global Dafny
               echo "$HOME/.dotnet/tools" >> "$GITHUB_PATH"
               ;;
@@ -234,16 +248,19 @@ jobs:
               exit 0
               ;;
             tlaps)
-              # tlapm ships a self-extracting binary installer.
-              # Latest release (tag 202210041448) asset is a .bin file, not .sh.
-              # find locates tlapm regardless of installer's extraction layout.
+              # tlapm 1.5.0 ships a makeself .bin installer (not .sh).
+              # The installer installs to /usr/local/lib/tlaps and links
+              # tlapm into /usr/local/bin — no --prefix needed or supported.
+              # find is a safety net for any layout variation.
               curl -fsSL --max-time 120 \
                 -o /tmp/tlaps.bin \
                 "https://github.com/tlaplus/tlapm/releases/download/202210041448/tlaps-1.5.0-x86_64-linux-gnu-inst.bin"
               chmod +x /tmp/tlaps.bin
-              sudo /tmp/tlaps.bin --prefix=/opt/tlaps || sudo /tmp/tlaps.bin /opt/tlaps
-              TLAPM_BIN="$(find /opt/tlaps /usr/local -type f -name tlapm 2>/dev/null | head -n 1)"
-              [ -n "$TLAPM_BIN" ] && sudo ln -sf "$TLAPM_BIN" /usr/local/bin/tlapm
+              sudo /tmp/tlaps.bin
+              command -v tlapm >/dev/null 2>&1 || {
+                TLAPM_BIN="$(find /usr /opt -type f -name tlapm 2>/dev/null | head -n 1)"
+                [ -n "$TLAPM_BIN" ] && sudo ln -sf "$TLAPM_BIN" /usr/local/bin/tlapm
+              }
               ;;
           esac
           # Best-effort version probe for the matrix log.
