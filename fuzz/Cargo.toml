@@ -12,6 +12,7 @@ cargo-fuzz = true
 [dependencies]
 libfuzzer-sys = "0.4"
 arbitrary = { version = "1", features = ["derive"] }
+serde_json = "1"
 
 [dependencies.echidna]
 path = ".."
@@ -19,6 +20,27 @@ path = ".."
 [[bin]]
 name = "fuzz_input"
 path = "fuzz_targets/fuzz_input.rs"
+test = false
+doc = false
+bench = false
+
+[[bin]]
+name = "fuzz_proof_state"
+path = "fuzz_targets/fuzz_proof_state.rs"
+test = false
+doc = false
+bench = false
+
+[[bin]]
+name = "fuzz_trust_pipeline"
+path = "fuzz_targets/fuzz_trust_pipeline.rs"
+test = false
+doc = false
+bench = false
+
+[[bin]]
+name = "fuzz_axiom_tracker"
+path = "fuzz_targets/fuzz_axiom_tracker.rs"
 test = false
 doc = false
 bench = false
