@@ -5,13 +5,81 @@
 [metadata]
 project = "echidna"
 version = "2.1.1"
-last-updated = "2026-04-18"
+last-updated = "2026-04-26"
 status = "active"
 
 [project-context]
 name = "echidna"
 completion-percentage = 100
-phase = "v1.6.0 Released - Production Ready"
+phase = "v1.6.0 Released — Phase 0 of comprehensive backend expansion landed"
+
+[expansion-roadmap]
+# 2026-04-26 — design landed; Phase 0 foundation pushed.  Goal: push prover
+# count from 74 real backends → 104, plus 10-kind coprocessor surface, plus
+# meta-control coordination.  See coprocessor/mod.rs module docs for the
+# Phase 6 backend ladder.
+plan-source-commit = "phase-0 foundation — see commit message for full phase table"
+backend-count-baseline = 74
+backend-count-target   = 104
+new-backends-planned   = 30
+dropped-from-candidate-list = ["Pellet (AGPL)", "Atelier B (commercial)", "Rodin (Eclipse RCP weight)", "FaCT++ (dead upstream)", "MRMC (superseded by STORM)", "Waldmeister (closed-source binary)", "SSProve (Coq plugin, fold into Coq backend)"]
+
+[[expansion-roadmap.phase]]
+id = "phase-0"
+title = "Foundation — coprocessor abstraction, MetaController, Idris2/SPARK/Julia bridges"
+status = "complete"
+landed = "2026-04-26"
+adds-backends = []
+notes = "Coprocessor trait + Math backend (num-bigint, 10 ops), JuliaCoprocessorBridge transport, MetaController coordinating prover×coprocessor×goal-aspect, Idris2 ABI declarations with constructive round-trip proof, SPARK trust-tier safety invariants, Julia-side router with Math fallback. 13 new tests green."
+
+[[expansion-roadmap.phase]]
+id = "phase-1"
+title = "HO-ATPs + frontier first-order"
+status = "available-for-claim"
+adds-backends = ["Leo-III", "Satallax", "Lash", "agsyHOL", "iProver", "Princess", "Twee", "MetiTarski", "CSI", "AProVE"]
+target-claim-id = "echidna-phase1a-tptp-atps  /  echidna-phase1b-frontier-fol"
+
+[[expansion-roadmap.phase]]
+id = "phase-2"
+title = "Computer-algebra (FLINT FFI + subprocess CAS family)"
+status = "available-for-claim"
+adds-backends = ["FLINT", "PARI/GP", "Maxima", "Singular", "GAP", "Macaulay2"]
+target-claim-id = "echidna-phase2a-cas-libraries  /  echidna-phase2b-cas-subprocess"
+
+[[expansion-roadmap.phase]]
+id = "phase-3"
+title = "Real-algebraic + modal / hybrid"
+status = "available-for-claim"
+adds-backends = ["QEPCAD-B", "Redlog", "KeYmaera X", "MleanCoP", "ileanCoP", "nanoCoP", "MetTeL2"]
+target-claim-id = "echidna-phase3-realalg-modal"
+
+[[expansion-roadmap.phase]]
+id = "phase-4"
+title = "Description logic + probabilistic + computational crypto"
+status = "available-for-claim"
+adds-backends = ["ELK", "Konclude", "STORM", "EasyCrypt", "CryptoVerif", "ProB"]
+target-claim-id = "echidna-phase4-dl-prob-cryptocomp"
+
+[[expansion-roadmap.phase]]
+id = "phase-5"
+title = "Refinement types + SPARK / Ada"
+status = "available-for-claim"
+adds-backends = ["Stainless", "Liquid Haskell", "GNATprove"]
+target-claim-id = "echidna-phase5-refinement-spark"
+
+[[expansion-roadmap.phase]]
+id = "phase-6"
+title = "Coprocessor full wiring — Physics/DSP/FPGA/Tensor/Vector/Crypto/Graphics/Audio/IO via LowLevel.jl + Rust SIMD + Chapel"
+status = "blocked-on-phase-0-merge"
+adds-backends = []
+notes = "Each kind lands with full implementation — never as a stub. Existing Phase 0 Math backend serves as the integration template."
+
+[[expansion-roadmap.phase]]
+id = "phase-7"
+title = "Meta-control — Pareto over (prover × coprocessor × aspect), Bayesian timeout per-tuple"
+status = "blocked-on-phases-1-6"
+adds-backends = []
+notes = "Extension to existing MetaController Plan + run_preconditions seam."
 
 # ═══════════════════════════════════════════════════════════════════════════════
 # CRG (Critical Reception Grade) advancement — D→C→B

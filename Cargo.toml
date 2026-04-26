@@ -79,6 +79,12 @@ rand = "0.8"
 # Temporary files (used by prover backends to invoke external solvers)
 tempfile = "3"
 
+# Math coprocessor — number theory + exact arithmetic.  Permissive licences
+# (Apache-2.0 / MIT) compatible with PMPL-1.0-or-later / MPL-2.0 fallback.
+num-bigint = "0.4"
+num-integer = "0.1"
+num-traits = "0.2"
+
 # TypedWasm engine — standalone crate at crates/typed_wasm.
 # Provides the pure parse/analyse engine; provers/typed_wasm.rs is a thin
 # adapter that maps its `Analysis` onto echidna core types, and routes the

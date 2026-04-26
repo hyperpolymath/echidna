@@ -20,6 +20,7 @@ use crate::provers::{ProverBackend, ProverKind};
 pub mod actors;
 pub mod explanations;
 pub mod memory;
+pub mod meta_controller; // Coordinates prover × coprocessor × goal-aspect
 pub mod planner;
 pub mod router;
 
