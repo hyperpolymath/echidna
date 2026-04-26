@@ -41,6 +41,7 @@ fn live_config(executable: &Path) -> ProverConfig {
         args: vec![],
         timeout: 30,
         neural_enabled: false,
+        gnn_api_url: None,
     }
 }
 

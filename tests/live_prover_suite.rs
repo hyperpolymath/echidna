@@ -49,6 +49,7 @@ fn live_config(executable: &str) -> ProverConfig {
         args: vec![],
         timeout: 30,
         neural_enabled: false,
+        gnn_api_url: None,
     }
 }
 
@@ -349,4 +350,24 @@ async fn live_imandra_version() {
     // Imandra is proprietary; handled via vendor-supplied container where a
     // licence is available.  Test SKIPs on public CI.
     assert_version_reachable(ProverKind::Imandra, "imandra").await;
+}
+
+// ==========================================================================
+// Tier 4 — quarterly.  GPU verification backends.  Require CUDA SDK or
+// OpenCL runtime; provisioned via Containerfile or developer workstation.
+// Tests SKIP when the binary is absent.
+// ==========================================================================
+
+#[tokio::test]
+async fn live_gpuverify_version() {
+    // GPUVerify targets CUDA/OpenCL kernels via Boogie+Z3.
+    // Install: https://github.com/mc-imperial/gpuverify
+    assert_version_reachable(ProverKind::GPUVerify, "gpuverify").await;
+}
+
+#[tokio::test]
+async fn live_faial_version() {
+    // Faial is a static GPU data-race detector targeting CUDA.
+    // Install: https://github.com/elliotttate/faial (or `cargo install faial`)
+    assert_version_reachable(ProverKind::Faial, "faial-drf").await;
 }
