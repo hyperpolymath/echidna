@@ -87,9 +87,10 @@ notes = "5 new CoprocessorKind variants (Dsp/Io/Graphics/Audio/Fpga) with full R
 [[expansion-roadmap.phase]]
 id = "phase-7"
 title = "Meta-control — Pareto over (prover × coprocessor × aspect), Bayesian timeout per-tuple"
-status = "blocked-on-phases-1-6"
+status = "complete"
+landed = "2026-04-27"
 adds-backends = []
-notes = "Extension to existing MetaController Plan + run_preconditions seam."
+notes = "MetaController extended: registers all 11 native coprocessors at construction; aspect routing taxonomy expanded from 3 entries to 22 covering arithmetic / polynomial-algebra / linalg / crypto / physics / signal / IO / visualisation / audio / hardware. Reuses existing `verification::pareto::ParetoFrontier` and `verification::statistics::StatisticsTracker` (no new infra invented). New API: `MetaController::with_stats(tracker)` plugs in a shared StatisticsTracker; `plan_with_pareto(goal, candidate_provers, default_timeout, default_trust)` ranks candidates by predicted (proof_time, trust, memory, steps) and picks from the Pareto frontier; `record_outcome(plan, goal, outcome, elapsed_ms)` flows results back to the tracker. `Plan` now carries `estimated_timeout_ms` (Bayesian per-tuple) and a `rationale` string for trust-pipeline diagnostics. FlintMath aspect-hints filtered when backend absent (graceful no-feature fallback). 8 new tests, all green; full lib still compiles cleanly."
 
 # ═══════════════════════════════════════════════════════════════════════════════
 # CRG (Critical Reception Grade) advancement — D→C→B
