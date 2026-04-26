@@ -1454,10 +1454,10 @@ mod tests {
 
     #[test]
     fn test_kind_from_u8_out_of_range() {
-        // 0–124 are valid; 125+ are out of range.
-        // (Boundary moved 114→124 on 2026-04-26 adding Phase 1b frontier provers.)
-        assert!(kind_from_u8(125).is_none());
+        // 0–127 are valid; 128+ are out of range.
+        // (Boundary moved to 127 on 2026-04-26 adding Phase 1a/1b ATPs and Phase 5 backends.)
         assert!(kind_from_u8(128).is_none());
+        assert!(kind_from_u8(200).is_none());
         assert!(kind_from_u8(255).is_none());
     }
 
