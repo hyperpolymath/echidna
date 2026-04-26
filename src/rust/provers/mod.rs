@@ -21,6 +21,8 @@ pub use io::{bounded_read_proof_file, MAX_PROOF_BYTES};
 
 pub mod abc;
 pub mod abella;
+pub mod faial;
+pub mod gpuverify;
 pub mod acl2;
 pub mod acl2s;
 pub mod agda;
@@ -187,6 +189,16 @@ pub enum ProverKind {
 
     // Tier 10: Logic synthesis & hardware verification
     ABC,
+
+    // Tier 10: GPU kernel verification
+    /// GPUVerify — verifies CUDA/OpenCL kernels for data races and barrier
+    /// divergence. Translates GPU kernels to Boogie/BPL then uses Z3/CVC4
+    /// as the backend SMT solver. Input: `.cu` (CUDA) or `.cl` (OpenCL).
+    GPUVerify,
+    /// Faial — detects data races in GPU parallel kernels via access pattern
+    /// analysis. Lighter-weight than GPUVerify; focuses on CUDA shared-memory
+    /// race freedom without a Boogie translation step.
+    Faial,
 
     // Tier 11: HP type-checker ecosystem. These dispatch through one
     // unified HPEcosystemBackend that routes to the real HP upstreams
@@ -441,6 +453,8 @@ impl std::str::FromStr for ProverKind {
             "key" | "key-project" | "javadl" => Ok(ProverKind::KeY),
             "dreal" | "d-real" | "dreal4" => Ok(ProverKind::DReal),
             "abc" | "berkeley-abc" => Ok(ProverKind::ABC),
+            "gpuverify" | "gpu-verify" | "gpu_verify" => Ok(ProverKind::GPUVerify),
+            "faial" | "faial-drf" => Ok(ProverKind::Faial),
             "typell" | "type-ll" | "typell-kernel" => Ok(ProverKind::TypeLL),
             "katagoria" | "katagoriaverifier" | "katagoria-verifier" => {
                 Ok(ProverKind::KatagoriaVerifier)
@@ -624,6 +638,8 @@ impl ProverKind {
             ProverKind::KeY,
             ProverKind::DReal,
             ProverKind::ABC,
+            ProverKind::GPUVerify,
+            ProverKind::Faial,
             ProverKind::CubicalAgda,
             ProverKind::Zipperposition,
             ProverKind::Prover9,
@@ -711,6 +727,8 @@ impl ProverKind {
             ProverKind::KeY => 3, // Deductive Java verifier (JavaDL + JML), auto + interactive
             ProverKind::DReal => 2, // Automated delta-complete SMT solver, NRA
             ProverKind::ABC => 2, // Automated hardware verification, AIG-based
+            ProverKind::GPUVerify => 2, // Automated GPU kernel verifier (Boogie/Z3 backend)
+            ProverKind::Faial => 2, // Lightweight GPU race detector (access pattern analysis)
             // HP type-checker ecosystem: complexity 3 — they are real
             // type-checkers with non-trivial unification/elaboration.
             // Heavier disciplines (HoTT/Cubical, Hoare) rate 4.
@@ -853,6 +871,8 @@ impl ProverKind {
             ProverKind::KeY => 5,      // Deductive Java verifier
             ProverKind::DReal => 5,    // Delta-complete SMT solver (NRA/ODE)
             ProverKind::ABC => 5,      // Logic synthesis & hardware verification
+            ProverKind::GPUVerify => 5, // GPU kernel verifier (CUDA/OpenCL → Boogie → Z3)
+            ProverKind::Faial => 5,     // Lightweight GPU data-race detector
             // HP ecosystem — tier 11 (beyond the existing 10-tier scheme
             // but placed as 3 here to share the ML guidance budget with
             // dependent/interactive provers).
@@ -970,6 +990,8 @@ impl ProverKind {
             ProverKind::KeY => 2.0,          // Deductive Java verifier (JavaDL + JML)
             ProverKind::DReal => 1.0,        // Automated SMT solver, SMT-LIB input
             ProverKind::ABC => 1.5,          // Hardware verification, AIGER/BLIF input
+            ProverKind::GPUVerify => 1.5,    // GPU kernel verifier, CUDA/OpenCL input
+            ProverKind::Faial => 1.0,        // Lightweight GPU race detector, CUDA input
             ProverKind::TypeLL
             | ProverKind::KatagoriaVerifier
             | ProverKind::TropicalTypeChecker
@@ -1081,6 +1103,8 @@ impl ProverKind {
             ProverKind::KeY => "key",     // KeY Java verifier (Java, headless mode)
             ProverKind::DReal => "dreal", // dReal delta-complete SMT solver
             ProverKind::ABC => "abc",     // Berkeley ABC logic synthesis system
+            ProverKind::GPUVerify => "gpuverify", // GPUVerify CUDA/OpenCL kernel verifier
+            ProverKind::Faial => "faial-drf",     // Faial data-race freedom checker
             ProverKind::CubicalAgda => "agda",
             ProverKind::Zipperposition => "zipperposition",
             ProverKind::Prover9 => "prover9",
@@ -1395,6 +1419,8 @@ impl ProverFactory {
             ProverKind::KeY => Ok(Box::new(key::KeyBackend::new(config))),
             ProverKind::DReal => Ok(Box::new(dreal::DRealBackend::new(config))),
             ProverKind::ABC => Ok(Box::new(abc::AbcBackend::new(config))),
+            ProverKind::GPUVerify => Ok(Box::new(gpuverify::GpuVerifyBackend::new(config))),
+            ProverKind::Faial => Ok(Box::new(faial::FaialBackend::new(config))),
             ProverKind::CubicalAgda => Ok(Box::new(cubical_agda::CubicalAgdaBackend::new(config))),
             ProverKind::Zipperposition => Ok(Box::new(zipperposition::ZipperpositionBackend::new(config))),
             ProverKind::Prover9 => Ok(Box::new(prover9::Prover9Backend::new(config))),
@@ -1499,6 +1525,10 @@ impl ProverFactory {
             "dr" => Some(ProverKind::DReal),           // dReal SMT-LIB (.dr extension)
             "aig" => Some(ProverKind::ABC),            // AIGER format (And-Inverter Graph)
             "blif" => Some(ProverKind::ABC),           // Berkeley Logic Interchange Format
+            // GPU source files — default to GPUVerify for extension-only detection.
+            // Use detect_from_file_content() to distinguish GPUVerify vs Faial.
+            "cu" => Some(ProverKind::GPUVerify),  // CUDA source (GPUVerify or Faial)
+            "cl" => Some(ProverKind::GPUVerify),  // OpenCL source (GPUVerify)
             "key" => Some(ProverKind::KeY),            // KeY proof problem file (JavaDL)
             // Note: .java files with JML annotations can also be detected via content-aware detection
             // Note: .c files only map to CBMC when containing __CPROVER directives

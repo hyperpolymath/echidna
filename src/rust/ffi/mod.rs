@@ -505,6 +505,9 @@ pub fn kind_from_u8(kind: u8) -> Option<ProverKind> {
         110 => Some(ProverKind::Rocq),
         111 => Some(ProverKind::UppaalStratego),
         112 => Some(ProverKind::MizAR),
+        // 2026-04-26 batch: GPU kernel verification backends.
+        113 => Some(ProverKind::GPUVerify),
+        114 => Some(ProverKind::Faial),
         _ => None,
     }
 }
@@ -1227,6 +1230,9 @@ pub fn kind_to_u8(kind: ProverKind) -> u8 {
         ProverKind::Rocq => 110,
         ProverKind::UppaalStratego => 111,
         ProverKind::MizAR => 112,
+        // 2026-04-26 batch: GPU kernel verification backends.
+        ProverKind::GPUVerify => 113,
+        ProverKind::Faial => 114,
     }
 }
 
@@ -1411,11 +1417,9 @@ mod tests {
 
     #[test]
     fn test_kind_from_u8_out_of_range() {
-        // 0–112 are valid; 113+ are out of range.
-        // (Boundary moved 104→112 in commit c8c0acf which added 8 new ProverKind
-        //  variants: CubicalAgda, Zipperposition, Prover9, OpenSMT, SmtRat,
-        //  Rocq, UppaalStratego, MizAR.)
-        assert!(kind_from_u8(113).is_none());
+        // 0–114 are valid; 115+ are out of range.
+        // (Boundary moved 112→114 on 2026-04-26 adding GPUVerify=113, Faial=114.)
+        assert!(kind_from_u8(115).is_none());
         assert!(kind_from_u8(128).is_none());
         assert!(kind_from_u8(255).is_none());
     }
