@@ -754,9 +754,30 @@ changes = [
 l3-status-after-wave-2 = [
   "Wave-1 (Tier-1, every PR, 9 backends): DONE — landed in b022bf4.",
   "Wave-2 (Tier-2, nightly, 10 backends): DONE for 9; hol-light deferred to Wave-3.",
-  "Wave-3 (Tier-3, weekly, 9 backends: Tamarin, ProVerif, Imandra, SCIP, OR-Tools, HOL4, ACL2, Twelf, Metamath): SCAFFOLD ONLY — placeholder job announces Wave-3 TODO. Needs per-backend Containerfiles (Podman, not Docker).",
-  "Wave-4 (Tier-4, quarterly, 19 backends): SCAFFOLD ONLY — placeholder. Retained as mock-only unless a maintainer volunteers.",
+  "Wave-3 (Tier-3, weekly, 9 backends: Tamarin, ProVerif, Imandra, SCIP, OR-Tools, HOL4, ACL2, Twelf, Metamath): Containerfiles present in .containerization/, tier3 matrix job wired in live-provers.yml. Imandra gated on licence. Others provision via apt/tarball with continue-on-error.",
+  "Wave-4 (Tier-4, quarterly, 19 backends): SCAFFOLD ONLY — placeholder tier4 job in live-provers.yml announces list. See wave-4-rationale for per-backend mock-only justification.",
 ]
+wave-4-rationale = {
+  Mizar = "Pascal/GNU C build; no CI-friendly prebuilt binary; corpus-only until a Containerfile is contributed",
+  Nuprl = "proprietary Cornell system; binary not publicly redistributable; requires institutional access",
+  PVS = "Allegro CL-based; PVS 7.x installer requires manual download from sri.com; no public CI binary",
+  Minlog = "Isabelle-hosted Minlog; requires full Isabelle to load; test path deferred to Isabelle T2 lane",
+  Dedukti = "OCaml build via opam; small but niche; deferred until a maintainer adds a Containerfile",
+  Arend = "JVM-based (IntelliJ IdeaPlugin); no headless CLI mode; deferred pending headless launcher",
+  KeY = "Java-based deductive verifier for Java source; needs JDK + GUI; no stable CI binary path",
+  Prism = "probabilistic model checker; large Java/C++ build; no apt package on Ubuntu runners",
+  UPPAAL = "proprietary academic licence; binary not redistributable in CI without licence agreement",
+  ViPER = "Viper is covered by the live_prover_verify test suite (apt-installable); Wave-4 placeholder kept for completeness",
+  NuSMV = "prebuilt Linux binary available from nusmv.fbk.eu; deferred pending stable tarball URL",
+  Spin = "apt-installable (spin package); low priority until a PROMELA goal fixture is written",
+  TLC = "TLA+ Toolbox CLI; apt-installable as tla-tools; deferred pending TLA fixture set",
+  CBMC = "C model checker; apt-installable; deferred pending C micro-goal fixture set",
+  Seahorn = "LLVM-based; no prebuilt Linux binary; deferred to developer workstation or Docker image",
+  dReal = "delta-decidability SMT; binary ships as .zip from GitHub releases; deferred pending fixture set",
+  Boogie = "intermediate verification language; .NET global tool (dotnet tool install Boogie); deferred pending fixture set",
+  Kissat = "SAT solver; binary available from GitHub; deferred pending DIMACS fixture set",
+  Alloy = "Java-based relational model finder; no headless CLI mode without Alloy API; deferred",
+}
 wave-3-handover-hints = [
   "Tamarin: Haskell Stack build; prebuilt binaries from github.com/tamarin-prover/tamarin-prover/releases may work.",
   "ProVerif: OCaml build via opam; consider the Docker image from INRIA.",
