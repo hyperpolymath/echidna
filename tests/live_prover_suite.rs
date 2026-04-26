@@ -18,6 +18,8 @@
 //
 // Wave-1 (this file): Tier-1 backends — version-check smoke tests.  Proves
 // the subprocess wiring is real, not mocked, and that the binary responds.
+// L3 hygiene: emits VeriSimDB records for each test outcome via
+// `record_proof_attempt`, feeding the learning loop.
 //
 // Wave-2+: adds per-backend canonical micro-goals (fed through
 // `ProverBackend::verify_proof`) once the fixtures land under
@@ -27,8 +29,10 @@
 #![cfg(feature = "live-provers")]
 
 use std::path::PathBuf;
+use std::time::Instant;
 
 use echidna::provers::{ProverBackend, ProverConfig, ProverFactory, ProverKind};
+use echidna::verisim_bridge::{ProofAttempt, VeriSimDBClient};
 
 /// Check if a binary exists on PATH.  Returns the resolved absolute path
 /// for diagnostics, or None when the binary is absent.
@@ -56,11 +60,64 @@ fn try_live_backend(kind: ProverKind, exe: &str) -> Option<Box<dyn ProverBackend
     ProverFactory::create(kind, config).ok()
 }
 
+/// Emit a VeriSimDB proof-attempt record for the test outcome.
+/// Non-fatal: if VeriSimDB is unreachable, log a warning and continue —
+/// never fail the test. This feeds the learning loop in hypatia's rule H3.
+async fn emit_live_result(kind: ProverKind, exe: &str, version: Option<&str>, elapsed_ms: u64) {
+    let outcome = if version.is_some() { "success" } else { "failure" };
+    let error_msg = if version.is_none() {
+        Some(format!("{} version() returned no version string", kind_label(kind)))
+    } else {
+        None
+    };
+
+    let attempt = ProofAttempt {
+        attempt_id: format!(
+            "live-version-{}-{}",
+            exe.replace(['/', '\\'], "_"),
+            std::time::SystemTime::now()
+                .duration_since(std::time::UNIX_EPOCH)
+                .unwrap_or_default()
+                .as_millis()
+        ),
+        obligation_id: format!("live-version-check-{}", exe),
+        repo: "hyperpolymath/echidna".to_string(),
+        file: "tests/live_prover_suite.rs".to_string(),
+        claim: format!("Prover {} is reachable and can report version", kind_label(kind)),
+        obligation_class: "system_integration".to_string(),
+        prover_used: format!("{:?}", kind).to_lowercase(),
+        outcome: outcome.to_string(),
+        duration_ms: elapsed_ms,
+        confidence: if version.is_some() { 1.0 } else { 0.0 },
+        parent_attempt_id: None,
+        strategy_tag: "live_version_check".to_string(),
+        started_at: chrono::Utc::now()
+            .checked_sub_signed(chrono::Duration::milliseconds(elapsed_ms as i64))
+            .unwrap_or_else(chrono::Utc::now)
+            .to_rfc3339(),
+        completed_at: chrono::Utc::now().to_rfc3339(),
+        prover_output: version.unwrap_or("").to_string(),
+        error_message: error_msg,
+    };
+
+    // Resolve VeriSimDB URL from VERISIMDB_URL env var or default to localhost:7700
+    let verisimdb_url = std::env::var("VERISIMDB_URL")
+        .unwrap_or_else(|_| "http://localhost:7700".to_string());
+    let client = VeriSimDBClient::new(&verisimdb_url);
+    if let Err(e) = client.record_proof_attempt(&attempt).await {
+        eprintln!(
+            "VeriSimDB emit skipped for {}: {} (VeriSimDB not running?)",
+            kind_label(kind),
+            e
+        );
+    }
+}
+
 /// Version-check helper: instantiates the backend, calls `version()`, and
 /// asserts the call succeeded and returned *something*.  A backend that
 /// compiles but cannot speak to its binary returns `Err`, which we surface
 /// as a test failure — that is exactly the mock-vs-reality gap this suite
-/// exists to catch.
+/// exists to catch.  Also emits a VeriSimDB record on completion.
 async fn assert_version_reachable(kind: ProverKind, exe: &str) {
     let Some(backend) = try_live_backend(kind, exe) else {
         eprintln!(
@@ -70,16 +127,23 @@ async fn assert_version_reachable(kind: ProverKind, exe: &str) {
         );
         return;
     };
+
+    let start_time = Instant::now();
     match backend.version().await {
         Ok(v) => {
+            let elapsed_ms = start_time.elapsed().as_millis() as u64;
             assert!(
                 !v.trim().is_empty(),
                 "{} version() returned empty string — subprocess is wired but produced no output",
                 kind_label(kind),
             );
             eprintln!("OK: {} reported version = {:?}", kind_label(kind), v);
+            emit_live_result(kind, exe, Some(&v), elapsed_ms).await;
         },
         Err(e) => {
+            let elapsed_ms = start_time.elapsed().as_millis() as u64;
+            eprintln!("FAIL: {} version() failed: {}", kind_label(kind), e);
+            emit_live_result(kind, exe, None, elapsed_ms).await;
             panic!(
                 "{} live version() failed: {}.  Binary found on PATH but the \
                  backend's subprocess wiring did not produce a usable version \

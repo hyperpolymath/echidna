@@ -104,7 +104,8 @@ verisim = [     # Enable VeriSimDB persistent proof storage (8-modality octads)
 # `cargo test` on a machine without prover binaries does NOT fail — the suite
 # auto-skips missing binaries, but the feature flag keeps it out of the default
 # test run to avoid confusing output. CI enables it in live-provers.yml.
-live-provers = []
+# Also enables VeriSimDB for L3 test hygiene (emit outcome records).
+live-provers = ["verisim"]
 
 [dev-dependencies]
 proptest = "1"
