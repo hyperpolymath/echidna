@@ -76,9 +76,10 @@ jobs:
       - name: Provision prover (${{ matrix.backend }})
         run: |
           set -euo pipefail
-          sudo apt-get update
+          # Retry apt-get update once on mirror failure before proceeding.
+          sudo apt-get update -qq || sudo apt-get update -qq --fix-missing
           case "${{ matrix.backend }}" in
-            z3)         sudo apt-get install -y z3 ;;
+            z3)         sudo apt-get install -y --fix-missing z3 ;;
             cvc5)       # Since cvc5 1.2.0 releases ship as a zip with the binary at
                         # bin/cvc5; the old bare `cvc5-Linux-static` asset no longer exists.
                         curl -sSL --max-time 120 -o /tmp/cvc5.zip \
@@ -92,17 +93,17 @@ jobs:
                           https://github.com/vprover/vampire/releases/download/v5.0.1/vampire-Linux-X64.zip
                         unzip -j -o /tmp/vampire.zip -d /tmp
                         sudo install -m 0755 /tmp/vampire /usr/local/bin/vampire ;;
-            eprover)    sudo apt-get install -y eprover ;;
-            spass)      sudo apt-get install -y spass ;;
+            eprover)    sudo apt-get install -y --fix-missing eprover ;;
+            spass)      sudo apt-get install -y --fix-missing spass ;;
             alt-ergo)   # alt-ergo is not in the Ubuntu 24.04 (noble) apt repos.
                         # Install the prebuilt musl static binary from OCamlPro's
                         # GitHub releases instead.
                         curl -sSL --max-time 120 -o /tmp/alt-ergo \
                           https://github.com/OCamlPro/alt-ergo/releases/download/v2.6.3/alt-ergo-v2.6.3-x86_64-linux-musl
                         sudo install -m 0755 /tmp/alt-ergo /usr/local/bin/alt-ergo ;;
-            glpk)       sudo apt-get install -y glpk-utils ;;
-            minizinc)   sudo apt-get install -y minizinc ;;
-            chuffed)    sudo apt-get install -y minizinc # chuffed bundled with minizinc-ide on recent ubuntu
+            glpk)       sudo apt-get install -y --fix-missing glpk-utils ;;
+            minizinc)   sudo apt-get install -y --fix-missing minizinc ;;
+            chuffed)    sudo apt-get install -y --fix-missing minizinc # chuffed bundled with minizinc-ide on recent ubuntu
                         ;;
           esac
           "${{ matrix.backend }}" --version 2>/dev/null || "${{ matrix.backend }}" --help 2>/dev/null || true
@@ -125,8 +126,8 @@ jobs:
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
       - name: Install Guix
         run: |
-          sudo apt-get update
-          sudo apt-get install -y guix
+          sudo apt-get update -qq || sudo apt-get update -qq --fix-missing
+          sudo apt-get install -y --fix-missing guix
       - name: Resolve manifest (doesn't run tests — just proves the .scm parses)
         run: |
           guix describe || true
@@ -165,13 +166,13 @@ jobs:
         continue-on-error: true
         run: |
           set -euo pipefail
-          sudo apt-get update
+          sudo apt-get update -qq || sudo apt-get update -qq --fix-missing
           case "${{ matrix.backend }}" in
             coq)
-              sudo apt-get install -y coq
+              sudo apt-get install -y --fix-missing coq
               ;;
             agda)
-              sudo apt-get install -y agda
+              sudo apt-get install -y --fix-missing agda
               ;;
             idris2)
               # Idris2 has no apt package; build from the self-hosting tarball.
@@ -188,14 +189,20 @@ jobs:
               echo "$HOME/.elan/bin" >> "$GITHUB_PATH"
               ;;
             isabelle)
-              # Isabelle2024 tarball (~500MB); keep on nightly only.
-              curl -fsSL -o /tmp/isabelle.tar.gz https://isabelle.in.tum.de/dist/Isabelle2024_linux.tar.gz
-              sudo mkdir -p /opt
-              sudo tar xzf /tmp/isabelle.tar.gz -C /opt
-              sudo ln -sf /opt/Isabelle2024/bin/isabelle /usr/local/bin/isabelle
+              # Isabelle2024 tarball (~500MB); nightly only.
+              # --retry 3 + --max-time 600 guard the large download.
+              # find locates the binary regardless of extracted dir name,
+              # so the symlink survives a future Isabelle2025 release.
+              curl -fsSL --max-time 600 --retry 3 --retry-delay 15 \
+                -o /tmp/isabelle.tar.gz \
+                https://isabelle.in.tum.de/dist/Isabelle2024_linux.tar.gz
+              sudo mkdir -p /opt/isabelle
+              sudo tar xzf /tmp/isabelle.tar.gz -C /opt/isabelle
+              ISABELLE_BIN="$(find /opt/isabelle -type f -name isabelle | head -n 1)"
+              [ -n "$ISABELLE_BIN" ] && sudo ln -sf "$ISABELLE_BIN" /usr/local/bin/isabelle
               ;;
             why3)
-              sudo apt-get install -y why3
+              sudo apt-get install -y --fix-missing why3
               ;;
             dafny)
               # Dafny 4.x is distributed as a standalone .NET global tool.
@@ -205,11 +212,19 @@ jobs:
               echo "$HOME/.dotnet/tools" >> "$GITHUB_PATH"
               ;;
             fstar)
-              # F* ships prebuilt Linux binaries; binary is `fstar.exe` even on Linux.
-              curl -fsSL -o /tmp/fstar.tar.gz https://github.com/FStarLang/FStar/releases/latest/download/fstar-linux_x86_64.tar.gz
+              # F* ships prebuilt Linux binaries; binary is fstar.exe even on Linux.
+              # Asset naming changed in 2025: fstar-linux_x86_64.tar.gz (old) →
+              # fstar-v{version}-Linux-x86_64.tar.gz (new). Pinned to v2026.04.17.
+              # Update FSTAR_VER when a newer release lands.
+              # find locates fstar.exe regardless of extracted directory layout.
+              FSTAR_VER="v2026.04.17"
+              curl -fsSL --max-time 300 --retry 2 \
+                -o /tmp/fstar.tar.gz \
+                "https://github.com/FStarLang/FStar/releases/download/${FSTAR_VER}/fstar-${FSTAR_VER}-Linux-x86_64.tar.gz"
               sudo mkdir -p /opt/fstar
-              sudo tar xzf /tmp/fstar.tar.gz -C /opt/fstar --strip-components=1
-              sudo ln -sf /opt/fstar/bin/fstar.exe /usr/local/bin/fstar.exe
+              sudo tar xzf /tmp/fstar.tar.gz -C /opt/fstar
+              FSTAR_BIN="$(find /opt/fstar -type f -name fstar.exe | head -n 1)"
+              [ -n "$FSTAR_BIN" ] && sudo ln -sf "$FSTAR_BIN" /usr/local/bin/fstar.exe
               ;;
             hol-light)
               # No prebuilt binary; opam build is ~20min and pulls camlp5.
@@ -219,11 +234,16 @@ jobs:
               exit 0
               ;;
             tlaps)
-              # TLA+ Proof System ships a self-extracting installer; provides tlapm.
-              curl -fsSL -o /tmp/tlaps.sh https://github.com/tlaplus/tlapm/releases/latest/download/tlaps-installer-linux-x86_64.sh
-              chmod +x /tmp/tlaps.sh
-              sudo /tmp/tlaps.sh --prefix=/opt/tlaps
-              sudo ln -sf /opt/tlaps/bin/tlapm /usr/local/bin/tlapm
+              # tlapm ships a self-extracting binary installer.
+              # Latest release (tag 202210041448) asset is a .bin file, not .sh.
+              # find locates tlapm regardless of installer's extraction layout.
+              curl -fsSL --max-time 120 \
+                -o /tmp/tlaps.bin \
+                "https://github.com/tlaplus/tlapm/releases/download/202210041448/tlaps-1.5.0-x86_64-linux-gnu-inst.bin"
+              chmod +x /tmp/tlaps.bin
+              sudo /tmp/tlaps.bin --prefix=/opt/tlaps || sudo /tmp/tlaps.bin /opt/tlaps
+              TLAPM_BIN="$(find /opt/tlaps /usr/local -type f -name tlapm 2>/dev/null | head -n 1)"
+              [ -n "$TLAPM_BIN" ] && sudo ln -sf "$TLAPM_BIN" /usr/local/bin/tlapm
               ;;
           esac
           # Best-effort version probe for the matrix log.
@@ -277,7 +297,7 @@ jobs:
         continue-on-error: true
         run: |
           set -euo pipefail
-          sudo apt-get update
+          sudo apt-get update -qq || sudo apt-get update -qq --fix-missing
           case "${{ matrix.backend }}" in
             tamarin)
               # Tamarin publishes prebuilt Linux x86_64 tarballs.
