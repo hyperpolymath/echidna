@@ -87,22 +87,47 @@ encodeDecodeId PureFormal         = Refl
 --------------------------------------------------------------------------------
 
 ||| The kind of a coprocessor backend.  Only variants with a fully
-||| functional Rust + SPARK + Idris2 implementation appear here.  Phase 6
-||| extends this enum (Physics / Dsp / Fpga / Tensor / Vector / Crypto /
-||| Graphics / Audio / Io) alongside the corresponding implementations.
+||| functional Rust + Idris2 implementation appear here.  Phase 6A adds
+||| Vector / Tensor / Crypto / Physics; Phase 6B will add Dsp / Fpga /
+||| Graphics / Audio / Io alongside their implementations.
 public export
 data CoprocessorKind : Type where
-  Math : CoprocessorKind
+  Math    : CoprocessorKind  -- Phase 0  (num-bigint + num-integer)
+  Vector  : CoprocessorKind  -- Phase 6A (auto-vectorised f64 loops)
+  Tensor  : CoprocessorKind  -- Phase 6A (nalgebra dense linalg)
+  Crypto  : CoprocessorKind  -- Phase 6A (sha2 + blake3 + ed25519-dalek)
+  Physics : CoprocessorKind  -- Phase 6A (RK4 + harmonic energy oracles)
 
 ||| Encoding to u8 — pinned for FFI stability.
 public export
 coprocessorKindToU8 : CoprocessorKind -> Bits8
-coprocessorKindToU8 Math = 0
+coprocessorKindToU8 Math    = 0
+coprocessorKindToU8 Vector  = 1
+coprocessorKindToU8 Tensor  = 2
+coprocessorKindToU8 Crypto  = 3
+coprocessorKindToU8 Physics = 4
 
 public export
 coprocessorKindFromU8 : Bits8 -> Maybe CoprocessorKind
 coprocessorKindFromU8 0 = Just Math
+coprocessorKindFromU8 1 = Just Vector
+coprocessorKindFromU8 2 = Just Tensor
+coprocessorKindFromU8 3 = Just Crypto
+coprocessorKindFromU8 4 = Just Physics
 coprocessorKindFromU8 _ = Nothing
+
+||| Round-trip on the kind discriminant.  Constructive — case-analysis
+||| discharges every variant.  Together with `coprocessorKindFromU8` this
+||| guarantees the kind ABI is well-formed end-to-end.
+public export
+kindEncodeDecodeId :
+  (k : CoprocessorKind) ->
+  coprocessorKindFromU8 (coprocessorKindToU8 k) = Just k
+kindEncodeDecodeId Math    = Refl
+kindEncodeDecodeId Vector  = Refl
+kindEncodeDecodeId Tensor  = Refl
+kindEncodeDecodeId Crypto  = Refl
+kindEncodeDecodeId Physics = Refl
 
 --------------------------------------------------------------------------------
 -- Health
@@ -147,4 +172,8 @@ healthFromU8 _ = Unhealthy
 ||| Unhealthy.  Currently a placeholder until libechidna_coprocessor lands.
 public export
 coprocessorHealthOf : CoprocessorKind -> CoprocessorHealth
-coprocessorHealthOf Math = Healthy
+coprocessorHealthOf Math    = Healthy
+coprocessorHealthOf Vector  = Healthy
+coprocessorHealthOf Tensor  = Healthy
+coprocessorHealthOf Crypto  = Healthy
+coprocessorHealthOf Physics = Healthy

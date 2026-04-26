@@ -162,6 +162,10 @@ fn dispatch_sync(op: CoprocessorOp) -> Result<CoprocessorOutcome> {
         CoprocessorOp::Factorial { n } => {
             CoprocessorOutcome::BigInt(factorial(n).to_string())
         }
+        other => CoprocessorOutcome::Failure(format!(
+            "Math backend does not support {:?}",
+            std::mem::discriminant(&other)
+        )),
     })
 }
 

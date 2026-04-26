@@ -40,18 +40,26 @@
 use anyhow::Result;
 use async_trait::async_trait;
 
+pub mod crypto;
 pub mod julia_bridge;
 pub mod math;
+pub mod physics;
+pub mod tensor;
 pub mod trust;
 pub mod types;
+pub mod vector;
 
+pub use crypto::CryptoBackend;
 pub use julia_bridge::JuliaCoprocessorBridge;
 pub use math::MathBackend;
+pub use physics::PhysicsBackend;
+pub use tensor::TensorBackend;
 pub use trust::CoprocessorTrustTier;
 pub use types::{
     CoprocessorCapabilities, CoprocessorHealth, CoprocessorKind, CoprocessorOp,
     CoprocessorOutcome,
 };
+pub use vector::VectorBackend;
 
 /// Universal coprocessor backend trait.
 ///
@@ -96,6 +104,10 @@ impl CoprocessorFactory {
     pub fn native(kind: CoprocessorKind) -> Option<Box<dyn Coprocessor>> {
         match kind {
             CoprocessorKind::Math => Some(Box::new(MathBackend::new())),
+            CoprocessorKind::Vector => Some(Box::new(VectorBackend::new())),
+            CoprocessorKind::Tensor => Some(Box::new(TensorBackend::new())),
+            CoprocessorKind::Crypto => Some(Box::new(CryptoBackend::new())),
+            CoprocessorKind::Physics => Some(Box::new(PhysicsBackend::new())),
         }
     }
 }

@@ -68,7 +68,6 @@ lazy_static = "1"
 
 # VeriSimDB integration (optional — behind "verisim" feature)
 ciborium = { version = "0.2", optional = true }
-sha2 = { version = "0.10", optional = true }
 
 # Chrono for timestamps
 chrono = { version = "0.4", features = ["serde"] }
@@ -84,6 +83,16 @@ tempfile = "3"
 num-bigint = "0.4"
 num-integer = "0.1"
 num-traits = "0.2"
+
+# Tensor coprocessor — dense linear algebra (BSD-3-Clause, MPL-2.0 compat).
+nalgebra = "0.33"
+
+# Crypto coprocessor.  blake3 already declared above; sha2 was previously
+# gated behind `verisim` — un-gate so the Crypto backend can use it.
+sha2 = "0.10"
+
+# Ed25519 signature verification (Apache-2.0 / MIT, MPL-2.0 compat).
+ed25519-dalek = { version = "2", default-features = false, features = ["std"] }
 
 # TypedWasm engine — standalone crate at crates/typed_wasm.
 # Provides the pure parse/analyse engine; provers/typed_wasm.rs is a thin
@@ -104,7 +113,6 @@ chapel = []       # Enable Chapel parallel proof search (requires Zig FFI librar
 spark = []        # Enable SPARK-verified axiom-policy (requires libechidna_spark from GPRbuild)
 verisim = [     # Enable VeriSimDB persistent proof storage (8-modality octads)
     "dep:ciborium",
-    "dep:sha2",
 ]
 # Enable the live-prover test suite (tests/live_prover_suite.rs). Gated so that
 # `cargo test` on a machine without prover binaries does NOT fail — the suite

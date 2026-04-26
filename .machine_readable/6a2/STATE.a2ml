@@ -68,11 +68,20 @@ adds-backends = ["Stainless", "Liquid Haskell", "GNATprove"]
 target-claim-id = "echidna-phase5-refinement-spark"
 
 [[expansion-roadmap.phase]]
-id = "phase-6"
-title = "Coprocessor full wiring — Physics/DSP/FPGA/Tensor/Vector/Crypto/Graphics/Audio/IO via LowLevel.jl + Rust SIMD + Chapel"
-status = "blocked-on-phase-0-merge"
+id = "phase-6a"
+title = "Coprocessor wiring — Vector + Tensor + Crypto + Physics"
+status = "complete"
+landed = "2026-04-26"
 adds-backends = []
-notes = "Each kind lands with full implementation — never as a stub. Existing Phase 0 Math backend serves as the integration template."
+notes = "4 new CoprocessorKind variants (Vector / Tensor / Crypto / Physics) with full Rust impls. New deps: nalgebra 0.33, sha2 0.10 (un-gated from verisim), ed25519-dalek 2. Vector: pure Rust auto-vectorised f64 (4 ops). Tensor: nalgebra DMatrix (4 ops, non-square + ragged input properly classified as Failure). Crypto: SHA-256 + BLAKE3 + Ed25519 (RFC 8032 verify) — RFC test vectors green, tamper detection green. Physics: RK4 step + harmonic energy oracle, harmonic-oscillator one-period round-trip closes to <1e-3 over 6283 RK4 steps. Idris2 ABI extended with constructive kindEncodeDecodeId proof. 21 new tests, all green."
+
+[[expansion-roadmap.phase]]
+id = "phase-6b"
+title = "Coprocessor wiring — DSP + IO + Graphics + Audio + FPGA"
+status = "available-for-claim"
+adds-backends = []
+target-claim-id = "echidna-phase6b-coproc-rest"
+notes = "Each kind lands with full implementation. DSP: rustfft (FFT/IFFT/window). IO: tokio::fs (read/write/line-count). Graphics: SVG ProofGraph render (no GPU dep). Audio: pure Rust sine-wave / completion chime. FPGA: subprocess to yosys (synth flow). Tier 3 for native; Tier 1 for FPGA subprocess."
 
 [[expansion-roadmap.phase]]
 id = "phase-7"

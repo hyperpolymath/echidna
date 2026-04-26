@@ -183,5 +183,9 @@ impl Coprocessor for JuliaCoprocessorBridge {
 fn kind_name(k: CoprocessorKind) -> &'static str {
     match k {
         CoprocessorKind::Math => "Math",
+        CoprocessorKind::Vector => "Vector",
+        CoprocessorKind::Tensor => "Tensor",
+        CoprocessorKind::Crypto => "Crypto",
+        CoprocessorKind::Physics => "Physics",
     }
 }

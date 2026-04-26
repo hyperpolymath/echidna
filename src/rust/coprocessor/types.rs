@@ -19,14 +19,33 @@ use serde::{Deserialize, Serialize};
 
 /// The kind of coprocessor a backend implements.
 ///
-/// Only variants with a fully-functional backend are present.  The Phase 6
-/// expansion will add Physics / DSP / FPGA / Tensor / Vector / Crypto /
-/// Graphics / Audio / IO variants together with their implementations.
+/// Only variants with a fully-functional backend are present.  Phase 6A
+/// adds Vector / Tensor / Crypto / Physics; Phase 6B will add DSP / FPGA /
+/// Graphics / Audio / IO together with their implementations.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]
 pub enum CoprocessorKind {
     /// Number theory, exact arithmetic, polynomial algebra over Q.
     /// Native Rust impl backed by `num-bigint` / `num-integer` / `num-rational`.
     Math,
+
+    /// Dense vector arithmetic (auto-vectorised f64 loops).  Backs
+    /// SIMD-batched ops for the GNN inference path and aggregate reasoning.
+    Vector,
+
+    /// Dense tensor / matrix linear algebra via `nalgebra`.  Backs node-
+    /// embedding aggregation, Pareto-frontier dominance computations, and
+    /// the matrix kernels that cross-prover certificate exchange depends on.
+    Tensor,
+
+    /// Cryptographic primitives — hashing, signature verification.
+    /// Pairs with the future EasyCrypt / Tamarin / ProVerif backends as
+    /// the *computational* (vs symbolic) crypto surface.
+    Crypto,
+
+    /// Numerical integration of ODE / Hamiltonian systems.  Pairs with the
+    /// future KeYmaera X backend as a sanity-check oracle for hybrid-system
+    /// trajectories proven correct symbolically.
+    Physics,
 }
 
 /// A request dispatched to a coprocessor.
@@ -67,6 +86,70 @@ pub enum CoprocessorOp {
 
     /// Factorial n! (memoised under the hood).
     Factorial { n: u64 },
+
+    // ── Vector: dense f64 arithmetic ─────────────────────────────────────
+    /// Element-wise addition.  Vectors must be the same length.
+    VectorAdd { a: Vec<f64>, b: Vec<f64> },
+
+    /// Inner product ∑ aᵢbᵢ.  Vectors must be the same length.
+    VectorDot { a: Vec<f64>, b: Vec<f64> },
+
+    /// Euclidean (L²) norm.
+    VectorNorm { a: Vec<f64> },
+
+    /// Scalar multiplication k·a.
+    VectorScale { a: Vec<f64>, k: f64 },
+
+    // ── Tensor: dense linear algebra over f64 ────────────────────────────
+    /// Matrix multiplication A·B.  `a` is row-major (rows_a × cols_a),
+    /// `b` is row-major (rows_b × cols_b).  cols_a must equal rows_b.
+    TensorMatMul {
+        a: Vec<Vec<f64>>,
+        b: Vec<Vec<f64>>,
+    },
+
+    /// Matrix transpose.  Returns row-major Aᵀ.
+    TensorTranspose { a: Vec<Vec<f64>> },
+
+    /// Trace of a square matrix.
+    TensorTrace { a: Vec<Vec<f64>> },
+
+    /// Determinant of a square matrix (LU under the hood for n > 4).
+    TensorDeterminant { a: Vec<Vec<f64>> },
+
+    // ── Crypto: computational primitives ─────────────────────────────────
+    /// SHA-256 of arbitrary bytes; result is hex-encoded.
+    CryptoSha256 { bytes: Vec<u8> },
+
+    /// BLAKE3 of arbitrary bytes; result is hex-encoded.
+    CryptoBlake3 { bytes: Vec<u8> },
+
+    /// Verify an Ed25519 signature.  Public key + signature + message all
+    /// raw bytes.  Returns Boolean(true) on valid, Boolean(false) on
+    /// invalid signature, Failure on malformed key/sig length.
+    CryptoEd25519Verify {
+        public_key: Vec<u8>,
+        signature: Vec<u8>,
+        message: Vec<u8>,
+    },
+
+    // ── Physics: ODE integration / energy invariants ─────────────────────
+    /// One Runge-Kutta-4 step for ẋ = f(x).  `f` is encoded as a fixed
+    /// well-known kernel name plus parameters, so the wire form stays
+    /// serialisable (closures don't cross the wire).  Currently supported
+    /// kernels: "harmonic-oscillator" (ẋ = -ω²x), "exponential-decay"
+    /// (ẋ = -λx), "linear" (ẋ = a·x + b).
+    PhysicsRk4Step {
+        kernel: String,
+        params: Vec<f64>,
+        x: Vec<f64>,
+        dt: f64,
+    },
+
+    /// Total mechanical energy of a unit-mass harmonic oscillator at
+    /// (x, p): E = ½p² + ½ω²x².  Trivial but useful as an invariant
+    /// oracle in proofs about Hamiltonian systems.
+    PhysicsHarmonicEnergy { x: f64, p: f64, omega: f64 },
 }
 
 /// The outcome of a dispatched op.
@@ -81,8 +164,20 @@ pub enum CoprocessorOutcome {
     /// A list of (prime, multiplicity) pairs from a factorisation.
     Factors(Vec<(String, u32)>),
 
-    /// A boolean answer (e.g. primality test).
+    /// A boolean answer (e.g. primality test, signature verification).
     Boolean(bool),
+
+    /// A scalar f64 (Vector L²-norm, Tensor trace/determinant, Physics energy).
+    Float(f64),
+
+    /// A dense f64 vector (Vector add/scale, Physics Rk4Step state).
+    FloatVec(Vec<f64>),
+
+    /// A dense f64 matrix in row-major form (Tensor matmul/transpose).
+    FloatMatrix(Vec<Vec<f64>>),
+
+    /// Hex-encoded byte sequence (cryptographic digest).
+    Hex(String),
 
     /// `None` — well-formed input but no answer exists (e.g. non-invertible
     /// modular inverse).  Distinct from `Failure`, which means the op itself
