@@ -17,13 +17,21 @@ L1 blocks L2 (because Chapel consumes Cap'n Proto schemas).
 - ✅ **FFI boundary audit** — `audits/audit-ffi-boundary.md` + `audits/assail-classifications.a2ml` classifying all legitimate UnsafeCode at FFI boundaries (`b4d682b`).
 - ✅ **`bounded_read_config`** — sync 1 MiB-capped read helper in `src/rust/integrity/io.rs`; `solver_integrity.rs` migrated.
 - ✅ **F5 (boj-server `echidna-llm-mcp`)** — `consult` + `suggest_tactics` operations implemented; Elixir router patched for `{operation, params}` alias; 176 boj-server tests pass (`a6c8456`).
+- ✅ **Real-Chapel CI job** — `chapel-ci.yml` Job 4 `rust-chapel-real` added (`continue-on-error: true`), downloads real Chapel lib and builds Rust without Zig stubs (`3fb6c6b`).
+- ✅ **Stage 8b — Agda meta-proofs 6→12 modules** — TrustLattice, AxiomMonotonicity, DispatchOrdering, SoundnessPreservation, PortfolioConsistency, CertificateChain (`6caff97`).
+- ✅ **Stage 8d — panic-attack proptest harnesses** — 13 property tests across term/trust/danger/pareto modules (`99198b0`).
+- ✅ **Stage 8d — AFL++ fuzz targets** — 3 real libfuzzer targets (proof_state JSON deserialization, trust pipeline, axiom tracker) replacing stub (`46453c4`).
+- ✅ **Stage 8a — Idris2 trust-kernel proofs** — TrustKernelMonotonicity, AxiomPolicyOrdering, ClampTrustBounds; zero believe_me; PROOF-NEEDS.md updated (`1444a30`).
+- ✅ **Stage 3a/3b — VeriSimDB read paths + dispatch advisor** — `query_by_goal_hash`, `query_prover_success_by_class`, `VeriSimAdvisor`, `verify_proof_verisim_guided` (`804ead6`).
+- ✅ **S5 — GNN-augmented suggest_tactics** — `gnn_augment_tactics` helper; rocq/lean/agda/isabelle/z3 backends prepend GNN-ranked apply tactics (`c4bc272`).
+- ✅ **S1 batch — 12 Julia premise extractors** — SMT-LIB, TPTP, Dafny, Lean3, HOL Light, Metamath, Tamarin, ProVerif, Boogie, Viper, MiniZinc, Twelf; named extractors 12→24 (`d7a2493`).
 
 ## P0 — Immediate pickup
 
 | Task | Lane | Est | Blocks |
 |------|------|-----|--------|
 | **Watch next `0 3 * * *` UTC nightly of `live-provers.yml`** — Wave-2 installers (idris2 / isabelle / dafny / fstar / tlaps) are local-pass but CI-unverified. Fix red matrix cells in-place. Likely failure modes: Isabelle2024 500 MB download timeout, tlapm release URL drift, `fstar.exe` symlink resolution, apt mirror changes. | L3 | 1 session | L3 Wave-3 gate |
-| **Real-Chapel CI job** — `chapel-ci.yml` currently links against bundled Zig stubs only. Add a job that builds `libechidna_chapel.so` from `chapel_poc/` then cargo-builds Rust with `-Dstubs=false`. `continue-on-error: true` at first. | L2 (prep) | 0.5 day | L2 default-on flip |
+| ~~**Real-Chapel CI job**~~ | ✅ Done (`3fb6c6b`) | — | — |
 
 ## P1 — L3 completion (~2 weeks)
 
@@ -59,8 +67,8 @@ Backends not yet scaffolded in `src/rust/provers/`; ProverKind enum, factory dis
 
 ### L3 hygiene
 
-- **Dafny deep-wiring upgrade** — `src/rust/provers/dafny.rs` is 165 LoC; live version-check passes but subprocess wrapper is stub-ish. Upgrade during L3 so live test measures real wiring, not a broken wrapper.
-- **VeriSimDB record emission** from live-prover harness per `feedback_verisimdb_policy` — coordinate with `verisimdb` repo schema first; currently TBD.
+- ~~**Dafny deep-wiring upgrade**~~ — ✅ Done (`e54275d`): temp-file subprocess, term_to_dafny_expr, real suggest_tactics.
+- ~~**VeriSimDB record emission**~~ — ✅ Done (`13cf817`): `emit_live_result()` wired in `assert_version_reachable`.
 - **`guix shell -m manifests/live-provers.scm -- just test-live`** — local-reproducibility acceptance criterion; confirm works end-to-end.
 - **L3 hand-to-L1 gate**: Tier-1 green on main for ≥ 7 days + all four waves landed or explicitly deferred with rationale in STATE.a2ml.
 
