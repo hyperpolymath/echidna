@@ -19,26 +19,22 @@
 
 # ─── TODO: what must land before this stub becomes real ──────────────────────
 #
-# Option A — CapnProto.jl (preferred if the package reaches stability):
+# DECISION (2026-04-26): Use CapnProto.jl (Option A).
+#
+# Implementation steps:
 #   1. Add CapnProto to Project.toml / Manifest.toml.
-#   2. Replace gnn_rank_request body with:
+#   2. Add a Julia codegen target to the `just capnp-gen` Justfile recipe
+#      so that `capnp compile -ojulia schemas/echidna.capnp` generates
+#      GnnRankRequest / GnnRankResponse Julia structs.
+#   3. Replace gnn_rank_request body with:
 #        msg = CapnProto.build(GnnRankRequest, parse_request_fields(request_json))
 #        write(sock.sock, CapnProto.encode(msg))
 #        raw = read(sock.sock, CapnProto.ResponseHeader)
 #        return CapnProto.decode(GnnRankResponse, raw)
-#   3. Wire GnnRankRequest / GnnRankResponse structs from generated Julia
-#      bindings (add a Julia target to the `just capnp-gen` Justfile recipe).
+#   4. If CapnProto.jl's RPC layer is missing/broken, patch upstream rather
+#      than switching approaches. The Zig C-ABI shim in
+#      ffi/zig/src/capnp_bridge.zig remains as a fallback of last resort.
 #
-# Option B — Zig C-ABI shim (fallback if CapnProto.jl is not viable):
-#   1. Build ffi/zig/src/capnp_bridge.zig as a shared library.
-#   2. Use ccall to call:
-#        ccall((:echidna_capnp_gnn_rank, "libechidna_capnp"),
-#              Cint, (Cint, Ref{EchidnaGnnRequest}, Ref{EchidnaGnnResponse}),
-#              fd, req, resp)
-#   3. The Zig shim handles Cap'n Proto framing and socket I/O; Julia only
-#      passes/receives C-compatible structs.
-#
-# Decision tracked in: docs/handover/TODO.md §L1 design questions
 # Gated on: L3 Tier-1 green for ≥ 7 days (same gate as Rust IPC side).
 # ─────────────────────────────────────────────────────────────────────────────
 

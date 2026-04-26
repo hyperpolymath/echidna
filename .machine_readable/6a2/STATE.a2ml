@@ -987,3 +987,11 @@ known-p0-failure-modes = [
 ]
 recommended-action = "Manually open https://github.com/hyperpolymath/echidna/actions/workflows/live-provers.yml and inspect the most recent scheduled run (triggered 2026-04-26T03:00Z on 757df703). For any red T2 cell: pull the log via 'gh run view <id> --log-failed --job <jobId>', classify against the four P0 failure modes above, and open a GitHub issue titled 'live-provers nightly red: <backend> — <one-line root cause>' (body: run URL, failing step, ~10-line log excerpt, suspected fix). Do NOT open issues for T1 reds."
 branch = "nightly-triage/2026-04-26"
+
+[l1-design-decisions]
+summary = "L1 Cap'n Proto design questions settled 2026-04-26."
+julia-ipc-library = "CapnProto.jl (Option A). Decision: use CapnProto.jl for the Julia-side deserialisation rather than the Zig C-ABI shim. Rationale: idiomatic Julia, schema evolution propagates automatically via regenerated bindings. Risk acknowledged: CapnProto.jl is pre-1.0 and the RPC layer may need patching; patch upstream if required rather than switching approaches. Zig shim (Option B) remains scaffolded in ffi/zig/src/capnp_bridge.zig as a fallback if CapnProto.jl proves unworkable in practice."
+uds-path = "Primary: /run/echidna/ipc.sock (overridable via $ECHIDNA_IPC_SOCK). TCP fallback: 127.0.0.1:9090 (overridable via $ECHIDNA_IPC_HOST + $ECHIDNA_IPC_PORT). Both sides (Rust src/rust/ipc/mod.rs and Julia src/julia/ipc.jl) use the same env-var priority order."
+handshake-signing = "None at the IPC layer. BLAKE3/SHAKE3-512 integrity is per-solver-binary (src/rust/integrity/), not per-IPC-connection. The IPC channel is local UDS only; no TLS or signing needed."
+streaming = "Request-response for L1. Cap'n Proto RPC streaming deferred to L2 when Chapel batching requires it."
+chapel-schemas = "Cap'n Proto messages are self-contained byte strings — locale-to-locale transit is byte-copy safe. No special multi-locale handling needed in L1; revisit when L2.5 (multi-locale PGAS) is scoped."
