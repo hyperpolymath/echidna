@@ -131,11 +131,43 @@ impl ProverBackend for CameleerBackend {
             .unwrap_or_default())
     }
 
-    async fn suggest_tactics(&self, _state: &ProofState, _limit: usize) -> Result<Vec<Tactic>> {
-        Ok(vec![])
+    async fn suggest_tactics(&self, _state: &ProofState, limit: usize) -> Result<Vec<Tactic>> {
+        // Cameleer is a deductive verification tool for OCaml programs; it
+        // lowers to Why3. Suggestions are Gospel contract annotations and
+        // Why3 proof hints rather than interactive proof tactics.
+        let tactics = vec![
+            Tactic::Simplify,
+            Tactic::Custom {
+                prover: "cameleer".to_string(),
+                command: "add_requires".to_string(),
+                args: vec![],
+            },
+            Tactic::Custom {
+                prover: "cameleer".to_string(),
+                command: "add_ensures".to_string(),
+                args: vec![],
+            },
+            Tactic::Custom {
+                prover: "cameleer".to_string(),
+                command: "add_invariant".to_string(),
+                args: vec![],
+            },
+            Tactic::Custom {
+                prover: "cameleer".to_string(),
+                command: "why3_tactic".to_string(),
+                args: vec!["auto".to_string()],
+            },
+            Tactic::Custom {
+                prover: "cameleer".to_string(),
+                command: "why3_tactic".to_string(),
+                args: vec!["split_vc".to_string()],
+            },
+        ];
+        Ok(tactics.into_iter().take(limit).collect())
     }
 
     async fn search_theorems(&self, _pattern: &str) -> Result<Vec<String>> {
+        // Cameleer delegates theorem search to Why3; no native search interface.
         Ok(vec![])
     }
 

@@ -133,10 +133,37 @@ impl ProverBackend for ORToolsBackend {
     async fn export(&self, state: &ProofState) -> Result<String> {
         self.to_input_format(state)
     }
-    async fn suggest_tactics(&self, _: &ProofState, _: usize) -> Result<Vec<Tactic>> {
-        Ok(vec![])
+    async fn suggest_tactics(&self, _state: &ProofState, limit: usize) -> Result<Vec<Tactic>> {
+        // OR-Tools is Google's combinatorial optimisation suite (CP-SAT, LP, routing).
+        // Suggestions are solver-selection and search-strategy hints.
+        let tactics = vec![
+            Tactic::Simplify,
+            Tactic::Custom {
+                prover: "ortools".to_string(),
+                command: "solver".to_string(),
+                args: vec!["CP-SAT".to_string()],
+            },
+            Tactic::Custom {
+                prover: "ortools".to_string(),
+                command: "set-parameter".to_string(),
+                args: vec!["num_search_workers:8".to_string()],
+            },
+            Tactic::Custom {
+                prover: "ortools".to_string(),
+                command: "set-parameter".to_string(),
+                args: vec!["max_time_in_seconds:60.0".to_string()],
+            },
+            Tactic::Custom {
+                prover: "ortools".to_string(),
+                command: "hint".to_string(),
+                args: vec![],
+            },
+        ];
+        Ok(tactics.into_iter().take(limit).collect())
     }
-    async fn search_theorems(&self, _: &str) -> Result<Vec<String>> {
+
+    async fn search_theorems(&self, _pattern: &str) -> Result<Vec<String>> {
+        // Combinatorial-optimisation solvers have no theorem libraries.
         Ok(vec![])
     }
     fn config(&self) -> &ProverConfig {

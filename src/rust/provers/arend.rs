@@ -109,10 +109,43 @@ impl ProverBackend for ArendBackend {
             .map(String::from)
             .unwrap_or_default())
     }
-    async fn suggest_tactics(&self, _: &ProofState, _: usize) -> Result<Vec<Tactic>> {
-        Ok(vec![])
+    async fn suggest_tactics(&self, _state: &ProofState, limit: usize) -> Result<Vec<Tactic>> {
+        // Arend is a proof assistant based on Homotopy Type Theory (HoTT).
+        // It uses term-mode proofs with the following common combinators.
+        let tactics = vec![
+            Tactic::Reflexivity,
+            Tactic::Custom {
+                prover: "arend".to_string(),
+                command: "trivial".to_string(),
+                args: vec![],
+            },
+            Tactic::Custom {
+                prover: "arend".to_string(),
+                command: "ext".to_string(),
+                args: vec![],
+            },
+            Tactic::Custom {
+                prover: "arend".to_string(),
+                command: "simp".to_string(),
+                args: vec![],
+            },
+            Tactic::Custom {
+                prover: "arend".to_string(),
+                command: "rewrite".to_string(),
+                args: vec![],
+            },
+            Tactic::Custom {
+                prover: "arend".to_string(),
+                command: "induction".to_string(),
+                args: vec![],
+            },
+            Tactic::Assumption,
+        ];
+        Ok(tactics.into_iter().take(limit).collect())
     }
-    async fn search_theorems(&self, _: &str) -> Result<Vec<String>> {
+
+    async fn search_theorems(&self, _pattern: &str) -> Result<Vec<String>> {
+        // Arend does not expose a programmatic search interface.
         Ok(vec![])
     }
     fn config(&self) -> &ProverConfig {

@@ -110,10 +110,39 @@ impl ProverBackend for LambdaPrologBackend {
             .map(String::from)
             .unwrap_or_default())
     }
-    async fn suggest_tactics(&self, _: &ProofState, _: usize) -> Result<Vec<Tactic>> {
-        Ok(vec![])
+    async fn suggest_tactics(&self, _state: &ProofState, limit: usize) -> Result<Vec<Tactic>> {
+        // λProlog (e.g. Teyjus, ELPI) is a higher-order logic programming
+        // language; proofs are goal-directed search programs. Canonical
+        // Prolog-style proof steps follow.
+        let tactics = vec![
+            Tactic::Custom {
+                prover: "lambda_prolog".to_string(),
+                command: "apply".to_string(),
+                args: vec![],
+            },
+            Tactic::Custom {
+                prover: "lambda_prolog".to_string(),
+                command: "backchain".to_string(),
+                args: vec![],
+            },
+            Tactic::Custom {
+                prover: "lambda_prolog".to_string(),
+                command: "cases".to_string(),
+                args: vec![],
+            },
+            Tactic::Custom {
+                prover: "lambda_prolog".to_string(),
+                command: "intros".to_string(),
+                args: vec![],
+            },
+            Tactic::Assumption,
+            Tactic::Simplify,
+        ];
+        Ok(tactics.into_iter().take(limit).collect())
     }
-    async fn search_theorems(&self, _: &str) -> Result<Vec<String>> {
+
+    async fn search_theorems(&self, _pattern: &str) -> Result<Vec<String>> {
+        // λProlog has no built-in theorem-search mechanism.
         Ok(vec![])
     }
     fn config(&self) -> &ProverConfig {

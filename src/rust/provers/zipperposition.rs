@@ -140,11 +140,37 @@ impl ProverBackend for ZipperpositionBackend {
             .join("\n"))
     }
 
-    async fn suggest_tactics(&self, _state: &ProofState, _limit: usize) -> Result<Vec<Tactic>> {
-        Ok(vec![])
+    async fn suggest_tactics(&self, _state: &ProofState, limit: usize) -> Result<Vec<Tactic>> {
+        // Zipperposition is a higher-order superposition ATP.
+        // Suggestions are prover flags and strategy hints.
+        let tactics = vec![
+            Tactic::Custom {
+                prover: "zipperposition".to_string(),
+                command: "strategy".to_string(),
+                args: vec!["--mode best".to_string()],
+            },
+            Tactic::Custom {
+                prover: "zipperposition".to_string(),
+                command: "strategy".to_string(),
+                args: vec!["--mode ho-competitive".to_string()],
+            },
+            Tactic::Custom {
+                prover: "zipperposition".to_string(),
+                command: "set-option".to_string(),
+                args: vec!["--ho-unif-max-depth 4".to_string()],
+            },
+            Tactic::Custom {
+                prover: "zipperposition".to_string(),
+                command: "set-option".to_string(),
+                args: vec!["--fp-index ".to_string()],
+            },
+            Tactic::Simplify,
+        ];
+        Ok(tactics.into_iter().take(limit).collect())
     }
 
     async fn search_theorems(&self, _pattern: &str) -> Result<Vec<String>> {
+        // ATP solvers do not maintain searchable theorem libraries.
         Ok(vec![])
     }
 

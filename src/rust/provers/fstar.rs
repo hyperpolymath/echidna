@@ -212,10 +212,44 @@ impl ProverBackend for FStarBackend {
     async fn export(&self, state: &ProofState) -> Result<String> {
         self.to_input_format(state)
     }
-    async fn suggest_tactics(&self, _state: &ProofState, _limit: usize) -> Result<Vec<Tactic>> {
-        Ok(vec![])
+    async fn suggest_tactics(&self, _state: &ProofState, limit: usize) -> Result<Vec<Tactic>> {
+        // F* supports both a tactic DSL (Tactics monad) and SMT-backed
+        // verification. The canonical first-pass tactics are listed below.
+        let tactics = vec![
+            Tactic::Custom {
+                prover: "fstar".to_string(),
+                command: "norm".to_string(),
+                args: vec!["[delta; iota; zeta; primops]".to_string()],
+            },
+            Tactic::Custom {
+                prover: "fstar".to_string(),
+                command: "smt".to_string(),
+                args: vec![],
+            },
+            Tactic::Custom {
+                prover: "fstar".to_string(),
+                command: "trivial".to_string(),
+                args: vec![],
+            },
+            Tactic::Custom {
+                prover: "fstar".to_string(),
+                command: "decide".to_string(),
+                args: vec![],
+            },
+            Tactic::Custom {
+                prover: "fstar".to_string(),
+                command: "exact".to_string(),
+                args: vec![],
+            },
+            Tactic::Simplify,
+            Tactic::Assumption,
+            Tactic::Reflexivity,
+        ];
+        Ok(tactics.into_iter().take(limit).collect())
     }
+
     async fn search_theorems(&self, _pattern: &str) -> Result<Vec<String>> {
+        // F* does not expose a programmatic theorem-search interface.
         Ok(vec![])
     }
     fn config(&self) -> &ProverConfig {

@@ -133,11 +133,53 @@ impl ProverBackend for IsabelleZfBackend {
             .unwrap_or_default())
     }
 
-    async fn suggest_tactics(&self, _state: &ProofState, _limit: usize) -> Result<Vec<Tactic>> {
-        Ok(vec![])
+    async fn suggest_tactics(&self, _state: &ProofState, limit: usize) -> Result<Vec<Tactic>> {
+        // Isabelle/ZF uses the same Isar tactic set as Isabelle/HOL but
+        // targets Zermelo–Fraenkel set theory rather than higher-order logic.
+        let tactics = vec![
+            Tactic::Custom {
+                prover: "isabelle_zf".to_string(),
+                command: "auto".to_string(),
+                args: vec![],
+            },
+            Tactic::Custom {
+                prover: "isabelle_zf".to_string(),
+                command: "blast".to_string(),
+                args: vec![],
+            },
+            Tactic::Custom {
+                prover: "isabelle_zf".to_string(),
+                command: "simp".to_string(),
+                args: vec![],
+            },
+            Tactic::Custom {
+                prover: "isabelle_zf".to_string(),
+                command: "force".to_string(),
+                args: vec![],
+            },
+            Tactic::Custom {
+                prover: "isabelle_zf".to_string(),
+                command: "fast".to_string(),
+                args: vec![],
+            },
+            Tactic::Custom {
+                prover: "isabelle_zf".to_string(),
+                command: "rule".to_string(),
+                args: vec![],
+            },
+            Tactic::Custom {
+                prover: "isabelle_zf".to_string(),
+                command: "induct_tac".to_string(),
+                args: vec![],
+            },
+            Tactic::Assumption,
+        ];
+        Ok(tactics.into_iter().take(limit).collect())
     }
 
     async fn search_theorems(&self, _pattern: &str) -> Result<Vec<String>> {
+        // find_theorems requires a running Isabelle session; return empty
+        // as a safe fallback until the batch-query bridge is wired.
         Ok(vec![])
     }
 

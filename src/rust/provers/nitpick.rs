@@ -122,10 +122,37 @@ impl ProverBackend for NitpickBackend {
             .map(String::from)
             .unwrap_or_default())
     }
-    async fn suggest_tactics(&self, _: &ProofState, _: usize) -> Result<Vec<Tactic>> {
-        Ok(vec![])
+    async fn suggest_tactics(&self, _state: &ProofState, limit: usize) -> Result<Vec<Tactic>> {
+        // Nitpick is Isabelle's counterexample finder (based on Kodkod/SAT).
+        // Its primary role is falsification, so "tactics" are configuration
+        // knobs that shape the finite-model search space.
+        let tactics = vec![
+            Tactic::Custom {
+                prover: "nitpick".to_string(),
+                command: "nitpick".to_string(),
+                args: vec!["[expect = genuine]".to_string()],
+            },
+            Tactic::Custom {
+                prover: "nitpick".to_string(),
+                command: "nitpick".to_string(),
+                args: vec!["[card = 1-8]".to_string()],
+            },
+            Tactic::Custom {
+                prover: "nitpick".to_string(),
+                command: "nitpick".to_string(),
+                args: vec!["[verbose, show_all]".to_string()],
+            },
+            Tactic::Custom {
+                prover: "nitpick".to_string(),
+                command: "nitpick".to_string(),
+                args: vec!["[timeout = 120]".to_string()],
+            },
+        ];
+        Ok(tactics.into_iter().take(limit).collect())
     }
-    async fn search_theorems(&self, _: &str) -> Result<Vec<String>> {
+
+    async fn search_theorems(&self, _pattern: &str) -> Result<Vec<String>> {
+        // Nitpick is a counterexample finder; it does not search theorem libraries.
         Ok(vec![])
     }
     fn config(&self) -> &ProverConfig {

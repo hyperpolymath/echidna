@@ -127,10 +127,45 @@ impl ProverBackend for NuprlBackend {
     async fn export(&self, state: &ProofState) -> Result<String> {
         self.to_input_format(state)
     }
-    async fn suggest_tactics(&self, _: &ProofState, _: usize) -> Result<Vec<Tactic>> {
-        Ok(vec![])
+    async fn suggest_tactics(&self, _state: &ProofState, limit: usize) -> Result<Vec<Tactic>> {
+        // Nuprl is a constructive type-theory proof assistant (Martin-Löf TT
+        // extended with type refinements). Its canonical tactic steps follow.
+        let tactics = vec![
+            Tactic::Custom {
+                prover: "nuprl".to_string(),
+                command: "intro".to_string(),
+                args: vec![],
+            },
+            Tactic::Custom {
+                prover: "nuprl".to_string(),
+                command: "elim".to_string(),
+                args: vec![],
+            },
+            Tactic::Custom {
+                prover: "nuprl".to_string(),
+                command: "auto".to_string(),
+                args: vec![],
+            },
+            Tactic::Custom {
+                prover: "nuprl".to_string(),
+                command: "decision".to_string(),
+                args: vec![],
+            },
+            Tactic::Custom {
+                prover: "nuprl".to_string(),
+                command: "reduce".to_string(),
+                args: vec![],
+            },
+            Tactic::Reflexivity,
+            Tactic::Assumption,
+            Tactic::Simplify,
+        ];
+        Ok(tactics.into_iter().take(limit).collect())
     }
-    async fn search_theorems(&self, _: &str) -> Result<Vec<String>> {
+
+    async fn search_theorems(&self, _pattern: &str) -> Result<Vec<String>> {
+        // Nuprl library search requires a running Nuprl session;
+        // return empty as fallback until the batch-query bridge is wired.
         Ok(vec![])
     }
     fn config(&self) -> &ProverConfig {

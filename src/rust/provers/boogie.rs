@@ -133,11 +133,43 @@ impl ProverBackend for BoogieBackend {
             .unwrap_or_default())
     }
 
-    async fn suggest_tactics(&self, _state: &ProofState, _limit: usize) -> Result<Vec<Tactic>> {
-        Ok(vec![])
+    async fn suggest_tactics(&self, _state: &ProofState, limit: usize) -> Result<Vec<Tactic>> {
+        // Boogie is an intermediate verification language; it delegates to
+        // an SMT solver (typically Z3). Suggestions are annotation and
+        // specification hints rather than interactive tactics.
+        let tactics = vec![
+            Tactic::Simplify,
+            Tactic::Custom {
+                prover: "boogie".to_string(),
+                command: "add_invariant".to_string(),
+                args: vec!["true".to_string()],
+            },
+            Tactic::Custom {
+                prover: "boogie".to_string(),
+                command: "add_requires".to_string(),
+                args: vec![],
+            },
+            Tactic::Custom {
+                prover: "boogie".to_string(),
+                command: "add_ensures".to_string(),
+                args: vec![],
+            },
+            Tactic::Custom {
+                prover: "boogie".to_string(),
+                command: "prover_option".to_string(),
+                args: vec!["/z3opt:smt.arith.solver=6".to_string()],
+            },
+            Tactic::Custom {
+                prover: "boogie".to_string(),
+                command: "prover_option".to_string(),
+                args: vec!["/proverOpt:O:smt.qi.max_multi_patterns=1000".to_string()],
+            },
+        ];
+        Ok(tactics.into_iter().take(limit).collect())
     }
 
     async fn search_theorems(&self, _pattern: &str) -> Result<Vec<String>> {
+        // Boogie has no theorem library; it encodes programs for an SMT backend.
         Ok(vec![])
     }
 

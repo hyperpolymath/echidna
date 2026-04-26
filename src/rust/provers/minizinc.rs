@@ -151,10 +151,38 @@ impl ProverBackend for MiniZincBackend {
     async fn export(&self, state: &ProofState) -> Result<String> {
         self.to_input_format(state)
     }
-    async fn suggest_tactics(&self, _: &ProofState, _: usize) -> Result<Vec<Tactic>> {
-        Ok(vec![])
+    async fn suggest_tactics(&self, _state: &ProofState, limit: usize) -> Result<Vec<Tactic>> {
+        // MiniZinc is a high-level constraint modelling language. Suggestions
+        // are solve annotations and search strategies that guide the underlying
+        // solver (Gecode, Chuffed, OR-Tools, etc.).
+        let tactics = vec![
+            Tactic::Custom {
+                prover: "minizinc".to_string(),
+                command: "solve".to_string(),
+                args: vec!["satisfy".to_string()],
+            },
+            Tactic::Custom {
+                prover: "minizinc".to_string(),
+                command: "solve".to_string(),
+                args: vec!["minimize objective".to_string()],
+            },
+            Tactic::Custom {
+                prover: "minizinc".to_string(),
+                command: "annotation".to_string(),
+                args: vec!["int_search(vars, first_fail, indomain_min, complete)".to_string()],
+            },
+            Tactic::Custom {
+                prover: "minizinc".to_string(),
+                command: "output".to_string(),
+                args: vec!["[ show(vars) ]".to_string()],
+            },
+            Tactic::Simplify,
+        ];
+        Ok(tactics.into_iter().take(limit).collect())
     }
-    async fn search_theorems(&self, _: &str) -> Result<Vec<String>> {
+
+    async fn search_theorems(&self, _pattern: &str) -> Result<Vec<String>> {
+        // Constraint modelling languages have no theorem libraries.
         Ok(vec![])
     }
     fn config(&self) -> &ProverConfig {

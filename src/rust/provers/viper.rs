@@ -294,11 +294,42 @@ impl ProverBackend for ViperBackend {
         self.to_silver(state)
     }
 
-    async fn suggest_tactics(&self, _state: &ProofState, _limit: usize) -> Result<Vec<Tactic>> {
-        Ok(vec![])
+    async fn suggest_tactics(&self, _state: &ProofState, limit: usize) -> Result<Vec<Tactic>> {
+        // Viper is a deductive verification infrastructure for Silver programs.
+        // Suggestions are Silver contract annotations and Viper-level hints.
+        let tactics = vec![
+            Tactic::Simplify,
+            Tactic::Custom {
+                prover: "viper".to_string(),
+                command: "add_precondition".to_string(),
+                args: vec![],
+            },
+            Tactic::Custom {
+                prover: "viper".to_string(),
+                command: "add_postcondition".to_string(),
+                args: vec![],
+            },
+            Tactic::Custom {
+                prover: "viper".to_string(),
+                command: "add_invariant".to_string(),
+                args: vec![],
+            },
+            Tactic::Custom {
+                prover: "viper".to_string(),
+                command: "exhale".to_string(),
+                args: vec![],
+            },
+            Tactic::Custom {
+                prover: "viper".to_string(),
+                command: "assert".to_string(),
+                args: vec![],
+            },
+        ];
+        Ok(tactics.into_iter().take(limit).collect())
     }
 
     async fn search_theorems(&self, _pattern: &str) -> Result<Vec<String>> {
+        // Viper delegates to SMT back-ends; no native theorem-search interface.
         Ok(vec![])
     }
 

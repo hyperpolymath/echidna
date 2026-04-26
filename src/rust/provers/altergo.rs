@@ -212,11 +212,37 @@ impl ProverBackend for AltErgoBackend {
         self.to_altergo(state)
     }
 
-    async fn suggest_tactics(&self, _state: &ProofState, _limit: usize) -> Result<Vec<Tactic>> {
-        Ok(vec![])
+    async fn suggest_tactics(&self, _state: &ProofState, limit: usize) -> Result<Vec<Tactic>> {
+        // Alt-Ergo is an SMT solver; suggestions are option-level strategy hints
+        // rather than interactive proof tactics.
+        let tactics = vec![
+            Tactic::Simplify,
+            Tactic::Custom {
+                prover: "altergo".to_string(),
+                command: "set-option".to_string(),
+                args: vec!["--fpa".to_string()],
+            },
+            Tactic::Custom {
+                prover: "altergo".to_string(),
+                command: "set-option".to_string(),
+                args: vec!["--instantiation-heuristic NORMAL".to_string()],
+            },
+            Tactic::Custom {
+                prover: "altergo".to_string(),
+                command: "set-option".to_string(),
+                args: vec!["--triggers-var-depth 3".to_string()],
+            },
+            Tactic::Custom {
+                prover: "altergo".to_string(),
+                command: "set-option".to_string(),
+                args: vec!["--sat-solver CDCL-Tableaux".to_string()],
+            },
+        ];
+        Ok(tactics.into_iter().take(limit).collect())
     }
 
     async fn search_theorems(&self, _pattern: &str) -> Result<Vec<String>> {
+        // Alt-Ergo is a decision procedure; it has no theorem library to search.
         Ok(vec![])
     }
 

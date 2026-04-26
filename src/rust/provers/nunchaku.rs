@@ -118,10 +118,32 @@ impl ProverBackend for NunchakuBackend {
             .map(String::from)
             .unwrap_or_default())
     }
-    async fn suggest_tactics(&self, _: &ProofState, _: usize) -> Result<Vec<Tactic>> {
-        Ok(vec![])
+    async fn suggest_tactics(&self, _state: &ProofState, limit: usize) -> Result<Vec<Tactic>> {
+        // Nunchaku is a model finder / counterexample tool for higher-order logic
+        // (successor to Nitpick). Suggestions are configuration knobs for its
+        // finite-model-building back-end.
+        let tactics = vec![
+            Tactic::Custom {
+                prover: "nunchaku".to_string(),
+                command: "nunchaku".to_string(),
+                args: vec!["--mode fo_tptp".to_string()],
+            },
+            Tactic::Custom {
+                prover: "nunchaku".to_string(),
+                command: "nunchaku".to_string(),
+                args: vec!["--timeout 60".to_string()],
+            },
+            Tactic::Custom {
+                prover: "nunchaku".to_string(),
+                command: "nunchaku".to_string(),
+                args: vec!["--solver smbc".to_string()],
+            },
+        ];
+        Ok(tactics.into_iter().take(limit).collect())
     }
-    async fn search_theorems(&self, _: &str) -> Result<Vec<String>> {
+
+    async fn search_theorems(&self, _pattern: &str) -> Result<Vec<String>> {
+        // Nunchaku is a model finder; it does not search theorem libraries.
         Ok(vec![])
     }
     fn config(&self) -> &ProverConfig {

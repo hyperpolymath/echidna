@@ -178,13 +178,52 @@ impl ProverBackend for Lean3Backend {
             }))
     }
 
-    async fn suggest_tactics(&self, _state: &ProofState, _limit: usize) -> Result<Vec<Tactic>> {
-        // Cold-start: no suggestions until the Lean 3 corpus is extracted
-        // and the ML layer is retrained. See scripts/extract_lean3.jl.
-        Ok(vec![])
+    async fn suggest_tactics(&self, _state: &ProofState, limit: usize) -> Result<Vec<Tactic>> {
+        // Lean 3 uses the same core tactic set as Lean 4 but with slightly
+        // different names. These cover the most commonly needed steps.
+        // (The Lean 3 corpus will improve premise ranking once extracted via
+        // scripts/extract_lean3.jl, but these static hints are immediately useful.)
+        let tactics = vec![
+            Tactic::Custom {
+                prover: "lean3".to_string(),
+                command: "simp".to_string(),
+                args: vec![],
+            },
+            Tactic::Custom {
+                prover: "lean3".to_string(),
+                command: "ring".to_string(),
+                args: vec![],
+            },
+            Tactic::Custom {
+                prover: "lean3".to_string(),
+                command: "linarith".to_string(),
+                args: vec![],
+            },
+            Tactic::Custom {
+                prover: "lean3".to_string(),
+                command: "omega".to_string(),
+                args: vec![],
+            },
+            Tactic::Custom {
+                prover: "lean3".to_string(),
+                command: "tauto".to_string(),
+                args: vec![],
+            },
+            Tactic::Custom {
+                prover: "lean3".to_string(),
+                command: "finish".to_string(),
+                args: vec![],
+            },
+            Tactic::Reflexivity,
+            Tactic::Assumption,
+            Tactic::Simplify,
+        ];
+        Ok(tactics.into_iter().take(limit).collect())
     }
 
     async fn search_theorems(&self, _pattern: &str) -> Result<Vec<String>> {
+        // Lean 3 #check / search_proof_tactic require a running server;
+        // return empty as a safe fallback until the batch-query bridge is wired.
         Ok(vec![])
     }
 

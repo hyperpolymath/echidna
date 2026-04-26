@@ -137,11 +137,49 @@ impl ProverBackend for MizARBackend {
             .join("\n"))
     }
 
-    async fn suggest_tactics(&self, _state: &ProofState, _limit: usize) -> Result<Vec<Tactic>> {
-        Ok(vec![])
+    async fn suggest_tactics(&self, _state: &ProofState, limit: usize) -> Result<Vec<Tactic>> {
+        // Mizar AR (Automated Reasoner) uses a natural-deduction style with
+        // Mizar language proof steps. These cover the canonical constructs.
+        let tactics = vec![
+            Tactic::Custom {
+                prover: "mizar_ar".to_string(),
+                command: "thus".to_string(),
+                args: vec![],
+            },
+            Tactic::Custom {
+                prover: "mizar_ar".to_string(),
+                command: "hence".to_string(),
+                args: vec![],
+            },
+            Tactic::Custom {
+                prover: "mizar_ar".to_string(),
+                command: "by".to_string(),
+                args: vec![],
+            },
+            Tactic::Custom {
+                prover: "mizar_ar".to_string(),
+                command: "from".to_string(),
+                args: vec![],
+            },
+            Tactic::Custom {
+                prover: "mizar_ar".to_string(),
+                command: "consider".to_string(),
+                args: vec![],
+            },
+            Tactic::Custom {
+                prover: "mizar_ar".to_string(),
+                command: "per cases".to_string(),
+                args: vec![],
+            },
+            Tactic::Assumption,
+            Tactic::Reflexivity,
+        ];
+        Ok(tactics.into_iter().take(limit).collect())
     }
 
     async fn search_theorems(&self, _pattern: &str) -> Result<Vec<String>> {
+        // Mizar theorem search (MML Query) requires the full Mizar library;
+        // return empty as fallback until the batch-query bridge is wired.
         Ok(vec![])
     }
 

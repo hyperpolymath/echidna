@@ -127,10 +127,42 @@ impl ProverBackend for TwelfBackend {
     async fn export(&self, state: &ProofState) -> Result<String> {
         self.to_input_format(state)
     }
-    async fn suggest_tactics(&self, _: &ProofState, _: usize) -> Result<Vec<Tactic>> {
-        Ok(vec![])
+    async fn suggest_tactics(&self, _state: &ProofState, limit: usize) -> Result<Vec<Tactic>> {
+        // Twelf is a meta-logical framework (LF) used primarily for
+        // mechanising programming-language metatheory. Proofs are
+        // totality/coverage declarations; these are the key constructs.
+        let tactics = vec![
+            Tactic::Custom {
+                prover: "twelf".to_string(),
+                command: "%total".to_string(),
+                args: vec![],
+            },
+            Tactic::Custom {
+                prover: "twelf".to_string(),
+                command: "%worlds".to_string(),
+                args: vec!["()".to_string()],
+            },
+            Tactic::Custom {
+                prover: "twelf".to_string(),
+                command: "%reduces".to_string(),
+                args: vec![],
+            },
+            Tactic::Custom {
+                prover: "twelf".to_string(),
+                command: "%theorem".to_string(),
+                args: vec![],
+            },
+            Tactic::Custom {
+                prover: "twelf".to_string(),
+                command: "%prove".to_string(),
+                args: vec!["5 _ _".to_string()],
+            },
+        ];
+        Ok(tactics.into_iter().take(limit).collect())
     }
-    async fn search_theorems(&self, _: &str) -> Result<Vec<String>> {
+
+    async fn search_theorems(&self, _pattern: &str) -> Result<Vec<String>> {
+        // Twelf has no built-in theorem-search interface.
         Ok(vec![])
     }
     fn config(&self) -> &ProverConfig {

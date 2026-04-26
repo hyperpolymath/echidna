@@ -236,11 +236,42 @@ impl ProverBackend for VampireBackend {
         self.to_tptp(state)
     }
 
-    async fn suggest_tactics(&self, _state: &ProofState, _limit: usize) -> Result<Vec<Tactic>> {
-        Ok(vec![])
+    async fn suggest_tactics(&self, _state: &ProofState, limit: usize) -> Result<Vec<Tactic>> {
+        // Vampire is a fully-automated first-order ATP and proof checker.
+        // Suggestions are strategy and scheduling options passed to the binary.
+        let tactics = vec![
+            Tactic::Custom {
+                prover: "vampire".to_string(),
+                command: "mode".to_string(),
+                args: vec!["casc".to_string()],
+            },
+            Tactic::Custom {
+                prover: "vampire".to_string(),
+                command: "mode".to_string(),
+                args: vec!["schedule".to_string()],
+            },
+            Tactic::Custom {
+                prover: "vampire".to_string(),
+                command: "strategy".to_string(),
+                args: vec!["discount".to_string()],
+            },
+            Tactic::Custom {
+                prover: "vampire".to_string(),
+                command: "strategy".to_string(),
+                args: vec!["otter".to_string()],
+            },
+            Tactic::Custom {
+                prover: "vampire".to_string(),
+                command: "set-option".to_string(),
+                args: vec!["--proof tptp".to_string()],
+            },
+            Tactic::Simplify,
+        ];
+        Ok(tactics.into_iter().take(limit).collect())
     }
 
     async fn search_theorems(&self, _pattern: &str) -> Result<Vec<String>> {
+        // ATP solvers do not maintain searchable theorem libraries.
         Ok(vec![])
     }
 

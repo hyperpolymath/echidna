@@ -138,11 +138,34 @@ impl ProverBackend for DeduktiBackend {
             .unwrap_or_default())
     }
 
-    async fn suggest_tactics(&self, _state: &ProofState, _limit: usize) -> Result<Vec<Tactic>> {
-        Ok(vec![])
+    async fn suggest_tactics(&self, _state: &ProofState, limit: usize) -> Result<Vec<Tactic>> {
+        // Dedukti is a logical framework (LF) based on lambda-Pi-modulo rewriting.
+        // Proofs are λ-terms; the useful structuring steps are below.
+        let tactics = vec![
+            Tactic::Custom {
+                prover: "dedukti".to_string(),
+                command: "rewrite".to_string(),
+                args: vec![],
+            },
+            Tactic::Reflexivity,
+            Tactic::Custom {
+                prover: "dedukti".to_string(),
+                command: "compute".to_string(),
+                args: vec![],
+            },
+            Tactic::Custom {
+                prover: "dedukti".to_string(),
+                command: "injective".to_string(),
+                args: vec![],
+            },
+            Tactic::Simplify,
+            Tactic::Assumption,
+        ];
+        Ok(tactics.into_iter().take(limit).collect())
     }
 
     async fn search_theorems(&self, _pattern: &str) -> Result<Vec<String>> {
+        // Dedukti has no built-in theorem-search interface.
         Ok(vec![])
     }
 

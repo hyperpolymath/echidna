@@ -125,11 +125,38 @@ impl ProverBackend for Acl2sBackend {
             .unwrap_or_default())
     }
 
-    async fn suggest_tactics(&self, _state: &ProofState, _limit: usize) -> Result<Vec<Tactic>> {
-        Ok(vec![])
+    async fn suggest_tactics(&self, _state: &ProofState, limit: usize) -> Result<Vec<Tactic>> {
+        // ACL2s (ACL2 Sedan) is a pedagogical IDE for ACL2. Its proof strategy
+        // hints are ACL2 :hints keyword arguments and defthm patterns.
+        let tactics = vec![
+            Tactic::Custom {
+                prover: "acl2s".to_string(),
+                command: "hint".to_string(),
+                args: vec![":hints ((\"Goal\" :induct t))".to_string()],
+            },
+            Tactic::Custom {
+                prover: "acl2s".to_string(),
+                command: "hint".to_string(),
+                args: vec![":hints ((\"Goal\" :in-theory (enable ...)))".to_string()],
+            },
+            Tactic::Custom {
+                prover: "acl2s".to_string(),
+                command: "hint".to_string(),
+                args: vec![":hints ((\"Goal\" :use (:instance lemma ...)))".to_string()],
+            },
+            Tactic::Custom {
+                prover: "acl2s".to_string(),
+                command: "prove".to_string(),
+                args: vec![],
+            },
+            Tactic::Simplify,
+        ];
+        Ok(tactics.into_iter().take(limit).collect())
     }
 
     async fn search_theorems(&self, _pattern: &str) -> Result<Vec<String>> {
+        // ACL2s theorem search requires a running ACL2 session with the
+        // appropriate libraries loaded; return empty as fallback.
         Ok(vec![])
     }
 

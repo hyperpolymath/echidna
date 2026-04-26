@@ -109,10 +109,42 @@ impl ProverBackend for NaprocheBackend {
             .map(String::from)
             .unwrap_or_default())
     }
-    async fn suggest_tactics(&self, _: &ProofState, _: usize) -> Result<Vec<Tactic>> {
-        Ok(vec![])
+    async fn suggest_tactics(&self, _state: &ProofState, limit: usize) -> Result<Vec<Tactic>> {
+        // Naproche is a controlled-natural-language proof checker.
+        // Its proof steps follow mathematical English conventions.
+        let tactics = vec![
+            Tactic::Custom {
+                prover: "naproche".to_string(),
+                command: "proof".to_string(),
+                args: vec![],
+            },
+            Tactic::Custom {
+                prover: "naproche".to_string(),
+                command: "assume".to_string(),
+                args: vec![],
+            },
+            Tactic::Custom {
+                prover: "naproche".to_string(),
+                command: "then".to_string(),
+                args: vec![],
+            },
+            Tactic::Custom {
+                prover: "naproche".to_string(),
+                command: "by contradiction".to_string(),
+                args: vec![],
+            },
+            Tactic::Custom {
+                prover: "naproche".to_string(),
+                command: "cases".to_string(),
+                args: vec![],
+            },
+            Tactic::Assumption,
+        ];
+        Ok(tactics.into_iter().take(limit).collect())
     }
-    async fn search_theorems(&self, _: &str) -> Result<Vec<String>> {
+
+    async fn search_theorems(&self, _pattern: &str) -> Result<Vec<String>> {
+        // Naproche has no built-in theorem-search interface.
         Ok(vec![])
     }
     fn config(&self) -> &ProverConfig {

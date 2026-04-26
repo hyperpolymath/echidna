@@ -109,10 +109,39 @@ impl ProverBackend for MatitaBackend {
             .map(String::from)
             .unwrap_or_default())
     }
-    async fn suggest_tactics(&self, _: &ProofState, _: usize) -> Result<Vec<Tactic>> {
-        Ok(vec![])
+    async fn suggest_tactics(&self, _state: &ProofState, limit: usize) -> Result<Vec<Tactic>> {
+        // Matita is a proof assistant based on the Calculus of Constructions
+        // (like Coq); its tactic language is a subset of Coq's.
+        let tactics = vec![
+            Tactic::Custom {
+                prover: "matita".to_string(),
+                command: "auto".to_string(),
+                args: vec!["depth=2".to_string()],
+            },
+            Tactic::Custom {
+                prover: "matita".to_string(),
+                command: "intro".to_string(),
+                args: vec![],
+            },
+            Tactic::Custom {
+                prover: "matita".to_string(),
+                command: "apply".to_string(),
+                args: vec![],
+            },
+            Tactic::Custom {
+                prover: "matita".to_string(),
+                command: "rewrite".to_string(),
+                args: vec![],
+            },
+            Tactic::Reflexivity,
+            Tactic::Assumption,
+            Tactic::Simplify,
+        ];
+        Ok(tactics.into_iter().take(limit).collect())
     }
-    async fn search_theorems(&self, _: &str) -> Result<Vec<String>> {
+
+    async fn search_theorems(&self, _pattern: &str) -> Result<Vec<String>> {
+        // Matita has no programmatic theorem-search interface.
         Ok(vec![])
     }
     fn config(&self) -> &ProverConfig {

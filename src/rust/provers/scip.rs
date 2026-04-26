@@ -136,10 +136,37 @@ impl ProverBackend for SCIPBackend {
     async fn export(&self, state: &ProofState) -> Result<String> {
         self.to_input_format(state)
     }
-    async fn suggest_tactics(&self, _: &ProofState, _: usize) -> Result<Vec<Tactic>> {
-        Ok(vec![])
+    async fn suggest_tactics(&self, _state: &ProofState, limit: usize) -> Result<Vec<Tactic>> {
+        // SCIP is a mixed-integer programming / constraint solver.
+        // Suggestions are parameter settings and solving strategy hints.
+        let tactics = vec![
+            Tactic::Simplify,
+            Tactic::Custom {
+                prover: "scip".to_string(),
+                command: "set".to_string(),
+                args: vec!["limits/time 60".to_string()],
+            },
+            Tactic::Custom {
+                prover: "scip".to_string(),
+                command: "set".to_string(),
+                args: vec!["presolving/maxrounds 10".to_string()],
+            },
+            Tactic::Custom {
+                prover: "scip".to_string(),
+                command: "set".to_string(),
+                args: vec!["separating/maxroundsroot 5".to_string()],
+            },
+            Tactic::Custom {
+                prover: "scip".to_string(),
+                command: "optimize".to_string(),
+                args: vec![],
+            },
+        ];
+        Ok(tactics.into_iter().take(limit).collect())
     }
-    async fn search_theorems(&self, _: &str) -> Result<Vec<String>> {
+
+    async fn search_theorems(&self, _pattern: &str) -> Result<Vec<String>> {
+        // Constraint/optimisation solvers have no theorem libraries.
         Ok(vec![])
     }
     fn config(&self) -> &ProverConfig {

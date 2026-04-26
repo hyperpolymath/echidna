@@ -147,11 +147,37 @@ impl ProverBackend for Prover9Backend {
             .join("\n"))
     }
 
-    async fn suggest_tactics(&self, _state: &ProofState, _limit: usize) -> Result<Vec<Tactic>> {
-        Ok(vec![])
+    async fn suggest_tactics(&self, _state: &ProofState, limit: usize) -> Result<Vec<Tactic>> {
+        // Prover9 is a first-order ATP (resolution + paramodulation).
+        // Suggestions are weight-function and strategy flags passed to the binary.
+        let tactics = vec![
+            Tactic::Custom {
+                prover: "prover9".to_string(),
+                command: "set".to_string(),
+                args: vec!["auto".to_string()],
+            },
+            Tactic::Custom {
+                prover: "prover9".to_string(),
+                command: "set".to_string(),
+                args: vec!["paramodulation".to_string()],
+            },
+            Tactic::Custom {
+                prover: "prover9".to_string(),
+                command: "set".to_string(),
+                args: vec!["back_subsumption".to_string()],
+            },
+            Tactic::Custom {
+                prover: "prover9".to_string(),
+                command: "assign".to_string(),
+                args: vec!["max_seconds 60".to_string()],
+            },
+            Tactic::Simplify,
+        ];
+        Ok(tactics.into_iter().take(limit).collect())
     }
 
     async fn search_theorems(&self, _pattern: &str) -> Result<Vec<String>> {
+        // ATP solvers do not maintain searchable theorem libraries.
         Ok(vec![])
     }
 

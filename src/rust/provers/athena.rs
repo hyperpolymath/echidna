@@ -108,10 +108,39 @@ impl ProverBackend for AthenaBackend {
             .map(String::from)
             .unwrap_or_default())
     }
-    async fn suggest_tactics(&self, _: &ProofState, _: usize) -> Result<Vec<Tactic>> {
-        Ok(vec![])
+    async fn suggest_tactics(&self, _state: &ProofState, limit: usize) -> Result<Vec<Tactic>> {
+        // Athena is a multi-logic deduction language. Its core reasoning
+        // methods map onto the following canonical proof steps.
+        let tactics = vec![
+            Tactic::Assumption,
+            Tactic::Reflexivity,
+            Tactic::Custom {
+                prover: "athena".to_string(),
+                command: "conclude".to_string(),
+                args: vec![],
+            },
+            Tactic::Custom {
+                prover: "athena".to_string(),
+                command: "by-contradiction".to_string(),
+                args: vec![],
+            },
+            Tactic::Custom {
+                prover: "athena".to_string(),
+                command: "suppose-absurd".to_string(),
+                args: vec![],
+            },
+            Tactic::Custom {
+                prover: "athena".to_string(),
+                command: "cases".to_string(),
+                args: vec![],
+            },
+            Tactic::Simplify,
+        ];
+        Ok(tactics.into_iter().take(limit).collect())
     }
-    async fn search_theorems(&self, _: &str) -> Result<Vec<String>> {
+
+    async fn search_theorems(&self, _pattern: &str) -> Result<Vec<String>> {
+        // Athena does not expose a programmatic theorem-search interface.
         Ok(vec![])
     }
     fn config(&self) -> &ProverConfig {

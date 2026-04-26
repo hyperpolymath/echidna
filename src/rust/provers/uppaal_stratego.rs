@@ -140,11 +140,38 @@ impl ProverBackend for UppaalStrategoBackend {
             .join("\n"))
     }
 
-    async fn suggest_tactics(&self, _state: &ProofState, _limit: usize) -> Result<Vec<Tactic>> {
-        Ok(vec![])
+    async fn suggest_tactics(&self, _state: &ProofState, limit: usize) -> Result<Vec<Tactic>> {
+        // UPPAAL Stratego extends UPPAAL with strategy synthesis for
+        // stochastic timed automata. Suggestions are query patterns and
+        // strategy-learning configuration hints.
+        let tactics = vec![
+            Tactic::Custom {
+                prover: "uppaal_stratego".to_string(),
+                command: "add_query".to_string(),
+                args: vec!["A[] not deadlock".to_string()],
+            },
+            Tactic::Custom {
+                prover: "uppaal_stratego".to_string(),
+                command: "synthesize_strategy".to_string(),
+                args: vec!["minimize E[<=100; 1000](max: cost)".to_string()],
+            },
+            Tactic::Custom {
+                prover: "uppaal_stratego".to_string(),
+                command: "add_clock".to_string(),
+                args: vec!["timer".to_string()],
+            },
+            Tactic::Custom {
+                prover: "uppaal_stratego".to_string(),
+                command: "set-learning-rate".to_string(),
+                args: vec!["0.1".to_string()],
+            },
+        ];
+        Ok(tactics.into_iter().take(limit).collect())
     }
 
     async fn search_theorems(&self, _pattern: &str) -> Result<Vec<String>> {
+        // UPPAAL Stratego is a model checker/strategy synthesiser;
+        // it has no theorem library to search.
         Ok(vec![])
     }
 

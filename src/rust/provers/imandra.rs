@@ -139,10 +139,43 @@ impl ProverBackend for ImandraBackend {
     async fn export(&self, state: &ProofState) -> Result<String> {
         self.to_input_format(state)
     }
-    async fn suggest_tactics(&self, _: &ProofState, _: usize) -> Result<Vec<Tactic>> {
-        Ok(vec![])
+    async fn suggest_tactics(&self, _state: &ProofState, limit: usize) -> Result<Vec<Tactic>> {
+        // Imandra is an industrial theorem prover and model checker for OCaml.
+        // Its proof library is inspired by HOL and LCF; canonical tactics follow.
+        let tactics = vec![
+            Tactic::Custom {
+                prover: "imandra".to_string(),
+                command: "verify".to_string(),
+                args: vec![],
+            },
+            Tactic::Custom {
+                prover: "imandra".to_string(),
+                command: "instance".to_string(),
+                args: vec![],
+            },
+            Tactic::Custom {
+                prover: "imandra".to_string(),
+                command: "simp".to_string(),
+                args: vec![],
+            },
+            Tactic::Custom {
+                prover: "imandra".to_string(),
+                command: "induct".to_string(),
+                args: vec![],
+            },
+            Tactic::Custom {
+                prover: "imandra".to_string(),
+                command: "blast".to_string(),
+                args: vec![],
+            },
+            Tactic::Simplify,
+            Tactic::Assumption,
+        ];
+        Ok(tactics.into_iter().take(limit).collect())
     }
-    async fn search_theorems(&self, _: &str) -> Result<Vec<String>> {
+
+    async fn search_theorems(&self, _pattern: &str) -> Result<Vec<String>> {
+        // Imandra does not expose a programmatic theorem-search interface.
         Ok(vec![])
     }
     fn config(&self) -> &ProverConfig {

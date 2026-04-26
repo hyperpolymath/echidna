@@ -144,11 +144,49 @@ impl ProverBackend for CubicalAgdaBackend {
             .join("\n"))
     }
 
-    async fn suggest_tactics(&self, _state: &ProofState, _limit: usize) -> Result<Vec<Tactic>> {
-        Ok(vec![])
+    async fn suggest_tactics(&self, _state: &ProofState, limit: usize) -> Result<Vec<Tactic>> {
+        // Cubical Agda is an extension of Agda with Cubical Type Theory (CTT)
+        // primitives: interval type, path types, and hcomp/transp operations.
+        // Proof steps are term-mode; the most useful automation helpers follow.
+        let tactics = vec![
+            Tactic::Reflexivity,
+            Tactic::Custom {
+                prover: "cubical_agda".to_string(),
+                command: "refl".to_string(),
+                args: vec![],
+            },
+            Tactic::Custom {
+                prover: "cubical_agda".to_string(),
+                command: "sym".to_string(),
+                args: vec![],
+            },
+            Tactic::Custom {
+                prover: "cubical_agda".to_string(),
+                command: "cong".to_string(),
+                args: vec![],
+            },
+            Tactic::Custom {
+                prover: "cubical_agda".to_string(),
+                command: "funExt".to_string(),
+                args: vec![],
+            },
+            Tactic::Custom {
+                prover: "cubical_agda".to_string(),
+                command: "transport".to_string(),
+                args: vec![],
+            },
+            Tactic::Custom {
+                prover: "cubical_agda".to_string(),
+                command: "hcomp".to_string(),
+                args: vec![],
+            },
+            Tactic::Assumption,
+        ];
+        Ok(tactics.into_iter().take(limit).collect())
     }
 
     async fn search_theorems(&self, _pattern: &str) -> Result<Vec<String>> {
+        // Cubical Agda has no programmatic theorem-search interface.
         Ok(vec![])
     }
 

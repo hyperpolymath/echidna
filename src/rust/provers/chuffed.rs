@@ -136,10 +136,37 @@ impl ProverBackend for ChuffedBackend {
     async fn export(&self, state: &ProofState) -> Result<String> {
         self.to_input_format(state)
     }
-    async fn suggest_tactics(&self, _: &ProofState, _: usize) -> Result<Vec<Tactic>> {
-        Ok(vec![])
+    async fn suggest_tactics(&self, _state: &ProofState, limit: usize) -> Result<Vec<Tactic>> {
+        // Chuffed is a lazy-clause-generation CP solver. Suggestions are
+        // MiniZinc solve annotations and propagation strategy hints.
+        let tactics = vec![
+            Tactic::Simplify,
+            Tactic::Custom {
+                prover: "chuffed".to_string(),
+                command: "solve".to_string(),
+                args: vec!["satisfy".to_string()],
+            },
+            Tactic::Custom {
+                prover: "chuffed".to_string(),
+                command: "annotation".to_string(),
+                args: vec!["int_search(vars, first_fail, indomain_min, complete)".to_string()],
+            },
+            Tactic::Custom {
+                prover: "chuffed".to_string(),
+                command: "annotation".to_string(),
+                args: vec!["seq_search([...])".to_string()],
+            },
+            Tactic::Custom {
+                prover: "chuffed".to_string(),
+                command: "set-option".to_string(),
+                args: vec!["--prop-fifo".to_string()],
+            },
+        ];
+        Ok(tactics.into_iter().take(limit).collect())
     }
-    async fn search_theorems(&self, _: &str) -> Result<Vec<String>> {
+
+    async fn search_theorems(&self, _pattern: &str) -> Result<Vec<String>> {
+        // Constraint solvers do not have theorem libraries.
         Ok(vec![])
     }
     fn config(&self) -> &ProverConfig {

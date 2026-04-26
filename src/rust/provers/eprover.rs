@@ -216,11 +216,38 @@ impl ProverBackend for EProverBackend {
         self.to_tptp(state)
     }
 
-    async fn suggest_tactics(&self, _state: &ProofState, _limit: usize) -> Result<Vec<Tactic>> {
-        Ok(vec![])
+    async fn suggest_tactics(&self, _state: &ProofState, limit: usize) -> Result<Vec<Tactic>> {
+        // E Prover is a fully-automated first-order ATP; suggestions are
+        // strategy-selection options passed to the binary rather than
+        // interactive proof tactics.
+        let tactics = vec![
+            Tactic::Custom {
+                prover: "eprover".to_string(),
+                command: "strategy".to_string(),
+                args: vec!["--auto".to_string()],
+            },
+            Tactic::Custom {
+                prover: "eprover".to_string(),
+                command: "strategy".to_string(),
+                args: vec!["--auto-schedule".to_string()],
+            },
+            Tactic::Custom {
+                prover: "eprover".to_string(),
+                command: "strategy".to_string(),
+                args: vec!["--split-clauses=4".to_string()],
+            },
+            Tactic::Custom {
+                prover: "eprover".to_string(),
+                command: "strategy".to_string(),
+                args: vec!["--prefer-initial-clauses".to_string()],
+            },
+            Tactic::Simplify,
+        ];
+        Ok(tactics.into_iter().take(limit).collect())
     }
 
     async fn search_theorems(&self, _pattern: &str) -> Result<Vec<String>> {
+        // ATP solvers do not maintain searchable theorem libraries.
         Ok(vec![])
     }
 

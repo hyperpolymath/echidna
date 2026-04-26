@@ -218,11 +218,37 @@ impl ProverBackend for SPASSBackend {
         self.to_dfg(state)
     }
 
-    async fn suggest_tactics(&self, _state: &ProofState, _limit: usize) -> Result<Vec<Tactic>> {
-        Ok(vec![])
+    async fn suggest_tactics(&self, _state: &ProofState, limit: usize) -> Result<Vec<Tactic>> {
+        // SPASS is a resolution-based first-order ATP. Suggestions are
+        // flag settings that control the proof search strategy.
+        let tactics = vec![
+            Tactic::Custom {
+                prover: "spass".to_string(),
+                command: "set-flag".to_string(),
+                args: vec!["-Auto 1".to_string()],
+            },
+            Tactic::Custom {
+                prover: "spass".to_string(),
+                command: "set-flag".to_string(),
+                args: vec!["-SOS 1".to_string()],
+            },
+            Tactic::Custom {
+                prover: "spass".to_string(),
+                command: "set-flag".to_string(),
+                args: vec!["-RFSub 1".to_string()],
+            },
+            Tactic::Custom {
+                prover: "spass".to_string(),
+                command: "set-flag".to_string(),
+                args: vec!["-TimeLimit 60".to_string()],
+            },
+            Tactic::Simplify,
+        ];
+        Ok(tactics.into_iter().take(limit).collect())
     }
 
     async fn search_theorems(&self, _pattern: &str) -> Result<Vec<String>> {
+        // ATP solvers do not maintain searchable theorem libraries.
         Ok(vec![])
     }
 

@@ -135,11 +135,37 @@ impl ProverBackend for OpenSmtBackend {
             .join("\n"))
     }
 
-    async fn suggest_tactics(&self, _state: &ProofState, _limit: usize) -> Result<Vec<Tactic>> {
-        Ok(vec![])
+    async fn suggest_tactics(&self, _state: &ProofState, limit: usize) -> Result<Vec<Tactic>> {
+        // OpenSMT is an SMT solver focused on interpolation-based verification.
+        // Suggestions are option-level strategy hints (similar to Z3 and CVC5).
+        let tactics = vec![
+            Tactic::Simplify,
+            Tactic::Custom {
+                prover: "opensmt".to_string(),
+                command: "set-option".to_string(),
+                args: vec![":produce-interpolants true".to_string()],
+            },
+            Tactic::Custom {
+                prover: "opensmt".to_string(),
+                command: "set-logic".to_string(),
+                args: vec!["QF_LRA".to_string()],
+            },
+            Tactic::Custom {
+                prover: "opensmt".to_string(),
+                command: "set-logic".to_string(),
+                args: vec!["QF_UF".to_string()],
+            },
+            Tactic::Custom {
+                prover: "opensmt".to_string(),
+                command: "set-option".to_string(),
+                args: vec![":interpolation-algorithm 1".to_string()],
+            },
+        ];
+        Ok(tactics.into_iter().take(limit).collect())
     }
 
     async fn search_theorems(&self, _pattern: &str) -> Result<Vec<String>> {
+        // SMT solvers do not maintain searchable theorem libraries.
         Ok(vec![])
     }
 

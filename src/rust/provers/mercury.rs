@@ -111,10 +111,33 @@ impl ProverBackend for MercuryBackend {
             .map(String::from)
             .unwrap_or_default())
     }
-    async fn suggest_tactics(&self, _: &ProofState, _: usize) -> Result<Vec<Tactic>> {
-        Ok(vec![])
+    async fn suggest_tactics(&self, _state: &ProofState, limit: usize) -> Result<Vec<Tactic>> {
+        // Mercury is a logic/functional language with a strict mode system.
+        // Proofs proceed by logic programming resolution; key steps follow.
+        let tactics = vec![
+            Tactic::Custom {
+                prover: "mercury".to_string(),
+                command: "solve".to_string(),
+                args: vec![],
+            },
+            Tactic::Custom {
+                prover: "mercury".to_string(),
+                command: "unify".to_string(),
+                args: vec![],
+            },
+            Tactic::Custom {
+                prover: "mercury".to_string(),
+                command: "determinism_check".to_string(),
+                args: vec![],
+            },
+            Tactic::Assumption,
+            Tactic::Simplify,
+        ];
+        Ok(tactics.into_iter().take(limit).collect())
     }
-    async fn search_theorems(&self, _: &str) -> Result<Vec<String>> {
+
+    async fn search_theorems(&self, _pattern: &str) -> Result<Vec<String>> {
+        // Mercury has no built-in theorem-search interface.
         Ok(vec![])
     }
     fn config(&self) -> &ProverConfig {

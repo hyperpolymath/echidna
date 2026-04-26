@@ -144,10 +144,49 @@ impl ProverBackend for TLAPSBackend {
     async fn export(&self, state: &ProofState) -> Result<String> {
         self.to_input_format(state)
     }
-    async fn suggest_tactics(&self, _: &ProofState, _: usize) -> Result<Vec<Tactic>> {
-        Ok(vec![])
+    async fn suggest_tactics(&self, _state: &ProofState, limit: usize) -> Result<Vec<Tactic>> {
+        // TLAPS (TLA+ Proof System) is the Isabelle-based backend for TLA+
+        // proofs. Proof steps use the TLA+ proof language, which maps onto
+        // these canonical decomposition tactics.
+        let tactics = vec![
+            Tactic::Custom {
+                prover: "tlaps".to_string(),
+                command: "BY".to_string(),
+                args: vec!["SMT".to_string()],
+            },
+            Tactic::Custom {
+                prover: "tlaps".to_string(),
+                command: "BY".to_string(),
+                args: vec!["Isabelle".to_string()],
+            },
+            Tactic::Custom {
+                prover: "tlaps".to_string(),
+                command: "OBVIOUS".to_string(),
+                args: vec![],
+            },
+            Tactic::Custom {
+                prover: "tlaps".to_string(),
+                command: "ASSUME".to_string(),
+                args: vec![],
+            },
+            Tactic::Custom {
+                prover: "tlaps".to_string(),
+                command: "CASE".to_string(),
+                args: vec![],
+            },
+            Tactic::Custom {
+                prover: "tlaps".to_string(),
+                command: "USE".to_string(),
+                args: vec![],
+            },
+            Tactic::Simplify,
+        ];
+        Ok(tactics.into_iter().take(limit).collect())
     }
-    async fn search_theorems(&self, _: &str) -> Result<Vec<String>> {
+
+    async fn search_theorems(&self, _pattern: &str) -> Result<Vec<String>> {
+        // TLAPS delegates theorem search to its Isabelle back-end;
+        // no native programmatic search interface is available.
         Ok(vec![])
     }
     fn config(&self) -> &ProverConfig {

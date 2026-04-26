@@ -132,11 +132,37 @@ impl ProverBackend for SmtRatBackend {
             .join("\n"))
     }
 
-    async fn suggest_tactics(&self, _state: &ProofState, _limit: usize) -> Result<Vec<Tactic>> {
-        Ok(vec![])
+    async fn suggest_tactics(&self, _state: &ProofState, limit: usize) -> Result<Vec<Tactic>> {
+        // SMT-RAT is a modular SMT solver framework. Suggestions are module
+        // and strategy hints that shape which theory solvers are activated.
+        let tactics = vec![
+            Tactic::Simplify,
+            Tactic::Custom {
+                prover: "smtrat".to_string(),
+                command: "set-logic".to_string(),
+                args: vec!["QF_NRA".to_string()],
+            },
+            Tactic::Custom {
+                prover: "smtrat".to_string(),
+                command: "strategy".to_string(),
+                args: vec!["NLSAT".to_string()],
+            },
+            Tactic::Custom {
+                prover: "smtrat".to_string(),
+                command: "strategy".to_string(),
+                args: vec!["Simplex".to_string()],
+            },
+            Tactic::Custom {
+                prover: "smtrat".to_string(),
+                command: "set-option".to_string(),
+                args: vec![":print-model true".to_string()],
+            },
+        ];
+        Ok(tactics.into_iter().take(limit).collect())
     }
 
     async fn search_theorems(&self, _pattern: &str) -> Result<Vec<String>> {
+        // SMT solvers do not maintain searchable theorem libraries.
         Ok(vec![])
     }
 

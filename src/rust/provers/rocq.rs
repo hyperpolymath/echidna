@@ -20,7 +20,7 @@ use std::process::Stdio;
 use tokio::process::Command;
 
 use super::{ProverBackend, ProverConfig, ProverKind};
-use crate::core::{ProofState, Tactic, TacticResult};
+use crate::core::{ProofState, Tactic, TacticResult, Term};
 
 /// Rocq proof assistant backend
 pub struct RocqBackend {
@@ -135,12 +135,102 @@ impl ProverBackend for RocqBackend {
             .join("\n"))
     }
 
-    async fn suggest_tactics(&self, _state: &ProofState, _limit: usize) -> Result<Vec<Tactic>> {
-        Ok(vec![])
+    async fn suggest_tactics(&self, state: &ProofState, limit: usize) -> Result<Vec<Tactic>> {
+        // Rocq (the Coq proof assistant, renamed) uses the same tactic
+        // language as Coq 8.x. Suggestions mirror the Coq backend's
+        // heuristics so that callers receive consistent advice regardless
+        // of which spelling they use for the prover.
+        let mut suggestions = Vec::new();
+
+        if state.goals.is_empty() {
+            return Ok(suggestions);
+        }
+
+        let goal = &state.goals[0];
+
+        // Shape-based heuristics matching the Coq backend
+        match &goal.target {
+            Term::Pi { .. } => {
+                suggestions.push(Tactic::Intro(None));
+            },
+            Term::App { func, .. } => {
+                if let Term::Const(name) = func.as_ref() {
+                    match name.as_str() {
+                        "and" => suggestions.push(Tactic::Custom {
+                            prover: "rocq".to_string(),
+                            command: "split".to_string(),
+                            args: vec![],
+                        }),
+                        "or" => {
+                            suggestions.push(Tactic::Custom {
+                                prover: "rocq".to_string(),
+                                command: "left".to_string(),
+                                args: vec![],
+                            });
+                            suggestions.push(Tactic::Custom {
+                                prover: "rocq".to_string(),
+                                command: "right".to_string(),
+                                args: vec![],
+                            });
+                        },
+                        "eq" => suggestions.push(Tactic::Reflexivity),
+                        _ => {},
+                    }
+                }
+            },
+            _ => {},
+        }
+
+        // Canonical general tactics
+        suggestions.push(Tactic::Simplify);
+        suggestions.push(Tactic::Assumption);
+        suggestions.push(Tactic::Custom {
+            prover: "rocq".to_string(),
+            command: "auto".to_string(),
+            args: vec![],
+        });
+        suggestions.push(Tactic::Custom {
+            prover: "rocq".to_string(),
+            command: "tauto".to_string(),
+            args: vec![],
+        });
+
+        Ok(suggestions.into_iter().take(limit).collect())
     }
 
-    async fn search_theorems(&self, _pattern: &str) -> Result<Vec<String>> {
-        Ok(vec![])
+    async fn search_theorems(&self, pattern: &str) -> Result<Vec<String>> {
+        // Rocq (formerly Coq) exposes a Search command that queries the loaded
+        // environment. We wrap it in a minimal .v file and parse the output.
+        let search_script = format!(
+            "From Coq Require Import Prelude.\nSearch {pattern}.\n"
+        );
+        let temp_path = "/tmp/echidna_rocq_search.v";
+        if tokio::fs::write(temp_path, search_script.as_bytes())
+            .await
+            .is_err()
+        {
+            return Ok(vec![]);
+        }
+
+        let output = Command::new(&self.config.executable)
+            .arg(temp_path)
+            .stdout(Stdio::piped())
+            .stderr(Stdio::piped())
+            .output()
+            .await;
+
+        match output {
+            Ok(out) => {
+                let stdout = String::from_utf8_lossy(&out.stdout);
+                let theorems: Vec<String> = stdout
+                    .lines()
+                    .filter(|line| !line.is_empty() && !line.starts_with("Error"))
+                    .map(|s| s.to_string())
+                    .collect();
+                Ok(theorems)
+            },
+            Err(_) => Ok(vec![]),
+        }
     }
 
     fn config(&self) -> &ProverConfig {

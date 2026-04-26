@@ -151,10 +151,42 @@ impl ProverBackend for Why3Backend {
     async fn export(&self, state: &ProofState) -> Result<String> {
         self.to_input_format(state)
     }
-    async fn suggest_tactics(&self, _: &ProofState, _: usize) -> Result<Vec<Tactic>> {
-        Ok(vec![])
+    async fn suggest_tactics(&self, _state: &ProofState, limit: usize) -> Result<Vec<Tactic>> {
+        // Why3 is a deductive verification platform that dispatches goals to
+        // multiple provers. Suggestions are prover-dispatch and transformation hints.
+        let tactics = vec![
+            Tactic::Custom {
+                prover: "why3".to_string(),
+                command: "auto".to_string(),
+                args: vec![],
+            },
+            Tactic::Custom {
+                prover: "why3".to_string(),
+                command: "split_vc".to_string(),
+                args: vec![],
+            },
+            Tactic::Custom {
+                prover: "why3".to_string(),
+                command: "inline_goal".to_string(),
+                args: vec![],
+            },
+            Tactic::Custom {
+                prover: "why3".to_string(),
+                command: "introduce_premises".to_string(),
+                args: vec![],
+            },
+            Tactic::Custom {
+                prover: "why3".to_string(),
+                command: "prover".to_string(),
+                args: vec!["Z3".to_string()],
+            },
+            Tactic::Simplify,
+        ];
+        Ok(tactics.into_iter().take(limit).collect())
     }
-    async fn search_theorems(&self, _: &str) -> Result<Vec<String>> {
+
+    async fn search_theorems(&self, _pattern: &str) -> Result<Vec<String>> {
+        // Why3 delegates to external provers; no native theorem-search interface.
         Ok(vec![])
     }
     fn config(&self) -> &ProverConfig {

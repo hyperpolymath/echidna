@@ -137,10 +137,37 @@ impl ProverBackend for GLPKBackend {
     async fn export(&self, state: &ProofState) -> Result<String> {
         self.to_input_format(state)
     }
-    async fn suggest_tactics(&self, _: &ProofState, _: usize) -> Result<Vec<Tactic>> {
-        Ok(vec![])
+    async fn suggest_tactics(&self, _state: &ProofState, limit: usize) -> Result<Vec<Tactic>> {
+        // GLPK is a linear programming solver. Suggestions are parameter
+        // and method hints that guide the simplex / interior-point algorithm.
+        let tactics = vec![
+            Tactic::Simplify,
+            Tactic::Custom {
+                prover: "glpk".to_string(),
+                command: "method".to_string(),
+                args: vec!["simplex".to_string()],
+            },
+            Tactic::Custom {
+                prover: "glpk".to_string(),
+                command: "method".to_string(),
+                args: vec!["interior-point".to_string()],
+            },
+            Tactic::Custom {
+                prover: "glpk".to_string(),
+                command: "set-option".to_string(),
+                args: vec!["--mipgap 0.01".to_string()],
+            },
+            Tactic::Custom {
+                prover: "glpk".to_string(),
+                command: "set-option".to_string(),
+                args: vec!["--tmlim 60".to_string()],
+            },
+        ];
+        Ok(tactics.into_iter().take(limit).collect())
     }
-    async fn search_theorems(&self, _: &str) -> Result<Vec<String>> {
+
+    async fn search_theorems(&self, _pattern: &str) -> Result<Vec<String>> {
+        // Linear programming solvers have no theorem libraries.
         Ok(vec![])
     }
     fn config(&self) -> &ProverConfig {
