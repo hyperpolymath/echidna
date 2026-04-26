@@ -8,6 +8,8 @@
 
 use anyhow::{Context, Result};
 use serde::{Deserialize, Serialize};
+#[cfg(feature = "verisim")]
+use std::collections::HashMap;
 use std::path::PathBuf;
 use std::time::Instant;
 use tracing::{info, warn};
@@ -117,6 +119,121 @@ impl Default for DispatchConfig {
     }
 }
 
+// ═══════════════════════════════════════════════════════════════════════
+// VeriSimAdvisor — VeriSimDB-backed strategy advisor (feature = "verisim")
+// ═══════════════════════════════════════════════════════════════════════
+
+/// Map a lowercase prover-name string (as stored in VeriSimDB) to a
+/// `ProverKind`.  Returns `None` for unrecognised names so callers can
+/// fall back gracefully rather than picking a wrong prover.
+///
+/// The inverse of `crate::verisim_bridge::prover_kind_to_str`.
+#[cfg(feature = "verisim")]
+pub fn prover_kind_from_str(s: &str) -> Option<ProverKind> {
+    match s {
+        "coq" => Some(ProverKind::Coq),
+        "lean" => Some(ProverKind::Lean),
+        "agda" => Some(ProverKind::Agda),
+        "isabelle" => Some(ProverKind::Isabelle),
+        "idris2" => Some(ProverKind::Idris2),
+        "z3" => Some(ProverKind::Z3),
+        "cvc5" => Some(ProverKind::CVC5),
+        "altergo" => Some(ProverKind::AltErgo),
+        "metamath" => Some(ProverKind::Metamath),
+        "hol_light" => Some(ProverKind::HOLLight),
+        "mizar" => Some(ProverKind::Mizar),
+        "hol4" => Some(ProverKind::HOL4),
+        "pvs" => Some(ProverKind::PVS),
+        "acl2" => Some(ProverKind::ACL2),
+        "vampire" => Some(ProverKind::Vampire),
+        "eprover" => Some(ProverKind::EProver),
+        _ => None,
+    }
+}
+
+/// Select the highest-success-rate `ProverKind` from a name→rate map.
+///
+/// Iterates the map, converts each name via `prover_kind_from_str`, skips
+/// unrecognised entries, and returns the variant with the largest `f32`
+/// rate.  Falls back to `fallback` when the map is empty or no name is
+/// recognised.
+#[cfg(feature = "verisim")]
+fn best_prover_or_fallback(rates: HashMap<String, f32>, fallback: ProverKind) -> ProverKind {
+    rates
+        .into_iter()
+        .filter_map(|(name, rate)| prover_kind_from_str(&name).map(|k| (k, rate)))
+        .max_by(|(_, a), (_, b)| a.partial_cmp(b).unwrap_or(std::cmp::Ordering::Equal))
+        .map(|(kind, _)| kind)
+        .unwrap_or(fallback)
+}
+
+/// VeriSimDB-backed strategy advisor.
+///
+/// Queries the `mv_prover_success_by_class` materialised view to suggest the
+/// best-performing prover for a given obligation class.  Advisory only — the
+/// trust pipeline remains inviolable and is never influenced by this advisor.
+///
+/// On any VeriSimDB error (network, parse, 404) the advisor silently returns
+/// the caller-supplied fallback.  Proof execution must never block on DB
+/// availability.
+#[cfg(feature = "verisim")]
+pub struct VeriSimAdvisor {
+    /// HTTP client to VeriSimDB.
+    client: crate::verisim_bridge::VeriSimDBClient,
+}
+
+#[cfg(feature = "verisim")]
+impl VeriSimAdvisor {
+    /// Create a new `VeriSimAdvisor` pointing at `base_url`.
+    ///
+    /// `base_url` is the root of the VeriSimDB HTTP API
+    /// (e.g. `"http://verisimdb:7700"`).  Trailing slashes are stripped
+    /// automatically by `VeriSimDBClient::new`.
+    pub fn new(base_url: &str) -> Self {
+        VeriSimAdvisor {
+            client: crate::verisim_bridge::VeriSimDBClient::new(base_url),
+        }
+    }
+
+    /// Suggest the best `ProverKind` for an obligation class.
+    ///
+    /// Queries `mv_prover_success_by_class` and returns the prover with the
+    /// highest historical success rate.  Returns `fallback` when VeriSimDB
+    /// is unreachable, has no data for the class, or no recognised prover
+    /// name appears in the response.
+    pub async fn suggest_prover(
+        &self,
+        obligation_class: &str,
+        fallback: ProverKind,
+    ) -> ProverKind {
+        match self.client.query_prover_success_by_class(obligation_class).await {
+            Ok(rates) if !rates.is_empty() => {
+                let best = best_prover_or_fallback(rates, fallback);
+                info!(
+                    "VeriSimAdvisor: obligation_class={} → {:?}",
+                    obligation_class, best
+                );
+                best
+            },
+            Ok(_) => {
+                // Empty map: no data yet for this class.
+                info!(
+                    "VeriSimAdvisor: no data for class={}, using fallback {:?}",
+                    obligation_class, fallback
+                );
+                fallback
+            },
+            Err(e) => {
+                warn!(
+                    "VeriSimAdvisor: VeriSimDB query failed ({}); using fallback {:?}",
+                    e, fallback
+                );
+                fallback
+            },
+        }
+    }
+}
+
 /// Prover dispatcher that runs the full trust-hardening pipeline
 pub struct ProverDispatcher {
     config: DispatchConfig,
@@ -124,6 +241,12 @@ pub struct ProverDispatcher {
     /// Optional frontier LLM advisor for intelligent dispatch optimisation.
     /// Advisory only — cannot influence trust levels.
     llm_advisor: Option<LlmAdvisor>,
+    /// Optional VeriSimDB-backed strategy advisor.
+    /// Uses historical success rates from `mv_prover_success_by_class` to
+    /// route `verify_proof_verisim_guided`.  Advisory only — trust pipeline
+    /// is inviolable.
+    #[cfg(feature = "verisim")]
+    verisim_advisor: Option<VeriSimAdvisor>,
 }
 
 impl ProverDispatcher {
@@ -133,6 +256,8 @@ impl ProverDispatcher {
             config: DispatchConfig::default(),
             integrity_checker: None,
             llm_advisor: None,
+            #[cfg(feature = "verisim")]
+            verisim_advisor: None,
         }
     }
 
@@ -142,6 +267,8 @@ impl ProverDispatcher {
             config,
             integrity_checker: None,
             llm_advisor: None,
+            #[cfg(feature = "verisim")]
+            verisim_advisor: None,
         }
     }
 
@@ -156,6 +283,44 @@ impl ProverDispatcher {
     pub fn with_llm_advisor(mut self, advisor: LlmAdvisor) -> Self {
         self.llm_advisor = Some(advisor);
         self
+    }
+
+    /// Attach a `VeriSimAdvisor` for history-guided dispatch.
+    ///
+    /// When set, `verify_proof_verisim_guided` queries VeriSimDB's
+    /// `mv_prover_success_by_class` view before dispatching, choosing the
+    /// historically highest-performing prover for the given obligation class.
+    /// Advisory only — the trust pipeline remains inviolable.
+    #[cfg(feature = "verisim")]
+    pub fn with_verisim(mut self, advisor: VeriSimAdvisor) -> Self {
+        self.verisim_advisor = Some(advisor);
+        self
+    }
+
+    /// Dispatch with VeriSimDB history-guided optimisation.
+    ///
+    /// Consults `mv_prover_success_by_class` for the supplied
+    /// `obligation_class` and routes to the prover with the highest
+    /// historical success rate.  If VeriSimDB is unreachable, has no data
+    /// for the class, or no `VeriSimAdvisor` is configured, falls back to
+    /// `fallback_prover` without error.
+    ///
+    /// **Trust guarantee**: the selected prover passes through the full
+    /// trust-hardening pipeline in `verify_proof`.  VeriSimDB influences
+    /// *which* prover is tried, never *how* the result is scored.
+    #[cfg(feature = "verisim")]
+    pub async fn verify_proof_verisim_guided(
+        &self,
+        content: &str,
+        obligation_class: &str,
+        fallback_prover: ProverKind,
+    ) -> Result<DispatchResult> {
+        let prover = if let Some(ref advisor) = self.verisim_advisor {
+            advisor.suggest_prover(obligation_class, fallback_prover).await
+        } else {
+            fallback_prover
+        };
+        self.verify_proof(prover, content).await
     }
 
     /// Dispatch with LLM-guided optimisation

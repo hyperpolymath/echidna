@@ -619,6 +619,132 @@ impl VeriSimDBClient {
             anyhow::bail!("VeriSimDB proof_attempts returned {}: {}", status, body)
         }
     }
+
+    /// Query proof attempts by goal hash (obligation_id).
+    ///
+    /// Returns all known attempts for this obligation, most recent first, up
+    /// to 50 rows.  Maps to:
+    ///   `GET /api/v1/proof_attempts?obligation_id={hash}&limit=50`
+    ///
+    /// Returns `Ok(vec![])` when VeriSimDB has no record for this obligation
+    /// (404 or empty body).  Propagates network/parse errors so callers can
+    /// decide whether to retry or fall back.
+    pub async fn query_by_goal_hash(&self, obligation_id: &str) -> Result<Vec<ProofAttempt>> {
+        let url = format!(
+            "{}/api/v1/proof_attempts?obligation_id={}&limit=50",
+            self.base_url, obligation_id
+        );
+
+        let response = self
+            .http
+            .get(&url)
+            .send()
+            .await
+            .context("Failed to query proof_attempts by obligation_id from VeriSimDB")?;
+
+        if response.status() == reqwest::StatusCode::NOT_FOUND {
+            debug!(
+                "No proof_attempts found for obligation_id={} (404)",
+                obligation_id
+            );
+            return Ok(vec![]);
+        }
+
+        if !response.status().is_success() {
+            let status = response.status();
+            anyhow::bail!(
+                "VeriSimDB proof_attempts query returned {} for obligation_id={}",
+                status,
+                obligation_id
+            );
+        }
+
+        // A 200 with an empty JSON array is valid and maps to Ok(vec![]).
+        let attempts: Vec<ProofAttempt> = response
+            .json()
+            .await
+            .context("Failed to parse proof_attempts list from VeriSimDB")?;
+
+        debug!(
+            "Fetched {} proof_attempt(s) for obligation_id={}",
+            attempts.len(),
+            obligation_id
+        );
+        Ok(attempts)
+    }
+
+    /// Query the `mv_prover_success_by_class` materialised view.
+    ///
+    /// Returns a map from prover name → success rate (in `[0.0, 1.0]`) for
+    /// the given `obligation_class`.  Maps to:
+    ///   `GET /api/v1/mv_prover_success_by_class?class={class}`
+    ///
+    /// The MV response is a JSON array of objects:
+    /// ```json
+    /// [{"prover": "coq", "success_rate": 0.85, "total_attempts": 42}, ...]
+    /// ```
+    ///
+    /// Returns `Ok(HashMap::new())` when VeriSimDB has no statistics for the
+    /// class (404 or empty array).  Propagates network/parse errors.
+    pub async fn query_prover_success_by_class(
+        &self,
+        obligation_class: &str,
+    ) -> Result<HashMap<String, f32>> {
+        // Local deserialisation type — mirrors one row in the MV response.
+        #[derive(Deserialize)]
+        struct ProverSuccessRow {
+            prover: String,
+            success_rate: f32,
+            #[allow(dead_code)]
+            total_attempts: u32,
+        }
+
+        let url = format!(
+            "{}/api/v1/mv_prover_success_by_class?class={}",
+            self.base_url, obligation_class
+        );
+
+        let response = self
+            .http
+            .get(&url)
+            .send()
+            .await
+            .context("Failed to query mv_prover_success_by_class from VeriSimDB")?;
+
+        if response.status() == reqwest::StatusCode::NOT_FOUND {
+            debug!(
+                "No prover success data for class={} (404)",
+                obligation_class
+            );
+            return Ok(HashMap::new());
+        }
+
+        if !response.status().is_success() {
+            let status = response.status();
+            anyhow::bail!(
+                "VeriSimDB mv_prover_success_by_class returned {} for class={}",
+                status,
+                obligation_class
+            );
+        }
+
+        let rows: Vec<ProverSuccessRow> = response
+            .json()
+            .await
+            .context("Failed to parse mv_prover_success_by_class response from VeriSimDB")?;
+
+        let map: HashMap<String, f32> = rows
+            .into_iter()
+            .map(|row| (row.prover, row.success_rate))
+            .collect();
+
+        debug!(
+            "Fetched {} prover success rate(s) for class={}",
+            map.len(),
+            obligation_class
+        );
+        Ok(map)
+    }
 }
 
 // ═══════════════════════════════════════════════════════════════════════
