@@ -48,12 +48,14 @@ pub mod eprover;
 pub mod framac;
 pub mod fstar;
 pub mod glpk;
+pub mod gnatprove;
 pub mod hol4;
 pub mod hol_light;
 pub mod hp_ecosystem;
 pub mod idris2;
 pub mod imandra;
 pub mod iprover;
+pub mod liquid_haskell;
 pub mod isabelle;
 pub mod isabelle_zf;
 pub mod key;
@@ -90,6 +92,7 @@ pub mod seahorn;
 pub mod spass;
 pub mod smtrat;
 pub mod satallax;
+pub mod stainless;
 pub mod tptp_output;
 pub mod spin_checker;
 pub mod tamarin;
@@ -161,6 +164,11 @@ pub enum ProverKind {
     FStar,
     Dafny,
     Why3,
+
+    // Tier 6b: Refinement-types + SPARK auto-active
+    GNATprove,      // SPARK/Ada — Why3 + Z3/CVC5/Alt-Ergo backend
+    Stainless,      // Scala / Inox refinement-types
+    LiquidHaskell,  // GHC plugin refinement-types
 
     // Tier 7: Specialized / niche
     TLAPS,
@@ -446,9 +454,24 @@ impl std::str::FromStr for ProverKind {
             "eprover" | "e" => Ok(ProverKind::EProver),
             "spass" => Ok(ProverKind::SPASS),
             "altergo" | "alt-ergo" => Ok(ProverKind::AltErgo),
+            "leo3" | "leo-iii" | "leo-3" => Ok(ProverKind::Leo3),
+            "satallax" => Ok(ProverKind::Satallax),
+            "lash" => Ok(ProverKind::Lash),
+            "agsyhol" | "agsy-hol" => Ok(ProverKind::AgsyHOL),
+            "iprover" | "iprover-eq" => Ok(ProverKind::IProver),
+            "princess" => Ok(ProverKind::Princess),
+            "twee" => Ok(ProverKind::Twee),
+            "metitarski" | "metit" => Ok(ProverKind::MetiTarski),
+            "csi" => Ok(ProverKind::CSI),
+            "aprove" => Ok(ProverKind::AProVE),
             "fstar" | "f*" | "f-star" => Ok(ProverKind::FStar),
             "dafny" => Ok(ProverKind::Dafny),
             "why3" => Ok(ProverKind::Why3),
+            "gnatprove" | "spark" | "ada" => Ok(ProverKind::GNATprove),
+            "stainless" | "scala-stainless" => Ok(ProverKind::Stainless),
+            "liquid" | "liquid-haskell" | "liquidhaskell" | "lh" => {
+                Ok(ProverKind::LiquidHaskell)
+            }
             "tlaps" | "tla+" => Ok(ProverKind::TLAPS),
             "twelf" => Ok(ProverKind::Twelf),
             "nuprl" => Ok(ProverKind::Nuprl),
@@ -591,12 +614,6 @@ impl std::str::FromStr for ProverKind {
             "rocq" | "rocq-compile" => Ok(ProverKind::Rocq),
             "uppaal-stratego" | "stratego" => Ok(ProverKind::UppaalStratego),
             "mizar-ar" | "mizatp" | "mizar-atp" => Ok(ProverKind::MizAR),
-            "iprover" => Ok(ProverKind::IProver),
-            "princess" => Ok(ProverKind::Princess),
-            "twee" => Ok(ProverKind::Twee),
-            "metitarski" | "metit" => Ok(ProverKind::MetiTarski),
-            "csi" => Ok(ProverKind::CSI),
-            "aprove" => Ok(ProverKind::AProVE),
             _ => Err(anyhow::anyhow!("Unknown prover: {}", s)),
         }
     }
@@ -732,9 +749,13 @@ impl ProverKind {
             ProverKind::EProver => 2,      // Similar to Vampire
             ProverKind::SPASS => 2,        // Automated FOL
             ProverKind::AltErgo => 2,      // SMT + FOL
+
             ProverKind::FStar => 3,        // Dependent types + effects
             ProverKind::Dafny => 2,        // Auto-active
             ProverKind::Why3 => 3,         // Multi-prover orchestration
+            ProverKind::GNATprove => 3,    // SPARK auto-active via Why3 backends
+            ProverKind::Stainless => 3,    // Scala/Inox refinement types
+            ProverKind::LiquidHaskell => 3, // GHC plugin refinement types
             ProverKind::TLAPS => 4,        // TLA+ proof system
             ProverKind::Twelf => 4,        // Logical framework
             ProverKind::Nuprl => 4,        // Constructive type theory
@@ -877,10 +898,15 @@ impl ProverKind {
             ProverKind::SPASS => 5,
             ProverKind::AltErgo => 5,
 
+
+
             // Tier 6: Dependent types + effects, auto-active
             ProverKind::FStar => 1, // Small kernel, dependent types
             ProverKind::Dafny => 2, // Auto-active (relies on Boogie->Z3)
             ProverKind::Why3 => 2,  // Multi-prover orchestration
+            ProverKind::GNATprove => 4, // SPARK — small-kernel via Why3
+            ProverKind::Stainless => 3, // Scala refinement types
+            ProverKind::LiquidHaskell => 3, // GHC refinement types
 
             // Tier 7: Specialized / niche
             ProverKind::TLAPS => 2,
@@ -1019,9 +1045,13 @@ impl ProverKind {
             ProverKind::EProver => 1.5,      // Similar to Vampire
             ProverKind::SPASS => 1.5,        // DFG format
             ProverKind::AltErgo => 1.5,      // Native format
+
             ProverKind::FStar => 2.5,        // Dependent types + effects
             ProverKind::Dafny => 2.0,        // Auto-active, Boogie pipeline
             ProverKind::Why3 => 2.0,         // Multi-prover
+            ProverKind::GNATprove => 3.0,    // SPARK toolchain wrapping
+            ProverKind::Stainless => 2.5,   // Scala JVM
+            ProverKind::LiquidHaskell => 2.5, // GHC plugin
             ProverKind::TLAPS => 2.5,        // TLA+ specific
             ProverKind::Twelf => 3.0,        // LF framework
             ProverKind::Nuprl => 3.0,        // Constructive type theory
@@ -1142,9 +1172,13 @@ impl ProverKind {
             ProverKind::EProver => "eprover",
             ProverKind::SPASS => "SPASS",
             ProverKind::AltErgo => "alt-ergo",
+
             ProverKind::FStar => "fstar.exe",
             ProverKind::Dafny => "dafny",
             ProverKind::Why3 => "why3",
+            ProverKind::GNATprove => "gnatprove",
+            ProverKind::Stainless => "stainless",
+            ProverKind::LiquidHaskell => "liquid",
             ProverKind::TLAPS => "tlapm",
             ProverKind::Twelf => "twelf-server",
             ProverKind::Nuprl => "nuprl",
@@ -1517,9 +1551,15 @@ impl ProverFactory {
             ProverKind::EProver => Ok(Box::new(eprover::EProverBackend::new(config))),
             ProverKind::SPASS => Ok(Box::new(spass::SPASSBackend::new(config))),
             ProverKind::AltErgo => Ok(Box::new(altergo::AltErgoBackend::new(config))),
+
             ProverKind::FStar => Ok(Box::new(fstar::FStarBackend::new(config))),
             ProverKind::Dafny => Ok(Box::new(dafny::DafnyBackend::new(config))),
             ProverKind::Why3 => Ok(Box::new(why3::Why3Backend::new(config))),
+            ProverKind::GNATprove => Ok(Box::new(gnatprove::GNATproveBackend::new(config))),
+            ProverKind::Stainless => Ok(Box::new(stainless::StainlessBackend::new(config))),
+            ProverKind::LiquidHaskell => {
+                Ok(Box::new(liquid_haskell::LiquidHaskellBackend::new(config)))
+            }
             ProverKind::TLAPS => Ok(Box::new(tlaps::TLAPSBackend::new(config))),
             ProverKind::Twelf => Ok(Box::new(twelf::TwelfBackend::new(config))),
             ProverKind::Nuprl => Ok(Box::new(nuprl::NuprlBackend::new(config))),
@@ -1644,6 +1684,10 @@ impl ProverFactory {
             "why" | "mlw" => Some(ProverKind::Why3),   // Why3 / WhyML
             "fst" | "fsti" => Some(ProverKind::FStar), // F* source / interface
             "dfy" => Some(ProverKind::Dafny),          // Dafny format
+            "ads" | "adb" | "gpr" => Some(ProverKind::GNATprove), // SPARK/Ada
+            // Note: ".scala" and ".hs" are NOT auto-mapped to Stainless /
+            // Liquid Haskell because plain Scala/Haskell sources are not
+            // necessarily refinement-typed.  Caller must pass explicit kind.
             "tla" => Some(ProverKind::TLAPS),          // TLA+ format
             "elf" => Some(ProverKind::Twelf),          // Twelf LF format
             "nuprl" => Some(ProverKind::Nuprl),        // Nuprl format

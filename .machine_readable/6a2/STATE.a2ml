@@ -64,9 +64,10 @@ target-claim-id = "echidna-phase4-dl-prob-cryptocomp"
 [[expansion-roadmap.phase]]
 id = "phase-5"
 title = "Refinement types + SPARK / Ada"
-status = "available-for-claim"
+status = "complete"
+landed = "2026-04-27"
 adds-backends = ["Stainless", "Liquid Haskell", "GNATprove"]
-target-claim-id = "echidna-phase5-refinement-spark"
+notes = "3 auto-active refinement-types verifiers wired. GNATprove (Tier 4 prover-side, small-kernel via Why3+Z3/CVC5/AltErgo) — invokes via -P <project.gpr>; generates minimal .ads/.adb/.gpr in temp dir from raw SPARK source; suggests Pre/Post/Loop_Invariant/Loop_Variant/Type_Invariant/Ghost tactics; pairs with the SPARK harness in src/ada/spark/ from Phase 0. Stainless (Tier 3) — Scala/Inox refinement types, parses output for valid/invalid/counter-example markers. Liquid Haskell (Tier 3) — GHC plugin refinement types, parses RESULT: SAFE/UNSAFE markers. FFI codes 125-127 added to ffi/mod.rs (also fixed two pre-existing bugs in the cbd9449 ffi: missing 115-124 entries in kind_from_u8 and duplicate kind_to_u8 entries). FromStr accepts gnatprove/spark/ada/stainless/liquid/lh aliases. Auto-detection: .ads/.adb/.gpr → GNATprove. .scala/.hs left explicit (not all Scala/Haskell is refinement-typed). 15 new tests, all green; lib compiles clean; panic-attack 0 weak points across all 3 files."
 
 [[expansion-roadmap.phase]]
 id = "phase-6a"
