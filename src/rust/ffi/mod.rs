@@ -219,6 +219,11 @@ impl FfiProverConfig {
             timeout: (self.timeout_ms / 1000),
             neural_enabled: self.neural_enabled,
             gnn_api_url: None,
+            // EI-1 / safe-learning b: FFI callers default to the legacy
+            // single-file path; project_root + sandbox stay opt-in via
+            // the Rust API. A future FFI ABI bump can expose them.
+            project_root: None,
+            sandbox: crate::provers::SandboxMode::None,
         }
     }
 }

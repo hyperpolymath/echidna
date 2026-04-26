@@ -172,6 +172,93 @@ fn build_isabelle_temp_dir(tag: &str) -> Result<std::path::PathBuf> {
     )))
 }
 
+/// EI-1 helper: find a parent session for a probe theory by reading the
+/// project's ROOT file.
+///
+/// Isabelle ROOT files declare sessions like:
+///
+///     session Tropical_Semirings in "." = "HOL-Library" +
+///       theories
+///         Tropical_v2
+///         Tropical_Kleene
+///         ...
+///
+/// When a probe theory is going to do `imports Tropical_v2`, the temp
+/// probe session needs to inherit from the session that owns
+/// `Tropical_v2`, OR a parent of it. We pick the first session in the
+/// project's ROOT that declares `theory_name` in its theories list.
+/// Falls back to the first session declaration found, or to "HOL".
+///
+/// This is intentionally permissive — we want to surface the existence
+/// of richer ROOT-parsing requirements as we hit them, not pre-build a
+/// full Isabelle ROOT parser. For Tropical_Semirings this matches the
+/// only declared session, which is what we want.
+fn detect_parent_session(root_text: &str, theory_name: &str) -> String {
+    let mut current_session: Option<String> = None;
+    let mut first_session: Option<String> = None;
+    let mut in_theories_block = false;
+
+    for raw_line in root_text.lines() {
+        let line = raw_line.trim();
+        if line.is_empty() || line.starts_with('(') {
+            continue;
+        }
+
+        // session FOO ... or session "FOO" ...
+        if let Some(rest) = line.strip_prefix("session ") {
+            let name: String = rest
+                .trim_start_matches('"')
+                .chars()
+                .take_while(|c| !c.is_whitespace() && *c != '"')
+                .collect();
+            if !name.is_empty() {
+                current_session = Some(name.clone());
+                first_session.get_or_insert(name);
+            }
+            in_theories_block = false;
+            continue;
+        }
+
+        if line.starts_with("theories") {
+            in_theories_block = true;
+            // Tail of the same line may already list theories
+            // ("theories Foo Bar"), so check both.
+            for tok in line.split_whitespace().skip(1) {
+                if tok.trim_matches('"') == theory_name {
+                    if let Some(s) = &current_session {
+                        return s.clone();
+                    }
+                }
+            }
+            continue;
+        }
+
+        // Sections that close a theories block.
+        if line.starts_with("document_files")
+            || line.starts_with("export_files")
+            || line.starts_with("description")
+            || line.starts_with("sessions")
+            || line.starts_with("global_theories")
+            || line.starts_with("ML_files")
+        {
+            in_theories_block = false;
+            continue;
+        }
+
+        if in_theories_block {
+            for tok in line.split_whitespace() {
+                if tok.trim_matches('"') == theory_name {
+                    if let Some(s) = &current_session {
+                        return s.clone();
+                    }
+                }
+            }
+        }
+    }
+
+    first_session.unwrap_or_else(|| "HOL".to_string())
+}
+
 // Isabelle-specific term representation
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
 pub enum IsabelleTerm {
@@ -494,23 +581,63 @@ impl ProverBackend for IsabelleBackend {
             tokio::fs::write(temp_dir.join(format!("{}.thy", theory_name)), raw)
                 .await
                 .context("Failed to write raw theory file")?;
-            let root = format!(
-                "session UserSession = HOL +\n  theories\n    {}\n",
-                theory_name
-            );
-            tokio::fs::write(temp_dir.join("ROOT"), root)
+
+            // EI-1: when a project root is supplied, parse its ROOT to find a
+            // parent session, declare the probe session as `= ParentSession +`,
+            // and add `-d <project_root>` to the build invocation. This is
+            // what makes goals importing project-specific theories
+            // (Tropical_v2, walks_def, ...) parse instead of failing.
+            let (root_text, parent_session, project_root_arg) =
+                if let Some(pr) = self.config.project_root.as_ref() {
+                    let project_root_path = pr.clone();
+                    let project_root_file = project_root_path.join("ROOT");
+                    let parent = match tokio::fs::read_to_string(&project_root_file).await {
+                        Ok(text) => detect_parent_session(&text, &theory_name),
+                        Err(e) => {
+                            tracing::warn!(
+                                project_root = %project_root_path.display(),
+                                err = %e,
+                                "EI-1: project_root supplied but ROOT not readable; falling back to HOL"
+                            );
+                            "HOL".to_string()
+                        }
+                    };
+                    (
+                        format!(
+                            "session UserSession = \"{parent}\" +\n  theories\n    {theory_name}\n"
+                        ),
+                        parent,
+                        Some(project_root_path),
+                    )
+                } else {
+                    (
+                        format!("session UserSession = HOL +\n  theories\n    {theory_name}\n"),
+                        "HOL".to_string(),
+                        None,
+                    )
+                };
+
+            tokio::fs::write(temp_dir.join("ROOT"), &root_text)
                 .await
                 .context("Failed to write ROOT file")?;
 
-            let output = tokio::process::Command::new(&self.config.executable)
-                .arg("build")
-                .arg("-D")
+            let mut cmd = tokio::process::Command::new(&self.config.executable);
+            cmd.arg("build");
+            if let Some(pr) = project_root_arg.as_ref() {
+                cmd.arg("-d").arg(pr);
+                tracing::info!(
+                    project_root = %pr.display(),
+                    parent_session = %parent_session,
+                    "EI-1: project-aware probe (parent session detected from ROOT)"
+                );
+            }
+            cmd.arg("-D")
                 .arg(&temp_dir)
                 .arg("-o")
                 .arg("document=false")
                 .arg("-o")
-                .arg("browser_info=false")
-                .output()
+                .arg("browser_info=false");
+            let output = cmd.output()
                 .await
                 .context("Failed to run Isabelle build")?;
 
@@ -771,5 +898,46 @@ mod tests {
         assert_eq!(state.goals.len(), 1);
         assert!(matches!(&state.goals[0].target, Term::Const(c) if c.starts_with("<check:")));
         assert_eq!(state.context.theorems.len(), 0);
+    }
+
+    // --- EI-1: project-aware probe (parent-session detection) -------------
+
+    #[test]
+    fn test_detect_parent_session_finds_owning_session() {
+        // Mirrors the live tropical-resource-typing/ROOT structure.
+        let root = r#"
+session Tropical_Semirings in "." = "HOL-Library" +
+  description "tropical algebra"
+  sessions
+    "HOL-Combinatorics"
+  theories
+    Tropical_v2
+    Tropical_Matrices_Full
+    Tropical_Kleene
+"#;
+        assert_eq!(detect_parent_session(root, "Tropical_v2"), "Tropical_Semirings");
+        assert_eq!(detect_parent_session(root, "Tropical_Kleene"), "Tropical_Semirings");
+    }
+
+    #[test]
+    fn test_detect_parent_session_falls_back_to_first_session() {
+        let root = r#"
+session OnlyOne = HOL +
+  theories
+    SomethingElse
+"#;
+        // theory_name not declared → first session wins.
+        assert_eq!(detect_parent_session(root, "Missing_Theory"), "OnlyOne");
+    }
+
+    #[test]
+    fn test_detect_parent_session_falls_back_to_hol_when_root_empty() {
+        assert_eq!(detect_parent_session("", "Anything"), "HOL");
+    }
+
+    #[test]
+    fn test_detect_parent_session_handles_inline_theories_list() {
+        let root = "session Inline = HOL +\n  theories Foo Bar Baz\n";
+        assert_eq!(detect_parent_session(root, "Bar"), "Inline");
     }
 }

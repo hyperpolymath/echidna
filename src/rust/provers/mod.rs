@@ -1182,6 +1182,53 @@ pub struct ProverConfig {
     /// Optional GNN inference server URL for neural tactic ranking.
     /// When set and `neural_enabled` is true, suggest_tactics calls the GNN.
     pub gnn_api_url: Option<String>,
+
+    /// Project root directory (EI-1, 2026-04-26).
+    ///
+    /// When `Some(p)`, prover backends that support session-based builds
+    /// (today: Isabelle) will treat `p` as the project root and resolve
+    /// theory imports from `p/ROOT`. Without this, `echidna prove` only
+    /// understands single-file goals importing `Main` — which made
+    /// Burrower's `attempt` mode unusable on real project proofs.
+    /// We deliberately did NOT repurpose `library_paths` because Lean
+    /// and HOL-Light already use it differently.
+    pub project_root: Option<PathBuf>,
+
+    /// Sandbox mode for prover invocation (safe-learning b, 2026-04-26).
+    ///
+    /// `None` (the default) preserves backwards-compatible behaviour and
+    /// runs the prover as a plain subprocess. `Bwrap` and `Podman` route
+    /// through `crate::executor::sandbox::SandboxConfig` and run the
+    /// prover under the named isolation layer. The wiring uses the
+    /// existing executor module — we do not reimplement sandboxing here.
+    pub sandbox: SandboxMode,
+}
+
+/// Sandbox mode for prover invocation.
+///
+/// Stays a separate enum from `executor::sandbox::SandboxKind` so the
+/// CLI surface is stable across executor refactors.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, Default)]
+pub enum SandboxMode {
+    /// No sandbox — direct subprocess. Backwards-compatible default.
+    #[default]
+    None,
+    /// Bubblewrap namespace isolation (lightweight, no daemon required).
+    Bwrap,
+    /// Podman container isolation (full-featured, requires podman daemon).
+    Podman,
+}
+
+impl std::str::FromStr for SandboxMode {
+    type Err = String;
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        match s.to_ascii_lowercase().as_str() {
+            "none" | "off" | "" => Ok(SandboxMode::None),
+            "bwrap" | "bubblewrap" => Ok(SandboxMode::Bwrap),
+            "podman" | "container" => Ok(SandboxMode::Podman),
+            other => Err(format!("unknown sandbox mode: {other} (expected one of: none, bwrap, podman)")),
+        }
+    }
 }
 
 impl Default for ProverConfig {
@@ -1193,6 +1240,8 @@ impl Default for ProverConfig {
             timeout: 300, // 5 minutes
             neural_enabled: true,
             gnn_api_url: None,
+            project_root: None,
+            sandbox: SandboxMode::None,
         }
     }
 }

@@ -73,6 +73,18 @@ enum Commands {
         /// On failure, run diagnostics and explain why the proof failed
         #[arg(long)]
         diagnose: bool,
+
+        /// Project root for backends with session-based builds (EI-1).
+        /// Today: Isabelle uses this to add `-d <root>` to the build
+        /// invocation and to import the file's session from the
+        /// project's existing ROOT, so theory imports resolve.
+        #[arg(long)]
+        project_root: Option<PathBuf>,
+
+        /// Sandbox mode for prover invocation (safe-learning b).
+        /// One of: none (default), bwrap, podman.
+        #[arg(long, default_value = "none")]
+        sandbox: String,
     },
 
     /// Verify an existing proof
@@ -184,9 +196,12 @@ async fn main() -> Result<()> {
             executable,
             library,
             diagnose,
+            project_root,
+            sandbox,
         } => {
             prove_command(
-                file, prover, timeout, neural, executable, library, diagnose, &formatter,
+                file, prover, timeout, neural, executable, library, diagnose,
+                project_root, sandbox, &formatter,
             )
             .await?;
         },
@@ -260,12 +275,16 @@ async fn prove_command(
     executable: Option<PathBuf>,
     library: Vec<PathBuf>,
     diagnose: bool,
+    project_root: Option<PathBuf>,
+    sandbox: String,
     formatter: &OutputFormatter,
 ) -> Result<()> {
     info!("Starting proof for: {}", file.display());
 
     let kind = detect_prover(prover_kind, &file)?;
-    let config = create_config(kind, timeout, neural, executable, library)?;
+    let config = create_config(
+        kind, timeout, neural, executable, library, project_root, &sandbox,
+    )?;
     let prover = echidna::provers::ProverFactory::create(kind, config)
         .context("Failed to create prover backend")?;
 
@@ -339,7 +358,7 @@ async fn verify_command(
     info!("Verifying proof: {}", file.display());
 
     let kind = detect_prover(prover_kind, &file)?;
-    let config = create_config(kind, timeout, true, executable, library)?;
+    let config = create_config(kind, timeout, true, executable, library, None, "none")?;
     let prover = echidna::provers::ProverFactory::create(kind, config)
         .context("Failed to create prover backend")?;
 
@@ -761,7 +780,13 @@ fn create_config(
     neural: bool,
     executable: Option<PathBuf>,
     library: Vec<PathBuf>,
+    project_root: Option<PathBuf>,
+    sandbox: &str,
 ) -> Result<ProverConfig> {
+    let sandbox_mode: echidna::provers::SandboxMode = sandbox
+        .parse()
+        .map_err(|e: String| anyhow::anyhow!(e))?;
+
     let config = ProverConfig {
         timeout,
         neural_enabled: neural,
@@ -771,6 +796,8 @@ fn create_config(
         } else {
             library
         },
+        project_root,
+        sandbox: sandbox_mode,
         ..ProverConfig::default()
     };
 
