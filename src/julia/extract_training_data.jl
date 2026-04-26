@@ -117,6 +117,46 @@ function extract_from_file(prover::String, filepath::String)::Vector{ProofExampl
         examples = extract_minizinc_proofs(filepath, content)
     elseif prover in ["Twelf", "TWELf"]
         examples = extract_twelf_proofs(filepath, content)
+    elseif prover in ["Abella"]
+        examples = extract_abella_proofs(filepath, content)
+    elseif prover == "Matita"
+        examples = extract_matita_proofs(filepath, content)
+    elseif prover == "Dedukti"
+        examples = extract_dedukti_proofs(filepath, content)
+    elseif prover == "Arend"
+        examples = extract_arend_proofs(filepath, content)
+    elseif prover == "Minlog"
+        examples = extract_minlog_proofs(filepath, content)
+    elseif prover in ["LambdaProlog", "Lambda Prolog", "Teyjus"]
+        examples = extract_lambda_prolog_proofs(filepath, content)
+    elseif prover == "Alloy"
+        examples = extract_alloy_proofs(filepath, content)
+    elseif prover in ["NuSMV", "nuXmv"]
+        examples = extract_nusmv_proofs(filepath, content)
+    elseif prover in ["Spin", "Promela"]
+        examples = extract_spin_proofs(filepath, content)
+    elseif prover == "CBMC"
+        examples = extract_cbmc_proofs(filepath, content)
+    elseif prover in ["SeaHorn", "Seahorn"]
+        examples = extract_seahorn_proofs(filepath, content)
+    elseif prover in ["UPPAAL", "Uppaal"]
+        examples = extract_uppaal_proofs(filepath, content)
+    elseif prover in ["Cameleer", "Gospel"]
+        examples = extract_cameleer_proofs(filepath, content)
+    elseif prover == "Mercury"
+        examples = extract_mercury_proofs(filepath, content)
+    elseif prover in ["Naproche", "SAD"]
+        examples = extract_naproche_proofs(filepath, content)
+    elseif prover == "OpenTheory"
+        examples = extract_opentheory_proofs(filepath, content)
+    elseif prover == "NuPRL"
+        examples = extract_nuprl_proofs(filepath, content)
+    elseif prover in ["Imandra"]
+        examples = extract_imandra_proofs(filepath, content)
+    elseif prover in ["ProofPower", "Proof Power"]
+        examples = extract_proofpower_proofs(filepath, content)
+    elseif prover in ["ACL2s", "ACL2-Sedan"]
+        examples = extract_acl2s_proofs(filepath, content)
     else
         # Generic extraction for other provers
         examples = extract_generic_proofs(prover, filepath, content)
@@ -1314,6 +1354,1248 @@ function extract_twelf_proofs(filepath::String, content::String)::Vector{ProofEx
         end
     catch
         # Skip malformed declarations
+    end
+
+    return examples
+end
+
+"""
+Extract Abella interactive theorem prover proofs (.thm files)
+
+Handles `Theorem name : formula.` declarations. Proof steps following
+`by ...` are parsed as tactics. Premises come from `apply H with ...`
+hypothesis references inside proof blocks.
+"""
+function extract_abella_proofs(filepath::String, content::String)::Vector{ProofExample}
+    examples = ProofExample[]
+
+    try
+        # Match Theorem name : formula. by tactic_block.
+        for m in eachmatch(r"(?:Theorem|Lemma)\s+(\w+)\s*:\s*(.+?)\.\s*by\s+(.*?)\."s, content)
+            thm_name   = m.captures[1]
+            formula    = strip(m.captures[2])
+            proof_body = m.captures[3]
+
+            # Split tactic steps on whitespace sequences between keywords
+            tactics = String[]
+            try
+                for t in split(proof_body, r"\s*\.\s*|\s*;\s*")
+                    s = strip(t)
+                    if !isempty(s)
+                        push!(tactics, s)
+                    end
+                end
+            catch
+                # Continue with empty tactics
+            end
+
+            # Premises: hypothesis names referenced via `apply H with ...`
+            premises = String[]
+            try
+                for pm in eachmatch(r"apply\s+(\w+)(?:\s+with\s+\w+\s*=\s*\w+)*", proof_body)
+                    push!(premises, pm.captures[1])
+                end
+            catch
+                # Continue with empty premises
+            end
+
+            push!(examples, ProofExample(
+                "Abella",
+                filepath,
+                thm_name,
+                formula,
+                tactics,
+                unique(premises),
+                true
+            ))
+        end
+    catch
+        # Skip malformed declarations
+    end
+
+    return examples
+end
+
+"""
+Extract Matita interactive theorem prover proofs (.ma files)
+
+Handles `theorem name: statement ≝ proof.`, `lemma`, and `definition`
+declarations. The statement (before ≝) is the goal. Premises come from
+`apply`, `exact`, and `rewrite` targets in the proof body.
+"""
+function extract_matita_proofs(filepath::String, content::String)::Vector{ProofExample}
+    examples = ProofExample[]
+
+    try
+        # Match theorem/lemma/definition ... : statement ≝ proof.
+        # ≝ is Unicode U+225D (definition equals)
+        for m in eachmatch(r"(?:theorem|lemma|definition)\s+(\w+)\s*(?:\([^)]*\))?\s*:\s*(.+?)\s*(?:≝|:=)\s*(.*?)\.\s*$"ms, content)
+            decl_name  = m.captures[1]
+            statement  = strip(m.captures[2])
+            proof_body = m.captures[3]
+
+            # Tactics: apply, exact, rewrite, elim, intro keywords
+            tactics = String[]
+            try
+                for tm in eachmatch(r"\b(apply|exact|rewrite|elim|intro|assumption|reflexivity|transitivity)\b", proof_body)
+                    push!(tactics, tm.captures[1])
+                end
+                unique!(tactics)
+            catch
+                # Continue
+            end
+
+            # Premises: identifiers following apply / exact / rewrite
+            premises = String[]
+            try
+                for pm in eachmatch(r"(?:apply|exact|rewrite)\s+(\w+)", proof_body)
+                    push!(premises, pm.captures[1])
+                end
+            catch
+                # Continue
+            end
+
+            push!(examples, ProofExample(
+                "Matita",
+                filepath,
+                decl_name,
+                statement,
+                tactics,
+                unique(premises),
+                true
+            ))
+        end
+    catch
+        # Skip malformed declarations
+    end
+
+    return examples
+end
+
+"""
+Extract Dedukti logical framework proofs (.dk files)
+
+Every top-level declaration `name : type.` is a potential theorem.
+The type expression is the goal. Premises are identifiers referenced
+inside the type expression (simple identifier scan, keywords excluded).
+"""
+function extract_dedukti_proofs(filepath::String, content::String)::Vector{ProofExample}
+    examples = ProofExample[]
+
+    # Dedukti keywords to skip when scanning for premise identifiers
+    dk_keywords = Set(["Type", "Kind", "def", "thm", "injective", "private", "protected"])
+
+    try
+        # Top-level: identifier followed by : then type expression ending with .
+        for m in eachmatch(r"^([A-Za-z_]\w*)\s*:\s*(.+?)\s*\."m, content)
+            decl_name = m.captures[1]
+            type_expr = strip(m.captures[2])
+
+            # Skip lines that look like rule/rewrite definitions (use =>)
+            occursin(r"=>|:=", type_expr) && continue
+
+            # Premises: all identifiers appearing in the type expression
+            premises = String[]
+            try
+                for pm in eachmatch(r"\b([A-Za-z_]\w*)\b", type_expr)
+                    candidate = pm.captures[1]
+                    if candidate ∉ dk_keywords && length(candidate) > 1 && candidate != decl_name
+                        push!(premises, candidate)
+                    end
+                end
+            catch
+                # Continue
+            end
+
+            push!(examples, ProofExample(
+                "Dedukti",
+                filepath,
+                decl_name,
+                type_expr,
+                String[],
+                unique(premises),
+                true
+            ))
+        end
+    catch
+        # Skip malformed declarations
+    end
+
+    return examples
+end
+
+"""
+Extract Arend theorem prover proofs (.ard files)
+
+Handles `\\func name ... : ReturnType \\where { ... }` and
+`\\lemma name ... : Prop` declarations. The return type / Prop is the
+goal. Import module names are collected as premises.
+"""
+function extract_arend_proofs(filepath::String, content::String)::Vector{ProofExample}
+    examples = ProofExample[]
+
+    # Collect \\import module names as premises (file-level)
+    import_premises = String[]
+    try
+        for im in eachmatch(r"\\import\s+([\w.]+)", content)
+            push!(import_premises, im.captures[1])
+        end
+    catch
+        # Continue
+    end
+
+    try
+        # Match \func or \lemma declarations with a return type
+        for m in eachmatch(r"\\(?:func|lemma)\s+(\w+)[^:]*:\s*(.+?)(?=\\where|\{|\\func|\\lemma|\\data|\Z)"s, content)
+            decl_name   = m.captures[1]
+            return_type = strip(m.captures[2])
+
+            push!(examples, ProofExample(
+                "Arend",
+                filepath,
+                decl_name,
+                return_type,
+                String[],
+                unique(import_premises),
+                true
+            ))
+        end
+    catch
+        # Skip malformed declarations
+    end
+
+    return examples
+end
+
+"""
+Extract Minlog proof assistant proofs (SML-based .sml files)
+
+Handles `add-theorem "name" formula` calls as goals and
+`use-theorem "name"` calls as premise references. Common tactic keywords
+(`simp`, `elim`, `intro`, `auto`, `norm`) are collected as tactics.
+"""
+function extract_minlog_proofs(filepath::String, content::String)::Vector{ProofExample}
+    examples = ProofExample[]
+
+    # Collect use-theorem references as premises
+    used_theorems = String[]
+    try
+        for um in eachmatch(r"use-theorem\s+\"([^\"]+)\"", content)
+            push!(used_theorems, um.captures[1])
+        end
+    catch
+        # Continue
+    end
+
+    # Common Minlog tactic keywords present in proof scripts
+    tactic_kws = ["simp", "elim", "intro", "auto", "norm"]
+    tactics = filter(kw -> occursin(Regex("\\b$kw\\b"), content), tactic_kws)
+
+    try
+        for m in eachmatch(r"add-theorem\s+\"([^\"]+)\"\s+(.+?)(?=add-theorem|$)"s, content)
+            thm_name = m.captures[1]
+            formula  = strip(m.captures[2])
+            # Trim trailing SML punctuation
+            formula  = replace(formula, r"[;)]+$" => "")
+
+            push!(examples, ProofExample(
+                "Minlog",
+                filepath,
+                thm_name,
+                formula,
+                tactics,
+                unique(used_theorems),
+                true
+            ))
+        end
+    catch
+        # Skip malformed declarations
+    end
+
+    return examples
+end
+
+"""
+Extract Lambda Prolog / Teyjus proofs (.lp, .mod files)
+
+Handles `theorem Name :- Body.` clauses where the head predicate is the
+goal and body predicates (comma-separated) are premises. Also detects
+module declarations via `:- module Name, [exports].`.
+"""
+function extract_lambda_prolog_proofs(filepath::String, content::String)::Vector{ProofExample}
+    examples = ProofExample[]
+
+    try
+        # Match theorem/lemma head :- body.
+        for m in eachmatch(r"(?:theorem|lemma)\s+(\w+)\s*:-\s*(.*?)\."s, content)
+            pred_name = m.captures[1]
+            body      = m.captures[2]
+
+            # Premises: comma-separated predicates in the body
+            premises = String[]
+            try
+                for part in split(body, ',')
+                    s = strip(part)
+                    # Extract the functor name (before any '(')
+                    head_match = match(r"^([A-Za-z_]\w*)", s)
+                    if head_match !== nothing && !isempty(head_match.captures[1])
+                        push!(premises, head_match.captures[1])
+                    end
+                end
+            catch
+                # Continue
+            end
+
+            push!(examples, ProofExample(
+                "LambdaProlog",
+                filepath,
+                pred_name,
+                "theorem $pred_name",
+                String[],
+                unique(premises),
+                true
+            ))
+        end
+    catch
+        # Skip malformed clauses
+    end
+
+    # Also capture standard Prolog-style named clauses: Name :- Cond1, Cond2.
+    try
+        for m in eachmatch(r"^([a-z]\w*)\s*(?:\([^)]*\))?\s*:-\s*(.*?)\."ms, content)
+            head_name = m.captures[1]
+            # Skip already-matched theorem/lemma pattern
+            head_name in ("theorem", "lemma", "module", "use_module", "ensure_loaded") && continue
+            body = m.captures[2]
+
+            premises = String[]
+            try
+                for part in split(body, ',')
+                    s = strip(part)
+                    hm = match(r"^([A-Za-z_]\w*)", s)
+                    if hm !== nothing && !isempty(hm.captures[1])
+                        push!(premises, hm.captures[1])
+                    end
+                end
+            catch
+                # Continue
+            end
+
+            push!(examples, ProofExample(
+                "LambdaProlog",
+                filepath,
+                head_name,
+                "clause $head_name",
+                String[],
+                unique(premises),
+                true
+            ))
+        end
+    catch
+        # Skip malformed clauses
+    end
+
+    return examples
+end
+
+"""
+Extract Alloy model checker specifications (.als files)
+
+`assert AssertName { ... }` blocks → goals. `pred PredName { ... }` and
+`fact FactName { ... }` declarations provide named premises. `check`
+commands confirm verified assertions.
+"""
+function extract_alloy_proofs(filepath::String, content::String)::Vector{ProofExample}
+    examples = ProofExample[]
+
+    # Collect predicate names as premises
+    pred_names = String[]
+    try
+        for pm in eachmatch(r"\bpred\s+(\w+)\s*(?:\[[^\]]*\])?\s*\{", content)
+            push!(pred_names, pm.captures[1])
+        end
+    catch
+        # Continue
+    end
+
+    # Collect fact names as premises
+    fact_names = String[]
+    try
+        for fm in eachmatch(r"\bfact\s+(\w+)\s*\{", content)
+            push!(fact_names, fm.captures[1])
+        end
+    catch
+        # Continue
+    end
+
+    all_premises = unique(vcat(pred_names, fact_names))
+
+    try
+        # Each assert declaration is a proof goal
+        for m in eachmatch(r"\bassert\s+(\w+)\s*\{([^}]*)\}"s, content)
+            assert_name = m.captures[1]
+            formula     = strip(m.captures[2])
+
+            push!(examples, ProofExample(
+                "Alloy",
+                filepath,
+                assert_name,
+                formula,
+                String[],
+                unique(all_premises),
+                true
+            ))
+        end
+    catch
+        # Skip malformed assert blocks
+    end
+
+    # If no assert blocks, emit one example per `check` command
+    if isempty(examples)
+        try
+            for cm in eachmatch(r"\bcheck\s+(\w+)", content)
+                push!(examples, ProofExample(
+                    "Alloy",
+                    filepath,
+                    cm.captures[1],
+                    "check $(cm.captures[1])",
+                    String[],
+                    unique(all_premises),
+                    true
+                ))
+            end
+        catch
+            # Continue
+        end
+    end
+
+    return examples
+end
+
+"""
+Extract NuSMV / nuXmv model checker verification obligations (.smv files)
+
+`LTLSPEC formula` and `CTLSPEC formula` lines → goals (the formula).
+`INVARSPEC formula` → invariant as goal. `DEFINE name := expr` named
+expressions are collected as premises.
+"""
+function extract_nusmv_proofs(filepath::String, content::String)::Vector{ProofExample}
+    examples = ProofExample[]
+
+    # Collect DEFINE names as premises
+    define_names = String[]
+    try
+        for dm in eachmatch(r"\bDEFINE\b[^\n]*\b(\w+)\s*:=", content)
+            push!(define_names, dm.captures[1])
+        end
+    catch
+        # Continue
+    end
+
+    spec_count = Ref(0)
+
+    try
+        # LTLSPEC
+        for m in eachmatch(r"\bLTLSPEC\b\s*(.+?)(?=\n(?:LTLSPEC|CTLSPEC|INVARSPEC|INIT|TRANS|MODULE|\Z))"s, content)
+            spec_count[] += 1
+            formula = strip(m.captures[1])
+            push!(examples, ProofExample(
+                "NuSMV",
+                filepath,
+                "ltlspec_$(spec_count[])",
+                "LTLSPEC $formula",
+                String[],
+                unique(define_names),
+                true
+            ))
+        end
+    catch
+        # Continue
+    end
+
+    try
+        # CTLSPEC
+        for m in eachmatch(r"\bCTLSPEC\b\s*(.+?)(?=\n(?:LTLSPEC|CTLSPEC|INVARSPEC|INIT|TRANS|MODULE|\Z))"s, content)
+            spec_count[] += 1
+            formula = strip(m.captures[1])
+            push!(examples, ProofExample(
+                "NuSMV",
+                filepath,
+                "ctlspec_$(spec_count[])",
+                "CTLSPEC $formula",
+                String[],
+                unique(define_names),
+                true
+            ))
+        end
+    catch
+        # Continue
+    end
+
+    try
+        # INVARSPEC
+        for m in eachmatch(r"\bINVARSPEC\b\s*(.+?)(?=\n)"s, content)
+            spec_count[] += 1
+            formula = strip(m.captures[1])
+            push!(examples, ProofExample(
+                "NuSMV",
+                filepath,
+                "invarspec_$(spec_count[])",
+                "INVARSPEC $formula",
+                String[],
+                unique(define_names),
+                true
+            ))
+        end
+    catch
+        # Continue
+    end
+
+    return examples
+end
+
+"""
+Extract Spin / Promela model checker proofs (.pml files)
+
+`ltl propname { formula }` → goals (the LTL formula). `assert(condition)`
+inside proctypes → goals. `proctype Name(...)` names are collected as
+premises.
+"""
+function extract_spin_proofs(filepath::String, content::String)::Vector{ProofExample}
+    examples = ProofExample[]
+
+    # Collect proctype names as premises
+    proc_names = String[]
+    try
+        for pm in eachmatch(r"\bproctype\s+(\w+)\s*\(", content)
+            push!(proc_names, pm.captures[1])
+        end
+    catch
+        # Continue
+    end
+
+    try
+        # LTL properties: ltl propname { formula }
+        for m in eachmatch(r"\bltl\s+(\w+)\s*\{([^}]*)\}"s, content)
+            prop_name = m.captures[1]
+            formula   = strip(m.captures[2])
+            push!(examples, ProofExample(
+                "Spin",
+                filepath,
+                prop_name,
+                "ltl $formula",
+                String[],
+                unique(proc_names),
+                true
+            ))
+        end
+    catch
+        # Skip malformed ltl blocks
+    end
+
+    try
+        # assert(condition) inside proctypes
+        for m in eachmatch(r"\bassert\s*\(([^)]+)\)", content)
+            cond = strip(m.captures[1])
+            push!(examples, ProofExample(
+                "Spin",
+                filepath,
+                "assert",
+                "assert($cond)",
+                String[],
+                unique(proc_names),
+                true
+            ))
+        end
+    catch
+        # Skip malformed assert calls
+    end
+
+    return examples
+end
+
+"""
+Extract CBMC bounded model checker proof annotations (annotated C files)
+
+`__CPROVER_assert(condition, "message")` → goal (condition + message).
+`__CPROVER_assume(condition)` → premise (assumed condition).
+`__CPROVER_requires` / `__CPROVER_ensures` → pre/post-conditions.
+"""
+function extract_cbmc_proofs(filepath::String, content::String)::Vector{ProofExample}
+    examples = ProofExample[]
+
+    # Collect __CPROVER_assume conditions as premises
+    assumptions = String[]
+    try
+        for am in eachmatch(r"__CPROVER_assume\s*\(([^)]+)\)", content)
+            push!(assumptions, strip(am.captures[1]))
+        end
+    catch
+        # Continue
+    end
+
+    # Collect __CPROVER_requires clauses as premises
+    try
+        for rm in eachmatch(r"__CPROVER_requires\s*\(([^)]+)\)", content)
+            push!(assumptions, "requires: " * strip(rm.captures[1]))
+        end
+    catch
+        # Continue
+    end
+
+    assert_count = Ref(0)
+
+    try
+        # __CPROVER_assert(condition, "message")
+        for m in eachmatch(r"__CPROVER_assert\s*\(\s*([^,]+),\s*\"([^\"]*)\"\s*\)", content)
+            assert_count[] += 1
+            cond    = strip(m.captures[1])
+            message = m.captures[2]
+            push!(examples, ProofExample(
+                "CBMC",
+                filepath,
+                "assert_$(assert_count[])",
+                "$cond /* $message */",
+                String[],
+                unique(assumptions),
+                true
+            ))
+        end
+    catch
+        # Skip malformed assertions
+    end
+
+    try
+        # __CPROVER_ensures clauses as goals (if no assert found)
+        for m in eachmatch(r"__CPROVER_ensures\s*\(([^)]+)\)", content)
+            assert_count[] += 1
+            ensures = strip(m.captures[1])
+            push!(examples, ProofExample(
+                "CBMC",
+                filepath,
+                "ensures_$(assert_count[])",
+                "ensures: $ensures",
+                String[],
+                unique(assumptions),
+                true
+            ))
+        end
+    catch
+        # Continue
+    end
+
+    return examples
+end
+
+"""
+Extract SeaHorn verification framework proof obligations (.c files)
+
+`sassert(condition)` / `sea_assert(condition)` / `__VERIFIER_assert(condition)`
+→ goals. `sassume(condition)` / `__VERIFIER_assume(condition)` → premises.
+"""
+function extract_seahorn_proofs(filepath::String, content::String)::Vector{ProofExample}
+    examples = ProofExample[]
+
+    # Collect assume conditions as premises
+    assumptions = String[]
+    try
+        for am in eachmatch(r"(?:sassume|__VERIFIER_assume)\s*\(([^)]+)\)", content)
+            push!(assumptions, strip(am.captures[1]))
+        end
+    catch
+        # Continue
+    end
+
+    assert_count = Ref(0)
+
+    try
+        for m in eachmatch(r"(?:sassert|sea_assert|__VERIFIER_assert)\s*\(([^)]+)\)", content)
+            assert_count[] += 1
+            cond = strip(m.captures[1])
+            push!(examples, ProofExample(
+                "SeaHorn",
+                filepath,
+                "assert_$(assert_count[])",
+                cond,
+                String[],
+                unique(assumptions),
+                true
+            ))
+        end
+    catch
+        # Skip malformed assertions
+    end
+
+    return examples
+end
+
+"""
+Extract UPPAAL timed automata verification properties (.xml snippet files)
+
+Uses regex-based XML extraction (no full XML parser needed). `<formula>`
+elements → goals. `<location ... name="...">` name attributes → state
+names collected as premises.
+"""
+function extract_uppaal_proofs(filepath::String, content::String)::Vector{ProofExample}
+    examples = ProofExample[]
+
+    # Collect location names as premises
+    location_names = String[]
+    try
+        for lm in eachmatch(r"<location[^>]*\bname\s*=\s*\"([^\"]+)\"", content)
+            push!(location_names, lm.captures[1])
+        end
+    catch
+        # Continue
+    end
+
+    formula_count = Ref(0)
+
+    try
+        # Extract <formula>...</formula> elements
+        for m in eachmatch(r"<formula>\s*(.*?)\s*</formula>"s, content)
+            formula_count[] += 1
+            formula = strip(m.captures[1])
+            push!(examples, ProofExample(
+                "UPPAAL",
+                filepath,
+                "formula_$(formula_count[])",
+                formula,
+                String[],
+                unique(location_names),
+                true
+            ))
+        end
+    catch
+        # Skip malformed XML
+    end
+
+    # Fallback: extract property queries from non-XML .q files (plain text)
+    if isempty(examples)
+        try
+            for m in eachmatch(r"^\s*(A\[\]|E\[\]|A<>|E<>|-->)\s*(.+)$"m, content)
+                formula_count[] += 1
+                formula = strip(m.captures[1] * " " * m.captures[2])
+                push!(examples, ProofExample(
+                    "UPPAAL",
+                    filepath,
+                    "query_$(formula_count[])",
+                    formula,
+                    String[],
+                    unique(location_names),
+                    true
+                ))
+            end
+        catch
+            # Continue
+        end
+    end
+
+    return examples
+end
+
+"""
+Extract Cameleer / Gospel annotated OCaml proofs (.ml files with Gospel specs)
+
+`(*@ function_spec ... @*)` annotation blocks → spec text as goal.
+`(*@ requires <cond> @*)` → premises. `(*@ ensures <cond> @*)` → goals.
+"""
+function extract_cameleer_proofs(filepath::String, content::String)::Vector{ProofExample}
+    examples = ProofExample[]
+
+    try
+        # Match Gospel annotation blocks (*@ ... @*)
+        for m in eachmatch(r"\(\*@\s*(.*?)\s*@\*\)"s, content)
+            annotation = m.captures[1]
+
+            # Collect requires clauses as premises
+            premises = String[]
+            try
+                for rm in eachmatch(r"requires\s+(.+?)(?=requires|ensures|variant|diverges|\z)"s, annotation)
+                    push!(premises, strip(rm.captures[1]))
+                end
+            catch
+                # Continue
+            end
+
+            # Collect ensures clauses as goals
+            goals = String[]
+            try
+                for em in eachmatch(r"ensures\s+(.+?)(?=requires|ensures|variant|diverges|\z)"s, annotation)
+                    push!(goals, strip(em.captures[1]))
+                end
+            catch
+                # Continue
+            end
+
+            # Determine theorem name from preceding OCaml function definition
+            thm_name = "gospel_spec"
+            try
+                # Look back in content for the nearest `let name` before this annotation
+                offset = m.offset
+                prefix = content[max(1, offset - 200):offset]
+                fn_match = match(r"let\s+(\w+)\s*(?:[:=(\[]|$)", prefix)
+                if fn_match !== nothing
+                    thm_name = fn_match.captures[1]
+                end
+            catch
+                # Continue with default name
+            end
+
+            goal_str = isempty(goals) ? strip(annotation) : join(goals, " ∧ ")
+            push!(examples, ProofExample(
+                "Cameleer",
+                filepath,
+                thm_name,
+                goal_str,
+                String[],
+                unique(premises),
+                true
+            ))
+        end
+    catch
+        # Skip malformed annotations
+    end
+
+    return examples
+end
+
+"""
+Extract Mercury logic programming proofs (.m files)
+
+`:- pred name(types) is det/semidet/nondet.` declarations → goals.
+`:- mode name(in, out) is det.` → mode declarations. Predicate names
+referenced in clause bodies are collected as premises.
+"""
+function extract_mercury_proofs(filepath::String, content::String)::Vector{ProofExample}
+    examples = ProofExample[]
+
+    try
+        # Match :- pred name(ArgTypes) is Determinism.
+        for m in eachmatch(r":-\s*pred\s+(\w+)\s*\(([^)]*)\)\s+is\s+(\w+)\s*\.", content)
+            pred_name   = m.captures[1]
+            arg_types   = strip(m.captures[2])
+            determinism = m.captures[3]
+
+            # Premises: referenced predicate names in clause heads/bodies for this predicate
+            premises = String[]
+            try
+                # Scan for calls to other predicates in clauses with matching head
+                # (look for `pred_name(...) :- ... Body.` patterns)
+                clause_pat = Regex("$(pred_name)\\s*\\([^)]*\\)\\s*:-\\s*(.*?)\\.", "s")
+                for cm in eachmatch(clause_pat, content)
+                    for pm in eachmatch(r"\b([a-z]\w*)\s*\(", cm.captures[1])
+                        candidate = pm.captures[1]
+                        candidate ∉ ("is", "if", "then", "else", "not") && push!(premises, candidate)
+                    end
+                end
+            catch
+                # Continue
+            end
+
+            push!(examples, ProofExample(
+                "Mercury",
+                filepath,
+                pred_name,
+                "pred $pred_name($arg_types) is $determinism",
+                String[],
+                unique(premises),
+                true
+            ))
+        end
+    catch
+        # Skip malformed declarations
+    end
+
+    return examples
+end
+
+"""
+Extract Naproche-SAD natural language proof checker proofs (.ftl, .tex files)
+
+`Theorem name. <statement>` and `Lemma name. <statement>` → goals.
+`Proof.` ... `Qed.` blocks contain proof steps. `By <lemma_name>` → premise names.
+"""
+function extract_naproche_proofs(filepath::String, content::String)::Vector{ProofExample}
+    examples = ProofExample[]
+
+    try
+        # Match Theorem/Lemma name. statement. Proof. ... Qed.
+        for m in eachmatch(r"(?:Theorem|Lemma)\s+(\w+)\.\s*(.+?)\s*Proof\.(.*?)Qed\."s, content)
+            thm_name   = m.captures[1]
+            statement  = strip(m.captures[2])
+            proof_body = m.captures[3]
+
+            # Tactics: collect sentences in proof body as steps
+            tactics = String[]
+            try
+                for step in split(proof_body, r"\.\s+")
+                    s = strip(step)
+                    isempty(s) || push!(tactics, s)
+                end
+            catch
+                # Continue
+            end
+
+            # Premises: names cited via "By <name>" patterns
+            premises = String[]
+            try
+                for pm in eachmatch(r"\bBy\s+(\w+)", proof_body)
+                    push!(premises, pm.captures[1])
+                end
+                # Also catch "by <name>" (lowercase)
+                for pm in eachmatch(r"\bby\s+([A-Z]\w*)", proof_body)
+                    push!(premises, pm.captures[1])
+                end
+            catch
+                # Continue
+            end
+
+            push!(examples, ProofExample(
+                "Naproche",
+                filepath,
+                thm_name,
+                statement,
+                tactics,
+                unique(premises),
+                true
+            ))
+        end
+    catch
+        # Skip malformed blocks
+    end
+
+    return examples
+end
+
+"""
+Extract OpenTheory article format proofs (.art files)
+
+Each non-comment line is a stack machine operation. `thm` pops a proof
+from the stack. Quoted strings `"name"` appearing before `thm` are
+treated as theorem names. `ref "name"` references are premises.
+"""
+function extract_opentheory_proofs(filepath::String, content::String)::Vector{ProofExample}
+    examples = ProofExample[]
+
+    # Collect all ref "name" references as premises
+    all_refs = String[]
+    try
+        for rm in eachmatch(r"^ref\s+\"([^\"]+)\""m, content)
+            push!(all_refs, rm.captures[1])
+        end
+    catch
+        # Continue
+    end
+
+    thm_count = Ref(0)
+
+    try
+        # Find thm lines and work backwards for the most recent quoted name
+        lines = split(content, '\n')
+        last_name = Ref("")
+        for line in lines
+            stripped = strip(line)
+            stripped == "" && continue
+            startswith(stripped, '#') && continue  # comment
+
+            # Track quoted string tokens as potential theorem names
+            nm = match(r"^\"([^\"]+)\"$", stripped)
+            if nm !== nothing
+                last_name[] = nm.captures[1]
+            end
+
+            if stripped == "thm"
+                thm_count[] += 1
+                name = isempty(last_name[]) ? "thm_$(thm_count[])" : last_name[]
+                push!(examples, ProofExample(
+                    "OpenTheory",
+                    filepath,
+                    name,
+                    "thm $name",
+                    String[],
+                    unique(all_refs),
+                    true
+                ))
+                last_name[] = ""  # Reset after consuming
+            end
+        end
+    catch
+        # Skip malformed article
+    end
+
+    return examples
+end
+
+"""
+Extract NuPRL proof development system proofs (.nuprl files)
+
+`THEOREM name == formula` → goal. `LEMMA name == formula` → lemma premise.
+`BY <tactic>` → tactic steps inside proof blocks.
+"""
+function extract_nuprl_proofs(filepath::String, content::String)::Vector{ProofExample}
+    examples = ProofExample[]
+
+    # Collect lemma names as premises
+    lemma_names = String[]
+    try
+        for lm in eachmatch(r"\bLEMMA\s+(\w+)\s*==", content)
+            push!(lemma_names, lm.captures[1])
+        end
+    catch
+        # Continue
+    end
+
+    try
+        for m in eachmatch(r"\bTHEOREM\s+(\w+)\s*==\s*(.+?)(?=\bTHEOREM\b|\bLEMMA\b|\Z)"s, content)
+            thm_name   = m.captures[1]
+            rest       = m.captures[2]
+
+            # The formula is everything before the first BY
+            formula = rest
+            tactic_block = ""
+            by_idx = findfirst(r"\bBY\b", rest)
+            if by_idx !== nothing
+                formula      = strip(rest[1:first(by_idx)-1])
+                tactic_block = rest[last(by_idx)+1:end]
+            else
+                formula = strip(rest)
+            end
+
+            # Collect BY tactic lines
+            tactics = String[]
+            try
+                for tm in eachmatch(r"\bBY\s+(.+?)(?=\bBY\b|\Z)"s, tactic_block)
+                    push!(tactics, strip(tm.captures[1]))
+                end
+            catch
+                # Continue
+            end
+
+            push!(examples, ProofExample(
+                "NuPRL",
+                filepath,
+                thm_name,
+                formula,
+                tactics,
+                unique(lemma_names),
+                true
+            ))
+        end
+    catch
+        # Skip malformed declarations
+    end
+
+    return examples
+end
+
+"""
+Extract Imandra verification platform proofs (.iml files)
+
+`theorem name : formula = ...` → goal. `instance () = verify (fun ...) [@@auto]`
+→ verification target. `[@@blast]`, `[@@rewrite]`, `[@@induct]` annotations
+→ tactics. `let name = ...` bindings → premises.
+"""
+function extract_imandra_proofs(filepath::String, content::String)::Vector{ProofExample}
+    examples = ProofExample[]
+
+    # Collect let-binding names as premises
+    let_names = String[]
+    try
+        for lm in eachmatch(r"\blet\s+(\w+)\s*=", content)
+            push!(let_names, lm.captures[1])
+        end
+    catch
+        # Continue
+    end
+
+    # Collect tactic annotations present in the file
+    tactic_annotations = String[]
+    for ann in ("@@auto", "@@blast", "@@rewrite", "@@induct")
+        if occursin(ann, content)
+            push!(tactic_annotations, ann)
+        end
+    end
+
+    try
+        # theorem name : formula = ...
+        for m in eachmatch(r"\btheorem\s+(\w+)\s*:\s*(.+?)\s*=", content)
+            thm_name = m.captures[1]
+            formula  = strip(m.captures[2])
+            push!(examples, ProofExample(
+                "Imandra",
+                filepath,
+                thm_name,
+                formula,
+                tactic_annotations,
+                unique(let_names),
+                true
+            ))
+        end
+    catch
+        # Continue
+    end
+
+    try
+        # instance () = verify (fun ...) [@@auto] style
+        for m in eachmatch(r"\binstance\s*\(\s*\)\s*=\s*verify\s*\((.+?)\)\s*(?:\[@@\w+\])*"s, content)
+            body = strip(m.captures[1])
+            push!(examples, ProofExample(
+                "Imandra",
+                filepath,
+                "verify_instance",
+                "verify($body)",
+                tactic_annotations,
+                unique(let_names),
+                true
+            ))
+        end
+    catch
+        # Continue
+    end
+
+    return examples
+end
+
+"""
+Extract ProofPower (SML-based LCF-style) proofs
+
+`val _ = prove_thm("name", goal_term, tac_list)` → goal. `set_goal([], term)`
+→ goal term. `a tactic_name` calls → tactic steps.
+"""
+function extract_proofpower_proofs(filepath::String, content::String)::Vector{ProofExample}
+    examples = ProofExample[]
+
+    try
+        # prove_thm("name", goal_term, tac_list)
+        for m in eachmatch(r"prove_thm\s*\(\s*\"([^\"]+)\"\s*,\s*([^,]+),\s*(.+?)\)"s, content)
+            thm_name  = m.captures[1]
+            goal_term = strip(m.captures[2])
+            tac_list  = m.captures[3]
+
+            # Extract tactic names from tac_list (identifiers ending in _TAC or known names)
+            tactics = String[]
+            try
+                for tm in eachmatch(r"\b(\w+_TAC|REWRITE_TAC|ASM_REWRITE_TAC|INDUCT_TAC|STRIP_TAC|CONJ_TAC|EQ_TAC|ACCEPT_TAC)\b", tac_list)
+                    push!(tactics, tm.captures[1])
+                end
+            catch
+                # Continue
+            end
+
+            push!(examples, ProofExample(
+                "ProofPower",
+                filepath,
+                thm_name,
+                goal_term,
+                unique(tactics),
+                String[],
+                true
+            ))
+        end
+    catch
+        # Skip malformed prove_thm calls
+    end
+
+    try
+        # set_goal([], term)
+        for m in eachmatch(r"set_goal\s*\(\s*\[\s*\]\s*,\s*(.+?)\s*\)"s, content)
+            goal_term = strip(m.captures[1])
+
+            # Collect subsequent `a tac` calls as tactics
+            tactics = String[]
+            try
+                for tm in eachmatch(r"\ba\s+(\w+)", content[m.offset:min(m.offset+1000, lastindex(content))])
+                    push!(tactics, tm.captures[1])
+                end
+            catch
+                # Continue
+            end
+
+            push!(examples, ProofExample(
+                "ProofPower",
+                filepath,
+                "set_goal_obligation",
+                goal_term,
+                unique(tactics),
+                String[],
+                true
+            ))
+        end
+    catch
+        # Skip malformed set_goal calls
+    end
+
+    return examples
+end
+
+"""
+Extract ACL2s (ACL2 Sedan) theorem prover proofs
+
+Extends the ACL2 extractor with additional ACL2s-specific forms:
+`defthm`, `deflem`, and `(test? <form>)` patterns. Test obligations
+from `test?` are emitted as goals alongside standard `defthm` theorems.
+"""
+function extract_acl2s_proofs(filepath::String, content::String)::Vector{ProofExample}
+    examples = ProofExample[]
+
+    # Collect standard defthm / deflem declarations (same as ACL2)
+    try
+        for m in eachmatch(r"\((?:defthm|deflem)\s+([A-Za-z_][A-Za-z0-9_-]*)\s+(.*?)(?:\)|:hints)"s, content)
+            theorem_name = m.captures[1]
+            formula      = strip(m.captures[2])
+
+            # Extract :hints block
+            hints = String[]
+            hint_block = match(r":hints\s*\((.*?)\)"s, content[m.offset:end])
+            if hint_block !== nothing
+                push!(hints, strip(hint_block.captures[1]))
+            end
+
+            # Premises from :use / :enable / :in-theory
+            premises = String[]
+            try
+                hint_src = hint_block !== nothing ? hint_block.captures[1] : ""
+                for um in eachmatch(r":use\s*\(?:?instance\s+([a-z][a-z0-9\-]*)", hint_src)
+                    push!(premises, um.captures[1])
+                end
+                for em in eachmatch(r":(?:in-theory\s*\(|enable\s+)([a-z][a-z0-9\-]*)", hint_src)
+                    push!(premises, em.captures[1])
+                end
+            catch
+                # Continue
+            end
+
+            push!(examples, ProofExample(
+                "ACL2s",
+                filepath,
+                theorem_name,
+                formula,
+                hints,
+                unique(premises),
+                true
+            ))
+        end
+    catch
+        # Skip malformed defthm/deflem
+    end
+
+    try
+        # ACL2s-specific: (test? <form>) → test obligation as goal
+        for m in eachmatch(r"\(test\?\s+(.*?)\)"s, content)
+            test_form = strip(m.captures[1])
+            push!(examples, ProofExample(
+                "ACL2s",
+                filepath,
+                "test_obligation",
+                "(test? $test_form)",
+                String[],
+                String[],
+                true
+            ))
+        end
+    catch
+        # Skip malformed test? forms
     end
 
     return examples
