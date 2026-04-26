@@ -218,6 +218,7 @@ impl FfiProverConfig {
             args: vec![],
             timeout: (self.timeout_ms / 1000),
             neural_enabled: self.neural_enabled,
+            gnn_api_url: None,
         }
     }
 }

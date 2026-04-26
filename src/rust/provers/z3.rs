@@ -579,8 +579,10 @@ impl ProverBackend for Z3Backend {
             });
         }
 
-        tactics.truncate(limit);
-        Ok(tactics)
+        Ok(crate::provers::gnn_augment_tactics(
+            &self.config, state, "z3", tactics, limit,
+        )
+        .await)
     }
 
     async fn search_theorems(&self, _pattern: &str) -> Result<Vec<String>> {

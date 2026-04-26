@@ -1154,6 +1154,10 @@ pub struct ProverConfig {
 
     /// Enable neural premise selection
     pub neural_enabled: bool,
+
+    /// Optional GNN inference server URL for neural tactic ranking.
+    /// When set and `neural_enabled` is true, suggest_tactics calls the GNN.
+    pub gnn_api_url: Option<String>,
 }
 
 impl Default for ProverConfig {
@@ -1164,8 +1168,63 @@ impl Default for ProverConfig {
             args: vec![],
             timeout: 300, // 5 minutes
             neural_enabled: true,
+            gnn_api_url: None,
         }
     }
+}
+
+/// GNN-augmented tactic suggestions: calls the Julia GNN server to rank premises,
+/// then prepends top-k `Apply` and prover-specific `apply` tactics to the list.
+/// Falls back silently (returns `hints` unchanged) if the server is unreachable
+/// or `neural_enabled` is false or `gnn_api_url` is unset.
+///
+/// # Arguments
+/// * `config`      – prover config supplying the GNN URL and neural flag
+/// * `state`       – current proof state (goals, context, theorems)
+/// * `prover_name` – short prover identifier used in `Tactic::Custom` args
+/// * `hints`       – heuristic suggestions already assembled by the caller
+/// * `limit`       – maximum number of tactics to return
+#[allow(dead_code)]
+pub(crate) async fn gnn_augment_tactics(
+    config: &ProverConfig,
+    state: &ProofState,
+    prover_name: &str,
+    mut hints: Vec<Tactic>,
+    limit: usize,
+) -> Vec<Tactic> {
+    let url = match config.gnn_api_url.as_deref() {
+        Some(u) if config.neural_enabled => u.to_string(),
+        _ => return hints.into_iter().take(limit).collect(),
+    };
+
+    use crate::gnn::client::{GnnClient, GnnConfig};
+    use crate::gnn::graph::ProofGraphBuilder;
+
+    let graph = ProofGraphBuilder::new(4).build_from_proof_state(state);
+    let gnn = GnnClient::with_config(GnnConfig {
+        api_url: url,
+        timeout_ms: 2000,
+        top_k: 8,
+        min_score: 0.1,
+        request_embeddings: false,
+        num_gnn_layers: 3,
+        use_attention: true,
+    });
+
+    let result = gnn.rank_premises(&graph).await;
+    // Prepend apply tactics for top premises (in score order, before heuristic hints)
+    let mut gnn_tactics: Vec<Tactic> = result
+        .ranked_premises
+        .iter()
+        .take(5)
+        .map(|premise: &String| Tactic::Custom {
+            prover: prover_name.to_string(),
+            command: "apply".to_string(),
+            args: vec![premise.clone()],
+        })
+        .collect();
+    gnn_tactics.append(&mut hints);
+    gnn_tactics.into_iter().take(limit).collect()
 }
 
 /// Universal trait for theorem prover backends

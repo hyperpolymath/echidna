@@ -195,7 +195,10 @@ impl ProverBackend for RocqBackend {
             args: vec![],
         });
 
-        Ok(suggestions.into_iter().take(limit).collect())
+        Ok(crate::provers::gnn_augment_tactics(
+            &self.config, state, "rocq", suggestions, limit,
+        )
+        .await)
     }
 
     async fn search_theorems(&self, pattern: &str) -> Result<Vec<String>> {
