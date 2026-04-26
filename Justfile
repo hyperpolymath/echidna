@@ -358,6 +358,14 @@ doc:
 update:
     cargo update
 
+# Regenerate Cap'n Proto bindings from schemas/echidna.capnp.
+# Requires capnp compiler: https://capnproto.org/install.html
+# Output: src/rust/ipc/echidna_capnp.rs (checked in; do not edit by hand)
+capnp-gen:
+    @command -v capnp >/dev/null 2>&1 || { echo "capnp compiler not found — install from https://capnproto.org/install.html"; exit 1; }
+    capnp compile -orust schemas/echidna.capnp -I /usr/include
+    @echo "Rust bindings generated. Commit src/rust/ipc/echidna_capnp.rs."
+
 # Audit dependencies
 audit:
     cargo audit
