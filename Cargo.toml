@@ -125,6 +125,7 @@ harness = false
 [workspace]
 members = [
     "crates/echidna-core",
+    "crates/echidna-core-spark",
     "crates/echidna-mcp",
     "crates/echidna-wire",
     "crates/typed_wasm",

@@ -1024,6 +1024,13 @@ dependencies = [
 ]
 
 [[package]]
+name = "echidna-core-spark"
+version = "0.1.0"
+dependencies = [
+ "serde",
+]
+
+[[package]]
 name = "echidna-graphql"
 version = "0.1.0"
 dependencies = [
