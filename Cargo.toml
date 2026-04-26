@@ -110,6 +110,7 @@ echidna-core = { path = "crates/echidna-core" }
 [features]
 default = []
 chapel = []       # Enable Chapel parallel proof search (requires Zig FFI library)
+flint = []        # Enable FLINT CAS coprocessor (requires system libflint, LGPL-3)
 spark = []        # Enable SPARK-verified axiom-policy (requires libechidna_spark from GPRbuild)
 verisim = [     # Enable VeriSimDB persistent proof storage (8-modality octads)
     "dep:ciborium",

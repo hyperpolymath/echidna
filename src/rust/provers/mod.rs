@@ -21,6 +21,8 @@ pub use io::{bounded_read_proof_file, MAX_PROOF_BYTES};
 
 pub mod abc;
 pub mod abella;
+pub mod agsyhol;
+pub mod aprove;
 pub mod faial;
 pub mod gpuverify;
 pub mod acl2;
@@ -36,6 +38,7 @@ pub mod cameleer;
 pub mod cbmc;
 pub mod chuffed;
 pub mod coq;
+pub mod csi;
 pub mod cubical_agda;
 pub mod cvc5;
 pub mod dafny;
@@ -50,15 +53,19 @@ pub mod hol_light;
 pub mod hp_ecosystem;
 pub mod idris2;
 pub mod imandra;
+pub mod iprover;
 pub mod isabelle;
 pub mod isabelle_zf;
 pub mod key;
 pub mod kissat;
 pub mod lambda_prolog;
+pub mod lash;
 pub mod lean;
 pub mod lean3;
+pub mod leo3;
 pub mod matita;
 pub mod mercury;
+pub mod metitarski;
 pub mod metamath;
 pub mod minisat;
 pub mod minizinc;
@@ -75,16 +82,20 @@ pub mod ortools;
 pub mod prism;
 pub mod prover9;
 pub mod proverif;
+pub mod princess;
 pub mod pvs;
 pub mod rocq;
 pub mod scip;
 pub mod seahorn;
 pub mod spass;
 pub mod smtrat;
+pub mod satallax;
+pub mod tptp_output;
 pub mod spin_checker;
 pub mod tamarin;
 pub mod tlaps;
 pub mod tlc;
+pub mod twee;
 pub mod twelf;
 pub mod typed_wasm;
 pub mod uppaal;
@@ -131,6 +142,20 @@ pub enum ProverKind {
     EProver,
     SPASS,
     AltErgo,
+
+    // Tier 5b: Higher-Order ATPs
+    Leo3,
+    Satallax,
+    Lash,
+    AgsyHOL,
+
+    // Tier 5c: Frontier First-Order ATPs
+    IProver,
+    Princess,
+    Twee,
+    MetiTarski,
+    CSI,
+    AProVE,
 
     // Tier 6: Dependent types + effects, auto-active, orchestration
     FStar,
@@ -566,6 +591,12 @@ impl std::str::FromStr for ProverKind {
             "rocq" | "rocq-compile" => Ok(ProverKind::Rocq),
             "uppaal-stratego" | "stratego" => Ok(ProverKind::UppaalStratego),
             "mizar-ar" | "mizatp" | "mizar-atp" => Ok(ProverKind::MizAR),
+            "iprover" => Ok(ProverKind::IProver),
+            "princess" => Ok(ProverKind::Princess),
+            "twee" => Ok(ProverKind::Twee),
+            "metitarski" | "metit" => Ok(ProverKind::MetiTarski),
+            "csi" => Ok(ProverKind::CSI),
+            "aprove" => Ok(ProverKind::AProVE),
             _ => Err(anyhow::anyhow!("Unknown prover: {}", s)),
         }
     }
@@ -648,6 +679,12 @@ impl ProverKind {
             ProverKind::Rocq,
             ProverKind::UppaalStratego,
             ProverKind::MizAR,
+            ProverKind::IProver,
+            ProverKind::Princess,
+            ProverKind::Twee,
+            ProverKind::MetiTarski,
+            ProverKind::CSI,
+            ProverKind::AProVE,
         ]);
         provers
     }
@@ -729,6 +766,18 @@ impl ProverKind {
             ProverKind::ABC => 2, // Automated hardware verification, AIG-based
             ProverKind::GPUVerify => 2, // Automated GPU kernel verifier (Boogie/Z3 backend)
             ProverKind::Faial => 2, // Lightweight GPU race detector (access pattern analysis)
+            // Phase 1a: Higher-order ATPs
+            ProverKind::Leo3 => 3,     // Leo III HOL-to-TPTP translator + ATP
+            ProverKind::Satallax => 3, // Satallax HOL-based ATP
+            ProverKind::Lash => 3,     // Lash higher-order prover
+            ProverKind::AgsyHOL => 4,  // Agsy HOL dependent-type prover
+            // Phase 1b: Frontier first-order provers
+            ProverKind::IProver => 2,      // Competitive ATP, standard FOL
+            ProverKind::Princess => 3,     // LA-extended ATP
+            ProverKind::Twee => 2,         // Equational only, deterministic
+            ProverKind::MetiTarski => 3,   // Transcendental function encoding
+            ProverKind::CSI => 3,          // TRS/CTRS parsing + CPF output
+            ProverKind::AProVE => 3,       // TRS/XTC parsing
             // HP type-checker ecosystem: complexity 3 — they are real
             // type-checkers with non-trivial unification/elaboration.
             // Heavier disciplines (HoTT/Cubical, Hoare) rate 4.
@@ -873,6 +922,18 @@ impl ProverKind {
             ProverKind::ABC => 5,      // Logic synthesis & hardware verification
             ProverKind::GPUVerify => 5, // GPU kernel verifier (CUDA/OpenCL → Boogie → Z3)
             ProverKind::Faial => 5,     // Lightweight GPU data-race detector
+            // Phase 1a: Higher-order ATPs
+            ProverKind::Leo3 => 5,      // Tier 5: HOL-to-TPTP translator
+            ProverKind::Satallax => 5,  // Tier 5: HOL-based ATP
+            ProverKind::Lash => 5,      // Tier 5: higher-order ATP
+            ProverKind::AgsyHOL => 5,   // Tier 5: HOL dependent-type prover
+            // Phase 1b: Frontier first-order provers
+            ProverKind::IProver => 2,      // Trust tier 2 (TPTP FOL)
+            ProverKind::Princess => 2,     // Trust tier 2 (TPTP + LA)
+            ProverKind::Twee => 3,         // Trust tier 3 (deterministic equational)
+            ProverKind::MetiTarski => 2,   // Trust tier 2 (TPTP + transcendental)
+            ProverKind::CSI => 2,          // Trust tier 2 (TRS/CPF)
+            ProverKind::AProVE => 2,       // Trust tier 2 (TRS/XTC)
             // HP ecosystem — tier 11 (beyond the existing 10-tier scheme
             // but placed as 3 here to share the ML guidance budget with
             // dependent/interactive provers).
@@ -992,6 +1053,16 @@ impl ProverKind {
             ProverKind::ABC => 1.5,          // Hardware verification, AIGER/BLIF input
             ProverKind::GPUVerify => 1.5,    // GPU kernel verifier, CUDA/OpenCL input
             ProverKind::Faial => 1.0,        // Lightweight GPU race detector, CUDA input
+            ProverKind::IProver => 1.5,     // First-order ATP with SZS output
+            ProverKind::Princess => 1.5,    // SMT-based first-order solver
+            ProverKind::Twee => 1.5,        // Equational logic (Knuth-Bendix)
+            ProverKind::MetiTarski => 1.5,  // Transcendental arithmetic extension
+            ProverKind::CSI => 2.0,         // Confluence/termination checker
+            ProverKind::AProVE => 2.0,      // Automated termination verifier
+            ProverKind::Leo3 => 2.5,        // Higher-order ATP
+            ProverKind::Satallax => 2.5,    // Higher-order ATP
+            ProverKind::Lash => 2.5,        // Higher-order ATP
+            ProverKind::AgsyHOL => 2.5,     // Higher-order ATP
             ProverKind::TypeLL
             | ProverKind::KatagoriaVerifier
             | ProverKind::TropicalTypeChecker
@@ -1113,6 +1184,16 @@ impl ProverKind {
             ProverKind::Rocq => "rocq",
             ProverKind::UppaalStratego => "stratego",
             ProverKind::MizAR => "mizar-atp",
+            ProverKind::IProver => "iprover",
+            ProverKind::Princess => "princess",
+            ProverKind::Twee => "twee",
+            ProverKind::MetiTarski => "metit",
+            ProverKind::CSI => "csi",
+            ProverKind::AProVE => "aprove",
+            ProverKind::Leo3 => "leo3",
+            ProverKind::Satallax => "satallax",
+            ProverKind::Lash => "lash",
+            ProverKind::AgsyHOL => "agsyhol",
             // HP ecosystem — all route through the TypeLL kernel CLI;
             // the discipline field on HPEcosystemBackend selects the
             // actual upstream (typell / katagoria / tropical-resource-typing).
@@ -1478,6 +1559,16 @@ impl ProverFactory {
             ProverKind::Rocq => Ok(Box::new(rocq::RocqBackend::new(config))),
             ProverKind::UppaalStratego => Ok(Box::new(uppaal_stratego::UppaalStrategoBackend::new(config))),
             ProverKind::MizAR => Ok(Box::new(mizar_ar::MizARBackend::new(config))),
+            ProverKind::IProver => Ok(Box::new(iprover::IProverBackend::new(config))),
+            ProverKind::Princess => Ok(Box::new(princess::PrincessBackend::new(config))),
+            ProverKind::Twee => Ok(Box::new(twee::TweeBackend::new(config))),
+            ProverKind::MetiTarski => Ok(Box::new(metitarski::MetiTarskiBackend::new(config))),
+            ProverKind::CSI => Ok(Box::new(csi::CSIBackend::new(config))),
+            ProverKind::AProVE => Ok(Box::new(aprove::AProVEBackend::new(config))),
+            ProverKind::Leo3 => Ok(Box::new(leo3::Leo3Backend::new(config))),
+            ProverKind::Satallax => Ok(Box::new(satallax::SatallaxBackend::new(config))),
+            ProverKind::Lash => Ok(Box::new(lash::LashBackend::new(config))),
+            ProverKind::AgsyHOL => Ok(Box::new(agsyhol::AgsyholBackend::new(config))),
             // TypeLL and KatagoriaVerifier are real HP upstream binaries —
             // they continue to dispatch through HPEcosystemBackend.
             ProverKind::TypeLL | ProverKind::KatagoriaVerifier => Ok(Box::new(
@@ -1600,6 +1691,8 @@ impl ProverFactory {
             // Mercury uses .m which collides with OCaml conventions in
             // some file sets; content-aware detection deferred to
             // phase 2 (look for Mercury `:- module`, `:- pred`, etc).
+            "pri" => Some(ProverKind::Princess),  // Princess native format
+            "trs" => Some(ProverKind::CSI),       // TRS rewriting system format (CSI/AProVE)
             _ => None,
         })
     }

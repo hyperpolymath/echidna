@@ -41,6 +41,8 @@ use anyhow::Result;
 use async_trait::async_trait;
 
 pub mod crypto;
+#[cfg(feature = "flint")]
+pub mod flint;
 pub mod julia_bridge;
 pub mod math;
 pub mod physics;
@@ -50,6 +52,8 @@ pub mod types;
 pub mod vector;
 
 pub use crypto::CryptoBackend;
+#[cfg(feature = "flint")]
+pub use flint::FlintMathBackend;
 pub use julia_bridge::JuliaCoprocessorBridge;
 pub use math::MathBackend;
 pub use physics::PhysicsBackend;
@@ -108,6 +112,13 @@ impl CoprocessorFactory {
             CoprocessorKind::Tensor => Some(Box::new(TensorBackend::new())),
             CoprocessorKind::Crypto => Some(Box::new(CryptoBackend::new())),
             CoprocessorKind::Physics => Some(Box::new(PhysicsBackend::new())),
+            // FlintMath is only available when the system FLINT library is
+            // linked.  Without --features flint the caller should fall through
+            // to a Julia bridge or subprocess backend for Flint* ops.
+            #[cfg(feature = "flint")]
+            CoprocessorKind::FlintMath => Some(Box::new(FlintMathBackend::new())),
+            #[cfg(not(feature = "flint"))]
+            CoprocessorKind::FlintMath => None,
         }
     }
 }
@@ -139,6 +150,17 @@ mod tests {
             CoprocessorOutcome::BigInt(s) => assert_eq!(s, "6"),
             _ => panic!("unexpected outcome"),
         }
+    }
+
+    // Without --features flint the factory returns None for FlintMath, so
+    // callers can gracefully fall through to a subprocess backend.
+    #[cfg(not(feature = "flint"))]
+    #[test]
+    fn flint_math_unavailable_without_feature() {
+        assert!(
+            CoprocessorFactory::native(CoprocessorKind::FlintMath).is_none(),
+            "FlintMath must return None when the `flint` feature is disabled"
+        );
     }
 
     #[test]

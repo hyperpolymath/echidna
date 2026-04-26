@@ -50,6 +50,46 @@ fn main() {
         println!("cargo:rerun-if-changed=src/zig/ffi/axiom_spark_bridge.zig");
     }
 
+    // FLINT CAS coprocessor (in-process, the only CAS we link rather than exec)
+    #[cfg(feature = "flint")]
+    {
+        // Try pkg-config first; fall back to a bare -lflint on the standard
+        // library path.  FLINT is LGPL-3 and compatible with the PMPL/MPL-2.0
+        // fallback licence under which ECHIDNA is distributed.
+        let found_via_pkg_config = std::process::Command::new("pkg-config")
+            .args(["--exists", "flint"])
+            .status()
+            .map(|s| s.success())
+            .unwrap_or(false);
+
+        if found_via_pkg_config {
+            // Let pkg-config emit the full set of link flags.
+            if let Ok(output) = std::process::Command::new("pkg-config")
+                .args(["--libs", "flint"])
+                .output()
+            {
+                let flags = String::from_utf8_lossy(&output.stdout);
+                for flag in flags.split_whitespace() {
+                    if let Some(path) = flag.strip_prefix("-L") {
+                        println!("cargo:rustc-link-search=native={path}");
+                    } else if let Some(lib) = flag.strip_prefix("-l") {
+                        println!("cargo:rustc-link-lib=dylib={lib}");
+                    }
+                }
+            }
+        } else {
+            // No pkg-config entry; attempt bare link on the system library path.
+            println!("cargo:rustc-link-lib=dylib=flint");
+            println!(
+                "cargo:warning=FLINT not found via pkg-config — \
+                 trying bare -lflint.  Install FLINT (LGPL-3) and ensure \
+                 its headers are on the include path."
+            );
+        }
+
+        println!("cargo:rerun-if-changed=src/rust/coprocessor/flint.rs");
+    }
+
     // Chapel parallel proof search bridge
     #[cfg(feature = "chapel")]
     {

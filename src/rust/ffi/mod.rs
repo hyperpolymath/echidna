@@ -513,6 +513,18 @@ pub fn kind_from_u8(kind: u8) -> Option<ProverKind> {
         // 2026-04-26 batch: GPU kernel verification backends.
         113 => Some(ProverKind::GPUVerify),
         114 => Some(ProverKind::Faial),
+        // Phase 1a: Higher-order ATPs (Leo-III, Satallax, Lash, agsyHOL).
+        115 => Some(ProverKind::Leo3),
+        116 => Some(ProverKind::Satallax),
+        117 => Some(ProverKind::Lash),
+        118 => Some(ProverKind::AgsyHOL),
+        // Phase 1b: Frontier first-order ATPs (iProver, Princess, Twee, MetiTarski, CSI, AProVE).
+        119 => Some(ProverKind::IProver),
+        120 => Some(ProverKind::Princess),
+        121 => Some(ProverKind::Twee),
+        122 => Some(ProverKind::MetiTarski),
+        123 => Some(ProverKind::CSI),
+        124 => Some(ProverKind::AProVE),
         _ => None,
     }
 }
@@ -1238,6 +1250,18 @@ pub fn kind_to_u8(kind: ProverKind) -> u8 {
         // 2026-04-26 batch: GPU kernel verification backends.
         ProverKind::GPUVerify => 113,
         ProverKind::Faial => 114,
+        // Phase 1a: Higher-order ATPs (Leo-III, Satallax, Lash, agsyHOL).
+        ProverKind::Leo3 => 115,
+        ProverKind::Satallax => 116,
+        ProverKind::Lash => 117,
+        ProverKind::AgsyHOL => 118,
+        // Phase 1b: Frontier first-order ATPs (iProver, Princess, Twee, MetiTarski, CSI, AProVE).
+        ProverKind::IProver => 119,
+        ProverKind::Princess => 120,
+        ProverKind::Twee => 121,
+        ProverKind::MetiTarski => 122,
+        ProverKind::CSI => 123,
+        ProverKind::AProVE => 124,
     }
 }
 
@@ -1422,9 +1446,9 @@ mod tests {
 
     #[test]
     fn test_kind_from_u8_out_of_range() {
-        // 0–114 are valid; 115+ are out of range.
-        // (Boundary moved 112→114 on 2026-04-26 adding GPUVerify=113, Faial=114.)
-        assert!(kind_from_u8(115).is_none());
+        // 0–124 are valid; 125+ are out of range.
+        // (Boundary moved 114→124 on 2026-04-26 adding Phase 1b frontier provers.)
+        assert!(kind_from_u8(125).is_none());
         assert!(kind_from_u8(128).is_none());
         assert!(kind_from_u8(255).is_none());
     }

@@ -42,9 +42,10 @@ target-claim-id = "echidna-phase1a-tptp-atps  /  echidna-phase1b-frontier-fol"
 [[expansion-roadmap.phase]]
 id = "phase-2"
 title = "Computer-algebra (FLINT FFI + subprocess CAS family)"
-status = "available-for-claim"
+status = "phase-2a-complete"
 adds-backends = ["FLINT", "PARI/GP", "Maxima", "Singular", "GAP", "Macaulay2"]
 target-claim-id = "echidna-phase2a-cas-libraries  /  echidna-phase2b-cas-subprocess"
+notes = "Phase 2a landed 2026-04-26: FLINT FFI coprocessor backend (CoprocessorKind::FlintMath, Tier 3 LibraryWrapped, --features flint). Adds FlintPolyGcd/Mul/Rem/Content + FlintNthRoot + FlintBinomial ops, Polynomial outcome variant. 8 unit tests; factory returns None gracefully without the feature. Phase 2b (subprocess CAS: PARI/GP, Maxima, Singular, GAP, Macaulay2) still available for claim."
 
 [[expansion-roadmap.phase]]
 id = "phase-3"

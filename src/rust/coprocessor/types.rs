@@ -46,6 +46,12 @@ pub enum CoprocessorKind {
     /// future KeYmaera X backend as a sanity-check oracle for hybrid-system
     /// trajectories proven correct symbolically.
     Physics,
+
+    /// FLINT integer and polynomial algebra — the only CAS backend that links
+    /// the library in-process rather than shelling out.  Requires
+    /// `--features flint` and a system FLINT (LGPL-3) installation.
+    /// Enabled by `CoprocessorFactory::native`; absent without the feature.
+    FlintMath,
 }
 
 /// A request dispatched to a coprocessor.
@@ -150,6 +156,38 @@ pub enum CoprocessorOp {
     /// (x, p): E = ½p² + ½ω²x².  Trivial but useful as an invariant
     /// oracle in proofs about Hamiltonian systems.
     PhysicsHarmonicEnergy { x: f64, p: f64, omega: f64 },
+
+    // ── FLINT: polynomial algebra over Z ─────────────────────────────────────
+    /// Primitive GCD of two polynomials over Z.
+    ///
+    /// Wire format: space-separated decimal integer coefficients in
+    /// degree-ascending order.  `"1 0 -1"` encodes `1 − x²`.  Zero
+    /// polynomial: `"0"`.  Result has positive leading coefficient.
+    FlintPolyGcd { f: String, g: String },
+
+    /// Product of two polynomials over Z.
+    FlintPolyMul { f: String, g: String },
+
+    /// Pseudo-remainder of `f` divided by `g` over Z.
+    ///
+    /// Satisfies `lc(g)^d · f = q · g + r` for the returned `r` (`d ≥ 0`).
+    /// Returns the zero polynomial when `g` exactly divides `f`.
+    /// Errors if `g` is the zero polynomial.
+    FlintPolyRem { f: String, g: String },
+
+    /// Content of a polynomial — the GCD of all its coefficients (positive).
+    /// Returns `BigInt("0")` for the zero polynomial.
+    FlintPolyContent { f: String },
+
+    // ── FLINT: enhanced integer arithmetic ───────────────────────────────────
+    /// Exact integer k-th root.
+    ///
+    /// Returns `BigInt(r)` if `n = r^k` for some integer `r`; `Empty`
+    /// otherwise.  `k` must be ≥ 1.
+    FlintNthRoot { n: String, k: u32 },
+
+    /// Binomial coefficient C(n, k).  Exact arbitrary-precision result.
+    FlintBinomial { n: u64, k: u64 },
 }
 
 /// The outcome of a dispatched op.
@@ -179,9 +217,14 @@ pub enum CoprocessorOutcome {
     /// Hex-encoded byte sequence (cryptographic digest).
     Hex(String),
 
+    /// A polynomial in wire format: space-separated decimal integer
+    /// coefficients in degree-ascending order.  `"1 0 -1"` encodes `1 − x²`.
+    /// The zero polynomial is represented as `"0"`.
+    Polynomial(String),
+
     /// `None` — well-formed input but no answer exists (e.g. non-invertible
-    /// modular inverse).  Distinct from `Failure`, which means the op itself
-    /// could not be carried out.
+    /// modular inverse, or non-exact k-th root).  Distinct from `Failure`,
+    /// which means the op itself could not be carried out.
     Empty,
 
     /// The op could not be executed.  Carries a human-readable reason; the
