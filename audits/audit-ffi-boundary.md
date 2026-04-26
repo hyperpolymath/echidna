@@ -68,3 +68,66 @@ wrappers that adapt the C-ABI output of `src/rust/ffi/mod.rs` to Rust-safe
 types for the interface handlers.
 
 **Classification**: legitimate FFI (interface-layer wrappers over §1 boundary).  No remediation required.
+
+---
+
+## §5 — `src/rust/provers/z3.rs` (UnsafeCode, PanicPath)
+
+No actual `unsafe` blocks present.  panic-attack reports:
+- **unwrap_calls**: 18 × `unwrap_or_else()` in parser recovery (lines 119, 125, 215) — normal S-expression parser fallback patterns
+- **allocations**: 54 units for proof state and SMT-LIB parsing buffers
+
+The parser `.expect(token)` method calls (lines 727+) are parser combinators
+that return `Result`, not panic sites.  Error propagation via `?` operator.
+
+**Classification**: legitimate SMT solver backend implementation.  No remediation required.
+
+---
+
+## §6 — `src/rust/provers/pvs.rs` (UnsafeCode)
+
+Large PVS (Prototype Verification System) backend: 3168 LoC, 105 variants for
+PVSExpr, PVSType, and proof state handling.  No `unsafe` blocks present.
+
+panic-attack reports:
+- **allocations**: 204 units for recursive AST construction (record expressions,
+  lambda bindings, quantifiers, case selections — see lines 46-100).
+- **file_size**: 5 units (normal for a full prover backend).
+
+The large allocations are expected: PVS is a rich type system with dependent
+types, predicate subtypes, and complex pattern matching.
+
+**Classification**: legitimate proof assistant backend.  No remediation required.
+
+---
+
+## §7 — `src/rust/provers/hol4.rs` (UnsafeCode, PanicPath)
+
+Large HOL4 (Higher-Order Logic) backend: 2621 LoC, with tactic evaluation,
+type parser, and bidirectional proof state conversion.  No `unsafe` blocks.
+
+panic-attack reports:
+- **panic_sites**: 1 from process spawn error (line 1430 `.spawn()`), reported but
+  error is caught and propagated via `?` operator.
+- **allocations**: 174 units for HOL4 tactic vectors (`Metis(vec![])`,
+  `Simp(vec![])`) and bidirectional term conversion (lines 1644-1738).
+
+All struct-to-vec conversions return `Result`, no panic on unwrap.
+
+**Classification**: legitimate proof assistant backend.  No remediation required.
+
+---
+
+## §8 — `src/rust/provers/mod.rs` (UnsafeCode)
+
+Central prover module: 105 prover backends, module declarations (lines 22-94),
+ProverKind enum (96+ variants), and ProverFactory dispatch logic.  No `unsafe` blocks.
+
+panic-attack reports:
+- **allocations**: 148 units from enum variants and module exports.
+- **file_size**: 3 units (normal for a registry file).
+
+This is structural overhead from the 105-prover architecture, not FFI or
+memory mismanagement.
+
+**Classification**: legitimate backend registry.  No remediation required.

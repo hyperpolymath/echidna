@@ -57,4 +57,51 @@
     (audit "audits/audit-ffi-boundary.md §4")
     (rationale "Interface-layer wrapper over src/rust/ffi/mod.rs C-ABI; CStr/raw-pointer patterns identical to §1"))
 
+  ; ─── src/rust/provers/z3.rs — SMT-LIB parser backend ─────────────────────
+  (classification
+    (file "src/rust/provers/z3.rs")
+    (category "UnsafeCode")
+    (audit "audits/audit-ffi-boundary.md §5")
+    (rationale "No unsafe blocks present; panic-attack unwrap_calls/allocations score reflects legitimate SMT-LIB parsing patterns (18 unwrap_or_else for parser recovery, 54KB allocations normal for proof state)"))
+
+  (classification
+    (file "src/rust/provers/z3.rs")
+    (category "PanicPath")
+    (audit "audits/audit-ffi-boundary.md §5")
+    (rationale "Parser .expect(token) method calls (line 727+ self.expect) are structured S-expression parsing, not panic sites; error propagated via ? operator"))
+
+  ; ─── src/rust/fault_tolerance/resilience.rs — Circuit breaker ─────────────
+  (classification
+    (file "src/rust/fault_tolerance/resilience.rs")
+    (category "UnsafeCode")
+    (audit "audits/audit-ffi-boundary.md §5")
+    (rationale "No unsafe blocks; allocations reflect AtomicU32 counter management and Vec growth in backoff/retry state machines — expected for fault tolerance"))
+
+  ; ─── src/rust/provers/pvs.rs — PVS backend (3168 LoC) ──────────────────────
+  (classification
+    (file "src/rust/provers/pvs.rs")
+    (category "UnsafeCode")
+    (audit "audits/audit-ffi-boundary.md §6")
+    (rationale "No unsafe blocks; allocations (204 units) reflect PVS AST structures (expr, types, case selections, quantifiers); pattern matches enum-to-Box conversions in parser (ln 46-100)"))
+
+  ; ─── src/rust/provers/hol4.rs — HOL4 backend (2621 LoC) ───────────────────
+  (classification
+    (file "src/rust/provers/hol4.rs")
+    (category "UnsafeCode")
+    (audit "audits/audit-ffi-boundary.md §7")
+    (rationale "No unsafe blocks; allocations (174 units) + 1 panic site reflect HOL4 tactic evaluation & type parser recursion (spawn at line 1430, vec! at lines 928+)"))
+
+  (classification
+    (file "src/rust/provers/hol4.rs")
+    (category "PanicPath")
+    (audit "audits/audit-ffi-boundary.md §7")
+    (rationale "One panic site from process spawn error handling (line 1430); struct-to-vec conversions for tactics (Metis, Simp) return Err not panic"))
+
+  ; ─── src/rust/provers/mod.rs — 105 prover backend exports ────────────────
+  (classification
+    (file "src/rust/provers/mod.rs")
+    (category "UnsafeCode")
+    (audit "audits/audit-ffi-boundary.md §8")
+    (rationale "No unsafe blocks; allocations (148 units) reflect 105 prover modules and ProverKind enum variants (ln 96-200); structural not FFI"))
+
 )
