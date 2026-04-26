@@ -187,9 +187,15 @@ fn kind_name(k: CoprocessorKind) -> &'static str {
         CoprocessorKind::Tensor => "Tensor",
         CoprocessorKind::Crypto => "Crypto",
         CoprocessorKind::Physics => "Physics",
-        // FlintMath is an in-process Rust backend; it would not normally be
-        // fronted by the Julia bridge.  The name is present for completeness
-        // so that this match remains exhaustive as the enum grows.
+        // FlintMath / Dsp / Audio / Graphics / Fpga / Io are in-process
+        // Rust backends; they would not normally be fronted by the Julia
+        // bridge, but the name is present for completeness so this match
+        // stays exhaustive.
         CoprocessorKind::FlintMath => "FlintMath",
+        CoprocessorKind::Dsp => "Dsp",
+        CoprocessorKind::Io => "Io",
+        CoprocessorKind::Graphics => "Graphics",
+        CoprocessorKind::Audio => "Audio",
+        CoprocessorKind::Fpga => "Fpga",
     }
 }

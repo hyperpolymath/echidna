@@ -94,6 +94,9 @@ sha2 = "0.10"
 # Ed25519 signature verification (Apache-2.0 / MIT, MPL-2.0 compat).
 ed25519-dalek = { version = "2", default-features = false, features = ["std"] }
 
+# DSP coprocessor — FFT/IFFT (Apache-2.0 / MIT).
+rustfft = "6"
+
 # TypedWasm engine — standalone crate at crates/typed_wasm.
 # Provides the pure parse/analyse engine; provers/typed_wasm.rs is a thin
 # adapter that maps its `Analysis` onto echidna core types, and routes the

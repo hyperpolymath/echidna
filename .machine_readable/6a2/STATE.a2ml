@@ -79,10 +79,10 @@ notes = "4 new CoprocessorKind variants (Vector / Tensor / Crypto / Physics) wit
 [[expansion-roadmap.phase]]
 id = "phase-6b"
 title = "Coprocessor wiring — DSP + IO + Graphics + Audio + FPGA"
-status = "available-for-claim"
+status = "complete"
+landed = "2026-04-26"
 adds-backends = []
-target-claim-id = "echidna-phase6b-coproc-rest"
-notes = "Each kind lands with full implementation. DSP: rustfft (FFT/IFFT/window). IO: tokio::fs (read/write/line-count). Graphics: SVG ProofGraph render (no GPU dep). Audio: pure Rust sine-wave / completion chime. FPGA: subprocess to yosys (synth flow). Tier 3 for native; Tier 1 for FPGA subprocess."
+notes = "5 new CoprocessorKind variants (Dsp/Io/Graphics/Audio/Fpga) with full Rust impls. New deps: rustfft 6 (Apache-2.0/MIT) for DSP. Dsp: 4 ops (FFT/IFFT/Hann/Hamming) — FFT round-trip identity verified to 1e-9. Io: 3 ops (ReadAll/LineCount/Sha256OfFile) — RFC SHA-256 vector green, 16 MiB read cap. Graphics: 2 ops (ProofGraphSvg/BarChartSvg) — depth-aware DAG layout, XML escape verified. Audio: 2 ops (SineWave/CompletionChime) — RIFF header validated, Nyquist enforced, three-note C5/E5/G5 chime. Fpga: 1 op (YosysSynth) Tier 1 — health flips Unhealthy when yosys absent, top_module name validated against shell injection. Idris2 ABI extended with 6 new kind discriminants (5..10) and constructive round-trip proof. 21 new tests (54 total coprocessor)."
 
 [[expansion-roadmap.phase]]
 id = "phase-7"

@@ -87,47 +87,71 @@ encodeDecodeId PureFormal         = Refl
 --------------------------------------------------------------------------------
 
 ||| The kind of a coprocessor backend.  Only variants with a fully
-||| functional Rust + Idris2 implementation appear here.  Phase 6A adds
-||| Vector / Tensor / Crypto / Physics; Phase 6B will add Dsp / Fpga /
-||| Graphics / Audio / Io alongside their implementations.
+||| functional Rust + Idris2 implementation appear here.  Phase 6A added
+||| Vector / Tensor / Crypto / Physics; Phase 6B adds Dsp / Io / Graphics /
+||| Audio / Fpga.  FlintMath (Phase 2A) is feature-gated in Rust but the
+||| ABI surface is unconditional.
 public export
 data CoprocessorKind : Type where
-  Math    : CoprocessorKind  -- Phase 0  (num-bigint + num-integer)
-  Vector  : CoprocessorKind  -- Phase 6A (auto-vectorised f64 loops)
-  Tensor  : CoprocessorKind  -- Phase 6A (nalgebra dense linalg)
-  Crypto  : CoprocessorKind  -- Phase 6A (sha2 + blake3 + ed25519-dalek)
-  Physics : CoprocessorKind  -- Phase 6A (RK4 + harmonic energy oracles)
+  Math      : CoprocessorKind  -- Phase 0  (num-bigint + num-integer)
+  Vector    : CoprocessorKind  -- Phase 6A (auto-vectorised f64 loops)
+  Tensor    : CoprocessorKind  -- Phase 6A (nalgebra dense linalg)
+  Crypto    : CoprocessorKind  -- Phase 6A (sha2 + blake3 + ed25519-dalek)
+  Physics   : CoprocessorKind  -- Phase 6A (RK4 + harmonic energy oracles)
+  FlintMath : CoprocessorKind  -- Phase 2A (FLINT C library FFI, --features flint)
+  Dsp       : CoprocessorKind  -- Phase 6B (rustfft FFT/IFFT + windows)
+  Io        : CoprocessorKind  -- Phase 6B (tokio::fs file ops)
+  Graphics  : CoprocessorKind  -- Phase 6B (SVG rendering, no GPU)
+  Audio     : CoprocessorKind  -- Phase 6B (PCM/WAV synthesis)
+  Fpga      : CoprocessorKind  -- Phase 6B (yosys subprocess, Tier 1)
 
-||| Encoding to u8 — pinned for FFI stability.
+||| Encoding to u8 — pinned for FFI stability.  Reordering is an ABI break.
 public export
 coprocessorKindToU8 : CoprocessorKind -> Bits8
-coprocessorKindToU8 Math    = 0
-coprocessorKindToU8 Vector  = 1
-coprocessorKindToU8 Tensor  = 2
-coprocessorKindToU8 Crypto  = 3
-coprocessorKindToU8 Physics = 4
+coprocessorKindToU8 Math      = 0
+coprocessorKindToU8 Vector    = 1
+coprocessorKindToU8 Tensor    = 2
+coprocessorKindToU8 Crypto    = 3
+coprocessorKindToU8 Physics   = 4
+coprocessorKindToU8 FlintMath = 5
+coprocessorKindToU8 Dsp       = 6
+coprocessorKindToU8 Io        = 7
+coprocessorKindToU8 Graphics  = 8
+coprocessorKindToU8 Audio     = 9
+coprocessorKindToU8 Fpga      = 10
 
 public export
 coprocessorKindFromU8 : Bits8 -> Maybe CoprocessorKind
-coprocessorKindFromU8 0 = Just Math
-coprocessorKindFromU8 1 = Just Vector
-coprocessorKindFromU8 2 = Just Tensor
-coprocessorKindFromU8 3 = Just Crypto
-coprocessorKindFromU8 4 = Just Physics
-coprocessorKindFromU8 _ = Nothing
+coprocessorKindFromU8 0  = Just Math
+coprocessorKindFromU8 1  = Just Vector
+coprocessorKindFromU8 2  = Just Tensor
+coprocessorKindFromU8 3  = Just Crypto
+coprocessorKindFromU8 4  = Just Physics
+coprocessorKindFromU8 5  = Just FlintMath
+coprocessorKindFromU8 6  = Just Dsp
+coprocessorKindFromU8 7  = Just Io
+coprocessorKindFromU8 8  = Just Graphics
+coprocessorKindFromU8 9  = Just Audio
+coprocessorKindFromU8 10 = Just Fpga
+coprocessorKindFromU8 _  = Nothing
 
 ||| Round-trip on the kind discriminant.  Constructive — case-analysis
-||| discharges every variant.  Together with `coprocessorKindFromU8` this
-||| guarantees the kind ABI is well-formed end-to-end.
+||| discharges every variant.  Zero believe_me.
 public export
 kindEncodeDecodeId :
   (k : CoprocessorKind) ->
   coprocessorKindFromU8 (coprocessorKindToU8 k) = Just k
-kindEncodeDecodeId Math    = Refl
-kindEncodeDecodeId Vector  = Refl
-kindEncodeDecodeId Tensor  = Refl
-kindEncodeDecodeId Crypto  = Refl
-kindEncodeDecodeId Physics = Refl
+kindEncodeDecodeId Math      = Refl
+kindEncodeDecodeId Vector    = Refl
+kindEncodeDecodeId Tensor    = Refl
+kindEncodeDecodeId Crypto    = Refl
+kindEncodeDecodeId Physics   = Refl
+kindEncodeDecodeId FlintMath = Refl
+kindEncodeDecodeId Dsp       = Refl
+kindEncodeDecodeId Io        = Refl
+kindEncodeDecodeId Graphics  = Refl
+kindEncodeDecodeId Audio     = Refl
+kindEncodeDecodeId Fpga      = Refl
 
 --------------------------------------------------------------------------------
 -- Health
@@ -172,8 +196,14 @@ healthFromU8 _ = Unhealthy
 ||| Unhealthy.  Currently a placeholder until libechidna_coprocessor lands.
 public export
 coprocessorHealthOf : CoprocessorKind -> CoprocessorHealth
-coprocessorHealthOf Math    = Healthy
-coprocessorHealthOf Vector  = Healthy
-coprocessorHealthOf Tensor  = Healthy
-coprocessorHealthOf Crypto  = Healthy
-coprocessorHealthOf Physics = Healthy
+coprocessorHealthOf Math      = Healthy
+coprocessorHealthOf Vector    = Healthy
+coprocessorHealthOf Tensor    = Healthy
+coprocessorHealthOf Crypto    = Healthy
+coprocessorHealthOf Physics   = Healthy
+coprocessorHealthOf FlintMath = Healthy
+coprocessorHealthOf Dsp       = Healthy
+coprocessorHealthOf Io        = Healthy
+coprocessorHealthOf Graphics  = Healthy
+coprocessorHealthOf Audio     = Healthy
+coprocessorHealthOf Fpga      = Unhealthy  -- subprocess; runtime probe required

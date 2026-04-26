@@ -52,6 +52,30 @@ pub enum CoprocessorKind {
     /// `--features flint` and a system FLINT (LGPL-3) installation.
     /// Enabled by `CoprocessorFactory::native`; absent without the feature.
     FlintMath,
+
+    /// Digital signal processing — FFT/IFFT, window functions.  Backed by
+    /// `rustfft`.  Pairs with the Tamarin / ProVerif backends for proofs
+    /// about communication channels and signal-bearing protocols.
+    Dsp,
+
+    /// File and stream I/O.  Async via `tokio::fs`.  Backs proof-artifact
+    /// handling — read a Coq .v file, hash it, line-count it.
+    Io,
+
+    /// 2-D graphics — emits SVG strings.  No GPU dependency.  Backs the
+    /// proof-graph visualisation that the GNN-guided search consumes,
+    /// and renders Pareto-frontier diagnostics.
+    Graphics,
+
+    /// Audio synthesis — generates PCM / WAV.  Backs the completion-chime
+    /// machinery and any audio-signal proof obligations (rare but real
+    /// for cyber-physical KeYmaera X targets that involve audible signals).
+    Audio,
+
+    /// FPGA / hardware verification — subprocess to yosys.  Trust tier
+    /// `ExternalSubprocess` (Tier 1).  Backs proofs about hardware modules
+    /// expressed in Verilog / SystemVerilog.
+    Fpga,
 }
 
 /// A request dispatched to a coprocessor.
@@ -188,6 +212,72 @@ pub enum CoprocessorOp {
 
     /// Binomial coefficient C(n, k).  Exact arbitrary-precision result.
     FlintBinomial { n: u64, k: u64 },
+
+    // ── DSP: signal processing ───────────────────────────────────────────
+    /// Forward Fast Fourier Transform.  Returns a `FloatVec` of 2*N values:
+    /// real and imaginary components interleaved (re_0, im_0, re_1, im_1, …).
+    DspFft { samples: Vec<f64> },
+
+    /// Inverse Fast Fourier Transform.  Input is 2*N interleaved re/im
+    /// components.  Returns N real values (imaginary parts discarded —
+    /// caller must ensure conjugate-symmetric input for a real signal).
+    DspIfft { spectrum: Vec<f64> },
+
+    /// Apply a Hann window: w[n] = 0.5·(1 − cos(2πn/(N−1))).
+    DspHannWindow { samples: Vec<f64> },
+
+    /// Apply a Hamming window: w[n] = 0.54 − 0.46·cos(2πn/(N−1)).
+    DspHammingWindow { samples: Vec<f64> },
+
+    // ── IO: file / stream operations ─────────────────────────────────────
+    /// Read a file's full contents as bytes (returns Hex-encoded so the
+    /// wire format stays consistent).  Empty if path doesn't exist;
+    /// Failure on permission errors etc.
+    IoReadAll { path: String },
+
+    /// Count newline-separated lines in a file.  Returns BigInt(N) so big
+    /// counts work on the wire.
+    IoLineCount { path: String },
+
+    /// Compute SHA-256 of a file.  Equivalent to read-then-hash; provided
+    /// as one op so callers don't transit large buffers.
+    IoSha256OfFile { path: String },
+
+    // ── Graphics: 2-D SVG rendering (no GPU) ─────────────────────────────
+    /// Render a proof DAG to SVG.  `nodes` is `(id, label)`; `edges` is
+    /// `(from_id, to_id)`.  Layout: simple vertical waterfall with depth
+    /// alignment.  Returns the SVG document as a string.
+    GraphicsProofGraphSvg {
+        nodes: Vec<(String, String)>,
+        edges: Vec<(String, String)>,
+    },
+
+    /// Render a 1-D bar chart to SVG.  `bars` is `(label, height)`.
+    GraphicsBarChartSvg {
+        title: String,
+        bars: Vec<(String, f64)>,
+    },
+
+    // ── Audio: synthesis (PCM / WAV) ─────────────────────────────────────
+    /// Sine wave at `frequency_hz` for `duration_ms` at `sample_rate` Hz.
+    /// Encoded as little-endian 16-bit PCM in a WAV container.  Returns
+    /// the WAV bytes (Hex-encoded for the wire).
+    AudioSineWave {
+        frequency_hz: f64,
+        duration_ms: u32,
+        sample_rate: u32,
+    },
+
+    /// Pre-baked completion chime — three ascending notes (C5/E5/G5,
+    /// 100 ms each).  Used by the Stop hook variant for an audible
+    /// "done" signal.
+    AudioCompletionChime { sample_rate: u32 },
+
+    // ── FPGA: hardware synthesis (subprocess) ────────────────────────────
+    /// Synthesise a Verilog module via yosys (`synth` command).  Returns
+    /// the netlist as a string.  Tier 1 (external subprocess).  Failure
+    /// if yosys is not on PATH or the verilog source has parse errors.
+    FpgaYosysSynth { verilog: String, top_module: String },
 }
 
 /// The outcome of a dispatched op.

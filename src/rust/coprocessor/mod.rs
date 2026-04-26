@@ -40,9 +40,14 @@
 use anyhow::Result;
 use async_trait::async_trait;
 
+pub mod audio;
 pub mod crypto;
+pub mod dsp;
 #[cfg(feature = "flint")]
 pub mod flint;
+pub mod fpga;
+pub mod graphics;
+pub mod io;
 pub mod julia_bridge;
 pub mod math;
 pub mod physics;
@@ -51,9 +56,14 @@ pub mod trust;
 pub mod types;
 pub mod vector;
 
+pub use audio::AudioBackend;
 pub use crypto::CryptoBackend;
+pub use dsp::DspBackend;
 #[cfg(feature = "flint")]
 pub use flint::FlintMathBackend;
+pub use fpga::FpgaBackend;
+pub use graphics::GraphicsBackend;
+pub use io::IoBackend;
 pub use julia_bridge::JuliaCoprocessorBridge;
 pub use math::MathBackend;
 pub use physics::PhysicsBackend;
@@ -119,6 +129,11 @@ impl CoprocessorFactory {
             CoprocessorKind::FlintMath => Some(Box::new(FlintMathBackend::new())),
             #[cfg(not(feature = "flint"))]
             CoprocessorKind::FlintMath => None,
+            CoprocessorKind::Dsp => Some(Box::new(DspBackend::new())),
+            CoprocessorKind::Io => Some(Box::new(IoBackend::new())),
+            CoprocessorKind::Graphics => Some(Box::new(GraphicsBackend::new())),
+            CoprocessorKind::Audio => Some(Box::new(AudioBackend::new())),
+            CoprocessorKind::Fpga => Some(Box::new(FpgaBackend::new())),
         }
     }
 }
