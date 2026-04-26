@@ -168,12 +168,12 @@ Existing POC: `chapel_poc/parallel_proof_search.chpl` (420 LoC) + the self-linki
 
 ## Task status snapshot
 
-**Complete (L3 Wave-1 + Wave-2 + Chapel self-link):** 19 Tier-1/2 backends CI-installable; 18/18 live tests pass locally; `cargo build --features chapel` links standalone against bundled Zig stubs; Tamarin/ProVerif confirmed fully wired (were stale-listed as "planned").
+**Complete (L3 Wave-1 + Wave-2 + Chapel self-link + Dafny deep-wiring + VeriSimDB emit):** 19 Tier-1/2 backends CI-installable; 18/18 live tests pass locally; `cargo build --features chapel` links standalone against bundled Zig stubs; Tamarin/ProVerif confirmed fully wired (were stale-listed as "planned"); Dafny deep-wiring done (`e54275d`); VeriSimDB record emission done (`13cf817`); Real-Chapel CI job done (`3fb6c6b`).
 
-**P0 immediate:** Wave-2 CI verification (next nightly); Real-Chapel CI job.
+**P0 immediate:** Watch the `0 3 * * *` UTC nightly of `live-provers.yml` — Wave-2 CI verification (Tier-2 backends: idris2/isabelle/dafny/fstar/tlaps). Fix any red matrix cells in-place. `guix shell -m manifests/live-provers.scm -- just test-live` local acceptance run.
 
-**P1 L3 finishers:** Wave-3 (9 Containerfiles), Wave-4 (19 placeholder + rationale), Dafny deep-wiring, VeriSimDB schema.
+**P1 L3 finishers:** Wave-3 (9 Containerfiles — see table above), Wave-4 (19 placeholder + rationale docs in STATE.a2ml).
 
-**P2 L1:** Not started. Gated on L3 hand-off.
+**P2 L1:** Not started. Gated on L3 hand-off (Tier-1 green for ≥ 7 days + all waves landed/deferred).
 
 **P3 L2:** POC present + self-link fix landed; actual `src/chapel/` modules not started. Gated on L1.
