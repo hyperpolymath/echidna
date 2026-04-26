@@ -4,7 +4,7 @@
 we are) and the full continuation prompts at
 `verification-ecosystem/echidna/docs/handover/{L1,L2,L3,PRODUCTION-WIRING-PLAN}.md`.
 
-Last updated: 2026-04-26.
+Last updated: 2026-04-26 (session 2).
 
 Execution order from the master plan: **L3 → L1 → L2.** L3 blocks L1;
 L1 blocks L2 (because Chapel consumes Cap'n Proto schemas).
@@ -25,6 +25,12 @@ L1 blocks L2 (because Chapel consumes Cap'n Proto schemas).
 - ✅ **Stage 3a/3b — VeriSimDB read paths + dispatch advisor** — `query_by_goal_hash`, `query_prover_success_by_class`, `VeriSimAdvisor`, `verify_proof_verisim_guided` (`804ead6`).
 - ✅ **S5 — GNN-augmented suggest_tactics** — `gnn_augment_tactics` helper; rocq/lean/agda/isabelle/z3 backends prepend GNN-ranked apply tactics (`c4bc272`).
 - ✅ **S1 batch — 12 Julia premise extractors** — SMT-LIB, TPTP, Dafny, Lean3, HOL Light, Metamath, Tamarin, ProVerif, Boogie, Viper, MiniZinc, Twelf; named extractors 12→24 (`d7a2493`).
+- ✅ **S1 batch — 20 more extractors** (24→44): Isabelle, Coq/Rocq, Why3, TLAPS, Idris2, Vampire, EProver, SPASS, AltErgo, FStar, Mizar, CVC5, HOL4, ACL2, Minlog, PVS, Nuprl, Twelf2, Z3-DTsolver, Agda-core (`53ee39a`).
+- ✅ **S1 final 6 extractors** (44→50): SPIN/Promela, CBMC-C, SCIP-opt, KeY-Java, Alloy-Relational, NuSMV-temporal (`4ead82a`).
+- ✅ **GPUVerify + Faial backends** — GPU CUDA/OpenCL verification; `src/rust/provers/gpuverify.rs` + `faial.rs`; ProverKind variants 113/114; ProverKindInjectivity updated; Julia GPU extractors (`a1b0e82`, `89b76be`).
+- ✅ **live-provers.yml `--features live-provers` compile fix** — `gnn_api_url: None` added to `live_prover_suite.rs` and `live_prover_verify.rs` live_config(); GPU backends added to T4-GPU matrix job (`dc02547`).
+- ✅ **Wave-4 per-backend rationale** — all 19 backends documented with mock-only justification in `STATE.a2ml [wave-4-rationale]` (`1ca9862`).
+- ✅ **chapel-ci.yml checkout v4→v6** — 3 stale v4 SHA pins upgraded to canonical v6.0.2 (`1ca9862`).
 
 ## P0 — Immediate pickup
 
