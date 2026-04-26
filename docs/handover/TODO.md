@@ -16,7 +16,7 @@ L1 blocks L2 (because Chapel consumes Cap'n Proto schemas).
 - ✅ **`echidna-graphql` build** — ProverKind 30→113 variants, trait stubs, FFI casts fixed (`5aec9d5`). All three interface crates now build clean.
 - ✅ **FFI boundary audit** — `audits/audit-ffi-boundary.md` + `audits/assail-classifications.a2ml` classifying all legitimate UnsafeCode at FFI boundaries (`b4d682b`).
 - ✅ **`bounded_read_config`** — sync 1 MiB-capped read helper in `src/rust/integrity/io.rs`; `solver_integrity.rs` migrated.
-- ⏳ **F5 (boj-server `echidna-llm-mcp`)** — deferred to separate dispatch. BoJ in skeleton mode for this cartridge.
+- ✅ **F5 (boj-server `echidna-llm-mcp`)** — `consult` + `suggest_tactics` operations implemented; Elixir router patched for `{operation, params}` alias; 176 boj-server tests pass (`a6c8456`).
 
 ## P0 — Immediate pickup
 

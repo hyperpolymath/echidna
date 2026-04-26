@@ -110,3 +110,57 @@ jobs:
 
       - name: Test with chapel feature
         run: cargo test --features chapel -- proof_search
+
+  # Job 4: Build Rust linking against the real Chapel library (no Zig stubs).
+  # This is the integration signal for full L2 Chapel wiring.  Marked
+  # continue-on-error: true until dispatch.rs routes to ChapelParallelSearch
+  # by default and the full L2 sub-waves are complete.
+  rust-chapel-real:
+    name: Rust Build — Real Chapel Library (allow-fail)
+    runs-on: ubuntu-latest
+    needs: [chapel-build, zig-ffi]
+    continue-on-error: true
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+
+      - name: Install Chapel
+        run: |
+          curl -fsSL --max-time 300 \
+            https://github.com/chapel-lang/chapel/releases/download/2.3.0/chapel-2.3.0-1.ubuntu24.amd64.deb \
+            -o /tmp/chapel.deb
+          sudo dpkg -i /tmp/chapel.deb || sudo apt-get install -f -y
+          chpl --version
+
+      - name: Install Zig
+        uses: mlugg/setup-zig@d1434d08867e3ee9daa34448df10607b98908d29 # v2.2.1
+        with:
+          version: 0.13.0
+
+      - name: Install Rust
+        uses: dtolnay/rust-toolchain@4be9e76fd7c4901c61fb841f559994984270fce7 # stable
+        with:
+          toolchain: stable
+
+      - name: Rust cache
+        uses: Swatinem/rust-cache@779680da715d629ac1d338a641029a2f4372abb5 # v2
+
+      - name: Download real Chapel library
+        uses: actions/download-artifact@fa0a91b85d4f404e444e00e005971372dc801d16 # v4
+        with:
+          name: chapel-lib
+          path: src/chapel/
+
+      - name: Build Zig FFI without stubs (links against real Chapel)
+        run: |
+          cd src/zig_ffi
+          zig build -Doptimize=ReleaseSafe -Dstubs=false
+
+      - name: Build Rust with real Chapel library
+        run: |
+          export LD_LIBRARY_PATH="$PWD/src/chapel:$PWD/src/zig_ffi/zig-out/lib:${LD_LIBRARY_PATH:-}"
+          cargo build --features chapel
+
+      - name: Test Rust with real Chapel library
+        run: |
+          export LD_LIBRARY_PATH="$PWD/src/chapel:$PWD/src/zig_ffi/zig-out/lib:${LD_LIBRARY_PATH:-}"
+          cargo test --features chapel -- proof_search
