@@ -171,6 +171,10 @@ function extract_from_file(prover::String, filepath::String)::Vector{ProofExampl
         examples = extract_hol_proofs(filepath, content)
     elseif prover in ["Rocq"]
         examples = extract_coq_proofs(filepath, content)
+    elseif prover in ["GPUVerify", "GPU", "gpu-verify"]
+        examples = extract_gpuverify_proofs(filepath, content)
+    elseif prover == "Faial"
+        examples = extract_faial_proofs(filepath, content)
     else
         # Generic extraction for other provers
         examples = extract_generic_proofs(prover, filepath, content)
@@ -3086,6 +3090,161 @@ function extract_hol_proofs(filepath::String, content::String)::Vector{ProofExam
         end
     catch
         # Continue
+    end
+
+    return examples
+end
+
+"""
+    extract_gpuverify_proofs(filepath, content) -> Vector{ProofExample}
+
+Extract kernel verification goals from CUDA/OpenCL source files.
+
+Each `__global__ void <name>` (CUDA) or `__kernel void <name>` (OpenCL)
+function becomes one ProofExample goal. Pre/post conditions expressed via
+`__requires` and `__ensures` annotations become premises.  `__syncthreads`
+calls are collected as tactics since they are the canonical barrier primitive.
+
+Corpus: GPUVerify testsuite and Rodinia/PolyBench-GPU CUDA benchmarks.
+"""
+function extract_gpuverify_proofs(filepath::String, content::String)::Vector{ProofExample}
+    examples = ProofExample[]
+
+    # Detect dialect (CUDA vs OpenCL)
+    is_cuda  = occursin("__global__", content)
+    is_opencl = occursin("__kernel", content)
+    prover_name = "GPUVerify"
+
+    # Extract __requires and __ensures annotations as premises
+    premises = String[]
+    for m in eachmatch(r"__(requires|ensures)\s*\(([^)]+)\)", content)
+        push!(premises, string(m.captures[1], "(", m.captures[2], ")"))
+    end
+
+    # Collect __syncthreads() calls as proof tactics
+    tactics = String[]
+    if occursin("__syncthreads()", content)
+        push!(tactics, "__syncthreads()")
+    end
+    if occursin("barrier(CLK_LOCAL_MEM_FENCE)", content)
+        push!(tactics, "barrier(CLK_LOCAL_MEM_FENCE)")
+    end
+    if isempty(tactics)
+        push!(tactics, "auto")
+    end
+
+    # Match CUDA kernel declarations: __global__ void name(
+    if is_cuda
+        for m in eachmatch(r"__global__\s+void\s+([A-Za-z_][A-Za-z0-9_]*)\s*\(", content)
+            kernel_name = m.captures[1]
+            push!(examples, ProofExample(
+                prover_name,
+                filepath,
+                kernel_name,
+                "race_free($kernel_name)",
+                copy(tactics),
+                copy(premises),
+                true
+            ))
+        end
+    end
+
+    # Match OpenCL kernel declarations: __kernel void name(
+    if is_opencl
+        for m in eachmatch(r"__kernel\s+void\s+([A-Za-z_][A-Za-z0-9_]*)\s*\(", content)
+            kernel_name = m.captures[1]
+            push!(examples, ProofExample(
+                prover_name,
+                filepath,
+                kernel_name,
+                "race_free($kernel_name)",
+                copy(tactics),
+                copy(premises),
+                true
+            ))
+        end
+    end
+
+    # Fallback: no recognised kernel declarations found
+    if isempty(examples)
+        push!(examples, ProofExample(
+            prover_name,
+            filepath,
+            "unknown_kernel",
+            "race_free(unknown)",
+            tactics,
+            premises,
+            true
+        ))
+    end
+
+    return examples
+end
+
+"""
+    extract_faial_proofs(filepath, content) -> Vector{ProofExample}
+
+Extract data-race freedom goals from CUDA source files for the Faial
+access-pattern analyser.
+
+Each `__global__ void <name>` kernel becomes one ProofExample.
+`__shared__` variable declarations are extracted as premises — shared
+memory is the primary race surface Faial reasons about.
+Synchronisation primitives (`__syncthreads`, `atomicAdd`, `atomicCAS`)
+are collected as tactics.
+
+Corpus: Faial tests/ directory and any CUDA kernel corpus.
+"""
+function extract_faial_proofs(filepath::String, content::String)::Vector{ProofExample}
+    examples = ProofExample[]
+
+    # Collect __shared__ declarations as premises (race surface)
+    premises = String[]
+    for line in split(content, '\n')
+        trimmed = strip(line)
+        if occursin("__shared__", trimmed)
+            push!(premises, trimmed)
+        end
+    end
+
+    # Collect synchronisation calls as tactics
+    tactics = String[]
+    if occursin("__syncthreads()", content)
+        push!(tactics, "__syncthreads()")
+    end
+    for m in eachmatch(r"(atomicAdd|atomicCAS|atomicExch)\s*\(", content)
+        push!(tactics, string(m.captures[1]))
+    end
+    if isempty(tactics)
+        push!(tactics, "auto")
+    end
+    tactics = unique(tactics)
+
+    # Match CUDA __global__ kernel declarations
+    for m in eachmatch(r"__global__\s+void\s+([A-Za-z_][A-Za-z0-9_]*)\s*\(", content)
+        kernel_name = m.captures[1]
+        push!(examples, ProofExample(
+            "Faial",
+            filepath,
+            kernel_name,
+            "data_race_free($kernel_name)",
+            copy(tactics),
+            copy(premises),
+            true
+        ))
+    end
+
+    # Fallback
+    if isempty(examples)
+        push!(examples, ProofExample(
+            "Faial",
+            filepath,
+            "unknown_kernel",
+            "data_race_free(unknown)",
+            tactics,
+            premises,
+            true
+        ))
     end
 
     return examples
