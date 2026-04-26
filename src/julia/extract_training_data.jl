@@ -79,6 +79,20 @@ function extract_from_file(prover::String, filepath::String)::Vector{ProofExampl
         examples = extract_pvs_proofs(filepath, content)
     elseif prover == "HOL4"
         examples = extract_hol4_proofs(filepath, content)
+    elseif prover == "Isabelle"
+        examples = extract_isabelle_proofs(filepath, content)
+    elseif prover == "Agda"
+        examples = extract_agda_proofs(filepath, content)
+    elseif prover == "Idris2"
+        examples = extract_idris2_proofs(filepath, content)
+    elseif prover == "Mizar"
+        examples = extract_mizar_proofs(filepath, content)
+    elseif prover == "TLAPS"
+        examples = extract_tlaps_proofs(filepath, content)
+    elseif prover == "Why3"
+        examples = extract_why3_proofs(filepath, content)
+    elseif prover == "F*"
+        examples = extract_fstar_proofs(filepath, content)
     else
         # Generic extraction for other provers
         examples = extract_generic_proofs(prover, filepath, content)
@@ -182,13 +196,28 @@ function extract_acl2_proofs(filepath::String, content::String)::Vector{ProofExa
             push!(hints, strip(hint_block.captures[1]))
         end
 
+        # Extract premises from :use, :in-theory, :enable, :disable clauses
+        premises = String[]
+        try
+            # Pattern: :use (:instance theorem-name ...) or :use theorem-name
+            for use_match in eachmatch(r":use\s*\(?:?instance\s+([a-z][a-z0-9\-]*)", hint_block !== nothing ? hint_block.captures[1] : "")
+                push!(premises, use_match.captures[1])
+            end
+            # Pattern: :enable theorem-name or :in-theory (enable theorem-name)
+            for enable_match in eachmatch(r":(?:in-theory\s*\(|enable\s+)([a-z][a-z0-9\-]*)", hint_block !== nothing ? hint_block.captures[1] : "")
+                push!(premises, enable_match.captures[1])
+            end
+        catch
+            # If regex fails, leave premises empty
+        end
+
         push!(examples, ProofExample(
             "ACL2",
             filepath,
             theorem_name,
             formula,
             hints,
-            String[],  # ACL2 premises extracted differently
+            unique(premises),
             true
         ))
     end
@@ -225,18 +254,315 @@ function extract_pvs_proofs(filepath::String, content::String)::Vector{ProofExam
 end
 
 """
-Extract HOL4 proofs
+Extract Isabelle/HOL proofs
+"""
+function extract_isabelle_proofs(filepath::String, content::String)::Vector{ProofExample}
+    examples = ProofExample[]
+
+    # Match theorem/lemma declarations with proof blocks
+    for m in eachmatch(r"(theorem|lemma)\s+([A-Za-z_][A-Za-z0-9_\"]*)\s*:([^=]+)=\s*(.+?)(?:\n(?:theorem|lemma|end|definition)|\Z)"s, content)
+        theorem_name = m.captures[2]
+        goal = strip(m.captures[3])
+        proof_block = m.captures[4]
+
+        # Extract tactics from proof
+        tactics = [strip(t) for t in split(proof_block, r"<;>|;|\n") if !isempty(strip(t))]
+
+        # Extract premises: using, metis, apply (rule), apply (erule), apply (drule), apply (frule)
+        premises = String[]
+        try
+            for tactic in tactics
+                # Pattern: using theorem_name or metis theorem_name1 theorem_name2
+                for premise_match in eachmatch(r"(?:using|metis|rule|erule|drule|frule)\s+([A-Za-z_][A-Za-z0-9_\.]*)", tactic)
+                    push!(premises, premise_match.captures[1])
+                end
+                # Pattern: apply (rule theorem_name) or by (metis theorem_name)
+                if occursin(r"apply\s*\((?:rule|erule|drule|frule)", tactic)
+                    for rule_match in eachmatch(r"apply\s*\((?:rule|erule|drule|frule)\s+([A-Za-z_][A-Za-z0-9_\.]*)", tactic)
+                        push!(premises, rule_match.captures[1])
+                    end
+                end
+            end
+        catch
+            # If regex fails, continue with empty premises
+        end
+
+        push!(examples, ProofExample(
+            "Isabelle",
+            filepath,
+            theorem_name,
+            goal,
+            tactics,
+            unique(premises),
+            true
+        ))
+    end
+
+    return examples
+end
+
+"""
+Extract Agda proofs (qualified names and definition references)
+"""
+function extract_agda_proofs(filepath::String, content::String)::Vector{ProofExample}
+    examples = ProofExample[]
+
+    # Match function/theorem declarations with where clauses
+    for m in eachmatch(r"([A-Za-z_][A-Za-z0-9_]*)\s*:\s*([^\s=]+(?:\s*→[^\s=]+)*)\s*(?:where|=)"s, content)
+        theorem_name = m.captures[1]
+        goal = strip(m.captures[2])
+
+        # Extract qualified names (e.g., Relation.Binary.PropositionalEquality.refl)
+        premises = String[]
+        try
+            for qual_match in eachmatch(r"([A-Za-z][A-Za-z0-9_]*(?:\.[A-Za-z][A-Za-z0-9_]*)+)", content[m.offset:min(m.offset+500, end)])
+                push!(premises, qual_match.captures[1])
+            end
+        catch
+            # Continue with empty premises
+        end
+
+        tactics = String["where"]  # Agda uses where clauses
+
+        push!(examples, ProofExample(
+            "Agda",
+            filepath,
+            theorem_name,
+            goal,
+            tactics,
+            unique(premises),
+            true
+        ))
+    end
+
+    return examples
+end
+
+"""
+Extract Idris2 proofs (similar to Lean: exact, apply, with patterns)
+"""
+function extract_idris2_proofs(filepath::String, content::String)::Vector{ProofExample}
+    examples = ProofExample[]
+
+    # Match theorem/lemma declarations
+    for m in eachmatch(r"(theorem|lemma)\s+([A-Za-z_][A-Za-z0-9_]*)\s*:([^:=]+):=\s*by\s*(.+?)(?:\n\n|\n(?:theorem|lemma)|\Z)"s, content)
+        theorem_name = m.captures[2]
+        goal = strip(m.captures[3])
+        proof_block = m.captures[4]
+
+        # Extract tactics
+        tactics = [strip(t) for t in split(proof_block, r"<;>|;|\n") if !isempty(strip(t))]
+
+        # Extract premises: exact theorem_name, apply theorem_name, with theorem_name
+        premises = String[]
+        try
+            for tactic in tactics
+                for premise_match in eachmatch(r"(?:exact|apply|with)\s+([A-Za-z_][A-Za-z0-9_\.]*)", tactic)
+                    push!(premises, premise_match.captures[1])
+                end
+            end
+        catch
+            # Continue with empty premises
+        end
+
+        push!(examples, ProofExample(
+            "Idris2",
+            filepath,
+            theorem_name,
+            goal,
+            tactics,
+            unique(premises),
+            true
+        ))
+    end
+
+    return examples
+end
+
+"""
+Extract Mizar proofs (THEOREM references with justifications)
+"""
+function extract_mizar_proofs(filepath::String, content::String)::Vector{ProofExample}
+    examples = ProofExample[]
+
+    # Match theorem/definition declarations
+    for m in eachmatch(r"(theorem|definition)\s+([A-Z_][A-Z0-9_]*)\s*:([^;]+);"s, content)
+        theorem_name = m.captures[2]
+        goal = strip(m.captures[3])
+
+        # Extract premises from "by THEOREM_NAME:1" and "from SCHEME_NAME(...)" patterns
+        premises = String[]
+        try
+            for by_match in eachmatch(r"by\s+([A-Z_][A-Z0-9_]*(?::[0-9]+)?)", goal)
+                push!(premises, by_match.captures[1])
+            end
+            for from_match in eachmatch(r"from\s+([A-Z_][A-Z0-9_]*)", goal)
+                push!(premises, from_match.captures[1])
+            end
+        catch
+            # Continue with empty premises
+        end
+
+        push!(examples, ProofExample(
+            "Mizar",
+            filepath,
+            theorem_name,
+            goal,
+            String["by"],  # Mizar proofs use "by" justifications
+            unique(premises),
+            true
+        ))
+    end
+
+    return examples
+end
+
+"""
+Extract TLAPS (TLA+) proofs
+"""
+function extract_tlaps_proofs(filepath::String, content::String)::Vector{ProofExample}
+    examples = ProofExample[]
+
+    # Match theorem declarations
+    for m in eachmatch(r"(THEOREM|LEMMA)\s+([A-Za-z_][A-Za-z0-9_]*)\s*(?:==|<=>)\s*(.+?)(?:\n(?:THEOREM|LEMMA|PROOF)|\Z)"s, content)
+        theorem_name = m.captures[2]
+        goal = strip(m.captures[3])
+
+        # Extract premises from <1>1 BY DEF theorem_name and PROVE ... BY theorem_name
+        premises = String[]
+        try
+            for by_match in eachmatch(r"BY(?:\s+DEF)?\s+([A-Za-z_][A-Za-z0-9_]*)", goal)
+                push!(premises, by_match.captures[1])
+            end
+            for prove_match in eachmatch(r"PROVE\s+[^B]*BY\s+([A-Za-z_][A-Za-z0-9_]*)", goal)
+                push!(premises, prove_match.captures[1])
+            end
+        catch
+            # Continue with empty premises
+        end
+
+        push!(examples, ProofExample(
+            "TLAPS",
+            filepath,
+            theorem_name,
+            goal,
+            String["BY"],
+            unique(premises),
+            true
+        ))
+    end
+
+    return examples
+end
+
+"""
+Extract Why3 proofs (use/import and by clauses)
+"""
+function extract_why3_proofs(filepath::String, content::String)::Vector{ProofExample}
+    examples = ProofExample[]
+
+    # Match lemma/theorem declarations
+    for m in eachmatch(r"(lemma|theorem)\s+([a-z_][a-z0-9_]*)\s*:(.+?)(?:proof|by|end)"is, content)
+        theorem_name = m.captures[2]
+        goal = strip(m.captures[3])
+
+        # Extract premises from "use import module_name" and "by <term>"
+        premises = String[]
+        try
+            for use_match in eachmatch(r"use\s+(?:import\s+)?([A-Za-z_][A-Za-z0-9_\.]*)", goal)
+                push!(premises, use_match.captures[1])
+            end
+        catch
+            # Continue with empty premises
+        end
+
+        push!(examples, ProofExample(
+            "Why3",
+            filepath,
+            theorem_name,
+            goal,
+            String["by"],
+            unique(premises),
+            true
+        ))
+    end
+
+    return examples
+end
+
+"""
+Extract F* proofs (by and using clauses with lemma names)
+"""
+function extract_fstar_proofs(filepath::String, content::String)::Vector{ProofExample}
+    examples = ProofExample[]
+
+    # Match val/lemma declarations
+    for m in eachmatch(r"(?:val|lemma)\s+([a-z_][a-z0-9_]*)\s*:(.+?)(?:=|by)"is, content)
+        theorem_name = m.captures[1]
+        goal = strip(m.captures[2])
+
+        # Extract premises from "by lemma_name" and "using lemma_name"
+        premises = String[]
+        try
+            for premise_match in eachmatch(r"(?:by|using)\s+([A-Za-z_][A-Za-z0-9_\.]*)", goal)
+                push!(premises, premise_match.captures[1])
+            end
+        catch
+            # Continue with empty premises
+        end
+
+        push!(examples, ProofExample(
+            "F*",
+            filepath,
+            theorem_name,
+            goal,
+            String["by"],
+            unique(premises),
+            true
+        ))
+    end
+
+    return examples
+end
+
+"""
+Extract HOL4 proofs (with premise extraction from tactic brackets)
 """
 function extract_hol4_proofs(filepath::String, content::String)::Vector{ProofExample}
     examples = ProofExample[]
 
     # Match store_thm or prove calls
-    for m in eachmatch(r"(store_thm|prove)\s*\(\s*[`\"]([^`\"]*)[`\"],\s*`([^`]*)`"s, content)
+    for m in eachmatch(r"(store_thm|prove)\s*\(\s*[`\"]([^`\"]*)[`\"],\s*`([^`]*)`\s*,\s*(.+?)\)"s, content)
         theorem_name = strip(m.captures[2])
         goal = strip(m.captures[3])
+        tactic_block = m.captures[4]
 
         # Extract tactics (simplified)
-        tactics = String["REWRITE_TAC"]  # Common HOL4 tactic
+        tactics = [strip(t) for t in split(tactic_block, r">>|THEN") if !isempty(strip(t))]
+        if isempty(tactics)
+            tactics = String["REWRITE_TAC"]
+        end
+
+        # Extract premises from tactic arguments: metis_tac [theorem1, theorem2], rw [theorem1], fs [theorem1]
+        premises = String[]
+        try
+            for tactic_match in eachmatch(r"\b(?:metis_tac|rw|fs|simp_tac|METIS_TAC)\s*\[([^\]]+)\]", tactic_block)
+                # Extract individual theorem names from bracket contents
+                bracket_content = tactic_match.captures[1]
+                for item in split(bracket_content, r",\s*")
+                    item = strip(item)
+                    # Extract theorem name (remove any type annotations or arguments)
+                    if !isempty(item)
+                        theorem_ref = match(r"([A-Za-z_][A-Za-z0-9_\.]*)", item)
+                        if theorem_ref !== nothing
+                            push!(premises, theorem_ref.captures[1])
+                        end
+                    end
+                end
+            end
+        catch
+            # Continue with empty premises
+        end
 
         push!(examples, ProofExample(
             "HOL4",
@@ -244,7 +570,7 @@ function extract_hol4_proofs(filepath::String, content::String)::Vector{ProofExa
             theorem_name,
             goal,
             tactics,
-            String[],
+            unique(premises),
             true
         ))
     end
