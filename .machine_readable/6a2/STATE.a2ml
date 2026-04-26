@@ -938,3 +938,31 @@ f4-result = "panic-attack test suite was already 200/0 pass (db603c3 fixed schem
 f6-result = "audits/audit-ffi-boundary.md (4-section safety audit) + audits/assail-classifications.a2ml (7 classifications: ffi/mod.rs ×2, spark_axiom.rs, proof_search.rs, graphql/grpc/rest ffi_wrapper.rs) committed at b4d682b."
 workspace-build = "cargo build -p echidna -p echidna-graphql -p echidna-grpc -p echidna-rest: Finished clean (warnings only). echidna-wire fails on capnp system binary missing — pre-existing, not caused by this batch."
 metadata.last-updated = "2026-04-26"
+
+[session-2026-04-26-morning-nightly-triage]
+summary = "Attempted triage of 2026-04-26 03:00 UTC live-provers.yml nightly. INCOMPLETE — GitHub Actions run data inaccessible from session environment."
+nightly-schedule = "0 3 * * * (Tier-2 Wave-2 nightly)"
+nightly-head-commit = "757df7031cb72ab71b98dc9beb3299ddb5645301 (2026-04-26T01:08:18Z — most recent commit before 03:00 UTC)"
+run-id = "UNKNOWN"
+run-url = "UNKNOWN — inspect manually: https://github.com/hyperpolymath/echidna/actions/workflows/live-provers.yml"
+jobs-green = "UNKNOWN"
+jobs-red = "UNKNOWN"
+wave-1-status = "UNKNOWN — run data inaccessible; Wave-1 is every-PR so also runs on push to main"
+wave-2-status = "UNKNOWN — run data inaccessible; CI-unverified per P0 row in docs/handover/TODO.md"
+issues-opened = []
+triage-result = "BLOCKED"
+blockers = [
+  "gh CLI not installed on session host (which gh → not found)",
+  "No GITHUB_TOKEN / PAT in environment (printenv shows no GH_ or GITHUB_ auth vars)",
+  "Anonymous GitHub REST API rate-limited (HTTP 403, IP 34.72.174.153 quota exhausted on shared runner)",
+  "MCP GitHub server in this session exposes no workflow-run endpoints — list_workflow_runs / get_job_logs absent from tool catalogue (all 46 mcp__github__ tools enumerated; none cover Actions run data)",
+  "Local git proxy (127.0.0.1:34413) handles only git protocol, rejects /api/ paths with 'Invalid path format'",
+]
+known-p0-failure-modes = [
+  "isabelle: 500 MB tarball from isabelle.in.tum.de/dist/Isabelle2024_linux.tar.gz — timeout risk on GHA shared runners (noted in TODO.md P0 row)",
+  "tlaps: self-extracting installer fetched from github.com/tlaplus/tlapm/releases/latest/download/ — URL drifts when tlapm cuts a new release with a different asset name",
+  "fstar: symlink /usr/local/bin/fstar.exe → /opt/fstar/bin/fstar.exe — requires the latest tarball to unpack at strip-components=1 with bin/fstar.exe at that path; new releases can change the inner layout",
+  "idris2: source bootstrap via Chez Scheme (chezscheme + make + curl to GitHub idris2-src-latest.tgz fallback) — apt mirror lag or tarball URL rename can break this step",
+]
+recommended-action = "Manually open https://github.com/hyperpolymath/echidna/actions/workflows/live-provers.yml and inspect the most recent scheduled run (triggered 2026-04-26T03:00Z on 757df703). For any red T2 cell: pull the log via 'gh run view <id> --log-failed --job <jobId>', classify against the four P0 failure modes above, and open a GitHub issue titled 'live-provers nightly red: <backend> — <one-line root cause>' (body: run URL, failing step, ~10-line log excerpt, suspected fix). Do NOT open issues for T1 reds."
+branch = "nightly-triage/2026-04-26"
