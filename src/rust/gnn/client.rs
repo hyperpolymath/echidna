@@ -242,6 +242,23 @@ impl GnnClient {
     /// If the server is unavailable, returns an empty result with
     /// `from_server: false`.
     pub async fn rank_premises(&self, graph: &ProofGraph) -> GnnInferenceResult {
+        self.rank_premises_with_aspects(graph, &[]).await
+    }
+
+    /// Rank premises with goal-aspect hints for weight-guided scoring.
+    ///
+    /// Identical to [`rank_premises`] but populates the `domain_hints` field
+    /// in the request so Julia can apply accumulated training weights from
+    /// `PROVER_DOMAIN_WEIGHTS` (updated by `POST /training/update`).  This
+    /// activates the closed-loop feedback path: prior proof outcomes on the
+    /// same domain influence current premise scoring.
+    ///
+    /// Pass an empty slice for behaviour identical to [`rank_premises`].
+    pub async fn rank_premises_with_aspects(
+        &self,
+        graph: &ProofGraph,
+        aspects: &[String],
+    ) -> GnnInferenceResult {
         if !self.server_available {
             debug!("GNN server not available, returning empty ranking");
             return GnnInferenceResult {
@@ -253,7 +270,7 @@ impl GnnClient {
             };
         }
 
-        match self.call_rank_api(graph).await {
+        match self.call_rank_api(graph, aspects).await {
             Ok(result) => result,
             Err(e) => {
                 warn!("GNN ranking failed: {}", e);
@@ -269,8 +286,12 @@ impl GnnClient {
     }
 
     /// Internal: call the /gnn/rank endpoint.
-    async fn call_rank_api(&self, graph: &ProofGraph) -> Result<GnnInferenceResult> {
-        let payload = self.build_request_payload(graph);
+    async fn call_rank_api(
+        &self,
+        graph: &ProofGraph,
+        aspects: &[String],
+    ) -> Result<GnnInferenceResult> {
+        let payload = self.build_request_payload(graph, aspects);
         let url = format!("{}/gnn/rank", self.config.api_url);
 
         let response = self
@@ -307,7 +328,7 @@ impl GnnClient {
     }
 
     /// Build the request payload from a proof graph.
-    fn build_request_payload(&self, graph: &ProofGraph) -> GnnRankRequest {
+    fn build_request_payload(&self, graph: &ProofGraph, aspects: &[String]) -> GnnRankRequest {
         let (edge_src, edge_dst, edge_weights) = graph.sparse_adjacency();
 
         let edge_kinds: Vec<String> = graph
@@ -360,7 +381,7 @@ impl GnnClient {
                 num_gnn_layers: self.config.num_gnn_layers,
                 use_attention: self.config.use_attention,
             },
-            domain_hints: vec![],
+            domain_hints: aspects.to_vec(),
         }
     }
 
@@ -426,11 +447,17 @@ mod tests {
         extractor.extract_features(&mut graph);
 
         let client = GnnClient::new();
-        let payload = client.build_request_payload(&graph);
+        let payload = client.build_request_payload(&graph, &[]);
 
         assert_eq!(payload.graph.num_nodes, graph.num_nodes());
         assert_eq!(payload.graph.num_edges, graph.num_edges());
         assert_eq!(payload.graph.edge_src.len(), graph.num_edges());
+        assert!(payload.domain_hints.is_empty());
+
+        // With aspects: the same payload but with domain_hints populated
+        let aspects = vec!["arithmetic.factorisation".to_string(), "crypto.hash.sha256".to_string()];
+        let payload_with = client.build_request_payload(&graph, &aspects);
+        assert_eq!(payload_with.domain_hints, aspects);
     }
 
     #[tokio::test]

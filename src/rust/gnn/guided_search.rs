@@ -160,23 +160,39 @@ impl GnnGuidedSearch {
 
     /// Rank available premises for the current proof state.
     ///
+    /// Convenience wrapper around [`rank_premises_with_aspects`] that passes
+    /// no domain hints — equivalent to `rank_premises_with_aspects(state, premises, &[])`.
+    pub async fn rank_premises(
+        &mut self,
+        state: &ProofState,
+        available_premises: &[Theorem],
+    ) -> Vec<ScoredPremise> {
+        self.rank_premises_with_aspects(state, available_premises, &[]).await
+    }
+
+    /// Rank available premises with goal-aspect hints for closed-loop scoring.
+    ///
     /// This is the main entry point. It:
     /// 1. Builds a proof graph from the state
     /// 2. Extracts features
-    /// 3. Queries the GNN server (if available)
+    /// 3. Queries the GNN server (if available), passing `aspects` so Julia
+    ///    can apply accumulated `PROVER_DOMAIN_WEIGHTS` from prior outcomes
     /// 4. Computes symbolic scores
     /// 5. Combines and ranks results
     ///
     /// # Arguments
     /// * `state` - Current proof state (goals + context)
     /// * `available_premises` - Theorems that could be applied
+    /// * `aspects` - Goal aspect tags (e.g. from `AgenticGoal::aspects`).
+    ///   Empty slice = behaviour identical to [`rank_premises`].
     ///
     /// # Returns
     /// Premises ranked by combined score (highest first).
-    pub async fn rank_premises(
+    pub async fn rank_premises_with_aspects(
         &mut self,
         state: &ProofState,
         available_premises: &[Theorem],
+        aspects: &[String],
     ) -> Vec<ScoredPremise> {
         self.stats.total_calls += 1;
 
@@ -187,8 +203,13 @@ impl GnnGuidedSearch {
         // Step 2: Extract features
         self.feature_extractor.extract_features(&mut graph);
 
-        // Step 3: Get GNN scores (if server available)
-        let gnn_result = self.gnn_client.rank_premises(&graph).await;
+        // Step 3: Get GNN scores (if server available); aspects flow through
+        // as `domain_hints` so Julia's rank_with_gnn can apply per-domain
+        // weights accumulated from past proof outcomes.
+        let gnn_result = self
+            .gnn_client
+            .rank_premises_with_aspects(&graph, aspects)
+            .await;
 
         let gnn_scores: HashMap<String, f32> = if gnn_result.from_server {
             self.stats.gnn_calls += 1;
