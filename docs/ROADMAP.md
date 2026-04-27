@@ -173,9 +173,13 @@ What **is** blocking and needs Opus + cross‑repo input:
   `mv_prover_success_by_class` MV) and both echidna read paths
   (`query_prover_success_by_class` via `VeriSimAdvisor`,
   `cross_prover_search_names` via `vcl_ut`) and the write path
-  (`spawn_record_attempt` from dispatch exits) are now wired. Remaining
-  S4 work is ops/runtime: standing up VeriSimDB in CI and observing the
-  loop close in production.
+  (`spawn_record_attempt` from dispatch exits) are now wired.
+  - End-to-end loop test: `tests/s4_loop_closure.rs`, runnable via
+    `just test-s4-loop`. Skips cleanly when verisim-api is unreachable.
+  - Operations runbook: [`docs/handover/S4-LOOP-CLOSURE-RUNBOOK.md`](handover/S4-LOOP-CLOSURE-RUNBOOK.md).
+  - CI workflow filing is blocked on a published verisim-api image
+    (no `ghcr-publish.yml` in `verification-ecosystem/verisimdb` yet).
+    The runbook holds the workflow YAML ready to commit on that day.
 
 ## 5. Agent‑tier guidance
 

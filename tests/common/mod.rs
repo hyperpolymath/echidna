@@ -122,6 +122,8 @@ pub fn test_prover_config(kind: ProverKind) -> ProverConfig {
         timeout: 10,           // 10 seconds for tests
         neural_enabled: false, // Disable neural for basic tests
         gnn_api_url: None,
+        project_root: None,
+        sandbox: echidna::provers::SandboxMode::None,
     }
 }
 
