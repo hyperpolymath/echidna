@@ -1,0 +1,64 @@
+DIGEST b6e86f4cbeae9f778c619e89f35ea3c2
+Fsimple_proof
+R275:279 Stdlib.Arith.Arith <> <> lib
+prf 324:331 <> add_comm
+R348:350 Corelib.Init.Datatypes <> nat ind
+binder 342:342 <> n:1
+binder 344:344 <> m:2
+R360:362 Corelib.Init.Logic <> ::type_scope:x_'='_x not
+R356:358 Corelib.Init.Peano <> ::nat_scope:x_'+'_x not
+R355:355 simple_proof <> n:1 var
+R359:359 simple_proof <> m:2 var
+R364:366 Corelib.Init.Peano <> ::nat_scope:x_'+'_x not
+R363:363 simple_proof <> m:2 var
+R367:367 simple_proof <> n:1 var
+R529:536 Corelib.Init.Peano <> plus_n_O thm
+R529:536 Corelib.Init.Peano <> plus_n_O thm
+R529:536 Corelib.Init.Peano <> plus_n_O thm
+R643:651 Corelib.Init.Peano <> plus_n_Sm thm
+R643:651 Corelib.Init.Peano <> plus_n_Sm thm
+R643:651 Corelib.Init.Peano <> plus_n_Sm thm
+prf 718:726 <> add_assoc
+R745:747 Corelib.Init.Datatypes <> nat ind
+binder 737:737 <> n:3
+binder 739:739 <> m:4
+binder 741:741 <> p:5
+R763:765 Corelib.Init.Logic <> ::type_scope:x_'='_x not
+R752:752 Corelib.Init.Peano <> ::nat_scope:x_'+'_x not
+R758:761 Corelib.Init.Peano <> ::nat_scope:x_'+'_x not
+R754:756 Corelib.Init.Peano <> ::nat_scope:x_'+'_x not
+R753:753 simple_proof <> n:3 var
+R757:757 simple_proof <> m:4 var
+R762:762 simple_proof <> p:5 var
+R767:770 Corelib.Init.Peano <> ::nat_scope:x_'+'_x not
+R776:776 Corelib.Init.Peano <> ::nat_scope:x_'+'_x not
+R766:766 simple_proof <> n:3 var
+R772:774 Corelib.Init.Peano <> ::nat_scope:x_'+'_x not
+R771:771 simple_proof <> m:4 var
+R775:775 simple_proof <> p:5 var
+prf 978:984 <> add_0_r
+R999:1001 Corelib.Init.Datatypes <> nat ind
+binder 995:995 <> n:6
+R1011:1013 Corelib.Init.Logic <> ::type_scope:x_'='_x not
+R1007:1009 Corelib.Init.Peano <> ::nat_scope:x_'+'_x not
+R1006:1006 simple_proof <> n:6 var
+R1014:1014 simple_proof <> n:6 var
+prf 1156:1164 <> mult_dist
+R1183:1185 Corelib.Init.Datatypes <> nat ind
+binder 1175:1175 <> n:7
+binder 1177:1177 <> m:8
+binder 1179:1179 <> p:9
+R1201:1203 Corelib.Init.Logic <> ::type_scope:x_'='_x not
+R1191:1194 Corelib.Init.Peano <> ::nat_scope:x_'*'_x not
+R1200:1200 Corelib.Init.Peano <> ::nat_scope:x_'*'_x not
+R1190:1190 simple_proof <> n:7 var
+R1196:1198 Corelib.Init.Peano <> ::nat_scope:x_'+'_x not
+R1195:1195 simple_proof <> m:8 var
+R1199:1199 simple_proof <> p:9 var
+R1209:1211 Corelib.Init.Peano <> ::nat_scope:x_'+'_x not
+R1205:1207 Corelib.Init.Peano <> ::nat_scope:x_'*'_x not
+R1204:1204 simple_proof <> n:7 var
+R1208:1208 simple_proof <> m:8 var
+R1213:1215 Corelib.Init.Peano <> ::nat_scope:x_'*'_x not
+R1212:1212 simple_proof <> n:7 var
+R1216:1216 simple_proof <> p:9 var

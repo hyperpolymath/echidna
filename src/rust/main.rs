@@ -7,11 +7,13 @@
 
 use anyhow::{Context, Result};
 use clap::{Parser, Subcommand};
+use echidna::dispatch::ProverDispatcher;
 use echidna::{
     diagnostics::proof_failure::diagnose_from_outcome, provers::ProverBackend, ProverConfig,
     ProverKind,
 };
 use indicatif::{ProgressBar, ProgressStyle};
+use std::sync::Arc;
 use std::path::PathBuf;
 use tracing::{info, warn};
 
@@ -20,6 +22,7 @@ mod repl;
 mod server;
 
 use output::{OutputFormat, OutputFormatter};
+use repl::DiagnosticsREPL;
 
 /// ECHIDNA - Extensible Cognitive Hybrid Intelligence for Deductive Neural Assistance
 #[derive(Parser)]
@@ -168,6 +171,9 @@ enum Commands {
         /// Prover name
         prover: ProverKind,
     },
+
+    /// Interactive diagnostics REPL for health monitoring
+    Diagnostics,
 }
 
 #[tokio::main]
@@ -243,6 +249,10 @@ async fn main() -> Result<()> {
 
         Commands::Info { prover } => {
             info_command(prover, &formatter)?;
+        },
+
+        Commands::Diagnostics => {
+            diagnostics_command().await?;
         },
     }
 
@@ -900,6 +910,16 @@ fn create_progress_bar(message: &str) -> ProgressBar {
     pb.set_message(message.to_string());
     pb.enable_steady_tick(std::time::Duration::from_millis(100));
     pb
+}
+
+/// Diagnostics command - interactive health monitoring REPL
+async fn diagnostics_command() -> Result<()> {
+    info!("Starting diagnostics REPL for health monitoring");
+    let dispatcher = Arc::new(ProverDispatcher::new());
+    let health = dispatcher.health_status();
+    let mut repl = DiagnosticsREPL::new();
+    repl.run(&health).await;
+    Ok(())
 }
 
 // We need to add futures crate for the executor

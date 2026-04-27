@@ -7,13 +7,16 @@
 //! axiom scan -> confidence scoring.
 
 use anyhow::{Context, Result};
+use chrono::Utc;
 use serde::{Deserialize, Serialize};
 #[cfg(feature = "verisim")]
 use std::collections::HashMap;
 use std::path::PathBuf;
+use std::sync::{Arc, Mutex};
 use std::time::Instant;
 use tracing::{info, warn};
 
+use crate::diagnostics::{HealthStatus, DegradationMode, CircuitBreakerStateSnapshot, ProverHealth};
 use crate::integrity::solver_integrity::{IntegrityChecker, IntegrityStatus};
 use crate::llm::LlmAdvisor;
 use crate::provers::outcome::{classify_anyhow_error, ProverOutcome};
@@ -255,6 +258,8 @@ pub struct ProverDispatcher {
     /// logged at warn level and dropped.
     #[cfg(feature = "verisim")]
     verisim_writer: Option<crate::verisim_bridge::VeriSimDBClient>,
+    /// Health monitoring for all provers and system components
+    health_status: Arc<Mutex<HealthStatus>>,
 }
 
 impl ProverDispatcher {
@@ -268,6 +273,7 @@ impl ProverDispatcher {
             verisim_advisor: None,
             #[cfg(feature = "verisim")]
             verisim_writer: None,
+            health_status: Arc::new(Mutex::new(HealthStatus::new())),
         }
     }
 
@@ -281,6 +287,7 @@ impl ProverDispatcher {
             verisim_advisor: None,
             #[cfg(feature = "verisim")]
             verisim_writer: None,
+            health_status: Arc::new(Mutex::new(HealthStatus::new())),
         }
     }
 
@@ -355,6 +362,66 @@ impl ProverDispatcher {
         // statistics this dispatch consults would be polluted with
         // "unknown" rows.
         self.verify_proof_with_class(prover, content, Some(obligation_class)).await
+    }
+
+    /// Get current health status snapshot
+    pub fn health_status(&self) -> HealthStatus {
+        let mut health = self.health_status.lock().unwrap().clone();
+        health.compute_degradation_mode();
+        health
+    }
+
+    /// Update prover health metrics after a proof attempt
+    pub fn record_prover_result(&self, prover_kind: ProverKind, outcome: &ProverOutcome, latency_ms: u64) {
+        let mut health = self.health_status.lock().unwrap();
+        let prover_name = format!("{:?}", prover_kind);
+
+        let entry = health
+            .prover_health
+            .entry(prover_name.clone())
+            .or_insert_with(|| ProverHealth {
+                name: prover_name,
+                is_available: true,
+                circuit_breaker_state: CircuitBreakerStateSnapshot::Closed,
+                last_successful_proof: None,
+                consecutive_failures: 0,
+                avg_latency_ms: 0.0,
+                success_rate: 0.5,
+                total_invocations: 0,
+                total_failures: 0,
+            });
+
+        entry.total_invocations += 1;
+        entry.avg_latency_ms = (entry.avg_latency_ms * 0.8) + (latency_ms as f64 * 0.2); // EMA
+
+        match outcome {
+            ProverOutcome::Proved { .. } => {
+                entry.consecutive_failures = 0;
+                entry.last_successful_proof = Some(Utc::now());
+                entry.is_available = true;
+                entry.success_rate = (entry.success_rate * 0.9) + (1.0 * 0.1);
+            }
+            ProverOutcome::Timeout { .. } | ProverOutcome::ProverError { .. } | ProverOutcome::SystemError { .. } => {
+                entry.consecutive_failures += 1;
+                entry.total_failures += 1;
+                if entry.consecutive_failures >= 3 {
+                    entry.is_available = false;
+                }
+                entry.success_rate *= 0.9;
+            }
+            _ => {
+                entry.total_failures += 1;
+                entry.success_rate = (entry.success_rate * 0.95) + (0.0 * 0.05);
+            }
+        }
+
+        entry.success_rate = entry.success_rate.clamp(0.0, 1.0);
+        health.compute_degradation_mode();
+    }
+
+    /// Get current system degradation mode
+    pub fn degradation_mode(&self) -> DegradationMode {
+        self.health_status().system_degradation
     }
 
     /// Dispatch with LLM-guided optimisation
@@ -453,6 +520,7 @@ impl ProverDispatcher {
             Err(e) => {
                 let outcome = classify_anyhow_error(&e, self.config.timeout);
                 let elapsed_ms = prover_started.elapsed().as_millis() as u64;
+                self.record_prover_result(prover_kind, &outcome, elapsed_ms);
                 let diagnostics = if self.config.diagnostics {
                     Some(RunDiagnostics {
                         normalized_input: content.trim().to_string(),
@@ -499,6 +567,7 @@ impl ProverDispatcher {
             .context("Failed to verify proof")?;
         let verified = outcome.is_proved();
         let prover_elapsed_ms = prover_started.elapsed().as_millis() as u64;
+        self.record_prover_result(prover_kind, &outcome, prover_elapsed_ms);
 
         // Step 4: Track axiom usage
         let axiom_usages = if self.config.track_axioms {
@@ -652,12 +721,42 @@ impl ProverDispatcher {
             return Ok(primary_result);
         }
 
+        // Check degradation mode: in CosineOnly/ReadOnly, skip cross-checking
+        let degradation = self.degradation_mode();
+        match degradation {
+            DegradationMode::CosineOnly | DegradationMode::ReadOnly | DegradationMode::Minimal => {
+                // System too degraded for cross-checking; return primary result only
+                return Ok(primary_result);
+            }
+            _ => {} // Normal or IncreasingFallback: proceed with cross-checking
+        }
+
+        // Filter cross-checkers by health status and degradation mode
+        let max_cross_checkers = match degradation {
+            DegradationMode::Normal => additional_provers.len(),
+            DegradationMode::IncreasingFallback => std::cmp::max(5, additional_provers.len() / 2),
+            _ => 0, // Should not reach here (caught above)
+        };
+
+        let health = self.health_status.lock().unwrap();
+        let available_cross_checkers: Vec<ProverKind> = additional_provers
+            .iter()
+            .filter(|p| {
+                let prover_name = format!("{:?}", p);
+                health.prover_health.get(&prover_name)
+                    .map_or(true, |h| h.is_available)
+            })
+            .take(max_cross_checkers)
+            .copied()
+            .collect();
+        drop(health);
+
         // Run additional provers for cross-checking
         let mut all_agree = primary_result.verified;
         let mut provers_used = vec![format!("{:?}", primary_prover)];
         let mut confirming_count: u32 = if primary_result.verified { 1 } else { 0 };
 
-        for &additional in additional_provers {
+        for &additional in available_cross_checkers.iter() {
             match self.verify_proof(additional, content).await {
                 Ok(result) => {
                     provers_used.push(format!("{:?}", additional));

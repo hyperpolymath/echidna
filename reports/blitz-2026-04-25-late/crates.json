@@ -1,0 +1,67 @@
+{
+  "program_path": "crates",
+  "language": "rust",
+  "frameworks": [],
+  "weak_points": [],
+  "statistics": {
+    "total_lines": 2272,
+    "unsafe_blocks": 0,
+    "panic_sites": 0,
+    "unwrap_calls": 3,
+    "allocation_sites": 26,
+    "io_operations": 1,
+    "threading_constructs": 0
+  },
+  "file_statistics": [
+    {
+      "file_path": "typed_wasm/src/lib.rs",
+      "lines": 1030,
+      "unsafe_blocks": 0,
+      "panic_sites": 0,
+      "unwrap_calls": 2,
+      "allocation_sites": 10,
+      "io_operations": 0,
+      "threading_constructs": 0
+    },
+    {
+      "file_path": "echidna-mcp/src/main.rs",
+      "lines": 308,
+      "unsafe_blocks": 0,
+      "panic_sites": 0,
+      "unwrap_calls": 0,
+      "allocation_sites": 6,
+      "io_operations": 1,
+      "threading_constructs": 0
+    },
+    {
+      "file_path": "echidna-wire/build.rs",
+      "lines": 12,
+      "unsafe_blocks": 0,
+      "panic_sites": 0,
+      "unwrap_calls": 1,
+      "allocation_sites": 0,
+      "io_operations": 0,
+      "threading_constructs": 0
+    },
+    {
+      "file_path": "echidna-core/src/types.rs",
+      "lines": 478,
+      "unsafe_blocks": 0,
+      "panic_sites": 0,
+      "unwrap_calls": 0,
+      "allocation_sites": 10,
+      "io_operations": 0,
+      "threading_constructs": 0
+    }
+  ],
+  "recommended_attacks": [
+    "memory",
+    "cpu"
+  ],
+  "dependency_graph": {
+    "edges": []
+  },
+  "taint_matrix": {
+    "rows": []
+  }
+}

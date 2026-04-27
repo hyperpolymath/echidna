@@ -2,6 +2,7 @@
 // Interactive REPL for echidna
 
 pub mod proof;
-// pub mod diagnostics; // TODO: Fix module import issues
+pub mod diagnostics;
 
 pub use proof::start_repl;
+pub use diagnostics::DiagnosticsREPL;

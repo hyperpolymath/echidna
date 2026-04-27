@@ -18,6 +18,8 @@ use echidna::agent::meta_controller::{MetaController, Plan};
 use echidna::agent::AgenticGoal;
 use echidna::core::{Goal, ProofState, Tactic, TacticResult, Term};
 use echidna::dispatch::ProverDispatcher;
+use echidna::diagnostics::HealthStatus;
+use echidna::provers::ProverOutcome;
 use echidna::verification::StatisticsTracker;
 use echidna::{ProverBackend, ProverConfig, ProverKind};
 use reqwest::Client;
@@ -26,7 +28,7 @@ use serde_json::json;
 use std::collections::HashMap;
 use std::net::SocketAddr;
 use std::sync::Arc;
-use std::time::Duration;
+use std::time::{Duration, Instant};
 use tokio::sync::{Mutex, RwLock};
 use tower_http::cors::CorsLayer;
 use tracing::{debug, info, instrument};
@@ -48,6 +50,8 @@ struct AppState {
     /// Shared proof-outcome statistics used by MetaController for Bayesian
     /// routing and exported to Julia for GNN online learning.
     stats: Arc<RwLock<StatisticsTracker>>,
+    /// Prover dispatcher for trust-hardening pipeline and health monitoring
+    dispatcher: Arc<ProverDispatcher>,
 }
 
 /// A proof session
@@ -90,12 +94,17 @@ pub async fn start_server(port: u16, host: String, enable_cors: bool) -> Result<
     let stats = Arc::new(RwLock::new(StatisticsTracker::new()));
     let meta_controller = Arc::new(MetaController::new().with_stats(stats.clone()));
 
+    // Create prover dispatcher with default configuration
+    let dispatcher = Arc::new(ProverDispatcher::new());
+    info!("✓ Initialized prover dispatcher for trust-hardening pipeline");
+
     let state = AppState {
         sessions: Arc::new(RwLock::new(HashMap::new())),
         ml_client,
         ml_api_url,
         meta_controller,
         stats,
+        dispatcher,
     };
 
     // GNN training sync — background task that pushes accumulated proof-outcome
@@ -145,6 +154,7 @@ pub async fn start_server(port: u16, host: String, enable_cors: bool) -> Result<
         .route("/.well-known/groove", get(groove_manifest))
         // REST API endpoints
         .route("/api/health", get(health_check))
+        .route("/api/diagnostics/health", get(diagnostics_health_handler))
         .route("/api/provers", get(list_provers))
         .route("/api/prove", post(prove_handler))
         .route("/api/verify", post(verify_handler))
@@ -359,6 +369,15 @@ async fn health_check() -> Json<HealthResponse> {
     })
 }
 
+/// Detailed diagnostics health endpoint
+/// Returns full HealthStatus snapshot from dispatcher with prover metrics and degradation mode
+async fn diagnostics_health_handler(
+    State(app_state): State<AppState>,
+) -> Json<HealthStatus> {
+    let health = app_state.dispatcher.health_status();
+    Json(health)
+}
+
 /// List available provers
 async fn list_provers() -> Json<ProversResponse> {
     let provers = ProverKind::all_core()
@@ -374,7 +393,10 @@ async fn list_provers() -> Json<ProversResponse> {
 }
 
 /// Prove theorem endpoint
-async fn prove_handler(Json(req): Json<ProveRequest>) -> Result<Json<ProveResponse>, AppError> {
+async fn prove_handler(
+    State(app_state): State<AppState>,
+    Json(req): Json<ProveRequest>,
+) -> Result<Json<ProveResponse>, AppError> {
     info!("Prove request for prover: {:?}", req.prover);
 
     // Create prover
@@ -398,6 +420,13 @@ async fn prove_handler(Json(req): Json<ProveRequest>) -> Result<Json<ProveRespon
     // which the backend prover then happily accepted). Require at least one
     // goal, theorem, definition, or axiom before we claim "parse succeeded".
     if is_empty_state(&state) && !req.content.trim().is_empty() {
+        let outcome = ProverOutcome::InvalidInput {
+            reason: "Parse produced no goals, theorems, definitions, or axioms — \
+                     content not recognised by the selected prover backend"
+                .to_string(),
+            location: None,
+        };
+        app_state.dispatcher.record_prover_result(req.prover, &outcome, 0);
         return Ok(Json(ProveResponse {
             success: false,
             goals: 0,
@@ -407,11 +436,26 @@ async fn prove_handler(Json(req): Json<ProveRequest>) -> Result<Json<ProveRespon
         }));
     }
 
-    // Verify proof
+    // Verify proof and record health metrics
+    let verify_start = Instant::now();
     let valid = prover
         .verify_proof(&state)
         .await
         .map_err(|e| AppError::VerificationError(e.to_string()))?;
+    let verify_elapsed_ms = verify_start.elapsed().as_millis() as u64;
+
+    // Record outcome in health monitoring
+    let outcome = if valid {
+        ProverOutcome::Proved {
+            elapsed_ms: verify_elapsed_ms,
+        }
+    } else {
+        ProverOutcome::NoProofFound {
+            elapsed_ms: verify_elapsed_ms,
+            reason: Some("Proof verification failed".to_string()),
+        }
+    };
+    app_state.dispatcher.record_prover_result(req.prover, &outcome, verify_elapsed_ms);
 
     Ok(Json(ProveResponse {
         success: valid,

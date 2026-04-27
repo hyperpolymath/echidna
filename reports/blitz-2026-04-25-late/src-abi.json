@@ -1,0 +1,151 @@
+{
+  "program_path": "src/abi",
+  "language": "idris",
+  "frameworks": [],
+  "weak_points": [],
+  "statistics": {
+    "total_lines": 7652,
+    "unsafe_blocks": 204,
+    "panic_sites": 0,
+    "unwrap_calls": 0,
+    "allocation_sites": 0,
+    "io_operations": 0,
+    "threading_constructs": 0
+  },
+  "file_statistics": [
+    {
+      "file_path": "Boj/Foreign.idr",
+      "lines": 271,
+      "unsafe_blocks": 19,
+      "panic_sites": 0,
+      "unwrap_calls": 0,
+      "allocation_sites": 0,
+      "io_operations": 0,
+      "threading_constructs": 0
+    },
+    {
+      "file_path": "BojForeign.idr",
+      "lines": 271,
+      "unsafe_blocks": 19,
+      "panic_sites": 0,
+      "unwrap_calls": 0,
+      "allocation_sites": 0,
+      "io_operations": 0,
+      "threading_constructs": 0
+    },
+    {
+      "file_path": "EchidnaABI/Foreign.idr",
+      "lines": 217,
+      "unsafe_blocks": 12,
+      "panic_sites": 0,
+      "unwrap_calls": 0,
+      "allocation_sites": 0,
+      "io_operations": 0,
+      "threading_constructs": 0
+    },
+    {
+      "file_path": "Foreign.idr",
+      "lines": 217,
+      "unsafe_blocks": 12,
+      "panic_sites": 0,
+      "unwrap_calls": 0,
+      "allocation_sites": 0,
+      "io_operations": 0,
+      "threading_constructs": 0
+    },
+    {
+      "file_path": "Overlay/Foreign.idr",
+      "lines": 522,
+      "unsafe_blocks": 34,
+      "panic_sites": 0,
+      "unwrap_calls": 0,
+      "allocation_sites": 0,
+      "io_operations": 0,
+      "threading_constructs": 0
+    },
+    {
+      "file_path": "OverlayForeign.idr",
+      "lines": 522,
+      "unsafe_blocks": 34,
+      "panic_sites": 0,
+      "unwrap_calls": 0,
+      "allocation_sites": 0,
+      "io_operations": 0,
+      "threading_constructs": 0
+    },
+    {
+      "file_path": "Tentacles/Foreign.idr",
+      "lines": 350,
+      "unsafe_blocks": 20,
+      "panic_sites": 0,
+      "unwrap_calls": 0,
+      "allocation_sites": 0,
+      "io_operations": 0,
+      "threading_constructs": 0
+    },
+    {
+      "file_path": "TentaclesForeign.idr",
+      "lines": 350,
+      "unsafe_blocks": 20,
+      "panic_sites": 0,
+      "unwrap_calls": 0,
+      "allocation_sites": 0,
+      "io_operations": 0,
+      "threading_constructs": 0
+    },
+    {
+      "file_path": "TypeLL/Foreign.idr",
+      "lines": 262,
+      "unsafe_blocks": 17,
+      "panic_sites": 0,
+      "unwrap_calls": 0,
+      "allocation_sites": 0,
+      "io_operations": 0,
+      "threading_constructs": 0
+    },
+    {
+      "file_path": "TypeLLForeign.idr",
+      "lines": 262,
+      "unsafe_blocks": 17,
+      "panic_sites": 0,
+      "unwrap_calls": 0,
+      "allocation_sites": 0,
+      "io_operations": 0,
+      "threading_constructs": 0
+    }
+  ],
+  "recommended_attacks": [
+    "cpu"
+  ],
+  "dependency_graph": {
+    "edges": [
+      {
+        "from": "BojForeign.idr",
+        "to": "Foreign.idr",
+        "relation": "shared_dir:",
+        "weight": 1.0
+      },
+      {
+        "from": "Foreign.idr",
+        "to": "OverlayForeign.idr",
+        "relation": "shared_dir:",
+        "weight": 1.0
+      },
+      {
+        "from": "OverlayForeign.idr",
+        "to": "TentaclesForeign.idr",
+        "relation": "shared_dir:",
+        "weight": 1.0
+      },
+      {
+        "from": "TentaclesForeign.idr",
+        "to": "TypeLLForeign.idr",
+        "relation": "shared_dir:",
+        "weight": 1.0
+      }
+    ]
+  },
+  "taint_matrix": {
+    "rows": []
+  }
+}

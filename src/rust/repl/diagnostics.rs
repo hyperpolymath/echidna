@@ -2,9 +2,8 @@
 // Interactive diagnostics REPL for echidna
 
 use std::io::{self, Write};
-use std::collections::HashMap;
 
-use crate::diagnostics::{HealthStatus, DegradationMode};
+use echidna::diagnostics::{HealthStatus, DegradationMode};
 
 /// Interactive diagnostics REPL
 pub struct DiagnosticsREPL {

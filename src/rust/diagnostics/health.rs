@@ -6,6 +6,8 @@ use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 
 use crate::fault_tolerance::CircuitState;
+use super::nesy_validation::NeSyMetrics;
+use super::fallback_monitor::FallbackMonitor;
 
 /// Overall system health status
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -63,6 +65,12 @@ pub struct ModelHealth {
     pub fallback_cache_size: usize,
     pub fallback_max_latency_ms: f64,
     pub fallback_sla_met: bool,  // Whether cosine fallback meets SLA thresholds
+    /// NeSy agreement metrics: GNN vs symbolic solver validation
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub nesy_metrics: Option<NeSyMetrics>,
+    /// Cosine fallback SLA monitor: tracks latency and cache health
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub fallback_monitor: Option<FallbackMonitor>,
 }
 
 /// Health of training corpus
@@ -107,6 +115,8 @@ impl HealthStatus {
                 fallback_cache_size: 0,
                 fallback_max_latency_ms: 0.0,
                 fallback_sla_met: true,  // Start as met until proven otherwise
+                nesy_metrics: None,
+                fallback_monitor: Some(FallbackMonitor::new(Default::default())),
             },
             corpus_health: CorpusHealth {
                 total_proofs: 0,
@@ -135,10 +145,27 @@ impl HealthStatus {
 
         let available_provers = self.prover_health.len() - failed_provers;
 
+        // Check NeSy agreement: if too low, flag GNN as suspect
+        let gnn_agreement_suspect = self
+            .gnn_model_health
+            .nesy_metrics
+            .as_ref()
+            .map(|m| m.agreement_rate < 0.75)
+            .unwrap_or(false);
+
+        // Check fallback SLA: if violations > 10% or latency exceeds threshold, degrade
+        let fallback_sla_violated = self
+            .gnn_model_health
+            .fallback_monitor
+            .as_ref()
+            .map(|m| !m.is_healthy())
+            .unwrap_or(false);
+
         // Heuristic rules for degradation (priority order: most critical first)
-        if !self.gnn_model_health.is_loaded || !self.gnn_model_health.nDCG_meets_threshold {
-            // GNN model not available or not meeting quality threshold
+        if !self.gnn_model_health.is_loaded || !self.gnn_model_health.nDCG_meets_threshold || gnn_agreement_suspect {
+            // GNN model not available, not meeting quality threshold, or NeSy agreement too low
             self.system_degradation = DegradationMode::CosineOnly;
+            self.gnn_model_health.fallback_active = true;
         } else if !self.gnn_model_health.fallback_sla_met {
             // Fallback cosine similarity is violating SLA (latency or success rate)
             // Transition from Normal → IncreasingFallback, or escalate if already degraded
@@ -154,6 +181,9 @@ impl HealthStatus {
         } else if available_provers < 3 {
             // Critical: too few provers available
             self.system_degradation = DegradationMode::ReadOnly;
+        } else if fallback_sla_violated {
+            // Fallback latency SLA violated or too many violations
+            self.system_degradation = DegradationMode::IncreasingFallback;
         } else if circuit_open_count >= 2 {
             // Multiple circuit breakers open
             self.system_degradation = DegradationMode::IncreasingFallback;

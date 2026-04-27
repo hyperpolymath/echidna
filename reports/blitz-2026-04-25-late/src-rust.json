@@ -1,0 +1,1565 @@
+{
+  "program_path": "src/rust",
+  "language": "rust",
+  "frameworks": [],
+  "weak_points": [
+    {
+      "category": "UnsafeCode",
+      "location": "ffi/spark_axiom.rs",
+      "file": "ffi/spark_axiom.rs",
+      "severity": "High",
+      "description": "3 unsafe blocks in ffi/spark_axiom.rs",
+      "recommended_attack": [
+        "memory",
+        "concurrency"
+      ]
+    },
+    {
+      "category": "UnsafeCode",
+      "location": "ffi/mod.rs",
+      "file": "ffi/mod.rs",
+      "severity": "High",
+      "description": "22 unsafe blocks in ffi/mod.rs",
+      "recommended_attack": [
+        "memory",
+        "concurrency"
+      ],
+      "suppressed": true
+    },
+    {
+      "category": "ResourceLeak",
+      "location": "ffi/mod.rs",
+      "file": "ffi/mod.rs",
+      "severity": "High",
+      "description": "mem::forget usage (resource leak) in ffi/mod.rs",
+      "recommended_attack": [
+        "memory"
+      ],
+      "suppressed": true
+    },
+    {
+      "category": "UnsafeCode",
+      "location": "ffi/mod.rs",
+      "file": "ffi/mod.rs",
+      "severity": "High",
+      "description": "Raw pointer cast in ffi/mod.rs",
+      "recommended_attack": [
+        "memory",
+        "concurrency"
+      ],
+      "suppressed": true
+    },
+    {
+      "category": "UnboundedAllocation",
+      "location": "integrity/solver_integrity.rs",
+      "file": "integrity/solver_integrity.rs",
+      "severity": "Critical",
+      "description": "Potential unbounded allocation pattern detected in integrity/solver_integrity.rs",
+      "recommended_attack": [
+        "memory",
+        "cpu"
+      ]
+    },
+    {
+      "category": "UnsafeCode",
+      "location": "proof_search.rs",
+      "file": "proof_search.rs",
+      "severity": "High",
+      "description": "8 unsafe blocks in proof_search.rs",
+      "recommended_attack": [
+        "memory",
+        "concurrency"
+      ],
+      "suppressed": true
+    },
+    {
+      "category": "UnsafeCode",
+      "location": "proof_search.rs",
+      "file": "proof_search.rs",
+      "severity": "High",
+      "description": "Raw pointer cast in proof_search.rs",
+      "recommended_attack": [
+        "memory",
+        "concurrency"
+      ],
+      "suppressed": true
+    },
+    {
+      "category": "PanicPath",
+      "location": "provers/z3.rs",
+      "file": "provers/z3.rs",
+      "severity": "Medium",
+      "description": "18 unwrap/expect calls in provers/z3.rs",
+      "recommended_attack": [
+        "memory",
+        "disk"
+      ],
+      "suppressed": true
+    },
+    {
+      "category": "PanicPath",
+      "location": "fault_tolerance/resilience.rs",
+      "file": "fault_tolerance/resilience.rs",
+      "severity": "Medium",
+      "description": "7 unwrap/expect calls in fault_tolerance/resilience.rs",
+      "recommended_attack": [
+        "memory",
+        "disk"
+      ],
+      "suppressed": true
+    }
+  ],
+  "statistics": {
+    "total_lines": 67538,
+    "unsafe_blocks": 33,
+    "panic_sites": 2,
+    "unwrap_calls": 56,
+    "allocation_sites": 1562,
+    "io_operations": 14,
+    "threading_constructs": 17
+  },
+  "file_statistics": [
+    {
+      "file_path": "agent/actors.rs",
+      "lines": 518,
+      "unsafe_blocks": 0,
+      "panic_sites": 0,
+      "unwrap_calls": 1,
+      "allocation_sites": 6,
+      "io_operations": 0,
+      "threading_constructs": 1
+    },
+    {
+      "file_path": "agent/explanations.rs",
+      "lines": 517,
+      "unsafe_blocks": 0,
+      "panic_sites": 0,
+      "unwrap_calls": 0,
+      "allocation_sites": 2,
+      "io_operations": 0,
+      "threading_constructs": 0
+    },
+    {
+      "file_path": "agent/memory.rs",
+      "lines": 527,
+      "unsafe_blocks": 0,
+      "panic_sites": 0,
+      "unwrap_calls": 0,
+      "allocation_sites": 8,
+      "io_operations": 0,
+      "threading_constructs": 0
+    },
+    {
+      "file_path": "agent/planner.rs",
+      "lines": 186,
+      "unsafe_blocks": 0,
+      "panic_sites": 0,
+      "unwrap_calls": 0,
+      "allocation_sites": 6,
+      "io_operations": 0,
+      "threading_constructs": 0
+    },
+    {
+      "file_path": "anomaly_detection.rs",
+      "lines": 303,
+      "unsafe_blocks": 0,
+      "panic_sites": 0,
+      "unwrap_calls": 0,
+      "allocation_sites": 2,
+      "io_operations": 0,
+      "threading_constructs": 0
+    },
+    {
+      "file_path": "aspect.rs",
+      "lines": 1152,
+      "unsafe_blocks": 0,
+      "panic_sites": 0,
+      "unwrap_calls": 0,
+      "allocation_sites": 26,
+      "io_operations": 0,
+      "threading_constructs": 0
+    },
+    {
+      "file_path": "exchange/dedukti.rs",
+      "lines": 495,
+      "unsafe_blocks": 0,
+      "panic_sites": 0,
+      "unwrap_calls": 0,
+      "allocation_sites": 22,
+      "io_operations": 0,
+      "threading_constructs": 0
+    },
+    {
+      "file_path": "exchange/opentheory.rs",
+      "lines": 251,
+      "unsafe_blocks": 0,
+      "panic_sites": 0,
+      "unwrap_calls": 0,
+      "allocation_sites": 10,
+      "io_operations": 0,
+      "threading_constructs": 0
+    },
+    {
+      "file_path": "executor/sandbox.rs",
+      "lines": 388,
+      "unsafe_blocks": 0,
+      "panic_sites": 0,
+      "unwrap_calls": 0,
+      "allocation_sites": 4,
+      "io_operations": 0,
+      "threading_constructs": 0
+    },
+    {
+      "file_path": "ffi/spark_axiom.rs",
+      "lines": 290,
+      "unsafe_blocks": 3,
+      "panic_sites": 0,
+      "unwrap_calls": 0,
+      "allocation_sites": 2,
+      "io_operations": 0,
+      "threading_constructs": 0
+    },
+    {
+      "file_path": "ffi/mod.rs",
+      "lines": 1448,
+      "unsafe_blocks": 22,
+      "panic_sites": 0,
+      "unwrap_calls": 0,
+      "allocation_sites": 12,
+      "io_operations": 0,
+      "threading_constructs": 1,
+      "ffi_safe_wrapper": true
+    },
+    {
+      "file_path": "gnn/client.rs",
+      "lines": 442,
+      "unsafe_blocks": 0,
+      "panic_sites": 0,
+      "unwrap_calls": 2,
+      "allocation_sites": 10,
+      "io_operations": 0,
+      "threading_constructs": 0
+    },
+    {
+      "file_path": "gnn/embeddings.rs",
+      "lines": 572,
+      "unsafe_blocks": 0,
+      "panic_sites": 0,
+      "unwrap_calls": 0,
+      "allocation_sites": 18,
+      "io_operations": 0,
+      "threading_constructs": 0
+    },
+    {
+      "file_path": "gnn/graph.rs",
+      "lines": 942,
+      "unsafe_blocks": 0,
+      "panic_sites": 0,
+      "unwrap_calls": 0,
+      "allocation_sites": 46,
+      "io_operations": 0,
+      "threading_constructs": 0
+    },
+    {
+      "file_path": "gnn/guided_search.rs",
+      "lines": 583,
+      "unsafe_blocks": 0,
+      "panic_sites": 0,
+      "unwrap_calls": 0,
+      "allocation_sites": 40,
+      "io_operations": 0,
+      "threading_constructs": 0
+    },
+    {
+      "file_path": "integration.rs",
+      "lines": 601,
+      "unsafe_blocks": 0,
+      "panic_sites": 0,
+      "unwrap_calls": 0,
+      "allocation_sites": 2,
+      "io_operations": 0,
+      "threading_constructs": 2
+    },
+    {
+      "file_path": "integrations/conceptnet.rs",
+      "lines": 167,
+      "unsafe_blocks": 0,
+      "panic_sites": 0,
+      "unwrap_calls": 0,
+      "allocation_sites": 2,
+      "io_operations": 0,
+      "threading_constructs": 0
+    },
+    {
+      "file_path": "integrity/solver_integrity.rs",
+      "lines": 494,
+      "unsafe_blocks": 0,
+      "panic_sites": 0,
+      "unwrap_calls": 0,
+      "allocation_sites": 2,
+      "io_operations": 4,
+      "threading_constructs": 1
+    },
+    {
+      "file_path": "learning/daemon.rs",
+      "lines": 240,
+      "unsafe_blocks": 0,
+      "panic_sites": 0,
+      "unwrap_calls": 0,
+      "allocation_sites": 2,
+      "io_operations": 0,
+      "threading_constructs": 1
+    },
+    {
+      "file_path": "learning/mcts.rs",
+      "lines": 291,
+      "unsafe_blocks": 0,
+      "panic_sites": 0,
+      "unwrap_calls": 0,
+      "allocation_sites": 6,
+      "io_operations": 0,
+      "threading_constructs": 1
+    },
+    {
+      "file_path": "learning/self_play.rs",
+      "lines": 217,
+      "unsafe_blocks": 0,
+      "panic_sites": 0,
+      "unwrap_calls": 0,
+      "allocation_sites": 20,
+      "io_operations": 0,
+      "threading_constructs": 0
+    },
+    {
+      "file_path": "llm.rs",
+      "lines": 802,
+      "unsafe_blocks": 0,
+      "panic_sites": 0,
+      "unwrap_calls": 1,
+      "allocation_sites": 12,
+      "io_operations": 0,
+      "threading_constructs": 0
+    },
+    {
+      "file_path": "main.rs",
+      "lines": 855,
+      "unsafe_blocks": 0,
+      "panic_sites": 0,
+      "unwrap_calls": 1,
+      "allocation_sites": 0,
+      "io_operations": 0,
+      "threading_constructs": 1
+    },
+    {
+      "file_path": "neural.rs",
+      "lines": 392,
+      "unsafe_blocks": 0,
+      "panic_sites": 0,
+      "unwrap_calls": 2,
+      "allocation_sites": 12,
+      "io_operations": 0,
+      "threading_constructs": 0
+    },
+    {
+      "file_path": "proof_search.rs",
+      "lines": 397,
+      "unsafe_blocks": 8,
+      "panic_sites": 0,
+      "unwrap_calls": 1,
+      "allocation_sites": 6,
+      "io_operations": 0,
+      "threading_constructs": 0,
+      "ffi_safe_wrapper": true
+    },
+    {
+      "file_path": "provers/cadical.rs",
+      "lines": 572,
+      "unsafe_blocks": 0,
+      "panic_sites": 0,
+      "unwrap_calls": 0,
+      "allocation_sites": 18,
+      "io_operations": 0,
+      "threading_constructs": 0
+    },
+    {
+      "file_path": "provers/kissat.rs",
+      "lines": 489,
+      "unsafe_blocks": 0,
+      "panic_sites": 0,
+      "unwrap_calls": 0,
+      "allocation_sites": 14,
+      "io_operations": 0,
+      "threading_constructs": 0
+    },
+    {
+      "file_path": "provers/minisat.rs",
+      "lines": 519,
+      "unsafe_blocks": 0,
+      "panic_sites": 0,
+      "unwrap_calls": 0,
+      "allocation_sites": 14,
+      "io_operations": 0,
+      "threading_constructs": 0
+    },
+    {
+      "file_path": "provers/outcome.rs",
+      "lines": 380,
+      "unsafe_blocks": 0,
+      "panic_sites": 0,
+      "unwrap_calls": 0,
+      "allocation_sites": 8,
+      "io_operations": 0,
+      "threading_constructs": 0
+    },
+    {
+      "file_path": "provers/mod.rs",
+      "lines": 1544,
+      "unsafe_blocks": 0,
+      "panic_sites": 0,
+      "unwrap_calls": 0,
+      "allocation_sites": 148,
+      "io_operations": 0,
+      "threading_constructs": 0
+    },
+    {
+      "file_path": "provers/typed_wasm.rs",
+      "lines": 615,
+      "unsafe_blocks": 0,
+      "panic_sites": 0,
+      "unwrap_calls": 0,
+      "allocation_sites": 18,
+      "io_operations": 0,
+      "threading_constructs": 0
+    },
+    {
+      "file_path": "provers/abc.rs",
+      "lines": 1103,
+      "unsafe_blocks": 0,
+      "panic_sites": 0,
+      "unwrap_calls": 0,
+      "allocation_sites": 2,
+      "io_operations": 0,
+      "threading_constructs": 0
+    },
+    {
+      "file_path": "provers/acl2.rs",
+      "lines": 1816,
+      "unsafe_blocks": 0,
+      "panic_sites": 0,
+      "unwrap_calls": 0,
+      "allocation_sites": 54,
+      "io_operations": 2,
+      "threading_constructs": 0
+    },
+    {
+      "file_path": "provers/agda.rs",
+      "lines": 739,
+      "unsafe_blocks": 0,
+      "panic_sites": 0,
+      "unwrap_calls": 0,
+      "allocation_sites": 44,
+      "io_operations": 0,
+      "threading_constructs": 0
+    },
+    {
+      "file_path": "provers/alloy.rs",
+      "lines": 569,
+      "unsafe_blocks": 0,
+      "panic_sites": 0,
+      "unwrap_calls": 0,
+      "allocation_sites": 2,
+      "io_operations": 0,
+      "threading_constructs": 0
+    },
+    {
+      "file_path": "provers/altergo.rs",
+      "lines": 344,
+      "unsafe_blocks": 0,
+      "panic_sites": 0,
+      "unwrap_calls": 0,
+      "allocation_sites": 4,
+      "io_operations": 0,
+      "threading_constructs": 0
+    },
+    {
+      "file_path": "provers/cbmc.rs",
+      "lines": 651,
+      "unsafe_blocks": 0,
+      "panic_sites": 0,
+      "unwrap_calls": 0,
+      "allocation_sites": 2,
+      "io_operations": 0,
+      "threading_constructs": 0
+    },
+    {
+      "file_path": "provers/chuffed.rs",
+      "lines": 189,
+      "unsafe_blocks": 0,
+      "panic_sites": 0,
+      "unwrap_calls": 0,
+      "allocation_sites": 2,
+      "io_operations": 0,
+      "threading_constructs": 0
+    },
+    {
+      "file_path": "provers/coq.rs",
+      "lines": 1158,
+      "unsafe_blocks": 0,
+      "panic_sites": 0,
+      "unwrap_calls": 2,
+      "allocation_sites": 44,
+      "io_operations": 0,
+      "threading_constructs": 0
+    },
+    {
+      "file_path": "provers/cvc5.rs",
+      "lines": 897,
+      "unsafe_blocks": 0,
+      "panic_sites": 0,
+      "unwrap_calls": 0,
+      "allocation_sites": 16,
+      "io_operations": 1,
+      "threading_constructs": 2
+    },
+    {
+      "file_path": "provers/dafny.rs",
+      "lines": 196,
+      "unsafe_blocks": 0,
+      "panic_sites": 0,
+      "unwrap_calls": 0,
+      "allocation_sites": 2,
+      "io_operations": 0,
+      "threading_constructs": 0
+    },
+    {
+      "file_path": "provers/dreal.rs",
+      "lines": 705,
+      "unsafe_blocks": 0,
+      "panic_sites": 0,
+      "unwrap_calls": 0,
+      "allocation_sites": 6,
+      "io_operations": 0,
+      "threading_constructs": 0
+    },
+    {
+      "file_path": "provers/eprover.rs",
+      "lines": 333,
+      "unsafe_blocks": 0,
+      "panic_sites": 0,
+      "unwrap_calls": 0,
+      "allocation_sites": 2,
+      "io_operations": 0,
+      "threading_constructs": 0
+    },
+    {
+      "file_path": "provers/framac.rs",
+      "lines": 1105,
+      "unsafe_blocks": 0,
+      "panic_sites": 0,
+      "unwrap_calls": 3,
+      "allocation_sites": 8,
+      "io_operations": 0,
+      "threading_constructs": 0
+    },
+    {
+      "file_path": "provers/fstar.rs",
+      "lines": 276,
+      "unsafe_blocks": 0,
+      "panic_sites": 0,
+      "unwrap_calls": 0,
+      "allocation_sites": 2,
+      "io_operations": 0,
+      "threading_constructs": 0
+    },
+    {
+      "file_path": "provers/glpk.rs",
+      "lines": 191,
+      "unsafe_blocks": 0,
+      "panic_sites": 0,
+      "unwrap_calls": 0,
+      "allocation_sites": 2,
+      "io_operations": 0,
+      "threading_constructs": 0
+    },
+    {
+      "file_path": "provers/hol4.rs",
+      "lines": 2621,
+      "unsafe_blocks": 0,
+      "panic_sites": 1,
+      "unwrap_calls": 0,
+      "allocation_sites": 174,
+      "io_operations": 0,
+      "threading_constructs": 0
+    },
+    {
+      "file_path": "provers/hol_light.rs",
+      "lines": 1289,
+      "unsafe_blocks": 0,
+      "panic_sites": 0,
+      "unwrap_calls": 0,
+      "allocation_sites": 30,
+      "io_operations": 0,
+      "threading_constructs": 0
+    },
+    {
+      "file_path": "provers/idris2.rs",
+      "lines": 1316,
+      "unsafe_blocks": 0,
+      "panic_sites": 0,
+      "unwrap_calls": 0,
+      "allocation_sites": 72,
+      "io_operations": 0,
+      "threading_constructs": 0
+    },
+    {
+      "file_path": "provers/imandra.rs",
+      "lines": 192,
+      "unsafe_blocks": 0,
+      "panic_sites": 0,
+      "unwrap_calls": 0,
+      "allocation_sites": 2,
+      "io_operations": 0,
+      "threading_constructs": 0
+    },
+    {
+      "file_path": "provers/isabelle.rs",
+      "lines": 772,
+      "unsafe_blocks": 0,
+      "panic_sites": 0,
+      "unwrap_calls": 0,
+      "allocation_sites": 22,
+      "io_operations": 0,
+      "threading_constructs": 1
+    },
+    {
+      "file_path": "provers/key.rs",
+      "lines": 988,
+      "unsafe_blocks": 0,
+      "panic_sites": 0,
+      "unwrap_calls": 0,
+      "allocation_sites": 14,
+      "io_operations": 0,
+      "threading_constructs": 0
+    },
+    {
+      "file_path": "provers/lean.rs",
+      "lines": 1704,
+      "unsafe_blocks": 0,
+      "panic_sites": 0,
+      "unwrap_calls": 1,
+      "allocation_sites": 74,
+      "io_operations": 0,
+      "threading_constructs": 1
+    },
+    {
+      "file_path": "provers/metamath.rs",
+      "lines": 1088,
+      "unsafe_blocks": 0,
+      "panic_sites": 0,
+      "unwrap_calls": 0,
+      "allocation_sites": 26,
+      "io_operations": 0,
+      "threading_constructs": 0
+    },
+    {
+      "file_path": "provers/minizinc.rs",
+      "lines": 208,
+      "unsafe_blocks": 0,
+      "panic_sites": 0,
+      "unwrap_calls": 0,
+      "allocation_sites": 2,
+      "io_operations": 0,
+      "threading_constructs": 0
+    },
+    {
+      "file_path": "provers/minlog.rs",
+      "lines": 184,
+      "unsafe_blocks": 0,
+      "panic_sites": 0,
+      "unwrap_calls": 0,
+      "allocation_sites": 2,
+      "io_operations": 0,
+      "threading_constructs": 0
+    },
+    {
+      "file_path": "provers/mizar.rs",
+      "lines": 1470,
+      "unsafe_blocks": 0,
+      "panic_sites": 0,
+      "unwrap_calls": 1,
+      "allocation_sites": 56,
+      "io_operations": 0,
+      "threading_constructs": 0
+    },
+    {
+      "file_path": "provers/nuprl.rs",
+      "lines": 180,
+      "unsafe_blocks": 0,
+      "panic_sites": 0,
+      "unwrap_calls": 0,
+      "allocation_sites": 2,
+      "io_operations": 0,
+      "threading_constructs": 0
+    },
+    {
+      "file_path": "provers/nusmv.rs",
+      "lines": 555,
+      "unsafe_blocks": 0,
+      "panic_sites": 0,
+      "unwrap_calls": 0,
+      "allocation_sites": 2,
+      "io_operations": 0,
+      "threading_constructs": 0
+    },
+    {
+      "file_path": "provers/ortools.rs",
+      "lines": 187,
+      "unsafe_blocks": 0,
+      "panic_sites": 0,
+      "unwrap_calls": 0,
+      "allocation_sites": 2,
+      "io_operations": 0,
+      "threading_constructs": 0
+    },
+    {
+      "file_path": "provers/prism.rs",
+      "lines": 545,
+      "unsafe_blocks": 0,
+      "panic_sites": 0,
+      "unwrap_calls": 0,
+      "allocation_sites": 4,
+      "io_operations": 0,
+      "threading_constructs": 0
+    },
+    {
+      "file_path": "provers/proverif.rs",
+      "lines": 840,
+      "unsafe_blocks": 0,
+      "panic_sites": 0,
+      "unwrap_calls": 0,
+      "allocation_sites": 2,
+      "io_operations": 0,
+      "threading_constructs": 0
+    },
+    {
+      "file_path": "provers/pvs.rs",
+      "lines": 3168,
+      "unsafe_blocks": 0,
+      "panic_sites": 0,
+      "unwrap_calls": 0,
+      "allocation_sites": 204,
+      "io_operations": 0,
+      "threading_constructs": 0
+    },
+    {
+      "file_path": "provers/scip.rs",
+      "lines": 190,
+      "unsafe_blocks": 0,
+      "panic_sites": 0,
+      "unwrap_calls": 0,
+      "allocation_sites": 2,
+      "io_operations": 0,
+      "threading_constructs": 0
+    },
+    {
+      "file_path": "provers/seahorn.rs",
+      "lines": 922,
+      "unsafe_blocks": 0,
+      "panic_sites": 0,
+      "unwrap_calls": 0,
+      "allocation_sites": 2,
+      "io_operations": 0,
+      "threading_constructs": 0
+    },
+    {
+      "file_path": "provers/spass.rs",
+      "lines": 338,
+      "unsafe_blocks": 0,
+      "panic_sites": 0,
+      "unwrap_calls": 0,
+      "allocation_sites": 2,
+      "io_operations": 0,
+      "threading_constructs": 0
+    },
+    {
+      "file_path": "provers/spin_checker.rs",
+      "lines": 640,
+      "unsafe_blocks": 0,
+      "panic_sites": 0,
+      "unwrap_calls": 0,
+      "allocation_sites": 2,
+      "io_operations": 0,
+      "threading_constructs": 0
+    },
+    {
+      "file_path": "provers/tamarin.rs",
+      "lines": 637,
+      "unsafe_blocks": 0,
+      "panic_sites": 0,
+      "unwrap_calls": 0,
+      "allocation_sites": 2,
+      "io_operations": 0,
+      "threading_constructs": 0
+    },
+    {
+      "file_path": "provers/tlc.rs",
+      "lines": 523,
+      "unsafe_blocks": 0,
+      "panic_sites": 0,
+      "unwrap_calls": 0,
+      "allocation_sites": 4,
+      "io_operations": 0,
+      "threading_constructs": 0
+    },
+    {
+      "file_path": "provers/twelf.rs",
+      "lines": 180,
+      "unsafe_blocks": 0,
+      "panic_sites": 0,
+      "unwrap_calls": 0,
+      "allocation_sites": 2,
+      "io_operations": 0,
+      "threading_constructs": 0
+    },
+    {
+      "file_path": "provers/uppaal.rs",
+      "lines": 592,
+      "unsafe_blocks": 0,
+      "panic_sites": 0,
+      "unwrap_calls": 0,
+      "allocation_sites": 4,
+      "io_operations": 0,
+      "threading_constructs": 0
+    },
+    {
+      "file_path": "provers/vampire.rs",
+      "lines": 308,
+      "unsafe_blocks": 0,
+      "panic_sites": 0,
+      "unwrap_calls": 0,
+      "allocation_sites": 2,
+      "io_operations": 0,
+      "threading_constructs": 0
+    },
+    {
+      "file_path": "provers/viper.rs",
+      "lines": 405,
+      "unsafe_blocks": 0,
+      "panic_sites": 0,
+      "unwrap_calls": 0,
+      "allocation_sites": 2,
+      "io_operations": 0,
+      "threading_constructs": 0
+    },
+    {
+      "file_path": "provers/z3.rs",
+      "lines": 997,
+      "unsafe_blocks": 0,
+      "panic_sites": 0,
+      "unwrap_calls": 18,
+      "allocation_sites": 54,
+      "io_operations": 0,
+      "threading_constructs": 0
+    },
+    {
+      "file_path": "provers/io.rs",
+      "lines": 74,
+      "unsafe_blocks": 0,
+      "panic_sites": 0,
+      "unwrap_calls": 0,
+      "allocation_sites": 2,
+      "io_operations": 0,
+      "threading_constructs": 0
+    },
+    {
+      "file_path": "server.rs",
+      "lines": 1253,
+      "unsafe_blocks": 0,
+      "panic_sites": 0,
+      "unwrap_calls": 4,
+      "allocation_sites": 24,
+      "io_operations": 0,
+      "threading_constructs": 1
+    },
+    {
+      "file_path": "vcl_ut.rs",
+      "lines": 984,
+      "unsafe_blocks": 0,
+      "panic_sites": 0,
+      "unwrap_calls": 0,
+      "allocation_sites": 2,
+      "io_operations": 0,
+      "threading_constructs": 0
+    },
+    {
+      "file_path": "verification/certificates.rs",
+      "lines": 416,
+      "unsafe_blocks": 0,
+      "panic_sites": 0,
+      "unwrap_calls": 0,
+      "allocation_sites": 10,
+      "io_operations": 6,
+      "threading_constructs": 0
+    },
+    {
+      "file_path": "verification/mutation.rs",
+      "lines": 339,
+      "unsafe_blocks": 0,
+      "panic_sites": 0,
+      "unwrap_calls": 0,
+      "allocation_sites": 14,
+      "io_operations": 0,
+      "threading_constructs": 0
+    },
+    {
+      "file_path": "verification/pareto.rs",
+      "lines": 247,
+      "unsafe_blocks": 0,
+      "panic_sites": 0,
+      "unwrap_calls": 0,
+      "allocation_sites": 2,
+      "io_operations": 0,
+      "threading_constructs": 0
+    },
+    {
+      "file_path": "verification/portfolio.rs",
+      "lines": 375,
+      "unsafe_blocks": 0,
+      "panic_sites": 0,
+      "unwrap_calls": 2,
+      "allocation_sites": 0,
+      "io_operations": 0,
+      "threading_constructs": 0
+    },
+    {
+      "file_path": "verification/statistics.rs",
+      "lines": 464,
+      "unsafe_blocks": 0,
+      "panic_sites": 0,
+      "unwrap_calls": 0,
+      "allocation_sites": 2,
+      "io_operations": 0,
+      "threading_constructs": 0
+    },
+    {
+      "file_path": "verification/axiom_tracker.rs",
+      "lines": 508,
+      "unsafe_blocks": 0,
+      "panic_sites": 1,
+      "unwrap_calls": 0,
+      "allocation_sites": 2,
+      "io_operations": 0,
+      "threading_constructs": 0
+    },
+    {
+      "file_path": "verisim_bridge.rs",
+      "lines": 1042,
+      "unsafe_blocks": 0,
+      "panic_sites": 0,
+      "unwrap_calls": 1,
+      "allocation_sites": 30,
+      "io_operations": 0,
+      "threading_constructs": 0
+    },
+    {
+      "file_path": "proof_encoding.rs",
+      "lines": 287,
+      "unsafe_blocks": 0,
+      "panic_sites": 0,
+      "unwrap_calls": 0,
+      "allocation_sites": 10,
+      "io_operations": 0,
+      "threading_constructs": 0
+    },
+    {
+      "file_path": "dispatch.rs",
+      "lines": 943,
+      "unsafe_blocks": 0,
+      "panic_sites": 0,
+      "unwrap_calls": 3,
+      "allocation_sites": 0,
+      "io_operations": 0,
+      "threading_constructs": 1
+    },
+    {
+      "file_path": "fault_tolerance/resilience.rs",
+      "lines": 443,
+      "unsafe_blocks": 0,
+      "panic_sites": 0,
+      "unwrap_calls": 7,
+      "allocation_sites": 0,
+      "io_operations": 0,
+      "threading_constructs": 3
+    },
+    {
+      "file_path": "repl/diagnostics.rs",
+      "lines": 280,
+      "unsafe_blocks": 0,
+      "panic_sites": 0,
+      "unwrap_calls": 2,
+      "allocation_sites": 4,
+      "io_operations": 1,
+      "threading_constructs": 0
+    },
+    {
+      "file_path": "repl/proof.rs",
+      "lines": 556,
+      "unsafe_blocks": 0,
+      "panic_sites": 0,
+      "unwrap_calls": 4,
+      "allocation_sites": 2,
+      "io_operations": 0,
+      "threading_constructs": 0
+    }
+  ],
+  "recommended_attacks": [
+    "cpu",
+    "memory",
+    "concurrency",
+    "disk"
+  ],
+  "dependency_graph": {
+    "edges": [
+      {
+        "from": "anomaly_detection.rs",
+        "to": "aspect.rs",
+        "relation": "shared_dir:",
+        "weight": 1.0
+      },
+      {
+        "from": "aspect.rs",
+        "to": "integration.rs",
+        "relation": "shared_dir:",
+        "weight": 1.0
+      },
+      {
+        "from": "integration.rs",
+        "to": "llm.rs",
+        "relation": "shared_dir:",
+        "weight": 1.0
+      },
+      {
+        "from": "llm.rs",
+        "to": "main.rs",
+        "relation": "shared_dir:",
+        "weight": 1.0
+      },
+      {
+        "from": "main.rs",
+        "to": "neural.rs",
+        "relation": "shared_dir:",
+        "weight": 1.0
+      },
+      {
+        "from": "neural.rs",
+        "to": "proof_search.rs",
+        "relation": "shared_dir:",
+        "weight": 1.0
+      },
+      {
+        "from": "proof_search.rs",
+        "to": "server.rs",
+        "relation": "shared_dir:",
+        "weight": 1.0
+      },
+      {
+        "from": "server.rs",
+        "to": "vcl_ut.rs",
+        "relation": "shared_dir:",
+        "weight": 1.0
+      },
+      {
+        "from": "vcl_ut.rs",
+        "to": "verisim_bridge.rs",
+        "relation": "shared_dir:",
+        "weight": 1.0
+      },
+      {
+        "from": "verisim_bridge.rs",
+        "to": "proof_encoding.rs",
+        "relation": "shared_dir:",
+        "weight": 1.0
+      },
+      {
+        "from": "proof_encoding.rs",
+        "to": "dispatch.rs",
+        "relation": "shared_dir:",
+        "weight": 1.0
+      },
+      {
+        "from": "gnn/client.rs",
+        "to": "gnn/embeddings.rs",
+        "relation": "shared_dir:gnn",
+        "weight": 1.0
+      },
+      {
+        "from": "gnn/embeddings.rs",
+        "to": "gnn/graph.rs",
+        "relation": "shared_dir:gnn",
+        "weight": 1.0
+      },
+      {
+        "from": "gnn/graph.rs",
+        "to": "gnn/guided_search.rs",
+        "relation": "shared_dir:gnn",
+        "weight": 1.0
+      },
+      {
+        "from": "verification/certificates.rs",
+        "to": "verification/mutation.rs",
+        "relation": "shared_dir:verification",
+        "weight": 1.0
+      },
+      {
+        "from": "verification/mutation.rs",
+        "to": "verification/pareto.rs",
+        "relation": "shared_dir:verification",
+        "weight": 1.0
+      },
+      {
+        "from": "verification/pareto.rs",
+        "to": "verification/portfolio.rs",
+        "relation": "shared_dir:verification",
+        "weight": 1.0
+      },
+      {
+        "from": "verification/portfolio.rs",
+        "to": "verification/statistics.rs",
+        "relation": "shared_dir:verification",
+        "weight": 1.0
+      },
+      {
+        "from": "verification/statistics.rs",
+        "to": "verification/axiom_tracker.rs",
+        "relation": "shared_dir:verification",
+        "weight": 1.0
+      },
+      {
+        "from": "agent/actors.rs",
+        "to": "agent/explanations.rs",
+        "relation": "shared_dir:agent",
+        "weight": 1.0
+      },
+      {
+        "from": "agent/explanations.rs",
+        "to": "agent/memory.rs",
+        "relation": "shared_dir:agent",
+        "weight": 1.0
+      },
+      {
+        "from": "agent/memory.rs",
+        "to": "agent/planner.rs",
+        "relation": "shared_dir:agent",
+        "weight": 1.0
+      },
+      {
+        "from": "learning/daemon.rs",
+        "to": "learning/mcts.rs",
+        "relation": "shared_dir:learning",
+        "weight": 1.0
+      },
+      {
+        "from": "learning/mcts.rs",
+        "to": "learning/self_play.rs",
+        "relation": "shared_dir:learning",
+        "weight": 1.0
+      },
+      {
+        "from": "provers/cadical.rs",
+        "to": "provers/kissat.rs",
+        "relation": "shared_dir:provers",
+        "weight": 1.0
+      },
+      {
+        "from": "provers/kissat.rs",
+        "to": "provers/minisat.rs",
+        "relation": "shared_dir:provers",
+        "weight": 1.0
+      },
+      {
+        "from": "provers/minisat.rs",
+        "to": "provers/outcome.rs",
+        "relation": "shared_dir:provers",
+        "weight": 1.0
+      },
+      {
+        "from": "provers/outcome.rs",
+        "to": "provers/mod.rs",
+        "relation": "shared_dir:provers",
+        "weight": 1.0
+      },
+      {
+        "from": "provers/mod.rs",
+        "to": "provers/typed_wasm.rs",
+        "relation": "shared_dir:provers",
+        "weight": 1.0
+      },
+      {
+        "from": "provers/typed_wasm.rs",
+        "to": "provers/abc.rs",
+        "relation": "shared_dir:provers",
+        "weight": 1.0
+      },
+      {
+        "from": "provers/abc.rs",
+        "to": "provers/acl2.rs",
+        "relation": "shared_dir:provers",
+        "weight": 1.0
+      },
+      {
+        "from": "provers/acl2.rs",
+        "to": "provers/agda.rs",
+        "relation": "shared_dir:provers",
+        "weight": 1.0
+      },
+      {
+        "from": "provers/agda.rs",
+        "to": "provers/alloy.rs",
+        "relation": "shared_dir:provers",
+        "weight": 1.0
+      },
+      {
+        "from": "provers/alloy.rs",
+        "to": "provers/altergo.rs",
+        "relation": "shared_dir:provers",
+        "weight": 1.0
+      },
+      {
+        "from": "provers/altergo.rs",
+        "to": "provers/cbmc.rs",
+        "relation": "shared_dir:provers",
+        "weight": 1.0
+      },
+      {
+        "from": "provers/cbmc.rs",
+        "to": "provers/chuffed.rs",
+        "relation": "shared_dir:provers",
+        "weight": 1.0
+      },
+      {
+        "from": "provers/chuffed.rs",
+        "to": "provers/coq.rs",
+        "relation": "shared_dir:provers",
+        "weight": 1.0
+      },
+      {
+        "from": "provers/coq.rs",
+        "to": "provers/cvc5.rs",
+        "relation": "shared_dir:provers",
+        "weight": 1.0
+      },
+      {
+        "from": "provers/cvc5.rs",
+        "to": "provers/dafny.rs",
+        "relation": "shared_dir:provers",
+        "weight": 1.0
+      },
+      {
+        "from": "provers/dafny.rs",
+        "to": "provers/dreal.rs",
+        "relation": "shared_dir:provers",
+        "weight": 1.0
+      },
+      {
+        "from": "provers/dreal.rs",
+        "to": "provers/eprover.rs",
+        "relation": "shared_dir:provers",
+        "weight": 1.0
+      },
+      {
+        "from": "provers/eprover.rs",
+        "to": "provers/framac.rs",
+        "relation": "shared_dir:provers",
+        "weight": 1.0
+      },
+      {
+        "from": "provers/framac.rs",
+        "to": "provers/fstar.rs",
+        "relation": "shared_dir:provers",
+        "weight": 1.0
+      },
+      {
+        "from": "provers/fstar.rs",
+        "to": "provers/glpk.rs",
+        "relation": "shared_dir:provers",
+        "weight": 1.0
+      },
+      {
+        "from": "provers/glpk.rs",
+        "to": "provers/hol4.rs",
+        "relation": "shared_dir:provers",
+        "weight": 1.0
+      },
+      {
+        "from": "provers/hol4.rs",
+        "to": "provers/hol_light.rs",
+        "relation": "shared_dir:provers",
+        "weight": 1.0
+      },
+      {
+        "from": "provers/hol_light.rs",
+        "to": "provers/idris2.rs",
+        "relation": "shared_dir:provers",
+        "weight": 1.0
+      },
+      {
+        "from": "provers/idris2.rs",
+        "to": "provers/imandra.rs",
+        "relation": "shared_dir:provers",
+        "weight": 1.0
+      },
+      {
+        "from": "provers/imandra.rs",
+        "to": "provers/isabelle.rs",
+        "relation": "shared_dir:provers",
+        "weight": 1.0
+      },
+      {
+        "from": "provers/isabelle.rs",
+        "to": "provers/key.rs",
+        "relation": "shared_dir:provers",
+        "weight": 1.0
+      },
+      {
+        "from": "provers/key.rs",
+        "to": "provers/lean.rs",
+        "relation": "shared_dir:provers",
+        "weight": 1.0
+      },
+      {
+        "from": "provers/lean.rs",
+        "to": "provers/metamath.rs",
+        "relation": "shared_dir:provers",
+        "weight": 1.0
+      },
+      {
+        "from": "provers/metamath.rs",
+        "to": "provers/minizinc.rs",
+        "relation": "shared_dir:provers",
+        "weight": 1.0
+      },
+      {
+        "from": "provers/minizinc.rs",
+        "to": "provers/minlog.rs",
+        "relation": "shared_dir:provers",
+        "weight": 1.0
+      },
+      {
+        "from": "provers/minlog.rs",
+        "to": "provers/mizar.rs",
+        "relation": "shared_dir:provers",
+        "weight": 1.0
+      },
+      {
+        "from": "provers/mizar.rs",
+        "to": "provers/nuprl.rs",
+        "relation": "shared_dir:provers",
+        "weight": 1.0
+      },
+      {
+        "from": "provers/nuprl.rs",
+        "to": "provers/nusmv.rs",
+        "relation": "shared_dir:provers",
+        "weight": 1.0
+      },
+      {
+        "from": "provers/nusmv.rs",
+        "to": "provers/ortools.rs",
+        "relation": "shared_dir:provers",
+        "weight": 1.0
+      },
+      {
+        "from": "provers/ortools.rs",
+        "to": "provers/prism.rs",
+        "relation": "shared_dir:provers",
+        "weight": 1.0
+      },
+      {
+        "from": "provers/prism.rs",
+        "to": "provers/proverif.rs",
+        "relation": "shared_dir:provers",
+        "weight": 1.0
+      },
+      {
+        "from": "provers/proverif.rs",
+        "to": "provers/pvs.rs",
+        "relation": "shared_dir:provers",
+        "weight": 1.0
+      },
+      {
+        "from": "provers/pvs.rs",
+        "to": "provers/scip.rs",
+        "relation": "shared_dir:provers",
+        "weight": 1.0
+      },
+      {
+        "from": "provers/scip.rs",
+        "to": "provers/seahorn.rs",
+        "relation": "shared_dir:provers",
+        "weight": 1.0
+      },
+      {
+        "from": "provers/seahorn.rs",
+        "to": "provers/spass.rs",
+        "relation": "shared_dir:provers",
+        "weight": 1.0
+      },
+      {
+        "from": "provers/spass.rs",
+        "to": "provers/spin_checker.rs",
+        "relation": "shared_dir:provers",
+        "weight": 1.0
+      },
+      {
+        "from": "provers/spin_checker.rs",
+        "to": "provers/tamarin.rs",
+        "relation": "shared_dir:provers",
+        "weight": 1.0
+      },
+      {
+        "from": "provers/tamarin.rs",
+        "to": "provers/tlc.rs",
+        "relation": "shared_dir:provers",
+        "weight": 1.0
+      },
+      {
+        "from": "provers/tlc.rs",
+        "to": "provers/twelf.rs",
+        "relation": "shared_dir:provers",
+        "weight": 1.0
+      },
+      {
+        "from": "provers/twelf.rs",
+        "to": "provers/uppaal.rs",
+        "relation": "shared_dir:provers",
+        "weight": 1.0
+      },
+      {
+        "from": "provers/uppaal.rs",
+        "to": "provers/vampire.rs",
+        "relation": "shared_dir:provers",
+        "weight": 1.0
+      },
+      {
+        "from": "provers/vampire.rs",
+        "to": "provers/viper.rs",
+        "relation": "shared_dir:provers",
+        "weight": 1.0
+      },
+      {
+        "from": "provers/viper.rs",
+        "to": "provers/z3.rs",
+        "relation": "shared_dir:provers",
+        "weight": 1.0
+      },
+      {
+        "from": "provers/z3.rs",
+        "to": "provers/io.rs",
+        "relation": "shared_dir:provers",
+        "weight": 1.0
+      },
+      {
+        "from": "ffi/spark_axiom.rs",
+        "to": "ffi/mod.rs",
+        "relation": "shared_dir:ffi",
+        "weight": 1.0
+      },
+      {
+        "from": "repl/diagnostics.rs",
+        "to": "repl/proof.rs",
+        "relation": "shared_dir:repl",
+        "weight": 1.0
+      },
+      {
+        "from": "exchange/dedukti.rs",
+        "to": "exchange/opentheory.rs",
+        "relation": "shared_dir:exchange",
+        "weight": 1.0
+      }
+    ]
+  },
+  "taint_matrix": {
+    "rows": [
+      {
+        "source_category": "PanicPath",
+        "sink_axis": "disk",
+        "severity_value": 2.5,
+        "files": [
+          "provers/z3.rs",
+          "fault_tolerance/resilience.rs"
+        ],
+        "frameworks": [],
+        "relation": "PanicPath->Disk"
+      },
+      {
+        "source_category": "UnsafeCode",
+        "sink_axis": "concurrency",
+        "severity_value": 3.5,
+        "files": [
+          "ffi/spark_axiom.rs",
+          "ffi/mod.rs",
+          "ffi/mod.rs",
+          "proof_search.rs",
+          "proof_search.rs"
+        ],
+        "frameworks": [],
+        "relation": "UnsafeCode->Concurrency"
+      },
+      {
+        "source_category": "UnboundedAllocation",
+        "sink_axis": "cpu",
+        "severity_value": 5.0,
+        "files": [
+          "integrity/solver_integrity.rs"
+        ],
+        "frameworks": [],
+        "relation": "UnboundedAllocation->Cpu"
+      },
+      {
+        "source_category": "ResourceLeak",
+        "sink_axis": "memory",
+        "severity_value": 3.5,
+        "files": [
+          "ffi/mod.rs"
+        ],
+        "frameworks": [],
+        "relation": "ResourceLeak->Memory"
+      },
+      {
+        "source_category": "PanicPath",
+        "sink_axis": "memory",
+        "severity_value": 2.5,
+        "files": [
+          "provers/z3.rs",
+          "fault_tolerance/resilience.rs"
+        ],
+        "frameworks": [],
+        "relation": "PanicPath->Memory"
+      },
+      {
+        "source_category": "UnsafeCode",
+        "sink_axis": "memory",
+        "severity_value": 3.5,
+        "files": [
+          "ffi/spark_axiom.rs",
+          "ffi/mod.rs",
+          "ffi/mod.rs",
+          "proof_search.rs",
+          "proof_search.rs"
+        ],
+        "frameworks": [],
+        "relation": "UnsafeCode->Memory"
+      },
+      {
+        "source_category": "UnboundedAllocation",
+        "sink_axis": "memory",
+        "severity_value": 5.0,
+        "files": [
+          "integrity/solver_integrity.rs"
+        ],
+        "frameworks": [],
+        "relation": "UnboundedAllocation->Memory"
+      }
+    ]
+  }
+}
