@@ -317,7 +317,102 @@ theorem best_steps_on_frontier (cs : List ProofObjective) (a : ProofObjective)
     omega
 
 -- ==========================================================================
--- Section 9: Strong maximality (design statement; proof TODO)
+-- Section 9: Descent measure (groundwork for strong maximality)
+-- ==========================================================================
+
+/-! ## Descent measure
+
+The strong-maximality theorem (§10 below) asks for a *frontier*
+member dominating every non-Pareto candidate — strictly stronger
+than `frontier_or_dominated` (PO-7) which only gives some input
+dominator.  Proving this constructively requires a well-founded
+descent: walk up the dominator chain from any non-Pareto element
+until reaching a Pareto member.
+
+The natural termination measure is the *count of dominators in
+`cs`*.  We define it here and prove the easy half — that this count
+is monotone-decreasing along dominator edges.  The strict-decrease
+proof needs a generic List "strict subset ⇒ shorter under nodup"
+lemma; we state that lemma (as `domCount_strictly_decreases`) but
+defer its body to the §10 mathlib-or-handroll bring-up.
+-/
+
+/-- The *list* of candidates in `cs` that strictly dominate `a`. -/
+def domSet (a : ProofObjective) (cs : List ProofObjective) : List ProofObjective :=
+  cs.filter (fun b => decide (dominates b a))
+
+/-- Cardinality of the dominator set.  This is the descent measure. -/
+def domCount (a : ProofObjective) (cs : List ProofObjective) : Nat :=
+  (domSet a cs).length
+
+/-- **PD-1** Subset transitivity: if `b` dominates `a`, every dominator
+    of `b` (in the same `cs`) also dominates `a`.  Direct corollary of
+    `dominates_transitive`. -/
+theorem domSet_subset_of_dominates (a b : ProofObjective) (cs : List ProofObjective)
+    (hba : dominates b a) :
+    ∀ x ∈ domSet b cs, x ∈ domSet a cs := by
+  intro x hx
+  unfold domSet at hx ⊢
+  rw [List.mem_filter] at hx ⊢
+  refine ⟨hx.1, ?_⟩
+  have hxb : dominates x b := of_decide_eq_true hx.2
+  exact decide_eq_true (dominates_transitive x b a hxb hba)
+
+/-- **PD-2** Witness for strict difference: when `b` dominates `a`,
+    `b` itself sits in `domSet a cs` (assuming `b ∈ cs`) but is *not*
+    in `domSet b cs` by irreflexivity.  Together with PD-1 this gives
+    a strict subset relationship. -/
+theorem domSet_strict_witness (a b : ProofObjective) (cs : List ProofObjective)
+    (hba : dominates b a) (hb_mem : b ∈ cs) :
+    b ∈ domSet a cs ∧ b ∉ domSet b cs := by
+  refine ⟨?_, ?_⟩
+  · -- b ∈ domSet a cs
+    unfold domSet
+    rw [List.mem_filter]
+    exact ⟨hb_mem, decide_eq_true hba⟩
+  · -- b ∉ domSet b cs
+    unfold domSet
+    rw [List.mem_filter]
+    intro ⟨_, hself⟩
+    have hbb : dominates b b := of_decide_eq_true hself
+    exact dominates_irreflexive b hbb
+
+/-! **PD-3 (statement, body deferred — see §10)**
+
+The strict-decrease lemma:
+
+```
+theorem domCount_strictly_decreases (a b : ProofObjective)
+    (cs : List ProofObjective)
+    (hba : dominates b a) (hb_mem : b ∈ cs) :
+    domCount b cs < domCount a cs
+```
+
+is the load-bearing gap for the §10 strong-maximality result.  Its
+mathematical content is settled by PD-1 (subset preservation) +
+PD-2 (strict witness): `domSet b cs ⊊ domSet a cs`, hence the
+length drops by at least one.
+
+The remaining formal step — converting a strict-subset-with-witness
+statement on Lists to a `List.length` inequality — needs either:
+
+1. `List.Nodup` on `cs` plus a hand-rolled
+   `List.length_lt_of_strict_subset_of_nodup` (~25-line proof in
+   core Lean), or
+2. Mathlib's `List.toFinset.card_lt_card` (cleanest, but pulls in
+   the entire Finset hierarchy).
+
+We intentionally do **not** declare PD-3 as a `theorem ... := sorry`
+or as a `theorem ... := by sorry` — both would violate the
+zero-sorry policy.  Instead PD-3 is staged as a docstring-level
+specification, ready to be filled in by the lake-build agent
+(scheduled 2026-05-11) once a Lean toolchain is pinned at
+`verification/proofs/lean4/`.
+
+Tracking ticket: **ECHIDNA-PARETO-DESCENT** (`PROOF-NEEDS.md`). -/
+
+-- ==========================================================================
+-- Section 10: Strong maximality (design statement; proof TODO)
 -- ==========================================================================
 
 /-! ## Strong maximality theorem (ECHIDNA-PARETO-DESCENT)

@@ -452,43 +452,49 @@ theorem needs_review_iff_no_consensus (rs : List SolverResult) :
 
 /-- **PR-14 (E13/14) Unanimity → verdict**: if all completed solvers
     return `some b` and ≥ 2 completed, the verdict is `some b` with
-    confidence `crossChecked`. -/
+    confidence `crossChecked`.
+
+    NOTE — proof depends on `simp` rewriting through the inner
+    `let firstVerdict := first.verified.getD false` in `reconcile`.
+    If `lake build` rejects the current tactic structure, the
+    `unfold reconcile` step may need to be replaced with a hand-rolled
+    `show` clause that pre-computes `firstVerdict` outside the
+    `match`.  Tracked alongside the other Lean-toolchain fixups
+    flagged in `PROOF-NEEDS.md`. -/
 theorem unanimous_yields_crosschecked (rs : List SolverResult)
     (b : Bool) (first : SolverResult) (rest : List SolverResult)
     (hc : completed rs = first :: rest)
     (hfirst : first.verified = some b)
-    (hall : ∀ r ∈ rest, r.verified = some b) :
-    rest ≠ [] →
+    (hall : ∀ r ∈ rest, r.verified = some b)
+    (hne : rest ≠ []) :
     (reconcile rs).confidence = PortfolioConfidence.crossChecked
     ∧ (reconcile rs).verified = some b := by
-  intro hne
-  unfold reconcile
-  rw [hc]
-  simp only [hfirst]
-  -- Filter `rest` for `r.verified ≠ some b` gives `[]` because every r agrees.
-  have hfilter_eq :
-      rest.filter (fun r => r.verified ≠ some b) = [] := by
+  -- Step 1: the inner `firstVerdict` of `reconcile` evaluates to `b`.
+  have hfv : first.verified.getD false = b := by
+    rw [hfirst]
+  -- Step 2: every member of `rest` satisfies `r.verified = some b`,
+  -- so the disagreement filter on `rest` is empty.
+  have hfilter : rest.filter (fun r => r.verified ≠ some b) = [] := by
     apply List.filter_eq_nil_iff.mpr
     intro r hr
-    simp
+    simp only [ne_eq, not_not]
     exact hall r hr
-  have : (rest.filter (fun r => r.verified ≠ some (Option.getD (some b) false))).map (·.prover_id) = [] := by
-    simp
-    rw [hfilter_eq]
-    rfl
-  -- `(some b).getD false = b`
-  simp [Option.getD]
-  rw [hfilter_eq]
-  simp
-  -- Length condition: completed rs = first :: rest, length = rest.length + 1 ≥ 2 iff rest ≠ []
+  -- Step 3: `rest ≠ []` ⇒ length of completed rs ≥ 2.
+  have hrest_pos : rest.length ≥ 1 := by
+    cases rest with
+    | nil => exact absurd rfl hne
+    | cons _ _ => simp [List.length_cons]
   have hlen : (completed rs).length ≥ 2 := by
-    rw [hc]
-    simp [List.length_cons]
-    cases rest
-    · simp at hne
-    · simp [List.length_cons]
+    rw [hc, List.length_cons]
+    omega
+  -- Step 4: compute reconcile rs.
+  unfold reconcile
+  rw [hc]
+  -- After unfolding the match, replace the inner `let firstVerdict` value.
+  simp only [hfv, hfilter, List.map_nil, List.isEmpty_nil]
+  -- The if-test on isEmpty fires (disagreement list is empty).
+  -- The if-test on length fires (≥ 2).
   rw [hc] at hlen
   simp [hlen]
-  exact ⟨rfl, rfl⟩
 
 end EchidnaPortfolio
