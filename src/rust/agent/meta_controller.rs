@@ -160,6 +160,13 @@ impl MetaController {
             CoprocessorKind::Graphics,
             CoprocessorKind::Audio,
             CoprocessorKind::Fpga,
+            // Phase 2b subprocess CAS backends — health degrades gracefully
+            // when the underlying binary is absent.
+            CoprocessorKind::PariGp,
+            CoprocessorKind::Maxima,
+            CoprocessorKind::Singular,
+            CoprocessorKind::Gap,
+            CoprocessorKind::Macaulay2,
         ];
         let mut out: HashMap<CoprocessorKind, Arc<dyn Coprocessor>> = HashMap::new();
         for &k in kinds {
@@ -333,6 +340,135 @@ impl MetaController {
                     verilog: String::new(),
                     top_module: String::new(),
                 },
+            )],
+        );
+
+        // ── PARI/GP advanced number theory ───────────────────────────────
+        // Preferred over Math for large semi-primes where ECM/GNFS matters.
+        r.insert(
+            "arithmetic.factorisation.advanced".into(),
+            vec![hint_template(
+                CoprocessorKind::PariGp,
+                CoprocessorOp::PariGpFactor { n: String::new() },
+            )],
+        );
+        r.insert(
+            "arithmetic.multiplicative_order".into(),
+            vec![hint_template(
+                CoprocessorKind::PariGp,
+                CoprocessorOp::PariGpZnorder { a: String::new(), n: String::new() },
+            )],
+        );
+        r.insert(
+            "arithmetic.next_prime".into(),
+            vec![hint_template(
+                CoprocessorKind::PariGp,
+                CoprocessorOp::PariGpNextPrime { n: String::new() },
+            )],
+        );
+
+        // ── Maxima symbolic algebra ──────────────────────────────────────
+        r.insert(
+            "algebra.symbolic.simplify".into(),
+            vec![hint_template(
+                CoprocessorKind::Maxima,
+                CoprocessorOp::MaximaSimplify { expr: String::new() },
+            )],
+        );
+        r.insert(
+            "algebra.symbolic.factor".into(),
+            vec![hint_template(
+                CoprocessorKind::Maxima,
+                CoprocessorOp::MaximaFactor { expr: String::new() },
+            )],
+        );
+        r.insert(
+            "algebra.symbolic.diff".into(),
+            vec![hint_template(
+                CoprocessorKind::Maxima,
+                CoprocessorOp::MaximaDiff { expr: String::new(), var: String::new() },
+            )],
+        );
+
+        // ── Singular polynomial algebra ──────────────────────────────────
+        r.insert(
+            "algebra.groebner.basis".into(),
+            vec![hint_template(
+                CoprocessorKind::Singular,
+                CoprocessorOp::SingularGroebner {
+                    ring_char: 0,
+                    vars: vec![],
+                    polys: vec![],
+                },
+            )],
+        );
+        r.insert(
+            "algebra.groebner.membership".into(),
+            vec![hint_template(
+                CoprocessorKind::Singular,
+                CoprocessorOp::SingularIdealMembership {
+                    ring_char: 0,
+                    vars: vec![],
+                    poly: String::new(),
+                    ideal: vec![],
+                },
+            )],
+        );
+        r.insert(
+            "algebra.variety.dimension".into(),
+            vec![hint_template(
+                CoprocessorKind::Singular,
+                CoprocessorOp::SingularDimension {
+                    ring_char: 0,
+                    vars: vec![],
+                    polys: vec![],
+                },
+            )],
+        );
+
+        // ── GAP group theory ─────────────────────────────────────────────
+        r.insert(
+            "algebra.group.order".into(),
+            vec![hint_template(
+                CoprocessorKind::Gap,
+                CoprocessorOp::GapGroupOrder { generators: vec![] },
+            )],
+        );
+        r.insert(
+            "algebra.group.abelian".into(),
+            vec![hint_template(
+                CoprocessorKind::Gap,
+                CoprocessorOp::GapIsAbelian { generators: vec![] },
+            )],
+        );
+        r.insert(
+            "algebra.group.symmetric_order".into(),
+            vec![hint_template(
+                CoprocessorKind::Gap,
+                CoprocessorOp::GapSymmetricGroupOrder { n: 0 },
+            )],
+        );
+
+        // ── Macaulay2 algebraic geometry ─────────────────────────────────
+        r.insert(
+            "algebra.geometry.groebner".into(),
+            vec![hint_template(
+                CoprocessorKind::Macaulay2,
+                CoprocessorOp::Macaulay2GroebnerBasis { vars: vec![], polys: vec![] },
+            )],
+        );
+        r.insert(
+            "algebra.geometry.dimension".into(),
+            vec![hint_template(
+                CoprocessorKind::Macaulay2,
+                CoprocessorOp::Macaulay2Dimension { vars: vec![], polys: vec![] },
+            )],
+        );
+        r.insert(
+            "algebra.geometry.degree".into(),
+            vec![hint_template(
+                CoprocessorKind::Macaulay2,
+                CoprocessorOp::Macaulay2Degree { vars: vec![], polys: vec![] },
             )],
         );
 
@@ -568,13 +704,16 @@ mod tests {
     #[tokio::test]
     async fn registers_all_native_coprocessors() {
         let mc = MetaController::new();
-        // 10 always-on (Math, Vector, Tensor, Crypto, Physics, Dsp, Io,
-        // Graphics, Audio, Fpga) + 1 feature-gated (FlintMath).
-        // Without --features flint we expect 10; with it, 11.
+        // 14 always-on (Math, Vector, Tensor, Crypto, Physics, Dsp, Io,
+        // Graphics, Audio, Fpga + Phase 2b: PariGp, Maxima, Singular, Gap,
+        // Macaulay2) + 1 feature-gated (FlintMath).
+        // Phase 2b backends degrade to Unhealthy if the binary is absent, but
+        // they ARE registered — health is checked at dispatch time, not at
+        // registration time.  Without --features flint we get 15; with it 16.
         let n = mc.num_coprocessors();
         assert!(
-            n == 10 || n == 11,
-            "expected 10 (no flint) or 11 (with flint), got {n}"
+            n == 15 || n == 16,
+            "expected 15 (no flint) or 16 (with flint), got {n}"
         );
     }
 
@@ -594,6 +733,12 @@ mod tests {
             ("visualisation.proof_graph", CoprocessorKind::Graphics),
             ("audio.completion_chime", CoprocessorKind::Audio),
             ("hardware.verilog.synth", CoprocessorKind::Fpga),
+            // Phase 2b CAS backends
+            ("arithmetic.factorisation.advanced", CoprocessorKind::PariGp),
+            ("algebra.symbolic.simplify", CoprocessorKind::Maxima),
+            ("algebra.groebner.basis", CoprocessorKind::Singular),
+            ("algebra.group.order", CoprocessorKind::Gap),
+            ("algebra.geometry.groebner", CoprocessorKind::Macaulay2),
         ];
         for (aspect, expected_kind) in cases {
             let g = dummy_goal(vec![aspect]);
