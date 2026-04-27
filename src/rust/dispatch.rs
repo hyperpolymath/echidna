@@ -721,21 +721,22 @@ impl ProverDispatcher {
             return Ok(primary_result);
         }
 
-        // Check degradation mode: in CosineOnly/ReadOnly, skip cross-checking
+        // CosineOnly = "use cosine for premise selection instead of GNN" — independent of
+        // multi-prover cross-checking.  Only ReadOnly / Minimal (genuinely degraded, few provers
+        // available) should skip cross-checking.
         let degradation = self.degradation_mode();
         match degradation {
-            DegradationMode::CosineOnly | DegradationMode::ReadOnly | DegradationMode::Minimal => {
-                // System too degraded for cross-checking; return primary result only
+            DegradationMode::ReadOnly | DegradationMode::Minimal => {
                 return Ok(primary_result);
             }
-            _ => {} // Normal or IncreasingFallback: proceed with cross-checking
+            _ => {}
         }
 
         // Filter cross-checkers by health status and degradation mode
         let max_cross_checkers = match degradation {
-            DegradationMode::Normal => additional_provers.len(),
+            DegradationMode::Normal | DegradationMode::CosineOnly => additional_provers.len(),
             DegradationMode::IncreasingFallback => std::cmp::max(5, additional_provers.len() / 2),
-            _ => 0, // Should not reach here (caught above)
+            _ => 0, // ReadOnly / Minimal already returned above
         };
 
         let health = self.health_status.lock().unwrap();
@@ -815,15 +816,19 @@ impl ProverDispatcher {
 
         let trust_level = compute_trust_level(&trust_factors);
 
+        // cross_checked = "we ran at least 2 provers for consistency" — independent of
+        // whether any prover confirmed the proof.  Trust level reflects confirming_count.
+        let cross_checked = provers_used.len() >= 2;
+
         primary_result.trust_level = trust_level;
         primary_result.provers_used = provers_used;
         primary_result.proof_time_ms = elapsed;
-        primary_result.cross_checked = confirming_count >= 2;
+        primary_result.cross_checked = cross_checked;
         primary_result.verified = all_agree && primary_result.verified;
 
-        if primary_result.cross_checked {
+        if cross_checked {
             primary_result.message = format!(
-                "Proof cross-checked by {} provers with {}",
+                "Proof cross-checked by {} prover(s) with {}",
                 confirming_count, trust_level
             );
         }
