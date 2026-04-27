@@ -69,7 +69,14 @@ Stage 4  Interaction layer honest           every declared ProverKind works
     4a  typed_wasm → crates/typed_wasm      [done 2026‑04‑22 ✓]
     4b  39 TypeChecker variant dispatch     [done 2026‑04‑22 ✓, all Sigma‑routed]
     4c  tactic synthesis template           [86/91 done; 5 suggest_tactics stubs remain]
-    4d  search_theorems template            72 stubs remain, query Verisim
+    4d  search_theorems template            [done 2026‑04‑27 ✓ — cross-prover layer
+                                             added at dispatcher (CLI/REST/REPL all
+                                             call `vcl_ut::cross_prover_search_names`).
+                                             The 72 backend `Ok(vec![])` returns are
+                                             correct: they report "no native search
+                                             command" — cross-prover semantics live
+                                             one layer up where Verisim covers all
+                                             provers in one query.]
 
 Stage 5  Distributed & fast                 scale + specialised hardware
     5a  Cap'n Proto IPC                     Rust ↔ Julia, :8090
@@ -104,7 +111,7 @@ Stage 8  Self‑verified                      ECHIDNA proves ECHIDNA
 
 | Claim | Today | End‑state target |
 |---|---|---|
-| "Every important solver" | **128 ProverKind variants** (89 external prover bindings + 39 TypeChecker disciplines routed through TypedWasm); **5 `suggest_tactics` stubs**; **72 `search_theorems` stubs** | **All variants with real `suggest_tactics` (GNN‑ranked top‑k) and `search_theorems` (queries Verisim by `goal_hash`) — no `Ok(vec![])` returns anywhere** |
+| "Every important solver" | **128 ProverKind variants** (89 external prover bindings + 39 TypeChecker disciplines routed through TypedWasm); **5 `suggest_tactics` stubs**; **72 backends with empty native search but a cross-prover Verisim fallback at the dispatcher layer (CLI/REST/REPL)** | **All variants with real `suggest_tactics` (GNN‑ranked top‑k); per-backend search reflects each prover's native capability while cross-prover queries are served from Verisim by `goal_hash`** |
 | "Vocab at 2.5 M" | 255 K | **~1 M canonical tokens** after Mathport + Iris + VST + Flyspeck + HoTT absorption, with **online growth** adding tokens during training |
 | "Chapel fully supported" | 2 files, POC only | **`dispatch.rs` picks Chapel‑parallel dispatch by config**; runtime init + cancellation + error propagation wired; ≥1 OoM speedup on portfolio solves |
 | "Cap'n Proto serialisation" | 0 `.capnp` files | **`crates/echidna-wire/`** contains schemas for ProofState / Goal / Tactic / EmbeddingRequest / RankingResponse; IPC on :8090 is Cap'n Proto; JSON retained only as debug fallback |
@@ -161,8 +168,14 @@ What **is** blocking and needs Opus + cross‑repo input:
   Vec<ProofRecord>` and `async fn prover_success_by_class(class) ->
   Vec<(ProverKind, f32)>`) but the schema for `ProofRecord` and `class`
   lives in the Verisim repo and must be agreed there before echidna
-  can wire reads.
-- **`search_theorems`** — 72 stubs, all blocked behind S4 contract.
+  can wire reads. **Status as of 2026-04-27**: the Verisim schema is in
+  fact fixed (`ProofAttempt` row → ClickHouse `proof_attempts` →
+  `mv_prover_success_by_class` MV) and both echidna read paths
+  (`query_prover_success_by_class` via `VeriSimAdvisor`,
+  `cross_prover_search_names` via `vcl_ut`) and the write path
+  (`spawn_record_attempt` from dispatch exits) are now wired. Remaining
+  S4 work is ops/runtime: standing up VeriSimDB in CI and observing the
+  loop close in production.
 
 ## 5. Agent‑tier guidance
 

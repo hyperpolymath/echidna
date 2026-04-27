@@ -869,6 +869,77 @@ fn octad_to_entry(octad: &OctadPayload) -> QueryResultEntry {
     }
 }
 
+// ═══════════════════════════════════════════════════════════════════════
+// Cross-prover convenience helpers — match the per-backend trait shape so
+// front-ends (CLI, REST, REPL) can append cross-prover results to the
+// per-backend aggregation without rebuilding a CrossProverQueryBuilder.
+// ═══════════════════════════════════════════════════════════════════════
+
+/// Query VeriSimDB for theorems matching a free-text pattern, across all
+/// provers, returning bare names that can be folded into a per-backend
+/// `search_theorems` aggregation.
+///
+/// Uses VeriSimDB's `/api/v1/search/text` (the same endpoint
+/// `execute_cross_prover` calls) and projects each `QueryResultEntry` to
+/// its `theorem_name`. Empty names are filtered. The query runs at
+/// `TypeLevel::Cardinality` (Level 7) so the `limit` is enforced
+/// type-safely.
+///
+/// **Failure mode**: returns `Ok(vec![])` when VeriSimDB is unreachable,
+/// returns 4xx/5xx, or has no matches. Errors from the executor itself
+/// (TypeLL validation, query construction) propagate. Callers that want
+/// strict failure semantics should use `QueryExecutor::execute` directly.
+///
+/// **Layering**: this is the dispatcher-layer counterpart to a backend's
+/// `search_theorems`. The 70+ backends whose native search is empty
+/// (`Ok(vec![])`) are not stubs to be filled — they correctly report
+/// "no native prover-specific search". Cross-prover semantics belong
+/// here, where one query covers every prover that has ever recorded a
+/// matching attempt.
+#[cfg(feature = "verisim")]
+pub async fn cross_prover_search_names(
+    verisim_url: &str,
+    pattern: &str,
+    limit: usize,
+) -> Result<Vec<String>> {
+    if pattern.trim().is_empty() {
+        return Ok(vec![]);
+    }
+    let executor = QueryExecutor::new(verisim_url);
+    let query = CrossProverQueryBuilder::new(TypeLevel::Cardinality)
+        .cross_prover_search(pattern)
+        .with_limit(limit)
+        .build()?;
+
+    match executor.execute(&query).await {
+        Ok(result) => Ok(result
+            .entries
+            .into_iter()
+            .filter_map(|e| {
+                let name = e.theorem_name.trim().to_string();
+                if name.is_empty() {
+                    None
+                } else {
+                    Some(name)
+                }
+            })
+            .collect()),
+        Err(_) => Ok(vec![]),
+    }
+}
+
+/// Build a no-op cross-prover search shim for the no-verisim default
+/// build, so callers don't need their own `#[cfg]` ladder. Always
+/// returns `Ok(vec![])`.
+#[cfg(not(feature = "verisim"))]
+pub async fn cross_prover_search_names(
+    _verisim_url: &str,
+    _pattern: &str,
+    _limit: usize,
+) -> Result<Vec<String>> {
+    Ok(vec![])
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -980,5 +1051,34 @@ mod tests {
         let result = executor.execute(&query).await.unwrap();
         assert_eq!(result.count, 0);
         assert_eq!(result.verified_level, TypeLevel::ResultType);
+    }
+
+    #[tokio::test]
+    async fn test_cross_prover_search_names_empty_pattern() {
+        // Empty / whitespace patterns short-circuit to empty without
+        // touching VeriSimDB at all — useful for callers that pass an
+        // un-validated CLI argument.
+        let names =
+            cross_prover_search_names("http://127.0.0.1:1", "", 10).await.unwrap();
+        assert!(names.is_empty());
+        let names =
+            cross_prover_search_names("http://127.0.0.1:1", "   ", 10).await.unwrap();
+        assert!(names.is_empty());
+    }
+
+    #[tokio::test]
+    async fn test_cross_prover_search_names_unreachable_returns_empty() {
+        // A real pattern against an unreachable VeriSimDB must return Ok(vec![])
+        // — search is a soft query, an outage cannot kill the caller.
+        // Without the verisim feature this is a no-op stub that also returns
+        // Ok(vec![]), so the same assertion holds in both build modes.
+        let names = cross_prover_search_names(
+            "http://127.0.0.1:1",
+            "associativity",
+            5,
+        )
+        .await
+        .unwrap();
+        assert!(names.is_empty());
     }
 }

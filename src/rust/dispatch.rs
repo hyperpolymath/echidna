@@ -350,7 +350,11 @@ impl ProverDispatcher {
         } else {
             fallback_prover
         };
-        self.verify_proof(prover, content).await
+        // Thread the class to the inner so the recorded ProofAttempt is
+        // attributed to the right obligation_class — otherwise the very
+        // statistics this dispatch consults would be polluted with
+        // "unknown" rows.
+        self.verify_proof_with_class(prover, content, Some(obligation_class)).await
     }
 
     /// Dispatch with LLM-guided optimisation
@@ -399,11 +403,32 @@ impl ProverDispatcher {
         self.verify_proof(fallback_prover, content).await
     }
 
-    /// Dispatch a proof verification request through the trust-hardening pipeline
+    /// Dispatch a proof verification request through the trust-hardening pipeline.
+    ///
+    /// Public entry point. Records dispatch attempts in VeriSimDB (when
+    /// `feature = "verisim"` and a writer is attached) with `obligation_class`
+    /// = `"unknown"`, since the public API does not carry class metadata.
+    /// Callers that *do* know the class (`verify_proof_verisim_guided`,
+    /// future LLM-guided dispatch with classification) should call
+    /// `verify_proof_with_class` directly.
     pub async fn verify_proof(
         &self,
         prover_kind: ProverKind,
         content: &str,
+    ) -> Result<DispatchResult> {
+        self.verify_proof_with_class(prover_kind, content, None).await
+    }
+
+    /// Inner dispatch implementation that takes an optional `obligation_class`
+    /// for VeriSimDB attribution. Crate-private — public callers go through
+    /// `verify_proof` (no class) or `verify_proof_verisim_guided` (class
+    /// already known).
+    pub(crate) async fn verify_proof_with_class(
+        &self,
+        prover_kind: ProverKind,
+        content: &str,
+        #[cfg_attr(not(feature = "verisim"), allow(unused_variables))]
+        obligation_class: Option<&str>,
     ) -> Result<DispatchResult> {
         let start = Instant::now();
 
@@ -442,7 +467,13 @@ impl ProverDispatcher {
                     None
                 };
                 #[cfg(feature = "verisim")]
-                self.spawn_record_attempt(prover_kind, None, &outcome, elapsed_ms, None);
+                self.spawn_record_attempt(
+                    prover_kind,
+                    None,
+                    &outcome,
+                    elapsed_ms,
+                    obligation_class,
+                );
                 return Ok(DispatchResult {
                     verified: false,
                     trust_level: TrustLevel::Level1,
@@ -559,7 +590,7 @@ impl ProverDispatcher {
             state.goals.first(),
             &outcome,
             prover_elapsed_ms,
-            None,
+            obligation_class,
         );
 
         Ok(DispatchResult {
@@ -1242,6 +1273,26 @@ mod tests {
         assert_eq!(attempt.obligation_id, "unknown");
         assert_eq!(attempt.claim, "");
         assert_eq!(attempt.obligation_class, "unknown");
+    }
+
+    #[cfg(feature = "verisim")]
+    #[tokio::test]
+    async fn test_verify_proof_with_class_threads_class_to_inner() {
+        // The inner accepts an obligation_class which gets attributed to the
+        // ProofAttempt row. We can't observe the row without VeriSimDB, but we
+        // can confirm the call typechecks and returns Ok end-to-end.
+        let dispatcher = ProverDispatcher::new();
+        let result = dispatcher
+            .verify_proof_with_class(
+                ProverKind::Z3,
+                "(set-logic QF_LIA)\n(assert (> x 0))\n(check-sat)",
+                Some("smoke-test"),
+            )
+            .await;
+        assert!(
+            result.is_ok(),
+            "verify_proof_with_class must complete with Some(class)"
+        );
     }
 
     #[cfg(feature = "verisim")]

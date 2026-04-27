@@ -458,6 +458,31 @@ async fn search_command(
         }
     }
 
+    // After per-backend search, add a cross-prover layer: query VeriSimDB
+    // for matches across every prover that has ever recorded an attempt.
+    // This compensates for backends without a native search command (the
+    // 70+ that legitimately return Vec::new() because their underlying
+    // prover doesn't ship a `Search`-equivalent). No-op without the
+    // `verisim` feature; logs and continues on Verisim outage.
+    let verisim_url = std::env::var("VERISIM_URL")
+        .unwrap_or_else(|_| "http://localhost:8080".to_string());
+    match echidna::vcl_ut::cross_prover_search_names(&verisim_url, &pattern, limit).await {
+        Ok(cross) if !cross.is_empty() => {
+            formatter.section("\nCross-prover (VeriSimDB) Results:")?;
+            total_results += cross.len();
+            for (i, result) in cross.iter().take(limit).enumerate() {
+                formatter.result(&format!("  {}. {}", i + 1, result))?;
+            }
+            if cross.len() > limit {
+                formatter.info(&format!("  ... and {} more results", cross.len() - limit))?;
+            }
+        }
+        Ok(_) => {}
+        Err(e) => {
+            warn!("Cross-prover search failed: {}", e);
+        }
+    }
+
     formatter.info(&format!("\nTotal results found: {}", total_results))?;
 
     Ok(())
