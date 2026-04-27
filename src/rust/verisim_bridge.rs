@@ -480,6 +480,11 @@ impl ProofOctadBuilder {
 /// Sends octad payloads to VeriSimDB for persistent storage.
 /// Uses reqwest for async HTTP. Falls back gracefully if VeriSimDB
 /// is unavailable (proof memory continues in-memory).
+///
+/// `Clone` is cheap: `reqwest::Client` is internally `Arc`'d, and the
+/// base URL is just a `String`. Cloning is required for fire-and-forget
+/// `tokio::spawn` writes (e.g. `dispatch::ProverDispatcher::spawn_record_attempt`).
+#[derive(Clone)]
 pub struct VeriSimDBClient {
     // pub(crate) — the sibling vcl_ut module composes queries directly
     // against the base URL + shared HTTP client rather than going through

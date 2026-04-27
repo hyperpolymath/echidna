@@ -247,6 +247,14 @@ pub struct ProverDispatcher {
     /// is inviolable.
     #[cfg(feature = "verisim")]
     verisim_advisor: Option<VeriSimAdvisor>,
+    /// Optional VeriSimDB writer for closing the learning loop.
+    /// When set, every `verify_proof()` exit fires a fire-and-forget
+    /// `record_proof_attempt` so historical outcomes accumulate in the
+    /// `proof_attempts` table that backs `mv_prover_success_by_class`.
+    /// A writer outage cannot affect the trust pipeline — failures are
+    /// logged at warn level and dropped.
+    #[cfg(feature = "verisim")]
+    verisim_writer: Option<crate::verisim_bridge::VeriSimDBClient>,
 }
 
 impl ProverDispatcher {
@@ -258,6 +266,8 @@ impl ProverDispatcher {
             llm_advisor: None,
             #[cfg(feature = "verisim")]
             verisim_advisor: None,
+            #[cfg(feature = "verisim")]
+            verisim_writer: None,
         }
     }
 
@@ -269,6 +279,8 @@ impl ProverDispatcher {
             llm_advisor: None,
             #[cfg(feature = "verisim")]
             verisim_advisor: None,
+            #[cfg(feature = "verisim")]
+            verisim_writer: None,
         }
     }
 
@@ -294,6 +306,24 @@ impl ProverDispatcher {
     #[cfg(feature = "verisim")]
     pub fn with_verisim(mut self, advisor: VeriSimAdvisor) -> Self {
         self.verisim_advisor = Some(advisor);
+        self
+    }
+
+    /// Attach a VeriSimDB writer that records every proof attempt.
+    ///
+    /// `base_url` is the same VeriSimDB endpoint used by `VeriSimAdvisor`
+    /// (e.g. `"http://verisimdb:7700"`).  Once attached, `verify_proof()`
+    /// fires `record_proof_attempt` as a `tokio::spawn` fire-and-forget at
+    /// every exit (parse failure or final result), populating the table that
+    /// `mv_prover_success_by_class` reads from.  This closes the loop
+    /// `attempt → table → MV → VeriSimAdvisor → next dispatch`.
+    ///
+    /// **Trust guarantee**: the writer runs detached. A VeriSimDB outage,
+    /// network partition, or 5xx response can never block, fail, or alter
+    /// a dispatch result; failures are logged at warn level and dropped.
+    #[cfg(feature = "verisim")]
+    pub fn with_verisim_writer(mut self, base_url: &str) -> Self {
+        self.verisim_writer = Some(crate::verisim_bridge::VeriSimDBClient::new(base_url));
         self
     }
 
@@ -411,6 +441,8 @@ impl ProverDispatcher {
                 } else {
                     None
                 };
+                #[cfg(feature = "verisim")]
+                self.spawn_record_attempt(prover_kind, None, &outcome, elapsed_ms, None);
                 return Ok(DispatchResult {
                     verified: false,
                     trust_level: TrustLevel::Level1,
@@ -521,6 +553,15 @@ impl ProverDispatcher {
             None
         };
 
+        #[cfg(feature = "verisim")]
+        self.spawn_record_attempt(
+            prover_kind,
+            state.goals.first(),
+            &outcome,
+            prover_elapsed_ms,
+            None,
+        );
+
         Ok(DispatchResult {
             verified: verified && meets_minimum,
             trust_level,
@@ -534,6 +575,34 @@ impl ProverDispatcher {
             outcome,
             diagnostics,
         })
+    }
+
+    /// Fire a `record_proof_attempt` to VeriSimDB without blocking dispatch.
+    ///
+    /// No-op when `verisim_writer` is unset.  HTTP errors from VeriSimDB are
+    /// logged at warn level and swallowed — the trust pipeline must never
+    /// depend on the writer succeeding.  Must be called from inside a tokio
+    /// runtime (the dispatch entry points are async, so this always holds).
+    #[cfg(feature = "verisim")]
+    fn spawn_record_attempt(
+        &self,
+        prover_kind: ProverKind,
+        goal: Option<&crate::core::Goal>,
+        outcome: &ProverOutcome,
+        duration_ms: u64,
+        obligation_class: Option<&str>,
+    ) {
+        let Some(writer) = self.verisim_writer.as_ref() else {
+            return;
+        };
+        let attempt =
+            build_proof_attempt(prover_kind, goal, outcome, duration_ms, obligation_class);
+        let writer = writer.clone();
+        tokio::spawn(async move {
+            if let Err(e) = writer.record_proof_attempt(&attempt).await {
+                warn!("VeriSim record_proof_attempt failed: {}", e);
+            }
+        });
     }
 
     /// Dispatch a proof with cross-checking (portfolio solving)
@@ -849,6 +918,64 @@ impl Default for ProverDispatcher {
     }
 }
 
+/// Build a `ProofAttempt` row for VeriSimDB from a dispatch outcome.
+///
+/// `obligation_id` uses `proof_encoding::goal_identity` so the same goal
+/// produces the same hash across provers, which is what
+/// `mv_prover_success_by_class` depends on for cross-prover comparison.
+/// When `goal` is `None` (e.g. parse failure with no parsed state) the
+/// id falls back to the literal string `"unknown"`.
+#[cfg(feature = "verisim")]
+fn build_proof_attempt(
+    prover_kind: ProverKind,
+    goal: Option<&crate::core::Goal>,
+    outcome: &ProverOutcome,
+    duration_ms: u64,
+    obligation_class: Option<&str>,
+) -> crate::verisim_bridge::ProofAttempt {
+    use crate::verisim_bridge::{prover_kind_to_str, ProofAttempt};
+
+    let now = chrono::Utc::now();
+    let obligation_id = goal
+        .map(|g| crate::proof_encoding::goal_identity("dispatch", g))
+        .unwrap_or_else(|| "unknown".to_string());
+    let claim = goal.map(|g| g.target.to_string()).unwrap_or_default();
+    let outcome_str = match outcome {
+        ProverOutcome::Proved { .. } => "success",
+        ProverOutcome::Timeout { .. } => "timeout",
+        ProverOutcome::NoProofFound { .. }
+        | ProverOutcome::InvalidInput { .. }
+        | ProverOutcome::InconsistentPremises { .. }
+        | ProverOutcome::ProverError { .. } => "failure",
+        ProverOutcome::UnsupportedFeature { .. } | ProverOutcome::SystemError { .. } => "unknown",
+    };
+    let confidence = if matches!(outcome, ProverOutcome::Proved { .. }) {
+        1.0
+    } else {
+        0.0
+    };
+    let started_at = now - chrono::Duration::milliseconds(duration_ms as i64);
+
+    ProofAttempt {
+        attempt_id: uuid::Uuid::new_v4().to_string(),
+        obligation_id,
+        repo: String::new(),
+        file: String::new(),
+        claim,
+        obligation_class: obligation_class.unwrap_or("unknown").to_string(),
+        prover_used: prover_kind_to_str(prover_kind).to_string(),
+        outcome: outcome_str.to_string(),
+        duration_ms,
+        confidence,
+        parent_attempt_id: None,
+        strategy_tag: "dispatch".to_string(),
+        started_at: started_at.to_rfc3339(),
+        completed_at: now.to_rfc3339(),
+        prover_output: String::new(),
+        error_message: None,
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -1004,6 +1131,135 @@ mod tests {
         assert!(
             result.is_ok(),
             "Chapel parallel dispatch must return Ok (either Chapel or fallback)"
+        );
+    }
+
+    // ----- VeriSim writer wiring ------------------------------------------
+
+    #[cfg(feature = "verisim")]
+    #[test]
+    fn test_with_verisim_writer_attaches_client() {
+        // The builder must set the `verisim_writer` field so subsequent
+        // dispatch calls can fire `record_proof_attempt`. We can't exercise
+        // the spawn path without a live VeriSimDB, but we can confirm the
+        // writer is wired.
+        let dispatcher = ProverDispatcher::new().with_verisim_writer("http://127.0.0.1:7700");
+        assert!(
+            dispatcher.verisim_writer.is_some(),
+            "with_verisim_writer must populate the verisim_writer field"
+        );
+    }
+
+    #[cfg(feature = "verisim")]
+    #[test]
+    fn test_build_proof_attempt_proved_outcome() {
+        use crate::core::{Goal, Term};
+
+        let goal = Goal {
+            id: "g0".to_string(),
+            target: Term::Const("True".to_string()),
+            hypotheses: vec![],
+        };
+        let outcome = ProverOutcome::Proved { elapsed_ms: 42 };
+
+        let attempt =
+            build_proof_attempt(ProverKind::Z3, Some(&goal), &outcome, 42, Some("smoke"));
+
+        assert_eq!(attempt.outcome, "success");
+        assert_eq!(attempt.confidence, 1.0);
+        assert_eq!(attempt.obligation_class, "smoke");
+        assert_eq!(attempt.prover_used, "z3");
+        assert_eq!(attempt.duration_ms, 42);
+        assert_eq!(attempt.strategy_tag, "dispatch");
+        assert!(
+            !attempt.obligation_id.is_empty() && attempt.obligation_id != "unknown",
+            "obligation_id must be a real goal_identity hash"
+        );
+    }
+
+    #[cfg(feature = "verisim")]
+    #[test]
+    fn test_build_proof_attempt_outcome_mapping() {
+        use crate::core::{Goal, Term};
+
+        let goal = Goal {
+            id: "g0".to_string(),
+            target: Term::Const("False".to_string()),
+            hypotheses: vec![],
+        };
+
+        let cases: Vec<(ProverOutcome, &str)> = vec![
+            (
+                ProverOutcome::NoProofFound {
+                    elapsed_ms: 10,
+                    reason: None,
+                },
+                "failure",
+            ),
+            (
+                ProverOutcome::InvalidInput {
+                    reason: "syntax".to_string(),
+                    location: None,
+                },
+                "failure",
+            ),
+            (ProverOutcome::Timeout { limit_secs: 30 }, "timeout"),
+            (
+                ProverOutcome::UnsupportedFeature {
+                    feature: "uf".to_string(),
+                },
+                "unknown",
+            ),
+            (
+                ProverOutcome::SystemError {
+                    detail: "io".to_string(),
+                },
+                "unknown",
+            ),
+        ];
+
+        for (outcome, expected) in cases {
+            let a = build_proof_attempt(ProverKind::Z3, Some(&goal), &outcome, 10, None);
+            assert_eq!(
+                a.outcome, expected,
+                "outcome {:?} should map to '{}'",
+                outcome, expected
+            );
+            assert_eq!(a.confidence, 0.0, "non-Proved outcomes get confidence 0.0");
+        }
+    }
+
+    #[cfg(feature = "verisim")]
+    #[test]
+    fn test_build_proof_attempt_no_goal_uses_unknown_id() {
+        // Parse-failure path passes goal=None. Must still produce a valid
+        // ProofAttempt rather than panicking.
+        let outcome = ProverOutcome::InvalidInput {
+            reason: "bad".to_string(),
+            location: None,
+        };
+        let attempt = build_proof_attempt(ProverKind::Coq, None, &outcome, 1, None);
+        assert_eq!(attempt.obligation_id, "unknown");
+        assert_eq!(attempt.claim, "");
+        assert_eq!(attempt.obligation_class, "unknown");
+    }
+
+    #[cfg(feature = "verisim")]
+    #[tokio::test]
+    async fn test_verify_proof_with_unreachable_writer_still_returns_ok() {
+        // Spawning a record to an unreachable VeriSimDB must NOT block or
+        // fail dispatch. The dispatch result must come back even though the
+        // background HTTP write will eventually time out and warn.
+        let dispatcher = ProverDispatcher::new().with_verisim_writer("http://127.0.0.1:1");
+        let result = dispatcher
+            .verify_proof(
+                ProverKind::Z3,
+                "(set-logic QF_LIA)\n(assert (> x 0))\n(check-sat)",
+            )
+            .await;
+        assert!(
+            result.is_ok(),
+            "dispatch must complete even with unreachable VeriSim writer"
         );
     }
 }
