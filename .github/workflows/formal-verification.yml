@@ -3,18 +3,17 @@
 #
 # formal-verification.yml — Creusot formal verification of the trust-pipeline kernel.
 #
-# Stage 8c of the ECHIDNA ROADMAP.
-#
-# This workflow runs in two jobs:
+# Stage 8c of the ECHIDNA ROADMAP.  Both jobs are merge gates as of Stage 8c-M3.
 #
 #   stable-tests   — `cargo test -p echidna-core-spark` on stable Rust.
-#                    Always a merge gate.  Exercises every proof obligation
-#                    as a `#[test]` function.
+#                    Exercises every proof obligation as a `#[test]` function.
+#                    Fast (~10 s); always passes on a correct Rust installation.
 #
-#   creusot-verify — `cargo +nightly creusot` with Why3 discharge.
-#                    Report-only until Stage 8c-M3 (toolchain is pinned
-#                    but full CI bring-up is pending Why3 availability in
-#                    the runner).  Failures are annotated but do not block.
+#   creusot-verify — `cargo +nightly creusot` with Why3 + Z3 discharge.
+#                    Hard gate as of Stage 8c-M3.  Requires Why3 in the runner;
+#                    `apt-get install why3` covers Ubuntu 22.04+.
+#                    If Why3 availability changes, re-evaluate whether to keep
+#                    this as a required check or move to a scheduled/manual job.
 #
 # See crates/echidna-core-spark/CREUSOT-SETUP.md for local setup.
 
@@ -34,7 +33,7 @@ permissions:
   contents: read
 
 jobs:
-  # ── Job 1: invariant tests on stable Rust (always a merge gate) ──────────
+  # ── Job 1: invariant tests on stable Rust ────────────────────────────────
   stable-tests:
     name: Trust-pipeline invariant tests (stable)
     runs-on: ubuntu-latest
@@ -58,12 +57,16 @@ jobs:
         env:
           RUST_BACKTRACE: 1
 
-  # ── Job 2: Creusot formal verification (report-only until Stage 8c-M3) ──
+  # ── Job 2: Creusot formal verification (hard gate — Stage 8c-M3) ─────────
   creusot-verify:
-    name: Creusot formal verification (report-only)
+    name: Creusot formal verification
     runs-on: ubuntu-latest
-    # continue-on-error keeps the job from blocking the PR until Stage 8c-M3.
-    continue-on-error: true
+    # No continue-on-error — this is a hard merge gate as of Stage 8c-M3.
+    # The outer-loop invariant for compute is now live; all obligations
+    # (PO-1..P8, PO-A1..A12) must discharge under Why3+Z3.
+    #
+    # If this job becomes flaky due to nightly drift, update the pin in
+    # rust-toolchain.toml and the `toolchain:` field below together.
 
     steps:
       - name: Checkout repository
@@ -80,21 +83,28 @@ jobs:
       - name: Install Why3 and SMT solvers
         run: |
           sudo apt-get update -qq
-          sudo apt-get install -y --no-install-recommends why3 z3
-        # CVC5 is not in Ubuntu 22.04 apt; skip for now. Alt-Ergo via opam if needed.
+          sudo apt-get install -y --no-install-recommends why3 z3 alt-ergo
+        # why3 + z3 cover all current obligations.  alt-ergo is included
+        # as a fallback solver for obligations z3 times out on.
+
+      - name: Verify Why3 installation
+        run: |
+          why3 --version
+          z3 --version
+          why3 config detect
 
       - name: Install Creusot
         run: cargo +nightly-2024-05-01 install creusot
-        # This step will fail if the nightly pin drifts from what Creusot supports.
-        # When it does, update rust-toolchain.toml and this workflow together.
-        continue-on-error: true
+        # Hard failure: if the nightly drifts from what Creusot supports,
+        # this step will fail and the PR is blocked.  Fix: bump the pin.
 
-      - name: Run Creusot verification (report-only)
+      - name: Run Creusot verification
         run: |
           cargo +nightly-2024-05-01 creusot \
             -p echidna-core-spark \
             -- \
             --features creusot \
-            --why3 "$(which why3)" \
-          || echo "::warning::Creusot verification incomplete — Stage 8c-M3 pending"
-        # Stage 8c-M3 will promote this from continue-on-error to a hard gate.
+            --why3 "$(which why3)"
+        # All obligations must be Valid.  Unknown/Timeout indicates either
+        # a contract error or a solver timeout (raise --timeout if needed).
+        # Invalid means the contract is wrong — check the Why3 obligation.

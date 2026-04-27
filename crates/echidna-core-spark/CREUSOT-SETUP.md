@@ -88,10 +88,13 @@ All obligations in `impl_invariants` are designed to discharge quickly
 
 ## 6 — CI integration
 
-`.github/workflows/formal-verification.yml` (added Stage 8c-M1) runs
-`just verify-trust-pipeline` in report-only mode (`continue-on-error: true`).
-Stage 8c-M3 will flip this to a hard merge gate once Why3 is available in
-the runner and all obligations discharge within the CI time budget.
+`.github/workflows/formal-verification.yml` runs two jobs, both merge gates:
+
+- `stable-tests`: `cargo test -p echidna-core-spark` on stable Rust (~10 s).
+- `creusot-verify`: `cargo +nightly creusot` with Why3 + Z3 discharge.
+  Requires `apt-get install why3 z3 alt-ergo` in the runner (Ubuntu 22.04+).
+
+Both were promoted to hard gates in Stage 8c-M3 (no `continue-on-error`).
 
 ## Annotation style
 
@@ -108,13 +111,20 @@ Creusot contracts in this crate are written in two complementary forms:
 |---|---|---|
 | 8c-M1 | `rust-toolchain.toml`, `formal-verification.yml`, `just verify-trust-pipeline` | **done** |
 | 8c-M2 | `dominates` marked `#[pure]`; `compute` ensures with `^candidates`; inner-loop `#[invariant]` for `dominated` | **done** |
-| 8c-M3 | Outer-loop invariant (prefix classification); Why3 CI discharge; flip CI to hard gate | pending |
+| 8c-M3 | Outer-loop invariant (`snapshot!` + prefix classification); Why3 CI hard gate | **done** |
 
-The outer-loop invariant for `compute` (classifying the prefix 0..i at each
-iteration) requires capturing a ghost snapshot of the initial objectives and
-reasoning over a growing prefix.  This is straightforward in Creusot but
-deferred to Stage 8c-M3 so that M2 ships without a partially-activated outer
-invariant that Creusot might not yet discharge.
+All three milestones are complete.  The `compute` function now carries the
+full two-level invariant structure:
+
+- **Outer**: `snapshot!(candidates)` at entry + `#[invariant]` asserting
+  (a) objectives unchanged for all k, (b) `is_pareto_optimal[k]` correctly
+  set for k < i.
+- **Inner**: `dominated == (∃ k < j, k ≠ i : dominates(k, i))`.
+
+The CI workflow (`formal-verification.yml`) is a hard gate: both
+`stable-tests` and `creusot-verify` must pass for a merge.  If the nightly
+pin drifts, bump `rust-toolchain.toml` + the workflow's `toolchain:` field
+together.
 
 This keeps the crate buildable on stable Rust at all times while still
 expressing every proof obligation in machine-verifiable syntax.

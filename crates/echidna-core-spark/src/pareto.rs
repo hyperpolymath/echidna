@@ -183,13 +183,10 @@ pub fn dominates(a: &ProofObjective, b: &ProofObjective) -> bool {
 ///
 /// The loop invariant inside the function body ensures Creusot can propagate
 /// the contract through the nested `for` loops.
-// Stage 8c-M2 note: the `compute` contract uses `^candidates` (Creusot's
-// "final borrow" sigil) and calls `dominates` (now marked `#[pure]`).
-// The outer-loop invariant (classifying 0..i) requires Creusot's quantifier
-// over a growing prefix and is straightforward; the inner-loop `dominated`
-// invariant is written as a `cfg_attr(invariant)` below.
-// Outer loop variant (`n - i`) and inner loop variant (`n - j`) are provided
-// for termination; Creusot can also infer these from bounded integer ranges.
+// Stage 8c-M3 note: outer-loop invariant activated (prefix classification +
+// objectives-read-only).  The invariant uses a ghost `snapshot!` of `candidates`
+// at entry so Creusot can reason that objectives[k] at iteration i equals
+// objectives[k] at call time — even though the slice is a mutable borrow.
 #[cfg_attr(feature = "creusot",
     // (1) Length preserved.
     ensures((^candidates).len() == (*candidates).len()),
@@ -214,16 +211,63 @@ pub fn compute(candidates: &mut [ProofCandidate]) -> Vec<usize> {
     let n = candidates.len();
     let mut frontier_indices = Vec::new();
 
+    // Ghost snapshot of *candidates at entry (Stage 8c-M3).
+    //
+    // `snapshot!` creates a Creusot ghost value of type `Snapshot<T>` that
+    // captures the current model of its argument without any runtime cost.
+    // On stable Rust (feature = "creusot" inactive) this declaration is
+    // compiled away by cfg; with --features creusot it enters scope as
+    // `init: Snapshot<&mut [ProofCandidate]>`.
+    //
+    // The snapshot is used in the outer-loop invariant to state that
+    // objectives[k] at any iteration equals objectives[k] at entry — even
+    // though `candidates` is a mutable borrow and Creusot cannot otherwise
+    // auto-frame that we only write `is_pareto_optimal`.
+    #[cfg(feature = "creusot")]
+    let init = snapshot!(candidates);
+
     for i in 0..n {
+        // ── Outer-loop invariant (Stage 8c-M3) ─────────────────────────
+        //
+        // At the start of each iteration `i`, two properties hold:
+        //
+        // (a) Objectives read-only: every candidate's objective tuple equals
+        //     its value at entry.  `(*init)[k]` dereferences the snapshot to
+        //     get the k-th candidate at call time.
+        //
+        // (b) Prefix classification: for every k < i, the `is_pareto_optimal`
+        //     flag is exactly `¬(∃ j ≠ k, j < n : dominates(j, k))`.
+        //     We use the *current* candidates[j].objectives in the quantifier;
+        //     (a) guarantees these equal the original values, so the predicate
+        //     is equivalent to the post-condition's quantifier.
+        //
+        // Base case (i=0): both vacuously true.
+        // Inductive step: the inner loop + assignment maintain (b) for the new
+        // index i; (a) is maintained because we only write is_pareto_optimal.
+        #[cfg_attr(feature = "creusot", invariant(
+            // (a)
+            (forall<k: usize> k < @n ==>
+                candidates[k].objectives == (*init)[k].objectives)
+            &&
+            // (b)
+            (forall<k: usize> k < @i ==>
+                candidates[k].is_pareto_optimal == (
+                    forall<j: usize> j < @n && j != k ==>
+                        !dominates(&candidates[j].objectives, &candidates[k].objectives)
+                )
+            )
+        ))]
+        let _ = ();
+
         let mut dominated = false;
         for j in 0..n {
-            // Inner-loop invariant: `dominated` is true iff some checked
-            // index k (0 ≤ k < j, k ≠ i) strictly dominates candidate i.
+            // Inner-loop invariant (Stage 8c-M2): `dominated` is true iff
+            // some k in 0..j, k ≠ i, strictly dominates candidate i.
             //
-            // Holds at loop entry (j=0, dominated=false, empty prefix) and
-            // is maintained by the body: we only set dominated=true after
-            // confirming dominates(k, i), and break immediately so no later
-            // iteration can unset it.
+            // Base case (j=0): dominated=false, empty prefix. ✓
+            // Inductive step: if k=j dominates, set dominated=true+break;
+            //   the invariant holds for the hypothetical "next j+1" because
+            //   we break before re-entering. ✓
             #[cfg_attr(feature = "creusot", invariant(
                 dominated == (exists<k: usize> k < @j && k != @i &&
                     dominates(&candidates[k].objectives, &candidates[i].objectives))
