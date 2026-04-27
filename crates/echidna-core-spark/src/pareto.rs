@@ -45,6 +45,9 @@ use serde::{Deserialize, Serialize};
 
 use crate::TrustLevel;
 
+#[cfg(feature = "creusot")]
+use creusot_contracts::*;
+
 // ---------------------------------------------------------------------------
 // ProofObjective
 // ---------------------------------------------------------------------------
@@ -111,18 +114,18 @@ pub struct ProofCandidate {
 ///         || a.proof_steps < b.proof_steps)
 /// ))]
 /// ```
-// #[cfg_attr(feature = "creusot",
-//     ensures(result == (
-//         a.proof_time_ms <= b.proof_time_ms
-//         && a.trust_level.value() >= b.trust_level.value()
-//         && a.memory_bytes <= b.memory_bytes
-//         && a.proof_steps <= b.proof_steps
-//         && (a.proof_time_ms < b.proof_time_ms
-//             || a.trust_level.value() > b.trust_level.value()
-//             || a.memory_bytes < b.memory_bytes
-//             || a.proof_steps < b.proof_steps)
-//     ))
-// )]
+#[cfg_attr(feature = "creusot",
+    ensures(result == (
+        a.proof_time_ms <= b.proof_time_ms
+        && a.trust_level.value() >= b.trust_level.value()
+        && a.memory_bytes <= b.memory_bytes
+        && a.proof_steps <= b.proof_steps
+        && (a.proof_time_ms < b.proof_time_ms
+            || a.trust_level.value() > b.trust_level.value()
+            || a.memory_bytes < b.memory_bytes
+            || a.proof_steps < b.proof_steps)
+    ))
+)]
 pub fn dominates(a: &ProofObjective, b: &ProofObjective) -> bool {
     let a_trust = a.trust_level.value();
     let b_trust = b.trust_level.value();
@@ -162,7 +165,20 @@ pub fn dominates(a: &ProofObjective, b: &ProofObjective) -> bool {
 /// )]
 /// #[ensures(result.len() == count_optimal(&candidates))]
 /// ```
-// #[cfg_attr(feature = "creusot", …)]
+/// ### Creusot contract (soundness + completeness)
+/// ```text
+/// #[ensures(forall<i: usize> i < candidates.len() ==>
+///     candidates[i].is_pareto_optimal == (
+///         forall<j: usize> j < candidates.len() && i != j ==>
+///             !dominates(&candidates[j].objectives, &candidates[i].objectives)
+///     )
+/// )]
+/// ```
+// The `compute` contract is complex (nested quantifiers over a mutable slice).
+// It is expressed as a doc comment above and tested exhaustively in
+// `impl_invariants::{po_p4_compute_sound, po_p5_compute_complete}`.
+// Activating it requires Creusot's mutable-borrow logic extensions;
+// that activation is tracked in Stage 8c-M2 of the ROADMAP.
 pub fn compute(candidates: &mut [ProofCandidate]) -> Vec<usize> {
     let n = candidates.len();
     let mut frontier_indices = Vec::new();
@@ -188,6 +204,61 @@ pub fn compute(candidates: &mut [ProofCandidate]) -> Vec<usize> {
 }
 
 // ---------------------------------------------------------------------------
+// weighted_rank
+// ---------------------------------------------------------------------------
+
+/// Rank candidates by a weighted combination of objectives.
+///
+/// Returns the indices `0..candidates.len()` sorted from best to worst
+/// according to: `trust_w * trust - time_w * time - mem_w * memory - steps_w * steps`.
+///
+/// ### PO-P8 — permutation property
+///
+/// The output is a permutation of `0..candidates.len()` — every index
+/// appears exactly once.
+///
+/// ### Creusot contract
+/// ```text
+/// #[ensures(result.len() == candidates.len())]
+/// #[ensures(forall<i: usize, j: usize>
+///     i < result.len() && j < result.len() && i != j
+///     ==> result[i] != result[j]
+/// )]
+/// #[ensures(forall<i: usize> i < result.len() ==> result[i] < candidates.len())]
+/// ```
+// #[cfg_attr(feature = "creusot",
+//     ensures(result.len() == candidates.len()),
+//     ensures(forall<i: usize, j: usize>
+//         i < result.len() && j < result.len() && i != j
+//         ==> result[i] != result[j]
+//     ),
+//     ensures(forall<i: usize> i < result.len() ==> result[i] < candidates.len())
+// )]
+pub fn weighted_rank(
+    candidates: &[ProofCandidate],
+    trust_w: f64,
+    time_w: f64,
+    mem_w: f64,
+    steps_w: f64,
+) -> Vec<usize> {
+    let score = |idx: usize| -> f64 {
+        let c = &candidates[idx];
+        trust_w * (c.objectives.trust_level.value() as f64)
+            - time_w  * (c.objectives.proof_time_ms as f64)
+            - mem_w   * (c.objectives.memory_bytes  as f64)
+            - steps_w * (c.objectives.proof_steps   as f64)
+    };
+    let mut indices: Vec<usize> = (0..candidates.len()).collect();
+    // Descending score — higher is better.
+    indices.sort_by(|&i, &j| {
+        score(j)
+            .partial_cmp(&score(i))
+            .unwrap_or(std::cmp::Ordering::Equal)
+    });
+    indices
+}
+
+// ---------------------------------------------------------------------------
 // Invariant test suite
 // ---------------------------------------------------------------------------
 
@@ -198,7 +269,7 @@ pub fn compute(candidates: &mut [ProofCandidate]) -> Vec<usize> {
 /// `assert!` with `#[ensures]` and the body with `#[logic]`).
 pub mod impl_invariants {
     #[allow(unused_imports)]
-    use super::{compute, dominates, ProofCandidate, ProofObjective};
+    use super::{compute, dominates, weighted_rank, ProofCandidate, ProofObjective};
     #[allow(unused_imports)]
     use crate::TrustLevel;
 
@@ -435,6 +506,46 @@ pub mod impl_invariants {
             cs[1].is_pareto_optimal,
             "best-steps candidate must be Pareto-optimal"
         );
+    }
+
+    /// **PO-P8** `weighted_rank` is a permutation: the output contains every
+    /// index in `0..candidates.len()` exactly once.
+    #[test]
+    fn po_p8_weighted_rank_is_permutation() {
+        use TrustLevel::*;
+        let cs = vec![
+            cand("a", 100, Level2, 100_000, 10),
+            cand("b", 200, Level5, 50_000,  5),
+            cand("c", 300, Level3, 200_000, 50),
+            cand("d", 50,  Level1, 10_000,  1),
+        ];
+        let ranked = weighted_rank(&cs, 1.0, 0.001, 0.0, 0.0);
+        assert_eq!(ranked.len(), cs.len(), "length must equal input length");
+        // Every index 0..n appears exactly once.
+        let mut seen = vec![false; cs.len()];
+        for &idx in &ranked {
+            assert!(idx < cs.len(), "index {idx} out of bounds");
+            assert!(!seen[idx], "index {idx} appears more than once");
+            seen[idx] = true;
+        }
+        // Best trust (Level5) should rank first when trust dominates weights.
+        assert_eq!(ranked[0], 1, "Level5 candidate should rank first");
+    }
+
+    /// **PO-P8 boundary** — empty input produces empty output.
+    #[test]
+    fn po_p8_empty_input() {
+        let ranked = weighted_rank(&[], 1.0, 1.0, 1.0, 1.0);
+        assert!(ranked.is_empty());
+    }
+
+    /// **PO-P8 singleton** — single candidate is ranked at index 0.
+    #[test]
+    fn po_p8_singleton() {
+        use TrustLevel::*;
+        let cs = vec![cand("only", 100, Level3, 1000, 10)];
+        let ranked = weighted_rank(&cs, 1.0, 0.001, 0.0, 0.0);
+        assert_eq!(ranked, vec![0]);
     }
 
     /// **Empty list** — boundary condition.

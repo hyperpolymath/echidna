@@ -25,6 +25,9 @@
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 
+#[cfg(feature = "creusot")]
+use creusot_contracts::*;
+
 // ---------------------------------------------------------------------------
 // DangerLevel
 // ---------------------------------------------------------------------------
@@ -65,7 +68,7 @@ impl DangerLevel {
     /// ```text
     /// #[ensures(result <= 3u8)]
     /// ```
-    // #[cfg_attr(feature = "creusot", ensures(result <= 3u8))]
+    #[cfg_attr(feature = "creusot", ensures(result <= 3u8))]
     pub fn value(self) -> u8 {
         self as u8
     }
@@ -78,11 +81,11 @@ impl DangerLevel {
     /// #[ensures(result >= b)]
     /// #[ensures(result == a || result == b)]
     /// ```
-    // #[cfg_attr(feature = "creusot",
-    //     ensures(result >= a),
-    //     ensures(result >= b),
-    //     ensures(result == a || result == b)
-    // )]
+    #[cfg_attr(feature = "creusot",
+        ensures(result >= a),
+        ensures(result >= b),
+        ensures(result == a || result == b)
+    )]
     pub fn max_danger(a: DangerLevel, b: DangerLevel) -> DangerLevel {
         if a >= b { a } else { b }
     }
@@ -155,12 +158,12 @@ impl AxiomPolicy {
     ///     ==> result == DangerLevel::Reject
     /// )]
     /// ```
-    // #[cfg_attr(feature = "creusot",
-    //     ensures(
-    //         matches!(*self, AxiomPolicy::Rejected(_))
-    //         ==> result == DangerLevel::Reject
-    //     )
-    // )]
+    #[cfg_attr(feature = "creusot",
+        ensures(
+            matches!(*self, AxiomPolicy::Rejected(_))
+            ==> result == DangerLevel::Reject
+        )
+    )]
     pub fn worst_danger(&self) -> DangerLevel {
         match self {
             AxiomPolicy::Clean              => DangerLevel::Safe,
@@ -258,10 +261,10 @@ impl ProverSyntax {
 ///     ==> result == DangerLevel::Reject
 /// )]
 /// ```
-// #[cfg_attr(feature = "creusot",
-//     ensures(result >= DangerLevel::Safe),
-//     ensures(result <= DangerLevel::Reject)
-// )]
+#[cfg_attr(feature = "creusot",
+    ensures(result >= DangerLevel::Safe),
+    ensures(result <= DangerLevel::Reject)
+)]
 pub fn classify_axiom(usages: &[AxiomUsage]) -> DangerLevel {
     usages
         .iter()

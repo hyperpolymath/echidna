@@ -1,0 +1,18 @@
+# SPDX-License-Identifier: PMPL-1.0-or-later
+#
+# Rust nightly toolchain for Creusot formal verification.
+#
+# Creusot pins to a specific nightly; run `cargo creusot` on the nightly
+# listed here.  Stable Rust builds the crate without this file having
+# any effect (it is only consulted when invoking `cargo +nightly` or
+# when the working directory is exactly this crate root).
+#
+# To update the pin:
+#   1. Check the supported nightly at https://github.com/creusot-rs/creusot
+#   2. Update `channel` below.
+#   3. Run `just verify-trust-pipeline` and confirm all obligations discharge.
+#   4. Commit with message: "chore(spark): bump Creusot nightly pin to <date>"
+
+[toolchain]
+channel = "nightly-2024-05-01"
+components = ["rustc", "cargo", "rustfmt", "rust-src"]

@@ -1,0 +1,100 @@
+# SPDX-License-Identifier: PMPL-1.0-or-later
+# Copyright (c) 2026 Jonathan D.A. Jewell (hyperpolymath) <j.d.a.jewell@open.ac.uk>
+#
+# formal-verification.yml — Creusot formal verification of the trust-pipeline kernel.
+#
+# Stage 8c of the ECHIDNA ROADMAP.
+#
+# This workflow runs in two jobs:
+#
+#   stable-tests   — `cargo test -p echidna-core-spark` on stable Rust.
+#                    Always a merge gate.  Exercises every proof obligation
+#                    as a `#[test]` function.
+#
+#   creusot-verify — `cargo +nightly creusot` with Why3 discharge.
+#                    Report-only until Stage 8c-M3 (toolchain is pinned
+#                    but full CI bring-up is pending Why3 availability in
+#                    the runner).  Failures are annotated but do not block.
+#
+# See crates/echidna-core-spark/CREUSOT-SETUP.md for local setup.
+
+name: Formal Verification (Stage 8c)
+
+on:
+  pull_request:
+    paths:
+      - 'crates/echidna-core-spark/**'
+      - '.github/workflows/formal-verification.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'crates/echidna-core-spark/**'
+
+permissions:
+  contents: read
+
+jobs:
+  # ── Job 1: invariant tests on stable Rust (always a merge gate) ──────────
+  stable-tests:
+    name: Trust-pipeline invariant tests (stable)
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd  # v6.0.2
+
+      - name: Install stable Rust toolchain
+        uses: dtolnay/rust-toolchain@4be9e76fd7c4901c61fb841f559994984270fce7  # stable
+        with:
+          toolchain: stable
+
+      - name: Cache Rust build artefacts
+        uses: Swatinem/rust-cache@779680da715d629ac1d338a641029a2f4372abb5  # v2
+        with:
+          workspaces: ". -> target"
+
+      - name: Run trust-pipeline invariant tests
+        run: cargo test -p echidna-core-spark --verbose
+        env:
+          RUST_BACKTRACE: 1
+
+  # ── Job 2: Creusot formal verification (report-only until Stage 8c-M3) ──
+  creusot-verify:
+    name: Creusot formal verification (report-only)
+    runs-on: ubuntu-latest
+    # continue-on-error keeps the job from blocking the PR until Stage 8c-M3.
+    continue-on-error: true
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd  # v6.0.2
+
+      - name: Install nightly Rust toolchain (Creusot pin)
+        uses: dtolnay/rust-toolchain@4be9e76fd7c4901c61fb841f559994984270fce7  # stable
+        with:
+          # Pin matches crates/echidna-core-spark/rust-toolchain.toml.
+          # Update both files together when bumping.
+          toolchain: nightly-2024-05-01
+          components: rustc, cargo, rust-src
+
+      - name: Install Why3 and SMT solvers
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y --no-install-recommends why3 z3
+        # CVC5 is not in Ubuntu 22.04 apt; skip for now. Alt-Ergo via opam if needed.
+
+      - name: Install Creusot
+        run: cargo +nightly-2024-05-01 install creusot
+        # This step will fail if the nightly pin drifts from what Creusot supports.
+        # When it does, update rust-toolchain.toml and this workflow together.
+        continue-on-error: true
+
+      - name: Run Creusot verification (report-only)
+        run: |
+          cargo +nightly-2024-05-01 creusot \
+            -p echidna-core-spark \
+            -- \
+            --features creusot \
+            --why3 "$(which why3)" \
+          || echo "::warning::Creusot verification incomplete — Stage 8c-M3 pending"
+        # Stage 8c-M3 will promote this from continue-on-error to a hard gate.

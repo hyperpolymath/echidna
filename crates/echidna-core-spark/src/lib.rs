@@ -113,7 +113,7 @@ impl TrustLevel {
     /// #[ensures(*self == TrustLevel::Level1 ==> result == 1)]
     /// #[ensures(*self == TrustLevel::Level5 ==> result == 5)]
     /// ```
-    // #[cfg_attr(feature = "creusot", ensures(result >= 1u8 && result <= 5u8))]
+    #[cfg_attr(feature = "creusot", ensures(result >= 1u8 && result <= 5u8))]
     pub fn value(self) -> u8 {
         self as u8
     }
@@ -128,11 +128,11 @@ impl TrustLevel {
     /// #[ensures(result <= b)]
     /// #[ensures(result == a || result == b)]
     /// ```
-    // #[cfg_attr(feature = "creusot",
-    //     ensures(result <= a),
-    //     ensures(result <= b),
-    //     ensures(result == a || result == b)
-    // )]
+    #[cfg_attr(feature = "creusot",
+        ensures(result <= a),
+        ensures(result <= b),
+        ensures(result == a || result == b)
+    )]
     pub fn min_level(a: TrustLevel, b: TrustLevel) -> TrustLevel {
         if a <= b { a } else { b }
     }
@@ -145,11 +145,11 @@ impl TrustLevel {
     /// #[ensures(result >= b)]
     /// #[ensures(result == a || result == b)]
     /// ```
-    // #[cfg_attr(feature = "creusot",
-    //     ensures(result >= a),
-    //     ensures(result >= b),
-    //     ensures(result == a || result == b)
-    // )]
+    #[cfg_attr(feature = "creusot",
+        ensures(result >= a),
+        ensures(result >= b),
+        ensures(result == a || result == b)
+    )]
     pub fn max_level(a: TrustLevel, b: TrustLevel) -> TrustLevel {
         if a >= b { a } else { b }
     }
@@ -226,11 +226,11 @@ pub struct TrustFactors {
 /// Commutativity: `combine_trust(a, b) == combine_trust(b, a)`.
 /// Associativity: `combine_trust(combine_trust(a, b), c) == combine_trust(a, combine_trust(b, c))`.
 /// Both follow from the `min` semantics and are testable via [`impl_invariants`].
-// #[cfg_attr(feature = "creusot",
-//     ensures(result <= a),
-//     ensures(result <= b),
-//     ensures(result == TrustLevel::min_level(a, b))
-// )]
+#[cfg_attr(feature = "creusot",
+    ensures(result <= a),
+    ensures(result <= b),
+    ensures(result == TrustLevel::min_level(a, b))
+)]
 pub fn combine_trust(a: TrustLevel, b: TrustLevel) -> TrustLevel {
     // Weakest-link: the combined trust is no stronger than the weaker input.
     TrustLevel::min_level(a, b)
@@ -250,10 +250,10 @@ pub fn combine_trust(a: TrustLevel, b: TrustLevel) -> TrustLevel {
 /// #[requires(min_level <= max_level)]
 /// #[ensures(result >= min_level && result <= max_level)]
 /// ```
-// #[cfg_attr(feature = "creusot",
-//     requires(min_level <= max_level),
-//     ensures(result >= min_level && result <= max_level)
-// )]
+#[cfg_attr(feature = "creusot",
+    requires(min_level <= max_level),
+    ensures(result >= min_level && result <= max_level)
+)]
 pub fn clamp_trust(level: TrustLevel, min_level: TrustLevel, max_level: TrustLevel) -> TrustLevel {
     if level < min_level {
         min_level
@@ -289,14 +289,14 @@ pub fn clamp_trust(level: TrustLevel, min_level: TrustLevel, max_level: TrustLev
 /// #[ensures(result >= TrustLevel::Level1)]
 /// #[ensures(result <= TrustLevel::Level5)]
 /// ```
-// #[cfg_attr(feature = "creusot",
-//     ensures(
-//         factors.worst_axiom_danger == DangerLevel::Reject
-//         ==> result == TrustLevel::Level1
-//     ),
-//     ensures(!factors.solver_integrity_ok ==> result == TrustLevel::Level1),
-//     ensures(result >= TrustLevel::Level1 && result <= TrustLevel::Level5)
-// )]
+#[cfg_attr(feature = "creusot",
+    ensures(
+        factors.worst_axiom_danger == DangerLevel::Reject
+        ==> result == TrustLevel::Level1
+    ),
+    ensures(!factors.solver_integrity_ok ==> result == TrustLevel::Level1),
+    ensures(result >= TrustLevel::Level1 && result <= TrustLevel::Level5)
+)]
 pub fn compute_trust_level(factors: &TrustFactors) -> TrustLevel {
     use axiom_tracker::DangerLevel;
 

@@ -514,6 +514,30 @@ verify-spark-crosscheck: build-spark
     cargo test --features spark -- crosscheck
     @echo "SPARK/Rust crosscheck passed"
 
+# ── Creusot formal verification (Stage 8c) ──────────────────
+
+# Run Creusot formal verification on the trust-pipeline kernel.
+#
+# Prerequisites: Creusot + Why3 + Z3/CVC5 (see crates/echidna-core-spark/CREUSOT-SETUP.md).
+# The nightly pin lives in crates/echidna-core-spark/rust-toolchain.toml.
+#
+# This recipe is currently in report-only mode: CI runs it and posts
+# results but does not block the merge until Stage 8c-M3.
+verify-trust-pipeline:
+    @echo "Running Creusot formal verification on echidna-core-spark..."
+    cargo +nightly creusot \
+        -p echidna-core-spark \
+        -- \
+        --features creusot \
+        --why3 "$(which why3)"
+    @echo "Creusot obligations discharged. See Why3 output above."
+
+# Stable-Rust test suite for the Creusot-annotated trust pipeline.
+# Runs on any Rust version; does not require Creusot or Why3.
+test-trust-pipeline:
+    cargo test -p echidna-core-spark
+    @echo "Trust-pipeline invariant tests passed ($(cargo test -p echidna-core-spark 2>&1 | grep 'test result' | head -1 | grep -oP '\d+ passed') tests)."
+
 # ── Other ───────────────────────────────────────────────────
 
 # [AUTO-GENERATED] Multi-arch / RISC-V target
