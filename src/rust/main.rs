@@ -174,6 +174,37 @@ enum Commands {
 
     /// Interactive diagnostics REPL for health monitoring
     Diagnostics,
+
+    /// Suggest tactic variants that close a failing lemma
+    Suggest {
+        /// Target in `<file>:<lemma>` form, e.g. `Foo.thy:bar`
+        #[arg(value_name = "TARGET")]
+        target: String,
+
+        /// Prover to use (auto-detected from file extension if absent)
+        #[arg(short, long)]
+        prover: Option<ProverKind>,
+
+        /// Time budget per variant attempt in seconds
+        #[arg(long, default_value_t = 60)]
+        budget: u64,
+
+        /// Maximum number of variants to report
+        #[arg(long, default_value_t = 10)]
+        top: usize,
+
+        /// Synonym table directory (defaults to `data/synonyms/`)
+        #[arg(long)]
+        synonyms_dir: Option<PathBuf>,
+
+        /// Don't run the prover; just print candidate variants
+        #[arg(long)]
+        dry_run: bool,
+
+        /// Maximum concurrent variant tests
+        #[arg(long, default_value_t = 4)]
+        max_parallel: usize,
+    },
 }
 
 #[tokio::main]
@@ -253,6 +284,27 @@ async fn main() -> Result<()> {
 
         Commands::Diagnostics => {
             diagnostics_command().await?;
+        },
+        Commands::Suggest {
+            target,
+            prover,
+            budget,
+            top,
+            synonyms_dir,
+            dry_run,
+            max_parallel,
+        } => {
+            let synonyms_dir = synonyms_dir.unwrap_or_else(|| PathBuf::from("data/synonyms"));
+            let config = echidna::suggest::SuggestConfig {
+                target,
+                prover,
+                budget: std::time::Duration::from_secs(budget),
+                top,
+                synonyms_dir,
+                dry_run,
+                max_parallel,
+            };
+            echidna::suggest::run(config).await?;
         },
     }
 
