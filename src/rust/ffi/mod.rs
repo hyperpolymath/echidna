@@ -536,6 +536,13 @@ pub fn kind_from_u8(kind: u8) -> Option<ProverKind> {
         132 => Some(ProverKind::IleanCoP),
         133 => Some(ProverKind::NanoCoP),
         134 => Some(ProverKind::MetTeL2),
+        // Phase 4 (2026-04-27): DL + probabilistic + B-method + computational crypto.
+        135 => Some(ProverKind::ELK),
+        136 => Some(ProverKind::Konclude),
+        137 => Some(ProverKind::Storm),
+        138 => Some(ProverKind::ProB),
+        139 => Some(ProverKind::EasyCrypt),
+        140 => Some(ProverKind::CryptoVerif),
         _ => None,
     }
 }
@@ -1284,6 +1291,13 @@ pub fn kind_to_u8(kind: ProverKind) -> u8 {
         ProverKind::IleanCoP => 132,
         ProverKind::NanoCoP => 133,
         ProverKind::MetTeL2 => 134,
+        // Phase 4 (2026-04-27): DL + probabilistic + B-method + computational crypto.
+        ProverKind::ELK => 135,
+        ProverKind::Konclude => 136,
+        ProverKind::Storm => 137,
+        ProverKind::ProB => 138,
+        ProverKind::EasyCrypt => 139,
+        ProverKind::CryptoVerif => 140,
     }
 }
 
@@ -1468,12 +1482,13 @@ mod tests {
 
     #[test]
     fn test_kind_from_u8_out_of_range() {
-        // 0–134 are valid; 135+ are out of range.
-        // (Boundary moved to 134 on 2026-04-27 adding Phase 3
-        // backends — KeYmaeraX (128), Qepcad (129), Redlog (130),
-        // MleanCoP (131), IleanCoP (132), NanoCoP (133), MetTeL2 (134).
-        // Previous boundary was 127 — Phase 1a/1b ATPs + Phase 5.)
-        assert!(kind_from_u8(135).is_none());
+        // 0–140 are valid; 141+ are out of range.
+        // (Boundary moved to 140 on 2026-04-27 adding Phase 4
+        // backends — ELK (135), Konclude (136), Storm (137),
+        // ProB (138), EasyCrypt (139), CryptoVerif (140).
+        // Previous boundary was 134 — Phase 3 connection-method /
+        // CAD / KeYmaeraX / MetTeL2.)
+        assert!(kind_from_u8(141).is_none());
         assert!(kind_from_u8(200).is_none());
         assert!(kind_from_u8(255).is_none());
     }

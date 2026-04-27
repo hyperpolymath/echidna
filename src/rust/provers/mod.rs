@@ -68,14 +68,20 @@ pub mod leo3;
 pub mod matita;
 pub mod mercury;
 pub mod connection_method;
+pub mod cryptoverif;
+pub mod easycrypt;
+pub mod elk;
 pub mod ileancop;
 pub mod keymaerax;
+pub mod konclude;
 pub mod metitarski;
 pub mod mettel2;
 pub mod mleancop;
 pub mod nanocop;
+pub mod prob;
 pub mod qepcad;
 pub mod redlog;
+pub mod storm;
 pub mod metamath;
 pub mod minisat;
 pub mod minizinc;
@@ -182,6 +188,25 @@ pub enum ProverKind {
 
     // Tier 5g: Tableau-prover generator for arbitrary modal logics
     MetTeL2,
+
+    // Tier 5h: Description-logic reasoners (OWL EL / OWL DL).
+    // ELK is the EL-profile specialist; Konclude handles full SROIQ.
+    ELK,
+    Konclude,
+
+    // Tier 5i: Probabilistic model checking (modern PRISM successor).
+    Storm,
+
+    // Tier 5j: B-method / Event-B model checker.
+    ProB,
+
+    // Tier 5k: Computational-cryptography proof assistant
+    // (game-based, interactive).
+    EasyCrypt,
+
+    // Tier 5l: Computational-cryptography automated prover
+    // (game-hopping, complementary to EasyCrypt).
+    CryptoVerif,
 
     // Tier 6: Dependent types + effects, auto-active, orchestration
     FStar,
@@ -494,6 +519,12 @@ impl std::str::FromStr for ProverKind {
             "ileancop" | "ilean-cop" | "ilean_cop" => Ok(ProverKind::IleanCoP),
             "nanocop" | "nano-cop" | "nano_cop" => Ok(ProverKind::NanoCoP),
             "mettel2" | "mettel-2" | "mettel" => Ok(ProverKind::MetTeL2),
+            "elk" | "elk-reasoner" => Ok(ProverKind::ELK),
+            "konclude" => Ok(ProverKind::Konclude),
+            "storm" | "stormpy" | "storm-checker" => Ok(ProverKind::Storm),
+            "prob" | "probcli" | "prob-cli" => Ok(ProverKind::ProB),
+            "easycrypt" | "easy-crypt" | "ec-prover" => Ok(ProverKind::EasyCrypt),
+            "cryptoverif" | "crypto-verif" | "cryptoverif-prover" => Ok(ProverKind::CryptoVerif),
             "fstar" | "f*" | "f-star" => Ok(ProverKind::FStar),
             "dafny" => Ok(ProverKind::Dafny),
             "why3" => Ok(ProverKind::Why3),
@@ -739,6 +770,12 @@ impl ProverKind {
             ProverKind::IleanCoP,
             ProverKind::NanoCoP,
             ProverKind::MetTeL2,
+            ProverKind::ELK,
+            ProverKind::Konclude,
+            ProverKind::Storm,
+            ProverKind::ProB,
+            ProverKind::EasyCrypt,
+            ProverKind::CryptoVerif,
         ]);
         provers
     }
@@ -843,6 +880,13 @@ impl ProverKind {
             ProverKind::IleanCoP => 3,     // intuitionistic connection-method
             ProverKind::NanoCoP => 3,      // small-kernel connection-method
             ProverKind::MetTeL2 => 4,      // JVM tableau-generator + spec config
+            // Phase 4: DL + probabilistic + B-method + computational crypto
+            ProverKind::ELK => 3,          // consequence-based EL kernel
+            ProverKind::Konclude => 4,     // full SROIQ tableau saturation
+            ProverKind::Storm => 3,        // numerical fixed-point computation
+            ProverKind::ProB => 3,         // B-method semantics + constraint engine
+            ProverKind::EasyCrypt => 4,    // probabilistic relational HL + tactics
+            ProverKind::CryptoVerif => 4,  // game-hopping + indistinguishability lib
             // HP type-checker ecosystem: complexity 3 — they are real
             // type-checkers with non-trivial unification/elaboration.
             // Heavier disciplines (HoTT/Cubical, Hoare) rate 4.
@@ -1011,6 +1055,13 @@ impl ProverKind {
             ProverKind::IleanCoP => 3,     // Trust tier 3 (intuitionistic kernel; small + checkable)
             ProverKind::NanoCoP => 3,      // Trust tier 3 (small kernel — Level-4 cohort)
             ProverKind::MetTeL2 => 2,      // Trust tier 2 (generated tableau correct by construction; spec unverified)
+            // Phase 4: DL + probabilistic + B-method + computational crypto.
+            ProverKind::ELK => 3,          // Trust tier 3 (consequence-based, peer-reviewed soundness)
+            ProverKind::Konclude => 3,     // Trust tier 3 (peer-reviewed tableau kernel)
+            ProverKind::Storm => 2,        // Trust tier 2 (DD/symbolic engines, no certificate)
+            ProverKind::ProB => 2,         // Trust tier 2 (constraint-based BMC, validated for railway)
+            ProverKind::EasyCrypt => 3,    // Trust tier 3 (small kernel + Why3/SMT for VC discharge)
+            ProverKind::CryptoVerif => 3,  // Trust tier 3 (small game-hopping engine, peer-reviewed)
             // HP ecosystem — tier 11 (beyond the existing 10-tier scheme
             // but placed as 3 here to share the ML guidance budget with
             // dependent/interactive provers).
@@ -1147,6 +1198,13 @@ impl ProverKind {
             ProverKind::IleanCoP => 2.0,    // Intuitionistic connection-method
             ProverKind::NanoCoP => 1.5,     // Lean-kernel connection-method
             ProverKind::MetTeL2 => 2.5,     // Modal-logic tableau generator
+            // Phase 4: DL + probabilistic + B-method + computational crypto.
+            ProverKind::ELK => 1.5,         // OWL EL classifier
+            ProverKind::Konclude => 2.0,    // OWL DL tableau reasoner
+            ProverKind::Storm => 2.0,       // Probabilistic model checker (PRISM successor)
+            ProverKind::ProB => 2.0,        // B-method / Event-B model checker
+            ProverKind::EasyCrypt => 2.5,   // Game-based crypto proofs
+            ProverKind::CryptoVerif => 2.5, // Automated computational-crypto prover
             ProverKind::Leo3 => 2.5,        // Higher-order ATP
             ProverKind::Satallax => 2.5,    // Higher-order ATP
             ProverKind::Lash => 2.5,        // Higher-order ATP
@@ -1289,6 +1347,12 @@ impl ProverKind {
             ProverKind::IleanCoP => "ileancop",
             ProverKind::NanoCoP => "nanocop",
             ProverKind::MetTeL2 => "mettel2",
+            ProverKind::ELK => "elk",
+            ProverKind::Konclude => "konclude",
+            ProverKind::Storm => "storm",
+            ProverKind::ProB => "probcli",
+            ProverKind::EasyCrypt => "easycrypt",
+            ProverKind::CryptoVerif => "cryptoverif",
             ProverKind::Leo3 => "leo3",
             ProverKind::Satallax => "satallax",
             ProverKind::Lash => "lash",
@@ -1686,6 +1750,12 @@ impl ProverFactory {
             ProverKind::IleanCoP => Ok(Box::new(ileancop::IleanCopBackend::new(config))),
             ProverKind::NanoCoP => Ok(Box::new(nanocop::NanoCopBackend::new(config))),
             ProverKind::MetTeL2 => Ok(Box::new(mettel2::MetTeL2Backend::new(config))),
+            ProverKind::ELK => Ok(Box::new(elk::ElkBackend::new(config))),
+            ProverKind::Konclude => Ok(Box::new(konclude::KoncludeBackend::new(config))),
+            ProverKind::Storm => Ok(Box::new(storm::StormBackend::new(config))),
+            ProverKind::ProB => Ok(Box::new(prob::ProBBackend::new(config))),
+            ProverKind::EasyCrypt => Ok(Box::new(easycrypt::EasyCryptBackend::new(config))),
+            ProverKind::CryptoVerif => Ok(Box::new(cryptoverif::CryptoVerifBackend::new(config))),
             ProverKind::Leo3 => Ok(Box::new(leo3::Leo3Backend::new(config))),
             ProverKind::Satallax => Ok(Box::new(satallax::SatallaxBackend::new(config))),
             ProverKind::Lash => Ok(Box::new(lash::LashBackend::new(config))),
