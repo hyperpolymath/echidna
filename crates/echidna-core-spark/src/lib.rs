@@ -47,8 +47,10 @@
 //! |---|---|---|
 //! | (this file) | `confidence.rs` | `TrustLevel` total order, combine monotonicity |
 //! | [`axiom_tracker`] | `axiom_tracker.rs` | `DangerLevel` order, classify monotonicity |
+//! | [`pareto`] | `verification/pareto.rs` | Dominance irreflexivity / antisymmetry / transitivity, frontier soundness + completeness, best-axis preservation (E10) |
 
 pub mod axiom_tracker;
+pub mod pareto;
 
 // ---------------------------------------------------------------------------
 // Creusot prelude — only imported when verifying
