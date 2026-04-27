@@ -46,11 +46,16 @@ pub mod dsp;
 #[cfg(feature = "flint")]
 pub mod flint;
 pub mod fpga;
+pub mod gap;
 pub mod graphics;
 pub mod io;
 pub mod julia_bridge;
+pub mod macaulay2;
 pub mod math;
+pub mod maxima;
+pub mod parigp;
 pub mod physics;
+pub mod singular;
 pub mod tensor;
 pub mod trust;
 pub mod types;
@@ -62,11 +67,16 @@ pub use dsp::DspBackend;
 #[cfg(feature = "flint")]
 pub use flint::FlintMathBackend;
 pub use fpga::FpgaBackend;
+pub use gap::GapBackend;
 pub use graphics::GraphicsBackend;
 pub use io::IoBackend;
 pub use julia_bridge::JuliaCoprocessorBridge;
+pub use macaulay2::Macaulay2Backend;
 pub use math::MathBackend;
+pub use maxima::MaximaBackend;
+pub use parigp::PariGpBackend;
 pub use physics::PhysicsBackend;
+pub use singular::SingularBackend;
 pub use tensor::TensorBackend;
 pub use trust::CoprocessorTrustTier;
 pub use types::{
@@ -134,6 +144,12 @@ impl CoprocessorFactory {
             CoprocessorKind::Graphics => Some(Box::new(GraphicsBackend::new())),
             CoprocessorKind::Audio => Some(Box::new(AudioBackend::new())),
             CoprocessorKind::Fpga => Some(Box::new(FpgaBackend::new())),
+            // Phase 2b subprocess CAS backends.
+            CoprocessorKind::PariGp => Some(Box::new(PariGpBackend::new())),
+            CoprocessorKind::Maxima => Some(Box::new(MaximaBackend::new())),
+            CoprocessorKind::Singular => Some(Box::new(SingularBackend::new())),
+            CoprocessorKind::Gap => Some(Box::new(GapBackend::new())),
+            CoprocessorKind::Macaulay2 => Some(Box::new(Macaulay2Backend::new())),
         }
     }
 }

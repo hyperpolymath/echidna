@@ -197,5 +197,12 @@ fn kind_name(k: CoprocessorKind) -> &'static str {
         CoprocessorKind::Graphics => "Graphics",
         CoprocessorKind::Audio => "Audio",
         CoprocessorKind::Fpga => "Fpga",
+        // Phase 2b subprocess CAS backends.  Normally backed by their own
+        // native subprocess; names are present so this match stays exhaustive.
+        CoprocessorKind::PariGp => "PariGp",
+        CoprocessorKind::Maxima => "Maxima",
+        CoprocessorKind::Singular => "Singular",
+        CoprocessorKind::Gap => "Gap",
+        CoprocessorKind::Macaulay2 => "Macaulay2",
     }
 }
