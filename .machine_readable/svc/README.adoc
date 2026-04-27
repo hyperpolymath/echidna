@@ -1,0 +1,16 @@
+= `.machine_readable/svc/` — Service components for echidna
+:toc:
+
+Service-layer components that sit alongside the contractile trident
+but are not themselves verbs. Per **ADR-001 (2026-04-18)**, K9 lives
+here rather than under `contractiles/` so the contractile directory
+stays a pure six-verb set (intend, trust, must, bust, adjust, dust).
+
+== Contents
+
+* `k9/` — K9 self-validating templates and validators.
+
+== Pointer
+
+For the verb contractiles themselves, see
+`.machine_readable/contractiles/`.
