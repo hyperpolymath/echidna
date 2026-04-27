@@ -34,9 +34,9 @@ following the pattern in repos like `typed-wasm`, `proven`, `echidna`, or `boj-s
 |---|------|--------|--------|
 | E1 | Confidence scoring lattice (TrustLevel forms valid partial order) | L4 | Covered by ConfidenceLattice.lean |
 | E8 | VQL-UT query safety (SEC, deeper layer) | I2 | Partially covered by VqlUt.idr |
-| E10 | Pareto frontier maximality | L4 | Not started |
-| E11 | SHAKE3-512/BLAKE3 integrity | L4 | Not started |
-| E13 | Portfolio cross-checking completeness | L4 | Not started |
+| E10 | Pareto frontier maximality | L4 | **Design landed 2026-04-27** (`verification/proofs/lean4/ParetoMaximality.lean` + Creusot mirror at `crates/echidna-core-spark/src/pareto.rs`); 11 of 12 PO theorems closed, strong-maximality (PO-12) deferred — needs mathlib `Finset.exists_maximal_wrt` or hand-rolled `WellFoundedRelation`. Tracking ticket: ECHIDNA-PARETO-DESCENT |
+| E11 | SHAKE3-512/BLAKE3 integrity | L4 | **Design landed 2026-04-27** (`verification/proofs/lean4/IntegrityVerification.lean`); 12 PI theorems including verifier soundness/completeness, status exhaustiveness, BLAKE3 cache freshness; collision-resistance theorems (PI-7, PI-9) state assumption explicitly as a typeclass per zero-axiom policy. NB: hash naming clarification — implementation is SHAKE-256 squeezing 512 bits, not "SHAKE3-512" |
+| E13 | Portfolio cross-checking completeness | L4 | **Design landed 2026-04-27** (`verification/proofs/lean4/PortfolioCompleteness.lean`); 14 PR theorems covering exhaustiveness, AllTimedOut iff no completed, CrossChecked agreement, Inconclusive disagreement detection, needs_review iff non-consensus, unanimity → CrossChecked |
 
 ## Recommended prover
 - **Idris2** for ABI-level properties and prover dispatch correctness
@@ -44,4 +44,4 @@ following the pattern in repos like `typed-wasm`, `proven`, `echidna`, or `boj-s
 - **Agda** for metatheoretic properties of proof composition
 
 ## Priority
-- **MEDIUM** (was HIGH) — Core trust pipeline proofs (E2-E6) are now complete. E10-E13 are P2 and do not block the critical path.
+- **MEDIUM** (was HIGH) — Core trust pipeline proofs (E2-E6) are now complete. E10-E13 design + statements landed 2026-04-27; remaining work is `lake build` integration (no Lean toolchain pinned in `verification/proofs/lean4/`; the existing `proofs/lean/lakefile.lean` is for the playground, not these proofs). E10-E13 are P2 and do not block the critical path.
