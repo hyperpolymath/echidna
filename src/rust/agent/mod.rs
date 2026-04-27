@@ -377,6 +377,13 @@ impl AgentCore {
                 metadata.insert(format!("coprocessor.{}", pre.aspect), v);
             }
         }
+        // Publish the goal's aspects so downstream neural ranking
+        // (gnn_augment_tactics) can pass them to Julia's /gnn/rank as
+        // domain_hints, activating the closed-loop weight-guided scoring
+        // from accumulated PROVER_DOMAIN_WEIGHTS.
+        if let Ok(v) = serde_json::to_value(&goal.aspects) {
+            metadata.insert("aspects".to_string(), v);
+        }
 
         // Step 5: Get tactic suggestions (neural guidance), using the
         // context-enriched initial state so the suggestion model sees the

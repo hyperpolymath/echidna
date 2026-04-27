@@ -1399,7 +1399,16 @@ pub(crate) async fn gnn_augment_tactics(
         use_attention: true,
     });
 
-    let result = gnn.rank_premises(&graph).await;
+    // Extract goal aspects from state metadata (written by AgentCore::process_goal)
+    // so Julia's /gnn/rank can apply per-domain weights from prior outcomes.
+    // When metadata has no "aspects" key (e.g. direct REPL invocation), aspects
+    // is empty and behaviour is identical to the no-hint path.
+    let aspects: Vec<String> = state
+        .metadata
+        .get("aspects")
+        .and_then(|v| serde_json::from_value(v.clone()).ok())
+        .unwrap_or_default();
+    let result = gnn.rank_premises_with_aspects(&graph, &aspects).await;
     // Prepend apply tactics for top premises (in score order, before heuristic hints)
     let mut gnn_tactics: Vec<Tactic> = result
         .ranked_premises
