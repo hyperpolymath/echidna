@@ -11,6 +11,7 @@
 use anyhow::Result;
 use serde::{Deserialize, Serialize};
 use std::collections::VecDeque;
+use std::sync::Arc;
 use tokio::sync::RwLock;
 use tracing::{debug, info, warn};
 
@@ -24,6 +25,7 @@ pub mod meta_controller; // Coordinates prover × coprocessor × goal-aspect
 pub mod planner;
 pub mod router;
 
+use meta_controller::{MetaController, PlanOutcome};
 use memory::ProofMemory;
 use planner::Planner;
 use router::ProverRouter;
@@ -121,6 +123,12 @@ pub struct AgentCore {
     /// Planner (decomposes goals into sub-goals)
     planner: Box<dyn Planner>,
 
+    /// MetaController — aspect-aware (prover × coprocessor) planner with
+    /// Pareto-frontier ranking and Bayesian timeout estimation.  Supersedes
+    /// the raw ProverRouter for goal dispatch; the router is retained for
+    /// the backward-compat reflection path (`reflect_on_success/failure`).
+    meta_controller: Arc<MetaController>,
+
     /// Prover router (selects best prover for a goal)
     router: ProverRouter,
 
@@ -167,10 +175,16 @@ impl Default for AgentConfig {
 }
 
 impl AgentCore {
-    /// Create a new agent core
+    /// Create a new agent core.
+    ///
+    /// `meta_controller` is the shared (prover × coprocessor) planner.  Pass
+    /// `Arc::new(MetaController::new())` for a standalone controller, or share
+    /// one that already has a `StatisticsTracker` plugged in (via
+    /// `MetaController::with_stats`) so outcomes feed a persistent learning loop.
     pub fn new(
         memory: Box<dyn ProofMemory>,
         planner: Box<dyn Planner>,
+        meta_controller: Arc<MetaController>,
         router: ProverRouter,
         provers: Vec<Box<dyn ProverBackend>>,
         config: AgentConfig,
@@ -179,6 +193,7 @@ impl AgentCore {
             goal_queue: RwLock::new(VecDeque::new()),
             memory,
             planner,
+            meta_controller,
             router,
             provers,
             config,
@@ -323,10 +338,24 @@ impl AgentCore {
             return Ok(GoalResult::Decomposed { sub_goals });
         }
 
-        // Step 3: Select prover
-        let prover_kind = goal
-            .preferred_prover
-            .unwrap_or_else(|| self.router.select(&goal));
+        // Step 3: Plan — MetaController selects the prover and queues coprocessor
+        // preconditions whose results will be available to the prover as proof
+        // context (ProofState::metadata).  Falls back gracefully to Z3 when no
+        // aspect routing matches or no stats exist.
+        let plan = self.meta_controller.plan(&goal).await;
+        let precondition_outcomes = self
+            .meta_controller
+            .run_preconditions(&plan)
+            .await
+            .unwrap_or_default();
+
+        // Use the MetaController's chosen prover, falling back to the
+        // router if that prover is not in our local pool.
+        let prover_kind = if self.provers.iter().any(|p| p.kind() == plan.prover) {
+            plan.prover
+        } else {
+            self.router.select(&goal)
+        };
 
         let prover = self
             .provers
@@ -334,36 +363,44 @@ impl AgentCore {
             .find(|p| p.kind() == prover_kind)
             .ok_or_else(|| anyhow::anyhow!("Prover {:?} not available", prover_kind))?;
 
-        // Step 4: Get tactic suggestions (neural guidance)
+        // Step 4: Seed ProofState metadata with coprocessor witness data so
+        // the prover backend and tactic suggester can see pre-computed facts
+        // (e.g. factorizations, Gröbner bases, crypto verifications).
+        // Keys follow the convention "coprocessor.<aspect>".
+        let mut metadata: std::collections::HashMap<String, serde_json::Value> = Default::default();
+        for (pre, outcome) in plan
+            .coprocessor_preconditions
+            .iter()
+            .zip(precondition_outcomes.iter())
+        {
+            if let Ok(v) = serde_json::to_value(outcome) {
+                metadata.insert(format!("coprocessor.{}", pre.aspect), v);
+            }
+        }
+
+        // Step 5: Get tactic suggestions (neural guidance), using the
+        // context-enriched initial state so the suggestion model sees the
+        // coprocessor witnesses.
+        let initial_state = ProofState {
+            goals: vec![goal.goal.clone()],
+            context: Default::default(),
+            proof_script: vec![],
+            metadata: metadata.clone(),
+        };
         let tactics = if self.config.neural_enabled {
-            prover
-                .suggest_tactics(
-                    &ProofState {
-                        goals: vec![goal.goal.clone()],
-                        context: Default::default(),
-                        proof_script: vec![],
-                        metadata: Default::default(),
-                    },
-                    5,
-                )
-                .await?
+            prover.suggest_tactics(&initial_state, 5).await?
         } else {
-            vec![Tactic::Assumption] // Fallback
+            vec![Tactic::Assumption]
         };
 
-        // Step 5: Try tactics against the chosen backend.
+        // Step 6: Try tactics against the chosen backend.
         //
         // Each candidate is applied via the `ProverBackend::apply_tactic`
         // FFI and the resulting state either yields the full proof (QED),
         // advances the state (Success — we fall through to next tactic,
         // keeping this step-thin), or errors out.
         let start = std::time::Instant::now();
-        let mut current_state = ProofState {
-            goals: vec![goal.goal.clone()],
-            context: Default::default(),
-            proof_script: vec![],
-            metadata: Default::default(),
-        };
+        let mut current_state = initial_state;
 
         for tactic in tactics {
             debug!("Trying tactic {:?} for goal {}", tactic, goal.goal.id);
@@ -372,6 +409,9 @@ impl AgentCore {
                 Ok(TacticResult::QED) => {
                     current_state.proof_script.push(tactic.clone());
                     let time_ms = start.elapsed().as_millis() as u64;
+                    self.meta_controller
+                        .record_outcome(&plan, &goal, PlanOutcome::Success, time_ms)
+                        .await;
                     return Ok(GoalResult::Proved {
                         proof: current_state,
                         prover: prover_kind,
@@ -391,6 +431,10 @@ impl AgentCore {
             }
         }
 
+        let elapsed_ms = start.elapsed().as_millis() as u64;
+        self.meta_controller
+            .record_outcome(&plan, &goal, PlanOutcome::Failure, elapsed_ms)
+            .await;
         Ok(GoalResult::Failed {
             reason: "No tactic succeeded".to_string(),
             prover: Some(prover_kind),

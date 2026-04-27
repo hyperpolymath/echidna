@@ -14,7 +14,9 @@ use axum::{
     Json, Router,
 };
 use colored::Colorize;
-use echidna::core::{ProofState, Tactic, TacticResult};
+use echidna::agent::meta_controller::{MetaController, Plan};
+use echidna::agent::AgenticGoal;
+use echidna::core::{Goal, ProofState, Tactic, TacticResult, Term};
 use echidna::dispatch::ProverDispatcher;
 use echidna::{ProverBackend, ProverConfig, ProverKind};
 use reqwest::Client;
@@ -37,6 +39,11 @@ struct AppState {
     ml_client: Client,
     /// Julia ML API base URL
     ml_api_url: String,
+    /// MetaController — shared (prover × coprocessor) planner with persistent
+    /// StatisticsTracker.  Survives request boundaries so the Bayesian routing
+    /// state accumulates across the server's lifetime.  All handlers that
+    /// perform goal-aware dispatch share this single instance.
+    meta_controller: Arc<MetaController>,
 }
 
 /// A proof session
@@ -74,10 +81,13 @@ pub async fn start_server(port: u16, host: String, enable_cors: bool) -> Result<
         },
     }
 
+    let meta_controller = Arc::new(MetaController::new());
+
     let state = AppState {
         sessions: Arc::new(RwLock::new(HashMap::new())),
         ml_client,
         ml_api_url,
+        meta_controller,
     };
 
     // Build router
@@ -99,6 +109,7 @@ pub async fn start_server(port: u16, host: String, enable_cors: bool) -> Result<
         .route("/api/session/:id/apply", post(apply_tactic_handler))
         .route("/api/session/:id/tree", get(get_proof_tree))
         // Additional UI-specific endpoints
+        .route("/api/agent/plan", post(agent_plan_handler))
         .route("/api/aspect-tags", get(get_aspect_tags))
         .route("/api/tactics/suggest", post(suggest_tactics_ui))
         .route("/api/theorems/search", get(search_theorems_ui))
@@ -155,6 +166,99 @@ pub async fn start_server(port: u16, host: String, enable_cors: bool) -> Result<
     axum::serve(listener, app).await?;
 
     Ok(())
+}
+
+// ========== Agent Planning ==========
+
+/// Request to `POST /api/agent/plan`.
+///
+/// Asks the MetaController to plan a proof attempt: which prover to use,
+/// which coprocessor preconditions to run first, and the Bayesian-estimated
+/// timeout.  The response is a `Plan` that callers can inspect before
+/// deciding whether to submit a full `/api/verify` or `/api/prove` request.
+///
+/// `aspects` drive the coprocessor routing (e.g. `"arithmetic.factorisation"`
+/// triggers a Math precondition; `"algebra.groebner.basis"` triggers Singular).
+/// `preferred_prover` and `candidates` are both optional — omitting both lets
+/// the Pareto ranker pick freely from Z3 as the default.
+#[derive(Debug, Deserialize)]
+struct AgentPlanRequest {
+    /// Goal aspect tags (e.g. `["arithmetic.factorisation", "crypto.hash.sha256"]`).
+    #[serde(default)]
+    aspects: Vec<String>,
+
+    /// Client's preferred prover, if any.  Overridden by Pareto ranking when
+    /// `candidates` is non-empty.
+    preferred_prover: Option<ProverKind>,
+
+    /// Candidate provers to rank.  When empty, `preferred_prover` (or Z3)
+    /// is selected directly without Pareto scoring.
+    #[serde(default)]
+    candidates: Vec<ProverKind>,
+
+    /// Default timeout hint (ms) used when no historical data is available.
+    #[serde(default = "default_timeout_ms")]
+    default_timeout_ms: u64,
+}
+
+fn default_timeout_ms() -> u64 {
+    30_000
+}
+
+/// `POST /api/agent/plan` — return a MetaController plan for the given goal aspects.
+///
+/// Does not execute any provers or coprocessors; it only plans.  Callers use
+/// the returned `coprocessor_preconditions` to understand what computational
+/// preparation the system recommends before submitting the proof content.
+async fn agent_plan_handler(
+    State(state): State<AppState>,
+    Json(req): Json<AgentPlanRequest>,
+) -> impl IntoResponse {
+    // Build a minimal AgenticGoal from the request metadata.  The goal target
+    // is a placeholder (`Term::Const("?")`) because planning doesn't inspect
+    // the proof content — only the aspects and prover preferences matter here.
+    use echidna::agent::Priority;
+    let goal = AgenticGoal {
+        goal: Goal {
+            id: uuid::Uuid::new_v4().to_string(),
+            target: Term::Const("?".to_string()),
+            hypotheses: vec![],
+        },
+        priority: Priority::Medium,
+        attempts: 0,
+        max_attempts: 3,
+        preferred_prover: req.preferred_prover,
+        aspects: req.aspects,
+        parent: None,
+    };
+
+    let plan: Plan = if req.candidates.is_empty() {
+        state.meta_controller.plan(&goal).await
+    } else {
+        use echidna::verification::confidence::TrustLevel;
+        state
+            .meta_controller
+            .plan_with_pareto(
+                &goal,
+                &req.candidates,
+                req.default_timeout_ms,
+                TrustLevel::Level2,
+            )
+            .await
+    };
+
+    Json(json!({
+        "prover": format!("{:?}", plan.prover),
+        "estimated_timeout_ms": plan.estimated_timeout_ms,
+        "rationale": plan.rationale,
+        "coprocessor_preconditions": plan.coprocessor_preconditions
+            .iter()
+            .map(|p| json!({
+                "kind": format!("{:?}", p.kind),
+                "aspect": p.aspect,
+            }))
+            .collect::<Vec<_>>(),
+    }))
 }
 
 // ========== Groove Discovery ==========
@@ -689,6 +793,15 @@ async fn search_handler(
                 all_results.extend(results);
             }
         }
+    }
+
+    // Cross-prover layer (see main.rs::search_command for rationale).
+    // Folds VeriSimDB matches into the same response so REST clients
+    // see results from backends without native search commands too.
+    let verisim_url = std::env::var("VERISIM_URL")
+        .unwrap_or_else(|_| "http://localhost:8080".to_string());
+    if let Ok(cross) = echidna::vcl_ut::cross_prover_search_names(&verisim_url, pattern, 50).await {
+        all_results.extend(cross);
     }
 
     let count = all_results.len();
