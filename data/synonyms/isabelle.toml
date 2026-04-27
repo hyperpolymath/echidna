@@ -1,0 +1,138 @@
+# SPDX-License-Identifier: PMPL-1.0-or-later
+#
+# Isabelle/HOL tactic and lemma synonyms.
+# Schema: see data/synonyms/README.adoc.
+# Seeded 2026-04-27 by Opus.
+
+# ---------------------------------------------------------------------------
+# Induction tactics
+# ---------------------------------------------------------------------------
+
+[[synonym]]
+canonical    = "induction"
+aliases      = ["induct"]
+tactic_class = "induction"
+since        = "Isabelle2016"
+notes        = """
+Isabelle2025 / Main: `induction rule: finite_induct` *binds* the
+IH names (`insert.IH`); `induct rule:` does not.  ECHIDNA-discovered
+2026-04-26 during the tropical-resource-typing fix.  Use `induction`
+unconditionally for Isabelle ≥ 2025.
+"""
+
+[[synonym]]
+canonical    = "finite_induct"
+aliases      = ["finite_subset_induct", "finite_ne_induct"]
+tactic_class = "induction"
+notes        = """
+Different finite-set induction principles.  `finite_induct` is the
+plain "empty + insert" rule; `finite_subset_induct` adds an enclosing
+finite set as a hypothesis; `finite_ne_induct` requires non-emptiness.
+Switch when the IH binds wrongly.
+"""
+
+# ---------------------------------------------------------------------------
+# Linear arithmetic
+# ---------------------------------------------------------------------------
+
+[[synonym]]
+canonical    = "linarith"
+aliases      = ["arith", "presburger"]
+tactic_class = "arithmetic"
+notes        = """
+Linear arithmetic on integers and reals.  `arith` is the historical
+name still working in many cases; `presburger` is the dedicated
+Presburger-arithmetic engine; `linarith` is mathlib-style and the
+preferred name in Isabelle Sledgehammer output.
+"""
+
+# ---------------------------------------------------------------------------
+# Order-theoretic transitivity
+# ---------------------------------------------------------------------------
+
+[[synonym]]
+canonical    = "order_trans"
+aliases      = ["le_trans", "dual_order.trans", "less_trans"]
+tactic_class = "lemma"
+notes        = """
+Transitivity of ≤.  `le_trans` is the legacy name (still in HOL/Main
+in many entries), `order_trans` is the locale-qualified version,
+`dual_order.trans` the dual-poset reflection.  When sledgehammer
+suggests one and it doesn't apply, try the others verbatim.
+"""
+
+# ---------------------------------------------------------------------------
+# Monotonicity drift (ECHIDNA-discovered)
+# ---------------------------------------------------------------------------
+
+[[synonym]]
+canonical    = "add_mono"
+aliases      = ["add_le_add", "add_le_imp_le_diff", "add_left_mono"]
+tactic_class = "lemma"
+notes        = """
+Monotonicity of `+` w.r.t. `≤`.  `add_le_add` was the standard name
+in HOL/Library; `add_mono` is the type-class / locale form preferred
+in Isabelle ≥ 2024.  ECHIDNA-discovered drift 2026-04-26.
+"""
+
+# ---------------------------------------------------------------------------
+# Set / image
+# ---------------------------------------------------------------------------
+
+[[synonym]]
+canonical    = "image_iff"
+aliases      = ["image_def", "image_eq", "image_image"]
+tactic_class = "lemma"
+notes        = """
+Membership characterisation of `f \\` A`.  `image_iff` is the
+quantifier form, `image_def` the unfolded definitional form.
+Use `image_iff` when rewriting under `∀` quantifiers; `image_def`
+for raw unfolding.
+"""
+
+# ---------------------------------------------------------------------------
+# Definition unfolding
+# ---------------------------------------------------------------------------
+
+[[synonym]]
+canonical    = "simp add"
+aliases      = ["unfold", "subst"]
+tactic_class = "reduction"
+notes        = """
+Three ways to expand a definition: `unfold X` unfolds *and stops*;
+`simp add: X` unfolds and continues simplification; `subst X` rewrites
+once non-recursively.  When unfolding causes loops, prefer `subst`
+or `simp only [X]` (the latter via `simp only`).
+"""
+
+# ---------------------------------------------------------------------------
+# Automation cascade
+# ---------------------------------------------------------------------------
+
+[[synonym]]
+canonical    = "auto"
+aliases      = ["force", "fastforce", "blast", "metis"]
+tactic_class = "automation"
+notes        = """
+Increasing aggressiveness: `auto` (general), `force` (more
+backtracking), `fastforce` (reverse-priority), `blast` (proof search
+without simp), `metis` (resolution-based, accepts hint lemmas).
+Variant tester should try the cascade in order; failure of one
+doesn't predict failure of the next.
+"""
+
+# ---------------------------------------------------------------------------
+# Case analysis
+# ---------------------------------------------------------------------------
+
+[[synonym]]
+canonical    = "cases"
+aliases      = ["case_tac", "case"]
+tactic_class = "case"
+notes        = """
+`cases` is the Isar method (`apply (cases x)`).
+`case_tac` is the apply-style legacy with `arg`-quoting.
+Bare `case` is the Isar block-level introduction (different syntax,
+same semantic role).  When porting from Isabelle2009-era proofs,
+substitute `case_tac x` → `cases x`.
+"""

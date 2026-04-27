@@ -1,0 +1,98 @@
+// SPDX-License-Identifier: PMPL-1.0-or-later
+= Tactic / Lemma Synonym Tables
+:toc: macro
+
+[discrete]
+== Purpose
+
+Hand-curated catalogue of *equivalent or near-equivalent*
+tactics and lemma names across Isabelle/HOL, Coq/Rocq, and Lean 4 (with
+or without mathlib).  Used by the planned `echidna suggest` CLI verb
+(see `ECHIDNA-NOTES-2026-04-27.md` §4.1) and by the variant-tester
+loop (§4.3) to recover from "synonym blindness" failures — proofs that
+go through under one name but fail under another.
+
+== Scope
+
+Three files, one per prover system:
+
+[cols="1,2"]
+|===
+| File | Prover
+
+| `isabelle.toml`
+| Isabelle/HOL (Isabelle2025+ — older versions noted per-entry)
+
+| `coq.toml`
+| Coq 8.18+ / Rocq
+
+| `lean4.toml`
+| Lean 4 + mathlib4
+|===
+
+The **first 20+ entries** were seeded by Opus on 2026-04-27 from the two
+ECHIDNA-discovered drifts during the tropical-resource-typing fix
+session (`induct→induction`, `add_le_add→add_mono`) and from
+hand-knowledge of common idiom drift across mathlib / mathcomp /
+Isabelle's Main.
+
+== Entry schema
+
+Each `[[synonym]]` entry has:
+
+[cols="1,1,2"]
+|===
+| Field | Required? | Meaning
+
+| `canonical`
+| yes
+| Preferred / current name.  Variant testers prefer this when emitting
+  suggestions.
+
+| `aliases`
+| yes
+| Array of equivalent names.  Order is *not* significant.
+
+| `tactic_class`
+| no
+| Coarse category (`induction`, `arithmetic`, `simplifier`, `case`,
+  `automation`, `reduction`, `lemma`, `combinator`).  Used to constrain
+  variant search.
+
+| `notes`
+| no
+| Free-text rationale, version notes, or pitfalls.
+
+| `since`, `until`
+| no
+| Version range over which the alias applies.  Empty means "always".
+|===
+
+== Variant-tester contract
+
+When `echidna suggest` encounters a tactic name in a failing proof, it:
+
+1. Looks up the name in the appropriate prover's table.
+2. For each entry where the name is `canonical` or in `aliases`, it
+   tries substituting *every other* alias (and the canonical) in turn.
+3. Re-runs the proof with each substitution.
+4. Reports successful substitutions, ranked by edit minimality.
+
+The tester is deliberately *mechanical* — no search, no creativity, no
+ML.  It only catches the cases where the proof author used a name the
+prover no longer accepts (or never accepted in this version).
+
+== Open questions tracked elsewhere
+
+- Cross-prover synonym graph (Isabelle `le_trans` ↔ Coq `Rle_trans` ↔
+  Lean `le_trans`) is intentionally **out of scope** here — that's
+  `echidna port`, not `echidna suggest`.
+- ML-driven synonym discovery from the corpus (mining
+  `training_data/`) is in §4.4 of the notes, not this layer.
+
+== Maintenance
+
+When a new drift is discovered, add the entry in the file for its
+prover, with a `notes` line that quotes the failure mode.  Keep
+entries terse — long prose belongs in commit messages, not in the
+table.

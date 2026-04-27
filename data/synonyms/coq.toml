@@ -1,0 +1,150 @@
+# SPDX-License-Identifier: PMPL-1.0-or-later
+#
+# Coq / Rocq tactic and lemma synonyms.
+# Schema: see data/synonyms/README.adoc.
+# Seeded 2026-04-27 by Opus.
+
+# ---------------------------------------------------------------------------
+# Linear integer arithmetic (omega → lia)
+# ---------------------------------------------------------------------------
+
+[[synonym]]
+canonical    = "lia"
+aliases      = ["omega"]
+tactic_class = "arithmetic"
+since        = "Coq 8.10"
+notes        = """
+`omega` was deprecated in Coq 8.10 and removed in 8.13.  All new
+proofs must use `lia` (Linear Integer Arithmetic).  Variant tester
+should auto-substitute `omega → lia` on Coq ≥ 8.10.
+"""
+
+[[synonym]]
+canonical    = "lra"
+aliases      = ["fourier", "psatz"]
+tactic_class = "arithmetic"
+notes        = """
+Real linear arithmetic.  `lra` is the modern Coq name; `fourier` was
+the original ssreflect tactic; `psatz` covers the polynomial case.
+"""
+
+# ---------------------------------------------------------------------------
+# Reduction tactics
+# ---------------------------------------------------------------------------
+
+[[synonym]]
+canonical    = "cbn"
+aliases      = ["simpl", "compute", "vm_compute", "lazy"]
+tactic_class = "reduction"
+notes        = """
+Reduction strength + strategy:
+  `simpl`       — smart head-reduction with heuristics (legacy).
+  `cbn`         — call-by-name, more predictable than `simpl`.
+  `compute`     — full reduction via the bytecode VM.
+  `vm_compute`  — compute, but produces an opaque proof (faster).
+  `lazy`        — call-by-need.
+Prefer `cbn` for new proofs; switch to `compute`/`vm_compute` when
+`cbn` is too slow.  WARN: `vm_compute` introduces a Reject-class
+trust hit if used in proof bodies that affect kernel checking — see
+`axiom_tracker.rs`.
+"""
+
+# ---------------------------------------------------------------------------
+# Application tactics
+# ---------------------------------------------------------------------------
+
+[[synonym]]
+canonical    = "apply"
+aliases      = ["eapply", "refine"]
+tactic_class = "lemma"
+notes        = """
+`apply L`   — unify L's conclusion with the goal, fail on residual evars.
+`eapply L`  — same, but defer evars (becomes new goals).
+`refine L`  — partial term construction; user supplies the term shape.
+When `apply` fails with "Cannot find an instance for variable X",
+try `eapply` first.
+"""
+
+# ---------------------------------------------------------------------------
+# Automation
+# ---------------------------------------------------------------------------
+
+[[synonym]]
+canonical    = "auto"
+aliases      = ["eauto", "intuition", "tauto", "firstorder"]
+tactic_class = "automation"
+notes        = """
+Increasing search-completeness:
+  `auto`       — search a hint database, no backtracking on evars.
+  `eauto`      — like auto but with `eapply`.
+  `intuition` — propositional intuitionistic search + auto leaves.
+  `tauto`      — pure propositional decision.
+  `firstorder` — first-order logic search.
+Cascade in order; fail-fast tactics suit batch testing.
+"""
+
+# ---------------------------------------------------------------------------
+# Induction
+# ---------------------------------------------------------------------------
+
+[[synonym]]
+canonical    = "induction"
+aliases      = ["elim", "destruct"]
+tactic_class = "induction"
+notes        = """
+`induction x`     — apply x's induction principle, with IH.
+`elim x`          — apply, no IH binding (legacy / SSReflect-adjacent).
+`destruct x`      — case-split, NO induction (constructors only).
+Confusing `destruct` with `induction` is a common pitfall on
+recursively-defined datatypes.
+"""
+
+# ---------------------------------------------------------------------------
+# Combinators
+# ---------------------------------------------------------------------------
+
+[[synonym]]
+canonical    = "now"
+aliases      = ["solve", "easy"]
+tactic_class = "combinator"
+notes        = """
+`now <tac>`   — run tac; require it to fully close the goal.
+`solve [t1 | t2]` — try alternatives, require one to close.
+`easy`        — automation tactic comparable to mathlib's `decide`.
+For "this should just work" finishing, `now (auto)` or `now lia` are
+the canonical idioms.
+"""
+
+# ---------------------------------------------------------------------------
+# Inversion / inductive case-split
+# ---------------------------------------------------------------------------
+
+[[synonym]]
+canonical    = "inversion"
+aliases      = ["inversion_clear", "dependent destruction"]
+tactic_class = "case"
+notes        = """
+`inversion H`           — split on an inductive hypothesis; keeps H.
+`inversion_clear H`     — same, but clear H from the context.
+`dependent destruction` — for dependent inductive types where plain
+                          `inversion` produces a "Cannot solve a
+                          unification problem" error.
+Fall back to `dependent destruction` (from Coq.Program.Equality) when
+inversion fails on dependently-typed indices.
+"""
+
+# ---------------------------------------------------------------------------
+# Definition rewriting
+# ---------------------------------------------------------------------------
+
+[[synonym]]
+canonical    = "unfold"
+aliases      = ["change", "fold", "rewrite_strat"]
+tactic_class = "reduction"
+notes        = """
+`unfold X`        — replace X by its definition (recursively).
+`change (...) with X` — replace a specific term shape with X.
+`fold X`          — inverse of unfold (re-fold definitions).
+When unfold loops or produces unwieldy goals, prefer `change` for
+surgical control.
+"""

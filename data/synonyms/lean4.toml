@@ -1,0 +1,157 @@
+# SPDX-License-Identifier: PMPL-1.0-or-later
+#
+# Lean 4 + mathlib4 tactic and lemma synonyms.
+# Schema: see data/synonyms/README.adoc.
+# Seeded 2026-04-27 by Opus.
+
+# ---------------------------------------------------------------------------
+# Simplifier cascade
+# ---------------------------------------------------------------------------
+
+[[synonym]]
+canonical    = "simp"
+aliases      = ["simp_all", "simp only", "aesop"]
+tactic_class = "simplifier"
+notes        = """
+`simp`           — rewrite using `@[simp]` lemmas.
+`simp_all`       — `simp` on every hypothesis and the goal until fixpoint.
+`simp only [L]`  — restrict the rewrite set, avoid loops.
+`aesop`          — mathlib-supplied search-and-simp combinator.
+When `simp` loops, switch to `simp only`; when it stalls, try `aesop`.
+"""
+
+# ---------------------------------------------------------------------------
+# Linear arithmetic
+# ---------------------------------------------------------------------------
+
+[[synonym]]
+canonical    = "omega"
+aliases      = ["linarith", "nlinarith"]
+tactic_class = "arithmetic"
+notes        = """
+`omega`     — linear integer arithmetic (Lean core, Lean ≥ 4.7).
+`linarith`  — linear arithmetic over ordered fields (mathlib).
+`nlinarith` — non-linear extension; tries Positivstellensatz hints.
+For pure Nat/Int goals prefer `omega` (no mathlib needed).  For Real
+or rational goals use `linarith`; reach for `nlinarith` only when
+linear fails.
+"""
+
+# ---------------------------------------------------------------------------
+# Term construction
+# ---------------------------------------------------------------------------
+
+[[synonym]]
+canonical    = "exact"
+aliases      = ["apply", "refine", "exact?"]
+tactic_class = "lemma"
+notes        = """
+`exact e`   — close the goal with term e (must fully match).
+`apply e`   — unify e's conclusion, leave hypotheses as new goals.
+`refine e`  — exact + holes (`?_`) for missing pieces.
+`exact?`    — search mathlib for a term that closes the goal (mathlib).
+"""
+
+# ---------------------------------------------------------------------------
+# Reflexivity
+# ---------------------------------------------------------------------------
+
+[[synonym]]
+canonical    = "rfl"
+aliases      = ["Eq.refl", "Iff.rfl", "HEq.rfl"]
+tactic_class = "lemma"
+notes        = """
+`rfl`        — universal reflexivity tactic (works for Eq, Iff,
+               propositional equality, etc.).
+`Eq.refl _`  — explicit term form for proof terms.
+`Iff.rfl`    — bidirectional reflexivity.
+`HEq.rfl`    — heterogeneous equality reflexivity.
+When `rfl` fails on dependently-indexed types, try `HEq.rfl`.
+"""
+
+# ---------------------------------------------------------------------------
+# Destructuring
+# ---------------------------------------------------------------------------
+
+[[synonym]]
+canonical    = "obtain"
+aliases      = ["rcases", "cases", "match"]
+tactic_class = "case"
+notes        = """
+`obtain ⟨a, b⟩ := h`   — destructure existentials / conjunctions /
+                         structures.  Mathlib idiom.
+`rcases h with ...`    — same, with rich pattern syntax.
+`cases h with | ...`   — Lean 4 core-syntax case analysis.
+`match h with | ... => ...` — term-level destructuring.
+For multiple witnesses, `rcases` reads cleaner; for single-pattern
+introduction `obtain` is shorter.
+"""
+
+# ---------------------------------------------------------------------------
+# Goal introduction
+# ---------------------------------------------------------------------------
+
+[[synonym]]
+canonical    = "intro"
+aliases      = ["intros", "rintro"]
+tactic_class = "lemma"
+notes        = """
+`intro a b c`   — introduce one or more named hypotheses.  Lean 4 core.
+`intros`        — introduce all leading binders.  Available in Lean 4.
+                  but considered an alias for `intro * ` / `intro` in
+                  modern code.
+`rintro ⟨a, b⟩` — intro + immediate destructuring (mathlib).
+When the migration target is mathlib-style, prefer `rintro`.
+"""
+
+# ---------------------------------------------------------------------------
+# Decidability
+# ---------------------------------------------------------------------------
+
+[[synonym]]
+canonical    = "decide"
+aliases      = ["native_decide", "norm_num"]
+tactic_class = "automation"
+notes        = """
+`decide`         — compute a `Decidable` instance to close the goal.
+                   Trusted (kernel-checked).
+`native_decide`  — same but compiled native; FASTER but adds a
+                   Reject-class trust hit (see axiom_tracker.rs).
+                   Avoid in proofs that need Level3+ trust.
+`norm_num`       — mathlib numeric goal closer.
+Variant tester should NEVER auto-substitute `decide → native_decide`
+(weaker trust); the reverse is always safe.
+"""
+
+# ---------------------------------------------------------------------------
+# Induction (mathlib3 ↔ mathlib4)
+# ---------------------------------------------------------------------------
+
+[[synonym]]
+canonical    = "induction"
+aliases      = ["induction'", "induction _ using"]
+tactic_class = "induction"
+notes        = """
+`induction x`              — Lean 4 core induction tactic.
+`induction'`               — mathlib variant with case-by-case syntax
+                             closer to mathlib3 style.
+`induction x using Nat.rec_aux` — explicit induction principle.
+Mathlib3-port code often uses `induction'`; rewrite to `induction`
+for mathlib4 portability.
+"""
+
+# ---------------------------------------------------------------------------
+# Rewrites
+# ---------------------------------------------------------------------------
+
+[[synonym]]
+canonical    = "rw"
+aliases      = ["rewrite", "subst", "conv"]
+tactic_class = "reduction"
+notes        = """
+`rw [h]`      — rewrite using equation h, fully applied.
+`rewrite [h]` — alias for `rw`, more verbose form (older code).
+`subst h`     — substitute a variable equation outright.
+`conv => rw [h]` — surgical rewrite at a specific subterm.
+When `rw` fails to match, drop to `conv` for finer control.
+"""
