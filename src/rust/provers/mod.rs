@@ -67,6 +67,7 @@ pub mod lean3;
 pub mod leo3;
 pub mod matita;
 pub mod mercury;
+pub mod keymaerax;
 pub mod metitarski;
 pub mod metamath;
 pub mod minisat;
@@ -159,6 +160,9 @@ pub enum ProverKind {
     MetiTarski,
     CSI,
     AProVE,
+
+    // Tier 5d: Hybrid systems / differential dynamic logic
+    KeYmaeraX,
 
     // Tier 6: Dependent types + effects, auto-active, orchestration
     FStar,
@@ -464,6 +468,7 @@ impl std::str::FromStr for ProverKind {
             "metitarski" | "metit" => Ok(ProverKind::MetiTarski),
             "csi" => Ok(ProverKind::CSI),
             "aprove" => Ok(ProverKind::AProVE),
+            "keymaerax" | "keymaera-x" | "keymaera_x" | "kyx" => Ok(ProverKind::KeYmaeraX),
             "fstar" | "f*" | "f-star" => Ok(ProverKind::FStar),
             "dafny" => Ok(ProverKind::Dafny),
             "why3" => Ok(ProverKind::Why3),
@@ -702,6 +707,7 @@ impl ProverKind {
             ProverKind::MetiTarski,
             ProverKind::CSI,
             ProverKind::AProVE,
+            ProverKind::KeYmaeraX,
         ]);
         provers
     }
@@ -799,6 +805,7 @@ impl ProverKind {
             ProverKind::MetiTarski => 3,   // Transcendental function encoding
             ProverKind::CSI => 3,          // TRS/CTRS parsing + CPF output
             ProverKind::AProVE => 3,       // TRS/XTC parsing
+            ProverKind::KeYmaeraX => 4,    // dL + hybrid programs + tactic language
             // HP type-checker ecosystem: complexity 3 — they are real
             // type-checkers with non-trivial unification/elaboration.
             // Heavier disciplines (HoTT/Cubical, Hoare) rate 4.
@@ -960,6 +967,7 @@ impl ProverKind {
             ProverKind::MetiTarski => 2,   // Trust tier 2 (TPTP + transcendental)
             ProverKind::CSI => 2,          // Trust tier 2 (TRS/CPF)
             ProverKind::AProVE => 2,       // Trust tier 2 (TRS/XTC)
+            ProverKind::KeYmaeraX => 2,    // Trust tier 2 (dL; QE delegated to external CAS)
             // HP ecosystem — tier 11 (beyond the existing 10-tier scheme
             // but placed as 3 here to share the ML guidance budget with
             // dependent/interactive provers).
@@ -1089,6 +1097,7 @@ impl ProverKind {
             ProverKind::MetiTarski => 1.5,  // Transcendental arithmetic extension
             ProverKind::CSI => 2.0,         // Confluence/termination checker
             ProverKind::AProVE => 2.0,      // Automated termination verifier
+            ProverKind::KeYmaeraX => 2.5,   // Hybrid systems / differential dynamic logic
             ProverKind::Leo3 => 2.5,        // Higher-order ATP
             ProverKind::Satallax => 2.5,    // Higher-order ATP
             ProverKind::Lash => 2.5,        // Higher-order ATP
@@ -1224,6 +1233,7 @@ impl ProverKind {
             ProverKind::MetiTarski => "metit",
             ProverKind::CSI => "csi",
             ProverKind::AProVE => "aprove",
+            ProverKind::KeYmaeraX => "keymaerax",
             ProverKind::Leo3 => "leo3",
             ProverKind::Satallax => "satallax",
             ProverKind::Lash => "lash",
@@ -1614,6 +1624,7 @@ impl ProverFactory {
             ProverKind::MetiTarski => Ok(Box::new(metitarski::MetiTarskiBackend::new(config))),
             ProverKind::CSI => Ok(Box::new(csi::CSIBackend::new(config))),
             ProverKind::AProVE => Ok(Box::new(aprove::AProVEBackend::new(config))),
+            ProverKind::KeYmaeraX => Ok(Box::new(keymaerax::KeYmaeraXBackend::new(config))),
             ProverKind::Leo3 => Ok(Box::new(leo3::Leo3Backend::new(config))),
             ProverKind::Satallax => Ok(Box::new(satallax::SatallaxBackend::new(config))),
             ProverKind::Lash => Ok(Box::new(lash::LashBackend::new(config))),

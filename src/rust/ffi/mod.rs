@@ -529,6 +529,7 @@ pub fn kind_from_u8(kind: u8) -> Option<ProverKind> {
         125 => Some(ProverKind::GNATprove),
         126 => Some(ProverKind::Stainless),
         127 => Some(ProverKind::LiquidHaskell),
+        128 => Some(ProverKind::KeYmaeraX),
         _ => None,
     }
 }
@@ -1270,6 +1271,7 @@ pub fn kind_to_u8(kind: ProverKind) -> u8 {
         ProverKind::GNATprove => 125,
         ProverKind::Stainless => 126,
         ProverKind::LiquidHaskell => 127,
+        ProverKind::KeYmaeraX => 128,
     }
 }
 
