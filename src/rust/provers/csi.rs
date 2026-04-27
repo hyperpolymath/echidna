@@ -168,6 +168,9 @@ impl ProverBackend for CSIBackend {
         _state: &ProofState,
         _limit: usize,
     ) -> Result<Vec<Tactic>> {
+        // CSI is a fully automated TRS confluence/termination solver.
+        // It has no user-facing tactic language — correctness certificates
+        // are produced internally. Returning empty is correct behaviour.
         Ok(vec![])
     }
 

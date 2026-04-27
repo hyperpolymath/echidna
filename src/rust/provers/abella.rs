@@ -174,10 +174,30 @@ impl ProverBackend for AbellaBackend {
             }))
     }
 
-    async fn suggest_tactics(&self, _state: &ProofState, _limit: usize) -> Result<Vec<Tactic>> {
-        // Cold-start: no suggestions until the Abella corpus is extracted
-        // and the ML layer is retrained.
-        Ok(vec![])
+    async fn suggest_tactics(&self, state: &ProofState, limit: usize) -> Result<Vec<Tactic>> {
+        if state.goals.is_empty() {
+            return Ok(vec![]);
+        }
+        // Abella is a sequent-calculus HOL prover. These are the core tactics
+        // drawn from the Abella manual (v2.x), ordered by how often they appear
+        // in the distributed examples.
+        let tactics = vec![
+            Tactic::Custom { prover: "abella".to_string(), command: "search".to_string(),      args: vec![] },
+            Tactic::Custom { prover: "abella".to_string(), command: "induction".to_string(),   args: vec![] },
+            Tactic::Custom { prover: "abella".to_string(), command: "apply".to_string(),       args: vec![] },
+            Tactic::Custom { prover: "abella".to_string(), command: "backchain".to_string(),   args: vec![] },
+            Tactic::Custom { prover: "abella".to_string(), command: "intros".to_string(),      args: vec![] },
+            Tactic::Custom { prover: "abella".to_string(), command: "split".to_string(),       args: vec![] },
+            Tactic::Custom { prover: "abella".to_string(), command: "cases".to_string(),       args: vec![] },
+            Tactic::Custom { prover: "abella".to_string(), command: "exists".to_string(),      args: vec![] },
+            Tactic::Custom { prover: "abella".to_string(), command: "unfold".to_string(),      args: vec![] },
+            Tactic::Custom { prover: "abella".to_string(), command: "coinduction".to_string(), args: vec![] },
+            Tactic::Custom { prover: "abella".to_string(), command: "assert".to_string(),      args: vec![] },
+            Tactic::Custom { prover: "abella".to_string(), command: "inst".to_string(),        args: vec![] },
+            Tactic::Custom { prover: "abella".to_string(), command: "cut".to_string(),         args: vec![] },
+            Tactic::Custom { prover: "abella".to_string(), command: "monotone".to_string(),    args: vec![] },
+        ];
+        Ok(crate::provers::gnn_augment_tactics(&self.config, state, "abella", tactics, limit).await)
     }
 
     async fn search_theorems(&self, _pattern: &str) -> Result<Vec<String>> {
@@ -223,5 +243,27 @@ mod tests {
     fn kind_is_abella() {
         let backend = AbellaBackend::new(ProverConfig::default());
         assert_eq!(backend.kind(), ProverKind::Abella);
+    }
+
+    #[tokio::test]
+    async fn suggest_tactics_empty_goals_returns_empty() {
+        let backend = AbellaBackend::new(ProverConfig::default());
+        let state = ProofState::default();
+        let tactics = backend.suggest_tactics(&state, 10).await.unwrap();
+        assert!(tactics.is_empty());
+    }
+
+    #[tokio::test]
+    async fn suggest_tactics_returns_abella_tactics() {
+        let backend = AbellaBackend::new(ProverConfig::default());
+        let src = "Theorem id : forall x, x = x.\nintros. search.\n";
+        let state = backend.parse_string(src).await.unwrap();
+        let tactics = backend.suggest_tactics(&state, 10).await.unwrap();
+        assert!(!tactics.is_empty());
+        let names: Vec<_> = tactics.iter().filter_map(|t| {
+            if let Tactic::Custom { command, .. } = t { Some(command.as_str()) } else { None }
+        }).collect();
+        assert!(names.contains(&"search"), "expected 'search' tactic");
+        assert!(names.contains(&"induction"), "expected 'induction' tactic");
     }
 }

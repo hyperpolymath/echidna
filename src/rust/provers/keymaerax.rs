@@ -285,13 +285,34 @@ impl ProverBackend for KeYmaeraXBackend {
 
     async fn suggest_tactics(
         &self,
-        _state: &ProofState,
-        _limit: usize,
+        state: &ProofState,
+        limit: usize,
     ) -> Result<Vec<Tactic>> {
-        // The Bellerophon tactic language is too large to enumerate
-        // statically here; GNN-ranked Bellerophon suggestion is
-        // queued under §4.4 of ECHIDNA-NOTES.
-        Ok(vec![])
+        if state.goals.is_empty() {
+            return Ok(vec![]);
+        }
+        // KeYmaera X Bellerophon tactics. This is a curated starter set
+        // covering the tactics most visible in the KeYmaera X tutorial and
+        // distributed benchmark archive. The full Bellerophon language is
+        // open-ended; GNN-ranked corpus suggestions (§4.4) will extend this.
+        let tactics = vec![
+            Tactic::Custom { prover: "keymaerax".to_string(), command: "auto".to_string(),      args: vec![] },
+            Tactic::Custom { prover: "keymaerax".to_string(), command: "QE".to_string(),        args: vec![] },
+            Tactic::Custom { prover: "keymaerax".to_string(), command: "loop".to_string(),      args: vec![] },
+            Tactic::Custom { prover: "keymaerax".to_string(), command: "ODE".to_string(),       args: vec![] },
+            Tactic::Custom { prover: "keymaerax".to_string(), command: "solve".to_string(),     args: vec![] },
+            Tactic::Custom { prover: "keymaerax".to_string(), command: "dI".to_string(),        args: vec![] },
+            Tactic::Custom { prover: "keymaerax".to_string(), command: "dC".to_string(),        args: vec![] },
+            Tactic::Custom { prover: "keymaerax".to_string(), command: "dW".to_string(),        args: vec![] },
+            Tactic::Custom { prover: "keymaerax".to_string(), command: "diffInd".to_string(),   args: vec![] },
+            Tactic::Custom { prover: "keymaerax".to_string(), command: "cut".to_string(),       args: vec![] },
+            Tactic::Custom { prover: "keymaerax".to_string(), command: "prop".to_string(),      args: vec![] },
+            Tactic::Custom { prover: "keymaerax".to_string(), command: "implyR".to_string(),    args: vec![] },
+            Tactic::Custom { prover: "keymaerax".to_string(), command: "andL".to_string(),      args: vec![] },
+            Tactic::Custom { prover: "keymaerax".to_string(), command: "hideL".to_string(),     args: vec![] },
+            Tactic::Custom { prover: "keymaerax".to_string(), command: "closeTrue".to_string(), args: vec![] },
+        ];
+        Ok(crate::provers::gnn_augment_tactics(&self.config, state, "keymaerax", tactics, limit).await)
     }
 
     async fn search_theorems(&self, _pattern: &str) -> Result<Vec<String>> {
@@ -404,5 +425,27 @@ mod tests {
             Term::Const(s) => assert!(s.contains("[x := x + 1;]")),
             _ => panic!("expected Term::Const"),
         }
+    }
+
+    #[tokio::test]
+    async fn suggest_tactics_empty_goals_returns_empty() {
+        let backend = KeYmaeraXBackend::new(ProverConfig::default());
+        let state = ProofState::default();
+        let tactics = backend.suggest_tactics(&state, 10).await.unwrap();
+        assert!(tactics.is_empty());
+    }
+
+    #[tokio::test]
+    async fn suggest_tactics_returns_kyx_tactics() {
+        let backend = KeYmaeraXBackend::new(ProverConfig::default());
+        let kyx = "ArchiveEntry \"x\"\n  Problem\n  x > 0 -> [x := x + 1;] x > 0\n  End.\nEnd.\n";
+        let state = backend.parse_string(kyx).await.expect("parse_string");
+        let tactics = backend.suggest_tactics(&state, 10).await.unwrap();
+        assert!(!tactics.is_empty());
+        let names: Vec<_> = tactics.iter().filter_map(|t| {
+            if let Tactic::Custom { command, .. } = t { Some(command.as_str()) } else { None }
+        }).collect();
+        assert!(names.contains(&"auto"), "expected 'auto' tactic");
+        assert!(names.contains(&"QE"),   "expected 'QE' tactic");
     }
 }
