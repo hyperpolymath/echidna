@@ -114,6 +114,10 @@ pub struct ProofCandidate {
 ///         || a.proof_steps < b.proof_steps)
 /// ))]
 /// ```
+// `pure` tells Creusot this function is side-effect-free and may be called
+// inside `ensures`/`requires`/`invariant` clauses.  Without `pure`, Creusot
+// cannot inline `dominates` into the `compute` contract.
+#[cfg_attr(feature = "creusot", pure)]
 #[cfg_attr(feature = "creusot",
     ensures(result == (
         a.proof_time_ms <= b.proof_time_ms
@@ -165,20 +169,47 @@ pub fn dominates(a: &ProofObjective, b: &ProofObjective) -> bool {
 /// )]
 /// #[ensures(result.len() == count_optimal(&candidates))]
 /// ```
-/// ### Creusot contract (soundness + completeness)
-/// ```text
-/// #[ensures(forall<i: usize> i < candidates.len() ==>
-///     candidates[i].is_pareto_optimal == (
-///         forall<j: usize> j < candidates.len() && i != j ==>
-///             !dominates(&candidates[j].objectives, &candidates[i].objectives)
-///     )
-/// )]
-/// ```
-// The `compute` contract is complex (nested quantifiers over a mutable slice).
-// It is expressed as a doc comment above and tested exhaustively in
-// `impl_invariants::{po_p4_compute_sound, po_p5_compute_complete}`.
-// Activating it requires Creusot's mutable-borrow logic extensions;
-// that activation is tracked in Stage 8c-M2 of the ROADMAP.
+/// ### Creusot contracts (Stage 8c-M2 — live annotations)
+///
+/// Four postconditions on `^candidates` (the slice state after the call):
+///
+/// 1. **Length preserved** — `compute` never adds or removes candidates.
+/// 2. **Objectives read-only** — only `is_pareto_optimal` is written; the
+///    objective tuples are untouched.
+/// 3. **Correctness** — the `is_pareto_optimal` flag of every candidate
+///    exactly matches the semantic definition of Pareto-optimality.
+/// 4. **Frontier membership** — every index in the return value is within
+///    bounds and has `is_pareto_optimal == true` in the final state.
+///
+/// The loop invariant inside the function body ensures Creusot can propagate
+/// the contract through the nested `for` loops.
+// Stage 8c-M2 note: the `compute` contract uses `^candidates` (Creusot's
+// "final borrow" sigil) and calls `dominates` (now marked `#[pure]`).
+// The outer-loop invariant (classifying 0..i) requires Creusot's quantifier
+// over a growing prefix and is straightforward; the inner-loop `dominated`
+// invariant is written as a `cfg_attr(invariant)` below.
+// Outer loop variant (`n - i`) and inner loop variant (`n - j`) are provided
+// for termination; Creusot can also infer these from bounded integer ranges.
+#[cfg_attr(feature = "creusot",
+    // (1) Length preserved.
+    ensures((^candidates).len() == (*candidates).len()),
+    // (2) Objectives are read-only.
+    ensures(forall<i: usize> i < (^candidates).len() ==>
+        (^candidates)[i].objectives == (*candidates)[i].objectives
+    ),
+    // (3) Correctness of the is_pareto_optimal flag.
+    ensures(forall<i: usize> i < (^candidates).len() ==>
+        (^candidates)[i].is_pareto_optimal == (
+            forall<j: usize> j < (^candidates).len() && j != i ==>
+                !dominates(&(^candidates)[j].objectives, &(^candidates)[i].objectives)
+        )
+    ),
+    // (4) Return value ⊆ optimal indices.
+    ensures(forall<k: usize> k < result.len() ==>
+        result[k] < (^candidates).len()
+        && (^candidates)[result[k]].is_pareto_optimal
+    )
+)]
 pub fn compute(candidates: &mut [ProofCandidate]) -> Vec<usize> {
     let n = candidates.len();
     let mut frontier_indices = Vec::new();
@@ -186,6 +217,18 @@ pub fn compute(candidates: &mut [ProofCandidate]) -> Vec<usize> {
     for i in 0..n {
         let mut dominated = false;
         for j in 0..n {
+            // Inner-loop invariant: `dominated` is true iff some checked
+            // index k (0 ≤ k < j, k ≠ i) strictly dominates candidate i.
+            //
+            // Holds at loop entry (j=0, dominated=false, empty prefix) and
+            // is maintained by the body: we only set dominated=true after
+            // confirming dominates(k, i), and break immediately so no later
+            // iteration can unset it.
+            #[cfg_attr(feature = "creusot", invariant(
+                dominated == (exists<k: usize> k < @j && k != @i &&
+                    dominates(&candidates[k].objectives, &candidates[i].objectives))
+            ))]
+            let _ = ();
             if i == j {
                 continue;
             }

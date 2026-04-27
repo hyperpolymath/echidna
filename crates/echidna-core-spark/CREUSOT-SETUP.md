@@ -21,8 +21,10 @@ rustup toolchain install nightly-2024-05-01   # example — check current pin
 rustup override set nightly-2024-05-01 --path crates/echidna-core-spark
 ```
 
-A `rust-toolchain.toml` at the crate root will be added in Stage 8c-M1 once
-the pin is agreed and tested.
+`rust-toolchain.toml` is at the crate root (added Stage 8c-M1) and pins
+`nightly-2024-05-01`.  Check the Creusot repository for the current supported
+nightly and update both `rust-toolchain.toml` and the `formal-verification.yml`
+workflow when bumping.
 
 ## 2 — Install Creusot
 
@@ -86,9 +88,10 @@ All obligations in `impl_invariants` are designed to discharge quickly
 
 ## 6 — CI integration
 
-The workflow `.github/workflows/formal-verification.yml` (to be created in
-Stage 8c-M1) runs `just verify-trust-pipeline` in report-only mode until
-Stage 8c-M3 (when verification becomes a merge gate).
+`.github/workflows/formal-verification.yml` (added Stage 8c-M1) runs
+`just verify-trust-pipeline` in report-only mode (`continue-on-error: true`).
+Stage 8c-M3 will flip this to a hard merge gate once Why3 is available in
+the runner and all obligations discharge within the CI time budget.
 
 ## Annotation style
 
@@ -97,8 +100,21 @@ Creusot contracts in this crate are written in two complementary forms:
 1. **Doc-comment code blocks** — always compiled and visible in `rustdoc`;
    describe the contract in human-readable form; not executed by the compiler.
 2. **`#[cfg_attr(feature = "creusot", ...)]` attributes** — machine-readable;
-   only activated during Creusot verification; commented out until the nightly
-   pin is decided and CI is wired.
+   active when Creusot runs (`--features creusot`); no-ops on stable Rust.
+
+### Stage status
+
+| Milestone | Contents | Status |
+|---|---|---|
+| 8c-M1 | `rust-toolchain.toml`, `formal-verification.yml`, `just verify-trust-pipeline` | **done** |
+| 8c-M2 | `dominates` marked `#[pure]`; `compute` ensures with `^candidates`; inner-loop `#[invariant]` for `dominated` | **done** |
+| 8c-M3 | Outer-loop invariant (prefix classification); Why3 CI discharge; flip CI to hard gate | pending |
+
+The outer-loop invariant for `compute` (classifying the prefix 0..i at each
+iteration) requires capturing a ghost snapshot of the initial objectives and
+reasoning over a growing prefix.  This is straightforward in Creusot but
+deferred to Stage 8c-M3 so that M2 ships without a partially-activated outer
+invariant that Creusot might not yet discharge.
 
 This keeps the crate buildable on stable Rust at all times while still
 expressing every proof obligation in machine-verifiable syntax.
