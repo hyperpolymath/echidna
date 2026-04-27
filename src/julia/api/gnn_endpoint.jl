@@ -31,6 +31,14 @@ using LinearAlgebra
 const GNN_MODEL = Ref{Any}(nothing)
 const GNN_VOCAB = Ref{Any}(nothing)
 
+# Per-(prover, domain) success-rate weights pushed from Rust via
+# POST /training/update.  Format: weights[prover_name][domain] = success_rate.
+# Used to modulate premise scores in rank_with_gnn when domain_hints present.
+const PROVER_DOMAIN_WEIGHTS = Ref{Dict{String,Dict{String,Float64}}}(Dict())
+
+# Running total of training records received since server start.
+const TOTAL_TRAINING_RECORDS = Ref{Int}(0)
+
 """
     load_gnn_model(models_dir::String)
 
@@ -94,23 +102,110 @@ function parse_proof_graph(body)
 end
 
 """
-    rank_with_gnn(g, node_features, goal_idx, premise_indices, config)
+    rank_with_gnn(g, node_features, goal_idx, premise_indices, config, domain_hints)
 
 Run GNN message passing + cross-attention scoring on the parsed graph.
 If a trained model is available, use it. Otherwise, use cosine similarity
 between the goal and premise node features as a fallback.
+
+When `domain_hints` is non-empty and `PROVER_DOMAIN_WEIGHTS` has been
+populated by prior `/training/update` calls, premise scores are modulated
+by the aggregate domain confidence from accumulated proof outcomes.
 """
-function rank_with_gnn(g, node_features, goal_idx, premise_indices, config)
+function rank_with_gnn(g, node_features, goal_idx, premise_indices, config, domain_hints=String[])
     model = GNN_MODEL[]
 
     if model !== nothing
-        # Use trained model for ranking
-        # (Delegate to neural_solver.jl PremiseRanker when available)
-        return rank_with_trained_model(model, g, node_features, goal_idx, premise_indices)
+        scores, indices = rank_with_trained_model(model, g, node_features, goal_idx, premise_indices)
+    else
+        # Fallback: cosine similarity between goal and premise features
+        scores, indices = rank_with_cosine(node_features, goal_idx, premise_indices)
     end
 
-    # Fallback: cosine similarity between goal and premise features
-    return rank_with_cosine(node_features, goal_idx, premise_indices)
+    # Apply accumulated training weights when the caller provided domain hints.
+    # This is a no-op until /training/update has been called at least once
+    # and the rank request includes non-empty domain_hints.
+    if !isempty(domain_hints) && !isempty(PROVER_DOMAIN_WEIGHTS[])
+        scores = apply_domain_weights(scores, domain_hints)
+    end
+
+    return (scores, indices)
+end
+
+"""
+    apply_domain_weights(scores, domain_hints)
+
+Scale premise scores by the mean success rate across all provers for the
+requested domain aspects.  Uses a `[0.5, 1.0]` range so that even low-
+confidence domains retain half the base score rather than collapsing to zero.
+
+When no training evidence exists for the requested domains, scores are
+returned unchanged.
+"""
+function apply_domain_weights(scores::Vector{Float32}, domain_hints::Vector{String})
+    weights = PROVER_DOMAIN_WEIGHTS[]
+    domain_rates = Float64[]
+    for domain in domain_hints
+        for (_, prover_weights) in weights
+            if haskey(prover_weights, domain)
+                push!(domain_rates, prover_weights[domain])
+            end
+        end
+    end
+    isempty(domain_rates) && return scores
+    mean_confidence = Statistics.mean(domain_rates)
+    scale = Float32(0.5 + 0.5 * mean_confidence)
+    return scores .* scale
+end
+
+"""
+    handle_training_update(req::HTTP.Request)
+
+POST /training/update — Receive proof-outcome statistics from the Rust server
+and update per-(prover, domain) success-rate weights used to modulate premise
+ranking scores.
+
+Payload: `{ "records": [{ "prover", "domain", "attempts", "successes",
+                           "timeouts", "failures", "mean_time_ms", "success_rate" }] }`
+
+The Rust `StatisticsTracker` is authoritative; Julia simply mirrors it so that
+the GNN ranking layer can incorporate proof-outcome evidence without a round-trip.
+"""
+function handle_training_update(req::HTTP.Request)
+    try
+        body = JSON3.read(String(req.body))
+        records = get(body, :records, [])
+
+        weights = PROVER_DOMAIN_WEIGHTS[]
+        n = 0
+        for rec in records
+            prover = string(get(rec, :prover, "Unknown"))
+            domain = string(get(rec, :domain, "unspecified"))
+            rate   = Float64(get(rec, :success_rate, 0.0))
+            if !haskey(weights, prover)
+                weights[prover] = Dict{String,Float64}()
+            end
+            weights[prover][domain] = rate
+            n += 1
+        end
+        PROVER_DOMAIN_WEIGHTS[] = weights
+        TOTAL_TRAINING_RECORDS[] += n
+
+        @info "Training update: $n records (total=$(TOTAL_TRAINING_RECORDS[]))"
+
+        return HTTP.Response(200, JSON3.write(Dict(
+            "status"          => "ok",
+            "records_received" => n,
+            "total_records"   => TOTAL_TRAINING_RECORDS[],
+            "weights_updated" => n > 0
+        )))
+    catch e
+        @error "Training update failed" exception=(e, catch_backtrace())
+        return HTTP.Response(500, JSON3.write(Dict(
+            "status" => "error",
+            "error"  => string(e)
+        )))
+    end
 end
 
 """
@@ -190,11 +285,14 @@ function handle_gnn_rank(req::HTTP.Request)
         top_k = get(body, :top_k, 20)
         min_score = get(body, :min_score, 0.05)
         include_embeddings = get(body, :include_embeddings, false)
+        domain_hints = String.(get(body, :domain_hints, String[]))
 
-        # Run GNN ranking
+        # Run GNN ranking; domain_hints allow weight-guided score modulation
+        # when /training/update has populated PROVER_DOMAIN_WEIGHTS.
         (scores, indices) = rank_with_gnn(
             g, node_features, goal_idx, premise_indices,
-            get(body, :config, nothing)
+            get(body, :config, nothing),
+            domain_hints
         )
 
         # Sort by score (descending)
@@ -268,15 +366,17 @@ Call this from the main api_server.jl to enable GNN functionality.
 """
 function register_gnn_routes!(existing_handler)
     @info "Registering GNN endpoints:"
-    @info "  POST /gnn/rank   — Rank premises via GNN"
-    @info "  GET  /gnn/health — GNN model status"
+    @info "  POST /gnn/rank        — Rank premises via GNN"
+    @info "  GET  /gnn/health      — GNN model status"
+    @info "  POST /training/update — Receive proof-outcome stats from Rust"
 
-    # Return a combined handler that dispatches to GNN routes first
     function combined_handler(req::HTTP.Request)
         if req.target == "/gnn/rank" && req.method == "POST"
             return handle_gnn_rank(req)
         elseif req.target == "/gnn/health"
             return handle_gnn_health(req)
+        elseif req.target == "/training/update" && req.method == "POST"
+            return handle_training_update(req)
         else
             return existing_handler(req)
         end

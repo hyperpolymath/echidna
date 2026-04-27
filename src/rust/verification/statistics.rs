@@ -143,6 +143,27 @@ impl ProverDomainStats {
     }
 }
 
+/// Serialisable snapshot of one (prover, domain) stats pair.
+///
+/// Exported by `StatisticsTracker::export_records` and pushed to the Julia
+/// ML server by the background training-sync task so that online weight
+/// updates incorporate accumulated proof evidence.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct StatsSummaryRecord {
+    /// Prover name — Debug-format of `ProverKind` (e.g. `"Z3"`, `"Lean"`).
+    pub prover: String,
+    /// Domain tag (e.g. `"arithmetic.factorisation"`).
+    pub domain: String,
+    pub attempts: u64,
+    pub successes: u64,
+    pub timeouts: u64,
+    pub failures: u64,
+    /// Mean proof time over successful attempts (ms). `None` if no successes.
+    pub mean_time_ms: Option<f64>,
+    /// Fraction of successful attempts `[0.0, 1.0]`.
+    pub success_rate: f64,
+}
+
 /// Tracks statistics across all provers and domains
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct StatisticsTracker {
@@ -322,6 +343,34 @@ impl StatisticsTracker {
     pub fn from_json(json: &str) -> Result<Self, serde_json::Error> {
         serde_json::from_str(json)
     }
+
+    /// Export every (prover, domain) entry as a flat `Vec<StatsSummaryRecord>`.
+    ///
+    /// Used by the background GNN training-sync task to push accumulated proof
+    /// evidence to the Julia ML server (`POST /training/update`).  The server
+    /// uses these records to update per-(prover, domain) success-rate weights
+    /// that modulate premise ranking scores.
+    pub fn export_records(&self) -> Vec<StatsSummaryRecord> {
+        self.stats
+            .iter()
+            .map(|(key, stats)| {
+                // Key format produced by `make_key`: "ProverDebug::domain"
+                let mut parts = key.splitn(2, "::");
+                let prover = parts.next().unwrap_or("Unknown").to_string();
+                let domain = parts.next().unwrap_or("unspecified").to_string();
+                StatsSummaryRecord {
+                    prover,
+                    domain,
+                    attempts: stats.attempts,
+                    successes: stats.successes,
+                    timeouts: stats.timeouts,
+                    failures: stats.failures,
+                    mean_time_ms: stats.mean_time_ms(),
+                    success_rate: stats.success_rate(),
+                }
+            })
+            .collect()
+    }
 }
 
 #[cfg(test)]
@@ -444,6 +493,35 @@ mod tests {
         let (lower, upper) = StatisticsTracker::mutation_score_confidence_interval(10, 10, 0.95);
         assert!(lower > 0.7);
         assert_eq!(upper, 1.0);
+    }
+
+    #[test]
+    fn test_export_records() {
+        let mut tracker = StatisticsTracker::new();
+        tracker.record_success(ProverKind::Z3, "arithmetic", 100);
+        tracker.record_success(ProverKind::Z3, "arithmetic", 200);
+        tracker.record_failure(ProverKind::Lean, "topology");
+
+        let records = tracker.export_records();
+        assert_eq!(records.len(), 2);
+
+        let z3 = records
+            .iter()
+            .find(|r| r.prover == "Z3" && r.domain == "arithmetic")
+            .expect("Z3::arithmetic record present");
+        assert_eq!(z3.successes, 2);
+        assert_eq!(z3.attempts, 2);
+        assert!((z3.success_rate - 1.0).abs() < 1e-10);
+        assert!(z3.mean_time_ms.is_some());
+
+        let lean = records
+            .iter()
+            .find(|r| r.prover == "Lean" && r.domain == "topology")
+            .expect("Lean::topology record present");
+        assert_eq!(lean.failures, 1);
+        assert_eq!(lean.successes, 0);
+        assert_eq!(lean.success_rate, 0.0);
+        assert!(lean.mean_time_ms.is_none());
     }
 
     #[test]

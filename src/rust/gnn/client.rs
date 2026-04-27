@@ -72,6 +72,11 @@ struct GnnRankRequest {
     include_embeddings: bool,
     /// GNN configuration hints for the server
     config: GnnServerHints,
+    /// Optional domain-aspect tags for the goal (e.g. `["arithmetic.factorisation"]`).
+    /// When non-empty, Julia uses accumulated training weights for these domains
+    /// to modulate premise scores.  Empty for backwards-compatible callers.
+    #[serde(default)]
+    domain_hints: Vec<String>,
 }
 
 /// Serialised proof graph for the Julia server.
@@ -355,6 +360,7 @@ impl GnnClient {
                 num_gnn_layers: self.config.num_gnn_layers,
                 use_attention: self.config.use_attention,
             },
+            domain_hints: vec![],
         }
     }
 

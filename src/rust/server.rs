@@ -18,6 +18,7 @@ use echidna::agent::meta_controller::{MetaController, Plan};
 use echidna::agent::AgenticGoal;
 use echidna::core::{Goal, ProofState, Tactic, TacticResult, Term};
 use echidna::dispatch::ProverDispatcher;
+use echidna::verification::StatisticsTracker;
 use echidna::{ProverBackend, ProverConfig, ProverKind};
 use reqwest::Client;
 use serde::{Deserialize, Serialize};
@@ -28,7 +29,7 @@ use std::sync::Arc;
 use std::time::Duration;
 use tokio::sync::{Mutex, RwLock};
 use tower_http::cors::CorsLayer;
-use tracing::{info, instrument};
+use tracing::{debug, info, instrument};
 
 /// Application state shared across handlers
 #[derive(Clone)]
@@ -44,6 +45,9 @@ struct AppState {
     /// state accumulates across the server's lifetime.  All handlers that
     /// perform goal-aware dispatch share this single instance.
     meta_controller: Arc<MetaController>,
+    /// Shared proof-outcome statistics used by MetaController for Bayesian
+    /// routing and exported to Julia for GNN online learning.
+    stats: Arc<RwLock<StatisticsTracker>>,
 }
 
 /// A proof session
@@ -81,14 +85,58 @@ pub async fn start_server(port: u16, host: String, enable_cors: bool) -> Result<
         },
     }
 
-    let meta_controller = Arc::new(MetaController::new());
+    // Shared stats tracker — MetaController uses it for Bayesian routing;
+    // the background GNN sync task pushes snapshots to Julia for online learning.
+    let stats = Arc::new(RwLock::new(StatisticsTracker::new()));
+    let meta_controller = Arc::new(MetaController::new().with_stats(stats.clone()));
 
     let state = AppState {
         sessions: Arc::new(RwLock::new(HashMap::new())),
         ml_client,
         ml_api_url,
         meta_controller,
+        stats,
     };
+
+    // GNN training sync — background task that pushes accumulated proof-outcome
+    // stats to Julia's /training/update endpoint every 60 seconds.
+    // Only fires when >= 10 new outcomes have accumulated since the last push,
+    // so idle servers incur no traffic.  Errors are logged at debug level and
+    // do not affect the main server loop (fire-and-forget).
+    {
+        let sync_stats = state.stats.clone();
+        let sync_client = state.ml_client.clone();
+        let sync_url = state.ml_api_url.clone();
+        tokio::spawn(async move {
+            let mut last_push_count: u64 = 0;
+            let mut interval = tokio::time::interval(Duration::from_secs(60));
+            interval.tick().await; // consume the immediate first tick; wait 60s before first push
+            loop {
+                interval.tick().await;
+                let (total, records) = {
+                    let guard = sync_stats.read().await;
+                    (guard.total_attempts(), guard.export_records())
+                };
+                if total < last_push_count + 10 || records.is_empty() {
+                    continue;
+                }
+                last_push_count = total;
+                let url = format!("{}/training/update", sync_url);
+                let payload = json!({ "records": records });
+                match sync_client.post(&url).json(&payload).send().await {
+                    Ok(resp) if resp.status().is_success() => {
+                        info!("GNN training sync: {} records pushed to Julia", records.len());
+                    },
+                    Ok(resp) => {
+                        debug!("GNN training sync: Julia returned {}", resp.status());
+                    },
+                    Err(e) => {
+                        debug!("GNN training sync: Julia unavailable ({})", e);
+                    },
+                }
+            }
+        });
+    }
 
     // Build router
     let mut app = Router::new()
