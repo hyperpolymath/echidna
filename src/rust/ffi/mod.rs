@@ -530,6 +530,12 @@ pub fn kind_from_u8(kind: u8) -> Option<ProverKind> {
         126 => Some(ProverKind::Stainless),
         127 => Some(ProverKind::LiquidHaskell),
         128 => Some(ProverKind::KeYmaeraX),
+        129 => Some(ProverKind::Qepcad),
+        130 => Some(ProverKind::Redlog),
+        131 => Some(ProverKind::MleanCoP),
+        132 => Some(ProverKind::IleanCoP),
+        133 => Some(ProverKind::NanoCoP),
+        134 => Some(ProverKind::MetTeL2),
         _ => None,
     }
 }
@@ -1272,6 +1278,12 @@ pub fn kind_to_u8(kind: ProverKind) -> u8 {
         ProverKind::Stainless => 126,
         ProverKind::LiquidHaskell => 127,
         ProverKind::KeYmaeraX => 128,
+        ProverKind::Qepcad => 129,
+        ProverKind::Redlog => 130,
+        ProverKind::MleanCoP => 131,
+        ProverKind::IleanCoP => 132,
+        ProverKind::NanoCoP => 133,
+        ProverKind::MetTeL2 => 134,
     }
 }
 
@@ -1456,9 +1468,12 @@ mod tests {
 
     #[test]
     fn test_kind_from_u8_out_of_range() {
-        // 0–127 are valid; 128+ are out of range.
-        // (Boundary moved to 127 on 2026-04-26 adding Phase 1a/1b ATPs and Phase 5 backends.)
-        assert!(kind_from_u8(128).is_none());
+        // 0–134 are valid; 135+ are out of range.
+        // (Boundary moved to 134 on 2026-04-27 adding Phase 3
+        // backends — KeYmaeraX (128), Qepcad (129), Redlog (130),
+        // MleanCoP (131), IleanCoP (132), NanoCoP (133), MetTeL2 (134).
+        // Previous boundary was 127 — Phase 1a/1b ATPs + Phase 5.)
+        assert!(kind_from_u8(135).is_none());
         assert!(kind_from_u8(200).is_none());
         assert!(kind_from_u8(255).is_none());
     }

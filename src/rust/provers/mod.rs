@@ -67,8 +67,15 @@ pub mod lean3;
 pub mod leo3;
 pub mod matita;
 pub mod mercury;
+pub mod connection_method;
+pub mod ileancop;
 pub mod keymaerax;
 pub mod metitarski;
+pub mod mettel2;
+pub mod mleancop;
+pub mod nanocop;
+pub mod qepcad;
+pub mod redlog;
 pub mod metamath;
 pub mod minisat;
 pub mod minizinc;
@@ -163,6 +170,18 @@ pub enum ProverKind {
 
     // Tier 5d: Hybrid systems / differential dynamic logic
     KeYmaeraX,
+
+    // Tier 5e: Real-algebraic decision (CAD / virtual substitution)
+    Qepcad,
+    Redlog,
+
+    // Tier 5f: Connection-method classical / intuitionistic / lean kernel
+    MleanCoP,
+    IleanCoP,
+    NanoCoP,
+
+    // Tier 5g: Tableau-prover generator for arbitrary modal logics
+    MetTeL2,
 
     // Tier 6: Dependent types + effects, auto-active, orchestration
     FStar,
@@ -469,6 +488,12 @@ impl std::str::FromStr for ProverKind {
             "csi" => Ok(ProverKind::CSI),
             "aprove" => Ok(ProverKind::AProVE),
             "keymaerax" | "keymaera-x" | "keymaera_x" | "kyx" => Ok(ProverKind::KeYmaeraX),
+            "qepcad" | "qepcad-b" | "qepcad_b" => Ok(ProverKind::Qepcad),
+            "redlog" => Ok(ProverKind::Redlog),
+            "mleancop" | "mlean-cop" | "mlean_cop" => Ok(ProverKind::MleanCoP),
+            "ileancop" | "ilean-cop" | "ilean_cop" => Ok(ProverKind::IleanCoP),
+            "nanocop" | "nano-cop" | "nano_cop" => Ok(ProverKind::NanoCoP),
+            "mettel2" | "mettel-2" | "mettel" => Ok(ProverKind::MetTeL2),
             "fstar" | "f*" | "f-star" => Ok(ProverKind::FStar),
             "dafny" => Ok(ProverKind::Dafny),
             "why3" => Ok(ProverKind::Why3),
@@ -708,6 +733,12 @@ impl ProverKind {
             ProverKind::CSI,
             ProverKind::AProVE,
             ProverKind::KeYmaeraX,
+            ProverKind::Qepcad,
+            ProverKind::Redlog,
+            ProverKind::MleanCoP,
+            ProverKind::IleanCoP,
+            ProverKind::NanoCoP,
+            ProverKind::MetTeL2,
         ]);
         provers
     }
@@ -806,6 +837,12 @@ impl ProverKind {
             ProverKind::CSI => 3,          // TRS/CTRS parsing + CPF output
             ProverKind::AProVE => 3,       // TRS/XTC parsing
             ProverKind::KeYmaeraX => 4,    // dL + hybrid programs + tactic language
+            ProverKind::Qepcad => 4,       // CAD doubly-exponential in variable count
+            ProverKind::Redlog => 3,       // virtual substitution + CAD
+            ProverKind::MleanCoP => 3,     // classical connection-method + equality
+            ProverKind::IleanCoP => 3,     // intuitionistic connection-method
+            ProverKind::NanoCoP => 3,      // small-kernel connection-method
+            ProverKind::MetTeL2 => 4,      // JVM tableau-generator + spec config
             // HP type-checker ecosystem: complexity 3 — they are real
             // type-checkers with non-trivial unification/elaboration.
             // Heavier disciplines (HoTT/Cubical, Hoare) rate 4.
@@ -968,6 +1005,12 @@ impl ProverKind {
             ProverKind::CSI => 2,          // Trust tier 2 (TRS/CPF)
             ProverKind::AProVE => 2,       // Trust tier 2 (TRS/XTC)
             ProverKind::KeYmaeraX => 2,    // Trust tier 2 (dL; QE delegated to external CAS)
+            ProverKind::Qepcad => 2,       // Trust tier 2 (CAD; no machine-checked certificate)
+            ProverKind::Redlog => 2,       // Trust tier 2 (parallel to QEPCAD)
+            ProverKind::MleanCoP => 2,     // Trust tier 2 (classical leanCoP kernel)
+            ProverKind::IleanCoP => 3,     // Trust tier 3 (intuitionistic kernel; small + checkable)
+            ProverKind::NanoCoP => 3,      // Trust tier 3 (small kernel — Level-4 cohort)
+            ProverKind::MetTeL2 => 2,      // Trust tier 2 (generated tableau correct by construction; spec unverified)
             // HP ecosystem — tier 11 (beyond the existing 10-tier scheme
             // but placed as 3 here to share the ML guidance budget with
             // dependent/interactive provers).
@@ -1098,6 +1141,12 @@ impl ProverKind {
             ProverKind::CSI => 2.0,         // Confluence/termination checker
             ProverKind::AProVE => 2.0,      // Automated termination verifier
             ProverKind::KeYmaeraX => 2.5,   // Hybrid systems / differential dynamic logic
+            ProverKind::Qepcad => 2.5,      // CAD / real quantifier elimination
+            ProverKind::Redlog => 2.0,      // REDUCE-CAS QE frontend
+            ProverKind::MleanCoP => 1.5,    // Classical connection-method
+            ProverKind::IleanCoP => 2.0,    // Intuitionistic connection-method
+            ProverKind::NanoCoP => 1.5,     // Lean-kernel connection-method
+            ProverKind::MetTeL2 => 2.5,     // Modal-logic tableau generator
             ProverKind::Leo3 => 2.5,        // Higher-order ATP
             ProverKind::Satallax => 2.5,    // Higher-order ATP
             ProverKind::Lash => 2.5,        // Higher-order ATP
@@ -1234,6 +1283,12 @@ impl ProverKind {
             ProverKind::CSI => "csi",
             ProverKind::AProVE => "aprove",
             ProverKind::KeYmaeraX => "keymaerax",
+            ProverKind::Qepcad => "qepcad",
+            ProverKind::Redlog => "redcsl",
+            ProverKind::MleanCoP => "mleancop",
+            ProverKind::IleanCoP => "ileancop",
+            ProverKind::NanoCoP => "nanocop",
+            ProverKind::MetTeL2 => "mettel2",
             ProverKind::Leo3 => "leo3",
             ProverKind::Satallax => "satallax",
             ProverKind::Lash => "lash",
@@ -1625,6 +1680,12 @@ impl ProverFactory {
             ProverKind::CSI => Ok(Box::new(csi::CSIBackend::new(config))),
             ProverKind::AProVE => Ok(Box::new(aprove::AProVEBackend::new(config))),
             ProverKind::KeYmaeraX => Ok(Box::new(keymaerax::KeYmaeraXBackend::new(config))),
+            ProverKind::Qepcad => Ok(Box::new(qepcad::QepcadBackend::new(config))),
+            ProverKind::Redlog => Ok(Box::new(redlog::RedlogBackend::new(config))),
+            ProverKind::MleanCoP => Ok(Box::new(mleancop::MleanCopBackend::new(config))),
+            ProverKind::IleanCoP => Ok(Box::new(ileancop::IleanCopBackend::new(config))),
+            ProverKind::NanoCoP => Ok(Box::new(nanocop::NanoCopBackend::new(config))),
+            ProverKind::MetTeL2 => Ok(Box::new(mettel2::MetTeL2Backend::new(config))),
             ProverKind::Leo3 => Ok(Box::new(leo3::Leo3Backend::new(config))),
             ProverKind::Satallax => Ok(Box::new(satallax::SatallaxBackend::new(config))),
             ProverKind::Lash => Ok(Box::new(lash::LashBackend::new(config))),
