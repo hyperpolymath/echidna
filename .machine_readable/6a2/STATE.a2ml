@@ -1075,3 +1075,40 @@ uds-path = "Primary: /run/echidna/ipc.sock (overridable via $ECHIDNA_IPC_SOCK). 
 handshake-signing = "None at the IPC layer. BLAKE3/SHAKE3-512 integrity is per-solver-binary (src/rust/integrity/), not per-IPC-connection. The IPC channel is local UDS only; no TLS or signing needed."
 streaming = "Request-response for L1. Cap'n Proto RPC streaming deferred to L2 when Chapel batching requires it."
 chapel-schemas = "Cap'n Proto messages are self-contained byte strings — locale-to-locale transit is byte-copy safe. No special multi-locale handling needed in L1; revisit when L2.5 (multi-locale PGAS) is scoped."
+
+[session-2026-04-27-audit-and-cleanup]
+summary = """
+Audit and cleanup session. Notes files swept, stale items reconciled, remaining
+phases confirmed done, smoke test confirmed passing.
+"""
+files-deleted = [
+  "~/Desktop/ECHIDNA-NOTES-2026-04-27.md (consolidated notes — stale, content reconciled)",
+  "~/Desktop/ECHIDNA-EXPANSION-TOMORROW-2026-04-28.md (expansion handoff — all 3 phases shipped)",
+  ".desktop-tools/inbox/echidna_prover_audit.md",
+  ".desktop-tools/inbox/echidna_upstreams.md",
+]
+phases-confirmed-shipped = [
+  "Phase 2B — CAS subprocess (daa5bdf + aa7ada0)",
+  "Phase 3 — real-algebraic + modal/hybrid (dec54bf)",
+  "Phase 4 — DL/probabilistic/comp-crypto (94002d0)",
+  "echidna suggest CLI verb (133e31b)",
+  "data/synonyms/ seeded 27 entries (8fc8615)",
+  "Stage 4c — Abella/KeYmaeraX/EasyCrypt suggest_tactics (fb3db5a)",
+]
+smoke-test = "smoke_cross_check_z3_cvc5 — PASSES (1/1, 0.18s). Fixed by 36d4c09 prior to session."
+notes-audit-findings = """
+  STALE claim: 'lack of adaptive timeout logic' — Bayesian timeout estimation present in
+  statistics.rs (mean + 2*std_dev from prior attempts per prover/domain). Claim was out of date.
+  STALE claim: 'No Suggest verb' — shipped same session notes were written (133e31b).
+  STALE claim: 'data/synonyms/ not done' — seeded (8fc8615) same session.
+  ACCURATE: 128 ProverKind variants, models/=0/0, models_e20/=7019/16, all listed commits.
+"""
+backend-count = "128 ProverKind variants (confirmed enum line 128, src/rust/provers/mod.rs)"
+suggest-tactics-status = "125 total fn suggest_tactics / ~87 real / 38 returning Vec::new()"
+remaining-open = [
+  "Train GNN end-to-end (hardware — corpus + scaffold ready, models/ is 0/0)",
+  "Stand up VeriSimDB locally (per S4-LOOP-CLOSURE-RUNBOOK.md)",
+  "File s4-loop.yml when ghcr image publishes",
+  "Stage 1c extractor premise gaps (28/50, in-flight)",
+  "Stage 8 E10-E13 proofs + SPARK kernel (Opus design session needed)",
+]
