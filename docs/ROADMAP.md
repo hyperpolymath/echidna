@@ -66,10 +66,10 @@ Stage 3  Learning loop closes               model improves from outcomes
                                             [defined 2026‑04‑19 ✓, emission pending]
 
 Stage 4  Interaction layer honest           every declared ProverKind works
-    4a  typed_wasm → crates/typed_wasm      extract to standalone crate
-    4b  40 TypeChecker variant dispatch     Sigma‑route via the crate
-    4c  tactic synthesis template           37 suggest_tactics stubs replaced
-    4d  search_theorems template            49 stubs replaced, query Verisim
+    4a  typed_wasm → crates/typed_wasm      [done 2026‑04‑22 ✓]
+    4b  39 TypeChecker variant dispatch     [done 2026‑04‑22 ✓, all Sigma‑routed]
+    4c  tactic synthesis template           [86/91 done; 5 suggest_tactics stubs remain]
+    4d  search_theorems template            72 stubs remain, query Verisim
 
 Stage 5  Distributed & fast                 scale + specialised hardware
     5a  Cap'n Proto IPC                     Rust ↔ Julia, :8090
@@ -104,7 +104,7 @@ Stage 8  Self‑verified                      ECHIDNA proves ECHIDNA
 
 | Claim | Today | End‑state target |
 |---|---|---|
-| "Every important solver" | 59 backends; 37 `suggest_tactics` stubs; 49 `search_theorems` stubs | **65 backends, every one with real `suggest_tactics` (GNN‑ranked top‑k) and `search_theorems` (queries Verisim by `goal_hash`) — no `Ok(vec![])` returns anywhere** |
+| "Every important solver" | **128 ProverKind variants** (89 external prover bindings + 39 TypeChecker disciplines routed through TypedWasm); **5 `suggest_tactics` stubs**; **72 `search_theorems` stubs** | **All variants with real `suggest_tactics` (GNN‑ranked top‑k) and `search_theorems` (queries Verisim by `goal_hash`) — no `Ok(vec![])` returns anywhere** |
 | "Vocab at 2.5 M" | 255 K | **~1 M canonical tokens** after Mathport + Iris + VST + Flyspeck + HoTT absorption, with **online growth** adding tokens during training |
 | "Chapel fully supported" | 2 files, POC only | **`dispatch.rs` picks Chapel‑parallel dispatch by config**; runtime init + cancellation + error propagation wired; ≥1 OoM speedup on portfolio solves |
 | "Cap'n Proto serialisation" | 0 `.capnp` files | **`crates/echidna-wire/`** contains schemas for ProofState / Goal / Tactic / EmbeddingRequest / RankingResponse; IPC on :8090 is Cap'n Proto; JSON retained only as debug fallback |
@@ -115,7 +115,7 @@ Stage 8  Self‑verified                      ECHIDNA proves ECHIDNA
 | "16‑endpoint Zig ABI" | 4 shared libs, endpoint count unverified | **`src/zig/echidna_abi.zig`** exports exactly 16 functions (`echidna_prove`, `echidna_apply_tactic`, `echidna_rank_premises`, `echidna_verify_certificate`, `echidna_post_octad`, `echidna_query_identity`, …) with a versioned header |
 | "100 K+ per prover" | Uneven; long tail <20 K | **Top 15 provers ≥ 100 K records each**; next 20 ≥ 25 K each; bottom 10 synthetically augmented to ≥ 10 K; `stats_UNIFIED.json` reports the distribution publicly |
 | "Panic‑attacked" | No fuzz infra | **`benches/panic_attack/`** with proptest + AFL++ harnesses covering every parser, FFI boundary, IPC schema; nightly CI ≥ 1 h; zero known panic paths |
-| "Prover count" | 59 real, 105 declared | **`ProverKind` = 65 variants, every one factory‑dispatched**; CLAUDE.md states the canonical count; no orphans |
+| "Prover count" | **128 declared, all 128 factory‑dispatched** (no orphans, verified 2026‑04‑27) | **`ProverKind` ≥ 65 variants, every one factory‑dispatched**; CLAUDE.md states the canonical count; no orphans — **target met and exceeded** |
 
 ## 4. Current sprint — "the smallest set that flips half the table"
 
@@ -123,16 +123,46 @@ Five concrete commitments.  Landed together inside ~6 weeks they move
 "Every important solver", "Vocab", "Prover count", half of "100 K+",
 and start the self‑learning loop closure.
 
-| # | Stage | Commitment | Agent tier |
-|---|---|---|---|
-| S1 | 1c | Finish the extractor premise‑emission wave (22 done; 28 remaining) | **Sonnet** (in flight) |
-| S2 | 2a / 2c | Run training on the fixed corpus; record new MRR; commit `metrics_baseline.jsonl` | **Hardware / you** |
-| S3 | 4a / 4b | Extract `typed_wasm` to `crates/typed_wasm/`; route 40 TypeChecker variants through Sigma parameters | **Opus‑design + Sonnet‑impl** |
-| S4 | 3a / 3b | Wire Verisim cross‑prover read paths (`goal_hash` queries + `mv_prover_success_by_class` + hypatia loop) | **Opus‑design + Sonnet‑impl** |
-| S5 | 4c / 4d (pilot) | Tactic synthesis template for 5 high‑value provers (coq, lean, agda, isabelle, z3) using the GNN | **Opus‑design + Sonnet‑impl** |
+| # | Stage | Commitment | Agent tier | Status |
+|---|---|---|---|---|
+| S1 | 1c | Finish the extractor premise‑emission wave (22 done; 28 remaining) | **Sonnet** | in flight |
+| S2 | 2a / 2c | Run training on the fixed corpus; record new MRR; commit `metrics_baseline.jsonl` | **Hardware / you** | gated by S1 |
+| S3 | 4a / 4b | Extract `typed_wasm` to `crates/typed_wasm/`; route 39 TypeChecker variants through Sigma parameters | **Opus‑design + Sonnet‑impl** | **done 2026‑04‑22 ✓** |
+| S4 | 3a / 3b | Wire Verisim cross‑prover read paths (`goal_hash` queries + `mv_prover_success_by_class` + hypatia loop) | **Opus‑design + Sonnet‑impl** | design pending — needs Verisim schema |
+| S5 | 4c / 4d (pilot) | Tactic synthesis template for 5 high‑value provers (coq, lean, agda, isabelle, z3) using the GNN | **Opus‑design + Sonnet‑impl** | partly done — `suggest_tactics` is 86/91 already real; remaining work is GNN‑ranking integration |
 
 After S1–S5 land, the roadmap's next sprint takes up Stage 5 (IPC +
 Chapel + Tier‑4 CI) and Stage 8 begins in parallel.
+
+### Sprint critical path (as of 2026‑04‑27)
+
+```
+S1 (extractors, Sonnet)  ──┬──►  S2 (training, hardware)   ──┐
+                           │                                  │
+                           └──►  S4 impl (needs S1 data) ────┴──►  S5 GNN ranking
+                                  ▲
+                                  │ blocked
+                  Verisim schema design  ◄── NEEDED FROM OPUS,
+                  (cross‑repo, not in     CROSS‑REPO INPUT.
+                   echidna tree)
+```
+
+What is **not** blocking and can move now:
+
+- **Phase 1a** (Leo3, Satallax, Lash, AgsyHOL) — done 2026‑04‑26 ✓
+- **Phase 1b** (IProver, Princess, Twee, MetiTarski, CSI, AProVE) — done ✓
+- **S3** (typed_wasm + 39 TypeChecker Sigma routing) — done ✓
+- **`suggest_tactics`** — 86/91 real implementations; only 5 stubs left
+
+What **is** blocking and needs Opus + cross‑repo input:
+
+- **Verisim schema contract** (S4 design): the trait surface from echidna's
+  side is straightforward (`async fn search_by_goal_hash(hash) ->
+  Vec<ProofRecord>` and `async fn prover_success_by_class(class) ->
+  Vec<(ProverKind, f32)>`) but the schema for `ProofRecord` and `class`
+  lives in the Verisim repo and must be agreed there before echidna
+  can wire reads.
+- **`search_theorems`** — 72 stubs, all blocked behind S4 contract.
 
 ## 5. Agent‑tier guidance
 
