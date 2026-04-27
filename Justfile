@@ -443,6 +443,41 @@ container-build:
 container-build-full:
     podman build -f .containerization/Containerfile.full -t echidna:full .
 
+# ── Tier-3 prover containers (Wave-3) ────────────────────────────────────────
+
+# Build all non-proprietary Tier-3 prover containers (skip imandra — licence required)
+container-build-tier3: container-build-tamarin container-build-proverif container-build-metamath \
+    container-build-twelf container-build-or-tools container-build-scip \
+    container-build-hol4 container-build-acl2
+
+container-build-tamarin:
+    podman build -f .containerization/Containerfile.tamarin -t echidna:tamarin .
+
+container-build-proverif:
+    podman build -f .containerization/Containerfile.proverif -t echidna:proverif .
+
+container-build-metamath:
+    podman build -f .containerization/Containerfile.metamath -t echidna:metamath .
+
+container-build-twelf:
+    podman build -f .containerization/Containerfile.twelf -t echidna:twelf .
+
+container-build-or-tools:
+    podman build -f .containerization/Containerfile.or-tools -t echidna:or-tools .
+
+container-build-scip:
+    podman build -f .containerization/Containerfile.scip -t echidna:scip .
+
+container-build-hol4:
+    podman build -f .containerization/Containerfile.hol4 -t echidna:hol4 .
+
+container-build-acl2:
+    podman build -f .containerization/Containerfile.acl2 -t echidna:acl2 .
+
+# Build imandra stub (proprietary; real binary requires a signed licence — see Containerfile.imandra)
+container-build-imandra:
+    podman build -f .containerization/Containerfile.imandra -t echidna:imandra .
+
 # Run echidna container
 container-run *ARGS:
     podman run --rm -it echidna:latest {{ARGS}}
@@ -755,9 +790,19 @@ help-me:
     echo "  just run prove <f>   - Prove a file"
     echo ""
     echo "Containers:"
-    echo "  just container-build      - Minimal image"
-    echo "  just container-build-full - Full image (all provers)"
-    echo "  just container-run        - Run container"
+    echo "  just container-build          - Minimal image"
+    echo "  just container-build-full     - Full image (all provers)"
+    echo "  just container-build-tier3    - All Wave-3 prover images (except imandra)"
+    echo "  just container-build-tamarin  - Tamarin security protocol prover"
+    echo "  just container-build-proverif - ProVerif cryptographic protocol verifier"
+    echo "  just container-build-metamath - Metamath (pure-Rust in-process + bundled databases)"
+    echo "  just container-build-twelf    - Twelf LF meta-logical framework"
+    echo "  just container-build-or-tools - OR-Tools combinatorial optimisation C++ library"
+    echo "  just container-build-scip     - SCIP constraint integer programming solver"
+    echo "  just container-build-hol4     - HOL4 (Poly/ML build, slow)"
+    echo "  just container-build-acl2     - ACL2 (SBCL build, slow)"
+    echo "  just container-build-imandra  - Imandra stub (proprietary licence required)"
+    echo "  just container-run            - Run container"
     echo ""
     echo "Chapel accelerator:"
     echo "  just chapel-all      - Build + test Chapel layer"

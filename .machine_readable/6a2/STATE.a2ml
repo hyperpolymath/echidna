@@ -834,7 +834,7 @@ changes = [
 l3-status-after-wave-2 = [
   "Wave-1 (Tier-1, every PR, 9 backends): DONE — landed in b022bf4.",
   "Wave-2 (Tier-2, nightly, 10 backends): DONE for 9; hol-light deferred to Wave-3.",
-  "Wave-3 (Tier-3, weekly, 9 backends: Tamarin, ProVerif, Imandra, SCIP, OR-Tools, HOL4, ACL2, Twelf, Metamath): Containerfiles present in .containerization/, tier3 matrix job wired in live-provers.yml. Imandra gated on licence. Others provision via apt/tarball with continue-on-error.",
+  "Wave-3 (Tier-3, weekly, 9 backends: Tamarin, ProVerif, Imandra, SCIP, OR-Tools, HOL4, ACL2, Twelf, Metamath): LANDED. All 9 Containerfiles in .containerization/ (Imandra is proprietary-gated stub). Justfile: container-build-tier3 + per-backend recipes. container-ci.yml: weekly tier3-container matrix job, 8 non-proprietary images, allow-fail, 90 min timeout for HOL4/ACL2.",
   "Wave-4 (Tier-4, quarterly, 19 backends): SCAFFOLD ONLY — placeholder tier4 job in live-provers.yml announces list. See wave-4-rationale for per-backend mock-only justification.",
 ]
 wave-4-rationale = {

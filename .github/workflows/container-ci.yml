@@ -1,4 +1,14 @@
 # SPDX-License-Identifier: PMPL-1.0-or-later
+#
+# container-ci.yml — Container build verification.
+#
+# Two jobs:
+#   container-build   — builds the minimal ECHIDNA image on every PR/push;
+#                       hard gate.
+#   tier3-container   — builds each Wave-3 prover image weekly (Sunday 06:00 UTC)
+#                       and on any change to the .containerization/** tree;
+#                       allow-fail per image (proprietary builds excluded).
+
 name: Container Build Verification
 
 on:
@@ -18,15 +28,24 @@ on:
       - 'Cargo.lock'
       - 'src/rust/**'
       - '.github/workflows/container-ci.yml'
+  schedule:
+    # Weekly build of Tier-3 prover images (Sunday 06:00 UTC).
+    # Distinct from live-provers.yml Tier-3 run (Sunday 05:00 UTC)
+    # so the container build does not race the live-prover tests.
+    - cron: '0 6 * * 0'
 
-permissions: read-all
+permissions:
+  contents: read
 
 jobs:
+  # ── Job 1: minimal image — hard gate on every PR/push ─────────────────────
   container-build:
     name: Build & verify container image
     runs-on: ubuntu-latest
+
     steps:
-      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
+      - name: Checkout
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd  # v6.0.2
 
       - name: Install Podman
         run: |
@@ -44,8 +63,8 @@ jobs:
       - name: Verify image metadata
         run: |
           echo "=== Image labels ==="
-          podman inspect echidna:ci-test --format '{{range $k, $v := .Config.Labels}}{{$k}}: {{$v}}{{"\n"}}{{end}}'
-
+          podman inspect echidna:ci-test \
+            --format '{{range $k, $v := .Config.Labels}}{{$k}}: {{$v}}{{"\n"}}{{end}}'
           echo "=== Image size ==="
           podman images echidna:ci-test --format "{{.Size}}"
 
@@ -53,7 +72,6 @@ jobs:
         run: |
           echo "=== echidna --version ==="
           podman run --rm echidna:ci-test --version
-
           echo "=== echidna --help ==="
           podman run --rm echidna:ci-test --help
 
@@ -61,18 +79,102 @@ jobs:
         run: |
           echo "=== Checking installed solvers ==="
           podman run --rm --entrypoint /bin/sh echidna:ci-test -c '
-            echo "Z3:"; z3 --version 2>/dev/null || echo "  not found"
-            echo "Lean:"; lean --version 2>/dev/null || echo "  not found"
+            echo "Z3:";    z3     --version 2>/dev/null || echo "  not found"
+            echo "Lean:";  lean   --version 2>/dev/null || echo "  not found"
             echo "Idris2:"; idris2 --version 2>/dev/null || echo "  not found"
           '
 
-      - name: Verify healthcheck
+      - name: Clean up
+        if: always()
+        run: podman rmi echidna:ci-test 2>/dev/null || true
+
+  # ── Job 2: Wave-3 Tier-3 prover images — weekly, allow-fail per image ─────
+  #
+  # Runs on the weekly schedule and whenever any .containerization/** file
+  # changes.  Each prover builds in its own matrix cell; allow-fail is set
+  # at cell level so one broken prover does not mask the others.
+  #
+  # Imandra is excluded: it is proprietary and requires a licence token not
+  # available in public CI.
+  tier3-container:
+    name: Tier-3 / ${{ matrix.prover }}
+    runs-on: ubuntu-latest
+    # Run on schedule or when the .containerization tree changes on main.
+    # Not a merge gate — these are informational weekly builds.
+    if: >-
+      github.event_name == 'schedule' ||
+      (github.event_name == 'push' && contains(github.event.head_commit.modified, '.containerization/'))
+    continue-on-error: true
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - prover: tamarin
+            image: echidna:tamarin
+            file: .containerization/Containerfile.tamarin
+            version_check: "tamarin-prover --version"
+          - prover: proverif
+            image: echidna:proverif
+            file: .containerization/Containerfile.proverif
+            version_check: "proverif -help 2>&1 | head -1"
+          - prover: metamath
+            image: echidna:metamath
+            file: .containerization/Containerfile.metamath
+            version_check: "echo exit | metamath 2>&1 | head -1 || true"
+          - prover: twelf
+            image: "echidna:twelf"
+            file: .containerization/Containerfile.twelf
+            version_check: "twelf-server --help 2>&1 | head -1 || true"
+          - prover: or-tools
+            image: echidna:or-tools
+            file: .containerization/Containerfile.or-tools
+            version_check: "ls /usr/local/lib/libortools* 2>/dev/null | head -1 || true"
+          - prover: scip
+            image: echidna:scip
+            file: .containerization/Containerfile.scip
+            version_check: "scip --version 2>&1 | head -1 || true"
+          - prover: hol4
+            image: echidna:hol4
+            file: .containerization/Containerfile.hol4
+            version_check: "echo '(* quit *);' | hol 2>&1 | head -1 || true"
+          - prover: acl2
+            image: echidna:acl2
+            file: .containerization/Containerfile.acl2
+            version_check: "echo '(acl2::quit)' | acl2 2>&1 | head -3 || true"
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd  # v6.0.2
+
+      - name: Install Podman
         run: |
-          echo "=== Running healthcheck command ==="
-          podman run --rm echidna:ci-test --version
-          echo "✓ Healthcheck passed"
+          sudo apt-get update -q
+          sudo apt-get install -y -q podman
+
+      - name: Build ${{ matrix.prover }} image
+        # HOL4 and ACL2 have long build times; give them extra headroom.
+        timeout-minutes: 90
+        run: |
+          podman build \
+            -f "${{ matrix.file }}" \
+            -t "${{ matrix.image }}" \
+            --no-cache \
+            .
+
+      - name: Verify ECHIDNA binary inside ${{ matrix.prover }} image
+        run: |
+          podman run --rm "${{ matrix.image }}" --version
+
+      - name: Smoke-check ${{ matrix.prover }} binary
+        run: |
+          podman run --rm --entrypoint /bin/sh "${{ matrix.image }}" \
+            -c '${{ matrix.version_check }}'
+
+      - name: Verify image metadata
+        run: |
+          podman inspect "${{ matrix.image }}" \
+            --format '{{index .Config.Labels "org.opencontainers.image.description"}}'
 
       - name: Clean up
         if: always()
-        run: |
-          podman rmi echidna:ci-test 2>/dev/null || true
+        run: podman rmi "${{ matrix.image }}" 2>/dev/null || true

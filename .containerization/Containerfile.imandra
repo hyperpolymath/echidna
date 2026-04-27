@@ -1,0 +1,128 @@
+# SPDX-License-Identifier: PMPL-1.0-or-later
+# SPDX-FileCopyrightText: 2026 Jonathan D.A. Jewell <j.d.a.jewell@open.ac.uk>
+#
+# ECHIDNA Imandra Containerfile  — GATED (proprietary licence required)
+# Build: podman build -f .containerization/Containerfile.imandra -t echidna:imandra .
+# Seal:  selur seal echidna:imandra
+# Sign:  cerro-torre sign echidna:imandra
+#
+# Imandra: an industrial theorem prover and program analyser for OCaml and
+# functional languages (Aesthetic Integration / Imandra Inc.).
+# Licence: proprietary — an Imandra account and signed licence agreement are
+# required before the binary can be downloaded.
+#
+# WHY THIS CONTAINERFILE IS GATED
+# ────────────────────────────────
+# Imandra does not publish a redistributable binary or source tarball.
+# Automated CI downloads require a bearer token from Imandra Inc. and an
+# active licence agreement.  Building this image without a signed licence
+# is not permitted under Imandra's terms.
+#
+# HOW TO ENABLE
+# ─────────────
+# 1. Register at https://imandra.ai/ and accept the licence.
+# 2. Download the Imandra CLI installer: `bash -c "$(curl -fsSL https://storage.googleapis.com/imandra-do/install.sh)"`
+# 3. Log in: `imandra auth login`
+# 4. Obtain the installer token from `~/.imandra/token` after auth.
+# 5. Pass the token as a build ARG:
+#      podman build \
+#        --secret id=imandra_token,src=~/.imandra/token \
+#        -f .containerization/Containerfile.imandra \
+#        -t echidna:imandra .
+# 6. Remove the ECHO_UNSUPPORTED line from Stage 2 and un-comment
+#    the curl-install block below.
+#
+# ECHIDNA uses the Imandra backend (ProverKind::Imandra) for OCaml program
+# verification and bounded model checking.  In CI, the backend is mock-only
+# unless this image is built and available on the runner.
+
+# =============================================================================
+# Stage 1: Rust Builder
+# =============================================================================
+FROM docker.io/library/rust:1.85-slim-bookworm AS rust-builder
+
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    build-essential \
+    pkg-config \
+    libssl-dev \
+    && rm -rf /var/lib/apt/lists/*
+
+RUN rustup toolchain install nightly && rustup default nightly
+
+WORKDIR /build
+
+COPY Cargo.toml Cargo.lock ./
+COPY src/rust ./src/rust
+COPY src/interfaces ./src/interfaces
+
+RUN cargo build --release --bin echidna
+
+# =============================================================================
+# Stage 2: Imandra Installer (PROPRIETARY — gated, replace block when licensed)
+# =============================================================================
+FROM docker.io/library/debian:bookworm-slim AS imandra-installer
+
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    curl \
+    ca-certificates \
+    bash \
+    && rm -rf /var/lib/apt/lists/*
+
+# ── GATE: emit stub and document the real install path ────────────────────────
+# Replace this block with the secret-mount curl install once a licence token
+# is available (see HOW TO ENABLE above).
+RUN mkdir -p /usr/local/bin && \
+    printf '#!/bin/sh\necho "imandra: not available (proprietary licence required — see Containerfile.imandra)"\nexit 1\n' \
+        > /usr/local/bin/imandra && \
+    chmod +x /usr/local/bin/imandra
+
+# ── REAL INSTALL (un-comment and fill in IMANDRA_TOKEN when licensed) ─────────
+# ARG IMANDRA_TOKEN
+# RUN --mount=type=secret,id=imandra_token,target=/run/secrets/imandra_token \
+#     set -eux; \
+#     TOKEN="$(cat /run/secrets/imandra_token)" && \
+#     curl -fsSL \
+#       -H "Authorization: Bearer ${TOKEN}" \
+#       "https://storage.googleapis.com/imandra-do/install.sh" | bash && \
+#     imandra --version
+# ────────────────────────────────────────────────────────────────────────────────
+
+# =============================================================================
+# Stage 3: Runtime Image
+# =============================================================================
+FROM docker.io/library/debian:bookworm-slim
+
+LABEL maintainer="Jonathan D.A. Jewell <j.d.a.jewell@open.ac.uk>"
+LABEL org.opencontainers.image.source="https://github.com/hyperpolymath/echidna"
+LABEL org.opencontainers.image.description="ECHIDNA + Imandra stub (proprietary licence required for real binary)"
+LABEL org.opencontainers.image.licenses="PMPL-1.0-or-later"
+LABEL org.opencontainers.image.version="2.3.0"
+LABEL org.opencontainers.image.vendor="hyperpolymath"
+
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    ca-certificates \
+    libssl3 \
+    && rm -rf /var/lib/apt/lists/*
+
+WORKDIR /app
+
+COPY --from=rust-builder /build/target/release/echidna /app/bin/echidna
+COPY --from=imandra-installer /usr/local/bin/imandra /usr/local/bin/imandra
+
+ENV PATH="/app/bin:/usr/local/bin:${PATH}"
+ENV ECHIDNA_PROVER_PATH="/usr/local/bin"
+
+RUN mkdir -p /app/proofs /app/config /app/logs
+
+# REST API
+EXPOSE 8000
+# GraphQL
+EXPOSE 8081
+# gRPC
+EXPOSE 50051
+
+HEALTHCHECK --interval=30s --timeout=10s --start-period=15s --retries=3 \
+    CMD ["/app/bin/echidna", "--version"]
+
+ENTRYPOINT ["/app/bin/echidna"]
+CMD ["--help"]
