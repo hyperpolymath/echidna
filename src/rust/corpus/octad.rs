@@ -407,9 +407,13 @@ impl Corpus {
         } else {
             timestamp
         };
-        // Compute the rich metrics tensor once for the whole corpus
-        // (Step 4); attach to each octad's Tensor modality.
+        // Compute the rich metrics tensor + embeddings once for the
+        // whole corpus (Steps 4, 5). Tensor → tensor.metrics; vectors
+        // → vector.goal_embedding.
         let metrics_per_entry = self.compute_metrics();
+        let embedder = super::embed::HashEmbedder;
+        let info = <super::embed::HashEmbedder as super::embed::Embedder>::info(&embedder);
+        let embeddings = self.compute_embeddings();
         let mut out = String::new();
         for (i, entry) in self.entries.iter().enumerate() {
             let module = &self.modules[entry.module_idx];
@@ -421,6 +425,9 @@ impl Corpus {
             let mut octad =
                 DeclarationOctad::from_entry(entry, module, &self.adapter, &rev, ts);
             octad.tensor.metrics = metrics_per_entry[i].as_metric_map();
+            octad.vector.goal_embedding = embeddings[i].clone();
+            octad.vector.model = info.model.clone();
+            octad.vector.dimensions = info.dimensions;
             let line = serde_json::to_string(&octad).context("serialise octad")?;
             out.push_str(&line);
             out.push('\n');

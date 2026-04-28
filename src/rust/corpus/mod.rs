@@ -35,6 +35,7 @@
 
 pub mod agda;
 pub mod coq;
+pub mod embed; // Vector-octad embeddings (Step 5)
 pub mod idris2;
 pub mod lean;
 pub mod metrics; // Per-entry metrics tensor (Step 4)

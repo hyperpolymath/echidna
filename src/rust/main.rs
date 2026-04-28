@@ -273,6 +273,17 @@ enum CorpusOp {
         synonyms_dir: Option<PathBuf>,
     },
 
+    /// Find the K nearest-neighbour entries to a free-form text
+    /// query by cosine similarity over the Vector octad embeddings.
+    /// Useful for "find lemmas semantically near `WellFounded _<_`".
+    Near {
+        query: String,
+        #[arg(short, long)]
+        index: Option<PathBuf>,
+        #[arg(short, long, default_value_t = 10)]
+        top: usize,
+    },
+
     /// Convert a JSON corpus index into 8-modality octad JSONL
     /// (one DeclarationOctad per line). Streamable; compatible with
     /// VeriSim's `/api/v1/octads` endpoint when posted line-by-line.
@@ -1304,6 +1315,39 @@ fn corpus_command(op: CorpusOp, formatter: &OutputFormatter) -> Result<()> {
                     tables.len(),
                     class
                 ))?;
+            }
+        }
+
+        CorpusOp::Near { query, index, top } => {
+            let path = match index {
+                Some(p) => p,
+                None => {
+                    let basename = std::env::current_dir()?
+                        .file_name()
+                        .map(|s| s.to_string_lossy().into_owned())
+                        .unwrap_or_else(|| "project".to_string());
+                    default_index(&basename)
+                }
+            };
+            let corpus = Corpus::load_json(&path)
+                .with_context(|| format!("load corpus index {}", path.display()))?;
+            let q_vec = corpus.embed_query(&query);
+            let nn = corpus.nearest_neighbours(&q_vec, top);
+            if nn.is_empty() {
+                formatter.info(&format!(
+                    "no entries near '{}' (corpus has {} entries)",
+                    query,
+                    corpus.entries.len()
+                ))?;
+                return Ok(());
+            }
+            for (idx, sim) in &nn {
+                let entry = &corpus.entries[*idx];
+                println!(
+                    "{:.3}  {}  [{:?}]",
+                    sim, entry.qualified, entry.kind
+                );
+                println!("       : {}", entry.statement);
             }
         }
 
