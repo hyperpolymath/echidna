@@ -143,6 +143,14 @@ pub struct Corpus {
     pub by_name: HashMap<String, Vec<usize>>,
     /// `entries` index by `qualified`. One-to-one within a project.
     pub by_qualified: HashMap<String, usize>,
+    /// **Reverse-dep index.** Maps a name (canonical key, same domain
+    /// as `by_name`) to the entry indices of decls that *reference*
+    /// it. Inverse of `CorpusEntry::dependencies`.
+    ///
+    /// Answers "what would break if I change X?". Computed by
+    /// `reindex` after `dependencies` are filled in.
+    #[serde(default)]
+    pub dependents: HashMap<String, Vec<usize>>,
 }
 
 impl Corpus {
@@ -216,14 +224,72 @@ impl Corpus {
         Ok(c)
     }
 
-    /// Re-build the by_name / by_qualified indices after mutation.
+    /// Re-build the by_name / by_qualified / dependents indices
+    /// after mutation. `dependents` is computed by inverting each
+    /// entry's `dependencies` list — the same domain (short names) is
+    /// used so callers can pivot from `by_name` to `dependents` with
+    /// the same key.
     pub fn reindex(&mut self) {
         self.by_name.clear();
         self.by_qualified.clear();
+        self.dependents.clear();
         for (i, e) in self.entries.iter().enumerate() {
             self.by_name.entry(e.name.clone()).or_default().push(i);
             self.by_qualified.insert(e.qualified.clone(), i);
         }
+        for (i, e) in self.entries.iter().enumerate() {
+            for dep in &e.dependencies {
+                self.dependents.entry(dep.clone()).or_default().push(i);
+            }
+        }
+        // Stable order so output is deterministic.
+        for v in self.dependents.values_mut() {
+            v.sort_unstable();
+            v.dedup();
+        }
+    }
+
+    /// Direct reverse dependencies of `qualified`: every entry whose
+    /// `dependencies` list mentions this entry's short name. Single-
+    /// hop only; use `reverse_closure` for transitive impact.
+    pub fn reverse_deps(&self, qualified: &str) -> Vec<&CorpusEntry> {
+        let entry = match self.by_qualified.get(qualified) {
+            Some(&i) => &self.entries[i],
+            None => return vec![],
+        };
+        let indices = match self.dependents.get(&entry.name) {
+            Some(v) => v,
+            None => return vec![],
+        };
+        indices.iter().map(|&i| &self.entries[i]).collect()
+    }
+
+    /// Transitive reverse closure: everything that would (potentially)
+    /// break if `qualified` changed. Walks `dependents` repeatedly
+    /// from the start node.
+    pub fn reverse_closure(&self, qualified: &str) -> Vec<&CorpusEntry> {
+        use std::collections::HashSet;
+        let mut seen: HashSet<usize> = HashSet::new();
+        let mut stack: Vec<usize> = Vec::new();
+        if let Some(&start) = self.by_qualified.get(qualified) {
+            stack.push(start);
+        } else {
+            return vec![];
+        }
+        while let Some(i) = stack.pop() {
+            if !seen.insert(i) {
+                continue;
+            }
+            let name = &self.entries[i].name;
+            if let Some(deps) = self.dependents.get(name) {
+                for &j in deps {
+                    if !seen.contains(&j) {
+                        stack.push(j);
+                    }
+                }
+            }
+        }
+        seen.iter().map(|&i| &self.entries[i]).collect()
     }
 
     /// Summary counts.
@@ -319,5 +385,88 @@ mod tests {
         let hits = c.find("mono");
         assert_eq!(hits.len(), 1);
         assert_eq!(hits[0].name, "osuc-mono-≤");
+    }
+
+    #[test]
+    fn corpus_reverse_dep_index() {
+        // Three entries in a small chain:
+        //   wf-< depends on pred-of-osuc
+        //   pred-of-osuc depends on _<_
+        //   _<_ has no deps
+        // Reverse: changing _<_ should flag pred-of-osuc; changing
+        // pred-of-osuc should flag wf-<.
+        let mut c = Corpus::default();
+        c.modules.push(ModuleEntry {
+            name: "Ordinal.Brouwer".into(),
+            path: PathBuf::from("Ordinal/Brouwer.agda"),
+            options: vec![],
+            imports: vec![],
+            entries: vec![0, 1, 2],
+        });
+        c.entries.push(CorpusEntry {
+            name: "_<_".into(),
+            qualified: "Ordinal.Brouwer._<_".into(),
+            module_idx: 0,
+            kind: DeclKind::Function,
+            statement: "Ord -> Ord -> Set".into(),
+            proof: None,
+            line: 56,
+            dependencies: vec![],
+            axiom_usage: AxiomUsage::default(),
+        });
+        c.entries.push(CorpusEntry {
+            name: "pred-of-osuc".into(),
+            qualified: "Ordinal.Brouwer.pred-of-osuc".into(),
+            module_idx: 0,
+            kind: DeclKind::Function,
+            statement: "...".into(),
+            proof: None,
+            line: 115,
+            dependencies: vec!["_<_".into()],
+            axiom_usage: AxiomUsage::default(),
+        });
+        c.entries.push(CorpusEntry {
+            name: "wf-<".into(),
+            qualified: "Ordinal.Brouwer.wf-<".into(),
+            module_idx: 0,
+            kind: DeclKind::Function,
+            statement: "WellFounded _<_".into(),
+            proof: None,
+            line: 130,
+            dependencies: vec!["pred-of-osuc".into(), "_<_".into()],
+            axiom_usage: AxiomUsage::default(),
+        });
+        c.reindex();
+
+        // Direct reverse-deps of _<_: both pred-of-osuc and wf-<.
+        let mut rev: Vec<&str> = c
+            .reverse_deps("Ordinal.Brouwer._<_")
+            .iter()
+            .map(|e| e.name.as_str())
+            .collect();
+        rev.sort();
+        assert_eq!(rev, vec!["pred-of-osuc", "wf-<"]);
+
+        // Direct reverse-deps of pred-of-osuc: just wf-<.
+        let rev: Vec<&str> = c
+            .reverse_deps("Ordinal.Brouwer.pred-of-osuc")
+            .iter()
+            .map(|e| e.name.as_str())
+            .collect();
+        assert_eq!(rev, vec!["wf-<"]);
+
+        // Transitive reverse-closure of _<_: includes itself
+        // (start node) plus pred-of-osuc plus wf-<.
+        let mut closure: Vec<&str> = c
+            .reverse_closure("Ordinal.Brouwer._<_")
+            .iter()
+            .map(|e| e.name.as_str())
+            .collect();
+        closure.sort();
+        assert_eq!(closure, vec!["_<_", "pred-of-osuc", "wf-<"]);
+
+        // Empty for unknown name.
+        assert!(c.reverse_deps("Nope").is_empty());
+        assert!(c.reverse_closure("Nope").is_empty());
     }
 }

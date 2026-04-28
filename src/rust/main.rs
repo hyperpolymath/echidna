@@ -242,9 +242,17 @@ enum CorpusOp {
         /// `data/corpus/<basename>.json` for the cwd's basename.
         #[arg(short, long)]
         index: Option<PathBuf>,
-        /// Show transitive dependencies of the matched entry.
+        /// Show transitive (forward) dependencies of the matched entry.
         #[arg(long)]
         deps: bool,
+        /// Show direct reverse-dependencies — entries that reference
+        /// the matched name, i.e. things that would (potentially)
+        /// break if the matched entry changed.
+        #[arg(long)]
+        reverse_deps: bool,
+        /// Show transitive reverse-closure — full impact set.
+        #[arg(long)]
+        reverse_closure: bool,
     },
     /// Print summary statistics for a corpus index.
     Stats {
@@ -1131,6 +1139,8 @@ fn corpus_command(op: CorpusOp, formatter: &OutputFormatter) -> Result<()> {
             pattern,
             index,
             deps,
+            reverse_deps,
+            reverse_closure,
         } => {
             let path = match index {
                 Some(p) => p,
@@ -1175,6 +1185,33 @@ fn corpus_command(op: CorpusOp, formatter: &OutputFormatter) -> Result<()> {
             if deps && hits.len() == 1 {
                 let closure = corpus.closure(&hits[0].qualified);
                 println!("\ntransitive closure ({} entries):", closure.len());
+                let mut names: Vec<&str> =
+                    closure.iter().map(|e| e.qualified.as_str()).collect();
+                names.sort();
+                for n in names {
+                    println!("  {}", n);
+                }
+            }
+            if reverse_deps && hits.len() == 1 {
+                let rev = corpus.reverse_deps(&hits[0].qualified);
+                println!(
+                    "\ndirect reverse-deps of {} ({} entries):",
+                    hits[0].qualified,
+                    rev.len()
+                );
+                let mut names: Vec<&str> = rev.iter().map(|e| e.qualified.as_str()).collect();
+                names.sort();
+                for n in names {
+                    println!("  {}", n);
+                }
+            }
+            if reverse_closure && hits.len() == 1 {
+                let closure = corpus.reverse_closure(&hits[0].qualified);
+                println!(
+                    "\nreverse closure (impact set) of {} ({} entries):",
+                    hits[0].qualified,
+                    closure.len()
+                );
                 let mut names: Vec<&str> =
                     closure.iter().map(|e| e.qualified.as_str()).collect();
                 names.sort();
