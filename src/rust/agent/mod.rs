@@ -24,6 +24,7 @@ pub mod memory;
 pub mod meta_controller; // Coordinates prover × coprocessor × goal-aspect
 pub mod planner;
 pub mod router;
+pub mod swarm; // 007-style swarm dispatcher over learning::design_search
 
 use meta_controller::{MetaController, PlanOutcome};
 use memory::ProofMemory;

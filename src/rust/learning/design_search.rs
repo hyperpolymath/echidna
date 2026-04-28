@@ -421,17 +421,21 @@ pub mod brouwer {
         blockers
     }
 
-    /// `osuc-mono-≤` is OK if any of the following hold:
-    ///   * `CongSuc` is a constructor (trivial),
-    ///   * style is `Recursive` (the equation
-    ///     `osuc α ≤ osuc β = α ≤ β` makes it definitional),
-    ///   * the data style has BOTH `LimBelow` AND a way to handle the
-    ///     `≤-lim n` case via a sup-style argument; this is the
-    ///     "doable but harder" path. We model that as: `LimBelow`
-    ///     present AND `LimRight` present AND `SucRight` present,
-    ///     i.e. the relation has both "select branch" and "bound limit"
-    ///     rules so we can rephrase `osuc x ≤ olim f` as
-    ///     `(∀ n → f n ≤ osuc (olim f))` and the recursive call lands.
+    /// `osuc-mono-≤ : x ≤ y → osuc x ≤ osuc y` is OK iff:
+    ///   * `CongSuc` is a constructor — trivial (apply it).
+    ///   * style is `Recursive` — the equation
+    ///     `osuc α ≤ osuc β = α ≤ β` makes it definitional, so
+    ///     `osuc-mono-≤ p = p`.
+    ///
+    /// Pure data-style with `LimBelow` does NOT unblock this. Hand-
+    /// trace: in the `≤-lim n q` case where `q : x ≤ f n` and the goal
+    /// is `osuc x ≤ osuc (olim f)`, the natural moves all stall:
+    ///   - `≤-suc → ≤-lim k`: needs `osuc x ≤ f k`; recursive call
+    ///     produces `osuc x ≤ osuc (f n)`, off by one.
+    ///   - `LimBelow`: requires `∀ k. f k ≤ osuc (olim f)` (which we
+    ///     can produce), but that gives `olim f ≤ osuc (olim f)`, not
+    ///     `osuc x ≤ osuc (olim f)`. We've lost the link to `x`.
+    /// `LimBelow` is useful for *other* lemmas, but not this one.
     fn mono_osuc_ok(s: &LeqState) -> bool {
         if s.ctors.contains(&Ctor::CongSuc) {
             return true;
@@ -439,25 +443,22 @@ pub mod brouwer {
         if s.style == Style::Recursive {
             return true;
         }
-        // Data-style fallback: needs the sup-elimination rule.
-        s.ctors.contains(&Ctor::LimBelow)
-            && s.ctors.contains(&Ctor::LimRight)
-            && s.ctors.contains(&Ctor::SucRight)
+        false
     }
 
-    /// `⊕-mono-≤-right` (right-monotonicity of the naive ordinal sum).
-    /// Heuristic: it goes through under the same conditions as
-    /// `osuc-mono-≤`. Both reduce to "lifting a sub-relation through
-    /// a constructor on the right", and the same `≤-lim` blocker
-    /// applies. If we have CongSuc but no LimBelow / Recursive, the
-    /// right-monotonicity over `olim f ⊕ x` still has the lim-on-the-
-    /// inside structure that needs sup-elim or definitional reduction.
+    /// `⊕-mono-≤-right : x ≤ y → α ⊕ x ≤ α ⊕ y`. Goes through iff
+    /// either:
+    ///   * Recursive style — the recursive `osuc α ⊕ x = osuc (α ⊕ x)`
+    ///     and `olim f ⊕ x = olim (λ n → f n ⊕ x)` line up with the
+    ///     `_≤_` recursion so the proof is structural;
+    ///   * data-style with the recursive style fallback isn't
+    ///     available; even `CongSuc` alone is insufficient because
+    ///     the `olim f ⊕ -` case has the same `≤-lim` blocker as
+    ///     `osuc-mono-≤`.
+    /// Hand-trace omitted; same shape as `mono_osuc_ok`. `CongSuc`
+    /// alone does NOT unblock `⊕-mono-≤-right`.
     fn mono_oplus_right_ok(s: &LeqState) -> bool {
-        if s.style == Style::Recursive {
-            return true;
-        }
-        // Data-style requires the sup-elimination rule.
-        s.ctors.contains(&Ctor::LimBelow) && s.ctors.contains(&Ctor::LimRight)
+        s.style == Style::Recursive
     }
 
     /// `≤-trans` is OK in Data style with `Refl + SucRight + LimRight`
@@ -516,27 +517,36 @@ pub mod brouwer {
         }
 
         #[test]
-        fn cong_suc_unblocks_osuc_only() {
+        fn limbelow_alone_does_not_unblock_osuc_mono() {
+            // Hand-traced: under `data + LimBelow`, the `≤-lim n q`
+            // case of `osuc-mono-≤` still loses the `x` link
+            // (LimBelow proves `olim f ≤ ?`, not `osuc x ≤ ?`).
+            // Energy must still report at least the osuc-mono blocker.
             let p = BrouwerLeqProblem::default();
             let mut s = LeqState::phase1_1();
-            s.ctors.insert(Ctor::CongSuc);
+            s.ctors.insert(Ctor::LimBelow);
             let e = p.energy(&s);
-            // osuc-mono unblocked, but ⊕-mono still blocked because
-            // LimBelow is missing.
-            assert_eq!(
-                e[0], 1,
-                "CongSuc alone should leave 1 blocker (⊕-mono); got {:?}",
+            assert!(
+                e[0] >= 1,
+                "LimBelow alone shouldn't unblock osuc-mono in data style; got {:?}",
                 e
             );
         }
 
         #[test]
-        fn limbelow_plus_existing_unblocks_both() {
+        fn cong_suc_unblocks_osuc_but_not_oplus() {
+            // `≤-cong-suc` makes `osuc-mono-≤` trivial but
+            // `⊕-mono-≤-right` still has the limit-on-the-inside
+            // blocker. Recursive style unblocks both.
             let p = BrouwerLeqProblem::default();
             let mut s = LeqState::phase1_1();
-            s.ctors.insert(Ctor::LimBelow);
+            s.ctors.insert(Ctor::CongSuc);
             let e = p.energy(&s);
-            assert_eq!(e[0], 0, "LimBelow added should unblock both monos");
+            assert_eq!(
+                e[0], 1,
+                "CongSuc alone leaves ⊕-mono blocked; got {:?}",
+                e
+            );
         }
 
         #[test]

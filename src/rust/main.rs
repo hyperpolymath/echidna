@@ -279,6 +279,30 @@ enum DesignOp {
         #[arg(long, default_value_t = 8)]
         top: usize,
     },
+
+    /// Run a parallel swarm of SA agents with cross-pollination.
+    Swarm {
+        /// Problem identifier. Currently: `brouwer-leq`.
+        problem: String,
+        /// Number of parallel agents.
+        #[arg(long, default_value_t = 4)]
+        agents: usize,
+        #[arg(long, default_value_t = 1000)]
+        iterations: usize,
+        #[arg(long, default_value_t = 4.0)]
+        temp: f64,
+        #[arg(long, default_value_t = 0.995)]
+        cooling: f64,
+        #[arg(long, default_value_t = 0xC0FFEE)]
+        seed: u64,
+        /// Broadcast best-so-far every N iterations.
+        #[arg(long, default_value_t = 100)]
+        broadcast_every: usize,
+        /// Adopt a peer's broadcast only if it beats the agent's best
+        /// by this lex-margin (0 = adopt on any improvement).
+        #[arg(long, default_value_t = 0)]
+        adopt_threshold: i64,
+    },
 }
 
 #[tokio::main]
@@ -364,7 +388,7 @@ async fn main() -> Result<()> {
         },
 
         Commands::Design { op } => {
-            design_command(op, &formatter)?;
+            design_command(op, &formatter).await?;
         },
 
         Commands::Suggest {
@@ -1191,10 +1215,13 @@ fn corpus_command(op: CorpusOp, formatter: &OutputFormatter) -> Result<()> {
 }
 
 /// Design-search command — simulated annealing over candidate
-/// axiomatisations. The first concrete problem is `brouwer-leq`,
-/// targeting echo-types' Phase 1.3 `_≤_` redesign.
-fn design_command(op: DesignOp, formatter: &OutputFormatter) -> Result<()> {
+/// axiomatisations, single-chain or parallel swarm. The first
+/// concrete problem is `brouwer-leq`, targeting echo-types' Phase 1.3
+/// `_≤_` redesign.
+async fn design_command(op: DesignOp, formatter: &OutputFormatter) -> Result<()> {
+    use echidna::agent::swarm::{run_swarm, SwarmConfig};
     use echidna::learning::design_search::{anneal, brouwer, AnnealConfig, DesignProblem};
+    use std::sync::Arc;
 
     match op {
         DesignOp::Search {
@@ -1245,6 +1272,68 @@ fn design_command(op: DesignOp, formatter: &OutputFormatter) -> Result<()> {
                     println!(
                         "        style-pref: 0 = recursive, 1 = data (recursive preferred when tied)"
                     );
+                }
+                other => {
+                    return Err(anyhow::anyhow!(
+                        "Unknown design problem '{}' (available: brouwer-leq)",
+                        other
+                    ))
+                }
+            }
+        }
+
+        DesignOp::Swarm {
+            problem,
+            agents,
+            iterations,
+            temp,
+            cooling,
+            seed,
+            broadcast_every,
+            adopt_threshold,
+        } => {
+            let anneal_cfg = AnnealConfig {
+                max_iterations: iterations,
+                initial_temp: temp,
+                cooling,
+                seed,
+                restarts: 1, // each swarm agent is its own "restart"
+            };
+            let swarm_cfg = SwarmConfig {
+                agents,
+                anneal: anneal_cfg,
+                broadcast_every,
+                adopt_threshold,
+            };
+
+            match problem.as_str() {
+                "brouwer-leq" => {
+                    let p = Arc::new(brouwer::BrouwerLeqProblem::default());
+                    let p_describe = brouwer::BrouwerLeqProblem::default();
+                    let result = run_swarm(p, swarm_cfg).await;
+                    formatter.info(&format!(
+                        "swarm: {} agents, {} adoptions; best energy {:?}",
+                        result.per_agent.len(),
+                        result.adoptions,
+                        result.best_energy
+                    ))?;
+                    println!(
+                        "\nbest design (energy = {:?}):\n  {}\n",
+                        result.best_energy,
+                        p_describe.describe(&result.best)
+                    );
+                    println!("per-agent reports:");
+                    for r in &result.per_agent {
+                        println!(
+                            "  agent {:2} (seed {:#x}): {} steps, {} accepted, {} adoptions; best {:?}",
+                            r.agent_id,
+                            r.seed,
+                            r.steps,
+                            r.accepted,
+                            r.adopted_count,
+                            r.local_best_energy,
+                        );
+                    }
                 }
                 other => {
                     return Err(anyhow::anyhow!(
