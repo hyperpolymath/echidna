@@ -1186,3 +1186,38 @@ new-docs = [
   "docs/CORPUS.md — user-facing guide for the corpus subsystem",
   "docs/decisions/2026-04-28-corpus-and-design-search.md — ADR record",
 ]
+
+[session-2026-04-28-eod-update]
+date = "2026-04-28"
+update-to = "session-2026-04-28-corpus-and-design-search"
+note = """
+After the user's `merge to single main + complete these things`
+directive, both proof targets were attacked. Outcome:
+
+Phase 1.3 (#4): structural scaffolding LANDED in echo-types commit
+e0f67cb on main. New module Ordinal.Brouwer.Phase13 defines
+recursive `_≤′_`; bullseye lemma `osuc-mono-≤′ p = p` compiles as
+identity. Strict version + ≤′-zero + oz<′osuc all land. ≤′-refl
+for the `olim f` case is the documented obstacle (`f-in-lim′`'s
+`f n = olim g` sub-case needs mutual-with-trans or accessibility
+strengthening).
+
+Unbudgeted wf-<ᵇʳᶠ_ (#5): rank function shape LANDED in echo-types
+same commit. New module Ordinal.Buchholz.RankBrouwer defines
+`rank : BT → Ord` exactly as recommended. Transport theorem
+deferred (couples to Phase-1.3 `⊕-mono-<-right` and Phase-2.2
+`rank-mono-<ᵇ`).
+
+Both modules pinned in Smoke.agda, wired into All.agda. Full suite
+exits 0 under `--safe --without-K`. No postulates introduced.
+
+Important context discovered mid-session: a prior dropped stash
+attempted the same recursive `_≤_` *replacing* the data definition
+and hit the same `f-in-lim` obstacle plus an implicit-arg-inference
+issue with downstream lemmas. Current landing avoids the inference
+issue by defining `_≤′_` alongside the original data `_≤_` rather
+than replacing.
+
+Echo-types main updated with two commits: e0f67cb (the Agda
+modules) + 3799cb7 (handoff doc EOD update).
+"""
