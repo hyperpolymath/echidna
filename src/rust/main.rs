@@ -181,6 +181,12 @@ enum Commands {
         op: CorpusOp,
     },
 
+    /// Search proof-design space via simulated annealing
+    Design {
+        #[command(subcommand)]
+        op: DesignOp,
+    },
+
     /// Suggest tactic variants that close a failing lemma
     Suggest {
         /// Target in `<file>:<lemma>` form, e.g. `Foo.thy:bar`
@@ -244,6 +250,34 @@ enum CorpusOp {
     Stats {
         #[arg(short, long)]
         index: Option<PathBuf>,
+    },
+}
+
+#[derive(Subcommand)]
+enum DesignOp {
+    /// Run SA over a named design problem.
+    Search {
+        /// Problem identifier. Currently: `brouwer-leq` (Phase 1.3
+        /// `_≤_` redesign for `Ordinal.Brouwer`).
+        problem: String,
+        /// Iterations per restart.
+        #[arg(long, default_value_t = 1000)]
+        iterations: usize,
+        /// Number of independent restarts.
+        #[arg(long, default_value_t = 4)]
+        restarts: usize,
+        /// Initial Metropolis temperature.
+        #[arg(long, default_value_t = 4.0)]
+        temp: f64,
+        /// Multiplicative cooling factor per iteration.
+        #[arg(long, default_value_t = 0.995)]
+        cooling: f64,
+        /// Seed.
+        #[arg(long, default_value_t = 0xC0FFEE)]
+        seed: u64,
+        /// Top-K candidates to print.
+        #[arg(long, default_value_t = 8)]
+        top: usize,
     },
 }
 
@@ -327,6 +361,10 @@ async fn main() -> Result<()> {
         },
         Commands::Corpus { op } => {
             corpus_command(op, &formatter)?;
+        },
+
+        Commands::Design { op } => {
+            design_command(op, &formatter)?;
         },
 
         Commands::Suggest {
@@ -1149,6 +1187,74 @@ fn corpus_command(op: CorpusOp, formatter: &OutputFormatter) -> Result<()> {
         }
     }
 
+    Ok(())
+}
+
+/// Design-search command — simulated annealing over candidate
+/// axiomatisations. The first concrete problem is `brouwer-leq`,
+/// targeting echo-types' Phase 1.3 `_≤_` redesign.
+fn design_command(op: DesignOp, formatter: &OutputFormatter) -> Result<()> {
+    use echidna::learning::design_search::{anneal, brouwer, AnnealConfig, DesignProblem};
+
+    match op {
+        DesignOp::Search {
+            problem,
+            iterations,
+            restarts,
+            temp,
+            cooling,
+            seed,
+            top,
+        } => {
+            let cfg = AnnealConfig {
+                max_iterations: iterations,
+                initial_temp: temp,
+                cooling,
+                seed,
+                restarts,
+            };
+
+            match problem.as_str() {
+                "brouwer-leq" => {
+                    let p = brouwer::BrouwerLeqProblem::default();
+                    let result = anneal(&p, &cfg);
+                    formatter.info(&format!(
+                        "annealer: {} steps, {} accepted ({:.1}%); best energy {:?}",
+                        result.steps,
+                        result.accepted,
+                        100.0 * result.accepted as f64 / result.steps.max(1) as f64,
+                        result.best_energy
+                    ))?;
+                    println!(
+                        "\nbest design (energy = {:?}):\n  {}\n",
+                        result.best_energy,
+                        p.describe(&result.best)
+                    );
+                    println!("top {} distinct candidates:", top.min(result.topk.len()));
+                    for (i, (state, e)) in result.topk.iter().take(top).enumerate() {
+                        println!(
+                            "  {:2}. energy {:?}  {}",
+                            i + 1,
+                            e,
+                            p.describe(state)
+                        );
+                    }
+                    println!(
+                        "\nlegend: energy = [mono-blockers, K-hazards, ctor-count, style-pref]"
+                    );
+                    println!(
+                        "        style-pref: 0 = recursive, 1 = data (recursive preferred when tied)"
+                    );
+                }
+                other => {
+                    return Err(anyhow::anyhow!(
+                        "Unknown design problem '{}' (available: brouwer-leq)",
+                        other
+                    ))
+                }
+            }
+        }
+    }
     Ok(())
 }
 

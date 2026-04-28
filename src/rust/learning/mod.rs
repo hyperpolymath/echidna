@@ -45,5 +45,6 @@
 
 pub mod curriculum;
 pub mod daemon;
+pub mod design_search; // Simulated annealing over proof-design space (vs MCTS over tactics)
 pub mod mcts;
 pub mod self_play;
