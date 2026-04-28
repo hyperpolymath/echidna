@@ -43,8 +43,8 @@ impl LiquidHaskellBackend {
 
         if let Some(g) = state.goals.first() {
             let cond = self.term_to_haskell_expr(&g.target);
-            s.push_str(&format!("{{-@ goal :: {{ v: Bool | v == True }} @-}}\n"));
-            s.push_str(&format!("goal :: Bool\n"));
+            s.push_str("{-@ goal :: { v: Bool | v == True } @-}\n");
+            s.push_str("goal :: Bool\n");
             s.push_str(&format!("goal = {}\n", cond));
         }
 

@@ -344,11 +344,10 @@ fn diagnose_z3(output: &str) -> FailureKind {
         };
     }
     // Timeout
-    if output.contains("timeout") || output.contains("unknown") {
-        if output.trim() == "unknown" || output.lines().any(|l| l.trim() == "unknown") {
+    if (output.contains("timeout") || output.contains("unknown"))
+        && (output.trim() == "unknown" || output.lines().any(|l| l.trim() == "unknown")) {
             return FailureKind::Timeout { limit_secs: None };
         }
-    }
     // Satisfiable (not a proof)
     if output.lines().any(|l| l.trim() == "sat") {
         let model = output
@@ -574,10 +573,10 @@ fn explain_and_suggest(prover: ProverKind, kind: &FailureKind) -> (String, Vec<S
     match kind {
         FailureKind::ParseMismatch { expected_pattern, actual_prefix } => (
             format!(
-                "ECHIDNA expected the {} output to match '{}', but saw '{}...' instead. \
+                "ECHIDNA expected the {:?} output to match '{}', but saw '{}...' instead. \
                  This typically means ECHIDNA's backend parser does not recognise \
                  the prover's actual output format.",
-                format!("{:?}", prover), expected_pattern,
+                prover, expected_pattern,
                 actual_prefix.chars().take(60).collect::<String>()
             ),
             vec![
@@ -820,8 +819,8 @@ fn extract_lean4_location(output: &str) -> Option<SourceLocation> {
     // Lean 4: "foo/Bar.lean:12:5: error: ..."
     for line in output.lines() {
         let parts: Vec<&str> = line.splitn(4, ':').collect();
-        if parts.len() >= 3 {
-            if parts[0].ends_with(".lean") {
+        if parts.len() >= 3
+            && parts[0].ends_with(".lean") {
                 let lineno = parts[1].parse().ok();
                 let colno = parts[2].parse().ok();
                 return Some(SourceLocation {
@@ -830,7 +829,6 @@ fn extract_lean4_location(output: &str) -> Option<SourceLocation> {
                     column: colno,
                 });
             }
-        }
     }
     None
 }
@@ -841,7 +839,7 @@ fn extract_idris2_location(output: &str) -> Option<SourceLocation> {
         let parts: Vec<&str> = line.splitn(4, ':').collect();
         if parts.len() >= 3 && parts[0].ends_with(".idr") {
             let lineno = parts[1].parse().ok();
-            let colno = parts[2].trim_start().split_whitespace().next().and_then(|s| s.parse().ok());
+            let colno = parts[2].split_whitespace().next().and_then(|s| s.parse().ok());
             return Some(SourceLocation {
                 file: Some(parts[0].to_string()),
                 line: lineno,
@@ -860,7 +858,7 @@ fn first_n(s: &str, n: usize) -> String {
     s.chars().take(n).collect()
 }
 
-fn extract_line_containing<'a>(output: &'a str, needle: &str) -> Option<String> {
+fn extract_line_containing(output: &str, needle: &str) -> Option<String> {
     output
         .lines()
         .find(|l| l.contains(needle))
@@ -877,11 +875,8 @@ mod tests {
 
     #[test]
     fn test_diagnose_eprover_parse_mismatch() {
-        // Simulate the old bug where ECHIDNA checked '#' but EProver emits '%'
-        let output = "% Proof found!\n% SZS status Unsatisfiable\n";
-        // The fixed parser correctly identifies this as a success, so if diagnose
-        // is called it means the verify path failed for another reason.
-        // For the bug case, simulate raw output that used '#'
+        // Simulate the old bug where ECHIDNA checked '#' but EProver emits '%'.
+        // For the bug case, simulate raw output that used '#'.
         let buggy_output = "# Proof found!\n# SZS status Unsatisfiable\n";
         let report = diagnose(ProverKind::EProver, buggy_output);
         // The buggy output doesn't have '%' so it hits the BackendBug branch

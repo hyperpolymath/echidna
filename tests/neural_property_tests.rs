@@ -13,8 +13,8 @@
 
 mod common;
 
-use echidna::provers::{ProverConfig, ProverFactory, ProverKind};
-use echidna::verification::axiom_tracker::{AxiomTracker, DangerLevel};
+use echidna::provers::ProverKind;
+use echidna::verification::axiom_tracker::DangerLevel;
 use echidna::verification::confidence::{compute_trust_level, TrustFactors, TrustLevel};
 use proptest::prelude::*;
 

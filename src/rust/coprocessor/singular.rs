@@ -104,7 +104,7 @@ fn extract_generators(output: &str, ideal_name: &str) -> Vec<String> {
         .filter_map(|line| {
             let line = line.trim();
             if line.starts_with(&prefix) {
-                line.splitn(2, '=').nth(1).map(|s| s.to_string())
+                line.split_once('=').map(|x| x.1).map(|s| s.to_string())
             } else {
                 None
             }

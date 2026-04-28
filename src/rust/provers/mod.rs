@@ -642,7 +642,7 @@ impl std::str::FromStr for ProverKind {
             "coeffecttypechecker" | "coeffect" | "graded-context" | "coeffects" => {
                 Ok(ProverKind::CoeffectTypeChecker)
             },
-            "probabilistictypechecker" | "probabilistic" | "prob" | "prob-types" => {
+            "probabilistictypechecker" | "probabilistic" | "prob-types" => {
                 Ok(ProverKind::ProbabilisticTypeChecker)
             },
             "dyadictypechecker" | "dyadic" | "binary-channel" | "dyadic-session" => {

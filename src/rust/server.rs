@@ -620,12 +620,8 @@ async fn verify_raw_handler(
         }));
     }
 
-    let (ext, program, args, interpret): (
-        &str,
-        &str,
-        Vec<String>,
-        fn(i32, &str, &str) -> (bool, String),
-    ) = match req.prover {
+    type Interpret = fn(i32, &str, &str) -> (bool, String);
+    let (ext, program, args, interpret): (&str, &str, Vec<String>, Interpret) = match req.prover {
         echidna::provers::ProverKind::Z3 => (
             "smt2",
             "z3",

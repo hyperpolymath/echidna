@@ -80,7 +80,7 @@ fn dispatch_sync(op: CoprocessorOp) -> Result<CoprocessorOutcome> {
             duration_ms,
             sample_rate,
         } => {
-            if sample_rate < 8_000 || sample_rate > 192_000 {
+            if !(8_000..=192_000).contains(&sample_rate) {
                 return Ok(CoprocessorOutcome::Failure(format!(
                     "AudioSineWave: sample_rate {} outside [8000, 192000]",
                     sample_rate
@@ -97,7 +97,7 @@ fn dispatch_sync(op: CoprocessorOp) -> Result<CoprocessorOutcome> {
             CoprocessorOutcome::Hex(hex(&wav_pack(&pcm, sample_rate)))
         }
         CoprocessorOp::AudioCompletionChime { sample_rate } => {
-            if sample_rate < 8_000 || sample_rate > 192_000 {
+            if !(8_000..=192_000).contains(&sample_rate) {
                 return Ok(CoprocessorOutcome::Failure(format!(
                     "AudioCompletionChime: sample_rate {} outside [8000, 192000]",
                     sample_rate

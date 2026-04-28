@@ -13,7 +13,7 @@
 //! `yosys -p "synth -top <top_module>" <file>`, and returns the netlist
 //! output.  Fail with a clear diagnostic if yosys is not on PATH.
 
-use anyhow::{anyhow, Result};
+use anyhow::Result;
 use async_trait::async_trait;
 use std::io::Write;
 use std::process::Stdio;

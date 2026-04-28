@@ -133,7 +133,9 @@ pub fn levenshtein(a: &str, b: &str) -> u32 {
     if n == 0 { return m as u32; }
     if m == 0 { return n as u32; }
     let mut dp = vec![vec![0u32; m + 1]; n + 1];
+    #[allow(clippy::needless_range_loop)]
     for i in 0..=n { dp[i][0] = i as u32; }
+    #[allow(clippy::needless_range_loop)]
     for j in 0..=m { dp[0][j] = j as u32; }
     for i in 1..=n {
         for j in 1..=m {

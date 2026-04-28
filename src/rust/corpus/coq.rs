@@ -561,7 +561,7 @@ fn top_level_colon(s: &str) -> Option<usize> {
             '}' => depth_brace -= 1,
             ':' if depth_paren == 0 && depth_bracket == 0 && depth_brace == 0 => {
                 // Skip `::` (Coq has it for cons in some scopes).
-                let mut next_idx = i + ':'.len_utf8();
+                let next_idx = i + ':'.len_utf8();
                 if next_idx < s.len() && s[next_idx..].starts_with(':') {
                     continue;
                 }
@@ -569,7 +569,6 @@ fn top_level_colon(s: &str) -> Option<usize> {
                 if next_idx < s.len() && s[next_idx..].starts_with('=') {
                     continue;
                 }
-                let _ = next_idx;
                 return Some(i);
             }
             _ => {}

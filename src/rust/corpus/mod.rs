@@ -300,6 +300,7 @@ impl Corpus {
     }
 
     /// Summary counts.
+    #[allow(clippy::field_reassign_with_default)]
     pub fn stats(&self) -> CorpusStats {
         let mut stats = CorpusStats::default();
         stats.modules = self.modules.len();

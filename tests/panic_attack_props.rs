@@ -120,8 +120,10 @@ mod term_props {
                 })
                 .collect();
             let len = goals.len();
-            let mut ps = ProofState::default();
-            ps.goals = goals;
+            let ps = ProofState {
+                goals,
+                ..ProofState::default()
+            };
             prop_assert_eq!(
                 ps.goals.len(), len,
                 "Expected {} goals, got {}", n, ps.goals.len()

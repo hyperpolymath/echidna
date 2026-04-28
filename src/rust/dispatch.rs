@@ -739,18 +739,21 @@ impl ProverDispatcher {
             _ => 0, // ReadOnly / Minimal already returned above
         };
 
-        let health = self.health_status.lock().unwrap();
-        let available_cross_checkers: Vec<ProverKind> = additional_provers
-            .iter()
-            .filter(|p| {
-                let prover_name = format!("{:?}", p);
-                health.prover_health.get(&prover_name)
-                    .map_or(true, |h| h.is_available)
-            })
-            .take(max_cross_checkers)
-            .copied()
-            .collect();
-        drop(health);
+        let available_cross_checkers: Vec<ProverKind> = {
+            let health = self.health_status.lock().unwrap();
+            additional_provers
+                .iter()
+                .filter(|p| {
+                    let prover_name = format!("{p:?}");
+                    health
+                        .prover_health
+                        .get(&prover_name)
+                        .is_none_or(|h| h.is_available)
+                })
+                .take(max_cross_checkers)
+                .copied()
+                .collect()
+        };
 
         // Run additional provers for cross-checking
         let mut all_agree = primary_result.verified;

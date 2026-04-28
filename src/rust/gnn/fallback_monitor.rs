@@ -3,7 +3,6 @@
 
 use serde::{Deserialize, Serialize};
 use std::sync::{Arc, Mutex};
-use std::time::Instant;
 
 /// Configuration for fallback SLA monitoring
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -105,8 +104,7 @@ impl FallbackMonitor {
         if let Ok(mut metrics) = self.metrics.lock() {
             metrics.total_invocations += 1;
 
-            // Update latency statistics (exponential moving average)
-            let ema_weight = 0.2; // Weight for new value
+            // Update latency statistics (cumulative arithmetic mean over all invocations)
             let invocations = metrics.total_invocations as f64;
             metrics.avg_latency_ms = (metrics.avg_latency_ms * (invocations - 1.0)
                 + latency_ms as f64)

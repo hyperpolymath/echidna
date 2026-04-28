@@ -52,6 +52,12 @@ impl From<CircuitState> for CircuitBreakerStateSnapshot {
 }
 
 /// Health of GNN model
+//
+// Field names use ML metric acronyms (nDCG, MRR) intentionally — these match
+// the JSON keys emitted by the Julia training pipeline (see
+// `src/julia/train_and_evaluate.jl`) and are the conventional spellings in
+// learning-to-rank literature.
+#[allow(non_snake_case)]
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct ModelHealth {
     pub is_loaded: bool,
