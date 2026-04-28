@@ -196,3 +196,6 @@ dist/
 
 # Subagent worktrees (isolation mode)
 .claude/worktrees/
+
+# Generated corpus indices (rebuilt with `echidna corpus ingest`)
+data/corpus/*.json

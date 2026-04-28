@@ -1,0 +1,268 @@
+# SPDX-License-Identifier: PMPL-1.0-or-later
+#
+# Agda + agda-stdlib 2.0 tactic and lemma synonyms.
+# Schema: see data/synonyms/README.adoc.
+# Seeded 2026-04-28 for the echo-types Brouwer / Buchholz proof campaign.
+#
+# Coverage focus: well-foundedness, ordinal notations, induction principles,
+# subrelation/inverse-image transport. This is the vocabulary Echidna needs
+# to reason about Phase 1.3 of the Option B WF programme and the unbudgeted
+# `wf-<ᵇʳᶠ_` theorem in `proofs/agda/Ordinal/Buchholz/`.
+
+# ---------------------------------------------------------------------------
+# Well-foundedness (the core machinery)
+# ---------------------------------------------------------------------------
+
+[[synonym]]
+canonical    = "WellFounded"
+aliases      = ["WellFounded _<_", "Wellfounded"]
+tactic_class = "wf-statement"
+notes        = """
+`WellFounded R` is `∀ x → Acc R x` in `Induction.WellFounded`.
+Two constructive proof strategies, both used in echo-types:
+
+1. **Direct structural** — pattern-match on the term, give `acc` with
+   a continuation that unfolds the relation's constructors. Used by
+   `Ordinal.Brouwer.wf-<` (structural on `Ord`).
+
+2. **Subrelation transport** — given `R ⇒ S` (subrelation) and
+   `WellFounded S`, conclude `WellFounded R` via
+   `Induction.WellFounded.Subrelation.wellFounded`. Used by
+   `RecursiveSurfaceBudget.wf-<ᵇʳᶠᵇ` (transports through `BudgetOrder`
+   on the ℕ projection).
+
+Method 2 is the Phase-2 strategy for `wf-<ᵇ`: build a rank target,
+prove `rank-mono`, transport.
+"""
+
+[[synonym]]
+canonical    = "Acc"
+aliases      = ["Acc R x", "accessible", "Accessible"]
+tactic_class = "wf-witness"
+notes        = """
+Accessibility predicate: `Acc R x` says every `R`-descending sequence
+from `x` is finite. Constructed via `acc : (∀ y → R y x → Acc R y) → Acc R x`.
+
+When unfolding `Acc`, never write `acc rs` and call `rs` recursively
+without a guard — Agda's termination checker rejects it. Pattern-match
+the `Acc` argument with `acc rsα` and call `rsα` only on hypotheses
+that came in via the relation, e.g. `pred-of-osuc (acc rsα) (≤-suc q) = rsα q`.
+"""
+
+[[synonym]]
+canonical    = "wf⇒asym"
+aliases      = ["wf-implies-asym", "<-irreflexive-from-wf"]
+tactic_class = "wf-corollary"
+notes        = """
+From `WellFounded _<_`, derive `¬ (x < x)` directly:
+`<-irrefl x<x = wf⇒asym wf-< x<x x<x`. This is the canonical
+fallback when direct-pattern `<-irrefl` blocks on a unification
+problem under `--without-K` (see the `<ᵇ-ψα` blocker in
+`docs/buchholz-plan.adoc`).
+"""
+
+# ---------------------------------------------------------------------------
+# Subrelation / InverseImage / On — the transport toolkit
+# ---------------------------------------------------------------------------
+
+[[synonym]]
+canonical    = "Subrelation.wellFounded"
+aliases      = [
+    "Induction.WellFounded.Subrelation.wellFounded",
+    "subrel-wf",
+    "wf-from-subrelation",
+]
+tactic_class = "wf-transport"
+notes        = """
+`Subrelation R ⇒ S → WellFounded S → WellFounded R`. The first
+argument is `R ⇒ S`, the implication of relations. Used to
+*push WF down* a subrelation: if you can show the small relation
+embeds into a known-WF big one, you're done.
+
+Use case: `wf-<ᵇʳᶠᵇ` is shown WF by transporting through
+`BudgetOrder = _<_ on proj₁` (which is WF because `<-wellFounded` on ℕ
+is, lifted by `On.wellFounded`).
+"""
+
+[[synonym]]
+canonical    = "On.wellFounded"
+aliases      = [
+    "Relation.Binary.Construct.On.wellFounded",
+    "wf-on",
+    "wf-via-projection",
+]
+tactic_class = "wf-transport"
+notes        = """
+Given `f : A → B` and `WellFounded R` on `B`, the relation
+`R on f = λ x y → R (f x) (f y)` is WF on `A`. The standard
+"measure into WF" construction.
+"""
+
+[[synonym]]
+canonical    = "InverseImage.wellFounded"
+aliases      = [
+    "Induction.WellFounded.InverseImage.wellFounded",
+    "wf-via-rank",
+    "rank-wf",
+]
+tactic_class = "wf-transport"
+notes        = """
+Specialisation of `On.wellFounded` for the canonical "rank function"
+pattern. This is the planned route for unbudgeted `wf-<ᵇ`:
+build `rank : BT → Ord`, prove `rank-mono : _<ᵇ_ ⇒ (_<_ on rank)`,
+then `wf-<ᵇ = Subrelation.wellFounded rank-mono (InverseImage.wellFounded rank wf-<)`.
+"""
+
+# ---------------------------------------------------------------------------
+# Induction principles
+# ---------------------------------------------------------------------------
+
+[[synonym]]
+canonical    = "wf-induction"
+aliases      = ["WellFounded-induction", "well-founded-induction", "<-rec"]
+tactic_class = "induction"
+notes        = """
+The recursor derived from `Acc`: given a goal `P x` and a function
+`(∀ y → R y x → P y) → P x`, induct on the accessibility witness.
+Common idiom for proofs that don't fit Agda's structural recursion
+checker but do descend in a WF relation.
+"""
+
+# ---------------------------------------------------------------------------
+# Brouwer ordinal vocabulary
+# ---------------------------------------------------------------------------
+
+[[synonym]]
+canonical    = "olim"
+aliases      = ["o-lim", "ordinal-limit", "ω-limit"]
+tactic_class = "ordinal-constructor"
+notes        = """
+The limit constructor in `Ordinal.Brouwer.Ord`: `olim : (ℕ → Ord) → Ord`.
+ℕ-indexed sup. Already exhausts countable ordinals < ω₁.
+
+Subtle: `olim f` is NOT strictly above `f n` in general
+(constant sequences witness `f n ≡ olim f`). The `≤` witness
+`f-in-lim f n : f n ≤ olim f` is enough for rank bookkeeping.
+"""
+
+[[synonym]]
+canonical    = "osuc"
+aliases      = ["o-suc", "ordinal-successor", "ord-suc"]
+tactic_class = "ordinal-constructor"
+notes        = """
+Successor on `Ord`. Strict-above its argument: `osuc α ≤ β` is the
+definition of `α < β` in this module.
+"""
+
+[[synonym]]
+canonical    = "≤-lim"
+aliases      = ["leq-lim", "le-lim-elim"]
+tactic_class = "ordinal-constructor"
+notes        = """
+Constructor `≤-lim : ∀ {α f} n → α ≤ f n → α ≤ olim f`. The "select
+a branch on the right" rule.
+
+PHASE-1.3 BLOCKER: `osuc-mono-≤ : x ≤ y → osuc x ≤ osuc y` is non-trivial
+because, in the `≤-lim` case where `y = olim f`, we have `x ≤ f n`
+but cannot lift to `osuc x ≤ f n`. Two candidate fixes:
+
+  (a) Add `≤-lim-below : (∀ n → f n ≤ β) → olim f ≤ β` constructor
+      (a "bound the limit from above" rule), making the order more
+      symmetric.
+  (b) Switch `_≤_` to a *recursive* definition where `osuc-mono-≤` is
+      reflexivity.
+
+Phase 1.3 in `docs/buchholz-plan.adoc` is exactly the SA design-search
+problem: which axiomatisation makes the most monotonicity lemmas easy?
+"""
+
+# ---------------------------------------------------------------------------
+# Buchholz / recursive-surface vocabulary (echo-types specific)
+# ---------------------------------------------------------------------------
+
+[[synonym]]
+canonical    = "_<ᵇ_"
+aliases      = ["bt-lt", "Buchholz-lt", "<-buchholz"]
+tactic_class = "buchholz-relation"
+notes        = """
+Buchholz term order in `Ordinal.Buchholz.Order`. 13-constructor admitted
+core (Ω/+ and ψ/+ bridges). Direct WF blocked by `<ᵇ-+2` requiring
+two-Acc lex-descent that the Foetus checker doesn't accept; route to WF
+goes through `Subrelation.wellFounded` from a Brouwer rank target.
+"""
+
+[[synonym]]
+canonical    = "_<ᵇʳᶠ_"
+aliases      = ["recursive-surface-lt", "rs-lt", "<-rec-surface"]
+tactic_class = "buchholz-relation"
+notes        = """
+Recursive-surface order in `Ordinal.Buchholz.RecursiveSurfaceOrder`.
+Currently only has a *budgeted* WF (`wf-<ᵇʳᶠᵇ` carries `ℕ × BT`).
+
+UNBUDGETED-WF GOAL: prove `WellFounded _<ᵇʳᶠ_` directly.
+The two routes:
+
+  (i)  Reuse the budget bridge `<ᵇʳᶠᵇ⇒budget` but eliminate the budget
+       at the WF site, e.g. by transporting through a measure that
+       depends on the term alone.
+  (ii) Build a fresh rank `rank-rs : BT → Ord` capturing the
+       recursive-surface descent and transport WF from `Brouwer.wf-<`.
+
+(ii) is the planned route — same shape as the Phase-2 plan for `_<ᵇ_`.
+"""
+
+[[synonym]]
+canonical    = "BudgetedBT"
+aliases      = ["ℕ × BT", "ranked-BT"]
+tactic_class = "buchholz-carrier"
+notes        = """
+`BudgetedBT = ℕ × BT` in `RecursiveSurfaceBudget.agda`. The pair
+carries a recursive-derivation depth alongside the term. The whole
+point of the unbudgeted goal is to retire this — once we have a
+direct rank into Brouwer `Ord`, the budget is just an internal
+scratch space we no longer need to expose.
+"""
+
+# ---------------------------------------------------------------------------
+# K-elimination / safety hazards
+# ---------------------------------------------------------------------------
+
+[[synonym]]
+canonical    = "--without-K"
+aliases      = ["without-K", "K-free", "no-K"]
+tactic_class = "option"
+notes        = """
+echo-types builds with `--safe --without-K` everywhere. Implications:
+
+* No equality reflection on indexed types — `refl` patterns sometimes
+  rejected when the indices aren't first-order unifiable.
+* `<ᵇ-irrefl` direct-pattern blocked because matching
+  `<ᵇ-ψα α<α : bpsi ν α <ᵇ bpsi ν α` needs to eliminate `ν = ν`,
+  which the K-free unifier refuses.
+* Workaround pattern: derive irreflexivity from WF via `wf⇒asym`
+  rather than direct pattern match.
+"""
+
+[[synonym]]
+canonical    = "postulate"
+aliases      = ["axiom"]
+tactic_class = "danger"
+notes        = """
+BANNED in echo-types proofs. Every postulate is a hole in the trusted
+base. If a proof seems to need one, escalate to the design-search loop
+(SA over `_≤_` axiomatisations) rather than admitting an axiom.
+
+See `docs/buchholz-plan.adoc` Option-B section for the policy: prefer
+a heavier architectural move (rank target, sized types, Subrelation
+transport) over postulating.
+"""
+
+[[synonym]]
+canonical    = "believe_me"
+aliases      = ["unsafeCoerce", "Obj.magic"]
+tactic_class = "danger"
+notes        = """
+Idris 2's unsafe cast. BANNED across the whole hyperpolymath estate
+(panic-attack rejects). For Agda, the analogue is `postulate` plus
+unsafe pattern-match on definitionally distinct terms — also banned.
+"""

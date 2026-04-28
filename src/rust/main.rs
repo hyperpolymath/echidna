@@ -175,6 +175,12 @@ enum Commands {
     /// Interactive diagnostics REPL for health monitoring
     Diagnostics,
 
+    /// Build / query a project corpus (named decls + dependency DAG)
+    Corpus {
+        #[command(subcommand)]
+        op: CorpusOp,
+    },
+
     /// Suggest tactic variants that close a failing lemma
     Suggest {
         /// Target in `<file>:<lemma>` form, e.g. `Foo.thy:bar`
@@ -204,6 +210,40 @@ enum Commands {
         /// Maximum concurrent variant tests
         #[arg(long, default_value_t = 4)]
         max_parallel: usize,
+    },
+}
+
+#[derive(Subcommand)]
+enum CorpusOp {
+    /// Walk a project tree and build a corpus index.
+    Ingest {
+        /// Path to the project root.
+        #[arg(short, long)]
+        root: PathBuf,
+        /// Adapter to use (currently only `agda`).
+        #[arg(short, long, default_value = "agda")]
+        adapter: String,
+        /// Where to write the JSON index. Defaults to
+        /// `data/corpus/<basename>.json`.
+        #[arg(short, long)]
+        out: Option<PathBuf>,
+    },
+    /// Query a previously-ingested corpus index.
+    Query {
+        /// Search term (qualified name, short name, or substring).
+        pattern: String,
+        /// Path to the corpus JSON. Defaults to
+        /// `data/corpus/<basename>.json` for the cwd's basename.
+        #[arg(short, long)]
+        index: Option<PathBuf>,
+        /// Show transitive dependencies of the matched entry.
+        #[arg(long)]
+        deps: bool,
+    },
+    /// Print summary statistics for a corpus index.
+    Stats {
+        #[arg(short, long)]
+        index: Option<PathBuf>,
     },
 }
 
@@ -285,6 +325,10 @@ async fn main() -> Result<()> {
         Commands::Diagnostics => {
             diagnostics_command().await?;
         },
+        Commands::Corpus { op } => {
+            corpus_command(op, &formatter)?;
+        },
+
         Commands::Suggest {
             target,
             prover,
@@ -971,6 +1015,140 @@ async fn diagnostics_command() -> Result<()> {
     let health = dispatcher.health_status();
     let mut repl = DiagnosticsREPL::new();
     repl.run(&health).await;
+    Ok(())
+}
+
+/// Corpus command - ingest, query, or summarise a project corpus.
+///
+/// First adapter is `agda`, targeted at echo-types' Buchholz / Brouwer
+/// proof tree. Build the index once with `corpus ingest --root …`,
+/// then query it without re-walking the source. The index is plain
+/// JSON at `data/corpus/<basename>.json` so other tools (suggest, the
+/// upcoming SA design search) can consume it directly.
+fn corpus_command(op: CorpusOp, formatter: &OutputFormatter) -> Result<()> {
+    use echidna::corpus::{self, Corpus};
+
+    let default_index = |root_basename: &str| -> PathBuf {
+        PathBuf::from("data/corpus").join(format!("{}.json", root_basename))
+    };
+
+    match op {
+        CorpusOp::Ingest { root, adapter, out } => {
+            let root = root.canonicalize().unwrap_or(root);
+            let basename = root
+                .file_name()
+                .map(|s| s.to_string_lossy().into_owned())
+                .unwrap_or_else(|| "project".to_string());
+            let out = out.unwrap_or_else(|| default_index(&basename));
+
+            let corpus = match adapter.as_str() {
+                "agda" => corpus::agda::ingest(&root)
+                    .with_context(|| format!("agda ingest of {}", root.display()))?,
+                other => {
+                    return Err(anyhow::anyhow!(
+                        "Unknown corpus adapter '{}' (supported: agda)",
+                        other
+                    ))
+                }
+            };
+            corpus.save_json(&out)?;
+            let stats = corpus.stats();
+            formatter.info(&format!(
+                "ingested {} module(s), {} entry/-ies ({} fn, {} data, {} record, {} postulate); {} entry/-ies have hazards; index: {}",
+                stats.modules,
+                stats.entries,
+                stats.functions,
+                stats.data,
+                stats.records,
+                stats.postulates,
+                stats.with_hazards,
+                out.display()
+            ))?;
+        }
+        CorpusOp::Query {
+            pattern,
+            index,
+            deps,
+        } => {
+            let path = match index {
+                Some(p) => p,
+                None => {
+                    let basename = std::env::current_dir()?
+                        .file_name()
+                        .map(|s| s.to_string_lossy().into_owned())
+                        .unwrap_or_else(|| "project".to_string());
+                    default_index(&basename)
+                }
+            };
+            let corpus = Corpus::load_json(&path)
+                .with_context(|| format!("load corpus index {}", path.display()))?;
+            let hits = corpus.find(&pattern);
+            if hits.is_empty() {
+                formatter.info(&format!("no matches for '{}'", pattern))?;
+                return Ok(());
+            }
+            for entry in &hits {
+                let module = corpus
+                    .modules
+                    .get(entry.module_idx)
+                    .map(|m| m.name.as_str())
+                    .unwrap_or("?");
+                println!(
+                    "{}  [{:?}] {}:{}",
+                    entry.qualified,
+                    entry.kind,
+                    module,
+                    entry.line
+                );
+                println!("  : {}", entry.statement);
+                if entry.axiom_usage.any() {
+                    println!("  ⚠ hazards: {:?}", entry.axiom_usage);
+                }
+                if !entry.dependencies.is_empty() {
+                    let mut deps_list = entry.dependencies.clone();
+                    deps_list.sort();
+                    println!("  deps ({}): {}", deps_list.len(), deps_list.join(", "));
+                }
+            }
+            if deps && hits.len() == 1 {
+                let closure = corpus.closure(&hits[0].qualified);
+                println!("\ntransitive closure ({} entries):", closure.len());
+                let mut names: Vec<&str> =
+                    closure.iter().map(|e| e.qualified.as_str()).collect();
+                names.sort();
+                for n in names {
+                    println!("  {}", n);
+                }
+            }
+        }
+        CorpusOp::Stats { index } => {
+            let path = match index {
+                Some(p) => p,
+                None => {
+                    let basename = std::env::current_dir()?
+                        .file_name()
+                        .map(|s| s.to_string_lossy().into_owned())
+                        .unwrap_or_else(|| "project".to_string());
+                    default_index(&basename)
+                }
+            };
+            let corpus = Corpus::load_json(&path)
+                .with_context(|| format!("load corpus index {}", path.display()))?;
+            let stats = corpus.stats();
+            println!(
+                "modules:    {}\nentries:    {}\n  functions:  {}\n  data:       {}\n  records:    {}\n  postulates: {}\nwith hazards: {}\nwith deps:    {}",
+                stats.modules,
+                stats.entries,
+                stats.functions,
+                stats.data,
+                stats.records,
+                stats.postulates,
+                stats.with_hazards,
+                stats.with_deps
+            );
+        }
+    }
+
     Ok(())
 }
 
