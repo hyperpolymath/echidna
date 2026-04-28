@@ -8,14 +8,20 @@ full-name = "Extensible Cognitive Hybrid Intelligence for Deductive Neural Assis
 author = "Jonathan D.A. Jewell <j.d.a.jewell@open.ac.uk>"
 license = "PMPL-1.0-or-later"
 standard = "RSR 2026"
-version = "2.1.1"
-last-updated = "2026-04-20"
+version = "2.2.0"
+last-updated = "2026-04-28"
 status = "active"
 
 [project-context]
 name = "echidna"
-completion-percentage = 92
-phase = "v2.1.1 - Production Ready"
+completion-percentage = 94
+phase = "v2.2.0 — N-dim corpus + design-search + swarm landed"
+notes = """
+2026-04-28: corpus subsystem expanded into an N-dimensional / 8-
+modality / cross-prover index, with simulated-annealing design-search
+and 007 swarm dispatcher driving it. See docs/CORPUS.md and
+docs/decisions/2026-04-28-corpus-and-design-search.md.
+"""
 
 [dependencies]
 primary = ["Rust", "Julia", "ReScript", "Idris2", "Zig"]

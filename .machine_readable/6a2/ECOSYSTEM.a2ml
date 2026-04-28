@@ -4,8 +4,8 @@
 # ECOSYSTEM.a2ml — Ecosystem position for echidna
 
 [metadata]
-version = "0.2.0"
-last-updated = "2026-04-11"
+version = "0.3.0"
+last-updated = "2026-04-28"
 project = "echidna"
 ecosystem = "hyperpolymath"
 
@@ -26,9 +26,13 @@ type = "component"
 projects = [
   { name = "proven-servers (nesy-solver-api)", relationship = "consumer", notes = "nesy-solver-api calls /api/verify on echidna-nesy.flycast:8090. Cold-start grace 90s." },
   { name = "hypatia", relationship = "sibling-neurosym", notes = "Hypatia performs neurosymbolic CI scanning; echidna does theorem proving. Both are Tier 2 formal verification tools." },
-  { name = "verisimdb", relationship = "planned-integration", notes = "Proof attempt results should feed VeriSimDB for longitudinal tracking." },
+  { name = "verisimdb", relationship = "active-integration", notes = "Corpus emits 8-modality octads (corpus/octad.rs) compatible with /api/v1/octads. Round-trip verified; HTTP push deferred." },
   { name = "neural-foundations", relationship = "monorepo-satellite", notes = "echidna is mirrored as a submodule/satellite inside neural-foundations." },
   { name = "maa-framework", relationship = "sibling", notes = "Absolute-zero and related MA/ML tools in same neurosymbolic tier." },
+  { name = "echo-types", relationship = "active-consumer", notes = "Echidna's design-search drove the Phase 1.3 _≤_ redesign + unbudgeted wf-<ᵇʳᶠ rank-function recommendations. Handoff document at echo-types/docs/echidna-design-search-2026-04-28.adoc. 640 entries indexed." },
+  { name = "januskey/reversible-core", relationship = "planned-integration", notes = "Bennettian reversibility substrate for the SA annealer trace ledger. Not yet wired." },
+  { name = "jtv (Lean 4)", relationship = "indexed", notes = "147 entries verified during Lean adapter rollout." },
+  { name = "eclexia (Idris 2 ABI)", relationship = "indexed", notes = "93 entries verified during Idris 2 adapter rollout." },
 ]
 
 [deployment]

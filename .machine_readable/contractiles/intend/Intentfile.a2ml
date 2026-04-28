@@ -9,8 +9,17 @@ Declared intent and purpose for Echidna.
 ## Purpose
 
 Echidna is a trust-hardened neurosymbolic theorem proving platform.
-It supports 48 prover backends, records every proof attempt to VeriSimDB,
-and feeds the Hypatia learning loop so the fleet gets smarter over time.
+It supports 128 prover backends, records every proof attempt to
+VeriSimDB, and feeds the Hypatia learning loop so the fleet gets
+smarter over time.
+
+As of 2026-04-28, Echidna also operates a project-corpus indexer with
+adapters for Agda, Coq, Lean 4, and Idris 2; emits 8-modality
+declaration octads compatible with VeriSim's `/api/v1/octads`; and
+runs simulated-annealing design-search + 007-style swarm dispatchers
+over candidate axiomatisations and rank functions. See
+`docs/CORPUS.md` and `docs/decisions/2026-04-28-corpus-and-design-
+search.md`.
 
 ## Anti-Purpose
 

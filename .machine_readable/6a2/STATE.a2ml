@@ -1112,3 +1112,77 @@ remaining-open = [
   "Stage 1c extractor premise gaps (28/50, in-flight)",
   "Stage 8 E10-E13 proofs + SPARK kernel (Opus design session needed)",
 ]
+
+[session-2026-04-28-corpus-and-design-search]
+date = "2026-04-28"
+summary = """
+Built the project-corpus indexer + simulated-annealing design-search +
+007 swarm dispatcher + rank-function search, then expanded the corpus
+into an N-dimensional / 8-modality / cross-prover index per the
+VeriSim octad shape. Eleven commits in echidna; one in echo-types
+(handoff document for the Phase 1.3 + unbudgeted wf-<ᵇʳᶠ proof
+campaign).
+"""
+commits-pushed = [
+  "85c2b55 feat(corpus): project-corpus indexer + Agda adapter + ordinal/WF synonyms",
+  "ae68579 feat(learning): SA design-search — proof-design space, not tactic space",
+  "fca18d5 feat(agent): swarm dispatcher + SA energy refinement",
+  "ca56b96 feat(learning): rank-function search for unbudgeted wf-<ᵇʳᶠ_",
+  "e599868 feat(corpus): reverse-dep index — Step 1 of N-dim VeriSim plan",
+  "572b9b7 feat(corpus): Coq + Lean 4 + Idris 2 adapters; cross-prover semantic classes",
+  "8604909 feat(corpus): 8-modality octad emission — Step 3 of N-dim plan",
+  "3148d14 feat(corpus): tensor-octad metrics — Step 4 of N-dim plan",
+  "4558e61 feat(corpus): vector-octad embeddings — Step 5 of N-dim plan",
+  "8265f9b feat(corpus): multi-axis query DSL — N-dim plan capstone",
+]
+new-modules = [
+  "src/rust/corpus/{mod,agda,coq,lean,idris2,metrics,embed,octad,query}.rs",
+  "src/rust/learning/{design_search,buchholz_rank}.rs",
+  "src/rust/agent/swarm.rs",
+]
+new-cli-verbs = [
+  "echidna corpus ingest --root <path> --adapter <agda|coq|lean|idris2>",
+  "echidna corpus query <pattern> [--deps] [--reverse-deps] [--reverse-closure]",
+  "echidna corpus near \"<text>\" [--top N]",
+  "echidna corpus crossquery <semantic-class>",
+  "echidna corpus export-octads --index <X.json> --out <X.octads.jsonl>",
+  "echidna corpus import-octads --octads <X.octads.jsonl> --out <X.json>",
+  "echidna corpus stats [--index <X.json>]",
+  "echidna design search <problem> [--iterations N] [--top K]",
+  "echidna design swarm <problem> [--agents N] [--broadcast-every N]",
+]
+design-problems-available = [
+  "brouwer-leq — Phase 1.3 _≤_ redesign",
+  "buchholz-rank — unbudgeted wf-<ᵇʳᶠ rank function",
+]
+recommendations-issued = """
+Phase 1.3: switch Ordinal.Brouwer._≤_ to a recursive definition.
+Energy [0, 0, 1, 0]; SA + 4-agent swarm both unanimous.
+
+Unbudgeted wf-<ᵇʳᶠ_: rank shape
+  rank bzero        = oz
+  rank (bOmega ν)   = ω-rank ν
+  rank (bplus x y)  = rank x ⊕ rank y
+  rank (bpsi ν α)   = psi-rank ν (rank α)
+Energy [3, 0, 1]; three downstream blockers (Phase-2.2 rank-mono-<ᵇ,
+⊕-mono-<-right twice). Closes via Subrelation.wellFounded chain.
+
+Handoff document: echo-types/docs/echidna-design-search-2026-04-28.adoc
+"""
+verified-fixtures = [
+  "echo-types/proofs/agda — 57 modules / 640 entries (Agda)",
+  "echidna/proofs/coq — 5 modules / 108 entries (Coq)",
+  "jtv/jtv_proofs — 7 modules / 147 entries (Lean 4)",
+  "eclexia/src/abi — 4 modules / 93 entries (Idris 2)",
+]
+test-posture = "1059 lib tests pass (16 added). 0 failures, 2 ignored (pre-existing)."
+remaining-open = [
+  "Apply recommendation to Agda — Phase 1.3 redesign + Σ-elim rewrite (multi-session)",
+  "Wire SA energy in learning/buchholz_rank::blockers to consume the corpus query DSL (~1d)",
+  "Reversibility integration with januskey/reversible-core::ContentStore for SA trace ledger",
+  "GNN embeddings via Julia /gnn/embed (deferred ML training column)",
+]
+new-docs = [
+  "docs/CORPUS.md — user-facing guide for the corpus subsystem",
+  "docs/decisions/2026-04-28-corpus-and-design-search.md — ADR record",
+]

@@ -199,3 +199,4 @@ dist/
 
 # Generated corpus indices (rebuilt with `echidna corpus ingest`)
 data/corpus/*.json
+data/corpus/*.octads.jsonl
