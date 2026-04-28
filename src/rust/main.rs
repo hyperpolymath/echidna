@@ -1273,9 +1273,50 @@ async fn design_command(op: DesignOp, formatter: &OutputFormatter) -> Result<()>
                         "        style-pref: 0 = recursive, 1 = data (recursive preferred when tied)"
                     );
                 }
+                "buchholz-rank" => {
+                    use echidna::learning::buchholz_rank::{
+                        render_rank_mono_skeleton, BuchholzRankProblem,
+                    };
+                    let p = BuchholzRankProblem::with_baseline_corpus();
+                    let result = anneal(&p, &cfg);
+                    formatter.info(&format!(
+                        "annealer: {} steps, {} accepted ({:.1}%); best energy {:?}",
+                        result.steps,
+                        result.accepted,
+                        100.0 * result.accepted as f64 / result.steps.max(1) as f64,
+                        result.best_energy
+                    ))?;
+                    println!(
+                        "\nbest rank shape (energy = {:?}):\n{}\n",
+                        result.best_energy,
+                        p.describe(&result.best)
+                    );
+                    println!("top {} distinct candidates:", top.min(result.topk.len()));
+                    for (i, (state, e)) in result.topk.iter().take(top).enumerate() {
+                        println!(
+                            "  {:2}. energy {:?}",
+                            i + 1,
+                            e
+                        );
+                        for line in p.describe(state).lines() {
+                            println!("       {}", line);
+                        }
+                    }
+                    println!(
+                        "\nlegend: energy = [downstream-blockers, capability-gaps, structural-cost]"
+                    );
+                    println!(
+                        "        downstream-blockers: # of new lemmas to prove (Phase-1.3 / 2.2)"
+                    );
+                    println!(
+                        "        capability-gaps:     # of primitives missing from current corpus"
+                    );
+                    println!("\n--- Agda skeleton for the recommended shape ---");
+                    println!("{}", render_rank_mono_skeleton(&result.best));
+                }
                 other => {
                     return Err(anyhow::anyhow!(
-                        "Unknown design problem '{}' (available: brouwer-leq)",
+                        "Unknown design problem '{}' (available: brouwer-leq, buchholz-rank)",
                         other
                     ))
                 }
@@ -1335,9 +1376,42 @@ async fn design_command(op: DesignOp, formatter: &OutputFormatter) -> Result<()>
                         );
                     }
                 }
+                "buchholz-rank" => {
+                    use echidna::learning::buchholz_rank::{
+                        render_rank_mono_skeleton, BuchholzRankProblem,
+                    };
+                    let p = Arc::new(BuchholzRankProblem::with_baseline_corpus());
+                    let p_describe = BuchholzRankProblem::with_baseline_corpus();
+                    let result = run_swarm(p, swarm_cfg).await;
+                    formatter.info(&format!(
+                        "swarm: {} agents, {} adoptions; best energy {:?}",
+                        result.per_agent.len(),
+                        result.adoptions,
+                        result.best_energy
+                    ))?;
+                    println!(
+                        "\nbest rank shape (energy = {:?}):\n{}\n",
+                        result.best_energy,
+                        p_describe.describe(&result.best)
+                    );
+                    println!("per-agent reports:");
+                    for r in &result.per_agent {
+                        println!(
+                            "  agent {:2} (seed {:#x}): {} steps, {} accepted, {} adoptions; best {:?}",
+                            r.agent_id,
+                            r.seed,
+                            r.steps,
+                            r.accepted,
+                            r.adopted_count,
+                            r.local_best_energy,
+                        );
+                    }
+                    println!("\n--- Agda skeleton for the recommended shape ---");
+                    println!("{}", render_rank_mono_skeleton(&result.best));
+                }
                 other => {
                     return Err(anyhow::anyhow!(
-                        "Unknown design problem '{}' (available: brouwer-leq)",
+                        "Unknown design problem '{}' (available: brouwer-leq, buchholz-rank)",
                         other
                     ))
                 }

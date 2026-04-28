@@ -43,6 +43,7 @@
 
 #![allow(dead_code)]
 
+pub mod buchholz_rank; // Rank-function search for unbudgeted `wf-<ᵇʳᶠ_` (Phase 2 transport)
 pub mod curriculum;
 pub mod daemon;
 pub mod design_search; // Simulated annealing over proof-design space (vs MCTS over tactics)
