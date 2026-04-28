@@ -37,6 +37,7 @@ pub mod agda;
 pub mod coq;
 pub mod idris2;
 pub mod lean;
+pub mod metrics; // Per-entry metrics tensor (Step 4)
 pub mod octad; // 8-modality octad emission for VeriSim integration (Step 3)
 
 use std::collections::HashMap;

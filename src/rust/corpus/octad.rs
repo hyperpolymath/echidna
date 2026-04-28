@@ -407,16 +407,20 @@ impl Corpus {
         } else {
             timestamp
         };
+        // Compute the rich metrics tensor once for the whole corpus
+        // (Step 4); attach to each octad's Tensor modality.
+        let metrics_per_entry = self.compute_metrics();
         let mut out = String::new();
-        for entry in &self.entries {
+        for (i, entry) in self.entries.iter().enumerate() {
             let module = &self.modules[entry.module_idx];
             let rev: Vec<String> = self
                 .dependents
                 .get(&entry.name)
                 .map(|v| v.iter().map(|i| self.entries[*i].qualified.clone()).collect())
                 .unwrap_or_default();
-            let octad =
+            let mut octad =
                 DeclarationOctad::from_entry(entry, module, &self.adapter, &rev, ts);
+            octad.tensor.metrics = metrics_per_entry[i].as_metric_map();
             let line = serde_json::to_string(&octad).context("serialise octad")?;
             out.push_str(&line);
             out.push('\n');
