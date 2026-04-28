@@ -155,3 +155,38 @@ notes        = """
 `conv => rw [h]` — surgical rewrite at a specific subterm.
 When `rw` fails to match, drop to `conv` for finer control.
 """
+
+# ---------------------------------------------------------------------------
+# Well-foundedness (cross-prover semantic class)
+# ---------------------------------------------------------------------------
+
+[[synonym]]
+canonical      = "WellFounded"
+aliases        = ["WellFounded R", "Wf"]
+tactic_class   = "wf-statement"
+semantic_class = "well-foundedness"
+notes          = """
+`WellFounded R` in core Lean 4: every R-chain is finite. Mathlib
+adds `WellFoundedRelation` as an instance class. Same conceptual
+role as Agda's `WellFounded`, Coq's `well_founded`, and Idris 2's
+`WellFounded`.
+"""
+
+[[synonym]]
+canonical      = "Acc"
+aliases        = ["Acc r x", "Accessible"]
+tactic_class   = "wf-witness"
+semantic_class = "accessibility"
+notes          = """
+`Acc r x` in core Lean 4: `x` is `r`-accessible.
+"""
+
+[[synonym]]
+canonical      = "WellFounded.induction"
+aliases        = ["WellFoundedRecursion", "termination_by"]
+tactic_class   = "wf-recursor"
+semantic_class = "wf-induction"
+notes          = """
+The induction principle from `WellFounded`. `termination_by` in a
+`def` body invokes the same machinery for recursive definitions.
+"""

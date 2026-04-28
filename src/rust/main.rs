@@ -259,6 +259,19 @@ enum CorpusOp {
         #[arg(short, long)]
         index: Option<PathBuf>,
     },
+
+    /// Look up entries across every prover's synonym table by
+    /// `semantic_class`. Demonstrates cross-prover semantic
+    /// equivalence — e.g. `corpus crossquery well-foundedness`
+    /// reports `WellFounded` in Agda + `well_founded` in Coq +
+    /// `WellFounded` in Lean + `WellFounded` in Idris 2.
+    Crossquery {
+        /// Semantic class to look up (e.g. `well-foundedness`).
+        class: String,
+        /// Synonym directory (defaults to `data/synonyms`).
+        #[arg(long)]
+        synonyms_dir: Option<PathBuf>,
+    },
 }
 
 #[derive(Subcommand)]
@@ -1114,9 +1127,15 @@ fn corpus_command(op: CorpusOp, formatter: &OutputFormatter) -> Result<()> {
             let corpus = match adapter.as_str() {
                 "agda" => corpus::agda::ingest(&root)
                     .with_context(|| format!("agda ingest of {}", root.display()))?,
+                "coq" => corpus::coq::ingest(&root)
+                    .with_context(|| format!("coq ingest of {}", root.display()))?,
+                "lean" | "lean4" => corpus::lean::ingest(&root)
+                    .with_context(|| format!("lean ingest of {}", root.display()))?,
+                "idris2" | "idris" => corpus::idris2::ingest(&root)
+                    .with_context(|| format!("idris2 ingest of {}", root.display()))?,
                 other => {
                     return Err(anyhow::anyhow!(
-                        "Unknown corpus adapter '{}' (supported: agda)",
+                        "Unknown corpus adapter '{}' (supported: agda, coq, lean, idris2)",
                         other
                     ))
                 }
@@ -1220,6 +1239,52 @@ fn corpus_command(op: CorpusOp, formatter: &OutputFormatter) -> Result<()> {
                 }
             }
         }
+        CorpusOp::Crossquery {
+            class,
+            synonyms_dir,
+        } => {
+            use echidna::suggest::synonyms::load_all;
+            let dir = synonyms_dir.unwrap_or_else(|| PathBuf::from("data/synonyms"));
+            let tables = load_all(&dir)
+                .with_context(|| format!("load synonym tables from {}", dir.display()))?;
+            let mut total = 0usize;
+            for prover in [
+                ProverKind::Agda,
+                ProverKind::Coq,
+                ProverKind::Lean,
+                ProverKind::Idris2,
+                ProverKind::Isabelle,
+            ] {
+                if let Some(table) = tables.get(&prover) {
+                    let hits = table.by_semantic_class(&class);
+                    if hits.is_empty() {
+                        continue;
+                    }
+                    println!("{:?}:", prover);
+                    for entry in &hits {
+                        let aliases = if entry.aliases.is_empty() {
+                            String::new()
+                        } else {
+                            format!(" (aliases: {})", entry.aliases.join(", "))
+                        };
+                        println!("  {}{}", entry.canonical, aliases);
+                        total += 1;
+                    }
+                }
+            }
+            if total == 0 {
+                formatter
+                    .info(&format!("no entries for semantic class '{}'", class))?;
+            } else {
+                formatter.info(&format!(
+                    "{} entries across {} prover(s) for semantic class '{}'",
+                    total,
+                    tables.len(),
+                    class
+                ))?;
+            }
+        }
+
         CorpusOp::Stats { index } => {
             let path = match index {
                 Some(p) => p,

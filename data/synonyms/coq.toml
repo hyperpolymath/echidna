@@ -148,3 +148,37 @@ notes        = """
 When unfold loops or produces unwieldy goals, prefer `change` for
 surgical control.
 """
+
+# ---------------------------------------------------------------------------
+# Well-foundedness (cross-prover semantic class)
+# ---------------------------------------------------------------------------
+
+[[synonym]]
+canonical      = "well_founded"
+aliases        = ["well_founded R", "Wf"]
+tactic_class   = "wf-statement"
+semantic_class = "well-foundedness"
+notes          = """
+`well_founded R` in `Coq.Init.Wf`: every chain in `R` is finite.
+Same conceptual role as Agda's `WellFounded`, Lean's `WellFounded`,
+and Idris 2's `WellFounded`.
+"""
+
+[[synonym]]
+canonical      = "Acc"
+aliases        = ["Acc R x", "accessible"]
+tactic_class   = "wf-witness"
+semantic_class = "accessibility"
+notes          = """
+`Acc R x` in `Coq.Init.Wf`: `x` is `R`-accessible.
+"""
+
+[[synonym]]
+canonical      = "well_founded_induction"
+aliases        = ["Fix", "Fix_F"]
+tactic_class   = "wf-recursor"
+semantic_class = "wf-induction"
+notes          = """
+The recursor derived from `well_founded`: prove `P x` from
+`(forall y, R y x -> P y) -> P x`.
+"""

@@ -170,6 +170,7 @@ mod tests {
             notes: None,
             since: None,
             until: None,
+            semantic_class: None,
         }])
     }
 

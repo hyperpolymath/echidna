@@ -1,0 +1,78 @@
+# SPDX-License-Identifier: PMPL-1.0-or-later
+#
+# Idris 2 + base / contrib library synonyms.
+# Schema: see data/synonyms/README.adoc.
+# Seeded 2026-04-28 alongside the cross-prover semantic-class
+# extension (Step 2 of the N-dim VeriSim corpus plan).
+
+# ---------------------------------------------------------------------------
+# Well-foundedness (cross-prover semantic class)
+# ---------------------------------------------------------------------------
+
+[[synonym]]
+canonical      = "WellFounded"
+aliases        = ["WellFounded R", "Wf"]
+tactic_class   = "wf-statement"
+semantic_class = "well-foundedness"
+notes          = """
+`WellFounded R` in `Control.WellFounded` (base): every R-chain is
+finite. Same conceptual role as Agda's `WellFounded`, Coq's
+`well_founded`, and Lean 4's `WellFounded`.
+"""
+
+[[synonym]]
+canonical      = "Accessible"
+aliases        = ["Acc", "Acc R x"]
+tactic_class   = "wf-witness"
+semantic_class = "accessibility"
+notes          = """
+`Accessible R x` in `Control.WellFounded`. Idris 2's name differs
+from the others; the type-shape is identical.
+"""
+
+[[synonym]]
+canonical      = "wfRec"
+aliases        = ["WellFounded.induction", "well-founded-induction"]
+tactic_class   = "wf-recursor"
+semantic_class = "wf-induction"
+notes          = """
+Well-founded recursion derived from `WellFounded`.
+"""
+
+# ---------------------------------------------------------------------------
+# Banned / dangerous patterns
+# ---------------------------------------------------------------------------
+
+[[synonym]]
+canonical    = "believe_me"
+aliases      = ["unsafeCoerce", "Obj.magic"]
+tactic_class = "danger"
+notes        = """
+Idris 2's unsafe cast. BANNED across the whole hyperpolymath estate
+(panic-attack rejects). Use a constructive proof or a `partial`
+totality annotation instead.
+"""
+
+[[synonym]]
+canonical    = "assert_total"
+aliases      = ["assert_smaller", "%total-fudge"]
+tactic_class = "danger"
+notes        = """
+Tells the totality checker to trust this call without proof. Avoid;
+restructure to a structurally-decreasing recursion or use
+`well-founded-recursion` with an explicit measure.
+"""
+
+[[synonym]]
+canonical    = "idris_crash"
+aliases      = ["partial-stub"]
+tactic_class = "stub"
+notes        = """
+Per project memory (Cerro-Torre 2026-04-25): `partial + idris_crash`
+is the accepted pattern for postulate-style stubs that downstream
+proofs are allowed to depend on, provided the dependent is also
+annotated `partial` and the design intent is documented.
+
+Not preferred for new code, but recognised as the workaround when
+Idris 2 0.8.0's `postulate` is unavailable in the desired position.
+"""

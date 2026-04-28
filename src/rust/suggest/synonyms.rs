@@ -20,6 +20,15 @@ pub struct SynonymEntry {
     pub notes: Option<String>,
     pub since: Option<String>,
     pub until: Option<String>,
+    /// Cross-prover semantic class. Two entries (potentially from
+    /// different prover synonym tables) sharing the same
+    /// `semantic_class` are considered semantically equivalent. The
+    /// classes are deliberately coarse (e.g. `"well-foundedness"`,
+    /// `"accessibility"`, `"transitivity"`) rather than per-theorem
+    /// — fine-grained equivalence belongs in the OpenTheory /
+    /// Dedukti exchange layer (`src/rust/exchange/`).
+    #[serde(default)]
+    pub semantic_class: Option<String>,
 }
 
 /// Parsed and indexed synonym table for a single prover.
@@ -92,6 +101,45 @@ impl SynonymTable {
     pub fn len(&self) -> usize {
         self.entries.len()
     }
+
+    /// All entries tagged with the given `semantic_class`. Used for
+    /// cross-prover lookups: load tables from multiple provers and
+    /// concatenate the results to find every prover's name for a
+    /// shared concept.
+    pub fn by_semantic_class(&self, class: &str) -> Vec<&SynonymEntry> {
+        self.entries
+            .iter()
+            .filter(|e| e.semantic_class.as_deref() == Some(class))
+            .collect()
+    }
+}
+
+/// Load every prover's synonym table from `dir` and return them
+/// keyed by prover. Useful for cross-prover queries:
+///
+/// ```ignore
+/// let tables = load_all(dir)?;
+/// for (prover, table) in &tables {
+///     for entry in table.by_semantic_class("well-foundedness") {
+///         println!("{:?}: {}", prover, entry.canonical);
+///     }
+/// }
+/// ```
+pub fn load_all(dir: &Path) -> Result<HashMap<ProverKind, SynonymTable>> {
+    let mut out: HashMap<ProverKind, SynonymTable> = HashMap::new();
+    for prover in [
+        ProverKind::Agda,
+        ProverKind::Coq,
+        ProverKind::Lean,
+        ProverKind::Idris2,
+        ProverKind::Isabelle,
+    ] {
+        let table = SynonymTable::load(prover, dir)?;
+        if !table.is_empty() {
+            out.insert(prover, table);
+        }
+    }
+    Ok(out)
 }
 
 fn prover_table_filename(prover: ProverKind) -> String {
@@ -119,6 +167,7 @@ mod tests {
                 notes: None,
                 since: None,
                 until: None,
+                semantic_class: None,
             },
             SynonymEntry {
                 canonical: "linarith".to_string(),
@@ -127,6 +176,7 @@ mod tests {
                 notes: None,
                 since: None,
                 until: None,
+                semantic_class: None,
             },
         ])
     }

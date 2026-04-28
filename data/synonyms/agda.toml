@@ -14,10 +14,11 @@
 # ---------------------------------------------------------------------------
 
 [[synonym]]
-canonical    = "WellFounded"
-aliases      = ["WellFounded _<_", "Wellfounded"]
-tactic_class = "wf-statement"
-notes        = """
+canonical      = "WellFounded"
+aliases        = ["WellFounded _<_", "Wellfounded"]
+tactic_class   = "wf-statement"
+semantic_class = "well-foundedness"
+notes          = """
 `WellFounded R` is `∀ x → Acc R x` in `Induction.WellFounded`.
 Two constructive proof strategies, both used in echo-types:
 
@@ -36,10 +37,11 @@ prove `rank-mono`, transport.
 """
 
 [[synonym]]
-canonical    = "Acc"
-aliases      = ["Acc R x", "accessible", "Accessible"]
-tactic_class = "wf-witness"
-notes        = """
+canonical      = "Acc"
+aliases        = ["Acc R x", "accessible", "Accessible"]
+tactic_class   = "wf-witness"
+semantic_class = "accessibility"
+notes          = """
 Accessibility predicate: `Acc R x` says every `R`-descending sequence
 from `x` is finite. Constructed via `acc : (∀ y → R y x → Acc R y) → Acc R x`.
 
@@ -66,14 +68,15 @@ problem under `--without-K` (see the `<ᵇ-ψα` blocker in
 # ---------------------------------------------------------------------------
 
 [[synonym]]
-canonical    = "Subrelation.wellFounded"
-aliases      = [
+canonical      = "Subrelation.wellFounded"
+aliases        = [
     "Induction.WellFounded.Subrelation.wellFounded",
     "subrel-wf",
     "wf-from-subrelation",
 ]
-tactic_class = "wf-transport"
-notes        = """
+tactic_class   = "wf-transport"
+semantic_class = "wf-subrelation-transport"
+notes          = """
 `Subrelation R ⇒ S → WellFounded S → WellFounded R`. The first
 argument is `R ⇒ S`, the implication of relations. Used to
 *push WF down* a subrelation: if you can show the small relation
