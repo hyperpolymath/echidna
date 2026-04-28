@@ -272,6 +272,28 @@ enum CorpusOp {
         #[arg(long)]
         synonyms_dir: Option<PathBuf>,
     },
+
+    /// Convert a JSON corpus index into 8-modality octad JSONL
+    /// (one DeclarationOctad per line). Streamable; compatible with
+    /// VeriSim's `/api/v1/octads` endpoint when posted line-by-line.
+    ExportOctads {
+        /// Path to the JSON corpus index.
+        #[arg(short, long)]
+        index: PathBuf,
+        /// Output JSONL path.
+        #[arg(short, long)]
+        out: PathBuf,
+    },
+
+    /// Load an octad JSONL stream back into a corpus and persist as
+    /// JSON. Round-trip is best-effort but lossless for the fields
+    /// the corpus cares about (statements, proofs, deps, hazards).
+    ImportOctads {
+        #[arg(short, long)]
+        octads: PathBuf,
+        #[arg(short, long)]
+        out: PathBuf,
+    },
 }
 
 #[derive(Subcommand)]
@@ -1283,6 +1305,30 @@ fn corpus_command(op: CorpusOp, formatter: &OutputFormatter) -> Result<()> {
                     class
                 ))?;
             }
+        }
+
+        CorpusOp::ExportOctads { index, out } => {
+            let corpus = Corpus::load_json(&index)
+                .with_context(|| format!("load corpus index {}", index.display()))?;
+            let timestamp = chrono::Utc::now().to_rfc3339();
+            corpus.save_octads_jsonl(&out, &timestamp)?;
+            formatter.info(&format!(
+                "exported {} octad(s) → {}",
+                corpus.entries.len(),
+                out.display()
+            ))?;
+        }
+
+        CorpusOp::ImportOctads { octads, out } => {
+            let corpus = Corpus::load_octads_jsonl(&octads)
+                .with_context(|| format!("load octads {}", octads.display()))?;
+            corpus.save_json(&out)?;
+            formatter.info(&format!(
+                "imported {} octad(s) ({} module(s)) → {}",
+                corpus.entries.len(),
+                corpus.modules.len(),
+                out.display()
+            ))?;
         }
 
         CorpusOp::Stats { index } => {
