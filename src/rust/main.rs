@@ -489,6 +489,7 @@ fn init_tracing(verbose: bool) {
 }
 
 /// Prove command implementation
+#[allow(clippy::too_many_arguments)]
 async fn prove_command(
     file: PathBuf,
     prover_kind: Option<ProverKind>,

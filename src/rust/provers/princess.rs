@@ -152,7 +152,7 @@ impl ProverBackend for PrincessBackend {
     async fn verify_proof(&self, state: &ProofState) -> Result<bool> {
         let tptp = self.to_tptp(state)?;
         let mut child = Command::new(&self.config.executable)
-            .args(&["-inputFormat=tptp"])
+            .args(["-inputFormat=tptp"])
             .stdin(Stdio::piped())
             .stdout(Stdio::piped())
             .stderr(Stdio::piped())

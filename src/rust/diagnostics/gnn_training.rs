@@ -6,7 +6,11 @@ use std::fs;
 use std::path::Path;
 use chrono::{DateTime, Utc};
 
-/// Metrics exported from GNN training pipeline
+/// Metrics exported from GNN training pipeline.
+//
+// Field names match the JSON keys produced by `src/julia/train_and_evaluate.jl`
+// (`"nDCG"`, `"MRR"`) — standard learning-to-rank acronyms.
+#[allow(non_snake_case)]
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct GnnTrainingMetrics {
     pub timestamp: String,

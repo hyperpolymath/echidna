@@ -13,7 +13,7 @@
 //! Path arguments are passed verbatim — caller is responsible for any path
 //! sanitisation (the prover-side trust pipeline does this before dispatch).
 
-use anyhow::{anyhow, Result};
+use anyhow::Result;
 use async_trait::async_trait;
 use sha2::{Digest, Sha256};
 use tokio::fs;

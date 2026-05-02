@@ -145,9 +145,11 @@ impl Daemon {
             });
 
         if outcome.proof_found {
-            let mut fresh = ProofState::default();
-            fresh.goals = chosen.state.goals.clone();
-            fresh.proof_script = outcome.best_script.clone();
+            let fresh = ProofState {
+                goals: chosen.state.goals.clone(),
+                proof_script: outcome.best_script.clone(),
+                ..ProofState::default()
+            };
             let variants = self.generator.emit_variants(&fresh);
             self.push_variants(variants);
         }

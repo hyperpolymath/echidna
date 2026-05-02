@@ -150,7 +150,7 @@ fn find_tactic_sites_isabelle(source: &str) -> Vec<TacticSite> {
         }
         // rule: <lemma_name>
         if let Some(rest) = line.find("rule:").map(|i| &line[i + 5..]) {
-            let name = rest.trim().split_whitespace().next().unwrap_or("").trim_matches(|c: char| !c.is_alphanumeric() && c != '_');
+            let name = rest.split_whitespace().next().unwrap_or("").trim_matches(|c: char| !c.is_alphanumeric() && c != '_');
             if !name.is_empty() {
                 let col = line.find(name).unwrap_or(0) + 1;
                 sites.push(TacticSite { line: line_no, col, name: name.to_string() });
@@ -209,7 +209,7 @@ fn find_tactic_sites_coq(source: &str) -> Vec<TacticSite> {
         let line_no = line_idx + 1;
         let t = line.trim();
         // Coq: bare tactic at start of line (after optional spaces/`- ` bullet)
-        let t_nobullet = t.trim_start_matches(|c: char| c == '-' || c == '+' || c == '*' || c == ' ');
+        let t_nobullet = t.trim_start_matches(['-', '+', '*', ' ']);
         let name = t_nobullet.split(|c: char| !c.is_alphanumeric() && c != '_').next().unwrap_or("");
         if !name.is_empty() && !["Proof", "Qed", "Defined", "Admitted", "Abort", "Lemma", "Theorem"].contains(&name) {
             let col = line.find(name).unwrap_or(0) + 1;

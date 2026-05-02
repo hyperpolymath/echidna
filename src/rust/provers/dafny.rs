@@ -126,7 +126,7 @@ impl DafnyBackend {
                     let rest = &line[ensures_start + 7..].trim();
                     // Find the end: either ; or { or newline
                     let goal_text = rest
-                        .split(|c| c == ';' || c == '{' || c == '\n')
+                        .split([';', '{', '\n'])
                         .next()
                         .unwrap_or(rest)
                         .trim();

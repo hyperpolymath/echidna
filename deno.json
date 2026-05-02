@@ -3,7 +3,7 @@
   "name": "@echidna/provers",
   "version": "0.1.0",
   "description": "ECHIDNA - Neurosymbolic Theorem Proving Platform",
-  "license": "MIT OR AGPL-3.0-or-later",
+  "license": "PMPL-1.0-or-later",
 
   "compilerOptions": {
     "allowJs": false,

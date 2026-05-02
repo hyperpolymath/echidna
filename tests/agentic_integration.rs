@@ -6,14 +6,12 @@
 use echidna::agent::{
     explanations::ExplanationGenerator,
     memory::{ProofMemory, SqliteMemory},
-    meta_controller::MetaController,
     planner::{Planner, RulePlanner},
     router::ProverRouter,
     AgentConfig, AgentCore, AgenticGoal, Priority,
 };
 use echidna::core::{Goal, Term};
 use echidna::provers::{ProverBackend, ProverKind};
-use std::sync::Arc;
 use tempfile::TempDir;
 
 /// Mock prover for testing

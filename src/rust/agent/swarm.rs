@@ -34,7 +34,7 @@ use serde::{Deserialize, Serialize};
 use tokio::sync::{mpsc, Mutex};
 use tokio::task::JoinSet;
 
-use crate::learning::design_search::{AnnealConfig, AnnealResult, DesignProblem};
+use crate::learning::design_search::{AnnealConfig, DesignProblem};
 
 /// Configuration for a swarm run.
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -152,6 +152,7 @@ fn delta_scalar(from: &[i64], to: &[i64]) -> f64 {
 
 /// Run a swarm over `problem`. Returns the global best across agents
 /// plus per-agent reports.
+#[allow(clippy::type_complexity, clippy::needless_range_loop)]
 pub async fn run_swarm<P>(problem: Arc<P>, config: SwarmConfig) -> SwarmResult<P::State>
 where
     P: DesignProblem + Send + Sync + 'static,

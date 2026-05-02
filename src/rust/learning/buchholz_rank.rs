@@ -25,7 +25,7 @@
 //!         capability gap)
 //!   * **bpsi** — how to rank `bpsi ν α`:
 //!       - PsiRank:    `psi-rank ν (rank α)` (the existing
-//!                     `osuc (ω-rank ν ⊕ rank α)`)
+//!         `osuc (ω-rank ν ⊕ rank α)`)
 //!       - PsiRankPlain: `ω-rank ν ⊕ rank α`
 //!       - OsucOmegaPlus: `osuc (ω-rank ν) ⊕ rank α`
 //!   * **bOmega** — how to rank `bOmega ν`:

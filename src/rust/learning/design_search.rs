@@ -435,6 +435,7 @@ pub mod brouwer {
     ///   - `LimBelow`: requires `∀ k. f k ≤ osuc (olim f)` (which we
     ///     can produce), but that gives `olim f ≤ osuc (olim f)`, not
     ///     `osuc x ≤ osuc (olim f)`. We've lost the link to `x`.
+    ///
     /// `LimBelow` is useful for *other* lemmas, but not this one.
     fn mono_osuc_ok(s: &LeqState) -> bool {
         if s.ctors.contains(&Ctor::CongSuc) {
@@ -455,6 +456,7 @@ pub mod brouwer {
     ///     available; even `CongSuc` alone is insufficient because
     ///     the `olim f ⊕ -` case has the same `≤-lim` blocker as
     ///     `osuc-mono-≤`.
+    ///
     /// Hand-trace omitted; same shape as `mono_osuc_ok`. `CongSuc`
     /// alone does NOT unblock `⊕-mono-≤-right`.
     fn mono_oplus_right_ok(s: &LeqState) -> bool {

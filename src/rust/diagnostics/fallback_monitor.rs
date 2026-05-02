@@ -77,7 +77,7 @@ impl FallbackMonitor {
             self.cache_hits += 1;
         }
 
-        if invocation.met_sla == false {
+        if !invocation.met_sla {
             self.sla_violations += 1;
         }
 

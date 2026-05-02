@@ -197,6 +197,7 @@ mod stage1_integration {
 // future fixture-based tests).
 // ─────────────────────────────────────────────────────────────────────────────
 #[cfg(test)]
+#[allow(dead_code)]
 mod fixtures {
     pub const SIMPLE_LEAN4_PROOF: &str = r#"
         theorem simple_arithmetic : 2 + 2 = 4 := by

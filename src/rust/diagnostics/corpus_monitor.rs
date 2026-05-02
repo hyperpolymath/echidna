@@ -77,25 +77,23 @@ impl CorpusMonitor {
         // Scan for premises_*.jsonl files
         match fs::read_dir(path) {
             Ok(entries) => {
-                for entry in entries {
-                    if let Ok(entry) = entry {
-                        let path = entry.path();
-                        let filename = path
-                            .file_name()
-                            .and_then(|n| n.to_str())
-                            .unwrap_or("");
+                for entry in entries.flatten() {
+                    let path = entry.path();
+                    let filename = path
+                        .file_name()
+                        .and_then(|n| n.to_str())
+                        .unwrap_or("");
 
-                        if filename.starts_with("premises_") && filename.ends_with(".jsonl") {
-                            if let Ok(metadata) = fs::metadata(&path) {
-                                total_size_bytes += metadata.len();
+                    if filename.starts_with("premises_") && filename.ends_with(".jsonl") {
+                        if let Ok(metadata) = fs::metadata(&path) {
+                            total_size_bytes += metadata.len();
 
-                                // Count lines (proofs) in the file
-                                if let Ok(content) = fs::read_to_string(&path) {
-                                    let line_count = content.lines().count();
-                                    total_proofs += line_count;
-                                    // Estimate premises as 2-3 per proof on average
-                                    total_premises += line_count * 2;
-                                }
+                            // Count lines (proofs) in the file
+                            if let Ok(content) = fs::read_to_string(&path) {
+                                let line_count = content.lines().count();
+                                total_proofs += line_count;
+                                // Estimate premises as 2-3 per proof on average
+                                total_premises += line_count * 2;
                             }
                         }
                     }

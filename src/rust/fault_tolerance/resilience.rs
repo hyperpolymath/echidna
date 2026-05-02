@@ -178,6 +178,11 @@ impl CircuitBreaker {
         *self.state.lock().unwrap()
     }
 
+    /// Identifier for this breaker (typically the prover/backend name).
+    pub fn name(&self) -> &str {
+        &self.name
+    }
+
     pub fn failure_count(&self) -> u32 {
         self.failure_count.load(Ordering::SeqCst)
     }
@@ -296,6 +301,11 @@ impl Bulkhead {
 
     pub fn available_permits(&self) -> u32 {
         self.current_permits.load(Ordering::SeqCst)
+    }
+
+    /// Configuration this bulkhead was constructed with.
+    pub fn config(&self) -> &BulkheadConfig {
+        &self.config
     }
 
     pub fn is_available(&self) -> bool {

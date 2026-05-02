@@ -11,7 +11,7 @@ use std::time::Duration;
 use anyhow::Result;
 use tokio::task::JoinSet;
 
-use crate::provers::{ProverBackend, ProverConfig, ProverFactory};
+use crate::provers::{ProverConfig, ProverFactory};
 use crate::ProverKind;
 
 use super::variant::Variant;
@@ -78,7 +78,6 @@ pub async fn test_all_variants(
         while pending < max_parallel {
             match iter.next() {
                 Some((idx, variant)) => {
-                    let budget = budget;
                     set.spawn(async move {
                         let outcome = test_single_variant(prover, &variant, budget).await;
                         (idx, VariantResult { variant, outcome })

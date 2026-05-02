@@ -43,7 +43,7 @@ fn arb_term(depth: u32) -> impl Strategy<Value = Term> {
         leaf,
         // App: func applied to 1-3 args
         (
-            "[a-z][a-z0-9]{0,5}".prop_map(|s| Term::Const(s)),
+            "[a-z][a-z0-9]{0,5}".prop_map(Term::Const),
             prop::collection::vec(arb_term(0), 1..4),
         )
             .prop_map(|(func, args)| Term::App {
@@ -60,8 +60,8 @@ fn arb_proof_state() -> impl Strategy<Value = ProofState> {
         |goals| {
             let goals = goals
                 .into_iter()
-                .enumerate()
-                .map(|(_i, (id, target))| Goal {
+                
+                .map(|(id, target)| Goal {
                     id,
                     hypotheses: vec![],
                     target,

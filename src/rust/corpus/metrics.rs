@@ -11,15 +11,15 @@
 //!
 //! Metric families:
 //!
-//! * **Size**:        statement token count, proof token count,
-//!                    declaration line count
+//! * **Size**: statement token count, proof token count,
+//!   declaration line count
 //! * **Connectivity**: forward fan-out (dep count), reverse fan-in
-//!                    (dependents count), proof-depth
-//! * **Shape**:        recursive vs structural (heuristic from proof
-//!                    body), pattern-match clauses count, has-where
-//! * **Hazards**:      one float per hazard class (0.0 / 1.0)
-//! * **K-elim**:        heuristic for `--without-K` violations
-//!                     (Agda: indices unification on data ctors)
+//!   (dependents count), proof-depth
+//! * **Shape**: recursive vs structural (heuristic from proof
+//!   body), pattern-match clauses count, has-where
+//! * **Hazards**: one float per hazard class (0.0 / 1.0)
+//! * **K-elim**: heuristic for `--without-K` violations
+//!   (Agda: indices unification on data ctors)
 //!
 //! All metrics are **derivable from the parsed corpus** without
 //! re-reading source files. They're computed in `Corpus::compute_metrics`
@@ -31,7 +31,7 @@ use std::collections::HashMap;
 
 use serde::{Deserialize, Serialize};
 
-use super::{Corpus, CorpusEntry, DeclKind};
+use super::{Corpus, DeclKind};
 
 /// Fixed-shape metrics tensor per entry.
 #[derive(Debug, Clone, Default, Serialize, Deserialize)]
@@ -135,6 +135,7 @@ impl Corpus {
     }
 }
 
+#[allow(clippy::field_reassign_with_default)]
 fn metrics_for(
     corpus: &Corpus,
     idx: usize,
@@ -305,7 +306,7 @@ fn compute_proof_depth(
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::corpus::{AxiomUsage, ModuleEntry};
+    use crate::corpus::{AxiomUsage, CorpusEntry, ModuleEntry};
     use std::path::PathBuf;
 
     fn three_entry_corpus() -> Corpus {

@@ -84,10 +84,7 @@ impl ProBBackend {
             b.push_str("PROPERTIES\n  ");
             let joined = state
                 .context
-                .axioms
-                .iter()
-                .cloned()
-                .collect::<Vec<_>>()
+                .axioms.to_vec()
                 .join(" &\n  ");
             b.push_str(&joined);
             b.push('\n');

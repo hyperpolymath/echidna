@@ -129,7 +129,9 @@ fn rk4_step(kernel: &str, params: &[f64], x: &[f64], dt: f64) -> std::result::Re
     Ok(next)
 }
 
-fn build_kernel(name: &str, params: &[f64]) -> std::result::Result<Box<dyn Fn(&[f64]) -> Vec<f64>>, String> {
+type KernelFn = Box<dyn Fn(&[f64]) -> Vec<f64>>;
+
+fn build_kernel(name: &str, params: &[f64]) -> std::result::Result<KernelFn, String> {
     match name {
         "harmonic-oscillator" => {
             if params.len() != 1 {

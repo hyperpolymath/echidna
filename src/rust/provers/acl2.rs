@@ -1421,7 +1421,7 @@ impl ProverBackend for ACL2Backend {
                 .output()
                 .await
                 .context("Failed to run ACL2")?;
-            if state.metadata.get("source_path").is_none() {
+            if !state.metadata.contains_key("source_path") {
                 let _ = tokio::fs::remove_file(&path).await;
             }
             let output_str = String::from_utf8_lossy(&output.stdout);
