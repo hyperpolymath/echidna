@@ -8,7 +8,7 @@ scaffolding with unresolved {{PROJECT}}/{{AUTHOR}} placeholders and no domain-sp
 When this project needs formal ABI verification, create domain-specific Idris2 proofs
 following the pattern in repos like `typed-wasm`, `proven`, `echidna`, or `boj-server`.
 
-## Current state (Updated 2026-04-26)
+## Current state (Updated 2026-05-11)
 
 ### Completed proofs
 
@@ -34,9 +34,9 @@ following the pattern in repos like `typed-wasm`, `proven`, `echidna`, or `boj-s
 |---|------|--------|--------|
 | E1 | Confidence scoring lattice (TrustLevel forms valid partial order) | L4 | Covered by ConfidenceLattice.lean |
 | E8 | VQL-UT query safety (SEC, deeper layer) | I2 | Partially covered by VqlUt.idr |
-| E10 | Pareto frontier maximality | L4 | **Design landed 2026-04-27** (`verification/proofs/lean4/ParetoMaximality.lean` + `ParetoStrongMaximality.lean` + Creusot mirror at `crates/echidna-core-spark/src/pareto.rs`); 11/12 PO theorems closed in main file (PO-1..PO-11); PO-12 strong maximality staged in `ParetoStrongMaximality.lean` as: `List.length_lt_of_subset_with_witness` (auxiliary List lemma, hand-rolled core-Lean) → `domCount_strictly_decreases` (PD-3) → `dominated_by_frontier_member` (PO-12 via `Nat.strong_induction_on` on the descent measure). Proof structure complete; tactic-level fixups expected at first `lake build` (no Lean toolchain locally 2026-04-27 — agent `trig_01Tm7zTxYEY7kmzBsu7P4nc9` will catch). Adds `cs.Nodup` side-condition (cheap to satisfy from the indexed-list shape used by Rust `compute`). Tracking ticket: ECHIDNA-PARETO-DESCENT |
-| E11 | SHAKE3-512/BLAKE3 integrity | L4 | **Design landed 2026-04-27** (`verification/proofs/lean4/IntegrityVerification.lean`); 12 PI theorems including verifier soundness/completeness, status exhaustiveness, BLAKE3 cache freshness; collision-resistance theorems (PI-7, PI-9) state assumption explicitly as a typeclass per zero-axiom policy. NB: hash naming clarification — implementation is SHAKE-256 squeezing 512 bits, not "SHAKE3-512" |
-| E13 | Portfolio cross-checking completeness | L4 | **Design landed 2026-04-27** (`verification/proofs/lean4/PortfolioCompleteness.lean`); 14 PR theorems covering exhaustiveness, AllTimedOut iff no completed, CrossChecked agreement, Inconclusive disagreement detection, needs_review iff non-consensus, unanimity → CrossChecked |
+| E10 | Pareto frontier maximality | L4 | **Lakefile scaffolded 2026-05-11.** `verification/proofs/lean4/lakefile.lean` + `lean-toolchain` (v4.13.0) in place. PO-1..PO-11 (`ParetoMaximality.lean`) expected to compile cleanly — no imports, pure omega/decide arithmetic proofs. PO-12 (`ParetoStrongMaximality.lean`): import path fix applied (`EchidnaPareto.ParetoMaximality` → `ParetoMaximality`); 8 List.Nodup API calls + `Nat.strong_induction_on` tactic syntax flagged as uncertain without a live toolchain — tracked in #53. `lake build` not yet run (`lake` unavailable in 2026-05-11 env). Tracking ticket: ECHIDNA-PARETO-DESCENT (math); #53 (tactic fixups). |
+| E11 | SHAKE3-512/BLAKE3 integrity | L4 | **Lakefile scaffolded 2026-05-11.** 12 PI theorems (PI-1..PI-12) expected to compile cleanly after mechanical fix: `integrityToBool` body corrected from bare `Prop` expression to `decide (s = IntegrityStatus.verified)`. Collision-resistance typeclasses (PI-7, PI-9) remain assumptions per zero-axiom policy. `match hf : file, hh : entry.hash` simultaneous named tactic match in `verify_sound` flagged in #53 as uncertain. `lake build` not yet run. NB: hash naming — implementation is SHAKE-256 squeezing 512 bits. |
+| E13 | Portfolio cross-checking completeness | L4 | **Lakefile scaffolded 2026-05-11.** 14 PR theorems (PR-1..PR-14) expected to mostly compile. Flagged in #53: `List.filter_eq_nil_iff` name (PR-14 prerequisite), `Option.some_injective` → `Option.some.inj` (PR-10), PR-14 `simp` through inner `let firstVerdict` may need `show` pre-computation. `lake build` not yet run. |
 
 ## Recommended prover
 - **Idris2** for ABI-level properties and prover dispatch correctness
@@ -44,4 +44,4 @@ following the pattern in repos like `typed-wasm`, `proven`, `echidna`, or `boj-s
 - **Agda** for metatheoretic properties of proof composition
 
 ## Priority
-- **MEDIUM** (was HIGH) — Core trust pipeline proofs (E2-E6) are now complete. E10-E13 design + statements landed 2026-04-27; remaining work is `lake build` integration (no Lean toolchain pinned in `verification/proofs/lean4/`; the existing `proofs/lean/lakefile.lean` is for the playground, not these proofs). E10-E13 are P2 and do not block the critical path.
+- **MEDIUM** (was HIGH) — Core trust pipeline proofs (E2-E6) are now complete. E10-E13 design + statements landed 2026-04-27; `verification/proofs/lean4/lakefile.lean` scaffolded 2026-05-11 (Lean 4.13.0, no mathlib). Remaining work: run `lake build` in an environment with Lean 4.13.0 and apply the API fixups tracked in #53. E10-E13 are P2 and do not block the critical path.

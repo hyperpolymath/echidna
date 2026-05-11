@@ -356,16 +356,16 @@ theorem small_kernel_monotone (f : TrustFactors) :
 -- Section 6: Exhaustive level distinctness
 -- ==========================================================================
 
-theorem level1_ne_level2 : Level1 ≠ Level2 := by omega
-theorem level1_ne_level3 : Level1 ≠ Level3 := by omega
-theorem level1_ne_level4 : Level1 ≠ Level4 := by omega
-theorem level1_ne_level5 : Level1 ≠ Level5 := by omega
-theorem level2_ne_level3 : Level2 ≠ Level3 := by omega
-theorem level2_ne_level4 : Level2 ≠ Level4 := by omega
-theorem level2_ne_level5 : Level2 ≠ Level5 := by omega
-theorem level3_ne_level4 : Level3 ≠ Level4 := by omega
-theorem level3_ne_level5 : Level3 ≠ Level5 := by omega
-theorem level4_ne_level5 : Level4 ≠ Level5 := by omega
+theorem level1_ne_level2 : Level1 ≠ Level2 := by decide
+theorem level1_ne_level3 : Level1 ≠ Level3 := by decide
+theorem level1_ne_level4 : Level1 ≠ Level4 := by decide
+theorem level1_ne_level5 : Level1 ≠ Level5 := by decide
+theorem level2_ne_level3 : Level2 ≠ Level3 := by decide
+theorem level2_ne_level4 : Level2 ≠ Level4 := by decide
+theorem level2_ne_level5 : Level2 ≠ Level5 := by decide
+theorem level3_ne_level4 : Level3 ≠ Level4 := by decide
+theorem level3_ne_level5 : Level3 ≠ Level5 := by decide
+theorem level4_ne_level5 : Level4 ≠ Level5 := by decide
 
 -- ==========================================================================
 -- Section 7: Strict ordering chain

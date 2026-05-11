@@ -25,7 +25,7 @@
 -- than mathematical errors) are expected; the proof structure is
 -- the load-bearing artefact.
 
-import EchidnaPareto.ParetoMaximality
+import ParetoMaximality
 
 namespace EchidnaPareto
 

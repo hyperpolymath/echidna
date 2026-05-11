@@ -364,7 +364,7 @@ theorem quickReverify_complete (e : Blake3CacheEntry) (current : ByteString)
     canonical mapping here so that downstream proofs can chain the
     integrity result into the trust-level computation. -/
 def integrityToBool (s : IntegrityStatus) : Bool :=
-  s = IntegrityStatus.verified
+  decide (s = IntegrityStatus.verified)
 
 /-- **PI-11 (E11/11) Trust gate**: `solver_integrity_ok` is `true` iff
     the verifier returns `verified`. -/
