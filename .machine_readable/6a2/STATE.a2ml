@@ -986,24 +986,45 @@ suggested-order = """
 estimate = "Multi-day if AffineScript has the needed primitives; multi-week if it gains new compiler features along the way."
 
 [migration-roadmap.rust-to-rust-spark]
-status = "scoping pending"
+status = "initial 3-module slate complete (2026-05-11); refreshed with 3 new candidates for next runs"
 note = """
 Memory rule "Rust always means Rust/SPARK" calls for new Rust projects
 to admit SPARK/Ada modules via Idris2-ABI + Zig-FFI. Echidna pre-dates
-this rule; the wholesale transition is multi-week. Realistic plan:
-identify highest-leverage modules + add SPARK companions over time.
+this rule; rather than wholesale transition, we add SPARK companions to
+highest-leverage pure-decision modules one per monthly routine run.
+
+Modeling pattern (established in initial slate): SPARK can't reason about
+file IO, async/tokio, strings, or cryptographic primitives, so each
+companion abstracts those into boolean inputs at the boundary and proves
+only the decision tree *above* the IO/crypto layer. Concrete contracts
+focus on totality + cap-at-bad-state monotonicity (cap-at-Reject for
+axiom_tracker, cap-at-Tampered for solver_integrity, cap-at-malformed
+for certificates).
+
+Per-module effort (revised from first slate): ~1-2 hours of focused work
+when the Rust source is well-factored decision logic, not the originally
+estimated 3-7 days. Heavy IO/string-handling modules remain non-candidates.
 """
+candidate-modules-completed = [
+  "src/rust/verification/axiom_tracker.rs — DONE run #1 (#47, commit f18cd5c, 2026-05-11). Proved: 4-level DangerLevel total order, Enforce_Policy cap-at-Reject monotonicity, Is_Acceptable exact characterisation, Worst_Danger exhaustive case. 18 checks, 0 unproved.",
+  "src/rust/integrity/solver_integrity.rs — DONE run #2 (#49, commit 1f92de7, 2026-05-11). Proved: Classify_Verification totality (never returns Unchecked), hash-mismatch ⇒ Tampered, Is_Safe exclusion, Aggregate_Safe cap-at-Tampered. 11 checks, 0 unproved.",
+  "src/rust/verification/certificates.rs — DONE run #3 (#50, commit 54c03aa, 2026-05-11). Proved: Format_Extension totality + injectivity, Check_Alethe_Step exact characterisation, Verify_Alethe = ∀ step valid, Cap_At_Malformed, Empty_Verifies. 10 checks, 0 unproved.",
+]
 candidate-modules = [
-  "src/rust/verification/axiom_tracker.rs — security-critical: tracks 4-level danger classification (Safe/Noted/Warning/Reject); SPARK proofs of monotonicity + cap-at-Reject would make the trust hierarchy provably sound rather than test-verified.",
-  "src/rust/integrity/solver_integrity.rs — SHAKE3-512 + BLAKE3 binary integrity verification; SPARK proofs that hash mismatch always yields IntegrityStatus::Failed (no silent pass) would close the dispatch trust loop.",
-  "src/rust/verification/certificates.rs — proof certificate validation (Alethe, DRAT, TSTP, OpenTheory); SPARK would prove certificate parsing is total + the verifier doesn't accept malformed certs.",
+  "src/rust/verification/confidence.rs — TrustLevel 5-level hierarchy (Level1..Level5) + compute_trust_level priority chain consuming TrustFactors. SPARK would prove: total order on TrustLevel, cap-at-Reject-axiom / cap-at-Warning-axiom / cap-at-integrity-fail (all force Level1), level-5 condition precisely characterised, monotonicity in confirming_provers / certificate_verified / solver_integrity_ok when axiom danger ≤ Noted. Direct mirror of axiom_tracker's structure — depends on DangerLevel which we already have SPARK proved (lifts the companion into a composable proof chain).",
+  "src/rust/verification/portfolio.rs — PortfolioConfidence classification (CrossChecked / SingleSolver / Inconclusive / AllTimedOut) over a Vec<SolverResult>. SPARK would prove: classification totality, solvers-disagree ⇒ Inconclusive (load-bearing safety: never silently pass an Inconclusive as CrossChecked), all-timeouts ⇒ AllTimedOut, exact characterisation of each branch.",
+  "src/rust/verification/pareto.rs — Pareto dominance + frontier construction over ProofObjective tuples (proof_time, trust_level, memory_bytes, proof_steps). SPARK would prove: dominance is irreflexive + transitive + antisymmetric, frontier is dominance-free (no member dominates another), insertion preserves the dominance-free invariant.",
 ]
 non-candidates = [
   "src/rust/provers/* — these are CLI shellouts to external prover binaries; Rust's safety adds little here vs SPARK overhead.",
   "src/julia/ — Julia ML; SPARK not applicable.",
   "src/interfaces/* — REST/GraphQL/gRPC adapters; standard web tier, low SPARK ROI.",
+  "src/rust/verification/mutation.rs — mutation testing infrastructure with String fields; less SPARK-tractable than the decision modules above.",
+  "src/rust/verification/statistics.rs — Bayesian updating with floats and HashMaps; SPARK-hostile (floats not in Ada subset by default).",
+  "src/rust/verification/proof.rs — mostly data structures + JSON serialization for Verisim E-R schema; limited decision logic to prove.",
+  "src/rust/integrity/io.rs — bounded file read helper; the bound IS a SPARK-provable property but the std::io::Read::take surface puts it outside the decision-logic sweet spot.",
 ]
-estimate = "Per-module: 3-7 days each (formal-spec → SPARK port → proof of equivalence with the Rust implementation)."
+estimate = "Per-module: 1-2 hours each (read Rust source → design abstraction → write .ads/.adb/.gpr/proof.adb → gnatprove until 0 unproved → PR). Revised down from original 3-7 day estimate after first-slate experience: the abstract-IO-as-boolean-inputs pattern collapses most of the work to writing the decision-tree mirror as a SPARK case/if-chain."
 
 [migration-roadmap.applies-to-other-repos]
 note = """
