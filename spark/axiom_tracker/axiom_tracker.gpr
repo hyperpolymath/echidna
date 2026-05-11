@@ -1,0 +1,30 @@
+-- GPRbuild project for axiom_tracker SPARK companion
+project Axiom_Tracker is
+
+   for Source_Dirs use (".");
+   for Object_Dir  use ".obj";
+   for Main        use ();
+
+   package Compiler is
+      for Switches ("Ada") use
+        ("-gnat2022",  -- Ada 2022 syntax
+         "-gnatX",     -- experimental Ada extensions (quantified exprs)
+         "-O1",
+         "-gnatn");
+   end Compiler;
+
+   package Prove is
+      --  gnatprove settings:
+      --    --mode=prove      run full proof (not just flow analysis)
+      --    --level=1         CVC5 + Z3, medium timeout
+      --    --counterexamples=on  surface failing inputs when a VC fails
+      --    -j0               use all available cores
+      for Proof_Switches ("Ada") use
+        ("--mode=prove",
+         "--level=1",
+         "--counterexamples=on",
+         "-j0",
+         "--report=all");
+   end Prove;
+
+end Axiom_Tracker;
