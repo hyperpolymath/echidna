@@ -195,7 +195,8 @@ impl ProverBackend for RedlogBackend {
         for line in content.lines() {
             let trimmed = line.trim();
             if let Some(rest) = trimmed.strip_prefix("formula") {
-                let rest = rest.trim_start_matches(|c: char| c.is_whitespace() || c == ':' || c == '=');
+                let rest =
+                    rest.trim_start_matches(|c: char| c.is_whitespace() || c == ':' || c == '=');
                 let rest = rest.trim_end_matches(|c: char| c.is_whitespace() || c == ';');
                 if !rest.is_empty() {
                     state.goals.push(Goal {
@@ -246,11 +247,7 @@ impl ProverBackend for RedlogBackend {
         self.to_redlog(state)
     }
 
-    async fn suggest_tactics(
-        &self,
-        _state: &ProofState,
-        _limit: usize,
-    ) -> Result<Vec<Tactic>> {
+    async fn suggest_tactics(&self, _state: &ProofState, _limit: usize) -> Result<Vec<Tactic>> {
         Ok(vec![])
     }
 
@@ -328,7 +325,7 @@ mod tests {
         let backend = RedlogBackend::new(config);
         let out = "5: x > 0 and y > 0\n";
         let r = backend.parse_result(out).expect("parse_result failed");
-        assert!(!r);  // residual formula → not closed
+        assert!(!r); // residual formula → not closed
     }
 
     #[test]
@@ -344,7 +341,10 @@ mod tests {
         let config = ProverConfig::default();
         let backend = RedlogBackend::new(config);
         let input = "load_package redlog;\nrlset reals;\nformula := x > 0;\nrlqe formula;\n";
-        let state = backend.parse_string(input).await.expect("parse_string failed");
+        let state = backend
+            .parse_string(input)
+            .await
+            .expect("parse_string failed");
         assert_eq!(state.goals.len(), 1);
     }
 }

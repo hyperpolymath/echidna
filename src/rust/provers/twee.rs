@@ -56,10 +56,7 @@ impl TweeBackend {
 
     /// Parse Twee output to determine proof success
     fn parse_result(&self, output: &str) -> Result<bool> {
-        if output.contains("THEOREM")
-            || output.contains("YES")
-            || output.contains("Proof found")
-        {
+        if output.contains("THEOREM") || output.contains("YES") || output.contains("Proof found") {
             Ok(true)
         } else if output.contains("COUNTER-SATISFIABLE")
             || output.contains("NO")
@@ -183,11 +180,7 @@ impl ProverBackend for TweeBackend {
         self.to_tptp(state)
     }
 
-    async fn suggest_tactics(
-        &self,
-        _state: &ProofState,
-        _limit: usize,
-    ) -> Result<Vec<Tactic>> {
+    async fn suggest_tactics(&self, _state: &ProofState, _limit: usize) -> Result<Vec<Tactic>> {
         Ok(vec![])
     }
 
@@ -251,5 +244,4 @@ mod tests {
         let result = backend.parse_result(output).expect("parse_result failed");
         assert!(!result);
     }
-
 }

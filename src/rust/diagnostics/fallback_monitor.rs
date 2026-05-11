@@ -82,8 +82,7 @@ impl FallbackMonitor {
         }
 
         // Update exponential moving average latency (0.8 * old + 0.2 * new)
-        self.avg_latency_ms =
-            (self.avg_latency_ms * 0.8) + (invocation.latency_ms * 0.2);
+        self.avg_latency_ms = (self.avg_latency_ms * 0.8) + (invocation.latency_ms * 0.2);
 
         // Track maximum latency
         if invocation.latency_ms > self.max_latency_seen_ms {

@@ -97,10 +97,7 @@ impl ProverBackend for MinlogBackend {
                 String::from_utf8_lossy(&output.stderr)
             ));
         }
-        let input = if let Some(src) = state
-            .metadata
-            .get("minlog_source")
-            .and_then(|v| v.as_str())
+        let input = if let Some(src) = state.metadata.get("minlog_source").and_then(|v| v.as_str())
         {
             src.to_string()
         } else {

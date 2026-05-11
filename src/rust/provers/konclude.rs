@@ -228,11 +228,7 @@ impl ProverBackend for KoncludeBackend {
         Ok(Self::to_ofn(state))
     }
 
-    async fn suggest_tactics(
-        &self,
-        _state: &ProofState,
-        _limit: usize,
-    ) -> Result<Vec<Tactic>> {
+    async fn suggest_tactics(&self, _state: &ProofState, _limit: usize) -> Result<Vec<Tactic>> {
         Ok(vec![])
     }
 

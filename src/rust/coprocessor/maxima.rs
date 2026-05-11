@@ -23,8 +23,7 @@ use tokio::process::Command;
 
 use super::trust::CoprocessorTrustTier;
 use super::types::{
-    CoprocessorCapabilities, CoprocessorHealth, CoprocessorKind, CoprocessorOp,
-    CoprocessorOutcome,
+    CoprocessorCapabilities, CoprocessorHealth, CoprocessorKind, CoprocessorOp, CoprocessorOutcome,
 };
 use super::Coprocessor;
 
@@ -73,9 +72,8 @@ fn which(name: &str) -> bool {
 /// Blocks shell metacharacters (`;` `:` `$` `"` `'` `\` `!` `&` `|` etc.).
 fn is_safe_expr(s: &str) -> bool {
     !s.is_empty()
-        && s.chars().all(|c| {
-            c.is_ascii_alphanumeric() || "+-*/^()., _".contains(c)
-        })
+        && s.chars()
+            .all(|c| c.is_ascii_alphanumeric() || "+-*/^()., _".contains(c))
 }
 
 /// Identifier: ASCII letter first, then alphanumeric or underscore.
@@ -88,7 +86,14 @@ fn is_safe_var(s: &str) -> bool {
 /// Strip Maxima banner lines and `(%i...)` / `(%o...)` label lines, returning
 /// the CAS result text.  `grind` output ends with `;` — that is stripped too.
 fn extract_result(output: &str) -> String {
-    let skip_prefixes = ["(%", "Maxima", "using Lisp", "Distributed", "Dedicated", "The function"];
+    let skip_prefixes = [
+        "(%",
+        "Maxima",
+        "using Lisp",
+        "Distributed",
+        "Dedicated",
+        "The function",
+    ];
     output
         .lines()
         .filter(|line| {
@@ -136,7 +141,7 @@ impl Coprocessor for MaximaBackend {
                 }
                 let batch = format!("display2d:false; grind(fullratsimp({expr}))$");
                 run_maxima_batch(&batch).await
-            }
+            },
             CoprocessorOp::MaximaFactor { expr } => {
                 if !is_safe_expr(&expr) {
                     return Ok(CoprocessorOutcome::Failure(format!(
@@ -145,7 +150,7 @@ impl Coprocessor for MaximaBackend {
                 }
                 let batch = format!("display2d:false; grind(factor({expr}))$");
                 run_maxima_batch(&batch).await
-            }
+            },
             CoprocessorOp::MaximaDiff { expr, var } => {
                 if !is_safe_expr(&expr) {
                     return Ok(CoprocessorOutcome::Failure(format!(
@@ -159,7 +164,7 @@ impl Coprocessor for MaximaBackend {
                 }
                 let batch = format!("display2d:false; grind(diff({expr},{var}))$");
                 run_maxima_batch(&batch).await
-            }
+            },
             other => Ok(CoprocessorOutcome::Failure(format!(
                 "Maxima backend does not support {:?}",
                 std::mem::discriminant(&other)
@@ -266,7 +271,8 @@ mod tests {
 
     #[test]
     fn extract_result_strips_labels() {
-        let raw = "(%i1) display2d:false;\n(%o1) false\n(%i2) grind(factor(x^2-1))$\n(x-1)*(x+1);\n";
+        let raw =
+            "(%i1) display2d:false;\n(%o1) false\n(%i2) grind(factor(x^2-1))$\n(x-1)*(x+1);\n";
         let result = extract_result(raw);
         assert_eq!(result, "(x-1)*(x+1)");
     }

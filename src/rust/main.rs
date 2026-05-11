@@ -13,8 +13,8 @@ use echidna::{
     ProverKind,
 };
 use indicatif::{ProgressBar, ProgressStyle};
-use std::sync::Arc;
 use std::path::PathBuf;
+use std::sync::Arc;
 use tracing::{info, warn};
 
 mod output;
@@ -389,8 +389,16 @@ async fn main() -> Result<()> {
             sandbox,
         } => {
             prove_command(
-                file, prover, timeout, neural, executable, library, diagnose,
-                project_root, sandbox, &formatter,
+                file,
+                prover,
+                timeout,
+                neural,
+                executable,
+                library,
+                diagnose,
+                project_root,
+                sandbox,
+                &formatter,
             )
             .await?;
         },
@@ -403,7 +411,10 @@ async fn main() -> Result<()> {
             library,
             diagnose,
         } => {
-            verify_command(file, prover, timeout, executable, library, diagnose, &formatter).await?;
+            verify_command(
+                file, prover, timeout, executable, library, diagnose, &formatter,
+            )
+            .await?;
         },
 
         Commands::Search {
@@ -506,7 +517,13 @@ async fn prove_command(
 
     let kind = detect_prover(prover_kind, &file)?;
     let config = create_config(
-        kind, timeout, neural, executable, library, project_root, &sandbox,
+        kind,
+        timeout,
+        neural,
+        executable,
+        library,
+        project_root,
+        &sandbox,
     )?;
     let prover = echidna::provers::ProverFactory::create(kind, config)
         .context("Failed to create prover backend")?;
@@ -687,8 +704,8 @@ async fn search_command(
     // 70+ that legitimately return Vec::new() because their underlying
     // prover doesn't ship a `Search`-equivalent). No-op without the
     // `verisim` feature; logs and continues on Verisim outage.
-    let verisim_url = std::env::var("VERISIM_URL")
-        .unwrap_or_else(|_| "http://localhost:8080".to_string());
+    let verisim_url =
+        std::env::var("VERISIM_URL").unwrap_or_else(|_| "http://localhost:8080".to_string());
     match echidna::vcl_ut::cross_prover_search_names(&verisim_url, &pattern, limit).await {
         Ok(cross) if !cross.is_empty() => {
             formatter.section("\nCross-prover (VeriSimDB) Results:")?;
@@ -699,11 +716,11 @@ async fn search_command(
             if cross.len() > limit {
                 formatter.info(&format!("  ... and {} more results", cross.len() - limit))?;
             }
-        }
-        Ok(_) => {}
+        },
+        Ok(_) => {},
         Err(e) => {
             warn!("Cross-prover search failed: {}", e);
-        }
+        },
     }
 
     formatter.info(&format!("\nTotal results found: {}", total_results))?;
@@ -1031,9 +1048,8 @@ fn create_config(
     project_root: Option<PathBuf>,
     sandbox: &str,
 ) -> Result<ProverConfig> {
-    let sandbox_mode: echidna::provers::SandboxMode = sandbox
-        .parse()
-        .map_err(|e: String| anyhow::anyhow!(e))?;
+    let sandbox_mode: echidna::provers::SandboxMode =
+        sandbox.parse().map_err(|e: String| anyhow::anyhow!(e))?;
 
     let config = ProverConfig {
         timeout,
@@ -1172,7 +1188,7 @@ fn corpus_command(op: CorpusOp, formatter: &OutputFormatter) -> Result<()> {
                         "Unknown corpus adapter '{}' (supported: agda, coq, lean, idris2)",
                         other
                     ))
-                }
+                },
             };
             corpus.save_json(&out)?;
             let stats = corpus.stats();
@@ -1187,7 +1203,7 @@ fn corpus_command(op: CorpusOp, formatter: &OutputFormatter) -> Result<()> {
                 stats.with_hazards,
                 out.display()
             ))?;
-        }
+        },
         CorpusOp::Query {
             pattern,
             index,
@@ -1203,7 +1219,7 @@ fn corpus_command(op: CorpusOp, formatter: &OutputFormatter) -> Result<()> {
                         .map(|s| s.to_string_lossy().into_owned())
                         .unwrap_or_else(|| "project".to_string());
                     default_index(&basename)
-                }
+                },
             };
             let corpus = Corpus::load_json(&path)
                 .with_context(|| format!("load corpus index {}", path.display()))?;
@@ -1220,10 +1236,7 @@ fn corpus_command(op: CorpusOp, formatter: &OutputFormatter) -> Result<()> {
                     .unwrap_or("?");
                 println!(
                     "{}  [{:?}] {}:{}",
-                    entry.qualified,
-                    entry.kind,
-                    module,
-                    entry.line
+                    entry.qualified, entry.kind, module, entry.line
                 );
                 println!("  : {}", entry.statement);
                 if entry.axiom_usage.any() {
@@ -1238,8 +1251,7 @@ fn corpus_command(op: CorpusOp, formatter: &OutputFormatter) -> Result<()> {
             if deps && hits.len() == 1 {
                 let closure = corpus.closure(&hits[0].qualified);
                 println!("\ntransitive closure ({} entries):", closure.len());
-                let mut names: Vec<&str> =
-                    closure.iter().map(|e| e.qualified.as_str()).collect();
+                let mut names: Vec<&str> = closure.iter().map(|e| e.qualified.as_str()).collect();
                 names.sort();
                 for n in names {
                     println!("  {}", n);
@@ -1265,14 +1277,13 @@ fn corpus_command(op: CorpusOp, formatter: &OutputFormatter) -> Result<()> {
                     hits[0].qualified,
                     closure.len()
                 );
-                let mut names: Vec<&str> =
-                    closure.iter().map(|e| e.qualified.as_str()).collect();
+                let mut names: Vec<&str> = closure.iter().map(|e| e.qualified.as_str()).collect();
                 names.sort();
                 for n in names {
                     println!("  {}", n);
                 }
             }
-        }
+        },
         CorpusOp::Crossquery {
             class,
             synonyms_dir,
@@ -1307,8 +1318,7 @@ fn corpus_command(op: CorpusOp, formatter: &OutputFormatter) -> Result<()> {
                 }
             }
             if total == 0 {
-                formatter
-                    .info(&format!("no entries for semantic class '{}'", class))?;
+                formatter.info(&format!("no entries for semantic class '{}'", class))?;
             } else {
                 formatter.info(&format!(
                     "{} entries across {} prover(s) for semantic class '{}'",
@@ -1317,7 +1327,7 @@ fn corpus_command(op: CorpusOp, formatter: &OutputFormatter) -> Result<()> {
                     class
                 ))?;
             }
-        }
+        },
 
         CorpusOp::Near { query, index, top } => {
             let path = match index {
@@ -1328,7 +1338,7 @@ fn corpus_command(op: CorpusOp, formatter: &OutputFormatter) -> Result<()> {
                         .map(|s| s.to_string_lossy().into_owned())
                         .unwrap_or_else(|| "project".to_string());
                     default_index(&basename)
-                }
+                },
             };
             let corpus = Corpus::load_json(&path)
                 .with_context(|| format!("load corpus index {}", path.display()))?;
@@ -1344,13 +1354,10 @@ fn corpus_command(op: CorpusOp, formatter: &OutputFormatter) -> Result<()> {
             }
             for (idx, sim) in &nn {
                 let entry = &corpus.entries[*idx];
-                println!(
-                    "{:.3}  {}  [{:?}]",
-                    sim, entry.qualified, entry.kind
-                );
+                println!("{:.3}  {}  [{:?}]", sim, entry.qualified, entry.kind);
                 println!("       : {}", entry.statement);
             }
-        }
+        },
 
         CorpusOp::ExportOctads { index, out } => {
             let corpus = Corpus::load_json(&index)
@@ -1362,7 +1369,7 @@ fn corpus_command(op: CorpusOp, formatter: &OutputFormatter) -> Result<()> {
                 corpus.entries.len(),
                 out.display()
             ))?;
-        }
+        },
 
         CorpusOp::ImportOctads { octads, out } => {
             let corpus = Corpus::load_octads_jsonl(&octads)
@@ -1374,7 +1381,7 @@ fn corpus_command(op: CorpusOp, formatter: &OutputFormatter) -> Result<()> {
                 corpus.modules.len(),
                 out.display()
             ))?;
-        }
+        },
 
         CorpusOp::Stats { index } => {
             let path = match index {
@@ -1385,7 +1392,7 @@ fn corpus_command(op: CorpusOp, formatter: &OutputFormatter) -> Result<()> {
                         .map(|s| s.to_string_lossy().into_owned())
                         .unwrap_or_else(|| "project".to_string());
                     default_index(&basename)
-                }
+                },
             };
             let corpus = Corpus::load_json(&path)
                 .with_context(|| format!("load corpus index {}", path.display()))?;
@@ -1401,7 +1408,7 @@ fn corpus_command(op: CorpusOp, formatter: &OutputFormatter) -> Result<()> {
                 stats.with_hazards,
                 stats.with_deps
             );
-        }
+        },
     }
 
     Ok(())
@@ -1452,12 +1459,7 @@ async fn design_command(op: DesignOp, formatter: &OutputFormatter) -> Result<()>
                     );
                     println!("top {} distinct candidates:", top.min(result.topk.len()));
                     for (i, (state, e)) in result.topk.iter().take(top).enumerate() {
-                        println!(
-                            "  {:2}. energy {:?}  {}",
-                            i + 1,
-                            e,
-                            p.describe(state)
-                        );
+                        println!("  {:2}. energy {:?}  {}", i + 1, e, p.describe(state));
                     }
                     println!(
                         "\nlegend: energy = [mono-blockers, K-hazards, ctor-count, style-pref]"
@@ -1465,7 +1467,7 @@ async fn design_command(op: DesignOp, formatter: &OutputFormatter) -> Result<()>
                     println!(
                         "        style-pref: 0 = recursive, 1 = data (recursive preferred when tied)"
                     );
-                }
+                },
                 "buchholz-rank" => {
                     use echidna::learning::buchholz_rank::{
                         render_rank_mono_skeleton, BuchholzRankProblem,
@@ -1486,11 +1488,7 @@ async fn design_command(op: DesignOp, formatter: &OutputFormatter) -> Result<()>
                     );
                     println!("top {} distinct candidates:", top.min(result.topk.len()));
                     for (i, (state, e)) in result.topk.iter().take(top).enumerate() {
-                        println!(
-                            "  {:2}. energy {:?}",
-                            i + 1,
-                            e
-                        );
+                        println!("  {:2}. energy {:?}", i + 1, e);
                         for line in p.describe(state).lines() {
                             println!("       {}", line);
                         }
@@ -1506,15 +1504,15 @@ async fn design_command(op: DesignOp, formatter: &OutputFormatter) -> Result<()>
                     );
                     println!("\n--- Agda skeleton for the recommended shape ---");
                     println!("{}", render_rank_mono_skeleton(&result.best));
-                }
+                },
                 other => {
                     return Err(anyhow::anyhow!(
                         "Unknown design problem '{}' (available: brouwer-leq, buchholz-rank)",
                         other
                     ))
-                }
+                },
             }
-        }
+        },
 
         DesignOp::Swarm {
             problem,
@@ -1568,7 +1566,7 @@ async fn design_command(op: DesignOp, formatter: &OutputFormatter) -> Result<()>
                             r.local_best_energy,
                         );
                     }
-                }
+                },
                 "buchholz-rank" => {
                     use echidna::learning::buchholz_rank::{
                         render_rank_mono_skeleton, BuchholzRankProblem,
@@ -1601,15 +1599,15 @@ async fn design_command(op: DesignOp, formatter: &OutputFormatter) -> Result<()>
                     }
                     println!("\n--- Agda skeleton for the recommended shape ---");
                     println!("{}", render_rank_mono_skeleton(&result.best));
-                }
+                },
                 other => {
                     return Err(anyhow::anyhow!(
                         "Unknown design problem '{}' (available: brouwer-leq, buchholz-rank)",
                         other
                     ))
-                }
+                },
             }
-        }
+        },
     }
     Ok(())
 }

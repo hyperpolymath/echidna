@@ -210,7 +210,10 @@ impl DeclarationOctad {
         let aspects = aspects_for(&entry.kind, &entry.axiom_usage);
         let searchable_text = format!(
             "{} {} {} {}",
-            entry.qualified, entry.statement, proof_text, aspects.join(" ")
+            entry.qualified,
+            entry.statement,
+            proof_text,
+            aspects.join(" ")
         );
         let document = DeclDocument {
             theorem_statement: entry.statement.clone(),
@@ -230,14 +233,15 @@ impl DeclarationOctad {
 
         let mut metrics = std::collections::HashMap::<String, f64>::new();
         metrics.insert("source_line".into(), entry.line as f64);
-        metrics.insert(
-            "dep_fanout".into(),
-            entry.dependencies.len() as f64,
-        );
+        metrics.insert("dep_fanout".into(), entry.dependencies.len() as f64);
         metrics.insert("dep_fanin".into(), reverse_deps.len() as f64);
         metrics.insert(
             "axiom_hazard_postulate".into(),
-            if entry.axiom_usage.postulate { 1.0 } else { 0.0 },
+            if entry.axiom_usage.postulate {
+                1.0
+            } else {
+                0.0
+            },
         );
         metrics.insert(
             "axiom_hazard_admitted".into(),
@@ -249,7 +253,11 @@ impl DeclarationOctad {
         );
         metrics.insert(
             "axiom_hazard_believe_me".into(),
-            if entry.axiom_usage.believe_me { 1.0 } else { 0.0 },
+            if entry.axiom_usage.believe_me {
+                1.0
+            } else {
+                0.0
+            },
         );
         let tensor = DeclTensor { metrics };
 
@@ -322,9 +330,24 @@ fn aspects_for(kind: &DeclKind, hz: &super::AxiomUsage) -> Vec<String> {
 
 fn axiom_usage_from_tensor(t: &DeclTensor) -> super::AxiomUsage {
     super::AxiomUsage {
-        postulate: t.metrics.get("axiom_hazard_postulate").copied().unwrap_or(0.0) > 0.5,
-        believe_me: t.metrics.get("axiom_hazard_believe_me").copied().unwrap_or(0.0) > 0.5,
-        admitted: t.metrics.get("axiom_hazard_admitted").copied().unwrap_or(0.0) > 0.5,
+        postulate: t
+            .metrics
+            .get("axiom_hazard_postulate")
+            .copied()
+            .unwrap_or(0.0)
+            > 0.5,
+        believe_me: t
+            .metrics
+            .get("axiom_hazard_believe_me")
+            .copied()
+            .unwrap_or(0.0)
+            > 0.5,
+        admitted: t
+            .metrics
+            .get("axiom_hazard_admitted")
+            .copied()
+            .unwrap_or(0.0)
+            > 0.5,
         sorry: t.metrics.get("axiom_hazard_sorry").copied().unwrap_or(0.0) > 0.5,
         assert_total: false,
         trustme: false,
@@ -364,13 +387,7 @@ fn content_hash_of(entry: &CorpusEntry) -> String {
     format!("{:x}", h.finalize())
 }
 
-fn hash_provenance(
-    parent: &str,
-    event: &str,
-    timestamp: &str,
-    file: &str,
-    line: usize,
-) -> String {
+fn hash_provenance(parent: &str, event: &str, timestamp: &str, file: &str, line: usize) -> String {
     let mut h = Sha256::new();
     h.update(parent.as_bytes());
     h.update(b"|");
@@ -420,10 +437,13 @@ impl Corpus {
             let rev: Vec<String> = self
                 .dependents
                 .get(&entry.name)
-                .map(|v| v.iter().map(|i| self.entries[*i].qualified.clone()).collect())
+                .map(|v| {
+                    v.iter()
+                        .map(|i| self.entries[*i].qualified.clone())
+                        .collect()
+                })
                 .unwrap_or_default();
-            let mut octad =
-                DeclarationOctad::from_entry(entry, module, &self.adapter, &rev, ts);
+            let mut octad = DeclarationOctad::from_entry(entry, module, &self.adapter, &rev, ts);
             octad.tensor.metrics = metrics_per_entry[i].as_metric_map();
             octad.vector.goal_embedding = embeddings[i].clone();
             octad.vector.model = info.model.clone();
@@ -432,8 +452,7 @@ impl Corpus {
             out.push_str(&line);
             out.push('\n');
         }
-        std::fs::write(path, out)
-            .with_context(|| format!("write {}", path.display()))?;
+        std::fs::write(path, out).with_context(|| format!("write {}", path.display()))?;
         Ok(())
     }
 
@@ -444,8 +463,8 @@ impl Corpus {
     pub fn load_octads_jsonl(path: &Path) -> Result<Self> {
         use std::collections::HashMap as Map;
 
-        let raw = std::fs::read_to_string(path)
-            .with_context(|| format!("read {}", path.display()))?;
+        let raw =
+            std::fs::read_to_string(path).with_context(|| format!("read {}", path.display()))?;
 
         let mut corpus = Corpus::default();
         let mut adapter_set: Option<String> = None;
@@ -476,7 +495,7 @@ impl Corpus {
                     });
                     module_idx_by_path.insert(module_path, idx);
                     idx
-                }
+                },
             };
             let entry_idx = corpus.entries.len();
             let mut entry = octad.to_entry();
@@ -554,13 +573,8 @@ mod tests {
             .get(&entry.name)
             .map(|v| v.iter().map(|i| c.entries[*i].qualified.clone()).collect())
             .unwrap_or_default();
-        let octad = DeclarationOctad::from_entry(
-            entry,
-            module,
-            &c.adapter,
-            &rev,
-            "2026-04-28T00:00:00Z",
-        );
+        let octad =
+            DeclarationOctad::from_entry(entry, module, &c.adapter, &rev, "2026-04-28T00:00:00Z");
         assert_eq!(octad.semantic.adapter, "agda");
         assert_eq!(octad.semantic.qualified, "Ordinal.Brouwer.wf-<");
         assert_eq!(octad.semantic.statement, "WellFounded _<_");
@@ -625,7 +639,10 @@ mod tests {
             &[],
             "T",
         );
-        assert_eq!(agda_octad.graph.cross_prover_id, coq_octad.graph.cross_prover_id);
+        assert_eq!(
+            agda_octad.graph.cross_prover_id,
+            coq_octad.graph.cross_prover_id
+        );
     }
 
     #[test]

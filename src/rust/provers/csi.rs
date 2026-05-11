@@ -50,7 +50,8 @@ impl CSIBackend {
 
     /// Parse CSI output to determine result
     fn parse_result(&self, output: &str) -> Result<bool> {
-        if output.contains("YES") || output.contains("Confluent") || output.contains("Terminating") {
+        if output.contains("YES") || output.contains("Confluent") || output.contains("Terminating")
+        {
             Ok(true)
         } else if output.contains("NO")
             || output.contains("Not confluent")
@@ -163,11 +164,7 @@ impl ProverBackend for CSIBackend {
         self.to_trs(state)
     }
 
-    async fn suggest_tactics(
-        &self,
-        _state: &ProofState,
-        _limit: usize,
-    ) -> Result<Vec<Tactic>> {
+    async fn suggest_tactics(&self, _state: &ProofState, _limit: usize) -> Result<Vec<Tactic>> {
         // CSI is a fully automated TRS confluence/termination solver.
         // It has no user-facing tactic language — correctness certificates
         // are produced internally. Returning empty is correct behaviour.
@@ -228,5 +225,4 @@ mod tests {
         let result = backend.parse_result(output).expect("parse_result failed");
         assert!(!result);
     }
-
 }

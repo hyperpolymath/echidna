@@ -29,12 +29,11 @@ use num_integer::Integer;
 use num_traits::{One, Signed, Zero};
 use std::str::FromStr;
 
+use super::trust::CoprocessorTrustTier;
 use super::types::{
-    CoprocessorCapabilities, CoprocessorHealth, CoprocessorKind, CoprocessorOp,
-    CoprocessorOutcome,
+    CoprocessorCapabilities, CoprocessorHealth, CoprocessorKind, CoprocessorOp, CoprocessorOutcome,
 };
 use super::Coprocessor;
-use super::trust::CoprocessorTrustTier;
 
 /// Math backend — see module docs for the operation set.
 pub struct MathBackend {
@@ -108,12 +107,12 @@ fn dispatch_sync(op: CoprocessorOp) -> Result<CoprocessorOutcome> {
             let ai = parse_bigint(&a)?;
             let bi = parse_bigint(&b)?;
             CoprocessorOutcome::BigInt(ai.gcd(&bi).to_string())
-        }
+        },
         CoprocessorOp::BigIntLcm { a, b } => {
             let ai = parse_bigint(&a)?;
             let bi = parse_bigint(&b)?;
             CoprocessorOutcome::BigInt(ai.lcm(&bi).to_string())
-        }
+        },
         CoprocessorOp::BigIntModExp { base, exp, modulus } => {
             let m = parse_biguint_positive(&modulus, "modulus must be positive")?;
             let b = parse_bigint(&base)?;
@@ -125,7 +124,7 @@ fn dispatch_sync(op: CoprocessorOp) -> Result<CoprocessorOutcome> {
             let b_u = b_mod.to_biguint().expect("non-negative after reduction");
             let e_u = e.to_biguint().expect("non-negative by precondition");
             CoprocessorOutcome::BigInt(b_u.modpow(&e_u, &m).to_string())
-        }
+        },
         CoprocessorOp::BigIntModInverse { a, modulus } => {
             let m = parse_bigint_positive(&modulus, "modulus must be positive")?;
             let a_v = parse_bigint(&a)?;
@@ -133,15 +132,15 @@ fn dispatch_sync(op: CoprocessorOp) -> Result<CoprocessorOutcome> {
                 Some(inv) => CoprocessorOutcome::BigInt(inv.to_string()),
                 None => CoprocessorOutcome::Empty,
             }
-        }
+        },
         CoprocessorOp::BigIntIsProbablePrime { n } => {
             let nu = parse_biguint_nonneg(&n, "primality input must be non-negative")?;
             CoprocessorOutcome::Boolean(is_probable_prime(&nu))
-        }
+        },
         CoprocessorOp::BigIntFactor { n } => {
             let nu = parse_biguint_nonneg(&n, "factor input must be non-negative")?;
             CoprocessorOutcome::Factors(factor(nu))
-        }
+        },
         CoprocessorOp::RationalSimplify { num, den } => {
             let n = parse_bigint(&num)?;
             let d = parse_bigint(&den)?;
@@ -155,13 +154,11 @@ fn dispatch_sync(op: CoprocessorOp) -> Result<CoprocessorOutcome> {
                 sd = -sd;
             }
             CoprocessorOutcome::BigIntPair(sn.to_string(), sd.to_string())
-        }
+        },
         CoprocessorOp::Fibonacci { n } => {
             CoprocessorOutcome::BigInt(fib_fast_doubling(n).to_string())
-        }
-        CoprocessorOp::Factorial { n } => {
-            CoprocessorOutcome::BigInt(factorial(n).to_string())
-        }
+        },
+        CoprocessorOp::Factorial { n } => CoprocessorOutcome::BigInt(factorial(n).to_string()),
         other => CoprocessorOutcome::Failure(format!(
             "Math backend does not support {:?}",
             std::mem::discriminant(&other)
@@ -254,10 +251,7 @@ fn is_probable_prime(n: &BigUint) -> bool {
     }
 
     // Sorenson–Webster bound.
-    let sw_bound = BigUint::from_str(
-        "3317044064679887385961981",
-    )
-    .expect("constant parses");
+    let sw_bound = BigUint::from_str("3317044064679887385961981").expect("constant parses");
 
     // Choose witnesses.
     let witnesses: Vec<BigUint> = if n < &sw_bound {
@@ -266,9 +260,8 @@ fn is_probable_prime(n: &BigUint) -> bool {
         // 40 fixed witnesses — small primes plus a deterministic spread.
         // All under 1024, so always smaller than n once n > sw_bound.
         const FALLBACK: [u32; 40] = [
-            2, 3, 5, 7, 11, 13, 17, 19, 23, 29, 31, 37, 41, 43, 47, 53,
-            59, 61, 67, 71, 73, 79, 83, 89, 97, 101, 103, 107, 109, 113,
-            127, 131, 137, 139, 149, 151, 157, 163, 167, 173,
+            2, 3, 5, 7, 11, 13, 17, 19, 23, 29, 31, 37, 41, 43, 47, 53, 59, 61, 67, 71, 73, 79, 83,
+            89, 97, 101, 103, 107, 109, 113, 127, 131, 137, 139, 149, 151, 157, 163, 167, 173,
         ];
         FALLBACK.iter().map(|p| BigUint::from(*p)).collect()
     };
@@ -302,8 +295,8 @@ fn factor(mut n: BigUint) -> Vec<(String, u32)> {
 
     // Trial division for small primes.
     let small_primes: [u32; 25] = [
-        2, 3, 5, 7, 11, 13, 17, 19, 23, 29, 31, 37, 41, 43, 47, 53, 59, 61,
-        67, 71, 73, 79, 83, 89, 97,
+        2, 3, 5, 7, 11, 13, 17, 19, 23, 29, 31, 37, 41, 43, 47, 53, 59, 61, 67, 71, 73, 79, 83, 89,
+        97,
     ];
     for p in &small_primes {
         let pp = BigUint::from(*p);
@@ -485,13 +478,11 @@ mod tests {
             ("2", true),
             ("17", true),
             ("21", false),
-            ("561", false), // Carmichael — must be caught by MR
+            ("561", false),   // Carmichael — must be caught by MR
             ("104729", true), // 10000th prime
         ];
         for (n, want) in cases {
-            match run(CoprocessorOp::BigIntIsProbablePrime {
-                n: (*n).into(),
-            }) {
+            match run(CoprocessorOp::BigIntIsProbablePrime { n: (*n).into() }) {
                 CoprocessorOutcome::Boolean(b) => {
                     assert_eq!(b, *want, "primality of {n}")
                 },
@@ -502,9 +493,7 @@ mod tests {
 
     #[test]
     fn factor_basic() {
-        match run(CoprocessorOp::BigIntFactor {
-            n: "360".into(),
-        }) {
+        match run(CoprocessorOp::BigIntFactor { n: "360".into() }) {
             CoprocessorOutcome::Factors(fs) => {
                 assert_eq!(fs, vec![("2".into(), 3), ("3".into(), 2), ("5".into(), 1)]);
             },

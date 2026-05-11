@@ -21,8 +21,7 @@ use tokio::io::{AsyncBufReadExt, AsyncReadExt, BufReader};
 
 use super::trust::CoprocessorTrustTier;
 use super::types::{
-    CoprocessorCapabilities, CoprocessorHealth, CoprocessorKind, CoprocessorOp,
-    CoprocessorOutcome,
+    CoprocessorCapabilities, CoprocessorHealth, CoprocessorKind, CoprocessorOp, CoprocessorOutcome,
 };
 use super::Coprocessor;
 
@@ -87,9 +86,7 @@ impl Coprocessor for IoBackend {
 async fn read_all(path: &str) -> CoprocessorOutcome {
     let meta = match fs::metadata(path).await {
         Ok(m) => m,
-        Err(e) if e.kind() == std::io::ErrorKind::NotFound => {
-            return CoprocessorOutcome::Empty
-        }
+        Err(e) if e.kind() == std::io::ErrorKind::NotFound => return CoprocessorOutcome::Empty,
         Err(e) => return CoprocessorOutcome::Failure(format!("metadata({path}): {e}")),
     };
     if meta.len() > MAX_READ_BYTES {
@@ -108,9 +105,7 @@ async fn read_all(path: &str) -> CoprocessorOutcome {
 async fn line_count(path: &str) -> CoprocessorOutcome {
     let f = match fs::File::open(path).await {
         Ok(f) => f,
-        Err(e) if e.kind() == std::io::ErrorKind::NotFound => {
-            return CoprocessorOutcome::Empty
-        }
+        Err(e) if e.kind() == std::io::ErrorKind::NotFound => return CoprocessorOutcome::Empty,
         Err(e) => return CoprocessorOutcome::Failure(format!("open({path}): {e}")),
     };
     let mut reader = BufReader::new(f);
@@ -121,9 +116,7 @@ async fn line_count(path: &str) -> CoprocessorOutcome {
         match reader.read_line(&mut line).await {
             Ok(0) => break,
             Ok(_) => count += 1,
-            Err(e) => {
-                return CoprocessorOutcome::Failure(format!("read_line({path}): {e}"))
-            }
+            Err(e) => return CoprocessorOutcome::Failure(format!("read_line({path}): {e}")),
         }
     }
     CoprocessorOutcome::BigInt(count.to_string())
@@ -132,9 +125,7 @@ async fn line_count(path: &str) -> CoprocessorOutcome {
 async fn sha256_of_file(path: &str) -> CoprocessorOutcome {
     let mut f = match fs::File::open(path).await {
         Ok(f) => f,
-        Err(e) if e.kind() == std::io::ErrorKind::NotFound => {
-            return CoprocessorOutcome::Empty
-        }
+        Err(e) if e.kind() == std::io::ErrorKind::NotFound => return CoprocessorOutcome::Empty,
         Err(e) => return CoprocessorOutcome::Failure(format!("open({path}): {e}")),
     };
     let mut hasher = Sha256::new();
@@ -143,9 +134,7 @@ async fn sha256_of_file(path: &str) -> CoprocessorOutcome {
         match f.read(&mut buf).await {
             Ok(0) => break,
             Ok(n) => hasher.update(&buf[..n]),
-            Err(e) => {
-                return CoprocessorOutcome::Failure(format!("read({path}): {e}"))
-            }
+            Err(e) => return CoprocessorOutcome::Failure(format!("read({path}): {e}")),
         }
     }
     CoprocessorOutcome::Hex(hex(&hasher.finalize()))
@@ -180,7 +169,7 @@ mod tests {
         {
             CoprocessorOutcome::Hex(h) => {
                 assert_eq!(h, "68656c6c6f2065636869646e61");
-            }
+            },
             _ => panic!(),
         }
     }
@@ -192,7 +181,7 @@ mod tests {
         })
         .await
         {
-            CoprocessorOutcome::Empty => {}
+            CoprocessorOutcome::Empty => {},
             _ => panic!(),
         }
     }

@@ -47,7 +47,10 @@ impl FStarBackend {
                 .and_then(|ti| ti.refinement.as_ref())
                 .map(|pred| format!("{{v:{} | {}}}", def.ty, pred))
                 .unwrap_or_else(|| format!("{}", def.ty));
-            input.push_str(&format!("val {} : {}{}\n", def.name, effect_str, refinement_str));
+            input.push_str(&format!(
+                "val {} : {}{}\n",
+                def.name, effect_str, refinement_str
+            ));
         }
         if let Some(goal) = state.goals.first() {
             input.push_str(&format!("\nval goal : {}\n", goal.target));

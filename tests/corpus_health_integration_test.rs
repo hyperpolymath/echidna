@@ -74,9 +74,9 @@ fn test_corpus_growth_tracking_over_time() {
 
     // Simulate corpus growth in stages
     let stages = vec![
-        (100, 300),   // 100 proofs, 300 premises
-        (200, 600),   // 200 proofs, 600 premises
-        (500, 1500),  // 500 proofs, 1500 premises
+        (100, 300),  // 100 proofs, 300 premises
+        (200, 600),  // 200 proofs, 600 premises
+        (500, 1500), // 500 proofs, 1500 premises
     ];
 
     for (proof_count, _premise_count) in &stages {
@@ -110,8 +110,8 @@ fn test_corpus_reset() {
 
 #[test]
 fn test_corpus_metrics_serialization() {
-    use echidna::diagnostics::CorpusMetrics;
     use chrono::Utc;
+    use echidna::diagnostics::CorpusMetrics;
 
     let metrics = CorpusMetrics {
         total_proofs: 5000,
@@ -128,8 +128,7 @@ fn test_corpus_metrics_serialization() {
     assert!(json.contains("2048"));
 
     // Verify round-trip
-    let deserialized: CorpusMetrics =
-        serde_json::from_str(&json).expect("Should deserialize");
+    let deserialized: CorpusMetrics = serde_json::from_str(&json).expect("Should deserialize");
     assert_eq!(deserialized.total_proofs, 5000);
     assert_eq!(deserialized.total_premises, 15000);
 }

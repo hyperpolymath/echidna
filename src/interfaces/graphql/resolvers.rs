@@ -20,7 +20,10 @@ struct FfiProverBackend {
 
 impl FfiProverBackend {
     pub fn new(handle: i32) -> Self {
-        FfiProverBackend { handle, config: ProverConfig::default() }
+        FfiProverBackend {
+            handle,
+            config: ProverConfig::default(),
+        }
     }
 }
 
@@ -158,7 +161,9 @@ impl ProverKindExt for crate::schema::ProverKind {
             CoreProverKind::TypeLL => crate::schema::ProverKind::TypeLL,
             CoreProverKind::KatagoriaVerifier => crate::schema::ProverKind::KatagoriaVerifier,
             CoreProverKind::TropicalTypeChecker => crate::schema::ProverKind::TropicalTypeChecker,
-            CoreProverKind::ChoreographicTypeChecker => crate::schema::ProverKind::ChoreographicTypeChecker,
+            CoreProverKind::ChoreographicTypeChecker => {
+                crate::schema::ProverKind::ChoreographicTypeChecker
+            },
             CoreProverKind::EpistemicTypeChecker => crate::schema::ProverKind::EpistemicTypeChecker,
             CoreProverKind::EchoTypeChecker => crate::schema::ProverKind::EchoTypeChecker,
             CoreProverKind::SessionTypeChecker => crate::schema::ProverKind::SessionTypeChecker,
@@ -166,15 +171,25 @@ impl ProverKindExt for crate::schema::ProverKind {
             CoreProverKind::QTTTypeChecker => crate::schema::ProverKind::QTTTypeChecker,
             CoreProverKind::EffectRowTypeChecker => crate::schema::ProverKind::EffectRowTypeChecker,
             CoreProverKind::DependentTypeChecker => crate::schema::ProverKind::DependentTypeChecker,
-            CoreProverKind::RefinementTypeChecker => crate::schema::ProverKind::RefinementTypeChecker,
+            CoreProverKind::RefinementTypeChecker => {
+                crate::schema::ProverKind::RefinementTypeChecker
+            },
             CoreProverKind::OrdinaryTypeChecker => crate::schema::ProverKind::OrdinaryTypeChecker,
             CoreProverKind::PhantomTypeChecker => crate::schema::ProverKind::PhantomTypeChecker,
-            CoreProverKind::PolymorphicTypeChecker => crate::schema::ProverKind::PolymorphicTypeChecker,
-            CoreProverKind::ExistentialTypeChecker => crate::schema::ProverKind::ExistentialTypeChecker,
-            CoreProverKind::HigherKindedTypeChecker => crate::schema::ProverKind::HigherKindedTypeChecker,
+            CoreProverKind::PolymorphicTypeChecker => {
+                crate::schema::ProverKind::PolymorphicTypeChecker
+            },
+            CoreProverKind::ExistentialTypeChecker => {
+                crate::schema::ProverKind::ExistentialTypeChecker
+            },
+            CoreProverKind::HigherKindedTypeChecker => {
+                crate::schema::ProverKind::HigherKindedTypeChecker
+            },
             CoreProverKind::RowTypeChecker => crate::schema::ProverKind::RowTypeChecker,
             CoreProverKind::SubtypingTypeChecker => crate::schema::ProverKind::SubtypingTypeChecker,
-            CoreProverKind::IntersectionTypeChecker => crate::schema::ProverKind::IntersectionTypeChecker,
+            CoreProverKind::IntersectionTypeChecker => {
+                crate::schema::ProverKind::IntersectionTypeChecker
+            },
             CoreProverKind::UnionTypeChecker => crate::schema::ProverKind::UnionTypeChecker,
             CoreProverKind::GradualTypeChecker => crate::schema::ProverKind::GradualTypeChecker,
             CoreProverKind::HoareTypeChecker => crate::schema::ProverKind::HoareTypeChecker,
@@ -183,15 +198,23 @@ impl ProverKindExt for crate::schema::ProverKind {
             CoreProverKind::AffineTypeChecker => crate::schema::ProverKind::AffineTypeChecker,
             CoreProverKind::RelevantTypeChecker => crate::schema::ProverKind::RelevantTypeChecker,
             CoreProverKind::OrderedTypeChecker => crate::schema::ProverKind::OrderedTypeChecker,
-            CoreProverKind::UniquenessTypeChecker => crate::schema::ProverKind::UniquenessTypeChecker,
+            CoreProverKind::UniquenessTypeChecker => {
+                crate::schema::ProverKind::UniquenessTypeChecker
+            },
             CoreProverKind::ImmutableTypeChecker => crate::schema::ProverKind::ImmutableTypeChecker,
-            CoreProverKind::CapabilityTypeChecker => crate::schema::ProverKind::CapabilityTypeChecker,
+            CoreProverKind::CapabilityTypeChecker => {
+                crate::schema::ProverKind::CapabilityTypeChecker
+            },
             CoreProverKind::BunchedTypeChecker => crate::schema::ProverKind::BunchedTypeChecker,
             CoreProverKind::TemporalTypeChecker => crate::schema::ProverKind::TemporalTypeChecker,
-            CoreProverKind::ProvabilityTypeChecker => crate::schema::ProverKind::ProvabilityTypeChecker,
+            CoreProverKind::ProvabilityTypeChecker => {
+                crate::schema::ProverKind::ProvabilityTypeChecker
+            },
             CoreProverKind::ImpureTypeChecker => crate::schema::ProverKind::ImpureTypeChecker,
             CoreProverKind::CoeffectTypeChecker => crate::schema::ProverKind::CoeffectTypeChecker,
-            CoreProverKind::ProbabilisticTypeChecker => crate::schema::ProverKind::ProbabilisticTypeChecker,
+            CoreProverKind::ProbabilisticTypeChecker => {
+                crate::schema::ProverKind::ProbabilisticTypeChecker
+            },
             CoreProverKind::DyadicTypeChecker => crate::schema::ProverKind::DyadicTypeChecker,
             CoreProverKind::HomotopyTypeChecker => crate::schema::ProverKind::HomotopyTypeChecker,
             CoreProverKind::CubicalTypeChecker => crate::schema::ProverKind::CubicalTypeChecker,
@@ -304,7 +327,9 @@ impl ProverKindExt for crate::schema::ProverKind {
             crate::schema::ProverKind::TypeLL => CoreProverKind::TypeLL,
             crate::schema::ProverKind::KatagoriaVerifier => CoreProverKind::KatagoriaVerifier,
             crate::schema::ProverKind::TropicalTypeChecker => CoreProverKind::TropicalTypeChecker,
-            crate::schema::ProverKind::ChoreographicTypeChecker => CoreProverKind::ChoreographicTypeChecker,
+            crate::schema::ProverKind::ChoreographicTypeChecker => {
+                CoreProverKind::ChoreographicTypeChecker
+            },
             crate::schema::ProverKind::EpistemicTypeChecker => CoreProverKind::EpistemicTypeChecker,
             crate::schema::ProverKind::EchoTypeChecker => CoreProverKind::EchoTypeChecker,
             crate::schema::ProverKind::SessionTypeChecker => CoreProverKind::SessionTypeChecker,
@@ -312,15 +337,25 @@ impl ProverKindExt for crate::schema::ProverKind {
             crate::schema::ProverKind::QTTTypeChecker => CoreProverKind::QTTTypeChecker,
             crate::schema::ProverKind::EffectRowTypeChecker => CoreProverKind::EffectRowTypeChecker,
             crate::schema::ProverKind::DependentTypeChecker => CoreProverKind::DependentTypeChecker,
-            crate::schema::ProverKind::RefinementTypeChecker => CoreProverKind::RefinementTypeChecker,
+            crate::schema::ProverKind::RefinementTypeChecker => {
+                CoreProverKind::RefinementTypeChecker
+            },
             crate::schema::ProverKind::OrdinaryTypeChecker => CoreProverKind::OrdinaryTypeChecker,
             crate::schema::ProverKind::PhantomTypeChecker => CoreProverKind::PhantomTypeChecker,
-            crate::schema::ProverKind::PolymorphicTypeChecker => CoreProverKind::PolymorphicTypeChecker,
-            crate::schema::ProverKind::ExistentialTypeChecker => CoreProverKind::ExistentialTypeChecker,
-            crate::schema::ProverKind::HigherKindedTypeChecker => CoreProverKind::HigherKindedTypeChecker,
+            crate::schema::ProverKind::PolymorphicTypeChecker => {
+                CoreProverKind::PolymorphicTypeChecker
+            },
+            crate::schema::ProverKind::ExistentialTypeChecker => {
+                CoreProverKind::ExistentialTypeChecker
+            },
+            crate::schema::ProverKind::HigherKindedTypeChecker => {
+                CoreProverKind::HigherKindedTypeChecker
+            },
             crate::schema::ProverKind::RowTypeChecker => CoreProverKind::RowTypeChecker,
             crate::schema::ProverKind::SubtypingTypeChecker => CoreProverKind::SubtypingTypeChecker,
-            crate::schema::ProverKind::IntersectionTypeChecker => CoreProverKind::IntersectionTypeChecker,
+            crate::schema::ProverKind::IntersectionTypeChecker => {
+                CoreProverKind::IntersectionTypeChecker
+            },
             crate::schema::ProverKind::UnionTypeChecker => CoreProverKind::UnionTypeChecker,
             crate::schema::ProverKind::GradualTypeChecker => CoreProverKind::GradualTypeChecker,
             crate::schema::ProverKind::HoareTypeChecker => CoreProverKind::HoareTypeChecker,
@@ -329,15 +364,23 @@ impl ProverKindExt for crate::schema::ProverKind {
             crate::schema::ProverKind::AffineTypeChecker => CoreProverKind::AffineTypeChecker,
             crate::schema::ProverKind::RelevantTypeChecker => CoreProverKind::RelevantTypeChecker,
             crate::schema::ProverKind::OrderedTypeChecker => CoreProverKind::OrderedTypeChecker,
-            crate::schema::ProverKind::UniquenessTypeChecker => CoreProverKind::UniquenessTypeChecker,
+            crate::schema::ProverKind::UniquenessTypeChecker => {
+                CoreProverKind::UniquenessTypeChecker
+            },
             crate::schema::ProverKind::ImmutableTypeChecker => CoreProverKind::ImmutableTypeChecker,
-            crate::schema::ProverKind::CapabilityTypeChecker => CoreProverKind::CapabilityTypeChecker,
+            crate::schema::ProverKind::CapabilityTypeChecker => {
+                CoreProverKind::CapabilityTypeChecker
+            },
             crate::schema::ProverKind::BunchedTypeChecker => CoreProverKind::BunchedTypeChecker,
             crate::schema::ProverKind::TemporalTypeChecker => CoreProverKind::TemporalTypeChecker,
-            crate::schema::ProverKind::ProvabilityTypeChecker => CoreProverKind::ProvabilityTypeChecker,
+            crate::schema::ProverKind::ProvabilityTypeChecker => {
+                CoreProverKind::ProvabilityTypeChecker
+            },
             crate::schema::ProverKind::ImpureTypeChecker => CoreProverKind::ImpureTypeChecker,
             crate::schema::ProverKind::CoeffectTypeChecker => CoreProverKind::CoeffectTypeChecker,
-            crate::schema::ProverKind::ProbabilisticTypeChecker => CoreProverKind::ProbabilisticTypeChecker,
+            crate::schema::ProverKind::ProbabilisticTypeChecker => {
+                CoreProverKind::ProbabilisticTypeChecker
+            },
             crate::schema::ProverKind::DyadicTypeChecker => CoreProverKind::DyadicTypeChecker,
             crate::schema::ProverKind::HomotopyTypeChecker => CoreProverKind::HomotopyTypeChecker,
             crate::schema::ProverKind::CubicalTypeChecker => CoreProverKind::CubicalTypeChecker,

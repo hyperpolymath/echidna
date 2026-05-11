@@ -12,10 +12,20 @@ mod full_health_system_tests {
 
         // Verify all systems initialized correctly
         assert_eq!(health.prover_health.len(), 0, "No provers tracked yet");
-        assert!(!health.gnn_model_health.is_loaded, "GNN not loaded by default");
-        assert!(health.gnn_model_health.fallback_active, "Fallback active by default");
+        assert!(
+            !health.gnn_model_health.is_loaded,
+            "GNN not loaded by default"
+        );
+        assert!(
+            health.gnn_model_health.fallback_active,
+            "Fallback active by default"
+        );
         assert_eq!(health.system_degradation, DegradationMode::Normal);
-        assert_eq!(health.health_percentage(), 100.0, "Empty state is 100% health");
+        assert_eq!(
+            health.health_percentage(),
+            100.0,
+            "Empty state is 100% health"
+        );
 
         // Verify fallback monitor initialized
         assert!(health.gnn_model_health.fallback_monitor.is_some());
@@ -52,7 +62,11 @@ mod full_health_system_tests {
 
         // Mark as unavailable after circuit breaker opens
         health.prover_health.get_mut("Z3").unwrap().is_available = false;
-        health.prover_health.get_mut("Z3").unwrap().circuit_breaker_state = CircuitBreakerStateSnapshot::Open;
+        health
+            .prover_health
+            .get_mut("Z3")
+            .unwrap()
+            .circuit_breaker_state = CircuitBreakerStateSnapshot::Open;
 
         health.compute_degradation_mode();
 
@@ -154,7 +168,10 @@ mod full_health_system_tests {
         health.compute_degradation_mode();
 
         // Fallback SLA violations (10%) → IncreasingFallback
-        assert_eq!(health.system_degradation, DegradationMode::IncreasingFallback);
+        assert_eq!(
+            health.system_degradation,
+            DegradationMode::IncreasingFallback
+        );
     }
 
     /// Test 5: Healthy state with good metrics
@@ -214,7 +231,11 @@ mod full_health_system_tests {
 
         // Health percentage should be high
         let health_pct = health.health_percentage();
-        assert!(health_pct > 90.0, "Expected >90% health, got {}%", health_pct);
+        assert!(
+            health_pct > 90.0,
+            "Expected >90% health, got {}%",
+            health_pct
+        );
     }
 
     /// Test 6: Circuit breaker state transitions
@@ -265,7 +286,10 @@ mod full_health_system_tests {
         health.compute_degradation_mode();
 
         // Multiple open circuits (≥2) → IncreasingFallback
-        assert_eq!(health.system_degradation, DegradationMode::IncreasingFallback);
+        assert_eq!(
+            health.system_degradation,
+            DegradationMode::IncreasingFallback
+        );
 
         // Critical provers identified
         let critical = health.critical_provers();
@@ -314,11 +338,23 @@ mod full_health_system_tests {
         let summary = health.summary();
 
         // Verify summary contains expected information
-        assert!(summary.contains("echidna health"), "Summary should start with echidna health");
+        assert!(
+            summary.contains("echidna health"),
+            "Summary should start with echidna health"
+        );
         assert!(summary.contains("2 provers"), "Should report 2 provers");
-        assert!(summary.contains("1 failed"), "Should report 1 failed prover");
-        assert!(summary.contains("1 critical"), "Should report 1 critical prover");
-        assert!(summary.contains("degradation:"), "Should include degradation mode");
+        assert!(
+            summary.contains("1 failed"),
+            "Should report 1 failed prover"
+        );
+        assert!(
+            summary.contains("1 critical"),
+            "Should report 1 critical prover"
+        );
+        assert!(
+            summary.contains("degradation:"),
+            "Should include degradation mode"
+        );
     }
 
     /// Test 8: Corpus health tracking

@@ -52,13 +52,13 @@ use creusot_contracts::*;
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash, Serialize, Deserialize)]
 pub enum DangerLevel {
     /// Standard library axiom — allowed without restriction.
-    Safe    = 0,
+    Safe = 0,
     /// Classical axiom in a constructive system — noted but allowed.
-    Noted   = 1,
+    Noted = 1,
     /// Incomplete proof marker (`sorry`, `Admitted`, `postulate`) — warning.
     Warning = 2,
     /// Known unsound construct (`believe_me`, `mk_thm`, `--type-in-type`) — REJECT.
-    Reject  = 3,
+    Reject = 3,
 }
 
 impl DangerLevel {
@@ -87,17 +87,21 @@ impl DangerLevel {
         ensures(result == a || result == b)
     )]
     pub fn max_danger(a: DangerLevel, b: DangerLevel) -> DangerLevel {
-        if a >= b { a } else { b }
+        if a >= b {
+            a
+        } else {
+            b
+        }
     }
 }
 
 impl std::fmt::Display for DangerLevel {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         let s = match self {
-            DangerLevel::Safe    => "Safe",
-            DangerLevel::Noted   => "Noted",
+            DangerLevel::Safe => "Safe",
+            DangerLevel::Noted => "Noted",
             DangerLevel::Warning => "Warning",
-            DangerLevel::Reject  => "Reject",
+            DangerLevel::Reject => "Reject",
         };
         write!(f, "{s}")
     }
@@ -166,10 +170,10 @@ impl AxiomPolicy {
     )]
     pub fn worst_danger(&self) -> DangerLevel {
         match self {
-            AxiomPolicy::Clean              => DangerLevel::Safe,
+            AxiomPolicy::Clean => DangerLevel::Safe,
             AxiomPolicy::ClassicalAxioms(_) => DangerLevel::Noted,
             AxiomPolicy::IncompleteProof(_) => DangerLevel::Warning,
-            AxiomPolicy::Rejected(_)        => DangerLevel::Reject,
+            AxiomPolicy::Rejected(_) => DangerLevel::Reject,
         }
     }
 
@@ -229,9 +233,7 @@ impl ProverSyntax {
                     || trimmed.starts_with("/-")
             },
             ProverSyntax::StarComment => trimmed.starts_with("(*"),
-            ProverSyntax::FStarComment => {
-                trimmed.starts_with("(*") || trimmed.starts_with("//")
-            },
+            ProverSyntax::FStarComment => trimmed.starts_with("(*") || trimmed.starts_with("//"),
             ProverSyntax::Unknown => false,
         }
     }
@@ -331,26 +333,30 @@ impl AxiomTracker {
         ));
 
         // Coq / Rocq
-        patterns.insert("coq".into(), (
-            ProverSyntax::StarComment,
-            vec![
-                DangerousPattern {
-                    pattern: "Admitted".into(),
-                    danger_level: DangerLevel::Warning,
-                    explanation: "Incomplete proof — 'Admitted' accepts an unproven goal".into(),
-                },
-                DangerousPattern {
-                    pattern: "admit".into(),
-                    danger_level: DangerLevel::Warning,
-                    explanation: "Tactic 'admit' — leaves goal unproven".into(),
-                },
-                DangerousPattern {
-                    pattern: "Axiom ".into(),
-                    danger_level: DangerLevel::Noted,
-                    explanation: "User-defined axiom — not verified by kernel".into(),
-                },
-            ],
-        ));
+        patterns.insert(
+            "coq".into(),
+            (
+                ProverSyntax::StarComment,
+                vec![
+                    DangerousPattern {
+                        pattern: "Admitted".into(),
+                        danger_level: DangerLevel::Warning,
+                        explanation: "Incomplete proof — 'Admitted' accepts an unproven goal"
+                            .into(),
+                    },
+                    DangerousPattern {
+                        pattern: "admit".into(),
+                        danger_level: DangerLevel::Warning,
+                        explanation: "Tactic 'admit' — leaves goal unproven".into(),
+                    },
+                    DangerousPattern {
+                        pattern: "Axiom ".into(),
+                        danger_level: DangerLevel::Noted,
+                        explanation: "User-defined axiom — not verified by kernel".into(),
+                    },
+                ],
+            ),
+        );
 
         // Agda
         patterns.insert("agda".into(), (
@@ -380,33 +386,37 @@ impl AxiomTracker {
         ));
 
         // Isabelle/HOL
-        patterns.insert("isabelle".into(), (
-            ProverSyntax::StarComment,
-            vec![
-                DangerousPattern {
-                    pattern: "sorry".into(),
-                    danger_level: DangerLevel::Warning,
-                    explanation: "Incomplete proof — 'sorry' skips a proof obligation".into(),
-                },
-                DangerousPattern {
-                    pattern: "oops".into(),
-                    danger_level: DangerLevel::Warning,
-                    explanation: "Isabelle 'oops' — intentionally incomplete proof".into(),
-                },
-            ],
-        ));
+        patterns.insert(
+            "isabelle".into(),
+            (
+                ProverSyntax::StarComment,
+                vec![
+                    DangerousPattern {
+                        pattern: "sorry".into(),
+                        danger_level: DangerLevel::Warning,
+                        explanation: "Incomplete proof — 'sorry' skips a proof obligation".into(),
+                    },
+                    DangerousPattern {
+                        pattern: "oops".into(),
+                        danger_level: DangerLevel::Warning,
+                        explanation: "Isabelle 'oops' — intentionally incomplete proof".into(),
+                    },
+                ],
+            ),
+        );
 
         // HOL4
-        patterns.insert("hol4".into(), (
-            ProverSyntax::StarComment,
-            vec![
-                DangerousPattern {
+        patterns.insert(
+            "hol4".into(),
+            (
+                ProverSyntax::StarComment,
+                vec![DangerousPattern {
                     pattern: "mk_thm".into(),
                     danger_level: DangerLevel::Reject,
                     explanation: "UNSOUND: mk_thm bypasses the HOL4 kernel entirely".into(),
-                },
-            ],
-        ));
+                }],
+            ),
+        );
 
         // Idris2
         patterns.insert("idris2".into(), (
@@ -451,21 +461,24 @@ impl AxiomTracker {
         ));
 
         // F*
-        patterns.insert("fstar".into(), (
-            ProverSyntax::FStarComment,
-            vec![
-                DangerousPattern {
-                    pattern: "admit".into(),
-                    danger_level: DangerLevel::Warning,
-                    explanation: "F* admit accepts a goal without proof".into(),
-                },
-                DangerousPattern {
-                    pattern: "assume".into(),
-                    danger_level: DangerLevel::Warning,
-                    explanation: "F* assume introduces an unverified assumption".into(),
-                },
-            ],
-        ));
+        patterns.insert(
+            "fstar".into(),
+            (
+                ProverSyntax::FStarComment,
+                vec![
+                    DangerousPattern {
+                        pattern: "admit".into(),
+                        danger_level: DangerLevel::Warning,
+                        explanation: "F* admit accepts a goal without proof".into(),
+                    },
+                    DangerousPattern {
+                        pattern: "assume".into(),
+                        danger_level: DangerLevel::Warning,
+                        explanation: "F* assume introduces an unverified assumption".into(),
+                    },
+                ],
+            ),
+        );
 
         Self { patterns }
     }
@@ -516,17 +529,16 @@ impl AxiomTracker {
                 // Skip echidna's own scaffold sorrys (PO-A5).
                 // These are generated by the prover backends to indicate a
                 // partial proof skeleton and always carry the marker comment.
-                let is_scaffold = pat.pattern == "sorry"
-                    && line.contains("ECHIDNA_SCAFFOLD_SORRY");
+                let is_scaffold = pat.pattern == "sorry" && line.contains("ECHIDNA_SCAFFOLD_SORRY");
                 if is_scaffold {
                     continue;
                 }
 
                 usages.push(AxiomUsage {
-                    construct:   pat.pattern.clone(),
+                    construct: pat.pattern.clone(),
                     danger_level: pat.danger_level,
                     explanation: pat.explanation.clone(),
-                    line:        Some(line_idx + 1),
+                    line: Some(line_idx + 1),
                 });
             }
         }
@@ -551,8 +563,10 @@ impl AxiomTracker {
         }
 
         let has_rejected = usages.iter().any(|u| u.danger_level == DangerLevel::Reject);
-        let has_warning  = usages.iter().any(|u| u.danger_level == DangerLevel::Warning);
-        let has_noted    = usages.iter().any(|u| u.danger_level == DangerLevel::Noted);
+        let has_warning = usages
+            .iter()
+            .any(|u| u.danger_level == DangerLevel::Warning);
+        let has_noted = usages.iter().any(|u| u.danger_level == DangerLevel::Noted);
 
         if has_rejected {
             let rejected: Vec<AxiomUsage> = usages
@@ -612,8 +626,8 @@ pub mod impl_invariants {
     /// **PO-A1** Total order: `Safe < Noted < Warning < Reject`.
     #[test]
     fn po_a1_danger_level_total_order() {
-        assert!(DangerLevel::Safe    < DangerLevel::Noted);
-        assert!(DangerLevel::Noted   < DangerLevel::Warning);
+        assert!(DangerLevel::Safe < DangerLevel::Noted);
+        assert!(DangerLevel::Noted < DangerLevel::Warning);
         assert!(DangerLevel::Warning < DangerLevel::Reject);
     }
 
@@ -627,23 +641,23 @@ pub mod impl_invariants {
     fn po_a2_classify_axiom_monotone() {
         let base: Vec<AxiomUsage> = vec![];
         let with_noted = vec![AxiomUsage {
-            construct:   "Axiom ".into(),
+            construct: "Axiom ".into(),
             danger_level: DangerLevel::Noted,
             explanation: "test".into(),
-            line:        Some(1),
+            line: Some(1),
         }];
         let with_reject = vec![
             with_noted[0].clone(),
             AxiomUsage {
-                construct:   "believe_me".into(),
+                construct: "believe_me".into(),
                 danger_level: DangerLevel::Reject,
                 explanation: "test".into(),
-                line:        Some(2),
+                line: Some(2),
             },
         ];
 
-        assert!(classify_axiom(&base)        <= classify_axiom(&with_noted));
-        assert!(classify_axiom(&with_noted)  <= classify_axiom(&with_reject));
+        assert!(classify_axiom(&base) <= classify_axiom(&with_noted));
+        assert!(classify_axiom(&with_noted) <= classify_axiom(&with_reject));
     }
 
     // -----------------------------------------------------------------------
@@ -660,8 +674,14 @@ pub mod impl_invariants {
             DangerLevel::Warning,
             DangerLevel::Reject,
         ] {
-            assert_eq!(DangerLevel::max_danger(DangerLevel::Reject, x), DangerLevel::Reject);
-            assert_eq!(DangerLevel::max_danger(x, DangerLevel::Reject), DangerLevel::Reject);
+            assert_eq!(
+                DangerLevel::max_danger(DangerLevel::Reject, x),
+                DangerLevel::Reject
+            );
+            assert_eq!(
+                DangerLevel::max_danger(x, DangerLevel::Reject),
+                DangerLevel::Reject
+            );
         }
     }
 
@@ -675,25 +695,25 @@ pub mod impl_invariants {
     fn po_a4_enforce_policy_monotone() {
         let tracker = AxiomTracker::new();
 
-        let empty_policy      = tracker.enforce_policy(&[]);
-        let noted_usage       = vec![AxiomUsage {
-            construct:   "Axiom ".into(),
+        let empty_policy = tracker.enforce_policy(&[]);
+        let noted_usage = vec![AxiomUsage {
+            construct: "Axiom ".into(),
             danger_level: DangerLevel::Noted,
             explanation: "test".into(),
-            line:        Some(1),
+            line: Some(1),
         }];
-        let noted_policy      = tracker.enforce_policy(&noted_usage);
+        let noted_policy = tracker.enforce_policy(&noted_usage);
         let mut reject_usages = noted_usage.clone();
         reject_usages.push(AxiomUsage {
-            construct:   "believe_me".into(),
+            construct: "believe_me".into(),
             danger_level: DangerLevel::Reject,
             explanation: "test".into(),
-            line:        Some(2),
+            line: Some(2),
         });
-        let reject_policy     = tracker.enforce_policy(&reject_usages);
+        let reject_policy = tracker.enforce_policy(&reject_usages);
 
-        assert!(empty_policy.worst_danger()  <= noted_policy.worst_danger());
-        assert!(noted_policy.worst_danger()  <= reject_policy.worst_danger());
+        assert!(empty_policy.worst_danger() <= noted_policy.worst_danger());
+        assert!(noted_policy.worst_danger() <= reject_policy.worst_danger());
         assert_eq!(reject_policy.worst_danger(), DangerLevel::Reject);
     }
 
@@ -708,8 +728,7 @@ pub mod impl_invariants {
         let tracker = AxiomTracker::new();
 
         // Lean scaffold sorry
-        let lean_content =
-            "theorem _goal : 1 = 1 := by\n  simp\n  sorry -- ECHIDNA_SCAFFOLD_SORRY";
+        let lean_content = "theorem _goal : 1 = 1 := by\n  simp\n  sorry -- ECHIDNA_SCAFFOLD_SORRY";
         assert!(
             tracker.scan("lean", lean_content).is_empty(),
             "Lean scaffold sorry must not be flagged"
@@ -741,7 +760,10 @@ pub mod impl_invariants {
     fn po_a7_coq_comment_not_flagged() {
         let tracker = AxiomTracker::new();
         let usages = tracker.scan("coq", "(* Admitted — this is a comment *)");
-        assert!(usages.is_empty(), "Coq comment line should not produce usages");
+        assert!(
+            usages.is_empty(),
+            "Coq comment line should not produce usages"
+        );
     }
 
     /// `mk_thm` in HOL4 code is always rejected.
@@ -788,19 +810,19 @@ pub mod impl_invariants {
     /// `DangerLevel::value()` is in range and order-preserving.
     #[test]
     fn po_a12_danger_level_value_range_and_order() {
-        assert_eq!(DangerLevel::Safe.value(),    0);
-        assert_eq!(DangerLevel::Noted.value(),   1);
+        assert_eq!(DangerLevel::Safe.value(), 0);
+        assert_eq!(DangerLevel::Noted.value(), 1);
         assert_eq!(DangerLevel::Warning.value(), 2);
-        assert_eq!(DangerLevel::Reject.value(),  3);
-        assert!(DangerLevel::Safe.value()    < DangerLevel::Noted.value());
-        assert!(DangerLevel::Noted.value()   < DangerLevel::Warning.value());
+        assert_eq!(DangerLevel::Reject.value(), 3);
+        assert!(DangerLevel::Safe.value() < DangerLevel::Noted.value());
+        assert!(DangerLevel::Noted.value() < DangerLevel::Warning.value());
         assert!(DangerLevel::Warning.value() < DangerLevel::Reject.value());
     }
 }
 
 #[cfg(test)]
 mod tests {
-    use super::{AxiomTracker, DangerLevel, classify_axiom, AxiomUsage};
+    use super::{classify_axiom, AxiomTracker, AxiomUsage, DangerLevel};
 
     #[test]
     fn test_lean_sorry_detected() {
@@ -832,8 +854,8 @@ mod tests {
     fn test_case_insensitive_prover_key() {
         let tracker = AxiomTracker::new();
         // "Lean" vs "lean" should both work
-        let a = tracker.scan("Lean",  "sorry");
-        let b = tracker.scan("lean",  "sorry");
+        let a = tracker.scan("Lean", "sorry");
+        let b = tracker.scan("lean", "sorry");
         assert_eq!(a.len(), b.len());
     }
 
@@ -845,8 +867,18 @@ mod tests {
     #[test]
     fn test_classify_axiom_picks_max() {
         let usages = vec![
-            AxiomUsage { construct: "a".into(), danger_level: DangerLevel::Noted,   explanation: "".into(), line: None },
-            AxiomUsage { construct: "b".into(), danger_level: DangerLevel::Warning, explanation: "".into(), line: None },
+            AxiomUsage {
+                construct: "a".into(),
+                danger_level: DangerLevel::Noted,
+                explanation: "".into(),
+                line: None,
+            },
+            AxiomUsage {
+                construct: "b".into(),
+                danger_level: DangerLevel::Warning,
+                explanation: "".into(),
+                line: None,
+            },
         ];
         assert_eq!(classify_axiom(&usages), DangerLevel::Warning);
     }

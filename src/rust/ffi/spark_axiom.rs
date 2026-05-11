@@ -26,9 +26,9 @@
 //! The underlying SPARK/Ada code has been formally verified correct; the
 //! Zig shim adds a null-pointer guard and a count-bounds check redundantly.
 
-use crate::verification::axiom_tracker::{AxiomPolicy, AxiomUsage, DangerLevel};
 #[cfg(test)]
 use crate::provers::ProverKind;
+use crate::verification::axiom_tracker::{AxiomPolicy, AxiomUsage, DangerLevel};
 
 // ────────────────────────────────────────────────────────────────────────────
 // Wire-format constants (must match src/ada/spark/axiom_types.ads)
@@ -114,7 +114,10 @@ pub fn spark_enforce_policy(usages: &[AxiomUsage]) -> Result<AxiomPolicy, SparkE
         return Err(SparkError::TooManyUsages(usages.len()));
     }
 
-    let wire: Vec<u8> = usages.iter().map(|u| danger_to_u8(u.danger_level)).collect();
+    let wire: Vec<u8> = usages
+        .iter()
+        .map(|u| danger_to_u8(u.danger_level))
+        .collect();
 
     // SAFETY: wire is non-empty only when usages is non-empty;
     // wire.as_ptr() is always non-null; wire.len() is bounded above.
@@ -160,7 +163,10 @@ pub fn spark_worst_danger(usages: &[AxiomUsage]) -> Result<DangerLevel, SparkErr
         return Err(SparkError::TooManyUsages(usages.len()));
     }
 
-    let wire: Vec<u8> = usages.iter().map(|u| danger_to_u8(u.danger_level)).collect();
+    let wire: Vec<u8> = usages
+        .iter()
+        .map(|u| danger_to_u8(u.danger_level))
+        .collect();
 
     // SAFETY: same reasoning as spark_enforce_policy above.
     let raw = unsafe { echidna_spark_worst_danger(wire.as_ptr(), wire.len()) };
@@ -193,8 +199,8 @@ pub fn crosscheck_enforce_policy(
     usages: &[AxiomUsage],
     rust_result: &AxiomPolicy,
 ) -> Result<(), String> {
-    let spark_result = spark_enforce_policy(usages)
-        .map_err(|e| format!("SPARK bridge error: {e}"))?;
+    let spark_result =
+        spark_enforce_policy(usages).map_err(|e| format!("SPARK bridge error: {e}"))?;
 
     let rust_disc = policy_discriminant(rust_result);
     let spark_disc = policy_discriminant(&spark_result);
@@ -265,7 +271,10 @@ mod tests {
 
     #[test]
     fn spark_reject_beats_warning() {
-        let usages = vec![make_usage(DangerLevel::Warning), make_usage(DangerLevel::Reject)];
+        let usages = vec![
+            make_usage(DangerLevel::Warning),
+            make_usage(DangerLevel::Reject),
+        ];
         let result = spark_enforce_policy(&usages).expect("SPARK bridge call");
         assert!(matches!(result, AxiomPolicy::Rejected(_)));
     }
@@ -278,7 +287,10 @@ mod tests {
 
     #[test]
     fn spark_worst_danger_with_reject() {
-        let usages = vec![make_usage(DangerLevel::Noted), make_usage(DangerLevel::Reject)];
+        let usages = vec![
+            make_usage(DangerLevel::Noted),
+            make_usage(DangerLevel::Reject),
+        ];
         let result = spark_worst_danger(&usages).expect("SPARK bridge call");
         assert_eq!(result, DangerLevel::Reject);
     }

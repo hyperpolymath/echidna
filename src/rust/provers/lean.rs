@@ -1527,10 +1527,10 @@ impl ProverBackend for LeanBackend {
         // Deduplicate before handing off to GNN augmentation
         suggestions.dedup();
 
-        Ok(crate::provers::gnn_augment_tactics(
-            &self.config, state, "lean", suggestions, limit,
+        Ok(
+            crate::provers::gnn_augment_tactics(&self.config, state, "lean", suggestions, limit)
+                .await,
         )
-        .await)
     }
 
     async fn search_theorems(&self, pattern: &str) -> Result<Vec<String>> {

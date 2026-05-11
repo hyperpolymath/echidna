@@ -24,11 +24,10 @@ use async_trait::async_trait;
 use ed25519_dalek::{Signature, Verifier, VerifyingKey};
 use sha2::{Digest, Sha256};
 
-use super::types::{
-    CoprocessorCapabilities, CoprocessorHealth, CoprocessorKind, CoprocessorOp,
-    CoprocessorOutcome,
-};
 use super::trust::CoprocessorTrustTier;
+use super::types::{
+    CoprocessorCapabilities, CoprocessorHealth, CoprocessorKind, CoprocessorOp, CoprocessorOutcome,
+};
 use super::Coprocessor;
 
 pub struct CryptoBackend {
@@ -91,11 +90,11 @@ fn dispatch_sync(op: CoprocessorOp) -> Result<CoprocessorOutcome> {
             let mut hasher = Sha256::new();
             hasher.update(&bytes);
             CoprocessorOutcome::Hex(hex(&hasher.finalize()))
-        }
+        },
         CoprocessorOp::CryptoBlake3 { bytes } => {
             let digest = blake3::hash(&bytes);
             CoprocessorOutcome::Hex(digest.to_hex().to_string())
-        }
+        },
         CoprocessorOp::CryptoEd25519Verify {
             public_key,
             signature,
@@ -124,11 +123,11 @@ fn dispatch_sync(op: CoprocessorOp) -> Result<CoprocessorOutcome> {
                     return Ok(CoprocessorOutcome::Failure(format!(
                         "CryptoEd25519Verify: invalid public key: {e}"
                     )))
-                }
+                },
             };
             let sig = Signature::from_bytes(&sig_bytes);
             CoprocessorOutcome::Boolean(vk.verify(&message, &sig).is_ok())
-        }
+        },
         other => CoprocessorOutcome::Failure(format!(
             "Crypto backend does not support {:?}",
             std::mem::discriminant(&other)
@@ -153,9 +152,7 @@ mod tests {
             .enable_all()
             .build()
             .unwrap();
-        rt.block_on(async {
-            CryptoBackend::new().dispatch(op).await.unwrap()
-        })
+        rt.block_on(async { CryptoBackend::new().dispatch(op).await.unwrap() })
     }
 
     #[test]
@@ -200,9 +197,9 @@ mod tests {
     fn ed25519_verify_rfc8032_test_vector_1() {
         // RFC 8032 §7.1, test vector 1 — empty message.
         let sk_seed: [u8; 32] = [
-            0x9d, 0x61, 0xb1, 0x9d, 0xef, 0xfd, 0x5a, 0x60, 0xba, 0x84, 0x4a, 0xf4,
-            0x92, 0xec, 0x2c, 0xc4, 0x44, 0x49, 0xc5, 0x69, 0x7b, 0x32, 0x69, 0x19,
-            0x70, 0x3b, 0xac, 0x03, 0x1c, 0xae, 0x7f, 0x60,
+            0x9d, 0x61, 0xb1, 0x9d, 0xef, 0xfd, 0x5a, 0x60, 0xba, 0x84, 0x4a, 0xf4, 0x92, 0xec,
+            0x2c, 0xc4, 0x44, 0x49, 0xc5, 0x69, 0x7b, 0x32, 0x69, 0x19, 0x70, 0x3b, 0xac, 0x03,
+            0x1c, 0xae, 0x7f, 0x60,
         ];
         // Derive verifying key from seed via SigningKey to keep the test
         // self-contained without hard-coding the public key.

@@ -21,8 +21,8 @@ pub const MAX_CONFIG_BYTES: u64 = 1024 * 1024;
 pub fn bounded_read_config<P: AsRef<Path>>(path: P) -> Result<String> {
     use std::io::Read;
     let path = path.as_ref();
-    let file = std::fs::File::open(path)
-        .with_context(|| format!("opening config {}", path.display()))?;
+    let file =
+        std::fs::File::open(path).with_context(|| format!("opening config {}", path.display()))?;
     let mut buf = String::new();
     let mut limited = file.take(MAX_CONFIG_BYTES + 1);
     limited

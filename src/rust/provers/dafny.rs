@@ -20,7 +20,8 @@ impl DafnyBackend {
 
     /// Generate a minimal valid Dafny program with assertions for the goal and axioms.
     fn to_input_format(&self, state: &ProofState) -> Result<String> {
-        let mut s = String::from("// SPDX-License-Identifier: PMPL-1.0-or-later\nmethod EchidnaGoal() {\n");
+        let mut s =
+            String::from("// SPDX-License-Identifier: PMPL-1.0-or-later\nmethod EchidnaGoal() {\n");
 
         // Add axioms as assume statements
         for (i, ax) in state.context.axioms.iter().enumerate() {
@@ -50,20 +51,28 @@ impl DafnyBackend {
                     .collect::<Vec<_>>()
                     .join(", ");
                 format!("{}({})", f, a)
-            }
-            Term::Pi { param, param_type, body } => {
+            },
+            Term::Pi {
+                param,
+                param_type,
+                body,
+            } => {
                 let t = self.term_to_dafny_expr(param_type);
                 let b = self.term_to_dafny_expr(body);
                 format!("forall {}: {} :: {}", param, t, b)
-            }
-            Term::Lambda { param, param_type, body } => {
+            },
+            Term::Lambda {
+                param,
+                param_type,
+                body,
+            } => {
                 let t = param_type
                     .as_ref()
                     .map(|x| self.term_to_dafny_expr(x))
                     .unwrap_or_else(|| "?".to_string());
                 let b = self.term_to_dafny_expr(body);
                 format!("(({}: {}) => {})", param, t, b)
-            }
+            },
             _ => "true".to_string(),
         }
     }
@@ -125,11 +134,7 @@ impl DafnyBackend {
                 if let Some(ensures_start) = line.find("ensures") {
                     let rest = &line[ensures_start + 7..].trim();
                     // Find the end: either ; or { or newline
-                    let goal_text = rest
-                        .split([';', '{', '\n'])
-                        .next()
-                        .unwrap_or(rest)
-                        .trim();
+                    let goal_text = rest.split([';', '{', '\n']).next().unwrap_or(rest).trim();
                     if !goal_text.is_empty() {
                         goals.push(Goal {
                             id: format!("goal_{}", goals.len()),
@@ -239,8 +244,7 @@ impl ProverBackend for DafnyBackend {
         };
 
         // Write to a temp file (Dafny requires a .dfy file, not stdin)
-        let temp_file = tempfile::NamedTempFile::new()
-            .context("Failed to create temp file")?;
+        let temp_file = tempfile::NamedTempFile::new().context("Failed to create temp file")?;
         let temp_path = temp_file.path().to_path_buf();
 
         // Write content to the temp file
@@ -315,15 +319,15 @@ impl ProverBackend for DafnyBackend {
                     command: "forall".to_string(),
                     args: vec![],
                 });
-            }
+            },
             Term::Const(s) if s.contains("forall") || s.contains("exists") => {
                 suggestions.push(Tactic::Custom {
                     prover: "dafny".to_string(),
                     command: "forall".to_string(),
                     args: vec![],
                 });
-            }
-            _ => {}
+            },
+            _ => {},
         }
 
         Ok(suggestions.into_iter().take(limit).collect())

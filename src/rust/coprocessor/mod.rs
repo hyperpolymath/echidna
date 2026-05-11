@@ -80,8 +80,7 @@ pub use singular::SingularBackend;
 pub use tensor::TensorBackend;
 pub use trust::CoprocessorTrustTier;
 pub use types::{
-    CoprocessorCapabilities, CoprocessorHealth, CoprocessorKind, CoprocessorOp,
-    CoprocessorOutcome,
+    CoprocessorCapabilities, CoprocessorHealth, CoprocessorKind, CoprocessorOp, CoprocessorOutcome,
 };
 pub use vector::VectorBackend;
 
@@ -198,16 +197,9 @@ mod tests {
     fn trust_tier_ordering() {
         // Sanity check the tier ladder.
         assert!(CoprocessorTrustTier::PureFormal > CoprocessorTrustTier::NativeKernel);
-        assert!(
-            CoprocessorTrustTier::NativeKernel > CoprocessorTrustTier::LibraryWrapped
-        );
-        assert!(
-            CoprocessorTrustTier::LibraryWrapped > CoprocessorTrustTier::JuliaBridged
-        );
-        assert!(
-            CoprocessorTrustTier::JuliaBridged
-                > CoprocessorTrustTier::ExternalSubprocess
-        );
+        assert!(CoprocessorTrustTier::NativeKernel > CoprocessorTrustTier::LibraryWrapped);
+        assert!(CoprocessorTrustTier::LibraryWrapped > CoprocessorTrustTier::JuliaBridged);
+        assert!(CoprocessorTrustTier::JuliaBridged > CoprocessorTrustTier::ExternalSubprocess);
         assert!(CoprocessorTrustTier::LibraryWrapped.is_self_sufficient());
         assert!(!CoprocessorTrustTier::JuliaBridged.is_self_sufficient());
     }

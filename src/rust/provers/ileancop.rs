@@ -74,7 +74,12 @@ impl ProverBackend for IleanCopBackend {
             .await
             .context("Failed to run ileancop --version")?;
         let stdout = String::from_utf8_lossy(&output.stdout);
-        Ok(stdout.lines().next().unwrap_or("ileancop").trim().to_string())
+        Ok(stdout
+            .lines()
+            .next()
+            .unwrap_or("ileancop")
+            .trim()
+            .to_string())
     }
 
     async fn parse_file(&self, path: PathBuf) -> Result<ProofState> {
@@ -158,11 +163,7 @@ impl ProverBackend for IleanCopBackend {
         Ok(connection_method::to_tptp(state))
     }
 
-    async fn suggest_tactics(
-        &self,
-        _state: &ProofState,
-        _limit: usize,
-    ) -> Result<Vec<Tactic>> {
+    async fn suggest_tactics(&self, _state: &ProofState, _limit: usize) -> Result<Vec<Tactic>> {
         Ok(vec![])
     }
 
@@ -195,7 +196,10 @@ mod tests {
         let config = ProverConfig::default();
         let backend = IleanCopBackend::new(config);
         let tptp = "fof(a1, axiom, p => p).\nfof(conj, conjecture, p => p).\n";
-        let state = backend.parse_string(tptp).await.expect("parse_string failed");
+        let state = backend
+            .parse_string(tptp)
+            .await
+            .expect("parse_string failed");
         assert_eq!(state.context.axioms.len(), 1);
         assert_eq!(state.goals.len(), 1);
     }

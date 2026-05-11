@@ -43,14 +43,26 @@ pub fn print_report(mut results: Vec<VariantResult>, dry_run: bool) {
             let outcome_str = match &r.outcome {
                 VariantOutcome::Closes => "✅ closes".to_string(),
                 VariantOutcome::Fails(msg) => {
-                    let short = msg.lines().next().unwrap_or("failed").chars().take(60).collect::<String>();
+                    let short = msg
+                        .lines()
+                        .next()
+                        .unwrap_or("failed")
+                        .chars()
+                        .take(60)
+                        .collect::<String>();
                     format!("❌ {}", short)
-                }
+                },
                 VariantOutcome::Timeout => "⏱ timeout".to_string(),
                 VariantOutcome::InvalidSyntax(msg) => {
-                    let short = msg.lines().next().unwrap_or("syntax error").chars().take(60).collect::<String>();
+                    let short = msg
+                        .lines()
+                        .next()
+                        .unwrap_or("syntax error")
+                        .chars()
+                        .take(60)
+                        .collect::<String>();
                     format!("⚠ syntax: {}", short)
-                }
+                },
             };
             println!(
                 "| `{}` → `{}` | line {} col {} | {} | {} |",
@@ -88,7 +100,11 @@ mod tests {
     fn make_result(original: &str, replacement: &str, outcome: VariantOutcome) -> VariantResult {
         VariantResult {
             variant: Variant {
-                site: TacticSite { line: 7, col: 12, name: original.to_string() },
+                site: TacticSite {
+                    line: 7,
+                    col: 12,
+                    name: original.to_string(),
+                },
                 original: original.to_string(),
                 replacement: replacement.to_string(),
                 probe_source: String::new(),
@@ -108,7 +124,11 @@ mod tests {
     fn test_print_report_with_results() {
         let results = vec![
             make_result("induct", "induction", VariantOutcome::Closes),
-            make_result("auto", "force", VariantOutcome::Fails("tactic failed".to_string())),
+            make_result(
+                "auto",
+                "force",
+                VariantOutcome::Fails("tactic failed".to_string()),
+            ),
         ];
         // Should not panic; output goes to stdout (captured in test harness)
         print_report(results, false);
@@ -116,9 +136,11 @@ mod tests {
 
     #[test]
     fn test_print_report_dry_run() {
-        let results = vec![
-            make_result("induct", "induction", VariantOutcome::Fails("dry-run".to_string())),
-        ];
+        let results = vec![make_result(
+            "induct",
+            "induction",
+            VariantOutcome::Fails("dry-run".to_string()),
+        )];
         print_report(results, true);
     }
 }

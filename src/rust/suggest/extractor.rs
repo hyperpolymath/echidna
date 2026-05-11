@@ -62,8 +62,8 @@ impl Probe {
 
 /// Extract named lemma from `path` for the given prover.
 pub fn extract(prover: ProverKind, path: &Path, lemma_name: &str) -> Result<Probe> {
-    let content = std::fs::read_to_string(path)
-        .with_context(|| format!("Cannot read {}", path.display()))?;
+    let content =
+        std::fs::read_to_string(path).with_context(|| format!("Cannot read {}", path.display()))?;
     match prover {
         ProverKind::Isabelle => extract_isabelle(&content, lemma_name),
         ProverKind::Coq => extract_coq(&content, lemma_name),
@@ -133,27 +133,59 @@ fn find_tactic_sites_isabelle(source: &str) -> Vec<TacticSite> {
     for (line_idx, line) in source.lines().enumerate() {
         let line_no = line_idx + 1;
         // apply (tactic ...) or apply tactic
-        if let Some(rest) = line.trim().strip_prefix("apply (").or_else(|| line.trim().strip_prefix("apply ")) {
-            let name = rest.split_whitespace().next().unwrap_or("").trim_matches(|c: char| !c.is_alphanumeric() && c != '_');
+        if let Some(rest) = line
+            .trim()
+            .strip_prefix("apply (")
+            .or_else(|| line.trim().strip_prefix("apply "))
+        {
+            let name = rest
+                .split_whitespace()
+                .next()
+                .unwrap_or("")
+                .trim_matches(|c: char| !c.is_alphanumeric() && c != '_');
             if !name.is_empty() {
                 let col = line.find(name).unwrap_or(0) + 1;
-                sites.push(TacticSite { line: line_no, col, name: name.to_string() });
+                sites.push(TacticSite {
+                    line: line_no,
+                    col,
+                    name: name.to_string(),
+                });
             }
         }
         // by tactic or by (tactic ...)
-        if let Some(rest) = line.trim().strip_prefix("by (").or_else(|| line.trim().strip_prefix("by ")) {
-            let name = rest.split_whitespace().next().unwrap_or("").trim_matches(|c: char| !c.is_alphanumeric() && c != '_');
+        if let Some(rest) = line
+            .trim()
+            .strip_prefix("by (")
+            .or_else(|| line.trim().strip_prefix("by "))
+        {
+            let name = rest
+                .split_whitespace()
+                .next()
+                .unwrap_or("")
+                .trim_matches(|c: char| !c.is_alphanumeric() && c != '_');
             if !name.is_empty() {
                 let col = line.find(name).unwrap_or(0) + 1;
-                sites.push(TacticSite { line: line_no, col, name: name.to_string() });
+                sites.push(TacticSite {
+                    line: line_no,
+                    col,
+                    name: name.to_string(),
+                });
             }
         }
         // rule: <lemma_name>
         if let Some(rest) = line.find("rule:").map(|i| &line[i + 5..]) {
-            let name = rest.split_whitespace().next().unwrap_or("").trim_matches(|c: char| !c.is_alphanumeric() && c != '_');
+            let name = rest
+                .split_whitespace()
+                .next()
+                .unwrap_or("")
+                .trim_matches(|c: char| !c.is_alphanumeric() && c != '_');
             if !name.is_empty() {
                 let col = line.find(name).unwrap_or(0) + 1;
-                sites.push(TacticSite { line: line_no, col, name: name.to_string() });
+                sites.push(TacticSite {
+                    line: line_no,
+                    col,
+                    name: name.to_string(),
+                });
             }
         }
     }
@@ -210,10 +242,22 @@ fn find_tactic_sites_coq(source: &str) -> Vec<TacticSite> {
         let t = line.trim();
         // Coq: bare tactic at start of line (after optional spaces/`- ` bullet)
         let t_nobullet = t.trim_start_matches(['-', '+', '*', ' ']);
-        let name = t_nobullet.split(|c: char| !c.is_alphanumeric() && c != '_').next().unwrap_or("");
-        if !name.is_empty() && !["Proof", "Qed", "Defined", "Admitted", "Abort", "Lemma", "Theorem"].contains(&name) {
+        let name = t_nobullet
+            .split(|c: char| !c.is_alphanumeric() && c != '_')
+            .next()
+            .unwrap_or("");
+        if !name.is_empty()
+            && ![
+                "Proof", "Qed", "Defined", "Admitted", "Abort", "Lemma", "Theorem",
+            ]
+            .contains(&name)
+        {
             let col = line.find(name).unwrap_or(0) + 1;
-            sites.push(TacticSite { line: line_no, col, name: name.to_string() });
+            sites.push(TacticSite {
+                line: line_no,
+                col,
+                name: name.to_string(),
+            });
         }
     }
     sites
@@ -247,7 +291,13 @@ fn extract_lean4(content: &str, lemma_name: &str) -> Result<Probe> {
         let first_char = line.chars().next().unwrap_or(' ');
         if first_char != ' ' && !first_char.is_control() && !line.trim().is_empty() {
             let t = line.trim();
-            if t.starts_with("theorem ") || t.starts_with("lemma ") || t.starts_with("def ") || t.starts_with("#") || t.starts_with("import ") || t.starts_with("open ") {
+            if t.starts_with("theorem ")
+                || t.starts_with("lemma ")
+                || t.starts_with("def ")
+                || t.starts_with("#")
+                || t.starts_with("import ")
+                || t.starts_with("open ")
+            {
                 break;
             }
         }
@@ -272,23 +322,43 @@ fn find_tactic_sites_lean4(source: &str) -> Vec<TacticSite> {
         let t = line.trim();
         // Lean 4 tactic block: lines with tactic calls, typically indented
         // Skip structural keywords
-        if t.starts_with("theorem ") || t.starts_with("lemma ") || t.starts_with("by") || t.is_empty() {
+        if t.starts_with("theorem ")
+            || t.starts_with("lemma ")
+            || t.starts_with("by")
+            || t.is_empty()
+        {
             if t.starts_with("by ") {
                 // "by <tactic>" single-line form
                 if let Some(rest) = t.strip_prefix("by ") {
-                    let name = rest.split(|c: char| !c.is_alphanumeric() && c != '_').next().unwrap_or("");
+                    let name = rest
+                        .split(|c: char| !c.is_alphanumeric() && c != '_')
+                        .next()
+                        .unwrap_or("");
                     if !name.is_empty() {
                         let col = line.find(name).unwrap_or(0) + 1;
-                        sites.push(TacticSite { line: line_no, col, name: name.to_string() });
+                        sites.push(TacticSite {
+                            line: line_no,
+                            col,
+                            name: name.to_string(),
+                        });
                     }
                 }
             }
             continue;
         }
-        let name = t.split(|c: char| !c.is_alphanumeric() && c != '_').next().unwrap_or("");
-        if !name.is_empty() && !["where", "fun", "have", "show", "exact", "rfl", "done"].contains(&name) {
+        let name = t
+            .split(|c: char| !c.is_alphanumeric() && c != '_')
+            .next()
+            .unwrap_or("");
+        if !name.is_empty()
+            && !["where", "fun", "have", "show", "exact", "rfl", "done"].contains(&name)
+        {
             let col = line.find(name).unwrap_or(0) + 1;
-            sites.push(TacticSite { line: line_no, col, name: name.to_string() });
+            sites.push(TacticSite {
+                line: line_no,
+                col,
+                name: name.to_string(),
+            });
         }
     }
     sites
@@ -318,7 +388,11 @@ fn extract_idris2(content: &str, lemma_name: &str) -> Result<Probe> {
             // blank line ends the block
             break;
         }
-        if line.starts_with(' ') || line.starts_with('\t') || t.starts_with(&clause_prefix) || t.starts_with(&clause_prefix2) {
+        if line.starts_with(' ')
+            || line.starts_with('\t')
+            || t.starts_with(&clause_prefix)
+            || t.starts_with(&clause_prefix2)
+        {
             lemma_lines.push(line);
         } else {
             break;
@@ -344,9 +418,17 @@ fn find_tactic_sites_idris2(source: &str) -> Vec<TacticSite> {
         // Look for `?proof_name` holes or `believe_me` / tactic names
         for word in t.split_whitespace() {
             let name = word.trim_matches(|c: char| !c.is_alphanumeric() && c != '_');
-            if name.starts_with("believe_me") || name.starts_with("rewrite") || name.starts_with("exact") || name.starts_with("Refl") {
+            if name.starts_with("believe_me")
+                || name.starts_with("rewrite")
+                || name.starts_with("exact")
+                || name.starts_with("Refl")
+            {
                 let col = line.find(name).unwrap_or(0) + 1;
-                sites.push(TacticSite { line: line_no, col, name: name.to_string() });
+                sites.push(TacticSite {
+                    line: line_no,
+                    col,
+                    name: name.to_string(),
+                });
                 break;
             }
         }
@@ -401,7 +483,11 @@ fn find_tactic_sites_agda(source: &str) -> Vec<TacticSite> {
             let name = word.trim_matches(|c: char| !c.is_alphanumeric() && c != '_' && c != '\'');
             if ["refl", "sym", "trans", "cong", "subst"].contains(&name) {
                 let col = line.find(name).unwrap_or(0) + 1;
-                sites.push(TacticSite { line: line_no, col, name: name.to_string() });
+                sites.push(TacticSite {
+                    line: line_no,
+                    col,
+                    name: name.to_string(),
+                });
             }
         }
     }

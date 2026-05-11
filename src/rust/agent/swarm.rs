@@ -166,8 +166,7 @@ where
 
     // Per-agent inbox channel for Adopt messages.
     let mut agent_tx: Vec<mpsc::Sender<Adopt<P::State>>> = Vec::with_capacity(config.agents);
-    let mut agent_rx: Vec<mpsc::Receiver<Adopt<P::State>>> =
-        Vec::with_capacity(config.agents);
+    let mut agent_rx: Vec<mpsc::Receiver<Adopt<P::State>>> = Vec::with_capacity(config.agents);
     for _ in 0..config.agents {
         let (tx, rx) = mpsc::channel(16);
         agent_tx.push(tx);
@@ -252,9 +251,7 @@ where
                 let cand = neighbours[pick].clone();
                 let cand_e = problem.energy(&cand);
 
-                let accept = if lex_better(&cand_e, &current_e)
-                    || cand_e == current_e
-                {
+                let accept = if lex_better(&cand_e, &current_e) || cand_e == current_e {
                     true
                 } else {
                     let de = delta_scalar(&current_e, &cand_e);
@@ -353,7 +350,7 @@ where
                 reports[best_idx].local_best.clone(),
                 reports[best_idx].local_best_energy.clone(),
             )
-        }
+        },
     };
 
     reports.sort_by_key(|r| r.agent_id);
@@ -414,8 +411,7 @@ mod tests {
             adopt_threshold: 0,
         };
         let result = run_swarm(problem, config).await;
-        let total_adoptions: usize =
-            result.per_agent.iter().map(|r| r.adopted_count).sum();
+        let total_adoptions: usize = result.per_agent.iter().map(|r| r.adopted_count).sum();
         // With 500 iters × 4 agents and broadcast_every=25, the
         // coordinator gets ~80 heartbeats, several of them strictly
         // better than peers. We expect at least some adoptions.

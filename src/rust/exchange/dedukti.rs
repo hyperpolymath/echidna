@@ -462,8 +462,16 @@ mod tests {
             body: Box::new(Term::Const("Prop".to_string())),
         };
         let dk = DeduktiExporter::term_to_dedukti(&term);
-        assert!(dk.contains("dk_sigma"), "Sigma should render as dk_sigma, got: {}", dk);
-        assert!(dk.contains("Nat"), "Sigma param type should appear, got: {}", dk);
+        assert!(
+            dk.contains("dk_sigma"),
+            "Sigma should render as dk_sigma, got: {}",
+            dk
+        );
+        assert!(
+            dk.contains("Nat"),
+            "Sigma param type should appear, got: {}",
+            dk
+        );
     }
 
     #[test]

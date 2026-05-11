@@ -17,11 +17,10 @@ use anyhow::{anyhow, Result};
 use async_trait::async_trait;
 use nalgebra::DMatrix;
 
-use super::types::{
-    CoprocessorCapabilities, CoprocessorHealth, CoprocessorKind, CoprocessorOp,
-    CoprocessorOutcome,
-};
 use super::trust::CoprocessorTrustTier;
+use super::types::{
+    CoprocessorCapabilities, CoprocessorHealth, CoprocessorKind, CoprocessorOp, CoprocessorOutcome,
+};
 use super::Coprocessor;
 
 pub struct TensorBackend {
@@ -83,10 +82,13 @@ fn dispatch_sync(op: CoprocessorOp) -> Result<CoprocessorOutcome> {
             (Some(am), Some(bm)) if am.ncols() == bm.nrows() => {
                 let prod = am * bm;
                 CoprocessorOutcome::FloatMatrix(dmat_to_rows(&prod))
-            }
+            },
             (Some(am), Some(bm)) => CoprocessorOutcome::Failure(format!(
                 "TensorMatMul: dimension mismatch ({}x{} · {}x{})",
-                am.nrows(), am.ncols(), bm.nrows(), bm.ncols()
+                am.nrows(),
+                am.ncols(),
+                bm.nrows(),
+                bm.ncols()
             )),
             _ => CoprocessorOutcome::Failure(
                 "TensorMatMul: ragged input — every row must have equal length".into(),
@@ -98,16 +100,14 @@ fn dispatch_sync(op: CoprocessorOp) -> Result<CoprocessorOutcome> {
         },
         CoprocessorOp::TensorTrace { a } => match rows_to_dmat(&a) {
             Some(am) if am.is_square() => CoprocessorOutcome::Float(am.trace()),
-            Some(_) => {
-                CoprocessorOutcome::Failure("TensorTrace: matrix must be square".into())
-            }
+            Some(_) => CoprocessorOutcome::Failure("TensorTrace: matrix must be square".into()),
             None => CoprocessorOutcome::Failure("TensorTrace: ragged input".into()),
         },
         CoprocessorOp::TensorDeterminant { a } => match rows_to_dmat(&a) {
             Some(am) if am.is_square() => CoprocessorOutcome::Float(am.determinant()),
-            Some(_) => CoprocessorOutcome::Failure(
-                "TensorDeterminant: matrix must be square".into(),
-            ),
+            Some(_) => {
+                CoprocessorOutcome::Failure("TensorDeterminant: matrix must be square".into())
+            },
             None => CoprocessorOutcome::Failure("TensorDeterminant: ragged input".into()),
         },
         other => CoprocessorOutcome::Failure(format!(
@@ -149,9 +149,7 @@ mod tests {
             .enable_all()
             .build()
             .unwrap();
-        rt.block_on(async {
-            TensorBackend::new().dispatch(op).await.unwrap()
-        })
+        rt.block_on(async { TensorBackend::new().dispatch(op).await.unwrap() })
     }
 
     #[test]
@@ -163,7 +161,7 @@ mod tests {
         }) {
             CoprocessorOutcome::FloatMatrix(m) => {
                 assert_eq!(m, vec![vec![3.0, 4.0], vec![5.0, 6.0]]);
-            }
+            },
             _ => panic!(),
         }
     }
@@ -171,7 +169,7 @@ mod tests {
     #[test]
     fn matmul_dimension_mismatch_returns_failure() {
         match run(CoprocessorOp::TensorMatMul {
-            a: vec![vec![1.0, 2.0]],            // 1×2
+            a: vec![vec![1.0, 2.0]],                  // 1×2
             b: vec![vec![1.0], vec![2.0], vec![3.0]], // 3×1
         }) {
             CoprocessorOutcome::Failure(_) => {},
@@ -186,7 +184,7 @@ mod tests {
         }) {
             CoprocessorOutcome::FloatMatrix(m) => {
                 assert_eq!(m, vec![vec![1.0, 4.0], vec![2.0, 5.0], vec![3.0, 6.0]]);
-            }
+            },
             _ => panic!(),
         }
     }

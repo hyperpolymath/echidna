@@ -18,9 +18,9 @@ pub struct FallbackSlaConfig {
 impl Default for FallbackSlaConfig {
     fn default() -> Self {
         Self {
-            max_latency_ms: 500,     // 500ms max latency
-            min_success_rate: 0.50,  // 50% min hit rate
-            max_cache_size: 10000,   // 10k max entries
+            max_latency_ms: 500,    // 500ms max latency
+            min_success_rate: 0.50, // 50% min hit rate
+            max_cache_size: 10000,  // 10k max entries
         }
     }
 }
@@ -106,9 +106,8 @@ impl FallbackMonitor {
 
             // Update latency statistics (cumulative arithmetic mean over all invocations)
             let invocations = metrics.total_invocations as f64;
-            metrics.avg_latency_ms = (metrics.avg_latency_ms * (invocations - 1.0)
-                + latency_ms as f64)
-                / invocations;
+            metrics.avg_latency_ms =
+                (metrics.avg_latency_ms * (invocations - 1.0) + latency_ms as f64) / invocations;
 
             // Track max/min latency
             metrics.max_latency_ms = metrics.max_latency_ms.max(latency_ms);
@@ -230,8 +229,8 @@ mod tests {
         let monitor = FallbackMonitor::with_config(config);
 
         // Record operations that meet SLA
-        monitor.record_fallback(100, true);  // Hit, low latency
-        monitor.record_fallback(150, true);  // Hit, low latency
+        monitor.record_fallback(100, true); // Hit, low latency
+        monitor.record_fallback(150, true); // Hit, low latency
 
         let metrics = monitor.metrics();
         assert!(metrics.meets_sla);

@@ -470,10 +470,10 @@ impl ProverBackend for AgdaBackend {
             }
         }
 
-        Ok(crate::provers::gnn_augment_tactics(
-            &self.config, state, "agda", suggestions, limit,
+        Ok(
+            crate::provers::gnn_augment_tactics(&self.config, state, "agda", suggestions, limit)
+                .await,
         )
-        .await)
     }
 
     async fn search_theorems(&self, _pattern: &str) -> Result<Vec<String>> {

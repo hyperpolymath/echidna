@@ -187,7 +187,12 @@ impl ProverBackend for QepcadBackend {
             .await
             .context("Failed to run qepcad -version")?;
         let stdout = String::from_utf8_lossy(&output.stdout);
-        Ok(stdout.lines().next().unwrap_or("qepcad-b").trim().to_string())
+        Ok(stdout
+            .lines()
+            .next()
+            .unwrap_or("qepcad-b")
+            .trim()
+            .to_string())
     }
 
     async fn parse_file(&self, path: PathBuf) -> Result<ProofState> {
@@ -266,11 +271,7 @@ impl ProverBackend for QepcadBackend {
         self.to_qepcad(state)
     }
 
-    async fn suggest_tactics(
-        &self,
-        _state: &ProofState,
-        _limit: usize,
-    ) -> Result<Vec<Tactic>> {
+    async fn suggest_tactics(&self, _state: &ProofState, _limit: usize) -> Result<Vec<Tactic>> {
         Ok(vec![])
     }
 
@@ -348,7 +349,7 @@ mod tests {
         let backend = QepcadBackend::new(config);
         let out = "An equivalent quantifier-free formula:\n\nx > 0\n";
         let r = backend.parse_result(out).expect("parse_result failed");
-        assert!(!r);  // residual formula → goal not closed
+        assert!(!r); // residual formula → goal not closed
     }
 
     #[test]
@@ -364,7 +365,10 @@ mod tests {
         let config = ProverConfig::default();
         let backend = QepcadBackend::new(config);
         let input = "[ test ]\n(x)\n0\n[ (E x)[ x > 0 ] ].\nfinish\n";
-        let state = backend.parse_string(input).await.expect("parse_string failed");
+        let state = backend
+            .parse_string(input)
+            .await
+            .expect("parse_string failed");
         assert_eq!(state.goals.len(), 1);
     }
 }

@@ -321,12 +321,12 @@ impl ProverBackend for SpinBackend {
             let combined = format!("{}\n{}", stdout, stderr);
             return self.parse_result(&combined);
         }
-        let promela_code = if let Some(src) = state.metadata.get("spin_source").and_then(|v| v.as_str())
-        {
-            src.to_string()
-        } else {
-            self.to_promela(state)?
-        };
+        let promela_code =
+            if let Some(src) = state.metadata.get("spin_source").and_then(|v| v.as_str()) {
+                src.to_string()
+            } else {
+                self.to_promela(state)?
+            };
 
         // Write Promela to a temporary file (spin -run requires a file)
         let tmp_dir =

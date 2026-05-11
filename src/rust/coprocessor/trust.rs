@@ -24,9 +24,7 @@ use serde::{Deserialize, Serialize};
 /// The discriminants are pinned (`repr(u8)`) because the SPARK and Idris2
 /// ABI layers consume them as raw bytes.  Reordering is an ABI break.
 #[repr(u8)]
-#[derive(
-    Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash, Serialize, Deserialize,
-)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash, Serialize, Deserialize)]
 pub enum CoprocessorTrustTier {
     /// Tier 5 — answer is constructively certified at the type level.
     /// Used when the op is dispatched through a path with an Idris2 ABI

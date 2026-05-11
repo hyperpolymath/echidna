@@ -408,11 +408,12 @@ impl ProverBackend for MiniSatBackend {
         let stdout = String::from_utf8_lossy(&output.stdout);
 
         // Try output file first, then stdout
-        let result_text = if let Ok(file_content) = super::bounded_read_proof_file(&output_file).await {
-            file_content
-        } else {
-            stdout.to_string()
-        };
+        let result_text =
+            if let Ok(file_content) = super::bounded_read_proof_file(&output_file).await {
+                file_content
+            } else {
+                stdout.to_string()
+            };
 
         Self::parse_sat_result(&result_text)
     }

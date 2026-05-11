@@ -233,11 +233,7 @@ impl ProverBackend for EasyCryptBackend {
         Ok(Self::to_ec(state))
     }
 
-    async fn suggest_tactics(
-        &self,
-        state: &ProofState,
-        limit: usize,
-    ) -> Result<Vec<Tactic>> {
+    async fn suggest_tactics(&self, state: &ProofState, limit: usize) -> Result<Vec<Tactic>> {
         if state.goals.is_empty() {
             return Ok(vec![]);
         }
@@ -245,23 +241,86 @@ impl ProverBackend for EasyCryptBackend {
         // reference manual and standard library proofs. Ordered by frequency
         // in the distributed game-based crypto proof corpus.
         let tactics = vec![
-            Tactic::Custom { prover: "easycrypt".to_string(), command: "proc".to_string(),    args: vec![] },
-            Tactic::Custom { prover: "easycrypt".to_string(), command: "wp".to_string(),      args: vec![] },
-            Tactic::Custom { prover: "easycrypt".to_string(), command: "sp".to_string(),      args: vec![] },
-            Tactic::Custom { prover: "easycrypt".to_string(), command: "seq".to_string(),     args: vec![] },
-            Tactic::Custom { prover: "easycrypt".to_string(), command: "call".to_string(),    args: vec![] },
-            Tactic::Custom { prover: "easycrypt".to_string(), command: "rnd".to_string(),     args: vec![] },
-            Tactic::Custom { prover: "easycrypt".to_string(), command: "skip".to_string(),    args: vec![] },
-            Tactic::Custom { prover: "easycrypt".to_string(), command: "apply".to_string(),   args: vec![] },
-            Tactic::Custom { prover: "easycrypt".to_string(), command: "trivial".to_string(), args: vec![] },
-            Tactic::Custom { prover: "easycrypt".to_string(), command: "smt".to_string(),     args: vec![] },
-            Tactic::Custom { prover: "easycrypt".to_string(), command: "split".to_string(),   args: vec![] },
-            Tactic::Custom { prover: "easycrypt".to_string(), command: "inline".to_string(),  args: vec![] },
-            Tactic::Custom { prover: "easycrypt".to_string(), command: "swap".to_string(),    args: vec![] },
-            Tactic::Custom { prover: "easycrypt".to_string(), command: "conseq".to_string(),  args: vec![] },
-            Tactic::Custom { prover: "easycrypt".to_string(), command: "hoare".to_string(),   args: vec![] },
+            Tactic::Custom {
+                prover: "easycrypt".to_string(),
+                command: "proc".to_string(),
+                args: vec![],
+            },
+            Tactic::Custom {
+                prover: "easycrypt".to_string(),
+                command: "wp".to_string(),
+                args: vec![],
+            },
+            Tactic::Custom {
+                prover: "easycrypt".to_string(),
+                command: "sp".to_string(),
+                args: vec![],
+            },
+            Tactic::Custom {
+                prover: "easycrypt".to_string(),
+                command: "seq".to_string(),
+                args: vec![],
+            },
+            Tactic::Custom {
+                prover: "easycrypt".to_string(),
+                command: "call".to_string(),
+                args: vec![],
+            },
+            Tactic::Custom {
+                prover: "easycrypt".to_string(),
+                command: "rnd".to_string(),
+                args: vec![],
+            },
+            Tactic::Custom {
+                prover: "easycrypt".to_string(),
+                command: "skip".to_string(),
+                args: vec![],
+            },
+            Tactic::Custom {
+                prover: "easycrypt".to_string(),
+                command: "apply".to_string(),
+                args: vec![],
+            },
+            Tactic::Custom {
+                prover: "easycrypt".to_string(),
+                command: "trivial".to_string(),
+                args: vec![],
+            },
+            Tactic::Custom {
+                prover: "easycrypt".to_string(),
+                command: "smt".to_string(),
+                args: vec![],
+            },
+            Tactic::Custom {
+                prover: "easycrypt".to_string(),
+                command: "split".to_string(),
+                args: vec![],
+            },
+            Tactic::Custom {
+                prover: "easycrypt".to_string(),
+                command: "inline".to_string(),
+                args: vec![],
+            },
+            Tactic::Custom {
+                prover: "easycrypt".to_string(),
+                command: "swap".to_string(),
+                args: vec![],
+            },
+            Tactic::Custom {
+                prover: "easycrypt".to_string(),
+                command: "conseq".to_string(),
+                args: vec![],
+            },
+            Tactic::Custom {
+                prover: "easycrypt".to_string(),
+                command: "hoare".to_string(),
+                args: vec![],
+            },
         ];
-        Ok(crate::provers::gnn_augment_tactics(&self.config, state, "easycrypt", tactics, limit).await)
+        Ok(
+            crate::provers::gnn_augment_tactics(&self.config, state, "easycrypt", tactics, limit)
+                .await,
+        )
     }
 
     async fn search_theorems(&self, _pattern: &str) -> Result<Vec<String>> {
@@ -311,7 +370,9 @@ mod tests {
 
     #[test]
     fn test_easycrypt_parse_result_failure() {
-        assert!(!EasyCryptBackend::parse_result("Proof failure: tactic 'auto' failed").expect("parse"));
+        assert!(
+            !EasyCryptBackend::parse_result("Proof failure: tactic 'auto' failed").expect("parse")
+        );
     }
 
     #[test]
@@ -328,8 +389,7 @@ mod tests {
     async fn test_easycrypt_parse_string_extracts_axiom_and_lemma() {
         let config = ProverConfig::default();
         let backend = EasyCryptBackend::new(config);
-        let ec =
-            "axiom plus_zero : forall x, x + 0 = x.\nlemma triv : forall x, x = x.\n";
+        let ec = "axiom plus_zero : forall x, x + 0 = x.\nlemma triv : forall x, x = x.\n";
         let state = backend.parse_string(ec).await.expect("parse_string");
         assert_eq!(state.context.axioms.len(), 1);
         assert_eq!(state.goals.len(), 1);
@@ -350,10 +410,17 @@ mod tests {
         let state = backend.parse_string(ec).await.expect("parse_string");
         let tactics = backend.suggest_tactics(&state, 10).await.unwrap();
         assert!(!tactics.is_empty());
-        let names: Vec<_> = tactics.iter().filter_map(|t| {
-            if let Tactic::Custom { command, .. } = t { Some(command.as_str()) } else { None }
-        }).collect();
-        assert!(names.contains(&"wp"),  "expected 'wp' tactic");
+        let names: Vec<_> = tactics
+            .iter()
+            .filter_map(|t| {
+                if let Tactic::Custom { command, .. } = t {
+                    Some(command.as_str())
+                } else {
+                    None
+                }
+            })
+            .collect();
+        assert!(names.contains(&"wp"), "expected 'wp' tactic");
         assert!(names.contains(&"rnd"), "expected 'rnd' tactic");
     }
 }

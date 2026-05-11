@@ -78,8 +78,9 @@ use creusot_contracts::*;
 /// 3. **Reject caps at Level1** — `DangerLevel::Reject` input to
 ///    [`compute_trust_level`] always yields `Level1`.
 ///    Discharged by the `#[ensures]` on [`compute_trust_level`].
-#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
-#[derive(serde::Serialize, serde::Deserialize)]
+#[derive(
+    Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash, serde::Serialize, serde::Deserialize,
+)]
 pub enum TrustLevel {
     /// Large-TCB system, unchecked result, or uses dangerous axioms.
     Level1 = 1,
@@ -134,7 +135,11 @@ impl TrustLevel {
         ensures(result == a || result == b)
     )]
     pub fn min_level(a: TrustLevel, b: TrustLevel) -> TrustLevel {
-        if a <= b { a } else { b }
+        if a <= b {
+            a
+        } else {
+            b
+        }
     }
 
     /// Returns the maximum (higher-trust) of two `TrustLevel` values.
@@ -151,7 +156,11 @@ impl TrustLevel {
         ensures(result == a || result == b)
     )]
     pub fn max_level(a: TrustLevel, b: TrustLevel) -> TrustLevel {
-        if a >= b { a } else { b }
+        if a >= b {
+            a
+        } else {
+            b
+        }
     }
 }
 
@@ -171,8 +180,7 @@ impl std::fmt::Display for TrustLevel {
 /// A deliberately minimal enum that covers the distinctions the trust
 /// algorithm cares about without pulling in the full 105-variant
 /// `ProverKind` from the main `echidna` crate.
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
-#[derive(serde::Serialize, serde::Deserialize)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, serde::Serialize, serde::Deserialize)]
 pub enum ProverClass {
     /// Small-kernel proof assistant (Lean4, Coq, Isabelle, Agda, Metamath,
     /// HOLLight, HOL4, Idris2, F*, Twelf, Nuprl, Minlog).
@@ -187,8 +195,7 @@ pub enum ProverClass {
 ///
 /// This mirrors `TrustFactors` in `confidence.rs` but uses [`ProverClass`]
 /// instead of the full `ProverKind` enum, keeping the crate self-contained.
-#[derive(Debug, Clone)]
-#[derive(serde::Serialize, serde::Deserialize)]
+#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
 pub struct TrustFactors {
     /// Class of prover that produced the result.
     pub prover_class: ProverClass,
@@ -362,11 +369,9 @@ pub mod impl_invariants {
     // only exercised at test time — hence the allow.
     #[allow(unused_imports)]
     use crate::{
-        TrustLevel, TrustFactors, ProverClass,
-        combine_trust, clamp_trust, compute_trust_level,
-        axiom_tracker::DangerLevel,
+        axiom_tracker::DangerLevel, clamp_trust, combine_trust, compute_trust_level, ProverClass,
+        TrustFactors, TrustLevel,
     };
-
 
     // -----------------------------------------------------------------------
     // Property: TrustLevel is totally ordered (Level1 < Level2 < … < Level5)
@@ -454,7 +459,10 @@ pub mod impl_invariants {
                 for &c in &levels {
                     let lhs = combine_trust(combine_trust(a, b), c);
                     let rhs = combine_trust(a, combine_trust(b, c));
-                    assert_eq!(lhs, rhs, "combine_trust not associative for {a:?}, {b:?}, {c:?}");
+                    assert_eq!(
+                        lhs, rhs,
+                        "combine_trust not associative for {a:?}, {b:?}, {c:?}"
+                    );
                 }
             }
         }
@@ -475,7 +483,7 @@ pub mod impl_invariants {
     fn po5_reject_danger_always_level1() {
         let factors = TrustFactors {
             prover_class: ProverClass::SmallKernel,
-            confirming_provers: 10,      // maximum cross-checking
+            confirming_provers: 10, // maximum cross-checking
             has_certificate: true,
             certificate_verified: true,
             worst_axiom_danger: DangerLevel::Reject,
@@ -502,7 +510,7 @@ pub mod impl_invariants {
             has_certificate: true,
             certificate_verified: true,
             worst_axiom_danger: DangerLevel::Safe,
-            solver_integrity_ok: false,   // <-- integrity failure
+            solver_integrity_ok: false, // <-- integrity failure
         };
         assert_eq!(
             compute_trust_level(&factors),
@@ -570,7 +578,7 @@ pub mod impl_invariants {
     /// for documentation purposes).
     #[test]
     fn po9_compute_trust_level_range() {
-        use crate::axiom_tracker::DangerLevel::{Safe, Noted, Warning, Reject};
+        use crate::axiom_tracker::DangerLevel::{Noted, Reject, Safe, Warning};
         use crate::TrustLevel::{Level1, Level5};
         let danger_levels = [Safe, Noted, Warning, Reject];
         let prover_classes = [

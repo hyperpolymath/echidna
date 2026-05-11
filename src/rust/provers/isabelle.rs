@@ -587,35 +587,36 @@ impl ProverBackend for IsabelleBackend {
             // and add `-d <project_root>` to the build invocation. This is
             // what makes goals importing project-specific theories
             // (Tropical_v2, walks_def, ...) parse instead of failing.
-            let (root_text, parent_session, project_root_arg) =
-                if let Some(pr) = self.config.project_root.as_ref() {
-                    let project_root_path = pr.clone();
-                    let project_root_file = project_root_path.join("ROOT");
-                    let parent = match tokio::fs::read_to_string(&project_root_file).await {
-                        Ok(text) => detect_parent_session(&text, &theory_name),
-                        Err(e) => {
-                            tracing::warn!(
-                                project_root = %project_root_path.display(),
-                                err = %e,
-                                "EI-1: project_root supplied but ROOT not readable; falling back to HOL"
-                            );
-                            "HOL".to_string()
-                        }
-                    };
-                    (
-                        format!(
-                            "session UserSession = \"{parent}\" +\n  theories\n    {theory_name}\n"
-                        ),
-                        parent,
-                        Some(project_root_path),
-                    )
-                } else {
-                    (
-                        format!("session UserSession = HOL +\n  theories\n    {theory_name}\n"),
-                        "HOL".to_string(),
-                        None,
-                    )
+            let (root_text, parent_session, project_root_arg) = if let Some(pr) =
+                self.config.project_root.as_ref()
+            {
+                let project_root_path = pr.clone();
+                let project_root_file = project_root_path.join("ROOT");
+                let parent = match tokio::fs::read_to_string(&project_root_file).await {
+                    Ok(text) => detect_parent_session(&text, &theory_name),
+                    Err(e) => {
+                        tracing::warn!(
+                            project_root = %project_root_path.display(),
+                            err = %e,
+                            "EI-1: project_root supplied but ROOT not readable; falling back to HOL"
+                        );
+                        "HOL".to_string()
+                    },
                 };
+                (
+                    format!(
+                        "session UserSession = \"{parent}\" +\n  theories\n    {theory_name}\n"
+                    ),
+                    parent,
+                    Some(project_root_path),
+                )
+            } else {
+                (
+                    format!("session UserSession = HOL +\n  theories\n    {theory_name}\n"),
+                    "HOL".to_string(),
+                    None,
+                )
+            };
 
             tokio::fs::write(temp_dir.join("ROOT"), &root_text)
                 .await
@@ -637,9 +638,7 @@ impl ProverBackend for IsabelleBackend {
                 .arg("document=false")
                 .arg("-o")
                 .arg("browser_info=false");
-            let output = cmd.output()
-                .await
-                .context("Failed to run Isabelle build")?;
+            let output = cmd.output().await.context("Failed to run Isabelle build")?;
 
             let success = output.status.success();
             if !success {
@@ -716,10 +715,16 @@ impl ProverBackend for IsabelleBackend {
             command: "auto".to_string(),
             args: vec![],
         });
-        Ok(crate::provers::gnn_augment_tactics(
-            &self.config, state, "isabelle", suggestions, limit,
+        Ok(
+            crate::provers::gnn_augment_tactics(
+                &self.config,
+                state,
+                "isabelle",
+                suggestions,
+                limit,
+            )
+            .await,
         )
-        .await)
     }
 
     async fn search_theorems(&self, pattern: &str) -> Result<Vec<String>> {
@@ -915,8 +920,14 @@ session Tropical_Semirings in "." = "HOL-Library" +
     Tropical_Matrices_Full
     Tropical_Kleene
 "#;
-        assert_eq!(detect_parent_session(root, "Tropical_v2"), "Tropical_Semirings");
-        assert_eq!(detect_parent_session(root, "Tropical_Kleene"), "Tropical_Semirings");
+        assert_eq!(
+            detect_parent_session(root, "Tropical_v2"),
+            "Tropical_Semirings"
+        );
+        assert_eq!(
+            detect_parent_session(root, "Tropical_Kleene"),
+            "Tropical_Semirings"
+        );
     }
 
     #[test]

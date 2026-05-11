@@ -523,8 +523,8 @@ async fn search_theorems(state: &ReplState, pattern: &str) -> Result<()> {
     // native search command still surface relevant theorems. No-op in
     // default builds (no verisim feature). Errors are silent at REPL —
     // search is a soft query and a writer outage shouldn't kill the loop.
-    let verisim_url = std::env::var("VERISIM_URL")
-        .unwrap_or_else(|_| "http://localhost:8080".to_string());
+    let verisim_url =
+        std::env::var("VERISIM_URL").unwrap_or_else(|_| "http://localhost:8080".to_string());
     if let Ok(cross) = echidna::vcl_ut::cross_prover_search_names(&verisim_url, pattern, 20).await {
         results.extend(cross);
     }

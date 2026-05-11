@@ -26,8 +26,8 @@ pub mod planner;
 pub mod router;
 pub mod swarm; // 007-style swarm dispatcher over learning::design_search
 
-use meta_controller::{MetaController, PlanOutcome};
 use memory::ProofMemory;
+use meta_controller::{MetaController, PlanOutcome};
 use planner::Planner;
 use router::ProverRouter;
 

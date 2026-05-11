@@ -249,12 +249,12 @@ impl ProverBackend for ViperBackend {
                 .parse_result(&stdout)
                 .or_else(|_| self.parse_result(&stderr));
         }
-        let silver_code = if let Some(src) = state.metadata.get("viper_source").and_then(|v| v.as_str())
-        {
-            src.to_string()
-        } else {
-            self.to_silver(state)?
-        };
+        let silver_code =
+            if let Some(src) = state.metadata.get("viper_source").and_then(|v| v.as_str()) {
+                src.to_string()
+            } else {
+                self.to_silver(state)?
+            };
 
         let mut child = Command::new(&self.config.executable)
             .arg("--timeout")

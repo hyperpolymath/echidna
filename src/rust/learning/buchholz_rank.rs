@@ -53,22 +53,22 @@ use super::design_search::DesignProblem;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, PartialOrd, Ord, Serialize, Deserialize)]
 pub enum BplusShape {
-    LeftSum,      // rank (bplus x y) = rank x ⊕ rank y
-    OsucSum,      // rank (bplus x y) = osuc (rank x ⊕ rank y)
-    Hessenberg,   // rank (bplus x y) = rank x #o rank y (commutative; needs lemma)
+    LeftSum,    // rank (bplus x y) = rank x ⊕ rank y
+    OsucSum,    // rank (bplus x y) = osuc (rank x ⊕ rank y)
+    Hessenberg, // rank (bplus x y) = rank x #o rank y (commutative; needs lemma)
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, PartialOrd, Ord, Serialize, Deserialize)]
 pub enum BpsiShape {
-    PsiRank,         // rank (bpsi ν α) = psi-rank ν (rank α) = osuc (ω-rank ν ⊕ rank α)
-    PsiRankPlain,    // rank (bpsi ν α) = ω-rank ν ⊕ rank α       (no outer osuc)
-    OsucOmegaPlus,   // rank (bpsi ν α) = osuc (ω-rank ν) ⊕ rank α
+    PsiRank,       // rank (bpsi ν α) = psi-rank ν (rank α) = osuc (ω-rank ν ⊕ rank α)
+    PsiRankPlain,  // rank (bpsi ν α) = ω-rank ν ⊕ rank α       (no outer osuc)
+    OsucOmegaPlus, // rank (bpsi ν α) = osuc (ω-rank ν) ⊕ rank α
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, PartialOrd, Ord, Serialize, Deserialize)]
 pub enum BomegaShape {
-    OmegaRank,       // rank (bOmega ν) = ω-rank ν
-    OsucOmegaRank,   // rank (bOmega ν) = osuc (ω-rank ν)
+    OmegaRank,     // rank (bOmega ν) = ω-rank ν
+    OsucOmegaRank, // rank (bOmega ν) = osuc (ω-rank ν)
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash, Serialize, Deserialize)]
@@ -139,7 +139,11 @@ impl DesignProblem for BuchholzRankProblem {
 
     fn neighbours(&self, s: &Self::State) -> Vec<Self::State> {
         let mut out = Vec::new();
-        for cand in &[BplusShape::LeftSum, BplusShape::OsucSum, BplusShape::Hessenberg] {
+        for cand in &[
+            BplusShape::LeftSum,
+            BplusShape::OsucSum,
+            BplusShape::Hessenberg,
+        ] {
             if *cand != s.bplus {
                 out.push(RankShape {
                     bplus: *cand,
@@ -231,9 +235,9 @@ fn blockers(s: &RankShape) -> i64 {
     // PsiRank has the outer osuc, which is helpful (strict descent
     // is "free"); PsiRankPlain doesn't and is harder.
     match s.bpsi {
-        BpsiShape::PsiRank => blockers += 1,        // need ⊕-mono-<-right
-        BpsiShape::PsiRankPlain => blockers += 2,   // need ⊕-mono-<-right AND a different psi-strict-mono
-        BpsiShape::OsucOmegaPlus => blockers += 2,  // similar issue, plus extra osuc step
+        BpsiShape::PsiRank => blockers += 1,       // need ⊕-mono-<-right
+        BpsiShape::PsiRankPlain => blockers += 2, // need ⊕-mono-<-right AND a different psi-strict-mono
+        BpsiShape::OsucOmegaPlus => blockers += 2, // similar issue, plus extra osuc step
     }
     // <ᵇʳᶠ-+2: needs ⊕-mono-<-right.
     match s.bplus {
@@ -306,24 +310,16 @@ pub fn render_rank_mono_skeleton(s: &RankShape) -> String {
         BomegaShape::OsucOmegaRank => "rank (bOmega ν)   = osuc (ω-rank ν)\n".to_string(),
     });
     out.push_str(&match s.bplus {
-        BplusShape::LeftSum => {
-            "rank (bplus x y)  = rank x ⊕ rank y\n".to_string()
-        }
-        BplusShape::OsucSum => {
-            "rank (bplus x y)  = osuc (rank x ⊕ rank y)\n".to_string()
-        }
+        BplusShape::LeftSum => "rank (bplus x y)  = rank x ⊕ rank y\n".to_string(),
+        BplusShape::OsucSum => "rank (bplus x y)  = osuc (rank x ⊕ rank y)\n".to_string(),
         BplusShape::Hessenberg => {
             "rank (bplus x y)  = rank x #o rank y  -- DEFINE Hessenberg sum first\n".to_string()
-        }
+        },
     });
     out.push_str(&match s.bpsi {
         BpsiShape::PsiRank => "rank (bpsi ν α)   = psi-rank ν (rank α)\n".to_string(),
-        BpsiShape::PsiRankPlain => {
-            "rank (bpsi ν α)   = ω-rank ν ⊕ rank α\n".to_string()
-        }
-        BpsiShape::OsucOmegaPlus => {
-            "rank (bpsi ν α)   = osuc (ω-rank ν) ⊕ rank α\n".to_string()
-        }
+        BpsiShape::PsiRankPlain => "rank (bpsi ν α)   = ω-rank ν ⊕ rank α\n".to_string(),
+        BpsiShape::OsucOmegaPlus => "rank (bpsi ν α)   = osuc (ω-rank ν) ⊕ rank α\n".to_string(),
     });
     out.push_str("\n-- The transport theorem.\n");
     out.push_str("rank-mono : ∀ {x y} → x <ᵇʳᶠ y → rank x < rank y\n");
@@ -379,6 +375,9 @@ mod tests {
             "expected 3 blockers (Phase-2.2 + ⊕-mono twice); got {:?}",
             result.best_energy
         );
-        assert_eq!(result.best_energy[1], 0, "best should have no capability gaps");
+        assert_eq!(
+            result.best_energy[1], 0,
+            "best should have no capability gaps"
+        );
     }
 }

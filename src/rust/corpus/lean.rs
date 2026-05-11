@@ -37,8 +37,8 @@ pub fn ingest(root: &Path) -> Result<Corpus> {
     let mut all_names: HashSet<String> = HashSet::new();
     for path in &files {
         let rel = path.strip_prefix(root).unwrap_or(path).to_path_buf();
-        let raw = std::fs::read_to_string(path)
-            .with_context(|| format!("read {}", path.display()))?;
+        let raw =
+            std::fs::read_to_string(path).with_context(|| format!("read {}", path.display()))?;
         let parsed = parse_lean_file(&raw);
 
         let module_idx = corpus.modules.len();
@@ -107,8 +107,7 @@ fn walk_lean(dir: &Path, out: &mut Vec<PathBuf>) -> Result<()> {
     if !dir.exists() {
         return Ok(());
     }
-    let read = std::fs::read_dir(dir)
-        .with_context(|| format!("read_dir {}", dir.display()))?;
+    let read = std::fs::read_dir(dir).with_context(|| format!("read_dir {}", dir.display()))?;
     for entry in read {
         let entry = entry?;
         let p = entry.path();
@@ -116,7 +115,14 @@ fn walk_lean(dir: &Path, out: &mut Vec<PathBuf>) -> Result<()> {
         if p.is_dir() {
             if matches!(
                 name_s.as_str(),
-                "_build" | ".git" | "node_modules" | "target" | ".cache" | "build" | "lake-packages" | ".lake"
+                "_build"
+                    | ".git"
+                    | "node_modules"
+                    | "target"
+                    | ".cache"
+                    | "build"
+                    | "lake-packages"
+                    | ".lake"
             ) {
                 continue;
             }
@@ -235,29 +241,26 @@ fn parse_lean_file(raw: &str) -> ParsedFile {
     for line in &lines {
         let t = line.trim_start();
         if let Some(rest) = t.strip_prefix("import ") {
-            let m: String = rest
-                .split_whitespace()
-                .next()
-                .unwrap_or("")
-                .to_string();
+            let m: String = rest.split_whitespace().next().unwrap_or("").to_string();
             if !m.is_empty() && !pf.imports.contains(&m) {
                 pf.imports.push(m);
             }
             continue;
         }
         if let Some(rest) = t.strip_prefix("namespace ") {
-            let n: String = rest
-                .split_whitespace()
-                .next()
-                .unwrap_or("")
-                .to_string();
+            let n: String = rest.split_whitespace().next().unwrap_or("").to_string();
             if !n.is_empty() && pf.module_name.is_none() {
                 pf.module_name = Some(n);
             }
             continue;
         }
         if let Some(rest) = t.strip_prefix("set_option ") {
-            pf.options.push(rest.split_whitespace().take(2).collect::<Vec<_>>().join(" "));
+            pf.options.push(
+                rest.split_whitespace()
+                    .take(2)
+                    .collect::<Vec<_>>()
+                    .join(" "),
+            );
             continue;
         }
     }
@@ -313,7 +316,7 @@ fn parse_lean_file(raw: &str) -> ParsedFile {
             None => {
                 i += 1;
                 continue;
-            }
+            },
         };
 
         // Skip imports/namespace/end/open/variable/universe/etc.
@@ -420,8 +423,8 @@ fn strip_attribute(s: &str) -> Option<&str> {
                 if depth == 0 {
                     return Some(&s[i + 1..]);
                 }
-            }
-            _ => {}
+            },
+            _ => {},
         }
     }
     None
@@ -518,8 +521,8 @@ fn top_level_colon(s: &str) -> Option<usize> {
                     continue;
                 }
                 return Some(i);
-            }
-            _ => {}
+            },
+            _ => {},
         }
         idx += 1;
     }
@@ -543,8 +546,8 @@ fn find_top_level_assign(s: &str) -> Option<usize> {
             b'}' => brace -= 1,
             b':' if paren == 0 && bracket == 0 && brace == 0 && bytes[i + 1] == b'=' => {
                 return Some(i);
-            }
-            _ => {}
+            },
+            _ => {},
         }
         i += 1;
     }

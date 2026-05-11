@@ -424,10 +424,7 @@ impl ProverBackend for MetamathBackend {
                 .context("Failed to spawn metamath")?;
 
             if let Some(mut stdin) = child.stdin.take() {
-                let script = format!(
-                    "read \"{}\"\nverify proof *\nexit\n",
-                    path.display()
-                );
+                let script = format!("read \"{}\"\nverify proof *\nexit\n", path.display());
                 stdin.write_all(script.as_bytes()).await?;
                 stdin.flush().await?;
                 drop(stdin);

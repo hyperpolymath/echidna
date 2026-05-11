@@ -45,8 +45,8 @@ pub fn ingest(root: &Path) -> Result<Corpus> {
     let mut all_names: HashSet<String> = HashSet::new();
     for path in &files {
         let rel = path.strip_prefix(root).unwrap_or(path).to_path_buf();
-        let raw = std::fs::read_to_string(path)
-            .with_context(|| format!("read {}", path.display()))?;
+        let raw =
+            std::fs::read_to_string(path).with_context(|| format!("read {}", path.display()))?;
         let parsed = parse_coq_file(&raw, &rel);
 
         let module_idx = corpus.modules.len();
@@ -116,8 +116,7 @@ fn walk_v(dir: &Path, out: &mut Vec<PathBuf>) -> Result<()> {
     if !dir.exists() {
         return Ok(());
     }
-    let read = std::fs::read_dir(dir)
-        .with_context(|| format!("read_dir {}", dir.display()))?;
+    let read = std::fs::read_dir(dir).with_context(|| format!("read_dir {}", dir.display()))?;
     for entry in read {
         let entry = entry?;
         let p = entry.path();
@@ -471,11 +470,11 @@ fn strip_definition(s: &str) -> Option<(String, String, Option<String>)> {
             let body = rest[eq + 2..].trim().to_string();
             let (name, ty) = split_name_optional_colon_type(head);
             Some((name, ty, Some(body)))
-        }
+        },
         None => {
             let (name, ty) = split_name_optional_colon_type(rest);
             Some((name, ty, None))
-        }
+        },
     }
 }
 
@@ -483,7 +482,7 @@ fn strip_inductive(s: &str) -> Option<(String, String)> {
     let s = s.trim_end_matches('.').trim();
     let rest = s
         .strip_prefix("Inductive ")
-        .or_else(|| s.strip_prefix("CoInductive ")) ?;
+        .or_else(|| s.strip_prefix("CoInductive "))?;
     let name: String = rest
         .chars()
         .take_while(|c| !c.is_whitespace() && *c != ':' && *c != '(')
@@ -496,7 +495,9 @@ fn strip_inductive(s: &str) -> Option<(String, String)> {
 
 fn strip_record(s: &str) -> Option<(String, String)> {
     let s = s.trim_end_matches('.').trim();
-    let rest = s.strip_prefix("Record ").or_else(|| s.strip_prefix("Structure "))?;
+    let rest = s
+        .strip_prefix("Record ")
+        .or_else(|| s.strip_prefix("Structure "))?;
     let name: String = rest
         .chars()
         .take_while(|c| !c.is_whitespace() && *c != ':' && *c != '(' && *c != '{')
@@ -534,11 +535,7 @@ fn split_name_colon_type(s: &str) -> Option<(String, String)> {
 /// `name [args] [: type]` — colon optional; if absent, ty is empty.
 fn split_name_optional_colon_type(s: &str) -> (String, String) {
     let s = s.trim();
-    let name = s
-        .split_whitespace()
-        .next()
-        .unwrap_or("")
-        .to_string();
+    let name = s.split_whitespace().next().unwrap_or("").to_string();
     let rest = if let Some(colon) = top_level_colon(s) {
         normalise_ws(s[colon + 1..].trim())
     } else {
@@ -570,8 +567,8 @@ fn top_level_colon(s: &str) -> Option<usize> {
                     continue;
                 }
                 return Some(i);
-            }
-            _ => {}
+            },
+            _ => {},
         }
     }
     None

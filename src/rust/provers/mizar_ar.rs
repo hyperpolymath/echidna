@@ -89,11 +89,7 @@ impl ProverBackend for MizARBackend {
         })
     }
 
-    async fn apply_tactic(
-        &self,
-        _state: &ProofState,
-        _tactic: &Tactic,
-    ) -> Result<TacticResult> {
+    async fn apply_tactic(&self, _state: &ProofState, _tactic: &Tactic) -> Result<TacticResult> {
         Ok(TacticResult::Error(
             "Tactic application not supported for MizAR".to_string(),
         ))

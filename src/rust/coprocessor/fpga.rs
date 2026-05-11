@@ -22,8 +22,7 @@ use tokio::process::Command;
 
 use super::trust::CoprocessorTrustTier;
 use super::types::{
-    CoprocessorCapabilities, CoprocessorHealth, CoprocessorKind, CoprocessorOp,
-    CoprocessorOutcome,
+    CoprocessorCapabilities, CoprocessorHealth, CoprocessorKind, CoprocessorOp, CoprocessorOutcome,
 };
 use super::Coprocessor;
 
@@ -88,7 +87,10 @@ impl Coprocessor for FpgaBackend {
 
     async fn dispatch(&self, op: CoprocessorOp) -> Result<CoprocessorOutcome> {
         match op {
-            CoprocessorOp::FpgaYosysSynth { verilog, top_module } => {
+            CoprocessorOp::FpgaYosysSynth {
+                verilog,
+                top_module,
+            } => {
                 if self.health == CoprocessorHealth::Unhealthy {
                     return Ok(CoprocessorOutcome::Failure(
                         "FpgaYosysSynth: yosys not found on PATH".into(),
@@ -100,7 +102,7 @@ impl Coprocessor for FpgaBackend {
                     )));
                 }
                 Ok(yosys_synth(&verilog, &top_module).await)
-            }
+            },
             other => Ok(CoprocessorOutcome::Failure(format!(
                 "Fpga backend does not support {:?}",
                 std::mem::discriminant(&other)
@@ -115,7 +117,10 @@ impl Coprocessor for FpgaBackend {
 fn is_safe_module_name(s: &str) -> bool {
     !s.is_empty()
         && s.chars().all(|c| c.is_ascii_alphanumeric() || c == '_')
-        && s.chars().next().map(|c| !c.is_ascii_digit()).unwrap_or(false)
+        && s.chars()
+            .next()
+            .map(|c| !c.is_ascii_digit())
+            .unwrap_or(false)
 }
 
 async fn yosys_synth(verilog: &str, top_module: &str) -> CoprocessorOutcome {
@@ -216,7 +221,7 @@ mod tests {
         {
             CoprocessorOutcome::Failure(msg) => {
                 assert!(msg.contains("yosys not found"));
-            }
+            },
             _ => panic!(),
         }
     }

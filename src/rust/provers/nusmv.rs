@@ -330,12 +330,12 @@ impl ProverBackend for NuSMVBackend {
             let combined = format!("{}\n{}", stdout, stderr);
             return self.parse_result(&combined);
         }
-        let smv_code = if let Some(src) = state.metadata.get("nusmv_source").and_then(|v| v.as_str())
-        {
-            src.to_string()
-        } else {
-            self.to_smv(state)?
-        };
+        let smv_code =
+            if let Some(src) = state.metadata.get("nusmv_source").and_then(|v| v.as_str()) {
+                src.to_string()
+            } else {
+                self.to_smv(state)?
+            };
 
         // Write SMV to a temporary file (nuXmv requires a file)
         let tmp_dir =

@@ -148,10 +148,7 @@ impl ProverBackend for GpuVerifyBackend {
     }
 
     async fn version(&self) -> Result<String> {
-        let output = Command::new(self.binary())
-            .arg("--version")
-            .output()
-            .await;
+        let output = Command::new(self.binary()).arg("--version").output().await;
         match output {
             Ok(out) => {
                 let text = String::from_utf8_lossy(&out.stdout);
@@ -435,9 +432,7 @@ __global__ void addKernel(float* a, float* b, float* c) {
         let state = backend.parse_string(src).await.unwrap();
         assert_eq!(state.goals.len(), 1);
         assert_eq!(state.goals[0].id, "kernel_addKernel");
-        assert!(state
-            .metadata
-            .contains_key("gpuverify_source"));
+        assert!(state.metadata.contains_key("gpuverify_source"));
         assert_eq!(
             state.metadata["gpuverify_dialect"].as_str().unwrap(),
             "cuda"

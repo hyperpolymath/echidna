@@ -3,8 +3,8 @@
 
 #[cfg(test)]
 mod prove_handler_health_tests {
-    use echidna::dispatch::ProverDispatcher;
     use echidna::diagnostics::DegradationMode;
+    use echidna::dispatch::ProverDispatcher;
     use echidna::ProverKind;
     use std::sync::Arc;
 
@@ -18,13 +18,14 @@ mod prove_handler_health_tests {
         let initial_health = dispatcher.health_status();
         assert_eq!(initial_health.prover_health.len(), 0);
         // GNN is not loaded by default, so degradation is CosineOnly
-        assert_eq!(initial_health.system_degradation, DegradationMode::CosineOnly);
+        assert_eq!(
+            initial_health.system_degradation,
+            DegradationMode::CosineOnly
+        );
 
         // Record a successful proof for Z3
         use echidna::provers::ProverOutcome;
-        let z3_success = ProverOutcome::Proved {
-            elapsed_ms: 45,
-        };
+        let z3_success = ProverOutcome::Proved { elapsed_ms: 45 };
         dispatcher.record_prover_result(ProverKind::Z3, &z3_success, 45);
 
         // After recording, health should track Z3
@@ -33,7 +34,10 @@ mod prove_handler_health_tests {
         assert!(updated_health.prover_health.contains_key("Z3"));
 
         let z3_health = &updated_health.prover_health["Z3"];
-        assert!(z3_health.is_available, "Z3 should be available after success");
+        assert!(
+            z3_health.is_available,
+            "Z3 should be available after success"
+        );
         assert_eq!(z3_health.total_invocations, 1);
         assert_eq!(z3_health.consecutive_failures, 0);
         assert!(z3_health.last_successful_proof.is_some());
@@ -50,10 +54,19 @@ mod prove_handler_health_tests {
         assert_eq!(final_health.prover_health.len(), 2);
 
         let coq_health = &final_health.prover_health["Coq"];
-        assert!(coq_health.is_available, "Coq should be available after single NoProofFound");
+        assert!(
+            coq_health.is_available,
+            "Coq should be available after single NoProofFound"
+        );
         assert_eq!(coq_health.total_invocations, 1);
-        assert_eq!(coq_health.total_failures, 1, "NoProofFound counts as a failure");
-        assert_eq!(coq_health.consecutive_failures, 0, "NoProofFound doesn't increment consecutive (only real errors do)");
+        assert_eq!(
+            coq_health.total_failures, 1,
+            "NoProofFound counts as a failure"
+        );
+        assert_eq!(
+            coq_health.consecutive_failures, 0,
+            "NoProofFound doesn't increment consecutive (only real errors do)"
+        );
 
         // Verify Z3 metrics unchanged
         let z3_health_final = &final_health.prover_health["Z3"];
@@ -79,9 +92,12 @@ mod prove_handler_health_tests {
 
         let health = dispatcher.health_status();
         let lean_health = &health.prover_health["Lean"];
-        
+
         // After 3 failures, is_available should be false
-        assert!(!lean_health.is_available, "Lean should be unavailable after 3 failures");
+        assert!(
+            !lean_health.is_available,
+            "Lean should be unavailable after 3 failures"
+        );
         assert_eq!(lean_health.consecutive_failures, 3);
         assert_eq!(lean_health.total_failures, 3);
         assert_eq!(lean_health.total_invocations, 3);
@@ -140,6 +156,10 @@ mod prove_handler_health_tests {
         let health_pct = health.health_percentage();
 
         // With all provers available and success_rate ~0.5 default, health should be good
-        assert!(health_pct > 40.0, "Expected >40% health, got {}%", health_pct);
+        assert!(
+            health_pct > 40.0,
+            "Expected >40% health, got {}%",
+            health_pct
+        );
     }
 }

@@ -66,7 +66,7 @@ impl LiquidHaskellBackend {
                     .collect::<Vec<_>>()
                     .join(" ");
                 format!("({} {})", f, a)
-            }
+            },
             _ => "True".to_string(),
         }
     }
@@ -79,10 +79,7 @@ impl LiquidHaskellBackend {
         let l = output.to_lowercase();
         // SAFE markers — be specific so we don't false-positive on the
         // word "safe" appearing in unrelated output.
-        if l.contains("result: safe")
-            || l.contains("liquid: safe")
-            || l.contains("** safe **")
-        {
+        if l.contains("result: safe") || l.contains("liquid: safe") || l.contains("** safe **") {
             return Ok(true);
         }
         if l.contains("result: unsafe")
@@ -149,11 +146,7 @@ impl ProverBackend for LiquidHaskellBackend {
         ))
     }
     async fn verify_proof(&self, state: &ProofState) -> Result<bool> {
-        if let Some(path) = state
-            .metadata
-            .get("source_path")
-            .and_then(|v| v.as_str())
-        {
+        if let Some(path) = state.metadata.get("source_path").and_then(|v| v.as_str()) {
             let output = tokio::time::timeout(
                 tokio::time::Duration::from_secs(self.config.timeout + 30),
                 Command::new(&self.config.executable)
@@ -171,8 +164,10 @@ impl ProverBackend for LiquidHaskellBackend {
             ));
         }
 
-        let input = if let Some(src) =
-            state.metadata.get("haskell_source").and_then(|v| v.as_str())
+        let input = if let Some(src) = state
+            .metadata
+            .get("haskell_source")
+            .and_then(|v| v.as_str())
         {
             src.to_string()
         } else {
@@ -205,11 +200,7 @@ impl ProverBackend for LiquidHaskellBackend {
     async fn export(&self, state: &ProofState) -> Result<String> {
         self.to_input_format(state)
     }
-    async fn suggest_tactics(
-        &self,
-        _state: &ProofState,
-        limit: usize,
-    ) -> Result<Vec<Tactic>> {
+    async fn suggest_tactics(&self, _state: &ProofState, limit: usize) -> Result<Vec<Tactic>> {
         let suggestions = vec![
             Tactic::Custom {
                 prover: "liquid-haskell".into(),
@@ -260,7 +251,9 @@ mod tests {
 
     #[test]
     fn parse_result_unsafe() {
-        assert!(!b().parse_result("RESULT: UNSAFE — counter-example: x = 0").unwrap());
+        assert!(!b()
+            .parse_result("RESULT: UNSAFE — counter-example: x = 0")
+            .unwrap());
     }
 
     #[test]

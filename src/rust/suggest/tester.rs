@@ -84,7 +84,7 @@ pub async fn test_all_variants(
                     });
                     pending += 1;
                     submitted += 1;
-                }
+                },
                 None => break,
             }
         }
@@ -97,12 +97,12 @@ pub async fn test_all_variants(
             Some(Ok((idx, result))) => {
                 results[idx] = Some(result);
                 pending -= 1;
-            }
+            },
             Some(Err(e)) => {
                 // Task panicked; treat as Fails
                 pending -= 1;
                 let _ = e; // logged by caller
-            }
+            },
             None => break,
         }
     }
@@ -147,7 +147,11 @@ mod tests {
 
     fn make_variant(original: &str, replacement: &str, source: &str) -> Variant {
         Variant {
-            site: TacticSite { line: 1, col: 1, name: original.to_string() },
+            site: TacticSite {
+                line: 1,
+                col: 1,
+                name: original.to_string(),
+            },
             original: original.to_string(),
             replacement: replacement.to_string(),
             probe_source: source.to_string(),

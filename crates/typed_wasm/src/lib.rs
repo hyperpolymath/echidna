@@ -1009,8 +1009,11 @@ region.get Small[99] .val
         );
         let analysis = analyse(VALID_TWASM, &ti).unwrap();
         // No BoundsProof, NullSafe, EffectSafe, LifetimeSafe obligations
-        let levels: HashSet<SafetyLevel> =
-            analysis.obligations.iter().map(|o| o.level.clone()).collect();
+        let levels: HashSet<SafetyLevel> = analysis
+            .obligations
+            .iter()
+            .map(|o| o.level.clone())
+            .collect();
         assert!(!levels.contains(&SafetyLevel::BoundsProof));
         assert!(!levels.contains(&SafetyLevel::EffectSafe));
         assert!(levels.contains(&SafetyLevel::Linear));

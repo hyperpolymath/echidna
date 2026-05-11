@@ -136,14 +136,14 @@ impl EchidnaMcp {
                     stderr: String::new(),
                 };
                 return serde_json::to_string_pretty(&result).unwrap_or_default();
-            }
+            },
         };
 
         let stdout = String::from_utf8_lossy(&output.stdout).into_owned();
         let stderr = String::from_utf8_lossy(&output.stderr).into_owned();
 
-        let verified = stdout.contains("\"level\": \"success\"")
-            || stdout.contains("\"level\":\"success\"");
+        let verified =
+            stdout.contains("\"level\": \"success\"") || stdout.contains("\"level\":\"success\"");
         let message = extract_first_message(&stdout).unwrap_or_else(|| {
             if stderr.is_empty() {
                 "(no output)".to_string()
@@ -196,7 +196,7 @@ impl EchidnaMcp {
                     stdout.trim().to_string()
                 };
                 CheckProverResult { available, message }
-            }
+            },
             Err(e) => CheckProverResult {
                 available: false,
                 message: format!("Failed to invoke echidna: {e}"),
@@ -224,7 +224,8 @@ impl EchidnaMcp {
                     stdout
                 } else {
                     // Wrap plain-text listing as a simple result object.
-                    let lines: Vec<&str> = stdout.lines().filter(|l| !l.trim().is_empty()).collect();
+                    let lines: Vec<&str> =
+                        stdout.lines().filter(|l| !l.trim().is_empty()).collect();
                     let provers: HashMap<String, String> = lines
                         .iter()
                         .map(|l| (l.trim().to_string(), String::new()))
@@ -235,20 +236,20 @@ impl EchidnaMcp {
                     };
                     serde_json::to_string_pretty(&result).unwrap_or_default()
                 }
-            }
+            },
             Ok(output) => {
                 let stderr = String::from_utf8_lossy(&output.stderr).into_owned();
                 let result = serde_json::json!({
                     "error": format!("echidna list-provers failed: {}", stderr.trim())
                 });
                 serde_json::to_string_pretty(&result).unwrap_or_default()
-            }
+            },
             Err(e) => {
                 let result = serde_json::json!({
                     "error": format!("Failed to invoke echidna: {e}")
                 });
                 serde_json::to_string_pretty(&result).unwrap_or_default()
-            }
+            },
         }
     }
 }

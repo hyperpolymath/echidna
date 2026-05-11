@@ -20,11 +20,10 @@
 use anyhow::{anyhow, Result};
 use async_trait::async_trait;
 
-use super::types::{
-    CoprocessorCapabilities, CoprocessorHealth, CoprocessorKind, CoprocessorOp,
-    CoprocessorOutcome,
-};
 use super::trust::CoprocessorTrustTier;
+use super::types::{
+    CoprocessorCapabilities, CoprocessorHealth, CoprocessorKind, CoprocessorOp, CoprocessorOutcome,
+};
 use super::Coprocessor;
 
 pub struct PhysicsBackend {
@@ -35,10 +34,7 @@ impl PhysicsBackend {
     pub fn new() -> Self {
         PhysicsBackend {
             capabilities: CoprocessorCapabilities {
-                supported_ops: vec![
-                    "PhysicsRk4Step".into(),
-                    "PhysicsHarmonicEnergy".into(),
-                ],
+                supported_ops: vec!["PhysicsRk4Step".into(), "PhysicsHarmonicEnergy".into()],
                 typical_latency_us: 5,
                 deterministic: true,
             },
@@ -90,7 +86,7 @@ fn dispatch_sync(op: CoprocessorOp) -> Result<CoprocessorOutcome> {
         },
         CoprocessorOp::PhysicsHarmonicEnergy { x, p, omega } => {
             CoprocessorOutcome::Float(0.5 * p * p + 0.5 * omega * omega * x * x)
-        }
+        },
         other => CoprocessorOutcome::Failure(format!(
             "Physics backend does not support {:?}",
             std::mem::discriminant(&other)
@@ -105,19 +101,35 @@ fn dispatch_sync(op: CoprocessorOp) -> Result<CoprocessorOutcome> {
 ///   ẋ₀ = x₁,  ẋ₁ = -ω²·x₀.
 /// - `"exponential-decay"`   — params = [lambda]; ẋᵢ = -λ·xᵢ.
 /// - `"linear"`              — params = [a, b]; ẋᵢ = a·xᵢ + b.
-fn rk4_step(kernel: &str, params: &[f64], x: &[f64], dt: f64) -> std::result::Result<Vec<f64>, String> {
+fn rk4_step(
+    kernel: &str,
+    params: &[f64],
+    x: &[f64],
+    dt: f64,
+) -> std::result::Result<Vec<f64>, String> {
     let f = build_kernel(kernel, params)?;
     let n = x.len();
 
     let k1 = f(x);
     if k1.len() != n {
-        return Err(format!("rk4: kernel returned {} components, expected {n}", k1.len()));
+        return Err(format!(
+            "rk4: kernel returned {} components, expected {n}",
+            k1.len()
+        ));
     }
 
-    let x2: Vec<f64> = x.iter().zip(&k1).map(|(xi, ki)| xi + 0.5 * dt * ki).collect();
+    let x2: Vec<f64> = x
+        .iter()
+        .zip(&k1)
+        .map(|(xi, ki)| xi + 0.5 * dt * ki)
+        .collect();
     let k2 = f(&x2);
 
-    let x3: Vec<f64> = x.iter().zip(&k2).map(|(xi, ki)| xi + 0.5 * dt * ki).collect();
+    let x3: Vec<f64> = x
+        .iter()
+        .zip(&k2)
+        .map(|(xi, ki)| xi + 0.5 * dt * ki)
+        .collect();
     let k3 = f(&x3);
 
     let x4: Vec<f64> = x.iter().zip(&k3).map(|(xi, ki)| xi + dt * ki).collect();
@@ -147,7 +159,7 @@ fn build_kernel(name: &str, params: &[f64]) -> std::result::Result<KernelFn, Str
                 }
                 vec![x[1], -omega * omega * x[0]]
             }))
-        }
+        },
         "exponential-decay" => {
             if params.len() != 1 {
                 return Err(format!(
@@ -156,8 +168,10 @@ fn build_kernel(name: &str, params: &[f64]) -> std::result::Result<KernelFn, Str
                 ));
             }
             let lambda = params[0];
-            Ok(Box::new(move |x: &[f64]| x.iter().map(|xi| -lambda * xi).collect()))
-        }
+            Ok(Box::new(move |x: &[f64]| {
+                x.iter().map(|xi| -lambda * xi).collect()
+            }))
+        },
         "linear" => {
             if params.len() != 2 {
                 return Err(format!(
@@ -166,8 +180,10 @@ fn build_kernel(name: &str, params: &[f64]) -> std::result::Result<KernelFn, Str
                 ));
             }
             let (a, b) = (params[0], params[1]);
-            Ok(Box::new(move |x: &[f64]| x.iter().map(|xi| a * xi + b).collect()))
-        }
+            Ok(Box::new(move |x: &[f64]| {
+                x.iter().map(|xi| a * xi + b).collect()
+            }))
+        },
         other => Err(format!("unknown kernel: {other}")),
     }
 }
@@ -181,9 +197,7 @@ mod tests {
             .enable_all()
             .build()
             .unwrap();
-        rt.block_on(async {
-            PhysicsBackend::new().dispatch(op).await.unwrap()
-        })
+        rt.block_on(async { PhysicsBackend::new().dispatch(op).await.unwrap() })
     }
 
     #[test]
@@ -222,11 +236,7 @@ mod tests {
         }
         // After one full period we should be near the start.  Tolerance
         // generous because we accumulate over ~6283 RK4 steps.
-        assert!(
-            (x[0] - 1.0).abs() < 1e-3,
-            "x[0] = {}",
-            x[0]
-        );
+        assert!((x[0] - 1.0).abs() < 1e-3, "x[0] = {}", x[0]);
         assert!((x[1] - 0.0).abs() < 1e-3, "x[1] = {}", x[1]);
     }
 

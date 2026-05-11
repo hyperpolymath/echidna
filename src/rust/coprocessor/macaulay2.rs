@@ -25,8 +25,7 @@ use tokio::process::Command;
 
 use super::trust::CoprocessorTrustTier;
 use super::types::{
-    CoprocessorCapabilities, CoprocessorHealth, CoprocessorKind, CoprocessorOp,
-    CoprocessorOutcome,
+    CoprocessorCapabilities, CoprocessorHealth, CoprocessorKind, CoprocessorOp, CoprocessorOutcome,
 };
 use super::Coprocessor;
 
@@ -81,9 +80,8 @@ fn is_safe_var(s: &str) -> bool {
 /// Polynomial expressions: alphanumeric plus standard math operators.
 fn is_safe_expr(s: &str) -> bool {
     !s.is_empty()
-        && s.chars().all(|c| {
-            c.is_ascii_alphanumeric() || "+-*/^()., _".contains(c)
-        })
+        && s.chars()
+            .all(|c| c.is_ascii_alphanumeric() || "+-*/^()., _".contains(c))
 }
 
 /// Build an M2 ring declaration over QQ with the given variable names.
@@ -165,7 +163,7 @@ impl Coprocessor for Macaulay2Backend {
                 let out = run_m2(&script).await?;
                 let result = extract_m2_output(&out);
                 Ok(CoprocessorOutcome::Text(result))
-            }
+            },
             CoprocessorOp::Macaulay2Dimension { vars, polys } => {
                 if let Some(bad) = vars.iter().find(|v| !is_safe_var(v)) {
                     return Ok(CoprocessorOutcome::Failure(format!(
@@ -188,7 +186,7 @@ impl Coprocessor for Macaulay2Backend {
                 let result = extract_m2_output(&out);
                 let trimmed = result.trim();
                 Ok(CoprocessorOutcome::BigInt(trimmed.to_string()))
-            }
+            },
             CoprocessorOp::Macaulay2Degree { vars, polys } => {
                 if let Some(bad) = vars.iter().find(|v| !is_safe_var(v)) {
                     return Ok(CoprocessorOutcome::Failure(format!(
@@ -211,7 +209,7 @@ impl Coprocessor for Macaulay2Backend {
                 let result = extract_m2_output(&out);
                 let trimmed = result.trim();
                 Ok(CoprocessorOutcome::BigInt(trimmed.to_string()))
-            }
+            },
             other => Ok(CoprocessorOutcome::Failure(format!(
                 "Macaulay2 backend does not support {:?}",
                 std::mem::discriminant(&other)

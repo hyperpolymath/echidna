@@ -51,9 +51,7 @@ pub enum FailureKind {
     },
 
     /// The prover hit its wall-clock or CPU limit before finishing.
-    Timeout {
-        limit_secs: Option<u64>,
-    },
+    Timeout { limit_secs: Option<u64> },
 
     /// The prover process crashed (non-zero exit, signal, or internal error).
     ProverCrash {
@@ -68,9 +66,7 @@ pub enum FailureKind {
     },
 
     /// An ECHIDNA configuration problem (wrong executable path, missing flag).
-    ConfigError {
-        detail: String,
-    },
+    ConfigError { detail: String },
 
     /// ECHIDNA's backend has a known bug for this prover/input combination.
     BackendBug {
@@ -80,14 +76,10 @@ pub enum FailureKind {
 
     /// The prover reported the formula is satisfiable (counterexample exists),
     /// so the proof attempt failed by design.
-    Satisfiable {
-        model_excerpt: Option<String>,
-    },
+    Satisfiable { model_excerpt: Option<String> },
 
     /// A catch-all for failures that don't fit the above categories.
-    Unknown {
-        raw_output: String,
-    },
+    Unknown { raw_output: String },
 }
 
 /// A file:line reference extracted from prover output.
@@ -137,7 +129,10 @@ impl DiagnosticReport {
             }
         }
         if !self.raw_excerpt.is_empty() {
-            out.push_str(&format!("\nProver output (excerpt):\n  {}\n", self.raw_excerpt.replace('\n', "\n  ")));
+            out.push_str(&format!(
+                "\nProver output (excerpt):\n  {}\n",
+                self.raw_excerpt.replace('\n', "\n  ")
+            ));
         }
         out
     }
@@ -215,7 +210,9 @@ pub fn diagnose_from_outcome(prover: ProverKind, outcome: &ProverOutcome) -> Dia
             // Should not reach diagnose on success, but handle gracefully.
             return DiagnosticReport {
                 prover,
-                kind: FailureKind::Unknown { raw_output: "Proved — no failure to diagnose.".into() },
+                kind: FailureKind::Unknown {
+                    raw_output: "Proved — no failure to diagnose.".into(),
+                },
                 explanation: "The prover succeeded. No diagnostic needed.".into(),
                 suggestions: vec![],
                 raw_excerpt: String::new(),
@@ -239,11 +236,9 @@ pub fn diagnose_from_outcome(prover: ProverKind, outcome: &ProverOutcome) -> Dia
             detail: format!("Unsupported feature: {}", feature),
         },
         ProverOutcome::InconsistentPremises { detail } => FailureKind::UnsolvedGoal {
-            goal_summary: Some(
-                detail.clone().unwrap_or_else(|| {
-                    "Premise set is inconsistent — proof is vacuously true.".into()
-                }),
-            ),
+            goal_summary: Some(detail.clone().unwrap_or_else(|| {
+                "Premise set is inconsistent — proof is vacuously true.".into()
+            })),
         },
         ProverOutcome::ProverError { detail, exit_code } => FailureKind::ProverCrash {
             exit_code: *exit_code,
@@ -265,7 +260,13 @@ pub fn diagnose_from_outcome(prover: ProverKind, outcome: &ProverOutcome) -> Dia
         _ => String::new(),
     };
 
-    DiagnosticReport { prover, kind, explanation, suggestions, raw_excerpt }
+    DiagnosticReport {
+        prover,
+        kind,
+        explanation,
+        suggestions,
+        raw_excerpt,
+    }
 }
 
 // ---------------------------------------------------------------------------
@@ -288,7 +289,9 @@ fn diagnose_eprover(output: &str) -> FailureKind {
     if output.contains("% SZS status CounterSatisfiable")
         || output.contains("% SZS status Satisfiable")
     {
-        return FailureKind::Satisfiable { model_excerpt: None };
+        return FailureKind::Satisfiable {
+            model_excerpt: None,
+        };
     }
     // Parse / syntax errors in the input
     if output.contains("Unexpected token") || output.contains("syntax error") {
@@ -300,11 +303,13 @@ fn diagnose_eprover(output: &str) -> FailureKind {
         };
     }
     // ECHIDNA backend bug: output uses '%' but old code checked '#'
-    if !output.contains('%') && (output.contains("Proof found") || output.contains("SZS status"))
-    {
+    if !output.contains('%') && (output.contains("Proof found") || output.contains("SZS status")) {
         return FailureKind::BackendBug {
-            description: "EProver output uses '%' prefix but ECHIDNA checked '#'. Parser mismatch.".into(),
-            workaround: Some("Update parse_result to check '% SZS status ...' not '# SZS status ...'".into()),
+            description: "EProver output uses '%' prefix but ECHIDNA checked '#'. Parser mismatch."
+                .into(),
+            workaround: Some(
+                "Update parse_result to check '% SZS status ...' not '# SZS status ...'".into(),
+            ),
         };
     }
     // Inconclusive / resource exhaustion
@@ -320,7 +325,10 @@ fn diagnose_eprover(output: &str) -> FailureKind {
 
 fn diagnose_z3(output: &str) -> FailureKind {
     // Explicit errors from Z3
-    if let Some(err_line) = output.lines().find(|l| l.trim_start().starts_with("(error")) {
+    if let Some(err_line) = output
+        .lines()
+        .find(|l| l.trim_start().starts_with("(error"))
+    {
         let msg = err_line
             .trim()
             .trim_start_matches("(error")
@@ -345,9 +353,10 @@ fn diagnose_z3(output: &str) -> FailureKind {
     }
     // Timeout
     if (output.contains("timeout") || output.contains("unknown"))
-        && (output.trim() == "unknown" || output.lines().any(|l| l.trim() == "unknown")) {
-            return FailureKind::Timeout { limit_secs: None };
-        }
+        && (output.trim() == "unknown" || output.lines().any(|l| l.trim() == "unknown"))
+    {
+        return FailureKind::Timeout { limit_secs: None };
+    }
     // Satisfiable (not a proof)
     if output.lines().any(|l| l.trim() == "sat") {
         let model = output
@@ -364,7 +373,8 @@ fn diagnose_z3(output: &str) -> FailureKind {
     // Backend bug: model output after get-value was mistaken for the sat/unsat answer
     if output.lines().any(|l| {
         let t = l.trim();
-        t.starts_with("((") || (t.starts_with('(') && !t.starts_with("(error") && !t.starts_with("(model"))
+        t.starts_with("((")
+            || (t.starts_with('(') && !t.starts_with("(error") && !t.starts_with("(model"))
     }) && output.lines().any(|l| matches!(l.trim(), "sat" | "unsat"))
     {
         return FailureKind::BackendBug {
@@ -382,18 +392,27 @@ fn diagnose_smt_generic(output: &str, _prover_name: &str) -> FailureKind {
     if output.lines().any(|l| l.trim() == "unsat") {
         // unsat is success for proof queries — if we're in diagnostics,
         // something else went wrong (likely the verify_proof logic)
-        return FailureKind::Unknown { raw_output: first_n(output, 300) };
+        return FailureKind::Unknown {
+            raw_output: first_n(output, 300),
+        };
     }
     if output.lines().any(|l| l.trim() == "sat") {
-        return FailureKind::Satisfiable { model_excerpt: None };
+        return FailureKind::Satisfiable {
+            model_excerpt: None,
+        };
     }
-    if let Some(err) = output.lines().find(|l| l.trim_start().starts_with("(error")) {
+    if let Some(err) = output
+        .lines()
+        .find(|l| l.trim_start().starts_with("(error"))
+    {
         return FailureKind::SyntaxError {
             message: err.trim().to_string(),
             location: None,
         };
     }
-    FailureKind::Unknown { raw_output: first_n(output, 300) }
+    FailureKind::Unknown {
+        raw_output: first_n(output, 300),
+    }
 }
 
 fn diagnose_coq(output: &str) -> FailureKind {
@@ -426,7 +445,9 @@ fn diagnose_coq(output: &str) -> FailureKind {
             location: extract_coq_location(output),
         };
     }
-    FailureKind::Unknown { raw_output: first_n(output, 300) }
+    FailureKind::Unknown {
+        raw_output: first_n(output, 300),
+    }
 }
 
 fn diagnose_agda(output: &str) -> FailureKind {
@@ -440,8 +461,10 @@ fn diagnose_agda(output: &str) -> FailureKind {
         };
     }
     // Type errors
-    if output.contains("type mismatch") || output.contains("Type mismatch")
-        || output.contains("_!=_") || output.contains("!=<")
+    if output.contains("type mismatch")
+        || output.contains("Type mismatch")
+        || output.contains("_!=_")
+        || output.contains("!=<")
     {
         return FailureKind::TypeError {
             message: first_n(output, 300),
@@ -468,7 +491,9 @@ fn diagnose_agda(output: &str) -> FailureKind {
             location: extract_agda_location(output),
         };
     }
-    FailureKind::Unknown { raw_output: first_n(output, 300) }
+    FailureKind::Unknown {
+        raw_output: first_n(output, 300),
+    }
 }
 
 fn diagnose_lean4(output: &str) -> FailureKind {
@@ -495,7 +520,9 @@ fn diagnose_lean4(output: &str) -> FailureKind {
             location: extract_lean4_location(output),
         };
     }
-    FailureKind::Unknown { raw_output: first_n(output, 300) }
+    FailureKind::Unknown {
+        raw_output: first_n(output, 300),
+    }
 }
 
 fn diagnose_idris2(output: &str) -> FailureKind {
@@ -507,7 +534,9 @@ fn diagnose_idris2(output: &str) -> FailureKind {
             location: extract_idris2_location(output),
         };
     }
-    if output.contains("Mismatch between") || output.contains("When checking") && output.contains("Expected") {
+    if output.contains("Mismatch between")
+        || output.contains("When checking") && output.contains("Expected")
+    {
         return FailureKind::TypeError {
             message: first_n(output, 300),
             location: extract_idris2_location(output),
@@ -526,7 +555,9 @@ fn diagnose_idris2(output: &str) -> FailureKind {
             goal_summary: extract_line_containing(output, "holes"),
         };
     }
-    FailureKind::Unknown { raw_output: first_n(output, 300) }
+    FailureKind::Unknown {
+        raw_output: first_n(output, 300),
+    }
 }
 
 fn diagnose_vampire(output: &str) -> FailureKind {
@@ -536,7 +567,9 @@ fn diagnose_vampire(output: &str) -> FailureKind {
     if output.contains("% SZS status CounterSatisfiable")
         || output.contains("% SZS status Satisfiable")
     {
-        return FailureKind::Satisfiable { model_excerpt: None };
+        return FailureKind::Satisfiable {
+            model_excerpt: None,
+        };
     }
     if output.contains("% SZS status GaveUp") {
         return FailureKind::UnsolvedGoal { goal_summary: None };
@@ -549,7 +582,9 @@ fn diagnose_vampire(output: &str) -> FailureKind {
             location: None,
         };
     }
-    FailureKind::Unknown { raw_output: first_n(output, 300) }
+    FailureKind::Unknown {
+        raw_output: first_n(output, 300),
+    }
 }
 
 fn diagnose_generic(output: &str) -> FailureKind {
@@ -562,7 +597,9 @@ fn diagnose_generic(output: &str) -> FailureKind {
             stderr_excerpt: "(empty output)".into(),
         };
     }
-    FailureKind::Unknown { raw_output: first_n(output, 300) }
+    FailureKind::Unknown {
+        raw_output: first_n(output, 300),
+    }
 }
 
 // ---------------------------------------------------------------------------
@@ -571,31 +608,37 @@ fn diagnose_generic(output: &str) -> FailureKind {
 
 fn explain_and_suggest(prover: ProverKind, kind: &FailureKind) -> (String, Vec<String>) {
     match kind {
-        FailureKind::ParseMismatch { expected_pattern, actual_prefix } => (
+        FailureKind::ParseMismatch {
+            expected_pattern,
+            actual_prefix,
+        } => (
             format!(
                 "ECHIDNA expected the {:?} output to match '{}', but saw '{}...' instead. \
                  This typically means ECHIDNA's backend parser does not recognise \
                  the prover's actual output format.",
-                prover, expected_pattern,
+                prover,
+                expected_pattern,
                 actual_prefix.chars().take(60).collect::<String>()
             ),
             vec![
                 "Check that the prover binary is the correct version.".into(),
                 "Compare the prover's raw stdout against the pattern in the backend's \
-                 parse_result function.".into(),
+                 parse_result function."
+                    .into(),
                 "File an ECHIDNA issue with the raw prover output attached.".into(),
             ],
         ),
 
-        FailureKind::BackendBug { description, workaround } => (
+        FailureKind::BackendBug {
+            description,
+            workaround,
+        } => (
             format!(
                 "ECHIDNA has a known backend bug with {:?}: {}",
                 prover, description
             ),
             {
-                let mut s = vec![
-                    "Update the ECHIDNA backend to fix the parser.".into(),
-                ];
+                let mut s = vec!["Update the ECHIDNA backend to fix the parser.".into()];
                 if let Some(w) = workaround {
                     s.push(format!("Workaround: {}", w));
                 }
@@ -608,7 +651,10 @@ fn explain_and_suggest(prover: ProverKind, kind: &FailureKind) -> (String, Vec<S
                 "{:?} could not find a proof for this goal{}. \
                  The prover exhausted its search without finding a derivation.",
                 prover,
-                goal_summary.as_deref().map(|g| format!(": {}", g)).unwrap_or_default()
+                goal_summary
+                    .as_deref()
+                    .map(|g| format!(": {}", g))
+                    .unwrap_or_default()
             ),
             vec![
                 "Check that the goal is actually provable — try a smaller example.".into(),
@@ -622,7 +668,10 @@ fn explain_and_suggest(prover: ProverKind, kind: &FailureKind) -> (String, Vec<S
             format!(
                 "{:?} rejected the proof term due to a type error{}. Message: {}",
                 prover,
-                location.as_ref().map(|l| format!(" at {}", l)).unwrap_or_default(),
+                location
+                    .as_ref()
+                    .map(|l| format!(" at {}", l))
+                    .unwrap_or_default(),
                 message.chars().take(120).collect::<String>()
             ),
             vec![
@@ -636,7 +685,10 @@ fn explain_and_suggest(prover: ProverKind, kind: &FailureKind) -> (String, Vec<S
             format!(
                 "{:?} could not parse the proof file{}. Parser error: {}",
                 prover,
-                location.as_ref().map(|l| format!(" at {}", l)).unwrap_or_default(),
+                location
+                    .as_ref()
+                    .map(|l| format!(" at {}", l))
+                    .unwrap_or_default(),
                 message.chars().take(120).collect::<String>()
             ),
             vec![
@@ -655,7 +707,10 @@ fn explain_and_suggest(prover: ProverKind, kind: &FailureKind) -> (String, Vec<S
                  Either the library is not installed or the import is wrong.",
                 prover,
                 missing,
-                location.as_ref().map(|l| format!(" (referenced at {})", l)).unwrap_or_default()
+                location
+                    .as_ref()
+                    .map(|l| format!(" (referenced at {})", l))
+                    .unwrap_or_default()
             ),
             vec![
                 "Verify the library/module is installed in the prover's search path.".into(),
@@ -682,11 +737,16 @@ fn explain_and_suggest(prover: ProverKind, kind: &FailureKind) -> (String, Vec<S
             ],
         ),
 
-        FailureKind::ProverCrash { exit_code, stderr_excerpt } => (
+        FailureKind::ProverCrash {
+            exit_code,
+            stderr_excerpt,
+        } => (
             format!(
                 "{:?} exited abnormally{}. Stderr: {}",
                 prover,
-                exit_code.map(|c| format!(" (exit {})", c)).unwrap_or_default(),
+                exit_code
+                    .map(|c| format!(" (exit {})", c))
+                    .unwrap_or_default(),
                 stderr_excerpt.chars().take(120).collect::<String>()
             ),
             vec![
@@ -701,7 +761,8 @@ fn explain_and_suggest(prover: ProverKind, kind: &FailureKind) -> (String, Vec<S
                 "{:?} found a satisfying assignment, which means a counterexample exists. \
                  The formula or negated goal is satisfiable, so the proof attempt fails.{}",
                 prover,
-                model_excerpt.as_deref()
+                model_excerpt
+                    .as_deref()
                     .map(|m| format!(" Counterexample:\n{}", m))
                     .unwrap_or_default()
             ),
@@ -729,7 +790,8 @@ fn explain_and_suggest(prover: ProverKind, kind: &FailureKind) -> (String, Vec<S
             ),
             vec![
                 "Run the prover manually on the input file and inspect the output.".into(),
-                "File an ECHIDNA issue with the full prover output so a parser can be added.".into(),
+                "File an ECHIDNA issue with the full prover output so a parser can be added."
+                    .into(),
             ],
         ),
     }
@@ -745,11 +807,19 @@ fn extract_tptp_location(output: &str) -> Option<SourceLocation> {
         if line.contains("at line") {
             let parts: Vec<&str> = line.split_whitespace().collect();
             if let Some(pos) = parts.iter().position(|&w| w == "line") {
-                let lineno = parts.get(pos + 1).and_then(|s| s.trim_end_matches(',').parse().ok());
-                let colno = parts.iter().position(|&w| w == "column")
+                let lineno = parts
+                    .get(pos + 1)
+                    .and_then(|s| s.trim_end_matches(',').parse().ok());
+                let colno = parts
+                    .iter()
+                    .position(|&w| w == "column")
                     .and_then(|p| parts.get(p + 1))
                     .and_then(|s| s.parse().ok());
-                return Some(SourceLocation { file: None, line: lineno, column: colno });
+                return Some(SourceLocation {
+                    file: None,
+                    line: lineno,
+                    column: colno,
+                });
             }
         }
     }
@@ -766,7 +836,11 @@ fn extract_z3_location(output: &str) -> Option<SourceLocation> {
                 .filter_map(|s| s.parse().ok())
                 .collect();
             if nums.len() >= 2 {
-                return Some(SourceLocation { file: None, line: Some(nums[0]), column: Some(nums[1]) });
+                return Some(SourceLocation {
+                    file: None,
+                    line: Some(nums[0]),
+                    column: Some(nums[1]),
+                });
             }
         }
     }
@@ -778,10 +852,16 @@ fn extract_coq_location(output: &str) -> Option<SourceLocation> {
     for line in output.lines() {
         if line.starts_with("File ") {
             let file = line.split('"').nth(1).map(String::from);
-            let lineno = line.split("line ").nth(1)
+            let lineno = line
+                .split("line ")
+                .nth(1)
                 .and_then(|s| s.split(',').next())
                 .and_then(|s| s.trim().parse().ok());
-            return Some(SourceLocation { file, line: lineno, column: None });
+            return Some(SourceLocation {
+                file,
+                line: lineno,
+                column: None,
+            });
         }
     }
     None
@@ -819,16 +899,15 @@ fn extract_lean4_location(output: &str) -> Option<SourceLocation> {
     // Lean 4: "foo/Bar.lean:12:5: error: ..."
     for line in output.lines() {
         let parts: Vec<&str> = line.splitn(4, ':').collect();
-        if parts.len() >= 3
-            && parts[0].ends_with(".lean") {
-                let lineno = parts[1].parse().ok();
-                let colno = parts[2].parse().ok();
-                return Some(SourceLocation {
-                    file: Some(parts[0].to_string()),
-                    line: lineno,
-                    column: colno,
-                });
-            }
+        if parts.len() >= 3 && parts[0].ends_with(".lean") {
+            let lineno = parts[1].parse().ok();
+            let colno = parts[2].parse().ok();
+            return Some(SourceLocation {
+                file: Some(parts[0].to_string()),
+                line: lineno,
+                column: colno,
+            });
+        }
     }
     None
 }
@@ -839,7 +918,10 @@ fn extract_idris2_location(output: &str) -> Option<SourceLocation> {
         let parts: Vec<&str> = line.splitn(4, ':').collect();
         if parts.len() >= 3 && parts[0].ends_with(".idr") {
             let lineno = parts[1].parse().ok();
-            let colno = parts[2].split_whitespace().next().and_then(|s| s.parse().ok());
+            let colno = parts[2]
+                .split_whitespace()
+                .next()
+                .and_then(|s| s.parse().ok());
             return Some(SourceLocation {
                 file: Some(parts[0].to_string()),
                 line: lineno,
@@ -974,7 +1056,11 @@ mod tests {
         };
         assert_eq!(loc.to_string(), "foo.v:42:7");
 
-        let loc2 = SourceLocation { file: None, line: Some(10), column: None };
+        let loc2 = SourceLocation {
+            file: None,
+            line: Some(10),
+            column: None,
+        };
         assert_eq!(loc2.to_string(), "line 10");
     }
 }

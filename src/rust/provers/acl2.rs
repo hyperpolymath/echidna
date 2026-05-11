@@ -1414,8 +1414,8 @@ impl ProverBackend for ACL2Backend {
             };
 
         if let Some(path) = source_file {
-            let stdin_file = std::fs::File::open(&path)
-                .context("Failed to open source file for ACL2 stdin")?;
+            let stdin_file =
+                std::fs::File::open(&path).context("Failed to open source file for ACL2 stdin")?;
             let output = Command::new(exec)
                 .stdin(std::process::Stdio::from(stdin_file))
                 .output()

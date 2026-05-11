@@ -323,15 +323,12 @@ impl ProverBackend for AlloyBackend {
             return self.parse_result(&combined);
         }
 
-        let alloy_code = if let Some(src) = state
-            .metadata
-            .get("alloy_source")
-            .and_then(|v| v.as_str())
-        {
-            src.to_string()
-        } else {
-            self.to_alloy(state)?
-        };
+        let alloy_code =
+            if let Some(src) = state.metadata.get("alloy_source").and_then(|v| v.as_str()) {
+                src.to_string()
+            } else {
+                self.to_alloy(state)?
+            };
 
         // Write Alloy to a temporary file
         let tmp_dir =

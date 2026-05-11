@@ -30,4 +30,4 @@ pub use portfolio::{PortfolioConfig, PortfolioResult, PortfolioSolver};
 pub use proof::{
     theorem_identity, Proof, ProofStateRecord, ProofVersion, TacticApplication, TacticStatus,
 };
-pub use statistics::{StatsSummaryRecord, StatisticsTracker};
+pub use statistics::{StatisticsTracker, StatsSummaryRecord};

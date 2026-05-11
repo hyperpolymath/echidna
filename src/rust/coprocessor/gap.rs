@@ -21,8 +21,7 @@ use tokio::process::Command;
 
 use super::trust::CoprocessorTrustTier;
 use super::types::{
-    CoprocessorCapabilities, CoprocessorHealth, CoprocessorKind, CoprocessorOp,
-    CoprocessorOutcome,
+    CoprocessorCapabilities, CoprocessorHealth, CoprocessorKind, CoprocessorOp, CoprocessorOutcome,
 };
 use super::Coprocessor;
 
@@ -70,8 +69,7 @@ fn which(name: &str) -> bool {
 /// Accept only characters that appear in cycle notation: digits, `()`, `,`,
 /// and ASCII space.  No letters, no shell metacharacters.
 fn is_safe_permutation(s: &str) -> bool {
-    !s.is_empty()
-        && s.chars().all(|c| c.is_ascii_digit() || "(,) ".contains(c))
+    !s.is_empty() && s.chars().all(|c| c.is_ascii_digit() || "(,) ".contains(c))
 }
 
 /// Render a list of permutations as a comma-separated GAP argument list.
@@ -126,7 +124,7 @@ impl Coprocessor for GapBackend {
                 );
                 let out = run_gap(&script).await?;
                 Ok(CoprocessorOutcome::BigInt(out.trim().to_string()))
-            }
+            },
             CoprocessorOp::GapIsAbelian { generators } => {
                 if generators.is_empty() {
                     return Ok(CoprocessorOutcome::Failure(
@@ -151,14 +149,12 @@ impl Coprocessor for GapBackend {
                         "GapIsAbelian: unexpected output '{other}'"
                     ))),
                 }
-            }
+            },
             CoprocessorOp::GapSymmetricGroupOrder { n } => {
-                let script = format!(
-                    "Print(Order(SymmetricGroup({n})), \"\\n\");\nQUIT;\n"
-                );
+                let script = format!("Print(Order(SymmetricGroup({n})), \"\\n\");\nQUIT;\n");
                 let out = run_gap(&script).await?;
                 Ok(CoprocessorOutcome::BigInt(out.trim().to_string()))
-            }
+            },
             other => Ok(CoprocessorOutcome::Failure(format!(
                 "Gap backend does not support {:?}",
                 std::mem::discriminant(&other)

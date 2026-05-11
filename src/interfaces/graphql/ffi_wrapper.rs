@@ -1,12 +1,12 @@
 // SPDX-License-Identifier: PMPL-1.0-or-later
 // GraphQL FFI Wrapper - Connects GraphQL interface to ECHIDNA Rust core via Zig FFI
 
-use std::ffi::{CString, CStr};
+use anyhow::{anyhow, Result};
+use std::ffi::{CStr, CString};
 use std::os::raw::{c_char, c_int};
-use anyhow::{Result, anyhow};
 
 // Re-export FFI types from core
-pub use echidna::ffi::{FfiStatus, FfiStringSlice, FfiOwnedString, FfiProverConfig};
+pub use echidna::ffi::{FfiOwnedString, FfiProverConfig, FfiStatus, FfiStringSlice};
 
 // External Zig FFI functions (from libechidna_ffi.so)
 extern "C" {
@@ -17,7 +17,12 @@ extern "C" {
     pub fn echidna_parse_string(handle: c_int, content: *const u8, len: usize) -> c_int;
     pub fn echidna_verify_proof(handle: c_int) -> c_int;
     pub fn echidna_apply_tactic(handle: c_int, tactic: *const u8, len: usize) -> c_int;
-    pub fn echidna_suggest_tactics(handle: c_int, limit: c_int, out: *mut u8, out_len: *mut usize) -> c_int;
+    pub fn echidna_suggest_tactics(
+        handle: c_int,
+        limit: c_int,
+        out: *mut u8,
+        out_len: *mut usize,
+    ) -> c_int;
     pub fn echidna_export_proof(handle: c_int, out: *mut u8, out_len: *mut usize) -> c_int;
     pub fn echidna_last_error() -> *const u8;
     pub fn echidna_version() -> *const u8;
@@ -32,7 +37,9 @@ pub fn init_ffi() -> Result<()> {
             let err_msg = if err_ptr.is_null() {
                 "Unknown FFI initialization error".to_string()
             } else {
-                CStr::from_ptr(err_ptr as *const c_char).to_string_lossy().into_owned()
+                CStr::from_ptr(err_ptr as *const c_char)
+                    .to_string_lossy()
+                    .into_owned()
             };
             return Err(anyhow!("FFI initialization failed: {}", err_msg));
         }
@@ -47,7 +54,9 @@ pub fn get_version() -> Result<String> {
         if ptr.is_null() {
             return Err(anyhow!("FFI version pointer is null"));
         }
-        let version = CStr::from_ptr(ptr as *const c_char).to_string_lossy().into_owned();
+        let version = CStr::from_ptr(ptr as *const c_char)
+            .to_string_lossy()
+            .into_owned();
         Ok(version)
     }
 }
@@ -59,7 +68,9 @@ pub fn get_last_error() -> Result<String> {
         if ptr.is_null() {
             return Err(anyhow!("No error message available"));
         }
-        let error = CStr::from_ptr(ptr as *const c_char).to_string_lossy().into_owned();
+        let error = CStr::from_ptr(ptr as *const c_char)
+            .to_string_lossy()
+            .into_owned();
         Ok(error)
     }
 }
@@ -119,26 +130,26 @@ pub fn suggest_tactics(handle: i32, limit: usize) -> Result<Vec<String>> {
     unsafe {
         let mut buffer = vec![0u8; 4096];
         let mut buffer_len = buffer.len();
-        
+
         let rc = echidna_suggest_tactics(
             handle,
             limit as c_int,
             buffer.as_mut_ptr(),
-            &mut buffer_len as *mut usize
+            &mut buffer_len as *mut usize,
         );
-        
+
         if rc != 0 {
             let error = get_last_error()?;
             return Err(anyhow!("Suggest tactics failed: {}", error));
         }
-        
+
         if buffer_len == 0 {
             return Ok(vec![]);
         }
-        
+
         buffer.truncate(buffer_len);
         let result = String::from_utf8(buffer)?;
-        
+
         // Parse JSON array of tactics
         let tactics: Vec<String> = serde_json::from_str(&result)?;
         Ok(tactics)
@@ -150,22 +161,18 @@ pub fn export_proof(handle: i32) -> Result<String> {
     unsafe {
         let mut buffer = vec![0u8; 8192];
         let mut buffer_len = buffer.len();
-        
-        let rc = echidna_export_proof(
-            handle,
-            buffer.as_mut_ptr(),
-            &mut buffer_len as *mut usize
-        );
-        
+
+        let rc = echidna_export_proof(handle, buffer.as_mut_ptr(), &mut buffer_len as *mut usize);
+
         if rc != 0 {
             let error = get_last_error()?;
             return Err(anyhow!("Export failed: {}", error));
         }
-        
+
         if buffer_len == 0 {
             return Ok(String::new());
         }
-        
+
         buffer.truncate(buffer_len);
         let result = String::from_utf8(buffer)?;
         Ok(result)
