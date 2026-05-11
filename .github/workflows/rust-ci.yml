@@ -158,7 +158,7 @@ jobs:
           version: '1.10'
 
       - name: Cache Julia packages
-        uses: julia-actions/cache@580d2b69d895343992af2cbad49c32a0149c2cde # v2
+        uses: julia-actions/cache@a45e8fa8be21c18a06b7177052533149e61e9b38 # v3.1.0
 
       - name: Install Julia dependencies
         run: |
@@ -190,7 +190,7 @@ jobs:
       - name: Setup Rust toolchain (MSRV)
         uses: dtolnay/rust-toolchain@6d9817901c499d6b02debbb57edb38d33daa680b # stable
         with:
-          toolchain: '1.75'
+          toolchain: '1.85'
 
       - name: Cache Cargo
         uses: Swatinem/rust-cache@ad397744b0d591a723ab90405b7247fac0e6b8db # v2

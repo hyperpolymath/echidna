@@ -45,7 +45,11 @@ Summary of SPARK analysis
 
 | link:axiom_tracker/[axiom_tracker]
 | `src/rust/verification/axiom_tracker.rs`
-| Run #1 — proved
+| Run #1 — proved (18/0)
+
+| link:solver_integrity/[solver_integrity]
+| `src/rust/integrity/solver_integrity.rs`
+| Run #2 — proved (11/0)
 
 |===
 
