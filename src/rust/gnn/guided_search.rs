@@ -160,14 +160,15 @@ impl GnnGuidedSearch {
 
     /// Rank available premises for the current proof state.
     ///
-    /// Convenience wrapper around [`rank_premises_with_aspects`] that passes
+    /// Convenience wrapper around `rank_premises_with_aspects` that passes
     /// no domain hints — equivalent to `rank_premises_with_aspects(state, premises, &[])`.
     pub async fn rank_premises(
         &mut self,
         state: &ProofState,
         available_premises: &[Theorem],
     ) -> Vec<ScoredPremise> {
-        self.rank_premises_with_aspects(state, available_premises, &[]).await
+        self.rank_premises_with_aspects(state, available_premises, &[])
+            .await
     }
 
     /// Rank available premises with goal-aspect hints for closed-loop scoring.
@@ -184,7 +185,7 @@ impl GnnGuidedSearch {
     /// * `state` - Current proof state (goals + context)
     /// * `available_premises` - Theorems that could be applied
     /// * `aspects` - Goal aspect tags (e.g. from `AgenticGoal::aspects`).
-    ///   Empty slice = behaviour identical to [`rank_premises`].
+    ///   Empty slice = behaviour identical to `rank_premises`.
     ///
     /// # Returns
     /// Premises ranked by combined score (highest first).
@@ -332,8 +333,10 @@ impl GnnGuidedSearch {
         // Record fallback operation metrics
         let fallback_latency_ms = fallback_start.elapsed().as_millis() as u64;
         let is_cache_hit = cache_hits > 0 && cache_misses == 0;
-        self.fallback_monitor.record_fallback(fallback_latency_ms, is_cache_hit);
-        self.fallback_monitor.set_cache_size(self.premise_embedding_cache.len());
+        self.fallback_monitor
+            .record_fallback(fallback_latency_ms, is_cache_hit);
+        self.fallback_monitor
+            .set_cache_size(self.premise_embedding_cache.len());
 
         scores
     }

@@ -169,7 +169,7 @@ pub enum HOL4Tactic {
     Assume(String),
     /// Reverse assumption: first_x_assum
     FirstXAssum(Box<HOL4Tactic>),
-    /// Meta-implication: metis_tac[thms]
+    /// Meta-implication: metis_tac\[thms\]
     Metis(Vec<String>),
     /// Decision procedure: blastLib.BBLAST_TAC
     BBlast,
@@ -197,7 +197,7 @@ pub enum HOL4Tactic {
     PopAssum(Box<HOL4Tactic>),
     /// Quantifier instantiation: qspec_then `tm` (ttac thm)
     QSpecThen(HOL4Term, Box<HOL4Tactic>),
-    /// Use definition: once_rewrite_tac[def]
+    /// Use definition: once_rewrite_tac\[def\]
     OnceRewrite(Vec<String>),
     /// Compute: EVAL_TAC
     Eval,

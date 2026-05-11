@@ -391,7 +391,7 @@ impl TypeDiscipline {
     /// Returned kinds are the real binaries a user would reach for if they
     /// searched for this discipline by name — Agda for dependent types, NuSMV
     /// for temporal logic, Viper for separation, and so on. The HP-ecosystem
-    /// dispatcher (available through [`prover_kind`]) is always a valid route
+    /// dispatcher (available through `prover_kind`) is always a valid route
     /// and is intentionally *not* listed here — this helper exists to power
     /// Axis-1-first discovery.
     ///
@@ -505,7 +505,7 @@ impl TypeDiscipline {
         }
     }
 
-    /// Inverse of [`prover_kind`]. Returns `None` for non-HP-ecosystem kinds.
+    /// Inverse of `prover_kind`. Returns `None` for non-HP-ecosystem kinds.
     pub fn from_prover_kind(kind: ProverKind) -> Option<TypeDiscipline> {
         use ProverKind as P;
         use TypeDiscipline as D;
