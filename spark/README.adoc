@@ -1,0 +1,73 @@
+// SPDX-License-Identifier: PMPL-1.0-or-later
+= SPARK Companions
+:toc:
+:toc-placement: preamble
+
+Formal SPARK 2014/2022 companions for selected echidna modules.
+Each companion mirrors its Rust counterpart's public surface in Ada,
+states key invariants as `Pre`/`Post` contracts, and carries a
+`_proof.adb` file listing all proof obligations and the expected
+gnatprove tactic for each.
+
+== Toolchain
+
+[source,bash]
+----
+# Install via Alire (one-time, per machine)
+alr toolchain --select gnat_native gprbuild
+alr get gnatprove --build   # places binary under ~/.alire/...
+
+# Verify
+gnatprove --version
+gprbuild  --version
+----
+
+== Running gnatprove
+
+[source,bash]
+----
+cd spark/<module_name>
+gnatprove --mode=prove --level=1 -P <module_name>.gpr
+----
+
+Expected output for a clean proof:
+----
+Summary of SPARK analysis
+  ...
+  PROVED  <n> checks
+----
+
+== Module index
+
+[cols="1,2,1"]
+|===
+| Module | Rust source | Status
+
+| link:axiom_tracker/[axiom_tracker]
+| `src/rust/verification/axiom_tracker.rs`
+| Run #1 — proved
+
+|===
+
+== Adding a new companion
+
+. Create `spark/<module_name>/` with:
+** `<module_name>.ads` — spec with `SPARK_Mode => On` + `Pre`/`Post`
+** `<module_name>.adb` — body with `Loop_Invariant` annotations
+** `<module_name>_proof.adb` — proof obligation catalogue
+** `<module_name>.gpr` — GPRbuild project
+** `alire.toml` — Alire manifest pinning `gnat_native` + `gprbuild`
+. Run `gnatprove` and iterate until all VCs are proved.
+. Update the module index in this file.
+. Open a PR referencing the migration roadmap entry.
+
+== Equivalence methodology
+
+Each companion proves properties of the *Ada model*, not the Rust code
+directly.  The connection is maintained two ways:
+
+. Structural argument: the Ada body mirrors the Rust algorithm step for
+  step (documented in `_proof.adb`).
+. Runtime crosscheck: the `enforce_policy_with_spark_crosscheck` method
+  (Rust, `--features spark`) calls the Ada compiled-to-C bridge and
+  panics in debug builds on divergence.

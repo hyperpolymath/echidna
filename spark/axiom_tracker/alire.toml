@@ -1,0 +1,13 @@
+name        = "axiom_tracker_spark"
+description = "SPARK companion for echidna axiom_tracker module"
+version     = "0.1.0"
+licenses    = "PMPL-1.0-or-later"
+maintainers = ["hyperpolymath@users.noreply.github.com"]
+maintainers-logins = ["hyperpolymath"]
+
+[build-switches]
+"*".Ada_Version = "Ada2022"
+
+[[depends-on]]
+gnat_native = "^14"
+gprbuild    = "^22"
