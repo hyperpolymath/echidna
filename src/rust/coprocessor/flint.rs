@@ -49,8 +49,7 @@ use std::os::raw::{c_char, c_int};
 
 use super::trust::CoprocessorTrustTier;
 use super::types::{
-    CoprocessorCapabilities, CoprocessorHealth, CoprocessorKind, CoprocessorOp,
-    CoprocessorOutcome,
+    CoprocessorCapabilities, CoprocessorHealth, CoprocessorKind, CoprocessorOp, CoprocessorOutcome,
 };
 use super::Coprocessor;
 
@@ -101,6 +100,7 @@ extern "C" {
     fn fmpz_get_str(str: *mut c_char, base: c_int, f: *const Slong) -> *mut c_char;
 
     // ── fmpz arithmetic ───────────────────────────────────────────────────────
+    #[allow(dead_code)]
     fn fmpz_gcd(f: *mut Slong, g: *const Slong, h: *const Slong);
     // Returns 1 if exact k-th root, 0 if not (r holds floor(|f|^(1/k))).
     fn fmpz_root(r: *mut Slong, f: *const Slong, n: Slong) -> c_int;
@@ -117,16 +117,8 @@ extern "C" {
 
     // ── fmpz_poly operations ──────────────────────────────────────────────────
     // All three require res to be distinct from the input polys.
-    fn fmpz_poly_gcd(
-        res: *mut FmpzPolyStruct,
-        f: *const FmpzPolyStruct,
-        g: *const FmpzPolyStruct,
-    );
-    fn fmpz_poly_mul(
-        res: *mut FmpzPolyStruct,
-        f: *const FmpzPolyStruct,
-        g: *const FmpzPolyStruct,
-    );
+    fn fmpz_poly_gcd(res: *mut FmpzPolyStruct, f: *const FmpzPolyStruct, g: *const FmpzPolyStruct);
+    fn fmpz_poly_mul(res: *mut FmpzPolyStruct, f: *const FmpzPolyStruct, g: *const FmpzPolyStruct);
     // Pseudo-remainder: lc(g)^d · f = q·g + r; g must be non-zero.
     fn fmpz_poly_pseudo_rem(
         r: *mut FmpzPolyStruct,
@@ -161,8 +153,8 @@ impl Fmpz {
     }
 
     fn set_str(&mut self, s: &str) -> Result<()> {
-        let cs = CString::new(s.trim())
-            .map_err(|e| anyhow!("fmpz string contains NUL byte: {e}"))?;
+        let cs =
+            CString::new(s.trim()).map_err(|e| anyhow!("fmpz string contains NUL byte: {e}"))?;
         let ret = unsafe { fmpz_set_str(&mut self.inner, cs.as_ptr(), 10) };
         if ret == 0 {
             Ok(())
@@ -173,8 +165,7 @@ impl Fmpz {
 
     fn get_str(&self) -> String {
         // FLINT allocates when str argument is NULL; we free with flint_free.
-        let ptr: *mut c_char =
-            unsafe { fmpz_get_str(std::ptr::null_mut(), 10, &self.inner) };
+        let ptr: *mut c_char = unsafe { fmpz_get_str(std::ptr::null_mut(), 10, &self.inner) };
         if ptr.is_null() {
             return "0".to_string();
         }
@@ -239,9 +230,7 @@ fn parse_poly(s: &str) -> Result<FmpzPoly> {
     }
     for (i, token) in s.split_whitespace().enumerate() {
         let coeff = Fmpz::from_str(token)?;
-        unsafe {
-            fmpz_poly_set_coeff_fmpz(&mut poly.inner, i as Slong, &coeff.inner)
-        };
+        unsafe { fmpz_poly_set_coeff_fmpz(&mut poly.inner, i as Slong, &coeff.inner) };
     }
     Ok(poly)
 }
@@ -337,7 +326,7 @@ fn dispatch_sync(op: CoprocessorOp) -> Result<CoprocessorOutcome> {
             let mut res = FmpzPoly::new();
             unsafe { fmpz_poly_gcd(&mut res.inner, &fp.inner, &gp.inner) };
             Ok(CoprocessorOutcome::Polynomial(poly_to_string(&res)))
-        }
+        },
 
         CoprocessorOp::FlintPolyMul { f, g } => {
             let fp = parse_poly(&f)?;
@@ -345,7 +334,7 @@ fn dispatch_sync(op: CoprocessorOp) -> Result<CoprocessorOutcome> {
             let mut res = FmpzPoly::new();
             unsafe { fmpz_poly_mul(&mut res.inner, &fp.inner, &gp.inner) };
             Ok(CoprocessorOutcome::Polynomial(poly_to_string(&res)))
-        }
+        },
 
         CoprocessorOp::FlintPolyRem { f, g } => {
             let fp = parse_poly(&f)?;
@@ -357,41 +346,36 @@ fn dispatch_sync(op: CoprocessorOp) -> Result<CoprocessorOutcome> {
             }
             let mut rem = FmpzPoly::new();
             let mut d: Ulong = 0;
-            unsafe {
-                fmpz_poly_pseudo_rem(&mut rem.inner, &mut d, &fp.inner, &gp.inner)
-            };
+            unsafe { fmpz_poly_pseudo_rem(&mut rem.inner, &mut d, &fp.inner, &gp.inner) };
             Ok(CoprocessorOutcome::Polynomial(poly_to_string(&rem)))
-        }
+        },
 
         CoprocessorOp::FlintPolyContent { f } => {
             let fp = parse_poly(&f)?;
             let mut content = Fmpz::new();
             unsafe { fmpz_poly_content(&mut content.inner, &fp.inner) };
             Ok(CoprocessorOutcome::BigInt(content.get_str()))
-        }
+        },
 
         CoprocessorOp::FlintNthRoot { n, k } => {
             if k == 0 {
-                return Err(anyhow!(
-                    "FlintNthRoot: exponent k must be ≥ 1, got 0"
-                ));
+                return Err(anyhow!("FlintNthRoot: exponent k must be ≥ 1, got 0"));
             }
             let nz = Fmpz::from_str(&n)?;
             let mut root = Fmpz::new();
-            let exact =
-                unsafe { fmpz_root(&mut root.inner, &nz.inner, k as Slong) };
+            let exact = unsafe { fmpz_root(&mut root.inner, &nz.inner, k as Slong) };
             if exact == 1 {
                 Ok(CoprocessorOutcome::BigInt(root.get_str()))
             } else {
                 Ok(CoprocessorOutcome::Empty)
             }
-        }
+        },
 
         CoprocessorOp::FlintBinomial { n, k } => {
             let mut res = Fmpz::new();
             unsafe { fmpz_bin_uiui(&mut res.inner, n, k) };
             Ok(CoprocessorOutcome::BigInt(res.get_str()))
-        }
+        },
 
         other => Ok(CoprocessorOutcome::Failure(format!(
             "FlintMathBackend: op not handled by this backend: {other:?}"
@@ -410,9 +394,7 @@ mod tests {
             .enable_all()
             .build()
             .unwrap()
-            .block_on(async {
-                FlintMathBackend::new().dispatch(op).await.unwrap()
-            })
+            .block_on(async { FlintMathBackend::new().dispatch(op).await.unwrap() })
     }
 
     #[test]
@@ -421,8 +403,8 @@ mod tests {
         //   1 − x² = −(x−1)(x+1),  x − 1.
         //   Primitive GCD with positive leading coeff = x − 1 → wire: "-1 1"
         match run(CoprocessorOp::FlintPolyGcd {
-            f: "1 0 -1".into(),  // 1 − x²
-            g: "-1 1".into(),    // x − 1
+            f: "1 0 -1".into(), // 1 − x²
+            g: "-1 1".into(),   // x − 1
         }) {
             CoprocessorOutcome::Polynomial(s) => assert_eq!(s, "-1 1"),
             other => panic!("unexpected: {other:?}"),
@@ -433,8 +415,8 @@ mod tests {
     fn poly_mul_difference_of_squares() {
         // (1 + x)(1 − x) = 1 − x²  →  wire: "1 0 -1"
         match run(CoprocessorOp::FlintPolyMul {
-            f: "1 1".into(),   // 1 + x
-            g: "1 -1".into(),  // 1 − x
+            f: "1 1".into(),  // 1 + x
+            g: "1 -1".into(), // 1 − x
         }) {
             CoprocessorOutcome::Polynomial(s) => assert_eq!(s, "1 0 -1"),
             other => panic!("unexpected: {other:?}"),
@@ -445,8 +427,8 @@ mod tests {
     fn poly_rem_exact_division_is_zero() {
         // pseudo_rem(1 − x², x − 1) = 0  because (x−1) | (1 − x²)
         match run(CoprocessorOp::FlintPolyRem {
-            f: "1 0 -1".into(),  // 1 − x²
-            g: "-1 1".into(),    // x − 1
+            f: "1 0 -1".into(), // 1 − x²
+            g: "-1 1".into(),   // x − 1
         }) {
             CoprocessorOutcome::Polynomial(s) => assert_eq!(s, "0"),
             other => panic!("unexpected: {other:?}"),
@@ -456,9 +438,7 @@ mod tests {
     #[test]
     fn poly_content_extracts_gcd_of_coefficients() {
         // content(6 + 4x + 2x²) = gcd(6, 4, 2) = 2
-        match run(CoprocessorOp::FlintPolyContent {
-            f: "6 4 2".into(),
-        }) {
+        match run(CoprocessorOp::FlintPolyContent { f: "6 4 2".into() }) {
             CoprocessorOutcome::BigInt(s) => assert_eq!(s, "2"),
             other => panic!("unexpected: {other:?}"),
         }

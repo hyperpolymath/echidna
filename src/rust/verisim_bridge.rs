@@ -23,9 +23,9 @@ use anyhow::{Context, Result};
 use chrono::Utc;
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
-use tracing::{debug, info, warn};
+use tracing::{debug, warn};
 
-use crate::core::{Goal, ProofState, Tactic};
+use crate::core::{Goal, ProofState};
 use crate::proof_encoding;
 use crate::provers::ProverKind;
 
@@ -985,7 +985,7 @@ fn base64_encode(bytes: &[u8]) -> String {
     // In production, use the `base64` crate; here we use a compact implementation
     // that avoids adding another dependency.
     const ALPHABET: &[u8; 64] = b"ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
-    let mut result = String::with_capacity((bytes.len() + 2) / 3 * 4);
+    let mut result = String::with_capacity(bytes.len().div_ceil(3) * 4);
 
     for chunk in bytes.chunks(3) {
         let b0 = chunk[0] as u32;
@@ -1010,6 +1010,7 @@ fn base64_encode(bytes: &[u8]) -> String {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::core::Tactic;
     use crate::core::{Context, Term};
     use std::collections::HashMap;
 

@@ -587,12 +587,11 @@ impl ProverBackend for Idris2Backend {
                         });
                     }
                 },
-                Idris2Decl::Pragma { directive, args: _ } => {
+                Idris2Decl::Pragma { directive, args: _ }
                     // Store pragmas as metadata
-                    if directive == "total" || directive == "default" {
+                    if (directive == "total" || directive == "default") => {
                         // Track totality checking
-                    }
-                },
+                    },
                 _ => {},
             }
         }
@@ -807,10 +806,8 @@ impl ProverBackend for Idris2Backend {
             return Ok(output.status.success());
         }
         if let Some(source) = state.metadata.get("idris2_source").and_then(|v| v.as_str()) {
-            let temp_dir = std::env::temp_dir().join(format!(
-                "echidna_idris2_{}",
-                uuid::Uuid::new_v4()
-            ));
+            let temp_dir =
+                std::env::temp_dir().join(format!("echidna_idris2_{}", uuid::Uuid::new_v4()));
             tokio::fs::create_dir_all(&temp_dir).await?;
             let temp_file = temp_dir.join("Verify.idr");
             tokio::fs::write(&temp_file, source).await?;
@@ -924,11 +921,9 @@ impl ProverBackend for Idris2Backend {
                 },
 
                 // Inductive type -> cases/induction
-                Term::Const(name) => {
-                    if name == "Nat" || name == "List" || name == "Vect" {
-                        suggestions.push(Tactic::Cases(goal.target.clone()));
-                        suggestions.push(Tactic::Induction(goal.target.clone()));
-                    }
+                Term::Const(name) if (name == "Nat" || name == "List" || name == "Vect") => {
+                    suggestions.push(Tactic::Cases(goal.target.clone()));
+                    suggestions.push(Tactic::Induction(goal.target.clone()));
                 },
 
                 _ => {},

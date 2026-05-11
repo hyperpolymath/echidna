@@ -1,10 +1,10 @@
 // SPDX-License-Identifier: PMPL-1.0-or-later
 // Circuit breaker, retry policy, bulkhead isolation for fault tolerance
 
+use std::fmt;
 use std::sync::atomic::{AtomicU32, Ordering};
 use std::sync::{Arc, Mutex};
 use std::time::{Duration, Instant};
-use std::fmt;
 
 /// Possible states of a circuit breaker
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -33,9 +33,16 @@ impl fmt::Display for CircuitBreakerError {
             Self::CircuitOpen => write!(f, "Circuit breaker is open"),
             Self::ProverFailed(msg) => write!(f, "Prover failed: {}", msg),
             Self::Timeout => write!(f, "Operation timed out"),
-            Self::RetryExhausted { attempts, last_error } => {
-                write!(f, "Retries exhausted ({} attempts): {}", attempts, last_error)
-            }
+            Self::RetryExhausted {
+                attempts,
+                last_error,
+            } => {
+                write!(
+                    f,
+                    "Retries exhausted ({} attempts): {}",
+                    attempts, last_error
+                )
+            },
             Self::BulkheadRejected { reason } => write!(f, "Bulkhead rejected: {}", reason),
         }
     }
@@ -65,7 +72,7 @@ impl BackoffStrategy {
                 } else {
                     duration
                 }
-            }
+            },
             Self::Linear { increment, max } => {
                 let duration = *increment * (attempt as u32 + 1);
                 if duration > *max {
@@ -73,7 +80,7 @@ impl BackoffStrategy {
                 } else {
                     duration
                 }
-            }
+            },
             Self::Fibonacci { max } => {
                 let fib = fibonacci(attempt);
                 let duration = Duration::from_millis(fib * 10);
@@ -82,7 +89,7 @@ impl BackoffStrategy {
                 } else {
                     duration
                 }
-            }
+            },
         }
     }
 }
@@ -101,7 +108,7 @@ fn fibonacci(n: usize) -> u64 {
                 b = next;
             }
             b
-        }
+        },
     }
 }
 
@@ -110,7 +117,7 @@ fn fibonacci(n: usize) -> u64 {
 pub struct RetryPolicy {
     pub max_attempts: usize,
     pub backoff_strategy: BackoffStrategy,
-    pub jitter_factor: f64,  // 0.0-1.0; adds randomness to backoff
+    pub jitter_factor: f64, // 0.0-1.0; adds randomness to backoff
 }
 
 impl RetryPolicy {
@@ -130,7 +137,8 @@ impl RetryPolicy {
     /// Calculate actual backoff with jitter
     pub fn backoff_with_jitter(&self, attempt: usize) -> Duration {
         let base = self.backoff_strategy.backoff_duration(attempt);
-        let jitter_ms = (base.as_millis() as f64 * self.jitter_factor * rand::random::<f64>()) as u128;
+        let jitter_ms =
+            (base.as_millis() as f64 * self.jitter_factor * rand::random::<f64>()) as u128;
         base + Duration::from_millis(jitter_ms as u64)
     }
 }
@@ -161,7 +169,12 @@ pub struct CircuitBreaker {
 }
 
 impl CircuitBreaker {
-    pub fn new(name: String, failure_threshold: usize, success_threshold: usize, timeout: Duration) -> Self {
+    pub fn new(
+        name: String,
+        failure_threshold: usize,
+        success_threshold: usize,
+        timeout: Duration,
+    ) -> Self {
         CircuitBreaker {
             name,
             state: Arc::new(Mutex::new(CircuitState::Closed)),
@@ -202,11 +215,11 @@ impl CircuitBreaker {
                     self.failure_count.store(0, Ordering::SeqCst);
                     self.success_count.store(0, Ordering::SeqCst);
                 }
-            }
+            },
             CircuitState::Closed => {
                 self.failure_count.store(0, Ordering::SeqCst);
-            }
-            _ => {}
+            },
+            _ => {},
         }
     }
 
@@ -216,17 +229,17 @@ impl CircuitBreaker {
         self.failure_count.fetch_add(1, Ordering::SeqCst);
 
         match *state {
-            CircuitState::Closed => {
-                if self.failure_count.load(Ordering::SeqCst) as usize >= self.failure_threshold {
-                    *state = CircuitState::Open;
-                    *self.last_failure.lock().unwrap() = Some(Instant::now());
-                }
-            }
+            CircuitState::Closed
+                if self.failure_count.load(Ordering::SeqCst) as usize >= self.failure_threshold =>
+            {
+                *state = CircuitState::Open;
+                *self.last_failure.lock().unwrap() = Some(Instant::now());
+            },
             CircuitState::HalfOpen => {
                 *state = CircuitState::Open;
                 *self.last_failure.lock().unwrap() = Some(Instant::now());
-            }
-            _ => {}
+            },
+            _ => {},
         }
     }
 
@@ -252,18 +265,16 @@ impl CircuitBreaker {
 
         match self.state() {
             CircuitState::Open => Err(CircuitBreakerError::CircuitOpen),
-            CircuitState::HalfOpen | CircuitState::Closed => {
-                match f.await {
-                    Ok(result) => {
-                        self.record_success();
-                        Ok(result)
-                    }
-                    Err(e) => {
-                        self.record_failure();
-                        Err(CircuitBreakerError::ProverFailed(e))
-                    }
-                }
-            }
+            CircuitState::HalfOpen | CircuitState::Closed => match f.await {
+                Ok(result) => {
+                    self.record_success();
+                    Ok(result)
+                },
+                Err(e) => {
+                    self.record_failure();
+                    Err(CircuitBreakerError::ProverFailed(e))
+                },
+            },
         }
     }
 }

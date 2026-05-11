@@ -167,7 +167,8 @@ impl GnnGuidedSearch {
         state: &ProofState,
         available_premises: &[Theorem],
     ) -> Vec<ScoredPremise> {
-        self.rank_premises_with_aspects(state, available_premises, &[]).await
+        self.rank_premises_with_aspects(state, available_premises, &[])
+            .await
     }
 
     /// Rank available premises with goal-aspect hints for closed-loop scoring.
@@ -221,7 +222,7 @@ impl GnnGuidedSearch {
             gnn_result
                 .ranked_premises
                 .into_iter()
-                .zip(gnn_result.scores.into_iter())
+                .zip(gnn_result.scores)
                 .collect()
         } else {
             self.stats.fallback_calls += 1;
@@ -332,8 +333,10 @@ impl GnnGuidedSearch {
         // Record fallback operation metrics
         let fallback_latency_ms = fallback_start.elapsed().as_millis() as u64;
         let is_cache_hit = cache_hits > 0 && cache_misses == 0;
-        self.fallback_monitor.record_fallback(fallback_latency_ms, is_cache_hit);
-        self.fallback_monitor.set_cache_size(self.premise_embedding_cache.len());
+        self.fallback_monitor
+            .record_fallback(fallback_latency_ms, is_cache_hit);
+        self.fallback_monitor
+            .set_cache_size(self.premise_embedding_cache.len());
 
         scores
     }

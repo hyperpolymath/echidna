@@ -22,9 +22,9 @@
 
 use anyhow::{Context, Result};
 use serde::{Deserialize, Serialize};
-use tracing::{debug, info};
 #[cfg(feature = "verisim")]
 use tracing::warn;
+use tracing::{debug, info};
 
 use crate::provers::ProverKind;
 
@@ -555,7 +555,7 @@ impl QueryExecutor {
                         if let Ok(results) = resp.json::<Vec<serde_json::Value>>().await {
                             let entries: Vec<QueryResultEntry> = results
                                 .iter()
-                                .filter_map(|r| search_result_to_entry(r))
+                                .filter_map(search_result_to_entry)
                                 .take(limit)
                                 .collect();
                             return Ok(QueryResult {
@@ -601,7 +601,7 @@ impl QueryExecutor {
                     if let Ok(results) = resp.json::<Vec<serde_json::Value>>().await {
                         let entries: Vec<QueryResultEntry> = results
                             .iter()
-                            .filter_map(|r| search_result_to_entry(r))
+                            .filter_map(search_result_to_entry)
                             .take(limit)
                             .collect();
                         return Ok(QueryResult {
@@ -694,7 +694,7 @@ impl QueryExecutor {
                             if let Ok(results) = resp.json::<Vec<serde_json::Value>>().await {
                                 let entries: Vec<QueryResultEntry> = results
                                     .iter()
-                                    .filter_map(|r| search_result_to_entry(r))
+                                    .filter_map(search_result_to_entry)
                                     .take(limit)
                                     .collect();
                                 return Ok(QueryResult {
@@ -1058,11 +1058,13 @@ mod tests {
         // Empty / whitespace patterns short-circuit to empty without
         // touching VeriSimDB at all — useful for callers that pass an
         // un-validated CLI argument.
-        let names =
-            cross_prover_search_names("http://127.0.0.1:1", "", 10).await.unwrap();
+        let names = cross_prover_search_names("http://127.0.0.1:1", "", 10)
+            .await
+            .unwrap();
         assert!(names.is_empty());
-        let names =
-            cross_prover_search_names("http://127.0.0.1:1", "   ", 10).await.unwrap();
+        let names = cross_prover_search_names("http://127.0.0.1:1", "   ", 10)
+            .await
+            .unwrap();
         assert!(names.is_empty());
     }
 
@@ -1072,13 +1074,9 @@ mod tests {
         // — search is a soft query, an outage cannot kill the caller.
         // Without the verisim feature this is a no-op stub that also returns
         // Ok(vec![]), so the same assertion holds in both build modes.
-        let names = cross_prover_search_names(
-            "http://127.0.0.1:1",
-            "associativity",
-            5,
-        )
-        .await
-        .unwrap();
+        let names = cross_prover_search_names("http://127.0.0.1:1", "associativity", 5)
+            .await
+            .unwrap();
         assert!(names.is_empty());
     }
 }
