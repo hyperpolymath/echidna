@@ -1,0 +1,25 @@
+-- GPRbuild project for certificates SPARK companion
+project Certificates is
+
+   for Source_Dirs use (".");
+   for Object_Dir  use ".obj";
+   for Main        use ();
+
+   package Compiler is
+      for Switches ("Ada") use
+        ("-gnat2022",
+         "-gnatX",
+         "-O1",
+         "-gnatn");
+   end Compiler;
+
+   package Prove is
+      for Proof_Switches ("Ada") use
+        ("--mode=prove",
+         "--level=1",
+         "--counterexamples=on",
+         "-j0",
+         "--report=all");
+   end Prove;
+
+end Certificates;

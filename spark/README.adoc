@@ -51,6 +51,10 @@ Summary of SPARK analysis
 | `src/rust/integrity/solver_integrity.rs`
 | Run #2 — proved (11/0)
 
+| link:certificates/[certificates]
+| `src/rust/verification/certificates.rs`
+| Run #3 — proved (10/0)
+
 |===
 
 == Adding a new companion
