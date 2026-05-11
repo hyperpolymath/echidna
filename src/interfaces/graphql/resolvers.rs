@@ -37,7 +37,7 @@ impl ProverBackend for FfiProverBackend {
         Ok(CoreProofState::new(Term::Var(content.to_string())))
     }
 
-    async fn verify_proof(&self, state: &CoreProofState) -> anyhow::Result<bool> {
+    async fn verify_proof(&self, _state: &CoreProofState) -> anyhow::Result<bool> {
         ffi_wrapper::verify_proof(self.handle)
     }
 
@@ -56,7 +56,7 @@ impl ProverBackend for FfiProverBackend {
 
     async fn suggest_tactics(
         &self,
-        state: &CoreProofState,
+        _state: &CoreProofState,
         limit: usize,
     ) -> anyhow::Result<Vec<CoreTactic>> {
         let tactic_names = ffi_wrapper::suggest_tactics(self.handle, limit)?;
@@ -71,7 +71,7 @@ impl ProverBackend for FfiProverBackend {
         Ok(tactics)
     }
 
-    async fn export(&self, state: &CoreProofState) -> anyhow::Result<String> {
+    async fn export(&self, _state: &CoreProofState) -> anyhow::Result<String> {
         ffi_wrapper::export_proof(self.handle)
     }
 
@@ -99,6 +99,7 @@ impl ProverBackend for FfiProverBackend {
 /// Helper trait to convert between GraphQL and core types
 pub trait ProverKindExt {
     fn from_core(kind: CoreProverKind) -> Self;
+    #[allow(dead_code)]
     fn to_core(&self) -> CoreProverKind;
 }
 
@@ -409,6 +410,7 @@ pub struct ProofSession {
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[allow(dead_code)]
 pub enum SessionStatus {
     Pending,
     InProgress,

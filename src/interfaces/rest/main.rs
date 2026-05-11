@@ -2,15 +2,11 @@
 // ECHIDNA REST API Server
 
 use axum::{
-    extract::{Json, Path, Query, State},
-    http::StatusCode,
-    response::IntoResponse,
     routing::{delete, get, post},
     Router,
 };
-use echidna::core::{ProofState, Tactic as CoreTactic, TacticResult};
-use echidna::provers::{ProverBackend, ProverConfig, ProverFactory, ProverKind as CoreProverKind};
-use serde::{Deserialize, Serialize};
+use echidna::core::ProofState;
+use echidna::provers::ProverBackend;
 use std::collections::HashMap;
 use std::sync::Arc;
 use std::time::Duration;

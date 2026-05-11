@@ -1,8 +1,14 @@
 // SPDX-License-Identifier: PMPL-1.0-or-later
-// REST FFI Wrapper - Connects REST interface to ECHIDNA Rust core via Zig FFI
+// REST FFI Wrapper - Connects REST interface to ECHIDNA Rust core via Zig FFI.
+//
+// The wrapper is scaffolding for the REST handlers — most entry points are
+// declared so the surface is complete the first time a handler reaches for
+// them. Crate-level `dead_code` / `unused_imports` allows reflect that.
+
+#![allow(dead_code, unused_imports)]
 
 use std::ffi::{CString, CStr};
-use std::os::raw::{c_char, c_int, c_void};
+use std::os::raw::{c_char, c_int};
 use anyhow::{Result, anyhow};
 
 // Re-export FFI types from core
