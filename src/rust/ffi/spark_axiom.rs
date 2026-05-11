@@ -26,8 +26,6 @@
 //! The underlying SPARK/Ada code has been formally verified correct; the
 //! Zig shim adds a null-pointer guard and a count-bounds check redundantly.
 
-#[cfg(test)]
-use crate::provers::ProverKind;
 use crate::verification::axiom_tracker::{AxiomPolicy, AxiomUsage, DangerLevel};
 
 // ────────────────────────────────────────────────────────────────────────────
@@ -77,6 +75,7 @@ fn danger_to_u8(d: DangerLevel) -> u8 {
     }
 }
 
+#[allow(dead_code)]
 fn i32_to_policy(n: i32) -> Option<AxiomPolicy> {
     match n {
         POLICY_CLEAN => Some(AxiomPolicy::Clean),

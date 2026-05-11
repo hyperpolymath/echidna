@@ -1000,7 +1000,7 @@ impl ProverDispatcher {
                 )
             };
 
-            return Ok(DispatchResult {
+            Ok(DispatchResult {
                 verified: meets_minimum,
                 trust_level,
                 provers_used: vec![format!("{:?}", winning_kind)],
@@ -1012,7 +1012,7 @@ impl ProverDispatcher {
                 cross_checked: false,
                 outcome,
                 diagnostics,
-            });
+            })
         }
 
         #[cfg(not(feature = "chapel"))]

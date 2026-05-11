@@ -33,6 +33,7 @@ use std::cmp::Ordering;
 use super::embed::cosine;
 use super::metrics::EntryMetrics;
 use super::{Corpus, CorpusEntry, DeclKind};
+use std::cmp::Reverse;
 
 /// Builder for a multi-axis corpus query. Created via `Corpus::query`.
 pub struct CorpusQuery<'c> {
@@ -252,10 +253,10 @@ impl<'c> CorpusQuery<'c> {
                 results.sort_by_key(|h| h.metrics.proof_depth);
             },
             SortKey::Fanin => {
-                results.sort_by(|a, b| b.metrics.dep_fanin.cmp(&a.metrics.dep_fanin));
+                results.sort_by_key(|h| Reverse(h.metrics.dep_fanin));
             },
             SortKey::Fanout => {
-                results.sort_by(|a, b| b.metrics.dep_fanout.cmp(&a.metrics.dep_fanout));
+                results.sort_by_key(|h| Reverse(h.metrics.dep_fanout));
             },
         }
 

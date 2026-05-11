@@ -1,6 +1,8 @@
 // SPDX-FileCopyrightText: 2026 Jonathan D.A. Jewell (hyperpolymath) <j.d.a.jewell@open.ac.uk>
 // SPDX-License-Identifier: PMPL-1.0-or-later
 
+#![allow(clippy::doc_overindented_list_items)]
+
 //! Persistent proof entities for the Verisim E-R schema.
 //!
 //! The existing `proof_encoding::proof_identity` function produces a stable

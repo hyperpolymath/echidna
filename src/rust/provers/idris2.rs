@@ -587,12 +587,11 @@ impl ProverBackend for Idris2Backend {
                         });
                     }
                 },
-                Idris2Decl::Pragma { directive, args: _ } => {
+                Idris2Decl::Pragma { directive, args: _ }
                     // Store pragmas as metadata
-                    if directive == "total" || directive == "default" {
+                    if (directive == "total" || directive == "default") => {
                         // Track totality checking
-                    }
-                },
+                    },
                 _ => {},
             }
         }
@@ -922,11 +921,9 @@ impl ProverBackend for Idris2Backend {
                 },
 
                 // Inductive type -> cases/induction
-                Term::Const(name) => {
-                    if name == "Nat" || name == "List" || name == "Vect" {
-                        suggestions.push(Tactic::Cases(goal.target.clone()));
-                        suggestions.push(Tactic::Induction(goal.target.clone()));
-                    }
+                Term::Const(name) if (name == "Nat" || name == "List" || name == "Vect") => {
+                    suggestions.push(Tactic::Cases(goal.target.clone()));
+                    suggestions.push(Tactic::Induction(goal.target.clone()));
                 },
 
                 _ => {},

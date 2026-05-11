@@ -158,6 +158,7 @@ mod chapel_ffi {
         fn echidna_chapel_is_available() -> c_int;
         fn echidna_chapel_get_version() -> *const c_char;
         fn echidna_chapel_available_prover_count() -> c_int;
+        #[allow(dead_code)]
         fn echidna_chapel_is_prover_available(prover_id: c_int) -> c_int;
         fn echidna_free_string(s: *const c_char);
     }
