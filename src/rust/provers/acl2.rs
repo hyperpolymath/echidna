@@ -596,17 +596,13 @@ impl ACL2Backend {
         while i < list.len() {
             if let Some(key) = list[i].as_atom() {
                 match key.to_lowercase().as_str() {
-                    ":hints" => {
-                        if i + 1 < list.len() {
-                            hints = self.parse_hints(&list[i + 1])?;
-                            i += 1;
-                        }
+                    ":hints" if i + 1 < list.len() => {
+                        hints = self.parse_hints(&list[i + 1])?;
+                        i += 1;
                     },
-                    ":rule-classes" => {
-                        if i + 1 < list.len() {
-                            rule_classes = Some(list[i + 1].clone());
-                            i += 1;
-                        }
+                    ":rule-classes" if i + 1 < list.len() => {
+                        rule_classes = Some(list[i + 1].clone());
+                        i += 1;
                     },
                     _ => {},
                 }
@@ -851,61 +847,53 @@ impl ACL2Backend {
                     // Check for special forms
                     if let Some(name) = head.as_atom() {
                         match name.to_lowercase().as_str() {
-                            "if" => {
-                                if items.len() >= 4 {
-                                    return Term::App {
-                                        func: Box::new(Term::Const("if".to_string())),
-                                        args: items[1..4]
-                                            .iter()
-                                            .map(|i| self.sexp_to_term(i))
-                                            .collect(),
-                                    };
+                            "if" if items.len() >= 4 => {
+                                return Term::App {
+                                    func: Box::new(Term::Const("if".to_string())),
+                                    args: items[1..4]
+                                        .iter()
+                                        .map(|i| self.sexp_to_term(i))
+                                        .collect(),
+                                };
+                            },
+                            "let" | "let*" if items.len() >= 3 => {
+                                // Simplify let to lambda application
+                                if let Some(last_item) = items.last() {
+                                    let body = self.sexp_to_term(last_item);
+                                    return body;
                                 }
                             },
-                            "let" | "let*" => {
-                                if items.len() >= 3 {
-                                    // Simplify let to lambda application
-                                    if let Some(last_item) = items.last() {
-                                        let body = self.sexp_to_term(last_item);
-                                        return body;
-                                    }
-                                }
-                            },
-                            "lambda" => {
-                                if items.len() >= 3 {
-                                    let params = match &items[1] {
-                                        SExp::List(ps) => ps
-                                            .iter()
-                                            .filter_map(|p| p.as_atom().map(String::from))
-                                            .collect::<Vec<_>>(),
-                                        _ => vec![],
-                                    };
-                                    let body = if let Some(last_item) = items.last() {
-                                        self.sexp_to_term(last_item)
-                                    } else {
-                                        Term::Const("nil".to_string())
-                                    };
+                            "lambda" if items.len() >= 3 => {
+                                let params = match &items[1] {
+                                    SExp::List(ps) => ps
+                                        .iter()
+                                        .filter_map(|p| p.as_atom().map(String::from))
+                                        .collect::<Vec<_>>(),
+                                    _ => vec![],
+                                };
+                                let body = if let Some(last_item) = items.last() {
+                                    self.sexp_to_term(last_item)
+                                } else {
+                                    Term::Const("nil".to_string())
+                                };
 
-                                    // Build nested lambdas
-                                    let mut result = body;
-                                    for param in params.into_iter().rev() {
-                                        result = Term::Lambda {
-                                            param,
-                                            param_type: None,
-                                            body: Box::new(result),
-                                        };
-                                    }
-                                    return result;
-                                }
-                            },
-                            "implies" => {
-                                if items.len() >= 3 {
-                                    return Term::Pi {
-                                        param: "_".to_string(),
-                                        param_type: Box::new(self.sexp_to_term(&items[1])),
-                                        body: Box::new(self.sexp_to_term(&items[2])),
+                                // Build nested lambdas
+                                let mut result = body;
+                                for param in params.into_iter().rev() {
+                                    result = Term::Lambda {
+                                        param,
+                                        param_type: None,
+                                        body: Box::new(result),
                                     };
                                 }
+                                return result;
+                            },
+                            "implies" if items.len() >= 3 => {
+                                return Term::Pi {
+                                    param: "_".to_string(),
+                                    param_type: Box::new(self.sexp_to_term(&items[1])),
+                                    body: Box::new(self.sexp_to_term(&items[2])),
+                                };
                             },
                             "and" | "or" | "not" | "equal" | "+" | "-" | "*" | "/" => {
                                 return Term::App {

@@ -229,11 +229,11 @@ impl CircuitBreaker {
         self.failure_count.fetch_add(1, Ordering::SeqCst);
 
         match *state {
-            CircuitState::Closed => {
-                if self.failure_count.load(Ordering::SeqCst) as usize >= self.failure_threshold {
-                    *state = CircuitState::Open;
-                    *self.last_failure.lock().unwrap() = Some(Instant::now());
-                }
+            CircuitState::Closed
+                if self.failure_count.load(Ordering::SeqCst) as usize >= self.failure_threshold =>
+            {
+                *state = CircuitState::Open;
+                *self.last_failure.lock().unwrap() = Some(Instant::now());
             },
             CircuitState::HalfOpen => {
                 *state = CircuitState::Open;

@@ -19,13 +19,17 @@ use crate::ffi_wrapper;
 
 use crate::{models::*, AppState, ProofSession};
 
-/// Wrapper for FFI-based prover backend
+/// Wrapper for FFI-based prover backend. Not yet constructed from any
+/// handler — provided so the trait impl is in place when the FFI route is
+/// wired.
+#[allow(dead_code)]
 struct FfiProverBackend {
     handle: i32,
     config: ProverConfig,
 }
 
 impl FfiProverBackend {
+    #[allow(dead_code)]
     pub fn new(handle: i32) -> Self {
         FfiProverBackend {
             handle,
@@ -201,9 +205,7 @@ pub async fn submit_proof(
     // Verify the proof
     let valid = prover.verify_proof(&proof_state).await.unwrap_or(false);
 
-    let status = if valid {
-        ProofStatus::Success
-    } else if proof_state.goals.is_empty() {
+    let status = if valid || proof_state.goals.is_empty() {
         ProofStatus::Success
     } else {
         ProofStatus::InProgress

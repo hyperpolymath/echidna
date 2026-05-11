@@ -4,6 +4,9 @@
 use serde::{Deserialize, Serialize};
 use utoipa::ToSchema;
 
+// Variant names mirror the well-known prover acronyms (TLAPS, GLPK, SCIP, …);
+// keeping them upper-case matches every other reference to these tools.
+#[allow(clippy::upper_case_acronyms)]
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, ToSchema)]
 #[serde(rename_all = "snake_case")]
 pub enum ProverKind {

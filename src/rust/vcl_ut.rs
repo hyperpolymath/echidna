@@ -555,7 +555,7 @@ impl QueryExecutor {
                         if let Ok(results) = resp.json::<Vec<serde_json::Value>>().await {
                             let entries: Vec<QueryResultEntry> = results
                                 .iter()
-                                .filter_map(|r| search_result_to_entry(r))
+                                .filter_map(search_result_to_entry)
                                 .take(limit)
                                 .collect();
                             return Ok(QueryResult {
@@ -601,7 +601,7 @@ impl QueryExecutor {
                     if let Ok(results) = resp.json::<Vec<serde_json::Value>>().await {
                         let entries: Vec<QueryResultEntry> = results
                             .iter()
-                            .filter_map(|r| search_result_to_entry(r))
+                            .filter_map(search_result_to_entry)
                             .take(limit)
                             .collect();
                         return Ok(QueryResult {
@@ -694,7 +694,7 @@ impl QueryExecutor {
                             if let Ok(results) = resp.json::<Vec<serde_json::Value>>().await {
                                 let entries: Vec<QueryResultEntry> = results
                                     .iter()
-                                    .filter_map(|r| search_result_to_entry(r))
+                                    .filter_map(search_result_to_entry)
                                     .take(limit)
                                     .collect();
                                 return Ok(QueryResult {

@@ -244,10 +244,8 @@ fn collect_lemma_candidates(term: &Term, out: &mut Vec<String>, cap: usize) {
         return;
     }
     match term {
-        Term::Const(name) | Term::Var(name) => {
-            if !out.contains(name) {
-                out.push(name.clone());
-            }
+        Term::Const(name) | Term::Var(name) if !out.contains(name) => {
+            out.push(name.clone());
         },
         Term::App { func, args } => {
             collect_lemma_candidates(func, out, cap);

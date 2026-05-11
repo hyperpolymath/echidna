@@ -100,6 +100,7 @@ extern "C" {
     fn fmpz_get_str(str: *mut c_char, base: c_int, f: *const Slong) -> *mut c_char;
 
     // ── fmpz arithmetic ───────────────────────────────────────────────────────
+    #[allow(dead_code)]
     fn fmpz_gcd(f: *mut Slong, g: *const Slong, h: *const Slong);
     // Returns 1 if exact k-th root, 0 if not (r holds floor(|f|^(1/k))).
     fn fmpz_root(r: *mut Slong, f: *const Slong, n: Slong) -> c_int;

@@ -222,7 +222,7 @@ impl GnnGuidedSearch {
             gnn_result
                 .ranked_premises
                 .into_iter()
-                .zip(gnn_result.scores.into_iter())
+                .zip(gnn_result.scores)
                 .collect()
         } else {
             self.stats.fallback_calls += 1;
