@@ -37,7 +37,8 @@ pub fn generate_variants(probe: &Probe, table: &SynonymTable) -> Vec<Variant> {
     for site in &probe.tactic_sites {
         let alts = table.alternatives(&site.name);
         for alt in alts {
-            let substituted = substitute_at_site(&full_source, &site.name, &alt, site.line, site.col, probe);
+            let substituted =
+                substitute_at_site(&full_source, &site.name, &alt, site.line, site.col, probe);
             let ed = levenshtein(&site.name, &alt);
             variants.push(Variant {
                 site: site.clone(),
@@ -109,7 +110,8 @@ fn find_word_boundary(text: &str, word: &str) -> Option<usize> {
             let abs_pos = start + pos;
             let before_ok = abs_pos == 0 || !is_ident_char(text.as_bytes()[abs_pos - 1] as char);
             let after_pos = abs_pos + word.len();
-            let after_ok = after_pos >= text.len() || !is_ident_char(text.as_bytes()[after_pos] as char);
+            let after_ok =
+                after_pos >= text.len() || !is_ident_char(text.as_bytes()[after_pos] as char);
             if before_ok && after_ok {
                 return Some(abs_pos);
             }
@@ -130,13 +132,21 @@ pub fn levenshtein(a: &str, b: &str) -> u32 {
     let a: Vec<char> = a.chars().collect();
     let b: Vec<char> = b.chars().collect();
     let (n, m) = (a.len(), b.len());
-    if n == 0 { return m as u32; }
-    if m == 0 { return n as u32; }
+    if n == 0 {
+        return m as u32;
+    }
+    if m == 0 {
+        return n as u32;
+    }
     let mut dp = vec![vec![0u32; m + 1]; n + 1];
     #[allow(clippy::needless_range_loop)]
-    for i in 0..=n { dp[i][0] = i as u32; }
+    for i in 0..=n {
+        dp[i][0] = i as u32;
+    }
     #[allow(clippy::needless_range_loop)]
-    for j in 0..=m { dp[0][j] = j as u32; }
+    for j in 0..=m {
+        dp[0][j] = j as u32;
+    }
     for i in 1..=n {
         for j in 1..=m {
             let cost = if a[i - 1] == b[j - 1] { 0 } else { 1 };
@@ -180,21 +190,32 @@ mod tests {
     fn test_generate_variants_basic() {
         let probe = make_probe(
             "lemma foo:\n  by (induct x)\n  done",
-            vec![TacticSite { line: 2, col: 6, name: "induct".to_string() }],
+            vec![TacticSite {
+                line: 2,
+                col: 6,
+                name: "induct".to_string(),
+            }],
         );
         let table = make_table();
         let variants = generate_variants(&probe, &table);
         assert_eq!(variants.len(), 1);
         assert_eq!(variants[0].replacement, "induction");
         assert!(variants[0].probe_source.contains("induction"));
-        assert!(!variants[0].probe_source.contains("induct ") || variants[0].probe_source.contains("induction"));
+        assert!(
+            !variants[0].probe_source.contains("induct ")
+                || variants[0].probe_source.contains("induction")
+        );
     }
 
     #[test]
     fn test_generate_variants_no_table_match() {
         let probe = make_probe(
             "lemma foo:\n  by auto\n  done",
-            vec![TacticSite { line: 2, col: 6, name: "auto".to_string() }],
+            vec![TacticSite {
+                line: 2,
+                col: 6,
+                name: "auto".to_string(),
+            }],
         );
         let table = make_table();
         // "auto" is not in the table, so no variants

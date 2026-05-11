@@ -107,7 +107,11 @@ impl StormBackend {
         jani.push_str("  \"system\": { \"elements\": [{\"automaton\": \"main\"}] },\n");
         jani.push_str("  \"axioms\": [\n");
         for (i, axiom) in state.context.axioms.iter().enumerate() {
-            let comma = if i + 1 < state.context.axioms.len() { "," } else { "" };
+            let comma = if i + 1 < state.context.axioms.len() {
+                ","
+            } else {
+                ""
+            };
             jani.push_str(&format!(
                 "    \"{}\"{}\n",
                 axiom.replace('"', "\\\""),
@@ -256,11 +260,7 @@ impl ProverBackend for StormBackend {
         Ok(Self::to_jani(state))
     }
 
-    async fn suggest_tactics(
-        &self,
-        _state: &ProofState,
-        _limit: usize,
-    ) -> Result<Vec<Tactic>> {
+    async fn suggest_tactics(&self, _state: &ProofState, _limit: usize) -> Result<Vec<Tactic>> {
         Ok(vec![])
     }
 
@@ -312,10 +312,9 @@ mod tests {
 
     #[test]
     fn test_storm_parse_result_violated() {
-        assert!(!StormBackend::parse_result(
-            "Result (for initial states): false\n",
-        )
-        .expect("parse"));
+        assert!(
+            !StormBackend::parse_result("Result (for initial states): false\n",).expect("parse")
+        );
     }
 
     #[test]

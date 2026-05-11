@@ -30,8 +30,8 @@
 #![cfg(feature = "verisim")]
 
 use anyhow::Result;
-use echidna::verisim_bridge::{prover_kind_to_str, ProofAttempt, VeriSimDBClient};
 use echidna::provers::ProverKind;
+use echidna::verisim_bridge::{prover_kind_to_str, ProofAttempt, VeriSimDBClient};
 
 /// Build a minimal `ProofAttempt` row with a unique obligation_id so each
 /// test run is independent (no collisions with prior runs in the table).

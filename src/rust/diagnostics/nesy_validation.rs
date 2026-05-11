@@ -88,14 +88,8 @@ pub fn compute_metrics(contracts: &[NeSyRankingContract], provers: Vec<String>) 
     let agreements = contracts.iter().filter(|c| c.is_agreement()).count();
 
     // High confidence (≥0.8) cases: if agreement fails, that's a false positive
-    let high_confidence: Vec<_> = contracts
-        .iter()
-        .filter(|c| c.gnn_score >= 0.8)
-        .collect();
-    let false_positives = high_confidence
-        .iter()
-        .filter(|c| !c.proof_found)
-        .count();
+    let high_confidence: Vec<_> = contracts.iter().filter(|c| c.gnn_score >= 0.8).collect();
+    let false_positives = high_confidence.iter().filter(|c| !c.proof_found).count();
     let fp_rate = if high_confidence.is_empty() {
         0.0
     } else {
@@ -103,14 +97,8 @@ pub fn compute_metrics(contracts: &[NeSyRankingContract], provers: Vec<String>) 
     };
 
     // Low confidence (< 0.8) cases: if proof succeeds anyway, that's a false negative
-    let low_confidence: Vec<_> = contracts
-        .iter()
-        .filter(|c| c.gnn_score < 0.8)
-        .collect();
-    let false_negatives = low_confidence
-        .iter()
-        .filter(|c| c.proof_found)
-        .count();
+    let low_confidence: Vec<_> = contracts.iter().filter(|c| c.gnn_score < 0.8).collect();
+    let false_negatives = low_confidence.iter().filter(|c| c.proof_found).count();
     let fn_rate = if low_confidence.is_empty() {
         0.0
     } else {

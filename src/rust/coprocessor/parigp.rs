@@ -23,8 +23,7 @@ use tokio::process::Command;
 
 use super::trust::CoprocessorTrustTier;
 use super::types::{
-    CoprocessorCapabilities, CoprocessorHealth, CoprocessorKind, CoprocessorOp,
-    CoprocessorOutcome,
+    CoprocessorCapabilities, CoprocessorHealth, CoprocessorKind, CoprocessorOp, CoprocessorOutcome,
 };
 use super::Coprocessor;
 
@@ -120,7 +119,7 @@ impl Coprocessor for PariGpBackend {
                 );
                 let out = run_gp(&script).await?;
                 parse_factor_lines(&out)
-            }
+            },
             CoprocessorOp::PariGpZnorder { a, n } => {
                 if !is_decimal_int(&a) || !is_decimal_int(&n) {
                     return Ok(CoprocessorOutcome::Failure(format!(
@@ -136,7 +135,7 @@ impl Coprocessor for PariGpBackend {
                     )));
                 }
                 Ok(CoprocessorOutcome::BigInt(trimmed.to_string()))
-            }
+            },
             CoprocessorOp::PariGpNextPrime { n } => {
                 if !is_decimal_int(&n) {
                     return Ok(CoprocessorOutcome::Failure(format!(
@@ -153,7 +152,7 @@ impl Coprocessor for PariGpBackend {
                     )));
                 }
                 Ok(CoprocessorOutcome::BigInt(trimmed.to_string()))
-            }
+            },
             other => Ok(CoprocessorOutcome::Failure(format!(
                 "PariGp backend does not support {:?}",
                 std::mem::discriminant(&other)
@@ -282,7 +281,7 @@ mod tests {
         match parse_factor_lines(out).unwrap() {
             CoprocessorOutcome::Factors(f) => {
                 assert_eq!(f, vec![("2".into(), 2u32), ("3".into(), 1u32)]);
-            }
+            },
             other => panic!("expected Factors, got {other:?}"),
         }
     }
@@ -294,7 +293,7 @@ mod tests {
         match parse_factor_lines(out).unwrap() {
             CoprocessorOutcome::Factors(f) => {
                 assert_eq!(f, vec![("7".into(), 1u32)]);
-            }
+            },
             other => panic!("expected Factors, got {other:?}"),
         }
     }

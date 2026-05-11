@@ -17,11 +17,10 @@
 use anyhow::{anyhow, Result};
 use async_trait::async_trait;
 
-use super::types::{
-    CoprocessorCapabilities, CoprocessorHealth, CoprocessorKind, CoprocessorOp,
-    CoprocessorOutcome,
-};
 use super::trust::CoprocessorTrustTier;
+use super::types::{
+    CoprocessorCapabilities, CoprocessorHealth, CoprocessorKind, CoprocessorOp, CoprocessorOutcome,
+};
 use super::Coprocessor;
 
 pub struct VectorBackend {
@@ -92,7 +91,7 @@ fn dispatch_sync(op: CoprocessorOp) -> Result<CoprocessorOutcome> {
             }
             let out: Vec<f64> = a.iter().zip(b.iter()).map(|(x, y)| x + y).collect();
             CoprocessorOutcome::FloatVec(out)
-        }
+        },
         CoprocessorOp::VectorDot { a, b } => {
             if a.len() != b.len() {
                 return Ok(CoprocessorOutcome::Failure(format!(
@@ -103,15 +102,15 @@ fn dispatch_sync(op: CoprocessorOp) -> Result<CoprocessorOutcome> {
             }
             let out: f64 = a.iter().zip(b.iter()).map(|(x, y)| x * y).sum();
             CoprocessorOutcome::Float(out)
-        }
+        },
         CoprocessorOp::VectorNorm { a } => {
             let out: f64 = a.iter().map(|x| x * x).sum::<f64>().sqrt();
             CoprocessorOutcome::Float(out)
-        }
+        },
         CoprocessorOp::VectorScale { a, k } => {
             let out: Vec<f64> = a.iter().map(|x| x * k).collect();
             CoprocessorOutcome::FloatVec(out)
-        }
+        },
         other => CoprocessorOutcome::Failure(format!(
             "Vector backend does not support {:?}",
             std::mem::discriminant(&other)
@@ -128,9 +127,7 @@ mod tests {
             .enable_all()
             .build()
             .unwrap();
-        rt.block_on(async {
-            VectorBackend::new().dispatch(op).await.unwrap()
-        })
+        rt.block_on(async { VectorBackend::new().dispatch(op).await.unwrap() })
     }
 
     #[test]
@@ -181,9 +178,7 @@ mod tests {
     #[test]
     fn norm_pythagorean() {
         // ‖(3,4)‖ = 5
-        match run(CoprocessorOp::VectorNorm {
-            a: vec![3.0, 4.0],
-        }) {
+        match run(CoprocessorOp::VectorNorm { a: vec![3.0, 4.0] }) {
             CoprocessorOutcome::Float(x) => assert!((x - 5.0).abs() < 1e-12),
             _ => panic!(),
         }
@@ -199,7 +194,7 @@ mod tests {
                 assert!((v[0] - 2.5).abs() < 1e-12);
                 assert!((v[1] - 5.0).abs() < 1e-12);
                 assert!((v[2] - 7.5).abs() < 1e-12);
-            }
+            },
             _ => panic!(),
         }
     }

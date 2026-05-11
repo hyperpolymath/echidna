@@ -47,7 +47,9 @@ impl ProverBackend for FfiProverBackend {
 
     async fn parse_string(&self, content: &str) -> anyhow::Result<echidna::core::ProofState> {
         ffi_wrapper::parse_string(self.handle, content)?;
-        Ok(echidna::core::ProofState::new(Term::Var(content.to_string())))
+        Ok(echidna::core::ProofState::new(Term::Var(
+            content.to_string(),
+        )))
     }
 
     async fn verify_proof(&self, _state: &echidna::core::ProofState) -> anyhow::Result<bool> {
@@ -780,7 +782,12 @@ pub async fn consult(
     let llm_response = advisor
         .consult(&req.question, req.context.as_deref())
         .await
-        .map_err(|e| (StatusCode::BAD_GATEWAY, format!("BoJ consult failed: {}", e)))?;
+        .map_err(|e| {
+            (
+                StatusCode::BAD_GATEWAY,
+                format!("BoJ consult failed: {}", e),
+            )
+        })?;
 
     Ok(Json(ConsultResponse {
         answer: llm_response.answer,

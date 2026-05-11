@@ -1,9 +1,9 @@
 // SPDX-License-Identifier: PMPL-1.0-or-later
 // gRPC FFI Wrapper - Connects gRPC interface to ECHIDNA Rust core via Zig FFI
 
-use std::ffi::{CString, CStr};
+use anyhow::{anyhow, Result};
+use std::ffi::{CStr, CString};
 use std::os::raw::c_int;
-use anyhow::{Result, anyhow};
 
 // External Zig FFI functions (from libechidna_ffi.so)
 extern "C" {
@@ -14,7 +14,12 @@ extern "C" {
     pub fn echidna_parse_string(handle: c_int, content: *const u8, len: usize) -> c_int;
     pub fn echidna_verify_proof(handle: c_int) -> c_int;
     pub fn echidna_apply_tactic(handle: c_int, tactic: *const u8, len: usize) -> c_int;
-    pub fn echidna_suggest_tactics(handle: c_int, limit: c_int, out: *mut u8, out_len: *mut usize) -> c_int;
+    pub fn echidna_suggest_tactics(
+        handle: c_int,
+        limit: c_int,
+        out: *mut u8,
+        out_len: *mut usize,
+    ) -> c_int;
     pub fn echidna_export_proof(handle: c_int, out: *mut u8, out_len: *mut usize) -> c_int;
     pub fn echidna_last_error() -> *const u8;
     pub fn echidna_version() -> *const u8;
@@ -29,7 +34,9 @@ pub fn init_ffi() -> Result<()> {
             let err_msg = if err_ptr.is_null() {
                 "Unknown FFI initialization error".to_string()
             } else {
-                CStr::from_ptr(err_ptr.cast()).to_string_lossy().into_owned()
+                CStr::from_ptr(err_ptr.cast())
+                    .to_string_lossy()
+                    .into_owned()
             };
             return Err(anyhow!("FFI initialization failed: {}", err_msg));
         }
@@ -116,26 +123,26 @@ pub fn suggest_tactics(handle: i32, limit: usize) -> Result<Vec<String>> {
     unsafe {
         let mut buffer = vec![0u8; 4096];
         let mut buffer_len = buffer.len();
-        
+
         let rc = echidna_suggest_tactics(
             handle,
             limit as c_int,
             buffer.as_mut_ptr(),
-            &mut buffer_len as *mut usize
+            &mut buffer_len as *mut usize,
         );
-        
+
         if rc != 0 {
             let error = get_last_error()?;
             return Err(anyhow!("Suggest tactics failed: {}", error));
         }
-        
+
         if buffer_len == 0 {
             return Ok(vec![]);
         }
-        
+
         buffer.truncate(buffer_len);
         let result = String::from_utf8(buffer)?;
-        
+
         // Parse JSON array of tactics
         let tactics: Vec<String> = serde_json::from_str(&result)?;
         Ok(tactics)
@@ -147,22 +154,18 @@ pub fn export_proof(handle: i32) -> Result<String> {
     unsafe {
         let mut buffer = vec![0u8; 8192];
         let mut buffer_len = buffer.len();
-        
-        let rc = echidna_export_proof(
-            handle,
-            buffer.as_mut_ptr(),
-            &mut buffer_len as *mut usize
-        );
-        
+
+        let rc = echidna_export_proof(handle, buffer.as_mut_ptr(), &mut buffer_len as *mut usize);
+
         if rc != 0 {
             let error = get_last_error()?;
             return Err(anyhow!("Export failed: {}", error));
         }
-        
+
         if buffer_len == 0 {
             return Ok(String::new());
         }
-        
+
         buffer.truncate(buffer_len);
         let result = String::from_utf8(buffer)?;
         Ok(result)
@@ -172,16 +175,16 @@ pub fn export_proof(handle: i32) -> Result<String> {
 /// Convert gRPC ProverKind to FFI ordinal
 pub fn proto_kind_to_ffi(kind: i32) -> Result<u8> {
     match kind {
-        1 => Ok(0), // Agda
-        2 => Ok(1), // Coq
-        3 => Ok(2), // Lean
-        4 => Ok(3), // Isabelle
-        5 => Ok(4), // Z3
-        6 => Ok(5), // CVC5
-        7 => Ok(6), // Metamath
-        8 => Ok(7), // HOLLight
-        9 => Ok(8), // Mizar
-        10 => Ok(9), // PVS
+        1 => Ok(0),   // Agda
+        2 => Ok(1),   // Coq
+        3 => Ok(2),   // Lean
+        4 => Ok(3),   // Isabelle
+        5 => Ok(4),   // Z3
+        6 => Ok(5),   // CVC5
+        7 => Ok(6),   // Metamath
+        8 => Ok(7),   // HOLLight
+        9 => Ok(8),   // Mizar
+        10 => Ok(9),  // PVS
         11 => Ok(10), // ACL2
         12 => Ok(11), // HOL4
         13 => Ok(12), // Idris2
@@ -209,16 +212,16 @@ pub fn proto_kind_to_ffi(kind: i32) -> Result<u8> {
 /// Convert FFI ordinal to gRPC ProverKind
 pub fn ffi_to_proto_kind(ordinal: u8) -> i32 {
     match ordinal {
-        0 => 1, // Agda
-        1 => 2, // Coq
-        2 => 3, // Lean
-        3 => 4, // Isabelle
-        4 => 5, // Z3
-        5 => 6, // CVC5
-        6 => 7, // Metamath
-        7 => 8, // HOLLight
-        8 => 9, // Mizar
-        9 => 10, // PVS
+        0 => 1,   // Agda
+        1 => 2,   // Coq
+        2 => 3,   // Lean
+        3 => 4,   // Isabelle
+        4 => 5,   // Z3
+        5 => 6,   // CVC5
+        6 => 7,   // Metamath
+        7 => 8,   // HOLLight
+        8 => 9,   // Mizar
+        9 => 10,  // PVS
         10 => 11, // ACL2
         11 => 12, // HOL4
         12 => 13, // Idris2
@@ -239,6 +242,6 @@ pub fn ffi_to_proto_kind(ordinal: u8) -> i32 {
         27 => 28, // MiniZinc
         28 => 29, // Chuffed
         29 => 30, // ORTools
-        _ => 0, // Unknown
+        _ => 0,   // Unknown
     }
 }

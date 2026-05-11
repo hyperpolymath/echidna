@@ -55,8 +55,8 @@ impl SynonymTable {
         }
         let raw = std::fs::read_to_string(&path)
             .with_context(|| format!("Failed to read synonym table {}", path.display()))?;
-        let parsed: RawTable = toml::from_str(&raw)
-            .with_context(|| format!("Failed to parse {}", path.display()))?;
+        let parsed: RawTable =
+            toml::from_str(&raw).with_context(|| format!("Failed to parse {}", path.display()))?;
         Ok(Self::from_entries(parsed.synonyms))
     }
 
@@ -186,14 +186,20 @@ mod tests {
         let t = make_table();
         let alts = t.alternatives("induction");
         assert!(alts.contains(&"induct".to_string()), "expected induct");
-        assert!(!alts.contains(&"induction".to_string()), "should not include self");
+        assert!(
+            !alts.contains(&"induction".to_string()),
+            "should not include self"
+        );
     }
 
     #[test]
     fn test_alternatives_alias() {
         let t = make_table();
         let alts = t.alternatives("induct");
-        assert!(alts.contains(&"induction".to_string()), "expected induction");
+        assert!(
+            alts.contains(&"induction".to_string()),
+            "expected induction"
+        );
     }
 
     #[test]

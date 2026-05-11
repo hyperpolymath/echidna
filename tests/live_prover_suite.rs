@@ -67,9 +67,16 @@ fn try_live_backend(kind: ProverKind, exe: &str) -> Option<Box<dyn ProverBackend
 /// Non-fatal: if VeriSimDB is unreachable, log a warning and continue —
 /// never fail the test. This feeds the learning loop in hypatia's rule H3.
 async fn emit_live_result(kind: ProverKind, exe: &str, version: Option<&str>, elapsed_ms: u64) {
-    let outcome = if version.is_some() { "success" } else { "failure" };
+    let outcome = if version.is_some() {
+        "success"
+    } else {
+        "failure"
+    };
     let error_msg = if version.is_none() {
-        Some(format!("{} version() returned no version string", kind_label(kind)))
+        Some(format!(
+            "{} version() returned no version string",
+            kind_label(kind)
+        ))
     } else {
         None
     };
@@ -86,7 +93,10 @@ async fn emit_live_result(kind: ProverKind, exe: &str, version: Option<&str>, el
         obligation_id: format!("live-version-check-{}", exe),
         repo: "hyperpolymath/echidna".to_string(),
         file: "tests/live_prover_suite.rs".to_string(),
-        claim: format!("Prover {} is reachable and can report version", kind_label(kind)),
+        claim: format!(
+            "Prover {} is reachable and can report version",
+            kind_label(kind)
+        ),
         obligation_class: "system_integration".to_string(),
         prover_used: format!("{:?}", kind).to_lowercase(),
         outcome: outcome.to_string(),
@@ -104,8 +114,8 @@ async fn emit_live_result(kind: ProverKind, exe: &str, version: Option<&str>, el
     };
 
     // Resolve VeriSimDB URL from VERISIMDB_URL env var or default to localhost:7700
-    let verisimdb_url = std::env::var("VERISIMDB_URL")
-        .unwrap_or_else(|_| "http://localhost:7700".to_string());
+    let verisimdb_url =
+        std::env::var("VERISIMDB_URL").unwrap_or_else(|_| "http://localhost:7700".to_string());
     let client = VeriSimDBClient::new(&verisimdb_url);
     if let Err(e) = client.record_proof_attempt(&attempt).await {
         eprintln!(

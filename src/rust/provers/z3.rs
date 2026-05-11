@@ -107,14 +107,9 @@ impl Z3Backend {
     /// non-empty line (e.g. for standalone `(simplify ...)` output).
     fn parse_smt_result(&self, output: &str) -> Result<SmtResult> {
         // Prefer the last line that looks like a check-sat answer.
-        let answer_line = output
-            .lines()
-            .rev()
-            .map(str::trim)
-            .find(|l| {
-                !l.is_empty()
-                    && (matches!(*l, "sat" | "unsat" | "unknown") || l.starts_with("(error"))
-            });
+        let answer_line = output.lines().rev().map(str::trim).find(|l| {
+            !l.is_empty() && (matches!(*l, "sat" | "unsat" | "unknown") || l.starts_with("(error"))
+        });
 
         let answer = answer_line.unwrap_or_else(|| {
             output
@@ -579,10 +574,7 @@ impl ProverBackend for Z3Backend {
             });
         }
 
-        Ok(crate::provers::gnn_augment_tactics(
-            &self.config, state, "z3", tactics, limit,
-        )
-        .await)
+        Ok(crate::provers::gnn_augment_tactics(&self.config, state, "z3", tactics, limit).await)
     }
 
     async fn search_theorems(&self, _pattern: &str) -> Result<Vec<String>> {

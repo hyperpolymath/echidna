@@ -21,15 +21,13 @@ pub use io::{bounded_read_proof_file, MAX_PROOF_BYTES};
 
 pub mod abc;
 pub mod abella;
-pub mod agsyhol;
-pub mod aprove;
-pub mod faial;
-pub mod gpuverify;
 pub mod acl2;
 pub mod acl2s;
 pub mod agda;
+pub mod agsyhol;
 pub mod alloy;
 pub mod altergo;
+pub mod aprove;
 pub mod arend;
 pub mod athena;
 pub mod boogie;
@@ -37,57 +35,55 @@ pub mod cadical;
 pub mod cameleer;
 pub mod cbmc;
 pub mod chuffed;
+pub mod connection_method;
 pub mod coq;
+pub mod cryptoverif;
 pub mod csi;
 pub mod cubical_agda;
 pub mod cvc5;
 pub mod dafny;
 pub mod dedukti;
 pub mod dreal;
+pub mod easycrypt;
+pub mod elk;
 pub mod eprover;
+pub mod faial;
 pub mod framac;
 pub mod fstar;
 pub mod glpk;
 pub mod gnatprove;
+pub mod gpuverify;
 pub mod hol4;
 pub mod hol_light;
 pub mod hp_ecosystem;
 pub mod idris2;
+pub mod ileancop;
 pub mod imandra;
 pub mod iprover;
-pub mod liquid_haskell;
 pub mod isabelle;
 pub mod isabelle_zf;
 pub mod key;
+pub mod keymaerax;
 pub mod kissat;
+pub mod konclude;
 pub mod lambda_prolog;
 pub mod lash;
 pub mod lean;
 pub mod lean3;
 pub mod leo3;
+pub mod liquid_haskell;
 pub mod matita;
 pub mod mercury;
-pub mod connection_method;
-pub mod cryptoverif;
-pub mod easycrypt;
-pub mod elk;
-pub mod ileancop;
-pub mod keymaerax;
-pub mod konclude;
+pub mod metamath;
 pub mod metitarski;
 pub mod mettel2;
-pub mod mleancop;
-pub mod nanocop;
-pub mod prob;
-pub mod qepcad;
-pub mod redlog;
-pub mod storm;
-pub mod metamath;
 pub mod minisat;
 pub mod minizinc;
 pub mod minlog;
 pub mod mizar;
 pub mod mizar_ar;
+pub mod mleancop;
+pub mod nanocop;
 pub mod naproche;
 pub mod nitpick;
 pub mod nunchaku;
@@ -95,23 +91,27 @@ pub mod nuprl;
 pub mod nusmv;
 pub mod opensmt;
 pub mod ortools;
+pub mod princess;
 pub mod prism;
+pub mod prob;
 pub mod prover9;
 pub mod proverif;
-pub mod princess;
 pub mod pvs;
+pub mod qepcad;
+pub mod redlog;
 pub mod rocq;
+pub mod satallax;
 pub mod scip;
 pub mod seahorn;
-pub mod spass;
 pub mod smtrat;
-pub mod satallax;
-pub mod stainless;
-pub mod tptp_output;
+pub mod spass;
 pub mod spin_checker;
+pub mod stainless;
+pub mod storm;
 pub mod tamarin;
 pub mod tlaps;
 pub mod tlc;
+pub mod tptp_output;
 pub mod twee;
 pub mod twelf;
 pub mod typed_wasm;
@@ -214,9 +214,9 @@ pub enum ProverKind {
     Why3,
 
     // Tier 6b: Refinement-types + SPARK auto-active
-    GNATprove,      // SPARK/Ada — Why3 + Z3/CVC5/Alt-Ergo backend
-    Stainless,      // Scala / Inox refinement-types
-    LiquidHaskell,  // GHC plugin refinement-types
+    GNATprove,     // SPARK/Ada — Why3 + Z3/CVC5/Alt-Ergo backend
+    Stainless,     // Scala / Inox refinement-types
+    LiquidHaskell, // GHC plugin refinement-types
 
     // Tier 7: Specialized / niche
     TLAPS,
@@ -530,9 +530,7 @@ impl std::str::FromStr for ProverKind {
             "why3" => Ok(ProverKind::Why3),
             "gnatprove" | "spark" | "ada" => Ok(ProverKind::GNATprove),
             "stainless" | "scala-stainless" => Ok(ProverKind::Stainless),
-            "liquid" | "liquid-haskell" | "liquidhaskell" | "lh" => {
-                Ok(ProverKind::LiquidHaskell)
-            }
+            "liquid" | "liquid-haskell" | "liquidhaskell" | "lh" => Ok(ProverKind::LiquidHaskell),
             "tlaps" | "tla+" => Ok(ProverKind::TLAPS),
             "twelf" => Ok(ProverKind::Twelf),
             "nuprl" => Ok(ProverKind::Nuprl),
@@ -796,66 +794,66 @@ impl ProverKind {
             ProverKind::ACL2 => 4,
             ProverKind::HOL4 => 5,
             ProverKind::Idris2 => 3,
-            ProverKind::Lean3 => 3,        // Same complexity as Lean 4.
-            ProverKind::Abella => 3,       // Two-level logic, HOAS proof state.
-            ProverKind::Dedukti => 3,      // λΠ-modulo framework.
-            ProverKind::Cameleer => 2,     // Thin OCaml→Why3 pipeline.
-            ProverKind::ACL2s => 4,        // Sibling to ACL2.
-            ProverKind::IsabelleZF => 4,   // Sibling to Isabelle/HOL.
-            ProverKind::Boogie => 2,       // Intermediate verification language.
-            ProverKind::Naproche => 3,     // Controlled-NL parsing non-trivial.
-            ProverKind::Matita => 3,       // CIC variant, same family as Coq.
-            ProverKind::Arend => 3,        // Cubical HoTT.
-            ProverKind::Athena => 4,       // Denotational + rewriting engine.
-            ProverKind::LambdaProlog => 3, // HOAS logic programming.
-            ProverKind::Mercury => 3,      // Logic programming with types/modes.
-            ProverKind::Nitpick => 2,      // Isabelle-wrapped counter-example finder.
-            ProverKind::Nunchaku => 2,     // Standalone counter-example finder.
-            ProverKind::CubicalAgda => 4,  // Cubical HoTT; harder than plain Agda.
+            ProverKind::Lean3 => 3,          // Same complexity as Lean 4.
+            ProverKind::Abella => 3,         // Two-level logic, HOAS proof state.
+            ProverKind::Dedukti => 3,        // λΠ-modulo framework.
+            ProverKind::Cameleer => 2,       // Thin OCaml→Why3 pipeline.
+            ProverKind::ACL2s => 4,          // Sibling to ACL2.
+            ProverKind::IsabelleZF => 4,     // Sibling to Isabelle/HOL.
+            ProverKind::Boogie => 2,         // Intermediate verification language.
+            ProverKind::Naproche => 3,       // Controlled-NL parsing non-trivial.
+            ProverKind::Matita => 3,         // CIC variant, same family as Coq.
+            ProverKind::Arend => 3,          // Cubical HoTT.
+            ProverKind::Athena => 4,         // Denotational + rewriting engine.
+            ProverKind::LambdaProlog => 3,   // HOAS logic programming.
+            ProverKind::Mercury => 3,        // Logic programming with types/modes.
+            ProverKind::Nitpick => 2,        // Isabelle-wrapped counter-example finder.
+            ProverKind::Nunchaku => 2,       // Standalone counter-example finder.
+            ProverKind::CubicalAgda => 4,    // Cubical HoTT; harder than plain Agda.
             ProverKind::Zipperposition => 2, // Automated ATP.
-            ProverKind::Prover9 => 2,      // Classic equational ATP.
-            ProverKind::OpenSmt => 2,      // SMT solver.
-            ProverKind::SmtRat => 3,       // Nonlinear arithmetic needs careful encoding.
-            ProverKind::Rocq => 3,         // Same as Coq.
+            ProverKind::Prover9 => 2,        // Classic equational ATP.
+            ProverKind::OpenSmt => 2,        // SMT solver.
+            ProverKind::SmtRat => 3,         // Nonlinear arithmetic needs careful encoding.
+            ProverKind::Rocq => 3,           // Same as Coq.
             ProverKind::UppaalStratego => 4, // Strategy synthesis is hard.
-            ProverKind::MizAR => 3,        // Mizar with ATP assist.
-            ProverKind::Vampire => 2,      // Automated, relatively simple
-            ProverKind::EProver => 2,      // Similar to Vampire
-            ProverKind::SPASS => 2,        // Automated FOL
-            ProverKind::AltErgo => 2,      // SMT + FOL
+            ProverKind::MizAR => 3,          // Mizar with ATP assist.
+            ProverKind::Vampire => 2,        // Automated, relatively simple
+            ProverKind::EProver => 2,        // Similar to Vampire
+            ProverKind::SPASS => 2,          // Automated FOL
+            ProverKind::AltErgo => 2,        // SMT + FOL
 
-            ProverKind::FStar => 3,        // Dependent types + effects
-            ProverKind::Dafny => 2,        // Auto-active
-            ProverKind::Why3 => 3,         // Multi-prover orchestration
-            ProverKind::GNATprove => 3,    // SPARK auto-active via Why3 backends
-            ProverKind::Stainless => 3,    // Scala/Inox refinement types
+            ProverKind::FStar => 3,         // Dependent types + effects
+            ProverKind::Dafny => 2,         // Auto-active
+            ProverKind::Why3 => 3,          // Multi-prover orchestration
+            ProverKind::GNATprove => 3,     // SPARK auto-active via Why3 backends
+            ProverKind::Stainless => 3,     // Scala/Inox refinement types
             ProverKind::LiquidHaskell => 3, // GHC plugin refinement types
-            ProverKind::TLAPS => 4,        // TLA+ proof system
-            ProverKind::Twelf => 4,        // Logical framework
-            ProverKind::Nuprl => 4,        // Constructive type theory
-            ProverKind::Minlog => 4,       // Minimal logic
-            ProverKind::Imandra => 3,      // ML-based reasoning
-            ProverKind::GLPK => 2,         // LP solver
-            ProverKind::SCIP => 3,         // MINLP solver
-            ProverKind::MiniZinc => 2,     // Constraint modelling
-            ProverKind::Chuffed => 2,      // CP solver
-            ProverKind::ORTools => 2,      // Constraint/optimization solver
-            ProverKind::TypedWasm => 3,    // Internal oracle, structural analysis
-            ProverKind::SPIN => 3,         // Model checker, Promela language
-            ProverKind::CBMC => 2,         // Bounded model checker, C input
-            ProverKind::SeaHorn => 2,      // LLVM-based verifier, abstract interpretation + CHC
-            ProverKind::CaDiCaL => 1,      // SAT solver, DIMACS CNF
-            ProverKind::Kissat => 1,       // SAT solver, DIMACS CNF
-            ProverKind::MiniSat => 1,      // SAT solver, DIMACS CNF
-            ProverKind::NuSMV => 3,        // Symbolic model checker, SMV language
-            ProverKind::TLC => 3,          // TLA+ model checker
-            ProverKind::Alloy => 3,        // Relational model finder
-            ProverKind::Prism => 3,        // Probabilistic model checker
-            ProverKind::UPPAAL => 3,       // Timed automata model checker
-            ProverKind::FramaC => 3,       // Deductive C verifier (ACSL + WP)
-            ProverKind::Viper => 3,        // Permission-based verifier (Silver + Silicon/Carbon)
-            ProverKind::Tamarin => 3,      // Security protocol verifier, multiset rewriting
-            ProverKind::ProVerif => 2,     // Automated protocol verifier, applied pi-calculus
+            ProverKind::TLAPS => 4,         // TLA+ proof system
+            ProverKind::Twelf => 4,         // Logical framework
+            ProverKind::Nuprl => 4,         // Constructive type theory
+            ProverKind::Minlog => 4,        // Minimal logic
+            ProverKind::Imandra => 3,       // ML-based reasoning
+            ProverKind::GLPK => 2,          // LP solver
+            ProverKind::SCIP => 3,          // MINLP solver
+            ProverKind::MiniZinc => 2,      // Constraint modelling
+            ProverKind::Chuffed => 2,       // CP solver
+            ProverKind::ORTools => 2,       // Constraint/optimization solver
+            ProverKind::TypedWasm => 3,     // Internal oracle, structural analysis
+            ProverKind::SPIN => 3,          // Model checker, Promela language
+            ProverKind::CBMC => 2,          // Bounded model checker, C input
+            ProverKind::SeaHorn => 2,       // LLVM-based verifier, abstract interpretation + CHC
+            ProverKind::CaDiCaL => 1,       // SAT solver, DIMACS CNF
+            ProverKind::Kissat => 1,        // SAT solver, DIMACS CNF
+            ProverKind::MiniSat => 1,       // SAT solver, DIMACS CNF
+            ProverKind::NuSMV => 3,         // Symbolic model checker, SMV language
+            ProverKind::TLC => 3,           // TLA+ model checker
+            ProverKind::Alloy => 3,         // Relational model finder
+            ProverKind::Prism => 3,         // Probabilistic model checker
+            ProverKind::UPPAAL => 3,        // Timed automata model checker
+            ProverKind::FramaC => 3,        // Deductive C verifier (ACSL + WP)
+            ProverKind::Viper => 3,         // Permission-based verifier (Silver + Silicon/Carbon)
+            ProverKind::Tamarin => 3,       // Security protocol verifier, multiset rewriting
+            ProverKind::ProVerif => 2,      // Automated protocol verifier, applied pi-calculus
             ProverKind::KeY => 3, // Deductive Java verifier (JavaDL + JML), auto + interactive
             ProverKind::DReal => 2, // Automated delta-complete SMT solver, NRA
             ProverKind::ABC => 2, // Automated hardware verification, AIG-based
@@ -867,26 +865,26 @@ impl ProverKind {
             ProverKind::Lash => 3,     // Lash higher-order prover
             ProverKind::AgsyHOL => 4,  // Agsy HOL dependent-type prover
             // Phase 1b: Frontier first-order provers
-            ProverKind::IProver => 2,      // Competitive ATP, standard FOL
-            ProverKind::Princess => 3,     // LA-extended ATP
-            ProverKind::Twee => 2,         // Equational only, deterministic
-            ProverKind::MetiTarski => 3,   // Transcendental function encoding
-            ProverKind::CSI => 3,          // TRS/CTRS parsing + CPF output
-            ProverKind::AProVE => 3,       // TRS/XTC parsing
-            ProverKind::KeYmaeraX => 4,    // dL + hybrid programs + tactic language
-            ProverKind::Qepcad => 4,       // CAD doubly-exponential in variable count
-            ProverKind::Redlog => 3,       // virtual substitution + CAD
-            ProverKind::MleanCoP => 3,     // classical connection-method + equality
-            ProverKind::IleanCoP => 3,     // intuitionistic connection-method
-            ProverKind::NanoCoP => 3,      // small-kernel connection-method
-            ProverKind::MetTeL2 => 4,      // JVM tableau-generator + spec config
+            ProverKind::IProver => 2,    // Competitive ATP, standard FOL
+            ProverKind::Princess => 3,   // LA-extended ATP
+            ProverKind::Twee => 2,       // Equational only, deterministic
+            ProverKind::MetiTarski => 3, // Transcendental function encoding
+            ProverKind::CSI => 3,        // TRS/CTRS parsing + CPF output
+            ProverKind::AProVE => 3,     // TRS/XTC parsing
+            ProverKind::KeYmaeraX => 4,  // dL + hybrid programs + tactic language
+            ProverKind::Qepcad => 4,     // CAD doubly-exponential in variable count
+            ProverKind::Redlog => 3,     // virtual substitution + CAD
+            ProverKind::MleanCoP => 3,   // classical connection-method + equality
+            ProverKind::IleanCoP => 3,   // intuitionistic connection-method
+            ProverKind::NanoCoP => 3,    // small-kernel connection-method
+            ProverKind::MetTeL2 => 4,    // JVM tableau-generator + spec config
             // Phase 4: DL + probabilistic + B-method + computational crypto
-            ProverKind::ELK => 3,          // consequence-based EL kernel
-            ProverKind::Konclude => 4,     // full SROIQ tableau saturation
-            ProverKind::Storm => 3,        // numerical fixed-point computation
-            ProverKind::ProB => 3,         // B-method semantics + constraint engine
-            ProverKind::EasyCrypt => 4,    // probabilistic relational HL + tactics
-            ProverKind::CryptoVerif => 4,  // game-hopping + indistinguishability lib
+            ProverKind::ELK => 3,         // consequence-based EL kernel
+            ProverKind::Konclude => 4,    // full SROIQ tableau saturation
+            ProverKind::Storm => 3,       // numerical fixed-point computation
+            ProverKind::ProB => 3,        // B-method semantics + constraint engine
+            ProverKind::EasyCrypt => 4,   // probabilistic relational HL + tactics
+            ProverKind::CryptoVerif => 4, // game-hopping + indistinguishability lib
             // HP type-checker ecosystem: complexity 3 — they are real
             // type-checkers with non-trivial unification/elaboration.
             // Heavier disciplines (HoTT/Cubical, Hoare) rate 4.
@@ -958,27 +956,27 @@ impl ProverKind {
             ProverKind::Lean3 => 1, // Sibling to Lean 4.
             // Tier 7 niche: specialized proof framework for HOAS / nominal.
             ProverKind::Abella => 2,
-            ProverKind::Dedukti => 2,      // Logical framework tier.
-            ProverKind::Cameleer => 2,     // Auto-active via Why3.
-            ProverKind::ACL2s => 3,        // Sibling to ACL2 (tier 3).
-            ProverKind::IsabelleZF => 1,   // Sibling to Isabelle (tier 1).
-            ProverKind::Boogie => 5,       // Deductive program verifier tier.
-            ProverKind::Naproche => 2,     // Specialised, text-style.
-            ProverKind::Matita => 1,       // Coq-adjacent, Tier 1 capability.
-            ProverKind::Arend => 1,        // Cubical HoTT, Tier 1.
-            ProverKind::Athena => 4,       // Niche framework.
-            ProverKind::LambdaProlog => 4, // Logical framework / HOAS.
-            ProverKind::Mercury => 4,      // Specialised logic programming.
-            ProverKind::Nitpick => 5,      // Counter-example finder tier.
-            ProverKind::Nunchaku => 5,     // Counter-example finder tier.
-            ProverKind::CubicalAgda => 2,   // Tier 2: HoTT proof assistant.
+            ProverKind::Dedukti => 2,        // Logical framework tier.
+            ProverKind::Cameleer => 2,       // Auto-active via Why3.
+            ProverKind::ACL2s => 3,          // Sibling to ACL2 (tier 3).
+            ProverKind::IsabelleZF => 1,     // Sibling to Isabelle (tier 1).
+            ProverKind::Boogie => 5,         // Deductive program verifier tier.
+            ProverKind::Naproche => 2,       // Specialised, text-style.
+            ProverKind::Matita => 1,         // Coq-adjacent, Tier 1 capability.
+            ProverKind::Arend => 1,          // Cubical HoTT, Tier 1.
+            ProverKind::Athena => 4,         // Niche framework.
+            ProverKind::LambdaProlog => 4,   // Logical framework / HOAS.
+            ProverKind::Mercury => 4,        // Specialised logic programming.
+            ProverKind::Nitpick => 5,        // Counter-example finder tier.
+            ProverKind::Nunchaku => 5,       // Counter-example finder tier.
+            ProverKind::CubicalAgda => 2,    // Tier 2: HoTT proof assistant.
             ProverKind::Zipperposition => 3, // Tier 3: HO-ATP.
-            ProverKind::Prover9 => 4,       // Tier 4: classic ATP.
-            ProverKind::OpenSmt => 3,       // Tier 3: interpolant SMT.
-            ProverKind::SmtRat => 5,        // Tier 5: research NL SMT.
-            ProverKind::Rocq => 1,          // Tier 1: Coq rename.
+            ProverKind::Prover9 => 4,        // Tier 4: classic ATP.
+            ProverKind::OpenSmt => 3,        // Tier 3: interpolant SMT.
+            ProverKind::SmtRat => 5,         // Tier 5: research NL SMT.
+            ProverKind::Rocq => 1,           // Tier 1: Coq rename.
             ProverKind::UppaalStratego => 4, // Tier 4: strategy synthesis.
-            ProverKind::MizAR => 3,         // Tier 3: ATP-assisted Mizar.
+            ProverKind::MizAR => 3,          // Tier 3: ATP-assisted Mizar.
 
             // Tier 5: First-Order ATPs
             ProverKind::Vampire => 5,
@@ -986,14 +984,12 @@ impl ProverKind {
             ProverKind::SPASS => 5,
             ProverKind::AltErgo => 5,
 
-
-
             // Tier 6: Dependent types + effects, auto-active
-            ProverKind::FStar => 1, // Small kernel, dependent types
-            ProverKind::Dafny => 2, // Auto-active (relies on Boogie->Z3)
-            ProverKind::Why3 => 2,  // Multi-prover orchestration
-            ProverKind::GNATprove => 4, // SPARK — small-kernel via Why3
-            ProverKind::Stainless => 3, // Scala refinement types
+            ProverKind::FStar => 1,         // Small kernel, dependent types
+            ProverKind::Dafny => 2,         // Auto-active (relies on Boogie->Z3)
+            ProverKind::Why3 => 2,          // Multi-prover orchestration
+            ProverKind::GNATprove => 4,     // SPARK — small-kernel via Why3
+            ProverKind::Stainless => 3,     // Scala refinement types
             ProverKind::LiquidHaskell => 3, // GHC refinement types
 
             // Tier 7: Specialized / niche
@@ -1027,41 +1023,41 @@ impl ProverKind {
             ProverKind::Alloy => 5,
             ProverKind::Prism => 5,
             ProverKind::UPPAAL => 5,
-            ProverKind::FramaC => 5,   // Deductive program verifier
-            ProverKind::Viper => 5,    // Permission-based program verifier
-            ProverKind::Tamarin => 5,  // Security protocol verifier
-            ProverKind::ProVerif => 5, // Security protocol verifier (automated)
-            ProverKind::KeY => 5,      // Deductive Java verifier
-            ProverKind::DReal => 5,    // Delta-complete SMT solver (NRA/ODE)
-            ProverKind::ABC => 5,      // Logic synthesis & hardware verification
+            ProverKind::FramaC => 5,    // Deductive program verifier
+            ProverKind::Viper => 5,     // Permission-based program verifier
+            ProverKind::Tamarin => 5,   // Security protocol verifier
+            ProverKind::ProVerif => 5,  // Security protocol verifier (automated)
+            ProverKind::KeY => 5,       // Deductive Java verifier
+            ProverKind::DReal => 5,     // Delta-complete SMT solver (NRA/ODE)
+            ProverKind::ABC => 5,       // Logic synthesis & hardware verification
             ProverKind::GPUVerify => 5, // GPU kernel verifier (CUDA/OpenCL → Boogie → Z3)
             ProverKind::Faial => 5,     // Lightweight GPU data-race detector
             // Phase 1a: Higher-order ATPs
-            ProverKind::Leo3 => 5,      // Tier 5: HOL-to-TPTP translator
-            ProverKind::Satallax => 5,  // Tier 5: HOL-based ATP
-            ProverKind::Lash => 5,      // Tier 5: higher-order ATP
-            ProverKind::AgsyHOL => 5,   // Tier 5: HOL dependent-type prover
+            ProverKind::Leo3 => 5,     // Tier 5: HOL-to-TPTP translator
+            ProverKind::Satallax => 5, // Tier 5: HOL-based ATP
+            ProverKind::Lash => 5,     // Tier 5: higher-order ATP
+            ProverKind::AgsyHOL => 5,  // Tier 5: HOL dependent-type prover
             // Phase 1b: Frontier first-order provers
-            ProverKind::IProver => 2,      // Trust tier 2 (TPTP FOL)
-            ProverKind::Princess => 2,     // Trust tier 2 (TPTP + LA)
-            ProverKind::Twee => 3,         // Trust tier 3 (deterministic equational)
-            ProverKind::MetiTarski => 2,   // Trust tier 2 (TPTP + transcendental)
-            ProverKind::CSI => 2,          // Trust tier 2 (TRS/CPF)
-            ProverKind::AProVE => 2,       // Trust tier 2 (TRS/XTC)
-            ProverKind::KeYmaeraX => 2,    // Trust tier 2 (dL; QE delegated to external CAS)
-            ProverKind::Qepcad => 2,       // Trust tier 2 (CAD; no machine-checked certificate)
-            ProverKind::Redlog => 2,       // Trust tier 2 (parallel to QEPCAD)
-            ProverKind::MleanCoP => 2,     // Trust tier 2 (classical leanCoP kernel)
-            ProverKind::IleanCoP => 3,     // Trust tier 3 (intuitionistic kernel; small + checkable)
-            ProverKind::NanoCoP => 3,      // Trust tier 3 (small kernel — Level-4 cohort)
-            ProverKind::MetTeL2 => 2,      // Trust tier 2 (generated tableau correct by construction; spec unverified)
+            ProverKind::IProver => 2,    // Trust tier 2 (TPTP FOL)
+            ProverKind::Princess => 2,   // Trust tier 2 (TPTP + LA)
+            ProverKind::Twee => 3,       // Trust tier 3 (deterministic equational)
+            ProverKind::MetiTarski => 2, // Trust tier 2 (TPTP + transcendental)
+            ProverKind::CSI => 2,        // Trust tier 2 (TRS/CPF)
+            ProverKind::AProVE => 2,     // Trust tier 2 (TRS/XTC)
+            ProverKind::KeYmaeraX => 2,  // Trust tier 2 (dL; QE delegated to external CAS)
+            ProverKind::Qepcad => 2,     // Trust tier 2 (CAD; no machine-checked certificate)
+            ProverKind::Redlog => 2,     // Trust tier 2 (parallel to QEPCAD)
+            ProverKind::MleanCoP => 2,   // Trust tier 2 (classical leanCoP kernel)
+            ProverKind::IleanCoP => 3,   // Trust tier 3 (intuitionistic kernel; small + checkable)
+            ProverKind::NanoCoP => 3,    // Trust tier 3 (small kernel — Level-4 cohort)
+            ProverKind::MetTeL2 => 2, // Trust tier 2 (generated tableau correct by construction; spec unverified)
             // Phase 4: DL + probabilistic + B-method + computational crypto.
-            ProverKind::ELK => 3,          // Trust tier 3 (consequence-based, peer-reviewed soundness)
-            ProverKind::Konclude => 3,     // Trust tier 3 (peer-reviewed tableau kernel)
-            ProverKind::Storm => 2,        // Trust tier 2 (DD/symbolic engines, no certificate)
-            ProverKind::ProB => 2,         // Trust tier 2 (constraint-based BMC, validated for railway)
-            ProverKind::EasyCrypt => 3,    // Trust tier 3 (small kernel + Why3/SMT for VC discharge)
-            ProverKind::CryptoVerif => 3,  // Trust tier 3 (small game-hopping engine, peer-reviewed)
+            ProverKind::ELK => 3, // Trust tier 3 (consequence-based, peer-reviewed soundness)
+            ProverKind::Konclude => 3, // Trust tier 3 (peer-reviewed tableau kernel)
+            ProverKind::Storm => 2, // Trust tier 2 (DD/symbolic engines, no certificate)
+            ProverKind::ProB => 2, // Trust tier 2 (constraint-based BMC, validated for railway)
+            ProverKind::EasyCrypt => 3, // Trust tier 3 (small kernel + Why3/SMT for VC discharge)
+            ProverKind::CryptoVerif => 3, // Trust tier 3 (small game-hopping engine, peer-reviewed)
             // HP ecosystem — tier 11 (beyond the existing 10-tier scheme
             // but placed as 3 here to share the ML guidance budget with
             // dependent/interactive provers).
@@ -1148,56 +1144,56 @@ impl ProverKind {
             ProverKind::SPASS => 1.5,        // DFG format
             ProverKind::AltErgo => 1.5,      // Native format
 
-            ProverKind::FStar => 2.5,        // Dependent types + effects
-            ProverKind::Dafny => 2.0,        // Auto-active, Boogie pipeline
-            ProverKind::Why3 => 2.0,         // Multi-prover
-            ProverKind::GNATprove => 3.0,    // SPARK toolchain wrapping
-            ProverKind::Stainless => 2.5,   // Scala JVM
+            ProverKind::FStar => 2.5,         // Dependent types + effects
+            ProverKind::Dafny => 2.0,         // Auto-active, Boogie pipeline
+            ProverKind::Why3 => 2.0,          // Multi-prover
+            ProverKind::GNATprove => 3.0,     // SPARK toolchain wrapping
+            ProverKind::Stainless => 2.5,     // Scala JVM
             ProverKind::LiquidHaskell => 2.5, // GHC plugin
-            ProverKind::TLAPS => 2.5,        // TLA+ specific
-            ProverKind::Twelf => 3.0,        // LF framework
-            ProverKind::Nuprl => 3.0,        // Constructive type theory
-            ProverKind::Minlog => 2.5,       // Minimal logic
-            ProverKind::Imandra => 2.0,      // ML-based
-            ProverKind::GLPK => 1.0,         // LP API
-            ProverKind::SCIP => 1.5,         // MINLP API
-            ProverKind::MiniZinc => 1.0,     // Constraint modelling
-            ProverKind::Chuffed => 1.0,      // CP solver
-            ProverKind::ORTools => 1.5,      // Constraint/optimization
-            ProverKind::TypedWasm => 2.0,    // Internal oracle
-            ProverKind::SPIN => 1.5,         // Model checker
-            ProverKind::CBMC => 1.5,         // Bounded model checker
-            ProverKind::SeaHorn => 1.5,      // LLVM-based CHC verifier
-            ProverKind::CaDiCaL => 1.0,      // SAT solver, DIMACS CNF
-            ProverKind::Kissat => 1.0,       // SAT solver, DIMACS CNF
-            ProverKind::MiniSat => 1.0,      // SAT solver, DIMACS CNF
-            ProverKind::NuSMV => 1.5,        // Symbolic model checker
-            ProverKind::TLC => 1.5,          // TLA+ model checker
-            ProverKind::Alloy => 1.5,        // Relational model finder
-            ProverKind::Prism => 1.5,        // Probabilistic model checker
-            ProverKind::UPPAAL => 1.5,       // Timed automata model checker
-            ProverKind::FramaC => 1.5,       // Deductive C verifier
-            ProverKind::Viper => 2.0,        // Permission-based verifier (Silver + two backends)
-            ProverKind::Tamarin => 2.0,      // Security protocol verifier (.spthy)
-            ProverKind::ProVerif => 1.5,     // Automated protocol verifier (.pv)
-            ProverKind::KeY => 2.0,          // Deductive Java verifier (JavaDL + JML)
-            ProverKind::DReal => 1.0,        // Automated SMT solver, SMT-LIB input
-            ProverKind::ABC => 1.5,          // Hardware verification, AIGER/BLIF input
-            ProverKind::GPUVerify => 1.5,    // GPU kernel verifier, CUDA/OpenCL input
-            ProverKind::Faial => 1.0,        // Lightweight GPU race detector, CUDA input
-            ProverKind::IProver => 1.5,     // First-order ATP with SZS output
-            ProverKind::Princess => 1.5,    // SMT-based first-order solver
-            ProverKind::Twee => 1.5,        // Equational logic (Knuth-Bendix)
-            ProverKind::MetiTarski => 1.5,  // Transcendental arithmetic extension
-            ProverKind::CSI => 2.0,         // Confluence/termination checker
-            ProverKind::AProVE => 2.0,      // Automated termination verifier
-            ProverKind::KeYmaeraX => 2.5,   // Hybrid systems / differential dynamic logic
-            ProverKind::Qepcad => 2.5,      // CAD / real quantifier elimination
-            ProverKind::Redlog => 2.0,      // REDUCE-CAS QE frontend
-            ProverKind::MleanCoP => 1.5,    // Classical connection-method
-            ProverKind::IleanCoP => 2.0,    // Intuitionistic connection-method
-            ProverKind::NanoCoP => 1.5,     // Lean-kernel connection-method
-            ProverKind::MetTeL2 => 2.5,     // Modal-logic tableau generator
+            ProverKind::TLAPS => 2.5,         // TLA+ specific
+            ProverKind::Twelf => 3.0,         // LF framework
+            ProverKind::Nuprl => 3.0,         // Constructive type theory
+            ProverKind::Minlog => 2.5,        // Minimal logic
+            ProverKind::Imandra => 2.0,       // ML-based
+            ProverKind::GLPK => 1.0,          // LP API
+            ProverKind::SCIP => 1.5,          // MINLP API
+            ProverKind::MiniZinc => 1.0,      // Constraint modelling
+            ProverKind::Chuffed => 1.0,       // CP solver
+            ProverKind::ORTools => 1.5,       // Constraint/optimization
+            ProverKind::TypedWasm => 2.0,     // Internal oracle
+            ProverKind::SPIN => 1.5,          // Model checker
+            ProverKind::CBMC => 1.5,          // Bounded model checker
+            ProverKind::SeaHorn => 1.5,       // LLVM-based CHC verifier
+            ProverKind::CaDiCaL => 1.0,       // SAT solver, DIMACS CNF
+            ProverKind::Kissat => 1.0,        // SAT solver, DIMACS CNF
+            ProverKind::MiniSat => 1.0,       // SAT solver, DIMACS CNF
+            ProverKind::NuSMV => 1.5,         // Symbolic model checker
+            ProverKind::TLC => 1.5,           // TLA+ model checker
+            ProverKind::Alloy => 1.5,         // Relational model finder
+            ProverKind::Prism => 1.5,         // Probabilistic model checker
+            ProverKind::UPPAAL => 1.5,        // Timed automata model checker
+            ProverKind::FramaC => 1.5,        // Deductive C verifier
+            ProverKind::Viper => 2.0,         // Permission-based verifier (Silver + two backends)
+            ProverKind::Tamarin => 2.0,       // Security protocol verifier (.spthy)
+            ProverKind::ProVerif => 1.5,      // Automated protocol verifier (.pv)
+            ProverKind::KeY => 2.0,           // Deductive Java verifier (JavaDL + JML)
+            ProverKind::DReal => 1.0,         // Automated SMT solver, SMT-LIB input
+            ProverKind::ABC => 1.5,           // Hardware verification, AIGER/BLIF input
+            ProverKind::GPUVerify => 1.5,     // GPU kernel verifier, CUDA/OpenCL input
+            ProverKind::Faial => 1.0,         // Lightweight GPU race detector, CUDA input
+            ProverKind::IProver => 1.5,       // First-order ATP with SZS output
+            ProverKind::Princess => 1.5,      // SMT-based first-order solver
+            ProverKind::Twee => 1.5,          // Equational logic (Knuth-Bendix)
+            ProverKind::MetiTarski => 1.5,    // Transcendental arithmetic extension
+            ProverKind::CSI => 2.0,           // Confluence/termination checker
+            ProverKind::AProVE => 2.0,        // Automated termination verifier
+            ProverKind::KeYmaeraX => 2.5,     // Hybrid systems / differential dynamic logic
+            ProverKind::Qepcad => 2.5,        // CAD / real quantifier elimination
+            ProverKind::Redlog => 2.0,        // REDUCE-CAS QE frontend
+            ProverKind::MleanCoP => 1.5,      // Classical connection-method
+            ProverKind::IleanCoP => 2.0,      // Intuitionistic connection-method
+            ProverKind::NanoCoP => 1.5,       // Lean-kernel connection-method
+            ProverKind::MetTeL2 => 2.5,       // Modal-logic tableau generator
             // Phase 4: DL + probabilistic + B-method + computational crypto.
             ProverKind::ELK => 1.5,         // OWL EL classifier
             ProverKind::Konclude => 2.0,    // OWL DL tableau reasoner
@@ -1325,7 +1321,7 @@ impl ProverKind {
             ProverKind::DReal => "dreal", // dReal delta-complete SMT solver
             ProverKind::ABC => "abc",     // Berkeley ABC logic synthesis system
             ProverKind::GPUVerify => "gpuverify", // GPUVerify CUDA/OpenCL kernel verifier
-            ProverKind::Faial => "faial-drf",     // Faial data-race freedom checker
+            ProverKind::Faial => "faial-drf", // Faial data-race freedom checker
             ProverKind::CubicalAgda => "agda",
             ProverKind::Zipperposition => "zipperposition",
             ProverKind::Prover9 => "prover9",
@@ -1470,7 +1466,9 @@ impl std::str::FromStr for SandboxMode {
             "none" | "off" | "" => Ok(SandboxMode::None),
             "bwrap" | "bubblewrap" => Ok(SandboxMode::Bwrap),
             "podman" | "container" => Ok(SandboxMode::Podman),
-            other => Err(format!("unknown sandbox mode: {other} (expected one of: none, bwrap, podman)")),
+            other => Err(format!(
+                "unknown sandbox mode: {other} (expected one of: none, bwrap, podman)"
+            )),
         }
     }
 }
@@ -1697,7 +1695,7 @@ impl ProverFactory {
             ProverKind::Stainless => Ok(Box::new(stainless::StainlessBackend::new(config))),
             ProverKind::LiquidHaskell => {
                 Ok(Box::new(liquid_haskell::LiquidHaskellBackend::new(config)))
-            }
+            },
             ProverKind::TLAPS => Ok(Box::new(tlaps::TLAPSBackend::new(config))),
             ProverKind::Twelf => Ok(Box::new(twelf::TwelfBackend::new(config))),
             ProverKind::Nuprl => Ok(Box::new(nuprl::NuprlBackend::new(config))),
@@ -1730,12 +1728,16 @@ impl ProverFactory {
             ProverKind::GPUVerify => Ok(Box::new(gpuverify::GpuVerifyBackend::new(config))),
             ProverKind::Faial => Ok(Box::new(faial::FaialBackend::new(config))),
             ProverKind::CubicalAgda => Ok(Box::new(cubical_agda::CubicalAgdaBackend::new(config))),
-            ProverKind::Zipperposition => Ok(Box::new(zipperposition::ZipperpositionBackend::new(config))),
+            ProverKind::Zipperposition => {
+                Ok(Box::new(zipperposition::ZipperpositionBackend::new(config)))
+            },
             ProverKind::Prover9 => Ok(Box::new(prover9::Prover9Backend::new(config))),
             ProverKind::OpenSmt => Ok(Box::new(opensmt::OpenSmtBackend::new(config))),
             ProverKind::SmtRat => Ok(Box::new(smtrat::SmtRatBackend::new(config))),
             ProverKind::Rocq => Ok(Box::new(rocq::RocqBackend::new(config))),
-            ProverKind::UppaalStratego => Ok(Box::new(uppaal_stratego::UppaalStrategoBackend::new(config))),
+            ProverKind::UppaalStratego => Ok(Box::new(
+                uppaal_stratego::UppaalStrategoBackend::new(config),
+            )),
             ProverKind::MizAR => Ok(Box::new(mizar_ar::MizARBackend::new(config))),
             ProverKind::IProver => Ok(Box::new(iprover::IProverBackend::new(config))),
             ProverKind::Princess => Ok(Box::new(princess::PrincessBackend::new(config))),
@@ -1808,9 +1810,9 @@ impl ProverFactory {
             | ProverKind::DyadicTypeChecker
             | ProverKind::HomotopyTypeChecker
             | ProverKind::CubicalTypeChecker
-            | ProverKind::NominalTypeChecker => {
-                Ok(Box::new(typed_wasm::TypedWasmBackend::for_kind(kind, config)))
-            },
+            | ProverKind::NominalTypeChecker => Ok(Box::new(
+                typed_wasm::TypedWasmBackend::for_kind(kind, config),
+            )),
         }
     }
 
@@ -1839,55 +1841,55 @@ impl ProverFactory {
             // Note: ".scala" and ".hs" are NOT auto-mapped to Stainless /
             // Liquid Haskell because plain Scala/Haskell sources are not
             // necessarily refinement-typed.  Caller must pass explicit kind.
-            "tla" => Some(ProverKind::TLAPS),          // TLA+ format
-            "elf" => Some(ProverKind::Twelf),          // Twelf LF format
-            "nuprl" => Some(ProverKind::Nuprl),        // Nuprl format
-            "minlog" => Some(ProverKind::Minlog),      // Minlog format
-            "iml" => Some(ProverKind::Imandra),        // Imandra ML format
-            "lp" | "mps" => Some(ProverKind::GLPK),    // LP/MIP format
-            "pip" | "zpl" => Some(ProverKind::SCIP),   // SCIP/ZIMPL format
+            "tla" => Some(ProverKind::TLAPS),        // TLA+ format
+            "elf" => Some(ProverKind::Twelf),        // Twelf LF format
+            "nuprl" => Some(ProverKind::Nuprl),      // Nuprl format
+            "minlog" => Some(ProverKind::Minlog),    // Minlog format
+            "iml" => Some(ProverKind::Imandra),      // Imandra ML format
+            "lp" | "mps" => Some(ProverKind::GLPK),  // LP/MIP format
+            "pip" | "zpl" => Some(ProverKind::SCIP), // SCIP/ZIMPL format
             "mzn" | "dzn" => Some(ProverKind::MiniZinc), // MiniZinc format
-            "fzn" => Some(ProverKind::Chuffed),        // FlatZinc (Chuffed input)
-            "twasm" => Some(ProverKind::TypedWasm),    // TypedWasm program
-            "pml" => Some(ProverKind::SPIN),           // Promela model
-            "smv" => Some(ProverKind::NuSMV),          // SMV specification
-            "als" => Some(ProverKind::Alloy),          // Alloy specification
+            "fzn" => Some(ProverKind::Chuffed),      // FlatZinc (Chuffed input)
+            "twasm" => Some(ProverKind::TypedWasm),  // TypedWasm program
+            "pml" => Some(ProverKind::SPIN),         // Promela model
+            "smv" => Some(ProverKind::NuSMV),        // SMV specification
+            "als" => Some(ProverKind::Alloy),        // Alloy specification
             "pm" | "prism" => Some(ProverKind::Prism), // PRISM model
-            "vpr" => Some(ProverKind::Viper),          // Viper Silver language
-            "spthy" => Some(ProverKind::Tamarin),      // Tamarin security protocol theory
-            "pv" => Some(ProverKind::ProVerif),        // ProVerif applied pi-calculus
-            "cnf" => Some(ProverKind::CaDiCaL),        // DIMACS CNF (default SAT solver)
-            "dr" => Some(ProverKind::DReal),           // dReal SMT-LIB (.dr extension)
-            "aig" => Some(ProverKind::ABC),            // AIGER format (And-Inverter Graph)
-            "blif" => Some(ProverKind::ABC),           // Berkeley Logic Interchange Format
+            "vpr" => Some(ProverKind::Viper),        // Viper Silver language
+            "spthy" => Some(ProverKind::Tamarin),    // Tamarin security protocol theory
+            "pv" => Some(ProverKind::ProVerif),      // ProVerif applied pi-calculus
+            "cnf" => Some(ProverKind::CaDiCaL),      // DIMACS CNF (default SAT solver)
+            "dr" => Some(ProverKind::DReal),         // dReal SMT-LIB (.dr extension)
+            "aig" => Some(ProverKind::ABC),          // AIGER format (And-Inverter Graph)
+            "blif" => Some(ProverKind::ABC),         // Berkeley Logic Interchange Format
             // GPU source files — default to GPUVerify for extension-only detection.
             // Use detect_from_file_content() to distinguish GPUVerify vs Faial.
-            "cu" => Some(ProverKind::GPUVerify),  // CUDA source (GPUVerify or Faial)
-            "cl" => Some(ProverKind::GPUVerify),  // OpenCL source (GPUVerify)
-            "key" => Some(ProverKind::KeY),            // KeY proof problem file (JavaDL)
+            "cu" => Some(ProverKind::GPUVerify), // CUDA source (GPUVerify or Faial)
+            "cl" => Some(ProverKind::GPUVerify), // OpenCL source (GPUVerify)
+            "key" => Some(ProverKind::KeY),      // KeY proof problem file (JavaDL)
             // Note: .java files with JML annotations can also be detected via content-aware detection
             // Note: .c files only map to CBMC when containing __CPROVER directives
             // Note: .lean is shared between Lean 3 and Lean 4; default is Lean 4.
             // Use detect_from_file_content() for Lean 3 vs 4 disambiguation.
             "lean3" => Some(ProverKind::Lean3), // explicit extension
-            "thm" => Some(ProverKind::Abella), // Abella .thm files
+            "thm" => Some(ProverKind::Abella),  // Abella .thm files
             // Dedukti uses .dk; .lp (lambdapi dialect) is shadowed by GLPK above
             // since LP/MIP files dominate that extension in the wild — a .lp
             // input ambiguous between lambdapi and linear programming is
             // resolved as GLPK.  Use detect_from_file_content() to disambiguate.
-            "dk" => Some(ProverKind::Dedukti), // Dedukti / λΠ
-            "bpl" => Some(ProverKind::Boogie), // Boogie intermediate language
+            "dk" => Some(ProverKind::Dedukti),   // Dedukti / λΠ
+            "bpl" => Some(ProverKind::Boogie),   // Boogie intermediate language
             "ftl" => Some(ProverKind::Naproche), // Naproche controlled-NL
-            "ma" => Some(ProverKind::Matita),   // Matita proof file
-            "ard" => Some(ProverKind::Arend),   // Arend cubical HoTT
-            "ath" => Some(ProverKind::Athena),  // Athena
+            "ma" => Some(ProverKind::Matita),    // Matita proof file
+            "ard" => Some(ProverKind::Arend),    // Arend cubical HoTT
+            "ath" => Some(ProverKind::Athena),   // Athena
             "mod" | "sig" => Some(ProverKind::LambdaProlog), // λProlog module / signature
             "nun" => Some(ProverKind::Nunchaku), // Nunchaku input
             // Mercury uses .m which collides with OCaml conventions in
             // some file sets; content-aware detection deferred to
             // phase 2 (look for Mercury `:- module`, `:- pred`, etc).
-            "pri" => Some(ProverKind::Princess),  // Princess native format
-            "trs" => Some(ProverKind::CSI),       // TRS rewriting system format (CSI/AProVE)
+            "pri" => Some(ProverKind::Princess), // Princess native format
+            "trs" => Some(ProverKind::CSI),      // TRS rewriting system format (CSI/AProVE)
             _ => None,
         })
     }

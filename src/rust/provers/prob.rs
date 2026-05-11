@@ -82,10 +82,7 @@ impl ProBBackend {
         b.push_str("MACHINE EchidnaProblem\n");
         if !state.context.axioms.is_empty() {
             b.push_str("PROPERTIES\n  ");
-            let joined = state
-                .context
-                .axioms.to_vec()
-                .join(" &\n  ");
+            let joined = state.context.axioms.to_vec().join(" &\n  ");
             b.push_str(&joined);
             b.push('\n');
         }
@@ -261,11 +258,7 @@ impl ProverBackend for ProBBackend {
         Ok(Self::to_b_machine(state))
     }
 
-    async fn suggest_tactics(
-        &self,
-        _state: &ProofState,
-        _limit: usize,
-    ) -> Result<Vec<Tactic>> {
+    async fn suggest_tactics(&self, _state: &ProofState, _limit: usize) -> Result<Vec<Tactic>> {
         Ok(vec![])
     }
 
@@ -312,8 +305,10 @@ mod tests {
 
     #[test]
     fn test_prob_parse_result_no_errors() {
-        assert!(ProBBackend::parse_result("Model checking complete: no error nodes found")
-            .expect("parse"));
+        assert!(
+            ProBBackend::parse_result("Model checking complete: no error nodes found")
+                .expect("parse")
+        );
     }
 
     #[test]

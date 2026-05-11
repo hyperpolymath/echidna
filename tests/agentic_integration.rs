@@ -275,7 +275,8 @@ async fn test_agent_queue_priority() {
     let router = ProverRouter::new();
 
     let config = AgentConfig::default();
-    let meta_controller = std::sync::Arc::new(echidna::agent::meta_controller::MetaController::new());
+    let meta_controller =
+        std::sync::Arc::new(echidna::agent::meta_controller::MetaController::new());
     let agent = AgentCore::new(
         Box::new(memory),
         Box::new(planner),

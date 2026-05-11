@@ -19,8 +19,7 @@ use std::fmt::Write;
 
 use super::trust::CoprocessorTrustTier;
 use super::types::{
-    CoprocessorCapabilities, CoprocessorHealth, CoprocessorKind, CoprocessorOp,
-    CoprocessorOutcome,
+    CoprocessorCapabilities, CoprocessorHealth, CoprocessorKind, CoprocessorOp, CoprocessorOutcome,
 };
 use super::Coprocessor;
 
@@ -32,10 +31,7 @@ impl GraphicsBackend {
     pub fn new() -> Self {
         GraphicsBackend {
             capabilities: CoprocessorCapabilities {
-                supported_ops: vec![
-                    "GraphicsProofGraphSvg".into(),
-                    "GraphicsBarChartSvg".into(),
-                ],
+                supported_ops: vec!["GraphicsProofGraphSvg".into(), "GraphicsBarChartSvg".into()],
                 typical_latency_us: 200,
                 deterministic: true,
             },
@@ -75,10 +71,10 @@ fn dispatch_sync(op: CoprocessorOp) -> Result<CoprocessorOutcome> {
     Ok(match op {
         CoprocessorOp::GraphicsProofGraphSvg { nodes, edges } => {
             CoprocessorOutcome::Hex(hex_str(&render_proof_graph(&nodes, &edges)))
-        }
+        },
         CoprocessorOp::GraphicsBarChartSvg { title, bars } => {
             CoprocessorOutcome::Hex(hex_str(&render_bar_chart(&title, &bars)))
-        }
+        },
         other => CoprocessorOutcome::Failure(format!(
             "Graphics backend does not support {:?}",
             std::mem::discriminant(&other)
@@ -137,7 +133,11 @@ fn render_proof_graph(nodes: &[(String, String)], edges: &[(String, String)]) ->
     // Edges first (so nodes draw on top).
     for (from, to) in edges {
         if let (Some(&(x1, y1)), Some(&(x2, y2))) = (pos.get(from), pos.get(to)) {
-            write!(svg, r#"<line class="edge" x1="{x1}" y1="{y1}" x2="{x2}" y2="{y2}"/>"#).unwrap();
+            write!(
+                svg,
+                r#"<line class="edge" x1="{x1}" y1="{y1}" x2="{x2}" y2="{y2}"/>"#
+            )
+            .unwrap();
         }
     }
 
@@ -167,15 +167,20 @@ fn render_proof_graph(nodes: &[(String, String)], edges: &[(String, String)]) ->
 fn compute_depths(nodes: &[(String, String)], edges: &[(String, String)]) -> Vec<u32> {
     use std::collections::HashMap;
     let n = nodes.len();
-    let id_to_idx: HashMap<&str, usize> =
-        nodes.iter().enumerate().map(|(i, (id, _))| (id.as_str(), i)).collect();
+    let id_to_idx: HashMap<&str, usize> = nodes
+        .iter()
+        .enumerate()
+        .map(|(i, (id, _))| (id.as_str(), i))
+        .collect();
     let mut depth = vec![0u32; n];
     // Iterate to fixpoint — n iterations suffice for a DAG; if cyclic,
     // depths plateau (no infinite loop).
     for _ in 0..n {
         let mut changed = false;
         for (from, to) in edges {
-            if let (Some(&fi), Some(&ti)) = (id_to_idx.get(from.as_str()), id_to_idx.get(to.as_str())) {
+            if let (Some(&fi), Some(&ti)) =
+                (id_to_idx.get(from.as_str()), id_to_idx.get(to.as_str()))
+            {
                 let candidate = depth[fi] + 1;
                 if candidate > depth[ti] {
                     depth[ti] = candidate;
@@ -216,13 +221,22 @@ fn render_bar_chart(title: &str, bars: &[(String, f64)]) -> String {
     )
     .unwrap();
     write!(svg, r#"<style>.bar{{fill:#003a3a}}.title{{font-family:sans-serif;font-size:14px;font-weight:600}}.lbl{{font-family:sans-serif;font-size:10px;text-anchor:middle}}</style>"#).unwrap();
-    write!(svg, r#"<text class="title" x="{gap}" y="20">{}</text>"#, escape_xml(title)).unwrap();
+    write!(
+        svg,
+        r#"<text class="title" x="{gap}" y="20">{}</text>"#,
+        escape_xml(title)
+    )
+    .unwrap();
 
     for (i, (label, h)) in bars.iter().enumerate() {
         let x = gap + i * (bar_w + gap);
         let normalised_h = ((h / max) * chart_h as f64) as i64;
         let y = 30 + chart_h as i64 - normalised_h;
-        write!(svg, r#"<rect class="bar" x="{x}" y="{y}" width="{bar_w}" height="{normalised_h}"/>"#).unwrap();
+        write!(
+            svg,
+            r#"<rect class="bar" x="{x}" y="{y}" width="{bar_w}" height="{normalised_h}"/>"#
+        )
+        .unwrap();
         write!(
             svg,
             r#"<text class="lbl" x="{}" y="{}">{}</text>"#,
@@ -253,9 +267,7 @@ mod tests {
             .enable_all()
             .build()
             .unwrap();
-        rt.block_on(async {
-            GraphicsBackend::new().dispatch(op).await.unwrap()
-        })
+        rt.block_on(async { GraphicsBackend::new().dispatch(op).await.unwrap() })
     }
 
     fn decode_hex(h: &str) -> String {
@@ -273,10 +285,7 @@ mod tests {
             ("b".into(), "Lemma".into()),
             ("c".into(), "Axiom".into()),
         ];
-        let edges = vec![
-            ("a".into(), "b".into()),
-            ("b".into(), "c".into()),
-        ];
+        let edges = vec![("a".into(), "b".into()), ("b".into(), "c".into())];
         match run(CoprocessorOp::GraphicsProofGraphSvg { nodes, edges }) {
             CoprocessorOutcome::Hex(h) => {
                 let svg = decode_hex(&h);
@@ -286,7 +295,7 @@ mod tests {
                 assert!(svg.contains("Lemma"));
                 assert!(svg.contains("Axiom"));
                 assert!(svg.contains("<line"));
-            }
+            },
             _ => panic!(),
         }
     }
@@ -300,7 +309,7 @@ mod tests {
             CoprocessorOutcome::Hex(h) => {
                 let svg = decode_hex(&h);
                 assert!(svg.contains("empty"));
-            }
+            },
             _ => panic!(),
         }
     }
@@ -321,7 +330,7 @@ mod tests {
                 assert!(svg.contains("auto"));
                 assert!(svg.contains("simpl"));
                 assert!(svg.contains("<rect"));
-            }
+            },
             _ => panic!(),
         }
     }
@@ -336,7 +345,7 @@ mod tests {
                 let svg = decode_hex(&h);
                 assert!(svg.contains("&lt;dangerous &amp; &quot;chars&quot;&gt;"));
                 assert!(!svg.contains("<dangerous"));
-            }
+            },
             _ => panic!(),
         }
     }

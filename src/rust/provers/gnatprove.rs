@@ -50,13 +50,8 @@ impl GNATproveBackend {
 
         if let Some(g) = state.goals.first() {
             let post = self.term_to_ada_expr(&g.target);
-            spec.push_str(&format!(
-                "   procedure Goal\n   with Post => {};\n",
-                post
-            ));
-            body.push_str(
-                "   procedure Goal is\n   begin\n      null;\n   end Goal;\n",
-            );
+            spec.push_str(&format!("   procedure Goal\n   with Post => {};\n", post));
+            body.push_str("   procedure Goal is\n   begin\n      null;\n   end Goal;\n");
         }
 
         spec.push_str("end Echidna_Goal;\n");
@@ -78,7 +73,7 @@ impl GNATproveBackend {
                     .collect::<Vec<_>>()
                     .join(", ");
                 format!("{}({})", f, a)
-            }
+            },
             _ => "True".to_string(),
         }
     }
@@ -170,11 +165,7 @@ impl ProverBackend for GNATproveBackend {
     }
     async fn verify_proof(&self, state: &ProofState) -> Result<bool> {
         // If a project file was provided in metadata, use it.
-        if let Some(gpr) = state
-            .metadata
-            .get("project_file")
-            .and_then(|v| v.as_str())
-        {
+        if let Some(gpr) = state.metadata.get("project_file").and_then(|v| v.as_str()) {
             let output = tokio::time::timeout(
                 tokio::time::Duration::from_secs(self.config.timeout + 5),
                 Command::new(&self.config.executable)
@@ -197,15 +188,14 @@ impl ProverBackend for GNATproveBackend {
         }
 
         // Otherwise: stage source + minimal .gpr in a temp dir.
-        let (spec, body) = if let Some(src) =
-            state.metadata.get("spark_source").and_then(|v| v.as_str())
-        {
-            // Raw source — split into spec/body by package boundary if
-            // possible, else treat the whole thing as a body.
-            split_ada_source(src)
-        } else {
-            self.to_input_format(state)?
-        };
+        let (spec, body) =
+            if let Some(src) = state.metadata.get("spark_source").and_then(|v| v.as_str()) {
+                // Raw source — split into spec/body by package boundary if
+                // possible, else treat the whole thing as a body.
+                split_ada_source(src)
+            } else {
+                self.to_input_format(state)?
+            };
 
         let dir = tempfile::tempdir().context("tempdir")?;
         let spec_path = dir.path().join("echidna_goal.ads");
@@ -240,11 +230,7 @@ impl ProverBackend for GNATproveBackend {
         let (spec, body) = self.to_input_format(state)?;
         Ok(format!("-- spec --\n{}\n-- body --\n{}", spec, body))
     }
-    async fn suggest_tactics(
-        &self,
-        _state: &ProofState,
-        limit: usize,
-    ) -> Result<Vec<Tactic>> {
+    async fn suggest_tactics(&self, _state: &ProofState, limit: usize) -> Result<Vec<Tactic>> {
         let suggestions = vec![
             Tactic::Custom {
                 prover: "gnatprove".into(),

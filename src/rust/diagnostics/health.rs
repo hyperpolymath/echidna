@@ -5,9 +5,9 @@ use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 
-use crate::fault_tolerance::CircuitState;
-use super::nesy_validation::NeSyMetrics;
 use super::fallback_monitor::FallbackMonitor;
+use super::nesy_validation::NeSyMetrics;
+use crate::fault_tolerance::CircuitState;
 
 /// Overall system health status
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -28,7 +28,7 @@ pub struct ProverHealth {
     pub last_successful_proof: Option<DateTime<Utc>>,
     pub consecutive_failures: usize,
     pub avg_latency_ms: f64,
-    pub success_rate: f64,  // 0.0 to 1.0
+    pub success_rate: f64, // 0.0 to 1.0
     pub total_invocations: u64,
     pub total_failures: u64,
 }
@@ -70,7 +70,7 @@ pub struct ModelHealth {
     pub fallback_cache_hit_rate: f64,
     pub fallback_cache_size: usize,
     pub fallback_max_latency_ms: f64,
-    pub fallback_sla_met: bool,  // Whether cosine fallback meets SLA thresholds
+    pub fallback_sla_met: bool, // Whether cosine fallback meets SLA thresholds
     /// NeSy agreement metrics: GNN vs symbolic solver validation
     #[serde(skip_serializing_if = "Option::is_none")]
     pub nesy_metrics: Option<NeSyMetrics>,
@@ -86,7 +86,7 @@ pub struct CorpusHealth {
     pub total_premises: usize,
     pub last_updated: Option<DateTime<Utc>>,
     pub size_mb: f64,
-    pub size_change_percent: f64,  // % change since last check
+    pub size_change_percent: f64, // % change since last check
 }
 
 /// System degradation mode based on health
@@ -120,7 +120,7 @@ impl HealthStatus {
                 fallback_cache_hit_rate: 0.0,
                 fallback_cache_size: 0,
                 fallback_max_latency_ms: 0.0,
-                fallback_sla_met: true,  // Start as met until proven otherwise
+                fallback_sla_met: true, // Start as met until proven otherwise
                 nesy_metrics: None,
                 fallback_monitor: Some(FallbackMonitor::new(Default::default())),
             },
@@ -168,7 +168,10 @@ impl HealthStatus {
             .unwrap_or(false);
 
         // Heuristic rules for degradation (priority order: most critical first)
-        if !self.gnn_model_health.is_loaded || !self.gnn_model_health.nDCG_meets_threshold || gnn_agreement_suspect {
+        if !self.gnn_model_health.is_loaded
+            || !self.gnn_model_health.nDCG_meets_threshold
+            || gnn_agreement_suspect
+        {
             // GNN model not available, not meeting quality threshold, or NeSy agreement too low
             self.system_degradation = DegradationMode::CosineOnly;
             self.gnn_model_health.fallback_active = true;
@@ -224,7 +227,7 @@ impl HealthStatus {
         let gnn_health = if self.gnn_model_health.is_loaded {
             self.gnn_model_health.last_validation_nDCG as f64 / 1.0
         } else {
-            0.5  // Fallback is always available
+            0.5 // Fallback is always available
         };
 
         (availability_rate * 0.4 + avg_success_rate * 0.4 + gnn_health * 0.2) * 100.0
@@ -256,7 +259,11 @@ impl HealthStatus {
 
         format!(
             "echidna health: {:.1}% | {} provers | {} failed | {} critical | degradation: {:?}",
-            health_pct, self.prover_health.len(), failed, critical, self.system_degradation
+            health_pct,
+            self.prover_health.len(),
+            failed,
+            critical,
+            self.system_degradation
         )
     }
 }
@@ -286,7 +293,7 @@ mod tests {
         // Add multiple provers (at least 3) to avoid ReadOnly trigger
         for i in 0..5 {
             let name = format!("prover{}", i);
-            let is_available = i < 4;  // 4 available, 1 unavailable
+            let is_available = i < 4; // 4 available, 1 unavailable
             let circuit_state = if i == 0 {
                 CircuitBreakerStateSnapshot::Open
             } else {
@@ -316,7 +323,10 @@ mod tests {
 
         health.compute_degradation_mode();
         // One open circuit breaker should trigger IncreasingFallback
-        assert_eq!(health.system_degradation, DegradationMode::IncreasingFallback);
+        assert_eq!(
+            health.system_degradation,
+            DegradationMode::IncreasingFallback
+        );
     }
 
     #[test]
@@ -351,7 +361,7 @@ mod tests {
         health.gnn_model_health.is_loaded = true;
         health.gnn_model_health.nDCG_meets_threshold = true;
         health.gnn_model_health.fallback_sla_met = true;
-        health.gnn_model_health.fallback_cache_hit_rate = 0.75;  // Warm cache to avoid IncreasingFallback trigger
+        health.gnn_model_health.fallback_cache_hit_rate = 0.75; // Warm cache to avoid IncreasingFallback trigger
         health.system_degradation = DegradationMode::Normal;
 
         // Add at least 3 provers to avoid ReadOnly trigger
@@ -379,7 +389,10 @@ mod tests {
         // Fallback SLA violation → transition to IncreasingFallback
         health.gnn_model_health.fallback_sla_met = false;
         health.compute_degradation_mode();
-        assert_eq!(health.system_degradation, DegradationMode::IncreasingFallback);
+        assert_eq!(
+            health.system_degradation,
+            DegradationMode::IncreasingFallback
+        );
 
         // If already degraded and SLA still violated → escalate
         health.compute_degradation_mode();

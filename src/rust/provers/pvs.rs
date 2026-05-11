@@ -162,9 +162,9 @@ pub enum PVSType {
         binding: PVSBinding,
         range: Box<PVSType>,
     },
-    /// Set type: set[T]
+    /// Set type: set\[T\]
     SetOf(Box<PVSType>),
-    /// Sequence type: sequence[T]
+    /// Sequence type: sequence\[T\]
     Sequence(Box<PVSType>),
 }
 
@@ -2697,10 +2697,9 @@ impl ProverBackend for PVSBackend {
             "source_path".to_string(),
             serde_json::Value::String(path.to_string_lossy().into_owned()),
         );
-        state.metadata.insert(
-            "pvs_source".to_string(),
-            serde_json::Value::String(content),
-        );
+        state
+            .metadata
+            .insert("pvs_source".to_string(), serde_json::Value::String(content));
         Ok(state)
     }
 

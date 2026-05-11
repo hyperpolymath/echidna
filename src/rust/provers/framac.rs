@@ -739,15 +739,12 @@ impl ProverBackend for FramaCBackend {
             return Ok(true);
         }
 
-        let acsl_source = if let Some(src) = state
-            .metadata
-            .get("framac_source")
-            .and_then(|v| v.as_str())
-        {
-            src.to_string()
-        } else {
-            self.to_acsl_source(state)?
-        };
+        let acsl_source =
+            if let Some(src) = state.metadata.get("framac_source").and_then(|v| v.as_str()) {
+                src.to_string()
+            } else {
+                self.to_acsl_source(state)?
+            };
 
         // Write ACSL-annotated C source to a temporary file
         let tmp_dir =

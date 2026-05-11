@@ -69,7 +69,7 @@ impl StainlessBackend {
                     .collect::<Vec<_>>()
                     .join(", ");
                 format!("{}({})", f, a)
-            }
+            },
             _ => "true".to_string(),
         }
     }
@@ -152,11 +152,7 @@ impl ProverBackend for StainlessBackend {
         ))
     }
     async fn verify_proof(&self, state: &ProofState) -> Result<bool> {
-        if let Some(path) = state
-            .metadata
-            .get("source_path")
-            .and_then(|v| v.as_str())
-        {
+        if let Some(path) = state.metadata.get("source_path").and_then(|v| v.as_str()) {
             let output = tokio::time::timeout(
                 tokio::time::Duration::from_secs(self.config.timeout + 30),
                 Command::new(&self.config.executable)
@@ -174,9 +170,7 @@ impl ProverBackend for StainlessBackend {
             ));
         }
 
-        let input = if let Some(src) =
-            state.metadata.get("scala_source").and_then(|v| v.as_str())
-        {
+        let input = if let Some(src) = state.metadata.get("scala_source").and_then(|v| v.as_str()) {
             src.to_string()
         } else {
             self.to_input_format(state)?
@@ -208,11 +202,7 @@ impl ProverBackend for StainlessBackend {
     async fn export(&self, state: &ProofState) -> Result<String> {
         self.to_input_format(state)
     }
-    async fn suggest_tactics(
-        &self,
-        _state: &ProofState,
-        limit: usize,
-    ) -> Result<Vec<Tactic>> {
+    async fn suggest_tactics(&self, _state: &ProofState, limit: usize) -> Result<Vec<Tactic>> {
         let suggestions = vec![
             Tactic::Custom {
                 prover: "stainless".into(),
@@ -263,7 +253,9 @@ mod tests {
 
     #[test]
     fn parse_result_invalid() {
-        assert!(!b().parse_result("VC invalid: counter-example found\n").unwrap());
+        assert!(!b()
+            .parse_result("VC invalid: counter-example found\n")
+            .unwrap());
     }
 
     #[test]

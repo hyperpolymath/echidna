@@ -67,11 +67,7 @@ fn fixture(name: &str) -> PathBuf {
 /// absent.  Any *error* from the pipeline fails the test — the pipeline
 /// should produce `Ok(true/false)`, never propagate an error for a
 /// well-formed input/invalid-proof distinction.
-async fn verify_fixture(
-    kind: ProverKind,
-    exe: &str,
-    fixture_name: &str,
-) -> Option<bool> {
+async fn verify_fixture(kind: ProverKind, exe: &str, fixture_name: &str) -> Option<bool> {
     let backend = try_live_backend(kind, exe)?;
     let path = fixture(fixture_name);
     let state = backend
@@ -88,12 +84,7 @@ async fn verify_fixture(
 /// One positive + one negative assertion in the shape every MVP prover
 /// test uses below.  Skip (returning without panicking) when the binary
 /// isn't on PATH.
-async fn check_pair(
-    kind: ProverKind,
-    exe: &str,
-    good: &str,
-    bad: &str,
-) {
+async fn check_pair(kind: ProverKind, exe: &str, good: &str, bad: &str) {
     let Some(ok) = verify_fixture(kind, exe, good).await else {
         eprintln!("SKIP: {exe} not on PATH ({good}/{bad})");
         return;
@@ -129,7 +120,13 @@ async fn verify_roundtrip_z3() {
 
 #[tokio::test(flavor = "multi_thread")]
 async fn verify_roundtrip_cvc5() {
-    check_pair(ProverKind::CVC5, "cvc5", "tautology.smt2", "contradiction.smt2").await;
+    check_pair(
+        ProverKind::CVC5,
+        "cvc5",
+        "tautology.smt2",
+        "contradiction.smt2",
+    )
+    .await;
 }
 
 // ============================================================================
@@ -156,7 +153,13 @@ async fn verify_roundtrip_metamath() {
     // non-trivial database to construct.  Positive-only for now — the
     // CLI shells out to `metamath; verify proof *` and only accepts the
     // "All proofs verified" banner.
-    check_pair(ProverKind::Metamath, "metamath", "trivial.mm", "__no_bad_fixture__").await;
+    check_pair(
+        ProverKind::Metamath,
+        "metamath",
+        "trivial.mm",
+        "__no_bad_fixture__",
+    )
+    .await;
 }
 
 // ============================================================================

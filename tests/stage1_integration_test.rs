@@ -18,8 +18,8 @@ mod stage1_integration {
 
     use echidna::dispatch::{DispatchConfig, DispatchResult, ProverDispatcher};
     use echidna::provers::{ProverConfig, ProverFactory, ProverKind, ProverOutcome};
-    use echidna::verification::DangerLevel;
     use echidna::verification::confidence::TrustLevel;
+    use echidna::verification::DangerLevel;
 
     // ─────────────────────────────────────────────────────────────────────────
     // Test 1 — Lean backend parse (no live prover required for construction)
@@ -50,13 +50,13 @@ mod stage1_integration {
                     "✓ Lean parse_string Ok: {} goal(s) in returned ProofState",
                     state.goals.len()
                 );
-            }
+            },
             Err(e) => {
                 // A stub backend may return Err when no real executable is
                 // present; that's acceptable — the key invariant is that
                 // ProverFactory::create and parse_string are callable.
                 println!("✓ Lean parse_string Err (no executable): {e}");
-            }
+            },
         }
 
         Ok(())

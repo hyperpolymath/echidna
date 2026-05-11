@@ -1,10 +1,10 @@
 // SPDX-License-Identifier: PMPL-1.0-or-later
 // GNN model training integration with health monitoring
 
+use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
 use std::fs;
 use std::path::Path;
-use chrono::{DateTime, Utc};
 
 /// Metrics exported from GNN training pipeline.
 //
@@ -31,7 +31,7 @@ pub fn load_training_metrics(metrics_path: &Path) -> Option<GnnTrainingMetrics> 
             Err(e) => {
                 eprintln!("Failed to parse training metrics: {}", e);
                 None
-            }
+            },
         },
         Err(_) => None,
     }
@@ -46,15 +46,15 @@ pub fn update_health_with_metrics(
     health.gnn_model_health.is_loaded = true;
     health.gnn_model_health.last_validation_nDCG = metrics.nDCG;
     health.gnn_model_health.last_validation_MRR = metrics.MRR;
-    
+
     // Mark as meeting threshold if nDCG >= 0.65
     health.gnn_model_health.nDCG_meets_threshold = metrics.nDCG >= 0.65;
-    
+
     // Update last_trained timestamp
     if let Ok(ts) = DateTime::parse_from_rfc3339(&metrics.timestamp) {
         health.gnn_model_health.last_trained = Some(ts.with_timezone(&Utc));
     }
-    
+
     // Recompute degradation with updated GNN metrics
     health.compute_degradation_mode();
 }

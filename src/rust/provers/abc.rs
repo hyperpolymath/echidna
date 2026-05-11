@@ -638,15 +638,14 @@ impl ProverBackend for AbcBackend {
 
         if let Some(source) = state.metadata.get("abc_source").and_then(|v| v.as_str()) {
             let trimmed = source.trim();
-            let (ext, read_cmd_base) =
-                if trimmed.starts_with("aag") || trimmed.starts_with("aig") {
-                    (".aig", "read_aiger")
-                } else if trimmed.starts_with(".model") || trimmed.starts_with(".inputs") {
-                    (".blif", "read_blif")
-                } else {
-                    // Inline script — just execute it directly.
-                    ("", "")
-                };
+            let (ext, read_cmd_base) = if trimmed.starts_with("aag") || trimmed.starts_with("aig") {
+                (".aig", "read_aiger")
+            } else if trimmed.starts_with(".model") || trimmed.starts_with(".inputs") {
+                (".blif", "read_blif")
+            } else {
+                // Inline script — just execute it directly.
+                ("", "")
+            };
             let tmp_dir =
                 tempfile::tempdir().context("Failed to create temporary directory for ABC")?;
             if ext.is_empty() {

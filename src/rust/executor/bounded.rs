@@ -15,9 +15,9 @@
 // and then use `out.stdout` / `out.stderr` as `Vec<u8>` as before.
 
 use anyhow::{anyhow, Result};
+use std::process::{ExitStatus, Stdio};
 use tokio::io::AsyncReadExt;
 use tokio::process::Command;
-use std::process::{ExitStatus, Stdio};
 
 /// Default per-invocation output cap: 8 MiB.
 /// Covers the largest realistic prover proof transcript while bounding heap growth.
@@ -44,8 +44,14 @@ pub async fn bounded_command_output(cmd: &mut Command, max_bytes: usize) -> Resu
 
     let mut child = cmd.spawn().map_err(|e| anyhow!("spawn failed: {e}"))?;
 
-    let mut stdout_pipe = child.stdout.take().ok_or_else(|| anyhow!("no stdout pipe"))?;
-    let mut stderr_pipe = child.stderr.take().ok_or_else(|| anyhow!("no stderr pipe"))?;
+    let mut stdout_pipe = child
+        .stdout
+        .take()
+        .ok_or_else(|| anyhow!("no stdout pipe"))?;
+    let mut stderr_pipe = child
+        .stderr
+        .take()
+        .ok_or_else(|| anyhow!("no stderr pipe"))?;
 
     let mut stdout_buf = Vec::with_capacity(max_bytes.min(64 * 1024));
     let mut stderr_buf = Vec::with_capacity(max_bytes.min(64 * 1024));
@@ -97,7 +103,10 @@ pub async fn bounded_command_output(cmd: &mut Command, max_bytes: usize) -> Resu
         }
     }
 
-    let status = child.wait().await.map_err(|e| anyhow!("wait failed: {e}"))?;
+    let status = child
+        .wait()
+        .await
+        .map_err(|e| anyhow!("wait failed: {e}"))?;
 
     let truncated = stdout_buf.len() >= max_bytes || stderr_buf.len() >= max_bytes;
     if truncated {
@@ -112,5 +121,10 @@ pub async fn bounded_command_output(cmd: &mut Command, max_bytes: usize) -> Resu
         }
     }
 
-    Ok(BoundedOutput { status, stdout: stdout_buf, stderr: stderr_buf, truncated })
+    Ok(BoundedOutput {
+        status,
+        stdout: stdout_buf,
+        stderr: stderr_buf,
+        truncated,
+    })
 }

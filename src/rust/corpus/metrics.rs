@@ -112,10 +112,7 @@ impl EntryMetrics {
             self.hazard_assert_total as i32 as f64,
         );
         m.insert("hazard_trustme".into(), self.hazard_trustme as i32 as f64);
-        m.insert(
-            "hazard_other_count".into(),
-            self.hazard_other_count as f64,
-        );
+        m.insert("hazard_other_count".into(), self.hazard_other_count as f64);
         m.insert("k_elim_risk".into(), self.k_elim_risk as i32 as f64);
         m
     }
@@ -136,11 +133,7 @@ impl Corpus {
 }
 
 #[allow(clippy::field_reassign_with_default)]
-fn metrics_for(
-    corpus: &Corpus,
-    idx: usize,
-    depth_cache: &mut Vec<Option<u32>>,
-) -> EntryMetrics {
+fn metrics_for(corpus: &Corpus, idx: usize, depth_cache: &mut Vec<Option<u32>>) -> EntryMetrics {
     let e = &corpus.entries[idx];
     let proof = e.proof.clone().unwrap_or_default();
     let mut m = EntryMetrics::default();
@@ -255,8 +248,7 @@ fn looks_k_elim(body: &str) -> bool {
 
 fn head_symbol(statement: &str) -> String {
     let s = statement.trim_start_matches(|c: char| {
-        c.is_whitespace()
-            || matches!(c, '(' | '{' | '[' | '∀' | 'Π')
+        c.is_whitespace() || matches!(c, '(' | '{' | '[' | '∀' | 'Π')
     });
     let tok: String = s
         .chars()
@@ -399,6 +391,9 @@ mod tests {
         c.entries[2].proof = Some("wf x with refl = x".into());
         c.reindex();
         let metrics = c.compute_metrics();
-        assert!(metrics[2].k_elim_risk, "refl-pattern should flag K-elim risk");
+        assert!(
+            metrics[2].k_elim_risk,
+            "refl-pattern should flag K-elim risk"
+        );
     }
 }

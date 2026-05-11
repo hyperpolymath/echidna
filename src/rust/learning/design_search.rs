@@ -146,7 +146,9 @@ pub fn anneal<P: DesignProblem>(problem: &P, config: &AnnealConfig) -> AnnealRes
         let mut best_e = current_e.clone();
         let mut temp = config.initial_temp;
 
-        all_seen.entry(current.clone()).or_insert_with(|| current_e.clone());
+        all_seen
+            .entry(current.clone())
+            .or_insert_with(|| current_e.clone());
 
         for _ in 0..config.max_iterations {
             total_steps += 1;
@@ -158,7 +160,9 @@ pub fn anneal<P: DesignProblem>(problem: &P, config: &AnnealConfig) -> AnnealRes
             let cand = neighbours[pick].clone();
             let cand_e = problem.energy(&cand);
 
-            all_seen.entry(cand.clone()).or_insert_with(|| cand_e.clone());
+            all_seen
+                .entry(cand.clone())
+                .or_insert_with(|| cand_e.clone());
 
             let accept = match lex_cmp(&cand_e, &current_e) {
                 std::cmp::Ordering::Less => true,
@@ -167,7 +171,7 @@ pub fn anneal<P: DesignProblem>(problem: &P, config: &AnnealConfig) -> AnnealRes
                     let de = delta_energy(&current_e, &cand_e);
                     let p: f64 = (-de / temp).exp();
                     rng.gen::<f64>() < p
-                }
+                },
             };
 
             if accept {
@@ -336,10 +340,8 @@ pub mod brouwer {
                 if s.ctors.contains(c) && s.ctors.len() > 1 {
                     let mut nc = s.ctors.clone();
                     nc.remove(c);
-                    let has_succ_path =
-                        nc.contains(&Ctor::SucRight) || nc.contains(&Ctor::CongSuc);
-                    let has_refl =
-                        nc.contains(&Ctor::Refl) || s.style == Style::Recursive;
+                    let has_succ_path = nc.contains(&Ctor::SucRight) || nc.contains(&Ctor::CongSuc);
+                    let has_refl = nc.contains(&Ctor::Refl) || s.style == Style::Recursive;
                     if has_succ_path && has_refl {
                         out.push(LeqState {
                             style: s.style,
@@ -388,11 +390,7 @@ pub mod brouwer {
                 })
                 .collect();
             ctor_list.sort();
-            format!(
-                "{:?}-style {{ {} }}",
-                s.style,
-                ctor_list.join(", ")
-            )
+            format!("{:?}-style {{ {} }}", s.style, ctor_list.join(", "))
         }
     }
 
@@ -544,11 +542,7 @@ pub mod brouwer {
             let mut s = LeqState::phase1_1();
             s.ctors.insert(Ctor::CongSuc);
             let e = p.energy(&s);
-            assert_eq!(
-                e[0], 1,
-                "CongSuc alone leaves ⊕-mono blocked; got {:?}",
-                e
-            );
+            assert_eq!(e[0], 1, "CongSuc alone leaves ⊕-mono blocked; got {:?}", e);
         }
 
         #[test]

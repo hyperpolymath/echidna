@@ -616,27 +616,26 @@ impl ProverBackend for CVC5Backend {
         // Prefer the original SMT-LIB source when parse_file / parse_string
         // stashed it.  Skipping the Term IR round-trip is the only way to
         // keep non-trivial CVC5 inputs intact.
-        let commands = if let Some(source) =
-            state.metadata.get("cvc5_source").and_then(|v| v.as_str())
-        {
-            source.to_string()
-        } else {
-            if state.goals.is_empty() {
-                return Ok(true);
-            }
-            let mut s = String::new();
-            s.push_str("(set-logic ALL)\n");
-            for var in &state.context.variables {
-                let ty = self.term_to_smtlib(&var.ty)?;
-                s.push_str(&format!("(declare-const {} {})\n", var.name, ty));
-            }
-            for goal in &state.goals {
-                let smtlib = self.term_to_smtlib(&goal.target)?;
-                s.push_str(&format!("(assert (not {}))\n", smtlib));
-            }
-            s.push_str("(check-sat)\n");
-            s
-        };
+        let commands =
+            if let Some(source) = state.metadata.get("cvc5_source").and_then(|v| v.as_str()) {
+                source.to_string()
+            } else {
+                if state.goals.is_empty() {
+                    return Ok(true);
+                }
+                let mut s = String::new();
+                s.push_str("(set-logic ALL)\n");
+                for var in &state.context.variables {
+                    let ty = self.term_to_smtlib(&var.ty)?;
+                    s.push_str(&format!("(declare-const {} {})\n", var.name, ty));
+                }
+                for goal in &state.goals {
+                    let smtlib = self.term_to_smtlib(&goal.target)?;
+                    s.push_str(&format!("(assert (not {}))\n", smtlib));
+                }
+                s.push_str("(check-sat)\n");
+                s
+            };
 
         let temp_file =
             std::env::temp_dir().join(format!("echidna_cvc5_verify_{}.smt2", Uuid::new_v4()));

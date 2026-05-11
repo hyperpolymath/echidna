@@ -11,8 +11,8 @@
 
 #![allow(dead_code)]
 
-use anyhow::Result;
 use crate::core::ProofState;
+use anyhow::Result;
 
 /// Convert a `ProofState` into a TPTP fof-formatted input.
 ///

@@ -235,11 +235,7 @@ impl ProverBackend for ElkBackend {
         Ok(Self::to_ofn(state))
     }
 
-    async fn suggest_tactics(
-        &self,
-        _state: &ProofState,
-        _limit: usize,
-    ) -> Result<Vec<Tactic>> {
+    async fn suggest_tactics(&self, _state: &ProofState, _limit: usize) -> Result<Vec<Tactic>> {
         Ok(vec![])
     }
 
@@ -270,7 +266,10 @@ mod tests {
     #[test]
     fn test_elk_to_ofn_emits_ontology_wrapper() {
         let mut state = ProofState::default();
-        state.context.axioms.push("SubClassOf(:Cat :Animal)".to_string());
+        state
+            .context
+            .axioms
+            .push("SubClassOf(:Cat :Animal)".to_string());
         state.goals.push(Goal {
             id: "goal_0".to_string(),
             target: Term::Const("SubClassOf(:Tabby :Animal)".to_string()),

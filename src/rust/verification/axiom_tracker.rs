@@ -389,11 +389,12 @@ impl AxiomTracker {
     ) -> Result<AxiomPolicy, crate::ffi::spark_axiom::SparkError> {
         let rust_policy = self.enforce_policy(usages);
 
-        crate::ffi::spark_axiom::crosscheck_enforce_policy(usages, &rust_policy)
-            .unwrap_or_else(|e| {
+        crate::ffi::spark_axiom::crosscheck_enforce_policy(usages, &rust_policy).unwrap_or_else(
+            |e| {
                 // Divergence is a critical soundness bug — abort loudly.
                 panic!("SPARK/Rust axiom-policy divergence (soundness violation): {e}");
-            });
+            },
+        );
 
         Ok(rust_policy)
     }

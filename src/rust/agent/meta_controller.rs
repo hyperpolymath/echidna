@@ -188,22 +188,37 @@ impl MetaController {
         // ── Number theory / arithmetic ───────────────────────────────────
         r.insert(
             "arithmetic.factorisation".into(),
-            vec![hint_template(CoprocessorKind::Math, CoprocessorOp::BigIntFactor { n: String::new() })],
+            vec![hint_template(
+                CoprocessorKind::Math,
+                CoprocessorOp::BigIntFactor { n: String::new() },
+            )],
         );
         r.insert(
             "arithmetic.primality".into(),
-            vec![hint_template(CoprocessorKind::Math, CoprocessorOp::BigIntIsProbablePrime { n: String::new() })],
+            vec![hint_template(
+                CoprocessorKind::Math,
+                CoprocessorOp::BigIntIsProbablePrime { n: String::new() },
+            )],
         );
         r.insert(
             "arithmetic.modular_inverse".into(),
             vec![hint_template(
                 CoprocessorKind::Math,
-                CoprocessorOp::BigIntModInverse { a: String::new(), modulus: String::new() },
+                CoprocessorOp::BigIntModInverse {
+                    a: String::new(),
+                    modulus: String::new(),
+                },
             )],
         );
         r.insert(
             "arithmetic.gcd".into(),
-            vec![hint_template(CoprocessorKind::Math, CoprocessorOp::BigIntGcd { a: String::new(), b: String::new() })],
+            vec![hint_template(
+                CoprocessorKind::Math,
+                CoprocessorOp::BigIntGcd {
+                    a: String::new(),
+                    b: String::new(),
+                },
+            )],
         );
         r.insert(
             "arithmetic.modexp".into(),
@@ -222,43 +237,73 @@ impl MetaController {
             "algebra.polynomial.gcd".into(),
             vec![hint_template(
                 CoprocessorKind::FlintMath,
-                CoprocessorOp::FlintPolyGcd { f: String::new(), g: String::new() },
+                CoprocessorOp::FlintPolyGcd {
+                    f: String::new(),
+                    g: String::new(),
+                },
             )],
         );
         r.insert(
             "algebra.polynomial.product".into(),
             vec![hint_template(
                 CoprocessorKind::FlintMath,
-                CoprocessorOp::FlintPolyMul { f: String::new(), g: String::new() },
+                CoprocessorOp::FlintPolyMul {
+                    f: String::new(),
+                    g: String::new(),
+                },
             )],
         );
 
         // ── Linear algebra (Vector + Tensor) ─────────────────────────────
         r.insert(
             "linear_algebra.dot".into(),
-            vec![hint_template(CoprocessorKind::Vector, CoprocessorOp::VectorDot { a: vec![], b: vec![] })],
+            vec![hint_template(
+                CoprocessorKind::Vector,
+                CoprocessorOp::VectorDot {
+                    a: vec![],
+                    b: vec![],
+                },
+            )],
         );
         r.insert(
             "linear_algebra.norm".into(),
-            vec![hint_template(CoprocessorKind::Vector, CoprocessorOp::VectorNorm { a: vec![] })],
+            vec![hint_template(
+                CoprocessorKind::Vector,
+                CoprocessorOp::VectorNorm { a: vec![] },
+            )],
         );
         r.insert(
             "linear_algebra.matmul".into(),
-            vec![hint_template(CoprocessorKind::Tensor, CoprocessorOp::TensorMatMul { a: vec![], b: vec![] })],
+            vec![hint_template(
+                CoprocessorKind::Tensor,
+                CoprocessorOp::TensorMatMul {
+                    a: vec![],
+                    b: vec![],
+                },
+            )],
         );
         r.insert(
             "linear_algebra.determinant".into(),
-            vec![hint_template(CoprocessorKind::Tensor, CoprocessorOp::TensorDeterminant { a: vec![] })],
+            vec![hint_template(
+                CoprocessorKind::Tensor,
+                CoprocessorOp::TensorDeterminant { a: vec![] },
+            )],
         );
 
         // ── Crypto ───────────────────────────────────────────────────────
         r.insert(
             "crypto.hash.sha256".into(),
-            vec![hint_template(CoprocessorKind::Crypto, CoprocessorOp::CryptoSha256 { bytes: vec![] })],
+            vec![hint_template(
+                CoprocessorKind::Crypto,
+                CoprocessorOp::CryptoSha256 { bytes: vec![] },
+            )],
         );
         r.insert(
             "crypto.hash.blake3".into(),
-            vec![hint_template(CoprocessorKind::Crypto, CoprocessorOp::CryptoBlake3 { bytes: vec![] })],
+            vec![hint_template(
+                CoprocessorKind::Crypto,
+                CoprocessorOp::CryptoBlake3 { bytes: vec![] },
+            )],
         );
         r.insert(
             "crypto.signature.ed25519_verify".into(),
@@ -289,28 +334,48 @@ impl MetaController {
             "physics.energy.harmonic".into(),
             vec![hint_template(
                 CoprocessorKind::Physics,
-                CoprocessorOp::PhysicsHarmonicEnergy { x: 0.0, p: 0.0, omega: 0.0 },
+                CoprocessorOp::PhysicsHarmonicEnergy {
+                    x: 0.0,
+                    p: 0.0,
+                    omega: 0.0,
+                },
             )],
         );
 
         // ── Signal processing ────────────────────────────────────────────
         r.insert(
             "signal.fft".into(),
-            vec![hint_template(CoprocessorKind::Dsp, CoprocessorOp::DspFft { samples: vec![] })],
+            vec![hint_template(
+                CoprocessorKind::Dsp,
+                CoprocessorOp::DspFft { samples: vec![] },
+            )],
         );
         r.insert(
             "signal.window.hann".into(),
-            vec![hint_template(CoprocessorKind::Dsp, CoprocessorOp::DspHannWindow { samples: vec![] })],
+            vec![hint_template(
+                CoprocessorKind::Dsp,
+                CoprocessorOp::DspHannWindow { samples: vec![] },
+            )],
         );
 
         // ── IO / artefact handling ───────────────────────────────────────
         r.insert(
             "io.file.hash".into(),
-            vec![hint_template(CoprocessorKind::Io, CoprocessorOp::IoSha256OfFile { path: String::new() })],
+            vec![hint_template(
+                CoprocessorKind::Io,
+                CoprocessorOp::IoSha256OfFile {
+                    path: String::new(),
+                },
+            )],
         );
         r.insert(
             "io.file.line_count".into(),
-            vec![hint_template(CoprocessorKind::Io, CoprocessorOp::IoLineCount { path: String::new() })],
+            vec![hint_template(
+                CoprocessorKind::Io,
+                CoprocessorOp::IoLineCount {
+                    path: String::new(),
+                },
+            )],
         );
 
         // ── Visualisation ────────────────────────────────────────────────
@@ -318,7 +383,10 @@ impl MetaController {
             "visualisation.proof_graph".into(),
             vec![hint_template(
                 CoprocessorKind::Graphics,
-                CoprocessorOp::GraphicsProofGraphSvg { nodes: vec![], edges: vec![] },
+                CoprocessorOp::GraphicsProofGraphSvg {
+                    nodes: vec![],
+                    edges: vec![],
+                },
             )],
         );
 
@@ -327,7 +395,9 @@ impl MetaController {
             "audio.completion_chime".into(),
             vec![hint_template(
                 CoprocessorKind::Audio,
-                CoprocessorOp::AudioCompletionChime { sample_rate: 44_100 },
+                CoprocessorOp::AudioCompletionChime {
+                    sample_rate: 44_100,
+                },
             )],
         );
 
@@ -356,7 +426,10 @@ impl MetaController {
             "arithmetic.multiplicative_order".into(),
             vec![hint_template(
                 CoprocessorKind::PariGp,
-                CoprocessorOp::PariGpZnorder { a: String::new(), n: String::new() },
+                CoprocessorOp::PariGpZnorder {
+                    a: String::new(),
+                    n: String::new(),
+                },
             )],
         );
         r.insert(
@@ -372,21 +445,28 @@ impl MetaController {
             "algebra.symbolic.simplify".into(),
             vec![hint_template(
                 CoprocessorKind::Maxima,
-                CoprocessorOp::MaximaSimplify { expr: String::new() },
+                CoprocessorOp::MaximaSimplify {
+                    expr: String::new(),
+                },
             )],
         );
         r.insert(
             "algebra.symbolic.factor".into(),
             vec![hint_template(
                 CoprocessorKind::Maxima,
-                CoprocessorOp::MaximaFactor { expr: String::new() },
+                CoprocessorOp::MaximaFactor {
+                    expr: String::new(),
+                },
             )],
         );
         r.insert(
             "algebra.symbolic.diff".into(),
             vec![hint_template(
                 CoprocessorKind::Maxima,
-                CoprocessorOp::MaximaDiff { expr: String::new(), var: String::new() },
+                CoprocessorOp::MaximaDiff {
+                    expr: String::new(),
+                    var: String::new(),
+                },
             )],
         );
 
@@ -454,21 +534,30 @@ impl MetaController {
             "algebra.geometry.groebner".into(),
             vec![hint_template(
                 CoprocessorKind::Macaulay2,
-                CoprocessorOp::Macaulay2GroebnerBasis { vars: vec![], polys: vec![] },
+                CoprocessorOp::Macaulay2GroebnerBasis {
+                    vars: vec![],
+                    polys: vec![],
+                },
             )],
         );
         r.insert(
             "algebra.geometry.dimension".into(),
             vec![hint_template(
                 CoprocessorKind::Macaulay2,
-                CoprocessorOp::Macaulay2Dimension { vars: vec![], polys: vec![] },
+                CoprocessorOp::Macaulay2Dimension {
+                    vars: vec![],
+                    polys: vec![],
+                },
             )],
         );
         r.insert(
             "algebra.geometry.degree".into(),
             vec![hint_template(
                 CoprocessorKind::Macaulay2,
-                CoprocessorOp::Macaulay2Degree { vars: vec![], polys: vec![] },
+                CoprocessorOp::Macaulay2Degree {
+                    vars: vec![],
+                    polys: vec![],
+                },
             )],
         );
 
@@ -490,10 +579,7 @@ impl MetaController {
             prover,
             coprocessor_preconditions: preconditions,
             estimated_timeout_ms,
-            rationale: format!(
-                "preferred_prover={:?}, no Pareto candidates",
-                prover
-            ),
+            rationale: format!("preferred_prover={:?}, no Pareto candidates", prover),
         }
     }
 
@@ -558,7 +644,9 @@ impl MetaController {
         drop(stats_guard);
 
         let preconditions = self.preconditions_for_goal(goal).await;
-        let estimated_timeout_ms = self.estimate_timeout(chosen, goal, default_timeout_ms).await;
+        let estimated_timeout_ms = self
+            .estimate_timeout(chosen, goal, default_timeout_ms)
+            .await;
 
         Plan {
             prover: chosen,
@@ -580,10 +668,7 @@ impl MetaController {
     /// outcome per precondition, in the same order.  Bridge / op failures
     /// are captured as `CoprocessorOutcome::Failure` so callers see them
     /// without losing the rest of the batch.
-    pub async fn run_preconditions(
-        &self,
-        plan: &Plan,
-    ) -> Result<Vec<CoprocessorOutcome>> {
+    pub async fn run_preconditions(&self, plan: &Plan) -> Result<Vec<CoprocessorOutcome>> {
         let mut out = Vec::with_capacity(plan.coprocessor_preconditions.len());
         for pre in &plan.coprocessor_preconditions {
             match self.coprocessors.get(&pre.kind) {
@@ -651,7 +736,9 @@ impl MetaController {
         goal: &AgenticGoal,
         default_ms: u64,
     ) -> u64 {
-        let Some(stats) = &self.stats else { return default_ms };
+        let Some(stats) = &self.stats else {
+            return default_ms;
+        };
         let s = stats.read().await;
         s.estimate_timeout(prover, &primary_domain(goal), default_ms)
     }
@@ -744,7 +831,9 @@ mod tests {
             let g = dummy_goal(vec![aspect]);
             let plan = mc.plan(&g).await;
             assert!(
-                plan.coprocessor_preconditions.iter().any(|p| p.kind == expected_kind),
+                plan.coprocessor_preconditions
+                    .iter()
+                    .any(|p| p.kind == expected_kind),
                 "aspect {aspect} → {:?} not found in preconditions {:?}",
                 expected_kind,
                 plan.coprocessor_preconditions
@@ -763,14 +852,19 @@ mod tests {
         assert!(candidates.contains(&plan.prover), "chose {:?}", plan.prover);
         assert!(plan.rationale.contains("pareto"));
         // Should still pick up the Math precondition for the aspect.
-        assert!(plan.coprocessor_preconditions.iter().any(|p| p.kind == CoprocessorKind::Math));
+        assert!(plan
+            .coprocessor_preconditions
+            .iter()
+            .any(|p| p.kind == CoprocessorKind::Math));
     }
 
     #[tokio::test]
     async fn plan_with_pareto_falls_back_when_no_candidates() {
         let mc = MetaController::new();
         let g = dummy_goal(vec![]);
-        let plan = mc.plan_with_pareto(&g, &[], 30_000, TrustLevel::Level2).await;
+        let plan = mc
+            .plan_with_pareto(&g, &[], 30_000, TrustLevel::Level2)
+            .await;
         assert_eq!(plan.prover, ProverKind::Z3);
     }
 
@@ -780,7 +874,8 @@ mod tests {
         let g = dummy_goal(vec!["arithmetic.factorisation"]);
         let plan = mc.plan(&g).await;
         // Should not panic / error even though stats is None.
-        mc.record_outcome(&plan, &g, PlanOutcome::Success, 1234).await;
+        mc.record_outcome(&plan, &g, PlanOutcome::Success, 1234)
+            .await;
     }
 
     #[tokio::test]
@@ -790,8 +885,10 @@ mod tests {
         let g = dummy_goal(vec!["arithmetic.factorisation"]);
         let plan = mc.plan(&g).await;
 
-        mc.record_outcome(&plan, &g, PlanOutcome::Success, 500).await;
-        mc.record_outcome(&plan, &g, PlanOutcome::Success, 700).await;
+        mc.record_outcome(&plan, &g, PlanOutcome::Success, 500)
+            .await;
+        mc.record_outcome(&plan, &g, PlanOutcome::Success, 700)
+            .await;
         mc.record_outcome(&plan, &g, PlanOutcome::Failure, 0).await;
 
         let s = stats.read().await;
@@ -839,7 +936,10 @@ mod tests {
                 plan.coprocessor_preconditions
             );
         } else {
-            assert!(plan.coprocessor_preconditions.iter().any(|p| p.kind == CoprocessorKind::FlintMath));
+            assert!(plan
+                .coprocessor_preconditions
+                .iter()
+                .any(|p| p.kind == CoprocessorKind::FlintMath));
         }
     }
 }

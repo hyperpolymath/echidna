@@ -11,14 +11,14 @@ pub mod anomaly_detection;
 pub mod aspect;
 pub mod coprocessor; // Math/Physics/DSP/FPGA/Tensor/Vector/Crypto/Graphics/Audio/IO compute (Phase 0: Math)
 pub mod corpus; // Project-corpus indexer (named decls + dependency DAG; first adapter: Agda)
-// `core` and `types` live in the `echidna-core` crate so vcl-ut and other
-// proof-exchange clients can consume the canonical Term / Goal / ProofState /
-// Tactic / TypeInfo types without depending on the full echidna binary.
-// Re-exported as modules so existing `crate::core::*` and `crate::types::*`
-// paths throughout this crate keep resolving unchanged.
+                // `core` and `types` live in the `echidna-core` crate so vcl-ut and other
+                // proof-exchange clients can consume the canonical Term / Goal / ProofState /
+                // Tactic / TypeInfo types without depending on the full echidna binary.
+                // Re-exported as modules so existing `crate::core::*` and `crate::types::*`
+                // paths throughout this crate keep resolving unchanged.
 pub use echidna_core::{core, types};
-pub mod disciplines; // Canonical TypeDiscipline taxonomy (katagoria transition)
 pub mod diagnostics; // Health monitoring and diagnostics
+pub mod disciplines; // Canonical TypeDiscipline taxonomy (katagoria transition)
 pub mod dispatch;
 pub mod exchange;
 pub mod executor;

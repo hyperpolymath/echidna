@@ -219,11 +219,7 @@ impl ProverBackend for CryptoVerifBackend {
         Ok(Self::to_ocv(state))
     }
 
-    async fn suggest_tactics(
-        &self,
-        _state: &ProofState,
-        _limit: usize,
-    ) -> Result<Vec<Tactic>> {
+    async fn suggest_tactics(&self, _state: &ProofState, _limit: usize) -> Result<Vec<Tactic>> {
         Ok(vec![])
     }
 
@@ -273,8 +269,10 @@ mod tests {
 
     #[test]
     fn test_cryptoverif_parse_result_could_not_prove() {
-        assert!(!CryptoVerifBackend::parse_result("RESULT Could not prove confidentiality")
-            .expect("parse"));
+        assert!(
+            !CryptoVerifBackend::parse_result("RESULT Could not prove confidentiality")
+                .expect("parse")
+        );
     }
 
     #[test]

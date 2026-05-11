@@ -134,15 +134,12 @@ impl ProverBackend for Leo3Backend {
     }
 
     async fn verify_proof(&self, state: &ProofState) -> Result<bool> {
-        let tptp_code = if let Some(src) = state
-            .metadata
-            .get("leo3_source")
-            .and_then(|v| v.as_str())
-        {
-            src.to_string()
-        } else {
-            self.to_tptp(state)?
-        };
+        let tptp_code =
+            if let Some(src) = state.metadata.get("leo3_source").and_then(|v| v.as_str()) {
+                src.to_string()
+            } else {
+                self.to_tptp(state)?
+            };
 
         let mut child = Command::new(&self.config.executable)
             .arg("--input")

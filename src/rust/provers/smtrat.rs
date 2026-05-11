@@ -88,11 +88,7 @@ impl ProverBackend for SmtRatBackend {
         })
     }
 
-    async fn apply_tactic(
-        &self,
-        _state: &ProofState,
-        _tactic: &Tactic,
-    ) -> Result<TacticResult> {
+    async fn apply_tactic(&self, _state: &ProofState, _tactic: &Tactic) -> Result<TacticResult> {
         Ok(TacticResult::Error(
             "Tactic application not supported for SMT-RAT".to_string(),
         ))

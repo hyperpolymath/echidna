@@ -32,8 +32,8 @@ use crate::core::{
 use crate::provers::{ProverBackend, ProverConfig, ProverKind};
 
 pub use typed_wasm::{
-    analyse, generate_proof_obligations, parse_twasm, parse_wasm_type, Analysis, Field,
-    LevelProof, SafetyLevel, Schema, TwasmInstruction, TypeInfo, WasmType,
+    analyse, generate_proof_obligations, parse_twasm, parse_wasm_type, Analysis, Field, LevelProof,
+    SafetyLevel, Schema, TwasmInstruction, TypeInfo, WasmType,
 };
 
 // ---------------------------------------------------------------------------
@@ -568,42 +568,36 @@ region.get Foo[0] .nonexistent
 
     #[tokio::test]
     async fn test_kind_reflects_dispatched_variant() {
-        let backend = TypedWasmBackend::for_kind(
-            ProverKind::LinearTypeChecker,
-            ProverConfig::default(),
-        );
+        let backend =
+            TypedWasmBackend::for_kind(ProverKind::LinearTypeChecker, ProverConfig::default());
         assert_eq!(backend.kind(), ProverKind::LinearTypeChecker);
         assert_eq!(backend.type_info.discipline, "linear");
     }
 
     #[tokio::test]
     async fn test_linear_discipline_filters_bounds() {
-        let backend = TypedWasmBackend::for_kind(
-            ProverKind::LinearTypeChecker,
-            ProverConfig::default(),
-        );
+        let backend =
+            TypedWasmBackend::for_kind(ProverKind::LinearTypeChecker, ProverConfig::default());
         let state = backend.parse_string(VALID_TWASM).await.unwrap();
         // Linear discipline doesn't include BoundsProof — so no goal IDs
         // mentioning BoundsProof should be present.
-        let has_bounds = state
-            .goals
-            .iter()
-            .any(|g| g.id.contains("BoundsProof"));
-        assert!(!has_bounds, "linear discipline should not emit BoundsProof goals");
+        let has_bounds = state.goals.iter().any(|g| g.id.contains("BoundsProof"));
+        assert!(
+            !has_bounds,
+            "linear discipline should not emit BoundsProof goals"
+        );
     }
 
     #[tokio::test]
     async fn test_refinement_discipline_includes_bounds() {
-        let backend = TypedWasmBackend::for_kind(
-            ProverKind::RefinementTypeChecker,
-            ProverConfig::default(),
-        );
+        let backend =
+            TypedWasmBackend::for_kind(ProverKind::RefinementTypeChecker, ProverConfig::default());
         let state = backend.parse_string(VALID_TWASM).await.unwrap();
-        let has_bounds = state
-            .goals
-            .iter()
-            .any(|g| g.id.contains("BoundsProof"));
-        assert!(has_bounds, "refinement discipline should emit BoundsProof goals");
+        let has_bounds = state.goals.iter().any(|g| g.id.contains("BoundsProof"));
+        assert!(
+            has_bounds,
+            "refinement discipline should emit BoundsProof goals"
+        );
     }
 
     #[test]

@@ -79,10 +79,7 @@ impl CorpusMonitor {
             Ok(entries) => {
                 for entry in entries.flatten() {
                     let path = entry.path();
-                    let filename = path
-                        .file_name()
-                        .and_then(|n| n.to_str())
-                        .unwrap_or("");
+                    let filename = path.file_name().and_then(|n| n.to_str()).unwrap_or("");
 
                     if filename.starts_with("premises_") && filename.ends_with(".jsonl") {
                         if let Ok(metadata) = fs::metadata(&path) {
@@ -98,10 +95,10 @@ impl CorpusMonitor {
                         }
                     }
                 }
-            }
+            },
             Err(e) => {
                 return Err(format!("Failed to read corpus directory: {}", e));
-            }
+            },
         }
 
         // Calculate size change percentage
@@ -185,11 +182,7 @@ impl CorpusMonitor {
 
     /// Get corpus size in MB
     pub fn size_mb(&self) -> f64 {
-        self.current
-            .lock()
-            .ok()
-            .map(|m| m.size_mb)
-            .unwrap_or(0.0)
+        self.current.lock().ok().map(|m| m.size_mb).unwrap_or(0.0)
     }
 
     /// Get size change percentage since last check
@@ -264,7 +257,7 @@ mod tests {
                     assert_eq!(metrics.total_proofs, 0);
                     assert_eq!(metrics.total_premises, 0);
                     assert_eq!(metrics.size_mb, 0.0);
-                }
+                },
                 Err(e) => panic!("Failed to scan empty directory: {}", e),
             }
         }

@@ -182,11 +182,7 @@ impl ProverBackend for IProverBackend {
         self.to_tptp(state)
     }
 
-    async fn suggest_tactics(
-        &self,
-        _state: &ProofState,
-        _limit: usize,
-    ) -> Result<Vec<Tactic>> {
+    async fn suggest_tactics(&self, _state: &ProofState, _limit: usize) -> Result<Vec<Tactic>> {
         Ok(vec![])
     }
 
@@ -250,5 +246,4 @@ mod tests {
         let result = backend.parse_result(output).expect("parse_result failed");
         assert!(!result);
     }
-
 }

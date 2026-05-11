@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: PMPL-1.0-or-later
 // Integration test: fallback_monitor wired to health status tracking
 
-use echidna::core::{Context, Goal, ProofState, Theorem, Term};
+use echidna::core::{Context, Goal, ProofState, Term, Theorem};
 use echidna::diagnostics::HealthStatus;
 use echidna::gnn::{FallbackMonitor, FallbackSlaConfig, GnnGuidedSearch};
 
@@ -10,9 +10,9 @@ async fn test_fallback_monitor_records_latency() {
     let monitor = FallbackMonitor::new();
 
     // Simulate cosine similarity fallback operations
-    monitor.record_fallback(100, true);   // Cache hit
-    monitor.record_fallback(150, true);   // Cache hit
-    monitor.record_fallback(200, false);  // Cache miss
+    monitor.record_fallback(100, true); // Cache hit
+    monitor.record_fallback(150, true); // Cache hit
+    monitor.record_fallback(200, false); // Cache miss
 
     let metrics = monitor.metrics();
     assert_eq!(metrics.total_invocations, 3);
@@ -79,14 +79,20 @@ async fn test_guided_search_integrates_fallback_monitor() {
     let ranked = search.rank_premises(&state, &premises).await;
 
     // Verify search produced results
-    assert!(!ranked.is_empty(), "Guided search should produce ranked premises");
+    assert!(
+        !ranked.is_empty(),
+        "Guided search should produce ranked premises"
+    );
 
     // Verify fallback monitor recorded activity
     let monitor = search.fallback_monitor();
     let metrics = monitor.metrics();
     assert!(metrics.total_invocations > 0, "Fallback should be invoked");
     // Verify cache size is tracked (may be 0 if embeddings are not cached yet)
-    assert!(metrics.cache_size <= 10000, "Cache size should be reasonable");
+    assert!(
+        metrics.cache_size <= 10000,
+        "Cache size should be reasonable"
+    );
 }
 
 #[tokio::test]
@@ -99,10 +105,10 @@ async fn test_fallback_metrics_update_health_status() {
     // Simulate fallback monitor recording operations
     let monitor = FallbackMonitor::new();
     for _ in 0..8 {
-        monitor.record_fallback(100, true);   // 80% hit rate
+        monitor.record_fallback(100, true); // 80% hit rate
     }
     for _ in 0..2 {
-        monitor.record_fallback(150, false);  // 20% miss rate
+        monitor.record_fallback(150, false); // 20% miss rate
     }
     monitor.set_cache_size(256);
 
@@ -147,7 +153,7 @@ async fn test_fallback_sla_violation_triggers_degradation() {
 
     // Simulate high-latency fallback operations
     for _ in 0..5 {
-        monitor.record_fallback(300, false);  // Exceeds max_latency_ms
+        monitor.record_fallback(300, false); // Exceeds max_latency_ms
     }
 
     let metrics = monitor.metrics();
@@ -177,8 +183,7 @@ fn test_fallback_metrics_serialization() {
     assert!(json.contains("100"));
 
     // Verify round-trip
-    let deserialized: FallbackMetrics =
-        serde_json::from_str(&json).expect("Should deserialize");
+    let deserialized: FallbackMetrics = serde_json::from_str(&json).expect("Should deserialize");
     assert_eq!(deserialized.total_invocations, 100);
     assert_eq!(deserialized.cache_hits, 75);
 }

@@ -236,11 +236,7 @@ impl ProverBackend for MetTeL2Backend {
         self.to_mettel(state)
     }
 
-    async fn suggest_tactics(
-        &self,
-        _state: &ProofState,
-        _limit: usize,
-    ) -> Result<Vec<Tactic>> {
+    async fn suggest_tactics(&self, _state: &ProofState, _limit: usize) -> Result<Vec<Tactic>> {
         Ok(vec![])
     }
 
@@ -346,7 +342,10 @@ mod tests {
         let config = ProverConfig::default();
         let backend = MetTeL2Backend::new(config);
         let input = "[](p -> q).\n[]p.\n[]q.\n";
-        let state = backend.parse_string(input).await.expect("parse_string failed");
+        let state = backend
+            .parse_string(input)
+            .await
+            .expect("parse_string failed");
         assert_eq!(state.context.axioms.len(), 2);
         assert_eq!(state.goals.len(), 1);
     }

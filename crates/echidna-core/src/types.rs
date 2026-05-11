@@ -176,17 +176,32 @@ pub struct Universe {
 impl Universe {
     /// Predicative cumulative `Type level`.
     pub fn ty(level: usize) -> Self {
-        Self { level, cumulative: true, impredicative: false, homotopy_level: None }
+        Self {
+            level,
+            cumulative: true,
+            impredicative: false,
+            homotopy_level: None,
+        }
     }
 
     /// Impredicative proposition universe (`Prop`).
     pub fn prop() -> Self {
-        Self { level: 0, cumulative: false, impredicative: true, homotopy_level: Some(1) }
+        Self {
+            level: 0,
+            cumulative: false,
+            impredicative: true,
+            homotopy_level: Some(1),
+        }
     }
 
     /// HoTT n-type universe at the given homotopy level.
     pub fn hott(level: usize, n: u8) -> Self {
-        Self { level, cumulative: true, impredicative: false, homotopy_level: Some(n) }
+        Self {
+            level,
+            cumulative: true,
+            impredicative: false,
+            homotopy_level: Some(n),
+        }
     }
 }
 
@@ -456,7 +471,12 @@ mod tests {
     #[test]
     fn hypothesis_with_type_info_roundtrips() {
         use crate::core::Hypothesis;
-        let h = Hypothesis { name: "h".into(), ty: Term::Const("Nat".to_string()), body: None, type_info: Some(TypeInfo::new().with_multiplicity(Multiplicity::Linear)) };
+        let h = Hypothesis {
+            name: "h".into(),
+            ty: Term::Const("Nat".to_string()),
+            body: None,
+            type_info: Some(TypeInfo::new().with_multiplicity(Multiplicity::Linear)),
+        };
         let json = serde_json::to_string(&h).expect("serialize");
         assert!(json.contains("Linear"));
         let back: Hypothesis = serde_json::from_str(&json).expect("deserialize");

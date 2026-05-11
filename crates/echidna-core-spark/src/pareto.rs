@@ -331,9 +331,9 @@ pub fn weighted_rank(
     let score = |idx: usize| -> f64 {
         let c = &candidates[idx];
         trust_w * (c.objectives.trust_level.value() as f64)
-            - time_w  * (c.objectives.proof_time_ms as f64)
-            - mem_w   * (c.objectives.memory_bytes  as f64)
-            - steps_w * (c.objectives.proof_steps   as f64)
+            - time_w * (c.objectives.proof_time_ms as f64)
+            - mem_w * (c.objectives.memory_bytes as f64)
+            - steps_w * (c.objectives.proof_steps as f64)
     };
     let mut indices: Vec<usize> = (0..candidates.len()).collect();
     // Descending score — higher is better.
@@ -388,10 +388,7 @@ pub mod impl_invariants {
                 for &m in &[0u64, 1024, 1 << 20] {
                     for &s in &[0u64, 1, 100] {
                         let o = obj(t, lvl, m, s);
-                        assert!(
-                            !dominates(&o, &o),
-                            "dominates is not irreflexive at {o:?}"
-                        );
+                        assert!(!dominates(&o, &o), "dominates is not irreflexive at {o:?}");
                     }
                 }
             }
@@ -494,12 +491,9 @@ pub mod impl_invariants {
                 }
             }
             assert_eq!(
-                cs[i].is_pareto_optimal,
-                !dominated,
+                cs[i].is_pareto_optimal, !dominated,
                 "completeness violation at {}: optimal_flag={} but actually-dominated={}",
-                cs[i].id,
-                cs[i].is_pareto_optimal,
-                dominated
+                cs[i].id, cs[i].is_pareto_optimal, dominated
             );
         }
     }
@@ -518,8 +512,8 @@ pub mod impl_invariants {
         let n = cs.len();
         for i in 0..n {
             if !cs[i].is_pareto_optimal {
-                let has_dominator = (0..n)
-                    .any(|j| j != i && dominates(&cs[j].objectives, &cs[i].objectives));
+                let has_dominator =
+                    (0..n).any(|j| j != i && dominates(&cs[j].objectives, &cs[i].objectives));
                 assert!(
                     has_dominator,
                     "dichotomy violation at {}: not optimal but no dominator",
@@ -535,7 +529,7 @@ pub mod impl_invariants {
     fn po_p7a_best_time_on_frontier() {
         use TrustLevel::*;
         let mut cs = vec![
-            cand("fast", 10, Level1, 1_000_000, 1000),       // best time
+            cand("fast", 10, Level1, 1_000_000, 1000), // best time
             cand("trusted", 5000, Level5, 100_000, 50),
             cand("balanced", 1000, Level3, 200_000, 100),
         ];
@@ -553,7 +547,7 @@ pub mod impl_invariants {
         use TrustLevel::*;
         let mut cs = vec![
             cand("fast", 10, Level1, 1_000_000, 1000),
-            cand("trusted", 5000, Level5, 100_000, 50),     // best trust
+            cand("trusted", 5000, Level5, 100_000, 50), // best trust
             cand("balanced", 1000, Level3, 200_000, 100),
         ];
         let _frontier = compute(&mut cs);
@@ -569,7 +563,7 @@ pub mod impl_invariants {
         use TrustLevel::*;
         let mut cs = vec![
             cand("fast", 10, Level1, 1_000_000, 1000),
-            cand("lean_mem", 5000, Level3, 1, 50),           // best memory
+            cand("lean_mem", 5000, Level3, 1, 50), // best memory
             cand("balanced", 1000, Level3, 200_000, 100),
         ];
         let _frontier = compute(&mut cs);
@@ -585,7 +579,7 @@ pub mod impl_invariants {
         use TrustLevel::*;
         let mut cs = vec![
             cand("verbose", 10, Level1, 1_000_000, 1000),
-            cand("terse", 5000, Level3, 500_000, 1),         // best steps
+            cand("terse", 5000, Level3, 500_000, 1), // best steps
             cand("balanced", 1000, Level3, 200_000, 100),
         ];
         let _frontier = compute(&mut cs);
@@ -602,9 +596,9 @@ pub mod impl_invariants {
         use TrustLevel::*;
         let cs = vec![
             cand("a", 100, Level2, 100_000, 10),
-            cand("b", 200, Level5, 50_000,  5),
+            cand("b", 200, Level5, 50_000, 5),
             cand("c", 300, Level3, 200_000, 50),
-            cand("d", 50,  Level1, 10_000,  1),
+            cand("d", 50, Level1, 10_000, 1),
         ];
         let ranked = weighted_rank(&cs, 1.0, 0.001, 0.0, 0.0);
         assert_eq!(ranked.len(), cs.len(), "length must equal input length");

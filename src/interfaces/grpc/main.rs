@@ -47,10 +47,9 @@ impl ProverBackend for FfiProverBackend {
             "source_path".to_string(),
             serde_json::Value::String(path.to_string_lossy().into_owned()),
         );
-        state.metadata.insert(
-            "ffi_source".to_string(),
-            serde_json::Value::String(content),
-        );
+        state
+            .metadata
+            .insert("ffi_source".to_string(), serde_json::Value::String(content));
         Ok(state)
     }
 

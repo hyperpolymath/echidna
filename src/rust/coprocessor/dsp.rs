@@ -20,8 +20,7 @@ use rustfft::{num_complex::Complex, FftPlanner};
 
 use super::trust::CoprocessorTrustTier;
 use super::types::{
-    CoprocessorCapabilities, CoprocessorHealth, CoprocessorKind, CoprocessorOp,
-    CoprocessorOutcome,
+    CoprocessorCapabilities, CoprocessorHealth, CoprocessorKind, CoprocessorOp, CoprocessorOutcome,
 };
 use super::Coprocessor;
 
@@ -85,10 +84,9 @@ fn dispatch_sync(op: CoprocessorOp) -> Result<CoprocessorOutcome> {
             let mut planner = FftPlanner::<f64>::new();
             let fft = planner.plan_fft_forward(buf.len());
             fft.process(&mut buf);
-            let interleaved: Vec<f64> =
-                buf.into_iter().flat_map(|c| [c.re, c.im]).collect();
+            let interleaved: Vec<f64> = buf.into_iter().flat_map(|c| [c.re, c.im]).collect();
             CoprocessorOutcome::FloatVec(interleaved)
-        }
+        },
         CoprocessorOp::DspIfft { spectrum } => {
             if spectrum.is_empty() {
                 return Ok(CoprocessorOutcome::FloatVec(vec![]));
@@ -110,13 +108,13 @@ fn dispatch_sync(op: CoprocessorOp) -> Result<CoprocessorOutcome> {
             let scale = 1.0 / (n as f64);
             let real: Vec<f64> = buf.into_iter().map(|c| c.re * scale).collect();
             CoprocessorOutcome::FloatVec(real)
-        }
+        },
         CoprocessorOp::DspHannWindow { samples } => {
             CoprocessorOutcome::FloatVec(apply_window(&samples, hann))
-        }
+        },
         CoprocessorOp::DspHammingWindow { samples } => {
             CoprocessorOutcome::FloatVec(apply_window(&samples, hamming))
-        }
+        },
         other => CoprocessorOutcome::Failure(format!(
             "Dsp backend does not support {:?}",
             std::mem::discriminant(&other)
@@ -129,7 +127,11 @@ fn apply_window(samples: &[f64], w: fn(usize, usize) -> f64) -> Vec<f64> {
     if n < 2 {
         return samples.to_vec();
     }
-    samples.iter().enumerate().map(|(i, &s)| s * w(i, n)).collect()
+    samples
+        .iter()
+        .enumerate()
+        .map(|(i, &s)| s * w(i, n))
+        .collect()
 }
 
 fn hann(i: usize, n: usize) -> f64 {
@@ -151,9 +153,7 @@ mod tests {
             .enable_all()
             .build()
             .unwrap();
-        rt.block_on(async {
-            DspBackend::new().dispatch(op).await.unwrap()
-        })
+        rt.block_on(async { DspBackend::new().dispatch(op).await.unwrap() })
     }
 
     #[test]
@@ -170,7 +170,7 @@ mod tests {
                     assert!(v[2 * i].abs() < 1e-9, "bin {i} re = {}", v[2 * i]);
                     assert!(v[2 * i + 1].abs() < 1e-9, "bin {i} im = {}", v[2 * i + 1]);
                 }
-            }
+            },
             _ => panic!(),
         }
     }
@@ -178,7 +178,9 @@ mod tests {
     #[test]
     fn fft_then_ifft_round_trip_to_input() {
         let samples: Vec<f64> = (0..8).map(|i| (i as f64).sin()).collect();
-        let spec = match run(CoprocessorOp::DspFft { samples: samples.clone() }) {
+        let spec = match run(CoprocessorOp::DspFft {
+            samples: samples.clone(),
+        }) {
             CoprocessorOutcome::FloatVec(v) => v,
             _ => panic!(),
         };
@@ -188,15 +190,17 @@ mod tests {
                 for (a, b) in samples.iter().zip(reconstructed.iter()) {
                     assert!((a - b).abs() < 1e-9, "{a} vs {b}");
                 }
-            }
+            },
             _ => panic!(),
         }
     }
 
     #[test]
     fn ifft_odd_length_returns_failure() {
-        match run(CoprocessorOp::DspIfft { spectrum: vec![1.0, 2.0, 3.0] }) {
-            CoprocessorOutcome::Failure(_) => {}
+        match run(CoprocessorOp::DspIfft {
+            spectrum: vec![1.0, 2.0, 3.0],
+        }) {
+            CoprocessorOutcome::Failure(_) => {},
             _ => panic!("expected Failure on odd-length spectrum"),
         }
     }
@@ -211,7 +215,7 @@ mod tests {
                 assert!(v[n - 1].abs() < 1e-12);
                 // Mid-point is 1.0 only for odd N; for even N, near 1.
                 assert!(v[n / 2] > 0.9);
-            }
+            },
             _ => panic!(),
         }
     }
@@ -224,7 +228,7 @@ mod tests {
         match run(CoprocessorOp::DspHammingWindow { samples }) {
             CoprocessorOutcome::FloatVec(v) => {
                 assert!((v[0] - 0.08).abs() < 1e-9, "v[0] = {}", v[0]);
-            }
+            },
             _ => panic!(),
         }
     }

@@ -175,8 +175,7 @@ impl Corpus {
         self.entries
             .iter()
             .filter(|e| {
-                e.name.to_lowercase().contains(&q)
-                    || e.qualified.to_lowercase().contains(&q)
+                e.name.to_lowercase().contains(&q) || e.qualified.to_lowercase().contains(&q)
             })
             .collect()
     }
@@ -215,19 +214,17 @@ impl Corpus {
             std::fs::create_dir_all(parent)
                 .with_context(|| format!("create_dir_all {}", parent.display()))?;
         }
-        let s = serde_json::to_string_pretty(self)
-            .context("serialise corpus")?;
-        std::fs::write(path, s)
-            .with_context(|| format!("write {}", path.display()))?;
+        let s = serde_json::to_string_pretty(self).context("serialise corpus")?;
+        std::fs::write(path, s).with_context(|| format!("write {}", path.display()))?;
         Ok(())
     }
 
     /// Load from JSON.
     pub fn load_json(path: &Path) -> Result<Self> {
-        let s = std::fs::read_to_string(path)
-            .with_context(|| format!("read {}", path.display()))?;
-        let c: Corpus = serde_json::from_str(&s)
-            .with_context(|| format!("parse {}", path.display()))?;
+        let s =
+            std::fs::read_to_string(path).with_context(|| format!("read {}", path.display()))?;
+        let c: Corpus =
+            serde_json::from_str(&s).with_context(|| format!("parse {}", path.display()))?;
         Ok(c)
     }
 
@@ -311,7 +308,7 @@ impl Corpus {
                 DeclKind::Data => stats.data += 1,
                 DeclKind::Record => stats.records += 1,
                 DeclKind::Postulate => stats.postulates += 1,
-                DeclKind::Module => {}
+                DeclKind::Module => {},
             }
             if e.axiom_usage.any() {
                 stats.with_hazards += 1;

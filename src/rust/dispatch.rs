@@ -16,7 +16,9 @@ use std::sync::{Arc, Mutex};
 use std::time::Instant;
 use tracing::{info, warn};
 
-use crate::diagnostics::{HealthStatus, DegradationMode, CircuitBreakerStateSnapshot, ProverHealth};
+use crate::diagnostics::{
+    CircuitBreakerStateSnapshot, DegradationMode, HealthStatus, ProverHealth,
+};
 use crate::integrity::solver_integrity::{IntegrityChecker, IntegrityStatus};
 use crate::llm::LlmAdvisor;
 use crate::provers::outcome::{classify_anyhow_error, ProverOutcome};
@@ -204,12 +206,12 @@ impl VeriSimAdvisor {
     /// highest historical success rate.  Returns `fallback` when VeriSimDB
     /// is unreachable, has no data for the class, or no recognised prover
     /// name appears in the response.
-    pub async fn suggest_prover(
-        &self,
-        obligation_class: &str,
-        fallback: ProverKind,
-    ) -> ProverKind {
-        match self.client.query_prover_success_by_class(obligation_class).await {
+    pub async fn suggest_prover(&self, obligation_class: &str, fallback: ProverKind) -> ProverKind {
+        match self
+            .client
+            .query_prover_success_by_class(obligation_class)
+            .await
+        {
             Ok(rates) if !rates.is_empty() => {
                 let best = best_prover_or_fallback(rates, fallback);
                 info!(
@@ -353,7 +355,9 @@ impl ProverDispatcher {
         fallback_prover: ProverKind,
     ) -> Result<DispatchResult> {
         let prover = if let Some(ref advisor) = self.verisim_advisor {
-            advisor.suggest_prover(obligation_class, fallback_prover).await
+            advisor
+                .suggest_prover(obligation_class, fallback_prover)
+                .await
         } else {
             fallback_prover
         };
@@ -361,7 +365,8 @@ impl ProverDispatcher {
         // attributed to the right obligation_class — otherwise the very
         // statistics this dispatch consults would be polluted with
         // "unknown" rows.
-        self.verify_proof_with_class(prover, content, Some(obligation_class)).await
+        self.verify_proof_with_class(prover, content, Some(obligation_class))
+            .await
     }
 
     /// Get current health status snapshot
@@ -372,7 +377,12 @@ impl ProverDispatcher {
     }
 
     /// Update prover health metrics after a proof attempt
-    pub fn record_prover_result(&self, prover_kind: ProverKind, outcome: &ProverOutcome, latency_ms: u64) {
+    pub fn record_prover_result(
+        &self,
+        prover_kind: ProverKind,
+        outcome: &ProverOutcome,
+        latency_ms: u64,
+    ) {
         let mut health = self.health_status.lock().unwrap();
         let prover_name = format!("{:?}", prover_kind);
 
@@ -400,19 +410,21 @@ impl ProverDispatcher {
                 entry.last_successful_proof = Some(Utc::now());
                 entry.is_available = true;
                 entry.success_rate = (entry.success_rate * 0.9) + (1.0 * 0.1);
-            }
-            ProverOutcome::Timeout { .. } | ProverOutcome::ProverError { .. } | ProverOutcome::SystemError { .. } => {
+            },
+            ProverOutcome::Timeout { .. }
+            | ProverOutcome::ProverError { .. }
+            | ProverOutcome::SystemError { .. } => {
                 entry.consecutive_failures += 1;
                 entry.total_failures += 1;
                 if entry.consecutive_failures >= 3 {
                     entry.is_available = false;
                 }
                 entry.success_rate *= 0.9;
-            }
+            },
             _ => {
                 entry.total_failures += 1;
                 entry.success_rate = (entry.success_rate * 0.95) + (0.0 * 0.05);
-            }
+            },
         }
 
         entry.success_rate = entry.success_rate.clamp(0.0, 1.0);
@@ -483,7 +495,8 @@ impl ProverDispatcher {
         prover_kind: ProverKind,
         content: &str,
     ) -> Result<DispatchResult> {
-        self.verify_proof_with_class(prover_kind, content, None).await
+        self.verify_proof_with_class(prover_kind, content, None)
+            .await
     }
 
     /// Inner dispatch implementation that takes an optional `obligation_class`
@@ -494,8 +507,9 @@ impl ProverDispatcher {
         &self,
         prover_kind: ProverKind,
         content: &str,
-        #[cfg_attr(not(feature = "verisim"), allow(unused_variables))]
-        obligation_class: Option<&str>,
+        #[cfg_attr(not(feature = "verisim"), allow(unused_variables))] obligation_class: Option<
+            &str,
+        >,
     ) -> Result<DispatchResult> {
         let start = Instant::now();
 
@@ -728,8 +742,8 @@ impl ProverDispatcher {
         match degradation {
             DegradationMode::ReadOnly | DegradationMode::Minimal => {
                 return Ok(primary_result);
-            }
-            _ => {}
+            },
+            _ => {},
         }
 
         // Filter cross-checkers by health status and degradation mode
@@ -1300,8 +1314,7 @@ mod tests {
         };
         let outcome = ProverOutcome::Proved { elapsed_ms: 42 };
 
-        let attempt =
-            build_proof_attempt(ProverKind::Z3, Some(&goal), &outcome, 42, Some("smoke"));
+        let attempt = build_proof_attempt(ProverKind::Z3, Some(&goal), &outcome, 42, Some("smoke"));
 
         assert_eq!(attempt.outcome, "success");
         assert_eq!(attempt.confidence, 1.0);

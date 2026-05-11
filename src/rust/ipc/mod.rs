@@ -54,7 +54,9 @@ impl Transport {
     /// `ECHIDNA_IPC_HOST` + `ECHIDNA_IPC_PORT` (TCP).
     pub fn from_env() -> Self {
         if let Ok(sock) = std::env::var("ECHIDNA_IPC_SOCK") {
-            return Transport::Uds { path: PathBuf::from(sock) };
+            return Transport::Uds {
+                path: PathBuf::from(sock),
+            };
         }
         // TCP only when ECHIDNA_IPC_HOST is explicitly set; otherwise UDS is primary.
         if let Ok(host) = std::env::var("ECHIDNA_IPC_HOST") {
@@ -64,7 +66,9 @@ impl Transport {
                 .unwrap_or(DEFAULT_TCP_PORT);
             return Transport::Tcp { host, port };
         }
-        Transport::Uds { path: PathBuf::from(DEFAULT_SOCK_PATH) }
+        Transport::Uds {
+            path: PathBuf::from(DEFAULT_SOCK_PATH),
+        }
     }
 
     /// Whether the transport endpoint appears reachable (best-effort probe).
@@ -75,9 +79,9 @@ impl Transport {
                 use std::net::TcpStream;
                 use std::time::Duration;
                 TcpStream::connect_timeout(
-                    &format!("{}:{}", host, port).parse().unwrap_or_else(|_| {
-                        "127.0.0.1:9090".parse().unwrap()
-                    }),
+                    &format!("{}:{}", host, port)
+                        .parse()
+                        .unwrap_or_else(|_| "127.0.0.1:9090".parse().unwrap()),
                     Duration::from_millis(200),
                 )
                 .is_ok()
@@ -99,7 +103,9 @@ pub struct IpcClient {
 impl IpcClient {
     /// Create a client using the default transport (from env).
     pub fn new() -> Self {
-        IpcClient { transport: Transport::from_env() }
+        IpcClient {
+            transport: Transport::from_env(),
+        }
     }
 
     /// Create a client with an explicit transport.
@@ -116,10 +122,19 @@ impl IpcClient {
     pub fn log_config(&self) {
         match &self.transport {
             Transport::Uds { path } => {
-                info!("IPC transport: UDS at {:?} (available={})", path, self.is_available());
+                info!(
+                    "IPC transport: UDS at {:?} (available={})",
+                    path,
+                    self.is_available()
+                );
             },
             Transport::Tcp { host, port } => {
-                info!("IPC transport: TCP {}:{} (available={})", host, port, self.is_available());
+                info!(
+                    "IPC transport: TCP {}:{} (available={})",
+                    host,
+                    port,
+                    self.is_available()
+                );
             },
         }
     }
@@ -158,7 +173,9 @@ mod tests {
 
     #[test]
     fn test_transport_uds_probe_missing_sock() {
-        let t = Transport::Uds { path: PathBuf::from("/tmp/echidna_no_such_sock_xyz.sock") };
+        let t = Transport::Uds {
+            path: PathBuf::from("/tmp/echidna_no_such_sock_xyz.sock"),
+        };
         assert!(!t.probe());
     }
 
@@ -170,6 +187,9 @@ mod tests {
         });
         let result = rt.block_on(client.gnn_rank("{}"));
         assert!(result.is_err());
-        assert!(result.unwrap_err().to_string().contains("L1 wave 1 pending"));
+        assert!(result
+            .unwrap_err()
+            .to_string()
+            .contains("L1 wave 1 pending"));
     }
 }

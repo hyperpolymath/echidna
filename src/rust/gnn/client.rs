@@ -247,13 +247,13 @@ impl GnnClient {
 
     /// Rank premises with goal-aspect hints for weight-guided scoring.
     ///
-    /// Identical to [`rank_premises`] but populates the `domain_hints` field
+    /// Identical to `rank_premises` but populates the `domain_hints` field
     /// in the request so Julia can apply accumulated training weights from
     /// `PROVER_DOMAIN_WEIGHTS` (updated by `POST /training/update`).  This
     /// activates the closed-loop feedback path: prior proof outcomes on the
     /// same domain influence current premise scoring.
     ///
-    /// Pass an empty slice for behaviour identical to [`rank_premises`].
+    /// Pass an empty slice for behaviour identical to `rank_premises`.
     pub async fn rank_premises_with_aspects(
         &self,
         graph: &ProofGraph,
@@ -455,7 +455,10 @@ mod tests {
         assert!(payload.domain_hints.is_empty());
 
         // With aspects: the same payload but with domain_hints populated
-        let aspects = vec!["arithmetic.factorisation".to_string(), "crypto.hash.sha256".to_string()];
+        let aspects = vec![
+            "arithmetic.factorisation".to_string(),
+            "crypto.hash.sha256".to_string(),
+        ];
         let payload_with = client.build_request_payload(&graph, &aspects);
         assert_eq!(payload_with.domain_hints, aspects);
     }

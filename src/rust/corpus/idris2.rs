@@ -43,8 +43,8 @@ pub fn ingest(root: &Path) -> Result<Corpus> {
     let mut all_names: HashSet<String> = HashSet::new();
     for path in &files {
         let rel = path.strip_prefix(root).unwrap_or(path).to_path_buf();
-        let raw = std::fs::read_to_string(path)
-            .with_context(|| format!("read {}", path.display()))?;
+        let raw =
+            std::fs::read_to_string(path).with_context(|| format!("read {}", path.display()))?;
         let parsed = parse_idris_file(&raw);
 
         let module_idx = corpus.modules.len();
@@ -113,8 +113,7 @@ fn walk_idr(dir: &Path, out: &mut Vec<PathBuf>) -> Result<()> {
     if !dir.exists() {
         return Ok(());
     }
-    let read = std::fs::read_dir(dir)
-        .with_context(|| format!("read_dir {}", dir.display()))?;
+    let read = std::fs::read_dir(dir).with_context(|| format!("read_dir {}", dir.display()))?;
     for entry in read {
         let entry = entry?;
         let p = entry.path();
@@ -332,7 +331,10 @@ fn parse_idris_file(raw: &str) -> ParsedFile {
                     if !name.is_empty() {
                         let mut stmt = String::from(line.trim());
                         let mut j = i + 1;
-                        while j < lines.len() && !lines[j].trim().is_empty() && column_of(lines[j]) > 0 {
+                        while j < lines.len()
+                            && !lines[j].trim().is_empty()
+                            && column_of(lines[j]) > 0
+                        {
                             stmt.push(' ');
                             stmt.push_str(lines[j].trim());
                             j += 1;
@@ -536,8 +538,8 @@ fn split_typesig(line: &str) -> Option<(String, String)> {
                     return None;
                 }
                 return Some((lhs.to_string(), rhs.trim().to_string()));
-            }
-            _ => {}
+            },
+            _ => {},
         }
         i += 1;
     }
@@ -559,8 +561,7 @@ fn normalise_ws(s: &str) -> String {
 
 fn tokenise_idents(s: &str) -> Vec<&str> {
     s.split(|c: char| {
-        c.is_whitespace()
-            || matches!(c, '(' | ')' | '[' | ']' | '{' | '}' | ',' | ';' | '=')
+        c.is_whitespace() || matches!(c, '(' | ')' | '[' | ']' | '{' | '}' | ',' | ';' | '=')
     })
     .filter(|t| !t.is_empty())
     .collect()

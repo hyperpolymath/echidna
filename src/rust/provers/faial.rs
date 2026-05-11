@@ -78,7 +78,11 @@ impl FaialBackend {
         let trimmed = after_void.trim_start();
         let end = trimmed.find(|c: char| !c.is_alphanumeric() && c != '_')?;
         let name = &trimmed[..end];
-        if name.is_empty() { None } else { Some(name.to_string()) }
+        if name.is_empty() {
+            None
+        } else {
+            Some(name.to_string())
+        }
     }
 
     /// Extract `__shared__` variable declarations as context axioms.
@@ -121,10 +125,7 @@ impl ProverBackend for FaialBackend {
     }
 
     async fn version(&self) -> Result<String> {
-        let output = Command::new(self.binary())
-            .arg("--version")
-            .output()
-            .await;
+        let output = Command::new(self.binary()).arg("--version").output().await;
         match output {
             Ok(out) => {
                 let text = String::from_utf8_lossy(&out.stdout);

@@ -91,11 +91,7 @@ impl ProverBackend for ZipperpositionBackend {
         })
     }
 
-    async fn apply_tactic(
-        &self,
-        _state: &ProofState,
-        _tactic: &Tactic,
-    ) -> Result<TacticResult> {
+    async fn apply_tactic(&self, _state: &ProofState, _tactic: &Tactic) -> Result<TacticResult> {
         Ok(TacticResult::Error(
             "Tactic application not supported for Zipperposition".to_string(),
         ))

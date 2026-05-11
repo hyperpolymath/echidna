@@ -527,11 +527,7 @@ impl LlmAdvisor {
     ///
     /// Returns Err when BoJ is unreachable / cartridge is unconfigured;
     /// callers should treat this as "no LLM enrichment available".
-    pub async fn consult(
-        &self,
-        question: &str,
-        context: Option<&str>,
-    ) -> Result<ConsultResponse> {
+    pub async fn consult(&self, question: &str, context: Option<&str>) -> Result<ConsultResponse> {
         let start = Instant::now();
 
         if !self.available {

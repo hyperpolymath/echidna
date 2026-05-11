@@ -349,15 +349,12 @@ impl ProverBackend for UppaalBackend {
             let combined = format!("{}\n{}", stdout, stderr);
             return self.parse_result(&combined);
         }
-        let xml_code = if let Some(src) = state
-            .metadata
-            .get("uppaal_source")
-            .and_then(|v| v.as_str())
-        {
-            src.to_string()
-        } else {
-            self.to_uppaal_xml(state)?
-        };
+        let xml_code =
+            if let Some(src) = state.metadata.get("uppaal_source").and_then(|v| v.as_str()) {
+                src.to_string()
+            } else {
+                self.to_uppaal_xml(state)?
+            };
         let query_code = self.to_query_file(state);
 
         // Write model and queries to temporary files

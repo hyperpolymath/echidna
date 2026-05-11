@@ -21,8 +21,7 @@ use std::fmt::Write;
 
 use super::trust::CoprocessorTrustTier;
 use super::types::{
-    CoprocessorCapabilities, CoprocessorHealth, CoprocessorKind, CoprocessorOp,
-    CoprocessorOutcome,
+    CoprocessorCapabilities, CoprocessorHealth, CoprocessorKind, CoprocessorOp, CoprocessorOutcome,
 };
 use super::Coprocessor;
 
@@ -34,10 +33,7 @@ impl AudioBackend {
     pub fn new() -> Self {
         AudioBackend {
             capabilities: CoprocessorCapabilities {
-                supported_ops: vec![
-                    "AudioSineWave".into(),
-                    "AudioCompletionChime".into(),
-                ],
+                supported_ops: vec!["AudioSineWave".into(), "AudioCompletionChime".into()],
                 typical_latency_us: 200,
                 deterministic: true,
             },
@@ -95,7 +91,7 @@ fn dispatch_sync(op: CoprocessorOp) -> Result<CoprocessorOutcome> {
             }
             let pcm = sine_pcm16(frequency_hz, duration_ms, sample_rate, 0.5);
             CoprocessorOutcome::Hex(hex(&wav_pack(&pcm, sample_rate)))
-        }
+        },
         CoprocessorOp::AudioCompletionChime { sample_rate } => {
             if !(8_000..=192_000).contains(&sample_rate) {
                 return Ok(CoprocessorOutcome::Failure(format!(
@@ -110,7 +106,7 @@ fn dispatch_sync(op: CoprocessorOp) -> Result<CoprocessorOutcome> {
                 buf.extend(sine_pcm16(f, 100, sample_rate, 0.4));
             }
             CoprocessorOutcome::Hex(hex(&wav_pack(&buf, sample_rate)))
-        }
+        },
         other => CoprocessorOutcome::Failure(format!(
             "Audio backend does not support {:?}",
             std::mem::discriminant(&other)
@@ -150,7 +146,7 @@ fn wav_pack(pcm: &[i16], sample_rate: u32) -> Vec<u8> {
     out.extend_from_slice(&byte_rate.to_le_bytes());
     out.extend_from_slice(&2u16.to_le_bytes()); // block align (mono × 2)
     out.extend_from_slice(&16u16.to_le_bytes()); // bits per sample
-    // data subchunk
+                                                 // data subchunk
     out.extend_from_slice(b"data");
     out.extend_from_slice(&data_len.to_le_bytes());
     for s in pcm {
@@ -176,9 +172,7 @@ mod tests {
             .enable_all()
             .build()
             .unwrap();
-        rt.block_on(async {
-            AudioBackend::new().dispatch(op).await.unwrap()
-        })
+        rt.block_on(async { AudioBackend::new().dispatch(op).await.unwrap() })
     }
 
     fn decode_hex(h: &str) -> Vec<u8> {
@@ -207,7 +201,7 @@ mod tests {
                     u32::from_le_bytes(bytes[40..44].try_into().unwrap()),
                     expected_data
                 );
-            }
+            },
             _ => panic!(),
         }
     }
@@ -219,7 +213,7 @@ mod tests {
             duration_ms: 50,
             sample_rate: 44_100,
         }) {
-            CoprocessorOutcome::Failure(_) => {}
+            CoprocessorOutcome::Failure(_) => {},
             _ => panic!("expected Failure for f > Nyquist"),
         }
     }
@@ -231,14 +225,16 @@ mod tests {
             duration_ms: 50,
             sample_rate: 1_000,
         }) {
-            CoprocessorOutcome::Failure(_) => {}
+            CoprocessorOutcome::Failure(_) => {},
             _ => panic!(),
         }
     }
 
     #[test]
     fn completion_chime_wav_size_matches_three_100ms_notes() {
-        match run(CoprocessorOp::AudioCompletionChime { sample_rate: 44_100 }) {
+        match run(CoprocessorOp::AudioCompletionChime {
+            sample_rate: 44_100,
+        }) {
             CoprocessorOutcome::Hex(h) => {
                 let bytes = decode_hex(&h);
                 assert_eq!(&bytes[0..4], b"RIFF");
@@ -248,7 +244,7 @@ mod tests {
                     u32::from_le_bytes(bytes[40..44].try_into().unwrap()),
                     expected_data
                 );
-            }
+            },
             _ => panic!(),
         }
     }

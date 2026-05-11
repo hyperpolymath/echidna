@@ -60,7 +60,6 @@ fn arb_proof_state() -> impl Strategy<Value = ProofState> {
         |goals| {
             let goals = goals
                 .into_iter()
-                
                 .map(|(id, target)| Goal {
                     id,
                     hypotheses: vec![],

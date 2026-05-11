@@ -5,5 +5,5 @@
 pub mod resilience;
 
 pub use resilience::{
-    CircuitBreaker, CircuitBreakerError, CircuitState, RetryPolicy, BulkheadConfig, BackoffStrategy,
+    BackoffStrategy, BulkheadConfig, CircuitBreaker, CircuitBreakerError, CircuitState, RetryPolicy,
 };

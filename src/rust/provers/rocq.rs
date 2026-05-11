@@ -86,11 +86,7 @@ impl ProverBackend for RocqBackend {
         })
     }
 
-    async fn apply_tactic(
-        &self,
-        _state: &ProofState,
-        _tactic: &Tactic,
-    ) -> Result<TacticResult> {
+    async fn apply_tactic(&self, _state: &ProofState, _tactic: &Tactic) -> Result<TacticResult> {
         Ok(TacticResult::Error(
             "Tactic application not supported for Rocq".to_string(),
         ))
@@ -195,18 +191,16 @@ impl ProverBackend for RocqBackend {
             args: vec![],
         });
 
-        Ok(crate::provers::gnn_augment_tactics(
-            &self.config, state, "rocq", suggestions, limit,
+        Ok(
+            crate::provers::gnn_augment_tactics(&self.config, state, "rocq", suggestions, limit)
+                .await,
         )
-        .await)
     }
 
     async fn search_theorems(&self, pattern: &str) -> Result<Vec<String>> {
         // Rocq (formerly Coq) exposes a Search command that queries the loaded
         // environment. We wrap it in a minimal .v file and parse the output.
-        let search_script = format!(
-            "From Coq Require Import Prelude.\nSearch {pattern}.\n"
-        );
+        let search_script = format!("From Coq Require Import Prelude.\nSearch {pattern}.\n");
         let temp_path = "/tmp/echidna_rocq_search.v";
         if tokio::fs::write(temp_path, search_script.as_bytes())
             .await

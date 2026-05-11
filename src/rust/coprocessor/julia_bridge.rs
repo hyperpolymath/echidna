@@ -22,12 +22,11 @@ use async_trait::async_trait;
 use serde::{Deserialize, Serialize};
 use std::time::Duration;
 
+use super::trust::CoprocessorTrustTier;
 use super::types::{
-    CoprocessorCapabilities, CoprocessorHealth, CoprocessorKind, CoprocessorOp,
-    CoprocessorOutcome,
+    CoprocessorCapabilities, CoprocessorHealth, CoprocessorKind, CoprocessorOp, CoprocessorOutcome,
 };
 use super::Coprocessor;
-use super::trust::CoprocessorTrustTier;
 
 /// Default Julia coprocessor endpoint.  Overridable via `ECHIDNA_JULIA_COPROC_URL`.
 const DEFAULT_URL: &str = "http://127.0.0.1:8090/coprocessor/dispatch";
@@ -64,8 +63,8 @@ impl JuliaCoprocessorBridge {
     /// Call `probe()` afterwards to refresh `health` and `capabilities`
     /// from the live endpoint.
     pub fn new(kind: CoprocessorKind, capabilities: CoprocessorCapabilities) -> Self {
-        let url = std::env::var("ECHIDNA_JULIA_COPROC_URL")
-            .unwrap_or_else(|_| DEFAULT_URL.to_string());
+        let url =
+            std::env::var("ECHIDNA_JULIA_COPROC_URL").unwrap_or_else(|_| DEFAULT_URL.to_string());
         let client = reqwest::Client::builder()
             .timeout(Duration::from_secs(DEFAULT_TIMEOUT_SECS))
             .build()
@@ -82,11 +81,7 @@ impl JuliaCoprocessorBridge {
     /// Non-throwing reachability probe — updates `self.health`.
     /// Returns the new health value.
     pub async fn probe(&mut self) -> CoprocessorHealth {
-        let probe_url = self
-            .url
-            .trim_end_matches("/dispatch")
-            .to_string()
-            + "/health";
+        let probe_url = self.url.trim_end_matches("/dispatch").to_string() + "/health";
         match self
             .client
             .get(&probe_url)
@@ -161,9 +156,7 @@ impl Coprocessor for JuliaCoprocessorBridge {
         if !resp.status().is_success() {
             let status = resp.status();
             let text = resp.text().await.unwrap_or_default();
-            return Err(anyhow!(
-                "julia bridge HTTP {status}: {text}"
-            ));
+            return Err(anyhow!("julia bridge HTTP {status}: {text}"));
         }
 
         let parsed: DispatchResponse = resp

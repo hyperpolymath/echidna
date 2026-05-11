@@ -30,9 +30,9 @@
 
 use std::cmp::Ordering;
 
-use super::{Corpus, CorpusEntry, DeclKind};
 use super::embed::cosine;
 use super::metrics::EntryMetrics;
+use super::{Corpus, CorpusEntry, DeclKind};
 
 /// Builder for a multi-axis corpus query. Created via `Corpus::query`.
 pub struct CorpusQuery<'c> {
@@ -163,10 +163,7 @@ impl<'c> CorpusQuery<'c> {
         self
     }
 
-    pub fn where_custom(
-        mut self,
-        f: fn(&CorpusEntry, &EntryMetrics) -> bool,
-    ) -> Self {
+    pub fn where_custom(mut self, f: fn(&CorpusEntry, &EntryMetrics) -> bool) -> Self {
         self.filters.push(Filter::Custom(f));
         self
     }
@@ -211,7 +208,11 @@ impl<'c> CorpusQuery<'c> {
             .enumerate()
             .filter_map(|(i, entry)| {
                 let m = &metrics[i];
-                if self.filters.iter().all(|f| filter_match(f, entry, m, self.corpus)) {
+                if self
+                    .filters
+                    .iter()
+                    .all(|f| filter_match(f, entry, m, self.corpus))
+                {
                     Some(QueryHit {
                         entry,
                         metrics: m.clone(),
@@ -236,26 +237,26 @@ impl<'c> CorpusQuery<'c> {
 
         // Sort.
         match self.order {
-            SortKey::Default => {}
+            SortKey::Default => {},
             SortKey::Similarity => {
                 results.sort_by(|a, b| {
                     let sa = a.similarity.unwrap_or(0.0);
                     let sb = b.similarity.unwrap_or(0.0);
                     sb.partial_cmp(&sa).unwrap_or(Ordering::Equal)
                 });
-            }
+            },
             SortKey::StatementSize => {
                 results.sort_by_key(|h| h.metrics.statement_tokens);
-            }
+            },
             SortKey::ProofDepth => {
                 results.sort_by_key(|h| h.metrics.proof_depth);
-            }
+            },
             SortKey::Fanin => {
                 results.sort_by(|a, b| b.metrics.dep_fanin.cmp(&a.metrics.dep_fanin));
-            }
+            },
             SortKey::Fanout => {
                 results.sort_by(|a, b| b.metrics.dep_fanout.cmp(&a.metrics.dep_fanout));
-            }
+            },
         }
 
         if let Some(k) = self.limit {
@@ -265,12 +266,7 @@ impl<'c> CorpusQuery<'c> {
     }
 }
 
-fn filter_match(
-    f: &Filter,
-    entry: &CorpusEntry,
-    metrics: &EntryMetrics,
-    corpus: &Corpus,
-) -> bool {
+fn filter_match(f: &Filter, entry: &CorpusEntry, metrics: &EntryMetrics, corpus: &Corpus) -> bool {
     match f {
         Filter::Kind(k) => entry.kind == *k,
         Filter::KindIn(ks) => ks.contains(&entry.kind),
@@ -281,7 +277,7 @@ fn filter_match(
                 || entry.axiom_usage.admitted
                 || entry.axiom_usage.sorry
                 || entry.axiom_usage.trustme)
-        }
+        },
         Filter::Recursive(want) => metrics.recursive == *want,
         Filter::StructuralInduction(want) => metrics.structural_induction == *want,
         Filter::NameContains(needle) => entry.name.contains(needle),
@@ -295,7 +291,7 @@ fn filter_match(
                 .map(|v| !v.is_empty())
                 .unwrap_or(false);
             has == *want
-        }
+        },
         Filter::Custom(pred) => pred(entry, metrics),
     }
 }

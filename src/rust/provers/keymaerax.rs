@@ -141,10 +141,10 @@ impl KeYmaeraXBackend {
         // Closed-proof markers (case-insensitive scan via lowercase copy).
         let lower = output.to_ascii_lowercase();
         let closed_markers = [
-            "proved",                // generic
-            "qed",                   // tactic language final marker
-            "closed",                // proof tree closed
-            "result: true",          // older CLI
+            "proved",       // generic
+            "qed",          // tactic language final marker
+            "closed",       // proof tree closed
+            "result: true", // older CLI
             "[proof] proved",
         ];
         let open_markers = [
@@ -283,11 +283,7 @@ impl ProverBackend for KeYmaeraXBackend {
         self.to_kyx(state)
     }
 
-    async fn suggest_tactics(
-        &self,
-        state: &ProofState,
-        limit: usize,
-    ) -> Result<Vec<Tactic>> {
+    async fn suggest_tactics(&self, state: &ProofState, limit: usize) -> Result<Vec<Tactic>> {
         if state.goals.is_empty() {
             return Ok(vec![]);
         }
@@ -296,23 +292,86 @@ impl ProverBackend for KeYmaeraXBackend {
         // distributed benchmark archive. The full Bellerophon language is
         // open-ended; GNN-ranked corpus suggestions (§4.4) will extend this.
         let tactics = vec![
-            Tactic::Custom { prover: "keymaerax".to_string(), command: "auto".to_string(),      args: vec![] },
-            Tactic::Custom { prover: "keymaerax".to_string(), command: "QE".to_string(),        args: vec![] },
-            Tactic::Custom { prover: "keymaerax".to_string(), command: "loop".to_string(),      args: vec![] },
-            Tactic::Custom { prover: "keymaerax".to_string(), command: "ODE".to_string(),       args: vec![] },
-            Tactic::Custom { prover: "keymaerax".to_string(), command: "solve".to_string(),     args: vec![] },
-            Tactic::Custom { prover: "keymaerax".to_string(), command: "dI".to_string(),        args: vec![] },
-            Tactic::Custom { prover: "keymaerax".to_string(), command: "dC".to_string(),        args: vec![] },
-            Tactic::Custom { prover: "keymaerax".to_string(), command: "dW".to_string(),        args: vec![] },
-            Tactic::Custom { prover: "keymaerax".to_string(), command: "diffInd".to_string(),   args: vec![] },
-            Tactic::Custom { prover: "keymaerax".to_string(), command: "cut".to_string(),       args: vec![] },
-            Tactic::Custom { prover: "keymaerax".to_string(), command: "prop".to_string(),      args: vec![] },
-            Tactic::Custom { prover: "keymaerax".to_string(), command: "implyR".to_string(),    args: vec![] },
-            Tactic::Custom { prover: "keymaerax".to_string(), command: "andL".to_string(),      args: vec![] },
-            Tactic::Custom { prover: "keymaerax".to_string(), command: "hideL".to_string(),     args: vec![] },
-            Tactic::Custom { prover: "keymaerax".to_string(), command: "closeTrue".to_string(), args: vec![] },
+            Tactic::Custom {
+                prover: "keymaerax".to_string(),
+                command: "auto".to_string(),
+                args: vec![],
+            },
+            Tactic::Custom {
+                prover: "keymaerax".to_string(),
+                command: "QE".to_string(),
+                args: vec![],
+            },
+            Tactic::Custom {
+                prover: "keymaerax".to_string(),
+                command: "loop".to_string(),
+                args: vec![],
+            },
+            Tactic::Custom {
+                prover: "keymaerax".to_string(),
+                command: "ODE".to_string(),
+                args: vec![],
+            },
+            Tactic::Custom {
+                prover: "keymaerax".to_string(),
+                command: "solve".to_string(),
+                args: vec![],
+            },
+            Tactic::Custom {
+                prover: "keymaerax".to_string(),
+                command: "dI".to_string(),
+                args: vec![],
+            },
+            Tactic::Custom {
+                prover: "keymaerax".to_string(),
+                command: "dC".to_string(),
+                args: vec![],
+            },
+            Tactic::Custom {
+                prover: "keymaerax".to_string(),
+                command: "dW".to_string(),
+                args: vec![],
+            },
+            Tactic::Custom {
+                prover: "keymaerax".to_string(),
+                command: "diffInd".to_string(),
+                args: vec![],
+            },
+            Tactic::Custom {
+                prover: "keymaerax".to_string(),
+                command: "cut".to_string(),
+                args: vec![],
+            },
+            Tactic::Custom {
+                prover: "keymaerax".to_string(),
+                command: "prop".to_string(),
+                args: vec![],
+            },
+            Tactic::Custom {
+                prover: "keymaerax".to_string(),
+                command: "implyR".to_string(),
+                args: vec![],
+            },
+            Tactic::Custom {
+                prover: "keymaerax".to_string(),
+                command: "andL".to_string(),
+                args: vec![],
+            },
+            Tactic::Custom {
+                prover: "keymaerax".to_string(),
+                command: "hideL".to_string(),
+                args: vec![],
+            },
+            Tactic::Custom {
+                prover: "keymaerax".to_string(),
+                command: "closeTrue".to_string(),
+                args: vec![],
+            },
         ];
-        Ok(crate::provers::gnn_augment_tactics(&self.config, state, "keymaerax", tactics, limit).await)
+        Ok(
+            crate::provers::gnn_augment_tactics(&self.config, state, "keymaerax", tactics, limit)
+                .await,
+        )
     }
 
     async fn search_theorems(&self, _pattern: &str) -> Result<Vec<String>> {
@@ -345,10 +404,7 @@ mod tests {
         let backend = KeYmaeraXBackend::new(config);
 
         let mut state = ProofState::default();
-        state
-            .context
-            .axioms
-            .push("x >= 0 & v >= 0".to_string());
+        state.context.axioms.push("x >= 0 & v >= 0".to_string());
         state.goals.push(Goal {
             id: "goal_0".to_string(),
             target: Term::Const("[x' = v & x >= 0] x >= 0".to_string()),
@@ -406,8 +462,7 @@ mod tests {
     fn test_keymaerax_parse_result_inconclusive() {
         let config = ProverConfig::default();
         let backend = KeYmaeraXBackend::new(config);
-        let result =
-            backend.parse_result("internal error: out of memory");
+        let result = backend.parse_result("internal error: out of memory");
         assert!(result.is_err());
     }
 
@@ -442,10 +497,17 @@ mod tests {
         let state = backend.parse_string(kyx).await.expect("parse_string");
         let tactics = backend.suggest_tactics(&state, 10).await.unwrap();
         assert!(!tactics.is_empty());
-        let names: Vec<_> = tactics.iter().filter_map(|t| {
-            if let Tactic::Custom { command, .. } = t { Some(command.as_str()) } else { None }
-        }).collect();
+        let names: Vec<_> = tactics
+            .iter()
+            .filter_map(|t| {
+                if let Tactic::Custom { command, .. } = t {
+                    Some(command.as_str())
+                } else {
+                    None
+                }
+            })
+            .collect();
         assert!(names.contains(&"auto"), "expected 'auto' tactic");
-        assert!(names.contains(&"QE"),   "expected 'QE' tactic");
+        assert!(names.contains(&"QE"), "expected 'QE' tactic");
     }
 }

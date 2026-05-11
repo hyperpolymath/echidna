@@ -5,7 +5,7 @@
 //! Singular polynomial-algebra coprocessor — subprocess to `Singular`.
 //!
 //! Provides Gröbner basis computation, ideal membership testing, and Krull
-//! dimension over polynomial rings k[vars] with arbitrary characteristic.
+//! dimension over polynomial rings k\[vars\] with arbitrary characteristic.
 //! Trust tier `ExternalSubprocess` (Tier 1).
 //!
 //! Input variable names and polynomial expressions are validated against safe
@@ -24,8 +24,7 @@ use tokio::process::Command;
 
 use super::trust::CoprocessorTrustTier;
 use super::types::{
-    CoprocessorCapabilities, CoprocessorHealth, CoprocessorKind, CoprocessorOp,
-    CoprocessorOutcome,
+    CoprocessorCapabilities, CoprocessorHealth, CoprocessorKind, CoprocessorOp, CoprocessorOutcome,
 };
 use super::Coprocessor;
 
@@ -80,9 +79,8 @@ fn is_safe_var(s: &str) -> bool {
 /// Polynomial expressions: alphanumeric plus standard math operators.
 fn is_safe_expr(s: &str) -> bool {
     !s.is_empty()
-        && s.chars().all(|c| {
-            c.is_ascii_alphanumeric() || "+-*/^()., _".contains(c)
-        })
+        && s.chars()
+            .all(|c| c.is_ascii_alphanumeric() || "+-*/^()., _".contains(c))
 }
 
 /// Build a Singular ring declaration line.
@@ -140,7 +138,11 @@ impl Coprocessor for SingularBackend {
             ));
         }
         match op {
-            CoprocessorOp::SingularGroebner { ring_char, vars, polys } => {
+            CoprocessorOp::SingularGroebner {
+                ring_char,
+                vars,
+                polys,
+            } => {
                 if let Some(bad) = vars.iter().find(|v| !is_safe_var(v)) {
                     return Ok(CoprocessorOutcome::Failure(format!(
                         "SingularGroebner: unsafe variable name '{bad}'"
@@ -159,8 +161,13 @@ impl Coprocessor for SingularBackend {
                 let out = run_singular(&script).await?;
                 let gens = extract_generators(&out, "g");
                 Ok(CoprocessorOutcome::Text(gens.join("\n")))
-            }
-            CoprocessorOp::SingularIdealMembership { ring_char, vars, poly, ideal } => {
+            },
+            CoprocessorOp::SingularIdealMembership {
+                ring_char,
+                vars,
+                poly,
+                ideal,
+            } => {
                 if let Some(bad) = vars.iter().find(|v| !is_safe_var(v)) {
                     return Ok(CoprocessorOutcome::Failure(format!(
                         "SingularIdealMembership: unsafe variable '{bad}'"
@@ -191,8 +198,12 @@ impl Coprocessor for SingularBackend {
                         "SingularIdealMembership: unexpected output '{other}'"
                     ))),
                 }
-            }
-            CoprocessorOp::SingularDimension { ring_char, vars, polys } => {
+            },
+            CoprocessorOp::SingularDimension {
+                ring_char,
+                vars,
+                polys,
+            } => {
                 if let Some(bad) = vars.iter().find(|v| !is_safe_var(v)) {
                     return Ok(CoprocessorOutcome::Failure(format!(
                         "SingularDimension: unsafe variable '{bad}'"
@@ -211,7 +222,7 @@ impl Coprocessor for SingularBackend {
                 let out = run_singular(&script).await?;
                 let trimmed = out.trim();
                 Ok(CoprocessorOutcome::BigInt(trimmed.to_string()))
-            }
+            },
             other => Ok(CoprocessorOutcome::Failure(format!(
                 "Singular backend does not support {:?}",
                 std::mem::discriminant(&other)

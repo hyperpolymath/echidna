@@ -17,8 +17,8 @@ use colored::Colorize;
 use echidna::agent::meta_controller::{MetaController, Plan};
 use echidna::agent::AgenticGoal;
 use echidna::core::{Goal, ProofState, Tactic, TacticResult, Term};
-use echidna::dispatch::ProverDispatcher;
 use echidna::diagnostics::HealthStatus;
+use echidna::dispatch::ProverDispatcher;
 use echidna::provers::ProverOutcome;
 use echidna::verification::StatisticsTracker;
 use echidna::{ProverBackend, ProverConfig, ProverKind};
@@ -134,7 +134,10 @@ pub async fn start_server(port: u16, host: String, enable_cors: bool) -> Result<
                 let payload = json!({ "records": records });
                 match sync_client.post(&url).json(&payload).send().await {
                     Ok(resp) if resp.status().is_success() => {
-                        info!("GNN training sync: {} records pushed to Julia", records.len());
+                        info!(
+                            "GNN training sync: {} records pushed to Julia",
+                            records.len()
+                        );
                     },
                     Ok(resp) => {
                         debug!("GNN training sync: Julia returned {}", resp.status());
@@ -371,9 +374,7 @@ async fn health_check() -> Json<HealthResponse> {
 
 /// Detailed diagnostics health endpoint
 /// Returns full HealthStatus snapshot from dispatcher with prover metrics and degradation mode
-async fn diagnostics_health_handler(
-    State(app_state): State<AppState>,
-) -> Json<HealthStatus> {
+async fn diagnostics_health_handler(State(app_state): State<AppState>) -> Json<HealthStatus> {
     let health = app_state.dispatcher.health_status();
     Json(health)
 }
@@ -426,7 +427,9 @@ async fn prove_handler(
                 .to_string(),
             location: None,
         };
-        app_state.dispatcher.record_prover_result(req.prover, &outcome, 0);
+        app_state
+            .dispatcher
+            .record_prover_result(req.prover, &outcome, 0);
         return Ok(Json(ProveResponse {
             success: false,
             goals: 0,
@@ -455,7 +458,9 @@ async fn prove_handler(
             reason: Some("Proof verification failed".to_string()),
         }
     };
-    app_state.dispatcher.record_prover_result(req.prover, &outcome, verify_elapsed_ms);
+    app_state
+        .dispatcher
+        .record_prover_result(req.prover, &outcome, verify_elapsed_ms);
 
     Ok(Json(ProveResponse {
         success: valid,
@@ -886,8 +891,8 @@ async fn search_handler(
     // Cross-prover layer (see main.rs::search_command for rationale).
     // Folds VeriSimDB matches into the same response so REST clients
     // see results from backends without native search commands too.
-    let verisim_url = std::env::var("VERISIM_URL")
-        .unwrap_or_else(|_| "http://localhost:8080".to_string());
+    let verisim_url =
+        std::env::var("VERISIM_URL").unwrap_or_else(|_| "http://localhost:8080".to_string());
     if let Ok(cross) = echidna::vcl_ut::cross_prover_search_names(&verisim_url, pattern, 50).await {
         all_results.extend(cross);
     }

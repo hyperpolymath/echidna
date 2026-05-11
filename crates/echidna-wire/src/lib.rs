@@ -37,9 +37,9 @@ pub mod gnn_capnp {
 
 // Ergonomic re-exports under shorter names.
 pub use common_capnp as common;
+pub use gnn_capnp as gnn;
 pub use proof_capnp as proof;
 pub use prover_capnp as prover;
-pub use gnn_capnp as gnn;
 
 #[cfg(test)]
 mod smoke {
@@ -64,7 +64,10 @@ mod smoke {
         )
         .unwrap();
         let root = reader.get_root::<proof::proof_goal::Reader>().unwrap();
-        assert_eq!(root.get_request_id().unwrap().to_str().unwrap(), "test-req-0");
+        assert_eq!(
+            root.get_request_id().unwrap().to_str().unwrap(),
+            "test-req-0"
+        );
         assert_eq!(root.get_schema_version(), 1);
         assert_eq!(root.get_timeout_ms(), 300_000);
     }

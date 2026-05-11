@@ -78,7 +78,7 @@ impl ProverBackend for Prover9Backend {
                 } else {
                     Ok("Prover9 (version unknown)".to_string())
                 }
-            }
+            },
             Err(_) => Ok("Prover9 (version unknown)".to_string()),
         }
     }
@@ -99,11 +99,7 @@ impl ProverBackend for Prover9Backend {
         })
     }
 
-    async fn apply_tactic(
-        &self,
-        _state: &ProofState,
-        _tactic: &Tactic,
-    ) -> Result<TacticResult> {
+    async fn apply_tactic(&self, _state: &ProofState, _tactic: &Tactic) -> Result<TacticResult> {
         Ok(TacticResult::Error(
             "Tactic application not supported for Prover9".to_string(),
         ))

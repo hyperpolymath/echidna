@@ -82,8 +82,13 @@ pub async fn run(config: SuggestConfig) -> Result<()> {
     };
 
     // Step 1: confirm the probe fails as-is (unless dry_run)
-    let probe = extract(prover, &file_path, &lemma_name)
-        .with_context(|| format!("Failed to extract lemma '{}' from {}", lemma_name, file_path.display()))?;
+    let probe = extract(prover, &file_path, &lemma_name).with_context(|| {
+        format!(
+            "Failed to extract lemma '{}' from {}",
+            lemma_name,
+            file_path.display()
+        )
+    })?;
 
     if !config.dry_run {
         // Attempt to verify the original lemma. If it passes, nothing to suggest.
@@ -100,13 +105,15 @@ pub async fn run(config: SuggestConfig) -> Result<()> {
         match backend.verify_proof(&state).await {
             Ok(true) => {
                 println!("ℹ  The lemma already passes — nothing to suggest.");
-                println!("   (If you expected it to fail, check that the right lemma was extracted.)");
+                println!(
+                    "   (If you expected it to fail, check that the right lemma was extracted.)"
+                );
                 return Ok(());
-            }
-            Ok(false) => {} // expected: it fails, proceed with variants
+            },
+            Ok(false) => {}, // expected: it fails, proceed with variants
             Err(e) => {
                 eprintln!("warn: baseline check errored ({}); proceeding anyway", e);
-            }
+            },
         }
     }
 
@@ -124,16 +131,29 @@ pub async fn run(config: SuggestConfig) -> Result<()> {
     // Step 3: generate variants
     let all_variants = generate_variants(&probe, &table);
     if all_variants.is_empty() {
-        println!("No tactic sites matched the synonym table for {:?}.", prover);
+        println!(
+            "No tactic sites matched the synonym table for {:?}.",
+            prover
+        );
         println!(
             "Sites identified: {:?}",
-            probe.tactic_sites.iter().map(|s| &s.name).collect::<Vec<_>>()
+            probe
+                .tactic_sites
+                .iter()
+                .map(|s| &s.name)
+                .collect::<Vec<_>>()
         );
-        println!("Consider adding entries to data/synonyms/{}.toml", prover_table_name(prover));
+        println!(
+            "Consider adding entries to data/synonyms/{}.toml",
+            prover_table_name(prover)
+        );
         return Ok(());
     }
 
-    let variants_to_test = all_variants.into_iter().take(config.top).collect::<Vec<_>>();
+    let variants_to_test = all_variants
+        .into_iter()
+        .take(config.top)
+        .collect::<Vec<_>>();
 
     // Step 4: test variants
     let results = test_all_variants(
@@ -174,9 +194,7 @@ fn detect_prover(path: &Path) -> Result<ProverKind> {
         "lean" => Ok(ProverKind::Lean),
         "idr" => Ok(ProverKind::Idris2),
         "agda" => Ok(ProverKind::Agda),
-        _ => bail!(
-            "Cannot auto-detect prover from extension .{ext}; use --prover to specify"
-        ),
+        _ => bail!("Cannot auto-detect prover from extension .{ext}; use --prover to specify"),
     }
 }
 
@@ -222,11 +240,23 @@ mod tests {
 
     #[test]
     fn test_detect_prover_extensions() {
-        assert_eq!(detect_prover(Path::new("a.thy")).unwrap(), ProverKind::Isabelle);
+        assert_eq!(
+            detect_prover(Path::new("a.thy")).unwrap(),
+            ProverKind::Isabelle
+        );
         assert_eq!(detect_prover(Path::new("a.v")).unwrap(), ProverKind::Coq);
-        assert_eq!(detect_prover(Path::new("a.lean")).unwrap(), ProverKind::Lean);
-        assert_eq!(detect_prover(Path::new("a.idr")).unwrap(), ProverKind::Idris2);
-        assert_eq!(detect_prover(Path::new("a.agda")).unwrap(), ProverKind::Agda);
+        assert_eq!(
+            detect_prover(Path::new("a.lean")).unwrap(),
+            ProverKind::Lean
+        );
+        assert_eq!(
+            detect_prover(Path::new("a.idr")).unwrap(),
+            ProverKind::Idris2
+        );
+        assert_eq!(
+            detect_prover(Path::new("a.agda")).unwrap(),
+            ProverKind::Agda
+        );
     }
 
     #[test]
