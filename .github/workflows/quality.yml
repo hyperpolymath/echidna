@@ -16,7 +16,7 @@ jobs:
           find . -type f -perm /111 -name "*.sh" | head -10 || true
       
       - name: Check for secrets
-        uses: trufflesecurity/trufflehog@7ee2e0fdffec27d19ccbb8fb3dcf8a83b9d7f9e8 # main
+        uses: trufflesecurity/trufflehog@ba0a524d6e51744d9d4e306bc57ac5d6ca5173ea # main
         with:
           path: ./
           base: ${{ github.event.pull_request.base.sha || github.event.before }}
