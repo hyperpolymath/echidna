@@ -5,10 +5,16 @@ use anyhow::{anyhow, Result};
 use std::ffi::{CStr, CString};
 use std::os::raw::{c_char, c_int};
 
-// Re-export FFI types from core
+// Re-export FFI types from core. Some of these are not used internally by the
+// GraphQL crate yet but form part of the public surface that downstream
+// consumers (and forthcoming session-state handlers) will need.
+#[allow(unused_imports)]
 pub use echidna::ffi::{FfiOwnedString, FfiProverConfig, FfiStatus, FfiStringSlice};
 
-// External Zig FFI functions (from libechidna_ffi.so)
+// External Zig FFI functions (from libechidna_ffi.so). Not every entry point
+// is invoked from this crate yet — the bindings are declared eagerly so the
+// surface is complete the first time a resolver needs it.
+#[allow(dead_code)]
 extern "C" {
     pub fn echidna_init() -> c_int;
     pub fn echidna_deinit();
@@ -88,6 +94,7 @@ pub fn create_prover(prover_kind: u8) -> Result<i32> {
 }
 
 /// Destroy a prover instance
+#[allow(dead_code)]
 pub fn destroy_prover(handle: i32) -> Result<()> {
     unsafe {
         echidna_destroy_prover(handle);
@@ -327,6 +334,7 @@ pub fn prover_kind_to_ffi(kind: &crate::schema::ProverKind) -> u8 {
 }
 
 /// Convert FFI ordinal to GraphQL ProverKind
+#[allow(dead_code)]
 pub fn ffi_to_prover_kind(ordinal: u8) -> Option<crate::schema::ProverKind> {
     match ordinal {
         0 => Some(crate::schema::ProverKind::Agda),

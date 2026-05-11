@@ -7,7 +7,12 @@ use echidna::provers::ProverKind as CoreProverKind;
 
 use crate::resolvers::EchidnaContext;
 
-/// Supported theorem provers in ECHIDNA
+/// Supported theorem provers in ECHIDNA.
+//
+// Variant names mirror the well-known prover acronyms (PVS, SPASS, TLAPS,
+// GLPK, …); keeping them upper-case matches the core `ProverKind` and every
+// other place these tools are referenced.
+#[allow(clippy::upper_case_acronyms)]
 #[derive(Debug, Clone, Copy, Enum, Eq, PartialEq)]
 pub enum ProverKind {
     Agda,
