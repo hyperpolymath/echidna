@@ -13,6 +13,11 @@ on:
 
 permissions:
   contents: read
+  # `pull-requests: write` is needed for the "Comment on PR with findings"
+  # step to POST a results summary. Note: on Dependabot PRs the token is
+  # downgraded to read-only regardless, so that step is also marked
+  # continue-on-error below.
+  pull-requests: write
 
 jobs:
   scan:
@@ -21,7 +26,7 @@ jobs:
 
     steps:
       - name: Checkout repository
-        uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11 # v4
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v4
         with:
           fetch-depth: 0  # Full history for better pattern analysis
 
@@ -31,30 +36,62 @@ jobs:
           elixir-version: '1.19.4'
           otp-version: '28.3'
 
-      - name: Clone Hypatia
+      - name: Clone Hypatia (or use checkout when scanning hypatia itself)
         run: |
-          if [ ! -d "$HOME/hypatia" ]; then
+          # When scanning hypatia from inside hypatia, point $HOME/hypatia
+          # at the PR/branch checkout instead of cloning main — otherwise
+          # CLI changes can never pass their own gate (the scanner binary
+          # would always come from main and ignore new flags).
+          if [ "${{ github.repository }}" = "hyperpolymath/hypatia" ]; then
+            ln -sfn "${GITHUB_WORKSPACE}" "$HOME/hypatia"
+          elif [ ! -d "$HOME/hypatia" ]; then
             git clone https://github.com/hyperpolymath/hypatia.git "$HOME/hypatia"
           fi
 
       - name: Build Hypatia scanner (if needed)
-        working-directory: ${{ env.HOME }}/hypatia
         run: |
-          if [ ! -f hypatia-v2 ]; then
-            echo "Building hypatia-v2 scanner..."
-            cd scanner
+          cd "$HOME/hypatia"
+          if [ ! -f hypatia ]; then
+            echo "Building hypatia scanner..."
             mix deps.get
             mix escript.build
-            mv hypatia ../hypatia-v2
           fi
 
       - name: Run Hypatia scan
         id: scan
+        env:
+          # Suppress the "Warning: Dependabot alerts unavailable: GITHUB_TOKEN
+          # not set" line so the run is silent-warning-free. The token is
+          # read-only by default and only used to query Dependabot alerts.
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           echo "Scanning repository: ${{ github.repository }}"
 
-          # Run scanner
-          HYPATIA_FORMAT=json "$HOME/hypatia/hypatia-cli.sh" scan . > hypatia-findings.json
+          # Run scanner with --exit-zero so a findings-found exit-1 does
+          # NOT short-circuit the rest of this step under `set -e`. The
+          # downstream "Check for critical or high-severity issues" step
+          # is the explicit gate. See hyperpolymath/hypatia#213.
+          #
+          # Guard against the scanner producing no output (a crash, an
+          # unknown flag, etc.): if hypatia-findings.json is empty or
+          # missing after the run, fall back to "[]" so the jq calls
+          # below don't 9 the whole gate. We surface stderr so the
+          # underlying scanner failure is still visible in the log.
+          set +e
+          HYPATIA_FORMAT=json "$HOME/hypatia/hypatia-cli.sh" scan . --exit-zero \
+            > hypatia-findings.json 2> hypatia-scan.stderr
+          SCAN_EXIT=$?
+          set -e
+          echo "Scanner exit: $SCAN_EXIT"
+          if [ -s hypatia-scan.stderr ]; then
+            echo "--- scanner stderr ---"
+            cat hypatia-scan.stderr
+            echo "--- end stderr ---"
+          fi
+          if ! jq empty hypatia-findings.json 2>/dev/null; then
+            echo "Scanner did not produce valid JSON; defaulting to empty findings."
+            echo "[]" > hypatia-findings.json
+          fi
 
           # Count findings
           FINDING_COUNT=$(jq '. | length' hypatia-findings.json 2>/dev/null || echo 0)
@@ -76,7 +113,7 @@ jobs:
           echo "- Medium: $MEDIUM" >> $GITHUB_STEP_SUMMARY
 
       - name: Upload findings artifact
-        uses: actions/upload-artifact@b4b15b8c7c6ac21ea08fcf65892d2ee8f75cf882 # v4
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
           name: hypatia-findings
           path: hypatia-findings.json
@@ -86,6 +123,8 @@ jobs:
         if: steps.scan.outputs.findings_count > 0
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          FLEET_PUSH_TOKEN: ${{ secrets.HYPATIA_DISPATCH_PAT }}
+          FLEET_DISPATCH_TOKEN: ${{ secrets.HYPATIA_DISPATCH_PAT }}
           GITHUB_REPOSITORY: ${{ github.repository }}
           GITHUB_SHA: ${{ github.sha }}
         run: |
@@ -95,21 +134,63 @@ jobs:
           FLEET_DIR="/tmp/gitbot-fleet-$$"
           git clone https://github.com/hyperpolymath/gitbot-fleet.git "$FLEET_DIR"
 
-          # Run submission script
-          bash "$FLEET_DIR/scripts/submit-finding.sh" hypatia-findings.json
+          # Run submission script. Pass the findings path as ABSOLUTE —
+          # submit-finding.sh cd's into its own working dir before reading
+          # the file, so a relative path would resolve to the wrong place
+          # and the script fails with "No such file or directory".
+          bash "$FLEET_DIR/scripts/submit-finding.sh" "$GITHUB_WORKSPACE/hypatia-findings.json"
 
           # Cleanup
           rm -rf "$FLEET_DIR"
 
           echo "✅ Finding submission complete"
 
-      - name: Check for critical issues
-        if: steps.scan.outputs.critical > 0
+      - name: Check for critical or high-severity issues
+        if: steps.scan.outputs.critical > 0 || steps.scan.outputs.high > 0
         run: |
-          echo "⚠️  Critical security issues found!"
-          echo "Review hypatia-findings.json for details"
-          # Don't fail the build yet - just warn
-          # exit 1
+          echo "Total critical/high: ${{ steps.scan.outputs.critical }} critical, ${{ steps.scan.outputs.high }} high"
+
+          # Baseline-aware gate: pre-existing accepted findings live in
+          # .hypatia-baseline.json (committed). New critical/high findings
+          # not in the baseline still fail the build. Findings are matched
+          # on (severity, rule_module, type, file) tuple with absolute
+          # build paths normalised to repo-relative.
+          if [ -f .hypatia-baseline.json ]; then
+            # Normalise + project the FINDING IDENTITY tuple from the current
+            # scan. Identity is (severity, rule_module, type, file) — `action`
+            # is remediation guidance that can legitimately drift between
+            # scanner versions (e.g. "flag" -> "create_branch") and is NOT
+            # part of what makes two findings the same.
+            jq '[ .[] | select(.severity == "critical" or .severity == "high")
+                       | {severity, rule_module, type,
+                          file: (.file | sub("^/home/runner/work/[^/]+/[^/]+/"; "")
+                                       | sub("^/github/workspace/"; "")) } ]' \
+               hypatia-findings.json > findings-current.json
+
+            # Subtract baseline. A current finding is "new" iff there's no
+            # baseline element with the same identity tuple. Baseline entries
+            # may include extra fields (e.g. `action`); strip them before the
+            # comparison so legacy baselines keep working.
+            jq --slurpfile base .hypatia-baseline.json \
+               '($base[0] | map({severity, rule_module, type, file})) as $bk
+                | map(. as $f | select(($bk | any(. == $f)) | not))' \
+               findings-current.json > findings-new.json
+            new_count=$(jq 'length' findings-new.json)
+
+            if [ "$new_count" -gt 0 ]; then
+              echo "::error::$new_count new critical/high finding(s) outside the baseline:"
+              jq -r '.[] | "  [\(.severity)] \(.rule_module)/\(.type) — \(.file)"' findings-new.json
+              echo
+              echo "If these are intentional, regenerate .hypatia-baseline.json:"
+              echo "  jq '[.[] | select(.severity == \"critical\" or .severity == \"high\") | {severity, rule_module, type, file}] | sort_by(.severity, .rule_module, .type, .file)' hypatia-findings.json > .hypatia-baseline.json"
+              exit 1
+            fi
+            echo "All critical/high findings present in baseline — gate passes."
+          else
+            echo "No .hypatia-baseline.json — failing on any critical/high (legacy behaviour)."
+            echo "Review hypatia-findings.json for details"
+            exit 1
+          fi
 
       - name: Generate scan report
         run: |
@@ -146,8 +227,14 @@ jobs:
           cat hypatia-report.md >> $GITHUB_STEP_SUMMARY
 
       - name: Comment on PR with findings
+        # Dependabot PRs always run with a read-only token regardless of the
+        # workflow's declared permissions, so the createComment call below
+        # would 403 on every dep-bump PR. The PR comment is informational
+        # (the check result is already visible in the PR UI); we don't want
+        # its absence to block merge.
         if: github.event_name == 'pull_request' && steps.scan.outputs.findings_count > 0
-        uses: actions/github-script@60a0d83039c74a4aee543508d2ffcb1c3799cdea # v7
+        continue-on-error: true
+        uses: actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3 # v7
         with:
           script: |
             const fs = require('fs');
