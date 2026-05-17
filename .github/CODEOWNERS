@@ -16,7 +16,6 @@
 /src/interfaces/ @hyperpolymath
 
 # Infrastructure and CI/CD
-/.github/workflows/ @hyperpolymath
 /.containerization/ @hyperpolymath
 /Containerfile @hyperpolymath
 
