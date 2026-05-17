@@ -178,7 +178,7 @@ theorem allTimedOut_iff_no_completed (rs : List SolverResult) :
     | cons first rest =>
       rw [hc] at h
       simp only at h
-      split_ifs at h <;> simp at h
+      (repeat' split at h) <;> simp_all
   · intro h
     unfold reconcile
     rw [h]
@@ -229,14 +229,15 @@ theorem singleSolver_implies_one_completed (rs : List SolverResult) :
   | cons first rest =>
     rw [hc] at h
     simp only at h
-    split_ifs at h with hagree hlen
-    · -- crossChecked branch
-      simp at h
-    · -- singleSolver branch — extract length info
-      -- hlen : ¬ (rest.length + 1 ≥ 2) ⇒ rest = []
-      simp at hlen
-      rw [Nat.lt_iff_add_one_le] at hlen
-      omega
+    split at h
+    · split at h
+      · -- crossChecked branch
+        simp at h
+      · -- singleSolver branch — extract length info
+        rename_i hlen
+        simp at hlen
+        rw [hc, List.length_cons]
+        omega
     · -- inconclusive branch
       simp at h
 
@@ -256,11 +257,13 @@ theorem crossChecked_implies_two_completed (rs : List SolverResult) :
   | cons first rest =>
     rw [hc] at h
     simp only at h
-    split_ifs at h with hagree hlen
-    · -- crossChecked: hlen has the length bound
-      rw [hc] at hlen ⊢
-      exact hlen
-    · simp at h
+    split at h
+    · split at h
+      · -- crossChecked: hlen has the length bound
+        rename_i hlen
+        rw [hc]
+        exact hlen
+      · simp at h
     · simp at h
 
 /-- **PR-7 (E13/7) CrossChecked yields a definite verdict**. -/
@@ -275,9 +278,10 @@ theorem crossChecked_has_verdict (rs : List SolverResult) :
   | cons first rest =>
     rw [hc] at h ⊢
     simp only at h ⊢
-    split_ifs at h with hagree hlen
-    · exact ⟨first.verified.getD false, rfl⟩
-    · simp at h
+    split at h
+    · split at h
+      · exact ⟨first.verified.getD false, rfl⟩
+      · simp at h
     · simp at h
 
 /-- **PR-8 (E13/8) CrossChecked has no review flag**. -/
@@ -292,9 +296,10 @@ theorem crossChecked_no_review (rs : List SolverResult) :
   | cons first rest =>
     rw [hc] at h ⊢
     simp only at h ⊢
-    split_ifs at h with hagree hlen
-    · rfl
-    · simp at h
+    split at h
+    · split at h
+      · rfl
+      · simp at h
     · simp at h
 
 /-- **PR-9 (E13/9) CrossChecked verdict matches first completed**. -/
@@ -306,9 +311,10 @@ theorem crossChecked_verdict_matches_first (rs : List SolverResult)
   unfold reconcile at hcc ⊢
   rw [hc] at hcc ⊢
   simp only at hcc ⊢
-  split_ifs at hcc with hagree hlen
-  · rfl
-  · simp at hcc
+  split at hcc
+  · split at hcc
+    · rfl
+    · simp at hcc
   · simp at hcc
 
 -- ==========================================================================
@@ -332,20 +338,24 @@ theorem inconclusive_implies_disagreement (rs : List SolverResult) :
   | cons first rest =>
     rw [hc] at h
     simp only at h
-    split_ifs at h with hagree hlen
-    · simp at h
-    · simp at h
+    split at h
+    · split at h
+      · simp at h
+      · simp at h
     · -- disagreement branch: at least one element of `rest` has verified ≠ some firstV
       -- Extract that witness.
+      rename_i hagree
       simp at hagree
       -- hagree gives the existence of some r ∈ rest with verified ≠ some (first.verified.getD false)
       have ⟨other, ho_mem, ho_ne⟩ : ∃ r ∈ rest, r.verified ≠ some (first.verified.getD false) := by
-        by_contra hno
-        push_neg at hno
+        apply Classical.byContradiction
+        intro hno
+        have hno' : ∀ r ∈ rest, ¬ (r.verified ≠ some (first.verified.getD false)) :=
+          fun r hr hne => hno ⟨r, hr, hne⟩
         apply hagree
         intro r hr_in_filter
         rw [List.mem_filter] at hr_in_filter
-        exact (hno r hr_in_filter.1) hr_in_filter.2
+        exact (hno' r hr_in_filter.1) hr_in_filter.2
       -- `first ∈ completed rs` because completed rs = first :: rest
       have hfirst_mem : first ∈ completed rs := by rw [hc]; exact List.mem_cons_self first rest
       have hother_mem : other ∈ completed rs := by rw [hc]; exact List.mem_cons_of_mem first ho_mem
@@ -390,9 +400,10 @@ theorem inconclusive_needs_review (rs : List SolverResult)
   | cons first rest =>
     rw [hc] at h ⊢
     simp only at h ⊢
-    split_ifs at h with hagree hlen
-    · simp at h
-    · simp at h
+    split at h
+    · split at h
+      · simp at h
+      · simp at h
     · rfl
 
 /-- **PR-12 (E13/12) Inconclusive has no verdict**. -/
@@ -406,9 +417,10 @@ theorem inconclusive_no_verdict (rs : List SolverResult)
   | cons first rest =>
     rw [hc] at h ⊢
     simp only at h ⊢
-    split_ifs at h with hagree hlen
-    · simp at h
-    · simp at h
+    split at h
+    · split at h
+      · simp at h
+      · simp at h
     · rfl
 
 -- ==========================================================================
@@ -432,15 +444,16 @@ theorem needs_review_iff_no_consensus (rs : List SolverResult) :
     | cons first rest =>
       rw [hc] at h
       simp only at h
-      split_ifs at h with hagree hlen
-      · simp at h    -- crossChecked: needs_review is false
-      · simp at h    -- singleSolver: needs_review is false
+      split at h
+      · split at h
+        · simp at h    -- crossChecked: needs_review is false
+        · simp at h    -- singleSolver: needs_review is false
       · -- inconclusive
         left
         unfold reconcile
         rw [hc]
         simp only
-        split_ifs <;> rfl
+        (repeat' split) <;> rfl
   · intro h
     cases h with
     | inl h => exact inconclusive_needs_review rs h
