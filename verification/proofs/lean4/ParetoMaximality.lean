@@ -93,7 +93,7 @@ structure ProofObjective where
   trust_level   : TrustLevel
   memory_bytes  : Nat
   proof_steps   : Nat
-deriving Repr
+deriving Repr, DecidableEq
 
 -- ==========================================================================
 -- Section 3: Dominance relation
