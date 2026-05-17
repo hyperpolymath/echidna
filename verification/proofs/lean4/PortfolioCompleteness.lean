@@ -147,24 +147,17 @@ theorem reconcile_exhaustive (rs : List SolverResult) :
     ∨ (reconcile rs).confidence = PortfolioConfidence.inconclusive
     ∨ (reconcile rs).confidence = PortfolioConfidence.allTimedOut := by
   unfold reconcile
-  cases hcomp : completed rs with
+  cases _hcomp : completed rs with
   | nil =>
     right; right; right; rfl
   | cons first rest =>
     simp only
-    by_cases hd : (((rest.filter (fun r => r.verified ≠ some (first.verified.getD false))).map (·.prover_id))).isEmpty
-    · -- all agree
-      simp [hd]
-      by_cases hlen : (completed rs).length ≥ 2
-      · rw [hcomp] at hlen ⊢
-        simp [hlen]
-        left; rfl
-      · rw [hcomp] at hlen ⊢
-        simp [hlen]
-        right; left; rfl
-    · -- disagreement
-      simp [hd]
-      right; right; left; rfl
+    -- `split_ifs` is a mathlib tactic; core `split` handles each `if`.
+    split
+    · split
+      · left; rfl
+      · right; left; rfl
+    · right; right; left; rfl
 
 /-- **PR-2 (E13/2) AllTimedOut iff every solver timed out**. -/
 theorem allTimedOut_iff_no_completed (rs : List SolverResult) :
@@ -178,7 +171,9 @@ theorem allTimedOut_iff_no_completed (rs : List SolverResult) :
     | cons first rest =>
       rw [hc] at h
       simp only at h
-      split_ifs at h <;> simp at h
+      -- `split_ifs` is mathlib; core `split` peels each `if`.
+      repeat' split at h
+      all_goals simp at h
   · intro h
     unfold reconcile
     rw [h]
@@ -229,14 +224,17 @@ theorem singleSolver_implies_one_completed (rs : List SolverResult) :
   | cons first rest =>
     rw [hc] at h
     simp only at h
-    split_ifs at h with hagree hlen
-    · -- crossChecked branch
-      simp at h
-    · -- singleSolver branch — extract length info
-      -- hlen : ¬ (rest.length + 1 ≥ 2) ⇒ rest = []
-      simp at hlen
-      rw [Nat.lt_iff_add_one_le] at hlen
-      omega
+    -- `split_ifs` is mathlib; core `split` peels each `if`.
+    split at h
+    · split at h
+      · -- crossChecked branch
+        simp at h
+      · -- singleSolver branch — `¬ (rest.length+1 ≥ 2)` ⇒ rest = []
+        rename_i hlen
+        have hlc : (first :: rest).length = rest.length + 1 :=
+          List.length_cons first rest
+        simp only [Nat.not_le] at hlen
+        omega
     · -- inconclusive branch
       simp at h
 
@@ -256,11 +254,12 @@ theorem crossChecked_implies_two_completed (rs : List SolverResult) :
   | cons first rest =>
     rw [hc] at h
     simp only at h
-    split_ifs at h with hagree hlen
-    · -- crossChecked: hlen has the length bound
-      rw [hc] at hlen ⊢
-      exact hlen
-    · simp at h
+    split at h
+    · split at h
+      · -- crossChecked: the length-bound hypothesis is exactly the goal
+        rename_i hlen
+        exact hlen
+      · simp at h
     · simp at h
 
 /-- **PR-7 (E13/7) CrossChecked yields a definite verdict**. -/
@@ -273,11 +272,14 @@ theorem crossChecked_has_verdict (rs : List SolverResult) :
   | nil =>
     rw [hc] at h; simp at h
   | cons first rest =>
-    rw [hc] at h ⊢
+    rw [hc] at h
     simp only at h ⊢
-    split_ifs at h with hagree hlen
-    · exact ⟨first.verified.getD false, rfl⟩
-    · simp at h
+    split at h
+    · split at h
+      · refine ⟨first.verified.getD false, ?_⟩
+        rename_i hd hl
+        rw [if_pos hd, if_pos hl]
+      · simp at h
     · simp at h
 
 /-- **PR-8 (E13/8) CrossChecked has no review flag**. -/
@@ -290,11 +292,13 @@ theorem crossChecked_no_review (rs : List SolverResult) :
   | nil =>
     rw [hc] at h; simp at h
   | cons first rest =>
-    rw [hc] at h ⊢
+    rw [hc] at h
     simp only at h ⊢
-    split_ifs at h with hagree hlen
-    · rfl
-    · simp at h
+    split at h
+    · split at h
+      · rename_i hd hl
+        rw [if_pos hd, if_pos hl]
+      · simp at h
     · simp at h
 
 /-- **PR-9 (E13/9) CrossChecked verdict matches first completed**. -/
@@ -306,9 +310,11 @@ theorem crossChecked_verdict_matches_first (rs : List SolverResult)
   unfold reconcile at hcc ⊢
   rw [hc] at hcc ⊢
   simp only at hcc ⊢
-  split_ifs at hcc with hagree hlen
-  · rfl
-  · simp at hcc
+  split at hcc
+  · split at hcc
+    · rename_i hd hl
+      rw [if_pos hd, if_pos hl]
+    · simp at hcc
   · simp at hcc
 
 -- ==========================================================================
@@ -328,56 +334,58 @@ theorem inconclusive_implies_disagreement (rs : List SolverResult) :
   unfold reconcile at h
   cases hc : completed rs with
   | nil =>
-    rw [hc] at h; simp at h
+    simp [hc] at h
   | cons first rest =>
     rw [hc] at h
     simp only at h
-    split_ifs at h with hagree hlen
-    · simp at h
-    · simp at h
-    · -- disagreement branch: at least one element of `rest` has verified ≠ some firstV
-      -- Extract that witness.
-      simp at hagree
-      -- hagree gives the existence of some r ∈ rest with verified ≠ some (first.verified.getD false)
-      have ⟨other, ho_mem, ho_ne⟩ : ∃ r ∈ rest, r.verified ≠ some (first.verified.getD false) := by
-        by_contra hno
-        push_neg at hno
-        apply hagree
-        intro r hr_in_filter
-        rw [List.mem_filter] at hr_in_filter
-        exact (hno r hr_in_filter.1) hr_in_filter.2
-      -- `first ∈ completed rs` because completed rs = first :: rest
-      have hfirst_mem : first ∈ completed rs := by rw [hc]; exact List.mem_cons_self first rest
-      have hother_mem : other ∈ completed rs := by rw [hc]; exact List.mem_cons_of_mem first ho_mem
-      -- `first.verified.isSome` because every element of `completed rs` is some
+    split at h
+    · -- disagreeing.isEmpty = true: split inner length `if`; both give
+      -- crossChecked / singleSolver, contradicting `= inconclusive`.
+      split at h <;> simp at h
+    · -- disagreement branch: the disagreeing list is non-empty, so some
+      -- element of `rest` has `verified ≠ some firstVerdict`.
+      rename_i hdis
+      -- `split_ifs`/`push_neg` are mathlib; extract the witness with core
+      -- `List.isEmpty_iff` + `List.exists_mem_of_ne_nil`.
+      rw [List.isEmpty_iff, List.map_eq_nil_iff] at hdis
+      obtain ⟨other, ho_in_filter⟩ := List.exists_mem_of_ne_nil _ hdis
+      rw [List.mem_filter] at ho_in_filter
+      have ho_mem : other ∈ rest := ho_in_filter.1
+      have ho_ne : other.verified ≠ some (first.verified.getD false) := by
+        have := ho_in_filter.2
+        simpa using this
+      -- `completed rs` was substituted to `first :: rest` in the goal by
+      -- `cases hc`; supply memberships against `first :: rest` directly.
+      -- `completed rs = rs.filter (·.verified.isSome)` definitionally, so
+      -- via `hc` every element of `first :: rest` is `isSome`.
+      have hcomp_eq : rs.filter (fun r => r.verified.isSome) = first :: rest := by
+        have : completed rs = first :: rest := hc
+        simpa [completed] using this
       have hfirst_some : first.verified.isSome := by
-        have : first ∈ rs.filter (fun r => r.verified.isSome) := by
-          rw [show (rs.filter (fun r => r.verified.isSome)) = completed rs from rfl, hc]
-          exact List.mem_cons_self first rest
-        rw [List.mem_filter] at this
-        exact this.2
+        have hmem : first ∈ rs.filter (fun r => r.verified.isSome) := by
+          rw [hcomp_eq]; exact List.mem_cons_self first rest
+        rw [List.mem_filter] at hmem
+        exact hmem.2
       have hother_some : other.verified.isSome := by
-        have : other ∈ rs.filter (fun r => r.verified.isSome) := by
-          rw [show (rs.filter (fun r => r.verified.isSome)) = completed rs from rfl, hc]
-          exact List.mem_cons_of_mem first ho_mem
-        rw [List.mem_filter] at this
-        exact this.2
-      refine ⟨first, hfirst_mem, other, hother_mem, hfirst_some, hother_some, ?_⟩
-      -- Show first.verified ≠ other.verified
+        have hmem : other ∈ rs.filter (fun r => r.verified.isSome) := by
+          rw [hcomp_eq]; exact List.mem_cons_of_mem first ho_mem
+        rw [List.mem_filter] at hmem
+        exact hmem.2
+      refine ⟨first, List.mem_cons_self first rest,
+        other, List.mem_cons_of_mem first ho_mem,
+        hfirst_some, hother_some, ?_⟩
+      -- Show first.verified ≠ other.verified.
       cases hfv : first.verified with
-      | none => simp [hfv] at hfirst_some
-      | some b =>
-        cases hov : other.verified with
-        | none => simp [hov] at hother_some
-        | some b' =>
-          -- ho_ne says other.verified ≠ some (first.verified.getD false)
-          -- with hfv, first.verified.getD false = b
-          rw [hfv]
-          simp [hfv] at ho_ne
-          rw [hov] at ho_ne ⊢
-          intro heq
-          have := Option.some_injective _ heq
-          exact ho_ne this.symm
+      | none =>
+        -- `hfv : first.verified = none` contradicts `first.verified.isSome`.
+        rw [hfv] at hfirst_some
+        simp at hfirst_some
+      | some bf =>
+        -- `cases hfv:` substituted `first.verified := some bf` in the goal
+        -- (now `some bf ≠ other.verified`) but not in `ho_ne`; rewrite the
+        -- latter with `hfv` so both sides talk about `some bf`.
+        simp only [hfv, Option.getD_some] at ho_ne
+        exact fun heq => ho_ne heq.symm
 
 /-- **PR-11 (E13/11) Inconclusive needs review**. -/
 theorem inconclusive_needs_review (rs : List SolverResult)
@@ -386,14 +394,17 @@ theorem inconclusive_needs_review (rs : List SolverResult)
   unfold reconcile at h ⊢
   cases hc : completed rs with
   | nil =>
-    rw [hc] at h; simp at h
+    simp [hc] at h
   | cons first rest =>
-    rw [hc] at h ⊢
+    rw [hc] at h
     simp only at h ⊢
-    split_ifs at h with hagree hlen
-    · simp at h
-    · simp at h
-    · rfl
+    split at h
+    · split at h
+      · simp at h
+      · simp at h
+    · -- inconclusive branch: needs_review is literally `true`
+      rename_i hd
+      rw [if_neg hd]
 
 /-- **PR-12 (E13/12) Inconclusive has no verdict**. -/
 theorem inconclusive_no_verdict (rs : List SolverResult)
@@ -402,14 +413,16 @@ theorem inconclusive_no_verdict (rs : List SolverResult)
   unfold reconcile at h ⊢
   cases hc : completed rs with
   | nil =>
-    rw [hc] at h; simp at h
+    simp [hc] at h
   | cons first rest =>
-    rw [hc] at h ⊢
+    rw [hc] at h
     simp only at h ⊢
-    split_ifs at h with hagree hlen
-    · simp at h
-    · simp at h
-    · rfl
+    split at h
+    · split at h
+      · simp at h
+      · simp at h
+    · rename_i hd
+      rw [if_neg hd]
 
 -- ==========================================================================
 -- Section 7: needs_review predicate
@@ -423,24 +436,22 @@ theorem needs_review_iff_no_consensus (rs : List SolverResult) :
     ∨ (reconcile rs).confidence = PortfolioConfidence.allTimedOut := by
   constructor
   · intro h
-    unfold reconcile at h
+    unfold reconcile at h ⊢
     cases hc : completed rs with
     | nil =>
       right
-      unfold reconcile
-      rw [hc]
+      rfl
     | cons first rest =>
       rw [hc] at h
-      simp only at h
-      split_ifs at h with hagree hlen
-      · simp at h    -- crossChecked: needs_review is false
-      · simp at h    -- singleSolver: needs_review is false
+      simp only at h ⊢
+      split at h
+      · split at h
+        · simp at h    -- crossChecked: needs_review is false
+        · simp at h    -- singleSolver: needs_review is false
       · -- inconclusive
         left
-        unfold reconcile
-        rw [hc]
-        simp only
-        split_ifs <;> rfl
+        rename_i hd
+        rw [if_neg hd]
   · intro h
     cases h with
     | inl h => exact inconclusive_needs_review rs h
@@ -471,14 +482,15 @@ theorem unanimous_yields_crosschecked (rs : List SolverResult)
     ∧ (reconcile rs).verified = some b := by
   -- Step 1: the inner `firstVerdict` of `reconcile` evaluates to `b`.
   have hfv : first.verified.getD false = b := by
-    rw [hfirst]
+    rw [hfirst]; rfl
   -- Step 2: every member of `rest` satisfies `r.verified = some b`,
-  -- so the disagreement filter on `rest` is empty.
+  -- so the disagreement filter on `rest` is empty.  (`not_not` is a
+  -- mathlib lemma; `simp [this]` discharges the `≠` directly instead.)
   have hfilter : rest.filter (fun r => r.verified ≠ some b) = [] := by
     apply List.filter_eq_nil_iff.mpr
     intro r hr
-    simp only [ne_eq, not_not]
-    exact hall r hr
+    have hrb : r.verified = some b := hall r hr
+    simp [hrb]
   -- Step 3: `rest ≠ []` ⇒ length of completed rs ≥ 2.
   have hrest_pos : rest.length ≥ 1 := by
     cases rest with
@@ -490,11 +502,11 @@ theorem unanimous_yields_crosschecked (rs : List SolverResult)
   -- Step 4: compute reconcile rs.
   unfold reconcile
   rw [hc]
-  -- After unfolding the match, replace the inner `let firstVerdict` value.
-  simp only [hfv, hfilter, List.map_nil, List.isEmpty_nil]
-  -- The if-test on isEmpty fires (disagreement list is empty).
-  -- The if-test on length fires (≥ 2).
+  -- Reduce the inner `let firstVerdict` and the empty disagreement list,
+  -- firing the outer `isEmpty` `if`; then the length `if` via `hlen`.
+  simp only [hfv, hfilter, List.map_nil, List.isEmpty_nil, if_true]
   rw [hc] at hlen
-  simp [hlen]
+  rw [if_pos hlen]
+  exact ⟨rfl, rfl⟩
 
 end EchidnaPortfolio

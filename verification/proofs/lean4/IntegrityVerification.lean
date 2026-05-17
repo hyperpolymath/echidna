@@ -72,12 +72,12 @@ deriving DecidableEq, Repr
 /-- A 512-bit digest (SHAKE-256 squeezed to 512 bits). -/
 structure Digest512 where
   bytes : List UInt8  -- canonical length = 64
-deriving DecidableEq, Repr
+deriving DecidableEq, Repr, Inhabited
 
 /-- A 256-bit digest (BLAKE3 standard output). -/
 structure Digest256 where
   bytes : List UInt8  -- canonical length = 32
-deriving DecidableEq, Repr
+deriving DecidableEq, Repr, Inhabited
 
 -- ==========================================================================
 -- Section 2: Hash functions (modelled as opaque pure functions)
@@ -181,16 +181,20 @@ theorem verify_sound (entry : ManifestEntry) (file : FileResult) :
       ∧ hashShake bs = expected := by
   intro h
   unfold verify at h
-  match hf : file, hh : entry.hash with
-  | FileResult.notFound, _ =>
-    rw [hf] at h; simp at h
-  | FileResult.found bs, ManifestHash.placeholder =>
-    rw [hf, hh] at h; simp at h
-  | FileResult.found bs, ManifestHash.digest expected =>
-    rw [hf, hh] at h
-    by_cases heq : hashShake bs = expected
-    · exact ⟨bs, expected, hf, hh, heq⟩
-    · simp [heq] at h
+  -- A simultaneous named multi-subject `match … with` is not supported in
+  -- tactic mode in Lean 4.13.0 (punch-list G); use sequential `cases` +
+  -- `split` on the inner `match`/`if` instead.
+  cases hf : file with
+  | notFound => rw [hf] at h; simp at h
+  | found bs =>
+    rw [hf] at h
+    cases hh : entry.hash with
+    | placeholder => rw [hh] at h; simp at h
+    | digest expected =>
+      rw [hh] at h
+      by_cases heq : hashShake bs = expected
+      · exact ⟨bs, expected, rfl, rfl, heq⟩
+      · simp [heq] at h
 
 /-- **PI-2 (E11/2) Verifier completeness**: if the file is found and
     the manifest digest matches, `verify` returns `verified`. -/

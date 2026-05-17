@@ -93,7 +93,7 @@ structure ProofObjective where
   trust_level   : TrustLevel
   memory_bytes  : Nat
   proof_steps   : Nat
-deriving Repr
+deriving Repr, DecidableEq
 
 -- ==========================================================================
 -- Section 3: Dominance relation
@@ -246,9 +246,12 @@ theorem frontier_or_dominated (cs : List ProofObjective) :
   by_cases hp : isPareto a cs
   · exact Or.inl (frontier_complete cs a ha hp)
   · right
+    -- `push_neg` is a mathlib tactic; hand-roll the negation of the
+    -- bounded ∀ using the decidability of the (finite) existential.
     unfold isPareto at hp
-    push_neg at hp
-    exact hp
+    by_cases hex : ∃ b ∈ cs, dominates b a
+    · exact hex
+    · exact absurd (fun b hb hba => hex ⟨b, hb, hba⟩) hp
 
 -- ==========================================================================
 -- Section 8: Best-objective preservation
