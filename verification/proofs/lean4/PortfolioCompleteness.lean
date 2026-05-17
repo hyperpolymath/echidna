@@ -135,6 +135,41 @@ def reconcile (rs : List SolverResult) : PortfolioResult :=
       , disagreeing_provers := disagreeing
       , needs_review := true }
 
+/-- Characterisation of `reconcile` on a non-empty completed list.
+    Lets every downstream proof reduce `reconcile` by a single `rw`
+    instead of relying on `match`/`let` reduction inside hypotheses
+    (which core Lean 4.13 `simp` does not perform under projections). -/
+theorem reconcile_cons {rs : List SolverResult} {first : SolverResult}
+    {rest : List SolverResult} (hc : completed rs = first :: rest) :
+    reconcile rs =
+      (if ((rest.filter (fun r => r.verified ≠ some (first.verified.getD false))).map (·.prover_id)).isEmpty then
+        (if (first :: rest).length ≥ 2 then
+          { verified := some (first.verified.getD false), confidence := PortfolioConfidence.crossChecked,
+            agreeing_provers := first.prover_id ::
+              (rest.filter (fun r => r.verified = some (first.verified.getD false))).map (·.prover_id),
+            disagreeing_provers := [], needs_review := false }
+        else
+          { verified := some (first.verified.getD false), confidence := PortfolioConfidence.singleSolver,
+            agreeing_provers := first.prover_id ::
+              (rest.filter (fun r => r.verified = some (first.verified.getD false))).map (·.prover_id),
+            disagreeing_provers := [], needs_review := false })
+       else
+        { verified := none, confidence := PortfolioConfidence.inconclusive,
+          agreeing_provers := first.prover_id ::
+            (rest.filter (fun r => r.verified = some (first.verified.getD false))).map (·.prover_id),
+          disagreeing_provers := (rest.filter (fun r => r.verified ≠ some (first.verified.getD false))).map (·.prover_id),
+          needs_review := true }) := by
+  unfold reconcile
+  rw [hc]
+
+/-- `reconcile` on an empty completed list. -/
+theorem reconcile_nil {rs : List SolverResult} (hc : completed rs = []) :
+    reconcile rs =
+      { verified := none, confidence := PortfolioConfidence.allTimedOut,
+        agreeing_provers := [], disagreeing_provers := [], needs_review := true } := by
+  unfold reconcile
+  rw [hc]
+
 -- ==========================================================================
 -- Section 3: Exhaustiveness, all-timed-out, single-solver
 -- ==========================================================================
@@ -147,24 +182,16 @@ theorem reconcile_exhaustive (rs : List SolverResult) :
     ∨ (reconcile rs).confidence = PortfolioConfidence.inconclusive
     ∨ (reconcile rs).confidence = PortfolioConfidence.allTimedOut := by
   unfold reconcile
-  cases hcomp : completed rs with
+  cases _hcomp : completed rs with
   | nil =>
     right; right; right; rfl
   | cons first rest =>
     simp only
-    by_cases hd : (((rest.filter (fun r => r.verified ≠ some (first.verified.getD false))).map (·.prover_id))).isEmpty
-    · -- all agree
-      simp [hd]
-      by_cases hlen : (completed rs).length ≥ 2
-      · rw [hcomp] at hlen ⊢
-        simp [hlen]
-        left; rfl
-      · rw [hcomp] at hlen ⊢
-        simp [hlen]
-        right; left; rfl
-    · -- disagreement
-      simp [hd]
-      right; right; left; rfl
+    split
+    · split
+      · exact Or.inl rfl
+      · exact Or.inr (Or.inl rfl)
+    · exact Or.inr (Or.inr (Or.inl rfl))
 
 /-- **PR-2 (E13/2) AllTimedOut iff every solver timed out**. -/
 theorem allTimedOut_iff_no_completed (rs : List SolverResult) :
@@ -235,8 +262,7 @@ theorem singleSolver_implies_one_completed (rs : List SolverResult) :
         simp at h
       · -- singleSolver branch — extract length info
         rename_i hlen
-        simp at hlen
-        rw [hc, List.length_cons]
+        simp only [ge_iff_le, Nat.not_le, List.length_cons] at hlen ⊢
         omega
     · -- inconclusive branch
       simp at h
@@ -250,19 +276,15 @@ theorem crossChecked_implies_two_completed (rs : List SolverResult) :
     (reconcile rs).confidence = PortfolioConfidence.crossChecked →
     (completed rs).length ≥ 2 := by
   intro h
-  unfold reconcile at h
   cases hc : completed rs with
-  | nil =>
-    rw [hc] at h; simp at h
+  | nil => rw [reconcile_nil hc] at h; simp at h
   | cons first rest =>
-    rw [hc] at h
-    simp only at h
+    rw [reconcile_cons hc] at h
     split at h
     · split at h
-      · -- crossChecked: hlen has the length bound
+      · -- crossChecked: the inner-if hypothesis is the length bound
         rename_i hlen
-        rw [hc]
-        exact hlen
+        simpa [hc] using hlen
       · simp at h
     · simp at h
 
@@ -271,16 +293,13 @@ theorem crossChecked_has_verdict (rs : List SolverResult) :
     (reconcile rs).confidence = PortfolioConfidence.crossChecked →
     ∃ b, (reconcile rs).verified = some b := by
   intro h
-  unfold reconcile at h ⊢
   cases hc : completed rs with
-  | nil =>
-    rw [hc] at h; simp at h
+  | nil => rw [reconcile_nil hc] at h; simp at h
   | cons first rest =>
-    rw [hc] at h ⊢
-    simp only at h ⊢
+    rw [reconcile_cons hc] at h ⊢
     split at h
     · split at h
-      · exact ⟨first.verified.getD false, rfl⟩
+      · refine ⟨first.verified.getD false, ?_⟩; simp_all
       · simp at h
     · simp at h
 
@@ -289,16 +308,13 @@ theorem crossChecked_no_review (rs : List SolverResult) :
     (reconcile rs).confidence = PortfolioConfidence.crossChecked →
     (reconcile rs).needs_review = false := by
   intro h
-  unfold reconcile at h ⊢
   cases hc : completed rs with
-  | nil =>
-    rw [hc] at h; simp at h
+  | nil => rw [reconcile_nil hc] at h; simp at h
   | cons first rest =>
-    rw [hc] at h ⊢
-    simp only at h ⊢
+    rw [reconcile_cons hc] at h ⊢
     split at h
     · split at h
-      · rfl
+      · simp_all
       · simp at h
     · simp at h
 
@@ -308,12 +324,10 @@ theorem crossChecked_verdict_matches_first (rs : List SolverResult)
     (hc : completed rs = first :: rest)
     (hcc : (reconcile rs).confidence = PortfolioConfidence.crossChecked) :
     (reconcile rs).verified = some (first.verified.getD false) := by
-  unfold reconcile at hcc ⊢
-  rw [hc] at hcc ⊢
-  simp only at hcc ⊢
+  rw [reconcile_cons hc] at hcc ⊢
   split at hcc
   · split at hcc
-    · rfl
+    · simp_all
     · simp at hcc
   · simp at hcc
 
@@ -393,35 +407,25 @@ theorem inconclusive_implies_disagreement (rs : List SolverResult) :
 theorem inconclusive_needs_review (rs : List SolverResult)
     (h : (reconcile rs).confidence = PortfolioConfidence.inconclusive) :
     (reconcile rs).needs_review = true := by
-  unfold reconcile at h ⊢
   cases hc : completed rs with
-  | nil =>
-    rw [hc] at h; simp at h
+  | nil => rw [reconcile_nil hc] at h; simp at h
   | cons first rest =>
-    rw [hc] at h ⊢
-    simp only at h ⊢
+    rw [reconcile_cons hc] at h ⊢
     split at h
-    · split at h
-      · simp at h
-      · simp at h
-    · rfl
+    · split at h <;> simp at h
+    · split <;> simp_all
 
 /-- **PR-12 (E13/12) Inconclusive has no verdict**. -/
 theorem inconclusive_no_verdict (rs : List SolverResult)
     (h : (reconcile rs).confidence = PortfolioConfidence.inconclusive) :
     (reconcile rs).verified = none := by
-  unfold reconcile at h ⊢
   cases hc : completed rs with
-  | nil =>
-    rw [hc] at h; simp at h
+  | nil => rw [reconcile_nil hc] at h; simp at h
   | cons first rest =>
-    rw [hc] at h ⊢
-    simp only at h ⊢
+    rw [reconcile_cons hc] at h ⊢
     split at h
-    · split at h
-      · simp at h
-      · simp at h
-    · rfl
+    · split at h <;> simp at h
+    · split <;> simp_all
 
 -- ==========================================================================
 -- Section 7: needs_review predicate
