@@ -213,7 +213,7 @@ theorem failed_integrity_implies_level1 :
 theorem adding_prover_monotone (f : TrustFactors) :
     let f' := { f with confirming_provers := f.confirming_provers + 1 }
     computeTrustLevel f ≤ computeTrustLevel f' := by
-  intro f'
+  intro _f'
   obtain ⟨cp, hcert, cv, wad, si, sk⟩ := f
   show computeTrustLevel _ ≤ computeTrustLevel _
   simp only [computeTrustLevel]
@@ -236,7 +236,7 @@ theorem verifying_cert_monotone (f : TrustFactors)
     (h_has_cert : f.has_certificate = true) :
     let f' := { f with certificate_verified := true }
     computeTrustLevel f ≤ computeTrustLevel f' := by
-  intro f'
+  intro _f'
   obtain ⟨cp, hcert, cv, wad, si, sk⟩ := f
   subst h_has_cert
   show computeTrustLevel _ ≤ computeTrustLevel _
@@ -256,7 +256,7 @@ theorem verifying_cert_monotone (f : TrustFactors)
 theorem small_kernel_monotone (f : TrustFactors) :
     let f' := { f with is_small_kernel := true }
     computeTrustLevel f ≤ computeTrustLevel f' := by
-  intro f'
+  intro _f'
   obtain ⟨cp, hcert, cv, wad, si, sk⟩ := f
   show computeTrustLevel _ ≤ computeTrustLevel _
   simp only [computeTrustLevel]
