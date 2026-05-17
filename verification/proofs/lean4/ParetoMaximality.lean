@@ -247,8 +247,9 @@ theorem frontier_or_dominated (cs : List ProofObjective) :
   · exact Or.inl (frontier_complete cs a ha hp)
   · right
     unfold isPareto at hp
-    push_neg at hp
-    exact hp
+    apply Classical.byContradiction
+    intro hcon
+    exact hp (fun b hb hdom => hcon ⟨b, hb, hdom⟩)
 
 -- ==========================================================================
 -- Section 8: Best-objective preservation
