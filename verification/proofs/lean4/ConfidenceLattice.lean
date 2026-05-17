@@ -65,29 +65,19 @@ theorem value_injective : ∀ a b : TrustLevel, a.value = b.value → a = b := b
 
 -- Reflexivity
 theorem le_refl : ∀ a : TrustLevel, a ≤ a := by
-  intro a; unfold_let instLE; simp [LE.le, le]; omega
+  intro a; cases a <;> decide
 
 -- Antisymmetry
 theorem le_antisymm : ∀ a b : TrustLevel, a ≤ b → b ≤ a → a = b := by
-  intro a b hab hba
-  apply value_injective
-  unfold_let instLE at hab hba
-  simp [LE.le, le] at hab hba
-  omega
+  intro a b; cases a <;> cases b <;> decide
 
 -- Transitivity
 theorem le_trans : ∀ a b c : TrustLevel, a ≤ b → b ≤ c → a ≤ c := by
-  intro a b c hab hbc
-  unfold_let instLE at *
-  simp [LE.le, le] at *
-  omega
+  intro a b c; cases a <;> cases b <;> cases c <;> decide
 
 -- Totality (linear order)
 theorem le_total : ∀ a b : TrustLevel, a ≤ b ∨ b ≤ a := by
-  intro a b
-  unfold_let instLE
-  simp [LE.le, le]
-  omega
+  intro a b; cases a <;> cases b <;> decide
 
 -- ==========================================================================
 -- Section 2: Lattice operations (meet / join)
@@ -106,51 +96,29 @@ instance : Max TrustLevel := ⟨join⟩
 
 /-- meet is a lower bound (left) -/
 theorem meet_le_left (a b : TrustLevel) : meet a b ≤ a := by
-  simp [meet]
-  split
-  · exact le_refl a
-  · rename_i h
-    unfold_let instLE at h
-    simp [LE.le, le] at h
-    unfold_let instLE
-    simp [LE.le, le]
-    omega
+  cases a <;> cases b <;> decide
 
 /-- meet is a lower bound (right) -/
 theorem meet_le_right (a b : TrustLevel) : meet a b ≤ b := by
-  simp [meet]
-  split
-  · assumption
-  · exact le_refl b
+  cases a <;> cases b <;> decide
 
 /-- join is an upper bound (left) -/
 theorem le_join_left (a b : TrustLevel) : a ≤ join a b := by
-  simp [join]
-  split
-  · assumption
-  · exact le_refl a
+  cases a <;> cases b <;> decide
 
 /-- join is an upper bound (right) -/
 theorem le_join_right (a b : TrustLevel) : b ≤ join a b := by
-  simp [join]
-  split
-  · exact le_refl b
-  · rename_i h
-    unfold_let instLE at h
-    simp [LE.le, le] at h
-    unfold_let instLE
-    simp [LE.le, le]
-    omega
+  cases a <;> cases b <;> decide
 
 -- Bounded: Level1 is bottom, Level5 is top.
 
 /-- Level1 is the minimum element -/
 theorem level1_le_all : ∀ t : TrustLevel, Level1 ≤ t := by
-  intro t; cases t <;> (unfold_let instLE; simp [LE.le, le, value]; omega)
+  intro t; cases t <;> decide
 
 /-- Level5 is the maximum element -/
 theorem all_le_level5 : ∀ t : TrustLevel, t ≤ Level5 := by
-  intro t; cases t <;> (unfold_let instLE; simp [LE.le, le, value]; omega)
+  intro t; cases t <;> decide
 
 -- ==========================================================================
 -- Section 3: DangerLevel and TrustFactors model
@@ -245,112 +213,63 @@ theorem failed_integrity_implies_level1 :
 theorem adding_prover_monotone (f : TrustFactors) :
     let f' := { f with confirming_provers := f.confirming_provers + 1 }
     computeTrustLevel f ≤ computeTrustLevel f' := by
+  intro f'
+  obtain ⟨cp, hcert, cv, wad, si, sk⟩ := f
+  show computeTrustLevel _ ≤ computeTrustLevel _
   simp only [computeTrustLevel]
-  -- Case-split on danger level to handle the early returns
-  cases hd : f.worst_axiom_danger <;> simp [hd]
-  · -- Safe
-    cases hi : f.solver_integrity_ok <;> simp [hi]
-    cases hk : f.is_small_kernel <;> simp [hk]
-    · -- not small kernel
-      cases hcv : f.certificate_verified <;> simp [hcv]
-      · -- cert not verified
-        cases hc : f.has_certificate <;> simp [hc]
-        all_goals (
-          unfold_let instLE; simp [LE.le, le, value]
-          omega
-        )
-      · cases hc : f.has_certificate <;> simp [hc]
-        all_goals (
-          unfold_let instLE; simp [LE.le, le, value]
-          omega
-        )
-    · -- small kernel
-      cases hcv : f.certificate_verified <;> simp [hcv]
-      · cases hc : f.has_certificate <;> simp [hc]
-        all_goals (
-          unfold_let instLE; simp [LE.le, le, value]
-          omega
-        )
-      · -- cert verified, small kernel
-        unfold_let instLE; simp [LE.le, le, value]
-        omega
-  · -- Noted
-    cases hi : f.solver_integrity_ok <;> simp [hi]
-    cases hk : f.is_small_kernel <;> simp [hk]
-    · cases hcv : f.certificate_verified <;> simp [hcv]
-      · cases hc : f.has_certificate <;> simp [hc]
-        all_goals (
-          unfold_let instLE; simp [LE.le, le, value]
-          omega
-        )
-      · cases hc : f.has_certificate <;> simp [hc]
-        all_goals (
-          unfold_let instLE; simp [LE.le, le, value]
-          omega
-        )
-    · cases hcv : f.certificate_verified <;> simp [hcv]
-      · cases hc : f.has_certificate <;> simp [hc]
-        all_goals (
-          unfold_let instLE; simp [LE.le, le, value]
-          omega
-        )
-      · unfold_let instLE; simp [LE.le, le, value]
-        omega
-  · -- Warning: both map to Level1
-    exact le_refl Level1
-  · -- Reject: both map to Level1
-    exact le_refl Level1
+  -- The only confirming_provers-dependent guards are the `≥ 2` thresholds.
+  -- For cp < 2 the threshold is ground (cp ∈ {0,1}); for cp ≥ 2 both
+  -- `cp ≥ 2` (for f) and `cp+1 ≥ 2` (for f') hold, so all guards resolve.
+  rcases Nat.lt_or_ge cp 2 with hlt | hge
+  · obtain _ | _ | cp := cp
+    · cases wad <;> cases hcert <;> cases cv <;> cases si <;> cases sk <;> decide
+    · cases wad <;> cases hcert <;> cases cv <;> cases si <;> cases sk <;> decide
+    · omega
+  · have e1 : decide (cp ≥ 2) = true := by simp [hge]
+    have e2 : decide (cp + 1 ≥ 2) = true := by simp; omega
+    have p2 : cp + 1 ≥ 2 := by omega
+    simp only [e1, e2, hge, p2, if_true]
+    cases wad <;> cases hcert <;> cases cv <;> cases si <;> cases sk <;> decide
 
 /-- Verifying a certificate never decreases trust. -/
 theorem verifying_cert_monotone (f : TrustFactors)
     (h_has_cert : f.has_certificate = true) :
     let f' := { f with certificate_verified := true }
     computeTrustLevel f ≤ computeTrustLevel f' := by
-  simp only [computeTrustLevel, h_has_cert]
-  cases hd : f.worst_axiom_danger <;> simp [hd]
-  · -- Safe
-    cases hi : f.solver_integrity_ok <;> simp [hi]
-    cases hk : f.is_small_kernel <;> simp [hk]
-    · -- not small kernel: result is ≤ Level3
-      cases hcv : f.certificate_verified <;> simp [hcv]
-      all_goals (unfold_let instLE; simp [LE.le, le, value]; omega)
-    · -- small kernel
-      cases hcv : f.certificate_verified <;> simp [hcv]
-      all_goals (unfold_let instLE; simp [LE.le, le, value]; omega)
-  · -- Noted
-    cases hi : f.solver_integrity_ok <;> simp [hi]
-    cases hk : f.is_small_kernel <;> simp [hk]
-    · cases hcv : f.certificate_verified <;> simp [hcv]
-      all_goals (unfold_let instLE; simp [LE.le, le, value]; omega)
-    · cases hcv : f.certificate_verified <;> simp [hcv]
-      all_goals (unfold_let instLE; simp [LE.le, le, value]; omega)
-  · exact le_refl Level1
-  · exact le_refl Level1
+  intro f'
+  obtain ⟨cp, hcert, cv, wad, si, sk⟩ := f
+  subst h_has_cert
+  show computeTrustLevel _ ≤ computeTrustLevel _
+  simp only [computeTrustLevel]
+  -- certificate_verified changes; confirming_provers is unchanged, so the
+  -- `≥ 2` guard is identical on both sides — pin it, then all guards resolve.
+  rcases Nat.lt_or_ge cp 2 with hlt | hge
+  · have e1 : decide (cp ≥ 2) = false := by simp; omega
+    have hn : ¬ cp ≥ 2 := by omega
+    simp only [e1, hn, if_false]
+    cases wad <;> cases cv <;> cases si <;> cases sk <;> decide
+  · have e1 : decide (cp ≥ 2) = true := by simp [hge]
+    simp only [e1, hge, if_true]
+    cases wad <;> cases cv <;> cases si <;> cases sk <;> decide
 
 /-- Having a small kernel never decreases trust. -/
 theorem small_kernel_monotone (f : TrustFactors) :
     let f' := { f with is_small_kernel := true }
     computeTrustLevel f ≤ computeTrustLevel f' := by
+  intro f'
+  obtain ⟨cp, hcert, cv, wad, si, sk⟩ := f
+  show computeTrustLevel _ ≤ computeTrustLevel _
   simp only [computeTrustLevel]
-  cases hd : f.worst_axiom_danger <;> simp [hd]
-  · -- Safe
-    cases hi : f.solver_integrity_ok <;> simp [hi]
-    cases hcv : f.certificate_verified <;> simp [hcv]
-    · -- cert not verified: result is Level2 or Level3 (cross-check)
-      cases hcp : f.confirming_provers ≥ 2 <;> simp [hcp]
-      all_goals (unfold_let instLE; simp [LE.le, le, value]; omega)
-    · -- cert verified: result is ≥ Level3
-      cases hcp : f.confirming_provers ≥ 2 <;> simp [hcp]
-      all_goals (unfold_let instLE; simp [LE.le, le, value]; omega)
-  · -- Noted
-    cases hi : f.solver_integrity_ok <;> simp [hi]
-    cases hcv : f.certificate_verified <;> simp [hcv]
-    · cases hcp : f.confirming_provers ≥ 2 <;> simp [hcp]
-      all_goals (unfold_let instLE; simp [LE.le, le, value]; omega)
-    · cases hcp : f.confirming_provers ≥ 2 <;> simp [hcp]
-      all_goals (unfold_let instLE; simp [LE.le, le, value]; omega)
-  · exact le_refl Level1
-  · exact le_refl Level1
+  -- is_small_kernel changes; confirming_provers is unchanged, so the
+  -- `≥ 2` guard is identical on both sides — pin it, then all guards resolve.
+  rcases Nat.lt_or_ge cp 2 with hlt | hge
+  · have e1 : decide (cp ≥ 2) = false := by simp; omega
+    have hn : ¬ cp ≥ 2 := by omega
+    simp only [e1, hn, if_false]
+    cases wad <;> cases hcert <;> cases cv <;> cases si <;> cases sk <;> decide
+  · have e1 : decide (cp ≥ 2) = true := by simp [hge]
+    simp only [e1, hge, if_true]
+    cases wad <;> cases hcert <;> cases cv <;> cases si <;> cases sk <;> decide
 
 -- ==========================================================================
 -- Section 6: Exhaustive level distinctness
@@ -371,16 +290,12 @@ theorem level4_ne_level5 : Level4 ≠ Level5 := by decide
 -- Section 7: Strict ordering chain
 -- ==========================================================================
 
-theorem level1_lt_level2 : Level1 < Level2 := by
-  unfold_let instLT; simp [LT.lt, lt, value]; omega
+theorem level1_lt_level2 : Level1 < Level2 := by decide
 
-theorem level2_lt_level3 : Level2 < Level3 := by
-  unfold_let instLT; simp [LT.lt, lt, value]; omega
+theorem level2_lt_level3 : Level2 < Level3 := by decide
 
-theorem level3_lt_level4 : Level3 < Level4 := by
-  unfold_let instLT; simp [LT.lt, lt, value]; omega
+theorem level3_lt_level4 : Level3 < Level4 := by decide
 
-theorem level4_lt_level5 : Level4 < Level5 := by
-  unfold_let instLT; simp [LT.lt, lt, value]; omega
+theorem level4_lt_level5 : Level4 < Level5 := by decide
 
 end TrustLevel
