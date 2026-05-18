@@ -8,6 +8,12 @@ on:
   release:
     types: [published]
 
+# Cause-B mitigation (#77): de-duplicate stacked sync runs.
+# cancel-in-progress is false so an in-flight sync always completes.
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: false
+
 permissions:
   contents: read
 

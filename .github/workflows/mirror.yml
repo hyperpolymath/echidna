@@ -7,6 +7,13 @@ on:
     branches: [main]
   workflow_dispatch:
 
+# Cause-B mitigation (#77): de-duplicate stacked mirror runs.
+# cancel-in-progress is false so an in-flight mirror push always
+# completes (a half-cancelled mirror could leave the remote stale).
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: false
+
 permissions:
   contents: read
 

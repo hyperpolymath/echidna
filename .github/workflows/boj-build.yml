@@ -4,6 +4,13 @@ on:
   push:
     branches: [main, master]
   workflow_dispatch:
+
+# Cause-B mitigation (#77): de-duplicate stacked BoJ build triggers.
+# cancel-in-progress is false so an in-flight dispatch always completes.
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: false
+
 jobs:
   trigger-boj:
     runs-on: ubuntu-latest
