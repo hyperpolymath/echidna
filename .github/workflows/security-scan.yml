@@ -9,6 +9,12 @@ on:
     - cron: '0 0 * * 0'  # Weekly on Sunday at midnight
   workflow_dispatch:
 
+# Cause-B mitigation (#77): cancel superseded runs so stacked pushes
+# to the same ref don't pile up identical jobs in the queue.
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
 permissions:
   contents: read
 

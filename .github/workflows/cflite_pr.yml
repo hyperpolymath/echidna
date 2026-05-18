@@ -4,6 +4,12 @@ on:
   pull_request:
     branches: [main]
 
+# Cause-B mitigation (#77): cancel superseded fuzzing runs so rapid
+# PR pushes don't pile up identical jobs in the queue.
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
 permissions:
   contents: read
 

@@ -9,6 +9,12 @@ on:
     - cron: '0 6 * * 1'  # Weekly on Monday
   workflow_dispatch:
 
+# Cause-B mitigation (#77): de-duplicate stacked enforcer runs.
+# cancel-in-progress is false — never abort a governance gate in flight.
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: false
+
 permissions:
   contents: read
 
