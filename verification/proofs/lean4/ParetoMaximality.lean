@@ -378,7 +378,7 @@ theorem domSet_strict_witness (a b : ProofObjective) (cs : List ProofObjective)
     have hbb : dominates b b := of_decide_eq_true hself
     exact dominates_irreflexive b hbb
 
-/-! **PD-3 (statement, body deferred — see §10)**
+/-! **PD-3 (statement here; proof in `ParetoStrongMaximality.lean`)**
 
 The strict-decrease lemma:
 
@@ -394,31 +394,27 @@ mathematical content is settled by PD-1 (subset preservation) +
 PD-2 (strict witness): `domSet b cs ⊊ domSet a cs`, hence the
 length drops by at least one.
 
-The remaining formal step — converting a strict-subset-with-witness
-statement on Lists to a `List.length` inequality — needs either:
+The formal step — converting a strict-subset-with-witness statement
+on Lists to a `List.length` inequality — was discharged in core Lean
+4.13 (no Mathlib) via a hand-rolled
+`List.length_lt_of_subset_with_witness` (`Nodup`-based), so PD-3 is a
+*real proven theorem*, not a docstring stub:
 
-1. `List.Nodup` on `cs` plus a hand-rolled
-   `List.length_lt_of_strict_subset_of_nodup` (~25-line proof in
-   core Lean), or
-2. Mathlib's `List.toFinset.card_lt_card` (cleanest, but pulls in
-   the entire Finset hierarchy).
+  `EchidnaPareto.domCount_strictly_decreases`
+  in `verification/proofs/lean4/ParetoStrongMaximality.lean`.
 
-We intentionally do **not** declare PD-3 as a `theorem ... := sorry`
-or as a `theorem ... := by sorry` — both would violate the
-zero-sorry policy.  Instead PD-3 is staged as a docstring-level
-specification, ready to be filled in by the lake-build agent
-(scheduled 2026-05-11) once a Lean toolchain is pinned at
-`verification/proofs/lean4/`.
-
-Tracking ticket: **ECHIDNA-PARETO-DESCENT** (`PROOF-NEEDS.md`). -/
+Resolved: **ECHIDNA-PARETO-DESCENT** (was tracked in `PROOF-NEEDS.md`;
+landed Lean-side, `lake build` green). -/
 
 -- ==========================================================================
--- Section 10: Strong maximality (design statement; proof TODO)
+-- Section 10: Strong maximality (proven in ParetoStrongMaximality.lean)
 -- ==========================================================================
 
-/-! ## Strong maximality theorem (ECHIDNA-PARETO-DESCENT)
+/-! ## Strong maximality theorem (ECHIDNA-PARETO-DESCENT — RESOLVED)
 
-The remaining E10 theorem we want is:
+The E10 strong-maximality theorem, **now proven** as
+`EchidnaPareto.dominated_by_frontier_member` in
+`ParetoStrongMaximality.lean`, is:
 
 ```
 theorem dominated_by_frontier_member (cs : List ProofObjective) :
@@ -437,30 +433,20 @@ of candidates each strictly dominating the previous one.  By
 appears twice, so the chain length is bounded by `cs.toFinset.card`.
 On termination the chain head is a frontier member dominating `a`.
 
-**Why deferred.** A clean Lean 4 proof needs either
-`Mathlib.Data.Finset` (so we can use `Finset.exists_maximal_wrt`) or
-a hand-rolled `WellFoundedRelation` instance for `dominates`
-restricted to `cs`.  The standalone toolchain at
-`proofs/lean/lean-toolchain` (Lean v4.13.0, no mathlib) does not
-include `Finset.exists_maximal_wrt`, and importing mathlib here
-would be disproportionate for a single descent argument.
+**How it was discharged.** Rather than importing Mathlib for
+`Finset.exists_maximal_wrt`, the descent argument was closed in core
+Lean 4.13 against `lean-toolchain` v4.13.0 (no mathlib): a hand-rolled
+`List.length_lt_of_subset_with_witness` gives strict `domCount`
+descent (PD-3 / `domCount_strictly_decreases`), and strong-induction
+on `domCount` over the finite candidate list yields a frontier
+dominator.  The full proof lives in `ParetoStrongMaximality.lean`
+and is covered by `lake build`.
 
-**Tracking.** Filed as ECHIDNA-PARETO-DESCENT in `PROOF-NEEDS.md`
-(this file's parent module).  Resolution options:
-
-1. Pull the relevant `Finset.exists_maximal_wrt` chain from mathlib
-   into a self-contained file (~200 lines).
-2. Add mathlib as a dependency to `proofs/lean/lakefile.lean` and
-   move this file under `lake build`.
-3. Encode `dominates` as a `Quotient`-friendly relation and use
-   `WellFoundedRelation.wf_of_finite` from `Std`.
-
-Option 2 is the hyperpolymath-preferred path (mathlib is widely
-trusted).  Until then, the practical implementation stands on
-`frontier_or_dominated` (PO-7) plus `dominates_transitive` (PO-3),
-which together give an *operational* proof that the Rust loop
-terminates correctly: walking dominators in a finite list cannot
-loop, so the chain must hit a frontier member.
+**Status.** ECHIDNA-PARETO-DESCENT is **RESOLVED** — no Mathlib
+dependency was needed; the standalone no-mathlib toolchain proves it.
+The Lean theorem now subsumes the earlier *operational* argument
+(`frontier_or_dominated` PO-7 + `dominates_transitive` PO-3), which
+remains a useful informal restatement of why the Rust loop terminates.
 -/
 
 end EchidnaPareto
