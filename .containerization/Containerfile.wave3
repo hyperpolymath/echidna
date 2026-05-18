@@ -62,37 +62,47 @@ RUN cargo build --release --bin echidna
 # #############################################################################
 FROM docker.io/library/debian:bookworm-slim AS tamarin-installer
 
+# maude is REQUIRED here, not just in the runtime stage: tamarin-prover
+# shells out to `maude --version` *before* printing its own version, so the
+# in-builder smoke-test below cannot pass without it. (This — NOT a dead URL —
+# was why tamarin always shipped a stub: the GitHub download succeeded but the
+# `--version` smoke-test exited 1 on missing maude. Brittle-pin tracking: #75.)
 RUN apt-get update && apt-get install -y --no-install-recommends \
     curl \
     ca-certificates \
-    wget \
-    file \
+    maude \
     && rm -rf /var/lib/apt/lists/*
 
-WORKDIR /opt/tamarin
+# Official prebuilt binary from the tamarin-prover/tamarin-prover GitHub
+# releases (GPL-3.0; anonymous; reliable). The linux64-ubuntu tarball contains
+# a single dynamically-linked x86_64 `tamarin-prover` at the archive root;
+# its only shared-lib deps are libm/libz/libgmp10/libc. It is a Maude
+# front-end and needs `maude` (hard) + graphviz `dot` (visualisation) at
+# runtime. Re-validate at https://github.com/tamarin-prover/tamarin-prover/releases.
+ARG TAMARIN_VERSION="1.12.0"
+ARG TAMARIN_TARBALL="tamarin-prover-${TAMARIN_VERSION}-linux64-ubuntu.tar.gz"
+ARG TAMARIN_URL="https://github.com/tamarin-prover/tamarin-prover/releases/download/${TAMARIN_VERSION}/${TAMARIN_TARBALL}"
 
-# Download prebuilt static binary from the tamarin-prover/tamarin-prover GitHub releases.
-# The release tarball contains a static Linux x86_64 binary that runs without Haskell.
-# Check https://github.com/tamarin-prover/tamarin-prover/releases for the latest version.
-ARG TAMARIN_VERSION="1.8.0"
+# Deterministic export tree so the runtime COPY never hard-fails: the real
+# binary if download + smoke-test succeed, a stub otherwise.
 RUN set -eux; \
-    TARBALL="tamarin-prover-${TAMARIN_VERSION}-linux64-ubuntu.tar.gz"; \
-    URL="https://github.com/tamarin-prover/tamarin-prover/releases/download/${TAMARIN_VERSION}/${TARBALL}"; \
-    curl -fsSL --retry 3 "${URL}" -o /tmp/tamarin.tar.gz \
-    && tar -xzf /tmp/tamarin.tar.gz -C /opt/tamarin \
-    && rm /tmp/tamarin.tar.gz \
-    && chmod +x /opt/tamarin/tamarin-prover \
-    && /opt/tamarin/tamarin-prover --version \
-    || { \
-        echo "WARNING: Prebuilt tamarin-prover binary download failed."; \
-        echo "Fallback: build via Haskell Stack (uncomment the block below)."; \
-        echo "Stack build takes several hours and ~8 GB RAM."; \
-        echo "See: https://tamarin-prover.com/installation/"; \
-        mkdir -p /opt/tamarin; \
-        printf '#!/bin/sh\necho "tamarin-prover not available (prebuilt download failed at image build time)"\nexit 1\n' \
-            > /opt/tamarin/tamarin-prover; \
-        chmod +x /opt/tamarin/tamarin-prover; \
-    }
+    mkdir -p /opt/tamarin-export; \
+    if curl -fsSL --retry 3 "${TAMARIN_URL}" -o /tmp/tamarin.tar.gz \
+       && tar -xzf /tmp/tamarin.tar.gz -C /opt/tamarin-export \
+       && chmod +x /opt/tamarin-export/tamarin-prover \
+       && /opt/tamarin-export/tamarin-prover --version; then \
+         echo "tamarin-prover ${TAMARIN_VERSION} installed."; \
+    else \
+         echo "WARNING: tamarin-prover download/smoke-test failed."; \
+         echo "Re-check https://github.com/tamarin-prover/tamarin-prover/releases."; \
+         echo "Creating stub binary as fallback."; \
+         mkdir -p /opt/tamarin-export; \
+         printf '#!/bin/sh\necho "tamarin-prover not available (bundle install failed at image build time)"\nexit 1\n' \
+             > /opt/tamarin-export/tamarin-prover; \
+         chmod +x /opt/tamarin-export/tamarin-prover; \
+    fi; \
+    rm -f /tmp/tamarin.tar.gz; \
+    touch /opt/tamarin-export/.keep
 
 # --- Fallback: Haskell Stack build (uncomment if prebuilt binary is unavailable) ---
 # RUN apt-get update && apt-get install -y --no-install-recommends \
@@ -113,20 +123,25 @@ LABEL org.opencontainers.image.licenses="PMPL-1.0-or-later"
 LABEL org.opencontainers.image.version="2.3.0"
 LABEL org.opencontainers.image.vendor="hyperpolymath"
 
-# Tamarin runtime deps: graphviz for its visualisation outputs, maude is the
-# underlying rewriting engine tamarin links against (bundled in the static
-# binary but maude files are loaded from the filesystem).
+# Tamarin runtime deps. The prebuilt binary is DYNAMICALLY linked (libm,
+# libz, libgmp10, libc) and is a Maude front-end: `maude` is a hard runtime
+# requirement (NOT bundled in the binary), graphviz `dot` is needed for
+# visualisation output.
 RUN apt-get update && apt-get install -y --no-install-recommends \
     ca-certificates \
-    libssl3 \
     libgmp10 \
+    zlib1g \
+    maude \
     graphviz \
     && rm -rf /var/lib/apt/lists/*
 
 WORKDIR /app
 
 COPY --from=rust-builder /build/target/release/echidna /app/bin/echidna
-COPY --from=tamarin-installer /opt/tamarin/tamarin-prover /usr/local/bin/tamarin-prover
+# Deterministic export tree (real binary if the GitHub download + smoke-test
+# succeeded, a one-file stub otherwise). A directory COPY never hard-fails.
+COPY --from=tamarin-installer /opt/tamarin-export/ /opt/tamarin/
+RUN ln -sf /opt/tamarin/tamarin-prover /usr/local/bin/tamarin-prover
 
 ENV PATH="/app/bin:/usr/local/bin:${PATH}"
 ENV ECHIDNA_PROVER_PATH="/usr/local/bin"
@@ -547,23 +562,27 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     gcc \
     && rm -rf /var/lib/apt/lists/*
 
-WORKDIR /build
-
-# Clone ACL2 from the official GitHub mirror.
-# Use a versioned tag for reproducibility.
+# Clone ACL2 directly at its FINAL runtime path. ACL2 is NOT relocatable:
+# `make LISP=sbcl` writes a saved_acl2 wrapper that bakes the absolute path
+# to saved_acl2.core, and the SBCL core bakes the absolute ACL2 source/books
+# directory. Building at /build/acl2 then COPYing to /opt/acl2 produced a
+# saved_acl2 whose wrapper exec'd /build/acl2/saved_acl2.core — "open: No
+# such file or directory" at runtime. Build in-place at /opt/acl2 so the
+# baked paths are correct in the runtime image (ACL2_SYSTEM_BOOKS=/opt/acl2/books).
 # Check https://github.com/acl2/acl2/releases for the latest version.
 ARG ACL2_VERSION="8.6"
 RUN git clone --depth 1 --branch "v${ACL2_VERSION}" \
-      https://github.com/acl2/acl2.git /build/acl2 \
+      https://github.com/acl2/acl2.git /opt/acl2 \
     || git clone --depth 1 \
-      https://github.com/acl2/acl2.git /build/acl2
+      https://github.com/acl2/acl2.git /opt/acl2
 
-WORKDIR /build/acl2
+WORKDIR /opt/acl2
 
 # Build ACL2 using SBCL.  The `make` target `LISP=sbcl` compiles ACL2 and
 # saves a SBCL core image.  The resulting saved_acl2 is the executable image.
 RUN make LISP=sbcl -j"$(nproc)" \
-    && test -f /build/acl2/saved_acl2 \
+    && test -f /opt/acl2/saved_acl2 \
+    && test -f /opt/acl2/saved_acl2.core \
     && echo "ACL2 build succeeded"
 
 # Create the acl2 wrapper script (mirrors the standard install convention)
@@ -591,7 +610,9 @@ WORKDIR /app
 COPY --from=rust-builder /build/target/release/echidna /app/bin/echidna
 
 # Copy ACL2 saved image and source tree (ACL2 loads books from its source tree)
-COPY --from=acl2-builder /build/acl2 /opt/acl2
+# Built in-place at /opt/acl2 → the saved_acl2 wrapper's baked core path and
+# the core's baked source/books root stay valid at runtime.
+COPY --from=acl2-builder /opt/acl2 /opt/acl2
 
 # Install the acl2 wrapper script
 RUN printf '#!/bin/sh\nexec /opt/acl2/saved_acl2 "$@"\n' > /usr/local/bin/acl2 \
@@ -627,7 +648,14 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     smlnj \
     && rm -rf /var/lib/apt/lists/*
 
-WORKDIR /build
+# Clone+build Twelf directly at its FINAL runtime path. SML/NJ heap images
+# are NOT relocatable: `make smlnj` bakes the absolute build directory into
+# bin/twelf-server's `sml @SMLload=...` and into bin/.heap/twelf-server.
+# Building at /build/twelf then COPYing to /opt/twelf produced a twelf-server
+# whose heap path /build/twelf/bin/.heap/twelf-server dangled at runtime
+# ("unable to open heap image"). Build in-place at /opt/twelf so the baked
+# paths are correct in the runtime image (which also uses TWELFDIR=/opt/twelf).
+WORKDIR /opt
 
 # Clone the Twelf source from the official repository.
 # The canonical upstream is hosted at https://github.com/standardml/twelf.
@@ -635,9 +663,9 @@ WORKDIR /build
 # note the commit in the label below.  For strict reproducibility, replace
 # `--depth 1` with `--branch <commit-sha>`.
 RUN git clone --depth 1 \
-      https://github.com/standardml/twelf.git /build/twelf
+      https://github.com/standardml/twelf.git /opt/twelf
 
-WORKDIR /build/twelf
+WORKDIR /opt/twelf
 
 # Build Twelf using SML/NJ's ml-build.
 # The Makefile target `smlnj` compiles a heap image; `twelf-server` is a
@@ -670,7 +698,9 @@ WORKDIR /app
 COPY --from=rust-builder /build/target/release/echidna /app/bin/echidna
 
 # Copy the Twelf installation (src tree + compiled heap + wrapper scripts)
-COPY --from=twelf-builder /build/twelf /opt/twelf
+# Built in-place at /opt/twelf → the baked absolute heap path in
+# bin/twelf-server / bin/.heap/twelf-server stays valid at runtime.
+COPY --from=twelf-builder /opt/twelf /opt/twelf
 
 # The twelf-server wrapper script references $TWELFDIR; make it a proper
 # system binary by symlinking.
@@ -693,8 +723,55 @@ ENTRYPOINT ["/app/bin/echidna"]
 CMD ["--help"]
 
 # #############################################################################
-# TARGET: metamath — pure-Rust in-process verifier + bundled databases
+# TARGET: metamath — upstream metamath-exe CLI verifier + bundled databases
 # #############################################################################
+
+# metamath-exe — the upstream Metamath CLI verifier. The ECHIDNA Metamath
+# backend (src/rust/provers/metamath.rs) shells out to `metamath` and drives
+# `read "<file>" / verify proof * / exit` over stdin, so a REAL binary must be
+# on PATH at runtime. The previous stage installed NO metamath binary (the
+# "pure-Rust" comment was wrong) → "metamath: not found" at runtime.
+# metamath-exe is a tiny pure-C program (libc only); the GitHub source tarball
+# is the reliable anonymous source. NOTE: metamath-exe publishes NO GitHub
+# Releases — only git tags; do not query releases/latest.
+# Re-validate the tag at https://github.com/metamath/metamath-exe/tags (#75).
+FROM docker.io/library/debian:bookworm-slim AS metamath-builder
+
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    curl \
+    ca-certificates \
+    gcc \
+    make \
+    && rm -rf /var/lib/apt/lists/*
+
+ARG MM_VERSION="0.198"
+ARG MM_TARBALL="v${MM_VERSION}.tar.gz"
+ARG MM_URL="https://github.com/metamath/metamath-exe/archive/refs/tags/${MM_TARBALL}"
+
+# Deterministic export tree so the runtime COPY never hard-fails: the real
+# binary if download + build + smoke-test succeed, a stub otherwise. The
+# GitHub tarball ships no generated ./configure; the README-documented
+# `gcc m*.c -o metamath` path is dependency-free and authoritative.
+RUN set -eux; \
+    mkdir -p /opt/mm-export/bin; \
+    if curl -fsSL --retry 3 "${MM_URL}" -o /tmp/mm.tgz \
+       && tar -xzf /tmp/mm.tgz -C /tmp \
+       && ( cd "/tmp/metamath-exe-${MM_VERSION}" \
+            && gcc m*.c -o metamath -O2 \
+            && printf 'exit\n' | ./metamath ) ; then \
+         cp "/tmp/metamath-exe-${MM_VERSION}/metamath" /opt/mm-export/bin/metamath; \
+    else \
+         echo "WARNING: metamath-exe download/build/smoke-test failed."; \
+         echo "Re-check https://github.com/metamath/metamath-exe/tags."; \
+         echo "Creating stub binary as fallback."; \
+         printf '#!/bin/sh\necho "metamath not available (build failed at image build time)"\nexit 1\n' \
+             > /opt/mm-export/bin/metamath; \
+         chmod +x /opt/mm-export/bin/metamath; \
+    fi; \
+    chmod +x /opt/mm-export/bin/metamath; \
+    rm -rf /tmp/mm.tgz "/tmp/metamath-exe-${MM_VERSION}"; \
+    touch /opt/mm-export/.keep
+
 FROM docker.io/library/debian:bookworm-slim AS mm-db-fetcher
 
 RUN apt-get update && apt-get install -y --no-install-recommends \
@@ -725,13 +802,14 @@ FROM docker.io/library/debian:bookworm-slim AS metamath
 
 LABEL maintainer="Jonathan D.A. Jewell <j.d.a.jewell@open.ac.uk>"
 LABEL org.opencontainers.image.source="https://github.com/hyperpolymath/echidna"
-LABEL org.opencontainers.image.description="ECHIDNA + Metamath - pure-Rust in-process verifier with bundled databases"
+LABEL org.opencontainers.image.description="ECHIDNA + Metamath - metamath-exe CLI verifier with bundled databases"
 LABEL org.opencontainers.image.licenses="PMPL-1.0-or-later"
 LABEL org.opencontainers.image.version="2.3.0"
 LABEL org.opencontainers.image.vendor="hyperpolymath"
 
-# Metamath is a pure-Rust verifier with no external binary; runtime deps
-# are only those needed by the ECHIDNA binary itself.
+# The Metamath backend shells out to the metamath-exe CLI (installed to
+# /usr/local/bin below). metamath-exe is pure C / libc-only, so runtime
+# deps here are only those needed by the ECHIDNA Rust binary itself.
 RUN apt-get update && apt-get install -y --no-install-recommends \
     ca-certificates \
     libssl3 \
@@ -741,6 +819,12 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 WORKDIR /app
 
 COPY --from=rust-builder /build/target/release/echidna /app/bin/echidna
+
+# The metamath-exe CLI verifier. The Rust backend execs bare `metamath`
+# (provers/mod.rs default_executable), resolved via PATH; /usr/local/bin is
+# on the default Debian PATH. The export tree always contains a file (real
+# binary or stub) so this single-file COPY never hard-fails.
+COPY --from=metamath-builder /opt/mm-export/bin/metamath /usr/local/bin/metamath
 
 # Bundle the canonical Metamath databases at a well-known path.
 # ECHIDNA reads ECHIDNA_METAMATH_DB_DIR at startup to pre-index databases.
