@@ -8,7 +8,7 @@ scaffolding with unresolved {{PROJECT}}/{{AUTHOR}} placeholders and no domain-sp
 When this project needs formal ABI verification, create domain-specific Idris2 proofs
 following the pattern in repos like `typed-wasm`, `proven`, `echidna`, or `boj-server`.
 
-## Current state (Updated 2026-05-11)
+## Current state (Updated 2026-05-18)
 
 ### Completed proofs
 
@@ -27,6 +27,9 @@ following the pattern in repos like `typed-wasm`, `proven`, `echidna`, or `boj-s
 | Stage 8a Trust-Kernel Monotonicity | `verification/proofs/idris2/TrustKernelMonotonicity.idr` | Reject/Warning danger → Level1; bad integrity → Level1; confirming≥2 + cert + small_kernel → ≥Level4; zero believe_me | I2 |
 | Stage 8a Axiom-Policy Ordering | `verification/proofs/idris2/AxiomPolicyOrdering.idr` | worstDanger equalities for all 4 AxiomPolicy variants; isAcceptable ↔ danger≠Reject; PolicyLE monotone; zero believe_me | I2 |
 | Stage 8a Clamp Trust Bounds | `verification/proofs/idris2/ClampTrustBounds.idr` | clamp_trust lower/upper bounds (1≤val≤5); monotonicity; fixed points (1→L1, 5→L5, 10→L5); surjectivity; zero believe_me | I2 |
+| E10 Pareto frontier maximality | `verification/proofs/lean4/ParetoMaximality.lean` + `ParetoStrongMaximality.lean` | PO-1..PO-11 frontier soundness; PD-1..PD-3 strict `domCount` descent; PO-12 strong maximality (`dominated_by_frontier_member`: every non-frontier candidate dominated by a frontier member). Core Lean 4.13, no mathlib, no sorry. ECHIDNA-PARETO-DESCENT resolved without a Finset dependency. | L4 |
+| E11 SHAKE3-512/BLAKE3 integrity | `verification/proofs/lean4/IntegrityVerification.lean` | PI-1..PI-12 integrity verification soundness; collision-resistance (PI-7, PI-9) stand as typeclass assumptions per zero-axiom policy. Core Lean 4.13, no sorry. NB: hash naming — implementation is SHAKE-256 squeezing 512 bits. | L4 |
+| E13 Portfolio cross-checking completeness | `verification/proofs/lean4/PortfolioCompleteness.lean` | PR-1..PR-14 portfolio reconciliation completeness via `reconcile_cons`/`reconcile_nil` characterization lemmas. Core Lean 4.13, no sorry. | L4 |
 
 ### Remaining (not Idris2, not actionable by Claude)
 
@@ -34,9 +37,6 @@ following the pattern in repos like `typed-wasm`, `proven`, `echidna`, or `boj-s
 |---|------|--------|--------|
 | E1 | Confidence scoring lattice (TrustLevel forms valid partial order) | L4 | Covered by ConfidenceLattice.lean |
 | E8 | VQL-UT query safety (SEC, deeper layer) | I2 | Partially covered by VqlUt.idr |
-| E10 | Pareto frontier maximality | L4 | **Lakefile scaffolded 2026-05-11.** `verification/proofs/lean4/lakefile.lean` + `lean-toolchain` (v4.13.0) in place. PO-1..PO-11 (`ParetoMaximality.lean`) expected to compile cleanly — no imports, pure omega/decide arithmetic proofs. PO-12 (`ParetoStrongMaximality.lean`): import path fix applied (`EchidnaPareto.ParetoMaximality` → `ParetoMaximality`); 8 List.Nodup API calls + `Nat.strong_induction_on` tactic syntax flagged as uncertain without a live toolchain — tracked in #53. `lake build` not yet run (`lake` unavailable in 2026-05-11 env). Tracking ticket: ECHIDNA-PARETO-DESCENT (math); #53 (tactic fixups). |
-| E11 | SHAKE3-512/BLAKE3 integrity | L4 | **Lakefile scaffolded 2026-05-11.** 12 PI theorems (PI-1..PI-12) expected to compile cleanly after mechanical fix: `integrityToBool` body corrected from bare `Prop` expression to `decide (s = IntegrityStatus.verified)`. Collision-resistance typeclasses (PI-7, PI-9) remain assumptions per zero-axiom policy. `match hf : file, hh : entry.hash` simultaneous named tactic match in `verify_sound` flagged in #53 as uncertain. `lake build` not yet run. NB: hash naming — implementation is SHAKE-256 squeezing 512 bits. |
-| E13 | Portfolio cross-checking completeness | L4 | **Lakefile scaffolded 2026-05-11.** 14 PR theorems (PR-1..PR-14) expected to mostly compile. Flagged in #53: `List.filter_eq_nil_iff` name (PR-14 prerequisite), `Option.some_injective` → `Option.some.inj` (PR-10), PR-14 `simp` through inner `let firstVerdict` may need `show` pre-computation. `lake build` not yet run. |
 
 ## Recommended prover
 - **Idris2** for ABI-level properties and prover dispatch correctness
@@ -44,4 +44,4 @@ following the pattern in repos like `typed-wasm`, `proven`, `echidna`, or `boj-s
 - **Agda** for metatheoretic properties of proof composition
 
 ## Priority
-- **MEDIUM** (was HIGH) — Core trust pipeline proofs (E2-E6) are now complete. E10-E13 design + statements landed 2026-04-27; `verification/proofs/lean4/lakefile.lean` scaffolded 2026-05-11 (Lean 4.13.0, no mathlib). Remaining work: run `lake build` in an environment with Lean 4.13.0 and apply the API fixups tracked in #53. E10-E13 are P2 and do not block the critical path.
+- **LOW** (was MEDIUM) — All E-series proofs are now discharged. Core trust pipeline (E2-E6) and Stage-8a (Idris2) complete; E10/E11/E13 (Lean4) landed and verified: `lake build` at `verification/proofs/lean4/` (Lean 4.13.0, no mathlib) is green from scratch, all 5 files 0 err / 0 warn / 0 sorry (#53, commit `760891e`). No outstanding proof obligations. E1/E8 above are covered/partially-covered informational entries, not gaps.
