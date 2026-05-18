@@ -184,49 +184,68 @@ ENTRYPOINT ["/app/bin/echidna"]
 CMD ["--help"]
 
 # #############################################################################
-# TARGET: proverif — cryptographic protocol verification (OCaml/opam)
+# TARGET: proverif — cryptographic protocol verification (OCaml, source build)
 # #############################################################################
+# ProVerif (Bruno Blanchet, INRIA) is FREE GPL software — NOT licence-gated.
+# The previous opam path (`opam init --bare` + `opam switch create
+# ocaml-base-compiler.4.14.1` + `opam install proverif`) emitted
+# "No solution found, exiting" because opam cannot resolve a transitive
+# solution from a cold/empty repo inside hermetic bookworm-slim (echidna #74).
+# Mirror the tamarin/metamath/or-tools fix: drop the fragile package-manager
+# path and build the OFFICIAL INRIA source release deterministically.
+# ProVerif 2.05 needs only OCaml >= 4.03; bookworm apt ships ocaml 4.13.1 +
+# ocaml-findlib 1.9.6 + ocamlbuild 0.14.1, so NO opam is required.
+# liblablgtk2-ocaml-dev is required at BUILD time: ProVerif 2.05's `./build`
+# hard-fails (`ocamlfind: Package 'lablgtk2' not found`) rather than skipping
+# the GUI target. It lives only in this throwaway builder stage — the GUI
+# binary is discarded; only the CLI `proverif` is copied to the runtime image,
+# which links no GTK (verified). tar needs --no-same-owner: the upstream
+# tarball carries the packager's numeric uid/gid and chown fails under the
+# container userns.
+# Re-validate the version/URL at https://bblanche.gitlabpages.inria.fr/proverif/
+# (brittle-pin tracking: #75).
 FROM docker.io/library/debian:bookworm-slim AS proverif-builder
 
 RUN apt-get update && apt-get install -y --no-install-recommends \
     curl \
     ca-certificates \
-    build-essential \
-    git \
     ocaml \
-    opam \
-    libgmp-dev \
-    m4 \
-    pkg-config \
-    bubblewrap \
+    ocaml-findlib \
+    ocamlbuild \
+    liblablgtk2-ocaml-dev \
+    make \
     && rm -rf /var/lib/apt/lists/*
 
-# Initialise opam (no sandbox inside container — use --disable-sandboxing)
-RUN opam init --disable-sandboxing --bare --no-setup -y
+ARG PROVERIF_VERSION="2.05"
+ARG PROVERIF_TARBALL="proverif${PROVERIF_VERSION}.tar.gz"
+ARG PROVERIF_URL="https://bblanche.gitlabpages.inria.fr/proverif/${PROVERIF_TARBALL}"
 
-# Install proverif via opam. Pin a known proverif-compatible OCaml (4.14.1)
-# and refresh the opam repo first — the prior `--packages=ocaml-base-compiler`
-# (unpinned) produced "no solution found" against bookworm's stale default
-# repo snapshot. proverif 2.x requires OCaml >= 4.05.
-RUN opam switch create default ocaml-base-compiler.4.14.1 \
-    && eval "$(opam env)" \
-    && opam update -y \
-    && opam install -y proverif \
-    && proverif -help 2>&1 | head -5 || true
-
-# Copy binary to a well-known location for the runtime stage. Graceful
-# degradation (matches the tamarin/imandra pattern): if the opam solve still
-# failed, emit a stub so the image still builds rather than hard-failing.
-RUN set -eux; eval "$(opam env)" || true; \
-    PROVERIF_BIN="$(opam var bin 2>/dev/null)/proverif"; \
-    if [ -x "${PROVERIF_BIN}" ]; then \
-        install -m 0755 "${PROVERIF_BIN}" /usr/local/bin/proverif; \
+# Deterministic export tree so the runtime COPY never hard-fails: the real
+# binary if download + ./build + smoke-test succeed, the documented stub
+# otherwise (same graceful-degradation convention as tamarin/metamath).
+# `./build` runs `ocamlbuild -use-ocamlfind`, skips the lablgtk GUI target
+# when lablgtk is absent, and leaves the CLI binary at ./proverif.
+RUN set -eux; \
+    mkdir -p /opt/proverif-export/bin; \
+    if curl -fsSL --retry 3 "${PROVERIF_URL}" -o /tmp/proverif.tar.gz \
+       && tar --no-same-owner -xzf /tmp/proverif.tar.gz -C /tmp \
+       && ( cd "/tmp/proverif${PROVERIF_VERSION}" \
+            && ./build \
+            && test -x ./proverif \
+            && ./proverif -help >/dev/null 2>&1 ) ; then \
+         install -m 0755 "/tmp/proverif${PROVERIF_VERSION}/proverif" \
+             /opt/proverif-export/bin/proverif; \
     else \
-        echo "WARNING: proverif opam install failed — emitting stub (image ships, backend degraded)"; \
-        printf '#!/bin/sh\necho "proverif not available (opam solve failed at image build — see Containerfile.wave3)"\nexit 1\n' \
-            > /usr/local/bin/proverif; \
-        chmod +x /usr/local/bin/proverif; \
-    fi
+         echo "WARNING: proverif source download/build/smoke-test failed."; \
+         echo "Re-check https://bblanche.gitlabpages.inria.fr/proverif/ (see #75)."; \
+         echo "Creating stub binary as fallback (image ships, backend degraded)."; \
+         printf '#!/bin/sh\necho "proverif not available (source build failed at image build — see Containerfile.wave3 / #74)"\nexit 1\n' \
+             > /opt/proverif-export/bin/proverif; \
+         chmod +x /opt/proverif-export/bin/proverif; \
+    fi; \
+    chmod +x /opt/proverif-export/bin/proverif; \
+    rm -rf /tmp/proverif.tar.gz "/tmp/proverif${PROVERIF_VERSION}"; \
+    touch /opt/proverif-export/.keep
 
 FROM docker.io/library/debian:bookworm-slim AS proverif
 
@@ -237,8 +256,10 @@ LABEL org.opencontainers.image.licenses="PMPL-1.0-or-later"
 LABEL org.opencontainers.image.version="2.3.0"
 LABEL org.opencontainers.image.vendor="hyperpolymath"
 
-# ProVerif at runtime is a statically-linked OCaml binary; it needs no
-# OCaml runtime.  Only libgmp is needed for big-integer arithmetic.
+# ProVerif at runtime is an OCaml-native binary linking only glibc/libm/
+# libpthread (all in bookworm-slim); it needs no OCaml runtime and no libgmp
+# (ProVerif uses no GMP — the prior "big-integer" comment was inaccurate).
+# libssl3/libgmp10 retained only for parity with the rest of this file.
 RUN apt-get update && apt-get install -y --no-install-recommends \
     ca-certificates \
     libssl3 \
@@ -248,7 +269,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 WORKDIR /app
 
 COPY --from=rust-builder /build/target/release/echidna /app/bin/echidna
-COPY --from=proverif-builder /usr/local/bin/proverif /usr/local/bin/proverif
+COPY --from=proverif-builder /opt/proverif-export/bin/proverif /usr/local/bin/proverif
 
 ENV PATH="/app/bin:/usr/local/bin:${PATH}"
 ENV ECHIDNA_PROVER_PATH="/usr/local/bin"
