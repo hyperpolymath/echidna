@@ -468,9 +468,12 @@ ENV PATH="/opt/polyml/bin:${PATH}"
 
 WORKDIR /build
 
-# Clone HOL4; use a pinned commit tag for reproducibility.
+# Clone HOL4; use a pinned release tag for reproducibility.
+# NOTE: the "kananaskis" series ended at kananaskis-14; HOL4's release line
+# was renamed to "trindemossen" (trindemossen-1, trindemossen-2 = latest
+# stable). "kananaskis-15" never existed and made this clone fail rc=128.
 # Check https://github.com/HOL-Theorem-Prover/HOL/releases for latest.
-ARG HOL4_VERSION="kananaskis-15"
+ARG HOL4_VERSION="trindemossen-2"
 RUN git clone --depth 1 --branch "${HOL4_VERSION}" \
       https://github.com/HOL-Theorem-Prover/HOL.git /build/HOL4
 
