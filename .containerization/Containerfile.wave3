@@ -44,6 +44,11 @@ RUN rustup toolchain install nightly && rustup default nightly
 WORKDIR /build
 
 COPY Cargo.toml Cargo.lock ./
+# Workspace members: crates/* (echidna-core, -core-spark, -mcp, -wire,
+# typed_wasm) + src/interfaces/* + root pkg at src/rust. The original nine
+# Containerfiles omitted `crates/` — their rust-builder stage could never
+# have built green (workspace manifest references crates/echidna-core).
+COPY crates ./crates
 COPY src/rust ./src/rust
 COPY src/interfaces ./src/interfaces
 COPY benches ./benches
