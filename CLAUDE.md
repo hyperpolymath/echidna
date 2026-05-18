@@ -136,14 +136,23 @@ The v1.5 trust hardening added:
 
 **Next (v2.2+)** (precise status):
 
-- **Chapel → Rust C FFI bridge (L2, half-done)**. Zig shim
-  (`src/zig_ffi/`, 738 LoC, 4 files) and Chapel POC (`src/chapel/`,
-  970 LoC) in place behind `--features chapel`; `cargo build --features
-  chapel` works standalone, 6/6 `proof_search` tests pass. The gap:
-  `dispatch.rs` still bypasses the feature-gated `ChapelParallelSearch`
-  strategy in `proof_search.rs`. Integration is split into 7 L2 sub-waves
-  tracked in `docs/handover/TODO.md`, gated on L1 Cap'n Proto completion.
-  Direct Rust↔Chapel today goes through Zig (no shortcut path).
+- **Chapel → Rust C FFI bridge (L2.1 done; L2.2–L2.7 gated)**. Zig shim
+  (`src/zig_ffi/`) and Chapel POC (`src/chapel/`) are in place behind
+  `--features chapel`. L2.1 is wired: `ChapelParallelSearch`
+  (`proof_search.rs`) is invoked by `dispatch.rs::verify_proof_parallel`
+  and reachable on the live `/api/verify_parallel` route, with graceful
+  sequential fallback. `just build-chapel-ffi && cargo build --features
+  chapel` builds and links standalone; `cargo test --features chapel`
+  passes including the chapel-gated `test_verify_proof_parallel_chapel_path`
+  (7/7). Build reproducibility was fixed 2026-05-18: `build.rs` now
+  `rerun-if-changed` on the built Zig artifact (was order-dependent on
+  recipe vs prior `cargo` run), and `build.zig` bundles compiler-rt (was
+  failing the non-Zig link with `undefined symbol: __zig_probe_stack`).
+  Remaining L2.2–L2.7 (speculative search, corpus-parallel, mutation
+  parallelism, multi-locale, numeric hot paths, bench) are **not started
+  and hard-gated on L1 Cap'n Proto**, itself gated on the L3 7-day-green
+  hand-off — see `docs/handover/TODO.md`. Direct Rust↔Chapel goes
+  through Zig (no shortcut path).
 
 - **Train GNN/Transformer on larger corpus (Flux.jl, scaffold-only)**.
   Flux.jl is declared in `src/julia/Project.toml` and imported across

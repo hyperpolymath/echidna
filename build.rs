@@ -120,5 +120,12 @@ fn main() {
         // Re-run if FFI source changes
         println!("cargo:rerun-if-changed=src/zig_ffi/chapel_bridge.zig");
         println!("cargo:rerun-if-changed=src/zig_ffi/build.zig");
+        // Re-run when the *built artifact* appears or changes. Without this,
+        // a `cargo build` performed before `just build-chapel-ffi` caches the
+        // "library not found" decision (no link directives emitted) and a
+        // later Zig build is never picked up — link fails with undefined
+        // `echidna_chapel_*` symbols regardless of recipe order.
+        println!("cargo:rerun-if-changed=src/zig_ffi/zig-out/lib/libechidna_chapel_ffi.a");
+        println!("cargo:rerun-if-changed=src/zig_ffi/zig-out/lib");
     }
 }
