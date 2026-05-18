@@ -9,6 +9,12 @@ on:
     types: [published]
   workflow_dispatch:
 
+# Cause-B mitigation (#77): de-duplicate stacked publish runs.
+# cancel-in-progress is false — never abort an image publish in flight.
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: false
+
 env:
   REGISTRY: ghcr.io
   IMAGE_NAME: ${{ github.repository }}
