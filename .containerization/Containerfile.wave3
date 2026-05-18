@@ -464,24 +464,29 @@ COPY --from=polyml-builder /opt/polyml /opt/polyml
 
 ENV PATH="/opt/polyml/bin:${PATH}"
 
-WORKDIR /build
-
-# Clone HOL4; use a pinned release tag for reproducibility.
-# NOTE: the "kananaskis" series ended at kananaskis-14; HOL4's release line
-# was renamed to "trindemossen" (trindemossen-1, trindemossen-2 = latest
-# stable). "kananaskis-15" never existed and made this clone fail rc=128.
-# Check https://github.com/HOL-Theorem-Prover/HOL/releases for latest.
+# Clone HOL4 directly at its FINAL runtime path. HOL4 is NOT relocatable:
+# `bin/build` bakes the absolute build directory into bin/hol, bin/heapname,
+# bin/buildheap and the heap files. Building at /build/HOL4 then COPYing to
+# /opt/HOL4 produced a `hol` that called /build/HOL4/bin/{heapname,buildheap}
+# — "not found" at runtime. Build in-place at /opt/HOL4 so the baked paths
+# are correct in the runtime image (which also uses HOLDIR=/opt/HOL4).
+#
+# Use a pinned release tag for reproducibility. NOTE: the "kananaskis" series
+# ended at kananaskis-14; HOL4's release line was renamed to "trindemossen"
+# (trindemossen-1, trindemossen-2 = latest stable). "kananaskis-15" never
+# existed and made this clone fail rc=128.
+# Check https://github.com/HOL-Theorem-Prover/HOL/releases for latest (#75).
 ARG HOL4_VERSION="trindemossen-2"
 RUN git clone --depth 1 --branch "${HOL4_VERSION}" \
-      https://github.com/HOL-Theorem-Prover/HOL.git /build/HOL4
+      https://github.com/HOL-Theorem-Prover/HOL.git /opt/HOL4
 
-WORKDIR /build/HOL4
+WORKDIR /opt/HOL4
 
 # Configure HOL4 against the Poly/ML we just built, then build all theories.
 RUN poly < tools/smart-configure.sml \
     && bin/build
 
-RUN test -f /build/HOL4/bin/hol && echo "HOL4 build succeeded"
+RUN test -f /opt/HOL4/bin/hol && echo "HOL4 build succeeded"
 
 FROM docker.io/library/debian:bookworm-slim AS hol4
 
@@ -506,8 +511,9 @@ COPY --from=rust-builder /build/target/release/echidna /app/bin/echidna
 # Copy Poly/ML runtime (HOL4 loads ML code via poly at runtime)
 COPY --from=polyml-builder /opt/polyml /opt/polyml
 
-# Copy HOL4 installation (includes pre-built heap images)
-COPY --from=hol4-builder /build/HOL4 /opt/HOL4
+# Copy HOL4 installation (built in-place at /opt/HOL4 → baked absolute paths
+# in bin/hol, bin/heapname, bin/buildheap and the heap files stay valid).
+COPY --from=hol4-builder /opt/HOL4 /opt/HOL4
 
 ENV PATH="/app/bin:/opt/polyml/bin:/opt/HOL4/bin:${PATH}"
 ENV HOLDIR="/opt/HOL4"
