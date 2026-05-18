@@ -13,6 +13,10 @@ name: Container Build Verification
 
 on:
   push:
+    # Cause-B mitigation (#77): was any-branch (path-filtered only);
+    # scoped to integration branches so feature-branch pushes that
+    # touch these paths don't also fan out a container build.
+    branches: [main, master]
     paths:
       - 'Containerfile'
       - '.containerization/**'
@@ -33,6 +37,13 @@ on:
     # Distinct from live-provers.yml Tier-3 run (Sunday 05:00 UTC)
     # so the container build does not race the live-prover tests.
     - cron: '0 6 * * 0'
+
+# Cause-B mitigation (#77): de-duplicate superseded builds on the same
+# ref. cancel-in-progress is false so an in-flight image build/publish
+# is never interrupted mid-push.
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: false
 
 permissions:
   contents: read
