@@ -834,7 +834,7 @@ changes = [
 l3-status-after-wave-2 = [
   "Wave-1 (Tier-1, every PR, 9 backends): DONE — landed in b022bf4.",
   "Wave-2 (Tier-2, nightly, 10 backends): DONE for 9; hol-light deferred to Wave-3.",
-  "Wave-3 (Tier-3, weekly, 9 backends: Tamarin, ProVerif, Imandra, SCIP, OR-Tools, HOL4, ACL2, Twelf, Metamath): LANDED. All 9 Containerfiles in .containerization/ (Imandra is proprietary-gated stub). Justfile: container-build-tier3 + per-backend recipes. container-ci.yml: weekly tier3-container matrix job, 8 non-proprietary images, allow-fail, 90 min timeout for HOL4/ACL2.",
+  "Wave-3 (Tier-3, weekly, 9 backends: Tamarin, ProVerif, Imandra, SCIP, OR-Tools, HOL4, ACL2, Twelf, Metamath): LANDED + RUNTIME-SMOKE-VERIFIED 2026-05-18 (PR #73, consolidated Containerfile.wave3). 8/8 non-proprietary backends confirmed REAL by exercising the binary in the built image — NOT trusting the build log (a green build had been hiding silent stubs: scip/tamarin dead-download, metamath missing libc6-dev, or-tools missing build-number, twelf/acl2 baked build paths, proverif opam-solve fail). All fixed at-source; #74 (proverif) resolved. Imandra is an INTENTIONAL honest licence-gated fail-loud stub (real adapter + Idris2 ABI proofs retained; KEEP decision). Justfile: container-build-tier3 + per-backend recipes. container-ci.yml: weekly tier3-container matrix job, 8 non-proprietary images, allow-fail, 90 min timeout for HOL4/ACL2.",
   "Wave-4 (Tier-4, quarterly, 19 backends): SCAFFOLD ONLY — placeholder tier4 job in live-provers.yml announces list. See wave-4-rationale for per-backend mock-only justification.",
 ]
 wave-4-rationale = {
@@ -858,16 +858,21 @@ wave-4-rationale = {
   Kissat = "SAT solver; binary available from GitHub; deferred pending DIMACS fixture set",
   Alloy = "Java-based relational model finder; no headless CLI mode without Alloy API; deferred",
 }
+# Strategy OF RECORD as actually shipped & runtime-smoke-verified in
+# .containerization/Containerfile.wave3 (2026-05-18; PR #73 commits
+# 63bacf0/6032f2e/981389a/faf05e9/ea2ce4b). 8/8 non-proprietary backends
+# verified REAL by exercising the binary in the built image (NOT the
+# build log); imandra is an intentional honest licence-gated stub.
 wave-3-handover-hints = [
-  "Tamarin: Haskell Stack build; prebuilt binaries from github.com/tamarin-prover/tamarin-prover/releases may work.",
-  "ProVerif: OCaml build via opam; consider the Docker image from INRIA.",
-  "Imandra: proprietary binary; needs signed registration before download.",
-  "SCIP: academic license now lifted; prebuilt .deb from scipopt.org.",
-  "OR-Tools: large C++ build; use the official ortools Python wheel's bundled binaries or the official .tar.gz release.",
-  "HOL4: Poly/ML + Moscow ML build; tractable but slow.",
-  "ACL2: Common Lisp (SBCL/CCL); prebuilt SBCL image + `make` is easiest.",
-  "Twelf: SML/NJ build.",
-  "Metamath: in-process pure-Rust verifier per stub-audit-result; external metamath binary is optional smoke-test scope only.",
+  "Tamarin: official SRI-CSL Maude 3.5.1 prebuilt (bookworm apt maude is 3.2, which tamarin-prover 1.12.0 REJECTS) + tamarin-prover prebuilt; both stages. VERIFIED REAL.",
+  "ProVerif: official INRIA source tarball proverif2.05 (bblanche.gitlabpages.inria.fr/proverif/), built with bookworm ocaml/ocaml-findlib/ocamlbuild + liblablgtk2-ocaml-dev (./build hard-fails without it), tar --no-same-owner (tarball numeric uid/gid vs container userns). NO opam. Resolves #74. VERIFIED REAL (Horn-clause resolution executed).",
+  "Imandra: proprietary binary; needs signed registration. INTENTIONAL honest fail-loud stub + documented IMANDRA_TOKEN-secret real-install path; real Rust adapter + Idris2 ABI proofs retained. KEEP (decision 2026-05-18). NOT counted as verified.",
+  "SCIP: official scipopt/scip GitHub portable bundle (scipopt.org download 403s anonymous). VERIFIED REAL (MIP solve).",
+  "OR-Tools: official C++ .tar.gz; asset name carries the build number — ARG ORTOOLS_BUILD must track it (v9.12 -> 4544). VERIFIED REAL (libortools present).",
+  "HOL4: Poly/ML build (trindemossen-2; kananaskis-15 was a phantom tag). VERIFIED REAL.",
+  "ACL2: Common Lisp (SBCL); build-in-place (not relocatable). VERIFIED REAL.",
+  "Twelf: SML/NJ build; build-in-place (heap path baked). VERIFIED REAL.",
+  "Metamath: official metamath-exe v0.198 source, gcc m*.c — REQUIRES libc6-dev (bookworm-slim gcc lacks libc headers). VERIFIED REAL.",
 ]
 
 [session-2026-04-24-pkg5-close]

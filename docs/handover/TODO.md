@@ -57,17 +57,33 @@ licence-gated. Table below kept for the per-backend install strategy of record.
 
 Handover hints live in `.machine_readable/6a2/STATE.a2ml [wave-3-handover-hints]`.
 
-| Backend | Install strategy |
-|---------|------------------|
-| Tamarin | Haskell Stack build; try prebuilt binaries from `tamarin-prover/tamarin-prover/releases` first |
-| ProVerif | OCaml via opam; consider INRIA Docker image |
-| Imandra | Proprietary — needs signed registration. Gate on Imandra licence decision (see open questions). |
-| SCIP | Academic licence lifted; prebuilt `.deb` from scipopt.org |
-| OR-Tools | Large C++ build; use official ortools Python wheel's bundled binaries |
-| HOL4 | Poly/ML + Moscow ML build; tractable but slow |
-| ACL2 | Common Lisp (SBCL/CCL); prebuilt SBCL image + `make` |
-| Twelf | SML/NJ build |
-| Metamath | In-process pure-Rust verifier per `stub-audit-result`; external binary optional |
+Strategy of record below = **as actually shipped & runtime-smoke-verified
+in `.containerization/Containerfile.wave3`** (2026-05-18, PR #73). Every
+non-proprietary backend was confirmed real by running its binary in the
+built image, not by trusting the build log — see "Wave-3 verification"
+note after the table.
+
+| Backend | Install strategy (verified) | Status |
+|---------|------------------|--------|
+| Tamarin | Official `tamarin-prover` prebuilt + **official SRI-CSL Maude 3.5.1 prebuilt** (bookworm apt `maude` is 3.2, which tamarin-prover 1.12.0 rejects) | ✅ REAL |
+| ProVerif | **Official INRIA source tarball `proverif2.05`**, built with bookworm `ocaml`/`ocaml-findlib`/`ocamlbuild` + `liblablgtk2-ocaml-dev` (`./build` hard-fails without it), `tar --no-same-owner`. **No opam** (resolves #74) | ✅ REAL |
+| Imandra | Proprietary — signed registration required. **Intentional honest fail-loud stub** + documented `IMANDRA_TOKEN`-secret real-install path; real Rust adapter + Idris2 ABI proofs retained. Kept by decision 2026-05-18 | ⏸ stub (by design) |
+| SCIP | Official `scipopt/scip` GitHub portable bundle (scipopt.org download 403s anonymous) | ✅ REAL |
+| OR-Tools | Official C++ `.tar.gz`; asset name carries the build number — `ARG ORTOOLS_BUILD` must track it (v9.12 → 4544) | ✅ REAL |
+| HOL4 | Poly/ML build (`trindemossen-2`; `kananaskis-15` was a phantom tag) | ✅ REAL |
+| ACL2 | Common Lisp (SBCL); build-in-place (not relocatable) | ✅ REAL |
+| Twelf | SML/NJ build; build-in-place (heap path baked) | ✅ REAL |
+| Metamath | Official `metamath-exe` v0.198 source, `gcc m*.c` — **requires `libc6-dev`** (bookworm-slim `gcc` lacks libc headers) | ✅ REAL |
+
+**Wave-3 verification (2026-05-18, PR #73, `ea2ce4b`):** all 8
+non-proprietary backends runtime-smoke-verified REAL by exercising the
+binary in the built image — *not* trusting the build log. A green Wave-3
+build had been masking silent stubs (scip/tamarin dead-download,
+metamath missing `libc6-dev`, or-tools missing build-number,
+twelf/acl2 baked build paths, proverif opam-solve failure); all fixed
+at-source. **#74 (proverif opam) resolved.** Imandra remains the only
+stub — genuinely proprietary, honestly fail-loud, kept by decision
+(real adapter + Idris2 ABI proofs retained). No stub-theatre.
 
 ### Wave-4 (Tier-4 quarterly, 19 backends, allow-fail placeholder)
 
