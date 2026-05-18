@@ -30,6 +30,12 @@ pub fn build(b: *std.Build) void {
         }),
         .linkage = .dynamic,
     });
+    // Bundle Zig's compiler-rt into the artifact. Zig std (panic/stack-trace
+    // DWARF machinery) references compiler-rt routines such as
+    // `__zig_probe_stack`; without bundling, linking this library into a
+    // non-Zig binary (Rust `cargo build --features chapel`) fails with
+    // `undefined symbol: __zig_probe_stack`.
+    lib.bundle_compiler_rt = true;
     // Chapel C headers are in the same directory
     lib.root_module.addIncludePath(b.path("."));
     if (stubs) {
@@ -53,6 +59,10 @@ pub fn build(b: *std.Build) void {
         }),
         .linkage = .static,
     });
+    // See note on lib.bundle_compiler_rt above — the static archive is the
+    // one Rust actually links (`rustc-link-lib=static=echidna_chapel_ffi`),
+    // so it must carry compiler-rt itself.
+    lib_static.bundle_compiler_rt = true;
     lib_static.root_module.addIncludePath(b.path("."));
     if (stubs) {
         lib_static.addCSourceFile(.{ .file = b.path("chapel_stubs.c"), .flags = &.{"-fno-sanitize=undefined"} });

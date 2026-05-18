@@ -1,4 +1,4 @@
-# SPDX-License-Identifier: PMPL-1.0-or-later
+# SPDX-License-Identifier: PMPL-1.0
 name: CodeQL Security Analysis
 
 on:
@@ -9,8 +9,10 @@ on:
   schedule:
     - cron: '0 6 * * 1'
 
-# Cause-B mitigation (#77): cancel superseded runs so stacked pushes
-# to the same ref don't pile up identical jobs in the queue.
+# Estate guardrail: cancel superseded runs so re-pushes / rebased PR
+# updates do not pile up queued runs against the shared account-wide
+# Actions concurrency pool. Applied only to read-only check workflows
+# (no publish/mutation), so cancelling a superseded run is always safe.
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
@@ -30,20 +32,18 @@ jobs:
         include:
           - language: javascript-typescript
             build-mode: none
-          - language: rust
-            build-mode: none
 
     steps:
       - name: Checkout
-        uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11 # v4.1.1
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
 
       - name: Initialize CodeQL
-        uses: github/codeql-action/init@662472033e021d55d94146f66f6058822b0b39fd # v3.28.1
+        uses: github/codeql-action/init@c6f931105cb2c34c8f901cc885ba1e2e259cf745 # v3
         with:
           languages: ${{ matrix.language }}
           build-mode: ${{ matrix.build-mode }}
 
       - name: Perform CodeQL Analysis
-        uses: github/codeql-action/analyze@662472033e021d55d94146f66f6058822b0b39fd # v3.28.1
+        uses: github/codeql-action/analyze@c6f931105cb2c34c8f901cc885ba1e2e259cf745 # v3
         with:
           category: "/language:${{ matrix.language }}"

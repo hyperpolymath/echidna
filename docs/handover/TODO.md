@@ -123,11 +123,11 @@ Rationale: HTTP+JSON on Rust↔Julia hot path (`src/rust/gnn/client.rs:1-195` �
 
 ## P3 — L2: Chapel maximum integration (~5–6 weeks, gated on L1)
 
-Existing POC: `chapel_poc/parallel_proof_search.chpl` (420 LoC) + the self-linking FFI bridge (`53ab9b8`). **Not yet in dispatch path.** Sub-waves:
+Existing POC: `chapel_poc/parallel_proof_search.chpl` (420 LoC) + the self-linking FFI bridge (`53ab9b8`). **L2.1 is wired into the dispatch path** (`dispatch.rs::verify_proof_parallel` → `ChapelParallelSearch`, live on `/api/verify_parallel`). Sub-waves:
 
 | Sub-wave | Scope | Est |
 |----------|-------|-----|
-| L2.1 | Portfolio dispatch (promote POC) → `src/chapel/portfolio.chpl`; atomic first-wins; wire into `src/rust/dispatch.rs` behind `--chapel` feature flag | 1 week |
+| L2.1 | ✅ **Done.** Portfolio dispatch POC promoted; `ChapelParallelSearch` wired into `src/rust/dispatch.rs` behind `--features chapel` with sequential fallback; reachable via `/api/verify_parallel`. Build reproducibility fixed 2026-05-18 (`build.rs` artifact `rerun-if-changed`; `build.zig` `bundle_compiler_rt`) — `cargo build/test --features chapel` green standalone, 7/7 incl. `test_verify_proof_parallel_chapel_path`. | — |
 | L2.2 | Speculative tactic search — parallel beam + MCTS; consumes `TacticSuggestion` stream from GNN | 1 week |
 | L2.3 | Corpus-parallel ops — `forall` over 66,674-proof corpus; replay, premise scoring, tactic mining, inverted index | 1 week |
 | L2.4 | Mutation-testing parallelism — fan out 1000s of mutants; integrate with `verification/mutation.rs` | 3 days |
@@ -188,4 +188,4 @@ Existing POC: `chapel_poc/parallel_proof_search.chpl` (420 LoC) + the self-linki
 
 **P2 L1:** Implementation NOT started — still gated on the L3 hand-off. Ahead-of-gate spec/design is landed: `schemas/echidna.capnp` + `schemas/VERSIONING.md` present; Julia-transport open question RESOLVED (Zig C-ABI shim, see §Open questions #2). L1 implementation (src/rust/ipc, gnn/client.rs swap, julia ipc.jl, CapnSchemas.idr, zig bridge) waits on the gate.
 
-**P3 L2:** POC present + self-link fix landed; actual `src/chapel/` modules not started. Gated on L1.
+**P3 L2:** L2.1 done — POC promoted, wired into dispatch (`/api/verify_parallel`), `--features chapel` builds/tests green standalone (build reproducibility fixed 2026-05-18). L2.2–L2.7 not started, hard-gated on L1 Cap'n Proto (itself gated on L3 7-day-green hand-off).

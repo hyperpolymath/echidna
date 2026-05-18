@@ -508,8 +508,10 @@ build-chapel: build-chapel-ffi
     cargo build --features chapel
 
 # Test Chapel integration
+# Includes the chapel-gated dispatch test (verify_proof_parallel) — the bare
+# `proof_search` filter alone silently skipped it.
 test-chapel: build-chapel-ffi
-    cargo test --features chapel -- proof_search
+    cargo test --features chapel --lib -- proof_search verify_proof_parallel
 
 # Test Zig FFI bridge independently
 test-chapel-ffi:
