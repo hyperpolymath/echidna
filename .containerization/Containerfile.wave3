@@ -354,10 +354,16 @@ RUN set -eux; \
         mkdir -p /opt/or-tools/lib; \
     }
 
-# Copy shared libraries and headers to system locations
-RUN mkdir -p /usr/local/lib /usr/local/include && \
-    cp -r /opt/or-tools/lib/. /usr/local/lib/ && \
-    cp -r /opt/or-tools/include/. /usr/local/include/ && \
+# Assemble a deterministic export tree (real libs/headers if the tarball
+# downloaded, empty-but-present otherwise). The old step left
+# /usr/local/include/ortools absent on a failed download, hard-failing the
+# runtime COPY and breaking the whole image. Same tamarin/scip pattern.
+RUN set -eux; \
+    mkdir -p /opt/or-tools-export/lib /opt/or-tools-export/include/ortools; \
+    cp -a /opt/or-tools/lib/.     /opt/or-tools-export/lib/             2>/dev/null || true; \
+    cp -a /opt/or-tools/include/. /opt/or-tools-export/include/         2>/dev/null || true; \
+    touch /opt/or-tools-export/lib/.keep /opt/or-tools-export/include/ortools/.keep; \
+    cp -a /opt/or-tools-export/lib/. /usr/local/lib/ 2>/dev/null || true; \
     ldconfig || true
 
 FROM docker.io/library/debian:bookworm-slim AS or-tools
@@ -386,10 +392,11 @@ WORKDIR /app
 
 COPY --from=rust-builder /build/target/release/echidna /app/bin/echidna
 
-# Copy OR-Tools shared libraries into the runtime image.
-# libortools.so and its dependencies (libCoinUtils, libClp, etc.) live in /usr/local/lib.
-COPY --from=ortools-installer /usr/local/lib /usr/local/lib/
-COPY --from=ortools-installer /usr/local/include/ortools /usr/local/include/ortools/
+# Copy OR-Tools libs/headers from the deterministic export tree (always
+# present — real content if the tarball downloaded, just .keep otherwise;
+# directory COPY never hard-fails on an empty glob).
+COPY --from=ortools-installer /opt/or-tools-export/lib/ /usr/local/lib/
+COPY --from=ortools-installer /opt/or-tools-export/include/ortools/ /usr/local/include/ortools/
 
 ENV PATH="/app/bin:${PATH}"
 ENV ECHIDNA_PROVER_PATH="/usr/local/lib"
