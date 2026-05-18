@@ -230,54 +230,49 @@ CMD ["--help"]
 # #############################################################################
 FROM docker.io/library/debian:bookworm-slim AS scip-installer
 
+# curl/ca-certificates for the download; libpcre2-posix3 is the one shared lib
+# the bundle does NOT carry (everything else is in its own lib64/) — needed so
+# the in-stage `scip --version` smoke-test below can actually run.
 RUN apt-get update && apt-get install -y --no-install-recommends \
     curl \
     ca-certificates \
-    wget \
-    dpkg \
-    libreadline8 \
-    libgmp10 \
-    libz-dev \
-    libgsl27 \
+    libpcre2-posix3 \
     && rm -rf /var/lib/apt/lists/*
 
-WORKDIR /opt/scip
+# SCIP Optimization Suite — official prebuilt *portable* bundle from the
+# scipopt/scip GitHub releases (Apache-2.0 since SCIP 8.0; anonymous; fully
+# self-contained: bundles its own lib64/ with RPATH=$ORIGIN/../lib64, so only
+# libc/libm/libpcre2 come from the base image).
+#
+# This REPLACES the old scipopt.org `.deb`. As of 2026-05 scipopt.org returns
+# a hard HTTP 403 for anonymous fetches of /download/release/ (even with a
+# browser UA + referer), which silently degraded scip to a stub. The GitHub
+# release tarball is the reliable, license-clean source. The glibc2_34 variant
+# is correct here: Debian bookworm ships glibc 2.36 (>= 2.34). Re-validate the
+# version at https://github.com/scipopt/scip/releases — brittle-pin tracking: #75.
+ARG SCIP_VERSION="10.0.2"
+ARG SCIP_TARBALL="scipoptsuite-${SCIP_VERSION}-glibc2_34-amd64.tgz"
+ARG SCIP_URL="https://github.com/scipopt/scip/releases/download/v${SCIP_VERSION}/${SCIP_TARBALL}"
 
-# Download the prebuilt SCIP deb for Debian bookworm (amd64).
-# Check https://www.scipopt.org/download.php for the latest release version.
-# SCIP 9.x is the current stable series as of 2026.
-ARG SCIP_VERSION="9.2.2"
-ARG SCIP_DEB="SCIPOptSuite-${SCIP_VERSION}-Linux-debian.bookworm.deb"
-ARG SCIP_URL="https://www.scipopt.org/download/release/${SCIP_DEB}"
-
+# Deterministic export tree so the runtime COPY never hard-fails: the real
+# self-contained bundle if download + smoke-test succeed, a stub otherwise.
 RUN set -eux; \
-    curl -fsSL --retry 3 "${SCIP_URL}" -o /tmp/scip.deb \
-    && dpkg -i /tmp/scip.deb \
-    && rm /tmp/scip.deb \
-    && scip --version 2>&1 | head -3 \
-    || { \
-        echo "WARNING: SCIP prebuilt .deb download or install failed."; \
-        echo "Verify the version and URL at https://www.scipopt.org/download.php"; \
-        echo "Creating stub binary as fallback."; \
-        mkdir -p /usr/local/bin; \
-        printf '#!/bin/sh\necho "scip not available (deb install failed at image build time)"\nexit 1\n' \
-            > /usr/local/bin/scip; \
-        chmod +x /usr/local/bin/scip; \
-    }
-
-# Normalise to a deterministic export tree so the runtime COPY never hard-fails
-# (the .deb installs scip at /usr/bin/scip; the failure-fallback stub lands at
-# /usr/local/bin/scip — the old runtime copied only /usr/bin/scip and broke the
-# whole image whenever the download failed). Mirrors the tamarin pattern.
-RUN set -eux; mkdir -p /opt/scip-export/bin /opt/scip-export/lib; \
-    if   [ -x /usr/bin/scip ];       then cp /usr/bin/scip       /opt/scip-export/bin/scip; \
-    elif [ -x /usr/local/bin/scip ]; then cp /usr/local/bin/scip /opt/scip-export/bin/scip; \
-    else printf '#!/bin/sh\necho "scip not available (install failed at image build time)"\nexit 1\n' \
-            > /opt/scip-export/bin/scip; fi; \
-    chmod +x /opt/scip-export/bin/scip; \
-    cp -a /usr/lib/x86_64-linux-gnu/libscip*   /opt/scip-export/lib/ 2>/dev/null || true; \
-    cp -a /usr/lib/x86_64-linux-gnu/libpapilo* /opt/scip-export/lib/ 2>/dev/null || true; \
-    touch /opt/scip-export/lib/.keep
+    mkdir -p /opt/scip-export; \
+    if curl -fsSL --retry 3 "${SCIP_URL}" -o /tmp/scip.tgz \
+       && tar -xzf /tmp/scip.tgz -C /opt \
+       && "/opt/scipoptsuite-${SCIP_VERSION}/bin/scip" --version; then \
+         cp -a "/opt/scipoptsuite-${SCIP_VERSION}" /opt/scip-export/scipoptsuite; \
+    else \
+         echo "WARNING: SCIP portable bundle download/smoke-test failed."; \
+         echo "Re-check https://github.com/scipopt/scip/releases (see #75)."; \
+         echo "Creating stub binary as fallback."; \
+         mkdir -p /opt/scip-export/scipoptsuite/bin; \
+         printf '#!/bin/sh\necho "scip not available (bundle install failed at image build time)"\nexit 1\n' \
+             > /opt/scip-export/scipoptsuite/bin/scip; \
+         chmod +x /opt/scip-export/scipoptsuite/bin/scip; \
+    fi; \
+    rm -f /tmp/scip.tgz; \
+    touch /opt/scip-export/.keep
 
 FROM docker.io/library/debian:bookworm-slim AS scip
 
@@ -288,24 +283,27 @@ LABEL org.opencontainers.image.licenses="PMPL-1.0-or-later"
 LABEL org.opencontainers.image.version="2.3.0"
 LABEL org.opencontainers.image.vendor="hyperpolymath"
 
-# SCIP runtime dependencies: libreadline, libgmp, libgsl are linked by scip.
+# The portable SCIP bundle carries its own lib64/ (libgmp, libtbb, libopenblas,
+# libgfortran, libstdc++, libmetis, libgomp, …). Only libc/libm (base image) and
+# libpcre2 are resolved from the system.
 RUN apt-get update && apt-get install -y --no-install-recommends \
     ca-certificates \
-    libssl3 \
-    libgmp10 \
-    libreadline8 \
-    libgsl27 \
+    libpcre2-posix3 \
     && rm -rf /var/lib/apt/lists/*
 
 WORKDIR /app
 
 COPY --from=rust-builder /build/target/release/echidna /app/bin/echidna
 
-# Copy from the deterministic export tree (always exists: real binary if the
-# .deb installed, stub otherwise; libs present or just a .keep). A directory
-# COPY never hard-fails on an empty glob, unlike the old per-file copies.
-COPY --from=scip-installer /opt/scip-export/bin/scip /usr/local/bin/scip
-COPY --from=scip-installer /opt/scip-export/lib/ /usr/lib/x86_64-linux-gnu/
+# Copy the deterministic export tree (always exists: the real self-contained
+# bundle if the GitHub download succeeded, a one-file stub otherwise). A
+# directory COPY never hard-fails. The binary's RPATH is $ORIGIN/../lib64 and
+# the loader resolves $ORIGIN via the realpath of the exe, so the
+# /usr/local/bin/scip symlink correctly finds /opt/scipoptsuite/lib64/*.
+COPY --from=scip-installer /opt/scip-export/scipoptsuite /opt/scipoptsuite
+RUN set -eux; \
+    ln -sf /opt/scipoptsuite/bin/scip /usr/local/bin/scip; \
+    [ -x /opt/scipoptsuite/bin/soplex ] && ln -sf /opt/scipoptsuite/bin/soplex /usr/local/bin/soplex || true
 
 ENV PATH="/app/bin:/usr/local/bin:${PATH}"
 ENV ECHIDNA_PROVER_PATH="/usr/local/bin"
