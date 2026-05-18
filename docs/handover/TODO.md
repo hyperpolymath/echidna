@@ -41,7 +41,19 @@ L1 blocks L2 (because Chapel consumes Cap'n Proto schemas).
 
 ## P1 — L3 completion (~2 weeks)
 
-### Wave-3 (Tier-3 weekly, 9 backends) — per-backend Containerfiles (Podman)
+### Wave-3 (Tier-3 weekly, 9 backends) — ✅ DONE & CONSOLIDATED (2026-05-18)
+
+**Status:** all 9 images authored and landed. Originally nine separate
+`Containerfile.<backend>` files (`a87fae1`); each re-compiled the entire Rust
+core. **Consolidated 2026-05-18** into a single multi-target
+`.containerization/Containerfile.wave3` — ONE shared `rust-builder` stage, one
+`--target` per prover (`podman build -f … --target <prover>`). Justfile +
+`container-ci.yml` rewired. Guix-extend was investigated and rejected as the
+primary path (only SCIP/OR-Tools/Metamath are in Guix; 5 need bespoke package
+defs; Imandra is non-free) — per the 2026-05-18 estate ruling, the sealed
+container *is* the escape hatch for the not-in-Guix / non-free tail (Guix
+primary, no Nix mirror; `flake.nix` deprecated). Imandra target remains
+licence-gated. Table below kept for the per-backend install strategy of record.
 
 Handover hints live in `.machine_readable/6a2/STATE.a2ml [wave-3-handover-hints]`.
 
@@ -151,7 +163,7 @@ Existing POC: `chapel_poc/parallel_proof_search.chpl` (420 LoC) + the self-linki
 ## Open questions
 
 1. **Imandra licence** — signed registration needed before Wave-3 Containerfile can download. Do you already hold a licence, or defer Imandra to Wave-4? (Current default: Wave-3 scaffold mentions it but install is gated on this decision.)
-2. **Cap'n Proto Julia library** — commit to `CapnProto.jl` and accept its maturity constraints, or shim through C-ABI via the existing Zig FFI layer? Shim is more work up front but removes a dependency risk.
+2. ~~**Cap'n Proto Julia library**~~ — **RESOLVED 2026-05-18: Zig C-ABI shim (buffer-oriented), NOT `CapnProto.jl`.** Estate-canonical (FFI=Zig; single codec shared with Rust; Zig = interface-safety transaction layer). `CapnProto.jl` rejected (low maturity + second wire codec = drift). See `docs/handover/L1-CAPNPROTO-PROMPT.md` §Resolved decisions.
 3. **Chapel default-on threshold** — the plan says ≥ 1.5× speedup to flip default-on. Is that the right threshold, or do we want absolute wall-clock improvement too (e.g. ≥ 5 s saved on portfolio dispatch of the full 48-backend set)?
 
 ## Rules active (applies to all phases)
@@ -172,8 +184,8 @@ Existing POC: `chapel_poc/parallel_proof_search.chpl` (420 LoC) + the self-linki
 
 **P0 immediate:** Watch the `0 3 * * *` UTC nightly of `live-provers.yml` — Wave-2 CI verification (Tier-2 backends: idris2/isabelle/dafny/fstar/tlaps). Fix any red matrix cells in-place. `guix shell -m manifests/live-provers.scm -- just test-live` local acceptance run.
 
-**P1 L3 finishers:** Wave-3 (9 Containerfiles — see table above), Wave-4 (19 placeholder + rationale docs in STATE.a2ml).
+**P1 L3 finishers:** Wave-3 ✅ DONE & consolidated to one `Containerfile.wave3` (2026-05-18; see Wave-3 section above), Wave-4 ✅ (19 placeholder + rationale docs in STATE.a2ml). L3 P1 finisher work is complete; the L3→L1 hand-off remains gated only on the calendar/infra gate (Tier-1 green ≥7 days on main — blocked by main CI stuck `queued/`, infra-owned, not collapsible here).
 
-**P2 L1:** Not started. Gated on L3 hand-off (Tier-1 green for ≥ 7 days + all waves landed/deferred).
+**P2 L1:** Implementation NOT started — still gated on the L3 hand-off. Ahead-of-gate spec/design is landed: `schemas/echidna.capnp` + `schemas/VERSIONING.md` present; Julia-transport open question RESOLVED (Zig C-ABI shim, see §Open questions #2). L1 implementation (src/rust/ipc, gnn/client.rs swap, julia ipc.jl, CapnSchemas.idr, zig bridge) waits on the gate.
 
 **P3 L2:** POC present + self-link fix landed; actual `src/chapel/` modules not started. Gated on L1.

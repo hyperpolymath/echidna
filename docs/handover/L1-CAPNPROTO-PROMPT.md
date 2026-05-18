@@ -30,7 +30,13 @@
 
 ### Julia side
 - `src/julia/ipc.jl` — Cap'n Proto reader/writer
-- Use `CapnProto.jl` if mature enough; otherwise shim via C-ABI (our Zig FFI layer)
+- **RATIFIED 2026-05-18: C-ABI shim through the existing Zig FFI layer** (NOT
+  `CapnProto.jl`). Buffer-oriented ABI — Julia hands the Zig layer opaque
+  Cap'n Proto frames; Zig owns parse/validate/gate. Rationale: estate-canonical
+  (FFI=Zig everywhere; single wire codec shared with Rust; the Zig layer is the
+  estate interface-safety transaction point). `CapnProto.jl` rejected: low
+  maturity + a second independent codec = wire-drift engine. See open-question
+  #2 resolution below.
 - `src/julia/api_server.jl` — switch from HTTP to UDS listener
 
 ### Idris2 ABI proofs
@@ -41,13 +47,16 @@
 ### Zig FFI bridge
 - `ffi/zig/capnp_bridge.zig` — C-ABI bridge for polyglot consumers (esp. Chapel in L2)
 
-### ReScript bindings (UI path)
-- `bindings/rescript/echidna_capnp.res` — typed ReScript bindings for the UI layer
+### AffineScript bindings (UI path)
+- `bindings/affinescript/echidna_capnp.affine` — typed AffineScript bindings for the
+  UI layer (compiled to typed-wasm). **ReScript is banned estate-wide** — this was
+  formerly listed as `bindings/rescript/echidna_capnp.res`; the destination is
+  AffineScript directly, not ReScript.
 - Keep the existing 3 API interfaces (GraphQL/gRPC/REST) as external surfaces; Cap'n Proto is the
   **internal** wire format
 
 ### Tooling
-- `just capnp-gen` — regenerates Rust/Julia/Idris2/Zig/ReScript bindings from `.capnp` schemas
+- `just capnp-gen` — regenerates Rust/Julia/Idris2/Zig/AffineScript bindings from `.capnp` schemas
 - CI check: `capnp compile` runs clean + generated code is committed
 
 ## Acceptance criteria
@@ -66,6 +75,21 @@
 3. **Streaming vs request-response** — Cap'n Proto RPC streams for GNN batch inference?
 4. **Multi-locale Chapel** — schemas need to survive locale-to-locale transit; design for that now
    so L2 doesn't re-spec.
+
+### Resolved decisions
+
+- **Julia transport (was: "`CapnProto.jl` vs Zig C-ABI shim", TODO.md open Q#2)**
+  — **RATIFIED 2026-05-18: Zig C-ABI shim, buffer-oriented.** Estate-canonical
+  (FFI=Zig; one codec shared with Rust; Zig = the interface-safety transaction
+  layer). `CapnProto.jl` rejected (low maturity + second wire codec). This is
+  gate-permitted spec/design; L1 *implementation* still waits on the L3 hand-off.
+- Q1/Q3/Q4 above remain open (recommended defaults, pending ratification): Q1 →
+  `$XDG_RUNTIME_DIR/echidna/ipc.sock` with `/run/echidna/ipc.sock` fallback; Q2
+  (auth) → yes, sign the handshake with the existing SHAKE3-512 integrity keys
+  (aligns with estate interface-safety policy); Q3 → request-response first,
+  streaming deferred until a measured GNN-batch need; Q4 → frames carry an
+  explicit `schemaVersion`, locale-agnostic by construction (no host pointers
+  on the wire — Cap'n Proto already guarantees this).
 
 ## Hand to L2 when
 

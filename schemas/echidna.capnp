@@ -4,7 +4,7 @@
 # ECHIDNA canonical Cap'n Proto wire schemas (L1 IPC)
 #
 # Replaces HTTP+JSON on the Rust↔Julia hot path. Transport: Unix domain
-# socket (primary), TCP fallback. See docs/handover/L1-CAPNPROTO.md.
+# socket (primary), TCP fallback. See docs/handover/L1-CAPNPROTO-PROMPT.md.
 #
 # Generate bindings: `just capnp-gen`
 # Versioning: add fields at end of structs only. See schemas/VERSIONING.md.

@@ -791,7 +791,7 @@ handover-artefacts = [
 ]
 l3-wave-1-artefacts = [
   "manifests/live-provers.scm — Guix manifest covering Tier-1 + Tier-2 prover binaries",
-  "flake.nix — expanded liveProverDeps matching Guix set (fallback path)",
+  "flake.nix — DEPRECATED & REMOVED 2026-05-18 (estate ruling: Guix primary + sealed-container escape, no Nix mirror). Tail provisioned via Containerfile.wave3.",
   ".github/workflows/live-provers.yml — tiered CI workflow (PR/nightly/weekly/quarterly)",
   "tests/live_prover_suite.rs — Rust test harness with canonical micro-goals for Tier-1",
   "tests/live_goals/ — canonical goal fixtures (Tier-1 seeded)",
@@ -1242,3 +1242,21 @@ than replacing.
 Echo-types main updated with two commits: e0f67cb (the Agda
 modules) + 3799cb7 (handoff doc EOD update).
 """
+
+[session-2026-05-18-l3-wave3-consolidate-l1-decisions]
+summary = "Stale-doc reconciliation + Wave-3 consolidation + L1 Zig-shim ratification + Guix-primary estate ruling applied to echidna."
+findings = [
+  "Wave-3: all 9 Tier-3 Containerfiles + L1 schemas were ALREADY landed on origin/main (a87fae1, 0a78906, b2a2ff7) — TODO.md/STATE were stale-doc-drift saying 'author them'. Verified by reading, not trusting status text.",
+  "PR #70 was a redundant subset of #71 (same 5 Lean files; #71 adds doc reconciliation) — closed #70 as superseded.",
+]
+changes = [
+  "Consolidated the 9 separate .containerization/Containerfile.<backend> (each re-compiling the whole Rust core) into ONE multi-target .containerization/Containerfile.wave3: single shared rust-builder stage + one --target per prover. git rm'd the 9. Justfile container-build-* + container-ci.yml matrix rewired to -f Containerfile.wave3 --target <prover>.",
+  "Guix-extend investigated empirically: only scip/or-tools/metamath in Guix; 5 need bespoke pkg defs; imandra non-free. Rejected Guix-extend as primary path.",
+  "Estate ruling 2026-05-18 (Guix primary + sealed-container escape; NO Nix mirror) applied to echidna as the pilot: flake.nix + flake.lock git rm'd; live-provers.scm / .claude/CLAUDE.md / Justfile / this file reconciled. Estate-wide tech debt recorded in hyperpolymath/standards .machine_readable/agent_instructions/debt.a2ml.",
+  "L1 open Q#2 (CapnProto.jl vs Zig C-ABI shim) RESOLVED: Zig C-ABI shim, buffer-oriented (estate-canonical; single codec). L1-CAPNPROTO-PROMPT.md + VERSIONING.md + TODO.md reconciled; ReScript binding line corrected to AffineScript (estate ban); fixed dangling L1-CAPNPROTO.md ref in echidna.capnp.",
+]
+not-done = [
+  "L1 implementation still gated on L3 hand-off (Tier-1 green >=7d on main; main CI stuck queued/ — infra-owned, not collapsible here).",
+  "Static-correctness only: full podman builds of Containerfile.wave3 targets NOT run in this env (heavy). Stage graph + COPY --from=rust-builder wiring verified by construction from the 9 verbatim originals.",
+  "container-ci.yml edit needs `workflow` token scope to push.",
+]
