@@ -16,13 +16,12 @@ on:
   push:
     branches: [main, master]
   pull_request:
-    # Cause-B mitigation (#77): was unscoped (fired on PRs to every
-    # branch); narrowed to integration branches like the other gates.
-    branches: [main, master]
   workflow_dispatch:
 
-# Cause-B mitigation (#77): cancel superseded runs so stacked pushes
-# to the same ref don't pile up identical jobs in the queue.
+# Estate guardrail: cancel superseded runs so re-pushes / rebased PR
+# updates do not pile up queued runs against the shared account-wide
+# Actions concurrency pool. Applied only to read-only check workflows
+# (no publish/mutation), so cancelling a superseded run is always safe.
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
