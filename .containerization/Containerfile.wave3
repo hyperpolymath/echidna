@@ -164,17 +164,29 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 # Initialise opam (no sandbox inside container — use --disable-sandboxing)
 RUN opam init --disable-sandboxing --bare --no-setup -y
 
-# Install proverif via opam.
-# proverif 2.x requires OCaml >= 4.05; bookworm ships OCaml 4.13.
-RUN opam switch create default --packages=ocaml-base-compiler \
+# Install proverif via opam. Pin a known proverif-compatible OCaml (4.14.1)
+# and refresh the opam repo first — the prior `--packages=ocaml-base-compiler`
+# (unpinned) produced "no solution found" against bookworm's stale default
+# repo snapshot. proverif 2.x requires OCaml >= 4.05.
+RUN opam switch create default ocaml-base-compiler.4.14.1 \
     && eval "$(opam env)" \
+    && opam update -y \
     && opam install -y proverif \
     && proverif -help 2>&1 | head -5 || true
 
-# Copy binary to a well-known location for the runtime stage
-RUN eval "$(opam env)" && \
-    PROVERIF_BIN="$(opam var bin)/proverif" && \
-    install -m 0755 "${PROVERIF_BIN}" /usr/local/bin/proverif
+# Copy binary to a well-known location for the runtime stage. Graceful
+# degradation (matches the tamarin/imandra pattern): if the opam solve still
+# failed, emit a stub so the image still builds rather than hard-failing.
+RUN set -eux; eval "$(opam env)" || true; \
+    PROVERIF_BIN="$(opam var bin 2>/dev/null)/proverif"; \
+    if [ -x "${PROVERIF_BIN}" ]; then \
+        install -m 0755 "${PROVERIF_BIN}" /usr/local/bin/proverif; \
+    else \
+        echo "WARNING: proverif opam install failed — emitting stub (image ships, backend degraded)"; \
+        printf '#!/bin/sh\necho "proverif not available (opam solve failed at image build — see Containerfile.wave3)"\nexit 1\n' \
+            > /usr/local/bin/proverif; \
+        chmod +x /usr/local/bin/proverif; \
+    fi
 
 FROM docker.io/library/debian:bookworm-slim AS proverif
 
@@ -253,6 +265,20 @@ RUN set -eux; \
         chmod +x /usr/local/bin/scip; \
     }
 
+# Normalise to a deterministic export tree so the runtime COPY never hard-fails
+# (the .deb installs scip at /usr/bin/scip; the failure-fallback stub lands at
+# /usr/local/bin/scip — the old runtime copied only /usr/bin/scip and broke the
+# whole image whenever the download failed). Mirrors the tamarin pattern.
+RUN set -eux; mkdir -p /opt/scip-export/bin /opt/scip-export/lib; \
+    if   [ -x /usr/bin/scip ];       then cp /usr/bin/scip       /opt/scip-export/bin/scip; \
+    elif [ -x /usr/local/bin/scip ]; then cp /usr/local/bin/scip /opt/scip-export/bin/scip; \
+    else printf '#!/bin/sh\necho "scip not available (install failed at image build time)"\nexit 1\n' \
+            > /opt/scip-export/bin/scip; fi; \
+    chmod +x /opt/scip-export/bin/scip; \
+    cp -a /usr/lib/x86_64-linux-gnu/libscip*   /opt/scip-export/lib/ 2>/dev/null || true; \
+    cp -a /usr/lib/x86_64-linux-gnu/libpapilo* /opt/scip-export/lib/ 2>/dev/null || true; \
+    touch /opt/scip-export/lib/.keep
+
 FROM docker.io/library/debian:bookworm-slim AS scip
 
 LABEL maintainer="Jonathan D.A. Jewell <j.d.a.jewell@open.ac.uk>"
@@ -275,11 +301,11 @@ WORKDIR /app
 
 COPY --from=rust-builder /build/target/release/echidna /app/bin/echidna
 
-# Copy the scip binary and shared libraries installed by the deb package.
-# Typical install paths: /usr/bin/scip, /usr/lib/libscip.so.*
-COPY --from=scip-installer /usr/bin/scip /usr/local/bin/scip
-COPY --from=scip-installer /usr/lib/x86_64-linux-gnu/libscip* /usr/lib/x86_64-linux-gnu/
-COPY --from=scip-installer /usr/lib/x86_64-linux-gnu/libpapilo* /usr/lib/x86_64-linux-gnu/
+# Copy from the deterministic export tree (always exists: real binary if the
+# .deb installed, stub otherwise; libs present or just a .keep). A directory
+# COPY never hard-fails on an empty glob, unlike the old per-file copies.
+COPY --from=scip-installer /opt/scip-export/bin/scip /usr/local/bin/scip
+COPY --from=scip-installer /opt/scip-export/lib/ /usr/lib/x86_64-linux-gnu/
 
 ENV PATH="/app/bin:/usr/local/bin:${PATH}"
 ENV ECHIDNA_PROVER_PATH="/usr/local/bin"
@@ -343,14 +369,16 @@ LABEL org.opencontainers.image.licenses="PMPL-1.0-or-later"
 LABEL org.opencontainers.image.version="2.3.0"
 LABEL org.opencontainers.image.vendor="hyperpolymath"
 
-# OR-Tools runtime dependencies: abseil, protobuf, re2, zlib.
+# OR-Tools runtime deps. The OR-Tools prebuilt tarball bundles its own
+# abseil/protobuf/re2 shared libs (the installer copies them to /usr/local/lib
+# + ldconfig), so we do NOT install system libabsl/libprotobuf/libre2 — and
+# the old `libabsl20230125t64`/`libprotobuf32t64`/`libre2-10t64` names are
+# Ubuntu-24.04 / time_t-64 packages that DO NOT EXIST on debian bookworm
+# (that apt line could only ever fail). Keep only the genuinely-needed bits.
 RUN apt-get update && apt-get install -y --no-install-recommends \
     ca-certificates \
     libssl3 \
     libgmp10 \
-    libabsl20230125t64 \
-    libprotobuf32t64 \
-    libre2-10t64 \
     zlib1g \
     && rm -rf /var/lib/apt/lists/*
 
@@ -397,13 +425,21 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 WORKDIR /build/polyml
 
 # Download and build Poly/ML from source.
-# Poly/ML 5.9.1 is the latest stable release known to work with HOL4.
+# Poly/ML 5.9.1 works with HOL4. Poly/ML does NOT publish a release *asset*
+# named polyml-<v>.tar.gz (the old releases/download URL 404'd) — use GitHub's
+# auto-generated source tarball for the tag (always present), with the
+# releases/download form as a fallback for any version that does ship one.
+# The archive tarball extracts to polyml-<version>/ → --strip-components=1.
 ARG POLYML_VERSION="5.9.1"
-RUN curl -fsSL --retry 3 \
-      "https://github.com/polyml/polyml/releases/download/v${POLYML_VERSION}/polyml-${POLYML_VERSION}.tar.gz" \
+RUN set -eux; \
+    curl -fsSL --retry 3 \
+      "https://github.com/polyml/polyml/archive/refs/tags/v${POLYML_VERSION}.tar.gz" \
       -o /tmp/polyml.tar.gz \
-    && tar -xzf /tmp/polyml.tar.gz -C /build/polyml --strip-components=1 \
-    && rm /tmp/polyml.tar.gz
+    || curl -fsSL --retry 3 \
+      "https://github.com/polyml/polyml/releases/download/v${POLYML_VERSION}/polyml-${POLYML_VERSION}.tar.gz" \
+      -o /tmp/polyml.tar.gz; \
+    tar -xzf /tmp/polyml.tar.gz -C /build/polyml --strip-components=1; \
+    rm /tmp/polyml.tar.gz
 
 RUN ./configure --prefix=/opt/polyml \
     && make -j"$(nproc)" \
