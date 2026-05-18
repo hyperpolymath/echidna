@@ -257,28 +257,31 @@ jobs:
           echo "has_manifest=true" >> "$GITHUB_OUTPUT"
 
           # Validate TOML structure using Python 3.11+ tomllib.
-          # Heredoc body is dedented before Python sees it so the YAML
-          # block-scalar indentation never reaches the interpreter.
-          if ! sed 's/^                //' <<'PY' | python3 -
-                import tomllib, sys
-                with open('eclexiaiser.toml', 'rb') as f:
-                    data = tomllib.load(f)
-                project = data.get('project', {})
-                if not project.get('name', '').strip():
-                    print('ERROR: project.name is required', file=sys.stderr)
-                    sys.exit(1)
-                functions = data.get('functions', [])
-                if not functions:
-                    print('ERROR: at least one [[functions]] entry is required', file=sys.stderr)
-                    sys.exit(1)
-                for fn in functions:
-                    if not fn.get('name', '').strip():
-                        print('ERROR: function name cannot be empty', file=sys.stderr)
-                        sys.exit(1)
-                    if not fn.get('source', '').strip():
-                        print(f'ERROR: function {fn["name"]} has no source path', file=sys.stderr)
-                        sys.exit(1)
-                print(f'Valid: {project["name"]} ({len(functions)} function(s))')
+          # The Python heredoc body sits at the YAML block-scalar base
+          # indentation, so after GitHub strips the block's common indent
+          # the interpreter receives it column-aligned (no sed dedent —
+          # a sed-based dedent breaks because YAML removes the block's
+          # leading indent before the script ever reaches the shell).
+          if ! python3 - <<'PY'
+          import tomllib, sys
+          with open('eclexiaiser.toml', 'rb') as f:
+              data = tomllib.load(f)
+          project = data.get('project', {})
+          if not project.get('name', '').strip():
+              print('ERROR: project.name is required', file=sys.stderr)
+              sys.exit(1)
+          functions = data.get('functions', [])
+          if not functions:
+              print('ERROR: at least one [[functions]] entry is required', file=sys.stderr)
+              sys.exit(1)
+          for fn in functions:
+              if not fn.get('name', '').strip():
+                  print('ERROR: function name cannot be empty', file=sys.stderr)
+                  sys.exit(1)
+              if not fn.get('source', '').strip():
+                  print(f'ERROR: function {fn["name"]} has no source path', file=sys.stderr)
+                  sys.exit(1)
+          print(f'Valid: {project["name"]} ({len(functions)} function(s))')
           PY
           then
             echo "::error file=eclexiaiser.toml::Invalid eclexiaiser.toml — see step output for details"
