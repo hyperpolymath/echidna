@@ -70,8 +70,28 @@ FROM docker.io/library/debian:bookworm-slim AS tamarin-installer
 RUN apt-get update && apt-get install -y --no-install-recommends \
     curl \
     ca-certificates \
-    maude \
+    unzip \
     && rm -rf /var/lib/apt/lists/*
+
+# Maude: bookworm's apt `maude` is upstream version 3.2, which tamarin-prover
+# 1.12.0 REJECTS (allow-list 2.7.1/3.0/3.1/3.2.1/3.2.2/3.3/3.3.1/3.4/3.5/3.5.1
+# — bare 3.2 is "unsupported"). Fetch the official SRI-CSL prebuilt binary at
+# a supported point release. The zip holds the `maude` binary + the runtime
+# *.maude prelude at its root (Maude needs the prelude on MAUDE_LIB). Hard-fail
+# (not graceful-stub) is deliberate: a stubbed maude silently recreates the
+# original unsupported-version failure. Re-validate / bump:
+# https://github.com/SRI-CSL/Maude/releases  (brittle-pin tracking: #75).
+ARG MAUDE_VERSION="3.5.1"
+ARG MAUDE_ZIP="Maude-${MAUDE_VERSION}-linux-x86_64.zip"
+ARG MAUDE_URL="https://github.com/SRI-CSL/Maude/releases/download/Maude${MAUDE_VERSION}/${MAUDE_ZIP}"
+RUN set -eux; \
+    mkdir -p /opt/maude; \
+    curl -fsSL --retry 3 "${MAUDE_URL}" -o /tmp/maude.zip; \
+    unzip -o -q /tmp/maude.zip -d /opt/maude; \
+    chmod +x /opt/maude/maude; \
+    ln -sf /opt/maude/maude /usr/local/bin/maude; \
+    rm -f /tmp/maude.zip; \
+    MAUDE_LIB=/opt/maude /usr/local/bin/maude --version
 
 # Official prebuilt binary from the tamarin-prover/tamarin-prover GitHub
 # releases (GPL-3.0; anonymous; reliable). The linux64-ubuntu tarball contains
@@ -131,7 +151,6 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     ca-certificates \
     libgmp10 \
     zlib1g \
-    maude \
     graphviz \
     && rm -rf /var/lib/apt/lists/*
 
@@ -142,6 +161,12 @@ COPY --from=rust-builder /build/target/release/echidna /app/bin/echidna
 # succeeded, a one-file stub otherwise). A directory COPY never hard-fails.
 COPY --from=tamarin-installer /opt/tamarin-export/ /opt/tamarin/
 RUN ln -sf /opt/tamarin/tamarin-prover /usr/local/bin/tamarin-prover
+# Maude (tamarin-supported point release) from the installer stage, NOT apt:
+# bookworm apt maude is 3.2 which tamarin-prover 1.12.0 rejects. Prebuilt
+# binary's only shared-lib deps (libm/libgcc_s/libc) are in the base image.
+COPY --from=tamarin-installer /opt/maude/ /opt/maude/
+RUN ln -sf /opt/maude/maude /usr/local/bin/maude
+ENV MAUDE_LIB="/opt/maude"
 
 ENV PATH="/app/bin:/usr/local/bin:${PATH}"
 ENV ECHIDNA_PROVER_PATH="/usr/local/bin"
@@ -352,8 +377,13 @@ WORKDIR /opt/or-tools
 # Download the prebuilt C++ release tarball for Debian 12 (bookworm) / amd64.
 # The tarball ships include headers, shared libraries, and CMake config files.
 # Check https://github.com/google/or-tools/releases for the latest version.
+# NOTE: upstream release assets ALWAYS carry the build number, e.g.
+#   or-tools_amd64_debian-12_cpp_v9.12.4544.tar.gz   (NOT ..._v9.12.tar.gz)
+# so ORTOOLS_BUILD must track the exact build for the tag (verified via the
+# GitHub releases API for tag v9.12). Bump both together on any version change.
 ARG ORTOOLS_VERSION="9.12"
-ARG ORTOOLS_ARCHIVE="or-tools_amd64_debian-12_cpp_v${ORTOOLS_VERSION}.tar.gz"
+ARG ORTOOLS_BUILD="4544"
+ARG ORTOOLS_ARCHIVE="or-tools_amd64_debian-12_cpp_v${ORTOOLS_VERSION}.${ORTOOLS_BUILD}.tar.gz"
 ARG ORTOOLS_URL="https://github.com/google/or-tools/releases/download/v${ORTOOLS_VERSION}/${ORTOOLS_ARCHIVE}"
 
 RUN set -eux; \
@@ -737,10 +767,14 @@ CMD ["--help"]
 # Re-validate the tag at https://github.com/metamath/metamath-exe/tags (#75).
 FROM docker.io/library/debian:bookworm-slim AS metamath-builder
 
+# libc6-dev is REQUIRED: the standalone `gcc` package on bookworm-slim does
+# NOT pull in the libc development headers, so `gcc m*.c` failed with
+# `fatal error: string.h: No such file or directory` and fell to the stub.
 RUN apt-get update && apt-get install -y --no-install-recommends \
     curl \
     ca-certificates \
     gcc \
+    libc6-dev \
     make \
     && rm -rf /var/lib/apt/lists/*
 
