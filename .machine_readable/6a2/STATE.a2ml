@@ -5,7 +5,7 @@
 [metadata]
 project = "echidna"
 version = "2.1.1"
-last-updated = "2026-04-26"
+last-updated = "2026-05-19"
 status = "active"
 
 [project-context]
@@ -1264,4 +1264,26 @@ not-done = [
   "L1 implementation still gated on L3 hand-off (Tier-1 green >=7d on main; main CI stuck queued/ — infra-owned, not collapsible here).",
   "Static-correctness only: full podman builds of Containerfile.wave3 targets NOT run in this env (heavy). Stage graph + COPY --from=rust-builder wiring verified by construction from the 9 verbatim originals.",
   "container-ci.yml edit needs `workflow` token scope to push.",
+]
+
+[session-2026-05-19-ci-baseline-triage]
+summary = "Landed PR #73 (Wave-3 consolidation, MERGED d3db97d) + triaged its red CI into 3 classes (real PR defect / baseline-rot / #77 infra jam) + cleared the two baseline blockers as dedicated PRs. Human ADR: docs/decisions/2026-05-19-ci-baseline-triage.md."
+required-merge-gate = ["Analyze (rust)", "Cargo check + clippy + fmt", "Dependency audit", "Dogfood Gate", "Hypatia Neurosymbolic Analysis", "OpenSSF Scorecard"]
+findings = [
+  "Triage rule: a red echidna PR check is one of (1) real in-scope PR defect, (2) baseline-rot — fails identically on origin/main, fix in dedicated PR not on the feature branch, (3) #77 infra jam — runner unassigned or ~15-30s fast-fail with EMPTY --log-failed. Verify class via `git show origin/main:<path>` + check main's run before patching.",
+  "Only the 6 required-merge-gate contexts block auto-merge; MVP Smoke / Julia Integration / MSRV / PR (address) / Validate A2ML+K9 / governance/* / T1-T4 are NON-gating.",
+  "build.rs ALREADY correctly cfg-gates -lflint/-lspark/-lchapel link dirs; the -lflint CI failure was rust-ci.yml forcing --all-features, NOT a build.rs defect.",
+  "Linker distinction: cargo test/build LINK; cargo clippy/doc/check do NOT — so clippy/doc/check tolerate --all-features on a bare runner (full lint coverage), only the test steps must drop features.",
+  "MSRV check fails identically on origin/main (24s, zero step logs) = #77-class baseline, not a regression, not required.",
+]
+changes = [
+  "PR #73 (MERGED d3db97d 17:49Z): added `COPY crates ./crates` + `COPY benches ./benches` to .containerization/Containerfile + Containerfile.full (were stale vs the crates/* workspace; wave3 + mcp were already correct).",
+  "Issue #85 -> PR #86 (fix/rust-ci-drop-all-features): rust-ci.yml clippy/doc/check KEEP --all-features (no link, full coverage); the 2 cargo-test steps -> --features verisim (sole pure-Rust optional feat; live-provers superset). Avoids blinding ~510 LoC flint + spark-FFI to CI. Validated: Test Suite X(main)->ok(#86) 3m18s; local cargo test --lib --features verisim = 1092 pass/0 fail.",
+  "PR #87 (fix/clusterfuzzlite-dockerfile-symlink): tracked symlink .clusterfuzzlite/Dockerfile -> Containerfile (git mode 120000); clusterfuzzlite action hardcodes Dockerfile, keeps house Containerfile name, zero blast radius. Non-gating hygiene.",
+  "docs/decisions/2026-05-19-ci-baseline-triage.md — human-readable ADR of the above (companion to this block).",
+]
+not-done = [
+  "#86 + #87 BLOCKED solely on #77 (required jobs awaiting runner assignment); auto-merge-squash armed, will self-fire when #77 clears. Do NOT admin-override.",
+  "#77 CI-infra jam is estate-owned (active estate-wide remediation), not collapsible from this repo.",
+  "MSRV + Julia Integration remain red on main as separate non-required baseline rot — not in scope of #85; file dedicated issues only if they later become gating.",
 ]
