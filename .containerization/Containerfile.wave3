@@ -1,0 +1,978 @@
+# SPDX-License-Identifier: PMPL-1.0-or-later
+# SPDX-FileCopyrightText: 2026 Jonathan D.A. Jewell <j.d.a.jewell@open.ac.uk>
+#
+# ECHIDNA Wave-3 (Tier-3, weekly) prover images — CONSOLIDATED multi-target
+#
+# Replaces the nine separate .containerization/Containerfile.<backend> files.
+# Rationale: every one of those files repeated a byte-identical Rust builder
+# stage (`cargo build --release --bin echidna`), i.e. the whole core was
+# compiled nine times. This file declares that builder ONCE (`rust-builder`)
+# and each prover image is a named build target that COPYs the one artifact.
+# Per-backend runtime stages (deps / ENV / healthcheck) are preserved verbatim
+# — only the duplicated compile is removed.
+#
+# Build one image:
+#   podman build -f .containerization/Containerfile.wave3 --target tamarin -t echidna:tamarin .
+# Build all non-proprietary (see Justfile `container-build-tier3`):
+#   for t in tamarin proverif scip or-tools hol4 acl2 twelf metamath; do \
+#     podman build -f .containerization/Containerfile.wave3 --target $t -t echidna:$t .; done
+# Seal:  selur seal echidna:<target>
+# Sign:  cerro-torre sign echidna:<target>
+#
+# Targets: tamarin proverif scip or-tools hol4 acl2 twelf metamath imandra
+#   imandra is GATED (proprietary licence — see its installer stage).
+#
+# Packaging policy (estate, RULED 2026-05-18): Guix is the primary packager;
+# the universal escape hatch for the not-in-Guix / non-free tail is a SEALED
+# CONTAINER (this file), NOT a Nix mirror. These nine backends are exactly
+# that tail (6 absent from Guix, Imandra non-free). flake.nix is deprecated.
+
+# #############################################################################
+# SHARED Stage: Rust Builder — built ONCE, consumed by every target below
+# #############################################################################
+FROM docker.io/library/rust:1.85-slim-bookworm AS rust-builder
+
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    build-essential \
+    pkg-config \
+    libssl-dev \
+    && rm -rf /var/lib/apt/lists/*
+
+# Some deps require nightly Rust
+RUN rustup toolchain install nightly && rustup default nightly
+
+WORKDIR /build
+
+COPY Cargo.toml Cargo.lock ./
+# Workspace members: crates/* (echidna-core, -core-spark, -mcp, -wire,
+# typed_wasm) + src/interfaces/* + root pkg at src/rust. The original nine
+# Containerfiles omitted `crates/` — their rust-builder stage could never
+# have built green (workspace manifest references crates/echidna-core).
+COPY crates ./crates
+COPY src/rust ./src/rust
+COPY src/interfaces ./src/interfaces
+COPY benches ./benches
+
+# Build release binary (Metamath verifier is compiled in unconditionally;
+# no feature gate — so this single binary serves every Wave-3 target).
+RUN cargo build --release --bin echidna
+
+# #############################################################################
+# TARGET: tamarin — symbolic security-protocol analysis
+# #############################################################################
+FROM docker.io/library/debian:bookworm-slim AS tamarin-installer
+
+# maude is REQUIRED here, not just in the runtime stage: tamarin-prover
+# shells out to `maude --version` *before* printing its own version, so the
+# in-builder smoke-test below cannot pass without it. (This — NOT a dead URL —
+# was why tamarin always shipped a stub: the GitHub download succeeded but the
+# `--version` smoke-test exited 1 on missing maude. Brittle-pin tracking: #75.)
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    curl \
+    ca-certificates \
+    unzip \
+    && rm -rf /var/lib/apt/lists/*
+
+# Maude: bookworm's apt `maude` is upstream version 3.2, which tamarin-prover
+# 1.12.0 REJECTS (allow-list 2.7.1/3.0/3.1/3.2.1/3.2.2/3.3/3.3.1/3.4/3.5/3.5.1
+# — bare 3.2 is "unsupported"). Fetch the official SRI-CSL prebuilt binary at
+# a supported point release. The zip holds the `maude` binary + the runtime
+# *.maude prelude at its root (Maude needs the prelude on MAUDE_LIB). Hard-fail
+# (not graceful-stub) is deliberate: a stubbed maude silently recreates the
+# original unsupported-version failure. Re-validate / bump:
+# https://github.com/SRI-CSL/Maude/releases  (brittle-pin tracking: #75).
+ARG MAUDE_VERSION="3.5.1"
+ARG MAUDE_ZIP="Maude-${MAUDE_VERSION}-linux-x86_64.zip"
+ARG MAUDE_URL="https://github.com/SRI-CSL/Maude/releases/download/Maude${MAUDE_VERSION}/${MAUDE_ZIP}"
+RUN set -eux; \
+    mkdir -p /opt/maude; \
+    curl -fsSL --retry 3 "${MAUDE_URL}" -o /tmp/maude.zip; \
+    unzip -o -q /tmp/maude.zip -d /opt/maude; \
+    chmod +x /opt/maude/maude; \
+    ln -sf /opt/maude/maude /usr/local/bin/maude; \
+    rm -f /tmp/maude.zip; \
+    MAUDE_LIB=/opt/maude /usr/local/bin/maude --version
+
+# Official prebuilt binary from the tamarin-prover/tamarin-prover GitHub
+# releases (GPL-3.0; anonymous; reliable). The linux64-ubuntu tarball contains
+# a single dynamically-linked x86_64 `tamarin-prover` at the archive root;
+# its only shared-lib deps are libm/libz/libgmp10/libc. It is a Maude
+# front-end and needs `maude` (hard) + graphviz `dot` (visualisation) at
+# runtime. Re-validate at https://github.com/tamarin-prover/tamarin-prover/releases.
+ARG TAMARIN_VERSION="1.12.0"
+ARG TAMARIN_TARBALL="tamarin-prover-${TAMARIN_VERSION}-linux64-ubuntu.tar.gz"
+ARG TAMARIN_URL="https://github.com/tamarin-prover/tamarin-prover/releases/download/${TAMARIN_VERSION}/${TAMARIN_TARBALL}"
+
+# Deterministic export tree so the runtime COPY never hard-fails: the real
+# binary if download + smoke-test succeed, a stub otherwise.
+RUN set -eux; \
+    mkdir -p /opt/tamarin-export; \
+    if curl -fsSL --retry 3 "${TAMARIN_URL}" -o /tmp/tamarin.tar.gz \
+       && tar -xzf /tmp/tamarin.tar.gz -C /opt/tamarin-export \
+       && chmod +x /opt/tamarin-export/tamarin-prover \
+       && /opt/tamarin-export/tamarin-prover --version; then \
+         echo "tamarin-prover ${TAMARIN_VERSION} installed."; \
+    else \
+         echo "WARNING: tamarin-prover download/smoke-test failed."; \
+         echo "Re-check https://github.com/tamarin-prover/tamarin-prover/releases."; \
+         echo "Creating stub binary as fallback."; \
+         mkdir -p /opt/tamarin-export; \
+         printf '#!/bin/sh\necho "tamarin-prover not available (bundle install failed at image build time)"\nexit 1\n' \
+             > /opt/tamarin-export/tamarin-prover; \
+         chmod +x /opt/tamarin-export/tamarin-prover; \
+    fi; \
+    rm -f /tmp/tamarin.tar.gz; \
+    touch /opt/tamarin-export/.keep
+
+# --- Fallback: Haskell Stack build (uncomment if prebuilt binary is unavailable) ---
+# RUN apt-get update && apt-get install -y --no-install-recommends \
+#     curl ca-certificates build-essential zlib1g-dev libtinfo-dev \
+#     && rm -rf /var/lib/apt/lists/*
+# RUN curl -sSL https://get.haskellstack.org/ | sh
+# RUN git clone --depth 1 https://github.com/tamarin-prover/tamarin-prover.git /src/tamarin \
+#     && cd /src/tamarin \
+#     && stack install --local-bin-path /opt/tamarin \
+#     && /opt/tamarin/tamarin-prover --version
+
+FROM docker.io/library/debian:bookworm-slim AS tamarin
+
+LABEL maintainer="Jonathan D.A. Jewell <j.d.a.jewell@open.ac.uk>"
+LABEL org.opencontainers.image.source="https://github.com/hyperpolymath/echidna"
+LABEL org.opencontainers.image.description="ECHIDNA + Tamarin Prover - security protocol analysis"
+LABEL org.opencontainers.image.licenses="PMPL-1.0-or-later"
+LABEL org.opencontainers.image.version="2.3.0"
+LABEL org.opencontainers.image.vendor="hyperpolymath"
+
+# Tamarin runtime deps. The prebuilt binary is DYNAMICALLY linked (libm,
+# libz, libgmp10, libc) and is a Maude front-end: `maude` is a hard runtime
+# requirement (NOT bundled in the binary), graphviz `dot` is needed for
+# visualisation output.
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    ca-certificates \
+    libgmp10 \
+    zlib1g \
+    graphviz \
+    && rm -rf /var/lib/apt/lists/*
+
+WORKDIR /app
+
+COPY --from=rust-builder /build/target/release/echidna /app/bin/echidna
+# Deterministic export tree (real binary if the GitHub download + smoke-test
+# succeeded, a one-file stub otherwise). A directory COPY never hard-fails.
+COPY --from=tamarin-installer /opt/tamarin-export/ /opt/tamarin/
+RUN ln -sf /opt/tamarin/tamarin-prover /usr/local/bin/tamarin-prover
+# Maude (tamarin-supported point release) from the installer stage, NOT apt:
+# bookworm apt maude is 3.2 which tamarin-prover 1.12.0 rejects. Prebuilt
+# binary's only shared-lib deps (libm/libgcc_s/libc) are in the base image.
+COPY --from=tamarin-installer /opt/maude/ /opt/maude/
+RUN ln -sf /opt/maude/maude /usr/local/bin/maude
+ENV MAUDE_LIB="/opt/maude"
+
+ENV PATH="/app/bin:/usr/local/bin:${PATH}"
+ENV ECHIDNA_PROVER_PATH="/usr/local/bin"
+
+RUN mkdir -p /app/proofs /app/config /app/logs
+
+EXPOSE 8000
+EXPOSE 8081
+EXPOSE 50051
+
+HEALTHCHECK --interval=30s --timeout=10s --start-period=15s --retries=3 \
+    CMD ["/app/bin/echidna", "--version"]
+
+ENTRYPOINT ["/app/bin/echidna"]
+CMD ["--help"]
+
+# #############################################################################
+# TARGET: proverif — cryptographic protocol verification (OCaml, source build)
+# #############################################################################
+# ProVerif (Bruno Blanchet, INRIA) is FREE GPL software — NOT licence-gated.
+# The previous opam path (`opam init --bare` + `opam switch create
+# ocaml-base-compiler.4.14.1` + `opam install proverif`) emitted
+# "No solution found, exiting" because opam cannot resolve a transitive
+# solution from a cold/empty repo inside hermetic bookworm-slim (echidna #74).
+# Mirror the tamarin/metamath/or-tools fix: drop the fragile package-manager
+# path and build the OFFICIAL INRIA source release deterministically.
+# ProVerif 2.05 needs only OCaml >= 4.03; bookworm apt ships ocaml 4.13.1 +
+# ocaml-findlib 1.9.6 + ocamlbuild 0.14.1, so NO opam is required.
+# liblablgtk2-ocaml-dev is required at BUILD time: ProVerif 2.05's `./build`
+# hard-fails (`ocamlfind: Package 'lablgtk2' not found`) rather than skipping
+# the GUI target. It lives only in this throwaway builder stage — the GUI
+# binary is discarded; only the CLI `proverif` is copied to the runtime image,
+# which links no GTK (verified). tar needs --no-same-owner: the upstream
+# tarball carries the packager's numeric uid/gid and chown fails under the
+# container userns.
+# Re-validate the version/URL at https://bblanche.gitlabpages.inria.fr/proverif/
+# (brittle-pin tracking: #75).
+FROM docker.io/library/debian:bookworm-slim AS proverif-builder
+
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    curl \
+    ca-certificates \
+    ocaml \
+    ocaml-findlib \
+    ocamlbuild \
+    liblablgtk2-ocaml-dev \
+    make \
+    && rm -rf /var/lib/apt/lists/*
+
+ARG PROVERIF_VERSION="2.05"
+ARG PROVERIF_TARBALL="proverif${PROVERIF_VERSION}.tar.gz"
+ARG PROVERIF_URL="https://bblanche.gitlabpages.inria.fr/proverif/${PROVERIF_TARBALL}"
+
+# Deterministic export tree so the runtime COPY never hard-fails: the real
+# binary if download + ./build + smoke-test succeed, the documented stub
+# otherwise (same graceful-degradation convention as tamarin/metamath).
+# `./build` runs `ocamlbuild -use-ocamlfind`, skips the lablgtk GUI target
+# when lablgtk is absent, and leaves the CLI binary at ./proverif.
+RUN set -eux; \
+    mkdir -p /opt/proverif-export/bin; \
+    if curl -fsSL --retry 3 "${PROVERIF_URL}" -o /tmp/proverif.tar.gz \
+       && tar --no-same-owner -xzf /tmp/proverif.tar.gz -C /tmp \
+       && ( cd "/tmp/proverif${PROVERIF_VERSION}" \
+            && ./build \
+            && test -x ./proverif \
+            && ./proverif -help >/dev/null 2>&1 ) ; then \
+         install -m 0755 "/tmp/proverif${PROVERIF_VERSION}/proverif" \
+             /opt/proverif-export/bin/proverif; \
+    else \
+         echo "WARNING: proverif source download/build/smoke-test failed."; \
+         echo "Re-check https://bblanche.gitlabpages.inria.fr/proverif/ (see #75)."; \
+         echo "Creating stub binary as fallback (image ships, backend degraded)."; \
+         printf '#!/bin/sh\necho "proverif not available (source build failed at image build — see Containerfile.wave3 / #74)"\nexit 1\n' \
+             > /opt/proverif-export/bin/proverif; \
+         chmod +x /opt/proverif-export/bin/proverif; \
+    fi; \
+    chmod +x /opt/proverif-export/bin/proverif; \
+    rm -rf /tmp/proverif.tar.gz "/tmp/proverif${PROVERIF_VERSION}"; \
+    touch /opt/proverif-export/.keep
+
+FROM docker.io/library/debian:bookworm-slim AS proverif
+
+LABEL maintainer="Jonathan D.A. Jewell <j.d.a.jewell@open.ac.uk>"
+LABEL org.opencontainers.image.source="https://github.com/hyperpolymath/echidna"
+LABEL org.opencontainers.image.description="ECHIDNA + ProVerif - cryptographic protocol verification"
+LABEL org.opencontainers.image.licenses="PMPL-1.0-or-later"
+LABEL org.opencontainers.image.version="2.3.0"
+LABEL org.opencontainers.image.vendor="hyperpolymath"
+
+# ProVerif at runtime is an OCaml-native binary linking only glibc/libm/
+# libpthread (all in bookworm-slim); it needs no OCaml runtime and no libgmp
+# (ProVerif uses no GMP — the prior "big-integer" comment was inaccurate).
+# libssl3/libgmp10 retained only for parity with the rest of this file.
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    ca-certificates \
+    libssl3 \
+    libgmp10 \
+    && rm -rf /var/lib/apt/lists/*
+
+WORKDIR /app
+
+COPY --from=rust-builder /build/target/release/echidna /app/bin/echidna
+COPY --from=proverif-builder /opt/proverif-export/bin/proverif /usr/local/bin/proverif
+
+ENV PATH="/app/bin:/usr/local/bin:${PATH}"
+ENV ECHIDNA_PROVER_PATH="/usr/local/bin"
+
+RUN mkdir -p /app/proofs /app/config /app/logs
+
+EXPOSE 8000
+EXPOSE 8081
+EXPOSE 50051
+
+HEALTHCHECK --interval=30s --timeout=10s --start-period=15s --retries=3 \
+    CMD ["/app/bin/echidna", "--version"]
+
+ENTRYPOINT ["/app/bin/echidna"]
+CMD ["--help"]
+
+# #############################################################################
+# TARGET: scip — constraint integer programming solver (prebuilt .deb)
+# #############################################################################
+FROM docker.io/library/debian:bookworm-slim AS scip-installer
+
+# curl/ca-certificates for the download; libpcre2-posix3 is the one shared lib
+# the bundle does NOT carry (everything else is in its own lib64/) — needed so
+# the in-stage `scip --version` smoke-test below can actually run.
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    curl \
+    ca-certificates \
+    libpcre2-posix3 \
+    && rm -rf /var/lib/apt/lists/*
+
+# SCIP Optimization Suite — official prebuilt *portable* bundle from the
+# scipopt/scip GitHub releases (Apache-2.0 since SCIP 8.0; anonymous; fully
+# self-contained: bundles its own lib64/ with RPATH=$ORIGIN/../lib64, so only
+# libc/libm/libpcre2 come from the base image).
+#
+# This REPLACES the old scipopt.org `.deb`. As of 2026-05 scipopt.org returns
+# a hard HTTP 403 for anonymous fetches of /download/release/ (even with a
+# browser UA + referer), which silently degraded scip to a stub. The GitHub
+# release tarball is the reliable, license-clean source. The glibc2_34 variant
+# is correct here: Debian bookworm ships glibc 2.36 (>= 2.34). Re-validate the
+# version at https://github.com/scipopt/scip/releases — brittle-pin tracking: #75.
+ARG SCIP_VERSION="10.0.2"
+ARG SCIP_TARBALL="scipoptsuite-${SCIP_VERSION}-glibc2_34-amd64.tgz"
+ARG SCIP_URL="https://github.com/scipopt/scip/releases/download/v${SCIP_VERSION}/${SCIP_TARBALL}"
+
+# Deterministic export tree so the runtime COPY never hard-fails: the real
+# self-contained bundle if download + smoke-test succeed, a stub otherwise.
+RUN set -eux; \
+    mkdir -p /opt/scip-export; \
+    if curl -fsSL --retry 3 "${SCIP_URL}" -o /tmp/scip.tgz \
+       && tar -xzf /tmp/scip.tgz -C /opt \
+       && "/opt/scipoptsuite-${SCIP_VERSION}/bin/scip" --version; then \
+         cp -a "/opt/scipoptsuite-${SCIP_VERSION}" /opt/scip-export/scipoptsuite; \
+    else \
+         echo "WARNING: SCIP portable bundle download/smoke-test failed."; \
+         echo "Re-check https://github.com/scipopt/scip/releases (see #75)."; \
+         echo "Creating stub binary as fallback."; \
+         mkdir -p /opt/scip-export/scipoptsuite/bin; \
+         printf '#!/bin/sh\necho "scip not available (bundle install failed at image build time)"\nexit 1\n' \
+             > /opt/scip-export/scipoptsuite/bin/scip; \
+         chmod +x /opt/scip-export/scipoptsuite/bin/scip; \
+    fi; \
+    rm -f /tmp/scip.tgz; \
+    touch /opt/scip-export/.keep
+
+FROM docker.io/library/debian:bookworm-slim AS scip
+
+LABEL maintainer="Jonathan D.A. Jewell <j.d.a.jewell@open.ac.uk>"
+LABEL org.opencontainers.image.source="https://github.com/hyperpolymath/echidna"
+LABEL org.opencontainers.image.description="ECHIDNA + SCIP - constraint integer programming solver"
+LABEL org.opencontainers.image.licenses="PMPL-1.0-or-later"
+LABEL org.opencontainers.image.version="2.3.0"
+LABEL org.opencontainers.image.vendor="hyperpolymath"
+
+# The portable SCIP bundle carries its own lib64/ (libgmp, libtbb, libopenblas,
+# libgfortran, libstdc++, libmetis, libgomp, …). Only libc/libm (base image) and
+# libpcre2 are resolved from the system.
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    ca-certificates \
+    libpcre2-posix3 \
+    && rm -rf /var/lib/apt/lists/*
+
+WORKDIR /app
+
+COPY --from=rust-builder /build/target/release/echidna /app/bin/echidna
+
+# Copy the deterministic export tree (always exists: the real self-contained
+# bundle if the GitHub download succeeded, a one-file stub otherwise). A
+# directory COPY never hard-fails. The binary's RPATH is $ORIGIN/../lib64 and
+# the loader resolves $ORIGIN via the realpath of the exe, so the
+# /usr/local/bin/scip symlink correctly finds /opt/scipoptsuite/lib64/*.
+COPY --from=scip-installer /opt/scip-export/scipoptsuite /opt/scipoptsuite
+RUN set -eux; \
+    ln -sf /opt/scipoptsuite/bin/scip /usr/local/bin/scip; \
+    [ -x /opt/scipoptsuite/bin/soplex ] && ln -sf /opt/scipoptsuite/bin/soplex /usr/local/bin/soplex || true
+
+ENV PATH="/app/bin:/usr/local/bin:${PATH}"
+ENV ECHIDNA_PROVER_PATH="/usr/local/bin"
+
+RUN mkdir -p /app/proofs /app/config /app/logs && ldconfig
+
+EXPOSE 8000
+EXPOSE 8081
+EXPOSE 50051
+
+HEALTHCHECK --interval=30s --timeout=10s --start-period=15s --retries=3 \
+    CMD ["/app/bin/echidna", "--version"]
+
+ENTRYPOINT ["/app/bin/echidna"]
+CMD ["--help"]
+
+# #############################################################################
+# TARGET: or-tools — combinatorial optimisation (prebuilt C++ tarball, via FFI)
+# #############################################################################
+FROM docker.io/library/debian:bookworm-slim AS ortools-installer
+
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    curl \
+    ca-certificates \
+    tar \
+    gzip \
+    && rm -rf /var/lib/apt/lists/*
+
+WORKDIR /opt/or-tools
+
+# Download the prebuilt C++ release tarball for Debian 12 (bookworm) / amd64.
+# The tarball ships include headers, shared libraries, and CMake config files.
+# Check https://github.com/google/or-tools/releases for the latest version.
+# NOTE: upstream release assets ALWAYS carry the build number, e.g.
+#   or-tools_amd64_debian-12_cpp_v9.12.4544.tar.gz   (NOT ..._v9.12.tar.gz)
+# so ORTOOLS_BUILD must track the exact build for the tag (verified via the
+# GitHub releases API for tag v9.12). Bump both together on any version change.
+ARG ORTOOLS_VERSION="9.12"
+ARG ORTOOLS_BUILD="4544"
+ARG ORTOOLS_ARCHIVE="or-tools_amd64_debian-12_cpp_v${ORTOOLS_VERSION}.${ORTOOLS_BUILD}.tar.gz"
+ARG ORTOOLS_URL="https://github.com/google/or-tools/releases/download/v${ORTOOLS_VERSION}/${ORTOOLS_ARCHIVE}"
+
+RUN set -eux; \
+    curl -fsSL --retry 3 "${ORTOOLS_URL}" -o /tmp/or-tools.tar.gz \
+    && tar -xzf /tmp/or-tools.tar.gz -C /opt/or-tools --strip-components=1 \
+    && rm /tmp/or-tools.tar.gz \
+    && ls /opt/or-tools/lib/ \
+    || { \
+        echo "WARNING: OR-Tools prebuilt tarball download failed."; \
+        echo "Verify the version and URL at https://github.com/google/or-tools/releases"; \
+        mkdir -p /opt/or-tools/lib; \
+    }
+
+# Assemble a deterministic export tree (real libs/headers if the tarball
+# downloaded, empty-but-present otherwise). The old step left
+# /usr/local/include/ortools absent on a failed download, hard-failing the
+# runtime COPY and breaking the whole image. Same tamarin/scip pattern.
+RUN set -eux; \
+    mkdir -p /opt/or-tools-export/lib /opt/or-tools-export/include/ortools; \
+    cp -a /opt/or-tools/lib/.     /opt/or-tools-export/lib/             2>/dev/null || true; \
+    cp -a /opt/or-tools/include/. /opt/or-tools-export/include/         2>/dev/null || true; \
+    touch /opt/or-tools-export/lib/.keep /opt/or-tools-export/include/ortools/.keep; \
+    cp -a /opt/or-tools-export/lib/. /usr/local/lib/ 2>/dev/null || true; \
+    ldconfig || true
+
+FROM docker.io/library/debian:bookworm-slim AS or-tools
+
+LABEL maintainer="Jonathan D.A. Jewell <j.d.a.jewell@open.ac.uk>"
+LABEL org.opencontainers.image.source="https://github.com/hyperpolymath/echidna"
+LABEL org.opencontainers.image.description="ECHIDNA + OR-Tools C++ library - combinatorial optimisation via FFI"
+LABEL org.opencontainers.image.licenses="PMPL-1.0-or-later"
+LABEL org.opencontainers.image.version="2.3.0"
+LABEL org.opencontainers.image.vendor="hyperpolymath"
+
+# OR-Tools runtime deps. The OR-Tools prebuilt tarball bundles its own
+# abseil/protobuf/re2 shared libs (the installer copies them to /usr/local/lib
+# + ldconfig), so we do NOT install system libabsl/libprotobuf/libre2 — and
+# the old `libabsl20230125t64`/`libprotobuf32t64`/`libre2-10t64` names are
+# Ubuntu-24.04 / time_t-64 packages that DO NOT EXIST on debian bookworm
+# (that apt line could only ever fail). Keep only the genuinely-needed bits.
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    ca-certificates \
+    libssl3 \
+    libgmp10 \
+    zlib1g \
+    && rm -rf /var/lib/apt/lists/*
+
+WORKDIR /app
+
+COPY --from=rust-builder /build/target/release/echidna /app/bin/echidna
+
+# Copy OR-Tools libs/headers from the deterministic export tree (always
+# present — real content if the tarball downloaded, just .keep otherwise;
+# directory COPY never hard-fails on an empty glob).
+COPY --from=ortools-installer /opt/or-tools-export/lib/ /usr/local/lib/
+COPY --from=ortools-installer /opt/or-tools-export/include/ortools/ /usr/local/include/ortools/
+
+ENV PATH="/app/bin:${PATH}"
+ENV ECHIDNA_PROVER_PATH="/usr/local/lib"
+ENV LD_LIBRARY_PATH="/usr/local/lib:${LD_LIBRARY_PATH}"
+
+RUN mkdir -p /app/proofs /app/config /app/logs && ldconfig
+
+EXPOSE 8000
+EXPOSE 8081
+EXPOSE 50051
+
+HEALTHCHECK --interval=30s --timeout=10s --start-period=15s --retries=3 \
+    CMD ["/app/bin/echidna", "--version"]
+
+ENTRYPOINT ["/app/bin/echidna"]
+CMD ["--help"]
+
+# #############################################################################
+# TARGET: hol4 — higher-order logic theorem prover (Poly/ML built from source)
+# #############################################################################
+FROM docker.io/library/debian:bookworm-slim AS polyml-builder
+
+# BuildKit cache hint: Poly/ML sources change rarely — cache this layer hard.
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    build-essential \
+    curl \
+    ca-certificates \
+    git \
+    libgmp-dev \
+    libffi-dev \
+    && rm -rf /var/lib/apt/lists/*
+
+WORKDIR /build/polyml
+
+# Download and build Poly/ML from source.
+# Poly/ML 5.9.1 works with HOL4. Poly/ML does NOT publish a release *asset*
+# named polyml-<v>.tar.gz (the old releases/download URL 404'd) — use GitHub's
+# auto-generated source tarball for the tag (always present), with the
+# releases/download form as a fallback for any version that does ship one.
+# The archive tarball extracts to polyml-<version>/ → --strip-components=1.
+ARG POLYML_VERSION="5.9.1"
+RUN set -eux; \
+    curl -fsSL --retry 3 \
+      "https://github.com/polyml/polyml/archive/refs/tags/v${POLYML_VERSION}.tar.gz" \
+      -o /tmp/polyml.tar.gz \
+    || curl -fsSL --retry 3 \
+      "https://github.com/polyml/polyml/releases/download/v${POLYML_VERSION}/polyml-${POLYML_VERSION}.tar.gz" \
+      -o /tmp/polyml.tar.gz; \
+    tar -xzf /tmp/polyml.tar.gz -C /build/polyml --strip-components=1; \
+    rm /tmp/polyml.tar.gz
+
+RUN ./configure --prefix=/opt/polyml \
+    && make -j"$(nproc)" \
+    && make install \
+    && /opt/polyml/bin/poly --version
+
+FROM docker.io/library/debian:bookworm-slim AS hol4-builder
+
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    build-essential \
+    git \
+    ca-certificates \
+    libgmp10 \
+    && rm -rf /var/lib/apt/lists/*
+
+COPY --from=polyml-builder /opt/polyml /opt/polyml
+
+ENV PATH="/opt/polyml/bin:${PATH}"
+
+# Clone HOL4 directly at its FINAL runtime path. HOL4 is NOT relocatable:
+# `bin/build` bakes the absolute build directory into bin/hol, bin/heapname,
+# bin/buildheap and the heap files. Building at /build/HOL4 then COPYing to
+# /opt/HOL4 produced a `hol` that called /build/HOL4/bin/{heapname,buildheap}
+# — "not found" at runtime. Build in-place at /opt/HOL4 so the baked paths
+# are correct in the runtime image (which also uses HOLDIR=/opt/HOL4).
+#
+# Use a pinned release tag for reproducibility. NOTE: the "kananaskis" series
+# ended at kananaskis-14; HOL4's release line was renamed to "trindemossen"
+# (trindemossen-1, trindemossen-2 = latest stable). "kananaskis-15" never
+# existed and made this clone fail rc=128.
+# Check https://github.com/HOL-Theorem-Prover/HOL/releases for latest (#75).
+ARG HOL4_VERSION="trindemossen-2"
+RUN git clone --depth 1 --branch "${HOL4_VERSION}" \
+      https://github.com/HOL-Theorem-Prover/HOL.git /opt/HOL4
+
+WORKDIR /opt/HOL4
+
+# Configure HOL4 against the Poly/ML we just built, then build all theories.
+RUN poly < tools/smart-configure.sml \
+    && bin/build
+
+RUN test -f /opt/HOL4/bin/hol && echo "HOL4 build succeeded"
+
+FROM docker.io/library/debian:bookworm-slim AS hol4
+
+LABEL maintainer="Jonathan D.A. Jewell <j.d.a.jewell@open.ac.uk>"
+LABEL org.opencontainers.image.source="https://github.com/hyperpolymath/echidna"
+LABEL org.opencontainers.image.description="ECHIDNA + HOL4 - higher-order logic theorem prover"
+LABEL org.opencontainers.image.licenses="PMPL-1.0-or-later"
+LABEL org.opencontainers.image.version="2.3.0"
+LABEL org.opencontainers.image.vendor="hyperpolymath"
+
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    ca-certificates \
+    libssl3 \
+    libgmp10 \
+    libffi8 \
+    && rm -rf /var/lib/apt/lists/*
+
+WORKDIR /app
+
+COPY --from=rust-builder /build/target/release/echidna /app/bin/echidna
+
+# Copy Poly/ML runtime (HOL4 loads ML code via poly at runtime)
+COPY --from=polyml-builder /opt/polyml /opt/polyml
+
+# Copy HOL4 installation (built in-place at /opt/HOL4 → baked absolute paths
+# in bin/hol, bin/heapname, bin/buildheap and the heap files stay valid).
+COPY --from=hol4-builder /opt/HOL4 /opt/HOL4
+
+ENV PATH="/app/bin:/opt/polyml/bin:/opt/HOL4/bin:${PATH}"
+ENV HOLDIR="/opt/HOL4"
+ENV ECHIDNA_PROVER_PATH="/opt/HOL4/bin"
+
+RUN mkdir -p /app/proofs /app/config /app/logs
+
+EXPOSE 8000
+EXPOSE 8081
+EXPOSE 50051
+
+# HOL4 cold-start is slow (loads heap image); give generous start-period.
+HEALTHCHECK --interval=30s --timeout=15s --start-period=120s --retries=3 \
+    CMD ["/app/bin/echidna", "--version"]
+
+ENTRYPOINT ["/app/bin/echidna"]
+CMD ["--help"]
+
+# #############################################################################
+# TARGET: acl2 — applicative Common Lisp logic prover (SBCL from source)
+# #############################################################################
+FROM docker.io/library/debian:bookworm-slim AS acl2-builder
+
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    sbcl \
+    curl \
+    ca-certificates \
+    git \
+    build-essential \
+    make \
+    gcc \
+    && rm -rf /var/lib/apt/lists/*
+
+# Clone ACL2 directly at its FINAL runtime path. ACL2 is NOT relocatable:
+# `make LISP=sbcl` writes a saved_acl2 wrapper that bakes the absolute path
+# to saved_acl2.core, and the SBCL core bakes the absolute ACL2 source/books
+# directory. Building at /build/acl2 then COPYing to /opt/acl2 produced a
+# saved_acl2 whose wrapper exec'd /build/acl2/saved_acl2.core — "open: No
+# such file or directory" at runtime. Build in-place at /opt/acl2 so the
+# baked paths are correct in the runtime image (ACL2_SYSTEM_BOOKS=/opt/acl2/books).
+# Check https://github.com/acl2/acl2/releases for the latest version.
+ARG ACL2_VERSION="8.6"
+RUN git clone --depth 1 --branch "v${ACL2_VERSION}" \
+      https://github.com/acl2/acl2.git /opt/acl2 \
+    || git clone --depth 1 \
+      https://github.com/acl2/acl2.git /opt/acl2
+
+WORKDIR /opt/acl2
+
+# Build ACL2 using SBCL.  The `make` target `LISP=sbcl` compiles ACL2 and
+# saves a SBCL core image.  The resulting saved_acl2 is the executable image.
+RUN make LISP=sbcl -j"$(nproc)" \
+    && test -f /opt/acl2/saved_acl2 \
+    && test -f /opt/acl2/saved_acl2.core \
+    && echo "ACL2 build succeeded"
+
+# Create the acl2 wrapper script (mirrors the standard install convention)
+RUN printf '#!/bin/sh\nexec /opt/acl2/saved_acl2 "$@"\n' > /usr/local/bin/acl2 \
+    && chmod +x /usr/local/bin/acl2
+
+FROM docker.io/library/debian:bookworm-slim AS acl2
+
+LABEL maintainer="Jonathan D.A. Jewell <j.d.a.jewell@open.ac.uk>"
+LABEL org.opencontainers.image.source="https://github.com/hyperpolymath/echidna"
+LABEL org.opencontainers.image.description="ECHIDNA + ACL2 - applicative Common Lisp logic prover"
+LABEL org.opencontainers.image.licenses="PMPL-1.0-or-later"
+LABEL org.opencontainers.image.version="2.3.0"
+LABEL org.opencontainers.image.vendor="hyperpolymath"
+
+# ACL2 at runtime runs a saved SBCL core image; only SBCL's C runtime is needed.
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    ca-certificates \
+    libssl3 \
+    sbcl \
+    && rm -rf /var/lib/apt/lists/*
+
+WORKDIR /app
+
+COPY --from=rust-builder /build/target/release/echidna /app/bin/echidna
+
+# Copy ACL2 saved image and source tree (ACL2 loads books from its source tree)
+# Built in-place at /opt/acl2 → the saved_acl2 wrapper's baked core path and
+# the core's baked source/books root stay valid at runtime.
+COPY --from=acl2-builder /opt/acl2 /opt/acl2
+
+# Install the acl2 wrapper script
+RUN printf '#!/bin/sh\nexec /opt/acl2/saved_acl2 "$@"\n' > /usr/local/bin/acl2 \
+    && chmod +x /usr/local/bin/acl2
+
+ENV PATH="/app/bin:/usr/local/bin:${PATH}"
+ENV ACL2_SYSTEM_BOOKS="/opt/acl2/books"
+ENV ECHIDNA_PROVER_PATH="/usr/local/bin"
+
+RUN mkdir -p /app/proofs /app/config /app/logs
+
+EXPOSE 8000
+EXPOSE 8081
+EXPOSE 50051
+
+HEALTHCHECK --interval=30s --timeout=15s --start-period=30s --retries=3 \
+    CMD ["/app/bin/echidna", "--version"]
+
+ENTRYPOINT ["/app/bin/echidna"]
+CMD ["--help"]
+
+# #############################################################################
+# TARGET: twelf — LF meta-logical framework (SML/NJ from source)
+# #############################################################################
+FROM docker.io/library/debian:bookworm-slim AS twelf-builder
+
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    curl \
+    ca-certificates \
+    git \
+    build-essential \
+    make \
+    smlnj \
+    && rm -rf /var/lib/apt/lists/*
+
+# Clone+build Twelf directly at its FINAL runtime path. SML/NJ heap images
+# are NOT relocatable: `make smlnj` bakes the absolute build directory into
+# bin/twelf-server's `sml @SMLload=...` and into bin/.heap/twelf-server.
+# Building at /build/twelf then COPYing to /opt/twelf produced a twelf-server
+# whose heap path /build/twelf/bin/.heap/twelf-server dangled at runtime
+# ("unable to open heap image"). Build in-place at /opt/twelf so the baked
+# paths are correct in the runtime image (which also uses TWELFDIR=/opt/twelf).
+WORKDIR /opt
+
+# Clone the Twelf source from the official repository.
+# The canonical upstream is hosted at https://github.com/standardml/twelf.
+# Twelf does not use versioned tags; we pin to the tip of the main branch and
+# note the commit in the label below.  For strict reproducibility, replace
+# `--depth 1` with `--branch <commit-sha>`.
+RUN git clone --depth 1 \
+      https://github.com/standardml/twelf.git /opt/twelf
+
+WORKDIR /opt/twelf
+
+# Build Twelf using SML/NJ's ml-build.
+# The Makefile target `smlnj` compiles a heap image; `twelf-server` is a
+# shell wrapper that invokes `sml @SMLload=...`.
+RUN make smlnj \
+    && test -f bin/twelf-server \
+    && echo "Twelf build succeeded"
+
+# Verify twelf-server starts in batch mode
+RUN echo "val () = OS.Process.exit OS.Process.success;" | bin/twelf-server || true
+
+FROM docker.io/library/debian:bookworm-slim AS twelf
+
+LABEL maintainer="Jonathan D.A. Jewell <j.d.a.jewell@open.ac.uk>"
+LABEL org.opencontainers.image.source="https://github.com/hyperpolymath/echidna"
+LABEL org.opencontainers.image.description="ECHIDNA + Twelf - LF meta-logical framework"
+LABEL org.opencontainers.image.licenses="PMPL-1.0-or-later"
+LABEL org.opencontainers.image.version="2.3.0"
+LABEL org.opencontainers.image.vendor="hyperpolymath"
+
+# SML/NJ runtime is needed to run the Twelf heap image.
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    ca-certificates \
+    libssl3 \
+    smlnj \
+    && rm -rf /var/lib/apt/lists/*
+
+WORKDIR /app
+
+COPY --from=rust-builder /build/target/release/echidna /app/bin/echidna
+
+# Copy the Twelf installation (src tree + compiled heap + wrapper scripts)
+# Built in-place at /opt/twelf → the baked absolute heap path in
+# bin/twelf-server / bin/.heap/twelf-server stays valid at runtime.
+COPY --from=twelf-builder /opt/twelf /opt/twelf
+
+# The twelf-server wrapper script references $TWELFDIR; make it a proper
+# system binary by symlinking.
+RUN ln -s /opt/twelf/bin/twelf-server /usr/local/bin/twelf-server
+
+ENV PATH="/app/bin:/usr/local/bin:${PATH}"
+ENV TWELFDIR="/opt/twelf"
+ENV ECHIDNA_PROVER_PATH="/usr/local/bin"
+
+RUN mkdir -p /app/proofs /app/config /app/logs
+
+EXPOSE 8000
+EXPOSE 8081
+EXPOSE 50051
+
+HEALTHCHECK --interval=30s --timeout=10s --start-period=15s --retries=3 \
+    CMD ["/app/bin/echidna", "--version"]
+
+ENTRYPOINT ["/app/bin/echidna"]
+CMD ["--help"]
+
+# #############################################################################
+# TARGET: metamath — upstream metamath-exe CLI verifier + bundled databases
+# #############################################################################
+
+# metamath-exe — the upstream Metamath CLI verifier. The ECHIDNA Metamath
+# backend (src/rust/provers/metamath.rs) shells out to `metamath` and drives
+# `read "<file>" / verify proof * / exit` over stdin, so a REAL binary must be
+# on PATH at runtime. The previous stage installed NO metamath binary (the
+# "pure-Rust" comment was wrong) → "metamath: not found" at runtime.
+# metamath-exe is a tiny pure-C program (libc only); the GitHub source tarball
+# is the reliable anonymous source. NOTE: metamath-exe publishes NO GitHub
+# Releases — only git tags; do not query releases/latest.
+# Re-validate the tag at https://github.com/metamath/metamath-exe/tags (#75).
+FROM docker.io/library/debian:bookworm-slim AS metamath-builder
+
+# libc6-dev is REQUIRED: the standalone `gcc` package on bookworm-slim does
+# NOT pull in the libc development headers, so `gcc m*.c` failed with
+# `fatal error: string.h: No such file or directory` and fell to the stub.
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    curl \
+    ca-certificates \
+    gcc \
+    libc6-dev \
+    make \
+    && rm -rf /var/lib/apt/lists/*
+
+ARG MM_VERSION="0.198"
+ARG MM_TARBALL="v${MM_VERSION}.tar.gz"
+ARG MM_URL="https://github.com/metamath/metamath-exe/archive/refs/tags/${MM_TARBALL}"
+
+# Deterministic export tree so the runtime COPY never hard-fails: the real
+# binary if download + build + smoke-test succeed, a stub otherwise. The
+# GitHub tarball ships no generated ./configure; the README-documented
+# `gcc m*.c -o metamath` path is dependency-free and authoritative.
+RUN set -eux; \
+    mkdir -p /opt/mm-export/bin; \
+    if curl -fsSL --retry 3 "${MM_URL}" -o /tmp/mm.tgz \
+       && tar -xzf /tmp/mm.tgz -C /tmp \
+       && ( cd "/tmp/metamath-exe-${MM_VERSION}" \
+            && gcc m*.c -o metamath -O2 \
+            && printf 'exit\n' | ./metamath ) ; then \
+         cp "/tmp/metamath-exe-${MM_VERSION}/metamath" /opt/mm-export/bin/metamath; \
+    else \
+         echo "WARNING: metamath-exe download/build/smoke-test failed."; \
+         echo "Re-check https://github.com/metamath/metamath-exe/tags."; \
+         echo "Creating stub binary as fallback."; \
+         printf '#!/bin/sh\necho "metamath not available (build failed at image build time)"\nexit 1\n' \
+             > /opt/mm-export/bin/metamath; \
+         chmod +x /opt/mm-export/bin/metamath; \
+    fi; \
+    chmod +x /opt/mm-export/bin/metamath; \
+    rm -rf /tmp/mm.tgz "/tmp/metamath-exe-${MM_VERSION}"; \
+    touch /opt/mm-export/.keep
+
+FROM docker.io/library/debian:bookworm-slim AS mm-db-fetcher
+
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    curl \
+    ca-certificates \
+    git \
+    && rm -rf /var/lib/apt/lists/*
+
+WORKDIR /opt/metamath-db
+
+# Clone the metamath-set-mm repository (set.mm + iset.mm + others).
+RUN git clone --depth 1 \
+      https://github.com/metamath/set.mm.git /opt/metamath-db/set.mm-repo \
+    && cp /opt/metamath-db/set.mm-repo/set.mm /opt/metamath-db/set.mm \
+    && cp /opt/metamath-db/set.mm-repo/iset.mm /opt/metamath-db/iset.mm \
+    || { \
+        echo "WARNING: set.mm clone failed; databases will not be bundled."; \
+        echo "ECHIDNA can still verify .mm files supplied at runtime."; \
+        mkdir -p /opt/metamath-db; \
+    }
+
+RUN curl -fsSL --retry 3 \
+      "https://raw.githubusercontent.com/metamath/ql.mm/master/ql.mm" \
+      -o /opt/metamath-db/ql.mm \
+    || echo "ql.mm fetch skipped"
+
+FROM docker.io/library/debian:bookworm-slim AS metamath
+
+LABEL maintainer="Jonathan D.A. Jewell <j.d.a.jewell@open.ac.uk>"
+LABEL org.opencontainers.image.source="https://github.com/hyperpolymath/echidna"
+LABEL org.opencontainers.image.description="ECHIDNA + Metamath - metamath-exe CLI verifier with bundled databases"
+LABEL org.opencontainers.image.licenses="PMPL-1.0-or-later"
+LABEL org.opencontainers.image.version="2.3.0"
+LABEL org.opencontainers.image.vendor="hyperpolymath"
+
+# The Metamath backend shells out to the metamath-exe CLI (installed to
+# /usr/local/bin below). metamath-exe is pure C / libc-only, so runtime
+# deps here are only those needed by the ECHIDNA Rust binary itself.
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    ca-certificates \
+    libssl3 \
+    libgmp10 \
+    && rm -rf /var/lib/apt/lists/*
+
+WORKDIR /app
+
+COPY --from=rust-builder /build/target/release/echidna /app/bin/echidna
+
+# The metamath-exe CLI verifier. The Rust backend execs bare `metamath`
+# (provers/mod.rs default_executable), resolved via PATH; /usr/local/bin is
+# on the default Debian PATH. The export tree always contains a file (real
+# binary or stub) so this single-file COPY never hard-fails.
+COPY --from=metamath-builder /opt/mm-export/bin/metamath /usr/local/bin/metamath
+
+# Bundle the canonical Metamath databases at a well-known path.
+# ECHIDNA reads ECHIDNA_METAMATH_DB_DIR at startup to pre-index databases.
+COPY --from=mm-db-fetcher /opt/metamath-db /app/metamath-db
+
+ENV PATH="/app/bin:${PATH}"
+ENV ECHIDNA_METAMATH_DB_DIR="/app/metamath-db"
+ENV ECHIDNA_PROVER_PATH="/app/bin"
+
+RUN mkdir -p /app/proofs /app/config /app/logs
+
+EXPOSE 8000
+EXPOSE 8081
+EXPOSE 50051
+
+HEALTHCHECK --interval=30s --timeout=10s --start-period=10s --retries=3 \
+    CMD ["/app/bin/echidna", "--version"]
+
+ENTRYPOINT ["/app/bin/echidna"]
+CMD ["--help"]
+
+# #############################################################################
+# TARGET: imandra — GATED (proprietary licence required)
+# #############################################################################
+# Imandra: an industrial theorem prover and program analyser for OCaml and
+# functional languages (Aesthetic Integration / Imandra Inc.).
+# Licence: proprietary — an Imandra account and signed licence agreement are
+# required before the binary can be downloaded. Imandra does not publish a
+# redistributable binary or source tarball.
+#
+# HOW TO ENABLE
+#   1. Register at https://imandra.ai/ and accept the licence.
+#   2. Download the Imandra CLI installer:
+#      bash -c "$(curl -fsSL https://storage.googleapis.com/imandra-do/install.sh)"
+#   3. Log in: `imandra auth login`; token lands in ~/.imandra/token
+#   4. Build with the token as a secret:
+#        podman build --secret id=imandra_token,src=~/.imandra/token \
+#          -f .containerization/Containerfile.wave3 --target imandra -t echidna:imandra .
+#   5. Remove the stub block, un-comment the REAL INSTALL block below.
+# #############################################################################
+FROM docker.io/library/debian:bookworm-slim AS imandra-installer
+
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    curl \
+    ca-certificates \
+    bash \
+    && rm -rf /var/lib/apt/lists/*
+
+# ── GATE: emit stub and document the real install path ────────────────────────
+RUN mkdir -p /usr/local/bin && \
+    printf '#!/bin/sh\necho "imandra: not available (proprietary licence required — see Containerfile.wave3 imandra target)"\nexit 1\n' \
+        > /usr/local/bin/imandra && \
+    chmod +x /usr/local/bin/imandra
+
+# ── REAL INSTALL (un-comment and supply IMANDRA_TOKEN secret when licensed) ──
+# RUN --mount=type=secret,id=imandra_token,target=/run/secrets/imandra_token \
+#     set -eux; \
+#     TOKEN="$(cat /run/secrets/imandra_token)" && \
+#     curl -fsSL \
+#       -H "Authorization: Bearer ${TOKEN}" \
+#       "https://storage.googleapis.com/imandra-do/install.sh" | bash && \
+#     imandra --version
+
+FROM docker.io/library/debian:bookworm-slim AS imandra
+
+LABEL maintainer="Jonathan D.A. Jewell <j.d.a.jewell@open.ac.uk>"
+LABEL org.opencontainers.image.source="https://github.com/hyperpolymath/echidna"
+LABEL org.opencontainers.image.description="ECHIDNA + Imandra stub (proprietary licence required for real binary)"
+LABEL org.opencontainers.image.licenses="PMPL-1.0-or-later"
+LABEL org.opencontainers.image.version="2.3.0"
+LABEL org.opencontainers.image.vendor="hyperpolymath"
+
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    ca-certificates \
+    libssl3 \
+    && rm -rf /var/lib/apt/lists/*
+
+WORKDIR /app
+
+COPY --from=rust-builder /build/target/release/echidna /app/bin/echidna
+COPY --from=imandra-installer /usr/local/bin/imandra /usr/local/bin/imandra
+
+ENV PATH="/app/bin:/usr/local/bin:${PATH}"
+ENV ECHIDNA_PROVER_PATH="/usr/local/bin"
+
+RUN mkdir -p /app/proofs /app/config /app/logs
+
+EXPOSE 8000
+EXPOSE 8081
+EXPOSE 50051
+
+HEALTHCHECK --interval=30s --timeout=10s --start-period=15s --retries=3 \
+    CMD ["/app/bin/echidna", "--version"]
+
+ENTRYPOINT ["/app/bin/echidna"]
+CMD ["--help"]

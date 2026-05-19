@@ -27,8 +27,14 @@ RUN rustup toolchain install nightly && rustup default nightly
 WORKDIR /build
 
 COPY Cargo.toml Cargo.lock ./
+# Workspace members: crates/* (echidna-core, -core-spark, -mcp, -wire,
+# typed_wasm) + src/interfaces/* + root pkg at src/rust. Omitting `crates/`
+# makes the rust-builder stage fail — the workspace manifest references
+# crates/echidna-core (matches Containerfile.wave3).
+COPY crates ./crates
 COPY src/rust ./src/rust
 COPY src/interfaces ./src/interfaces
+COPY benches ./benches
 
 # Build release binary
 RUN cargo build --release --bin echidna

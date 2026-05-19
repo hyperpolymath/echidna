@@ -119,38 +119,35 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
+        # All targets live in the consolidated .containerization/Containerfile.wave3
+        # (shared rust-builder stage, one --target per prover). Each matrix cell
+        # is an isolated runner so the shared stage still rebuilds per cell with
+        # --no-cache; cross-cell base caching would need a registry and is a
+        # deliberate future optimisation, not required for correctness.
         include:
           - prover: tamarin
             image: echidna:tamarin
-            file: .containerization/Containerfile.tamarin
             version_check: "tamarin-prover --version"
           - prover: proverif
             image: echidna:proverif
-            file: .containerization/Containerfile.proverif
             version_check: "proverif -help 2>&1 | head -1"
           - prover: metamath
             image: echidna:metamath
-            file: .containerization/Containerfile.metamath
             version_check: "echo exit | metamath 2>&1 | head -1 || true"
           - prover: twelf
             image: "echidna:twelf"
-            file: .containerization/Containerfile.twelf
             version_check: "twelf-server --help 2>&1 | head -1 || true"
           - prover: or-tools
             image: echidna:or-tools
-            file: .containerization/Containerfile.or-tools
             version_check: "ls /usr/local/lib/libortools* 2>/dev/null | head -1 || true"
           - prover: scip
             image: echidna:scip
-            file: .containerization/Containerfile.scip
             version_check: "scip --version 2>&1 | head -1 || true"
           - prover: hol4
             image: echidna:hol4
-            file: .containerization/Containerfile.hol4
             version_check: "echo '(* quit *);' | hol 2>&1 | head -1 || true"
           - prover: acl2
             image: echidna:acl2
-            file: .containerization/Containerfile.acl2
             version_check: "echo '(acl2::quit)' | acl2 2>&1 | head -3 || true"
 
     steps:
@@ -167,7 +164,8 @@ jobs:
         timeout-minutes: 90
         run: |
           podman build \
-            -f "${{ matrix.file }}" \
+            -f .containerization/Containerfile.wave3 \
+            --target "${{ matrix.prover }}" \
             -t "${{ matrix.image }}" \
             --no-cache \
             .

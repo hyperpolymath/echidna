@@ -791,7 +791,7 @@ handover-artefacts = [
 ]
 l3-wave-1-artefacts = [
   "manifests/live-provers.scm — Guix manifest covering Tier-1 + Tier-2 prover binaries",
-  "flake.nix — expanded liveProverDeps matching Guix set (fallback path)",
+  "flake.nix — DEPRECATED & REMOVED 2026-05-18 (estate ruling: Guix primary + sealed-container escape, no Nix mirror). Tail provisioned via Containerfile.wave3.",
   ".github/workflows/live-provers.yml — tiered CI workflow (PR/nightly/weekly/quarterly)",
   "tests/live_prover_suite.rs — Rust test harness with canonical micro-goals for Tier-1",
   "tests/live_goals/ — canonical goal fixtures (Tier-1 seeded)",
@@ -834,7 +834,7 @@ changes = [
 l3-status-after-wave-2 = [
   "Wave-1 (Tier-1, every PR, 9 backends): DONE — landed in b022bf4.",
   "Wave-2 (Tier-2, nightly, 10 backends): DONE for 9; hol-light deferred to Wave-3.",
-  "Wave-3 (Tier-3, weekly, 9 backends: Tamarin, ProVerif, Imandra, SCIP, OR-Tools, HOL4, ACL2, Twelf, Metamath): LANDED. All 9 Containerfiles in .containerization/ (Imandra is proprietary-gated stub). Justfile: container-build-tier3 + per-backend recipes. container-ci.yml: weekly tier3-container matrix job, 8 non-proprietary images, allow-fail, 90 min timeout for HOL4/ACL2.",
+  "Wave-3 (Tier-3, weekly, 9 backends: Tamarin, ProVerif, Imandra, SCIP, OR-Tools, HOL4, ACL2, Twelf, Metamath): LANDED + RUNTIME-SMOKE-VERIFIED 2026-05-18 (PR #73, consolidated Containerfile.wave3). 8/8 non-proprietary backends confirmed REAL by exercising the binary in the built image — NOT trusting the build log (a green build had been hiding silent stubs: scip/tamarin dead-download, metamath missing libc6-dev, or-tools missing build-number, twelf/acl2 baked build paths, proverif opam-solve fail). All fixed at-source; #74 (proverif) resolved. Imandra is an INTENTIONAL honest licence-gated fail-loud stub (real adapter + Idris2 ABI proofs retained; KEEP decision). Justfile: container-build-tier3 + per-backend recipes. container-ci.yml: weekly tier3-container matrix job, 8 non-proprietary images, allow-fail, 90 min timeout for HOL4/ACL2.",
   "Wave-4 (Tier-4, quarterly, 19 backends): SCAFFOLD ONLY — placeholder tier4 job in live-provers.yml announces list. See wave-4-rationale for per-backend mock-only justification.",
 ]
 wave-4-rationale = {
@@ -858,16 +858,21 @@ wave-4-rationale = {
   Kissat = "SAT solver; binary available from GitHub; deferred pending DIMACS fixture set",
   Alloy = "Java-based relational model finder; no headless CLI mode without Alloy API; deferred",
 }
+# Strategy OF RECORD as actually shipped & runtime-smoke-verified in
+# .containerization/Containerfile.wave3 (2026-05-18; PR #73 commits
+# 63bacf0/6032f2e/981389a/faf05e9/ea2ce4b). 8/8 non-proprietary backends
+# verified REAL by exercising the binary in the built image (NOT the
+# build log); imandra is an intentional honest licence-gated stub.
 wave-3-handover-hints = [
-  "Tamarin: Haskell Stack build; prebuilt binaries from github.com/tamarin-prover/tamarin-prover/releases may work.",
-  "ProVerif: OCaml build via opam; consider the Docker image from INRIA.",
-  "Imandra: proprietary binary; needs signed registration before download.",
-  "SCIP: academic license now lifted; prebuilt .deb from scipopt.org.",
-  "OR-Tools: large C++ build; use the official ortools Python wheel's bundled binaries or the official .tar.gz release.",
-  "HOL4: Poly/ML + Moscow ML build; tractable but slow.",
-  "ACL2: Common Lisp (SBCL/CCL); prebuilt SBCL image + `make` is easiest.",
-  "Twelf: SML/NJ build.",
-  "Metamath: in-process pure-Rust verifier per stub-audit-result; external metamath binary is optional smoke-test scope only.",
+  "Tamarin: official SRI-CSL Maude 3.5.1 prebuilt (bookworm apt maude is 3.2, which tamarin-prover 1.12.0 REJECTS) + tamarin-prover prebuilt; both stages. VERIFIED REAL.",
+  "ProVerif: official INRIA source tarball proverif2.05 (bblanche.gitlabpages.inria.fr/proverif/), built with bookworm ocaml/ocaml-findlib/ocamlbuild + liblablgtk2-ocaml-dev (./build hard-fails without it), tar --no-same-owner (tarball numeric uid/gid vs container userns). NO opam. Resolves #74. VERIFIED REAL (Horn-clause resolution executed).",
+  "Imandra: proprietary binary; needs signed registration. INTENTIONAL honest fail-loud stub + documented IMANDRA_TOKEN-secret real-install path; real Rust adapter + Idris2 ABI proofs retained. KEEP (decision 2026-05-18). NOT counted as verified.",
+  "SCIP: official scipopt/scip GitHub portable bundle (scipopt.org download 403s anonymous). VERIFIED REAL (MIP solve).",
+  "OR-Tools: official C++ .tar.gz; asset name carries the build number — ARG ORTOOLS_BUILD must track it (v9.12 -> 4544). VERIFIED REAL (libortools present).",
+  "HOL4: Poly/ML build (trindemossen-2; kananaskis-15 was a phantom tag). VERIFIED REAL.",
+  "ACL2: Common Lisp (SBCL); build-in-place (not relocatable). VERIFIED REAL.",
+  "Twelf: SML/NJ build; build-in-place (heap path baked). VERIFIED REAL.",
+  "Metamath: official metamath-exe v0.198 source, gcc m*.c — REQUIRES libc6-dev (bookworm-slim gcc lacks libc headers). VERIFIED REAL.",
 ]
 
 [session-2026-04-24-pkg5-close]
@@ -1242,3 +1247,21 @@ than replacing.
 Echo-types main updated with two commits: e0f67cb (the Agda
 modules) + 3799cb7 (handoff doc EOD update).
 """
+
+[session-2026-05-18-l3-wave3-consolidate-l1-decisions]
+summary = "Stale-doc reconciliation + Wave-3 consolidation + L1 Zig-shim ratification + Guix-primary estate ruling applied to echidna."
+findings = [
+  "Wave-3: all 9 Tier-3 Containerfiles + L1 schemas were ALREADY landed on origin/main (a87fae1, 0a78906, b2a2ff7) — TODO.md/STATE were stale-doc-drift saying 'author them'. Verified by reading, not trusting status text.",
+  "PR #70 was a redundant subset of #71 (same 5 Lean files; #71 adds doc reconciliation) — closed #70 as superseded.",
+]
+changes = [
+  "Consolidated the 9 separate .containerization/Containerfile.<backend> (each re-compiling the whole Rust core) into ONE multi-target .containerization/Containerfile.wave3: single shared rust-builder stage + one --target per prover. git rm'd the 9. Justfile container-build-* + container-ci.yml matrix rewired to -f Containerfile.wave3 --target <prover>.",
+  "Guix-extend investigated empirically: only scip/or-tools/metamath in Guix; 5 need bespoke pkg defs; imandra non-free. Rejected Guix-extend as primary path.",
+  "Estate ruling 2026-05-18 (Guix primary + sealed-container escape; NO Nix mirror) applied to echidna as the pilot: flake.nix + flake.lock git rm'd; live-provers.scm / .claude/CLAUDE.md / Justfile / this file reconciled. Estate-wide tech debt recorded in hyperpolymath/standards .machine_readable/agent_instructions/debt.a2ml.",
+  "L1 open Q#2 (CapnProto.jl vs Zig C-ABI shim) RESOLVED: Zig C-ABI shim, buffer-oriented (estate-canonical; single codec). L1-CAPNPROTO-PROMPT.md + VERSIONING.md + TODO.md reconciled; ReScript binding line corrected to AffineScript (estate ban); fixed dangling L1-CAPNPROTO.md ref in echidna.capnp.",
+]
+not-done = [
+  "L1 implementation still gated on L3 hand-off (Tier-1 green >=7d on main; main CI stuck queued/ — infra-owned, not collapsible here).",
+  "Static-correctness only: full podman builds of Containerfile.wave3 targets NOT run in this env (heavy). Stage graph + COPY --from=rust-builder wiring verified by construction from the 9 verbatim originals.",
+  "container-ci.yml edit needs `workflow` token scope to push.",
+]

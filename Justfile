@@ -444,6 +444,9 @@ container-build-full:
     podman build -f .containerization/Containerfile.full -t echidna:full .
 
 # ── Tier-3 prover containers (Wave-3) ────────────────────────────────────────
+# All nine targets live in ONE consolidated multi-target Containerfile.wave3.
+# The Rust core is compiled once (shared `rust-builder` stage) and every prover
+# image is a `--target`; podman caches the shared stage across builds on a host.
 
 # Build all non-proprietary Tier-3 prover containers (skip imandra — licence required)
 container-build-tier3: container-build-tamarin container-build-proverif container-build-metamath \
@@ -451,32 +454,32 @@ container-build-tier3: container-build-tamarin container-build-proverif containe
     container-build-hol4 container-build-acl2
 
 container-build-tamarin:
-    podman build -f .containerization/Containerfile.tamarin -t echidna:tamarin .
+    podman build -f .containerization/Containerfile.wave3 --target tamarin -t echidna:tamarin .
 
 container-build-proverif:
-    podman build -f .containerization/Containerfile.proverif -t echidna:proverif .
+    podman build -f .containerization/Containerfile.wave3 --target proverif -t echidna:proverif .
 
 container-build-metamath:
-    podman build -f .containerization/Containerfile.metamath -t echidna:metamath .
+    podman build -f .containerization/Containerfile.wave3 --target metamath -t echidna:metamath .
 
 container-build-twelf:
-    podman build -f .containerization/Containerfile.twelf -t echidna:twelf .
+    podman build -f .containerization/Containerfile.wave3 --target twelf -t echidna:twelf .
 
 container-build-or-tools:
-    podman build -f .containerization/Containerfile.or-tools -t echidna:or-tools .
+    podman build -f .containerization/Containerfile.wave3 --target or-tools -t echidna:or-tools .
 
 container-build-scip:
-    podman build -f .containerization/Containerfile.scip -t echidna:scip .
+    podman build -f .containerization/Containerfile.wave3 --target scip -t echidna:scip .
 
 container-build-hol4:
-    podman build -f .containerization/Containerfile.hol4 -t echidna:hol4 .
+    podman build -f .containerization/Containerfile.wave3 --target hol4 -t echidna:hol4 .
 
 container-build-acl2:
-    podman build -f .containerization/Containerfile.acl2 -t echidna:acl2 .
+    podman build -f .containerization/Containerfile.wave3 --target acl2 -t echidna:acl2 .
 
-# Build imandra stub (proprietary; real binary requires a signed licence — see Containerfile.imandra)
+# Build imandra stub (proprietary; real binary requires a signed licence — see Containerfile.wave3 imandra target)
 container-build-imandra:
-    podman build -f .containerization/Containerfile.imandra -t echidna:imandra .
+    podman build -f .containerization/Containerfile.wave3 --target imandra -t echidna:imandra .
 
 # Run echidna container
 container-run *ARGS:
@@ -748,8 +751,8 @@ tour:
     echo "6. BUILD SYSTEM:"
     echo "   Cargo.toml   - Rust workspace"
     echo "   Justfile      - Primary build system"
-    echo "   guix.scm      - Guix package definition"
-    echo "   flake.nix      - Nix flake"
+    echo "   guix.scm      - Guix package definition (PRIMARY; no Nix mirror — estate ruling 2026-05-18)"
+    echo "   .containerization/Containerfile.wave3 - sealed-container escape hatch (Tier-3 provers)"
     echo ""
     echo "Try: just build       (compile Rust core)"
     echo "     just test        (run 232 unit tests)"

@@ -14,15 +14,20 @@
 ;;   T3 — container / special env                 — run weekly
 ;;   T4 — niche / best-effort                     — run quarterly, allow-fail
 ;;
-;; Policy (per project CLAUDE.md):
-;;   Guix is the PRIMARY package-management path.
-;;   flake.nix mirrors this set as a fallback for contributors without Guix.
+;; Policy (estate ruling 2026-05-18 — Guix primary + sealed-container escape):
+;;   Guix is the PRIMARY (and only) package-management path declared here.
+;;   There is NO Nix mirror — flake.nix is DEPRECATED and removed. The single
+;;   universal escape hatch for the not-in-Guix / non-free tail is a SEALED
+;;   CONTAINER (.containerization/Containerfile.wave3), not a Nix twin.
 ;;
 ;; Availability note:
 ;;   Guix package availability drifts. The comment beside each line records the
-;;   Guix module the package lives in at audit time. Anything marked NIX_ONLY or
-;;   CONTAINER_ONLY is *not* in Guix upstream and must be provisioned via the
-;;   flake.nix fallback path or a Containerfile in Wave-3.
+;;   Guix module the package lives in at audit time. Anything previously marked
+;;   NIX_ONLY or CONTAINER_ONLY is *not* in Guix upstream and is provisioned via
+;;   the Wave-3 sealed container (Containerfile.wave3 --target <prover>). The
+;;   "NIX_ONLY" label is retained below only as a historical availability fact
+;;   (the package is absent from Guix) — it no longer implies a Nix provisioning
+;;   path; the provisioning path is the container.
 
 (specifications->manifest
  '(;; ----------------------------------------------------------------------
