@@ -26,6 +26,12 @@ WORKDIR /build
 COPY Cargo.toml Cargo.lock ./
 COPY src/rust ./src/rust
 COPY src/interfaces ./src/interfaces
+# The root `echidna` package is a Cargo workspace whose members include
+# crates/* (echidna-core, -core-spark, -mcp, -wire, typed_wasm). Cargo
+# loads every member manifest when building the bin, so the crates/ tree
+# must be in the build context too — omitting it fails the build with
+# `failed to read /build/crates/echidna-core/Cargo.toml`.
+COPY crates ./crates
 
 RUN cargo build --release --bin echidna
 
