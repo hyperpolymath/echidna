@@ -45,14 +45,25 @@ jobs:
       - name: Check formatting
         run: cargo fmt --all -- --check
 
+      # echidna#85: `flint`/`spark`/`chapel` are opt-in, system-library-
+      # dependent features (libflint LGPL-3 / GNAT+libechidna_spark / Zig
+      # FFI). build.rs gates their `-l...` link directives correctly, but
+      # the bare runner has none of those libraries. Key distinction:
+      # `clippy`/`doc`/`check` type-check and lint the cfg-gated code WITHOUT
+      # invoking the linker, so `--all-features` is safe there and keeps full
+      # lint/compile coverage of flint/spark/chapel. Only `cargo test` builds
+      # a linked binary — so the two test steps drop to `--features verisim`
+      # (the only pure-Rust optional feature; `live-provers ⊇ verisim`).
+      # flint/spark/chapel test execution stays in their dedicated CI
+      # (chapel-ci.yml, SPARK Theatre Gate, live-provers.yml).
       - name: Clippy lints
         run: cargo clippy --all-targets --all-features -- -D warnings
 
       - name: Run unit tests
-        run: cargo test --lib --all-features
+        run: cargo test --lib --features verisim
 
       - name: Run integration tests
-        run: cargo test --test integration_tests --all-features
+        run: cargo test --test integration_tests --features verisim
 
       - name: Build release
         run: cargo build --release
@@ -133,7 +144,7 @@ jobs:
         uses: Swatinem/rust-cache@ad397744b0d591a723ab90405b7247fac0e6b8db # v2
 
       - name: Build documentation
-        run: cargo doc --no-deps --all-features
+        run: cargo doc --no-deps --all-features   # echidna#85: doc doesn't link, --all-features safe
         env:
           RUSTDOCFLAGS: -D warnings
 
@@ -202,4 +213,4 @@ jobs:
         uses: Swatinem/rust-cache@ad397744b0d591a723ab90405b7247fac0e6b8db # v2
 
       - name: Check MSRV
-        run: cargo check --all-features
+        run: cargo check --all-features   # echidna#85: check doesn't link, --all-features safe
