@@ -32,6 +32,13 @@ COPY src/interfaces ./src/interfaces
 # must be in the build context too — omitting it fails the build with
 # `failed to read /build/crates/echidna-core/Cargo.toml`.
 COPY crates ./crates
+# Root Cargo.toml declares explicit [[bench]] targets (proof_benchmarks,
+# routing_benchmarks at benches/*.rs). Cargo validates every declared
+# target when it parses the manifest — even for `--bin echidna` — so the
+# benches/ sources must exist in the build context or parse fails with
+# `can't find 'proof_benchmarks' bench`. (tests/ and examples/ are
+# auto-discovered and tolerate absence, so they are intentionally not copied.)
+COPY benches ./benches
 
 RUN cargo build --release --bin echidna
 
