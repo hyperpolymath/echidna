@@ -200,3 +200,14 @@ dist/
 # Generated corpus indices (rebuilt with `echidna corpus ingest`)
 data/corpus/*.json
 data/corpus/*.octads.jsonl
+
+# generated/* — produced by boj-server -mcp cartridges on push via *-regen.yml.
+# DO NOT commit these. If missing locally, trigger regeneration:
+#   curl -X POST http://boj-server.local:7700/cartridges/k9iser-mcp/invoke \
+#     -d '{"repo": "hyperpolymath/<repo>", "tool": "k9_generate"}'
+# Standards#93 / #89 sub-issue 1+2 must be wired before this line is safe.
+generated/k9iser/
+generated/tlaiser/
+generated/wokelangiser/
+generated/alloyiser/
+generated/abi/

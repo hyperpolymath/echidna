@@ -1,0 +1,42 @@
+# Banned-language exemption ledger — hypatia / governance-reusable.yml
+#
+# Each line: <rule>:<path>
+#
+# Per CLAUDE.md: 'migrate existing src/rescript/ to AffineScript per
+# docs/ROADMAP.md'. These exemptions hold the line while the migration
+# is in progress — each entry gets removed as the matching .res file
+# is migrated to AffineScript or deleted.
+#
+cicd_rules/banned_language_file:echidna-playground/examples/SafeDOMExample.res
+cicd_rules/banned_language_file:echidna-playground/src/Components.res
+cicd_rules/banned_language_file:echidna-playground/src/Deno.res
+cicd_rules/banned_language_file:echidna-playground/src/Dom.res
+cicd_rules/banned_language_file:echidna-playground/src/JsCoq.res
+cicd_rules/banned_language_file:echidna-playground/src/Main.res
+cicd_rules/banned_language_file:echidna-playground/src/Page.res
+cicd_rules/banned_language_file:echidna-playground/src/PlaygroundServer.res
+cicd_rules/banned_language_file:echidna-playground/src/Server.res
+cicd_rules/banned_language_file:examples/SafeDOMExample.res
+cicd_rules/banned_language_file:src/provers/Mod.res
+cicd_rules/banned_language_file:src/provers/clients/LeanTool.res
+cicd_rules/banned_language_file:src/provers/clients/Metamath.res
+cicd_rules/banned_language_file:src/provers/clients/SystemOnTptp.res
+cicd_rules/banned_language_file:src/provers/clients/Unified.res
+cicd_rules/banned_language_file:src/provers/clients/UnifiedTest.res
+cicd_rules/banned_language_file:src/provers/clients/Wolfram.res
+cicd_rules/banned_language_file:src/provers/clients/Z3Wasm.res
+cicd_rules/banned_language_file:src/provers/runners/Cli.res
+cicd_rules/banned_language_file:src/provers/runners/Daemon.res
+cicd_rules/banned_language_file:src/provers/types/Prover.res
+cicd_rules/banned_language_file:src/provers/types/ProverTest.res
+cicd_rules/banned_language_file:src/provers/utils/Http.res
+cicd_rules/banned_language_file:src/rescript/src/Main.res
+cicd_rules/banned_language_file:src/rescript/src/Server.res
+cicd_rules/banned_language_file:src/rescript/src/api/Client.res
+cicd_rules/banned_language_file:src/rescript/src/components/GoalList.res
+cicd_rules/banned_language_file:src/rescript/src/components/ProofTree.res
+cicd_rules/banned_language_file:src/rescript/src/components/ProofViewer.res
+cicd_rules/banned_language_file:src/rescript/src/components/ProverSelector.res
+cicd_rules/banned_language_file:src/rescript/src/components/TacticSuggester.res
+cicd_rules/banned_language_file:src/rescript/src/components/TheoremSearch.res
+cicd_rules/banned_language_file:src/rescript/src/state/Store.res
