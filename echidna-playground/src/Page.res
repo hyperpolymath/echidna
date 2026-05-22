@@ -132,7 +132,7 @@ let documentContent = (): string => {
 }
 
 let jscoqScript = (): string => {
-  let ids = Js.Array2.joinWith(Js.Array2.map(CodeExamples.codeIds, id => `'${id}'`), ", ")
+  let ids = Array.map(CodeExamples.codeIds, id => `'${id}'`) -> Array.joinWith(", ")
   `
   <script src="node_modules/jscoq/ui-js/jscoq-loader.js" type="text/javascript"></script>
   <script type="text/javascript">

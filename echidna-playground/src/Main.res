@@ -11,8 +11,8 @@ module Page = Page
 
 // Initialize the application when running in browser
 let initialize = () => {
-  Js.log("Coq-Jr initialized")
-  Js.log("Generated page HTML available via Page.render()")
+  Console.log("Coq-Jr initialized")
+  Console.log("Generated page HTML available via Page.render()")
 }
 
 // Export the page render function for use by Deno server

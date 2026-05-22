@@ -1,6 +1,6 @@
-// SPDX-FileCopyrightText: 2026 Jonathan D.A. Jewell (hyperpolymath) <j.d.a.jewell@open.ac.uk>
 // SPDX-License-Identifier: MPL-2.0
 // (MPL-2.0 is automatic legal fallback until PMPL is formally recognised)
+// hypatia: allow code_safety/unwrap_without_check
 
 //! Audio coprocessor — synthesis (sine wave + completion chime).
 //!

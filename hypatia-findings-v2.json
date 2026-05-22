@@ -1,0 +1,1260 @@
+[
+  {
+    "action": "create",
+    "file": "quality.yml",
+    "reason": "Issue in quality.yml",
+    "rule_module": "workflow_audit",
+    "severity": "high",
+    "type": "missing_workflow"
+  },
+  {
+    "action": "create",
+    "file": "security-policy.yml",
+    "reason": "Issue in security-policy.yml",
+    "rule_module": "workflow_audit",
+    "severity": "medium",
+    "type": "missing_workflow"
+  },
+  {
+    "action": "verify_download_integrity",
+    "file": "mirror.yml",
+    "reason": "Workflow executes remote script directly (curl/wget piped to shell). Download, verify checksum/signature, then execute.",
+    "rule_module": "workflow_audit",
+    "severity": "high",
+    "type": "download_then_run"
+  },
+  {
+    "action": "flag",
+    "file": "/home/hyperpolymath/dev/repos/echidna/verification/proofs/idris2/ProofStateSerialisation.idr",
+    "reason": "believe_me undermines formal verification (2 occurrences, CWE-704)",
+    "rule_module": "code_safety",
+    "severity": "critical",
+    "type": "believe_me"
+  },
+  {
+    "action": "flag",
+    "file": "/home/hyperpolymath/dev/repos/echidna/verification/proofs/idris2/ProofStateSerialisation.idr",
+    "reason": "assert_total bypasses totality checker (1 occurrences, CWE-704)",
+    "rule_module": "code_safety",
+    "severity": "high",
+    "type": "assert_total"
+  },
+  {
+    "action": "flag",
+    "file": "/home/hyperpolymath/dev/repos/echidna/verification/proofs/idris2/TrustLevelSoundness.idr",
+    "reason": "believe_me undermines formal verification (1 occurrences, CWE-704)",
+    "rule_module": "code_safety",
+    "severity": "critical",
+    "type": "believe_me"
+  },
+  {
+    "action": "flag",
+    "file": "/home/hyperpolymath/dev/repos/echidna/verification/proofs/idris2/AxiomPolicyOrdering.idr",
+    "reason": "believe_me undermines formal verification (1 occurrences, CWE-704)",
+    "rule_module": "code_safety",
+    "severity": "critical",
+    "type": "believe_me"
+  },
+  {
+    "action": "flag",
+    "file": "/home/hyperpolymath/dev/repos/echidna/verification/proofs/idris2/ClampTrustBounds.idr",
+    "reason": "believe_me undermines formal verification (1 occurrences, CWE-704)",
+    "rule_module": "code_safety",
+    "severity": "critical",
+    "type": "believe_me"
+  },
+  {
+    "action": "flag",
+    "file": "/home/hyperpolymath/dev/repos/echidna/verification/proofs/idris2/AxiomCompleteness.idr",
+    "reason": "assert_total bypasses totality checker (1 occurrences, CWE-704)",
+    "rule_module": "code_safety",
+    "severity": "high",
+    "type": "assert_total"
+  },
+  {
+    "action": "flag",
+    "file": "/home/hyperpolymath/dev/repos/echidna/verification/proofs/idris2/AxiomCompleteness.idr",
+    "reason": "assert_smaller bypasses termination checker (1 occurrences, CWE-704)",
+    "rule_module": "code_safety",
+    "severity": "high",
+    "type": "assert_smaller"
+  },
+  {
+    "action": "flag",
+    "file": "/home/hyperpolymath/dev/repos/echidna/verification/proofs/idris2/TrustKernelMonotonicity.idr",
+    "reason": "believe_me undermines formal verification (1 occurrences, CWE-704)",
+    "rule_module": "code_safety",
+    "severity": "critical",
+    "type": "believe_me"
+  },
+  {
+    "action": "flag",
+    "file": "/home/hyperpolymath/dev/repos/echidna/verification/proofs/lean4/ConfidenceLattice.lean",
+    "reason": "User-defined axiom -- not verified by Lean kernel (1 occurrences, CWE-704)",
+    "rule_module": "code_safety",
+    "severity": "medium",
+    "type": "lean_axiom"
+  },
+  {
+    "action": "flag",
+    "file": "/home/hyperpolymath/dev/repos/echidna/verification/proofs/lean4/IntegrityVerification.lean",
+    "reason": "User-defined axiom -- not verified by Lean kernel (1 occurrences, CWE-704)",
+    "rule_module": "code_safety",
+    "severity": "medium",
+    "type": "lean_axiom"
+  },
+  {
+    "action": "flag",
+    "file": "/home/hyperpolymath/dev/repos/echidna/proofs/lean/Propositional.lean",
+    "reason": "User-defined axiom -- not verified by Lean kernel (1 occurrences, CWE-704)",
+    "rule_module": "code_safety",
+    "severity": "medium",
+    "type": "lean_axiom"
+  },
+  {
+    "action": "flag",
+    "file": "/home/hyperpolymath/dev/repos/echidna/proofs/lean/mvp_basic.lean",
+    "reason": "User-defined axiom -- not verified by Lean kernel (1 occurrences, CWE-704)",
+    "rule_module": "code_safety",
+    "severity": "medium",
+    "type": "lean_axiom"
+  },
+  {
+    "action": "flag",
+    "file": "/home/hyperpolymath/dev/repos/echidna/configs/config.ncl",
+    "reason": "Nickel file missing SPDX-License-Identifier header (1 occurrences, CWE-1104)",
+    "rule_module": "code_safety",
+    "severity": "medium",
+    "type": "ncl_missing_spdx"
+  },
+  {
+    "action": "flag",
+    "file": "/home/hyperpolymath/dev/repos/echidna/src/rust/coprocessor/singular.rs",
+    "reason": "unwrap() without prior check -- DoS via panic (1 occurrences, CWE-754)",
+    "rule_module": "code_safety",
+    "severity": "high",
+    "type": "unwrap_without_check"
+  },
+  {
+    "action": "flag",
+    "file": "/home/hyperpolymath/dev/repos/echidna/src/rust/coprocessor/julia_bridge.rs",
+    "reason": "expect() in hot path (1 occurrences, CWE-754)",
+    "rule_module": "code_safety",
+    "severity": "medium",
+    "type": "expect_in_hot_path"
+  },
+  {
+    "action": "flag",
+    "file": "/home/hyperpolymath/dev/repos/echidna/src/rust/coprocessor/audio.rs",
+    "reason": "unwrap() without prior check -- DoS via panic (1 occurrences, CWE-754)",
+    "rule_module": "code_safety",
+    "severity": "high",
+    "type": "unwrap_without_check"
+  },
+  {
+    "action": "flag",
+    "file": "/home/hyperpolymath/dev/repos/echidna/src/rust/coprocessor/math.rs",
+    "reason": "expect() in hot path (5 occurrences, CWE-754)",
+    "rule_module": "code_safety",
+    "severity": "medium",
+    "type": "expect_in_hot_path"
+  },
+  {
+    "action": "flag",
+    "file": "/home/hyperpolymath/dev/repos/echidna/src/rust/coprocessor/graphics.rs",
+    "reason": "unwrap() without prior check -- DoS via panic (11 occurrences, CWE-754)",
+    "rule_module": "code_safety",
+    "severity": "high",
+    "type": "unwrap_without_check"
+  },
+  {
+    "action": "flag",
+    "file": "/home/hyperpolymath/dev/repos/echidna/src/rust/coprocessor/parigp.rs",
+    "reason": "unwrap() without prior check -- DoS via panic (1 occurrences, CWE-754)",
+    "rule_module": "code_safety",
+    "severity": "high",
+    "type": "unwrap_without_check"
+  },
+  {
+    "action": "flag",
+    "file": "/home/hyperpolymath/dev/repos/echidna/src/rust/coprocessor/macaulay2.rs",
+    "reason": "unwrap() without prior check -- DoS via panic (1 occurrences, CWE-754)",
+    "rule_module": "code_safety",
+    "severity": "high",
+    "type": "unwrap_without_check"
+  },
+  {
+    "action": "flag",
+    "file": "/home/hyperpolymath/dev/repos/echidna/src/rust/coprocessor/flint.rs",
+    "reason": "unsafe block -- requires SAFETY comment (17 occurrences, CWE-676)",
+    "rule_module": "code_safety",
+    "severity": "medium",
+    "type": "unsafe_block"
+  },
+  {
+    "action": "flag",
+    "file": "/home/hyperpolymath/dev/repos/echidna/src/rust/coprocessor/flint.rs",
+    "reason": "as_ptr exposes raw pointer that may dangle or alias unsafely (1 occurrences, CWE-676)",
+    "rule_module": "code_safety",
+    "severity": "medium",
+    "type": "as_ptr"
+  },
+  {
+    "action": "flag",
+    "file": "/home/hyperpolymath/dev/repos/echidna/src/rust/coprocessor/maxima.rs",
+    "reason": "unwrap() without prior check -- DoS via panic (1 occurrences, CWE-754)",
+    "rule_module": "code_safety",
+    "severity": "high",
+    "type": "unwrap_without_check"
+  },
+  {
+    "action": "flag",
+    "file": "/home/hyperpolymath/dev/repos/echidna/src/rust/llm.rs",
+    "reason": "expect() in hot path (1 occurrences, CWE-754)",
+    "rule_module": "code_safety",
+    "severity": "medium",
+    "type": "expect_in_hot_path"
+  },
+  {
+    "action": "flag",
+    "file": "/home/hyperpolymath/dev/repos/echidna/src/rust/proof_search.rs",
+    "reason": "unwrap() without prior check -- DoS via panic (1 occurrences, CWE-754)",
+    "rule_module": "code_safety",
+    "severity": "high",
+    "type": "unwrap_without_check"
+  },
+  {
+    "action": "flag",
+    "file": "/home/hyperpolymath/dev/repos/echidna/src/rust/proof_search.rs",
+    "reason": "unsafe block -- requires SAFETY comment (8 occurrences, CWE-676)",
+    "rule_module": "code_safety",
+    "severity": "medium",
+    "type": "unsafe_block"
+  },
+  {
+    "action": "flag",
+    "file": "/home/hyperpolymath/dev/repos/echidna/src/rust/proof_search.rs",
+    "reason": "as_ptr exposes raw pointer that may dangle or alias unsafely (1 occurrences, CWE-676)",
+    "rule_module": "code_safety",
+    "severity": "medium",
+    "type": "as_ptr"
+  },
+  {
+    "action": "flag",
+    "file": "/home/hyperpolymath/dev/repos/echidna/src/rust/verification/portfolio.rs",
+    "reason": "unwrap() without prior check -- DoS via panic (2 occurrences, CWE-754)",
+    "rule_module": "code_safety",
+    "severity": "high",
+    "type": "unwrap_without_check"
+  },
+  {
+    "action": "flag",
+    "file": "/home/hyperpolymath/dev/repos/echidna/src/rust/verification/axiom_tracker.rs",
+    "reason": "panic! macro causes unrecoverable crash (1 occurrences, CWE-754)",
+    "rule_module": "code_safety",
+    "severity": "high",
+    "type": "panic_macro"
+  },
+  {
+    "action": "flag",
+    "file": "/home/hyperpolymath/dev/repos/echidna/src/rust/provers/mizar.rs",
+    "reason": "unwrap() without prior check -- DoS via panic (1 occurrences, CWE-754)",
+    "rule_module": "code_safety",
+    "severity": "high",
+    "type": "unwrap_without_check"
+  },
+  {
+    "action": "flag",
+    "file": "/home/hyperpolymath/dev/repos/echidna/src/rust/provers/coq.rs",
+    "reason": "unwrap() without prior check -- DoS via panic (2 occurrences, CWE-754)",
+    "rule_module": "code_safety",
+    "severity": "high",
+    "type": "unwrap_without_check"
+  },
+  {
+    "action": "flag",
+    "file": "/home/hyperpolymath/dev/repos/echidna/src/rust/provers/z3.rs",
+    "reason": "expect() in hot path (18 occurrences, CWE-754)",
+    "rule_module": "code_safety",
+    "severity": "medium",
+    "type": "expect_in_hot_path"
+  },
+  {
+    "action": "flag",
+    "file": "/home/hyperpolymath/dev/repos/echidna/src/rust/provers/lean.rs",
+    "reason": "unwrap() without prior check -- DoS via panic (1 occurrences, CWE-754)",
+    "rule_module": "code_safety",
+    "severity": "high",
+    "type": "unwrap_without_check"
+  },
+  {
+    "action": "flag",
+    "file": "/home/hyperpolymath/dev/repos/echidna/src/rust/provers/lean.rs",
+    "reason": "Lock.unwrap() without poison handling (1 occurrences, CWE-754)",
+    "rule_module": "code_safety",
+    "severity": "high",
+    "type": "lock_unwrap"
+  },
+  {
+    "action": "flag",
+    "file": "/home/hyperpolymath/dev/repos/echidna/src/rust/provers/opensmt.rs",
+    "reason": "from_raw constructs types from raw pointers without safety checks (1 occurrences, CWE-676)",
+    "rule_module": "code_safety",
+    "severity": "high",
+    "type": "from_raw"
+  },
+  {
+    "action": "flag",
+    "file": "/home/hyperpolymath/dev/repos/echidna/src/rust/provers/framac.rs",
+    "reason": "unwrap() without prior check -- DoS via panic (3 occurrences, CWE-754)",
+    "rule_module": "code_safety",
+    "severity": "high",
+    "type": "unwrap_without_check"
+  },
+  {
+    "action": "flag",
+    "file": "/home/hyperpolymath/dev/repos/echidna/src/rust/dispatch.rs",
+    "reason": "unwrap() without prior check -- DoS via panic (3 occurrences, CWE-754)",
+    "rule_module": "code_safety",
+    "severity": "high",
+    "type": "unwrap_without_check"
+  },
+  {
+    "action": "flag",
+    "file": "/home/hyperpolymath/dev/repos/echidna/src/rust/dispatch.rs",
+    "reason": "Lock.unwrap() without poison handling (3 occurrences, CWE-754)",
+    "rule_module": "code_safety",
+    "severity": "high",
+    "type": "lock_unwrap"
+  },
+  {
+    "action": "flag",
+    "file": "/home/hyperpolymath/dev/repos/echidna/src/rust/agent/actors.rs",
+    "reason": "unwrap() without prior check -- DoS via panic (1 occurrences, CWE-754)",
+    "rule_module": "code_safety",
+    "severity": "high",
+    "type": "unwrap_without_check"
+  },
+  {
+    "action": "flag",
+    "file": "/home/hyperpolymath/dev/repos/echidna/src/rust/verisim_bridge.rs",
+    "reason": "expect() in hot path (1 occurrences, CWE-754)",
+    "rule_module": "code_safety",
+    "severity": "medium",
+    "type": "expect_in_hot_path"
+  },
+  {
+    "action": "flag",
+    "file": "/home/hyperpolymath/dev/repos/echidna/src/rust/ipc/mod.rs",
+    "reason": "unwrap() without prior check -- DoS via panic (1 occurrences, CWE-754)",
+    "rule_module": "code_safety",
+    "severity": "high",
+    "type": "unwrap_without_check"
+  },
+  {
+    "action": "flag",
+    "file": "/home/hyperpolymath/dev/repos/echidna/src/rust/fault_tolerance/resilience.rs",
+    "reason": "unwrap() without prior check -- DoS via panic (7 occurrences, CWE-754)",
+    "rule_module": "code_safety",
+    "severity": "high",
+    "type": "unwrap_without_check"
+  },
+  {
+    "action": "flag",
+    "file": "/home/hyperpolymath/dev/repos/echidna/src/rust/fault_tolerance/resilience.rs",
+    "reason": "Lock.unwrap() without poison handling (7 occurrences, CWE-754)",
+    "rule_module": "code_safety",
+    "severity": "high",
+    "type": "lock_unwrap"
+  },
+  {
+    "action": "flag",
+    "file": "/home/hyperpolymath/dev/repos/echidna/src/rust/ffi/mod.rs",
+    "reason": "unsafe block -- requires SAFETY comment (18 occurrences, CWE-676)",
+    "rule_module": "code_safety",
+    "severity": "medium",
+    "type": "unsafe_block"
+  },
+  {
+    "action": "flag",
+    "file": "/home/hyperpolymath/dev/repos/echidna/src/rust/ffi/mod.rs",
+    "reason": "mem::forget leaks memory by skipping Drop (1 occurrences, CWE-401)",
+    "rule_module": "code_safety",
+    "severity": "high",
+    "type": "mem_forget"
+  },
+  {
+    "action": "flag",
+    "file": "/home/hyperpolymath/dev/repos/echidna/src/rust/ffi/mod.rs",
+    "reason": "from_raw constructs types from raw pointers without safety checks (5 occurrences, CWE-676)",
+    "rule_module": "code_safety",
+    "severity": "high",
+    "type": "from_raw"
+  },
+  {
+    "action": "flag",
+    "file": "/home/hyperpolymath/dev/repos/echidna/src/rust/ffi/mod.rs",
+    "reason": "as_ptr exposes raw pointer that may dangle or alias unsafely (5 occurrences, CWE-676)",
+    "rule_module": "code_safety",
+    "severity": "medium",
+    "type": "as_ptr"
+  },
+  {
+    "action": "flag",
+    "file": "/home/hyperpolymath/dev/repos/echidna/src/rust/ffi/spark_axiom.rs",
+    "reason": "unsafe block -- requires SAFETY comment (3 occurrences, CWE-676)",
+    "rule_module": "code_safety",
+    "severity": "medium",
+    "type": "unsafe_block"
+  },
+  {
+    "action": "flag",
+    "file": "/home/hyperpolymath/dev/repos/echidna/src/rust/ffi/spark_axiom.rs",
+    "reason": "as_ptr exposes raw pointer that may dangle or alias unsafely (3 occurrences, CWE-676)",
+    "rule_module": "code_safety",
+    "severity": "medium",
+    "type": "as_ptr"
+  },
+  {
+    "action": "flag",
+    "file": "/home/hyperpolymath/dev/repos/echidna/src/rust/learning/design_search.rs",
+    "reason": "expect() in hot path (1 occurrences, CWE-754)",
+    "rule_module": "code_safety",
+    "severity": "medium",
+    "type": "expect_in_hot_path"
+  },
+  {
+    "action": "flag",
+    "file": "/home/hyperpolymath/dev/repos/echidna/src/rust/repl/proof.rs",
+    "reason": "unwrap() without prior check -- DoS via panic (4 occurrences, CWE-754)",
+    "rule_module": "code_safety",
+    "severity": "high",
+    "type": "unwrap_without_check"
+  },
+  {
+    "action": "flag",
+    "file": "/home/hyperpolymath/dev/repos/echidna/src/rust/repl/diagnostics.rs",
+    "reason": "unwrap() without prior check -- DoS via panic (2 occurrences, CWE-754)",
+    "rule_module": "code_safety",
+    "severity": "high",
+    "type": "unwrap_without_check"
+  },
+  {
+    "action": "flag",
+    "file": "/home/hyperpolymath/dev/repos/echidna/src/rust/neural.rs",
+    "reason": "expect() in hot path (2 occurrences, CWE-754)",
+    "rule_module": "code_safety",
+    "severity": "medium",
+    "type": "expect_in_hot_path"
+  },
+  {
+    "action": "flag",
+    "file": "/home/hyperpolymath/dev/repos/echidna/src/rust/gnn/client.rs",
+    "reason": "expect() in hot path (2 occurrences, CWE-754)",
+    "rule_module": "code_safety",
+    "severity": "medium",
+    "type": "expect_in_hot_path"
+  },
+  {
+    "action": "flag",
+    "file": "/home/hyperpolymath/dev/repos/echidna/src/rust/server.rs",
+    "reason": "unwrap() without prior check -- DoS via panic (4 occurrences, CWE-754)",
+    "rule_module": "code_safety",
+    "severity": "high",
+    "type": "unwrap_without_check"
+  },
+  {
+    "action": "flag",
+    "file": "/home/hyperpolymath/dev/repos/echidna/src/interfaces/rest/ffi_wrapper.rs",
+    "reason": "unsafe block -- requires SAFETY comment (10 occurrences, CWE-676)",
+    "rule_module": "code_safety",
+    "severity": "medium",
+    "type": "unsafe_block"
+  },
+  {
+    "action": "flag",
+    "file": "/home/hyperpolymath/dev/repos/echidna/src/interfaces/rest/ffi_wrapper.rs",
+    "reason": "as_ptr exposes raw pointer that may dangle or alias unsafely (2 occurrences, CWE-676)",
+    "rule_module": "code_safety",
+    "severity": "medium",
+    "type": "as_ptr"
+  },
+  {
+    "action": "flag",
+    "file": "/home/hyperpolymath/dev/repos/echidna/src/interfaces/grpc/ffi_wrapper.rs",
+    "reason": "unsafe block -- requires SAFETY comment (10 occurrences, CWE-676)",
+    "rule_module": "code_safety",
+    "severity": "medium",
+    "type": "unsafe_block"
+  },
+  {
+    "action": "flag",
+    "file": "/home/hyperpolymath/dev/repos/echidna/src/interfaces/grpc/ffi_wrapper.rs",
+    "reason": "as_ptr exposes raw pointer that may dangle or alias unsafely (2 occurrences, CWE-676)",
+    "rule_module": "code_safety",
+    "severity": "medium",
+    "type": "as_ptr"
+  },
+  {
+    "action": "flag",
+    "file": "/home/hyperpolymath/dev/repos/echidna/src/interfaces/graphql/ffi_wrapper.rs",
+    "reason": "unsafe block -- requires SAFETY comment (10 occurrences, CWE-676)",
+    "rule_module": "code_safety",
+    "severity": "medium",
+    "type": "unsafe_block"
+  },
+  {
+    "action": "flag",
+    "file": "/home/hyperpolymath/dev/repos/echidna/src/interfaces/graphql/ffi_wrapper.rs",
+    "reason": "as_ptr exposes raw pointer that may dangle or alias unsafely (2 occurrences, CWE-676)",
+    "rule_module": "code_safety",
+    "severity": "medium",
+    "type": "as_ptr"
+  },
+  {
+    "action": "flag",
+    "file": "/home/hyperpolymath/dev/repos/echidna/src/interfaces/graphql/resolvers.rs",
+    "reason": "expect() in hot path (1 occurrences, CWE-754)",
+    "rule_module": "code_safety",
+    "severity": "medium",
+    "type": "expect_in_hot_path"
+  },
+  {
+    "action": "flag",
+    "file": "/home/hyperpolymath/dev/repos/echidna/src/interfaces/graphql/schema.rs",
+    "reason": "unwrap() without prior check -- DoS via panic (1 occurrences, CWE-754)",
+    "rule_module": "code_safety",
+    "severity": "high",
+    "type": "unwrap_without_check"
+  },
+  {
+    "action": "flag",
+    "file": "/home/hyperpolymath/dev/repos/echidna/src/interfaces/graphql/schema.rs",
+    "reason": "unwrap_or(0) with dangerous default (4 occurrences, CWE-754)",
+    "rule_module": "code_safety",
+    "severity": "critical",
+    "type": "unwrap_dangerous_default"
+  },
+  {
+    "action": "flag",
+    "file": "/home/hyperpolymath/dev/repos/echidna/benches/routing_benchmarks.rs",
+    "reason": "unwrap() without prior check -- DoS via panic (1 occurrences, CWE-754)",
+    "rule_module": "code_safety",
+    "severity": "high",
+    "type": "unwrap_without_check"
+  },
+  {
+    "action": "flag",
+    "file": "/home/hyperpolymath/dev/repos/echidna/benches/proof_benchmarks.rs",
+    "reason": "unwrap() without prior check -- DoS via panic (1 occurrences, CWE-754)",
+    "rule_module": "code_safety",
+    "severity": "high",
+    "type": "unwrap_without_check"
+  },
+  {
+    "action": "flag",
+    "file": "/home/hyperpolymath/dev/repos/echidna/crates/typed_wasm/src/lib.rs",
+    "reason": "unwrap() without prior check -- DoS via panic (2 occurrences, CWE-754)",
+    "rule_module": "code_safety",
+    "severity": "high",
+    "type": "unwrap_without_check"
+  },
+  {
+    "action": "module_replace",
+    "file": "/home/hyperpolymath/dev/repos/echidna/src/provers/types/ProverTest.res",
+    "reason": "Js.Dict deprecated -- use Dict (4 occurrences)",
+    "rule_module": "migration_rules",
+    "severity": "high",
+    "type": "deprecated_api"
+  },
+  {
+    "action": "module_replace",
+    "file": "/home/hyperpolymath/dev/repos/echidna/src/provers/types/ProverTest.res",
+    "reason": "Js.Json deprecated -- use JSON (1 occurrences)",
+    "rule_module": "migration_rules",
+    "severity": "medium",
+    "type": "deprecated_api"
+  },
+  {
+    "action": "search_replace",
+    "file": "/home/hyperpolymath/dev/repos/echidna/src/provers/types/ProverTest.res",
+    "reason": "Js.String2 deprecated -- use String (1 occurrences)",
+    "rule_module": "migration_rules",
+    "severity": "high",
+    "type": "deprecated_api"
+  },
+  {
+    "action": "module_replace",
+    "file": "/home/hyperpolymath/dev/repos/echidna/src/provers/types/Prover.res",
+    "reason": "Js.Dict deprecated -- use Dict (15 occurrences)",
+    "rule_module": "migration_rules",
+    "severity": "high",
+    "type": "deprecated_api"
+  },
+  {
+    "action": "module_replace",
+    "file": "/home/hyperpolymath/dev/repos/echidna/src/provers/types/Prover.res",
+    "reason": "Js.Json deprecated -- use JSON (1 occurrences)",
+    "rule_module": "migration_rules",
+    "severity": "medium",
+    "type": "deprecated_api"
+  },
+  {
+    "action": "module_replace",
+    "file": "/home/hyperpolymath/dev/repos/echidna/src/provers/clients/Wolfram.res",
+    "reason": "Belt.Array deprecated -- use Array (6 occurrences)",
+    "rule_module": "migration_rules",
+    "severity": "high",
+    "type": "deprecated_api"
+  },
+  {
+    "action": "module_replace",
+    "file": "/home/hyperpolymath/dev/repos/echidna/src/provers/clients/Wolfram.res",
+    "reason": "Belt.Option deprecated -- use Option (3 occurrences)",
+    "rule_module": "migration_rules",
+    "severity": "medium",
+    "type": "deprecated_api"
+  },
+  {
+    "action": "search_replace",
+    "file": "/home/hyperpolymath/dev/repos/echidna/src/provers/clients/Wolfram.res",
+    "reason": "Js.Array2 deprecated -- use Array (2 occurrences)",
+    "rule_module": "migration_rules",
+    "severity": "high",
+    "type": "deprecated_api"
+  },
+  {
+    "action": "module_replace",
+    "file": "/home/hyperpolymath/dev/repos/echidna/src/provers/clients/Wolfram.res",
+    "reason": "Js.Json deprecated -- use JSON (1 occurrences)",
+    "rule_module": "migration_rules",
+    "severity": "medium",
+    "type": "deprecated_api"
+  },
+  {
+    "action": "module_replace",
+    "file": "/home/hyperpolymath/dev/repos/echidna/src/provers/clients/Wolfram.res",
+    "reason": "Js.Promise deprecated -- use Promise (18 occurrences)",
+    "rule_module": "migration_rules",
+    "severity": "medium",
+    "type": "deprecated_api"
+  },
+  {
+    "action": "search_replace",
+    "file": "/home/hyperpolymath/dev/repos/echidna/src/provers/clients/Wolfram.res",
+    "reason": "Js.String2 deprecated -- use String (15 occurrences)",
+    "rule_module": "migration_rules",
+    "severity": "high",
+    "type": "deprecated_api"
+  },
+  {
+    "action": "module_replace",
+    "file": "/home/hyperpolymath/dev/repos/echidna/src/provers/clients/Z3Wasm.res",
+    "reason": "Belt.Array deprecated -- use Array (2 occurrences)",
+    "rule_module": "migration_rules",
+    "severity": "high",
+    "type": "deprecated_api"
+  },
+  {
+    "action": "module_replace",
+    "file": "/home/hyperpolymath/dev/repos/echidna/src/provers/clients/Z3Wasm.res",
+    "reason": "Belt.Option deprecated -- use Option (1 occurrences)",
+    "rule_module": "migration_rules",
+    "severity": "medium",
+    "type": "deprecated_api"
+  },
+  {
+    "action": "module_replace",
+    "file": "/home/hyperpolymath/dev/repos/echidna/src/provers/clients/Z3Wasm.res",
+    "reason": "Js.Promise deprecated -- use Promise (27 occurrences)",
+    "rule_module": "migration_rules",
+    "severity": "medium",
+    "type": "deprecated_api"
+  },
+  {
+    "action": "module_replace",
+    "file": "/home/hyperpolymath/dev/repos/echidna/src/provers/clients/SystemOnTptp.res",
+    "reason": "Belt.Array deprecated -- use Array (5 occurrences)",
+    "rule_module": "migration_rules",
+    "severity": "high",
+    "type": "deprecated_api"
+  },
+  {
+    "action": "module_replace",
+    "file": "/home/hyperpolymath/dev/repos/echidna/src/provers/clients/SystemOnTptp.res",
+    "reason": "Belt.Option deprecated -- use Option (2 occurrences)",
+    "rule_module": "migration_rules",
+    "severity": "medium",
+    "type": "deprecated_api"
+  },
+  {
+    "action": "module_replace",
+    "file": "/home/hyperpolymath/dev/repos/echidna/src/provers/clients/SystemOnTptp.res",
+    "reason": "Js.Dict deprecated -- use Dict (1 occurrences)",
+    "rule_module": "migration_rules",
+    "severity": "high",
+    "type": "deprecated_api"
+  },
+  {
+    "action": "module_replace",
+    "file": "/home/hyperpolymath/dev/repos/echidna/src/provers/clients/SystemOnTptp.res",
+    "reason": "Js.Nullable deprecated -- use Nullable (3 occurrences)",
+    "rule_module": "migration_rules",
+    "severity": "medium",
+    "type": "deprecated_api"
+  },
+  {
+    "action": "module_replace",
+    "file": "/home/hyperpolymath/dev/repos/echidna/src/provers/clients/SystemOnTptp.res",
+    "reason": "Js.Promise deprecated -- use Promise (14 occurrences)",
+    "rule_module": "migration_rules",
+    "severity": "medium",
+    "type": "deprecated_api"
+  },
+  {
+    "action": "search_replace",
+    "file": "/home/hyperpolymath/dev/repos/echidna/src/provers/clients/SystemOnTptp.res",
+    "reason": "Js.String2 deprecated -- use String (5 occurrences)",
+    "rule_module": "migration_rules",
+    "severity": "high",
+    "type": "deprecated_api"
+  },
+  {
+    "action": "module_replace",
+    "file": "/home/hyperpolymath/dev/repos/echidna/src/provers/clients/UnifiedTest.res",
+    "reason": "Belt.Array deprecated -- use Array (5 occurrences)",
+    "rule_module": "migration_rules",
+    "severity": "high",
+    "type": "deprecated_api"
+  },
+  {
+    "action": "module_replace",
+    "file": "/home/hyperpolymath/dev/repos/echidna/src/provers/clients/UnifiedTest.res",
+    "reason": "Js.Promise deprecated -- use Promise (2 occurrences)",
+    "rule_module": "migration_rules",
+    "severity": "medium",
+    "type": "deprecated_api"
+  },
+  {
+    "action": "module_replace",
+    "file": "/home/hyperpolymath/dev/repos/echidna/src/provers/clients/LeanTool.res",
+    "reason": "Belt.Array deprecated -- use Array (1 occurrences)",
+    "rule_module": "migration_rules",
+    "severity": "high",
+    "type": "deprecated_api"
+  },
+  {
+    "action": "module_replace",
+    "file": "/home/hyperpolymath/dev/repos/echidna/src/provers/clients/LeanTool.res",
+    "reason": "Belt.Option deprecated -- use Option (2 occurrences)",
+    "rule_module": "migration_rules",
+    "severity": "medium",
+    "type": "deprecated_api"
+  },
+  {
+    "action": "module_replace",
+    "file": "/home/hyperpolymath/dev/repos/echidna/src/provers/clients/LeanTool.res",
+    "reason": "Js.Dict deprecated -- use Dict (8 occurrences)",
+    "rule_module": "migration_rules",
+    "severity": "high",
+    "type": "deprecated_api"
+  },
+  {
+    "action": "module_replace",
+    "file": "/home/hyperpolymath/dev/repos/echidna/src/provers/clients/LeanTool.res",
+    "reason": "Js.Json deprecated -- use JSON (16 occurrences)",
+    "rule_module": "migration_rules",
+    "severity": "medium",
+    "type": "deprecated_api"
+  },
+  {
+    "action": "module_replace",
+    "file": "/home/hyperpolymath/dev/repos/echidna/src/provers/clients/LeanTool.res",
+    "reason": "Js.Promise deprecated -- use Promise (17 occurrences)",
+    "rule_module": "migration_rules",
+    "severity": "medium",
+    "type": "deprecated_api"
+  },
+  {
+    "action": "search_replace",
+    "file": "/home/hyperpolymath/dev/repos/echidna/src/provers/clients/LeanTool.res",
+    "reason": "Js.String2 deprecated -- use String (13 occurrences)",
+    "rule_module": "migration_rules",
+    "severity": "high",
+    "type": "deprecated_api"
+  },
+  {
+    "action": "module_replace",
+    "file": "/home/hyperpolymath/dev/repos/echidna/src/provers/clients/Metamath.res",
+    "reason": "Belt.Array deprecated -- use Array (17 occurrences)",
+    "rule_module": "migration_rules",
+    "severity": "high",
+    "type": "deprecated_api"
+  },
+  {
+    "action": "module_replace",
+    "file": "/home/hyperpolymath/dev/repos/echidna/src/provers/clients/Metamath.res",
+    "reason": "Belt.Map deprecated -- use Map (6 occurrences)",
+    "rule_module": "migration_rules",
+    "severity": "medium",
+    "type": "deprecated_api"
+  },
+  {
+    "action": "module_replace",
+    "file": "/home/hyperpolymath/dev/repos/echidna/src/provers/clients/Metamath.res",
+    "reason": "Belt.Option deprecated -- use Option (2 occurrences)",
+    "rule_module": "migration_rules",
+    "severity": "medium",
+    "type": "deprecated_api"
+  },
+  {
+    "action": "module_replace",
+    "file": "/home/hyperpolymath/dev/repos/echidna/src/provers/clients/Metamath.res",
+    "reason": "Belt.Set deprecated -- use Set (8 occurrences)",
+    "rule_module": "migration_rules",
+    "severity": "medium",
+    "type": "deprecated_api"
+  },
+  {
+    "action": "search_replace",
+    "file": "/home/hyperpolymath/dev/repos/echidna/src/provers/clients/Metamath.res",
+    "reason": "Js.Array2 deprecated -- use Array (6 occurrences)",
+    "rule_module": "migration_rules",
+    "severity": "high",
+    "type": "deprecated_api"
+  },
+  {
+    "action": "module_replace",
+    "file": "/home/hyperpolymath/dev/repos/echidna/src/provers/clients/Metamath.res",
+    "reason": "Js.Dict deprecated -- use Dict (4 occurrences)",
+    "rule_module": "migration_rules",
+    "severity": "high",
+    "type": "deprecated_api"
+  },
+  {
+    "action": "module_replace",
+    "file": "/home/hyperpolymath/dev/repos/echidna/src/provers/clients/Metamath.res",
+    "reason": "Js.Json deprecated -- use JSON (2 occurrences)",
+    "rule_module": "migration_rules",
+    "severity": "medium",
+    "type": "deprecated_api"
+  },
+  {
+    "action": "module_replace",
+    "file": "/home/hyperpolymath/dev/repos/echidna/src/provers/clients/Metamath.res",
+    "reason": "Js.Promise deprecated -- use Promise (15 occurrences)",
+    "rule_module": "migration_rules",
+    "severity": "medium",
+    "type": "deprecated_api"
+  },
+  {
+    "action": "search_replace",
+    "file": "/home/hyperpolymath/dev/repos/echidna/src/provers/clients/Metamath.res",
+    "reason": "Js.String2 deprecated -- use String (8 occurrences)",
+    "rule_module": "migration_rules",
+    "severity": "high",
+    "type": "deprecated_api"
+  },
+  {
+    "action": "module_replace",
+    "file": "/home/hyperpolymath/dev/repos/echidna/src/provers/clients/Unified.res",
+    "reason": "Belt.Array deprecated -- use Array (24 occurrences)",
+    "rule_module": "migration_rules",
+    "severity": "high",
+    "type": "deprecated_api"
+  },
+  {
+    "action": "module_replace",
+    "file": "/home/hyperpolymath/dev/repos/echidna/src/provers/clients/Unified.res",
+    "reason": "Js.Dict deprecated -- use Dict (4 occurrences)",
+    "rule_module": "migration_rules",
+    "severity": "high",
+    "type": "deprecated_api"
+  },
+  {
+    "action": "module_replace",
+    "file": "/home/hyperpolymath/dev/repos/echidna/src/provers/clients/Unified.res",
+    "reason": "Js.Promise deprecated -- use Promise (27 occurrences)",
+    "rule_module": "migration_rules",
+    "severity": "medium",
+    "type": "deprecated_api"
+  },
+  {
+    "action": "module_replace",
+    "file": "/home/hyperpolymath/dev/repos/echidna/src/provers/runners/Cli.res",
+    "reason": "Belt.Option deprecated -- use Option (3 occurrences)",
+    "rule_module": "migration_rules",
+    "severity": "medium",
+    "type": "deprecated_api"
+  },
+  {
+    "action": "module_replace",
+    "file": "/home/hyperpolymath/dev/repos/echidna/src/provers/runners/Cli.res",
+    "reason": "Js.Promise deprecated -- use Promise (3 occurrences)",
+    "rule_module": "migration_rules",
+    "severity": "medium",
+    "type": "deprecated_api"
+  },
+  {
+    "action": "search_replace",
+    "file": "/home/hyperpolymath/dev/repos/echidna/src/provers/runners/Cli.res",
+    "reason": "Js.String2 deprecated -- use String (7 occurrences)",
+    "rule_module": "migration_rules",
+    "severity": "high",
+    "type": "deprecated_api"
+  },
+  {
+    "action": "module_replace",
+    "file": "/home/hyperpolymath/dev/repos/echidna/src/provers/runners/Daemon.res",
+    "reason": "Belt.Option deprecated -- use Option (1 occurrences)",
+    "rule_module": "migration_rules",
+    "severity": "medium",
+    "type": "deprecated_api"
+  },
+  {
+    "action": "module_replace",
+    "file": "/home/hyperpolymath/dev/repos/echidna/src/provers/runners/Daemon.res",
+    "reason": "Js.Dict deprecated -- use Dict (5 occurrences)",
+    "rule_module": "migration_rules",
+    "severity": "high",
+    "type": "deprecated_api"
+  },
+  {
+    "action": "module_replace",
+    "file": "/home/hyperpolymath/dev/repos/echidna/src/provers/runners/Daemon.res",
+    "reason": "Js.Promise deprecated -- use Promise (1 occurrences)",
+    "rule_module": "migration_rules",
+    "severity": "medium",
+    "type": "deprecated_api"
+  },
+  {
+    "action": "module_replace",
+    "file": "/home/hyperpolymath/dev/repos/echidna/src/provers/utils/Http.res",
+    "reason": "Belt.Array deprecated -- use Array (2 occurrences)",
+    "rule_module": "migration_rules",
+    "severity": "high",
+    "type": "deprecated_api"
+  },
+  {
+    "action": "module_replace",
+    "file": "/home/hyperpolymath/dev/repos/echidna/src/provers/utils/Http.res",
+    "reason": "Belt.Option deprecated -- use Option (1 occurrences)",
+    "rule_module": "migration_rules",
+    "severity": "medium",
+    "type": "deprecated_api"
+  },
+  {
+    "action": "search_replace",
+    "file": "/home/hyperpolymath/dev/repos/echidna/src/provers/utils/Http.res",
+    "reason": "Js.Array2 deprecated -- use Array (1 occurrences)",
+    "rule_module": "migration_rules",
+    "severity": "high",
+    "type": "deprecated_api"
+  },
+  {
+    "action": "module_replace",
+    "file": "/home/hyperpolymath/dev/repos/echidna/src/provers/utils/Http.res",
+    "reason": "Js.Dict deprecated -- use Dict (7 occurrences)",
+    "rule_module": "migration_rules",
+    "severity": "high",
+    "type": "deprecated_api"
+  },
+  {
+    "action": "module_replace",
+    "file": "/home/hyperpolymath/dev/repos/echidna/src/provers/utils/Http.res",
+    "reason": "Js.Json deprecated -- use JSON (4 occurrences)",
+    "rule_module": "migration_rules",
+    "severity": "medium",
+    "type": "deprecated_api"
+  },
+  {
+    "action": "module_replace",
+    "file": "/home/hyperpolymath/dev/repos/echidna/src/provers/utils/Http.res",
+    "reason": "Js.Promise deprecated -- use Promise (24 occurrences)",
+    "rule_module": "migration_rules",
+    "severity": "medium",
+    "type": "deprecated_api"
+  },
+  {
+    "action": "module_replace",
+    "file": "/home/hyperpolymath/dev/repos/echidna/src/rescript/src/Main.res",
+    "reason": "Belt.Array deprecated -- use Array (1 occurrences)",
+    "rule_module": "migration_rules",
+    "severity": "high",
+    "type": "deprecated_api"
+  },
+  {
+    "action": "module_replace",
+    "file": "/home/hyperpolymath/dev/repos/echidna/src/rescript/src/Main.res",
+    "reason": "Belt.Option deprecated -- use Option (1 occurrences)",
+    "rule_module": "migration_rules",
+    "severity": "medium",
+    "type": "deprecated_api"
+  },
+  {
+    "action": "module_replace",
+    "file": "/home/hyperpolymath/dev/repos/echidna/src/rescript/src/api/Client.res",
+    "reason": "Belt.Array deprecated -- use Array (8 occurrences)",
+    "rule_module": "migration_rules",
+    "severity": "high",
+    "type": "deprecated_api"
+  },
+  {
+    "action": "module_replace",
+    "file": "/home/hyperpolymath/dev/repos/echidna/src/rescript/src/api/Client.res",
+    "reason": "Belt.Option deprecated -- use Option (33 occurrences)",
+    "rule_module": "migration_rules",
+    "severity": "medium",
+    "type": "deprecated_api"
+  },
+  {
+    "action": "module_replace",
+    "file": "/home/hyperpolymath/dev/repos/echidna/src/rescript/src/components/ProofTree.res",
+    "reason": "Belt.Array deprecated -- use Array (4 occurrences)",
+    "rule_module": "migration_rules",
+    "severity": "high",
+    "type": "deprecated_api"
+  },
+  {
+    "action": "module_replace",
+    "file": "/home/hyperpolymath/dev/repos/echidna/src/rescript/src/components/ProofTree.res",
+    "reason": "Belt.Option deprecated -- use Option (4 occurrences)",
+    "rule_module": "migration_rules",
+    "severity": "medium",
+    "type": "deprecated_api"
+  },
+  {
+    "action": "module_replace",
+    "file": "/home/hyperpolymath/dev/repos/echidna/src/rescript/src/components/ProofTree.res",
+    "reason": "Belt.Set deprecated -- use Set (7 occurrences)",
+    "rule_module": "migration_rules",
+    "severity": "medium",
+    "type": "deprecated_api"
+  },
+  {
+    "action": "module_replace",
+    "file": "/home/hyperpolymath/dev/repos/echidna/src/rescript/src/components/ProverSelector.res",
+    "reason": "Belt.Array deprecated -- use Array (3 occurrences)",
+    "rule_module": "migration_rules",
+    "severity": "high",
+    "type": "deprecated_api"
+  },
+  {
+    "action": "module_replace",
+    "file": "/home/hyperpolymath/dev/repos/echidna/src/rescript/src/components/GoalList.res",
+    "reason": "Belt.Array deprecated -- use Array (3 occurrences)",
+    "rule_module": "migration_rules",
+    "severity": "high",
+    "type": "deprecated_api"
+  },
+  {
+    "action": "module_replace",
+    "file": "/home/hyperpolymath/dev/repos/echidna/src/rescript/src/components/TacticSuggester.res",
+    "reason": "Belt.Array deprecated -- use Array (4 occurrences)",
+    "rule_module": "migration_rules",
+    "severity": "high",
+    "type": "deprecated_api"
+  },
+  {
+    "action": "module_replace",
+    "file": "/home/hyperpolymath/dev/repos/echidna/src/rescript/src/components/TheoremSearch.res",
+    "reason": "Belt.Array deprecated -- use Array (10 occurrences)",
+    "rule_module": "migration_rules",
+    "severity": "high",
+    "type": "deprecated_api"
+  },
+  {
+    "action": "module_replace",
+    "file": "/home/hyperpolymath/dev/repos/echidna/src/rescript/src/components/TheoremSearch.res",
+    "reason": "Belt.Map deprecated -- use Map (5 occurrences)",
+    "rule_module": "migration_rules",
+    "severity": "medium",
+    "type": "deprecated_api"
+  },
+  {
+    "action": "module_replace",
+    "file": "/home/hyperpolymath/dev/repos/echidna/src/rescript/src/components/TheoremSearch.res",
+    "reason": "Belt.Option deprecated -- use Option (1 occurrences)",
+    "rule_module": "migration_rules",
+    "severity": "medium",
+    "type": "deprecated_api"
+  },
+  {
+    "action": "module_replace",
+    "file": "/home/hyperpolymath/dev/repos/echidna/src/rescript/src/components/ProofViewer.res",
+    "reason": "Belt.Array deprecated -- use Array (4 occurrences)",
+    "rule_module": "migration_rules",
+    "severity": "high",
+    "type": "deprecated_api"
+  },
+  {
+    "action": "module_replace",
+    "file": "/home/hyperpolymath/dev/repos/echidna/src/rescript/src/state/Store.res",
+    "reason": "Belt.Array deprecated -- use Array (1 occurrences)",
+    "rule_module": "migration_rules",
+    "severity": "high",
+    "type": "deprecated_api"
+  },
+  {
+    "action": "search_replace",
+    "file": "/home/hyperpolymath/dev/repos/echidna/echidna-playground/src/Components.res",
+    "reason": "Js.Array2 deprecated -- use Array (11 occurrences)",
+    "rule_module": "migration_rules",
+    "severity": "high",
+    "type": "deprecated_api"
+  },
+  {
+    "action": "search_replace",
+    "file": "/home/hyperpolymath/dev/repos/echidna/echidna-playground/src/Page.res",
+    "reason": "Js.Array2 deprecated -- use Array (2 occurrences)",
+    "rule_module": "migration_rules",
+    "severity": "high",
+    "type": "deprecated_api"
+  },
+  {
+    "action": "module_replace",
+    "file": "/home/hyperpolymath/dev/repos/echidna/echidna-playground/src/JsCoq.res",
+    "reason": "Js.Promise deprecated -- use Promise (2 occurrences)",
+    "rule_module": "migration_rules",
+    "severity": "medium",
+    "type": "deprecated_api"
+  },
+  {
+    "action": "module_replace",
+    "file": "/home/hyperpolymath/dev/repos/echidna/echidna-playground/src/Server.res",
+    "reason": "Js.Dict deprecated -- use Dict (3 occurrences)",
+    "rule_module": "migration_rules",
+    "severity": "high",
+    "type": "deprecated_api"
+  },
+  {
+    "action": "search_replace",
+    "file": "/home/hyperpolymath/dev/repos/echidna/echidna-playground/src/Server.res",
+    "reason": "Js.String2 deprecated -- use String (2 occurrences)",
+    "rule_module": "migration_rules",
+    "severity": "high",
+    "type": "deprecated_api"
+  },
+  {
+    "action": "module_replace",
+    "file": "/home/hyperpolymath/dev/repos/echidna/echidna-playground/src/PlaygroundServer.res",
+    "reason": "Js.Dict deprecated -- use Dict (3 occurrences)",
+    "rule_module": "migration_rules",
+    "severity": "high",
+    "type": "deprecated_api"
+  },
+  {
+    "action": "search_replace",
+    "file": "/home/hyperpolymath/dev/repos/echidna/echidna-playground/src/PlaygroundServer.res",
+    "reason": "Js.String2 deprecated -- use String (2 occurrences)",
+    "rule_module": "migration_rules",
+    "severity": "high",
+    "type": "deprecated_api"
+  },
+  {
+    "action": "module_replace",
+    "file": "/home/hyperpolymath/dev/repos/echidna/echidna-playground/src/Deno.res",
+    "reason": "Js.Promise deprecated -- use Promise (2 occurrences)",
+    "rule_module": "migration_rules",
+    "severity": "medium",
+    "type": "deprecated_api"
+  },
+  {
+    "action": "module_replace",
+    "file": "/home/hyperpolymath/dev/repos/echidna/echidna-playground/src/Dom.res",
+    "reason": "Js.Nullable deprecated -- use Nullable (3 occurrences)",
+    "rule_module": "migration_rules",
+    "severity": "medium",
+    "type": "deprecated_api"
+  },
+  {
+    "action": "auto_fix",
+    "file": "/home/hyperpolymath/dev/repos/echidna",
+    "reason": "Nominal-only SAST in echidna: codeql.yml language matrix contains no language present in the repo and lacks `actions`, so CodeQL records zero results on every commit. Remediation: set the CodeQL matrix to `language: actions`.",
+    "remediation": "Add CodeQL or equivalent SAST workflow.",
+    "rule_module": "scorecard",
+    "scorecard_check": "SAST",
+    "severity": "medium",
+    "type": "StaticAnalysis"
+  },
+  {
+    "action": "commit",
+    "file": ".",
+    "reason": "35 unstaged modification(s) -- stage and commit needed",
+    "rule_module": "git_state",
+    "severity": "medium",
+    "type": "GS001"
+  },
+  {
+    "action": "delete_remote_branches",
+    "file": ".",
+    "reason": "Repository has 1 non-main remote branch(es). Policy: single main branch only.",
+    "rule_module": "git_state",
+    "severity": "medium",
+    "type": "GS007"
+  },
+  {
+    "action": "update_reference",
+    "file": ".claude/CLAUDE.md",
+    "reason": "References STATE.scm -- should be .machine_readable/6a2/STATE.a2ml",
+    "rule_module": "structural_drift",
+    "severity": "medium",
+    "type": "SD007"
+  },
+  {
+    "action": "update_reference",
+    "file": ".claude/CLAUDE.md",
+    "reason": "References META.scm -- should be .machine_readable/6a2/META.a2ml",
+    "rule_module": "structural_drift",
+    "severity": "medium",
+    "type": "SD007"
+  },
+  {
+    "action": "update_reference",
+    "file": ".claude/CLAUDE.md",
+    "reason": "References ECOSYSTEM.scm -- should be .machine_readable/6a2/ECOSYSTEM.a2ml",
+    "rule_module": "structural_drift",
+    "severity": "medium",
+    "type": "SD007"
+  },
+  {
+    "action": "update_reference",
+    "file": ".claude/CLAUDE.md",
+    "reason": "References AGENTIC.scm -- should be .machine_readable/6a2/AGENTIC.a2ml",
+    "rule_module": "structural_drift",
+    "severity": "medium",
+    "type": "SD007"
+  },
+  {
+    "action": "update_reference",
+    "file": ".claude/CLAUDE.md",
+    "reason": "References NEUROSYM.scm -- should be .machine_readable/6a2/NEUROSYM.a2ml",
+    "rule_module": "structural_drift",
+    "severity": "medium",
+    "type": "SD007"
+  },
+  {
+    "action": "update_reference",
+    "file": ".claude/CLAUDE.md",
+    "reason": "References PLAYBOOK.scm -- should be .machine_readable/6a2/PLAYBOOK.a2ml",
+    "rule_module": "structural_drift",
+    "severity": "medium",
+    "type": "SD007"
+  },
+  {
+    "action": "add_spdx_header",
+    "file": "src/zig_ffi/.zig-cache/o/0dfaff335b1e988f906e10fdc662b1d9/cimport.zig",
+    "reason": "Source file missing SPDX-License-Identifier header",
+    "rule_module": "structural_drift",
+    "severity": "medium",
+    "type": "SD009"
+  },
+  {
+    "action": "add_spdx_header",
+    "file": "src/zig_ffi/.zig-cache/o/f1ea4330472a4c6ebcbfed6922919020/dependencies.zig",
+    "reason": "Source file missing SPDX-License-Identifier header",
+    "rule_module": "structural_drift",
+    "severity": "medium",
+    "type": "SD009"
+  }
+]

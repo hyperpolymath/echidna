@@ -21,7 +21,7 @@ external denoServe: (serveOptions, Deno.request => promise<Deno.response>) => un
 external log: string => unit = "log"
 
 /** MIME type mapping for static file serving */
-let mimeTypes: Js.Dict.t<string> = Js.Dict.fromArray([
+let mimeTypes: Dict.t<string> = Dict.fromArray([
   (".html", "text/html"),
   (".css", "text/css"),
   (".js", "application/javascript"),
@@ -38,9 +38,9 @@ let mimeTypes: Js.Dict.t<string> = Js.Dict.fromArray([
 
 /** Extract file extension from a path */
 let getExtension = (path: string): string => {
-  let lastDot = Js.String2.lastIndexOf(path, ".")
+  let lastDot = String.lastIndexOf(path, ".")
   if lastDot >= 0 {
-    Js.String2.substr(path, ~from=lastDot)
+    String.substring(path, ~start=lastDot, ~end=String.length(path))
   } else {
     ""
   }
@@ -49,7 +49,7 @@ let getExtension = (path: string): string => {
 /** Look up MIME type for a path */
 let getMimeType = (path: string): string => {
   let ext = getExtension(path)
-  switch Js.Dict.get(mimeTypes, ext) {
+  switch Dict.get(mimeTypes, ext) {
   | Some(mime) => mime
   | None => "application/octet-stream"
   }

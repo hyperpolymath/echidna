@@ -1,0 +1,434 @@
+[
+  {
+    "severity": "high",
+    "rule_module": "workflow_audit",
+    "type": "missing_workflow",
+    "file": "quality.yml"
+  },
+  {
+    "severity": "high",
+    "rule_module": "workflow_audit",
+    "type": "download_then_run",
+    "file": "mirror.yml"
+  },
+  {
+    "severity": "high",
+    "rule_module": "code_safety",
+    "type": "unwrap_without_check",
+    "file": "src/rust/coprocessor/singular.rs"
+  },
+  {
+    "severity": "high",
+    "rule_module": "code_safety",
+    "type": "unwrap_without_check",
+    "file": "src/rust/coprocessor/audio.rs"
+  },
+  {
+    "severity": "high",
+    "rule_module": "code_safety",
+    "type": "unwrap_without_check",
+    "file": "src/rust/coprocessor/graphics.rs"
+  },
+  {
+    "severity": "high",
+    "rule_module": "code_safety",
+    "type": "unwrap_without_check",
+    "file": "src/rust/coprocessor/parigp.rs"
+  },
+  {
+    "severity": "high",
+    "rule_module": "code_safety",
+    "type": "unwrap_without_check",
+    "file": "src/rust/coprocessor/macaulay2.rs"
+  },
+  {
+    "severity": "high",
+    "rule_module": "code_safety",
+    "type": "unwrap_without_check",
+    "file": "src/rust/coprocessor/maxima.rs"
+  },
+  {
+    "severity": "high",
+    "rule_module": "code_safety",
+    "type": "unwrap_without_check",
+    "file": "src/rust/proof_search.rs"
+  },
+  {
+    "severity": "high",
+    "rule_module": "code_safety",
+    "type": "unwrap_without_check",
+    "file": "src/rust/verification/portfolio.rs"
+  },
+  {
+    "severity": "high",
+    "rule_module": "code_safety",
+    "type": "panic_macro",
+    "file": "src/rust/verification/axiom_tracker.rs"
+  },
+  {
+    "severity": "high",
+    "rule_module": "code_safety",
+    "type": "unwrap_without_check",
+    "file": "src/rust/provers/mizar.rs"
+  },
+  {
+    "severity": "high",
+    "rule_module": "code_safety",
+    "type": "unwrap_without_check",
+    "file": "src/rust/provers/coq.rs"
+  },
+  {
+    "severity": "high",
+    "rule_module": "code_safety",
+    "type": "unwrap_without_check",
+    "file": "src/rust/provers/lean.rs"
+  },
+  {
+    "severity": "high",
+    "rule_module": "code_safety",
+    "type": "lock_unwrap",
+    "file": "src/rust/provers/lean.rs"
+  },
+  {
+    "severity": "high",
+    "rule_module": "code_safety",
+    "type": "from_raw",
+    "file": "src/rust/provers/opensmt.rs"
+  },
+  {
+    "severity": "high",
+    "rule_module": "code_safety",
+    "type": "unwrap_without_check",
+    "file": "src/rust/provers/framac.rs"
+  },
+  {
+    "severity": "high",
+    "rule_module": "code_safety",
+    "type": "unwrap_without_check",
+    "file": "src/rust/dispatch.rs"
+  },
+  {
+    "severity": "high",
+    "rule_module": "code_safety",
+    "type": "lock_unwrap",
+    "file": "src/rust/dispatch.rs"
+  },
+  {
+    "severity": "high",
+    "rule_module": "code_safety",
+    "type": "unwrap_without_check",
+    "file": "src/rust/agent/actors.rs"
+  },
+  {
+    "severity": "high",
+    "rule_module": "code_safety",
+    "type": "unwrap_without_check",
+    "file": "src/rust/ipc/mod.rs"
+  },
+  {
+    "severity": "high",
+    "rule_module": "code_safety",
+    "type": "unwrap_without_check",
+    "file": "src/rust/fault_tolerance/resilience.rs"
+  },
+  {
+    "severity": "high",
+    "rule_module": "code_safety",
+    "type": "lock_unwrap",
+    "file": "src/rust/fault_tolerance/resilience.rs"
+  },
+  {
+    "severity": "high",
+    "rule_module": "code_safety",
+    "type": "mem_forget",
+    "file": "src/rust/ffi/mod.rs"
+  },
+  {
+    "severity": "high",
+    "rule_module": "code_safety",
+    "type": "from_raw",
+    "file": "src/rust/ffi/mod.rs"
+  },
+  {
+    "severity": "high",
+    "rule_module": "code_safety",
+    "type": "unwrap_without_check",
+    "file": "src/rust/repl/proof.rs"
+  },
+  {
+    "severity": "high",
+    "rule_module": "code_safety",
+    "type": "unwrap_without_check",
+    "file": "src/rust/repl/diagnostics.rs"
+  },
+  {
+    "severity": "high",
+    "rule_module": "code_safety",
+    "type": "unwrap_without_check",
+    "file": "src/rust/server.rs"
+  },
+  {
+    "severity": "high",
+    "rule_module": "code_safety",
+    "type": "unwrap_without_check",
+    "file": "src/interfaces/graphql/schema.rs"
+  },
+  {
+    "severity": "high",
+    "rule_module": "code_safety",
+    "type": "unwrap_without_check",
+    "file": "benches/routing_benchmarks.rs"
+  },
+  {
+    "severity": "high",
+    "rule_module": "code_safety",
+    "type": "unwrap_without_check",
+    "file": "benches/proof_benchmarks.rs"
+  },
+  {
+    "severity": "high",
+    "rule_module": "code_safety",
+    "type": "unwrap_without_check",
+    "file": "crates/typed_wasm/src/lib.rs"
+  },
+  {
+    "severity": "high",
+    "rule_module": "migration_rules",
+    "type": "deprecated_api",
+    "file": "src/provers/types/ProverTest.res"
+  },
+  {
+    "severity": "high",
+    "rule_module": "migration_rules",
+    "type": "deprecated_api",
+    "file": "src/provers/types/ProverTest.res"
+  },
+  {
+    "severity": "high",
+    "rule_module": "migration_rules",
+    "type": "deprecated_api",
+    "file": "src/provers/types/Prover.res"
+  },
+  {
+    "severity": "high",
+    "rule_module": "migration_rules",
+    "type": "deprecated_api",
+    "file": "src/provers/clients/Wolfram.res"
+  },
+  {
+    "severity": "high",
+    "rule_module": "migration_rules",
+    "type": "deprecated_api",
+    "file": "src/provers/clients/Wolfram.res"
+  },
+  {
+    "severity": "high",
+    "rule_module": "migration_rules",
+    "type": "deprecated_api",
+    "file": "src/provers/clients/Wolfram.res"
+  },
+  {
+    "severity": "high",
+    "rule_module": "migration_rules",
+    "type": "deprecated_api",
+    "file": "src/provers/clients/Z3Wasm.res"
+  },
+  {
+    "severity": "high",
+    "rule_module": "migration_rules",
+    "type": "deprecated_api",
+    "file": "src/provers/clients/SystemOnTptp.res"
+  },
+  {
+    "severity": "high",
+    "rule_module": "migration_rules",
+    "type": "deprecated_api",
+    "file": "src/provers/clients/SystemOnTptp.res"
+  },
+  {
+    "severity": "high",
+    "rule_module": "migration_rules",
+    "type": "deprecated_api",
+    "file": "src/provers/clients/SystemOnTptp.res"
+  },
+  {
+    "severity": "high",
+    "rule_module": "migration_rules",
+    "type": "deprecated_api",
+    "file": "src/provers/clients/UnifiedTest.res"
+  },
+  {
+    "severity": "high",
+    "rule_module": "migration_rules",
+    "type": "deprecated_api",
+    "file": "src/provers/clients/LeanTool.res"
+  },
+  {
+    "severity": "high",
+    "rule_module": "migration_rules",
+    "type": "deprecated_api",
+    "file": "src/provers/clients/LeanTool.res"
+  },
+  {
+    "severity": "high",
+    "rule_module": "migration_rules",
+    "type": "deprecated_api",
+    "file": "src/provers/clients/LeanTool.res"
+  },
+  {
+    "severity": "high",
+    "rule_module": "migration_rules",
+    "type": "deprecated_api",
+    "file": "src/provers/clients/Metamath.res"
+  },
+  {
+    "severity": "high",
+    "rule_module": "migration_rules",
+    "type": "deprecated_api",
+    "file": "src/provers/clients/Metamath.res"
+  },
+  {
+    "severity": "high",
+    "rule_module": "migration_rules",
+    "type": "deprecated_api",
+    "file": "src/provers/clients/Metamath.res"
+  },
+  {
+    "severity": "high",
+    "rule_module": "migration_rules",
+    "type": "deprecated_api",
+    "file": "src/provers/clients/Metamath.res"
+  },
+  {
+    "severity": "high",
+    "rule_module": "migration_rules",
+    "type": "deprecated_api",
+    "file": "src/provers/clients/Unified.res"
+  },
+  {
+    "severity": "high",
+    "rule_module": "migration_rules",
+    "type": "deprecated_api",
+    "file": "src/provers/clients/Unified.res"
+  },
+  {
+    "severity": "high",
+    "rule_module": "migration_rules",
+    "type": "deprecated_api",
+    "file": "src/provers/runners/Cli.res"
+  },
+  {
+    "severity": "high",
+    "rule_module": "migration_rules",
+    "type": "deprecated_api",
+    "file": "src/provers/runners/Daemon.res"
+  },
+  {
+    "severity": "high",
+    "rule_module": "migration_rules",
+    "type": "deprecated_api",
+    "file": "src/provers/utils/Http.res"
+  },
+  {
+    "severity": "high",
+    "rule_module": "migration_rules",
+    "type": "deprecated_api",
+    "file": "src/provers/utils/Http.res"
+  },
+  {
+    "severity": "high",
+    "rule_module": "migration_rules",
+    "type": "deprecated_api",
+    "file": "src/provers/utils/Http.res"
+  },
+  {
+    "severity": "high",
+    "rule_module": "migration_rules",
+    "type": "deprecated_api",
+    "file": "src/rescript/src/Main.res"
+  },
+  {
+    "severity": "high",
+    "rule_module": "migration_rules",
+    "type": "deprecated_api",
+    "file": "src/rescript/src/api/Client.res"
+  },
+  {
+    "severity": "high",
+    "rule_module": "migration_rules",
+    "type": "deprecated_api",
+    "file": "src/rescript/src/components/ProofTree.res"
+  },
+  {
+    "severity": "high",
+    "rule_module": "migration_rules",
+    "type": "deprecated_api",
+    "file": "src/rescript/src/components/ProverSelector.res"
+  },
+  {
+    "severity": "high",
+    "rule_module": "migration_rules",
+    "type": "deprecated_api",
+    "file": "src/rescript/src/components/GoalList.res"
+  },
+  {
+    "severity": "high",
+    "rule_module": "migration_rules",
+    "type": "deprecated_api",
+    "file": "src/rescript/src/components/TacticSuggester.res"
+  },
+  {
+    "severity": "high",
+    "rule_module": "migration_rules",
+    "type": "deprecated_api",
+    "file": "src/rescript/src/components/TheoremSearch.res"
+  },
+  {
+    "severity": "high",
+    "rule_module": "migration_rules",
+    "type": "deprecated_api",
+    "file": "src/rescript/src/components/ProofViewer.res"
+  },
+  {
+    "severity": "high",
+    "rule_module": "migration_rules",
+    "type": "deprecated_api",
+    "file": "src/rescript/src/state/Store.res"
+  },
+  {
+    "severity": "high",
+    "rule_module": "migration_rules",
+    "type": "deprecated_api",
+    "file": "echidna-playground/src/Components.res"
+  },
+  {
+    "severity": "high",
+    "rule_module": "migration_rules",
+    "type": "deprecated_api",
+    "file": "echidna-playground/src/Page.res"
+  },
+  {
+    "severity": "high",
+    "rule_module": "migration_rules",
+    "type": "deprecated_api",
+    "file": "echidna-playground/src/Server.res"
+  },
+  {
+    "severity": "high",
+    "rule_module": "migration_rules",
+    "type": "deprecated_api",
+    "file": "echidna-playground/src/Server.res"
+  },
+  {
+    "severity": "high",
+    "rule_module": "migration_rules",
+    "type": "deprecated_api",
+    "file": "echidna-playground/src/PlaygroundServer.res"
+  },
+  {
+    "severity": "high",
+    "rule_module": "migration_rules",
+    "type": "deprecated_api",
+    "file": "echidna-playground/src/PlaygroundServer.res"
+  }
+]
