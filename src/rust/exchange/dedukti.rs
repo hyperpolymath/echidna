@@ -291,7 +291,7 @@ impl DeduktiExporter {
                 .trim_start_matches("Type")
                 .trim()
                 .parse::<usize>()
-                .unwrap_or(0);
+                .unwrap_or_else(|_| 0);
             Term::Type(level)
         } else {
             // Simple identifier

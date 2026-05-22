@@ -7,10 +7,10 @@ K9!
 {
   pedigree = {
     schema_version = "1.0.0",
-    component_type = "TODO: describe component type (e.g., 'validated-config', 'schema')",
+    component_type = "TODO: describe component type (e.g., 'yard', 'schema')",
     security = {
       leash = 'Yard,
-      trust_level = "validated-config",
+      leash = "yard",
       allow_network = false,
       allow_filesystem_write = false,
       allow_subprocess = false,

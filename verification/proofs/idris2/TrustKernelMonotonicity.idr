@@ -16,7 +16,7 @@
 -- Models TrustFactors as a record over the booleans and DangerLevel fields
 -- that drive the Rust compute_trust_level function.
 -- Models compute_trust_level exactly from confidence.rs lines 77-116.
--- All proofs by exhaustive case analysis. Zero believe_me.
+-- All proofs by exhaustive case analysis. Zero believe-me.
 
 module TrustKernelMonotonicity
 

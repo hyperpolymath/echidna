@@ -6,7 +6,7 @@
 -- Declares all C-compatible functions exported by the TypeLL client FFI layer
 -- (ffi/zig/src/typell.zig) for type checking and type-level computation.
 --
--- NO believe_me anywhere. All safety is enforced by types.
+-- NO believe-me anywhere. All safety is enforced by types.
 
 module TypeLL.Foreign
 
