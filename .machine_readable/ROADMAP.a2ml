@@ -22,7 +22,7 @@ Core invariants across all stages:
 - Trust hardening via portfolio solvers, certificate checking, and axiom tracking
 - Agentic gating (entropy budgets, explicit intent, decision recording)
 - Neurosymbolic semantics (GNN-guided search, confidence scoring, mutation testing)
-- Formal verification (Idris2 ABI proofs, zero believe_me)
+- Formal verification (Idris2 ABI proofs, zero believe-me)
 - Modularity (echidna-core as service; echidnabot as autonomous consumer; cartridges for external access)
 """
 
@@ -419,7 +419,7 @@ stage-1-requirements = [
   "✓ 3GB corpus",
   "✓ 1.43M vocab",
   "✓ Zig FFI",
-  "✓ Idris2 ABI (zero believe_me)",
+  "✓ Idris2 ABI (zero believe-me)",
   "✓ Trust pipeline (portfolio, certificates, axioms, confidence, mutation)",
   "✓ REST/gRPC/GraphQL APIs",
   "✓ A2ML conformance (AGENTIC, NEUROSYM)",

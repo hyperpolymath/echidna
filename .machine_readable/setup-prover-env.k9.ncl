@@ -6,9 +6,11 @@ K9!
 # 12 theorem prover backends, including Agda, Coq, Lean, Isabelle, Z3, CVC5,
 # Metamath, HOL Light, Mizar, PVS, ACL2, and HOL4.
 
-leash = 'Hunt
-
 pedigree = {
+  name = "setup-prover-env",
+  version = "1.0.0",
+  leash = 'Hunt,
+  signature = "PLACEHOLDER-SIGNATURE-REQUIRED-FOR-HUNT",
   schema_version = "1.0.0",
   component_type = "prover-env-setup",
   author = "Jonathan D.A. Jewell <jonathan.jewell@open.ac.uk>",

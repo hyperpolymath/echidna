@@ -227,7 +227,7 @@ impl ProofGraphBuilder {
             .map(|(idx, node)| (node.id, idx))
             .collect();
 
-        let max_depth = self.nodes.iter().map(|n| n.term_depth).max().unwrap_or(0);
+        let max_depth = self.nodes.iter().map(|n| n.term_depth).max().unwrap_or_else(|| 0);
         let num_subterms = self
             .nodes
             .iter()

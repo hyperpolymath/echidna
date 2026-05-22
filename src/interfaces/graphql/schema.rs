@@ -244,7 +244,7 @@ impl QueryRoot {
             .state
             .as_ref()
             .map(|s| s.goals.len() as i32)
-            .unwrap_or(0);
+            .unwrap_or_else(|| 0);
 
         let status = match session.status {
             crate::resolvers::SessionStatus::Pending => ProofStatus::Pending,
@@ -291,7 +291,7 @@ impl QueryRoot {
                 .state
                 .as_ref()
                 .map(|s| s.goals.len() as i32)
-                .unwrap_or(0);
+                .unwrap_or_else(|| 0);
 
             let status = match session.status {
                 crate::resolvers::SessionStatus::Pending => ProofStatus::Pending,
@@ -382,7 +382,7 @@ impl MutationRoot {
             .state
             .as_ref()
             .map(|s| s.goals.len() as i32)
-            .unwrap_or(0);
+            .unwrap_or_else(|| 0);
 
         Ok(ProofState {
             id: proof_id,
@@ -432,7 +432,7 @@ impl MutationRoot {
             .state
             .as_ref()
             .map(|s| s.goals.len() as i32)
-            .unwrap_or(0);
+            .unwrap_or_else(|| 0);
 
         let status = match session.status {
             crate::resolvers::SessionStatus::Pending => ProofStatus::Pending,

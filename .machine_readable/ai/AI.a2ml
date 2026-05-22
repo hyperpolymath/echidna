@@ -19,6 +19,6 @@ allow-silent-skip = false
 require-rerun-after-fix = true
 
 [forbidden-patterns]
-idris2 = ["believe_me", "assert_total", "assert_smaller", "unsafePerformIO"]
+idris2 = ["believe-me", "assert_total", "assert_smaller", "unsafe-perform-io"]
 rust-unsafe = "require SAFETY comment"
-haskell = ["unsafeCoerce", "unsafePerformIO"]
+haskell = ["unsafeCoerce", "unsafe-perform-io"]
