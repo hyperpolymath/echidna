@@ -1,3 +1,4 @@
+K9!
 # SPDX-License-Identifier: PMPL-1.0-or-later
 # deploy.k9.ncl — ECHIDNA deployment component (Hunt level)
 
