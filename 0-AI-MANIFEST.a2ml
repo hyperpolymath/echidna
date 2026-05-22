@@ -49,7 +49,7 @@ container = "container/"
 primary = "Rust (48 prover backends, trust pipeline, CLI, REPL, API servers)"
 secondary = "Julia (ML inference, port 8090), ReScript+Deno (UI, 33 files, zero TypeScript)"
 optional = "Chapel (parallel proof dispatch)"
-abi = "Idris2 (7 modules, zero believe_me)"
+abi = "Idris2 (7 modules, zero believe-me)"
 ffi = "Zig (4 shared libraries)"
 interfaces = "GraphQL (8081), gRPC (50051), REST (8000)"
 build = "Justfile (primary), Cargo workspace"
@@ -90,7 +90,7 @@ invariant-5 = "MPL-2.0 throughout"
 invariant-6 = "Container: Containerfile not Dockerfile, Podman not Docker"
 invariant-7 = "Justfile is primary build system — not Make"
 invariant-8 = "No Python — Julia for ML, Rust for systems, ReScript for apps"
-invariant-9 = "Zero believe_me in Idris2 ABI (src/abi/)"
+invariant-9 = "Zero believe-me in Idris2 ABI (src/abi/)"
 
 [session-protocol]
 on-enter = [

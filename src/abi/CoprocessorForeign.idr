@@ -13,7 +13,7 @@
 -- FPGA, Tensor, Vector, Crypto, Graphics, Audio, IO) extend this module
 -- alongside their Rust impls — never as stubs.
 --
--- NO believe_me anywhere. All safety is enforced by types.
+-- NO believe-me anywhere. All safety is enforced by types.
 
 module Coprocessor.Foreign
 
@@ -136,7 +136,7 @@ coprocessorKindFromU8 10 = Just Fpga
 coprocessorKindFromU8 _  = Nothing
 
 ||| Round-trip on the kind discriminant.  Constructive — case-analysis
-||| discharges every variant.  Zero believe_me.
+||| discharges every variant.  Zero believe-me.
 public export
 kindEncodeDecodeId :
   (k : CoprocessorKind) ->

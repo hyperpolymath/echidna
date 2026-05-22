@@ -639,7 +639,7 @@ impl MetaController {
             .iter()
             .find(|(i, _)| frontier.contains(i))
             .map(|(i, _)| *i)
-            .unwrap_or(0);
+            .unwrap_or_else(|| 0);
         let chosen = candidate_provers[chosen_idx];
         drop(stats_guard);
 

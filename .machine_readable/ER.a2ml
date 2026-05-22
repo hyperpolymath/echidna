@@ -175,7 +175,7 @@ prover-coverage = [
   "Agda:     postulate, {!!}, --type-in-type",
   "Isabelle: sorry, oops",
   "HOL4:     mk_thm (REJECT)",
-  "Idris2:   believe_me, assert_total, assert_smaller, unsafePerformIO, really_believe_me, prim__crash, unsafeCoerce",
+  "Idris2:   believe-me, assert_total, assert_smaller, unsafe-perform-io, really_believe-me, prim__crash, unsafeCoerce",
   "F*:       admit, assume",
 ]
 special-case = "scaffold-sorry lines carrying ECHIDNA_SCAFFOLD_SORRY marker are exempted from flagging (axiom:312-318)"

@@ -189,7 +189,7 @@ can-access-training-data = true
 
 [agent-constraints]
 never-use = [
-  "believe_me, unsafeCoerce, sorry, assert_total, Admitted (Idris2 banned patterns)",
+  "believe-me, unsafeCoerce, sorry, assert_total, Admitted (Idris2 banned patterns)",
   "TypeScript, Python, Go, zig, ATS2 (banned languages)",
   "hardcoded secrets or credentials",
   "AGPL license (use MPL-2.0)",

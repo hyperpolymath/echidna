@@ -168,7 +168,7 @@ impl CorpusMonitor {
             .lock()
             .ok()
             .map(|m| m.total_proofs)
-            .unwrap_or(0)
+            .unwrap_or_else(|| 0)
     }
 
     /// Get total number of premises
@@ -177,7 +177,7 @@ impl CorpusMonitor {
             .lock()
             .ok()
             .map(|m| m.total_premises)
-            .unwrap_or(0)
+            .unwrap_or_else(|| 0)
     }
 
     /// Get corpus size in MB

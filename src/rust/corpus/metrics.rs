@@ -149,7 +149,7 @@ fn metrics_for(corpus: &Corpus, idx: usize, depth_cache: &mut Vec<Option<u32>>) 
         .dependents
         .get(&e.name)
         .map(|v| v.len() as u32)
-        .unwrap_or(0);
+        .unwrap_or_else(|| 0);
     m.proof_depth = compute_proof_depth(corpus, idx, depth_cache, 0, 32);
 
     // -- shape --

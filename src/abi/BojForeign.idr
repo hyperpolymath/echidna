@@ -6,7 +6,7 @@
 -- Declares all C-compatible functions exported by the BoJ client FFI layer
 -- (ffi/zig/src/boj.zig) for cartridge management and service discovery.
 --
--- NO believe_me anywhere. All safety is enforced by types.
+-- NO believe-me anywhere. All safety is enforced by types.
 
 module Boj.Foreign
 

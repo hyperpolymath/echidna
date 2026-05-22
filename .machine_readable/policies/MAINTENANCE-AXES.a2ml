@@ -22,7 +22,7 @@ sources = ["README.adoc", "ROADMAP.adoc", "docs/maintenance/MAINTENANCE-CHECKLIS
 items = [
   "30 prover backends compile and pass smoke tests",
   "cargo test --lib passes with zero failures",
-  "No believe_me or assert_total in Idris2 source",
+  "No believe-me or assert_total in Idris2 source",
   "No unsafe blocks without SAFETY comments",
   "SCM files only in .machine_readable/",
   "Container builds with Podman on Chainguard base",
@@ -59,5 +59,5 @@ effects-check = ["sustainabot ecological assessment", "binary size tracking"]
 effects-tool = "sustainabot"
 
 [idris-unsound-scan]
-patterns = ["believe_me", "assert_total", "assert_smaller", "unsafePerformIO"]
+patterns = ["believe-me", "assert_total", "assert_smaller", "unsafe-perform-io"]
 action = "block"
