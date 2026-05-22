@@ -73,7 +73,7 @@ ciborium = { version = "0.2", optional = true }
 chrono = { version = "0.4", features = ["serde"] }
 
 # Random number generation (for resilience jitter)
-rand = "0.8"
+rand = "0.9"
 
 # Temporary files (used by prover backends to invoke external solvers)
 tempfile = "3"
