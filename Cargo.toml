@@ -128,7 +128,7 @@ live-provers = ["verisim"]
 [dev-dependencies]
 proptest = "1"
 tokio-test = "0.4"
-which = "7"
+which = "8"
 pretty_assertions = "1"
 criterion = { version = "0.5", features = ["html_reports"] }
 
