@@ -10,7 +10,7 @@ K9!
     component_type = "project-metadata",
     security = {
       leash = 'Kennel,
-      trust_level = "data-only",
+      leash = "kennel",
       allow_network = false,
       allow_filesystem_write = false,
       allow_subprocess = false,

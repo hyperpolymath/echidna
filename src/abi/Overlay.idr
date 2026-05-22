@@ -9,7 +9,7 @@
 --   - Ethereum: Proof certificate timestamping (stubbed for Aerie)
 --
 -- All types are C-ABI compatible (repr(C) equivalent) for FFI bridging.
--- Zero believe_me. All proofs constructive.
+-- Zero believe-me. All proofs constructive.
 
 module Overlay
 

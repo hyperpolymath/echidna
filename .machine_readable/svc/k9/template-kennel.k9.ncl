@@ -1,7 +1,7 @@
 K9!
 # SPDX-License-Identifier: MPL-2.0
 # K9 Kennel-level template: Pure data configuration
-# Security Level: Kennel (data-only, no execution)
+# Security Level: Kennel (kennel, no execution)
 # No signature required - safe for any use
 
 {
@@ -10,7 +10,7 @@ K9!
     component_type = "TODO: describe component type (e.g., 'build-config', 'metadata')",
     security = {
       leash = 'Kennel,
-      trust_level = "data-only",
+      leash = "kennel",
       allow_network = false,
       allow_filesystem_write = false,
       allow_subprocess = false,

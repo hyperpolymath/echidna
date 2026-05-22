@@ -10,7 +10,7 @@
 -- The key invariants stated here as dependent-type propositions are exactly
 -- what GNATprove discharges on the SPARK side.  Both must agree.
 --
--- NO believe_me — every proof is constructive (Refl, case analysis, or
+-- NO believe-me — every proof is constructive (Refl, case analysis, or
 -- explicit witnesses).
 
 module EchidnaABI.AxiomTracker

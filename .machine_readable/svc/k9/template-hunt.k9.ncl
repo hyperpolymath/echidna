@@ -10,7 +10,7 @@ K9!
     component_type = "TODO: describe component type (e.g., 'deployment', 'setup-script')",
     security = {
       leash = 'Hunt,
-      trust_level = "full-system-access",
+      leash = "hunt",
       allow_network = true,
       allow_filesystem_write = true,
       allow_subprocess = true,

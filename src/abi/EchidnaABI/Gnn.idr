@@ -8,7 +8,7 @@
 ||| graph construction, feature extraction, and premise ranking
 ||| maintain correctness guarantees at the type level.
 |||
-||| NO believe_me — every proof is constructive (Refl or witness).
+||| NO believe-me — every proof is constructive (Refl or witness).
 ||| NO postulates — all properties derived from definitions.
 
 module EchidnaABI.Gnn

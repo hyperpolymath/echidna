@@ -11,7 +11,7 @@
 ||| is attempted the type-checker guarantees that every enum fits in a UInt8
 ||| and that the schema identifier is genuinely non-zero.
 |||
-||| NO believe_me — every proof is constructive (Refl, Vect witness, %search).
+||| NO believe-me — every proof is constructive (Refl, Vect witness, %search).
 ||| NO postulate  — all properties derived from definitions.
 |||
 ||| Schema ID : 0xd3b45f8ae1c79012  (echidna.capnp @0xd3b45f8ae1c79012)

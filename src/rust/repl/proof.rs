@@ -172,7 +172,7 @@ fn create_prompt(state: &ReplState) -> String {
         .proof_state
         .as_ref()
         .map(|s| s.goals.len())
-        .unwrap_or(0);
+        .unwrap_or_else(|| 0);
 
     if goal_count == 0 {
         format!("{}> ", prover.green())
