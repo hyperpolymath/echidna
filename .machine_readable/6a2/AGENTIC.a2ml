@@ -1,4 +1,4 @@
-# SPDX-License-Identifier: PMPL-1.0-or-later
+# SPDX-License-Identifier: MPL-2.0
 # Copyright (c) 2026 Jonathan D.A. Jewell (hyperpolymath) <j.d.a.jewell@open.ac.uk>
 #
 # AGENTIC.a2ml — AI agent operational gating and proof-solving dispatch
@@ -190,9 +190,9 @@ can-access-training-data = true
 [agent-constraints]
 never-use = [
   "believe_me, unsafeCoerce, sorry, assert_total, Admitted (Idris2 banned patterns)",
-  "TypeScript, Python, Go, V-lang, ATS2 (banned languages)",
+  "TypeScript, Python, Go, zig, ATS2 (banned languages)",
   "hardcoded secrets or credentials",
-  "AGPL license (use PMPL-1.0-or-later)",
+  "AGPL license (use MPL-2.0)",
   "state files in repository root (use .machine_readable/ only)",
   "subprocess execution outside prover-execute gate",
   "direct filesystem access to /home, /tmp without sandbox"

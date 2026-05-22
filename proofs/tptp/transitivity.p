@@ -1,5 +1,5 @@
 %-----------------------------------------------------------------------------
-% SPDX-License-Identifier: PMPL-1.0-or-later
+% SPDX-License-Identifier: MPL-2.0
 % File     : transitivity.p
 % Status   : Theorem
 % Claim    : Less-than is transitive: a<b ∧ b<c → a<c.

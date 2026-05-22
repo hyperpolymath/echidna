@@ -59,4 +59,4 @@ ECHIDNA follows a trust-hardened architecture:
 
 ## License
 
-PMPL-1.0-or-later
+MPL-2.0

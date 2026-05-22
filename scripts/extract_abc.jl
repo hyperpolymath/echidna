@@ -1,5 +1,5 @@
 #!/usr/bin/env julia
-# SPDX-License-Identifier: PMPL-1.0-or-later
+# SPDX-License-Identifier: MPL-2.0
 # Extract ABC hardware-verification problems (AIGER / BLIF).
 # Vendor: git clone https://github.com/berkeley-abc/abc external_corpora/abc
 using JSON3, Dates

@@ -1,4 +1,4 @@
-<!-- SPDX-License-Identifier: PMPL-1.0-or-later -->
+<!-- SPDX-License-Identifier: MPL-2.0 -->
 
 # 2026-05-19 — CI baseline triage: real defects vs baseline-rot vs infra jam
 

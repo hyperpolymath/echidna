@@ -1,5 +1,5 @@
 // SPDX-FileCopyrightText: 2026 Jonathan D.A. Jewell <j.d.a.jewell@open.ac.uk>
-// SPDX-License-Identifier: PMPL-1.0-or-later
+// SPDX-License-Identifier: MPL-2.0
 //
 // ECHIDNA Overlay FFI — Comprehensive Integration Tests
 //
@@ -8,7 +8,7 @@
 //   1. Lifecycle Tests          — connect/disconnect, status transitions
 //   2. Point-to-Point Tests     — each C-ABI export with valid + invalid inputs
 //   3. End-to-End Tests         — full workflow pipelines (Tor, IPFS, Ethereum)
-//   4. Bidirectional Tests      — V-lang adapter style roundtrip, error propagation
+//   4. Bidirectional Tests      — zig adapter style roundtrip, error propagation
 //   5. Edge Case Tests          — buffer limits, zero-length strings, boundary values
 //   6. Concurrency Tests        — multi-threaded overlay operations
 //   7. Memory Safety Tests      — connect/disconnect loops, leak detection
@@ -495,7 +495,7 @@ test "e2e: cross-overlay workflow — all three networks in sequence" {
 }
 
 // ============================================================================
-// 4. Bidirectional Tests (V-lang adapter style roundtrip)
+// 4. Bidirectional Tests (zig adapter style roundtrip)
 // ============================================================================
 
 test "bidi: ipfs add-cat roundtrip preserves content semantics" {
@@ -536,7 +536,7 @@ test "bidi: eth timestamp-verify roundtrip" {
     _ = echidna_eth_connect(config.ptr, config.len);
     defer echidna_eth_disconnect();
 
-    // Simulate V-lang adapter pattern: hash → timestamp → verify
+    // Simulate zig adapter pattern: hash → timestamp → verify
     const proof_hash = "0xfedcba9876543210fedcba9876543210fedcba9876543210fedcba9876543210";
     var tx_buf: [BUF_SIZE]u8 = undefined;
     var tx_len: usize = tx_buf.len;

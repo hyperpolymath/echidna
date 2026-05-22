@@ -1,4 +1,4 @@
-# SPDX-License-Identifier: PMPL-1.0-or-later
+# SPDX-License-Identifier: MPL-2.0
 # Pre-commit hooks for hyperpolymath RSR repos.
 # Install: pip install pre-commit && pre-commit install
 # Run manually: pre-commit run --all-files

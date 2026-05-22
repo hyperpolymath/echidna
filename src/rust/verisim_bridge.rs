@@ -1,5 +1,5 @@
 // SPDX-FileCopyrightText: 2026 Jonathan D.A. Jewell (hyperpolymath) <j.d.a.jewell@open.ac.uk>
-// SPDX-License-Identifier: PMPL-1.0-or-later
+// SPDX-License-Identifier: MPL-2.0
 
 //! VeriSimDB Bridge — Maps ECHIDNA proof state to VeriSimDB's 8-modality octad.
 //!
@@ -17,7 +17,7 @@
 //!   - **Spatial**: Reserved for proof origin metadata (future)
 //!
 //! The bridge uses VeriSimDB's HTTP API via reqwest. For BoJ-integrated deployments,
-//! the V-lang adapter (`echidna_llm_verisimdb.v`) routes through verisim.zig FFI.
+//! the zig adapter (`echidna_llm_verisimdb.v`) routes through verisim.zig FFI.
 
 use anyhow::{Context, Result};
 use chrono::Utc;

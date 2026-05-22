@@ -1,4 +1,4 @@
-// SPDX-License-Identifier: PMPL-1.0-or-later
+// SPDX-License-Identifier: MPL-2.0
 
 //! ECHIDNA L1 wire layer — Cap'n Proto schemas and generated bindings.
 //!

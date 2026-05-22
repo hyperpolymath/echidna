@@ -1,4 +1,4 @@
-# SPDX-License-Identifier: PMPL-1.0-or-later
+# SPDX-License-Identifier: MPL-2.0
 # META.a2ml — Project meta-information
 # Converted from META.scm on 2026-03-15
 
@@ -6,7 +6,7 @@
 project = "echidna"
 full-name = "Extensible Cognitive Hybrid Intelligence for Deductive Neural Assistance"
 author = "Jonathan D.A. Jewell <j.d.a.jewell@open.ac.uk>"
-license = "PMPL-1.0-or-later"
+license = "MPL-2.0"
 standard = "RSR 2026"
 version = "2.2.0"
 last-updated = "2026-04-28"

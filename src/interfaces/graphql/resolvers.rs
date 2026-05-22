@@ -1,4 +1,4 @@
-// SPDX-License-Identifier: PMPL-1.0-or-later
+// SPDX-License-Identifier: MPL-2.0
 // GraphQL resolvers - wired to ECHIDNA core
 
 use echidna::core::{

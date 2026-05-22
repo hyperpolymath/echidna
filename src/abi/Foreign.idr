@@ -1,4 +1,4 @@
-||| SPDX-License-Identifier: PMPL-1.0-or-later
+||| SPDX-License-Identifier: MPL-2.0
 ||| Foreign Function Interface Declarations for ECHIDNA
 |||
 ||| This module declares all C-compatible functions that will be

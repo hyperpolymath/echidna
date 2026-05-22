@@ -1,4 +1,4 @@
-# SPDX-License-Identifier: PMPL-1.0-or-later
+# SPDX-License-Identifier: MPL-2.0
 #
 # Lean 4 + mathlib4 tactic and lemma synonyms.
 # Schema: see data/synonyms/README.adoc.

@@ -1,4 +1,4 @@
-// SPDX-License-Identifier: PMPL-1.0-or-later
+// SPDX-License-Identifier: MPL-2.0
 // SPDX-FileCopyrightText: 2025-2026 Jonathan D.A. Jewell <j.d.a.jewell@open.ac.uk>
 
 = ECHIDNA
@@ -359,11 +359,11 @@ CVC5, Lean 4, Coq/Rocq, Isabelle. Each adds accurate `INCONSISTENT_PREMISES` and
 * *RSR/CCCP Compliance* -- Rhodium Standard Repository guidelines
 * *Justfile PRIMARY* -- Use Just, not Make
 * *Podman not Docker* -- Always Podman
-* *License*: PMPL-1.0-or-later
+* *License*: MPL-2.0
 
 == License
 
-This project is licensed under the link:LICENSE[Palimpsest Meta-Project License (PMPL-1.0-or-later)].
+This project is licensed under the link:LICENSE[Palimpsest Meta-Project License (MPL-2.0)].
 
 == Citation
 
@@ -374,7 +374,7 @@ This project is licensed under the link:LICENSE[Palimpsest Meta-Project License 
   author = {Jewell, Jonathan D.A.},
   year = {2026},
   url = {https://github.com/hyperpolymath/echidna},
-  license = {PMPL-1.0-or-later}
+  license = {MPL-2.0}
 }
 ----
 

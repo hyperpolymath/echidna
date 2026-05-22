@@ -1,5 +1,5 @@
 #!/usr/bin/env julia
-# SPDX-License-Identifier: PMPL-1.0-or-later
+# SPDX-License-Identifier: MPL-2.0
 # Train GNN model and evaluate on validation set, outputting metrics for health monitoring
 
 using JSON3

@@ -93,7 +93,7 @@ Also corrected 2026-04-19 (were mis-listed as "planned"):
 - **All interfaces under `src/interfaces/`**; never extract to separate repos.
 - **When adding provers: update all 3 layers** (Rust backend, Julia ML, Chapel).
 - **Original name: "Cognitive Hybrid"** not "Computational Heuristic".
-- **PMPL-1.0-or-later** throughout.
+- **MPL-2.0** throughout.
 - **No Python** — Julia for ML, Rust for systems, ReScript for apps.
 
 ## Tech stack

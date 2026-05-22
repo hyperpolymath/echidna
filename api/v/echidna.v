@@ -1,7 +1,7 @@
-// SPDX-License-Identifier: PMPL-1.0-or-later
+// SPDX-License-Identifier: MPL-2.0
 // Copyright (c) 2026 Jonathan D.A. Jewell (hyperpolymath) <j.d.a.jewell@open.ac.uk>
 //
-// ECHIDNA V-lang API — Multi-backend theorem prover client.
+// ECHIDNA zig API — Multi-backend theorem prover client.
 module echidna
 
 pub enum ProverBackend {

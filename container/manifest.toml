@@ -1,4 +1,4 @@
-# SPDX-License-Identifier: PMPL-1.0-or-later
+# SPDX-License-Identifier: MPL-2.0
 #
 # Cerro Torre manifest for ECHIDNA .ctp bundle
 
@@ -12,7 +12,7 @@ ECHIDNA — neurosymbolic theorem proving platform with 30 prover backends,
 packaged as a verified cerro-torre .ctp bundle with Ed25519 signing and
 full provenance tracking.
 """
-license = "PMPL-1.0-or-later"
+license = "MPL-2.0"
 homepage = "https://github.com/hyperpolymath/echidna"
 maintainer = "Jonathan D.A. Jewell <j.d.a.jewell@open.ac.uk>"
 

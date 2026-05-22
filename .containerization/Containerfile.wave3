@@ -1,4 +1,4 @@
-# SPDX-License-Identifier: PMPL-1.0-or-later
+# SPDX-License-Identifier: MPL-2.0
 # SPDX-FileCopyrightText: 2026 Jonathan D.A. Jewell <j.d.a.jewell@open.ac.uk>
 #
 # ECHIDNA Wave-3 (Tier-3, weekly) prover images — CONSOLIDATED multi-target
@@ -139,7 +139,7 @@ FROM docker.io/library/debian:bookworm-slim AS tamarin
 LABEL maintainer="Jonathan D.A. Jewell <j.d.a.jewell@open.ac.uk>"
 LABEL org.opencontainers.image.source="https://github.com/hyperpolymath/echidna"
 LABEL org.opencontainers.image.description="ECHIDNA + Tamarin Prover - security protocol analysis"
-LABEL org.opencontainers.image.licenses="PMPL-1.0-or-later"
+LABEL org.opencontainers.image.licenses="MPL-2.0"
 LABEL org.opencontainers.image.version="2.3.0"
 LABEL org.opencontainers.image.vendor="hyperpolymath"
 
@@ -252,7 +252,7 @@ FROM docker.io/library/debian:bookworm-slim AS proverif
 LABEL maintainer="Jonathan D.A. Jewell <j.d.a.jewell@open.ac.uk>"
 LABEL org.opencontainers.image.source="https://github.com/hyperpolymath/echidna"
 LABEL org.opencontainers.image.description="ECHIDNA + ProVerif - cryptographic protocol verification"
-LABEL org.opencontainers.image.licenses="PMPL-1.0-or-later"
+LABEL org.opencontainers.image.licenses="MPL-2.0"
 LABEL org.opencontainers.image.version="2.3.0"
 LABEL org.opencontainers.image.vendor="hyperpolymath"
 
@@ -340,7 +340,7 @@ FROM docker.io/library/debian:bookworm-slim AS scip
 LABEL maintainer="Jonathan D.A. Jewell <j.d.a.jewell@open.ac.uk>"
 LABEL org.opencontainers.image.source="https://github.com/hyperpolymath/echidna"
 LABEL org.opencontainers.image.description="ECHIDNA + SCIP - constraint integer programming solver"
-LABEL org.opencontainers.image.licenses="PMPL-1.0-or-later"
+LABEL org.opencontainers.image.licenses="MPL-2.0"
 LABEL org.opencontainers.image.version="2.3.0"
 LABEL org.opencontainers.image.vendor="hyperpolymath"
 
@@ -435,7 +435,7 @@ FROM docker.io/library/debian:bookworm-slim AS or-tools
 LABEL maintainer="Jonathan D.A. Jewell <j.d.a.jewell@open.ac.uk>"
 LABEL org.opencontainers.image.source="https://github.com/hyperpolymath/echidna"
 LABEL org.opencontainers.image.description="ECHIDNA + OR-Tools C++ library - combinatorial optimisation via FFI"
-LABEL org.opencontainers.image.licenses="PMPL-1.0-or-later"
+LABEL org.opencontainers.image.licenses="MPL-2.0"
 LABEL org.opencontainers.image.version="2.3.0"
 LABEL org.opencontainers.image.vendor="hyperpolymath"
 
@@ -559,7 +559,7 @@ FROM docker.io/library/debian:bookworm-slim AS hol4
 LABEL maintainer="Jonathan D.A. Jewell <j.d.a.jewell@open.ac.uk>"
 LABEL org.opencontainers.image.source="https://github.com/hyperpolymath/echidna"
 LABEL org.opencontainers.image.description="ECHIDNA + HOL4 - higher-order logic theorem prover"
-LABEL org.opencontainers.image.licenses="PMPL-1.0-or-later"
+LABEL org.opencontainers.image.licenses="MPL-2.0"
 LABEL org.opencontainers.image.version="2.3.0"
 LABEL org.opencontainers.image.vendor="hyperpolymath"
 
@@ -645,7 +645,7 @@ FROM docker.io/library/debian:bookworm-slim AS acl2
 LABEL maintainer="Jonathan D.A. Jewell <j.d.a.jewell@open.ac.uk>"
 LABEL org.opencontainers.image.source="https://github.com/hyperpolymath/echidna"
 LABEL org.opencontainers.image.description="ECHIDNA + ACL2 - applicative Common Lisp logic prover"
-LABEL org.opencontainers.image.licenses="PMPL-1.0-or-later"
+LABEL org.opencontainers.image.licenses="MPL-2.0"
 LABEL org.opencontainers.image.version="2.3.0"
 LABEL org.opencontainers.image.vendor="hyperpolymath"
 
@@ -733,7 +733,7 @@ FROM docker.io/library/debian:bookworm-slim AS twelf
 LABEL maintainer="Jonathan D.A. Jewell <j.d.a.jewell@open.ac.uk>"
 LABEL org.opencontainers.image.source="https://github.com/hyperpolymath/echidna"
 LABEL org.opencontainers.image.description="ECHIDNA + Twelf - LF meta-logical framework"
-LABEL org.opencontainers.image.licenses="PMPL-1.0-or-later"
+LABEL org.opencontainers.image.licenses="MPL-2.0"
 LABEL org.opencontainers.image.version="2.3.0"
 LABEL org.opencontainers.image.vendor="hyperpolymath"
 
@@ -858,7 +858,7 @@ FROM docker.io/library/debian:bookworm-slim AS metamath
 LABEL maintainer="Jonathan D.A. Jewell <j.d.a.jewell@open.ac.uk>"
 LABEL org.opencontainers.image.source="https://github.com/hyperpolymath/echidna"
 LABEL org.opencontainers.image.description="ECHIDNA + Metamath - metamath-exe CLI verifier with bundled databases"
-LABEL org.opencontainers.image.licenses="PMPL-1.0-or-later"
+LABEL org.opencontainers.image.licenses="MPL-2.0"
 LABEL org.opencontainers.image.version="2.3.0"
 LABEL org.opencontainers.image.vendor="hyperpolymath"
 
@@ -948,7 +948,7 @@ FROM docker.io/library/debian:bookworm-slim AS imandra
 LABEL maintainer="Jonathan D.A. Jewell <j.d.a.jewell@open.ac.uk>"
 LABEL org.opencontainers.image.source="https://github.com/hyperpolymath/echidna"
 LABEL org.opencontainers.image.description="ECHIDNA + Imandra stub (proprietary licence required for real binary)"
-LABEL org.opencontainers.image.licenses="PMPL-1.0-or-later"
+LABEL org.opencontainers.image.licenses="MPL-2.0"
 LABEL org.opencontainers.image.version="2.3.0"
 LABEL org.opencontainers.image.vendor="hyperpolymath"
 

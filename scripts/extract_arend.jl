@@ -1,5 +1,5 @@
 #!/usr/bin/env julia
-# SPDX-License-Identifier: PMPL-1.0-or-later
+# SPDX-License-Identifier: MPL-2.0
 # Extract proofs / declarations / .ard files from Arend.
 # Vendor location: external_corpora/arend/
 using JSON3, Dates

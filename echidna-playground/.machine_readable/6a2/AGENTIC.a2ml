@@ -1,4 +1,4 @@
-# SPDX-License-Identifier: PMPL-1.0-or-later
+# SPDX-License-Identifier: MPL-2.0
 # Copyright (c) 2026 Jonathan D.A. Jewell (hyperpolymath) <j.d.a.jewell@open.ac.uk>
 #
 # AGENTIC.a2ml — AI agent constraints and capabilities
@@ -19,7 +19,7 @@ can-create-files = true
 # - Never commit secrets or credentials
 # - Never use banned languages (TypeScript, Python, Go, etc.)
 # - Never place state files in repository root (must be in .machine_readable/)
-# - Never use AGPL license (use PMPL-1.0-or-later)
+# - Never use AGPL license (use MPL-2.0)
 
 [maintenance-integrity]
 fail-closed = true

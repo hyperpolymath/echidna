@@ -1,11 +1,11 @@
-# SPDX-License-Identifier: PMPL-1.0-or-later
+# SPDX-License-Identifier: MPL-2.0
 
 [package]
 name = "echidna"
 version = "2.1.0"
 edition = "2021"
 authors = ["Jonathan D.A. Jewell <j.d.a.jewell@open.ac.uk>"]
-license = "PMPL-1.0-or-later"
+license = "MPL-2.0"
 description = "Neurosymbolic theorem proving platform with multi-prover support"
 repository = "https://github.com/hyperpolymath/echidna"
 
@@ -79,7 +79,7 @@ rand = "0.8"
 tempfile = "3"
 
 # Math coprocessor — number theory + exact arithmetic.  Permissive licences
-# (Apache-2.0 / MIT) compatible with PMPL-1.0-or-later / MPL-2.0 fallback.
+# (Apache-2.0 / MIT) compatible with MPL-2.0 / MPL-2.0 fallback.
 num-bigint = "0.4"
 num-integer = "0.1"
 num-traits = "0.2"

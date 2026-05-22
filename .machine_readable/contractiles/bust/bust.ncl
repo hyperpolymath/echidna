@@ -1,4 +1,4 @@
-# SPDX-License-Identifier: PMPL-1.0-or-later
+# SPDX-License-Identifier: MPL-2.0
 # Bust — error-handling / failure-recovery runner
 #
 # Pairs with: Bustfile.a2ml (same directory)

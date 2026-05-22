@@ -1,4 +1,4 @@
-// SPDX-License-Identifier: PMPL-1.0-or-later
+// SPDX-License-Identifier: MPL-2.0
 // REST FFI Wrapper - Connects REST interface to ECHIDNA Rust core via Zig FFI.
 //
 // The wrapper is scaffolding for the REST handlers — most entry points are

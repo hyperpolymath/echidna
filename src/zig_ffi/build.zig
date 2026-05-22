@@ -1,4 +1,4 @@
-// SPDX-License-Identifier: PMPL-1.0-or-later
+// SPDX-License-Identifier: MPL-2.0
 // ECHIDNA Zig FFI Build Configuration
 // Compatible with Zig 0.14+/0.15+
 

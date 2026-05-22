@@ -1,4 +1,4 @@
-// SPDX-License-Identifier: PMPL-1.0-or-later
+// SPDX-License-Identifier: MPL-2.0
 // SPDX-FileCopyrightText: 2025-2026 Jonathan D.A. Jewell <j.d.a.jewell@open.ac.uk>
 
 = ECHIDNA Roadmap
@@ -33,7 +33,7 @@ Our roadmap **extends this prevailing advantage** by deepening these unique capa
 * Chapel parallel dispatch layer
 * ReScript UI: 33 compiled components (zero TypeScript)
 * Training data: 332 proofs, 1,603 tactics
-* License standardised: PMPL-1.0-or-later throughout
+* License standardised: MPL-2.0 throughout
 
 == v1.0 -- Core Infrastructure (COMPLETE)
 

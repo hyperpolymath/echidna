@@ -1,5 +1,5 @@
 %-----------------------------------------------------------------------------
-% SPDX-License-Identifier: PMPL-1.0-or-later
+% SPDX-License-Identifier: MPL-2.0
 % File     : group_left_identity.p
 % Status   : Theorem
 % Claim    : In a group, e is also a right identity (proved from left-identity

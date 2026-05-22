@@ -1,4 +1,4 @@
-<!-- SPDX-License-Identifier: PMPL-1.0-or-later -->
+<!-- SPDX-License-Identifier: MPL-2.0 -->
 <!-- TOPOLOGY.md — Project architecture map and completion dashboard -->
 <!-- Last updated: 2026-03-08 -->
 
@@ -13,7 +13,7 @@
                         └───────────────────┬─────────────────────┘
                                             │
                         ┌───────────────────┼─────────────────────┐
-                        │    V-LANG REST ADAPTERS (5 adapters)    │
+                        │    zig REST ADAPTERS (5 adapters)    │
                         │  Core:8100-8102  Overlay:8103           │
                         │  BoJ:7700  TypeLL:7800  Tentacles:8300  │
                         └───────────────────┬─────────────────────┘
@@ -105,14 +105,14 @@ FFI / ABI LAYER
   Generated C Headers (5)          ██████████ 100%    echidna_ffi/overlay/boj/typell/tentacles.h
   Bidirectional Callbacks           ██████████ 100%    Init/prover/error/verify events
   Native Zig Tests                  ██████████ 100%    30+ tests, core + overlay
-  V-lang REST Adapters (5)         ████████░░  80%    Polling works; SSE/WS pending
+  zig REST Adapters (5)         ████████░░  80%    Polling works; SSE/WS pending
   Memory Layout Proofs              ██████████ 100%    DivisibleBy, VerifiedLayout
 
 TENTACLES FFI/ABI
   TentaclesForeign.idr              ██████████ 100%    7-Tentacles agent ABI definitions
   tentacles.zig                     ██████████ 100%    Agent mgmt, OODA loop, events FFI
   echidna_tentacles.h               ██████████ 100%    Generated C header for tentacles
-  tentacles.v                       ██████████ 100%    V-lang REST adapter (port 8300)
+  tentacles.v                       ██████████ 100%    zig REST adapter (port 8300)
   libechidna_tentacles.so           ██████████ 100%    Shared library for tentacles FFI
 
 REPO INFRASTRUCTURE
@@ -127,7 +127,7 @@ OVERALL:                            █████████░  95%    v1.6 
 ## Key Dependencies
 
 ```
-Idris2 ABI ──► C Headers ──► Zig FFI (.so) ──► V-lang Adapters (REST)
+Idris2 ABI ──► C Headers ──► Zig FFI (.so) ──► zig Adapters (REST)
      │              │              │                    │
      ▼              ▼              ▼                    ▼
 Type Proofs    echidna_*.h    Callbacks ◄──►    SSE/WebSocket (planned)

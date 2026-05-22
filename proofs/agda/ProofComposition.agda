@@ -1,4 +1,4 @@
--- SPDX-License-Identifier: PMPL-1.0-or-later
+-- SPDX-License-Identifier: MPL-2.0
 -- ProofComposition.agda — axiom-set consistency for composed proofs.
 --
 -- Simplified version: proves that combining two consistent axiom

@@ -1,4 +1,4 @@
-// SPDX-License-Identifier: PMPL-1.0-or-later
+// SPDX-License-Identifier: MPL-2.0
 // Fault-tolerance primitives for echidna prover backends
 // Includes circuit breakers, retry policies, bulkheads
 

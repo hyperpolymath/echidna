@@ -1,5 +1,5 @@
 K9!
-# SPDX-License-Identifier: PMPL-1.0-or-later
+# SPDX-License-Identifier: MPL-2.0
 # K9 Yard-level template: Configuration with validation
 # Security Level: Yard (Nickel evaluation with contracts)
 # Signature recommended but not required

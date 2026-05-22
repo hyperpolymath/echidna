@@ -396,7 +396,7 @@ We welcome contributions! Please see link:CONTRIBUTING.adoc[CONTRIBUTING.adoc] f
 Dual-licensed under your choice of:
 
 * Palimpsest-MPL License v1.0 (PMPL-1.0)
-* Palimpsest-MPL License v3.0 or later (PMPL-1.0-or-later)
+* Palimpsest-MPL License v3.0 or later (MPL-2.0)
 
 See link:LICENSE-PMPL-1.0[LICENSE-PMPL-1.0] and link:LICENSE-AGPL[LICENSE-AGPL] for details.
 

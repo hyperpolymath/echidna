@@ -1,5 +1,5 @@
 #!/usr/bin/env julia
-# SPDX-License-Identifier: PMPL-1.0-or-later
+# SPDX-License-Identifier: MPL-2.0
 # Extract ProVerif queries from inria/proverif-examples.
 # Vendor: git clone https://gitlab.inria.fr/bblanche/proverif external_corpora/proverif
 using JSON3, Dates

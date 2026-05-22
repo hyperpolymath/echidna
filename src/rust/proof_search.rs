@@ -1,4 +1,4 @@
-// SPDX-License-Identifier: PMPL-1.0-or-later
+// SPDX-License-Identifier: MPL-2.0
 //! Proof search strategies for ECHIDNA
 //!
 //! This module implements pluggable proof search strategies following the

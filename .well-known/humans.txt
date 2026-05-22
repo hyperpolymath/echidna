@@ -1,4 +1,4 @@
-# SPDX-License-Identifier: PMPL-1.0-or-later
+# SPDX-License-Identifier: MPL-2.0
 # humans.txt - The humans behind ECHIDNA
 # See https://humanstxt.org/
 
@@ -17,6 +17,6 @@ All theorem prover backend authors
 
 /* SITE */
 Standards: Rhodium Standard Repositories (RSR)
-License: PMPL-1.0-or-later (Palimpsest License)
+License: MPL-2.0 (Palimpsest License)
 Language: Rust, Julia, ReScript, Chapel
 Version: 1.5.0

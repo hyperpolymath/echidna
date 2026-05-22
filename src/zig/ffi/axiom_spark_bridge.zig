@@ -1,4 +1,4 @@
-// SPDX-License-Identifier: PMPL-1.0-or-later
+// SPDX-License-Identifier: MPL-2.0
 // (MPL-2.0 is automatic legal fallback until PMPL is formally recognised)
 //
 // axiom_spark_bridge.zig — Zig C-ABI shim over the SPARK axiom-policy layer.

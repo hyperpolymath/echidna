@@ -59,7 +59,7 @@
 **The 1,035 .v files are Coq proof files from external_corpora/ — NOT runnable benchmarks.**
 - `external_corpora/CoqGym/` — 6,678 Coq proofs (training/ML corpus data)
 - `proofs/coq/` — 16 project Coq proof files
-- These are NOT V-lang files and NOT benchmark runners
+- These are NOT zig files and NOT benchmark runners
 
 **Real Criterion benchmarks exist in `benches/proof_benchmarks.rs`:**
 - `bench_proof_state_construction` (5 goal-count variants)
@@ -168,9 +168,9 @@ server running on port 8081.)
 
 ## Still Missing
 
-### V-lang prover (6,694 files — ZERO tests)
+### zig prover (6,694 files — ZERO tests)
 - This is Coq formal proof code in external_corpora/ (training data)
-- The "V" extension here means Coq, not V-lang
+- The "V" extension here means Coq, not zig
 - Coq proofs are inherently self-verifying when compiled with coqc
 - No dedicated test infrastructure for the Coq corpus
 - **Status:** Out of scope for this blitz (requires Coq toolchain + significant effort)
@@ -255,5 +255,5 @@ instead of round-tripping through ProofState — remains outstanding.
 ## Priority
 - **CRG C COMPLETE** as of 2026-04-04
 - Next priority: Fix 5 shell issues found by validation
-- V-lang prover testing remains the largest correctness gap but is out of scope
+- zig prover testing remains the largest correctness gap but is out of scope
   until the Coq corpus toolchain is set up in CI

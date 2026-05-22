@@ -1,4 +1,4 @@
-// SPDX-License-Identifier: PMPL-1.0-or-later
+// SPDX-License-Identifier: MPL-2.0
 //! Dafny auto-active verification backend
 #![allow(dead_code)]
 use super::{ProverBackend, ProverConfig, ProverKind};
@@ -21,7 +21,7 @@ impl DafnyBackend {
     /// Generate a minimal valid Dafny program with assertions for the goal and axioms.
     fn to_input_format(&self, state: &ProofState) -> Result<String> {
         let mut s =
-            String::from("// SPDX-License-Identifier: PMPL-1.0-or-later\nmethod EchidnaGoal() {\n");
+            String::from("// SPDX-License-Identifier: MPL-2.0\nmethod EchidnaGoal() {\n");
 
         // Add axioms as assume statements
         for (i, ax) in state.context.axioms.iter().enumerate() {

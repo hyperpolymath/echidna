@@ -1,4 +1,4 @@
-;; SPDX-License-Identifier: PMPL-1.0-or-later
+;; SPDX-License-Identifier: MPL-2.0
 ;; echidna - Guix Package Definition
 ;; Development: guix shell -D -f guix.scm
 ;; Build: guix build -f guix.scm
@@ -85,7 +85,7 @@ and more, with a comprehensive verification pipeline featuring solver integrity
 checking, proof certificate validation, axiom tracking, and confidence scoring.")
     (home-page "https://github.com/hyperpolymath/echidna")
     (license (license:non-copyleft "https://github.com/hyperpolymath/palimpsest-license"
-                                   #:comment "PMPL-1.0-or-later"))))
+                                   #:comment "MPL-2.0"))))
 
 ;; For development shell
 echidna

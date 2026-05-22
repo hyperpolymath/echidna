@@ -1,4 +1,4 @@
-// SPDX-License-Identifier: PMPL-1.0-or-later
+// SPDX-License-Identifier: MPL-2.0
 // Simple performance check for prover backends
 
 use echidna::provers::{ProverConfig, ProverFactory, ProverKind};

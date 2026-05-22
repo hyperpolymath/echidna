@@ -1,5 +1,5 @@
 // SPDX-FileCopyrightText: 2026 Jonathan D.A. Jewell <j.d.a.jewell@open.ac.uk>
-// SPDX-License-Identifier: PMPL-1.0-or-later
+// SPDX-License-Identifier: MPL-2.0
 //
 // ECHIDNA Tentacles FFI — 7-Tentacles Compiler Agent Interface
 //
@@ -8,7 +8,7 @@
 // streaming events to external consumers (PanLL, CLI, etc.).
 //
 // Architecture:
-//   Idris2 ABI (TentaclesForeign.idr) --> Zig FFI (tentacles.zig) --> C-ABI --> V-lang adapter
+//   Idris2 ABI (TentaclesForeign.idr) --> Zig FFI (tentacles.zig) --> C-ABI --> zig adapter
 //
 // Each agent maintains:
 //   - Status (idle/busy/error/disabled)
@@ -360,7 +360,7 @@ export fn echidna_tentacles_broadcast(source_id: c_int, payload_ptr: [*]const u8
     _ = payload_len;
     if (!g_initialised) return ERR_NOT_INIT;
     if (validAgent(source_id) == null) return ERR_INVALID_AGENT;
-    // Broadcast delivery is handled by the consumer (PanLL TEA loop or V-lang adapter).
+    // Broadcast delivery is handled by the consumer (PanLL TEA loop or zig adapter).
     // This FFI call records the intent; actual routing is external.
     return 0;
 }

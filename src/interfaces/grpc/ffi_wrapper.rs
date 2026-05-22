@@ -1,4 +1,4 @@
-// SPDX-License-Identifier: PMPL-1.0-or-later
+// SPDX-License-Identifier: MPL-2.0
 // gRPC FFI Wrapper - Connects gRPC interface to ECHIDNA Rust core via Zig FFI
 
 use anyhow::{anyhow, Result};

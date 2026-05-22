@@ -1,4 +1,4 @@
-# SPDX-License-Identifier: PMPL-1.0-or-later
+# SPDX-License-Identifier: MPL-2.0
 # Solver binary integrity manifest for ECHIDNA
 # SHAKE3-512 hashes of known-good solver binaries
 # Update hashes when upgrading solver versions

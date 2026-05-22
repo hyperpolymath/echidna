@@ -1,4 +1,4 @@
-// SPDX-License-Identifier: PMPL-1.0-or-later
+// SPDX-License-Identifier: MPL-2.0
 // Integration test: fallback_monitor wired to health status tracking
 
 use echidna::core::{Context, Goal, ProofState, Term, Theorem};

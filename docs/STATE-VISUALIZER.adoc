@@ -1,8 +1,8 @@
-// SPDX-License-Identifier: PMPL-1.0-or-later
+// SPDX-License-Identifier: MPL-2.0
 = Project State Visualizer
 [source]
 ----
-<!-- SPDX-License-Identifier: PMPL-1.0-or-later -->
+<!-- SPDX-License-Identifier: MPL-2.0 -->
 <!-- STATE-VISUALIZER.adoc — Project architecture map and completion dashboard -->
 <!-- Last updated: 2026-03-06 -->
 

@@ -1,5 +1,5 @@
 // SPDX-FileCopyrightText: 2026 ECHIDNA Project Team
-// SPDX-License-Identifier: PMPL-1.0-or-later
+// SPDX-License-Identifier: MPL-2.0
 
 //! Synonym table loader — reads `data/synonyms/<prover>.toml` and indexes
 //! it for fast lookup of alternatives given any name in the table.

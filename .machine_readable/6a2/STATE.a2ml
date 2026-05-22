@@ -1,4 +1,4 @@
-# SPDX-License-Identifier: PMPL-1.0-or-later
+# SPDX-License-Identifier: MPL-2.0
 # STATE.a2ml — Project state checkpoint
 # Converted from STATE.scm on 2026-03-15
 
@@ -226,7 +226,7 @@ changes = [
   "Created tests/julia/smoke_test.jl (63 tests): syntax validation for all Julia ML scripts, tokenizer, BOW vectorizer",
   "Created tests/shell/validate_scripts.sh: bash -n syntax check, SPDX check, banned pattern detection, --help smoke",
   "Investigated 9 ignored tests: all legitimately ignored (require ACL2/PVS/HOL4 binaries), comments already present",
-  "Verified benchmark situation: 1035 .v files are Coq proof corpus (external_corpora/), NOT V-lang. Real Criterion benchmarks in benches/proof_benchmarks.rs with 13 functions covering all critical paths",
+  "Verified benchmark situation: 1035 .v files are Coq proof corpus (external_corpora/), NOT zig. Real Criterion benchmarks in benches/proof_benchmarks.rs with 13 functions covering all critical paths",
   "Total Rust tests: 756 passing (was 684), 16 ignored (legitimate — require specific prover binaries)",
   "Julia smoke tests: 63 passing",
   "Shell validation: runs and catches real issues (2 missing SPDX, 3 HTTP URLs)",

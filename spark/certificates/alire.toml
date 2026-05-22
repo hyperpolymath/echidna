@@ -1,7 +1,7 @@
 name        = "certificates_spark"
 description = "SPARK companion for echidna certificates module"
 version     = "0.1.0"
-licenses    = "PMPL-1.0-or-later"
+licenses    = "MPL-2.0"
 maintainers = ["hyperpolymath@users.noreply.github.com"]
 maintainers-logins = ["hyperpolymath"]
 

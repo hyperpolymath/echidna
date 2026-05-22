@@ -1,5 +1,5 @@
 // SPDX-FileCopyrightText: 2026 Jonathan D.A. Jewell <j.d.a.jewell@open.ac.uk>
-// SPDX-License-Identifier: PMPL-1.0-or-later
+// SPDX-License-Identifier: MPL-2.0
 //
 // ECHIDNA Overlay Network FFI — Tor, IPFS, Ethereum
 //
@@ -9,7 +9,7 @@
 //   - Ethereum: Proof certificate timestamping via JSON-RPC (stubbed)
 //
 // Architecture:
-//   Idris2 ABI (Overlay.idr) --> Zig FFI (overlay.zig) --> C-ABI exports --> V-lang adapter
+//   Idris2 ABI (Overlay.idr) --> Zig FFI (overlay.zig) --> C-ABI exports --> zig adapter
 //
 // All functions follow the ECHIDNA convention:
 //   - Return 0 on success, negative on error

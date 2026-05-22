@@ -1,4 +1,4 @@
--- SPDX-License-Identifier: PMPL-1.0-or-later
+-- SPDX-License-Identifier: MPL-2.0
 -- NeSy Assist Testing: Formal contract between neural ranker and symbolic verifier
 
 module NeSyAssistTesting

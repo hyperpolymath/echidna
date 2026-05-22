@@ -1,4 +1,4 @@
-# SPDX-License-Identifier: PMPL-1.0-or-later
+# SPDX-License-Identifier: MPL-2.0
 # SPDX-FileCopyrightText: 2024-2025 Jonathan D.A. Jewell <jonathan.jewell@open.ac.uk>
 #
 # ECHIDNA Full Containerfile - Includes a curated prover set
@@ -135,7 +135,7 @@ COPY guix-channel/echidna.scm /channel/echidna/
 
 # If no guix channel file exists, create a stub
 RUN if [ ! -f /channel/echidna/echidna.scm ]; then \
-    printf ';;; SPDX-License-Identifier: PMPL-1.0-or-later\n\
+    printf ';;; SPDX-License-Identifier: MPL-2.0\n\
 (define-module (echidna)\n\
   #:use-module (guix packages)\n\
   #:use-module (guix build-system cargo)\n\
@@ -187,7 +187,7 @@ FROM docker.io/library/debian:bookworm-slim
 LABEL maintainer="Jonathan D.A. Jewell <jonathan.jewell@open.ac.uk>"
 LABEL org.opencontainers.image.source="https://github.com/hyperpolymath/echidna"
 LABEL org.opencontainers.image.description="ECHIDNA Full - Curated prover set + VeriSimDB + Guix"
-LABEL org.opencontainers.image.licenses="PMPL-1.0-or-later"
+LABEL org.opencontainers.image.licenses="MPL-2.0"
 LABEL org.opencontainers.image.version="1.5.0"
 LABEL org.opencontainers.image.vendor="hyperpolymath"
 

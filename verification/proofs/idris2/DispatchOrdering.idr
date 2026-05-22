@@ -1,4 +1,4 @@
--- SPDX-License-Identifier: PMPL-1.0-or-later
+-- SPDX-License-Identifier: MPL-2.0
 -- DispatchOrdering.idr — proves that the 6-stage dispatch pipeline
 -- (Integrity, Sandbox, Verify, Certs, Axioms, Confidence) executes in a
 -- strictly monotonic order.

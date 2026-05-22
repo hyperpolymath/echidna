@@ -1,4 +1,4 @@
-;; SPDX-License-Identifier: PMPL-1.0-or-later
+;; SPDX-License-Identifier: MPL-2.0
 ;; Guix channel module exporting the echidna package
 (define-module (echidna packages)
   #:use-module (guix packages)
@@ -60,4 +60,4 @@ Assistance) is a trust-hardened neurosymbolic theorem proving platform supportin
 30 prover backends with solver integrity checking and confidence scoring.")
     (home-page "https://github.com/hyperpolymath/echidna")
     (license (license:non-copyleft "https://github.com/hyperpolymath/palimpsest-license"
-                                   #:comment "PMPL-1.0-or-later"))))
+                                   #:comment "MPL-2.0"))))

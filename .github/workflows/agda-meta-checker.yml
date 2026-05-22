@@ -1,4 +1,4 @@
-# SPDX-License-Identifier: PMPL-1.0-or-later
+# SPDX-License-Identifier: MPL-2.0
 # CI workflow for ECHIDNA Agda meta-checker
 # Type-checks all formal proofs verifying trust pipeline correctness
 

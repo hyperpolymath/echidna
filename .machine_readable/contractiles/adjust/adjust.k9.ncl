@@ -1,4 +1,4 @@
-# SPDX-License-Identifier: PMPL-1.0-or-later
+# SPDX-License-Identifier: MPL-2.0
 # adjust.k9.ncl — K9 trust-tier component of the adjust trident
 # Author: Jonathan D.A. Jewell <j.d.a.jewell@open.ac.uk>
 #

@@ -1,4 +1,4 @@
-; SPDX-License-Identifier: PMPL-1.0-or-later
+; SPDX-License-Identifier: MPL-2.0
 ; Melange setup - this would replace package.json/rescript.json
 
 (lang dune 3.14)
