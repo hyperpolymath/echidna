@@ -89,7 +89,7 @@ nalgebra = "0.33"
 
 # Crypto coprocessor.  blake3 already declared above; sha2 was previously
 # gated behind `verisim` — un-gate so the Crypto backend can use it.
-sha2 = "0.10"
+sha2 = "0.11"
 
 # Ed25519 signature verification (Apache-2.0 / MIT, MPL-2.0 compat).
 ed25519-dalek = { version = "2", default-features = false, features = ["std"] }
