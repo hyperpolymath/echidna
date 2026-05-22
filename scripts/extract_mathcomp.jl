@@ -1,5 +1,5 @@
 #!/usr/bin/env julia
-# SPDX-License-Identifier: PMPL-1.0-or-later
+# SPDX-License-Identifier: MPL-2.0
 # Copyright (c) 2026 Jonathan D.A. Jewell (hyperpolymath)
 #
 # Mathematical Components (mathcomp) extractor for ECHIDNA training data.
@@ -212,7 +212,7 @@ function save_results(proof_states, tactics, premises, stats; output_dir="traini
         end
     end
     open(joinpath(output_dir, "stats_mathcomp.a2ml"), "w") do fh
-        println(fh, "# SPDX-License-Identifier: PMPL-1.0-or-later")
+        println(fh, "# SPDX-License-Identifier: MPL-2.0")
         println(fh, "# mathcomp extraction statistics"); println(fh)
         A2MLEmit.write_metadata_table(fh, stats)
     end

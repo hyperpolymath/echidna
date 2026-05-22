@@ -1,5 +1,5 @@
 #!/usr/bin/env julia
-# SPDX-License-Identifier: PMPL-1.0-or-later
+# SPDX-License-Identifier: MPL-2.0
 # SPDX-FileCopyrightText: 2026 ECHIDNA Project Team
 #
 # Extract proofs from Lean mathlib4 corpus and convert to ECHIDNA training format.

@@ -1,4 +1,4 @@
--- SPDX-License-Identifier: PMPL-1.0-or-later
+-- SPDX-License-Identifier: MPL-2.0
 -- IdentityLaws.agda — trivial proofs that compile cleanly against
 -- agda-stdlib v2.3. Exists to exercise the echidnabot agda runner
 -- with a known-good file alongside the pre-existing (broken) corpus.

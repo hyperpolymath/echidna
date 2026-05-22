@@ -8,7 +8,7 @@ This document provides guidelines and context for working with Claude Code on th
 
 **Repository**: https://github.com/hyperpolymath/echidna
 **Version**: 2.3.0
-**License**: PMPL-1.0-or-later
+**License**: MPL-2.0
 
 ## Repository Structure
 
@@ -201,7 +201,7 @@ cargo fmt --check                 # Format check
 - **RSR/CCCP Compliance Required** - follow Rhodium Standard Repository guidelines
 - **Justfile PRIMARY** - never use Make or other build systems
 - **Podman not Docker** - always use Podman for containers
-- **License**: PMPL-1.0-or-later (not AGPL, not dual MIT/Palimpsest)
+- **License**: MPL-2.0 (not AGPL, not dual MIT/Palimpsest)
 - **Author**: Jonathan D.A. Jewell <j.d.a.jewell@open.ac.uk>
 
 ---

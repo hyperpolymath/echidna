@@ -1,12 +1,12 @@
-SPDX-License-Identifier: PMPL-1.0-or-later
+SPDX-License-Identifier: MPL-2.0
 SPDX-FileCopyrightText: 2024-2026 Jonathan D.A. Jewell (hyperpolymath) <j.d.a.jewell@open.ac.uk>
 
 ------------------------------------------------------------------------
-PREFERRED LICENCE: Palimpsest License (PMPL-1.0-or-later)
+PREFERRED LICENCE: Palimpsest License (MPL-2.0)
 ------------------------------------------------------------------------
 
-This work is governed by the Palimpsest License (PMPL-1.0-or-later) as
-its primary intended licence. PMPL-1.0-or-later extends the Mozilla
+This work is governed by the Palimpsest License (MPL-2.0) as
+its primary intended licence. MPL-2.0 extends the Mozilla
 Public License 2.0 (MPL-2.0) with additional provisions for ethical use,
 post-quantum cryptographic provenance, and emotional lineage protection.
 The canonical PMPL text and stewardship information are maintained at:
@@ -16,16 +16,16 @@ The canonical PMPL text and stewardship information are maintained at:
 FALLBACK LICENCE: Mozilla Public License 2.0 (MPL-2.0)
 ------------------------------------------------------------------------
 
-Because PMPL-1.0-or-later is not yet recognised by the Open Source
+Because MPL-2.0 is not yet recognised by the Open Source
 Initiative (OSI) or equivalent bodies, this work also carries MPL-2.0
 as its legally-recognised fallback licence.
 
-In any jurisdiction, platform, or context where PMPL-1.0-or-later is
+In any jurisdiction, platform, or context where MPL-2.0 is
 not accepted as a valid licence, or where an OSI-approved licence is
 required, this work is instead governed by the Mozilla Public License,
 Version 2.0.
 
-MPL-2.0 was chosen as the fallback because PMPL-1.0-or-later is
+MPL-2.0 was chosen as the fallback because MPL-2.0 is
 explicitly based on and extends MPL-2.0; it is therefore the closest
 recognised equivalent to the intended licence.
 

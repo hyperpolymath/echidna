@@ -1,5 +1,5 @@
 %-----------------------------------------------------------------------------
-% SPDX-License-Identifier: PMPL-1.0-or-later
+% SPDX-License-Identifier: MPL-2.0
 % File     : socrates.p
 % Status   : Theorem
 % Claim    : Classical syllogism: all humans are mortal; Socrates is human;

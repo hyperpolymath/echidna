@@ -1,4 +1,4 @@
-# SPDX-License-Identifier: PMPL-1.0-or-later
+# SPDX-License-Identifier: MPL-2.0
 # ECHIDNA Container Image (Stapeln standard)
 #
 # Multi-stage Rust build using Chainguard Wolfi base images.
@@ -39,7 +39,7 @@ LABEL org.opencontainers.image.title="ECHIDNA" \
       org.opencontainers.image.url="https://github.com/hyperpolymath/echidna" \
       org.opencontainers.image.source="https://github.com/hyperpolymath/echidna" \
       org.opencontainers.image.vendor="hyperpolymath" \
-      org.opencontainers.image.licenses="PMPL-1.0-or-later" \
+      org.opencontainers.image.licenses="MPL-2.0" \
       org.opencontainers.image.version="1.5.0" \
       org.opencontainers.image.authors="Jonathan D.A. Jewell <j.d.a.jewell@open.ac.uk>" \
       dev.cerrotorre.manifest="container/manifest.toml" \

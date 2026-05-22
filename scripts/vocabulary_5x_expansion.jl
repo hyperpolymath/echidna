@@ -1,5 +1,5 @@
 #!/usr/bin/env julia
-# SPDX-License-Identifier: PMPL-1.0-or-later
+# SPDX-License-Identifier: MPL-2.0
 # SPDX-FileCopyrightText: 2026 ECHIDNA Project Team
 #
 # vocabulary_5x_expansion.jl — Expand ECHIDNA vocabulary 5× (6,555 → 33,000+)

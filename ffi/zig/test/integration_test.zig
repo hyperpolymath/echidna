@@ -1,5 +1,5 @@
 // SPDX-FileCopyrightText: 2026 Jonathan D.A. Jewell <j.d.a.jewell@open.ac.uk>
-// SPDX-License-Identifier: PMPL-1.0-or-later
+// SPDX-License-Identifier: MPL-2.0
 //
 // ECHIDNA Zig FFI — Comprehensive Integration Tests
 //
@@ -8,7 +8,7 @@
 //   1. Lifecycle Tests          — init/deinit, double-init, prover create/destroy ordering
 //   2. Point-to-Point Tests     — each C-ABI export with valid + invalid inputs
 //   3. End-to-End Tests         — full workflow pipelines
-//   4. Bidirectional Tests      — V-lang style roundtrip, error propagation
+//   4. Bidirectional Tests      — zig style roundtrip, error propagation
 //   5. Edge Case Tests          — buffer limits, zero-length strings, boundary handles
 //   6. Concurrency Tests        — multi-threaded init/create/verify/destroy
 //   7. Memory Safety Tests      — create/destroy loops, leak detection via iteration count
@@ -332,11 +332,11 @@ test "e2e: multiple provers in sequence" {
 }
 
 // ============================================================================
-// 4. Bidirectional Tests (V-lang style roundtrip)
+// 4. Bidirectional Tests (zig style roundtrip)
 // ============================================================================
 
-test "bidi: V-lang REST/gRPC roundtrip pattern" {
-    // Simulates the call pattern used by the V-lang adapter:
+test "bidi: zig REST/gRPC roundtrip pattern" {
+    // Simulates the call pattern used by the zig adapter:
     // init → create → parse_string → verify → export → destroy → deinit
     ensureInit();
 

@@ -1,4 +1,4 @@
--- SPDX-License-Identifier: PMPL-1.0-or-later
+-- SPDX-License-Identifier: MPL-2.0
 -- AxiomMonotonicity.agda — danger-level order and monotonicity of maxDanger.
 --
 -- Models ECHIDNA's 4-tier axiom-danger system (Safe < Noted < Warning < Reject)

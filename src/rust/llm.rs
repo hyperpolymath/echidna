@@ -1,4 +1,4 @@
-// SPDX-License-Identifier: PMPL-1.0-or-later
+// SPDX-License-Identifier: MPL-2.0
 //! Frontier LLM integration for ECHIDNA
 //!
 //! Connects to frontier language models (Claude, GPT-4, etc.) via BoJ Server

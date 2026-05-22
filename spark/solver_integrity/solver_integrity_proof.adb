@@ -1,4 +1,4 @@
--- SPDX-License-Identifier: PMPL-1.0-or-later
+-- SPDX-License-Identifier: MPL-2.0
 --
 -- Proof obligations and gnatprove discharge notes for solver_integrity.
 -- This file compiles to a no-op; all content is documentary.

@@ -1,5 +1,5 @@
 // SPDX-FileCopyrightText: 2026 Jonathan D.A. Jewell <j.d.a.jewell@open.ac.uk>
-// SPDX-License-Identifier: PMPL-1.0-or-later
+// SPDX-License-Identifier: MPL-2.0
 //
 // ECHIDNA BoJ Client FFI — Cartridge Management Interface
 //
@@ -9,7 +9,7 @@
 // running in a BoJ server instance.
 //
 // Architecture:
-//   Idris2 ABI (BojForeign.idr) --> Zig FFI (boj.zig) --> C-ABI exports --> V-lang adapter (port 7700)
+//   Idris2 ABI (BojForeign.idr) --> Zig FFI (boj.zig) --> C-ABI exports --> zig adapter (port 7700)
 //
 // The BoJ server itself lives at hyperpolymath/boj-server with its own ABI+FFI.
 // This module is the ECHIDNA-side client bridge.

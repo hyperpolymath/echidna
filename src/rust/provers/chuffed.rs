@@ -1,4 +1,4 @@
-// SPDX-License-Identifier: PMPL-1.0-or-later
+// SPDX-License-Identifier: MPL-2.0
 //! Chuffed lazy clause generation CP solver backend
 #![allow(dead_code)]
 use super::{ProverBackend, ProverConfig, ProverKind};

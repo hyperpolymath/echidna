@@ -1,5 +1,5 @@
 // SPDX-FileCopyrightText: 2026 ECHIDNA Project Team
-// SPDX-License-Identifier: PMPL-1.0-or-later
+// SPDX-License-Identifier: MPL-2.0
 
 //! ileanCoP backend — connection-method prover for intuitionistic
 //! first-order logic.

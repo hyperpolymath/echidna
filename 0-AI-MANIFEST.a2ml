@@ -1,4 +1,4 @@
-# SPDX-License-Identifier: PMPL-1.0-or-later
+# SPDX-License-Identifier: MPL-2.0
 # SPDX-FileCopyrightText: 2026 Jonathan D.A. Jewell (hyperpolymath)
 #
 # 0-AI-MANIFEST.a2ml — Universal AI Agent Entry Point
@@ -11,7 +11,7 @@ version = "1.1"
 project = "echidna"
 type = "neurosymbolic-theorem-prover"
 full-version = "1.6.0"
-license = "PMPL-1.0-or-later"
+license = "MPL-2.0"
 author = "Jonathan D.A. Jewell <j.d.a.jewell@open.ac.uk>"
 repo = "https://github.com/hyperpolymath/echidna"
 
@@ -86,7 +86,7 @@ invariant-1 = "State files in .machine_readable/ ONLY — never in root"
 invariant-2 = "All interfaces under src/interfaces/ — never extract to separate repos"
 invariant-3 = "When adding provers: update all 3 layers (Rust, Julia, Chapel)"
 invariant-4 = "Original name: 'Cognitive Hybrid' not 'Computational Heuristic'"
-invariant-5 = "PMPL-1.0-or-later throughout"
+invariant-5 = "MPL-2.0 throughout"
 invariant-6 = "Container: Containerfile not Dockerfile, Podman not Docker"
 invariant-7 = "Justfile is primary build system — not Make"
 invariant-8 = "No Python — Julia for ML, Rust for systems, ReScript for apps"

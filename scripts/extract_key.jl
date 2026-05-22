@@ -1,5 +1,5 @@
 #!/usr/bin/env julia
-# SPDX-License-Identifier: PMPL-1.0-or-later
+# SPDX-License-Identifier: MPL-2.0
 # Extract KeY proof problems (Java + JML). Vendor: key-project/key examples.
 using JSON3, Dates
 const DIR = "external_corpora/key/examples"; const OUT = "training_data"; const START_ID = 1_400_000

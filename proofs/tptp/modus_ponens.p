@@ -1,5 +1,5 @@
 %-----------------------------------------------------------------------------
-% SPDX-License-Identifier: PMPL-1.0-or-later
+% SPDX-License-Identifier: MPL-2.0
 % File     : modus_ponens.p
 % Syntax   : TPTP FOF (First-Order Form)
 % Status   : Theorem

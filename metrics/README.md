@@ -1,6 +1,6 @@
 # ECHIDNA metrics suite
 
-<!-- SPDX-License-Identifier: PMPL-1.0-or-later -->
+<!-- SPDX-License-Identifier: MPL-2.0 -->
 
 Measures the cross-prover corpus along eight axes that together bound
 the vocabulary horizon and triangulation capacity. Every metric

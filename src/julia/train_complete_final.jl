@@ -1,6 +1,6 @@
 #!/usr/bin/env julia
 # SPDX-FileCopyrightText: 2026 ECHIDNA Project Team
-# SPDX-License-Identifier: PMPL-1.0-or-later
+# SPDX-License-Identifier: MPL-2.0
 
 """
 COMPLETE FINAL Model Training - Standalone version with all dependencies

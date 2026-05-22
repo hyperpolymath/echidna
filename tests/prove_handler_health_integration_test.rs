@@ -1,4 +1,4 @@
-// SPDX-License-Identifier: PMPL-1.0-or-later
+// SPDX-License-Identifier: MPL-2.0
 // Integration test: prove_handler records health metrics on proof attempts
 
 #[cfg(test)]

@@ -1,4 +1,4 @@
-(* SPDX-License-Identifier: PMPL-1.0-or-later *)
+(* SPDX-License-Identifier: MPL-2.0 *)
 (* neurosymbolicTac.sml — Neurosymbolic tactics for ECHIDNA
  *
  * Provides HOL4 tactics that integrate with ECHIDNA's ML-guided

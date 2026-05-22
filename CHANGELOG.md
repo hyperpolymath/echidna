@@ -151,7 +151,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `echidna_ffi.h` — 23 functions, 5 enums, 2 structs, 4 callback types
 - `echidna_overlay.h`, `echidna_boj.h`, `echidna_typell.h`
 
-#### V-lang REST Adapters
+#### zig REST Adapters
 - Core adapter (ports 8100-8102: REST, gRPC, GraphQL)
 - Overlay adapter (port 8103)
 - BoJ adapter (port 7700)
@@ -162,7 +162,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `TentaclesForeign.idr` — Idris2 ABI definitions for 7-Tentacles agents with dependent type proofs
 - `tentacles.zig` → `libechidna_tentacles.so` — Zig FFI with 7 agent management, OODA loop dispatch, and event callbacks
 - `echidna_tentacles.h` — Generated C header for tentacles agent interface
-- `tentacles.v` — V-lang REST adapter on port 8300 exposing agent management and OODA endpoints
+- `tentacles.v` — zig REST adapter on port 8300 exposing agent management and OODA endpoints
 
 ### Added
 

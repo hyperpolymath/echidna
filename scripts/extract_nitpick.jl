@@ -1,5 +1,5 @@
 #!/usr/bin/env julia
-# SPDX-License-Identifier: PMPL-1.0-or-later
+# SPDX-License-Identifier: MPL-2.0
 # Extract proofs / declarations / Isabelle .thy with nitpick calls from Nitpick (refutation finder).
 # Vendor location: external_corpora/nitpick/
 using JSON3, Dates

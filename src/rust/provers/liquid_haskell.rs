@@ -1,4 +1,4 @@
-// SPDX-License-Identifier: PMPL-1.0-or-later
+// SPDX-License-Identifier: MPL-2.0
 //! Liquid Haskell refinement-types verification backend.
 //!
 //! Liquid Haskell extends GHC with refinement types via the
@@ -34,7 +34,7 @@ impl LiquidHaskellBackend {
     /// Generate a minimal Liquid-Haskell-annotated module for the goal.
     fn to_input_format(&self, state: &ProofState) -> Result<String> {
         let mut s = String::from(
-            "-- SPDX-License-Identifier: PMPL-1.0-or-later\n\
+            "-- SPDX-License-Identifier: MPL-2.0\n\
              {-# LANGUAGE NoImplicitPrelude #-}\n\
              module EchidnaGoal where\n\n\
              import Prelude hiding (Bool)\n\

@@ -1,4 +1,4 @@
-; SPDX-License-Identifier: PMPL-1.0-or-later
+; SPDX-License-Identifier: MPL-2.0
 ; MUST.contractile — Baseline invariants for echidna
 ; These constraints MUST NOT be violated. K9 validators enforce them.
 

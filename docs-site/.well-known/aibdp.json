@@ -4,7 +4,7 @@
   "policies": {
     "training": {
       "status": "Refused",
-      "rationale": "ECHIDNA documentation is licensed under PMPL-1.0-or-later and may not be used for AI model training without explicit permission."
+      "rationale": "ECHIDNA documentation is licensed under MPL-2.0 and may not be used for AI model training without explicit permission."
     },
     "indexing": {
       "status": "Allowed",
@@ -32,5 +32,5 @@
     }
   },
   "contact": "jonathan.jewell@open.ac.uk",
-  "license": "PMPL-1.0-or-later"
+  "license": "MPL-2.0"
 }

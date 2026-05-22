@@ -1,4 +1,4 @@
-// SPDX-License-Identifier: PMPL-1.0-or-later
+// SPDX-License-Identifier: MPL-2.0
 //! GNATprove (SPARK/Ada) auto-active verification backend.
 //!
 //! GNATprove is the SPARK toolset's verifier — it discharges proof
@@ -40,11 +40,11 @@ impl GNATproveBackend {
     /// goal is wired as a procedure post-condition so GNATprove proves it.
     fn to_input_format(&self, state: &ProofState) -> Result<(String, String)> {
         let mut spec = String::from(
-            "-- SPDX-License-Identifier: PMPL-1.0-or-later\n\
+            "-- SPDX-License-Identifier: MPL-2.0\n\
              package Echidna_Goal with SPARK_Mode => On is\n",
         );
         let mut body = String::from(
-            "-- SPDX-License-Identifier: PMPL-1.0-or-later\n\
+            "-- SPDX-License-Identifier: MPL-2.0\n\
              package body Echidna_Goal with SPARK_Mode => On is\n",
         );
 
@@ -291,7 +291,7 @@ fn split_ada_source(src: &str) -> (String, String) {
 }
 
 const MIN_GPR: &str = "\
--- SPDX-License-Identifier: PMPL-1.0-or-later
+-- SPDX-License-Identifier: MPL-2.0
 project Echidna_Goal is
    for Source_Dirs use (\".\");
    for Object_Dir  use \"obj\";

@@ -1,4 +1,4 @@
-; SPDX-License-Identifier: PMPL-1.0-or-later
+; SPDX-License-Identifier: MPL-2.0
 ; TRUST.contractile — Trust boundaries for echidna
 ; Defines what LLM/SLM agents are trusted to do without asking.
 

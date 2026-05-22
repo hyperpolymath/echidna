@@ -1,10 +1,10 @@
 // SPDX-FileCopyrightText: 2026 Jonathan D.A. Jewell <j.d.a.jewell@open.ac.uk>
-// SPDX-License-Identifier: PMPL-1.0-or-later
+// SPDX-License-Identifier: MPL-2.0
 //
 // ECHIDNA FFI Build Configuration (Zig 0.15.2)
 //
 // Builds:
-//   - libechidna_ffi.so     (shared library for V-lang / other consumers)
+//   - libechidna_ffi.so     (shared library for zig / other consumers)
 //   - libechidna_ffi.a      (static library)
 //   - libechidna_overlay.so (Tor/IPFS/Ethereum overlay networks)
 //   - libechidna_overlay.a  (static overlay library)

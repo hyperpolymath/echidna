@@ -1,5 +1,5 @@
 #!/usr/bin/env julia
-# SPDX-License-Identifier: PMPL-1.0-or-later
+# SPDX-License-Identifier: MPL-2.0
 # Extract Frama-C / ACSL proof obligations from the Frama-C tests + WP tutorials.
 # Vendor: git clone https://git.frama-c.com/pub/frama-c external_corpora/frama-c
 using JSON3, Dates
