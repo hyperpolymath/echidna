@@ -1,6 +1,10 @@
 # SPDX-License-Identifier: MPL-2.0
 # Clade declaration — part of the gv-clade-index registry
-# See: https://github.com/hyperpolymath/gv-clade-index
+
+[manifest]
+version = "1.1"
+project = "echidna"
+type = "clade-declaration"
 
 [identity]
 uuid = "6bab4e6b-e028-5e31-a5d8-d46c9359669b"

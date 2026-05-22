@@ -10,6 +10,11 @@
 #   3. echidnabot's `repositories.mode` DB column
 #   4. BotMode::default() = Verifier
 
+[manifest]
+version = "1.1"
+project = "echidnabot"
+type = "bot-directive"
+
 [metadata]
 version = "1.0.0"
 last-updated = "2026-04-25"

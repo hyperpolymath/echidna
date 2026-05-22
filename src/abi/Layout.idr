@@ -5,7 +5,7 @@
 |||
 ||| Formal proofs about memory layout, alignment, and padding for the
 ||| C-compatible FFI structs defined in src/rust/ffi/mod.rs. Every layout
-||| assertion is backed by a constructive proof (no believe_me).
+||| assertion is backed by a constructive proof (no believe-me).
 |||
 ||| Reference structs (Rust repr(C)):
 |||   FfiStringSlice    — ptr(8) + len(8)              = 16 bytes, align 8
@@ -76,7 +76,7 @@ data DivisibleBy : (a : Nat) -> (b : Nat) -> Type where
 
 ||| A verified struct layout: fields + size + alignment + proof that
 ||| the total size is a multiple of the alignment. The proof is checked
-||| at construction time via Refl, ensuring correctness without believe_me.
+||| at construction time via Refl, ensuring correctness without believe-me.
 public export
 record VerifiedLayout (n : Nat) where
   constructor MkVerifiedLayout

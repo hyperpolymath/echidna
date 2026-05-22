@@ -90,7 +90,7 @@ impl AgdaBackend {
                 body: Box::new(self.agda_to_term(body)),
             },
             AgdaTerm::Set(level) => Term::Universe(*level),
-            AgdaTerm::Hole(name) => Term::Meta(name.parse().unwrap_or(0)),
+            AgdaTerm::Hole(name) => Term::Meta(name.parse().unwrap_or_else(|_| 0)),
         }
     }
 

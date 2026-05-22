@@ -17,7 +17,7 @@ let component_pedigree = {
     min_memory_mb = 512,
   },
   security = {
-    trust_level = 'Hunt,
+    leash = 'Hunt,
     allow_network = true,
     allow_filesystem_write = true,
     allow_subprocess = true,

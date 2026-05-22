@@ -43,7 +43,7 @@
 -- Meta, ProverSpecific) follow the same structural pattern and can be
 -- added without changing the proof strategy.
 --
--- Zero believe_me.  All proofs are constructive (Refl / structural
+-- Zero believe-me.  All proofs are constructive (Refl / structural
 -- induction / congruence).  No external libraries beyond `base`.
 
 module ProofStateSerialisation
@@ -531,7 +531,7 @@ decodeProofState _ = Nothing
 |||   5. Both sub-decoders return Just ⟹ Just (MkProofState gs ctx). QED.
 |||
 ||| The proof is fully constructive: structural induction + rewriting.
-||| Zero believe_me, zero sorry, zero assert_total.
+||| Zero believe-me, zero sorry, zero assert-total.
 public export
 proofStateRoundtrip : (ps : ProofState)
                     -> decodeProofState (encodeProofState ps) = Just ps

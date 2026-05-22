@@ -163,7 +163,7 @@ fn build_isabelle_temp_dir(tag: &str) -> Result<std::path::PathBuf> {
     let nanos = std::time::SystemTime::now()
         .duration_since(std::time::UNIX_EPOCH)
         .map(|d| d.as_nanos())
-        .unwrap_or(0);
+        .unwrap_or_else(|_| 0);
     Ok(std::env::temp_dir().join(format!(
         "echidna_isabelle_{}_{}_{}",
         tag,

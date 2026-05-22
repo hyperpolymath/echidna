@@ -8,7 +8,7 @@
 ||| mirror the Rust core (src/rust/core.rs, provers/mod.rs, ffi/mod.rs,
 ||| dispatch.rs) and carry compile-time correctness guarantees.
 |||
-||| NO believe_me — every proof is constructive (Refl or witness).
+||| NO believe-me — every proof is constructive (Refl or witness).
 
 module EchidnaABI.Types
 

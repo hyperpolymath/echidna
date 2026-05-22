@@ -11,7 +11,7 @@
 --   Red=Parser, Orange=Concurrency, Yellow=TypeSystem, Green=ASTArchitect,
 --   Blue=Auditor, Indigo=Metaprogrammer, Violet=Governance
 --
--- NO believe_me anywhere. All safety is enforced by types.
+-- NO believe-me anywhere. All safety is enforced by types.
 
 module Tentacles.Foreign
 

@@ -73,7 +73,7 @@ deepen-not-broaden = true
 rules = [
   # Customise per project. Examples:
   # "Idris2 only for formal verification — no Lean4, Coq, Agda",
-  # "believe_me count must remain zero",
+  # "believe-me count must remain zero",
   # "FFI architecture: Idris2 → RefC → Zig → C ABI (no shortcuts)",
 ]
 

@@ -255,12 +255,6 @@
     "severity": "critical",
     "rule_module": "structural_drift",
     "type": "SD008",
-    "file": "src/abi/EchidnaABI/AxiomTracker.idr"
-  },
-  {
-    "severity": "critical",
-    "rule_module": "structural_drift",
-    "type": "SD008",
     "file": "src/abi/EchidnaABI/CapnSchemas.idr"
   },
   {
@@ -1227,13 +1221,13 @@
     "severity": "high",
     "rule_module": "code_safety",
     "type": "unwrap_without_check",
-    "file": "src/rust/provers/mizar_ar.rs"
+    "file": "src/rust/provers/mizar.rs"
   },
   {
     "severity": "high",
     "rule_module": "code_safety",
     "type": "unwrap_without_check",
-    "file": "src/rust/provers/mizar.rs"
+    "file": "src/rust/provers/mizar_ar.rs"
   },
   {
     "severity": "high",
@@ -1371,13 +1365,13 @@
     "severity": "high",
     "rule_module": "code_safety",
     "type": "unwrap_without_check",
-    "file": "src/rust/provers/uppaal_stratego.rs"
+    "file": "src/rust/provers/uppaal.rs"
   },
   {
     "severity": "high",
     "rule_module": "code_safety",
     "type": "unwrap_without_check",
-    "file": "src/rust/provers/uppaal.rs"
+    "file": "src/rust/provers/uppaal_stratego.rs"
   },
   {
     "severity": "high",
@@ -1557,18 +1551,6 @@
     "severity": "high",
     "rule_module": "migration_rules",
     "type": "deprecated_api",
-    "file": "echidna-playground/src/PlaygroundServer.res"
-  },
-  {
-    "severity": "high",
-    "rule_module": "migration_rules",
-    "type": "deprecated_api",
-    "file": "echidna-playground/src/Server.res"
-  },
-  {
-    "severity": "high",
-    "rule_module": "migration_rules",
-    "type": "deprecated_api",
     "file": "echidna-playground/src/Server.res"
   },
   {
@@ -1581,36 +1563,6 @@
     "severity": "high",
     "rule_module": "migration_rules",
     "type": "deprecated_api",
-    "file": "src/provers/clients/LeanTool.res"
-  },
-  {
-    "severity": "high",
-    "rule_module": "migration_rules",
-    "type": "deprecated_api",
-    "file": "src/provers/clients/LeanTool.res"
-  },
-  {
-    "severity": "high",
-    "rule_module": "migration_rules",
-    "type": "deprecated_api",
-    "file": "src/provers/clients/Metamath.res"
-  },
-  {
-    "severity": "high",
-    "rule_module": "migration_rules",
-    "type": "deprecated_api",
-    "file": "src/provers/clients/Metamath.res"
-  },
-  {
-    "severity": "high",
-    "rule_module": "migration_rules",
-    "type": "deprecated_api",
-    "file": "src/provers/clients/Metamath.res"
-  },
-  {
-    "severity": "high",
-    "rule_module": "migration_rules",
-    "type": "deprecated_api",
     "file": "src/provers/clients/Metamath.res"
   },
   {
@@ -1618,24 +1570,6 @@
     "rule_module": "migration_rules",
     "type": "deprecated_api",
     "file": "src/provers/clients/SystemOnTptp.res"
-  },
-  {
-    "severity": "high",
-    "rule_module": "migration_rules",
-    "type": "deprecated_api",
-    "file": "src/provers/clients/SystemOnTptp.res"
-  },
-  {
-    "severity": "high",
-    "rule_module": "migration_rules",
-    "type": "deprecated_api",
-    "file": "src/provers/clients/SystemOnTptp.res"
-  },
-  {
-    "severity": "high",
-    "rule_module": "migration_rules",
-    "type": "deprecated_api",
-    "file": "src/provers/clients/Unified.res"
   },
   {
     "severity": "high",
@@ -1648,18 +1582,6 @@
     "rule_module": "migration_rules",
     "type": "deprecated_api",
     "file": "src/provers/clients/UnifiedTest.res"
-  },
-  {
-    "severity": "high",
-    "rule_module": "migration_rules",
-    "type": "deprecated_api",
-    "file": "src/provers/clients/Wolfram.res"
-  },
-  {
-    "severity": "high",
-    "rule_module": "migration_rules",
-    "type": "deprecated_api",
-    "file": "src/provers/clients/Wolfram.res"
   },
   {
     "severity": "high",
@@ -1701,25 +1623,13 @@
     "severity": "high",
     "rule_module": "migration_rules",
     "type": "deprecated_api",
-    "file": "src/provers/types/ProverTest.res"
-  },
-  {
-    "severity": "high",
-    "rule_module": "migration_rules",
-    "type": "deprecated_api",
     "file": "src/provers/utils/Http.res"
   },
   {
     "severity": "high",
     "rule_module": "migration_rules",
     "type": "deprecated_api",
-    "file": "src/provers/utils/Http.res"
-  },
-  {
-    "severity": "high",
-    "rule_module": "migration_rules",
-    "type": "deprecated_api",
-    "file": "src/provers/utils/Http.res"
+    "file": "src/rescript/src/Main.res"
   },
   {
     "severity": "high",
@@ -1767,12 +1677,6 @@
     "severity": "high",
     "rule_module": "migration_rules",
     "type": "deprecated_api",
-    "file": "src/rescript/src/Main.res"
-  },
-  {
-    "severity": "high",
-    "rule_module": "migration_rules",
-    "type": "deprecated_api",
     "file": "src/rescript/src/state/Store.res"
   },
   {
@@ -1780,6 +1684,12 @@
     "rule_module": "workflow_audit",
     "type": "download_then_run",
     "file": "mirror.yml"
+  },
+  {
+    "severity": "high",
+    "rule_module": "workflow_audit",
+    "type": "missing_workflow",
+    "file": "quality.yml"
   },
   {
     "severity": "high",
