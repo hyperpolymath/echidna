@@ -17,7 +17,7 @@
 --                            under the policy danger ordering
 --
 -- Axiom lists are abstracted as List String (matching AxiomUsage.construct).
--- All proofs by structural induction / case analysis. Zero believe_me.
+-- All proofs by structural induction / case analysis. Zero believe-me.
 
 module AxiomPolicyOrdering
 

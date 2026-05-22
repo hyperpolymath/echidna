@@ -11,7 +11,7 @@
 --   2. A safe Idris2 wrapper with proper error handling
 --   3. Return type mapped to OverlayStatus or Int (0 = success, negative = error)
 --
--- NO believe_me anywhere. All safety is enforced by types.
+-- NO believe-me anywhere. All safety is enforced by types.
 
 module Overlay.Foreign
 

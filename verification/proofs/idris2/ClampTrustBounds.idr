@@ -19,7 +19,7 @@
 -- TrustLevel is a 5-constructor data type.
 -- trustValue : TrustLevel → Nat encodes the numeric value 1..5.
 -- clamp_trust : Nat → TrustLevel is defined by guarded cases.
--- All proofs by case-split + decidability on Nat. Zero believe_me.
+-- All proofs by case-split + decidability on Nat. Zero believe-me.
 
 module ClampTrustBounds
 

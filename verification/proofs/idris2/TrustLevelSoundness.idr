@@ -16,7 +16,7 @@
 -- Any attempt to claim a higher trust level for a Reject-axiom proof
 -- is a type error.
 --
--- Zero believe_me. All proofs are constructive.
+-- Zero believe-me. All proofs are constructive.
 
 module TrustLevelSoundness
 
