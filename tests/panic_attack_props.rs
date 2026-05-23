@@ -472,7 +472,7 @@ mod prover_kind_props {
         #[test]
         fn prop_tier_in_bounds(kind in arb_prover_kind()) {
             let tier = kind.tier();
-            prop_assert!(tier >= 1 && tier <= 10,
+            prop_assert!((1..=10).contains(&tier),
                 "tier() returned {} for {:?}, expected 1..=10", tier, kind);
         }
     }
@@ -481,7 +481,7 @@ mod prover_kind_props {
         #[test]
         fn prop_complexity_in_bounds(kind in arb_prover_kind()) {
             let c = kind.complexity();
-            prop_assert!(c >= 1 && c <= 5,
+            prop_assert!((1..=5).contains(&c),
                 "complexity() returned {} for {:?}, expected 1..=5", c, kind);
         }
     }

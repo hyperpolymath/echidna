@@ -976,7 +976,7 @@ fn hash_provenance_record(
         timestamp,
         serde_json::to_string(data).unwrap_or_default(),
     );
-    format!("{:x}", Sha256::digest(input.as_bytes()))
+    crate::corpus::octad::to_hex(Sha256::digest(input.as_bytes()))
 }
 
 /// Base64-encode bytes (no padding, URL-safe).

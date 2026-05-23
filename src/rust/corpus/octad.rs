@@ -355,7 +355,7 @@ fn axiom_usage_from_tensor(t: &DeclTensor) -> super::AxiomUsage {
     }
 }
 
-fn to_hex(bytes: impl AsRef<[u8]>) -> String {
+pub(crate) fn to_hex(bytes: impl AsRef<[u8]>) -> String {
     use std::fmt::Write;
     let bytes = bytes.as_ref();
     let mut s = String::with_capacity(bytes.len() * 2);

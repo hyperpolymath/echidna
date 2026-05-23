@@ -52,7 +52,7 @@ pub fn proof_identity(theorem_name: &str, goal: &Goal, prover: ProverKind) -> St
         prover,
     );
     let hash = Sha256::digest(input.as_bytes());
-    format!("{:x}", hash)
+    crate::corpus::octad::to_hex(hash)
 }
 
 /// Generate a goal-only identity (prover-agnostic).
@@ -62,7 +62,7 @@ pub fn proof_identity(theorem_name: &str, goal: &Goal, prover: ProverKind) -> St
 pub fn goal_identity(theorem_name: &str, goal: &Goal) -> String {
     let input = format!("echidna:v1:goal:{}:{}", theorem_name, goal.target,);
     let hash = Sha256::digest(input.as_bytes());
-    format!("{:x}", hash)
+    crate::corpus::octad::to_hex(hash)
 }
 
 /// Generate a session identity for ephemeral proof attempts.
@@ -72,7 +72,7 @@ pub fn goal_identity(theorem_name: &str, goal: &Goal) -> String {
 pub fn session_identity(goal_id: &str, timestamp: i64) -> String {
     let input = format!("echidna:v1:session:{}:{}", goal_id, timestamp,);
     let hash = Sha256::digest(input.as_bytes());
-    format!("{:x}", hash)
+    crate::corpus::octad::to_hex(hash)
 }
 
 /// Estimate the CBOR-encoded size of a ProofState without allocating.
