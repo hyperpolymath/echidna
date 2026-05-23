@@ -66,7 +66,8 @@ No build step is required.
 
 ## Beyond the core 12
 
-`ProverKind::all()` lists 67 additional backends with full
+`ProverKind::all()` lists 67 additional backends (79 total — 12 core
+plus 67 extended) with full
 `ProverBackend` trait implementations (real subprocess invocation, not
 stubs), spanning interactive provers (Idris2, Lean3, F\*), first-order
 ATPs (Vampire, E, SPASS), constraint/SAT solvers (MiniSat, CaDiCaL,
@@ -87,7 +88,7 @@ backends through the REST API, edit `src/rust/provers/mod.rs:689` and
 add the relevant `ProverKind` variants to `all_core()`.
 
 The full `ProverKind` enum has 141 variants. The delta between 141 and
-67 covers dialect variants (e.g. `Lean3` alongside `Lean`, `Rocq`
+79 covers dialect variants (e.g. `Lean3` alongside `Lean`, `Rocq`
 alongside `Coq`, `IsabelleZF` alongside `Isabelle`) and experimental
 adapters not yet promoted to the canonical roster. They have
 implementation files but are not exercised by the default test suite.

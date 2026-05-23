@@ -5,7 +5,7 @@
 
 image:https://img.shields.io/badge/OpenSSF-Best_Practices-green?logo=opensourcesecurity[OpenSSF Best Practices,link="https://www.bestpractices.dev/en/projects/new?repo_url=https://github.com/hyperpolymath/echidna"]
 image:https://img.shields.io/badge/License-PMPL--1.0-blue.svg[License: PMPL-1.0,link="https://github.com/hyperpolymath/palimpsest-license"]
-image:https://img.shields.io/badge/Provers-12_core_/_67_advertised-green.svg[Provers: 12 core / 67 advertised]
+image:https://img.shields.io/badge/Provers-12_core_/_79_advertised-green.svg[Provers: 12 core / 79 advertised]
 image:https://img.shields.io/badge/Tests-1059-brightgreen.svg[Tests: 1059]
 image:https://api.thegreenwebfoundation.org/greencheckimage/nesy-prover.dev[Green Hosting,link="https://www.thegreenwebfoundation.org/green-web-check/?url=nesy-prover.dev"]
 
@@ -19,7 +19,7 @@ backend implementations.
 
 ECHIDNA's `ProverKind` enum has 141 variants and the repository ships
 102 backend implementation files. The advertised roster
-(`ProverKind::all()`) is 67 backends. The REST API
+(`ProverKind::all()`) is 79 backends. The REST API
 (`GET /api/provers`) exposes the 12-prover **core** set
 (`ProverKind::all_core()`) by default. See
 link:docs/SUPPORTED_PROVERS.md[`docs/SUPPORTED_PROVERS.md`] for the
@@ -60,7 +60,7 @@ The 12-prover **core** set exposed via `GET /api/provers`:
 * *SMT solvers*: Z3, CVC5
 * *Pure-Rust in-process*: Metamath (no external binary needed)
 
-`ProverKind::all()` advertises a further 55 backends including
+`ProverKind::all()` advertises a further 67 backends including
 interactive provers (Idris2, Lean3, F\*, Rocq), first-order ATPs
 (Vampire, E Prover, SPASS, iProver, Prover9, Zipperposition),
 SAT/SMT (CaDiCaL, Kissat, MiniSat, OpenSMT, SmtRat, AltErgo, dReal,
