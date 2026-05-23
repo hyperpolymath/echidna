@@ -105,8 +105,8 @@ struct Adopt<S> {
 fn lex_better(a: &[i64], b: &[i64]) -> bool {
     let n = a.len().max(b.len());
     for i in 0..n {
-        let ai = a.get(i).copied().unwrap_or_else(|| 0);
-        let bi = b.get(i).copied().unwrap_or_else(|| 0);
+        let ai = a.get(i).copied().unwrap_or(0);
+        let bi = b.get(i).copied().unwrap_or(0);
         if ai < bi {
             return true;
         }
@@ -123,8 +123,8 @@ fn lex_strictly_better_by(a: &[i64], b: &[i64], threshold: i64) -> bool {
     // qualifies; for threshold > 0, the gap must reach that size.
     let n = a.len().max(b.len());
     for i in 0..n {
-        let ai = a.get(i).copied().unwrap_or_else(|| 0);
-        let bi = b.get(i).copied().unwrap_or_else(|| 0);
+        let ai = a.get(i).copied().unwrap_or(0);
+        let bi = b.get(i).copied().unwrap_or(0);
         if ai < bi {
             return (bi - ai) >= threshold;
         }
@@ -142,8 +142,8 @@ fn delta_scalar(from: &[i64], to: &[i64]) -> f64 {
     let n = from.len().max(to.len());
     let mut delta = 0.0;
     for i in 0..n {
-        let f = from.get(i).copied().unwrap_or_else(|| 0) as f64;
-        let t = to.get(i).copied().unwrap_or_else(|| 0) as f64;
+        let f = from.get(i).copied().unwrap_or(0) as f64;
+        let t = to.get(i).copied().unwrap_or(0) as f64;
         let w = (1000_f64).powi((n - i - 1) as i32);
         delta += w * (t - f);
     }
@@ -247,7 +247,7 @@ where
                 if neighbours.is_empty() {
                     break;
                 }
-                let pick = rng.gen_range(0..neighbours.len());
+                let pick = rng.random_range(0..neighbours.len());
                 let cand = neighbours[pick].clone();
                 let cand_e = problem.energy(&cand);
 
@@ -256,7 +256,7 @@ where
                 } else {
                     let de = delta_scalar(&current_e, &cand_e);
                     let p: f64 = (-de / temp).exp();
-                    rng.gen::<f64>() < p
+                    rng.random::<f64>() < p
                 };
 
                 if accept {

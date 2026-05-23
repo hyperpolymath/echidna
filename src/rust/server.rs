@@ -947,7 +947,11 @@ async fn get_session_state(
     let session = session.lock().await;
 
     Ok(Json(SessionStateResponse {
-        goals: session.state.as_ref().map(|s| s.goals.len()).unwrap_or_else(|| 0),
+        goals: session
+            .state
+            .as_ref()
+            .map(|s| s.goals.len())
+            .unwrap_or_else(|| 0),
         complete: session
             .state
             .as_ref()

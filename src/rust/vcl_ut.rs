@@ -398,7 +398,7 @@ impl QueryExecutor {
                         .get("safety_report")
                         .and_then(|sr| sr.get("max_level"))
                         .and_then(|ml| ml.as_u64())
-                        .unwrap_or_else(|| 0);
+                        .unwrap_or(0);
 
                     let valid = body.get("valid").and_then(|v| v.as_bool()).unwrap_or(true);
 
@@ -803,7 +803,10 @@ fn search_result_to_entry(value: &serde_json::Value) -> Option<QueryResultEntry>
             .and_then(|v| v.as_str())
             .unwrap_or("unknown")
             .to_string(),
-        time_ms: value.get("time_ms").and_then(|v| v.as_u64()).unwrap_or_else(|| 0),
+        time_ms: value
+            .get("time_ms")
+            .and_then(|v| v.as_u64())
+            .unwrap_or_else(|| 0),
         aspects: value
             .get("aspects")
             .or_else(|| value.get("document").and_then(|d| d.get("aspects")))

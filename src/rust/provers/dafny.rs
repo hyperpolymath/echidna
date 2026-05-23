@@ -20,8 +20,7 @@ impl DafnyBackend {
 
     /// Generate a minimal valid Dafny program with assertions for the goal and axioms.
     fn to_input_format(&self, state: &ProofState) -> Result<String> {
-        let mut s =
-            String::from("// SPDX-License-Identifier: MPL-2.0\nmethod EchidnaGoal() {\n");
+        let mut s = String::from("// SPDX-License-Identifier: MPL-2.0\nmethod EchidnaGoal() {\n");
 
         // Add axioms as assume statements
         for (i, ax) in state.context.axioms.iter().enumerate() {

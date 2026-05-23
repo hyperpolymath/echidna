@@ -104,7 +104,7 @@ fn render_proof_graph(nodes: &[(String, String)], edges: &[(String, String)]) ->
     }
     // Compute approximate depth: longest incoming edge chain (BFS from sources).
     let depths = compute_depths(nodes, edges);
-    let row_count = (depths.iter().copied().max().unwrap_or_else(|| 0) + 1) as usize;
+    let row_count = (depths.iter().copied().max().unwrap_or(0) + 1) as usize;
     let cell_w = 160usize;
     let cell_h = 60usize;
     let width = cell_w * n.max(1);
