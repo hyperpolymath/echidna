@@ -29,6 +29,7 @@ using LinearAlgebra
 
 # Reference to global GNN model (loaded at server startup)
 const GNN_MODEL = Ref{Any}(nothing)
+const GNN_MODEL_PATH = Ref{Union{Nothing,String}}(nothing)
 const GNN_VOCAB = Ref{Any}(nothing)
 
 # Per-(prover, domain) success-rate weights pushed from Rust via
@@ -64,6 +65,7 @@ function load_gnn_model(models_dir::String)
         try
             solver = load_solver(model_path)
             GNN_MODEL[] = solver
+            GNN_MODEL_PATH[] = model_path
             @info "GNN model loaded successfully from $model_path"
             return true
         catch e
@@ -74,6 +76,7 @@ function load_gnn_model(models_dir::String)
     # All candidates exhausted — cosine fallback is genuine missing-model path.
     @warn "No trained GNN model found in $(joinpath(models_dir, "neural")) — ranking will use cosine similarity until weights are trained (run: just train-cpu)"
     GNN_MODEL[] = nothing
+    GNN_MODEL_PATH[] = nothing
     return false
 end
 
@@ -360,9 +363,12 @@ function handle_gnn_health(req::HTTP.Request)
     response = Dict(
         "status" => "ok",
         "gnn_model_loaded" => model_loaded,
+        "model_path" => model_loaded ? GNN_MODEL_PATH[] : nothing,
+        "vocab_size" => model_loaded ? length(GNN_VOCAB[]) : 0,
+        "training_records_received" => TOTAL_TRAINING_RECORDS[],
         "num_gnn_layers" => model_loaded ? 4 : 0,
         "service" => "echidna-gnn",
-        "version" => "2.1.0"
+        "version" => "2.1.0",
     )
 
     return HTTP.Response(200, JSON3.write(response))

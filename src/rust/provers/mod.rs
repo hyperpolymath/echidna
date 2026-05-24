@@ -1516,7 +1516,7 @@ pub(crate) async fn gnn_augment_tactics(
     use crate::gnn::graph::ProofGraphBuilder;
 
     let graph = ProofGraphBuilder::new(4).build_from_proof_state(state);
-    let gnn = GnnClient::with_config(GnnConfig {
+    let mut gnn = GnnClient::with_config(GnnConfig {
         api_url: url,
         timeout_ms: 2000,
         top_k: 8,
@@ -1530,6 +1530,11 @@ pub(crate) async fn gnn_augment_tactics(
     // so Julia's /gnn/rank can apply per-domain weights from prior outcomes.
     // When metadata has no "aspects" key (e.g. direct REPL invocation), aspects
     // is empty and behaviour is identical to the no-hint path.
+    // Ping the server so rank_premises_with_aspects sees server_available = true.
+    // Graceful: if check_health errors (server down), gnn.server_available stays
+    // false and rank_premises_with_aspects returns empty — no disruption to callers.
+    let _ = gnn.check_health().await;
+
     let aspects: Vec<String> = state
         .metadata
         .get("aspects")
