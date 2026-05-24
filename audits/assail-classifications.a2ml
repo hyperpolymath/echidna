@@ -1,12 +1,17 @@
-# identity: echidna-assail-classifications
-; SPDX-License-Identifier: MPL-2.0
-; Copyright (c) 2026 Jonathan D.A. Jewell (hyperpolymath) <j.d.a.jewell@open.ac.uk>
-;
-; Classification registry for panic-attack assail findings that are confirmed
-; legitimate patterns and should not be treated as actionable weak-points.
-;
-; Format mirrors the panic-attack user-classification registry protocol.
-; Cross-reference: audits/audit-ffi-boundary.md
+# SPDX-License-Identifier: MPL-2.0
+# Copyright (c) 2026 Jonathan D.A. Jewell (hyperpolymath) <j.d.a.jewell@open.ac.uk>
+#
+# Classification registry for panic-attack assail findings that are confirmed
+# legitimate patterns and should not be treated as actionable weak-points.
+#
+# Format mirrors the panic-attack user-classification registry protocol.
+# Cross-reference: audits/audit-ffi-boundary.md
+
+[metadata]
+name = "echidna-assail-classifications"
+project = "echidna"
+version = "1.0.0"
+schema_version = "1.0.0"
 
 (assail-classifications
 

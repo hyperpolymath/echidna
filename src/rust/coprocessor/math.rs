@@ -384,7 +384,9 @@ fn fib_fast_doubling(n: u64) -> BigUint {
         let (a, b) = helper(n / 2);
         let c = &a * (BigUint::from(2u32) * &b - &a);
         let d = &a * &a + &b * &b;
-        if n.is_multiple_of(2) {
+        // MSRV 1.85: cannot use `u64::is_multiple_of` (stabilised in 1.87).
+        #[allow(clippy::manual_is_multiple_of)]
+        if n % 2 == 0 {
             (c, d)
         } else {
             let e = &c + &d;

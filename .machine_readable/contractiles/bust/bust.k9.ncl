@@ -51,6 +51,10 @@ let base    = import "../_base.ncl" in
       allow_filesystem_write = true,      # drills may write transient state (tmp dirs, test DBs)
       allow_subprocess = true,
       injection_scope = 'system_under_test_only,
+      # Hunt-tier files must declare whether a cryptographic signature
+      # is required. Bust trident runs in CI on every PR; signatures
+      # are enforced at the trident-runner layer, not in-band.
+      signature_required = true,
     },
   },
 

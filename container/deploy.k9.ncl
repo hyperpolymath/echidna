@@ -3,6 +3,16 @@ K9!
 # deploy.k9.ncl — ECHIDNA deployment component (Hunt level)
 
 let component_pedigree = {
+  # Top-level identity fields — duplicated from metadata so the K9
+  # validator (which inspects the literal `pedigree = { ... }` block
+  # at the toplevel of the file rather than the resolved Nickel value)
+  # can locate name / version / security_level without resolving the
+  # `component_pedigree` indirection.
+  name = "echidna-deploy",
+  version = "1.5.0",
+  schema_version = "1.0.0",
+  security_level = 'Hunt,
+  signature_required = true,
   metadata = {
     name = "echidna-deploy",
     version = "1.5.0",
