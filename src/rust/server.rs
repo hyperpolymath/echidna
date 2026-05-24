@@ -338,6 +338,8 @@ async fn agent_plan_handler(
 ///   - octad-storage (VeriSimDB): Persist proof artifacts as octad entities
 ///   - scanning (Hypatia): Trigger re-verification after codebase changes
 async fn groove_manifest() -> Json<serde_json::Value> {
+    let core_count = echidna::ProverKind::all_core().len();
+    let advertised_count = echidna::ProverKind::all().len();
     Json(json!({
         "groove_version": "1",
         "service_id": "echidna",
@@ -345,17 +347,22 @@ async fn groove_manifest() -> Json<serde_json::Value> {
         "capabilities": {
             "theorem_proving": {
                 "type": "theorem-proving",
-                "description": "Neurosymbolic theorem proving with 48 prover backends",
+                "description": format!(
+                    "Neurosymbolic theorem proving — {} core / {} advertised prover backends",
+                    core_count, advertised_count
+                ),
                 "protocol": "http",
-                "endpoint": "/api/v1/prove",
+                "endpoint": "/api/prove",
                 "requires_auth": false,
                 "panel_compatible": true
             }
         },
         "consumes": ["octad-storage", "scanning"],
         "endpoints": {
-            "api": "http://localhost:9000/api",
-            "health": "http://localhost:9000/api/health"
+            "provers": "/api/provers",
+            "prove":   "/api/prove",
+            "verify":  "/api/verify",
+            "health":  "/api/health"
         },
         "health": "/api/health",
         "applicability": ["individual", "team"]
@@ -947,7 +954,11 @@ async fn get_session_state(
     let session = session.lock().await;
 
     Ok(Json(SessionStateResponse {
-        goals: session.state.as_ref().map(|s| s.goals.len()).unwrap_or_else(|| 0),
+        goals: session
+            .state
+            .as_ref()
+            .map(|s| s.goals.len())
+            .unwrap_or_else(|| 0),
         complete: session
             .state
             .as_ref()

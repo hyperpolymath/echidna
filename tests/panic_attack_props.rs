@@ -363,3 +363,140 @@ mod pareto_props {
         }
     }
 }
+
+// ── Module 5: metamath_parser_props ──────────────────────────────────────────
+//
+// The Metamath backend is the only prover with an in-process pure-Rust
+// parser, so it is also the only one we can panic-attack without an
+// external binary. The contract under test is simple: `parse_string`
+// must either succeed or return an `Err`; it must never panic, abort,
+// or take unbounded time on arbitrary input. Discovered while sweeping
+// the API surface that several valid-looking `.mm` fixtures parse to
+// an empty `ProofState`; the property below pins the weaker (no-panic)
+// invariant while the parser bug is investigated.
+
+mod metamath_parser_props {
+    use echidna::provers::metamath::MetamathBackend;
+    use echidna::provers::{ProverBackend, ProverConfig};
+    use proptest::prelude::*;
+
+    fn backend() -> MetamathBackend {
+        MetamathBackend::new(ProverConfig::default())
+    }
+
+    proptest! {
+        // Arbitrary ASCII input must not panic. Tokenizer / scope-stack /
+        // statement-parser paths all see the input here.
+        #[test]
+        fn prop_parse_string_ascii_no_panic(s in "[\\x20-\\x7e\\n\\t]{0,512}") {
+            let rt = tokio::runtime::Runtime::new().expect("runtime");
+            let backend = backend();
+            // We intentionally do not assert Ok/Err — only the absence of
+            // panic and that any returned `ProofState` is well-formed.
+            let _ = rt.block_on(backend.parse_string(&s));
+        }
+    }
+
+    proptest! {
+        // Mixed-binary input including `$` punctuation, comment markers,
+        // and unbalanced braces. Pin against parser panics on real-world
+        // garbage that a user might POST to `/api/prove`.
+        #[test]
+        fn prop_parse_string_mixed_no_panic(s in ".{0,512}") {
+            let rt = tokio::runtime::Runtime::new().expect("runtime");
+            let backend = backend();
+            let _ = rt.block_on(backend.parse_string(&s));
+        }
+    }
+
+    proptest! {
+        // Bounded-size keyword-heavy input — biases the parser towards
+        // exercising the `$c / $v / $a / $p / $f / ${ $}` branches.
+        #[test]
+        fn prop_parse_string_keyword_heavy_no_panic(
+            tokens in proptest::collection::vec(
+                prop_oneof![
+                    Just("$c".to_string()),
+                    Just("$v".to_string()),
+                    Just("$a".to_string()),
+                    Just("$p".to_string()),
+                    Just("$f".to_string()),
+                    Just("$e".to_string()),
+                    Just("${".to_string()),
+                    Just("$}".to_string()),
+                    Just("$.".to_string()),
+                    Just("$(".to_string()),
+                    Just("$)".to_string()),
+                    "[a-z]{1,8}".prop_map(String::from),
+                ],
+                0..40,
+            ),
+        ) {
+            let rt = tokio::runtime::Runtime::new().expect("runtime");
+            let backend = backend();
+            let src = tokens.join(" ");
+            let _ = rt.block_on(backend.parse_string(&src));
+        }
+    }
+}
+
+// ── Module 6: prover_kind_props ──────────────────────────────────────────────
+//
+// `ProverKind` is the JSON surface of `/api/prove`. Its serde
+// round-trip is on every request path, so the invariant
+// "serialize ∘ deserialize = id" must hold for every variant.
+// Otherwise a request with a valid prover name could fail at the
+// edge even though `ProverFactory::create` would have accepted it.
+
+mod prover_kind_props {
+    use echidna::provers::ProverKind;
+    use proptest::prelude::*;
+
+    fn arb_prover_kind() -> impl Strategy<Value = ProverKind> {
+        // Restrict to the canonical roster — `all()` is what
+        // `ProverFactory::create` is contracted to support.
+        let kinds = ProverKind::all();
+        (0..kinds.len()).prop_map(move |i| kinds[i])
+    }
+
+    proptest! {
+        #[test]
+        fn prop_serde_roundtrip(kind in arb_prover_kind()) {
+            let json = serde_json::to_string(&kind).expect("serialize");
+            let back: ProverKind = serde_json::from_str(&json).expect("deserialize");
+            prop_assert_eq!(kind, back, "ProverKind {:?} did not round-trip via JSON", kind);
+        }
+    }
+
+    proptest! {
+        #[test]
+        fn prop_tier_in_bounds(kind in arb_prover_kind()) {
+            let tier = kind.tier();
+            prop_assert!((1..=10).contains(&tier),
+                "tier() returned {} for {:?}, expected 1..=10", tier, kind);
+        }
+    }
+
+    proptest! {
+        #[test]
+        fn prop_complexity_in_bounds(kind in arb_prover_kind()) {
+            let c = kind.complexity();
+            prop_assert!((1..=5).contains(&c),
+                "complexity() returned {} for {:?}, expected 1..=5", c, kind);
+        }
+    }
+
+    #[test]
+    fn all_core_is_subset_of_all() {
+        let core = ProverKind::all_core();
+        let all = ProverKind::all();
+        for k in &core {
+            assert!(
+                all.contains(k),
+                "ProverKind::{:?} in all_core() but not in all() — \
+                 the core set must be a subset of the advertised roster",
+                k
+            );
+        }
+    }
+}

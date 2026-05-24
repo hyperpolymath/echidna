@@ -144,7 +144,7 @@ fn find_tactic_sites_isabelle(source: &str) -> Vec<TacticSite> {
                 .unwrap_or("")
                 .trim_matches(|c: char| !c.is_alphanumeric() && c != '_');
             if !name.is_empty() {
-                let col = line.find(name).unwrap_or_else(|| 0) + 1;
+                let col = line.find(name).unwrap_or(0) + 1;
                 sites.push(TacticSite {
                     line: line_no,
                     col,
@@ -164,7 +164,7 @@ fn find_tactic_sites_isabelle(source: &str) -> Vec<TacticSite> {
                 .unwrap_or("")
                 .trim_matches(|c: char| !c.is_alphanumeric() && c != '_');
             if !name.is_empty() {
-                let col = line.find(name).unwrap_or_else(|| 0) + 1;
+                let col = line.find(name).unwrap_or(0) + 1;
                 sites.push(TacticSite {
                     line: line_no,
                     col,
@@ -180,7 +180,7 @@ fn find_tactic_sites_isabelle(source: &str) -> Vec<TacticSite> {
                 .unwrap_or("")
                 .trim_matches(|c: char| !c.is_alphanumeric() && c != '_');
             if !name.is_empty() {
-                let col = line.find(name).unwrap_or_else(|| 0) + 1;
+                let col = line.find(name).unwrap_or(0) + 1;
                 sites.push(TacticSite {
                     line: line_no,
                     col,
@@ -252,7 +252,7 @@ fn find_tactic_sites_coq(source: &str) -> Vec<TacticSite> {
             ]
             .contains(&name)
         {
-            let col = line.find(name).unwrap_or_else(|| 0) + 1;
+            let col = line.find(name).unwrap_or(0) + 1;
             sites.push(TacticSite {
                 line: line_no,
                 col,
@@ -335,7 +335,7 @@ fn find_tactic_sites_lean4(source: &str) -> Vec<TacticSite> {
                         .next()
                         .unwrap_or("");
                     if !name.is_empty() {
-                        let col = line.find(name).unwrap_or_else(|| 0) + 1;
+                        let col = line.find(name).unwrap_or(0) + 1;
                         sites.push(TacticSite {
                             line: line_no,
                             col,
@@ -353,7 +353,7 @@ fn find_tactic_sites_lean4(source: &str) -> Vec<TacticSite> {
         if !name.is_empty()
             && !["where", "fun", "have", "show", "exact", "rfl", "done"].contains(&name)
         {
-            let col = line.find(name).unwrap_or_else(|| 0) + 1;
+            let col = line.find(name).unwrap_or(0) + 1;
             sites.push(TacticSite {
                 line: line_no,
                 col,
@@ -423,7 +423,7 @@ fn find_tactic_sites_idris2(source: &str) -> Vec<TacticSite> {
                 || name.starts_with("exact")
                 || name.starts_with("Refl")
             {
-                let col = line.find(name).unwrap_or_else(|| 0) + 1;
+                let col = line.find(name).unwrap_or(0) + 1;
                 sites.push(TacticSite {
                     line: line_no,
                     col,
@@ -482,7 +482,7 @@ fn find_tactic_sites_agda(source: &str) -> Vec<TacticSite> {
         for word in line.split_whitespace() {
             let name = word.trim_matches(|c: char| !c.is_alphanumeric() && c != '_' && c != '\'');
             if ["refl", "sym", "trans", "cong", "subst"].contains(&name) {
-                let col = line.find(name).unwrap_or_else(|| 0) + 1;
+                let col = line.find(name).unwrap_or(0) + 1;
                 sites.push(TacticSite {
                     line: line_no,
                     col,

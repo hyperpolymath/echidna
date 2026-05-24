@@ -345,7 +345,11 @@ impl GnnClient {
 
         let node_labels: Vec<String> = graph.nodes.iter().map(|n| n.label.clone()).collect();
 
-        let feature_dim = graph.nodes.first().map(|n| n.features.len()).unwrap_or_else(|| 0);
+        let feature_dim = graph
+            .nodes
+            .first()
+            .map(|n| n.features.len())
+            .unwrap_or_else(|| 0);
 
         let goal_node_idx = graph
             .goal_node_id

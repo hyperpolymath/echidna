@@ -3,6 +3,16 @@ K9!
 # deploy.k9.ncl — ECHIDNA deployment component (Hunt level)
 
 let component_pedigree = {
+  # Top-level identity fields — duplicated from metadata so the K9
+  # validator (which inspects the literal `pedigree = { ... }` block
+  # at the toplevel of the file rather than the resolved Nickel value)
+  # can locate name / version / security_level without resolving the
+  # `component_pedigree` indirection.
+  name = "echidna-deploy",
+  version = "1.5.0",
+  schema_version = "1.0.0",
+  security_level = 'Hunt,
+  signature_required = true,
   metadata = {
     name = "echidna-deploy",
     version = "1.5.0",
@@ -99,7 +109,23 @@ echo "K9: Rollback complete."
 } in
 
 {
-  pedigree = component_pedigree,
+  # The K9 validator does a literal text-scan over the toplevel
+  # `pedigree = { ... }` block and does not resolve Nickel let-bindings,
+  # so the identity fields (name / version / security_level) must appear
+  # inside the inline record here even though they are also present in
+  # the `component_pedigree` binding used by the runtime consumer.
+  pedigree = {
+    name = "echidna-deploy",
+    version = "1.5.0",
+    schema_version = "1.0.0",
+    security_level = 'Hunt,
+    signature_required = true,
+    metadata = component_pedigree.metadata,
+    target = component_pedigree.target,
+    security = component_pedigree.security,
+    validation = component_pedigree.validation,
+    recipes = component_pedigree.recipes,
+  },
   deployment = deployment,
   scripts = scripts,
   required_level = 'Hunt,

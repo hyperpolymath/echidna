@@ -976,7 +976,7 @@ fn hash_provenance_record(
         timestamp,
         serde_json::to_string(data).unwrap_or_default(),
     );
-    format!("{:x}", Sha256::digest(input.as_bytes()))
+    crate::corpus::octad::to_hex(Sha256::digest(input.as_bytes()))
 }
 
 /// Base64-encode bytes (no padding, URL-safe).
@@ -989,8 +989,8 @@ fn base64_encode(bytes: &[u8]) -> String {
 
     for chunk in bytes.chunks(3) {
         let b0 = chunk[0] as u32;
-        let b1 = chunk.get(1).copied().unwrap_or_else(|| 0) as u32;
-        let b2 = chunk.get(2).copied().unwrap_or_else(|| 0) as u32;
+        let b1 = chunk.get(1).copied().unwrap_or(0) as u32;
+        let b2 = chunk.get(2).copied().unwrap_or(0) as u32;
         let triple = (b0 << 16) | (b1 << 8) | b2;
 
         result.push(ALPHABET[((triple >> 18) & 0x3F) as usize] as char);

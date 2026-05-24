@@ -52,7 +52,7 @@ use crate::provers::ProverKind;
 /// entity from the E-R perspective.
 pub fn theorem_identity(theorem_name: &str) -> String {
     let input = format!("echidna:v1:theorem:{}", theorem_name);
-    format!("{:x}", Sha256::digest(input.as_bytes()))
+    crate::corpus::octad::to_hex(Sha256::digest(input.as_bytes()))
 }
 
 // ═══════════════════════════════════════════════════════════════════════

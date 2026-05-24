@@ -103,8 +103,8 @@ pub struct AnnealResult<S> {
 fn lex_cmp(a: &[i64], b: &[i64]) -> std::cmp::Ordering {
     let n = a.len().max(b.len());
     for i in 0..n {
-        let ai = a.get(i).copied().unwrap_or_else(|| 0);
-        let bi = b.get(i).copied().unwrap_or_else(|| 0);
+        let ai = a.get(i).copied().unwrap_or(0);
+        let bi = b.get(i).copied().unwrap_or(0);
         match ai.cmp(&bi) {
             std::cmp::Ordering::Equal => continue,
             other => return other,
@@ -120,8 +120,8 @@ fn delta_energy(from: &[i64], to: &[i64]) -> f64 {
     let n = from.len().max(to.len());
     let mut delta: f64 = 0.0;
     for i in 0..n {
-        let f = from.get(i).copied().unwrap_or_else(|| 0) as f64;
-        let t = to.get(i).copied().unwrap_or_else(|| 0) as f64;
+        let f = from.get(i).copied().unwrap_or(0) as f64;
+        let t = to.get(i).copied().unwrap_or(0) as f64;
         // Weight: 1000^(n-i-1). The first coord dominates by a
         // factor of 1000 per position.
         let w = (1000_f64).powi((n - i - 1) as i32);
@@ -156,7 +156,7 @@ pub fn anneal<P: DesignProblem>(problem: &P, config: &AnnealConfig) -> AnnealRes
             if neighbours.is_empty() {
                 break;
             }
-            let pick = rng.gen_range(0..neighbours.len());
+            let pick = rng.random_range(0..neighbours.len());
             let cand = neighbours[pick].clone();
             let cand_e = problem.energy(&cand);
 
@@ -170,7 +170,7 @@ pub fn anneal<P: DesignProblem>(problem: &P, config: &AnnealConfig) -> AnnealRes
                 std::cmp::Ordering::Greater => {
                     let de = delta_energy(&current_e, &cand_e);
                     let p: f64 = (-de / temp).exp();
-                    rng.gen::<f64>() < p
+                    rng.random::<f64>() < p
                 },
             };
 

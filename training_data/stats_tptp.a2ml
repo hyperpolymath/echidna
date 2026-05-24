@@ -3,6 +3,8 @@
 # TPTP extraction statistics
 
 [metadata]
+name = "echidna-training-stats-tptp"
+project = "echidna"
 id_range = "70000-148530"
 extraction_date = "2026-04-18T08:38:10"
 total_proofs = 78531

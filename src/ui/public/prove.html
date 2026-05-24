@@ -1,0 +1,279 @@
+<!--
+  SPDX-FileCopyrightText: 2026 ECHIDNA Project Team
+  SPDX-License-Identifier: MPL-2.0
+
+  Minimal proof submission UI. Self-contained: open directly in a
+  browser (file:// works) and point at a running ECHIDNA server
+  (`echidna server --cors`). No build step required.
+-->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ECHIDNA — Prove</title>
+  <style>
+    :root {
+      --bg: #0d1117;
+      --panel: #161b22;
+      --border: #30363d;
+      --text: #c9d1d9;
+      --muted: #8b949e;
+      --accent: #58a6ff;
+      --ok: #3fb950;
+      --bad: #f85149;
+      --warn: #d29922;
+      --mono: 'JetBrains Mono', 'Fira Code', ui-monospace, Menlo, monospace;
+    }
+    * { box-sizing: border-box; }
+    body {
+      font-family: var(--mono);
+      background: var(--bg);
+      color: var(--text);
+      margin: 0;
+      padding: 24px;
+      min-height: 100vh;
+    }
+    h1 {
+      color: var(--accent);
+      font-weight: 400;
+      letter-spacing: 2px;
+      text-transform: uppercase;
+      margin: 0 0 4px;
+    }
+    .sub { color: var(--muted); font-size: 0.85em; margin-bottom: 24px; }
+    .layout {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 20px;
+      max-width: 1200px;
+      margin: 0 auto;
+    }
+    .panel {
+      background: var(--panel);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      padding: 18px;
+    }
+    label {
+      display: block;
+      color: var(--muted);
+      font-size: 0.8em;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      margin: 12px 0 6px;
+    }
+    input, select, textarea {
+      width: 100%;
+      background: #0d1117;
+      color: var(--text);
+      border: 1px solid var(--border);
+      border-radius: 4px;
+      padding: 8px 10px;
+      font-family: inherit;
+      font-size: 0.95em;
+    }
+    textarea { resize: vertical; min-height: 220px; }
+    .row { display: flex; gap: 10px; }
+    .row > * { flex: 1; }
+    button {
+      background: var(--accent);
+      color: #0d1117;
+      border: none;
+      padding: 10px 16px;
+      border-radius: 4px;
+      cursor: pointer;
+      font-family: inherit;
+      font-weight: 600;
+      margin-top: 14px;
+    }
+    button:hover { filter: brightness(1.1); }
+    button:disabled { opacity: 0.5; cursor: not-allowed; }
+    .pill {
+      display: inline-block;
+      padding: 2px 10px;
+      border-radius: 999px;
+      font-size: 0.75em;
+      border: 1px solid var(--border);
+      color: var(--muted);
+    }
+    .pill.ok   { color: var(--ok);   border-color: var(--ok); }
+    .pill.bad  { color: var(--bad);  border-color: var(--bad); }
+    .pill.warn { color: var(--warn); border-color: var(--warn); }
+    pre {
+      background: #0d1117;
+      border: 1px solid var(--border);
+      border-radius: 4px;
+      padding: 12px;
+      overflow: auto;
+      max-height: 60vh;
+      white-space: pre-wrap;
+      word-break: break-word;
+      font-size: 0.9em;
+    }
+    .examples { margin-top: 8px; font-size: 0.8em; }
+    .examples a {
+      color: var(--accent);
+      cursor: pointer;
+      margin-right: 12px;
+      text-decoration: underline dotted;
+    }
+    .meta { display: flex; gap: 12px; margin-top: 6px; font-size: 0.85em; color: var(--muted); }
+  </style>
+</head>
+<body>
+  <header style="max-width:1200px;margin:0 auto 16px">
+    <h1>ECHIDNA — Prove</h1>
+    <div class="sub">Minimum-viable REST client. Start the server with
+      <code>cargo run -- server --cors</code> and aim this page at it.</div>
+  </header>
+
+  <div class="layout">
+    <section class="panel">
+      <div class="row">
+        <div>
+          <label>API base</label>
+          <input id="api" value="http://127.0.0.1:8081">
+        </div>
+        <div style="flex:0 0 auto;align-self:end">
+          <span id="health" class="pill">unknown</span>
+        </div>
+      </div>
+
+      <label>Prover</label>
+      <select id="prover"><option>loading…</option></select>
+
+      <div class="row">
+        <div>
+          <label>Timeout (s)</label>
+          <input id="timeout" type="number" value="30" min="1">
+        </div>
+        <div>
+          <label>Neural assist</label>
+          <select id="neural">
+            <option value="true">on</option>
+            <option value="false">off</option>
+          </select>
+        </div>
+      </div>
+
+      <label>Content</label>
+      <textarea id="content" spellcheck="false" placeholder="Paste theorem / SMT-LIB / proof script here"></textarea>
+      <div class="examples">
+        examples:
+        <a data-ex="z3-sat">Z3 SAT</a>
+        <a data-ex="z3-unsat">Z3 UNSAT</a>
+      </div>
+
+      <button id="go">Prove</button>
+      <button id="verify" style="background:#21262d;color:var(--accent);border:1px solid var(--border)">Verify only</button>
+    </section>
+
+    <section class="panel">
+      <div style="display:flex;justify-content:space-between;align-items:center">
+        <strong style="color:var(--muted);font-size:0.85em;letter-spacing:1px">RESULT</strong>
+        <span id="outcome" class="pill">idle</span>
+      </div>
+      <div class="meta">
+        <span>goals: <span id="goals">—</span></span>
+        <span>elapsed: <span id="elapsed">—</span> ms</span>
+      </div>
+      <label>Response</label>
+      <pre id="out">// no request yet</pre>
+    </section>
+  </div>
+
+<script>
+const $ = (id) => document.getElementById(id);
+const EXAMPLES = {
+  'z3-sat': '(set-logic QF_LIA)\n(declare-const x Int)\n(assert (> x 0))\n(check-sat)\n',
+  'z3-unsat': '(set-logic QF_LIA)\n(declare-const x Int)\n(assert (and (> x 0) (< x 0)))\n(check-sat)\n',
+};
+
+document.querySelectorAll('[data-ex]').forEach(a => {
+  a.onclick = () => { $('content').value = EXAMPLES[a.dataset.ex]; $('prover').value = 'Z3'; };
+});
+
+async function refreshHealth() {
+  const base = $('api').value.replace(/\/$/, '');
+  const pill = $('health');
+  try {
+    const r = await fetch(base + '/api/health');
+    if (r.ok) { pill.textContent = 'online'; pill.className = 'pill ok'; }
+    else { pill.textContent = 'http ' + r.status; pill.className = 'pill bad'; }
+  } catch (e) {
+    pill.textContent = 'offline'; pill.className = 'pill bad';
+  }
+}
+
+async function loadProvers() {
+  const base = $('api').value.replace(/\/$/, '');
+  const sel = $('prover');
+  try {
+    const r = await fetch(base + '/api/provers');
+    const data = await r.json();
+    const provers = (data.provers || []).map(p => p.name).sort();
+    sel.innerHTML = provers.map(n => `<option>${n}</option>`).join('');
+    if (provers.includes('Z3')) sel.value = 'Z3';
+  } catch (e) {
+    sel.innerHTML = '<option>—</option>';
+    console.error(e);
+  }
+}
+
+async function submit(endpoint) {
+  const base = $('api').value.replace(/\/$/, '');
+  const body = {
+    prover: $('prover').value,
+    content: $('content').value,
+  };
+  if (endpoint === 'prove') {
+    body.timeout = parseInt($('timeout').value, 10);
+    body.neural = $('neural').value === 'true';
+  }
+
+  $('out').textContent = '// submitting…';
+  $('outcome').textContent = 'running'; $('outcome').className = 'pill warn';
+  $('goals').textContent = '—'; $('elapsed').textContent = '—';
+
+  const t0 = performance.now();
+  try {
+    const r = await fetch(`${base}/api/${endpoint}`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(body),
+    });
+    const elapsed = Math.round(performance.now() - t0);
+    $('elapsed').textContent = elapsed;
+
+    const text = await r.text();
+    let data; try { data = JSON.parse(text); } catch { data = { raw: text }; }
+    $('out').textContent = JSON.stringify(data, null, 2);
+
+    if (!r.ok) {
+      $('outcome').textContent = 'http ' + r.status;
+      $('outcome').className = 'pill bad';
+      return;
+    }
+
+    const ok = data.success === true || data.valid === true;
+    const tag = data.outcome || (ok ? 'OK' : 'FAILED');
+    $('outcome').textContent = tag;
+    $('outcome').className = 'pill ' + (ok ? 'ok' : 'bad');
+    if (typeof data.goals === 'number') $('goals').textContent = data.goals;
+    if (typeof data.goals_remaining === 'number') $('goals').textContent = data.goals_remaining;
+  } catch (e) {
+    $('out').textContent = 'fetch error: ' + e.message;
+    $('outcome').textContent = 'error'; $('outcome').className = 'pill bad';
+  }
+}
+
+$('go').onclick     = () => submit('prove');
+$('verify').onclick = () => submit('verify');
+$('api').onchange   = () => { refreshHealth(); loadProvers(); };
+
+refreshHealth();
+loadProvers();
+</script>
+</body>
+</html>

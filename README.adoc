@@ -5,34 +5,44 @@
 
 image:https://img.shields.io/badge/OpenSSF-Best_Practices-green?logo=opensourcesecurity[OpenSSF Best Practices,link="https://www.bestpractices.dev/en/projects/new?repo_url=https://github.com/hyperpolymath/echidna"]
 image:https://img.shields.io/badge/License-PMPL--1.0-blue.svg[License: PMPL-1.0,link="https://github.com/hyperpolymath/palimpsest-license"]
-image:https://img.shields.io/badge/Provers-128-green.svg[Provers: 128]
-image:https://img.shields.io/badge/Tests-917%2B-brightgreen.svg[Tests: 917+]
+image:https://img.shields.io/badge/Provers-12_core_/_79_advertised-green.svg[Provers: 12 core / 79 advertised]
+image:https://img.shields.io/badge/Tests-1059-brightgreen.svg[Tests: 1059]
 image:https://api.thegreenwebfoundation.org/greencheckimage/nesy-prover.dev[Green Hosting,link="https://www.thegreenwebfoundation.org/green-web-check/?url=nesy-prover.dev"]
 
 *E*xtensible *C*ognitive *H*ybrid *I*ntelligence for *D*eductive *N*eural *A*ssistance
 
-A neurosymbolic theorem proving platform with 128 prover backends,
-trust-hardened verification pipeline, and multi-objective proof search.
+A neurosymbolic theorem proving platform with a trust-hardened
+verification pipeline, multi-objective proof search, and 100+ prover
+backend implementations.
 
-== Leadership Position
+== Prover Surface
 
-ECHIDNA holds a **unique leadership position** in the theorem proving ecosystem as:
+ECHIDNA's `ProverKind` enum has 141 variants and the repository ships
+102 backend implementation files. The advertised roster
+(`ProverKind::all()`) is 79 backends. The REST API
+(`GET /api/provers`) exposes the 12-prover **core** set
+(`ProverKind::all_core()`) by default. See
+link:docs/SUPPORTED_PROVERS.md[`docs/SUPPORTED_PROVERS.md`] for the
+core list, required external binaries, and how to surface additional
+backends through the API.
 
-* **The only system with 128+ prover backends** (vs 1 for Isabelle, Coq, Lean, Z3, etc.)
-* **The only system actively solving cross-prover arbitration** (mathematical object identity resolution)
-* **The only neurosymbolic hybrid architecture** (combining AI and symbolic reasoning)
-* **The only system with 7-stage trust pipeline** (comprehensive verification infrastructure)
-* **The only system integrating OpenTheory + Dedukti** (universal proof exchange)
-* **The largest vocabulary management** (992K+ terms across mathematical domains)
-* **The most comprehensive axiom tracking** (4 danger levels across 128 provers)
-* **The only Bayesian confidence scoring** (across multiple independent provers)
+== Distinguishing Features
 
-Our **prevailing advantage** comes from this unique combination that no other system can match.
+* **Trust-hardened pipeline** — every proof passes through solver
+  integrity verification, axiom tracking, certificate checking, and
+  Bayesian confidence scoring before the result is returned.
+* **Cross-prover arbitration** — mathematical object identity resolution
+  across heterogeneous prover backends.
+* **Neurosymbolic architecture** — Julia ML layer suggests tactics;
+  formal provers always have the final word.
+* **OpenTheory + Dedukti integration** — universal proof exchange.
+* **Axiom-usage tracking** — four danger levels (Safe, Noted, Warning,
+  Reject) applied uniformly across every backend.
 
 == Overview
 
-ECHIDNA orchestrates 128 theorem provers, SMT solvers, first-order ATPs, and
-constraint solvers through a unified Rust core. Every proof result passes
+ECHIDNA orchestrates theorem provers, SMT solvers, first-order ATPs,
+and constraint solvers through a unified Rust core. Every proof result passes
 through a trust-hardening pipeline that checks solver integrity, tracks axiom
 usage, verifies proof certificates, and assigns a 5-level confidence score.
 
@@ -41,34 +51,34 @@ always have the final word. ECHIDNA never produces unsound proofs.
 
 == Features
 
-=== 128 Prover Backends
+=== Prover Backends
 
-[cols="1,4", options="header"]
-|===
-| Tier | Provers
+The 12-prover **core** set exposed via `GET /api/provers`:
 
-| *Tier 1: Interactive Proof Assistants*
-| Agda, Coq/Rocq, Lean 4, Isabelle/HOL, Idris2, F*
+* *Interactive proof assistants*: Agda, Coq, Lean 4, Isabelle/HOL,
+  HOL Light, HOL4, Mizar, PVS, ACL2
+* *SMT solvers*: Z3, CVC5
+* *Pure-Rust in-process*: Metamath (no external binary needed)
 
-| *Tier 2: SMT Solvers*
-| Z3, CVC5, Alt-Ergo
+`ProverKind::all()` advertises a further 67 backends including
+interactive provers (Idris2, Lean3, F\*, Rocq), first-order ATPs
+(Vampire, E Prover, SPASS, iProver, Prover9, Zipperposition),
+SAT/SMT (CaDiCaL, Kissat, MiniSat, OpenSMT, SmtRat, AltErgo, dReal,
+Princess), auto-active verifiers (Dafny, Why3, F\*, Cameleer, Liquid
+Haskell, GNATprove, Stainless), constraint/optimisation (GLPK, SCIP,
+MiniZinc, Chuffed, OR-Tools), model checkers (SPIN, NuSMV, TLC, Alloy,
+Prism, UPPAAL, Storm, ProB), C/hardware verifiers (CBMC, SeaHorn,
+Frama-C, ABC, Viper, KeY, GPUVerify, Faial), security protocol tools
+(Tamarin, ProVerif, EasyCrypt, CryptoVerif), and specialised systems
+(TLAPS, Twelf, Nuprl, Minlog, Imandra, KeYmaeraX, MetiTarski, Cubical
+Agda, MizAR, Dedukti, Boogie, Athena, Naproche, Matita, Arend, Mercury,
+λProlog, Nitpick, Nunchaku, Leo III, Satallax, Lash, agsyHOL, mleanCoP,
+ileanCoP, NanoCoP, MetTeL2, ELK, Konclude, TypedWasm, UPPAAL Stratego).
 
-| *Tier 3: Auto-Active Verifiers*
-| Dafny, Why3
-
-| *Tier 4: Specialised*
-| Metamath, HOL Light, Mizar, HOL4, PVS, ACL2, TLAPS, Twelf, Nuprl, Minlog, Imandra
-
-| *Tier 5: First-Order ATPs*
-| Vampire, E Prover, SPASS
-
-| *Tier 6: Constraint / Optimisation Solvers*
-| GLPK, SCIP, MiniZinc, Chuffed, OR-Tools
-|===
-
-All 128 backends implement the `ProverBackend` trait: parse, verify, export,
-tactic suggestion, and theorem search. File extension detection covers 30+
-formats (`.v`, `.lean`, `.smt2`, `.tptp`, `.dfy`, `.mzn`, etc.).
+All advertised backends implement the `ProverBackend` trait: parse,
+verify, export, tactic suggestion, and theorem search. File extension
+detection covers 30+ formats (`.v`, `.lean`, `.smt2`, `.tptp`, `.dfy`,
+`.mzn`, etc.).
 
 === Trust & Safety Hardening (v1.5)
 
@@ -175,13 +185,40 @@ cd echidna
 just build
 # or: cargo build
 
-# Run all tests (917+ passing)
+# Run all tests (1059 passing on default build)
 just test
 # or: cargo test
 
 # Run ECHIDNA REPL
 just run
 ----
+
+=== Prove your first goal
+
+[source,bash]
+----
+# Install at least one solver — Z3 is the smallest dependency
+sudo apt install z3        # Debian/Ubuntu (or `brew install z3`)
+
+# Start the REST API server with CORS enabled
+cargo run --bin echidna -- server --cors
+
+# In another terminal, POST a satisfiable SMT-LIB goal
+curl -X POST http://127.0.0.1:8081/api/prove \
+  -H 'Content-Type: application/json' \
+  -d '{"prover":"Z3",
+       "content":"(set-logic QF_LIA)\n(declare-const x Int)\n(assert (> x 0))\n(check-sat)\n",
+       "timeout":30}'
+# → {"success":true,"goals":1,"message":"Proof verified successfully"}
+----
+
+For a minimal browser UI, open `src/ui/public/prove.html` directly in
+any modern browser and point the "API base" field at the running
+server. No build step is required.
+
+See link:docs/SUPPORTED_PROVERS.md[`docs/SUPPORTED_PROVERS.md`] for the
+12-prover core set, required binaries, and how to expose additional
+backends through the API.
 
 === Using Podman Container
 
@@ -205,7 +242,7 @@ podman run -it echidna:latest
 [source]
 ----
 src/rust/
-  provers/          # 128 prover backend implementations (ProverBackend trait)
+  provers/          # 102 prover backend implementation files (ProverBackend trait)
   verification/     # Trust-hardening subsystem
     portfolio.rs    # SMT portfolio solving / cross-checking
     certificates.rs # Proof certificate checking (Alethe, DRAT/LRAT, TSTP)
@@ -268,11 +305,11 @@ println!("Verified: {}, Trust: {}", result.verified, result.trust_level);
 
 == Test Suite
 
-917+ library tests passing (`cargo test --lib --features verisim`, 2 ignored).
+1059 library tests passing on the default build
+(`cargo test --lib`, 2 ignored). The `--features verisim` build adds
+further integration tests for the VeriSim bridge.
 
-* 884 tests default build (`cargo test --lib`)
-* 917 tests with VeriSim integration (`--features verisim`)
-* Smoke E2E integration tests across all prover backends
+* Smoke E2E integration tests across the core prover backends
 * Property-based tests (PropTest)
 * Criterion benchmarks across all critical paths
 

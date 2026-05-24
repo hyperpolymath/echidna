@@ -355,6 +355,16 @@ fn axiom_usage_from_tensor(t: &DeclTensor) -> super::AxiomUsage {
     }
 }
 
+pub(crate) fn to_hex(bytes: impl AsRef<[u8]>) -> String {
+    use std::fmt::Write;
+    let bytes = bytes.as_ref();
+    let mut s = String::with_capacity(bytes.len() * 2);
+    for b in bytes {
+        write!(s, "{:02x}", b).expect("write to String never fails");
+    }
+    s
+}
+
 fn octad_key(adapter: &str, qualified: &str, statement: &str) -> String {
     let mut h = Sha256::new();
     h.update(adapter.as_bytes());
@@ -362,7 +372,7 @@ fn octad_key(adapter: &str, qualified: &str, statement: &str) -> String {
     h.update(qualified.as_bytes());
     h.update(b"|");
     h.update(statement.as_bytes());
-    format!("{:x}", h.finalize())
+    to_hex(h.finalize())
 }
 
 fn cross_prover_key(qualified: &str) -> String {
@@ -372,7 +382,7 @@ fn cross_prover_key(qualified: &str) -> String {
     let tail = qualified.rsplit('.').next().unwrap_or(qualified);
     let mut h = Sha256::new();
     h.update(tail.as_bytes());
-    format!("{:x}", h.finalize())
+    to_hex(h.finalize())
 }
 
 fn content_hash_of(entry: &CorpusEntry) -> String {
@@ -384,7 +394,7 @@ fn content_hash_of(entry: &CorpusEntry) -> String {
     if let Some(p) = &entry.proof {
         h.update(p.as_bytes());
     }
-    format!("{:x}", h.finalize())
+    to_hex(h.finalize())
 }
 
 fn hash_provenance(parent: &str, event: &str, timestamp: &str, file: &str, line: usize) -> String {
@@ -398,7 +408,7 @@ fn hash_provenance(parent: &str, event: &str, timestamp: &str, file: &str, line:
     h.update(file.as_bytes());
     h.update(b"|");
     h.update(line.to_string().as_bytes());
-    format!("{:x}", h.finalize())
+    to_hex(h.finalize())
 }
 
 // ===========================================================================

@@ -123,7 +123,7 @@ impl TermFeatureExtractor {
             } else {
                 let total: usize = symbols
                     .iter()
-                    .map(|s| self.symbol_frequencies.get(s).copied().unwrap_or_else(|| 0))
+                    .map(|s| self.symbol_frequencies.get(s).copied().unwrap_or(0))
                     .sum();
                 (total as f32) / (symbols.len() as f32 * self.max_frequency as f32)
             };
@@ -364,13 +364,16 @@ fn term_depth(term: &Term) -> usize {
         | Term::Meta(_) => 0,
         Term::App { func, args } => {
             let func_depth = term_depth(func);
-            let max_arg = args.iter().map(term_depth).max().unwrap_or_else(|| 0);
+            let max_arg = args.iter().map(term_depth).max().unwrap_or(0);
             1 + func_depth.max(max_arg)
         },
         Term::Lambda {
             param_type, body, ..
         } => {
-            let pt = param_type.as_ref().map(|t| term_depth(t)).unwrap_or_else(|| 0);
+            let pt = param_type
+                .as_ref()
+                .map(|t| term_depth(t))
+                .unwrap_or_else(|| 0);
             1 + pt.max(term_depth(body))
         },
         Term::Pi {
@@ -395,7 +398,7 @@ fn term_depth(term: &Term) -> usize {
                 .iter()
                 .map(|(_, t)| term_depth(t))
                 .max()
-                .unwrap_or_else(|| 0);
+                .unwrap_or(0);
             1 + s.max(b)
         },
         Term::Fix { ty, body, .. } => {
