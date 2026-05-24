@@ -349,6 +349,13 @@ train:
 train-cpu:
     ECHIDNA_MAX_PROOF_STATES=2000 ECHIDNA_NUM_EPOCHS=2 julia --project=src/julia src/julia/run_training_cpu.jl
 
+# Evaluate trained model on held-out validation split (MRR / top-k).
+# Requires `just train-cpu` (or `just train`) to have produced models/neural/.
+# Appends one JSONL row to training_data/eval_results.jsonl and exits non-zero
+# if MRR < 0.66 (below the cosine baseline).
+eval:
+    julia --project=src/julia src/julia/eval_held_out.jl
+
 # End-to-end pipeline: provision → extract → merge → align → retrain.
 # Use `ECHIDNA_MAX_PROOF_STATES=0 just corpus-refresh` to lift the sample cap.
 corpus-refresh: provision-corpora extract-corpora merge-corpora align-premises retrain
