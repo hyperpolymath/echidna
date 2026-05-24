@@ -138,7 +138,7 @@ struct GnnRankResponse {
     error: Option<String>,
 }
 
-/// GNN health check response.
+/// GNN health check response (internal, minimal — kept for legacy deserialization path).
 #[derive(Debug, Deserialize)]
 struct GnnHealthResponse {
     /// Server status
@@ -148,6 +148,25 @@ struct GnnHealthResponse {
     /// Number of GNN layers in the loaded model
     #[serde(default)]
     num_gnn_layers: usize,
+}
+
+/// Richer health payload returned by `/gnn/health` after the S5 extension.
+///
+/// All fields present when `gnn_model_loaded` is true; `model_path`,
+/// `vocab_size`, and `training_records_received` are the new additions.
+#[derive(Debug, Clone, Deserialize)]
+pub struct GnnHealth {
+    pub status: String,
+    pub gnn_model_loaded: bool,
+    pub model_path: Option<String>,
+    #[serde(default)]
+    pub vocab_size: usize,
+    #[serde(default)]
+    pub training_records_received: u64,
+    #[serde(default)]
+    pub num_gnn_layers: usize,
+    pub service: String,
+    pub version: String,
 }
 
 /// Result of a GNN inference call.
@@ -197,6 +216,28 @@ impl GnnClient {
             client,
             server_available: false,
         }
+    }
+
+    /// Fetch the richer `/gnn/health` payload introduced in S5.
+    ///
+    /// Returns the full `GnnHealth` struct (model path, vocab size,
+    /// training record count, etc.).  Does NOT update `server_available`
+    /// — callers that need the availability gate should use `check_health`.
+    pub async fn health_status(&self) -> Result<GnnHealth> {
+        let url = format!("{}/gnn/health", self.config.api_url);
+        let response = self
+            .client
+            .get(&url)
+            .send()
+            .await
+            .context("Failed to reach GNN health endpoint")?;
+        if !response.status().is_success() {
+            anyhow::bail!("GNN health returned HTTP {}", response.status());
+        }
+        response
+            .json::<GnnHealth>()
+            .await
+            .context("Failed to parse GnnHealth response")
     }
 
     /// Check if the GNN server is available and has a loaded model.

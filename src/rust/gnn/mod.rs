@@ -49,7 +49,7 @@ pub mod fallback_monitor;
 pub mod graph;
 pub mod guided_search;
 
-pub use client::{GnnClient, GnnConfig, GnnInferenceResult};
+pub use client::{GnnClient, GnnConfig, GnnHealth, GnnInferenceResult};
 pub use embeddings::{TermEmbedding, TermFeatureExtractor};
 pub use fallback_monitor::{FallbackMetrics, FallbackMonitor, FallbackSlaConfig};
 pub use graph::{EdgeKind, NodeKind, ProofGraph, ProofGraphBuilder};
