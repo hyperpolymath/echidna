@@ -42,27 +42,37 @@ const TOTAL_TRAINING_RECORDS = Ref{Int}(0)
 """
     load_gnn_model(models_dir::String)
 
-Load the GNN premise ranker model from disk.
-Falls back to creating a fresh (untrained) model if no checkpoint exists.
+Load the GNN premise ranker model from disk.  Tries, in order:
+  1. `models/neural/gnn_ranker/`   — directory written by run_training*.jl
+  2. `models/neural/best_model/`   — early-stopping checkpoint
+  3. `models/neural/final_model/`  — last epoch checkpoint
+
+Only falls back to the cosine path (GNN_MODEL[] = nothing) when none of
+the above directories exist or all fail to deserialise.  The cosine path
+is the genuine missing-model fallback for CI smoke runs.
 """
 function load_gnn_model(models_dir::String)
-    model_path = joinpath(models_dir, "neural", "gnn_ranker")
+    candidate_dirs = [
+        joinpath(models_dir, "neural", "gnn_ranker"),
+        joinpath(models_dir, "neural", "best_model"),
+        joinpath(models_dir, "neural", "final_model"),
+    ]
 
-    if isdir(model_path)
-        @info "Loading GNN model from $model_path"
+    for model_path in candidate_dirs
+        isdir(model_path) || continue
+        @info "Trying to load GNN model from $model_path"
         try
             solver = load_solver(model_path)
             GNN_MODEL[] = solver
-            @info "GNN model loaded successfully"
+            @info "GNN model loaded successfully from $model_path"
             return true
         catch e
-            @warn "Failed to load GNN model: $e"
+            @warn "Failed to load GNN model from $model_path: $e"
         end
     end
 
-    @info "No trained GNN model found — creating fresh model for inference"
-    # Create a minimal model with default configuration for the endpoint
-    # to respond (scores will be random until training completes)
+    # All candidates exhausted — cosine fallback is genuine missing-model path.
+    @warn "No trained GNN model found in $(joinpath(models_dir, "neural")) — ranking will use cosine similarity until weights are trained (run: just train-cpu)"
     GNN_MODEL[] = nothing
     return false
 end

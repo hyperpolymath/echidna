@@ -337,6 +337,18 @@ retrain: align-premises
 retrain-skip-align:
     julia --project=src/julia src/julia/run_training.jl
 
+# Full training run on the real corpus (auto-selects GPU when available).
+# Honours ECHIDNA_MAX_PROOF_STATES, ECHIDNA_NUM_EPOCHS, ECHIDNA_NUM_NEGATIVES.
+# Produces models/neural/{premise_selector,tactic_predictor}.bson, vocab.json,
+# updates models/model_metadata.txt, and appends to training_data/metrics_baseline.jsonl.
+train:
+    julia --project=src/julia src/julia/run_training.jl
+
+# CPU smoke pass: 2000 proof states, 2 epochs — fast end-to-end sanity check.
+# Safe to run on any dev box without a GPU.  Produces the same artefacts as `train`.
+train-cpu:
+    ECHIDNA_MAX_PROOF_STATES=2000 ECHIDNA_NUM_EPOCHS=2 julia --project=src/julia src/julia/run_training_cpu.jl
+
 # End-to-end pipeline: provision → extract → merge → align → retrain.
 # Use `ECHIDNA_MAX_PROOF_STATES=0 just corpus-refresh` to lift the sample cap.
 corpus-refresh: provision-corpora extract-corpora merge-corpora align-premises retrain
