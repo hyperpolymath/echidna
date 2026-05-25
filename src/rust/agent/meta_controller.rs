@@ -756,8 +756,11 @@ pub enum PlanOutcome {
 /// the first aspect (lexicographically? no — order-as-given so the user
 /// can prioritise).  Empty aspect list → "unspecified".
 fn primary_domain(goal: &AgenticGoal) -> String {
+    // Only dotted "category.aspect" strings are valid domain keys; structural
+    // meta-tags (e.g. "axiom", "constructor") do not reach the learning loop.
     goal.aspects
-        .first()
+        .iter()
+        .find(|s| s.contains('.'))
         .cloned()
         .unwrap_or_else(|| "unspecified".to_string())
 }
@@ -771,6 +774,18 @@ mod tests {
     use super::*;
     use crate::core::{Goal, Term};
     use crate::verification::confidence::TrustLevel;
+
+    #[test]
+    fn test_primary_domain_skips_structural_tags() {
+        let goal = dummy_goal(vec!["axiom", "arithmetic.natural_numbers"]);
+        assert_eq!(primary_domain(&goal), "arithmetic.natural_numbers");
+    }
+
+    #[test]
+    fn test_primary_domain_all_structural_returns_unspecified() {
+        let goal = dummy_goal(vec!["axiom"]);
+        assert_eq!(primary_domain(&goal), "unspecified");
+    }
 
     fn dummy_goal(aspects: Vec<&str>) -> AgenticGoal {
         AgenticGoal {

@@ -1540,6 +1540,10 @@ pub(crate) async fn gnn_augment_tactics(
         .get("aspects")
         .and_then(|v| serde_json::from_value(v.clone()).ok())
         .unwrap_or_default();
+    // Boundary filter: only dotted "category.aspect" strings reach the learning-loop
+    // key space. Structural meta-tags without a dot (e.g. "axiom", "constructor")
+    // are excluded here so they never pollute domain_hints or training records.
+    let aspects: Vec<String> = aspects.into_iter().filter(|s| s.contains('.')).collect();
     let result = gnn.rank_premises_with_aspects(&graph, &aspects).await;
     // Prepend apply tactics for top premises (in score order, before heuristic hints)
     let mut gnn_tactics: Vec<Tactic> = result
