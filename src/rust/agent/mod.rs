@@ -382,7 +382,18 @@ impl AgentCore {
         // (gnn_augment_tactics) can pass them to Julia's /gnn/rank as
         // domain_hints, activating the closed-loop weight-guided scoring
         // from accumulated PROVER_DOMAIN_WEIGHTS.
-        if let Ok(v) = serde_json::to_value(&goal.aspects) {
+        // If the caller supplied no aspects, run the lightweight rule-based tagger
+        // and map results to canonical dotted keys before publishing.
+        let aspects: Vec<String> = if goal.aspects.is_empty() {
+            let tagger = crate::aspect::RuleBasedTagger::new();
+            crate::aspect::AspectTagger::tag(&tagger, &goal.goal.id, &goal.goal.target)
+                .into_iter()
+                .map(|a| a.dotted_key())
+                .collect()
+        } else {
+            goal.aspects.clone()
+        };
+        if let Ok(v) = serde_json::to_value(&aspects) {
             metadata.insert("aspects".to_string(), v);
         }
 
