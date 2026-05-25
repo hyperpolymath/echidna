@@ -442,6 +442,7 @@ fn infer_tactic(name: &str, statement: &Term) -> Tactic {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::aspect::Aspect;
     use crate::core::{Context, Goal, Hypothesis, Variable};
 
     fn make_test_state() -> ProofState {
@@ -493,7 +494,7 @@ mod tests {
                     }),
                 },
                 proof: None,
-                aspects: vec!["arithmetic".to_string()],
+                aspects: vec![Aspect::Arithmetic.dotted_key()],
             },
             Theorem {
                 name: "zero_is_even".to_string(),

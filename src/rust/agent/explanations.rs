@@ -431,6 +431,7 @@ impl Default for ExplanationGenerator {
 mod tests {
     use super::*;
     use crate::agent::Priority;
+    use crate::aspect::Aspect;
     use crate::core::Goal;
 
     #[test]
@@ -447,7 +448,7 @@ mod tests {
             attempts: 2,
             max_attempts: 3,
             preferred_prover: None,
-            aspects: vec!["algebra".to_string()],
+            aspects: vec![Aspect::Groups.dotted_key()],
             parent: None,
         };
 
@@ -473,7 +474,7 @@ mod tests {
             attempts: 1,
             max_attempts: 3,
             preferred_prover: None,
-            aspects: vec!["algebra".to_string()],
+            aspects: vec![Aspect::Groups.dotted_key()],
             parent: None,
         };
 
@@ -498,7 +499,7 @@ mod tests {
             attempts: 0,
             max_attempts: 3,
             preferred_prover: None,
-            aspects: vec!["algebra".to_string()],
+            aspects: vec![Aspect::Groups.dotted_key()],
             parent: None,
         };
 
