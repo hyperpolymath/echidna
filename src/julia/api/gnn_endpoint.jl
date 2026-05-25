@@ -159,9 +159,27 @@ function apply_domain_weights(scores::Vector{Float32}, domain_hints::Vector{Stri
     weights = PROVER_DOMAIN_WEIGHTS[]
     domain_rates = Float64[]
     for domain in domain_hints
+        # First: collect exact-match rates across all provers.
+        exact_matches = Float64[]
         for (_, prover_weights) in weights
             if haskey(prover_weights, domain)
-                push!(domain_rates, prover_weights[domain])
+                push!(exact_matches, prover_weights[domain])
+            end
+        end
+        if !isempty(exact_matches)
+            append!(domain_rates, exact_matches)
+            continue
+        end
+        # Miss: fall back to mean of all keys sharing the same category prefix.
+        parts = split(domain, '.'; limit=2)
+        if length(parts) == 2
+            prefix = parts[1] * "."
+            for (_, prover_weights) in weights
+                for (k, v) in prover_weights
+                    if startswith(k, prefix)
+                        push!(domain_rates, v)
+                    end
+                end
             end
         end
     end
