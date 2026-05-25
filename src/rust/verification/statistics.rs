@@ -152,7 +152,9 @@ impl ProverDomainStats {
 pub struct StatsSummaryRecord {
     /// Prover name — Debug-format of `ProverKind` (e.g. `"Z3"`, `"Lean"`).
     pub prover: String,
-    /// Domain tag (e.g. `"arithmetic.factorisation"`).
+    /// Domain tag in `category.aspect` form (e.g. `"arithmetic.natural_numbers"`).
+    /// Produced by `Aspect::dotted_key()` and filtered by the learning-loop
+    /// boundary so only dotted strings reach this field.
     pub domain: String,
     pub attempts: u64,
     pub successes: u64,
