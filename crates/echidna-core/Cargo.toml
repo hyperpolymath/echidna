@@ -5,7 +5,7 @@ name = "echidna-core"
 version = "0.1.0"
 edition = "2021"
 authors = ["Jonathan D.A. Jewell <j.d.a.jewell@open.ac.uk>"]
-license = "MPL-2.0"
+license = "AGPL-3.0-or-later"
 description = "Canonical Term / Goal / ProofState / Tactic types for ECHIDNA, re-used by vcl-ut and any future proof-exchange client without depending on the full echidna binary."
 repository = "https://github.com/hyperpolymath/echidna"
 

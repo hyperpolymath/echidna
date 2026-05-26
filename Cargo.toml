@@ -5,7 +5,7 @@ name = "echidna"
 version = "2.1.0"
 edition = "2021"
 authors = ["Jonathan D.A. Jewell <j.d.a.jewell@open.ac.uk>"]
-license = "MPL-2.0"
+license = "AGPL-3.0-or-later"
 description = "Neurosymbolic theorem proving platform with multi-prover support"
 repository = "https://github.com/hyperpolymath/echidna"
 
