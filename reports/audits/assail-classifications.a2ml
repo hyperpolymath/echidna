@@ -110,4 +110,21 @@ schema_version = "1.0.0"
     (audit "audits/audit-ffi-boundary.md §8")
     (rationale "No unsafe blocks; allocations (148 units) reflect 105 prover modules and ProverKind enum variants (ln 96-200); structural not FFI"))
 
+  ; ─── PA021 ProofDrift — legitimate mathematical axioms ───────────────────
+  ; Both findings are postulates with inline justification in the source
+  ; (funext is HoTT-standard; Conflicts is INTENTIONAL parameter, not debt).
+  ; See audits/audit-pa021-axioms-2026-05-26.md.
+
+  (classification
+    (file "proofs/agda/Basic.agda")
+    (category "ProofDrift")
+    (audit "audits/audit-pa021-axioms-2026-05-26.md §1")
+    (rationale "funext: function extensionality, postulated in plain Agda (provable in Cubical); standard mathematical axiom accepted by Coq, Lean, HoTT. Inline justification at line 172-177."))
+
+  (classification
+    (file "proofs/agda/SoundnessPreservation.agda")
+    (category "ProofDrift")
+    (audit "audits/audit-pa021-axioms-2026-05-26.md §2")
+    (rationale "Conflicts is an abstract binary predicate parameter; caller supplies concrete proof of ¬ Conflicts when sets are disjoint. INTENTIONAL parameter, not proof debt. Inline justification at line 44-53."))
+
 )
