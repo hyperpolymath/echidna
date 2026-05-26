@@ -1251,7 +1251,10 @@ mod tests {
 
     #[test]
     fn test_dotted_key_natural_numbers() {
-        assert_eq!(Aspect::NaturalNumbers.dotted_key(), "arithmetic.natural_numbers");
+        assert_eq!(
+            Aspect::NaturalNumbers.dotted_key(),
+            "arithmetic.natural_numbers"
+        );
     }
 
     #[test]
@@ -1261,7 +1264,10 @@ mod tests {
 
     #[test]
     fn test_dotted_key_propositional_logic() {
-        assert_eq!(Aspect::PropositionalLogic.dotted_key(), "logic.propositional_logic");
+        assert_eq!(
+            Aspect::PropositionalLogic.dotted_key(),
+            "logic.propositional_logic"
+        );
     }
 
     #[test]

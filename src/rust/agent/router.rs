@@ -107,7 +107,11 @@ impl ProverRouter {
             }
 
             // Coq for inductive proofs ("proof_techniques.induction")
-            if goal.aspects.iter().any(|s| s.starts_with("proof_techniques.")) {
+            if goal
+                .aspects
+                .iter()
+                .any(|s| s.starts_with("proof_techniques."))
+            {
                 return ProverKind::Coq;
             }
 
