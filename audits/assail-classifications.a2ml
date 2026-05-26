@@ -1,32 +1,130 @@
-;; SPDX-License-Identifier: MPL-2.0
-;; Copyright (c) 2026 Jonathan D.A. Jewell (hyperpolymath) <j.d.a.jewell@open.ac.uk>
-;;
-;; Assail Classifications — echidna
-;; See panic-attack/.claude/CLAUDE.md § "User-Classification Registry".
+# SPDX-License-Identifier: MPL-2.0
+# Copyright (c) 2026 Jonathan D.A. Jewell (hyperpolymath) <j.d.a.jewell@open.ac.uk>
+#
+# Classification registry for panic-attack assail findings that are confirmed
+# legitimate patterns and should not be treated as actionable weak-points.
+#
+# Format mirrors the panic-attack user-classification registry protocol.
+# Cross-reference: audits/audit-ffi-boundary.md
+
+[metadata]
+name = "echidna-assail-classifications"
+project = "echidna"
+version = "1.0.0"
+schema_version = "1.0.0"
 
 (assail-classifications
-  (metadata
-    (version "1.0.0")
-    (project "echidna")
-    (last-updated "2026-05-26")
-    (entries 2)
-    (status "active"))
 
-  ;; ─── PA021 ProofDrift — legitimate mathematical axioms ─────────────────
-  ;; Both findings are postulates with inline justification in the source
-  ;; (funext is HoTT-standard; Conflicts is an INTENTIONAL parameter not a
-  ;; proof debt). See audits/audit-pa021-axioms-2026-05-26.md.
+  ; ─── src/rust/ffi/mod.rs — C-ABI exports + raw-pointer handling ──────────
+  (classification
+    (file "src/rust/ffi/mod.rs")
+    (category "UnsafeCode")
+    (audit "audits/audit-ffi-boundary.md §1")
+    (rationale "C-ABI exports for the Zig FFI layer; 24 documented unsafe blocks reviewed in linked audit"))
+
+  (classification
+    (file "src/rust/ffi/mod.rs")
+    (category "ResourceLeak")
+    (audit "audits/audit-ffi-boundary.md §1")
+    (rationale "Box::into_raw ownership-transfer to Zig caller; Zig calls rust_free_* to drop — not an actual leak"))
+
+  ; ─── src/rust/ffi/spark_axiom.rs — Rust→SPARK via C ABI ─────────────────
+  (classification
+    (file "src/rust/ffi/spark_axiom.rs")
+    (category "UnsafeCode")
+    (audit "audits/audit-ffi-boundary.md §2")
+    (rationale "extern C callouts to SPARK-compiled policy enforcement; pointer preconditions enforced by Ada contracts"))
+
+  ; ─── src/rust/proof_search.rs — Chapel FFI, feature-gated ───────────────
+  (classification
+    (file "src/rust/proof_search.rs")
+    (category "UnsafeCode")
+    (audit "audits/audit-ffi-boundary.md §3")
+    (rationale "Chapel parallel-search FFI behind #[cfg(feature = chapel)]; all 7 unsafe blocks reviewed in linked audit"))
+
+  ; ─── src/interfaces/graphql/ffi_wrapper.rs ────────────────────────────────
+  (classification
+    (file "src/interfaces/graphql/ffi_wrapper.rs")
+    (category "UnsafeCode")
+    (audit "audits/audit-ffi-boundary.md §4")
+    (rationale "Interface-layer wrapper over src/rust/ffi/mod.rs C-ABI; CStr/raw-pointer patterns identical to §1"))
+
+  ; ─── src/interfaces/grpc/ffi_wrapper.rs ───────────────────────────────────
+  (classification
+    (file "src/interfaces/grpc/ffi_wrapper.rs")
+    (category "UnsafeCode")
+    (audit "audits/audit-ffi-boundary.md §4")
+    (rationale "Interface-layer wrapper over src/rust/ffi/mod.rs C-ABI; CStr/raw-pointer patterns identical to §1"))
+
+  ; ─── src/interfaces/rest/ffi_wrapper.rs ───────────────────────────────────
+  (classification
+    (file "src/interfaces/rest/ffi_wrapper.rs")
+    (category "UnsafeCode")
+    (audit "audits/audit-ffi-boundary.md §4")
+    (rationale "Interface-layer wrapper over src/rust/ffi/mod.rs C-ABI; CStr/raw-pointer patterns identical to §1"))
+
+  ; ─── src/rust/provers/z3.rs — SMT-LIB parser backend ─────────────────────
+  (classification
+    (file "src/rust/provers/z3.rs")
+    (category "UnsafeCode")
+    (audit "audits/audit-ffi-boundary.md §5")
+    (rationale "No unsafe blocks present; panic-attack unwrap_calls/allocations score reflects legitimate SMT-LIB parsing patterns (18 unwrap_or_else for parser recovery, 54KB allocations normal for proof state)"))
+
+  (classification
+    (file "src/rust/provers/z3.rs")
+    (category "PanicPath")
+    (audit "audits/audit-ffi-boundary.md §5")
+    (rationale "Parser .expect(token) method calls (line 727+ self.expect) are structured S-expression parsing, not panic sites; error propagated via ? operator"))
+
+  ; ─── src/rust/fault_tolerance/resilience.rs — Circuit breaker ─────────────
+  (classification
+    (file "src/rust/fault_tolerance/resilience.rs")
+    (category "UnsafeCode")
+    (audit "audits/audit-ffi-boundary.md §5")
+    (rationale "No unsafe blocks; allocations reflect AtomicU32 counter management and Vec growth in backoff/retry state machines — expected for fault tolerance"))
+
+  ; ─── src/rust/provers/pvs.rs — PVS backend (3168 LoC) ──────────────────────
+  (classification
+    (file "src/rust/provers/pvs.rs")
+    (category "UnsafeCode")
+    (audit "audits/audit-ffi-boundary.md §6")
+    (rationale "No unsafe blocks; allocations (204 units) reflect PVS AST structures (expr, types, case selections, quantifiers); pattern matches enum-to-Box conversions in parser (ln 46-100)"))
+
+  ; ─── src/rust/provers/hol4.rs — HOL4 backend (2621 LoC) ───────────────────
+  (classification
+    (file "src/rust/provers/hol4.rs")
+    (category "UnsafeCode")
+    (audit "audits/audit-ffi-boundary.md §7")
+    (rationale "No unsafe blocks; allocations (174 units) + 1 panic site reflect HOL4 tactic evaluation & type parser recursion (spawn at line 1430, vec! at lines 928+)"))
+
+  (classification
+    (file "src/rust/provers/hol4.rs")
+    (category "PanicPath")
+    (audit "audits/audit-ffi-boundary.md §7")
+    (rationale "One panic site from process spawn error handling (line 1430); struct-to-vec conversions for tactics (Metis, Simp) return Err not panic"))
+
+  ; ─── src/rust/provers/mod.rs — 105 prover backend exports ────────────────
+  (classification
+    (file "src/rust/provers/mod.rs")
+    (category "UnsafeCode")
+    (audit "audits/audit-ffi-boundary.md §8")
+    (rationale "No unsafe blocks; allocations (148 units) reflect 105 prover modules and ProverKind enum variants (ln 96-200); structural not FFI"))
+
+  ; ─── PA021 ProofDrift — legitimate mathematical axioms ───────────────────
+  ; Both findings are postulates with inline justification in the source
+  ; (funext is HoTT-standard; Conflicts is INTENTIONAL parameter, not debt).
+  ; See audits/audit-pa021-axioms-2026-05-26.md.
 
   (classification
     (file "proofs/agda/Basic.agda")
     (category "ProofDrift")
-    (classification "legitimate-mathematical-axiom")
     (audit "audits/audit-pa021-axioms-2026-05-26.md §1")
-    (rationale "funext: function extensionality, postulated in plain Agda (provable in Cubical Agda); standard mathematical axiom accepted by Coq, Lean, HoTT. Inline justification at line 172-177."))
+    (rationale "funext: function extensionality, postulated in plain Agda (provable in Cubical); standard mathematical axiom accepted by Coq, Lean, HoTT. Inline justification at line 172-177."))
 
   (classification
     (file "proofs/agda/SoundnessPreservation.agda")
     (category "ProofDrift")
-    (classification "intentional-parameter")
     (audit "audits/audit-pa021-axioms-2026-05-26.md §2")
-    (rationale "Conflicts is an abstract binary predicate parameter; the caller supplies a concrete proof of ¬ Conflicts when sets are disjoint. INTENTIONAL design parameter, not proof debt. Inline justification at line 44-53.")))
+    (rationale "Conflicts is an abstract binary predicate parameter; caller supplies concrete proof of ¬ Conflicts when sets are disjoint. INTENTIONAL parameter, not proof debt. Inline justification at line 44-53."))
+
+)
