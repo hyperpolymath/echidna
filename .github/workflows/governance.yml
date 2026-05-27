@@ -31,4 +31,4 @@ permissions:
 
 jobs:
   governance:
-    uses: hyperpolymath/standards/.github/workflows/governance-reusable.yml@128a854b199848c1603c5748260ca33f0ce559c6 # main 2026-05-20
+    uses: hyperpolymath/standards/.github/workflows/governance-reusable.yml@5eb28d7d8790d5389b7b6a5233fe6265a775e3d0 # main 2026-05-27 (post-#219 workflow_sha fix)
