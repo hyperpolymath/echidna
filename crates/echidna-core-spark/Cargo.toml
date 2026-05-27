@@ -7,7 +7,7 @@ edition = "2021"
 description = "Creusot-annotated trust pipeline kernel for ECHIDNA"
 # crates.io requires an OSI-approved identifier; MPL-2.0 is the automatic
 # legal fallback for MPL-2.0 until PMPL achieves formal recognition.
-license = "MPL-2.0"
+license = "AGPL-3.0-or-later"
 authors = ["Jonathan D.A. Jewell <j.d.a.jewell@open.ac.uk>"]
 repository = "https://github.com/hyperpolymath/echidna"
 
