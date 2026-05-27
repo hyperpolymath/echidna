@@ -484,6 +484,7 @@ impl ProofMemory for VeriSimDBProofStore {
 mod tests {
     use super::super::{AgenticGoal, Priority};
     use super::*;
+    use crate::aspect::Aspect;
     use crate::core::{Goal, Term};
 
     #[tokio::test]
@@ -501,7 +502,7 @@ mod tests {
             attempts: 0,
             max_attempts: 3,
             preferred_prover: None,
-            aspects: vec!["logic".to_string()],
+            aspects: vec![Aspect::PredicateLogic.dotted_key()],
             parent: None,
         };
 

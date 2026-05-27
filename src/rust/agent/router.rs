@@ -99,20 +99,24 @@ impl ProverRouter {
     /// Aspect-only heuristic; history-weighted selection is available
     /// via `select_async`, which reads the routing stats tables.
     pub fn select(&self, goal: &AgenticGoal) -> ProverKind {
-        // If goal has aspects, try to match
+        // If goal has aspects, try to match on dotted category.aspect keys.
         if !goal.aspects.is_empty() {
-            // SMT solvers for arithmetic
-            if goal.aspects.contains(&"arithmetic".to_string()) {
+            // SMT solvers for arithmetic (any "arithmetic.*" key)
+            if goal.aspects.iter().any(|s| s.starts_with("arithmetic.")) {
                 return ProverKind::Z3;
             }
 
-            // Coq for inductive proofs
-            if goal.aspects.contains(&"inductive".to_string()) {
+            // Coq for inductive proofs ("proof_techniques.induction")
+            if goal
+                .aspects
+                .iter()
+                .any(|s| s.starts_with("proof_techniques."))
+            {
                 return ProverKind::Coq;
             }
 
-            // Lean for type theory
-            if goal.aspects.contains(&"type_theory".to_string()) {
+            // Lean for type theory ("type_theory.*")
+            if goal.aspects.iter().any(|s| s.starts_with("type_theory.")) {
                 return ProverKind::Lean;
             }
         }
@@ -242,6 +246,7 @@ impl Default for ProverRouter {
 mod tests {
     use super::super::{AgenticGoal, Priority};
     use super::*;
+    use crate::aspect::Aspect;
     use crate::core::{Goal, Term};
 
     #[tokio::test]
@@ -258,7 +263,7 @@ mod tests {
             attempts: 0,
             max_attempts: 3,
             preferred_prover: None,
-            aspects: vec!["arithmetic".to_string()],
+            aspects: vec![Aspect::Arithmetic.dotted_key()],
             parent: None,
         };
 
@@ -332,7 +337,7 @@ mod tests {
             attempts: 0,
             max_attempts: 3,
             preferred_prover: None,
-            aspects: vec!["arithmetic".to_string()],
+            aspects: vec![Aspect::Arithmetic.dotted_key()],
             parent: None,
         };
 
@@ -352,7 +357,7 @@ mod tests {
             attempts: 0,
             max_attempts: 3,
             preferred_prover: None,
-            aspects: vec!["inductive".to_string()],
+            aspects: vec![Aspect::Induction.dotted_key()],
             parent: None,
         };
 
@@ -372,7 +377,7 @@ mod tests {
             attempts: 0,
             max_attempts: 3,
             preferred_prover: None,
-            aspects: vec!["type_theory".to_string()],
+            aspects: vec![Aspect::DependentTypes.dotted_key()],
             parent: None,
         };
 
@@ -412,7 +417,7 @@ mod tests {
             attempts: 0,
             max_attempts: 3,
             preferred_prover: None,
-            aspects: vec!["logic".to_string()],
+            aspects: vec![Aspect::PredicateLogic.dotted_key()],
             parent: None,
         };
 

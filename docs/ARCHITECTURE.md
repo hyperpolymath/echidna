@@ -1,0 +1,160 @@
+<!-- SPDX-License-Identifier: MPL-2.0 -->
+<!-- SPDX-FileCopyrightText: 2026 Jonathan D.A. Jewell <j.d.a.jewell@open.ac.uk> -->
+
+# ECHIDNA Architecture
+
+**Status**: canonical human-readable overview. Lives alongside the machine-readable
+[`.machine_readable/6a2/META.a2ml`](../.machine_readable/6a2/META.a2ml) (architecture
+decisions) and [`STATE.a2ml`](../.machine_readable/6a2/STATE.a2ml) (current state).
+Last revised: 2026-05-26.
+
+ECHIDNA — Extensible Cognitive Hybrid Intelligence for Deductive Neural Assistance —
+is the reasoning substrate of the hyperpolymath ecosystem. Two non-negotiable
+invariants govern every design choice:
+
+1. **ML suggests; provers verify.** Neural components rank, route, and propose;
+   formal provers carry the trust. A wrong suggestion is a wasted CPU cycle,
+   not a wrong proof.
+2. **Trust is checked, not asserted.** Solver binaries are SHAKE3-512 / BLAKE3
+   integrity-checked before invocation; certificates are independently
+   reproduced where formats allow (Alethe, DRAT/LRAT, TSTP).
+
+## Component map
+
+```
+┌─────────────────────────────────────────────────────────────────────────┐
+│                              UI Layer                                   │
+│   AffineScript-TEA (migrating from src/rescript/), served by Deno      │
+└──────────────────────────────┬──────────────────────────────────────────┘
+                               │ HTTP / WebSocket (Cap'n Proto, planned L1)
+┌──────────────────────────────▼──────────────────────────────────────────┐
+│                       Rust Core  (src/rust/, crates/)                   │
+│                                                                         │
+│  ┌──────────┐  ┌──────────────┐  ┌────────────────┐  ┌──────────────┐  │
+│  │ CLI/REPL │  │ REST / GraphQL│  │ gRPC          │  │ FFI (Zig)    │  │
+│  │ (main.rs)│  │ (axum :8000)  │  │ (tonic :50051)│  │ (16 exports) │  │
+│  └────┬─────┘  └──────┬────────┘  └──────┬────────┘  └──────┬───────┘  │
+│       └────────────────┴──────────────────┴────────────────┘            │
+│                                  │                                       │
+│                                  ▼                                       │
+│              ┌──────────────────────────────────────┐                   │
+│              │  ProverDispatcher (dispatch.rs)       │                   │
+│              │  — selects backend, owns trust loop   │                   │
+│              └──┬───────────────────────────────┬───┘                   │
+│                 │                               │                        │
+│   ┌─────────────▼────────────┐    ┌─────────────▼───────────────────┐   │
+│   │   Trust pipeline          │    │  128 ProverKind backends         │  │
+│   │   (verification/)         │    │  (provers/)                      │  │
+│   │   - integrity             │    │   89 external prover bindings    │  │
+│   │   - portfolio             │    │   39 TypeChecker disciplines     │  │
+│   │   - certificates          │    │      via TypedWasm Sigma         │  │
+│   │   - axiom tracker         │    │                                  │  │
+│   │   - confidence            │    │   Tier 1: 12 core (REST default) │  │
+│   │   - mutation              │    │   Tier 2–10: by capability       │  │
+│   │   - pareto                │    └──────────────────────────────────┘  │
+│   │   - statistics            │                                          │
+│   └───────────────────────────┘                                          │
+│                                                                         │
+│   ┌────────────────────────┐    ┌────────────────────────┐              │
+│   │ Agentic search          │    │ GNN client              │             │
+│   │ (agent/, actor model)   │───►│ (gnn/client.rs)         │             │
+│   └────────────────────────┘    └─────────┬──────────────┘              │
+└─────────────────────────────────────────────┼────────────────────────────┘
+                                              │ POST /gnn/rank
+                                              │ POST /training/update
+                                              │ POST /gnn/health
+                  ┌───────────────────────────▼───────────────────────────┐
+                  │  Julia ML sidecar  (src/julia/)  — port 8090          │
+                  │   api/server.jl (canonical entry)                     │
+                  │   - load_gnn_model → models/neural/gnn_ranker         │
+                  │   - PROVER_DOMAIN_WEIGHTS (online from /training/update)│
+                  │   - cosine fallback (model_loaded == false)           │
+                  └───────────────────────┬───────────────────────────────┘
+                                          │
+                                          ▼
+                                     VeriSimDB
+                          (cross-repo; verisim REST :8080)
+                          historical proof_attempts table,
+                          mv_prover_success_by_class
+```
+
+## Tier overview
+
+ECHIDNA carries **128 ProverKind variants**. The exposed surface depends on tier:
+
+- **Tier 1 (12 core)** — the default REST `/api/verify` surface: Coq/Rocq, Lean 4,
+  Agda, Isabelle/HOL, Idris 2, F*, Z3, CVC5, Alt-Ergo, Dafny, Vampire, E Prover.
+- **Tier 2–10** — 116 additional backends: ATPs, SMT, model checkers, constraint
+  solvers, niche provers, ecosystem type-checkers. Available via explicit
+  `ProverKind` selection in CLI / REPL / GraphQL but not auto-routed.
+
+See [`PROVER_COUNT.md`](PROVER_COUNT.md) for the canonical tier table and
+per-prover capabilities.
+
+## Trust pipeline walkthrough
+
+Each `verify_proof` call passes through (under `--features verisim`, eventually
+in default builds; see [`handover/TODO.md`](handover/TODO.md) for current state):
+
+1. **Integrity** (`integrity/`) — solver binary SHAKE3-512 + BLAKE3 against
+   `config/solver-manifest.toml`.
+2. **Dispatch** (`dispatch.rs`) — `ProverDispatcher::select_prover` picks the
+   backend; under `with_verisim`, `VeriSimAdvisor` queries
+   `mv_prover_success_by_class` for historical success-rate hints.
+3. **Sandbox** (`executor/`) — Podman or bubblewrap process containment.
+4. **Portfolio cross-check** (`verification/portfolio.rs`) — for SMT, run two
+   independent solvers; ✓ if both agree.
+5. **Certificate verification** (`verification/certificates.rs`) — replay
+   Alethe / DRAT-LRAT / TSTP independently of the originating solver.
+6. **Axiom tracking** (`verification/axiom_tracker.rs`) — 4 danger levels
+   (Safe, Noted, Warning, Reject).
+7. **Confidence** (`verification/confidence.rs`) — 5-tier Bayesian trust score.
+8. **Mutation testing** (`verification/mutation.rs`) — for specifications.
+9. **Pareto** (`verification/pareto.rs`) — multi-objective frontier across
+   speed / trust / certificate availability.
+10. **Statistics** (`verification/statistics.rs`) — per-(prover, domain) success
+    rates; exported to `/training/update` for online ML weight updates.
+11. **Outcome emission** (`dispatch.rs::spawn_record_attempt`, gated on
+    `with_verisim_writer`) — fire-and-forget write to VeriSimDB
+    `proof_attempts`, closes the learning loop.
+
+## Polyglot source layout
+
+`src/` holds one subdirectory per language. The split is intentional — see
+[`RSR_COMPLIANCE.adoc`](../RSR_COMPLIANCE.adoc) §"Out-of-template adaptations".
+
+| Path | Language | Role |
+|---|---|---|
+| `src/rust/` | Rust | Core: backends, dispatch, trust pipeline, CLI, REPL, server |
+| `crates/` | Rust | Extracted workspace members (`echidna-core`, `-mcp`, `-wire`, `-core-spark`, `typed_wasm`) |
+| `src/julia/` | Julia | ML sidecar (GNN, logistic regression, training, eval) |
+| `src/abi/` | Idris 2 | Formal ABI proofs (16 modules, zero `believe_me`) |
+| `src/idris/` | Idris 2 | UI validator |
+| `src/chapel/` | Chapel | Parallel proof search (L2.1 live; L2.2+ gated) |
+| `src/zig_ffi/` | Zig | Chapel-bridge FFI shim |
+| `ffi/zig/` | Zig | Overlay / tentacles / boj sources |
+| `src/ada/` | Ada + SPARK | Formal companion library |
+| `src/rescript/` | ReScript → AffineScript | UI (migration in progress) |
+| `src/ui/` | static assets | Public UI files |
+| `src/interfaces/` | Rust | GraphQL, gRPC, REST workspace crates |
+
+## Internal IPC
+
+Today: HTTP + JSON between Rust core and Julia sidecar on port 8090.
+Endpoints — `POST /gnn/rank`, `POST /gnn/embed`, `POST /training/update`,
+`POST /gnn/health`, plus `POST /reload` (planned port from the orphaned
+`api_server.jl`).
+
+Planned (Stage 5a / L1): Cap'n Proto over Unix domain socket; HTTP+JSON
+retained only as debug fallback. See [`docs/handover/L1-CAPNPROTO-PROMPT.md`](handover/L1-CAPNPROTO-PROMPT.md).
+
+## Where to go next
+
+- [`docs/ROADMAP.md`](ROADMAP.md) — canonical stage map and sprint targets.
+- [`docs/handover/STATE.md`](handover/STATE.md) — running session log.
+- [`docs/handover/HANDOVER-INDEX.md`](handover/HANDOVER-INDEX.md) — guide to the
+  handover/ prompt suite.
+- [`docs/ENV-VARS.md`](ENV-VARS.md) — every environment variable the system
+  reads, with defaults.
+- [`docs/PROVER_COUNT.md`](PROVER_COUNT.md) — canonical tier table.
+- [`.machine_readable/6a2/STATE.a2ml`](../.machine_readable/6a2/STATE.a2ml) — machine-readable state, regenerated each sprint.

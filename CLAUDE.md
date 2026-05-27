@@ -4,19 +4,22 @@ This document provides guidelines and context for working with Claude Code on th
 
 ## Project Overview
 
-**ECHIDNA** (Extensible Cognitive Hybrid Intelligence for Deductive Neural Assistance) is a trust-hardened neurosymbolic theorem proving platform supporting 105 prover backends with a comprehensive verification pipeline.
+**ECHIDNA** (Extensible Cognitive Hybrid Intelligence for Deductive Neural Assistance) is a trust-hardened neurosymbolic theorem proving platform supporting 128 prover backends with a comprehensive verification pipeline.
 
 **Repository**: https://github.com/hyperpolymath/echidna
-**Version**: 2.3.0
+**Version**: 2.3.0 (see `CHANGELOG.md`; release-tag publication tracked in `docs/handover/TODO.md`)
 **License**: MPL-2.0
+**Architecture overview**: [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md)
+**Canonical prover count**: [`docs/PROVER_COUNT.md`](docs/PROVER_COUNT.md) (128 total, 12 core)
+**Environment variables**: [`docs/ENV-VARS.md`](docs/ENV-VARS.md)
 
 ## Repository Structure
 
 ```
 echidna/
 ├── src/
-│   ├── rust/               # Rust core (105 provers, trust pipeline)
-│   │   ├── provers/        # 105 prover backend implementations
+│   ├── rust/               # Rust core (128 provers, trust pipeline)
+│   │   ├── provers/        # 128 prover backend implementations
 │   │   ├── verification/   # Trust pipeline (portfolio, certificates, axioms, confidence, mutation, pareto, statistics)
 │   │   ├── integrity/      # Solver binary integrity (SHAKE3-512, BLAKE3)
 │   │   ├── executor/       # Sandboxed solver execution (Podman, bubblewrap)
@@ -38,7 +41,7 @@ echidna/
 │   │   ├── grpc/           # gRPC (tonic, port 50051)
 │   │   └── rest/           # REST (axum + OpenAPI, port 8000)
 │   ├── julia/              # Julia ML components
-│   └── rescript/           # ReScript+Deno UI (10 files — built locally, not yet shipped)
+│   └── rescript/           # ReScript UI (10 files — migration to AffineScript-TEA in progress)
 ├── .machine_readable/      # A2ML metadata (STATE.a2ml, META.a2ml, ECOSYSTEM.a2ml, …)
 ├── .github/workflows/      # 17 CI/CD workflows
 ├── Cargo.toml              # Rust workspace root
@@ -69,9 +72,9 @@ Follow conventional commit format:
 
 ### Tech Stack
 
-- **Rust**: Core logic, 105 prover backends, trust pipeline, CLI, REPL, API servers
+- **Rust**: Core logic, 128 prover backends, trust pipeline, CLI, REPL, API servers
 - **Julia**: ML inference (tactic prediction, premise selection, port 8090)
-- **ReScript + Deno**: UI components (10 files, zero TypeScript — local build only)
+- **AffineScript + Deno** (canonical; migration in progress from `src/rescript/`): UI served by Deno
 - **Chapel**: Optional parallel proof dispatch
 
 ### Prover Support (105 Total - ALL IMPLEMENTED)
@@ -100,7 +103,7 @@ The v1.5 trust hardening added:
 
 ### Key Components
 
-- `src/rust/provers/mod.rs`: ProverBackend trait, ProverKind enum (105 variants), ProverFactory
+- `src/rust/provers/mod.rs`: ProverBackend trait, ProverKind enum (128 variants), ProverFactory
 - `src/rust/dispatch.rs`: Full trust-hardening dispatch pipeline
 - `src/rust/verification/`: Portfolio, certificates, axiom tracker, confidence, mutation, pareto, statistics
 - `src/rust/integrity/`: Solver binary integrity (SHAKE3-512, BLAKE3)
@@ -113,13 +116,13 @@ The v1.5 trust hardening added:
 ### Current Status
 
 **Completed (v2.0.0)**:
-- 105/105 prover backends across 10 tiers
+- 105/128 prover backends across 10 tiers
 - Trust & safety hardening (13 tasks complete)
 - 638+ tests passing (528 unit + 38 integration + 21 property + interface)
 - 3 API interfaces (GraphQL, gRPC, REST) with real prover backend invocation
 - Agda meta-checker: 30+ formally verified trust pipeline properties
 - Criterion benchmarks: 13 functions covering all critical paths
-- FFI bridge: complete C-compatible API for all 105 provers
+- FFI bridge: complete C-compatible API for all 128 provers
 - Julia ML layer (logistic regression, MRR 0.66)
 - 26 CI/CD workflows (including Agda meta-checker)
 - Zig FFI layer (4 shared libraries)

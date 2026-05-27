@@ -1,0 +1,73 @@
+// SPDX-License-Identifier: MPL-2.0
+// SPDX-FileCopyrightText: 2026 Jonathan D.A. Jewell <j.d.a.jewell@open.ac.uk>
+
+= ECHIDNA — RSR / CCCP Compliance Statement
+Jonathan D.A. Jewell <j.d.a.jewell@open.ac.uk>
+:revdate: 2026-05-25
+:toc:
+
+Status: living document, regenerated as policy changes.
+Canonical state: `.machine_readable/6a2/STATE.a2ml`.
+Canonical policy: `MUST.contractile`, `ADJUST.contractile`,
+`.machine_readable/policies/*.a2ml`.
+
+This file satisfies RSR-H9 / RSR-S4 (required root-level compliance
+statement). It is a *summary* — the authoritative ruleset lives in
+the contractiles and the machine-readable policies above.
+
+== Hard rules (HARD; enforced by CI)
+
+[cols="1,3,2",options="header"]
+|===
+| ID | Rule | Source
+| RSR-H1  | `.machine_readable/` and `0-AI-MANIFEST.a2ml` preserved at root | `MUST.contractile:34`
+| RSR-H2  | No `.scm` metadata files in `.machine_readable/` (deprecated; use `.a2ml`). `guix.scm` exempt. | `.claude/CLAUDE.md`
+| RSR-H3  | Generated code lives only in `generated/`                       | `MUST.contractile:39`
+| RSR-H4  | No Python, TypeScript, Go anywhere                              | `MUST.contractile:31`
+| RSR-H5  | SPDX-License-Identifier header on every source file             | `MUST.contractile:28`
+| RSR-H6  | `unsafe {}` only with `// SAFETY:` comment; no `believe_me` / `assert_total` / `Admitted` / `sorry` | `MUST.contractile:22`
+| RSR-H7  | CI workflows not removed without approval; all Actions SHA-pinned | `MUST.contractile:30`
+| RSR-H8  | No OWASP Top-10 vulnerabilities introduced                      | `MUST.contractile:37`
+| RSR-H9  | Required root files: `.editorconfig`, `.gitignore`, `Justfile`, `README.adoc`, this file, `LICENSE`, `.well-known/{security,ai,humans}.txt`, `guix.scm` | `RSR_OUTLINE.adoc` (echidna-playground)
+| RSR-H10 | Prohibited: Python outside `salt/`; TypeScript/JS (use AffineScript); `Dockerfile` (use `Containerfile`); CUE (use Nickel) | `RSR_OUTLINE.adoc`
+| RSR-H11 | Canonical dirs: `config/`, `docs/`, `docs/generated/`, `docs/man/`, `src/`, `tests/` | `RSR_OUTLINE.adoc`
+| RSR-H12 | `just validate-rsr` passes on every PR                          | `MAINTENANCE-CHECKLIST.adoc:69`
+| RSR-H13 | Guix is primary package manager; sealed-container escape only; no Nix fallback (estate ruling 2026-05-18) | `.claude/CLAUDE.md`
+| RSR-H14 | Justfile is the primary build system (no Make, etc.)            | `MUST.contractile:42`
+| RSR-H15 | Podman, not Docker, for containers                              | `MUST.contractile:44`
+|===
+
+== Soft conventions (SOFT; aspirational)
+
+* Language tiers: Tier-1 = Rust, Elixir, Zig, Ada, Haskell, ReScript/AffineScript; Tier-2 = Nickel, Racket, Guile, Nix.
+* Coverage above 80 %.
+* Performance benchmarks show no regression PR-over-PR.
+* Generated docs in `docs/generated/`; man pages in `docs/man/`.
+
+== Out-of-template adaptations
+
+ECHIDNA diverges from the strict RSR template in three places:
+
+1. *State file location*: RSR template puts `STATE.scm` at root; echidna
+   places it at `.machine_readable/6a2/STATE.a2ml` per the `.scm → .a2ml`
+   migration documented in `.claude/CLAUDE.md`.
+2. *Polyglot source layout*: `src/` contains per-language subdirectories
+   (`src/rust/`, `src/julia/`, `src/abi/`, `src/chapel/`, `src/zig_ffi/`,
+   `src/ada/`, `src/rescript/`, `src/ui/`, `src/interfaces/`) rather than
+   a single language tree. The split is intentional — see CLAUDE.md.
+3. *Extracted Rust crates*: workspace-member crates live in `crates/`
+   alongside `src/rust/`. The split between `src/rust/` (binary + main
+   library) and `crates/` (extracted workspace members like `echidna-mcp`,
+   `echidna-wire`, `echidna-core-spark`, `typed_wasm`) is intentional and
+   documented in `Cargo.toml`.
+
+== Verifying compliance locally
+
+[source,bash]
+----
+just validate-rsr     # primary gate
+just check            # broader sweep (rust + julia + idris2 + ...)
+just test             # 1067+ unit tests, 6 integration tests
+----
+
+Run any of these before submitting a PR. CI runs all three on every push.

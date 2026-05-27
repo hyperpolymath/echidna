@@ -105,7 +105,10 @@ async fn test_health_status_richer_payload() {
         ..GnnConfig::default()
     });
 
-    let health = client.health_status().await.expect("health_status should succeed");
+    let health = client
+        .health_status()
+        .await
+        .expect("health_status should succeed");
 
     assert!(health.gnn_model_loaded, "mock reports model loaded");
     assert_eq!(health.model_path.as_deref(), Some("/fake/path"));
@@ -118,11 +121,7 @@ async fn test_health_status_richer_payload() {
 
 // ─── helper: assert top tactic from suggest_tactics ─────────────────────────
 
-async fn assert_top_tactic_is_apply(
-    kind: ProverKind,
-    prover_name: &str,
-    base_url: &str,
-) {
+async fn assert_top_tactic_is_apply(kind: ProverKind, prover_name: &str, base_url: &str) {
     let backend = ProverFactory::create(kind, gnn_config(base_url))
         .unwrap_or_else(|e| panic!("Failed to create {:?} backend: {}", kind, e));
 
@@ -140,7 +139,11 @@ async fn assert_top_tactic_is_apply(
 
     let first = &tactics[0];
     match first {
-        echidna::core::Tactic::Custom { prover, command, args } => {
+        echidna::core::Tactic::Custom {
+            prover,
+            command,
+            args,
+        } => {
             assert_eq!(
                 prover.as_str(),
                 prover_name,

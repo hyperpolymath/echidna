@@ -1,131 +1,79 @@
 ECHIDNA - Extensible Cognitive Hybrid Intelligence for Deductive Neural Assistance
-Copyright (c) 2024-2025 ECHIDNA Project Contributors
+Copyright (c) 2024-2026 Jonathan D.A. Jewell and ECHIDNA Project Contributors
 
-This project is dual-licensed under:
-1. MIT License
-2. Palimpsest License v0.6
+This project is licensed under the Mozilla Public License, version 2.0
+(MPL-2.0).
 
-You may choose to use this software under the terms of either license.
+  Full text:                 LICENSE  (also in LICENSES/MPL-2.0.txt)
+  SPDX-License-Identifier:   MPL-2.0
 
-================================================================================
-
-LICENSES
-
-This software is licensed under the following licenses:
-
-1. MIT License
-   Full text available in: LICENSES/MIT.txt
-   SPDX-License-Identifier: MIT
-
-2. Palimpsest License v0.6
-   Full text available in: LICENSES/Palimpsest-0.6.txt
-   SPDX-License-Identifier: Palimpsest-0.6
+The project migrated from a dual MIT/Palimpsest-0.6 licence to MPL-2.0 in
+2026. Source files retain SPDX-License-Identifier: MPL-2.0 headers; the
+historical licence texts under LICENSES/ are kept only for any archival
+artefact that still bears an older SPDX tag.
 
 ================================================================================
 
 THIRD-PARTY SOFTWARE
 
 This project includes or depends on third-party software components with their
-own licenses. See the respective component directories and files for details.
+own licences. See the respective component directories and files for details.
 
-Rust Dependencies:
-- See Cargo.toml for complete list
-- Run `cargo license` for dependency licenses
+Rust dependencies:    Cargo.toml + `cargo license`
+Julia packages:       Project.toml + Manifest.toml
+Deno / AffineScript:  deno.json (run `deno info`)
 
-Julia Packages:
-- See Project.toml and Manifest.toml for complete list
-- All Julia packages respect their individual licenses
-
-ReScript/Deno Dependencies:
-- See package configuration for complete list
-
-Theorem Provers (integrated, not included):
-- Agda - BSD-3-Clause
-- Coq/Rocq - LGPL-2.1
-- Lean - Apache-2.0
-- Isabelle - BSD-3-Clause
-- Z3 - MIT
-- CVC5 - BSD-3-Clause
-- Metamath - Public Domain
-- HOL Light - BSD-2-Clause
-- Mizar - GPL-3.0
-- PVS - GPL-2.0
-- ACL2 - BSD-3-Clause
-- HOL4 - BSD-3-Clause
+Theorem provers (integrated, not redistributed):
+  Agda            BSD-3-Clause
+  Coq / Rocq      LGPL-2.1
+  Lean 4          Apache-2.0
+  Isabelle/HOL    BSD-3-Clause
+  Z3              MIT
+  CVC5            BSD-3-Clause
+  Metamath        Public Domain
+  HOL Light       BSD-2-Clause
+  Mizar           GPL-3.0
+  PVS             GPL-2.0
+  ACL2            BSD-3-Clause
+  HOL4            BSD-3-Clause
+  (...and 93 other backends; see docs/SUPPORTED_PROVERS.md)
 
 ================================================================================
 
 REUSE COMPLIANCE
 
-This project is compliant with REUSE Software Licensing specifications.
-For detailed copyright and licensing information, see:
+This project follows the REUSE Software Licensing specification.
 
-- .reuse/dep5 - Bulk copyright declarations
-- Individual file headers - SPDX license identifiers
-- LICENSES/ directory - Full license texts
+  .reuse/dep5          bulk copyright declarations
+  per-file headers     SPDX-License-Identifier: MPL-2.0
+  LICENSES/MPL-2.0.txt full licence text
 
-To verify compliance, run:
-  reuse lint
+Verify locally: `reuse lint`
 
 ================================================================================
 
-RSR/CCCP COMPLIANCE
+RSR / CCCP COMPLIANCE
 
-This project follows the Rhodium Standard Repository (RSR) and
-Cloud Computing Compliance Package (CCCP) guidelines.
-
-For more information:
-https://rhodium-standard.org
-
-================================================================================
-
-ATTRIBUTION REQUIREMENTS
-
-When using this software, you must:
-
-1. Retain all copyright notices
-2. Retain all license texts
-3. Attribute the ECHIDNA Project Contributors
-4. Include a copy of this NOTICE file (or equivalent attribution)
-
-For MIT License:
-- Include copyright notice and permission notice in all copies
-
-For Palimpsest License:
-- Retain attribution notices
-- Document modifications
-- Preserve transparency requirements
-- Respect ethical use provisions
-
-================================================================================
-
-SECURITY
-
-For security vulnerabilities, please see SECURITY.md and contact:
-security@echidna-project.org
-
-Do not disclose security issues publicly until they have been addressed.
+See RSR_COMPLIANCE.adoc at repo root.
 
 ================================================================================
 
 CONTRIBUTIONS
 
-All contributions to this project are licensed under the same dual license
-(MIT AND Palimpsest-0.6) unless explicitly stated otherwise.
+All contributions to this project are licensed under MPL-2.0 unless
+explicitly stated otherwise. See CONTRIBUTING.md.
 
 By contributing, you certify that:
-1. You have the right to submit the contribution
-2. You agree to license it under the project's licenses
-3. You understand the contribution will be publicly available
-
-See CONTRIBUTING.md for details.
+  1. You have the right to submit the contribution.
+  2. You agree to license it under MPL-2.0.
+  3. You understand the contribution will be publicly available.
 
 ================================================================================
 
-TRADEMARKS
+SECURITY
 
-"ECHIDNA" and related marks may be trademarks of the ECHIDNA Project.
-Use of these marks must comply with trademark guidelines (when established).
+See SECURITY.md and .well-known/security.txt.
+Do not disclose security issues publicly until they have been addressed.
 
 ================================================================================
 
@@ -133,34 +81,27 @@ CITATIONS
 
 If you use this software in academic work, please cite:
 
-@software{echidna2025,
-  title = {ECHIDNA: Extensible Cognitive Hybrid Intelligence for
-           Deductive Neural Assistance},
-  author = {ECHIDNA Project Contributors},
-  year = {2025},
-  url = {https://github.com/hyperpolymath/echidna},
-  license = {MIT AND Palimpsest-0.6}
-}
+  @software{echidna2026,
+    title  = {ECHIDNA: Extensible Cognitive Hybrid Intelligence for
+              Deductive Neural Assistance},
+    author = {Jonathan D.A. Jewell and ECHIDNA Project Contributors},
+    year   = {2026},
+    url    = {https://github.com/hyperpolymath/echidna},
+    license = {MPL-2.0},
+  }
 
-See CITATION.cff for machine-readable citation metadata.
+See CITATION.cff for machine-readable metadata and docs/CITATIONS.adoc for
+the broader bibliography.
 
 ================================================================================
 
 CONTACT
 
-Project Repository: https://github.com/hyperpolymath/echidna
-Issue Tracker: https://github.com/hyperpolymath/echidna/-/issues
-Documentation: See docs/ directory
+Repository:    https://github.com/hyperpolymath/echidna
+Issue tracker: https://github.com/hyperpolymath/echidna/issues
+Documentation: docs/ + RSR_COMPLIANCE.adoc + CLAUDE.md
 
 ================================================================================
 
-ACKNOWLEDGMENTS
-
-Built on foundations from the theorem proving community
-Thanks to all theorem prover communities
-Thanks to all contributors (see AUTHORS.md)
-
-================================================================================
-
-Last Updated: 2025-11-22
-Version: 0.1.0
+Last updated: 2026-05-25
+Version:      see CHANGELOG.md

@@ -12,7 +12,7 @@ This document outlines the recommended [proven](https://github.com/hyperpolymath
 
 ## Integration Notes
 
-ECHIDNA as a neurosymbolic theorem proving platform supporting 12 provers requires formally verified proof management:
+ECHIDNA as a neurosymbolic theorem proving platform supporting 128 prover backends (12 core; see [docs/PROVER_COUNT.md](../docs/PROVER_COUNT.md)) requires formally verified proof management:
 
 - **SafeGraph** models proof dependencies as DAGs. The `Acyclic` proof guarantees no circular dependencies in proof chains, and `topoSort` provides correct ordering for proof verification. `PathExists` verifies lemma reachability.
 

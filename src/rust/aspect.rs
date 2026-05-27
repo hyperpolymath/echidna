@@ -373,6 +373,82 @@ impl Aspect {
             _ => AspectCategory::Other,
         }
     }
+
+    /// Get snake_case slug for use in dotted domain keys.
+    pub fn slug(&self) -> &'static str {
+        match self {
+            Aspect::PropositionalLogic => "propositional_logic",
+            Aspect::PredicateLogic => "predicate_logic",
+            Aspect::ModalLogic => "modal_logic",
+            Aspect::TemporalLogic => "temporal_logic",
+            Aspect::HigherOrderLogic => "higher_order_logic",
+            Aspect::IntuitionisticLogic => "intuitionistic_logic",
+            Aspect::ClassicalLogic => "classical_logic",
+            Aspect::NaturalNumbers => "natural_numbers",
+            Aspect::Integers => "integers",
+            Aspect::Rationals => "rationals",
+            Aspect::Reals => "reals",
+            Aspect::Complex => "complex",
+            Aspect::NumberTheory => "number_theory",
+            Aspect::Arithmetic => "arithmetic",
+            Aspect::Groups => "groups",
+            Aspect::Rings => "rings",
+            Aspect::Fields => "fields",
+            Aspect::VectorSpaces => "vector_spaces",
+            Aspect::Modules => "modules",
+            Aspect::Lattices => "lattices",
+            Aspect::CategoryTheory => "category_theory",
+            Aspect::UniversalAlgebra => "universal_algebra",
+            Aspect::Limits => "limits",
+            Aspect::Continuity => "continuity",
+            Aspect::Derivatives => "derivatives",
+            Aspect::Integrals => "integrals",
+            Aspect::Sequences => "sequences",
+            Aspect::MeasureTheory => "measure_theory",
+            Aspect::FunctionalAnalysis => "functional_analysis",
+            Aspect::MetricSpaces => "metric_spaces",
+            Aspect::TopologicalSpaces => "topological_spaces",
+            Aspect::Compactness => "compactness",
+            Aspect::Connectedness => "connectedness",
+            Aspect::TopologicalContinuity => "topological_continuity",
+            Aspect::SetOperations => "set_operations",
+            Aspect::Cardinality => "cardinality",
+            Aspect::Ordinals => "ordinals",
+            Aspect::AxiomOfChoice => "axiom_of_choice",
+            Aspect::ZFC => "zfc",
+            Aspect::DependentTypes => "dependent_types",
+            Aspect::Universes => "universes",
+            Aspect::InductiveTypes => "inductive_types",
+            Aspect::CoinductiveTypes => "coinductive_types",
+            Aspect::Polymorphism => "polymorphism",
+            Aspect::TypeEquivalence => "type_equivalence",
+            Aspect::Algorithms => "algorithms",
+            Aspect::Complexity => "complexity",
+            Aspect::FormalVerification => "formal_verification",
+            Aspect::ProgramSemantics => "program_semantics",
+            Aspect::Concurrency => "concurrency",
+            Aspect::Cryptography => "cryptography",
+            Aspect::Automata => "automata",
+            Aspect::LambdaCalculus => "lambda_calculus",
+            Aspect::Induction => "induction",
+            Aspect::Coinduction => "coinduction",
+            Aspect::Recursion => "recursion",
+            Aspect::CaseAnalysis => "case_analysis",
+            Aspect::Contradiction => "contradiction",
+            Aspect::DirectProof => "direct_proof",
+            Aspect::Combinatorics => "combinatorics",
+            Aspect::GraphTheory => "graph_theory",
+            Aspect::Probability => "probability",
+            Aspect::GameTheory => "game_theory",
+            Aspect::Geometry => "geometry",
+            Aspect::AbstractNonsense => "abstract_nonsense",
+        }
+    }
+
+    /// Canonical dotted domain key: `"category.aspect"` (e.g. `"arithmetic.natural_numbers"`).
+    pub fn dotted_key(&self) -> String {
+        format!("{}.{}", self.category().slug(), self.slug())
+    }
 }
 
 impl fmt::Display for Aspect {
@@ -394,6 +470,24 @@ pub enum AspectCategory {
     ComputerScience,
     ProofTechniques,
     Other,
+}
+
+impl AspectCategory {
+    /// Get snake_case slug for use in dotted domain keys.
+    pub fn slug(&self) -> &'static str {
+        match self {
+            AspectCategory::Logic => "logic",
+            AspectCategory::Arithmetic => "arithmetic",
+            AspectCategory::Algebra => "algebra",
+            AspectCategory::Analysis => "analysis",
+            AspectCategory::Topology => "topology",
+            AspectCategory::SetTheory => "set_theory",
+            AspectCategory::TypeTheory => "type_theory",
+            AspectCategory::ComputerScience => "computer_science",
+            AspectCategory::ProofTechniques => "proof_techniques",
+            AspectCategory::Other => "other",
+        }
+    }
 }
 
 /// Features extracted from a theorem for aspect classification
@@ -1148,5 +1242,116 @@ mod tests {
         let aspects = tagger.tag(theorem_name, &statement);
 
         assert!(aspects.contains(&Aspect::Induction));
+    }
+
+    #[test]
+    fn test_dotted_key_eponymous_category() {
+        assert_eq!(Aspect::Arithmetic.dotted_key(), "arithmetic.arithmetic");
+    }
+
+    #[test]
+    fn test_dotted_key_natural_numbers() {
+        assert_eq!(
+            Aspect::NaturalNumbers.dotted_key(),
+            "arithmetic.natural_numbers"
+        );
+    }
+
+    #[test]
+    fn test_dotted_key_groups() {
+        assert_eq!(Aspect::Groups.dotted_key(), "algebra.groups");
+    }
+
+    #[test]
+    fn test_dotted_key_propositional_logic() {
+        assert_eq!(
+            Aspect::PropositionalLogic.dotted_key(),
+            "logic.propositional_logic"
+        );
+    }
+
+    #[test]
+    fn test_dotted_key_zfc() {
+        assert_eq!(Aspect::ZFC.dotted_key(), "set_theory.zfc");
+    }
+
+    #[test]
+    fn test_all_variants_have_exactly_one_dot() {
+        let all_aspects = [
+            Aspect::PropositionalLogic,
+            Aspect::PredicateLogic,
+            Aspect::ModalLogic,
+            Aspect::TemporalLogic,
+            Aspect::HigherOrderLogic,
+            Aspect::IntuitionisticLogic,
+            Aspect::ClassicalLogic,
+            Aspect::NaturalNumbers,
+            Aspect::Integers,
+            Aspect::Rationals,
+            Aspect::Reals,
+            Aspect::Complex,
+            Aspect::NumberTheory,
+            Aspect::Arithmetic,
+            Aspect::Groups,
+            Aspect::Rings,
+            Aspect::Fields,
+            Aspect::VectorSpaces,
+            Aspect::Modules,
+            Aspect::Lattices,
+            Aspect::CategoryTheory,
+            Aspect::UniversalAlgebra,
+            Aspect::Limits,
+            Aspect::Continuity,
+            Aspect::Derivatives,
+            Aspect::Integrals,
+            Aspect::Sequences,
+            Aspect::MeasureTheory,
+            Aspect::FunctionalAnalysis,
+            Aspect::MetricSpaces,
+            Aspect::TopologicalSpaces,
+            Aspect::Compactness,
+            Aspect::Connectedness,
+            Aspect::TopologicalContinuity,
+            Aspect::SetOperations,
+            Aspect::Cardinality,
+            Aspect::Ordinals,
+            Aspect::AxiomOfChoice,
+            Aspect::ZFC,
+            Aspect::DependentTypes,
+            Aspect::Universes,
+            Aspect::InductiveTypes,
+            Aspect::CoinductiveTypes,
+            Aspect::Polymorphism,
+            Aspect::TypeEquivalence,
+            Aspect::Algorithms,
+            Aspect::Complexity,
+            Aspect::FormalVerification,
+            Aspect::ProgramSemantics,
+            Aspect::Concurrency,
+            Aspect::Cryptography,
+            Aspect::Automata,
+            Aspect::LambdaCalculus,
+            Aspect::Induction,
+            Aspect::Coinduction,
+            Aspect::Recursion,
+            Aspect::CaseAnalysis,
+            Aspect::Contradiction,
+            Aspect::DirectProof,
+            Aspect::Combinatorics,
+            Aspect::GraphTheory,
+            Aspect::Probability,
+            Aspect::GameTheory,
+            Aspect::Geometry,
+            Aspect::AbstractNonsense,
+        ];
+        for aspect in &all_aspects {
+            let key = aspect.dotted_key();
+            let dot_count = key.chars().filter(|&c| c == '.').count();
+            assert_eq!(
+                dot_count, 1,
+                "Expected exactly one dot in dotted_key for {:?}, got: {}",
+                aspect, key
+            );
+        }
     }
 }
