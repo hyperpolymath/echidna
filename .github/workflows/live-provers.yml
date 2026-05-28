@@ -276,8 +276,7 @@ jobs:
             hol-light) true ;;
             *)         "${{ matrix.backend }}" --version 2>/dev/null || true ;;
           esac
-      - name: Run live test for ${{ matrix.backend }} (allow-fail while Wave-2 wires up)
-        continue-on-error: true
+      - name: Run live test for ${{ matrix.backend }}
         run: cargo test --test live_prover_suite --features live-provers -- --nocapture ${{ matrix.backend }}
 
   # ============================================================================
@@ -399,8 +398,7 @@ jobs:
             ortools)    ortools_solve --help 2>&1 | head -n 1 || true ;;
             hol4|acl2|scip|imandra) true ;;
           esac
-      - name: Run live test for ${{ matrix.backend }} (allow-fail while Wave-3 wires up)
-        continue-on-error: true
+      - name: Run live test for ${{ matrix.backend }}
         run: cargo test --test live_prover_suite --features live-provers -- --nocapture ${{ matrix.backend }}
 
   # ============================================================================
