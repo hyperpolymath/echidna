@@ -48,6 +48,8 @@ record Proof : Set where
 -- In practice ECHIDNA computes this via the danger-level tracker
 -- (verification/axioms.rs): two axiom sets conflict when one contains
 -- an axiom that the other marks Reject.
+-- TRUSTED: Conflicts is an abstract parameter (see above), not an unsound
+-- escape — the caller discharges it with a concrete proof.
 postulate
   Conflicts : List Axiom → List Axiom → Set
   -- ^ INTENTIONAL PARAMETER — "Conflicts" is domain knowledge about

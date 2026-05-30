@@ -1,0 +1,36 @@
+# .trusted-base-ignore — whole-path exemptions for the trusted-base scanner
+# (hyperpolymath/standards check-trusted-base.sh).
+#
+# Format: each non-comment, non-blank line is a path-fragment substring that
+# exempts every marker whose file path contains the fragment.
+#
+# Use sparingly. Per-site `TRUSTED:`/`AXIOM:` comments remain the preferred
+# mechanism for one-off documented escapes; this file is for whole-path
+# exemptions where the file's *entire purpose* is to talk about the patterns
+# the scanner detects (so every occurrence is a string literal, not a use).
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Pattern-detector tables (NOT uses of the patterns themselves)
+# ─────────────────────────────────────────────────────────────────────────────
+# Each of the files below holds a `Vec<DangerousPattern>` (or equivalent)
+# that enumerates the very `unsafePerformIO`/`unsafeCoerce`/`believe_me`
+# string literals the scanner is hunting for. The scanner's naive
+# substring grep cannot distinguish "uses the pattern" from "names the
+# pattern in a detector table", so every entry shows up as a false
+# positive. Same FP class as the `\bbelieve_me\b` Idris2 audit recorded
+# in docs/PROOF-NEEDS.md §"believe_me audit (2026-05-18)".
+#
+# These files are the *implementation* of the trust-pipeline's
+# axiom-tracker — they're proof infrastructure, not proof escapes.
+src/rust/verification/axiom_tracker.rs
+crates/echidna-core-spark/src/axiom_tracker.rs
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Hazard-classification helpers in the corpus extractor (NOT uses)
+# ─────────────────────────────────────────────────────────────────────────────
+# `corpus/agda.rs::collect_hazards` and `corpus/idris2.rs::collect_hazards`
+# each run a single-line `if text.contains("unsafePerformIO" / "unsafeCoerce"
+# / "Obj.magic")` to flag corpus entries that *contain* those patterns.
+# Same FP class — the substring is a hazard sentinel, not an escape hatch.
+src/rust/corpus/agda.rs
+src/rust/corpus/idris2.rs
