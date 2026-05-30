@@ -218,7 +218,7 @@ impl ProverBackend for SPASSBackend {
         self.to_dfg(state)
     }
 
-    async fn suggest_tactics(&self, _state: &ProofState, limit: usize) -> Result<Vec<Tactic>> {
+    async fn suggest_tactics(&self, state: &ProofState, limit: usize) -> Result<Vec<Tactic>> {
         // SPASS is a resolution-based first-order ATP. Suggestions are
         // flag settings that control the proof search strategy.
         let tactics = vec![
@@ -244,7 +244,7 @@ impl ProverBackend for SPASSBackend {
             },
             Tactic::Simplify,
         ];
-        Ok(tactics.into_iter().take(limit).collect())
+        Ok(crate::provers::gnn_augment_tactics(&self.config, state, "spass", tactics, limit).await)
     }
 
     async fn search_theorems(&self, _pattern: &str) -> Result<Vec<String>> {

@@ -108,7 +108,7 @@ impl ProverBackend for AthenaBackend {
             .map(String::from)
             .unwrap_or_default())
     }
-    async fn suggest_tactics(&self, _state: &ProofState, limit: usize) -> Result<Vec<Tactic>> {
+    async fn suggest_tactics(&self, state: &ProofState, limit: usize) -> Result<Vec<Tactic>> {
         // Athena is a multi-logic deduction language. Its core reasoning
         // methods map onto the following canonical proof steps.
         let tactics = vec![
@@ -136,7 +136,7 @@ impl ProverBackend for AthenaBackend {
             },
             Tactic::Simplify,
         ];
-        Ok(tactics.into_iter().take(limit).collect())
+        Ok(crate::provers::gnn_augment_tactics(&self.config, state, "athena", tactics, limit).await)
     }
 
     async fn search_theorems(&self, _pattern: &str) -> Result<Vec<String>> {

@@ -517,7 +517,7 @@ impl ProverBackend for MetamathBackend {
             suggestions.push(Tactic::Simplify);
         }
 
-        Ok(suggestions.into_iter().take(limit).collect())
+        Ok(crate::provers::gnn_augment_tactics(&self.config, state, "metamath", suggestions, limit).await)
     }
 
     async fn search_theorems(&self, pattern: &str) -> Result<Vec<String>> {

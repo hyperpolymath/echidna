@@ -131,7 +131,7 @@ impl ProverBackend for CameleerBackend {
             .unwrap_or_default())
     }
 
-    async fn suggest_tactics(&self, _state: &ProofState, limit: usize) -> Result<Vec<Tactic>> {
+    async fn suggest_tactics(&self, state: &ProofState, limit: usize) -> Result<Vec<Tactic>> {
         // Cameleer is a deductive verification tool for OCaml programs; it
         // lowers to Why3. Suggestions are Gospel contract annotations and
         // Why3 proof hints rather than interactive proof tactics.
@@ -163,7 +163,7 @@ impl ProverBackend for CameleerBackend {
                 args: vec!["split_vc".to_string()],
             },
         ];
-        Ok(tactics.into_iter().take(limit).collect())
+        Ok(crate::provers::gnn_augment_tactics(&self.config, state, "cameleer", tactics, limit).await)
     }
 
     async fn search_theorems(&self, _pattern: &str) -> Result<Vec<String>> {

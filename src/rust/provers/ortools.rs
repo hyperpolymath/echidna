@@ -133,7 +133,7 @@ impl ProverBackend for ORToolsBackend {
     async fn export(&self, state: &ProofState) -> Result<String> {
         self.to_input_format(state)
     }
-    async fn suggest_tactics(&self, _state: &ProofState, limit: usize) -> Result<Vec<Tactic>> {
+    async fn suggest_tactics(&self, state: &ProofState, limit: usize) -> Result<Vec<Tactic>> {
         // OR-Tools is Google's combinatorial optimisation suite (CP-SAT, LP, routing).
         // Suggestions are solver-selection and search-strategy hints.
         let tactics = vec![
@@ -159,7 +159,7 @@ impl ProverBackend for ORToolsBackend {
                 args: vec![],
             },
         ];
-        Ok(tactics.into_iter().take(limit).collect())
+        Ok(crate::provers::gnn_augment_tactics(&self.config, state, "ortools", tactics, limit).await)
     }
 
     async fn search_theorems(&self, _pattern: &str) -> Result<Vec<String>> {

@@ -136,7 +136,7 @@ impl ProverBackend for SCIPBackend {
     async fn export(&self, state: &ProofState) -> Result<String> {
         self.to_input_format(state)
     }
-    async fn suggest_tactics(&self, _state: &ProofState, limit: usize) -> Result<Vec<Tactic>> {
+    async fn suggest_tactics(&self, state: &ProofState, limit: usize) -> Result<Vec<Tactic>> {
         // SCIP is a mixed-integer programming / constraint solver.
         // Suggestions are parameter settings and solving strategy hints.
         let tactics = vec![
@@ -162,7 +162,7 @@ impl ProverBackend for SCIPBackend {
                 args: vec![],
             },
         ];
-        Ok(tactics.into_iter().take(limit).collect())
+        Ok(crate::provers::gnn_augment_tactics(&self.config, state, "scip", tactics, limit).await)
     }
 
     async fn search_theorems(&self, _pattern: &str) -> Result<Vec<String>> {

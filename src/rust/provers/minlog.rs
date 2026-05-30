@@ -128,7 +128,7 @@ impl ProverBackend for MinlogBackend {
     async fn export(&self, state: &ProofState) -> Result<String> {
         self.to_input_format(state)
     }
-    async fn suggest_tactics(&self, _state: &ProofState, limit: usize) -> Result<Vec<Tactic>> {
+    async fn suggest_tactics(&self, state: &ProofState, limit: usize) -> Result<Vec<Tactic>> {
         // Minlog is a proof assistant based on minimal logic; it is used
         // primarily for program extraction from constructive proofs.
         let tactics = vec![
@@ -156,7 +156,7 @@ impl ProverBackend for MinlogBackend {
             Tactic::Assumption,
             Tactic::Simplify,
         ];
-        Ok(tactics.into_iter().take(limit).collect())
+        Ok(crate::provers::gnn_augment_tactics(&self.config, state, "minlog", tactics, limit).await)
     }
 
     async fn search_theorems(&self, _pattern: &str) -> Result<Vec<String>> {
