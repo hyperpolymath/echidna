@@ -14,7 +14,7 @@ permissions:
 
 jobs:
   rust-ci:
-    uses: hyperpolymath/standards/.github/workflows/rust-ci-reusable.yml@4fdf4314b4ab54269adbaff10e30e483b5e86845
+    uses: hyperpolymath/standards/.github/workflows/rust-ci-reusable.yml@cc5a372af1af1b202c17f1b21efd954e6c038bef
     with:
       enable_audit: true
       enable_coverage: true
