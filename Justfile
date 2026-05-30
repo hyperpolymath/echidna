@@ -526,6 +526,14 @@ chapel-smoke:
 chapel-test: build-chapel-ffi
     cargo test --features chapel --lib -- proof_search verify_proof_parallel
 
+# Speedup baseline: compares sequentialProofSearch /
+# parallelProofSearch / parallelProofSearchSpeculative against the
+# fixture corpus in tests/chapel_fixtures/. Emits CSV to stdout. Doc:
+# docs/bench/2026-05-30-chapel-mrr-baseline.md.
+bench-chapel-mrr:
+    cd src/chapel && chpl -o bench_mrr bench_mrr.chpl && \
+      ./bench_mrr --verbose=false --timeout=10
+
 # Build Zig FFI bridge for Chapel (prerequisite for --features chapel)
 build-chapel-ffi:
     @echo "Building Zig FFI bridge..."
