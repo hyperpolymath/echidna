@@ -2,8 +2,9 @@
 // SPDX-FileCopyrightText: 2026 Jonathan D.A. Jewell <j.d.a.jewell@open.ac.uk>
 
 //! Integration test: mock HTTP server proves the GNN wire format works and
-//! that the 5 key backends (rocq, lean, agda, isabelle, z3) consume
-//! `/gnn/rank` and prepend model-derived apply tactics.
+//! that the 10 GNN-augmented Tier-1 backends (rocq, lean, agda, isabelle, z3
+//! from the S5 pilot, plus idris2, fstar, cvc5, vampire, dafny extending it)
+//! consume `/gnn/rank` and prepend model-derived apply tactics.
 //!
 //! No Julia installation needed — the mock server is an in-process axum
 //! server bound to a random port.  Run with:
@@ -202,4 +203,34 @@ async fn test_isabelle_gnn_wires_top_premise() {
 async fn test_z3_gnn_wires_top_premise() {
     let base_url = spawn_mock_gnn_server().await;
     assert_top_tactic_is_apply(ProverKind::Z3, "z3", &base_url).await;
+}
+
+#[tokio::test]
+async fn test_idris2_gnn_wires_top_premise() {
+    let base_url = spawn_mock_gnn_server().await;
+    assert_top_tactic_is_apply(ProverKind::Idris2, "idris2", &base_url).await;
+}
+
+#[tokio::test]
+async fn test_fstar_gnn_wires_top_premise() {
+    let base_url = spawn_mock_gnn_server().await;
+    assert_top_tactic_is_apply(ProverKind::FStar, "fstar", &base_url).await;
+}
+
+#[tokio::test]
+async fn test_cvc5_gnn_wires_top_premise() {
+    let base_url = spawn_mock_gnn_server().await;
+    assert_top_tactic_is_apply(ProverKind::CVC5, "cvc5", &base_url).await;
+}
+
+#[tokio::test]
+async fn test_vampire_gnn_wires_top_premise() {
+    let base_url = spawn_mock_gnn_server().await;
+    assert_top_tactic_is_apply(ProverKind::Vampire, "vampire", &base_url).await;
+}
+
+#[tokio::test]
+async fn test_dafny_gnn_wires_top_premise() {
+    let base_url = spawn_mock_gnn_server().await;
+    assert_top_tactic_is_apply(ProverKind::Dafny, "dafny", &base_url).await;
 }
