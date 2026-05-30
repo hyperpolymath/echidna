@@ -696,7 +696,7 @@ impl ProverBackend for CVC5Backend {
         Ok(output)
     }
 
-    async fn suggest_tactics(&self, _state: &ProofState, limit: usize) -> Result<Vec<Tactic>> {
+    async fn suggest_tactics(&self, state: &ProofState, limit: usize) -> Result<Vec<Tactic>> {
         let mut tactics = vec![Tactic::Custom {
             prover: "cvc5".to_string(),
             command: "check-sat".to_string(),
@@ -719,7 +719,7 @@ impl ProverBackend for CVC5Backend {
                 args: vec![],
             });
         }
-        Ok(tactics.into_iter().take(limit).collect())
+        Ok(crate::provers::gnn_augment_tactics(&self.config.base, state, "cvc5", tactics, limit).await)
     }
 
     async fn search_theorems(&self, _pattern: &str) -> Result<Vec<String>> {

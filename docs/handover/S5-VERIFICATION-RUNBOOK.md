@@ -28,11 +28,12 @@ Spawns an in-process mock HTTP server and asserts:
 
 - `GnnClient::health_status()` returns the richer payload (model_path, vocab_size,
   training_records_received).
-- For each of rocq, lean, agda, isabelle, z3: `suggest_tactics` returns
+- For each of rocq, lean, agda, isabelle, z3 (the S5 pilot) plus idris2, fstar,
+  cvc5, vampire, dafny (the Tier-1 extension): `suggest_tactics` returns
   `Tactic::Custom { command: "apply", args: ["lemma_foo"] }` as the first tactic,
   proving the `/gnn/rank` wire format is consumed correctly by every backend.
 
-Expected output: `test result: ok. 6 passed; 0 failed`.
+Expected output: `test result: ok. 11 passed; 0 failed`.
 
 ---
 

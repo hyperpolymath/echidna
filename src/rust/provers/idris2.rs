@@ -956,7 +956,10 @@ impl ProverBackend for Idris2Backend {
             });
         }
 
-        Ok(suggestions.into_iter().take(limit).collect())
+        Ok(
+            crate::provers::gnn_augment_tactics(&self.config, state, "idris2", suggestions, limit)
+                .await,
+        )
     }
 
     async fn search_theorems(&self, _pattern: &str) -> Result<Vec<String>> {
