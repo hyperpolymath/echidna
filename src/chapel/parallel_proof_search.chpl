@@ -112,10 +112,15 @@ record ProofResult {
 // Prover availability check
 // ---------------------------------------------------------------------------
 
-// Check if a prover executable exists on PATH
+// Check if a prover executable exists on PATH. `stdout = pipeStyle.pipe`
+// stops `which` from leaking the resolved path into the parent's stdout,
+// which would otherwise mangle structured output (CSV, JSON) from callers
+// like `bench_mrr`.
 proc isProverAvailable(info: ProverInfo): bool {
     try {
-        var whichProc = spawn(["which", info.executable]);
+        var whichProc = spawn(["which", info.executable],
+                              stdout = pipeStyle.pipe,
+                              stderr = pipeStyle.pipe);
         whichProc.wait();
         return whichProc.exitCode == 0;
     } catch {

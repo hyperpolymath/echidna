@@ -63,6 +63,8 @@ __pycache__/
 src/chapel/lib/
 src/chapel/chapel_smoke
 src/chapel/chapel_smoke_real
+src/chapel/bench_mrr
+src/chapel/bench_mrr_real
 src/chapel/libechidna_chapel.h
 
 # Zig
