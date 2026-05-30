@@ -5,7 +5,7 @@
 
 **Status**: canonical • supersedes the aspirational parts of
 [`FUTURE_DEVELOPMENT_ROADMAP.md`](./FUTURE_DEVELOPMENT_ROADMAP.md).
-**Last revised**: 2026‑04‑20
+**Last revised**: 2026‑05‑30 (truthfulness audit; previous revision 2026‑04‑20)
 **Scope**: the shortest honest path from today's repo to the endpoint vision.
 
 This document is the single source of truth for where ECHIDNA is going.
@@ -51,7 +51,8 @@ wrong.**
 Stage 1  Train the model at all             ML layer can receive signal
     1a  extractors emit premises            [done 2026‑04‑20, 22 of 50 ✓]
     1b  align_premises joins correctly      [done 2026‑04‑19 ✓]
-    1c  residual extractor gaps fixed       [in progress, 28 to go]
+    1c  residual extractor gaps fixed       [done 2026‑04‑26 ✓ — 50/50 named extractors;
+                                             see handover/TODO.md S1 batches]
     1d  vocab covers the surface            [255 K; target ~1 M]
 
 Stage 2  Signal becomes useful              MRR moves off 0.66 baseline
@@ -68,7 +69,9 @@ Stage 3  Learning loop closes               model improves from outcomes
 Stage 4  Interaction layer honest           every declared ProverKind works
     4a  typed_wasm → crates/typed_wasm      [done 2026‑04‑22 ✓]
     4b  39 TypeChecker variant dispatch     [done 2026‑04‑22 ✓, all Sigma‑routed]
-    4c  tactic synthesis template           [86/91 done; 5 suggest_tactics stubs remain]
+    4c  tactic synthesis template           [91/91 real impl ✓; 5 still heuristic-only —
+                                             GNN-ranking is the end-state target;
+                                             see docs/PROVER_COUNT.md]
     4d  search_theorems template            [done 2026‑04‑27 ✓ — cross-prover layer
                                              added at dispatcher (CLI/REST/REPL all
                                              call `vcl_ut::cross_prover_search_names`).
@@ -111,7 +114,7 @@ Stage 8  Self‑verified                      ECHIDNA proves ECHIDNA
 
 | Claim | Today | End‑state target |
 |---|---|---|
-| "Every important solver" | **128 ProverKind variants** (89 external prover bindings + 39 TypeChecker disciplines routed through TypedWasm); **5 `suggest_tactics` stubs**; **72 backends with empty native search but a cross-prover Verisim fallback at the dispatcher layer (CLI/REST/REPL)** | **All variants with real `suggest_tactics` (GNN‑ranked top‑k); per-backend search reflects each prover's native capability while cross-prover queries are served from Verisim by `goal_hash`** |
+| "Every important solver" | **128 ProverKind variants** (89 external prover bindings + 39 TypeChecker disciplines routed through TypedWasm); **91 / 91 with real `suggest_tactics`** (5 still heuristic-only; GNN-ranked is the end-state target per `docs/PROVER_COUNT.md`); **72 backends with empty native search but a cross-prover Verisim fallback at the dispatcher layer (CLI/REST/REPL)** | **All variants with real `suggest_tactics` (GNN‑ranked top‑k); per-backend search reflects each prover's native capability while cross-prover queries are served from Verisim by `goal_hash`** |
 | "Vocab at 2.5 M" | 255 K | **~1 M canonical tokens** after Mathport + Iris + VST + Flyspeck + HoTT absorption, with **online growth** adding tokens during training |
 | "Chapel fully supported" | 2 files, POC only | **`dispatch.rs` picks Chapel‑parallel dispatch by config**; runtime init + cancellation + error propagation wired; ≥1 OoM speedup on portfolio solves |
 | "Cap'n Proto serialisation" | 0 `.capnp` files | **`crates/echidna-wire/`** contains schemas for ProofState / Goal / Tactic / EmbeddingRequest / RankingResponse; IPC on :8090 is Cap'n Proto; JSON retained only as debug fallback |
@@ -132,11 +135,11 @@ and start the self‑learning loop closure.
 
 | # | Stage | Commitment | Agent tier | Status |
 |---|---|---|---|---|
-| S1 | 1c | Finish the extractor premise‑emission wave (22 done; 28 remaining) | **Sonnet** | in flight |
-| S2 | 2a / 2c | Run training on the fixed corpus; record new MRR; commit `metrics_baseline.jsonl` | **Hardware / you** | gated by S1 |
+| S1 | 1c | Finish the extractor premise‑emission wave (22 done; 28 remaining) | **Sonnet** | **done 2026‑04‑26 ✓** — 50/50 named extractors (3 batches in `handover/TODO.md`: 12 + 20 + 6) |
+| S2 | 2a / 2c | Run training on the fixed corpus; record new MRR; commit `metrics_baseline.jsonl` | **Hardware / you** | gated by S1 (S1 ✓; S2 hardware step still to run) |
 | S3 | 4a / 4b | Extract `typed_wasm` to `crates/typed_wasm/`; route 39 TypeChecker variants through Sigma parameters | **Opus‑design + Sonnet‑impl** | **done 2026‑04‑22 ✓** |
-| S4 | 3a / 3b | Wire Verisim cross‑prover read paths (`goal_hash` queries + `mv_prover_success_by_class` + hypatia loop) | **Opus‑design + Sonnet‑impl** | design pending — needs Verisim schema |
-| S5 | 4c / 4d (pilot) | Tactic synthesis template for 5 high‑value provers (coq, lean, agda, isabelle, z3) using the GNN | **Opus‑design + Sonnet‑impl** | partly done — `suggest_tactics` is 86/91 already real; remaining work is GNN‑ranking integration |
+| S4 | 3a / 3b | Wire Verisim cross‑prover read paths (`goal_hash` queries + `mv_prover_success_by_class` + hypatia loop) | **Opus‑design + Sonnet‑impl** | **wired 2026‑04‑27 ✓** — read paths (`query_prover_success_by_class` via `VeriSimAdvisor`, `cross_prover_search_names` via `vcl_ut`) + write path (`spawn_record_attempt`) + end-to-end test (`tests/s4_loop_closure.rs`, `just test-s4-loop`); CI workflow filing gated on `ghcr-publish.yml` in `verisimdb` upstream (runbook holds the YAML) |
+| S5 | 4c / 4d (pilot) | Tactic synthesis template for 5 high‑value provers (coq, lean, agda, isabelle, z3) using the GNN | **Opus‑design + Sonnet‑impl** | **mostly done** — `suggest_tactics` is 91/91 real; `gnn_augment_tactics` wired into the 5 pilot backends (rocq/lean/agda/isabelle/z3) per c4bc272; remaining 5 heuristic-only backends are the GNN-ranked end-state target |
 
 After S1–S5 land, the roadmap's next sprint takes up Stage 5 (IPC +
 Chapel + Tier‑4 CI) and Stage 8 begins in parallel.
