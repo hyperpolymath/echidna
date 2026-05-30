@@ -740,8 +740,8 @@ impl ProverBackend for AbcBackend {
         self.to_abc_script(state)
     }
 
-    async fn suggest_tactics(&self, _state: &ProofState, limit: usize) -> Result<Vec<Tactic>> {
-        let mut tactics = vec![
+    async fn suggest_tactics(&self, state: &ProofState, limit: usize) -> Result<Vec<Tactic>> {
+        let tactics = vec![
             // PDR (IC3) — most commonly used complete verification engine
             Tactic::Custom {
                 prover: "abc".to_string(),
@@ -780,8 +780,7 @@ impl ProverBackend for AbcBackend {
             },
         ];
 
-        tactics.truncate(limit);
-        Ok(tactics)
+        Ok(crate::provers::gnn_augment_tactics(&self.config, state, "abc", tactics, limit).await)
     }
 
     async fn search_theorems(&self, _pattern: &str) -> Result<Vec<String>> {

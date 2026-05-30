@@ -438,7 +438,7 @@ impl ProverBackend for TypedWasmBackend {
         Ok(output)
     }
 
-    async fn suggest_tactics(&self, state: &ProofState, _limit: usize) -> Result<Vec<Tactic>> {
+    async fn suggest_tactics(&self, state: &ProofState, limit: usize) -> Result<Vec<Tactic>> {
         let mut suggestions = Vec::new();
         let has_witnessed = state.goals.iter().any(|g| !g.hypotheses.is_empty());
         if has_witnessed {
@@ -450,7 +450,7 @@ impl ProverBackend for TypedWasmBackend {
             command: "auto".to_string(),
             args: vec![],
         });
-        Ok(suggestions)
+        Ok(crate::provers::gnn_augment_tactics(&self.config, state, "typed_wasm", suggestions, limit).await)
     }
 
     async fn search_theorems(&self, pattern: &str) -> Result<Vec<String>> {

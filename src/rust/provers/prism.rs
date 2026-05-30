@@ -400,8 +400,8 @@ impl ProverBackend for PrismBackend {
         self.to_prism_model(state)
     }
 
-    async fn suggest_tactics(&self, _state: &ProofState, limit: usize) -> Result<Vec<Tactic>> {
-        let mut tactics = vec![
+    async fn suggest_tactics(&self, state: &ProofState, limit: usize) -> Result<Vec<Tactic>> {
+        let tactics = vec![
             Tactic::Custom {
                 prover: "prism".to_string(),
                 command: "add_property".to_string(),
@@ -419,8 +419,7 @@ impl ProverBackend for PrismBackend {
             },
         ];
 
-        tactics.truncate(limit);
-        Ok(tactics)
+        Ok(crate::provers::gnn_augment_tactics(&self.config, state, "prism", tactics, limit).await)
     }
 
     async fn search_theorems(&self, _pattern: &str) -> Result<Vec<String>> {

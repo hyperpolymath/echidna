@@ -136,7 +136,7 @@ impl ProverBackend for UppaalStrategoBackend {
             .join("\n"))
     }
 
-    async fn suggest_tactics(&self, _state: &ProofState, limit: usize) -> Result<Vec<Tactic>> {
+    async fn suggest_tactics(&self, state: &ProofState, limit: usize) -> Result<Vec<Tactic>> {
         // UPPAAL Stratego extends UPPAAL with strategy synthesis for
         // stochastic timed automata. Suggestions are query patterns and
         // strategy-learning configuration hints.
@@ -162,7 +162,7 @@ impl ProverBackend for UppaalStrategoBackend {
                 args: vec!["0.1".to_string()],
             },
         ];
-        Ok(tactics.into_iter().take(limit).collect())
+        Ok(crate::provers::gnn_augment_tactics(&self.config, state, "uppaal_stratego", tactics, limit).await)
     }
 
     async fn search_theorems(&self, _pattern: &str) -> Result<Vec<String>> {

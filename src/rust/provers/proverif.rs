@@ -536,10 +536,10 @@ impl ProverBackend for ProVerifBackend {
         self.to_pv(state)
     }
 
-    async fn suggest_tactics(&self, _state: &ProofState, _limit: usize) -> Result<Vec<Tactic>> {
+    async fn suggest_tactics(&self, state: &ProofState, limit: usize) -> Result<Vec<Tactic>> {
         // ProVerif is fully automated — no tactics to suggest.
         // Return empty list rather than error, since this is an advisory call.
-        Ok(vec![])
+        Ok(crate::provers::gnn_augment_tactics(&self.config, state, "proverif", vec![], limit).await)
     }
 
     async fn search_theorems(&self, _pattern: &str) -> Result<Vec<String>> {

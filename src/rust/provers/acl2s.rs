@@ -125,7 +125,7 @@ impl ProverBackend for Acl2sBackend {
             .unwrap_or_default())
     }
 
-    async fn suggest_tactics(&self, _state: &ProofState, limit: usize) -> Result<Vec<Tactic>> {
+    async fn suggest_tactics(&self, state: &ProofState, limit: usize) -> Result<Vec<Tactic>> {
         // ACL2s (ACL2 Sedan) is a pedagogical IDE for ACL2. Its proof strategy
         // hints are ACL2 :hints keyword arguments and defthm patterns.
         let tactics = vec![
@@ -151,7 +151,7 @@ impl ProverBackend for Acl2sBackend {
             },
             Tactic::Simplify,
         ];
-        Ok(tactics.into_iter().take(limit).collect())
+        Ok(crate::provers::gnn_augment_tactics(&self.config, state, "acl2s", tactics, limit).await)
     }
 
     async fn search_theorems(&self, _pattern: &str) -> Result<Vec<String>> {

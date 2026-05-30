@@ -5,7 +5,7 @@
 
 **Status**: canonical. Cite this file when documenting backend coverage in any
 other doc. Other surfaces that quoted historical counts (12, 30, 48, 105) are
-being updated to point here. Last revised: 2026-05-26.
+being updated to point here. Last revised: 2026-05-30.
 
 ## TL;DR
 
@@ -15,7 +15,8 @@ being updated to point here. Last revised: 2026-05-26.
 | External prover bindings (separate binary or library) | 89 |
 | `TypeChecker` disciplines routed via TypedWasm Sigma | 39 |
 | Exposed by default REST API (`Tier 1` / core) | **12** |
-| With real `suggest_tactics` (not stub) | 91 of 91 (5 of 91 still use heuristic only; GNN-ranked is target end-state) |
+| With real `suggest_tactics` (not stub) | **91 of 91** |
+| Routing tactic suggestions through `gnn_augment_tactics` | **all backends with `suggest_tactics`** (S5 pilot 5 + Tier-1 extension 5 + Tier-1 finisher 2 + Tier-2 sweep 33 + Tier-3/niche sweep 53 — full coverage as of 2026-05-30; gracefully no-ops when `gnn_api_url` is None or `neural_enabled` is false) |
 | With native search command | 16 of 91 (72 return `Ok(vec![])` — cross-prover search via `VeriSimAdvisor` covers them) |
 | Trust pipeline integrity-hashed | All Tier 1; Tier 2 incrementally |
 
@@ -47,6 +48,13 @@ History of the count drift:
 - v2.1 (May 2026): **105** after Wave-3 (Tamarin, ProVerif, Twelf, OR-Tools).
 - v2.2 (May 2026): **128** after 39 TypeChecker disciplines were Sigma-routed
   through TypedWasm (commit `c4bc272` and follow-on).
+- v2.3 (May 2026): same **128** declared, but `gnn_augment_tactics` now wraps
+  every backend with `suggest_tactics` (S5 pilot c8a4f25 + #135 Tier-1 extension
+  + #136 Tier-1 finisher + Tier-2 sweep + Tier-3/niche sweep). Wiring is a
+  no-op when the Julia `/gnn/rank` service is unreachable; once trained
+  weights land (`models/neural/`), every backend automatically returns
+  model-derived premise-apply tactics at the top of its `suggest_tactics`
+  list.
 
 Documents in this repo predating each milestone often quote the count current
 to their authoring date. When in doubt, **trust this file** and

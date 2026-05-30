@@ -122,7 +122,7 @@ impl ProverBackend for NitpickBackend {
             .map(String::from)
             .unwrap_or_default())
     }
-    async fn suggest_tactics(&self, _state: &ProofState, limit: usize) -> Result<Vec<Tactic>> {
+    async fn suggest_tactics(&self, state: &ProofState, limit: usize) -> Result<Vec<Tactic>> {
         // Nitpick is Isabelle's counterexample finder (based on Kodkod/SAT).
         // Its primary role is falsification, so "tactics" are configuration
         // knobs that shape the finite-model search space.
@@ -148,7 +148,7 @@ impl ProverBackend for NitpickBackend {
                 args: vec!["[timeout = 120]".to_string()],
             },
         ];
-        Ok(tactics.into_iter().take(limit).collect())
+        Ok(crate::provers::gnn_augment_tactics(&self.config, state, "nitpick", tactics, limit).await)
     }
 
     async fn search_theorems(&self, _pattern: &str) -> Result<Vec<String>> {

@@ -299,7 +299,7 @@ impl ProverBackend for GpuVerifyBackend {
             .unwrap_or_default())
     }
 
-    async fn suggest_tactics(&self, _state: &ProofState, limit: usize) -> Result<Vec<Tactic>> {
+    async fn suggest_tactics(&self, state: &ProofState, limit: usize) -> Result<Vec<Tactic>> {
         // GPUVerify uses annotation-style specification: __requires, __ensures,
         // __invariant, __barrier_invariant, and assert for inline checks.
         let tactics = vec![
@@ -329,7 +329,7 @@ impl ProverBackend for GpuVerifyBackend {
                 args: vec!["true".to_string()],
             },
         ];
-        Ok(tactics.into_iter().take(limit).collect())
+        Ok(crate::provers::gnn_augment_tactics(&self.config, state, "gpuverify", tactics, limit).await)
     }
 
     async fn search_theorems(&self, pattern: &str) -> Result<Vec<String>> {

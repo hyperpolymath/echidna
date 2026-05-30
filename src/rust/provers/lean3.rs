@@ -178,7 +178,7 @@ impl ProverBackend for Lean3Backend {
             }))
     }
 
-    async fn suggest_tactics(&self, _state: &ProofState, limit: usize) -> Result<Vec<Tactic>> {
+    async fn suggest_tactics(&self, state: &ProofState, limit: usize) -> Result<Vec<Tactic>> {
         // Lean 3 uses the same core tactic set as Lean 4 but with slightly
         // different names. These cover the most commonly needed steps.
         // (The Lean 3 corpus will improve premise ranking once extracted via
@@ -218,7 +218,7 @@ impl ProverBackend for Lean3Backend {
             Tactic::Assumption,
             Tactic::Simplify,
         ];
-        Ok(tactics.into_iter().take(limit).collect())
+        Ok(crate::provers::gnn_augment_tactics(&self.config, state, "lean3", tactics, limit).await)
     }
 
     async fn search_theorems(&self, _pattern: &str) -> Result<Vec<String>> {

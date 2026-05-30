@@ -69,9 +69,15 @@ Stage 3  Learning loop closes               model improves from outcomes
 Stage 4  Interaction layer honest           every declared ProverKind works
     4a  typed_wasm → crates/typed_wasm      [done 2026‑04‑22 ✓]
     4b  39 TypeChecker variant dispatch     [done 2026‑04‑22 ✓, all Sigma‑routed]
-    4c  tactic synthesis template           [91/91 real impl ✓; 5 still heuristic-only —
-                                             GNN-ranking is the end-state target;
-                                             see docs/PROVER_COUNT.md]
+    4c  tactic synthesis template           [91/91 real impl ✓; GNN-ranking surface
+                                             COMPLETE 2026‑05‑30 — every backend with
+                                             suggest_tactics now routes through
+                                             gnn_augment_tactics (S5 pilot + Tier-1
+                                             ext + Tier-1 finisher + Tier-2 sweep +
+                                             Tier-3/niche sweep). Helper no-ops when
+                                             Julia /gnn/rank is unreachable. End-state
+                                             target met; remaining S2 dependency is
+                                             real trained weights at models/neural/]
     4d  search_theorems template            [done 2026‑04‑27 ✓ — cross-prover layer
                                              added at dispatcher (CLI/REST/REPL all
                                              call `vcl_ut::cross_prover_search_names`).
@@ -139,7 +145,7 @@ and start the self‑learning loop closure.
 | S2 | 2a / 2c | Run training on the fixed corpus; record new MRR; commit `metrics_baseline.jsonl` | **Hardware / you** | gated by S1 (S1 ✓; S2 hardware step still to run) |
 | S3 | 4a / 4b | Extract `typed_wasm` to `crates/typed_wasm/`; route 39 TypeChecker variants through Sigma parameters | **Opus‑design + Sonnet‑impl** | **done 2026‑04‑22 ✓** |
 | S4 | 3a / 3b | Wire Verisim cross‑prover read paths (`goal_hash` queries + `mv_prover_success_by_class` + hypatia loop) | **Opus‑design + Sonnet‑impl** | **wired 2026‑04‑27 ✓** — read paths (`query_prover_success_by_class` via `VeriSimAdvisor`, `cross_prover_search_names` via `vcl_ut`) + write path (`spawn_record_attempt`) + end-to-end test (`tests/s4_loop_closure.rs`, `just test-s4-loop`); CI workflow filing gated on `ghcr-publish.yml` in `verisimdb` upstream (runbook holds the YAML) |
-| S5 | 4c / 4d (pilot) | Tactic synthesis template for 5 high‑value provers (coq, lean, agda, isabelle, z3) using the GNN | **Opus‑design + Sonnet‑impl** | **mostly done** — `suggest_tactics` is 91/91 real; `gnn_augment_tactics` wired into the 5 pilot backends (rocq/lean/agda/isabelle/z3) per c4bc272; remaining 5 heuristic-only backends are the GNN-ranked end-state target |
+| S5 | 4c / 4d (pilot) | Tactic synthesis template for 5 high‑value provers (coq, lean, agda, isabelle, z3) using the GNN | **Opus‑design + Sonnet‑impl** | **done 2026‑05‑30 ✓** — `suggest_tactics` is 91/91 real; `gnn_augment_tactics` wired into ALL backends with `suggest_tactics` (S5 pilot 5 in c8a4f25, Tier-1 extension 5 in #135, Tier-1 finisher 2 + Tier-2 sweep 33 in #136, Tier-3/niche sweep 53 in this PR). Wiring is a no-op when Julia /gnn/rank is unreachable; once S2 trained weights land at `models/neural/`, every backend automatically returns model-derived premise-apply tactics |
 
 After S1–S5 land, the roadmap's next sprint takes up Stage 5 (IPC +
 Chapel + Tier‑4 CI) and Stage 8 begins in parallel.
@@ -162,7 +168,9 @@ What is **not** blocking and can move now:
 - **Phase 1a** (Leo3, Satallax, Lash, AgsyHOL) — done 2026‑04‑26 ✓
 - **Phase 1b** (IProver, Princess, Twee, MetiTarski, CSI, AProVE) — done ✓
 - **S3** (typed_wasm + 39 TypeChecker Sigma routing) — done ✓
-- **`suggest_tactics`** — 86/91 real implementations; only 5 stubs left
+- **`suggest_tactics`** — 91/91 real implementations ✓; every backend now
+  routes through `gnn_augment_tactics` (no-op until S2 weights land at
+  `models/neural/`)
 
 What **is** blocking and needs Opus + cross‑repo input:
 

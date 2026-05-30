@@ -369,8 +369,8 @@ impl ProverBackend for NuSMVBackend {
         self.to_smv(state)
     }
 
-    async fn suggest_tactics(&self, _state: &ProofState, limit: usize) -> Result<Vec<Tactic>> {
-        let mut tactics = vec![
+    async fn suggest_tactics(&self, state: &ProofState, limit: usize) -> Result<Vec<Tactic>> {
+        let tactics = vec![
             Tactic::Custom {
                 prover: "nusmv".to_string(),
                 command: "add_ctlspec".to_string(),
@@ -388,8 +388,7 @@ impl ProverBackend for NuSMVBackend {
             },
         ];
 
-        tactics.truncate(limit);
-        Ok(tactics)
+        Ok(crate::provers::gnn_augment_tactics(&self.config, state, "nusmv", tactics, limit).await)
     }
 
     async fn search_theorems(&self, _pattern: &str) -> Result<Vec<String>> {

@@ -399,8 +399,8 @@ impl ProverBackend for CaDiCaLBackend {
         Ok(Self::to_dimacs(num_vars, &clauses))
     }
 
-    async fn suggest_tactics(&self, _state: &ProofState, limit: usize) -> Result<Vec<Tactic>> {
-        let mut tactics = vec![
+    async fn suggest_tactics(&self, state: &ProofState, limit: usize) -> Result<Vec<Tactic>> {
+        let tactics = vec![
             Tactic::Custom {
                 prover: "cadical".to_string(),
                 command: "add-clause".to_string(),
@@ -419,8 +419,7 @@ impl ProverBackend for CaDiCaLBackend {
             Tactic::Simplify,
         ];
 
-        tactics.truncate(limit);
-        Ok(tactics)
+        Ok(crate::provers::gnn_augment_tactics(&self.config, state, "cadical", tactics, limit).await)
     }
 
     async fn search_theorems(&self, _pattern: &str) -> Result<Vec<String>> {

@@ -133,7 +133,7 @@ impl ProverBackend for BoogieBackend {
             .unwrap_or_default())
     }
 
-    async fn suggest_tactics(&self, _state: &ProofState, limit: usize) -> Result<Vec<Tactic>> {
+    async fn suggest_tactics(&self, state: &ProofState, limit: usize) -> Result<Vec<Tactic>> {
         // Boogie is an intermediate verification language; it delegates to
         // an SMT solver (typically Z3). Suggestions are annotation and
         // specification hints rather than interactive tactics.
@@ -165,7 +165,7 @@ impl ProverBackend for BoogieBackend {
                 args: vec!["/proverOpt:O:smt.qi.max_multi_patterns=1000".to_string()],
             },
         ];
-        Ok(tactics.into_iter().take(limit).collect())
+        Ok(crate::provers::gnn_augment_tactics(&self.config, state, "boogie", tactics, limit).await)
     }
 
     async fn search_theorems(&self, _pattern: &str) -> Result<Vec<String>> {

@@ -789,8 +789,8 @@ impl ProverBackend for FramaCBackend {
         self.to_acsl_source(state)
     }
 
-    async fn suggest_tactics(&self, _state: &ProofState, limit: usize) -> Result<Vec<Tactic>> {
-        let mut tactics = vec![
+    async fn suggest_tactics(&self, state: &ProofState, limit: usize) -> Result<Vec<Tactic>> {
+        let tactics = vec![
             Tactic::Custom {
                 prover: "framac".to_string(),
                 command: "add_requires".to_string(),
@@ -823,8 +823,7 @@ impl ProverBackend for FramaCBackend {
             },
         ];
 
-        tactics.truncate(limit);
-        Ok(tactics)
+        Ok(crate::provers::gnn_augment_tactics(&self.config, state, "framac", tactics, limit).await)
     }
 
     async fn search_theorems(&self, _pattern: &str) -> Result<Vec<String>> {

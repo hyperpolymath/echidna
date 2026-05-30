@@ -140,7 +140,7 @@ impl ProverBackend for CubicalAgdaBackend {
             .join("\n"))
     }
 
-    async fn suggest_tactics(&self, _state: &ProofState, limit: usize) -> Result<Vec<Tactic>> {
+    async fn suggest_tactics(&self, state: &ProofState, limit: usize) -> Result<Vec<Tactic>> {
         // Cubical Agda is an extension of Agda with Cubical Type Theory (CTT)
         // primitives: interval type, path types, and hcomp/transp operations.
         // Proof steps are term-mode; the most useful automation helpers follow.
@@ -178,7 +178,7 @@ impl ProverBackend for CubicalAgdaBackend {
             },
             Tactic::Assumption,
         ];
-        Ok(tactics.into_iter().take(limit).collect())
+        Ok(crate::provers::gnn_augment_tactics(&self.config, state, "cubical_agda", tactics, limit).await)
     }
 
     async fn search_theorems(&self, _pattern: &str) -> Result<Vec<String>> {

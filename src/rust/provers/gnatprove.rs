@@ -230,7 +230,7 @@ impl ProverBackend for GNATproveBackend {
         let (spec, body) = self.to_input_format(state)?;
         Ok(format!("-- spec --\n{}\n-- body --\n{}", spec, body))
     }
-    async fn suggest_tactics(&self, _state: &ProofState, limit: usize) -> Result<Vec<Tactic>> {
+    async fn suggest_tactics(&self, state: &ProofState, limit: usize) -> Result<Vec<Tactic>> {
         let suggestions = vec![
             Tactic::Custom {
                 prover: "gnatprove".into(),
@@ -263,7 +263,7 @@ impl ProverBackend for GNATproveBackend {
                 args: vec![],
             },
         ];
-        Ok(suggestions.into_iter().take(limit).collect())
+        Ok(crate::provers::gnn_augment_tactics(&self.config, state, "gnatprove", suggestions, limit).await)
     }
     async fn search_theorems(&self, _: &str) -> Result<Vec<String>> {
         Ok(vec![])

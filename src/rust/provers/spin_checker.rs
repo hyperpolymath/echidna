@@ -368,8 +368,8 @@ impl ProverBackend for SpinBackend {
         self.to_promela(state)
     }
 
-    async fn suggest_tactics(&self, _state: &ProofState, limit: usize) -> Result<Vec<Tactic>> {
-        let mut tactics = vec![
+    async fn suggest_tactics(&self, state: &ProofState, limit: usize) -> Result<Vec<Tactic>> {
+        let tactics = vec![
             Tactic::Custom {
                 prover: "spin".to_string(),
                 command: "add_assertion".to_string(),
@@ -387,8 +387,7 @@ impl ProverBackend for SpinBackend {
             },
         ];
 
-        tactics.truncate(limit);
-        Ok(tactics)
+        Ok(crate::provers::gnn_augment_tactics(&self.config, state, "spin", tactics, limit).await)
     }
 
     async fn search_theorems(&self, _pattern: &str) -> Result<Vec<String>> {

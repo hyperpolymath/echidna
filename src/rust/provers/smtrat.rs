@@ -128,7 +128,7 @@ impl ProverBackend for SmtRatBackend {
             .join("\n"))
     }
 
-    async fn suggest_tactics(&self, _state: &ProofState, limit: usize) -> Result<Vec<Tactic>> {
+    async fn suggest_tactics(&self, state: &ProofState, limit: usize) -> Result<Vec<Tactic>> {
         // SMT-RAT is a modular SMT solver framework. Suggestions are module
         // and strategy hints that shape which theory solvers are activated.
         let tactics = vec![
@@ -154,7 +154,7 @@ impl ProverBackend for SmtRatBackend {
                 args: vec![":print-model true".to_string()],
             },
         ];
-        Ok(tactics.into_iter().take(limit).collect())
+        Ok(crate::provers::gnn_augment_tactics(&self.config, state, "smtrat", tactics, limit).await)
     }
 
     async fn search_theorems(&self, _pattern: &str) -> Result<Vec<String>> {

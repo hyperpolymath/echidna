@@ -268,7 +268,7 @@ impl ProverBackend for FaialBackend {
             .unwrap_or_default())
     }
 
-    async fn suggest_tactics(&self, _state: &ProofState, limit: usize) -> Result<Vec<Tactic>> {
+    async fn suggest_tactics(&self, state: &ProofState, limit: usize) -> Result<Vec<Tactic>> {
         // Synchronisation and atomics are the primary remediation vocabulary
         // for race conditions found by Faial.
         let tactics = vec![
@@ -302,7 +302,7 @@ impl ProverBackend for FaialBackend {
                 args: vec!["x".to_string()],
             },
         ];
-        Ok(tactics.into_iter().take(limit).collect())
+        Ok(crate::provers::gnn_augment_tactics(&self.config, state, "faial", tactics, limit).await)
     }
 
     async fn search_theorems(&self, pattern: &str) -> Result<Vec<String>> {

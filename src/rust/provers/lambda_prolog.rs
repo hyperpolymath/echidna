@@ -110,7 +110,7 @@ impl ProverBackend for LambdaPrologBackend {
             .map(String::from)
             .unwrap_or_default())
     }
-    async fn suggest_tactics(&self, _state: &ProofState, limit: usize) -> Result<Vec<Tactic>> {
+    async fn suggest_tactics(&self, state: &ProofState, limit: usize) -> Result<Vec<Tactic>> {
         // λProlog (e.g. Teyjus, ELPI) is a higher-order logic programming
         // language; proofs are goal-directed search programs. Canonical
         // Prolog-style proof steps follow.
@@ -138,7 +138,7 @@ impl ProverBackend for LambdaPrologBackend {
             Tactic::Assumption,
             Tactic::Simplify,
         ];
-        Ok(tactics.into_iter().take(limit).collect())
+        Ok(crate::provers::gnn_augment_tactics(&self.config, state, "lambda_prolog", tactics, limit).await)
     }
 
     async fn search_theorems(&self, _pattern: &str) -> Result<Vec<String>> {

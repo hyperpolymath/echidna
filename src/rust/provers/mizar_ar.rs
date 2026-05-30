@@ -133,7 +133,7 @@ impl ProverBackend for MizARBackend {
             .join("\n"))
     }
 
-    async fn suggest_tactics(&self, _state: &ProofState, limit: usize) -> Result<Vec<Tactic>> {
+    async fn suggest_tactics(&self, state: &ProofState, limit: usize) -> Result<Vec<Tactic>> {
         // Mizar AR (Automated Reasoner) uses a natural-deduction style with
         // Mizar language proof steps. These cover the canonical constructs.
         let tactics = vec![
@@ -170,7 +170,7 @@ impl ProverBackend for MizARBackend {
             Tactic::Assumption,
             Tactic::Reflexivity,
         ];
-        Ok(tactics.into_iter().take(limit).collect())
+        Ok(crate::provers::gnn_augment_tactics(&self.config, state, "mizar_ar", tactics, limit).await)
     }
 
     async fn search_theorems(&self, _pattern: &str) -> Result<Vec<String>> {
