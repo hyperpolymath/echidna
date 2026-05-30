@@ -86,7 +86,7 @@ jobs:
       - name: Install Zig
         uses: mlugg/setup-zig@d1434d08867e3ee9daa34448df10607b98908d29 # v2.2.1
         with:
-          version: 0.13.0
+          version: 0.14.0
 
       - name: Build Zig FFI library (with Chapel stubs)
         run: cd src/zig_ffi && zig build -Doptimize=ReleaseSafe
@@ -151,7 +151,7 @@ jobs:
       - name: Install Zig
         uses: mlugg/setup-zig@d1434d08867e3ee9daa34448df10607b98908d29 # v2.2.1
         with:
-          version: 0.13.0
+          version: 0.14.0
 
       - name: Install Rust
         uses: dtolnay/rust-toolchain@4be9e76fd7c4901c61fb841f559994984270fce7 # stable
