@@ -7,10 +7,10 @@
 ||| All functions are declared here with type signatures and safety proofs.
 ||| Implementations live in ffi/zig/
 
-module Echidna.ABI.Foreign
+module EchidnaABI.Foreign
 
-import Echidna.ABI.Types
-import Echidna.ABI.Layout
+import EchidnaABI.Types
+import EchidnaABI.Layout
 
 %default total
 
