@@ -86,7 +86,7 @@ impl CorpusMonitor {
                             total_size_bytes += metadata.len();
 
                             // Count lines (proofs) in the file
-                            if let Ok(content) = fs::read_to_string(&path) {
+                            if let Ok(content) = crate::provers::bounded_read_corpus_file(&path) {
                                 let line_count = content.lines().count();
                                 total_proofs += line_count;
                                 // Estimate premises as 2-3 per proof on average

@@ -355,6 +355,12 @@ fn axiom_usage_from_tensor(t: &DeclTensor) -> super::AxiomUsage {
     }
 }
 
+/// Hex-encode a byte slice.
+///
+/// `with_capacity(bytes.len() * 2)` is statically bounded: every caller in
+/// this module passes `Sha256::finalize()` (32 bytes ⇒ 64 chars). The
+/// argument is `impl AsRef<[u8]>` only for ergonomics, not to admit
+/// caller-controlled lengths.
 pub(crate) fn to_hex(bytes: impl AsRef<[u8]>) -> String {
     use std::fmt::Write;
     let bytes = bytes.as_ref();

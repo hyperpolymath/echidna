@@ -1,14 +1,16 @@
 // SPDX-License-Identifier: MPL-2.0
 // Copyright (c) 2026 Jonathan D.A. Jewell (hyperpolymath) <j.d.a.jewell@open.ac.uk>
 
-//! Shared IO helpers for prover backends.
+//! Shared IO helpers for prover backends and corpus loaders.
 //!
-//! All prover backends read user-supplied proof files from disk. Bare
-//! `tokio::fs::read_to_string(&path)` has no upper bound — a malicious
-//! or pathological caller could pass `/dev/zero` or a multi-GB file
-//! and OOM the process. This module exposes
-//! [`bounded_read_proof_file`] which caps the read at
-//! [`MAX_PROOF_BYTES`] and reports an error rather than truncating.
+//! All prover backends, corpus loaders, suggest extractors, and the
+//! diagnostics monitors read user-supplied / on-disk files. Bare
+//! `tokio::fs::read_to_string(&path)` (or its `std::fs` sync sibling)
+//! has no upper bound — a malicious or pathological caller could pass
+//! `/dev/zero` or a multi-GB file and OOM the process. This module
+//! exposes [`bounded_read_proof_file`] (async) and
+//! [`bounded_read_corpus_file`] (sync), which cap the read at
+//! [`MAX_PROOF_BYTES`] and report an error rather than truncating.
 //!
 //! Cap chosen at 64 MiB: large real-world proof corpora (Mizar MML
 //! per-article files, Coq `.v` libraries, Isabelle theory chains)
@@ -16,6 +18,7 @@
 //! almost certainly pathological input.
 
 use anyhow::{Context, Result};
+use std::io::Read;
 use std::path::Path;
 use tokio::io::AsyncReadExt;
 
@@ -47,6 +50,30 @@ pub async fn bounded_read_proof_file<P: AsRef<Path>>(path: P) -> Result<String> 
     Ok(buf)
 }
 
+/// Read a UTF-8 corpus / config / diagnostics file synchronously,
+/// bounded at [`MAX_PROOF_BYTES`].
+///
+/// Same `take(N+1)` discipline as [`bounded_read_proof_file`]; differs
+/// only in that callers (corpus loaders, suggest extractors, diagnostic
+/// monitors) live on sync code paths and cannot await a tokio future.
+pub fn bounded_read_corpus_file<P: AsRef<Path>>(path: P) -> Result<String> {
+    let path = path.as_ref();
+    let file = std::fs::File::open(path)
+        .with_context(|| format!("opening corpus file {}", path.display()))?;
+    let mut buf = String::new();
+    file.take(MAX_PROOF_BYTES + 1)
+        .read_to_string(&mut buf)
+        .with_context(|| format!("reading corpus file {}", path.display()))?;
+    if buf.len() as u64 > MAX_PROOF_BYTES {
+        return Err(anyhow::anyhow!(
+            "corpus file {} exceeds {} byte cap",
+            path.display(),
+            MAX_PROOF_BYTES
+        ));
+    }
+    Ok(buf)
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -70,5 +97,30 @@ mod tests {
         tokio::fs::write(&path, &big).await.unwrap();
         let err = bounded_read_proof_file(&path).await.unwrap_err();
         assert!(err.to_string().contains("exceeds"));
+    }
+
+    #[test]
+    fn sync_small_file_reads_fully() {
+        let dir = tempfile::tempdir().unwrap();
+        let path = dir.path().join("small.corpus");
+        std::fs::write(&path, b"corpus entry: lemma_foo\n").unwrap();
+        let s = bounded_read_corpus_file(&path).unwrap();
+        assert!(s.contains("lemma_foo"));
+    }
+
+    #[test]
+    fn sync_oversized_file_errors() {
+        let dir = tempfile::tempdir().unwrap();
+        let path = dir.path().join("big.corpus");
+        let big = vec![b'x'; (MAX_PROOF_BYTES + 1024) as usize];
+        std::fs::write(&path, &big).unwrap();
+        let err = bounded_read_corpus_file(&path).unwrap_err();
+        assert!(err.to_string().contains("exceeds"));
+    }
+
+    #[test]
+    fn sync_missing_file_errors_clean() {
+        let err = bounded_read_corpus_file("/nonexistent/path/that/does/not/exist").unwrap_err();
+        assert!(err.to_string().contains("opening corpus file"));
     }
 }

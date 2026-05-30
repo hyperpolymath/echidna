@@ -62,8 +62,7 @@ impl Probe {
 
 /// Extract named lemma from `path` for the given prover.
 pub fn extract(prover: ProverKind, path: &Path, lemma_name: &str) -> Result<Probe> {
-    let content =
-        std::fs::read_to_string(path).with_context(|| format!("Cannot read {}", path.display()))?;
+    let content = crate::provers::bounded_read_corpus_file(path)?;
     match prover {
         ProverKind::Isabelle => extract_isabelle(&content, lemma_name),
         ProverKind::Coq => extract_coq(&content, lemma_name),
