@@ -60,6 +60,10 @@ __pycache__/
 
 # Chapel
 *.chpl.tmp.*
+src/chapel/lib/
+src/chapel/chapel_smoke
+src/chapel/chapel_smoke_real
+src/chapel/libechidna_chapel.h
 
 # Zig
 .zig-cache/

@@ -5,11 +5,27 @@
 // All 30 prover backends are supported.
 
 use CTypes;
+use List;
 use parallel_proof_search;
 
 // ---------------------------------------------------------------------------
 // C-compatible proof result (fixed-size for C interop)
 // ---------------------------------------------------------------------------
+//
+// `require "chapel_ffi_exports.h"` tells `chpl` to emit
+// `#include "chapel_ffi_exports.h"` into the generated C — that lets
+// the frontend treat `CProofResult` as an external (C-defined) type
+// without needing LLVM/clang to parse the header itself. The
+// `extern record` declaration then names the fields Chapel may read
+// or assign; field order/types must match `src/zig_ffi/chapel_ffi_exports.h`
+// exactly because that file is the authoritative C ABI for the Zig
+// FFI consumer (`@cImport`).
+//
+// The hand-rolled header is preferred over Chapel's `--savec`
+// emitted header because it lives in source control, sits next to
+// the Zig bridge, and survives `chpl` version churn.
+
+require "chapel_ffi_exports.h";
 
 extern record CProofResult {
     var success: c_int;                    // 0 = false, 1 = true
@@ -112,8 +128,11 @@ proc categoryToInt(cat: ProverCategory): c_int {
     return -1:c_int;
 }
 
-// Convert a ProofResult to a C-compatible CProofResult
-proc toCResult(ref chapelResult: ProofResult): CProofResult {
+// Convert a ProofResult to a C-compatible CProofResult.
+// `const ref` (not `ref`) — the conversion is read-only, and the
+// callers pass freshly-returned values which Chapel materialises
+// as `const`.
+proc toCResult(const ref chapelResult: ProofResult): CProofResult {
     var cResult: CProofResult;
 
     cResult.success = if chapelResult.success then 1:c_int else 0:c_int;
@@ -137,7 +156,16 @@ proc toCResult(ref chapelResult: ProofResult): CProofResult {
 // FFI exports
 // ---------------------------------------------------------------------------
 
-// Free a CProofResult's heap-allocated strings
+// Free a CProofResult's heap-allocated strings.
+//
+// Signature notes:
+// - `in result: CProofResult` — Chapel's `export proc` requires an
+//   explicit intent on record-typed formals (default would be `const ref`,
+//   which `chpl` declines to map to a C parameter without LLVM). `in` is
+//   semantically right here: the function consumes the result, frees its
+//   buffers, and leaves nothing for the caller to read.
+// - The caller (Zig FFI in `chapel_bridge.zig`) treats the struct as
+//   consumed after this call and overwrites the pointer fields with NULL.
 export proc chapel_free_result(ref result: CProofResult) {
     if result.prover_name != nil {
         deallocate(result.prover_name);
@@ -167,10 +195,15 @@ export proc chapel_parallel_search(
     timeout_secs: c_int
 ): CProofResult {
 
-    // Convert C string to Chapel string
+    // Convert C string to Chapel string.
+    //
+    // `string.createCopyingBuffer` replaces the pre-2.0 free-function
+    // `createStringWithNewBuffer` (removed when the string constructors
+    // moved onto the type). The copying variant is correct here because
+    // the caller (Zig FFI) retains ownership of `goal_cstr`.
     var goal: string;
     try {
-        goal = createStringWithNewBuffer(goal_cstr);
+        goal = string.createCopyingBuffer(goal_cstr);
     } catch {
         var errResult: CProofResult;
         errResult.success = 0;
@@ -212,8 +245,13 @@ export proc chapel_is_available(): c_int {
 
 // Query: Get version string
 // Returns: Static C string (do not free)
+//
+// `c_str()` returns a `c_ptrConst(c_char)` pointing at the string's
+// underlying null-terminated buffer; the trailing `\0` that used to
+// be in the literal was redundant *and* parsed as an unsupported
+// octal escape (`\0NN…`) by `chpl 2.8.0`.
 export proc chapel_get_version(): c_ptrConst(c_char) {
-    return "ECHIDNA Chapel Metalayer v2.0.0 (30 provers)\0".c_str();
+    return "ECHIDNA Chapel Metalayer v2.3.0 (30 provers)".c_str();
 }
 
 // Query: Get number of available provers (those found on PATH)

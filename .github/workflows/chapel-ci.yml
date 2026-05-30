@@ -28,58 +28,72 @@ concurrency:
 permissions: read-all
 
 jobs:
-  # Job 1: Compile Chapel .chpl files into a shared library.
-  # Marked continue-on-error: true pending #133 — the .chpl sources use
-  # non-Chapel FFI syntax (`extern "C" { ... }` blocks, octal escapes)
-  # that have never compiled. Job runs for visibility but doesn't fail
-  # the workflow. Re-enable strict gating once #133's rewrite lands.
+  # Job 1: Compile Chapel .chpl files into a static library.
+  #
+  # Strict gating (was continue-on-error before #133 closure) — this job
+  # is the load-bearing Chapel toolchain signal. If the sources stop
+  # compiling, the workflow fails.
+  #
+  # Why --static and not --dynamic:
+  #   The official apt deb (chapel-2.3.0-1.ubuntu24.amd64.deb) ships only
+  #   the CHPL_LIB_PIC=none runtime variant. Building a shared library
+  #   requires CHPL_LIB_PIC=pic runtime objects which are not in the
+  #   package; the linker rejects the non-PIC `libchpl.a` with
+  #   `relocation R_X86_64_TPOFF32 ... can not be used when making a
+  #   shared object`. Until the CI image ships a PIC-enabled runtime
+  #   (or we adopt a from-source Chapel build), the metalayer is
+  #   distributed as `libechidna_chapel.a` and the Zig FFI links it
+  #   statically.
   chapel-build:
     name: Compile Chapel Metalayer
     runs-on: ubuntu-latest
-    continue-on-error: true
     steps:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
 
       - name: Install Chapel
         run: |
-          # Install Chapel from official apt repository
-          curl -fsSL https://github.com/chapel-lang/chapel/releases/download/2.3.0/chapel-2.3.0-1.ubuntu24.amd64.deb \
+          # Install Chapel from official apt repository.
+          # SHA256 of the deb is pinned for supply-chain integrity; bump
+          # alongside the version tag when upgrading.
+          curl -fsSL --max-time 300 \
+            https://github.com/chapel-lang/chapel/releases/download/2.3.0/chapel-2.3.0-1.ubuntu24.amd64.deb \
             -o /tmp/chapel.deb
           sudo dpkg -i /tmp/chapel.deb || sudo apt-get install -f -y
-          # Verify installation
           chpl --version
 
-      - name: Compile Chapel proof search module
+      - name: Compile Chapel proof search library (static)
         run: |
           cd src/chapel
-          chpl --library --dynamic \
+          # -I ../zig_ffi so `require "chapel_ffi_exports.h"` finds the
+          # authoritative C ABI header next to the Zig bridge.
+          chpl --library --static -I ../zig_ffi \
             -o libechidna_chapel \
             chapel_ffi_exports.chpl parallel_proof_search.chpl
-          ls -la libechidna_chapel*
+          ls -la lib/libechidna_chapel*
 
-      - name: Run Chapel standalone test
+      - name: Compile + run smoke target
         run: |
           cd src/chapel
-          chpl -o chapel_test parallel_proof_search.chpl
-          # Run with verbose output, will show prover availability
-          timeout 30 ./chapel_test --verbose=true || true
+          chpl -o chapel_smoke smoke.chpl
+          ./chapel_smoke
 
       - name: Upload Chapel library artifact
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v4
         with:
           name: chapel-lib
-          path: src/chapel/libechidna_chapel*
+          path: src/chapel/lib/libechidna_chapel*
 
   # Job 2: Build and test Zig FFI bridge (always uses stubs).
-  # Marked continue-on-error: true alongside chapel-build (#133) — the
-  # Zig 0.13.0 toolchain pinned here is missing `addLibrary` on the
-  # `Build` namespace that `src/zig_ffi/build.zig:23` calls. Either bump
-  # to the Zig that ships `addLibrary` or migrate to the supported API;
-  # tracked as part of #133's Chapel + FFI rehabilitation arc.
+  #
+  # Strict gating (was continue-on-error before #133 closure). The
+  # earlier comment claimed `addLibrary` was missing on Zig 0.13.0; the
+  # workflow has pinned 0.14.0 since the Chapel-CI rewrite (which DOES
+  # ship `addLibrary`), so the comment was stale relative to the actual
+  # pin. The build now uses the modern API as documented in
+  # `src/zig_ffi/build.zig`.
   zig-ffi:
     name: Build & Test Zig FFI Bridge
     runs-on: ubuntu-latest
-    continue-on-error: true
     steps:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
 
@@ -129,11 +143,17 @@ jobs:
         run: cargo test --features chapel -- proof_search
 
   # Job 4: Build Rust linking against the real Chapel library (no Zig stubs).
-  # This is the integration signal for full L2 Chapel wiring.  Marked
-  # continue-on-error: true until dispatch.rs routes to ChapelParallelSearch
-  # by default and the full L2 sub-waves are complete.
+  #
+  # Still allow-fail in Wave 1: the full static link of Chapel runtime
+  # (`libchpl.a` + dependency archives) into the Zig FFI shared library
+  # is non-trivial and is tracked as the next milestone after #133
+  # (Wave 2). The chapel-build artifact is now `libechidna_chapel.a`
+  # (static) rather than the previous `.so`, because the apt-shipped
+  # Chapel only carries the `CHPL_LIB_PIC=none` runtime. Once a PIC
+  # runtime is available in the CI image we can revert to `--dynamic`
+  # and flip this job to strict.
   rust-chapel-real:
-    name: Rust Build — Real Chapel Library (allow-fail)
+    name: Rust Build — Real Chapel Library (allow-fail, L2.3+ gate)
     runs-on: ubuntu-latest
     needs: [chapel-build, zig-ffi]
     continue-on-error: true
