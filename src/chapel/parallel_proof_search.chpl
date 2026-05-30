@@ -43,6 +43,54 @@ record ProverInfo {
     var category: ProverCategory;
     var fileExt: string;       // file extension for temp input files
     var argTemplate: string;   // how to pass the input file (%FILE% placeholder)
+    // Optional spawn hooks. Default empty preserves prior behaviour:
+    // inherit parent CWD + use generic `goal_<name>_<nodeId>.<fileExt>`
+    // filename. Set per-prover when the prover enforces special
+    // requirements at subprocess spawn time:
+    //   cwd              — Idris2 resolves its prelude relative to CWD
+    //                      and requires the source file to live inside
+    //                      the configured source directory (#158).
+    //   filenameOverride — Agda + Idris2 enforce module-name = filename;
+    //                      generic `goal_<n>_<id>` either fails the Agda
+    //                      lexer ("the part 0 is not valid because it is
+    //                      a literal") or the Idris2 module/file-mismatch
+    //                      check (#159). Use a literal basename (with
+    //                      extension) that matches the fixture's module
+    //                      declaration.
+    var cwd: string;
+    var filenameOverride: string;
+
+    proc init(id: int, name: string, executable: string,
+              category: ProverCategory, fileExt: string,
+              argTemplate: string,
+              cwd: string = "",
+              filenameOverride: string = "") {
+        this.id = id;
+        this.name = name;
+        this.executable = executable;
+        this.category = category;
+        this.fileExt = fileExt;
+        this.argTemplate = argTemplate;
+        this.cwd = cwd;
+        this.filenameOverride = filenameOverride;
+        init this;
+    }
+
+    // Zero-arg init for array default-initialisation
+    // (`var provers: [0..29] ProverInfo`). Custom positional init above
+    // suppresses the auto-generated zero-arg form, so the array
+    // declaration needs this fallback to compile.
+    proc init() {
+        this.id = -1;
+        this.name = "";
+        this.executable = "";
+        this.category = ProverCategory.InteractiveAssistant;
+        this.fileExt = "";
+        this.argTemplate = "";
+        this.cwd = "";
+        this.filenameOverride = "";
+        init this;
+    }
 }
 
 // Build the full 30-prover registry
@@ -50,11 +98,32 @@ proc buildProverRegistry(): [0..29] ProverInfo {
     var provers: [0..29] ProverInfo;
 
     // Tier 1: Interactive proof assistants (10)
-    provers[0]  = new ProverInfo(0,  "Agda",      "agda",          ProverCategory.InteractiveAssistant, "agda",  "--safe %FILE%");
+    // Agda: --safe rejects postulate/admit/believe_me. Two filename
+    // hooks needed for the module-name resolver:
+    //   filenameOverride: the source-file basename must be a valid
+    //                     identifier (generic `goal_Agda_0` is rejected
+    //                     because the part `0` is parsed as a literal).
+    //                     The fixture declares `module Trivial where`.
+    //   cwd:              the module-name resolver searches relative
+    //                     to the cwd (plus agda-stdlib paths). Setting
+    //                     cwd to the temp dir makes the override basename
+    //                     resolve from the file actually written there.
+    provers[0]  = new ProverInfo(0,  "Agda",      "agda",          ProverCategory.InteractiveAssistant, "agda",  "--safe %FILE%",
+                                  cwd = "/tmp/echidna-chapel",
+                                  filenameOverride = "Trivial.agda");
     provers[1]  = new ProverInfo(1,  "Coq",       "coqc",          ProverCategory.InteractiveAssistant, "v",     "%FILE%");
     provers[2]  = new ProverInfo(2,  "Lean",      "lean",          ProverCategory.InteractiveAssistant, "lean",  "%FILE%");
     provers[3]  = new ProverInfo(3,  "Isabelle",  "isabelle",      ProverCategory.InteractiveAssistant, "thy",   "process %FILE%");
-    provers[4]  = new ProverInfo(4,  "Idris2",    "idris2",        ProverCategory.InteractiveAssistant, "idr",   "--check %FILE%");
+    // Idris2: `--check` resolves the prelude relative to IDRIS2_PREFIX
+    // (or the install root) AND the source file must live in the
+    // configured source directory. cwd = /tmp/echidna-chapel matches
+    // where tryProver writes the temp file; the parent process's
+    // IDRIS2_PREFIX is inherited by the subprocess (POSIX spawn
+    // default). filenameOverride pins the basename to the fixture's
+    // `module Trivial where` declaration.
+    provers[4]  = new ProverInfo(4,  "Idris2",    "idris2",        ProverCategory.InteractiveAssistant, "idr",   "--check %FILE%",
+                                  cwd = "/tmp/echidna-chapel",
+                                  filenameOverride = "Trivial.idr");
     provers[5]  = new ProverInfo(5,  "FStar",     "fstar.exe",     ProverCategory.InteractiveAssistant, "fst",   "%FILE%");
     provers[6]  = new ProverInfo(6,  "HOL4",      "hol",           ProverCategory.InteractiveAssistant, "sml",   "< %FILE%");
     provers[7]  = new ProverInfo(7,  "HOLLight",  "ocaml",         ProverCategory.InteractiveAssistant, "ml",    "%FILE%");
@@ -181,7 +250,13 @@ proc tryProver(info: ProverInfo, goal: string, timeout: int = defaultTimeout,
     const tmpDir = "/tmp/echidna-chapel";
     if !exists(tmpDir) then mkdir(tmpDir);
 
-    const tmpFile = tmpDir + "/goal_" + info.name:string + "_" + here.id:string + "." + info.fileExt;
+    // #159: provers that enforce module-name = filename (Agda, Idris2)
+    // override the generic basename via filenameOverride. Default keeps
+    // the locale-id-suffixed form so non-overriding provers stay
+    // collision-free across locales.
+    const tmpFile = if info.filenameOverride != ""
+                    then tmpDir + "/" + info.filenameOverride
+                    else tmpDir + "/goal_" + info.name:string + "_" + here.id:string + "." + info.fileExt;
 
     try {
         var f = open(tmpFile, ioMode.cw);
@@ -206,11 +281,25 @@ proc tryProver(info: ProverInfo, goal: string, timeout: int = defaultTimeout,
     // from splitting `argTemplate` after `%FILE%` substitution. `list(string)`
     // is used rather than a fixed array because the argument count is
     // template-driven and varies per prover.
+    //
+    // #158: when info.cwd is set, wrap the call in `sh -c "cd <cwd> &&
+    // exec <executable> <args>"` so the subprocess starts in the
+    // configured directory. A shell wrapper (vs process-global chdir)
+    // is required because chdir would race against other parallel
+    // spawn calls inside a coforall. The parent's full environment
+    // (incl. IDRIS2_PREFIX / IDRIS2_DATA_DIR) is inherited regardless
+    // — POSIX spawn defaults preserve env.
     var cmdStr = info.argTemplate.replace("%FILE%", tmpFile);
     var argList: list(string);
-    argList.pushBack(info.executable);
-    for part in cmdStr.split(" ") {
-        if part.size > 0 then argList.pushBack(part);
+    if info.cwd != "" {
+        argList.pushBack("sh");
+        argList.pushBack("-c");
+        argList.pushBack("cd " + info.cwd + " && exec " + info.executable + " " + cmdStr);
+    } else {
+        argList.pushBack(info.executable);
+        for part in cmdStr.split(" ") {
+            if part.size > 0 then argList.pushBack(part);
+        }
     }
     var args = argList.toArray();
 

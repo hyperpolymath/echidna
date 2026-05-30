@@ -128,6 +128,13 @@ Wave 3+ (longer term):
   tactics consumed by the Chapel side); gated on a producer for
   the serialised record format.
 
+Wave-3 follow-ups landed:
+- Per-prover `cwd` + `filenameOverride` hooks on `ProverInfo`
+  (closes #158 / #159). Resolves caveats 1 + 2 of the Wave-1 MRR
+  baseline — Idris2 and Agda fixtures now succeed end-to-end
+  through `bench-chapel-mrr`. Mechanism + alternatives:
+  [2026-05-31-chapel-prover-spawn-hooks.md](./2026-05-31-chapel-prover-spawn-hooks.md).
+
 ## Consequences
 
 **Positive.**
