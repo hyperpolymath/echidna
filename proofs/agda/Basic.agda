@@ -174,6 +174,7 @@ module CurryUncurryLaws where
   -- major proof assistants (Coq's Functional Extensionality, Lean's
   -- funext, HoTT axiom). It does NOT compromise soundness.
   -- See: HoTT Book, Section 2.9; nLab "function extensionality"
+  -- AXIOM: funext (see justification above; recognised by check-trusted-base.sh)
   postulate
     funext : {A B : Set} {f g : A → B}
            → ((x : A) → f x ≡ g x)
