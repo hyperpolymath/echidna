@@ -20,6 +20,7 @@ depends = base
 
 modules = EchidnaABI.AxiomTracker
         , EchidnaABI.Gnn
+        , EchidnaABI.TacticRecord
         , EchidnaABI.Types
         , EchidnaABI.Layout
         , EchidnaABI.Foreign
