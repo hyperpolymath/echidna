@@ -129,11 +129,37 @@ proc isProverAvailable(info: ProverInfo): bool {
 }
 
 // ---------------------------------------------------------------------------
+// Cancellation token (L2.3)
+// ---------------------------------------------------------------------------
+
+// A shared cancellation flag used by `parallelProofSearchSpeculative`
+// to signal in-flight losers as soon as the first winner has been
+// established via the CAS. A `class` (not `record`) so that all
+// `coforall` tasks share the same instance by reference.
+//
+// `cancelled.write(true)` is the only mutation; all readers are
+// `read()` polls inside `tryProver`'s wait loop. The atomic semantics
+// give us a happens-before edge from the winner's CAS to every
+// loser's next poll — no extra synchronisation is required.
+class CancelToken {
+    var cancelled: atomic bool;
+    proc init() {
+        // `atomic bool` defaults to `false` after `init this` commits
+        // field initialisation; no further write needed.
+        init this;
+    }
+}
+
+// ---------------------------------------------------------------------------
 // Real prover invocation via subprocess
 // ---------------------------------------------------------------------------
 
-// Write goal content to a temporary file and invoke the prover
-proc tryProver(info: ProverInfo, goal: string, timeout: int = defaultTimeout): ProofResult {
+// Write goal content to a temporary file and invoke the prover. If
+// `cancelToken` is non-nil and `cancelled.read()` returns true mid-poll,
+// SIGKILL the child and return a cancelled-result (exitCode = -5).
+// Callers that do not race (sequential / best-of) pass nil.
+proc tryProver(info: ProverInfo, goal: string, timeout: int = defaultTimeout,
+               cancelToken: borrowed CancelToken? = nil): ProofResult {
     var timer = new stopwatch();
     timer.start();
 
@@ -199,12 +225,39 @@ proc tryProver(info: ProverInfo, goal: string, timeout: int = defaultTimeout): P
         // The previous implementation used `!proc.running` which is true
         // before the child has begun and after it has exited, so it was
         // both racy at startup and stopped polling once running latched.
+        // L2.3: also break out if the shared `cancelToken` flips to true,
+        // which the speculative-search winner sets after its CAS succeeds.
         var elapsed: real = 0.0;
         const pollInterval: real = 0.1;
+        var preempted = false;
         while subproc.running && elapsed < timeout:real {
             sleep(pollInterval);
             elapsed += pollInterval;
             subproc.poll();
+            if cancelToken != nil && cancelToken!.cancelled.read() {
+                preempted = true;
+                break;
+            }
+        }
+
+        if preempted {
+            // L2.3 preemption: the speculative-search winner has been
+            // declared elsewhere. SIGKILL ourselves and return a
+            // distinct exitCode = -5 so the caller's result table
+            // distinguishes preempted-loser from timed-out from failed.
+            subproc.sendPosixSignal(9);
+            subproc.wait();
+            timer.stop();
+            try { remove(tmpFile); } catch { }
+            return new ProofResult(
+                success = false,
+                prover = info.name,
+                proverId = info.id,
+                time = timer.elapsed(),
+                exitCode = -5,
+                output = "Preempted by speculative-search winner",
+                category = info.category
+            );
         }
 
         if subproc.running {
@@ -370,21 +423,25 @@ proc parallelProofSearch(goal: string, provers: [] ProverInfo,
 //   - parallelProofSearch waits for ALL tasks then picks the fastest
 //     success. Wall time is bounded by the slowest prover.
 //   - parallelProofSearchSpeculative records the first-completing
-//     success via an atomic CAS and returns it. Wall time is bounded
-//     by the fastest successful prover plus whatever in-flight tasks
-//     have already begun (no mid-flight preemption in Wave 1).
+//     success via an atomic CAS and SIGKILLs any still-running losers
+//     via the shared `CancelToken`. Wall time is bounded by the
+//     fastest successful prover plus one poll-interval (~100 ms) of
+//     observation lag on the losers.
 //
-// Wave 1 scope deliberately stops short of the "kill in-flight losers"
-// step. Once a prover has been spawned, `tryProver` runs it to its own
-// per-prover timeout — coforall doesn't know how to cancel a child task
-// that's blocked on subprocess I/O. L2.3 introduces a cancel token
-// threaded through `tryProver` so the children can SIGKILL their own
-// subprocesses when they observe a winner; that's a separate PR.
+// L2.3 cancellation: the winning task's CAS is paired with a write to
+// the shared `CancelToken`. Loser tasks read the token at every poll
+// step in `tryProver` and self-SIGKILL their subprocess as soon as
+// the flag is observed. The atomic-bool semantics give us a
+// happens-before edge from CAS-success to next-loser-poll, so no
+// further locking is needed.
 //
-// Cancellation-safety today: every losing task is run to its natural
-// end. The result table records all outcomes; only the winning index
-// (the first successful CAS) is returned. No prover's exit can poison
-// the join because the atomic CAS is monotone — the first winner wins.
+// Soundness: the monotone first-wins CAS still controls which index
+// is returned. The cancellation flag only affects how the LOSERS
+// terminate — their results land in the table with exitCode = -5
+// instead of running to completion, but they are never returned to
+// the caller because `winner` is set before any cancellation could
+// race the CAS. See proofs/agda/ParallelSoundness.agda:
+// `cancellation-safety` for the formal statement.
 proc parallelProofSearchSpeculative(goal: string, provers: [] ProverInfo,
                                     timeout: int = defaultTimeout): ProofResult {
     if verbose then
@@ -397,15 +454,20 @@ proc parallelProofSearchSpeculative(goal: string, provers: [] ProverInfo,
     var results: [provers.domain] ProofResult;
     var winnerIdx: atomic int;
     winnerIdx.write(-1);
+    var cancelToken = new owned CancelToken();
 
     coforall (prover, i) in zip(provers, provers.domain) {
-        results[i] = tryProver(prover, goal, timeout);
+        results[i] = tryProver(prover, goal, timeout, cancelToken.borrow());
 
         if results[i].success {
             // Monotone first-wins CAS: only the first successful
-            // worker flips the atomic from -1 to its own index.
+            // worker flips the atomic from -1 to its own index. The
+            // paired write to cancelToken signals every still-polling
+            // loser to SIGKILL its subprocess on the next poll.
             var expected = -1;
-            winnerIdx.compareAndSwap(expected, i);
+            if winnerIdx.compareAndSwap(expected, i) {
+                cancelToken.cancelled.write(true);
+            }
         }
     }
 
