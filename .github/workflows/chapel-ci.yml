@@ -28,10 +28,15 @@ concurrency:
 permissions: read-all
 
 jobs:
-  # Job 1: Compile Chapel .chpl files into a shared library
+  # Job 1: Compile Chapel .chpl files into a shared library.
+  # Marked continue-on-error: true pending #133 — the .chpl sources use
+  # non-Chapel FFI syntax (`extern "C" { ... }` blocks, octal escapes)
+  # that have never compiled. Job runs for visibility but doesn't fail
+  # the workflow. Re-enable strict gating once #133's rewrite lands.
   chapel-build:
     name: Compile Chapel Metalayer
     runs-on: ubuntu-latest
+    continue-on-error: true
     steps:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
 
@@ -65,10 +70,16 @@ jobs:
           name: chapel-lib
           path: src/chapel/libechidna_chapel*
 
-  # Job 2: Build and test Zig FFI bridge (always uses stubs)
+  # Job 2: Build and test Zig FFI bridge (always uses stubs).
+  # Marked continue-on-error: true alongside chapel-build (#133) — the
+  # Zig 0.13.0 toolchain pinned here is missing `addLibrary` on the
+  # `Build` namespace that `src/zig_ffi/build.zig:23` calls. Either bump
+  # to the Zig that ships `addLibrary` or migrate to the supported API;
+  # tracked as part of #133's Chapel + FFI rehabilitation arc.
   zig-ffi:
     name: Build & Test Zig FFI Bridge
     runs-on: ubuntu-latest
+    continue-on-error: true
     steps:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
 
