@@ -399,11 +399,11 @@ WORKDIR /opt/or-tools
 # The tarball ships include headers, shared libraries, and CMake config files.
 # Check https://github.com/google/or-tools/releases for the latest version.
 # NOTE: upstream release assets ALWAYS carry the build number, e.g.
-#   or-tools_amd64_debian-12_cpp_v9.12.4544.tar.gz   (NOT ..._v9.12.tar.gz)
+#   or-tools_amd64_debian-12_cpp_v9.15.6755.tar.gz   (NOT ..._v9.15.tar.gz)
 # so ORTOOLS_BUILD must track the exact build for the tag (verified via the
-# GitHub releases API for tag v9.12). Bump both together on any version change.
-ARG ORTOOLS_VERSION="9.12"
-ARG ORTOOLS_BUILD="4544"
+# GitHub releases API for tag v9.15). Bump both together on any version change.
+ARG ORTOOLS_VERSION="9.15"
+ARG ORTOOLS_BUILD="6755"
 ARG ORTOOLS_ARCHIVE="or-tools_amd64_debian-12_cpp_v${ORTOOLS_VERSION}.${ORTOOLS_BUILD}.tar.gz"
 ARG ORTOOLS_URL="https://github.com/google/or-tools/releases/download/v${ORTOOLS_VERSION}/${ORTOOLS_ARCHIVE}"
 
@@ -501,7 +501,7 @@ WORKDIR /build/polyml
 # auto-generated source tarball for the tag (always present), with the
 # releases/download form as a fallback for any version that does ship one.
 # The archive tarball extracts to polyml-<version>/ → --strip-components=1.
-ARG POLYML_VERSION="5.9.1"
+ARG POLYML_VERSION="5.9.2"
 RUN set -eux; \
     curl -fsSL --retry 3 \
       "https://github.com/polyml/polyml/archive/refs/tags/v${POLYML_VERSION}.tar.gz" \
@@ -621,7 +621,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 # such file or directory" at runtime. Build in-place at /opt/acl2 so the
 # baked paths are correct in the runtime image (ACL2_SYSTEM_BOOKS=/opt/acl2/books).
 # Check https://github.com/acl2/acl2/releases for the latest version.
-ARG ACL2_VERSION="8.6"
+ARG ACL2_VERSION="8.7"
 RUN git clone --depth 1 --branch "v${ACL2_VERSION}" \
       https://github.com/acl2/acl2.git /opt/acl2 \
     || git clone --depth 1 \
