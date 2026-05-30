@@ -258,8 +258,8 @@ impl ProverBackend for ProBBackend {
         Ok(Self::to_b_machine(state))
     }
 
-    async fn suggest_tactics(&self, _state: &ProofState, _limit: usize) -> Result<Vec<Tactic>> {
-        Ok(vec![])
+    async fn suggest_tactics(&self, state: &ProofState, limit: usize) -> Result<Vec<Tactic>> {
+        Ok(crate::provers::gnn_augment_tactics(&self.config, state, "prob", vec![], limit).await)
     }
 
     async fn search_theorems(&self, _pattern: &str) -> Result<Vec<String>> {

@@ -1057,7 +1057,7 @@ impl ProverBackend for CoqBackend {
             args: vec![],
         });
 
-        Ok(suggestions.into_iter().take(limit).collect())
+        Ok(crate::provers::gnn_augment_tactics(&self.config, state, "coq", suggestions, limit).await)
     }
 
     async fn search_theorems(&self, pattern: &str) -> Result<Vec<String>> {

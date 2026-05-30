@@ -133,7 +133,7 @@ impl ProverBackend for IsabelleZfBackend {
             .unwrap_or_default())
     }
 
-    async fn suggest_tactics(&self, _state: &ProofState, limit: usize) -> Result<Vec<Tactic>> {
+    async fn suggest_tactics(&self, state: &ProofState, limit: usize) -> Result<Vec<Tactic>> {
         // Isabelle/ZF uses the same Isar tactic set as Isabelle/HOL but
         // targets Zermelo–Fraenkel set theory rather than higher-order logic.
         let tactics = vec![
@@ -174,7 +174,7 @@ impl ProverBackend for IsabelleZfBackend {
             },
             Tactic::Assumption,
         ];
-        Ok(tactics.into_iter().take(limit).collect())
+        Ok(crate::provers::gnn_augment_tactics(&self.config, state, "isabelle_zf", tactics, limit).await)
     }
 
     async fn search_theorems(&self, _pattern: &str) -> Result<Vec<String>> {

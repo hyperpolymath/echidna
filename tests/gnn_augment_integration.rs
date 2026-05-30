@@ -448,3 +448,323 @@ async fn test_why3_gnn_wires_top_premise() {
     let base_url = spawn_mock_gnn_server().await;
     assert_top_tactic_is_apply(ProverKind::Why3, "why3", &base_url).await;
 }
+
+// ─── Tier-3 / niche sweep: full ProverKind coverage ─────────────────────────
+
+#[tokio::test]
+async fn test_abc_gnn_wires_top_premise() {
+    let base_url = spawn_mock_gnn_server().await;
+    assert_top_tactic_is_apply(ProverKind::ABC, "abc", &base_url).await;
+}
+
+#[tokio::test]
+async fn test_acl2s_gnn_wires_top_premise() {
+    let base_url = spawn_mock_gnn_server().await;
+    assert_top_tactic_is_apply(ProverKind::ACL2s, "acl2s", &base_url).await;
+}
+
+#[tokio::test]
+async fn test_alloy_gnn_wires_top_premise() {
+    let base_url = spawn_mock_gnn_server().await;
+    assert_top_tactic_is_apply(ProverKind::Alloy, "alloy", &base_url).await;
+}
+
+#[tokio::test]
+async fn test_arend_gnn_wires_top_premise() {
+    let base_url = spawn_mock_gnn_server().await;
+    assert_top_tactic_is_apply(ProverKind::Arend, "arend", &base_url).await;
+}
+
+#[tokio::test]
+async fn test_boogie_gnn_wires_top_premise() {
+    let base_url = spawn_mock_gnn_server().await;
+    assert_top_tactic_is_apply(ProverKind::Boogie, "boogie", &base_url).await;
+}
+
+#[tokio::test]
+async fn test_cadical_gnn_wires_top_premise() {
+    let base_url = spawn_mock_gnn_server().await;
+    assert_top_tactic_is_apply(ProverKind::CaDiCaL, "cadical", &base_url).await;
+}
+
+#[tokio::test]
+async fn test_coq_gnn_wires_top_premise() {
+    let base_url = spawn_mock_gnn_server().await;
+    assert_top_tactic_is_apply(ProverKind::Coq, "coq", &base_url).await;
+}
+
+#[tokio::test]
+async fn test_cryptoverif_gnn_wires_top_premise() {
+    let base_url = spawn_mock_gnn_server().await;
+    assert_top_tactic_is_apply(ProverKind::CryptoVerif, "cryptoverif", &base_url).await;
+}
+
+#[tokio::test]
+async fn test_cubical_agda_gnn_wires_top_premise() {
+    let base_url = spawn_mock_gnn_server().await;
+    assert_top_tactic_is_apply(ProverKind::CubicalAgda, "cubical_agda", &base_url).await;
+}
+
+#[tokio::test]
+async fn test_dedukti_gnn_wires_top_premise() {
+    let base_url = spawn_mock_gnn_server().await;
+    assert_top_tactic_is_apply(ProverKind::Dedukti, "dedukti", &base_url).await;
+}
+
+#[tokio::test]
+async fn test_elk_gnn_wires_top_premise() {
+    let base_url = spawn_mock_gnn_server().await;
+    assert_top_tactic_is_apply(ProverKind::ELK, "elk", &base_url).await;
+}
+
+#[tokio::test]
+async fn test_faial_gnn_wires_top_premise() {
+    let base_url = spawn_mock_gnn_server().await;
+    assert_top_tactic_is_apply(ProverKind::Faial, "faial", &base_url).await;
+}
+
+#[tokio::test]
+async fn test_framac_gnn_wires_top_premise() {
+    let base_url = spawn_mock_gnn_server().await;
+    assert_top_tactic_is_apply(ProverKind::FramaC, "framac", &base_url).await;
+}
+
+#[tokio::test]
+async fn test_gnatprove_gnn_wires_top_premise() {
+    let base_url = spawn_mock_gnn_server().await;
+    assert_top_tactic_is_apply(ProverKind::GNATprove, "gnatprove", &base_url).await;
+}
+
+#[tokio::test]
+async fn test_gpuverify_gnn_wires_top_premise() {
+    let base_url = spawn_mock_gnn_server().await;
+    assert_top_tactic_is_apply(ProverKind::GPUVerify, "gpuverify", &base_url).await;
+}
+
+#[tokio::test]
+async fn test_hp_ecosystem_gnn_wires_top_premise() {
+    let base_url = spawn_mock_gnn_server().await;
+    assert_top_tactic_is_apply(ProverKind::TypeLL, "hp_ecosystem", &base_url).await;
+}
+
+#[tokio::test]
+async fn test_ileancop_gnn_wires_top_premise() {
+    let base_url = spawn_mock_gnn_server().await;
+    assert_top_tactic_is_apply(ProverKind::IleanCoP, "ileancop", &base_url).await;
+}
+
+#[tokio::test]
+async fn test_isabelle_zf_gnn_wires_top_premise() {
+    let base_url = spawn_mock_gnn_server().await;
+    assert_top_tactic_is_apply(ProverKind::IsabelleZF, "isabelle_zf", &base_url).await;
+}
+
+#[tokio::test]
+async fn test_kissat_gnn_wires_top_premise() {
+    let base_url = spawn_mock_gnn_server().await;
+    assert_top_tactic_is_apply(ProverKind::Kissat, "kissat", &base_url).await;
+}
+
+#[tokio::test]
+async fn test_konclude_gnn_wires_top_premise() {
+    let base_url = spawn_mock_gnn_server().await;
+    assert_top_tactic_is_apply(ProverKind::Konclude, "konclude", &base_url).await;
+}
+
+#[tokio::test]
+async fn test_lambda_prolog_gnn_wires_top_premise() {
+    let base_url = spawn_mock_gnn_server().await;
+    assert_top_tactic_is_apply(ProverKind::LambdaProlog, "lambda_prolog", &base_url).await;
+}
+
+#[tokio::test]
+async fn test_lean3_gnn_wires_top_premise() {
+    let base_url = spawn_mock_gnn_server().await;
+    assert_top_tactic_is_apply(ProverKind::Lean3, "lean3", &base_url).await;
+}
+
+#[tokio::test]
+async fn test_liquid_haskell_gnn_wires_top_premise() {
+    let base_url = spawn_mock_gnn_server().await;
+    assert_top_tactic_is_apply(ProverKind::LiquidHaskell, "liquid-haskell", &base_url).await;
+}
+
+#[tokio::test]
+async fn test_matita_gnn_wires_top_premise() {
+    let base_url = spawn_mock_gnn_server().await;
+    assert_top_tactic_is_apply(ProverKind::Matita, "matita", &base_url).await;
+}
+
+#[tokio::test]
+async fn test_mercury_gnn_wires_top_premise() {
+    let base_url = spawn_mock_gnn_server().await;
+    assert_top_tactic_is_apply(ProverKind::Mercury, "mercury", &base_url).await;
+}
+
+#[tokio::test]
+async fn test_mettel2_gnn_wires_top_premise() {
+    let base_url = spawn_mock_gnn_server().await;
+    assert_top_tactic_is_apply(ProverKind::MetTeL2, "mettel2", &base_url).await;
+}
+
+#[tokio::test]
+async fn test_minisat_gnn_wires_top_premise() {
+    let base_url = spawn_mock_gnn_server().await;
+    assert_top_tactic_is_apply(ProverKind::MiniSat, "minisat", &base_url).await;
+}
+
+#[tokio::test]
+async fn test_mizar_ar_gnn_wires_top_premise() {
+    let base_url = spawn_mock_gnn_server().await;
+    assert_top_tactic_is_apply(ProverKind::MizAR, "mizar_ar", &base_url).await;
+}
+
+#[tokio::test]
+async fn test_mleancop_gnn_wires_top_premise() {
+    let base_url = spawn_mock_gnn_server().await;
+    assert_top_tactic_is_apply(ProverKind::MleanCoP, "mleancop", &base_url).await;
+}
+
+#[tokio::test]
+async fn test_nanocop_gnn_wires_top_premise() {
+    let base_url = spawn_mock_gnn_server().await;
+    assert_top_tactic_is_apply(ProverKind::NanoCoP, "nanocop", &base_url).await;
+}
+
+#[tokio::test]
+async fn test_naproche_gnn_wires_top_premise() {
+    let base_url = spawn_mock_gnn_server().await;
+    assert_top_tactic_is_apply(ProverKind::Naproche, "naproche", &base_url).await;
+}
+
+#[tokio::test]
+async fn test_nitpick_gnn_wires_top_premise() {
+    let base_url = spawn_mock_gnn_server().await;
+    assert_top_tactic_is_apply(ProverKind::Nitpick, "nitpick", &base_url).await;
+}
+
+#[tokio::test]
+async fn test_nunchaku_gnn_wires_top_premise() {
+    let base_url = spawn_mock_gnn_server().await;
+    assert_top_tactic_is_apply(ProverKind::Nunchaku, "nunchaku", &base_url).await;
+}
+
+#[tokio::test]
+async fn test_nusmv_gnn_wires_top_premise() {
+    let base_url = spawn_mock_gnn_server().await;
+    assert_top_tactic_is_apply(ProverKind::NuSMV, "nusmv", &base_url).await;
+}
+
+#[tokio::test]
+async fn test_opensmt_gnn_wires_top_premise() {
+    let base_url = spawn_mock_gnn_server().await;
+    assert_top_tactic_is_apply(ProverKind::OpenSmt, "opensmt", &base_url).await;
+}
+
+#[tokio::test]
+async fn test_prism_gnn_wires_top_premise() {
+    let base_url = spawn_mock_gnn_server().await;
+    assert_top_tactic_is_apply(ProverKind::Prism, "prism", &base_url).await;
+}
+
+#[tokio::test]
+async fn test_prob_gnn_wires_top_premise() {
+    let base_url = spawn_mock_gnn_server().await;
+    assert_top_tactic_is_apply(ProverKind::ProB, "prob", &base_url).await;
+}
+
+#[tokio::test]
+async fn test_prover9_gnn_wires_top_premise() {
+    let base_url = spawn_mock_gnn_server().await;
+    assert_top_tactic_is_apply(ProverKind::Prover9, "prover9", &base_url).await;
+}
+
+#[tokio::test]
+async fn test_proverif_gnn_wires_top_premise() {
+    let base_url = spawn_mock_gnn_server().await;
+    assert_top_tactic_is_apply(ProverKind::ProVerif, "proverif", &base_url).await;
+}
+
+#[tokio::test]
+async fn test_qepcad_gnn_wires_top_premise() {
+    let base_url = spawn_mock_gnn_server().await;
+    assert_top_tactic_is_apply(ProverKind::Qepcad, "qepcad", &base_url).await;
+}
+
+#[tokio::test]
+async fn test_redlog_gnn_wires_top_premise() {
+    let base_url = spawn_mock_gnn_server().await;
+    assert_top_tactic_is_apply(ProverKind::Redlog, "redlog", &base_url).await;
+}
+
+#[tokio::test]
+async fn test_seahorn_gnn_wires_top_premise() {
+    let base_url = spawn_mock_gnn_server().await;
+    assert_top_tactic_is_apply(ProverKind::SeaHorn, "seahorn", &base_url).await;
+}
+
+#[tokio::test]
+async fn test_smtrat_gnn_wires_top_premise() {
+    let base_url = spawn_mock_gnn_server().await;
+    assert_top_tactic_is_apply(ProverKind::SmtRat, "smtrat", &base_url).await;
+}
+
+#[tokio::test]
+async fn test_spin_checker_gnn_wires_top_premise() {
+    let base_url = spawn_mock_gnn_server().await;
+    assert_top_tactic_is_apply(ProverKind::SPIN, "spin", &base_url).await;
+}
+
+#[tokio::test]
+async fn test_stainless_gnn_wires_top_premise() {
+    let base_url = spawn_mock_gnn_server().await;
+    assert_top_tactic_is_apply(ProverKind::Stainless, "stainless", &base_url).await;
+}
+
+#[tokio::test]
+async fn test_storm_gnn_wires_top_premise() {
+    let base_url = spawn_mock_gnn_server().await;
+    assert_top_tactic_is_apply(ProverKind::Storm, "storm", &base_url).await;
+}
+
+#[tokio::test]
+async fn test_tamarin_gnn_wires_top_premise() {
+    let base_url = spawn_mock_gnn_server().await;
+    assert_top_tactic_is_apply(ProverKind::Tamarin, "tamarin", &base_url).await;
+}
+
+#[tokio::test]
+async fn test_tlc_gnn_wires_top_premise() {
+    let base_url = spawn_mock_gnn_server().await;
+    assert_top_tactic_is_apply(ProverKind::TLC, "tlc", &base_url).await;
+}
+
+#[tokio::test]
+async fn test_typed_wasm_gnn_wires_top_premise() {
+    let base_url = spawn_mock_gnn_server().await;
+    assert_top_tactic_is_apply(ProverKind::TypedWasm, "typed_wasm", &base_url).await;
+}
+
+#[tokio::test]
+async fn test_uppaal_gnn_wires_top_premise() {
+    let base_url = spawn_mock_gnn_server().await;
+    assert_top_tactic_is_apply(ProverKind::UPPAAL, "uppaal", &base_url).await;
+}
+
+#[tokio::test]
+async fn test_uppaal_stratego_gnn_wires_top_premise() {
+    let base_url = spawn_mock_gnn_server().await;
+    assert_top_tactic_is_apply(ProverKind::UppaalStratego, "uppaal_stratego", &base_url).await;
+}
+
+#[tokio::test]
+async fn test_viper_gnn_wires_top_premise() {
+    let base_url = spawn_mock_gnn_server().await;
+    assert_top_tactic_is_apply(ProverKind::Viper, "viper", &base_url).await;
+}
+
+#[tokio::test]
+async fn test_zipperposition_gnn_wires_top_premise() {
+    let base_url = spawn_mock_gnn_server().await;
+    assert_top_tactic_is_apply(ProverKind::Zipperposition, "zipperposition", &base_url).await;
+}

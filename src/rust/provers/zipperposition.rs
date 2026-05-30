@@ -136,7 +136,7 @@ impl ProverBackend for ZipperpositionBackend {
             .join("\n"))
     }
 
-    async fn suggest_tactics(&self, _state: &ProofState, limit: usize) -> Result<Vec<Tactic>> {
+    async fn suggest_tactics(&self, state: &ProofState, limit: usize) -> Result<Vec<Tactic>> {
         // Zipperposition is a higher-order superposition ATP.
         // Suggestions are prover flags and strategy hints.
         let tactics = vec![
@@ -162,7 +162,7 @@ impl ProverBackend for ZipperpositionBackend {
             },
             Tactic::Simplify,
         ];
-        Ok(tactics.into_iter().take(limit).collect())
+        Ok(crate::provers::gnn_augment_tactics(&self.config, state, "zipperposition", tactics, limit).await)
     }
 
     async fn search_theorems(&self, _pattern: &str) -> Result<Vec<String>> {

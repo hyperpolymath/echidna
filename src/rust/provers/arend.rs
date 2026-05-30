@@ -109,7 +109,7 @@ impl ProverBackend for ArendBackend {
             .map(String::from)
             .unwrap_or_default())
     }
-    async fn suggest_tactics(&self, _state: &ProofState, limit: usize) -> Result<Vec<Tactic>> {
+    async fn suggest_tactics(&self, state: &ProofState, limit: usize) -> Result<Vec<Tactic>> {
         // Arend is a proof assistant based on Homotopy Type Theory (HoTT).
         // It uses term-mode proofs with the following common combinators.
         let tactics = vec![
@@ -141,7 +141,7 @@ impl ProverBackend for ArendBackend {
             },
             Tactic::Assumption,
         ];
-        Ok(tactics.into_iter().take(limit).collect())
+        Ok(crate::provers::gnn_augment_tactics(&self.config, state, "arend", tactics, limit).await)
     }
 
     async fn search_theorems(&self, _pattern: &str) -> Result<Vec<String>> {

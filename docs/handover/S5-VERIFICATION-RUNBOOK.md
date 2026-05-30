@@ -28,17 +28,17 @@ Spawns an in-process mock HTTP server and asserts:
 
 - `GnnClient::health_status()` returns the richer payload (model_path, vocab_size,
   training_records_received).
-- For each of rocq, lean, agda, isabelle, z3 (the S5 pilot), idris2, fstar,
-  cvc5, vampire, dafny (the Tier-1 extension), altergo, eprover (the Tier-1
-  finisher), and the 33 Tier-2 backends (acl2, agsyhol, aprove, athena,
-  cameleer, cbmc, chuffed, csi, dreal, glpk, HOL4, hol_light, imandra, iprover,
-  key, lash, leo3, metamath, metitarski, minizinc, minlog, mizar, nuprl,
-  ortools, princess, PVS, satallax, scip, spass, tlaps, twee, twelf, why3):
+- For every backend in `ProverKind` whose `suggest_tactics` is wired through
+  `gnn_augment_tactics` (S5 pilot 5 + Tier-1 extension 5 + Tier-1 finisher 2 +
+  Tier-2 sweep 33 + Tier-3/niche sweep 53 — full coverage as of 2026-05-30):
   `suggest_tactics` returns `Tactic::Custom { command: "apply", args: ["lemma_foo"] }`
-  as the first tactic, proving the `/gnn/rank` wire format is consumed
-  correctly by every backend.
+  as the first tactic, proving the `/gnn/rank` wire format is consumed correctly
+  by every backend.
 
-Expected output: `test result: ok. 46 passed; 0 failed`.
+Expected output: `test result: ok. N passed; 0 failed` where N is
+`1 (health) + |gnn_augment_tactics call-sites|`. The exact count tracks the
+test functions in `tests/gnn_augment_integration.rs`; do not hardcode it in
+new docs.
 
 ---
 

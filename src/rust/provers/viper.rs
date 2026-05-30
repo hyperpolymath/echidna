@@ -294,7 +294,7 @@ impl ProverBackend for ViperBackend {
         self.to_silver(state)
     }
 
-    async fn suggest_tactics(&self, _state: &ProofState, limit: usize) -> Result<Vec<Tactic>> {
+    async fn suggest_tactics(&self, state: &ProofState, limit: usize) -> Result<Vec<Tactic>> {
         // Viper is a deductive verification infrastructure for Silver programs.
         // Suggestions are Silver contract annotations and Viper-level hints.
         let tactics = vec![
@@ -325,7 +325,7 @@ impl ProverBackend for ViperBackend {
                 args: vec![],
             },
         ];
-        Ok(tactics.into_iter().take(limit).collect())
+        Ok(crate::provers::gnn_augment_tactics(&self.config, state, "viper", tactics, limit).await)
     }
 
     async fn search_theorems(&self, _pattern: &str) -> Result<Vec<String>> {

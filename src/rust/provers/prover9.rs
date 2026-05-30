@@ -143,7 +143,7 @@ impl ProverBackend for Prover9Backend {
             .join("\n"))
     }
 
-    async fn suggest_tactics(&self, _state: &ProofState, limit: usize) -> Result<Vec<Tactic>> {
+    async fn suggest_tactics(&self, state: &ProofState, limit: usize) -> Result<Vec<Tactic>> {
         // Prover9 is a first-order ATP (resolution + paramodulation).
         // Suggestions are weight-function and strategy flags passed to the binary.
         let tactics = vec![
@@ -169,7 +169,7 @@ impl ProverBackend for Prover9Backend {
             },
             Tactic::Simplify,
         ];
-        Ok(tactics.into_iter().take(limit).collect())
+        Ok(crate::provers::gnn_augment_tactics(&self.config, state, "prover9", tactics, limit).await)
     }
 
     async fn search_theorems(&self, _pattern: &str) -> Result<Vec<String>> {

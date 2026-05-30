@@ -138,7 +138,7 @@ impl ProverBackend for DeduktiBackend {
             .unwrap_or_default())
     }
 
-    async fn suggest_tactics(&self, _state: &ProofState, limit: usize) -> Result<Vec<Tactic>> {
+    async fn suggest_tactics(&self, state: &ProofState, limit: usize) -> Result<Vec<Tactic>> {
         // Dedukti is a logical framework (LF) based on lambda-Pi-modulo rewriting.
         // Proofs are λ-terms; the useful structuring steps are below.
         let tactics = vec![
@@ -161,7 +161,7 @@ impl ProverBackend for DeduktiBackend {
             Tactic::Simplify,
             Tactic::Assumption,
         ];
-        Ok(tactics.into_iter().take(limit).collect())
+        Ok(crate::provers::gnn_augment_tactics(&self.config, state, "dedukti", tactics, limit).await)
     }
 
     async fn search_theorems(&self, _pattern: &str) -> Result<Vec<String>> {

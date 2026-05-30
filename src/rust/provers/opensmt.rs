@@ -131,7 +131,7 @@ impl ProverBackend for OpenSmtBackend {
             .join("\n"))
     }
 
-    async fn suggest_tactics(&self, _state: &ProofState, limit: usize) -> Result<Vec<Tactic>> {
+    async fn suggest_tactics(&self, state: &ProofState, limit: usize) -> Result<Vec<Tactic>> {
         // OpenSMT is an SMT solver focused on interpolation-based verification.
         // Suggestions are option-level strategy hints (similar to Z3 and CVC5).
         let tactics = vec![
@@ -157,7 +157,7 @@ impl ProverBackend for OpenSmtBackend {
                 args: vec![":interpolation-algorithm 1".to_string()],
             },
         ];
-        Ok(tactics.into_iter().take(limit).collect())
+        Ok(crate::provers::gnn_augment_tactics(&self.config, state, "opensmt", tactics, limit).await)
     }
 
     async fn search_theorems(&self, _pattern: &str) -> Result<Vec<String>> {
