@@ -106,3 +106,34 @@ hand-off and the Wave-2 Idris2/Agda fixes above.
 ## Raw data
 
 5-run readings preserved at `docs/bench/2026-05-30-chapel-mrr-baseline.csv`.
+
+## Update 2026-05-31 — Caveats 1 & 2 resolved (#158 + #159)
+
+`ProverInfo` gained two optional spawn hooks: `cwd` (subprocess
+working directory, shell-wrapped to be coforall-safe) and
+`filenameOverride` (literal basename for provers that enforce
+module-name = filename). Registry entries for Idris2 and Agda set
+both; the bench fixture set gained `agda_trivial.agda`. The
+`bench-chapel-mrr` Justfile recipe now derives `IDRIS2_PREFIX` from
+`which idris2` so the parent shell doesn't need to export it.
+
+Single-run readings (replace with 5-run medians in a follow-up):
+
+| fixture | strategy | wallclock | winning prover |
+|---|---|---|---|
+| idris2_trivial | sequential          | 1.970 | Idris2 |
+| idris2_trivial | parallel_bestof     | 1.037 | Idris2 |
+| idris2_trivial | parallel_speculative| 1.032 | Idris2 |
+| agda_trivial   | sequential          | 0.101 | Agda   |
+| agda_trivial   | parallel_bestof     | 0.751 | Agda   |
+| agda_trivial   | parallel_speculative| 0.450 | Agda   |
+
+Note the new Agda regime: `sequential` is fastest (0.101 s) because
+Agda sits at registry position 0 — the first prover tried — and
+succeeds immediately, so the parallel strategies pay coforall spawn
+overhead with no benefit. The trivial-goal regime observation from
+the original bench applies symmetrically here.
+
+Wave-3 follow-ups still open: real-corpus speedup bench (#161,
+10-30 s prover invocations) and per-prover preempted/timeout/success
+telemetry (#162).

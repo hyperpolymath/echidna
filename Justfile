@@ -530,9 +530,24 @@ chapel-test: build-chapel-ffi
 # parallelProofSearch / parallelProofSearchSpeculative against the
 # fixture corpus in tests/chapel_fixtures/. Emits CSV to stdout. Doc:
 # docs/bench/2026-05-30-chapel-mrr-baseline.md.
+#
+# IDRIS2_PREFIX is derived from `which idris2` because Idris2's prelude
+# resolution requires the env var to be set when invoking `--check`;
+# the per-prover cwd hook (#158) sets the subprocess working dir but
+# doesn't help if the parent never had the env var (see
+# src/chapel/parallel_proof_search.chpl ProverInfo[4]). The derived
+# prefix is `dirname(dirname(realpath(which idris2)))` — works for
+# both source builds and asdf-shimmed installs.
 bench-chapel-mrr:
-    cd src/chapel && chpl -o bench_mrr bench_mrr.chpl && \
-      ./bench_mrr --verbose=false --timeout=10
+    #!/usr/bin/env bash
+    set -euo pipefail
+    if command -v idris2 >/dev/null 2>&1 && [ -z "${IDRIS2_PREFIX:-}" ]; then
+      export IDRIS2_PREFIX="$(dirname "$(dirname "$(readlink -f "$(command -v idris2)")")")"
+      echo "# IDRIS2_PREFIX=$IDRIS2_PREFIX (derived from which idris2)" >&2
+    fi
+    cd src/chapel
+    chpl -o bench_mrr bench_mrr.chpl
+    ./bench_mrr --verbose=false --timeout=10
 
 # Rebuild Chapel 2.8.0 from source with CHPL_LIB_PIC=pic so that
 # `chpl --library --dynamic` can produce a shared-library form of the

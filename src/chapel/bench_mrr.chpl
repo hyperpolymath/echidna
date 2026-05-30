@@ -81,10 +81,11 @@ proc benchOne(goal: string, fixtureName: string, allProvers: [] ProverInfo,
 proc main(): int {
     var allProvers = buildProverRegistry();
 
-    const fixtures: [0..2] Fixture = [
+    const fixtures: [0..3] Fixture = [
         new Fixture("coq_trivial",    fixtureDir + "/coq_trivial.v"),
         new Fixture("lean_trivial",   fixtureDir + "/lean_trivial.lean"),
-        new Fixture("idris2_trivial", fixtureDir + "/idris2_trivial.idr")
+        new Fixture("idris2_trivial", fixtureDir + "/idris2_trivial.idr"),
+        new Fixture("agda_trivial",   fixtureDir + "/agda_trivial.agda")
     ];
 
     writeln("fixture,strategy,wallclock_s,success,winning_prover");
