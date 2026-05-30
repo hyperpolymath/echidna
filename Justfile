@@ -534,6 +534,43 @@ bench-chapel-mrr:
     cd src/chapel && chpl -o bench_mrr bench_mrr.chpl && \
       ./bench_mrr --verbose=false --timeout=10
 
+# Rebuild Chapel 2.8.0 from source with CHPL_LIB_PIC=pic so that
+# `chpl --library --dynamic` can produce a shared-library form of the
+# metalayer. The apt deb ships only the `lib_pic-none` runtime
+# variant. ~25-35 min wall on a 4-core x86_64. ~5 GB disk under
+# ~/.cache/echidna/chapel-pic. Procedure + tradeoffs:
+# docs/decisions/2026-05-30-chapel-pic-rebuild.md. NOT a CI step.
+chapel-pic-from-source:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    CACHE_DIR="${ECHIDNA_CHAPEL_PIC_CACHE:-$HOME/.cache/echidna/chapel-pic}"
+    CHPL_VERSION="${CHPL_VERSION:-2.8.0}"
+    mkdir -p "$CACHE_DIR"
+    cd "$CACHE_DIR"
+    if [ ! -f "chapel-${CHPL_VERSION}.tar.gz" ]; then
+      echo "Downloading chapel ${CHPL_VERSION}..."
+      curl -fL "https://github.com/chapel-lang/chapel/releases/download/${CHPL_VERSION}/chapel-${CHPL_VERSION}.tar.gz" \
+        -o "chapel-${CHPL_VERSION}.tar.gz"
+    fi
+    if [ ! -d "chapel-${CHPL_VERSION}" ]; then
+      tar xf "chapel-${CHPL_VERSION}.tar.gz"
+    fi
+    cd "chapel-${CHPL_VERSION}"
+    export CHPL_LIB_PIC=pic
+    export CHPL_LLVM=bundled
+    export CHPL_HOME="$PWD"
+    source util/setchplenv.bash
+    echo "Building chapel runtime with CHPL_LIB_PIC=pic (~30 min)..."
+    make -j"$(nproc)"
+    echo "Verifying lib_pic-pic variant landed..."
+    if find lib -name 'lib_pic-pic' -type d | head -1 | grep -q .; then
+      echo "OK: PIC runtime built at $CHPL_HOME"
+      echo "Use:  PATH=$CHPL_HOME/bin/linux64-x86_64:\$PATH chpl --library --dynamic ..."
+    else
+      echo "ERROR: lib_pic-pic variant not found after build" >&2
+      exit 1
+    fi
+
 # Build Zig FFI bridge for Chapel (prerequisite for --features chapel)
 build-chapel-ffi:
     @echo "Building Zig FFI bridge..."
