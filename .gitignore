@@ -217,3 +217,11 @@ generated/tlaiser/
 generated/wokelangiser/
 generated/alloyiser/
 generated/abi/
+
+# npm-avoidant (standards#67)
+package-lock.json
+**/package-lock.json
+bun.lockb
+yarn.lock
+pnpm-lock.yaml
+.npmrc
