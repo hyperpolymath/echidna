@@ -37,6 +37,11 @@ jobs:
       - name: Cache Cargo
         uses: Swatinem/rust-cache@65012b490220f477f20ab979e35ae732e6de4e68 # v2
 
+      - name: Install just
+        uses: taiki-e/install-action@184183c2401be73c3bf42c2e61268aa5855379c1 # v2.78.1
+        with:
+          tool: just
+
       - name: Build release
         run: cargo build --release
 
