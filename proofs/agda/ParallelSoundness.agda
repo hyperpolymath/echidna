@@ -15,7 +15,17 @@
 --   3.  Cancellation-safety      — once a prover position witnesses
 --                                  success, the verdict is true regardless
 --                                  of what other provers do (the winner is
---                                  insensitive to the losers' state)
+--                                  insensitive to the losers' state).
+--                                  THIS IS THE L2.3 PREEMPTION CLAIM.
+--                                  Once the speculative-search winner has
+--                                  flipped the shared `CancelToken`, every
+--                                  in-flight loser self-SIGKILLs on its
+--                                  next poll and returns a preempted
+--                                  result (exitCode = -5). Those preempted
+--                                  results are NEVER returned to the
+--                                  caller — `winner` was set before any
+--                                  cancellation could race the CAS — so
+--                                  the aggregation verdict is unchanged.
 --
 -- The Chapel implementation uses an atomic compare-and-swap on a
 -- shared `winnerIdx` to record the first-completing successful prover.
@@ -24,6 +34,13 @@
 -- is a refinement of this model: it picks ONE successful index out of
 -- the (possibly several) provers that succeed, but the aggregation
 -- verdict (success or not) is unaffected by which index wins.
+--
+-- L2.3 cancel-token implementation lives in `src/chapel/parallel_proof_search.chpl`:
+-- the `CancelToken` class (class for shared-by-reference semantics across
+-- coforall tasks), the `cancelToken` parameter on `tryProver`, and the
+-- `cancelToken.cancelled.write(true)` paired with the CAS in
+-- `parallelProofSearchSpeculative`. `cancellation-safety` below is the
+-- formal statement of what that implementation preserves.
 --
 -- Wave-1 scope: this module proves the AGGREGATION layer. The
 -- complementary layer — that `tryProver` itself is sound (i.e. its

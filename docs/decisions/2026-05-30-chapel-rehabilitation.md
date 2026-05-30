@@ -113,7 +113,9 @@ Wave 2 (separate PR, after Wave 1 green-on-main for ≥7 days):
   CI flip deferred — the ~30 min source build dominates the chapel-ci
   budget; a registry-pushed container image is the L2.5 prerequisite.
 - Add the cancel-token thread through `tryProver` and switch the
-  Chapel-side default to the speculative search.
+  Chapel-side default to the speculative search. Implementation +
+  soundness argument:
+  [2026-05-30-chapel-l23-cancel-token.md](./2026-05-30-chapel-l23-cancel-token.md).
 - Wire the `proven` and `docudactyl` parallel-dispatch tracks
   off the same scaffold; breadcrumb issues filed in those repos
   on the PR landing.
