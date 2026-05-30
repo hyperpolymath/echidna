@@ -26,57 +26,63 @@ extern record CProofResult {
 // Prover ID constants (match ProverInfo.id and Zig ProverKind enum)
 // ---------------------------------------------------------------------------
 
-extern "C" {
-    // Interactive proof assistants
-    const PROVER_AGDA: c_int      = 0;
-    const PROVER_COQ: c_int       = 1;
-    const PROVER_LEAN: c_int      = 2;
-    const PROVER_ISABELLE: c_int  = 3;
-    const PROVER_IDRIS2: c_int    = 4;
-    const PROVER_FSTAR: c_int     = 5;
-    const PROVER_HOL4: c_int      = 6;
-    const PROVER_HOLLIGHT: c_int  = 7;
-    const PROVER_NUPRL: c_int     = 8;
-    const PROVER_MINLOG: c_int    = 9;
+// (Was originally `extern "C" { ... }`, but Chapel's extern-blocks feature
+// requires a Chapel install built with LLVM + clang headers; the official
+// `chapel-2.3.0-1.ubuntu24.amd64.deb` used in `chapel-ci.yml` is not. The
+// canonical C-visible copy lives in `src/zig_ffi/chapel_ffi_exports.h`
+// (`#define PROVER_AGDA 0`…), which is what every non-Chapel consumer
+// reads; the constants below only need module-level scope inside Chapel.
+// Keep the two copies in sync if values change.)
 
-    // SMT solvers
-    const PROVER_Z3: c_int        = 10;
-    const PROVER_CVC5: c_int      = 11;
-    const PROVER_ALTERGO: c_int   = 12;
+// Interactive proof assistants
+const PROVER_AGDA: c_int      = 0;
+const PROVER_COQ: c_int       = 1;
+const PROVER_LEAN: c_int      = 2;
+const PROVER_ISABELLE: c_int  = 3;
+const PROVER_IDRIS2: c_int    = 4;
+const PROVER_FSTAR: c_int     = 5;
+const PROVER_HOL4: c_int      = 6;
+const PROVER_HOLLIGHT: c_int  = 7;
+const PROVER_NUPRL: c_int     = 8;
+const PROVER_MINLOG: c_int    = 9;
 
-    // First-order ATPs
-    const PROVER_VAMPIRE: c_int   = 13;
-    const PROVER_EPROVER: c_int   = 14;
-    const PROVER_SPASS: c_int     = 15;
+// SMT solvers
+const PROVER_Z3: c_int        = 10;
+const PROVER_CVC5: c_int      = 11;
+const PROVER_ALTERGO: c_int   = 12;
 
-    // Declarative provers
-    const PROVER_METAMATH: c_int  = 16;
-    const PROVER_MIZAR: c_int     = 17;
-    const PROVER_PVS: c_int       = 18;
-    const PROVER_ACL2: c_int      = 19;
-    const PROVER_TLAPS: c_int     = 20;
-    const PROVER_TWELF: c_int     = 21;
-    const PROVER_IMANDRA: c_int   = 22;
+// First-order ATPs
+const PROVER_VAMPIRE: c_int   = 13;
+const PROVER_EPROVER: c_int   = 14;
+const PROVER_SPASS: c_int     = 15;
 
-    // Auto-active verifiers
-    const PROVER_DAFNY: c_int     = 23;
-    const PROVER_WHY3: c_int      = 24;
+// Declarative provers
+const PROVER_METAMATH: c_int  = 16;
+const PROVER_MIZAR: c_int     = 17;
+const PROVER_PVS: c_int       = 18;
+const PROVER_ACL2: c_int      = 19;
+const PROVER_TLAPS: c_int     = 20;
+const PROVER_TWELF: c_int     = 21;
+const PROVER_IMANDRA: c_int   = 22;
 
-    // Constraint solvers
-    const PROVER_GLPK: c_int      = 25;
-    const PROVER_SCIP: c_int      = 26;
-    const PROVER_MINIZINC: c_int  = 27;
-    const PROVER_CHUFFED: c_int   = 28;
-    const PROVER_ORTOOLS: c_int   = 29;
+// Auto-active verifiers
+const PROVER_DAFNY: c_int     = 23;
+const PROVER_WHY3: c_int      = 24;
 
-    // Category constants
-    const CATEGORY_INTERACTIVE: c_int  = 0;
-    const CATEGORY_SMT: c_int          = 1;
-    const CATEGORY_ATP: c_int          = 2;
-    const CATEGORY_DECLARATIVE: c_int  = 3;
-    const CATEGORY_AUTOACTIVE: c_int   = 4;
-    const CATEGORY_CONSTRAINT: c_int   = 5;
-}
+// Constraint solvers
+const PROVER_GLPK: c_int      = 25;
+const PROVER_SCIP: c_int      = 26;
+const PROVER_MINIZINC: c_int  = 27;
+const PROVER_CHUFFED: c_int   = 28;
+const PROVER_ORTOOLS: c_int   = 29;
+
+// Category constants
+const CATEGORY_INTERACTIVE: c_int  = 0;
+const CATEGORY_SMT: c_int          = 1;
+const CATEGORY_ATP: c_int          = 2;
+const CATEGORY_DECLARATIVE: c_int  = 3;
+const CATEGORY_AUTOACTIVE: c_int   = 4;
+const CATEGORY_CONSTRAINT: c_int   = 5;
 
 // ---------------------------------------------------------------------------
 // Helpers
