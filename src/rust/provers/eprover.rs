@@ -216,7 +216,7 @@ impl ProverBackend for EProverBackend {
         self.to_tptp(state)
     }
 
-    async fn suggest_tactics(&self, _state: &ProofState, limit: usize) -> Result<Vec<Tactic>> {
+    async fn suggest_tactics(&self, state: &ProofState, limit: usize) -> Result<Vec<Tactic>> {
         // E Prover is a fully-automated first-order ATP; suggestions are
         // strategy-selection options passed to the binary rather than
         // interactive proof tactics.
@@ -243,7 +243,7 @@ impl ProverBackend for EProverBackend {
             },
             Tactic::Simplify,
         ];
-        Ok(tactics.into_iter().take(limit).collect())
+        Ok(crate::provers::gnn_augment_tactics(&self.config, state, "eprover", tactics, limit).await)
     }
 
     async fn search_theorems(&self, _pattern: &str) -> Result<Vec<String>> {

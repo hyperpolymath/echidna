@@ -127,7 +127,7 @@ impl ProverBackend for TwelfBackend {
     async fn export(&self, state: &ProofState) -> Result<String> {
         self.to_input_format(state)
     }
-    async fn suggest_tactics(&self, _state: &ProofState, limit: usize) -> Result<Vec<Tactic>> {
+    async fn suggest_tactics(&self, state: &ProofState, limit: usize) -> Result<Vec<Tactic>> {
         // Twelf is a meta-logical framework (LF) used primarily for
         // mechanising programming-language metatheory. Proofs are
         // totality/coverage declarations; these are the key constructs.
@@ -158,7 +158,7 @@ impl ProverBackend for TwelfBackend {
                 args: vec!["5 _ _".to_string()],
             },
         ];
-        Ok(tactics.into_iter().take(limit).collect())
+        Ok(crate::provers::gnn_augment_tactics(&self.config, state, "twelf", tactics, limit).await)
     }
 
     async fn search_theorems(&self, _pattern: &str) -> Result<Vec<String>> {

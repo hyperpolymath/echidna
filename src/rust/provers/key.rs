@@ -694,7 +694,7 @@ impl ProverBackend for KeyBackend {
     /// Returns KeY-specific tactics as `Tactic::Custom` variants. These cover
     /// the most commonly used KeY proof commands: automatic strategy, proof macros,
     /// JavaDL rule applications, and proof tree management.
-    async fn suggest_tactics(&self, _state: &ProofState, limit: usize) -> Result<Vec<Tactic>> {
+    async fn suggest_tactics(&self, state: &ProofState, limit: usize) -> Result<Vec<Tactic>> {
         // Common KeY proof tactics, ordered by general usefulness
         let suggestions: Vec<Tactic> = vec![
             Tactic::Custom {
@@ -754,7 +754,7 @@ impl ProverBackend for KeyBackend {
             },
         ];
 
-        Ok(suggestions.into_iter().take(limit).collect())
+        Ok(crate::provers::gnn_augment_tactics(&self.config, state, "key", suggestions, limit).await)
     }
 
     /// Search for KeY taclets, rules, or lemmas matching a pattern.

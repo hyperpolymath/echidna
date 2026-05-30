@@ -212,7 +212,7 @@ impl ProverBackend for AltErgoBackend {
         self.to_altergo(state)
     }
 
-    async fn suggest_tactics(&self, _state: &ProofState, limit: usize) -> Result<Vec<Tactic>> {
+    async fn suggest_tactics(&self, state: &ProofState, limit: usize) -> Result<Vec<Tactic>> {
         // Alt-Ergo is an SMT solver; suggestions are option-level strategy hints
         // rather than interactive proof tactics.
         let tactics = vec![
@@ -238,7 +238,7 @@ impl ProverBackend for AltErgoBackend {
                 args: vec!["--sat-solver CDCL-Tableaux".to_string()],
             },
         ];
-        Ok(tactics.into_iter().take(limit).collect())
+        Ok(crate::provers::gnn_augment_tactics(&self.config, state, "altergo", tactics, limit).await)
     }
 
     async fn search_theorems(&self, _pattern: &str) -> Result<Vec<String>> {

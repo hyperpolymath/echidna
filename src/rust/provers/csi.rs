@@ -164,11 +164,12 @@ impl ProverBackend for CSIBackend {
         self.to_trs(state)
     }
 
-    async fn suggest_tactics(&self, _state: &ProofState, _limit: usize) -> Result<Vec<Tactic>> {
+    async fn suggest_tactics(&self, state: &ProofState, limit: usize) -> Result<Vec<Tactic>> {
         // CSI is a fully automated TRS confluence/termination solver.
         // It has no user-facing tactic language — correctness certificates
-        // are produced internally. Returning empty is correct behaviour.
-        Ok(vec![])
+        // are produced internally. GNN-ranked premises (when enabled) are
+        // still surfaced as apply hints; otherwise the result is empty.
+        Ok(crate::provers::gnn_augment_tactics(&self.config, state, "csi", vec![], limit).await)
     }
 
     async fn search_theorems(&self, _pattern: &str) -> Result<Vec<String>> {

@@ -144,7 +144,7 @@ impl ProverBackend for TLAPSBackend {
     async fn export(&self, state: &ProofState) -> Result<String> {
         self.to_input_format(state)
     }
-    async fn suggest_tactics(&self, _state: &ProofState, limit: usize) -> Result<Vec<Tactic>> {
+    async fn suggest_tactics(&self, state: &ProofState, limit: usize) -> Result<Vec<Tactic>> {
         // TLAPS (TLA+ Proof System) is the Isabelle-based backend for TLA+
         // proofs. Proof steps use the TLA+ proof language, which maps onto
         // these canonical decomposition tactics.
@@ -181,7 +181,7 @@ impl ProverBackend for TLAPSBackend {
             },
             Tactic::Simplify,
         ];
-        Ok(tactics.into_iter().take(limit).collect())
+        Ok(crate::provers::gnn_augment_tactics(&self.config, state, "tlaps", tactics, limit).await)
     }
 
     async fn search_theorems(&self, _pattern: &str) -> Result<Vec<String>> {

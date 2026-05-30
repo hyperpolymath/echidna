@@ -450,14 +450,10 @@ impl ProverBackend for DRealBackend {
     ///
     /// Since dReal is fully automated, suggestions are limited to
     /// precision-adjustment custom commands rather than interactive tactics.
-    async fn suggest_tactics(&self, _state: &ProofState, limit: usize) -> Result<Vec<Tactic>> {
-        if !self.config.neural_enabled {
-            return Ok(vec![]);
-        }
-
+    async fn suggest_tactics(&self, state: &ProofState, limit: usize) -> Result<Vec<Tactic>> {
         // dReal does not support interactive tactics, but we can suggest
         // precision adjustments and solver options as custom commands
-        let mut suggestions = vec![
+        let suggestions = vec![
             Tactic::Custom {
                 prover: "dreal".to_string(),
                 command: "set-precision".to_string(),
@@ -475,8 +471,7 @@ impl ProverBackend for DRealBackend {
             },
         ];
 
-        suggestions.truncate(limit);
-        Ok(suggestions)
+        Ok(crate::provers::gnn_augment_tactics(&self.config, state, "dreal", suggestions, limit).await)
     }
 
     async fn search_theorems(&self, _pattern: &str) -> Result<Vec<String>> {
