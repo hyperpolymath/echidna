@@ -35,9 +35,9 @@ Canonical sources of truth:
 - [`.machine_readable/6a2/STATE.a2ml`](https://github.com/hyperpolymath/echidna/blob/main/.machine_readable/6a2/STATE.a2ml) for current state
 - [`docs/ROADMAP.md`](https://github.com/hyperpolymath/echidna/blob/main/docs/ROADMAP.md) for direction
 
-## Why MPL-2.0 and not MIT or AGPL?
+## Why AGPL-3.0-or-later?
 
-Practical balance: weak copyleft at the file level (modifications to MPL'd files must be open) without copyleft-by-linking (so downstream commercial use is straightforward). The project migrated from a dual MIT/Palimpsest-0.6 licence in 2026; `NOTICE` and `LICENSE` reflect the current state.
+Estate-wide policy decision (co-dev alignment). The project migrated from MPL-2.0 to AGPL-3.0-or-later on 2026-05-27 (#112); prior to MPL-2.0 it had been dual MIT/Palimpsest-0.6. `NOTICE` and `LICENSE` reflect the current state.
 
 ## How do I report a security issue?
 

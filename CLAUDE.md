@@ -8,7 +8,7 @@ This document provides guidelines and context for working with Claude Code on th
 
 **Repository**: https://github.com/hyperpolymath/echidna
 **Version**: 2.3.0 (see `CHANGELOG.md`; release-tag publication tracked in `docs/handover/TODO.md`)
-**License**: MPL-2.0
+**License**: AGPL-3.0-or-later
 **Architecture overview**: [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md)
 **Canonical prover count**: [`docs/PROVER_COUNT.md`](docs/PROVER_COUNT.md) (128 total, 12 core)
 **Environment variables**: [`docs/ENV-VARS.md`](docs/ENV-VARS.md)
@@ -215,10 +215,10 @@ cargo fmt --check                 # Format check
 - **RSR/CCCP Compliance Required** - follow Rhodium Standard Repository guidelines
 - **Justfile PRIMARY** - never use Make or other build systems
 - **Podman not Docker** - always use Podman for containers
-- **License**: MPL-2.0 (not AGPL, not dual MIT/Palimpsest)
+- **License**: AGPL-3.0-or-later (migrated from MPL-2.0 in #112, 2026-05-27)
 - **Author**: Jonathan D.A. Jewell <j.d.a.jewell@open.ac.uk>
 
 ---
 
-**Last Updated**: 2026-03-23
+**Last Updated**: 2026-05-30
 **Maintained By**: Jonathan D.A. Jewell <j.d.a.jewell@open.ac.uk>
