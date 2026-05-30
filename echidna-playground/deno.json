@@ -2,13 +2,13 @@
   "name": "@coq-jr/web",
   "version": "0.1.0",
   "tasks": {
-    "build:res": "npx rescript build",
-    "clean:res": "npx rescript clean",
+    "build:res": "deno run -A --node-modules-dir=auto npm:rescript build",
+    "clean:res": "deno run -A --node-modules-dir=auto npm:rescript clean",
     "dev": "deno run --allow-net --allow-read server.ts",
     "serve": "deno run --allow-net --allow-read server.ts",
-    "res:build": "rescript build",
-    "res:clean": "rescript clean",
-    "res:watch": "rescript build -w"
+    "res:build": "deno run -A --node-modules-dir=auto npm:rescript build",
+    "res:clean": "deno run -A --node-modules-dir=auto npm:rescript clean",
+    "res:watch": "deno run -A --node-modules-dir=auto npm:rescript build -w"
   },
   "imports": {
     "@std/http": "jsr:@std/http@^1.0.0",
