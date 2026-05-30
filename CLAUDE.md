@@ -139,23 +139,34 @@ The v1.5 trust hardening added:
 
 **Next (v2.2+)** (precise status):
 
-- **Chapel → Rust C FFI bridge (L2.1 done; L2.2–L2.7 gated)**. Zig shim
-  (`src/zig_ffi/`) and Chapel POC (`src/chapel/`) are in place behind
-  `--features chapel`. L2.1 is wired: `ChapelParallelSearch`
+- **Chapel → Rust C FFI bridge (L2.1 + L2.2 done; L2.3+ gated)**. Zig shim
+  (`src/zig_ffi/`) and the rewritten Chapel metalayer (`src/chapel/`) sit
+  behind `--features chapel`. L2.1 is wired: `ChapelParallelSearch`
   (`proof_search.rs`) is invoked by `dispatch.rs::verify_proof_parallel`
   and reachable on the live `/api/verify_parallel` route, with graceful
   sequential fallback. `just build-chapel-ffi && cargo build --features
   chapel` builds and links standalone; `cargo test --features chapel`
   passes including the chapel-gated `test_verify_proof_parallel_chapel_path`
-  (7/7). Build reproducibility was fixed 2026-05-18: `build.rs` now
+  (7/7). L2.2 lands 2026-05-30 with the #133 rehabilitation arc: the
+  `.chpl` sources now compile cleanly under chpl 2.3.0 / 2.8.0 (static
+  library — apt Chapel ships `CHPL_LIB_PIC=none` only, dynamic awaits
+  a PIC-runtime CI image), `chapel-ci.yml` chapel-build + zig-ffi are
+  strict (no continue-on-error), `just chapel-build` / `chapel-smoke` /
+  `chapel-test` recipes exist, and `parallelProofSearchSpeculative`
+  ships first-success-wins atomic-CAS semantics next to the existing
+  best-of `parallelProofSearch`. `proofs/agda/ParallelSoundness.agda`
+  formalises the aggregation invariants (soundness, completeness,
+  cancellation-safety) with zero postulate/admit/believe_me — see
+  `docs/decisions/2026-05-30-chapel-rehabilitation.md` for the rollout
+  decision. Build reproducibility was fixed 2026-05-18: `build.rs` now
   `rerun-if-changed` on the built Zig artifact (was order-dependent on
   recipe vs prior `cargo` run), and `build.zig` bundles compiler-rt (was
   failing the non-Zig link with `undefined symbol: __zig_probe_stack`).
-  Remaining L2.2–L2.7 (speculative search, corpus-parallel, mutation
-  parallelism, multi-locale, numeric hot paths, bench) are **not started
-  and hard-gated on L1 Cap'n Proto**, itself gated on the L3 7-day-green
-  hand-off — see `docs/handover/TODO.md`. Direct Rust↔Chapel goes
-  through Zig (no shortcut path).
+  L2.3 (cancel-token through `tryProver` for mid-flight preemption) is
+  the next sub-wave; L2.4 mutation parallelism / L2.5 multi-locale /
+  L2.6 numeric hot paths / L2.7 bench remain hard-gated on L1 Cap'n
+  Proto and (for L2.5) a cluster runtime — see `docs/handover/TODO.md`.
+  Direct Rust↔Chapel goes through Zig (no shortcut path).
 
 - **Train GNN/Transformer on larger corpus (Flux.jl, scaffold-only)**.
   Flux.jl is declared in `src/julia/Project.toml` and imported across

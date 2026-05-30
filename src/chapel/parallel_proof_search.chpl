@@ -12,6 +12,7 @@ use IO;
 use FileSystem;
 use Subprocess;
 use Path;
+use List;
 
 // ---------------------------------------------------------------------------
 // Configuration
@@ -165,37 +166,48 @@ proc tryProver(info: ProverInfo, goal: string, timeout: int = defaultTimeout): P
             proverId = info.id,
             time = timer.elapsed(),
             exitCode = -2,
-            output = "Failed to write temp file: " + e:string,
+            output = "Failed to write temp file: " + e.message(),
             category = info.category
         );
     }
 
-    // Build command by replacing %FILE% placeholder
+    // Build argument vector. First entry is the executable; the rest come
+    // from splitting `argTemplate` after `%FILE%` substitution. `list(string)`
+    // is used rather than a fixed array because the argument count is
+    // template-driven and varies per prover.
     var cmdStr = info.argTemplate.replace("%FILE%", tmpFile);
-    var args: [0..0] string = [info.executable];
-
-    // Split additional arguments
+    var argList: list(string);
+    argList.pushBack(info.executable);
     for part in cmdStr.split(" ") {
-        if part != info.executable && part.size > 0 {
-            args.push_back(part);
-        }
+        if part.size > 0 then argList.pushBack(part);
     }
+    var args = argList.toArray();
 
-    // Invoke prover subprocess with timeout
+    // Invoke prover subprocess. `stdout = pipeStyle.pipe` is required so
+    // the parent can read the prover's output once it terminates; without
+    // it the subprocess inherits the parent's stdout and `subproc.stdout`
+    // is not a readable channel.
     try {
-        var proc = spawn(args);
+        var subproc = spawn(args, stdout = pipeStyle.pipe);
 
-        // Wait with timeout (Chapel tracks elapsed time)
+        // Bounded poll-wait: poll every 100 ms, capped at `timeout` seconds.
+        // The previous implementation used `!proc.running` which is true
+        // before the child has begun and after it has exited, so it was
+        // both racy at startup and stopped polling once running latched.
         var elapsed: real = 0.0;
-        while !proc.running && elapsed < timeout:real {
-            sleep(0.1);
-            elapsed += 0.1;
+        const pollInterval: real = 0.1;
+        while subproc.running && elapsed < timeout:real {
+            sleep(pollInterval);
+            elapsed += pollInterval;
+            subproc.poll();
         }
 
-        if elapsed >= timeout:real {
-            proc.send_signal(9); // SIGKILL
+        if subproc.running {
+            // Timeout reached while child still alive — SIGKILL it.
+            // 2.x renamed `send_signal` → `sendPosixSignal`.
+            subproc.sendPosixSignal(9);
+            subproc.wait();
             timer.stop();
-            // Clean up temp file
             try { remove(tmpFile); } catch { }
             return new ProofResult(
                 success = false,
@@ -208,32 +220,31 @@ proc tryProver(info: ProverInfo, goal: string, timeout: int = defaultTimeout): P
             );
         }
 
-        proc.wait();
+        subproc.wait();
         timer.stop();
 
-        // Capture stdout
-        var stdout = "";
+        var stdoutText = "";
         try {
-            var reader = proc.stdout.reader(locking=false);
-            stdout = reader.readAll():string;
-            reader.close();
+            // 2.x: `subproc.stdout` is itself a `fileReader` when the
+            // subprocess was spawned with `stdout = pipeStyle.pipe`, so
+            // we read directly. The old `.reader(locking=false)` indirection
+            // belonged to the 1.x `file`-based API.
+            stdoutText = subproc.stdout.readAll(string);
         } catch { }
 
-        // Clean up temp file
         try { remove(tmpFile); } catch { }
 
         return new ProofResult(
-            success = proc.exitCode == 0,
+            success = subproc.exitCode == 0,
             prover = info.name,
             proverId = info.id,
             time = timer.elapsed(),
-            exitCode = proc.exitCode,
-            output = stdout,
+            exitCode = subproc.exitCode,
+            output = stdoutText,
             category = info.category
         );
     } catch e {
         timer.stop();
-        // Clean up temp file
         try { remove(tmpFile); } catch { }
         return new ProofResult(
             success = false,
@@ -241,7 +252,7 @@ proc tryProver(info: ProverInfo, goal: string, timeout: int = defaultTimeout): P
             proverId = info.id,
             time = timer.elapsed(),
             exitCode = -4,
-            output = "Subprocess error: " + e:string,
+            output = "Subprocess error: " + e.message(),
             category = info.category
         );
     }
@@ -346,6 +357,69 @@ proc parallelProofSearch(goal: string, provers: [] ProverInfo,
             category = ProverCategory.InteractiveAssistant
         );
     }
+}
+
+// L2.2 speculative search — race all provers, return the first success.
+//
+// Semantics vs `parallelProofSearch` (best-of):
+//   - parallelProofSearch waits for ALL tasks then picks the fastest
+//     success. Wall time is bounded by the slowest prover.
+//   - parallelProofSearchSpeculative records the first-completing
+//     success via an atomic CAS and returns it. Wall time is bounded
+//     by the fastest successful prover plus whatever in-flight tasks
+//     have already begun (no mid-flight preemption in Wave 1).
+//
+// Wave 1 scope deliberately stops short of the "kill in-flight losers"
+// step. Once a prover has been spawned, `tryProver` runs it to its own
+// per-prover timeout — coforall doesn't know how to cancel a child task
+// that's blocked on subprocess I/O. L2.3 introduces a cancel token
+// threaded through `tryProver` so the children can SIGKILL their own
+// subprocesses when they observe a winner; that's a separate PR.
+//
+// Cancellation-safety today: every losing task is run to its natural
+// end. The result table records all outcomes; only the winning index
+// (the first successful CAS) is returned. No prover's exit can poison
+// the join because the atomic CAS is monotone — the first winner wins.
+proc parallelProofSearchSpeculative(goal: string, provers: [] ProverInfo,
+                                    timeout: int = defaultTimeout): ProofResult {
+    if verbose then
+        writeln("Speculative search: ", provers.size,
+                " provers racing, first-success-wins");
+
+    var totalTimer = new stopwatch();
+    totalTimer.start();
+
+    var results: [provers.domain] ProofResult;
+    var winnerIdx: atomic int;
+    winnerIdx.write(-1);
+
+    coforall (prover, i) in zip(provers, provers.domain) {
+        results[i] = tryProver(prover, goal, timeout);
+
+        if results[i].success {
+            // Monotone first-wins CAS: only the first successful
+            // worker flips the atomic from -1 to its own index.
+            var expected = -1;
+            winnerIdx.compareAndSwap(expected, i);
+        }
+    }
+
+    totalTimer.stop();
+
+    const winner = winnerIdx.read();
+    if winner >= 0 {
+        if verbose then
+            writeln("\nSpeculative winner: ", results[winner].prover,
+                    " in ", totalTimer.elapsed(), " s wall");
+        return results[winner];
+    }
+
+    return new ProofResult(
+        success = false, prover = "", proverId = -1,
+        time = totalTimer.elapsed(), exitCode = -1,
+        output = "All provers exhausted (speculative)",
+        category = ProverCategory.InteractiveAssistant
+    );
 }
 
 // Category-filtered parallel search — only try provers from a specific category

@@ -506,38 +506,45 @@ container-run *ARGS:
 
 # ── Chapel Accelerator ──────────────────────────────────────
 
+# Compile the Chapel metalayer into a static library.
+# --static (not --dynamic) because the apt-shipped Chapel runtime is
+# CHPL_LIB_PIC=none only; see .github/workflows/chapel-ci.yml for the
+# longer explanation and #133 for the closure trace.
+chapel-build:
+    @echo "Compiling Chapel metalayer (static)..."
+    cd src/chapel && chpl --library --static -I ../zig_ffi \
+        -o libechidna_chapel \
+        chapel_ffi_exports.chpl parallel_proof_search.chpl
+    @echo "Built src/chapel/lib/libechidna_chapel.a"
+
+# Build the Chapel "hello" smoke target — exercises coforall + atomic
+# CAS + reduction. Used in CI as the toolchain-health signal.
+chapel-smoke:
+    cd src/chapel && chpl -o chapel_smoke smoke.chpl && ./chapel_smoke
+
+# Run the Chapel-gated Rust tests (`--features chapel`).
+chapel-test: build-chapel-ffi
+    cargo test --features chapel --lib -- proof_search verify_proof_parallel
+
 # Build Zig FFI bridge for Chapel (prerequisite for --features chapel)
 build-chapel-ffi:
     @echo "Building Zig FFI bridge..."
     cd src/zig_ffi && zig build -Doptimize=ReleaseSafe
     @echo "Library built at src/zig_ffi/zig-out/lib/"
 
-# Build Chapel PoC (requires Chapel compiler)
-build-chapel-poc:
-    @echo "Building Chapel proof-of-concept..."
-    cd chapel_poc && chpl parallel_proof_search.chpl -o proof_search --fast
-    @echo "Built chapel_poc/proof_search"
-
-# Run Chapel PoC benchmark
-run-chapel-poc:
-    cd chapel_poc && ./proof_search
-
 # Build with Chapel support enabled (requires Zig FFI built first)
 build-chapel: build-chapel-ffi
     cargo build --features chapel
 
-# Test Chapel integration
-# Includes the chapel-gated dispatch test (verify_proof_parallel) — the bare
-# `proof_search` filter alone silently skipped it.
-test-chapel: build-chapel-ffi
-    cargo test --features chapel --lib -- proof_search verify_proof_parallel
+# Alias retained for muscle-memory; same as chapel-test.
+test-chapel: chapel-test
 
 # Test Zig FFI bridge independently
 test-chapel-ffi:
     cd src/zig_ffi && zig build test
 
 # Full Chapel build + test
-chapel-all: build-chapel-poc build-chapel-ffi test-chapel
+chapel-all: chapel-build chapel-smoke build-chapel-ffi chapel-test
     @echo "Chapel accelerator fully built and tested"
 
 # ── SPARK axiom-policy layer ─────────────────────────────────
