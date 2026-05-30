@@ -51,8 +51,7 @@ pub fn ingest(root: &Path) -> Result<Corpus> {
     let mut all_names: HashSet<String> = HashSet::new();
     for path in &files {
         let rel = path.strip_prefix(root).unwrap_or(path).to_path_buf();
-        let raw =
-            std::fs::read_to_string(path).with_context(|| format!("read {}", path.display()))?;
+        let raw = crate::provers::bounded_read_corpus_file(path)?;
         let parsed = parse_agda_file(&raw);
 
         let module_idx = corpus.modules.len();

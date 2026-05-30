@@ -17,7 +17,7 @@ pub mod outcome;
 pub use outcome::{classify_anyhow_error, ProverOutcome};
 
 pub mod io;
-pub use io::{bounded_read_proof_file, MAX_PROOF_BYTES};
+pub use io::{bounded_read_corpus_file, bounded_read_proof_file, MAX_PROOF_BYTES};
 
 pub mod abc;
 pub mod abella;

@@ -53,8 +53,7 @@ impl SynonymTable {
         if !path.exists() {
             return Ok(Self::default());
         }
-        let raw = std::fs::read_to_string(&path)
-            .with_context(|| format!("Failed to read synonym table {}", path.display()))?;
+        let raw = crate::provers::bounded_read_corpus_file(&path)?;
         let parsed: RawTable =
             toml::from_str(&raw).with_context(|| format!("Failed to parse {}", path.display()))?;
         Ok(Self::from_entries(parsed.synonyms))

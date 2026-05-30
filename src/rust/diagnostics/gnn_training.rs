@@ -3,7 +3,6 @@
 
 use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
-use std::fs;
 use std::path::Path;
 
 /// Metrics exported from GNN training pipeline.
@@ -25,7 +24,7 @@ pub struct GnnTrainingMetrics {
 /// Load GNN training metrics from JSON file
 /// Returns None if file doesn't exist or can't be parsed
 pub fn load_training_metrics(metrics_path: &Path) -> Option<GnnTrainingMetrics> {
-    match fs::read_to_string(metrics_path) {
+    match crate::provers::bounded_read_corpus_file(metrics_path) {
         Ok(json_content) => match serde_json::from_str::<GnnTrainingMetrics>(&json_content) {
             Ok(metrics) => Some(metrics),
             Err(e) => {

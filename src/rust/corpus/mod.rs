@@ -221,8 +221,7 @@ impl Corpus {
 
     /// Load from JSON.
     pub fn load_json(path: &Path) -> Result<Self> {
-        let s =
-            std::fs::read_to_string(path).with_context(|| format!("read {}", path.display()))?;
+        let s = crate::provers::bounded_read_corpus_file(path)?;
         let c: Corpus =
             serde_json::from_str(&s).with_context(|| format!("parse {}", path.display()))?;
         Ok(c)
