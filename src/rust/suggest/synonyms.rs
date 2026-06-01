@@ -1,4 +1,5 @@
 // SPDX-FileCopyrightText: 2026 ECHIDNA Project Team
+// SPDX-FileCopyrightText: 2026 Jonathan D.A. Jewell <j.d.a.jewell@open.ac.uk>
 // SPDX-License-Identifier: MPL-2.0
 
 //! Synonym table loader — reads `data/synonyms/<prover>.toml` and indexes
@@ -126,12 +127,24 @@ impl SynonymTable {
 /// ```
 pub fn load_all(dir: &Path) -> Result<HashMap<ProverKind, SynonymTable>> {
     let mut out: HashMap<ProverKind, SynonymTable> = HashMap::new();
+    // Original five + 2026-06-01 saturation campaign additions (9 more).
+    // Underscore-prefix dictionaries (_msc2020, _wordnet_math,
+    // _conceptnet_seed) are loaded separately by `load_cross_prover_dicts`.
     for prover in [
         ProverKind::Agda,
         ProverKind::Coq,
         ProverKind::Lean,
         ProverKind::Idris2,
         ProverKind::Isabelle,
+        // Saturation campaign 2026-06-01: 9 new per-prover tables.
+        ProverKind::Metamath,
+        ProverKind::Mizar,
+        ProverKind::HOL4,
+        ProverKind::HOLLight,
+        ProverKind::Dafny,
+        ProverKind::Why3,
+        ProverKind::FStar,
+        ProverKind::ACL2,
     ] {
         let table = SynonymTable::load(prover, dir)?;
         if !table.is_empty() {
@@ -141,6 +154,51 @@ pub fn load_all(dir: &Path) -> Result<HashMap<ProverKind, SynonymTable>> {
     Ok(out)
 }
 
+/// Cross-prover taxonomic dictionaries. Loaded from underscore-prefix
+/// TOMLs that are NOT per-prover (`_msc2020.toml`, `_wordnet_math.toml`,
+/// `_conceptnet_seed.toml`). Consumers merge these into per-prover
+/// resolution to bridge corpus items across systems by `semantic_class`.
+#[derive(Debug, Clone, Default)]
+pub struct CrossProverDicts {
+    pub msc2020: SynonymTable,
+    pub wordnet_math: SynonymTable,
+    pub conceptnet_seed: SynonymTable,
+}
+
+/// Load every cross-prover dictionary from `dir`. Missing files are
+/// silently treated as empty; the campaign target is offline resilience.
+pub fn load_cross_prover_dicts(dir: &Path) -> Result<CrossProverDicts> {
+    Ok(CrossProverDicts {
+        msc2020: load_underscore_dict(dir, "_msc2020.toml")?,
+        wordnet_math: load_underscore_dict(dir, "_wordnet_math.toml")?,
+        conceptnet_seed: load_underscore_dict(dir, "_conceptnet_seed.toml")?,
+    })
+}
+
+fn load_underscore_dict(dir: &Path, filename: &str) -> Result<SynonymTable> {
+    let path = dir.join(filename);
+    if !path.exists() {
+        return Ok(SynonymTable::default());
+    }
+    let raw = crate::provers::bounded_read_corpus_file(&path)?;
+    let parsed: RawTable = toml::from_str(&raw)
+        .with_context(|| format!("Failed to parse {}", path.display()))?;
+    Ok(SynonymTable::from_entries(parsed.synonyms))
+}
+
+impl SynonymTable {
+    /// Extend this per-prover table with rows from a cross-prover
+    /// dictionary (MSC2020 / WordNet / ConceptNet). New entries are
+    /// appended; the by_name index is rebuilt. Idempotent if called with
+    /// the same `other` twice (duplicates dedup at lookup time via
+    /// `alternatives()`).
+    pub fn merge_external(&mut self, other: &SynonymTable) {
+        let mut entries = std::mem::take(&mut self.entries);
+        entries.extend(other.entries.iter().cloned());
+        *self = SynonymTable::from_entries(entries);
+    }
+}
+
 fn prover_table_filename(prover: ProverKind) -> String {
     match prover {
         ProverKind::Isabelle => "isabelle.toml",
@@ -148,6 +206,16 @@ fn prover_table_filename(prover: ProverKind) -> String {
         ProverKind::Lean => "lean4.toml",
         ProverKind::Idris2 => "idris2.toml",
         ProverKind::Agda => "agda.toml",
+        // Saturation campaign 2026-06-01 — canonical filenames for the
+        // nine new per-prover synonym tables.
+        ProverKind::Metamath => "metamath.toml",
+        ProverKind::Mizar => "mizar.toml",
+        ProverKind::HOL4 => "hol4.toml",
+        ProverKind::HOLLight => "hol_light.toml",
+        ProverKind::Dafny => "dafny.toml",
+        ProverKind::Why3 => "why3.toml",
+        ProverKind::FStar => "fstar.toml",
+        ProverKind::ACL2 => "acl2.toml",
         _ => return format!("{}.toml", format!("{:?}", prover).to_lowercase()),
     }
     .to_string()
