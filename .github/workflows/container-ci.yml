@@ -174,10 +174,18 @@ jobs:
         run: |
           podman run --rm "${{ matrix.image }}" --version
 
+      # version_check is passed via env to avoid the YAML→outer-shell→inner-sh
+      # single-quote nesting trap: for acl2 (`echo '(acl2::quit)' | acl2 …`) and
+      # hol4 (`echo '(* quit *);' | hol …`), the inline `-c '${{ matrix.version_check }}'`
+      # form lets the embedded `'` close the outer string and the bash parser
+      # fails with "syntax error near unexpected token `('". Confirmed root-cause
+      # of the persistent acl2/hol4 cron red since 2026-04-27 (a87fae12).
       - name: Smoke-check ${{ matrix.prover }} binary
+        env:
+          VERSION_CHECK: ${{ matrix.version_check }}
         run: |
           podman run --rm --entrypoint /bin/sh "${{ matrix.image }}" \
-            -c '${{ matrix.version_check }}'
+            -c "$VERSION_CHECK"
 
       # #75: the per-prover version_check above uses `|| true` for several
       # backends because tools like metamath / hol4 / acl2 exit non-zero on
@@ -188,10 +196,12 @@ jobs:
       # output verbatim, and fails LOUDLY on any stub sentinel — turning the
       # silent degradation into a visible weekly red.
       - name: Stub-sentinel detection (#75)
+        env:
+          VERSION_CHECK: ${{ matrix.version_check }}
         run: |
           set +e
           OUTPUT=$(podman run --rm --entrypoint /bin/sh "${{ matrix.image }}" \
-            -c '${{ matrix.version_check }}' 2>&1)
+            -c "$VERSION_CHECK" 2>&1)
           echo "--- version_check output ---"
           echo "$OUTPUT"
           echo "--- end ---"
