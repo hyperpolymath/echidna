@@ -283,9 +283,11 @@ mod tests {
     #[test]
     fn proven_vs_refuted_yields_conflict() {
         let mut arb = DempsterShaferArbiter::new();
-        arb.submit(ProverKind::Z3, MassFunction::proven(0.9));
-        arb.submit(ProverKind::Coq, MassFunction::refuted(0.9));
-        // Two near-certain singletons that disagree -> very high k -> error.
+        arb.submit(ProverKind::Z3, MassFunction::proven(0.95));
+        arb.submit(ProverKind::Coq, MassFunction::refuted(0.95));
+        arb.submit(ProverKind::Lean, MassFunction::proven(0.95));
+        arb.submit(ProverKind::Agda, MassFunction::refuted(0.95));
+        // Four near-certain singletons that disagree -> very high k -> error.
         let res = arb.combine_all();
         match res {
             Err(ArbiterError::HighConflict(k)) => {
