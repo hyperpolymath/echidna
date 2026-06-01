@@ -2,7 +2,7 @@
 
 **Context**: Echidna (`/var/mnt/eclipse/repos/verification-ecosystem/echidna/`) has 48 trait-wired
 prover backends, but CI only tests them with `MockProver`. Mission: make every provisionable
-backend run against a canonical micro-goal on a predictable cadence. Guix primary, Nix fallback.
+backend run against a canonical micro-goal on a predictable cadence. Guix sole primary (nix deprecated estate-wide 2026-06-01).
 
 **Master plan**: `~/Desktop/ECHIDNA-PRODUCTION-WIRING-PLAN.md`
 **Order**: L3 (this) → L1 (Cap'n Proto) → L2 (Chapel max).
@@ -13,7 +13,7 @@ backend run against a canonical micro-goal on a predictable cadence. Guix primar
 
 Wave-1 (Tier-1, every PR — 9 backends) DONE in kickoff session, commit `b022bf4`:
 - `manifests/live-provers.scm` — Guix manifest with Tier-1 + Tier-2 provers
-- `flake.nix` — expanded with matching `liveProverDeps`
+- ~`flake.nix` — expanded with matching `liveProverDeps`~ (removed 2026-06-01 per estate-wide nix-deprecation)
 - `.github/workflows/live-provers.yml` — tiered workflow (Tier-1 PR, Tier-2 nightly, etc.)
 - `tests/live_prover_suite.rs` — Rust test harness with Tier-1 version-check tests
 

@@ -134,13 +134,13 @@ package definitions (not metadata files) and must NOT be deleted.
 
 ### Package Management
 
-- **Primary**: Guix (`guix.scm`, `manifests/*.scm`)
+- **Sole primary**: Guix (`guix.scm`, `manifests/*.scm`)
 - **Escape hatch**: a sealed container (`.containerization/Containerfile.wave3`)
-  for the not-in-Guix / non-free tail. **NO Nix mirror** — estate ruling
-  2026-05-18 (Guix primary + sealed-container escape). `flake.nix` is
-  deprecated and removed; a `flake.nix` that only mirrors the Guix manifest is
-  drift, not a fallback. A second packager is permitted only where it is the
-  sole source of a specific named dependency, documented as such.
+  for the not-in-Guix / non-free tail. **NO Nix anywhere** — estate ruling
+  2026-05-18 (Guix primary + sealed-container escape), hardened 2026-06-01
+  (nix deprecated estate-wide; do NOT add `flake.nix`/`flake.lock` back).
+  A second packager is permitted only where it is the sole source of a
+  specific named dependency, documented as such.
 - **JS deps**: Deno (deno.json imports)
 
 ### Security Requirements
