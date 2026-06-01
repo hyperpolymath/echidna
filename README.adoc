@@ -4,27 +4,27 @@
 = ECHIDNA
 
 image:https://img.shields.io/badge/OpenSSF-Best_Practices-green?logo=opensourcesecurity[OpenSSF Best Practices,link="https://www.bestpractices.dev/en/projects/new?repo_url=https://github.com/hyperpolymath/echidna"]
-image:https://img.shields.io/badge/License-PMPL--1.0-blue.svg[License: PMPL-1.0,link="https://github.com/hyperpolymath/palimpsest-license"]
-image:https://img.shields.io/badge/Provers-12_core_/_79_advertised-green.svg[Provers: 12 core / 79 advertised]
-image:https://img.shields.io/badge/Tests-1059-brightgreen.svg[Tests: 1059]
+image:https://img.shields.io/badge/License-MPL--2.0-blue.svg[License: MPL-2.0,link="LICENSE"]
 image:https://api.thegreenwebfoundation.org/greencheckimage/nesy-prover.dev[Green Hosting,link="https://www.thegreenwebfoundation.org/green-web-check/?url=nesy-prover.dev"]
 
 *E*xtensible *C*ognitive *H*ybrid *I*ntelligence for *D*eductive *N*eural *A*ssistance
 
-A neurosymbolic theorem proving platform with a trust-hardened
-verification pipeline, multi-objective proof search, and 100+ prover
-backend implementations.
+A neurosymbolic theorem-proving platform with a trust-hardened
+verification pipeline, multi-objective proof search, and a polyglot
+backend surface (Rust core + Julia ML + Idris2 ABI + Zig FFI + optional
+Chapel parallel layer).
 
 == Prover Surface
 
-ECHIDNA's `ProverKind` enum has 141 variants and the repository ships
-102 backend implementation files. The advertised roster
-(`ProverKind::all()`) is 79 backends. The REST API
-(`GET /api/provers`) exposes the 12-prover **core** set
-(`ProverKind::all_core()`) by default. See
-link:docs/SUPPORTED_PROVERS.md[`docs/SUPPORTED_PROVERS.md`] for the
-core list, required external binaries, and how to surface additional
-backends through the API.
+Backend tiering, count semantics (variants vs. impl files vs. advertised
+vs. core), and "what's the canonical number" answers live in a single
+source of truth:
+link:docs/PROVER_COUNT.md[`docs/PROVER_COUNT.md`]. The REST API
+(`GET /api/provers`) exposes the Tier-1 _core_ set by default; all
+other backends are reachable through `ProverKind` and the dispatch
+pipeline. See link:docs/SUPPORTED_PROVERS.md[`docs/SUPPORTED_PROVERS.md`]
+for the core list, required external binaries, and how to surface
+additional backends through the API.
 
 == Distinguishing Features
 
@@ -42,45 +42,46 @@ backends through the API.
 == Overview
 
 ECHIDNA orchestrates theorem provers, SMT solvers, first-order ATPs,
-and constraint solvers through a unified Rust core. Every proof result passes
-through a trust-hardening pipeline that checks solver integrity, tracks axiom
-usage, verifies proof certificates, and assigns a 5-level confidence score.
+and constraint solvers through a unified Rust core. Every proof result
+passes through a trust-hardening pipeline that checks solver
+integrity, tracks axiom usage, verifies proof certificates, and
+assigns a 5-level confidence score.
 
-Neural premise selection (via Julia) suggests tactics, but formal provers
-always have the final word. ECHIDNA never produces unsound proofs.
+Neural premise selection (via Julia) suggests tactics; formal provers
+always have the final word. ECHIDNA never reports a proof as verified
+without the underlying backend agreeing. The neurosymbolic and
+formal-verification layers are wired so the ML suggestion path can
+only ever _accelerate_ a proof attempt — never substitute for one.
+
+The Idris2 ABI layer (`src/abi/EchidnaABI/`) carries the type-level
+specifications and totality proofs that pin the on-wire contracts
+between the Rust dispatcher, the Julia GNN ranker, and the Chapel
+parallel rank-merge — including the fixed-point `ConfidenceFP`
+encoding with its round-trip and total-order properties (zero
+`believe_me`, zero postulates, zero admits).
 
 == Features
 
 === Prover Backends
 
-The 12-prover **core** set exposed via `GET /api/provers`:
+The Tier-1 _core_ set — Coq/Rocq, Lean 4, Agda, Isabelle/HOL, Idris 2,
+F\*, Z3, CVC5, Alt-Ergo, Dafny, Vampire, E Prover — is exposed via
+`GET /api/provers` and required to pass for green CI. The remaining
+tiers (extended, niche, Wave-3 secured, Wave-2 modal/real-algebraic,
+pure-Rust in-process, HP type-checker ecosystem, TypeChecker
+disciplines, Coq-Jr playground) cover interactive provers, first-order
+ATPs, SAT/SMT solvers, auto-active verifiers, constraint/optimisation
+backends, model checkers, C/hardware verifiers, security-protocol
+tools, and specialised systems. The full tier table and membership
+list — the only place these counts are maintained — is
+link:docs/PROVER_COUNT.md[`docs/PROVER_COUNT.md`].
 
-* *Interactive proof assistants*: Agda, Coq, Lean 4, Isabelle/HOL,
-  HOL Light, HOL4, Mizar, PVS, ACL2
-* *SMT solvers*: Z3, CVC5
-* *Pure-Rust in-process*: Metamath (no external binary needed)
+All backends in the Tier-1 / Tier-2 / Wave-3 / Wave-2 / pure-Rust
+groups implement the `ProverBackend` trait (parse, verify, export,
+tactic suggestion, theorem search). File-extension detection covers
+30+ formats (`.v`, `.lean`, `.smt2`, `.tptp`, `.dfy`, `.mzn`, …).
 
-`ProverKind::all()` advertises a further 67 backends including
-interactive provers (Idris2, Lean3, F\*, Rocq), first-order ATPs
-(Vampire, E Prover, SPASS, iProver, Prover9, Zipperposition),
-SAT/SMT (CaDiCaL, Kissat, MiniSat, OpenSMT, SmtRat, AltErgo, dReal,
-Princess), auto-active verifiers (Dafny, Why3, F\*, Cameleer, Liquid
-Haskell, GNATprove, Stainless), constraint/optimisation (GLPK, SCIP,
-MiniZinc, Chuffed, OR-Tools), model checkers (SPIN, NuSMV, TLC, Alloy,
-Prism, UPPAAL, Storm, ProB), C/hardware verifiers (CBMC, SeaHorn,
-Frama-C, ABC, Viper, KeY, GPUVerify, Faial), security protocol tools
-(Tamarin, ProVerif, EasyCrypt, CryptoVerif), and specialised systems
-(TLAPS, Twelf, Nuprl, Minlog, Imandra, KeYmaeraX, MetiTarski, Cubical
-Agda, MizAR, Dedukti, Boogie, Athena, Naproche, Matita, Arend, Mercury,
-λProlog, Nitpick, Nunchaku, Leo III, Satallax, Lash, agsyHOL, mleanCoP,
-ileanCoP, NanoCoP, MetTeL2, ELK, Konclude, TypedWasm, UPPAAL Stratego).
-
-All advertised backends implement the `ProverBackend` trait: parse,
-verify, export, tactic suggestion, and theorem search. File extension
-detection covers 30+ formats (`.v`, `.lean`, `.smt2`, `.tptp`, `.dfy`,
-`.mzn`, etc.).
-
-=== Trust & Safety Hardening (v1.5)
+=== Trust & Safety Hardening
 
 The verification pipeline applies the following checks to every proof:
 
@@ -150,18 +151,28 @@ The verification pipeline applies the following checks to every proof:
 
 === Additional Capabilities
 
-* *Neurosymbolic ML* (Julia layer): Logistic regression tactic prediction
-  trained on 332 proofs / 1,603 tactics. Serves predictions via HTTP (port 8090).
-* *Aspect Tagging*: Intelligent proof categorisation and domain analysis
-* *Anomaly Detection*: ML-based overconfidence detection
-* *Agentic Proof Search*: Actor-based autonomous proof exploration
-* *Chapel Parallel Layer* (optional): Coforall-based parallel proof dispatch
-* *3 API Interfaces*:
+* *Neurosymbolic ML* (Julia layer): Logistic-regression tactic
+  prediction; serves rankings via HTTP for the GNN-augmented dispatch
+  path. Output flows through the type-level `TacticSuggestion` /
+  `ConfidenceFP` ABI before any consumer touches it.
+* *Aspect Tagging*: Proof categorisation and domain analysis.
+* *Anomaly Detection*: ML-based overconfidence detection on dispatcher
+  outputs.
+* *Agentic Proof Search*: Actor-based autonomous proof exploration.
+* *Chapel Parallel Layer* (optional): Coforall-based parallel proof
+  dispatch, including a per-prover cwd/filename-override hook in
+  `tryProver` so each backend can be invoked with its required
+  workspace shape (Idris2 / Agda case studies in
+  link:src/chapel/[`src/chapel/`]).
+* *Three API surfaces*:
   - GraphQL (async-graphql, port 8081)
   - gRPC (tonic + Protocol Buffers, port 50051)
   - REST (axum + OpenAPI/Swagger, port 8000)
-* *ReScript UI*: 33 compiled components for proof exploration (zero TypeScript)
-* *REPL*: Interactive proof session via rustyline
+* *ReScript / AffineScript UI*: ReScript components are being ported
+  to AffineScript-TEA as the stdlib primitives needed for the port
+  (Http / Promise / Json / Dict) land in
+  https://github.com/hyperpolymath/affinescript[affinescript].
+* *REPL*: Interactive proof session via rustyline.
 
 == Quick Start
 
@@ -185,7 +196,7 @@ cd echidna
 just build
 # or: cargo build
 
-# Run all tests (1059 passing on default build)
+# Run all tests
 just test
 # or: cargo test
 
@@ -217,7 +228,7 @@ any modern browser and point the "API base" field at the running
 server. No build step is required.
 
 See link:docs/SUPPORTED_PROVERS.md[`docs/SUPPORTED_PROVERS.md`] for the
-12-prover core set, required binaries, and how to expose additional
+Tier-1 core set, required binaries, and how to expose additional
 backends through the API.
 
 === Using Podman Container
@@ -305,19 +316,25 @@ println!("Verified: {}, Trust: {}", result.verified, result.trust_level);
 
 == Test Suite
 
-1059 library tests passing on the default build
-(`cargo test --lib`, 2 ignored). The `--features verisim` build adds
-further integration tests for the VeriSim bridge.
+The test surface spans unit tests inside `src/rust/` and integration
+suites under `tests/`, supplemented by property tests, criterion
+benchmarks, and Idris2 ABI type-checks. Current counts are not
+embedded here — `cargo test --lib`, `cargo test --tests`, and
+link:CHANGELOG.md[`CHANGELOG.md`] carry the live numbers.
 
-* Smoke E2E integration tests across the core prover backends
+* Smoke E2E integration tests across the Tier-1 prover backends
 * Property-based tests (PropTest)
 * Criterion benchmarks across all critical paths
+* Idris2 ABI type-check (`idris2 --build src/abi/echidnaabi.ipkg`)
+  enforces zero `believe_me` / `assert_total` / `postulate` in the ABI
+  modules.
 
 [source,bash]
 ----
-cargo test              # Run all tests
+cargo test              # All Rust tests
 cargo test --lib        # Unit tests only
 cargo test --test integration_tests
+idris2 --build src/abi/echidnaabi.ipkg  # ABI type-check
 ----
 
 == Development
@@ -335,72 +352,56 @@ just mvp        # MVP smoke checks (reports missing provers, non-fatal)
 
 == Current Status
 
-*v1.5.0 -- Trust & Safety Hardening Complete*
+The authoritative status surface — release history, what shipped in
+each minor, what's targeted next — is link:CHANGELOG.md[`CHANGELOG.md`].
+For roadmap items beyond the next release, see
+link:docs/ROADMAP.md[`docs/ROADMAP.md`].
 
-[cols="1,3", options="header"]
-|===
-| Area | Status
+Headline shape (as of the most recent on-main work):
 
-| Prover backends | 30/30 operational
-| Trust pipeline | All 13 tasks complete
-| Unit tests | 232 passing
-| Integration tests | 38 passing
-| Property tests | 21 passing (PropTest)
-| API interfaces | GraphQL, gRPC, REST
-| ML layer | Julia logistic regression
-| UI | ReScript, 33 components
-| CI/CD | 17 workflows
-|===
-
-*Completed in v2.2 (epistemic hardening)*:
-
-* Typed `ProverOutcome` taxonomy — 8 mutually-exclusive statuses replacing `Result<bool>`
-* Z3 `check()` override: inconsistency pre-check before trivial-goal short-circuit
-* Z3 output parsing uses last non-empty line (not whole-output `contains()`)
-* Z3 goal-set inconsistency detection (goals cannot all hold simultaneously)
-* Why3 timeout bug fixed (+5s undocumented slack removed)
-* Pre-colleague sanity suite: 37 tests covering full taxonomy with Z3 integration
-* `/api/verify` REST endpoint now returns typed `outcome` field alongside `valid: bool`
-* echidnabot `ProofStatus` extended to full 8-variant taxonomy, backward compatible
-
-*Roadmap — v2.3 (single-session Z3)*:
-
-* Replace two-process inconsistency check with single Z3 session using `(push)/(pop)` —
-  atomic, halves subprocess overhead
-* `check_raw_smt()` trait method for backends that accept pre-built content directly
-  (bypasses lossy `parse_string()` round-trip)
-
-*Roadmap — v2.4 (typed override coverage)*:
-
-Priority backends for typed `check()` overrides (currently use heuristic fallback):
-CVC5, Lean 4, Coq/Rocq, Isabelle. Each adds accurate `INCONSISTENT_PREMISES` and
-`UNSUPPORTED_FEATURE` detection for that backend.
-
-*Planned for v3.0*:
-
-* Deep learning models (Transformers via Flux.jl)
-* Production deployment configuration
-* Tamarin/ProVerif bridge for cipherbot
+* *Trust pipeline*: solver-integrity, certificate-checking,
+  axiom-tracking, sandboxing, mutation-testing, Pareto ranking,
+  Bayesian confidence — all wired into `dispatch.rs`.
+* *Idris2 ABI*: `EchidnaABI.TacticRecord` (fixed-point confidence,
+  total-order proofs, in-range round-trip lemmas), `Provers`,
+  `AxiomTracker`, `Gnn`, `CapnSchemas` — type-checked on every push.
+* *Chapel parallel layer*: per-prover cwd / filename hooks
+  (`tryProver`) and L2.3 cancel-token preemption.
+* *Wave-3 container infrastructure*: 8-cell weekly cron building each
+  Tier-3 prover image with stub-sentinel detection.
+* *Estate migrations in flight*: ReScript→AffineScript UI; npm→Deno
+  for `echidna-playground`; CI workflow consolidation under the
+  governance ruleset.
 
 == Documentation
 
 * link:CONTRIBUTING.md[Contributing Guidelines]
 * link:CODE_OF_CONDUCT.md[Code of Conduct]
 * link:SECURITY.md[Security Policy]
-* link:CHANGELOG.adoc[Changelog]
-* link:ROADMAP.adoc[Roadmap]
+* link:CHANGELOG.md[Changelog]
+* link:docs/ROADMAP.md[Roadmap]
+* link:RSR_COMPLIANCE.adoc[RSR / CCCP Compliance Statement]
+* link:EXPLAINME.adoc[EXPLAINME — receipts for the README claims]
+* link:docs/PROVER_COUNT.md[`docs/PROVER_COUNT.md`] — canonical
+  prover-count and tier table
+* link:docs/ARCHITECTURE.md[`docs/ARCHITECTURE.md`] — system overview
+* link:docs/ENV-VARS.md[`docs/ENV-VARS.md`] — environment variables
+* link:CLAUDE.md[`CLAUDE.md`] — collaboration brief for Claude Code
 
 == Critical Constraints
 
-* *NO PYTHON* -- Julia for ML, Rust for systems, ReScript for UI
-* *RSR/CCCP Compliance* -- Rhodium Standard Repository guidelines
-* *Justfile PRIMARY* -- Use Just, not Make
-* *Podman not Docker* -- Always Podman
-* *License*: MPL-2.0
+* *No Python* — Julia for ML, Rust for systems, ReScript / AffineScript
+  for UI. (`salt/` is the only carve-out.)
+* *RSR / CCCP Compliance* — see link:RSR_COMPLIANCE.adoc[`RSR_COMPLIANCE.adoc`]
+  for the full hard-rule list and ECHIDNA's out-of-template adaptations.
+* *Justfile primary* — Just is the build entry point; no Make.
+* *Podman not Docker* — always Podman; `Containerfile` (`.containerization/`
+  for the per-prover images) not `Dockerfile`.
+* *License*: MPL-2.0 (source files). See LICENSE.
 
 == License
 
-This project is licensed under the link:LICENSE[Palimpsest Meta-Project License (MPL-2.0)].
+This project is licensed under the link:LICENSE[Mozilla Public License 2.0].
 
 == Citation
 
@@ -422,7 +423,6 @@ This project is licensed under the link:LICENSE[Palimpsest Meta-Project License 
 
 ---
 
-*Version*: 1.5.0 +
-*Status*: Trust & Safety Hardening Complete +
 *Author*: Jonathan D.A. Jewell <j.d.a.jewell@open.ac.uk> +
-*Last Updated*: 2026-02-08
+*Version and last-changed date*: tracked in link:CHANGELOG.md[`CHANGELOG.md`]
+and the git log; not duplicated here to avoid drift.

@@ -1,100 +1,167 @@
 // SPDX-License-Identifier: MPL-2.0
-= ECHIDNA — Extensible Cognitive Hybrid Intelligence — Show Me The Receipts
+// SPDX-FileCopyrightText: 2025-2026 Jonathan D.A. Jewell <j.d.a.jewell@open.ac.uk>
+= ECHIDNA — Show Me The Receipts
 :toc:
 :icons: font
 
-The README makes claims. This file backs them up with evidence.
+The README makes claims. This file shows where to look for the
+evidence: source files, runnable commands, canonical-count docs. It is
+deliberately count-free at the prose level — every number lives in
+exactly one place and is referenced from here.
 
-== Key Claims From README
+== How to read this file
+
+Each section quotes a claim from `README.adoc`, then names the file or
+command that backs it up. If you want a specific number, run the
+command; if you want the canonical version of a tier or count, follow
+the link.
+
+== Trust pipeline and prover surface
 
 [quote, README section "Overview"]
 ____
-ECHIDNA orchestrates 30 theorem provers, SMT solvers, first-order ATPs, and constraint solvers through a unified Rust core. Every proof result passes through a trust-hardening pipeline that checks solver integrity, tracks axiom usage, verifies proof certificates, and assigns a 5-level confidence score.
+ECHIDNA orchestrates theorem provers, SMT solvers, first-order ATPs,
+and constraint solvers through a unified Rust core. Every proof result
+passes through a trust-hardening pipeline that checks solver
+integrity, tracks axiom usage, verifies proof certificates, and
+assigns a 5-level confidence score.
 ____
 
-*Evidence:* The project implements 48 prover backends across 10 tiers (lines 29-57):
-- Tier 1: Agda, Coq/Rocq, Lean 4, Isabelle/HOL, Idris2, F*
-- Tier 2: Z3, CVC5, Alt-Ergo
-- Tier 3: Dafny, Why3
-- Tier 4: Metamath, HOL Light, Mizar, HOL4, PVS, ACL2, TLAPS, Twelf, Nuprl, Minlog, Imandra
-- Tier 5: Vampire, E Prover, SPASS
-- Tier 6: GLPK, SCIP, MiniZinc, Chuffed, OR-Tools
+*Evidence*:
 
-All 48 implement the `ProverBackend` trait (line 54-56). The trust pipeline (lines 59-114) applies 13 checks: solver integrity, portfolio solving, certificate checking, axiom tracking, sandboxing, 5-level confidence hierarchy, mutation testing, proof exchange, Pareto optimization, statistical tracking, and dispatch orchestration.
+* Backend tiering, count semantics (variants vs. impl files vs.
+  advertised vs. core), and live answers to "how many backends" live
+  in link:docs/PROVER_COUNT.md[`docs/PROVER_COUNT.md`].
+* `ProverBackend` trait: `src/rust/provers/mod.rs` — `pub enum
+  ProverKind`, `pub fn all()`, `pub fn all_core()`.
+* Trust pipeline: `src/rust/verification/` (portfolio, certificates,
+  axiom_tracker, confidence, mutation, pareto, statistics) and
+  `src/rust/dispatch.rs`.
+* Integrity hashing: `src/rust/integrity/` (SHAKE3-512, BLAKE3).
+* Sandboxed execution: `src/rust/executor/` (Podman / bubblewrap /
+  unsandboxed-with-opt-in).
+* Cross-prover exchange: `src/rust/exchange/` (OpenTheory + Dedukti).
 
-*Caveat:* All 48 backends have `ProverBackend` trait implementations with no `unimplemented!()`/`todo!()`/`unreachable!()` macros (sample verified 2026-04-05: Coq 1121 LoC, Lean 4 1648, Agda 673, Isabelle 360, Idris2 1253, Z3 840, CVC5 841). The README claims 30 but the system supports 48 total. "Operational" here means trait-implemented and shells out to a real external binary (e.g. `coqc`, `lean`, `agda`, `z3`) — it does NOT mean the live subprocess path has been exercised in CI against non-trivial goals. See testing caveat below.
+*Caveat*:
+"Operational" means `ProverBackend` trait-implemented and shells out
+to a real external binary; it does NOT mean every live subprocess path
+has been exercised in CI against non-trivial goals. The test suite
+mixes in-process mocked-prover scenarios with binary-shelled-out paths;
+the split is documented in `tests/` and in
+link:docs/PROVER_COUNT.md[`docs/PROVER_COUNT.md`].
 
-*Caveat (testing):* The 30 e2e prover tests (`tests/e2e_prover_test.rs`) and most integration tests are in-process and mock-based (`common::mock_prover`). They exercise the dispatch infrastructure and trust pipeline with mocked prover results; they do NOT invoke Tier 1 binaries (`coqc`, `lean`, `agda`, `z3`, etc.) against non-trivial goals. The `verify` command on the included `proofs/coq/basic.v` fixture does shell out to `coqc` — but via a round-trip through echidna's own re-serialization (parser fidelity untested on non-trivial proofs). The Z3 `prove` on `proofs/z3/basic.smt2` short-circuits before subprocess spawn (the fixture is `(assert true)`). Live subprocess correctness for the 48 backends is not covered by the current test suite.
+*Caveat (binaries)*:
+Running Tier-1 backends requires the corresponding external binaries
+on the host (`coqc`, `lean`, `agda`, `isabelle`, `idris2`, `z3`, `cvc5`,
+…). These are not bundled. The Wave-3 `Containerfile.wave3` lineage
+gives reproducible per-prover images; the weekly cron in
+`container-ci.yml` builds each Tier-3 image and runs a stub-sentinel
+detection step so a silently-degraded image red-flags rather than
+masquerading as healthy.
 
-*Caveat (binaries):* Running Tier 1 backends requires the corresponding external binaries installed on the host (`coqc`, `lean`, `agda`, `isabelle`, `idris2`, `z3`, `cvc5`). These are not bundled. On a reference Fedora 43 system (2026-04-05), Coq/Lean/Agda/Idris2/Z3 were installed via opam/elan/local; Isabelle and CVC5 were absent.
+== Test surface
 
 [quote, README section "Test Suite"]
 ____
-613+ library tests passing (cargo test --lib), 2 ignored.
+The test surface spans unit tests inside `src/rust/` and integration
+suites under `tests/`, supplemented by property tests, criterion
+benchmarks, and Idris2 ABI type-checks. Current counts are not
+embedded here — `cargo test --lib`, `cargo test --tests`, and
+`CHANGELOG.md` carry the live numbers.
 ____
 
-*Evidence:* The test metrics (updated 2026-04-18) report:
-- ~528 unit tests in the library target
-- 38 integration tests (with 2 pre-existing CVC5 E2E failures tracked separately)
-- 21 property-based tests (PropTest)
-- Additional interface and neural integration tests
-- Library (`cargo test --lib`): 613 passed / 0 failed / 2 ignored as of 2026-04-18.
-- All-targets total remains in the 638+ band once integration + property suites run.
+*Evidence (commands)*:
 
-This is verifiable with `cargo test --lib` (unit) and `cargo test --test integration_tests`.
+[source,bash]
+----
+# Library unit tests
+cargo test --lib
+
+# Integration suites
+cargo test --tests
+
+# Property tests (PropTest)
+cargo test --test property_tests
+
+# Criterion benchmarks
+cargo bench
+
+# Idris2 ABI type-check (zero believe_me / postulate / admit
+# in src/abi/ enforced by `.github/workflows/idris2-abi-ci.yml`)
+idris2 --build src/abi/echidnaabi.ipkg
+----
+
+*Evidence (recent counts)*: rough function-count from `grep -rE
+'^\s*#\[test\]|^\s*#\[tokio::test\]'`:
+
+* `src/rust/`: ~1.1k unit-test functions
+* `tests/`: ~400 integration / property / interface functions
+
+Numbers above are floors and drift as work lands; `cargo test`'s own
+summary line is the only post-build truth.
 
 == Technology Choices
 
 [cols="1,2"]
 |===
-| Technology | Learn More
+| Technology | Where to look
 
-| **Rust** | https://www.rust-lang.org (core logic, 48 prover backends, trust pipeline)
-| **Julia 1.10+** | https://julialang.org (ML inference: tactic prediction, premise selection)
-| **ReScript + Deno** | UI components (33 files, zero TypeScript)
-| **Chapel** | Optional parallel proof dispatch (compute-heavy operations)
-| **Idris2 ABI** | https://www.idris-lang.org (formal proofs, 16 modules, zero believe_me)
-| **Zig FFI** | https://ziglang.org (C-compatible API for all 48 provers)
+| **Rust** (core)   | `src/rust/`, `crates/echidna-*`
+| **Julia 1.10+**   | `src/julia/` — ML inference, tactic prediction, premise selection
+| **Idris2**        | `src/abi/` — type-level ABI specifications + totality proofs (zero `believe_me`)
+| **Zig**           | `ffi/zig/`, `src/zig_ffi/` — C-ABI FFI layer, hex/base64 primitives
+| **Chapel**        | `src/chapel/` — optional parallel proof dispatch with per-prover cwd/filename hooks
+| **ReScript /     +
+  AffineScript**     | `src/rescript/`, `src/ui/` — UI components; migration to AffineScript-TEA tracked alongside `affinescript/stdlib` primitives
 |===
 
-== Dogfooded Across The Account
+== Dogfooded across the estate
 
-Uses the hyperpolymath ABI/FFI standard (Idris2 + Zig). Same pattern across proven, burble, and gossamer.
+ECHIDNA uses the `hyperpolymath` ABI / FFI standard (Idris2 + Zig) —
+same pattern that runs in `proven`, `burble`, and `gossamer`.
 
-ECHIDNA-specific:
-- `src/abi/` — Idris2 formal proofs (16 modules, type soundness proofs)
-- `ffi/zig/` — Zig FFI layer (7 exported functions, C ABI compatibility)
-- `generated/abi/` — Auto-generated C headers from Idris2
+ECHIDNA-specific anchors:
 
-Agda meta-checker (30+ formally verified trust pipeline properties) provides independent formal verification of the Rust trust pipeline correctness.
+* `src/abi/EchidnaABI/` — Idris2 formal contracts. `TacticRecord.idr`
+  pins the GNN→Chapel cross-FFI suggestion format with a fixed-point
+  `ConfidenceFP` encoding plus reflexivity, antisymmetry, in-range
+  round-trip, and clamp round-trip lemmas — all total, no escapes.
+* `ffi/zig/` — Zig FFI layer (C-ABI compatibility for all wired
+  backends).
+* `generated/abi/` — auto-generated C headers from the Idris2 ABI.
 
-== File Map: Key Modules
+The Agda meta-checker provides independent formal verification of the
+Rust trust-pipeline properties; see `proofs/agda/`.
+
+== File map: key modules
 
 [cols="1,2"]
 |===
-| Path | What's There
+| Path | What's there
 
-| `src/rust/provers/` | 48 prover backend implementations (ProverBackend trait)
-| `src/rust/verification/` | Trust pipeline (portfolio, certificates, axioms, confidence, mutation, pareto, statistics)
-| `src/rust/integrity/` | Solver binary integrity (SHAKE3-512, BLAKE3)
-| `src/rust/executor/` | Sandboxed solver execution (Podman, bubblewrap)
-| `src/rust/exchange/` | Cross-prover proof exchange (OpenTheory, Dedukti)
-| `src/rust/dispatch.rs` | Full trust-hardening dispatch pipeline
-| `src/rust/agent/` | Agentic proof search (actor model)
-| `src/rust/gnn/` | GNN integration (graph construction, embeddings, guided search)
-| `src/rust/neural.rs` | Neural premise selection (tactic prediction)
-| `src/rust/core.rs` | Core types (Term, ProofState, Tactic, Goal, Context, Theorem)
-| `src/rust/server.rs` | HTTP API server (GraphQL, gRPC, REST)
-| `src/rust/repl.rs` | Interactive REPL
-| `src/interfaces/` | API interfaces (GraphQL, gRPC, REST with real prover invocation)
-| `src/julia/` | ML layer (logistic regression, MRR 0.66)
-| `src/rescript/` | UI components (33 files, proof exploration)
-| `src/abi/` | Idris2 formal specifications (16 modules)
-| `ffi/zig/` | Zig FFI implementation (7 functions)
-| `proofs/agda/` | Agda meta-checker (30+ formally verified trust properties)
-| `tests/` | 638+ tests (unit, integration, property, interface)
+| `src/rust/provers/`        | `ProverKind` enum + per-backend `ProverBackend` impls (see link:docs/PROVER_COUNT.md[`docs/PROVER_COUNT.md`] for the live tier table)
+| `src/rust/verification/`   | Trust pipeline (portfolio, certificates, axioms, confidence, mutation, pareto, statistics)
+| `src/rust/integrity/`      | Solver-binary integrity (SHAKE3-512, BLAKE3)
+| `src/rust/executor/`       | Sandboxed solver execution (Podman, bubblewrap)
+| `src/rust/exchange/`       | Cross-prover proof exchange (OpenTheory, Dedukti)
+| `src/rust/dispatch.rs`     | Full trust-hardening dispatch pipeline
+| `src/rust/agent/`          | Agentic proof search (actor model)
+| `src/rust/gnn/`             | GNN integration (graph construction, embeddings, guided search)
+| `src/rust/neural.rs`       | Neural premise selection (tactic prediction)
+| `src/rust/core.rs`         | Core types (Term, ProofState, Tactic, Goal, Context, Theorem)
+| `src/rust/server.rs`       | HTTP API server (GraphQL, gRPC, REST)
+| `src/rust/repl.rs`         | Interactive REPL
+| `src/interfaces/`          | API interfaces (GraphQL, gRPC, REST with real prover invocation)
+| `src/julia/`               | ML layer (logistic-regression tactic prediction)
+| `src/rescript/`, `src/ui/` | UI components — migration to AffineScript-TEA in progress
+| `src/abi/`                 | Idris2 formal specifications (ABI contracts + totality proofs)
+| `ffi/zig/`, `src/zig_ffi/` | Zig FFI implementation
+| `proofs/agda/`             | Agda meta-checker (independent verification of trust properties)
+| `tests/`                   | Integration / property / interface test suites
 |===
 
 == Questions?
 
-Open an issue in the hyperpolymath/echidna repository for questions about prover backend implementation, trust pipeline architecture, formal verification approach, or GNN-guided proof search integration.
+Open an issue at https://github.com/hyperpolymath/echidna/issues for
+questions about backend implementation, trust pipeline architecture,
+formal verification approach, or GNN-guided proof search.
