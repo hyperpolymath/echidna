@@ -106,3 +106,23 @@ add the per-prover synonyms TOML at `data/synonyms/<name>.toml`
 
 Drop here as upstream URLs are confirmed and at least one production
 consumer needs each.
+
+## Type-discipline detection
+
+See `docs/architecture/TYPE-DISCIPLINE-EMBEDDING.md` for the canonical
+specification.
+
+Every adapter calls `detect_disciplines(adapter_name, statement, proof,
+registry)` (`src/rust/disciplines/detector.rs`) on every `CorpusEntry`
+post-extraction. The detector returns `Vec<TypeDiscipline>` against the
+39-discipline taxonomy used by the HP type-checker ecosystem
+(`src/rust/provers/hp_ecosystem.rs:63-126`, dispatched via TypedWasm
+Sigma parameters), and the result is surfaced as
+`CorpusEntry.type_discipline_tags`.
+
+The tags flow through `SemanticPayload`
+(`src/rust/verisim_bridge.rs`, new field per `VERISIM-ER-SCHEMA.md`
+E2 / Cap'n Proto `@11`) into VeriSimDB and into the Julia GNN
+training pipeline as a 39-dim multi-hot feature vector per example.
+See sub-table §4 of `TYPE-DISCIPLINE-EMBEDDING.md` for the per-adapter
+× per-family expected-hit-frequency matrix.

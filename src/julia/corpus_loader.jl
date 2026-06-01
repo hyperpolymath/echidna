@@ -449,4 +449,86 @@ function corpus_loader_test()
     return true
 end
 
+"""
+    entry_disciplines(entry) -> Vector{Symbol}
+
+Extract the [`TypeDiscipline`](@ref) tags detected for `entry`.
+
+Mirrors `src/rust/corpus/mod.rs::Corpus::entry_disciplines`. The
+Rust-side `Corpus::reindex` (called by every adapter's `ingest`)
+runs `detect_disciplines` on every entry and pushes
+`"discipline:<tag>"` strings into `axiom_usage.other`. This helper
+parses them back out into Julia symbols.
+
+The returned vector is in the order the Rust detector pushed them
+(decreasing detection-score). See
+`docs/architecture/TYPE-DISCIPLINE-EMBEDDING.md` for the canonical
+42-discipline taxonomy and the per-marker confidence rubric.
+
+# Examples
+
+```julia
+corpus = load_corpus_json("data/corpus/agda.json")
+for entry in corpus.entries
+    tags = entry_disciplines(entry)
+    if !isempty(tags)
+        println("\$(entry.qualified): \$(tags)")
+    end
+end
+```
+
+Returned symbols match the Rust [`TypeDiscipline::tag()`] output:
+`:linear`, `:affine`, `:dependent`, `:refinement`, `:hoare`, `:qtt`,
+`:ceremonial`, `:dyadic`, `:tropical`, `:choreographic`, `:epistemic`,
+etc.
+"""
+function entry_disciplines(entry)::Vector{Symbol}
+    hz = if entry isa AbstractDict
+        get(entry, "axiom_usage", nothing)
+    elseif hasfield(typeof(entry), :axiom_usage)
+        entry.axiom_usage
+    else
+        return Symbol[]
+    end
+    if hz === nothing
+        return Symbol[]
+    end
+    other = if hz isa AbstractDict
+        get(hz, "other", String[])
+    elseif hasfield(typeof(hz), :other)
+        hz.other
+    else
+        String[]
+    end
+    [Symbol(s[length("discipline:")+1:end]) for s in other if startswith(s, "discipline:")]
+end
+
+"""
+    discipline_feature_vector(entry; all_disciplines=DEFAULT_DISCIPLINES) -> BitVector
+
+Build a multi-hot indicator vector over a canonical discipline list.
+
+Suitable as a per-example feature for the GNN value head. The default
+`all_disciplines` is the 42-element ordered list matching Rust's
+`TypeDiscipline::ALL`. Pass your own ordering if you want a smaller
+or differently-ordered vector.
+"""
+const DEFAULT_DISCIPLINES = Symbol[
+    :typell, :verify, :ordinary,
+    :phantom, :polymorphic, :existential, :higher_kinded, :row,
+    :subtyping, :intersection, :union, :gradual,
+    :dependent, :refinement, :hoare, :indexed,
+    :qtt, :linear, :affine, :relevant, :ordered, :uniqueness,
+    :immutable, :capability, :bunched,
+    :modal, :epistemic, :temporal, :provability,
+    :effect_row, :impure, :coeffect, :probabilistic,
+    :session, :choreographic, :dyadic, :echo,
+    :tropical, :homotopy, :cubical, :nominal, :ceremonial,
+]
+
+function discipline_feature_vector(entry; all_disciplines=DEFAULT_DISCIPLINES)::BitVector
+    tags = Set(entry_disciplines(entry))
+    BitVector([d in tags for d in all_disciplines])
+end
+
 end # module CorpusLoader

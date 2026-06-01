@@ -254,6 +254,15 @@ impl Corpus {
     /// entry's `dependencies` list — the same domain (short names) is
     /// used so callers can pivot from `by_name` to `dependents` with
     /// the same key.
+    ///
+    /// **Saturation campaign 2026-06-01 extension**: this method also
+    /// runs the type-discipline detector on every entry and surfaces
+    /// the matched `TypeDiscipline`s as `"discipline:<tag>"` strings
+    /// pushed into `axiom_usage.other`. The detector is idempotent:
+    /// any prior `"discipline:..."` entry is stripped first. Storing
+    /// tags in `other` (rather than a new struct field) preserves
+    /// serde back-compat with pre-2026-06 corpus JSON. See
+    /// `docs/architecture/TYPE-DISCIPLINE-EMBEDDING.md`.
     pub fn reindex(&mut self) {
         self.by_name.clear();
         self.by_qualified.clear();
@@ -272,6 +281,42 @@ impl Corpus {
             v.sort_unstable();
             v.dedup();
         }
+
+        // Discipline detection across all entries. Universal coverage
+        // for the 17 adapters that all already call reindex().
+        use crate::disciplines::{detect_disciplines, DetectionContext, MarkerRegistry};
+        let registry = MarkerRegistry::canonical();
+        let adapter = self.adapter.clone();
+        for entry in &mut self.entries {
+            entry.axiom_usage.other.retain(|s| !s.starts_with("discipline:"));
+            let ctx = DetectionContext {
+                adapter: &adapter,
+                statement: &entry.statement,
+                proof: entry.proof.as_deref(),
+            };
+            for d in detect_disciplines(&ctx, &registry) {
+                entry.axiom_usage.other.push(format!("discipline:{}", d.tag()));
+            }
+        }
+    }
+
+    /// Extract the `TypeDiscipline`s detected for `entry`, parsed from
+    /// the `"discipline:<tag>"` strings stored in `axiom_usage.other`.
+    /// Returns the disciplines in the order they were pushed by
+    /// [`Self::reindex`] (decreasing detection-score order).
+    pub fn entry_disciplines(entry: &CorpusEntry) -> Vec<crate::disciplines::TypeDiscipline> {
+        entry
+            .axiom_usage
+            .other
+            .iter()
+            .filter_map(|s| s.strip_prefix("discipline:"))
+            .filter_map(|tag| {
+                crate::disciplines::TypeDiscipline::ALL
+                    .iter()
+                    .copied()
+                    .find(|d| d.tag() == tag)
+            })
+            .collect()
     }
 
     /// Direct reverse dependencies of `qualified`: every entry whose

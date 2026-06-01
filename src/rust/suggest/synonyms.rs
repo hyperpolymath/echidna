@@ -156,13 +156,19 @@ pub fn load_all(dir: &Path) -> Result<HashMap<ProverKind, SynonymTable>> {
 
 /// Cross-prover taxonomic dictionaries. Loaded from underscore-prefix
 /// TOMLs that are NOT per-prover (`_msc2020.toml`, `_wordnet_math.toml`,
-/// `_conceptnet_seed.toml`). Consumers merge these into per-prover
-/// resolution to bridge corpus items across systems by `semantic_class`.
+/// `_conceptnet_seed.toml`, `_disciplines.toml`). Consumers merge these
+/// into per-prover resolution to bridge corpus items across systems by
+/// `semantic_class`.
 #[derive(Debug, Clone, Default)]
 pub struct CrossProverDicts {
     pub msc2020: SynonymTable,
     pub wordnet_math: SynonymTable,
     pub conceptnet_seed: SynonymTable,
+    /// Type-discipline vocabulary (42 TypeChecker disciplines). See
+    /// `data/synonyms/_disciplines.toml` and
+    /// `docs/architecture/TYPE-DISCIPLINE-EMBEDDING.md`. Added 2026-06-01
+    /// as part of the saturation campaign discipline-embedding layer.
+    pub disciplines: SynonymTable,
 }
 
 /// Load every cross-prover dictionary from `dir`. Missing files are
@@ -172,6 +178,7 @@ pub fn load_cross_prover_dicts(dir: &Path) -> Result<CrossProverDicts> {
         msc2020: load_underscore_dict(dir, "_msc2020.toml")?,
         wordnet_math: load_underscore_dict(dir, "_wordnet_math.toml")?,
         conceptnet_seed: load_underscore_dict(dir, "_conceptnet_seed.toml")?,
+        disciplines: load_underscore_dict(dir, "_disciplines.toml")?,
     })
 }
 
