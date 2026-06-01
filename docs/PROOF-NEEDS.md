@@ -85,3 +85,92 @@ the phrase "zero believe_me" in its `brief` field — also prose, also true.)
   modified** (one token-swap was tested on a copy and reverted; files are
   byte-identical to pre-audit). E10-E13 remain P2 and do not block the
   critical path, but #53 is materially larger than "API fixups".
+
+## Echo-types audit (2026-06-01)
+
+Per the estate-wide standing directive: every proof in any sibling repo
+with an echo-types link must first audit `hyperpolymath/echo-types`,
+reuse if applicable, extend upstream WITH proofs if not, then
+cross-document. L3 (echo) obligations are load-bearing; L1/L4-only
+obligations audit-and-record-as-not-relevant.
+
+Echo-types layer scheme: **L1** regions / **L2** modality / **L3** echo
+(structured residue / fibre shape) / **L4** dyadic (orders, products,
+predicates, exhaustivity, monotonicity).
+
+### Surface audited
+
+All proof files under `proofs/agda/`, `proofs/coq/`, `proofs/isabelle/`,
+`proofs/lean/`, `verification/proofs/idris2/`,
+`verification/proofs/lean4/`, and `meta-checker/src/Echidna/`. The
+Idris2 ABI under `src/abi/` is owner-intentional and out of scope (per
+estate memo `echidna_src_abi_namespace_intentional`). Per-prover
+fixture files under `tests/` are out of scope (smoke fixtures, not
+obligations).
+
+### Classification summary (26 obligation-bearing modules)
+
+| Layer | Count | Status |
+|-------|-------|--------|
+| L1 (regions) | 0 | n/a — echidna is not a typed-substrate project |
+| L2 (modality) | 0 | n/a — no modal logic surface in the verifier |
+| **L3 (echo)** | **2** | **cross-ref added below** |
+| L4 (dyadic) | 24 | audit-and-not-relevant; recorded here |
+
+### L3 obligations (cross-reference to echo-types)
+
+Two existing echidna theorems land in the echo-types EQUIV / INJ
+shapes from `proofs/agda/EchoLossTaxonomy.agda`. The directive's
+"reuse if applicable" path is satisfied by **cross-reference** rather
+than rewrite — both theorems already discharge their content directly
+under the relevant prover (Idris2), and the echo-types lemmas are
+stated in Agda over abstract `f : A → B`, so the reuse is at the
+**conceptual / classification** layer, not the proof-term layer.
+
+| Echidna theorem | Echo-types analogue | Relationship |
+|-----------------|---------------------|--------------|
+| `Serialisation.roundtrip : (x : a) → decode (encode x) = Just x` (`verification/proofs/idris2/ProofStateSerialisation.idr:88`, E12) | `HasInverse` + `equiv-fibre-center` + `equiv-implies-injective` in `proofs/agda/EchoLossTaxonomy.agda` (EQUIV case); `EchoTotalCompletion` for the Σ-packaging | The roundtrip witness IS the EQUIV-shape data instantiated at the wire-encoding map. Losslessness ≡ trivial fibre at every wire value in the encode image. Echidna's proof is concrete-prover (Idris2 over wire `SExpr`); echo-types' is abstract (Agda, K-free). Same content, different stratum. |
+| `kind_to_u8_injective` (`verification/proofs/idris2/ProverKindInjectivity.idr`, E6) | `inj-fibre-proj-unique` (INJ case re-export from `EchoImageFactorization` in `proofs/agda/EchoLossTaxonomy.agda`) | Injectivity of the discriminant map IS the INJ-case projection-uniqueness statement at the concrete domain `ProverKind` (105 variants) → `Nat`. Echidna does the concrete case split (no `believe_me`); echo-types names + classifies the shape. |
+
+**Upstream extension status: not required.** Echo-types already
+mechanises both the EQUIV (`HasInverse`) and INJ
+(`inj-fibre-proj-unique`) cases in `EchoLossTaxonomy.agda`. The
+echidna theorems are downstream *applications* of these classified
+shapes, not new content owed back to the upstream library.
+
+### L4 obligations (audit-and-not-relevant, recorded)
+
+Every other obligation listed in **Completed proofs** above is L4:
+order-theoretic (TrustLattice, DispatchOrdering, ClampTrustBounds,
+ConfidenceLattice, ParetoMaximality, ParetoStrongMaximality),
+monotonicity (AxiomMonotonicity, TrustKernelMonotonicity, AxiomPolicyOrdering),
+exhaustivity / case-coverage (AxiomCompleteness,
+AxiomTrackerCompleteness, AxiomSafety, MetaChecker), aggregation
+(PortfolioConsistency, ParallelSoundness, Portfolio,
+PortfolioCompleteness), composition / closure (ProofComposition,
+SoundnessPreservation, CertificateChain, Dispatch), totality (BasicTotality,
+IdentityLaws, TrustLevelSoundness, TrustLevel), or hash-integrity
+algebra (IntegrityVerification). None involves loss-with-residue,
+fibre structure, image factorisation, or any other echo-typed
+construct, so the directive's L4 branch — "audit-and-record-as-not-
+relevant" — is discharged by this paragraph.
+
+### Cross-doc echo
+
+* Echidna → echo-types: this section.
+* Echo-types → echidna: `docs/echo-types/echidna-design-search-2026-04-28.adoc`
+  already cross-references echidna (as a *tool* used over the
+  echo-types corpus). No reverse proof-relevance link is owed back
+  from echo-types because echidna does not add classified-shape
+  content (the EQUIV/INJ cases echidna instantiates are already
+  upstream).
+
+### Related obligation (echidna#117)
+
+`echidna#117` (`Client.res` AffineScript-TEA port — missing
+`Http.fetch` / `Promise` / `Json` / `Dict` primitives) is a stdlib-
+primitives meta-issue. Its blocker set is purely **L4 representation
+/ transport** (encoding shapes for Http / Promise / JSON / Dict). It
+carries no L3 obligation (no claim about fibre structure of the wire
+transport), so audit-and-not-relevant applies. Recorded here so a
+future port reviewer does not need to re-audit.
