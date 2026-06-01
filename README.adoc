@@ -253,7 +253,7 @@ podman run -it echidna:latest
 [source]
 ----
 src/rust/
-  provers/          # 102 prover backend implementation files (ProverBackend trait)
+  provers/          # Per-backend ProverBackend impls (see docs/PROVER_COUNT.md for the live tier table)
   verification/     # Trust-hardening subsystem
     portfolio.rs    # SMT portfolio solving / cross-checking
     certificates.rs # Proof certificate checking (Alethe, DRAT/LRAT, TSTP)
