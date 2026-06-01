@@ -127,4 +127,49 @@ schema_version = "1.0.0"
     (audit "audits/audit-pa021-axioms-2026-05-26.md §2")
     (rationale "Conflicts is an abstract binary predicate parameter; caller supplies concrete proof of ¬ Conflicts when sets are disjoint. INTENTIONAL parameter, not proof debt. Inline justification at line 44-53."))
 
+  ; ─── src/rust/coprocessor/flint.rs — FLINT C bigint FFI ───────────────────
+  ; Feature-gated CAS backend (--features flint); 17 unsafe blocks across
+  ; RAII init/clear, string round-trip, and arithmetic ops on RAII-owned
+  ; fmpz / fmpz_poly objects. Documented in audit §9 (issue #177).
+  (classification
+    (file "src/rust/coprocessor/flint.rs")
+    (category "UnsafeCode")
+    (audit "audits/audit-ffi-boundary.md §9")
+    (rationale "FLINT C bigint library FFI (feature-gated --features flint); 17 unsafe blocks across RAII init/clear, fmpz string round-trip, and fmpz_poly arithmetic; all pointers are &mut self.inner to RAII-owned objects on the blocking thread, never aliased, never shared across threads"))
+
+  ; ─── src/zig/ffi/axiom_spark_bridge.zig — Zig shim over SPARK ─────────────
+  (classification
+    (file "src/zig/ffi/axiom_spark_bridge.zig")
+    (category "UnsafeFFI")
+    (audit "audits/audit-ffi-boundary.md §10.1")
+    (rationale "Zig C-ABI shim re-exporting SPARK axiom-policy symbols with predictable C ABI; @cImport({}) is the only construct flagged. SPARK contracts enforce output-pointer write-before-return; Rust side already audited in §2"))
+
+  ; ─── src/zig_ffi/chapel_bridge.zig — Zig bridge to Chapel runtime ─────────
+  (classification
+    (file "src/zig_ffi/chapel_bridge.zig")
+    (category "UnsafeFFI")
+    (audit "audits/audit-ffi-boundary.md §10.2")
+    (rationale "Type-safe Zig bridge between Chapel parallel-search runtime and Rust core (feature-gated chapel); @cImport pulls in chapel_ffi_exports.h. Enum-from-int is bounds-checked (line 156); strings copied into Zig-owned storage before Chapel call returns; Rust side already audited in §3"))
+
+  ; ─── ffi/zig/src/boj.zig — BoJ client last_error getter ───────────────────
+  (classification
+    (file "ffi/zig/src/boj.zig")
+    (category "UnsafeCode")
+    (audit "audits/audit-ffi-boundary.md §11")
+    (rationale "Single @ptrCast at line 456 in echidna_boj_last_error(): casts module-static error_buf [N]u8 to [*:0]const u8 with null-fast-path guard. Buffer is static (lifetime = program), nul-terminated by all writers, read-only contract. Identical pattern to overlay.zig and typell.zig"))
+
+  ; ─── ffi/zig/src/overlay.zig — Overlay subsystem last_error getter ───────
+  (classification
+    (file "ffi/zig/src/overlay.zig")
+    (category "UnsafeCode")
+    (audit "audits/audit-ffi-boundary.md §11")
+    (rationale "Single @ptrCast at line 684 in echidna_overlay_last_error(): identical pattern to boj.zig — module-static error_buf [N]u8 → [*:0]const u8 with null-fast-path guard. Single-threaded request-response model"))
+
+  ; ─── ffi/zig/src/typell.zig — TypeLL subsystem last_error getter ─────────
+  (classification
+    (file "ffi/zig/src/typell.zig")
+    (category "UnsafeCode")
+    (audit "audits/audit-ffi-boundary.md §11")
+    (rationale "Single @ptrCast at line 333 in echidna_typell_last_error(): identical pattern to boj.zig and overlay.zig — module-static error_buf [N]u8 → [*:0]const u8 with null-fast-path guard"))
+
 )
