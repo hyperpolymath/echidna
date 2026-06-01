@@ -1,4 +1,5 @@
 // SPDX-License-Identifier: MPL-2.0
+// SPDX-FileCopyrightText: 2026 Jonathan D.A. Jewell <j.d.a.jewell@open.ac.uk>
 
 //! Verification subsystem for ECHIDNA
 //!
@@ -19,6 +20,9 @@ pub mod portfolio;
 #[cfg(feature = "verisim")]
 pub mod proof;
 pub mod statistics;
+pub mod bayesian_arbiter;
+pub mod dempster_shafer;
+pub mod pareto_arbiter;
 
 pub use axiom_tracker::{AxiomPolicy, AxiomTracker, AxiomUsage, DangerLevel};
 pub use certificates::{CertificateFormat, CertificateVerifier, ProofCertificate};
