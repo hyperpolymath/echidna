@@ -1,4 +1,5 @@
 <!--
+SPDX-FileCopyrightText: 2026 Jonathan D.A. Jewell <j.d.a.jewell@open.ac.uk>
 SPDX-License-Identifier: MPL-2.0
 SPDX-FileCopyrightText: 2024-2025 ECHIDNA Project Contributors
 -->
@@ -148,6 +149,8 @@ Security advisories are published at:
   https://github.com/hyperpolymath/echidna/security/advisories
 - **GitHub Releases** (security patches are tagged accordingly):
   https://github.com/hyperpolymath/echidna/releases
+- **GitHub Releases atom feed**:
+  <https://github.com/hyperpolymath/echidna/releases.atom>
 
 ## Scope
 
@@ -232,7 +235,9 @@ For security-related questions or concerns:
   https://github.com/hyperpolymath/echidna/security/advisories/new
 - **Email**: j.d.a.jewell@open.ac.uk (maintainer)
 - **PGP key**: `4A03639C1EB1F86C7F0C97A91835A14A2867091E`
-  (https://keys.openpgp.org)
+  — fetch via `gpg --recv-keys 4A03639C1EB1F86C7F0C97A91835A14A2867091E`
+  or from <https://keys.openpgp.org/search?q=j.d.a.jewell@open.ac.uk>
+- **GitHub**: [@hyperpolymath](https://github.com/hyperpolymath)
 
 ## Acknowledgments
 

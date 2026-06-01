@@ -1,0 +1,23 @@
+(* SPDX-License-Identifier: MPL-2.0 *)
+(* Why3 corpus-adapter smoke fixture. *)
+(* Exercises: theory envelope, use import, predicate, function, *)
+(* lemma, one axiom hazard. *)
+
+theory T
+
+  use import int.Int
+
+  predicate even (x: int) = exists k: int. x = 2 * k
+
+  function double (x: int) : int = x + x
+
+  lemma double_even:
+    forall x: int. even (double x)
+
+  axiom bad_assumption:
+    forall x: int. x = x + 0
+
+  goal trivially_true:
+    forall x: int. x = x
+
+end

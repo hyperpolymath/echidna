@@ -40,7 +40,39 @@ ____
 * Integrity hashing: `src/rust/integrity/` (SHAKE3-512, BLAKE3).
 * Sandboxed execution: `src/rust/executor/` (Podman / bubblewrap /
   unsandboxed-with-opt-in).
-* Cross-prover exchange: `src/rust/exchange/` (OpenTheory + Dedukti).
+* Cross-prover exchange: `src/rust/exchange/` (OpenTheory, Dedukti,
+  TPTP, SMT-LIB, SMTCoq, Lambdapi — six formats; see
+  link:src/rust/exchange/mod.rs[`src/rust/exchange/mod.rs:11`]).
+* Arbitration: four mechanisms turn multi-prover outcomes into a
+  single decision —
+  link:src/rust/verification/portfolio.rs[`portfolio.rs`] (majority
+  vote),
+  link:src/rust/verification/bayesian_arbiter.rs[`bayesian_arbiter.rs`]
+  (log-odds posterior),
+  link:src/rust/verification/dempster_shafer.rs[`dempster_shafer.rs`]
+  (mass-function combination with explicit ignorance), and
+  link:src/rust/verification/pareto_arbiter.rs[`pareto_arbiter.rs`]
+  (multi-objective dominance with tiebreak).
+* Corpus ingest: 17 adapters under
+  link:src/rust/corpus/[`src/rust/corpus/`] cover 17 distinct proof
+  languages — agda / coq / lean / idris2 (pre-2026-04) plus isabelle
+  / metamath / mizar / hol_light / hol4 / dafny / why3 / fstar /
+  acl2_books / tptp / smtlib / proofnet / minif2f added in the
+  2026-06-01 saturation campaign. Index:
+  link:docs/CORPUS-ADAPTERS.md[`docs/CORPUS-ADAPTERS.md`].
+* Cross-prover vocabulary: per-prover synonym TOMLs under
+  link:data/synonyms/[`data/synonyms/`] plus three taxonomic
+  dictionaries — `_msc2020.toml` (87 MSC2020 codes),
+  `_wordnet_math.toml` (~80 WordNet 3.1 math lemmas), and
+  `_conceptnet_seed.toml` (~55 ConceptNet 5.7 edges) — used by the
+  `echidna suggest` variant tester.
+* Shared data dictionary between echidna and its long-term memory
+  store: the formal E-R schema at
+  link:docs/architecture/VERISIM-ER-SCHEMA.md[`docs/architecture/VERISIM-ER-SCHEMA.md`]
+  with Cap'n Proto wire format
+  link:crates/echidna-wire/schemas/verisim_er.capnp[`crates/echidna-wire/schemas/verisim_er.capnp`].
+  12 first-class entities + 7 first-class relationships, each with
+  Rust struct + VeriSimDB table + Cap'n Proto schema + PK/FK set.
 
 *Caveat*:
 "Operational" means `ProverBackend` trait-implemented and shells out
@@ -140,10 +172,14 @@ Rust trust-pipeline properties; see `proofs/agda/`.
 | Path | What's there
 
 | `src/rust/provers/`        | `ProverKind` enum + per-backend `ProverBackend` impls (see link:docs/PROVER_COUNT.md[`docs/PROVER_COUNT.md`] for the live tier table)
-| `src/rust/verification/`   | Trust pipeline (portfolio, certificates, axioms, confidence, mutation, pareto, statistics)
+| `src/rust/verification/`   | Trust pipeline (portfolio, certificates, axioms, confidence, mutation, pareto, statistics) + four arbiters (`portfolio.rs`, `bayesian_arbiter.rs`, `dempster_shafer.rs`, `pareto_arbiter.rs`)
+| `src/rust/corpus/`         | 17 corpus adapters (see link:docs/CORPUS-ADAPTERS.md[`docs/CORPUS-ADAPTERS.md`])
 | `src/rust/integrity/`      | Solver-binary integrity (SHAKE3-512, BLAKE3)
 | `src/rust/executor/`       | Sandboxed solver execution (Podman, bubblewrap)
-| `src/rust/exchange/`       | Cross-prover proof exchange (OpenTheory, Dedukti)
+| `src/rust/exchange/`       | Cross-prover proof exchange — six formats (OpenTheory, Dedukti, TPTP, SMT-LIB, SMTCoq, Lambdapi)
+| `data/synonyms/`           | Per-prover synonym TOMLs + 3 cross-prover dictionaries (MSC2020, WordNet, ConceptNet); see link:data/synonyms/README.adoc[`data/synonyms/README.adoc`]
+| `docs/architecture/VERISIM-ER-SCHEMA.md` | Formal E-R schema — shared data dictionary echidna ↔ long-term memory store
+| `crates/echidna-wire/schemas/verisim_er.capnp` | Cap'n Proto wire format for the E-R schema
 | `src/rust/dispatch.rs`     | Full trust-hardening dispatch pipeline
 | `src/rust/agent/`          | Agentic proof search (actor model)
 | `src/rust/gnn/`             | GNN integration (graph construction, embeddings, guided search)

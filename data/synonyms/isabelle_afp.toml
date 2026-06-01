@@ -1,0 +1,416 @@
+# SPDX-FileCopyrightText: 2026 ECHIDNA Project Team
+# SPDX-License-Identifier: MPL-2.0
+#
+# Isabelle/HOL AFP-specific synonyms.  Companion to `isabelle.toml`.
+# Schema: see data/synonyms/README.adoc.
+#
+# Scope: AFP-prevalent tactic / method / Isar-keyword vocab that does NOT
+# duplicate the core `isabelle.toml` entries.  Heavy on the structured
+# Isar keywords, the `induct` family, the `simp` family, sledgehammer-
+# generated callouts (`metis`, `smt`, `meson`), and the locale lattice
+# common in AFP algebra entries.
+#
+# Seeded 2026-06-01.
+
+# ---------------------------------------------------------------------------
+# Induction family — surface variants beyond core `induct↔induction`
+# ---------------------------------------------------------------------------
+
+[[synonym]]
+canonical      = "induct"
+aliases        = ["induct_tac", "case_tac", "induction"]
+tactic_class   = "induction"
+semantic_class = "induction"
+notes          = """
+AFP-era variants: `induct_tac` is the apply-style legacy taking a
+bare variable name; `case_tac` is its case-split sibling.  Both are
+still accepted but flagged in `print_methods` output as deprecated.
+Cross-prover: mirrors Coq `induction` and Lean `induction`.
+"""
+
+[[synonym]]
+canonical      = "induct_rule"
+aliases        = ["induct rule:", "induction rule:", "cases rule:"]
+tactic_class   = "induction"
+notes          = """
+Explicit rule selection for induction.  `induct rule: foo.induct`
+chooses the induction principle generated for `foo`.  AFP entries
+written before 2018 often use `induct_tac`/`case_tac` without `rule:`
+and fail under stricter rule selection.
+"""
+
+[[synonym]]
+canonical      = "induct_pred"
+aliases        = ["induct_set", "inductive_cases"]
+tactic_class   = "induction"
+notes          = """
+Predicate / set induction principles emitted by `inductive` and
+`inductive_set`.  `inductive_cases` produces case rules for elim
+reasoning on an inductive predicate's introduction rules.
+"""
+
+# ---------------------------------------------------------------------------
+# Simp family — surface variants beyond core `auto` cascade
+# ---------------------------------------------------------------------------
+
+[[synonym]]
+canonical      = "simp"
+aliases        = ["simp_all", "clarsimp", "simp only:"]
+tactic_class   = "simplifier"
+notes          = """
+`simp_all` applies `simp` to every subgoal; `clarsimp` interleaves
+`clarify` and `simp`; `simp only:` is non-recursive and accepts the
+exact rewrite set.  AFP performance tuning: `simp only:` is preferred
+in long proofs to avoid loops.
+"""
+
+[[synonym]]
+canonical      = "fastforce"
+aliases        = ["force", "auto"]
+tactic_class   = "automation"
+semantic_class = "automation"
+notes          = """
+Isabelle automation tier.  `fastforce` is the reverse-priority
+single-goal closer; `force` does more backtracking; `auto` handles
+multiple goals.  Roughly in completeness: `auto` > `force`;
+in power on a single goal: `fastforce` > `force` > `auto`.
+"""
+
+[[synonym]]
+canonical      = "clarsimp"
+aliases        = ["clarify", "safe"]
+tactic_class   = "simplifier"
+notes          = """
+`clarsimp` = `clarify; simp`; `clarify` is `safe` restricted to
+non-splitting safe rules; `safe` does aggressive safe-rule firing.
+AFP convention: open a proof with `clarsimp` to normalise hypotheses
+before invoking heavier automation.
+"""
+
+# ---------------------------------------------------------------------------
+# Sledgehammer-emitted callouts
+# ---------------------------------------------------------------------------
+
+[[synonym]]
+canonical      = "metis"
+aliases        = ["meson", "metisFT"]
+tactic_class   = "smt"
+semantic_class = "resolution"
+notes          = """
+Resolution-based provers.  `metis` is the default callout from
+sledgehammer; `meson` is the older Loveland-style prover; `metisFT`
+is `metis` with full types (slower, more complete).  AFP proofs
+often regenerate to `metis` even when sledgehammer first suggested
+`smt`.
+"""
+
+[[synonym]]
+canonical      = "smt"
+aliases        = ["z3", "cvc4", "veriT"]
+tactic_class   = "smt"
+semantic_class = "smt"
+notes          = """
+SMT backend selectors.  Bare `smt` defaults to the SMT solver
+configured for the Isabelle distribution; AFP entries occasionally
+pin solver explicitly via `smt (z3)` / `smt (cvc4)`.  Variant tester
+should try bare `smt` first to avoid solver-binary dependence.
+"""
+
+[[synonym]]
+canonical      = "blast"
+aliases        = ["fast", "best"]
+tactic_class   = "automation"
+notes          = """
+Tableaux provers.  `blast` is the modern higher-order; `fast` is
+the first-order ancestor; `best` is `fast` with best-first search.
+Pre-2010 AFP entries still use `fast`; on recent Isabelle `blast`
+strictly subsumes it.
+"""
+
+[[synonym]]
+canonical      = "sledgehammer"
+aliases        = ["try", "try0"]
+tactic_class   = "automation"
+notes          = """
+Proof-search invocation.  `sledgehammer` runs the external prover
+fleet; `try0` runs the built-in tactic cascade only; `try` runs
+both.  Variant tester avoids `sledgehammer` (network / wall-clock
+budget) — it's a discovery tool, not a replay tool.
+"""
+
+# ---------------------------------------------------------------------------
+# Isar block-level keywords
+# ---------------------------------------------------------------------------
+
+[[synonym]]
+canonical      = "have"
+aliases        = ["hence", "then have"]
+tactic_class   = "isar"
+notes          = """
+`hence` ≡ `then have` — chains the immediately preceding fact.
+AFP entries often spell out `then have` for readability; replay
+tools should treat them interchangeably.
+"""
+
+[[synonym]]
+canonical      = "thus"
+aliases        = ["then show", "hence ?thesis"]
+tactic_class   = "isar"
+notes          = """
+`thus` ≡ `then show` — chains-and-shows.  When the goal is
+`?thesis`, `hence ?thesis` is the explicit verbose form.
+"""
+
+[[synonym]]
+canonical      = "moreover"
+aliases        = ["also", "finally"]
+tactic_class   = "isar"
+notes          = """
+Fact-accumulation keywords.  `moreover` collects facts under a
+single chain; `also` does the same but uses transitivity rules;
+`finally` is `also` + `then`.  Choice matters when the chain is
+used in calculational reasoning (`also`) vs disjoint fact-gathering
+(`moreover`).
+"""
+
+[[synonym]]
+canonical      = "ultimately"
+aliases        = ["then", "with"]
+tactic_class   = "isar"
+notes          = """
+Chain-closer.  `ultimately` discharges everything collected by
+`moreover`; `with X` uses the named fact plus the chain; bare `then`
+just chains the immediately preceding fact.
+"""
+
+[[synonym]]
+canonical      = "obtain"
+aliases        = ["guess", "consider"]
+tactic_class   = "isar"
+notes          = """
+Existential elimination patterns.  `obtain x where …` is the
+modern form; `guess` is the deprecated apply-style sibling;
+`consider` introduces named cases for disjunction elimination.
+"""
+
+[[synonym]]
+canonical      = "fix"
+aliases        = ["assume", "presume"]
+tactic_class   = "isar"
+notes          = """
+Block-level binder / hypothesis introduction.  `fix x` introduces a
+fresh constant; `assume H: P` introduces a hypothesis; `presume`
+introduces a hypothesis that becomes a residual obligation.
+AFP convention: `presume` only when refactoring an existing chain.
+"""
+
+[[synonym]]
+canonical      = "show"
+aliases        = ["thus", "show ?thesis"]
+tactic_class   = "isar"
+notes          = """
+Goal closer.  `show` discharges the current subgoal; `thus` chains
+the previous fact first.  `show ?thesis` is the explicit form when
+the goal would otherwise be ambiguous.
+"""
+
+[[synonym]]
+canonical      = "qed"
+aliases        = ["done", "by", ".."]
+tactic_class   = "isar"
+notes          = """
+Proof terminators.  `qed` closes a structured proof block; `done`
+closes an apply-style proof; `by …` is the single-step combinator
+(`by simp` ≡ `apply simp; done`); `..` is the trivial closer.
+"""
+
+[[synonym]]
+canonical      = "qed_by"
+aliases        = ["qed (simp)", "qed simp", "qed auto"]
+tactic_class   = "isar"
+notes          = """
+`qed (METHOD)` invokes METHOD as the closing step of a structured
+proof.  AFP entries written 2008-2014 favour the parenthesised form;
+modern style prefers `by METHOD` standalone.
+"""
+
+# ---------------------------------------------------------------------------
+# Type / datatype declaration patterns
+# ---------------------------------------------------------------------------
+
+[[synonym]]
+canonical      = "datatype"
+aliases        = ["datatype_new", "old_datatype", "free_constructors"]
+tactic_class   = "structural"
+notes          = """
+`datatype_new` was the BNF-backed package introduced in Isabelle2014;
+`datatype` was rebound to it in Isabelle2016.  `old_datatype` is the
+pre-BNF compatibility shim, still used in some AFP entries.
+"""
+
+[[synonym]]
+canonical      = "typedef"
+aliases        = ["typedecl", "type_synonym"]
+tactic_class   = "structural"
+notes          = """
+`typedef` carves out a subtype with a non-emptiness obligation;
+`typedecl` introduces an abstract type; `type_synonym` is a pure
+abbreviation.  AFP modelling convention: prefer `typedef` for
+quotient-like constructions, `type_synonym` for readability sugar.
+"""
+
+[[synonym]]
+canonical      = "primrec"
+aliases        = ["fun", "function", "definition"]
+tactic_class   = "structural"
+notes          = """
+Recursion packages, increasing power: `primrec` is structurally
+recursive only (cheap termination); `fun` covers pattern matching
+with automatic termination proof; `function` is `fun` with manual
+termination; `definition` for non-recursive.  Pre-2010 AFP often
+uses `primrec` where `fun` would now be idiomatic.
+"""
+
+# ---------------------------------------------------------------------------
+# Locale / class lattice common in AFP algebra
+# ---------------------------------------------------------------------------
+
+[[synonym]]
+canonical      = "Group"
+aliases        = ["group", "Group_with_inverses", "monoid_add"]
+tactic_class   = "structural"
+notes          = """
+AFP group hierarchy: `group` is the type-class form; `Group` is the
+locale form (with explicit carrier set, used in `HOL-Algebra`);
+`monoid_add` is the additive monoid type-class.  Mixing locale and
+type-class spellings is the most common AFP porting failure.
+"""
+
+[[synonym]]
+canonical      = "Ring"
+aliases        = ["ring", "comm_ring", "ring_1"]
+tactic_class   = "structural"
+notes          = """
+AFP ring hierarchy.  `ring`/`comm_ring`/`ring_1` are type-class
+forms in increasing strength (no-axiom / commutative / has-unit);
+`Ring` is the `HOL-Algebra` locale.
+"""
+
+[[synonym]]
+canonical      = "Field"
+aliases        = ["field", "comm_field", "ordered_field"]
+tactic_class   = "structural"
+notes          = """
+AFP field hierarchy.  `field` is the type-class; `Field` the locale.
+`ordered_field` adds a linear order; `comm_field` is redundant in
+HOL (all fields are commutative) but appears in some AFP entries.
+"""
+
+[[synonym]]
+canonical      = "Lattice"
+aliases        = ["lattice", "semilattice", "complete_lattice"]
+tactic_class   = "structural"
+notes          = """
+Lattice hierarchy.  `semilattice` (one binop), `lattice` (both),
+`complete_lattice` (arbitrary sup/inf).  `Lattice` is the
+`HOL-Algebra` locale.
+"""
+
+[[synonym]]
+canonical      = "Order"
+aliases        = ["order", "linorder", "partial_order"]
+tactic_class   = "structural"
+notes          = """
+Order hierarchy.  `order` is partial; `linorder` total; `Order`
+the locale.  `partial_order` is the explicit synonym used in
+`HOL-Library`.
+"""
+
+# ---------------------------------------------------------------------------
+# Locale-management keywords
+# ---------------------------------------------------------------------------
+
+[[synonym]]
+canonical      = "interpretation"
+aliases        = ["interpret", "global_interpretation", "sublocale"]
+tactic_class   = "structural"
+notes          = """
+Locale-instantiation forms.  `interpret` is local to a proof;
+`interpretation` is at theory level; `global_interpretation` exports
+to the global namespace; `sublocale` declares a locale-to-locale
+inclusion.  AFP entries vary on which form they use to instantiate
+generic algebra.
+"""
+
+[[synonym]]
+canonical      = "context"
+aliases        = ["locale", "class"]
+tactic_class   = "structural"
+notes          = """
+`context X begin … end` enters the locale X for a block of
+declarations; defining `locale X = …` introduces it; `class` is the
+type-class sibling with subsumption.  Variant tester should not
+rewrite between forms — they have different elaboration semantics.
+"""
+
+# ---------------------------------------------------------------------------
+# Conjunction-style proof closers (AFP idiomatic)
+# ---------------------------------------------------------------------------
+
+[[synonym]]
+canonical      = "rule"
+aliases        = ["intro", "elim", "dest"]
+tactic_class   = "structural"
+notes          = """
+Inference-rule application.  `rule R` applies as introduction;
+`intro R` is the unsafe-resolution variant; `elim R` is elimination;
+`dest R` derives a fact from a hypothesis.  AFP entries use all
+four; `rule` is the workhorse.
+"""
+
+[[synonym]]
+canonical      = "subst"
+aliases        = ["subst (asm)", "ssubst"]
+tactic_class   = "simplifier"
+notes          = """
+Single-step rewriting.  `subst R` rewrites the goal; `subst (asm) R`
+rewrites a hypothesis; `ssubst` rewrites in reverse direction.
+AFP convention: use `subst` when `simp add: R` would loop.
+"""
+
+# ---------------------------------------------------------------------------
+# Print-checking / debugging methods (mild hazards)
+# ---------------------------------------------------------------------------
+
+[[synonym]]
+canonical      = "print_state"
+aliases        = ["print_facts", "print_methods", "print_locale"]
+tactic_class   = "structural"
+notes          = """
+Debugging methods.  Should NOT appear in committed AFP proofs;
+flag for review.  Variant tester elides these silently.
+"""
+
+# ---------------------------------------------------------------------------
+# Equality reasoning
+# ---------------------------------------------------------------------------
+
+[[synonym]]
+canonical      = "iff"
+aliases        = ["HOL.iff", "if_iff", "iffI"]
+tactic_class   = "lemma"
+notes          = """
+Bi-implication lemmas.  `iffI` is the introduction rule; `if_iff` is
+the conditional-as-iff lemma.  AFP entries port to mathlib's
+`Iff.intro` / `Iff.mpr` patterns.
+"""
+
+[[synonym]]
+canonical      = "trans"
+aliases        = ["HOL.trans", "transD", "transE"]
+tactic_class   = "lemma"
+notes          = """
+Transitivity rule packaging.  `trans` is the bidirectional rule;
+`transD` and `transE` are the destruction / elimination variants
+used in `dest:` / `elim:` clauses of `auto`.
+"""

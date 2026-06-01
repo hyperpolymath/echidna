@@ -31,3 +31,75 @@ secondary = ["Chapel", "Deno", "Guix", "Nix"]
 graphql = 8081
 grpc = 50051
 rest = 8000
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Saturation campaign 2026-06-01 — additive surface declaration
+# Branch: prover-corpus-saturation. ADR: docs/decisions/2026-06-01-saturation-campaign.md
+# ─────────────────────────────────────────────────────────────────────────────
+
+[saturation-campaign]
+design-principle = "Saturation campaign 2026-06-01 — push corpus/vocab/arbitration to marginal-benefit limit while preserving heuristic-adapter quality contract"
+
+[saturation-campaign.new-modules]
+corpus = [
+  "src/rust/corpus/isabelle.rs",
+  "src/rust/corpus/metamath.rs",
+  "src/rust/corpus/mizar.rs",
+  "src/rust/corpus/hol_light.rs",
+  "src/rust/corpus/hol4.rs",
+  "src/rust/corpus/dafny.rs",
+  "src/rust/corpus/why3.rs",
+  "src/rust/corpus/fstar.rs",
+  "src/rust/corpus/acl2_books.rs",
+  "src/rust/corpus/tptp.rs",
+  "src/rust/corpus/smtlib.rs",
+  "src/rust/corpus/proofnet.rs",
+  "src/rust/corpus/minif2f.rs",
+]
+verification = [
+  "src/rust/verification/bayesian_arbiter.rs",
+  "src/rust/verification/dempster_shafer.rs",
+  "src/rust/verification/pareto_arbiter.rs",
+]
+exchange = [
+  "src/rust/exchange/tptp.rs",
+  "src/rust/exchange/smtlib.rs",
+  "src/rust/exchange/smtcoq.rs",
+  "src/rust/exchange/lambdapi.rs",
+]
+
+[saturation-campaign.new-data]
+synonyms = [
+  "data/synonyms/isabelle_afp.toml",
+  "data/synonyms/metamath.toml",
+  "data/synonyms/mizar.toml",
+  "data/synonyms/hol_light.toml",
+  "data/synonyms/hol4.toml",
+  "data/synonyms/dafny.toml",
+  "data/synonyms/why3.toml",
+  "data/synonyms/fstar.toml",
+  "data/synonyms/acl2.toml",
+  "data/synonyms/_msc2020.toml",
+  "data/synonyms/_wordnet_math.toml",
+  "data/synonyms/_conceptnet_seed.toml",
+]
+
+[saturation-campaign.new-docs]
+docs = [
+  "docs/architecture/VERISIM-ER-SCHEMA.md",
+  "docs/CORPUS-ADAPTERS.md",
+  "docs/decisions/2026-06-01-saturation-campaign.md",
+  "docs/handover/PROVER-CORPUS-SATURATION-LANE.md",
+]
+
+[saturation-campaign.new-schemas]
+schemas = [
+  "crates/echidna-wire/schemas/verisim_er.capnp",
+]
+
+[saturation-campaign.testing]
+new-tests-passing = 139
+heuristic-limit-ignored = 1
+heuristic-limit-ignored-list = [
+  "corpus::dafny::tests::detects_datatype_and_extern",
+]

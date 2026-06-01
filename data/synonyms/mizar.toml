@@ -1,0 +1,464 @@
+# SPDX-License-Identifier: MPL-2.0
+#
+# Mizar / MML proof-step, structural, and definition keyword synonyms.
+# Schema: see data/synonyms/README.adoc.
+# Seeded 2026-06-01 for the Mizar MML corpus saturation pass.
+#
+# Coverage focus: the natural-language-style proof skeleton (let /
+# assume / thus / hence / per cases / suppose), justification glue
+# (by / from), article structure (environ / begin / vocabularies /
+# theorems / definitions / ...), and the definition heads (mode /
+# func / pred / attr / cluster / registration).
+
+# ---------------------------------------------------------------------------
+# Proof step keywords
+# ---------------------------------------------------------------------------
+
+[[synonym]]
+canonical      = "thus"
+aliases        = ["hence", "then thus"]
+tactic_class   = "proof_step"
+semantic_class = "goal_discharge"
+notes          = """
+`thus F;` discharges the current thesis with formula `F` (Mizar's
+equivalent of "we have shown `F`, which is what we needed").
+
+`hence F;` is `then thus F;` — it composes the most recent intermediate
+result with the discharge, mirroring Coq's `... apply <prev>.` chained
+into the goal close.
+"""
+
+[[synonym]]
+canonical      = "hence"
+aliases        = ["then thus"]
+tactic_class   = "proof_step"
+semantic_class = "linkage_discharge"
+notes          = """
+Discharge + immediate linkage to the previous step. Mizar's parser
+treats `hence F;` exactly as `then thus F;` — the chain operator
+`then` reuses the prior result as a hypothesis.
+"""
+
+[[synonym]]
+canonical      = "then"
+aliases        = []
+tactic_class   = "linkage"
+semantic_class = "antecedent_chain"
+notes          = """
+`then` re-uses the immediately preceding statement's conclusion as
+the implicit antecedent for the next step. Equivalent to Coq's `;` +
+`apply <prev>`. Not a goal-changing tactic on its own — it only
+composes with `thus`, `consider`, `take`, or a plain forward step.
+"""
+
+[[synonym]]
+canonical      = "proof"
+aliases        = []
+tactic_class   = "structural"
+semantic_class = "proof_block_open"
+notes          = """
+Opens a proof block. Mizar's `theorem … proof … end;` is the rigid
+shape — no proof block means the theorem is a *postulate-style*
+declaration (forbidden in MML submissions but legal in `@proof`-tagged
+sketches).
+"""
+
+[[synonym]]
+canonical      = "end"
+aliases        = []
+tactic_class   = "structural"
+semantic_class = "block_close"
+notes          = """
+Closes the nearest open block (`proof`, `now`, `case`, `suppose`,
+`definition`, `registration`, `cluster`, `notation`, `scheme`).
+Always paired with a trailing `;`.
+"""
+
+[[synonym]]
+canonical      = "now"
+aliases        = []
+tactic_class   = "proof_step"
+semantic_class = "diffuse_subproof"
+notes          = """
+`now … end;` opens a "diffuse" subproof — a structured block whose
+internal goal isn't fixed up-front but is derived from the steps
+inside it. Useful for `per cases` arms and for forward proofs that
+build up `thus`-able intermediates.
+"""
+
+[[synonym]]
+canonical      = "assume"
+aliases        = []
+tactic_class   = "proof_step"
+semantic_class = "hypothesis_intro"
+notes          = """
+Introduces the antecedent of an implication into the local
+context. `assume A;` for goal `A implies B` leaves residual goal `B`.
+Equivalent to Coq's `intro`/`intros` followed by naming.
+"""
+
+[[synonym]]
+canonical      = "let"
+aliases        = []
+tactic_class   = "proof_step"
+semantic_class = "universal_elim"
+notes          = """
+`let x be T;` introduces a fresh variable `x : T` into the local
+context — discharging a universal quantifier. Equivalent to Coq's
+`intro x` when the goal is `for x being T holds …`.
+"""
+
+[[synonym]]
+canonical      = "consider"
+aliases        = ["consider … such that"]
+tactic_class   = "proof_step"
+semantic_class = "existential_intro"
+notes          = """
+`consider x being T such that A;` eliminates an existential —
+mirrors Coq's `destruct H as [x H']`. The `such that` clause becomes
+a fresh hypothesis usable by name.
+"""
+
+[[synonym]]
+canonical      = "take"
+aliases        = []
+tactic_class   = "proof_step"
+semantic_class = "existential_witness"
+notes          = """
+`take t;` provides a witness for an existential goal. Equivalent
+to Coq's `exists t.` or Lean's `exact ⟨t, _⟩`.
+"""
+
+[[synonym]]
+canonical      = "per cases"
+aliases        = ["per_cases"]
+tactic_class   = "proof_step"
+semantic_class = "case_split"
+notes          = """
+`per cases by …;` opens a case split. Each branch is a `suppose A;
+… end;`. Mizar requires the `per cases` clause to be justified by
+a disjunction-like fact (often `LM_excluded_middle` for classical
+splits). Equivalent to Coq's `destruct (classical_dec _)`.
+"""
+
+[[synonym]]
+canonical      = "suppose"
+aliases        = ["case"]
+tactic_class   = "proof_step"
+semantic_class = "case_arm"
+notes          = """
+Introduces one arm of a `per cases` split. Mizar uses `suppose`;
+some older MML articles use `case`. Both close with `end;`.
+"""
+
+[[synonym]]
+canonical      = "cases"
+aliases        = []
+tactic_class   = "proof_step"
+semantic_class = "case_split_keyword"
+notes          = """
+The `cases` half of `per cases`. Always preceded by `per`. Not used
+alone.
+"""
+
+# ---------------------------------------------------------------------------
+# Linkage / justification
+# ---------------------------------------------------------------------------
+
+[[synonym]]
+canonical      = "by"
+aliases        = []
+tactic_class   = "linkage"
+semantic_class = "justification"
+notes          = """
+Inline justification: `thus A by Th1, Lemma2;`. The `by` clause is
+checked by Mizar's *checker* — a single-step decision procedure with
+bounded inference. Roughly Coq's `apply` + small auto.
+"""
+
+[[synonym]]
+canonical      = "from"
+aliases        = []
+tactic_class   = "linkage"
+semantic_class = "scheme_instantiation"
+notes          = """
+`from Scheme(args)` instantiates a `scheme`. Schemes in Mizar are
+second-order — they take predicates / functors as parameters. The
+`from` form is the only way to invoke them.
+"""
+
+[[synonym]]
+canonical      = ";"
+aliases        = []
+tactic_class   = "linkage"
+semantic_class = "statement_terminator"
+notes          = """
+Every Mizar statement ends with `;`. A bare `;` after a forward step
+(no `by …`) means "this follows trivially" — Mizar will accept it
+if the checker can derive the conclusion from the local context
+without any explicit reference.
+"""
+
+# ---------------------------------------------------------------------------
+# Article structure
+# ---------------------------------------------------------------------------
+
+[[synonym]]
+canonical      = "environ"
+aliases        = []
+tactic_class   = "structural"
+semantic_class = "imports_block"
+notes          = """
+Opens the article's environment block. Lists library articles whose
+declarations are visible. The block ends at `begin`.
+"""
+
+[[synonym]]
+canonical      = "begin"
+aliases        = []
+tactic_class   = "structural"
+semantic_class = "body_open"
+notes          = """
+Marks the start of the article body. Everything before `begin` is
+environ-block directives; everything after is the proof corpus.
+"""
+
+[[synonym]]
+canonical      = "vocabularies"
+aliases        = []
+tactic_class   = "structural"
+semantic_class = "lexical_imports"
+notes          = """
+Imports symbol vocabularies (token tables for func / pred / attr
+names). Vocabulary files live in `mml/voc/*.voc`.
+"""
+
+[[synonym]]
+canonical      = "notations"
+aliases        = []
+tactic_class   = "structural"
+semantic_class = "syntax_imports"
+notes          = """
+Imports the parsing rules (how funcs / preds / etc. are written).
+Roughly Coq's `Notation`.
+"""
+
+[[synonym]]
+canonical      = "constructors"
+aliases        = []
+tactic_class   = "structural"
+semantic_class = "type_imports"
+notes          = """
+Imports type / func / pred constructors from other articles. Needed
+even if the article doesn't directly name them but uses them via
+notations.
+"""
+
+[[synonym]]
+canonical      = "registrations"
+aliases        = []
+tactic_class   = "structural"
+semantic_class = "cluster_imports"
+notes          = """
+Imports `cluster` and `registration` blocks. These deliver Mizar's
+typing automation — without them, type inference for adjectives
+fails silently.
+"""
+
+[[synonym]]
+canonical      = "requirements"
+aliases        = []
+tactic_class   = "structural"
+semantic_class = "builtin_imports"
+notes          = """
+Enables specific Mizar requirement modules (e.g. `NUMERALS`, `REAL`,
+`SUBSET`, `BOOLE`, `ARITHM`). Each requirement turns on a particular
+built-in proof rule in the checker.
+"""
+
+[[synonym]]
+canonical      = "definitions"
+aliases        = []
+tactic_class   = "structural"
+semantic_class = "definition_imports"
+notes          = """
+Lists articles whose `definition` blocks should be expanded by the
+checker. Without this, `definitional unfolding` is unavailable.
+"""
+
+[[synonym]]
+canonical      = "theorems"
+aliases        = []
+tactic_class   = "structural"
+semantic_class = "lemma_imports"
+notes          = """
+Lists articles whose theorems can be cited (`by Th1.Article:42`).
+The bread-and-butter of MML cross-referencing.
+"""
+
+[[synonym]]
+canonical      = "schemes"
+aliases        = []
+tactic_class   = "structural"
+semantic_class = "scheme_imports"
+notes          = """
+Lists articles whose `scheme` blocks can be instantiated via `from`.
+"""
+
+# ---------------------------------------------------------------------------
+# Definition heads
+# ---------------------------------------------------------------------------
+
+[[synonym]]
+canonical      = "definition"
+aliases        = []
+tactic_class   = "definition"
+semantic_class = "definition_block"
+notes          = """
+`definition … end;` opens a definitional block. Inside, one or more
+of `func`, `mode`, `pred`, `attr`, `redefine`, `cluster` introduce
+new constants / types / predicates / adjectives.
+"""
+
+[[synonym]]
+canonical      = "mode"
+aliases        = []
+tactic_class   = "definition"
+semantic_class = "type_definition"
+notes          = """
+`mode T of P, Q means …;` introduces a type (Mizar's notion of "type"
+is named "mode"). Roughly Coq's `Definition T : Type := …`.
+"""
+
+[[synonym]]
+canonical      = "func"
+aliases        = []
+tactic_class   = "definition"
+semantic_class = "function_definition"
+notes          = """
+`func F(x: T) -> U means …;` or `func F(...) equals expr;` introduces
+a function. The `means` form is implicit; the `equals` form is
+explicit (and gives Mizar a computational rule).
+"""
+
+[[synonym]]
+canonical      = "pred"
+aliases        = []
+tactic_class   = "definition"
+semantic_class = "predicate_definition"
+notes          = """
+`pred x R y means F;` introduces a binary predicate (or n-ary). The
+defining formula `F` is the iff body.
+"""
+
+[[synonym]]
+canonical      = "attr"
+aliases        = []
+tactic_class   = "definition"
+semantic_class = "attribute_definition"
+notes          = """
+`attr x is Adj means F;` introduces an adjective (Mizar's
+"attribute") — a predicate written `x is Adj` rather than `Adj(x)`.
+Critical for the cluster / registration typing automation.
+"""
+
+[[synonym]]
+canonical      = "cluster"
+aliases        = []
+tactic_class   = "definition"
+semantic_class = "type_inference_rule"
+notes          = """
+`cluster …;` registers a typing fact for Mizar's auto-typing.
+Three flavours: *existential* (some element exists with these
+attributes), *conditional* (if these attributes hold, this further
+attribute also holds), and *functorial* (the result of this functor
+has these attributes).
+"""
+
+[[synonym]]
+canonical      = "registration"
+aliases        = []
+tactic_class   = "definition"
+semantic_class = "registration_block"
+notes          = """
+`registration … end;` is the block syntax that contains one or more
+`cluster` declarations together with their proofs.
+"""
+
+[[synonym]]
+canonical      = "synonym"
+aliases        = []
+tactic_class   = "definition"
+semantic_class = "alias_introduction"
+notes          = """
+`synonym foo for bar;` adds `foo` as an alias for `bar` in the
+current notation scope.
+"""
+
+[[synonym]]
+canonical      = "antonym"
+aliases        = []
+tactic_class   = "definition"
+semantic_class = "negation_alias"
+notes          = """
+`antonym not-foo for foo;` adds a negated alias — `x is not-foo`
+expands to `not (x is foo)`.
+"""
+
+# ---------------------------------------------------------------------------
+# Special operators and modifiers
+# ---------------------------------------------------------------------------
+
+[[synonym]]
+canonical      = "iff"
+aliases        = []
+tactic_class   = "reasoning"
+semantic_class = "biconditional"
+notes          = """
+The biconditional connective `iff`. In `pred` and `attr`
+definitions, `means` introduces an `iff` (the defining body).
+"""
+
+[[synonym]]
+canonical      = "means"
+aliases        = []
+tactic_class   = "definition"
+semantic_class = "implicit_definiens"
+notes          = """
+Implicit (predicative) definition body. `func F(x) -> T means
+P[x, it];` defines `F(x)` as the unique `it : T` with `P[x, it]`.
+Mizar requires existence + uniqueness proofs alongside.
+"""
+
+[[synonym]]
+canonical      = "equals"
+aliases        = []
+tactic_class   = "definition"
+semantic_class = "explicit_definiens"
+notes          = """
+Explicit (computational) definition body. `func F(x) -> T equals
+expr;` defines `F(x)` as `expr` directly. Mizar requires the
+correctness proof `expr is T`.
+"""
+
+[[synonym]]
+canonical      = "redefine"
+aliases        = []
+tactic_class   = "definition"
+semantic_class = "type_refinement"
+notes          = """
+`redefine func F(x) -> T';` narrows the result type of an existing
+functor (or the argument types of an existing predicate). Used to
+deliver tighter typing for already-defined notions.
+"""
+
+[[synonym]]
+canonical      = "reserve"
+aliases        = []
+tactic_class   = "structural"
+semantic_class = "variable_typing"
+notes          = """
+`reserve x, y for Real;` declares default types for free variables
+throughout the article. Roughly an implicit `for x, y being Real`
+prepended to every later statement.
+"""

@@ -1,0 +1,253 @@
+# SPDX-License-Identifier: MPL-2.0
+#
+# MetaMath set.mm tactic and lemma synonyms.
+# Schema: see data/synonyms/README.adoc.
+# Seeded 2026-06-01 for the MetaMath corpus adapter.
+#
+# MetaMath has no "tactics" in the Coq / Lean sense — proofs are
+# RPN sequences of label references against $a axioms, $e hypotheses,
+# and earlier $p theorems. The "synonyms" here are the canonical
+# set.mm naming conventions: the suffix dialect (`i` inference, `d`
+# deduction, `bi` biconditional) plus the modus-ponens / syllogism
+# / equality / definition families that dominate any non-trivial
+# set.mm proof.
+#
+# tactic_class values used:
+#   axiom        — propositional / FOL / set-theory base axioms ($a)
+#   inference    — closed inference rule (one-line theorem)
+#   deduction    — hypothesis-carrying inference (`...d` family)
+#   biconditional — bidirectional rewriting / iff manipulation
+#   equality     — equality-handling theorems
+#   definition   — abbreviating definitions ($a with df- prefix)
+
+# ---------------------------------------------------------------------------
+# Modus ponens family
+# ---------------------------------------------------------------------------
+
+[[synonym]]
+canonical      = "ax-mp"
+aliases        = ["ax_mp", "axmp"]
+tactic_class   = "axiom"
+semantic_class = "modus-ponens"
+notes          = """
+The MetaMath modus-ponens axiom: from `|- ph` and `|- ( ph -> ps )`
+conclude `|- ps`. Every classical proof chain in set.mm bottoms out
+at `ax-mp`. Flag any `$a` line whose label is `ax-mp` as the
+"reachability anchor" of the proof graph.
+"""
+
+[[synonym]]
+canonical    = "mpbi"
+aliases      = ["mp_bi", "modus-ponens-biconditional-i"]
+tactic_class = "inference"
+notes        = "From `|- ph` and `|- ( ph <-> ps )` conclude `|- ps`. Inference form."
+
+[[synonym]]
+canonical    = "mpbii"
+aliases      = ["mp_bii"]
+tactic_class = "inference"
+notes        = "Double-inference modus-ponens through a biconditional. Common in early set.mm chains."
+
+[[synonym]]
+canonical    = "mpd"
+aliases      = ["mp_d"]
+tactic_class = "deduction"
+notes        = "Deduction-form modus ponens: under a hypothesis `ph`, both `ph -> ps` and `ph -> ( ps -> ch )` yield `ph -> ch`."
+
+[[synonym]]
+canonical    = "mp2"
+aliases      = ["mp_2"]
+tactic_class = "inference"
+notes        = "Two-step closed modus ponens; saves a `syl` when both antecedents are already discharged."
+
+[[synonym]]
+canonical    = "mp3"
+aliases      = ["mp_3"]
+tactic_class = "inference"
+notes        = "Three-step closed modus ponens."
+
+# ---------------------------------------------------------------------------
+# Syllogism family — by far the most common proof move in set.mm
+# ---------------------------------------------------------------------------
+
+[[synonym]]
+canonical      = "syl"
+aliases        = ["syllogism"]
+tactic_class   = "inference"
+semantic_class = "syllogism"
+notes          = """
+Hypothetical syllogism: from `|- ( ph -> ps )` and `|- ( ps -> ch )`
+conclude `|- ( ph -> ch )`. Probably the single most-cited theorem in
+set.mm; tens of thousands of proofs hit it. A high syl-density inside a
+$p body is a fingerprint for "boilerplate transport"; downstream
+strategies can use it as a low-information signal.
+"""
+
+[[synonym]]
+canonical    = "sylbi"
+aliases      = ["syl_bi"]
+tactic_class = "biconditional"
+notes        = "Syllogism through a biconditional: `( ph <-> ps )` + `( ps -> ch )` gives `( ph -> ch )`."
+
+[[synonym]]
+canonical    = "syl5"
+aliases      = ["syl_5"]
+tactic_class = "inference"
+notes        = "Syllogism variant; antecedent shape `( ph -> ( ps -> ch ) )` + `( ch -> th )`."
+
+[[synonym]]
+canonical    = "syl6"
+aliases      = ["syl_6"]
+tactic_class = "inference"
+notes        = "Syllogism variant; mirror of syl5 with the new antecedent on the other end."
+
+[[synonym]]
+canonical    = "3syl"
+aliases      = ["syl3", "three-syl"]
+tactic_class = "inference"
+notes        = "Three-step syllogism: combines three implications into a single transitive chain."
+
+# ---------------------------------------------------------------------------
+# Simplification + biconditional manipulation
+# ---------------------------------------------------------------------------
+
+[[synonym]]
+canonical    = "simpli"
+aliases      = ["simp_li", "simp-left-inference"]
+tactic_class = "inference"
+notes        = "From `|- ( ph /\\ ps )` infer `|- ph`. Left projection."
+
+[[synonym]]
+canonical    = "simprbi"
+aliases      = ["simp_rbi"]
+tactic_class = "biconditional"
+notes        = "Right projection across a biconditional: `( ph <-> ( ps /\\ ch ) )` gives `( ph -> ch )`."
+
+[[synonym]]
+canonical    = "simprbii"
+aliases      = ["simp_rbii"]
+tactic_class = "biconditional"
+notes        = "Double-inference right-projection-through-biconditional."
+
+[[synonym]]
+canonical    = "bitri"
+aliases      = ["bi_tri", "biconditional-transitive-i"]
+tactic_class = "biconditional"
+notes        = "Transitive biconditional: `( ph <-> ps )` + `( ps <-> ch )` gives `( ph <-> ch )`. The `<->` analogue of `syl`."
+
+[[synonym]]
+canonical    = "bitr3i"
+aliases      = ["bi_tr3i"]
+tactic_class = "biconditional"
+notes        = "Variant of bitri that flips the first biconditional. Saves one `bicomi` in chained rewrites."
+
+[[synonym]]
+canonical    = "bitr4i"
+aliases      = ["bi_tr4i"]
+tactic_class = "biconditional"
+notes        = "Variant of bitri flipping the second biconditional. Mirror of bitr3i."
+
+# ---------------------------------------------------------------------------
+# Equality
+# ---------------------------------------------------------------------------
+
+[[synonym]]
+canonical      = "eqid"
+aliases        = ["eq_id", "equality-reflexive"]
+tactic_class   = "equality"
+semantic_class = "reflexivity"
+notes          = "Reflexivity of class equality: `|- A = A`. The set.mm analogue of `refl`."
+
+[[synonym]]
+canonical    = "eqcomi"
+aliases      = ["eq_comi"]
+tactic_class = "equality"
+notes        = "Symmetry of equality (inference form): `|- A = B` infers `|- B = A`."
+
+[[synonym]]
+canonical    = "eqtri"
+aliases      = ["eq_tri"]
+tactic_class = "equality"
+notes        = "Transitivity of equality (inference form): `|- A = B` + `|- B = C` gives `|- A = C`."
+
+# ---------------------------------------------------------------------------
+# Propositional-calculus base axioms (all are $a — flagged hazard)
+# ---------------------------------------------------------------------------
+
+[[synonym]]
+canonical    = "ax-1"
+aliases      = ["ax1"]
+tactic_class = "axiom"
+notes        = "Frege axiom 1: `|- ( ph -> ( ps -> ph ) )`. Base propositional axiom; one of three needed to derive classical implication."
+
+[[synonym]]
+canonical    = "ax-2"
+aliases      = ["ax2"]
+tactic_class = "axiom"
+notes        = "Frege axiom 2: `|- ( ( ph -> ( ps -> ch ) ) -> ( ( ph -> ps ) -> ( ph -> ch ) ) )`. Distributivity of implication."
+
+[[synonym]]
+canonical    = "ax-3"
+aliases      = ["ax3"]
+tactic_class = "axiom"
+notes        = "Frege axiom 3 (contraposition): `|- ( ( -. ph -> -. ps ) -> ( ps -> ph ) )`. Source of classicality in set.mm."
+
+# ---------------------------------------------------------------------------
+# Definitional abbreviations ($a with df- prefix — still axiomatic but
+# conservative-extension; downstream consumers usually exempt these from
+# axiom counts).
+# ---------------------------------------------------------------------------
+
+[[synonym]]
+canonical    = "df-or"
+aliases      = ["df_or"]
+tactic_class = "definition"
+notes        = "Defines disjunction: `( ph \\/ ps ) <-> ( -. ph -> ps )`."
+
+[[synonym]]
+canonical    = "df-and"
+aliases      = ["df_and"]
+tactic_class = "definition"
+notes        = "Defines conjunction: `( ph /\\ ps ) <-> -. ( ph -> -. ps )`."
+
+[[synonym]]
+canonical    = "df-iff"
+aliases      = ["df_iff"]
+tactic_class = "definition"
+notes        = "Defines biconditional: `( ph <-> ps ) <-> ( ( ph -> ps ) /\\ ( ps -> ph ) )`."
+
+# ---------------------------------------------------------------------------
+# Naming conventions — suffix dialect
+# ---------------------------------------------------------------------------
+
+[[synonym]]
+canonical    = "suffix-i"
+aliases      = ["-i", "inference-suffix"]
+tactic_class = "inference"
+notes        = """
+Suffix `i` on a label name marks the inference form of a theorem
+(antecedent already discharged as a hypothesis). E.g. `mpi` = inference
+form of `mp`. When indexing the set.mm corpus, group `X` / `Xi` / `Xd`
+as a triple — they're the same theorem at different abstraction levels.
+"""
+
+[[synonym]]
+canonical    = "suffix-d"
+aliases      = ["-d", "deduction-suffix"]
+tactic_class = "deduction"
+notes        = """
+Suffix `d` marks the deduction form — the theorem is stated under a
+universal antecedent `ph`. Critical for chaining inside larger proofs;
+the set.mm idiom is "prove `Xi`, then mechanically lift to `Xd`".
+"""
+
+[[synonym]]
+canonical    = "suffix-bi"
+aliases      = ["-bi", "biconditional-suffix"]
+tactic_class = "biconditional"
+notes        = """
+Suffix `bi` marks a variant that takes (or produces) a biconditional
+where the base theorem takes (or produces) an implication. The
+biconditional ↔ implication boundary is the most common place for an
+extra `mpbi` / `bitri` insertion in a proof transcription.
+"""

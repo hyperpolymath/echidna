@@ -243,3 +243,17 @@ report-format = "JSON (AssailReport)"
 proof-obligations-check = "panic-attack (code-only grep; no comments)"
 banned-patterns = ["believe-me", "unsafeCoerce", "Admitted", "sorry"]
 neurosym-rules-file = "standards-repo/neurosym-a2ml/hypatia-ruleset.json"
+
+# === SATURATION CAMPAIGN 2026-06-01 — arbitration + cross-prover index ===
+# Branch: prover-corpus-saturation. ADR: docs/decisions/2026-06-01-saturation-campaign.md
+# Additive — preserves all existing operation-definitions / type-system / hypatia-config keys.
+
+[arbitration-extension]
+bayesian = "src/rust/verification/bayesian_arbiter.rs"
+dempster_shafer = "src/rust/verification/dempster_shafer.rs"
+pareto = "src/rust/verification/pareto_arbiter.rs"
+
+[cross-prover-semantic-index]
+msc2020_codes_count = 87
+wordnet_lemmas_count = "~80"
+conceptnet_edges_count = "~55"

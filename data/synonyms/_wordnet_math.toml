@@ -1,0 +1,634 @@
+# SPDX-FileCopyrightText: 2026 ECHIDNA Project Team
+# SPDX-License-Identifier: MPL-2.0
+#
+# WordNet math-vocabulary seeds. Hand-selected synset bridges drawn from
+# Princeton WordNet 3.1 noun + verb hierarchies for mathematical English.
+#
+# Underscore-prefix filename `_wordnet_math.toml` signals: secondary
+# vocabulary index, NOT a per-prover synonym table. Consumers may merge
+# it into per-prover `semantic_class` resolution to bridge prose tokens
+# (e.g. NL theorem statements in ProofNet) to formal-prover canonical
+# tactic / decl names.
+#
+# Selection criteria: every entry must (1) appear as a noun or verb in
+# WordNet's math.* subhierarchy AND (2) be a token the corpus indexers
+# / NL→formal alignment passes need to disambiguate. Excluded: pure
+# logic / set-theoretic primitives already covered by per-prover TOMLs
+# and `_msc2020.toml`.
+#
+# Schema matches the project's `[[synonym]]` convention. `canonical`
+# is the WordNet lemma (lowercase, underscore-joined for multiword);
+# `aliases` are the WordNet synonyms (sister lemmas in the same synset)
+# plus formal-corpus naming variants encountered in mathlib4 / MML /
+# AFP / set.mm in practice.
+
+# ============================================================
+# Number-system vocabulary
+# ============================================================
+
+[[synonym]]
+canonical = "natural_number"
+aliases = ["nat", "Nat", "ℕ", "N", "positive_integer", "nonneg_integer", "counting_number", "whole_number"]
+tactic_class = "type"
+semantic_class = "natural-numbers"
+notes = "WordNet lemma: natural number. Includes formal-corpus variants Nat (Lean/Coq), ℕ (Agda)."
+
+[[synonym]]
+canonical = "integer"
+aliases = ["int", "Int", "ℤ", "Z", "whole_number", "signed_integer"]
+tactic_class = "type"
+semantic_class = "integers"
+notes = "WordNet lemma: integer. Lean: Int; Coq: Z; Agda: ℤ; mathlib4: ℤ."
+
+[[synonym]]
+canonical = "rational_number"
+aliases = ["rational", "rat", "Rat", "ℚ", "Q", "fraction"]
+tactic_class = "type"
+semantic_class = "rationals"
+notes = "WordNet lemma: rational number. Mathlib4: ℚ; Coq.QArith: Q."
+
+[[synonym]]
+canonical = "real_number"
+aliases = ["real", "Real", "ℝ", "R", "continuous_quantity", "real_value"]
+tactic_class = "type"
+semantic_class = "reals"
+notes = "WordNet lemma: real number. Lean: ℝ / Real; Coq.Reals: R; Isabelle: real."
+
+[[synonym]]
+canonical = "complex_number"
+aliases = ["complex", "Complex", "ℂ", "C", "complex_quantity", "imaginary_extension"]
+tactic_class = "type"
+semantic_class = "complex"
+notes = "WordNet lemma: complex number."
+
+[[synonym]]
+canonical = "prime_number"
+aliases = ["prime", "Prime", "prime_quantity", "irreducible_integer"]
+tactic_class = "predicate"
+semantic_class = "prime"
+notes = "WordNet lemma: prime, prime number, prime quantity."
+
+[[synonym]]
+canonical = "even"
+aliases = ["even_number", "even_integer", "divisible_by_two", "two_divides"]
+tactic_class = "predicate"
+semantic_class = "even"
+notes = "WordNet lemma: even (as adjective applied to numbers)."
+
+[[synonym]]
+canonical = "odd"
+aliases = ["odd_number", "odd_integer", "uneven", "not_divisible_by_two"]
+tactic_class = "predicate"
+semantic_class = "odd"
+notes = "WordNet lemma: odd (as adjective applied to numbers)."
+
+# ============================================================
+# Operation vocabulary
+# ============================================================
+
+[[synonym]]
+canonical = "add"
+aliases = ["plus", "sum", "addition", "summation", "increment", "add_up", "Add", "HAdd"]
+tactic_class = "operation"
+semantic_class = "addition"
+notes = "WordNet: add, plus (as verb/noun). Lean: HAdd; Coq: plus / Nat.add."
+
+[[synonym]]
+canonical = "multiply"
+aliases = ["mul", "times", "product", "multiplication", "Mul", "HMul"]
+tactic_class = "operation"
+semantic_class = "multiplication"
+notes = "WordNet: multiply, times. Lean: HMul; Coq: mult / Nat.mul."
+
+[[synonym]]
+canonical = "subtract"
+aliases = ["sub", "minus", "difference", "subtraction", "decrement", "Sub", "HSub"]
+tactic_class = "operation"
+semantic_class = "subtraction"
+notes = "WordNet: subtract, minus."
+
+[[synonym]]
+canonical = "divide"
+aliases = ["div", "quotient", "division", "Div", "HDiv"]
+tactic_class = "operation"
+semantic_class = "division"
+notes = "WordNet: divide, divided_by. Lean: HDiv; Coq: Div; Agda: _/_."
+
+[[synonym]]
+canonical = "exponent"
+aliases = ["pow", "power", "exponentiation", "raise", "to_the", "HPow"]
+tactic_class = "operation"
+semantic_class = "exponentiation"
+notes = "WordNet: exponent, power (mathematics). Lean: HPow."
+
+[[synonym]]
+canonical = "modulo"
+aliases = ["mod", "remainder", "rem", "%", "Mod", "HMod"]
+tactic_class = "operation"
+semantic_class = "modulo"
+notes = "WordNet: modulo (math)."
+
+[[synonym]]
+canonical = "absolute_value"
+aliases = ["abs", "absolute", "magnitude", "modulus", "|.|"]
+tactic_class = "operation"
+semantic_class = "absolute-value"
+notes = "WordNet: absolute value, absolute. Lean/Mathlib4: abs."
+
+[[synonym]]
+canonical = "negation"
+aliases = ["negate", "negative", "neg", "Neg", "minus_sign", "additive_inverse"]
+tactic_class = "operation"
+semantic_class = "negation"
+notes = "WordNet: negative (as operation)."
+
+# ============================================================
+# Relations / comparison vocabulary
+# ============================================================
+
+[[synonym]]
+canonical = "equal"
+aliases = ["equality", "eq", "Eq", "=", "≡", "identical", "same"]
+tactic_class = "relation"
+semantic_class = "equality"
+notes = "WordNet: equal (relation)."
+
+[[synonym]]
+canonical = "less_than"
+aliases = ["lt", "Lt", "<", "below", "strictly_less", "smaller_than"]
+tactic_class = "relation"
+semantic_class = "strict-less"
+notes = "WordNet: less than (mathematical relation)."
+
+[[synonym]]
+canonical = "greater_than"
+aliases = ["gt", "Gt", ">", "above", "strictly_greater", "larger_than"]
+tactic_class = "relation"
+semantic_class = "strict-greater"
+notes = "WordNet: greater than."
+
+[[synonym]]
+canonical = "less_than_or_equal"
+aliases = ["le", "Le", "≤", "<=", "at_most", "no_greater_than", "bounded_above"]
+tactic_class = "relation"
+semantic_class = "less-or-equal"
+notes = "WordNet: less than or equal to."
+
+[[synonym]]
+canonical = "greater_than_or_equal"
+aliases = ["ge", "Ge", "≥", ">=", "at_least", "no_less_than", "bounded_below"]
+tactic_class = "relation"
+semantic_class = "greater-or-equal"
+notes = "WordNet: greater than or equal to."
+
+[[synonym]]
+canonical = "divides"
+aliases = ["divisible", "factor_of", "dvd", "∣", "is_factor", "divides_evenly"]
+tactic_class = "relation"
+semantic_class = "divides"
+notes = "WordNet: divides (algebraic relation, sense 4)."
+
+[[synonym]]
+canonical = "congruent"
+aliases = ["mod_equal", "≡", "equivalent_modulo", "same_residue"]
+tactic_class = "relation"
+semantic_class = "congruence"
+notes = "WordNet: congruent (sense: equal modulo n)."
+
+[[synonym]]
+canonical = "isomorphic"
+aliases = ["iso", "≃", "≅", "structurally_equal", "iso_morphic"]
+tactic_class = "relation"
+semantic_class = "isomorphism"
+notes = "WordNet: isomorphic. Cross-prover: Lean Iso; Coq morphism; Agda ≃."
+
+[[synonym]]
+canonical = "homomorphic"
+aliases = ["homomorphism", "hom", "→*", "structure_preserving_map", "morphism"]
+tactic_class = "relation"
+semantic_class = "homomorphism"
+notes = "WordNet: homomorphic (structure-preserving)."
+
+# ============================================================
+# Function / mapping vocabulary
+# ============================================================
+
+[[synonym]]
+canonical = "function"
+aliases = ["fn", "Fn", "map", "mapping", "transformation", "operator", "λ", "lambda"]
+tactic_class = "type"
+semantic_class = "function"
+notes = "WordNet: function (mathematics)."
+
+[[synonym]]
+canonical = "injection"
+aliases = ["injective", "one_to_one", "one_to_one_map", "1_1", "monomorphism", "↪"]
+tactic_class = "property"
+semantic_class = "injective"
+notes = "WordNet: injection (math)."
+
+[[synonym]]
+canonical = "surjection"
+aliases = ["surjective", "onto", "epimorphism", "↠"]
+tactic_class = "property"
+semantic_class = "surjective"
+notes = "WordNet: surjection."
+
+[[synonym]]
+canonical = "bijection"
+aliases = ["bijective", "one_to_one_correspondence", "isomorphism", "≅", "↔"]
+tactic_class = "property"
+semantic_class = "bijective"
+notes = "WordNet: bijection."
+
+[[synonym]]
+canonical = "composition"
+aliases = ["compose", "comp", "∘", "after", "function_composition"]
+tactic_class = "operation"
+semantic_class = "composition"
+notes = "WordNet: composition (math)."
+
+[[synonym]]
+canonical = "identity"
+aliases = ["id", "Id", "identity_function", "identity_morphism", "𝟙"]
+tactic_class = "function"
+semantic_class = "identity"
+notes = "WordNet: identity (math)."
+
+[[synonym]]
+canonical = "inverse"
+aliases = ["inv", "Inv", "⁻¹", "reciprocal", "multiplicative_inverse"]
+tactic_class = "operation"
+semantic_class = "inverse"
+notes = "WordNet: inverse."
+
+# ============================================================
+# Set / collection vocabulary
+# ============================================================
+
+[[synonym]]
+canonical = "set"
+aliases = ["Set", "collection", "aggregate", "family", "Type"]
+tactic_class = "type"
+semantic_class = "set"
+notes = "WordNet: set (math)."
+
+[[synonym]]
+canonical = "subset"
+aliases = ["⊆", "⊂", "contained_in", "sub_collection", "is_subset_of"]
+tactic_class = "relation"
+semantic_class = "subset"
+notes = "WordNet: subset."
+
+[[synonym]]
+canonical = "union"
+aliases = ["∪", "join", "set_union", "or_combine", "cup"]
+tactic_class = "operation"
+semantic_class = "set-union"
+notes = "WordNet: union (math)."
+
+[[synonym]]
+canonical = "intersection"
+aliases = ["∩", "meet", "set_intersection", "and_combine", "cap"]
+tactic_class = "operation"
+semantic_class = "set-intersection"
+notes = "WordNet: intersection (math)."
+
+[[synonym]]
+canonical = "empty_set"
+aliases = ["∅", "null_set", "void", "empty", "EmptySet"]
+tactic_class = "constant"
+semantic_class = "empty-set"
+notes = "WordNet: empty set, null set."
+
+[[synonym]]
+canonical = "complement"
+aliases = ["Cᶜ", "set_complement", "negated_set", "compl"]
+tactic_class = "operation"
+semantic_class = "set-complement"
+notes = "WordNet: complement (set theory)."
+
+[[synonym]]
+canonical = "power_set"
+aliases = ["𝒫", "P", "set_of_subsets", "powerset"]
+tactic_class = "operation"
+semantic_class = "power-set"
+notes = "WordNet: power set."
+
+[[synonym]]
+canonical = "cardinality"
+aliases = ["card", "size", "|.|", "set_size", "|S|"]
+tactic_class = "operation"
+semantic_class = "cardinality"
+notes = "WordNet: cardinality, cardinal number."
+
+# ============================================================
+# Logical operator vocabulary
+# ============================================================
+
+[[synonym]]
+canonical = "conjunction"
+aliases = ["and", "∧", "∩", "both", "Conj", "And"]
+tactic_class = "connective"
+semantic_class = "conjunction"
+notes = "WordNet: logical conjunction."
+
+[[synonym]]
+canonical = "disjunction"
+aliases = ["or", "∨", "either", "Disj", "Or"]
+tactic_class = "connective"
+semantic_class = "disjunction"
+notes = "WordNet: logical disjunction."
+
+[[synonym]]
+canonical = "implication"
+aliases = ["implies", "→", "⇒", "if_then", "Implies"]
+tactic_class = "connective"
+semantic_class = "implication"
+notes = "WordNet: implication."
+
+[[synonym]]
+canonical = "negation_logical"
+aliases = ["not", "¬", "false_when", "Negation", "Not"]
+tactic_class = "connective"
+semantic_class = "logical-negation"
+notes = "WordNet: logical negation."
+
+[[synonym]]
+canonical = "biconditional"
+aliases = ["iff", "↔", "if_and_only_if", "equivalent", "Iff"]
+tactic_class = "connective"
+semantic_class = "biconditional"
+notes = "WordNet: biconditional."
+
+[[synonym]]
+canonical = "universal_quantifier"
+aliases = ["forall", "∀", "for_all", "for_every", "All", "Forall"]
+tactic_class = "quantifier"
+semantic_class = "universal"
+notes = "WordNet: universal quantification."
+
+[[synonym]]
+canonical = "existential_quantifier"
+aliases = ["exists", "∃", "there_exists", "some", "Exists"]
+tactic_class = "quantifier"
+semantic_class = "existential"
+notes = "WordNet: existential quantification."
+
+# ============================================================
+# Proof vocabulary
+# ============================================================
+
+[[synonym]]
+canonical = "theorem"
+aliases = ["thm", "Theorem", "lemma", "proposition", "fact", "result", "claim"]
+tactic_class = "decl"
+semantic_class = "theorem"
+notes = "WordNet: theorem."
+
+[[synonym]]
+canonical = "lemma"
+aliases = ["aux_thm", "Lemma", "auxiliary_theorem", "preliminary_result"]
+tactic_class = "decl"
+semantic_class = "lemma"
+notes = "WordNet: lemma (auxiliary proposition)."
+
+[[synonym]]
+canonical = "corollary"
+aliases = ["Corollary", "consequence", "immediate_consequence"]
+tactic_class = "decl"
+semantic_class = "corollary"
+notes = "WordNet: corollary."
+
+[[synonym]]
+canonical = "proof"
+aliases = ["demonstration", "argument", "derivation", "Proof", "verification"]
+tactic_class = "decl"
+semantic_class = "proof"
+notes = "WordNet: proof (math)."
+
+[[synonym]]
+canonical = "axiom"
+aliases = ["postulate", "Axiom", "Postulate", "primitive_assumption", "given", "basic_truth"]
+tactic_class = "decl"
+semantic_class = "axiom"
+notes = "WordNet: axiom (basic mathematical assumption)."
+
+[[synonym]]
+canonical = "definition"
+aliases = ["def", "Def", "Definition", "let", "is_defined_as", "denote"]
+tactic_class = "decl"
+semantic_class = "definition"
+notes = "WordNet: definition (math)."
+
+[[synonym]]
+canonical = "hypothesis"
+aliases = ["hyp", "assumption", "supposition", "premise", "Hypothesis"]
+tactic_class = "decl"
+semantic_class = "hypothesis"
+notes = "WordNet: hypothesis (premise)."
+
+[[synonym]]
+canonical = "conclusion"
+aliases = ["goal", "thesis", "Goal", "result", "QED_clause"]
+tactic_class = "decl"
+semantic_class = "conclusion"
+notes = "WordNet: conclusion."
+
+# ============================================================
+# Structural / algebraic vocabulary
+# ============================================================
+
+[[synonym]]
+canonical = "group"
+aliases = ["Group", "Grp", "group_structure", "monoid_with_inverses"]
+tactic_class = "structure"
+semantic_class = "group"
+notes = "WordNet: group (algebra)."
+
+[[synonym]]
+canonical = "ring"
+aliases = ["Ring", "Rng", "associative_ring", "ring_structure"]
+tactic_class = "structure"
+semantic_class = "ring"
+notes = "WordNet: ring (algebra)."
+
+[[synonym]]
+canonical = "field"
+aliases = ["Field", "division_ring_commutative", "Fld"]
+tactic_class = "structure"
+semantic_class = "field"
+notes = "WordNet: field (math, sense: commutative division ring)."
+
+[[synonym]]
+canonical = "vector_space"
+aliases = ["VS", "VectorSpace", "module_over_field", "linear_space"]
+tactic_class = "structure"
+semantic_class = "vector-space"
+notes = "WordNet: vector space."
+
+[[synonym]]
+canonical = "monoid"
+aliases = ["Monoid", "Mon", "associative_unital"]
+tactic_class = "structure"
+semantic_class = "monoid"
+notes = "WordNet: monoid (related to algebra sense)."
+
+[[synonym]]
+canonical = "semigroup"
+aliases = ["Semigroup", "Sg", "associative_binary"]
+tactic_class = "structure"
+semantic_class = "semigroup"
+notes = "WordNet: semigroup."
+
+[[synonym]]
+canonical = "lattice"
+aliases = ["Lattice", "Latt", "join_meet_structure"]
+tactic_class = "structure"
+semantic_class = "lattice"
+notes = "WordNet: lattice (algebra)."
+
+[[synonym]]
+canonical = "homomorphism_struct"
+aliases = ["hom", "Hom", "structure_morphism", "preserves_structure"]
+tactic_class = "morphism"
+semantic_class = "structure-homomorphism"
+notes = "WordNet: homomorphism (algebra)."
+
+# ============================================================
+# Topology vocabulary
+# ============================================================
+
+[[synonym]]
+canonical = "topological_space"
+aliases = ["TS", "TopSpace", "Top", "T0_space", "topology_carrier"]
+tactic_class = "structure"
+semantic_class = "topological-space"
+notes = "WordNet: topological space."
+
+[[synonym]]
+canonical = "open_set"
+aliases = ["open", "Open", "is_open", "neighborhood"]
+tactic_class = "predicate"
+semantic_class = "open-set"
+notes = "WordNet: open set."
+
+[[synonym]]
+canonical = "closed_set"
+aliases = ["closed", "Closed", "is_closed", "complement_of_open"]
+tactic_class = "predicate"
+semantic_class = "closed-set"
+notes = "WordNet: closed set."
+
+[[synonym]]
+canonical = "continuous_function"
+aliases = ["continuous", "Continuous", "Cts", "preserves_limits", "cts"]
+tactic_class = "predicate"
+semantic_class = "continuity"
+notes = "WordNet: continuous (math)."
+
+[[synonym]]
+canonical = "compact"
+aliases = ["Compact", "is_compact", "finite_subcover", "sequentially_compact"]
+tactic_class = "predicate"
+semantic_class = "compactness"
+notes = "WordNet: compact (math)."
+
+[[synonym]]
+canonical = "connected"
+aliases = ["Connected", "is_connected", "path_connected", "topologically_connected"]
+tactic_class = "predicate"
+semantic_class = "connectedness"
+notes = "WordNet: connected (math, topological)."
+
+[[synonym]]
+canonical = "homeomorphism"
+aliases = ["homeo", "≅_top", "topological_isomorphism"]
+tactic_class = "morphism"
+semantic_class = "homeomorphism"
+notes = "WordNet: homeomorphism."
+
+# ============================================================
+# Limit / convergence vocabulary
+# ============================================================
+
+[[synonym]]
+canonical = "limit"
+aliases = ["lim", "Limit", "tends_to", "approaches", "→", "convergent_value"]
+tactic_class = "operation"
+semantic_class = "limit"
+notes = "WordNet: limit (math)."
+
+[[synonym]]
+canonical = "converges"
+aliases = ["convergent", "Conv", "tends_to_limit", "limit_exists"]
+tactic_class = "predicate"
+semantic_class = "convergence"
+notes = "WordNet: converge (math)."
+
+[[synonym]]
+canonical = "diverges"
+aliases = ["divergent", "Div", "no_limit", "unbounded_oscillation"]
+tactic_class = "predicate"
+semantic_class = "divergence"
+notes = "WordNet: diverge (math)."
+
+[[synonym]]
+canonical = "supremum"
+aliases = ["sup", "Sup", "least_upper_bound", "lub"]
+tactic_class = "operation"
+semantic_class = "supremum"
+notes = "WordNet: supremum, least upper bound."
+
+[[synonym]]
+canonical = "infimum"
+aliases = ["inf", "Inf", "greatest_lower_bound", "glb"]
+tactic_class = "operation"
+semantic_class = "infimum"
+notes = "WordNet: infimum, greatest lower bound."
+
+# ============================================================
+# Reasoning vocabulary (proof verbs)
+# ============================================================
+
+[[synonym]]
+canonical = "prove"
+aliases = ["demonstrate", "establish", "show", "derive", "argue", "verify"]
+tactic_class = "verb"
+semantic_class = "prove"
+notes = "WordNet: prove (math sense)."
+
+[[synonym]]
+canonical = "imply"
+aliases = ["implies", "entail", "follow_from", "lead_to", "conclude"]
+tactic_class = "verb"
+semantic_class = "imply"
+notes = "WordNet: imply (math sense)."
+
+[[synonym]]
+canonical = "assume"
+aliases = ["suppose", "let", "hypothesize", "posit", "given"]
+tactic_class = "verb"
+semantic_class = "assume"
+notes = "WordNet: assume (math sense)."
+
+[[synonym]]
+canonical = "induction"
+aliases = ["induct", "mathematical_induction", "structural_induction", "well_founded_induction", "transfinite_induction"]
+tactic_class = "verb"
+semantic_class = "induction"
+notes = "WordNet: mathematical induction. Cross-prover: Lean induction; Coq induction; Agda elim."
+
+[[synonym]]
+canonical = "contradiction"
+aliases = ["contra", "absurd", "reductio", "ex_falso", "exfalso", "by_contradiction"]
+tactic_class = "verb"
+semantic_class = "contradiction"
+notes = "WordNet: contradiction. Tactic across provers."
+
+[[synonym]]
+canonical = "construct"
+aliases = ["build", "define", "exhibit", "witness", "construction"]
+tactic_class = "verb"
+semantic_class = "constructive"
+notes = "WordNet: construct (math)."

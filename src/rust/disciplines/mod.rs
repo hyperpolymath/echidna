@@ -1,4 +1,5 @@
 // SPDX-License-Identifier: MPL-2.0
+// SPDX-FileCopyrightText: 2026 Jonathan D.A. Jewell <j.d.a.jewell@open.ac.uk>
 // Copyright (c) 2026 Jonathan D.A. Jewell (hyperpolymath) <j.d.a.jewell@open.ac.uk>
 
 //! Type-discipline taxonomy — **Axis 2** of echidna's prover classification.
@@ -58,6 +59,12 @@
 //! unavailable, fall back to the umbrella `Modal`).
 
 #![allow(dead_code)]
+
+pub mod registry;
+pub mod detector;
+
+pub use registry::{DisciplineMarker, MarkerRegistry};
+pub use detector::{detect_disciplines, DetectionContext};
 
 use serde::{Deserialize, Serialize};
 
@@ -131,6 +138,14 @@ pub enum TypeDiscipline {
     // machinery — distinct from polymorphism, modal logic, and every other
     // discipline family here.
     Nominal,
+    // Ceremonial / ritual / protocol-bound types — multi-party
+    // ceremonies and protocol-bound resource types. Added 2026-06-01
+    // (saturation campaign) — owner-listed alongside linear/affine/
+    // dyadic/tropical/choreographic/epistemic. No canonical upstream
+    // checker yet; tag routes to typell --discipline=ceremonial as
+    // placeholder pending Panll's ceremonial subsystem. Family is
+    // ResourceSemiring (ceremonies are protocol-bound resources).
+    Ceremonial,
 }
 
 /// High-level family grouping. Disciplines in the same family share
@@ -171,7 +186,7 @@ pub enum DisciplineFamily {
 impl TypeDiscipline {
     /// Every discipline the echidna TypeDiscipline transition admits.
     /// Kept in sync with `ProverKind::is_hp_ecosystem`.
-    pub const ALL: [TypeDiscipline; 41] = [
+    pub const ALL: [TypeDiscipline; 42] = [
         TypeDiscipline::TypeLl,
         TypeDiscipline::Katagoria,
         TypeDiscipline::Ordinary,
@@ -213,6 +228,7 @@ impl TypeDiscipline {
         TypeDiscipline::Homotopy,
         TypeDiscipline::Cubical,
         TypeDiscipline::Nominal,
+        TypeDiscipline::Ceremonial,
     ];
 
     /// Which family this discipline belongs to.
@@ -232,7 +248,7 @@ impl TypeDiscipline {
             D::Modal | D::Epistemic | D::Temporal | D::Provability => Modal,
             D::EffectRow | D::Impure | D::Coeffect | D::Probabilistic => EffectsCoeffects,
             D::Session | D::Choreographic | D::Dyadic | D::Echo => Process,
-            D::Tropical => ResourceSemiring,
+            D::Tropical | D::Ceremonial => ResourceSemiring,
             D::Homotopy | D::Cubical => Homotopy,
             D::Nominal => BinderManagement,
         }
@@ -285,6 +301,7 @@ impl TypeDiscipline {
             D::Homotopy => "homotopy",
             D::Cubical => "cubical",
             D::Nominal => "nominal",
+            D::Ceremonial => "ceremonial",
         }
     }
 
@@ -319,7 +336,10 @@ impl TypeDiscipline {
             D::Nominal => None,
             // Capability/Bunched refine Immutable's concern (aliasing).
             D::Capability | D::Bunched => Some(D::Immutable),
-            // Kernels / umbrellas have no fallback.
+            // Kernels / umbrellas have no fallback. Ceremonial has no
+            // umbrella yet — it sits in the ResourceSemiring family alongside
+            // Tropical, but is not subsumed by it (ceremonies are
+            // protocol-bound; tropical is min-plus / max-plus algebra).
             D::TypeLl
             | D::Katagoria
             | D::Ordinary
@@ -332,15 +352,24 @@ impl TypeDiscipline {
             | D::EffectRow
             | D::Session
             | D::Tropical
+            | D::Ceremonial
             | D::Homotopy => None,
         }
     }
 
-    /// The `ProverKind` that backs this discipline. Every variant has one.
-    pub fn prover_kind(self) -> ProverKind {
+    /// The `ProverKind` that backs this discipline.
+    ///
+    /// Returns `Some` for the 41 originally-enumerated disciplines, each of
+    /// which has a 1:1 `ProverKind::*TypeChecker` mapping. Returns `None`
+    /// for `Ceremonial` (added 2026-06-01): there is no
+    /// `CeremonialTypeChecker` `ProverKind` yet — see Panll's ceremonial
+    /// subsystem roadmap. Callers must handle the `None` case gracefully
+    /// (typically by falling back to the `tag()`-based dispatch route
+    /// through `typell --discipline=ceremonial`).
+    pub fn prover_kind(self) -> Option<ProverKind> {
         use ProverKind as P;
         use TypeDiscipline as D;
-        match self {
+        Some(match self {
             D::TypeLl => P::TypeLL,
             D::Katagoria => P::KatagoriaVerifier,
             D::Tropical => P::TropicalTypeChecker,
@@ -382,7 +411,9 @@ impl TypeDiscipline {
             D::Homotopy => P::HomotopyTypeChecker,
             D::Cubical => P::CubicalTypeChecker,
             D::Nominal => P::NominalTypeChecker,
-        }
+            // CeremonialTypeChecker not yet a ProverKind — see Panll roadmap.
+            D::Ceremonial => return None,
+        })
     }
 
     /// Which **classical** (Axis-1) provers can natively serve this
@@ -487,6 +518,12 @@ impl TypeDiscipline {
             // Resource semirings — Tropical is an HP-stack specialty.
             D::Tropical => vec![],
 
+            // Ceremonial / protocol-bound resource types. No classical
+            // prover advertises ceremonial typing as a first-class feature;
+            // dispatch routes through `typell --discipline=ceremonial` once
+            // Panll's ceremonial subsystem lands.
+            D::Ceremonial => vec![],
+
             // Homotopy foundations.
             D::Homotopy => vec![P::Agda, P::Lean], // HoTT libraries on both.
             D::Cubical => vec![P::Agda, P::Arend], // Cubical Agda + JetBrains's Arend.
@@ -562,7 +599,7 @@ mod tests {
 
     #[test]
     fn all_has_expected_size() {
-        assert_eq!(TypeDiscipline::ALL.len(), 41);
+        assert_eq!(TypeDiscipline::ALL.len(), 42);
     }
 
     #[test]
@@ -586,7 +623,17 @@ mod tests {
     #[test]
     fn prover_kind_roundtrip() {
         for &d in TypeDiscipline::ALL.iter() {
-            let back = TypeDiscipline::from_prover_kind(d.prover_kind())
+            // Ceremonial has no ProverKind yet — skip in roundtrip.
+            let Some(kind) = d.prover_kind() else {
+                assert_eq!(
+                    d,
+                    TypeDiscipline::Ceremonial,
+                    "only Ceremonial may currently lack a prover_kind; got None for {:?}",
+                    d
+                );
+                continue;
+            };
+            let back = TypeDiscipline::from_prover_kind(kind)
                 .unwrap_or_else(|| panic!("no discipline for prover_kind {:?}", d));
             assert_eq!(back, d, "roundtrip failed for {:?}", d);
         }

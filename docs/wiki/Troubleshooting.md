@@ -1,3 +1,5 @@
+<!-- SPDX-FileCopyrightText: 2026 Jonathan D.A. Jewell <j.d.a.jewell@open.ac.uk> -->
+<!-- SPDX-License-Identifier: MPL-2.0 -->
 # Troubleshooting
 
 ## Build fails with `openssl` errors
@@ -104,6 +106,49 @@ cargo build  # without --features verisim
 ```
 
 See [`docs/handover/S4-LOOP-CLOSURE-RUNBOOK.md`](https://github.com/hyperpolymath/echidna/blob/main/docs/handover/S4-LOOP-CLOSURE-RUNBOOK.md) for the operational details.
+
+## Corpus adapter returns empty Corpus
+
+If `corpus::<adapter>::ingest(root)` returns a `Corpus` with `entries.is_empty()`:
+
+1. **Confirm the root path.** Adapters take the *project* root, not an individual source file. Check the path resolves and is a directory.
+2. **Check walk exclusions.** Each adapter excludes build / VCS / heap caches (e.g. Isabelle skips `*/heaps/*`, Coq skips `_build/`, …). If your tree uses non-standard out-of-tree build directories, files under them won't be indexed.
+3. **Verify the file extension matches.** The [`docs/CORPUS-ADAPTERS.md`](https://github.com/hyperpolymath/echidna/blob/main/docs/CORPUS-ADAPTERS.md) table lists the canonical extensions per adapter (`*.thy` for Isabelle, `*.mm` for Metamath, `*.fst` / `*.fsti` for F\*, etc.). Non-canonical extensions (e.g. `.hol4` instead of `*Script.sml`) are silently skipped.
+
+## Synonym lookup returns empty
+
+If `SynonymTable::load(ProverKind::X, dir)?.alternatives("name")` returns `vec![]`:
+
+1. **Confirm the TOML exists** at `data/synonyms/<prover>.toml`. `SynonymTable::load` returns an empty table (without error) if the file is missing — verify with `ls data/synonyms/`.
+2. **Check the schema.** Rows must be `[[synonym]]`, not `[[entries]]` or `[[entry]]`. Each row needs `canonical = "..."` and `aliases = [...]` at minimum. Anything else parses as zero entries.
+3. **Verify the filename mapping** in `prover_table_filename` in [`src/rust/suggest/synonyms.rs`](https://github.com/hyperpolymath/echidna/blob/main/src/rust/suggest/synonyms.rs). The canonical filenames are: `agda.toml`, `coq.toml`, `lean4.toml` (note the `4`), `idris2.toml`, `isabelle.toml`, `metamath.toml`, `mizar.toml`, `hol4.toml`, `hol_light.toml` (underscore), `dafny.toml`, `why3.toml`, `fstar.toml`, `acl2.toml`. Mismatches resolve to an empty table.
+4. **Cross-prover dictionaries are different.** `_msc2020.toml`, `_wordnet_math.toml`, `_conceptnet_seed.toml` load via `load_cross_prover_dicts`, not `SynonymTable::load`; merge them into a per-prover table with `merge_external()`.
+
+## Bayesian arbiter posterior stuck at 0.5
+
+If `BayesianArbiter::combine(&evidence)` returns `p_proven ≈ p_refuted ≈ 0.5`:
+
+The likely cause is that every `ProverEvidence` in your slice carries `Verdict::Timeout`, `Verdict::Unknown`, or `Verdict::Error`. Those verdicts contribute a likelihood ratio of 1.0 — no log-odds update — so the posterior stays at the prior. See the `timeouts_only_leave_entropy_at_prior_entropy` test in `src/rust/verification/bayesian_arbiter.rs`.
+
+**Fix**: feed at least one `Verdict::Proven` or `Verdict::Refuted`. If your prover never returns a decisive verdict, either raise its timeout budget (`DispatchConfig::timeout`) or replace it with a different backend for that goal class.
+
+## Dempster-Shafer returns HighConflict error
+
+`DempsterShaferArbiter::combine_all()` returns `Err(ArbiterError::HighConflict(k))` when the cumulative conflict mass `k > 0.95` — the provers are strongly disagreeing and DS refuses to commit a posterior on principle.
+
+**Options**:
+
+- Use the **Bayesian arbiter** with a strong prior (e.g. `BayesianArbiter::new(0.99)`) if you have a domain reason to favour one outcome.
+- Use the **Pareto arbiter** (`src/rust/verification/pareto_arbiter.rs`) if the disagreement reflects multi-axis trade-offs rather than truth-value conflict.
+- Investigate the evidence — high conflict often signals a bug in one prover's harness (wrong axioms loaded, stale binary, sandbox leakage) rather than a genuine logical disagreement.
+
+## Hazard flag is set unexpectedly
+
+`AxiomUsage::other` (and the boolean flags) are filled by **heuristic** scanners in each corpus adapter. They run against comment-stripped source and can false-positive when a banned token appears inside a string literal, an ML antiquotation, or a doc-comment fragment that survived stripping.
+
+Review the `axiom_usage.other` strings on the offending `CorpusEntry` — they record the exact substring that triggered the flag. If it's inside a literal, the flag is heuristic noise; the adapter doc-strings (e.g. the Isabelle module-doc) explicitly note that "banned tokens inside ML antiquotations or string literals can still be flagged for human review."
+
+The adapters are deliberately quality "heuristic, not authoritative" — see [`docs/CORPUS-ADAPTERS.md`](https://github.com/hyperpolymath/echidna/blob/main/docs/CORPUS-ADAPTERS.md) and the module-level docs on `src/rust/corpus/mod.rs`. If false positives accumulate for your project, file an issue with the triggering substring; the heuristic can be tightened per-adapter.
 
 ## Wiki page is wrong
 

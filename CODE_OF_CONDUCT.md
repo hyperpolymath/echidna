@@ -1,4 +1,5 @@
 <!--
+SPDX-FileCopyrightText: 2026 Jonathan D.A. Jewell <j.d.a.jewell@open.ac.uk>
 SPDX-License-Identifier: MPL-2.0
 SPDX-FileCopyrightText: 2024-2025 ECHIDNA Project Contributors
 -->
@@ -45,7 +46,7 @@ Project maintainers have the right and responsibility to remove, edit, or reject
 
 This Code of Conduct applies within all project spaces, including:
 
-- GitLab repositories (code, issues, merge requests, wiki)
+- GitHub repository (code, issues, pull requests, wiki) and any mirror (e.g. GitLab CI mirror)
 - Project communication channels (mailing lists, chat, forums)
 - Official project events (conferences, meetups, workshops)
 - Social media when representing the project
