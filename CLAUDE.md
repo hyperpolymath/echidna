@@ -139,10 +139,14 @@ Shape, by area:
 # Build System (Justfile is PRIMARY — RSR-H14)
 just build              # Build the project
 just test               # Run tests
-just check              # Run all quality checkers
+just check              # Roll-up: fmt-check + lint + test
+just lint               # REUSE + rustfmt + clippy
+just pre-commit         # fmt-check + lint + test (use in git hooks)
 just doctor             # Verify toolchain
-just heal               # Auto-install missing tools
+just heal               # Offer to install missing tools
 just tour               # Codebase tour
+just help-me            # Onboarding subset of recipes
+just --list             # Every recipe in the Justfile
 
 # Cargo
 cargo build             # Build Rust code
@@ -153,6 +157,16 @@ cargo bench             # Criterion benchmarks
 cargo clippy            # Rust lints
 cargo fmt --check       # Format check
 
+# CLI entry points (clap-routed in src/rust/main.rs)
+cargo run -- interactive          # Launch interactive REPL
+cargo run -- server --cors        # Launch HTTP API server (port 8081)
+cargo run -- list-provers         # List ProverKind variants on this build
+cargo run -- info <PROVER>        # Show backend metadata
+cargo run -- prove <file>         # Prove a theorem from file
+cargo run -- verify <file>        # Verify an existing proof
+cargo run -- search <pattern>     # Search theorem libraries
+cargo run -- diagnostics          # Interactive diagnostics REPL
+
 # Idris2 ABI
 idris2 --build src/abi/echidnaabi.ipkg   # Type-check the ABI package
 
@@ -161,6 +175,29 @@ podman build -f Containerfile .          # Minimal image
 podman run echidna                        # Run minimal image
 # Per-prover images live under .containerization/Containerfile.wave3
 ```
+
+## Governance gates
+
+CI enforces estate-wide governance through reusable workflows pinned
+in `.github/workflows/`:
+
+- **R5a** (echidna-local, post-#174): doc canonical-reference drift
+  for prover counts; canonical refs live under
+  `.github/canonical-references/`.
+- **R5b** (estate-wide, consumed via standards SHA pin per #172):
+  `Version: x.y.z` strings in docs are scanned for drift against
+  `Cargo.toml`. **`CHANGELOG.md` and `Cargo.toml` are exempt;
+  everything else is not.** Keep this file (and any new doc) prose
+  count-free and version-free unless the number is sourced
+  authoritatively elsewhere.
+- **MVP smoke** (#167): just-pinned smoke harness on every PR;
+  reports missing prover binaries non-fatally.
+- **Idris2 ABI type-check**: `idris2-abi-ci.yml` enforces zero
+  `believe_me` / `assert_total` / `postulate` in `src/abi/`.
+- **Chapel CI**: `chapel-ci.yml` builds the static lib + Zig FFI
+  strict on every PR.
+- **Container CI**: `container-ci.yml` weekly cron builds each
+  Tier-3 cell with stub-sentinel detection.
 
 ## Critical Constraints
 
