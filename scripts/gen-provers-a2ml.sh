@@ -1,7 +1,21 @@
 #!/bin/bash
 # Generate provers.a2ml from a variant list.
 # Snake-case conversion: PascalCase -> snake_case (matches serde default).
+#
+# Usage: gen-provers-a2ml.sh <variant-list-file>
+#
+# The variant-list path is a CLI argument (was the hard-coded
+# /tmp/provers-list.txt); predictable /tmp/* paths are a panic-attack
+# low (path-traversal / TOCTOU on multi-user runners). Callers should
+# pass `$(mktemp)` or any path they control.
 set -euo pipefail
+
+VARIANT_LIST="${1:-}"
+if [ -z "$VARIANT_LIST" ] || [ ! -r "$VARIANT_LIST" ]; then
+  echo "usage: $0 <variant-list-file>" >&2
+  echo "  (one PascalCase variant per line; e.g. \"$(mktemp)\" populated by caller)" >&2
+  exit 2
+fi
 
 cat << 'HEADER'
 # SPDX-License-Identifier: MPL-2.0
@@ -28,7 +42,7 @@ source  = "src/rust/provers/mod.rs::ProverKind"
 date    = "2026-04-24"
 HEADER
 
-printf "count   = %d\n\n" "$(wc -l < /tmp/provers-list.txt)"
+printf "count   = %d\n\n" "$(wc -l < "$VARIANT_LIST")"
 
 while IFS= read -r variant; do
   # snake_case: lowercase + insert underscore before uppercase letter that
@@ -38,4 +52,4 @@ while IFS= read -r variant; do
   echo "[prover.${variant}]"
   echo "slug = \"${slug}\""
   echo ""
-done < /tmp/provers-list.txt
+done < "$VARIANT_LIST"
