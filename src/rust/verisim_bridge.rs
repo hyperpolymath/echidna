@@ -1,4 +1,5 @@
 // SPDX-FileCopyrightText: 2026 Jonathan D.A. Jewell (hyperpolymath) <j.d.a.jewell@open.ac.uk>
+// SPDX-FileCopyrightText: 2026 Jonathan D.A. Jewell <j.d.a.jewell@open.ac.uk>
 // SPDX-License-Identifier: MPL-2.0
 
 //! VeriSimDB Bridge — Maps ECHIDNA proof state to VeriSimDB's 8-modality octad.
@@ -18,6 +19,21 @@
 //!
 //! The bridge uses VeriSimDB's HTTP API via reqwest. For BoJ-integrated deployments,
 //! the zig adapter (`echidna_llm_verisimdb.v`) routes through verisim.zig FFI.
+//!
+//! ## Formal E-R schema (saturation campaign 2026-06-01)
+//!
+//! The 12-entity / 7-relationship data model this bridge implements is
+//! now formally specified at:
+//!
+//! - **Schema doc**: `docs/architecture/VERISIM-ER-SCHEMA.md`
+//! - **Cap'n Proto wire format**: `crates/echidna-wire/schemas/verisim_er.capnp`
+//! - **Crosswalk**: each Rust struct here ↔ Cap'n Proto struct ↔
+//!   ClickHouse table is enumerated in the schema doc.
+//!
+//! Drift between this code and the schema is the responsibility of any
+//! PR that adds/renames fields in `OctadPayload` or its modality
+//! structs — the schema doc + `.capnp` file must update in the same PR
+//! (CI gate planned, see schema doc "Drift detection" section).
 
 use anyhow::{Context, Result};
 use chrono::Utc;

@@ -1291,3 +1291,56 @@ not-done = [
   "#77 CI-infra jam is estate-owned (active estate-wide remediation), not collapsible from this repo.",
   "MSRV + Julia Integration remain red on main as separate non-required baseline rot — not in scope of #85; file dedicated issues only if they later become gating.",
 ]
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# Saturation campaign 2026-06-01 — corpus / vocab / arbitration / exchange surface
+# Additive snapshot of the surface delivered by branch prover-corpus-saturation.
+# Existing prover_count / trust_pipeline / gnn_status fields preserved verbatim.
+# ═══════════════════════════════════════════════════════════════════════════════
+
+[saturation-surface]
+last_revised = "2026-06-01"
+
+corpus_adapters_count = 17  # was 4
+corpus_adapters_list = [
+  "agda", "coq", "lean", "idris2",
+  "isabelle", "metamath", "mizar", "hol_light", "hol4",
+  "dafny", "why3", "fstar", "acl2_books",
+  "tptp", "smtlib", "proofnet", "minif2f",
+]
+
+synonym_tables_count = "14 per-prover + 3 cross-prover dictionaries"
+synonym_tables_list = [
+  "agda", "coq", "lean4", "idris2",
+  "isabelle", "isabelle_afp", "metamath", "mizar",
+  "hol_light", "hol4", "dafny", "why3", "fstar", "acl2",
+  "_msc2020", "_wordnet_math", "_conceptnet_seed",
+]
+
+arbitration_mechanisms_count = 4  # was 1
+arbitration_mechanisms_list = [
+  "portfolio (majority-vote)",
+  "bayesian",
+  "dempster_shafer",
+  "pareto",
+]
+
+exchange_bridges_count = 6  # was 2
+exchange_bridges_list = [
+  "opentheory", "dedukti", "tptp", "smtlib", "smtcoq", "lambdapi",
+]
+
+er_schema_status = "formalised"
+er_schema_doc_path = "docs/architecture/VERISIM-ER-SCHEMA.md"
+er_schema_capnp_path = "crates/echidna-wire/schemas/verisim_er.capnp"
+
+[saturation-campaign]
+date = "2026-06-01"
+branch = "prover-corpus-saturation"
+status = "complete"
+adr = "docs/decisions/2026-06-01-saturation-campaign.md"
+handover = "docs/handover/PROVER-CORPUS-SATURATION-LANE.md"
+commits = [
+  "f73ee00", "46a7408", "6019860", "3828056", "d05dfff",
+  "4a0b068", "c61140c", "85c1b8c", "cb8caff",
+]

@@ -10,6 +10,24 @@
 //! - Confidence scoring (5-level trust hierarchy)
 //! - Mutation testing for specifications
 //! - Pareto optimality for proof search
+//!
+//! ## Arbitration stack (4 mechanisms, post-saturation 2026-06-01)
+//!
+//! Existing:
+//! - `portfolio` — majority-vote + flagging when k provers agree
+//!
+//! Added in the saturation campaign (see
+//! `docs/decisions/2026-06-01-saturation-campaign.md`):
+//! - `bayesian_arbiter` — log-odds posterior with per-prover calibrated
+//!   likelihoods; reports Shannon entropy.
+//! - `dempster_shafer` — belief-mass combination via Dempster's rule;
+//!   trips `HighConflict` when normalised conflict mass k > 0.95.
+//! - `pareto_arbiter` — multi-objective Pareto frontier over
+//!   (confidence↑, latency↓, axiom_cost↓, certificate_size↓) with
+//!   pluggable tiebreak.
+//!
+//! Picking between them: see the "Guide: Picking an arbitration
+//! mechanism" entry in `docs/wiki/Guides.md`.
 
 pub mod axiom_tracker;
 pub mod certificates;

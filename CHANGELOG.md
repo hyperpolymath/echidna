@@ -1,3 +1,5 @@
+<!-- SPDX-FileCopyrightText: 2026 Jonathan D.A. Jewell <j.d.a.jewell@open.ac.uk> -->
+<!-- SPDX-License-Identifier: MPL-2.0 -->
 # Changelog
 
 All notable changes to ECHIDNA will be documented in this file.
@@ -6,6 +8,45 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
+
+### Added — Saturation campaign 2026-06-01
+
+Branch `prover-corpus-saturation` (commits f73ee00..cb8caff). Owner-directed marginal-benefit push across corpus, vocabulary, arbitration, exchange, and wire-schema surfaces. See `docs/decisions/2026-06-01-saturation-campaign.md`.
+
+- **13 new corpus adapters** under `src/rust/corpus/` (`isabelle`, `metamath`, `mizar`, `hol_light`, `hol4`, `dafny`, `why3`, `fstar`, `acl2_books`, `tptp`, `smtlib`, `proofnet`, `minif2f`). Total corpus adapter coverage: 4 → **17** (4.25×). See `docs/CORPUS-ADAPTERS.md`.
+- **9 new per-prover synonym TOMLs** (`isabelle_afp`, `metamath`, `mizar`, `hol_light`, `hol4`, `dafny`, `why3`, `fstar`, `acl2`). Total: 5 → **14** per-prover tables.
+- **3 cross-prover taxonomic dictionaries** (underscore-prefix): `_msc2020.toml` (87 codes), `_wordnet_math.toml` (~80 lemmas), `_conceptnet_seed.toml` (~55 edges, offline-resilient).
+- **3 new arbitration mechanisms** under `src/rust/verification/`: `bayesian_arbiter` (log-odds posterior), `dempster_shafer` (HighConflict trip at k > 0.95), `pareto_arbiter` (4-axis Pareto frontier).
+- **4 new exchange bridges** under `src/rust/exchange/`: `tptp`, `smtlib`, `smtcoq` (stub bridge), `lambdapi`.
+- **Formal VeriSim E-R schema** at `docs/architecture/VERISIM-ER-SCHEMA.md` (12 entities + 7 relationships, crosswalk Rust↔Cap'n Proto↔ClickHouse) + Cap'n Proto wire schema `crates/echidna-wire/schemas/verisim_er.capnp` (@0xe4dc7b1f01a06001).
+- **Chapel + Julia integration hooks** at `docs/architecture/CHAPEL-SATURATION-HOOKS.md` + `docs/architecture/JULIA-SATURATION-HOOKS.md` (specifications only — wave3 chapel + GNN-training-trigger files deliberately untouched).
+- **New Julia helper modules** `src/julia/corpus_loader.jl` + `src/julia/saturation_synonyms.jl` (bridge Rust corpus JSON + saturation synonym TOMLs into the GNN training pipeline).
+- **Saturation campaign ADR** at `docs/decisions/2026-06-01-saturation-campaign.md`.
+- **Handover lane doc** at `docs/handover/PROVER-CORPUS-SATURATION-LANE.md` (collision-avoidance contract with `wave3/161-162-bench-telemetry-corpus`).
+- **Corpus adapter index** at `docs/CORPUS-ADAPTERS.md`.
+- **Justfile recipes**: `corpus-ingest-saturation`, `corpus-stats-all`, `synonym-load-test`, `test-saturation`, `arbiter-smoke`, `er-schema-drift-check`.
+- **139 new unit tests** across the saturation modules (1 ignored heuristic-limit).
+
+### Changed
+
+- `src/rust/suggest/synonyms.rs`: `load_all` extended to 14 provers; new `CrossProverDicts` + `load_cross_prover_dicts()` + `SynonymTable::merge_external()`.
+- `src/rust/corpus/mod.rs`, `verification/mod.rs`, `exchange/mod.rs`: register new modules (additive).
+- Module-level doc comments on `corpus/mod.rs`, `verification/mod.rs`, `verisim_bridge.rs` cite the new schemas + arbiters.
+
+### Documentation
+
+- Wiki updated (Home, Architecture, Getting-Started, Guides, FAQ, Troubleshooting) to reflect the new surface.
+- README.adoc + EXPLAINME.adoc updated with new headline counts + per-module references.
+- Machine-readable metadata under `.machine_readable/6a2/` (STATE / META / ECOSYSTEM / NEUROSYM) updated additively.
+- 9 RSR-template substitution gaps closed in CODE_OF_CONDUCT.md / SECURITY.md / AUTHORS.md.
+
+### Verification
+
+- `cargo check --lib` clean (~24s).
+- `cargo test --lib -- corpus:: verification::{bayesian,dempster_shafer,pareto}_arbiter exchange::{tptp,smtlib,smtcoq,lambdapi}`: **139 passed, 0 failed, 1 ignored** (corpus::dafny::tests::detects_datatype_and_extern — heuristic body-less-extern-method limitation).
+- Zero collisions with `wave3/161-162-bench-telemetry-corpus`.
+
+---
 
 ## [2.3.0] - 2026-06-01
 

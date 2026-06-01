@@ -18,7 +18,12 @@
 //! adapter wired to a real proof tree.
 //!
 //! First adapter: `agda` (echo-types' Buchholz / Brouwer / WF
-//! programme). Future adapters: `coq`, `lean4`, `idris2`.
+//! programme). Now-shipped adapters: `coq`, `lean`, `idris2`, plus the
+//! saturation-campaign 2026-06-01 additions: `isabelle`, `metamath`,
+//! `mizar`, `hol_light`, `hol4`, `dafny`, `why3`, `fstar`,
+//! `acl2_books`, `tptp`, `smtlib`, `proofnet`, `minif2f`. **17 total
+//! adapters**. See `docs/CORPUS-ADAPTERS.md` for the canonical index,
+//! per-adapter hazard inventory, and source URLs.
 //!
 //! ## Design
 //!

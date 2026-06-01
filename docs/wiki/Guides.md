@@ -1,3 +1,5 @@
+<!-- SPDX-FileCopyrightText: 2026 Jonathan D.A. Jewell <j.d.a.jewell@open.ac.uk> -->
+<!-- SPDX-License-Identifier: MPL-2.0 -->
 # Guides
 
 ## Adding a new prover backend
@@ -67,3 +69,84 @@ Every env var the system reads is enumerated in [`docs/ENV-VARS.md`](https://git
 ## Following the roadmap
 
 [`docs/ROADMAP.md`](https://github.com/hyperpolymath/echidna/blob/main/docs/ROADMAP.md) is the canonical 8-stage map. [`docs/handover/HANDOVER-INDEX.md`](https://github.com/hyperpolymath/echidna/blob/main/docs/handover/HANDOVER-INDEX.md) navigates the prompt-and-runbook suite that drives each stage.
+
+## Guide: Adding a new corpus adapter
+
+The 2026-06-01 saturation campaign brought the adapter count to 17. The mechanical pattern is small enough to fit on one page; the criteria for *when* to add one are in [`docs/CORPUS-ADAPTERS.md` § "When to add a new adapter"](https://github.com/hyperpolymath/echidna/blob/main/docs/CORPUS-ADAPTERS.md#when-to-add-a-new-adapter).
+
+1. **Pick a reference adapter.** Read [`src/rust/corpus/agda.rs`](https://github.com/hyperpolymath/echidna/blob/main/src/rust/corpus/agda.rs) for a layout-sensitive language or [`src/rust/corpus/coq.rs`](https://github.com/hyperpolymath/echidna/blob/main/src/rust/corpus/coq.rs) for a keyword-delimited one. Both are heuristic, not full parsers — that's deliberate (see the module-level doc on `src/rust/corpus/mod.rs`).
+2. **Create `src/rust/corpus/<your_adapter>.rs`** exposing `pub fn ingest(root: &Path) -> Result<Corpus>`.
+3. **Two-pass extraction.** Pass 1 walks the tree, enumerates module names and decl names. Pass 2 walks each decl's text and records references to any name in pass-1's known set. Strip comments before reference scanning but preserve newlines so line numbers stay aligned (see the Isabelle adapter for the canonical comment-stripping shape).
+4. **Hazard detection.** Fill `AxiomUsage` per entry. The detector is heuristic — scan the comment-stripped slice covering the decl's lines for prover-specific banned tokens (`axiomatization`, `sorry`, `cheat`, `believe_me`, `Admitted`, …). False positives inside string literals are acceptable; flag in `axiom_usage.other` for human review.
+5. **Register in `src/rust/corpus/mod.rs`.** Add `pub mod your_adapter;` to the module list.
+6. **Add the per-prover synonyms TOML** at `data/synonyms/<your_adapter>.toml` with schema `[[synonym]]` rows (`canonical`, `aliases`, optional `tactic_class`, `semantic_class`). Map the new `ProverKind` variant to its filename in `prover_table_filename` in [`src/rust/suggest/synonyms.rs`](https://github.com/hyperpolymath/echidna/blob/main/src/rust/suggest/synonyms.rs).
+7. **Add a fixture** under `tests/corpus_fixtures/<your_adapter>/` covering one happy-path decl and one hazard case. Keep it tiny — the goal is smoke correctness, not coverage.
+8. **Update [`docs/CORPUS-ADAPTERS.md`](https://github.com/hyperpolymath/echidna/blob/main/docs/CORPUS-ADAPTERS.md)** with the new row in the adapter table.
+
+## Guide: Picking an arbitration mechanism
+
+ECHIDNA ships four arbiters. They're complementary; the right choice depends on what you want the output to *be*.
+
+| Arbiter | Output shape | Use when |
+|---|---|---|
+| **Portfolio** (`src/rust/verification/portfolio.rs`) | Categorical agreement summary (`PortfolioConfidence` + `SolverResult` list) | You want simple-majority consensus across N solvers — fast, no calibration needed. Default for "did any two solvers agree?" |
+| **Bayesian** (`src/rust/verification/bayesian_arbiter.rs`) | `PosteriorVerdict { p_proven, p_refuted, p_unknown, entropy_bits, winning }` | You have calibrated per-prover precision/FPR and want a probability with uncertainty. Returns Shannon entropy too. |
+| **Dempster-Shafer** (`src/rust/verification/dempster_shafer.rs`) | `BeliefPlausibility` over `VerdictSet` — or `ArbiterError::HighConflict(k)` if conflict mass `k > 0.95` | You want to model *ignorance* as first-class (mass on `{Proven, Refuted}` = "I don't know"). Refuses to commit when conflict is too high. |
+| **Pareto** (`src/rust/verification/pareto_arbiter.rs`) | `ParetoDecision` over `AttemptOutcome` records | You're optimising on *multiple* axes (time, memory, certificate-size, trust-tier) and want non-dominated outcomes, not a single verdict. |
+
+Motivating examples:
+
+- **Portfolio** — "Run Z3, CVC5, Vampire; if any two say Proven, ship it."
+- **Bayesian** — "Z3 says Proven, Coq says Refuted; given Coq's higher precision, what's the posterior?" (see the test in `bayesian_arbiter.rs:268`).
+- **Dempster-Shafer** — "Five solvers; three Proven, two Refuted; either commit a posterior or *refuse to arbitrate* because conflict is too high."
+- **Pareto** — "Lean took 30s and produced a 4kB certificate; Z3 took 0.2s and produced no certificate. Which dominates?" — neither; return both as Pareto-optimal.
+
+## Guide: Cross-prover semantic queries
+
+The synonym layer carries an optional `semantic_class` tag per entry. Combined with the three cross-prover dictionaries (`_msc2020.toml`, `_wordnet_math.toml`, `_conceptnet_seed.toml`) this gives "every prover's name for the same concept" lookups, fully offline.
+
+```rust
+use std::path::Path;
+use echidna::suggest::synonyms::{
+    SynonymTable, load_all, load_cross_prover_dicts,
+};
+use echidna::ProverKind;
+
+let dir = Path::new("data/synonyms");
+
+// Load all per-prover tables (saturation-campaign set: 13 provers).
+let mut tables = load_all(dir)?;
+
+// Merge each cross-prover dictionary into every per-prover table
+// so `by_semantic_class` queries find rows regardless of origin.
+let dicts = load_cross_prover_dicts(dir)?;
+for table in tables.values_mut() {
+    table.merge_external(&dicts.msc2020);
+    table.merge_external(&dicts.wordnet_math);
+    table.merge_external(&dicts.conceptnet_seed);
+}
+
+// "What's everyone's name for well-foundedness?"
+for (prover, table) in &tables {
+    for entry in table.by_semantic_class("well-foundedness") {
+        println!(
+            "{:?}: {} (aliases: {:?})",
+            prover, entry.canonical, entry.aliases,
+        );
+    }
+}
+```
+
+The semantic classes are deliberately coarse (e.g. `"well-foundedness"`, `"accessibility"`, `"transitivity"`) — fine-grained equivalence belongs in the OpenTheory / Dedukti exchange layer (`src/rust/exchange/`).
+
+## Guide: Adding a new exchange bridge
+
+Exchange modules translate proof artefacts between formalisms. The 2026-06-01 saturation campaign added six (TPTP, LambdaPi, SMTCoq stub, plus existing Dedukti, OpenTheory, Alethe). The pattern from [`src/rust/exchange/tptp.rs`](https://github.com/hyperpolymath/echidna/blob/main/src/rust/exchange/tptp.rs) and [`src/rust/exchange/lambdapi.rs`](https://github.com/hyperpolymath/echidna/blob/main/src/rust/exchange/lambdapi.rs):
+
+1. **Module-level doc** stating the format, upstream URL, and what's in vs. out of scope. Be explicit about "stub bridge" vs "full bridge" — see [`src/rust/exchange/smtcoq.rs`](https://github.com/hyperpolymath/echidna/blob/main/src/rust/exchange/smtcoq.rs) for the canonical stub-bridge disclosure (gated on upstream SMTCoq Coq plugin invocation).
+2. **`ExchangeError` enum** with at minimum `UnsupportedDialect(String)`, `ParseError(String)`, `TranslationError(String)`, `EmptyProblem`. Implement `Display` and `std::error::Error`.
+3. **Structured AST** for the format — typically a `Problem` / `Module` struct holding a `Vec<AnnotatedFormula>` or equivalent. Derive `Serialize + Deserialize + PartialEq + Eq + Clone + Debug` so consumers can persist intermediate forms.
+4. **`pub fn parse(input: &str) -> Result<Problem, ExchangeError>`** — best-effort parser, lenient on whitespace, strict on dialect mismatch.
+5. **`pub fn emit(p: &Problem) -> String`** — round-trip safe for the supported dialect subset.
+6. **Translation seams** to/from neighbouring formats (TPTP ↔ SMT-LIB, LambdaPi ↔ Dedukti). Reject unsupported dialects with `UnsupportedDialect` rather than silently mistranslating.
+7. **Unit tests** covering a parse-emit round-trip on at least one fixture from the upstream problem set.

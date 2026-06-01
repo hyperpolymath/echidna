@@ -42,3 +42,37 @@ url = "http://echidna-nesy.flycast:8090 (private 6PN — auto-wake via .flycast)
 health-endpoint = "/api/health"
 grace-period = "90s"
 cold-start-note = "Isabelle Main heap ~1-2GB maps at first use; Julia JIT runs on first inference. Minimum 90s grace."
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Saturation campaign 2026-06-01 — external corpus / vocab / exchange sources
+# Branch: prover-corpus-saturation. ADR: docs/decisions/2026-06-01-saturation-campaign.md
+# ─────────────────────────────────────────────────────────────────────────────
+
+[corpus-sources]
+lean_mathlib4 = "https://github.com/leanprover-community/mathlib4"
+isabelle_afp = "https://www.isa-afp.org/"
+metamath_setmm = "https://github.com/metamath/set.mm"
+mizar_mml = "http://mizar.org/version/8.1.14/mml/"
+hol_light = "https://github.com/jrh13/hol-light"
+hol4 = "https://github.com/HOL-Theorem-Prover/HOL"
+dafny_examples = "https://github.com/dafny-lang/dafny"
+why3_toccata = "https://gitlab.inria.fr/why3/why3"
+fstar_examples = "https://github.com/FStarLang/FStar"
+acl2_books = "https://github.com/acl2/acl2"
+tptp_problems = "https://tptp.org/"
+smtlib_benchmarks = "https://smt-lib.org/benchmarks.shtml"
+proofnet = "https://github.com/zhangir-azerbayev/ProofNet"
+minif2f = "https://github.com/openai/miniF2F"
+
+[vocab-sources]
+msc2020 = "https://msc2020.org/"
+wordnet = "https://wordnet.princeton.edu/"
+conceptnet = "https://conceptnet.io/"
+
+[proof-exchange-standards]
+tptp_iltp = "https://tptp.org/"
+smtlib_v2 = "https://smt-lib.org/"
+opentheory = "http://www.gilith.com/research/opentheory/"
+dedukti = "https://deducteam.github.io/"
+lambdapi = "https://github.com/Deducteam/lambdapi"
+smtcoq = "https://github.com/smtcoq/smtcoq"

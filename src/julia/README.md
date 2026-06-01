@@ -493,3 +493,107 @@ See LICENSE files for details.
 ---
 
 **Built with Julia. No Python. Pure power.**
+
+<!--
+SPDX-FileCopyrightText: 2026 Jonathan D.A. Jewell <j.d.a.jewell@open.ac.uk>
+SPDX-License-Identifier: MPL-2.0
+Saturation campaign 2026-06-01 addendum.
+-->
+
+## Saturation-campaign addendum (2026-06-01)
+
+The saturation campaign on branch `prover-corpus-saturation` added 13
+new Rust corpus adapters (lifting coverage from 4 → 17) plus 9 new
+per-prover synonym TOMLs and 3 cross-prover dictionaries
+(`_msc2020`, `_wordnet_math`, `_conceptnet_seed`). See
+`docs/decisions/2026-06-01-saturation-campaign.md` for the full ADR.
+
+The campaign added **two new Julia helper modules** to bridge that new
+Rust surface area into the existing GNN training pipeline, without
+touching any file the parallel `wave3/161-162-bench-telemetry-corpus`
+session owns.
+
+### `CorpusLoader` — `src/julia/corpus_loader.jl`
+
+Reads `Corpus` JSON files produced by `Corpus::save_json` in
+`src/rust/corpus/mod.rs`. Public API:
+
+- `load_corpus_json(path)` — reads one adapter's JSON output, returns
+  a NamedTuple matching the Rust `Corpus` schema field-for-field.
+- `corpus_to_training_examples(corpus, prover_kind)` — translates
+  `CorpusEntry` rows into `TrainingExample`-shaped NamedTuples. The
+  function does NOT depend on `training/dataloader.jl`; it returns the
+  field bundles that a downstream wiring shim can spread into
+  `ProofState(...)` / `Premise(...)` / `TrainingExample(...)`
+  constructors. Schema is documented in the function's docstring.
+- `corpus_stats(corpus)` — module count, entry count, hazard count,
+  per-`DeclKind` breakdown.
+- `merge_corpora([…])` — concatenates multiple loaded corpora into
+  one, preserving `(adapter, qualified)` uniqueness, rebuilding the
+  by-name / by-qualified / dependents indices over the merged result.
+
+A self-contained `corpus_loader_test()` smoke test sits at the bottom
+of the file.
+
+### `SaturationSynonyms` — `src/julia/saturation_synonyms.jl`
+
+Reads the per-prover synonym TOMLs and the three cross-prover
+dictionaries shipped by the campaign. Schema source of truth:
+`src/rust/suggest/synonyms.rs`. Public API:
+
+- `load_prover_synonyms(prover::Symbol, dir)` — loads `dir/<prover>.toml`,
+  returns a `Dict{String, NamedTuple}` keyed by canonical name.
+- `load_msc2020(dir)`, `load_wordnet_math(dir)`,
+  `load_conceptnet_seed(dir)` — three cross-prover taxonomic
+  dictionaries.
+- `by_semantic_class(table, class)` — cross-table semantic-class
+  lookup, mirrors `SynonymTable::by_semantic_class`.
+- `expand_aliases(name, table)` — given any canonical-or-alias name,
+  returns the rest of the synonym group; mirrors
+  `SynonymTable::alternatives`.
+
+### Why this lives in Julia
+
+The new Rust adapters emit structured `Corpus` JSON that downstream
+training code needs to ingest as `TrainingExample` rows for the Flux /
+GNN learner. Doing the translation in Julia (rather than burning it
+into the Rust side) keeps the training-pipeline schema mutable
+under sibling-branch ownership without churning Rust.
+
+### Worked example (described, NOT invoked)
+
+```julia
+using JSON
+include("src/julia/corpus_loader.jl"); using .CorpusLoader
+
+# Load one adapter's output.
+corpus = load_corpus_json("data/corpus/lean.json")
+@info corpus_stats(corpus)
+
+# Translate to TrainingExample-shaped rows.
+rows = corpus_to_training_examples(corpus, :lean)
+
+# Downstream consumer (NOT invoked here — see hand-off doc):
+# for row in rows
+#     ps = ProofState(LEAN, row.proof_state_fields.goal,
+#                     row.proof_state_fields.context, …)
+#     prems = [Premise(p.name, p.statement, LEAN, nothing,
+#                      p.frequency_score, p.relevance_score)
+#              for p in row.candidate_premise_field_rows]
+#     push!(examples, TrainingExample(ps, prems, row.relevant_indices, LEAN))
+# end
+# dataset = TrainingDataset(examples; batch_size = 32)
+```
+
+### Caveat: deliberate hand-off boundary
+
+`src/julia/training/train.jl`, `src/julia/run_training.jl`, and
+`src/julia/training/dataloader.jl` are **NOT modified by this
+campaign**. They are owned by the parallel
+`wave3/161-162-bench-telemetry-corpus` session (chapel bench +
+telemetry work). The integration commit that wires `CorpusLoader`
+output INTO the training pipeline (a ~50-line addition to
+`run_training.jl`) is a deliberate hand-off, landing AFTER both
+branches merge. See `docs/architecture/JULIA-SATURATION-HOOKS.md` for
+the topology, the field-shape contract, and the follow-up wiring PR
+sketch.
