@@ -64,17 +64,20 @@ encoding with its round-trip and total-order properties (zero
 
 === Prover Backends
 
-The Tier-1 _core_ set — Coq/Rocq, Lean 4, Agda, Isabelle/HOL, Idris 2,
-F\*, Z3, CVC5, Alt-Ergo, Dafny, Vampire, E Prover — is exposed via
-`GET /api/provers` and required to pass for green CI. The remaining
-tiers (extended, niche, Wave-3 secured, Wave-2 modal/real-algebraic,
+The Tier-1 _core_ set is what `GET /api/provers` exposes by default
+and what is required to pass for green CI; the live membership list
+is `ProverKind::all_core()` in `src/rust/provers/mod.rs`, mirrored
+in human-readable form at
+link:docs/SUPPORTED_PROVERS.md[`docs/SUPPORTED_PROVERS.md`] (with
+required external binaries and install hints). The remaining tiers
+(extended, niche, Wave-3 secured, Wave-2 modal/real-algebraic,
 pure-Rust in-process, HP type-checker ecosystem, TypeChecker
-disciplines, Coq-Jr playground) cover interactive provers, first-order
-ATPs, SAT/SMT solvers, auto-active verifiers, constraint/optimisation
-backends, model checkers, C/hardware verifiers, security-protocol
-tools, and specialised systems. The full tier table and membership
-list — the only place these counts are maintained — is
-link:docs/PROVER_COUNT.md[`docs/PROVER_COUNT.md`].
+disciplines, Coq-Jr playground) cover interactive provers,
+first-order ATPs, SAT/SMT solvers, auto-active verifiers,
+constraint/optimisation backends, model checkers, C/hardware
+verifiers, security-protocol tools, and specialised systems. The
+full tier table and membership list — the only place these counts
+are maintained — is link:docs/PROVER_COUNT.md[`docs/PROVER_COUNT.md`].
 
 All backends in the Tier-1 / Tier-2 / Wave-3 / Wave-2 / pure-Rust
 groups implement the `ProverBackend` trait (parse, verify, export,
@@ -172,17 +175,30 @@ The verification pipeline applies the following checks to every proof:
   to AffineScript-TEA as the stdlib primitives needed for the port
   (Http / Promise / Json / Dict) land in
   https://github.com/hyperpolymath/affinescript[affinescript].
-* *REPL*: Interactive proof session via rustyline.
+* *REPL*: Interactive proof session via rustyline
+  (`cargo run -- interactive`).
 
 == Quick Start
 
 === Prerequisites
 
-* *Rust* nightly (managed via asdf)
-* *Julia* 1.10+ (for ML layer)
-* *Deno* (for ReScript UI)
-* *Podman* (NOT Docker) -- recommended for solver sandboxing
-* *Just* command runner
+* *Rust* nightly (managed via asdf or rustup)
+* *Just* command runner (`cargo install just`)
+* *pkg-config* + *openssl-devel* / *libssl-dev* (system)
+* *Podman* (NOT Docker) — recommended for solver sandboxing
+
+Optional, by component:
+
+* *Julia* 1.10+ — ML layer (`src/julia/`)
+* *Idris2* >= 0.7.0 — ABI type-check (`src/abi/`)
+* *Zig* >= 0.13.0 — FFI bridge (`ffi/zig/`, `src/zig_ffi/`)
+* *Chapel* — optional parallel proof dispatch (`src/chapel/`,
+  `--features chapel`)
+* *Deno* >= 2.0 — ReScript / AffineScript UI (`src/rescript/`,
+  `src/ui/`)
+
+Run `just doctor` to verify what's actually installed; `just heal`
+will offer to install missing pieces non-destructively.
 
 === Build and Test
 
@@ -200,8 +216,9 @@ just build
 just test
 # or: cargo test
 
-# Run ECHIDNA REPL
-just run
+# Launch the interactive proof REPL
+cargo run -- interactive
+# or: just run interactive
 ----
 
 === Prove your first goal
@@ -343,12 +360,19 @@ idris2 --build src/abi/echidnaabi.ipkg  # ABI type-check
 
 [source,bash]
 ----
-just check      # All quality checks
-just lint       # REUSE, rustfmt, clippy
-just security   # Trivy, cargo-audit
-just coverage   # Test coverage
-just mvp        # MVP smoke checks (reports missing provers, non-fatal)
+just check       # Roll-up: fmt-check + lint + test
+just lint        # REUSE, rustfmt, clippy
+just audit       # cargo-audit + supply-chain check
+just pre-commit  # fmt-check + lint + test (use in git hooks)
+just assail      # panic-attacker security scan (requires the panic-attack CLI)
+just mvp         # MVP smoke checks (reports missing provers, non-fatal)
+just doctor      # Verify required toolchain is on PATH
+just heal        # Offer to install missing tools
+just tour        # Guided walkthrough of the repo
 ----
+
+`just --list` enumerates every recipe; `just help-me` prints an
+onboarding subset.
 
 == Current Status
 

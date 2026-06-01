@@ -10,6 +10,10 @@ verification pipeline and sandboxed solver execution. The full
 backend roster — Tier-1 core through Tier-10 — is in
 link:docs/PROVER_COUNT.md[`docs/PROVER_COUNT.md`].
 
+This guide is for a *user* who wants to verify a proof. For developer
+setup see link:QUICKSTART-DEV.adoc[`QUICKSTART-DEV.adoc`]; for release
+/ packaging see link:QUICKSTART-MAINTAINER.adoc[`QUICKSTART-MAINTAINER.adoc`].
+
 toc::[]
 
 == Prerequisites
@@ -28,101 +32,124 @@ toc::[]
 
 | Podman
 | >= 4.0
-| `dnf install podman` / `apt install podman`
+| `dnf install podman` / `apt install podman` — preferred sandbox
 
 | pkg-config + openssl-devel
 | system
 | `dnf install pkg-config openssl-devel` / `apt install pkg-config libssl-dev`
 |===
 
-Optional (for full stack):
+Optional, by component (only needed if you exercise that surface):
 
-* Idris2 >= 0.7.0 (for ABI definitions in `src/abi/`)
-* Zig >= 0.13.0 (for FFI bridge in `ffi/zig/`)
-* Julia >= 1.10 (for ML layer in `src/julia/`)
-* Chapel (for parallel proof dispatch in `chapel_poc/`)
-* Deno >= 2.0 (for ReScript UI in `src/rescript/`)
+* Idris2 >= 0.7.0 — ABI definitions in `src/abi/`
+* Zig >= 0.13.0 — FFI bridge in `ffi/zig/`, `src/zig_ffi/`
+* Julia >= 1.10 — ML layer in `src/julia/`
+* Chapel — optional parallel proof dispatch in `src/chapel/`
+  (built behind `--features chapel`)
+* Deno >= 2.0 — ReScript / AffineScript UI in `src/rescript/`,
+  `src/ui/`
+
+Run `just doctor` to see what is and isn't present; `just heal`
+offers to install missing pieces non-destructively.
 
 == Clone and build
 
 [source,bash]
 ----
-cd ~/Documents/hyperpolymath-repos
 git clone https://github.com/hyperpolymath/echidna.git
 cd echidna
 
-just build
+just build       # or: cargo build
 ----
 
-Expected output:
+Expected shape (version + timing vary):
 
 ----
-   Compiling echidna v1.5.0 (/home/you/.../echidna)
-    Finished `dev` profile [unoptimized + debuginfo] target(s) in 45s
+   Compiling echidna vX.Y.Z (...)
+    Finished `dev` profile [unoptimized + debuginfo] target(s) in NNs
 ----
+
+The on-disk version lives in `Cargo.toml` and `CHANGELOG.md`; this
+doc deliberately does not pin it.
 
 == Run tests
 
 [source,bash]
 ----
-# Unit tests (232)
-just test
-
-# All tests including integration (389)
-just test-all
+just test          # all rust tests (unit + tests/)
+just test-all      # adds integration suites where present
+just test-integration   # only the integration tree under tests/
 ----
 
-Expected:
-
-----
-running 232 tests
-...
-test result: ok. 232 passed; 0 failed; 0 ignored
-----
+The current test-count summary is whatever `cargo test`'s own
+trailing line reports; counts are not pinned in docs to avoid drift.
+Many integration tests are gated on external solver binaries and
+skip cleanly when absent (see Troubleshooting).
 
 == Launch the REPL
 
 [source,bash]
 ----
-just run repl
+cargo run -- interactive          # primary entry point
+# or via Justfile:
+just run interactive
 ----
 
-Example session:
-
-----
-echidna> :prove 1 + 1 = 2
-[z3] Proved in 0.003s (confidence: 0.99)
-echidna> :backends
-(lists currently-registered backends — see docs/PROVER_COUNT.md for the canonical tier table)
-echidna> :quit
-----
+The CLI subcommand is `interactive` (clap-routed in
+`src/rust/main.rs`). It accepts `--prover <KIND>` and `--neural` to
+preselect a backend and turn on neural premise selection. Inside the
+session, the REPL slash-commands are listed by `:help`.
 
 == Launch the API server
 
 [source,bash]
 ----
-# REST API on port 8000
-just run serve --port 8000
+# Bind to localhost:8081 (the binary default) with CORS enabled
+cargo run -- server --cors
+# or pin a port explicitly
+cargo run -- server --port 8000 --host 127.0.0.1 --cors
 ----
 
 Then in another terminal:
 
 [source,bash]
 ----
-curl http://localhost:8000/api/v1/health
-# {"status":"ok","provers":48,"version":"1.5.0"}
+# Health (no version line — call `cargo run -- --version` for that)
+curl http://127.0.0.1:8081/api/health
+
+# List Tier-1 core provers
+curl http://127.0.0.1:8081/api/provers
+
+# Prove a satisfiable SMT-LIB goal (Z3)
+curl -X POST http://127.0.0.1:8081/api/prove \
+  -H 'Content-Type: application/json' \
+  -d '{"prover":"Z3",
+       "content":"(set-logic QF_LIA)\n(declare-const x Int)\n(assert (> x 0))\n(check-sat)\n",
+       "timeout":30}'
 ----
+
+The full route table is in `src/rust/server.rs`. Separate
+GraphQL / gRPC / REST interface crates live under `src/interfaces/`
+on dedicated ports (8081 / 50051 / 8000 respectively); they share
+the same dispatch path.
+
+For a no-build browser UI, open `src/ui/public/prove.html` directly
+and point the "API base" field at the running server.
 
 == Build container image
 
 [source,bash]
 ----
-# Minimal (Z3, CVC5, Lean, Idris2)
+# Minimal image (core dependencies only)
 just container-build
 
-# Full (all provers + Julia)
+# Full image (additional provers + Julia)
 just container-build-full
 ----
+
+Per-prover Wave-3 images live under `.containerization/Containerfile.wave3`
+and are built by the weekly cron in `.github/workflows/container-ci.yml`
+with stub-sentinel detection on each cell.
 
 == Quick reference
 
@@ -137,34 +164,49 @@ just container-build-full
 | Build optimised release binary
 
 | `just test`
-| Run unit tests (232)
+| Run Rust tests
 
 | `just test-all`
-| Run all tests (389)
+| Run all Rust + integration suites
 
 | `just lint`
-| Run clippy lints
+| REUSE + rustfmt + clippy
 
 | `just fmt`
-| Format Rust code
+| Format Rust code in place
 
 | `just pre-commit`
-| Format check + lint + test
+| `fmt-check` + `lint` + `test`
 
-| `just run repl`
+| `cargo run -- interactive`
 | Launch interactive REPL
 
+| `cargo run -- server --cors`
+| Launch HTTP API server (default port 8081)
+
+| `cargo run -- list-provers`
+| List `ProverKind` variants available on this build
+
 | `just container-build`
-| Build minimal container
+| Build minimal Podman image
 
 | `just assail`
-| Run panic-attacker pre-commit scan
+| panic-attacker security scan (requires the panic-attack CLI)
 
 | `just doctor`
-| Check all required tools are installed
+| Verify required toolchain is on PATH
+
+| `just heal`
+| Offer to install missing tools
 
 | `just tour`
 | Guided walkthrough of the repo
+
+| `just help-me`
+| Onboarding subset of recipes
+
+| `just --list`
+| Every recipe in the Justfile
 |===
 
 == Troubleshooting
@@ -175,9 +217,17 @@ just container-build-full
 `cargo: command not found`::
   Install Rust via `asdf install rust nightly` or https://rustup.rs.
 
-`389 tests but some fail on timeout`::
-  Some integration tests need solver binaries (z3, cvc5). Install them or run
-  `just test` for unit tests only.
+`integration tests fail with "binary not found"`::
+  Many tests shell out to external solvers (`z3`, `cvc5`, `coqc`, …).
+  Either install the needed binary or restrict to unit tests with
+  `cargo test --lib`. See link:docs/SUPPORTED_PROVERS.md[`docs/SUPPORTED_PROVERS.md`]
+  for the Tier-1 install hints.
+
+`POST /api/prove returns "Failed to spawn ... process"`::
+  Same root cause: the prover binary isn't on PATH inside the
+  server's environment. Install it or pick a different `prover`
+  field. Other backends remain available.
 
 Container build fails::
-  Ensure Podman is installed (`podman --version`). ECHIDNA uses Podman, not Docker.
+  Ensure Podman is installed (`podman --version`). ECHIDNA uses
+  Podman, not Docker — see `Containerfile` rather than `Dockerfile`.

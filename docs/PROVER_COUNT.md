@@ -5,16 +5,24 @@
 
 **Status**: canonical. Cite this file when documenting backend coverage in any
 other doc. Other surfaces that quoted historical counts (12, 30, 48, 105) are
-being updated to point here. Last revised: 2026-05-30.
+being updated to point here. Last revised: 2026-06-01.
+
+> **Known drift** (tracked, not closed in routine doc PRs): the
+> `ProverKind` variant count below (**128**) lags the actual enum in
+> `src/rust/provers/mod.rs` (~138 variants on `main`). Refreshing
+> the count + `.machine_readable/provers.a2ml` belongs to the next
+> backend-count audit PR; see PR #169 closeout for the deliberately
+> deferred scope. The Tier-1 membership list immediately below is
+> the live one (mirrors `ProverKind::all_core()`).
 
 ## TL;DR
 
 | Question | Answer |
 |---|---|
-| Total `ProverKind` variants in `src/rust/provers/mod.rs` | **128** |
+| Total `ProverKind` variants in `src/rust/provers/mod.rs` | **128** (~138 on `main` — see drift note above) |
 | External prover bindings (separate binary or library) | 89 |
 | `TypeChecker` disciplines routed via TypedWasm Sigma | 39 |
-| Exposed by default REST API (`Tier 1` / core) | **12** |
+| Exposed by default REST API (`Tier 1` / core) | **12** (`GET /api/provers`) |
 | With real `suggest_tactics` (not stub) | **91 of 91** |
 | Routing tactic suggestions through `gnn_augment_tactics` | **all backends with `suggest_tactics`** (S5 pilot 5 + Tier-1 extension 5 + Tier-1 finisher 2 + Tier-2 sweep 33 + Tier-3/niche sweep 53 — full coverage as of 2026-05-30; gracefully no-ops when `gnn_api_url` is None or `neural_enabled` is false) |
 | With native search command | 16 of 91 (72 return `Ok(vec![])` — cross-prover search via `VeriSimAdvisor` covers them) |
@@ -26,8 +34,8 @@ Tiers correspond to CI coverage cadence and default-API visibility.
 
 | Tier | Cadence | Members | Notes |
 |---|---|---|---|
-| **1 — core** | Every PR | Coq/Rocq, Lean 4, Agda, Isabelle/HOL, Idris 2, F*, Z3, CVC5, Alt-Ergo, Dafny, Vampire, E Prover | Exposed by default REST `/api/verify`. Required to pass for green CI. |
-| **2 — extended** | Every PR (allow-fail) | HOL Light, Metamath, Mizar, HOL4, PVS, ACL2, TLAPS, Twelf, Nuprl, Minlog, Imandra, SPASS, Princess, IProver, Twee, MetiTarski, CSI, AProVE, Leo3, Satallax, Lash, AgsyHOL, GLPK, SCIP, MiniZinc, Chuffed, OR-Tools, Dreal, CBMC, KeY, KeYmaera X, EasyCrypt, Abella, Athena, Cameleer, Why3 | Direct invocation via `ProverKind`. CI runs but doesn't block. |
+| **1 — core** | Every PR | Agda, Coq, Lean 4, Isabelle/HOL, Z3, CVC5, Metamath, HOL Light, Mizar, PVS, ACL2, HOL4 | Returned by `ProverKind::all_core()`; exposed by default at `GET /api/provers`; required to pass for green CI. Install hints in [`SUPPORTED_PROVERS.md`](SUPPORTED_PROVERS.md). |
+| **2 — extended** | Every PR (allow-fail) | Idris 2, Lean 3, Vampire, E Prover, SPASS, Alt-Ergo, F*, Dafny, Why3, TLAPS, Twelf, Nuprl, Minlog, Imandra, Princess, IProver, Twee, MetiTarski, CSI, AProVE, Leo-III, Satallax, Lash, AgsyHOL, GLPK, SCIP, MiniZinc, Chuffed, OR-Tools, Dreal, CBMC, KeY, KeYmaera X, EasyCrypt, Abella, Athena, Cameleer | Direct invocation via `ProverKind` (covered by `ProverKind::all()` beyond `all_core()`). CI runs but doesn't block. List is illustrative; the live set is whatever `ProverKind::all()` returns. |
 | **3 — niche** | Nightly | Arend, Cedille, Lego, Aprové, Boogie, CVC4, Petri-net checkers, modal-logic provers, real-algebraic provers | Specialised use. |
 | **4 — placeholder** | Smoke only | 19 backends present as `ProverKind` variants but with mock-only invocation. | Promote when upstream maintainer ships a Containerfile. See [`handover/TODO.md`](handover/TODO.md) P4. |
 | **5 — Wave-3 secured** | Every PR | Tamarin, ProVerif, Metamath (rust-native), Twelf, OR-Tools | All ✅ real, runtime-smoke verified, Containerfile.wave3 |
