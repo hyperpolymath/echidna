@@ -2,7 +2,7 @@
 
 **ECHIDNA** — Extensible Cognitive Hybrid Intelligence for Deductive Neural Assistance — is a trust-hardened neurosymbolic theorem-proving platform supporting **128 prover backends** (12 core, exposed by default API; see [`docs/PROVER_COUNT.md`](https://github.com/hyperpolymath/echidna/blob/main/docs/PROVER_COUNT.md) for the tier breakdown).
 
-**License**: MPL-2.0 · **Version**: 2.3.0 · **Last updated**: 2026-05-26
+**License**: MPL-2.0 (documentation surface) · authoritative version pinned in [`Cargo.toml`](https://github.com/hyperpolymath/echidna/blob/main/Cargo.toml) and [`CHANGELOG.md`](https://github.com/hyperpolymath/echidna/blob/main/CHANGELOG.md)
 
 ## Quick navigation
 
