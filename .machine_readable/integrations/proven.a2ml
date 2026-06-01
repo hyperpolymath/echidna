@@ -5,12 +5,18 @@
 name = "proven"
 type = "safety-library"
 repository = "https://github.com/hyperpolymath/proven"
-version = "1.2.0"
+# Tracks proven/proven.ipkg `version =` (in-flight 1.1.0; latest released tag v1.0.0).
+# Bump when proven cuts a new release; see proven CHANGELOG for the canonical
+# release history.
+version = "1.1.0"
 
 [binding-policy]
 approach = "thin-ffi-wrapper"
 unsafe-patterns = "replace-with-proven-equivalent"
-modules-available = ["SafeMath", "SafeString", "SafeJSON", "SafeURL", "SafeRegex", "SafeSQL", "SafeFile", "SafeTemplate", "SafeCrypto"]
+# Module names match the Idris2 module identifiers under proven/src/*.idr
+# (Pascal-cased, not all-caps). Drift from these breaks any downstream
+# bindgen/lookup that consumes this manifest.
+modules-available = ["SafeMath", "SafeString", "SafeJson", "SafeUrl", "SafeRegex", "SafeSQL", "SafeFile", "SafeTemplate", "SafeCrypto"]
 
 [adoption-guidance]
 priority = "high"

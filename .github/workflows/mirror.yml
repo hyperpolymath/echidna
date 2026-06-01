@@ -11,5 +11,5 @@ permissions:
 
 jobs:
   mirror:
-    uses: hyperpolymath/standards/.github/workflows/mirror-reusable.yml@e6b2884722350515934d443daf23442f2195796f
+    uses: hyperpolymath/standards/.github/workflows/mirror-reusable.yml@af5cd0cabd8d8e3611dd594b098d4825a85fae8a # main 2026-05-30 (Radicle + Instant-Sync secret-presence gating #305)
     secrets: inherit
