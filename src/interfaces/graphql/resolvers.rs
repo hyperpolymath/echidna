@@ -6,6 +6,7 @@ use echidna::core::{
 };
 use echidna::provers::{ProverBackend, ProverConfig, ProverFactory, ProverKind as CoreProverKind};
 use std::collections::HashMap;
+use std::str::FromStr;
 use std::sync::Arc;
 use tokio::sync::{Mutex, RwLock};
 
@@ -592,6 +593,90 @@ impl EchidnaContext {
         }
 
         Ok(result)
+    }
+
+    /// Suggest tactics for an ad-hoc `(prover, context, goal_state)` triple
+    /// without requiring an existing proof session.
+    ///
+    /// Added 2026-06-01 for the `suggestTactics(prover, context,
+    /// goalState)` mutation (issue #180). The signature mirrors the
+    /// echidnabot client's expectation. Tries the Julia ML coprocessor
+    /// first; falls back to constructing a one-shot prover backend and
+    /// calling its `suggest_tactics` against a fresh parse of the goal.
+    pub async fn suggest_tactics_for_goal(
+        &self,
+        prover: &str,
+        context: &str,
+        goal_state: &str,
+        limit: usize,
+    ) -> anyhow::Result<Vec<crate::schema::SuggestedTactic>> {
+        // Parse the free-form prover string (same alias set as the REST handler).
+        let core_kind = CoreProverKind::from_str(prover)
+            .map_err(|e| anyhow::anyhow!("Unknown prover '{}': {}", prover, e))?;
+
+        // Try Julia ML first — the new shape ships `prover`/`context`/`goal`
+        // directly so the bridge can use whichever it prefers.
+        let ml_req = serde_json::json!({
+            "goal": goal_state,
+            "context": context,
+            "prover": format!("{:?}", core_kind),
+            "top_k": limit,
+        });
+
+        if let Ok(resp) = self
+            .ml_client
+            .post(format!("{}/suggest", self.ml_api_url))
+            .json(&ml_req)
+            .send()
+            .await
+        {
+            if resp.status().is_success() {
+                if let Ok(ml_resp) = resp.json::<serde_json::Value>().await {
+                    if let Some(arr) = ml_resp["suggestions"].as_array() {
+                        let suggestions: Vec<crate::schema::SuggestedTactic> = arr
+                            .iter()
+                            .filter_map(|s| {
+                                let name = s["tactic"].as_str()?;
+                                let confidence =
+                                    s["confidence"].as_f64().unwrap_or(0.5);
+                                let explanation =
+                                    s["explanation"].as_str().map(|t| t.to_string());
+                                Some(crate::schema::SuggestedTactic {
+                                    tactic: name.to_string(),
+                                    confidence,
+                                    explanation,
+                                })
+                            })
+                            .collect();
+
+                        if !suggestions.is_empty() {
+                            return Ok(suggestions);
+                        }
+                    }
+                }
+            }
+        }
+
+        // Fallback: spin up a one-shot prover backend and ask it.
+        let config = ProverConfig::default();
+        let backend = ProverFactory::create(core_kind, config)?;
+        // Prefer goal_state if non-empty (matches the REST `/api/suggest`
+        // fallback that the echidnabot client uses).
+        let content = if !goal_state.trim().is_empty() {
+            goal_state
+        } else {
+            context
+        };
+        let state = backend.parse_string(content).await?;
+        let tactics = backend.suggest_tactics(&state, limit).await?;
+        Ok(tactics
+            .into_iter()
+            .map(|t| crate::schema::SuggestedTactic {
+                tactic: format!("{:?}", t),
+                confidence: 0.5,
+                explanation: Some("Backend heuristic suggestion".to_string()),
+            })
+            .collect())
     }
 
     pub async fn suggest_tactics(

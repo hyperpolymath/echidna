@@ -10,9 +10,14 @@ This directory contains all interface implementations for ECHIDNA theorem provin
 - **Playground:** http://localhost:8081/
 - **Features:**
   - Type-safe schema with all 17 provers
-  - Queries: provers, proof_state, list_proofs, suggest_tactics
-  - Mutations: submit_proof, apply_tactic, cancel_proof
-  - Subscriptions: proof_updates (planned)
+  - Queries: `provers`, `proofState`, `listProofs`,
+    `suggestTacticsByProofId` (renamed from `suggestTactics` 2026-06-01,
+    issue #180), `proverStatus`, `health`
+  - Mutations: `submitProof`, `applyTactic`, `cancelProof`,
+    `verifyProof` (synchronous one-shot, returns typed `VerifyOutcome` +
+    optional `mode` / `smtStatus`), `suggestTactics(prover, context,
+    goalState)` (ad-hoc, ML-backed)
+  - Subscriptions: `proofUpdates` (planned)
 
 ### gRPC (`grpc/`)
 - **Framework:** Rust + tonic + Protocol Buffers
