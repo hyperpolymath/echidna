@@ -1,26 +1,29 @@
 # SPDX-License-Identifier: MPL-2.0
 #
-# governance-doc-drift.yml — local-to-echidna governance rule R5.
+# governance-doc-drift.yml — local-to-echidna governance rule R5a.
 #
 # Companion to the shared `governance.yml` wrapper (which calls
 # hyperpolymath/standards/governance-reusable.yml). Adds a hard gate
-# specifically for the kind of doc drift that the
-# #169 / #170 narrative-coherence PRs cleaned up: bare prover counts
-# outside docs/PROVER_COUNT.md and pinned version strings outside
-# CHANGELOG.md / Cargo.toml.
+# specifically for bare prover counts outside docs/PROVER_COUNT.md —
+# the kind of drift the #169 / #170 narrative-coherence PRs cleaned
+# up. The companion R5b rule (pinned version strings outside
+# CHANGELOG.md / Cargo.toml) is promoted to the estate-wide
+# governance-reusable.yml at hyperpolymath/standards#329.
+#
+# Why R5a stays local: the prover-count semantics are echidna-domain-
+# specific. Sibling repos (proven, ephapax, affinescript, typed-wasm)
+# each have their own canonical-reference cohort (lemma counts, stdlib
+# function counts, proof-obligation counts, syntax-feature counts) that
+# do not share R5a's regex shape. A future generic R5 with per-repo
+# configurable canonical patterns is the natural extension.
 #
 # Scope is deliberately tight: load-bearing top-level docs only.
 # Sub-tree docs (docs/handover/, docs/decisions/, docs/releases/,
-# docs/reports/, audits, etc.) are owner-managed historical
-# snapshots and not scanned. Sub-crate READMEs likewise belong to
-# their own crate-local cadence.
-#
-# Promoting this rule into hyperpolymath/standards's
-# governance-reusable.yml is the natural follow-up once the pattern
-# proves out here — keeping it local first means a fail closes one
-# repo, not the estate.
+# docs/reports/, audits, etc.) are owner-managed historical snapshots
+# and not scanned. Sub-crate READMEs likewise belong to their own
+# crate-local cadence.
 
-name: Governance / Doc drift (R5)
+name: Governance / Doc drift (R5a)
 
 on:
   push:
@@ -44,8 +47,8 @@ permissions:
   contents: read
 
 jobs:
-  r5-doc-drift:
-    name: R5 — canonical-reference drift detection
+  r5a-doc-drift:
+    name: R5a — canonical-reference drift detection (prover counts)
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
@@ -101,49 +104,16 @@ jobs:
           fi
           echo "✓ R5a clean — no bare prover counts in load-bearing docs."
 
-      - name: R5b — pinned version strings outside CHANGELOG.md / Cargo.toml
-        run: |
-          set -euo pipefail
-          DOCS=(
-            README.md README.adoc
-            EXPLAINME.adoc
-            CLAUDE.md
-            CONTRIBUTING.md CONTRIBUTING.adoc
-            QUICKSTART-USER.adoc QUICKSTART-DEV.adoc QUICKSTART-MAINTAINER.adoc
-            RSR_COMPLIANCE.adoc
-            SECURITY.md
-            MAINTAINERS.adoc
-            AUTHORS.md
-            CODE_OF_CONDUCT.md
-          )
-          # Matches `Version: 1.2.3` / `**Version**: 1.2.3` / `_Version_: v1.2.3`
-          # etc. Not `Version` without a number, not `version = "x"` in code
-          # blocks that just talk about a dep field name.
-          PATTERN='^[[:space:]]*[*_]{0,2}Version[*_]{0,2}[[:space:]]*[:=][[:space:]]*v?[0-9]+\.[0-9]+\.[0-9]+'
-          HITS=0
-          for doc in "${DOCS[@]}"; do
-            [ -f "$doc" ] || continue
-            while IFS= read -r line; do
-              [ -n "$line" ] || continue
-              echo "::error file=$doc::R5b pinned version: $line — route to CHANGELOG.md (release history) or Cargo.toml (semver pin)"
-              HITS=$((HITS+1))
-            done < <(grep -nE "$PATTERN" "$doc" 2>/dev/null || true)
-          done
-          if [ "$HITS" -gt 0 ]; then
-            echo ""
-            echo "::error::R5b tripped on $HITS line(s)."
-            echo "Fix: drop the embedded version; defer to CHANGELOG.md + the"
-            echo "git log. Cargo.toml's [package].version is the semver pin."
-            exit 1
-          fi
-          echo "✓ R5b clean — no pinned version strings in load-bearing docs."
-
       - name: Summary
         run: |
-          echo "R5 (canonical-reference drift) summary"
-          echo "----------------------------------------"
-          echo "R5a: bare prover counts          → docs/PROVER_COUNT.md"
-          echo "R5b: pinned version strings      → CHANGELOG.md / Cargo.toml"
+          echo "R5a (canonical-reference drift — prover counts) summary"
+          echo "---------------------------------------------------------"
+          echo "R5a: bare prover counts → docs/PROVER_COUNT.md"
+          echo ""
+          echo "R5b (version-string drift) is promoted to the estate-wide"
+          echo "governance reusable in hyperpolymath/standards (#329); this"
+          echo "local file carries the prover-count rule that is specific"
+          echo "to echidna's domain."
           echo ""
           echo "Scope: 14 load-bearing top-level docs. Sub-tree historical"
           echo "docs (docs/handover/, docs/decisions/, docs/releases/, …)"
