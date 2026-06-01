@@ -176,8 +176,10 @@ All in `.machine_readable/`:
 ## Packaging
 
 - `guix.scm` — Guix package definition (uses cargo-build-system)
-- `flake.nix` — Nix flake (with rust-overlay)
 - `Containerfile` — Podman container
+
+(Nix flake removed 2026-06-01 per estate-wide nix-deprecation directive;
+Guix is the sole packaging primary.)
 
 ## Test Structure
 

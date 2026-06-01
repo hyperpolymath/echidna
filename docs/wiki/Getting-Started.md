@@ -16,7 +16,7 @@ This page is a short orientation; defer to those for current details.
 - **Guix** (primary package manager; sealed-container escape hatch at `.containerization/Containerfile.wave3`)
 - **Podman** (containers — RSR-H15; **do not** use Docker)
 
-> Note: Nix as a fallback was deprecated in the 2026-05-18 estate ruling. Use Guix or the sealed container only.
+> Note: Nix as a fallback was deprecated in the 2026-05-18 estate ruling and fully removed estate-wide on 2026-06-01. Use Guix or the sealed container only.
 
 ## Quick setup
 

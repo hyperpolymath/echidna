@@ -52,7 +52,7 @@ core. **Consolidated 2026-05-18** into a single multi-target
 primary path (only SCIP/OR-Tools/Metamath are in Guix; 5 need bespoke package
 defs; Imandra is non-free) — per the 2026-05-18 estate ruling, the sealed
 container *is* the escape hatch for the not-in-Guix / non-free tail (Guix
-primary, no Nix mirror; `flake.nix` deprecated). Imandra target remains
+primary, no Nix mirror; `flake.nix` deprecated and removed estate-wide 2026-06-01). Imandra target remains
 licence-gated. Table below kept for the per-backend install strategy of record.
 
 Handover hints live in `.machine_readable/6a2/STATE.a2ml [wave-3-handover-hints]`.

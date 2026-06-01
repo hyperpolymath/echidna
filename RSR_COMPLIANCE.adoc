@@ -32,14 +32,14 @@ the contractiles and the machine-readable policies above.
 | RSR-H10 | Prohibited: Python outside `salt/`; TypeScript/JS (use AffineScript); `Dockerfile` (use `Containerfile`); CUE (use Nickel) | `RSR_OUTLINE.adoc`
 | RSR-H11 | Canonical dirs: `config/`, `docs/`, `docs/generated/`, `docs/man/`, `src/`, `tests/` | `RSR_OUTLINE.adoc`
 | RSR-H12 | `just validate-rsr` passes on every PR                          | `MAINTENANCE-CHECKLIST.adoc:69`
-| RSR-H13 | Guix is primary package manager; sealed-container escape only; no Nix fallback (estate ruling 2026-05-18) | `.claude/CLAUDE.md`
+| RSR-H13 | Guix is the sole package manager; sealed-container escape only; nix deprecated estate-wide 2026-06-01 | `.claude/CLAUDE.md`
 | RSR-H14 | Justfile is the primary build system (no Make, etc.)            | `MUST.contractile:42`
 | RSR-H15 | Podman, not Docker, for containers                              | `MUST.contractile:44`
 |===
 
 == Soft conventions (SOFT; aspirational)
 
-* Language tiers: Tier-1 = Rust, Elixir, Zig, Ada, Haskell, ReScript/AffineScript; Tier-2 = Nickel, Racket, Guile, Nix.
+* Language tiers: Tier-1 = Rust, Elixir, Zig, Ada, Haskell, ReScript/AffineScript; Tier-2 = Nickel, Racket, Guile. (Nix removed from Tier-2 on 2026-06-01 per estate-wide deprecation.)
 * Coverage above 80 %.
 * Performance benchmarks show no regression PR-over-PR.
 * Generated docs in `docs/generated/`; man pages in `docs/man/`.

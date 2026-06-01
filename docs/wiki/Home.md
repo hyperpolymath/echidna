@@ -36,5 +36,5 @@ When the wiki and the repo disagree, **the repo wins**:
 - **128 backends, 12 core** — 89 external prover bindings + 39 TypeChecker disciplines via TypedWasm Sigma.
 - **11-step trust pipeline** — integrity → portfolio → certificates → axioms → confidence → mutation → pareto → statistics → emission (see Architecture page).
 - **Polyglot stack** — Rust core, Julia ML sidecar, Idris2/Agda formal proofs, Zig FFI, Chapel parallel, AffineScript/Deno UI (migrating from ReScript).
-- **Guix-primary package management** — sealed-container escape hatch for the non-free tail. Nix fallback was deprecated in 2026-05-18 estate ruling.
+- **Guix-only package management** — sealed-container escape hatch for the non-free tail. (Nix fallback was deprecated in the 2026-05-18 estate ruling and fully removed estate-wide on 2026-06-01.)
 - **Justfile, not Make. Podman, not Docker.**

@@ -12,8 +12,10 @@
 #
 # Reproducibility paths (both tried; at least one must succeed):
 #   1. Guix manifest (PRIMARY, per project CLAUDE.md): manifests/live-provers.scm
-#   2. Nix flake (fallback):                            nix develop .#live-provers
-#   3. apt-get (expedient bootstrap for T1 only):       jobs below
+#   2. apt-get (expedient bootstrap for T1 only):       jobs below
+#
+# (Nix flake removed 2026-06-01 per estate-wide nix-deprecation directive;
+# Guix is the sole reproducible-build primary.)
 
 name: Live Provers
 
