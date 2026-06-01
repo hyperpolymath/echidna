@@ -513,13 +513,20 @@ pub struct VeriSimDBClient {
 
 impl VeriSimDBClient {
     /// Create a new VeriSimDB client.
+    ///
+    /// Falls back to `reqwest::Client::new()` (no custom timeout) if the
+    /// builder fails (e.g. native-tls bootstrap error). The fallback still
+    /// gives a functional client; downstream requests will surface any
+    /// underlying transport problems explicitly. Avoids a panic on the
+    /// hot construction path.
     pub fn new(base_url: &str) -> Self {
+        let http = reqwest::Client::builder()
+            .timeout(std::time::Duration::from_secs(10))
+            .build()
+            .unwrap_or_else(|_| reqwest::Client::new());
         VeriSimDBClient {
             base_url: base_url.trim_end_matches('/').to_string(),
-            http: reqwest::Client::builder()
-                .timeout(std::time::Duration::from_secs(10))
-                .build()
-                .expect("Failed to create HTTP client"),
+            http,
         }
     }
 
@@ -1004,6 +1011,10 @@ fn base64_encode(bytes: &[u8]) -> String {
     let mut result = String::with_capacity(bytes.len().div_ceil(3) * 4);
 
     for chunk in bytes.chunks(3) {
+        // Base64 padding: missing chunk bytes are zero-extended per RFC 4648
+        // §4. The `chunk.len() > 1 / > 2` guards below ensure we only emit
+        // significant alphabet positions, so the zero padding never escapes
+        // into the output beyond what the spec already permits.
         let b0 = chunk[0] as u32;
         let b1 = chunk.get(1).copied().unwrap_or(0) as u32;
         let b2 = chunk.get(2).copied().unwrap_or(0) as u32;

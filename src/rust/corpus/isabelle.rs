@@ -343,22 +343,22 @@ fn parse_isabelle_file(raw: &str) -> ParsedFile {
                 i += consumed.max(1);
                 continue;
             },
-            Some("axiomatization") | Some("axiom") | Some("consts") => {
+            Some(k @ ("axiomatization" | "axiom" | "consts")) => {
                 let (consumed, decl) =
-                    parse_postulate_like(&lines, &raw_lines, i, line_no, kw.unwrap());
+                    parse_postulate_like(&lines, &raw_lines, i, line_no, k);
                 if let Some(d) = decl {
                     pf.decls.push(d);
                 }
                 i += consumed.max(1);
                 continue;
             },
-            Some("locale") | Some("class") => {
+            Some(k @ ("locale" | "class")) => {
                 // Module-like grouping; the shared schema has no
                 // Module-like DeclKind for sub-entries (Module is
                 // reserved for the file-level entry), so map to
                 // Function. Document keyword in the statement.
                 let (consumed, decl) =
-                    parse_definition_like(&lines, &raw_lines, i, line_no, kw.unwrap());
+                    parse_definition_like(&lines, &raw_lines, i, line_no, k);
                 if let Some(d) = decl {
                     pf.decls.push(d);
                 }

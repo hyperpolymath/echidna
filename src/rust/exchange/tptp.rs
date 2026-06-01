@@ -440,7 +440,10 @@ fn collect_symbols(formula: &str, into: &mut Vec<String>) {
         } else {
             if !current.is_empty() {
                 let token = current.clone();
-                if token.chars().next().unwrap().is_ascii_lowercase()
+                if token
+                    .chars()
+                    .next()
+                    .is_some_and(|c| c.is_ascii_lowercase())
                     && !matches!(
                         token.as_str(),
                         "true" | "false" | "and" | "or" | "not" | "implies"
@@ -452,7 +455,12 @@ fn collect_symbols(formula: &str, into: &mut Vec<String>) {
             }
         }
     }
-    if !current.is_empty() && current.chars().next().unwrap().is_ascii_lowercase() {
+    if !current.is_empty()
+        && current
+            .chars()
+            .next()
+            .is_some_and(|c| c.is_ascii_lowercase())
+    {
         into.push(current);
     }
 }

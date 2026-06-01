@@ -221,7 +221,8 @@ fn parse_mizar_file(raw: &str) -> ParsedFile {
     // Body declarations: scan lines after `begin` for declaration
     // keywords. We do a token-level scan rather than a per-line scan
     // because Mizar's keywords can appear anywhere on a line.
-    let body_start = begin_pos.map(|b| b + "begin".len()).unwrap_or(0);
+    // No `begin` keyword → scan from start of stripped body (no environ block).
+    let body_start = begin_pos.map_or(0, |b| b + "begin".len());
     let body_lines: Vec<&str> = stripped[body_start..].lines().collect();
     let body_line_offset = stripped[..body_start].lines().count();
 
@@ -254,8 +255,7 @@ fn parse_mizar_file(raw: &str) -> ParsedFile {
             )
         );
 
-        if is_decl_head {
-            let kw = head_keyword.unwrap();
+        if let Some(kw) = head_keyword.filter(|_| is_decl_head) {
             // Collect the statement: from this line until we see
             // `proof`, `;`, or the matching `end;` for definition/
             // scheme/registration/cluster blocks.
@@ -412,7 +412,8 @@ fn collect_imports(env_text: &str, imports: &mut Vec<String>) {
         if !want {
             continue;
         }
-        let head_len = head.as_ref().map(|h| h.len()).unwrap_or(0);
+        // No matched head keyword → no prefix to skip.
+        let head_len = head.as_ref().map_or(0, |h| h.len());
         let rest = &s[head_len..];
         for id in rest.split(',') {
             let t = id.trim();

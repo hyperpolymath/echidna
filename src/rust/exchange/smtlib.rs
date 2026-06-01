@@ -275,7 +275,11 @@ fn parse_command(expr: &str) -> Result<SmtLibCommand, ExchangeError> {
         "declare-sort" => {
             let parts: Vec<&str> = rest.split_whitespace().collect();
             let name = parts.first().copied().unwrap_or("").to_string();
-            let arity = parts.get(1).and_then(|s| s.parse().ok()).unwrap_or(0);
+            // SMT-LIB spec: arity defaults to 0 when omitted (nullary sort
+            // constructor). Any non-numeric token also collapses to 0 — the
+            // upstream prover will reject the malformed line; we tolerate it
+            // here rather than panicking during corpus ingest.
+            let arity = parts.get(1).and_then(|s| s.parse().ok()).unwrap_or(0u32);
             SmtLibCommand::DeclareSort { name, arity }
         },
         "declare-fun" => {
