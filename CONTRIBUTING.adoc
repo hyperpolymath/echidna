@@ -1,0 +1,180 @@
+// SPDX-License-Identifier: MPL-2.0
+// SPDX-FileCopyrightText: 2025-2026 Jonathan D.A. Jewell <j.d.a.jewell@open.ac.uk>
+= ECHIDNA — Contributing
+:toc: macro
+:icons: font
+
+Thanks for opening this file. ECHIDNA is owner-maintained and slow-merging
+by design: each change has to compose with a trust-hardened verification
+pipeline, a polyglot backend surface, and the
+link:RSR_COMPLIANCE.adoc[RSR / CCCP hard-rule set]. This document tells
+you how to keep your contribution composable.
+
+toc::[]
+
+== Before you start
+
+. Skim link:README.adoc[`README.adoc`] for the overview and
+  link:EXPLAINME.adoc[`EXPLAINME.adoc`] for "show me the receipts".
+. Read link:RSR_COMPLIANCE.adoc[`RSR_COMPLIANCE.adoc`]. The
+  hard-rule list (RSR-H1…H15) is enforced by CI; the soft conventions
+  are checked at review time.
+. Open an issue before doing significant work — design and scope
+  discussions are cheaper than a re-review.
+. If you're using an AI agent (Claude Code, GitHub Copilot, etc.),
+  read link:CLAUDE.md[`CLAUDE.md`] first; it carries the collaboration
+  brief and the things to avoid sweeping.
+
+== Setup
+
+[source,bash]
+----
+git clone https://github.com/hyperpolymath/echidna.git
+cd echidna
+just doctor    # verify toolchain
+just heal      # auto-install missing tools
+just tour      # codebase tour
+----
+
+Language toolchains are described in link:QUICKSTART-DEV.adoc[`QUICKSTART-DEV.adoc`].
+
+== What's accepted
+
+[cols="1,3", options="header"]
+|===
+| Type | Notes
+
+| Corrective (bug fix)
+| Welcome. Cite the failing test, log line, or reproduction in the
+  PR body. If the fix involves a new test, that test must fail at the
+  parent of the fix commit and pass at the fix commit.
+
+| Adaptive (env / dep / upstream change)
+| Welcome. Pin every action SHA, every tool version, and every
+  upstream release. The `governance / Security policy checks` job
+  enforces versioned pins for `just|must|trust|adjust|bust|dust|intend`
+  family tools (R1 rule); other unpinned installs may be flagged by
+  reviewers.
+
+| Perfective (refactor / docs / clarity)
+| Welcome _if_ pareto-optimal: every user-facing surface should be
+  at least as informative after the change. Don't shave numbers or
+  cite-points out without leaving a canonical pointer in their place
+  (see link:docs/PROVER_COUNT.md[`docs/PROVER_COUNT.md`] for the
+  count-deference convention this README uses).
+
+| Preventive (proactive hardening)
+| Welcome with a stated motivation. Drive-by hardening with no
+  current risk should defer to a tracked issue first.
+|===
+
+== What's NOT accepted
+
+* **Python anywhere outside `salt/`** — banned by RSR-H4. The ML
+  layer is Julia; the rest is Rust / Idris2 / Chapel / Zig /
+  AffineScript-or-ReScript.
+* **Dockerfiles** — RSR-H15 requires Podman + `Containerfile` (or
+  `.containerization/Containerfile.wave3` for the per-prover image
+  tree).
+* **Make** — RSR-H14: Justfile is primary.
+* **`believe_me`, `assert_total`, `unsafePerformIO`, `prim__crash`
+  in `src/abi/`** — the Idris2 ABI is gated by
+  `.github/workflows/idris2-abi-ci.yml`; the scan rejects all four
+  unconditionally. Existing comments referencing those tokens are
+  fine; new uses are not.
+* **`unsafe {}` in Rust without a `// SAFETY:` comment** — RSR-H6.
+* **Removing CI workflows** — RSR-H7: needs explicit owner approval.
+* **Generated code outside `generated/`** — RSR-H3.
+
+== Commits
+
+Conventional Commits prefixes — `feat`, `fix`, `docs`, `refactor`,
+`test`, `chore`, `ci`, `build`, `perf`. The first line stays at or
+under 72 characters; the body wraps at 80 and explains *why*. The
+project uses GPG-signed commits (`git commit -S`); a maintainer can
+help reviewers verify on request.
+
+For PRs touching more than one concern, prefer multiple atomic
+commits over a single squash blob — squash happens at merge time.
+
+== Pull requests
+
+. Branch off `main` (`origin/main`). Stacked PRs against feature
+  branches are accepted but require the base branch in the PR
+  description.
+. Rebase, don't merge, when pulling in main mid-PR.
+. Fill in the PR template (the trio of *Summary*, *Why*, *Test plan*
+  blocks is the floor). If your PR touches the trust pipeline, the
+  Idris2 ABI, or the Chapel layer, name the invariants you preserved
+  in the *Why* block.
+. Auto-merge (`gh pr merge <n> --auto --squash --delete-branch`) is
+  fine and encouraged for low-risk PRs once CI is green. Admin merge
+  is the owner's tool for clearing pre-existing red checks at source.
+
+== Tests
+
+* `cargo test --lib` for unit tests; per-module test functions are
+  expected at change time.
+* `cargo test --tests` for integration suites under `tests/`.
+* `cargo test --test integration_tests` for the dispatcher
+  end-to-end suite specifically.
+* `cargo bench` for criterion benchmarks. Regressions block merge by
+  convention — call out an expected regression in the *Why* block
+  before benchmarking.
+* `idris2 --build src/abi/echidnaabi.ipkg` for the ABI. The CI gate
+  for this is `Type-check Idris2 ABI definitions`.
+* `just chapel-build && just chapel-smoke && just chapel-test` for
+  the optional Chapel layer.
+
+== Documentation
+
+The doc surfaces and their authoritative responsibilities are:
+
+[cols="1,3", options="header"]
+|===
+| Surface | Owns
+
+| link:README.adoc[`README.adoc`]    | Overview, prover surface, quick start, architecture pointers. Defers counts to `docs/PROVER_COUNT.md` and history to `CHANGELOG.md`.
+| link:README.md[`README.md`]        | Thin Markdown pointer to `README.adoc` for `.md`-preferring renderers.
+| link:EXPLAINME.adoc[`EXPLAINME.adoc`] | "Receipts for the README claims" — names commands and pointers, not embedded numbers.
+| link:CHANGELOG.md[`CHANGELOG.md`]  | Per-release notes; the single source of truth for "what shipped in vX.Y".
+| link:docs/PROVER_COUNT.md[`docs/PROVER_COUNT.md`] | The canonical prover-count and tier table. If you find a doc that names a specific count, route it through here.
+| link:docs/ARCHITECTURE.md[`docs/ARCHITECTURE.md`] | System architecture.
+| link:docs/ENV-VARS.md[`docs/ENV-VARS.md`] | Environment variables.
+| link:docs/ROADMAP.md[`docs/ROADMAP.md`] | Direction beyond the next release.
+| link:RSR_COMPLIANCE.adoc[`RSR_COMPLIANCE.adoc`] | The hard-rule list and ECHIDNA's out-of-template adaptations.
+| link:CLAUDE.md[`CLAUDE.md`]        | Collaboration brief for Claude Code; not a tutorial.
+|===
+
+If you add a new doc, slot it into the table above and link to it from
+the `Documentation` section of `README.adoc`.
+
+== License and SPDX
+
+This project is licensed under MPL-2.0; new source files carry the
+header:
+
+[source]
+----
+// SPDX-License-Identifier: MPL-2.0
+// SPDX-FileCopyrightText: <year> <name> <email>
+----
+
+Don't migrate existing files' SPDX identifiers without explicit owner
+direction — the license stance is intentionally MPL-2.0 across the
+documentation surface, and historical drift on individual files is
+owner-managed.
+
+== Security
+
+Vulnerabilities go through link:SECURITY.md[`SECURITY.md`], not the
+public issue tracker. The supply-chain hardening conventions
+(SHA-pinned actions, R1 family-tool pins, OpenSSF Scorecard
+enforcement) are enforced by CI; the *governance* workflow is the
+gate.
+
+== Where to go next
+
+* Open an issue: https://github.com/hyperpolymath/echidna/issues
+* Read the project Code of Conduct: link:CODE_OF_CONDUCT.md[`CODE_OF_CONDUCT.md`]
+* See current maintainers: link:MAINTAINERS.adoc[`MAINTAINERS.adoc`]

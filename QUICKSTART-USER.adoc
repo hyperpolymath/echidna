@@ -5,8 +5,10 @@
 :icons: font
 :source-highlighter: rouge
 
-Neurosymbolic theorem proving platform with 48 prover backends, trust-hardened
-verification pipeline, and sandboxed execution.
+Neurosymbolic theorem-proving platform with a trust-hardened
+verification pipeline and sandboxed solver execution. The full
+backend roster — Tier-1 core through Tier-10 — is in
+link:docs/PROVER_COUNT.md[`docs/PROVER_COUNT.md`].
 
 toc::[]
 
@@ -91,7 +93,7 @@ Example session:
 echidna> :prove 1 + 1 = 2
 [z3] Proved in 0.003s (confidence: 0.99)
 echidna> :backends
-48 backends available (6 interactive, 3 SMT, 3 ATP, ...)
+(lists currently-registered backends — see docs/PROVER_COUNT.md for the canonical tier table)
 echidna> :quit
 ----
 
