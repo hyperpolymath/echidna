@@ -44,4 +44,18 @@ May be invited to become maintainers at the discretion of existing maintainers.
 
 == Contact
 
-For questions about project governance, open an issue or contact the maintainers listed above.
+For questions about project governance, open an issue or contact
+the maintainers listed above. For security disclosures, use the
+GitHub Security Advisories route documented in
+link:SECURITY.md[`SECURITY.md`] — do NOT open public issues for
+vulnerabilities.
+
+For high-level direction the canonical surfaces are:
+
+* link:README.adoc[`README.adoc`] — overview, distinguishing features
+* link:docs/ROADMAP.md[`docs/ROADMAP.md`] — stage map + sprint plan
+* link:CHANGELOG.md[`CHANGELOG.md`] — release history
+* link:docs/PROVER_COUNT.md[`docs/PROVER_COUNT.md`] — canonical
+  backend tier table
+* link:RSR_COMPLIANCE.adoc[`RSR_COMPLIANCE.adoc`] — hard-rule
+  compliance and out-of-template adaptations

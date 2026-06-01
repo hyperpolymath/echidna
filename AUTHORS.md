@@ -1,54 +1,33 @@
 <!--
 SPDX-License-Identifier: MPL-2.0
-SPDX-FileCopyrightText: 2024-2025 ECHIDNA Project Contributors
+SPDX-FileCopyrightText: 2024-2026 Jonathan D.A. Jewell <j.d.a.jewell@open.ac.uk>
 -->
 
 # Authors and Contributors
 
-This file lists the authors and contributors to the ECHIDNA project. We are grateful to everyone who has contributed to making ECHIDNA a reality.
+This file lists the authors and contributors to the ECHIDNA project.
+The authoritative running list lives in the git history — `git shortlog
+-sne` will produce a deduplicated, frequency-sorted view at any commit.
 
-## Project Maintainers
+## Maintainers
 
-The following individuals are the core maintainers of ECHIDNA:
+| Name | Role | Contact |
+|---|---|---|
+| Jonathan D.A. Jewell | Lead Maintainer | [@hyperpolymath](https://github.com/hyperpolymath), `j.d.a.jewell@open.ac.uk` |
 
-- **ECHIDNA Project Team** - Project coordination and oversight
+See [`MAINTAINERS.adoc`](MAINTAINERS.adoc) for the maintainer
+responsibility model and the path to becoming a maintainer.
 
-## Core Contributors
+## Contributors
 
-Contributors who have made significant contributions to the codebase:
+Code, documentation, infrastructure, review, issue triage. The
+deduplicated running list is in the git history:
 
-<!-- Contributors will be added here as they make contributions -->
+```bash
+git shortlog -sne
+```
 
-## Code Contributors
-
-All contributors to the ECHIDNA codebase (in alphabetical order):
-
-<!-- This section will be automatically updated based on git history -->
-
-## Documentation Contributors
-
-Contributors who have improved documentation:
-
-<!-- Documentation contributors will be listed here -->
-
-## Special Thanks
-
-We would like to extend special thanks to:
-
-- **Theorem Proving Community** - For foundations and inspiration
-- **Theorem Prover Communities** - For developing and maintaining the 12 provers we integrate
-- **Rhodium Standard Repository (RSR/CCCP)** - For compliance guidelines
-- **Palimpsest License** - For ethical licensing framework
-
-## How to Be Added
-
-If you've contributed to ECHIDNA and your name isn't listed here, please:
-
-1. Open an issue or merge request on GitLab
-2. Provide a brief description of your contribution
-3. Indicate how you'd like to be credited
-
-We recognize all forms of contribution, including but not limited to:
+We recognise all forms of contribution including but not limited to:
 
 - Code contributions
 - Documentation improvements
@@ -59,48 +38,45 @@ We recognize all forms of contribution, including but not limited to:
 - Design and artwork
 - Infrastructure and tooling
 
-## Contribution Statistics
+## Special Thanks
 
-<!-- Generated statistics will appear here -->
+- **The theorem-proving community** — for the foundations and the
+  ongoing maintenance of the backends ECHIDNA integrates with
+  (Coq/Rocq, Lean, Agda, Isabelle, Idris2, F*, HOL Light, Mizar,
+  PVS, ACL2, HOL4, Z3, CVC5, Vampire, E Prover, and the long tail
+  in [`docs/PROVER_COUNT.md`](docs/PROVER_COUNT.md)).
+- **The Rhodium Standard Repository (RSR/CCCP)** — for the
+  compliance template that this repo extends; see
+  [`RSR_COMPLIANCE.adoc`](RSR_COMPLIANCE.adoc).
 
-### By Component
+## How to be added
 
-- **Rust Core**: TBD contributors
-- **Julia ML**: TBD contributors
-- **ReScript UI**: TBD contributors
-- **Documentation**: TBD contributors
-- **Tests**: TBD contributors
-- **Infrastructure**: TBD contributors
+If you've contributed to ECHIDNA and would like to be acknowledged
+beyond the git history, open an issue or PR on
+[GitHub](https://github.com/hyperpolymath/echidna/issues) with the
+attribution you would like.
 
-### By Prover Backend
+## License of contributions
 
-- **Tier 1 (Agda, Coq, Lean, Isabelle, Z3, CVC5)**: TBD contributors
-- **Tier 2 (Metamath, HOL Light, Mizar)**: TBD contributors
-- **Tier 3 (PVS, ACL2)**: TBD contributors
-- **Tier 4 (HOL4)**: TBD contributors
+Source files are licensed per the SPDX header at the top of each
+file; the project root [`LICENSE`](LICENSE) and the per-tree
+[`.reuse/dep5`](.reuse/dep5) catalogue together describe the
+authoritative position. By contributing you agree to license your
+contribution under the licence noted on the file you touch (or the
+project default for new files).
 
-## Institutional Support
-
-Organizations and institutions that have supported ECHIDNA development:
-
-<!-- Institutional supporters will be listed here -->
-
-## License
-
-All contributions to ECHIDNA are licensed under the dual license:
-- MIT License
-- Palimpsest License v0.6
-
-By contributing to ECHIDNA, you agree to license your contributions under these terms.
+The documentation surface is intentionally `MPL-2.0` — see
+[`feedback_echidna_license_docs_mpl_intentional`](https://github.com/hyperpolymath/echidna/issues?q=license)
+for the deliberation.
 
 ## Contact
 
-For questions about attribution or contributions:
-- GitLab Issues: https://github.com/hyperpolymath/echidna/-/issues
-- Email: contributors@echidna-project.org (when available)
+- **GitHub Issues**: <https://github.com/hyperpolymath/echidna/issues>
+- **Security**: see [`SECURITY.md`](SECURITY.md) — use GitHub
+  Security Advisories for vulnerabilities, not public issues.
 
 ---
 
-**Last Updated**: 2025-11-22
-
-*This file is maintained by the ECHIDNA Project Team. If you notice any errors or omissions, please let us know.*
+*This file is intentionally count-free and date-free in prose. The
+git history is the running timeline; the canonical attribution
+surface is `git shortlog -sne`.*
