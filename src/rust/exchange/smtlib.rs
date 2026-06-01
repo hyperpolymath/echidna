@@ -281,7 +281,7 @@ fn parse_command(expr: &str) -> Result<SmtLibCommand, ExchangeError> {
         "declare-fun" => {
             // (declare-fun NAME (P1 P2 ...) RET)
             let (name, after_name) = split_first_token(rest);
-            let (params_block, ret) = split_paren_block(after_name)?;
+            let (params_block, ret) = split_paren_block(&after_name)?;
             let params: Vec<String> = params_block
                 .split_whitespace()
                 .map(str::to_string)
@@ -295,7 +295,7 @@ fn parse_command(expr: &str) -> Result<SmtLibCommand, ExchangeError> {
         "define-fun" => {
             // (define-fun NAME ((x T) ...) RET BODY)
             let (name, after_name) = split_first_token(rest);
-            let (params_block, after_params) = split_paren_block(after_name)?;
+            let (params_block, after_params) = split_paren_block(&after_name)?;
             let params = parse_typed_params(&params_block);
             let (ret, body) = split_first_token(after_params.trim());
             SmtLibCommand::DefineFun {
