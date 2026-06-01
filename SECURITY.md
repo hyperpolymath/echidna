@@ -7,12 +7,17 @@ SPDX-FileCopyrightText: 2024-2025 ECHIDNA Project Contributors
 
 ## Supported Versions
 
-The following versions of ECHIDNA are currently being supported with security updates:
+ECHIDNA is in active development. The current major version (`2.x`)
+on `main` receives security updates; pre-`1.0` lineages are not
+supported. The on-disk version lives in
+[`Cargo.toml`](Cargo.toml) and [`CHANGELOG.md`](CHANGELOG.md); this
+file deliberately does not pin a version number to avoid drift.
 
-| Version | Supported          |
+| Lineage | Supported          |
 | ------- | ------------------ |
-| 0.1.x   | :white_check_mark: |
-| < 0.1   | :x:                |
+| 2.x (`main`) | :white_check_mark: |
+| 1.x          | :white_check_mark: (security only) |
+| < 1.0        | :x: |
 
 ## Security Principles
 
@@ -31,11 +36,20 @@ We take the security of ECHIDNA seriously. If you believe you have found a secur
 
 ### Where to Report
 
-**DO NOT** report security vulnerabilities through public GitLab issues.
+**DO NOT** report security vulnerabilities through public GitHub
+issues, GitLab issues, the issue tracker, or any other public
+channel.
 
-Instead, please report them via email to:
+Preferred route — **GitHub Security Advisories** (private, encrypted,
+auditable):
 
-**security@echidna-project.org** (Replace with actual security contact)
+* https://github.com/hyperpolymath/echidna/security/advisories/new
+
+Email fallback (use only if GitHub is unavailable to you):
+
+* j.d.a.jewell@open.ac.uk (maintainer; PGP key
+  `4A03639C1EB1F86C7F0C97A91835A14A2867091E` published on
+  https://keys.openpgp.org)
 
 ### What to Include
 
@@ -130,9 +144,10 @@ Security updates are released as:
 
 Security advisories are published at:
 
-- **GitLab**: https://github.com/hyperpolymath/echidna/-/security/advisories
-- **Email**: Subscribers to security@echidna-project.org
-- **RSS**: Security advisory feed (when available)
+- **GitHub Security Advisories**:
+  https://github.com/hyperpolymath/echidna/security/advisories
+- **GitHub Releases** (security patches are tagged accordingly):
+  https://github.com/hyperpolymath/echidna/releases
 
 ## Scope
 
@@ -140,11 +155,22 @@ Security advisories are published at:
 
 The following are in scope for security reports:
 
-- **Core Libraries**: Rust, Julia, ReScript code
-- **Prover Backends**: All 12 theorem prover integrations
-- **Build System**: Justfile, CI/CD pipelines
-- **Containers**: Containerfile and Podman configurations
-- **Dependencies**: Third-party libraries and tools
+- **Core libraries**: Rust core, Julia ML layer, Idris2 ABI,
+  Zig FFI bridge, AffineScript / ReScript UI components
+- **Prover backends**: every `ProverKind` variant wired through the
+  dispatch pipeline — Tier-1 core through Tier-3 niche. The live
+  membership list is `ProverKind::all()` in
+  `src/rust/provers/mod.rs`; the human-readable mirror is
+  [`docs/PROVER_COUNT.md`](docs/PROVER_COUNT.md).
+- **Trust-hardening pipeline**: solver integrity, certificate
+  checking, axiom tracking, sandboxing, mutation testing, Pareto
+  ranking, Bayesian confidence — wired in
+  `src/rust/dispatch.rs`.
+- **Build system**: Justfile, CI/CD workflows under
+  `.github/workflows/`
+- **Containers**: `Containerfile`, `.containerization/Containerfile.wave3`,
+  Podman configurations
+- **Dependencies**: third-party libraries and tools
 
 ### Out of Scope
 
@@ -202,9 +228,11 @@ The following are typically not accepted:
 
 For security-related questions or concerns:
 
-- **Email**: security@echidna-project.org (Replace with actual contact)
-- **PGP Key**: Available at https://keys.openpgp.org (when available)
-- **GitLab**: @echidna-security (when available)
+- **GitHub Security Advisories**:
+  https://github.com/hyperpolymath/echidna/security/advisories/new
+- **Email**: j.d.a.jewell@open.ac.uk (maintainer)
+- **PGP key**: `4A03639C1EB1F86C7F0C97A91835A14A2867091E`
+  (https://keys.openpgp.org)
 
 ## Acknowledgments
 
@@ -214,6 +242,7 @@ We thank the following researchers and security professionals for responsibly di
 
 ---
 
-**Version**: 1.0
-**Last Updated**: 2025-11-22
-**Next Review**: 2026-05-22
+**Document lineage**: revisions tracked via `git log SECURITY.md`;
+versioned alongside the project (see [`CHANGELOG.md`](CHANGELOG.md)).
+This file is intentionally count-free and version-free in prose to
+avoid R5b drift against [`Cargo.toml`](Cargo.toml).
