@@ -1,0 +1,331 @@
+# SPDX-License-Identifier: MPL-2.0
+#
+# HOL4 tactic and term-builder synonyms.
+# Schema: see data/synonyms/README.adoc.
+# Seeded 2026-06-01 by Opus.
+
+# ---------------------------------------------------------------------------
+# Automation cascade
+# ---------------------------------------------------------------------------
+
+[[synonym]]
+canonical    = "METIS_TAC"
+aliases      = ["metis_tac", "ASM_METIS_TAC"]
+tactic_class = "automation"
+notes        = """
+Resolution-based FO prover. HOL4's default heavy-automation hammer.
+`metis_tac` is the lower-case Isar-style alias used in modern Theorem
+syntax. When `METIS_TAC[]` times out, narrow the hint list before
+falling back to `MESON_TAC`.
+"""
+
+[[synonym]]
+canonical    = "MESON_TAC"
+aliases      = ["mesonLib.MESON_TAC", "ASM_MESON_TAC"]
+tactic_class = "automation"
+notes        = """
+Model-elimination prover, identical in spirit to HOL Light's MESON_TAC.
+In HOL4 it's less popular than METIS_TAC because equality reasoning is
+weaker, but it's faster on non-equational goals.
+"""
+
+[[synonym]]
+canonical    = "SRW_TAC"
+aliases      = ["srw_tac", "FULL_SIMP_TAC"]
+tactic_class = "rewriting"
+notes        = """
+Stateful rewriting. `SRW_TAC[ss][lemmas]` rewrites with the named
+simpset plus lemmas. The state in question is the simpset registry —
+adding `@[simp]`-equivalent annotations changes behaviour estate-wide.
+Prefer over `RW_TAC` for new code (handles conditional rewrites).
+"""
+
+# ---------------------------------------------------------------------------
+# Rewriting
+# ---------------------------------------------------------------------------
+
+[[synonym]]
+canonical    = "REWRITE_TAC"
+aliases      = ["PURE_REWRITE_TAC", "ONCE_REWRITE_TAC", "ASM_REWRITE_TAC"]
+tactic_class = "rewriting"
+notes        = """
+`REWRITE_TAC[L]` rewrites with `L` plus the default boolean simp set;
+`PURE_REWRITE_TAC` is `L`-only; `ONCE_*` does a single pass.
+`ASM_REWRITE_TAC` pulls in the assumption list.
+"""
+
+[[synonym]]
+canonical    = "SIMP_TAC"
+aliases      = ["simp", "FULL_SIMP_TAC", "RW_TAC"]
+tactic_class = "rewriting"
+notes        = """
+Conditional rewriting with side-condition discharge. `simp` is the
+modern lower-case Isar-style alias. `FULL_SIMP_TAC` rewrites both goal
+and hypotheses to fixpoint. `RW_TAC` is the legacy form.
+"""
+
+[[synonym]]
+canonical    = "EVAL_TAC"
+aliases      = ["computeLib.EVAL_TAC", "EVAL"]
+tactic_class = "reduction"
+notes        = """
+Executes closed terms via the `computeLib` reduction engine. Use for
+ground arithmetic and explicit list manipulation. Fails on goals
+containing free variables; pair with `Q.SPEC` to instantiate first.
+"""
+
+# ---------------------------------------------------------------------------
+# Arithmetic
+# ---------------------------------------------------------------------------
+
+[[synonym]]
+canonical    = "DECIDE_TAC"
+aliases      = ["DECIDE", "intLib.ARITH_TAC"]
+tactic_class = "arith"
+notes        = """
+Linear arithmetic over booleans + naturals. `intLib.ARITH_TAC` is the
+integer-coefficient version. When `DECIDE_TAC` fails on a goal that
+looks linear, check for hidden quantifiers — DECIDE is purely
+quantifier-free.
+"""
+
+[[synonym]]
+canonical    = "ARITH_TAC"
+aliases      = ["numLib.ARITH_TAC", "DECIDE_TAC", "intLib.COOPER_TAC"]
+tactic_class = "arith"
+notes        = """
+Naturals-only Presburger arithmetic. `COOPER_TAC` is the
+quantifier-handling extension (slower but accepts `!`/`?`).
+"""
+
+# ---------------------------------------------------------------------------
+# Induction
+# ---------------------------------------------------------------------------
+
+[[synonym]]
+canonical    = "Induct"
+aliases      = ["Induct_on", "recInduct", "completeInduct_on"]
+tactic_class = "induction"
+notes        = """
+`Induct` does induction on the *outermost* universally-quantified
+variable. `Induct_on \`x\`` picks the variable explicitly.
+`recInduct` uses the recursion induction principle generated from a
+`Define`. `completeInduct_on` is strong (course-of-values) induction.
+"""
+
+[[synonym]]
+canonical    = "Induct_on"
+aliases      = ["Induct", "completeInduct_on", "measureInduct_on"]
+tactic_class = "induction"
+notes        = """
+Explicit-target induction. Prefer over bare `Induct` whenever the
+goal has multiple universals; otherwise the wrong variable gets
+chosen and the IH is unusable.
+"""
+
+[[synonym]]
+canonical    = "Cases"
+aliases      = ["Cases_on", "FULL_CASES_TAC"]
+tactic_class = "case"
+notes        = """
+Case split on the outermost universal. `Cases_on \`x\`` picks the
+variable. `FULL_CASES_TAC` is the legacy form that also splits
+hypotheses by case.
+"""
+
+[[synonym]]
+canonical    = "Cases_on"
+aliases      = ["Cases", "MP_CASES_TAC"]
+tactic_class = "case"
+notes        = """
+Explicit-target case split, the workhorse of HOL4 destructors. Often
+chained with `gvs[]` to clean up the resulting subgoals.
+"""
+
+# ---------------------------------------------------------------------------
+# Backwards modus ponens / specialisation
+# ---------------------------------------------------------------------------
+
+[[synonym]]
+canonical    = "MATCH_MP_TAC"
+aliases      = ["match_mp_tac", "irule", "drule"]
+tactic_class = "structural"
+notes        = """
+Backwards MP. `irule` is the modern lower-case form (slightly smarter
+unifier — handles meta-variables better). `drule` is the forward
+chaining version (turns a hypothesis into a new conclusion).
+"""
+
+[[synonym]]
+canonical    = "EXISTS_TAC"
+aliases      = ["Q.EXISTS_TAC", "qexists_tac", "MAP_EVERY EXISTS_TAC"]
+tactic_class = "structural"
+notes        = """
+Witness an existential. `Q.EXISTS_TAC \`t\`` accepts a quotation
+(parses `t` in the current goal's context). `qexists_tac` is the
+modern lower-case alias.
+"""
+
+[[synonym]]
+canonical    = "Q.SPEC"
+aliases      = ["Q.SPECL", "ISPEC", "SPEC"]
+tactic_class = "lemma"
+notes        = """
+Specialise a universally-quantified theorem to a quoted term.
+`Q.SPECL [\`a\`,\`b\`]` does multiple at once. `ISPEC` infers the type
+from the term; bare `SPEC` requires a term of the matching type.
+"""
+
+[[synonym]]
+canonical    = "Q.SPECL"
+aliases      = ["Q.SPEC", "SPECL", "ISPECL"]
+tactic_class = "lemma"
+notes        = """
+List form of `Q.SPEC`. When porting from Isabelle, this is the
+closest analogue of `OF [a, b]`-style backwards application.
+"""
+
+# ---------------------------------------------------------------------------
+# Cleanup / hammer
+# ---------------------------------------------------------------------------
+
+[[synonym]]
+canonical    = "oneline_simps"
+aliases      = ["gvs", "rw"]
+tactic_class = "automation"
+notes        = """
+`gvs[L]` = "generic goal-and-variable simp" — rewrites with `L`,
+substitutes equalities pulled into assumptions, collapses ones that
+trigger contradiction. The 2020s HOL4 idiom for closing trivial
+post-`Cases_on` subgoals. `rw[L]` is the older equivalent.
+"""
+
+# ---------------------------------------------------------------------------
+# Term-builder kernel calls
+# ---------------------------------------------------------------------------
+
+[[synonym]]
+canonical    = "store_thm"
+aliases      = ["Theorem", "save_thm"]
+tactic_class = "term_builder"
+notes        = """
+The legacy theorem-storer: `store_thm("name", `stmt`, tac)`. Modern
+HOL4 prefers the `Theorem name: stmt Proof tac QED` block syntax,
+which carries the same semantics but composes better with Holmake
+dependency tracking. `save_thm` stores an already-proven theorem.
+"""
+
+[[synonym]]
+canonical    = "Theorem"
+aliases      = ["store_thm", "Triviality"]
+tactic_class = "term_builder"
+notes        = """
+Modern theorem-block syntax. `Triviality name: stmt Proof tac QED`
+marks the result as a one-shot lemma not exported from the theory —
+use for local helper lemmas to keep the theory's signature lean.
+"""
+
+[[synonym]]
+canonical    = "Definition"
+aliases      = ["Define", "tDefine", "Hol_reln"]
+tactic_class = "term_builder"
+notes        = """
+`Definition name: eqn End` (modern) / `Define \`eqn\`` (classic).
+`tDefine` accepts a termination-measure annotation for definitions
+whose termination isn't structural. `Hol_reln` is the inductive-
+relation variant (corresponds to `Inductive`).
+"""
+
+[[synonym]]
+canonical    = "Inductive"
+aliases      = ["Hol_reln", "CoInductive"]
+tactic_class = "term_builder"
+notes        = """
+Inductive relation definition. `Hol_reln` is the legacy ML-call
+form; both produce a relation + the introduction/elimination rules.
+`CoInductive` flips to greatest-fixed-point semantics.
+"""
+
+[[synonym]]
+canonical    = "Datatype"
+aliases      = ["Hol_datatype", "TypeBase"]
+tactic_class = "term_builder"
+notes        = """
+`Datatype: foo = A | B Foo End` declares a new algebraic data type
+and automatically generates case-elim + induction principles. The
+modern syntax replaces ML-call-style `Hol_datatype`.
+"""
+
+[[synonym]]
+canonical    = "cheat"
+aliases      = ["CHEAT_TAC", "ALL_TAC"]
+tactic_class = "automation"
+notes        = """
+HAZARD. `cheat` closes any goal by inserting an unjustified
+`mk_thm`. Useful for prototyping, fatal for soundness. `ALL_TAC` is
+*not* a hazard (it's the no-op tactic) — only confused as an alias
+because both leave the goal unchanged-but-acceptable in interactive
+mode. Strip every `cheat` before merging.
+"""
+
+# ---------------------------------------------------------------------------
+# Tactic combinators
+# ---------------------------------------------------------------------------
+
+[[synonym]]
+canonical    = "THEN"
+aliases      = [">>", "\\\\", "THENL"]
+tactic_class = "combinator"
+notes        = """
+`t1 >> t2` (modern) or `t1 THEN t2` (classic) sequences tactics.
+`THENL` distributes a list across subgoals — fragile, breaks when
+goal count changes. The `\\\\` operator is an alias for `THEN` in
+older codebases.
+"""
+
+[[synonym]]
+canonical    = "ORELSE"
+aliases      = ["||", "TRY"]
+tactic_class = "combinator"
+notes        = """
+`t1 || t2` (modern) / `t1 ORELSE t2` (classic): try `t1`, fall back
+to `t2` on failure. `TRY t` is `t || ALL_TAC`.
+"""
+
+# ---------------------------------------------------------------------------
+# Equality moves
+# ---------------------------------------------------------------------------
+
+[[synonym]]
+canonical    = "REFL_TAC"
+aliases      = ["EQ_TAC", "AP_TERM_TAC"]
+tactic_class = "structural"
+notes        = """
+`REFL_TAC` discharges `t = t`. `EQ_TAC` splits boolean equation into
+two implications. `AP_TERM_TAC` applies congruence to reduce
+`f x = f y` to `x = y`.
+"""
+
+# ---------------------------------------------------------------------------
+# Subgoal manipulation
+# ---------------------------------------------------------------------------
+
+[[synonym]]
+canonical    = "by"
+aliases      = ["sg", "SUBGOAL_THEN", "qsuff_tac"]
+tactic_class = "structural"
+notes        = """
+HOL4 modern Theorem syntax: `\`stmt\` by tac` proves a side-lemma
+and adds it as a hypothesis. `qsuff_tac` is the "it-suffices-to-show"
+form (turns the current goal into the lemma + a discharge step).
+"""
+
+[[synonym]]
+canonical    = "first_assum"
+aliases      = ["pop_assum", "qpat_assum", "Q.PAT_ASSUM"]
+tactic_class = "structural"
+notes        = """
+Hypothesis lookup. `qpat_assum \`pat\` f` finds the first hypothesis
+matching `pat` and applies `f`. `pop_assum f` pops the most-recent
+hypothesis and applies `f` (typical use: `pop_assum mp_tac`).
+"""

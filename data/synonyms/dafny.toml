@@ -1,0 +1,309 @@
+# SPDX-License-Identifier: MPL-2.0
+#
+# Dafny tactic, spec-clause, and hazard synonyms.
+# Schema: see data/synonyms/README.adoc.
+# Seeded 2026-06-01 alongside the Dafny corpus adapter.
+#
+# Coverage focus: the surface a `verify_proof` strategy has to reason
+# about — declaration keywords, specification clauses (`requires` /
+# `ensures` / `invariant` / `decreases` / framing), the SOUNDNESS-CRITICAL
+# escape hatches (`assume`, `:axiom`, `extern`, `expect`, `:fuel 0`),
+# refinement keywords, and the auto-active hint attributes Dafny accepts
+# in `{:foo}` form.
+
+# ---------------------------------------------------------------------------
+# Declaration keywords
+# ---------------------------------------------------------------------------
+
+[[synonym]]
+canonical    = "method"
+aliases      = ["proc", "procedure"]
+tactic_class = "decl"
+notes        = """
+Imperative procedure. Has `requires` precondition, `ensures`
+post-condition, optional `modifies` frame, and a body verified by
+weakest-precondition + SMT.
+"""
+
+[[synonym]]
+canonical    = "lemma"
+aliases      = ["ghost-method", "proof-method"]
+tactic_class = "decl"
+notes        = """
+A `lemma` is a ghost method: no runtime semantics, exists purely to
+discharge proof obligations. Body steps Dafny through a calc / case
+analysis / nested-lemma dance to convince Z3.
+"""
+
+[[synonym]]
+canonical    = "function"
+aliases      = ["pure-function", "math-function"]
+tactic_class = "decl"
+notes        = """
+Pure mathematical function (no heap reads unless marked `function
+method`). Body is an expression. Counts as ghost by default — use
+`function method` for compile-to-runtime variants.
+"""
+
+[[synonym]]
+canonical    = "predicate"
+aliases      = ["bool-function"]
+tactic_class = "decl"
+notes        = "Boolean-valued `function`. `predicate P(x) { body }` ≡ `function P(x): bool { body }`."
+
+[[synonym]]
+canonical    = "ghost"
+aliases      = ["ghost var", "ghost method", "ghost function", "ghost predicate"]
+tactic_class = "decl"
+notes        = "Erased at compile time; exists only for verification."
+
+[[synonym]]
+canonical    = "class"
+aliases      = ["heap-class"]
+tactic_class = "decl"
+notes        = "Reference type with a `Repr` ghost field convention for ownership accounting."
+
+[[synonym]]
+canonical    = "trait"
+aliases      = ["interface"]
+tactic_class = "decl"
+notes        = "Dafny's interface analogue. Methods + ghost predicates; refined by `class C extends T`."
+
+[[synonym]]
+canonical    = "datatype"
+aliases      = ["adt", "algebraic-data-type", "inductive-datatype"]
+tactic_class = "decl"
+notes        = """
+Algebraic data type, optionally `codatatype` for co-inductive shapes.
+Pattern-matched via `match`. Termination on a `datatype` parameter is
+automatic structural decrease.
+"""
+
+[[synonym]]
+canonical    = "type"
+aliases      = ["type-synonym", "subset-type", "newtype"]
+tactic_class = "decl"
+notes        = """
+Three flavours: `type T = U` (synonym), `type T = x: U | P(x) witness w`
+(subset type with witness obligation), and `newtype T = x: U | P(x)`
+(distinct runtime representation).
+"""
+
+[[synonym]]
+canonical    = "module"
+aliases      = ["abstract-module", "refinement-module"]
+tactic_class = "decl"
+notes        = "Namespaces + refinement carrier. `abstract module M` declares; `module M refines A` provides."
+
+# ---------------------------------------------------------------------------
+# Specification annotations
+# ---------------------------------------------------------------------------
+
+[[synonym]]
+canonical    = "requires"
+aliases      = ["precondition", "pre"]
+tactic_class = "spec"
+notes        = "Pre-condition. Callers prove it; callees assume it."
+
+[[synonym]]
+canonical    = "ensures"
+aliases      = ["postcondition", "post"]
+tactic_class = "spec"
+notes        = "Post-condition. Callees prove it; callers assume it."
+
+[[synonym]]
+canonical    = "invariant"
+aliases      = ["loop-invariant", "object-invariant"]
+tactic_class = "spec"
+notes        = """
+Loop invariant (in `while`) or object invariant (`Valid()` predicate
+convention). The single most common reason a Dafny proof fails is a
+loop invariant that's too weak.
+"""
+
+[[synonym]]
+canonical    = "decreases"
+aliases      = ["termination-measure", "variant"]
+tactic_class = "spec"
+notes        = """
+Termination measure. Lexicographic tuples allowed. `decreases *`
+disables termination checking (CO-INDUCTION / CONCURRENCY only).
+"""
+
+[[synonym]]
+canonical    = "modifies"
+aliases      = ["frame-modifies", "writes"]
+tactic_class = "spec"
+notes        = "Frame clause: heap locations the method may mutate."
+
+[[synonym]]
+canonical    = "reads"
+aliases      = ["frame-reads"]
+tactic_class = "spec"
+notes        = "Frame clause for `function`/`predicate`: heap locations read by the expression."
+
+[[synonym]]
+canonical    = "frees"
+aliases      = ["frame-frees"]
+tactic_class = "spec"
+notes        = "Frame clause for memory deallocation (rarely used; for the C/native subset)."
+
+# ---------------------------------------------------------------------------
+# HAZARDS — soundness escape hatches
+# ---------------------------------------------------------------------------
+
+[[synonym]]
+canonical    = "assume"
+aliases      = ["assume {:axiom}", "assume false"]
+tactic_class = "hazard"
+notes        = """
+SOUNDNESS ESCAPE. The verifier accepts the predicate without proof.
+Equivalent in trust terms to an Agda `postulate` or a Coq `Admitted`.
+
+`assume false` is the strongest form: every subsequent goal is
+trivially discharged. ECHIDNA's SA design-search REJECTS any candidate
+proof whose body contains an `assume` (unless explicitly whitelisted
+as part of an interactive sketch).
+"""
+
+[[synonym]]
+canonical    = "expect"
+aliases      = ["runtime-check"]
+tactic_class = "hazard"
+notes        = """
+Runtime check, NOT statically verified. The compiler emits an
+`if (!cond) abort()`. The verifier IGNORES the condition. Useful for
+testing but invisible to the trusted base — flag for human review.
+"""
+
+[[synonym]]
+canonical    = ":axiom"
+aliases      = ["assert {:axiom}", "{:axiom}"]
+tactic_class = "hazard"
+notes        = """
+The `{:axiom}` attribute lets you mark an `assert` (or a function body)
+as axiomatic — Dafny will not require a proof. Identical soundness
+profile to `assume`.
+"""
+
+[[synonym]]
+canonical    = "extern"
+aliases      = ["{:extern}", "extern method"]
+tactic_class = "hazard"
+notes        = """
+`extern` (or `{:extern}`) marks the implementation as supplied by the
+target-language runtime (e.g. C# / Java). The verifier trusts that
+the foreign implementation meets the spec. Hazard tier: trusted-but-
+unverified.
+"""
+
+# ---------------------------------------------------------------------------
+# Tactic-ish proof helpers
+# ---------------------------------------------------------------------------
+
+[[synonym]]
+canonical    = "calc"
+aliases      = ["calculational-proof", "equational-chain"]
+tactic_class = "calc"
+notes        = """
+Calculational proof block: `calc { e1; OP e2; { hint } OP e3; ... }`.
+The default `OP` is `==`. The `{ hint }` between steps is where you
+inline a lemma call or `assert`.
+"""
+
+[[synonym]]
+canonical    = "forall-ensures"
+aliases      = ["forall ... ensures ...", "ghost-forall"]
+tactic_class = "calc"
+notes        = """
+`forall x | P(x) ensures Q(x) { body }` — a ghost universal-quantifier
+proof. Body proves `Q(x)` for an arbitrary `x` satisfying `P`, and
+Dafny lifts the conclusion to `forall x. P(x) ==> Q(x)`.
+"""
+
+[[synonym]]
+canonical    = "assert-by"
+aliases      = ["assert ... by { ... }", "subproof-assert"]
+tactic_class = "calc"
+notes        = """
+`assert P by { ... }` — local subproof. The body is verified
+in-context, and `P` becomes available afterwards. Used to nudge Z3
+when the global automation can't find the proof but a focused one can.
+"""
+
+# ---------------------------------------------------------------------------
+# Auto-active hints (attributes)
+# ---------------------------------------------------------------------------
+
+[[synonym]]
+canonical    = ":opaque"
+aliases      = ["{:opaque}", "opaque-function"]
+tactic_class = "auto_active"
+notes        = """
+Marks a function as opaque to the verifier — the body is not unfolded
+unless explicitly `reveal F();`. Cuts solver context, often turns red
+to green.
+"""
+
+[[synonym]]
+canonical    = ":fuel"
+aliases      = ["{:fuel}", "{:fuel 0}", "fuel-attribute"]
+tactic_class = "auto_active"
+notes        = """
+Controls how aggressively Dafny unfolds a recursive function during
+verification. `{:fuel 0}` disables unfolding entirely (HAZARD-adjacent
+— effectively makes the function opaque to the goal). Higher fuel
+helps with chains of recursive unfolds.
+"""
+
+[[synonym]]
+canonical    = ":induction"
+aliases      = ["{:induction}", "{:induction false}"]
+tactic_class = "auto_active"
+notes        = """
+Auto-induction hint. `{:induction}` enables; `{:induction false}`
+disables. By default Dafny induct on the first inductive parameter of
+a lemma; this hint redirects.
+"""
+
+[[synonym]]
+canonical    = ":verify"
+aliases      = ["{:verify}", "{:verify false}"]
+tactic_class = "auto_active"
+notes        = """
+`{:verify false}` skips verification of the marked entity. Useful
+during iteration; HAZARD-tier when left in production code (the
+unverified entity is implicitly trusted).
+"""
+
+# ---------------------------------------------------------------------------
+# Refinement
+# ---------------------------------------------------------------------------
+
+[[synonym]]
+canonical    = "refines"
+aliases      = ["module-refines", "abstract-refines"]
+tactic_class = "refinement"
+notes        = """
+`module C refines A` — supplies bodies for `A`'s abstract declarations.
+Each refining decl must prove it preserves the abstract spec.
+"""
+
+[[synonym]]
+canonical    = "replaces"
+aliases      = ["module-replaces"]
+tactic_class = "refinement"
+notes        = """
+In a refinement, `replaces X by Y` swaps one decl for another while
+preserving the public contract. Newer Dafny syntax — older versions
+use unqualified `refines`.
+"""
+
+[[synonym]]
+canonical    = "provides"
+aliases      = ["export-provides", "import-provides"]
+tactic_class = "refinement"
+notes        = """
+Export-set qualifier. `export E provides f` exposes `f` to importers
+under export set `E`. Pairs with `reveals` (exposes body too).
+"""

@@ -1,4 +1,5 @@
 // SPDX-FileCopyrightText: 2026 ECHIDNA Project Team
+// SPDX-FileCopyrightText: 2026 Jonathan D.A. Jewell <j.d.a.jewell@open.ac.uk>
 // SPDX-License-Identifier: MPL-2.0
 
 //! Project-corpus indexer.
@@ -41,6 +42,22 @@ pub mod lean;
 pub mod metrics; // Per-entry metrics tensor (Step 4)
 pub mod octad; // 8-modality octad emission for VeriSim integration (Step 3)
 pub mod query; // Multi-axis query DSL (capstone)
+
+// Saturation campaign — new corpus adapters (2026-06-01).
+// See docs/handover/PROVER-CORPUS-SATURATION-LANE.md.
+pub mod acl2_books;
+pub mod dafny;
+pub mod fstar;
+pub mod hol4;
+pub mod hol_light;
+pub mod isabelle;
+pub mod metamath;
+pub mod minif2f;
+pub mod mizar;
+pub mod proofnet;
+pub mod smtlib;
+pub mod tptp;
+pub mod why3;
 
 use std::collections::HashMap;
 use std::path::{Path, PathBuf};

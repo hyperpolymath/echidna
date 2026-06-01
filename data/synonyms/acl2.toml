@@ -1,0 +1,292 @@
+# SPDX-License-Identifier: MPL-2.0
+#
+# ACL2 (+ ACL2s) decl, hint, and theory synonyms.
+# Schema: see data/synonyms/README.adoc.
+# Seeded 2026-06-01 for the ACL2 community-books corpus adapter.
+#
+# Coverage focus: top-level decls, defthm hint vocabulary, theory
+# enable/disable manipulation, the standard hazard surface
+# (skip-proofs / defaxiom / defstub / ld-skip-proofsp), and ACL2s
+# extensions (defdata, definec, defunc, cgen, test?).
+
+# ---------------------------------------------------------------------------
+# Top-level decls
+# ---------------------------------------------------------------------------
+
+[[synonym]]
+canonical    = "defthm"
+aliases      = ["defthmd", "defrule", "rule"]
+tactic_class = "decl"
+notes        = """
+Prove and store a theorem. `defthmd` is the disabled variant — same
+proof obligation, but the rule isn't added to the active theory.
+"""
+
+[[synonym]]
+canonical    = "defun"
+aliases      = ["defun-nx", "defund", "defn"]
+tactic_class = "decl"
+notes        = """
+Function definition. `defund` is the disabled variant. `defun-nx`
+declares a non-executable function (logical only — no Lisp body
+needed). ACL2s' `defn` is `defun` with stricter guard-verification.
+"""
+
+[[synonym]]
+canonical    = "defaxiom"
+aliases      = ["axiom", "postulate"]
+tactic_class = "danger"
+notes        = """
+HAZARD. Postulates a theorem without proof. Every `defaxiom` is a
+hole in the trusted base — the official ACL2 advice is to use
+`skip-proofs` for development scaffolding and elaborate to a real
+proof before release. `defaxiom` makes the leak permanent.
+"""
+
+[[synonym]]
+canonical    = "defstub"
+aliases      = ["stub", "constrained-function"]
+tactic_class = "danger"
+notes        = """
+HAZARD. Introduces a constrained function whose body is opaque. Used
+for encapsulate-style reasoning, but in isolation is an axiom about
+the existence of a function with the given signature.
+"""
+
+[[synonym]]
+canonical    = "defconst"
+aliases      = ["constant", "defparameter"]
+tactic_class = "decl"
+notes        = "Top-level constant. Name is conventionally wrapped in earmuffs (`*name*`)."
+
+[[synonym]]
+canonical    = "defmacro"
+aliases      = ["macro", "macroexpand"]
+tactic_class = "decl"
+notes        = "Macro definition. Expanded before logic processing."
+
+[[synonym]]
+canonical    = "defabbrev"
+aliases      = ["abbreviation", "inline-defun"]
+tactic_class = "decl"
+notes        = """
+Function with always-inline semantics. Equivalent to a `defmacro`
+that takes evaluated arguments — convenient for short helpers
+without paying the macro-expansion cost at the surface.
+"""
+
+[[synonym]]
+canonical    = "include-book"
+aliases      = ["import-book", "load-book"]
+tactic_class = "import"
+notes        = """
+Import a previously-certified book. The basic composition mechanism
+for the ACL2 community books. Use `:dir :system` to pull from the
+system book directory.
+"""
+
+[[synonym]]
+canonical    = "in-package"
+aliases      = ["select-package", "package-decl"]
+tactic_class = "decl"
+notes        = """
+Set the current package. Every book starts with `(in-package \"X\")`
+where `X` is typically `\"ACL2\"` for community books.
+"""
+
+# ---------------------------------------------------------------------------
+# Proof hints (inside :hints (("Goal" …)) or per-subgoal)
+# ---------------------------------------------------------------------------
+
+[[synonym]]
+canonical    = ":induct"
+aliases      = ["induct-scheme", "induction-scheme"]
+tactic_class = "hint"
+notes        = """
+Specify the induction scheme. Either a function name (use its
+recursion structure) or an explicit `(:induct (… …))` form.
+"""
+
+[[synonym]]
+canonical    = ":in-theory"
+aliases      = ["theory-hint", "in-theory-hint"]
+tactic_class = "hint"
+notes        = """
+Override the rewrite theory active during the proof. Common idioms:
+`(enable foo)`, `(disable bar)`, `(e/d (enable-these)(disable-those))`.
+"""
+
+[[synonym]]
+canonical    = ":hints"
+aliases      = ["hints-block"]
+tactic_class = "hint"
+notes        = "Top-level hint container in a `defthm`. Per-subgoal hints keyed by `\"Goal\"`, `\"Subgoal *1/3\"`, etc."
+
+[[synonym]]
+canonical    = ":use"
+aliases      = ["lemma-instance"]
+tactic_class = "hint"
+notes        = """
+Force the prover to use a particular lemma instance. Form:
+`(:instance lemma-name (var1 e1) (var2 e2))`. The standard way to
+inject a known fact when the rewriter wouldn't find it on its own.
+"""
+
+[[synonym]]
+canonical    = ":by"
+aliases      = ["by-hint", "single-step"]
+tactic_class = "hint"
+notes        = "Single-step justification — the term must literally match the goal up to alpha-equivalence."
+
+[[synonym]]
+canonical    = ":cases"
+aliases      = ["case-split-hint"]
+tactic_class = "hint"
+notes        = "Split the proof into cases on the given list of terms."
+
+[[synonym]]
+canonical    = ":expand"
+aliases      = ["force-expand"]
+tactic_class = "hint"
+notes        = "Force the rewriter to expand the listed terms even if they're disabled or under a heuristic guard."
+
+[[synonym]]
+canonical    = ":do-not"
+aliases      = ["disable-proof-step"]
+tactic_class = "hint"
+notes        = """
+Disable specific waterfall steps. Common values: `'(generalize fertilize
+eliminate-destructors)` to keep the prover from rewriting too
+aggressively.
+"""
+
+# ---------------------------------------------------------------------------
+# Theory manipulation (the tactic-equivalent vocabulary)
+# ---------------------------------------------------------------------------
+
+[[synonym]]
+canonical    = "enable"
+aliases      = ["enable-rules"]
+tactic_class = "theory"
+notes        = "Add the listed rules to the active theory. Inside `:in-theory`."
+
+[[synonym]]
+canonical    = "disable"
+aliases      = ["disable-rules"]
+tactic_class = "theory"
+notes        = "Remove the listed rules. Inverse of `enable`."
+
+[[synonym]]
+canonical    = "e/d"
+aliases      = ["enable-disable", "e/d*"]
+tactic_class = "theory"
+notes        = """
+`(e/d (enables) (disables))` — combined enable/disable in one form.
+Idiomatic for theory hints. `e/d*` is the recursive variant.
+"""
+
+[[synonym]]
+canonical    = "executable-counterpart"
+aliases      = ["ec", ":executable-counterpart"]
+tactic_class = "theory"
+notes        = """
+Toggle the executable-counterpart of a function (the rewrite that
+unfolds calls on concrete arguments). Frequently disabled inside
+proofs to keep terms small.
+"""
+
+[[synonym]]
+canonical    = "theory"
+aliases      = ["current-theory", "ground-zero"]
+tactic_class = "theory"
+notes        = """
+Predefined theory primitives: `(theory 'minimal-theory)`,
+`(theory 'ground-zero)`, `(current-theory 'world)`. Used to build
+custom `:in-theory` lists.
+"""
+
+# ---------------------------------------------------------------------------
+# Hazards
+# ---------------------------------------------------------------------------
+
+[[synonym]]
+canonical    = "skip-proofs"
+aliases      = ["skip-proofs-wrapper", "trusted-block"]
+tactic_class = "danger"
+notes        = """
+THE BIG ACL2 HAZARD. `(skip-proofs FORM)` makes the prover accept
+`FORM` as if it had been proved, without actually proving it. Common
+in development scaffolding; absolutely forbidden in shipped books.
+Every `skip-proofs` is a trusted hole.
+"""
+
+[[synonym]]
+canonical    = "ld-skip-proofsp"
+aliases      = ["ld-skip-proofs-mode"]
+tactic_class = "danger"
+notes        = """
+Global flag that makes the read-eval loop skip ALL proofs. Used to
+quickly re-certify a development without re-running proofs, but lethal
+if it leaks into a release. Detect any toggle of this flag as a
+hazard.
+"""
+
+[[synonym]]
+canonical    = "(local (in-theory nil))"
+aliases      = ["local-empty-theory", "anti-pattern-empty-theory"]
+tactic_class = "danger"
+notes        = """
+ANTI-PATTERN. Setting the theory to nil inside a local context defeats
+all standard rewriter behaviour and almost always indicates the author
+got stuck and bypassed normal proof discipline.
+"""
+
+# ---------------------------------------------------------------------------
+# ACL2s extensions (counterexample generation, contracts, data)
+# ---------------------------------------------------------------------------
+
+[[synonym]]
+canonical    = "defdata"
+aliases      = ["data-definition", "type-like-decl"]
+tactic_class = "decl"
+notes        = """
+ACL2s data definition. Generates recognisers, constructors, and the
+test-case generator hooks needed by `cgen`. The ACL2s analogue of an
+algebraic datatype.
+"""
+
+[[synonym]]
+canonical    = "definec"
+aliases      = ["definec-with-contracts", "contract-fn"]
+tactic_class = "decl"
+notes        = """
+ACL2s function definition with input/output contracts. Generates the
+guard, the type-of-each-input theorem, and the type-of-output theorem
+in one shot.
+"""
+
+[[synonym]]
+canonical    = "defunc"
+aliases      = ["defunc-with-contracts"]
+tactic_class = "decl"
+notes        = "ACL2s `defun` + contracts. Older spelling kept for compatibility with the long-tail ACL2s book corpus."
+
+[[synonym]]
+canonical    = "cgen"
+aliases      = ["counterexample-generation", "test-then-prove"]
+tactic_class = "automation"
+notes        = """
+ACL2s counterexample generator. Runs random + targeted test cases
+against a conjecture before attempting the proof. The "test-then-prove"
+discipline.
+"""
+
+[[synonym]]
+canonical    = "test?"
+aliases      = ["check-conjecture", "cgen-only"]
+tactic_class = "automation"
+notes        = """
+Run `cgen` on a conjecture without attempting a real proof. Returns
+counterexamples if any. The fastest way to sanity-check a draft
+theorem statement before committing to the proof effort.
+"""

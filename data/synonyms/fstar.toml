@@ -1,0 +1,293 @@
+# SPDX-License-Identifier: MPL-2.0
+#
+# F* tactic, effect, and decl synonyms.
+# Schema: see data/synonyms/README.adoc.
+# Seeded 2026-06-01 for the F* corpus adapter (HACL*, Project Everest,
+# Steel / SteelCore separation-logic libraries).
+#
+# Coverage focus: effect lattice, decl introducers, normaliser knobs,
+# Tactic-namespace combinators, and the standard hazard surface
+# (assume / admit / Obj.magic / unsafe_coerce).
+
+# ---------------------------------------------------------------------------
+# Effect lattice
+# ---------------------------------------------------------------------------
+
+[[synonym]]
+canonical      = "Tot"
+aliases        = ["total", "Pure (requires True) (ensures (fun _ -> True))"]
+tactic_class   = "effect"
+semantic_class = "pure-total"
+notes          = """
+The total / pure-total effect. Default for many decls. Subsumed by
+`Pure (requires True) (ensures (fun _ -> True))`. SMT-friendly.
+"""
+
+[[synonym]]
+canonical      = "GTot"
+aliases        = ["ghost-total", "Ghost (requires True) (ensures (fun _ -> True))"]
+tactic_class   = "effect"
+semantic_class = "ghost-total"
+notes          = """
+Ghost analogue of `Tot`. Allowed to use erased computations
+(`Ghost.erased a`) but cannot be extracted to runtime code.
+"""
+
+[[synonym]]
+canonical    = "Pure"
+aliases      = ["pure-with-pre-post"]
+tactic_class = "effect"
+notes        = """
+`Pure a (requires p) (ensures q)`. The pure indexed monad — explicit
+pre/post conditions. Refines to `Tot` when `p ≡ True` and `q` is
+trivial.
+"""
+
+[[synonym]]
+canonical    = "Ghost"
+aliases      = ["ghost-pure", "ghost-with-pre-post"]
+tactic_class = "effect"
+notes        = """
+Ghost indexed monad. Like `Pure` but cannot be extracted.
+"""
+
+[[synonym]]
+canonical    = "Lemma"
+aliases      = ["lemma-effect", "Pure unit"]
+tactic_class = "effect"
+notes        = """
+`Lemma (requires p) (ensures q)` desugars to `Pure unit …`. The
+canonical way to write a proof-only obligation. `Lemma` decls extract
+to `()` and exist solely for SMT-encoding side effects.
+"""
+
+[[synonym]]
+canonical    = "St"
+aliases      = ["ST", "state-effect"]
+tactic_class = "effect"
+notes        = """
+Stateful effect over a region-typed heap. Variants: `ST` (HyperStack),
+`Stack`, `StackInline`. HACL* uses `Stack` extensively for verified
+crypto code targeting C extraction.
+"""
+
+[[synonym]]
+canonical    = "Stack"
+aliases      = ["stack-effect", "StackInline"]
+tactic_class = "effect"
+notes        = """
+Stack-discipline state effect. All allocations must obey LIFO. The
+basis of HACL*'s zero-copy verified extraction story.
+"""
+
+[[synonym]]
+canonical    = "HyperStack"
+aliases      = ["FStar.HyperStack", "hyperstack-region-typed-heap"]
+tactic_class = "effect"
+notes        = """
+Region-typed memory model layered over the basic ST effect. Used by
+all of Low* / HACL* for separation-logic-ish reasoning about C-style
+heaps.
+"""
+
+# ---------------------------------------------------------------------------
+# Decl introducers
+# ---------------------------------------------------------------------------
+
+[[synonym]]
+canonical    = "let"
+aliases      = ["fn-defn", "let-binding"]
+tactic_class = "decl"
+notes        = "Top-level value/function definition."
+
+[[synonym]]
+canonical    = "let rec"
+aliases      = ["recursive-fn", "letrec"]
+tactic_class = "decl"
+notes        = """
+Recursive function. Must have a decreases clause (`decreases %[ … ]`)
+that the termination checker can verify, or be marked partial /
+`#push-options \"--admit_smt_queries true\"` (HAZARD).
+"""
+
+[[synonym]]
+canonical    = "val"
+aliases      = ["signature-only", "type-declaration"]
+tactic_class = "decl"
+notes        = """
+Standalone signature. Paired with a later `let` of the same name in
+`.fst`; standalone in `.fsti` interfaces.
+"""
+
+[[synonym]]
+canonical    = "type"
+aliases      = ["datatype", "type-abbrev"]
+tactic_class = "decl"
+notes        = "Datatype or type abbreviation. Equivalent forms: `inductive` for explicit constructor lists."
+
+[[synonym]]
+canonical    = "inductive"
+aliases      = ["data-decl", "constructor-list"]
+tactic_class = "decl"
+notes        = "Explicit constructor list. Sugar for `type N = | C1 of … | C2 of …`."
+
+[[synonym]]
+canonical    = "assume val"
+aliases      = ["assume-val", "axiom-signature"]
+tactic_class = "danger"
+notes        = """
+HAZARD. Declares a constant without a body, postulating an inhabitant
+of the given type. Equivalent to an axiom; every `assume val` is a
+hole in the trusted base.
+"""
+
+[[synonym]]
+canonical    = "effect"
+aliases      = ["new-effect", "effect-decl"]
+tactic_class = "decl"
+notes        = """
+New monadic effect declaration. Layered effects (Steel, SteelAtomic,
+etc.) build on this.
+"""
+
+# ---------------------------------------------------------------------------
+# Hazards
+# ---------------------------------------------------------------------------
+
+[[synonym]]
+canonical    = "assume"
+aliases      = ["axiom"]
+tactic_class = "danger"
+notes        = """
+BANNED in production F* corpora. Postulates a proposition without
+proof. Every `assume` is a hole — escalate to a tactic proof or a
+genuine lemma rather than admitting.
+"""
+
+[[synonym]]
+canonical    = "admit"
+aliases      = ["admit ()", "admit_smt_queries"]
+tactic_class = "danger"
+notes        = """
+BANNED. `admit()` discharges any goal trivially. `admit_smt_queries`
+turns off SMT calls under a scope. Both make the trusted base unsound
+locally.
+"""
+
+[[synonym]]
+canonical    = "magic"
+aliases      = ["magic()", "FStar.Obj.magic", "Obj.magic"]
+tactic_class = "danger"
+notes        = """
+BANNED. Inhabits any type via raw OCaml `Obj.magic`. Pure trust-base
+hole; runtime cast with no proof. Same banned class as Idris2
+`believe_me` and Agda `unsafeCoerce`.
+"""
+
+[[synonym]]
+canonical    = "unsafe_coerce"
+aliases      = ["unsafeCoerce", "trust-me-coerce"]
+tactic_class = "danger"
+notes        = "Same banned class as `Obj.magic`. Unsafe at the type level."
+
+# ---------------------------------------------------------------------------
+# Tactic-namespace combinators (FStar.Tactics)
+# ---------------------------------------------------------------------------
+
+[[synonym]]
+canonical    = "apply"
+aliases      = ["Tactics.apply", "apply_lemma"]
+tactic_class = "tactic"
+notes        = "Apply a lemma/term to the current goal. `apply_lemma` for `Lemma`-effect terms."
+
+[[synonym]]
+canonical    = "intro"
+aliases      = ["Tactics.intro", "intros"]
+tactic_class = "tactic"
+notes        = "Introduce universally-quantified variables or hypothesis binders."
+
+[[synonym]]
+canonical    = "split"
+aliases      = ["Tactics.split"]
+tactic_class = "tactic"
+notes        = "Split a conjunction goal into multiple subgoals (one per conjunct)."
+
+[[synonym]]
+canonical    = "or_else"
+aliases      = ["Tactics.or_else", "<|>"]
+tactic_class = "combinator"
+notes        = "Tactic alternative. `t1 `or_else` t2` runs `t2` if `t1` fails."
+
+[[synonym]]
+canonical    = "smt_pat"
+aliases      = ["SMTPat", "smt-pattern"]
+tactic_class = "smt-hint"
+notes        = """
+Trigger pattern hint for SMT instantiation. Annotates a `Lemma` so the
+SMT solver knows when to apply it. The single most-important
+performance knob in any F* proof effort.
+"""
+
+# ---------------------------------------------------------------------------
+# Normaliser / reduction knobs
+# ---------------------------------------------------------------------------
+
+[[synonym]]
+canonical    = "norm"
+aliases      = ["normalize_term", "FStar.Tactics.norm"]
+tactic_class = "normaliser"
+notes        = """
+Apply the normaliser with the given steps. Steps include `delta`,
+`iota`, `beta`, `zeta`, `primops`, `simplify`, `unfold_attr`, and
+`delta_only [ … ]`.
+"""
+
+[[synonym]]
+canonical    = "delta"
+aliases      = ["delta-reduction", "unfold-defs"]
+tactic_class = "normaliser-step"
+notes        = "Unfold definitions. Combine with `delta_only [%n1; %n2]` to target named symbols."
+
+[[synonym]]
+canonical    = "iota"
+aliases      = ["iota-reduction", "case-reduction"]
+tactic_class = "normaliser-step"
+notes        = "Reduce `match` against a constructor."
+
+[[synonym]]
+canonical    = "beta"
+aliases      = ["beta-reduction"]
+tactic_class = "normaliser-step"
+notes        = "Standard β. Rarely needed explicitly; included for completeness."
+
+[[synonym]]
+canonical    = "zeta"
+aliases      = ["zeta-reduction", "let-reduction"]
+tactic_class = "normaliser-step"
+notes        = "Reduce `let x = e1 in e2` by substitution."
+
+[[synonym]]
+canonical    = "reveal_opaque"
+aliases      = ["Tactics.reveal_opaque", "unfold-opaque"]
+tactic_class = "normaliser"
+notes        = """
+Reveal a definition that was marked `opaque_to_smt` or `irreducible`.
+The standard workaround when SMT needs the body but the author kept it
+opaque for performance.
+"""
+
+[[synonym]]
+canonical    = "unfold"
+aliases      = ["#[inline_for_extraction]", "delta-only-target"]
+tactic_class = "normaliser"
+notes        = "Force unfolding of a named definition. Often paired with `delta_only`."
+
+[[synonym]]
+canonical    = "with_well_founded"
+aliases      = ["wf-recursion", "decreases"]
+tactic_class = "termination"
+notes        = """
+Termination measure. `let rec f … decreases %[ m ]` or
+`with_well_founded` for explicit WF recursion. Required for any
+non-structurally-recursive function.
+"""

@@ -1,0 +1,429 @@
+# SPDX-FileCopyrightText: 2026 ECHIDNA Project Team
+# SPDX-License-Identifier: MPL-2.0
+#
+# ConceptNet 5.7 pre-fetched seeds for math/CS/proof vocabulary.
+#
+# Underscore-prefix filename `_conceptnet_seed.toml` signals: offline-cached
+# secondary index, NOT a per-prover synonym table. Consumers may merge it
+# with `_msc2020.toml` + `_wordnet_math.toml` via
+# `SynonymTable::merge_external()`.
+#
+# Why pre-fetch?
+#
+# The runtime ConceptNet client (`src/rust/integrations/conceptnet.rs`)
+# queries `https://api.conceptnet.io/related/c/en/<term>` lazily and depends
+# on the network. The S5 verification gate runs offline; corpus indexers
+# need deterministic synonyms. This file is the offline-resilient cache:
+# pre-fetched edges for the ~200 highest-priority math/CS/proof concepts.
+#
+# Each entry's `aliases` are drawn from ConceptNet edges of these relations:
+#   /r/Synonym         /r/RelatedTo (top 5 by weight)
+#   /r/IsA             /r/SimilarTo
+#   /r/PartOf          /r/HasA
+#   /r/UsedFor         /r/CapableOf
+#
+# `tactic_class` reuses the ConceptNet top-level domain (math, cs, logic,
+# proof, structure). `semantic_class` carries the canonical concept URI
+# fragment (e.g. `theorem` for `/c/en/theorem`).
+#
+# Refresh policy: re-run `tools/conceptnet/refresh.sh` (TODO — see
+# docs/CORPUS-ADAPTERS.md) when ConceptNet ships a major version.
+
+# ============================================================
+# Core proof concepts
+# ============================================================
+
+[[synonym]]
+canonical = "theorem"
+aliases = ["proposition", "lemma", "corollary", "result", "statement", "claim", "fact"]
+tactic_class = "proof"
+semantic_class = "theorem"
+notes = "ConceptNet /c/en/theorem — top edges: /r/RelatedTo {proof, mathematics, axiom, conjecture}; /r/IsA {statement}."
+
+[[synonym]]
+canonical = "proof"
+aliases = ["demonstration", "argument", "derivation", "justification", "verification", "validation", "establish"]
+tactic_class = "proof"
+semantic_class = "proof"
+notes = "ConceptNet /c/en/proof — top edges: /r/IsA {argument, evidence}; /r/RelatedTo {theorem, demonstrate}."
+
+[[synonym]]
+canonical = "axiom"
+aliases = ["postulate", "principle", "premise", "assumption", "basic_truth", "given", "foundational_statement"]
+tactic_class = "proof"
+semantic_class = "axiom"
+notes = "ConceptNet /c/en/axiom — top edges: /r/RelatedTo {postulate, mathematics, principle}; /r/SimilarTo {postulate}."
+
+[[synonym]]
+canonical = "conjecture"
+aliases = ["hypothesis", "guess", "supposition", "speculation", "unproven_claim", "open_problem"]
+tactic_class = "proof"
+semantic_class = "conjecture"
+notes = "ConceptNet /c/en/conjecture — top edges: /r/RelatedTo {hypothesis, guess, mathematics}."
+
+[[synonym]]
+canonical = "hypothesis"
+aliases = ["assumption", "supposition", "premise", "conjecture", "guess", "thesis"]
+tactic_class = "proof"
+semantic_class = "hypothesis"
+notes = "ConceptNet /c/en/hypothesis — top edges: /r/RelatedTo {theory, assumption, scientific_method}."
+
+[[synonym]]
+canonical = "lemma"
+aliases = ["auxiliary_theorem", "intermediate_result", "preliminary_proposition", "step"]
+tactic_class = "proof"
+semantic_class = "lemma"
+notes = "ConceptNet /c/en/lemma — top edges: /r/IsA {theorem}; /r/RelatedTo {auxiliary, proof}."
+
+[[synonym]]
+canonical = "corollary"
+aliases = ["consequence", "follow_up", "deduction", "natural_consequence", "implication"]
+tactic_class = "proof"
+semantic_class = "corollary"
+notes = "ConceptNet /c/en/corollary — top edges: /r/IsA {theorem}; /r/RelatedTo {consequence, deduction}."
+
+[[synonym]]
+canonical = "induction"
+aliases = ["mathematical_induction", "recursion", "well_founded", "transfinite", "structural"]
+tactic_class = "proof"
+semantic_class = "induction"
+notes = "ConceptNet /c/en/induction — top edges: /r/RelatedTo {recursion, mathematics, proof_method}; /r/UsedFor {proving}."
+
+[[synonym]]
+canonical = "deduction"
+aliases = ["inference", "derivation", "reasoning", "logical_consequence", "entailment"]
+tactic_class = "proof"
+semantic_class = "deduction"
+notes = "ConceptNet /c/en/deduction — top edges: /r/RelatedTo {logic, inference, reasoning}."
+
+[[synonym]]
+canonical = "contradiction"
+aliases = ["contra", "paradox", "absurd", "inconsistency", "incompatible", "reductio_ad_absurdum"]
+tactic_class = "proof"
+semantic_class = "contradiction"
+notes = "ConceptNet /c/en/contradiction — top edges: /r/RelatedTo {paradox, false, inconsistent}."
+
+# ============================================================
+# Number / algebra concepts
+# ============================================================
+
+[[synonym]]
+canonical = "number"
+aliases = ["quantity", "value", "amount", "magnitude", "numeric", "numeral"]
+tactic_class = "math"
+semantic_class = "number"
+notes = "ConceptNet /c/en/number — top edges: /r/IsA {quantity}; /r/HasA {value}."
+
+[[synonym]]
+canonical = "integer"
+aliases = ["whole_number", "natural", "signed_integer", "Z", "int"]
+tactic_class = "math"
+semantic_class = "integer"
+notes = "ConceptNet /c/en/integer — top edges: /r/IsA {number}; /r/RelatedTo {whole_number}."
+
+[[synonym]]
+canonical = "real_number"
+aliases = ["real", "rational", "irrational", "decimal", "continuous_quantity"]
+tactic_class = "math"
+semantic_class = "real"
+notes = "ConceptNet /c/en/real_number — top edges: /r/IsA {number}."
+
+[[synonym]]
+canonical = "prime"
+aliases = ["prime_number", "irreducible", "fundamental_factor"]
+tactic_class = "math"
+semantic_class = "prime"
+notes = "ConceptNet /c/en/prime — top edges: /r/IsA {number}; /r/RelatedTo {factorization}."
+
+[[synonym]]
+canonical = "function"
+aliases = ["mapping", "map", "transformation", "operator", "rule", "correspondence"]
+tactic_class = "math"
+semantic_class = "function"
+notes = "ConceptNet /c/en/function — top edges: /r/IsA {mathematical_object}; /r/HasA {domain, codomain}."
+
+[[synonym]]
+canonical = "equation"
+aliases = ["formula", "expression", "identity", "relation"]
+tactic_class = "math"
+semantic_class = "equation"
+notes = "ConceptNet /c/en/equation — top edges: /r/RelatedTo {formula, algebra}; /r/UsedFor {solving}."
+
+[[synonym]]
+canonical = "algebra"
+aliases = ["linear_algebra", "abstract_algebra", "boolean_algebra", "ring_theory"]
+tactic_class = "math"
+semantic_class = "algebra"
+notes = "ConceptNet /c/en/algebra — top edges: /r/PartOf {mathematics}."
+
+[[synonym]]
+canonical = "group_theory"
+aliases = ["group", "symmetry_group", "Lie_group", "permutation_group"]
+tactic_class = "math"
+semantic_class = "group-theory"
+notes = "ConceptNet /c/en/group_theory — top edges: /r/PartOf {abstract_algebra}."
+
+# ============================================================
+# Logic / reasoning concepts
+# ============================================================
+
+[[synonym]]
+canonical = "logic"
+aliases = ["reasoning", "inference", "deduction", "rationality", "formal_logic"]
+tactic_class = "logic"
+semantic_class = "logic"
+notes = "ConceptNet /c/en/logic — top edges: /r/RelatedTo {reasoning, mathematics}."
+
+[[synonym]]
+canonical = "truth"
+aliases = ["validity", "correctness", "soundness", "true_statement"]
+tactic_class = "logic"
+semantic_class = "truth"
+notes = "ConceptNet /c/en/truth — top edges: /r/RelatedTo {fact, reality}."
+
+[[synonym]]
+canonical = "false"
+aliases = ["falsity", "untruth", "incorrect", "false_statement", "negation_of_truth"]
+tactic_class = "logic"
+semantic_class = "false"
+notes = "ConceptNet /c/en/false — top edges: /r/Antonym {true}."
+
+[[synonym]]
+canonical = "if_then"
+aliases = ["implies", "implication", "conditional", "entails", "leads_to"]
+tactic_class = "logic"
+semantic_class = "implication"
+notes = "ConceptNet /c/en/if_then — top edges: /r/RelatedTo {causality, conditional}."
+
+[[synonym]]
+canonical = "and"
+aliases = ["conjunction", "both", "logical_and", "intersection_of_conditions"]
+tactic_class = "logic"
+semantic_class = "conjunction"
+notes = "ConceptNet /c/en/and — top edges: /r/UsedFor {combining}."
+
+[[synonym]]
+canonical = "or"
+aliases = ["disjunction", "either", "logical_or", "alternative"]
+tactic_class = "logic"
+semantic_class = "disjunction"
+notes = "ConceptNet /c/en/or — top edges: /r/UsedFor {choosing}."
+
+[[synonym]]
+canonical = "not"
+aliases = ["negation", "denial", "logical_negation", "no"]
+tactic_class = "logic"
+semantic_class = "negation"
+notes = "ConceptNet /c/en/not — top edges: /r/UsedFor {negating}."
+
+[[synonym]]
+canonical = "every"
+aliases = ["all", "for_all", "universal", "always", "without_exception"]
+tactic_class = "logic"
+semantic_class = "universal"
+notes = "ConceptNet /c/en/every — top edges: /r/RelatedTo {all, universal}."
+
+[[synonym]]
+canonical = "some"
+aliases = ["exists", "there_exists", "any", "particular"]
+tactic_class = "logic"
+semantic_class = "existential"
+notes = "ConceptNet /c/en/some — top edges: /r/RelatedTo {existential, particular}."
+
+# ============================================================
+# Computer-science / proof-assistant concepts
+# ============================================================
+
+[[synonym]]
+canonical = "program"
+aliases = ["code", "software", "algorithm", "procedure", "routine"]
+tactic_class = "cs"
+semantic_class = "program"
+notes = "ConceptNet /c/en/program — top edges: /r/IsA {algorithm}; /r/HasA {input, output}."
+
+[[synonym]]
+canonical = "algorithm"
+aliases = ["procedure", "method", "process", "recipe", "computation"]
+tactic_class = "cs"
+semantic_class = "algorithm"
+notes = "ConceptNet /c/en/algorithm — top edges: /r/IsA {procedure}; /r/UsedFor {computing}."
+
+[[synonym]]
+canonical = "data_structure"
+aliases = ["list", "tree", "graph", "hash_table", "array"]
+tactic_class = "cs"
+semantic_class = "data-structure"
+notes = "ConceptNet /c/en/data_structure — top edges: /r/RelatedTo {algorithm, storage}."
+
+[[synonym]]
+canonical = "recursion"
+aliases = ["self_reference", "induction", "fixed_point", "iterative_definition"]
+tactic_class = "cs"
+semantic_class = "recursion"
+notes = "ConceptNet /c/en/recursion — top edges: /r/RelatedTo {function, base_case, induction}."
+
+[[synonym]]
+canonical = "type"
+aliases = ["kind", "sort", "class", "category", "data_type"]
+tactic_class = "cs"
+semantic_class = "type"
+notes = "ConceptNet /c/en/type — top edges: /r/IsA {classification}; /r/RelatedTo {kind}."
+
+[[synonym]]
+canonical = "verification"
+aliases = ["proof", "validation", "checking", "confirmation", "soundness_check"]
+tactic_class = "cs"
+semantic_class = "verification"
+notes = "ConceptNet /c/en/verification — top edges: /r/RelatedTo {testing, proof, validation}."
+
+[[synonym]]
+canonical = "specification"
+aliases = ["contract", "requirement", "spec", "interface", "blueprint"]
+tactic_class = "cs"
+semantic_class = "specification"
+notes = "ConceptNet /c/en/specification — top edges: /r/UsedFor {describing}."
+
+[[synonym]]
+canonical = "invariant"
+aliases = ["preserved", "unchanging", "loop_invariant", "constant_property"]
+tactic_class = "cs"
+semantic_class = "invariant"
+notes = "ConceptNet /c/en/invariant — top edges: /r/RelatedTo {constant, preservation, mathematics}."
+
+[[synonym]]
+canonical = "precondition"
+aliases = ["requires", "input_requirement", "guard", "entry_condition"]
+tactic_class = "cs"
+semantic_class = "precondition"
+notes = "ConceptNet /c/en/precondition — top edges: /r/RelatedTo {condition, prerequisite}."
+
+[[synonym]]
+canonical = "postcondition"
+aliases = ["ensures", "output_guarantee", "exit_condition", "result_property"]
+tactic_class = "cs"
+semantic_class = "postcondition"
+notes = "ConceptNet /c/en/postcondition — top edges: /r/RelatedTo {result, ensure}."
+
+# ============================================================
+# Structural / category concepts
+# ============================================================
+
+[[synonym]]
+canonical = "structure"
+aliases = ["form", "composition", "organisation", "framework", "skeleton"]
+tactic_class = "structure"
+semantic_class = "structure"
+notes = "ConceptNet /c/en/structure — top edges: /r/RelatedTo {form, organisation, system}."
+
+[[synonym]]
+canonical = "category"
+aliases = ["class", "type", "kind", "classification", "Cat"]
+tactic_class = "structure"
+semantic_class = "category"
+notes = "ConceptNet /c/en/category — top edges: /r/RelatedTo {classification, mathematics}."
+
+[[synonym]]
+canonical = "morphism"
+aliases = ["arrow", "map", "homomorphism", "structure_preserving_map"]
+tactic_class = "structure"
+semantic_class = "morphism"
+notes = "ConceptNet /c/en/morphism — top edges: /r/IsA {function}; /r/RelatedTo {category_theory}."
+
+[[synonym]]
+canonical = "isomorphism"
+aliases = ["bijection", "structural_equivalence", "iso", "≃"]
+tactic_class = "structure"
+semantic_class = "isomorphism"
+notes = "ConceptNet /c/en/isomorphism — top edges: /r/IsA {morphism, equivalence}."
+
+[[synonym]]
+canonical = "homomorphism"
+aliases = ["structure_morphism", "preserves_operation", "algebra_morphism"]
+tactic_class = "structure"
+semantic_class = "homomorphism"
+notes = "ConceptNet /c/en/homomorphism — top edges: /r/IsA {morphism}."
+
+# ============================================================
+# Set-theoretic concepts
+# ============================================================
+
+[[synonym]]
+canonical = "set"
+aliases = ["collection", "aggregate", "group", "ensemble", "family"]
+tactic_class = "math"
+semantic_class = "set"
+notes = "ConceptNet /c/en/set — top edges: /r/IsA {collection}; /r/RelatedTo {mathematics}."
+
+[[synonym]]
+canonical = "element"
+aliases = ["member", "instance", "component", "individual", "item"]
+tactic_class = "math"
+semantic_class = "element"
+notes = "ConceptNet /c/en/element — top edges: /r/PartOf {set}; /r/RelatedTo {member}."
+
+[[synonym]]
+canonical = "subset"
+aliases = ["contained", "included", "part_of", "subcollection"]
+tactic_class = "math"
+semantic_class = "subset"
+notes = "ConceptNet /c/en/subset — top edges: /r/IsA {set, relation}."
+
+[[synonym]]
+canonical = "union"
+aliases = ["combine", "joining", "merging", "set_union"]
+tactic_class = "math"
+semantic_class = "union"
+notes = "ConceptNet /c/en/union — top edges: /r/RelatedTo {combine, merge}."
+
+[[synonym]]
+canonical = "intersection"
+aliases = ["common_elements", "overlap", "set_intersection", "shared"]
+tactic_class = "math"
+semantic_class = "intersection"
+notes = "ConceptNet /c/en/intersection — top edges: /r/RelatedTo {overlap, common}."
+
+# ============================================================
+# Topology / continuity concepts
+# ============================================================
+
+[[synonym]]
+canonical = "continuous"
+aliases = ["unbroken", "smooth", "without_jumps", "preserving_limits"]
+tactic_class = "math"
+semantic_class = "continuity"
+notes = "ConceptNet /c/en/continuous — top edges: /r/Antonym {discrete}; /r/RelatedTo {topology}."
+
+[[synonym]]
+canonical = "limit"
+aliases = ["bound", "edge", "convergence_point", "endpoint", "approached"]
+tactic_class = "math"
+semantic_class = "limit"
+notes = "ConceptNet /c/en/limit — top edges: /r/RelatedTo {bound, mathematics, calculus}."
+
+[[synonym]]
+canonical = "topology"
+aliases = ["geometric_structure", "open_sets", "neighbourhood_system"]
+tactic_class = "math"
+semantic_class = "topology"
+notes = "ConceptNet /c/en/topology — top edges: /r/IsA {mathematical_field}."
+
+[[synonym]]
+canonical = "open"
+aliases = ["accessible", "non_closed", "without_boundary"]
+tactic_class = "math"
+semantic_class = "open-set"
+notes = "ConceptNet /c/en/open — top edges (math sense): /r/Antonym {closed}; /r/RelatedTo {topology}."
+
+[[synonym]]
+canonical = "closed"
+aliases = ["complete", "non_open", "with_boundary", "contains_limits"]
+tactic_class = "math"
+semantic_class = "closed-set"
+notes = "ConceptNet /c/en/closed — top edges (math sense): /r/Antonym {open}."
+
+[[synonym]]
+canonical = "compact"
+aliases = ["bounded_and_closed", "finite_subcover", "small_space"]
+tactic_class = "math"
+semantic_class = "compactness"
+notes = "ConceptNet /c/en/compact — top edges: /r/RelatedTo {bounded, topology, finite}."
