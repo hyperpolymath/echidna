@@ -40,7 +40,11 @@ jobs:
       - name: Install just
         uses: taiki-e/install-action@184183c2401be73c3bf42c2e61268aa5855379c1 # v2.78.1
         with:
-          tool: just
+          # Governance R1 requires versioned family-tool pins
+          # (just|must|trust|adjust|bust|dust|intend); bare `tool: just`
+          # tripped the Security policy check on every push to main since
+          # #130 landed (2026-05-30). 1.51.0 is the current upstream stable.
+          tool: just@1.51.0
 
       - name: Build release
         run: cargo build --release
