@@ -85,12 +85,38 @@ clampConfidence n = case isLT n (S MaxConfidence) of
   Yes prf => natToFinLT n
   No _    => last  -- saturate to MaxConfidence
 
--- Round-trip lemma `natToFinToNat` is desirable but requires careful
--- LTE-weakening that has not yet been spelled out structurally. The
--- absence of this lemma here is INTENTIONAL: the file ships with the
--- comparison total order proven and the round-trip property captured
--- as a Wave-3 sub-issue rather than a believe-me hole. See issue
--- breadcrumb at the top of this file.
+------------------------------------------------------------------------
+-- natToFinLT / finToNat Round-Trip
+------------------------------------------------------------------------
+
+-- The LTE-weakening worry recorded in the original deferral comment was
+-- a unification trap, not a missing lemma. Specialising on
+-- `S MaxConfidence` directly forces the recursive call to see
+-- `LTE (S k) MaxConfidence`, but the recursive obligation needs
+-- `LTE (S k) (S MaxConfidence)` — the same proposition off-by-one.
+-- The polymorphic helper sidesteps the trap: with `m` implicit the
+-- recursive `m` is inferred to the structural predecessor, so the
+-- LTESucc pattern matches without explicit weakening. The
+-- `S MaxConfidence` instance is then a one-line specialisation.
+
+||| Generic round-trip: every nat strictly below `m` is faithfully
+||| recovered by `finToNat . natToFinLT`. Polymorphic in `m` so the
+||| recursion's implicit upper bound shrinks structurally and the
+||| LTESucc pattern can be unpacked without `lteSuccRight` glue.
+public export
+finToNatNatToFinLT :
+  (n : Nat) -> {m : Nat} -> (0 prf : LT n m) ->
+  finToNat (natToFinLT n {prf}) = n
+finToNatNatToFinLT 0     (LTESucc _)  = Refl
+finToNatNatToFinLT (S k) (LTESucc lt) = cong S (finToNatNatToFinLT k lt)
+
+||| In-range nat ↔ ConfidenceFP round-trip. Discharges the round-trip
+||| obligation flagged at lines 88-93 of the original file.
+public export
+natToFinToNat :
+  (n : Nat) -> (0 prf : LT n (S MaxConfidence)) ->
+  finToNat (natToFinLT n {prf}) = n
+natToFinToNat n prf = finToNatNatToFinLT n prf
 
 ------------------------------------------------------------------------
 -- Comparison: by confidence, descending
@@ -188,9 +214,15 @@ confidenceFloatZero = Refl
 -- ABI Roundtrip Invariant
 ------------------------------------------------------------------------
 
--- clampRoundtripInRange is deferred along with natToFinToNat above;
--- the constructive round-trip proof requires the in-range
--- nat-fin-nat lemma which is the Wave-3 sub-issue. The clamp
--- operation itself is total and that totality is verified by
--- Idris2's pattern-matching exhaustiveness on the `with` of
--- `isLT n (S MaxConfidence)`.
+||| Clamp is the identity on in-range inputs. The `with`-abstraction
+||| pivots on the very `isLT n (S MaxConfidence)` that `clampConfidence`
+||| inspects, so the `Yes` branch reduces the case and we discharge it
+||| via the round-trip lemma; the `No` branch is contradicted by the
+||| in-range hypothesis, closed by `absurd`. Total, no admits.
+public export
+clampRoundtripInRange :
+  (n : Nat) -> (prf : LT n (S MaxConfidence)) ->
+  finToNat (clampConfidence n) = n
+clampRoundtripInRange n prf with (isLT n (S MaxConfidence))
+  _ | Yes prf' = natToFinToNat n prf'
+  _ | No nlt   = absurd (nlt prf)
