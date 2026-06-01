@@ -1,0 +1,50 @@
+# SPDX-License-Identifier: MPL-2.0
+# SPDX-FileCopyrightText: 2025-2026 Jonathan D.A. Jewell <j.d.a.jewell@open.ac.uk>
+#
+# R5 canonical-reference rule: bare prover counts in load-bearing
+# top-level docs must defer to docs/PROVER_COUNT.md (the canonical
+# tier table).
+#
+# Consumed by the `Canonical-reference drift (R5 generic)` step in
+# hyperpolymath/standards's governance-reusable.yml — see
+# hyperpolymath/standards#330. Replaces the previous local-only
+# .github/workflows/governance-doc-drift.yml (deleted in the same
+# commit).
+#
+# Rule format documented in the upstream step comment.
+
+id: prover-counts
+description: |
+  Bare prover counts (variants vs impl files vs advertised vs core)
+  in narrative-carrying top-level docs must defer to
+  docs/PROVER_COUNT.md so they cannot drift. Patterns are anchored
+  with (^|[[:space:]]) so neighbours like Tier-1, v1.2.3, port 8081
+  don't false-positive.
+
+patterns:
+  - '(^|[[:space:]])[0-9]+[[:space:]]+prover[[:space:]]+backends?\b'
+  - '(^|[[:space:]])[0-9]+[[:space:]]*-[[:space:]]*prover[[:space:]]+core\b'
+  - '(^|[[:space:]])[0-9]+[[:space:]]+core[[:space:]]+(backends?|provers?)\b'
+  - '(^|[[:space:]])[0-9]+[[:space:]]+(backends?|provers?)[[:space:]]+(operational|advertised|implemented|available|across|total)\b'
+  - '(^|[[:space:]])[0-9]+[[:space:]]+ProverKind[[:space:]]+variants?\b'
+  - '(^|[[:space:]])[0-9]+[[:space:]]+backend[[:space:]]+implementation[[:space:]]+files?\b'
+  - '(^|[[:space:]])[0-9]+/[0-9]+[[:space:]]+(backends?|provers?)\b'
+
+canonical_pointer: docs/PROVER_COUNT.md
+
+scope:
+  include:
+    - README.md
+    - README.adoc
+    - EXPLAINME.adoc
+    - CLAUDE.md
+    - CONTRIBUTING.md
+    - CONTRIBUTING.adoc
+    - QUICKSTART-USER.adoc
+    - QUICKSTART-DEV.adoc
+    - QUICKSTART-MAINTAINER.adoc
+    - RSR_COMPLIANCE.adoc
+    - SECURITY.md
+    - MAINTAINERS.adoc
+    - AUTHORS.md
+    - CODE_OF_CONDUCT.md
