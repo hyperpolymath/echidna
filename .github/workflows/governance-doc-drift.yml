@@ -1,0 +1,151 @@
+# SPDX-License-Identifier: MPL-2.0
+#
+# governance-doc-drift.yml — local-to-echidna governance rule R5.
+#
+# Companion to the shared `governance.yml` wrapper (which calls
+# hyperpolymath/standards/governance-reusable.yml). Adds a hard gate
+# specifically for the kind of doc drift that the
+# #169 / #170 narrative-coherence PRs cleaned up: bare prover counts
+# outside docs/PROVER_COUNT.md and pinned version strings outside
+# CHANGELOG.md / Cargo.toml.
+#
+# Scope is deliberately tight: load-bearing top-level docs only.
+# Sub-tree docs (docs/handover/, docs/decisions/, docs/releases/,
+# docs/reports/, audits, etc.) are owner-managed historical
+# snapshots and not scanned. Sub-crate READMEs likewise belong to
+# their own crate-local cadence.
+#
+# Promoting this rule into hyperpolymath/standards's
+# governance-reusable.yml is the natural follow-up once the pattern
+# proves out here — keeping it local first means a fail closes one
+# repo, not the estate.
+
+name: Governance / Doc drift (R5)
+
+on:
+  push:
+    branches: [main, master]
+    paths:
+      - '*.md'
+      - '*.adoc'
+      - '.github/workflows/governance-doc-drift.yml'
+  pull_request:
+    paths:
+      - '*.md'
+      - '*.adoc'
+      - '.github/workflows/governance-doc-drift.yml'
+  workflow_dispatch:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  r5-doc-drift:
+    name: R5 — canonical-reference drift detection
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+
+      - name: R5a — bare prover counts outside docs/PROVER_COUNT.md
+        run: |
+          set -euo pipefail
+          # Load-bearing narrative-carrying surfaces. Add new entries
+          # here when promoting a doc into the canonical-reference set.
+          DOCS=(
+            README.md README.adoc
+            EXPLAINME.adoc
+            CLAUDE.md
+            CONTRIBUTING.md CONTRIBUTING.adoc
+            QUICKSTART-USER.adoc QUICKSTART-DEV.adoc QUICKSTART-MAINTAINER.adoc
+            RSR_COMPLIANCE.adoc
+            SECURITY.md
+            MAINTAINERS.adoc
+            AUTHORS.md
+            CODE_OF_CONDUCT.md
+          )
+          # Patterns that consistently re-introduced drift across the
+          # #169 / #170 cleanup. Each alternation is anchored so a digit
+          # following `Tier-`, `v`, `port `, `:` etc. does NOT match —
+          # only standalone counts trip the rule.
+          PATTERNS=(
+            '(^|[[:space:]])[0-9]+[[:space:]]+prover[[:space:]]+backends?\b'
+            '(^|[[:space:]])[0-9]+[[:space:]]*-[[:space:]]*prover[[:space:]]+core\b'
+            '(^|[[:space:]])[0-9]+[[:space:]]+core[[:space:]]+(backends?|provers?)\b'
+            '(^|[[:space:]])[0-9]+[[:space:]]+(backends?|provers?)[[:space:]]+(operational|advertised|implemented|available|across|total)\b'
+            '(^|[[:space:]])[0-9]+[[:space:]]+ProverKind[[:space:]]+variants?\b'
+            '(^|[[:space:]])[0-9]+[[:space:]]+backend[[:space:]]+implementation[[:space:]]+files?\b'
+            '(^|[[:space:]])[0-9]+/[0-9]+[[:space:]]+(backends?|provers?)\b'
+          )
+          HITS=0
+          for doc in "${DOCS[@]}"; do
+            [ -f "$doc" ] || continue
+            for pat in "${PATTERNS[@]}"; do
+              while IFS= read -r line; do
+                [ -n "$line" ] || continue
+                echo "::error file=$doc::R5a bare prover count: $line — route to docs/PROVER_COUNT.md (the canonical tier table)"
+                HITS=$((HITS+1))
+              done < <(grep -nE "$pat" "$doc" 2>/dev/null || true)
+            done
+          done
+          if [ "$HITS" -gt 0 ]; then
+            echo ""
+            echo "::error::R5a tripped on $HITS line(s)."
+            echo "Fix: replace the bare count with a pointer to docs/PROVER_COUNT.md"
+            echo "(\"the canonical tier table\"). See PR #169 / #170 for the pattern."
+            exit 1
+          fi
+          echo "✓ R5a clean — no bare prover counts in load-bearing docs."
+
+      - name: R5b — pinned version strings outside CHANGELOG.md / Cargo.toml
+        run: |
+          set -euo pipefail
+          DOCS=(
+            README.md README.adoc
+            EXPLAINME.adoc
+            CLAUDE.md
+            CONTRIBUTING.md CONTRIBUTING.adoc
+            QUICKSTART-USER.adoc QUICKSTART-DEV.adoc QUICKSTART-MAINTAINER.adoc
+            RSR_COMPLIANCE.adoc
+            SECURITY.md
+            MAINTAINERS.adoc
+            AUTHORS.md
+            CODE_OF_CONDUCT.md
+          )
+          # Matches `Version: 1.2.3` / `**Version**: 1.2.3` / `_Version_: v1.2.3`
+          # etc. Not `Version` without a number, not `version = "x"` in code
+          # blocks that just talk about a dep field name.
+          PATTERN='^[[:space:]]*[*_]{0,2}Version[*_]{0,2}[[:space:]]*[:=][[:space:]]*v?[0-9]+\.[0-9]+\.[0-9]+'
+          HITS=0
+          for doc in "${DOCS[@]}"; do
+            [ -f "$doc" ] || continue
+            while IFS= read -r line; do
+              [ -n "$line" ] || continue
+              echo "::error file=$doc::R5b pinned version: $line — route to CHANGELOG.md (release history) or Cargo.toml (semver pin)"
+              HITS=$((HITS+1))
+            done < <(grep -nE "$PATTERN" "$doc" 2>/dev/null || true)
+          done
+          if [ "$HITS" -gt 0 ]; then
+            echo ""
+            echo "::error::R5b tripped on $HITS line(s)."
+            echo "Fix: drop the embedded version; defer to CHANGELOG.md + the"
+            echo "git log. Cargo.toml's [package].version is the semver pin."
+            exit 1
+          fi
+          echo "✓ R5b clean — no pinned version strings in load-bearing docs."
+
+      - name: Summary
+        run: |
+          echo "R5 (canonical-reference drift) summary"
+          echo "----------------------------------------"
+          echo "R5a: bare prover counts          → docs/PROVER_COUNT.md"
+          echo "R5b: pinned version strings      → CHANGELOG.md / Cargo.toml"
+          echo ""
+          echo "Scope: 14 load-bearing top-level docs. Sub-tree historical"
+          echo "docs (docs/handover/, docs/decisions/, docs/releases/, …)"
+          echo "are deliberately out of scope — they are owner-managed"
+          echo "snapshots, not the canonical narrative surface."
