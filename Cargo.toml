@@ -54,7 +54,7 @@ actix = "0.13"
 nom = "7"
 
 # REPL
-rustyline = "15"
+rustyline = "18"
 
 # Hashing (BLAKE3 for speed, SHAKE3-512 via tiny-keccak for provenance)
 blake3 = "1"
