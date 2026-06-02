@@ -58,7 +58,7 @@ jobs:
   #   statically.
   chapel-build:
     name: Compile Chapel Metalayer
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-22.04
     steps:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
 
@@ -74,7 +74,7 @@ jobs:
           sudo apt-get install -y libunwind-dev
           curl -fsSL --max-time 300 --retry 3 -o /tmp/chapel.deb "$CHAPEL_DEB_URL"
           echo "$CHAPEL_DEB_SHA256  /tmp/chapel.deb" | sha256sum --check
-          sudo dpkg -i /tmp/chapel.deb || sudo apt-get install -f -y
+          sudo apt-get install -y /tmp/chapel.deb
           chpl --version
 
       - name: Compile Chapel proof search library (static)
@@ -109,7 +109,7 @@ jobs:
   # `src/zig_ffi/build.zig`.
   zig-ffi:
     name: Build & Test Zig FFI Bridge
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-22.04
     steps:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
 
@@ -137,7 +137,7 @@ jobs:
   # Re-enable strict gating once #133's Chapel + FFI rehabilitation lands.
   rust-chapel-feature:
     name: Rust Build with Chapel Feature
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-22.04
     needs: zig-ffi
     continue-on-error: true
     steps:
@@ -175,7 +175,7 @@ jobs:
   # and flip this job to strict.
   rust-chapel-real:
     name: Rust Build — Real Chapel Library (allow-fail, L2.3+ gate)
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-22.04
     needs: [chapel-build, zig-ffi]
     continue-on-error: true
     steps:
@@ -188,7 +188,7 @@ jobs:
           sudo apt-get install -y libunwind-dev
           curl -fsSL --max-time 300 --retry 3 -o /tmp/chapel.deb "$CHAPEL_DEB_URL"
           echo "$CHAPEL_DEB_SHA256  /tmp/chapel.deb" | sha256sum --check
-          sudo dpkg -i /tmp/chapel.deb || sudo apt-get install -f -y
+          sudo apt-get install -y /tmp/chapel.deb
           chpl --version
 
       - name: Install Zig
