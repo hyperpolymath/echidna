@@ -1,0 +1,276 @@
+// SPDX-License-Identifier: MPL-2.0
+// SPDX-FileCopyrightText: 2026 Jonathan D.A. Jewell <j.d.a.jewell@open.ac.uk>
+:toc: left
+:toclevels: 2
+:sectnums:
+:icons: font
+
+= L3 → L1 gate path: precise checklist
+
+_Closes audit item *D18* from the 2026-06-03_
+_"what stops echidna from running proof work across the estate"_
+_punch list._
+
+Status as of *2026-06-03*: **gate NOT satisfied**. L1 (Cap'n Proto) and
+L2 (Chapel full integration) are blocked until every box below is
+ticked. This document enumerates exactly what remains.
+
+== Where the criteria come from
+
+`docs/handover/L3-LIVE-PROVER-CI-PROMPT.md` "Hand to L1 when":
+
+* All four waves land or are explicitly deferred with rationale in
+  `STATE.a2ml`.
+* Tier-1 has run green on main for ≥7 days.
+
+`docs/handover/TODO.md` adds two operational pre-requisites (P0, P1).
+
+These five criteria are unpacked below.
+
+== Criterion 1 — Wave-1 (Tier-1, every PR)
+
+Wave-1 is the every-PR Tier-1 matrix (9 backends): coq, agda, lean4,
+isabelle, z3, cvc5, eprover, alt-ergo, why3.
+
+[%header,cols="2,1,3"]
+|===
+| Sub-criterion | Status | Notes
+
+| Wave-1 manifest exists
+| ✅ DONE
+| `manifests/live-provers.scm` + `.github/workflows/live-provers.yml`
+  (b022bf4, 2026-04-18).
+
+| Wave-1 binaries reachable on CI
+| ✅ DONE
+| 9 backends present; verified locally 2026-04-19 (18/18 tests pass).
+
+| Wave-1 green on main for ≥7 days
+| ⚠ UNKNOWN
+| `STATE.a2ml [session-…l3-triage] wave-1-status = "UNKNOWN — run data
+  inaccessible"`. Needs a `gh run list --workflow live-provers.yml
+  --branch main --status success` count over the last 7 days. Cannot
+  be ticked without that evidence.
+|===
+
+**To close:** run the gh query, confirm ≥7 consecutive successful
+nightly invocations on main, and amend `STATE.a2ml` to record the
+window.
+
+== Criterion 2 — Wave-2 (Tier-2, nightly)
+
+Wave-2 is the nightly Tier-2 matrix (10 backends): idris2, isabelle,
+dafny, fstar, tlaps, vampire, gnatprove, glpk, spass, minizinc. (HOL
+Light deferred to Wave-3.)
+
+[%header,cols="2,1,3"]
+|===
+| Sub-criterion | Status | Notes
+
+| Wave-2 installers landed (local)
+| ✅ DONE
+| Real provisioning commands shipped 2026-04-19 (9a4aeeb + 6717b12).
+  18/18 local tests pass; 13 real-version returns; 5 auto-skipped.
+
+| Wave-2 installers green in CI
+| ⚠ UNVERIFIED
+| TODO.md P0 row: "Wave-2 installers (idris2 / isabelle / dafny /
+  fstar / tlaps) are local-pass but CI-unverified." Likely failure
+  modes documented: Isabelle 500 MB download timeout, tlapm release
+  URL drift, `fstar.exe` symlink resolution, apt mirror changes.
+
+| HOL Light explicitly deferred to Wave-3
+| ✅ DONE
+| Deferred + rationale (no prebuilt binary, opam build ~20 min +
+  camlp5). Recorded in STATE.a2ml.
+|===
+
+**To close:** wait for the next `0 3 * * *` UTC nightly to fire and
+fix any red matrix cells in-place. Then run the 7-day green window
+check (Criterion 1, sub-row 3) against the Tier-2 matrix.
+
+== Criterion 3 — Wave-3 (Tier-3, weekly)
+
+Wave-3 is the weekly Tier-3 container matrix (9 backends): tamarin,
+proverif, imandra, scip, or-tools, hol4, acl2, twelf, metamath.
+
+[%header,cols="2,1,3"]
+|===
+| Sub-criterion | Status | Notes
+
+| Wave-3 containers landed
+| ✅ DONE
+| PR #73 (2026-05-18) consolidated `.containerization/Containerfile.wave3` —
+  one shared `rust-builder`, `--target` per prover.
+
+| All non-proprietary backends runtime-smoke-verified REAL
+| ✅ DONE
+| 8/8 confirmed by exercising the binary in the built image (not by
+  trusting the build log). Five silent-stub failures fixed at-source
+  during verification: scip dead-download, tamarin dead-download,
+  metamath missing libc6-dev, or-tools missing build-number, twelf/acl2
+  baked build paths, proverif opam-solve.
+
+| Imandra documented as honest licence-gated stub
+| ✅ DONE
+| Real Rust adapter + Idris2 ABI proofs retained; `IMANDRA_TOKEN`
+  secret path documented; KEEP decision recorded 2026-05-18.
+
+| Container CI workflow green
+| ⚠ UNVERIFIED
+| `container-ci.yml` weekly tier3-container matrix is allow-fail. No
+  recent green-run count on main.
+
+| PR #74 (proverif opam) resolved
+| ✅ DONE
+| Closed by the 2026-05-18 source-tarball pivot.
+|===
+
+**To close:** verify `container-ci.yml` weekly Tier-3 runs are not
+silently red-but-allow-fail; record green-run count in `STATE.a2ml`.
+
+== Criterion 4 — Wave-4 (Tier-4, quarterly)
+
+Wave-4 is the quarterly allow-fail Tier-4 list (19 backends): Mizar,
+Nuprl, PVS, Minlog, Dedukti, Arend, KeY, Prism, UPPAAL, ViPER, NuSMV,
+Spin, TLC, CBMC, Seahorn, dReal, Boogie, Kissat, Alloy.
+
+[%header,cols="2,1,3"]
+|===
+| Sub-criterion | Status | Notes
+
+| Per-backend mock-only rationale in STATE.a2ml
+| ✅ DONE
+| `STATE.a2ml [wave-4-rationale]` carries one-line rationale per
+  backend (1ca9862, 2026-04-26).
+
+| Scaffold placeholder in `live-provers.yml`
+| ✅ DONE
+| Tier-4 placeholder job announces the list.
+
+| At least one Wave-4 quarterly run executed
+| ⚠ UNVERIFIED
+| No evidence in STATE.a2ml that the placeholder has ever fired.
+  Possibly cron-pinned but never visited.
+|===
+
+**To close:** check that the quarterly cron has fired at least once
+since scaffolding, OR explicitly defer Wave-4 with a STATE.a2ml note
+"Wave-4 is scaffold-only and acceptable in the L3 hand-off — to be
+revisited when a maintainer contributes a Containerfile".
+
+Both readings satisfy the L3 prompt's phrasing
+("...all four waves land *or are explicitly deferred with rationale*
+in STATE.a2ml"). The choice is the owner's.
+
+== Criterion 5 — Tier-1 green on main for ≥7 days
+
+Same as Criterion 1, sub-row 3 — broken out here because the L3 prompt
+states it as a top-level acceptance criterion.
+
+[%header,cols="2,1,3"]
+|===
+| Sub-criterion | Status | Notes
+
+| Run data accessible from a host with `gh` + auth
+| ❌ TODO
+| `STATE.a2ml [session-…l3-triage]` blocked on this. Local sessions
+  have lacked `gh` + GITHUB_TOKEN.
+
+| Tier-1 nightly green count ≥7 over last 7 days on main
+| ❌ TODO
+| Requires the above. Suggested query:
++
+[source,shell]
+----
+gh run list \
+  --workflow live-provers.yml \
+  --branch main \
+  --status success \
+  --limit 14 \
+  --json conclusion,startedAt
+----
+
+| Record green window in STATE.a2ml
+| ❌ TODO
+| Single key, e.g. `l3-tier1-green-window = "2026-MM-DD .. 2026-MM-DD"`.
+|===
+
+== Criterion 6 — Operational pre-requisites
+
+From `docs/handover/TODO.md`:
+
+[%header,cols="2,1,3"]
+|===
+| Sub-criterion | Status | Notes
+
+| `guix shell -m manifests/live-provers.scm -- just test-live`
+  end-to-end on a dev machine
+| ❌ TODO
+| Stated as L3 acceptance in the prompt. Has not been run end-to-end
+  on a fresh dev host (Guix-extend was rejected; sealed container is
+  the fallback for the not-in-Guix tail).
+
+| Dafny stub-shape upgrade (165 LoC → deep)
+| ⚠ UNKNOWN
+| Stated as L3 acceptance in the prompt. No commit found that closes
+  this; needs an audit pass against `src/rust/provers/dafny.rs`.
+
+| VeriSimDB integration emits live-run records
+| ⚠ PARTIAL
+| Per `feedback_verisimdb_policy`, write paths exist in
+  `dispatch.rs::emit_live_result` (2026-04-26). CI workflow gated on
+  upstream `verisimdb#ghcr-publish.yml` — runbook YAML kept but not
+  merged upstream. Tracked separately by audit item A5.
+|===
+
+== Summary
+
+[%header,cols="1,4,1"]
+|===
+| Criterion | Description | Status
+
+| 1 | Wave-1 (every-PR Tier-1) green ≥7 days | ⚠ UNKNOWN (data not collected)
+| 2 | Wave-2 (nightly Tier-2) green ≥1 cycle | ⚠ UNVERIFIED
+| 3 | Wave-3 (weekly Tier-3) green ≥1 cycle | ⚠ UNVERIFIED
+| 4 | Wave-4 (quarterly Tier-4) executed or explicitly deferred | ⚠ owner choice
+| 5 | Tier-1 green ≥7 days on main (data) | ❌ TODO
+| 6a | `guix shell` local end-to-end | ❌ TODO
+| 6b | Dafny stub upgrade | ⚠ UNKNOWN
+| 6c | VeriSimDB live-record emission | ⚠ PARTIAL (gated on verisimdb#ghcr)
+|===
+
+**Minimum sufficient path to close the gate:**
+
+. Run the `gh run list` query for the last 14 nightlies of
+  `live-provers.yml` on main; record the green window in
+  `STATE.a2ml`. (Closes Criteria 1, 2, 5.)
+. Same query against `container-ci.yml` for Tier-3 weekly.
+  (Closes Criterion 3 sub-row 4.)
+. Owner decision on Wave-4: execute one quarterly run OR formally
+  defer with a STATE.a2ml note. (Closes Criterion 4 sub-row 3.)
+. One dev-host run of `guix shell -m manifests/live-provers.scm --
+  just test-live`. (Closes Criterion 6a.)
+. Audit `src/rust/provers/dafny.rs` against the "deep wiring" bar
+  used for Coq / Lean4. If it falls short, file a follow-up; if it
+  meets the bar, record that in STATE.a2ml. (Closes Criterion 6b.)
+. (Criterion 6c stays parked on `verisimdb#ghcr-publish.yml` — that
+  is upstream-blocked and not on this gate's critical path.)
+
+Estimated effort: **one session** if the gh tokens are available.
+Without gh access, Criteria 1/2/3/5 cannot close, full stop.
+
+== Cross-references
+
+* `docs/handover/L3-LIVE-PROVER-CI-PROMPT.md` — original L3 mission.
+* `docs/handover/TODO.md` — P0 / P1 rows referenced above.
+* `docs/handover/L1-CAPNPROTO-PROMPT.md` — the prompt that fires
+  once this gate closes.
+* `docs/handover/L2-CHAPEL-PROMPT.md` — blocked behind L1 + this gate.
+* C12 PR (echidnabot manifest) — per-repo opt-in shape for consumers.
+* C14 PR (cross-repo proof DAG design) — what L1's Cap'n Proto schemas
+  must carry.
+* C15 PR (gitbot-fleet hypatia wiring) — the closed-loop signal the
+  L3 gate depends on for VeriSimDB record quality.
+* B7 PR (HP backend correction) — confirms the HP ecosystem is not
+  blocking L3.
