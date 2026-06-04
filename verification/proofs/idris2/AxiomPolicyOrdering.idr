@@ -21,6 +21,8 @@
 
 module AxiomPolicyOrdering
 
+import Data.Nat
+
 %default total
 
 -- ==========================================================================

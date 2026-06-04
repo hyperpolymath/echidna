@@ -198,7 +198,15 @@ function __init__()
     # Check CUDA availability
     if CUDA.functional()
         @info "CUDA available - using GPU acceleration"
-        @info "CUDA version: $(CUDA.version())"
+        # CUDA.jl 5.x uses runtime_version() / driver_version();
+        # legacy CUDA.version() was removed. Wrap defensively so a
+        # logging-only probe can't kill the init path.
+        try
+            @info "CUDA runtime version: $(CUDA.runtime_version())"
+            @info "CUDA driver version: $(CUDA.driver_version())"
+        catch e
+            @debug "CUDA version probe failed (non-fatal)" exception=e
+        end
         @info "Device: $(CUDA.device())"
     else
         @info "CUDA not available - using CPU"
