@@ -26,11 +26,14 @@ jobs:
     permissions:
       contents: read
       security-events: write
+    timeout-minutes: 15
     strategy:
       fail-fast: false
       matrix:
         include:
           - language: javascript-typescript
+            build-mode: none
+          - language: cpp
             build-mode: none
 
     steps:

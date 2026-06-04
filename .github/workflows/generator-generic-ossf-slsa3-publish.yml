@@ -23,6 +23,7 @@ on:
 jobs:
   build:
     runs-on: ubuntu-latest
+    timeout-minutes: 10
     outputs:
       digests: ${{ steps.hash.outputs.digests }}
 
@@ -60,6 +61,7 @@ jobs:
 
   provenance:
     needs: [build]
+    timeout-minutes: 10
     permissions:
       actions: read   # To read the workflow path.
       id-token: write # To sign the provenance.
