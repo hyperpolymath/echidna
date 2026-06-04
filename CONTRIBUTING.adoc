@@ -165,6 +165,18 @@ direction — the license stance is intentionally MPL-2.0 across the
 documentation surface, and historical drift on individual files is
 owner-managed.
 
+ECHIDNA's contribution model historically references the
+*Palimpsest License* as an ethical / philosophical framework
+alongside the legal licence. That framework reference is preserved
+as part of the project's stance: the *legal* licence remains as
+declared by the SPDX header on each file (MPL-2.0 for the
+documentation surface; historical drift owner-managed). The
+Palimpsest framework is a discipline about how contributions are
+received, attributed, and forwarded — orthogonal to the SPDX
+choice. The Palimpsest licence proper is the legal licence only on
+`palimpsest-license`, `palimpsest-plasma`, and (prospectively)
+`consent-aware-http`.
+
 == Security
 
 Vulnerabilities go through link:SECURITY.md[`SECURITY.md`], not the
