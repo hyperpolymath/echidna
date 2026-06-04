@@ -9,6 +9,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+
+- ci(chapel): pin runs-on to ubuntu-22.04 for Chapel 2.8.0 libclang-cpp.so.14 ABI compatibility (#183). Chapel 2.8.0's debian package is built against LLVM-14 / Ubuntu 22.04; on Ubuntu 24.04 (`ubuntu-latest`) apt resolves the unmet dependency with libclang-cpp-18, leaving `chpl` unable to load. Also switched install to `apt-get install -y /tmp/chapel.deb` so libclang-cpp14 / libllvm14 are resolved declaratively in one pass.
+
 ### Added — Saturation campaign 2026-06-01
 
 Branch `prover-corpus-saturation` (commits f73ee00..cb8caff). Owner-directed marginal-benefit push across corpus, vocabulary, arbitration, exchange, and wire-schema surfaces. See `docs/decisions/2026-06-01-saturation-campaign.md`.

@@ -175,7 +175,15 @@ min-trust-lb-left Level5 Level4 = l4≤5
 min-trust-lb-left Level5 Level5 = l5≤5
 
 min-trust-lb-right : ∀ (a b : TrustLevel) → min-trust a b ≤ₜ b
-min-trust-lb-right _ Level1 = l1≤
+-- `min-trust` splits on its FIRST argument (clause `min-trust Level1 _`),
+-- so `min-trust a Level1` is stuck for a neutral `a`: it does not reduce to
+-- `Level1`. We therefore enumerate the first argument explicitly (mirroring
+-- `min-trust-lb-left`) so each `min-trust <Lvl> Level1` reduces to `Level1`.
+min-trust-lb-right Level1 Level1 = l1≤
+min-trust-lb-right Level2 Level1 = l1≤
+min-trust-lb-right Level3 Level1 = l1≤
+min-trust-lb-right Level4 Level1 = l1≤
+min-trust-lb-right Level5 Level1 = l1≤
 min-trust-lb-right Level1 Level2 = l1≤
 min-trust-lb-right Level1 Level3 = l1≤
 min-trust-lb-right Level1 Level4 = l1≤

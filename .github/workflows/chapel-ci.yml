@@ -27,6 +27,17 @@ concurrency:
 
 permissions: read-all
 
+# Pinned Chapel deb (Ubuntu 22.04 amd64; installs cleanly on the
+# ubuntu24 runner). SHA-256 verified against the GitHub Releases asset;
+# mismatch fails the install step. Bumped 2.3.0 -> 2.8.0 (issue #181)
+# to track sibling estate repos proven (#141) and panic-attack (#85),
+# both of which validated this URL+SHA combo against the same
+# `ubuntu-latest` runner image we use here.
+env:
+  CHAPEL_VERSION: '2.8.0'
+  CHAPEL_DEB_URL: 'https://github.com/chapel-lang/chapel/releases/download/2.8.0/chapel-2.8.0-1.ubuntu22.amd64.deb'
+  CHAPEL_DEB_SHA256: '944a454b8a791f344312fcd261b562871159b74f5ef41d81e11833eb21d85f60'
+
 jobs:
   # Job 1: Compile Chapel .chpl files into a static library.
   #
@@ -35,30 +46,35 @@ jobs:
   # compiling, the workflow fails.
   #
   # Why --static and not --dynamic:
-  #   The official apt deb (chapel-2.3.0-1.ubuntu24.amd64.deb) ships only
-  #   the CHPL_LIB_PIC=none runtime variant. Building a shared library
-  #   requires CHPL_LIB_PIC=pic runtime objects which are not in the
-  #   package; the linker rejects the non-PIC `libchpl.a` with
+  #   The official apt deb (chapel-${CHAPEL_VERSION}-1.ubuntu22.amd64.deb)
+  #   ships only the CHPL_LIB_PIC=none runtime variant. Building a shared
+  #   library requires CHPL_LIB_PIC=pic runtime objects which are not in
+  #   the package; the linker rejects the non-PIC `libchpl.a` with
   #   `relocation R_X86_64_TPOFF32 ... can not be used when making a
   #   shared object`. Until the CI image ships a PIC-enabled runtime
-  #   (or we adopt a from-source Chapel build), the metalayer is
+  #   (or we adopt a from-source Chapel build via the
+  #   `chapel-pic-from-source` Justfile recipe), the metalayer is
   #   distributed as `libechidna_chapel.a` and the Zig FFI links it
   #   statically.
   chapel-build:
     name: Compile Chapel Metalayer
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-22.04
     steps:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
 
-      - name: Install Chapel
+      - name: Install Chapel ${{ env.CHAPEL_VERSION }} (SHA-pinned .deb)
         run: |
-          # Install Chapel from official apt repository.
-          # SHA256 of the deb is pinned for supply-chain integrity; bump
-          # alongside the version tag when upgrading.
-          curl -fsSL --max-time 300 \
-            https://github.com/chapel-lang/chapel/releases/download/2.3.0/chapel-2.3.0-1.ubuntu24.amd64.deb \
-            -o /tmp/chapel.deb
-          sudo dpkg -i /tmp/chapel.deb || sudo apt-get install -f -y
+          set -euo pipefail
+          # libunwind-dev is a runtime link-time dep for chpl-built binaries
+          # on the ubuntu .deb path; sibling estate repo panic-attack (#85)
+          # established this preinstall as the working pattern, reused by
+          # proven (#141). Without it the chapel-build smoke link fails with
+          # `error while loading shared libraries: libunwind.so.8`.
+          sudo apt-get update -qq
+          sudo apt-get install -y libunwind-dev
+          curl -fsSL --max-time 300 --retry 3 -o /tmp/chapel.deb "$CHAPEL_DEB_URL"
+          echo "$CHAPEL_DEB_SHA256  /tmp/chapel.deb" | sha256sum --check
+          sudo apt-get install -y /tmp/chapel.deb
           chpl --version
 
       - name: Compile Chapel proof search library (static)
@@ -93,7 +109,7 @@ jobs:
   # `src/zig_ffi/build.zig`.
   zig-ffi:
     name: Build & Test Zig FFI Bridge
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-22.04
     steps:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
 
@@ -121,7 +137,7 @@ jobs:
   # Re-enable strict gating once #133's Chapel + FFI rehabilitation lands.
   rust-chapel-feature:
     name: Rust Build with Chapel Feature
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-22.04
     needs: zig-ffi
     continue-on-error: true
     steps:
@@ -159,18 +175,20 @@ jobs:
   # and flip this job to strict.
   rust-chapel-real:
     name: Rust Build — Real Chapel Library (allow-fail, L2.3+ gate)
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-22.04
     needs: [chapel-build, zig-ffi]
     continue-on-error: true
     steps:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
 
-      - name: Install Chapel
+      - name: Install Chapel ${{ env.CHAPEL_VERSION }} (SHA-pinned .deb)
         run: |
-          curl -fsSL --max-time 300 \
-            https://github.com/chapel-lang/chapel/releases/download/2.3.0/chapel-2.3.0-1.ubuntu24.amd64.deb \
-            -o /tmp/chapel.deb
-          sudo dpkg -i /tmp/chapel.deb || sudo apt-get install -f -y
+          set -euo pipefail
+          sudo apt-get update -qq
+          sudo apt-get install -y libunwind-dev
+          curl -fsSL --max-time 300 --retry 3 -o /tmp/chapel.deb "$CHAPEL_DEB_URL"
+          echo "$CHAPEL_DEB_SHA256  /tmp/chapel.deb" | sha256sum --check
+          sudo apt-get install -y /tmp/chapel.deb
           chpl --version
 
       - name: Install Zig
