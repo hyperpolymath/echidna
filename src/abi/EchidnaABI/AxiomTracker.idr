@@ -17,6 +17,7 @@ module EchidnaABI.AxiomTracker
 
 import EchidnaABI.Types   -- ProverKind, Platform, etc.
 import Data.List
+import Data.List.Elem
 import Data.So
 import Decidable.Equality
 
@@ -44,7 +45,7 @@ Eq DangerLevel where
   _       == _       = False
 
 public export
-DecidableEq DangerLevel where
+DecEq DangerLevel where
   decEq Safe    Safe    = Yes Refl
   decEq Noted   Noted   = Yes Refl
   decEq Warning Warning = Yes Refl
@@ -117,6 +118,15 @@ isAcceptable _              = True
 -- (These are what SPARK GNATprove formally verifies on the Ada side.)
 -- ════════════════════════════════════════════════════════════════════════════
 
+||| Structural existential over a danger level.  Unlike the Foldable `any`
+||| (which folds via `foldl`, so it does NOT reduce on cons), this recurses
+||| structurally — letting the soundness/precision proofs below go through by
+||| induction with definitional reduction of the head test `x == d`.
+public export
+hasDanger : DangerLevel -> List DangerLevel -> Bool
+hasDanger _ []        = False
+hasDanger d (x :: xs) = (x == d) || hasDanger d xs
+
 ||| Specification of enforcePolicySpec: the reference function that the
 ||| SPARK implementation must replicate.
 |||
@@ -125,9 +135,9 @@ isAcceptable _              = True
 public export
 enforcePolicySpec : List DangerLevel -> AxiomPolicy
 enforcePolicySpec usages =
-  if any (== Reject) usages then PolicyRejected
-  else if any (== Warning) usages then PolicyIncomplete
-  else if any (== Noted) usages then PolicyClassical
+  if hasDanger Reject usages then PolicyRejected
+  else if hasDanger Warning usages then PolicyIncomplete
+  else if hasDanger Noted usages then PolicyClassical
   else PolicyClean
 
 -- ────────────────────────────────────────────────────────────────────────────
@@ -141,25 +151,21 @@ soundness
   -> Elem Reject usages
   -> enforcePolicySpec usages = PolicyRejected
 soundness usages prf =
-  rewrite anyRejectIsTrue usages prf in Refl
+  rewrite hasRejectIsTrue usages prf in Refl
   where
-    -- Prove any (== Reject) us = True given Reject ∈ us.
-    -- We case-split on the head constructor so that 'x == Reject' reduces
+    -- Prove hasDanger Reject us = True given Reject ∈ us.
+    -- Case-split on the head constructor so that 'x == Reject' reduces
     -- definitionally before applying the induction hypothesis via rewrite.
-    anyRejectIsTrue
+    hasRejectIsTrue
       : (us : List DangerLevel)
       -> Elem Reject us
-      -> any (== Reject) us = True
-    anyRejectIsTrue []             p            = absurd p
-    anyRejectIsTrue (Reject :: _)  Here         = Refl
-    anyRejectIsTrue (Safe    :: xs) (There p)   =
-      let ih := anyRejectIsTrue xs p in rewrite ih in Refl
-    anyRejectIsTrue (Noted   :: xs) (There p)   =
-      let ih := anyRejectIsTrue xs p in rewrite ih in Refl
-    anyRejectIsTrue (Warning :: xs) (There p)   =
-      let ih := anyRejectIsTrue xs p in rewrite ih in Refl
-    anyRejectIsTrue (Reject  :: xs) (There p)   =
-      let ih := anyRejectIsTrue xs p in rewrite ih in Refl
+      -> hasDanger Reject us = True
+    hasRejectIsTrue []              p          = absurd p
+    hasRejectIsTrue (Reject  :: _)  Here       = Refl
+    hasRejectIsTrue (Safe    :: xs) (There p)  = rewrite hasRejectIsTrue xs p in Refl
+    hasRejectIsTrue (Noted   :: xs) (There p)  = rewrite hasRejectIsTrue xs p in Refl
+    hasRejectIsTrue (Warning :: xs) (There p)  = rewrite hasRejectIsTrue xs p in Refl
+    hasRejectIsTrue (Reject  :: xs) (There _)  = Refl
 
 -- ────────────────────────────────────────────────────────────────────────────
 -- Invariant 2 (Precision): no Reject-in → not PolicyRejected-out
@@ -172,35 +178,38 @@ precision
   -> ((e : DangerLevel) -> Elem e usages -> Not (e = Reject))
   -> Not (enforcePolicySpec usages = PolicyRejected)
 precision usages noReject prf =
-  -- Derive any (== Reject) usages = False from the no-Reject hypothesis.
-  -- Then case-split on all three 'any' booleans so enforcePolicySpec usages
-  -- reduces definitionally in each branch; each non-Rejected result gives a
-  -- constructor mismatch with prf : ... = PolicyRejected.
-  let anyFalse := noRejectMeansAnyFalse usages noReject
-  in case any (== Reject) usages of
-       True  => absurd anyFalse                   -- anyFalse : True  = False
-       False =>
-         case any (== Warning) usages of
-           True  => case prf of { Refl impossible }  -- PolicyIncomplete ≠ PolicyRejected
-           False =>
-             case any (== Noted) usages of
-               True  => case prf of { Refl impossible }  -- PolicyClassical ≠ PolicyRejected
-               False => case prf of { Refl impossible }  -- PolicyClean ≠ PolicyRejected
+  -- A PolicyRejected verdict forces the Reject flag True (rejTrue); the
+  -- no-Reject hypothesis forces it False — contradiction.
+  absurd (trans (sym (rejTrue usages prf)) (noRejectMeansFalse usages noReject))
   where
-    -- Case-split on each constructor so 'x == Reject' reduces definitionally,
-    -- making 'False || any (== Reject) xs = any (== Reject) xs' automatic.
-    noRejectMeansAnyFalse
+    -- enforcePolicySpec us = PolicyRejected can only arise via the Reject
+    -- guard.  `with` on each flag lets the spec reduce per branch, so every
+    -- non-Reject branch contradicts `p` and the Reject branch returns Refl.
+    rejTrue : (us : List DangerLevel) ->
+              enforcePolicySpec us = PolicyRejected -> hasDanger Reject us = True
+    rejTrue us p with (hasDanger Reject us)
+      rejTrue us p | True = Refl
+      rejTrue us p | False with (hasDanger Warning us)
+        rejTrue us p | False | True = case p of { Refl impossible }
+        rejTrue us p | False | False with (hasDanger Noted us)
+          rejTrue us p | False | False | True  = case p of { Refl impossible }
+          rejTrue us p | False | False | False = case p of { Refl impossible }
+
+    -- No Reject in the list ⇒ the structural Reject check is False.
+    -- 'x == Reject' reduces definitionally, so 'False || hasDanger Reject xs'
+    -- collapses to the inductive hypothesis.
+    noRejectMeansFalse
       : (us : List DangerLevel)
       -> ((e : DangerLevel) -> Elem e us -> Not (e = Reject))
-      -> any (== Reject) us = False
-    noRejectMeansAnyFalse [] _ = Refl
-    noRejectMeansAnyFalse (Safe    :: xs) noR =
-      noRejectMeansAnyFalse xs (\e p => noR e (There p))
-    noRejectMeansAnyFalse (Noted   :: xs) noR =
-      noRejectMeansAnyFalse xs (\e p => noR e (There p))
-    noRejectMeansAnyFalse (Warning :: xs) noR =
-      noRejectMeansAnyFalse xs (\e p => noR e (There p))
-    noRejectMeansAnyFalse (Reject  :: xs) noR =
+      -> hasDanger Reject us = False
+    noRejectMeansFalse [] _ = Refl
+    noRejectMeansFalse (Safe    :: xs) noR =
+      rewrite noRejectMeansFalse xs (\e, p => noR e (There p)) in Refl
+    noRejectMeansFalse (Noted   :: xs) noR =
+      rewrite noRejectMeansFalse xs (\e, p => noR e (There p)) in Refl
+    noRejectMeansFalse (Warning :: xs) noR =
+      rewrite noRejectMeansFalse xs (\e, p => noR e (There p)) in Refl
+    noRejectMeansFalse (Reject  :: xs) noR =
       void (noR Reject Here Refl)
 
 -- ════════════════════════════════════════════════════════════════════════════
