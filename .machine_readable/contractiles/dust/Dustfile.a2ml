@@ -1,22 +1,158 @@
 # SPDX-License-Identifier: MPL-2.0
-# Dustfile — Cleanup and Hygiene Contract
+# Dustfile (A2ML Canonical)
+# Copyright (c) 2026 Jonathan D.A. Jewell (hyperpolymath)
 
-[dustfile]
-version = "1.0.0"
-format = "a2ml"
+@abstract:
+Fine-grained recovery (broom-and-pan: pick up tiny leftover state)
+for Echidna. Where Bustfile rolls back a broken commit and Adjustfile
+migrates to a new upstream version, Dustfile cleans the small dusty
+remnants — stale branches, orphan caches, dropped /tmp worktrees,
+half-merged stash entries, leftover process pids.
 
-[cleanup]
-stale-branch-policy = "delete-after-merge"
-artifact-retention = "90-days"
-cache-policy = "clear-on-release"
+Error-code namespace: D###
+Dust commands are idempotent and reversible; running them on a clean
+repo should be a no-op.
+@end
 
-[hygiene]
-linting = "required"
-formatting = "required"
-dead-code-removal = "encouraged"
-todo-tracking = "tracked-in-issues"
+@requires:
+- section: Branch-Dust
+- section: Worktree-Dust
+- section: Cache-Dust
+- section: Process-Dust
+- section: Artefact-Dust
+- section: Source-Dust
+@end
 
-[reversibility]
-backup-before-destructive = true
-rollback-mechanism = "git-revert"
-data-retention-policy = "preserve-30-days"
+@dust-cadence: weekly (cheap) ; before-release (thorough)
+
+## Branch-Dust
+
+### D001-stale-local-branches
+- description: local branches whose remote-tracking is gone
+- probe: git for-each-ref refs/heads --format '%(refname:short) %(upstream:track)' | grep -q '\[gone\]'
+- severity: low
+- dust: git fetch --prune ; for b in $(git for-each-ref refs/heads --format='%(refname:short) %(upstream:track)' | awk '/gone/ {print $1}'); do gh pr list --repo hyperpolymath/echidna --head "$b" --state merged --json number --jq '.[0].number' | grep -q '^[0-9]' && git branch -D "$b"; done
+- reversible: yes (re-fetch from origin if needed)
+
+### D002-stale-remote-branches
+- description: remote branches whose PR was squash-merged (git's mergedness detector misses)
+- probe: gh pr list --repo hyperpolymath/echidna --state all --limit 50 --json number,headRefName,state,mergedAt | jq '[.[] | select(.state=="MERGED" and (.mergedAt != null))] | length' | grep -qE '^[1-9]'
+- severity: low
+- dust: per merged PR, `gh api -X DELETE repos/hyperpolymath/echidna/git/refs/heads/<branch>` if still present
+- reversible: PR is the durable record; remote branch can be re-pushed
+
+## Worktree-Dust
+
+### D010-dangling-git-worktrees
+- description: registered worktrees pointing at nonexistent paths
+- probe: ! git worktree list 2>&1 | grep -q '\[prunable\]'
+- severity: low
+- dust: git worktree prune -v
+- reversible: yes (worktree is filesystem state; metadata only)
+
+### D011-tmp-agent-worktrees
+- description: /tmp/<repo>-* leftover from prior agent runs
+- probe: ls -d /tmp/echidna-* /tmp/echidnabot-* /tmp/gitbot-fleet-* /tmp/hyperpolymath-* 2>/dev/null | wc -l | grep -qE '^[1-9]'
+- severity: low
+- dust: for d in /tmp/<repo>-*; do case "$d" in *-saturation|*-training-bin|*-training-*.log|*-training-*.pid|*-training-*.status) ;; *) git -C <parent-repo> worktree remove --force "$d" 2>/dev/null || rm -rf "$d";; esac; done
+- reversible: per-worktree only (no commits at risk if worktree is clean)
+- exclude: /tmp/echidna-saturation (other Claude's territory), /tmp/echidna-training-* (active artefacts)
+
+## Cache-Dust
+
+### D020-cargo-target-bloat
+- description: target/ directory exceeds 5GB
+- probe: test -d target && du -sh target | awk '{print $1}' | grep -qE '^[1-9][0-9]+G$'
+- severity: low
+- dust: cargo clean ; or `cargo sweep --time 30` to keep recent only
+- reversible: yes (rebuild on next cargo command)
+
+### D021-julia-precompile-cache-stale
+- description: ~/.julia/compiled stale wrt Project.toml
+- probe: test -d ~/.julia/compiled && julia --project=src/julia -e 'using Pkg; Pkg.precompile()' 2>&1 | grep -q 'Precompiling'
+- severity: low
+- dust: rm -rf ~/.julia/compiled ; julia --project=src/julia -e 'using Pkg; Pkg.precompile()'
+- reversible: yes (regenerates lazily)
+
+### D022-podman-image-orphans
+- description: dangling podman images (built then orphaned by re-tag)
+- probe: podman images --filter dangling=true --format '{{.ID}}' | wc -l | grep -qE '^[1-9]'
+- severity: low
+- dust: podman image prune -f
+- reversible: yes (re-pull from registry if needed)
+
+### D023-chapel-build-artefacts
+- description: src/chapel/lib*.a or *.dylib leftover after feature flip
+- probe: find src/chapel -name '*.a' -o -name '*.so' -o -name '*.dylib' 2>/dev/null | head -1
+- severity: low
+- dust: rm src/chapel/lib*.a src/chapel/*.so src/chapel/*.dylib 2>/dev/null || true
+- reversible: yes (just chapel-build regenerates)
+
+## Process-Dust
+
+### D030-orphan-pid-files
+- description: /tmp/*.pid files pointing at no-longer-running PIDs
+- probe: ls /tmp/echidna-*.pid 2>/dev/null | while read f; do kill -0 $(cat "$f") 2>/dev/null || echo "$f"; done | head -1
+- severity: low
+- dust: for f in /tmp/echidna-*.pid; do kill -0 $(cat "$f") 2>/dev/null || rm -f "$f" "${f%.pid}.status"; done
+- reversible: harmless (re-created by next launcher)
+
+### D031-stale-status-files
+- description: /tmp/*.status files marked RUNNING but process dead
+- probe: ls /tmp/echidna-*.status 2>/dev/null | while read f; do pid=$(cat "${f%.status}.pid" 2>/dev/null); grep -q RUNNING "$f" && [ -n "$pid" ] && ! kill -0 "$pid" 2>/dev/null && echo "$f"; done | head -1
+- severity: low
+- dust: per-file: update status to ORPHANED or remove if no longer of interest
+- reversible: harmless
+
+## Artefact-Dust
+
+### D040-prior-run-models
+- description: models/neural/ from prior training runs that aren't the current canonical
+- probe: ls models/neural/ 2>/dev/null | grep -E 'checkpoint_epoch_[0-9]+' | wc -l | grep -qE '^[4-9]|^[0-9]{2,}'
+- severity: low
+- dust: keep best_model + final_model + gnn_ranker; archive epoch checkpoints under models/neural/archive/<run-id>/
+- reversible: yes (data preserved under archive/)
+
+### D041-corpus-snapshot-overlap
+- description: data/corpus/*.json overlapping with newer saturation outputs
+- probe: ls data/corpus/*.json 2>/dev/null | wc -l | grep -qE '^[1-9][0-9]+'
+- severity: low
+- dust: archive older corpus snapshots under data/corpus/archive/<date>/
+- reversible: yes
+
+### D042-training-data-jsonl-bloat
+- description: training_data/*.jsonl pre-saturation files no longer canonical
+- probe: ls training_data/proof_states_*.jsonl 2>/dev/null | wc -l | grep -qE '^[1-9]'
+- severity: low
+- dust: archive ; do NOT delete (load-bearing for JSONL-fallback training path until full saturation pipeline is the only entry point)
+- reversible: yes
+
+## Source-Dust
+
+### D050-todo-with-no-issue
+- description: TODO/FIXME comments without a tracking issue reference
+- probe: grep -rnE 'TODO|FIXME|XXX' src/ 2>/dev/null | grep -vE '#[0-9]+' | head -1
+- severity: low (informational)
+- dust: for each: either open a tracking issue + add `// TODO(#N):` prefix, or close out
+- reversible: yes (comment-only)
+
+### D051-unused-imports
+- description: Rust unused imports
+- probe: cargo clippy --workspace 2>&1 | grep -q 'unused import'
+- severity: low
+- dust: cargo fix --allow-dirty --allow-staged
+- reversible: yes (atomic)
+
+### D052-dead-code-warnings
+- description: dead_code warnings
+- probe: cargo build --workspace 2>&1 | grep -q 'warning: .* is never used'
+- severity: low
+- dust: review each — sometimes legitimate forward-prep; otherwise remove
+- reversible: yes (git history)
+
+@dust-philosophy:
+- "leave no trace": every run should be idempotent
+- "narrow blast radius": never combine destructive ops; one dust action per recipe
+- "reversibility first": every dust action should be undoable from git or by re-running a non-dust recipe
+- "exclusion list is sacred": active worktrees + production artefacts NEVER swept (see exclusions in D011)
+@end

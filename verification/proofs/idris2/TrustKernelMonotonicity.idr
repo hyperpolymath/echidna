@@ -20,6 +20,9 @@
 
 module TrustKernelMonotonicity
 
+import Data.Nat
+import NatLte
+
 %default total
 
 -- ==========================================================================
@@ -68,18 +71,20 @@ TrustLTE a b = trustValue a `LTE` trustValue b
 -- Convenience constructor aliases used in proofs below.
 
 trustLTE_refl : (t : TrustLevel) -> TrustLTE t t
-trustLTE_refl Level1 = LTESucc LTEZero
-trustLTE_refl Level2 = LTESucc (LTESucc LTEZero)
-trustLTE_refl Level3 = LTESucc (LTESucc (LTESucc LTEZero))
-trustLTE_refl Level4 = LTESucc (LTESucc (LTESucc (LTESucc LTEZero)))
-trustLTE_refl Level5 = LTESucc (LTESucc (LTESucc (LTESucc (LTESucc LTEZero))))
+trustLTE_refl Level1 = lteLit 1 1
+trustLTE_refl Level2 = lteLit 2 2
+trustLTE_refl Level3 = lteLit 3 3
+trustLTE_refl Level4 = lteLit 4 4
+trustLTE_refl Level5 = lteLit 5 5
 
 ||| Level4 ≤ Level4 and Level4 ≤ Level5: both satisfy ≥ Level4.
+||| Bodies use lteLit (machine-checked); level4LTELevel5 previously mis-counted
+||| as LTE 5 5 instead of LTE 4 5.
 level4LTELevel4 : TrustLTE Level4 Level4
-level4LTELevel4 = LTESucc (LTESucc (LTESucc (LTESucc LTEZero)))
+level4LTELevel4 = lteLit 4 4
 
 level4LTELevel5 : TrustLTE Level4 Level5
-level4LTELevel5 = LTESucc (LTESucc (LTESucc (LTESucc (LTESucc LTEZero))))
+level4LTELevel5 = lteLit 4 5
 
 -- ==========================================================================
 -- Section 4: TrustFactors record
@@ -224,7 +229,7 @@ trustMono_level5_exact
   : (n : Nat)
   -> (n >= 2 = True)
   -> (danger : DangerLevel)
-  -> (danger = Safe \/ danger = Noted)
+  -> Either (danger = Safe) (danger = Noted)
   -> computeTrustLevel (MkTrustFactors n True danger True True) = Level5
 trustMono_level5_exact n hge Safe    (Left  Refl) with (n >= 2)
   trustMono_level5_exact n hge Safe    (Left  Refl) | True  = Refl
@@ -244,7 +249,7 @@ trustMono_level5_conditions
   : (n : Nat)
   -> (n >= 2 = True)
   -> (danger : DangerLevel)
-  -> (danger = Safe \/ danger = Noted)
+  -> Either (danger = Safe) (danger = Noted)
   -> TrustLTE Level4
        (computeTrustLevel (MkTrustFactors n True danger True True))
 trustMono_level5_conditions n hge Safe  (Left  Refl) with (n >= 2)
