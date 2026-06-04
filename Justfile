@@ -360,6 +360,15 @@ eval:
 # Use `ECHIDNA_MAX_PROOF_STATES=0 just corpus-refresh` to lift the sample cap.
 corpus-refresh: provision-corpora extract-corpora merge-corpora align-premises retrain
 
+# Run training using the saturation-campaign corpus adapters as the
+# data source. Requires `just provision-corpora` to have populated
+# data/corpus/ first. Per-prover invocation; default lean.
+train-from-corpus prover="lean":
+    @julia --project=src/julia src/julia/run_training.jl \
+        --prover {{prover}} \
+        --corpus-json $(ls data/corpus/*.json | tr '\n' ',') \
+        --synonyms-dir data/synonyms
+
 # Run the eight-axis metrics suite against the current corpus and post
 # results to VeriSimDB. Falls back to training_data/metrics_<run_id>.jsonl
 # if VERISIM_URL is unreachable. Target values are documented in

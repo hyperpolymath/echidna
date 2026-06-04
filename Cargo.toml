@@ -42,7 +42,7 @@ tracing = "0.1"
 tracing-subscriber = { version = "0.3", features = ["env-filter"] }
 
 # Web/HTTP
-axum = { version = "0.7", features = ["macros"] }
+axum = { version = "0.8", features = ["macros"] }
 tower = "0.5"
 tower-http = { version = "0.6", features = ["cors", "trace"] }
 reqwest = { version = "0.12", default-features = false, features = ["json", "rustls-tls"] }
@@ -51,10 +51,10 @@ reqwest = { version = "0.12", default-features = false, features = ["json", "rus
 actix = "0.13"
 
 # Parsing
-nom = "7"
+nom = "8"
 
 # REPL
-rustyline = "15"
+rustyline = "18"
 
 # Hashing (BLAKE3 for speed, SHAKE3-512 via tiny-keccak for provenance)
 blake3 = "1"
@@ -73,7 +73,7 @@ ciborium = { version = "0.2", optional = true }
 chrono = { version = "0.4", features = ["serde"] }
 
 # Random number generation (for resilience jitter)
-rand = "0.9"
+rand = "0.10"
 
 # Temporary files (used by prover backends to invoke external solvers)
 tempfile = "3"

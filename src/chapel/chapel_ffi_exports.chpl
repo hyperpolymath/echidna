@@ -44,7 +44,7 @@ extern record CProofResult {
 
 // (Was originally `extern "C" { ... }`, but Chapel's extern-blocks feature
 // requires a Chapel install built with LLVM + clang headers; the official
-// `chapel-2.3.0-1.ubuntu24.amd64.deb` used in `chapel-ci.yml` is not. The
+// `chapel-2.8.0-1.ubuntu22.amd64.deb` used in `chapel-ci.yml` is not. The
 // canonical C-visible copy lives in `src/zig_ffi/chapel_ffi_exports.h`
 // (`#define PROVER_AGDA 0`…), which is what every non-Chapel consumer
 // reads; the constants below only need module-level scope inside Chapel.
