@@ -24,6 +24,7 @@
 module ClampTrustBounds
 
 import Data.Nat
+import NatLte
 
 %default total
 
@@ -92,12 +93,12 @@ clamp_trust (S (S (S (S (S _))))) = Level5
 ||| TrustLevel whose trustValue ≥ 1 by direct computation.
 public export
 clamp_lower_bound : (n : Nat) -> 1 `LTE` trustValue (clamp_trust n)
-clamp_lower_bound 0                     = LTESucc LTEZero
-clamp_lower_bound 1                     = LTESucc LTEZero
-clamp_lower_bound 2                     = LTESucc LTEZero
-clamp_lower_bound 3                     = LTESucc LTEZero
-clamp_lower_bound 4                     = LTESucc LTEZero
-clamp_lower_bound (S (S (S (S (S _))))) = LTESucc LTEZero
+clamp_lower_bound 0                     = lteLit 1 1
+clamp_lower_bound 1                     = lteLit 1 1
+clamp_lower_bound 2                     = lteLit 1 2
+clamp_lower_bound 3                     = lteLit 1 3
+clamp_lower_bound 4                     = lteLit 1 4
+clamp_lower_bound (S (S (S (S (S _))))) = lteLit 1 5
 
 -- ==========================================================================
 -- Section 5: clamp_upper_bound
@@ -109,12 +110,12 @@ clamp_lower_bound (S (S (S (S (S _))))) = LTESucc LTEZero
 ||| TrustLevel whose trustValue ≤ 5 by direct computation.
 public export
 clamp_upper_bound : (n : Nat) -> trustValue (clamp_trust n) `LTE` 5
-clamp_upper_bound 0                     = LTESucc LTEZero
-clamp_upper_bound 1                     = LTESucc LTEZero
-clamp_upper_bound 2                     = LTESucc (LTESucc LTEZero)
-clamp_upper_bound 3                     = LTESucc (LTESucc (LTESucc LTEZero))
-clamp_upper_bound 4                     = LTESucc (LTESucc (LTESucc (LTESucc LTEZero)))
-clamp_upper_bound (S (S (S (S (S _))))) = LTESucc (LTESucc (LTESucc (LTESucc (LTESucc LTEZero))))
+clamp_upper_bound 0                     = lteLit 1 5
+clamp_upper_bound 1                     = lteLit 1 5
+clamp_upper_bound 2                     = lteLit 2 5
+clamp_upper_bound 3                     = lteLit 3 5
+clamp_upper_bound 4                     = lteLit 4 5
+clamp_upper_bound (S (S (S (S (S _))))) = lteLit 5 5
 
 -- ==========================================================================
 -- Section 6: clamp_monotone
@@ -145,12 +146,12 @@ data ClampZone : Nat -> Type where
 ||| Every Nat inhabits a ClampZone.
 public export
 classifyNat : (n : Nat) -> ClampZone n
-classifyNat 0                     = Zone01 0 LTEZero
-classifyNat 1                     = Zone01 1 (LTESucc LTEZero)
+classifyNat 0                     = Zone01 0 (lteLit 0 1)
+classifyNat 1                     = Zone01 1 (lteLit 1 1)
 classifyNat 2                     = Zone2
 classifyNat 3                     = Zone3
 classifyNat 4                     = Zone4
-classifyNat (S (S (S (S (S k))))) = Zone5up (S (S (S (S (S k))))) (LTESucc (LTESucc (LTESucc (LTESucc (LTESucc LTEZero)))))
+classifyNat (S (S (S (S (S k))))) = Zone5up (S (S (S (S (S k))))) (lteLit 5 (S (S (S (S (S k))))))
 
 ||| clamp_trust is constant on zone 0 (returns Level1 for 0 and 1).
 clampZone01 : (n : Nat) -> n `LTE` 1 -> clamp_trust n = Level1
@@ -169,50 +170,55 @@ clampZone5up (S (S (S (S (S _))))) _ = Refl
 
 -- TrustLTE lemmas for adjacent levels (used to build the monotonicity table).
 
+-- Bodies use `lteLit` (machine-checked via Data.Nat.isLTE) rather than
+-- hand-counted LTESucc towers; the off-diagonal towers previously mis-counted
+-- (e.g. l1lteL2 proved LTE 2 2 instead of LTE 1 2). The count can no longer
+-- be wrong: `lteLit i j` type-checks iff i <= j.
+
 l1lteL1 : TrustLTE Level1 Level1
-l1lteL1 = LTESucc LTEZero
+l1lteL1 = lteLit 1 1
 
 l1lteL2 : TrustLTE Level1 Level2
-l1lteL2 = LTESucc (LTESucc LTEZero)
+l1lteL2 = lteLit 1 2
 
 l1lteL3 : TrustLTE Level1 Level3
-l1lteL3 = LTESucc (LTESucc (LTESucc LTEZero))
+l1lteL3 = lteLit 1 3
 
 l1lteL4 : TrustLTE Level1 Level4
-l1lteL4 = LTESucc (LTESucc (LTESucc (LTESucc LTEZero)))
+l1lteL4 = lteLit 1 4
 
 l1lteL5 : TrustLTE Level1 Level5
-l1lteL5 = LTESucc (LTESucc (LTESucc (LTESucc (LTESucc LTEZero))))
+l1lteL5 = lteLit 1 5
 
 l2lteL2 : TrustLTE Level2 Level2
-l2lteL2 = LTESucc (LTESucc LTEZero)
+l2lteL2 = lteLit 2 2
 
 l2lteL3 : TrustLTE Level2 Level3
-l2lteL3 = LTESucc (LTESucc (LTESucc LTEZero))
+l2lteL3 = lteLit 2 3
 
 l2lteL4 : TrustLTE Level2 Level4
-l2lteL4 = LTESucc (LTESucc (LTESucc (LTESucc LTEZero)))
+l2lteL4 = lteLit 2 4
 
 l2lteL5 : TrustLTE Level2 Level5
-l2lteL5 = LTESucc (LTESucc (LTESucc (LTESucc (LTESucc LTEZero))))
+l2lteL5 = lteLit 2 5
 
 l3lteL3 : TrustLTE Level3 Level3
-l3lteL3 = LTESucc (LTESucc (LTESucc LTEZero))
+l3lteL3 = lteLit 3 3
 
 l3lteL4 : TrustLTE Level3 Level4
-l3lteL4 = LTESucc (LTESucc (LTESucc (LTESucc LTEZero)))
+l3lteL4 = lteLit 3 4
 
 l3lteL5 : TrustLTE Level3 Level5
-l3lteL5 = LTESucc (LTESucc (LTESucc (LTESucc (LTESucc LTEZero))))
+l3lteL5 = lteLit 3 5
 
 l4lteL4 : TrustLTE Level4 Level4
-l4lteL4 = LTESucc (LTESucc (LTESucc (LTESucc LTEZero)))
+l4lteL4 = lteLit 4 4
 
 l4lteL5 : TrustLTE Level4 Level5
-l4lteL5 = LTESucc (LTESucc (LTESucc (LTESucc (LTESucc LTEZero))))
+l4lteL5 = lteLit 4 5
 
 l5lteL5 : TrustLTE Level5 Level5
-l5lteL5 = LTESucc (LTESucc (LTESucc (LTESucc (LTESucc LTEZero))))
+l5lteL5 = lteLit 5 5
 
 ||| clamp_monotone: n ≤ m → TrustLTE (clamp_trust n) (clamp_trust m).
 |||
