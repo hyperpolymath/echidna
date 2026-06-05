@@ -174,11 +174,20 @@ worst-comm Rejected IncompleteProof = refl
 worst-comm Rejected Rejected = refl
 
 -- THEOREM: worst-policy is associative
+-- NB: `worst-policy` splits on its FIRST argument, so `worst-policy x c` is
+-- stuck for a neutral `c` unless `x` reduces to the absorbing element
+-- `Rejected`. Clauses whose left fold collapses to `Rejected` may keep the
+-- `c` wildcard; the `IncompleteProof·IncompleteProof`, `ClassicalAxioms·
+-- IncompleteProof` and the whole `Clean` row do NOT collapse, so they must
+-- enumerate the remaining argument(s) concretely for `refl` to reduce.
 worst-assoc : ∀ (a b c : AxiomPolicy) →
   worst-policy (worst-policy a b) c ≡ worst-policy a (worst-policy b c)
 worst-assoc Rejected _ _ = refl
 worst-assoc IncompleteProof Rejected _ = refl
-worst-assoc IncompleteProof IncompleteProof _ = refl
+worst-assoc IncompleteProof IncompleteProof Rejected = refl
+worst-assoc IncompleteProof IncompleteProof IncompleteProof = refl
+worst-assoc IncompleteProof IncompleteProof ClassicalAxioms = refl
+worst-assoc IncompleteProof IncompleteProof Clean = refl
 worst-assoc IncompleteProof ClassicalAxioms Rejected = refl
 worst-assoc IncompleteProof ClassicalAxioms IncompleteProof = refl
 worst-assoc IncompleteProof ClassicalAxioms ClassicalAxioms = refl
@@ -188,7 +197,10 @@ worst-assoc IncompleteProof Clean IncompleteProof = refl
 worst-assoc IncompleteProof Clean ClassicalAxioms = refl
 worst-assoc IncompleteProof Clean Clean = refl
 worst-assoc ClassicalAxioms Rejected _ = refl
-worst-assoc ClassicalAxioms IncompleteProof _ = refl
+worst-assoc ClassicalAxioms IncompleteProof Rejected = refl
+worst-assoc ClassicalAxioms IncompleteProof IncompleteProof = refl
+worst-assoc ClassicalAxioms IncompleteProof ClassicalAxioms = refl
+worst-assoc ClassicalAxioms IncompleteProof Clean = refl
 worst-assoc ClassicalAxioms ClassicalAxioms Rejected = refl
 worst-assoc ClassicalAxioms ClassicalAxioms IncompleteProof = refl
 worst-assoc ClassicalAxioms ClassicalAxioms ClassicalAxioms = refl
@@ -197,7 +209,22 @@ worst-assoc ClassicalAxioms Clean Rejected = refl
 worst-assoc ClassicalAxioms Clean IncompleteProof = refl
 worst-assoc ClassicalAxioms Clean ClassicalAxioms = refl
 worst-assoc ClassicalAxioms Clean Clean = refl
-worst-assoc Clean b c = refl
+worst-assoc Clean Rejected Rejected = refl
+worst-assoc Clean Rejected IncompleteProof = refl
+worst-assoc Clean Rejected ClassicalAxioms = refl
+worst-assoc Clean Rejected Clean = refl
+worst-assoc Clean IncompleteProof Rejected = refl
+worst-assoc Clean IncompleteProof IncompleteProof = refl
+worst-assoc Clean IncompleteProof ClassicalAxioms = refl
+worst-assoc Clean IncompleteProof Clean = refl
+worst-assoc Clean ClassicalAxioms Rejected = refl
+worst-assoc Clean ClassicalAxioms IncompleteProof = refl
+worst-assoc Clean ClassicalAxioms ClassicalAxioms = refl
+worst-assoc Clean ClassicalAxioms Clean = refl
+worst-assoc Clean Clean Rejected = refl
+worst-assoc Clean Clean IncompleteProof = refl
+worst-assoc Clean Clean ClassicalAxioms = refl
+worst-assoc Clean Clean Clean = refl
 
 ------------------------------------------------------------------------
 -- CRITICAL: Comment-skipping soundness

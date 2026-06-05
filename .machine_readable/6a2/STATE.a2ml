@@ -8,14 +8,46 @@ type = "state-file"
 
 [metadata]
 project = "echidna"
-version = "2.1.1"
-last-updated = "2026-05-19"
+version = "2.3.0"
+last-updated = "2026-06-02"
 status = "active"
+release-tag = "v2.3.0"
 
 [project-context]
 name = "echidna"
 completion-percentage = 100
-phase = "v1.6.0 Released — Phase 0 of comprehensive backend expansion landed"
+phase = "v2.3.0 Released — saturation+typing (#198) + GNN training wiring (#207) + dispatcher all-17-adapters (PR pending SPDX hook) + comprehensive contractile family (#214) + first owner-authorised GNN training run completed (best MRR 0.92)"
+
+[session-2026-06-02]
+description = "Major wave: 20+ PRs across echidna+echidnabot+gitbot-fleet+hyperpolymath"
+notable-pr-merges = [
+    "#176 panic-attack Critical bound (load_octads_jsonl)",
+    "#178 echo-types audit cross-doc",
+    "#179 6 SHA-pin bumps + proven manifest fix",
+    "#182 doc maxout (+wiki sync)",
+    "#183 Chapel 2.3 → 2.8 bump (ubuntu-22.04 .deb pin)",
+    "#184 v2.3.0 release reconcile (#173 Option B)",
+    "#185 mktemp swap for scripts/",
+    "#186 FFI audit §§9-11 (FLINT + Zig bridges + Zig overlay)",
+    "#188 GraphQL +3 ops (verifyProof/suggestTactics/proverStatus) closes #180",
+    "#189 nix purge per estate policy",
+    "#198 saturation+typing (corpus 4→17, 42-discipline embedding)",
+    "#199 a2ml-validate to 6bff6ec (s-expression form)",
+    "#206 wave3 CI/CD closeout (C001-C005)",
+    "#207 GNN training wiring (CorpusLoader)",
+    "#209 Palimpsest framework reference restored",
+    "#210 JSON dep fix (corpus_loader.jl)",
+    "#211 EchidnaML CUDA.version() fix + training doc skeleton",
+    "#212 training run 2026-06-02 results (MRR 0.92, 17 epochs coq, 16 lean)",
+    "#214 contractile family (5 files, 805 ins / 307 del — comprehensive A/B/D/T### error codes)",
+]
+new-issues-filed-as-trackers = [
+    "#177 panic-attack FFI follow-ups",
+    "#187 panic-attack classifications path mismatch (audits/ vs reports/audits/)",
+    "#190-197 long-tail roadmap trackers (OpenTheory/Dedukti/SPARK/AI-sketch/Cap'n Proto/Stage 5/L2.3/Verisim)",
+]
+known-blocker = "feat/corpus-dispatcher-all-17-adapters branch ready to wire 13 missing adapters into CLI dispatcher; blocked by src/rust/main.rs SPDX-FileCopyrightText hook requiring owner manual flip from 'ECHIDNA Project Team' to canonical 'Jonathan D.A. Jewell <j.d.a.jewell@open.ac.uk>' before commit accepted"
+gnn-training-run = "models/neural/{best_model,final_model,gnn_ranker,checkpoint_epoch_{5,10,15}} — 952MB total; gnn_ranker production-deployable (162MB)"
 
 [expansion-roadmap]
 # 2026-04-26 — design landed; Phase 0 foundation pushed.  Goal: push prover

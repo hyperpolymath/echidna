@@ -73,7 +73,7 @@ ciborium = { version = "0.2", optional = true }
 chrono = { version = "0.4", features = ["serde"] }
 
 # Random number generation (for resilience jitter)
-rand = "0.9"
+rand = "0.10"
 
 # Temporary files (used by prover backends to invoke external solvers)
 tempfile = "3"
@@ -130,7 +130,7 @@ proptest = "1"
 tokio-test = "0.4"
 which = "8"
 pretty_assertions = "1"
-criterion = { version = "0.5", features = ["html_reports"] }
+criterion = { version = "0.8", features = ["html_reports"] }
 
 [[bench]]
 name = "proof_benchmarks"
