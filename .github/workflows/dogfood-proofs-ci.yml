@@ -1,8 +1,8 @@
 # SPDX-License-Identifier: MPL-2.0
 # Gates the ECHIDNA dogfood proof corpus: every theorem under proofs/{coq,lean,agda}
-# must type-check. These proofs had no CI coverage before this workflow — the
+# must type-check. These proofs had no CI coverage before this workflow -- the
 # language-specific path filters on the other proof workflows (agda-meta-checker
-# → meta-checker/**, idris2-abi-ci → src/abi/**) never touched proofs/**, so
+# -> meta-checker/**, idris2-abi-ci -> src/abi/**) never touched proofs/**, so
 # regressions here were invisible. Each job calls a `just` recipe so local and
 # CI run the identical command (RSR-H14).
 name: Dogfood Proof Corpus
