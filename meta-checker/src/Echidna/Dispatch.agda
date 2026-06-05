@@ -57,12 +57,9 @@ compute-trust tf with TrustFactors.integrity-ok tf
 ... | true  | DC-Noted  | true  | false | true  = Level3
 ... | true  | DC-Safe   | true  | false | false = Level3
 ... | true  | DC-Noted  | true  | false | false = Level3
--- No certificate → Level2
+-- No certificate → Level2 (covers every small-kernel / cross-checked combo)
 ... | true  | DC-Safe   | false | _     | _     = Level2
 ... | true  | DC-Noted  | false | _     | _     = Level2
--- Cross-checked large kernel without certificate → Level2
-... | true  | DC-Safe   | _     | false | true  = Level2
-... | true  | DC-Noted  | _     | false | true  = Level2
 
 ------------------------------------------------------------------------
 -- THEOREM: Failed integrity always produces Level1
@@ -104,25 +101,41 @@ max-trust-requires-all : ∀ (tf : TrustFactors) →
   TrustFactors.has-certificate tf ≡ true ×
   TrustFactors.small-kernel tf ≡ true ×
   TrustFactors.cross-checked tf ≡ true
-max-trust-requires-all tf p with TrustFactors.integrity-ok tf
-                               | TrustFactors.axiom-danger tf
-                               | TrustFactors.has-certificate tf
-                               | TrustFactors.small-kernel tf
-                               | TrustFactors.cross-checked tf
-... | true | DC-Safe  | true | true | true = refl , refl , refl , refl
-... | true | DC-Noted | true | true | true = refl , refl , refl , refl
+-- Destructure the record so `compute-trust` actually reduces when we split
+-- on the five factors; then the hypothesis `p` reduces to a concrete
+-- `Levelₙ ≡ Level5`, which is `refl` only in the two genuine Level5 branches
+-- and absurd (`()`) in every other.
+max-trust-requires-all
+  record { integrity-ok = i ; axiom-danger = d ; has-certificate = h
+         ; small-kernel = s ; cross-checked = c } p
+  with i | d | h | s | c | p
+... | true  | DC-Safe    | true  | true  | true  | _  = refl , refl , refl , refl
+... | true  | DC-Noted   | true  | true  | true  | _  = refl , refl , refl , refl
+... | true  | DC-Safe    | true  | true  | false | ()
+... | true  | DC-Noted   | true  | true  | false | ()
+... | true  | DC-Safe    | true  | false | true  | ()
+... | true  | DC-Noted   | true  | false | true  | ()
+... | true  | DC-Safe    | true  | false | false | ()
+... | true  | DC-Noted   | true  | false | false | ()
+... | true  | DC-Safe    | false | _     | _     | ()
+... | true  | DC-Noted   | false | _     | _     | ()
+... | true  | DC-Warning | _     | _     | _     | ()
+... | true  | DC-Reject  | _     | _     | _     | ()
+... | false | _          | _     | _     | _     | ()
 
 ------------------------------------------------------------------------
 -- Pipeline composition: running two stages
 ------------------------------------------------------------------------
 
 -- The pipeline result is always ≤ the initial trust level
-pipeline-monotonic : ∀ (t : TrustLevel) (d : DangerClass) →
+-- `cap-if-dangerous` (TrustLevel.agda) is indexed by `DangerLevel`
+-- (Safe/Noted/Warning/Reject), NOT the AxiomSafety `DangerClass`.
+pipeline-monotonic : ∀ (t : TrustLevel) (d : DangerLevel) →
   cap-if-dangerous t d ≤ₜ t
-pipeline-monotonic t DC-Safe    = ≤ₜ-refl t
-pipeline-monotonic t DC-Noted   = ≤ₜ-refl t
-pipeline-monotonic _ DC-Warning = l1≤
-pipeline-monotonic _ DC-Reject  = l1≤
+pipeline-monotonic t Safe    = ≤ₜ-refl t
+pipeline-monotonic t Noted   = ≤ₜ-refl t
+pipeline-monotonic _ Warning = l1≤
+pipeline-monotonic _ Reject  = l1≤
 
 ------------------------------------------------------------------------
 -- THEOREM: Pipeline is deterministic
