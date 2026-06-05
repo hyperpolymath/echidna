@@ -101,15 +101,21 @@ jobs:
       - name: Install Agda + standard library
         run: |
           set -euo pipefail
-          sudo apt-get update -qq || sudo apt-get update -qq --fix-missing
-          sudo apt-get install -y --fix-missing agda agda-stdlib
+          sudo apt-get update -qq
+          sudo apt-get install -y agda
           agda --version
-          # Register the Ubuntu-packaged standard library so the corpus's
-          # `depend: standard-library` resolves (the corpus .agda-lib is
-          # auto-detected from proofs/agda when agda runs there).
+          # stdlib from GitHub, pinned to v1.7.3 (the version apt ships for the
+          # agda 2.6.3 the corpus is verified against). apt's agda-stdlib is NOT
+          # used: `apt --fix-missing` can silently drop it, leaving the library
+          # unregistered ("Installed libraries: (none)"). The corpus .agda-lib in
+          # proofs/agda is auto-detected from the working dir; this registration
+          # resolves its `depend: standard-library`.
+          cd /tmp
+          curl -fsSL --retry 3 -o agda-stdlib.tar.gz \
+            https://github.com/agda/agda-stdlib/archive/refs/tags/v1.7.3.tar.gz
+          tar xzf agda-stdlib.tar.gz
           mkdir -p ~/.agda
-          STDLIB="$(find /usr/share -name standard-library.agda-lib 2>/dev/null | head -1)"
-          echo "$STDLIB" > ~/.agda/libraries
+          echo "/tmp/agda-stdlib-1.7.3/standard-library.agda-lib" > ~/.agda/libraries
           echo "standard-library" > ~/.agda/defaults
 
       - name: Install just
