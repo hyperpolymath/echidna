@@ -191,3 +191,7 @@ testValidation = do
   putStrLn $ show (validateProof proof3 goal3)
 
   putStrLn "Validation tests complete."
+
+-- Executable entry point (declared in echidna-validator.ipkg: `main = Validator`).
+main : IO ()
+main = testValidation

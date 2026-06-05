@@ -1,0 +1,136 @@
+# SPDX-License-Identifier: MPL-2.0
+# Gates the ECHIDNA dogfood proof corpus: every theorem under proofs/{coq,lean,agda}
+# must type-check. These proofs had no CI coverage before this workflow — the
+# language-specific path filters on the other proof workflows (agda-meta-checker
+# → meta-checker/**, idris2-abi-ci → src/abi/**) never touched proofs/**, so
+# regressions here were invisible. Each job calls a `just` recipe so local and
+# CI run the identical command (RSR-H14).
+name: Dogfood Proof Corpus
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'proofs/**'
+      - 'Justfile'
+      - '.github/workflows/dogfood-proofs-ci.yml'
+  pull_request:
+    branches: [main]
+    paths:
+      - 'proofs/**'
+      - 'Justfile'
+      - '.github/workflows/dogfood-proofs-ci.yml'
+  workflow_dispatch:
+
+# Cause-B mitigation (#77): cancel superseded runs so stacked pushes
+# to the same ref don't pile up identical jobs in the queue.
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  coq:
+    name: Coq
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+
+      - name: Install Coq
+        run: |
+          set -euo pipefail
+          sudo apt-get update -qq || sudo apt-get update -qq --fix-missing
+          sudo apt-get install -y --fix-missing coq
+          coqc --version
+
+      - name: Install just
+        uses: taiki-e/install-action@e49978b799e49ff429d162b7a30601a569ab6538 # v2.81.1
+        with:
+          tool: just@1.51.0
+
+      - name: Type-check Coq corpus
+        run: just proofs-coq
+
+  lean:
+    name: Lean 4
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+
+      - name: Cache elan + Lean toolchain
+        uses: actions/cache@27d5ce7f107fe9357f9df03efb73ab90386fccae # v5.0.5
+        with:
+          path: ~/.elan
+          key: elan-${{ runner.os }}-${{ hashFiles('proofs/lean/lean-toolchain') }}
+
+      - name: Install elan (Lean toolchain manager)
+        run: |
+          set -euo pipefail
+          # The toolchain version itself is pinned by proofs/lean/lean-toolchain
+          # (lake reads it and fetches that exact Lean on first invocation).
+          if [ ! -x "$HOME/.elan/bin/lake" ]; then
+            curl -fsSL --retry 3 \
+              https://raw.githubusercontent.com/leanprover/elan/master/elan-init.sh \
+              -o /tmp/elan-init.sh
+            sh /tmp/elan-init.sh -y --default-toolchain none
+          fi
+          echo "$HOME/.elan/bin" >> "$GITHUB_PATH"
+
+      - name: Install just
+        uses: taiki-e/install-action@e49978b799e49ff429d162b7a30601a569ab6538 # v2.81.1
+        with:
+          tool: just@1.51.0
+
+      - name: Build Lean corpus
+        run: just proofs-lean
+
+  agda:
+    name: Agda
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+
+      - name: Setup Haskell
+        uses: haskell-actions/setup@cd0d9bdd65b20557f41bea4dbe43d0b5fbbfe553 # v2
+        with:
+          ghc-version: '9.6'
+          cabal-version: '3.10'
+
+      - name: Cache cabal (Agda build)
+        uses: actions/cache@27d5ce7f107fe9357f9df03efb73ab90386fccae # v5.0.5
+        with:
+          # Keyed on the Agda version, not the proofs, so the expensive
+          # from-source Agda build is reused across proof-only changes.
+          path: ~/.cabal
+          key: agda-cabal-${{ runner.os }}-Agda-2.7.0.1
+
+      - name: Install Agda
+        run: |
+          set -euo pipefail
+          cabal update
+          # --overwrite-policy=always: a warm ~/.cabal cache already carries
+          # the agda symlink, so a plain install aborts with "path exists".
+          cabal install Agda-2.7.0.1 --overwrite-policy=always
+          echo "$HOME/.cabal/bin" >> "$GITHUB_PATH"
+
+      - name: Install Agda standard library (v2.1)
+        run: |
+          set -euo pipefail
+          mkdir -p ~/.agda
+          cd /tmp
+          wget -q https://github.com/agda/agda-stdlib/archive/refs/tags/v2.1.tar.gz
+          tar xzf v2.1.tar.gz
+          # Fresh registration each run (`>`), then append the corpus library.
+          echo "/tmp/agda-stdlib-2.1/standard-library.agda-lib" > ~/.agda/libraries
+          echo "standard-library" > ~/.agda/defaults
+          echo "${GITHUB_WORKSPACE}/proofs/agda/echidna-proofs.agda-lib" >> ~/.agda/libraries
+
+      - name: Install just
+        uses: taiki-e/install-action@e49978b799e49ff429d162b7a30601a569ab6538 # v2.81.1
+        with:
+          tool: just@1.51.0
+
+      - name: Type-check Agda corpus
+        run: just proofs-agda
