@@ -1,6 +1,6 @@
 # SPDX-License-Identifier: MPL-2.0
 # Gates the ECHIDNA dogfood proof corpus (proofs/{coq,lean,agda}) in CI.
-# (Bisecting a startup_failure: isolating the taiki-e/install-action step.)
+# (Bisecting a startup_failure: testing curl-installed just, no marketplace action.)
 name: Dogfood Proof Corpus
 
 on:
@@ -33,9 +33,14 @@ jobs:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
 
       - name: Install just
-        uses: taiki-e/install-action@e49978b799e49ff429d162b7a30601a569ab6538 # v2.81.1
-        with:
-          tool: just@1.51.0
+        run: |
+          set -euo pipefail
+          curl -fsSL --retry 3 \
+            "https://github.com/casey/just/releases/download/1.51.0/just-1.51.0-x86_64-unknown-linux-musl.tar.gz" \
+            -o /tmp/just.tar.gz
+          mkdir -p "$HOME/.local/bin"
+          tar xzf /tmp/just.tar.gz -C "$HOME/.local/bin" just
+          echo "$HOME/.local/bin" >> "$GITHUB_PATH"
 
       - name: Smoke
         run: just --version
