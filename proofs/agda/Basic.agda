@@ -8,6 +8,17 @@
 
 module Basic where
 
+-- Propositional equality at module scope (used by trans-assoc, id-left, id-right)
+data _≡_ {A : Set} (x : A) : A → Set where
+  refl : x ≡ x
+
+infix 4 _≡_
+
+-- Natural numbers at module scope (used by id-nat)
+data ℕ : Set where
+  zero : ℕ
+  suc  : ℕ → ℕ
+
 --------------------------------------------------------------------------------
 -- Identity Proof
 --------------------------------------------------------------------------------
@@ -21,10 +32,6 @@ id x = x
 -- Example: identity for a specific type
 id-nat : (n : ℕ) → ℕ
 id-nat = id
-  where
-    data ℕ : Set where
-      zero : ℕ
-      suc  : ℕ → ℕ
 
 -- The identity function can also be written explicitly with a lambda
 id′ : {A : Set} → A → A
@@ -75,28 +82,14 @@ trans-assoc : {A B C D : Set}
             → (f : A → B) → (g : B → C) → (h : C → D)
             → (h ∘ (g ∘ f)) ≡ ((h ∘ g) ∘ f)
 trans-assoc f g h = refl
-  where
-    -- Propositional equality
-    data _≡_ {A : Set} (x : A) : A → Set where
-      refl : x ≡ x
-
-    infix 4 _≡_
 
 -- Proof that identity is a left identity for composition
 id-left : {A B : Set} → (f : A → B) → (id ∘ f) ≡ f
 id-left f = refl
-  where
-    data _≡_ {A : Set} (x : A) : A → Set where
-      refl : x ≡ x
-    infix 4 _≡_
 
 -- Proof that identity is a right identity for composition
 id-right : {A B : Set} → (f : A → B) → (f ∘ id) ≡ f
 id-right f = refl
-  where
-    data _≡_ {A : Set} (x : A) : A → Set where
-      refl : x ≡ x
-    infix 4 _≡_
 
 --------------------------------------------------------------------------------
 -- Additional Basic Combinators
@@ -125,13 +118,9 @@ infixr 0 _$_
 --------------------------------------------------------------------------------
 
 module CombinatorLaws where
-  data _≡_ {A : Set} (x : A) : A → Set where
-    refl : x ≡ x
-
-  infix 4 _≡_
-
   -- SKK = I (a famous combinator identity)
-  SKK : {A : Set} → (x : A) → S const const x ≡ id x
+  -- The second const needs B instantiated explicitly to resolve the implicit argument.
+  SKK : {A : Set} → (x : A) → S const (const {B = A}) x ≡ id x
   SKK x = refl
 
   -- Flip is involutive (applying it twice gets you back where you started)
@@ -164,9 +153,6 @@ uncurry f (x , y) = f x y
 
 -- Proof that curry and uncurry are inverses
 module CurryUncurryLaws where
-  data _≡_ {A : Set} (x : A) : A → Set where
-    refl : x ≡ x
-
   -- INTENTIONAL AXIOM: Function extensionality (funext)
   -- Justification: funext is consistent with Agda's type theory and is
   -- provable in Cubical Agda (--cubical). In plain Agda it must be

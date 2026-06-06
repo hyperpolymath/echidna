@@ -5,10 +5,12 @@ on:
   push:
     paths:
       - 'src/abi/**'
+      - 'src/idris/**'
       - '.github/workflows/idris2-abi-ci.yml'
   pull_request:
     paths:
       - 'src/abi/**'
+      - 'src/idris/**'
       - '.github/workflows/idris2-abi-ci.yml'
 
 # Cause-B mitigation (#77): cancel superseded runs so stacked pushes
@@ -56,6 +58,16 @@ jobs:
           echo "=== Type-checking ECHIDNA ABI package (16 modules) ==="
           idris2 --build echidnaabi.ipkg
           echo "✓ All ABI modules type-check successfully"
+
+      - name: Type-check Idris2 proof validator (src/idris)
+        run: |
+          # Mirrors `just proofs-idris`. --typecheck (not --build) so no codegen
+          # backend is required; the declared executable's `main` is exercised
+          # by `idris2 --build` locally where a backend is present.
+          cd src/idris
+          echo "=== Type-checking ECHIDNA proof validator ==="
+          idris2 --typecheck echidna-validator.ipkg
+          echo "✓ Validator modules type-check successfully"
 
       - name: Verify no dangerous patterns
         run: |

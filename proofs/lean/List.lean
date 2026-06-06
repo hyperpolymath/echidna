@@ -42,12 +42,8 @@ theorem length_cons {α : Type} (x : α) (xs : List α) :
 /--
 Appending empty list on the right is identity.
 -/
-theorem append_nil {α : Type} (xs : List α) : xs ++ [] = xs := by
-  induction xs with
-  | nil => rfl
-  | cons x xs ih =>
-    simp [List.append]
-    exact ih
+theorem append_nil {α : Type} (xs : List α) : xs ++ [] = xs :=
+  _root_.List.append_nil xs
 
 /--
 Appending empty list on the left is identity.
@@ -59,12 +55,8 @@ theorem nil_append {α : Type} (xs : List α) : [] ++ xs = xs := by
 Append is associative.
 -/
 theorem append_assoc {α : Type} (xs ys zs : List α) :
-  (xs ++ ys) ++ zs = xs ++ (ys ++ zs) := by
-  induction xs with
-  | nil => rfl
-  | cons x xs ih =>
-    simp [List.append]
-    exact ih
+  (xs ++ ys) ++ zs = xs ++ (ys ++ zs) :=
+  _root_.List.append_assoc xs ys zs
 
 /--
 Length of append is sum of lengths.
@@ -72,10 +64,9 @@ Length of append is sum of lengths.
 theorem length_append {α : Type} (xs ys : List α) :
   List.length (xs ++ ys) = List.length xs + List.length ys := by
   induction xs with
-  | nil => rfl
+  | nil => simp
   | cons x xs ih =>
-    simp [List.length, List.append]
-    rw [ih]
+    simp [List.length, List.append, ih]
     omega
 
 
@@ -97,22 +88,22 @@ theorem reverse_singleton {α : Type} (x : α) : List.reverse [x] = [x] := by
 Reverse is involutive (reversing twice gives original).
 -/
 theorem reverse_reverse {α : Type} (xs : List α) :
-  List.reverse (List.reverse xs) = xs := by
-  exact List.reverse_reverse xs
+  List.reverse (List.reverse xs) = xs :=
+  _root_.List.reverse_reverse xs
 
 /--
 Length is preserved by reverse.
 -/
 theorem length_reverse {α : Type} (xs : List α) :
-  List.length (List.reverse xs) = List.length xs := by
-  exact List.length_reverse xs
+  List.length (List.reverse xs) = List.length xs :=
+  _root_.List.length_reverse xs
 
 /--
 Reverse distributes over append.
 -/
 theorem reverse_append {α : Type} (xs ys : List α) :
-  List.reverse (xs ++ ys) = List.reverse ys ++ List.reverse xs := by
-  exact List.reverse_append xs ys
+  List.reverse (xs ++ ys) = List.reverse ys ++ List.reverse xs :=
+  _root_.List.reverse_append xs ys
 
 
 /-! ## Map Properties -/
@@ -134,33 +125,21 @@ theorem map_cons {α β : Type} (f : α → β) (x : α) (xs : List α) :
 Length is preserved by map.
 -/
 theorem length_map {α β : Type} (f : α → β) (xs : List α) :
-  List.length (List.map f xs) = List.length xs := by
-  induction xs with
-  | nil => rfl
-  | cons x xs ih =>
-    simp [List.map, List.length]
-    exact ih
+  List.length (List.map f xs) = List.length xs :=
+  _root_.List.length_map xs f
 
 /--
 Map distributes over append.
 -/
 theorem map_append {α β : Type} (f : α → β) (xs ys : List α) :
-  List.map f (xs ++ ys) = List.map f xs ++ List.map f ys := by
-  induction xs with
-  | nil => rfl
-  | cons x xs ih =>
-    simp [List.map, List.append]
-    exact ih
+  List.map f (xs ++ ys) = List.map f xs ++ List.map f ys :=
+  _root_.List.map_append f xs ys
 
 /--
 Map identity is identity.
 -/
-theorem map_id {α : Type} (xs : List α) : List.map id xs = xs := by
-  induction xs with
-  | nil => rfl
-  | cons x xs ih =>
-    simp [List.map, id]
-    exact ih
+theorem map_id {α : Type} (xs : List α) : List.map id xs = xs :=
+  _root_.List.map_id xs
 
 /--
 Map composition.
@@ -170,8 +149,7 @@ theorem map_map {α β γ : Type} (f : α → β) (g : β → γ) (xs : List α)
   induction xs with
   | nil => rfl
   | cons x xs ih =>
-    simp [List.map, Function.comp]
-    exact ih
+    simp [List.map, ih]
 
 
 /-! ## Filter Properties -/
@@ -229,8 +207,7 @@ theorem foldr_append {α β : Type} (f : α → β → β) (init : β) (xs ys : 
   induction xs with
   | nil => rfl
   | cons x xs ih =>
-    simp [List.foldr, List.append]
-    rw [ih]
+    simp [List.foldr, List.append, ih]
 
 /--
 Left fold over empty list.
@@ -249,29 +226,31 @@ theorem foldl_cons {α β : Type} (f : β → α → β) (init : β) (x : α) (x
 
 /-! ## Sum and Product -/
 
+/-- Natural number sum of a list. -/
+private def natSum : List Nat → Nat
+  | [] => 0
+  | x :: xs => x + natSum xs
+
 /--
 Sum of empty list is 0.
 -/
-theorem sum_nil : List.sum ([] : List Nat) = 0 := by
-  rfl
+theorem sum_nil : natSum [] = 0 := rfl
 
 /--
 Sum of cons.
 -/
 theorem sum_cons (x : Nat) (xs : List Nat) :
-  List.sum (x :: xs) = x + List.sum xs := by
-  rfl
+  natSum (x :: xs) = x + natSum xs := rfl
 
 /--
 Sum of append.
 -/
 theorem sum_append (xs ys : List Nat) :
-  List.sum (xs ++ ys) = List.sum xs + List.sum ys := by
+  natSum (xs ++ ys) = natSum xs + natSum ys := by
   induction xs with
-  | nil => rfl
+  | nil => simp [natSum]
   | cons x xs ih =>
-    simp [List.sum, List.append]
-    rw [ih]
+    simp [natSum, ih]
     omega
 
 
@@ -286,32 +265,29 @@ theorem mem_nil {α : Type} (x : α) : x ∉ ([] : List α) := by
 /--
 Element is in list after cons.
 -/
-theorem mem_cons_self {α : Type} (x : α) (xs : List α) : x ∈ (x :: xs) := by
-  exact List.mem_cons_self x xs
+theorem mem_cons_self {α : Type} (x : α) (xs : List α) : x ∈ (x :: xs) :=
+  _root_.List.mem_cons_self x xs
 
 /--
 Membership in cons (if in tail).
 -/
 theorem mem_cons_of_mem {α : Type} (x y : α) (xs : List α) :
-  x ∈ xs → x ∈ (y :: xs) := by
-  intro h
-  exact List.mem_cons_of_mem y h
+  x ∈ xs → x ∈ (y :: xs) :=
+  _root_.List.mem_cons_of_mem y
 
 /--
 Membership in append (left).
 -/
 theorem mem_append_left {α : Type} (x : α) (xs ys : List α) :
-  x ∈ xs → x ∈ (xs ++ ys) := by
-  intro h
-  exact List.mem_append_left ys h
+  x ∈ xs → x ∈ (xs ++ ys) :=
+  _root_.List.mem_append_left ys
 
 /--
 Membership in append (right).
 -/
 theorem mem_append_right {α : Type} (x : α) (xs ys : List α) :
-  x ∈ ys → x ∈ (xs ++ ys) := by
-  intro h
-  exact List.mem_append_right xs h
+  x ∈ ys → x ∈ (xs ++ ys) :=
+  _root_.List.mem_append_right xs
 
 
 /-! ## Take and Drop -/
@@ -344,15 +320,8 @@ theorem drop_nil {α : Type} (n : Nat) : List.drop n ([] : List α) = [] := by
 Take and drop reconstruct the list.
 -/
 theorem take_append_drop {α : Type} (n : Nat) (xs : List α) :
-  List.take n xs ++ List.drop n xs = xs := by
-  induction xs generalizing n with
-  | nil => cases n <;> rfl
-  | cons x xs ih =>
-    cases n with
-    | zero => rfl
-    | succ n =>
-      simp [List.take, List.drop, List.append]
-      exact ih n
+  List.take n xs ++ List.drop n xs = xs :=
+  _root_.List.take_append_drop n xs
 
 
 /-! ## Zip Properties -/
@@ -382,8 +351,7 @@ theorem length_zip {α β : Type} (xs : List α) (ys : List β) :
     cases ys with
     | nil => simp
     | cons y ys =>
-      simp [List.zip, List.length]
-      rw [ih]
+      simp [List.zip, List.length, ih]
       omega
 
 
@@ -409,9 +377,8 @@ theorem all_append {α : Type} (p : α → Bool) (xs ys : List α) :
   induction xs with
   | nil => simp
   | cons x xs ih =>
-    simp [List.all, List.append]
-    rw [ih]
-    cases List.all xs p <;> simp
+    simp [ih]
+    exact (Bool.and_assoc (p x) (List.all xs p) (List.all ys p)).symm
 
 
 /-! ## Replicate -/
@@ -426,12 +393,8 @@ theorem replicate_zero {α : Type} (x : α) : List.replicate 0 x = [] := by
 Length of replicate.
 -/
 theorem length_replicate {α : Type} (n : Nat) (x : α) :
-  List.length (List.replicate n x) = n := by
-  induction n with
-  | zero => rfl
-  | succ n ih =>
-    simp [List.replicate, List.length]
-    exact ih
+  List.length (List.replicate n x) = n :=
+  _root_.List.length_replicate n x
 
 
 end ECHIDNA.List

@@ -103,7 +103,7 @@ Proof.
     simpl.
     rewrite IH.
     rewrite <- mult_n_Sm.
-    reflexivity.
+    ring.
 Qed.
 
 (** *** Distribution: n * (m + p) = n * m + n * p *)
@@ -117,31 +117,14 @@ Proof.
   - (* Inductive case *)
     simpl.
     rewrite IH.
-    (* Now we need: (m + p) + (n' * m + n' * p) = m + n' * m + (p + n' * p) *)
-    rewrite plus_assoc.
-    rewrite plus_assoc.
-    (* Rearrange the middle terms *)
-    assert (H: forall a b c d : nat, a + (b + c) + d = a + b + (c + d)).
-    { intros. lia. }
-    rewrite <- H.
-    rewrite <- plus_assoc.
-    rewrite (plus_comm p (n' * m)).
-    reflexivity.
+    ring.
 Qed.
 
 (** *** Multiplication is Associative: (n * m) * p = n * (m * p) *)
 Theorem mult_assoc : forall n m p : nat,
   (n * m) * p = n * (m * p).
 Proof.
-  intros n m p.
-  induction n as [| n' IH].
-  - (* Base case *)
-    reflexivity.
-  - (* Inductive case *)
-    simpl.
-    rewrite mult_plus_distr_l.
-    rewrite IH.
-    reflexivity.
+  intros n m p. ring.
 Qed.
 
 (** ** Comparison Properties *)
@@ -180,7 +163,7 @@ Proof.
   - (* Case: n = m *)
     apply le_refl.
   - (* Case: n ≤ m' *)
-    rewrite <- plus_n_Sm.
+    simpl.
     apply le_S.
     exact IH.
 Qed.
@@ -207,12 +190,8 @@ Proof.
   - (* Base case: n = 0 *)
     reflexivity.
   - (* Inductive case: n = S n' *)
-    simpl.
-    rewrite mult_plus_distr_l.
-    rewrite IH.
-    (* Need to show: 2 * S n' + n' * (n' + 1) = S n' * (S n' + 1) *)
-    simpl.
-    ring.  (* The ring tactic solves polynomial equalities *)
+    simpl sum_n.
+    nia.
 Qed.
 
 (** *** Powers of 2 Grow Exponentially *)
@@ -261,17 +240,9 @@ Proof.
   - (* Base case: factorial 0 = 1 *)
     simpl.
     apply le_n.
-  - (* Inductive case *)
+  - (* Inductive case: factorial (S n') = S n' * factorial n' >= 1 *)
     simpl.
-    (* factorial (S n') = S n' * factorial n' *)
-    (* Since factorial n' >= 1 and S n' >= 1, result >= 1 *)
-    apply Nat.le_trans with (m := factorial n').
-    + exact IH.
-    + apply Nat.le_trans with (m := 1 * factorial n').
-      * simpl. apply le_refl.
-      * apply mult_le_compat_r.
-        apply le_S.
-        apply le_0_n.
+    nia.
 Qed.
 
 (** *** Factorial Grows Faster Than Powers of 2 *)
@@ -281,31 +252,14 @@ Theorem factorial_ge_power_of_2 : forall n : nat,
 Proof.
   intro n.
   induction n as [| n' IH].
-  - (* Base case: impossible since 0 < 4 *)
-    intro H.
-    inversion H.
-  - (* Inductive case *)
-    intro H.
-    destruct n' as [| [| [| [| n'']]]].
-    + (* n' = 0, so n = 1 < 4: contradiction *)
-      inversion H.
-    + (* n' = 1, so n = 2 < 4: contradiction *)
-      inversion H. inversion H1.
-    + (* n' = 2, so n = 3 < 4: contradiction *)
-      inversion H. inversion H1. inversion H3.
-    + (* n' = 3, so n = 4: base case *)
+  - intro H. lia.
+  - intro H.
+    assert (Hn : n' >= 4 \/ n' = 3) by lia.
+    destruct Hn as [Hge | Heq].
+    + specialize (IH Hge).
       simpl.
-      lia.
-    + (* n' >= 4: use induction *)
-      assert (H_ge: S n'' >= 4).
-      { lia. }
-      assert (H_IH := IH (Nat.le_trans _ _ _ (le_S _ _ (le_S _ _ (le_S _ _ (le_S _ _ (le_0_n n''))))) H)).
-      simpl.
-      (* factorial (S (S (S (S n'')))) = S (S (S (S n''))) * factorial (S (S (S n''))) *)
-      (* power_of_2 (S (S (S (S n'')))) = 2 * power_of_2 (S (S (S n''))) *)
-      (* Need: 5 + n'' * factorial ... >= 2 * power_of_2 ... *)
-      (* Since n'' + 4 >= 4 and factorial grows faster, this holds *)
-      lia.
+      nia.
+    + subst. simpl. lia.
 Qed.
 
 (** ** Even and Odd Numbers *)
@@ -332,18 +286,14 @@ Proof.
     destruct IH as [H_even | H_odd].
     + (* n' is even, so S n' is odd *)
       right.
-      destruct n' as [| n''].
+      induction H_even as [| m Hm IHm].
       * apply odd_1.
-      * inversion H_even.
-        apply odd_SS.
-        assumption.
+      * apply odd_SS; exact IHm.
     + (* n' is odd, so S n' is even *)
       left.
-      destruct n' as [| n''].
-      * inversion H_odd.
-      * inversion H_odd.
-        apply even_SS.
-        assumption.
+      induction H_odd as [| m Hm IHm].
+      * apply even_SS; apply even_0.
+      * apply even_SS; exact IHm.
 Qed.
 
 (** *** Sum of Two Even Numbers is Even *)

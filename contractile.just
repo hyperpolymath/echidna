@@ -190,13 +190,10 @@ intend-list:
     @echo ''
     @echo 'Run `cat .machine_readable/contractiles/intend/Intentfile.a2ml` for the source of truth.'
 
-# ── HEAL (recovery shortcuts referenced by bust/dust recipes) ─────────
-
-heal:
-    @echo 'just heal: workspace healing entry point'
-    @cargo --version >/dev/null 2>&1 && echo '  rust toolchain OK' || echo '  rust toolchain MISSING'
-    @julia --version >/dev/null 2>&1 && echo '  julia OK' || echo '  julia MISSING — see juliaup'
-    @echo 'For prover binaries: just heal-provers'
+# ── HEAL-PROVERS (recovery shortcut referenced by bust/dust recipes) ──
+# NB: `heal` itself is defined in the root Justfile. Defining it here too
+# made `just` abort with a duplicate-recipe error across the `import?`,
+# which broke every `just` invocation (and thus MVP Smoke's `just mvp-env`).
 
 heal-provers:
     @echo 'heal-provers: install missing Tier-1 prover binaries'

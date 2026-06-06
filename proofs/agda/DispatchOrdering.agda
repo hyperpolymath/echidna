@@ -14,7 +14,7 @@ module DispatchOrdering where
 open import Data.Fin       using (Fin; zero; suc; toℕ; _<_)
 open import Data.Fin.Properties
   using (<-irrefl; <-trans; <-cmp; <-isStrictTotalOrder)
-open import Data.Nat.Base  using (z<s; s<s)
+open import Data.Nat.Base  using (z≤n; s≤s)
 open import Relation.Binary.Definitions
   using (Irreflexive; Transitive; Trichotomous; Asymmetric)
 open import Relation.Binary.Structures
@@ -79,26 +79,26 @@ stage-strictTotalOrder = <-isStrictTotalOrder
 
 -- Integrity strictly precedes Sandbox.
 integrity-before-sandbox : Integrity < Sandbox
-integrity-before-sandbox = z<s
+integrity-before-sandbox = s≤s z≤n
 
 -- Integrity strictly precedes Verify.
 integrity-before-verify : Integrity < Verify
-integrity-before-verify = z<s
+integrity-before-verify = s≤s z≤n
 
 -- Integrity strictly precedes Certs.
 integrity-before-certs : Integrity < Certs
-integrity-before-certs = z<s
+integrity-before-certs = s≤s z≤n
 
 -- Integrity strictly precedes Axioms.
 integrity-before-axioms : Integrity < Axioms
-integrity-before-axioms = z<s
+integrity-before-axioms = s≤s z≤n
 
 -- Integrity strictly precedes Confidence.
 integrity-before-confidence : Integrity < Confidence
-integrity-before-confidence = z<s
+integrity-before-confidence = s≤s z≤n
 
 -- The general statement: for any stage that is not Integrity, Integrity precedes it.
--- We pattern-match: zero would give h refl : ⊥ (absurd); any suc s gives z<s.
+-- We pattern-match: zero would give h refl : ⊥ (absurd); any suc s gives s≤s z≤n.
 integrity-precedes : (s : Stage) → Integrity ≢ s → Integrity < s
 integrity-precedes zero    h = ⊥-elim (h refl)
-integrity-precedes (suc s) _ = z<s
+integrity-precedes (suc s) _ = s≤s z≤n
