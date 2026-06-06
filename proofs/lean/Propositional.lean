@@ -127,9 +127,9 @@ theorem peirce (A B : Prop) : ((A → B) → A) → A := by
   by_cases ha : A
   · exact ha
   · apply h
-    intro ha
+    intro hha
     exfalso
-    exact ha ha
+    exact ha hha
 
 /--
 Double negation of excluded middle is constructively provable.
@@ -271,8 +271,8 @@ theorem and_distrib_or (A B C : Prop) :
     | inr hc => right; exact ⟨ha, hc⟩
   · intro h
     cases h with
-    | inl ⟨ha, hb⟩ => exact ⟨ha, Or.inl hb⟩
-    | inr ⟨ha, hc⟩ => exact ⟨ha, Or.inr hc⟩
+    | inl hab => exact ⟨hab.1, Or.inl hab.2⟩
+    | inr hac => exact ⟨hac.1, Or.inr hac.2⟩
 
 /--
 Disjunction distributes over conjunction (requires classical logic).
@@ -285,10 +285,10 @@ theorem or_distrib_and (A B C : Prop) :
     constructor
     · left; exact ha
     · left; exact ha
-  | inr ⟨hb, hc⟩ =>
+  | inr hbc =>
     constructor
-    · right; exact hb
-    · right; exact hc
+    · right; exact hbc.1
+    · right; exact hbc.2
 
 
 /-! ## Logical Equivalence -/

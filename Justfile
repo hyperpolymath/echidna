@@ -244,6 +244,46 @@ test-s4-loop:
     @echo "Test will skip cleanly if the endpoint is unreachable."
     cargo test --features verisim --test s4_loop_closure -- --nocapture
 
+# ── Dogfood proof corpus (proofs/{coq,lean,agda} + src/idris validator) ──
+# Each recipe assumes its toolchain is already installed (see `just doctor`);
+# CI installs the toolchains first, then calls these so local and CI run the
+# exact same commands.
+
+# Type-check the whole dogfood proof corpus across every assistant.
+proofs: proofs-coq proofs-lean proofs-agda proofs-idris
+
+# Compile the Coq proof corpus (proofs/coq/**/*.v).
+proofs-coq:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    cd proofs/coq
+    for f in $(find . -name '*.v' | sort); do
+        echo "coqc $f"
+        coqc -q "$f"
+    done
+    echo "Coq corpus: all files type-check"
+
+# Build the Lean 4 proof corpus via Lake (proofs/lean).
+proofs-lean:
+    cd proofs/lean && lake build
+
+# Type-check the Agda proof corpus (proofs/agda/*.agda).
+proofs-agda:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    # Agda writes UTF-8 to stdout and aborts under a non-UTF-8 locale (C/POSIX).
+    export LC_ALL="${LC_ALL:-C.UTF-8}"
+    cd proofs/agda
+    for f in $(find . -name '*.agda' -not -path './_build/*' -not -path './dist-newstyle/*' | sort); do
+        echo "agda $f"
+        agda "$f"
+    done
+    echo "Agda corpus: all files type-check"
+
+# Type-check the Idris2 validator (src/idris) — --typecheck needs no codegen backend.
+proofs-idris:
+    cd src/idris && idris2 --typecheck echidna-validator.ipkg
+
 # Format code
 fmt:
     cargo fmt
