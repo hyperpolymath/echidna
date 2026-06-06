@@ -85,7 +85,7 @@ num-integer = "0.1"
 num-traits = "0.2"
 
 # Tensor coprocessor — dense linear algebra (BSD-3-Clause, MPL-2.0 compat).
-nalgebra = "0.33"
+nalgebra = "0.35"
 
 # Crypto coprocessor.  blake3 already declared above; sha2 was previously
 # gated behind `verisim` — un-gate so the Crypto backend can use it.
