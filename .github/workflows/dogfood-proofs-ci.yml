@@ -1,0 +1,132 @@
+# SPDX-License-Identifier: MPL-2.0
+# Gates the ECHIDNA dogfood proof corpus: every theorem under proofs/{coq,lean,agda}
+# must type-check. These proofs had no CI coverage before this workflow -- the other
+# proof workflows are path-filtered to meta-checker/** (agda-meta-checker) and
+# src/abi/** (idris2-abi-ci), and there was no Coq or Lean workflow at all, so
+# regressions in proofs/ landed silently.
+#
+# Toolchains are installed with plain `run:` steps (apt / curl tarballs, matching the
+# idris2 + chapel workflows) rather than marketplace setup actions: a third-party
+# setup action (taiki-e/install-action) reproducibly tripped a startup_failure in this
+# workflow's context, so this workflow uses only actions/checkout plus run steps.
+# `just` stays the single source of truth for the commands (RSR-H14) -- CI installs it
+# and calls the same recipes a developer runs locally.
+name: Dogfood Proof Corpus
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'proofs/**'
+      - 'Justfile'
+      - '.github/workflows/dogfood-proofs-ci.yml'
+  pull_request:
+    branches: [main]
+    paths:
+      - 'proofs/**'
+      - 'Justfile'
+      - '.github/workflows/dogfood-proofs-ci.yml'
+  workflow_dispatch:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  coq:
+    name: Coq
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+
+      - name: Install Coq
+        run: |
+          set -euo pipefail
+          sudo apt-get update -qq || sudo apt-get update -qq --fix-missing
+          sudo apt-get install -y --fix-missing coq
+          coqc --version
+
+      - name: Install just
+        run: |
+          set -euo pipefail
+          curl -fsSL --retry 3 \
+            "https://github.com/casey/just/releases/download/1.51.0/just-1.51.0-x86_64-unknown-linux-musl.tar.gz" \
+            -o /tmp/just.tar.gz
+          mkdir -p "$HOME/.local/bin"
+          tar xzf /tmp/just.tar.gz -C "$HOME/.local/bin" just
+          echo "$HOME/.local/bin" >> "$GITHUB_PATH"
+
+      - name: Type-check Coq corpus
+        run: just proofs-coq
+
+  lean:
+    name: Lean 4
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+
+      - name: Install elan + Lean toolchain
+        run: |
+          set -euo pipefail
+          # The toolchain version is pinned by proofs/lean/lean-toolchain; lake reads
+          # it and fetches that exact Lean on first invocation.
+          curl -fsSL --retry 3 \
+            https://raw.githubusercontent.com/leanprover/elan/master/elan-init.sh \
+            -o /tmp/elan-init.sh
+          sh /tmp/elan-init.sh -y --default-toolchain none
+          echo "$HOME/.elan/bin" >> "$GITHUB_PATH"
+
+      - name: Install just
+        run: |
+          set -euo pipefail
+          curl -fsSL --retry 3 \
+            "https://github.com/casey/just/releases/download/1.51.0/just-1.51.0-x86_64-unknown-linux-musl.tar.gz" \
+            -o /tmp/just.tar.gz
+          mkdir -p "$HOME/.local/bin"
+          tar xzf /tmp/just.tar.gz -C "$HOME/.local/bin" just
+          echo "$HOME/.local/bin" >> "$GITHUB_PATH"
+
+      - name: Build Lean corpus
+        run: just proofs-lean
+
+  agda:
+    name: Agda
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+
+      - name: Install Agda + standard library
+        run: |
+          set -euo pipefail
+          sudo apt-get update -qq
+          sudo apt-get install -y agda
+          agda --version
+          # stdlib from GitHub, pinned to v1.7.3 (the version apt ships for the
+          # agda 2.6.3 the corpus is verified against). apt's agda-stdlib is NOT
+          # used: `apt --fix-missing` can silently drop it, leaving the library
+          # unregistered ("Installed libraries: (none)"). The corpus .agda-lib in
+          # proofs/agda is auto-detected from the working dir; this registration
+          # resolves its `depend: standard-library`.
+          cd /tmp
+          curl -fsSL --retry 3 -o agda-stdlib.tar.gz \
+            https://github.com/agda/agda-stdlib/archive/refs/tags/v1.7.3.tar.gz
+          tar xzf agda-stdlib.tar.gz
+          mkdir -p ~/.agda
+          echo "/tmp/agda-stdlib-1.7.3/standard-library.agda-lib" > ~/.agda/libraries
+          echo "standard-library" > ~/.agda/defaults
+
+      - name: Install just
+        run: |
+          set -euo pipefail
+          curl -fsSL --retry 3 \
+            "https://github.com/casey/just/releases/download/1.51.0/just-1.51.0-x86_64-unknown-linux-musl.tar.gz" \
+            -o /tmp/just.tar.gz
+          mkdir -p "$HOME/.local/bin"
+          tar xzf /tmp/just.tar.gz -C "$HOME/.local/bin" just
+          echo "$HOME/.local/bin" >> "$GITHUB_PATH"
+
+      - name: Type-check Agda corpus
+        run: just proofs-agda

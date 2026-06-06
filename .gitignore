@@ -190,6 +190,12 @@ proofs/coq/**/*.vok
 proofs/coq/**/*.glob
 proofs/coq/**/.*.aux
 proofs/agda/**/*.agdai
+proofs/agda/**/dist-newstyle/
+proofs/lean/**/.lake/
+proofs/lean/**/.lia.cache
+proofs/lean/**/.nia.cache
+.lia.cache
+.nia.cache
 proofs/metamath/.metamath*
 target/
 node_modules/
