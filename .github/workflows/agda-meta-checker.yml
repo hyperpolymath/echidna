@@ -49,7 +49,10 @@ jobs:
       - name: Install Agda
         run: |
           cabal update
-          cabal install Agda-2.7.0.1
+          # --overwrite-policy=always: the cached ~/.cabal restore already
+          # carries the agda symlink, so a plain install aborts with
+          # "Path '.../bin/agda' already exists" on a warm cache.
+          cabal install Agda-2.7.0.1 --overwrite-policy=always
 
       - name: Install Agda standard library
         run: |
