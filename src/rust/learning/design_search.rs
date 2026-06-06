@@ -31,7 +31,7 @@ use std::collections::BTreeSet;
 use std::fmt::Debug;
 
 use rand::rngs::StdRng;
-use rand::{Rng, SeedableRng};
+use rand::{RngExt, SeedableRng};
 use serde::{Deserialize, Serialize};
 
 /// The minimum surface a domain has to expose for the annealer.
