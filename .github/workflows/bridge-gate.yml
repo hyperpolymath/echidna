@@ -1,0 +1,60 @@
+# SPDX-License-Identifier: MPL-2.0
+# Copyright (c) 2026 Jonathan D.A. Jewell <j.d.a.jewell@open.ac.uk>
+#
+# bridge-gate.yml -- merge-orchestration CVE/bump gate.
+# Wired from hyperpolymath/hypatia docs/design/merge-orchestration (artifact 4, PR #459).
+#
+# Gates dependency-bump PRs on:
+#   B3  nix bump                  -> fail (Nix removed estate-wide; close, do not merge)
+#   B1  reachable unmitigable CVE -> fail (via panic-attack's OSV-backed Patch-Bridge)
+# A clean patch/minor CVE-clear bump passes. A failing gate is a red check; to actually
+# BLOCK auto-merge, add "bridge-gate" to this repo's required status checks (owner action).
+#
+# Notes for review:
+#  - B2 (major -> review) is left to the existing human-review path; it can be added
+#    later via dependabot/fetch-metadata.
+#  - panic-attack is built from source (public clone). Production hardening: a released
+#    binary, or -- to match estate convention -- a hyperpolymath/standards reusable
+#    workflow. Offered as a follow-up.
+#  - github context is passed via env: only (no ${{ }} in run lines) per estate rules.
+name: bridge-gate
+on:
+  pull_request:
+    types: [opened, synchronize, reopened]
+permissions:
+  contents: read
+jobs:
+  bridge-gate:
+    if: ${{ startsWith(github.head_ref, 'dependabot/') || startsWith(github.head_ref, 'renovate/') }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5
+
+      - name: B3 gate -- nix bumps (no network)
+        env:
+          HEAD_REF: ${{ github.head_ref }}
+        run: |
+          if [[ "$HEAD_REF" == dependabot/nix/* ]]; then
+            echo "::error::B3: nix bump -- Nix removed estate-wide; close, do not merge."
+            exit 1
+          fi
+
+      - name: Build panic-attack (Patch-Bridge)
+        run: |
+          git clone --depth 1 https://github.com/hyperpolymath/panic-attack /tmp/pa
+          cargo build --release --features http --manifest-path /tmp/pa/Cargo.toml
+          echo "/tmp/pa/target/release" >> "$GITHUB_PATH"
+
+      - name: Bridge triage (queries OSV) -> BridgeReport
+        run: panic-attack bridge triage . --output bridge-report.json
+
+      - name: Apply B1 verdict -- reachable unmitigable CVE -> flag
+        run: |
+          blockers=$(jq '[.cves[]? | select(.classification=="Unmitigable" and .reachability.status=="Reachable")] | length' bridge-report.json)
+          if [ "$blockers" -gt 0 ]; then
+            echo "::error::B1: $blockers reachable unmitigable CVE(s) -> safety=flag (auto-merge blocked)"
+            jq -r '.cves[]? | select(.classification=="Unmitigable" and .reachability.status=="Reachable") | "  - \(.vulnerability.cve // .vulnerability.id): \(.rationale)"' bridge-report.json
+            exit 1
+          fi
+          echo "B1 PASS: no reachable unmitigable CVEs -> arm-eligible (pool-gated)."
