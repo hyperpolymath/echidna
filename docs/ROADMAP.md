@@ -13,7 +13,11 @@ guardrail landed in two halves — R5a (prover-count drift, echidna‑local
 at `.github/canonical-references/` after PR #174 migration) and R5b
 (estate‑wide `Version: x.y.z` drift, in the standards reusable, consumed
 via PR #172). MVP smoke (#167) and the pareto/bare-build governance
-harness are green on `main`. None of these change the stage map below;
+harness are green on `main`. The dogfood proof corpus (`proofs/{coq,lean,agda}` + `src/idris`) is now
+CI-gated by `dogfood-proofs-ci.yml` (Coq/Lean/Agda) and `idris2-abi-ci.yml`
+(the `src/idris` validator), each driven by a `just proofs-*` recipe — closing
+a gap where the corpus had no CI and a green PR proved nothing about the
+proofs (PR #234). None of these change the stage map below;
 they are infrastructure around the work, not on the critical path.
 
 This document is the single source of truth for where ECHIDNA is going.

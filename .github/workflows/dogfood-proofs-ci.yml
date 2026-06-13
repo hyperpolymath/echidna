@@ -68,16 +68,37 @@ jobs:
     steps:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
 
-      - name: Install elan + Lean toolchain
+      - name: Install elan + pinned Lean toolchain
         run: |
           set -euo pipefail
-          # The toolchain version is pinned by proofs/lean/lean-toolchain; lake reads
-          # it and fetches that exact Lean on first invocation.
+          # elan-init installs the elan shim only (--default-toolchain none). We then
+          # pre-install the exact toolchain pinned by proofs/lean/lean-toolchain *here*,
+          # with retry/backoff, rather than letting `lake build` resolve it lazily:
+          # elan maps the pinned version against the GitHub releases API, which can
+          # transiently fail ("failed to parse latest release tag" — observed once on
+          # PR #234's pre-merge run; the post-merge run on main passed). Isolating and
+          # retrying that one network step keeps the Build step deterministic.
           curl -fsSL --retry 3 \
             https://raw.githubusercontent.com/leanprover/elan/master/elan-init.sh \
             -o /tmp/elan-init.sh
           sh /tmp/elan-init.sh -y --default-toolchain none
+          export PATH="$HOME/.elan/bin:$PATH"
           echo "$HOME/.elan/bin" >> "$GITHUB_PATH"
+          toolchain="$(tr -d '[:space:]' < proofs/lean/lean-toolchain)"
+          for attempt in 1 2 3 4 5; do
+            if elan toolchain install "$toolchain"; then
+              break
+            fi
+            if [ "$attempt" -eq 5 ]; then
+              echo "elan toolchain install failed after 5 attempts" >&2
+              exit 1
+            fi
+            backoff=$((attempt * 5))
+            echo "elan toolchain install failed (attempt $attempt); retrying in ${backoff}s" >&2
+            sleep "$backoff"
+          done
+          elan default "$toolchain"
+          lean --version
 
       - name: Install just
         run: |
