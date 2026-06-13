@@ -1,0 +1,19 @@
+# SPDX-License-Identifier: MPL-2.0
+# Auto-add new issues & PRs to the Hyperpolymath Master Roadmap (project #35).
+# Pilot wiring (2026-06-13). Requires repo secret ADD_TO_PROJECT_PAT:
+# a fine-grained PAT with Projects (read+write) on the hyperpolymath account.
+name: Add to roadmap 35
+on:
+  issues:
+    types: [opened, reopened, transferred]
+  pull_request_target:
+    types: [opened, reopened]
+permissions: {}
+jobs:
+  add-to-project:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/add-to-project@v1.0.2
+        with:
+          project-url: https://github.com/users/hyperpolymath/projects/35
+          github-token: ${{ secrets.ADD_TO_PROJECT_PAT }}
