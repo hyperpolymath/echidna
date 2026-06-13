@@ -9,7 +9,7 @@ type = "state-file"
 [metadata]
 project = "echidna"
 version = "2.3.0"
-last-updated = "2026-06-02"
+last-updated = "2026-06-13"
 status = "active"
 release-tag = "v2.3.0"
 
@@ -17,6 +17,28 @@ release-tag = "v2.3.0"
 name = "echidna"
 completion-percentage = 100
 phase = "v2.3.0 Released — saturation+typing (#198) + GNN training wiring (#207) + dispatcher all-17-adapters (PR pending SPDX hook) + comprehensive contractile family (#214) + first owner-authorised GNN training run completed (best MRR 0.92)"
+
+[session-2026-06-13-dogfood-proof-ci]
+summary = "Proof corpus repaired and gated in CI (PR #234, squash-merged to main 2026-06-06)"
+pr = "https://github.com/hyperpolymath/echidna/pull/234"
+tracker = "https://github.com/hyperpolymath/echidna/issues/238"
+changes = [
+  "proofs/{coq,lean,agda} + src/idris: every theorem now type-checks against real toolchains (Coq 8.18, Lean v4.13.0, Agda 2.6.3 + stdlib v1.7.3, Idris2 0.8.0)",
+  "New .github/workflows/dogfood-proofs-ci.yml — Coq + Lean + Agda jobs, each invoking a just proofs-* recipe so CI and local runs share one command surface (RSR-H14)",
+  "idris2-abi-ci.yml extended to type-check the src/idris validator (src/idris/** added to its triggers)",
+  "New Justfile recipes: proofs, proofs-coq, proofs-lean, proofs-agda, proofs-idris",
+]
+latent-bugs-fixed = [
+  "proofs/lean/lakefile.lean rooted only ECHIDNA, so lake build was silently broken (unknown module prefix); now every module is a root",
+  "src/idris/Validator.idr had no main though its ipkg declares an executable; added main = testValidation",
+]
+ci-environment-notes = [
+  "taiki-e/install-action reproducibly startup_failure'd in the new workflow even though mvp-smoke.yml uses the same pin on main; worked around with plain run: installs (apt + curl tarballs). Allowed-actions policy worth a look.",
+  "apt --fix-missing silently dropped agda-stdlib (exit 0, library unregistered); Agda now fetches stdlib v1.7.3 from GitHub deterministically.",
+  "Lean toolchain resolution via elan flaked once on the pre-merge ref ('failed to parse latest release tag', a GitHub releases-API hiccup); the post-merge run on main passed. Hardened by pre-installing the pinned toolchain with retry/backoff.",
+]
+gap-closed = "Before #234 the corpus had zero CI: agda-meta-checker.yml gated meta-checker/**, idris2-abi-ci.yml gated src/abi/**, and there was no Coq or Lean workflow at all, so a green PR proved nothing about proofs/."
+verification = "All proof jobs green end-to-end on PR #234 and on the post-merge push to main (Dogfood Proof Corpus run #11)."
 
 [session-2026-06-02]
 description = "Major wave: 20+ PRs across echidna+echidnabot+gitbot-fleet+hyperpolymath"
