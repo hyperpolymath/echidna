@@ -1072,3 +1072,6 @@ er-schema-drift-check:
                | sha256sum | head -c 64
     @echo " (current combined hash; compare against .machine_readable/er-schema.sha256 when CI gate lands)"
 
+
+secret-scan-trufflehog:
+    @command -v trufflehog >/dev/null && trufflehog filesystem . --only-verified || true

@@ -302,3 +302,9 @@ deploy-release:
           url: "${CI_REGISTRY_IMAGE}:${CI_COMMIT_TAG}"
   only:
     - tags
+
+trufflehog:
+  stage: security
+  image: trufflesecurity/trufflehog:latest
+  script:
+    - trufflehog git file://. --only-verified --fail
