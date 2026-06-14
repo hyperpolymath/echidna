@@ -1,0 +1,151 @@
+// SPDX-License-Identifier: MPL-2.0
+// Copyright (c) 2026 Jonathan D.A. Jewell (hyperpolymath) <j.d.a.jewell@open.ac.uk>
+= Echidna Contractiles
+Jonathan D.A. Jewell <j.d.a.jewell@open.ac.uk>
+:toc:
+:sectnums:
+
+This directory holds Echidna's *contractiles* — the machine-readable
+contracts that make the project's invariants, trust boundary, recovery
+story, drift tolerances, hard-stop conditions, and north-star intent
+legible to CI, the contractile CLI, and Hypatia rules.
+
+Echidna is a trust-hardened neurosymbolic theorem-proving platform, so
+these contracts are not decorative: `must` and `trust` gate merges,
+`bust` declares deprecated-path hard-stops, and `dust` governs how
+recovery happens without losing the audit trail.
+
+The estate-level audit semantics (what each verb *means* and the
+minimum bar for "real contract vs template residue") are defined in
+`standards/contractiles/CANONICAL-TEMPLATES.adoc`. The normative
+per-file specification is `docs/CONTRACTILE-SPEC.adoc`. This README
+documents the local realisation.
+
+== Layout — the trident shape
+
+Each verb lives in its own directory as a complete *trident* plus a
+coherence manifest:
+
+* `<Verb>file.a2ml` — the project-specific *declaration* (data: the
+  actual invariants / trust actions / tolerances / intents).
+* `<verb>.ncl` — the paired Nickel *runner* (pedigree + schema + run
+  policy). Imports `../_base.ncl`.
+* `<verb>.k9.ncl` — the *K9 trust-tier component* (execution surface,
+  evidence sinks, session-open/close negotiation). Imports the Hunt
+  base via `../k9/template-hunt.k9.ncl` and `../_base.ncl`.
+* `<verb>.manifest.a2ml` — the *trident coherence manifest* (file roles,
+  cross-refs, signature, history).
+
+Filenames use the lowercase verb in the `.ncl`/`.manifest` names and
+noun-form PascalCase in the A2ML declaration (e.g. `intend.ncl` +
+`Intentfile.a2ml`, `must.ncl` + `Mustfile.a2ml`).
+
+`_base.ncl` provides the shared `pedigree_schema`, `run_defaults`, and
+`probe_schema` that every runner merges into. `INDEX.a2ml` is the
+machine-readable registry of all verbs — consumers should read it
+rather than hard-coding the verb list.
+
+== Verbs (6 + k9 exception)
+
+[cols="1,2,3", options="header"]
+|===
+| Verb | Declaration | Role (and gating)
+
+| `must`
+| `must/Mustfile.a2ml`
+| Release-blocking physical-state invariants (LICENSE/README presence,
+  banned hardcoded paths, no Dockerfile/Makefile, …). *Gating* —
+  hard `exit-nonzero`. Specialises in subtle invariant-erosion.
+
+| `trust`
+| `trust/Trustfile.a2ml`
+| Trust boundary, allowed/denied actions, provenance + supply-chain
+  integrity, dispatcher-trust (`T###` namespace). *Gating* — hard
+  `exit-nonzero`. Primary defence against unsound proofs leaving the
+  dispatcher.
+
+| `adjust`
+| `adjust/Adjustfile.a2ml`
+| Drift tolerances + corrective actions; deterministic auto-fix where
+  declared. Advisory (`continue-with-warnings`), Yard tier.
+
+| `dust`
+| `dust/Dustfile.a2ml`
+| Fine-grained recovery / rollback / deprecation with audit-trail
+  preservation (`D###` namespace). Destructive actions are dry-run by
+  default and require `--apply` + per-item approval. Advisory.
+
+| `bust`
+| `bust/Bustfile.a2ml`
+| Breakage / expiry / hard-stop — declares "this is broken / must-not-run"
+  (e.g. deprecated paths that still exist). *Gating* — hard `exit-nonzero`.
+
+| `intend`
+| `intend/Intentfile.a2ml`
+| North-star: committed next-actions (`[[intents]]`, with probes) AND
+  horizon aspirations (`[[wishes]]`, near/mid/far, no probes).
+  Non-gating (report only). Absorbed the deprecated `lust` verb
+  2026-04-18.
+|===
+
+NOTE: The `lust` verb was deprecated 2026-04-18 (name had unwanted
+associations); its `[[wishes]]` semantics now live inside
+`intend/Intentfile.a2ml` as a second section alongside `[[intents]]`.
+Any `lust/` directory is drift and should be removed.
+
+== Intentfile: commitments vs aspirations — two sections, one file
+
+* `[[intents]]` is the *commitment axis*: tracked next-actions with
+  observable probes. Status progresses
+  `declared → in_progress → done / deferred / retired`.
+* `[[wishes]]` is the *aspiration axis*: horizon goals grouped
+  near/mid/far, no probes. Status progresses
+  `declared → in_progress → achieved / abandoned`.
+
+If something is concrete enough to have a probe, it is an intent; a
+horizon-level desire that might never be acted on is a wish. A wish can
+graduate into an intent when a concrete plan materialises. Intent is
+guidance, never evidence of completion.
+
+== k9 — service-automation layer (EXCEPTION to the one-verbfile rule)
+
+`k9` is *not* a contractile verb and deliberately does not follow the
+`<Verb>file.a2ml` + `<verb>.ncl` pattern. It is the graded automation
+surface (three trust tiers) that validates or enforces the verb
+declarations:
+
+* *Kennel* — pure data; no subprocess, filesystem write, or network.
+* *Yard* — Nickel evaluation with contracts/validation; no side effects.
+* *Hunt* — full execution surface; must declare side effects, support
+  dry-run, and be signed before being trusted.
+
+Each per-verb `<verb>.k9.ncl` declares a `paired_xfile` pointing at its
+contractile (e.g. `../must/Mustfile.a2ml`); a floating k9 component with
+no paired xfile is non-conformant.
+
+[NOTE]
+====
+*Local k9-base status.* Echidna's three trust-tier templates currently
+live under `../svc/k9/` (`template-kennel.k9.ncl`, `template-yard.k9.ncl`,
+`template-hunt.k9.ncl`). The per-verb `<verb>.k9.ncl` components import the
+canonical `../k9/template-hunt.k9.ncl` base path used estate-wide; that
+shared Hunt base is a known estate-level gap (the same import is unresolved
+in `standards`) and is tracked by the machine-readable respec programme
+rather than patched per-repo here. The runner `.ncl` files (which import
+only `_base.ncl`) `nickel typecheck` clean.
+====
+
+== Fill-in / maintenance rules
+
+. Every declaration must hold real, project-specific content — no
+  generic samples, no `rsr-template` residue.
+. `Mustfile` must encode invariants the toolchain can actually check.
+. `Trustfile` must name the real keys, policies, and authority
+  boundaries. Per estate policy, licence/SPDX findings are *flag-only*
+  here — never auto-edited.
+. `Dustfile` must describe real rollback/deprecation behaviour and what
+  evidence persists after a rollback.
+. `Bustfile` must declare real breakage / expiry / hard-stop conditions.
+. `Intentfile` must separate probed `[[intents]]` from horizon
+  `[[wishes]]`.
+. Pair each `k9/*.k9.ncl` to a specific contractile via `paired_xfile`.
