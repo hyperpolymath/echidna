@@ -1,0 +1,72 @@
+# SPDX-License-Identifier: MPL-2.0
+# Server boot gate — builds the echidna binary, boots the server, and
+# verifies that /api/health, /api/provers, and a session {id} route all
+# respond.  Exists so "compiles" can never again mean "boots" — the
+# axum 0.8 route-syntax panic shipped precisely because nothing in CI
+# started the server.
+name: Server Boot Gate
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+permissions:
+  contents: read
+jobs:
+  boot-gate:
+    name: Boot Gate
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v4
+      - name: Setup Rust toolchain
+        uses: dtolnay/rust-toolchain@6d9817901c499d6b02debbb57edb38d33daa680b # stable
+        with:
+          toolchain: stable
+      - name: Cache Cargo
+        uses: Swatinem/rust-cache@65012b490220f477f20ab979e35ae732e6de4e68 # v2
+      - name: Install system dependencies
+        run: sudo apt-get install -y libssl-dev pkg-config
+      - name: Build echidna binary
+        run: cargo build -p echidna
+      - name: Boot server and verify routes
+        run: |
+          ./target/debug/echidna server --port 8081 &
+          SERVER_PID=$!
+          trap "kill $SERVER_PID 2>/dev/null || true" EXIT
+
+          # Wait up to 15 s for the server to accept connections
+          for i in $(seq 1 30); do
+            curl -sf http://127.0.0.1:8081/api/health >/dev/null && break
+            sleep 0.5
+          done
+
+          echo "=== /api/health ==="
+          curl -sf http://127.0.0.1:8081/api/health || { echo "FAIL: /api/health"; exit 1; }
+
+          echo ""
+          echo "=== /api/provers ==="
+          curl -sf http://127.0.0.1:8081/api/provers || { echo "FAIL: /api/provers"; exit 1; }
+
+          echo ""
+          echo "=== POST /api/session/create ==="
+          SESSION=$(curl -sf -X POST http://127.0.0.1:8081/api/session/create \
+            -H 'Content-Type: application/json' \
+            -d '{"prover":"Z3"}') || { echo "FAIL: session/create"; exit 1; }
+          echo "$SESSION"
+
+          SESSION_ID=$(echo "$SESSION" | grep -o '"session_id":"[^"]*"' | cut -d'"' -f4)
+          if [ -n "$SESSION_ID" ]; then
+            echo ""
+            echo "=== GET /api/session/{id}/state ==="
+            curl -sf "http://127.0.0.1:8081/api/session/${SESSION_ID}/state" \
+              || { echo "FAIL: session/{id}/state"; exit 1; }
+          fi
+
+          echo ""
+          echo "Boot gate PASSED"
