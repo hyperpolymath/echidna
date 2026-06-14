@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: 2025 ECHIDNA Project Team
+// SPDX-FileCopyrightText: 2025 Jonathan D.A. Jewell <j.d.a.jewell@open.ac.uk>
 // SPDX-License-Identifier: MPL-2.0
 
 //! HTTP API server for ECHIDNA
@@ -94,8 +94,22 @@ pub async fn start_server(port: u16, host: String, enable_cors: bool) -> Result<
     let stats = Arc::new(RwLock::new(StatisticsTracker::new()));
     let meta_controller = Arc::new(MetaController::new().with_stats(stats.clone()));
 
-    // Create prover dispatcher with default configuration
-    let dispatcher = Arc::new(ProverDispatcher::new());
+    // Create prover dispatcher with default configuration.
+    // When compiled with --features verisim, attach the VeriSimDB writer so
+    // every HTTP proof attempt (including parse failures) feeds the S4 learning
+    // loop.  The writer runs fire-and-forget; a VeriSimDB outage never blocks
+    // or alters a dispatch result.
+    let dispatcher = {
+        let d = ProverDispatcher::new();
+        #[cfg(feature = "verisim")]
+        let d = {
+            let url = std::env::var("VERISIM_URL")
+                .unwrap_or_else(|_| "http://localhost:8080".to_string());
+            info!("✓ VeriSim writer attached at {}", url);
+            d.with_verisim_writer(&url)
+        };
+        Arc::new(d)
+    };
     info!("✓ Initialized prover dispatcher for trust-hardening pipeline");
 
     let state = AppState {
@@ -407,77 +421,98 @@ async fn prove_handler(
 ) -> Result<Json<ProveResponse>, AppError> {
     info!("Prove request for prover: {:?}", req.prover);
 
-    // Create prover
-    let config = ProverConfig {
-        timeout: req.timeout.unwrap_or(300),
-        neural_enabled: req.neural.unwrap_or(true),
-        ..ProverConfig::default()
-    };
-
-    let prover = echidna::provers::ProverFactory::create(req.prover, config)
-        .map_err(|e| AppError::InternalError(e.to_string()))?;
-
-    // Parse proof
-    let state = prover
-        .parse_string(&req.content)
-        .await
-        .map_err(|e| AppError::ParseError(e.to_string()))?;
-
-    // Fail-fast on empty parse results (fixes false-positive: unrecognised
-    // content produced an empty ProofState that re-exported to an empty file
-    // which the backend prover then happily accepted). Require at least one
-    // goal, theorem, definition, or axiom before we claim "parse succeeded".
-    if is_empty_state(&state) && !req.content.trim().is_empty() {
-        let outcome = ProverOutcome::InvalidInput {
-            reason: "Parse produced no goals, theorems, definitions, or axioms — \
-                     content not recognised by the selected prover backend"
-                .to_string(),
-            location: None,
-        };
-        app_state
+    // Route through the full dispatch pipeline when the verisim feature is
+    // active.  This fires the VeriSimDB writer for every HTTP proof (parse
+    // failures and final results), closing the S4 learning loop.  The writer
+    // runs fire-and-forget — a VeriSimDB outage never blocks or alters a
+    // result.  Response shape (success/goals/message) is preserved.
+    #[cfg(feature = "verisim")]
+    {
+        let result = app_state
             .dispatcher
-            .record_prover_result(req.prover, &outcome, 0);
+            .verify_proof(req.prover, &req.content)
+            .await
+            .map_err(|e| AppError::VerificationError(e.to_string()))?;
         return Ok(Json(ProveResponse {
-            success: false,
-            goals: 0,
-            message: "Parse produced no goals, theorems, definitions, or axioms — \
-                     content not recognised by the selected prover backend"
-                .to_string(),
+            success: result.verified,
+            goals: result.goals_remaining,
+            message: result.message,
         }));
     }
 
-    // Verify proof and record health metrics
-    let verify_start = Instant::now();
-    let valid = prover
-        .verify_proof(&state)
-        .await
-        .map_err(|e| AppError::VerificationError(e.to_string()))?;
-    let verify_elapsed_ms = verify_start.elapsed().as_millis() as u64;
+    // Non-verisim path: direct factory + prover call (existing behaviour).
+    #[cfg(not(feature = "verisim"))]
+    {
+        // Create prover
+        let config = ProverConfig {
+            timeout: req.timeout.unwrap_or(300),
+            neural_enabled: req.neural.unwrap_or(true),
+            ..ProverConfig::default()
+        };
 
-    // Record outcome in health monitoring
-    let outcome = if valid {
-        ProverOutcome::Proved {
-            elapsed_ms: verify_elapsed_ms,
-        }
-    } else {
-        ProverOutcome::NoProofFound {
-            elapsed_ms: verify_elapsed_ms,
-            reason: Some("Proof verification failed".to_string()),
-        }
-    };
-    app_state
-        .dispatcher
-        .record_prover_result(req.prover, &outcome, verify_elapsed_ms);
+        let prover = echidna::provers::ProverFactory::create(req.prover, config)
+            .map_err(|e| AppError::InternalError(e.to_string()))?;
 
-    Ok(Json(ProveResponse {
-        success: valid,
-        goals: state.goals.len(),
-        message: if valid {
-            "Proof verified successfully".to_string()
+        // Parse proof
+        let state = prover
+            .parse_string(&req.content)
+            .await
+            .map_err(|e| AppError::ParseError(e.to_string()))?;
+
+        // Fail-fast on empty parse results (fixes false-positive: unrecognised
+        // content produced an empty ProofState that re-exported to an empty file
+        // which the backend prover then happily accepted).
+        if is_empty_state(&state) && !req.content.trim().is_empty() {
+            let outcome = ProverOutcome::InvalidInput {
+                reason: "Parse produced no goals, theorems, definitions, or axioms — \
+                         content not recognised by the selected prover backend"
+                    .to_string(),
+                location: None,
+            };
+            app_state
+                .dispatcher
+                .record_prover_result(req.prover, &outcome, 0);
+            return Ok(Json(ProveResponse {
+                success: false,
+                goals: 0,
+                message: "Parse produced no goals, theorems, definitions, or axioms — \
+                         content not recognised by the selected prover backend"
+                    .to_string(),
+            }));
+        }
+
+        // Verify proof and record health metrics
+        let verify_start = Instant::now();
+        let valid = prover
+            .verify_proof(&state)
+            .await
+            .map_err(|e| AppError::VerificationError(e.to_string()))?;
+        let verify_elapsed_ms = verify_start.elapsed().as_millis() as u64;
+
+        let outcome = if valid {
+            ProverOutcome::Proved {
+                elapsed_ms: verify_elapsed_ms,
+            }
         } else {
-            "Proof verification failed".to_string()
-        },
-    }))
+            ProverOutcome::NoProofFound {
+                elapsed_ms: verify_elapsed_ms,
+                reason: Some("Proof verification failed".to_string()),
+            }
+        };
+        app_state
+            .dispatcher
+            .record_prover_result(req.prover, &outcome, verify_elapsed_ms);
+
+        Ok(Json(ProveResponse {
+            success: valid,
+            goals: state.goals.len(),
+            message: if valid {
+                "Proof verified successfully".to_string()
+            } else {
+                "Proof verification failed".to_string()
+            },
+        }))
+    }
 }
 
 /// Verify proof endpoint

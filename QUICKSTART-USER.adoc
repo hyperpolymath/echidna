@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: MPL-2.0
-// Copyright (c) 2026 Jonathan D.A. Jewell (hyperpolymath) <j.d.a.jewell@open.ac.uk>
+// SPDX-FileCopyrightText: 2026 Jonathan D.A. Jewell <j.d.a.jewell@open.ac.uk>
 = ECHIDNA: Quickstart Guide
 :toc: macro
 :icons: font
@@ -120,12 +120,16 @@ curl http://127.0.0.1:8081/api/health
 # List Tier-1 core provers
 curl http://127.0.0.1:8081/api/provers
 
-# Prove a satisfiable SMT-LIB goal (Z3)
+# Refutation demo (Z3) — asserts a contradiction, expects success:true
+# ECHIDNA proves by refutation: success ⟺ unsat.
+# A satisfiable assertion correctly returns success:false (assert the
+# negation of your goal to check a validity obligation instead).
 curl -X POST http://127.0.0.1:8081/api/prove \
   -H 'Content-Type: application/json' \
   -d '{"prover":"Z3",
-       "content":"(set-logic QF_LIA)\n(declare-const x Int)\n(assert (> x 0))\n(check-sat)\n",
+       "content":"(set-logic QF_LIA)\n(declare-const x Int)\n(assert (and (> x 0) (< x 0)))\n(check-sat)\n",
        "timeout":30}'
+# Expected: {"success":true,"goals":0,"message":"Proof verified successfully"}
 ----
 
 The full route table is in `src/rust/server.rs`. Separate
