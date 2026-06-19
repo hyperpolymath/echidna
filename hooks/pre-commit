@@ -1,0 +1,16 @@
+#!/usr/bin/env bash
+# SPDX-License-Identifier: MPL-2.0
+# SPDX-FileCopyrightText: 2026 Jonathan D.A. Jewell <j.d.a.jewell@open.ac.uk>
+#
+# ECHIDNA pre-commit hook — satisfies the RSR hooks/ requirement
+# (pre-commit enforcement). Wraps the same fast gate CI runs.
+# Enable per clone:  git config core.hooksPath hooks
+set -euo pipefail
+
+if ! command -v just >/dev/null 2>&1; then
+  echo "pre-commit: 'just' not on PATH (RSR-H14 build tool); skipping gate." >&2
+  exit 0
+fi
+
+# fmt-check + lint (REUSE/SPDX + rustfmt + clippy) + test — Justfile `pre-commit`.
+exec just pre-commit
