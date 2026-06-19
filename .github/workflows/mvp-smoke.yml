@@ -28,7 +28,7 @@ jobs:
       contents: read
     steps:
       - name: Checkout repository
-        uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v4
+        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v4
 
       - name: Setup Rust toolchain
         uses: dtolnay/rust-toolchain@6d9817901c499d6b02debbb57edb38d33daa680b # stable
@@ -39,7 +39,7 @@ jobs:
         uses: Swatinem/rust-cache@65012b490220f477f20ab979e35ae732e6de4e68 # v2
 
       - name: Install just
-        uses: taiki-e/install-action@7a79fe8c3a13344501c80d99cae481c1c9085912 # v2.81.10
+        uses: taiki-e/install-action@b8cecb83565409bcc297b2df6e77f030b2a468d5 # v2.82.0
         with:
           # Governance R1 requires versioned family-tool pins
           # (just|must|trust|adjust|bust|dust|intend); bare `tool: just`
