@@ -492,9 +492,18 @@ dependencies = [
 
 [[package]]
 name = "capnp"
-version = "0.25.5"
+version = "0.25.6"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "1cfd2485d4b36ac9c5aa6572d7d35daa63a5b34f517627d6c34d068e616e4a73"
+checksum = "4777a3bc19b8f8e5fb2d0196c6b5dfcbbcc8b2fe08ae57f873f2f35f15cfc210"
+dependencies = [
+ "embedded-io",
+]
+
+[[package]]
+name = "capnp"
+version = "0.26.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "71338171543626713e427635f7de390328d9e85828a816a0c88d959032b34a2f"
 dependencies = [
  "embedded-io",
 ]
@@ -505,7 +514,7 @@ version = "0.25.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "fca02be865c8c5a78bfc24b9819006ab6b59bef238467203928e26459557af93"
 dependencies = [
- "capnp",
+ "capnp 0.25.6",
 ]
 
 [[package]]
@@ -1181,7 +1190,7 @@ dependencies = [
 name = "echidna-wire"
 version = "0.1.0"
 dependencies = [
- "capnp",
+ "capnp 0.26.0",
  "capnpc",
 ]
 
