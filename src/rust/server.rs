@@ -229,8 +229,8 @@ pub async fn start_server(port: u16, host: String, enable_cors: bool) -> Result<
     println!("  POST /api/suggest             - Get tactic suggestions");
     println!("  GET  /api/search?q=<pattern>  - Search theorems");
     println!("  POST /api/session/create      - Create proof session");
-    println!("  GET  /api/session/{id}/state   - Get session state");
-    println!("  POST /api/session/{id}/apply   - Apply tactic to session");
+    println!("  GET  /api/session/{{id}}/state   - Get session state");
+    println!("  POST /api/session/{{id}}/apply   - Apply tactic to session");
     println!("  WS   /ws/interactive          - WebSocket live proof session");
     println!();
     println!("Press Ctrl+C to stop the server");
