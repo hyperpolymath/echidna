@@ -180,9 +180,9 @@ pub async fn start_server(port: u16, host: String, enable_cors: bool) -> Result<
         .route("/api/suggest", post(suggest_handler))
         .route("/api/search", get(search_handler))
         .route("/api/session/create", post(create_session))
-        .route("/api/session/:id/state", get(get_session_state))
-        .route("/api/session/:id/apply", post(apply_tactic_handler))
-        .route("/api/session/:id/tree", get(get_proof_tree))
+        .route("/api/session/{id}/state", get(get_session_state))
+        .route("/api/session/{id}/apply", post(apply_tactic_handler))
+        .route("/api/session/{id}/tree", get(get_proof_tree))
         // Additional UI-specific endpoints
         .route("/api/agent/plan", post(agent_plan_handler))
         .route("/api/aspect-tags", get(get_aspect_tags))
@@ -229,8 +229,8 @@ pub async fn start_server(port: u16, host: String, enable_cors: bool) -> Result<
     println!("  POST /api/suggest             - Get tactic suggestions");
     println!("  GET  /api/search?q=<pattern>  - Search theorems");
     println!("  POST /api/session/create      - Create proof session");
-    println!("  GET  /api/session/:id/state   - Get session state");
-    println!("  POST /api/session/:id/apply   - Apply tactic to session");
+    println!("  GET  /api/session/{{id}}/state   - Get session state");
+    println!("  POST /api/session/{{id}}/apply   - Apply tactic to session");
     println!("  WS   /ws/interactive          - WebSocket live proof session");
     println!();
     println!("Press Ctrl+C to stop the server");
