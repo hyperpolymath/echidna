@@ -20,7 +20,7 @@
 (define-public echidna
   (package
     (name "echidna")
-    (version "1.5.0")
+    (version "2.3.0")
     (source (local-file "." "echidna-checkout"
                         #:recursive? #t
                         #:select? (git-predicate ".")))
