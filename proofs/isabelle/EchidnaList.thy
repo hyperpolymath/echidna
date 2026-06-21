@@ -248,7 +248,7 @@ text \<open>
 
 lemma map_rev:
   "map f (rev xs) = rev (map f xs)"
-  by simp
+  by (simp add: rev_map)
 
 section \<open>Filter Function\<close>
 
