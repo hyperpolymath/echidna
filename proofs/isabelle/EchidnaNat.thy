@@ -194,19 +194,19 @@ text \<open>
 \<close>
 
 lemma power_zero:
-  "n ^ 0 = 1"
+  "(n::nat) ^ 0 = 1"
   by simp
 
 lemma power_one:
-  "n ^ 1 = n"
+  "(n::nat) ^ 1 = n"
   by simp
 
 lemma power_add:
-  "n ^ (m + p) = n ^ m * n ^ p"
+  "(n::nat) ^ (m + p) = n ^ m * n ^ p"
   by (simp add: power_add)
 
 lemma power_mult:
-  "n ^ (m * p) = (n ^ m) ^ p"
+  "(n::nat) ^ (m * p) = (n ^ m) ^ p"
   by (simp add: power_mult)
 
 text \<open>
@@ -214,7 +214,7 @@ text \<open>
 \<close>
 
 lemma power_add_inductive:
-  shows "n ^ (m + p) = n ^ m * n ^ p"
+  shows "(n::nat) ^ (m + p) = n ^ m * n ^ p"
 proof (induction m)
   case 0
   show ?case by simp
@@ -240,15 +240,15 @@ text \<open>
 \<close>
 
 lemma le_refl:
-  "n \<le> n"
+  "(n::nat) \<le> n"
   by simp
 
 lemma le_trans:
-  "m \<le> n \<Longrightarrow> n \<le> p \<Longrightarrow> m \<le> p"
+  "(m::nat) \<le> n \<Longrightarrow> n \<le> p \<Longrightarrow> m \<le> p"
   by simp
 
 lemma le_antisym:
-  "m \<le> n \<Longrightarrow> n \<le> m \<Longrightarrow> m = n"
+  "(m::nat) \<le> n \<Longrightarrow> n \<le> m \<Longrightarrow> m = n"
   by simp
 
 text \<open>
@@ -256,15 +256,15 @@ text \<open>
 \<close>
 
 lemma less_irrefl:
-  "\<not>(n < n)"
+  "\<not>((n::nat) < n)"
   by simp
 
 lemma less_trans:
-  "m < n \<Longrightarrow> n < p \<Longrightarrow> m < p"
+  "(m::nat) < n \<Longrightarrow> n < p \<Longrightarrow> m < p"
   by simp
 
 lemma less_imp_le:
-  "m < n \<Longrightarrow> m \<le> n"
+  "(m::nat) < n \<Longrightarrow> m \<le> n"
   by simp
 
 text \<open>
@@ -290,11 +290,11 @@ text \<open>
 \<close>
 
 lemma add_le_mono:
-  "m \<le> n \<Longrightarrow> m + p \<le> n + p"
+  "(m::nat) \<le> n \<Longrightarrow> m + p \<le> n + p"
   by simp
 
 lemma add_less_mono:
-  "m < n \<Longrightarrow> m + p < n + p"
+  "(m::nat) < n \<Longrightarrow> m + p < n + p"
   by simp
 
 text \<open>
@@ -302,11 +302,11 @@ text \<open>
 \<close>
 
 lemma add_left_cancel:
-  "p + m = p + n \<longleftrightarrow> m = n"
+  "(p::nat) + m = p + n \<longleftrightarrow> m = n"
   by simp
 
 lemma add_right_cancel:
-  "m + p = n + p \<longleftrightarrow> m = n"
+  "(m::nat) + p = n + p \<longleftrightarrow> m = n"
   by simp
 
 section \<open>Division and Modulo\<close>
@@ -316,19 +316,19 @@ text \<open>
 \<close>
 
 lemma div_mult_self:
-  "n > 0 \<Longrightarrow> (m * n) div n = m"
+  "(n::nat) > 0 \<Longrightarrow> (m * n) div n = m"
   by simp
 
 lemma mod_mult_self:
-  "n > 0 \<Longrightarrow> (m * n) mod n = 0"
+  "(n::nat) > 0 \<Longrightarrow> (m * n) mod n = 0"
   by simp
 
 lemma div_less:
-  "m < n \<Longrightarrow> n > 0 \<Longrightarrow> m div n = 0"
+  "(m::nat) < n \<Longrightarrow> n > 0 \<Longrightarrow> m div n = 0"
   by simp
 
 lemma mod_less:
-  "m < n \<Longrightarrow> n > 0 \<Longrightarrow> m mod n = m"
+  "(m::nat) < n \<Longrightarrow> n > 0 \<Longrightarrow> m mod n = m"
   by simp
 
 text \<open>
@@ -336,7 +336,7 @@ text \<open>
 \<close>
 
 lemma div_mod_equality:
-  "n > 0 \<Longrightarrow> (m div n) * n + m mod n = m"
+  "(n::nat) > 0 \<Longrightarrow> (m div n) * n + m mod n = m"
   by simp
 
 section \<open>Even and Odd\<close>
@@ -346,15 +346,15 @@ text \<open>
 \<close>
 
 lemma even_zero:
-  "even 0"
+  "even (0::nat)"
   by simp
 
 lemma even_double:
-  "even (2 * n)"
+  "even (2 * (n::nat))"
   by simp
 
 lemma even_succ_succ:
-  "even n \<longleftrightarrow> even (Suc (Suc n))"
+  "even (n::nat) \<longleftrightarrow> even (Suc (Suc n))"
   by simp
 
 text \<open>
@@ -362,7 +362,7 @@ text \<open>
 \<close>
 
 lemma even_add:
-  "even m \<Longrightarrow> even n \<Longrightarrow> even (m + n)"
+  "even (m::nat) \<Longrightarrow> even n \<Longrightarrow> even (m + n)"
   by simp
 
 text \<open>
@@ -370,7 +370,7 @@ text \<open>
 \<close>
 
 lemma even_mult:
-  "even m \<or> even n \<Longrightarrow> even (m * n)"
+  "even (m::nat) \<or> even n \<Longrightarrow> even (m * n)"
   by auto
 
 section \<open>Strong Induction\<close>
@@ -382,8 +382,8 @@ text \<open>
 \<close>
 
 lemma strong_induction_example:
-  assumes "\<And>n. (\<forall>m. m < n \<longrightarrow> P m) \<Longrightarrow> P n"
-  shows "P n"
+  assumes "\<And>k::nat. (\<forall>m. m < k \<longrightarrow> P m) \<Longrightarrow> P k"
+  shows "P (n::nat)"
 proof -
   have "\<forall>m. m \<le> n \<longrightarrow> P m"
   proof (induction n)
