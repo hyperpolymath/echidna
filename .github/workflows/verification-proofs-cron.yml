@@ -38,15 +38,27 @@ jobs:
     steps:
       - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
 
-      - name: Install Isabelle2024
+      - name: Install Isabelle
         run: |
           set -euo pipefail
-          # Isabelle2024 tarball (~500MB). --retry + --max-time guard the large
-          # download; find locates the launcher regardless of the extracted dir
-          # name (matches the proven install in live-provers.yml).
-          curl -fsSL --max-time 900 --retry 3 --retry-delay 15 \
-            -o /tmp/isabelle.tar.gz \
-            https://isabelle.in.tum.de/dist/Isabelle2024_linux.tar.gz
+          # Resolve the current Isabelle linux x86_64 tarball from the website. A
+          # pinned /dist/IsabelleYYYY URL 404s once a newer release supersedes it
+          # (live-provers.yml's Isabelle2024 pin has rotted), so discover the link
+          # from the homepage, then fall back to the dist/ directory listing.
+          url=""
+          for src in "https://isabelle.in.tum.de/" "https://isabelle.in.tum.de/dist/"; do
+            page="$(curl -fsSL --max-time 120 --retry 3 "$src" || true)"
+            echo "--- candidates from $src ---"
+            printf '%s\n' "$page" | grep -oE '(dist/)?Isabelle[0-9][0-9-]*_linux\.tar\.gz' | sort -V | uniq | tail -5 || true
+            rel="$(printf '%s\n' "$page" | grep -oE '(dist/)?Isabelle[0-9][0-9-]*_linux\.tar\.gz' | sort -V | uniq | tail -1)"
+            if [ -n "$rel" ]; then
+              case "$rel" in dist/*) url="https://isabelle.in.tum.de/$rel" ;; *) url="https://isabelle.in.tum.de/dist/$rel" ;; esac
+              break
+            fi
+          done
+          [ -n "$url" ] || { echo "could not resolve Isabelle linux tarball URL" >&2; exit 1; }
+          echo "Resolved Isabelle URL: $url"
+          curl -fsSL --max-time 900 --retry 3 --retry-delay 15 -o /tmp/isabelle.tar.gz "$url"
           sudo mkdir -p /opt/isabelle
           sudo tar xzf /tmp/isabelle.tar.gz -C /opt/isabelle
           ISABELLE_BIN="$(find /opt/isabelle -type f -name isabelle | head -n 1)"
@@ -77,28 +89,42 @@ jobs:
       - name: Install Mizar (system + MML)
         run: |
           set -euo pipefail
-          # Mizar is not packaged for apt and ships only from mizar.org. Discover
-          # the newest linux tarball at runtime so the pin survives MML releases.
-          base="http://mizar.org/system/i386-linux"
-          listing="$(curl -fsSL --max-time 120 --retry 3 "$base/" || true)"
-          tarball="$(printf '%s\n' "$listing" \
-            | grep -oE 'mizar-[0-9][0-9._]*-i386-linux\.tar' | sort -V | uniq | tail -1)"
-          if [ -z "$tarball" ]; then
-            echo "No Mizar linux tarball found at $base/" >&2; exit 1
-          fi
-          echo "Installing $tarball"
-          curl -fsSL --max-time 600 --retry 3 -o /tmp/mizar.tar "$base/$tarball"
+          # Mizar ships only from mizar.org with no stable, documented path (the
+          # /system/i386-linux/ guess 404s). Discover the linux tarball by scraping
+          # the system index; dump candidate hrefs so one run reveals the layout if
+          # discovery misses.
+          found=""
+          for page in "http://mizar.org/system/" "http://mizar.org/system/index.html"; do
+            html="$(curl -fsSL --max-time 120 --retry 3 "$page" || true)"
+            echo "=== href candidates at $page (linux/.tar) ==="
+            printf '%s\n' "$html" | grep -oiE 'href="[^"]+"' | grep -iE 'linux|\.tar' | head -40 || true
+            href="$(printf '%s\n' "$html" | grep -oiE 'href="[^"]*linux[^"]*\.tar(\.gz)?"' \
+                    | sed -E 's/^href="//I; s/"$//' | sort -V | uniq | tail -1)"
+            if [ -n "$href" ]; then
+              case "$href" in
+                http*) found="$href" ;;
+                /*)    found="http://mizar.org$href" ;;
+                *)     found="http://mizar.org/system/$href" ;;
+              esac
+              break
+            fi
+          done
+          [ -n "$found" ] || { echo "could not resolve Mizar linux tarball" >&2; exit 1; }
+          echo "Resolved Mizar URL: $found"
+          curl -fsSL --max-time 600 --retry 3 -o /tmp/mizar.tar "$found"
           mkdir -p "$HOME/mizar"
           tar xf /tmp/mizar.tar -C "$HOME/mizar"
-          # The outer tar yields mizbin.tar(.gz) + mizshare.tar(.gz) (+ docs/installer).
+          echo "=== outer archive contents ==="; ls -la "$HOME/mizar" | head -30
           cd "$HOME/mizar"
-          for inner in mizbin mizshare; do
-            if [ -f "$inner.tar.gz" ]; then tar xzf "$inner.tar.gz";
-            elif [ -f "$inner.tar" ]; then tar xf "$inner.tar"; fi
+          for inner in mizbin mizshare mizdoc; do
+            for ext in tar.gz tgz tar; do
+              [ -f "$inner.$ext" ] && { echo "extracting $inner.$ext"; tar xf "$inner.$ext"; }
+            done
           done
+          echo "=== after inner extraction ==="; ls -la "$HOME/mizar" | head -40
           echo "MIZFILES=$HOME/mizar" >> "$GITHUB_ENV"
           echo "$HOME/mizar/bin" >> "$GITHUB_PATH"
-          ls "$HOME/mizar/bin" | head
+          if [ -d "$HOME/mizar/bin" ]; then ls "$HOME/mizar/bin" | head; else echo "(no bin/ dir -- layout differs; see dumps above)"; fi
 
       - name: Install just
         run: |
