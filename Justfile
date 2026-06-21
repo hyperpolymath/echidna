@@ -311,6 +311,38 @@ proofs-verif-idris:
     fi
     echo "Idris2 verification corpus: all files type-check"
 
+# Heavy (downloads the ~500MB Isabelle release), so this is gated by the weekly
+# verification-proofs-cron workflow, not the per-PR `proofs` rollup. Covers the
+# base-HOL theories; algebra/GroupTheory.thy is excluded (see proofs/isabelle/ROOT).
+# Verify the Isabelle/HOL self-proof corpus (proofs/isabelle) via `isabelle build`.
+proofs-isabelle:
+    cd proofs/isabelle && isabelle build -d . -v Echidna_Isabelle
+
+# Mizar is not packaged for apt and ships only from mizar.org (Tier-4 in this
+# project); like Isabelle it is gated by the weekly cron, not per-PR. MIZFILES
+# must point at the Mizar share dir. Errors are reported in a per-file .err file
+# (the verifier's exit code is not reliable), so a non-empty .err fails the recipe.
+# Verify the Mizar self-proof corpus (proofs/mizar) with the Mizar verifier.
+proofs-mizar:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    : "${MIZFILES:?MIZFILES must point at the Mizar share dir}"
+    cd proofs/mizar
+    rc=0
+    for f in *.miz; do
+        echo "=== makeenv + verifier $f ==="
+        makeenv "$f"
+        verifier "$f" || rc=1
+        errfile="${f%.miz}.err"
+        if [ -s "$errfile" ]; then
+            echo "Mizar errors in $f:" >&2
+            cat "$errfile" >&2
+            rc=1
+        fi
+    done
+    if [ "$rc" -ne 0 ]; then echo "Mizar corpus: VERIFICATION ERRORS" >&2; exit 1; fi
+    echo "Mizar corpus: all files verify"
+
 # Format code
 fmt:
     cargo fmt

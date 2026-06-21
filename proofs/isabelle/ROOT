@@ -1,0 +1,23 @@
+(* SPDX-License-Identifier: MPL-2.0 *)
+(*
+  ROOT - Isabelle session for the ECHIDNA self-proof corpus.
+
+  Gated by `just proofs-isabelle` and the weekly verification-proofs-cron
+  workflow. Covers the base-HOL theories that type-check on the current
+  Isabelle release (confirmed green on Isabelle2025-2).
+
+  NOTE: algebra/GroupTheory.thy is intentionally NOT in a gated session. It is
+  "ML training corpus" material (per its own header) that does not verify on
+  Isabelle2025-2: several lemmas omit their `assumes "group G"` while using
+  `assms`, and `center_closed` invokes `group.m_comm` which does not hold for a
+  bare `group` locale (only `comm_group`). Gating it would make the weekly cron
+  permanently red; it should be repaired as a separate task before being added.
+*)
+
+session "Echidna_Isabelle" = "HOL" +
+  description \<open>ECHIDNA Isabelle/HOL self-proof corpus (base HOL).\<close>
+  theories
+    Basic
+    List
+    Nat
+    Propositional
