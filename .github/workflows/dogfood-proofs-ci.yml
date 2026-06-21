@@ -193,6 +193,12 @@ jobs:
             (cd /tmp/idris2-src && make bootstrap SCHEME=scheme && sudo make install PREFIX=/usr/local)
           }
           idris2 --version
+          # The source-build fallback runs `sudo make install`, which can leave
+          # ~/.idris2 root-owned; `idris2 --install` (run unprivileged by the
+          # proofs-verif-idris recipe) then fails with "Permission Denied". Make
+          # the user package dir writable so the echidnaabi install succeeds.
+          mkdir -p "$HOME/.idris2"
+          sudo chown -R "$(id -u):$(id -g)" "$HOME/.idris2"
 
       - name: Install just
         run: |

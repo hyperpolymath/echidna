@@ -103,7 +103,7 @@ text \<open>
 \<close>
 
 lemma mult_assoc:
-  "(m * n) * p = m * (n * p)"
+  "((m::nat) * n) * p = m * (n * p)"
   by simp
 
 text \<open>
@@ -111,11 +111,11 @@ text \<open>
 \<close>
 
 lemma mult_distrib_left:
-  "m * (n + p) = m * n + m * p"
+  "(m::nat) * (n + p) = m * n + m * p"
   by (simp add: ring_distribs)
 
 lemma mult_distrib_right:
-  "(m + n) * p = m * p + n * p"
+  "((m::nat) + n) * p = m * p + n * p"
   by (simp add: ring_distribs)
 
 section \<open>Induction Examples\<close>
@@ -175,25 +175,16 @@ qed
 
 lemma factorial_monotone:
   "n > 0 \<Longrightarrow> factorial n \<ge> n"
-proof (induction n)
+proof (cases n)
   case 0
-  then show ?case by simp
+  then show ?thesis by simp
 next
-  case (Suc n)
-  show ?case
-  proof (cases n)
-    case 0
-    then show ?thesis by simp
-  next
-    case (Suc m)
-    have "factorial (Suc n) = Suc n * factorial n"
-      by simp
-    also have "... \<ge> Suc n * 1"
-      using factorial_positive[of n] by simp
-    also have "... = Suc n"
-      by simp
-    finally show ?thesis .
-  qed
+  case (Suc k)
+  have "(1::nat) \<le> factorial k"
+    using factorial_positive[of k] by simp
+  hence "Suc k * 1 \<le> Suc k * factorial k"
+    by (rule mult_le_mono2)
+  thus ?thesis using Suc by simp
 qed
 
 section \<open>Power Function\<close>
