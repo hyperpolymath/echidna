@@ -1,5 +1,5 @@
 (*
-  List.thy - List Proofs in Isabelle/HOL
+  EchidnaList.thy - List Proofs in Isabelle/HOL
 
   This theory demonstrates reasoning about lists:
   - Append properties
@@ -10,9 +10,12 @@
 
   Part of the ECHIDNA theorem proving platform
   Tier 1 Prover: Isabelle/HOL
+
+  NB: named EchidnaList (not List) so its fact names (append_assoc, length_append,
+  map_append, ...) do not collide with HOL's own theory List.
 *)
 
-theory List
+theory EchidnaList
   imports Main
 begin
 

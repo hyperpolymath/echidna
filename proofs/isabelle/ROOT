@@ -4,7 +4,11 @@
 
   Gated by `just proofs-isabelle` and the weekly verification-proofs-cron
   workflow. Covers the base-HOL theories that type-check on the current
-  Isabelle release (confirmed green on Isabelle2025-2).
+  Isabelle release (Isabelle2025-2).
+
+  Nat and List were renamed to EchidnaNat / EchidnaList: a theory named Nat or
+  List collides with HOL's own theories of those names (duplicate fact
+  declarations such as Nat.le_refl / List.append_assoc).
 
   NOTE: algebra/GroupTheory.thy is intentionally NOT in a gated session. It is
   "ML training corpus" material (per its own header) that does not verify on
@@ -18,6 +22,6 @@ session "Echidna_Isabelle" = "HOL" +
   description \<open>ECHIDNA Isabelle/HOL self-proof corpus (base HOL).\<close>
   theories
     Basic
-    List
-    Nat
+    EchidnaList
+    EchidnaNat
     Propositional
