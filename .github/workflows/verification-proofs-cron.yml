@@ -1,0 +1,105 @@
+# SPDX-License-Identifier: MPL-2.0
+# Weekly verification of the heavier self-proof corpora that are too slow and too
+# network-heavy to gate on every PR: Isabelle/HOL (proofs/isabelle) and Mizar
+# (proofs/mizar). Both toolchains are large, non-apt downloads -- Isabelle is a
+# ~500MB tarball and additionally builds the HOL-Algebra image; Mizar ships only
+# from mizar.org (Tier-4 in this project, see live-provers.yml) with its full MML.
+# So this runs on a weekly schedule plus manual dispatch, mirroring container-ci.
+# `just` stays the single source of truth for the commands (RSR-H14): CI installs
+# the toolchains, then calls the same recipes a developer runs locally.
+name: Verification Proof Corpora (weekly)
+
+on:
+  schedule:
+    - cron: '17 4 * * 1'   # Mondays 04:17 UTC
+  workflow_dispatch:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  isabelle:
+    name: Isabelle/HOL
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+
+      - name: Install Isabelle2024
+        run: |
+          set -euo pipefail
+          # Isabelle2024 tarball (~500MB). --retry + --max-time guard the large
+          # download; find locates the launcher regardless of the extracted dir
+          # name (matches the proven install in live-provers.yml).
+          curl -fsSL --max-time 900 --retry 3 --retry-delay 15 \
+            -o /tmp/isabelle.tar.gz \
+            https://isabelle.in.tum.de/dist/Isabelle2024_linux.tar.gz
+          sudo mkdir -p /opt/isabelle
+          sudo tar xzf /tmp/isabelle.tar.gz -C /opt/isabelle
+          ISABELLE_BIN="$(find /opt/isabelle -type f -name isabelle | head -n 1)"
+          [ -n "$ISABELLE_BIN" ] || { echo "isabelle launcher not found after extract" >&2; exit 1; }
+          sudo ln -sf "$ISABELLE_BIN" /usr/local/bin/isabelle
+          isabelle version
+
+      - name: Install just
+        run: |
+          set -euo pipefail
+          curl -fsSL --retry 3 \
+            "https://github.com/casey/just/releases/download/1.51.0/just-1.51.0-x86_64-unknown-linux-musl.tar.gz" \
+            -o /tmp/just.tar.gz
+          mkdir -p "$HOME/.local/bin"
+          tar xzf /tmp/just.tar.gz -C "$HOME/.local/bin" just
+          echo "$HOME/.local/bin" >> "$GITHUB_PATH"
+
+      - name: Verify Isabelle corpus
+        run: just proofs-isabelle
+
+  mizar:
+    name: Mizar
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+
+      - name: Install Mizar (system + MML)
+        run: |
+          set -euo pipefail
+          # Mizar is not packaged for apt and ships only from mizar.org. Discover
+          # the newest linux tarball at runtime so the pin survives MML releases.
+          base="http://mizar.org/system/i386-linux"
+          listing="$(curl -fsSL --max-time 120 --retry 3 "$base/" || true)"
+          tarball="$(printf '%s\n' "$listing" \
+            | grep -oE 'mizar-[0-9][0-9._]*-i386-linux\.tar' | sort -V | uniq | tail -1)"
+          if [ -z "$tarball" ]; then
+            echo "No Mizar linux tarball found at $base/" >&2; exit 1
+          fi
+          echo "Installing $tarball"
+          curl -fsSL --max-time 600 --retry 3 -o /tmp/mizar.tar "$base/$tarball"
+          mkdir -p "$HOME/mizar"
+          tar xf /tmp/mizar.tar -C "$HOME/mizar"
+          # The outer tar yields mizbin.tar(.gz) + mizshare.tar(.gz) (+ docs/installer).
+          cd "$HOME/mizar"
+          for inner in mizbin mizshare; do
+            if [ -f "$inner.tar.gz" ]; then tar xzf "$inner.tar.gz";
+            elif [ -f "$inner.tar" ]; then tar xf "$inner.tar"; fi
+          done
+          echo "MIZFILES=$HOME/mizar" >> "$GITHUB_ENV"
+          echo "$HOME/mizar/bin" >> "$GITHUB_PATH"
+          ls "$HOME/mizar/bin" | head
+
+      - name: Install just
+        run: |
+          set -euo pipefail
+          curl -fsSL --retry 3 \
+            "https://github.com/casey/just/releases/download/1.51.0/just-1.51.0-x86_64-unknown-linux-musl.tar.gz" \
+            -o /tmp/just.tar.gz
+          mkdir -p "$HOME/.local/bin"
+          tar xzf /tmp/just.tar.gz -C "$HOME/.local/bin" just
+          echo "$HOME/.local/bin" >> "$GITHUB_PATH"
+
+      - name: Verify Mizar corpus
+        run: just proofs-mizar

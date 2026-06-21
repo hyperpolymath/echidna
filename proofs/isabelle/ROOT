@@ -1,0 +1,24 @@
+(* SPDX-License-Identifier: MPL-2.0 *)
+(*
+  ROOT - Isabelle session definitions for the ECHIDNA self-proof corpus.
+
+  Built by `just proofs-isabelle` and the weekly verification-proofs-cron
+  workflow. Split into two sessions so the heavy HOL-Algebra image is only
+  built for the one theory that needs it:
+
+  - Echidna_Isabelle          : base-HOL theories (imports Main)
+  - Echidna_Isabelle_Algebra  : GroupTheory (imports HOL-Algebra)
+*)
+
+session "Echidna_Isabelle" = "HOL" +
+  description \<open>ECHIDNA Isabelle/HOL self-proof corpus (base HOL).\<close>
+  theories
+    Basic
+    List
+    Nat
+    Propositional
+
+session "Echidna_Isabelle_Algebra" in "algebra" = "HOL-Algebra" +
+  description \<open>ECHIDNA Isabelle/HOL self-proof corpus (HOL-Algebra).\<close>
+  theories
+    GroupTheory
