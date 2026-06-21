@@ -93,23 +93,24 @@ jobs:
           # /system/i386-linux/ guess 404s). Discover the linux tarball by scraping
           # the system index; dump candidate hrefs so one run reveals the layout if
           # discovery misses.
-          found=""
-          for page in "http://mizar.org/system/" "http://mizar.org/system/index.html"; do
-            html="$(curl -fsSL --max-time 120 --retry 3 "$page" || true)"
-            echo "=== href candidates at $page (linux/.tar) ==="
-            printf '%s\n' "$html" | grep -oiE 'href="[^"]+"' | grep -iE 'linux|\.tar' | head -40 || true
-            href="$(printf '%s\n' "$html" | grep -oiE 'href="[^"]*linux[^"]*\.tar(\.gz)?"' \
-                    | sed -E 's/^href="//I; s/"$//' | sort -V | uniq | tail -1)"
-            if [ -n "$href" ]; then
-              case "$href" in
-                http*) found="$href" ;;
-                /*)    found="http://mizar.org$href" ;;
-                *)     found="http://mizar.org/system/$href" ;;
-              esac
-              break
-            fi
-          done
-          [ -n "$found" ] || { echo "could not resolve Mizar linux tarball" >&2; exit 1; }
+          # Two-stage discovery: mizar.org/system/ only links to per-arch *directories*
+          # on the upstream host (http://mizar.uwb.edu.pl/.../i386-linux/); the actual
+          # tarball lives inside that directory.
+          sys="$(curl -fsSL --max-time 120 --retry 3 "http://mizar.org/system/" || true)"
+          dir="$(printf '%s\n' "$sys" | grep -oiE 'href="http://[^"]*i386-linux/?"' \
+                 | sed -E 's/^href="//I; s/"$//' | head -1)"
+          [ -n "$dir" ] || dir="http://mizar.uwb.edu.pl/~softadm/pub/system/i386-linux/"
+          dir="${dir%/}/"
+          echo "Mizar i386-linux dir: $dir"
+          idx="$(curl -fsSL --max-time 120 --retry 3 "$dir" || true)"
+          echo "=== .tar candidates in $dir ==="
+          printf '%s\n' "$idx" | grep -oiE 'href="[^"]+"' | grep -iE '\.tar' | head -40 || true
+          rel="$(printf '%s\n' "$idx" | grep -oiE 'href="[^"]*mizar-[^"]*i386-linux\.tar"' \
+                 | sed -E 's/^href="//I; s/"$//' | sort -V | uniq | tail -1)"
+          [ -n "$rel" ] || rel="$(printf '%s\n' "$idx" | grep -oiE 'href="[^"]*\.tar"' \
+                 | sed -E 's/^href="//I; s/"$//' | sort -V | uniq | tail -1)"
+          [ -n "$rel" ] || { echo "no Mizar .tar found in $dir" >&2; exit 1; }
+          case "$rel" in http*) found="$rel" ;; /*) found="http://mizar.uwb.edu.pl$rel" ;; *) found="$dir$rel" ;; esac
           echo "Resolved Mizar URL: $found"
           curl -fsSL --max-time 600 --retry 3 -o /tmp/mizar.tar "$found"
           mkdir -p "$HOME/mizar"
