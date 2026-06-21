@@ -250,7 +250,7 @@ test-s4-loop:
 # exact same commands.
 
 # Type-check the whole dogfood proof corpus across every assistant.
-proofs: proofs-coq proofs-lean proofs-agda proofs-idris proofs-verif-lean
+proofs: proofs-coq proofs-lean proofs-agda proofs-idris proofs-verif-lean proofs-verif-idris
 
 # Compile the Coq proof corpus (proofs/coq/**/*.v).
 proofs-coq:
@@ -291,6 +291,25 @@ proofs-idris:
 # Build the Lean 4 trust-pipeline property proofs via Lake (verification/proofs/lean4).
 proofs-verif-lean:
     cd verification/proofs/lean4 && lake build
+
+# DispatchCorrectness imports EchidnaABI.Types, so the echidnaabi package
+# (src/abi) is installed first (--install builds it on the way); the ipkg then
+# type-checks all 11 modules with a reliable aggregate exit code. A bare per-file
+# `idris2 --check` is unsafe here -- it exits 0 even on an unresolved import -- so
+# the ipkg build is the gate and any "Error" line is also treated as failure.
+# Type-check the Idris2 trust-pipeline property proofs (verification/proofs/idris2).
+proofs-verif-idris:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    (cd src/abi && idris2 --install echidnaabi.ipkg >/dev/null)
+    cd verification/proofs/idris2
+    out=$(idris2 --typecheck echidna-verif-proofs.ipkg 2>&1)
+    printf '%s\n' "$out"
+    if printf '%s\n' "$out" | grep -qE '^Error'; then
+        echo "Idris2 verification corpus: TYPE ERRORS DETECTED" >&2
+        exit 1
+    fi
+    echo "Idris2 verification corpus: all files type-check"
 
 # Format code
 fmt:
