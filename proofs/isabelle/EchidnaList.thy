@@ -515,6 +515,6 @@ text \<open>
 
 lemma list_all_filter:
   "list_all P xs \<longleftrightarrow> filter P xs = xs"
-  by (induction xs; auto)
+  by (simp add: list_all_iff filter_id_conv)
 
 end
