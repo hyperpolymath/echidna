@@ -325,22 +325,30 @@ proofs-isabelle:
 # Verify the Mizar self-proof corpus (proofs/mizar) with the Mizar verifier.
 proofs-mizar:
     #!/usr/bin/env bash
-    set -euo pipefail
+    # Not -e: makeenv/verifier signal errors via a per-file .err (line col code),
+    # not a reliable exit code, so inspect that rather than abort on first non-zero.
+    set -uo pipefail
     : "${MIZFILES:?MIZFILES must point at the Mizar share dir}"
     cd proofs/mizar
     rc=0
     for f in *.miz; do
-        echo "=== makeenv + verifier $f ==="
-        makeenv "$f"
-        verifier "$f" || rc=1
-        errfile="${f%.miz}.err"
-        if [ -s "$errfile" ]; then
-            echo "Mizar errors in $f:" >&2
-            cat "$errfile" >&2
+        base="${f%.miz}"
+        echo "=== $f ==="
+        makeenv "$f" || echo "(makeenv exit $?)"
+        verifier "$f" || echo "(verifier exit $?)"
+        if [ -s "$base.err" ]; then
+            echo "--- $base.err (line col code) ---"
+            cat "$base.err"
+            while read -r line col code; do
+                src="$(sed -n "${line}p" "$f" 2>/dev/null)"
+                [ -n "$src" ] && echo "    L${line}:${col} (code ${code}): ${src}"
+            done < "$base.err"
             rc=1
+        else
+            echo "($f verifies clean)"
         fi
     done
-    if [ "$rc" -ne 0 ]; then echo "Mizar corpus: VERIFICATION ERRORS" >&2; exit 1; fi
+    [ "$rc" -eq 0 ] || { echo "Mizar corpus: VERIFICATION ERRORS (see .err above)" >&2; exit 1; }
     echo "Mizar corpus: all files verify"
 
 # Format code

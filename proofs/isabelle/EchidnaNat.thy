@@ -1,5 +1,5 @@
 (*
-  Nat.thy - Natural Number Proofs in Isabelle/HOL
+  EchidnaNat.thy - Natural Number Proofs in Isabelle/HOL
 
   This theory demonstrates reasoning about natural numbers:
   - Arithmetic properties (addition, multiplication)
@@ -9,9 +9,14 @@
 
   Part of the ECHIDNA theorem proving platform
   Tier 1 Prover: Isabelle/HOL
+
+  NB: named EchidnaNat (not Nat) so fact names do not collide with HOL's own
+  theory Nat (e.g. Nat.le_refl). The three basic addition lemmas are annotated
+  :: nat so their goals are about natural numbers rather than an
+  under-constrained polymorphic {zero, plus} type that simp cannot discharge.
 *)
 
-theory Nat
+theory EchidnaNat
   imports Main
 begin
 
@@ -22,11 +27,11 @@ text \<open>
 \<close>
 
 lemma add_zero_left:
-  "0 + n = n"
+  "(0::nat) + n = n"
   by simp
 
 lemma add_zero_right:
-  "n + 0 = n"
+  "(n::nat) + 0 = n"
   by simp
 
 text \<open>
@@ -34,7 +39,7 @@ text \<open>
 \<close>
 
 lemma add_comm:
-  "m + n = n + m"
+  "(m::nat) + n = n + m"
   by simp
 
 text \<open>
