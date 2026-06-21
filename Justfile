@@ -311,11 +311,12 @@ proofs-verif-idris:
     fi
     echo "Idris2 verification corpus: all files type-check"
 
-# Heavy (downloads Isabelle2024 + builds the HOL-Algebra image), so this is gated
-# by the weekly verification-proofs-cron workflow, not the per-PR `proofs` rollup.
+# Heavy (downloads the ~500MB Isabelle release), so this is gated by the weekly
+# verification-proofs-cron workflow, not the per-PR `proofs` rollup. Covers the
+# base-HOL theories; algebra/GroupTheory.thy is excluded (see proofs/isabelle/ROOT).
 # Verify the Isabelle/HOL self-proof corpus (proofs/isabelle) via `isabelle build`.
 proofs-isabelle:
-    cd proofs/isabelle && isabelle build -d . -v Echidna_Isabelle Echidna_Isabelle_Algebra
+    cd proofs/isabelle && isabelle build -d . -v Echidna_Isabelle
 
 # Mizar is not packaged for apt and ships only from mizar.org (Tier-4 in this
 # project); like Isabelle it is gated by the weekly cron, not per-PR. MIZFILES

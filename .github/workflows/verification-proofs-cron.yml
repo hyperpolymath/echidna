@@ -123,9 +123,12 @@ jobs:
             done
           done
           echo "=== after inner extraction ==="; ls -la "$HOME/mizar" | head -40
+          # mizbin.tar.gz extracts the binaries (makeenv, accom, verifier, ...) flat
+          # into $HOME/mizar alongside the MML share, so both PATH and MIZFILES point
+          # at $HOME/mizar -- there is no bin/ subdir.
           echo "MIZFILES=$HOME/mizar" >> "$GITHUB_ENV"
-          echo "$HOME/mizar/bin" >> "$GITHUB_PATH"
-          if [ -d "$HOME/mizar/bin" ]; then ls "$HOME/mizar/bin" | head; else echo "(no bin/ dir -- layout differs; see dumps above)"; fi
+          echo "$HOME/mizar" >> "$GITHUB_PATH"
+          ls -l "$HOME/mizar/makeenv" "$HOME/mizar/verifier" "$HOME/mizar/accom"
 
       - name: Install just
         run: |
