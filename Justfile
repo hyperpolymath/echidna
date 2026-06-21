@@ -250,7 +250,7 @@ test-s4-loop:
 # exact same commands.
 
 # Type-check the whole dogfood proof corpus across every assistant.
-proofs: proofs-coq proofs-lean proofs-agda proofs-idris
+proofs: proofs-coq proofs-lean proofs-agda proofs-idris proofs-verif-lean
 
 # Compile the Coq proof corpus (proofs/coq/**/*.v).
 proofs-coq:
@@ -283,6 +283,14 @@ proofs-agda:
 # Type-check the Idris2 validator (src/idris) — --typecheck needs no codegen backend.
 proofs-idris:
     cd src/idris && idris2 --typecheck echidna-validator.ipkg
+
+# Distinct from proofs-lean: the verification-pipeline *property* proofs
+# (ConfidenceLattice, ParetoMaximality, ParetoStrongMaximality, IntegrityVerification,
+# PortfolioCompleteness) under verification/proofs/lean4, not the dogfood corpus under
+# proofs/lean. No mathlib dependency (lake-manifest packages: []), so the build is light.
+# Build the Lean 4 trust-pipeline property proofs via Lake (verification/proofs/lean4).
+proofs-verif-lean:
+    cd verification/proofs/lean4 && lake build
 
 # Format code
 fmt:

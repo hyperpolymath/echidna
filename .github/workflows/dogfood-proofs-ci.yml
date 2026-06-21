@@ -18,12 +18,14 @@ on:
     branches: [main]
     paths:
       - 'proofs/**'
+      - 'verification/proofs/lean4/**'
       - 'Justfile'
       - '.github/workflows/dogfood-proofs-ci.yml'
   pull_request:
     branches: [main]
     paths:
       - 'proofs/**'
+      - 'verification/proofs/lean4/**'
       - 'Justfile'
       - '.github/workflows/dogfood-proofs-ci.yml'
   workflow_dispatch:
@@ -114,6 +116,56 @@ jobs:
 
       - name: Build Lean corpus
         run: just proofs-lean
+
+  verif-lean:
+    name: Lean 4 (verification)
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+
+      - name: Install elan + pinned Lean toolchain
+        run: |
+          set -euo pipefail
+          # Mirrors the `lean` job: install the elan shim only, then pre-install the
+          # toolchain pinned by verification/proofs/lean4/lean-toolchain with
+          # retry/backoff so the Build step does not lazily resolve it (elan's release
+          # tag lookup against the GitHub API can transiently fail). This corpus has no
+          # mathlib dependency (lake-manifest packages: []), so it builds fast.
+          curl -fsSL --retry 3 \
+            https://raw.githubusercontent.com/leanprover/elan/master/elan-init.sh \
+            -o /tmp/elan-init.sh
+          sh /tmp/elan-init.sh -y --default-toolchain none
+          export PATH="$HOME/.elan/bin:$PATH"
+          echo "$HOME/.elan/bin" >> "$GITHUB_PATH"
+          toolchain="$(tr -d '[:space:]' < verification/proofs/lean4/lean-toolchain)"
+          for attempt in 1 2 3 4 5; do
+            if elan toolchain install "$toolchain"; then
+              break
+            fi
+            if [ "$attempt" -eq 5 ]; then
+              echo "elan toolchain install failed after 5 attempts" >&2
+              exit 1
+            fi
+            backoff=$((attempt * 5))
+            echo "elan toolchain install failed (attempt $attempt); retrying in ${backoff}s" >&2
+            sleep "$backoff"
+          done
+          elan default "$toolchain"
+          lean --version
+
+      - name: Install just
+        run: |
+          set -euo pipefail
+          curl -fsSL --retry 3 \
+            "https://github.com/casey/just/releases/download/1.51.0/just-1.51.0-x86_64-unknown-linux-musl.tar.gz" \
+            -o /tmp/just.tar.gz
+          mkdir -p "$HOME/.local/bin"
+          tar xzf /tmp/just.tar.gz -C "$HOME/.local/bin" just
+          echo "$HOME/.local/bin" >> "$GITHUB_PATH"
+
+      - name: Build Lean verification corpus
+        run: just proofs-verif-lean
 
   agda:
     name: Agda
