@@ -47,7 +47,7 @@ text \<open>
 \<close>
 
 lemma add_assoc:
-  "(m + n) + p = m + (n + p)"
+  "((m::nat) + n) + p = m + (n + p)"
   by simp
 
 text \<open>
@@ -55,7 +55,7 @@ text \<open>
 \<close>
 
 lemma add_zero_right_inductive:
-  shows "n + 0 = n"
+  shows "(n::nat) + 0 = n"
 proof (induction n)
   case 0
   show ?case by simp
@@ -71,11 +71,11 @@ text \<open>
 \<close>
 
 lemma mult_zero_left:
-  "0 * n = 0"
+  "(0::nat) * n = 0"
   by simp
 
 lemma mult_zero_right:
-  "n * 0 = 0"
+  "(n::nat) * 0 = 0"
   by simp
 
 text \<open>
@@ -83,11 +83,11 @@ text \<open>
 \<close>
 
 lemma mult_one_left:
-  "1 * n = n"
+  "(1::nat) * n = n"
   by simp
 
 lemma mult_one_right:
-  "n * 1 = n"
+  "(n::nat) * 1 = n"
   by simp
 
 text \<open>
@@ -95,7 +95,7 @@ text \<open>
 \<close>
 
 lemma mult_comm:
-  "m * n = n * m"
+  "(m::nat) * n = n * m"
   by simp
 
 text \<open>
