@@ -53,10 +53,11 @@ jobs:
   container-build:
     name: Build & verify container image
     runs-on: ubuntu-latest
+    timeout-minutes: 90
 
     steps:
       - name: Checkout
-        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd  # v6.0.2
+        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0  # v7.0.0
 
       - name: Install Podman
         run: |
@@ -110,6 +111,7 @@ jobs:
   tier3-container:
     name: Tier-3 / ${{ matrix.prover }}
     runs-on: ubuntu-latest
+    timeout-minutes: 90
     # Run on schedule or when the .containerization tree changes on main.
     # Not a merge gate — these are informational weekly builds.
     if: >-
@@ -152,7 +154,7 @@ jobs:
 
     steps:
       - name: Checkout
-        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd  # v6.0.2
+        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0  # v7.0.0
 
       - name: Install Podman
         run: |

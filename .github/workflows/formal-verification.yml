@@ -43,10 +43,11 @@ jobs:
   stable-tests:
     name: Trust-pipeline invariant tests (stable)
     runs-on: ubuntu-latest
+    timeout-minutes: 15
 
     steps:
       - name: Checkout repository
-        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd  # v6.0.2
+        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0  # v7.0.0
 
       - name: Install stable Rust toolchain
         uses: dtolnay/rust-toolchain@4be9e76fd7c4901c61fb841f559994984270fce7  # stable
@@ -67,6 +68,7 @@ jobs:
   creusot-verify:
     name: Creusot formal verification
     runs-on: ubuntu-latest
+    timeout-minutes: 15
     # No continue-on-error — this is a hard merge gate as of Stage 8c-M3.
     # The outer-loop invariant for compute is now live; all obligations
     # (PO-1..P8, PO-A1..A12) must discharge under Why3+Z3.
@@ -76,7 +78,7 @@ jobs:
 
     steps:
       - name: Checkout repository
-        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd  # v6.0.2
+        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0  # v7.0.0
 
       - name: Install nightly Rust toolchain (Creusot pin)
         uses: dtolnay/rust-toolchain@4be9e76fd7c4901c61fb841f559994984270fce7  # stable

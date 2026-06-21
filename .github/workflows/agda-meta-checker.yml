@@ -9,10 +9,11 @@ on:
     branches: [main]
     paths:
       - 'meta-checker/**'
+  # No paths-filter on pull_request: this is a REQUIRED status check, so it must
+  # report on every PR (a path-filtered required check deadlocks PRs that don't
+  # touch its paths). The "Detect relevant changes" step path-gates internally.
   pull_request:
     branches: [main]
-    paths:
-      - 'meta-checker/**'
   workflow_dispatch:
 
 # Cause-B mitigation (#77): cancel superseded runs so stacked pushes
@@ -23,22 +24,50 @@ concurrency:
 
 permissions:
   contents: read
+  pull-requests: read   # change-detector reads the PR's file list (gh api pulls/.../files)
 
 jobs:
   verify-proofs:
     name: Type-check Agda proofs
     runs-on: ubuntu-latest
+    timeout-minutes: 15
     steps:
       - name: Checkout
-        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd  # v6.0.2
+        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0  # v7.0.0
+
+      # Required-check shim: only the meta-checker/ tree needs the real proof
+      # check. Non-PR events (push, workflow_dispatch) always run it.
+      - name: Detect relevant changes
+        id: detect
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          PATTERN='^meta-checker/'
+          if [ "${{ github.event_name }}" = "pull_request" ]; then
+            FILES=$(gh api "repos/${{ github.repository }}/pulls/${{ github.event.pull_request.number }}/files" \
+                      --paginate --jq '.[].filename')
+            if printf '%s\n' "$FILES" | grep -qE "$PATTERN"; then
+              echo "relevant=true" >> "$GITHUB_OUTPUT"
+              echo "meta-checker/ sources changed — running full Agda type-check."
+            else
+              echo "relevant=false" >> "$GITHUB_OUTPUT"
+              echo "No meta-checker changes — pass-through (required-check shim)."
+            fi
+          else
+            echo "relevant=true" >> "$GITHUB_OUTPUT"
+            echo "Non-PR event — running full Agda type-check."
+          fi
 
       - name: Setup Haskell
+        if: steps.detect.outputs.relevant == 'true'
         uses: haskell-actions/setup@cd0d9bdd65b20557f41bea4dbe43d0b5fbbfe553 # v2
         with:
           ghc-version: '9.6'
           cabal-version: '3.10'
 
       - name: Cache Agda
+        if: steps.detect.outputs.relevant == 'true'
         uses: actions/cache@27d5ce7f107fe9357f9df03efb73ab90386fccae # v5.0.5
         with:
           path: |
@@ -47,6 +76,7 @@ jobs:
           key: agda-${{ runner.os }}-${{ hashFiles('meta-checker/**/*.agda') }}
 
       - name: Install Agda
+        if: steps.detect.outputs.relevant == 'true'
         run: |
           cabal update
           # --overwrite-policy=always: the cached ~/.cabal restore already
@@ -55,6 +85,7 @@ jobs:
           cabal install Agda-2.7.0.1 --overwrite-policy=always
 
       - name: Install Agda standard library
+        if: steps.detect.outputs.relevant == 'true'
         run: |
           mkdir -p ~/.agda
           cd /tmp
@@ -64,6 +95,7 @@ jobs:
           echo "standard-library" > ~/.agda/defaults
 
       - name: Type-check meta-checker
+        if: steps.detect.outputs.relevant == 'true'
         run: |
           cd meta-checker
           echo "$PWD/echidna-meta.agda-lib" >> ~/.agda/libraries

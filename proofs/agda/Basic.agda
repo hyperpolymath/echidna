@@ -151,25 +151,18 @@ curry f x y = f (x , y)
 uncurry : {A B C : Set} → (A → B → C) → (A × B → C)
 uncurry f (x , y) = f x y
 
--- Proof that curry and uncurry are inverses
+-- Proof that curry and uncurry are inverses.
+--
+-- Stated *pointwise* (the functions agree on every input), which is
+-- provable in plain Agda by `refl` with ZERO axioms. The fully-extensional
+-- form `curry (uncurry f) ≡ f` would require function extensionality
+-- (funext) — a standard axiom, but an axiom nonetheless; the pointwise
+-- statements below are the axiom-free truth and need no postulate.
 module CurryUncurryLaws where
-  -- INTENTIONAL AXIOM: Function extensionality (funext)
-  -- Justification: funext is consistent with Agda's type theory and is
-  -- provable in Cubical Agda (--cubical). In plain Agda it must be
-  -- postulated. It is a standard mathematical axiom accepted by all
-  -- major proof assistants (Coq's Functional Extensionality, Lean's
-  -- funext, HoTT axiom). It does NOT compromise soundness.
-  -- See: HoTT Book, Section 2.9; nLab "function extensionality"
-  -- AXIOM: funext (see justification above; recognised by check-trusted-base.sh)
-  postulate
-    funext : {A B : Set} {f g : A → B}
-           → ((x : A) → f x ≡ g x)
-           → f ≡ g
+  curry-uncurry : {A B C : Set} → (f : A → B → C) → (x : A) → (y : B)
+                → curry (uncurry f) x y ≡ f x y
+  curry-uncurry f x y = refl
 
-  curry-uncurry : {A B C : Set} → (f : A → B → C)
-                → curry (uncurry f) ≡ f
-  curry-uncurry f = funext λ x → funext λ y → refl
-
-  uncurry-curry : {A B C : Set} → (f : A × B → C)
-                → uncurry (curry f) ≡ f
-  uncurry-curry f = funext λ { (x , y) → refl }
+  uncurry-curry : {A B C : Set} → (f : A × B → C) → (p : A × B)
+                → uncurry (curry f) p ≡ f p
+  uncurry-curry f (x , y) = refl

@@ -44,7 +44,7 @@ tracing-subscriber = { version = "0.3", features = ["env-filter"] }
 # Web/HTTP
 axum = { version = "0.8", features = ["macros"] }
 tower = "0.5"
-tower-http = { version = "0.6", features = ["cors", "trace"] }
+tower-http = { version = "0.7", features = ["cors", "trace"] }
 reqwest = { version = "0.12", default-features = false, features = ["json", "rustls-tls"] }
 
 # Actor framework
@@ -85,7 +85,7 @@ num-integer = "0.1"
 num-traits = "0.2"
 
 # Tensor coprocessor — dense linear algebra (BSD-3-Clause, MPL-2.0 compat).
-nalgebra = "0.33"
+nalgebra = "0.35"
 
 # Crypto coprocessor.  blake3 already declared above; sha2 was previously
 # gated behind `verisim` — un-gate so the Crypto backend can use it.

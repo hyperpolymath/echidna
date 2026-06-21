@@ -1,3 +1,4 @@
+// SPDX-FileCopyrightText: 2025 Jonathan D.A. Jewell <j.d.a.jewell@open.ac.uk>
 // SPDX-License-Identifier: MPL-2.0
 // ECHIDNA REST API Server
 
@@ -97,21 +98,21 @@ async fn main() {
         .route("/health", get(health_check))
         // Prover endpoints
         .route("/api/v1/provers", get(handlers::list_provers))
-        .route("/api/v1/provers/:kind", get(handlers::get_prover))
+        .route("/api/v1/provers/{kind}", get(handlers::get_prover))
         // Proof endpoints
         .route("/api/v1/proofs", post(handlers::submit_proof))
         .route("/api/v1/proofs", get(handlers::list_proofs))
-        .route("/api/v1/proofs/:id", get(handlers::get_proof))
-        .route("/api/v1/proofs/:id", delete(handlers::cancel_proof))
+        .route("/api/v1/proofs/{id}", get(handlers::get_proof))
+        .route("/api/v1/proofs/{id}", delete(handlers::cancel_proof))
         // Tactic endpoints
-        .route("/api/v1/proofs/:id/tactics", post(handlers::apply_tactic))
+        .route("/api/v1/proofs/{id}/tactics", post(handlers::apply_tactic))
         .route(
-            "/api/v1/proofs/:id/tactics/suggest",
+            "/api/v1/proofs/{id}/tactics/suggest",
             get(handlers::suggest_tactics),
         )
         // Cross-prover exchange endpoints (OpenTheory / Dedukti).
         // Export is session-scoped; import is stateless.
-        .route("/api/v1/proofs/:id/export", get(handlers::export_proof))
+        .route("/api/v1/proofs/{id}/export", get(handlers::export_proof))
         .route("/api/v1/exchange/import", post(handlers::import_proof))
         // Consultant-mode Q&A — free-form question + optional context →
         // LLM-shaped markdown answer via BoJ's cartridge router.

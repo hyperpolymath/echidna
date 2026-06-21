@@ -1,0 +1,84 @@
+// SPDX-License-Identifier: MPL-2.0
+// SPDX-FileCopyrightText: 2026 Jonathan D.A. Jewell <j.d.a.jewell@open.ac.uk>
+
+= ECHIDNA — Affirmation of Honest State
+Jonathan D.A. Jewell <j.d.a.jewell@open.ac.uk>
+:revdate: 2026-06-15
+:toc:
+
+A point-in-time honesty attestation, per the RSR / CCCP audit gate
+(`AUDIT.adoc` in `rsr-template-repo`): an affirmation that ECHIDNA's public
+claims do not outrun the proofs, tests, and artefacts that back them, with a
+plain disclosure of what is verified, what is aspirational, and what is
+known-debt as of the date above.
+
+Companion to `RSR_COMPLIANCE.adoc` (hard-rule compliance) and `EXPLAINME.adoc`
+(receipts for README claims). Canonical live state: `CHANGELOG.md` + the git
+log + open issues.
+
+[NOTE]
+====
+The canonical standards AFFIRMATION template was not reachable from the
+authoring session (outside repo scope at the time). This document follows the
+audit-gate rules in `rsr-template-repo/AUDIT.adoc` and the conventions of
+`RSR_COMPLIANCE.adoc`; reconcile it against the canonical template when
+available.
+====
+
+== Affirmations
+
+. *Claims do not outrun artefacts.* Every "verified" item below is reproduced in
+  CI or by a named test/proof. Direction-of-travel items are labelled
+  aspirational and make no readiness claim.
+. *No hidden proof debt.* Known gaps are disclosed under "Known debt" below, not
+  buried; where stubs exist they are named.
+. *Stability discipline.* ECHIDNA is *not* affirmed `stable` or `v1.0.0`; the
+  real release line is in `CHANGELOG.md`.
+. *Critical Reception Grade.* CRG-C is complete (unit + smoke + build + P2P +
+  E2E + contract + aspect + benchmarks baselined, per
+  `.machine_readable/6a2/STATE.a2ml`); CRG-B criteria are populated but B is
+  *not* formally affirmed here.
+
+== Verified as of 2026-06-15 (green / reproduced)
+
+* Multi-language dogfood proof corpus — Coq, Lean 4, Agda, Idris2 — type-checks
+  in CI (`dogfood-proofs-ci.yml` + `idris2-abi-ci.yml`); merged via #234 / #244.
+* Idris2 ABI carries zero `believe_me` / `assert_total` / `postulate`
+  (enforced by `idris2-abi-ci.yml`).
+* Every CI workflow job carries an explicit `timeout-minutes` bound (#247).
+* Governance gates green on `main`: REUSE/SPDX, workflow-linter, A2ML manifest
+  validation, K9 contracts, SPARK theatre gate.
+
+== Aspirational (direction of travel — NOT done)
+
+* ML-at-scale: GNN/Transformer training on the real corpus (scaffolds present,
+  weights not trained on real data).
+* Cap'n Proto IPC; full Chapel-parallel dispatch; coprocessor hardware paths.
+* Stages 5–8 of `docs/ROADMAP.md` (distributed, cross-prover semantics,
+  sovereign tooling, self-verified kernel).
+
+== Known debt (disclosed, not hidden)
+
+* `--features verisim`: 22 compile errors; feature gated off by default (#245).
+* `formal-verification.yml` `creusot-verify` red — `alt-ergo` not
+  apt-installable (#250).
+* `src/rust/main.rs` SPDX-FileCopyrightText hook blocks commits to that file
+  (#216) — owner-only fix; gates the 13-adapter dispatcher branch.
+* Prover-count drift across surfaces vs `docs/PROVER_COUNT.md` (#251).
+* RSR divergences vs the standards repo: stale `salt/` Python wording, and the
+  polyglot language set not yet declared as an out-of-template adaptation
+  (#254). The RSR `hooks/` requirement is addressed in the change that
+  introduces this file.
+
+== Scope
+
+This affirmation covers `hyperpolymath/echidna`. `echidnabot` maintains its own
+state; its `proofs/coq/admitted_stub.v` and `proofs/lean/sorry_stub.lean` are
+*intentional* dogfood-CI failures, disclosed in its `CLAUDE.md`.
+
+== Affirmed
+
+Affirmed during the 2026-06-13/15 estate-maintenance session (Claude Code),
+pending owner counter-sign.
+
+Owner: Jonathan D.A. Jewell <j.d.a.jewell@open.ac.uk>.

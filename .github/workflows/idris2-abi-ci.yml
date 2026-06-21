@@ -3,15 +3,17 @@ name: Idris2 ABI Type-Check
 
 on:
   push:
+    branches: [main]   # only post-merge; feature-branch PRs are gated by the pull_request run below
     paths:
       - 'src/abi/**'
       - 'src/idris/**'
       - '.github/workflows/idris2-abi-ci.yml'
+  # No paths-filter on pull_request: this job is a REQUIRED status check, so it
+  # must report on every PR (a path-filtered required check deadlocks PRs that
+  # don't touch its paths — they wait forever for a run that never happens). The
+  # "Detect relevant changes" step below does the path-gating internally instead,
+  # so the check always reports while heavy work runs only when sources change.
   pull_request:
-    paths:
-      - 'src/abi/**'
-      - 'src/idris/**'
-      - '.github/workflows/idris2-abi-ci.yml'
 
 # Cause-B mitigation (#77): cancel superseded runs so stacked pushes
 # to the same ref don't pile up identical jobs in the queue.
@@ -25,10 +27,37 @@ jobs:
   idris2-typecheck:
     name: Type-check Idris2 ABI definitions
     runs-on: ubuntu-latest
+    timeout-minutes: 30
     steps:
-      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+
+      # Required-check shim: decide whether ABI/proof sources actually changed.
+      # The workflow file itself is intentionally NOT in the pattern, so CI-only
+      # edits pass through. Non-PR events (push) always run the full check.
+      - name: Detect relevant changes
+        id: detect
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          PATTERN='^(src/abi/|src/idris/)'
+          if [ "${{ github.event_name }}" = "pull_request" ]; then
+            FILES=$(gh api "repos/${{ github.repository }}/pulls/${{ github.event.pull_request.number }}/files" \
+                      --paginate --jq '.[].filename')
+            if printf '%s\n' "$FILES" | grep -qE "$PATTERN"; then
+              echo "relevant=true" >> "$GITHUB_OUTPUT"
+              echo "Idris2 ABI/proof sources changed — running full type-check."
+            else
+              echo "relevant=false" >> "$GITHUB_OUTPUT"
+              echo "No Idris2 source changes — pass-through (required-check shim)."
+            fi
+          else
+            echo "relevant=true" >> "$GITHUB_OUTPUT"
+            echo "Non-PR event — running full type-check."
+          fi
 
       - name: Install Idris2
+        if: steps.detect.outputs.relevant == 'true'
         run: |
           # Idris2 v0.8.0 has no pre-built Linux release binary — the
           # release-assets array on https://api.github.com/repos/idris-lang/Idris2/releases/tags/v0.8.0
@@ -53,6 +82,7 @@ jobs:
           idris2 --version
 
       - name: Type-check all ABI modules via ipkg
+        if: steps.detect.outputs.relevant == 'true'
         run: |
           cd src/abi
           echo "=== Type-checking ECHIDNA ABI package (16 modules) ==="
@@ -60,6 +90,7 @@ jobs:
           echo "✓ All ABI modules type-check successfully"
 
       - name: Type-check Idris2 proof validator (src/idris)
+        if: steps.detect.outputs.relevant == 'true'
         run: |
           # Mirrors `just proofs-idris`. --typecheck (not --build) so no codegen
           # backend is required; the declared executable's `main` is exercised
@@ -70,6 +101,7 @@ jobs:
           echo "✓ Validator modules type-check successfully"
 
       - name: Verify no dangerous patterns
+        if: steps.detect.outputs.relevant == 'true'
         run: |
           echo "=== Scanning for dangerous patterns in ABI code ==="
           FOUND=0
@@ -87,6 +119,7 @@ jobs:
           fi
 
       - name: Count modules and report
+        if: steps.detect.outputs.relevant == 'true'
         run: |
           echo "=== ABI Module Summary ==="
           IDR_COUNT=$(find src/abi -name "*.idr" | wc -l)

@@ -1,0 +1,48 @@
+# SPDX-License-Identifier: MPL-2.0
+# S4 loop-closure CI — brings up verisim-api as a service container and
+# runs the echidna s4_loop_closure integration test.  Filed once
+# ghcr.io/hyperpolymath/verisimdb-api:latest became available (PR #121).
+# Runs on schedule (Mondays 04:00 UTC) and on demand; not on every PR
+# (the test is a Tier-3 weekly cadence check, not a PR gate).
+name: S4 Loop Closure
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: '0 4 * * 1'
+permissions:
+  contents: read
+jobs:
+  s4-loop:
+    name: S4 Loop Closure
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    services:
+      verisim:
+        image: ghcr.io/hyperpolymath/verisimdb-api:latest
+        ports:
+          - '8080:8080'
+        options: >-
+          --health-cmd "curl -sf http://localhost:8080/health"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 12
+    env:
+      VERISIM_URL: http://localhost:8080
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v4
+      - name: Setup Rust toolchain
+        uses: dtolnay/rust-toolchain@6d9817901c499d6b02debbb57edb38d33daa680b # stable
+        with:
+          toolchain: stable
+      - name: Cache Cargo
+        uses: Swatinem/rust-cache@65012b490220f477f20ab979e35ae732e6de4e68 # v2
+      - name: Install just
+        uses: taiki-e/install-action@b8cecb83565409bcc297b2df6e77f030b2a468d5 # v2.82.0
+        with:
+          tool: just@1.51.0
+      - name: Install system dependencies
+        run: sudo apt-get install -y libssl-dev pkg-config
+      - name: Run S4 loop-closure test
+        run: just test-s4-loop
