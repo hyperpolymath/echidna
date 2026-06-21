@@ -19,6 +19,7 @@ on:
     paths:
       - 'proofs/**'
       - 'verification/proofs/lean4/**'
+      - 'verification/proofs/idris2/**'
       - 'Justfile'
       - '.github/workflows/dogfood-proofs-ci.yml'
   pull_request:
@@ -26,6 +27,7 @@ on:
     paths:
       - 'proofs/**'
       - 'verification/proofs/lean4/**'
+      - 'verification/proofs/idris2/**'
       - 'Justfile'
       - '.github/workflows/dogfood-proofs-ci.yml'
   workflow_dispatch:
@@ -166,6 +168,44 @@ jobs:
 
       - name: Build Lean verification corpus
         run: just proofs-verif-lean
+
+  verif-idris:
+    name: Idris2 (verification)
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+
+      - name: Install Idris2
+        run: |
+          set -euo pipefail
+          # idris2 v0.8.0 ships no prebuilt Linux release asset, so prefer the
+          # Ubuntu 24.04 universe package and fall back to a source bootstrap from
+          # the tag archive (mirrors idris2-abi-ci.yml's install).
+          sudo apt-get update -qq || sudo apt-get update -qq --fix-missing
+          sudo apt-get install -y --fix-missing idris2 2>/dev/null || {
+            IDRIS2_VER="v0.8.0"
+            sudo apt-get install -y --fix-missing chezscheme make libgmp-dev
+            curl -fsSL --max-time 300 --retry 2 -o /tmp/idris2.tar.gz \
+              "https://github.com/idris-lang/Idris2/archive/refs/tags/${IDRIS2_VER}.tar.gz"
+            mkdir -p /tmp/idris2-src
+            tar xzf /tmp/idris2.tar.gz -C /tmp/idris2-src --strip-components=1
+            (cd /tmp/idris2-src && make bootstrap SCHEME=scheme && sudo make install PREFIX=/usr/local)
+          }
+          idris2 --version
+
+      - name: Install just
+        run: |
+          set -euo pipefail
+          curl -fsSL --retry 3 \
+            "https://github.com/casey/just/releases/download/1.51.0/just-1.51.0-x86_64-unknown-linux-musl.tar.gz" \
+            -o /tmp/just.tar.gz
+          mkdir -p "$HOME/.local/bin"
+          tar xzf /tmp/just.tar.gz -C "$HOME/.local/bin" just
+          echo "$HOME/.local/bin" >> "$GITHUB_PATH"
+
+      - name: Type-check Idris2 verification corpus
+        run: just proofs-verif-idris
 
   agda:
     name: Agda
