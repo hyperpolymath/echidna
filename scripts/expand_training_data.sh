@@ -1,5 +1,5 @@
 #!/bin/bash
-# SPDX-License-Identifier: MIT OR Palimpsest-0.6
+# SPDX-License-Identifier: MPL-2.0 OR Palimpsest-0.6
 # Quick training data expansion script for ECHIDNA
 
 set -e

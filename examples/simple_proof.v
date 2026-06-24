@@ -1,4 +1,4 @@
-(* SPDX-License-Identifier: MIT OR Palimpsest-0.6 *)
+(* SPDX-License-Identifier: MPL-2.0 OR Palimpsest-0.6 *)
 (* Simple Coq proof demonstrating ECHIDNA capabilities *)
 
 (** * Simple Arithmetic Proof

@@ -3,7 +3,7 @@
 # ECHIDNA Pre-commit Hook
 # Enforces npm ban and runs checks
 #
-# SPDX-License-Identifier: MIT OR AGPL-3.0-or-later
+# SPDX-License-Identifier: MPL-2.0 OR AGPL-3.0-or-later
 
 set -euo pipefail
 

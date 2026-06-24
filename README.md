@@ -4,7 +4,7 @@
 [![Green Hosting](https://api.thegreenwebfoundation.org/greencheckimage/nesy-prover.dev)](https://www.thegreenwebfoundation.org/green-web-check/?url=nesy-prover.dev)
 
 <!--
-  SPDX-License-Identifier: MPL-2.0
+  SPDX-License-Identifier: CC-BY-SA-4.0
   SPDX-FileCopyrightText: 2025-2026 Jonathan D.A. Jewell <j.d.a.jewell@open.ac.uk>
 
   README.adoc is canonical (RSR-H9). This Markdown file is a thin
