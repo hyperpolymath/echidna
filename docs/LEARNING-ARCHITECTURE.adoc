@@ -4,7 +4,7 @@
 :revdate: 2026-04-17
 :toc: preamble
 
-// SPDX-License-Identifier: MPL-2.0
+// SPDX-License-Identifier: CC-BY-SA-4.0
 
 == Problem
 

@@ -1,5 +1,5 @@
 <!-- SPDX-FileCopyrightText: 2026 Jonathan D.A. Jewell <j.d.a.jewell@open.ac.uk> -->
-<!-- SPDX-License-Identifier: MPL-2.0 -->
+<!-- SPDX-License-Identifier: CC-BY-SA-4.0 -->
 # ECHIDNA Wiki
 
 **ECHIDNA** — Extensible Cognitive Hybrid Intelligence for Deductive Neural Assistance — is a trust-hardened neurosymbolic theorem-proving platform supporting **128 prover backends** (12 core, exposed by default API; see [`docs/PROVER_COUNT.md`](https://github.com/hyperpolymath/echidna/blob/main/docs/PROVER_COUNT.md) for the tier breakdown).

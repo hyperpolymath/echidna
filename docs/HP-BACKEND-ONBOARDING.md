@@ -1,5 +1,5 @@
 <!--
-SPDX-License-Identifier: MPL-2.0
+SPDX-License-Identifier: CC-BY-SA-4.0
 SPDX-FileCopyrightText: 2026 Jonathan D.A. Jewell <j.d.a.jewell@open.ac.uk>
 -->
 
@@ -112,7 +112,7 @@ parametric `TypeInfo` so the unified verifier knows what to check.
 `tests/fixtures/hp/foo_trivial.tll`:
 
 ```
-# SPDX-License-Identifier: MPL-2.0
+# SPDX-License-Identifier: CC-BY-SA-4.0
 #discipline: foo
 
 theorem foo_identity : ... .

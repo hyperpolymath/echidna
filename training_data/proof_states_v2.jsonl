@@ -1,6 +1,6 @@
 {"id":1,"prover":"PVS","goal":"fib(n: nat): RECURSIVE nat =","theorem":"n","file":"arithmetic.pvs"}
 {"id":2,"prover":"PVS","goal":"1: 1","theorem":"1","file":"arithmetic.pvs"}
-{"id":3,"prover":"PVS","goal":"% SPDX-License-Identifier: MIT OR Palimpsest-0.6","theorem":"Identifier","file":"list_theory.pvs"}
+{"id":3,"prover":"PVS","goal":"% SPDX-License-Identifier: MPL-2.0 OR Palimpsest-0.6","theorem":"Identifier","file":"list_theory.pvs"}
 {"id":4,"prover":"PVS","goal":"append(l1, l2: list): RECURSIVE list =","theorem":"l2","file":"list_theory.pvs"}
 {"id":5,"prover":"PVS","goal":"null: l2,","theorem":"null","file":"list_theory.pvs"}
 {"id":6,"prover":"PVS","goal":"length(l: list): RECURSIVE nat =","theorem":"l","file":"list_theory.pvs"}
@@ -285,7 +285,7 @@
 {"id":285,"prover":"Isabelle","goal":"Part of the ECHIDNA theorem proving platform","theorem":"proving","file":"List.thy"}
 {"id":286,"prover":"Isabelle","goal":"Part of the ECHIDNA theorem proving platform","theorem":"proving","file":"Nat.thy"}
 {"id":287,"prover":"Isabelle","goal":"Part of the ECHIDNA theorem proving platform","theorem":"proving","file":"Propositional.thy"}
-{"id":288,"prover":"Agda","goal":"-- SPDX-License-Identifier: MIT AND Palimpsest-0.6","theorem":"Identifier","file":"Basic.agda"}
+{"id":288,"prover":"Agda","goal":"-- SPDX-License-Identifier: MPL-2.0 AND Palimpsest-0.6","theorem":"Identifier","file":"Basic.agda"}
 {"id":289,"prover":"Agda","goal":"-- Type: A → A","theorem":"Type","file":"Basic.agda"}
 {"id":290,"prover":"Agda","goal":"suc  : ℕ → ℕ","theorem":"suc","file":"Basic.agda"}
 {"id":291,"prover":"Agda","goal":"-- Modus ponens: if we have A → B and we have A, then we can derive B","theorem":"ponens","file":"Basic.agda"}
@@ -293,7 +293,7 @@
 {"id":293,"prover":"Agda","goal":"-- Example: if ⊤ → ⊤ and we have ⊤, we get ⊤","theorem":"Example","file":"Basic.agda"}
 {"id":294,"prover":"Agda","goal":"trans : {A B C : Set} → (A → B) → (B → C) → (A → C)","theorem":"trans","file":"Basic.agda"}
 {"id":295,"prover":"Agda","goal":"SKK : {A : Set} → (x : A) → S const const x ≡ id x","theorem":"SKK","file":"Basic.agda"}
-{"id":296,"prover":"Agda","goal":"-- SPDX-License-Identifier: MIT AND Palimpsest-0.6","theorem":"Identifier","file":"List.agda"}
+{"id":296,"prover":"Agda","goal":"-- SPDX-License-Identifier: MPL-2.0 AND Palimpsest-0.6","theorem":"Identifier","file":"List.agda"}
 {"id":297,"prover":"Agda","goal":"filter : {A : Set} → (A → Bool) → List A → List A","theorem":"filter","file":"List.agda"}
 {"id":298,"prover":"Agda","goal":"reverse : {A : Set} → List A → List A","theorem":"reverse","file":"List.agda"}
 {"id":299,"prover":"Agda","goal":"reverse′ : {A : Set} → List A → List A","theorem":"A","file":"List.agda"}
@@ -313,7 +313,7 @@
 {"id":313,"prover":"Agda","goal":"length-foldr : {A : Set} → (xs : List A)","theorem":"foldr","file":"List.agda"}
 {"id":314,"prover":"Agda","goal":"there : {x : A} {xs : List A} → Any P xs → Any P (x ∷ xs)","theorem":"there","file":"List.agda"}
 {"id":315,"prover":"Agda","goal":"Any-++ : {A : Set} {P : A → Set} {xs ys : List A}","theorem":"A","file":"List.agda"}
-{"id":316,"prover":"Agda","goal":"-- SPDX-License-Identifier: MIT AND Palimpsest-0.6","theorem":"Identifier","file":"Nat.agda"}
+{"id":316,"prover":"Agda","goal":"-- SPDX-License-Identifier: MPL-2.0 AND Palimpsest-0.6","theorem":"Identifier","file":"Nat.agda"}
 {"id":317,"prover":"Agda","goal":"subst : {A : Set} {x y : A} → (P : A → Set) → x ≡ y → P x → P y","theorem":"subst","file":"Nat.agda"}
 {"id":318,"prover":"Agda","goal":"_+_ : ℕ → ℕ → ℕ","theorem":"_","file":"Nat.agda"}
 {"id":319,"prover":"Agda","goal":"+-zero : (n : ℕ) → n + zero ≡ n","theorem":"zero","file":"Nat.agda"}
@@ -324,7 +324,7 @@
 {"id":324,"prover":"Agda","goal":"s≤s : {m n : ℕ} → m ≤ n → suc m ≤ suc n","theorem":"s","file":"Nat.agda"}
 {"id":325,"prover":"Agda","goal":"min-comm : (m n : ℕ) → min m n ≡ min n m","theorem":"comm","file":"Nat.agda"}
 {"id":326,"prover":"Agda","goal":"even-or-odd : (n : ℕ) → Even n ⊎ Odd n","theorem":"odd","file":"Nat.agda"}
-{"id":327,"prover":"Agda","goal":"-- SPDX-License-Identifier: MIT AND Palimpsest-0.6","theorem":"Identifier","file":"Propositional.agda"}
+{"id":327,"prover":"Agda","goal":"-- SPDX-License-Identifier: MPL-2.0 AND Palimpsest-0.6","theorem":"Identifier","file":"Propositional.agda"}
 {"id":328,"prover":"Agda","goal":"tt : ⊤","theorem":"tt","file":"Propositional.agda"}
 {"id":329,"prover":"Agda","goal":"-- Ex falso quodlibet: from falsehood, anything follows","theorem":"quodlibet","file":"Propositional.agda"}
 {"id":330,"prover":"Agda","goal":"de-morgan₂-iff : {A B : Set} → ¬ (A ∨ B) ⇔ (¬ A ∧ ¬ B)","theorem":"iff","file":"Propositional.agda"}

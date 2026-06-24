@@ -1,4 +1,4 @@
-<!-- SPDX-License-Identifier: MPL-2.0 -->
+<!-- SPDX-License-Identifier: CC-BY-SA-4.0 -->
 <!-- LLM warmup context — USER level (<200 lines) -->
 <!-- Feed this to an LLM before asking questions about ECHIDNA -->
 

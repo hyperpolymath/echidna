@@ -35,7 +35,7 @@ Together, these create a **stable, predictable development experience**.
 **Justfile** (complete, comprehensive):
 
 ```justfile
-# SPDX-License-Identifier: MIT OR Palimpsest-0.6
+# SPDX-License-Identifier: CC-BY-SA-4.0 OR Palimpsest-0.6
 # ECHIDNA Standard Build System
 
 # List all available commands
@@ -370,7 +370,7 @@ dev-cycle:
 
 ```bash
 #!/usr/bin/env bash
-# SPDX-License-Identifier: MIT OR Palimpsest-0.6
+# SPDX-License-Identifier: CC-BY-SA-4.0 OR Palimpsest-0.6
 # Must Validation System
 #
 # Exit codes:
@@ -570,7 +570,7 @@ jobs:
 
 ```bash
 #!/usr/bin/env bash
-# SPDX-License-Identifier: MIT OR Palimpsest-0.6
+# SPDX-License-Identifier: CC-BY-SA-4.0 OR Palimpsest-0.6
 # Pre-commit hook: Run quick validation
 
 set -e

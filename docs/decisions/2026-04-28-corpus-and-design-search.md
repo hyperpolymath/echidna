@@ -1,4 +1,4 @@
-<!-- SPDX-License-Identifier: MPL-2.0 -->
+<!-- SPDX-License-Identifier: CC-BY-SA-4.0 -->
 
 # 2026-04-28 — Corpus, design-search, swarm, and the N-dim VeriSim plan
 
