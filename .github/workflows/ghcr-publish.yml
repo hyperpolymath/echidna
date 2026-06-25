@@ -65,10 +65,41 @@ jobs:
           sudo nerdctl build -f .containerization/Containerfile.full -t ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:full .
 
       - name: Push images
+        id: push
         run: |
           sudo nerdctl push ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ github.sha }}
           sudo nerdctl push ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:latest
           sudo nerdctl push ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:full
+          # nerdctl push has no --digestfile, so read the real sha256 of each
+          # pushed image back from the registry with skopeo (pre-installed on
+          # ubuntu-latest). The minimal (:sha/:latest) and :full images are
+          # distinct artifacts, so each gets its own attestation.
+          MIN_DIGEST="$(skopeo inspect --format '{{.Digest}}' \
+            --creds "${{ github.actor }}:${{ secrets.GITHUB_TOKEN }}" \
+            docker://${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ github.sha }})"
+          FULL_DIGEST="$(skopeo inspect --format '{{.Digest}}' \
+            --creds "${{ github.actor }}:${{ secrets.GITHUB_TOKEN }}" \
+            docker://${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:full)"
+          echo "min_digest=$MIN_DIGEST" >> "$GITHUB_OUTPUT"
+          echo "full_digest=$FULL_DIGEST" >> "$GITHUB_OUTPUT"
+
+      # GitHub native artifact attestation (build provenance) for the pushed
+      # images. Verify with:
+      #   gh attest verify oci://ghcr.io/${{ github.repository }}:<tag> \
+      #     --repo ${{ github.repository }}
+      - name: Attest container provenance (minimal image)
+        uses: actions/attest-build-provenance@e8998f949152b193b063cb0ec769d69d929409be # v2
+        with:
+          subject-name: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
+          subject-digest: ${{ steps.push.outputs.min_digest }}
+          push-to-registry: true
+
+      - name: Attest container provenance (full image)
+        uses: actions/attest-build-provenance@e8998f949152b193b063cb0ec769d69d929409be # v2
+        with:
+          subject-name: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
+          subject-digest: ${{ steps.push.outputs.full_digest }}
+          push-to-registry: true
 
       - name: Tag release version
         if: github.event_name == 'release'
