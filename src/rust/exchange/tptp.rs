@@ -147,7 +147,9 @@ pub struct TptpExchange {
 
 impl TptpExchange {
     pub fn new() -> Self {
-        Self { emit_comments: true }
+        Self {
+            emit_comments: true,
+        }
     }
 
     /// Import a TPTP source file into a structured problem.
@@ -280,10 +282,7 @@ impl TptpExchange {
         match problem.dialect {
             TptpDialect::Cnf | TptpDialect::Fof => {},
             d => {
-                return Err(ExchangeError::UnsupportedDialect(format!(
-                    "{:?}",
-                    d
-                )));
+                return Err(ExchangeError::UnsupportedDialect(format!("{:?}", d)));
             },
         }
         if problem.axioms.is_empty() && problem.conjecture.is_none() {
@@ -293,11 +292,7 @@ impl TptpExchange {
         out.push_str("(set-logic UF)\n");
         // Collect predicate / function symbols by a cheap lexical scan.
         let mut symbols: Vec<String> = Vec::new();
-        for f in problem
-            .axioms
-            .iter()
-            .chain(problem.conjecture.iter())
-        {
+        for f in problem.axioms.iter().chain(problem.conjecture.iter()) {
             collect_symbols(&f.formula, &mut symbols);
         }
         symbols.sort();
@@ -440,10 +435,7 @@ fn collect_symbols(formula: &str, into: &mut Vec<String>) {
         } else {
             if !current.is_empty() {
                 let token = current.clone();
-                if token
-                    .chars()
-                    .next()
-                    .is_some_and(|c| c.is_ascii_lowercase())
+                if token.chars().next().is_some_and(|c| c.is_ascii_lowercase())
                     && !matches!(
                         token.as_str(),
                         "true" | "false" | "and" | "or" | "not" | "implies"

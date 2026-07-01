@@ -344,7 +344,9 @@ fn parse_tptp_file(raw: &str) -> ParsedFile {
                 // include arguments don't nest).
                 if let Some(end) = args.rfind(')') {
                     let inside = args[..end].trim();
-                    let path = inside.trim_matches(|c: char| c == '\'' || c == '"').to_string();
+                    let path = inside
+                        .trim_matches(|c: char| c == '\'' || c == '"')
+                        .to_string();
                     if !path.is_empty() && !pf.imports.contains(&path) {
                         pf.imports.push(path);
                     }
