@@ -32,7 +32,7 @@ Methodology-aware configuration for AI agents. Read by any AI agent
 == Relationship to Other Files
 
 * `AGENTIC.a2ml` says WHAT agents can do (permissions, gating)
-* `agent_instructions/` says HOW agents should work (methodology)
+* `bot_directives/` says HOW agents should work (methodology)
 * `bot_directives/` says what the gitbot-fleet does (fleet-specific)
 * `CLAUDE.md` says how Claude specifically should work (Claude-specific)
 
