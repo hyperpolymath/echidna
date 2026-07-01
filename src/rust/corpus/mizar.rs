@@ -240,18 +240,18 @@ fn parse_mizar_file(raw: &str) -> ParsedFile {
             head_keyword.as_deref(),
             Some(
                 "theorem"
-                | "definition"
-                | "scheme"
-                | "cluster"
-                | "registration"
-                | "notation"
-                | "synonym"
-                | "antonym"
-                | "attr"
-                | "mode"
-                | "func"
-                | "pred"
-                | "redefine"
+                    | "definition"
+                    | "scheme"
+                    | "cluster"
+                    | "registration"
+                    | "notation"
+                    | "synonym"
+                    | "antonym"
+                    | "attr"
+                    | "mode"
+                    | "func"
+                    | "pred"
+                    | "redefine"
             )
         );
 
@@ -376,8 +376,7 @@ fn find_keyword_at_word(s: &str, kw: &str) -> Option<usize> {
     while i + kwb.len() <= bytes.len() {
         if &bytes[i..i + kwb.len()] == kwb {
             let before_ok = i == 0 || !is_ident_byte(bytes[i - 1]);
-            let after_ok =
-                i + kwb.len() == bytes.len() || !is_ident_byte(bytes[i + kwb.len()]);
+            let after_ok = i + kwb.len() == bytes.len() || !is_ident_byte(bytes[i + kwb.len()]);
             if before_ok && after_ok {
                 return Some(i);
             }
@@ -425,9 +424,7 @@ fn collect_imports(env_text: &str, imports: &mut Vec<String>) {
 }
 
 fn is_plausible_article_id(s: &str) -> bool {
-    !s.is_empty()
-        && s.chars()
-            .all(|c| c.is_ascii_alphanumeric() || c == '_')
+    !s.is_empty() && s.chars().all(|c| c.is_ascii_alphanumeric() || c == '_')
 }
 
 /// Leading keyword (alphanumeric `_` run) at start of `s`.
@@ -453,8 +450,8 @@ fn classify_decl(kw: &str, head_line: &str) -> (String, DeclKind) {
     let (name, kind) = match kw {
         "theorem" => {
             // `theorem Th1: ...` (named) or `theorem ...` (unnamed).
-            let nm = parse_label_name(after_kw)
-                .unwrap_or_else(|| synthetic_name("Theorem", head_line));
+            let nm =
+                parse_label_name(after_kw).unwrap_or_else(|| synthetic_name("Theorem", head_line));
             (nm, DeclKind::Function)
         },
         "definition" => {
@@ -467,8 +464,8 @@ fn classify_decl(kw: &str, head_line: &str) -> (String, DeclKind) {
         },
         "scheme" => {
             // `scheme SchemeName { … } : … provided …`
-            let nm = parse_first_ident(after_kw)
-                .unwrap_or_else(|| synthetic_name("Scheme", head_line));
+            let nm =
+                parse_first_ident(after_kw).unwrap_or_else(|| synthetic_name("Scheme", head_line));
             (nm, DeclKind::Record)
         },
         "cluster" | "registration" => {
@@ -484,13 +481,11 @@ fn classify_decl(kw: &str, head_line: &str) -> (String, DeclKind) {
             (nm, DeclKind::Function)
         },
         "synonym" | "antonym" => {
-            let nm = parse_first_ident(after_kw)
-                .unwrap_or_else(|| synthetic_name(kw, head_line));
+            let nm = parse_first_ident(after_kw).unwrap_or_else(|| synthetic_name(kw, head_line));
             (nm, DeclKind::Function)
         },
         "attr" | "mode" | "func" | "pred" => {
-            let nm = parse_first_ident(after_kw)
-                .unwrap_or_else(|| synthetic_name(kw, head_line));
+            let nm = parse_first_ident(after_kw).unwrap_or_else(|| synthetic_name(kw, head_line));
             (nm, DeclKind::Function)
         },
         "redefine" => {
@@ -583,16 +578,7 @@ fn tokenise_idents(s: &str) -> Vec<&str> {
         c.is_whitespace()
             || matches!(
                 c,
-                '(' | ')'
-                    | '['
-                    | ']'
-                    | '{'
-                    | '}'
-                    | ','
-                    | ';'
-                    | ':'
-                    | '='
-                    | '.'
+                '(' | ')' | '[' | ']' | '{' | '}' | ',' | ';' | ':' | '=' | '.'
             )
     })
     .filter(|t| !t.is_empty())
@@ -647,7 +633,11 @@ mod tests {
         assert_eq!(pf.decls[0].kind, DeclKind::Function);
         assert!(pf.decls[0].statement.contains("for P being set"));
         let body = pf.decls[0].proof.as_deref().unwrap_or("");
-        assert!(body.contains("let P"), "proof body missing 'let P': {}", body);
+        assert!(
+            body.contains("let P"),
+            "proof body missing 'let P': {}",
+            body
+        );
         assert!(body.contains("thus P = P"));
         assert!(!pf.decls[0].axiom_usage.any());
     }
@@ -659,12 +649,12 @@ mod tests {
         assert_eq!(pf.decls.len(), 1);
         // `@proof` should set the sorry flag and append "@proof" to
         // the `other` hazard list.
-        assert!(pf.decls[0].axiom_usage.sorry, "sorry flag not set: {:?}", pf.decls[0].axiom_usage);
-        assert!(pf.decls[0]
-            .axiom_usage
-            .other
-            .iter()
-            .any(|s| s == "@proof"));
+        assert!(
+            pf.decls[0].axiom_usage.sorry,
+            "sorry flag not set: {:?}",
+            pf.decls[0].axiom_usage
+        );
+        assert!(pf.decls[0].axiom_usage.other.iter().any(|s| s == "@proof"));
     }
 
     #[test]

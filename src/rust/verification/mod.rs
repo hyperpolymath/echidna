@@ -30,17 +30,17 @@
 //! mechanism" entry in `docs/wiki/Guides.md`.
 
 pub mod axiom_tracker;
+pub mod bayesian_arbiter;
 pub mod certificates;
 pub mod confidence;
+pub mod dempster_shafer;
 pub mod mutation;
 pub mod pareto;
+pub mod pareto_arbiter;
 pub mod portfolio;
 #[cfg(feature = "verisim")]
 pub mod proof;
 pub mod statistics;
-pub mod bayesian_arbiter;
-pub mod dempster_shafer;
-pub mod pareto_arbiter;
 
 pub use axiom_tracker::{AxiomPolicy, AxiomTracker, AxiomUsage, DangerLevel};
 pub use certificates::{CertificateFormat, CertificateVerifier, ProofCertificate};

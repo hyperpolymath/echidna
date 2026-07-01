@@ -127,9 +127,11 @@ impl ParetoArbiter {
             Tiebreak::MinLatency => frontier
                 .iter()
                 .min_by_key(|o| (o.latency_ms, o.axiom_cost))?,
-            Tiebreak::MaxConfidence => frontier
-                .iter()
-                .max_by(|a, b| a.confidence.partial_cmp(&b.confidence).unwrap_or(std::cmp::Ordering::Equal))?,
+            Tiebreak::MaxConfidence => frontier.iter().max_by(|a, b| {
+                a.confidence
+                    .partial_cmp(&b.confidence)
+                    .unwrap_or(std::cmp::Ordering::Equal)
+            })?,
             Tiebreak::MinCertificate => frontier
                 .iter()
                 .min_by_key(|o| (o.certificate_size_bytes, o.latency_ms))?,

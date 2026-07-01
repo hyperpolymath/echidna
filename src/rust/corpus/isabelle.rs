@@ -307,8 +307,7 @@ fn parse_isabelle_file(raw: &str) -> ParsedFile {
 
         match kw {
             Some(k) if is_theorem_like(k) => {
-                let (consumed, decl) =
-                    parse_theorem_like(&lines, &raw_lines, i, line_no, k);
+                let (consumed, decl) = parse_theorem_like(&lines, &raw_lines, i, line_no, k);
                 if let Some(d) = decl {
                     pf.decls.push(d);
                 }
@@ -316,8 +315,7 @@ fn parse_isabelle_file(raw: &str) -> ParsedFile {
                 continue;
             },
             Some(k) if is_definition_like(k) => {
-                let (consumed, decl) =
-                    parse_definition_like(&lines, &raw_lines, i, line_no, k);
+                let (consumed, decl) = parse_definition_like(&lines, &raw_lines, i, line_no, k);
                 if let Some(d) = decl {
                     pf.decls.push(d);
                 }
@@ -325,8 +323,7 @@ fn parse_isabelle_file(raw: &str) -> ParsedFile {
                 continue;
             },
             Some(k) if is_data_like(k) => {
-                let (consumed, decl) =
-                    parse_data_like(&lines, &raw_lines, i, line_no, k);
+                let (consumed, decl) = parse_data_like(&lines, &raw_lines, i, line_no, k);
                 if let Some(d) = decl {
                     pf.decls.push(d);
                 }
@@ -334,8 +331,7 @@ fn parse_isabelle_file(raw: &str) -> ParsedFile {
                 continue;
             },
             Some("record") => {
-                let (consumed, decl) =
-                    parse_data_like(&lines, &raw_lines, i, line_no, "record");
+                let (consumed, decl) = parse_data_like(&lines, &raw_lines, i, line_no, "record");
                 if let Some(mut d) = decl {
                     d.kind = DeclKind::Record;
                     pf.decls.push(d);
@@ -344,8 +340,7 @@ fn parse_isabelle_file(raw: &str) -> ParsedFile {
                 continue;
             },
             Some(k @ ("axiomatization" | "axiom" | "consts")) => {
-                let (consumed, decl) =
-                    parse_postulate_like(&lines, &raw_lines, i, line_no, k);
+                let (consumed, decl) = parse_postulate_like(&lines, &raw_lines, i, line_no, k);
                 if let Some(d) = decl {
                     pf.decls.push(d);
                 }
@@ -357,8 +352,7 @@ fn parse_isabelle_file(raw: &str) -> ParsedFile {
                 // Module-like DeclKind for sub-entries (Module is
                 // reserved for the file-level entry), so map to
                 // Function. Document keyword in the statement.
-                let (consumed, decl) =
-                    parse_definition_like(&lines, &raw_lines, i, line_no, k);
+                let (consumed, decl) = parse_definition_like(&lines, &raw_lines, i, line_no, k);
                 if let Some(d) = decl {
                     pf.decls.push(d);
                 }
@@ -477,8 +471,8 @@ fn parse_theorem_like(
     kw: &str,
 ) -> (usize, Option<DraftDecl>) {
     let first = lines[start].trim_start();
-    let name = extract_decl_name(first, kw)
-        .unwrap_or_else(|| format!("<anonymous-{}-L{}>", kw, line_no));
+    let name =
+        extract_decl_name(first, kw).unwrap_or_else(|| format!("<anonymous-{}-L{}>", kw, line_no));
 
     // Statement: accumulate lines until we see a proof opener
     // (`proof`, `by`, `apply`, `using`, `unfolding`, `including`,

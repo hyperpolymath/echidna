@@ -149,7 +149,7 @@ fn opening_tokens(ext: &str) -> &'static [&'static str] {
 /// Terminator tokens that end a proof body.
 fn terminators(ext: &str) -> &'static [&'static str] {
     match ext {
-        "lean" => &[],            // blank-line terminated; no `qed`
+        "lean" => &[], // blank-line terminated; no `qed`
         "thy" => &["qed", "done", "."],
         "ml" => &[";;"],
         "mm" => &["$."],
@@ -170,7 +170,12 @@ fn match_opening<'a>(line: &'a str, ext: &str) -> Option<(usize, String)> {
             let name: String = rest
                 .chars()
                 .take_while(|c| {
-                    !c.is_whitespace() && *c != '(' && *c != ':' && *c != '{' && *c != '[' && *c != ','
+                    !c.is_whitespace()
+                        && *c != '('
+                        && *c != ':'
+                        && *c != '{'
+                        && *c != '['
+                        && *c != ','
                 })
                 .collect();
             if !name.is_empty() {
@@ -306,7 +311,8 @@ mod tests {
 
     #[test]
     fn parses_lean_mathd_theorem() {
-        let src = "theorem mathd_algebra_42 (x : \u{211d}) (h : x + 1 = 2) : x = 1 := by\n  linarith\n";
+        let src =
+            "theorem mathd_algebra_42 (x : \u{211d}) (h : x + 1 = 2) : x = 1 := by\n  linarith\n";
         let decls = parse_uniform(src, "lean");
         assert_eq!(decls.len(), 1);
         assert_eq!(decls[0].name, "mathd_algebra_42");
@@ -343,11 +349,7 @@ mod tests {
         let decls = parse_uniform(src, "v");
         assert_eq!(decls.len(), 1);
         assert_eq!(decls[0].name, "amc_1985_p10");
-        assert!(decls[0]
-            .proof
-            .as_deref()
-            .unwrap()
-            .contains("reflexivity"));
+        assert!(decls[0].proof.as_deref().unwrap().contains("reflexivity"));
     }
 
     #[test]
@@ -355,10 +357,6 @@ mod tests {
         let src = "theorem mathd_empty : True\n";
         let decls = parse_uniform(src, "lean");
         assert_eq!(decls.len(), 1);
-        assert!(decls[0]
-            .axiom_usage
-            .other
-            .iter()
-            .any(|t| t == "empty_body"));
+        assert!(decls[0].axiom_usage.other.iter().any(|t| t == "empty_body"));
     }
 }

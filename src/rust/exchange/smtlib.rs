@@ -41,10 +41,23 @@ impl std::error::Error for ExchangeError {}
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub enum SmtLibCommand {
     SetLogic(String),
-    SetInfo { key: String, value: String },
-    SetOption { key: String, value: String },
-    DeclareSort { name: String, arity: u32 },
-    DeclareFun { name: String, params: Vec<String>, ret: String },
+    SetInfo {
+        key: String,
+        value: String,
+    },
+    SetOption {
+        key: String,
+        value: String,
+    },
+    DeclareSort {
+        name: String,
+        arity: u32,
+    },
+    DeclareFun {
+        name: String,
+        params: Vec<String>,
+        ret: String,
+    },
     DefineFun {
         name: String,
         params: Vec<(String, String)>,
@@ -171,7 +184,11 @@ impl SmtLibExchange {
                 let body = body.trim();
                 let is_neg_conjecture = body.starts_with("(not ");
                 let formula = smt_expr_to_fof(body);
-                let role = if is_neg_conjecture { "conjecture" } else { "axiom" };
+                let role = if is_neg_conjecture {
+                    "conjecture"
+                } else {
+                    "axiom"
+                };
                 let name = format!("smt_{}", counter);
                 axioms.push(format!("fof({}, {}, {}).", name, role, formula));
                 counter += 1;
@@ -417,14 +434,12 @@ fn emit_command(cmd: &SmtLibCommand, out: &mut String) {
         SmtLibCommand::DeclareSort { name, arity } => {
             out.push_str(&format!("(declare-sort {} {})", name, arity))
         },
-        SmtLibCommand::DeclareFun { name, params, ret } => {
-            out.push_str(&format!(
-                "(declare-fun {} ({}) {})",
-                name,
-                params.join(" "),
-                ret
-            ))
-        },
+        SmtLibCommand::DeclareFun { name, params, ret } => out.push_str(&format!(
+            "(declare-fun {} ({}) {})",
+            name,
+            params.join(" "),
+            ret
+        )),
         SmtLibCommand::DefineFun {
             name,
             params,

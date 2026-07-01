@@ -19,11 +19,11 @@
 //! `docs/decisions/2026-06-01-saturation-campaign.md`.
 
 pub mod dedukti;
-pub mod opentheory;
-pub mod tptp;
-pub mod smtlib;
-pub mod smtcoq;
 pub mod lambdapi;
+pub mod opentheory;
+pub mod smtcoq;
+pub mod smtlib;
+pub mod tptp;
 
 pub use dedukti::DeduktiExporter;
 pub use opentheory::OpenTheoryExporter;
