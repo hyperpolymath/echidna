@@ -90,8 +90,16 @@ jobs:
 
       - name: Install Why3 and SMT solvers
         run: |
+          set -euo pipefail
           sudo apt-get update -qq
-          sudo apt-get install -y --no-install-recommends why3 z3 alt-ergo
+          sudo apt-get install -y --no-install-recommends why3 z3
+          # alt-ergo has no installation candidate in the Ubuntu 24.04
+          # (noble) apt repos (#250).  Install the prebuilt musl static
+          # binary pinned from OCamlPro's GitHub releases instead — same
+          # provisioning pattern as live-provers.yml.
+          curl -sSL --max-time 120 -o /tmp/alt-ergo \
+            https://github.com/OCamlPro/alt-ergo/releases/download/v2.6.3/alt-ergo-v2.6.3-x86_64-linux-musl
+          sudo install -m 0755 /tmp/alt-ergo /usr/local/bin/alt-ergo
         # why3 + z3 cover all current obligations.  alt-ergo is included
         # as a fallback solver for obligations z3 times out on.
 
@@ -99,6 +107,7 @@ jobs:
         run: |
           why3 --version
           z3 --version
+          alt-ergo --version
           why3 config detect
 
       - name: Install Creusot
