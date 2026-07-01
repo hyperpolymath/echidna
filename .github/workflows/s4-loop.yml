@@ -39,7 +39,7 @@ jobs:
       - name: Cache Cargo
         uses: Swatinem/rust-cache@65012b490220f477f20ab979e35ae732e6de4e68 # v2
       - name: Install just
-        uses: taiki-e/install-action@b8cecb83565409bcc297b2df6e77f030b2a468d5 # v2.82.0
+        uses: taiki-e/install-action@682e7d9e49c5e653d371fc6adbda67653461378a # v2.82.4
         with:
           tool: just@1.51.0
       - name: Install system dependencies
