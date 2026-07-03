@@ -80,7 +80,7 @@ tempfile = "3"
 
 # Math coprocessor — number theory + exact arithmetic.  Permissive licences
 # (Apache-2.0 / MIT) compatible with MPL-2.0 / MPL-2.0 fallback.
-num-bigint = "0.4"
+num-bigint = "0.5"
 num-integer = "0.1"
 num-traits = "0.2"
 
