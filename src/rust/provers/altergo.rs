@@ -238,7 +238,10 @@ impl ProverBackend for AltErgoBackend {
                 args: vec!["--sat-solver CDCL-Tableaux".to_string()],
             },
         ];
-        Ok(crate::provers::gnn_augment_tactics(&self.config, state, "altergo", tactics, limit).await)
+        Ok(
+            crate::provers::gnn_augment_tactics(&self.config, state, "altergo", tactics, limit)
+                .await,
+        )
     }
 
     async fn search_theorems(&self, _pattern: &str) -> Result<Vec<String>> {

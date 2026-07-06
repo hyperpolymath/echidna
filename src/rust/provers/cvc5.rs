@@ -719,7 +719,10 @@ impl ProverBackend for CVC5Backend {
                 args: vec![],
             });
         }
-        Ok(crate::provers::gnn_augment_tactics(&self.config.base, state, "cvc5", tactics, limit).await)
+        Ok(
+            crate::provers::gnn_augment_tactics(&self.config.base, state, "cvc5", tactics, limit)
+                .await,
+        )
     }
 
     async fn search_theorems(&self, _pattern: &str) -> Result<Vec<String>> {

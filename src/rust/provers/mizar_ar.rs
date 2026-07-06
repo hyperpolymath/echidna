@@ -170,7 +170,10 @@ impl ProverBackend for MizARBackend {
             Tactic::Assumption,
             Tactic::Reflexivity,
         ];
-        Ok(crate::provers::gnn_augment_tactics(&self.config, state, "mizar_ar", tactics, limit).await)
+        Ok(
+            crate::provers::gnn_augment_tactics(&self.config, state, "mizar_ar", tactics, limit)
+                .await,
+        )
     }
 
     async fn search_theorems(&self, _pattern: &str) -> Result<Vec<String>> {

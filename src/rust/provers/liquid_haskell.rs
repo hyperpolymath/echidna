@@ -223,7 +223,14 @@ impl ProverBackend for LiquidHaskellBackend {
                 args: vec![],
             },
         ];
-        Ok(crate::provers::gnn_augment_tactics(&self.config, state, "liquid-haskell", suggestions, limit).await)
+        Ok(crate::provers::gnn_augment_tactics(
+            &self.config,
+            state,
+            "liquid-haskell",
+            suggestions,
+            limit,
+        )
+        .await)
     }
     async fn search_theorems(&self, _: &str) -> Result<Vec<String>> {
         Ok(vec![])

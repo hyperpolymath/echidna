@@ -655,7 +655,14 @@ impl ProverBackend for HolLightBackend {
             });
         }
 
-        Ok(crate::provers::gnn_augment_tactics(&self.config, state, "hol_light", suggestions, limit).await)
+        Ok(crate::provers::gnn_augment_tactics(
+            &self.config,
+            state,
+            "hol_light",
+            suggestions,
+            limit,
+        )
+        .await)
     }
 
     async fn search_theorems(&self, pattern: &str) -> Result<Vec<String>> {

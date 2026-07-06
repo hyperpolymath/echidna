@@ -669,7 +669,10 @@ impl ProverBackend for SeaHornBackend {
             },
         ];
 
-        Ok(crate::provers::gnn_augment_tactics(&self.config, state, "seahorn", tactics, limit).await)
+        Ok(
+            crate::provers::gnn_augment_tactics(&self.config, state, "seahorn", tactics, limit)
+                .await,
+        )
     }
 
     async fn search_theorems(&self, _pattern: &str) -> Result<Vec<String>> {
