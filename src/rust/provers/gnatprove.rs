@@ -263,7 +263,14 @@ impl ProverBackend for GNATproveBackend {
                 args: vec![],
             },
         ];
-        Ok(crate::provers::gnn_augment_tactics(&self.config, state, "gnatprove", suggestions, limit).await)
+        Ok(crate::provers::gnn_augment_tactics(
+            &self.config,
+            state,
+            "gnatprove",
+            suggestions,
+            limit,
+        )
+        .await)
     }
     async fn search_theorems(&self, _: &str) -> Result<Vec<String>> {
         Ok(vec![])

@@ -1550,7 +1550,10 @@ impl ProverBackend for ACL2Backend {
             args: vec![],
         });
 
-        Ok(crate::provers::gnn_augment_tactics(&self.config, state, "acl2", suggestions, limit).await)
+        Ok(
+            crate::provers::gnn_augment_tactics(&self.config, state, "acl2", suggestions, limit)
+                .await,
+        )
     }
 
     async fn search_theorems(&self, pattern: &str) -> Result<Vec<String>> {

@@ -471,7 +471,10 @@ impl ProverBackend for DRealBackend {
             },
         ];
 
-        Ok(crate::provers::gnn_augment_tactics(&self.config, state, "dreal", suggestions, limit).await)
+        Ok(
+            crate::provers::gnn_augment_tactics(&self.config, state, "dreal", suggestions, limit)
+                .await,
+        )
     }
 
     async fn search_theorems(&self, _pattern: &str) -> Result<Vec<String>> {
