@@ -8,7 +8,7 @@ Guidelines and context for working with Claude Code on the ECHIDNA project.
 
 - **Repository**: https://github.com/hyperpolymath/echidna
 - **Version + release history**: [`CHANGELOG.md`](CHANGELOG.md) (single source of truth; do not duplicate version strings elsewhere)
-- **License**: MPL-2.0
+- **License**: AGPL-3.0-or-later (owner decision 2026-07-07; per-file MPL-2.0 headers pending migration sweep)
 - **Architecture overview**: [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md)
 - **Canonical prover count + tier table**: [`docs/PROVER_COUNT.md`](docs/PROVER_COUNT.md)
 - **Environment variables**: [`docs/ENV-VARS.md`](docs/ENV-VARS.md)
@@ -205,7 +205,7 @@ in `.github/workflows/`:
 - **RSR / CCCP compliance** — see [`RSR_COMPLIANCE.adoc`](RSR_COMPLIANCE.adoc) for the full hard-rule list and out-of-template adaptations.
 - **Justfile primary** (RSR-H14) — Just is the build entry point; no Make.
 - **Podman not Docker** (RSR-H15) — always Podman; `Containerfile` (not `Dockerfile`); `.containerization/Containerfile.wave3` for per-prover images.
-- **License**: MPL-2.0 across the documentation surface (intentional doc stance; see [`feedback_echidna_license_docs_mpl_intentional`](https://github.com/hyperpolymath/echidna/issues?q=license) — historical drift on individual files is owner-managed and not reconciled in routine PRs).
+- **License**: project licence is AGPL-3.0-or-later (owner decision 2026-07-07, matching `Cargo.toml`); documentation surface keeps its MPL-2.0 headers (intentional doc stance; see [`feedback_echidna_license_docs_mpl_intentional`](https://github.com/hyperpolymath/echidna/issues?q=license) — per-file header drift is owner-managed and not reconciled in routine PRs).
 - **Author**: Jonathan D.A. Jewell <j.d.a.jewell@open.ac.uk>.
 
 ---

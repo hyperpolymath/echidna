@@ -4,7 +4,7 @@ SPDX-FileCopyrightText: 2025-2026 Jonathan D.A. Jewell <j.d.a.jewell@open.ac.uk>
 -->
 
 [![OpenSSF Best Practices](https://img.shields.io/badge/OpenSSF-Best_Practices-green?logo=opensourcesecurity)](https://www.bestpractices.dev/en/projects/new?repo_url=https://github.com/hyperpolymath/echidna)
-[![License: MPL-2.0](https://img.shields.io/badge/License-MPL--2.0-blue.svg)](LICENSE) [![Green Hosting](https://api.thegreenwebfoundation.org/greencheckimage/nesy-prover.dev)](https://www.thegreenwebfoundation.org/green-web-check/?url=nesy-prover.dev)
+[![License: AGPL-3.0-or-later](https://img.shields.io/badge/License-AGPL--3.0--or--later-blue.svg)](LICENSE) [![Green Hosting](https://api.thegreenwebfoundation.org/greencheckimage/nesy-prover.dev)](https://www.thegreenwebfoundation.org/green-web-check/?url=nesy-prover.dev)
 
 \*E\*xtensible \*C\*ognitive \*H\*ybrid \*I\*ntelligence for
 \*D\*eductive \*N\*eural \*A\*ssistance
@@ -611,12 +611,13 @@ Headline shape (as of the most recent on-main work):
 - **Podman not Docker** — always Podman; `Containerfile`
   (`.containerization/` for the per-prover images) not `Dockerfile`.
 
-- **License**: MPL-2.0 (source files). See LICENSE.
+- **License**: AGPL-3.0-or-later. See LICENSE.
 
 # License
 
-This project is licensed under the [Mozilla Public License
-2.0](LICENSE).
+This project is licensed under the [GNU Affero General Public License
+v3.0 or later](LICENSE). Individual files may carry earlier MPL-2.0
+SPDX headers pending the header migration sweep.
 
 # Citation
 
@@ -626,7 +627,7 @@ This project is licensed under the [Mozilla Public License
   author = {Jewell, Jonathan D.A.},
   year = {2026},
   url = {https://github.com/hyperpolymath/echidna},
-  license = {MPL-2.0}
+  license = {AGPL-3.0-or-later}
 }
 ```
 
