@@ -306,6 +306,7 @@ fn bench_dispatch_config_construction(c: &mut Criterion) {
                 generate_certificates: true,
                 timeout: 60,
                 diagnostics: false,
+                arbitration_policy: Default::default(),
             })
         })
     });

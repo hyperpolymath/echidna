@@ -452,6 +452,8 @@ fn e2e_dispatch_result_json_roundtrip() {
         cross_checked: true,
         outcome: echidna::provers::outcome::ProverOutcome::Proved { elapsed_ms: 42 },
         diagnostics: None,
+        needs_review: false,
+        arbitration: None,
     };
 
     let json = serde_json::to_string(&original).expect("DispatchResult must serialise to JSON");

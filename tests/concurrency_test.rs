@@ -365,6 +365,7 @@ async fn concurrency_dispatch_config_shared_read() {
         generate_certificates: false,
         timeout: 30,
         diagnostics: false,
+        arbitration_policy: Default::default(),
     });
 
     let mut handles = vec![];

@@ -101,6 +101,10 @@ Motivating examples:
 - **Dempster-Shafer** — "Five solvers; three Proven, two Refuted; either commit a posterior or *refuse to arbitrate* because conflict is too high."
 - **Pareto** — "Lean took 30s and produced a 4kB certificate; Z3 took 0.2s and produced no certificate. Which dominates?" — neither; return both as Pareto-optimal.
 
+### Unified entry point: `ResultArbiter`
+
+You normally don't call the four mechanisms directly. `ResultArbiter` (`src/rust/verification/result_arbiter.rs`) takes the per-prover `ProverOutcome`s from a cross-checked dispatch, adapts them into whichever mechanism `DispatchConfig.arbitration_policy` selects (`portfolio` default | `bayesian` | `dempster_shafer`), and returns an `ArbitratedVerdict`: winning verdict, agreeing/disagreeing/inconclusive camps, a `[0,1]` conflict metric, `needs_review`, and a Pareto-recommended prover among the agreeing set. `Dispatcher::verify_proof_cross_checked` attaches it to `DispatchResult.arbitration`. Key semantics: timeouts and errors are no-information (they no longer veto agreement), and a genuine Proven-vs-Refuted split is flagged for review instead of being flattened to `verified = false`.
+
 ## Guide: Cross-prover semantic queries
 
 The synonym layer carries an optional `semantic_class` tag per entry. Combined with the three cross-prover dictionaries (`_msc2020.toml`, `_wordnet_math.toml`, `_conceptnet_seed.toml`) this gives "every prover's name for the same concept" lookups, fully offline.

@@ -28,6 +28,11 @@
 //!
 //! Picking between them: see the "Guide: Picking an arbitration
 //! mechanism" entry in `docs/wiki/Guides.md`.
+//!
+//! Unified entry point: `result_arbiter` adapts per-prover
+//! [`crate::provers::outcome::ProverOutcome`]s into whichever mechanism
+//! the configured [`result_arbiter::ArbitrationPolicy`] selects; the
+//! dispatch cross-check path delegates to it.
 
 pub mod axiom_tracker;
 pub mod bayesian_arbiter;
@@ -40,6 +45,7 @@ pub mod pareto_arbiter;
 pub mod portfolio;
 #[cfg(feature = "verisim")]
 pub mod proof;
+pub mod result_arbiter;
 pub mod statistics;
 
 pub use axiom_tracker::{AxiomPolicy, AxiomTracker, AxiomUsage, DangerLevel};
@@ -52,4 +58,5 @@ pub use portfolio::{PortfolioConfig, PortfolioResult, PortfolioSolver};
 pub use proof::{
     theorem_identity, Proof, ProofStateRecord, ProofVersion, TacticApplication, TacticStatus,
 };
+pub use result_arbiter::{ArbitratedVerdict, ArbitrationPolicy, ProverAttempt, ResultArbiter};
 pub use statistics::{StatisticsTracker, StatsSummaryRecord};
