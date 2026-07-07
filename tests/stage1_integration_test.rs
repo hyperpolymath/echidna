@@ -84,6 +84,8 @@ mod stage1_integration {
             cross_checked: false,
             outcome: ProverOutcome::default(),
             diagnostics: None,
+            needs_review: false,
+            arbitration: None,
         };
 
         // The trust_level field must be readable as a TrustLevel.

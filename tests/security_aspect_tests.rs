@@ -286,6 +286,8 @@ fn security_cross_checked_requires_two_provers() {
         cross_checked: true,
         outcome: echidna::provers::outcome::ProverOutcome::Proved { elapsed_ms: 100 },
         diagnostics: None,
+        needs_review: false,
+        arbitration: None,
     };
     assert!(
         good.provers_used.len() >= 2,
@@ -319,6 +321,8 @@ fn security_single_prover_not_cross_checked() {
         cross_checked: false,
         outcome: echidna::provers::outcome::ProverOutcome::Proved { elapsed_ms: 50 },
         diagnostics: None,
+        needs_review: false,
+        arbitration: None,
     };
     assert!(
         !result.cross_checked,
