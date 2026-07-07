@@ -144,10 +144,10 @@ impl SmtLibExchange {
             }
         }
 
-        infos.sort_by(|a, b| key_of(a).cmp(&key_of(b)));
-        options.sort_by(|a, b| key_of(a).cmp(&key_of(b)));
-        sorts.sort_by(|a, b| key_of(a).cmp(&key_of(b)));
-        funs.sort_by(|a, b| key_of(a).cmp(&key_of(b)));
+        infos.sort_by_key(key_of);
+        options.sort_by_key(key_of);
+        sorts.sort_by_key(key_of);
+        funs.sort_by_key(key_of);
         // defs preserve original order: dependencies between defines are
         // significant and we don't track them here.
 

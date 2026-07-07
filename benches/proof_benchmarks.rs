@@ -6,7 +6,8 @@
 //! Run with: cargo bench
 //! Generates HTML reports in target/criterion/
 
-use criterion::{black_box, criterion_group, criterion_main, BenchmarkId, Criterion};
+use criterion::{criterion_group, criterion_main, BenchmarkId, Criterion};
+use std::hint::black_box;
 
 use echidna::core::{Context, Goal, Hypothesis, ProofState, Term};
 use echidna::provers::{ProverConfig, ProverFactory, ProverKind};
