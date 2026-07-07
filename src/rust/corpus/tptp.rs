@@ -372,9 +372,9 @@ fn parse_annotated_formula(stmt: &str, line: usize) -> Option<DraftDecl> {
     for k in &kinds {
         if let Some(r) = stmt.strip_prefix(k) {
             let r2 = r.trim_start();
-            if r2.starts_with('(') {
+            if let Some(stripped) = r2.strip_prefix('(') {
                 head = Some(k);
-                rest = Some(&r2[1..]);
+                rest = Some(stripped);
                 break;
             }
         }

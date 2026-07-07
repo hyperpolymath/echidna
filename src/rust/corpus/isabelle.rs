@@ -546,10 +546,8 @@ fn parse_theorem_like(
             }
             // `using … by …` and `unfolding … by …` patterns also
             // terminate on the trailing `by`.
-            if t.contains(" by ") || t.ends_with(" by") {
-                if !t.starts_with("proof") {
-                    terminated = true;
-                }
+            if (t.contains(" by ") || t.ends_with(" by")) && !t.starts_with("proof") {
+                terminated = true;
             }
         }
         j += 1;

@@ -314,8 +314,10 @@ fn extract_module_name(src: &str) -> Option<String> {
 }
 
 fn parse_mm_file(raw: &str) -> ParsedFile {
-    let mut pf = ParsedFile::default();
-    pf.module_name = extract_module_name(raw);
+    let mut pf = ParsedFile {
+        module_name: extract_module_name(raw),
+        ..Default::default()
+    };
 
     let toks = lex(raw);
     let mut scope_stack: Vec<String> = Vec::new();

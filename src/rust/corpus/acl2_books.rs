@@ -361,8 +361,10 @@ fn classify_form(form: &str, line: usize, pf: &mut ParsedFile) {
             if name.is_empty() {
                 return;
             }
-            let mut hz = AxiomUsage::default();
-            hz.postulate = true;
+            let mut hz = AxiomUsage {
+                postulate: true,
+                ..Default::default()
+            };
             hz.other.push("defaxiom".to_string());
             flag_hazards(rest_body, &mut hz);
             pf.decls.push(DraftDecl {
@@ -379,8 +381,10 @@ fn classify_form(form: &str, line: usize, pf: &mut ParsedFile) {
             if name.is_empty() {
                 return;
             }
-            let mut hz = AxiomUsage::default();
-            hz.postulate = true;
+            let mut hz = AxiomUsage {
+                postulate: true,
+                ..Default::default()
+            };
             hz.other.push("defstub".to_string());
             pf.decls.push(DraftDecl {
                 name,
