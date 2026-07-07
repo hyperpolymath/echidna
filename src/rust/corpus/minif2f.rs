@@ -160,7 +160,7 @@ fn terminators(ext: &str) -> &'static [&'static str] {
 
 /// Identify the start-of-statement on a line and return
 /// `(opening_token_index, name)` if found.
-fn match_opening<'a>(line: &'a str, ext: &str) -> Option<(usize, String)> {
+fn match_opening(line: &str, ext: &str) -> Option<(usize, String)> {
     let trim = line.trim_start();
     for kw in opening_tokens(ext) {
         if let Some(rest) = trim.strip_prefix(*kw) {
