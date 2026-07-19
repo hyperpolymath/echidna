@@ -20,6 +20,6 @@ permissions:
 
 jobs:
   scan:
-    uses: hyperpolymath/panic-attack/.github/workflows/scan-and-report.yml@4591649f42b16089a9b1d4eaf3bb2f780c23e8ac # main 2026-07-07 (skip dispatch without VERISIMDB_PAT)
+    uses: hyperpolymath/panic-attack/.github/workflows/scan-and-report.yml@485ca54610aa1ffc663639c5d43c39452f6897cc # main 2026-07-07 (skip dispatch without VERISIMDB_PAT)
     secrets:
       VERISIMDB_PAT: ${{ secrets.VERISIMDB_PAT }}
