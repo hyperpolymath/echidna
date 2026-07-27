@@ -45,11 +45,7 @@ jobs:
 
       - name: Validate A2ML manifests
         if: steps.detect.outputs.count > 0
-        uses: hyperpolymath/a2ml-ecosystem/validate-action@aa4b836bd969df2bc58128cb8e3d20bbc88d5e79 # main
-        with:
-          path: '.'
-          strict: 'false'
-
+        run: bash .githooks/validate-a2ml.sh
       - name: Write summary
         run: |
           A2ML_COUNT="${{ steps.detect.outputs.count }}"
@@ -94,11 +90,7 @@ jobs:
 
       - name: Validate K9 contracts
         if: steps.detect.outputs.k9_count > 0
-        uses: hyperpolymath/k9-ecosystem/validate-action@89f3c2702f4f650a92aa7411502f38da06abd562 # main
-        with:
-          path: '.'
-          strict: 'false'
-
+        run: bash .githooks/validate-k9.sh
       - name: Write summary
         run: |
           K9_COUNT="${{ steps.detect.outputs.k9_count }}"
