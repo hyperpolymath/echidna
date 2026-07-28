@@ -1,0 +1,44 @@
+# SPDX-License-Identifier: MPL-2.0
+# SPDX-FileCopyrightText: 2026 Jonathan D.A. Jewell <j.d.a.jewell@open.ac.uk>
+#
+# TLS-terminating reverse proxy for the public ECHIDNA API.
+# Runs in the localhost/caddy-rl:2 image (see Containerfile.caddy);
+# the rate_limit directive is provided by mholt/caddy-ratelimit.
+
+{
+	email j.d.a.jewell@open.ac.uk
+	order rate_limit before reverse_proxy
+}
+
+api.nesy-prover.dev {
+	encode zstd gzip
+
+	# The API executes prover input; cap request size and per-client
+	# rate before anything reaches it.
+	request_body {
+		max_size 1MB
+	}
+	rate_limit {
+		zone api {
+			key {remote_host}
+			events 30
+			window 1m
+		}
+	}
+
+	header {
+		Strict-Transport-Security "max-age=31536000"
+		X-Content-Type-Options nosniff
+		X-Frame-Options DENY
+		Referrer-Policy no-referrer
+		-Server
+	}
+
+	# `echidna` resolves on the shared podman network (echidna.network);
+	# the API container publishes no host port.
+	reverse_proxy echidna:8081 {
+		transport http {
+			response_header_timeout 120s
+		}
+	}
+}
