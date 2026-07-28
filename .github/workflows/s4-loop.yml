@@ -15,6 +15,7 @@ jobs:
   s4-loop:
     name: S4 Loop Closure
     runs-on: ubuntu-latest
+    timeout-minutes: 10
     permissions:
       contents: read
     services:
