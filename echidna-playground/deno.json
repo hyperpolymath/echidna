@@ -4,8 +4,8 @@
   "tasks": {
     "build:res": "deno run -A --node-modules-dir=auto npm:rescript build",
     "clean:res": "deno run -A --node-modules-dir=auto npm:rescript clean",
-    "dev": "deno run --allow-net --allow-read server.ts",
-    "serve": "deno run --allow-net --allow-read server.ts",
+    "dev": "deno run --allow-net --allow-read jsr:@std/http@^1.0.0/file-server .",
+    "serve": "deno run --allow-net --allow-read jsr:@std/http@^1.0.0/file-server .",
     "res:build": "deno run -A --node-modules-dir=auto npm:rescript build",
     "res:clean": "deno run -A --node-modules-dir=auto npm:rescript clean",
     "res:watch": "deno run -A --node-modules-dir=auto npm:rescript build -w"

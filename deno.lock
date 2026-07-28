@@ -1,4 +1,11 @@
 {
-  "version": "4",
-  "remote": {}
+  "version": "5",
+  "specifiers": {
+    "jsr:@std/yaml@*": "1.1.2"
+  },
+  "jsr": {
+    "@std/yaml@1.1.2": {
+      "integrity": "de612653c036749ba2044165e316f52412b0f0698afffb7ee80b5331d6d2abae"
+    }
+  }
 }
