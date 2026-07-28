@@ -19,9 +19,7 @@ Let's Encrypt), orchestrated with podman systemd quadlets.
 
 * *Quadlets over podman-compose*: systemd-native restart-on-boot with no
   extra daemon, unit-level dependency ordering, and first-class
-  `AutoUpdate=registry` integration with `podman-auto-update.timer`
-  (which rolls back automatically when the updated container fails its
-  healthcheck). Requires podman >= 4.4.
+  `AutoUpdate=registry` integration with `podman-auto-update.timer`.
 * *Rootless*: the API executes user-supplied prover input; run both
   units as an unprivileged `deploy` user with linger.
 * *Caddy over svalinn*: the estate's svalinn/vordr stack is not yet
@@ -35,20 +33,41 @@ Let's Encrypt), orchestrated with podman systemd quadlets.
 
 == 0. Preflight (read-only, do first)
 
-  ssh <user>@<SERVER_IP> 'cat /etc/os-release; free -h; df -h /; nproc; ss -tlnp; podman --version'
+[source,console]
+----
+ssh <user>@<SERVER_IP> 'cat /etc/os-release; free -h; df -h /; nproc; ss -tlnp; podman --version'
+----
 
 Gates — stop and reassess if any fail:
 
 * Ports 80/443 unbound (`ss -tlnp` shows no listener). If something
   else owns them, this plan does not apply as-is.
-* >= 2 GB RAM free for the `:latest` image (Z3 + Lean). The `:full`
-  image (Isabelle/Agda/Julia) needs >= 4 GB and is not deployed here.
-* podman >= 4.4 for quadlets. Debian 12 ships 4.3.1 — either install a
-  newer podman or fall back to `podman generate systemd --new --files`
-  (same containers, generated units instead of quadlets).
+* At least 2 GB RAM. The API container is capped at 1500 MB
+  (`PodmanArgs=--memory=1500m`), deliberately below the host total so
+  Caddy and the OS keep headroom; raise both together if you want more.
+  The `:full` image (Isabelle/Agda/Julia) needs >= 4 GB and is not
+  deployed here.
+* *Quadlet keys are all understood by the installed podman.* Do not
+  trust a version number for this — measure it. Copy the three unit
+  files to the server and run the generator in dry-run mode:
++
+[source,console]
+----
+scp echidna.network echidna.container caddy.container <user>@<SERVER_IP>:/tmp/qcheck/
+ssh <user>@<SERVER_IP> 'QUADLET_UNIT_DIRS=/tmp/qcheck /usr/libexec/podman/quadlet -dryrun'
+----
++
+It must print generated `[Service]` sections for all three units with
+no warnings. These units were authored and dry-run verified against podman
+5.4; podman 5.x is recommended and 4.x is likely to reject at least
+one key (`HealthOnFailure=` in particular). If the dry-run complains,
+use the Debian-12 fallback in the appendix instead.
 * Image pullable anonymously:
 +
-  podman manifest inspect ghcr.io/hyperpolymath/echidna:latest
+[source,console]
+----
+podman manifest inspect ghcr.io/hyperpolymath/echidna:latest
+----
 +
 On 401: make the GHCR package public (GitHub → Packages → echidna →
 Package settings → visibility) or use a read-only PAT with
@@ -56,51 +75,70 @@ Package settings → visibility) or use a read-only PAT with
 
 == 1. Server preparation (as root)
 
-  apt update && apt upgrade -y
-  apt install -y podman unattended-upgrades
-  dpkg-reconfigure -f noninteractive unattended-upgrades
+[source,console]
+----
+apt update && apt upgrade -y
+apt install -y podman unattended-upgrades ufw
+dpkg-reconfigure -f noninteractive unattended-upgrades
 
-  # Firewall: SSH + HTTP(S) only
-  apt install -y ufw
-  ufw default deny incoming
-  ufw allow 22/tcp && ufw allow 80/tcp && ufw allow 443/tcp
-  ufw enable
+# Firewall: SSH + HTTP(S) only
+ufw default deny incoming
+ufw allow 22/tcp && ufw allow 80/tcp && ufw allow 443/tcp
+ufw enable
 
-  # Unprivileged deploy user with lingering services
-  useradd -m -s /bin/bash deploy
-  loginctl enable-linger deploy
+# Unprivileged deploy user with lingering services
+useradd -m -s /bin/bash deploy
+loginctl enable-linger deploy
 
-  # Let rootless podman bind 80/443
-  echo 'net.ipv4.ip_unprivileged_port_start=80' > /etc/sysctl.d/50-unprivileged-ports.conf
-  sysctl --system
+# Let rootless podman bind 80/443
+echo 'net.ipv4.ip_unprivileged_port_start=80' > /etc/sysctl.d/50-unprivileged-ports.conf
+sysctl --system
 
-== 2. Install the deploy unit (as deploy)
+# Destination for the Caddyfile and the Caddy build context
+mkdir -p /opt/echidna && chown deploy:deploy /opt/echidna
+----
 
-From your workstation, from this directory:
+== 2. Install the deploy unit
 
-  scp Caddyfile Containerfile.caddy deploy@<SERVER_IP>:/opt/echidna/
-  scp echidna.network echidna.container caddy.container \
-      deploy@<SERVER_IP>:~/.config/containers/systemd/
+Create the quadlet directory *before* copying anything into it — as
+the deploy user on the server:
 
-(Create the target dirs first: `sudo mkdir -p /opt/echidna && sudo chown deploy /opt/echidna`
-and `mkdir -p ~/.config/containers/systemd` as deploy.)
+[source,console]
+----
+mkdir -p ~/.config/containers/systemd
+----
 
-On the server, as deploy:
+Then, from your workstation in this directory:
 
-  cd /opt/echidna
-  podman build -f Containerfile.caddy -t localhost/caddy-rl:2 .
-  podman pull ghcr.io/hyperpolymath/echidna:latest
-  podman image inspect --format '{{.Digest}}' ghcr.io/hyperpolymath/echidna:latest
-  # ^ record this digest in env.example / your notes for rollback
+[source,console]
+----
+scp Caddyfile Containerfile.caddy deploy@<SERVER_IP>:/opt/echidna/
+scp echidna.network echidna.container caddy.container \
+    deploy@<SERVER_IP>:~/.config/containers/systemd/
+----
 
-  systemctl --user daemon-reload
-  systemctl --user list-unit-files | grep -E 'echidna|caddy'
+Back on the server, as deploy:
+
+[source,console]
+----
+cd /opt/echidna
+podman build -f Containerfile.caddy -t localhost/caddy-rl:2 .
+podman pull ghcr.io/hyperpolymath/echidna:latest
+podman image inspect --format '{{.Digest}}' ghcr.io/hyperpolymath/echidna:latest
+# ^ record this digest in env.example / your notes for rollback
+
+systemctl --user daemon-reload
+systemctl --user list-unit-files | grep -E 'echidna|caddy'
+----
 
 == 3. DNS (before starting Caddy)
 
 Create in the Cloudflare zone for nesy-prover.dev:
 
-  A  api  <SERVER_IP>  proxied=false (grey cloud), TTL 300
+[source]
+----
+A  api  <SERVER_IP>  proxied=false (grey cloud), TTL 300
+----
 
 Grey cloud is required at launch so Caddy's Let's Encrypt HTTP-01
 challenge reaches the server directly. (Optional later hardening:
@@ -111,71 +149,106 @@ server IP before the first Caddy start — ACME then succeeds first try.
 
 == 4. Bring-up and verification
 
-  systemctl --user start echidna caddy
-  podman ps                                   # both Up, echidna (healthy)
-  journalctl --user -u caddy -f               # watch certificate issuance
+[source,console]
+----
+systemctl --user start echidna caddy
+podman ps                                   # both Up, echidna (healthy)
+journalctl --user -u caddy -f               # watch certificate issuance
+----
 
 End-to-end, from anywhere:
 
-  curl -s https://api.nesy-prover.dev/api/health        # {"status":"ok",...}
-  curl -s https://api.nesy-prover.dev/api/provers | head
-  curl -s -X POST https://api.nesy-prover.dev/api/verify \
-    -H 'content-type: application/json' \
-    -d '{"prover":"Z3","content":"(assert (forall ((x Int)) (= (+ x 0) x)))(check-sat)"}'
+[source,console]
+----
+curl -s https://api.nesy-prover.dev/api/health        # {"status":"ok",...}
+curl -s https://api.nesy-prover.dev/api/provers | head
+curl -s -X POST https://api.nesy-prover.dev/api/verify \
+  -H 'content-type: application/json' \
+  -d '{"prover":"Z3","content":"(assert (forall ((x Int)) (= (+ x 0) x)))(check-sat)"}'
+----
 
 Controls:
 
-  # Rate limit: burst 40 requests, expect HTTP 429 after ~30
-  for i in $(seq 1 40); do curl -s -o /dev/null -w '%{http_code} ' \
-    https://api.nesy-prover.dev/api/health; done; echo
-  # Headers: HSTS present, Server header absent
-  curl -sI https://api.nesy-prover.dev/api/health
-  # Isolation: direct API port must be unreachable from outside
-  curl -m 5 http://<SERVER_IP>:8081/api/health || echo "unreachable (correct)"
+[source,console]
+----
+# Rate limit: burst 40 requests, expect HTTP 429 after ~30
+for i in $(seq 1 40); do curl -s -o /dev/null -w '%{http_code} ' \
+  https://api.nesy-prover.dev/api/health; done; echo
 
-Reboot survival (validates linger + [Install] + Restart in one shot):
+# Headers: HSTS present, Server header absent
+curl -sI https://api.nesy-prover.dev/api/health
 
-  sudo reboot
-  # after it returns:
-  podman ps && curl -s https://api.nesy-prover.dev/api/health
+# Isolation: the API port must NOT be reachable directly. This probe is
+# deliberately plaintext against the raw port — it is asserting that
+# nothing answers there, and must fail.
+curl -m 5 http://<SERVER_IP>:8081/api/health && echo "REACHABLE - FIX THIS" || echo "unreachable (correct)"
+----
+
+Reboot survival (validates linger + `[Install]` + Restart in one shot):
+
+[source,console]
+----
+sudo reboot
+# after it returns:
+podman ps && curl -s https://api.nesy-prover.dev/api/health
+----
 
 == 5. Updates and rollback
 
-Enable unattended rollout of new releases (ghcr-publish.yml pushes
-`:latest` on every GitHub release):
+`ghcr-publish.yml` pushes a new `:latest` on every GitHub release.
+Enable unattended rollout:
 
-  systemctl --user enable --now podman-auto-update.timer
-  podman auto-update --dry-run     # see what would change
-  podman auto-update               # roll out immediately
+[source,console]
+----
+systemctl --user enable --now podman-auto-update.timer
+podman auto-update --dry-run     # see what would change
+podman auto-update               # roll out immediately
+----
 
-`podman-auto-update` restarts the unit on a new image and rolls back
-automatically if the fresh container fails its healthcheck.
+How the safety net actually works: `podman auto-update` pulls the new
+image and restarts the unit. `HealthOnFailure=kill` in
+`echidna.container` means a container that goes unhealthy is killed,
+which fails the systemd unit — and auto-update rolls the unit back to
+the image it was running before when the restarted unit does not come
+up healthy. Without that key an unhealthy-but-running container would
+satisfy systemd and no rollback would occur, so do not remove it.
 
-Manual rollback to a recorded digest:
+Manual rollback to a recorded digest. *Stop the timer first* —
+otherwise its next run pulls registry `:latest` again and silently
+undoes the rollback:
 
-  podman pull ghcr.io/hyperpolymath/echidna@<DIGEST>
-  podman tag  ghcr.io/hyperpolymath/echidna@<DIGEST> ghcr.io/hyperpolymath/echidna:latest
-  systemctl --user restart echidna
+[source,console]
+----
+systemctl --user disable --now podman-auto-update.timer
+podman pull ghcr.io/hyperpolymath/echidna@<DIGEST>
+podman tag  ghcr.io/hyperpolymath/echidna@<DIGEST> ghcr.io/hyperpolymath/echidna:latest
+systemctl --user restart echidna
+----
 
-Pinned mode (opt out of auto-update): set `Image=` in
-`echidna.container` to a `:vX.Y.Z` tag or digest, remove
-`AutoUpdate=registry`, and bump via PR.
+Re-enable the timer only once a fixed `:latest` has been published,
+or switch to pinned mode permanently: set `Image=` in
+`echidna.container` to a `:vX.Y.Z` tag or digest, drop
+`AutoUpdate=registry`, and bump it via PR.
 
-== Appendix: Debian 12 fallback (podman 4.3, no quadlets)
+== Appendix: fallback for podman without quadlet support
 
-  podman network create echidna-net
-  podman create --name echidna --network echidna-net \
-    --memory=1500m --pids-limit=512 --tmpfs /tmp:rw,size=256m \
-    --security-opt no-new-privileges \
-    --health-cmd '/app/bin/echidna --version' --health-interval 30s \
-    ghcr.io/hyperpolymath/echidna:latest server --port 8081 --host 0.0.0.0 --cors
-  podman create --name caddy --network echidna-net \
-    -p 80:80 -p 443:443 \
-    -v /opt/echidna/Caddyfile:/etc/caddy/Caddyfile:ro \
-    -v caddy-data:/data -v caddy-config:/config \
-    localhost/caddy-rl:2
-  podman generate systemd --new --files --name echidna
-  podman generate systemd --new --files --name caddy
-  mkdir -p ~/.config/systemd/user && mv container-*.service ~/.config/systemd/user/
-  systemctl --user daemon-reload
-  systemctl --user enable --now container-echidna container-caddy
+[source,console]
+----
+podman network create echidna-net
+podman create --name echidna --network echidna-net \
+  --memory=1500m --pids-limit=512 --tmpfs /tmp:rw,size=256m \
+  --security-opt no-new-privileges \
+  --health-cmd '/app/bin/echidna --version' --health-interval 30s \
+  --health-on-failure kill \
+  ghcr.io/hyperpolymath/echidna:latest server --port 8081 --host 0.0.0.0 --cors
+podman create --name caddy --network echidna-net \
+  -p 80:80 -p 443:443 \
+  -v /opt/echidna/Caddyfile:/etc/caddy/Caddyfile:ro \
+  -v caddy-data:/data -v caddy-config:/config \
+  localhost/caddy-rl:2
+podman generate systemd --new --files --name echidna
+podman generate systemd --new --files --name caddy
+mkdir -p ~/.config/systemd/user && mv container-*.service ~/.config/systemd/user/
+systemctl --user daemon-reload
+systemctl --user enable --now container-echidna container-caddy
+----

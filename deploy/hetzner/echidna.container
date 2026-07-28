@@ -25,6 +25,10 @@ Exec=server --port 8081 --host 0.0.0.0 --cors
 Environment=RUST_LOG=info
 HealthCmd=/app/bin/echidna --version
 HealthInterval=30s
+# kill (not stop) is what integrates with systemd: an unhealthy
+# container fails the unit, which is what makes Restart=always and
+# podman-auto-update's rollback actually trigger.
+HealthOnFailure=kill
 Tmpfs=/tmp:rw,size=256m
 NoNewPrivileges=true
 PodmanArgs=--memory=1500m --pids-limit=512
