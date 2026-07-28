@@ -1708,5 +1708,313 @@
     "rule_module": "workflow_audit",
     "type": "unsafe_curl_payload",
     "file": "hypatia-scan.yml"
+  },
+  {
+    "severity": "medium",
+    "rule_module": "migration_rules",
+    "type": "deprecated_api",
+    "file": "src/provers/runners/Daemon.res",
+    "note": "ReScript Belt/Js.* migration pending; hypatia now emits these at medium (baseline had high)"
+  },
+  {
+    "severity": "medium",
+    "rule_module": "migration_rules",
+    "type": "deprecated_api",
+    "file": "src/provers/runners/Cli.res",
+    "note": "ReScript Belt/Js.* migration pending"
+  },
+  {
+    "severity": "medium",
+    "rule_module": "migration_rules",
+    "type": "deprecated_api",
+    "file": "src/provers/clients/Wolfram.res",
+    "note": "ReScript Belt/Js.* migration pending"
+  },
+  {
+    "severity": "medium",
+    "rule_module": "migration_rules",
+    "type": "deprecated_api",
+    "file": "src/provers/clients/UnifiedTest.res",
+    "note": "ReScript Belt/Js.* migration pending"
+  },
+  {
+    "severity": "medium",
+    "rule_module": "migration_rules",
+    "type": "deprecated_api",
+    "file": "src/provers/clients/SystemOnTptp.res",
+    "note": "ReScript Belt/Js.* migration pending"
+  },
+  {
+    "severity": "medium",
+    "rule_module": "migration_rules",
+    "type": "deprecated_api",
+    "file": "src/provers/clients/LeanTool.res",
+    "note": "ReScript Belt/Js.* migration pending"
+  },
+  {
+    "severity": "medium",
+    "rule_module": "migration_rules",
+    "type": "deprecated_api",
+    "file": "src/provers/clients/Z3Wasm.res",
+    "note": "ReScript Belt/Js.* migration pending"
+  },
+  {
+    "severity": "medium",
+    "rule_module": "migration_rules",
+    "type": "deprecated_api",
+    "file": "src/provers/clients/Metamath.res",
+    "note": "ReScript Belt/Js.* migration pending"
+  },
+  {
+    "severity": "medium",
+    "rule_module": "migration_rules",
+    "type": "deprecated_api",
+    "file": "src/provers/clients/Unified.res",
+    "note": "ReScript Belt/Js.* migration pending"
+  },
+  {
+    "severity": "medium",
+    "rule_module": "migration_rules",
+    "type": "deprecated_api",
+    "file": "src/provers/types/Prover.res",
+    "note": "ReScript Belt/Js.* migration pending"
+  },
+  {
+    "severity": "medium",
+    "rule_module": "migration_rules",
+    "type": "deprecated_api",
+    "file": "src/provers/types/ProverTest.res",
+    "note": "ReScript Belt/Js.* migration pending"
+  },
+  {
+    "severity": "medium",
+    "rule_module": "migration_rules",
+    "type": "deprecated_api",
+    "file": "src/provers/utils/Http.res",
+    "note": "ReScript Belt/Js.* migration pending"
+  },
+  {
+    "severity": "medium",
+    "rule_module": "migration_rules",
+    "type": "deprecated_api",
+    "file": "src/rescript/src/components/TheoremSearch.res",
+    "note": "ReScript Belt/Js.* migration pending"
+  },
+  {
+    "severity": "medium",
+    "rule_module": "migration_rules",
+    "type": "deprecated_api",
+    "file": "src/rescript/src/components/ProofTree.res",
+    "note": "ReScript Belt/Js.* migration pending"
+  },
+  {
+    "severity": "medium",
+    "rule_module": "migration_rules",
+    "type": "deprecated_api",
+    "file": "src/rescript/src/api/Client.res",
+    "note": "ReScript Belt/Js.* migration pending"
+  },
+  {
+    "severity": "medium",
+    "rule_module": "migration_rules",
+    "type": "deprecated_api",
+    "file": "src/rescript/src/Main.res",
+    "note": "ReScript Belt/Js.* migration pending"
+  },
+  {
+    "severity": "medium",
+    "rule_module": "migration_rules",
+    "type": "deprecated_api",
+    "file": "echidna-playground/src/JsCoq.res",
+    "note": "ReScript Belt/Js.* migration pending"
+  },
+  {
+    "severity": "medium",
+    "rule_module": "migration_rules",
+    "type": "deprecated_api",
+    "file": "echidna-playground/src/Deno.res",
+    "note": "ReScript Belt/Js.* migration pending"
+  },
+  {
+    "severity": "medium",
+    "rule_module": "migration_rules",
+    "type": "deprecated_api",
+    "file": "echidna-playground/src/Dom.res",
+    "note": "ReScript Belt/Js.* migration pending"
+  },
+  {
+    "severity": "medium",
+    "rule_module": "code_safety",
+    "type": "expect_in_hot_path",
+    "file": "src/rust/learning/design_search.rs",
+    "note": "expect() triage tracked with existing unwrap_without_check debt"
+  },
+  {
+    "severity": "medium",
+    "rule_module": "code_safety",
+    "type": "expect_in_hot_path",
+    "file": "src/rust/provers/z3.rs",
+    "note": "expect() triage tracked with existing unwrap_without_check debt"
+  },
+  {
+    "severity": "medium",
+    "rule_module": "code_safety",
+    "type": "expect_in_hot_path",
+    "file": "src/rust/coprocessor/julia_bridge.rs",
+    "note": "expect() triage tracked with existing unwrap_without_check debt"
+  },
+  {
+    "severity": "medium",
+    "rule_module": "code_safety",
+    "type": "expect_in_hot_path",
+    "file": "src/rust/coprocessor/math.rs",
+    "note": "expect() triage tracked with existing unwrap_without_check debt"
+  },
+  {
+    "severity": "medium",
+    "rule_module": "code_safety",
+    "type": "expect_in_hot_path",
+    "file": "src/rust/gnn/client.rs",
+    "note": "expect() triage tracked with existing unwrap_without_check debt"
+  },
+  {
+    "severity": "medium",
+    "rule_module": "code_safety",
+    "type": "expect_in_hot_path",
+    "file": "src/rust/llm.rs",
+    "note": "expect() triage tracked with existing unwrap_without_check debt"
+  },
+  {
+    "severity": "medium",
+    "rule_module": "code_safety",
+    "type": "expect_in_hot_path",
+    "file": "src/rust/neural.rs",
+    "note": "expect() triage tracked with existing unwrap_without_check debt"
+  },
+  {
+    "severity": "medium",
+    "rule_module": "code_safety",
+    "type": "expect_in_hot_path",
+    "file": "src/rust/corpus/octad.rs",
+    "note": "expect() triage tracked with existing unwrap_without_check debt"
+  },
+  {
+    "severity": "medium",
+    "rule_module": "code_safety",
+    "type": "expect_in_hot_path",
+    "file": "src/interfaces/graphql/resolvers.rs",
+    "note": "expect() triage tracked with existing unwrap_without_check debt"
+  },
+  {
+    "severity": "medium",
+    "rule_module": "code_safety",
+    "type": "unsafe_block",
+    "file": "src/rust/ffi/mod.rs",
+    "note": "FFI boundary; SAFETY-comment sweep pending"
+  },
+  {
+    "severity": "medium",
+    "rule_module": "code_safety",
+    "type": "unsafe_block",
+    "file": "src/rust/ffi/spark_axiom.rs",
+    "note": "FFI boundary; SAFETY-comment sweep pending"
+  },
+  {
+    "severity": "medium",
+    "rule_module": "code_safety",
+    "type": "unsafe_block",
+    "file": "src/rust/coprocessor/flint.rs",
+    "note": "FFI boundary; SAFETY-comment sweep pending"
+  },
+  {
+    "severity": "medium",
+    "rule_module": "code_safety",
+    "type": "unsafe_block",
+    "file": "src/rust/proof_search.rs",
+    "note": "FFI boundary; SAFETY-comment sweep pending"
+  },
+  {
+    "severity": "medium",
+    "rule_module": "code_safety",
+    "type": "unsafe_block",
+    "file": "src/interfaces/grpc/ffi_wrapper.rs",
+    "note": "FFI boundary; SAFETY-comment sweep pending"
+  },
+  {
+    "severity": "medium",
+    "rule_module": "code_safety",
+    "type": "unsafe_block",
+    "file": "src/interfaces/rest/ffi_wrapper.rs",
+    "note": "FFI boundary; SAFETY-comment sweep pending"
+  },
+  {
+    "severity": "medium",
+    "rule_module": "code_safety",
+    "type": "unsafe_block",
+    "file": "src/interfaces/graphql/ffi_wrapper.rs",
+    "note": "FFI boundary; SAFETY-comment sweep pending"
+  },
+  {
+    "severity": "medium",
+    "rule_module": "code_safety",
+    "type": "as_ptr",
+    "file": "src/rust/ffi/mod.rs",
+    "note": "FFI boundary; pointer-lifetime audit pending"
+  },
+  {
+    "severity": "medium",
+    "rule_module": "code_safety",
+    "type": "as_ptr",
+    "file": "src/rust/ffi/spark_axiom.rs",
+    "note": "FFI boundary; pointer-lifetime audit pending"
+  },
+  {
+    "severity": "medium",
+    "rule_module": "code_safety",
+    "type": "as_ptr",
+    "file": "src/rust/coprocessor/flint.rs",
+    "note": "FFI boundary; pointer-lifetime audit pending"
+  },
+  {
+    "severity": "medium",
+    "rule_module": "code_safety",
+    "type": "as_ptr",
+    "file": "src/rust/proof_search.rs",
+    "note": "FFI boundary; pointer-lifetime audit pending"
+  },
+  {
+    "severity": "medium",
+    "rule_module": "code_safety",
+    "type": "as_ptr",
+    "file": "src/interfaces/grpc/ffi_wrapper.rs",
+    "note": "FFI boundary; pointer-lifetime audit pending"
+  },
+  {
+    "severity": "medium",
+    "rule_module": "code_safety",
+    "type": "as_ptr",
+    "file": "src/interfaces/rest/ffi_wrapper.rs",
+    "note": "FFI boundary; pointer-lifetime audit pending"
+  },
+  {
+    "severity": "medium",
+    "rule_module": "code_safety",
+    "type": "as_ptr",
+    "file": "src/interfaces/graphql/ffi_wrapper.rs",
+    "note": "FFI boundary; pointer-lifetime audit pending"
+  },
+  {
+    "severity": "medium",
+    "rule_module": "structural_drift",
+    "type": "SD022",
+    "file": ".machine_readable/descriptiles/STATE.a2ml",
+    "note": "Paths cited are in EXTERNAL corpora repos (mirror-isabelle, viperproject/silver, vcl-ut), not this tree; SD022 cannot see that"
+  },
+  {
+    "severity": "medium",
+    "rule_module": "structural_drift",
+    "type": "SD022",
+    "file": "docs/SSG_ROADMAP.adoc",
+    "note": "Roadmap doc: paths are planned future modules, not renames"
   }
 ]
