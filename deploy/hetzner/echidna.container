@@ -1,0 +1,37 @@
+# SPDX-License-Identifier: MPL-2.0
+# SPDX-FileCopyrightText: 2026 Jonathan D.A. Jewell <j.d.a.jewell@open.ac.uk>
+#
+# Quadlet unit for the ECHIDNA API server.
+#
+# The API has no authentication and spawns prover binaries on user
+# input, so it is caged: no published host port (only Caddy reaches it
+# over echidna-net), memory/pids limits, tmpfs /tmp, no privilege
+# escalation. Healthcheck uses the binary — the image ships no curl.
+#
+# Image tag :latest is intentional together with AutoUpdate=registry +
+# podman-auto-update.timer: new releases roll out automatically and a
+# failing healthcheck rolls back. For pinned mode, set Image= to a
+# :vX.Y.Z tag or digest and bump via PR (see README.adoc).
+
+[Unit]
+Description=ECHIDNA theorem-prover API
+
+[Container]
+Image=ghcr.io/hyperpolymath/echidna:latest
+AutoUpdate=registry
+ContainerName=echidna
+Network=echidna.network
+Exec=server --port 8081 --host 0.0.0.0 --cors
+Environment=RUST_LOG=info
+HealthCmd=/app/bin/echidna --version
+HealthInterval=30s
+Tmpfs=/tmp:rw,size=256m
+NoNewPrivileges=true
+PodmanArgs=--memory=1500m --pids-limit=512
+
+[Service]
+Restart=always
+RestartSec=5
+
+[Install]
+WantedBy=default.target
