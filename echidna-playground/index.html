@@ -142,8 +142,6 @@ Qed.</textarea>
     </div>
 
     <script type="module">
-      import { JsCoq } from 'https://cdn.jsdelivr.net/npm/jscoq@0.17.1/jscoq.js';
-
       const jscoq_ids = ['ex1', 'ex2', 'ex3'];
       const jscoq_opts = {
         prelude: true,
@@ -153,10 +151,17 @@ Qed.</textarea>
         all_pkgs: ['coq']
       };
 
-      JsCoq.start(jscoq_ids, jscoq_opts).catch((err) => {
-        console.error('jsCoq failed to start:', err);
+      // Dynamic import, not a static one: a static import that fails to
+      // fetch aborts module instantiation, so nothing below it — including
+      // the error handler — would ever run, and the banner would stay
+      // hidden in exactly the CDN-unreachable case it exists for.
+      try {
+        const { JsCoq } = await import('https://cdn.jsdelivr.net/npm/jscoq@0.17.1/jscoq.js');
+        await JsCoq.start(jscoq_ids, jscoq_opts);
+      } catch (err) {
+        console.error('jsCoq failed to load or start:', err);
         document.getElementById('load-error').hidden = false;
-      });
+      }
     </script>
   </body>
 </html>

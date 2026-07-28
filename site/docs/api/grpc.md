@@ -1,101 +1,128 @@
 ---
-title: gRPC API Reference
-date: 2026-02-09
+title: gRPC Interface Reference
+date: 2026-07-28
 template: default
 ---
 
-# gRPC API Reference
+# gRPC Interface Reference
 
-Endpoint: `localhost:50051`
+The `echidna-grpc` binary is an optional self-hosted service listening
+on `localhost:50051`. The authoritative schema is
+`src/interfaces/grpc/proto/echidna.proto`; everything below is taken
+from it.
 
-Proto file: `src/interfaces/grpc/proto/echidna.proto`
-
-## Service Definition
+## Service definition
 
 ```protobuf
 service ProofService {
-    rpc SubmitProof (SubmitProofRequest) returns (SubmitProofResponse);
-    rpc GetProofStatus (GetProofStatusRequest) returns (GetProofStatusResponse);
+    rpc SubmitProof (SubmitProofRequest) returns (ProofResponse);
+    rpc GetProofStatus (GetProofStatusRequest) returns (ProofResponse);
     rpc StreamProof (StreamProofRequest) returns (stream ProofUpdate);
-    rpc ApplyTactic (ApplyTacticRequest) returns (ApplyTacticResponse);
+    rpc ApplyTactic (ApplyTacticRequest) returns (TacticResponse);
     rpc CancelProof (CancelProofRequest) returns (CancelProofResponse);
     rpc ListProvers (ListProversRequest) returns (ListProversResponse);
     rpc SuggestTactics (SuggestTacticsRequest) returns (SuggestTacticsResponse);
 }
 ```
 
-## RPC Methods
+## Methods
 
 ### SubmitProof
 
-Submit a new proof for verification.
+Submit a goal for verification. `prover` is the `ProverKind` enum and
+the timeout is expressed in seconds.
 
-**Request:**
 ```protobuf
 message SubmitProofRequest {
-    string prover_kind = 1;
-    string goal = 2;
-    int64 timeout_ms = 3;
+    string goal = 1;
+    ProverKind prover = 2;
+    optional uint32 timeout_seconds = 3;
+}
+
+message ProofResponse {
+    string proof_id = 1;
+    ProverKind prover = 2;
+    string goal = 3;
+    ProofStatus status = 4;
+    repeated string proof_script = 5;
+    optional double time_elapsed = 6;
+    optional string error_message = 7;
 }
 ```
 
-**Response:**
-```protobuf
-message SubmitProofResponse {
-    string session_id = 1;
-    ProofStatus status = 2;
-    repeated string goals = 3;
-}
-```
+`GetProofStatus` takes `{ proof_id }` and returns the same
+`ProofResponse`.
 
 ### StreamProof
 
-Stream proof progress updates in real time.
+Streams progress for a proof that has already been submitted, so the
+request is just its identifier:
 
-**Request:**
 ```protobuf
 message StreamProofRequest {
-    string prover_kind = 1;
-    string goal = 2;
+    string proof_id = 1;
 }
-```
 
-**Response (stream):**
-```protobuf
 message ProofUpdate {
-    string step = 1;
+    string proof_id = 1;
     ProofStatus status = 2;
-    repeated string remaining_goals = 3;
-    float progress = 4;
+    string message = 3;
+    optional double progress = 4;
 }
 ```
 
 ### ApplyTactic
 
-Apply a tactic to an active proof session.
+Note the field names: `tactic_name` and a repeated `tactic_args`.
+
+```protobuf
+message ApplyTacticRequest {
+    string proof_id = 1;
+    string tactic_name = 2;
+    repeated string tactic_args = 3;
+}
+
+message TacticResponse {
+    bool success = 1;
+    ProofResponse proof_state = 2;
+}
+```
 
 ### CancelProof
 
-Cancel an active proof session.
+Takes `{ proof_id }`, returns `{ success }`.
 
 ### ListProvers
 
-List the available prover backends with tier and complexity.
+Takes an empty request and returns `ProverInfo` entries carrying kind,
+version, tier, complexity, and availability.
 
 ### SuggestTactics
 
-Get ML-suggested tactics for the current proof state.
+Keyed by proof, not by goal text:
 
-## Connection
+```protobuf
+message SuggestTacticsRequest {
+    string proof_id = 1;
+    optional uint32 limit = 2;
+}
+
+message Tactic {
+    string name = 1;
+    repeated string args = 2;
+    optional string description = 3;
+    optional float confidence = 4;
+}
+```
+
+## Connecting
 
 ```bash
-# Using grpcurl
 grpcurl -plaintext localhost:50051 echidna.ProofService/ListProvers
 
-# Submit a proof
 grpcurl -plaintext -d '{
-  "prover_kind": "coq",
-  "goal": "forall n, n + 0 = n"
+  "goal": "forall n, n + 0 = n",
+  "prover": "COQ"
 }' localhost:50051 echidna.ProofService/SubmitProof
 ```
 

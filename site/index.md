@@ -23,9 +23,10 @@ statistical confidence scoring.
 ## Explore
 
 - [Platform documentation](/docs/index.html) — architecture, features, and API quick start
-- [REST API reference](/docs/api/rest.html)
-- [GraphQL API reference](/docs/api/graphql.html)
-- [gRPC API reference](/docs/api/grpc.html)
+- [Core server API](/docs/api/core.html) — the API served at api.nesy-prover.dev
+- [REST interface](/docs/api/rest.html)
+- [GraphQL interface](/docs/api/graphql.html)
+- [gRPC interface](/docs/api/grpc.html)
 - [Coq playground](/playground/) — prove theorems in your browser with jsCoq
 
 ## Live API

@@ -1,148 +1,106 @@
 ---
-title: REST API Reference
-date: 2026-02-09
+title: REST Interface Reference
+date: 2026-07-28
 template: default
 ---
 
-# REST API Reference
+# REST Interface Reference
 
-Base URL: `https://localhost:8000/api/v1`
+The `echidna-rest` binary is an optional self-hosted service that
+exposes an OpenAPI-documented `/api/v1` surface, separate from the
+[core server API](/docs/api/core.html). It binds `127.0.0.1:8000` over
+plain HTTP — put it behind a TLS-terminating proxy before exposing it.
+
+Documented from `src/interfaces/rest/{main,handlers,models}.rs`.
 
 ## Endpoints
 
-### Health Check
+### Health check
 
 ```
 GET /health
 ```
 
-Returns server health status.
+Note that health sits at the server root, not under `/api/v1`.
 
 ### Provers
 
-#### List All Provers
-
 ```
 GET /api/v1/provers
+GET /api/v1/provers/{kind}
 ```
 
-Returns the supported prover backends with tier and complexity information.
+Each entry carries the prover kind, version string, tier, complexity,
+and whether the backend binary is available on this host:
 
-#### Get Prover Details
-
+```json
+{ "kind": "Coq", "version": "8.19", "tier": 1, "complexity": 3, "available": true }
 ```
-GET /api/v1/provers/:kind
-```
 
-Returns details for a specific prover backend.
-
-**Path Parameters:**
-- `kind` — Prover identifier (e.g., `coq`, `lean`, `z3`, `isabelle`)
+`{kind}` is a `ProverKind` variant name, for example `Coq`, `Lean`, `Z3`.
 
 ### Proofs
 
-#### Submit a Proof
-
 ```
-POST /api/v1/proofs
+POST   /api/v1/proofs
+GET    /api/v1/proofs
+GET    /api/v1/proofs/{id}
+DELETE /api/v1/proofs/{id}
 ```
 
-**Request Body:**
+Submit request — the timeout field is `timeout_seconds` and is optional:
+
 ```json
 {
-  "prover": "coq",
   "goal": "forall n : nat, n + 0 = n",
-  "timeout_ms": 30000
+  "prover": "Coq",
+  "timeout_seconds": 30
 }
 ```
 
-**Response:**
+Response:
+
 ```json
 {
   "id": "proof-uuid",
-  "status": "verified",
-  "prover": "coq",
-  "goals_remaining": 0
+  "prover": "Coq",
+  "goal": "forall n : nat, n + 0 = n",
+  "status": "Verified",
+  "proof_script": ["induction n", "reflexivity"],
+  "time_elapsed": 0.42
 }
 ```
 
-#### List Active Proofs
-
-```
-GET /api/v1/proofs
-```
-
-Returns all active proof sessions.
-
-#### Get Proof Status
-
-```
-GET /api/v1/proofs/:id
-```
-
-#### Cancel a Proof
-
-```
-DELETE /api/v1/proofs/:id
-```
+`error_message` is present only on failure.
 
 ### Tactics
 
-#### Apply a Tactic
-
 ```
-POST /api/v1/proofs/:id/tactics
+POST /api/v1/proofs/{id}/tactics
 ```
 
-**Request Body:**
+The request is a tactic name plus its arguments; `args` is required and
+may be an empty array:
+
 ```json
-{
-  "tactic": "induction n"
-}
+{ "name": "induction", "args": ["n"] }
 ```
 
-#### Suggest Tactics
+The response wraps the updated proof state:
+
+```json
+{ "success": true, "proof_state": { "id": "proof-uuid", "status": "InProgress" } }
+```
+
+### Exchange and consultation
 
 ```
-GET /api/v1/proofs/:id/tactics/suggest
+GET  /api/v1/proofs/{id}/export
+POST /api/v1/exchange/import
+POST /api/v1/consult
 ```
 
-Returns ML-suggested tactics for the current proof state.
-Uses Julia ML service (port 8090) with fallback to prover built-in suggestions.
-
-## Prover Kinds
-
-| Kind | Tier | Category |
-|------|------|----------|
-| agda | core | Interactive Proof Assistant |
-| coq | core | Interactive Proof Assistant |
-| lean | core | Interactive Proof Assistant |
-| isabelle | core | Interactive Proof Assistant |
-| idris2 | core | Interactive Proof Assistant |
-| fstar | core | Interactive Proof Assistant |
-| z3 | core | SMT Solver |
-| cvc5 | core | SMT Solver |
-| alt_ergo | core | SMT Solver |
-| dafny | core | Auto-Active Verifier |
-| why3 | core | Auto-Active Verifier |
-| metamath | core | Specialised |
-| hol_light | core | Specialised |
-| mizar | core | Specialised |
-| hol4 | core | Specialised |
-| pvs | core | Specialised |
-| acl2 | core | Specialised |
-| tlaps | core | Specialised |
-| twelf | core | Specialised |
-| nuprl | core | Specialised |
-| minlog | core | Specialised |
-| imandra | core | Specialised |
-| vampire | core | First-Order ATP |
-| eprover | core | First-Order ATP |
-| spass | core | First-Order ATP |
-| glpk | core | Constraint Solver |
-| scip | core | Constraint Solver |
-| minizinc | core | Constraint Solver |
-| chuffed | core | Constraint Solver |
-| or_tools | core | Constraint Solver |
+`export` and `import` move proofs across provers via the exchange
+layer; `consult` runs a portfolio consultation.
 
 [Documentation index](/docs/index.html)

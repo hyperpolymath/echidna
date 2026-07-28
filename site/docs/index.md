@@ -30,36 +30,36 @@ curl https://api.nesy-prover.dev/api/health
 curl https://api.nesy-prover.dev/api/provers
 ```
 
-Self-hosted deployments additionally offer three dedicated interface
-services:
-
-### REST API (Port 8000)
-
-List all provers:
+Verifying an SMT script takes a prover name and its source:
 
 ```bash
-curl https://localhost:8000/api/v1/provers
-```
-
-Submit a proof:
-
-```bash
-curl -X POST https://localhost:8000/api/v1/proofs \
+curl -X POST https://api.nesy-prover.dev/api/verify \
   -H "Content-Type: application/json" \
-  -d '{"prover": "coq", "goal": "forall n, n + 0 = n"}'
+  -d '{"prover": "Z3", "content": "(assert (forall ((x Int)) (= (+ x 0) x)))(check-sat)"}'
 ```
 
-See the [REST API reference](/docs/api/rest.html).
+See the [core server API reference](/docs/api/core.html) for every
+route. A self-hosted instance serves the same routes over plain HTTP on
+the port passed to `--port` (default 8081) — front it with a TLS proxy
+before exposing it.
 
-### GraphQL (Port 8081)
+Three further interface services ship as separate optional binaries,
+each binding loopback over plain HTTP:
 
-Query provers and submit proofs via the GraphQL playground. See the
-[GraphQL API reference](/docs/api/graphql.html).
+### REST interface (port 8000)
 
-### gRPC (Port 50051)
+An OpenAPI-documented `/api/v1` surface — see the
+[REST interface reference](/docs/api/rest.html).
 
-See the [gRPC API reference](/docs/api/grpc.html) and the proto definition
-at `src/interfaces/grpc/proto/echidna.proto`.
+### GraphQL interface (port 8081)
+
+Endpoint and interactive playground both at the server root — see the
+[GraphQL interface reference](/docs/api/graphql.html).
+
+### gRPC interface (port 50051)
+
+See the [gRPC interface reference](/docs/api/grpc.html) and the proto
+definition at `src/interfaces/grpc/proto/echidna.proto`.
 
 ## Architecture
 

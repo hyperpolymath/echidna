@@ -1,151 +1,158 @@
 ---
-title: GraphQL API Reference
-date: 2026-02-09
+title: GraphQL Interface Reference
+date: 2026-07-28
 template: default
 ---
 
-# GraphQL API Reference
+# GraphQL Interface Reference
 
-Endpoint: `https://localhost:8081/graphql`
+The `echidna-graphql` binary is an optional self-hosted service. It
+binds `127.0.0.1:8081` over plain HTTP and serves both the GraphQL
+endpoint and the interactive playground at the server root — a `POST`
+to `/` executes operations, a `GET` renders the playground. There is a
+separate `GET /health`.
 
-Playground: `https://localhost:8081/playground`
+Documented from `src/interfaces/graphql/{main,schema}.rs`.
 
-## Schema
+## Queries
 
-### Queries
-
-#### List Provers
+### provers
 
 ```graphql
 query {
   provers {
     kind
+    version
     tier
     complexity
+    available
   }
 }
 ```
 
-Returns the available prover backends.
+### proofState
 
-#### Get Proof State
+Takes `id`, not a session identifier:
 
 ```graphql
 query {
-  proofState(sessionId: "session-uuid") {
-    goals {
-      conclusion
-      hypotheses
-    }
+  proofState(id: "proof-uuid") {
+    id
+    prover
+    goal
     status
     proofScript
+    goalsRemaining
+    timeElapsed
+    errorMessage
   }
 }
 ```
 
-#### List Active Proofs
+### listProofs
 
 ```graphql
 query {
-  listProofs {
-    sessionId
-    proverKind
+  listProofs(limit: 20) {
+    id
+    prover
     status
-    startedAt
+    goalsRemaining
   }
 }
 ```
 
-#### Suggest Tactics
+### suggestTacticsByProofId
+
+The query form of tactic suggestion, keyed by an existing proof:
 
 ```graphql
 query {
-  suggestTactics(sessionId: "session-uuid") {
+  suggestTacticsByProofId(proofId: "proof-uuid", limit: 5) {
     name
+    args
     description
     confidence
   }
 }
 ```
 
-### Mutations
+### proverStatus
 
-#### Submit a Proof
+```graphql
+query {
+  proverStatus(prover: "Coq") {
+    available
+  }
+}
+```
+
+## Mutations
+
+### submitProof
 
 ```graphql
 mutation {
-  submitProof(
-    proverKind: COQ
-    goal: "forall n : nat, n + 0 = n"
-  ) {
-    sessionId
+  submitProof(goal: "forall n : nat, n + 0 = n", prover: COQ) {
+    id
     status
-    goals {
-      conclusion
-    }
+    goalsRemaining
   }
 }
 ```
 
-#### Apply a Tactic
+### applyTactic
+
+`proofId`, `tactic`, and `args` are all required; pass an empty list
+when the tactic takes no arguments:
 
 ```graphql
 mutation {
-  applyTactic(
-    sessionId: "session-uuid"
-    tactic: "induction n"
-  ) {
-    result
-    goals {
-      conclusion
-      hypotheses
-    }
+  applyTactic(proofId: "proof-uuid", tactic: "induction", args: ["n"]) {
+    id
+    status
+    proofScript
+    goalsRemaining
   }
 }
 ```
 
-#### Cancel a Proof
+### verifyProof
+
+Verifies prover source directly, without a proof session:
 
 ```graphql
 mutation {
-  cancelProof(sessionId: "session-uuid")
+  verifyProof(prover: "Z3", content: "(check-sat)") {
+    status
+    message
+    proverOutput
+    durationMs
+    artifacts
+  }
 }
 ```
 
-## Prover Kind Enum
+### suggestTactics
+
+Tactic suggestion is a **mutation**, not a query, and takes a goal
+state rather than a proof identifier:
 
 ```graphql
-enum ProverKind {
-  AGDA
-  COQ
-  LEAN
-  ISABELLE
-  Z3
-  CVC5
-  METAMATH
-  HOL_LIGHT
-  MIZAR
-  PVS
-  ACL2
-  HOL4
-  IDRIS2
-  VAMPIRE
-  EPROVER
-  SPASS
-  ALT_ERGO
-  FSTAR
-  DAFNY
-  WHY3
-  TLAPS
-  TWELF
-  NUPRL
-  MINLOG
-  IMANDRA
-  GLPK
-  SCIP
-  MINIZINC
-  CHUFFED
-  OR_TOOLS
+mutation {
+  suggestTactics(prover: "Coq", context: "", goalState: "forall n : nat, n + 0 = n") {
+    tactic
+    confidence
+    explanation
+  }
+}
+```
+
+### cancelProof
+
+```graphql
+mutation {
+  cancelProof(proofId: "proof-uuid")
 }
 ```
 
