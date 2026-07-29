@@ -88,7 +88,7 @@ let base    = import "../_base.ncl" in
       { kind = 'verisimdb, table = "contractile_executions",
         schema = "contractile_execution_v1",
         aux_tables = [ "bust_recovery_times" ] },
-      { kind = 'failure_log, path = ".machine_readable/6a2/FAILURES.a2ml",
+      { kind = 'failure_log, path = ".machine_readable/descriptiles/FAILURES.a2ml",
         append_only = true },
     ],
 
@@ -142,7 +142,7 @@ let base    = import "../_base.ncl" in
             signature_required = true,
           },
         ],
-        signed_record_destination = ".machine_readable/6a2/ratification-<session-id>.a2ml",
+        signed_record_destination = ".machine_readable/descriptiles/ratification-<session-id>.a2ml",
         must_precede_work = true,
       },
 

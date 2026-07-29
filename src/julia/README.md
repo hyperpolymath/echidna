@@ -1,5 +1,5 @@
 # SPDX-FileCopyrightText: 2025 ECHIDNA Project Team
-# SPDX-License-Identifier: MPL-2.0
+# SPDX-License-Identifier: CC-BY-SA-4.0
 
 # ECHIDNA Julia ML Components
 
@@ -496,7 +496,7 @@ See LICENSE files for details.
 
 <!--
 SPDX-FileCopyrightText: 2026 Jonathan D.A. Jewell <j.d.a.jewell@open.ac.uk>
-SPDX-License-Identifier: MPL-2.0
+SPDX-License-Identifier: CC-BY-SA-4.0
 Saturation campaign 2026-06-01 addendum.
 -->
 

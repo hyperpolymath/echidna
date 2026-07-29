@@ -251,7 +251,8 @@ Proof.
     reflexivity.
   - (* Inductive case *)
     simpl.
-    rewrite <- plus_assoc.
+    rewrite IH.
+    rewrite <- Nat.add_assoc.
     reflexivity.
 Qed.
 
@@ -456,29 +457,22 @@ Proof.
         split.
         -- right; exact H_in_t.
         -- exact H_fx.
-  - (* Backward direction *)
+  - (* Backward direction: case-split on f h first, then on membership *)
     intro H.
     destruct H as [H_in H_fx].
     induction l as [| h t IH].
-    + (* Base case: contradiction *)
-      inversion H_in.
-    + (* Inductive case *)
-      simpl.
-      destruct H_in as [H_eq | H_in_t].
-      * (* x = h *)
-        rewrite <- H_eq.
-        rewrite H_fx.
-        simpl.
-        left.
-        reflexivity.
-      * (* In x t *)
-        destruct (f h) eqn:E.
-        -- simpl.
-           right.
-           apply IH.
-           exact H_in_t.
-        -- apply IH.
-           exact H_in_t.
+    + inversion H_in.
+    + simpl.
+      destruct (f h) eqn:Efh.
+      * (* f h = true: filter result includes h *)
+        destruct H_in as [H_eq | H_in_t].
+        -- left; exact H_eq.
+        -- right; apply IH; exact H_in_t.
+      * (* f h = false: filter skips h *)
+        destruct H_in as [H_eq | H_in_t].
+        -- (* x = h, but f h = false and f x = true: contradiction *)
+           congruence.
+        -- apply IH; exact H_in_t.
 Qed.
 
 (* ========================================================================= *)

@@ -18,7 +18,7 @@ use nom::{
     combinator::opt,
     multi::{many0, separated_list0},
     sequence::preceded,
-    IResult,
+    IResult, Parser,
 };
 use std::collections::HashMap;
 use std::path::PathBuf;
@@ -1012,14 +1012,14 @@ fn block_comment(input: &str) -> IResult<&str, ()> {
 }
 
 fn identifier(input: &str) -> IResult<&str, String> {
-    let (input, first) = alt((alpha1, tag("_")))(input)?;
+    let (input, first) = alt((alpha1, tag("_"))).parse(input)?;
     let (input, rest) =
         take_while(|c: char| c.is_alphanumeric() || c == '_' || c == '\'' || c == '?')(input)?;
     Ok((input, format!("{}{}", first, rest)))
 }
 
 fn qualified_name(input: &str) -> IResult<&str, String> {
-    let (input, parts) = separated_list0(tag("."), identifier)(input)?;
+    let (input, parts) = separated_list0(tag("."), identifier).parse(input)?;
     Ok((input, parts.join(".")))
 }
 
@@ -1033,7 +1033,7 @@ fn parse_module_decl(input: &str) -> IResult<&str, Idris2Decl> {
 
 fn parse_import(input: &str) -> IResult<&str, Idris2Decl> {
     let (input, _) = ws(input)?;
-    let (input, public) = opt(preceded(tag("public"), space1))(input)?;
+    let (input, public) = opt(preceded(tag("public"), space1)).parse(input)?;
     let (input, _) = tag("import")(input)?;
     let (input, _) = space1(input)?;
     let (input, module) = qualified_name(input)?;
@@ -1081,7 +1081,7 @@ fn parse_data(input: &str) -> IResult<&str, Idris2Decl> {
 
     // Parse type parameters (simplified)
     let (input, _) = take_while(|c| c != '=' && c != '\n')(input)?;
-    let (input, _) = opt(tag("="))(input)?;
+    let (input, _) = opt(tag("=")).parse(input)?;
 
     // Parse constructors (simplified - just capture until next declaration)
     let (input, _) = take_while(|c| c != '\n')(input)?;
@@ -1162,11 +1162,12 @@ fn parse_decl(input: &str) -> IResult<&str, Idris2Decl> {
         parse_interface,
         parse_implementation,
         parse_type_sig,
-    ))(input)
+    ))
+    .parse(input)
 }
 
 fn parse_module(input: &str) -> IResult<&str, Vec<Idris2Decl>> {
-    many0(parse_decl)(input)
+    many0(parse_decl).parse(input)
 }
 
 // ============================================================================

@@ -78,9 +78,9 @@ chore(<scope>): scout-pass trivial cleanup ahead of <step id>
 
 **All `.scm` state/metadata files have been replaced by `.a2ml`.**
 
-If you find any `.scm` file under `.machine_readable/` (e.g. `STATE.scm`, `META.scm`,
-`ECOSYSTEM.scm`, `AGENTIC.scm`, `NEUROSYM.scm`, `PLAYBOOK.scm`, bot directive `.scm`
-files, or similar), you MUST:
+If you find any `.scm` file under `.machine_readable/` (state/metadata descriptors
+such as STATE, META, ECOSYSTEM, AGENTIC, NEUROSYM or PLAYBOOK carrying the legacy
+Scheme extension, bot directive files, or similar), you MUST:
 
 1. Check whether an equivalent `.a2ml` file already exists
 2. If yes — delete the `.scm` file immediately (`git rm`)

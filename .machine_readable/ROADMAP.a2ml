@@ -7,10 +7,10 @@
 
 [metadata]
 version = "1.0.0"
-last-updated = "2026-04-25"
+last-updated = "2026-06-13"
 status = "Stage 1 active"
 maintainer = "Jonathan D.A. Jewell (hyperpolymath)"
-next-review = "2026-05-25"
+next-review = "2026-07-13"
 
 [vision]
 summary = """
@@ -61,7 +61,8 @@ prerequisites = [
   "✓ API surfaces: REST, GraphQL, gRPC (done 2026-04-10)",
   "✓ Bebop3 serialization (gRPC proto + axum, done 2026-04-15)",
   "✓ A2ML conformance (AGENTIC, NEUROSYM, done 2026-04-25)",
-  "⚠ Container isolation hardening (IN-PROGRESS; blocks production release)"
+  "⚠ Container isolation hardening (IN-PROGRESS; blocks production release)",
+  "✓ Dogfood proof corpus CI-gated — proofs/{coq,lean,agda} + src/idris type-check on every PR via dogfood-proofs-ci.yml + idris2-abi-ci.yml (done 2026-06-06, PR #234)"
 ]
 
 blockers = [

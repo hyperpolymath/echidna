@@ -161,7 +161,10 @@ impl ProverBackend for DeduktiBackend {
             Tactic::Simplify,
             Tactic::Assumption,
         ];
-        Ok(crate::provers::gnn_augment_tactics(&self.config, state, "dedukti", tactics, limit).await)
+        Ok(
+            crate::provers::gnn_augment_tactics(&self.config, state, "dedukti", tactics, limit)
+                .await,
+        )
     }
 
     async fn search_theorems(&self, _pattern: &str) -> Result<Vec<String>> {

@@ -1,4 +1,4 @@
-<!-- SPDX-License-Identifier: MPL-2.0 -->
+<!-- SPDX-License-Identifier: CC-BY-SA-4.0 -->
 # Echidna `suggest` — CLI Verb + Variant Tester — Sonnet Handoff Prompt
 
 **Context**: Echidna's `prove` CLI is a one-shot dispatcher. When a proof

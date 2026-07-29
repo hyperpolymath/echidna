@@ -13,8 +13,8 @@ data ValidationResult : Type where
 
 export
 Show ValidationResult where
-  show (Valid proof) = "✓ Valid proof: " ++ show proof
-  show (Invalid reason) = "✗ Invalid: " ++ reason
+  show (Valid pterm) = "Valid proof: " ++ show pterm
+  show (Invalid reason) = "Invalid: " ++ reason
 
 -- Type inference with totality guarantee
 export
@@ -115,11 +115,11 @@ check ctx term ty =
 -- Validate proof against goal
 export
 validateProof : ProofTerm -> ProofTerm -> ValidationResult
-validateProof proof goal =
-  case infer Empty proof of
+validateProof pterm goal =
+  case infer Empty pterm of
     Just ty =>
       if ty == goal || ty == TyProp  -- Allow TyProp for now
-        then Valid proof
+        then Valid pterm
         else Invalid ("Proof type " ++ show ty ++
                      " doesn't match goal " ++ show goal)
     Nothing => Invalid "Failed to infer proof type"
@@ -127,15 +127,15 @@ validateProof proof goal =
 -- Validate that proof is well-formed (no type errors)
 export
 validateWellFormed : ProofTerm -> ValidationResult
-validateWellFormed proof =
-  case infer Empty proof of
-    Just ty => Valid proof
+validateWellFormed pterm =
+  case infer Empty pterm of
+    Just ty => Valid pterm
     Nothing => Invalid "Proof is not well-formed"
 
 -- Check for circular reasoning (proof uses goal in premises)
 export
 checkCircular : ProofTerm -> ProofTerm -> Bool
-checkCircular proof goal = containsTerm proof goal
+checkCircular pterm goal = containsTerm pterm goal
   where
     containsTerm : ProofTerm -> ProofTerm -> Bool
     containsTerm (Var n1) (Var n2) = n1 == n2
@@ -161,13 +161,13 @@ checkCircular proof goal = containsTerm proof goal
 -- Comprehensive validation (well-formedness + type-checking + circular check)
 export
 validateComprehensive : ProofTerm -> ProofTerm -> ValidationResult
-validateComprehensive proof goal =
-  case validateWellFormed proof of
+validateComprehensive pterm goal =
+  case validateWellFormed pterm of
     Invalid reason => Invalid reason
     Valid _ =>
-      if checkCircular proof goal
+      if checkCircular pterm goal
         then Invalid "Circular reasoning detected"
-        else validateProof proof goal
+        else validateProof pterm goal
 
 -- Example usage
 export
@@ -191,3 +191,7 @@ testValidation = do
   putStrLn $ show (validateProof proof3 goal3)
 
   putStrLn "Validation tests complete."
+
+-- Executable entry point (declared in echidna-validator.ipkg: `main = Validator`).
+main : IO ()
+main = testValidation

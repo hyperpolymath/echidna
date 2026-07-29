@@ -1,4 +1,4 @@
-<!-- SPDX-License-Identifier: MPL-2.0 -->
+<!-- SPDX-License-Identifier: CC-BY-SA-4.0 -->
 # Echidna Phase 3 — Real-Algebraic + Modal/Hybrid Backends — Opus Handoff Prompt
 
 **Context**: Phase 3 of the ECHIDNA expansion is the

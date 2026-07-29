@@ -55,13 +55,8 @@ FeatureVector = Vect FeatureDim Double
 ||| Required for normalisation denominators and embedding operations.
 public export
 featureDimPositive : GT FeatureDim 0
-featureDimPositive = LTESucc (LTESucc (LTESucc (LTESucc (LTESucc
-  (LTESucc (LTESucc (LTESucc (LTESucc (LTESucc
-  (LTESucc (LTESucc (LTESucc (LTESucc (LTESucc
-  (LTESucc (LTESucc (LTESucc (LTESucc (LTESucc
-  (LTESucc (LTESucc (LTESucc (LTESucc (LTESucc
-  (LTESucc (LTESucc (LTESucc (LTESucc (LTESucc
-  (LTESucc (LTESucc LTEZero)))))))))))))))))))))))))))))))
+-- GT FeatureDim 0 ≡ LT 0 32 ≡ LTE 1 32 ≡ LTESucc (LTEZero : LTE 0 31).
+featureDimPositive = LTESucc LTEZero
 
 ------------------------------------------------------------------------
 -- Graph Structure Properties
@@ -114,7 +109,12 @@ public export
 sparseAdjLengthsEqual : (adj : SparseAdjacency n) ->
   (length (rows adj) = length (cols adj),
    length (cols adj) = length (vals adj))
-sparseAdjLengthsEqual (MkSparseAdj rs cs vs) = (Refl, Refl)
+-- `Data.Vect.length` recurses structurally, so it does not reduce to the
+-- type-level index for an abstract vector; `lengthCorrect xs : length xs = n`
+-- supplies the bridge, and the two equalities chain through `n`.
+sparseAdjLengthsEqual (MkSparseAdj rs cs vs) =
+  ( trans (lengthCorrect rs) (sym (lengthCorrect cs))
+  , trans (lengthCorrect cs) (sym (lengthCorrect vs)) )
 
 ------------------------------------------------------------------------
 -- Premise Ranking Properties
@@ -167,16 +167,16 @@ maxNodesAtDepth : (maxDepth : Nat) -> (branchingFactor : Nat) -> Nat
 maxNodesAtDepth Z _ = 1
 maxNodesAtDepth (S d) bf = bf * maxNodesAtDepth d bf
 
-||| Proof: maxNodesAtDepth is monotonically non-decreasing in depth.
+||| Proof: maxNodesAtDepth is monotonically non-decreasing in depth, for a
+||| positive branching factor.  A factor of 0 is degenerate (0^0 = 1 but
+||| 0^(d+1) = 0, which is NOT monotone), so the property genuinely requires
+||| branchingFactor >= 1; we encode that by taking the factor as `S bf`.
+||| Then maxNodesAtDepth (S d) (S bf) = (S bf) * m = m + bf * m, so the bound
+||| is exactly `lteAddRight m`.
 public export
 maxNodesMonotone : (d : Nat) -> (bf : Nat) ->
-  LTE (maxNodesAtDepth d bf) (maxNodesAtDepth (S d) bf)
-maxNodesMonotone Z bf = lteAddRight 1
-maxNodesMonotone (S d) bf =
-  let ih = maxNodesMonotone d bf
-      prev = maxNodesAtDepth (S d) bf
-      next = maxNodesAtDepth (S (S d)) bf
-  in lteTransitive (lteAddRight prev) (lteReflexive {n = next})
+  LTE (maxNodesAtDepth d (S bf)) (maxNodesAtDepth (S d) (S bf))
+maxNodesMonotone d bf = lteAddRight (maxNodesAtDepth d (S bf))
 
 ------------------------------------------------------------------------
 -- Node Kind Enumeration Completeness
@@ -261,10 +261,13 @@ data DualEdgePair : (src : Nat) -> (tgt : Nat) -> Type where
 ||| we can construct the corresponding UsefulFor edge.
 public export
 makeDualPair : (src : Nat) -> (tgt : Nat) -> (w : Double) -> DualEdgePair src tgt
+-- The edges are inlined (rather than `let`-bound) so the record
+-- projections in MkDual's equality arguments reduce definitionally and
+-- each proof closes by `Refl`.
 makeDualPair src tgt w =
-  let fwd = MkGraphEdge src tgt DependsOn w
-      rev = MkGraphEdge tgt src UsefulFor w
-  in MkDual fwd rev Refl Refl Refl Refl Refl Refl
+  MkDual (MkGraphEdge src tgt DependsOn w)   -- forward edge: DependsOn
+         (MkGraphEdge tgt src UsefulFor w)   -- reverse edge: UsefulFor
+         Refl Refl Refl Refl Refl Refl
 
 ------------------------------------------------------------------------
 -- Cosine Similarity Bounds
@@ -285,12 +288,12 @@ data CosineSimilarityWellDefined : Type where
 -- Graph Invariants Summary
 ------------------------------------------------------------------------
 
-||| Summary of all GNN integration invariants proven in this module:
-|||
-||| 1. featureDimPositive: Feature dimension is > 0 (safe for division)
-||| 2. sparseAdjLengthsEqual: Adjacency vectors are length-consistent
-||| 3. nodeKindIndexInjective: Node kind encoding has no collisions
-||| 4. edgeKindIndexInjective: Edge kind encoding has no collisions
-||| 5. maxNodesMonotone: Deeper expansion produces >= nodes (termination)
-||| 6. makeDualPair: DependsOn/UsefulFor edges are always paired
-||| 7. combinedScoreBounded: Weighted score combination preserves bounds
+-- Summary of all GNN integration invariants proven in this module:
+--
+-- 1. featureDimPositive: Feature dimension is > 0 (safe for division)
+-- 2. sparseAdjLengthsEqual: Adjacency vectors are length-consistent
+-- 3. nodeKindIndexInjective: Node kind encoding has no collisions
+-- 4. edgeKindIndexInjective: Edge kind encoding has no collisions
+-- 5. maxNodesMonotone: Deeper expansion produces >= nodes (termination)
+-- 6. makeDualPair: DependsOn/UsefulFor edges are always paired
+-- 7. combinedScoreBounded: Weighted score combination preserves bounds

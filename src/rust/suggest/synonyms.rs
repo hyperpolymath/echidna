@@ -188,8 +188,8 @@ fn load_underscore_dict(dir: &Path, filename: &str) -> Result<SynonymTable> {
         return Ok(SynonymTable::default());
     }
     let raw = crate::provers::bounded_read_corpus_file(&path)?;
-    let parsed: RawTable = toml::from_str(&raw)
-        .with_context(|| format!("Failed to parse {}", path.display()))?;
+    let parsed: RawTable =
+        toml::from_str(&raw).with_context(|| format!("Failed to parse {}", path.display()))?;
     Ok(SynonymTable::from_entries(parsed.synonyms))
 }
 

@@ -232,9 +232,7 @@ fn lex(src: &str) -> Vec<Token> {
         let is_ws = matches!(c, b' ' | b'\t' | b'\r' | b'\n');
         if is_ws {
             if let Some(s) = tok_start.take() {
-                let text = std::str::from_utf8(&bytes[s..i])
-                    .unwrap_or("")
-                    .to_string();
+                let text = std::str::from_utf8(&bytes[s..i]).unwrap_or("").to_string();
                 if !text.is_empty() {
                     out.push(Token {
                         text,
@@ -316,8 +314,10 @@ fn extract_module_name(src: &str) -> Option<String> {
 }
 
 fn parse_mm_file(raw: &str) -> ParsedFile {
-    let mut pf = ParsedFile::default();
-    pf.module_name = extract_module_name(raw);
+    let mut pf = ParsedFile {
+        module_name: extract_module_name(raw),
+        ..Default::default()
+    };
 
     let toks = lex(raw);
     let mut scope_stack: Vec<String> = Vec::new();
@@ -381,15 +381,18 @@ fn parse_mm_file(raw: &str) -> ParsedFile {
             }
             match kw {
                 "$c" | "$v" => {
-                    pf.options.push(format!("{}@{} {}", kw, line, payload.join(" ")));
+                    pf.options
+                        .push(format!("{}@{} {}", kw, line, payload.join(" ")));
                 },
                 "$d" => {
-                    pf.options.push(format!("$d@{} {}", line, payload.join(" ")));
+                    pf.options
+                        .push(format!("$d@{} {}", line, payload.join(" ")));
                 },
                 _ => {
                     // labelled forms reached without a preceding label
                     // (malformed); record as option for visibility.
-                    pf.options.push(format!("{}@{} (no label) {}", kw, line, payload.join(" ")));
+                    pf.options
+                        .push(format!("{}@{} (no label) {}", kw, line, payload.join(" ")));
                 },
             }
             i = j;
@@ -509,7 +512,10 @@ mod tests {
 
         let ax = pf.decls.iter().find(|d| d.name == "ax-mp").unwrap();
         assert_eq!(ax.kind, DeclKind::Postulate);
-        assert!(ax.axiom_usage.postulate, "ax-mp should be flagged as postulate");
+        assert!(
+            ax.axiom_usage.postulate,
+            "ax-mp should be flagged as postulate"
+        );
 
         let id = pf.decls.iter().find(|d| d.name == "id").unwrap();
         assert_eq!(id.kind, DeclKind::Function);
@@ -540,12 +546,7 @@ mod tests {
 
     #[test]
     fn scope_block_qualifies_label() {
-        let src = concat!(
-            "$c wff $.\n",
-            "${\n",
-            "inner $a wff bar $.\n",
-            "$}\n",
-        );
+        let src = concat!("$c wff $.\n", "${\n", "inner $a wff bar $.\n", "$}\n",);
         let pf = parse_mm_file(src);
         let inner = pf.decls.iter().find(|d| d.name == "inner").unwrap();
         assert!(

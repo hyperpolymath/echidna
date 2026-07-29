@@ -3,7 +3,7 @@
     Group Theory Examples for ML Training Corpus *)
 
 theory GroupTheory
-  imports Main "~~/src/HOL/Algebra/Group"
+  imports Main "HOL-Algebra.Group"
 begin
 
 (** Basic group axioms *)

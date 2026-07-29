@@ -61,11 +61,17 @@ impl VerdictSet {
     }
 
     fn contains_proven(self) -> bool {
-        matches!(self, VerdictSet::Proven | VerdictSet::ProvenOrRefuted | VerdictSet::Unknown)
+        matches!(
+            self,
+            VerdictSet::Proven | VerdictSet::ProvenOrRefuted | VerdictSet::Unknown
+        )
     }
 
     fn contains_refuted(self) -> bool {
-        matches!(self, VerdictSet::Refuted | VerdictSet::ProvenOrRefuted | VerdictSet::Unknown)
+        matches!(
+            self,
+            VerdictSet::Refuted | VerdictSet::ProvenOrRefuted | VerdictSet::Unknown
+        )
     }
 }
 

@@ -1,28 +1,167 @@
-// Bustfile.a2ml — meta-repo bust contractile (breakage / rollback)
-// SPDX-License-Identifier: MPL-2.0
+# SPDX-License-Identifier: MPL-2.0
+# Bustfile (A2ML Canonical)
+# Copyright (c) 2026 Jonathan D.A. Jewell (hyperpolymath)
 
-Bust {
-    name: "rsr-template-repo"
-    version: "1.0.0"
-    description: "Rollback procedures when something breaks in the meta-repo"
+@abstract:
+Breakage and rollback contract for Echidna. When a build, test, prover
+backend, ABI proof, container, or training pipeline goes wrong, this
+file declares the recovery sequence. Each scenario is an error code,
+a probe to detect it, and a `recovery:` recipe pointing at the
+self-heal action.
 
-    scenarios: {
-        "bad-pointer-bump": "git revert <bump-commit> in meta-repo; child repo itself untouched"
-        "submodule-pointer-points-at-missing-sha": "git submodule update --init --checkout <path> resets child to parent-recorded SHA; OR revert the stale bump commit"
-        "submodule-orphan-after-local-only-commit": "roll back locally with git reset to before the stranded commit; fix remote situation before re-attempting"
-        "accidental-private-repo-content-leaked-to-public-submodule": "hard-rotate the leaked secret immediately; git-filter-repo or BFG on the submodule's own history; public re-publication only after rotation complete"
-    }
+Error-code namespace: B###
+Recovery sequence is "narrowest-first": prefer reverting a single
+commit over invalidating caches; prefer cache bust over reinstalling
+toolchains.
+@end
 
-    escalation-ladder: [
-        "1. revert the meta-repo commit (reversible, low blast radius)",
-        "2. reset the local submodule clone (affects only local workspace)",
-        "3. force-push to main — PROHIBITED without explicit user confirmation (violates branch protection)",
-        "4. registry-level (delete/archive the GitHub repo) — human-only action, never by AI"
-    ]
+@requires:
+- section: Build-Bust
+- section: Test-Bust
+- section: Backend-Bust
+- section: ABI-Bust
+- section: Container-Bust
+- section: Training-Bust
+- section: Repo-Bust
+@end
 
-    backup-points: [
-        "GitHub serves as the durable backup for every submodule's own history",
-        "Meta-repo history on origin/main is the durable backup for pointer state",
-        "Local backup tags (backup/pre-<operation>-<date>) retained on risky rewrites"
-    ]
-}
+## Build-Bust
+
+### B001-cargo-build-broken
+- description: cargo build fails after dep update
+- probe: ! cargo build --offline 2>&1 | grep -q 'error\['
+- severity: critical
+- recovery: just bust-cargo-cache && just heal && cargo build
+- escalation: git revert <last-dep-bump> ; cargo update -p <crate> --precise <known-good>
+
+### B002-nom-parser-api-break
+- description: nom 7→8 silently broke direct-call combinators
+- probe: ! grep -q "expected function, found .impl Parser" target/debug/build.log
+- severity: high
+- recovery: defer nom 8 bump; pin Cargo.toml `nom = "7.1"` until call-sites migrated to `.parse()`
+- escalation: file follow-up PR rewriting ~100 call sites
+
+### B003-rand-api-break
+- description: rand 0.9→0.10 removed StdRng::random_range
+- probe: ! grep -q "no method named .random_range" target/debug/build.log
+- severity: high
+- recovery: pin Cargo.toml `rand = "0.9"` ; or rewrite to `.gen_range()` / `Distribution::sample`
+- escalation: verify rand 0.10 actually exists on crates.io (suspect dependabot phantom)
+
+## Test-Bust
+
+### B010-cargo-test-broken
+- description: cargo test --lib regresses
+- probe: ! cargo test --lib --offline 2>&1 | grep -q 'test result: ok'
+- severity: critical
+- recovery: bisect with `git bisect run cargo test --lib` ; revert offending commit
+- escalation: just bust-target-dir ; just heal ; retry
+
+### B011-julia-test-broken
+- description: julia --project=src/julia -e 'using Pkg; Pkg.test()' fails
+- probe: ! julia --project=src/julia -e 'using Pkg; Pkg.test()' 2>&1 | tail -5 | grep -q 'PASS'
+- severity: high
+- recovery: rm -rf src/julia/Manifest.toml ; just heal ; retry
+- escalation: julia --project=src/julia -e 'using Pkg; Pkg.resolve(); Pkg.precompile()'
+
+## Backend-Bust
+
+### B020-prover-binary-missing
+- description: a Tier-1 prover binary is not on PATH
+- probe: which coq agda lean4 idris2 >/dev/null
+- severity: warning
+- recovery: just heal-provers (installs missing Tier-1 backends)
+- escalation: rebuild Containerfile.wave3 for the missing prover
+
+### B021-chapel-build-broken
+- description: cargo build --features chapel fails
+- probe: ! cargo build --features chapel --offline 2>&1 | tail -10 | grep -q 'Compiling'
+- severity: warning
+- recovery: just bust-chapel-artefacts ; just doctor-chapel
+- escalation: confirm CHPL_VERSION env matches Justfile pin (currently 2.8.0)
+
+### B022-zig-ffi-broken
+- description: ffi/zig/src build fails (Zig version drift)
+- probe: ! zig build -p ffi/zig 2>&1 | grep -q 'error:'
+- severity: warning
+- recovery: just bust-zig-cache ; verify Zig pin matches `feedback_zig_015_breaking_changes`
+- escalation: hotfix unsafe-cast sites per memory
+
+## ABI-Bust
+
+### B030-idris2-abi-typecheck-broken
+- description: idris2 --build src/abi/echidnaabi.ipkg fails
+- probe: ! idris2 --build src/abi/echidnaabi.ipkg 2>&1 | tail -5 | grep -q 'OK'
+- severity: critical
+- recovery: examine the failing module; look for new `believe_me`/`assert_total`/`postulate` (banned by idris2-abi-ci.yml)
+- escalation: revert the offending commit; src/abi/ namespace state is owner-managed per feedback_echidna_src_abi_namespace_intentional
+
+### B031-banned-token-in-abi
+- description: src/abi/ contains a banned construct
+- probe: ! grep -rn 'believe_me\|assert_total\|postulate\|prim__crash' src/abi/ 2>&1 | grep -v -- "--" | head -1
+- severity: critical
+- recovery: rewrite the proof constructively; if blocked, revert
+- escalation: open issue tagged `area:abi` with reproducer
+
+## Container-Bust
+
+### B040-containerfile-build-broken
+- description: podman build -f Containerfile fails
+- probe: ! podman build -f Containerfile -q . 2>&1 | tail -3 | grep -qE 'sha256:[0-9a-f]'
+- severity: warning
+- recovery: podman system prune -af ; rebuild
+- escalation: check Chainguard base tag drift; consult stapeln.toml layer cache rules
+
+### B041-wave3-image-broken
+- description: .containerization/Containerfile.wave3 build fails for a prover cell
+- probe: ! podman build -f .containerization/Containerfile.wave3 --build-arg PROVER=<name> -q . 2>&1 | tail -3 | grep -qE 'sha256:[0-9a-f]'
+- severity: warning
+- recovery: check stub-sentinel detection step (added in wave3 #157) ; verify upstream prover repo still resolvable
+- escalation: pin previous-known-good upstream tag for that prover
+
+## Training-Bust
+
+### B050-julia-pkg-instantiate-broken
+- description: src/julia Pkg.instantiate fails
+- probe: ! julia --project=src/julia -e 'using Pkg; Pkg.instantiate()' 2>&1 | tail -3 | grep -q 'Updating'
+- severity: high
+- recovery: rm src/julia/Manifest.toml ; just heal ; retry
+- escalation: pin known-good Julia channel via juliaup
+
+### B051-corpus-ingest-unknown-adapter
+- description: `just corpus-ingest-saturation <name>` errors `Unknown corpus adapter`
+- probe: ! just corpus-ingest-saturation isabelle external_corpora/isabelle/ 2>&1 | grep -q 'Unknown'
+- severity: medium
+- recovery: confirm dispatcher in src/rust/main.rs has match arm for <name>; if not, file PR (see docs/training-runs/2026-06-02.md follow-ups)
+- escalation: until dispatcher fix lands, fall back to the 4 supported adapters (agda/coq/lean/idris2)
+
+### B052-bson-undefined-at-save
+- description: training final-save fails `UndefVarError: BSON not defined in Main`
+- probe: grep -q 'UndefVarError: .BSON. not defined' /tmp/echidna-training-*.log
+- severity: low
+- recovery: per-epoch checkpoint scaffold still saves models; ignore final-save failure for now
+- escalation: add `using BSON` to the JSONL-fallback training entry point in src/julia/training/train.jl
+
+## Repo-Bust
+
+### B060-bad-commit-on-main
+- description: a known-bad commit is on origin/main
+- probe: manual — owner identifies
+- severity: high
+- recovery: git revert <SHA> on a fresh branch ; PR ; admin-merge
+- escalation: force-push to main is PROHIBITED without explicit owner confirmation (violates branch protection)
+
+### B061-tag-points-at-wrong-sha
+- description: a release tag was cut at the wrong commit
+- probe: manual
+- severity: medium
+- recovery: git tag -d <tag> ; git push origin :refs/tags/<tag> ; re-tag at correct SHA ; push
+- escalation: notify any downstream consumers of the tag re-point
+
+@bust-escalation-ladder:
+- 1. revert a single commit (low blast radius)
+- 2. reset local workspace (no remote impact)
+- 3. invalidate a specific cache (just bust-* recipes)
+- 4. force-push to main — PROHIBITED without explicit owner confirmation
+- 5. registry-level (delete/archive a release tag, package version) — human-only
+@end
