@@ -180,6 +180,7 @@ fn e2e_dispatch_config_timeout_propagated() {
         generate_certificates: false,
         min_trust_level: TrustLevel::Level1,
         diagnostics: false,
+        arbitration_policy: Default::default(),
     };
 
     let dispatcher = echidna::dispatch::ProverDispatcher::with_config(config.clone());
@@ -212,6 +213,8 @@ fn e2e_dispatch_result_invariants() {
         cross_checked: false,
         outcome: echidna::provers::outcome::ProverOutcome::Proved { elapsed_ms: 42 },
         diagnostics: None,
+        needs_review: false,
+        arbitration: None,
     };
 
     assert!(

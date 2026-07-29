@@ -299,7 +299,10 @@ impl ProverBackend for HPEcosystemBackend {
         // Type-checkers don't suggest tactics — they either accept or
         // reject the body. Training-time premise selection will populate
         // this list from the corpus in future.
-        Ok(crate::provers::gnn_augment_tactics(&self.config, state, "hp_ecosystem", vec![], limit).await)
+        Ok(
+            crate::provers::gnn_augment_tactics(&self.config, state, "hp_ecosystem", vec![], limit)
+                .await,
+        )
     }
 
     async fn search_theorems(&self, _pattern: &str) -> Result<Vec<String>> {

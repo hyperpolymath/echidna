@@ -754,7 +754,10 @@ impl ProverBackend for KeyBackend {
             },
         ];
 
-        Ok(crate::provers::gnn_augment_tactics(&self.config, state, "key", suggestions, limit).await)
+        Ok(
+            crate::provers::gnn_augment_tactics(&self.config, state, "key", suggestions, limit)
+                .await,
+        )
     }
 
     /// Search for KeY taclets, rules, or lemmas matching a pattern.

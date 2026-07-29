@@ -138,10 +138,8 @@ impl LambdapiExchange {
                 let rule = parse_rule(rest)?;
                 module.rules.push(rule);
             } else if stmt.starts_with("symbol ")
-                || SymbolKind::parse_modifier(
-                    stmt.split_whitespace().next().unwrap_or(""),
-                )
-                .is_some()
+                || SymbolKind::parse_modifier(stmt.split_whitespace().next().unwrap_or(""))
+                    .is_some()
             {
                 let sym = parse_symbol(stmt)?;
                 module.symbols.push(sym);
@@ -343,7 +341,10 @@ fn parse_symbol(stmt: &str) -> Result<LambdapiSymbol, ExchangeError> {
     }
     // rest now starts with: name : T [≔ body]
     let (name, after_name) = match rest.find(':') {
-        Some(i) => (rest[..i].trim().to_string(), rest[i + 1..].trim().to_string()),
+        Some(i) => (
+            rest[..i].trim().to_string(),
+            rest[i + 1..].trim().to_string(),
+        ),
         None => {
             return Err(ExchangeError::ParseError(format!(
                 "symbol missing ':' — {}",

@@ -1,6 +1,6 @@
 <!--
 SPDX-FileCopyrightText: 2026 ECHIDNA Project Team
-SPDX-License-Identifier: MPL-2.0
+SPDX-License-Identifier: CC-BY-SA-4.0
 -->
 
 # Supported Provers

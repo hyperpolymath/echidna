@@ -1,0 +1,31 @@
+# SPDX-License-Identifier: MPL-2.0
+# SPDX-FileCopyrightText: 2026 Jonathan D.A. Jewell <j.d.a.jewell@open.ac.uk>
+#
+# Quadlet unit for the Caddy TLS proxy fronting api.nesy-prover.dev.
+#
+# Build the image on the host first:
+#     podman build -f Containerfile.caddy -t localhost/caddy-rl:2 .
+# The caddy-data volume persists the ACME account and certificates —
+# do not delete it casually (Let's Encrypt rate limits).
+
+[Unit]
+Description=Caddy TLS proxy for api.nesy-prover.dev
+Wants=echidna.service
+After=echidna.service
+
+[Container]
+Image=localhost/caddy-rl:2
+ContainerName=caddy
+Network=echidna.network
+PublishPort=80:80
+PublishPort=443:443
+Volume=/opt/echidna/Caddyfile:/etc/caddy/Caddyfile:ro
+Volume=caddy-data:/data
+Volume=caddy-config:/config
+
+[Service]
+Restart=always
+RestartSec=5
+
+[Install]
+WantedBy=default.target

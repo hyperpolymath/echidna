@@ -5,7 +5,7 @@ name = "echidna-graphql"
 version = "0.1.0"
 edition = "2021"
 authors = ["Jonathan D.A. Jewell <j.d.a.jewell@open.ac.uk>"]
-license = "MPL-2.0"
+license = "AGPL-3.0-or-later"
 description = "GraphQL interface for ECHIDNA theorem proving platform"
 repository = "https://github.com/hyperpolymath/echidna-graphql"
 readme = "README.adoc"
@@ -24,7 +24,7 @@ async-graphql-axum = "7.0"
 # Web framework
 axum = "0.8"
 tokio = { version = "1.41", features = ["full"] }
-tower-http = { version = "0.6", features = ["cors"] }
+tower-http = { version = "0.7", features = ["cors"] }
 
 # Serialization
 serde = { version = "1.0", features = ["derive"] }

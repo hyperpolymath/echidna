@@ -2421,7 +2421,10 @@ impl ProverBackend for Hol4Backend {
 
         suggestions.dedup();
 
-        Ok(crate::provers::gnn_augment_tactics(&self.config, state, "HOL4", suggestions, limit).await)
+        Ok(
+            crate::provers::gnn_augment_tactics(&self.config, state, "HOL4", suggestions, limit)
+                .await,
+        )
     }
 
     async fn search_theorems(&self, pattern: &str) -> Result<Vec<String>> {

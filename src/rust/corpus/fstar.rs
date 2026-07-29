@@ -545,12 +545,18 @@ type color =\n\
         let names: Vec<(&str, DeclKind)> =
             pf.decls.iter().map(|d| (d.name.as_str(), d.kind)).collect();
         assert!(
-            names.iter().any(|(n, k)| *n == "foo" && *k == DeclKind::Function),
-            "expected foo function, got {:?}", names
+            names
+                .iter()
+                .any(|(n, k)| *n == "foo" && *k == DeclKind::Function),
+            "expected foo function, got {:?}",
+            names
         );
         assert!(
-            names.iter().any(|(n, k)| *n == "color" && *k == DeclKind::Data),
-            "expected color data, got {:?}", names
+            names
+                .iter()
+                .any(|(n, k)| *n == "color" && *k == DeclKind::Data),
+            "expected color data, got {:?}",
+            names
         );
     }
 
@@ -566,11 +572,19 @@ assume Ax_no_lt : forall x. x >= 0\n\
 let cheat (x: nat) : nat = admit ()\n\
 ";
         let pf = parse_fstar_file(src);
-        let sketchy = pf.decls.iter().find(|d| d.name == "sketchy").expect("sketchy");
+        let sketchy = pf
+            .decls
+            .iter()
+            .find(|d| d.name == "sketchy")
+            .expect("sketchy");
         assert_eq!(sketchy.kind, DeclKind::Postulate);
         assert!(sketchy.axiom_usage.postulate);
 
-        let ax = pf.decls.iter().find(|d| d.name == "Ax_no_lt").expect("Ax_no_lt");
+        let ax = pf
+            .decls
+            .iter()
+            .find(|d| d.name == "Ax_no_lt")
+            .expect("Ax_no_lt");
         assert_eq!(ax.kind, DeclKind::Postulate);
         assert!(ax.axiom_usage.postulate);
 

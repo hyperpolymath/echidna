@@ -156,7 +156,10 @@ impl ProverBackend for MinlogBackend {
             Tactic::Assumption,
             Tactic::Simplify,
         ];
-        Ok(crate::provers::gnn_augment_tactics(&self.config, state, "minlog", tactics, limit).await)
+        Ok(
+            crate::provers::gnn_augment_tactics(&self.config, state, "minlog", tactics, limit)
+                .await,
+        )
     }
 
     async fn search_theorems(&self, _pattern: &str) -> Result<Vec<String>> {

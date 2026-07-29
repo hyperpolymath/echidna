@@ -3,23 +3,171 @@
 # Copyright (c) 2026 Jonathan D.A. Jewell (hyperpolymath)
 
 @abstract:
-Trust and provenance verification for Echidna.
-Maximal trust by default — LLM may read, build, test, lint, format.
+Trust and provenance verification contract for Echidna. Defines what
+the agent / CI is allowed to do, what must be verifiable before any
+proof leaves the dispatcher, and what supply-chain hardening is
+mandatory.
+
+Error-code namespace: T###
+Maximal trust by default — LLM may read, build, test, lint, format,
+file PRs against non-main branches.
 @end
 
 @trust-level: maximal
 @trust-boundary: repo
-@trust-actions: [read, build, test, lint, format]
-@trust-deny: [delete-branch, force-push, modify-ci-secrets, publish]
+@trust-actions: [read, build, test, lint, format, file-pr-on-branch, admin-merge-with-owner-authorisation]
+@trust-deny: [delete-branch-without-owner-confirm, force-push-to-main, modify-ci-secrets, publish-without-tag-cut, edit-licence-headers-automatically]
+
+@requires:
+- section: Integrity
+- section: Provenance
+- section: Supply-Chain
+- section: Dispatcher-Trust
+- section: Sandbox
+- section: ABI-Trust
+@end
 
 ## Integrity
 
-### license-content
-- description: LICENSE contains expected SPDX identifier
-- run: grep -q 'SPDX\|License\|MIT\|Apache\|PMPL\|MPL' LICENSE
+### T001-license-content
+- description: LICENSE file contains a recognised SPDX identifier
+- run: grep -qE 'SPDX-License-Identifier|MIT|Apache|MPL|AGPL|PMPL' LICENSE
 - severity: critical
+- recovery: restore LICENSE from git history; do NOT auto-edit (see [[feedback_no_automated_licence_edits]])
 
-### no-secrets-committed
-- description: No .env or credential files in repo
-- run: test ! -f .env && test ! -f credentials.json && test ! -f .env.local
+### T002-no-secrets-committed
+- description: no .env or credential files in repo
+- run: test ! -f .env && test ! -f credentials.json && test ! -f .env.local && test ! -f .secrets
 - severity: critical
+- recovery: git-filter-repo to remove + rotate the leaked secret immediately
+
+### T003-spdx-headers-on-source
+- description: source files carry SPDX-License-Identifier
+- run: find src/ -name '*.rs' -o -name '*.jl' -o -name '*.idr' -o -name '*.chpl' -o -name '*.zig' | xargs grep -L 'SPDX-License-Identifier' 2>/dev/null | wc -l | grep -q '^0$'
+- severity: warning
+- recovery: per-file manual addition; never sweep
+
+## Provenance
+
+### T010-commits-are-gpg-signed
+- description: HEAD commit is GPG-signed
+- run: git log -1 --pretty='%G?' | grep -qE '[GN]'
+- severity: critical
+- recovery: `git commit --amend -S` ; configure git config commit.gpgsign true
+
+### T011-tagged-releases-only
+- description: a release tag exists for current Cargo.toml version
+- run: ver=$(grep -E '^version = ' Cargo.toml | head -1 | cut -d'"' -f2); git tag -l "v$ver" | grep -q "v$ver"
+- severity: medium
+- recovery: owner cuts the tag manually (signed): `git tag -a -s v<ver> -m "v<ver> release"`
+
+### T012-signed-tag
+- description: latest release tag is GPG-signed (annotated + signed)
+- run: latest=$(git describe --tags --abbrev=0 2>/dev/null); [ -n "$latest" ] && git tag -v "$latest" 2>&1 | grep -q 'Good signature'
+- severity: medium
+- recovery: owner re-cuts the tag with `-s`
+
+## Supply-Chain
+
+### T020-action-shas-pinned
+- description: every 3rd-party action in .github/workflows/ uses a 40-char SHA pin
+- run: ! grep -rE 'uses: [^/]+/[^@]+@(main|master|v[0-9]+\.?[0-9]*\.?[0-9]*)' .github/workflows/ | grep -v '^#'
+- severity: high
+- recovery: replace tag/branch pin with `gh api repos/<owner>/<action>/commits/<branch> --jq .sha` resolved 40-char SHA
+
+### T021-action-shas-not-fake
+- description: every SHA pin resolves to a real upstream commit
+- run: bash scripts/verify-action-shas.sh 2>&1 | ! grep -q 'FAKE'
+- severity: critical
+- recovery: see [[feedback_verify_action_sha_pins]] — re-resolve via `gh api .../commits/<sha>` (422 = fake)
+
+### T022-cargo-lock-tracked
+- description: Cargo.lock is committed (workspace root + crate roots that produce binaries)
+- run: test -f Cargo.lock && git ls-files --error-unmatch Cargo.lock > /dev/null
+- severity: high
+- recovery: git add Cargo.lock ; commit
+
+### T023-trusted-base-reduction
+- description: only standards-approved base images in Containerfile
+- run: ! grep -E '^FROM' Containerfile .containerization/Containerfile.wave3 2>/dev/null | grep -v -E 'cgr\.dev/chainguard/|docker\.io/library/(postgres|redis|alpine):'
+- severity: warning
+- recovery: switch to Chainguard wolfi-base (per stapeln.toml model)
+
+### T024-no-pip-install-pip
+- description: no `pip install pip` or curl|bash patterns in scripts
+- run: ! grep -rE 'pip install pip|curl[^|]+\| ?bash' scripts/ .github/workflows/ 2>/dev/null
+- severity: warning
+- recovery: pin via guix.scm or Chainguard base; never bootstrap a package manager via the network
+
+## Dispatcher-Trust
+
+### T030-axiom-tracker-enabled
+- description: dispatch pipeline includes axiom_tracker pre-emission
+- run: grep -q 'AxiomTracker\|axiom_tracker' src/rust/dispatch.rs
+- severity: critical
+- recovery: any dispatch path emitting a result without axiom tracking is a TRUST VIOLATION; revert
+
+### T031-confidence-scoring-bounded
+- description: confidence values are in [0.0, 1.0] (5-level trust hierarchy)
+- run: grep -q 'ConfidenceFP\|Fin 10000' src/abi/EchidnaABI/TacticRecord.idr
+- severity: high
+- recovery: see seam analysis Gap 5 — add `#[serde(with = "confidence_serde")]` at the Rust ↔ Idris2 boundary
+
+### T032-mutation-testing-wired
+- description: dispatch.rs invokes mutation testing
+- run: grep -q 'MutationTester\|mutation::run' src/rust/dispatch.rs
+- severity: medium
+- recovery: re-wire per docs/handover/STATE.md trust-pipeline section
+
+### T033-pareto-frontier-tracked
+- description: dispatch results pass through Pareto frontier ranking
+- run: grep -q 'pareto::frontier\|ParetoRanker' src/rust/dispatch.rs
+- severity: medium
+- recovery: re-wire per same handover doc
+
+### T034-bayesian-confidence-tracked
+- description: statistical confidence module is engaged
+- run: grep -q 'BayesianTimeout\|statistics::confidence' src/rust/dispatch.rs
+- severity: medium
+- recovery: re-wire
+
+## Sandbox
+
+### T040-solver-execution-sandboxed
+- description: src/rust/executor uses Podman or bubblewrap (no bare-process exec)
+- run: grep -qE 'podman|bubblewrap|bwrap' src/rust/executor/*.rs
+- severity: critical
+- recovery: dispatcher must refuse to run any backend that bypasses executor; revert
+
+### T041-blake3-binary-integrity
+- description: src/rust/integrity uses BLAKE3 + SHAKE3-512 for prover binary verification
+- run: grep -qE 'blake3::|shake3|Shake3_512' src/rust/integrity/*.rs
+- severity: high
+- recovery: re-add per docs/ARCHITECTURE.md integrity section
+
+## ABI-Trust
+
+### T050-idris2-totality-enforced
+- description: src/abi has `%default total`
+- run: grep -q '%default total' src/abi/echidnaabi.ipkg
+- severity: critical
+- recovery: re-add line; do not workaround with per-fn `total` annotations
+
+### T051-no-banned-token-in-abi
+- description: src/abi/ has zero `believe_me`/`assert_total`/`postulate`/`prim__crash`
+- run: ! grep -rnE 'believe_me|assert_total|postulate|prim__crash' src/abi/ 2>/dev/null | grep -v -- "--" | head -1
+- severity: critical
+- recovery: rewrite proof constructively or revert; src/abi/ namespace is owner-managed per [[feedback_echidna_src_abi_namespace_intentional]]
+
+### T052-idris2-abi-ci-enforces
+- description: idris2-abi-ci.yml workflow exists + runs on every push
+- run: test -f .github/workflows/idris2-abi-ci.yml && grep -qE 'on:.*push' .github/workflows/idris2-abi-ci.yml
+- severity: critical
+- recovery: restore workflow from git history
+
+@trust-on-merge-checklist:
+- [ ] All T001-T052 pass on the PR branch
+- [ ] Owner has reviewed any T###-flagged finding before admin-merge
+- [ ] GPG-signed commit + signed tag for any release
+- [ ] No SHA pin newer than 30 days without re-verify
+@end

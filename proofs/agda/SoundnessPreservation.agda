@@ -41,23 +41,15 @@ record Proof : Set where
 -- 2.  Conflict predicate
 ------------------------------------------------------------------------
 
--- Conflicts is an abstract binary predicate over two axiom lists.
--- We leave it as a postulate-free parameter: the caller supplies a
--- concrete proof of ¬ Conflicts when they know the sets are disjoint.
+-- "Conflicts" is an abstract binary predicate over two axiom lists. It is
+-- threaded as an *explicit parameter* of the composition theorem (§5)
+-- rather than a module-level postulate, so this file declares ZERO axioms.
 --
--- In practice ECHIDNA computes this via the danger-level tracker
--- (verification/axioms.rs): two axiom sets conflict when one contains
--- an axiom that the other marks Reject.
--- TRUSTED: Conflicts is an abstract parameter (see above), not an unsound
--- escape — the caller discharges it with a concrete proof.
-postulate
-  Conflicts : List Axiom → List Axiom → Set
-  -- ^ INTENTIONAL PARAMETER — "Conflicts" is domain knowledge about
-  --   which axiom combinations are unsound.  Leaving it abstract keeps
-  --   the composition theorem maximally reusable: any concrete conflict
-  --   definition satisfying ¬ Conflicts a1 a2 gives the same guarantee.
-  --   This is NOT a soundness hole: the theorem proves a conditional,
-  --   not an unconditional claim.
+-- In practice ECHIDNA instantiates it via the danger-level tracker
+-- (src/rust/verification/axioms.rs): two axiom sets conflict when one
+-- contains an axiom the other marks Reject. The theorem proves a
+-- conditional ("if the sets do not conflict …"), so any concrete conflict
+-- definition gives the same guarantee.
 
 ------------------------------------------------------------------------
 -- 3.  Proof composition
@@ -83,12 +75,13 @@ compose p1 p2 = MkProof
 --     conflict, then compose p1 p2 is sound.
 ------------------------------------------------------------------------
 
-compose-sound : (p1 p2 : Proof)
+compose-sound : (Conflicts : List Axiom → List Axiom → Set)
+              → (p1 p2 : Proof)
               → Proof.sound p1 ≡ true
               → Proof.sound p2 ≡ true
               → ¬ Conflicts (Proof.axioms p1) (Proof.axioms p2)
               → Proof.sound (compose p1 p2) ≡ true
-compose-sound p1 p2 s1 s2 _ = ∧-true s1 s2
+compose-sound _ p1 p2 s1 s2 _ = ∧-true s1 s2
 
 ------------------------------------------------------------------------
 -- 6.  Structural corollary: composing with an empty-axiom proof

@@ -20,6 +20,8 @@
 
 module TrustLevelSoundness
 
+import Data.Nat
+
 %default total
 
 -- ==========================================================================

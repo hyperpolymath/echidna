@@ -450,7 +450,14 @@ impl ProverBackend for TypedWasmBackend {
             command: "auto".to_string(),
             args: vec![],
         });
-        Ok(crate::provers::gnn_augment_tactics(&self.config, state, "typed_wasm", suggestions, limit).await)
+        Ok(crate::provers::gnn_augment_tactics(
+            &self.config,
+            state,
+            "typed_wasm",
+            suggestions,
+            limit,
+        )
+        .await)
     }
 
     async fn search_theorems(&self, pattern: &str) -> Result<Vec<String>> {

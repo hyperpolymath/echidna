@@ -35,18 +35,13 @@ pub struct AttemptOutcome {
 
 /// How to pick a recommendation when multiple frontier points
 /// remain after Pareto filtering.
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Default, Serialize, Deserialize)]
 pub enum Tiebreak {
+    #[default]
     MinAxiom,
     MinLatency,
     MaxConfidence,
     MinCertificate,
-}
-
-impl Default for Tiebreak {
-    fn default() -> Self {
-        Tiebreak::MinAxiom
-    }
 }
 
 /// Arbitration decision: the frontier, a recommendation, and how
@@ -127,9 +122,11 @@ impl ParetoArbiter {
             Tiebreak::MinLatency => frontier
                 .iter()
                 .min_by_key(|o| (o.latency_ms, o.axiom_cost))?,
-            Tiebreak::MaxConfidence => frontier
-                .iter()
-                .max_by(|a, b| a.confidence.partial_cmp(&b.confidence).unwrap_or(std::cmp::Ordering::Equal))?,
+            Tiebreak::MaxConfidence => frontier.iter().max_by(|a, b| {
+                a.confidence
+                    .partial_cmp(&b.confidence)
+                    .unwrap_or(std::cmp::Ordering::Equal)
+            })?,
             Tiebreak::MinCertificate => frontier
                 .iter()
                 .min_by_key(|o| (o.certificate_size_bytes, o.latency_ms))?,
@@ -151,6 +148,7 @@ impl Default for ParetoArbiter {
 /// - a.axiom_cost              <= b.axiom_cost
 /// - a.certificate_size_bytes  <= b.certificate_size_bytes
 /// - a.confidence              >= b.confidence
+///
 /// AND at least one of these is strict.
 fn dominates(a: &AttemptOutcome, b: &AttemptOutcome) -> bool {
     let no_worse = a.latency_ms <= b.latency_ms
@@ -160,11 +158,10 @@ fn dominates(a: &AttemptOutcome, b: &AttemptOutcome) -> bool {
     if !no_worse {
         return false;
     }
-    let strictly_better = a.latency_ms < b.latency_ms
+    a.latency_ms < b.latency_ms
         || a.axiom_cost < b.axiom_cost
         || a.certificate_size_bytes < b.certificate_size_bytes
-        || a.confidence > b.confidence;
-    strictly_better
+        || a.confidence > b.confidence
 }
 
 #[cfg(test)]

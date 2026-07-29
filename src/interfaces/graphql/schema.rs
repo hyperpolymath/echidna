@@ -483,11 +483,7 @@ impl QueryRoot {
     /// list-query for the common single-prover case. Backend construction
     /// + a `version()` probe is the strongest "available right now"
     /// signal we can give without actually dispatching a proof.
-    async fn prover_status(
-        &self,
-        _ctx: &Context<'_>,
-        prover: String,
-    ) -> Result<ProverStatusInfo> {
+    async fn prover_status(&self, _ctx: &Context<'_>, prover: String) -> Result<ProverStatusInfo> {
         let core_kind = match CoreProverKind::from_str(&prover) {
             Ok(k) => k,
             Err(e) => {
@@ -1115,7 +1111,10 @@ mod tests {
     /// `/api/verify` handler emits must map onto a distinct enum variant.
     #[test]
     fn verify_outcome_from_rest_str_covers_taxonomy() {
-        assert_eq!(VerifyOutcome::from_rest_str("PROVED"), VerifyOutcome::Proved);
+        assert_eq!(
+            VerifyOutcome::from_rest_str("PROVED"),
+            VerifyOutcome::Proved
+        );
         assert_eq!(
             VerifyOutcome::from_rest_str("NO_PROOF_FOUND"),
             VerifyOutcome::NoProofFound
@@ -1128,7 +1127,10 @@ mod tests {
             VerifyOutcome::from_rest_str("UNSUPPORTED_FEATURE"),
             VerifyOutcome::UnsupportedFeature
         );
-        assert_eq!(VerifyOutcome::from_rest_str("TIMEOUT"), VerifyOutcome::Timeout);
+        assert_eq!(
+            VerifyOutcome::from_rest_str("TIMEOUT"),
+            VerifyOutcome::Timeout
+        );
         assert_eq!(
             VerifyOutcome::from_rest_str("INCONSISTENT_PREMISES"),
             VerifyOutcome::InconsistentPremises
@@ -1142,10 +1144,7 @@ mod tests {
             VerifyOutcome::from_rest_str("WAT"),
             VerifyOutcome::SystemError
         );
-        assert_eq!(
-            VerifyOutcome::from_rest_str(""),
-            VerifyOutcome::SystemError
-        );
+        assert_eq!(VerifyOutcome::from_rest_str(""), VerifyOutcome::SystemError);
     }
 
     /// `loose_status` covers the four labels echidnabot's existing
@@ -1256,7 +1255,10 @@ mod tests {
         "#;
         let resp = schema.execute(Request::new(query)).await;
         // Unknown prover -> resolver Err -> top-level GraphQL error.
-        assert!(!resp.errors.is_empty(), "expected an error for unknown prover");
+        assert!(
+            !resp.errors.is_empty(),
+            "expected an error for unknown prover"
+        );
         assert!(resp.errors[0].message.contains("Unknown prover"));
     }
 
@@ -1328,9 +1330,16 @@ mod tests {
             }
         "#;
         let resp = schema.execute(Request::new(q)).await;
-        assert!(resp.errors.is_empty(), "introspection errors: {:?}", resp.errors);
+        assert!(
+            resp.errors.is_empty(),
+            "introspection errors: {:?}",
+            resp.errors
+        );
         let body = serde_json::to_string(&resp.data).unwrap();
-        assert!(body.contains("\"verifyProof\""), "missing verifyProof mutation");
+        assert!(
+            body.contains("\"verifyProof\""),
+            "missing verifyProof mutation"
+        );
         assert!(
             body.contains("\"suggestTactics\""),
             "missing new suggestTactics mutation"
@@ -1353,7 +1362,10 @@ mod tests {
         let resp = schema.execute(Request::new(q)).await;
         assert!(resp.errors.is_empty());
         let body = serde_json::to_string(&resp.data).unwrap();
-        assert!(body.contains("\"proverStatus\""), "missing proverStatus query");
+        assert!(
+            body.contains("\"proverStatus\""),
+            "missing proverStatus query"
+        );
         assert!(
             body.contains("\"suggestTacticsByProofId\""),
             "missing renamed suggestTacticsByProofId query"
