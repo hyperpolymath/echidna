@@ -637,10 +637,8 @@ impl EchidnaContext {
                             .iter()
                             .filter_map(|s| {
                                 let name = s["tactic"].as_str()?;
-                                let confidence =
-                                    s["confidence"].as_f64().unwrap_or(0.5);
-                                let explanation =
-                                    s["explanation"].as_str().map(|t| t.to_string());
+                                let confidence = s["confidence"].as_f64().unwrap_or(0.5);
+                                let explanation = s["explanation"].as_str().map(|t| t.to_string());
                                 Some(crate::schema::SuggestedTactic {
                                     tactic: name.to_string(),
                                     confidence,

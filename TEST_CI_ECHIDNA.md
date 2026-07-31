@@ -1,6 +1,6 @@
 # CI Test for ECHIDNA
 
-// SPDX-License-Identifier: MPL-2.0
+// SPDX-License-Identifier: CC-BY-SA-4.0
 
 This is a test file to trigger CI workflows for echidna.
 

@@ -1,6 +1,6 @@
 <!--
 SPDX-FileCopyrightText: 2026 Jonathan D.A. Jewell <j.d.a.jewell@open.ac.uk>
-SPDX-License-Identifier: MPL-2.0
+SPDX-License-Identifier: CC-BY-SA-4.0
 -->
 
 # ADR 2026-06-01 — Prover / Corpus / Vocab / Synonyms / Arbitration Saturation Campaign

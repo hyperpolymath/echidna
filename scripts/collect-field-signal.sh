@@ -6,7 +6,7 @@
 set -euo pipefail
 
 REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
-STATE_FILE="${REPO_ROOT}/.machine_readable/6a2/STATE.a2ml"
+STATE_FILE="${REPO_ROOT}/.machine_readable/descriptiles/STATE.a2ml"
 TIMESTAMP=$(date -u +"%Y-%m-%d")
 
 # 1. Cold-start latency from Fly.io logs (requires auth)

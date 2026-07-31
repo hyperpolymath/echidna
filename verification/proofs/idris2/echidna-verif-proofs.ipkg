@@ -1,0 +1,32 @@
+-- SPDX-License-Identifier: MPL-2.0
+--
+-- echidna-verif-proofs — Idris2 trust-pipeline property proofs.
+--
+-- These modules formalise properties of ECHIDNA's verification pipeline
+-- (axiom completeness/policy ordering, trust-kernel monotonicity, dispatch
+-- correctness/ordering, clamp bounds, proof-state serialisation round-trips,
+-- prover-kind injectivity, trust-level soundness).
+--
+-- Type-check the whole corpus:  idris2 --typecheck echidna-verif-proofs.ipkg
+--
+-- Building via this package (rather than a per-file `idris2 --check` loop) gives
+-- a reliable aggregate exit code AND resolves DispatchCorrectness's
+-- `import EchidnaABI.Types` through `depends = echidnaabi` — the echidnaabi
+-- package must be installed first (`idris2 --install src/abi/echidnaabi.ipkg`).
+package echidna-verif-proofs
+
+sourcedir = "."
+
+depends = base, echidnaabi
+
+modules = AxiomCompleteness
+        , AxiomPolicyOrdering
+        , BasicTotality
+        , ClampTrustBounds
+        , DispatchCorrectness
+        , DispatchOrdering
+        , NatLte
+        , ProofStateSerialisation
+        , ProverKindInjectivity
+        , TrustKernelMonotonicity
+        , TrustLevelSoundness

@@ -165,7 +165,10 @@ impl ProverBackend for BoogieBackend {
                 args: vec!["/proverOpt:O:smt.qi.max_multi_patterns=1000".to_string()],
             },
         ];
-        Ok(crate::provers::gnn_augment_tactics(&self.config, state, "boogie", tactics, limit).await)
+        Ok(
+            crate::provers::gnn_augment_tactics(&self.config, state, "boogie", tactics, limit)
+                .await,
+        )
     }
 
     async fn search_theorems(&self, _pattern: &str) -> Result<Vec<String>> {

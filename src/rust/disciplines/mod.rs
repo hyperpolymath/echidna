@@ -60,11 +60,11 @@
 
 #![allow(dead_code)]
 
-pub mod registry;
 pub mod detector;
+pub mod registry;
 
-pub use registry::{DisciplineMarker, MarkerRegistry};
 pub use detector::{detect_disciplines, DetectionContext};
+pub use registry::{DisciplineMarker, MarkerRegistry};
 
 use serde::{Deserialize, Serialize};
 

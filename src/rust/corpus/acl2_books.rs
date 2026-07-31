@@ -320,9 +320,7 @@ fn classify_form(form: &str, line: usize, pf: &mut ParsedFile) {
     match head {
         "in-package" => {
             // (in-package "X")
-            let pkg = raw_arg1
-                .trim_matches('"')
-                .to_string();
+            let pkg = raw_arg1.trim_matches('"').to_string();
             if !pkg.is_empty() && pf.module_name.is_none() {
                 pf.module_name = Some(pkg);
             }
@@ -363,8 +361,10 @@ fn classify_form(form: &str, line: usize, pf: &mut ParsedFile) {
             if name.is_empty() {
                 return;
             }
-            let mut hz = AxiomUsage::default();
-            hz.postulate = true;
+            let mut hz = AxiomUsage {
+                postulate: true,
+                ..Default::default()
+            };
             hz.other.push("defaxiom".to_string());
             flag_hazards(rest_body, &mut hz);
             pf.decls.push(DraftDecl {
@@ -381,8 +381,10 @@ fn classify_form(form: &str, line: usize, pf: &mut ParsedFile) {
             if name.is_empty() {
                 return;
             }
-            let mut hz = AxiomUsage::default();
-            hz.postulate = true;
+            let mut hz = AxiomUsage {
+                postulate: true,
+                ..Default::default()
+            };
             hz.other.push("defstub".to_string());
             pf.decls.push(DraftDecl {
                 name,
@@ -446,11 +448,9 @@ fn normalise_ws(s: &str) -> String {
 
 /// Tokenise on whitespace and Lisp syntactic glue.
 fn tokenise_idents(s: &str) -> Vec<&str> {
-    s.split(|c: char| {
-        c.is_whitespace() || matches!(c, '(' | ')' | '\'' | '`' | ',' | '"')
-    })
-    .filter(|t| !t.is_empty())
-    .collect()
+    s.split(|c: char| c.is_whitespace() || matches!(c, '(' | ')' | '\'' | '`' | ',' | '"'))
+        .filter(|t| !t.is_empty())
+        .collect()
 }
 
 fn flag_hazards(text: &str, hz: &mut AxiomUsage) {
@@ -565,11 +565,12 @@ mod tests {
 ";
         let pf = parse_acl2_file(src);
         assert!(pf.imports.iter().any(|i| i == "std/lists/top"));
-        assert!(pf
-            .imports
+        assert!(pf.imports.iter().any(|i| i == "arithmetic/top-with-meta"));
+        let one = pf
+            .decls
             .iter()
-            .any(|i| i == "arithmetic/top-with-meta"));
-        let one = pf.decls.iter().find(|d| d.name == "*one*").expect("defconst");
+            .find(|d| d.name == "*one*")
+            .expect("defconst");
         assert_eq!(one.kind, DeclKind::Module);
     }
 }

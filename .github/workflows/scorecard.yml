@@ -12,5 +12,13 @@ permissions:
   contents: read
 
 jobs:
-  scorecard:
-    uses: hyperpolymath/standards/.github/workflows/scorecard-reusable.yml@5a93d9d57cc04de4002d6d0ecd336fc7a8698910
+  analysis:
+    # Job-level permissions REPLACE the workflow-level read-all block, so
+    # contents: read must be restated here — the reusable declares it
+    # (checkout needs it) and startup-fails if the caller doesn't grant it.
+    permissions:
+      security-events: write
+      id-token: write
+      contents: read
+    uses: hyperpolymath/standards/.github/workflows/scorecard-reusable.yml@81dbf2dd854b1444fd6236fa2352474383b2c2b9 # main 2026-05-28 (SPDX bump #249)
+    secrets: inherit

@@ -14,7 +14,8 @@
 //! Run with: `cargo bench --bench routing_benchmarks`
 //! Generates HTML reports in `target/criterion/`
 
-use criterion::{black_box, criterion_group, criterion_main, BenchmarkId, Criterion};
+use criterion::{criterion_group, criterion_main, BenchmarkId, Criterion};
+use std::hint::black_box;
 
 use echidna::agent::AgentConfig;
 use echidna::dispatch::DispatchConfig;
@@ -306,6 +307,7 @@ fn bench_dispatch_config_construction(c: &mut Criterion) {
                 generate_certificates: true,
                 timeout: 60,
                 diagnostics: false,
+                arbitration_policy: Default::default(),
             })
         })
     });

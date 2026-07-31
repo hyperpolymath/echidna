@@ -20,7 +20,7 @@
 (define-public echidna
   (package
     (name "echidna")
-    (version "1.5.0")
+    (version "2.3.0")
     (source (local-file "." "echidna-checkout"
                         #:recursive? #t
                         #:select? (git-predicate ".")))
@@ -84,8 +84,7 @@ supports 30 prover backends including Agda, Coq, Lean 4, Isabelle, Z3, CVC5,
 and more, with a comprehensive verification pipeline featuring solver integrity
 checking, proof certificate validation, axiom tracking, and confidence scoring.")
     (home-page "https://github.com/hyperpolymath/echidna")
-    (license (license:non-copyleft "https://github.com/hyperpolymath/palimpsest-license"
-                                   #:comment "MPL-2.0"))))
+    (license license:agpl3+)))
 
 ;; For development shell
 echidna

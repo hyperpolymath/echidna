@@ -1,6 +1,6 @@
 /-
 SPDX-FileCopyrightText: 2025 ECHIDNA Project Team
-SPDX-License-Identifier: MIT
+SPDX-License-Identifier: MPL-2.0
 
 List Proofs in Lean 4
 

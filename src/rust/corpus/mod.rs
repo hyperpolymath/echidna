@@ -288,14 +288,20 @@ impl Corpus {
         let registry = MarkerRegistry::canonical();
         let adapter = self.adapter.clone();
         for entry in &mut self.entries {
-            entry.axiom_usage.other.retain(|s| !s.starts_with("discipline:"));
+            entry
+                .axiom_usage
+                .other
+                .retain(|s| !s.starts_with("discipline:"));
             let ctx = DetectionContext {
                 adapter: &adapter,
                 statement: &entry.statement,
                 proof: entry.proof.as_deref(),
             };
             for d in detect_disciplines(&ctx, &registry) {
-                entry.axiom_usage.other.push(format!("discipline:{}", d.tag()));
+                entry
+                    .axiom_usage
+                    .other
+                    .push(format!("discipline:{}", d.tag()));
             }
         }
     }
