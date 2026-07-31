@@ -1,0 +1,64 @@
+# SPDX-License-Identifier: MPL-2.0
+# trust.manifest.a2ml — Trident coherence manifest for the trust verb.
+# Author: Jonathan D.A. Jewell <j.d.a.jewell@open.ac.uk>
+#
+# Asserts: exactly three files constitute the trust trident; their
+# content-hashes are pinned here; cross-references round-trip; no
+# partial publication is permitted.
+#
+# The contractile CLI's `verify trust` subcommand MUST:
+#   1. Confirm all three listed files exist at the declared paths.
+#   2. Compute each file's sha256 and match against the pinned value.
+#   3. Follow each cross-reference and confirm the target file's
+#      reciprocal field points back.
+#   4. Refuse the dir (exit non-zero) if any of 1–3 fails.
+#
+# trust is the security + provenance + safe-hacking verb for echidna; one of
+# the (Hunt, blocking) triple (must + trust + bust). Primary defense against
+# threat-model misclassification (B1) and the "turn off the firewall"
+# capability-collapse (C2) — for echidna this means an unsound proof leaving
+# the dispatcher (axiom smuggled in, solver sandbox bypassed, Idris2 ABI
+# totality stripped). Error namespace T### maps onto Trustfile.a2ml sections.
+
+---
+trident_version = "1.0.0"
+verb = "trust"
+semantics = "security + provenance + safe-hacking"
+cardinality = "one per repo"
+authority = "blocking (hard gate)"
+
+[[files]]
+role = "declaration"
+path = "Trustfile.a2ml"
+sha256 = "pending-first-verify"
+size_bytes = "pending-first-verify"
+notes = "Pre-existing echidna declaration. T### namespace across Integrity / Provenance / Supply-Chain / Dispatcher-Trust / Sandbox / ABI-Trust. Maximal-trust-by-default agent action policy; deny list (no force-push-to-main, no auto licence-header edits). Covers GPG-signed commits/tags, SHA-pinned actions, Cargo.lock, axiom tracker, solver sandboxing (Podman/bwrap), BLAKE3/SHAKE3 integrity, Idris2 %default total + zero believe_me."
+
+[[files]]
+role = "runner"
+path = "trust.ncl"
+sha256 = "pending-first-verify"
+size_bytes = "pending-first-verify"
+notes = "Runner schema covers verifications (T### + section tag + severity + recovery) + safe_hacking with authorised-probes-only and this_repo_only scope enforcement. allow_filesystem_write = false; on_any_fail = exit-nonzero (hard gate)."
+
+[[files]]
+role = "k9_component"
+path = "trust.k9.ncl"
+sha256 = "pending-first-verify"
+size_bytes = "pending-first-verify"
+notes = "Trust-tier Hunt with blocking authority. on_open foregrounds threat model before negotiation; block_session_close_on_critical_drift; VeriSimDB evidence sink (trust_verifications + trust_probes). T001 licence findings are flag-only (no automated licence edits)."
+
+[cross_refs]
+runner_paired_xfile   = "Trustfile.a2ml"
+k9_paired_xfile       = "../trust/Trustfile.a2ml"
+k9_paired_runner      = "../trust/trust.ncl"
+
+[signed_by]
+user    = "Jonathan D.A. Jewell"
+date    = "2026-04-18"
+context = "trust trident — completes the (Hunt, blocking) triple (must + trust + bust) for echidna. Primary catchment for the 'turn off the firewall' class of drift: dispatcher trust boundary (axiom-track + integrity + sandbox before any proof emits), solver sandboxing, Idris2 ABI totality, supply-chain SHA-pinning, GPG-signed provenance."
+
+[[history]]
+date = "2026-04-18"
+event = "trident-born"
+note = "Trustfile.a2ml pre-existed (T### namespace, six sections, maximal-trust-by-default agent policy). This manifest + trust.ncl + trust.k9.ncl complete the trident. Hunt tier + blocking authority — on_unmet = 'fail (opposite of adjust's advisory drift-log). Inherits on_open negotiation + accountability + plain-language-translation from the intend/adjust k9 pattern; adds trust-specific threat_model_foregrounding + block_session_close_on_critical_drift + stricter accountability pledge (user cannot disable verification/sandbox/axiom-tracking to unblock merges; T001 licence findings flag-only per feedback_no_automated_licence_edits)."

@@ -80,7 +80,7 @@ tier = "Hunt"
 authority = "reporting"
 gating = "non-gating (continue)"
 cardinality = "one per repo"
-notes = "First trident instance in the estate (2026-04-18). Reports progress toward committed next-actions AND lists horizon aspirations. Absorbed the deprecated `lust` verb 2026-04-18. Never blocks. Remaining 5 verbs still on file_pair shape until tridents are built."
+notes = "First trident instance in the estate (2026-04-18). Reports progress toward committed next-actions AND lists horizon aspirations. Absorbed the deprecated `lust` verb 2026-04-18. Never blocks. All six verbs are now complete tridents (declaration + runner + k9 component) with coherence manifests."
 
 [[verbs]]
 name = "k9"
