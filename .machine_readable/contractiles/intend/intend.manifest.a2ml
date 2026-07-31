@@ -1,0 +1,69 @@
+# SPDX-License-Identifier: MPL-2.0
+# intend.manifest.a2ml — Trident coherence manifest for the intend verb.
+# Author: Jonathan D.A. Jewell <j.d.a.jewell@open.ac.uk>
+#
+# Asserts: exactly three files constitute the intend trident; their
+# content-hashes are pinned here; cross-references round-trip; no
+# partial publication is permitted.
+#
+# The contractile CLI's `verify <verb>` subcommand MUST:
+#   1. Confirm all three listed files exist at the declared paths.
+#   2. Compute each file's sha256 and match against the pinned value.
+#   3. Follow each cross-reference and confirm the target file's
+#      reciprocal field points back.
+#   4. Refuse the dir (exit non-zero) if any of 1–3 fails.
+#
+# This forecloses the failure mode where an agent publishes an A2ML
+# declaration with no paired runner or K9 component — the trident is
+# atomically complete or it is invalid.
+
+---
+trident_version = "1.0.0"
+verb = "intend"
+semantics = "north-star (commitments + aspirations)"
+cardinality = "one per repo"
+authority = "non-gating (continue)"
+
+## Files (three; exactly)
+
+[[files]]
+role = "declaration"
+path = "Intentfile.a2ml"
+sha256 = "pending-first-verify"   # populated on first `contractile verify intend`
+size_bytes = "pending-first-verify"
+
+[[files]]
+role = "runner"
+path = "intend.ncl"
+sha256 = "pending-first-verify"
+size_bytes = "pending-first-verify"
+
+[[files]]
+role = "k9_component"
+path = "intend.k9.ncl"
+sha256 = "pending-first-verify"
+size_bytes = "pending-first-verify"
+
+## Cross-references (must round-trip)
+
+[cross_refs]
+# Each runner/K9 component names its paired files; the CLI follows the
+# links and asserts reciprocity. Any dangling or mismatched reference
+# fails the verify gate.
+runner_paired_xfile   = "Intentfile.a2ml"
+k9_paired_xfile       = "../intend/Intentfile.a2ml"
+k9_paired_runner      = "../intend/intend.ncl"
+
+## Trident signing
+
+[signed_by]
+user    = "Jonathan D.A. Jewell"
+date    = "2026-04-18"
+context = "intend trident — first Trident instance in the estate (2026-04-18). Reporting authority; never blocks. Reports ECHIDNA's progress toward committed next-actions (prover backends, trust pipeline, VeriSimDB recording, Hypatia loop) and lists horizon aspirations. Absorbed the deprecated `lust` verb's [[wishes]] schema 2026-04-18."
+
+## Change log
+
+[[history]]
+date = "2026-04-18"
+event = "trident-born"
+note = "intend/Intentfile.a2ml pre-existed. This manifest + intend.ncl + intend.k9.ncl complete the trident. intend was the FIRST trident instance in the estate and ABSORBED the deprecated `lust` verb 2026-04-18 (its [[wishes]] horizon/aspiration schema now lives in Intentfile.a2ml; any `lust/` dir is drift). Non-gating reporting authority — never blocks session close."
