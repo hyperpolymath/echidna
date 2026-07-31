@@ -1,0 +1,60 @@
+# SPDX-License-Identifier: MPL-2.0
+# must.manifest.a2ml — Trident coherence manifest for the must verb.
+# Author: Jonathan D.A. Jewell <j.d.a.jewell@open.ac.uk>
+#
+# Third trident instance (per INDEX.a2ml). Completes the blocking-authority
+# pair (must + trust) and sits inside the (Hunt, blocking) triple
+# (must + trust + bust). must is concrete + persistent invariants; trust
+# is concrete + ephemeral transactions. Together they gate every
+# security- and invariant-affecting merge for the Echidna platform.
+
+---
+trident_version = "1.0.0"
+verb = "must"
+semantics = "invariant assertion — release-blocking"
+cardinality = "one per repo"
+authority = "blocking (hard gate)"
+
+## Files (three; exactly)
+
+[[files]]
+role = "declaration"
+path = "Mustfile.a2ml"
+sha256 = "pending-first-verify"
+size_bytes = "pending-first-verify"
+notes = "Mustfile declaration — Physical-State invariants each with id, description, probe, severity (LICENSE/README presence, banned hardcoded paths, no Dockerfile, no Makefile)."
+
+[[files]]
+role = "runner"
+path = "must.ncl"
+sha256 = "pending-first-verify"
+size_bytes = "pending-first-verify"
+notes = "Runner. Schema covers invariants array with status_core trio (declared/verified/failing — must does NOT extend it) + severity. on_any_fail = exit-nonzero."
+
+[[files]]
+role = "k9_component"
+path = "must.k9.ncl"
+sha256 = "pending-first-verify"
+size_bytes = "pending-first-verify"
+notes = "Hunt-restricted read-only tier; blocking authority. Tracks per-invariant trend across sessions; flags silent regressions; blocks session close on critical drift. Evidence sink = VeriSimDB contractile_executions + must_invariant_history aux table."
+
+## Cross-references (must round-trip)
+
+[cross_refs]
+runner_paired_xfile = "Mustfile.a2ml"
+k9_paired_xfile     = "../must/Mustfile.a2ml"
+k9_paired_runner    = "../must/must.ncl"
+
+## Trident signing
+
+[signed_by]
+user    = "Jonathan D.A. Jewell"
+date    = "2026-04-18"
+context = "must trident — third Trident instance. Completes the blocking-authority pair (must + trust). Specialises in subtle invariant-erosion catchment vs trust's outrageous-attack catchment. Bespoke for the Echidna neurosymbolic theorem-proving platform (Rust core + Julia ML + Idris2 ABI + Zig FFI + optional Chapel)."
+
+## Change log
+
+[[history]]
+date = "2026-04-18"
+event = "trident-born"
+note = "Mustfile.a2ml pre-existed. This manifest + must.ncl + must.k9.ncl complete the trident. Runner inherits pedigree_schema + run_defaults from ../_base.ncl; on_any_fail = exit-nonzero (hard gate). k9 inherits on_open schema from intend.k9.ncl v2.0.0; inherits block_session_close_on_critical_drift + variance-severity-acknowledgement from trust.k9.ncl v1.0.0; adds must-specific track_per_session_trend + flag_silent_regression + probe_scope = 'read_only (must doesn't do active exploit attempts — that's trust's safe_hacking territory). Evidence recorded to VeriSimDB consistent with the adjust/bust k9 evidence_sinks pattern."
