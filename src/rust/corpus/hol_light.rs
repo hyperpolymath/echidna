@@ -459,7 +459,10 @@ mod tests {
         assert_eq!(d.kind, DeclKind::Function);
         assert!(d.statement.contains("m + n"));
         let proof = d.proof.as_deref().unwrap_or("");
-        assert!(proof.contains("MESON_TAC"), "proof missing tactics: {proof}");
+        assert!(
+            proof.contains("MESON_TAC"),
+            "proof missing tactics: {proof}"
+        );
     }
 
     #[test]

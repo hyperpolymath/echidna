@@ -1,5 +1,5 @@
 <!-- SPDX-FileCopyrightText: 2026 Jonathan D.A. Jewell <j.d.a.jewell@open.ac.uk> -->
-<!-- SPDX-License-Identifier: MPL-2.0 -->
+<!-- SPDX-License-Identifier: CC-BY-SA-4.0 -->
 # ECHIDNA Wiki
 
 **ECHIDNA** — Extensible Cognitive Hybrid Intelligence for Deductive Neural Assistance — is a trust-hardened neurosymbolic theorem-proving platform supporting **128 prover backends** (12 core, exposed by default API; see [`docs/PROVER_COUNT.md`](https://github.com/hyperpolymath/echidna/blob/main/docs/PROVER_COUNT.md) for the tier breakdown).
@@ -52,3 +52,5 @@ The 2026-06-01 **prover/corpus/vocab/synonyms/arbitration saturation campaign** 
 - [`docs/architecture/VERISIM-ER-SCHEMA.md`](https://github.com/hyperpolymath/echidna/blob/main/docs/architecture/VERISIM-ER-SCHEMA.md) — VeriSim ↔ ECHIDNA E-R schema (12 entities + 7 relationships, each with Rust struct + VeriSimDB table + Cap'n Proto schema + PK/FK).
 - [`docs/decisions/2026-06-01-saturation-campaign.md`](https://github.com/hyperpolymath/echidna/blob/main/docs/decisions/2026-06-01-saturation-campaign.md) — ADR documenting the ordered marginal-benefit hierarchy and the decision to execute levers (1)–(6) and defer (7) GNN-training.
 - [`docs/handover/PROVER-CORPUS-SATURATION-LANE.md`](https://github.com/hyperpolymath/echidna/blob/main/docs/handover/PROVER-CORPUS-SATURATION-LANE.md) — saturation lane handover with sibling-branch collision avoidance.
+
+The **dogfood proof corpus is now CI-gated**: every theorem under `proofs/{coq,lean,agda}` and the `src/idris` validator type-checks on each PR (`dogfood-proofs-ci.yml` + `idris2-abi-ci.yml`), each driven by a `just proofs-*` recipe — closing a gap where the corpus had no CI. Run it locally via `just proofs`; see [Getting Started](Getting-Started).

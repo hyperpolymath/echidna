@@ -1,5 +1,5 @@
 <!-- SPDX-FileCopyrightText: 2026 Jonathan D.A. Jewell <j.d.a.jewell@open.ac.uk> -->
-<!-- SPDX-License-Identifier: MPL-2.0 -->
+<!-- SPDX-License-Identifier: CC-BY-SA-4.0 -->
 # Getting Started
 
 The canonical quickstart docs live in the repo:
@@ -40,6 +40,24 @@ just repl
 # Verify a proof file
 just verify examples/simple.v
 ```
+
+## Verify the dogfood proof corpus
+
+ECHIDNA dogfoods formal verification: its own trust-kernel proofs live under
+`proofs/` (Coq, Lean 4, Agda) and `src/idris`, and every one type-checks in CI
+(`dogfood-proofs-ci.yml` for Coq/Lean/Agda, `idris2-abi-ci.yml` for the Idris2
+ABI + validator). Run the same checks locally with the `just` recipes CI calls:
+
+```bash
+just proofs          # roll-up: Coq + Lean + Agda + Idris2
+just proofs-coq      # coqc over proofs/coq
+just proofs-lean     # lake build in proofs/lean (Lean toolchain pinned by lean-toolchain)
+just proofs-agda     # agda over proofs/agda (needs agda-stdlib registered)
+just proofs-idris    # idris2 --typecheck the src/idris validator
+```
+
+Toolchain versions match CI: Coq 8.18, Lean v4.13.0, Agda 2.6.3 with stdlib
+v1.7.3, and Idris2 0.8.0.
 
 ## Install prover backends
 

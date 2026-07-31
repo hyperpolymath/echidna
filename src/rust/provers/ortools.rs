@@ -159,7 +159,10 @@ impl ProverBackend for ORToolsBackend {
                 args: vec![],
             },
         ];
-        Ok(crate::provers::gnn_augment_tactics(&self.config, state, "ortools", tactics, limit).await)
+        Ok(
+            crate::provers::gnn_augment_tactics(&self.config, state, "ortools", tactics, limit)
+                .await,
+        )
     }
 
     async fn search_theorems(&self, _pattern: &str) -> Result<Vec<String>> {

@@ -340,9 +340,7 @@ fn parse_dafny_file(raw: &str) -> ParsedFile {
             if let Some(after) = rest.strip_prefix(&prefix) {
                 let name = after
                     .chars()
-                    .take_while(|c| {
-                        c.is_alphanumeric() || *c == '_' || *c == '\'' || *c == '?'
-                    })
+                    .take_while(|c| c.is_alphanumeric() || *c == '_' || *c == '\'' || *c == '?')
                     .collect::<String>();
                 if name.is_empty() {
                     continue;
@@ -577,7 +575,8 @@ mod tests {
 
     #[test]
     fn detects_assume_hazard() {
-        let src = "module M {\n  lemma Sketchy()\n    ensures false\n  {\n    assume false;\n  }\n}\n";
+        let src =
+            "module M {\n  lemma Sketchy()\n    ensures false\n  {\n    assume false;\n  }\n}\n";
         let pf = parse_dafny_file(src);
         assert_eq!(pf.decls.len(), 1);
         assert_eq!(pf.decls[0].name, "Sketchy");
@@ -586,11 +585,7 @@ mod tests {
             "assume should set postulate hazard: {:?}",
             pf.decls[0].axiom_usage
         );
-        assert!(pf.decls[0]
-            .axiom_usage
-            .other
-            .iter()
-            .any(|s| s == "assume"));
+        assert!(pf.decls[0].axiom_usage.other.iter().any(|s| s == "assume"));
     }
 
     // Known heuristic-adapter limitation 2026-06-01: body-less `extern method`

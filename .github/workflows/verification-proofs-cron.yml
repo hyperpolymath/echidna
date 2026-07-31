@@ -1,0 +1,82 @@
+# SPDX-License-Identifier: MPL-2.0
+# Weekly verification of the heavier self-proof corpora that are too slow and too
+# network-heavy to gate on every PR: currently Isabelle/HOL (proofs/isabelle). The
+# Isabelle toolchain is a large, non-apt download (~500MB tarball), so this runs on
+# a weekly schedule plus manual dispatch, mirroring container-ci.
+#
+# NOTE: the Mizar corpus (proofs/mizar) is intentionally NOT gated here yet -- its
+# .miz files have genuine verification errors and Mizar is the project's mock-only
+# Tier-4 tail; repairing + gating it is tracked separately (see issue). The
+# proofs-mizar just recipe remains for local/manual use.
+# `just` stays the single source of truth for the commands (RSR-H14): CI installs
+# the toolchains, then calls the same recipes a developer runs locally.
+name: Verification Proof Corpora (weekly)
+
+on:
+  schedule:
+    - cron: '17 4 * * 1'   # Mondays 04:17 UTC
+  workflow_dispatch:
+  # Tightly path-filtered: a PR that actually touches the Isabelle corpus (or this
+  # workflow) gets one confirmation run, but unrelated PRs never trigger the heavy
+  # toolchain. The weekly schedule above is the primary gate; this just catches
+  # direct edits to the .thy sources before they land.
+  pull_request:
+    paths:
+      - 'proofs/isabelle/**'
+      - '.github/workflows/verification-proofs-cron.yml'
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  isabelle:
+    name: Isabelle/HOL
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - name: Install Isabelle
+        run: |
+          set -euo pipefail
+          # Resolve the current Isabelle linux x86_64 tarball from the website. A
+          # pinned /dist/IsabelleYYYY URL 404s once a newer release supersedes it
+          # (live-provers.yml's Isabelle2024 pin has rotted), so discover the link
+          # from the homepage, then fall back to the dist/ directory listing.
+          url=""
+          for src in "https://isabelle.in.tum.de/" "https://isabelle.in.tum.de/dist/"; do
+            page="$(curl -fsSL --max-time 120 --retry 3 "$src" || true)"
+            echo "--- candidates from $src ---"
+            printf '%s\n' "$page" | grep -oE '(dist/)?Isabelle[0-9][0-9-]*_linux\.tar\.gz' | sort -V | uniq | tail -5 || true
+            rel="$(printf '%s\n' "$page" | grep -oE '(dist/)?Isabelle[0-9][0-9-]*_linux\.tar\.gz' | sort -V | uniq | tail -1)"
+            if [ -n "$rel" ]; then
+              case "$rel" in dist/*) url="https://isabelle.in.tum.de/$rel" ;; *) url="https://isabelle.in.tum.de/dist/$rel" ;; esac
+              break
+            fi
+          done
+          [ -n "$url" ] || { echo "could not resolve Isabelle linux tarball URL" >&2; exit 1; }
+          echo "Resolved Isabelle URL: $url"
+          curl -fsSL --max-time 900 --retry 3 --retry-delay 15 -o /tmp/isabelle.tar.gz "$url"
+          sudo mkdir -p /opt/isabelle
+          sudo tar xzf /tmp/isabelle.tar.gz -C /opt/isabelle
+          ISABELLE_BIN="$(find /opt/isabelle -type f -name isabelle | head -n 1)"
+          [ -n "$ISABELLE_BIN" ] || { echo "isabelle launcher not found after extract" >&2; exit 1; }
+          sudo ln -sf "$ISABELLE_BIN" /usr/local/bin/isabelle
+          isabelle version
+
+      - name: Install just
+        run: |
+          set -euo pipefail
+          curl -fsSL --retry 3 \
+            "https://github.com/casey/just/releases/download/1.51.0/just-1.51.0-x86_64-unknown-linux-musl.tar.gz" \
+            -o /tmp/just.tar.gz
+          mkdir -p "$HOME/.local/bin"
+          tar xzf /tmp/just.tar.gz -C "$HOME/.local/bin" just
+          echo "$HOME/.local/bin" >> "$GITHUB_PATH"
+
+      - name: Verify Isabelle corpus
+        run: just proofs-isabelle

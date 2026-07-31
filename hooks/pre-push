@@ -1,0 +1,14 @@
+#!/usr/bin/env bash
+# SPDX-License-Identifier: MPL-2.0
+# SPDX-FileCopyrightText: 2026 Jonathan D.A. Jewell <j.d.a.jewell@open.ac.uk>
+#
+# ECHIDNA pre-push hook — RSR compliance gate (RSR-H12).
+# Enable per clone:  git config core.hooksPath hooks
+set -euo pipefail
+
+if ! command -v just >/dev/null 2>&1; then
+  echo "pre-push: 'just' not on PATH; skipping RSR gate." >&2
+  exit 0
+fi
+
+exec just validate-rsr

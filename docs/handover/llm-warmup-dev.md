@@ -1,4 +1,4 @@
-<!-- SPDX-License-Identifier: MPL-2.0 -->
+<!-- SPDX-License-Identifier: CC-BY-SA-4.0 -->
 <!-- LLM warmup context — DEVELOPER level (<400 lines) -->
 <!-- Feed this to an LLM before doing development work on ECHIDNA -->
 

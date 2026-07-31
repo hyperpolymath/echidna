@@ -44,14 +44,14 @@ tracing-subscriber = { version = "0.3", features = ["env-filter"] }
 # Web/HTTP
 axum = { version = "0.8", features = ["macros"] }
 tower = "0.5"
-tower-http = { version = "0.6", features = ["cors", "trace"] }
+tower-http = { version = "0.7", features = ["cors", "trace"] }
 reqwest = { version = "0.12", default-features = false, features = ["json", "rustls-tls"] }
 
 # Actor framework
 actix = "0.13"
 
 # Parsing
-nom = "7"
+nom = "8"
 
 # REPL
 rustyline = "18"
@@ -73,19 +73,19 @@ ciborium = { version = "0.2", optional = true }
 chrono = { version = "0.4", features = ["serde"] }
 
 # Random number generation (for resilience jitter)
-rand = "0.9"
+rand = "0.10"
 
 # Temporary files (used by prover backends to invoke external solvers)
 tempfile = "3"
 
 # Math coprocessor — number theory + exact arithmetic.  Permissive licences
 # (Apache-2.0 / MIT) compatible with MPL-2.0 / MPL-2.0 fallback.
-num-bigint = "0.4"
+num-bigint = "0.5"
 num-integer = "0.1"
 num-traits = "0.2"
 
 # Tensor coprocessor — dense linear algebra (BSD-3-Clause, MPL-2.0 compat).
-nalgebra = "0.33"
+nalgebra = "0.35"
 
 # Crypto coprocessor.  blake3 already declared above; sha2 was previously
 # gated behind `verisim` — un-gate so the Crypto backend can use it.

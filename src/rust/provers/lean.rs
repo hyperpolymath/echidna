@@ -21,8 +21,8 @@ use nom::{
     bytes::complete::{tag, take_while},
     character::complete::{alpha1, multispace0, space1},
     combinator::opt,
-    sequence::{preceded, terminated, tuple},
-    IResult,
+    sequence::{preceded, terminated},
+    IResult, Parser,
 };
 use std::collections::HashMap;
 use std::path::PathBuf;
@@ -829,7 +829,7 @@ fn skip_whitespace_and_comments(input: &str) -> &str {
 /// Parse an identifier
 fn parse_identifier(input: &str) -> IResult<&str, String> {
     let (input, _) = multispace0(input)?;
-    let (input, first) = alt((alpha1, tag("_")))(input)?;
+    let (input, first) = alt((alpha1, tag("_"))).parse(input)?;
     let (input, rest) = take_while(|c: char| c.is_alphanumeric() || c == '_' || c == '\'')(input)?;
     Ok((input, format!("{}{}", first, rest)))
 }
@@ -877,7 +877,8 @@ fn parse_declaration(input: &str) -> IResult<&str, LeanDeclaration> {
         parse_inductive_decl,
         parse_structure_decl,
         parse_instance_decl,
-    ))(input)
+    ))
+    .parse(input)
 }
 
 /// Parse a theorem declaration
@@ -897,9 +898,10 @@ fn parse_theorem_decl(input: &str) -> IResult<&str, LeanDeclaration> {
 
     // Parse optional proof
     let (input, value) = opt(preceded(
-        tuple((multispace0, tag(":="), multispace0)),
+        (multispace0, tag(":="), multispace0),
         parse_proof_body,
-    ))(input)?;
+    ))
+    .parse(input)?;
 
     Ok((
         input,
@@ -1026,7 +1028,7 @@ fn parse_instance_decl(input: &str) -> IResult<&str, LeanDeclaration> {
     let (input, _) = multispace0(input)?;
 
     // Optional name
-    let (input, name) = opt(terminated(parse_identifier, multispace0))(input)?;
+    let (input, name) = opt(terminated(parse_identifier, multispace0)).parse(input)?;
 
     let (input, _) = tag(":")(input)?;
     let (input, ty) = parse_type_expr(input)?;

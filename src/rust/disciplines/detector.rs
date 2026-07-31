@@ -68,10 +68,7 @@ pub fn detect_disciplines(
         .into_iter()
         .filter(|(_, s)| *s >= DETECTION_THRESHOLD)
         .collect();
-    hits.sort_by(|a, b| {
-        b.1.partial_cmp(&a.1)
-            .unwrap_or(std::cmp::Ordering::Equal)
-    });
+    hits.sort_by(|a, b| b.1.partial_cmp(&a.1).unwrap_or(std::cmp::Ordering::Equal));
     hits.into_iter().map(|(d, _)| d).collect()
 }
 

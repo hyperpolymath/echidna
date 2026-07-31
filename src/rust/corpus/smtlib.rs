@@ -646,11 +646,7 @@ mod tests {
         .unwrap();
         let c = ingest(dir.path()).unwrap();
         let f = c.entries.iter().find(|e| e.name == "f").unwrap();
-        assert!(f
-            .axiom_usage
-            .other
-            .iter()
-            .any(|s| s == "uninterpreted"));
+        assert!(f.axiom_usage.other.iter().any(|s| s == "uninterpreted"));
     }
 
     #[test]

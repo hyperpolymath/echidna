@@ -329,8 +329,8 @@ fn parse_envelope(
     }
 
     // Imports / clones inside the envelope.
-    for k in (start + 1)..body_end {
-        let t = lines[k].trim_start();
+    for line in lines.iter().take(body_end).skip(start + 1) {
+        let t = line.trim_start();
         let import_rest = t
             .strip_prefix("use import ")
             .or_else(|| t.strip_prefix("use export "))

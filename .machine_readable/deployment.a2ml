@@ -1,0 +1,116 @@
+# SPDX-License-Identifier: MPL-2.0
+# Copyright (c) 2026 Jonathan D.A. Jewell (hyperpolymath) <j.d.a.jewell@open.ac.uk>
+#
+# deployment.a2ml — public hosting topology for ECHIDNA.
+# Human-facing companion: docs/HOSTING.md (keep the two in step).
+
+[metadata]
+version = "1.0.0"
+last-updated = "2026-07-29"
+maintainer = "Jonathan D.A. Jewell (hyperpolymath)"
+companion-doc = "docs/HOSTING.md"
+
+[dns]
+zone = "nesy-prover.dev"
+provider = "cloudflare"
+
+[surfaces.website]
+hostname = "nesy-prover.dev"
+host = "cloudflare-pages"
+built-by = ".github/workflows/pages.yml"
+generator = "ddraig-ssg"
+generator-language = "idris2"
+content-root = "site/"
+extra-assets = "echidna-playground/"
+output-dir = "_site"
+status = "content-merged-not-live"
+# The build must remain in GitHub Actions: it requires Idris2, which managed
+# build images do not provide. CI produces _site and publishes that directory.
+build-must-stay-in-ci = true
+
+[surfaces.website.constraints]
+# The SSG hard-fails the build on any accessibility violation.
+a11y-gate = "hard-fail"
+a11y-rules = ["exactly-one-h1-per-page", "no-skipped-heading-levels", "alt-required"]
+# Its copyTree is text-only and corrupts binaries; binary assets need `cp`.
+copytree-is-text-only = true
+link-extension = "html"
+
+[surfaces.api]
+hostname = "api.nesy-prover.dev"
+host = "hetzner"
+runtime = "podman-rootless-quadlets"
+proxy = "caddy"
+image = "ghcr.io/hyperpolymath/echidna:latest"
+image-published-by = ".github/workflows/ghcr-publish.yml"
+image-public = true
+deploy-unit = "deploy/hetzner/"
+runbook = "deploy/hetzner/README.adoc"
+canonical-api-doc = "site/docs/api/core.md"
+status = "ready-not-deployed"
+
+[surfaces.api.limits]
+rate-limit = "30/min/ip"
+request-body-max = "1MB"
+memory = "1500m"
+pids = 512
+tmpfs = "/tmp"
+no-new-privileges = true
+published-host-port = false          # reachable only via caddy
+update-policy = "auto-update-registry"
+rollback-trigger = "HealthOnFailure=kill"
+
+[surfaces.api.risks]
+# The API has no auth and spawns prover binaries on user input. Rate limiting
+# bounds request COUNT, not the cost of a single request. Lean accepts #eval,
+# i.e. arbitrary code at elaboration time.
+authentication = "none"
+per-request-prover-timeout = "absent"
+outstanding-work = "add server-side timeout around prover subprocess in src/rust/server.rs"
+
+[surfaces.email]
+address = "sudo@nesy-prover.dev"
+host = "cloudflare-email-routing"
+mode = "forwarder"
+status = "not-configured"
+
+[retired.fly-io]
+app = "echidna-nesy"
+reason = "cost"
+action = "delete fly.toml and .github/workflows/fly-deploy.yml"
+note = "the fly deploy action was never on the repository permitted-actions list"
+
+[known-issues.actions-startup-failure]
+severity = "blocking"
+scope = "repository-wide"
+detected = "2026-07-27T22:45Z"
+symptom = "every workflow returns startup_failure, including pages.yml"
+# A minimal probe workflow (one SHA-pinned actions/checkout + echo) fails
+# identically, so this is not a fault in any workflow file.
+probe-also-fails = true
+ruled-out = [
+  "workflow-yaml-validity",
+  "unresolvable-action-shas",
+  "billing-or-visibility",
+  "ruleset-required-workflow",
+  "account-wide-outage",
+  "scalar-permissions-yaml-break",
+  "actions-policy",           # byte-identical to a healthy sibling repo
+]
+reason-not-exposed-by-api = true
+next-action = "read the banner on an Actions run page; it exists nowhere else"
+
+[known-issues.apex-no-origin]
+severity = "blocking-website"
+symptom = "TLS to cloudflare completes, request then hangs"
+cause = "cloudflare proxying to an origin that does not exist"
+note = "DNS records are likely already correct; the Pages project is what is missing"
+
+[diagnostics]
+# A startup-failed workflow registers NO check run, so `gh pr checks` reports
+# success while every real gate is dead. Always use `gh run list`.
+trust-gh-pr-checks = false
+liveness-command = "gh run list --branch main --json workflowName,conclusion"
+# A workflow displayed by PATH instead of NAME has never been parsed.
+never-parsed-tell = "workflowName equals .github/workflows/<file>.yml"
+never-parsed-confirm = "gh api repos/OWNER/REPO/actions/runs/<id>/jobs --jq '.jobs|length' == 0"

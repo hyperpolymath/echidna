@@ -7,12 +7,27 @@
 ||| All functions are declared here with type signatures and safety proofs.
 ||| Implementations live in ffi/zig/
 
-module Echidna.ABI.Foreign
+module EchidnaABI.Foreign
 
-import Echidna.ABI.Types
-import Echidna.ABI.Layout
+import EchidnaABI.Types
+import EchidnaABI.Layout
 
 %default total
+
+--------------------------------------------------------------------------------
+-- FFI Result codes
+--------------------------------------------------------------------------------
+
+||| Result / error codes returned across the C ABI boundary.
+||| Mirrors the discriminant set consumed by `resultFromInt` below and the
+||| `echidna_*` C entry points implemented in ffi/zig/.
+public export
+data Result : Type where
+  Ok           : Result
+  Error        : Result
+  InvalidParam : Result
+  OutOfMemory  : Result
+  NullPointer  : Result
 
 --------------------------------------------------------------------------------
 -- Library Lifecycle
@@ -184,13 +199,13 @@ Callback = Bits64 -> Bits32 -> Bits32
 ||| Register a callback
 export
 %foreign "C:echidna_register_callback, libechidna"
-prim__registerCallback : Bits64 -> AnyPtr -> PrimIO Bits32
+prim__registerCallback : Bits64 -> Callback -> PrimIO Bits32
 
 ||| Safe callback registration
 export
 registerCallback : Handle -> Callback -> IO (Either Result ())
 registerCallback h cb = do
-  result <- primIO (prim__registerCallback (handlePtr h) (cast cb))
+  result <- primIO (prim__registerCallback (handlePtr h) cb)
   pure $ case resultFromInt result of
     Just Ok => Right ()
     Just err => Left err

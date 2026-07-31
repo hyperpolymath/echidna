@@ -344,7 +344,9 @@ fn parse_tptp_file(raw: &str) -> ParsedFile {
                 // include arguments don't nest).
                 if let Some(end) = args.rfind(')') {
                     let inside = args[..end].trim();
-                    let path = inside.trim_matches(|c: char| c == '\'' || c == '"').to_string();
+                    let path = inside
+                        .trim_matches(|c: char| c == '\'' || c == '"')
+                        .to_string();
                     if !path.is_empty() && !pf.imports.contains(&path) {
                         pf.imports.push(path);
                     }
@@ -370,9 +372,9 @@ fn parse_annotated_formula(stmt: &str, line: usize) -> Option<DraftDecl> {
     for k in &kinds {
         if let Some(r) = stmt.strip_prefix(k) {
             let r2 = r.trim_start();
-            if r2.starts_with('(') {
+            if let Some(stripped) = r2.strip_prefix('(') {
                 head = Some(k);
-                rest = Some(&r2[1..]);
+                rest = Some(stripped);
                 break;
             }
         }

@@ -18,7 +18,7 @@ repo = "https://github.com/hyperpolymath/echidna"
 [context-tiers]
 # Tier 0 (always load): This file + .claude/CLAUDE.md — orientation only
 # Tier 1 (load if working on code): README.adoc, EXPLAINME.adoc, Justfile, Cargo.toml
-# Tier 2 (load on demand): .machine_readable/6a2/*.a2ml, docs/
+# Tier 2 (load on demand): .machine_readable/descriptiles/*.a2ml, docs/
 # Tier 3 (never load unless asked): tests/, generated/, proofs/
 #
 # DO NOT READ unless specifically asked:
@@ -32,9 +32,9 @@ repo = "https://github.com/hyperpolymath/echidna"
 
 [canonical-locations]
 state-files = ".machine_readable/"
-state = ".machine_readable/6a2/STATE.a2ml"
-meta = ".machine_readable/6a2/META.a2ml"
-ecosystem = ".machine_readable/6a2/ECOSYSTEM.a2ml"
+state = ".machine_readable/descriptiles/STATE.a2ml"
+meta = ".machine_readable/descriptiles/META.a2ml"
+ecosystem = ".machine_readable/descriptiles/ECOSYSTEM.a2ml"
 anchors = ".machine_readable/anchors/"
 policies = ".machine_readable/policies/"
 contractiles = ".machine_readable/contractiles/"
@@ -95,9 +95,9 @@ invariant-9 = "Zero believe-me in Idris2 ABI (src/abi/)"
 [session-protocol]
 on-enter = [
   "Read this manifest",
-  "Read .machine_readable/6a2/STATE.a2ml for current status",
+  "Read .machine_readable/descriptiles/STATE.a2ml for current status",
   "Read .claude/CLAUDE.md for build commands and conventions",
 ]
 on-exit = [
-  "Update .machine_readable/6a2/STATE.a2ml with progress",
+  "Update .machine_readable/descriptiles/STATE.a2ml with progress",
 ]
