@@ -110,7 +110,7 @@ pub const OverlayError = enum(c_int) {
 // Thread-local error buffer
 // ============================================================================
 
-threadlocal var error_buf: [ERROR_BUF_SIZE]u8 = [_]u8{0} ** ERROR_BUF_SIZE;
+threadlocal var error_buf: [ERROR_BUF_SIZE:0]u8 = std.mem.zeroes([ERROR_BUF_SIZE:0]u8);
 threadlocal var error_len: usize = 0;
 
 fn setError(msg: []const u8) void {
@@ -681,7 +681,7 @@ pub export fn echidna_overlay_kind_name(kind: c_int) [*:0]const u8 {
 /// Get the last overlay error message.
 pub export fn echidna_overlay_last_error() ?[*:0]const u8 {
     if (error_len == 0) return null;
-    return @ptrCast(&error_buf);
+    return &error_buf;
 }
 
 // ============================================================================
