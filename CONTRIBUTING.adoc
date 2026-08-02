@@ -1,4 +1,4 @@
-// SPDX-License-Identifier: MPL-2.0
+// SPDX-License-Identifier: CC-BY-SA-4.0
 // SPDX-FileCopyrightText: 2025-2026 Jonathan D.A. Jewell <j.d.a.jewell@open.ac.uk>
 = ECHIDNA — Contributing
 :toc: macro
@@ -156,7 +156,7 @@ header:
 
 [source]
 ----
-// SPDX-License-Identifier: MPL-2.0
+// SPDX-License-Identifier: CC-BY-SA-4.0
 // SPDX-FileCopyrightText: <year> <name> <email>
 ----
 
@@ -164,6 +164,18 @@ Don't migrate existing files' SPDX identifiers without explicit owner
 direction — the license stance is intentionally MPL-2.0 across the
 documentation surface, and historical drift on individual files is
 owner-managed.
+
+ECHIDNA's contribution model historically references the
+*Palimpsest License* as an ethical / philosophical framework
+alongside the legal licence. That framework reference is preserved
+as part of the project's stance: the *legal* licence remains as
+declared by the SPDX header on each file (MPL-2.0 for the
+documentation surface; historical drift owner-managed). The
+Palimpsest framework is a discipline about how contributions are
+received, attributed, and forwarded — orthogonal to the SPDX
+choice. The Palimpsest licence proper is the legal licence only on
+`palimpsest-license`, `palimpsest-plasma`, and (prospectively)
+`consent-aware-http`.
 
 == Security
 

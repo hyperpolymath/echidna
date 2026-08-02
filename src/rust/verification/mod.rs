@@ -1,4 +1,5 @@
 // SPDX-License-Identifier: MPL-2.0
+// SPDX-FileCopyrightText: 2026 Jonathan D.A. Jewell <j.d.a.jewell@open.ac.uk>
 
 //! Verification subsystem for ECHIDNA
 //!
@@ -9,15 +10,42 @@
 //! - Confidence scoring (5-level trust hierarchy)
 //! - Mutation testing for specifications
 //! - Pareto optimality for proof search
+//!
+//! ## Arbitration stack (4 mechanisms, post-saturation 2026-06-01)
+//!
+//! Existing:
+//! - `portfolio` — majority-vote + flagging when k provers agree
+//!
+//! Added in the saturation campaign (see
+//! `docs/decisions/2026-06-01-saturation-campaign.md`):
+//! - `bayesian_arbiter` — log-odds posterior with per-prover calibrated
+//!   likelihoods; reports Shannon entropy.
+//! - `dempster_shafer` — belief-mass combination via Dempster's rule;
+//!   trips `HighConflict` when normalised conflict mass k > 0.95.
+//! - `pareto_arbiter` — multi-objective Pareto frontier over
+//!   (confidence↑, latency↓, axiom_cost↓, certificate_size↓) with
+//!   pluggable tiebreak.
+//!
+//! Picking between them: see the "Guide: Picking an arbitration
+//! mechanism" entry in `docs/wiki/Guides.md`.
+//!
+//! Unified entry point: `result_arbiter` adapts per-prover
+//! [`crate::provers::outcome::ProverOutcome`]s into whichever mechanism
+//! the configured [`result_arbiter::ArbitrationPolicy`] selects; the
+//! dispatch cross-check path delegates to it.
 
 pub mod axiom_tracker;
+pub mod bayesian_arbiter;
 pub mod certificates;
 pub mod confidence;
+pub mod dempster_shafer;
 pub mod mutation;
 pub mod pareto;
+pub mod pareto_arbiter;
 pub mod portfolio;
 #[cfg(feature = "verisim")]
 pub mod proof;
+pub mod result_arbiter;
 pub mod statistics;
 
 pub use axiom_tracker::{AxiomPolicy, AxiomTracker, AxiomUsage, DangerLevel};
@@ -30,4 +58,5 @@ pub use portfolio::{PortfolioConfig, PortfolioResult, PortfolioSolver};
 pub use proof::{
     theorem_identity, Proof, ProofStateRecord, ProofVersion, TacticApplication, TacticStatus,
 };
+pub use result_arbiter::{ArbitratedVerdict, ArbitrationPolicy, ProverAttempt, ResultArbiter};
 pub use statistics::{StatisticsTracker, StatsSummaryRecord};

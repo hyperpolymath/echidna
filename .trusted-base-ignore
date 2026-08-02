@@ -28,9 +28,19 @@ crates/echidna-core-spark/src/axiom_tracker.rs
 # ─────────────────────────────────────────────────────────────────────────────
 # Hazard-classification helpers in the corpus extractor (NOT uses)
 # ─────────────────────────────────────────────────────────────────────────────
-# `corpus/agda.rs::collect_hazards` and `corpus/idris2.rs::collect_hazards`
-# each run a single-line `if text.contains("unsafePerformIO" / "unsafeCoerce"
-# / "Obj.magic")` to flag corpus entries that *contain* those patterns.
+# `corpus/agda.rs`, `corpus/idris2.rs` and `corpus/fstar.rs` each run a
+# single-line `if text.contains("unsafePerformIO" / "unsafeCoerce" / "Obj.magic"
+# / "admit" / ...)` to flag corpus entries that *contain* those patterns.
 # Same FP class — the substring is a hazard sentinel, not an escape hatch.
 src/rust/corpus/agda.rs
 src/rust/corpus/idris2.rs
+src/rust/corpus/fstar.rs
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Test corpus fixtures (sample prover inputs, NOT trust-kernel proofs)
+# ─────────────────────────────────────────────────────────────────────────────
+# `tests/corpus_fixtures/` holds sample source files fed to the corpus
+# extractors as test inputs — e.g. a minif2f Lean problem stubbed with `sorry`,
+# an F* smoke file with `assume val oracle`. They exercise the scanner; they are
+# not proof obligations in the trusted base.
+tests/corpus_fixtures/

@@ -1,0 +1,381 @@
+# SPDX-License-Identifier: MPL-2.0
+#
+# HOL Light tactic and term-builder synonyms.
+# Schema: see data/synonyms/README.adoc.
+# Seeded 2026-06-01 by Opus.
+
+# ---------------------------------------------------------------------------
+# First-order automation cascade
+# ---------------------------------------------------------------------------
+
+[[synonym]]
+canonical    = "MESON_TAC"
+aliases      = ["ASM_MESON_TAC", "MESON"]
+tactic_class = "automation"
+notes        = """
+Model-elimination first-order prover. `ASM_MESON_TAC` adds the
+assumption list as hints; `MESON` is the kernel function the tactic
+wraps. When `MESON_TAC[]` fails, try `ASM_MESON_TAC[]` before pulling
+in named lemmas — context often closes the gap for free.
+"""
+
+[[synonym]]
+canonical    = "METIS_TAC"
+aliases      = ["ASM_METIS_TAC"]
+tactic_class = "automation"
+notes        = """
+Resolution-based FO prover. Slower than MESON on small goals but
+handles equality reasoning more robustly. Common HOL4 → HOL Light
+port surface; if a HOL4 proof used METIS, METIS_TAC is the first
+thing to try here, MESON_TAC second.
+"""
+
+# ---------------------------------------------------------------------------
+# Rewriting cascade
+# ---------------------------------------------------------------------------
+
+[[synonym]]
+canonical    = "REWRITE_TAC"
+aliases      = ["PURE_REWRITE_TAC", "ONCE_REWRITE_TAC"]
+tactic_class = "rewriting"
+notes        = """
+`REWRITE_TAC` includes default simp set; `PURE_REWRITE_TAC` does not;
+`ONCE_REWRITE_TAC` performs a single pass (no fixed-point loop).
+When `REWRITE_TAC` loops, drop to `PURE_REWRITE_TAC` or `ONCE_REWRITE_TAC`.
+"""
+
+[[synonym]]
+canonical    = "ASM_REWRITE_TAC"
+aliases      = ["ASM_SIMP_TAC", "ASM_ONCE_REWRITE_TAC"]
+tactic_class = "rewriting"
+notes        = """
+`ASM_*` variants pull the hypotheses into the rewrite set. Prefer
+when goal contains assumption-mentioned terms; equivalent to
+`REWRITE_TAC[ASSUME h_i ...]` for each hypothesis.
+"""
+
+[[synonym]]
+canonical    = "SIMP_TAC"
+aliases      = ["ASM_SIMP_TAC", "ONCE_SIMP_TAC"]
+tactic_class = "rewriting"
+notes        = """
+Conditional rewriting with side-condition discharge. More powerful
+than `REWRITE_TAC` when lemmas carry guards (`P ==> a = b`).
+"""
+
+# ---------------------------------------------------------------------------
+# Arithmetic
+# ---------------------------------------------------------------------------
+
+[[synonym]]
+canonical    = "ARITH_TAC"
+aliases      = ["NUM_ARITH_TAC", "ASM_ARITH_TAC"]
+tactic_class = "arith"
+notes        = """
+Linear arithmetic over `num` (naturals). `ASM_ARITH_TAC` includes
+hypotheses. For integers use `INT_ARITH_TAC`; for reals
+`REAL_ARITH_TAC`.
+"""
+
+[[synonym]]
+canonical    = "INT_ARITH_TAC"
+aliases      = ["INT_ARITH"]
+tactic_class = "arith"
+notes        = """
+Linear integer arithmetic. Use when goal mixes negative literals or
+explicit `(:int)` casts.
+"""
+
+[[synonym]]
+canonical    = "REAL_ARITH_TAC"
+aliases      = ["REAL_ARITH", "REAL_LINEAR_TAC"]
+tactic_class = "arith"
+notes        = """
+Linear real arithmetic (a la Hodes' decision procedure). `REAL_ARITH`
+is the term-conversion form usable inside `MP_TAC`.
+"""
+
+# ---------------------------------------------------------------------------
+# Backwards implication / forward chaining
+# ---------------------------------------------------------------------------
+
+[[synonym]]
+canonical    = "MATCH_MP_TAC"
+aliases      = ["MP_TAC", "ANTE_RES_THEN"]
+tactic_class = "structural"
+notes        = """
+Backwards modus ponens. `MATCH_MP_TAC thm` unifies the conclusion of
+`thm` with the goal and reduces to the premises. `MP_TAC` is forward
+(adds the thm to assumptions). When the conclusion shape doesn't
+match exactly, look for a `MATCH_MP_TAC` alias of the lemma you
+expected to use.
+"""
+
+# ---------------------------------------------------------------------------
+# Quantifier introduction / elimination
+# ---------------------------------------------------------------------------
+
+[[synonym]]
+canonical    = "EXISTS_TAC"
+aliases      = ["MAP_EVERY EXISTS_TAC", "META_EXISTS_TAC"]
+tactic_class = "structural"
+notes        = """
+Provide a witness for `?x. P x`. `META_EXISTS_TAC` defers the witness
+to a metavariable for later unification — useful when the witness is
+forced by later subgoals.
+"""
+
+[[synonym]]
+canonical    = "X_GEN_TAC"
+aliases      = ["GEN_TAC", "X_CHOOSE_TAC"]
+tactic_class = "structural"
+notes        = """
+Universal-introduction with a chosen name (`X_GEN_TAC`) versus a
+kernel-fresh name (`GEN_TAC`). Prefer `X_GEN_TAC` whenever the body
+mentions the new name — readable proofs name their binders.
+"""
+
+[[synonym]]
+canonical    = "DISCH_TAC"
+aliases      = ["STRIP_TAC", "DISCH_THEN"]
+tactic_class = "structural"
+notes        = """
+Implication-introduction. `STRIP_TAC` is the omnibus form: it does
+DISCH for `==>`, GEN for `!`, CONJ for `/\\`. When you want exactly
+one of these moves, name it explicitly.
+"""
+
+[[synonym]]
+canonical    = "STRIP_TAC"
+aliases      = ["REPEAT STRIP_TAC", "REPEAT GEN_TAC THEN DISCH_TAC"]
+tactic_class = "structural"
+notes        = """
+Omnibus introduction. Convenient but opaque — avoid in proofs that
+will be ported across HOL family members where the strip ordering
+differs.
+"""
+
+[[synonym]]
+canonical    = "CONJ_TAC"
+aliases      = ["MAP_EVERY CONJ_TAC", "STRIP_TAC"]
+tactic_class = "structural"
+notes        = """
+Split `A /\\ B` into two subgoals. For `A /\\ B /\\ C` HOL Light
+right-associates, so `CONJ_TAC` gives `A` and `B /\\ C` — call again
+on the second.
+"""
+
+[[synonym]]
+canonical    = "DISJ_CASES_TAC"
+aliases      = ["DISJ1_TAC", "DISJ2_TAC", "ASM_CASES_TAC"]
+tactic_class = "structural"
+notes        = """
+Disjunction elimination. `DISJ1_TAC`/`DISJ2_TAC` are the introduction
+forms (pick a disjunct). `ASM_CASES_TAC P` does a classical case
+split on an arbitrary proposition.
+"""
+
+# ---------------------------------------------------------------------------
+# Induction
+# ---------------------------------------------------------------------------
+
+[[synonym]]
+canonical    = "INDUCT_TAC"
+aliases      = ["NUM_INDUCT_TAC", "GEN_INDUCT_TAC"]
+tactic_class = "induction"
+notes        = """
+Induction on `num` — base + step. `NUM_INDUCT_TAC` is the
+explicitly-named variant; `INDUCT_TAC` infers the type.
+"""
+
+[[synonym]]
+canonical    = "LIST_INDUCT_TAC"
+aliases      = ["INDUCT_TAC"]
+tactic_class = "induction"
+notes        = """
+Induction on `list` — `[]` + `CONS h t`. When the goal universal is
+over a list, this is the right call (don't reach for `INDUCT_TAC`,
+which targets `num`).
+"""
+
+[[synonym]]
+canonical    = "NUM_INDUCT_TAC"
+aliases      = ["INDUCT_TAC", "WF_INDUCT_TAC", "ARITH_INDUCT_TAC"]
+tactic_class = "induction"
+notes        = """
+Explicit `num`-induction. `WF_INDUCT_TAC` is the well-founded form,
+useful when the step needs the IH on every smaller value, not just
+the predecessor.
+"""
+
+# ---------------------------------------------------------------------------
+# Term-builder kernel calls
+# ---------------------------------------------------------------------------
+
+[[synonym]]
+canonical    = "new_definition"
+aliases      = ["define", "new_recursive_definition", "new_specification"]
+tactic_class = "term_builder"
+notes        = """
+HOL Light has *many* definition forms. `new_definition` is the
+non-recursive workhorse; `define` does pattern-style equations;
+`new_recursive_definition` requires the recursion-on-type instance;
+`new_specification` produces existentials given a definedness
+witness. Don't conflate during a port — the proof obligations differ.
+"""
+
+[[synonym]]
+canonical    = "define"
+aliases      = ["new_recursive_definition"]
+tactic_class = "term_builder"
+notes        = """
+Pattern-matching definition (HOL Light's `define` is a thin wrapper
+over a recursion-equation prover). Use when the equations have
+multiple cases; otherwise `new_definition` is cheaper.
+"""
+
+[[synonym]]
+canonical    = "new_axiom"
+aliases      = ["mk_thm", "ASSUME"]
+tactic_class = "term_builder"
+notes        = """
+HAZARD. `new_axiom` adds an axiom to the kernel. `mk_thm` constructs
+a theorem token directly (worse: bypasses the axiom audit trail).
+`ASSUME P` at top level (outside a tactic) introduces a hypothesis
+that propagates; safe inside tactics where the hypothesis is
+discharged later. Any of these in a finished proof is a smell.
+"""
+
+[[synonym]]
+canonical    = "prove"
+aliases      = ["TAC_PROOF", "prove_by_refinement"]
+tactic_class = "term_builder"
+notes        = """
+The standard theorem-builder takes `(stmt, tactic)`. `TAC_PROOF` is
+the underlying kernel call (same args, no implicit goalstack).
+`prove_by_refinement` takes a refinement list (interactive
+goal-driven proofs scripted out).
+"""
+
+# ---------------------------------------------------------------------------
+# Conversions (rewriting *terms*, not tactics)
+# ---------------------------------------------------------------------------
+
+[[synonym]]
+canonical    = "REWRITE_CONV"
+aliases      = ["PURE_REWRITE_CONV", "ONCE_REWRITE_CONV"]
+tactic_class = "rewriting"
+notes        = """
+Conversion form of REWRITE_TAC — rewrites a term, returning the
+equation between original and rewritten form. Embedded in tactics
+via `CONV_TAC (REWRITE_CONV [...])`.
+"""
+
+[[synonym]]
+canonical    = "BETA_CONV"
+aliases      = ["GEN_BETA_CONV", "TOP_DEPTH_CONV BETA_CONV"]
+tactic_class = "reduction"
+notes        = """
+Beta-reduction conversion. `GEN_BETA_CONV` handles paired binders too
+(`\\(x,y). f x y`).
+"""
+
+[[synonym]]
+canonical    = "NUM_REDUCE_CONV"
+aliases      = ["NUM_NORMALIZE_CONV", "ARITH_RULE"]
+tactic_class = "arith"
+notes        = """
+Evaluates closed arithmetic terms over `num` (`SUC (SUC 0) + 3` → `5`).
+`ARITH_RULE` is the proof-producing form for arbitrary arithmetic
+identities.
+"""
+
+# ---------------------------------------------------------------------------
+# Equality-driven moves
+# ---------------------------------------------------------------------------
+
+[[synonym]]
+canonical    = "REFL_TAC"
+aliases      = ["EQ_TAC", "ACCEPT_TAC REFL"]
+tactic_class = "structural"
+notes        = """
+Discharges `t = t`. `EQ_TAC` turns `A = B` (booleans) into `A ==> B`
++ `B ==> A`. When the goal is a tautological equation, both work;
+prefer `REFL_TAC` for clarity.
+"""
+
+[[synonym]]
+canonical    = "ACCEPT_TAC"
+aliases      = ["MATCH_ACCEPT_TAC", "ASSUME_TAC"]
+tactic_class = "structural"
+notes        = """
+Closes the goal by exhibiting a theorem that matches it exactly.
+`MATCH_ACCEPT_TAC` does a type-instantiation pass first.
+`ASSUME_TAC` adds the theorem to the hypotheses (forward chaining).
+"""
+
+# ---------------------------------------------------------------------------
+# Tactic combinators
+# ---------------------------------------------------------------------------
+
+[[synonym]]
+canonical    = "THEN"
+aliases      = ["THENL", "ORELSE", "REPEAT"]
+tactic_class = "combinator"
+notes        = """
+`t1 THEN t2` sequences tactics (applies `t2` to every subgoal).
+`THENL` distributes a list of tactics across the subgoals — fragile,
+breaks when the goal count changes. `ORELSE` tries `t1`, falls back
+to `t2` on failure. `REPEAT t` runs until `t` no longer makes
+progress.
+"""
+
+[[synonym]]
+canonical    = "ALL_TAC"
+aliases      = ["NO_TAC", "FAIL_TAC"]
+tactic_class = "combinator"
+notes        = """
+`ALL_TAC` is the identity tactic (always succeeds, leaves goal
+unchanged). `NO_TAC` always fails. `FAIL_TAC s` always fails with
+message `s` — used inside `ORELSE` to signal *expected* failure.
+"""
+
+# ---------------------------------------------------------------------------
+# Subgoal manipulation
+# ---------------------------------------------------------------------------
+
+[[synonym]]
+canonical    = "SUBGOAL_TAC"
+aliases      = ["SUBGOAL_THEN", "ABBREV_TAC"]
+tactic_class = "structural"
+notes        = """
+Introduce an auxiliary lemma as a new goal, then use it to close the
+original. `SUBGOAL_THEN` takes the lemma's statement as a backtick-
+quoted term. `ABBREV_TAC` introduces a local definition (`y = expr`)
+that gets folded into the goal.
+"""
+
+[[synonym]]
+canonical    = "POP_ASSUM"
+aliases      = ["FIRST_ASSUM", "MAP_EVERY POP_ASSUM"]
+tactic_class = "structural"
+notes        = """
+Walk over hypotheses. `POP_ASSUM f` pops the last one and applies
+`f`. `FIRST_ASSUM f` tries each hypothesis in turn, succeeds on the
+first that doesn't fail. Useful for `irule`-style chaining when the
+relevant hypothesis isn't yet named.
+"""
+
+# ---------------------------------------------------------------------------
+# Term-builder kernel calls (continued)
+# ---------------------------------------------------------------------------
+
+[[synonym]]
+canonical    = "new_inductive_definition"
+aliases      = ["new_inductive_set", "Hol_reln"]
+tactic_class = "term_builder"
+notes        = """
+Inductive relation/predicate definition. Produces the relation plus
+rule-induction and case-analysis principles. The proof obligations
+discharge the existence of a least fixed point of the rule functor.
+"""

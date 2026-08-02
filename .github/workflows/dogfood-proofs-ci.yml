@@ -1,0 +1,254 @@
+# SPDX-License-Identifier: MPL-2.0
+# Gates the ECHIDNA dogfood proof corpus: every theorem under proofs/{coq,lean,agda}
+# must type-check. These proofs had no CI coverage before this workflow -- the other
+# proof workflows are path-filtered to meta-checker/** (agda-meta-checker) and
+# src/abi/** (idris2-abi-ci), and there was no Coq or Lean workflow at all, so
+# regressions in proofs/ landed silently.
+#
+# Toolchains are installed with plain `run:` steps (apt / curl tarballs, matching the
+# idris2 + chapel workflows) rather than marketplace setup actions: a third-party
+# setup action (taiki-e/install-action) reproducibly tripped a startup_failure in this
+# workflow's context, so this workflow uses only actions/checkout plus run steps.
+# `just` stays the single source of truth for the commands (RSR-H14) -- CI installs it
+# and calls the same recipes a developer runs locally.
+name: Dogfood Proof Corpus
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'proofs/**'
+      - 'verification/proofs/lean4/**'
+      - 'verification/proofs/idris2/**'
+      - 'Justfile'
+      - '.github/workflows/dogfood-proofs-ci.yml'
+  pull_request:
+    branches: [main]
+    paths:
+      - 'proofs/**'
+      - 'verification/proofs/lean4/**'
+      - 'verification/proofs/idris2/**'
+      - 'Justfile'
+      - '.github/workflows/dogfood-proofs-ci.yml'
+  workflow_dispatch:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  coq:
+    name: Coq
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - name: Install Coq
+        run: |
+          set -euo pipefail
+          sudo apt-get update -qq || sudo apt-get update -qq --fix-missing
+          sudo apt-get install -y --fix-missing coq
+          coqc --version
+
+      - name: Install just
+        run: |
+          set -euo pipefail
+          curl -fsSL --retry 3 \
+            "https://github.com/casey/just/releases/download/1.51.0/just-1.51.0-x86_64-unknown-linux-musl.tar.gz" \
+            -o /tmp/just.tar.gz
+          mkdir -p "$HOME/.local/bin"
+          tar xzf /tmp/just.tar.gz -C "$HOME/.local/bin" just
+          echo "$HOME/.local/bin" >> "$GITHUB_PATH"
+
+      - name: Type-check Coq corpus
+        run: just proofs-coq
+
+  lean:
+    name: Lean 4
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - name: Install elan + pinned Lean toolchain
+        run: |
+          set -euo pipefail
+          # elan-init installs the elan shim only (--default-toolchain none). We then
+          # pre-install the exact toolchain pinned by proofs/lean/lean-toolchain *here*,
+          # with retry/backoff, rather than letting `lake build` resolve it lazily:
+          # elan maps the pinned version against the GitHub releases API, which can
+          # transiently fail ("failed to parse latest release tag" — observed once on
+          # PR #234's pre-merge run; the post-merge run on main passed). Isolating and
+          # retrying that one network step keeps the Build step deterministic.
+          curl -fsSL --retry 3 \
+            https://raw.githubusercontent.com/leanprover/elan/master/elan-init.sh \
+            -o /tmp/elan-init.sh
+          sh /tmp/elan-init.sh -y --default-toolchain none
+          export PATH="$HOME/.elan/bin:$PATH"
+          echo "$HOME/.elan/bin" >> "$GITHUB_PATH"
+          toolchain="$(tr -d '[:space:]' < proofs/lean/lean-toolchain)"
+          for attempt in 1 2 3 4 5; do
+            if elan toolchain install "$toolchain"; then
+              break
+            fi
+            if [ "$attempt" -eq 5 ]; then
+              echo "elan toolchain install failed after 5 attempts" >&2
+              exit 1
+            fi
+            backoff=$((attempt * 5))
+            echo "elan toolchain install failed (attempt $attempt); retrying in ${backoff}s" >&2
+            sleep "$backoff"
+          done
+          elan default "$toolchain"
+          lean --version
+
+      - name: Install just
+        run: |
+          set -euo pipefail
+          curl -fsSL --retry 3 \
+            "https://github.com/casey/just/releases/download/1.51.0/just-1.51.0-x86_64-unknown-linux-musl.tar.gz" \
+            -o /tmp/just.tar.gz
+          mkdir -p "$HOME/.local/bin"
+          tar xzf /tmp/just.tar.gz -C "$HOME/.local/bin" just
+          echo "$HOME/.local/bin" >> "$GITHUB_PATH"
+
+      - name: Build Lean corpus
+        run: just proofs-lean
+
+  verif-lean:
+    name: Lean 4 (verification)
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - name: Install elan + pinned Lean toolchain
+        run: |
+          set -euo pipefail
+          # Mirrors the `lean` job: install the elan shim only, then pre-install the
+          # toolchain pinned by verification/proofs/lean4/lean-toolchain with
+          # retry/backoff so the Build step does not lazily resolve it (elan's release
+          # tag lookup against the GitHub API can transiently fail). This corpus has no
+          # mathlib dependency (lake-manifest packages: []), so it builds fast.
+          curl -fsSL --retry 3 \
+            https://raw.githubusercontent.com/leanprover/elan/master/elan-init.sh \
+            -o /tmp/elan-init.sh
+          sh /tmp/elan-init.sh -y --default-toolchain none
+          export PATH="$HOME/.elan/bin:$PATH"
+          echo "$HOME/.elan/bin" >> "$GITHUB_PATH"
+          toolchain="$(tr -d '[:space:]' < verification/proofs/lean4/lean-toolchain)"
+          for attempt in 1 2 3 4 5; do
+            if elan toolchain install "$toolchain"; then
+              break
+            fi
+            if [ "$attempt" -eq 5 ]; then
+              echo "elan toolchain install failed after 5 attempts" >&2
+              exit 1
+            fi
+            backoff=$((attempt * 5))
+            echo "elan toolchain install failed (attempt $attempt); retrying in ${backoff}s" >&2
+            sleep "$backoff"
+          done
+          elan default "$toolchain"
+          lean --version
+
+      - name: Install just
+        run: |
+          set -euo pipefail
+          curl -fsSL --retry 3 \
+            "https://github.com/casey/just/releases/download/1.51.0/just-1.51.0-x86_64-unknown-linux-musl.tar.gz" \
+            -o /tmp/just.tar.gz
+          mkdir -p "$HOME/.local/bin"
+          tar xzf /tmp/just.tar.gz -C "$HOME/.local/bin" just
+          echo "$HOME/.local/bin" >> "$GITHUB_PATH"
+
+      - name: Build Lean verification corpus
+        run: just proofs-verif-lean
+
+  verif-idris:
+    name: Idris2 (verification)
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - name: Install Idris2
+        run: |
+          set -euo pipefail
+          # idris2 v0.8.0 ships no prebuilt Linux release asset, so prefer the
+          # Ubuntu 24.04 universe package and fall back to a source bootstrap from
+          # the tag archive (mirrors idris2-abi-ci.yml's install).
+          sudo apt-get update -qq || sudo apt-get update -qq --fix-missing
+          sudo apt-get install -y --fix-missing idris2 2>/dev/null || {
+            IDRIS2_VER="v0.8.0"
+            sudo apt-get install -y --fix-missing chezscheme make libgmp-dev
+            curl -fsSL --max-time 300 --retry 2 -o /tmp/idris2.tar.gz \
+              "https://github.com/idris-lang/Idris2/archive/refs/tags/${IDRIS2_VER}.tar.gz"
+            mkdir -p /tmp/idris2-src
+            tar xzf /tmp/idris2.tar.gz -C /tmp/idris2-src --strip-components=1
+            (cd /tmp/idris2-src && make bootstrap SCHEME=scheme && sudo make install PREFIX=/usr/local)
+          }
+          idris2 --version
+          # The source-build fallback runs `sudo make install`, which can leave
+          # ~/.idris2 root-owned; `idris2 --install` (run unprivileged by the
+          # proofs-verif-idris recipe) then fails with "Permission Denied". Make
+          # the user package dir writable so the echidnaabi install succeeds.
+          mkdir -p "$HOME/.idris2"
+          sudo chown -R "$(id -u):$(id -g)" "$HOME/.idris2"
+
+      - name: Install just
+        run: |
+          set -euo pipefail
+          curl -fsSL --retry 3 \
+            "https://github.com/casey/just/releases/download/1.51.0/just-1.51.0-x86_64-unknown-linux-musl.tar.gz" \
+            -o /tmp/just.tar.gz
+          mkdir -p "$HOME/.local/bin"
+          tar xzf /tmp/just.tar.gz -C "$HOME/.local/bin" just
+          echo "$HOME/.local/bin" >> "$GITHUB_PATH"
+
+      - name: Type-check Idris2 verification corpus
+        run: just proofs-verif-idris
+
+  agda:
+    name: Agda
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - name: Install Agda + standard library
+        run: |
+          set -euo pipefail
+          sudo apt-get update -qq
+          sudo apt-get install -y agda
+          agda --version
+          # stdlib from GitHub, pinned to v1.7.3 (the version apt ships for the
+          # agda 2.6.3 the corpus is verified against). apt's agda-stdlib is NOT
+          # used: `apt --fix-missing` can silently drop it, leaving the library
+          # unregistered ("Installed libraries: (none)"). The corpus .agda-lib in
+          # proofs/agda is auto-detected from the working dir; this registration
+          # resolves its `depend: standard-library`.
+          cd /tmp
+          curl -fsSL --retry 3 -o agda-stdlib.tar.gz \
+            https://github.com/agda/agda-stdlib/archive/refs/tags/v1.7.3.tar.gz
+          tar xzf agda-stdlib.tar.gz
+          mkdir -p ~/.agda
+          echo "/tmp/agda-stdlib-1.7.3/standard-library.agda-lib" > ~/.agda/libraries
+          echo "standard-library" > ~/.agda/defaults
+
+      - name: Install just
+        run: |
+          set -euo pipefail
+          curl -fsSL --retry 3 \
+            "https://github.com/casey/just/releases/download/1.51.0/just-1.51.0-x86_64-unknown-linux-musl.tar.gz" \
+            -o /tmp/just.tar.gz
+          mkdir -p "$HOME/.local/bin"
+          tar xzf /tmp/just.tar.gz -C "$HOME/.local/bin" just
+          echo "$HOME/.local/bin" >> "$GITHUB_PATH"
+
+      - name: Type-check Agda corpus
+        run: just proofs-agda

@@ -12,7 +12,7 @@ type = "formal-verification"
 [architecture]
 enforcement_level = "normal"
 primary_language = "rust"    # Core prover backends
-secondary_languages = ["julia", "rescript", "idris2", "chapel"]
+secondary_languages = ["julia", "rescript", "idris2", "chapel", "spark"]
 
 [provers]
 # ECHIDNA is self-hosting - can verify its own Idris2 ABI definitions

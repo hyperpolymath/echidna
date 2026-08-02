@@ -25,6 +25,9 @@ use crate::provers::outcome::{classify_anyhow_error, ProverOutcome};
 use crate::provers::{ProverConfig, ProverFactory, ProverKind};
 use crate::verification::axiom_tracker::{AxiomTracker, AxiomUsage, DangerLevel};
 use crate::verification::confidence::{compute_trust_level, TrustFactors, TrustLevel};
+use crate::verification::result_arbiter::{
+    ArbitratedVerdict, ArbitrationPolicy, ProverAttempt, ResultArbiter,
+};
 
 #[cfg(feature = "chapel")]
 use crate::proof_search::{ChapelParallelSearch, ProofSearchStrategy};
@@ -89,6 +92,17 @@ pub struct DispatchResult {
     /// input and per-prover records.
     #[serde(default)]
     pub diagnostics: Option<RunDiagnostics>,
+    /// True when arbitration found conclusive disagreement, all-timeout,
+    /// high evidential conflict, or suspect premises. A `verified = false`
+    /// with `needs_review = true` means "the provers could not settle it",
+    /// not "the proof is bad".
+    #[serde(default)]
+    pub needs_review: bool,
+    /// Full arbitration verdict for cross-checked dispatches: winning
+    /// verdict, agreeing/disagreeing camps, conflict metric, and any
+    /// policy-specific posterior/belief. `None` on single-prover paths.
+    #[serde(default)]
+    pub arbitration: Option<ArbitratedVerdict>,
 }
 
 /// Configuration for the dispatch pipeline
@@ -109,6 +123,11 @@ pub struct DispatchConfig {
     /// default is `false` so production callers pay nothing.
     #[serde(default)]
     pub diagnostics: bool,
+    /// Which mechanism fuses cross-checked prover outcomes into one
+    /// verdict. Default `Portfolio` (categorical agreement) — the
+    /// conservative pre-arbiter behaviour.
+    #[serde(default)]
+    pub arbitration_policy: ArbitrationPolicy,
 }
 
 impl Default for DispatchConfig {
@@ -120,6 +139,7 @@ impl Default for DispatchConfig {
             generate_certificates: false,
             timeout: 300,
             diagnostics: false,
+            arbitration_policy: ArbitrationPolicy::default(),
         }
     }
 }
@@ -568,6 +588,8 @@ impl ProverDispatcher {
                     cross_checked: false,
                     outcome,
                     diagnostics,
+                    needs_review: false,
+                    arbitration: None,
                 });
             },
         };
@@ -688,6 +710,8 @@ impl ProverDispatcher {
             cross_checked: false,
             outcome,
             diagnostics,
+            needs_review: false,
+            arbitration: None,
         })
     }
 
@@ -769,26 +793,39 @@ impl ProverDispatcher {
                 .collect()
         };
 
-        // Run additional provers for cross-checking
-        let mut all_agree = primary_result.verified;
+        // Run additional provers and collect their rich outcomes — the
+        // arbiter needs to distinguish "refuted" from "timed out" from
+        // "errored", which the boolean `verified` flattens away.
+        let mut attempts = vec![ProverAttempt::new(
+            primary_prover,
+            primary_result.outcome.clone(),
+            primary_result.proof_time_ms,
+        )];
         let mut provers_used = vec![format!("{:?}", primary_prover)];
-        let mut confirming_count: u32 = if primary_result.verified { 1 } else { 0 };
 
         for &additional in available_cross_checkers.iter() {
             match self.verify_proof(additional, content).await {
                 Ok(result) => {
                     provers_used.push(format!("{:?}", additional));
-                    if result.verified {
-                        confirming_count += 1;
-                    } else {
-                        all_agree = false;
-                    }
+                    attempts.push(ProverAttempt::new(
+                        additional,
+                        result.outcome.clone(),
+                        result.proof_time_ms,
+                    ));
                 },
                 Err(e) => {
                     warn!("Cross-check with {:?} failed: {}", additional, e);
                 },
             }
         }
+
+        // Arbitrate: fuse the per-prover outcomes under the configured
+        // policy instead of the old inline all-must-agree boolean check.
+        let arbiter =
+            ResultArbiter::new(self.config.arbitration_policy, self.config.timeout * 1000);
+        let arbitration = arbiter.arbitrate(&attempts);
+
+        let confirming_count = attempts.iter().filter(|a| a.outcome.is_proved()).count() as u32;
 
         let elapsed = start.elapsed().as_millis() as u64;
 
@@ -822,13 +859,7 @@ impl ProverDispatcher {
             certificate_verified: false,
             worst_axiom_danger: worst_danger,
             solver_integrity_ok,
-            portfolio_confidence: Some(if confirming_count >= 2 {
-                crate::verification::portfolio::PortfolioConfidence::CrossChecked
-            } else if confirming_count == 1 {
-                crate::verification::portfolio::PortfolioConfidence::SingleSolver
-            } else {
-                crate::verification::portfolio::PortfolioConfidence::Inconclusive
-            }),
+            portfolio_confidence: Some(arbitration.confidence),
         };
 
         let trust_level = compute_trust_level(&trust_factors);
@@ -841,14 +872,32 @@ impl ProverDispatcher {
         primary_result.provers_used = provers_used;
         primary_result.proof_time_ms = elapsed;
         primary_result.cross_checked = cross_checked;
-        primary_result.verified = all_agree && primary_result.verified;
+        // `verified` stays primary-anchored: the arbitrated verdict must be
+        // Proven AND the primary itself proved the goal. A timeout among the
+        // cross-checkers no longer vetoes agreement (it is no-information),
+        // but a conclusive disagreement always does. Consumers wanting the
+        // fused multi-prover verdict read `arbitration`.
+        primary_result.verified =
+            matches!(arbitration.verified, Some(true)) && primary_result.outcome.is_proved();
+        primary_result.needs_review = arbitration.needs_review;
 
         if cross_checked {
-            primary_result.message = format!(
-                "Proof cross-checked by {} prover(s) with {}",
-                confirming_count, trust_level
-            );
+            primary_result.message = if !arbitration.disagreeing.is_empty() {
+                format!(
+                    "PROVERS DISAGREE on this goal: {:?} vs {:?} (conflict {:.2}) — flagged for review",
+                    arbitration.agreeing, arbitration.disagreeing, arbitration.conflict
+                )
+            } else if arbitration.suspect_premises {
+                "Premises flagged inconsistent by a cross-checker — result withheld for review"
+                    .to_string()
+            } else {
+                format!(
+                    "Proof cross-checked by {} prover(s) with {}",
+                    confirming_count, trust_level
+                )
+            };
         }
+        primary_result.arbitration = Some(arbitration);
 
         Ok(primary_result)
     }
@@ -1012,6 +1061,8 @@ impl ProverDispatcher {
                 cross_checked: false,
                 outcome,
                 diagnostics,
+                needs_review: false,
+                arbitration: None,
             })
         }
 
@@ -1186,6 +1237,8 @@ mod tests {
             cross_checked: false,
             outcome: ProverOutcome::Proved { elapsed_ms: 1500 },
             diagnostics: None,
+            needs_review: false,
+            arbitration: None,
         };
 
         let json = serde_json::to_string(&result).unwrap();
@@ -1229,6 +1282,7 @@ mod tests {
             generate_certificates: true,
             timeout: 600,
             diagnostics: false,
+            arbitration_policy: Default::default(),
         };
         assert!(config.cross_check);
         assert_eq!(config.min_trust_level, TrustLevel::Level4);

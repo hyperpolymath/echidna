@@ -1,0 +1,51 @@
+# SPDX-License-Identifier: MPL-2.0
+# dust.manifest.a2ml — Trident coherence manifest for the dust verb.
+# Author: Jonathan D.A. Jewell <j.d.a.jewell@open.ac.uk>
+#
+# Sixth + final trident instance. Completes the full verb set —
+# echidna now has tridents for every contractile verb.
+
+---
+trident_version = "1.0.0"
+verb = "dust"
+semantics = "rollback / recovery / deprecation / audit-trail preservation"
+cardinality = "one per repo"
+authority = "advisory (continue-with-warnings)"
+
+[[files]]
+role = "declaration"
+path = "Dustfile.a2ml"
+sha256 = "pending-first-verify"
+size_bytes = "pending-first-verify"
+
+[[files]]
+role = "runner"
+path = "dust.ncl"
+sha256 = "pending-first-verify"
+size_bytes = "pending-first-verify"
+
+[[files]]
+role = "k9_component"
+path = "dust.k9.ncl"
+sha256 = "pending-first-verify"
+size_bytes = "pending-first-verify"
+
+[cross_refs]
+runner_paired_xfile = "Dustfile.a2ml"
+k9_paired_xfile     = "../dust/Dustfile.a2ml"
+k9_paired_runner    = "../dust/dust.ncl"
+
+[signed_by]
+user    = "Jonathan D.A. Jewell"
+date    = "2026-04-18"
+context = "dust trident — sixth and final Trident instance. Completes the full verb set for echidna. Specialises in fine-grained recovery (broom-and-pan: stale branches, orphan caches, dropped /tmp worktrees, half-merged stashes, leftover pids) + audit-trail preservation across the D### error-code namespace. Yard tier with destructive-action gating (dry-run default; --apply + per-item approval required for mutations). Every recipe idempotent + reversible; clean repo => no-op."
+
+[[history]]
+date = "2026-04-18"
+event = "trident-born"
+note = "Dustfile.a2ml pre-existed (the bespoke echidna D### broom-and-pan declaration). This manifest + dust.ncl + dust.k9.ncl complete the trident and the full verb set. All 6 verbs now on trident shape: intend (Hunt, reporting), trust (Hunt, blocking), must (Hunt-read-only, blocking), bust (Hunt-read-only, blocking), adjust (Yard, advisory), dust (Yard, advisory). dust uses the non-standard status enum ('declared/'proposed/'approved/'removed) and on_any_fail = continue-with-warnings; destructive sweeps gated behind --apply + per-item approval with a sacred exclusion list (active worktrees + production model/training artefacts)."
+
+[[history]]
+date = "2026-04-18"
+event = "verb-set-complete"
+note = "Full echidna trident coverage. Blocking-authority triple (must/trust/bust) handles release-gating. Advisory pair (adjust/dust) handles drift-warning and audit-trail / broom-and-pan recovery. Single reporting verb (intend) handles north-star. The two-axis surface is fully exercised across all (tier, authority) combinations used: (Hunt, reporting), (Hunt, blocking), (Hunt-read-only, blocking), (Yard, advisory). dust completes the set — fine-grained recovery is now first-class alongside the heavier rollback (bust) and migration (adjust) verbs."

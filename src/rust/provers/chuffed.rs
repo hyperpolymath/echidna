@@ -162,7 +162,10 @@ impl ProverBackend for ChuffedBackend {
                 args: vec!["--prop-fifo".to_string()],
             },
         ];
-        Ok(crate::provers::gnn_augment_tactics(&self.config, state, "chuffed", tactics, limit).await)
+        Ok(
+            crate::provers::gnn_augment_tactics(&self.config, state, "chuffed", tactics, limit)
+                .await,
+        )
     }
 
     async fn search_theorems(&self, _pattern: &str) -> Result<Vec<String>> {

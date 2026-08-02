@@ -1,13 +1,19 @@
 = Echidna — Developer Quickstart
 :toc: preamble
 
-Clone, build, test, contribute.
+Clone, build, test, contribute. The user-facing analogue lives in
+link:QUICKSTART-USER.adoc[`QUICKSTART-USER.adoc`]; release / packaging
+is in link:QUICKSTART-MAINTAINER.adoc[`QUICKSTART-MAINTAINER.adoc`].
 
 == Prerequisites
 
 * Git 2.40+
-* just (command runner)
+* just (command runner) — `cargo install just`
 * See `just doctor` output for language-specific requirements
+
+For the full optional toolchain (Julia, Idris2, Zig, Chapel, Deno) see
+link:QUICKSTART-USER.adoc[`QUICKSTART-USER.adoc`]; only Rust + just +
+pkg-config + openssl-devel are mandatory.
 
 == Setup
 
@@ -16,16 +22,26 @@ Clone, build, test, contribute.
 git clone https://github.com/hyperpolymath/echidna
 cd echidna
 just doctor    # verify toolchain
-just heal      # auto-install missing tools
+just heal      # offer to install missing tools (non-destructive)
+just tour      # guided codebase walkthrough
+just help-me   # onboarding subset of recipes
 ----
 
 == Development Workflow
 
 [source,bash]
 ----
-just tour      # understand the codebase
-just help-me   # see available commands
+just build              # debug build
+just test               # all Rust tests
+just lint               # REUSE + rustfmt + clippy
+just pre-commit         # fmt-check + lint + test
+just check              # roll-up: fmt-check + lint + test
+cargo run -- interactive    # launch the REPL
+cargo run -- server --cors  # launch the API server on 8081
 ----
+
+The full recipe set is in `Justfile`; `just --list` enumerates
+every recipe.
 
 == Optional: Chapel Parallel Proof Search
 
@@ -43,17 +59,42 @@ cargo test  --features chapel --lib proof_search
 ----
 
 With Chapel actually installed and `libechidna_chapel.so` built from
-`chapel_poc/`, pass `-Dstubs=false` to the Zig build and link the
+`src/chapel/`, pass `-Dstubs=false` to the Zig build and link the
 Chapel library alongside. Stubs return "Chapel unavailable" at runtime
 so `cargo test --features chapel` still passes on hosts without Chapel.
+
+The Justfile wrappers (`just build-chapel`, `just chapel-build`,
+`just chapel-smoke`, `just chapel-test`, `just bench-chapel-mrr`,
+`just test-chapel-ffi`) cover the common flows; `just --list | grep chapel`
+shows them all.
+
+== Idris2 ABI
+
+The on-wire contract between the Rust dispatcher, the Julia GNN
+ranker, and the Chapel parallel rank-merge is pinned in `src/abi/`.
+Type-check before pushing if you touched anything that touches the
+ABI surface:
+
+[source,bash]
+----
+idris2 --build src/abi/echidnaabi.ipkg
+----
+
+CI enforces zero `believe_me` / `assert_total` / `postulate` in the
+ABI modules via `.github/workflows/idris2-abi-ci.yml`.
 
 == Before Committing
 
 [source,bash]
 ----
-just assail    # run panic-attacker security scan
+just pre-commit    # fmt-check + lint + test
+just assail        # panic-attacker security scan (requires panic-attack CLI)
 ----
+
+All commits must be GPG-signed and follow Conventional Commits — see
+link:CONTRIBUTING.adoc[`CONTRIBUTING.adoc`] for the full policy.
 
 == Contributing
 
-See link:CONTRIBUTING.md[CONTRIBUTING.md] for guidelines.
+See link:CONTRIBUTING.adoc[CONTRIBUTING.adoc] for guidelines (the
+canonical, AsciiDoc version). `CONTRIBUTING.md` is a thin pointer.

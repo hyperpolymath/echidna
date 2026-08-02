@@ -171,7 +171,10 @@ impl ProverBackend for MleanCopBackend {
     }
 
     async fn suggest_tactics(&self, state: &ProofState, limit: usize) -> Result<Vec<Tactic>> {
-        Ok(crate::provers::gnn_augment_tactics(&self.config, state, "mleancop", vec![], limit).await)
+        Ok(
+            crate::provers::gnn_augment_tactics(&self.config, state, "mleancop", vec![], limit)
+                .await,
+        )
     }
 
     async fn search_theorems(&self, _pattern: &str) -> Result<Vec<String>> {

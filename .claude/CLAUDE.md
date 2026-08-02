@@ -78,9 +78,9 @@ chore(<scope>): scout-pass trivial cleanup ahead of <step id>
 
 **All `.scm` state/metadata files have been replaced by `.a2ml`.**
 
-If you find any `.scm` file under `.machine_readable/` (e.g. `STATE.scm`, `META.scm`,
-`ECOSYSTEM.scm`, `AGENTIC.scm`, `NEUROSYM.scm`, `PLAYBOOK.scm`, bot directive `.scm`
-files, or similar), you MUST:
+If you find any `.scm` file under `.machine_readable/` (state/metadata descriptors
+such as STATE, META, ECOSYSTEM, AGENTIC, NEUROSYM or PLAYBOOK carrying the legacy
+Scheme extension, bot directive files, or similar), you MUST:
 
 1. Check whether an equivalent `.a2ml` file already exists
 2. If yes — delete the `.scm` file immediately (`git rm`)
@@ -134,13 +134,13 @@ package definitions (not metadata files) and must NOT be deleted.
 
 ### Package Management
 
-- **Primary**: Guix (`guix.scm`, `manifests/*.scm`)
+- **Sole primary**: Guix (`guix.scm`, `manifests/*.scm`)
 - **Escape hatch**: a sealed container (`.containerization/Containerfile.wave3`)
-  for the not-in-Guix / non-free tail. **NO Nix mirror** — estate ruling
-  2026-05-18 (Guix primary + sealed-container escape). `flake.nix` is
-  deprecated and removed; a `flake.nix` that only mirrors the Guix manifest is
-  drift, not a fallback. A second packager is permitted only where it is the
-  sole source of a specific named dependency, documented as such.
+  for the not-in-Guix / non-free tail. **NO Nix anywhere** — estate ruling
+  2026-05-18 (Guix primary + sealed-container escape), hardened 2026-06-01
+  (nix deprecated estate-wide; do NOT add `flake.nix`/`flake.lock` back).
+  A second packager is permitted only where it is the sole source of a
+  specific named dependency, documented as such.
 - **JS deps**: Deno (deno.json imports)
 
 ### Security Requirements

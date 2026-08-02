@@ -174,7 +174,10 @@ impl ProverBackend for IsabelleZfBackend {
             },
             Tactic::Assumption,
         ];
-        Ok(crate::provers::gnn_augment_tactics(&self.config, state, "isabelle_zf", tactics, limit).await)
+        Ok(
+            crate::provers::gnn_augment_tactics(&self.config, state, "isabelle_zf", tactics, limit)
+                .await,
+        )
     }
 
     async fn search_theorems(&self, _pattern: &str) -> Result<Vec<String>> {

@@ -1,4 +1,5 @@
 // SPDX-FileCopyrightText: 2026 Jonathan D.A. Jewell (hyperpolymath) <j.d.a.jewell@open.ac.uk>
+// SPDX-FileCopyrightText: 2026 Jonathan D.A. Jewell <j.d.a.jewell@open.ac.uk>
 // SPDX-License-Identifier: MPL-2.0
 
 //! VeriSimDB Bridge — Maps ECHIDNA proof state to VeriSimDB's 8-modality octad.
@@ -18,6 +19,21 @@
 //!
 //! The bridge uses VeriSimDB's HTTP API via reqwest. For BoJ-integrated deployments,
 //! the zig adapter (`echidna_llm_verisimdb.v`) routes through verisim.zig FFI.
+//!
+//! ## Formal E-R schema (saturation campaign 2026-06-01)
+//!
+//! The 12-entity / 7-relationship data model this bridge implements is
+//! now formally specified at:
+//!
+//! - **Schema doc**: `docs/architecture/VERISIM-ER-SCHEMA.md`
+//! - **Cap'n Proto wire format**: `crates/echidna-wire/schemas/verisim_er.capnp`
+//! - **Crosswalk**: each Rust struct here ↔ Cap'n Proto struct ↔
+//!   ClickHouse table is enumerated in the schema doc.
+//!
+//! Drift between this code and the schema is the responsibility of any
+//! PR that adds/renames fields in `OctadPayload` or its modality
+//! structs — the schema doc + `.capnp` file must update in the same PR
+//! (CI gate planned, see schema doc "Drift detection" section).
 
 use anyhow::{Context, Result};
 use chrono::Utc;
@@ -497,13 +513,20 @@ pub struct VeriSimDBClient {
 
 impl VeriSimDBClient {
     /// Create a new VeriSimDB client.
+    ///
+    /// Falls back to `reqwest::Client::new()` (no custom timeout) if the
+    /// builder fails (e.g. native-tls bootstrap error). The fallback still
+    /// gives a functional client; downstream requests will surface any
+    /// underlying transport problems explicitly. Avoids a panic on the
+    /// hot construction path.
     pub fn new(base_url: &str) -> Self {
+        let http = reqwest::Client::builder()
+            .timeout(std::time::Duration::from_secs(10))
+            .build()
+            .unwrap_or_else(|_| reqwest::Client::new());
         VeriSimDBClient {
             base_url: base_url.trim_end_matches('/').to_string(),
-            http: reqwest::Client::builder()
-                .timeout(std::time::Duration::from_secs(10))
-                .build()
-                .expect("Failed to create HTTP client"),
+            http,
         }
     }
 
@@ -988,6 +1011,10 @@ fn base64_encode(bytes: &[u8]) -> String {
     let mut result = String::with_capacity(bytes.len().div_ceil(3) * 4);
 
     for chunk in bytes.chunks(3) {
+        // Base64 padding: missing chunk bytes are zero-extended per RFC 4648
+        // §4. The `chunk.len() > 1 / > 2` guards below ensure we only emit
+        // significant alphabet positions, so the zero padding never escapes
+        // into the output beyond what the spec already permits.
         let b0 = chunk[0] as u32;
         let b1 = chunk.get(1).copied().unwrap_or(0) as u32;
         let b2 = chunk.get(2).copied().unwrap_or(0) as u32;

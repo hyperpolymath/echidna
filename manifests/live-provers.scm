@@ -14,11 +14,12 @@
 ;;   T3 — container / special env                 — run weekly
 ;;   T4 — niche / best-effort                     — run quarterly, allow-fail
 ;;
-;; Policy (estate ruling 2026-05-18 — Guix primary + sealed-container escape):
+;; Policy (estate ruling 2026-05-18 + estate-wide nix-deprecation 2026-06-01):
 ;;   Guix is the PRIMARY (and only) package-management path declared here.
-;;   There is NO Nix mirror — flake.nix is DEPRECATED and removed. The single
-;;   universal escape hatch for the not-in-Guix / non-free tail is a SEALED
-;;   CONTAINER (.containerization/Containerfile.wave3), not a Nix twin.
+;;   There is NO Nix mirror anywhere — flake.nix was DEPRECATED on 2026-05-18,
+;;   removed from this repo, and on 2026-06-01 nix was deprecated estate-wide.
+;;   The single universal escape hatch for the not-in-Guix / non-free tail is a
+;;   SEALED CONTAINER (.containerization/Containerfile.wave3), not a Nix twin.
 ;;
 ;; Availability note:
 ;;   Guix package availability drifts. The comment beside each line records the
@@ -26,8 +27,8 @@
 ;;   NIX_ONLY or CONTAINER_ONLY is *not* in Guix upstream and is provisioned via
 ;;   the Wave-3 sealed container (Containerfile.wave3 --target <prover>). The
 ;;   "NIX_ONLY" label is retained below only as a historical availability fact
-;;   (the package is absent from Guix) — it no longer implies a Nix provisioning
-;;   path; the provisioning path is the container.
+;;   (the package is absent from Guix) — it does NOT imply a Nix provisioning
+;;   path is permitted; the provisioning path is the container.
 
 (specifications->manifest
  '(;; ----------------------------------------------------------------------
@@ -54,7 +55,9 @@
    "idris2"          ; (gnu packages idris) — dependent-type proof assistant
    "isabelle"        ; (gnu packages isabelle) — HOL proof assistant
    "why3"            ; (gnu packages ocaml) — auto-active verifier
-   ;; Lean 4 — NIX_ONLY: not in Guix; install via flake.nix or upstream installer.
+   ;; Lean 4 — NIX_ONLY: not in Guix; install via the Wave-3 sealed container
+   ;; (the upstream installer ships pre-built binaries; the historical "flake.nix"
+   ;; path was closed 2026-06-01 per estate-wide nix-deprecation).
    ;; Dafny — NIX_ONLY: dotnet toolchain dependency makes Guix packaging tricky.
    ;; F* — BUILD_FROM_SOURCE (no Guix package): manual Wave-2 Containerfile path.
    ;; HOL Light — CONTAINER_ONLY: obscure build requirements.

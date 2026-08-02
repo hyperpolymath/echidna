@@ -479,8 +479,9 @@ impl Corpus {
     pub fn load_octads_jsonl(path: &Path) -> Result<Self> {
         use std::collections::HashMap as Map;
 
-        let raw =
-            std::fs::read_to_string(path).with_context(|| format!("read {}", path.display()))?;
+        // Bounded read (64 MiB cap via MAX_PROOF_BYTES) — mirrors the
+        // remediation pattern from #145 (Refs #104).
+        let raw = crate::provers::bounded_read_corpus_file(path)?;
 
         let mut corpus = Corpus::default();
         let mut adapter_set: Option<String> = None;

@@ -15,7 +15,7 @@ use nom::{
     bytes::complete::{tag, take_until, take_while},
     character::complete::{alpha1, multispace0, multispace1, space0, space1},
     multi::many0,
-    IResult,
+    IResult, Parser,
 };
 use std::collections::HashMap;
 use std::path::PathBuf;
@@ -496,7 +496,7 @@ fn ws(input: &str) -> IResult<&str, ()> {
 }
 
 fn identifier(input: &str) -> IResult<&str, String> {
-    let (input, first) = alt((alpha1, tag("_")))(input)?;
+    let (input, first) = alt((alpha1, tag("_"))).parse(input)?;
     let (input, rest) =
         take_while(|c: char| c.is_alphanumeric() || c == '_' || c == '-' || c == '\'')(input)?;
     Ok((input, format!("{}{}", first, rest)))
@@ -544,7 +544,7 @@ fn parse_postulate(input: &str) -> IResult<&str, AgdaDecl> {
 }
 
 fn parse_import(input: &str) -> IResult<&str, AgdaDecl> {
-    let (input, _) = alt((tag("import"), tag("open import")))(input)?;
+    let (input, _) = alt((tag("import"), tag("open import"))).parse(input)?;
     let (input, _) = space1(input)?;
     let (input, module) = take_until("\n")(input)?;
     Ok((
@@ -562,11 +562,12 @@ fn parse_decl(input: &str) -> IResult<&str, AgdaDecl> {
         parse_postulate,
         parse_import,
         parse_type_sig,
-    ))(input)
+    ))
+    .parse(input)
 }
 
 fn parse_module(input: &str) -> IResult<&str, Vec<AgdaDecl>> {
-    many0(parse_decl)(input)
+    many0(parse_decl).parse(input)
 }
 
 #[cfg(test)]

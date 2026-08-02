@@ -20,7 +20,6 @@ permissions:
 
 jobs:
   scan:
-    uses: hyperpolymath/panic-attack/.github/workflows/scan-and-report.yml@ea88be7da68e07249ae7df8b948ecb8ecfb9664c # main 2026-05-20
-    timeout-minutes: 15
+    uses: hyperpolymath/panic-attack/.github/workflows/scan-and-report.yml@774dceb6373d798ad4d96a9e40c3993942c2836e # main 2026-07-07 (skip dispatch without VERISIMDB_PAT)
     secrets:
       VERISIMDB_PAT: ${{ secrets.VERISIMDB_PAT }}

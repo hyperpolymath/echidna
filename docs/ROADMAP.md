@@ -1,12 +1,24 @@
-<!-- SPDX-License-Identifier: MPL-2.0 -->
+<!-- SPDX-License-Identifier: CC-BY-SA-4.0 -->
 <!-- SPDX-FileCopyrightText: 2026 Jonathan D.A. Jewell <j.d.a.jewell@open.ac.uk> -->
 
 # ECHIDNA Roadmap
 
 **Status**: canonical • supersedes the aspirational parts of
 [`FUTURE_DEVELOPMENT_ROADMAP.md`](./FUTURE_DEVELOPMENT_ROADMAP.md).
-**Last revised**: 2026‑05‑30 (truthfulness audit; previous revision 2026‑04‑20)
+**Last revised**: 2026‑06‑01 (doc-coherence pass; previous revisions 2026‑05‑30 truthfulness audit, 2026‑04‑20)
 **Scope**: the shortest honest path from today's repo to the endpoint vision.
+
+**Governance status post‑2026‑06‑01**: the R5 doc-canonical-reference
+guardrail landed in two halves — R5a (prover-count drift, echidna‑local
+at `.github/canonical-references/` after PR #174 migration) and R5b
+(estate‑wide `Version: x.y.z` drift, in the standards reusable, consumed
+via PR #172). MVP smoke (#167) and the pareto/bare-build governance
+harness are green on `main`. The dogfood proof corpus (`proofs/{coq,lean,agda}` + `src/idris`) is now
+CI-gated by `dogfood-proofs-ci.yml` (Coq/Lean/Agda) and `idris2-abi-ci.yml`
+(the `src/idris` validator), each driven by a `just proofs-*` recipe — closing
+a gap where the corpus had no CI and a green PR proved nothing about the
+proofs (PR #234). None of these change the stage map below;
+they are infrastructure around the work, not on the critical path.
 
 This document is the single source of truth for where ECHIDNA is going.
 The domain‑specific plans under [`handover/`](./handover/) and

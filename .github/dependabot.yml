@@ -16,10 +16,6 @@ updates:
       actions:
         patterns:
           - "*"
-  - package-ecosystem: "nix"
-    directory: "/"
-    schedule:
-      interval: "weekly"
   - package-ecosystem: "npm"
     directory: "/"
     schedule:

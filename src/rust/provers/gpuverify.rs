@@ -329,7 +329,10 @@ impl ProverBackend for GpuVerifyBackend {
                 args: vec!["true".to_string()],
             },
         ];
-        Ok(crate::provers::gnn_augment_tactics(&self.config, state, "gpuverify", tactics, limit).await)
+        Ok(
+            crate::provers::gnn_augment_tactics(&self.config, state, "gpuverify", tactics, limit)
+                .await,
+        )
     }
 
     async fn search_theorems(&self, pattern: &str) -> Result<Vec<String>> {

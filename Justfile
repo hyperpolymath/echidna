@@ -244,6 +244,113 @@ test-s4-loop:
     @echo "Test will skip cleanly if the endpoint is unreachable."
     cargo test --features verisim --test s4_loop_closure -- --nocapture
 
+# ── Dogfood proof corpus (proofs/{coq,lean,agda} + src/idris validator) ──
+# Each recipe assumes its toolchain is already installed (see `just doctor`);
+# CI installs the toolchains first, then calls these so local and CI run the
+# exact same commands.
+
+# Type-check the whole dogfood proof corpus across every assistant.
+proofs: proofs-coq proofs-lean proofs-agda proofs-idris proofs-verif-lean proofs-verif-idris
+
+# Compile the Coq proof corpus (proofs/coq/**/*.v).
+proofs-coq:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    cd proofs/coq
+    for f in $(find . -name '*.v' | sort); do
+        echo "coqc $f"
+        coqc -q "$f"
+    done
+    echo "Coq corpus: all files type-check"
+
+# Build the Lean 4 proof corpus via Lake (proofs/lean).
+proofs-lean:
+    cd proofs/lean && lake build
+
+# Type-check the Agda proof corpus (proofs/agda/*.agda).
+proofs-agda:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    # Agda writes UTF-8 to stdout and aborts under a non-UTF-8 locale (C/POSIX).
+    export LC_ALL="${LC_ALL:-C.UTF-8}"
+    cd proofs/agda
+    for f in $(find . -name '*.agda' -not -path './_build/*' -not -path './dist-newstyle/*' | sort); do
+        echo "agda $f"
+        agda "$f"
+    done
+    echo "Agda corpus: all files type-check"
+
+# Type-check the Idris2 validator (src/idris) — --typecheck needs no codegen backend.
+proofs-idris:
+    cd src/idris && idris2 --typecheck echidna-validator.ipkg
+
+# Distinct from proofs-lean: the verification-pipeline *property* proofs
+# (ConfidenceLattice, ParetoMaximality, ParetoStrongMaximality, IntegrityVerification,
+# PortfolioCompleteness) under verification/proofs/lean4, not the dogfood corpus under
+# proofs/lean. No mathlib dependency (lake-manifest packages: []), so the build is light.
+# Build the Lean 4 trust-pipeline property proofs via Lake (verification/proofs/lean4).
+proofs-verif-lean:
+    cd verification/proofs/lean4 && lake build
+
+# DispatchCorrectness imports EchidnaABI.Types, so the echidnaabi package
+# (src/abi) is installed first (--install builds it on the way); the ipkg then
+# type-checks all 11 modules with a reliable aggregate exit code. A bare per-file
+# `idris2 --check` is unsafe here -- it exits 0 even on an unresolved import -- so
+# the ipkg build is the gate and any "Error" line is also treated as failure.
+# Type-check the Idris2 trust-pipeline property proofs (verification/proofs/idris2).
+proofs-verif-idris:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    (cd src/abi && idris2 --install echidnaabi.ipkg >/dev/null)
+    cd verification/proofs/idris2
+    out=$(idris2 --typecheck echidna-verif-proofs.ipkg 2>&1)
+    printf '%s\n' "$out"
+    if printf '%s\n' "$out" | grep -qE '^Error'; then
+        echo "Idris2 verification corpus: TYPE ERRORS DETECTED" >&2
+        exit 1
+    fi
+    echo "Idris2 verification corpus: all files type-check"
+
+# Heavy (downloads the ~500MB Isabelle release), so this is gated by the weekly
+# verification-proofs-cron workflow, not the per-PR `proofs` rollup. Covers the
+# base-HOL theories; algebra/GroupTheory.thy is excluded (see proofs/isabelle/ROOT).
+# Verify the Isabelle/HOL self-proof corpus (proofs/isabelle) via `isabelle build`.
+proofs-isabelle:
+    cd proofs/isabelle && isabelle build -d . -v Echidna_Isabelle
+
+# Mizar is not packaged for apt and ships only from mizar.org (Tier-4 in this
+# project); like Isabelle it is gated by the weekly cron, not per-PR. MIZFILES
+# must point at the Mizar share dir. Errors are reported in a per-file .err file
+# (the verifier's exit code is not reliable), so a non-empty .err fails the recipe.
+# Verify the Mizar self-proof corpus (proofs/mizar) with the Mizar verifier.
+proofs-mizar:
+    #!/usr/bin/env bash
+    # Not -e: makeenv/verifier signal errors via a per-file .err (line col code),
+    # not a reliable exit code, so inspect that rather than abort on first non-zero.
+    set -uo pipefail
+    : "${MIZFILES:?MIZFILES must point at the Mizar share dir}"
+    cd proofs/mizar
+    rc=0
+    for f in *.miz; do
+        base="${f%.miz}"
+        echo "=== $f ==="
+        makeenv "$f" || echo "(makeenv exit $?)"
+        verifier "$f" || echo "(verifier exit $?)"
+        if [ -s "$base.err" ]; then
+            echo "--- $base.err (line col code) ---"
+            cat "$base.err"
+            while read -r line col code; do
+                src="$(sed -n "${line}p" "$f" 2>/dev/null)"
+                [ -n "$src" ] && echo "    L${line}:${col} (code ${code}): ${src}"
+            done < "$base.err"
+            rc=1
+        else
+            echo "($f verifies clean)"
+        fi
+    done
+    [ "$rc" -eq 0 ] || { echo "Mizar corpus: VERIFICATION ERRORS (see .err above)" >&2; exit 1; }
+    echo "Mizar corpus: all files verify"
+
 # Format code
 fmt:
     cargo fmt
@@ -359,6 +466,15 @@ eval:
 # End-to-end pipeline: provision → extract → merge → align → retrain.
 # Use `ECHIDNA_MAX_PROOF_STATES=0 just corpus-refresh` to lift the sample cap.
 corpus-refresh: provision-corpora extract-corpora merge-corpora align-premises retrain
+
+# Run training using the saturation-campaign corpus adapters as the
+# data source. Requires `just provision-corpora` to have populated
+# data/corpus/ first. Per-prover invocation; default lean.
+train-from-corpus prover="lean":
+    @julia --project=src/julia src/julia/run_training.jl \
+        --prover {{prover}} \
+        --corpus-json $(ls data/corpus/*.json | tr '\n' ',') \
+        --synonyms-dir data/synonyms
 
 # Run the eight-axis metrics suite against the current corpus and post
 # results to VeriSimDB. Falls back to training_data/metrics_<run_id>.jsonl
@@ -966,3 +1082,63 @@ design-search problem="brouwer-leq" iterations="2000" top="10":
 # Run the parallel-swarm design-search
 design-swarm problem="brouwer-leq" agents="4" iterations="800":
     cargo run --bin echidna -- design swarm {{problem}} --agents {{agents}} --iterations {{iterations}} --broadcast-every 50
+
+# ─────────────────────────────────────────────────────────────────────
+# Saturation campaign 2026-06-01 — recipes for the new corpus / vocab /
+# arbiter / exchange surface. See docs/decisions/2026-06-01-saturation-
+# campaign.md and docs/CORPUS-ADAPTERS.md.
+# ─────────────────────────────────────────────────────────────────────
+
+# Ingest a project tree via one of the 13 new corpus adapters
+# (isabelle / metamath / mizar / hol_light / hol4 / dafny / why3 /
+#  fstar / acl2_books / tptp / smtlib / proofnet / minif2f).
+corpus-ingest-saturation adapter root:
+    cargo run --bin echidna -- corpus ingest --root {{root}} --adapter {{adapter}}
+
+# Run the corpus-stats summary across all 17 adapter outputs found under
+# data/corpus/*.json (skips any missing without failing).
+corpus-stats-all:
+    @for f in data/corpus/*.json; do \
+        [ -f "$f" ] || continue; \
+        echo "--- $f"; \
+        cargo run --bin echidna --quiet -- corpus stats --index "$f" 2>/dev/null || echo "  (skipped)"; \
+    done
+
+# Load every per-prover synonym TOML + the 3 cross-prover dictionaries
+# (_msc2020 / _wordnet_math / _conceptnet_seed) and report counts.
+synonym-load-test:
+    cargo test --lib --quiet suggest::synonyms 2>&1 | tail -20
+
+# Run the saturation-campaign cargo tests only (139 cases + 1 ignored).
+test-saturation:
+    cargo test --lib -- \
+        corpus:: \
+        verification::bayesian_arbiter \
+        verification::dempster_shafer \
+        verification::pareto_arbiter \
+        exchange::tptp \
+        exchange::smtlib \
+        exchange::smtcoq \
+        exchange::lambdapi \
+        suggest::synonyms
+
+# Smoke-test the arbiter trio with synthetic evidence.
+# Prints posterior verdict from each of: Bayesian, Dempster-Shafer, Pareto.
+arbiter-smoke:
+    cargo run --bin echidna --quiet -- arbiter smoke 2>/dev/null || \
+        echo "(arbiter-smoke CLI not yet wired — see src/rust/verification/{bayesian,dempster_shafer,pareto}_arbiter.rs for unit-test entry points)"
+
+# Validate that the E-R schema doc + Cap'n Proto schema are
+# byte-identical with the recorded SHA in .machine_readable/er-schema.sha256.
+# (CI gate planned — see docs/architecture/VERISIM-ER-SCHEMA.md
+#  "Drift detection".)
+er-schema-drift-check:
+    @echo "Checking E-R schema drift..."
+    @sha256sum docs/architecture/VERISIM-ER-SCHEMA.md \
+               crates/echidna-wire/schemas/verisim_er.capnp \
+               | sha256sum | head -c 64
+    @echo " (current combined hash; compare against .machine_readable/er-schema.sha256 when CI gate lands)"
+
+
+secret-scan-trufflehog:
+    @command -v trufflehog >/dev/null && trufflehog filesystem . --only-verified || true

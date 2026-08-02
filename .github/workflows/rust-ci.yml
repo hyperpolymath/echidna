@@ -14,8 +14,7 @@ permissions:
 
 jobs:
   rust-ci:
-    uses: hyperpolymath/standards/.github/workflows/rust-ci-reusable.yml@cc5a372af1af1b202c17f1b21efd954e6c038bef
-    timeout-minutes: 30
+    uses: hyperpolymath/standards/.github/workflows/rust-ci-reusable.yml@7c9db0e5909aab77bf11a444ade3b95c1d2b702e # re-pinned 2026-07-01: toolchain-required-input fix (standards#439) # main 2026-05-31 (CI/CD campaigns C001-C005)
     with:
       enable_audit: true
       enable_coverage: true

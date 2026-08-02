@@ -178,7 +178,16 @@ impl ProverBackend for CubicalAgdaBackend {
             },
             Tactic::Assumption,
         ];
-        Ok(crate::provers::gnn_augment_tactics(&self.config, state, "cubical_agda", tactics, limit).await)
+        Ok(
+            crate::provers::gnn_augment_tactics(
+                &self.config,
+                state,
+                "cubical_agda",
+                tactics,
+                limit,
+            )
+            .await,
+        )
     }
 
     async fn search_theorems(&self, _pattern: &str) -> Result<Vec<String>> {

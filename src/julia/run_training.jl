@@ -4,7 +4,8 @@
 # run_training.jl — Main entry point for training the ECHIDNA neural solver.
 #
 # Usage:
-#   julia --project=src/julia src/julia/run_training.jl [data_dir] [save_dir]
+#   julia --project=src/julia src/julia/run_training.jl [data_dir] [save_dir] \
+#       [--corpus-json a.json,b.json] [--synonyms-dir DIR] [--prover lean]
 #
 # Defaults:
 #   data_dir  = training_data/
@@ -17,6 +18,17 @@
 #   ECHIDNA_NUM_EPOCHS      — training epochs (default 30).
 #   ECHIDNA_NUM_NEGATIVES   — hard-negative premise samples per example
 #     (default 20).
+#
+# Saturation-campaign flags (2026-06-01):
+#   --corpus-json A,B,C   Comma-separated paths to Corpus JSON files emitted
+#                         by Rust corpus adapters (e.g. data/corpus/lean.json).
+#                         Their rows are unioned with whatever
+#                         load_training_data returns. Hazard-flagged entries
+#                         (any axiom_usage flag set) are dropped.
+#   --synonyms-dir DIR    Directory containing per-prover + cross-prover
+#                         synonym TOMLs. Defaults to data/synonyms.
+#   --prover P            Prover symbol to attach to corpus rows when
+#                         translating to TrainingExample (default: lean).
 #
 # This script:
 #   1. Loads JSONL training data (proof states + premises)
@@ -34,9 +46,32 @@ println("║  ECHIDNA Neural Solver — Training Pipeline               ║")
 println("╚═══════════════════════════════════════════════════════════╝")
 println()
 
-# Parse arguments
-data_dir = length(ARGS) >= 1 ? ARGS[1] : joinpath(@__DIR__, "..", "..", "training_data")
-save_dir = length(ARGS) >= 2 ? ARGS[2] : joinpath(@__DIR__, "..", "..", "models", "neural")
+# Parse arguments: positional (data_dir, save_dir) preserved for back-compat;
+# saturation-campaign flags (--corpus-json, --synonyms-dir, --prover) are
+# extracted from ARGS before the positional read so order is not enforced.
+function _extract_flag!(args::Vector{String}, name::String,
+                        default::String)::String
+    i = findfirst(==(name), args)
+    if i === nothing
+        return default
+    end
+    if i == length(args)
+        @warn "$name flag passed without a value; using default" default
+        deleteat!(args, i)
+        return default
+    end
+    val = args[i + 1]
+    deleteat!(args, i:i + 1)
+    return val
+end
+
+_argv = copy(ARGS)
+corpus_json_arg  = _extract_flag!(_argv, "--corpus-json",  "")
+synonyms_dir_arg = _extract_flag!(_argv, "--synonyms-dir", joinpath(@__DIR__, "..", "..", "data", "synonyms"))
+prover_arg       = _extract_flag!(_argv, "--prover",       "lean")
+
+data_dir = length(_argv) >= 1 ? _argv[1] : joinpath(@__DIR__, "..", "..", "training_data")
+save_dir = length(_argv) >= 2 ? _argv[2] : joinpath(@__DIR__, "..", "..", "models", "neural")
 
 println("Data directory: $data_dir")
 println("Save directory: $save_dir")
@@ -46,6 +81,95 @@ println()
 println("Loading EchidnaML module...")
 include(joinpath(@__DIR__, "EchidnaML.jl"))
 using .EchidnaML
+
+# Saturation-campaign corpus + synonym helpers (PR #198).
+include(joinpath(@__DIR__, "corpus_loader.jl"))
+using .CorpusLoader
+include(joinpath(@__DIR__, "saturation_synonyms.jl"))
+using .SaturationSynonyms
+
+"""
+    load_corpus_examples(corpus_paths, prover_kind, synonyms_dir)
+
+Read one or more Corpus JSON files (saturation-campaign Rust adapter
+output), translate to `TrainingExample` rows. Hazard-filtered: entries
+with any `axiom_usage` flag set are dropped, matching the SA
+design-search reject convention in `src/rust/corpus/mod.rs`.
+
+The `discipline_tags` field of each emitted `TrainingExample` is
+populated from `CorpusLoader.entry_disciplines(entry)`, sourced from
+`axiom_usage.other` strings prefixed with `discipline:`. Cross-prover
+synonym tables are pre-loaded for future feature-lookup paths
+(downstream consumer in `training/train.jl` may concatenate
+`discipline_feature_vector` onto goal embeddings; this PR ships the
+data path only).
+"""
+function load_corpus_examples(corpus_paths::Vector{String},
+                              prover_kind::Symbol,
+                              synonyms_dir::String)
+    isempty(corpus_paths) && return TrainingExample[]
+
+    # Pre-load cross-prover vocab tables (currently consumed downstream;
+    # called here so any TOML breakage surfaces at training-launch time,
+    # not mid-epoch).
+    try
+        SaturationSynonyms.load_msc2020(synonyms_dir)
+    catch e
+        @warn "load_msc2020 failed (continuing with empty table)" exception=e
+    end
+
+    examples = TrainingExample[]
+    for path in corpus_paths
+        isfile(path) || (@warn "corpus JSON not found, skipping" path; continue)
+        corpus = CorpusLoader.load_corpus_json(path)
+        rows   = CorpusLoader.corpus_to_training_examples(corpus, prover_kind)
+
+        for (entry, row) in zip(corpus.entries, rows)
+            # Hazard gate (matches Rust SA reject convention).
+            hz = row.hazards
+            has_hazard = false
+            if hz isa AbstractDict
+                for (k, v) in hz
+                    k == "other" && continue
+                    if v isa Bool && v
+                        has_hazard = true
+                        break
+                    end
+                end
+            end
+            has_hazard && continue
+
+            prover = safe_parse_prover(string(prover_kind))
+            prover === nothing && continue
+
+            ps = ProofState(
+                prover,
+                row.proof_state_fields.goal,
+                row.proof_state_fields.context,
+                row.proof_state_fields.hypotheses,
+                row.proof_state_fields.available_premises,
+                row.proof_state_fields.proof_depth,
+                row.proof_state_fields.metadata,
+            )
+
+            premises = Premise[]
+            for p in row.candidate_premise_field_rows
+                push!(premises, Premise(p.name, p.statement, prover,
+                                        nothing, p.frequency_score,
+                                        p.relevance_score))
+            end
+
+            disciplines = CorpusLoader.entry_disciplines(entry)
+
+            push!(examples, TrainingExample(ps, premises,
+                                            row.relevant_indices, prover,
+                                            disciplines))
+        end
+    end
+
+    @info "load_corpus_examples produced $(length(examples)) TrainingExample rows from $(length(corpus_paths)) corpus file(s)" prover_kind synonyms_dir
+    return examples
+end
 
 # Configure for available hardware
 println("Configuring...")
@@ -103,8 +227,28 @@ train_data, val_data, vocab = load_training_data(data_dir;
     num_negatives=num_negatives,
 )
 
+# Saturation-campaign corpus inputs (optional). Translate each Corpus JSON
+# into TrainingExample rows and union them onto the JSONL-derived train
+# split. Validation split is left untouched — corpus-sourced rows are
+# treated as training-only signal in this first wiring; held-out evaluation
+# remains on the canonical JSONL split.
+if !isempty(corpus_json_arg)
+    corpus_paths = String.(split(corpus_json_arg, ","))
+    filter!(!isempty, corpus_paths)
+    if !isempty(corpus_paths)
+        prover_sym = Symbol(prover_arg)
+        @info "Loading saturation-campaign corpus inputs" corpus_paths prover_sym synonyms_dir_arg
+        extra_examples = load_corpus_examples(corpus_paths, prover_sym, synonyms_dir_arg)
+        if !isempty(extra_examples)
+            append!(train_data.examples, extra_examples)
+            @info "Unioned $(length(extra_examples)) corpus-derived examples into train split" total=length(train_data.examples)
+        end
+    end
+end
+
 if isempty(train_data.examples)
-    println("ERROR: No training data loaded. Check that JSONL files exist in $data_dir")
+    println("ERROR: No training data loaded. Check that JSONL files exist in $data_dir, " *
+            "or pass --corpus-json a.json,b.json for saturation-campaign inputs.")
     exit(1)
 end
 

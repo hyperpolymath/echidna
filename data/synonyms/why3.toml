@@ -1,0 +1,311 @@
+# SPDX-License-Identifier: MPL-2.0
+#
+# Why3 declaration, spec, dispatch-backend, and transformation synonyms.
+# Schema: see data/synonyms/README.adoc.
+# Seeded 2026-06-01 alongside the Why3 corpus adapter.
+#
+# Coverage focus: the surface a strategy needs to dispatch a goal to
+# Why3 — envelope keywords (`theory`, `module`), declaration kinds
+# (`predicate`, `function`, `lemma`, `goal`, `axiom`), WhyML extras
+# (`let`, `let rec`, `val`, `exception`), the SOUNDNESS-CRITICAL
+# unproved-assumption surface (`axiom`, `val function`, `val lemma`,
+# `assume`, `absurd`), the back-end provers Why3 dispatches to
+# (Alt-Ergo / Z3 / CVC4 / CVC5 / E / Vampire / Coq), and the
+# transformation tactics applied to goals before dispatch.
+
+# ---------------------------------------------------------------------------
+# Envelope keywords
+# ---------------------------------------------------------------------------
+
+[[synonym]]
+canonical    = "theory"
+aliases      = ["why3-theory", "logic-theory"]
+tactic_class = "structural"
+notes        = """
+`theory NAME ... end` envelope. The pure-logic Why3 unit: types,
+predicates, functions, axioms, lemmas, goals. No imperative code.
+"""
+
+[[synonym]]
+canonical    = "module"
+aliases      = ["whyml-module", "imperative-module"]
+tactic_class = "structural"
+notes        = """
+WhyML's imperative envelope. `module NAME ... end`. Adds `let`,
+`val`, `exception`, `raises`, `requires`, `ensures`, `variant` to the
+pure-logic surface.
+"""
+
+# ---------------------------------------------------------------------------
+# Pure-logic declarations
+# ---------------------------------------------------------------------------
+
+[[synonym]]
+canonical    = "predicate"
+aliases      = ["bool-predicate"]
+tactic_class = "decl"
+notes        = "`predicate P (x: T) = body` — bool-valued definition."
+
+[[synonym]]
+canonical    = "function"
+aliases      = ["pure-function"]
+tactic_class = "decl"
+notes        = "`function f (x: T) : U = body` — total math function."
+
+[[synonym]]
+canonical    = "lemma"
+aliases      = ["proof-lemma"]
+tactic_class = "decl"
+notes        = """
+`lemma NAME: P` — a fact to be discharged by an external prover, then
+imported as an assumption into subsequent goals. Cheaper than `theorem`
+in usage convention but identical semantically.
+"""
+
+[[synonym]]
+canonical    = "theorem"
+aliases      = ["headline-theorem"]
+tactic_class = "decl"
+notes        = """
+Strong-intent synonym of `lemma`. Why3 treats them identically but
+the convention is to use `theorem` for the headline result of a
+theory and `lemma` for supporting facts.
+"""
+
+[[synonym]]
+canonical    = "goal"
+aliases      = ["proof-obligation"]
+tactic_class = "decl"
+notes        = """
+`goal NAME: P` — explicit proof obligation. Dispatched to back-ends.
+Unlike `lemma`, the proved fact is NOT carried into subsequent decls
+as an assumption. Use when you want to prove something for its own
+sake but don't want it polluting later contexts.
+"""
+
+[[synonym]]
+canonical    = "axiom"
+aliases      = ["why3-axiom"]
+tactic_class = "hazard"
+notes        = """
+SOUNDNESS HAZARD. `axiom NAME: P` declares `P` as a trusted
+assumption — Why3 does NOT try to prove it. Use only for foundational
+theories (e.g. integer arithmetic backing axioms). In application
+code, every `axiom` is a hole in the trusted base.
+"""
+
+[[synonym]]
+canonical    = "type"
+aliases      = ["adt", "algebraic-type", "record-type"]
+tactic_class = "decl"
+notes        = """
+`type T = | C1 | C2 of int` (datatype), `type T = { f: int; g: bool }`
+(record), or `type T` (abstract). The `predicate ... = ...` form
+defines refinement types.
+"""
+
+[[synonym]]
+canonical    = "use"
+aliases      = ["use import", "use export"]
+tactic_class = "structural"
+notes        = """
+`use import M` brings `M`'s names into scope qualified; `use export M`
+re-exports them. Bare `use M` is `use import` in modern Why3.
+"""
+
+[[synonym]]
+canonical    = "clone"
+aliases      = ["clone import", "clone export", "module-clone"]
+tactic_class = "structural"
+notes        = """
+`clone M with type t = u` — instantiates an abstract theory at concrete
+types/operations. The Why3 analogue of ML functor application.
+"""
+
+# ---------------------------------------------------------------------------
+# WhyML extras
+# ---------------------------------------------------------------------------
+
+[[synonym]]
+canonical    = "let"
+aliases      = ["whyml-let", "let-binding"]
+tactic_class = "decl"
+notes        = "WhyML imperative definition. `let f x = body` with optional `requires`/`ensures`."
+
+[[synonym]]
+canonical    = "let-rec"
+aliases      = ["let rec", "recursive-let"]
+tactic_class = "decl"
+notes        = "`let rec f x = body` with a mandatory `variant` clause for termination."
+
+[[synonym]]
+canonical    = "val"
+aliases      = ["whyml-val", "abstract-val"]
+tactic_class = "hazard"
+notes        = """
+`val f x: T` — uninterpreted symbol at the WhyML level. Equivalent in
+soundness terms to an `axiom`: callers can assume the spec but no
+implementation is verified.
+"""
+
+[[synonym]]
+canonical    = "exception"
+aliases      = ["whyml-exception"]
+tactic_class = "decl"
+notes        = "`exception E of T` — declared exception, raised via `raise E v`, caught with `try ... with`."
+
+[[synonym]]
+canonical    = "raises"
+aliases      = ["raises-clause"]
+tactic_class = "spec"
+notes        = "`raises { E -> Q | ... }` — exceptional postcondition per exception kind."
+
+[[synonym]]
+canonical    = "requires"
+aliases      = ["whyml-requires", "precondition"]
+tactic_class = "spec"
+notes        = "Pre-condition on `let`/`val`."
+
+[[synonym]]
+canonical    = "ensures"
+aliases      = ["whyml-ensures", "postcondition"]
+tactic_class = "spec"
+notes        = "Post-condition. `result` is the bound name of the return value."
+
+[[synonym]]
+canonical    = "variant"
+aliases      = ["termination-variant", "whyml-variant"]
+tactic_class = "spec"
+notes        = "Termination measure on `let rec` and `while`. Lexicographic tuples allowed."
+
+[[synonym]]
+canonical    = "assert"
+aliases      = ["whyml-assert", "in-code-assert"]
+tactic_class = "spec"
+notes        = "`assert { P }` — local proof obligation in WhyML code. Verified at the surrounding context."
+
+[[synonym]]
+canonical    = "assume"
+aliases      = ["whyml-assume"]
+tactic_class = "hazard"
+notes        = """
+`assume { P }` — UNCONDITIONALLY accepts `P` at this program point.
+Same soundness profile as `axiom`. ECHIDNA flags any decl whose body
+contains `assume` for human review.
+"""
+
+[[synonym]]
+canonical    = "absurd"
+aliases      = ["whyml-absurd", "ex-falso"]
+tactic_class = "hazard"
+notes        = """
+`absurd` in a branch tells the verifier "this case is unreachable —
+prove false here". If the branch IS reachable, `absurd` becomes an
+unsound assumption. Flag when present in any non-dead branch.
+"""
+
+# ---------------------------------------------------------------------------
+# Dispatch back-ends — Why3 farms goals out to these
+# ---------------------------------------------------------------------------
+
+[[synonym]]
+canonical    = "alt-ergo"
+aliases      = ["altergo", "AE"]
+tactic_class = "dispatch"
+notes        = """
+The OCamlPro SMT solver that ships with Why3. First choice for most
+first-order goals over int/real/array. Good at modular arithmetic
+and the WP-encoded heap theories.
+"""
+
+[[synonym]]
+canonical    = "z3"
+aliases      = ["Z3", "microsoft-z3"]
+tactic_class = "dispatch"
+notes        = """
+Microsoft's SMT solver. Best general-purpose Why3 back-end —
+strongest on bit-vectors, arrays, and quantifier-instantiation-heavy
+goals. Default in most modern projects.
+"""
+
+[[synonym]]
+canonical    = "cvc4"
+aliases      = ["CVC4"]
+tactic_class = "dispatch"
+notes        = """
+The Stanford/NYU SMT solver. Strong on strings and arrays; useful as
+a Z3 cross-check. Why3 dispatch usually configures CVC4 with
+finite-model-finding on for satisfiability queries.
+"""
+
+[[synonym]]
+canonical    = "cvc5"
+aliases      = ["CVC5"]
+tactic_class = "dispatch"
+notes        = """
+Successor to CVC4. Wider theory support including separation logic
+and reals/transcendentals. Often complements Z3 — try both per goal.
+"""
+
+[[synonym]]
+canonical    = "eprover"
+aliases      = ["E", "e-prover"]
+tactic_class = "dispatch"
+notes        = """
+First-order theorem prover (saturation-based). Useful for pure
+quantifier-heavy goals where SMT is weak. Why3 encodes the goal into
+TPTP-FOF before dispatch.
+"""
+
+[[synonym]]
+canonical    = "vampire"
+aliases      = ["Vampire"]
+tactic_class = "dispatch"
+notes        = """
+First-order saturation prover, similar niche to E but with stronger
+strategy scheduling. Run alongside E for coverage.
+"""
+
+[[synonym]]
+canonical    = "coq"
+aliases      = ["Coq", "coq-backend"]
+tactic_class = "dispatch"
+notes        = """
+Why3 can emit a Coq `.v` skeleton for the goal and let a human (or
+ECHIDNA's Coq backend) close it interactively. The escape hatch when
+SMT can't reach the goal.
+"""
+
+# ---------------------------------------------------------------------------
+# Transformations applied before dispatch
+# ---------------------------------------------------------------------------
+
+[[synonym]]
+canonical    = "split_goal_right"
+aliases      = ["split-goal-right", "split-conjunction"]
+tactic_class = "transformation"
+notes        = """
+Decomposes a conjunction in the goal `A /\\ B` into two sub-goals.
+First reflex when a goal is too big — gives each SMT back-end a
+focused sub-problem.
+"""
+
+[[synonym]]
+canonical    = "inline_goal"
+aliases      = ["inline-defs", "unfold-in-goal"]
+tactic_class = "transformation"
+notes        = """
+Unfolds all transparent definitions in the goal. Use when the SMT
+back-end stalls because a definition wasn't visible to the solver's
+heuristics.
+"""
+
+[[synonym]]
+canonical    = "eliminate_inductive"
+aliases      = ["eliminate-inductive-predicate"]
+tactic_class = "transformation"
+notes        = """
+Replaces inductive predicates with their fixpoint defining axioms
+(or rejection-set encoding). Required before dispatching to FOL
+back-ends that have no native inductive predicate support.
+"""

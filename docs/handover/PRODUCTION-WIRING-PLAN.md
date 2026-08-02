@@ -15,7 +15,7 @@ subprocess CI across ~38/48 backends, Cap'n Proto IPC, Chapel as first-class exe
 |---|---|---|
 | D1 | **Serialization = Cap'n Proto** | Chosen over Bebop3 for dependability+maturity (Cloudflare Workers use at scale), zero-copy reads, strongest schema-evolution story. Tradeoff: heavier codegen. Shim Julia/Chapel via C-ABI (fits existing Idris2-ABI + Zig-FFI policy). |
 | D2 | **Chapel = first-class, maximal** | Existing POC (`chapel_poc/parallel_proof_search.chpl`, 420 LoC) promoted to `src/chapel/`. Expand into portfolio dispatch, speculative tactic search, corpus-parallel ops, mutation-testing parallelism, multi-locale distributed, numeric hot paths. |
-| D3 | **Guix primary, Nix fallback** | Per project `CLAUDE.md` package-management policy. `guix.scm` / `manifests/live-provers.scm` authoritative; `flake.nix` mirrors. |
+| D3 | **Guix sole primary** | Per project `CLAUDE.md` package-management policy. `guix.scm` / `manifests/live-provers.scm` authoritative. (Nix fallback removed 2026-06-01 per estate-wide nix-deprecation directive — originally D3 said "Nix fallback"; that path is now closed.) |
 | D4 | **Execution order = L3 → L1 → L2** | Live-prover CI first: highest-leverage gap, surfaces real bugs mocks hide, no protocol break. Cap'n Proto next, since Chapel wiring (L2) will consume those schemas. |
 | D5 | **Live-prover CI cadence = tiered** | Tier-1 every PR, Tier-2 nightly, Tier-3 weekly, Tier-4 "best-effort / allow-fail" quarterly. |
 | D6 | **No JSON emit** | Per memory rule `feedback_no_json_emit_a2ml`. Cap'n Proto replaces the current HTTP-JSON Rust↔Julia channel. Tool config stays Nickel/A2ML. |
@@ -30,10 +30,11 @@ subprocess CI across ~38/48 backends, Cap'n Proto IPC, Chapel as first-class exe
 
 **Artefacts**:
 - `manifests/live-provers.scm` — Guix manifest listing all provisionable prover binaries
-- `flake.nix` — Nix fallback, mirror of Guix set
 - `.github/workflows/live-provers.yml` — tiered CI workflow (PR/nightly/weekly/quarterly)
 - `tests/live_prover_suite.rs` — Rust test harness with canonical goals per backend
 - `tests/live_goals/` — micro-goal fixtures (one per backend, per category)
+
+(Originally also planned `flake.nix` as a Nix-fallback mirror of the Guix set; removed 2026-06-01 per estate-wide nix-deprecation directive.)
 
 **Tier assignment** (per `/var/mnt/eclipse/repos/verification-ecosystem/echidna/src/rust/provers/` audit):
 

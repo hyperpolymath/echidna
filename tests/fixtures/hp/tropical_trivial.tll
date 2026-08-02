@@ -1,0 +1,12 @@
+# SPDX-License-Identifier: MPL-2.0
+#discipline: tropical
+#
+# Smoke fixture: tropical resource-typing single-goal identity.
+# Exercises TypedWasmBackend with ProverKind::TropicalTypeChecker.
+# Cost = 0 (additive identity in the tropical semiring); type checks
+# trivially under the standard resource-tracking judgement.
+
+theorem tropical_zero_cost : forall (A : TropicalType[cost=0]), A |- A.
+Proof.
+  tropical_refl.
+Qed.

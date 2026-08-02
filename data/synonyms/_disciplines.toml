@@ -1,0 +1,355 @@
+# SPDX-FileCopyrightText: 2026 Jonathan D.A. Jewell <j.d.a.jewell@open.ac.uk>
+# SPDX-License-Identifier: MPL-2.0
+#
+# TypeChecker disciplines cross-prover vocabulary index.
+#
+# Underscore-prefix filename `_disciplines.toml` signals: this is NOT a
+# per-prover synonym table (those are unprefixed: lean4.toml, coq.toml,
+# etc.). Instead it is a cross-prover *taxonomic* dictionary loaded as a
+# SECONDARY index by `SynonymTable::with_disciplines()`, sibling to
+# `_msc2020.toml`, `_wordnet_math.toml`, `_conceptnet_seed.toml`.
+#
+# Each `[[synonym]]` entry captures one of the 41 TypeChecker disciplines
+# wired into the Echidna saturation pipeline (the "39" headline figure in
+# the goal-spec under-counted; the enumerated list contains 41). The
+# `aliases` are textual markers a practitioner would grep for, drawn from
+# TypeLL `Sigma` parameter names, source-code keywords and operators, and
+# theory-paper terminology.
+#
+# Schema:
+#   canonical        — discipline slug (kebab-case).
+#   aliases          — 5-12 textual markers (keywords, operators, theorist
+#                      names, paper titles).
+#   tactic_class     — discipline family. One of: polymorphism, subtyping,
+#                      dependent, substructural, mutability, modal,
+#                      effects, session, homotopy, resource.
+#   semantic_class   — discipline slug (same as canonical) — cross-table
+#                      join key.
+#   notes            — one-line description with theory citation.
+
+# ============================================================
+# polymorphism
+# ============================================================
+
+[[synonym]]
+canonical = "hindley-milner"
+aliases = ["HM", "ML-style", "Algorithm-W", "Damas-Milner", "principal-type", "let-polymorphism", "generalise", "instantiate", "forall"]
+tactic_class = "polymorphism"
+semantic_class = "hindley-milner"
+notes = "Damas-Milner 1982 prenex polymorphism with Algorithm W; the type system underlying ML, OCaml core, and Haskell-98."
+
+[[synonym]]
+canonical = "system-f"
+aliases = ["SF", "polymorphic-lambda", "∀", "∀α", "Lambda", "Λα", "predicative", "Girard-Reynolds", "second-order-lambda"]
+tactic_class = "polymorphism"
+semantic_class = "system-f"
+notes = "Girard 1972 / Reynolds 1974 second-order polymorphic lambda calculus; basis of GHC Core (System F_C)."
+
+[[synonym]]
+canonical = "rank-n"
+aliases = ["RankN", "RankNTypes", "impredicative-poly", "ImpredicativeTypes", "higher-rank", "Rank2Types", "forall-on-left", "Quick-Look"]
+tactic_class = "polymorphism"
+semantic_class = "rank-n"
+notes = "Higher-rank polymorphism (Peyton Jones-Vytiniotis-Weirich 2007); polytypes appear on the left of arrows."
+
+[[synonym]]
+canonical = "phantom"
+aliases = ["phantom-type", "ghost-type", "PhantomData", "type-tag", "branded-type", "newtype-tag", "marker", "_marker"]
+tactic_class = "polymorphism"
+semantic_class = "phantom"
+notes = "Leijen-Meijer 1999 phantom-type parameters; Rust's `PhantomData<T>` is the canonical modern marker."
+
+[[synonym]]
+canonical = "existential"
+aliases = ["∃", "exists", "abstract-type", "package-type", "ExistentialQuantification", "data-type-with-hidden", "Sigma-erased", "open-existential"]
+tactic_class = "polymorphism"
+semantic_class = "existential"
+notes = "Mitchell-Plotkin 1988 abstract types as existential types; Haskell's `forall a.` under a constructor."
+
+[[synonym]]
+canonical = "higher-kinded"
+aliases = ["HKT", "*→*", "∀F:*→*", "Functor", "kind-arrow", "type-constructor-poly", "Type1", "PolyKinds"]
+tactic_class = "polymorphism"
+semantic_class = "higher-kinded"
+notes = "Quantification over type constructors of kind `* -> *`; Functor/Monad classes, Scala's HKT encoding."
+
+[[synonym]]
+canonical = "row-poly"
+aliases = ["row-type", "RowPoly", "OCaml-row", "polymorphic-records", "extensible-records", "ρ", "row-variable", "lacks-label"]
+tactic_class = "polymorphism"
+semantic_class = "row-poly"
+notes = "Wand 1987 / Remy 1989 row polymorphism; OCaml polymorphic variants, PureScript records, Koka effects."
+
+# ============================================================
+# subtyping
+# ============================================================
+
+[[synonym]]
+canonical = "subtyping"
+aliases = ["<:", "structural-subtyping", "nominal-subtyping", "variance", "co-variant", "contra-variant", "bounded-quantification", "F<:"]
+tactic_class = "subtyping"
+semantic_class = "subtyping"
+notes = "Cardelli 1988 subtype relation `S <: T`; bounded quantification (F<:) of Cardelli-Wegner."
+
+[[synonym]]
+canonical = "intersection"
+aliases = ["&", "intersection-type", "&&", "type-and", "∩", "Coppo-Dezani", "refinement-intersection", "T1 & T2"]
+tactic_class = "subtyping"
+semantic_class = "intersection"
+notes = "Coppo-Dezani-Salle 1979 intersection types; TypeScript's `A & B`, Scala 3's `&`."
+
+[[synonym]]
+canonical = "union"
+aliases = ["|", "union-type", "||", "sum-type-untagged", "∪", "T1 | T2", "ad-hoc-union", "discriminated-union"]
+tactic_class = "subtyping"
+semantic_class = "union"
+notes = "Untagged union types; TypeScript's `A | B`, Scala 3's `|`, Ceylon union types."
+
+[[synonym]]
+canonical = "gradual"
+aliases = ["?", "dynamic-type", "?-type", "gradual-typing", "blame", "consistency", "Any", "Dyn", "Siek-Taha"]
+tactic_class = "subtyping"
+semantic_class = "gradual"
+notes = "Siek-Taha 2006 gradual typing; `?` (Unknown) type and the blame calculus of Wadler-Findler 2009."
+
+# ============================================================
+# dependent
+# ============================================================
+
+[[synonym]]
+canonical = "dependent"
+aliases = ["Pi", "Π", "Sigma", "Σ", "dependent-product", "Vec n", "MLTT", "Martin-Lof", "(x : A) -> B x"]
+tactic_class = "dependent"
+semantic_class = "dependent"
+notes = "Martin-Lof type theory; dependent function space Pi and dependent pair Sigma."
+
+[[synonym]]
+canonical = "refinement"
+aliases = ["refinement-type", "{x : T | P x}", "liquid-types", "predicate-subtype", "LiquidHaskell", "F*-refinement", "subset-type", "{v: Int | v > 0}"]
+tactic_class = "dependent"
+semantic_class = "refinement"
+notes = "Freeman-Pfenning 1991 refinement types; Liquid Types (Rondon-Kawaguchi-Jhala 2008), F* and Dafny."
+
+[[synonym]]
+canonical = "hoare"
+aliases = ["requires", "ensures", "invariant", "modifies", "hoare-triple", "vc", "{P} c {Q}", "wp", "weakest-precondition"]
+tactic_class = "dependent"
+semantic_class = "hoare"
+notes = "Hoare 1969 axiomatic semantics; verification-condition style as in Dafny, Why3, OpenJML."
+
+[[synonym]]
+canonical = "indexed"
+aliases = ["indexed-family", "GADT", "type-index", "Eq-indices", "data-family", "Fin n", "type-level-index", "(n : Nat) -> Vec A n"]
+tactic_class = "dependent"
+semantic_class = "indexed"
+notes = "Type families indexed by data; Generalized Algebraic Datatypes (Cheney-Hinze 2003, Xi 2003)."
+
+[[synonym]]
+canonical = "qtt"
+aliases = ["Quantitative-Type-Theory", "0..1..ω", "multiplicity", "McBride-QTT", "Atkey-QTT", "0-erased", "1-linear", "ω-many", "graded"]
+tactic_class = "dependent"
+semantic_class = "qtt"
+notes = "McBride 2016 / Atkey 2018 Quantitative Type Theory; Idris 2's `0 1 w` multiplicities."
+
+# ============================================================
+# substructural
+# ============================================================
+
+[[synonym]]
+canonical = "linear"
+aliases = ["!", "linear-logic", "⊸", "Lin", "linear-arrow", "must-use", "lollipop", "Girard-LL", "%1 ->"]
+tactic_class = "substructural"
+semantic_class = "linear"
+notes = "Girard 1987 linear logic; LinearTypes extension in GHC (`%1 ->`), Linear Haskell, Idris 1 linear."
+
+[[synonym]]
+canonical = "affine"
+aliases = ["affine-logic", "weakening-only", "Rust-borrow", "at-most-once", "drop-allowed", "move-semantics", "T (consumed)", "affine-arrow"]
+tactic_class = "substructural"
+semantic_class = "affine"
+notes = "Affine logic (weakening allowed, contraction forbidden); Rust's move/drop discipline, AffineScript."
+
+[[synonym]]
+canonical = "relevant"
+aliases = ["relevant-logic", "contraction-only", "at-least-once", "weakening-forbidden", "Church-relevant", "must-touch", "must-consume", "R-logic"]
+tactic_class = "substructural"
+semantic_class = "relevant"
+notes = "Relevance logic (contraction allowed, weakening forbidden); Anderson-Belnap, used in some session-type systems."
+
+[[synonym]]
+canonical = "ordered"
+aliases = ["non-commutative-linear", "BCK", "sequenced-linear", "Lambek-calculus", "exchange-forbidden", "ordered-context", "concatenation-only", "Lambek-/-\\"]
+tactic_class = "substructural"
+semantic_class = "ordered"
+notes = "Lambek 1958 / Polakow-Pfenning 1999 ordered logic; substructural with neither weakening, contraction, nor exchange."
+
+[[synonym]]
+canonical = "uniqueness"
+aliases = ["*", "Clean", "◆", "unique-reference", "*World", "uniqueness-type", "Barendsen-Smetsers", "unique-attribute"]
+tactic_class = "substructural"
+semantic_class = "uniqueness"
+notes = "Barendsen-Smetsers 1996 uniqueness types in Clean; reference-count = 1 at type level."
+
+# ============================================================
+# mutability
+# ============================================================
+
+[[synonym]]
+canonical = "immutable"
+aliases = ["readonly", "const", "frozen", "immutability", "val", "let", "@readonly", "final"]
+tactic_class = "mutability"
+semantic_class = "immutable"
+notes = "Read-only typing discipline; TypeScript `readonly`, C++ `const`, Java `final`, Swift `let`."
+
+[[synonym]]
+canonical = "capability"
+aliases = ["cap", "ocap", "object-capability", "granted-cap", "capability-safe", "auth-token", "Pony-cap", "Cap[T]"]
+tactic_class = "mutability"
+semantic_class = "capability"
+notes = "Object-capability discipline (Miller 2006); Pony reference capabilities, E language, Newspeak."
+
+[[synonym]]
+canonical = "bunched"
+aliases = ["BI", ";", "★", "*", "separation-logic", "bunched-implications", "O'Hearn-Pym", "P * Q", "frame-rule"]
+tactic_class = "mutability"
+semantic_class = "bunched"
+notes = "O'Hearn-Pym 1999 bunched implications; separation logic's `*` and frame rule for heap-aware reasoning."
+
+# ============================================================
+# modal
+# ============================================================
+
+[[synonym]]
+canonical = "modal"
+aliases = ["□", "◇", "modal-logic", "S4", "S5", "K", "T", "necessarily", "possibly", "Kripke"]
+tactic_class = "modal"
+semantic_class = "modal"
+notes = "Kripke 1963 possible-worlds semantics; modal type theories of Pfenning-Davies 2001."
+
+[[synonym]]
+canonical = "epistemic"
+aliases = ["K", "knows", "agent-knowledge", "common-knowledge", "distributed-knowledge", "K_a φ", "Fagin-Halpern", "belief-modality"]
+tactic_class = "modal"
+semantic_class = "epistemic"
+notes = "Fagin-Halpern-Moses-Vardi 1995 epistemic logic; agent-indexed knowledge modality `K_a`."
+
+[[synonym]]
+canonical = "temporal"
+aliases = ["LTL", "CTL", "always", "eventually", "until", "next", "○", "◇", "□", "G", "F", "X", "U"]
+tactic_class = "modal"
+semantic_class = "temporal"
+notes = "Pnueli 1977 LTL / Clarke-Emerson CTL; G/F/X/U temporal operators in TLA+, Spin, NuSMV."
+
+[[synonym]]
+canonical = "provability"
+aliases = ["GL", "Goedel-Loeb", "□", "provability-logic", "GLP", "Solovay", "□(□A → A) → □A", "Bekklemishev"]
+tactic_class = "modal"
+semantic_class = "provability"
+notes = "Goedel-Loeb provability logic GL; Solovay 1976 arithmetical completeness; modal `□` = `Prov(⌜·⌝)`."
+
+# ============================================================
+# effects
+# ============================================================
+
+[[synonym]]
+canonical = "effect-row"
+aliases = ["!{IO}", "!{State, Exn}", "row-of-effects", "Eff", "<e>", "effect-handler", "Koka-effect", "Eff [State, Exc]"]
+tactic_class = "effects"
+semantic_class = "effect-row"
+notes = "Leijen 2014 row-of-effects (Koka); Plotkin-Pretnar 2009 algebraic effects and handlers."
+
+[[synonym]]
+canonical = "impure"
+aliases = ["IO", "ST", "Side-effect", "RealWorld-token", "unsafePerformIO", "IO a", "ST s a", "Monad.IO"]
+tactic_class = "effects"
+semantic_class = "impure"
+notes = "Peyton Jones-Wadler 1993 monadic IO in Haskell; `RealWorld#` token threading."
+
+[[synonym]]
+canonical = "coeffect"
+aliases = ["co-effect", "context-dependence", "granular-context", "coexponent", "Petricek-Orchard-Mycroft", "graded-comonad", "□_r", "[Γ]_r"]
+tactic_class = "effects"
+semantic_class = "coeffect"
+notes = "Petricek-Orchard-Mycroft 2014 coeffects; graded-comonadic context demands (dual to graded-monadic effects)."
+
+[[synonym]]
+canonical = "probabilistic"
+aliases = ["probability-monad", "p[%]", "Bernoulli", "Dirichlet", "sample", "observe", "Dist a", "PPL", "Church", "Pyro"]
+tactic_class = "effects"
+semantic_class = "probabilistic"
+notes = "Giry-monad-based probabilistic effects (Ramsey-Pfeffer 2002); Church/Anglican/Pyro PPL primitives."
+
+# ============================================================
+# session
+# ============================================================
+
+[[synonym]]
+canonical = "session"
+aliases = ["!T", "?T", "dual", "session-type", "multiparty-session", "Scribble", "Honda-Vasconcelos-Kubo", "end", "S.dual"]
+tactic_class = "session"
+semantic_class = "session"
+notes = "Honda-Vasconcelos-Kubo 1998 session types; `!T.S` send, `?T.S` receive, duality `S.dual`."
+
+[[synonym]]
+canonical = "choreographic"
+aliases = ["choreographic", "Choreo", "global-types", "projection", "Montesi-Yoshida", "A -> B: msg", "endpoint-projection", "Chor λ"]
+tactic_class = "session"
+semantic_class = "choreographic"
+notes = "Carbone-Honda-Yoshida 2012 / Montesi 2013 choreographic programming; global type with endpoint projection."
+
+[[synonym]]
+canonical = "dyadic"
+aliases = ["dyadic", "L→R", "R→L", "echo-types-dyadic", "two-party", "binary-session", "client-server-pair", "ephapax-affine"]
+tactic_class = "session"
+semantic_class = "dyadic"
+notes = "Two-party (binary) session subset; canonical in `echo-types` and the `ephapax-affine` sublanguage."
+
+[[synonym]]
+canonical = "echo"
+aliases = ["echo", "↔", "mirror", "isomorphism-as-type", "EchoSpec", "round-trip", "ping-pong", "echo-types", "L ↔ R"]
+tactic_class = "session"
+semantic_class = "echo"
+notes = "Echo-types discipline: two-sided protocols where send/receive must mirror; canonical doc `hyperpolymath/echo-types`."
+
+# ============================================================
+# homotopy
+# ============================================================
+
+[[synonym]]
+canonical = "homotopy"
+aliases = ["HoTT", "univalence", "ua", "Path", "Path-induction", "Id", "transport", "Voevodsky", "Univalent-Foundations"]
+tactic_class = "homotopy"
+semantic_class = "homotopy"
+notes = "Awodey-Voevodsky homotopy type theory; HoTT book 2013, univalence axiom `(A ≃ B) ≃ (A = B)`."
+
+[[synonym]]
+canonical = "cubical"
+aliases = ["cubical-type-theory", "PathP", "i0", "i1", "transp", "hcomp", "Cohen-Coquand-Huber-Mortberg", "Interval I", "Glue"]
+tactic_class = "homotopy"
+semantic_class = "cubical"
+notes = "Cohen-Coquand-Huber-Mortberg 2018 cubical type theory; Cubical Agda's `PathP`, `transp`, `hcomp`."
+
+[[synonym]]
+canonical = "nominal"
+aliases = ["Atom", "fresh", "swap", "alpha-equivalence", "name-binding", "Pitts-Gabbay", "Nom", "Name", "Fresh.swap"]
+tactic_class = "homotopy"
+semantic_class = "nominal"
+notes = "Gabbay-Pitts 2002 nominal sets; first-class atoms with swap and freshness for alpha-equivalent binding."
+
+# ============================================================
+# resource
+# ============================================================
+
+[[synonym]]
+canonical = "tropical"
+aliases = ["min-plus", "max-plus", "⊕", "⊗", "tropical-semiring", "Maslov", "min(a,b)", "a+b", "tropical-resource-typing", "(R, min, +)"]
+tactic_class = "resource"
+semantic_class = "tropical"
+notes = "Tropical (min,+) semiring (Maslov 1980s); the `tropical-resource-typing` library uses it for cost composition."
+
+[[synonym]]
+canonical = "ceremonial"
+aliases = ["ritual", "ceremony", "@[ceremony]", "protocol-bound", "multi-party-protocol", "Ellison-ceremony", "step-binding", "ceremony-attribute"]
+tactic_class = "resource"
+semantic_class = "ceremonial"
+notes = "Ellison 2007 ceremony-design discipline; vocabulary still settling, canonical markers TBD post-Panll ceremony-types spec."

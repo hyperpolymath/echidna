@@ -1,0 +1,12 @@
+# SPDX-License-Identifier: MPL-2.0
+#discipline: echo
+#
+# Smoke fixture: echo type-discipline single-goal identity.
+# Exercises HPEcosystemBackend with ProverKind::EchoTypeChecker.
+# The L3 (echo) obligation reduces to its own type — the simplest
+# possible witness that the backend wiring round-trips.
+
+theorem echo_identity : forall (A : EchoType), A |- A.
+Proof.
+  echo_refl.
+Qed.

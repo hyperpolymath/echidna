@@ -52,7 +52,7 @@ core. **Consolidated 2026-05-18** into a single multi-target
 primary path (only SCIP/OR-Tools/Metamath are in Guix; 5 need bespoke package
 defs; Imandra is non-free) — per the 2026-05-18 estate ruling, the sealed
 container *is* the escape hatch for the not-in-Guix / non-free tail (Guix
-primary, no Nix mirror; `flake.nix` deprecated). Imandra target remains
+primary, no Nix mirror; `flake.nix` deprecated and removed estate-wide 2026-06-01). Imandra target remains
 licence-gated. Table below kept for the per-backend install strategy of record.
 
 Handover hints live in `.machine_readable/6a2/STATE.a2ml [wave-3-handover-hints]`.
@@ -167,7 +167,6 @@ Existing POC: `chapel_poc/parallel_proof_search.chpl` (420 LoC) + the self-linki
 - **TypeDiscipline deep native wiring** (phase-2 deferred) — per-discipline proof encoding, Idris2 validator tagging, family-aware GNN features, per-discipline integration tests under `tests/disciplines/`, Katagoria fixture round-trip, per-discipline dispatch scoring.
 - **HP type-checker ecosystem backends** — 13 corpus-only provers (KatagoriaVerifier, Modal/Session/Choreographic/Epistemic/Refinement/Echo/Dependent/QTT/Effect-Row/Tropical/TypeLL etc.) need Rust backends shelling out to the HP stack (Ephapax, Wokelang, AffineScript) — corpus contributes to vocab/training only until backends wire up dispatch.
 - **CR-1..CR-10 cross-repo tests** from standards `TESTING-TAXONOMY.adoc` — notably CR-2 foreign-enum exhaustive-match lint, CR-3 FFI roundtrip over all variants, CR-6 upstream-HEAD sentinel.
-- **`verisim` feature compile errors** — `cargo check --lib --features verisim` fails with 22 errors (missing `warn` import, unresolved `Goal`/`theorem`, private-field access in `VeriSimDBClient`). Unrelated to main build; gate off by default.
 - **Remaining CI infra failures** — Mirror to Git Forges Radicle SSH key unset; Instant Sync `.git-private-farm` bad credentials. Tokens human-owned — see `YOUR-ACTIONS-todo.md §0c`.
 
 ## Non-goals (explicit)

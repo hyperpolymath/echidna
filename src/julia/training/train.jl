@@ -37,13 +37,28 @@ using ProgressMeter
     TrainingExample
 
 Single training example with proof state, relevant premises, and labels.
+
+`discipline_tags` (added 2026-06-01 in the saturation campaign wiring PR)
+is a multi-hot tag vector of `Symbol` discipline names — e.g. `:linear`,
+`:dependent`, `:effect_row`. It is populated by
+`load_corpus_examples` in `run_training.jl`, sourced from
+`CorpusLoader.entry_disciplines(entry)`. JSONL-derived examples leave it
+empty for back-compat; the back-compat 4-arg constructor preserves all
+pre-campaign call-sites without modification.
 """
 struct TrainingExample
     proof_state::ProofState
     candidate_premises::Vector{Premise}
     relevant_indices::Vector{Int}  # Indices of actually useful premises
     prover::ProverType
+    discipline_tags::Vector{Symbol}
 end
+
+# Back-compat constructor (4 args) — preserves pre-campaign call-sites in
+# `training/dataloader.jl::build_training_examples` and elsewhere.
+TrainingExample(ps::ProofState, premises::Vector{Premise},
+                rel::Vector{Int}, prover::ProverType) =
+    TrainingExample(ps, premises, rel, prover, Symbol[])
 
 """
     TrainingDataset
@@ -592,7 +607,38 @@ end
 # NOTE: load_training_data is defined in training/dataloader.jl (included before this file).
 # It reads JSONL files and returns (train_data, val_data, vocab).
 
+# ============================================================================
+# Discipline-feature helper (saturation campaign 2026-06-01)
+# ============================================================================
+
+"""
+    discipline_feature_vector(example::TrainingExample;
+                              all_disciplines=nothing) -> Vector{Float32}
+
+Multi-hot 42-dim Float32 feature vector derived from
+`example.discipline_tags`. Returns a length-0 vector when the example
+has no discipline tags (gates the future concat in
+`compute_features`-style paths so old JSONL examples keep their original
+feature shape).
+
+The canonical 42-element ordering is owned by
+`CorpusLoader.DEFAULT_DISCIPLINES` and matches Rust's
+`TypeDiscipline::ALL`. Pass `all_disciplines` to override (e.g. for a
+smaller probe vocabulary in unit tests).
+"""
+function discipline_feature_vector(example::TrainingExample;
+                                   all_disciplines=nothing)
+    isempty(example.discipline_tags) && return Float32[]
+    # Lazy reach into the CorpusLoader-owned default; avoids a hard
+    # using-clause cycle here.
+    canon = all_disciplines === nothing ?
+        Main.CorpusLoader.DEFAULT_DISCIPLINES : all_disciplines
+    tags = Set(example.discipline_tags)
+    return Float32[d in tags ? 1.0f0 : 0.0f0 for d in canon]
+end
+
 export TrainingExample, TrainingDataset, next_batch!, reset!
 export ranking_loss, contrastive_loss, combined_loss
 export TrainingMetrics, compute_metrics, log_metrics!, save_metrics
 export TrainingConfig, train_solver!
+export discipline_feature_vector

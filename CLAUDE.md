@@ -8,7 +8,7 @@ Guidelines and context for working with Claude Code on the ECHIDNA project.
 
 - **Repository**: https://github.com/hyperpolymath/echidna
 - **Version + release history**: [`CHANGELOG.md`](CHANGELOG.md) (single source of truth; do not duplicate version strings elsewhere)
-- **License**: MPL-2.0
+- **License**: AGPL-3.0-or-later (owner decision 2026-07-07; per-file MPL-2.0 headers pending migration sweep)
 - **Architecture overview**: [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md)
 - **Canonical prover count + tier table**: [`docs/PROVER_COUNT.md`](docs/PROVER_COUNT.md)
 - **Environment variables**: [`docs/ENV-VARS.md`](docs/ENV-VARS.md)
@@ -139,10 +139,14 @@ Shape, by area:
 # Build System (Justfile is PRIMARY — RSR-H14)
 just build              # Build the project
 just test               # Run tests
-just check              # Run all quality checkers
+just check              # Roll-up: fmt-check + lint + test
+just lint               # REUSE + rustfmt + clippy
+just pre-commit         # fmt-check + lint + test (use in git hooks)
 just doctor             # Verify toolchain
-just heal               # Auto-install missing tools
+just heal               # Offer to install missing tools
 just tour               # Codebase tour
+just help-me            # Onboarding subset of recipes
+just --list             # Every recipe in the Justfile
 
 # Cargo
 cargo build             # Build Rust code
@@ -153,6 +157,16 @@ cargo bench             # Criterion benchmarks
 cargo clippy            # Rust lints
 cargo fmt --check       # Format check
 
+# CLI entry points (clap-routed in src/rust/main.rs)
+cargo run -- interactive          # Launch interactive REPL
+cargo run -- server --cors        # Launch HTTP API server (port 8081)
+cargo run -- list-provers         # List ProverKind variants on this build
+cargo run -- info <PROVER>        # Show backend metadata
+cargo run -- prove <file>         # Prove a theorem from file
+cargo run -- verify <file>        # Verify an existing proof
+cargo run -- search <pattern>     # Search theorem libraries
+cargo run -- diagnostics          # Interactive diagnostics REPL
+
 # Idris2 ABI
 idris2 --build src/abi/echidnaabi.ipkg   # Type-check the ABI package
 
@@ -162,13 +176,36 @@ podman run echidna                        # Run minimal image
 # Per-prover images live under .containerization/Containerfile.wave3
 ```
 
+## Governance gates
+
+CI enforces estate-wide governance through reusable workflows pinned
+in `.github/workflows/`:
+
+- **R5a** (echidna-local, post-#174): doc canonical-reference drift
+  for prover counts; canonical refs live under
+  `.github/canonical-references/`.
+- **R5b** (estate-wide, consumed via standards SHA pin per #172):
+  `Version: x.y.z` strings in docs are scanned for drift against
+  `Cargo.toml`. **`CHANGELOG.md` and `Cargo.toml` are exempt;
+  everything else is not.** Keep this file (and any new doc) prose
+  count-free and version-free unless the number is sourced
+  authoritatively elsewhere.
+- **MVP smoke** (#167): just-pinned smoke harness on every PR;
+  reports missing prover binaries non-fatally.
+- **Idris2 ABI type-check**: `idris2-abi-ci.yml` enforces zero
+  `believe_me` / `assert_total` / `postulate` in `src/abi/`.
+- **Chapel CI**: `chapel-ci.yml` builds the static lib + Zig FFI
+  strict on every PR.
+- **Container CI**: `container-ci.yml` weekly cron builds each
+  Tier-3 cell with stub-sentinel detection.
+
 ## Critical Constraints
 
 - **No Python** outside `salt/` (RSR-H4) — Julia for ML, Rust for systems, AffineScript/ReScript for UI.
 - **RSR / CCCP compliance** — see [`RSR_COMPLIANCE.adoc`](RSR_COMPLIANCE.adoc) for the full hard-rule list and out-of-template adaptations.
 - **Justfile primary** (RSR-H14) — Just is the build entry point; no Make.
 - **Podman not Docker** (RSR-H15) — always Podman; `Containerfile` (not `Dockerfile`); `.containerization/Containerfile.wave3` for per-prover images.
-- **License**: MPL-2.0 across the documentation surface (intentional doc stance; see [`feedback_echidna_license_docs_mpl_intentional`](https://github.com/hyperpolymath/echidna/issues?q=license) — historical drift on individual files is owner-managed and not reconciled in routine PRs).
+- **License**: project licence is AGPL-3.0-or-later (owner decision 2026-07-07, matching `Cargo.toml`); documentation surface keeps its MPL-2.0 headers (intentional doc stance; see [`feedback_echidna_license_docs_mpl_intentional`](https://github.com/hyperpolymath/echidna/issues?q=license) — per-file header drift is owner-managed and not reconciled in routine PRs).
 - **Author**: Jonathan D.A. Jewell <j.d.a.jewell@open.ac.uk>.
 
 ---

@@ -165,7 +165,10 @@ impl ProverBackend for SatallaxBackend {
             command: "timeout".to_string(),
             args: vec![format!("{}", self.config.timeout)],
         }];
-        Ok(crate::provers::gnn_augment_tactics(&self.config, state, "satallax", tactics, limit).await)
+        Ok(
+            crate::provers::gnn_augment_tactics(&self.config, state, "satallax", tactics, limit)
+                .await,
+        )
     }
 
     async fn search_theorems(&self, _pattern: &str) -> Result<Vec<String>> {

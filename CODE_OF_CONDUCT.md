@@ -1,5 +1,6 @@
 <!--
-SPDX-License-Identifier: MPL-2.0
+SPDX-FileCopyrightText: 2026 Jonathan D.A. Jewell <j.d.a.jewell@open.ac.uk>
+SPDX-License-Identifier: CC-BY-SA-4.0
 SPDX-FileCopyrightText: 2024-2025 ECHIDNA Project Contributors
 -->
 
@@ -45,7 +46,7 @@ Project maintainers have the right and responsibility to remove, edit, or reject
 
 This Code of Conduct applies within all project spaces, including:
 
-- GitLab repositories (code, issues, merge requests, wiki)
+- GitHub repository (code, issues, pull requests, wiki) and any mirror (e.g. GitLab CI mirror)
 - Project communication channels (mailing lists, chat, forums)
 - Official project events (conferences, meetups, workshops)
 - Social media when representing the project
@@ -56,9 +57,14 @@ It also applies when an individual is officially representing the project in pub
 
 ### Reporting
 
-Instances of abusive, harassing, or otherwise unacceptable behavior may be reported to the project team at:
+Instances of abusive, harassing, or otherwise unacceptable behaviour may be reported through either of the following channels:
 
-**echidna-conduct@example.org** (Replace with actual contact)
+- **GitHub Security Advisories** (preferred — private, encrypted,
+  auditable): <https://github.com/hyperpolymath/echidna/security/advisories/new>
+  Tag the report as a conduct matter.
+- **Email** (fallback): `j.d.a.jewell@open.ac.uk` — maintainer;
+  PGP key `4A03639C1EB1F86C7F0C97A91835A14A2867091E` published on
+  https://keys.openpgp.org.
 
 All complaints will be reviewed and investigated promptly and fairly.
 
@@ -106,6 +112,10 @@ For answers to common questions about this code of conduct, see the FAQ at https
 
 ---
 
-**Version**: 1.0
-**Last Updated**: 2025-11-22
-**Contact**: echidna-conduct@example.org (Replace with actual contact)
+**Lineage**: Adapted from the [Contributor Covenant](https://www.contributor-covenant.org/)
+v2.1. Revisions tracked via `git log CODE_OF_CONDUCT.md`. This file
+is intentionally version-free and date-free in prose to avoid R5b
+drift.
+
+**Contact**: <https://github.com/hyperpolymath/echidna/security/advisories/new>
+(preferred) or `j.d.a.jewell@open.ac.uk` (fallback).

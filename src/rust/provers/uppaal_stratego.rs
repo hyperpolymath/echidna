@@ -162,7 +162,14 @@ impl ProverBackend for UppaalStrategoBackend {
                 args: vec!["0.1".to_string()],
             },
         ];
-        Ok(crate::provers::gnn_augment_tactics(&self.config, state, "uppaal_stratego", tactics, limit).await)
+        Ok(crate::provers::gnn_augment_tactics(
+            &self.config,
+            state,
+            "uppaal_stratego",
+            tactics,
+            limit,
+        )
+        .await)
     }
 
     async fn search_theorems(&self, _pattern: &str) -> Result<Vec<String>> {

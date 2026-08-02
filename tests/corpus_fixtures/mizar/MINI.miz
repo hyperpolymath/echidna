@@ -1,0 +1,37 @@
+:: SPDX-License-Identifier: MPL-2.0
+:: Mini Mizar article fixture for the corpus adapter.
+:: Article identifier: MINI
+
+environ
+
+ vocabularies SUBSET_1, XBOOLE_0, TARSKI;
+ notations TARSKI, XBOOLE_0;
+ constructors TARSKI, XBOOLE_0;
+ registrations XBOOLE_0;
+ requirements SUBSET, BOOLE;
+ definitions XBOOLE_0;
+ theorems TARSKI, XBOOLE_0;
+
+begin
+
+definition
+  let X be set;
+  attr X is empty-ish means
+:: definitional body
+    X = {};
+end;
+
+theorem ReflEq:
+  for x being set holds x = x
+proof
+  let x be set;
+  thus x = x;
+end;
+
+theorem SketchedFact:
+  for x, y being set holds x = y implies y = x
+@proof
+  let x, y be set;
+  assume x = y;
+  hence y = x;
+end;

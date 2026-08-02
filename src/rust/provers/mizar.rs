@@ -624,7 +624,10 @@ impl ProverBackend for MizarBackend {
             },
         }
 
-        Ok(crate::provers::gnn_augment_tactics(&self.config, state, "mizar", suggestions, limit).await)
+        Ok(
+            crate::provers::gnn_augment_tactics(&self.config, state, "mizar", suggestions, limit)
+                .await,
+        )
     }
 
     async fn search_theorems(&self, pattern: &str) -> Result<Vec<String>> {

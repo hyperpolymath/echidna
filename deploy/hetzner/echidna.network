@@ -1,0 +1,9 @@
+# SPDX-License-Identifier: MPL-2.0
+# SPDX-FileCopyrightText: 2026 Jonathan D.A. Jewell <j.d.a.jewell@open.ac.uk>
+#
+# Shared podman network for the API + proxy pair. Referenced by name
+# (echidna.network) from both .container units so systemd orders
+# creation correctly.
+
+[Network]
+NetworkName=echidna-net

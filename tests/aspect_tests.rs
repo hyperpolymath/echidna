@@ -324,6 +324,7 @@ fn aspect_error_handling_config_validation() {
         timeout: 1,
         min_trust_level: TrustLevel::Level1,
         diagnostics: false,
+        arbitration_policy: Default::default(),
     };
     // Dispatcher must accept any valid DispatchConfig without panic
     let _dispatcher = ProverDispatcher::with_config(config);
@@ -347,6 +348,8 @@ fn aspect_error_handling_dispatch_result_edge_cases() {
             cross_checked: false,
             outcome: echidna::provers::outcome::ProverOutcome::default(),
             diagnostics: None,
+            needs_review: false,
+            arbitration: None,
         },
         // Maximum fields populated
         DispatchResult {
@@ -363,6 +366,8 @@ fn aspect_error_handling_dispatch_result_edge_cases() {
                 elapsed_ms: u64::MAX,
             },
             diagnostics: None,
+            needs_review: false,
+            arbitration: None,
         },
         // Unicode in message
         DispatchResult {
@@ -377,6 +382,8 @@ fn aspect_error_handling_dispatch_result_edge_cases() {
             cross_checked: false,
             outcome: echidna::provers::outcome::ProverOutcome::default(),
             diagnostics: None,
+            needs_review: false,
+            arbitration: None,
         },
     ];
 

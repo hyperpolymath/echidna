@@ -1,93 +1,86 @@
 -- SPDX-License-Identifier: MPL-2.0
 -- Copyright (c) 2026 ECHIDNA Project
--- Group Theory Examples for ML Training Corpus
+-- Group Theory: self-contained abstract algebra for training corpus.
+--
+-- Defines abstract groups via a structure, then proves the five
+-- standard group lemmas and several derived properties.
+-- No Mathlib dependency.
 
-import Mathlib.Algebra.Group.Defs
-import Mathlib.Tactic
+/-! ## Abstract Group Definition -/
 
--- Basic group theory examples
+/-- A group structure with carrier, operation, identity, and inverse. -/
+structure GroupAxioms (G : Type) (op : G → G → G) (e : G) (inv : G → G) : Prop where
+  assoc     : ∀ a b c : G, op (op a b) c = op a (op b c)
+  left_id   : ∀ a : G, op e a = a
+  right_id  : ∀ a : G, op a e = a
+  left_inv  : ∀ a : G, op (inv a) a = e
+  right_inv : ∀ a : G, op a (inv a) = e
 
-theorem mul_assoc {G : Type*} [Group G] (a b c : G) : (a * b) * c = a * (b * c) := by
-  apply mul_assoc
+/-! ## Derived properties -/
 
-theorem mul_left_inv {G : Type*} [Group G] (a : G) : a⁻¹ * a = 1 := by
-  apply inv_mul_self
+/-- The identity element is unique. -/
+theorem identity_unique {G : Type} (op : G → G → G) (e : G) (inv : G → G)
+    (gax : GroupAxioms G op e inv) (e' : G) :
+    (∀ a, op e' a = a) → e' = e := by
+  intro h
+  have : e' = op e' e := (gax.right_id e').symm
+  rw [this, h]
 
-theorem mul_right_inv {G : Type*} [Group G] (a : G) : a * a⁻¹ = 1 := by
-  apply mul_inv_self
+/-- Left cancellation. -/
+theorem left_cancel {G : Type} (op : G → G → G) (e : G) (inv : G → G)
+    (gax : GroupAxioms G op e inv) (a b c : G) :
+    op a b = op a c → b = c := by
+  intro h
+  have hb : b = op e b := (gax.left_id b).symm
+  have hc : c = op e c := (gax.left_id c).symm
+  have he : e = op (inv a) a := (gax.left_inv a).symm
+  rw [hb, hc, he, gax.assoc, gax.assoc, h]
 
-theorem mul_one {G : Type*} [Group G] (a : G) : a * 1 = a := by
-  apply mul_one
+/-- Right cancellation. -/
+theorem right_cancel {G : Type} (op : G → G → G) (e : G) (inv : G → G)
+    (gax : GroupAxioms G op e inv) (a b c : G) :
+    op b a = op c a → b = c := by
+  intro h
+  have hb : b = op b e := (gax.right_id b).symm
+  have hc : c = op c e := (gax.right_id c).symm
+  have he : e = op a (inv a) := (gax.right_inv a).symm
+  rw [hb, hc, he, ← gax.assoc, ← gax.assoc, h]
 
-theorem one_mul {G : Type*} [Group G] (a : G) : 1 * a = a := by
-  apply one_mul
+/-- The inverse of the inverse is the original element. -/
+theorem inv_inv {G : Type} (op : G → G → G) (e : G) (inv : G → G)
+    (gax : GroupAxioms G op e inv) (a : G) :
+    inv (inv a) = a := by
+  apply left_cancel op e inv gax (inv a)
+  rw [gax.left_inv, gax.right_inv]
 
--- Subgroup examples
-theorem subgroup_closure {G : Type*} [Group G] (H : Subgroup G) (a b : H) : a * b ∈ H := by
-  apply H.mul_mem
-  assumption
-  assumption
+/-- The inverse of a product reverses order. -/
+theorem inv_mul {G : Type} (op : G → G → G) (e : G) (inv : G → G)
+    (gax : GroupAxioms G op e inv) (a b : G) :
+    inv (op a b) = op (inv b) (inv a) := by
+  apply left_cancel op e inv gax (op a b)
+  rw [gax.right_inv]
+  rw [← gax.assoc (op a b)]
+  rw [gax.assoc a b (inv b)]
+  rw [gax.right_inv b]
+  rw [gax.right_id]
+  rw [gax.right_inv]
 
-theorem subgroup_inv {G : Type*} [Group G] (H : Subgroup G) (a : H) : a⁻¹ ∈ H := by
-  apply H.inv_mem
-  assumption
+/-! ## Concrete Example: Integers mod 2 form a group under addition -/
 
-theorem subgroup_one {G : Type*} [Group G] (H : Subgroup G) : (1 : G) ∈ H := by
-  apply H.one_mem
+def Z2 := Bool
 
--- Homomorphism examples
-theorem hom_map_mul {G H : Type*} [Group G] [Group H] (f : G →* H) (a b : G) :
-    f (a * b) = f a * f b := by
-  apply f.map_mul
+def z2_op (a b : Z2) : Z2 := xor a b
+def z2_e  : Z2 := false
+def z2_inv (a : Z2) : Z2 := a
 
-theorem hom_map_one {G H : Type*} [Group G] [Group H] (f : G →* H) :
-    f 1 = 1 := by
-  apply f.map_one
+theorem z2_group : GroupAxioms Z2 z2_op z2_e z2_inv := {
+  assoc     := by intros a b c; cases a <;> cases b <;> cases c <;> rfl
+  left_id   := by intros a; cases a <;> rfl
+  right_id  := by intros a; cases a <;> rfl
+  left_inv  := by intros a; cases a <;> rfl
+  right_inv := by intros a; cases a <;> rfl
+}
 
--- Cyclic group examples
-theorem pow_add {G : Type*} [Group G] (a : G) (m n : ℕ) :
-    a^(m + n) = a^m * a^n := by
-  apply pow_add
-
-theorem pow_zero {G : Type*} [Group G] (a : G) : a^0 = 1 := by
-  apply pow_zero
-
-theorem pow_one {G : Type*} [Group G] (a : G) : a^1 = a := by
-  apply pow_one
-
--- Commutator examples
-theorem commutator_def {G : Type*} [Group G] (a b : G) :
-    a ⋆ b = a⁻¹ * b⁻¹ * a * b := by
-  rfl
-
--- Center examples
-theorem center_closure {G : Type*} [Group G] (a b : G) (ha : a ∈ center G) (hb : b ∈ center G) :
-    a * b ∈ center G := by
-  rintro x
-  apply mul_comm
-  · apply ha
-  · apply hb
-
--- Normal subgroup examples
-theorem normal_conjugate {G : Type*} [Group G] (N : Subgroup G) [Normal N] (g : G) (n : N) :
-    g * n * g⁻¹ ∈ N := by
-  apply N.conj_mem
-  assumption
-
--- Quotient group examples
-theorem quotient_well_defined {G : Type*} [Group G] (N : Subgroup G) [Normal N] (a b : G) :
-    (a * N = b * N) ↔ (a⁻¹ * b ∈ N) := by
-  apply Subgroup.quotient_eq
-
--- Direct product examples
-theorem prod_group_mul {G H : Type*} [Group G] [Group H] (g1 g2 : G) (h1 h2 : H) :
-    (g1, h1) * (g2, h2) = (g1 * g2, h1 * h2) := by
-  rfl
-
-theorem prod_group_inv {G H : Type*} [Group G] [Group H] (g : G) (h : H) :
-    (g, h)⁻¹ = (g⁻¹, h⁻¹) := by
-  rfl
-
-theorem prod_group_one {G H : Type*} [Group G] [Group H] :
-    (1, 1) = 1 := by
-  rfl
+/-- Verify the derived lemma for Z2. -/
+example (a : Z2) : z2_inv (z2_inv a) = a :=
+  inv_inv z2_op z2_e z2_inv z2_group a

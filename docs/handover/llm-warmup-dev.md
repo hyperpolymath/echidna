@@ -1,4 +1,4 @@
-<!-- SPDX-License-Identifier: MPL-2.0 -->
+<!-- SPDX-License-Identifier: CC-BY-SA-4.0 -->
 <!-- LLM warmup context — DEVELOPER level (<400 lines) -->
 <!-- Feed this to an LLM before doing development work on ECHIDNA -->
 
@@ -176,8 +176,10 @@ All in `.machine_readable/`:
 ## Packaging
 
 - `guix.scm` — Guix package definition (uses cargo-build-system)
-- `flake.nix` — Nix flake (with rust-overlay)
 - `Containerfile` — Podman container
+
+(Nix flake removed 2026-06-01 per estate-wide nix-deprecation directive;
+Guix is the sole packaging primary.)
 
 ## Test Structure
 

@@ -1,4 +1,4 @@
-<!-- SPDX-License-Identifier: MPL-2.0 -->
+<!-- SPDX-License-Identifier: CC-BY-SA-4.0 -->
 
 # 2026-05-31 — Per-prover spawn hooks: cwd + filenameOverride
 

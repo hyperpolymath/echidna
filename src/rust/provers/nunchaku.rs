@@ -139,7 +139,10 @@ impl ProverBackend for NunchakuBackend {
                 args: vec!["--solver smbc".to_string()],
             },
         ];
-        Ok(crate::provers::gnn_augment_tactics(&self.config, state, "nunchaku", tactics, limit).await)
+        Ok(
+            crate::provers::gnn_augment_tactics(&self.config, state, "nunchaku", tactics, limit)
+                .await,
+        )
     }
 
     async fn search_theorems(&self, _pattern: &str) -> Result<Vec<String>> {

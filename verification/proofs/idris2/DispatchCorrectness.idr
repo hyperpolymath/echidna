@@ -12,7 +12,6 @@
 module DispatchCorrectness
 
 import EchidnaABI.Types
-import EchidnaABI.Provers
 
 %default total
 

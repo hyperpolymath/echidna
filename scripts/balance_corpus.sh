@@ -24,11 +24,15 @@ fi
 REPLICA_DIR="$CORPUS_DIR/replica"
 mkdir -p "$REPLICA_DIR"
 
-# Get a list of all files with the specified extension
-find "$CORPUS_DIR" -name "*$EXTENSION" > /tmp/corpus_files.txt
+# Get a list of all files with the specified extension.
+# Use mktemp for the listing file: predictable /tmp/* paths are a
+# panic-attack low (path-traversal / TOCTOU on multi-user runners).
+CORPUS_LIST="$(mktemp)"
+trap 'rm -f "$CORPUS_LIST"' EXIT
+find "$CORPUS_DIR" -name "*$EXTENSION" > "$CORPUS_LIST"
 
 # Read the list into an array
-mapfile -t FILES < /tmp/corpus_files.txt
+mapfile -t FILES < "$CORPUS_LIST"
 
 # Replicate files in batches to avoid timeout
 echo "Starting replication of $FILES_TO_ADD files for $CORPUS_DIR..."
