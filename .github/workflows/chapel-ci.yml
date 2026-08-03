@@ -1,4 +1,5 @@
 # SPDX-License-Identifier: MPL-2.0
+# This workflow is managed by gh actions-lock.
 name: Chapel Accelerator CI
 
 on:
@@ -61,7 +62,7 @@ jobs:
     runs-on: ubuntu-22.04
     timeout-minutes: 30
     steps:
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/checkout@v7.0.1
 
       - name: Install Chapel ${{ env.CHAPEL_VERSION }} (SHA-pinned .deb)
         run: |
@@ -95,7 +96,7 @@ jobs:
           ./chapel_smoke
 
       - name: Upload Chapel library artifact
-        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v4
+        uses: actions/upload-artifact@v7.0.1
         with:
           name: chapel-lib
           path: src/chapel/lib/libechidna_chapel*
@@ -113,10 +114,10 @@ jobs:
     runs-on: ubuntu-22.04
     timeout-minutes: 30
     steps:
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/checkout@v7.0.1
 
       - name: Install Zig
-        uses: mlugg/setup-zig@d1434d08867e3ee9daa34448df10607b98908d29 # v2.2.1
+        uses: mlugg/setup-zig@v2.2.1
         with:
           version: 0.14.0
 
@@ -127,7 +128,7 @@ jobs:
         run: cd src/zig_ffi && zig build test
 
       - name: Upload FFI library artifact
-        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v4
+        uses: actions/upload-artifact@v7.0.1
         with:
           name: chapel-ffi-lib
           path: src/zig_ffi/zig-out/lib/
@@ -144,18 +145,18 @@ jobs:
     needs: zig-ffi
     continue-on-error: true
     steps:
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/checkout@v7.0.1
 
       - name: Install Rust toolchain
-        uses: dtolnay/rust-toolchain@4be9e76fd7c4901c61fb841f559994984270fce7 # stable
+        uses: dtolnay/rust-toolchain@stable
         with:
           toolchain: stable
 
       - name: Rust cache
-        uses: Swatinem/rust-cache@c19371144df3bb44fab255c43d04cbc2ab54d1c4 # v2
+        uses: Swatinem/rust-cache@v2.9.1
 
       - name: Download FFI library
-        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v4
+        uses: actions/download-artifact@v8.0.1
         with:
           name: chapel-ffi-lib
           path: src/zig_ffi/zig-out/lib/
@@ -183,7 +184,7 @@ jobs:
     needs: [chapel-build, zig-ffi]
     continue-on-error: true
     steps:
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/checkout@v7.0.1
 
       - name: Install Chapel ${{ env.CHAPEL_VERSION }} (SHA-pinned .deb)
         run: |
@@ -196,20 +197,20 @@ jobs:
           chpl --version
 
       - name: Install Zig
-        uses: mlugg/setup-zig@d1434d08867e3ee9daa34448df10607b98908d29 # v2.2.1
+        uses: mlugg/setup-zig@v2.2.1
         with:
           version: 0.14.0
 
       - name: Install Rust
-        uses: dtolnay/rust-toolchain@4be9e76fd7c4901c61fb841f559994984270fce7 # stable
+        uses: dtolnay/rust-toolchain@stable
         with:
           toolchain: stable
 
       - name: Rust cache
-        uses: Swatinem/rust-cache@c19371144df3bb44fab255c43d04cbc2ab54d1c4 # v2
+        uses: Swatinem/rust-cache@v2.9.1
 
       - name: Download real Chapel library
-        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v4
+        uses: actions/download-artifact@v8.0.1
         with:
           name: chapel-lib
           path: src/chapel/

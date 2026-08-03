@@ -1,4 +1,5 @@
 # SPDX-License-Identifier: MPL-2.0
+# This workflow is managed by gh actions-lock.
 # Copyright (c) 2026 Jonathan D.A. Jewell (hyperpolymath) <j.d.a.jewell@open.ac.uk>
 #
 # formal-verification.yml — Creusot formal verification of the trust-pipeline kernel.
@@ -47,15 +48,15 @@ jobs:
 
     steps:
       - name: Checkout repository
-        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
+        uses: actions/checkout@v7.0.1
 
       - name: Install stable Rust toolchain
-        uses: dtolnay/rust-toolchain@4be9e76fd7c4901c61fb841f559994984270fce7  # stable
+        uses: dtolnay/rust-toolchain@stable
         with:
           toolchain: stable
 
       - name: Cache Rust build artefacts
-        uses: Swatinem/rust-cache@c19371144df3bb44fab255c43d04cbc2ab54d1c4  # v2
+        uses: Swatinem/rust-cache@v2.9.1
         with:
           workspaces: ". -> target"
 
@@ -78,10 +79,10 @@ jobs:
 
     steps:
       - name: Checkout repository
-        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
+        uses: actions/checkout@v7.0.1
 
       - name: Install nightly Rust toolchain (Creusot pin)
-        uses: dtolnay/rust-toolchain@4be9e76fd7c4901c61fb841f559994984270fce7  # stable
+        uses: dtolnay/rust-toolchain@stable
         with:
           # Pin matches crates/echidna-core-spark/rust-toolchain.toml.
           # Update both files together when bumping.
