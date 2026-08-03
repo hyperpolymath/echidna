@@ -1,4 +1,5 @@
 # SPDX-License-Identifier: MPL-2.0
+# This workflow is managed by gh actions-lock.
 # CI workflow for ECHIDNA Agda meta-checker
 # Type-checks all formal proofs verifying trust pipeline correctness
 
@@ -33,7 +34,7 @@ jobs:
     timeout-minutes: 15
     steps:
       - name: Checkout
-        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
+        uses: actions/checkout@v7.0.1
 
       # Required-check shim: only the meta-checker/ tree needs the real proof
       # check. Non-PR events (push, workflow_dispatch) always run it.
@@ -61,14 +62,14 @@ jobs:
 
       - name: Setup Haskell
         if: steps.detect.outputs.relevant == 'true'
-        uses: haskell-actions/setup@cd0d9bdd65b20557f41bea4dbe43d0b5fbbfe553 # v2
+        uses: haskell-actions/setup@v2.11.0
         with:
           ghc-version: '9.6'
           cabal-version: '3.10'
 
       - name: Cache Agda
         if: steps.detect.outputs.relevant == 'true'
-        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        uses: actions/cache@v6.1.0
         with:
           path: |
             ~/.cabal

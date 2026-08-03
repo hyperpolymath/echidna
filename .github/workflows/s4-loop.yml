@@ -1,4 +1,5 @@
 # SPDX-License-Identifier: MPL-2.0
+# This workflow is managed by gh actions-lock.
 # S4 loop-closure CI — brings up verisim-api as a service container and
 # runs the echidna s4_loop_closure integration test.  Filed once
 # ghcr.io/hyperpolymath/verisimdb-api:latest became available (PR #121).
@@ -32,15 +33,15 @@ jobs:
       VERISIM_URL: http://localhost:8080
     steps:
       - name: Checkout repository
-        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v4
+        uses: actions/checkout@v7.0.1
       - name: Setup Rust toolchain
-        uses: dtolnay/rust-toolchain@6d9817901c499d6b02debbb57edb38d33daa680b # stable
+        uses: dtolnay/rust-toolchain@stable
         with:
           toolchain: stable
       - name: Cache Cargo
-        uses: Swatinem/rust-cache@65012b490220f477f20ab979e35ae732e6de4e68 # v2
+        uses: Swatinem/rust-cache@v2.9.1
       - name: Install just
-        uses: taiki-e/install-action@18b1216eba7f8039b0f8d131d5473787f0edce68 # v2.85.3
+        uses: taiki-e/install-action@v2.85.3
         with:
           tool: just@1.51.0
       - name: Install system dependencies
