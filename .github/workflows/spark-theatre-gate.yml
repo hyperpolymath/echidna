@@ -12,11 +12,12 @@ on:
     branches: [main, master]
 
 permissions:
+  actions: read
   contents: read
 
 jobs:
   spark-theatre-gate:
-    uses: hyperpolymath/standards/.github/workflows/spark-theatre-gate.yml@e03686486e11b662834d7090dffae54c3e96fd59 # main 2026-05-28 (SPDX bump #249)
+    uses: hyperpolymath/standards/.github/workflows/spark-theatre-gate.yml@fcb8669169b4e9f5d9848608df880ae5fae812b4 # main 2026-08-04 (lockfile-bearing ref: actions.lock required by caller-side enforcement, standards#570)
     with:
       paths: "."
       enforce_zero_contract: false
