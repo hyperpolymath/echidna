@@ -43,12 +43,15 @@ workflows:
     '.github/workflows/ghcr-publish.yml':
         - 'actions/attest-build-provenance@v4.1.1'
         - 'actions/checkout@v7.0.1'
+    '.github/workflows/governance.yml': []
+    '.github/workflows/hypatia-scan.yml': []
     '.github/workflows/idris2-abi-ci.yml':
         - 'actions/checkout@v7.0.1'
     '.github/workflows/live-provers.yml':
         - 'actions/checkout@v7.0.1'
         - 'dtolnay/rust-toolchain@stable'
         - 'swatinem/rust-cache@v2.9.1'
+    '.github/workflows/mirror.yml': []
     '.github/workflows/mvp-smoke.yml':
         - 'actions/checkout@v7.0.1'
         - 'dtolnay/rust-toolchain@stable'
@@ -58,15 +61,20 @@ workflows:
         - 'actions/checkout@v7.0.1'
         - 'actions/deploy-pages@v5.0.0'
         - 'actions/upload-pages-artifact@v5.0.0'
+    '.github/workflows/rust-ci.yml': []
     '.github/workflows/s4-loop.yml':
         - 'actions/checkout@v7.0.1'
         - 'dtolnay/rust-toolchain@stable'
         - 'swatinem/rust-cache@v2.9.1'
         - 'taiki-e/install-action@v2.85.3'
+    '.github/workflows/scorecard.yml': []
+    '.github/workflows/secret-scanner.yml': []
+    '.github/workflows/security-scan.yml': []
     '.github/workflows/server-boot-gate.yml':
         - 'actions/checkout@v7.0.1'
         - 'dtolnay/rust-toolchain@stable'
         - 'swatinem/rust-cache@v2.9.1'
+    '.github/workflows/spark-theatre-gate.yml': []
     '.github/workflows/verification-proofs-cron.yml':
         - 'actions/checkout@v7.0.1'
     '.github/workflows/workflow-linter.yml':
