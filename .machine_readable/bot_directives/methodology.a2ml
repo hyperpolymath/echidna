@@ -101,7 +101,7 @@ constraints = [
 # These rules detect corrupt/template/stale state files.
 
 [methodology.state-validation]
-reject-if-contains = ["{{PLACEHOLDER}}", "ECHIDNA", "rsr-template-repo"]
+reject-if-contains = ["{{PLACEHOLDER}}", "{{PROJECT}}", "rsr-template-repo"]
 reject-if-project-name-mismatch = true
 staleness-threshold-days = 90
 fallback-files = ["TODO.md", "TODO.adoc", "ROADMAP.adoc", "README.adoc"]
