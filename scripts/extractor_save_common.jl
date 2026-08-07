@@ -1,4 +1,4 @@
-# SPDX-License-Identifier: MPL-2.0
+# SPDX-License-Identifier: AGPL-3.0-or-later
 # Shared helper used by the backend-only-prover extractors to serialise
 # proof-states / tactics / premises to the standard training_data layout.
 using JSON3, Dates

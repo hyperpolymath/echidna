@@ -36,7 +36,7 @@ copy wins because it is the committed one.
   deferred to Wave-3. Commits `9a4aeeb` + `6717b12`.
 - **L3 Wave-3** (Tier-3, weekly, 9 backends): scaffold only; needs
   per-backend Containerfiles. Handover hints in
-  `.machine_readable/6a2/STATE.a2ml` under `[wave-3-handover-hints]`.
+  `.machine_readable/descriptiles/STATE.a2ml` under `[wave-3-handover-hints]`.
 - **L3 Wave-4** (Tier-4, quarterly, 19 backends): scaffold only;
   retained as mock-only unless a maintainer volunteers.
 - **L2 Chapel**: `--features chapel` now self-links against bundled

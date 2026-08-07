@@ -1,4 +1,4 @@
-// SPDX-License-Identifier: MPL-2.0
+// SPDX-License-Identifier: AGPL-3.0-or-later
 //! TLAPS (TLA+ Proof System) backend for distributed system verification
 #![allow(dead_code)]
 use super::{ProverBackend, ProverConfig, ProverKind};

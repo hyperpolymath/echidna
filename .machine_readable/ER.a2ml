@@ -41,8 +41,9 @@ scope   = "src/rust/core.rs + src/rust/verification/* + src/rust/dispatch.rs"
 # ═══════════════════════════════════════════════════════════════════════════════
 
 # ─── 1. Term ──────────────────────────────────────────────────────────────────
-# Universal mathematical term representation shared across all 105 prover
-# backends.  An ADT with 15 variants; self-referential via boxed children.
+# Universal mathematical term representation shared across every prover backend
+# (see docs/PROVER_COUNT.md for the canonical count and its semantics).
+# An ADT with 15 variants; self-referential via boxed children.
 #
 # No explicit integer PK — terms are compared structurally (PartialEq) or
 # via Display serialisation for hashing in proof_encoding.rs.

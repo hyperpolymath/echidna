@@ -1,4 +1,4 @@
--- SPDX-License-Identifier: MPL-2.0
+-- SPDX-License-Identifier: AGPL-3.0-or-later
 -- TrustLattice.agda — bounded poset on TrustLevel (5-element type).
 --
 -- Models the ECHIDNA trust hierarchy as an ordered type and proves the

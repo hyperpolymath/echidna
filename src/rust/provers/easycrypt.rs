@@ -1,5 +1,5 @@
 // SPDX-FileCopyrightText: 2026 ECHIDNA Project Team
-// SPDX-License-Identifier: MPL-2.0
+// SPDX-License-Identifier: AGPL-3.0-or-later
 
 //! EasyCrypt backend — proof assistant for game-based cryptographic
 //! security proofs.
@@ -77,7 +77,7 @@ impl EasyCryptBackend {
     /// scripts come from `parse_file`).
     fn to_ec(state: &ProofState) -> String {
         let mut ec = String::new();
-        ec.push_str("(* SPDX-License-Identifier: MPL-2.0 *)\n");
+        ec.push_str("(* SPDX-License-Identifier: AGPL-3.0-or-later *)\n");
         ec.push_str("require import AllCore.\n\n");
         for (i, axiom) in state.context.axioms.iter().enumerate() {
             ec.push_str(&format!("axiom ax_{} : {}.\n", i, axiom));

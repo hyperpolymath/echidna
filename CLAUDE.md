@@ -8,9 +8,14 @@ Guidelines and context for working with Claude Code on the ECHIDNA project.
 
 - **Repository**: https://github.com/hyperpolymath/echidna
 - **Version + release history**: [`CHANGELOG.md`](CHANGELOG.md) (single source of truth; do not duplicate version strings elsewhere)
-- **License**: AGPL-3.0-or-later (owner decision 2026-07-07; per-file MPL-2.0 headers pending migration sweep)
+- **License**: four parts — AGPL-3.0-or-later (application code), **MPL-2.0
+  (`.machine_readable/` specification surface + manifests + OCI labels, kept
+  weak-copyleft for interoperability/standards work)**, CC-BY-SA-4.0 (docs),
+  MPL-2.0 (`echidna-playground/`). See [`NOTICE`](NOTICE); MPL §3.3 is what
+  makes the MPL parts compatible inside the AGPL work
 - **Architecture overview**: [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md)
 - **Canonical prover count + tier table**: [`docs/PROVER_COUNT.md`](docs/PROVER_COUNT.md)
+- **Known debt (licence, docs, code)**: [`docs/DEBT.md`](docs/DEBT.md)
 - **Environment variables**: [`docs/ENV-VARS.md`](docs/ENV-VARS.md)
 - **RSR / CCCP compliance statement**: [`RSR_COMPLIANCE.adoc`](RSR_COMPLIANCE.adoc)
 - **Receipts for README claims**: [`EXPLAINME.adoc`](EXPLAINME.adoc)
@@ -46,7 +51,7 @@ echidna/
 │   ├── abi/                # Idris2 formal ABI (EchidnaABI.TacticRecord, …)
 │   ├── chapel/             # Optional parallel proof dispatch (--features chapel)
 │   ├── julia/              # Julia ML components
-│   ├── rescript/, src/ui/  # UI — ReScript → AffineScript-TEA migration in flight
+│   ├── ui/                 # AffineScript-TEA UI (tea/) + static shell (public/)
 │   └── zig_ffi/, ffi/zig/  # Zig FFI bridge (C-ABI surface for backends)
 ├── .machine_readable/      # A2ML metadata, contractiles (MUST/ADJUST/TRUST/INTENT)
 ├── .github/workflows/      # CI/CD workflows
@@ -84,7 +89,7 @@ Follow conventional commit format:
 - **Idris2**: Formal ABI specifications + totality proofs (`src/abi/`); zero `believe_me`, zero postulates, zero admits, enforced by `idris2-abi-ci.yml`
 - **Zig**: C-ABI FFI bridge (`ffi/zig/`, `src/zig_ffi/`)
 - **Chapel**: Optional parallel proof dispatch (`--features chapel`)
-- **AffineScript + Deno** (canonical UI target; ReScript components are being ported)
+- **AffineScript + Deno**: the UI. ReScript was removed 2026-08 (banned language); the AffineScript-TEA compile pipeline is not wired yet — `just build-ui` fails deliberately rather than pretending (issues #117, #266)
 
 ### Prover Support
 
@@ -205,7 +210,16 @@ in `.github/workflows/`:
 - **RSR / CCCP compliance** — see [`RSR_COMPLIANCE.adoc`](RSR_COMPLIANCE.adoc) for the full hard-rule list and out-of-template adaptations.
 - **Justfile primary** (RSR-H14) — Just is the build entry point; no Make.
 - **Podman not Docker** (RSR-H15) — always Podman; `Containerfile` (not `Dockerfile`); `.containerization/Containerfile.wave3` for per-prover images.
-- **License**: project licence is AGPL-3.0-or-later (owner decision 2026-07-07, matching `Cargo.toml`); documentation surface keeps its MPL-2.0 headers (intentional doc stance; see [`feedback_echidna_license_docs_mpl_intentional`](https://github.com/hyperpolymath/echidna/issues?q=license) — per-file header drift is owner-managed and not reconciled in routine PRs).
+- **License**: four parts, reconciled 2026-08 — **application code**
+  AGPL-3.0-or-later (matching `LICENSE` and `Cargo.toml`); **machine-readable
+  specification surface** (`.machine_readable/`, `0-AI-MANIFEST.a2ml`,
+  package/container manifests, OCI image labels) MPL-2.0, held weak-copyleft
+  on purpose so it stays usable for interoperability and standards
+  submission; **documentation** CC-BY-SA-4.0; **`echidna-playground/`**
+  MPL-2.0 (Coq-Jr contributions, not relicensed). Per-file SPDX headers are
+  authoritative. When adding a file, use the licence of the part of the tree
+  it sits in — do not copy a header from elsewhere. Rationale and the MPL
+  §3.3 compatibility argument: [`NOTICE`](NOTICE).
 - **Author**: Jonathan D.A. Jewell <j.d.a.jewell@open.ac.uk>.
 
 ---

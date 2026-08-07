@@ -1,4 +1,4 @@
-// SPDX-License-Identifier: MPL-2.0
+// SPDX-License-Identifier: AGPL-3.0-or-later
 // Dafny corpus-adapter smoke fixture.
 // Exercises: module envelope, method, lemma, function, datatype, and
 // one `assume` hazard so the parser's hazard tag fires.

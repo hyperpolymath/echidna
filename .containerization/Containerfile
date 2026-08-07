@@ -1,4 +1,4 @@
-# SPDX-License-Identifier: MPL-2.0
+# SPDX-License-Identifier: AGPL-3.0-or-later
 # SPDX-FileCopyrightText: 2024-2025 Jonathan D.A. Jewell <jonathan.jewell@open.ac.uk>
 #
 # ECHIDNA Minimal Containerfile - Multi-stage build for Podman

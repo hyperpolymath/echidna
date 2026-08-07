@@ -1,4 +1,4 @@
-(* SPDX-License-Identifier: MPL-2.0 *)
+(* SPDX-License-Identifier: AGPL-3.0-or-later *)
 (* default.sml — Base overlay configuration for HOL-o-extension
  *
  * This overlay is always applied when the o-extension is active.

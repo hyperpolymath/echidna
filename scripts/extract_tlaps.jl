@@ -1,5 +1,5 @@
 #!/usr/bin/env julia
-# SPDX-License-Identifier: MPL-2.0
+# SPDX-License-Identifier: AGPL-3.0-or-later
 # Extract TLA+ proofs from the TLAPS examples + tlaplus/examples repo.
 # Vendor: git clone https://github.com/tlaplus/Examples external_corpora/tlaplus_examples
 using JSON3, Dates

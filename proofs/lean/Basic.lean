@@ -1,6 +1,6 @@
 /-
 SPDX-FileCopyrightText: 2025 ECHIDNA Project Team
-SPDX-License-Identifier: MPL-2.0
+SPDX-License-Identifier: AGPL-3.0-or-later
 
 Basic Lean 4 Proofs - Foundation Level
 

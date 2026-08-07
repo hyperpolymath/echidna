@@ -1,5 +1,5 @@
 #!/usr/bin/env julia
-# SPDX-License-Identifier: MPL-2.0
+# SPDX-License-Identifier: AGPL-3.0-or-later
 # Extract PRISM probabilistic model-checker properties.
 # Vendor: git clone https://github.com/prismmodelchecker/prism-examples external_corpora/prism
 using JSON3, Dates

@@ -1,4 +1,4 @@
-# SPDX-License-Identifier: MPL-2.0
+# SPDX-License-Identifier: AGPL-3.0-or-later
 #
 # Agda + agda-stdlib 2.0 tactic and lemma synonyms.
 # Schema: see data/synonyms/README.adoc.

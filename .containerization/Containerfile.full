@@ -1,4 +1,4 @@
-# SPDX-License-Identifier: MPL-2.0
+# SPDX-License-Identifier: AGPL-3.0-or-later
 # SPDX-FileCopyrightText: 2024-2025 Jonathan D.A. Jewell <jonathan.jewell@open.ac.uk>
 #
 # ECHIDNA Full Containerfile - Includes a curated prover set
@@ -135,7 +135,7 @@ COPY guix-channel/echidna.scm /channel/echidna/
 
 # If no guix channel file exists, create a stub
 RUN if [ ! -f /channel/echidna/echidna.scm ]; then \
-    printf ';;; SPDX-License-Identifier: MPL-2.0\n\
+    printf ';;; SPDX-License-Identifier: AGPL-3.0-or-later\n\
 (define-module (echidna)\n\
   #:use-module (guix packages)\n\
   #:use-module (guix build-system cargo)\n\

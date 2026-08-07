@@ -1,5 +1,5 @@
 #!/usr/bin/env julia
-# SPDX-License-Identifier: MPL-2.0
+# SPDX-License-Identifier: AGPL-3.0-or-later
 # Extract Tamarin security-protocol theories from tamarin-prover examples.
 # Vendor: git clone https://github.com/tamarin-prover/tamarin-prover external_corpora/tamarin
 using JSON3, Dates

@@ -1,4 +1,4 @@
-// SPDX-License-Identifier: MPL-2.0
+// SPDX-License-Identifier: AGPL-3.0-or-later
 // FFI Integration Test - Tests that all 3 interfaces can use the FFI layer
 
 #[cfg(test)]

@@ -1,4 +1,4 @@
-(* SPDX-License-Identifier: MPL-2.0 *)
+(* SPDX-License-Identifier: AGPL-3.0-or-later *)
 (* echidnaTrustScript.sml — Trust level theory for ECHIDNA
  *
  * Formalises ECHIDNA's 5-level trust hierarchy in HOL4:

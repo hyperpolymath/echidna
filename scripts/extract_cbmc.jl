@@ -1,5 +1,5 @@
 #!/usr/bin/env julia
-# SPDX-License-Identifier: MPL-2.0
+# SPDX-License-Identifier: AGPL-3.0-or-later
 # Extract CBMC bounded-model-check problems from diffblue/cbmc regression tests.
 # Vendor: git clone https://github.com/diffblue/cbmc external_corpora/cbmc
 using JSON3, Dates
