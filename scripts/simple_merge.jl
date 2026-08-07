@@ -1,6 +1,6 @@
 #!/usr/bin/env julia
 # SPDX-FileCopyrightText: 2026 ECHIDNA Project Team
-# SPDX-License-Identifier: MPL-2.0
+# SPDX-License-Identifier: AGPL-3.0-or-later
 
 """
 Simple corpus merger using manual JSON parsing (like original scripts).

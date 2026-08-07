@@ -1,5 +1,5 @@
 K9!
-# SPDX-License-Identifier: MPL-2.0
+# SPDX-License-Identifier: AGPL-3.0-or-later
 # K9 Kennel-level template: Pure data configuration
 # Security Level: Kennel (kennel, no execution)
 # No signature required - safe for any use

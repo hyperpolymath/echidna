@@ -8,7 +8,9 @@ Guidelines and context for working with Claude Code on the ECHIDNA project.
 
 - **Repository**: https://github.com/hyperpolymath/echidna
 - **Version + release history**: [`CHANGELOG.md`](CHANGELOG.md) (single source of truth; do not duplicate version strings elsewhere)
-- **License**: AGPL-3.0-or-later (owner decision 2026-07-07; per-file MPL-2.0 headers pending migration sweep)
+- **License**: AGPL-3.0-or-later for code, CC-BY-SA-4.0 for documentation,
+  MPL-2.0 for `echidna-playground/` — see [`NOTICE`](NOTICE) for why the MPL
+  component is compatible (MPL §3.3 Secondary Licenses)
 - **Architecture overview**: [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md)
 - **Canonical prover count + tier table**: [`docs/PROVER_COUNT.md`](docs/PROVER_COUNT.md)
 - **Known debt (licence, docs, code)**: [`docs/DEBT.md`](docs/DEBT.md) — read before
@@ -207,7 +209,13 @@ in `.github/workflows/`:
 - **RSR / CCCP compliance** — see [`RSR_COMPLIANCE.adoc`](RSR_COMPLIANCE.adoc) for the full hard-rule list and out-of-template adaptations.
 - **Justfile primary** (RSR-H14) — Just is the build entry point; no Make.
 - **Podman not Docker** (RSR-H15) — always Podman; `Containerfile` (not `Dockerfile`); `.containerization/Containerfile.wave3` for per-prover images.
-- **License**: project licence is AGPL-3.0-or-later (owner decision 2026-07-07, matching `Cargo.toml`); documentation surface keeps its MPL-2.0 headers (intentional doc stance; see [`feedback_echidna_license_docs_mpl_intentional`](https://github.com/hyperpolymath/echidna/issues?q=license) — per-file header drift is owner-managed and not reconciled in routine PRs).
+- **License**: three parts, reconciled 2026-08 — **code** AGPL-3.0-or-later
+  (matching `LICENSE` and `Cargo.toml`), **documentation** CC-BY-SA-4.0, and
+  **`echidna-playground/`** MPL-2.0 (Coq-Jr contributions, deliberately not
+  relicensed; compatible under MPL §3.3). Per-file SPDX headers are
+  authoritative and now match this split. When adding a file, use the licence
+  of the part of the tree it sits in — do not copy a header from elsewhere.
+  Rationale and the compatibility argument: [`NOTICE`](NOTICE).
 - **Author**: Jonathan D.A. Jewell <j.d.a.jewell@open.ac.uk>.
 
 ---

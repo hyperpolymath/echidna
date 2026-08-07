@@ -1,5 +1,5 @@
 K9!
-# SPDX-License-Identifier: MPL-2.0
+# SPDX-License-Identifier: AGPL-3.0-or-later
 # Example Kennel-level K9 component: Project metadata
 # Security Level: Kennel (pure data, no execution)
 # No signature required

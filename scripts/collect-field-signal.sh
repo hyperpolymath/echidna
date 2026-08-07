@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# SPDX-License-Identifier: MPL-2.0
+# SPDX-License-Identifier: AGPL-3.0-or-later
 # Collect field signal data for STATE.a2ml [field-signal] section
 # Runs weekly to track: cold-start latency, corpus growth, vulnerability count, test coverage
 

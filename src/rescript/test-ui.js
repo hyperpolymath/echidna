@@ -1,4 +1,4 @@
-// SPDX-License-Identifier: MPL-2.0
+// SPDX-License-Identifier: AGPL-3.0-or-later
 // Quick test of UI API connectivity
 const apiBase = 'http://127.0.0.1:8081/api';
 

@@ -1,5 +1,5 @@
 #!/bin/bash
-# SPDX-License-Identifier: MPL-2.0 OR Palimpsest-0.6
+# SPDX-License-Identifier: AGPL-3.0-or-later OR Palimpsest-0.6
 # Production build script for ECHIDNA
 
 set -e

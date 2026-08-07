@@ -1,4 +1,4 @@
-# SPDX-License-Identifier: MPL-2.0
+# SPDX-License-Identifier: AGPL-3.0-or-later
 # This workflow is managed by gh actions-lock.
 # Gates the ECHIDNA dogfood proof corpus: every theorem under proofs/{coq,lean,agda}
 # must type-check. These proofs had no CI coverage before this workflow -- the other

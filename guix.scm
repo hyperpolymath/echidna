@@ -1,4 +1,4 @@
-;; SPDX-License-Identifier: MPL-2.0
+;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;; echidna - Guix Package Definition
 ;; Development: guix shell -D -f guix.scm
 ;; Build: guix build -f guix.scm

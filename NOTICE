@@ -1,16 +1,61 @@
 ECHIDNA - Extensible Cognitive Hybrid Intelligence for Deductive Neural Assistance
 Copyright (c) 2024-2026 Jonathan D.A. Jewell and ECHIDNA Project Contributors
 
-This project is licensed under the Mozilla Public License, version 2.0
-(MPL-2.0).
+LICENSING
 
-  Full text:                 LICENSE  (also in LICENSES/MPL-2.0.txt)
-  SPDX-License-Identifier:   MPL-2.0
+This project is licensed under the GNU Affero General Public License,
+version 3 or later (AGPL-3.0-or-later).
 
-The project migrated from a dual MIT/Palimpsest-0.6 licence to MPL-2.0 in
-2026. Source files retain SPDX-License-Identifier: MPL-2.0 headers; the
-historical licence texts under LICENSES/ are kept only for any archival
-artefact that still bears an older SPDX tag.
+  Full text:               LICENSE  (also in LICENSES/AGPL-3.0-or-later.txt)
+  SPDX-License-Identifier: AGPL-3.0-or-later
+
+Three licences apply, to three distinct parts of the tree. This is deliberate,
+not drift:
+
+  1. CODE                      AGPL-3.0-or-later
+     Everything under src/, crates/, ffi/, proofs/, spark/, verification/,
+     scripts/, hooks/, the build system, the CI workflows, and the
+     machine-readable metadata. This is the project's own code, and the
+     AGPL's network clause applies: if you run a modified ECHIDNA as a
+     network service, you must offer your users the modified source.
+
+  2. DOCUMENTATION             CC-BY-SA-4.0
+     Everything under docs/, plus the top-level Markdown and AsciiDoc
+     documents. Share-alike attribution terms, so the prose can be quoted,
+     translated and adapted independently of the code.
+
+  3. echidna-playground/       MPL-2.0
+     The Coq-Jr playground sub-project, which carries contributions from
+     Coq-Jr Contributors rather than the ECHIDNA project. It remains under
+     the Mozilla Public License 2.0 and is NOT relicensed.
+
+WHY THE MPL COMPONENT IS COMPATIBLE
+
+MPL-2.0 section 3.3 designates the GNU licences - including
+AGPL-3.0-or-later - as "Secondary Licenses". MPL-covered files may therefore
+be combined into this AGPL-licensed work, and the combined work distributed
+under the AGPL, while those files individually remain available under the
+MPL. No file in this repository carries the MPL Exhibit B
+"Incompatible With Secondary Licenses" notice, which would have prevented
+this.
+
+In short: the whole distributed work is AGPL-3.0-or-later. If you extract
+echidna-playground/ on its own, you may use it under MPL-2.0.
+
+A small number of files additionally offer Palimpsest-0.6 as an alternative
+or additional grant (`AGPL-3.0-or-later OR Palimpsest-0.6`, or `... AND ...`).
+Those grants are preserved as originally made. Note that the Palimpsest-0.6
+licence text is not currently distributed with this repository - see
+docs/DEBT.md.
+
+LICENCE HISTORY
+
+  dual MIT / Palimpsest-0.6  ->  MPL-2.0  ->  AGPL-3.0-or-later (2026)
+
+The AGPL decision was taken by the project owner in 2026; the per-file SPDX
+headers were reconciled to match it in 2026-08. Documents predating that
+reconciliation may describe the project as MPL-2.0; LICENSE and this file are
+authoritative.
 
 ================================================================================
 
@@ -36,7 +81,10 @@ Theorem provers (integrated, not redistributed):
   PVS             GPL-2.0
   ACL2            BSD-3-Clause
   HOL4            BSD-3-Clause
-  (...and 93 other backends; see docs/SUPPORTED_PROVERS.md)
+  (...and the remaining backends; see docs/SUPPORTED_PROVERS.md)
+
+Provers are invoked as external binaries, not linked or redistributed, so
+their licences do not propagate to this work.
 
 ================================================================================
 
@@ -44,11 +92,16 @@ REUSE COMPLIANCE
 
 This project follows the REUSE Software Licensing specification.
 
-  .reuse/dep5          bulk copyright declarations
-  per-file headers     SPDX-License-Identifier: MPL-2.0
-  LICENSES/MPL-2.0.txt full licence text
+  .reuse/dep5                        bulk copyright declarations
+  per-file headers                   SPDX-License-Identifier, per the
+                                     three-part split described above
+  LICENSES/AGPL-3.0-or-later.txt     code
+  LICENSES/CC-BY-SA-4.0.txt          documentation
+  LICENSES/MPL-2.0.txt               echidna-playground/
 
 Verify locally: `reuse lint`
+
+Known gaps are recorded in docs/DEBT.md rather than left silent.
 
 ================================================================================
 
@@ -60,12 +113,14 @@ See RSR_COMPLIANCE.adoc at repo root.
 
 CONTRIBUTIONS
 
-All contributions to this project are licensed under MPL-2.0 unless
-explicitly stated otherwise. See CONTRIBUTING.md.
+Contributions to the code are licensed under AGPL-3.0-or-later; contributions
+to the documentation under CC-BY-SA-4.0; contributions to
+echidna-playground/ under MPL-2.0. See CONTRIBUTING.adoc.
 
 By contributing, you certify that:
   1. You have the right to submit the contribution.
-  2. You agree to license it under MPL-2.0.
+  2. You agree to license it under the licence governing that part of the
+     tree, as set out above.
   3. You understand the contribution will be publicly available.
 
 ================================================================================
@@ -87,7 +142,7 @@ If you use this software in academic work, please cite:
     author = {Jonathan D.A. Jewell and ECHIDNA Project Contributors},
     year   = {2026},
     url    = {https://github.com/hyperpolymath/echidna},
-    license = {MPL-2.0},
+    license = {AGPL-3.0-or-later},
   }
 
 See CITATION.cff for machine-readable metadata and docs/CITATIONS.adoc for
@@ -103,5 +158,4 @@ Documentation: docs/ + RSR_COMPLIANCE.adoc + CLAUDE.md
 
 ================================================================================
 
-Last updated: 2026-05-25
-Version:      see CHANGELOG.md
+Version: see CHANGELOG.md

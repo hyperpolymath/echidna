@@ -1,4 +1,4 @@
--- SPDX-License-Identifier: MPL-2.0
+-- SPDX-License-Identifier: AGPL-3.0-or-later
 -- DispatchOrdering.agda — strict total order on the 6-stage trust pipeline.
 --
 -- Models ECHIDNA's dispatch pipeline stages (dispatch.rs) as a Fin 6 type and

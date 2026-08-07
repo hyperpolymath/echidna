@@ -1,4 +1,4 @@
-// SPDX-License-Identifier: MPL-2.0
+// SPDX-License-Identifier: AGPL-3.0-or-later
 
 //! Solver binary integrity verification using SHAKE3-512 and BLAKE3
 //!

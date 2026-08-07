@@ -1,4 +1,4 @@
-# SPDX-License-Identifier: MPL-2.0
+# SPDX-License-Identifier: AGPL-3.0-or-later
 # Trust — security + provenance + safe-hacking runner
 #
 # Pairs with: Trustfile.a2ml (same directory)

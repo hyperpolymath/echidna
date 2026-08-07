@@ -1,5 +1,5 @@
 K9!
-# SPDX-License-Identifier: MPL-2.0
+# SPDX-License-Identifier: AGPL-3.0-or-later
 # intend.k9.ncl — K9 trust-tier component of the intend trident
 # Author: Jonathan D.A. Jewell <j.d.a.jewell@open.ac.uk>
 #

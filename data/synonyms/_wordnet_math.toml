@@ -1,5 +1,5 @@
 # SPDX-FileCopyrightText: 2026 ECHIDNA Project Team
-# SPDX-License-Identifier: MPL-2.0
+# SPDX-License-Identifier: AGPL-3.0-or-later
 #
 # WordNet math-vocabulary seeds. Hand-selected synset bridges drawn from
 # Princeton WordNet 3.1 noun + verb hierarchies for mathematical English.

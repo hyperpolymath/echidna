@@ -1,5 +1,5 @@
 K9!
-# SPDX-License-Identifier: MPL-2.0
+# SPDX-License-Identifier: AGPL-3.0-or-later
 # ECHIDNA Theorem Prover Environment Setup
 #
 # This K9 component automates the installation and configuration of ECHIDNA's

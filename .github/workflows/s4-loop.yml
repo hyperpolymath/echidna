@@ -1,4 +1,4 @@
-# SPDX-License-Identifier: MPL-2.0
+# SPDX-License-Identifier: AGPL-3.0-or-later
 # This workflow is managed by gh actions-lock.
 # S4 loop-closure CI — brings up verisim-api as a service container and
 # runs the echidna s4_loop_closure integration test.  Filed once

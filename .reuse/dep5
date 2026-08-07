@@ -1,74 +1,87 @@
 Format: https://www.debian.org/doc/packaging-manuals/copyright-format/1.0/
 Upstream-Name: ECHIDNA
-Upstream-Contact: ECHIDNA Project Team
+Upstream-Contact: Jonathan D.A. Jewell <j.d.a.jewell@open.ac.uk>
 Source: https://github.com/hyperpolymath/echidna
 
-# Core source code - dual licensed
-Files: src/* Cargo.toml Cargo.lock Justfile
-Copyright: 2024-2025 ECHIDNA Project Contributors
-License: PMPL-1.0 AND Palimpsest-0.6
+# ECHIDNA is licensed in three parts. See NOTICE for the rationale and for
+# why the MPL-2.0 component is compatible with the AGPL umbrella
+# (MPL-2.0 section 3.3, Secondary Licenses).
+#
+# Per-file SPDX-License-Identifier headers are authoritative. The stanzas
+# below are the REUSE bulk fallback for files that carry no header.
 
-# Rust source files
-Files: src/rust/*.rs src/rust/**/*.rs
-Copyright: 2024-2025 ECHIDNA Project Contributors
-License: PMPL-1.0 AND Palimpsest-0.6
+# ---------------------------------------------------------------------------
+# 1. Code — AGPL-3.0-or-later
+# ---------------------------------------------------------------------------
 
-# Julia source files
-Files: src/julia/*.jl src/julia/**/*.jl Project.toml Manifest.toml
-Copyright: 2024-2025 ECHIDNA Project Contributors
-License: PMPL-1.0 AND Palimpsest-0.6
+Files: src/*
+ crates/*
+ ffi/*
+ proofs/*
+ spark/*
+ verification/*
+ scripts/*
+ hooks/*
+ .githooks/*
+ tests/*
+ meta-checker/*
+ HOL-o-extension/*
+ docs-site/*
+ generated/*
+ schemas/*
+ rules/*
+ training_data/*
+ deploy/*
+ container/*
+ .containerization/*
+ .clusterfuzzlite/*
+ .machine_readable/*
+ .github/*
+ .well-known/*
+ guix/*
+ guix-channel/*
+ manifests/*
+ Cargo.toml
+ Cargo.lock
+ Justfile
+ Mustfile
+ Containerfile
+ contractile.just
+ guix.scm
+ 0-AI-MANIFEST.a2ml
+Copyright: 2024-2026 Jonathan D.A. Jewell <j.d.a.jewell@open.ac.uk> and ECHIDNA Project Contributors
+License: AGPL-3.0-or-later
 
-# ReScript source files
-Files: src/rescript/*.res src/rescript/**/*.res src/rescript/*.resi
-Copyright: 2024-2025 ECHIDNA Project Contributors
-License: PMPL-1.0 AND Palimpsest-0.6
+# ---------------------------------------------------------------------------
+# 2. Documentation — CC-BY-SA-4.0
+# ---------------------------------------------------------------------------
 
-# Mercury/Logtalk source files (if present)
-Files: src/mercury/*.m src/mercury/**/*.m
-Copyright: 2024-2025 ECHIDNA Project Contributors
-License: PMPL-1.0 AND Palimpsest-0.6
+Files: docs/*
+ *.md
+ *.adoc
+Copyright: 2024-2026 Jonathan D.A. Jewell <j.d.a.jewell@open.ac.uk> and ECHIDNA Project Contributors
+License: CC-BY-SA-4.0
 
-# Documentation files
-Files: docs/* *.md README.md CONTRIBUTING.md CHANGELOG.md AUTHORS.md
-Copyright: 2024-2025 ECHIDNA Project Contributors
-License: PMPL-1.0 AND Palimpsest-0.6
+# ---------------------------------------------------------------------------
+# 3. Coq-Jr playground — MPL-2.0, NOT relicensed
+#
+# Carries contributions from Coq-Jr Contributors rather than the ECHIDNA
+# project. Sits under the AGPL umbrella via MPL-2.0 section 3.3 while
+# remaining individually available under MPL-2.0.
+# ---------------------------------------------------------------------------
 
-# Configuration files
-Files: .gitlab-ci.yml Containerfile .editorconfig rustfmt.toml codecov.yml .trivyignore
-Copyright: 2024-2025 ECHIDNA Project Contributors
-License: PMPL-1.0 AND Palimpsest-0.6
+Files: echidna-playground/*
+Copyright: 2024-2026 Coq-Jr Contributors and Jonathan D.A. Jewell <j.d.a.jewell@open.ac.uk>
+License: MPL-2.0
 
-# GitLab templates
-Files: .gitlab/* .gitlab/**/*
-Copyright: 2024-2025 ECHIDNA Project Contributors
-License: PMPL-1.0 AND Palimpsest-0.6
+# ---------------------------------------------------------------------------
+# 4. Licence reference material — left as-is
+#
+# Licence texts and their exhibits are reference documents; their own
+# headers are not rewritten by licensing sweeps.
+# ---------------------------------------------------------------------------
 
-# Test files
-Files: tests/* tests/**/*
-Copyright: 2024-2025 ECHIDNA Project Contributors
-License: PMPL-1.0 AND Palimpsest-0.6
-
-# Example files and proofs
-Files: examples/* proofs/* proofs/**/*
-Copyright: 2024-2025 ECHIDNA Project Contributors
-License: PMPL-1.0 AND Palimpsest-0.6
-
-# Scripts
-Files: scripts/*.sh scripts/*.jl
-Copyright: 2024-2025 ECHIDNA Project Contributors
-License: PMPL-1.0 AND Palimpsest-0.6
-
-# Build artifacts and generated files (excluded from licensing)
-Files: target/* .cargo/* .julia/* *.lock
-Copyright: 2024-2025 ECHIDNA Project Contributors
-License: PMPL-1.0 AND Palimpsest-0.6
-
-# Git and IDE configuration (public domain / CC0)
-Files: .gitignore .gitattributes
-Copyright: 2024-2025 ECHIDNA Project Contributors
-License: CC0-1.0
-
-# License files themselves
 Files: LICENSES/*
-Copyright: Various (see individual license files)
-License: PMPL-1.0 AND Palimpsest-0.6
+ docs/legal/*
+Copyright: 2024-2026 Jonathan D.A. Jewell <j.d.a.jewell@open.ac.uk>
+License: CC-BY-SA-4.0

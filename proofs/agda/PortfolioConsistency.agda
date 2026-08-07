@@ -1,4 +1,4 @@
--- SPDX-License-Identifier: MPL-2.0
+-- SPDX-License-Identifier: AGPL-3.0-or-later
 -- PortfolioConsistency.agda — All-true implies Any-true for non-empty Vec Bool.
 --
 -- Models an ECHIDNA portfolio of n independent prover results as a

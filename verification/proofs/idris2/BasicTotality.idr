@@ -1,4 +1,4 @@
--- SPDX-License-Identifier: MPL-2.0
+-- SPDX-License-Identifier: AGPL-3.0-or-later
 -- BasicTotality.idr — small, correct totality proofs that compile
 -- cleanly under `idris2 --source-dir . --check`. Exists to populate
 -- the totality obligation_class alongside DispatchCorrectness.idr

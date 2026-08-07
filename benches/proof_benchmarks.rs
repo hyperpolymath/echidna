@@ -1,5 +1,5 @@
 // SPDX-FileCopyrightText: 2025-2026 Jonathan D.A. Jewell <j.d.a.jewell@open.ac.uk>
-// SPDX-License-Identifier: MPL-2.0
+// SPDX-License-Identifier: AGPL-3.0-or-later
 
 //! Performance benchmarks for ECHIDNA proof operations
 //!

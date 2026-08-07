@@ -1,4 +1,4 @@
-// SPDX-License-Identifier: MPL-2.0
+// SPDX-License-Identifier: AGPL-3.0-or-later
 // Health diagnostics and monitoring for echidna
 
 pub mod corpus_monitor;

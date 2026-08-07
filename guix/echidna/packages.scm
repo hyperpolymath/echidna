@@ -1,4 +1,4 @@
-;; SPDX-License-Identifier: MPL-2.0
+;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;; Guix channel module exporting the echidna package
 (define-module (echidna packages)
   #:use-module (guix packages)
