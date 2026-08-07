@@ -1,47 +1,26 @@
+<!--
+  SPDX-License-Identifier: CC-BY-SA-4.0
+  SPDX-FileCopyrightText: 2025-2026 Jonathan D.A. Jewell <j.d.a.jewell@open.ac.uk>
+
+  docs/ARCHITECTURE.md is canonical. This file previously held generic
+  scaffold text ("modular, maintainable architecture designed for clarity,
+  scalability...") that contained no project-specific content — it described
+  no part of ECHIDNA and duplicated nothing real. Replaced with a pointer
+  rather than deleted, because the path is referenced externally.
+-->
+
 # Architecture
 
-## Overview
+The architecture documentation for ECHIDNA lives in
+[`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md) — the polyglot layout, the
+dispatch path, the trust-hardening pipeline, and how the Rust core, Julia ML
+sidecar, Idris2 ABI, Zig FFI and optional Chapel parallel layer fit together.
 
-This repository follows a modular, maintainable architecture designed for clarity, scalability, and long-term sustainability.
+Related canonical documents:
 
-## Directory Structure
-
-```
-.
-├── src/           # Source code
-├── tests/        # Test suites
-├── docs/         # Documentation
-├── scripts/      # Utility scripts
-├── config/       # Configuration files
-├── LICENSE       # License file
-├── LICENSES/     # Full license texts
-└── README.adoc   # Project documentation
-```
-
-## Design Principles
-
-- **Separation of Concerns**: Each module has a single responsibility
-- **Testability**: Code is written to be easily testable
-- **Documentation**: All public APIs are documented
-- **Configuration**: Environment-specific settings are externalized
-
-## Dependencies
-
-- External dependencies are minimized and clearly declared
-- Version pinning is used for reproducibility
-
-## Security Considerations
-
-- Sensitive data is never committed to the repository
-- Secrets are managed through environment variables or secure vaults
-- Regular dependency audits are performed
-
-## Maintainability
-
-- Code follows consistent style guidelines
-- Pull requests require review and CI checks
-- Issues and discussions are tracked transparently
-
----
-
-*Last updated: 2026-07-18*
+- [`docs/PROVER_COUNT.md`](docs/PROVER_COUNT.md) — backend tier table and what
+  each published count actually counts
+- [`docs/ROADMAP.md`](docs/ROADMAP.md) — stage map and current direction
+- [`docs/DEBT.md`](docs/DEBT.md) — known licence, documentation and code debt
+- [`.machine_readable/descriptiles/META.a2ml`](.machine_readable/descriptiles/META.a2ml)
+  — the machine-readable architecture record

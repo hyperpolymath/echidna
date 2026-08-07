@@ -84,7 +84,7 @@ Per `feedback_verisimdb_policy`: the live-prover harness should emit a VeriSimDB
 ## Key files to read first
 
 1. `~/Desktop/ECHIDNA-PRODUCTION-WIRING-PLAN.md`
-2. `/var/mnt/eclipse/repos/verification-ecosystem/echidna/.machine_readable/6a2/STATE.a2ml`
+2. `/var/mnt/eclipse/repos/verification-ecosystem/echidna/.machine_readable/descriptiles/STATE.a2ml`
 3. `/var/mnt/eclipse/repos/verification-ecosystem/echidna/manifests/live-provers.scm`
 4. `/var/mnt/eclipse/repos/verification-ecosystem/echidna/.github/workflows/live-provers.yml`
 5. `/var/mnt/eclipse/repos/verification-ecosystem/echidna/tests/live_prover_suite.rs`

@@ -14,7 +14,8 @@ next-review = "2026-07-13"
 
 [vision]
 summary = """
-Echidna evolves from a proof-solving library (105 provers + neurosymbolic guidance)
+Echidna evolves from a proof-solving library (multi-backend prover surface —
+see docs/PROVER_COUNT.md — plus neurosymbolic guidance)
 into a distributed, trustworthy proof-as-a-service platform accessible to the
 entire hyperpolymath estate and beyond.
 

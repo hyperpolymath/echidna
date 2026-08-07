@@ -55,7 +55,7 @@ container *is* the escape hatch for the not-in-Guix / non-free tail (Guix
 primary, no Nix mirror; `flake.nix` deprecated and removed estate-wide 2026-06-01). Imandra target remains
 licence-gated. Table below kept for the per-backend install strategy of record.
 
-Handover hints live in `.machine_readable/6a2/STATE.a2ml [wave-3-handover-hints]`.
+Handover hints live in `.machine_readable/descriptiles/STATE.a2ml [wave-3-handover-hints]`.
 
 Strategy of record below = **as actually shipped & runtime-smoke-verified
 in `.containerization/Containerfile.wave3`** (2026-05-18, PR #73). Every

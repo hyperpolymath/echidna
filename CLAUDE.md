@@ -11,6 +11,8 @@ Guidelines and context for working with Claude Code on the ECHIDNA project.
 - **License**: AGPL-3.0-or-later (owner decision 2026-07-07; per-file MPL-2.0 headers pending migration sweep)
 - **Architecture overview**: [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md)
 - **Canonical prover count + tier table**: [`docs/PROVER_COUNT.md`](docs/PROVER_COUNT.md)
+- **Known debt (licence, docs, code)**: [`docs/DEBT.md`](docs/DEBT.md) — read before
+  asserting anything about the licence; the repository is currently inconsistent
 - **Environment variables**: [`docs/ENV-VARS.md`](docs/ENV-VARS.md)
 - **RSR / CCCP compliance statement**: [`RSR_COMPLIANCE.adoc`](RSR_COMPLIANCE.adoc)
 - **Receipts for README claims**: [`EXPLAINME.adoc`](EXPLAINME.adoc)

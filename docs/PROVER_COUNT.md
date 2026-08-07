@@ -4,33 +4,41 @@
 # Canonical Prover Count and Tier Table
 
 **Status**: canonical. Cite this file when documenting backend coverage in any
-other doc. Other surfaces that quoted historical counts (12, 30, 48, 105) are
-being updated to point here. Last revised: 2026-06-01.
+other doc. Every number below was re-measured against the tree — see
+[Verifying locally](#verifying-locally) for the exact commands, which are the
+definition of each figure rather than a description of it.
 
-> **Known drift** (tracked, not closed in routine doc PRs): the
-> `ProverKind` variant count below (**128**) lags the actual enum in
-> `src/rust/provers/mod.rs` (~138 variants on `main`). Refreshing
-> the count + `.machine_readable/provers.a2ml` belongs to the next
-> backend-count audit PR; see PR #169 closeout for the deliberately
-> deferred scope. The Tier-1 membership list immediately below is
-> the live one (mirrors `ProverKind::all_core()`).
+> **Read this first — the counts differ because they count different things.**
+> There is no single "number of provers". The two figures most often confused:
+> **141** is the number of `ProverKind` *enum variants*; **105** is the number
+> of *backend implementation files* in `src/rust/provers/`. Both are correct.
+> A surface quoting one of them as "the" count without saying which is drift —
+> that is why historical counts (12, 30, 48, 74, 105, 128) are scattered across
+> older documents. Prefer citing this file to quoting any number.
 
 ## TL;DR
 
-| Question | Answer |
-|---|---|
-| Total `ProverKind` variants in `src/rust/provers/mod.rs` | **128** (~138 on `main` — see drift note above) |
-| External prover bindings (separate binary or library) | 89 |
-| `TypeChecker` disciplines routed via TypedWasm Sigma | 39 |
-| Exposed by default REST API (`Tier 1` / core) | **12** (`GET /api/provers`) |
-| With real `suggest_tactics` (not stub) | **91 of 91** |
-| Routing tactic suggestions through `gnn_augment_tactics` | **all backends with `suggest_tactics`** (S5 pilot 5 + Tier-1 extension 5 + Tier-1 finisher 2 + Tier-2 sweep 33 + Tier-3/niche sweep 53 — full coverage as of 2026-05-30; gracefully no-ops when `gnn_api_url` is None or `neural_enabled` is false) |
-| With native search command | 16 of 91 (72 return `Ok(vec![])` — cross-prover search via `VeriSimAdvisor` covers them) |
-| Trust pipeline integrity-hashed | All Tier 1; Tier 2 incrementally |
+| Question | Answer | Command |
+|---|---|---|
+| Total `ProverKind` variants in `src/rust/provers/mod.rs` | **141** | `V` below |
+| Backend implementation files in `src/rust/provers/` | **105** | `F` below |
+| Implementations providing `suggest_tactics` | **102** | `S` below |
+| Exposed by default REST API (`Tier 1` / core) | **12** (`GET /api/provers`) | `C` below |
+| Variants carrying a type-checker / discipline role | **46** | `D` below |
+| Routing tactic suggestions through `gnn_augment_tactics` | **all backends with `suggest_tactics`** — gracefully no-ops when `gnn_api_url` is None or `neural_enabled` is false | — |
+| Trust pipeline integrity-hashed | All Tier 1; Tier 2 incrementally | — |
 
 ## Tier table
 
 Tiers correspond to CI coverage cadence and default-API visibility.
+
+> **Membership counts in this table are not machine-checked.** Tier 1 mirrors
+> `ProverKind::all_core()` and is verified by command `C`. Tier 9 is verified by
+> command `D`. The remaining per-tier figures (Tier 4's placeholder count,
+> Tier 8's corpus-only count) are hand-maintained and have not been
+> re-measured — treat them as indicative. Making tier membership derivable
+> from the code (an attribute on each variant) is tracked as documentation
+> debt in [`docs/DEBT.md`](DEBT.md).
 
 | Tier | Cadence | Members | Notes |
 |---|---|---|---|
@@ -42,55 +50,84 @@ Tiers correspond to CI coverage cadence and default-API visibility.
 | **6 — pure-Rust** | Every PR | Metamath (own crate) | No external binary; in-process. |
 | **7 — Wave-2 modal/real-algebraic** | Every PR | Modal, real-algebraic provers (Phase 3 implementations) | See [`handover/PHASE-3-PROMPT.md`](handover/PHASE-3-PROMPT.md) |
 | **8 — HP type-checker ecosystem** | Nightly | 13 corpus-only provers (Ephapax / Wokelang / AffineScript backends) | Adapters pending; tracked in handover/TODO P4 |
-| **9 — TypeChecker disciplines** | Every PR | 39 disciplines (Hindley-Milner, System F, Rank-N, ATS-style affine, …) | Routed via `crates/typed_wasm` Sigma parameters; do not require external binary. |
+| **9 — TypeChecker disciplines** | Every PR | 46 variants carry a type-checker / discipline role (Hindley-Milner, System F, Rank-N, ATS-style affine, …) — command `D` | Routed via `crates/typed_wasm` Sigma parameters; do not require an external binary. |
 | **10 — Coq-Jr ecosystem (playground)** | Sub-project CI | `echidna-playground/` backends | Separate sub-project; tracked there. |
 
 ## Why so many counts in the wild?
 
-History of the count drift:
+Two independent causes, and they need different remedies.
 
-- v1.0 (Dec 2025): **12** real backends. Released as the MVP scope.
-- v1.2 (Jan 2026): **30** declared, 12 fully tested.
-- v1.3 (Feb 2026): **48** declared, ~32 with real `suggest_tactics`.
-- v2.0 (Apr 2026): **74** after Wave-1 + Wave-2 absorption.
-- v2.1 (May 2026): **105** after Wave-3 (Tamarin, ProVerif, Twelf, OR-Tools).
-- v2.2 (May 2026): **128** after 39 TypeChecker disciplines were Sigma-routed
-  through TypedWasm (commit `c4bc272` and follow-on).
-- v2.3 (May 2026): same **128** declared, but `gnn_augment_tactics` now wraps
-  every backend with `suggest_tactics` (S5 pilot c8a4f25 + #135 Tier-1 extension
-  + #136 Tier-1 finisher + Tier-2 sweep + Tier-3/niche sweep). Wiring is a
-  no-op when the Julia `/gnn/rank` service is unreachable; once trained
-  weights land (`models/neural/`), every backend automatically returns
-  model-derived premise-apply tactics at the top of its `suggest_tactics`
-  list.
+**Cause 1 — genuine growth over time.** Each milestone's documents quote the
+count current to their authoring date:
 
-Documents in this repo predating each milestone often quote the count current
-to their authoring date. When in doubt, **trust this file** and
-`.machine_readable/6a2/STATE.a2ml`.
+| Release | Declared | What changed |
+|---|---|---|
+| v1.0 (Dec 2025) | 12 | MVP scope: 12 real backends |
+| v1.2 (Jan 2026) | 30 | 12 fully tested |
+| v1.3 (Feb 2026) | **48** | ~32 with real `suggest_tactics` |
+| v2.0 (Apr 2026) | 74 | Wave-1 + Wave-2 absorption |
+| v2.1 (May 2026) | **105** | Wave-3 (Tamarin, ProVerif, Twelf, OR-Tools) |
+| v2.2 (May 2026) | **128** | TypeChecker disciplines Sigma-routed through TypedWasm |
+| current `main` | **141** | measured, this file |
+
+Historical snapshots under `docs/releases/`, `docs/handover/` and
+`docs/decisions/` are *deliberately* left at their authoring-time numbers —
+they are records, not claims about today.
+
+**Cause 2 — counting different things and calling both "provers".** This is
+the harmful one, because both numbers are defensible in isolation. 141 counts
+enum variants; 105 counts implementation files; 102 counts implementations
+exposing `suggest_tactics`; 12 counts the default-exposed core. A document that
+says "N prover backends" without naming the denominator will be read as a claim
+about all four.
+
+**Remedy:** cite this file rather than a number. The `R5a` canonical-reference
+CI rule (`.github/canonical-references/prover-counts.yml`, enforced by the
+`Canonical-reference drift (R5 generic)` step in the shared
+`governance-reusable.yml`) fails the build when a bare count appears in a
+load-bearing top-level document. Note its scope is the top-level document set
+listed in that file — `docs/`, `.machine_readable/` and `crates/*/README.md`
+are **not** covered, which is where the surviving drift accumulated.
 
 ## Verifying locally
 
+Each command is the definition of its figure. Run from the repository root.
+
 ```bash
-# Total variant count
-rg -c "^\s*[A-Z][a-zA-Z0-9_]+," src/rust/provers/mod.rs | head -1
+# V — total ProverKind variants (141)
+awk '/pub enum ProverKind/{f=1;next} f&&/^\}/{exit} f' src/rust/provers/mod.rs \
+  | grep -cE '^\s*[A-Z][A-Za-z0-9_]*\s*,'
 
-# Tier 1 core list
-rg "fn all_core" -A 30 src/rust/provers/mod.rs
+# F — backend implementation files (105)
+ls src/rust/provers/*.rs | grep -cv 'mod\.rs$'
 
-# Per-tier breakdown
-just provers              # if implemented
-echo "or read"
-cat .machine_readable/provers.a2ml
+# S — implementations providing suggest_tactics (102)
+git grep -l 'fn suggest_tactics' -- 'src/rust/provers/*.rs' | wc -l
+
+# C — Tier-1 core, exposed by default at GET /api/provers (12)
+awk '/fn all_core/{f=1} f&&/\]/{print;exit} f' src/rust/provers/mod.rs \
+  | grep -oE 'ProverKind::[A-Za-z0-9_]+' | wc -l
+
+# D — variants carrying a type-checker / discipline role (46)
+awk '/pub enum ProverKind/{f=1;next} f&&/^\}/{exit} f' src/rust/provers/mod.rs \
+  | grep -icE 'typecheck|discipline'
 ```
+
+`ProverKind::all()` in `src/rust/provers/mod.rs` is the machine source of
+truth; this document is its human-readable mirror. If a count changes, update
+this file **and** `.machine_readable/provers.a2ml` in the same PR.
 
 ## When to cite this file
 
 Cite `docs/PROVER_COUNT.md` (not a number) in:
-- README.adoc tagline
-- CLAUDE.md project overview
-- Any new design doc
+- the `README.md` tagline and the repository description
+- `CLAUDE.md` project overview
+- any new design doc
 - PR descriptions referring to "all backends"
-- Issue templates
+- issue templates
+
+When a number genuinely must appear (a release note, a benchmark table), name
+the denominator: "141 `ProverKind` variants", not "141 provers".
 
 If a count changes (new wave absorbed, backend retired), update this file
 in the same PR. The single source of truth for the count is `ProverKind::all()`

@@ -48,7 +48,7 @@ Read this index first to know which file is which.
 | File | What it is |
 |---|---|
 | [`TODO.md`](TODO.md) | Living backlog. Single source of truth for "what's next" between sprints. P0–P4 priority bands. |
-| [`STATE.md`](STATE.md) | Running human-readable state log. Complement to `.machine_readable/6a2/STATE.a2ml`. |
+| [`STATE.md`](STATE.md) | Running human-readable state log. Complement to `.machine_readable/descriptiles/STATE.a2ml`. |
 | [`README.md`](README.md) | Original handover suite intro (older; kept for orientation). |
 
 ## Warmup material

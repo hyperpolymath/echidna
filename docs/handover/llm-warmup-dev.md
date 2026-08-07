@@ -166,10 +166,10 @@ members = [".", "src/interfaces/graphql", "src/interfaces/grpc", "src/interfaces
 ## Machine-Readable Metadata
 
 All in `.machine_readable/`:
-- `6a2/STATE.a2ml` — Current state
-- `6a2/META.a2ml` — Architecture decisions
-- `6a2/ECOSYSTEM.a2ml` — Ecosystem position
-- `6a2/AGENTIC.a2ml`, `NEUROSYM.a2ml`, `PLAYBOOK.a2ml`
+- `descriptiles/STATE.a2ml` — Current state
+- `descriptiles/META.a2ml` — Architecture decisions
+- `descriptiles/ECOSYSTEM.a2ml` — Ecosystem position
+- `descriptiles/AGENTIC.a2ml`, `NEUROSYM.a2ml`, `PLAYBOOK.a2ml`
 
 **NEVER** create these in the root directory.
 

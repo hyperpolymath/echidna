@@ -128,7 +128,7 @@ This repository adheres to hyperpolymath estate-wide policies:
 
 | **Contractiles** | Mustfile, Trustfile, Intendfile, Adjustfile in root
 
-| **Machine Readable** | META.a2ml in .machine_readable/6a2/
+| **Machine Readable** | META.a2ml in .machine_readable/descriptiles/
 
 | **CI/CD** | GitHub Actions workflows in .github/workflows/
 
