@@ -2016,5 +2016,143 @@
     "type": "SD022",
     "file": "docs/SSG_ROADMAP.adoc",
     "note": "Roadmap doc: paths are planned future modules, not renames"
+  },
+  {
+    "severity": "medium",
+    "rule_module": "scorecard",
+    "type": "DependencyPinning",
+    "file": "."
+  },
+  {
+    "severity": "medium",
+    "rule_module": "workflow_audit",
+    "type": "unpinned_action",
+    "file": "agda-meta-checker.yml"
+  },
+  {
+    "severity": "medium",
+    "rule_module": "workflow_audit",
+    "type": "unpinned_action",
+    "file": "boj-build.yml"
+  },
+  {
+    "severity": "medium",
+    "rule_module": "workflow_audit",
+    "type": "unpinned_action",
+    "file": "bridge-gate.yml"
+  },
+  {
+    "severity": "medium",
+    "rule_module": "workflow_audit",
+    "type": "unpinned_action",
+    "file": "cargo-audit.yml"
+  },
+  {
+    "severity": "medium",
+    "rule_module": "workflow_audit",
+    "type": "unpinned_action",
+    "file": "cflite_batch.yml"
+  },
+  {
+    "severity": "medium",
+    "rule_module": "workflow_audit",
+    "type": "unpinned_action",
+    "file": "cflite_pr.yml"
+  },
+  {
+    "severity": "medium",
+    "rule_module": "workflow_audit",
+    "type": "unpinned_action",
+    "file": "chapel-ci.yml"
+  },
+  {
+    "severity": "medium",
+    "rule_module": "workflow_audit",
+    "type": "unpinned_action",
+    "file": "codeql.yml"
+  },
+  {
+    "severity": "medium",
+    "rule_module": "workflow_audit",
+    "type": "unpinned_action",
+    "file": "container-ci.yml"
+  },
+  {
+    "severity": "medium",
+    "rule_module": "workflow_audit",
+    "type": "unpinned_action",
+    "file": "dogfood-gate.yml"
+  },
+  {
+    "severity": "medium",
+    "rule_module": "workflow_audit",
+    "type": "unpinned_action",
+    "file": "dogfood-proofs-ci.yml"
+  },
+  {
+    "severity": "medium",
+    "rule_module": "workflow_audit",
+    "type": "unpinned_action",
+    "file": "formal-verification.yml"
+  },
+  {
+    "severity": "medium",
+    "rule_module": "workflow_audit",
+    "type": "unpinned_action",
+    "file": "generator-generic-ossf-slsa3-publish.yml"
+  },
+  {
+    "severity": "medium",
+    "rule_module": "workflow_audit",
+    "type": "unpinned_action",
+    "file": "ghcr-publish.yml"
+  },
+  {
+    "severity": "medium",
+    "rule_module": "workflow_audit",
+    "type": "unpinned_action",
+    "file": "idris2-abi-ci.yml"
+  },
+  {
+    "severity": "medium",
+    "rule_module": "workflow_audit",
+    "type": "unpinned_action",
+    "file": "live-provers.yml"
+  },
+  {
+    "severity": "medium",
+    "rule_module": "workflow_audit",
+    "type": "unpinned_action",
+    "file": "mvp-smoke.yml"
+  },
+  {
+    "severity": "medium",
+    "rule_module": "workflow_audit",
+    "type": "unpinned_action",
+    "file": "pages.yml"
+  },
+  {
+    "severity": "medium",
+    "rule_module": "workflow_audit",
+    "type": "unpinned_action",
+    "file": "s4-loop.yml"
+  },
+  {
+    "severity": "medium",
+    "rule_module": "workflow_audit",
+    "type": "unpinned_action",
+    "file": "server-boot-gate.yml"
+  },
+  {
+    "severity": "medium",
+    "rule_module": "workflow_audit",
+    "type": "unpinned_action",
+    "file": "verification-proofs-cron.yml"
+  },
+  {
+    "severity": "medium",
+    "rule_module": "workflow_audit",
+    "type": "unpinned_action",
+    "file": "workflow-linter.yml"
   }
 ]
