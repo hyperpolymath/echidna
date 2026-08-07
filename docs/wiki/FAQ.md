@@ -47,26 +47,32 @@ Canonical sources of truth:
 
 ## What licence is ECHIDNA under?
 
-**The repository is currently inconsistent on this point, and you should not
-rely on this page.** Read
-[`LICENSE`](https://github.com/hyperpolymath/echidna/blob/main/LICENSE) and, if
-your use depends on the answer, ask the maintainer before proceeding.
+Three, applying to three parts of the tree. This is deliberate, not drift.
 
-What the tree actually says today:
-
-| Surface | States |
+| Part | Licence |
 |---|---|
-| `LICENSE`, `Cargo.toml`, README badge | AGPL-3.0-or-later |
-| Per-file `SPDX-License-Identifier` headers (588 source files) | MPL-2.0 |
-| `NOTICE` | MPL-2.0 ("Full text: LICENSE" — which is AGPL) |
-| `.reuse/dep5` | PMPL-1.0 AND Palimpsest-0.6 |
+| Code — `src/`, `crates/`, `ffi/`, `proofs/`, `spark/`, `verification/`, build system, CI | **AGPL-3.0-or-later** |
+| Documentation — `docs/`, top-level `.md` / `.adoc` | **CC-BY-SA-4.0** |
+| `echidna-playground/` — the Coq-Jr sub-project | **MPL-2.0** |
 
-The owner's recorded decision is AGPL-3.0-or-later; the per-file headers and
-`NOTICE` predate it and have not been migrated. Reconciling them is tracked as
-P0 licensing debt in
-[`docs/DEBT.md`](https://github.com/hyperpolymath/echidna/blob/main/docs/DEBT.md).
-The historical migration path was dual MIT/Palimpsest-0.6 → MPL-2.0 → (decided)
-AGPL-3.0-or-later.
+**The combined work distributes as AGPL-3.0-or-later.** The network clause
+applies: if you run a modified ECHIDNA as a service, you must offer your users
+the modified source.
+
+**Why an MPL component is fine inside an AGPL project.** MPL-2.0 §3.3
+designates the GNU licences — including AGPL-3.0+ — as "Secondary Licenses".
+MPL-covered files may therefore be combined into an AGPL work and distributed
+under the AGPL, while remaining individually available under MPL. So if you
+extract `echidna-playground/` on its own, you may use it under MPL-2.0. The
+playground keeps MPL because it carries contributions from Coq-Jr
+Contributors, and relicensing someone else's contribution needs their consent.
+
+Licence history: dual MIT/Palimpsest-0.6 → MPL-2.0 → AGPL-3.0-or-later, with
+the per-file headers reconciled to the AGPL ruling in 2026-08. Anything
+describing the project as MPL-2.0 predates that;
+[`LICENSE`](https://github.com/hyperpolymath/echidna/blob/main/LICENSE) and
+[`NOTICE`](https://github.com/hyperpolymath/echidna/blob/main/NOTICE) are
+authoritative.
 
 ## How do I report a security issue?
 

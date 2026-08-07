@@ -22,73 +22,68 @@ latent risk.
 
 ---
 
-## P0 — Licensing: the repository states four different licences
+## P0 — Licensing: RESOLVED 2026-08-07
 
-**This is the most serious item in the register.** A recipient cannot determine
-the terms under which they receive this software, and every surface they might
-reasonably consult gives a different answer.
+**Was:** the repository stated four different licences at once — `LICENSE` and
+`Cargo.toml` said AGPL-3.0-or-later while 590 source files granted MPL-2.0,
+`NOTICE` described the project as MPL-2.0 while citing the AGPL file as its
+text, and `.reuse/dep5` claimed `PMPL-1.0 AND Palimpsest-0.6`. Because
+per-file SPDX headers are themselves a licence grant, a recipient could have
+taken the tree under MPL-2.0 — which, unlike AGPL, has no network clause.
 
-| Surface | What it states | Evidence |
+**Now:** reconciled to the owner's AGPL ruling as a deliberate three-part
+split.
+
+| Part | Licence | Files |
 |---|---|---|
-| `LICENSE` (full GNU text) | AGPL-3.0-or-later | `head -3 LICENSE` |
-| `Cargo.toml` | AGPL-3.0-or-later | `grep '^license' Cargo.toml` |
-| README badge | AGPL-3.0-or-later | `grep -m1 'License:' README.md` |
-| Per-file SPDX headers — **590 source files** (584 `MPL-2.0`, 6 dual with `Palimpsest-0.6`) | MPL-2.0 | `L1` below |
-| Per-file SPDX headers | AGPL-3.0-or-later — **zero files** | `L2` below |
-| `NOTICE` | MPL-2.0, and points at `LICENSE` for the "full text" — but `LICENSE` is AGPL | `head -10 NOTICE` |
-| `.reuse/dep5` (`src/*`) | `PMPL-1.0 AND Palimpsest-0.6` | `grep -m1 -A3 'Files: src' .reuse/dep5` |
-| `.github/workflows/governance.yml` | `PMPL-1.0-or-later` | `head -1 .github/workflows/governance.yml` |
-| GitHub's own detection | "Other" — no licence identified | `gh repo view --json licenseInfo` |
+| Code — `src/`, `crates/`, `ffi/`, `proofs/`, `spark/`, `verification/`, build system, CI, machine-readable metadata | **AGPL-3.0-or-later** | 594 + 6 dual |
+| Documentation — `docs/`, top-level `.md` / `.adoc` | **CC-BY-SA-4.0** | 92 + 1 dual |
+| `echidna-playground/` — Coq-Jr sub-project | **MPL-2.0**, unchanged | 35 |
+
+The playground was **not** relicensed: it carries contributions attributed to
+"Coq-Jr Contributors", and relicensing another party's work needs their
+consent. It does not need relicensing — MPL-2.0 §3.3 designates the GNU
+licences (including AGPL-3.0+) as Secondary Licenses, so MPL files combine
+into an AGPL work and the combined work distributes under AGPL while those
+files individually remain available under MPL. No file carries the Exhibit B
+"Incompatible With Secondary Licenses" notice that would break this.
+
+`NOTICE` and `.reuse/dep5` were rewritten to describe the split; `LICENSE`
+had two prepended SPDX lines removed so it is byte-identical to
+`LICENSES/AGPL-3.0-or-later.txt` — those lines were stopping GitHub's licence
+detector matching the body, which is why the repository showed "Other".
+
+**Verification — these should come back clean:**
 
 ```bash
-# L1 — source files declaring MPL-2.0 (590: 584 plain + 6 dual)
-git grep -I -h -m1 -oP 'SPDX-License-Identifier:\s*\K[A-Za-z0-9.\-+]+( (AND|OR) [A-Za-z0-9.\-+]+)*' \
-  -- '*.rs' '*.jl' '*.zig' '*.chpl' '*.idr' '*.agda' '*.res' '*.sh' '*.ncl' | sort | uniq -c
+# no MPL outside the playground and licence reference material
+git grep -l 'SPDX-License-Identifier:.*MPL-2\.0' \
+  | grep -vE '^(echidna-playground/|LICENSES/|docs/legal/)'      # expect empty
 
-# L2 — source files declaring AGPL (0)
-git grep -l 'SPDX-License-Identifier:.*AGPL' -- '*.rs' '*.jl' '*.zig' | wc -l
+# code is AGPL
+git grep -I -h -m1 -oP 'SPDX-License-Identifier:\s*\K[A-Za-z0-9.\-+]+( (AND|OR) [A-Za-z0-9.\-+]+)*' \
+  -- '*.rs' '*.jl' '*.zig' ':!echidna-playground/' | sort | uniq -c
+
+# GitHub now detects a licence
+gh repo view hyperpolymath/echidna --json licenseInfo
 ```
 
-The difference is not cosmetic. MPL-2.0 is file-level weak copyleft with no
-network clause; AGPL-3.0-or-later is strong copyleft that reaches users served
-over a network. A downstream integrator reading the file headers would conclude
-they may offer a modified ECHIDNA as a hosted service without publishing their
-changes. The `LICENSE` file says otherwise. **Because the per-file headers are
-themselves a licence grant, this exposure is real, not theoretical.**
+### Residual — `Palimpsest-0.6` has no licence text
 
-Two further consequences:
+Seven files offer `Palimpsest-0.6` as an alternative or additional grant
+(`AGPL-3.0-or-later OR Palimpsest-0.6`, and two with `AND`). **No
+`Palimpsest-0.6` text exists in this repository or anywhere in the estate**
+(`find . -iname '*palimpsest*'` and `ls ../standards/LICENSES/` both come back
+without it), so the identifier is unresolvable and REUSE cannot validate it.
 
-- **REUSE non-compliance.** `.reuse/dep5` and nine file headers reference
-  `PMPL-1.0` and `Palimpsest-0.6`, but `LICENSES/` contains only
-  `AGPL-3.0-or-later.txt`, `CC-BY-SA-4.0.txt`, and `MPL-2.0.txt`. A REUSE
-  conformance run cannot resolve those identifiers.
-  Evidence: `ls LICENSES/` and `git grep -l Palimpsest`.
-- **GitHub reports the licence as "Other"**, so the repository shows no licence
-  in search, the sidebar, or the API. The likely cause is the
-  `SPDX-License-Identifier:` line prepended to `LICENSE` above the GNU text,
-  which stops GitHub's detector matching the body. Removing that one line is a
-  low-risk experiment that does not alter the grant.
+The grants were **preserved rather than dropped** — removing half of a dual
+licence withdraws a permission the owner granted, which is not a
+documentation decision. Resolve by supplying `LICENSES/Palimpsest-0.6.txt`,
+or by deciding the Palimpsest grant is retired and removing it deliberately.
 
-**Owner decision required — do not "fix" this in a routine PR.** The recorded
-decision (`CLAUDE.md`, matching `Cargo.toml`) is AGPL-3.0-or-later. Applying it
-means rewriting the SPDX header of every source file, which is a re-licensing
-act with consequences for existing recipients and any contributor who submitted
-under MPL terms. Nobody should do that on their own initiative.
-
-Suggested sequence, once the owner has ruled:
-
-1. Confirm the intended licence for **code** and for the **documentation
-   surface** separately — `CLAUDE.md` states the MPL headers on docs are
-   deliberate, so the two may legitimately differ.
-2. Reconcile `NOTICE` first: it is the only surface that is internally
-   self-contradictory (it names MPL and cites an AGPL file as its text).
-3. Add the missing `LICENSES/` texts, or remove the `PMPL-1.0` /
-   `Palimpsest-0.6` references if those licences are retired.
-4. Only then sweep the per-file headers, in one reviewable commit per language.
-   A previous blind SPDX sweep in this estate mis-licensed files by imposing a
-   header where a different one already existed further down the file — grep the
-   whole file, move the identifier, never impose one.
-5. Drop the prepended SPDX line from `LICENSE` and confirm GitHub detects it.
+Note `docs/legal/texts/PMPL-1.0-or-later.txt` exists and the estate's
+`standards/LICENSES/` carries `PMPL-1.0-or-later.txt` — PMPL and Palimpsest
+are different identifiers, and only the former has a text.
 
 ---
 

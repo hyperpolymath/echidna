@@ -15,13 +15,14 @@ one reports the achieved tier and changes when it lapses. Tracked as D3 in
 docs/DEBT.md.
 -->
 
-> **Licence notice.** This repository declares AGPL-3.0-or-later in `LICENSE`
-> and `Cargo.toml`, but per-file `SPDX-License-Identifier` headers across the
-> source tree still read `MPL-2.0`, and `NOTICE` still describes the project as
-> MPL-2.0. That inconsistency is unresolved — see
-> [`docs/DEBT.md`](docs/DEBT.md) (P0). If your use depends on the licence
-> terms, read `LICENSE` and ask the maintainer before relying on any other
-> surface.
+> **Licensing.** ECHIDNA is licensed in three parts: **code** under
+> AGPL-3.0-or-later, **documentation** under CC-BY-SA-4.0, and
+> **`echidna-playground/`** under MPL-2.0 (Coq-Jr contributions, retained
+> deliberately — MPL §3.3 makes it compatible under the AGPL umbrella).
+> The combined work distributes as AGPL-3.0-or-later; run a modified ECHIDNA
+> as a network service and you must offer your users the modified source.
+> See [`NOTICE`](NOTICE) for the full statement and the compatibility
+> argument.
 
 \*E\*xtensible \*C\*ognitive \*H\*ybrid \*I\*ntelligence for
 \*D\*eductive \*N\*eural \*A\*ssistance

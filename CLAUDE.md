@@ -13,8 +13,7 @@ Guidelines and context for working with Claude Code on the ECHIDNA project.
   component is compatible (MPL §3.3 Secondary Licenses)
 - **Architecture overview**: [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md)
 - **Canonical prover count + tier table**: [`docs/PROVER_COUNT.md`](docs/PROVER_COUNT.md)
-- **Known debt (licence, docs, code)**: [`docs/DEBT.md`](docs/DEBT.md) — read before
-  asserting anything about the licence; the repository is currently inconsistent
+- **Known debt (licence, docs, code)**: [`docs/DEBT.md`](docs/DEBT.md)
 - **Environment variables**: [`docs/ENV-VARS.md`](docs/ENV-VARS.md)
 - **RSR / CCCP compliance statement**: [`RSR_COMPLIANCE.adoc`](RSR_COMPLIANCE.adoc)
 - **Receipts for README claims**: [`EXPLAINME.adoc`](EXPLAINME.adoc)

@@ -4,7 +4,7 @@
 
 **ECHIDNA** — Extensible Cognitive Hybrid Intelligence for Deductive Neural Assistance — is a trust-hardened neurosymbolic theorem-proving platform with a large multi-backend prover surface, of which **12 core backends** are exposed by the default API. Counts differ depending on what is being counted; [`docs/PROVER_COUNT.md`](https://github.com/hyperpolymath/echidna/blob/main/docs/PROVER_COUNT.md) is canonical and carries the commands that reproduce each figure.
 
-**License**: the repository declares **AGPL-3.0-or-later** ([`LICENSE`](https://github.com/hyperpolymath/echidna/blob/main/LICENSE), `Cargo.toml`). Note that per-file `SPDX-License-Identifier` headers across the source tree still read `MPL-2.0`, and `NOTICE` still describes the project as MPL-2.0 — this inconsistency is **open licensing debt**, tracked in [`docs/DEBT.md`](https://github.com/hyperpolymath/echidna/blob/main/docs/DEBT.md). Until it is reconciled by the owner, do not rely on this page for the licence terms; read `LICENSE` and seek clarification.
+**License**: three parts, by design — **code** under AGPL-3.0-or-later, **documentation** under CC-BY-SA-4.0, and **`echidna-playground/`** under MPL-2.0 (Coq-Jr contributions, deliberately not relicensed). The combined work distributes as AGPL-3.0-or-later, so running a modified ECHIDNA as a network service obliges you to offer users the modified source. The MPL component is compatible under MPL §3.3 (Secondary Licenses). Full statement: [`NOTICE`](https://github.com/hyperpolymath/echidna/blob/main/NOTICE).
 
 **Release history**: [`CHANGELOG.md`](https://github.com/hyperpolymath/echidna/blob/main/CHANGELOG.md); semver pin in [`Cargo.toml`](https://github.com/hyperpolymath/echidna/blob/main/Cargo.toml).
 
