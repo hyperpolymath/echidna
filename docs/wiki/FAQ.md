@@ -4,9 +4,17 @@
 
 ## How many provers are supported?
 
-**128 total** ProverKind variants: 89 external prover bindings plus 39 TypeChecker disciplines routed via TypedWasm Sigma.
+There is no single number, and that is the honest answer rather than a dodge:
+the tree contains **141 `ProverKind` variants** across **105 backend
+implementation files**, of which **102** provide `suggest_tactics`. Which figure
+is "the" count depends on what you are counting.
+[`docs/PROVER_COUNT.md`](https://github.com/hyperpolymath/echidna/blob/main/docs/PROVER_COUNT.md)
+is canonical and ships the commands that reproduce each one.
 
-Of these, **12 core** are exposed by the default REST API: Coq/Rocq, Lean 4, Agda, Isabelle/HOL, Idris 2, F\*, Z3, CVC5, Alt-Ergo, Dafny, Vampire, E Prover. The remaining 116 are reachable via explicit `ProverKind` selection in CLI / REPL / GraphQL.
+**12 core** backends are exposed by the default REST API, mirroring
+`ProverKind::all_core()`: Agda, Coq, Lean 4, Isabelle/HOL, Z3, CVC5, Metamath,
+HOL Light, Mizar, PVS, ACL2, HOL4. Everything else is reachable via explicit
+`ProverKind` selection in CLI / REPL / GraphQL.
 
 The full tier table lives in [`docs/PROVER_COUNT.md`](https://github.com/hyperpolymath/echidna/blob/main/docs/PROVER_COUNT.md).
 
@@ -34,12 +42,31 @@ No. **The repo wins** when the wiki and the in-repo docs disagree. The wiki is a
 
 Canonical sources of truth:
 - [`CLAUDE.md`](https://github.com/hyperpolymath/echidna/blob/main/CLAUDE.md) for codebase orientation
-- [`.machine_readable/6a2/STATE.a2ml`](https://github.com/hyperpolymath/echidna/blob/main/.machine_readable/6a2/STATE.a2ml) for current state
+- [`.machine_readable/descriptiles/STATE.a2ml`](https://github.com/hyperpolymath/echidna/blob/main/.machine_readable/descriptiles/STATE.a2ml) for current state
 - [`docs/ROADMAP.md`](https://github.com/hyperpolymath/echidna/blob/main/docs/ROADMAP.md) for direction
 
-## Why MPL-2.0 and not MIT or AGPL?
+## What licence is ECHIDNA under?
 
-Practical balance: weak copyleft at the file level (modifications to MPL'd files must be open) without copyleft-by-linking (so downstream commercial use is straightforward). The project migrated from a dual MIT/Palimpsest-0.6 licence in 2026; `NOTICE` and `LICENSE` reflect the current state.
+**The repository is currently inconsistent on this point, and you should not
+rely on this page.** Read
+[`LICENSE`](https://github.com/hyperpolymath/echidna/blob/main/LICENSE) and, if
+your use depends on the answer, ask the maintainer before proceeding.
+
+What the tree actually says today:
+
+| Surface | States |
+|---|---|
+| `LICENSE`, `Cargo.toml`, README badge | AGPL-3.0-or-later |
+| Per-file `SPDX-License-Identifier` headers (588 source files) | MPL-2.0 |
+| `NOTICE` | MPL-2.0 ("Full text: LICENSE" — which is AGPL) |
+| `.reuse/dep5` | PMPL-1.0 AND Palimpsest-0.6 |
+
+The owner's recorded decision is AGPL-3.0-or-later; the per-file headers and
+`NOTICE` predate it and have not been migrated. Reconciling them is tracked as
+P0 licensing debt in
+[`docs/DEBT.md`](https://github.com/hyperpolymath/echidna/blob/main/docs/DEBT.md).
+The historical migration path was dual MIT/Palimpsest-0.6 → MPL-2.0 → (decided)
+AGPL-3.0-or-later.
 
 ## How do I report a security issue?
 

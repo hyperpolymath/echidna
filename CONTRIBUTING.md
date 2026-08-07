@@ -15,7 +15,7 @@ and the licence / SPDX policy. GitHub renders AsciiDoc directly.
 
 If a quick orientation is enough:
 
-- **Before you start**: read [`README.adoc`](README.adoc),
+- **Before you start**: read [`README.md`](README.md),
   [`RSR_COMPLIANCE.adoc`](RSR_COMPLIANCE.adoc), and
   [`CLAUDE.md`](CLAUDE.md) (if you are using an AI agent).
 - **Local setup**: see [`QUICKSTART-DEV.adoc`](QUICKSTART-DEV.adoc).

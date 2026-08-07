@@ -174,4 +174,4 @@ concrete, scoped engineering tasks.
 - `agda 2.6.3` against `agda-stdlib` (any 2.x compatible release).
 
 These pins are re-stated in `chapel-ci.yml` and `Justfile`; see
-also `.machine_readable/6a2/META.a2ml` for the canonical record.
+also `.machine_readable/descriptiles/META.a2ml` for the canonical record.

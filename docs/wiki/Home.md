@@ -2,9 +2,11 @@
 <!-- SPDX-License-Identifier: CC-BY-SA-4.0 -->
 # ECHIDNA Wiki
 
-**ECHIDNA** — Extensible Cognitive Hybrid Intelligence for Deductive Neural Assistance — is a trust-hardened neurosymbolic theorem-proving platform supporting **128 prover backends** (12 core, exposed by default API; see [`docs/PROVER_COUNT.md`](https://github.com/hyperpolymath/echidna/blob/main/docs/PROVER_COUNT.md) for the tier breakdown).
+**ECHIDNA** — Extensible Cognitive Hybrid Intelligence for Deductive Neural Assistance — is a trust-hardened neurosymbolic theorem-proving platform with a large multi-backend prover surface, of which **12 core backends** are exposed by the default API. Counts differ depending on what is being counted; [`docs/PROVER_COUNT.md`](https://github.com/hyperpolymath/echidna/blob/main/docs/PROVER_COUNT.md) is canonical and carries the commands that reproduce each figure.
 
-**License**: MPL-2.0 (documentation surface) · authoritative version pinned in [`Cargo.toml`](https://github.com/hyperpolymath/echidna/blob/main/Cargo.toml) and [`CHANGELOG.md`](https://github.com/hyperpolymath/echidna/blob/main/CHANGELOG.md)
+**License**: the repository declares **AGPL-3.0-or-later** ([`LICENSE`](https://github.com/hyperpolymath/echidna/blob/main/LICENSE), `Cargo.toml`). Note that per-file `SPDX-License-Identifier` headers across the source tree still read `MPL-2.0`, and `NOTICE` still describes the project as MPL-2.0 — this inconsistency is **open licensing debt**, tracked in [`docs/DEBT.md`](https://github.com/hyperpolymath/echidna/blob/main/docs/DEBT.md). Until it is reconciled by the owner, do not rely on this page for the licence terms; read `LICENSE` and seek clarification.
+
+**Release history**: [`CHANGELOG.md`](https://github.com/hyperpolymath/echidna/blob/main/CHANGELOG.md); semver pin in [`Cargo.toml`](https://github.com/hyperpolymath/echidna/blob/main/Cargo.toml).
 
 ## Quick navigation
 
@@ -18,7 +20,7 @@
 
 When the wiki and the repo disagree, **the repo wins**:
 
-- [`README.adoc`](https://github.com/hyperpolymath/echidna/blob/main/README.adoc) — primary project README
+- [`README.md`](https://github.com/hyperpolymath/echidna/blob/main/README.md) — primary project README
 - [`CLAUDE.md`](https://github.com/hyperpolymath/echidna/blob/main/CLAUDE.md) — codebase orientation
 - [`docs/ARCHITECTURE.md`](https://github.com/hyperpolymath/echidna/blob/main/docs/ARCHITECTURE.md) — current architecture
 - [`docs/PROVER_COUNT.md`](https://github.com/hyperpolymath/echidna/blob/main/docs/PROVER_COUNT.md) — tier table
@@ -26,7 +28,7 @@ When the wiki and the repo disagree, **the repo wins**:
 - [`docs/ROADMAP.md`](https://github.com/hyperpolymath/echidna/blob/main/docs/ROADMAP.md) — stage map and sprint targets
 - [`docs/handover/HANDOVER-INDEX.md`](https://github.com/hyperpolymath/echidna/blob/main/docs/handover/HANDOVER-INDEX.md) — handover/ navigation
 - [`RSR_COMPLIANCE.adoc`](https://github.com/hyperpolymath/echidna/blob/main/RSR_COMPLIANCE.adoc) — RSR / CCCP compliance statement
-- [`.machine_readable/6a2/STATE.a2ml`](https://github.com/hyperpolymath/echidna/blob/main/.machine_readable/6a2/STATE.a2ml) — machine-readable state
+- [`.machine_readable/descriptiles/STATE.a2ml`](https://github.com/hyperpolymath/echidna/blob/main/.machine_readable/descriptiles/STATE.a2ml) — machine-readable state
 
 ## Core invariants
 
@@ -35,7 +37,7 @@ When the wiki and the repo disagree, **the repo wins**:
 
 ## Key concepts
 
-- **128 backends, 12 core** — 89 external prover bindings + 39 TypeChecker disciplines via TypedWasm Sigma.
+- **12 core backends** exposed by default; the wider surface (external prover bindings plus TypeChecker disciplines routed via TypedWasm Sigma) is reachable through explicit `ProverKind` selection. Figures and their denominators: [`docs/PROVER_COUNT.md`](https://github.com/hyperpolymath/echidna/blob/main/docs/PROVER_COUNT.md).
 - **17 corpus adapters** — every major public proof corpus has a structural ingest path (see [`docs/CORPUS-ADAPTERS.md`](https://github.com/hyperpolymath/echidna/blob/main/docs/CORPUS-ADAPTERS.md)).
 - **4 arbitration mechanisms** — portfolio majority-vote, Bayesian posterior, Dempster-Shafer belief combination, Pareto multi-objective frontier.
 - **6 cross-prover exchange formats** — OpenTheory, Dedukti, TPTP, SMT-LIB, SMTCoq, Lambdapi.

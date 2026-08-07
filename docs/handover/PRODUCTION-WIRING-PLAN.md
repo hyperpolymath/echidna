@@ -164,7 +164,7 @@ Applies to this plan:
 - `~/Desktop/ECHIDNA-L3-LIVE-PROVER-CI-PROMPT.md` — continuation prompt for L3
 - `~/Desktop/ECHIDNA-L1-CAPNPROTO-PROMPT.md` — continuation prompt for L1
 - `~/Desktop/ECHIDNA-L2-CHAPEL-PROMPT.md` — continuation prompt for L2
-- `.machine_readable/6a2/STATE.a2ml` — mirrored wave entry in-repo
+- `.machine_readable/descriptiles/STATE.a2ml` — mirrored wave entry in-repo
 
 ## Session Log
 
