@@ -1,4 +1,4 @@
-# SPDX-License-Identifier: MPL-2.0
+# SPDX-License-Identifier: AGPL-3.0-or-later
 # SPDX-FileCopyrightText: 2024-2025 ECHIDNA Project Contributors
 #
 # Codecov configuration for ECHIDNA
@@ -47,25 +47,3 @@ flags:
       - src/julia/
     carryforward: true
 
-  rescript:
-    paths:
-      - src/rescript/
-    carryforward: true
-
-# Component coverage
-component_management:
-  individual_components:
-    - component_id: rust_core
-      name: Rust Core
-      paths:
-        - src/rust/
-
-    - component_id: julia_ml
-      name: Julia ML
-      paths:
-        - src/julia/
-
-    - component_id: rescript_ui
-      name: ReScript UI
-      paths:
-        - src/rescript/

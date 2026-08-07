@@ -1,4 +1,4 @@
-// SPDX-License-Identifier: MPL-2.0
+// SPDX-License-Identifier: AGPL-3.0-or-later
 // Health status monitoring for echidna services
 
 use chrono::{DateTime, Utc};

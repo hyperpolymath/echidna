@@ -1,5 +1,5 @@
 # SPDX-FileCopyrightText: 2025 ECHIDNA Project Contributors
-# SPDX-License-Identifier: MPL-2.0
+# SPDX-License-Identifier: AGPL-3.0-or-later
 
 """
 Reinforcement Learning Training Loop for ECHIDNA

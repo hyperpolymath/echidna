@@ -1,4 +1,4 @@
-// SPDX-License-Identifier: MPL-2.0
+// SPDX-License-Identifier: AGPL-3.0-or-later
 // GraphQL schema definitions - wired to ECHIDNA core
 
 use async_graphql::{Context, Enum, Object, Result, SimpleObject};

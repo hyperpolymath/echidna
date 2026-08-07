@@ -1,4 +1,4 @@
--- SPDX-License-Identifier: MPL-2.0
+-- SPDX-License-Identifier: AGPL-3.0-or-later
 -- Validator.idr - Type checker for proof terms with soundness guarantees
 
 module Validator

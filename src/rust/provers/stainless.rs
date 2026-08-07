@@ -1,4 +1,4 @@
-// SPDX-License-Identifier: MPL-2.0
+// SPDX-License-Identifier: AGPL-3.0-or-later
 //! Stainless (Scala / Inox) refinement-types verification backend.
 //!
 //! Stainless verifies Scala programs against refinement-type contracts:
@@ -35,7 +35,7 @@ impl StainlessBackend {
     /// Generate a minimal Stainless-annotated Scala program for the goal.
     fn to_input_format(&self, state: &ProofState) -> Result<String> {
         let mut s = String::from(
-            "// SPDX-License-Identifier: MPL-2.0\n\
+            "// SPDX-License-Identifier: AGPL-3.0-or-later\n\
              import stainless.lang._\n\
              import stainless.annotation._\n\n\
              object EchidnaGoal {\n",

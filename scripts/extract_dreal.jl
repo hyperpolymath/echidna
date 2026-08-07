@@ -1,5 +1,5 @@
 #!/usr/bin/env julia
-# SPDX-License-Identifier: MPL-2.0
+# SPDX-License-Identifier: AGPL-3.0-or-later
 # Extract dReal delta-complete SMT-LIB problems (NRA / nonlinear real arithmetic).
 # Vendor: git clone https://github.com/dreal/dreal4 external_corpora/dreal4
 using JSON3, Dates

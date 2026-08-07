@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# SPDX-License-Identifier: MPL-2.0
+# SPDX-License-Identifier: AGPL-3.0-or-later
 #
 # install-proof-toolchains.sh — self-provision the formal-proof toolchains that
 # ECHIDNA's proof corpus is checked with: Idris2, Agda (+stdlib), Coq, Lean 4.

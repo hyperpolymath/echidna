@@ -1,5 +1,5 @@
 #!/usr/bin/env julia
-# SPDX-License-Identifier: MPL-2.0
+# SPDX-License-Identifier: AGPL-3.0-or-later
 # Extract SeaHorn LLVM-based verification problems (CHC-encoded).
 # Vendor: git clone https://github.com/seahorn/seahorn external_corpora/seahorn
 using JSON3, Dates

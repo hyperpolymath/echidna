@@ -31,13 +31,12 @@
 
     "ban-npm": "echo '❌ npm is BANNED in this project. Use Deno!' && exit 1",
 
-    "dev:ui": "cd src/rescript && deno task dev",
-    "build:ui": "cd src/rescript && deno task build"
+    "serve:ui": "cd src/ui/public && deno run --allow-net --allow-read jsr:@std/http/file-server"
   },
 
   "fmt": {
     "include": ["src/"],
-    "exclude": ["src/rescript/node_modules/"],
+    "exclude": [],
     "options": {
       "useTabs": false,
       "lineWidth": 100,
@@ -49,7 +48,7 @@
 
   "lint": {
     "include": ["src/"],
-    "exclude": ["src/rescript/node_modules/"],
+    "exclude": [],
     "rules": {
       "tags": ["recommended"],
       "include": [
@@ -63,7 +62,7 @@
 
   "test": {
     "include": ["src/**/*_test.ts", "src/**/*.test.ts"],
-    "exclude": ["src/rescript/"]
+    "exclude": []
   },
 
   "publish": {

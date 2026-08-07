@@ -1,5 +1,5 @@
 #!/bin/bash -eu
-# SPDX-License-Identifier: MPL-2.0
+# SPDX-License-Identifier: AGPL-3.0-or-later
 cd "$SRC"/echidna
 cargo +nightly fuzz build
 # `fuzz` is excluded from the workspace (`Cargo.toml:154-157`), so

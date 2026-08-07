@@ -518,21 +518,23 @@ audit:
 
 # ── UI Management ──────────────────────────────────────────
 
-# Build ReScript frontend (Deno caches npm: deps automatically — no install step)
+# ── UI ──
+# The ReScript UI was removed 2026-08 (ReScript is a banned language under the
+# estate language policy; AffineScript-TEA is the replacement). The TEA sources
+# live in src/ui/tea/ and the static shell in src/ui/public/, but the
+# AffineScript compile pipeline is NOT wired yet — see issues #117 and #266
+# (missing Http::fetch / Async / Json primitives).
+
+# Build the UI — blocked on the AffineScript-TEA toolchain
 build-ui:
-    cd src/rescript && deno task res:build && deno task build
+    @echo "build-ui is unavailable: the ReScript UI was removed and the"
+    @echo "AffineScript-TEA pipeline is not wired yet (issues #117, #266)."
+    @echo "Sources: src/ui/tea/echidna_gui.affine; shell: src/ui/public/."
+    @exit 1
 
-# Start ReScript compiler in watch mode
-watch-ui:
-    cd src/rescript && deno task res:dev
-
-# Start Deno dev server for UI
-dev-ui:
-    cd src/rescript && deno task dev
-
-# Serve production UI build
+# Serve the static UI shell (no compile step)
 serve-ui:
-    cd src/rescript && deno task serve
+    cd src/ui/public && deno run --allow-net --allow-read jsr:@std/http/file-server
 
 # Launch full ECHIDNA GUI (Backend + UI + Browser)
 gui:
@@ -543,7 +545,7 @@ gui:
     cargo run -- server --port 8081 --cors > /dev/null 2>&1 & BACKEND_PID=$!
     echo "Started backend (PID $BACKEND_PID)"
     # Start UI server
-    cd src/rescript && deno task serve > /dev/null 2>&1 & UI_PID=$!
+    (cd src/ui/public && deno run --allow-net --allow-read jsr:@std/http/file-server) > /dev/null 2>&1 & UI_PID=$!
     echo "Started UI server (PID $UI_PID)"
     # Cleanup on exit
     trap "kill $BACKEND_PID $UI_PID 2>/dev/null || true" EXIT
@@ -947,8 +949,8 @@ tour:
     echo "     src/abi/   - Idris2 formal type definitions"
     echo "     ffi/zig/   - Zig FFI bridge (4 shared libraries)"
     echo ""
-    echo "5. UI: src/rescript/"
-    echo "   ReScript + Deno frontend (33 files, zero TypeScript)."
+    echo "5. UI: src/ui/"
+    echo "   AffineScript-TEA (src/ui/tea/) + static shell (src/ui/public/)."
     echo ""
     echo "6. BUILD SYSTEM:"
     echo "   Cargo.toml   - Rust workspace"

@@ -1,5 +1,5 @@
 // SPDX-FileCopyrightText: 2026 ECHIDNA Project Team
-// SPDX-License-Identifier: MPL-2.0
+// SPDX-License-Identifier: AGPL-3.0-or-later
 
 //! CryptoVerif backend — automatic prover for cryptographic protocols
 //! in the computational model.
@@ -74,7 +74,7 @@ impl CryptoVerifBackend {
     /// emitted as the `query` line that drives the prover.
     fn to_ocv(state: &ProofState) -> String {
         let mut ocv = String::new();
-        ocv.push_str("(* SPDX-License-Identifier: MPL-2.0 *)\n");
+        ocv.push_str("(* SPDX-License-Identifier: AGPL-3.0-or-later *)\n");
         ocv.push_str("(* CryptoVerif input synthesised by ECHIDNA *)\n\n");
         for axiom in &state.context.axioms {
             ocv.push_str(&format!("def {}.\n", axiom));

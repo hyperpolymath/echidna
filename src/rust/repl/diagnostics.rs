@@ -1,4 +1,4 @@
-// SPDX-License-Identifier: MPL-2.0
+// SPDX-License-Identifier: AGPL-3.0-or-later
 // Interactive diagnostics REPL for echidna
 
 use std::io::{self, Write};

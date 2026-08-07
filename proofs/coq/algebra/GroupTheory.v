@@ -1,4 +1,4 @@
-(* SPDX-License-Identifier: MPL-2.0
+(* SPDX-License-Identifier: AGPL-3.0-or-later
    Copyright (c) 2026 ECHIDNA Project
    Group Theory: self-contained abstract algebra for training corpus.
 
