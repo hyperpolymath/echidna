@@ -6,7 +6,7 @@ ADR-style record of the CI triage done while landing PR #73 and the
 two baseline-blocker follow-ups (#86, #87). Written so future humans
 **and** agents do not re-litigate these red checks. Companion
 machine-readable record:
-`.machine_readable/6a2/STATE.a2ml § [session-2026-05-19-ci-baseline-triage]`.
+`.machine_readable/descriptiles/STATE.a2ml § [session-2026-05-19-ci-baseline-triage]`.
 
 ## TL;DR for anyone debugging echidna PR CI
 

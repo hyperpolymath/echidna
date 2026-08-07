@@ -4,8 +4,8 @@
 # ECHIDNA Architecture
 
 **Status**: canonical human-readable overview. Lives alongside the machine-readable
-[`.machine_readable/6a2/META.a2ml`](../.machine_readable/6a2/META.a2ml) (architecture
-decisions) and [`STATE.a2ml`](../.machine_readable/6a2/STATE.a2ml) (current state).
+[`.machine_readable/descriptiles/META.a2ml`](../.machine_readable/descriptiles/META.a2ml) (architecture
+decisions) and [`STATE.a2ml`](../.machine_readable/descriptiles/STATE.a2ml) (current state).
 Last revised: 2026-05-26.
 
 ECHIDNA — Extensible Cognitive Hybrid Intelligence for Deductive Neural Assistance —
@@ -157,4 +157,4 @@ retained only as debug fallback. See [`docs/handover/L1-CAPNPROTO-PROMPT.md`](ha
 - [`docs/ENV-VARS.md`](ENV-VARS.md) — every environment variable the system
   reads, with defaults.
 - [`docs/PROVER_COUNT.md`](PROVER_COUNT.md) — canonical tier table.
-- [`.machine_readable/6a2/STATE.a2ml`](../.machine_readable/6a2/STATE.a2ml) — machine-readable state, regenerated each sprint.
+- [`.machine_readable/descriptiles/STATE.a2ml`](../.machine_readable/descriptiles/STATE.a2ml) — machine-readable state, regenerated each sprint.

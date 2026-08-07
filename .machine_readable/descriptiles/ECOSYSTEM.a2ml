@@ -12,10 +12,12 @@ ecosystem = "hyperpolymath"
 [project]
 name = "ECHIDNA"
 full-name = "Extensible Cognitive Hybrid Intelligence for Deductive Neural Assistance"
-purpose = """Trust-hardened neurosymbolic theorem proving platform. 48 prover backends
-(Agda, Lean4, Isabelle, Coq, Idris2, F*, Z3, CVC5, Vampire, and 39 more). Sandboxed
-solver execution (Podman/bubblewrap), proof certificate checking, axiom tracking,
-GNN-guided proof search, Julia ML inference layer."""
+purpose = """Trust-hardened neurosymbolic theorem proving platform. 141 ProverKind
+variants across 105 backend implementations, 12 exposed by default at GET /api/provers
+(Agda, Coq, Lean 4, Isabelle/HOL, Z3, CVC5, Metamath, HOL Light, Mizar, PVS, ACL2, HOL4);
+canonical tier table and count semantics in docs/PROVER_COUNT.md. Sandboxed solver
+execution (Podman/bubblewrap), proof certificate checking, axiom tracking, GNN-guided
+proof search, Julia ML inference layer."""
 role = "prover-dispatcher"
 
 [position]

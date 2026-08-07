@@ -9,7 +9,8 @@ Declared intent and purpose for Echidna.
 ## Purpose
 
 Echidna is a trust-hardened neurosymbolic theorem proving platform.
-It supports 128 prover backends, records every proof attempt to
+It supports 141 ProverKind variants over 105 backend implementations
+(canonical count semantics: docs/PROVER_COUNT.md), records every proof attempt to
 VeriSimDB, and feeds the Hypatia learning loop so the fleet gets
 smarter over time.
 

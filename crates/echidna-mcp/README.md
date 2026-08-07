@@ -50,7 +50,7 @@ Or with an explicit binary path:
 
 ### `prove`
 
-Prove a theorem from a file using one of ECHIDNA's 105 backends.
+Prove a theorem from a file using one of ECHIDNA's prover backends (see [`docs/PROVER_COUNT.md`](../../docs/PROVER_COUNT.md)).
 
 | Parameter | Type | Required | Description |
 |-----------|------|----------|-------------|

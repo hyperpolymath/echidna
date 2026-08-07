@@ -10,8 +10,9 @@ component map and the 11-step trust pipeline walkthrough.
 ## Component map (one paragraph)
 
 ECHIDNA is a polyglot system. The **Rust core** (`src/rust/`, plus extracted
-workspace crates in `crates/`) owns dispatch, the trust pipeline, and the 128
-prover backend implementations. Four API surfaces (CLI, REPL, REST/GraphQL
+workspace crates in `crates/`) owns dispatch, the trust pipeline, and the prover
+backend implementations (105 implementation files behind 141 `ProverKind`
+variants — see [`docs/PROVER_COUNT.md`](https://github.com/hyperpolymath/echidna/blob/main/docs/PROVER_COUNT.md)). Four API surfaces (CLI, REPL, REST/GraphQL
 on port 8000, gRPC on port 50051) hit `ProverDispatcher`, which picks a
 backend, runs the verification under sandboxing (Podman / bubblewrap), and
 walks the proof through the trust pipeline. A **Julia ML sidecar**

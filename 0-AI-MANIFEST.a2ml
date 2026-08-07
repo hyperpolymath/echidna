@@ -46,7 +46,7 @@ proofs = "proofs/"
 container = "container/"
 
 [tech-stack]
-primary = "Rust (48 prover backends, trust pipeline, CLI, REPL, API servers)"
+primary = "Rust (141 ProverKind variants over 105 backend implementations — see docs/PROVER_COUNT.md; trust pipeline, CLI, REPL, API servers)"
 secondary = "Julia (ML inference, port 8090), ReScript+Deno (UI, 33 files, zero TypeScript)"
 optional = "Chapel (parallel proof dispatch)"
 abi = "Idris2 (7 modules, zero believe-me)"
@@ -56,8 +56,9 @@ build = "Justfile (primary), Cargo workspace"
 container = "Podman + Containerfile"
 
 [architecture]
-# Trust-hardened neurosymbolic theorem proving with 48 prover backends
-core = "src/rust/"                  # 48 provers, trust pipeline, dispatch
+# Trust-hardened neurosymbolic theorem proving; canonical backend count and
+# count semantics live in docs/PROVER_COUNT.md
+core = "src/rust/"                  # ProverKind enum + backends, trust pipeline, dispatch
 verification = "src/rust/verification/" # Portfolio, certificates, axiom tracker, confidence, mutation, pareto, statistics
 integrity = "src/rust/integrity/"   # Solver binary integrity (SHAKE3-512, BLAKE3)
 executor = "src/rust/executor/"     # Sandboxed execution (Podman, bubblewrap)

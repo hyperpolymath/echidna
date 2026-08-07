@@ -3,8 +3,25 @@ SPDX-License-Identifier: CC-BY-SA-4.0
 SPDX-FileCopyrightText: 2025-2026 Jonathan D.A. Jewell <j.d.a.jewell@open.ac.uk>
 -->
 
-[![OpenSSF Best Practices](https://img.shields.io/badge/OpenSSF-Best_Practices-green?logo=opensourcesecurity)](https://www.bestpractices.dev/en/projects/new?repo_url=https://github.com/hyperpolymath/echidna)
 [![License: AGPL-3.0-or-later](https://img.shields.io/badge/License-AGPL--3.0--or--later-blue.svg)](LICENSE) [![Green Hosting](https://api.thegreenwebfoundation.org/greencheckimage/nesy-prover.dev)](https://www.thegreenwebfoundation.org/green-web-check/?url=nesy-prover.dev)
+
+<!--
+The OpenSSF Best Practices badge was removed 2026-08-07: it was a hardcoded
+green shields.io label linking to the project *registration* form, so it
+displayed "passed" while the project was not registered and would have kept
+displaying it whatever the real standing. Restore the genuine dynamic badge
+once the project is registered at https://www.bestpractices.dev/ — the real
+one reports the achieved tier and changes when it lapses. Tracked as D3 in
+docs/DEBT.md.
+-->
+
+> **Licence notice.** This repository declares AGPL-3.0-or-later in `LICENSE`
+> and `Cargo.toml`, but per-file `SPDX-License-Identifier` headers across the
+> source tree still read `MPL-2.0`, and `NOTICE` still describes the project as
+> MPL-2.0. That inconsistency is unresolved — see
+> [`docs/DEBT.md`](docs/DEBT.md) (P0). If your use depends on the licence
+> terms, read `LICENSE` and ask the maintainer before relying on any other
+> surface.
 
 \*E\*xtensible \*C\*ognitive \*H\*ybrid \*I\*ntelligence for
 \*D\*eductive \*N\*eural \*A\*ssistance

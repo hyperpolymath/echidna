@@ -36,7 +36,7 @@ available.
   real release line is in `CHANGELOG.md`.
 . *Critical Reception Grade.* CRG-C is complete (unit + smoke + build + P2P +
   E2E + contract + aspect + benchmarks baselined, per
-  `.machine_readable/6a2/STATE.a2ml`); CRG-B criteria are populated but B is
+  `.machine_readable/descriptiles/STATE.a2ml`); CRG-B criteria are populated but B is
   *not* formally affirmed here.
 
 == Verified as of 2026-06-15 (green / reproduced)

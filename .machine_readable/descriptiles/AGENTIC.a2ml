@@ -3,7 +3,8 @@
 #
 # AGENTIC.a2ml — AI agent operational gating and proof-solving dispatch
 # Defines safety constraints, entropy budgets, and explicit-intent gating for AI agents
-# working in echidna (proof-solving service with 105 prover backends, 3GB training corpus).
+# working in echidna (proof-solving service; 141 ProverKind variants over 105 backend
+# implementations — see docs/PROVER_COUNT.md for count semantics; 3GB training corpus).
 
 [metadata]
 version = "0.3.0"

@@ -4,7 +4,7 @@
 # ECHIDNA Roadmap
 
 **Status**: canonical • supersedes the aspirational parts of
-[`FUTURE_DEVELOPMENT_ROADMAP.md`](./FUTURE_DEVELOPMENT_ROADMAP.md).
+`FUTURE_DEVELOPMENT_ROADMAP.md` (removed from the tree; see git history).
 **Last revised**: 2026‑06‑01 (doc-coherence pass; previous revisions 2026‑05‑30 truthfulness audit, 2026‑04‑20)
 **Scope**: the shortest honest path from today's repo to the endpoint vision.
 
@@ -223,7 +223,7 @@ follow a mould, localisation key additions.
 
 ## 6. Inheritance from existing planning docs
 
-* **[`docs/FUTURE_DEVELOPMENT_ROADMAP.md`](FUTURE_DEVELOPMENT_ROADMAP.md)**
+* **`docs/FUTURE_DEVELOPMENT_ROADMAP.md`** (removed from the tree; see git history)
   — 2026‑01‑29 vision document.  Its chapters on RL for tactic
   search (§1.1), active learning (§1.2), and distributed dispatch
   map onto Stages 3c / 4c and 5b/5c of this roadmap.  Retain as
@@ -244,7 +244,7 @@ follow a mould, localisation key additions.
 * **[`docs/handover/L3-LIVE-PROVER-CI-PROMPT.md`](handover/L3-LIVE-PROVER-CI-PROMPT.md)**
   — implementation brief for Stage 5d.
 * **[`docs/handover/STATE.md`](handover/STATE.md)** and
-  **[`.machine_readable/6a2/STATE.a2ml`](../.machine_readable/6a2/STATE.a2ml)**
+  **[`.machine_readable/descriptiles/STATE.a2ml`](../.machine_readable/descriptiles/STATE.a2ml)**
   — running log of session‑by‑session progress.  Continue to use as
   running state; sync highlights to §2 of this document at each
   sprint boundary.
