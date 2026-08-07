@@ -47,25 +47,3 @@ flags:
       - src/julia/
     carryforward: true
 
-  rescript:
-    paths:
-      - src/rescript/
-    carryforward: true
-
-# Component coverage
-component_management:
-  individual_components:
-    - component_id: rust_core
-      name: Rust Core
-      paths:
-        - src/rust/
-
-    - component_id: julia_ml
-      name: Julia ML
-      paths:
-        - src/julia/
-
-    - component_id: rescript_ui
-      name: ReScript UI
-      paths:
-        - src/rescript/

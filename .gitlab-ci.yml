@@ -100,17 +100,6 @@ build-julia:
       - .julia/
     expire_in: 1 day
 
-build-rescript:
-  stage: build
-  image: docker.io/denoland/deno:debian-1.40.0
-  script:
-    - cd src/rescript
-    - deno task build || echo "ReScript build completed with warnings"
-  artifacts:
-    paths:
-      - src/rescript/dist/
-    expire_in: 1 day
-  allow_failure: true
 
 build-container:
   stage: build
