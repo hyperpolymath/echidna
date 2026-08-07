@@ -5,7 +5,7 @@
 canonical-repo = "https://github.com/hyperpolymath/echidna"
 canonical-owner = "hyperpolymath"
 canonical-author = "Jonathan D.A. Jewell <j.d.a.jewell@open.ac.uk>"
-canonical-license = "MPL-2.0"
+canonical-license = "AGPL-3.0-or-later"
 mirrors = [
   "https://gitlab.com/hyperpolymath/echidna",
 ]

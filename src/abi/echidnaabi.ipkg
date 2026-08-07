@@ -10,7 +10,7 @@ package echidnaabi
 version = 0.2.0
 
 authors = "Jonathan D.A. Jewell"
-license = "MPL-2.0"
+license = "AGPL-3.0-or-later"
 brief   = "ECHIDNA ABI definitions with formal proofs for 30 prover backends (zero believe-me)"
 
 sourcedir = "."

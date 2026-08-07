@@ -196,7 +196,7 @@ let make = () => {
             {React.string("ECHIDNA v0.1.0 - Extensible Cognitive Hybrid Intelligence for Deductive Neural Assistance")}
           </p>
           <p className="text-gray-400 mt-1">
-            {React.string("MIT OR Palimpsest-0.6 License")}
+            {React.string("AGPL-3.0-or-later")}
           </p>
         </div>
       </footer>

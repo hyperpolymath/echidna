@@ -9,7 +9,7 @@ name = "echidna"
 version = "0.1.0"
 description = "echidna container service"
 author = "Jonathan D.A. Jewell <j.d.a.jewell@open.ac.uk>"
-license = "MPL-2.0"
+license = "AGPL-3.0-or-later"
 registry = "ghcr.io/hyperpolymath"
 
 [build]

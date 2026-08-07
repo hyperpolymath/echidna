@@ -1,5 +1,5 @@
 #!/bin/bash
-# SPDX-License-Identifier: AGPL-3.0-or-later OR Palimpsest-0.6
+# SPDX-License-Identifier: AGPL-3.0-or-later
 # ECHIDNA Interactive Demo - Proof of Commutativity
 
 set -e

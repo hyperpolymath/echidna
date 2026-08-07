@@ -1,12 +1,17 @@
 Format: https://www.debian.org/doc/packaging-manuals/copyright-format/1.0/
 Upstream-Name: echidna-ui
-Upstream-Contact: ECHIDNA Project Team
+Upstream-Contact: Jonathan D.A. Jewell <j.d.a.jewell@open.ac.uk>
 Source: https://github.com/hyperpolymath/echidna
 
-Files: package.json package-lock.json rescript.json deno.json import_map.json tailwind.config.js
-Copyright: 2025 ECHIDNA Project Team
-License: MIT OR Palimpsest-0.6
+# This sub-tree follows the repository-wide licensing set out in the root
+# NOTICE and .reuse/dep5: code is AGPL-3.0-or-later. The previous
+# "MIT OR Palimpsest-0.6" declaration here predated the MPL and then AGPL
+# migrations and was never updated.
 
-Files: node_modules/* .gitignore
-Copyright: Various
-License: MIT OR Palimpsest-0.6
+Files: package.json package-lock.json rescript.json deno.json import_map.json tailwind.config.js
+Copyright: 2025-2026 Jonathan D.A. Jewell <j.d.a.jewell@open.ac.uk> and ECHIDNA Project Contributors
+License: AGPL-3.0-or-later
+
+Files: .gitignore
+Copyright: 2025-2026 Jonathan D.A. Jewell <j.d.a.jewell@open.ac.uk> and ECHIDNA Project Contributors
+License: AGPL-3.0-or-later

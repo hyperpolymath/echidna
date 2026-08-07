@@ -42,11 +42,20 @@ this.
 In short: the whole distributed work is AGPL-3.0-or-later. If you extract
 echidna-playground/ on its own, you may use it under MPL-2.0.
 
-A small number of files additionally offer Palimpsest-0.6 as an alternative
-or additional grant (`AGPL-3.0-or-later OR Palimpsest-0.6`, or `... AND ...`).
-Those grants are preserved as originally made. Note that the Palimpsest-0.6
-licence text is not currently distributed with this repository - see
-docs/DEBT.md.
+THE PALIMPSEST FRAMEWORK IS NOT A LICENCE GRANT HERE
+
+ECHIDNA references the Palimpsest License as an ethical / philosophical
+framework - a discipline about how contributions are received, attributed and
+forwarded. That reference stands, and is orthogonal to the SPDX identifiers
+above.
+
+It is not a legal grant in this repository. The Palimpsest licence proper is
+the legal licence only on `palimpsest-license`, `palimpsest-plasma` and
+(prospectively) `consent-aware-http`. Some files here previously carried
+`... OR Palimpsest-0.6` or `... AND Palimpsest-0.6` SPDX identifiers; those
+were drift rather than a deliberate grant, referenced a version superseded by
+the `palimpsest-license` repository, and had no licence text distributed with
+this repository. They were removed in 2026-08.
 
 LICENCE HISTORY
 

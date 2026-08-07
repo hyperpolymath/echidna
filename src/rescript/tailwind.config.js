@@ -1,4 +1,4 @@
-// SPDX-License-Identifier: MIT OR Palimpsest-0.6
+// SPDX-License-Identifier: AGPL-3.0-or-later
 // SPDX-FileCopyrightText: 2025 ECHIDNA Project Team
 
 /** @type {import('tailwindcss').Config} */

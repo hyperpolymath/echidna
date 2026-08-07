@@ -6,7 +6,7 @@
 project = "echidna"
 full-name = "Extensible Cognitive Hybrid Intelligence for Deductive Neural Assistance"
 author = "Jonathan D.A. Jewell <j.d.a.jewell@open.ac.uk>"
-license = "MPL-2.0"
+license = "AGPL-3.0-or-later"
 standard = "RSR 2026"
 version = "2.2.0"
 last-updated = "2026-04-28"

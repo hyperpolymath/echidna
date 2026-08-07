@@ -1,4 +1,4 @@
-%% SPDX-License-Identifier: AGPL-3.0-or-later OR Palimpsest-0.6
+%% SPDX-License-Identifier: AGPL-3.0-or-later
 %% ECHIDNA Security Rule Learning Module
 %% Learns security patterns from cicd-hyper-a audit data
 

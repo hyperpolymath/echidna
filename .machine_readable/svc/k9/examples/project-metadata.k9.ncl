@@ -40,7 +40,7 @@ K9!
       organization = "The Open University",
     },
 
-    license = "MPL-2.0",
+    license = "AGPL-3.0-or-later",
 
     keywords = [
       "rhodium-standard",

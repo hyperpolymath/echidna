@@ -11,7 +11,7 @@ version = "1.1"
 project = "echidna"
 type = "neurosymbolic-theorem-prover"
 full-version = "1.6.0"
-license = "MPL-2.0"
+license = "AGPL-3.0-or-later"
 author = "Jonathan D.A. Jewell <j.d.a.jewell@open.ac.uk>"
 repo = "https://github.com/hyperpolymath/echidna"
 

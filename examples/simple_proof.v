@@ -1,4 +1,4 @@
-(* SPDX-License-Identifier: AGPL-3.0-or-later OR Palimpsest-0.6 *)
+(* SPDX-License-Identifier: AGPL-3.0-or-later *)
 (* Simple Coq proof demonstrating ECHIDNA capabilities *)
 
 (** * Simple Arithmetic Proof

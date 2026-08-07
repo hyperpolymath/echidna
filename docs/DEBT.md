@@ -68,22 +68,69 @@ git grep -I -h -m1 -oP 'SPDX-License-Identifier:\s*\K[A-Za-z0-9.\-+]+( (AND|OR) 
 gh repo view hyperpolymath/echidna --json licenseInfo
 ```
 
-### Residual — `Palimpsest-0.6` has no licence text
+### Closed — `Palimpsest-0.6` grants removed
 
-Seven files offer `Palimpsest-0.6` as an alternative or additional grant
-(`AGPL-3.0-or-later OR Palimpsest-0.6`, and two with `AND`). **No
-`Palimpsest-0.6` text exists in this repository or anywhere in the estate**
-(`find . -iname '*palimpsest*'` and `ls ../standards/LICENSES/` both come back
-without it), so the identifier is unresolvable and REUSE cannot validate it.
+Seven files (later found to be 29) carried `Palimpsest-0.6` in their SPDX
+identifier. The owner ruled these were never a deliberate legal grant:
+`CONTRIBUTING.adoc` already recorded that the Palimpsest licence proper "is
+the legal licence only on `palimpsest-license`, `palimpsest-plasma`, and
+(prospectively) `consent-aware-http`", and that in ECHIDNA it is an *ethical
+framework* reference, orthogonal to the SPDX choice. Version 0.6 is also
+superseded by the `hyperpolymath/palimpsest-license` repository.
 
-The grants were **preserved rather than dropped** — removing half of a dual
-licence withdraws a permission the owner granted, which is not a
-documentation decision. Resolve by supplying `LICENSES/Palimpsest-0.6.txt`,
-or by deciding the Palimpsest grant is retired and removing it deliberately.
+All Palimpsest SPDX identifiers were therefore removed. The framework
+reference is preserved in `CONTRIBUTING.adoc` and `NOTICE`, which now state
+explicitly that it is not a grant, so this cannot drift back in silently.
 
-Note `docs/legal/texts/PMPL-1.0-or-later.txt` exists and the estate's
-`standards/LICENSES/` carries `PMPL-1.0-or-later.txt` — PMPL and Palimpsest
-are different identifiers, and only the former has a text.
+Two exclusions, deliberate: `training_data/proof_states_v2.jsonl` contains
+SPDX strings as *scraped corpus content* (proof goals harvested from files,
+recorded as data — editing them would corrupt the corpus), and `docs/legal/`
+holds licence reference texts.
+
+### Closed — three further licence-drift classes found by the deeper sweep
+
+The SPDX-header sweep alone would have missed all of these. Recorded because
+each is a distinct class worth re-checking after any future licence change:
+
+1. **Stale `MIT` grants.** `src/rescript/.gitignore`, `styles/main.css` and
+   `tailwind.config.js` still declared `MIT OR Palimpsest-0.6` — pre-dating
+   even the MPL migration. Removing only the Palimpsest half would have left
+   them **MIT**. Now AGPL-3.0-or-later.
+2. **Machine-readable `license:` fields**, which are what packaging and
+   tooling actually read, and which carry no `SPDX-License-Identifier:` line
+   for a header sweep to match. Eight declared MPL-2.0:
+   `docs-site/.well-known/aibdp.json` (served on the site), `stapeln.toml`,
+   `container/manifest.toml`, three Ada `alire.toml` manifests under `spark/`,
+   `.machine_readable/descriptiles/META.a2ml`, and `0-AI-MANIFEST.a2ml`.
+   Plus a **nested `src/rescript/.reuse/dep5`** declaring `MIT OR
+   Palimpsest-0.6` for the UI sub-tree.
+3. **A user-facing licence string.** `src/rescript/src/Main.res` rendered
+   `"MIT OR Palimpsest-0.6 License"` in the UI — a false licence statement
+   shown to users, invisible to every header-based check.
+4. **OCI image labels** — 16 `LABEL org.opencontainers.image.licenses="MPL-2.0"`
+   across `Containerfile`, `container/Containerfile`, and the
+   `.containerization/` tree (11 in `Containerfile.wave3` alone, one per
+   per-prover stage). These are **baked into every image published to
+   ghcr.io** and read by registries, SBOM generators and supply-chain
+   scanners, so the wrong value propagates downstream of the repository
+   entirely. Also `canonical-license` in
+   `.machine_readable/anchors/ANCHOR.a2ml` and two Idris2 `.ipkg` manifests.
+
+**Detector for next time** — a header sweep is not sufficient:
+
+```bash
+git grep -In '"license"' -- '*.json'
+git grep -In '^license'   -- '*.toml' '*.a2ml'
+git grep -In '^licenses'  -- '*.toml'
+find . -name dep5 -not -path './.git/*'          # nested REUSE configs
+git grep -InE '"(MIT|MPL|AGPL|Apache)[^"]*"' -- 'src/' 'site/'   # UI strings
+git grep -In 'org.opencontainers.image.licenses'                 # OCI labels
+
+# or, exhaustively — by value rather than by file type, which is what
+# actually caught the last three classes:
+git grep -InE '(license|licenses|licence)\s*[:=]\s*"?(MPL-2\.0|MIT|Palimpsest)' \
+  | grep -v '^echidna-playground/'
+```
 
 ---
 
