@@ -62,7 +62,7 @@ jobs:
 
       - name: Setup Haskell
         if: steps.detect.outputs.relevant == 'true'
-        uses: haskell-actions/setup@v2.11.0
+        uses: haskell-actions/setup@v2.12.0
         with:
           ghc-version: '9.6'
           cabal-version: '3.10'
