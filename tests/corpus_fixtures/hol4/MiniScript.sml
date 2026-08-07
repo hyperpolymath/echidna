@@ -1,5 +1,5 @@
 (* SPDX-FileCopyrightText: 2026 ECHIDNA Project Team
-   SPDX-License-Identifier: MPL-2.0
+   SPDX-License-Identifier: AGPL-3.0-or-later
    Smoke fixture for the HOL4 corpus adapter. *)
 
 open HolKernel boolLib bossLib;

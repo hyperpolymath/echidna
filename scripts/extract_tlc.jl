@@ -1,5 +1,5 @@
 #!/usr/bin/env julia
-# SPDX-License-Identifier: MPL-2.0
+# SPDX-License-Identifier: AGPL-3.0-or-later
 # Extract TLC model-checker inputs from tlaplus/examples (same repo as TLAPS).
 # TLC checks specifications rather than proves theorems; records capture
 # spec+invariant pairs as proof-state analogues.

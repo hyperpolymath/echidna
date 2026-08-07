@@ -1,4 +1,4 @@
-(* SPDX-License-Identifier: MPL-2.0 *)
+(* SPDX-License-Identifier: AGPL-3.0-or-later *)
 (* security.sml — Security-focused overlay for HOL-o-extension
  *
  * Adds theories and tactics for security protocol verification,

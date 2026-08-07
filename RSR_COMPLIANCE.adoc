@@ -7,7 +7,7 @@ Jonathan D.A. Jewell <j.d.a.jewell@open.ac.uk>
 :toc:
 
 Status: living document, regenerated as policy changes.
-Canonical state: `.machine_readable/6a2/STATE.a2ml`.
+Canonical state: `.machine_readable/descriptiles/STATE.a2ml`.
 Canonical policy: `MUST.contractile`, `ADJUST.contractile`,
 `.machine_readable/policies/*.a2ml`.
 
@@ -49,7 +49,7 @@ the contractiles and the machine-readable policies above.
 ECHIDNA diverges from the strict RSR template in three places:
 
 1. *State file location*: RSR template puts `STATE.scm` at root; echidna
-   places it at `.machine_readable/6a2/STATE.a2ml` per the `.scm → .a2ml`
+   places it at `.machine_readable/descriptiles/STATE.a2ml` per the `.scm → .a2ml`
    migration documented in `.claude/CLAUDE.md`.
 2. *Polyglot source layout*: `src/` contains per-language subdirectories
    (`src/rust/`, `src/julia/`, `src/abi/`, `src/chapel/`, `src/zig_ffi/`,

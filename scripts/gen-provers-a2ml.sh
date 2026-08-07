@@ -18,7 +18,7 @@ if [ -z "$VARIANT_LIST" ] || [ ! -r "$VARIANT_LIST" ]; then
 fi
 
 cat << 'HEADER'
-# SPDX-License-Identifier: MPL-2.0
+# SPDX-License-Identifier: AGPL-3.0-or-later
 # SPDX-FileCopyrightText: 2026 Jonathan D.A. Jewell <j.d.a.jewell@open.ac.uk>
 #
 # provers.a2ml — Authoritative enumeration of ECHIDNA prover backends.

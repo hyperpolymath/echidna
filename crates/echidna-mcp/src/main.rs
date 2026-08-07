@@ -1,4 +1,4 @@
-// SPDX-License-Identifier: MPL-2.0
+// SPDX-License-Identifier: AGPL-3.0-or-later
 
 //! ECHIDNA MCP Server — exposes the `echidna` CLI as Model Context Protocol
 //! tools so Claude Code / Claude API agents can call on the 105-prover

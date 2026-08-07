@@ -1,5 +1,5 @@
 #!/usr/bin/env julia
-# SPDX-License-Identifier: MPL-2.0
+# SPDX-License-Identifier: AGPL-3.0-or-later
 # Copyright (c) 2026 Jonathan D.A. Jewell (hyperpolymath)
 #
 # SMT-LIB benchmark extractor for ECHIDNA training data.
@@ -396,7 +396,7 @@ function save_results(proof_states, tactics, premises, stats; output_dir="traini
     )
 
     open(joinpath(output_dir, "stats_smtlib.a2ml"), "w") do fh
-        println(fh, "# SPDX-License-Identifier: MPL-2.0")
+        println(fh, "# SPDX-License-Identifier: AGPL-3.0-or-later")
         println(fh, "# SMT-LIB extraction statistics")
         println(fh)
         A2MLEmit.write_metadata_table(fh, stats)

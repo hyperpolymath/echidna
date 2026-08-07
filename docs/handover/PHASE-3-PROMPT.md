@@ -222,7 +222,7 @@ doesn't have to re-derive them:
    via `Command::spawn().context(...)`.)
 6. `docs/ROADMAP.md` row "Every important solver" updated with the
    new ProverKind count (currently 128 → 134 after Phase 3 closes).
-7. `PROOF-NEEDS.md` and `.machine_readable/6a2/STATE.a2ml`
+7. `PROOF-NEEDS.md` and `.machine_readable/descriptiles/STATE.a2ml`
    reflect the closure of Phase 3.
 
 ## Non-goals

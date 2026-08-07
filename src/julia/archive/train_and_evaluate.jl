@@ -1,6 +1,6 @@
 #!/usr/bin/env julia
 # ARCHIVED 2026-05-24 — superseded by src/julia/run_training.jl. Kept for history only; do not invoke.
-# SPDX-License-Identifier: MPL-2.0
+# SPDX-License-Identifier: AGPL-3.0-or-later
 # Train GNN model and evaluate on validation set, outputting metrics for health monitoring
 
 using JSON3

@@ -1,5 +1,5 @@
 #!/usr/bin/env julia
-# SPDX-License-Identifier: MPL-2.0
+# SPDX-License-Identifier: AGPL-3.0-or-later
 # Copyright (c) 2026 Jonathan D.A. Jewell (hyperpolymath) <j.d.a.jewell@open.ac.uk>
 #
 # A2ML emitter for training-corpus records.
@@ -130,7 +130,7 @@ function write_records_file(
     header::Union{AbstractString,Nothing}=nothing,
 )
     open(path, "w") do io
-        println(io, "# SPDX-License-Identifier: MPL-2.0")
+        println(io, "# SPDX-License-Identifier: AGPL-3.0-or-later")
         println(io, "# Copyright (c) 2026 Jonathan D.A. Jewell (hyperpolymath)")
         if header !== nothing
             for line in split(header, '\n')

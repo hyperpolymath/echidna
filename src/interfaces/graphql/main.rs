@@ -1,4 +1,4 @@
-// SPDX-License-Identifier: MPL-2.0
+// SPDX-License-Identifier: AGPL-3.0-or-later
 // ECHIDNA GraphQL Interface - Main server
 
 use async_graphql::{EmptySubscription, Schema};

@@ -3,8 +3,27 @@ SPDX-License-Identifier: CC-BY-SA-4.0
 SPDX-FileCopyrightText: 2025-2026 Jonathan D.A. Jewell <j.d.a.jewell@open.ac.uk>
 -->
 
-[![OpenSSF Best Practices](https://img.shields.io/badge/OpenSSF-Best_Practices-green?logo=opensourcesecurity)](https://www.bestpractices.dev/en/projects/new?repo_url=https://github.com/hyperpolymath/echidna)
 [![License: AGPL-3.0-or-later](https://img.shields.io/badge/License-AGPL--3.0--or--later-blue.svg)](LICENSE) [![Green Hosting](https://api.thegreenwebfoundation.org/greencheckimage/nesy-prover.dev)](https://www.thegreenwebfoundation.org/green-web-check/?url=nesy-prover.dev)
+
+<!--
+The OpenSSF Best Practices badge was removed 2026-08-07: it was a hardcoded
+green shields.io label linking to the project *registration* form, so it
+displayed "passed" while the project was not registered and would have kept
+displaying it whatever the real standing. Restore the genuine dynamic badge
+once the project is registered at https://www.bestpractices.dev/ — the real
+one reports the achieved tier and changes when it lapses. Tracked as D3 in
+docs/DEBT.md.
+-->
+
+> **Licensing.** ECHIDNA is licensed in four parts: **application code** under
+> AGPL-3.0-or-later; the **machine-readable specification surface**
+> (`.machine_readable/`, manifests, OCI labels) under MPL-2.0, deliberately
+> weak-copyleft so it stays usable for interoperability and standards work;
+> **documentation** under CC-BY-SA-4.0; and **`echidna-playground/`** under
+> MPL-2.0. The combined work distributes as AGPL-3.0-or-later — run a
+> modified ECHIDNA as a network service and you must offer your users the
+> modified source. MPL §3.3 (Secondary Licenses) is what makes the MPL parts
+> compatible inside the AGPL work. Full statement: [`NOTICE`](NOTICE).
 
 \*E\*xtensible \*C\*ognitive \*H\*ybrid \*I\*ntelligence for
 \*D\*eductive \*N\*eural \*A\*ssistance

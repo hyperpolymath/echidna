@@ -1,4 +1,4 @@
--- SPDX-License-Identifier: MPL-2.0
+-- SPDX-License-Identifier: AGPL-3.0-or-later
 -- Trivial Agda goal: identity on Unit. Accepted by `agda --safe`.
 -- Module name MUST match the filename written by tryProver — the
 -- registry entry for Agda sets filenameOverride = "Trivial.agda"

@@ -151,31 +151,61 @@ the `Documentation` section of `README.adoc`.
 
 == License and SPDX
 
-This project is licensed under MPL-2.0; new source files carry the
-header:
+ECHIDNA is licensed in three parts. Use the licence of the part of the
+tree your file sits in — do not copy a header from elsewhere:
+
+[cols="1,1"]
+|===
+| Part | SPDX identifier
+
+| Application code — `src/`, `crates/`, `ffi/`, `proofs/`, `spark/`,
+  `verification/`, `scripts/`, build system, CI
+| `AGPL-3.0-or-later`
+
+| Machine-readable specification surface — `.machine_readable/`,
+  `0-AI-MANIFEST.a2ml`, package/container manifests, OCI image labels
+| `MPL-2.0`
+
+| Documentation — `docs/`, top-level `.md` / `.adoc`
+| `CC-BY-SA-4.0`
+
+| `echidna-playground/` — the Coq-Jr sub-project
+| `MPL-2.0`
+|===
+
+The specification surface is weak-copyleft on purpose. It is metadata and
+spec material intended for interoperability, some of it on a path to
+standards-body submission, where strong copyleft would obstruct adoption
+and re-publication. Improvements to those files stay open; implementing
+against them carries no obligation.
+
+New files carry two lines, with the SPDX identifier *first* (the
+workflow linter checks line 1):
 
 [source]
 ----
-// SPDX-License-Identifier: CC-BY-SA-4.0
+// SPDX-License-Identifier: AGPL-3.0-or-later
 // SPDX-FileCopyrightText: <year> <name> <email>
 ----
 
-Don't migrate existing files' SPDX identifiers without explicit owner
-direction — the license stance is intentionally MPL-2.0 across the
-documentation surface, and historical drift on individual files is
-owner-managed.
+`NOTICE` explains why an MPL-2.0 component is compatible inside an
+AGPL work (MPL-2.0 §3.3, Secondary Licenses) and carries the full
+statement.
 
-ECHIDNA's contribution model historically references the
-*Palimpsest License* as an ethical / philosophical framework
-alongside the legal licence. That framework reference is preserved
-as part of the project's stance: the *legal* licence remains as
-declared by the SPDX header on each file (MPL-2.0 for the
-documentation surface; historical drift owner-managed). The
-Palimpsest framework is a discipline about how contributions are
-received, attributed, and forwarded — orthogonal to the SPDX
-choice. The Palimpsest licence proper is the legal licence only on
-`palimpsest-license`, `palimpsest-plasma`, and (prospectively)
-`consent-aware-http`.
+=== The Palimpsest framework is not a licence grant here
+
+ECHIDNA's contribution model references the *Palimpsest License* as an
+ethical / philosophical framework: a discipline about how contributions
+are received, attributed, and forwarded. That reference is preserved
+and is orthogonal to the SPDX choice.
+
+It is *not* a legal grant in this repository. The Palimpsest licence
+proper is the legal licence only on `palimpsest-license`,
+`palimpsest-plasma`, and (prospectively) `consent-aware-http`. Some
+files here previously carried `... OR Palimpsest-0.6` /
+`... AND Palimpsest-0.6` SPDX identifiers; those were drift, not a
+deliberate grant, and were removed in 2026-08. Do not reintroduce a
+Palimpsest identifier into an SPDX header in this repository.
 
 == Security
 

@@ -1,4 +1,4 @@
--- SPDX-License-Identifier: MPL-2.0
+-- SPDX-License-Identifier: AGPL-3.0-or-later
 -- (MPL-2.0 is automatic legal fallback until PMPL is formally recognised)
 --
 -- Axiom_C_Bridge — C-callable wrapper around the SPARK Enforce function.

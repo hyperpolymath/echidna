@@ -1,4 +1,4 @@
-// SPDX-License-Identifier: MPL-2.0
+// SPDX-License-Identifier: AGPL-3.0-or-later
 //! Imandra ML-based reasoning backend for industrial verification
 #![allow(dead_code)]
 use super::{ProverBackend, ProverConfig, ProverKind};

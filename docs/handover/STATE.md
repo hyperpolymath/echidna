@@ -90,7 +90,7 @@ Also corrected 2026-04-19 (were mis-listed as "planned"):
 - **Zig FFI** for C-ABI bridges to polyglot consumers.
 - **Justfile** primary build system; not Make.
 - **Containerfile** + Podman; not Dockerfile / Docker.
-- **State files in `.machine_readable/6a2/` only**; never root.
+- **State files in `.machine_readable/descriptiles/` only**; never root.
 - **All interfaces under `src/interfaces/`**; never extract to separate repos.
 - **When adding provers: update all 3 layers** (Rust backend, Julia ML, Chapel).
 - **Original name: "Cognitive Hybrid"** not "Computational Heuristic".
@@ -135,7 +135,7 @@ Also corrected 2026-04-19 (were mis-listed as "planned"):
 | `verification-ecosystem/echidna/docs/handover/L1-CAPNPROTO-PROMPT.md` | L1 Cap'n Proto continuation prompt |
 | `verification-ecosystem/echidna/docs/handover/L2-CHAPEL-PROMPT.md` | L2 Chapel continuation prompt |
 | `verification-ecosystem/echidna/docs/handover/L3-LIVE-PROVER-CI-PROMPT.md` | L3 live-prover continuation prompt (marked Wave-2 DONE, pointing to Wave-3) |
-| `verification-ecosystem/echidna/.machine_readable/6a2/STATE.a2ml` | Session ledger incl. `[l3-status-after-wave-2]` + `[wave-3-handover-hints]` |
+| `verification-ecosystem/echidna/.machine_readable/descriptiles/STATE.a2ml` | Session ledger incl. `[l3-status-after-wave-2]` + `[wave-3-handover-hints]` |
 | `verification-ecosystem/echidna/docs/handover/README.md` | Index + drift-handling policy |
 
 ## Session log highlights (2026-04-26)

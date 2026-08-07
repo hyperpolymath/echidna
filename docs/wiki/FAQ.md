@@ -4,9 +4,17 @@
 
 ## How many provers are supported?
 
-**128 total** ProverKind variants: 89 external prover bindings plus 39 TypeChecker disciplines routed via TypedWasm Sigma.
+There is no single number, and that is the honest answer rather than a dodge:
+the tree contains **141 `ProverKind` variants** across **105 backend
+implementation files**, of which **102** provide `suggest_tactics`. Which figure
+is "the" count depends on what you are counting.
+[`docs/PROVER_COUNT.md`](https://github.com/hyperpolymath/echidna/blob/main/docs/PROVER_COUNT.md)
+is canonical and ships the commands that reproduce each one.
 
-Of these, **12 core** are exposed by the default REST API: Coq/Rocq, Lean 4, Agda, Isabelle/HOL, Idris 2, F\*, Z3, CVC5, Alt-Ergo, Dafny, Vampire, E Prover. The remaining 116 are reachable via explicit `ProverKind` selection in CLI / REPL / GraphQL.
+**12 core** backends are exposed by the default REST API, mirroring
+`ProverKind::all_core()`: Agda, Coq, Lean 4, Isabelle/HOL, Z3, CVC5, Metamath,
+HOL Light, Mizar, PVS, ACL2, HOL4. Everything else is reachable via explicit
+`ProverKind` selection in CLI / REPL / GraphQL.
 
 The full tier table lives in [`docs/PROVER_COUNT.md`](https://github.com/hyperpolymath/echidna/blob/main/docs/PROVER_COUNT.md).
 
@@ -34,12 +42,48 @@ No. **The repo wins** when the wiki and the in-repo docs disagree. The wiki is a
 
 Canonical sources of truth:
 - [`CLAUDE.md`](https://github.com/hyperpolymath/echidna/blob/main/CLAUDE.md) for codebase orientation
-- [`.machine_readable/6a2/STATE.a2ml`](https://github.com/hyperpolymath/echidna/blob/main/.machine_readable/6a2/STATE.a2ml) for current state
+- [`.machine_readable/descriptiles/STATE.a2ml`](https://github.com/hyperpolymath/echidna/blob/main/.machine_readable/descriptiles/STATE.a2ml) for current state
 - [`docs/ROADMAP.md`](https://github.com/hyperpolymath/echidna/blob/main/docs/ROADMAP.md) for direction
 
-## Why MPL-2.0 and not MIT or AGPL?
+## What licence is ECHIDNA under?
 
-Practical balance: weak copyleft at the file level (modifications to MPL'd files must be open) without copyleft-by-linking (so downstream commercial use is straightforward). The project migrated from a dual MIT/Palimpsest-0.6 licence in 2026; `NOTICE` and `LICENSE` reflect the current state.
+Four, applying to four parts of the tree. This is deliberate, not drift.
+
+| Part | Licence |
+|---|---|
+| Application code — `src/`, `crates/`, `ffi/`, `proofs/`, `spark/`, `verification/`, build system, CI | **AGPL-3.0-or-later** |
+| Machine-readable specification surface — `.machine_readable/`, `0-AI-MANIFEST.a2ml`, package/container manifests, OCI image labels | **MPL-2.0** |
+| Documentation — `docs/`, top-level `.md` / `.adoc` | **CC-BY-SA-4.0** |
+| `echidna-playground/` — the Coq-Jr sub-project | **MPL-2.0** |
+
+The specification surface is weak-copyleft on purpose: it is metadata and spec
+material meant for interoperability, some of it on a path to standards-body
+submission, where strong copyleft would obstruct adoption. Improvements to
+those files stay open; implementing against them carries no obligation.
+
+**The combined work distributes as AGPL-3.0-or-later.** The network clause
+applies: if you run a modified ECHIDNA as a service, you must offer your users
+the modified source.
+
+**Why an MPL component is fine inside an AGPL project.** MPL-2.0 §3.3
+designates the GNU licences — including AGPL-3.0+ — as "Secondary Licenses".
+MPL-covered files may therefore be combined into an AGPL work and distributed
+under the AGPL, while remaining individually available under MPL. So if you
+extract an MPL-2.0 part on its own — the specification surface, or
+`echidna-playground/` — you may use it under MPL-2.0. The playground keeps MPL
+because it carries contributions from Coq-Jr Contributors, and relicensing
+someone else's contribution needs their consent.
+
+Files that previously offered `Palimpsest-0.6` now carry MPL-2.0: the
+Palimpsest Licence is MPL-2.0 with ethical provisions layered on top, so
+MPL-2.0 is the faithful reduction when that layer is not being asserted.
+
+Licence history: dual MIT/Palimpsest-0.6 → MPL-2.0 → AGPL-3.0-or-later for
+application code, with the specification surface deliberately held at MPL-2.0
+(2026-08). Anything describing the whole project as MPL-2.0 predates that;
+[`LICENSE`](https://github.com/hyperpolymath/echidna/blob/main/LICENSE) and
+[`NOTICE`](https://github.com/hyperpolymath/echidna/blob/main/NOTICE) are
+authoritative.
 
 ## How do I report a security issue?
 

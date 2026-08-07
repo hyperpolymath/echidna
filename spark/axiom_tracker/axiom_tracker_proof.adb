@@ -1,4 +1,4 @@
--- SPDX-License-Identifier: MPL-2.0
+-- SPDX-License-Identifier: AGPL-3.0-or-later
 --
 -- Proof obligations and gnatprove discharge notes for axiom_tracker.
 -- This file compiles to a no-op; all content is documentary.

@@ -3,7 +3,7 @@
 # ECHIDNA NPM Ban Enforcement Script
 # This script checks for and blocks npm/node usage
 #
-# SPDX-License-Identifier: MPL-2.0
+# SPDX-License-Identifier: AGPL-3.0-or-later
 
 set -euo pipefail
 

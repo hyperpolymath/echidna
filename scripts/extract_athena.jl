@@ -1,5 +1,5 @@
 #!/usr/bin/env julia
-# SPDX-License-Identifier: MPL-2.0
+# SPDX-License-Identifier: AGPL-3.0-or-later
 # Extract proofs / declarations / .ath files from Athena.
 # Vendor location: external_corpora/athena/
 using JSON3, Dates

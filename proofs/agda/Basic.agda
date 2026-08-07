@@ -1,5 +1,5 @@
 -- SPDX-FileCopyrightText: 2025 ECHIDNA Project Team
--- SPDX-License-Identifier: MPL-2.0 AND Palimpsest-0.6
+-- SPDX-License-Identifier: MPL-2.0
 --
 -- Basic.agda - Simple proofs demonstrating fundamental logical principles
 --
