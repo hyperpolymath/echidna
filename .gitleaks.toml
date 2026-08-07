@@ -1,0 +1,43 @@
+# SPDX-License-Identifier: MPL-2.0
+#
+# Gitleaks configuration — hyperpolymath/echidna
+#
+# EXTENDS THE ESTATE BASELINE, it does not replace it.
+# `.gitleaks-estate.toml` is staged into the workspace root by
+# hyperpolymath/standards `.github/workflows/secret-scanner-reusable.yml`
+# before the scan runs. gitleaks resolves `[extend] path` against the process
+# CWD (verified — NOT relative to this file), which is the repository root.
+#
+# WHY THIS FILE IS LOCAL RATHER THAN IN THE ESTATE BASELINE.
+# Every entry below is a blind spot. Held here, it blinds this repository only,
+# and the justification sits beside the code it describes. Promoted to the
+# estate baseline it would blind all 400+ repositories — so the baseline keeps
+# only entries that are true everywhere (lockfiles, vendored bundles, published
+# protocol constants).
+#
+# Each entry names WHAT THE VALUE IS. "This file is noisy" is not a reason; if
+# an entry cannot say what the matched value actually is, the secret should be
+# removed from the tree instead.
+#
+# Every finding suppressed here was triaged on 2026-08-06 by reading the
+# matched line with the value redacted. Before adding an entry, plant a
+# realistic secret in the same path and confirm it is STILL detected.
+
+[extend]
+path = ".gitleaks-estate.toml"
+
+[allowlist]
+description = "hyperpolymath/echidna: locally justified exemptions, extending the estate baseline"
+
+
+paths = [
+  # Declared machine-learning corpus. These JSONL files are training data
+  # FOR a security/proof analyser: containing credential-shaped strings is
+  # their entire purpose. 69 of this repo's 73 findings are this directory.
+  '''(^|/)training_data/[^/]*\.jsonl$''',
+
+  # Model vocabulary file — a token list extracted from the corpus above, so
+  # it inherits the same credential-shaped strings by construction.
+  '''(^|/)models/premise_vocab\.txt$''',
+
+]
