@@ -1,6 +1,6 @@
 #!/bin/bash
 # SPDX-FileCopyrightText: 2025 ECHIDNA Project Team
-# SPDX-License-Identifier: AGPL-3.0-or-later
+# SPDX-License-Identifier: MPL-2.0
 
 # Integration test runner for Rust↔Julia communication
 # Starts Julia test server, runs Rust integration tests, then stops server

@@ -1,5 +1,5 @@
 ; SPDX-FileCopyrightText: 2025 ECHIDNA Project Team
-; SPDX-License-Identifier: AGPL-3.0-or-later
+; SPDX-License-Identifier: MPL-2.0
 
 ;; Associativity of addition
 ;; Demonstrates ACL2's automated proof with induction

@@ -158,9 +158,13 @@ tree your file sits in — do not copy a header from elsewhere:
 |===
 | Part | SPDX identifier
 
-| Code — `src/`, `crates/`, `ffi/`, `proofs/`, `spark/`,
-  `verification/`, build system, CI, machine-readable metadata
+| Application code — `src/`, `crates/`, `ffi/`, `proofs/`, `spark/`,
+  `verification/`, `scripts/`, build system, CI
 | `AGPL-3.0-or-later`
+
+| Machine-readable specification surface — `.machine_readable/`,
+  `0-AI-MANIFEST.a2ml`, package/container manifests, OCI image labels
+| `MPL-2.0`
 
 | Documentation — `docs/`, top-level `.md` / `.adoc`
 | `CC-BY-SA-4.0`
@@ -168,6 +172,12 @@ tree your file sits in — do not copy a header from elsewhere:
 | `echidna-playground/` — the Coq-Jr sub-project
 | `MPL-2.0`
 |===
+
+The specification surface is weak-copyleft on purpose. It is metadata and
+spec material intended for interoperability, some of it on a path to
+standards-body submission, where strong copyleft would obstruct adoption
+and re-publication. Improvements to those files stay open; implementing
+against them carries no obligation.
 
 New files carry two lines, with the SPDX identifier *first* (the
 workflow linter checks line 1):

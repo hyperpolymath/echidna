@@ -4,7 +4,7 @@
 
 **ECHIDNA** — Extensible Cognitive Hybrid Intelligence for Deductive Neural Assistance — is a trust-hardened neurosymbolic theorem-proving platform with a large multi-backend prover surface, of which **12 core backends** are exposed by the default API. Counts differ depending on what is being counted; [`docs/PROVER_COUNT.md`](https://github.com/hyperpolymath/echidna/blob/main/docs/PROVER_COUNT.md) is canonical and carries the commands that reproduce each figure.
 
-**License**: three parts, by design — **code** under AGPL-3.0-or-later, **documentation** under CC-BY-SA-4.0, and **`echidna-playground/`** under MPL-2.0 (Coq-Jr contributions, deliberately not relicensed). The combined work distributes as AGPL-3.0-or-later, so running a modified ECHIDNA as a network service obliges you to offer users the modified source. The MPL component is compatible under MPL §3.3 (Secondary Licenses). Full statement: [`NOTICE`](https://github.com/hyperpolymath/echidna/blob/main/NOTICE).
+**License**: four parts, by design — **application code** under AGPL-3.0-or-later; the **machine-readable specification surface** (`.machine_readable/`, manifests, OCI image labels) under MPL-2.0, held weak-copyleft so it stays usable for interoperability and standards submission; **documentation** under CC-BY-SA-4.0; and **`echidna-playground/`** under MPL-2.0. The combined work distributes as AGPL-3.0-or-later, so running a modified ECHIDNA as a network service obliges you to offer users the modified source. MPL §3.3 (Secondary Licenses) is what makes the MPL parts compatible inside the AGPL work. Full statement: [`NOTICE`](https://github.com/hyperpolymath/echidna/blob/main/NOTICE).
 
 **Release history**: [`CHANGELOG.md`](https://github.com/hyperpolymath/echidna/blob/main/CHANGELOG.md); semver pin in [`Cargo.toml`](https://github.com/hyperpolymath/echidna/blob/main/Cargo.toml).
 
@@ -42,7 +42,7 @@ When the wiki and the repo disagree, **the repo wins**:
 - **4 arbitration mechanisms** — portfolio majority-vote, Bayesian posterior, Dempster-Shafer belief combination, Pareto multi-objective frontier.
 - **6 cross-prover exchange formats** — OpenTheory, Dedukti, TPTP, SMT-LIB, SMTCoq, Lambdapi.
 - **11-step trust pipeline** — integrity → portfolio → certificates → axioms → confidence → mutation → pareto → statistics → emission (see Architecture page).
-- **Polyglot stack** — Rust core, Julia ML sidecar, Idris2/Agda formal proofs, Zig FFI, Chapel parallel, AffineScript/Deno UI (migrating from ReScript).
+- **Polyglot stack** — Rust core, Julia ML sidecar, Idris2/Agda formal proofs, Zig FFI, Chapel parallel, AffineScript/Deno UI (ReScript removed 2026-08; the TEA compile pipeline is not wired yet — issues #117/#266).
 - **Guix-only package management** — sealed-container escape hatch for the non-free tail. (Nix fallback was deprecated in the 2026-05-18 estate ruling and fully removed estate-wide on 2026-06-01.)
 - **Justfile, not Make. Podman, not Docker.**
 

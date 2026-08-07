@@ -15,14 +15,15 @@ one reports the achieved tier and changes when it lapses. Tracked as D3 in
 docs/DEBT.md.
 -->
 
-> **Licensing.** ECHIDNA is licensed in three parts: **code** under
-> AGPL-3.0-or-later, **documentation** under CC-BY-SA-4.0, and
-> **`echidna-playground/`** under MPL-2.0 (Coq-Jr contributions, retained
-> deliberately — MPL §3.3 makes it compatible under the AGPL umbrella).
-> The combined work distributes as AGPL-3.0-or-later; run a modified ECHIDNA
-> as a network service and you must offer your users the modified source.
-> See [`NOTICE`](NOTICE) for the full statement and the compatibility
-> argument.
+> **Licensing.** ECHIDNA is licensed in four parts: **application code** under
+> AGPL-3.0-or-later; the **machine-readable specification surface**
+> (`.machine_readable/`, manifests, OCI labels) under MPL-2.0, deliberately
+> weak-copyleft so it stays usable for interoperability and standards work;
+> **documentation** under CC-BY-SA-4.0; and **`echidna-playground/`** under
+> MPL-2.0. The combined work distributes as AGPL-3.0-or-later — run a
+> modified ECHIDNA as a network service and you must offer your users the
+> modified source. MPL §3.3 (Secondary Licenses) is what makes the MPL parts
+> compatible inside the AGPL work. Full statement: [`NOTICE`](NOTICE).
 
 \*E\*xtensible \*C\*ognitive \*H\*ybrid \*I\*ntelligence for
 \*D\*eductive \*N\*eural \*A\*ssistance

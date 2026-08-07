@@ -79,7 +79,7 @@ FROM cgr.dev/chainguard/wolfi-base:latest
 LABEL maintainer="Jonathan D.A. Jewell <j.d.a.jewell@open.ac.uk>"
 LABEL org.opencontainers.image.source="https://github.com/hyperpolymath/echidna"
 LABEL org.opencontainers.image.description="ECHIDNA - Extensible Cognitive Hybrid Intelligence for Deductive Neural Assistance"
-LABEL org.opencontainers.image.licenses="AGPL-3.0-or-later"
+LABEL org.opencontainers.image.licenses="MPL-2.0"
 LABEL org.opencontainers.image.version="1.5.0"
 LABEL org.opencontainers.image.vendor="hyperpolymath"
 

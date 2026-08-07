@@ -8,9 +8,11 @@ Guidelines and context for working with Claude Code on the ECHIDNA project.
 
 - **Repository**: https://github.com/hyperpolymath/echidna
 - **Version + release history**: [`CHANGELOG.md`](CHANGELOG.md) (single source of truth; do not duplicate version strings elsewhere)
-- **License**: AGPL-3.0-or-later for code, CC-BY-SA-4.0 for documentation,
-  MPL-2.0 for `echidna-playground/` — see [`NOTICE`](NOTICE) for why the MPL
-  component is compatible (MPL §3.3 Secondary Licenses)
+- **License**: four parts — AGPL-3.0-or-later (application code), **MPL-2.0
+  (`.machine_readable/` specification surface + manifests + OCI labels, kept
+  weak-copyleft for interoperability/standards work)**, CC-BY-SA-4.0 (docs),
+  MPL-2.0 (`echidna-playground/`). See [`NOTICE`](NOTICE); MPL §3.3 is what
+  makes the MPL parts compatible inside the AGPL work
 - **Architecture overview**: [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md)
 - **Canonical prover count + tier table**: [`docs/PROVER_COUNT.md`](docs/PROVER_COUNT.md)
 - **Known debt (licence, docs, code)**: [`docs/DEBT.md`](docs/DEBT.md)
@@ -49,7 +51,7 @@ echidna/
 │   ├── abi/                # Idris2 formal ABI (EchidnaABI.TacticRecord, …)
 │   ├── chapel/             # Optional parallel proof dispatch (--features chapel)
 │   ├── julia/              # Julia ML components
-│   ├── rescript/, src/ui/  # UI — ReScript → AffineScript-TEA migration in flight
+│   ├── ui/                 # AffineScript-TEA UI (tea/) + static shell (public/)
 │   └── zig_ffi/, ffi/zig/  # Zig FFI bridge (C-ABI surface for backends)
 ├── .machine_readable/      # A2ML metadata, contractiles (MUST/ADJUST/TRUST/INTENT)
 ├── .github/workflows/      # CI/CD workflows
@@ -87,7 +89,7 @@ Follow conventional commit format:
 - **Idris2**: Formal ABI specifications + totality proofs (`src/abi/`); zero `believe_me`, zero postulates, zero admits, enforced by `idris2-abi-ci.yml`
 - **Zig**: C-ABI FFI bridge (`ffi/zig/`, `src/zig_ffi/`)
 - **Chapel**: Optional parallel proof dispatch (`--features chapel`)
-- **AffineScript + Deno** (canonical UI target; ReScript components are being ported)
+- **AffineScript + Deno**: the UI. ReScript was removed 2026-08 (banned language); the AffineScript-TEA compile pipeline is not wired yet — `just build-ui` fails deliberately rather than pretending (issues #117, #266)
 
 ### Prover Support
 
@@ -208,13 +210,16 @@ in `.github/workflows/`:
 - **RSR / CCCP compliance** — see [`RSR_COMPLIANCE.adoc`](RSR_COMPLIANCE.adoc) for the full hard-rule list and out-of-template adaptations.
 - **Justfile primary** (RSR-H14) — Just is the build entry point; no Make.
 - **Podman not Docker** (RSR-H15) — always Podman; `Containerfile` (not `Dockerfile`); `.containerization/Containerfile.wave3` for per-prover images.
-- **License**: three parts, reconciled 2026-08 — **code** AGPL-3.0-or-later
-  (matching `LICENSE` and `Cargo.toml`), **documentation** CC-BY-SA-4.0, and
-  **`echidna-playground/`** MPL-2.0 (Coq-Jr contributions, deliberately not
-  relicensed; compatible under MPL §3.3). Per-file SPDX headers are
-  authoritative and now match this split. When adding a file, use the licence
-  of the part of the tree it sits in — do not copy a header from elsewhere.
-  Rationale and the compatibility argument: [`NOTICE`](NOTICE).
+- **License**: four parts, reconciled 2026-08 — **application code**
+  AGPL-3.0-or-later (matching `LICENSE` and `Cargo.toml`); **machine-readable
+  specification surface** (`.machine_readable/`, `0-AI-MANIFEST.a2ml`,
+  package/container manifests, OCI image labels) MPL-2.0, held weak-copyleft
+  on purpose so it stays usable for interoperability and standards
+  submission; **documentation** CC-BY-SA-4.0; **`echidna-playground/`**
+  MPL-2.0 (Coq-Jr contributions, not relicensed). Per-file SPDX headers are
+  authoritative. When adding a file, use the licence of the part of the tree
+  it sits in — do not copy a header from elsewhere. Rationale and the MPL
+  §3.3 compatibility argument: [`NOTICE`](NOTICE).
 - **Author**: Jonathan D.A. Jewell <j.d.a.jewell@open.ac.uk>.
 
 ---

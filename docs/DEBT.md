@@ -249,15 +249,31 @@ whether the sink should be created or repointed.
 
 ## P2 — Code
 
-### C1. ReScript remains, though the language policy bans it
+### C1. ReScript — removed 2026-08
 
-31 files (`git ls-files '*.res' '*.resi' | wc -l`). Project policy names
-ReScript as banned with AffineScript-TEA as the replacement, and the migration
-is blocked on missing AffineScript primitives — `Http::fetch`, `Async`, `Json`
-— tracked in issues [#266](https://github.com/hyperpolymath/echidna/issues/266)
-and [#117](https://github.com/hyperpolymath/echidna/issues/117). The debt is the
-gap between a stated ban and an unmigrated tree, and the honest reading is that
-the policy is aspirational until those primitives land.
+The 37 ReScript files (24 in `src/rescript/`, 13 orphaned `.res` prover
+clients in `src/provers/`) were deleted, along with the build and CI wiring
+that referenced them. ReScript is a banned language under the estate policy.
+
+**The replacement is not ready, and that is now visible rather than hidden.**
+The AffineScript-TEA sources sit at `src/ui/tea/` but the compile pipeline is
+unwired, blocked on missing primitives — `Http::fetch`, `Async`, `Json` —
+tracked in [#266](https://github.com/hyperpolymath/echidna/issues/266) and
+[#117](https://github.com/hyperpolymath/echidna/issues/117). `just build-ui`
+now **fails with an explanatory message** instead of silently doing nothing;
+`serve-ui` serves the static shell at `src/ui/public/`.
+
+`echidna-playground/` keeps its 8 `.res` files: that sub-project carries
+Coq-Jr contributions, so removing them is a separate decision from a
+language-policy cleanup.
+
+### C1b. `.gitlab-ci.yml` is not valid YAML
+
+`python3 -c "import yaml; yaml.safe_load(open('.gitlab-ci.yml'))"` fails on a
+bare `%` inside an unquoted shell command. **Pre-existing** — verified by
+parsing the file at `HEAD` before the ReScript removal shifted the line
+number. Whether it matters depends on whether the GitLab mirror actually runs
+CI; if it does not, the file is decorative and should say so or go.
 
 ### C2. 185 `#[allow(dead_code)]` suppressions
 

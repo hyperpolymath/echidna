@@ -1,5 +1,5 @@
 K9!
-# SPDX-License-Identifier: AGPL-3.0-or-later
+# SPDX-License-Identifier: MPL-2.0
 # Example Hunt-level K9 component: Repository setup automation
 # Security Level: Hunt (full execution with Just recipes)
 # ⚠️ SIGNATURE REQUIRED - DO NOT RUN WITHOUT VERIFICATION
