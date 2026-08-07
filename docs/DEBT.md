@@ -238,7 +238,36 @@ runs stub-sentinel detection for Tier-3 cells; the corresponding guarantee for
 Tier-4 placeholders at the API boundary is not documented. Related: D2 — the
 placeholder count itself is unverified.
 
-### C4. Unfinished-work markers
+### C4. `Dogfood Gate` fails K9 validation on `main`
+
+Observed 2026-08-07 on every PR run:
+
+```
+Hunt-level K9 file must include a 'signature' or 'signature_required' field
+K9 validation failed with 1 error(s)
+```
+
+A contractile/K9 schema requirement that the repository's own hunt-level K9
+file does not satisfy — the dogfooding gate cannot pass its own rules. Not
+diagnosed further here; reproduce with
+`gh run list -R hyperpolymath/echidna --workflow "Dogfood Gate"` and read the
+failing step.
+
+### C5. `Rust CI` test failures on `main`
+
+`cargo test --tests --workspace --locked` exits 101 under `llvm-cov`. This is a
+genuine test failure, not infrastructure: it appears **after** the toolchain
+installs and the workspace builds. Distinguish it from the lockfile-pin
+startup failures that affected the same workflow until the
+`dtolnay/rust-toolchain@stable` relock — those failed *before* running a step
+and produced no test output. Individual failing tests have not been
+enumerated; that is the next action.
+
+`Secret Scanner` also exits 1 on `main`; likely the dead `VERISIMDB_PAT`
+already tracked in [#310](https://github.com/hyperpolymath/echidna/issues/310),
+but not confirmed here.
+
+### C6. Unfinished-work markers
 
 Low and healthy for a tree this size — recorded as a baseline to watch:
 
