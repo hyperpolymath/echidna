@@ -1,5 +1,5 @@
 #!/usr/bin/env julia
-# SPDX-License-Identifier: MPL-2.0
+# SPDX-License-Identifier: AGPL-3.0-or-later
 # Extract SPIN model-checker LTL properties from Promela models.
 # Vendor: https://spinroot.com/spin/Examples or nimble-code/Spin
 using JSON3, Dates

@@ -1,4 +1,4 @@
-// SPDX-License-Identifier: MPL-2.0
+// SPDX-License-Identifier: AGPL-3.0-or-later
 // NeSy (Neurosymbolic) agreement validation between GNN and symbolic solvers
 
 use serde::{Deserialize, Serialize};

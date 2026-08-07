@@ -1,4 +1,4 @@
-// SPDX-License-Identifier: MPL-2.0
+// SPDX-License-Identifier: AGPL-3.0-or-later
 // Cosine fallback SLA monitoring and cache health tracking
 
 use serde::{Deserialize, Serialize};

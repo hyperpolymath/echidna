@@ -1,4 +1,4 @@
--- SPDX-License-Identifier: MPL-2.0
+-- SPDX-License-Identifier: AGPL-3.0-or-later
 -- CertificateChain.agda — transitivity and vacuous validity of cert chains.
 --
 -- Models a certificate chain as a List CertStep where each CertStep

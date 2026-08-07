@@ -1,5 +1,5 @@
 #!/usr/bin/env julia
-# SPDX-License-Identifier: MPL-2.0
+# SPDX-License-Identifier: AGPL-3.0-or-later
 # Extract Viper (Silver) separation-logic verification problems.
 # Vendor: git clone https://github.com/viperproject/silver external_corpora/viper
 using JSON3, Dates

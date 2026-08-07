@@ -1,5 +1,5 @@
 #!/usr/bin/env julia
-# SPDX-License-Identifier: MPL-2.0
+# SPDX-License-Identifier: AGPL-3.0-or-later
 # Extract NuSMV / nuXmv model-checker CTL/LTL properties.
 # Vendor: https://nusmv.fbk.eu/distrib/ (examples ship with distribution).
 using JSON3, Dates

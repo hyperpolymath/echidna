@@ -1,5 +1,5 @@
 #!/usr/bin/env julia
-# SPDX-License-Identifier: MPL-2.0
+# SPDX-License-Identifier: AGPL-3.0-or-later
 #
 # Shared extractor for the SAT-solver fleet (CaDiCaL, Kissat, MiniSat).
 # All three consume DIMACS CNF, so one extractor builds the corpus and

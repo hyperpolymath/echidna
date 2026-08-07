@@ -1,5 +1,5 @@
 %-----------------------------------------------------------------------------
-% SPDX-License-Identifier: MPL-2.0
+% SPDX-License-Identifier: AGPL-3.0-or-later
 % File     : disjunction_elim.p
 % Status   : Theorem
 % Claim    : Disjunction elimination — from P∨Q, P→R, Q→R, conclude R.

@@ -1,4 +1,4 @@
-// SPDX-License-Identifier: MPL-2.0
+// SPDX-License-Identifier: AGPL-3.0-or-later
 // (MPL-2.0 is automatic legal fallback until PMPL is formally recognised)
 //
 //! Rust bindings to the SPARK-verified axiom-policy layer.

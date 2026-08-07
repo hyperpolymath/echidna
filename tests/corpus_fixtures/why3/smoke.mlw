@@ -1,4 +1,4 @@
-(* SPDX-License-Identifier: MPL-2.0 *)
+(* SPDX-License-Identifier: AGPL-3.0-or-later *)
 (* Why3 corpus-adapter smoke fixture. *)
 (* Exercises: theory envelope, use import, predicate, function, *)
 (* lemma, one axiom hazard. *)

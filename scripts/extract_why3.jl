@@ -1,5 +1,5 @@
 #!/usr/bin/env julia
-# SPDX-License-Identifier: MPL-2.0
+# SPDX-License-Identifier: AGPL-3.0-or-later
 # SPDX-FileCopyrightText: 2026 ECHIDNA Project Team
 #
 # Extract proofs from Why3 examples and convert to ECHIDNA training format.

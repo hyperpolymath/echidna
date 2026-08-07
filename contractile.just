@@ -2,7 +2,7 @@
 # Source directory: .machine_readable/contractiles
 # Re-generate with: contractile gen-just --dir .machine_readable/contractiles
 #
-# SPDX-License-Identifier: MPL-2.0
+# SPDX-License-Identifier: AGPL-3.0-or-later
 #
 # HAND-AUGMENTED 2026-06-02: contractile binary not on PATH at time of
 # rewrite; this file was manually re-wired to match the expanded a2ml
