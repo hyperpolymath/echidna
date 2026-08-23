@@ -17,8 +17,8 @@ phases, deliberately sequenced **L3 → L1 → L2**: live-prover CI first
 because it surfaces real bugs mocks hide, Cap'n Proto next so Chapel
 can consume its schemas, Chapel last because its sub-waves are the
 largest piece. Guix is the sole authoritative package manager
-throughout (nix fallback removed 2026-06-01 per estate-wide
-nix-deprecation directive). GitHub is the single source of truth; no
+throughout (guix fallback removed 2026-06-01 per estate-wide
+guix-deprecation directive). GitHub is the single source of truth; no
 other forges pushed directly.
 
 ## Decisions locked
@@ -27,7 +27,7 @@ other forges pushed directly.
 |---|----------|-----------|
 | D1 | **Serialization = Cap'n Proto** | Chosen over Bebop3 for dependability + maturity (Cloudflare Workers use at scale), zero-copy reads, strong schema-evolution. Tradeoff: heavier codegen; shim Julia/Chapel via C-ABI (fits existing Idris2-ABI + Zig-FFI). |
 | D2 | **Chapel = first-class, maximal** | 420-LoC POC promoted to `src/chapel/` across 7 sub-waves — portfolio dispatch, speculative tactic search, corpus-parallel ops, mutation-testing parallelism, multi-locale distributed, numeric hot paths. |
-| D3 | **Guix sole primary** | Per project CLAUDE.md. `guix.scm` / `manifests/live-provers.scm` authoritative. (Originally "Nix fallback"; that path closed 2026-06-01 per estate-wide nix-deprecation directive.) |
+| D3 | **Guix sole primary** | Per project CLAUDE.md. `guix.scm` / `manifests/live-provers.scm` authoritative. (Originally "Guix fallback"; that path closed 2026-06-01 per estate-wide guix-deprecation directive.) |
 | D4 | **Execution order = L3 → L1 → L2** | Live-prover CI first: highest-leverage gap, surfaces real bugs mocks hide. Cap'n Proto next, since Chapel consumes those schemas. |
 | D5 | **Live-prover CI cadence tiered** | T1 every PR, T2 nightly, T3 weekly, T4 quarterly allow-fail. |
 | D6 | **No JSON emit on hot path** | Per `feedback_no_json_emit_a2ml`. Cap'n Proto replaces HTTP-JSON Rust↔Julia. Tool config stays Nickel/A2ML. |
@@ -95,12 +95,12 @@ Also corrected 2026-04-19 (were mis-listed as "planned"):
 - **When adding provers: update all 3 layers** (Rust backend, Julia ML, Chapel).
 - **Original name: "Cognitive Hybrid"** not "Computational Heuristic".
 - **MPL-2.0** throughout.
-- **No Python** — Julia for ML, Rust for systems, ReScript for apps.
+- **No Python** — Julia for ML, Rust for systems, AffineScript for apps.
 
 ## Tech stack
 
 - **Primary**: Rust (48 / 105 prover backends, trust pipeline, CLI, REPL, API servers).
-- **Secondary**: Julia (ML inference, port 8090), ReScript + Deno (UI, 33 files, zero TypeScript).
+- **Secondary**: Julia (ML inference, port 8090), AffineScript + Deno (UI, 33 files, zero TypeScript).
 - **Optional**: Chapel (parallel proof dispatch).
 - **ABI**: Idris2 (7+ modules, zero `believe_me`).
 - **FFI**: Zig (4 shared libraries).

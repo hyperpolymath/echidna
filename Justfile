@@ -187,7 +187,7 @@ init:
 
     # Check for remaining placeholders
     PATTERN="${LB}[A-Z_]*${RB}"
-    REMAINING=$(grep -rl "$PATTERN" . --include='*.md' --include='*.adoc' --include='*.yml' --include='*.yaml' --include='*.a2ml' --include='*.toml' --include='*.scm' --include='*.ncl' --include='*.nix' --include='*.json' --include='*.sh' 2>/dev/null | grep -v '.git/' | grep -v '.machine_readable/ai/PLACEHOLDERS.adoc' || true)
+    REMAINING=$(grep -rl "$PATTERN" . --include='*.md' --include='*.adoc' --include='*.yml' --include='*.yaml' --include='*.a2ml' --include='*.toml' --include='*.scm' --include='*.ncl' --include='*.guix' --include='*.json' --include='*.sh' 2>/dev/null | grep -v '.git/' | grep -v '.machine_readable/ai/PLACEHOLDERS.adoc' || true)
     if [ -n "$REMAINING" ]; then
         echo "WARNING: Remaining placeholders in:"
         echo "$REMAINING" | sed 's/^/  /'
@@ -519,7 +519,7 @@ audit:
 # ── UI Management ──────────────────────────────────────────
 
 # ── UI ──
-# The ReScript UI was removed 2026-08 (ReScript is a banned language under the
+# The AffineScript UI was removed 2026-08 (AffineScript is a banned language under the
 # estate language policy; AffineScript-TEA is the replacement). The TEA sources
 # live in src/ui/tea/ and the static shell in src/ui/public/, but the
 # AffineScript compile pipeline is NOT wired yet — see issues #117 and #266
@@ -527,7 +527,7 @@ audit:
 
 # Build the UI — blocked on the AffineScript-TEA toolchain
 build-ui:
-    @echo "build-ui is unavailable: the ReScript UI was removed and the"
+    @echo "build-ui is unavailable: the AffineScript UI was removed and the"
     @echo "AffineScript-TEA pipeline is not wired yet (issues #117, #266)."
     @echo "Sources: src/ui/tea/echidna_gui.affine; shell: src/ui/public/."
     @exit 1
@@ -955,7 +955,7 @@ tour:
     echo "6. BUILD SYSTEM:"
     echo "   Cargo.toml   - Rust workspace"
     echo "   Justfile      - Primary build system"
-    echo "   guix.scm      - Guix package definition (PRIMARY; no Nix mirror — estate ruling 2026-05-18)"
+    echo "   guix.scm      - Guix package definition (PRIMARY; no Guix mirror — estate ruling 2026-05-18)"
     echo "   .containerization/Containerfile.wave3 - sealed-container escape hatch (Tier-3 provers)"
     echo ""
     echo "Try: just build       (compile Rust core)"

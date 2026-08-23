@@ -52,7 +52,7 @@ notable-pr-merges = [
     "#185 mktemp swap for scripts/",
     "#186 FFI audit §§9-11 (FLINT + Zig bridges + Zig overlay)",
     "#188 GraphQL +3 ops (verifyProof/suggestTactics/proverStatus) closes #180",
-    "#189 nix purge per estate policy",
+    "#189 guix purge per estate policy",
     "#198 saturation+typing (corpus 4→17, 42-discipline embedding)",
     "#199 a2ml-validate to 6bff6ec (s-expression form)",
     "#206 wave3 CI/CD closeout (C001-C005)",
@@ -832,11 +832,11 @@ remaining-ci = [
 
 [session-2026-04-19-production-wiring-kickoff]
 summary = "Kickoff of three-phase production wiring plan: L3 live-prover CI, L1 Cap'n Proto, L2 Chapel maximal."
-user-directive = "Make wiring deep and holistic across Rust/Julia/Chapel; address mock-only CI to full production; Cap'n Proto chosen over Bebop3; Chapel maximised; Guix primary, Nix fallback; order = 3, 1, 2."
+user-directive = "Make wiring deep and holistic across Rust/Julia/Chapel; address mock-only CI to full production; Cap'n Proto chosen over Bebop3; Chapel maximised; Guix primary, Guix fallback; order = 3, 1, 2."
 decisions-locked = [
-  "D1: Cap'n Proto for internal IPC (Rust<->Julia<->Chapel<->ReScript) — chosen over Bebop3 for dependability/maturity/zero-copy reads.",
+  "D1: Cap'n Proto for internal IPC (Rust<->Julia<->Chapel<->AffineScript) — chosen over Bebop3 for dependability/maturity/zero-copy reads.",
   "D2: Chapel promoted from POC (chapel_poc/parallel_proof_search.chpl, 420 LoC) to first-class hot-path execution layer across 7 sub-waves.",
-  "D3: Guix primary, Nix fallback, per project CLAUDE.md package-management policy.",
+  "D3: Guix primary, Guix fallback, per project CLAUDE.md package-management policy.",
   "D4: Execution order L3 -> L1 -> L2 (live-prover CI first to surface real bugs mocks hide, then protocol swap, then Chapel).",
   "D5: Live-prover CI tiered — Tier-1 every PR, Tier-2 nightly, Tier-3 weekly, Tier-4 quarterly allow-fail.",
   "D6: No-JSON rule applies; Cap'n Proto kills HTTP+JSON on Rust<->Julia hot path.",
@@ -849,7 +849,7 @@ handover-artefacts = [
 ]
 l3-wave-1-artefacts = [
   "manifests/live-provers.scm — Guix manifest covering Tier-1 + Tier-2 prover binaries",
-  "flake.nix — DEPRECATED & REMOVED 2026-05-18 (estate ruling: Guix primary + sealed-container escape, no Nix mirror). Tail provisioned via Containerfile.wave3.",
+  "flake.guix — DEPRECATED & REMOVED 2026-05-18 (estate ruling: Guix primary + sealed-container escape, no Guix mirror). Tail provisioned via Containerfile.wave3.",
   ".github/workflows/live-provers.yml — tiered CI workflow (PR/nightly/weekly/quarterly)",
   "tests/live_prover_suite.rs — Rust test harness with canonical micro-goals for Tier-1",
   "tests/live_goals/ — canonical goal fixtures (Tier-1 seeded)",
@@ -984,7 +984,7 @@ commits = [
   "<pending> fix(uppaal): https for the UPPAAL flat-DTD URI",
 ]
 rest-crate-fix = "models::ProverKind gains 13 variants (FStar, Dafny, Why3, TLAPS, Twelf, Nuprl, Minlog, Imandra, GLPK, SCIP, MiniZinc, Chuffed, ORTools) so the FFI ordinal table 17..29 round-trips through the REST schema. core_kind_to_rest / rest_kind_to_core wired both ways; drops the '_ => Vampire' mistargeting fallback for ord ≤ 29. FfiProverBackend now implements search_theorems (empty-vec stub), config / set_config (stores ProverConfig). apply_tactic returns CoreTacticResult::Success(state.clone()) (no Box). ProofState::new wrapping in Term::Var to match the new Term-typed core API. c_char ↔ u8 raw-pointer casts at the Zig FFI boundary. 637 lib tests still passing."
-panic-attack-sweep = "14 per-subdir chunks (src/rust, src/interfaces, src/julia, src/abi, src/zig, src/zig_ffi, src/idris, src/ada, src/ui, src/rescript, crates/echidna-{core,mcp,wire}, crates/typed_wasm). Combined wall time ~60s; previously single-run timed out at 180s. 44 findings — 41 are in existing memory-rule classes (file-level UnboundedAllocation in 26 prover wrappers, legitimate-FFI UnsafeCode/UnsafeFFI in interface ffi_wrappers + zig bridges, ProofDrift on .ipkg). 3 actionable: SupplyChain on echidna-mcp Cargo.toml (false-positive — workspace Cargo.lock is at root, panic-attack scans crate in isolation), PanicPath on z3.rs (false-positive — the 'expect calls' are parser-helper self.expect(...)? ; the one panic! is a #[test] assertion), InsecureProtocol on uppaal.rs (real, fixed: UPPAAL flat-DTD URI flipped http:// → https://; uu.se 301-redirects already, https returns 200). Reports retained at reports/panic-attack-chunks/*.json + SUMMARY.md."
+panic-attack-sweep = "14 per-subdir chunks (src/rust, src/interfaces, src/julia, src/abi, src/zig, src/zig_ffi, src/idris, src/ada, src/ui, src/affinescript, crates/echidna-{core,mcp,wire}, crates/typed_wasm). Combined wall time ~60s; previously single-run timed out at 180s. 44 findings — 41 are in existing memory-rule classes (file-level UnboundedAllocation in 26 prover wrappers, legitimate-FFI UnsafeCode/UnsafeFFI in interface ffi_wrappers + zig bridges, ProofDrift on .ipkg). 3 actionable: SupplyChain on echidna-mcp Cargo.toml (false-positive — workspace Cargo.lock is at root, panic-attack scans crate in isolation), PanicPath on z3.rs (false-positive — the 'expect calls' are parser-helper self.expect(...)? ; the one panic! is a #[test] assertion), InsecureProtocol on uppaal.rs (real, fixed: UPPAAL flat-DTD URI flipped http:// → https://; uu.se 301-redirects already, https returns 200). Reports retained at reports/panic-attack-chunks/*.json + SUMMARY.md."
 panic-attack-followups = [
   "echidnaabi.ipkg ProofDrift is a detector miss on a config file — worth a panic-attack memory entry to skip .ipkg for ProofDrift class.",
   "26 prover-wrapper UnboundedAllocation flags are file-level aggregations per the existing memory rule — per-backend audit pass is its own multi-session work, not a one-shot.",
@@ -1019,29 +1019,29 @@ session-close sweep. Both are multi-day to multi-week scope; documenting
 here so the work has clear targets when picked up.
 """
 
-[migration-roadmap.rescript-to-affinescript]
+[migration-roadmap.affinescript-to-affinescript]
 status = "in-progress (per docs/ROADMAP.md), 30 files outstanding"
 inventory = """
-echidna/src/rescript/ — 30 .res files split between:
-  src/rescript/src/                 — 10 production files (Main, Server,
+echidna/src/affinescript/ — 30 .res files split between:
+  src/affinescript/src/                 — 10 production files (Main, Server,
                                        api/Client, components/{GoalList,
                                        ProofTree, ProofViewer, ProverSelector,
                                        TacticSuggester, TheoremSearch},
                                        state/Store)
-  src/rescript/lib/ocaml/           — 10 generated/compiled mirrors
+  src/affinescript/lib/ocaml/           — 10 generated/compiled mirrors
   + 10 ancillary
 """
 target = "AffineScript-TEA per docs/ROADMAP.md (compiled to typed-wasm, served via Deno)"
 prereqs = """
 - AffineScript compiler stable enough to handle React-equivalent component
   primitives (rsr-template-repo/affinescript/ has working examples but the
-  surface used in echidna/src/rescript/components/ is wider).
-- Migration script or manual port — no automatic ReScript→AffineScript
+  surface used in echidna/src/affinescript/components/ is wider).
+- Migration script or manual port — no automatic AffineScript→AffineScript
   transpiler exists today.
 """
 suggested-order = """
-1. Migrate src/rescript/src/api/Client.res first (smallest, no UI deps).
-2. Then src/rescript/src/state/Store.res (TEA store — drives the rest).
+1. Migrate src/affinescript/src/api/Client.res first (smallest, no UI deps).
+2. Then src/affinescript/src/state/Store.res (TEA store — drives the rest).
 3. Then components in dependency order: ProverSelector → GoalList →
    TacticSuggester → ProofViewer → ProofTree → TheoremSearch.
 4. Finally Main + Server.
@@ -1091,9 +1091,9 @@ estimate = "Per-module: 1-2 hours each (read Rust source → design abstraction 
 
 [migration-roadmap.applies-to-other-repos]
 note = """
-Same migration framings apply to echidnabot (no ReScript so RS→AS not
+Same migration framings apply to echidnabot (no AffineScript so RS→AS not
 applicable; SPARK candidates are src/api/webhooks.rs HMAC verification
-+ src/store/sqlite.rs schema migration safety) and vcl-ut (no ReScript;
++ src/store/sqlite.rs schema migration safety) and vcl-ut (no AffineScript;
 SPARK candidate is src/interface/lint/ which gates queries pre-execution).
 """
 
@@ -1315,8 +1315,8 @@ findings = [
 changes = [
   "Consolidated the 9 separate .containerization/Containerfile.<backend> (each re-compiling the whole Rust core) into ONE multi-target .containerization/Containerfile.wave3: single shared rust-builder stage + one --target per prover. git rm'd the 9. Justfile container-build-* + container-ci.yml matrix rewired to -f Containerfile.wave3 --target <prover>.",
   "Guix-extend investigated empirically: only scip/or-tools/metamath in Guix; 5 need bespoke pkg defs; imandra non-free. Rejected Guix-extend as primary path.",
-  "Estate ruling 2026-05-18 (Guix primary + sealed-container escape; NO Nix mirror) applied to echidna as the pilot: flake.nix + flake.lock git rm'd; live-provers.scm / .claude/CLAUDE.md / Justfile / this file reconciled. Estate-wide tech debt recorded in hyperpolymath/standards .machine_readable/agent_instructions/debt.a2ml.",
-  "L1 open Q#2 (CapnProto.jl vs Zig C-ABI shim) RESOLVED: Zig C-ABI shim, buffer-oriented (estate-canonical; single codec). L1-CAPNPROTO-PROMPT.md + VERSIONING.md + TODO.md reconciled; ReScript binding line corrected to AffineScript (estate ban); fixed dangling L1-CAPNPROTO.md ref in echidna.capnp.",
+  "Estate ruling 2026-05-18 (Guix primary + sealed-container escape; NO Guix mirror) applied to echidna as the pilot: flake.guix + flake.lock git rm'd; live-provers.scm / .claude/CLAUDE.md / Justfile / this file reconciled. Estate-wide tech debt recorded in hyperpolymath/standards .machine_readable/agent_instructions/debt.a2ml.",
+  "L1 open Q#2 (CapnProto.jl vs Zig C-ABI shim) RESOLVED: Zig C-ABI shim, buffer-oriented (estate-canonical; single codec). L1-CAPNPROTO-PROMPT.md + VERSIONING.md + TODO.md reconciled; AffineScript binding line corrected to AffineScript (estate ban); fixed dangling L1-CAPNPROTO.md ref in echidna.capnp.",
 ]
 not-done = [
   "L1 implementation still gated on L3 hand-off (Tier-1 green >=7d on main; main CI stuck queued/ — infra-owned, not collapsible here).",

@@ -1629,55 +1629,55 @@
     "severity": "high",
     "rule_module": "migration_rules",
     "type": "deprecated_api",
-    "file": "src/rescript/src/Main.res"
+    "file": "src/affinescript/src/Main.res"
   },
   {
     "severity": "high",
     "rule_module": "migration_rules",
     "type": "deprecated_api",
-    "file": "src/rescript/src/api/Client.res"
+    "file": "src/affinescript/src/api/Client.res"
   },
   {
     "severity": "high",
     "rule_module": "migration_rules",
     "type": "deprecated_api",
-    "file": "src/rescript/src/components/GoalList.res"
+    "file": "src/affinescript/src/components/GoalList.res"
   },
   {
     "severity": "high",
     "rule_module": "migration_rules",
     "type": "deprecated_api",
-    "file": "src/rescript/src/components/ProofTree.res"
+    "file": "src/affinescript/src/components/ProofTree.res"
   },
   {
     "severity": "high",
     "rule_module": "migration_rules",
     "type": "deprecated_api",
-    "file": "src/rescript/src/components/ProofViewer.res"
+    "file": "src/affinescript/src/components/ProofViewer.res"
   },
   {
     "severity": "high",
     "rule_module": "migration_rules",
     "type": "deprecated_api",
-    "file": "src/rescript/src/components/ProverSelector.res"
+    "file": "src/affinescript/src/components/ProverSelector.res"
   },
   {
     "severity": "high",
     "rule_module": "migration_rules",
     "type": "deprecated_api",
-    "file": "src/rescript/src/components/TacticSuggester.res"
+    "file": "src/affinescript/src/components/TacticSuggester.res"
   },
   {
     "severity": "high",
     "rule_module": "migration_rules",
     "type": "deprecated_api",
-    "file": "src/rescript/src/components/TheoremSearch.res"
+    "file": "src/affinescript/src/components/TheoremSearch.res"
   },
   {
     "severity": "high",
     "rule_module": "migration_rules",
     "type": "deprecated_api",
-    "file": "src/rescript/src/state/Store.res"
+    "file": "src/affinescript/src/state/Store.res"
   },
   {
     "severity": "high",
@@ -1714,133 +1714,133 @@
     "rule_module": "migration_rules",
     "type": "deprecated_api",
     "file": "src/provers/runners/Daemon.res",
-    "note": "ReScript Belt/Js.* migration pending; hypatia now emits these at medium (baseline had high)"
+    "note": "AffineScript Belt/Js.* migration pending; hypatia now emits these at medium (baseline had high)"
   },
   {
     "severity": "medium",
     "rule_module": "migration_rules",
     "type": "deprecated_api",
     "file": "src/provers/runners/Cli.res",
-    "note": "ReScript Belt/Js.* migration pending"
+    "note": "AffineScript Belt/Js.* migration pending"
   },
   {
     "severity": "medium",
     "rule_module": "migration_rules",
     "type": "deprecated_api",
     "file": "src/provers/clients/Wolfram.res",
-    "note": "ReScript Belt/Js.* migration pending"
+    "note": "AffineScript Belt/Js.* migration pending"
   },
   {
     "severity": "medium",
     "rule_module": "migration_rules",
     "type": "deprecated_api",
     "file": "src/provers/clients/UnifiedTest.res",
-    "note": "ReScript Belt/Js.* migration pending"
+    "note": "AffineScript Belt/Js.* migration pending"
   },
   {
     "severity": "medium",
     "rule_module": "migration_rules",
     "type": "deprecated_api",
     "file": "src/provers/clients/SystemOnTptp.res",
-    "note": "ReScript Belt/Js.* migration pending"
+    "note": "AffineScript Belt/Js.* migration pending"
   },
   {
     "severity": "medium",
     "rule_module": "migration_rules",
     "type": "deprecated_api",
     "file": "src/provers/clients/LeanTool.res",
-    "note": "ReScript Belt/Js.* migration pending"
+    "note": "AffineScript Belt/Js.* migration pending"
   },
   {
     "severity": "medium",
     "rule_module": "migration_rules",
     "type": "deprecated_api",
     "file": "src/provers/clients/Z3Wasm.res",
-    "note": "ReScript Belt/Js.* migration pending"
+    "note": "AffineScript Belt/Js.* migration pending"
   },
   {
     "severity": "medium",
     "rule_module": "migration_rules",
     "type": "deprecated_api",
     "file": "src/provers/clients/Metamath.res",
-    "note": "ReScript Belt/Js.* migration pending"
+    "note": "AffineScript Belt/Js.* migration pending"
   },
   {
     "severity": "medium",
     "rule_module": "migration_rules",
     "type": "deprecated_api",
     "file": "src/provers/clients/Unified.res",
-    "note": "ReScript Belt/Js.* migration pending"
+    "note": "AffineScript Belt/Js.* migration pending"
   },
   {
     "severity": "medium",
     "rule_module": "migration_rules",
     "type": "deprecated_api",
     "file": "src/provers/types/Prover.res",
-    "note": "ReScript Belt/Js.* migration pending"
+    "note": "AffineScript Belt/Js.* migration pending"
   },
   {
     "severity": "medium",
     "rule_module": "migration_rules",
     "type": "deprecated_api",
     "file": "src/provers/types/ProverTest.res",
-    "note": "ReScript Belt/Js.* migration pending"
+    "note": "AffineScript Belt/Js.* migration pending"
   },
   {
     "severity": "medium",
     "rule_module": "migration_rules",
     "type": "deprecated_api",
     "file": "src/provers/utils/Http.res",
-    "note": "ReScript Belt/Js.* migration pending"
+    "note": "AffineScript Belt/Js.* migration pending"
   },
   {
     "severity": "medium",
     "rule_module": "migration_rules",
     "type": "deprecated_api",
-    "file": "src/rescript/src/components/TheoremSearch.res",
-    "note": "ReScript Belt/Js.* migration pending"
+    "file": "src/affinescript/src/components/TheoremSearch.res",
+    "note": "AffineScript Belt/Js.* migration pending"
   },
   {
     "severity": "medium",
     "rule_module": "migration_rules",
     "type": "deprecated_api",
-    "file": "src/rescript/src/components/ProofTree.res",
-    "note": "ReScript Belt/Js.* migration pending"
+    "file": "src/affinescript/src/components/ProofTree.res",
+    "note": "AffineScript Belt/Js.* migration pending"
   },
   {
     "severity": "medium",
     "rule_module": "migration_rules",
     "type": "deprecated_api",
-    "file": "src/rescript/src/api/Client.res",
-    "note": "ReScript Belt/Js.* migration pending"
+    "file": "src/affinescript/src/api/Client.res",
+    "note": "AffineScript Belt/Js.* migration pending"
   },
   {
     "severity": "medium",
     "rule_module": "migration_rules",
     "type": "deprecated_api",
-    "file": "src/rescript/src/Main.res",
-    "note": "ReScript Belt/Js.* migration pending"
+    "file": "src/affinescript/src/Main.res",
+    "note": "AffineScript Belt/Js.* migration pending"
   },
   {
     "severity": "medium",
     "rule_module": "migration_rules",
     "type": "deprecated_api",
     "file": "echidna-playground/src/JsCoq.res",
-    "note": "ReScript Belt/Js.* migration pending"
+    "note": "AffineScript Belt/Js.* migration pending"
   },
   {
     "severity": "medium",
     "rule_module": "migration_rules",
     "type": "deprecated_api",
     "file": "echidna-playground/src/Deno.res",
-    "note": "ReScript Belt/Js.* migration pending"
+    "note": "AffineScript Belt/Js.* migration pending"
   },
   {
     "severity": "medium",
     "rule_module": "migration_rules",
     "type": "deprecated_api",
     "file": "echidna-playground/src/Dom.res",
-    "note": "ReScript Belt/Js.* migration pending"
+    "note": "AffineScript Belt/Js.* migration pending"
   },
   {
     "severity": "medium",

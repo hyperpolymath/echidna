@@ -390,12 +390,12 @@ use echidna_julia_ffi::predict_premises;
 let ranking = predict_premises(goal, premises, top_k)?;
 ```
 
-### ReScript UI
+### AffineScript UI
 
-The HTTP API serves the ReScript+Deno frontend:
+The HTTP API serves the AffineScript+Deno frontend:
 
-```rescript
-// In ReScript
+```affinescript
+// In AffineScript
 let response = await fetch("/predict", {
   method: "POST",
   body: JSON.stringify(request)

@@ -52,7 +52,7 @@ core. **Consolidated 2026-05-18** into a single multi-target
 primary path (only SCIP/OR-Tools/Metamath are in Guix; 5 need bespoke package
 defs; Imandra is non-free) — per the 2026-05-18 estate ruling, the sealed
 container *is* the escape hatch for the not-in-Guix / non-free tail (Guix
-primary, no Nix mirror; `flake.nix` deprecated and removed estate-wide 2026-06-01). Imandra target remains
+primary, no Guix mirror; `flake.guix` deprecated and removed estate-wide 2026-06-01). Imandra target remains
 licence-gated. Table below kept for the per-backend install strategy of record.
 
 Handover hints live in `.machine_readable/descriptiles/STATE.a2ml [wave-3-handover-hints]`.
@@ -119,7 +119,7 @@ Rationale: HTTP+JSON on Rust↔Julia hot path (`src/rust/gnn/client.rs:1-195` �
 - `src/julia/ipc.jl` — use `CapnProto.jl` if mature; otherwise shim via C-ABI through Zig.
 - `src/abi/CapnSchemas.idr` — Idris2 ABI mirror proving schema compatibility, zero `believe_me`.
 - `ffi/zig/capnp_bridge.zig` — C-ABI bridge for polyglot consumers.
-- `bindings/rescript/echidna_capnp.res` — ReScript UI bindings.
+- `bindings/affinescript/echidna_capnp.res` — AffineScript UI bindings.
 - `just capnp-gen` recipe regenerating all bindings; CI check that generated code is committed.
 
 ### Acceptance

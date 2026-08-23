@@ -20,7 +20,7 @@ in < 30s for a combined wall time well under the prior single-run cap.
 | `src/julia`                    |        0 |    0 |      0 |     0 |
 | `src/idris`                    |        0 |    0 |      0 |     0 |
 | `src/ada`                      |        0 |    0 |      0 |     0 |
-| `src/rescript`                 |        0 |    0 |      0 |     0 |
+| `src/affinescript`                 |        0 |    0 |      0 |     0 |
 | `src/ui`                       |        0 |    0 |      0 |     0 |
 | `src/chapel`                   |        – |    – |      – |     – |
 | **Total**                      |   **27** | **15** |  **2** | **44** |

@@ -1,6 +1,6 @@
 # Melange Route
 
-This shows how to use Melange (ReScript → OCaml → JS or native).
+This shows how to use Melange (AffineScript → OCaml → JS or native).
 
 ## Setup
 
@@ -16,9 +16,9 @@ opam install melange dune
 dune build
 ```
 
-## Key Difference from ReScript
+## Key Difference from AffineScript
 
-- **ReScript**: npm-based, JS output only
+- **AffineScript**: npm-based, JS output only
 - **Melange**: opam-based, can also compile to native
 
 ## Native Binary Option

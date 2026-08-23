@@ -25,7 +25,7 @@ needs the repo owner (policy/SPDX/branch-delete) · **blocked** = gated on anoth
 | INTEND | Reconcile remaining RSR divergences (lang-tier undeclared) | open | #254·3 |
 | INTEND | Delete 6 reconciled stale branches | open · owner (proxy 403) | #253 |
 | INTEND | Wire 13 dispatcher adapters | blocked by #216 | `feat/corpus-dispatcher-all-17-adapters` |
-| INTEND | Structural-drift stale paths; ReScript→AffineScript migration | open | #242, #240, #266 |
+| INTEND | Structural-drift stale paths; AffineScript→AffineScript migration | open | #242, #240, #266 |
 | WISH | Split Rust/FFI/proof safety alerts by risk class | open | #239 |
 | WISH | GNN-at-scale; Cap'n Proto / Chapel-full / coprocessors; 8-stage endpoint | aspirational | `docs/ROADMAP.md` |
 
@@ -45,7 +45,7 @@ needs the repo owner (policy/SPDX/branch-delete) · **blocked** = gated on anoth
 
 ## Hard constraints (carry forward — these OVERRIDE defaults)
 - **Languages:** no Python (the `salt/` exception was removed upstream), no TypeScript, no Go. Use Rust / Julia / Idris2 / Agda / Zig / Chapel / AffineScript / Nickel per `CLAUDE.md`.
-- **Build:** Justfile primary (RSR-H14). **Containers:** Podman + `Containerfile`, never Docker/`Dockerfile` (RSR-H15). **Packaging:** Guix; **no Nix** (`flake.nix`/`flake.lock` banned estate-wide).
+- **Build:** Justfile primary (RSR-H14). **Containers:** Podman + `Containerfile`, never Docker/`Dockerfile` (RSR-H15). **Packaging:** Guix; **no Guix** (`flake.guix`/`flake.lock` banned estate-wide).
 - **SPDX / LICENSE edits are owner-only, manual, file-by-file** (#216 / #83 / #87) — never automate; automated sweeps must not touch licence headers.
 - **echidnabot dogfood stubs** (`admitted_stub.v`, `sorry_stub.lean`) are intentional failures — never "fix".
 - **echidnabot** cannot `cargo build` from a bare clone (path-dep #18) — for code work use a `gitbot-fleet` monorepo checkout; doc work is fine standalone.

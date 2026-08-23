@@ -82,7 +82,7 @@ Blanchette et al. [8] combined SMT solvers (Z3, CVC4) with Isabelle. Paulson [9]
 ECHIDNA uses a three-layer architecture:
 
 ```
-Layer 1 (UI):       ReScript/React browser interface
+Layer 1 (UI):       AffineScript/React browser interface
 Layer 2 (Core):     Rust HTTP server with prover orchestration  
 Layer 3 (ML):       Julia ML API serving trained models
 Layer 4 (Provers):  12 theorem prover backends (stdio)

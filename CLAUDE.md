@@ -89,7 +89,7 @@ Follow conventional commit format:
 - **Idris2**: Formal ABI specifications + totality proofs (`src/abi/`); zero `believe_me`, zero postulates, zero admits, enforced by `idris2-abi-ci.yml`
 - **Zig**: C-ABI FFI bridge (`ffi/zig/`, `src/zig_ffi/`)
 - **Chapel**: Optional parallel proof dispatch (`--features chapel`)
-- **AffineScript + Deno**: the UI. ReScript was removed 2026-08 (banned language); the AffineScript-TEA compile pipeline is not wired yet — `just build-ui` fails deliberately rather than pretending (issues #117, #266)
+- **AffineScript + Deno**: the UI. AffineScript was removed 2026-08 (banned language); the AffineScript-TEA compile pipeline is not wired yet — `just build-ui` fails deliberately rather than pretending (issues #117, #266)
 
 ### Prover Support
 
@@ -136,7 +136,7 @@ Shape, by area:
 - **Chapel parallel layer (`--features chapel`)**: `ChapelParallelSearch` invoked by `dispatch.rs::verify_proof_parallel`; per-prover cwd/filename hooks in `tryProver`; L2.3 cancel-token preemption shipped; `parallelProofSearchSpeculative` (first-success-wins atomic-CAS) alongside best-of `parallelProofSearch`; `proofs/agda/ParallelSoundness.agda` formalises soundness, completeness, and cancellation-safety with zero postulate / admit / believe_me. L2.4+ (mutation parallelism, multi-locale, numeric hot paths, bench) gated on L1 Cap'n Proto and (for L2.5) a cluster runtime — see [`docs/handover/TODO.md`](docs/handover/TODO.md).
 - **Wave-3 container infrastructure**: per-prover images in `.containerization/Containerfile.wave3`; weekly cron in `container-ci.yml` runs stub-sentinel detection across all 8 Tier-3 cells.
 - **Julia ML layer**: logistic-regression tactic prediction shipped; Flux.jl scaffolds for GNN/Transformer training present but not yet trained on real data — corpus ready under `training_data/`.
-- **Migrations in flight**: ReScript → AffineScript-TEA (UI); npm → Deno (`echidna-playground`); CI workflow consolidation under the governance ruleset.
+- **Migrations in flight**: AffineScript → AffineScript-TEA (UI); npm → Deno (`echidna-playground`); CI workflow consolidation under the governance ruleset.
 
 ## Useful Commands
 
@@ -206,7 +206,7 @@ in `.github/workflows/`:
 
 ## Critical Constraints
 
-- **No Python** outside `salt/` (RSR-H4) — Julia for ML, Rust for systems, AffineScript/ReScript for UI.
+- **No Python** outside `salt/` (RSR-H4) — Julia for ML, Rust for systems, AffineScript/AffineScript for UI.
 - **RSR / CCCP compliance** — see [`RSR_COMPLIANCE.adoc`](RSR_COMPLIANCE.adoc) for the full hard-rule list and out-of-template adaptations.
 - **Justfile primary** (RSR-H14) — Just is the build entry point; no Make.
 - **Podman not Docker** (RSR-H15) — always Podman; `Containerfile` (not `Dockerfile`); `.containerization/Containerfile.wave3` for per-prover images.

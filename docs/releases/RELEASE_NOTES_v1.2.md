@@ -166,7 +166,7 @@ Prioritized 40+ features across 8 categories:
 ### Architecture
 
 ```
-ReScript UI (Browser)
+AffineScript UI (Browser)
     ↓ Fetch API
 Rust Backend (Axum HTTP)
     ↓ reqwest
@@ -211,7 +211,7 @@ None - v1.2 is fully backward compatible with v1.1.
 - UI needs syntax highlighting for all 12 provers
 - Documentation could use more examples
 - Performance benchmarking baseline needed
-- ReScript rescript.json uses deprecated 'es6' → should be 'esmodule'
+- AffineScript affinescript.json uses deprecated 'es6' → should be 'esmodule'
 
 ## Upgrade Notes
 
@@ -221,7 +221,7 @@ No breaking changes. Simply rebuild:
 
 ```bash
 cargo build --release
-cd src/rescript && npm run build
+cd src/affinescript && npm run build
 ```
 
 ### New Dependencies
@@ -237,7 +237,7 @@ cd src/rescript && npm run build
 ## Next Steps (v1.3)
 
 - ✅ Connect Rust backend to Julia ML API (DONE)
-- ✅ Connect ReScript UI to Rust HTTP server (DONE)
+- ✅ Connect AffineScript UI to Rust HTTP server (DONE)
 - ✅ End-to-end proof flow testing (DONE)
 - □ Train neural models on 600+ proof corpus
 - □ Polish UI with proof tree visualization

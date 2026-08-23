@@ -184,9 +184,9 @@ server running on port 8081.)
 - No runtime integration tests yet
 - **Status:** Deferred — requires Idris2 toolchain in CI
 
-### ReScript UI (33 files — ZERO tests)
+### AffineScript UI (33 files — ZERO tests)
 - Dashboard components need render tests
-- **Status:** Deferred — requires Deno + ReScript test setup
+- **Status:** Deferred — requires Deno + AffineScript test setup
 
 ### Self-Tests
 - [ ] panic-attack assail on own repo

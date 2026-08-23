@@ -6,7 +6,7 @@
 
 ## Overview
 
-ECHIDNA v1.3 completes the **end-to-end neurosymbolic proving stack**. All three layers—Julia ML API, Rust backend, and ReScript UI—are now integrated and operational. Real AI-powered tactic suggestions flow from trained models through the entire system.
+ECHIDNA v1.3 completes the **end-to-end neurosymbolic proving stack**. All three layers—Julia ML API, Rust backend, and AffineScript UI—are now integrated and operational. Real AI-powered tactic suggestions flow from trained models through the entire system.
 
 ## What's New
 
@@ -16,7 +16,7 @@ ECHIDNA v1.3 completes the **end-to-end neurosymbolic proving stack**. All three
 
 ```
 ┌─────────────────┐
-│  ReScript UI    │  Port 3000
+│  AffineScript UI    │  Port 3000
 │  (Browser)      │  → Fetch API
 └────────┬────────┘
          │
@@ -40,7 +40,7 @@ ECHIDNA v1.3 completes the **end-to-end neurosymbolic proving stack**. All three
 - Julia ML API server (`src/julia/api_server.jl`) serves trained models via HTTP
 - Rust backend calls Julia `/suggest` endpoint for AI predictions
 - Falls back to prover-specific suggestions if ML unavailable
-- ReScript UI calls Rust `/api/tactics/suggest` endpoint
+- AffineScript UI calls Rust `/api/tactics/suggest` endpoint
 - Real confidence scores: reflexivity (0.321), simpl (0.288), intros (0.233)
 
 ### 🧠 Julia ML API Server
@@ -82,7 +82,7 @@ ECHIDNA v1.3 completes the **end-to-end neurosymbolic proving stack**. All three
 - Aspect tag inference (algebraic, geometric, logical, inductive, deductive, automated)
 - Session management with proof state tracking
 
-### 📊 ReScript UI
+### 📊 AffineScript UI
 
 **Status:** Compiled & Operational
 
@@ -105,7 +105,7 @@ ECHIDNA v1.3 completes the **end-to-end neurosymbolic proving stack**. All three
 - Session state management
 
 **Build System:**
-- ReScript → ES6 modules
+- AffineScript → ES6 modules
 - Output: `.bs.js` files
 - Served via Python http.server (dev)
 
@@ -160,7 +160,7 @@ Test 5: Rust Backend → Julia ML Integration
 ```bash
 julia src/julia/api_server.jl &
 ./target/release/echidna server --port 8081 --enable-cors &
-cd src/rescript && python3 -m http.server 3000 &
+cd src/affinescript && python3 -m http.server 3000 &
 ```
 
 **Access:** http://127.0.0.1:3000
@@ -169,7 +169,7 @@ cd src/rescript && python3 -m http.server 3000 &
 
 ### Data Flow
 
-1. **User Input** → ReScript UI captures goal
+1. **User Input** → AffineScript UI captures goal
 2. **API Request** → Fetch POST to Rust `/api/tactics/suggest`
 3. **ML Inference** → Rust forwards to Julia `/suggest`
 4. **Model Prediction** → Julia runs logistic regression (332 proofs)
@@ -241,7 +241,7 @@ None - v1.3 is fully backward compatible with v1.2.
 
 1. **Julia ML API** - Now serving predictions via HTTP (was: local training only)
 2. **Rust Backend** - Now calls ML API (was: mock/prover suggestions only)
-3. **ReScript UI** - Now connected to backend (was: standalone)
+3. **AffineScript UI** - Now connected to backend (was: standalone)
 4. **Integration Tests** - New 8-test suite (was: unit tests only)
 5. **Documentation** - Added QUICKSTART.md (was: scattered docs)
 
@@ -250,11 +250,11 @@ None - v1.3 is fully backward compatible with v1.2.
 - Fixed server.rs imports (added reqwest, Duration)
 - Fixed AppState to include ml_client and ml_api_url
 - Fixed suggest_handler signature to receive State parameter
-- Fixed ReScript compilation warnings (unused variable)
+- Fixed AffineScript compilation warnings (unused variable)
 
 ## Known Issues
 
-- ReScript deno bundle fails (not critical - ES6 modules work)
+- AffineScript deno bundle fails (not critical - ES6 modules work)
 - UI needs syntax highlighting for all 12 provers
 - Proof tree visualization structure ready but rendering incomplete
 - aspect-tags endpoint returns null descriptions
@@ -272,7 +272,7 @@ None - v1.3 is fully backward compatible with v1.2.
 ### Production Checklist
 
 - [ ] Build Rust in release mode: `cargo build --release`
-- [ ] Compile ReScript UI: `cd src/rescript && npm run build`
+- [ ] Compile AffineScript UI: `cd src/affinescript && npm run build`
 - [ ] Train models if needed: `julia src/julia/train_models.jl`
 - [ ] Start Julia ML API: `julia src/julia/api_server.jl`
 - [ ] Start Rust backend: `./target/release/echidna server --port 8081`
@@ -309,7 +309,7 @@ services:
 1. Pull latest: `git pull origin main`
 2. Install Julia packages: `julia -e 'using Pkg; Pkg.add(["HTTP", "JSON3"])'`
 3. Rebuild Rust: `cargo build --release`
-4. Rebuild ReScript: `cd src/rescript && npm run build`
+4. Rebuild AffineScript: `cd src/affinescript && npm run build`
 5. Start services (see Quick Start)
 6. Run tests: `./tests/integration_test.sh`
 
@@ -323,8 +323,8 @@ services:
 - Port: 8081 (default, CLI: `--port`)
 - Julia URL: `http://127.0.0.1:9000` (hardcoded in server.rs:48)
 
-**ReScript UI:**
-- API base: `http://localhost:8081/api` (src/rescript/src/api/Client.res:12)
+**AffineScript UI:**
+- API base: `http://localhost:8081/api` (src/affinescript/src/api/Client.res:12)
 
 ## Contributors
 
@@ -361,7 +361,7 @@ MIT OR Palimpsest-0.6
 ---
 
 **v1.3 Highlights:**
-- ✅ Full stack integration (Julia ← Rust ← ReScript)
+- ✅ Full stack integration (Julia ← Rust ← AffineScript)
 - ✅ Real AI predictions with confidence scores
 - ✅ 13 REST API endpoints operational
 - ✅ 8 integration tests passing

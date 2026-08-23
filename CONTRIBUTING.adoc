@@ -72,7 +72,7 @@ Language toolchains are described in link:QUICKSTART-DEV.adoc[`QUICKSTART-DEV.ad
 
 * **Python anywhere outside `salt/`** — banned by RSR-H4. The ML
   layer is Julia; the rest is Rust / Idris2 / Chapel / Zig /
-  AffineScript-or-ReScript.
+  AffineScript-or-AffineScript.
 * **Dockerfiles** — RSR-H15 requires Podman + `Containerfile` (or
   `.containerization/Containerfile.wave3` for the per-prover image
   tree).

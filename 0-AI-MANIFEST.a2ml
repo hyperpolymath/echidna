@@ -47,7 +47,7 @@ container = "container/"
 
 [tech-stack]
 primary = "Rust (141 ProverKind variants over 105 backend implementations — see docs/PROVER_COUNT.md; trust pipeline, CLI, REPL, API servers)"
-secondary = "Julia (ML inference, port 8090), ReScript+Deno (UI, 33 files, zero TypeScript)"
+secondary = "Julia (ML inference, port 8090), AffineScript+Deno (UI, 33 files, zero TypeScript)"
 optional = "Chapel (parallel proof dispatch)"
 abi = "Idris2 (7 modules, zero believe-me)"
 ffi = "Zig (4 shared libraries)"
@@ -66,7 +66,7 @@ exchange = "src/rust/exchange/"     # Cross-prover proof exchange (OpenTheory, D
 agent = "src/rust/agent/"           # Agentic proof search (actor model)
 interfaces = "src/interfaces/"      # GraphQL + gRPC + REST (workspace members)
 julia-ml = "src/julia/"             # Neural premise selection
-rescript-ui = "src/rescript/"       # UI components
+affinescript-ui = "src/affinescript/"       # UI components
 
 [trust-pipeline]
 # 11-step trust hardening (v1.5+)
@@ -90,7 +90,7 @@ invariant-4 = "Original name: 'Cognitive Hybrid' not 'Computational Heuristic'"
 invariant-5 = "MPL-2.0 throughout"
 invariant-6 = "Container: Containerfile not Dockerfile, Podman not Docker"
 invariant-7 = "Justfile is primary build system — not Make"
-invariant-8 = "No Python — Julia for ML, Rust for systems, ReScript for apps"
+invariant-8 = "No Python — Julia for ML, Rust for systems, AffineScript for apps"
 invariant-9 = "Zero believe-me in Idris2 ABI (src/abi/)"
 
 [session-protocol]
