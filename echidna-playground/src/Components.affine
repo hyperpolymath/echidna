@@ -1,0 +1,7 @@
+// SPDX-License-Identifier: MPL-2.0
+// SPDX-FileCopyrightText: 2026 Jonathan D.A. Jewell
+// Ported via Harvard Engine bulk-processor
+
+module Components;
+
+// TODO: Complete semantic implementation
