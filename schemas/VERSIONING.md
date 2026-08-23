@@ -83,7 +83,7 @@ schema; failing it is a merge blocker.
 | **Rust** | `capnpc-rust` (generated `echidna_capnp.rs`) | L1 wave 1 target |
 | **Idris2** | `src/abi/EchidnaABI/CapnSchemas.idr` — type mirror + proofs | Present; update alongside schema |
 | **Julia** | Zig C-ABI shim, buffer-oriented (RATIFIED 2026-05-18; `CapnProto.jl` rejected) | `src/julia/ipc.jl` stub present; impl gated on L3 hand-off |
-| **AffineScript** | `bindings/affinescript/echidna_capnp.affine` → typed-wasm (UI path; ReScript banned estate-wide) | Planned L1 wave 1 |
+| **AffineScript** | `bindings/affinescript/echidna_capnp.affine` → typed-wasm (UI path; AffineScript banned estate-wide) | Planned L1 wave 1 |
 | **Zig** | C-ABI bridge in `ffi/zig/src/capnp_bridge.zig` — also the codec the Julia shim calls | Stub present; real impl in L1 wave 1 |
 
 ## Idris2 ABI Proofs (`src/abi/EchidnaABI/CapnSchemas.idr`)

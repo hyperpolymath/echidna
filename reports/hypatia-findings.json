@@ -1217,7 +1217,7 @@
   },
   {
     "action": "module_replace",
-    "file": "/home/hyperpolymath/dev/repos/echidna/src/rescript/src/Main.res",
+    "file": "/home/hyperpolymath/dev/repos/echidna/src/affinescript/src/Main.res",
     "reason": "Belt.Array deprecated -- use Array (1 occurrences)",
     "rule_module": "migration_rules",
     "severity": "high",
@@ -1225,7 +1225,7 @@
   },
   {
     "action": "module_replace",
-    "file": "/home/hyperpolymath/dev/repos/echidna/src/rescript/src/Main.res",
+    "file": "/home/hyperpolymath/dev/repos/echidna/src/affinescript/src/Main.res",
     "reason": "Belt.Option deprecated -- use Option (1 occurrences)",
     "rule_module": "migration_rules",
     "severity": "medium",
@@ -1233,7 +1233,7 @@
   },
   {
     "action": "module_replace",
-    "file": "/home/hyperpolymath/dev/repos/echidna/src/rescript/src/api/Client.res",
+    "file": "/home/hyperpolymath/dev/repos/echidna/src/affinescript/src/api/Client.res",
     "reason": "Belt.Array deprecated -- use Array (8 occurrences)",
     "rule_module": "migration_rules",
     "severity": "high",
@@ -1241,7 +1241,7 @@
   },
   {
     "action": "module_replace",
-    "file": "/home/hyperpolymath/dev/repos/echidna/src/rescript/src/api/Client.res",
+    "file": "/home/hyperpolymath/dev/repos/echidna/src/affinescript/src/api/Client.res",
     "reason": "Belt.Option deprecated -- use Option (33 occurrences)",
     "rule_module": "migration_rules",
     "severity": "medium",
@@ -1249,7 +1249,7 @@
   },
   {
     "action": "module_replace",
-    "file": "/home/hyperpolymath/dev/repos/echidna/src/rescript/src/components/ProofTree.res",
+    "file": "/home/hyperpolymath/dev/repos/echidna/src/affinescript/src/components/ProofTree.res",
     "reason": "Belt.Array deprecated -- use Array (4 occurrences)",
     "rule_module": "migration_rules",
     "severity": "high",
@@ -1257,7 +1257,7 @@
   },
   {
     "action": "module_replace",
-    "file": "/home/hyperpolymath/dev/repos/echidna/src/rescript/src/components/ProofTree.res",
+    "file": "/home/hyperpolymath/dev/repos/echidna/src/affinescript/src/components/ProofTree.res",
     "reason": "Belt.Option deprecated -- use Option (4 occurrences)",
     "rule_module": "migration_rules",
     "severity": "medium",
@@ -1265,7 +1265,7 @@
   },
   {
     "action": "module_replace",
-    "file": "/home/hyperpolymath/dev/repos/echidna/src/rescript/src/components/ProofTree.res",
+    "file": "/home/hyperpolymath/dev/repos/echidna/src/affinescript/src/components/ProofTree.res",
     "reason": "Belt.Set deprecated -- use Set (7 occurrences)",
     "rule_module": "migration_rules",
     "severity": "medium",
@@ -1273,7 +1273,7 @@
   },
   {
     "action": "module_replace",
-    "file": "/home/hyperpolymath/dev/repos/echidna/src/rescript/src/components/ProverSelector.res",
+    "file": "/home/hyperpolymath/dev/repos/echidna/src/affinescript/src/components/ProverSelector.res",
     "reason": "Belt.Array deprecated -- use Array (3 occurrences)",
     "rule_module": "migration_rules",
     "severity": "high",
@@ -1281,7 +1281,7 @@
   },
   {
     "action": "module_replace",
-    "file": "/home/hyperpolymath/dev/repos/echidna/src/rescript/src/components/GoalList.res",
+    "file": "/home/hyperpolymath/dev/repos/echidna/src/affinescript/src/components/GoalList.res",
     "reason": "Belt.Array deprecated -- use Array (3 occurrences)",
     "rule_module": "migration_rules",
     "severity": "high",
@@ -1289,7 +1289,7 @@
   },
   {
     "action": "module_replace",
-    "file": "/home/hyperpolymath/dev/repos/echidna/src/rescript/src/components/TacticSuggester.res",
+    "file": "/home/hyperpolymath/dev/repos/echidna/src/affinescript/src/components/TacticSuggester.res",
     "reason": "Belt.Array deprecated -- use Array (4 occurrences)",
     "rule_module": "migration_rules",
     "severity": "high",
@@ -1297,7 +1297,7 @@
   },
   {
     "action": "module_replace",
-    "file": "/home/hyperpolymath/dev/repos/echidna/src/rescript/src/components/TheoremSearch.res",
+    "file": "/home/hyperpolymath/dev/repos/echidna/src/affinescript/src/components/TheoremSearch.res",
     "reason": "Belt.Array deprecated -- use Array (10 occurrences)",
     "rule_module": "migration_rules",
     "severity": "high",
@@ -1305,7 +1305,7 @@
   },
   {
     "action": "module_replace",
-    "file": "/home/hyperpolymath/dev/repos/echidna/src/rescript/src/components/TheoremSearch.res",
+    "file": "/home/hyperpolymath/dev/repos/echidna/src/affinescript/src/components/TheoremSearch.res",
     "reason": "Belt.Map deprecated -- use Map (5 occurrences)",
     "rule_module": "migration_rules",
     "severity": "medium",
@@ -1313,7 +1313,7 @@
   },
   {
     "action": "module_replace",
-    "file": "/home/hyperpolymath/dev/repos/echidna/src/rescript/src/components/TheoremSearch.res",
+    "file": "/home/hyperpolymath/dev/repos/echidna/src/affinescript/src/components/TheoremSearch.res",
     "reason": "Belt.Option deprecated -- use Option (1 occurrences)",
     "rule_module": "migration_rules",
     "severity": "medium",
@@ -1321,7 +1321,7 @@
   },
   {
     "action": "module_replace",
-    "file": "/home/hyperpolymath/dev/repos/echidna/src/rescript/src/components/ProofViewer.res",
+    "file": "/home/hyperpolymath/dev/repos/echidna/src/affinescript/src/components/ProofViewer.res",
     "reason": "Belt.Array deprecated -- use Array (4 occurrences)",
     "rule_module": "migration_rules",
     "severity": "high",
@@ -1329,7 +1329,7 @@
   },
   {
     "action": "module_replace",
-    "file": "/home/hyperpolymath/dev/repos/echidna/src/rescript/src/state/Store.res",
+    "file": "/home/hyperpolymath/dev/repos/echidna/src/affinescript/src/state/Store.res",
     "reason": "Belt.Array deprecated -- use Array (1 occurrences)",
     "rule_module": "migration_rules",
     "severity": "high",

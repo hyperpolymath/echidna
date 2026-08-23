@@ -6,7 +6,7 @@
 # Wired from hyperpolymath/hypatia docs/design/merge-orchestration (artifact 4, PR #459).
 #
 # Gates dependency-bump PRs on:
-#   B3  nix bump                  -> fail (Nix removed estate-wide; close, do not merge)
+#   B3  guix bump                  -> fail (Guix removed estate-wide; close, do not merge)
 #   B1  reachable unmitigable CVE -> fail (via panic-attack's OSV-backed Patch-Bridge)
 # A clean patch/minor CVE-clear bump passes. A failing gate is a red check; to actually
 # BLOCK auto-merge, add "bridge-gate" to this repo's required status checks (owner action).
@@ -32,12 +32,12 @@ jobs:
     steps:
       - uses: actions/checkout@v7.0.1
 
-      - name: B3 gate -- nix bumps (no network)
+      - name: B3 gate -- guix bumps (no network)
         env:
           HEAD_REF: ${{ github.head_ref }}
         run: |
-          if [[ "$HEAD_REF" == dependabot/nix/* ]]; then
-            echo "::error::B3: nix bump -- Nix removed estate-wide; close, do not merge."
+          if [[ "$HEAD_REF" == dependabot/guix/* ]]; then
+            echo "::error::B3: guix bump -- Guix removed estate-wide; close, do not merge."
             exit 1
           fi
 

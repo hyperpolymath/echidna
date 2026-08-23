@@ -28,7 +28,7 @@ Related to #
 
 - [ ] Rust core
 - [ ] Julia ML components
-- [ ] ReScript UI
+- [ ] AffineScript UI
 - [ ] Prover backend (specify): _____
 - [ ] Documentation
 - [ ] Tests

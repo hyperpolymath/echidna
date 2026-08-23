@@ -22,7 +22,7 @@ GitHub code scanning showed 249 open alerts.
 | Hypatia `code_scanning_alerts/CSA001` self-echo | 27 | Reporting debris | Standards/Hypatia SARIF fix, then clear stale alerts |
 | Structural stale refs: `SD022`, `SD007` | 28 | Lifecycle hygiene | PR-only documentation/state cleanup |
 | Workflow and Scorecard control-plane hygiene | 51 | CI/security control | Existing PR machinery, conservative batching |
-| ReScript migration findings | 73 | Language migration | Batch by subsystem, PR-only |
+| AffineScript migration findings | 73 | Language migration | Batch by subsystem, PR-only |
 | Runtime crash/availability code safety | 45 | Source risk | Context-aware PRs, no blind rewrites |
 | FFI/proof/memory-safety findings | 22 | High-risk source/proof boundary | Specialist review, proof route, report-only by default |
 | Environment/report-only findings | 3 | Control-plane topology | Observe, model, and route manually |
@@ -57,7 +57,7 @@ Recommended handling:
 
 Related issue: <https://github.com/hyperpolymath/echidna/issues/241>
 
-### ReScript Migration
+### AffineScript Migration
 
 The 73 migration findings should be treated as one language-migration campaign,
 not 73 isolated defects.
@@ -119,7 +119,7 @@ Related issue: <https://github.com/hyperpolymath/echidna/issues/239>
 | --- | ---: | --- |
 | Dissolve as stale/reporting debris | 27 | Self-echo SARIF artifacts |
 | Trivial/easy existing-system PR work | 79 | Workflow/Scorecard plus structural docs/state |
-| Readily accommodated by extended system | 118 | ReScript migration plus runtime code-safety with context |
+| Readily accommodated by extended system | 118 | AffineScript migration plus runtime code-safety with context |
 | High risk, specialist review only | 22 | FFI/proof/memory boundary |
 | Report-only environment topology | 3 | Needs environment self-modeling |
 
@@ -131,7 +131,7 @@ The safe order is:
 2. Let relevant in-flight GitHub Actions, CodeQL, Scorecard, and Dependabot
    work finish when it covers the same class.
 3. Apply workflow and structural hygiene PRs.
-4. Run the ReScript migration campaign by subsystem.
+4. Run the AffineScript migration campaign by subsystem.
 5. Triage runtime code-safety paths.
 6. Hold FFI/proof/memory-safety items for specialist review.
 

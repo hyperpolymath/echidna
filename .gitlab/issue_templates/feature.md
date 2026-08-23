@@ -26,7 +26,7 @@ If you have thoughts on implementation:
 ### Components Affected
 - [ ] Rust core
 - [ ] Julia ML
-- [ ] ReScript UI
+- [ ] AffineScript UI
 - [ ] Prover backend: _____
 - [ ] Documentation
 - [ ] Tests

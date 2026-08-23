@@ -24,7 +24,7 @@ invariants govern every design choice:
 ```
 ┌─────────────────────────────────────────────────────────────────────────┐
 │                              UI Layer                                   │
-│   AffineScript-TEA (migrating from src/rescript/), served by Deno      │
+│   AffineScript-TEA (migrating from src/affinescript/), served by Deno      │
 └──────────────────────────────┬──────────────────────────────────────────┘
                                │ HTTP / WebSocket (Cap'n Proto, planned L1)
 ┌──────────────────────────────▼──────────────────────────────────────────┐
@@ -134,7 +134,7 @@ in default builds; see [`handover/TODO.md`](handover/TODO.md) for current state)
 | `src/zig_ffi/` | Zig | Chapel-bridge FFI shim |
 | `ffi/zig/` | Zig | Overlay / tentacles / boj sources |
 | `src/ada/` | Ada + SPARK | Formal companion library |
-| `src/rescript/` | ReScript → AffineScript | UI (migration in progress) |
+| `src/affinescript/` | AffineScript → AffineScript | UI (migration in progress) |
 | `src/ui/` | static assets | Public UI files |
 | `src/interfaces/` | Rust | GraphQL, gRPC, REST workspace crates |
 

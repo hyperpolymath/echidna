@@ -117,7 +117,7 @@ Stage 7  Sovereign tooling surround         the rest of the ecosystem
     7c  Selur scheduler
     7d  Svalinn trust boundary
     7e  Cerro‑Torre observability
-    7f  AffineScript‑TEA frontend           src/rescript/, ≥33 modules
+    7f  AffineScript‑TEA frontend           src/affinescript/, ≥33 modules
     7g  LOL i18n                            locale/ + t!() macro
     7h  Zig ABI 16‑endpoint surface         src/zig/echidna_abi.zig
 
@@ -137,7 +137,7 @@ Stage 8  Self‑verified                      ECHIDNA proves ECHIDNA
 | "Chapel fully supported" | **rewritten and CI-green 2026-05-30** — `src/chapel/` compiles under chpl 2.3.0 / 2.8.0 (static lib, apt Chapel ships `CHPL_LIB_PIC=none` only); L2.2 `parallelProofSearchSpeculative` (first-success-wins atomic CAS) shipped next to best-of `parallelProofSearch`; `chapel-ci.yml` chapel-build + zig-ffi strict; aggregation invariants proved in `proofs/agda/ParallelSoundness.agda` with zero postulate/admit/believe_me. L2.3 cancel-token preemption next | **`dispatch.rs` picks Chapel‑parallel dispatch by config**; runtime init + cancellation + error propagation wired; ≥1 OoM speedup on portfolio solves |
 | "Cap'n Proto serialisation" | 0 `.capnp` files | **`crates/echidna-wire/`** contains schemas for ProofState / Goal / Tactic / EmbeddingRequest / RankingResponse; IPC on :8090 is Cap'n Proto; JSON retained only as debug fallback |
 | "Vordr / Selur / Svalinn / Cerro‑Torre / Stapeln" | Not present | Each named as a versioned dependency in Cargo.toml or the container definition, wired into its role |
-| "AffineScript‑TEA frontend" | Not present (10 `.res` files stub) | **`src/rescript/`** holds ≥33 AffineScript‑TEA modules, persistent Model → Msg → Update loop, talks to core over Cap'n Proto WebSocket |
+| "AffineScript‑TEA frontend" | Not present (10 `.res` files stub) | **`src/affinescript/`** holds ≥33 AffineScript‑TEA modules, persistent Model → Msg → Update loop, talks to core over Cap'n Proto WebSocket |
 | "LOL i18n" | Not present | **`locale/`** with LOL‑sourced translations; `t!()` macro for every user‑facing string |
 | "Rust/SPARK base stable" | Rust only | **`crates/echidna-core-spark/`** holds the Ada/SPARK‑verified kernel (axiom scanning, trust‑level computation); proved free of runtime errors; called from Rust via C ABI |
 | "16‑endpoint Zig ABI" | 4 shared libs, endpoint count unverified | **`src/zig/echidna_abi.zig`** exports exactly 16 functions (`echidna_prove`, `echidna_apply_tactic`, `echidna_rank_premises`, `echidna_verify_certificate`, `echidna_post_octad`, `echidna_query_identity`, …) with a versioned header |

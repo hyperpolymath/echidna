@@ -3,7 +3,7 @@
 # in hyperpolymath/standards instead of carrying per-repo copies.
 #
 # Replaces the per-repo governance scaffolding removed in the same commit:
-#   quality.yml, guix-nix-policy.yml, npm-bun-blocker.yml, ts-blocker.yml,
+#   quality.yml, guix-guix-policy.yml, npm-bun-blocker.yml, ts-blocker.yml,
 #   security-policy.yml, rsr-antipattern.yml, wellknown-enforcement.yml,
 #   workflow-linter.yml
 #

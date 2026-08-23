@@ -68,8 +68,8 @@ build-wasm:
 
 # Build UI components
 build-ui:
-    @echo "Compiling ReScript UI..."
-    cd src/rescript && npm run build
+    @echo "Compiling AffineScript UI..."
+    cd src/affinescript && npm run build
 
 # Build Julia ML components
 build-ml:
@@ -203,7 +203,7 @@ dev-julia:
 
 # Start UI development server
 dev-ui:
-    cd src/rescript && npm run dev
+    cd src/affinescript && npm run dev
 
 # Watch for changes and rebuild
 watch:
@@ -219,14 +219,14 @@ install-deps:
     cargo fetch
     @echo "Installing Julia dependencies..."
     cd src/julia && julia --project -e 'using Pkg; Pkg.instantiate()'
-    @echo "Installing ReScript dependencies..."
-    cd src/rescript && npm install
+    @echo "Installing AffineScript dependencies..."
+    cd src/affinescript && npm install
 
 # Update dependencies
 update-deps:
     cargo update
     cd src/julia && julia --project -e 'using Pkg; Pkg.update()'
-    cd src/rescript && npm update
+    cd src/affinescript && npm update
 
 # Check for outdated dependencies
 check-deps:
@@ -325,7 +325,7 @@ release-tag VERSION:
 clean:
     cargo clean
     rm -rf target/
-    rm -rf src/rescript/lib/
+    rm -rf src/affinescript/lib/
     find . -name "*.bs.js" -delete
 
 # Deep clean (including dependencies)

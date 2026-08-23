@@ -176,14 +176,14 @@ completion-estimate = "2026-09-15"
 
 goal = """
 Stable, versioned API that experts and bots can rely on.
-Multiple protocol options (REST, gRPC, GraphQL), client libraries (Rust, Julia, ReScript).
+Multiple protocol options (REST, gRPC, GraphQL), client libraries (Rust, Julia, AffineScript).
 API contract: version bumps only break on major version increment.
 
 Definition of done:
 1. REST API v1.0 (OpenAPI spec published)
 2. gRPC service v1.0 (protobuf definitions, SLA guarantees)
 3. GraphQL query/mutation set (stable schema)
-4. Client SDKs (Rust, Julia, ReScript)
+4. Client SDKs (Rust, Julia, AffineScript)
 5. API documentation (tutorials, examples, error codes)
 6. Backwards compatibility policy documented
 """
@@ -202,7 +202,7 @@ deliverables = [
   "GraphQL schema (query/mutation/subscription)",
   "Rust SDK (github.com/hyperpolymath/echidna-sdk-rust)",
   "Julia SDK (registered as EchidnaSDK.jl)",
-  "ReScript SDK (@hyperpolymath/echidna-sdk-rescript)",
+  "AffineScript SDK (@hyperpolymath/echidna-sdk-affinescript)",
   "API documentation website",
   "Backwards compatibility SLA"
 ]

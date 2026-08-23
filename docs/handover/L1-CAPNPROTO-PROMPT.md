@@ -49,9 +49,9 @@
 
 ### AffineScript bindings (UI path)
 - `bindings/affinescript/echidna_capnp.affine` — typed AffineScript bindings for the
-  UI layer (compiled to typed-wasm). **ReScript is banned estate-wide** — this was
-  formerly listed as `bindings/rescript/echidna_capnp.res`; the destination is
-  AffineScript directly, not ReScript.
+  UI layer (compiled to typed-wasm). **AffineScript is banned estate-wide** — this was
+  formerly listed as `bindings/affinescript/echidna_capnp.res`; the destination is
+  AffineScript directly, not AffineScript.
 - Keep the existing 3 API interfaces (GraphQL/gRPC/REST) as external surfaces; Cap'n Proto is the
   **internal** wire format
 

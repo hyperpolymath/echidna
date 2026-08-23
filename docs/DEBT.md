@@ -92,7 +92,7 @@ holds licence reference texts.
 The SPDX-header sweep alone would have missed all of these. Recorded because
 each is a distinct class worth re-checking after any future licence change:
 
-1. **Stale `MIT` grants.** `src/rescript/.gitignore`, `styles/main.css` and
+1. **Stale `MIT` grants.** `src/affinescript/.gitignore`, `styles/main.css` and
    `tailwind.config.js` still declared `MIT OR Palimpsest-0.6` — pre-dating
    even the MPL migration. Removing only the Palimpsest half would have left
    them **MIT**. Now AGPL-3.0-or-later.
@@ -102,9 +102,9 @@ each is a distinct class worth re-checking after any future licence change:
    `docs-site/.well-known/aibdp.json` (served on the site), `stapeln.toml`,
    `container/manifest.toml`, three Ada `alire.toml` manifests under `spark/`,
    `.machine_readable/descriptiles/META.a2ml`, and `0-AI-MANIFEST.a2ml`.
-   Plus a **nested `src/rescript/.reuse/dep5`** declaring `MIT OR
+   Plus a **nested `src/affinescript/.reuse/dep5`** declaring `MIT OR
    Palimpsest-0.6` for the UI sub-tree.
-3. **A user-facing licence string.** `src/rescript/src/Main.res` rendered
+3. **A user-facing licence string.** `src/affinescript/src/Main.res` rendered
    `"MIT OR Palimpsest-0.6 License"` in the UI — a false licence statement
    shown to users, invisible to every header-based check.
 4. **OCI image labels** — 16 `LABEL org.opencontainers.image.licenses="MPL-2.0"`
@@ -249,11 +249,11 @@ whether the sink should be created or repointed.
 
 ## P2 — Code
 
-### C1. ReScript — removed 2026-08
+### C1. AffineScript — removed 2026-08
 
-The 37 ReScript files (24 in `src/rescript/`, 13 orphaned `.res` prover
+The 37 AffineScript files (24 in `src/affinescript/`, 13 orphaned `.res` prover
 clients in `src/provers/`) were deleted, along with the build and CI wiring
-that referenced them. ReScript is a banned language under the estate policy.
+that referenced them. AffineScript is a banned language under the estate policy.
 
 **The replacement is not ready, and that is now visible rather than hidden.**
 The AffineScript-TEA sources sit at `src/ui/tea/` but the compile pipeline is
@@ -271,7 +271,7 @@ language-policy cleanup.
 
 `python3 -c "import yaml; yaml.safe_load(open('.gitlab-ci.yml'))"` fails on a
 bare `%` inside an unquoted shell command. **Pre-existing** — verified by
-parsing the file at `HEAD` before the ReScript removal shifted the line
+parsing the file at `HEAD` before the AffineScript removal shifted the line
 number. Whether it matters depends on whether the GitLab mirror actually runs
 CI; if it does not, the file is decorative and should say so or go.
 
@@ -344,7 +344,7 @@ Open issues covering debt not duplicated above: [#314](https://github.com/hyperp
 `VERISIMDB_PAT`), [#252](https://github.com/hyperpolymath/echidna/issues/252)
 (machine-readable currency audit), [#242](https://github.com/hyperpolymath/echidna/issues/242)
 (structural drift in path references), [#240](https://github.com/hyperpolymath/echidna/issues/240)
-(ReScript deprecated-API triage), [#239](https://github.com/hyperpolymath/echidna/issues/239)
+(AffineScript deprecated-API triage), [#239](https://github.com/hyperpolymath/echidna/issues/239)
 (safety-alert classification), [#216](https://github.com/hyperpolymath/echidna/issues/216)
 (SPDX-FileCopyrightText hook blocks commits — a licensing-adjacent item that
 should be resolved alongside P0).

@@ -107,7 +107,7 @@ package definitions (not metadata files) and must NOT be deleted.
 | **Chapel** | Optional parallel proof dispatch | Wired via Cargo `chapel` feature |
 | **Guile Scheme** | Guix package definitions (`guix.scm`, `manifests/*.scm`) | `.scm` metadata files are deprecated — see below |
 | **Bash/POSIX Shell** | Build scripts, CI glue | Keep minimal |
-| **AffineScript** | UI components (TEA architecture, compiled to typed-wasm / wasm, served via Deno) | Replaces ReScript per `docs/ROADMAP.md`; migration in progress at `src/rescript/` |
+| **AffineScript** | UI components (TEA architecture, compiled to typed-wasm / wasm, served via Deno) | Replaces AffineScript per `docs/ROADMAP.md`; migration in progress at `src/affinescript/` |
 | **Deno** | Runtime for compiled AffineScript-TEA UI | Replaces Node/npm/bun |
 | **JavaScript** | Build tooling only (Tailwind config, test harness) | Not for business logic |
 | **OCaml** | AffineScript compiler host | Decision locked — AffineScript selected for UI |
@@ -118,7 +118,7 @@ package definitions (not metadata files) and must NOT be deleted.
 | Banned | Replacement |
 |--------|-------------|
 | TypeScript | AffineScript |
-| ReScript | AffineScript |
+| AffineScript | AffineScript |
 | Node.js | Deno |
 | npm / Bun / pnpm / yarn | Deno |
 | Go | Rust |
@@ -126,7 +126,7 @@ package definitions (not metadata files) and must NOT be deleted.
 
 ### Enforcement Rules
 
-1. **No new TypeScript or ReScript files** - Use AffineScript-TEA; migrate existing `src/rescript/` to AffineScript per `docs/ROADMAP.md`
+1. **No new TypeScript or AffineScript files** - Use AffineScript-TEA; migrate existing `src/affinescript/` to AffineScript per `docs/ROADMAP.md`
 2. **No package.json for runtime deps** - Use deno.json imports
 3. **No node_modules in production** - Deno caches deps automatically
 4. **No Go code** - Use Rust instead
@@ -136,9 +136,9 @@ package definitions (not metadata files) and must NOT be deleted.
 
 - **Sole primary**: Guix (`guix.scm`, `manifests/*.scm`)
 - **Escape hatch**: a sealed container (`.containerization/Containerfile.wave3`)
-  for the not-in-Guix / non-free tail. **NO Nix anywhere** — estate ruling
+  for the not-in-Guix / non-free tail. **NO Guix anywhere** — estate ruling
   2026-05-18 (Guix primary + sealed-container escape), hardened 2026-06-01
-  (nix deprecated estate-wide; do NOT add `flake.nix`/`flake.lock` back).
+  (guix deprecated estate-wide; do NOT add `flake.guix`/`flake.lock` back).
   A second packager is permitted only where it is the sole source of a
   specific named dependency, documented as such.
 - **JS deps**: Deno (deno.json imports)

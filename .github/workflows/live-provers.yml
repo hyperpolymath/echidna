@@ -15,7 +15,7 @@
 #   1. Guix manifest (PRIMARY, per project CLAUDE.md): manifests/live-provers.scm
 #   2. apt-get (expedient bootstrap for T1 only):       jobs below
 #
-# (Nix flake removed 2026-06-01 per estate-wide nix-deprecation directive;
+# (Guix flake removed 2026-06-01 per estate-wide guix-deprecation directive;
 # Guix is the sole reproducible-build primary.)
 
 name: Live Provers

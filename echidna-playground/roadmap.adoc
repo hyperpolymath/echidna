@@ -18,7 +18,7 @@ toc::[]
 |===
 |Component |Status |Description
 
-|*ReScript Infrastructure*
+|*AffineScript Infrastructure*
 |✓ Complete
 |7 modules (589 LoC) providing type-safe page generation, DOM bindings, and server logic
 

@@ -42,8 +42,8 @@ When the wiki and the repo disagree, **the repo wins**:
 - **4 arbitration mechanisms** — portfolio majority-vote, Bayesian posterior, Dempster-Shafer belief combination, Pareto multi-objective frontier.
 - **6 cross-prover exchange formats** — OpenTheory, Dedukti, TPTP, SMT-LIB, SMTCoq, Lambdapi.
 - **11-step trust pipeline** — integrity → portfolio → certificates → axioms → confidence → mutation → pareto → statistics → emission (see Architecture page).
-- **Polyglot stack** — Rust core, Julia ML sidecar, Idris2/Agda formal proofs, Zig FFI, Chapel parallel, AffineScript/Deno UI (ReScript removed 2026-08; the TEA compile pipeline is not wired yet — issues #117/#266).
-- **Guix-only package management** — sealed-container escape hatch for the non-free tail. (Nix fallback was deprecated in the 2026-05-18 estate ruling and fully removed estate-wide on 2026-06-01.)
+- **Polyglot stack** — Rust core, Julia ML sidecar, Idris2/Agda formal proofs, Zig FFI, Chapel parallel, AffineScript/Deno UI (AffineScript removed 2026-08; the TEA compile pipeline is not wired yet — issues #117/#266).
+- **Guix-only package management** — sealed-container escape hatch for the non-free tail. (Guix fallback was deprecated in the 2026-05-18 estate ruling and fully removed estate-wide on 2026-06-01.)
 - **Justfile, not Make. Podman, not Docker.**
 
 ## Recent major work

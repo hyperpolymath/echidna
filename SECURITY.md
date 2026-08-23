@@ -159,7 +159,7 @@ Security advisories are published at:
 The following are in scope for security reports:
 
 - **Core libraries**: Rust core, Julia ML layer, Idris2 ABI,
-  Zig FFI bridge, AffineScript / ReScript UI components
+  Zig FFI bridge, AffineScript / AffineScript UI components
 - **Prover backends**: every `ProverKind` variant wired through the
   dispatch pipeline — Tier-1 core through Tier-3 niche. The live
   membership list is `ProverKind::all()` in

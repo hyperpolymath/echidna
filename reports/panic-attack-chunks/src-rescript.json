@@ -1,6 +1,6 @@
 {
-  "program_path": "src/rescript",
-  "language": "rescript",
+  "program_path": "src/affinescript",
+  "language": "affinescript",
   "frameworks": [],
   "weak_points": [],
   "statistics": {

@@ -6,7 +6,7 @@
 
 ## Architecture
 
-ECHIDNA is a Rust workspace with Julia ML, Idris2 ABI, Zig FFI, and ReScript UI.
+ECHIDNA is a Rust workspace with Julia ML, Idris2 ABI, Zig FFI, and AffineScript UI.
 
 ### Rust Core (src/rust/)
 
@@ -78,7 +78,7 @@ Future: Flux.jl Transformer models.
 
 4 shared libraries. Bridges Idris2 ABI to C ABI.
 
-### ReScript UI (src/rescript/)
+### AffineScript UI (src/affinescript/)
 
 33 .res files. Deno runtime. Zero TypeScript.
 
@@ -178,7 +178,7 @@ All in `.machine_readable/`:
 - `guix.scm` — Guix package definition (uses cargo-build-system)
 - `Containerfile` — Podman container
 
-(Nix flake removed 2026-06-01 per estate-wide nix-deprecation directive;
+(Guix flake removed 2026-06-01 per estate-wide guix-deprecation directive;
 Guix is the sole packaging primary.)
 
 ## Test Structure
@@ -192,7 +192,7 @@ Guix is the sole packaging primary.)
 
 - No Python anywhere (use Julia for ML)
 - No Docker (use Podman)
-- No TypeScript (use ReScript)
+- No TypeScript (use AffineScript)
 - No `believe_me`/`assert_total` in Idris2
 - MPL-2.0 license throughout
 

@@ -252,7 +252,7 @@ The verification pipeline applies the following checks to every proof:
 
   - REST (axum + OpenAPI/Swagger, port 8000)
 
-- **ReScript / AffineScript UI**: ReScript components are being ported
+- **AffineScript / AffineScript UI**: AffineScript components are being ported
   to AffineScript-TEA as the stdlib primitives needed for the port (Http
   / Promise / Json / Dict) land in
   [affinescript](https://github.com/hyperpolymath/affinescript).
@@ -283,7 +283,7 @@ Optional, by component:
 - **Chapel** — optional parallel proof dispatch (`src/chapel/`,
   `--features` `chapel`)
 
-- **Deno** \>= 2.0 — ReScript / AffineScript UI (`src/rescript/`,
+- **Deno** \>= 2.0 — AffineScript / AffineScript UI (`src/affinescript/`,
   `src/ui/`)
 
 Run `just` `doctor` to verify what’s actually installed; `just` `heal`
@@ -351,7 +351,7 @@ podman run -it echidna:latest
 
 - **Julia**: ML inference (tactic prediction, premise selection)
 
-- **ReScript + Deno**: UI components
+- **AffineScript + Deno**: UI components
 
 - **Chapel**: Optional parallel proof dispatch
 
@@ -574,7 +574,7 @@ Headline shape (as of the most recent on-main work):
 - **Wave-3 container infrastructure**: 8-cell weekly cron building each
   Tier-3 prover image with stub-sentinel detection.
 
-- **Estate migrations in flight**: ReScript→AffineScript UI; npm→Deno
+- **Estate migrations in flight**: AffineScript→AffineScript UI; npm→Deno
   for `echidna-playground`; CI workflow consolidation under the
   governance ruleset.
 
@@ -618,7 +618,7 @@ Headline shape (as of the most recent on-main work):
 
 # Critical Constraints
 
-- **No Python** — Julia for ML, Rust for systems, ReScript /
+- **No Python** — Julia for ML, Rust for systems, AffineScript /
   AffineScript for UI. (`salt/` is the only carve-out.)
 
 - **RSR / CCCP Compliance** — see
