@@ -1,7 +1,25 @@
 // SPDX-License-Identifier: MPL-2.0
-// SPDX-FileCopyrightText: 2026 Jonathan D.A. Jewell
-// Ported via Harvard Engine bulk-processor
+// Ported via Harvard Engine (Semantic pass)
 
 module Main;
 
-// TODO: Complete semantic implementation
+// SPDX-License-Identifier: MPL-2.0
+// SPDX-FileCopyrightText: 2025 Coq-Jr Contributors
+
+// Main entry point for Coq-Jr
+
+// Re-export modules
+module Dom = Dom
+module JsCoq = JsCoq
+module Components = Components
+module Page = Page
+
+// Initialize the application when running in browser
+fn initialize = () => {
+  Console.log("Coq-Jr initialized")
+  Console.log("Generated page HTML available via Page.render()")
+}
+
+// Export the page render function for use by Deno server
+fn getPageHtml = Page.render
+
