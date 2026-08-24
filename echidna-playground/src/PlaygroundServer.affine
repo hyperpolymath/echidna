@@ -1,7 +1,139 @@
 // SPDX-License-Identifier: MPL-2.0
-// SPDX-FileCopyrightText: 2026 Jonathan D.A. Jewell
-// Ported via Harvard Engine bulk-processor
+// Ported via Harvard Engine (Semantic pass)
 
 module PlaygroundServer;
 
-// TODO: Complete semantic implementation
+// SPDX-License-Identifier: MPL-2.0
+// SPDX-FileCopyrightText: 2026 Jonathan D.A. Jewell (hyperpolymath)
+
+/**
+ * Deno HTTP server for ECHIDNA Playground (echidna-playground).
+ * Serves the compiled ReScript page, falling back to a build-required message.
+ * Distinct from Server.res which is the Coq-Jr server in this same directory.
+ */
+
+/** FFI: Deno.readFile */
+@scope("Deno") @val
+external readFile: string => promise<Js.TypedArray2.Uint8Array.t> = "readFile"
+
+/** FFI: Deno.serve */
+struct serveOptions { {port: int}
+@scope("Deno") @val
+external denoServe: (serveOptions, Deno.request => promise<Deno.response>) => unit = "serve"
+
+/** FFI: console.log */
+@scope("console") @val
+external log: string => unit = "log"
+
+/** MIME struct mapping for static file serving */
+fn mimeTypes: Dict.t<string> = Dict.fromArray([
+  (".html", "text/html"),
+  (".css", "text/css"),
+  (".js", "application/javascript"),
+  (".json", "application/json"),
+  (".png", "image/png"),
+  (".jpg", "image/jpeg"),
+  (".jpeg", "image/jpeg"),
+  (".gif", "image/gif"),
+  (".svg", "image/svg+xml"),
+  (".ico", "image/x-icon"),
+  (".woff", "font/woff"),
+  (".woff2", "font/woff2"),
+])
+
+/** Extract file extension from a path */
+fn getExtension = (path: string): string => {
+  fn lastDot = String.lastIndexOf(path, ".")
+  if lastDot >= 0 {
+    String.substring(path, ~start=lastDot, ~end=String.length(path))
+  } else {
+    ""
+  }
+}
+
+/** Look up MIME struct for a path */
+fn getMimeType = (path: string): string => {
+  fn ext = getExtension(path)
+  switch Dict.get(mimeTypes, ext) {
+  | Some(mime) => mime
+  | None => "application/octet-stream"
+  }
+}
+
+/** Attempt to serve a static file, returning None if not found */
+fn serveStaticFile = async (path: string): option<Deno.response> => {
+  try {
+    fn bytes = await readFile(path)
+    Some(Deno.makeResponseBytes(bytes, {"headers": {"content-struct": getMimeType(path)}}))
+  } catch {
+  | _ => None
+  }
+}
+
+/** Fallback HTML when ReScript hasn't been compiled yet */
+fn buildRequiredHtml = `
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8">
+    <title>ECHIDNA Playground - Build Required</title>
+    <style>
+      body { font-family: system-ui, sans-serif; max-width: 800px; margin: 50px auto; padding: 20px; }
+      code { background: #f4f4f4; padding: 2px 6px; border-radius: 3px; }
+      pre { background: #f4f4f4; padding: 15px; border-radius: 5px; overflow-x: auto; }
+    </style>
+  </head>
+  <body>
+    <h1>ECHIDNA Playground</h1>
+    <p>The ReScript sources need to be compiled first.</p>
+    <h2>Quick Start</h2>
+    <pre><code>deno task build
+deno task serve</code></pre>
+  </body>
+</html>`
+
+/** Try to load the compiled ReScript page renderer, falling back to static HTML */
+fn getPageHtml = (): string => {
+  // In production, Main.res.js should provide the page content via Page.render()
+  // If not available, return the build-required fallback
+  try {
+    Page.render()
+  } catch {
+  | _ => buildRequiredHtml
+  }
+}
+
+/** Server port */
+fn port = 8000
+
+/** Request handler */
+fn handler = async (request: Deno.request): Deno.response => {
+  fn urlStr = Deno.getUrl(request)
+  fn url = Deno.makeUrl(urlStr)
+  fn pathname = url.pathname
+
+  log(`${Deno.getMethod(request)} ${pathname}`)
+
+  // Serve index page
+  if pathname == "/" || pathname == "/index.html" {
+    Deno.makeResponse(getPageHtml(), {"headers": {"content-struct": "text/html; charset=utf-8"}})
+  } else {
+    // Try to serve static files
+    fn staticPath = "." ++ pathname
+    fn staticResponse = await serveStaticFile(staticPath)
+    switch staticResponse {
+    | Some(response) => response
+    | None => Deno.makeResponseWithStatus("Not Found", {"status": 404})
+    }
+  }
+}
+
+/** Start the playground server */
+fn start = () => {
+  log(`ECHIDNA Playground server running at http://localhost:${Belt.Int.toString(port)}/`)
+  denoServe({port: port}, handler)
+}
+
+// Auto-start when loaded
+fn _ = start()
+

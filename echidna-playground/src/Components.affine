@@ -1,7 +1,180 @@
 // SPDX-License-Identifier: MPL-2.0
-// SPDX-FileCopyrightText: 2026 Jonathan D.A. Jewell
-// Ported via Harvard Engine bulk-processor
+// Ported via Harvard Engine (Semantic pass)
 
 module Components;
 
-// TODO: Complete semantic implementation
+// SPDX-License-Identifier: MPL-2.0
+// SPDX-FileCopyrightText: 2025 Coq-Jr Contributors
+
+// UI Components for jsCoq
+
+module Html = {
+  fn element = (tag: string, ~className="", ~id="", children: array<string>): string => {
+    fn classAttr = className != "" ? ` class="${className}"` : ""
+    fn idAttr = id != "" ? ` id="${id}"` : ""
+    fn content = Js.Array2.joinWith(children, "")
+    `<${tag}${idAttr}${classAttr}>${content}</${tag}>`
+  }
+
+  fn div = element("div", ...)
+  fn span = element("span", ...)
+  fn p = element("p", ...)
+  fn h3 = element("h3", ...)
+  fn h4 = element("h4", ...)
+  fn h5 = element("h5", ...)
+  fn ul = element("ul", ...)
+  fn li = element("li", ...)
+  fn a = (~href: string, text: string): string => `<a href="${href}">${text}</a>`
+  fn img = (~src: string, ~height: string, ~alt=""): string =>
+    `<img src="${src}" height="${height}" alt="${alt}">`
+  fn kbd = (text: string): string => `<kbd>${text}</kbd>`
+  fn code = (text: string): string => `<code>${text}</code>`
+  fn em = (text: string): string => `<em>${text}</em>`
+  fn i = (text: string): string => `<i>${text}</i>`
+  fn hr = (): string => `<hr/>`
+  fn br = (): string => `<br/>`
+
+  fn textarea = (~id: string, content: string): string =>
+    `<textarea id="${id}">${content}</textarea>`
+
+  fn table = (~className="", rows: array<string>): string => {
+    fn classAttr = className != "" ? ` class="${className}"` : ""
+    `<table${classAttr}>${Js.Array2.joinWith(rows, "")}</table>`
+  }
+
+  fn tr = (cells: array<string>): string => `<tr>${Js.Array2.joinWith(cells, "")}</tr>`
+  fn th = (content: string): string => `<th>${content}</th>`
+  fn td = (content: string): string => `<td>${content}</td>`
+}
+
+module JsCoqName = {
+  fn render = (): string => {
+    Html.span(~className="jscoq-name", ["jsCoq"])
+  }
+}
+
+module ActionTable = {
+  struct action { {
+    button: string,
+    keyBinding: string,
+    description: string,
+  }
+
+  fn actions: array<action> = [
+    {
+      button: `${Html.img(~src="ui-images/down.png", ~height="15px")}${Html.img(
+          ~src="ui-images/up.png",
+          ~height="15px",
+        )}`,
+      keyBinding: `${Html.kbd("Alt")}+${Html.kbd("↓")}/${Html.kbd("↑")} or${Html.br()}${Html.kbd(
+          "Alt",
+        )}+${Html.kbd("N")}/${Html.kbd("P")}`,
+      description: "Move through the proof.",
+    },
+    {
+      button: Html.img(~src="ui-images/to-cursor.png", ~height="20px"),
+      keyBinding: `${Html.kbd("Alt")}+${Html.kbd("Enter")} or${Html.br()} ${Html.kbd(
+          "Alt",
+        )}+${Html.kbd("→")}`,
+      description: "Run (or go back) to the current point.",
+    },
+    {
+      button: Html.img(~src="ui-images/power-button-512-black.png", ~height="20px"),
+      keyBinding: Html.kbd("F8"),
+      description: "Toggles the goal panel.",
+    },
+  ]
+
+  fn render = (): string => {
+    fn headerRow = Html.tr([Html.th("Button"), Html.th("Key binding"), Html.th("Action")])
+
+    fn rows = Js.Array2.map(actions, action => {
+      Html.tr([Html.td(action.button), Html.td(action.keyBinding), Html.td(action.description)])
+    })
+
+    Html.table(~className="doc-actions", Js.Array2.concat([headerRow], rows))
+  }
+}
+
+module TeamSection = {
+  struct teamMember { {
+    name: string,
+    url: string,
+    affiliations: array<(string, string)>,
+  }
+
+  fn devTeam: array<teamMember> = [
+    {
+      name: "Emilio Jesús Gallego Arias",
+      url: "https://www.irif.fr/~gallego/",
+      affiliations: [
+        ("Inria", "https://www.inria.fr"),
+        ("Université de Paris", "https://u-paris.fr"),
+        ("IRIF", "https://www.irif.fr"),
+      ],
+    },
+    {
+      name: "Shachar Itzhaky",
+      url: "https://www.cs.technion.ac.il/~shachari/",
+      affiliations: [("Technion", "https://cs.technion.ac.il")],
+    },
+  ]
+
+  fn contributors: array<teamMember> = [
+    {
+      name: "Benoît Pin",
+      url: "",
+      affiliations: [
+        ("CRI", "https://www.cri.ensmp.fr/"),
+        ("MINES ParisTech", "https://www.minesparis.psl.eu"),
+      ],
+    },
+  ]
+
+  fn renderMember = (member: teamMember): string => {
+    fn nameLink = member.url != "" ? Html.a(~href=member.url, member.name) : member.name
+
+    fn affiliationLinks = Js.Array2.joinWith(
+      Js.Array2.map(member.affiliations, ((name, url)) => Html.a(~href=url, name)),
+      ", ",
+    )
+
+    Html.li([`${nameLink} (${affiliationLinks})`])
+  }
+
+  fn render = (): string => {
+    fn devList = Js.Array2.joinWith(Js.Array2.map(devTeam, renderMember), "")
+    fn contribList = Js.Array2.joinWith(Js.Array2.map(contributors, renderMember), "")
+
+    Html.div(
+      ~id="team",
+      [
+        `<a name="team"></a>`,
+        Html.p([Html.i("The dev team")]),
+        Html.ul([devList]),
+        Html.p([Html.i("Contributors")]),
+        Html.ul([contribList]),
+      ],
+    )
+  }
+}
+
+module CodeExamples = {
+  fn imports = `From Coq Require Import ssreflect ssrfun ssrbool.
+From mathcomp Require Import eqstruct ssrnat div prime.`
+
+  fn primeAbove1 = `(* A nice proof of the infinitude of primes, by Georges Gonthier *)
+Lemma prime_above m : {p | m < p & prime p}.
+Proof.`
+
+  fn primeAbove2 = `have /pdivP[p pr_p p_dv_m1]: 1 < m\`! + 1
+  by rewrite addn1 ltnS fact_gt0.`
+
+  fn primeAbove3 = `exists p => //; rewrite ltnNge; apply: contraL p_dv_m1 => p_le_m.`
+
+  fn primeAbove4 = `by rewrite dvdn_addr ?dvdn_fact ?prime_gt0 // gtnNdvd ?prime_gt1.
+Qed.`
+
+  fn codeIds = ["addnC", "prime_above1", "prime_above2", "prime_above3", "prime_above4"]
+}
+
