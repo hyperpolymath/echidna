@@ -1,0 +1,18 @@
+== Architecture
+
+The architecture documentation for ECHIDNA lives in
+link:docs/ARCHITECTURE.md[`+docs/ARCHITECTURE.md+`] — the polyglot
+layout, the dispatch path, the trust-hardening pipeline, and how the
+Rust core, Julia ML sidecar, Idris2 ABI, Zig FFI and optional Chapel
+parallel layer fit together.
+
+Related canonical documents:
+
+* link:docs/PROVER_COUNT.md[`+docs/PROVER_COUNT.md+`] — backend tier
+table and what each published count actually counts
+* link:docs/ROADMAP.md[`+docs/ROADMAP.md+`] — stage map and current
+direction
+* link:docs/DEBT.md[`+docs/DEBT.md+`] — known licence, documentation and
+code debt
+* link:.machine_readable/descriptiles/META.a2ml[`+.machine_readable/descriptiles/META.a2ml+`]
+— the machine-readable architecture record

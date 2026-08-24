@@ -1,0 +1,163 @@
+== GraphQL Interface Reference
+
+The `+echidna-graphql+` binary is an optional self-hosted service. It
+binds `+127.0.0.1:8081+` over plain HTTP and serves both the GraphQL
+endpoint and the interactive playground at the server root — a `+POST+`
+to `+/+` executes operations, a `+GET+` renders the playground. There is
+a separate `+GET /health+`.
+
+Documented from `+src/interfaces/graphql/{main,schema}.rs+`.
+
+=== Queries
+
+==== provers
+
+[source,graphql]
+----
+query {
+  provers {
+    kind
+    version
+    tier
+    complexity
+    available
+  }
+}
+----
+
+==== proofState
+
+Takes `+id+`, not a session identifier:
+
+[source,graphql]
+----
+query {
+  proofState(id: "proof-uuid") {
+    id
+    prover
+    goal
+    status
+    proofScript
+    goalsRemaining
+    timeElapsed
+    errorMessage
+  }
+}
+----
+
+==== listProofs
+
+[source,graphql]
+----
+query {
+  listProofs(limit: 20) {
+    id
+    prover
+    status
+    goalsRemaining
+  }
+}
+----
+
+==== suggestTacticsByProofId
+
+The query form of tactic suggestion, keyed by an existing proof:
+
+[source,graphql]
+----
+query {
+  suggestTacticsByProofId(proofId: "proof-uuid", limit: 5) {
+    name
+    args
+    description
+    confidence
+  }
+}
+----
+
+==== proverStatus
+
+[source,graphql]
+----
+query {
+  proverStatus(prover: "Coq") {
+    available
+  }
+}
+----
+
+=== Mutations
+
+==== submitProof
+
+[source,graphql]
+----
+mutation {
+  submitProof(goal: "forall n : nat, n + 0 = n", prover: COQ) {
+    id
+    status
+    goalsRemaining
+  }
+}
+----
+
+==== applyTactic
+
+`+proofId+`, `+tactic+`, and `+args+` are all required; pass an empty
+list when the tactic takes no arguments:
+
+[source,graphql]
+----
+mutation {
+  applyTactic(proofId: "proof-uuid", tactic: "induction", args: ["n"]) {
+    id
+    status
+    proofScript
+    goalsRemaining
+  }
+}
+----
+
+==== verifyProof
+
+Verifies prover source directly, without a proof session:
+
+[source,graphql]
+----
+mutation {
+  verifyProof(prover: "Z3", content: "(check-sat)") {
+    status
+    message
+    proverOutput
+    durationMs
+    artifacts
+  }
+}
+----
+
+==== suggestTactics
+
+Tactic suggestion is a *mutation*, not a query, and takes a goal state
+rather than a proof identifier:
+
+[source,graphql]
+----
+mutation {
+  suggestTactics(prover: "Coq", context: "", goalState: "forall n : nat, n + 0 = n") {
+    tactic
+    confidence
+    explanation
+  }
+}
+----
+
+==== cancelProof
+
+[source,graphql]
+----
+mutation {
+  cancelProof(proofId: "proof-uuid")
+}
+----
+
+link:/docs/index.html[Documentation index]
