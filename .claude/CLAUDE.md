@@ -119,6 +119,7 @@ package definitions (not metadata files) and must NOT be deleted.
 |--------|-------------|
 | TypeScript | AffineScript |
 | ReScript | AffineScript |
+| Deno | Bun |
 | Node.js | Bun |
 | npm / pnpm / yarn | Bun |
 | Go | Rust |
@@ -141,7 +142,7 @@ package definitions (not metadata files) and must NOT be deleted.
   (guix deprecated estate-wide; do NOT add `flake.guix`/`flake.lock` back).
   A second packager is permitted only where it is the sole source of a
   specific named dependency, documented as such.
-- **JS deps**: Bun (`package.json` + `bun.lock`); `bunx <tool>` for one-off tooling
+- **JS deps**: Bun (`package.json` + `bun.lock`). Declare tooling as a devDependency and run `bunx --no-install --bun <tool>` — a bare `bunx <tool>` can fetch an unpinned package and may start Node via its shebang.
 
 ### Security Requirements
 
