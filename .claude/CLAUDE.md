@@ -129,7 +129,7 @@ package definitions (not metadata files) and must NOT be deleted.
 
 1. **No new TypeScript or ReScript files** - Use AffineScript-TEA; migrate existing `src/affinescript/` to AffineScript per `docs/ROADMAP.md`
 2. **Use `package.json` + `bun.lock` for JS runtime deps** - Bun is npm-compatible; a manifest is REQUIRED
-3. **`bun install --production` for production deps** - resolved from `package.json`, pinned via `bun.lock`
+3. **`bun install --production --frozen-lockfile` for production deps** - resolved from `package.json` and pinned via `bun.lock`; `--frozen-lockfile` makes a lockfile mismatch a build failure rather than a silent re-resolve
 4. **No Go code** - Use Rust instead
 5. **No Python anywhere** - Use Julia for data/batch, Rust for systems
 
