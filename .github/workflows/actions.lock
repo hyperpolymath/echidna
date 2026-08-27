@@ -47,6 +47,8 @@ workflows:
     '.github/workflows/hypatia-scan.yml': []
     '.github/workflows/idris2-abi-ci.yml':
         - 'actions/checkout@v7.0.1'
+    '.github/workflows/label-triage.yml': []
+    '.github/workflows/labels.yml': []
     '.github/workflows/live-provers.yml':
         - 'actions/checkout@v7.0.1'
         - 'dtolnay/rust-toolchain@stable'
