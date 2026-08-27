@@ -108,7 +108,7 @@ package definitions (not metadata files) and must NOT be deleted.
 | **Guile Scheme** | Guix package definitions (`guix.scm`, `manifests/*.scm`) | `.scm` metadata files are deprecated — see below |
 | **Bash/POSIX Shell** | Build scripts, CI glue | Keep minimal |
 | **AffineScript** | UI components (TEA architecture, compiled to typed-wasm / wasm, served via Deno) | Replaces AffineScript per `docs/ROADMAP.md`; migration in progress at `src/affinescript/` |
-| **Deno** | Runtime for compiled AffineScript-TEA UI | Replaces Node/npm/bun |
+| **Bun** | Runtime for compiled AffineScript-TEA UI | Replaces Node/npm/Deno |
 | **JavaScript** | Build tooling only (Tailwind config, test harness) | Not for business logic |
 | **OCaml** | AffineScript compiler host | Decision locked — AffineScript selected for UI |
 | **Nickel** | Configuration language | Used across `configs/`, `echidna-playground/contractiles/k9/`, `.machine_readable/`, `echidnabot/config/` (11+ `.ncl` files) |
@@ -118,17 +118,18 @@ package definitions (not metadata files) and must NOT be deleted.
 | Banned | Replacement |
 |--------|-------------|
 | TypeScript | AffineScript |
-| AffineScript | AffineScript |
-| Node.js | Deno |
-| npm / Bun / pnpm / yarn | Deno |
+| ReScript | AffineScript |
+| Deno | Bun |
+| Node.js | Bun |
+| npm / pnpm / yarn | Bun |
 | Go | Rust |
 | Python | Julia / Rust |
 
 ### Enforcement Rules
 
-1. **No new TypeScript or AffineScript files** - Use AffineScript-TEA; migrate existing `src/affinescript/` to AffineScript per `docs/ROADMAP.md`
-2. **No package.json for runtime deps** - Use deno.json imports
-3. **No node_modules in production** - Deno caches deps automatically
+1. **No new TypeScript or ReScript files** - Use AffineScript-TEA; migrate existing `src/affinescript/` to AffineScript per `docs/ROADMAP.md`
+2. **Use `package.json` + `bun.lock` for JS runtime deps** - Bun is npm-compatible; a manifest is REQUIRED
+3. **`bun install --production --frozen-lockfile` for production deps** - resolved from `package.json` and pinned via `bun.lock`; `--frozen-lockfile` makes a lockfile mismatch a build failure rather than a silent re-resolve
 4. **No Go code** - Use Rust instead
 5. **No Python anywhere** - Use Julia for data/batch, Rust for systems
 
@@ -141,7 +142,7 @@ package definitions (not metadata files) and must NOT be deleted.
   (guix deprecated estate-wide; do NOT add `flake.guix`/`flake.lock` back).
   A second packager is permitted only where it is the sole source of a
   specific named dependency, documented as such.
-- **JS deps**: Deno (deno.json imports)
+- **JS deps**: Bun (`package.json` + `bun.lock`). Declare tooling as a devDependency and run `bunx --no-install --bun <tool>` — a bare `bunx <tool>` can fetch an unpinned package and may start Node via its shebang.
 
 ### Security Requirements
 
