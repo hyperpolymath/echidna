@@ -1,5 +1,6 @@
 # SPDX-License-Identifier: AGPL-3.0-or-later
 # This workflow is managed by gh actions-lock.
+# This workflow is managed by gh actions-lock.
 # S4 loop-closure CI — brings up verisim-api as a service container and
 # runs the echidna s4_loop_closure integration test.  Filed once
 # ghcr.io/hyperpolymath/verisimdb-api:latest became available (PR #121).

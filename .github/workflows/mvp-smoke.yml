@@ -1,5 +1,6 @@
 # SPDX-License-Identifier: AGPL-3.0-or-later
 # This workflow is managed by gh actions-lock.
+# This workflow is managed by gh actions-lock.
 name: MVP Smoke (Best Effort)
 
 on:
