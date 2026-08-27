@@ -6,7 +6,7 @@ workflows:
     '.github/workflows/agda-meta-checker.yml':
         - 'actions/cache@v6.1.0'
         - 'actions/checkout@v7.0.1'
-        - 'haskell-actions/setup@v2.11.0'
+        - 'haskell-actions/setup@v2.12.0'
     '.github/workflows/boj-build.yml':
         - 'actions/checkout@v7.0.1'
     '.github/workflows/bridge-gate.yml':
@@ -24,10 +24,10 @@ workflows:
         - 'actions/upload-artifact@v7.0.1'
         - 'dtolnay/rust-toolchain@stable'
         - 'mlugg/setup-zig@v2.2.1'
-        - 'swatinem/rust-cache@v2.9.1'
+        - 'swatinem/rust-cache@v2.9.2'
     '.github/workflows/codeql.yml':
         - 'actions/checkout@v7.0.1'
-        - 'github/codeql-action@v4.37.3'
+        - 'github/codeql-action@v4.37.7'
     '.github/workflows/container-ci.yml':
         - 'actions/checkout@v7.0.1'
     '.github/workflows/dogfood-gate.yml':
@@ -37,11 +37,11 @@ workflows:
     '.github/workflows/formal-verification.yml':
         - 'actions/checkout@v7.0.1'
         - 'dtolnay/rust-toolchain@stable'
-        - 'swatinem/rust-cache@v2.9.1'
+        - 'swatinem/rust-cache@v2.9.2'
     '.github/workflows/generator-generic-ossf-slsa3-publish.yml':
         - 'actions/checkout@v7.0.1'
     '.github/workflows/ghcr-publish.yml':
-        - 'actions/attest-build-provenance@v4.1.1'
+        - 'actions/attest-build-provenance@v4.2.2'
         - 'actions/checkout@v7.0.1'
     '.github/workflows/governance.yml': []
     '.github/workflows/hypatia-scan.yml': []
@@ -50,13 +50,13 @@ workflows:
     '.github/workflows/live-provers.yml':
         - 'actions/checkout@v7.0.1'
         - 'dtolnay/rust-toolchain@stable'
-        - 'swatinem/rust-cache@v2.9.1'
+        - 'swatinem/rust-cache@v2.9.2'
     '.github/workflows/mirror.yml': []
     '.github/workflows/mvp-smoke.yml':
         - 'actions/checkout@v7.0.1'
         - 'dtolnay/rust-toolchain@stable'
-        - 'swatinem/rust-cache@v2.9.1'
-        - 'taiki-e/install-action@v2.85.3'
+        - 'swatinem/rust-cache@v2.9.2'
+        - 'taiki-e/install-action@v2.86.4'
     '.github/workflows/pages.yml':
         - 'actions/checkout@v7.0.1'
         - 'actions/deploy-pages@v5.0.0'
@@ -65,31 +65,31 @@ workflows:
     '.github/workflows/s4-loop.yml':
         - 'actions/checkout@v7.0.1'
         - 'dtolnay/rust-toolchain@stable'
-        - 'swatinem/rust-cache@v2.9.1'
-        - 'taiki-e/install-action@v2.85.3'
+        - 'swatinem/rust-cache@v2.9.2'
+        - 'taiki-e/install-action@v2.86.4'
     '.github/workflows/scorecard.yml': []
     '.github/workflows/secret-scanner.yml': []
     '.github/workflows/security-scan.yml': []
     '.github/workflows/server-boot-gate.yml':
         - 'actions/checkout@v7.0.1'
         - 'dtolnay/rust-toolchain@stable'
-        - 'swatinem/rust-cache@v2.9.1'
+        - 'swatinem/rust-cache@v2.9.2'
     '.github/workflows/spark-theatre-gate.yml': []
     '.github/workflows/verification-proofs-cron.yml':
         - 'actions/checkout@v7.0.1'
     '.github/workflows/workflow-linter.yml':
         - 'actions/checkout@v7.0.1'
 dependencies:
-    'actions/attest-build-provenance@v4.1.1':
-        ref: 'v4.1.1'
-        commit: 'sha1-0f67c3f4856b2e3261c31976d6725780e5e4c373'
+    'actions/attest-build-provenance@v4.2.2':
+        ref: 'v4.2.2'
+        commit: 'sha1-4d101475d8b20a2381f78447822ac1eab6504dd8'
         owner_id: 44036562
         repo_id: 760702757
         uses:
-            - 'actions/attest@a1948c3f048ba23858d222213b7c278aabede763'
-    'actions/attest@a1948c3f048ba23858d222213b7c278aabede763':
-        ref: 'v4.1.1'
-        commit: 'sha1-a1948c3f048ba23858d222213b7c278aabede763'
+            - 'actions/attest@508db95dd578ae2727ebd6217d5ba78e4fbda05d'
+    'actions/attest@508db95dd578ae2727ebd6217d5ba78e4fbda05d':
+        ref: 'v4.2.1'
+        commit: 'sha1-508db95dd578ae2727ebd6217d5ba78e4fbda05d'
         owner_id: 44036562
         repo_id: 760701061
     'actions/cache@v6.1.0':
@@ -134,9 +134,9 @@ dependencies:
         commit: 'sha1-4360b52568e2003a75bf9bc1d59f33a8e3fc893c'
         owner_id: 1940490
         repo_id: 260749683
-    'github/codeql-action@v4.37.3':
-        ref: 'v4.37.3'
-        commit: 'sha1-e4fba868fa4b1b91e1fdab776edc8cfbe6e9fb81'
+    'github/codeql-action@v4.37.7':
+        ref: 'v4.37.7'
+        commit: 'sha1-ff2f1c621b7f889edc0d3c761ac2e6a3f8cdb0dd'
         owner_id: 9919
         repo_id: 259445878
     'google/clusterfuzzlite@v1':
@@ -144,9 +144,9 @@ dependencies:
         commit: 'sha1-884713a6c30a92e5e8544c39945cd7cb630abcd1'
         owner_id: 1342004
         repo_id: 400046858
-    'haskell-actions/setup@v2.11.0':
-        ref: 'v2.11.0'
-        commit: 'sha1-cd0d9bdd65b20557f41bea4dbe43d0b5fbbfe553'
+    'haskell-actions/setup@v2.12.0':
+        ref: 'v2.12.0'
+        commit: 'sha1-6037f33647c3f17758a2356c80fc4a53d7e0685d'
         owner_id: 75048950
         repo_id: 623796603
     'mlugg/setup-zig@v2.2.1':
@@ -154,13 +154,13 @@ dependencies:
         commit: 'sha1-d1434d08867e3ee9daa34448df10607b98908d29'
         owner_id: 7289241
         repo_id: 812112570
-    'swatinem/rust-cache@v2.9.1':
-        ref: 'v2.9.1'
-        commit: 'sha1-c19371144df3bb44fab255c43d04cbc2ab54d1c4'
+    'swatinem/rust-cache@v2.9.2':
+        ref: 'v2.9.2'
+        commit: 'sha1-6323deb102c322ba6fcbdcafc7e3dddab59af2b6'
         owner_id: 580492
         repo_id: 298565987
-    'taiki-e/install-action@v2.85.3':
-        ref: 'v2.85.3'
-        commit: 'sha1-18b1216eba7f8039b0f8d131d5473787f0edce68'
+    'taiki-e/install-action@v2.86.4':
+        ref: 'v2.86.4'
+        commit: 'sha1-a2a5f6e99e1a31540baa0468acfa302cff0f359f'
         owner_id: 43724913
         repo_id: 442947557
