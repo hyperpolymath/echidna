@@ -36,7 +36,7 @@ tracing = "0.1"
 tracing-subscriber = { version = "0.3", features = ["env-filter"] }
 
 # UUID
-uuid = { version = "1.11", features = ["v4", "serde"] }
+uuid = { version = "1.25.0", features = ["v4", "serde"] }
 
 # OpenAPI
 utoipa = { version = "5.3", features = ["axum_extras"] }
