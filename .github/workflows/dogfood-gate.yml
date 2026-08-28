@@ -130,7 +130,7 @@ jobs:
           # Checks for: zero-width spaces, zero-width joiners, BOM, soft hyphens,
           # non-breaking spaces, null bytes, and other invisible Unicode in source files.
           set +e
-          PATTERNS='\x00|[\x01-\x08\x0B\x0C\x0E-\x1F]|\x{a0}|\x{ad}|\x{200b}|\x{200c}|\x{200d}|\x{200e}|\x{200f}|\x{202a}|\x{202b}|\x{202c}|\x{202d}|\x{202e}|\x{2060}|\x{feff}'
+          PATTERNS='(*UTF)[\x00-\x08\x0B\x0C\x0E-\x1F\x{a0}\x{ad}\x{200b}-\x{200f}\x{202a}-\x{202f}\x{2060}\x{2066}-\x{2069}\x{feff}]'
           find "$GITHUB_WORKSPACE" \
             -not -path '*/.git/*' -not -path '*/node_modules/*' \
             -not -path '*/.deno/*' -not -path '*/target/*' \
