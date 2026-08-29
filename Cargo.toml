@@ -61,7 +61,7 @@ blake3 = "1"
 tiny-keccak = { version = "2", features = ["shake"] }
 
 # UUID
-uuid = { version = "1", features = ["v4", "serde"] }
+uuid = { version = "1.25.0", features = ["v4", "serde"] }
 
 # Lazy statics
 lazy_static = "1"
