@@ -2154,5 +2154,33 @@
     "rule_module": "workflow_audit",
     "type": "unpinned_action",
     "file": "workflow-linter.yml"
+  },
+  {
+    "severity": "high",
+    "rule_module": "cicd_rules",
+    "type": "missing_requirement",
+    "file": "SECURITY.md",
+    "note": "The security policy is SECURITY.adoc; Markdown was deliberately migrated to AsciiDoc in #366."
+  },
+  {
+    "severity": "medium",
+    "rule_module": "scorecard",
+    "type": "SecurityPolicy",
+    "file": ".",
+    "note": "The security policy is SECURITY.adoc; the scanner currently checks only SECURITY.md."
+  },
+  {
+    "severity": "medium",
+    "rule_module": "structural_drift",
+    "type": "SD022",
+    "file": "docs/DEBT.adoc",
+    "note": "Historical debt record names the removed src/affinescript tree as evidence; the reference is intentionally retrospective."
+  },
+  {
+    "severity": "medium",
+    "rule_module": "structural_drift",
+    "type": "SD022",
+    "file": "docs/releases/RELEASE_NOTES_v1.3.adoc",
+    "note": "Historical v1.3 release notes retain the source path that existed for that release."
   }
 ]

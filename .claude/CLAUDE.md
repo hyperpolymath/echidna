@@ -107,7 +107,7 @@ package definitions (not metadata files) and must NOT be deleted.
 | **Chapel** | Optional parallel proof dispatch | Wired via Cargo `chapel` feature |
 | **Guile Scheme** | Guix package definitions (`guix.scm`, `manifests/*.scm`) | `.scm` metadata files are deprecated — see below |
 | **Bash/POSIX Shell** | Build scripts, CI glue | Keep minimal |
-| **AffineScript** | UI components (TEA architecture, compiled to typed-wasm / wasm, served via Deno) | Replaces AffineScript per `docs/ROADMAP.md`; migration in progress at `src/affinescript/` |
+| **AffineScript** | UI components (TEA architecture, compiled to typed-wasm / wasm, served via Deno) | Replaces ReScript per `docs/ROADMAP.md`; migration in progress at `src/ui/tea/` |
 | **Deno** | Runtime for compiled AffineScript-TEA UI | Replaces Node/npm/bun |
 | **JavaScript** | Build tooling only (Tailwind config, test harness) | Not for business logic |
 | **OCaml** | AffineScript compiler host | Decision locked — AffineScript selected for UI |
@@ -126,7 +126,7 @@ package definitions (not metadata files) and must NOT be deleted.
 
 ### Enforcement Rules
 
-1. **No new TypeScript or AffineScript files** - Use AffineScript-TEA; migrate existing `src/affinescript/` to AffineScript per `docs/ROADMAP.md`
+1. **No new TypeScript or ReScript files** - Use AffineScript-TEA under `src/ui/tea/` per `docs/ROADMAP.md`
 2. **No package.json for runtime deps** - Use deno.json imports
 3. **No node_modules in production** - Deno caches deps automatically
 4. **No Go code** - Use Rust instead
@@ -150,4 +150,3 @@ package definitions (not metadata files) and must NOT be deleted.
 - No hardcoded secrets
 - SHA-pinned dependencies
 - SPDX license headers on all files
-

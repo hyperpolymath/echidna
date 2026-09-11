@@ -22,5 +22,5 @@ jobs:
       security-events: write
       id-token: write
       contents: read
-    uses: hyperpolymath/standards/.github/workflows/scorecard-reusable.yml@fcb8669169b4e9f5d9848608df880ae5fae812b4 # main 2026-08-04 (lockfile-bearing ref: actions.lock required by caller-side enforcement, standards#570)
+    uses: hyperpolymath/standards/.github/workflows/scorecard-reusable.yml@8750b94ac1bbe8c51ad13fe106669b13478f0b62 # main 2026-08-04 (lockfile-bearing ref: actions.lock required by caller-side enforcement, standards#570)
     secrets: inherit

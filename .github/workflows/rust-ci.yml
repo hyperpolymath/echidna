@@ -18,4 +18,32 @@ jobs:
     uses: hyperpolymath/standards/.github/workflows/rust-ci-reusable.yml@fcb8669169b4e9f5d9848608df880ae5fae812b4 # main 2026-08-04 (lockfile-bearing ref: actions.lock required by caller-side enforcement, standards#570)
     with:
       enable_audit: true
-      enable_coverage: true
+
+  # The shared coverage job cannot provision repository-specific system
+  # packages. echidna-wire compiles Cap'n Proto schemas from build.rs, so keep
+  # coverage local until the reusable accepts a package-provisioning input.
+  coverage:
+    name: llvm-cov line coverage
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    permissions:
+      contents: read
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v7.0.1
+
+      - name: Install Cap'n Proto compiler
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y --no-install-recommends capnproto
+
+      - name: Install Rust toolchain
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          components: llvm-tools-preview
+
+      - name: Install cargo-llvm-cov
+        run: cargo install cargo-llvm-cov --locked
+
+      - name: Measure line coverage
+        run: cargo llvm-cov --workspace --locked

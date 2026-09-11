@@ -110,9 +110,9 @@ Flux.jl Transformer models.
 
 4 shared libraries. Bridges Idris2 ABI to C ABI.
 
-==== AffineScript UI (src/affinescript/)
+==== AffineScript UI (`+src/ui/tea/+`)
 
-33 .res files. Deno runtime. Zero TypeScript.
+AffineScript-TEA source plus compiled Deno JavaScript. Zero TypeScript or ReScript.
 
 ==== Chapel PoC (chapel_poc/)
 

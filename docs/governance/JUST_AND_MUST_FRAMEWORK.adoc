@@ -323,7 +323,7 @@ release-tag VERSION:
 clean:
     cargo clean
     rm -rf target/
-    rm -rf src/affinescript/lib/
+    rm -f src/ui/tea/echidna_tea.js
     find . -name "*.bs.js" -delete
 
 # Deep clean (including dependencies)

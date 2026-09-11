@@ -70,6 +70,9 @@ let base    = import "../_base.ncl" in
       allow_network = false,
       allow_filesystem_write = false,   # evidence sinks are indirected
       allow_subprocess = true,
+      # Hunt-tier files must explicitly declare whether a cryptographic
+      # signature is required. Signatures are enforced by the trident runner.
+      signature_required = true,
     },
   },
 
