@@ -1,6 +1,5 @@
 # SPDX-License-Identifier: AGPL-3.0-or-later
 # This workflow is managed by gh actions-lock.
-# This workflow is managed by gh actions-lock.
 name: MVP Smoke (Best Effort)
 
 on:
@@ -33,7 +32,7 @@ jobs:
         uses: actions/checkout@v7.0.1
 
       - name: Setup Rust toolchain
-        uses: dtolnay/rust-toolchain@stable
+        uses: dtolnay/rust-toolchain@master
         with:
           toolchain: stable
 
@@ -41,7 +40,7 @@ jobs:
         uses: Swatinem/rust-cache@v2.9.2
 
       - name: Install just
-        uses: taiki-e/install-action@v2.86.4
+        uses: taiki-e/install-action@v2.87.3
         with:
           # Governance R1 requires versioned family-tool pins
           # (just|must|trust|adjust|bust|dust|intend); bare `tool: just`
