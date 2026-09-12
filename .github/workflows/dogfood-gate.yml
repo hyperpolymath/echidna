@@ -141,7 +141,7 @@ jobs:
               -o -name '*.yml' -o -name '*.yaml' -o -name '*.md' -o -name '*.adoc' \
               -o -name '*.idr' -o -name '*.zig' -o -name '*.v' -o -name '*.jl' \
               -o -name '*.gleam' -o -name '*.hs' -o -name '*.ml' -o -name '*.sh' \) \
-            -exec grep -aPrl "$PATTERNS" {} \; > /tmp/empty-lint-results.txt 2>/dev/null
+            -exec grep -aPl "$PATTERNS" -- {} + > /tmp/empty-lint-results.txt 2>/dev/null
           EL_EXIT=$?
           set -e
 
