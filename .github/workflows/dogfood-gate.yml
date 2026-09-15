@@ -40,7 +40,7 @@ jobs:
       - name: Check for A2ML files
         id: detect
         run: |
-          COUNT=$(find . \( -name '*.a2ml' -o -name '*.deed' \) -not -path './.git/*' | wc -l)
+          COUNT=$(find . -type f \( -name '*.a2ml' -o -name '*.deed' \) -not -path './.git/*' | wc -l)
           echo "count=$COUNT" >> "$GITHUB_OUTPUT"
           if [ "$COUNT" -eq 0 ]; then
             echo "::warning::No .deed manifest files found. Every RSR repo should have 0-AI-MANIFEST.deed (.a2ml is legacy and no longer authored)"
@@ -63,7 +63,7 @@ jobs:
           else
             echo "## A2ML Validation" >> "$GITHUB_STEP_SUMMARY"
             echo "" >> "$GITHUB_STEP_SUMMARY"
-            echo "Scanned **${A2ML_COUNT}** .a2ml file(s). See step output for details." >> "$GITHUB_STEP_SUMMARY"
+            echo "Scanned **${A2ML_COUNT}** manifest file(s) (.deed, or legacy .a2ml). See step output for details." >> "$GITHUB_STEP_SUMMARY"
           fi
 
   # ---------------------------------------------------------------------------
@@ -326,7 +326,7 @@ jobs:
           MAX=6
 
           # A2ML manifest present?
-          if find . \( -name '*.a2ml' -o -name '*.deed' \) -not -path './.git/*' | head -1 | grep -q .; then
+          if find . -type f \( -name '*.a2ml' -o -name '*.deed' \) -not -path './.git/*' | head -1 | grep -q .; then
             SCORE=$((SCORE + 1))
             A2ML_STATUS=":white_check_mark:"
           else
@@ -380,7 +380,7 @@ jobs:
 
           | Tool/Format | Status | Notes |
           |-------------|--------|-------|
-          | DEED manifest (0-AI-MANIFEST.deed) | ${A2ML_STATUS} | Required for all RSR repos |
+          | AI manifest (0-AI-MANIFEST.deed, or legacy .a2ml) | ${A2ML_STATUS} | Required for all RSR repos |
           | K9 contracts | ${K9_STATUS} | Required for repos with config files |
           | .editorconfig | ${EC_STATUS} | Required for all repos |
           | Groove endpoint | ${GROOVE_STATUS} | Required for service repos |

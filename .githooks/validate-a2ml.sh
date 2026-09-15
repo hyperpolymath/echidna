@@ -281,7 +281,12 @@ validate_a2ml() {
             "Missing required identity field (agent-id, name, or project)"
     fi
 
-    if [[ "$has_version" == "false" && "$is_manifest" == "false" && "$is_contractile_shape" == "false" && "$is_structural_identity" == "false" ]]; then
+    # DEED is the live, grammar-bearing format: its schema version is required even
+    # under a machine-readable tree. The structural-identity exemption below stays
+    # scoped to legacy *.a2ml, which is no longer authored. (CodeRabbit, PR review.)
+    local version_exempt_structural="$is_structural_identity"
+    case "$file" in *.deed) version_exempt_structural=false ;; esac
+    if [[ "$has_version" == "false" && "$is_manifest" == "false" && "$is_contractile_shape" == "false" && "$version_exempt_structural" == "false" ]]; then
         report_issue "warning" "$file" 1 \
             "Missing version or schema_version field"
     fi
