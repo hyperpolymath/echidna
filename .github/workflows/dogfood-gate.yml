@@ -40,10 +40,10 @@ jobs:
       - name: Check for A2ML files
         id: detect
         run: |
-          COUNT=$(find . -name '*.a2ml' -not -path './.git/*' | wc -l)
+          COUNT=$(find . \( -name '*.a2ml' -o -name '*.deed' \) -not -path './.git/*' | wc -l)
           echo "count=$COUNT" >> "$GITHUB_OUTPUT"
           if [ "$COUNT" -eq 0 ]; then
-            echo "::warning::No .a2ml manifest files found. Every RSR repo should have 0-AI-MANIFEST.a2ml"
+            echo "::warning::No .deed manifest files found. Every RSR repo should have 0-AI-MANIFEST.deed (.a2ml is legacy and no longer authored)"
           fi
 
       - name: Validate A2ML manifests
@@ -56,9 +56,9 @@ jobs:
             cat <<'EOF' >> "$GITHUB_STEP_SUMMARY"
           ## A2ML Validation
 
-          :warning: **No .a2ml files found.** Every RSR-compliant repo should have at least `0-AI-MANIFEST.a2ml`.
+          :warning: **No manifest found.** Every RSR-compliant repo should have at least `0-AI-MANIFEST.deed`. (`.a2ml` still validates as legacy but is no longer authored.)
 
-          Create one with: `a2mliser init` or copy from [rsr-template-repo](https://github.com/hyperpolymath/rsr-template-repo).
+          Copy one from [rsr-template-repo](https://github.com/hyperpolymath/rsr-template-repo).
           EOF
           else
             echo "## A2ML Validation" >> "$GITHUB_STEP_SUMMARY"
@@ -326,7 +326,7 @@ jobs:
           MAX=6
 
           # A2ML manifest present?
-          if find . -name '*.a2ml' -not -path './.git/*' | head -1 | grep -q .; then
+          if find . \( -name '*.a2ml' -o -name '*.deed' \) -not -path './.git/*' | head -1 | grep -q .; then
             SCORE=$((SCORE + 1))
             A2ML_STATUS=":white_check_mark:"
           else
@@ -380,7 +380,7 @@ jobs:
 
           | Tool/Format | Status | Notes |
           |-------------|--------|-------|
-          | A2ML manifest (0-AI-MANIFEST.a2ml) | ${A2ML_STATUS} | Required for all RSR repos |
+          | DEED manifest (0-AI-MANIFEST.deed) | ${A2ML_STATUS} | Required for all RSR repos |
           | K9 contracts | ${K9_STATUS} | Required for repos with config files |
           | .editorconfig | ${EC_STATUS} | Required for all repos |
           | Groove endpoint | ${GROOVE_STATUS} | Required for service repos |
