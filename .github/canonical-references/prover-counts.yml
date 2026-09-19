@@ -39,7 +39,7 @@ scope:
     - EXPLAINME.adoc
     - CLAUDE.md
     - CONTRIBUTING.md
-    - CONTRIBUTING.adoc
+    - ../../.github/CONTRIBUTING.md
     - QUICKSTART-USER.adoc
     - QUICKSTART-DEV.adoc
     - QUICKSTART-MAINTAINER.adoc

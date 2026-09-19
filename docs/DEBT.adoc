@@ -84,7 +84,7 @@ gh repo view hyperpolymath/echidna --json licenseInfo
 
 Seven files (later found to be 29) carried `+Palimpsest-0.6+` in their
 SPDX identifier. The owner ruled these were never a deliberate legal
-grant: `+CONTRIBUTING.adoc+` already recorded that the Palimpsest
+grant: `+../.github/CONTRIBUTING.md+` already recorded that the Palimpsest
 licence proper "`is the legal licence only on `+palimpsest-license+`,
 `+palimpsest-plasma+`, and (prospectively) `+consent-aware-http+``", and
 that in ECHIDNA it is an _ethical framework_ reference, orthogonal to
@@ -92,7 +92,7 @@ the SPDX choice. Version 0.6 is also superseded by the
 `+hyperpolymath/palimpsest-license+` repository.
 
 All Palimpsest SPDX identifiers were therefore removed. The framework
-reference is preserved in `+CONTRIBUTING.adoc+` and `+NOTICE+`, which
+reference is preserved in `+../.github/CONTRIBUTING.md+` and `+NOTICE+`, which
 now state explicitly that it is not a grant, so this cannot drift back
 in silently.
 

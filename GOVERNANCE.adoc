@@ -8,7 +8,7 @@ ratified. GitHub renders AsciiDoc directly.
 Related:
 
 * link:MAINTAINERS.adoc[`+MAINTAINERS.adoc+`] — who maintains what
-* link:CONTRIBUTING.adoc[`+CONTRIBUTING.adoc+`] — contribution process
+* link:.github/CONTRIBUTING.md[`+.github/CONTRIBUTING.md+`] — contribution process
 * link:CODE_OF_CONDUCT.md[`+CODE_OF_CONDUCT.md+`] — expected conduct
 * link:RSR_COMPLIANCE.adoc[`+RSR_COMPLIANCE.adoc+`] — compliance
 statement

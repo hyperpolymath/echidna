@@ -382,7 +382,7 @@ deno task test:proofs
 
 == Contributing
 
-We welcome contributions! Please see link:CONTRIBUTING.adoc[CONTRIBUTING.adoc] for guidelines.
+We welcome contributions! Please see link:../.github/CONTRIBUTING.md[../.github/CONTRIBUTING.md] for guidelines.
 
 === Development Philosophy
 

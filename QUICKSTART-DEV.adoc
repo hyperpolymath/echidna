@@ -92,9 +92,9 @@ just assail        # panic-attacker security scan (requires panic-attack CLI)
 ----
 
 All commits must be GPG-signed and follow Conventional Commits — see
-link:CONTRIBUTING.adoc[`CONTRIBUTING.adoc`] for the full policy.
+link:.github/CONTRIBUTING.md[`.github/CONTRIBUTING.md`] for the full policy.
 
 == Contributing
 
-See link:CONTRIBUTING.adoc[CONTRIBUTING.adoc] for guidelines (the
+See link:.github/CONTRIBUTING.md[.github/CONTRIBUTING.md] for guidelines (the
 canonical, AsciiDoc version). `CONTRIBUTING.md` is a thin pointer.
