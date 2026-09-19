@@ -19,7 +19,7 @@ Guidelines and context for working with Claude Code on the ECHIDNA project.
 - **Environment variables**: [`docs/ENV-VARS.md`](docs/ENV-VARS.md)
 - **RSR / CCCP compliance statement**: [`RSR_COMPLIANCE.adoc`](RSR_COMPLIANCE.adoc)
 - **Receipts for README claims**: [`EXPLAINME.adoc`](EXPLAINME.adoc)
-- **Contributor guide**: [`CONTRIBUTING.adoc`](CONTRIBUTING.adoc)
+- **Contributor guide**: [`.github/CONTRIBUTING.md`](.github/CONTRIBUTING.md)
 
 ## Repository Structure
 

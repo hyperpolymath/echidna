@@ -147,7 +147,7 @@ CONTRIBUTIONS
 Contributions are licensed under the licence governing the part of the tree
 they land in: AGPL-3.0-or-later for application code, MPL-2.0 for the
 machine-readable specification surface and echidna-playground/, and
-CC-BY-SA-4.0 for documentation. See CONTRIBUTING.adoc.
+CC-BY-SA-4.0 for documentation. See .github/CONTRIBUTING.md.
 
 By contributing, you certify that:
   1. You have the right to submit the contribution.
