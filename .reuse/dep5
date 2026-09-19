@@ -22,7 +22,7 @@ Files: src/*
  verification/*
  scripts/*
  hooks/*
- .githooks/*
+ .github/hooks/*
  tests/*
  meta-checker/*
  HOL-o-extension/*

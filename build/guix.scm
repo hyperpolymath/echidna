@@ -1,7 +1,7 @@
 ;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;; echidna - Guix Package Definition
-;; Development: guix shell -D -f guix.scm
-;; Build: guix build -f guix.scm
+;; Development: guix shell -D -f build/guix.scm
+;; Build: guix build -f build/guix.scm
 
 (use-modules (guix packages)
              (guix gexp)
