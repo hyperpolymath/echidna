@@ -1,2 +1,3 @@
 .hypatia-ignore
 CLAUDE.md
+build/                     # build orchestration: guix.scm relocated here (canon 1.2.1 guix-primary template_ref = "build/")
