@@ -1,4 +1,4 @@
-# SPDX-License-Identifier: AGPL-3.0-or-later
+# SPDX-License-Identifier: MPL-2.0
 #
 # Repository settings for probot/settings GitHub App.
 # https://github.com/probot/settings
@@ -6,14 +6,46 @@
 # This file defines repository-level configuration that is automatically
 # applied by the probot/settings app when changes are pushed to the default
 # branch. Install the app at: https://github.com/apps/settings
+#
+# ─── THIS FILE MUST NEVER DECLARE REPOSITORY IDENTITY ─────────────────────────
+#
+# It carries NO `name`, `description`, `homepage` or `private` key, and it must
+# never gain one. The reason is a real incident, not a hypothetical:
+#
+#   This file previously read `name: "{{REPO}}"`. probot/settings applies it on
+#   every push to the default branch, so it submitted the literal string
+#   `{{REPO}}` as the repository name. GitHub sanitises an invalid name by
+#   collapsing each run of illegal characters to a dash — `{{REPO}}` became
+#   `-REPO-`. The template renamed itself on every push, its old URL 404'd, and
+#   it was mistaken for a deleted repository. `description` was likewise left
+#   reading the literal `{{DESCRIPTION}}` on the live repo.
+#
+# Two properties make identity keys unsafe here specifically:
+#
+#   1. This is a TEMPLATE. `just repo-init` fills placeholders in repos minted by the
+#      scaffolder — but GitHub's "Use this template" button copies the default
+#      branch verbatim and never runs `just repo-init`. Any placeholder left in a
+#      probot-managed file therefore reaches children unrendered.
+#   2. Identity is not shareable. The template must be public while children
+#      default private; a child cannot inherit either `name` or `private` from
+#      its parent without being wrong.
+#
+# Repository identity and visibility are therefore set OUT OF BAND: once per
+# repo, at creation time, by the operator (the Configure stage of ADR-0003).
+# `just repo-init` deliberately runs NO `gh` commands — it prints the exact
+# `gh repo edit` commands as next steps instead. Fail-closed default: repos
+# stay private unless the owner flips visibility deliberately; the template's
+# own name and visibility are set deliberately by the owner.
+#
+# Everything below is safe to inherit: it is true of every RSR repo regardless
+# of that repo's name, purpose or visibility.
+#
+# Enforced by `scripts/check-no-placeholders.sh`, which fails if this file
+# contains a `{{` token or declares any of the four identity keys.
 
 # ─── Repository Settings ───────────────────────────────────────────────────────
 
 repository:
-  name: "echidna"
-  description: "ECHIDNA — Extensible Cognitive Hybrid Intelligence for Deductive Neural Assistance. Neurosymbolic theorem proving with 30 prover backends"
-  homepage: "https://github.com/hyperpolymath/echidna"
-  private: false
   has_issues: true
   has_projects: true
   has_wiki: false
