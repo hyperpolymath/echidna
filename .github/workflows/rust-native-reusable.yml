@@ -1,3 +1,4 @@
+# This workflow is managed by gh actions-lock.
 # SPDX-License-Identifier: MPL-2.0
 # This workflow is managed by gh actions-lock.
 # Derived from hyperpolymath/standards@571cc734cd69fb846032ec77a662aa8ee4fc32cd.
@@ -140,7 +141,7 @@ jobs:
       has_cargo: ${{ steps.detect.outputs.has_cargo }}
     steps:
       - name: Checkout repository
-        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
+        uses: actions/checkout@v7.0.1
         with:
           repository: ${{ github.repository }}
           ref: ${{ github.ref }}
@@ -166,7 +167,7 @@ jobs:
         working-directory: ${{ inputs.working_directory }}
     steps:
       - name: Checkout repository
-        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
+        uses: actions/checkout@v7.0.1
         with:
           repository: ${{ github.repository }}
           ref: ${{ github.ref }}
@@ -177,7 +178,7 @@ jobs:
         # `@stable`), but a SHA ref carries no version, so the action's "parse
         # toolchain version" step fails with `'toolchain' is a required input`.
         # See standards estate-wide rust-ci red.
-        uses: dtolnay/rust-toolchain@02cb101ec7c40f2c49e1d9714d64511d8e1b74de  # master
+        uses: dtolnay/rust-toolchain@v1
         with:
           toolchain: master
         with:
@@ -191,12 +192,12 @@ jobs:
 
       - name: Install Zig for native build
         if: ${{ inputs.zig_version != '' }}
-        uses: goto-bus-stop/setup-zig@abea47f85e598557f500fa1fd2ab7464fcb39406  # v2.2.1
+        uses: goto-bus-stop/setup-zig@v2.2.1
         with:
           version: ${{ inputs.zig_version }}
 
       - name: Cache cargo registry and build
-        uses: Swatinem/rust-cache@6323deb102c322ba6fcbdcafc7e3dddab59af2b6  # v2.9.2
+        uses: Swatinem/rust-cache@v2.9.2
         with:
           workspaces: ${{ inputs.working_directory }}
 
@@ -226,14 +227,14 @@ jobs:
         working-directory: ${{ inputs.working_directory }}
     steps:
       - name: Checkout repository
-        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
+        uses: actions/checkout@v7.0.1
         with:
           repository: ${{ github.repository }}
           ref: ${{ github.ref }}
 
       - name: Install Rust toolchain
         # `toolchain:` mandatory under SHA pin — see Cargo check job above.
-        uses: dtolnay/rust-toolchain@02cb101ec7c40f2c49e1d9714d64511d8e1b74de  # master
+        uses: dtolnay/rust-toolchain@v1
         with:
           toolchain: stable
 
@@ -244,12 +245,12 @@ jobs:
 
       - name: Install Zig for native build
         if: ${{ inputs.zig_version != '' }}
-        uses: goto-bus-stop/setup-zig@abea47f85e598557f500fa1fd2ab7464fcb39406  # v2.2.1
+        uses: goto-bus-stop/setup-zig@v2.2.1
         with:
           version: ${{ inputs.zig_version }}
 
       - name: Cache cargo registry and build
-        uses: Swatinem/rust-cache@6323deb102c322ba6fcbdcafc7e3dddab59af2b6  # v2.9.2
+        uses: Swatinem/rust-cache@v2.9.2
         with:
           workspaces: ${{ inputs.working_directory }}
 
@@ -280,14 +281,14 @@ jobs:
         working-directory: ${{ inputs.working_directory }}
     steps:
       - name: Checkout repository
-        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
+        uses: actions/checkout@v7.0.1
         with:
           repository: ${{ github.repository }}
           ref: ${{ github.ref }}
 
       - name: Install Rust toolchain
         # `toolchain:` mandatory under SHA pin — see Cargo check job above.
-        uses: dtolnay/rust-toolchain@02cb101ec7c40f2c49e1d9714d64511d8e1b74de  # master
+        uses: dtolnay/rust-toolchain@v1
         with:
           toolchain: stable
 
@@ -316,14 +317,14 @@ jobs:
       FLOOR: ${{ inputs.coverage_floor }}
     steps:
       - name: Checkout repository
-        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
+        uses: actions/checkout@v7.0.1
         with:
           repository: ${{ github.repository }}
           ref: ${{ github.ref }}
 
       - name: Install Rust toolchain
         # `toolchain:` mandatory under SHA pin — see Cargo check job above.
-        uses: dtolnay/rust-toolchain@02cb101ec7c40f2c49e1d9714d64511d8e1b74de  # master
+        uses: dtolnay/rust-toolchain@v1
         with:
           toolchain: stable
           components: llvm-tools-preview
@@ -335,7 +336,7 @@ jobs:
 
       - name: Install Zig for native build
         if: ${{ inputs.zig_version != '' }}
-        uses: goto-bus-stop/setup-zig@abea47f85e598557f500fa1fd2ab7464fcb39406  # v2.2.1
+        uses: goto-bus-stop/setup-zig@v2.2.1
         with:
           version: ${{ inputs.zig_version }}
 
