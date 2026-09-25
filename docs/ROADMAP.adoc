@@ -131,12 +131,14 @@ Stage 8  Self‑verified                      ECHIDNA proves ECHIDNA
 [width="100%",cols="34%,33%,33%",options="header",]
 |===
 |Claim |Today |End‑state target
-|"`Every important solver`" |*128 ProverKind variants* (89 external
-prover bindings + 39 TypeChecker disciplines routed through TypedWasm);
-*91 / 91 with real `+suggest_tactics+`* (5 still heuristic-only;
-GNN-ranked is the end-state target per `+docs/PROVER_COUNT.adoc+`); *72
-backends with empty native search but a cross-prover Verisim fallback at
-the dispatcher layer (CLI/REST/REPL)* |*All variants with real
+|"`Every important solver`" |*141 `+ProverKind+` variants* over *105
+backend implementation files*, of which *46* carry a type-checker /
+discipline role and *102* expose real `+suggest_tactics+` (the rest
+heuristic-only; GNN-ranked is the end-state target); some backends have
+empty native search but a cross-prover Verisim fallback at the
+dispatcher layer (CLI/REST/REPL). Denominators, tier split and the
+commands that reproduce each figure: `+docs/PROVER_COUNT.adoc+`
+(canonical) |*All variants with real
 `+suggest_tactics+` (GNN‑ranked top‑k); per-backend search reflects each
 prover’s native capability while cross-prover queries are served from
 Verisim by `+goal_hash+`*

@@ -21,7 +21,9 @@ query {
 }
 ----
 
-Returns all 30 prover backends.
+Returns all registered prover backends — 141 `+ProverKind+` variants over
+105 backend implementations. See `+docs/PROVER_COUNT.adoc+` (canonical) for
+the tier split and reproduction commands.
 
 ===== Get Proof State
 

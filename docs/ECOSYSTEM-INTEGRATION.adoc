@@ -141,7 +141,7 @@ Needs entry in `+repos+` section of farm-manifest.json
 [source,json]
 ----
 "echidna": {
-  "description": "Neurosymbolic theorem proving platform with 30 prover backends",
+  "description": "Neurosymbolic theorem proving platform with 141 ProverKind variants over 105 backend implementations",
   "forges": ["github", "gitlab", "sourcehut", "codeberg", "bitbucket"],
   "priority": "high",
   "auto_propagate": true,

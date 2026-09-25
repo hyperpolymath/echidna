@@ -154,6 +154,154 @@ document set listed in that file — `+docs/+`, `+.machine_readable/+` and
 `+crates/*/README.md+` are *not* covered, which is where the surviving
 drift accumulated.
 
+=== Surface reconciliation (issue #251)
+
+Drift accumulated because the `+R5a+` guard covers only the top-level
+document set; `+docs/+`, `+.machine_readable/+` and `+crates/*+` sit
+outside it. This table records, surface by surface, what each one said
+and how it is being handled. Three dispositions are in use:
+
+* *corrected* — a live claim that was simply wrong; it now states the
+canonical figure.
+* *de-numbered* — a live gate or checklist; the bare number was removed
+and replaced with a pointer here, so the gate can no longer drift.
+* *record* — a point-in-time document (release note, dated audit,
+handover snapshot, campaign log); left at its authoring-time figure on
+purpose, per the policy above.
+
+[width="100%",cols="46%,20%,34%",options="header",]
+|===
+|Surface |Said |Disposition
+
+|`+docs/ARCHITECTURE.adoc+` (diagram + tier overview)
+|128 variants; 89 external + 39 TypeChecker; Tier 1 = Coq, Lean, Agda,
+Isabelle, Idris2, F*, Z3, CVC5, Alt-Ergo, Dafny, Vampire, E Prover
+|*corrected* — 141 variants over 105 impl files; Tier 1 restated to the
+exact `+ProverKind::all_core()+` set
+
+|`+docs/ROADMAP.adoc+` (endpoint-target table)
+|128 variants; 89 external + 39 TypeChecker; 91/91 `+suggest_tactics+`;
+72 with Verisim fallback
+|*corrected* — 141/105, 46 discipline, 102 `+suggest_tactics+`; cites
+this file instead of restating denominators
+
+|`+docs/architecture/VERISIM-ER-SCHEMA.adoc+`
+|"`which of the 128 backends`"
+|*corrected* — 141 variants, cites this file
+
+|`+docs-site/content/api/graphql.adoc+`
+|"`Returns all 30 prover backends`"
+|*corrected* — 141 variants over 105 impl files, cites this file
+
+|`+docs/ECOSYSTEM-INTEGRATION.adoc+` (forge-registry JSON sample)
+|"`...with 30 prover backends`"
+|*corrected* — 141 variants over 105 impl files
+
+|`+docs/practice/SOFTWARE-DEVELOPMENT-APPROACH.adoc+`
+|"`Core | Rust | 30 prover backends`"
+|*corrected* — 141/105, cites this file
+
+|`+docs/ASPECT_IMPLEMENTATION_SUMMARY.adoc+`
+|"`Compatible with all 12 prover backends`"
+|*corrected* — "`all Tier 1 (core) prover backends`"
+
+|`+docs/maintenance/MAINTENANCE-CHECKLIST.adoc+` and
+`+.machine_readable/policies/MAINTENANCE-AXES.a2ml+`
+|"`All 30 prover backends compile and pass smoke tests`"
+|*de-numbered* — "`All prover backends compile and pass smoke tests`",
+pointer to this file
+
+|`+docs/releases/RELEASE_NOTES_v1.2.adoc+`, `+v1.3.adoc+`
+|12 provers (release-time)
+|*record*
+
+|`+docs/reports/audit/2026-03-31-echidna-audit.adoc+`
+|30 provers (audit-time)
+|*record*
+
+|`+CHANGELOG.adoc+`
+|30 (early entries), 105 (later entry)
+|*record* — each entry describes its release, not `+main+` today
+
+|`+docs/decisions/2026-06-01-saturation-campaign.adoc+`
+|"`had reached 128 ProverKind variants`"
+|*record* — the campaign's starting state
+
+|`+docs/TEST-NEEDS.adoc+`
+|48 backends (CRG B snapshot, 2026-04-04)
+|*record* — dated achievement checklist
+
+|`+docs/handover/+` (`+STATE+`, `+PRODUCTION-WIRING-PLAN+`, `+TODO+`,
+`+llm-warmup-*+`)
+|12 / 30 / 48 in past-state narrative
+|*record* — handover snapshots of what was true then
+
+|`+docs/design/+`, `+docs/academic/+`, `+docs/governance/+`,
+`+docs/isabelle-backend.adoc+`, `+docs/METAMATH_BACKEND.adoc+`
+|12 / 48 / "`48+`" in design-time prose
+|*record* — design/positioning documents of their period
+
+|`+src/chapel/RESULTS.adoc+`
+|9/12 provers succeeded (lab run)
+|*record* — benchmark output
+
+|`+audits/+` (`+assail-classifications.a2ml+`,
+`+audit-ffi-boundary.adoc+`)
+|105 backends / 30 at audit time
+|*record* — audit artefacts
+
+|`+.machine_readable/descriptiles/STATE.a2ml+`
+|113, 128, 48 at various points
+|*record* — session-state ledger (one snapshot even records that it
+disagreed with the enum at the time)
+
+|`+.machine_readable/provers.a2ml+`
+|`+count = 113+` (date 2026-04-24), i.e. 28 variants behind the enum
+|*corrected* — regenerated from `+ProverKind+` with
+`+scripts/gen-provers-a2ml.sh+`: 141 sections, validated as TOML; the 113
+pre-existing entries are byte-identical
+|===
+
+Live surfaces still carrying an unlabelled figure, deferred as explicit
+follow-ups rather than guessed at:
+
+* `+crates/echidna-mcp/src/main.rs+` — six "`105 prover backends`"
+occurrences in MCP tool descriptions (runtime-visible). 105 is the
+correct *implementation-file* denominator, but the label is wrong; it
+should read "`105 backend implementations`" or cite this file.
+* `+src/rust/+` doc comments (`+groove.rs+`, `+learning/mod.rs+`,
+`+llm.rs+`, `+proof_search.rs+`, `+server.rs+`, `+dispatch.rs+`) — 30/48.
+* `+tests/+` (`+aspect_tests.rs+`, `+e2e_prover_test.rs+`,
+`+integration_v1_2.rs+`, `+neural_property_tests.rs+`, `+smoke_e2e.rs+`)
+— stale counts in comments; the assertions themselves are lower bounds
+and still pass.
+* `+.machine_readable/{ROADMAP.a2ml,descriptiles/{AGENTIC,ECOSYSTEM,NEUROSYM}.a2ml}+`
+— 105/141 figures that are correct but unlabelled.
+* Repository GitHub description ("`30 prover backends`") — an
+owner-level settings write, not something a repository commit can fix.
+* `+docs/LEARNING-ARCHITECTURE.adoc+` — "`48-prover dispatch layer`" in a
+live architectural explanation; the denominator needs a decision, not a
+guess.
+* `+.machine_readable/provers.a2ml+`'s documented consumer is gone: it
+says `+backend-matrix.yml+` reads it to build "`one job per prover`", but
+no such workflow exists in `+.github/workflows/+` and nothing else reads
+the file. The per-prover matrix CI the file was built for is therefore
+absent, not merely stale.
+* `+scripts/gen-provers-a2ml.sh+`'s header template declares
+`+AGPL-3.0-or-later+` (matching the root `+LICENSE+`) while the committed
+`+provers.a2ml+` declares `+MPL-2.0+`. Left as-is: which one is correct is
+a licensing decision (see the SPDX/licensing issue), and a regeneration
+must not silently flip a licence line.
+
+Re-check by re-running the sweep:
+
+[source,bash]
+----
+grep -rnE '(^|[^0-9])(12|30|48|74|105|113|128|141)[^0-9]{0,3}(prover|backend|ProverKind)' \
+  --include='*.adoc' --include='*.md' --include='*.a2ml' --include='*.rs' . \
+  | grep -v '^\./\.git'
+----
+
 === Verifying locally
 
 Each command is the definition of its figure. Run from the repository

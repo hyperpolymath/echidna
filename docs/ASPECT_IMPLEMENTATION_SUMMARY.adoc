@@ -250,7 +250,7 @@ file)
 * Uses `+crate::core::Term+` for theorem representation
 * Integrates with `+Theorem+` struct (has `+aspects: Vec<String>+`
 field)
-* Compatible with all 12 prover backends
+* Compatible with all Tier 1 (core) prover backends
 * Works with `+ProofState+` and `+Context+`
 
 ==== With Neural Components (Julia)

@@ -223,7 +223,8 @@ A single invocation of a prover backend against a goal.
 
 |`+octad_key+` (FK→E1) |`+UUIDv7+` |the goal
 
-|`+prover+` |enum `+ProverKind+` |which of the 128 backends
+|`+prover+` |enum `+ProverKind+` |which of the 141 `+ProverKind+`
+variants (see `+docs/PROVER_COUNT.adoc+`, canonical)
 
 |`+verdict+` |enum
 `+Proven+`/`+Refuted+`/`+Timeout+`/`+Unknown+`/`+Error+` |outcome

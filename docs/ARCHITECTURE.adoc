@@ -43,14 +43,14 @@ independently reproduced where formats allow (Alethe, DRAT/LRAT, TSTP).
 │              └──┬───────────────────────────────┬───┘                   │
 │                 │                               │                        │
 │   ┌─────────────▼────────────┐    ┌─────────────▼───────────────────┐   │
-│   │   Trust pipeline          │    │  128 ProverKind backends         │  │
-│   │   (verification/)         │    │  (provers/)                      │  │
-│   │   - integrity             │    │   89 external prover bindings    │  │
-│   │   - portfolio             │    │   39 TypeChecker disciplines     │  │
-│   │   - certificates          │    │      via TypedWasm Sigma         │  │
+│   │   Trust pipeline          │    │  141 ProverKind variants         │  │
+│   │   (verification/)         │    │  105 backend impl files          │  │
+│   │   - integrity             │    │  (provers/)                      │  │
+│   │   - portfolio             │    │  see docs/PROVER_COUNT.adoc      │  │
+│   │   - certificates          │    │                                  │  │
 │   │   - axiom tracker         │    │                                  │  │
-│   │   - confidence            │    │   Tier 1: 12 core (REST default) │  │
-│   │   - mutation              │    │   Tier 2–10: by capability       │  │
+│   │   - confidence            │    │  Tier 1: 12 core (REST default)  │  │
+│   │   - mutation              │    │  Tier 2–10: by capability        │  │
 │   │   - pareto                │    └──────────────────────────────────┘  │
 │   │   - statistics            │                                          │
 │   └───────────────────────────┘                                          │
@@ -80,13 +80,14 @@ independently reproduced where formats allow (Alethe, DRAT/LRAT, TSTP).
 
 === Tier overview
 
-ECHIDNA carries *128 ProverKind variants*. The exposed surface depends
-on tier:
+ECHIDNA carries *141 `+ProverKind+` variants* across *105 backend
+implementation files*. The exposed surface depends on tier:
 
-* *Tier 1 (12 core)* — the default REST `+/api/verify+` surface:
-Coq/Rocq, Lean 4, Agda, Isabelle/HOL, Idris 2, F*, Z3, CVC5, Alt-Ergo,
-Dafny, Vampire, E Prover.
-* *Tier 2–10* — 116 additional backends: ATPs, SMT, model checkers,
+* *Tier 1 (12 core)* — the default REST `+/api/verify+` surface, and
+exactly the set returned by `+ProverKind::all_core()+`: Coq, Lean 4,
+Agda, Isabelle/HOL, Z3, CVC5, Metamath, HOL Light, Mizar, PVS, ACL2,
+HOL4.
+* *Tier 2–10* — the remaining variants: ATPs, SMT, model checkers,
 constraint solvers, niche provers, ecosystem type-checkers. Available
 via explicit `+ProverKind+` selection in CLI / REPL / GraphQL but not
 auto-routed.
