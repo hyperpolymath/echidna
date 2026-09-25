@@ -264,9 +264,9 @@ Without gh access, Criteria 1/2/3/5 cannot close, full stop.
 
 * `docs/handover/L3-LIVE-PROVER-CI-PROMPT.adoc` — original L3 mission.
 * `docs/handover/TODO.adoc` — P0 / P1 rows referenced above.
-* `docs/handover/L1-CAPNPROTO-PROMPT.md` — the prompt that fires
+* `docs/handover/L1-CAPNPROTO-PROMPT.adoc` — the prompt that fires
   once this gate closes.
-* `docs/handover/L2-CHAPEL-PROMPT.md` — blocked behind L1 + this gate.
+* `docs/handover/L2-CHAPEL-PROMPT.adoc` — blocked behind L1 + this gate.
 * C12 PR (echidnabot manifest) — per-repo opt-in shape for consumers.
 * C14 PR (cross-repo proof DAG design) — what L1's Cap'n Proto schemas
   must carry.

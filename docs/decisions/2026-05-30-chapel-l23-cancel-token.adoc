@@ -1,7 +1,7 @@
 == 2026-05-30 — L2.3 cancel-token preemption for speculative search
 
 ADR-style addendum to
-link:./2026-05-30-chapel-rehabilitation.md[2026-05-30-chapel-rehabilitation.md].
+link:./2026-05-30-chapel-rehabilitation.md[2026-05-30-chapel-rehabilitation.adoc].
 Documents the L2.3 cancel-token plumbing that closes the
 "`speculative-search winner doesn’t kill losers`" gap explicitly carried
 forward from Wave 1.
@@ -95,7 +95,7 @@ Chapel inherits from the C11 memory model.
 
 === Expected speedup
 
-Wave-1 baseline (`+docs/bench/2026-05-30-chapel-mrr-baseline.md+`)
+Wave-1 baseline (`+docs/bench/2026-05-30-chapel-mrr-baseline.adoc+`)
 showed speculative ≈ best-of on the success cases because every loser
 ran to its own per-prover timeout. After L2.3 the loser wall is bounded
 by `+pollInterval + SIGKILL latency ≈ 100-150 ms+`. For the

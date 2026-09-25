@@ -46,5 +46,5 @@ scope:
     - RSR_COMPLIANCE.adoc
     - SECURITY.md
     - MAINTAINERS.adoc
-    - AUTHORS.md
-    - CODE_OF_CONDUCT.md
+    - AUTHORS.adoc
+    - CODE_OF_CONDUCT.adoc

@@ -105,7 +105,7 @@ export VERISIM_URL=http://localhost:8080
 cargo build  # without --features verisim
 ```
 
-See [`docs/handover/S4-LOOP-CLOSURE-RUNBOOK.md`](https://github.com/hyperpolymath/echidna/blob/main/docs/handover/S4-LOOP-CLOSURE-RUNBOOK.md) for the operational details.
+See [`docs/handover/S4-LOOP-CLOSURE-RUNBOOK.adoc`](https://github.com/hyperpolymath/echidna/blob/main/docs/handover/S4-LOOP-CLOSURE-RUNBOOK.md) for the operational details.
 
 ## Corpus adapter returns empty Corpus
 

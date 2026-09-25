@@ -2,13 +2,13 @@
 # Copyright (c) 2026 Jonathan D.A. Jewell (hyperpolymath) <j.d.a.jewell@open.ac.uk>
 #
 # deployment.a2ml — public hosting topology for ECHIDNA.
-# Human-facing companion: docs/HOSTING.md (keep the two in step).
+# Human-facing companion: docs/HOSTING.adoc (keep the two in step).
 
 [metadata]
 version = "1.0.0"
 last-updated = "2026-07-29"
 maintainer = "Jonathan D.A. Jewell (hyperpolymath)"
-companion-doc = "docs/HOSTING.md"
+companion-doc = "docs/HOSTING.adoc"
 
 [dns]
 zone = "nesy-prover.dev"
@@ -46,7 +46,7 @@ image-published-by = ".github/workflows/ghcr-publish.yml"
 image-public = true
 deploy-unit = "deploy/hetzner/"
 runbook = "deploy/hetzner/README.adoc"
-canonical-api-doc = "site/docs/api/core.md"
+canonical-api-doc = "site/docs/api/core.adoc"
 status = "ready-not-deployed"
 
 [surfaces.api.limits]

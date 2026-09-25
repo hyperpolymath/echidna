@@ -108,7 +108,7 @@ relationship definitions
 * `+docs/decisions/2026-06-01-saturation-campaign.adoc+` — ADR
 * `+docs/CORPUS-ADAPTERS.adoc+` — index of all corpus adapters with their
 parsing strategy + canonical source URL
-* `+docs/handover/PROVER-CORPUS-SATURATION-LANE.md+` — this file
+* `+docs/handover/PROVER-CORPUS-SATURATION-LANE.adoc+` — this file
 
 === Lane scope — what this branch DOES NOT touch
 

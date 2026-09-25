@@ -223,7 +223,7 @@ with stub-sentinel detection on each cell.
 `integration tests fail with "binary not found"`::
   Many tests shell out to external solvers (`z3`, `cvc5`, `coqc`, …).
   Either install the needed binary or restrict to unit tests with
-  `cargo test --lib`. See link:docs/SUPPORTED_PROVERS.md[`docs/SUPPORTED_PROVERS.md`]
+  `cargo test --lib`. See link:docs/SUPPORTED_PROVERS.adoc[`docs/SUPPORTED_PROVERS.adoc`]
   for the Tier-1 install hints.
 
 `POST /api/prove returns "Failed to spawn ... process"`::

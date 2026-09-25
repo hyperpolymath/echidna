@@ -48,8 +48,8 @@ relationships, crosswalk Rust↔Cap’n Proto↔ClickHouse) + Cap’n Proto wire
 schema `+crates/echidna-wire/schemas/verisim_er.capnp+`
 (@0xe4dc7b1f01a06001).
 * *Chapel + Julia integration hooks* at
-`+docs/architecture/CHAPEL-SATURATION-HOOKS.md+` +
-`+docs/architecture/JULIA-SATURATION-HOOKS.md+` (specifications only —
+`+docs/architecture/CHAPEL-SATURATION-HOOKS.adoc+` +
+`+docs/architecture/JULIA-SATURATION-HOOKS.adoc+` (specifications only —
 wave3 chapel + GNN-training-trigger files deliberately untouched).
 * *New Julia helper modules* `+src/julia/corpus_loader.jl+` +
 `+src/julia/saturation_synonyms.jl+` (bridge Rust corpus JSON +
@@ -57,7 +57,7 @@ saturation synonym TOMLs into the GNN training pipeline).
 * *Saturation campaign ADR* at
 `+docs/decisions/2026-06-01-saturation-campaign.adoc+`.
 * *Handover lane doc* at
-`+docs/handover/PROVER-CORPUS-SATURATION-LANE.md+` (collision-avoidance
+`+docs/handover/PROVER-CORPUS-SATURATION-LANE.adoc+` (collision-avoidance
 contract with `+wave3/161-162-bench-telemetry-corpus+`).
 * *Corpus adapter index* at `+docs/CORPUS-ADAPTERS.adoc+`.
 * *Justfile recipes*: `+corpus-ingest-saturation+`,
@@ -85,8 +85,8 @@ Troubleshooting) to reflect the new surface.
 per-module references.
 * Machine-readable metadata under `+.machine_readable/6a2/+` (STATE /
 META / ECOSYSTEM / NEUROSYM) updated additively.
-* 9 RSR-template substitution gaps closed in CODE_OF_CONDUCT.md /
-SECURITY.md / AUTHORS.md.
+* 9 RSR-template substitution gaps closed in CODE_OF_CONDUCT.adoc /
+SECURITY.md / AUTHORS.adoc.
 
 ==== Verification
 
@@ -163,7 +163,7 @@ it. Now Theorem-certified by both Vampire and E Prover.
 `+prove_handler+` and `+verify_handler+` now returns `+valid: false+`
 when `+parse_string+` produces an empty `+ProofState+` (no goals,
 theorems, definitions, axioms, or variables) on non-empty input. Partial
-fix for the parse+export round-trip bug documented in `+TEST-NEEDS.md+`.
+fix for the parse+export round-trip bug documented in `+TEST-NEEDS.adoc+`.
 Verified live: garbage to Coq/Lean now returns `+valid: false+` (was
 `+true+`); real proofs unaffected.
 * *Isabelle prover backend de-stubbed*
@@ -345,7 +345,7 @@ MiniZinc, Chuffed, OR-Tools
 
 *Documentation*: - PERFORMANCE.md - Prover creation benchmarks (avg
 2.5µs) - SECURITY-SCAN-FINAL.md - Security audit results -
-ROADMAP-v2.0.md - v2.0 feature roadmap - ECOSYSTEM-INTEGRATION.md -
+ROADMAP-v2.0.md - v2.0 feature roadmap - ECOSYSTEM-INTEGRATION.adoc -
 Ecosystem service integration - echidnabot/FLEET-INTEGRATION.md - Fleet
 integration guide
 

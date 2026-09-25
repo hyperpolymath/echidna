@@ -443,7 +443,7 @@ in parallel - Use fastest result
 
 === Links
 
-* link:implementation/CVC5_IMPLEMENTATION_SUMMARY.md[Implementation
+* link:implementation/CVC5_IMPLEMENTATION_SUMMARY.adoc[Implementation
 Summary]
 * https://cvc5.github.io/docs/latest/[CVC5 Documentation]
 * https://smtlib.cs.uiowa.edu/[SMT-LIB Standard]

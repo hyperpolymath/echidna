@@ -117,7 +117,7 @@ bindings (for UI layer)
 zero `+serde_json+` calls on Rust↔Julia hot path - All schemas have
 Idris2 ABI proofs (zero `+believe_me+`) - Benchmarks: Cap’n Proto
 round-trip ≤ 50% of JSON latency for GNN rank request - Schema
-versioning doc (`+schemas/VERSIONING.md+`) explains forward/backward
+versioning doc (`+schemas/VERSIONING.adoc+`) explains forward/backward
 compat rules
 
 *Out of scope for L1*: Chapel (L2), gRPC replacement (keep as declared

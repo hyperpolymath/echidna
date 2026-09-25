@@ -16,10 +16,10 @@ Read this index first to know which file is which.
 [width="100%",cols="25%,25%,25%,25%",options="header",]
 |===
 |File |Workstream |Pre-condition |Effort
-|link:L1-CAPNPROTO-PROMPT.md[`+L1-CAPNPROTO-PROMPT.md+`] |Stage 5a —
+|link:L1-CAPNPROTO-PROMPT.adoc[`+L1-CAPNPROTO-PROMPT.adoc+`] |Stage 5a —
 Cap’n Proto IPC |L3 hand-off green ≥ 7 days |~2 sprints
 
-|link:L2-CHAPEL-PROMPT.md[`+L2-CHAPEL-PROMPT.md+`] |Stage 5b — Chapel
+|link:L2-CHAPEL-PROMPT.adoc[`+L2-CHAPEL-PROMPT.adoc+`] |Stage 5b — Chapel
 L2.2+ (speculative search, corpus-parallel, multi-locale) |L1 landed |~4
 sprints
 
@@ -27,10 +27,10 @@ sprints
 |Stage 5d — Tier-4 live-CI provisioning |Tier-1 main CI green ≥ 7 days
 |~1 sprint
 
-|link:PHASE-3-PROMPT.md[`+PHASE-3-PROMPT.md+`] |Modal + real-algebraic
+|link:PHASE-3-PROMPT.adoc[`+PHASE-3-PROMPT.adoc+`] |Modal + real-algebraic
 backends (Wave-2 follow-on) |Wave-2 done |~1 sprint
 
-|link:SUGGEST-CLI-PROMPT.md[`+SUGGEST-CLI-PROMPT.md+`] |`+suggest+` verb
+|link:SUGGEST-CLI-PROMPT.adoc[`+SUGGEST-CLI-PROMPT.adoc+`] |`+suggest+` verb
 implementation |None |~3 days
 |===
 
@@ -39,7 +39,7 @@ implementation |None |~3 days
 [width="100%",cols="50%,50%",options="header",]
 |===
 |File |What it covers
-|link:S4-LOOP-CLOSURE-RUNBOOK.md[`+S4-LOOP-CLOSURE-RUNBOOK.md+`]
+|link:S4-LOOP-CLOSURE-RUNBOOK.adoc[`+S4-LOOP-CLOSURE-RUNBOOK.adoc+`]
 |VeriSim learning-loop end-to-end test (`+just test-s4-loop+`) and
 operational verification
 
@@ -53,7 +53,7 @@ operational verification
 [width="100%",cols="50%,50%",options="header",]
 |===
 |File |Scope
-|link:PRODUCTION-WIRING-PLAN.md[`+PRODUCTION-WIRING-PLAN.md+`]
+|link:PRODUCTION-WIRING-PLAN.adoc[`+PRODUCTION-WIRING-PLAN.adoc+`]
 |Three-tier (L1 Cap’n Proto / L2 Chapel / L3 live CI) production-wiring
 plan. L1 prompt is the executable derivative.
 |===
@@ -63,7 +63,7 @@ plan. L1 prompt is the executable derivative.
 [width="100%",cols="50%,50%",options="header",]
 |===
 |File |Tracks
-|link:THEOREM-METADATA-MIGRATION.md[`+THEOREM-METADATA-MIGRATION.md+`]
+|link:THEOREM-METADATA-MIGRATION.adoc[`+THEOREM-METADATA-MIGRATION.adoc+`]
 |Future migration of 8 parser-site structural meta-tags out of
 `+Theorem.aspects+` into a dedicated `+TheoremKind+` field. Boundary
 filter contains the damage; this is hygiene.
@@ -77,10 +77,10 @@ filter contains the damage; this is hygiene.
 |link:TODO.adoc[`+TODO.adoc+`] |Living backlog. Single source of truth for
 "`what’s next`" between sprints. P0–P4 priority bands.
 
-|link:STATE.md[`+STATE.md+`] |Running human-readable state log.
+|link:STATE.adoc[`+STATE.adoc+`] |Running human-readable state log.
 Complement to `+.machine_readable/descriptiles/STATE.a2ml+`.
 
-|link:README.md[`+README.md+`] |Original handover suite intro (older;
+|link:README.adoc[`+README.adoc+`] |Original handover suite intro (older;
 kept for orientation).
 |===
 
@@ -89,17 +89,17 @@ kept for orientation).
 [width="100%",cols="50%,50%",options="header",]
 |===
 |File |Audience
-|link:llm-warmup-dev.md[`+llm-warmup-dev.md+`] |LLM session warmup for
+|link:llm-warmup-dev.adoc[`+llm-warmup-dev.adoc+`] |LLM session warmup for
 contributors
 
-|link:llm-warmup-user.md[`+llm-warmup-user.md+`] |LLM session warmup for
+|link:llm-warmup-user.adoc[`+llm-warmup-user.adoc+`] |LLM session warmup for
 end-users
 |===
 
 === Execution order (when starting a fresh sprint)
 
 [arabic]
-. Read `+STATE.md+` (or `+STATE.a2ml+`) for the current sprint state.
+. Read `+STATE.adoc+` (or `+STATE.a2ml+`) for the current sprint state.
 . Read `+TODO.adoc+` for the prioritised backlog.
 . Pick the next-up prompt from "`Active prompts`" whose pre-condition is
 met.
@@ -119,16 +119,16 @@ each:
 |Stage |Drives |Artefact
 |2a/2c |GNN training + eval |`+S5-VERIFICATION-RUNBOOK.adoc+`
 
-|3a/3b |Verisim read paths |`+S4-LOOP-CLOSURE-RUNBOOK.md+` (done)
+|3a/3b |Verisim read paths |`+S4-LOOP-CLOSURE-RUNBOOK.adoc+` (done)
 
 |3c |Outcome emission wiring |Stage-3c plan in chat history (no
 dedicated handover yet — to be written when work begins)
 
-|4c/4d |`+suggest_tactics+` GNN ranking |`+SUGGEST-CLI-PROMPT.md+`
+|4c/4d |`+suggest_tactics+` GNN ranking |`+SUGGEST-CLI-PROMPT.adoc+`
 
-|5a |Cap’n Proto IPC |`+L1-CAPNPROTO-PROMPT.md+`
+|5a |Cap’n Proto IPC |`+L1-CAPNPROTO-PROMPT.adoc+`
 
-|5b |Chapel L2.2+ |`+L2-CHAPEL-PROMPT.md+`
+|5b |Chapel L2.2+ |`+L2-CHAPEL-PROMPT.adoc+`
 
 |5d |Tier-4 live CI |`+L3-LIVE-PROVER-CI-PROMPT.adoc+`
 |===

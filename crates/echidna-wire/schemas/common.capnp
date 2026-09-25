@@ -1,7 +1,7 @@
 @0xf2f7187fddaa9139;
 
 # Schema version stamped into every root message. Bumped only on incompatible
-# changes per VERSIONING.md. L1.0 = 1.
+# changes per VERSIONING.adoc. L1.0 = 1.
 const schemaVersionMajor :UInt16 = 1;
 const schemaVersionMinor :UInt16 = 0;
 

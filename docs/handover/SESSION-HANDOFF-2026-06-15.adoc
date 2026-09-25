@@ -119,7 +119,7 @@ Continue estate maintenance on `+hyperpolymath/echidna+` +
 `+hyperpolymath/echidnabot+`.
 
 *First read:* echidna issue #238 (closed master checkpoint),
-`+docs/handover/SESSION-HANDOFF-2026-06-15.md+`, `+AFFIRMATION.adoc+`,
+`+docs/handover/SESSION-HANDOFF-2026-06-15.adoc+`, `+AFFIRMATION.adoc+`,
 and both repos’ `+CLAUDE.md+` (their rules OVERRIDE defaults).
 
 *Where things stand:* the multi-language proof corpus is repaired,

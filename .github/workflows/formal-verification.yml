@@ -17,7 +17,7 @@
 #                    If Why3 availability changes, re-evaluate whether to keep
 #                    this as a required check or move to a scheduled/manual job.
 #
-# See crates/echidna-core-spark/CREUSOT-SETUP.md for local setup.
+# See crates/echidna-core-spark/CREUSOT-SETUP.adoc for local setup.
 
 name: Formal Verification (Stage 8c)
 

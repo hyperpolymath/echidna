@@ -60,7 +60,7 @@ Per-(prover, domain) timeout estimates come from `StatisticsTracker::estimate_ti
 
 ## Working with the learning loop
 
-The loop flows: prover runs → outcome → VeriSimDB `proof_attempts` table → `mv_prover_success_by_class` materialised view → `VeriSimAdvisor` reads in dispatch / Julia `/training/update` pushes weights. Closing this loop is **Stage 3c** on the roadmap; current status and dead-wire findings are in [`docs/handover/STATE.md`](https://github.com/hyperpolymath/echidna/blob/main/docs/handover/STATE.md).
+The loop flows: prover runs → outcome → VeriSimDB `proof_attempts` table → `mv_prover_success_by_class` materialised view → `VeriSimAdvisor` reads in dispatch / Julia `/training/update` pushes weights. Closing this loop is **Stage 3c** on the roadmap; current status and dead-wire findings are in [`docs/handover/STATE.adoc`](https://github.com/hyperpolymath/echidna/blob/main/docs/handover/STATE.md).
 
 ## Environment variables
 

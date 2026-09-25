@@ -111,7 +111,7 @@ Theorem provers (integrated, not redistributed):
   PVS             GPL-2.0
   ACL2            BSD-3-Clause
   HOL4            BSD-3-Clause
-  (...and the remaining backends; see docs/SUPPORTED_PROVERS.md)
+  (...and the remaining backends; see docs/SUPPORTED_PROVERS.adoc)
 
 Provers are invoked as external binaries, not linked or redistributed, so
 their licences do not propagate to this work.

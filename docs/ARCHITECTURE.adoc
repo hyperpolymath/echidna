@@ -173,13 +173,13 @@ Endpoints — `+POST /gnn/rank+`, `+POST /gnn/embed+`,
 
 Planned (Stage 5a / L1): Cap’n Proto over Unix domain socket; HTTP+JSON
 retained only as debug fallback. See
-link:handover/L1-CAPNPROTO-PROMPT.md[`+docs/handover/L1-CAPNPROTO-PROMPT.md+`].
+link:handover/L1-CAPNPROTO-PROMPT.adoc[`+docs/handover/L1-CAPNPROTO-PROMPT.adoc+`].
 
 === Where to go next
 
 * link:ROADMAP.adoc[`+docs/ROADMAP.adoc+`] — canonical stage map and sprint
 targets.
-* link:handover/STATE.md[`+docs/handover/STATE.md+`] — running session
+* link:handover/STATE.adoc[`+docs/handover/STATE.adoc+`] — running session
 log.
 * link:handover/HANDOVER-INDEX.adoc[`+docs/handover/HANDOVER-INDEX.adoc+`] —
 guide to the handover/ prompt suite.

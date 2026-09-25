@@ -22,7 +22,7 @@ over Bebop3 for dependability + maturity + zero-copy reads).
 ** `+ProverInvocation+` — dispatch message to a backend (used later by
 Chapel in L2)
 ** `+TrustedOutcome+` — post-trust-pipeline result
-* `+schemas/VERSIONING.md+` — forward/backward compat rules
+* `+schemas/VERSIONING.adoc+` — forward/backward compat rules
 
 ==== Rust side (hot-path consumer)
 
@@ -84,7 +84,7 @@ Rust↔Julia hot path
 request
 * Idris2 ABI compiles with zero `+believe_me+`
 * Round-trip property tests on all six schemas (Rust, Julia, Idris2)
-* `+schemas/VERSIONING.md+` explains migration story
+* `+schemas/VERSIONING.adoc+` explains migration story
 
 === Open design questions to settle early
 

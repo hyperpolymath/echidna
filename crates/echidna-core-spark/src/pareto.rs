@@ -39,7 +39,7 @@
 //! on stable Rust) and as `#[cfg_attr(feature = "creusot", …)]`
 //! attribute macros (activated during formal verification — currently
 //! commented out pending the toolchain pin in
-//! `crates/echidna-core-spark/CREUSOT-SETUP.md`).
+//! `crates/echidna-core-spark/CREUSOT-SETUP.adoc`).
 
 use serde::{Deserialize, Serialize};
 

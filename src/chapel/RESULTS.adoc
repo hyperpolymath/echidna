@@ -175,7 +175,7 @@ selection)
 
 * `+parallel_proof_search.chpl+` - 258 lines (fixed formatting)
 * `+proof_search+` - Compiled Chapel binary
-* `+RESULTS.md+` - This document
+* `+RESULTS.adoc+` - This document
 
 '''''
 

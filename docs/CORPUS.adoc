@@ -9,7 +9,7 @@ the substrate for design-search, MCTS priors, and the
 
 ____
 *For the design history* see
-link:decisions/2026-04-28-corpus-and-design-search.md[`+docs/decisions/2026-04-28-corpus-and-design-search.md+`].
+link:decisions/2026-04-28-corpus-and-design-search.adoc[`+docs/decisions/2026-04-28-corpus-and-design-search.adoc+`].
 ____
 
 === What it is

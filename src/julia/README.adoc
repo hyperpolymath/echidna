@@ -626,6 +626,6 @@ campaign*. They are owned by the parallel
 telemetry work). The integration commit that wires `+CorpusLoader+`
 output INTO the training pipeline (a ~50-line addition to
 `+run_training.jl+`) is a deliberate hand-off, landing AFTER both
-branches merge. See `+docs/architecture/JULIA-SATURATION-HOOKS.md+` for
+branches merge. See `+docs/architecture/JULIA-SATURATION-HOOKS.adoc+` for
 the topology, the field-shape contract, and the follow-up wiring PR
 sketch.

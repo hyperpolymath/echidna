@@ -117,7 +117,7 @@ file PRs against non-main branches.
 - description: dispatch.rs invokes mutation testing
 - run: grep -q 'MutationTester\|mutation::run' src/rust/dispatch.rs
 - severity: medium
-- recovery: re-wire per docs/handover/STATE.md trust-pipeline section
+- recovery: re-wire per docs/handover/STATE.adoc trust-pipeline section
 
 ### T033-pareto-frontier-tracked
 - description: dispatch results pass through Pareto frontier ranking

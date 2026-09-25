@@ -11,7 +11,7 @@
 #
 # This module is intentionally STANDALONE: it does not `using` any of the
 # existing training pipeline modules. Consumers wire the output into
-# `TrainingDataset` themselves — see `docs/architecture/JULIA-SATURATION-HOOKS.md`
+# `TrainingDataset` themselves — see `docs/architecture/JULIA-SATURATION-HOOKS.adoc`
 # for the integration topology.
 
 """

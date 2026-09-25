@@ -297,11 +297,11 @@ git log --oneline | head -10                     # 6 fresh feat() commits
 
 === Tracking
 
-* This brief: `+docs/handover/PHASE-3-PROMPT.md+`
+* This brief: `+docs/handover/PHASE-3-PROMPT.adoc+`
 * Master plan: `+~/Desktop/ECHIDNA-EXPANSION-TOMORROW-2026-04-28.md+`
 * Worked example: `+src/rust/provers/keymaerax.rs+` (committed
 2026-04-27)
-* Companion handoff: `+docs/handover/SUGGEST-CLI-PROMPT.md+` (the
+* Companion handoff: `+docs/handover/SUGGEST-CLI-PROMPT.adoc+` (the
 §4.1/4.3 mechanical-baseline brief from the same session)
 
 When Phase 3 closes, update this file’s status table to all-green, move

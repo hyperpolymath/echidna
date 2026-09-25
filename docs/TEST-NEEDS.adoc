@@ -110,7 +110,7 @@ All 9 ignored tests are in `+tests/integration_v1_2.rs+`. They are
 remain skipped until ACL2/PVS/HOL4 are installed in the CI environment.
 The ignore reason is clearly documented.
 
-(Note: TEST-NEEDS.md said "`9 ignored`" but `+cargo test+` shows 16
+(Note: TEST-NEEDS.adoc said "`9 ignored`" but `+cargo test+` shows 16
 ignored total. The additional 7 are in
 `+tests/test_neural_integration.rs+` requiring the Julia server running
 on port 8081.)

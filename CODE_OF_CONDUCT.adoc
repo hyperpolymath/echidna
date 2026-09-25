@@ -162,7 +162,7 @@ at https://www.contributor-covenant.org/translations.
 
 *Lineage*: Adapted from the
 https://www.contributor-covenant.org/[Contributor Covenant] v2.1.
-Revisions tracked via `+git log CODE_OF_CONDUCT.md+`. This file is
+Revisions tracked via `+git log CODE_OF_CONDUCT.adoc+`. This file is
 intentionally version-free and date-free in prose to avoid R5b drift.
 
 *Contact*:

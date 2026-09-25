@@ -49,7 +49,7 @@ pub mod octad; // 8-modality octad emission for VeriSim integration (Step 3)
 pub mod query; // Multi-axis query DSL (capstone)
 
 // Saturation campaign — new corpus adapters (2026-06-01).
-// See docs/handover/PROVER-CORPUS-SATURATION-LANE.md.
+// See docs/handover/PROVER-CORPUS-SATURATION-LANE.adoc.
 pub mod acl2_books;
 pub mod dafny;
 pub mod fstar;

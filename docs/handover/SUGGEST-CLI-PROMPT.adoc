@@ -380,7 +380,7 @@ needs more entries.
 
 === Tracking
 
-* This prompt: `+docs/handover/SUGGEST-CLI-PROMPT.md+`
+* This prompt: `+docs/handover/SUGGEST-CLI-PROMPT.adoc+`
 * Synonym tables: `+data/synonyms/{isabelle,coq,lean4}.toml+` (committed
 2026-04-27, 27 entries)
 * Headline notes: `+~/Desktop/ECHIDNA-NOTES-2026-04-27.md+` §4.1, §4.2,

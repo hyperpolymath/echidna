@@ -32,7 +32,7 @@ source of truth: link:docs/PROVER_COUNT.adoc[`+docs/PROVER_COUNT.adoc+`].
 The REST API (`+GET+` `+/api/provers+`) exposes the Tier-1 _core_ set by
 default; all other backends are reachable through `+ProverKind+` and the
 dispatch pipeline. See
-link:docs/SUPPORTED_PROVERS.md[`+docs/SUPPORTED_PROVERS.md+`] for the
+link:docs/SUPPORTED_PROVERS.adoc[`+docs/SUPPORTED_PROVERS.adoc+`] for the
 core list, required external binaries, and how to surface additional
 backends through the API.
 
@@ -85,7 +85,7 @@ The Tier-1 _core_ set is what `+GET+` `+/api/provers+` exposes by
 default and what is required to pass for green CI; the live membership
 list is `+ProverKind::all_core()+` in `+src/rust/provers/mod.rs+`,
 mirrored in human-readable form at
-link:docs/SUPPORTED_PROVERS.md[`+docs/SUPPORTED_PROVERS.md+`] (with
+link:docs/SUPPORTED_PROVERS.adoc[`+docs/SUPPORTED_PROVERS.adoc+`] (with
 required external binaries and install hints). The remaining tiers
 (extended, niche, Wave-3 secured, Wave-2 modal/real-algebraic, pure-Rust
 in-process, HP type-checker ecosystem, TypeChecker disciplines, Coq-Jr
@@ -266,7 +266,7 @@ For a minimal browser UI, open `+src/ui/public/prove.html+` directly in
 any modern browser and point the "`API base`" field at the running
 server. No build step is required.
 
-See link:docs/SUPPORTED_PROVERS.md[`+docs/SUPPORTED_PROVERS.md+`] for
+See link:docs/SUPPORTED_PROVERS.adoc[`+docs/SUPPORTED_PROVERS.adoc+`] for
 the Tier-1 core set, required binaries, and how to expose additional
 backends through the API.
 
@@ -551,7 +551,7 @@ governance ruleset.
 == Documentation
 
 * link:CONTRIBUTING.md[Contributing Guidelines]
-* link:CODE_OF_CONDUCT.md[Code of Conduct]
+* link:CODE_OF_CONDUCT.adoc[Code of Conduct]
 * link:SECURITY.md[Security Policy]
 * link:CHANGELOG.adoc[Changelog]
 * link:docs/ROADMAP.adoc[Roadmap]
@@ -567,7 +567,7 @@ corpus ingest index
 * link:docs/decisions/2026-06-01-saturation-campaign.adoc[`+docs/decisions/2026-06-01-saturation-campaign.adoc+`]
 — ADR for the saturation campaign (corpora / vocab / synonyms / exchange
 / arbitration)
-* link:docs/handover/PROVER-CORPUS-SATURATION-LANE.md[`+docs/handover/PROVER-CORPUS-SATURATION-LANE.md+`]
+* link:docs/handover/PROVER-CORPUS-SATURATION-LANE.adoc[`+docs/handover/PROVER-CORPUS-SATURATION-LANE.adoc+`]
 — saturation lane handover
 * link:docs/ENV-VARS.adoc[`+docs/ENV-VARS.adoc+`] — environment variables
 * link:CLAUDE.md[`+CLAUDE.md+`] — collaboration brief for Claude Code

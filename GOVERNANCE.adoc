@@ -9,6 +9,6 @@ Related:
 
 * link:MAINTAINERS.adoc[`+MAINTAINERS.adoc+`] — who maintains what
 * link:.github/CONTRIBUTING.md[`+.github/CONTRIBUTING.md+`] — contribution process
-* link:CODE_OF_CONDUCT.md[`+CODE_OF_CONDUCT.md+`] — expected conduct
+* link:CODE_OF_CONDUCT.adoc[`+CODE_OF_CONDUCT.adoc+`] — expected conduct
 * link:RSR_COMPLIANCE.adoc[`+RSR_COMPLIANCE.adoc+`] — compliance
 statement

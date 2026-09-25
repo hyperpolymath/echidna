@@ -19,7 +19,7 @@
 --
 -- **Toolchain note**: written 2026-04-27 by Opus without local
 -- access to a Lean 4 toolchain.  The 2026-05-11 lake-build agent
--- (per `docs/handover/PHASE-3-PROMPT.md` / scheduled routine
+-- (per `docs/handover/PHASE-3-PROMPT.adoc` / scheduled routine
 -- `trig_01Tm7zTxYEY7kmzBsu7P4nc9`) will be the first run that
 -- actually tries `lake build` on this file.  Tactic fixups (rather
 -- than mathematical errors) are expected; the proof structure is

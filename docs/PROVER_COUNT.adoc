@@ -63,7 +63,7 @@ ____
 Metamath, HOL Light, Mizar, PVS, ACL2, HOL4 |Returned by
 `+ProverKind::all_core()+`; exposed by default at `+GET /api/provers+`;
 required to pass for green CI. Install hints in
-link:SUPPORTED_PROVERS.md[`+SUPPORTED_PROVERS.md+`].
+link:SUPPORTED_PROVERS.adoc[`+SUPPORTED_PROVERS.adoc+`].
 
 |*2 — extended* |Every PR (allow-fail) |Idris 2, Lean 3, Vampire, E
 Prover, SPASS, Alt-Ergo, F*, Dafny, Why3, TLAPS, Twelf, Nuprl, Minlog,
@@ -92,7 +92,7 @@ in-process.
 
 |*7 — Wave-2 modal/real-algebraic* |Every PR |Modal, real-algebraic
 provers (Phase 3 implementations) |See
-link:handover/PHASE-3-PROMPT.md[`+handover/PHASE-3-PROMPT.md+`]
+link:handover/PHASE-3-PROMPT.adoc[`+handover/PHASE-3-PROMPT.adoc+`]
 
 |*8 — HP type-checker ecosystem* |Nightly |13 corpus-only provers
 (Ephapax / Wokelang / AffineScript backends) |Adapters pending; tracked
@@ -187,7 +187,7 @@ the same PR.
 
 === When to cite this file
 
-Cite `+docs/PROVER_COUNT.adoc+` (not a number) in: - the `+README.md+`
+Cite `+docs/PROVER_COUNT.adoc+` (not a number) in: - the `+README.adoc+`
 tagline and the repository description - `+CLAUDE.md+` project overview
 - any new design doc - PR descriptions referring to "`all backends`" -
 issue templates

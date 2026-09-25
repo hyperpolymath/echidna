@@ -15,7 +15,7 @@ the marginal-benefit limit while a sibling session worked on chapel
 bench + telemetry (`+wave3/161-162+`).
 
 A scoping pass (saved in
-`+docs/handover/PROVER-CORPUS-SATURATION-LANE.md+`) identified the
+`+docs/handover/PROVER-CORPUS-SATURATION-LANE.adoc+`) identified the
 following ordered marginal-benefit hierarchy:
 
 [arabic]
@@ -116,7 +116,7 @@ changed.
 ==== Coordination with wave3/161-162
 
 The handover document at
-`+docs/handover/PROVER-CORPUS-SATURATION-LANE.md+` enumerated the
+`+docs/handover/PROVER-CORPUS-SATURATION-LANE.adoc+` enumerated the
 hard-exclusion list (chapel sources, benches, corpus monitor
 diagnostics, training_data premises files, Justfile train recipes,
 models/, julia run_training, the 300+ files wave3 had unstaged).
@@ -171,7 +171,7 @@ the E-R schema "`Open migrations`" section. Highest priority: produce
 
 === References
 
-* Handover: `+docs/handover/PROVER-CORPUS-SATURATION-LANE.md+`
+* Handover: `+docs/handover/PROVER-CORPUS-SATURATION-LANE.adoc+`
 * E-R schema: `+docs/architecture/VERISIM-ER-SCHEMA.adoc+`
 * Corpus index: `+docs/CORPUS-ADAPTERS.adoc+`
 * Prover count source of truth: `+docs/PROVER_COUNT.adoc+`

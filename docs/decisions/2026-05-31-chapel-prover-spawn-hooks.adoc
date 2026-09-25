@@ -5,7 +5,7 @@ ADR-style record of the mechanism added to `+ProverInfo+` and
 provers whose CLI invocation requires per-prover state at spawn time.
 Closes issues #158 (Idris2 env hook) and #159 (Agda filename hook), both
 surfaced by the Wave-1 MRR baseline
-(`+docs/bench/2026-05-30-chapel-mrr-baseline.md+`).
+(`+docs/bench/2026-05-30-chapel-mrr-baseline.adoc+`).
 
 === Status
 
@@ -35,7 +35,7 @@ match the basename. `+goal_Agda_0.agda+` is rejected by the lexer
 even after fixing the lexer issue, Agda then enforces module-name =
 file-name and rejects mismatched module declarations.
 
-The Wave-1 baseline (`+docs/bench/2026-05-30-chapel-mrr-baseline.md+`)
+The Wave-1 baseline (`+docs/bench/2026-05-30-chapel-mrr-baseline.adoc+`)
 explicitly tracked these as caveats 1 + 2, deferred as Wave-2 follow-up
 issues (`+#158+`/`+#159+`).
 
@@ -171,4 +171,4 @@ same constraint).
 design (`+Issue #1062+` upstream).
 
 These pins are re-stated in `+chapel-ci.yml+`, `+Justfile+`, and
-`+docs/decisions/2026-05-30-chapel-rehabilitation.md+`.
+`+docs/decisions/2026-05-30-chapel-rehabilitation.adoc+`.

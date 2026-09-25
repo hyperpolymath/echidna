@@ -15,7 +15,7 @@
 # until the Cap'n Proto serialisation layer lands (see TODO block below).
 #
 # Wire protocol: schemas/echidna.capnp, schema ID @0xd3b45f8ae1c79012.
-# Versioning rules: schemas/VERSIONING.md.
+# Versioning rules: schemas/VERSIONING.adoc.
 
 # ─── TODO: what must land before this stub becomes real ──────────────────────
 #

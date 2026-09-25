@@ -15,13 +15,13 @@ Current documentation:
 |===
 |You want to |Read
 |Understand where everything runs
-|link:../HOSTING.md[`+docs/HOSTING.md+`]
+|link:../HOSTING.md[`+docs/HOSTING.adoc+`]
 
 |Deploy the API to a server
 |link:../../deploy/hetzner/README.adoc[`+deploy/hetzner/README.adoc+`]
 
 |Call the deployed API
-|link:../../site/docs/api/core.md[`+site/docs/api/core.md+`]
+|link:../../site/docs/api/core.md[`+site/docs/api/core.adoc+`]
 
 |Machine-readable topology
 |link:../../.machine_readable/deployment.a2ml[`+.machine_readable/deployment.a2ml+`]
