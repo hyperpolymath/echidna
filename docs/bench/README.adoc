@@ -1,0 +1,129 @@
+// SPDX-License-Identifier: CC-BY-SA-4.0
+// SPDX-FileCopyrightText: 2026 ECHIDNA Project Contributors
+
+= Chapel benchmark artifacts
+
+This directory holds the recorded outputs of
+`+src/chapel/bench_mrr.chpl+` and the writeups that interpret them.
+
+[cols=",",options="header",]
+|===
+|File |What it is
+|`+2026-05-30-chapel-mrr-baseline.adoc+` |Wave-1 writeup: three strategies, wall-clock and winner per fixture.
+|`+2026-05-30-chapel-mrr-baseline.csv+` |The raw 5-run readings that writeup is based on.
+|===
+
+== The bench
+
+`+bench_mrr+` reads each fixture from `+tests/chapel_fixtures/+` and calls
+each of the three search strategies with the same goal string and the full
+30-prover registry:
+
+* `+sequentialProofSearch+` — serial fallback.
+* `+parallelProofSearch+` — best-of: `+coforall+` over all provers, return
+  the fastest success. Wall time is bounded by the slowest task.
+* `+parallelProofSearchSpeculative+` — first-success-wins via atomic CAS,
+  with L2.3 cancel-token preemption of the losers.
+
+== Outputs
+
+Run `+just bench-chapel-mrr+`. It writes three tables.
+
+=== 1. Wall-clock + winner (stdout)
+
+[source]
+----
+fixture,strategy,wallclock_s,success,winning_prover
+----
+
+Pass `+--verbose=false+` (the Justfile recipes do) or the strategy progress
+chatter interleaves with this CSV.
+
+=== 2. Per-prover telemetry (`+bench_mrr_telemetry.csv+`)
+
+One row per prover per fixture × strategy — 360 rows for the stock 4-fixture
+× 3-strategy × 30-prover matrix.
+
+[source]
+----
+fixture,strategy,prover,prover_id,category,outcome,exit_code,wallclock_s
+----
+
+Rows are never omitted. A prover the *sequential* strategy never reached
+because an earlier prover already won is reported as `+not_attempted+`, so
+the per-strategy counts always sum to the registry size. `+outcome+` is one
+of:
+
+[cols=",",options="header",]
+|===
+|Outcome |Meaning
+|`+completed_success+` |Prover ran, exit status 0.
+|`+completed_failure+` |Prover ran and rejected the goal.
+|`+preempted+` |Exit `+-5+`: SIGKILLed by the L2.3 cancel token after the speculative winner was declared.
+|`+timed_out+` |Exit `+-3+`: wall timeout reached, subprocess SIGKILLed.
+|`+not_available+` |Exit `+-1+`: executable not on PATH. Never invoked.
+|`+subprocess_error+` |Exit `+-2+` (ECHIDNA failed to write the temp goal) or `+-4+` (spawn/IO exception).
+|`+not_attempted+` |Sequential returned before reaching this prover. Not an exit code.
+|===
+
+=== 3. Per-strategy summary (`+bench_mrr_summary.csv+`)
+
+One row per fixture × strategy, plus a `+fixture=ALL+` row per strategy
+aggregating the corpus.
+
+[source]
+----
+fixture,strategy,attempted_total,completed_success,completed_failure,
+preempted,timed_out,not_available,subprocess_error,not_attempted,
+preemption_rate,wallclock_s,success,winning_prover
+----
+
+`+preemption_rate+` is `+preempted / attempted_total+` — measured against
+provers that actually ran, not against the whole registry, because a rate
+over provers that were never invoked would be meaningless. The `+ALL+` rows
+are the quick answer to "how much of the speculative wall-clock win is
+preemption?".
+
+`+just bench-chapel-mrr-telemetry+` runs the bench and prints only those
+`+ALL+` rows, one line per strategy.
+
+=== `+--telemetry-only+`
+
+`+--telemetry-only=true+` omits the stdout wall-clock CSV so a run produces
+only the two files. The searches still execute — an outcome cannot be
+observed without invoking the prover — and the timing values inside the two
+files stay populated, because they are already measured and cost nothing to
+keep.
+
+== Re-run status
+
+The telemetry columns were added for issue #162. *The recorded numbers have
+not yet been refreshed*: the change was authored in an environment with no
+Chapel toolchain, so `+bench_mrr+` could not be built or executed there, and
+inventing plausible figures would be worse than leaving this section empty.
+
+To produce the post-#162 readings on a Chapel-enabled host:
+
+[source,bash]
+----
+just bench-chapel-mrr            # wall-clock CSV to stdout + both files
+just bench-chapel-mrr-telemetry  # corpus-level rates only
+
+# Then record the run:
+cp src/chapel/bench_mrr_summary.csv docs/bench/<date>-chapel-mrr-telemetry.csv
+----
+
+Expected shape of the result, which is the hypothesis the bench exists to
+test: in the trivial-goal regime the speculative strategy's losers are
+preempted rather than allowed to finish, so its `+preempted+` count should
+be large and its `+attempted_total+` should still equal the registry size;
+`+sequential+` should show a large `+not_attempted+` count, because it stops
+at the first success. Both are consequences of the L2.3 design and neither
+is currently measured anywhere.
+
+== Related
+
+* `+docs/decisions/2026-05-30-chapel-l23-cancel-token.adoc+` — the `+-5+`
+  preemption contract and why it is distinct from `+-3+`.
+* `+proofs/agda/ParallelSoundness.agda+` — cancellation-safety.
+* `+docs/handover/TODO.adoc+` — real-corpus speedup bench (#161).
