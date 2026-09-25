@@ -190,3 +190,15 @@ also failed to download, although job/annotation metadata is readable.
 The GitHub integration returns 403 for secrets and code-scanning alerts.
 Accordingly no fresh Hypatia scan, proof compilation, or alert dismissal is
 claimed here. Existing failing checks remain visible rather than disabled.
+
+=== PR validation blocker
+
+PR https://github.com/hyperpolymath/echidna/pull/396[#396] could not run
+GitHub Actions: run
+https://github.com/hyperpolymath/echidna/actions/runs/36185037867[36185037867]
+reports `Actor is not allowed to trigger Actions workflows` for the
+`arena-ai-coding-agent[bot]` actor. All PR Actions runs failed at startup;
+this is not a result from the regression tests. The main-branch ruleset
+requires `scan / gitleaks`, `scan / rust-secrets`, and `scan / shell-secrets`,
+so an authorized maintainer must permit the actor or re-run validation as
+an allowed actor before normal merge. Do not bypass or fabricate these checks.
