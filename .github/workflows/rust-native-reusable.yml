@@ -180,8 +180,6 @@ jobs:
         # See standards estate-wide rust-ci red.
         uses: dtolnay/rust-toolchain@v1
         with:
-          toolchain: master
-        with:
           toolchain: stable
           components: clippy, rustfmt
 

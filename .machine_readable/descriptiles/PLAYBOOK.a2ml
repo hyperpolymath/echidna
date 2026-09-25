@@ -43,3 +43,13 @@ steps = [
 health-endpoint = "/api/health"
 grace-period = "90s"
 cold-start-note = "Isabelle Main heap ~1-2GB maps at first use; Julia JIT runs on first inference."
+
+[self-proof-ci]
+reviewed-on = "2026-09-25"
+fast-corpus-workflow = ".github/workflows/dogfood-proofs-ci.yml"
+abi-workflow = ".github/workflows/idris2-abi-ci.yml"
+safety-workflow = ".github/workflows/proof-safety.yml"
+weekly-workflow = ".github/workflows/verification-proofs-cron.yml"
+weekly-scope = "Isabelle base HOL only; algebra and Mizar repairs remain in #280"
+local-recipes = "Justfile: proofs-coq, proofs-lean, proofs-agda, proofs-idris, proofs-isabelle"
+closure-evidence = "docs/reports/2026-09-25-issue-maintenance.adoc"

@@ -89,7 +89,7 @@ Follow conventional commit format:
 - **Idris2**: Formal ABI specifications + totality proofs (`src/abi/`); zero `believe_me`, zero postulates, zero admits, enforced by `idris2-abi-ci.yml`
 - **Zig**: C-ABI FFI bridge (`ffi/zig/`, `src/zig_ffi/`)
 - **Chapel**: Optional parallel proof dispatch (`--features chapel`)
-- **AffineScript + Deno**: the UI. AffineScript was removed 2026-08 (banned language); the AffineScript-TEA compile pipeline is not wired yet — `just build-ui` fails deliberately rather than pretending (issues #117, #266)
+- **AffineScript + Deno**: the UI. ReScript was removed 2026-08 (banned language); the AffineScript-TEA compile pipeline is not wired yet — `just build-ui` fails deliberately rather than pretending (issues #117, #266)
 
 ### Prover Support
 
