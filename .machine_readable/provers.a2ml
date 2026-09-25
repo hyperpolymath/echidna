@@ -19,8 +19,8 @@
 [metadata]
 version = "1.0.0"
 source  = "src/rust/provers/mod.rs::ProverKind"
-date    = "2026-04-24"
-count   = 113
+date    = "2026-09-25"
+count   = 141
 
 [prover.ABC]
 slug = "abc"
@@ -40,11 +40,17 @@ slug = "affine_type_checker"
 [prover.Agda]
 slug = "agda"
 
+[prover.AgsyHOL]
+slug = "agsy_hol"
+
 [prover.Alloy]
 slug = "alloy"
 
 [prover.AltErgo]
 slug = "alt_ergo"
+
+[prover.AProVE]
+slug = "a_pro_ve"
 
 [prover.Arend]
 slug = "arend"
@@ -82,6 +88,12 @@ slug = "coeffect_type_checker"
 [prover.Coq]
 slug = "coq"
 
+[prover.CryptoVerif]
+slug = "crypto_verif"
+
+[prover.CSI]
+slug = "csi"
+
 [prover.CubicalAgda]
 slug = "cubical_agda"
 
@@ -106,11 +118,17 @@ slug = "d_real"
 [prover.DyadicTypeChecker]
 slug = "dyadic_type_checker"
 
+[prover.EasyCrypt]
+slug = "easy_crypt"
+
 [prover.EchoTypeChecker]
 slug = "echo_type_checker"
 
 [prover.EffectRowTypeChecker]
 slug = "effect_row_type_checker"
+
+[prover.ELK]
+slug = "elk"
 
 [prover.EpistemicTypeChecker]
 slug = "epistemic_type_checker"
@@ -121,6 +139,9 @@ slug = "e_prover"
 [prover.ExistentialTypeChecker]
 slug = "existential_type_checker"
 
+[prover.Faial]
+slug = "faial"
+
 [prover.FramaC]
 slug = "frama_c"
 
@@ -129,6 +150,12 @@ slug = "f_star"
 
 [prover.GLPK]
 slug = "glpk"
+
+[prover.GNATprove]
+slug = "gna_tprove"
+
+[prover.GPUVerify]
+slug = "gpu_verify"
 
 [prover.GradualTypeChecker]
 slug = "gradual_type_checker"
@@ -151,6 +178,9 @@ slug = "homotopy_type_checker"
 [prover.Idris2]
 slug = "idris2"
 
+[prover.IleanCoP]
+slug = "ilean_co_p"
+
 [prover.Imandra]
 slug = "imandra"
 
@@ -166,6 +196,9 @@ slug = "indexed_type_checker"
 [prover.IntersectionTypeChecker]
 slug = "intersection_type_checker"
 
+[prover.IProver]
+slug = "i_prover"
+
 [prover.Isabelle]
 slug = "isabelle"
 
@@ -178,11 +211,20 @@ slug = "katagoria_verifier"
 [prover.KeY]
 slug = "ke_y"
 
+[prover.KeYmaeraX]
+slug = "ke_ymaera_x"
+
 [prover.Kissat]
 slug = "kissat"
 
+[prover.Konclude]
+slug = "konclude"
+
 [prover.LambdaProlog]
 slug = "lambda_prolog"
+
+[prover.Lash]
+slug = "lash"
 
 [prover.Lean]
 slug = "lean"
@@ -190,8 +232,14 @@ slug = "lean"
 [prover.Lean3]
 slug = "lean3"
 
+[prover.Leo3]
+slug = "leo3"
+
 [prover.LinearTypeChecker]
 slug = "linear_type_checker"
+
+[prover.LiquidHaskell]
+slug = "liquid_haskell"
 
 [prover.Matita]
 slug = "matita"
@@ -201,6 +249,12 @@ slug = "mercury"
 
 [prover.Metamath]
 slug = "metamath"
+
+[prover.MetiTarski]
+slug = "meti_tarski"
+
+[prover.MetTeL2]
+slug = "met_te_l2"
 
 [prover.MiniSat]
 slug = "mini_sat"
@@ -217,8 +271,14 @@ slug = "mizar"
 [prover.MizAR]
 slug = "miz_ar"
 
+[prover.MleanCoP]
+slug = "mlean_co_p"
+
 [prover.ModalTypeChecker]
 slug = "modal_type_checker"
+
+[prover.NanoCoP]
+slug = "nano_co_p"
 
 [prover.Naproche]
 slug = "naproche"
@@ -256,8 +316,14 @@ slug = "phantom_type_checker"
 [prover.PolymorphicTypeChecker]
 slug = "polymorphic_type_checker"
 
+[prover.Princess]
+slug = "princess"
+
 [prover.Prism]
 slug = "prism"
+
+[prover.ProB]
+slug = "pro_b"
 
 [prover.ProbabilisticTypeChecker]
 slug = "probabilistic_type_checker"
@@ -274,8 +340,14 @@ slug = "pro_verif"
 [prover.PVS]
 slug = "pvs"
 
+[prover.Qepcad]
+slug = "qepcad"
+
 [prover.QTTTypeChecker]
 slug = "qtt_type_checker"
+
+[prover.Redlog]
+slug = "redlog"
 
 [prover.RefinementTypeChecker]
 slug = "refinement_type_checker"
@@ -288,6 +360,9 @@ slug = "rocq"
 
 [prover.RowTypeChecker]
 slug = "row_type_checker"
+
+[prover.Satallax]
+slug = "satallax"
 
 [prover.SCIP]
 slug = "scip"
@@ -307,6 +382,12 @@ slug = "spass"
 [prover.SPIN]
 slug = "spin"
 
+[prover.Stainless]
+slug = "stainless"
+
+[prover.Storm]
+slug = "storm"
+
 [prover.SubtypingTypeChecker]
 slug = "subtyping_type_checker"
 
@@ -324,6 +405,9 @@ slug = "tlc"
 
 [prover.TropicalTypeChecker]
 slug = "tropical_type_checker"
+
+[prover.Twee]
+slug = "twee"
 
 [prover.Twelf]
 slug = "twelf"

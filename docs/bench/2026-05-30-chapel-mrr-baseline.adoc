@@ -140,6 +140,15 @@ immediately, so the parallel strategies pay coforall spawn overhead with
 no benefit. The trivial-goal regime observation from the original bench
 applies symmetrically here.
 
-Wave-3 follow-ups still open: real-corpus speedup bench (#161, 10-30 s
-prover invocations) and per-prover preempted/timeout/success telemetry
-(#162).
+Wave-3 follow-ups: real-corpus speedup bench (#161, 10-30 s prover
+invocations) is still open. Per-prover preempted/timeout/success telemetry
+(#162) is now *implemented* — `+bench_mrr+` emits
+`+bench_mrr_telemetry.csv+` and `+bench_mrr_summary.csv+`, and
+`+just bench-chapel-mrr-telemetry+` prints the corpus-level breakdown.
+See `+docs/bench/README.adoc+` for the column contracts.
+
+The readings in *this* file predate that telemetry, so they carry no
+preemption counts: a re-run on a Chapel-enabled host is required to put
+preemption rates next to wall-clock. That re-run has not been performed —
+the telemetry was authored without a Chapel toolchain available, and this
+table is deliberately left un-refreshed rather than filled with estimates.

@@ -178,6 +178,88 @@ record ProofResult {
 }
 
 // ---------------------------------------------------------------------------
+// Per-prover outcome telemetry (#162)
+// ---------------------------------------------------------------------------
+
+// Categorical outcome of a single prover attempt. The exit-code
+// encoding is the L2.3 contract (see
+// docs/decisions/2026-05-30-chapel-l23-cancel-token.adoc):
+//
+//      0 -> CompletedSuccess   prover ran, exit status 0
+//     >0 -> CompletedFailure   prover ran and rejected the goal
+//     -1 -> NotAvailable       executable not on PATH (never invoked)
+//     -2 -> SubprocessError    ECHIDNA-side failure writing the temp goal
+//     -3 -> TimedOut           wall timeout reached, subprocess SIGKILLed
+//     -4 -> SubprocessError    spawn/IO exception around the subprocess
+//     -5 -> Preempted          L2.3 SIGKILL by the speculative winner
+//
+// `NotAttempted` is deliberately not an exit code. The sequential
+// strategy returns as soon as a prover succeeds, so the provers after
+// the winner are never invoked; they are reported as NotAttempted so
+// the breakdown still accounts for every registry entry instead of
+// silently dropping rows.
+enum ProverOutcome {
+    CompletedSuccess,
+    CompletedFailure,
+    NotAvailable,
+    TimedOut,
+    Preempted,
+    SubprocessError,
+    NotAttempted
+}
+
+// Stable lowercase labels — these are the literal CSV values, so they
+// are part of the bench output contract. Do not rename without
+// updating docs/bench/.
+proc outcomeLabel(o: ProverOutcome): string {
+    select o {
+        when ProverOutcome.CompletedSuccess do return "completed_success";
+        when ProverOutcome.CompletedFailure do return "completed_failure";
+        when ProverOutcome.NotAvailable     do return "not_available";
+        when ProverOutcome.TimedOut         do return "timed_out";
+        when ProverOutcome.Preempted        do return "preempted";
+        when ProverOutcome.SubprocessError  do return "subprocess_error";
+        when ProverOutcome.NotAttempted     do return "not_attempted";
+    }
+    return "unknown";
+}
+
+// Stable lowercase category labels for the telemetry CSV.
+proc categoryLabel(cat: ProverCategory): string {
+    select cat {
+        when ProverCategory.InteractiveAssistant do return "interactive_assistant";
+        when ProverCategory.SmtSolver            do return "smt_solver";
+        when ProverCategory.FirstOrderAtp        do return "first_order_atp";
+        when ProverCategory.DeclarativeProver    do return "declarative_prover";
+        when ProverCategory.AutoActive           do return "auto_active";
+        when ProverCategory.ConstraintSolver     do return "constraint_solver";
+    }
+    return "unknown";
+}
+
+// Classify one prover result. `wasAttempted` is false for provers the
+// sequential strategy skipped after an earlier success.
+//
+// Note the two distinct `SubprocessError` causes (-2 temp-file write,
+// -4 spawn/IO exception): both mean the prover never got a fair
+// hearing, which is why they are one category rather than two.
+proc classifyOutcome(r: ProofResult, wasAttempted: bool): ProverOutcome {
+    if !wasAttempted then return ProverOutcome.NotAttempted;
+    if r.success then return ProverOutcome.CompletedSuccess;
+    select r.exitCode {
+        when -1 do return ProverOutcome.NotAvailable;
+        when -2 do return ProverOutcome.SubprocessError;
+        when -3 do return ProverOutcome.TimedOut;
+        when -4 do return ProverOutcome.SubprocessError;
+        when -5 do return ProverOutcome.Preempted;
+        otherwise do return ProverOutcome.CompletedFailure;
+    }
+    // Unreachable: every branch returns. Kept so the return type is
+    // satisfied on all paths, mirroring `categoryToInt` above.
+    return ProverOutcome.CompletedFailure;
+}
+
+// ---------------------------------------------------------------------------
 // Prover availability check
 // ---------------------------------------------------------------------------
 
@@ -409,20 +491,47 @@ proc tryProver(info: ProverInfo, goal: string, timeout: int = defaultTimeout,
 // Search strategies
 // ---------------------------------------------------------------------------
 
-// Sequential proof search (baseline) — tries provers one by one
-proc sequentialProofSearch(goal: string, provers: [] ProverInfo,
-                           timeout: int = defaultTimeout): ProofResult {
+// Sequential search — tries provers one by one, recording the full
+// per-prover table for telemetry (#162).
+//
+// `results` and `attempted` are indexed by `provers.domain`, NOT by
+// `ProverInfo.id`, so filtered registries (see `categorySearch`) stay
+// correctly indexed. Provers the strategy never reaches after an early
+// success keep `attempted[i] == false`, which the bench reports as
+// `not_attempted`.
+//
+// All three strategies delegate to a telemetry variant so that what the
+// bench measures and what the bench reports are the same code path.
+proc sequentialProofSearchTelemetry(goal: string, provers: [] ProverInfo,
+                                    ref results: [] ProofResult,
+                                    ref attempted: [] bool,
+                                    timeout: int = defaultTimeout): ProofResult {
     if verbose then
         writeln("Sequential search: trying ", provers.size, " provers one by one...");
+
+    // Pre-seed so every index is readable even if the loop returns early.
+    for i in provers.domain {
+        attempted[i] = false;
+        results[i] = new ProofResult(
+            success = false, prover = provers[i].name, proverId = provers[i].id,
+            time = 0.0, exitCode = -1, output = "Not attempted",
+            category = provers[i].category
+        );
+    }
 
     var totalTimer = new stopwatch();
     totalTimer.start();
 
-    for prover in provers {
+    for i in provers.domain {
+        const prover = provers[i];
+
         if verbose then
             write("  Trying ", prover.name, "...");
 
         var result = tryProver(prover, goal, timeout);
+
+        attempted[i] = true;
+        results[i] = result;
 
         if verbose then
             writeln(if result.success then " ✓ SUCCESS (" + result.time:string + "s)"
@@ -449,9 +558,20 @@ proc sequentialProofSearch(goal: string, provers: [] ProverInfo,
     );
 }
 
-// Parallel proof search — tries ALL provers concurrently via coforall
-proc parallelProofSearch(goal: string, provers: [] ProverInfo,
-                          timeout: int = defaultTimeout): ProofResult {
+// Sequential proof search (baseline) — tries provers one by one
+proc sequentialProofSearch(goal: string, provers: [] ProverInfo,
+                           timeout: int = defaultTimeout): ProofResult {
+    var results: [provers.domain] ProofResult;
+    var attempted: [provers.domain] bool;
+    return sequentialProofSearchTelemetry(goal, provers, results, attempted, timeout);
+}
+
+// Parallel proof search — tries ALL provers concurrently via coforall,
+// recording the full per-prover table for telemetry.
+proc parallelProofSearchTelemetry(goal: string, provers: [] ProverInfo,
+                                  ref results: [] ProofResult,
+                                  ref attempted: [] bool,
+                                  timeout: int = defaultTimeout): ProofResult {
     if verbose then
         writeln("Parallel search: trying all ", provers.size,
                " provers concurrently...");
@@ -459,16 +579,15 @@ proc parallelProofSearch(goal: string, provers: [] ProverInfo,
     var totalTimer = new stopwatch();
     totalTimer.start();
 
-    // Results array — one per prover
-    var results: [provers.domain] ProofResult;
-
-    // Launch all provers in parallel
-    coforall (prover, i) in zip(provers, provers.domain) {
-        results[i] = tryProver(prover, goal, timeout);
+    // Launch all provers in parallel. Each task owns its own index, so
+    // the writes to `results` and `attempted` never race.
+    coforall i in provers.domain {
+        results[i] = tryProver(provers[i], goal, timeout);
+        attempted[i] = true;
 
         if verbose && results[i].success {
             writef("  ✓ %s succeeded in %.2dr seconds (exit %i)\n",
-                   prover.name, results[i].time, results[i].exitCode);
+                   provers[i].name, results[i].time, results[i].exitCode);
         }
     }
 
@@ -506,6 +625,14 @@ proc parallelProofSearch(goal: string, provers: [] ProverInfo,
     }
 }
 
+// Parallel proof search — tries ALL provers concurrently via coforall
+proc parallelProofSearch(goal: string, provers: [] ProverInfo,
+                          timeout: int = defaultTimeout): ProofResult {
+    var results: [provers.domain] ProofResult;
+    var attempted: [provers.domain] bool;
+    return parallelProofSearchTelemetry(goal, provers, results, attempted, timeout);
+}
+
 // L2.2 speculative search — race all provers, return the first success.
 //
 // Semantics vs `parallelProofSearch` (best-of):
@@ -531,8 +658,13 @@ proc parallelProofSearch(goal: string, provers: [] ProverInfo,
 // the caller because `winner` is set before any cancellation could
 // race the CAS. See proofs/agda/ParallelSoundness.agda:
 // `cancellation-safety` for the formal statement.
-proc parallelProofSearchSpeculative(goal: string, provers: [] ProverInfo,
-                                    timeout: int = defaultTimeout): ProofResult {
+//
+// Telemetry: losers that self-SIGKILLed land in `results` with
+// exitCode = -5, which `classifyOutcome` maps to `preempted`.
+proc parallelProofSearchSpeculativeTelemetry(goal: string, provers: [] ProverInfo,
+                                             ref results: [] ProofResult,
+                                             ref attempted: [] bool,
+                                             timeout: int = defaultTimeout): ProofResult {
     if verbose then
         writeln("Speculative search: ", provers.size,
                 " provers racing, first-success-wins");
@@ -540,13 +672,13 @@ proc parallelProofSearchSpeculative(goal: string, provers: [] ProverInfo,
     var totalTimer = new stopwatch();
     totalTimer.start();
 
-    var results: [provers.domain] ProofResult;
     var winnerIdx: atomic int;
     winnerIdx.write(-1);
     var cancelToken = new owned CancelToken();
 
-    coforall (prover, i) in zip(provers, provers.domain) {
-        results[i] = tryProver(prover, goal, timeout, cancelToken.borrow());
+    coforall i in provers.domain {
+        results[i] = tryProver(provers[i], goal, timeout, cancelToken.borrow());
+        attempted[i] = true;
 
         if results[i].success {
             // Monotone first-wins CAS: only the first successful
@@ -576,6 +708,14 @@ proc parallelProofSearchSpeculative(goal: string, provers: [] ProverInfo,
         output = "All provers exhausted (speculative)",
         category = ProverCategory.InteractiveAssistant
     );
+}
+
+// L2.2 speculative search — race all provers, return the first success.
+proc parallelProofSearchSpeculative(goal: string, provers: [] ProverInfo,
+                                    timeout: int = defaultTimeout): ProofResult {
+    var results: [provers.domain] ProofResult;
+    var attempted: [provers.domain] bool;
+    return parallelProofSearchSpeculativeTelemetry(goal, provers, results, attempted, timeout);
 }
 
 // Category-filtered parallel search — only try provers from a specific category

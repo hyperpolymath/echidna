@@ -7,7 +7,8 @@
 
 === Must
 
-* [ ] All 30 prover backends compile and pass smoke tests
+* [ ] All prover backends compile and pass smoke tests (current figure and
+denominator: `+docs/PROVER_COUNT.adoc+`)
 * [ ] `cargo test --lib` passes with zero failures
 * [ ] No `believe_me` or `assert_total` in Idris2 source
 * [ ] No `unsafe` blocks without `// SAFETY:` comments

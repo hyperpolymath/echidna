@@ -4,6 +4,16 @@
 #
 # Usage: gen-provers-a2ml.sh <variant-list-file>
 #
+# Pass the variants case-insensitively sorted to match the committed
+# layout (.machine_readable/provers.a2ml) and keep diffs minimal.
+# Case-only ties are not resolved by the sort: list `Mizar` before
+# `MizAR`, as the committed file does.
+#
+# NOTE: the header template below declares AGPL-3.0-or-later (matching the
+# root LICENSE) while the committed .machine_readable/provers.a2ml declares
+# MPL-2.0. That discrepancy is a licensing call, tracked separately -- do
+# not let a regeneration silently change the file's SPDX line.
+#
 # The variant-list path is a CLI argument (was the hard-coded
 # /tmp/provers-list.txt); predictable /tmp/* paths are a panic-attack
 # low (path-traversal / TOCTOU on multi-user runners). Callers should
@@ -39,9 +49,12 @@ cat << 'HEADER'
 [metadata]
 version = "1.0.0"
 source  = "src/rust/provers/mod.rs::ProverKind"
-date    = "2026-04-24"
 HEADER
 
+# Emitted outside the quoted heredoc so it is evaluated at run time rather
+# than frozen at authoring time. The comment block above contains backticks,
+# so the heredoc itself must stay quoted (no command substitution).
+printf 'date    = "%s"\n' "$(date -u +%F)"
 printf "count   = %d\n\n" "$(wc -l < "$VARIANT_LIST")"
 
 while IFS= read -r variant; do

@@ -14,7 +14,8 @@ RSR (Rhodium Standard Repository) practices with formal verification emphasis.
 |===
 | Layer | Language | Purpose
 
-| Core | Rust | 30 prover backends, dispatch pipeline, trust pipeline
+| Core | Rust | 141 `+ProverKind+` variants over 105 backend implementations
+(see `+docs/PROVER_COUNT.adoc+`), dispatch pipeline, trust pipeline
 | ML | Julia | Neural tactic prediction, premise selection, anomaly detection
 | Parallel | Chapel | HPC distributed proof search
 | ABI | Idris2 | Formal interface definitions with dependent types

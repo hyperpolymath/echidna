@@ -666,6 +666,27 @@ bench-chapel-mrr:
     cd src/chapel
     chpl -o bench_mrr bench_mrr.chpl
     ./bench_mrr --verbose=false --timeout=10
+    echo "# wrote src/chapel/bench_mrr_telemetry.csv + src/chapel/bench_mrr_summary.csv" >&2
+
+# Same bench, but surface only the corpus-level outcome breakdown: the
+# per-prover preempted / timed-out / success counts and the preemption
+# rate next to wall-clock, one line per strategy. This is the #162 view —
+# it answers "how much of the speculative win is preemption?" without
+# opening the 360-row telemetry file.
+bench-chapel-mrr-telemetry:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    if command -v idris2 >/dev/null 2>&1 && [ -z "${IDRIS2_PREFIX:-}" ]; then
+      export IDRIS2_PREFIX="$(dirname "$(dirname "$(readlink -f "$(command -v idris2)")")")"
+    fi
+    cd src/chapel
+    chpl -o bench_mrr bench_mrr.chpl
+    ./bench_mrr --verbose=false --timeout=10 --telemetry-only=true
+    echo "corpus-level outcome breakdown (fixture=ALL):"
+    grep '^ALL,' bench_mrr_summary.csv | while IFS=, read -r _ strategy att ok fail preempt timeout na err notatt rate wall _ _; do
+      printf '  %-22s attempted=%-3s success=%-3s failure=%-3s preempted=%-3s timed_out=%-3s rate=%s wall=%ss\n' \
+        "$strategy" "$att" "$ok" "$fail" "$preempt" "$timeout" "$rate" "$wall"
+    done
 
 # Rebuild Chapel 2.8.0 from source with CHPL_LIB_PIC=pic so that
 # `chpl --library --dynamic` can produce a shared-library form of the

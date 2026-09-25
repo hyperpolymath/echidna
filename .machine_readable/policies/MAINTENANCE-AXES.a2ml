@@ -20,7 +20,7 @@ sources = ["README.adoc", "ROADMAP.adoc", "docs/maintenance/MAINTENANCE-CHECKLIS
 
 [axes.axis-1.must]
 items = [
-  "30 prover backends compile and pass smoke tests",
+  "All prover backends compile and pass smoke tests (figure: docs/PROVER_COUNT.adoc)",
   "cargo test --lib passes with zero failures",
   "No believe-me or assert_total in Idris2 source",
   "No unsafe blocks without SAFETY comments",
