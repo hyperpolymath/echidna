@@ -2,7 +2,7 @@
 # SPDX-License-Identifier: AGPL-3.0-or-later
 #
 # VeriSim ↔ ECHIDNA E-R schema (wire format).
-# Companion to docs/architecture/VERISIM-ER-SCHEMA.md.
+# Companion to docs/architecture/VERISIM-ER-SCHEMA.adoc.
 
 @0xe4dc7b1f01a06001;
 

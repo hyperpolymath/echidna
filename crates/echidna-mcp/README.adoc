@@ -53,7 +53,7 @@ Or with an explicit binary path:
 ==== `+prove+`
 
 Prove a theorem from a file using one of ECHIDNA’s prover backends (see
-link:../../docs/PROVER_COUNT.md[`+docs/PROVER_COUNT.md+`]).
+link:../../docs/PROVER_COUNT.adoc[`+docs/PROVER_COUNT.adoc+`]).
 
 [width="100%",cols="28%,15%,25%,32%",options="header",]
 |===

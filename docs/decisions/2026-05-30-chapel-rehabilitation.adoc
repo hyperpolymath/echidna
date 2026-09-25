@@ -52,7 +52,7 @@ language level rather than burying it in async runtimes, and (b) already
 terminates at the Rust↔Zig↔Chapel triple-boundary that the L1 Cap’n
 Proto plan presupposes. Parking would discard ~650 LOC of staged work
 and would not actually save the work in the long run — the
-parallel-dispatch row in `+docs/ROADMAP.md+` is a stage requirement, not
+parallel-dispatch row in `+docs/ROADMAP.adoc+` is a stage requirement, not
 an accelerator we can drop without re-planning.
 
 The specific commitments inside the rewrite decision:
@@ -105,13 +105,13 @@ Wave 2 (separate PR, after Wave 1 green-on-main for ≥7 days): - Rebuild
 Chapel from source with `+CHPL_LIB_PIC=pic+` runtime; revert the
 metalayer build to `+--dynamic+`; flip `+rust-chapel-real+` to strict.
 Recipe + tradeoffs:
-link:./2026-05-30-chapel-pic-rebuild.md[2026-05-30-chapel-pic-rebuild.md].
+link:./2026-05-30-chapel-pic-rebuild.md[2026-05-30-chapel-pic-rebuild.adoc].
 CI flip deferred — the ~30 min source build dominates the chapel-ci
 budget; a registry-pushed container image is the L2.5 prerequisite. -
 Add the cancel-token thread through `+tryProver+` and switch the
 Chapel-side default to the speculative search. Implementation +
 soundness argument:
-link:./2026-05-30-chapel-l23-cancel-token.md[2026-05-30-chapel-l23-cancel-token.md].
+link:./2026-05-30-chapel-l23-cancel-token.md[2026-05-30-chapel-l23-cancel-token.adoc].
 - Wire the `+proven+` and `+docudactyl+` parallel-dispatch tracks off
 the same scaffold; breadcrumb issues filed in those repos on the PR
 landing.
@@ -126,7 +126,7 @@ Wave-3 follow-ups landed: - Per-prover `+cwd+` + `+filenameOverride+`
 hooks on `+ProverInfo+` (closes #158 / #159). Resolves caveats 1 + 2 of
 the Wave-1 MRR baseline — Idris2 and Agda fixtures now succeed
 end-to-end through `+bench-chapel-mrr+`. Mechanism + alternatives:
-link:./2026-05-31-chapel-prover-spawn-hooks.md[2026-05-31-chapel-prover-spawn-hooks.md].
+link:./2026-05-31-chapel-prover-spawn-hooks.md[2026-05-31-chapel-prover-spawn-hooks.adoc].
 
 === Consequences
 

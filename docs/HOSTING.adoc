@@ -68,7 +68,7 @@ ____
 
 The deployed service is the `+echidna+` binary’s `+server+` subcommand.
 Its routes, request shapes and response shapes are documented in
-link:../site/docs/api/core.md[`+site/docs/api/core.md+`], which was
+link:../site/docs/api/core.md[`+site/docs/api/core.adoc+`], which was
 written from the route table and types in `+src/rust/server.rs+` — *that
 page is the accurate one*. The separate REST, GraphQL and gRPC interface
 binaries are optional and documented alongside it.

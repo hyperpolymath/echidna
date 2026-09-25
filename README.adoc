@@ -28,11 +28,11 @@ Chapel parallel layer).
 
 Backend tiering, count semantics (variants vs. impl files vs. advertised
 vs. core), and "`what’s the canonical number`" answers live in a single
-source of truth: link:docs/PROVER_COUNT.md[`+docs/PROVER_COUNT.md+`].
+source of truth: link:docs/PROVER_COUNT.adoc[`+docs/PROVER_COUNT.adoc+`].
 The REST API (`+GET+` `+/api/provers+`) exposes the Tier-1 _core_ set by
 default; all other backends are reachable through `+ProverKind+` and the
 dispatch pipeline. See
-link:docs/SUPPORTED_PROVERS.md[`+docs/SUPPORTED_PROVERS.md+`] for the
+link:docs/SUPPORTED_PROVERS.adoc[`+docs/SUPPORTED_PROVERS.adoc+`] for the
 core list, required external binaries, and how to surface additional
 backends through the API.
 
@@ -85,7 +85,7 @@ The Tier-1 _core_ set is what `+GET+` `+/api/provers+` exposes by
 default and what is required to pass for green CI; the live membership
 list is `+ProverKind::all_core()+` in `+src/rust/provers/mod.rs+`,
 mirrored in human-readable form at
-link:docs/SUPPORTED_PROVERS.md[`+docs/SUPPORTED_PROVERS.md+`] (with
+link:docs/SUPPORTED_PROVERS.adoc[`+docs/SUPPORTED_PROVERS.adoc+`] (with
 required external binaries and install hints). The remaining tiers
 (extended, niche, Wave-3 secured, Wave-2 modal/real-algebraic, pure-Rust
 in-process, HP type-checker ecosystem, TypeChecker disciplines, Coq-Jr
@@ -94,7 +94,7 @@ solvers, auto-active verifiers, constraint/optimisation backends, model
 checkers, C/hardware verifiers, security-protocol tools, and specialised
 systems. The full tier table and membership list — the only place these
 counts are maintained — is
-link:docs/PROVER_COUNT.md[`+docs/PROVER_COUNT.md+`].
+link:docs/PROVER_COUNT.adoc[`+docs/PROVER_COUNT.adoc+`].
 
 All backends in the Tier-1 / Tier-2 / Wave-3 / Wave-2 / pure-Rust groups
 implement the `+ProverBackend+` trait (parse, verify, export, tactic
@@ -266,7 +266,7 @@ For a minimal browser UI, open `+src/ui/public/prove.html+` directly in
 any modern browser and point the "`API base`" field at the running
 server. No build step is required.
 
-See link:docs/SUPPORTED_PROVERS.md[`+docs/SUPPORTED_PROVERS.md+`] for
+See link:docs/SUPPORTED_PROVERS.adoc[`+docs/SUPPORTED_PROVERS.adoc+`] for
 the Tier-1 core set, required binaries, and how to expose additional
 backends through the API.
 
@@ -292,7 +292,7 @@ servers
 
 ....
 src/rust/
-  provers/          # Per-backend ProverBackend impls (see docs/PROVER_COUNT.md for the live tier table)
+  provers/          # Per-backend ProverBackend impls (see docs/PROVER_COUNT.adoc for the live tier table)
   verification/     # Trust-hardening subsystem
     portfolio.rs    # SMT portfolio solving / cross-checking
     certificates.rs # Proof certificate checking (Alethe, DRAT/LRAT, TSTP)
@@ -376,7 +376,7 @@ bodies and records references against the pass-1 name set
 
 Full per-adapter source URLs, hazard flag inventory, fixture layout and
 downstream wiring (`+suggest+` / `+octad-emit+` / GNN training) are in
-link:docs/CORPUS-ADAPTERS.md[`+docs/CORPUS-ADAPTERS.md+`].
+link:docs/CORPUS-ADAPTERS.adoc[`+docs/CORPUS-ADAPTERS.adoc+`].
 
 === Cross-prover Vocabulary
 
@@ -438,7 +438,7 @@ single recommended pick from the frontier.
 The data contract between ECHIDNA and its long-term memory store
 (VeriSimDB) is formalised:
 
-* link:docs/architecture/VERISIM-ER-SCHEMA.md[`+docs/architecture/VERISIM-ER-SCHEMA.md+`]
+* link:docs/architecture/VERISIM-ER-SCHEMA.adoc[`+docs/architecture/VERISIM-ER-SCHEMA.adoc+`]
 — 12 first-class entities + 7 first-class relationships, each with its
 Rust struct, VeriSimDB table, Cap’n Proto schema, and PK/FK set.
 Replaces the aspirational text in the 2026-04-17 triangulation document.
@@ -488,7 +488,7 @@ The test surface spans unit tests inside `+src/rust/+` and integration
 suites under `+tests/+`, supplemented by property tests, criterion
 benchmarks, and Idris2 ABI type-checks. Current counts are not embedded
 here — `+cargo+` `+test+` `+--lib+`, `+cargo+` `+test+` `+--tests+`, and
-link:CHANGELOG.md[`+CHANGELOG.md+`] carry the live numbers.
+link:CHANGELOG.adoc[`+CHANGELOG.adoc+`] carry the live numbers.
 
 * Smoke E2E integration tests across the Tier-1 prover backends
 * Property-based tests (PropTest)
@@ -528,9 +528,9 @@ an onboarding subset.
 == Current Status
 
 The authoritative status surface — release history, what shipped in each
-minor, what’s targeted next — is link:CHANGELOG.md[`+CHANGELOG.md+`].
+minor, what’s targeted next — is link:CHANGELOG.adoc[`+CHANGELOG.adoc+`].
 For roadmap items beyond the next release, see
-link:docs/ROADMAP.md[`+docs/ROADMAP.md+`].
+link:docs/ROADMAP.adoc[`+docs/ROADMAP.adoc+`].
 
 Headline shape (as of the most recent on-main work):
 
@@ -551,25 +551,25 @@ governance ruleset.
 == Documentation
 
 * link:CONTRIBUTING.md[Contributing Guidelines]
-* link:CODE_OF_CONDUCT.md[Code of Conduct]
+* link:CODE_OF_CONDUCT.adoc[Code of Conduct]
 * link:SECURITY.md[Security Policy]
-* link:CHANGELOG.md[Changelog]
-* link:docs/ROADMAP.md[Roadmap]
+* link:CHANGELOG.adoc[Changelog]
+* link:docs/ROADMAP.adoc[Roadmap]
 * link:RSR_COMPLIANCE.adoc[RSR / CCCP Compliance Statement]
 * link:EXPLAINME.adoc[EXPLAINME — receipts for the README claims]
-* link:docs/PROVER_COUNT.md[`+docs/PROVER_COUNT.md+`] — canonical
+* link:docs/PROVER_COUNT.adoc[`+docs/PROVER_COUNT.adoc+`] — canonical
 prover-count and tier table
-* link:docs/ARCHITECTURE.md[`+docs/ARCHITECTURE.md+`] — system overview
-* link:docs/CORPUS-ADAPTERS.md[`+docs/CORPUS-ADAPTERS.md+`] — 17-adapter
+* link:docs/ARCHITECTURE.adoc[`+docs/ARCHITECTURE.adoc+`] — system overview
+* link:docs/CORPUS-ADAPTERS.adoc[`+docs/CORPUS-ADAPTERS.adoc+`] — 17-adapter
 corpus ingest index
-* link:docs/architecture/VERISIM-ER-SCHEMA.md[`+docs/architecture/VERISIM-ER-SCHEMA.md+`]
+* link:docs/architecture/VERISIM-ER-SCHEMA.adoc[`+docs/architecture/VERISIM-ER-SCHEMA.adoc+`]
 — VeriSim ↔ ECHIDNA entity-relationship schema
-* link:docs/decisions/2026-06-01-saturation-campaign.md[`+docs/decisions/2026-06-01-saturation-campaign.md+`]
+* link:docs/decisions/2026-06-01-saturation-campaign.adoc[`+docs/decisions/2026-06-01-saturation-campaign.adoc+`]
 — ADR for the saturation campaign (corpora / vocab / synonyms / exchange
 / arbitration)
-* link:docs/handover/PROVER-CORPUS-SATURATION-LANE.md[`+docs/handover/PROVER-CORPUS-SATURATION-LANE.md+`]
+* link:docs/handover/PROVER-CORPUS-SATURATION-LANE.adoc[`+docs/handover/PROVER-CORPUS-SATURATION-LANE.adoc+`]
 — saturation lane handover
-* link:docs/ENV-VARS.md[`+docs/ENV-VARS.md+`] — environment variables
+* link:docs/ENV-VARS.adoc[`+docs/ENV-VARS.adoc+`] — environment variables
 * link:CLAUDE.md[`+CLAUDE.md+`] — collaboration brief for Claude Code
 
 == Critical Constraints
@@ -612,5 +612,5 @@ MPL-2.0 SPDX headers pending the header migration sweep.
 
 *Author*: Jonathan D.A. Jewell <j.d.a.jewell@open.ac.uk> +
 *Version and last-changed date*: tracked in
-link:CHANGELOG.md[`+CHANGELOG.md+`] and the git log; not duplicated here
+link:CHANGELOG.adoc[`+CHANGELOG.adoc+`] and the git log; not duplicated here
 to avoid drift.

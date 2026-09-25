@@ -1,14 +1,14 @@
 == Type-Discipline Embedding — 39-Discipline Corpus Annotation
 
 *Status*: canonical. Companion to
-`+docs/architecture/VERISIM-ER-SCHEMA.md+` and
-`+docs/CORPUS-ADAPTERS.md+`. *Last revised*: 2026-06-01. *Tier*: see
-`+docs/PROVER_COUNT.md+` Tier 9 ("`TypeChecker disciplines`").
+`+docs/architecture/VERISIM-ER-SCHEMA.adoc+` and
+`+docs/CORPUS-ADAPTERS.adoc+`. *Last revised*: 2026-06-01. *Tier*: see
+`+docs/PROVER_COUNT.adoc+` Tier 9 ("`TypeChecker disciplines`").
 
 === 1. Why this doc exists
 
 The 2026-06-01 saturation campaign added 17 corpus adapters (see
-`+docs/CORPUS-ADAPTERS.md+`). Every adapter emits `+CorpusEntry+` values
+`+docs/CORPUS-ADAPTERS.adoc+`). Every adapter emits `+CorpusEntry+` values
 with a flat `+DeclKind = {Function, Data, Record, Postulate, Module}+`
 (defined at `+src/rust/corpus/mod.rs:53+`). That flat tagging is
 sufficient for hazard accounting but blind to the _type discipline_ each
@@ -22,7 +22,7 @@ it — gains a `+type_discipline_tags: Vec<TypeDiscipline>+` annotation so
 that:
 
 [arabic]
-. cross-prover identity queries (E6 Rel-2 in `+VERISIM-ER-SCHEMA.md+`)
+. cross-prover identity queries (E6 Rel-2 in `+VERISIM-ER-SCHEMA.adoc+`)
 can constrain by discipline,
 . the Julia GNN training pipeline (`+src/julia/training/train.jl+`) gets
 a 39-dim multi-hot feature vector per example, and
@@ -252,7 +252,7 @@ Corpus adapter ingests *.<ext>
       → Vec<TypeDiscipline>                     (src/rust/disciplines/disciplines.rs)
         → CorpusEntry.type_discipline_tags
           → Octad SemanticPayload               (src/rust/verisim_bridge.rs)
-            → VeriSimDB cross-prover identity index  (E6 in VERISIM-ER-SCHEMA.md)
+            → VeriSimDB cross-prover identity index  (E6 in VERISIM-ER-SCHEMA.adoc)
             → Julia GNN training feature row    (src/julia/training/train.jl)
 ....
 
@@ -409,7 +409,7 @@ where type_level >= TypeLevel::L7
 ----
 
 The VCL-UT planner pushes the discipline filter down to the
-`+octads_semantic+` materialised view (E2 in `+VERISIM-ER-SCHEMA.md+`),
+`+octads_semantic+` materialised view (E2 in `+VERISIM-ER-SCHEMA.adoc+`),
 which indexes on the new `+type_discipline_tags+` array column.
 
 ==== 5.4 Panll
@@ -457,7 +457,7 @@ struct Semantic {
 VeriSimDB stores this as an `+Array(LowCardinality(String))+` column on
 the `+octads_semantic+` table, with a secondary skip index for
 discipline-filtered queries. The drift-detection SHA in §"`Drift
-detection`" of `+VERISIM-ER-SCHEMA.md+` MUST be re-computed when this
+detection`" of `+VERISIM-ER-SCHEMA.adoc+` MUST be re-computed when this
 field lands.
 
 === 7. Detection confidence
@@ -574,12 +574,12 @@ and `+typell_sigma()+` mapping.
 entry point.
 * `+data/synonyms/_disciplines.toml+` — the cross-prover discipline
 vocabulary.
-* `+docs/architecture/VERISIM-ER-SCHEMA.md+` — E2 Semantic modality
+* `+docs/architecture/VERISIM-ER-SCHEMA.adoc+` — E2 Semantic modality
 target (this doc adds field `+@11+`).
 * `+crates/echidna-wire/schemas/verisim_er.capnp+` — wire schema
 (pending field-11 delta per T3).
 * `+crates/typed_wasm/src/lib.rs+` — Sigma parameter routing target.
 * `+src/rust/provers/hp_ecosystem.rs:63-126+` — 39-discipline dispatch
 table.
-* `+docs/PROVER_COUNT.md+` Tier 9 — the canonical tier table.
-* `+docs/CORPUS-ADAPTERS.md+` — adapter inventory consumed by §4.
+* `+docs/PROVER_COUNT.adoc+` Tier 9 — the canonical tier table.
+* `+docs/CORPUS-ADAPTERS.adoc+` — adapter inventory consumed by §4.

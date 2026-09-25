@@ -117,7 +117,7 @@ file PRs against non-main branches.
 - description: dispatch.rs invokes mutation testing
 - run: grep -q 'MutationTester\|mutation::run' src/rust/dispatch.rs
 - severity: medium
-- recovery: re-wire per docs/handover/STATE.md trust-pipeline section
+- recovery: re-wire per docs/handover/STATE.adoc trust-pipeline section
 
 ### T033-pareto-frontier-tracked
 - description: dispatch results pass through Pareto frontier ranking
@@ -143,7 +143,7 @@ file PRs against non-main branches.
 - description: src/rust/integrity uses BLAKE3 + SHAKE3-512 for prover binary verification
 - run: grep -qE 'blake3::|shake3|Shake3_512' src/rust/integrity/*.rs
 - severity: high
-- recovery: re-add per docs/ARCHITECTURE.md integrity section
+- recovery: re-add per docs/ARCHITECTURE.adoc integrity section
 
 ## ABI-Trust
 

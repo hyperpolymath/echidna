@@ -14,7 +14,7 @@
 // The fixture corpus is intentionally tiny (one trivially-true goal
 // per available prover language) so the bench completes in well
 // under one minute even on a cold cache. Real corpus-scale numbers
-// are tracked in docs/handover/TODO.md.
+// are tracked in docs/handover/TODO.adoc.
 
 use parallel_proof_search;
 use Time;

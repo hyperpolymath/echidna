@@ -433,7 +433,7 @@ available)
 │   └── cvc5.rs                        # Main implementation (719 lines)
 ├── docs/
 │   └── CVC5_IMPLEMENTATION.md         # Detailed documentation
-└── CVC5_IMPLEMENTATION_SUMMARY.md     # This file
+└── CVC5_IMPLEMENTATION_SUMMARY.adoc     # This file
 ....
 
 '''''

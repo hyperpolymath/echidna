@@ -3,7 +3,7 @@
 
 //! Discipline marker registry for the corpus-side detector.
 //!
-//! See `docs/architecture/TYPE-DISCIPLINE-EMBEDDING.md` for the
+//! See `docs/architecture/TYPE-DISCIPLINE-EMBEDDING.adoc` for the
 //! theoretical background. The registry is read-only and seeded by
 //! [`MarkerRegistry::canonical`] — no runtime mutation expected.
 //!

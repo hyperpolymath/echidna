@@ -5,7 +5,7 @@
 ECHIDNA is in active development. The current major version (`+2.x+`) on
 `+main+` receives security updates; pre-`+1.0+` lineages are not
 supported. The on-disk version lives in link:Cargo.toml[`+Cargo.toml+`]
-and link:CHANGELOG.md[`+CHANGELOG.md+`]; this file deliberately does not
+and link:CHANGELOG.adoc[`+CHANGELOG.adoc+`]; this file deliberately does not
 pin a version number to avoid drift.
 
 [cols=",",options="header",]
@@ -168,7 +168,7 @@ bridge, AffineScript / AffineScript UI components
 dispatch pipeline — Tier-1 core through Tier-3 niche. The live
 membership list is `+ProverKind::all()+` in `+src/rust/provers/mod.rs+`;
 the human-readable mirror is
-link:docs/PROVER_COUNT.md[`+docs/PROVER_COUNT.md+`].
+link:docs/PROVER_COUNT.adoc[`+docs/PROVER_COUNT.adoc+`].
 * *Trust-hardening pipeline*: solver integrity, certificate checking,
 axiom tracking, sandboxing, mutation testing, Pareto ranking, Bayesian
 confidence — wired in `+src/rust/dispatch.rs+`.
@@ -252,6 +252,6 @@ responsibly disclosing vulnerabilities:
 
 *Document lineage*: revisions tracked via `+git log SECURITY.md+`;
 versioned alongside the project (see
-link:CHANGELOG.md[`+CHANGELOG.md+`]). This file is intentionally
+link:CHANGELOG.adoc[`+CHANGELOG.adoc+`]). This file is intentionally
 count-free and version-free in prose to avoid R5b drift against
 link:Cargo.toml[`+Cargo.toml+`].

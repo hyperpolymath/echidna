@@ -111,7 +111,7 @@ Theorem provers (integrated, not redistributed):
   PVS             GPL-2.0
   ACL2            BSD-3-Clause
   HOL4            BSD-3-Clause
-  (...and the remaining backends; see docs/SUPPORTED_PROVERS.md)
+  (...and the remaining backends; see docs/SUPPORTED_PROVERS.adoc)
 
 Provers are invoked as external binaries, not linked or redistributed, so
 their licences do not propagate to this work.
@@ -132,7 +132,7 @@ This project follows the REUSE Software Licensing specification.
 
 Verify locally: `reuse lint`
 
-Known gaps are recorded in docs/DEBT.md rather than left silent.
+Known gaps are recorded in docs/DEBT.adoc rather than left silent.
 
 ================================================================================
 
@@ -190,4 +190,4 @@ Documentation: docs/ + RSR_COMPLIANCE.adoc + CLAUDE.md
 
 ================================================================================
 
-Version: see CHANGELOG.md
+Version: see CHANGELOG.adoc

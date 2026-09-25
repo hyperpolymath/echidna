@@ -3,7 +3,7 @@
 # Each line: <rule>:<path>
 #
 # Per CLAUDE.md: 'migrate existing src/rescript/ to AffineScript per
-# docs/ROADMAP.md'. These exemptions hold the line while the migration
+# docs/ROADMAP.adoc'. These exemptions hold the line while the migration
 # is in progress — each entry gets removed as the matching .res file
 # is migrated to AffineScript or deleted.
 #

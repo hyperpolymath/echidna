@@ -167,7 +167,7 @@ because four different things are all called "`the number of provers`":
 enum variants (141), implementation files (105), implementations with
 `+suggest_tactics+` (102), and default-exposed core backends (12). All
 four are defensible; none is "`the`" count.
-link:PROVER_COUNT.md[`+PROVER_COUNT.md+`] is now canonical, carries the
+link:PROVER_COUNT.adoc[`+PROVER_COUNT.adoc+`] is now canonical, carries the
 commands that reproduce each figure, and explains the denominators.
 
 *Residual risk:* the `+R5a+` CI rule
@@ -179,7 +179,7 @@ accumulated. Extending the rule’s scope is unfinished work.
 
 ==== D2. Tier membership is hand-maintained and unverifiable
 
-`+PROVER_COUNT.md+`’s tier table is the routing contract, but only Tier
+`+PROVER_COUNT.adoc+`’s tier table is the routing contract, but only Tier
 1 (`+ProverKind::all_core()+`) and Tier 9 are machine-checkable. Tier
 4’s "`19 placeholder backends`" and Tier 8’s "`13 corpus-only provers`"
 are asserted, not derived, and were not re-measured in this pass — they

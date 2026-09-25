@@ -132,7 +132,7 @@ toolchains.
 - description: `just corpus-ingest-saturation <name>` errors `Unknown corpus adapter`
 - probe: ! just corpus-ingest-saturation isabelle external_corpora/isabelle/ 2>&1 | grep -q 'Unknown'
 - severity: medium
-- recovery: confirm dispatcher in src/rust/main.rs has match arm for <name>; if not, file PR (see docs/training-runs/2026-06-02.md follow-ups)
+- recovery: confirm dispatcher in src/rust/main.rs has match arm for <name>; if not, file PR (see docs/training-runs/2026-06-02.adoc follow-ups)
 - escalation: until dispatcher fix lands, fall back to the 4 supported adapters (agda/coq/lean/idris2)
 
 ### B052-bson-undefined-at-save

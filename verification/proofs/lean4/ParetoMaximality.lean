@@ -403,7 +403,7 @@ on Lists to a `List.length` inequality — was discharged in core Lean
   `EchidnaPareto.domCount_strictly_decreases`
   in `verification/proofs/lean4/ParetoStrongMaximality.lean`.
 
-Resolved: **ECHIDNA-PARETO-DESCENT** (was tracked in `PROOF-NEEDS.md`;
+Resolved: **ECHIDNA-PARETO-DESCENT** (was tracked in `PROOF-NEEDS.adoc`;
 landed Lean-side, `lake build` green). -/
 
 -- ==========================================================================

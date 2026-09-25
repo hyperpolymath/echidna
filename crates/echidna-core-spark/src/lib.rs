@@ -362,7 +362,7 @@ pub fn compute_trust_level(factors: &TrustFactors) -> TrustLevel {
 /// stable Rust) and as Creusot lemma stubs (run when `--features creusot`).
 ///
 /// Each test corresponds to a named proof obligation from the SPARK
-/// adoption plan (`docs/design/SPARK_ADOPTION_PLAN.md`, §M3).
+/// adoption plan (`docs/design/SPARK_ADOPTION_PLAN.adoc`, §M3).
 pub mod impl_invariants {
     // These imports are only used in #[test] functions.  The module itself
     // is pub so that Creusot can see the lemma stubs, but the items are

@@ -453,7 +453,7 @@ theorem needs_review_iff_no_consensus (rs : List SolverResult) :
     `unfold reconcile` step may need to be replaced with a hand-rolled
     `show` clause that pre-computes `firstVerdict` outside the
     `match`.  Tracked alongside the other Lean-toolchain fixups
-    flagged in `PROOF-NEEDS.md`. -/
+    flagged in `PROOF-NEEDS.adoc`. -/
 theorem unanimous_yields_crosschecked (rs : List SolverResult)
     (b : Bool) (first : SolverResult) (rest : List SolverResult)
     (hc : completed rs = first :: rest)

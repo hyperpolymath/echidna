@@ -16,7 +16,7 @@ Phase 3 backends, names the worked example already landed
 to closing the phase.
 
 *Master plan*: `+~/Desktop/ECHIDNA-EXPANSION-TOMORROW-2026-04-28.md+`
-*Reference doc*: `+docs/ROADMAP.md+` row "`Every important solver`"
+*Reference doc*: `+docs/ROADMAP.adoc+` row "`Every important solver`"
 *Status as of 2026-04-27*: KeYmaera X *landed* in
 `+src/rust/provers/keymaerax.rs+` (8/8 tests passing); 6 backends
 remain.
@@ -235,9 +235,9 @@ doesn’t have to re-derive them:
 correct flag — gated such that *missing binary returns a structured
 error*, not a panic. (KeYmaera X already does this via
 `+Command::spawn().context(...)+`.)
-. `+docs/ROADMAP.md+` row "`Every important solver`" updated with the
+. `+docs/ROADMAP.adoc+` row "`Every important solver`" updated with the
 new ProverKind count (currently 128 → 134 after Phase 3 closes).
-. `+PROOF-NEEDS.md+` and `+.machine_readable/descriptiles/STATE.a2ml+`
+. `+PROOF-NEEDS.adoc+` and `+.machine_readable/descriptiles/STATE.a2ml+`
 reflect the closure of Phase 3.
 
 === Non-goals
@@ -297,11 +297,11 @@ git log --oneline | head -10                     # 6 fresh feat() commits
 
 === Tracking
 
-* This brief: `+docs/handover/PHASE-3-PROMPT.md+`
+* This brief: `+docs/handover/PHASE-3-PROMPT.adoc+`
 * Master plan: `+~/Desktop/ECHIDNA-EXPANSION-TOMORROW-2026-04-28.md+`
 * Worked example: `+src/rust/provers/keymaerax.rs+` (committed
 2026-04-27)
-* Companion handoff: `+docs/handover/SUGGEST-CLI-PROMPT.md+` (the
+* Companion handoff: `+docs/handover/SUGGEST-CLI-PROMPT.adoc+` (the
 §4.1/4.3 mechanical-baseline brief from the same session)
 
 When Phase 3 closes, update this file’s status table to all-green, move

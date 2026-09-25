@@ -16,7 +16,7 @@ generators, and assertion helpers
 
 ....
 tests/
-├── README.md                 # This file
+├── README.adoc                 # This file
 ├── common/                   # Test utilities
 │   ├── mod.rs               # Main utilities module
 │   ├── mock_prover.rs       # Mock prover backend for testing

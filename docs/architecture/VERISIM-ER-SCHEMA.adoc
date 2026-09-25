@@ -394,7 +394,7 @@ renames an entity / relationship MUST also update both files in the same
 PR. A CI gate (TODO: `+er-drift.yml+`) computes:
 
 ....
-sha256( cat docs/architecture/VERISIM-ER-SCHEMA.md
+sha256( cat docs/architecture/VERISIM-ER-SCHEMA.adoc
         crates/echidna-wire/schemas/verisim_er.capnp )
 ....
 

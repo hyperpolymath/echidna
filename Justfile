@@ -479,7 +479,7 @@ train-from-corpus prover="lean":
 # Run the eight-axis metrics suite against the current corpus and post
 # results to VeriSimDB. Falls back to training_data/metrics_<run_id>.jsonl
 # if VERISIM_URL is unreachable. Target values are documented in
-# metrics/README.md.
+# metrics/README.adoc.
 metrics:
     julia --project=src/julia metrics/run_all.jl
 
@@ -647,7 +647,7 @@ chapel-test: build-chapel-ffi
 # Speedup baseline: compares sequentialProofSearch /
 # parallelProofSearch / parallelProofSearchSpeculative against the
 # fixture corpus in tests/chapel_fixtures/. Emits CSV to stdout. Doc:
-# docs/bench/2026-05-30-chapel-mrr-baseline.md.
+# docs/bench/2026-05-30-chapel-mrr-baseline.adoc.
 #
 # IDRIS2_PREFIX is derived from `which idris2` because Idris2's prelude
 # resolution requires the env var to be set when invoking `--check`;
@@ -672,7 +672,7 @@ bench-chapel-mrr:
 # metalayer. The apt deb ships only the `lib_pic-none` runtime
 # variant. ~25-35 min wall on a 4-core x86_64. ~5 GB disk under
 # ~/.cache/echidna/chapel-pic. Procedure + tradeoffs:
-# docs/decisions/2026-05-30-chapel-pic-rebuild.md. NOT a CI step.
+# docs/decisions/2026-05-30-chapel-pic-rebuild.adoc. NOT a CI step.
 chapel-pic-from-source:
     #!/usr/bin/env bash
     set -euo pipefail
@@ -762,7 +762,7 @@ verify-spark-crosscheck: build-spark
 
 # Run Creusot formal verification on the trust-pipeline kernel.
 #
-# Prerequisites: Creusot + Why3 + Z3/CVC5 (see crates/echidna-core-spark/CREUSOT-SETUP.md).
+# Prerequisites: Creusot + Why3 + Z3/CVC5 (see crates/echidna-core-spark/CREUSOT-SETUP.adoc).
 # The nightly pin lives in crates/echidna-core-spark/rust-toolchain.toml.
 #
 # This recipe is currently in report-only mode: CI runs it and posts
@@ -1088,7 +1088,7 @@ design-swarm problem="brouwer-leq" agents="4" iterations="800":
 # ─────────────────────────────────────────────────────────────────────
 # Saturation campaign 2026-06-01 — recipes for the new corpus / vocab /
 # arbiter / exchange surface. See docs/decisions/2026-06-01-saturation-
-# campaign.md and docs/CORPUS-ADAPTERS.md.
+# campaign.md and docs/CORPUS-ADAPTERS.adoc.
 # ─────────────────────────────────────────────────────────────────────
 
 # Ingest a project tree via one of the 13 new corpus adapters
@@ -1132,11 +1132,11 @@ arbiter-smoke:
 
 # Validate that the E-R schema doc + Cap'n Proto schema are
 # byte-identical with the recorded SHA in .machine_readable/er-schema.sha256.
-# (CI gate planned — see docs/architecture/VERISIM-ER-SCHEMA.md
+# (CI gate planned — see docs/architecture/VERISIM-ER-SCHEMA.adoc
 #  "Drift detection".)
 er-schema-drift-check:
     @echo "Checking E-R schema drift..."
-    @sha256sum docs/architecture/VERISIM-ER-SCHEMA.md \
+    @sha256sum docs/architecture/VERISIM-ER-SCHEMA.adoc \
                crates/echidna-wire/schemas/verisim_er.capnp \
                | sha256sum | head -c 64
     @echo " (current combined hash; compare against .machine_readable/er-schema.sha256 when CI gate lands)"

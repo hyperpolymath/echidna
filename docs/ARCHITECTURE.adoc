@@ -91,14 +91,14 @@ constraint solvers, niche provers, ecosystem type-checkers. Available
 via explicit `+ProverKind+` selection in CLI / REPL / GraphQL but not
 auto-routed.
 
-See link:PROVER_COUNT.md[`+PROVER_COUNT.md+`] for the canonical tier
+See link:PROVER_COUNT.adoc[`+PROVER_COUNT.adoc+`] for the canonical tier
 table and per-prover capabilities.
 
 === Trust pipeline walkthrough
 
 Each `+verify_proof+` call passes through (under `+--features verisim+`,
 eventually in default builds; see
-link:handover/TODO.md[`+handover/TODO.md+`] for current state):
+link:handover/TODO.adoc[`+handover/TODO.adoc+`] for current state):
 
 [arabic]
 . *Integrity* (`+integrity/+`) — solver binary SHAKE3-512 + BLAKE3
@@ -173,18 +173,18 @@ Endpoints — `+POST /gnn/rank+`, `+POST /gnn/embed+`,
 
 Planned (Stage 5a / L1): Cap’n Proto over Unix domain socket; HTTP+JSON
 retained only as debug fallback. See
-link:handover/L1-CAPNPROTO-PROMPT.md[`+docs/handover/L1-CAPNPROTO-PROMPT.md+`].
+link:handover/L1-CAPNPROTO-PROMPT.adoc[`+docs/handover/L1-CAPNPROTO-PROMPT.adoc+`].
 
 === Where to go next
 
-* link:ROADMAP.md[`+docs/ROADMAP.md+`] — canonical stage map and sprint
+* link:ROADMAP.adoc[`+docs/ROADMAP.adoc+`] — canonical stage map and sprint
 targets.
-* link:handover/STATE.md[`+docs/handover/STATE.md+`] — running session
+* link:handover/STATE.adoc[`+docs/handover/STATE.adoc+`] — running session
 log.
-* link:handover/HANDOVER-INDEX.md[`+docs/handover/HANDOVER-INDEX.md+`] —
+* link:handover/HANDOVER-INDEX.adoc[`+docs/handover/HANDOVER-INDEX.adoc+`] —
 guide to the handover/ prompt suite.
-* link:ENV-VARS.md[`+docs/ENV-VARS.md+`] — every environment variable
+* link:ENV-VARS.adoc[`+docs/ENV-VARS.adoc+`] — every environment variable
 the system reads, with defaults.
-* link:PROVER_COUNT.md[`+docs/PROVER_COUNT.md+`] — canonical tier table.
+* link:PROVER_COUNT.adoc[`+docs/PROVER_COUNT.adoc+`] — canonical tier table.
 * link:../.machine_readable/descriptiles/STATE.a2ml[`+.machine_readable/descriptiles/STATE.a2ml+`]
 — machine-readable state, regenerated each sprint.

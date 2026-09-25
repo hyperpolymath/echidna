@@ -1,0 +1,235 @@
+// SPDX-License-Identifier: CC-BY-SA-4.0
+// SPDX-FileCopyrightText: 2026 ECHIDNA Project Contributors
+
+= Stale Reference Tombstones and Path Migrations
+
+This file is the audit record for the `+SD022+` / `+SD007+` structural-drift
+work (GitHub issue #242). It has three jobs:
+
+. record every stale path that was *migrated* to a verified current path;
+. record every stale path that was *deliberately left in place*, with the
+  reason (a tombstone), so the same alert is not re-triaged from scratch;
+. record the targets that were never a rename at all and therefore need
+  real follow-up.
+
+The originating classification is
+`+docs/reports/2026-06-06-hypatia-alert-classification.adoc+`, which bucketed
+28 `+SD022+`/`+SD007+` alerts as "lifecycle hygiene — PR-only
+documentation/state cleanup". This file is that cleanup's receipt.
+
+== The drift class: `.md` → `.adoc`
+
+Almost all of the stale references were one mechanical class. The repository
+publishes its long-form documentation as AsciiDoc, but a large set of
+references still pointed at the `.md` spelling of the same filename. In every
+case the `.adoc` counterpart existed at the identical path, so the
+replacement target is *verified by existence*, not inferred.
+
+*502 references were retargeted across 109 files.* No file was renamed,
+created, or deleted to make an alert go away. The work landed in two passes:
+the 16 highest-volume classes first, then a systematic sweep for every
+remaining `.md` reference that had a verified `.adoc` counterpart.
+
+[width="100%",cols="40%,12%,48%",options="header",]
+|===
+|Stale reference |Count |Verified current path
+|`+PROVER_COUNT.md+` |68 |`+docs/PROVER_COUNT.adoc+`
+|`+VERISIM-ER-SCHEMA.md+` |36 |`+docs/architecture/VERISIM-ER-SCHEMA.adoc+`
+|`+CORPUS-ADAPTERS.md+` |33 |`+docs/CORPUS-ADAPTERS.adoc+`
+|`+CHANGELOG.md+` |30 |`+CHANGELOG.adoc+`
+|`+ROADMAP.md+` |27 |`+docs/ROADMAP.adoc+`
+|`+audit-ffi-boundary.md+` |24 |`+audits/audit-ffi-boundary.adoc+`
+|`+TODO.md+` (within `+docs/handover/+`) |22 |`+docs/handover/TODO.adoc+`
+|`+2026-06-01-saturation-campaign.md+` |21 |`+docs/decisions/2026-06-01-saturation-campaign.adoc+`
+|`+ARCHITECTURE.md+` |15 |`+docs/ARCHITECTURE.adoc+`
+|`+PROVER-CORPUS-SATURATION-LANE.md+` |13 |`+docs/handover/PROVER-CORPUS-SATURATION-LANE.adoc+`
+|`+STATE.md+` |11 |`+docs/handover/STATE.adoc+`
+|`+SUPPORTED_PROVERS.md+` |11 |`+docs/SUPPORTED_PROVERS.adoc+`
+|`+L1-CAPNPROTO-PROMPT.md+` |11 |`+docs/handover/L1-CAPNPROTO-PROMPT.adoc+`
+|`+DEBT.md+` |10 |`+docs/DEBT.adoc+`
+|`+ENV-VARS.md+` |10 |`+docs/ENV-VARS.adoc+`
+|`+L3-LIVE-PROVER-CI-PROMPT.md+` |9 |`+docs/handover/L3-LIVE-PROVER-CI-PROMPT.adoc+`
+|`+README.md+` |8 |`+README.adoc+`
+|`+VERSIONING.md+` |8 |`+schemas/VERSIONING.adoc+`
+|`+TYPE-DISCIPLINE-EMBEDDING.md+` |8 |`+docs/architecture/TYPE-DISCIPLINE-EMBEDDING.adoc+`
+|`+PROOF-NEEDS.md+` |7 |`+docs/PROOF-NEEDS.adoc+`
+|`+SPARK_ADOPTION_PLAN.md+` |7 |`+docs/design/SPARK_ADOPTION_PLAN.adoc+`
+|`+L2-CHAPEL-PROMPT.md+` |7 |`+docs/handover/L2-CHAPEL-PROMPT.adoc+`
+|_plus 30 further classes_ |41 |`+docs/CORPUS.adoc+`, `+docs/HOSTING.adoc+`,
+`+site/docs/api/core.adoc+`, `+crates/echidna-core-spark/CREUSOT-SETUP.adoc+`,
+`+docs/decisions/2026-04-28-corpus-and-design-search.adoc+`,
+`+docs/handover/S4-LOOP-CLOSURE-RUNBOOK.adoc+`, `+metrics/README.adoc+`, …
+|===
+
+Three of these were load-bearing beyond navigation and are called out
+explicitly:
+
+* `+.github/canonical-references/prover-counts.yml+` declared
+  `+canonical_pointer: docs/PROVER_COUNT.md+`. Because that path did not
+  exist, the R5a canonical-reference guardrail was pointing at nothing.
+  It now points at the file that exists.
+* The same file's `+scope.include+` list named `+AUTHORS.md+` and
+  `+CODE_OF_CONDUCT.md+`, neither of which exists — so those two surfaces
+  were outside the guardrail's scan. Both now name the `+.adoc+` files.
+* `+Justfile+`'s `+er-schema-drift-check+` recipe ran `+sha256sum+` against
+  `+docs/architecture/VERISIM-ER-SCHEMA.md+`, so the recipe failed on a
+  missing file. It now hashes the real document. No stored hash was
+  invalidated: `+.machine_readable/er-schema.sha256+` does not exist, so
+  there was no pinned constant to update.
+
+=== Guarding against over-reach
+
+Two classes of false positive were excluded mechanically.
+
+*Names that merely contain a migrated basename* were left untouched:
+`+FUTURE_DEVELOPMENT_ROADMAP.md+`, `+PROVER_EXPANSION_ROADMAP.md+`,
+`+CORRECTNESS-ARCHITECTURE.md+`, `+ECHIDNA-TODO.md+`.
+
+*References to files that genuinely exist as `+.md+`* were left untouched —
+this is the reason the sweep checks target existence rather than blindly
+rewriting every `.md` it sees. 47 references fall in this class across the
+21 tracked `+.md+` files: `+SECURITY.md+`, `+CLAUDE.md+`, `+GEMINI.md+`,
+`+.github/CONTRIBUTING.md+`, `+.github/PROVEN-INTEGRATION.md+`,
+`+docs/wiki/*.md+` and the GitLab issue/MR templates. In particular
+`+SECURITY.md+` coexists with `+SECURITY.adoc+` and is *not* stale; an
+earlier, looser version of this sweep rewrote
+link in `+AUTHORS.adoc+` (`+link:SECURITY.md+`) and was caught by this check.
+
+== Reproducing the check
+
+[source,bash]
+----
+# 1. No migrated .md reference should remain outside the tombstones below.
+grep -rnE '(^|[^A-Za-z0-9_-])(PROVER_COUNT|CORPUS-ADAPTERS|VERISIM-ER-SCHEMA|ROADMAP|CHANGELOG|ARCHITECTURE|DEBT|ENV-VARS|PROOF-NEEDS|HANDOVER-INDEX|SPARK_ADOPTION_PLAN|S5-VERIFICATION-RUNBOOK|TYPE-DISCIPLINE-EMBEDDING|L3-LIVE-PROVER-CI-PROMPT)\.md' . \
+  | grep -v '^./.git/'
+
+# 2. Every .adoc target referenced by a changed file must exist.
+#    Resolve each reference relative to both the referencing file and the repo root.
+
+# 3. A .md reference is only rewritten when the .md file is absent AND
+#    the .adoc counterpart is present. Anything else is a tombstone below.
+----
+
+== Deliberate non-rewrites (tombstones)
+
+These still contain the old spelling on purpose. Each is either a
+point-in-time record — where rewriting the reference would falsify what was
+observed — a path belonging to something other than this repository, or a
+deliberate "either spelling" fallback. They are *not* outstanding work.
+
+[width="100%",cols="30%,22%,48%",options="header",]
+|===
+|Old reference |Location |Why it is not rewritten
+
+|`+DEBT.md+`, `+CHANGELOG.md+`
+|`+docs/tech-debt-2026-05-26.adoc+`
+|Dated audit (2026-05-26) containing an existence table. The names are the
+*subject* of the record ("CHANGELOG.md: Y"), so correcting them would
+falsify the snapshot.
+
+|`+PROOF-NEEDS.md+`
+|`+docs/reports/audit/2026-03-31-echidna-audit.adoc+`
+|Dated audit report. Also asserts the file was "visible in root", which was
+already inaccurate — the canonical file is `+docs/PROOF-NEEDS.adoc+`.
+
+|`+ARCHITECTURE.md+`, `+CHANGELOG.md+`, `+README.md+`
+|`+docs/DEBT.adoc+` (D5/D6 and the README checks)
+|These lines describe a past defect and its fix ("it links to
+`+README.md+`", "the real documents sat at `+docs/ARCHITECTURE.md+`", the
+`+grep … README.md+` probe). The names are the subject of the sentences.
+
+|`+CHANGELOG.md+`, `+CONTRIBUTING.md+`, `+README.md+`
+|`+echidna-playground/SECURITY.adoc+`
+|Separate sub-project. These `+link:+`-style references resolve inside
+`+echidna-playground/+`, and `+CONTRIBUTING.md+` has no counterpart there in
+either spelling, so no replacement can be verified from the repository root.
+
+|`+README.md+`
+|`+.github/canonical-references/prover-counts.yml+` (`+scope.include+`)
+|Deliberately lists *both* `+README.md+` and `+README.adoc+`. Rewriting the
+first would leave a duplicate entry, and coverage is already intact via the
+second.
+
+|`+README.md+`
+|`+.machine_readable/contractiles/must/Mustfile.a2ml+`, `+contractile.just+`
+|A `+test -f+` fallback probe that checks each spelling in turn. It names
+both spellings on purpose; it is a test, not a reference.
+
+|`+L3-LIVE-PROVER-CI-PROMPT.md+`
+|`+.machine_readable/descriptiles/STATE.a2ml+`,
+`+docs/handover/PRODUCTION-WIRING-PLAN.adoc+`,
+`+tests/live_prover_suite.rs+`
+|These are `+~/Desktop/ECHIDNA-L3-LIVE-PROVER-CI-PROMPT.md+` — a path on the
+maintainer's machine, not a repository document.
+
+|`+L3-LIVE-PROVER-CI-PROMPT.md+`
+|`+docs/handover/STATE.adoc+`
+|Points into a *different* checkout (`+verification-ecosystem/echidna/…+`).
+The counterpart there cannot be verified from this repository.
+
+|`+TODO.md+`
+|`+.machine_readable/descriptiles/STATE.a2ml+`
+|Past-state narrative ("TODO.md/STATE were stale-doc-drift", "TODO.md
+reconciled"). Records what happened, not where to go.
+|===
+
+A further 100 reference sites name a path that is absent in *both*
+spellings — `+ROADMAP-v2.0.md+`, `+CONTRIBUTING.md+` (bare, at this root),
+`+docs/training-runs/+`-era artefacts and similar. Those are not renames and
+therefore have no verified replacement; they are follow-ups, not edits.
+
+== Follow-ups that are *not* renames
+
+These targets were never renamed — they simply do not exist. They need a
+decision, not a search-and-replace, and are deliberately out of scope here.
+
+=== `.hypatia-ignore` exemptions all point at deleted files
+
+All 33 entries in `+.hypatia-ignore+` exempt `+banned_language_file+` findings
+for `+.res+` sources that no longer exist (`+src/rescript/+` and
+`+src/provers/+` are gone from the tree). Check it with:
+
+[source,bash]
+----
+while read -r l; do case "$l" in \#*|'') continue;; esac
+  p="${l#*:}"; [ -e "$p" ] || echo "dead exemption: $p"; done < .hypatia-ignore | wc -l
+# => 33
+----
+
+The file's own header says each entry "gets removed as the matching `+.res+`
+file is migrated to AffineScript or deleted". Per #242's safety note, a
+policy/state file is not rewritten to clear alerts, so this is recorded
+rather than changed. Emptying the ledger is a one-line owner decision.
+
+=== Paths that never existed in this tree
+
+* `+.machine_readable/6a2/+` — referenced by
+  `+.machine_readable/contractiles/{dust,must,trust}/*.k9.ncl+` (as
+  `+.machine_readable/6a2/DRIFT.a2ml+` and `+ratification-<session-id>.a2ml+`)
+  and by `+CHANGELOG.adoc+`. Neither the directory nor `+DRIFT.a2ml+` exists
+  anywhere in the tree.
+* `+src/rescript/+` — removed; only the dead `+.hypatia-ignore+` entries and
+  one historical comment in `+CLAUDE.md+` still refer to it.
+
+=== Remaining dangling documentation targets
+
+An independent scan for repository-internal path references that resolve to
+nothing found *108* remaining targets, down from 129 before this change. The
+largest are pointers at files that do not exist in any spelling — for
+example `+verification/pareto.rs+`, `+verification/portfolio.rs+`,
+`+verification/confidence.rs+`, `+scripts/retrain_from_verisim.jl+`,
+`+docs/buchholz-plan.adoc+`, `+src/rust/core.rs+` and
+`+src/rust/provers/your_prover.rs+` (the last is likely intentional as an
+extension template). These are a separate alert family from the `.md`/`.adoc`
+drift and should be triaged on their own.
+
+== Out of scope: upstream reporting
+
+Two acceptance criteria on #242 concern Hypatia itself, not this repository:
+
+* `+SD022+` should emit the specific old/new path pair, rather than the
+  existence alert alone.
+* The category should be displayed as
+  `+lifecycle-hygiene+` / `+repository-structure+`.
+
+Both belong in `+hyperpolymath/standards+`.

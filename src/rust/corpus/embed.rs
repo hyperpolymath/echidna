@@ -15,7 +15,7 @@
 //!
 //! 2. **GNN client** (future, online): for when the Julia server at
 //!    `/gnn/embed` is primed against real proof corpora (Wave-3 ML
-//!    work tracked in `docs/handover/TODO.md`). The trait `Embedder`
+//!    work tracked in `docs/handover/TODO.adoc`). The trait `Embedder`
 //!    abstracts the choice; replacing the default `HashEmbedder`
 //!    with a `GnnEmbedder` is one-line.
 //!

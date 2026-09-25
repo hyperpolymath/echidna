@@ -227,7 +227,7 @@ from 30 → 113 variants (exhaustive, no catch-all) across schema.rs +
 resolvers.rs + ffi_wrapper.rs; FfiProverBackend trait wired
 (config/set_config/search_theorems); FFI pointer casts corrected.
 `+cargo build -p echidna-graphql+` now clean.
-* *FFI boundary audit* (`+b4d682b+`) — `+audits/audit-ffi-boundary.md+`
+* *FFI boundary audit* (`+b4d682b+`) — `+audits/audit-ffi-boundary.adoc+`
 (4-section per-module safety review) +
 `+audits/assail-classifications.a2ml+` (7 classifications suppressing
 legitimate UnsafeCode at all three interface ffi_wrapper.rs files + core

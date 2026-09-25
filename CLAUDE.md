@@ -7,16 +7,16 @@ Guidelines and context for working with Claude Code on the ECHIDNA project.
 **ECHIDNA** (Extensible Cognitive Hybrid Intelligence for Deductive Neural Assistance) is a trust-hardened neurosymbolic theorem-proving platform with a polyglot backend surface and a comprehensive verification pipeline.
 
 - **Repository**: https://github.com/hyperpolymath/echidna
-- **Version + release history**: [`CHANGELOG.md`](CHANGELOG.md) (single source of truth; do not duplicate version strings elsewhere)
+- **Version + release history**: [`CHANGELOG.adoc`](CHANGELOG.adoc) (single source of truth; do not duplicate version strings elsewhere)
 - **License**: four parts — AGPL-3.0-or-later (application code), **MPL-2.0
   (`.machine_readable/` specification surface + manifests + OCI labels, kept
   weak-copyleft for interoperability/standards work)**, CC-BY-SA-4.0 (docs),
   MPL-2.0 (`echidna-playground/`). See [`NOTICE`](NOTICE); MPL §3.3 is what
   makes the MPL parts compatible inside the AGPL work
-- **Architecture overview**: [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md)
-- **Canonical prover count + tier table**: [`docs/PROVER_COUNT.md`](docs/PROVER_COUNT.md)
-- **Known debt (licence, docs, code)**: [`docs/DEBT.md`](docs/DEBT.md)
-- **Environment variables**: [`docs/ENV-VARS.md`](docs/ENV-VARS.md)
+- **Architecture overview**: [`docs/ARCHITECTURE.adoc`](docs/ARCHITECTURE.adoc)
+- **Canonical prover count + tier table**: [`docs/PROVER_COUNT.adoc`](docs/PROVER_COUNT.adoc)
+- **Known debt (licence, docs, code)**: [`docs/DEBT.adoc`](docs/DEBT.adoc)
+- **Environment variables**: [`docs/ENV-VARS.adoc`](docs/ENV-VARS.adoc)
 - **RSR / CCCP compliance statement**: [`RSR_COMPLIANCE.adoc`](RSR_COMPLIANCE.adoc)
 - **Receipts for README claims**: [`EXPLAINME.adoc`](EXPLAINME.adoc)
 - **Contributor guide**: [`.github/CONTRIBUTING.md`](.github/CONTRIBUTING.md)
@@ -27,7 +27,7 @@ Guidelines and context for working with Claude Code on the ECHIDNA project.
 echidna/
 ├── src/
 │   ├── rust/               # Rust core + ProverKind enum + ProverFactory
-│   │   ├── provers/        # Per-backend ProverBackend impls (see docs/PROVER_COUNT.md for the tier table)
+│   │   ├── provers/        # Per-backend ProverBackend impls (see docs/PROVER_COUNT.adoc for the tier table)
 │   │   ├── verification/   # Trust pipeline (portfolio, certificates, axioms, confidence, mutation, pareto, statistics)
 │   │   ├── integrity/      # Solver binary integrity (SHAKE3-512, BLAKE3)
 │   │   ├── executor/       # Sandboxed solver execution (Podman, bubblewrap)
@@ -93,7 +93,7 @@ Follow conventional commit format:
 
 ### Prover Support
 
-Backend tiers, member lists, and the canonical answer to "how many provers?" all live in [`docs/PROVER_COUNT.md`](docs/PROVER_COUNT.md). The Tier-1 _core_ set is exposed by default through `GET /api/provers`; the rest are reachable via `ProverKind` and the dispatch pipeline. Do not duplicate counts in this file — they drift.
+Backend tiers, member lists, and the canonical answer to "how many provers?" all live in [`docs/PROVER_COUNT.adoc`](docs/PROVER_COUNT.adoc). The Tier-1 _core_ set is exposed by default through `GET /api/provers`; the rest are reachable via `ProverKind` and the dispatch pipeline. Do not duplicate counts in this file — they drift.
 
 ### Trust & Safety Pipeline
 
@@ -126,14 +126,14 @@ The trust-hardening pipeline applies the following checks before any proof resul
 
 ### Current Status
 
-The authoritative status surface is [`CHANGELOG.md`](CHANGELOG.md) (released versions) plus the git log + open issues (in-flight work). Do not duplicate version-keyed status here — it drifts.
+The authoritative status surface is [`CHANGELOG.adoc`](CHANGELOG.adoc) (released versions) plus the git log + open issues (in-flight work). Do not duplicate version-keyed status here — it drifts.
 
 Shape, by area:
 
 - **Trust pipeline**: solver integrity, certificate checking, axiom tracking, sandboxing, mutation testing, Pareto ranking, Bayesian confidence — wired into `dispatch.rs`.
 - **Idris2 ABI**: `EchidnaABI.TacticRecord` (fixed-point confidence, total-order proofs, in-range round-trip lemmas) + sibling modules; type-checked on every push by `idris2-abi-ci.yml`.
 - **GNN integration**: graph construction (7 node kinds, 8 edge kinds), 32-dim local term embeddings, GNN inference client, hybrid GNN + symbolic scoring, Julia `/gnn/rank` with cosine fallback.
-- **Chapel parallel layer (`--features chapel`)**: `ChapelParallelSearch` invoked by `dispatch.rs::verify_proof_parallel`; per-prover cwd/filename hooks in `tryProver`; L2.3 cancel-token preemption shipped; `parallelProofSearchSpeculative` (first-success-wins atomic-CAS) alongside best-of `parallelProofSearch`; `proofs/agda/ParallelSoundness.agda` formalises soundness, completeness, and cancellation-safety with zero postulate / admit / believe_me. L2.4+ (mutation parallelism, multi-locale, numeric hot paths, bench) gated on L1 Cap'n Proto and (for L2.5) a cluster runtime — see [`docs/handover/TODO.md`](docs/handover/TODO.md).
+- **Chapel parallel layer (`--features chapel`)**: `ChapelParallelSearch` invoked by `dispatch.rs::verify_proof_parallel`; per-prover cwd/filename hooks in `tryProver`; L2.3 cancel-token preemption shipped; `parallelProofSearchSpeculative` (first-success-wins atomic-CAS) alongside best-of `parallelProofSearch`; `proofs/agda/ParallelSoundness.agda` formalises soundness, completeness, and cancellation-safety with zero postulate / admit / believe_me. L2.4+ (mutation parallelism, multi-locale, numeric hot paths, bench) gated on L1 Cap'n Proto and (for L2.5) a cluster runtime — see [`docs/handover/TODO.adoc`](docs/handover/TODO.adoc).
 - **Wave-3 container infrastructure**: per-prover images in `.containerization/Containerfile.wave3`; weekly cron in `container-ci.yml` runs stub-sentinel detection across all 8 Tier-3 cells.
 - **Julia ML layer**: logistic-regression tactic prediction shipped; Flux.jl scaffolds for GNN/Transformer training present but not yet trained on real data — corpus ready under `training_data/`.
 - **Migrations in flight**: AffineScript → AffineScript-TEA (UI); npm → Deno (`echidna-playground`); CI workflow consolidation under the governance ruleset.
@@ -191,7 +191,7 @@ in `.github/workflows/`:
   `.github/canonical-references/`.
 - **R5b** (estate-wide, consumed via standards SHA pin per #172):
   `Version: x.y.z` strings in docs are scanned for drift against
-  `Cargo.toml`. **`CHANGELOG.md` and `Cargo.toml` are exempt;
+  `Cargo.toml`. **`CHANGELOG.adoc` and `Cargo.toml` are exempt;
   everything else is not.** Keep this file (and any new doc) prose
   count-free and version-free unless the number is sourced
   authoritatively elsewhere.
@@ -225,4 +225,4 @@ in `.github/workflows/`:
 ---
 
 **Maintained by**: Jonathan D.A. Jewell <j.d.a.jewell@open.ac.uk>.
-This file is kept count-free and date-free in prose; CHANGELOG.md and the git log carry the live timeline.
+This file is kept count-free and date-free in prose; CHANGELOG.adoc and the git log carry the live timeline.

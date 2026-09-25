@@ -15,7 +15,7 @@ repository = "https://github.com/hyperpolymath/echidna"
 serde = { version = "1", features = ["derive"] }
 
 [dev-dependencies]
-# creusot = "0.1"  # Uncomment when toolchain is pinned; see CREUSOT-SETUP.md
+# creusot = "0.1"  # Uncomment when toolchain is pinned; see CREUSOT-SETUP.adoc
 
 [features]
 # Gate all Creusot-specific annotations behind this feature so that

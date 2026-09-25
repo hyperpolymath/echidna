@@ -10,7 +10,7 @@ Declared intent and purpose for Echidna.
 
 Echidna is a trust-hardened neurosymbolic theorem proving platform.
 It supports 141 ProverKind variants over 105 backend implementations
-(canonical count semantics: docs/PROVER_COUNT.md), records every proof attempt to
+(canonical count semantics: docs/PROVER_COUNT.adoc), records every proof attempt to
 VeriSimDB, and feeds the Hypatia learning loop so the fleet gets
 smarter over time.
 
@@ -19,7 +19,7 @@ adapters for Agda, Coq, Lean 4, and Idris 2; emits 8-modality
 declaration octads compatible with VeriSim's `/api/v1/octads`; and
 runs simulated-annealing design-search + 007-style swarm dispatchers
 over candidate axiomatisations and rank functions. See
-`docs/CORPUS.md` and `docs/decisions/2026-04-28-corpus-and-design-
+`docs/CORPUS.adoc` and `docs/decisions/2026-04-28-corpus-and-design-
 search.md`.
 
 ## Anti-Purpose

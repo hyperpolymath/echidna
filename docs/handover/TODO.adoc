@@ -16,7 +16,7 @@ blocks L2 (because Chapel consumes Cap’n Proto schemas).
 * ✅ *`+echidna-graphql+` build* — ProverKind 30→113 variants, trait
 stubs, FFI casts fixed (`+5aec9d5+`). All three interface crates now
 build clean.
-* ✅ *FFI boundary audit* — `+audits/audit-ffi-boundary.md+` +
+* ✅ *FFI boundary audit* — `+audits/audit-ffi-boundary.adoc+` +
 `+audits/assail-classifications.a2ml+` classifying all legitimate
 UnsafeCode at FFI boundaries (`+b4d682b+`).
 * ✅ *`+bounded_read_config+`* — sync 1 MiB-capped read helper in
@@ -36,7 +36,7 @@ across term/trust/danger/pareto modules (`+99198b0+`).
 (proof_state JSON deserialization, trust pipeline, axiom tracker)
 replacing stub (`+46453c4+`).
 * ✅ *Stage 8a — Idris2 trust-kernel proofs* — TrustKernelMonotonicity,
-AxiomPolicyOrdering, ClampTrustBounds; zero believe_me; PROOF-NEEDS.md
+AxiomPolicyOrdering, ClampTrustBounds; zero believe_me; PROOF-NEEDS.adoc
 updated (`+1444a30+`).
 * ✅ *Stage 3a/3b — VeriSimDB read paths + dispatch advisor* —
 `+query_by_goal_hash+`, `+query_prover_success_by_class+`,
@@ -205,7 +205,7 @@ violates `+feedback_no_json_emit_a2ml+`.
 * `+schemas/echidna.capnp+` — canonical wire schemas: `+ProofGoal+`,
 `+ProofResult+`, `+TacticSuggestion+`, `+GnnRankRequest+`,
 `+GnnRankResponse+`, `+ProverInvocation+`, `+TrustedOutcome+`.
-* `+schemas/VERSIONING.md+` — forward/backward compat rules.
+* `+schemas/VERSIONING.adoc+` — forward/backward compat rules.
 * `+src/rust/ipc/+` — Cap’n Proto transport module; UDS primary, TCP
 fallback.
 * Replace HTTP calls in `+src/rust/gnn/client.rs+` with UDS + Cap’n
@@ -338,7 +338,7 @@ Zig C-ABI shim (buffer-oriented), NOT `+CapnProto.jl+`.*
 Estate-canonical (FFI=Zig; single codec shared with Rust; Zig =
 interface-safety transaction layer). `+CapnProto.jl+` rejected (low
 maturity + second wire codec = drift). See
-`+docs/handover/L1-CAPNPROTO-PROMPT.md+` §Resolved decisions.
+`+docs/handover/L1-CAPNPROTO-PROMPT.adoc+` §Resolved decisions.
 . *Chapel default-on threshold* — the plan says ≥ 1.5× speedup to flip
 default-on. Is that the right threshold, or do we want absolute
 wall-clock improvement too (e.g. ≥ 5 s saved on portfolio dispatch of
@@ -387,7 +387,7 @@ gate (Tier-1 green ≥7 days on main — blocked by main CI stuck
 
 *P2 L1:* Implementation NOT started — still gated on the L3 hand-off.
 Ahead-of-gate spec/design is landed: `+schemas/echidna.capnp+` +
-`+schemas/VERSIONING.md+` present; Julia-transport open question
+`+schemas/VERSIONING.adoc+` present; Julia-transport open question
 RESOLVED (Zig C-ABI shim, see §Open questions #2). L1 implementation
 (src/rust/ipc, gnn/client.rs swap, julia ipc.jl, CapnSchemas.idr, zig
 bridge) waits on the gate.

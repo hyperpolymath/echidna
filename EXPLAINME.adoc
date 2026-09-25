@@ -31,7 +31,7 @@ ____
 
 * Backend tiering, count semantics (variants vs. impl files vs.
   advertised vs. core), and live answers to "how many backends" live
-  in link:docs/PROVER_COUNT.md[`docs/PROVER_COUNT.md`].
+  in link:docs/PROVER_COUNT.adoc[`docs/PROVER_COUNT.adoc`].
 * `ProverBackend` trait: `src/rust/provers/mod.rs` — `pub enum
   ProverKind`, `pub fn all()`, `pub fn all_core()`.
 * Trust pipeline: `src/rust/verification/` (portfolio, certificates,
@@ -59,7 +59,7 @@ ____
   / metamath / mizar / hol_light / hol4 / dafny / why3 / fstar /
   acl2_books / tptp / smtlib / proofnet / minif2f added in the
   2026-06-01 saturation campaign. Index:
-  link:docs/CORPUS-ADAPTERS.md[`docs/CORPUS-ADAPTERS.md`].
+  link:docs/CORPUS-ADAPTERS.adoc[`docs/CORPUS-ADAPTERS.adoc`].
 * Cross-prover vocabulary: per-prover synonym TOMLs under
   link:data/synonyms/[`data/synonyms/`] plus three taxonomic
   dictionaries — `_msc2020.toml` (87 MSC2020 codes),
@@ -68,7 +68,7 @@ ____
   `echidna suggest` variant tester.
 * Shared data dictionary between echidna and its long-term memory
   store: the formal E-R schema at
-  link:docs/architecture/VERISIM-ER-SCHEMA.md[`docs/architecture/VERISIM-ER-SCHEMA.md`]
+  link:docs/architecture/VERISIM-ER-SCHEMA.adoc[`docs/architecture/VERISIM-ER-SCHEMA.adoc`]
   with Cap'n Proto wire format
   link:crates/echidna-wire/schemas/verisim_er.capnp[`crates/echidna-wire/schemas/verisim_er.capnp`].
   12 first-class entities + 7 first-class relationships, each with
@@ -80,7 +80,7 @@ to a real external binary; it does NOT mean every live subprocess path
 has been exercised in CI against non-trivial goals. The test suite
 mixes in-process mocked-prover scenarios with binary-shelled-out paths;
 the split is documented in `tests/` and in
-link:docs/PROVER_COUNT.md[`docs/PROVER_COUNT.md`].
+link:docs/PROVER_COUNT.adoc[`docs/PROVER_COUNT.adoc`].
 
 *Caveat (binaries)*:
 Running Tier-1 backends requires the corresponding external binaries
@@ -99,7 +99,7 @@ The test surface spans unit tests inside `src/rust/` and integration
 suites under `tests/`, supplemented by property tests, criterion
 benchmarks, and Idris2 ABI type-checks. Current counts are not
 embedded here — `cargo test --lib`, `cargo test --tests`, and
-`CHANGELOG.md` carry the live numbers.
+`CHANGELOG.adoc` carry the live numbers.
 ____
 
 *Evidence (commands)*:
@@ -170,14 +170,14 @@ Rust trust-pipeline properties; see `proofs/agda/`.
 |===
 | Path | What's there
 
-| `src/rust/provers/`        | `ProverKind` enum + per-backend `ProverBackend` impls (see link:docs/PROVER_COUNT.md[`docs/PROVER_COUNT.md`] for the live tier table)
+| `src/rust/provers/`        | `ProverKind` enum + per-backend `ProverBackend` impls (see link:docs/PROVER_COUNT.adoc[`docs/PROVER_COUNT.adoc`] for the live tier table)
 | `src/rust/verification/`   | Trust pipeline (portfolio, certificates, axioms, confidence, mutation, pareto, statistics) + four arbiters (`portfolio.rs`, `bayesian_arbiter.rs`, `dempster_shafer.rs`, `pareto_arbiter.rs`)
-| `src/rust/corpus/`         | 17 corpus adapters (see link:docs/CORPUS-ADAPTERS.md[`docs/CORPUS-ADAPTERS.md`])
+| `src/rust/corpus/`         | 17 corpus adapters (see link:docs/CORPUS-ADAPTERS.adoc[`docs/CORPUS-ADAPTERS.adoc`])
 | `src/rust/integrity/`      | Solver-binary integrity (SHAKE3-512, BLAKE3)
 | `src/rust/executor/`       | Sandboxed solver execution (Podman, bubblewrap)
 | `src/rust/exchange/`       | Cross-prover proof exchange — six formats (OpenTheory, Dedukti, TPTP, SMT-LIB, SMTCoq, Lambdapi)
 | `data/synonyms/`           | Per-prover synonym TOMLs + 3 cross-prover dictionaries (MSC2020, WordNet, ConceptNet); see link:data/synonyms/README.adoc[`data/synonyms/README.adoc`]
-| `docs/architecture/VERISIM-ER-SCHEMA.md` | Formal E-R schema — shared data dictionary echidna ↔ long-term memory store
+| `docs/architecture/VERISIM-ER-SCHEMA.adoc` | Formal E-R schema — shared data dictionary echidna ↔ long-term memory store
 | `crates/echidna-wire/schemas/verisim_er.capnp` | Cap'n Proto wire format for the E-R schema
 | `src/rust/dispatch.rs`     | Full trust-hardening dispatch pipeline
 | `src/rust/agent/`          | Agentic proof search (actor model)

@@ -377,10 +377,10 @@ manual tagging
 
 === References
 
-* *ECHIDNA Architecture*: See `+docs/ARCHITECTURE.md+`
+* *ECHIDNA Architecture*: See `+docs/ARCHITECTURE.adoc+`
 * *Core Types*: See `+src/rust/core.rs+`
 * *Prover Integration*: See `+docs/PROVER_INTEGRATION.md+`
-* *Neural Components*: See `+src/julia/README.md+`
+* *Neural Components*: See `+src/julia/README.adoc+`
 
 === License
 

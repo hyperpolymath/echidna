@@ -33,6 +33,6 @@ overwritten by the next sync, so make changes here.
 | `Troubleshooting` | [`Troubleshooting.md`](Troubleshooting.md) |
 
 When a wiki page diverges from the matching repo doc it references (e.g.
-`docs/ARCHITECTURE.md`), update **the repo doc first**, then refresh the
+`docs/ARCHITECTURE.adoc`), update **the repo doc first**, then refresh the
 wiki page from the new repo state. The wiki is a navigation aid; the repo
 is the source of truth.

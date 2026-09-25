@@ -1,7 +1,7 @@
 == 2026-05-30 — Chapel PIC rebuild from source for `+--library --dynamic+`
 
 ADR-style addendum to
-link:./2026-05-30-chapel-rehabilitation.md[2026-05-30-chapel-rehabilitation.md].
+link:./2026-05-30-chapel-rehabilitation.md[2026-05-30-chapel-rehabilitation.adoc].
 Documents the procedure and constraints for replacing the apt-shipped
 Chapel runtime with a position-independent variant so the metalayer can
 be linked as a shared library instead of a static archive.

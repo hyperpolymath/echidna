@@ -1020,7 +1020,7 @@ here so the work has clear targets when picked up.
 """
 
 [migration-roadmap.affinescript-to-affinescript]
-status = "in-progress (per docs/ROADMAP.md), 30 files outstanding"
+status = "in-progress (per docs/ROADMAP.adoc), 30 files outstanding"
 inventory = """
 echidna/src/affinescript/ — 30 .res files split between:
   src/affinescript/src/                 — 10 production files (Main, Server,
@@ -1031,7 +1031,7 @@ echidna/src/affinescript/ — 30 .res files split between:
   src/affinescript/lib/ocaml/           — 10 generated/compiled mirrors
   + 10 ancillary
 """
-target = "AffineScript-TEA per docs/ROADMAP.md (compiled to typed-wasm, served via Deno)"
+target = "AffineScript-TEA per docs/ROADMAP.adoc (compiled to typed-wasm, served via Deno)"
 prereqs = """
 - AffineScript compiler stable enough to handle React-equivalent component
   primitives (rsr-template-repo/affinescript/ has working examples but the
@@ -1120,7 +1120,7 @@ echidna-graphql binary now builds clean. Changes:
 panic-attack assail: 4 weak points (ffi_wrapper.rs UnsafeCode — expected FFI boundary; covered by assail-classifications.a2ml)
 """
 f4-result = "panic-attack test suite was already 200/0 pass (db603c3 fixed schema_version + safe_unwrap_calls fixtures). No changes needed."
-f6-result = "audits/audit-ffi-boundary.md (4-section safety audit) + audits/assail-classifications.a2ml (7 classifications: ffi/mod.rs ×2, spark_axiom.rs, proof_search.rs, graphql/grpc/rest ffi_wrapper.rs) committed at b4d682b."
+f6-result = "audits/audit-ffi-boundary.adoc (4-section safety audit) + audits/assail-classifications.a2ml (7 classifications: ffi/mod.rs ×2, spark_axiom.rs, proof_search.rs, graphql/grpc/rest ffi_wrapper.rs) committed at b4d682b."
 workspace-build = "cargo build -p echidna -p echidna-graphql -p echidna-grpc -p echidna-rest: Finished clean (warnings only). echidna-wire fails on capnp system binary missing — pre-existing, not caused by this batch."
 metadata.last-updated = "2026-04-26"
 
@@ -1133,7 +1133,7 @@ run-url = "UNKNOWN — inspect manually: https://github.com/hyperpolymath/echidn
 jobs-green = "UNKNOWN"
 jobs-red = "UNKNOWN"
 wave-1-status = "UNKNOWN — run data inaccessible; Wave-1 is every-PR so also runs on push to main"
-wave-2-status = "UNKNOWN — run data inaccessible; CI-unverified per P0 row in docs/handover/TODO.md"
+wave-2-status = "UNKNOWN — run data inaccessible; CI-unverified per P0 row in docs/handover/TODO.adoc"
 issues-opened = []
 triage-result = "BLOCKED"
 blockers = [
@@ -1267,8 +1267,8 @@ remaining-open = [
   "GNN embeddings via Julia /gnn/embed (deferred ML training column)",
 ]
 new-docs = [
-  "docs/CORPUS.md — user-facing guide for the corpus subsystem",
-  "docs/decisions/2026-04-28-corpus-and-design-search.md — ADR record",
+  "docs/CORPUS.adoc — user-facing guide for the corpus subsystem",
+  "docs/decisions/2026-04-28-corpus-and-design-search.adoc — ADR record",
 ]
 
 [session-2026-04-28-eod-update]
@@ -1325,7 +1325,7 @@ not-done = [
 ]
 
 [session-2026-05-19-ci-baseline-triage]
-summary = "Landed PR #73 (Wave-3 consolidation, MERGED d3db97d) + triaged its red CI into 3 classes (real PR defect / baseline-rot / #77 infra jam) + cleared the two baseline blockers as dedicated PRs. Human ADR: docs/decisions/2026-05-19-ci-baseline-triage.md."
+summary = "Landed PR #73 (Wave-3 consolidation, MERGED d3db97d) + triaged its red CI into 3 classes (real PR defect / baseline-rot / #77 infra jam) + cleared the two baseline blockers as dedicated PRs. Human ADR: docs/decisions/2026-05-19-ci-baseline-triage.adoc."
 required-merge-gate = ["Analyze (rust)", "Cargo check + clippy + fmt", "Dependency audit", "Dogfood Gate", "Hypatia Neurosymbolic Analysis", "OpenSSF Scorecard"]
 findings = [
   "Triage rule: a red echidna PR check is one of (1) real in-scope PR defect, (2) baseline-rot — fails identically on origin/main, fix in dedicated PR not on the feature branch, (3) #77 infra jam — runner unassigned or ~15-30s fast-fail with EMPTY --log-failed. Verify class via `git show origin/main:<path>` + check main's run before patching.",
@@ -1338,7 +1338,7 @@ changes = [
   "PR #73 (MERGED d3db97d 17:49Z): added `COPY crates ./crates` + `COPY benches ./benches` to .containerization/Containerfile + Containerfile.full (were stale vs the crates/* workspace; wave3 + mcp were already correct).",
   "Issue #85 -> PR #86 (fix/rust-ci-drop-all-features): rust-ci.yml clippy/doc/check KEEP --all-features (no link, full coverage); the 2 cargo-test steps -> --features verisim (sole pure-Rust optional feat; live-provers superset). Avoids blinding ~510 LoC flint + spark-FFI to CI. Validated: Test Suite X(main)->ok(#86) 3m18s; local cargo test --lib --features verisim = 1092 pass/0 fail.",
   "PR #87 (fix/clusterfuzzlite-dockerfile-symlink): tracked symlink .clusterfuzzlite/Dockerfile -> Containerfile (git mode 120000); clusterfuzzlite action hardcodes Dockerfile, keeps house Containerfile name, zero blast radius. Non-gating hygiene.",
-  "docs/decisions/2026-05-19-ci-baseline-triage.md — human-readable ADR of the above (companion to this block).",
+  "docs/decisions/2026-05-19-ci-baseline-triage.adoc — human-readable ADR of the above (companion to this block).",
 ]
 not-done = [
   "#86 + #87 BLOCKED solely on #77 (required jobs awaiting runner assignment); auto-merge-squash armed, will self-fire when #77 clears. Do NOT admin-override.",
@@ -1385,15 +1385,15 @@ exchange_bridges_list = [
 ]
 
 er_schema_status = "formalised"
-er_schema_doc_path = "docs/architecture/VERISIM-ER-SCHEMA.md"
+er_schema_doc_path = "docs/architecture/VERISIM-ER-SCHEMA.adoc"
 er_schema_capnp_path = "crates/echidna-wire/schemas/verisim_er.capnp"
 
 [saturation-campaign]
 date = "2026-06-01"
 branch = "prover-corpus-saturation"
 status = "complete"
-adr = "docs/decisions/2026-06-01-saturation-campaign.md"
-handover = "docs/handover/PROVER-CORPUS-SATURATION-LANE.md"
+adr = "docs/decisions/2026-06-01-saturation-campaign.adoc"
+handover = "docs/handover/PROVER-CORPUS-SATURATION-LANE.adoc"
 commits = [
   "f73ee00", "46a7408", "6019860", "3828056", "d05dfff",
   "4a0b068", "c61140c", "85c1b8c", "cb8caff",

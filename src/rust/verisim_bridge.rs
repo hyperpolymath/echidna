@@ -25,7 +25,7 @@
 //! The 12-entity / 7-relationship data model this bridge implements is
 //! now formally specified at:
 //!
-//! - **Schema doc**: `docs/architecture/VERISIM-ER-SCHEMA.md`
+//! - **Schema doc**: `docs/architecture/VERISIM-ER-SCHEMA.adoc`
 //! - **Cap'n Proto wire format**: `crates/echidna-wire/schemas/verisim_er.capnp`
 //! - **Crosswalk**: each Rust struct here ↔ Cap'n Proto struct ↔
 //!   ClickHouse table is enumerated in the schema doc.

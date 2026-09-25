@@ -42,7 +42,7 @@ scope   = "src/rust/core.rs + src/rust/verification/* + src/rust/dispatch.rs"
 
 # ─── 1. Term ──────────────────────────────────────────────────────────────────
 # Universal mathematical term representation shared across every prover backend
-# (see docs/PROVER_COUNT.md for the canonical count and its semantics).
+# (see docs/PROVER_COUNT.adoc for the canonical count and its semantics).
 # An ADT with 15 variants; self-referential via boxed children.
 #
 # No explicit integer PK — terms are compared structurally (PartialEq) or

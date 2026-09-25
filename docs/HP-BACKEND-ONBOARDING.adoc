@@ -6,7 +6,7 @@ KatagoriaVerifier, TropicalTypeChecker, EchoTypeChecker, …) all followed
 this same pattern.
 
 For background on what already exists, see
-`+docs/handover/B7-AUDIT-CORRECTION.md+`.
+`+docs/handover/B7-AUDIT-CORRECTION.adoc+`.
 
 === Where the wiring lives
 

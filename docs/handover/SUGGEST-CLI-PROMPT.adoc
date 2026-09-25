@@ -13,7 +13,7 @@ substitutions close the goal.
 This is the §4.1 / §4.3 pair from
 `+~/Desktop/ECHIDNA-NOTES-2026-04-27.md+`.
 
-*Master plan*: `+docs/ROADMAP.md+` row 4 ("`Every important solver`" →
+*Master plan*: `+docs/ROADMAP.adoc+` row 4 ("`Every important solver`" →
 end-state target: real `+suggest_tactics+` for every backend).
 
 *Prerequisite*: synonym tables seeded at
@@ -380,7 +380,7 @@ needs more entries.
 
 === Tracking
 
-* This prompt: `+docs/handover/SUGGEST-CLI-PROMPT.md+`
+* This prompt: `+docs/handover/SUGGEST-CLI-PROMPT.adoc+`
 * Synonym tables: `+data/synonyms/{isabelle,coq,lean4}.toml+` (committed
 2026-04-27, 27 entries)
 * Headline notes: `+~/Desktop/ECHIDNA-NOTES-2026-04-27.md+` §4.1, §4.2,

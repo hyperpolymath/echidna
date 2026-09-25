@@ -82,13 +82,13 @@ and `+default_executable()+`. There is no documented onboarding flow.
 
 === What this PR delivers
 
-* This correction memo (`+docs/handover/B7-AUDIT-CORRECTION.md+`).
+* This correction memo (`+docs/handover/B7-AUDIT-CORRECTION.adoc+`).
 * Three smoke fixtures (`+tests/fixtures/hp/+`):
 ** `+echo_trivial.tll+` — discipline `+echo+`, single identity goal.
 ** `+tropical_trivial.tll+` — discipline `+tropical+`, resource-aware
 identity.
 ** `+katagoria_trivial.k+` — discipline `+verify+`, single isomorphism.
-* A short onboarding doc (`+docs/HP-BACKEND-ONBOARDING.md+`) listing the
+* A short onboarding doc (`+docs/HP-BACKEND-ONBOARDING.adoc+`) listing the
 ~4 files an author must touch to add a new HP discipline, with line
 references.
 
@@ -105,9 +105,9 @@ deferred — audit item F26).
 
 === Cross-references
 
-* `+docs/handover/TODO.md+` P4 — Wave-4 + HP ecosystem expansion (now
+* `+docs/handover/TODO.adoc+` P4 — Wave-4 + HP ecosystem expansion (now
 partially superseded for the HP rows).
-* `+docs/PROVER_COUNT.md+` Tier-8 — canonical 41-variant inventory.
+* `+docs/PROVER_COUNT.adoc+` Tier-8 — canonical 41-variant inventory.
 * C12 PR (echidnabot manifest) — per-repo opt-in shape that consumers
 using these backends will adopt.
 * D18 PR (L3 gate checklist) — packaging the upstream binaries is one of

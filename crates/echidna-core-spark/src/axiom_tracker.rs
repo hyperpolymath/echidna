@@ -9,7 +9,7 @@
 //!
 //! | ID | Property | Source |
 //! |---|---|---|
-//! | **PO-A1** | `DangerLevel` total order: `Safe < Noted < Warning < Reject` | §M2 of SPARK_ADOPTION_PLAN.md |
+//! | **PO-A1** | `DangerLevel` total order: `Safe < Noted < Warning < Reject` | §M2 of SPARK_ADOPTION_PLAN.adoc |
 //! | **PO-A2** | Monotonicity of `classify_axiom`: adding more dangerous patterns can only keep or raise the result | §M2 |
 //! | **PO-A3** | Cap at Reject: `max(Reject, x) == Reject` for all `x` | §M2 |
 //! | **PO-A4** | `enforce_policy` is non-decreasing with number of Reject-level usages | §M2 |

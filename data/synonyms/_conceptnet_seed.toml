@@ -27,7 +27,7 @@
 # fragment (e.g. `theorem` for `/c/en/theorem`).
 #
 # Refresh policy: re-run `tools/conceptnet/refresh.sh` (TODO — see
-# docs/CORPUS-ADAPTERS.md) when ConceptNet ships a major version.
+# docs/CORPUS-ADAPTERS.adoc) when ConceptNet ships a major version.
 
 # ============================================================
 # Core proof concepts
