@@ -592,7 +592,7 @@ mod tests {
     // declarations (no `{}` block) don't terminate the brace-balanced body
     // collector cleanly, so `NativeCall` isn't extracted. Track upstream
     // alongside the broader heuristic-vs-parser tradeoffs documented in
-    // docs/CORPUS-ADAPTERS.md.
+    // docs/CORPUS-ADAPTERS.adoc.
     #[test]
     #[ignore]
     fn detects_datatype_and_extern() {

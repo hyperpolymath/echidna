@@ -1020,7 +1020,7 @@ here so the work has clear targets when picked up.
 """
 
 [migration-roadmap.affinescript-to-affinescript]
-status = "in-progress (per docs/ROADMAP.md), 30 files outstanding"
+status = "in-progress (per docs/ROADMAP.adoc), 30 files outstanding"
 inventory = """
 echidna/src/affinescript/ — 30 .res files split between:
   src/affinescript/src/                 — 10 production files (Main, Server,
@@ -1031,7 +1031,7 @@ echidna/src/affinescript/ — 30 .res files split between:
   src/affinescript/lib/ocaml/           — 10 generated/compiled mirrors
   + 10 ancillary
 """
-target = "AffineScript-TEA per docs/ROADMAP.md (compiled to typed-wasm, served via Deno)"
+target = "AffineScript-TEA per docs/ROADMAP.adoc (compiled to typed-wasm, served via Deno)"
 prereqs = """
 - AffineScript compiler stable enough to handle React-equivalent component
   primitives (rsr-template-repo/affinescript/ has working examples but the
@@ -1133,7 +1133,7 @@ run-url = "UNKNOWN — inspect manually: https://github.com/hyperpolymath/echidn
 jobs-green = "UNKNOWN"
 jobs-red = "UNKNOWN"
 wave-1-status = "UNKNOWN — run data inaccessible; Wave-1 is every-PR so also runs on push to main"
-wave-2-status = "UNKNOWN — run data inaccessible; CI-unverified per P0 row in docs/handover/TODO.md"
+wave-2-status = "UNKNOWN — run data inaccessible; CI-unverified per P0 row in docs/handover/TODO.adoc"
 issues-opened = []
 triage-result = "BLOCKED"
 blockers = [
@@ -1385,14 +1385,14 @@ exchange_bridges_list = [
 ]
 
 er_schema_status = "formalised"
-er_schema_doc_path = "docs/architecture/VERISIM-ER-SCHEMA.md"
+er_schema_doc_path = "docs/architecture/VERISIM-ER-SCHEMA.adoc"
 er_schema_capnp_path = "crates/echidna-wire/schemas/verisim_er.capnp"
 
 [saturation-campaign]
 date = "2026-06-01"
 branch = "prover-corpus-saturation"
 status = "complete"
-adr = "docs/decisions/2026-06-01-saturation-campaign.md"
+adr = "docs/decisions/2026-06-01-saturation-campaign.adoc"
 handover = "docs/handover/PROVER-CORPUS-SATURATION-LANE.md"
 commits = [
   "f73ee00", "46a7408", "6019860", "3828056", "d05dfff",

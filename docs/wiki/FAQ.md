@@ -8,7 +8,7 @@ There is no single number, and that is the honest answer rather than a dodge:
 the tree contains **141 `ProverKind` variants** across **105 backend
 implementation files**, of which **102** provide `suggest_tactics`. Which figure
 is "the" count depends on what you are counting.
-[`docs/PROVER_COUNT.md`](https://github.com/hyperpolymath/echidna/blob/main/docs/PROVER_COUNT.md)
+[`docs/PROVER_COUNT.adoc`](https://github.com/hyperpolymath/echidna/blob/main/docs/PROVER_COUNT.adoc)
 is canonical and ships the commands that reproduce each one.
 
 **12 core** backends are exposed by the default REST API, mirroring
@@ -16,7 +16,7 @@ is canonical and ships the commands that reproduce each one.
 HOL Light, Mizar, PVS, ACL2, HOL4. Everything else is reachable via explicit
 `ProverKind` selection in CLI / REPL / GraphQL.
 
-The full tier table lives in [`docs/PROVER_COUNT.md`](https://github.com/hyperpolymath/echidna/blob/main/docs/PROVER_COUNT.md).
+The full tier table lives in [`docs/PROVER_COUNT.adoc`](https://github.com/hyperpolymath/echidna/blob/main/docs/PROVER_COUNT.adoc).
 
 ## Are proofs sandboxed?
 
@@ -34,7 +34,7 @@ Yes. Implement the `ProverBackend` trait in `src/rust/provers/your_prover.rs`, a
 
 Julia sidecar (port 8090). A GNN ranks premises; a logistic regression head suggests tactics. Both can be retrained from accumulated proof outcomes stored in VeriSimDB. The architecture is "ML suggests; provers verify" — a wrong suggestion costs a CPU cycle, not soundness.
 
-See [`docs/ARCHITECTURE.md`](https://github.com/hyperpolymath/echidna/blob/main/docs/ARCHITECTURE.md) for the data flow.
+See [`docs/ARCHITECTURE.adoc`](https://github.com/hyperpolymath/echidna/blob/main/docs/ARCHITECTURE.adoc) for the data flow.
 
 ## Is the wiki authoritative?
 
@@ -43,7 +43,7 @@ No. **The repo wins** when the wiki and the in-repo docs disagree. The wiki is a
 Canonical sources of truth:
 - [`CLAUDE.md`](https://github.com/hyperpolymath/echidna/blob/main/CLAUDE.md) for codebase orientation
 - [`.machine_readable/descriptiles/STATE.a2ml`](https://github.com/hyperpolymath/echidna/blob/main/.machine_readable/descriptiles/STATE.a2ml) for current state
-- [`docs/ROADMAP.md`](https://github.com/hyperpolymath/echidna/blob/main/docs/ROADMAP.md) for direction
+- [`docs/ROADMAP.adoc`](https://github.com/hyperpolymath/echidna/blob/main/docs/ROADMAP.adoc) for direction
 
 ## What licence is ECHIDNA under?
 
@@ -97,7 +97,7 @@ agda, coq, lean, idris2, isabelle, metamath, mizar, hol_light, hol4, dafny, why3
 
 The first four shipped pre-2026-04; the other 13 landed in the saturation campaign. Each adapter is `pub fn ingest(root: &Path) -> Result<Corpus>` and surfaces hazard flags (`postulate`, `believe_me`, `sorry`, `cheat`, `Admitted`, …) via `AxiomUsage`.
 
-Full table with file extensions, upstream source URLs, and hazard flags: [`docs/CORPUS-ADAPTERS.md`](https://github.com/hyperpolymath/echidna/blob/main/docs/CORPUS-ADAPTERS.md).
+Full table with file extensions, upstream source URLs, and hazard flags: [`docs/CORPUS-ADAPTERS.adoc`](https://github.com/hyperpolymath/echidna/blob/main/docs/CORPUS-ADAPTERS.adoc).
 
 ## What's the difference between the four arbitration mechanisms?
 
@@ -131,7 +131,7 @@ A full bridge would require the upstream SMTCoq binary on `PATH` and would repla
 
 Two complementary surfaces:
 
-- [`docs/architecture/VERISIM-ER-SCHEMA.md`](https://github.com/hyperpolymath/echidna/blob/main/docs/architecture/VERISIM-ER-SCHEMA.md) — the formal entity-relationship schema for the VeriSim shared-state model (entities, relations, cardinalities, invariants).
+- [`docs/architecture/VERISIM-ER-SCHEMA.adoc`](https://github.com/hyperpolymath/echidna/blob/main/docs/architecture/VERISIM-ER-SCHEMA.adoc) — the formal entity-relationship schema for the VeriSim shared-state model (entities, relations, cardinalities, invariants).
 - [`crates/echidna-wire/schemas/verisim_er.capnp`](https://github.com/hyperpolymath/echidna/blob/main/crates/echidna-wire/schemas/verisim_er.capnp) — the Cap'n Proto wire schema that implements it.
 
 The 8-modality octad emission layer (`src/rust/corpus/octad.rs`) is the load-bearing producer; any corpus from any adapter can emit octads conforming to this schema.

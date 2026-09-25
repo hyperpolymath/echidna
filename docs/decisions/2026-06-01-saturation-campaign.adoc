@@ -9,7 +9,7 @@ Jonathan D.A. Jewell (executed by Claude Opus 4.7).
 
 ECHIDNA had reached *128 ProverKind variants with 91/91 real
 `+suggest_tactics+`* and *GNN-augment wiring across every backend* (see
-`+docs/PROVER_COUNT.md+`). The owner directive was to push the remaining
+`+docs/PROVER_COUNT.adoc+`). The owner directive was to push the remaining
 levers — corpora, vocabulary, synonyms, arbitration, verisim wiring — to
 the marginal-benefit limit while a sibling session worked on chapel
 bench + telemetry (`+wave3/161-162+`).
@@ -85,7 +85,7 @@ detection (`+HighConflict+` at k > 0.95).
 ** Round-trip parse/emit + bidirectional translations where the
 semantics overlap (TPTP↔SMT-LIB for first-order, Dedukti↔Lambdapi for
 proof rewriting).
-* *Formal E-R schema* at `+docs/architecture/VERISIM-ER-SCHEMA.md+`:
+* *Formal E-R schema* at `+docs/architecture/VERISIM-ER-SCHEMA.adoc+`:
 ** 12 entities + 7 relationships fully specified.
 ** Crosswalk Rust struct ↔ Cap’n Proto schema ↔ ClickHouse table.
 ** Drift-detection plan (SHA of schema + .capnp) tracked for CI gate.
@@ -165,14 +165,14 @@ network access.
 
 === Follow-ups
 
-Tracked in `+docs/CORPUS-ADAPTERS.md+` "`Open backlog`" section and in
+Tracked in `+docs/CORPUS-ADAPTERS.adoc+` "`Open backlog`" section and in
 the E-R schema "`Open migrations`" section. Highest priority: produce
 `+crates/echidna-wire/schemas/verisim_er.capnp+` matching the new doc.
 
 === References
 
 * Handover: `+docs/handover/PROVER-CORPUS-SATURATION-LANE.md+`
-* E-R schema: `+docs/architecture/VERISIM-ER-SCHEMA.md+`
-* Corpus index: `+docs/CORPUS-ADAPTERS.md+`
-* Prover count source of truth: `+docs/PROVER_COUNT.md+`
+* E-R schema: `+docs/architecture/VERISIM-ER-SCHEMA.adoc+`
+* Corpus index: `+docs/CORPUS-ADAPTERS.adoc+`
+* Prover count source of truth: `+docs/PROVER_COUNT.adoc+`
 * Sibling branch: `+wave3/161-162-bench-telemetry-corpus+`

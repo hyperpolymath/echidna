@@ -53,9 +53,9 @@ vulnerabilities.
 For high-level direction the canonical surfaces are:
 
 * link:README.adoc[`README.adoc`] — overview, distinguishing features
-* link:docs/ROADMAP.md[`docs/ROADMAP.md`] — stage map + sprint plan
-* link:CHANGELOG.md[`CHANGELOG.md`] — release history
-* link:docs/PROVER_COUNT.md[`docs/PROVER_COUNT.md`] — canonical
+* link:docs/ROADMAP.adoc[`docs/ROADMAP.adoc`] — stage map + sprint plan
+* link:CHANGELOG.adoc[`CHANGELOG.adoc`] — release history
+* link:docs/PROVER_COUNT.adoc[`docs/PROVER_COUNT.adoc`] — canonical
   backend tier table
 * link:RSR_COMPLIANCE.adoc[`RSR_COMPLIANCE.adoc`] — hard-rule
   compliance and out-of-template adaptations

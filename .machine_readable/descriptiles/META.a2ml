@@ -34,7 +34,7 @@ rest = 8000
 
 # ─────────────────────────────────────────────────────────────────────────────
 # Saturation campaign 2026-06-01 — additive surface declaration
-# Branch: prover-corpus-saturation. ADR: docs/decisions/2026-06-01-saturation-campaign.md
+# Branch: prover-corpus-saturation. ADR: docs/decisions/2026-06-01-saturation-campaign.adoc
 # ─────────────────────────────────────────────────────────────────────────────
 
 [saturation-campaign]
@@ -86,9 +86,9 @@ synonyms = [
 
 [saturation-campaign.new-docs]
 docs = [
-  "docs/architecture/VERISIM-ER-SCHEMA.md",
-  "docs/CORPUS-ADAPTERS.md",
-  "docs/decisions/2026-06-01-saturation-campaign.md",
+  "docs/architecture/VERISIM-ER-SCHEMA.adoc",
+  "docs/CORPUS-ADAPTERS.adoc",
+  "docs/decisions/2026-06-01-saturation-campaign.adoc",
   "docs/handover/PROVER-CORPUS-SATURATION-LANE.md",
 ]
 

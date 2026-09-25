@@ -53,7 +53,7 @@ Tier 9 is verified by command `+D+`. The remaining per-tier figures
 hand-maintained and have not been re-measured — treat them as
 indicative. Making tier membership derivable from the code (an attribute
 on each variant) is tracked as documentation debt in
-link:DEBT.md[`+docs/DEBT.md+`].
+link:DEBT.adoc[`+docs/DEBT.adoc+`].
 ____
 
 [width="100%",cols="25%,25%,25%,25%",options="header",]
@@ -81,7 +81,7 @@ Petri-net checkers, modal-logic provers, real-algebraic provers
 |*4 — placeholder* |Smoke only |19 backends present as `+ProverKind+`
 variants but with mock-only invocation. |Promote when upstream
 maintainer ships a Containerfile. See
-link:handover/TODO.md[`+handover/TODO.md+`] P4.
+link:handover/TODO.adoc[`+handover/TODO.adoc+`] P4.
 
 |*5 — Wave-3 secured* |Every PR |Tamarin, ProVerif, Metamath
 (rust-native), Twelf, OR-Tools |All ✅ real, runtime-smoke verified,
@@ -187,7 +187,7 @@ the same PR.
 
 === When to cite this file
 
-Cite `+docs/PROVER_COUNT.md+` (not a number) in: - the `+README.md+`
+Cite `+docs/PROVER_COUNT.adoc+` (not a number) in: - the `+README.md+`
 tagline and the repository description - `+CLAUDE.md+` project overview
 - any new design doc - PR descriptions referring to "`all backends`" -
 issue templates

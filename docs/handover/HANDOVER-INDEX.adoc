@@ -23,7 +23,7 @@ Cap’n Proto IPC |L3 hand-off green ≥ 7 days |~2 sprints
 L2.2+ (speculative search, corpus-parallel, multi-locale) |L1 landed |~4
 sprints
 
-|link:L3-LIVE-PROVER-CI-PROMPT.md[`+L3-LIVE-PROVER-CI-PROMPT.md+`]
+|link:L3-LIVE-PROVER-CI-PROMPT.adoc[`+L3-LIVE-PROVER-CI-PROMPT.adoc+`]
 |Stage 5d — Tier-4 live-CI provisioning |Tier-1 main CI green ≥ 7 days
 |~1 sprint
 
@@ -43,7 +43,7 @@ implementation |None |~3 days
 |VeriSim learning-loop end-to-end test (`+just test-s4-loop+`) and
 operational verification
 
-|link:S5-VERIFICATION-RUNBOOK.md[`+S5-VERIFICATION-RUNBOOK.md+`]
+|link:S5-VERIFICATION-RUNBOOK.adoc[`+S5-VERIFICATION-RUNBOOK.adoc+`]
 |Trained-GNN-weights verification flow: `+just train-cpu+` →
 `+/gnn/health+` → `+just eval+`
 |===
@@ -74,7 +74,7 @@ filter contains the damage; this is hygiene.
 [width="100%",cols="50%,50%",options="header",]
 |===
 |File |What it is
-|link:TODO.md[`+TODO.md+`] |Living backlog. Single source of truth for
+|link:TODO.adoc[`+TODO.adoc+`] |Living backlog. Single source of truth for
 "`what’s next`" between sprints. P0–P4 priority bands.
 
 |link:STATE.md[`+STATE.md+`] |Running human-readable state log.
@@ -100,7 +100,7 @@ end-users
 
 [arabic]
 . Read `+STATE.md+` (or `+STATE.a2ml+`) for the current sprint state.
-. Read `+TODO.md+` for the prioritised backlog.
+. Read `+TODO.adoc+` for the prioritised backlog.
 . Pick the next-up prompt from "`Active prompts`" whose pre-condition is
 met.
 . Execute the prompt; cite this index in commits if you reorder
@@ -111,13 +111,13 @@ ones.
 
 === Stage cross-reference
 
-Maps `+docs/ROADMAP.md+` stage IDs to the handover artefact that drives
+Maps `+docs/ROADMAP.adoc+` stage IDs to the handover artefact that drives
 each:
 
 [width="100%",cols="34%,33%,33%",options="header",]
 |===
 |Stage |Drives |Artefact
-|2a/2c |GNN training + eval |`+S5-VERIFICATION-RUNBOOK.md+`
+|2a/2c |GNN training + eval |`+S5-VERIFICATION-RUNBOOK.adoc+`
 
 |3a/3b |Verisim read paths |`+S4-LOOP-CLOSURE-RUNBOOK.md+` (done)
 
@@ -130,7 +130,7 @@ dedicated handover yet — to be written when work begins)
 
 |5b |Chapel L2.2+ |`+L2-CHAPEL-PROMPT.md+`
 
-|5d |Tier-4 live CI |`+L3-LIVE-PROVER-CI-PROMPT.md+`
+|5d |Tier-4 live CI |`+L3-LIVE-PROVER-CI-PROMPT.adoc+`
 |===
 
 === When this index goes stale
@@ -138,7 +138,7 @@ dedicated handover yet — to be written when work begins)
 Update conditions: - A prompt is completed → move it to a `+archive/+`
 subdirectory or delete and note in this file. - A new prompt is added →
 add a row to the appropriate section. - A stage status changes in
-`+docs/ROADMAP.md+` → update the cross-reference table.
+`+docs/ROADMAP.adoc+` → update the cross-reference table.
 
 Quick check: `+ls docs/handover/*.md | wc -l+` should match the number
 of rows across all tables above. As of 2026-05-26, this file accounts

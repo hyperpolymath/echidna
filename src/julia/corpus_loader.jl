@@ -27,7 +27,7 @@ fields: `root`, `adapter`, `modules`, `entries`, `by_name`,
 `qualified`, `module_idx`, `kind`, `statement`, `proof`, `line`,
 `dependencies`, `axiom_usage` (a `HazardTags` struct).
 
-See `docs/decisions/2026-06-01-saturation-campaign.md` for the
+See `docs/decisions/2026-06-01-saturation-campaign.adoc` for the
 campaign that produced these adapters and the rationale for this
 ingestion shim.
 """
@@ -462,7 +462,7 @@ parses them back out into Julia symbols.
 
 The returned vector is in the order the Rust detector pushed them
 (decreasing detection-score). See
-`docs/architecture/TYPE-DISCIPLINE-EMBEDDING.md` for the canonical
+`docs/architecture/TYPE-DISCIPLINE-EMBEDDING.adoc` for the canonical
 42-discipline taxonomy and the per-marker confidence rubric.
 
 # Examples

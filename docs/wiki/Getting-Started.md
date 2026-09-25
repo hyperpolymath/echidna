@@ -62,7 +62,7 @@ v1.7.3, and Idris2 0.8.0.
 ## Install prover backends
 
 The 12 core (Tier 1) backends need their binaries on PATH. See
-[`docs/PROVER_COUNT.md`](https://github.com/hyperpolymath/echidna/blob/main/docs/PROVER_COUNT.md)
+[`docs/PROVER_COUNT.adoc`](https://github.com/hyperpolymath/echidna/blob/main/docs/PROVER_COUNT.adoc)
 for the tier table. The Guix manifest at `manifests/live-provers.scm` covers
 the bulk; the sealed container at `.containerization/Containerfile.wave3`
 covers the non-free / not-in-Guix tail.
@@ -89,7 +89,7 @@ just train
 just eval
 ```
 
-See [`docs/handover/S5-VERIFICATION-RUNBOOK.md`](https://github.com/hyperpolymath/echidna/blob/main/docs/handover/S5-VERIFICATION-RUNBOOK.md)
+See [`docs/handover/S5-VERIFICATION-RUNBOOK.adoc`](https://github.com/hyperpolymath/echidna/blob/main/docs/handover/S5-VERIFICATION-RUNBOOK.adoc)
 for the end-to-end verification flow.
 
 ## Ingest a corpus
@@ -118,7 +118,7 @@ The entry types (`src/rust/corpus/mod.rs`):
 - [`AxiomUsage`](https://github.com/hyperpolymath/echidna/blob/main/src/rust/corpus/mod.rs#L92) — boolean flags for `postulate`, `believe_me`, `assert_total`, `admitted`, `sorry`, `trustme`, plus `other: Vec<String>` for free-form hazards. `AxiomUsage::any()` is true if anything fired.
 - [`CorpusEntry`](https://github.com/hyperpolymath/echidna/blob/main/src/rust/corpus/mod.rs#L132) — one per top-level decl: `name`, `qualified`, `module_idx`, `kind`, `statement`, `proof: Option<String>`, `line`, `dependencies: Vec<String>`, `axiom_usage`.
 
-Full adapter table: [`docs/CORPUS-ADAPTERS.md`](https://github.com/hyperpolymath/echidna/blob/main/docs/CORPUS-ADAPTERS.md).
+Full adapter table: [`docs/CORPUS-ADAPTERS.adoc`](https://github.com/hyperpolymath/echidna/blob/main/docs/CORPUS-ADAPTERS.adoc).
 
 ## Cross-prover synonym lookup
 
@@ -194,4 +194,4 @@ Coq's default likelihood is calibrated higher than Z3's, so the posterior leans 
 
 - [Guides](Guides) — adding a backend, API usage, training the model
 - [Architecture](Architecture) — how the pieces fit
-- [`docs/ROADMAP.md`](https://github.com/hyperpolymath/echidna/blob/main/docs/ROADMAP.md) — what's being built next
+- [`docs/ROADMAP.adoc`](https://github.com/hyperpolymath/echidna/blob/main/docs/ROADMAP.adoc) — what's being built next

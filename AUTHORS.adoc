@@ -45,7 +45,7 @@ We recognise all forms of contribution including but not limited to:
 maintenance of the backends ECHIDNA integrates with (Coq/Rocq, Lean,
 Agda, Isabelle, Idris2, F*, HOL Light, Mizar, PVS, ACL2, HOL4, Z3, CVC5,
 Vampire, E Prover, and the long tail in
-link:docs/PROVER_COUNT.md[`+docs/PROVER_COUNT.md+`]).
+link:docs/PROVER_COUNT.adoc[`+docs/PROVER_COUNT.adoc+`]).
 * *The Rhodium Standard Repository (RSR/CCCP)* — for the compliance
 template that this repo extends; see
 link:RSR_COMPLIANCE.adoc[`+RSR_COMPLIANCE.adoc+`].

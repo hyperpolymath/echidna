@@ -200,9 +200,9 @@ The integration is deferred, not abandoned. This doc IS the spec.
 === Cross-references
 
 * E-R schema (consumed by Hook C):
-`+docs/architecture/VERISIM-ER-SCHEMA.md+`
-* Corpus adapters (consumed by Hook A): `+docs/CORPUS-ADAPTERS.md+`
-* Saturation ADR: `+docs/decisions/2026-06-01-saturation-campaign.md+`
+`+docs/architecture/VERISIM-ER-SCHEMA.adoc+`
+* Corpus adapters (consumed by Hook A): `+docs/CORPUS-ADAPTERS.adoc+`
+* Saturation ADR: `+docs/decisions/2026-06-01-saturation-campaign.adoc+`
 * Handover (collision-avoidance contract):
 `+docs/handover/PROVER-CORPUS-SATURATION-LANE.md+`
 * Existing chapel rehabilitation ADR:

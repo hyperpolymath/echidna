@@ -16,7 +16,7 @@
 //! the four enums share an identical variant set, so cross-bridge
 //! interop just needs a small `From` impl wherever a downstream call
 //! converts between them. See
-//! `docs/decisions/2026-06-01-saturation-campaign.md`.
+//! `docs/decisions/2026-06-01-saturation-campaign.adoc`.
 
 pub mod dedukti;
 pub mod lambdapi;

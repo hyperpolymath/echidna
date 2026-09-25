@@ -15,7 +15,7 @@ full-name = "Extensible Cognitive Hybrid Intelligence for Deductive Neural Assis
 purpose = """Trust-hardened neurosymbolic theorem proving platform. 141 ProverKind
 variants across 105 backend implementations, 12 exposed by default at GET /api/provers
 (Agda, Coq, Lean 4, Isabelle/HOL, Z3, CVC5, Metamath, HOL Light, Mizar, PVS, ACL2, HOL4);
-canonical tier table and count semantics in docs/PROVER_COUNT.md. Sandboxed solver
+canonical tier table and count semantics in docs/PROVER_COUNT.adoc. Sandboxed solver
 execution (Podman/bubblewrap), proof certificate checking, axiom tracking, GNN-guided
 proof search, Julia ML inference layer."""
 role = "prover-dispatcher"
@@ -47,7 +47,7 @@ cold-start-note = "Isabelle Main heap ~1-2GB maps at first use; Julia JIT runs o
 
 # ─────────────────────────────────────────────────────────────────────────────
 # Saturation campaign 2026-06-01 — external corpus / vocab / exchange sources
-# Branch: prover-corpus-saturation. ADR: docs/decisions/2026-06-01-saturation-campaign.md
+# Branch: prover-corpus-saturation. ADR: docs/decisions/2026-06-01-saturation-campaign.adoc
 # ─────────────────────────────────────────────────────────────────────────────
 
 [corpus-sources]

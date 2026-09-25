@@ -10,7 +10,7 @@
 4. Add test fixtures under `tests/fixtures/your_prover/`.
 5. If the prover has a binary, add the SHAKE3-512 + BLAKE3 hashes to `config/solver-manifest.toml`.
 6. If the prover should ship with the project, add it to `manifests/live-provers.scm` (Guix) or to `.containerization/Containerfile.wave3` (sealed container).
-7. Update [`docs/PROVER_COUNT.md`](https://github.com/hyperpolymath/echidna/blob/main/docs/PROVER_COUNT.md) with the new tier assignment.
+7. Update [`docs/PROVER_COUNT.adoc`](https://github.com/hyperpolymath/echidna/blob/main/docs/PROVER_COUNT.adoc) with the new tier assignment.
 8. Run `just check && just test`.
 
 ## Using the API
@@ -45,7 +45,7 @@ just train
 just eval
 ```
 
-Trained weights land in `models/neural/gnn_ranker/`. The Julia server hot-loads them on startup; a planned `POST /reload` endpoint will allow hot-swap without restart. See [`docs/handover/S5-VERIFICATION-RUNBOOK.md`](https://github.com/hyperpolymath/echidna/blob/main/docs/handover/S5-VERIFICATION-RUNBOOK.md).
+Trained weights land in `models/neural/gnn_ranker/`. The Julia server hot-loads them on startup; a planned `POST /reload` endpoint will allow hot-swap without restart. See [`docs/handover/S5-VERIFICATION-RUNBOOK.adoc`](https://github.com/hyperpolymath/echidna/blob/main/docs/handover/S5-VERIFICATION-RUNBOOK.adoc).
 
 ## Configuring trust thresholds
 
@@ -56,7 +56,7 @@ Trust pipeline parameters live in `DispatchConfig` (`src/rust/dispatch.rs`). Adj
 - `cross_check_required` — minimum portfolio agreement
 - `min_trust_level` — refuse below this Bayesian tier
 
-Per-(prover, domain) timeout estimates come from `StatisticsTracker::estimate_timeout` once the learning loop has accumulated evidence. See [`docs/ARCHITECTURE.md`](https://github.com/hyperpolymath/echidna/blob/main/docs/ARCHITECTURE.md).
+Per-(prover, domain) timeout estimates come from `StatisticsTracker::estimate_timeout` once the learning loop has accumulated evidence. See [`docs/ARCHITECTURE.adoc`](https://github.com/hyperpolymath/echidna/blob/main/docs/ARCHITECTURE.adoc).
 
 ## Working with the learning loop
 
@@ -64,15 +64,15 @@ The loop flows: prover runs → outcome → VeriSimDB `proof_attempts` table →
 
 ## Environment variables
 
-Every env var the system reads is enumerated in [`docs/ENV-VARS.md`](https://github.com/hyperpolymath/echidna/blob/main/docs/ENV-VARS.md).
+Every env var the system reads is enumerated in [`docs/ENV-VARS.adoc`](https://github.com/hyperpolymath/echidna/blob/main/docs/ENV-VARS.adoc).
 
 ## Following the roadmap
 
-[`docs/ROADMAP.md`](https://github.com/hyperpolymath/echidna/blob/main/docs/ROADMAP.md) is the canonical 8-stage map. [`docs/handover/HANDOVER-INDEX.md`](https://github.com/hyperpolymath/echidna/blob/main/docs/handover/HANDOVER-INDEX.md) navigates the prompt-and-runbook suite that drives each stage.
+[`docs/ROADMAP.adoc`](https://github.com/hyperpolymath/echidna/blob/main/docs/ROADMAP.adoc) is the canonical 8-stage map. [`docs/handover/HANDOVER-INDEX.adoc`](https://github.com/hyperpolymath/echidna/blob/main/docs/handover/HANDOVER-INDEX.adoc) navigates the prompt-and-runbook suite that drives each stage.
 
 ## Guide: Adding a new corpus adapter
 
-The 2026-06-01 saturation campaign brought the adapter count to 17. The mechanical pattern is small enough to fit on one page; the criteria for *when* to add one are in [`docs/CORPUS-ADAPTERS.md` § "When to add a new adapter"](https://github.com/hyperpolymath/echidna/blob/main/docs/CORPUS-ADAPTERS.md#when-to-add-a-new-adapter).
+The 2026-06-01 saturation campaign brought the adapter count to 17. The mechanical pattern is small enough to fit on one page; the criteria for *when* to add one are in [`docs/CORPUS-ADAPTERS.adoc` § "When to add a new adapter"](https://github.com/hyperpolymath/echidna/blob/main/docs/CORPUS-ADAPTERS.adoc#when-to-add-a-new-adapter).
 
 1. **Pick a reference adapter.** Read [`src/rust/corpus/agda.rs`](https://github.com/hyperpolymath/echidna/blob/main/src/rust/corpus/agda.rs) for a layout-sensitive language or [`src/rust/corpus/coq.rs`](https://github.com/hyperpolymath/echidna/blob/main/src/rust/corpus/coq.rs) for a keyword-delimited one. Both are heuristic, not full parsers — that's deliberate (see the module-level doc on `src/rust/corpus/mod.rs`).
 2. **Create `src/rust/corpus/<your_adapter>.rs`** exposing `pub fn ingest(root: &Path) -> Result<Corpus>`.
@@ -81,7 +81,7 @@ The 2026-06-01 saturation campaign brought the adapter count to 17. The mechanic
 5. **Register in `src/rust/corpus/mod.rs`.** Add `pub mod your_adapter;` to the module list.
 6. **Add the per-prover synonyms TOML** at `data/synonyms/<your_adapter>.toml` with schema `[[synonym]]` rows (`canonical`, `aliases`, optional `tactic_class`, `semantic_class`). Map the new `ProverKind` variant to its filename in `prover_table_filename` in [`src/rust/suggest/synonyms.rs`](https://github.com/hyperpolymath/echidna/blob/main/src/rust/suggest/synonyms.rs).
 7. **Add a fixture** under `tests/corpus_fixtures/<your_adapter>/` covering one happy-path decl and one hazard case. Keep it tiny — the goal is smoke correctness, not coverage.
-8. **Update [`docs/CORPUS-ADAPTERS.md`](https://github.com/hyperpolymath/echidna/blob/main/docs/CORPUS-ADAPTERS.md)** with the new row in the adapter table.
+8. **Update [`docs/CORPUS-ADAPTERS.adoc`](https://github.com/hyperpolymath/echidna/blob/main/docs/CORPUS-ADAPTERS.adoc)** with the new row in the adapter table.
 
 ## Guide: Picking an arbitration mechanism
 

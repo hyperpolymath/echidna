@@ -18,7 +18,7 @@
 # substring grep cannot distinguish "uses the pattern" from "names the
 # pattern in a detector table", so every entry shows up as a false
 # positive. Same FP class as the `\bbelieve_me\b` Idris2 audit recorded
-# in docs/PROOF-NEEDS.md §"believe_me audit (2026-05-18)".
+# in docs/PROOF-NEEDS.adoc §"believe_me audit (2026-05-18)".
 #
 # These files are the *implementation* of the trust-pipeline's
 # axiom-tracker — they're proof infrastructure, not proof escapes.

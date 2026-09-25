@@ -98,15 +98,15 @@ UNCHANGED.
 
 ==== E-R schema formalization (new files)
 
-* `+docs/architecture/VERISIM-ER-SCHEMA.md+` — formal entity +
+* `+docs/architecture/VERISIM-ER-SCHEMA.adoc+` — formal entity +
 relationship definitions
 * `+crates/echidna-wire/schemas/verisim_er.capnp+` — Cap’n Proto schema
 (if compatible)
 
 ==== Documentation (new files)
 
-* `+docs/decisions/2026-06-01-saturation-campaign.md+` — ADR
-* `+docs/CORPUS-ADAPTERS.md+` — index of all corpus adapters with their
+* `+docs/decisions/2026-06-01-saturation-campaign.adoc+` — ADR
+* `+docs/CORPUS-ADAPTERS.adoc+` — index of all corpus adapters with their
 parsing strategy + canonical source URL
 * `+docs/handover/PROVER-CORPUS-SATURATION-LANE.md+` — this file
 

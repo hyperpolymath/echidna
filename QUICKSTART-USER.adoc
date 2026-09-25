@@ -8,7 +8,7 @@
 Neurosymbolic theorem-proving platform with a trust-hardened
 verification pipeline and sandboxed solver execution. The full
 backend roster — Tier-1 core through Tier-10 — is in
-link:docs/PROVER_COUNT.md[`docs/PROVER_COUNT.md`].
+link:docs/PROVER_COUNT.adoc[`docs/PROVER_COUNT.adoc`].
 
 This guide is for a *user* who wants to verify a proof. For developer
 setup see link:QUICKSTART-DEV.adoc[`QUICKSTART-DEV.adoc`]; for release
@@ -68,7 +68,7 @@ Expected shape (version + timing vary):
     Finished `dev` profile [unoptimized + debuginfo] target(s) in NNs
 ----
 
-The on-disk version lives in `Cargo.toml` and `CHANGELOG.md`; this
+The on-disk version lives in `Cargo.toml` and `CHANGELOG.adoc`; this
 doc deliberately does not pin it.
 
 == Run tests

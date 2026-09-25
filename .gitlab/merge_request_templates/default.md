@@ -58,7 +58,7 @@ Related to #
 - [ ] Self-review of code performed
 - [ ] Comments added for complex logic
 - [ ] Documentation updated (if needed)
-- [ ] CHANGELOG.md updated (if needed)
+- [ ] CHANGELOG.adoc updated (if needed)
 - [ ] No new warnings introduced
 - [ ] SPDX headers added to new files
 - [ ] Follows RSR/CCCP compliance guidelines

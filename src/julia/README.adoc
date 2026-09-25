@@ -536,7 +536,7 @@ The saturation campaign on branch `+prover-corpus-saturation+` added 13
 new Rust corpus adapters (lifting coverage from 4 → 17) plus 9 new
 per-prover synonym TOMLs and 3 cross-prover dictionaries (`+_msc2020+`,
 `+_wordnet_math+`, `+_conceptnet_seed+`). See
-`+docs/decisions/2026-06-01-saturation-campaign.md+` for the full ADR.
+`+docs/decisions/2026-06-01-saturation-campaign.adoc+` for the full ADR.
 
 The campaign added *two new Julia helper modules* to bridge that new
 Rust surface area into the existing GNN training pipeline, without

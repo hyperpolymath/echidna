@@ -22,7 +22,7 @@
 //! saturation-campaign 2026-06-01 additions: `isabelle`, `metamath`,
 //! `mizar`, `hol_light`, `hol4`, `dafny`, `why3`, `fstar`,
 //! `acl2_books`, `tptp`, `smtlib`, `proofnet`, `minif2f`. **17 total
-//! adapters**. See `docs/CORPUS-ADAPTERS.md` for the canonical index,
+//! adapters**. See `docs/CORPUS-ADAPTERS.adoc` for the canonical index,
 //! per-adapter hazard inventory, and source URLs.
 //!
 //! ## Design
@@ -262,7 +262,7 @@ impl Corpus {
     /// any prior `"discipline:..."` entry is stripped first. Storing
     /// tags in `other` (rather than a new struct field) preserves
     /// serde back-compat with pre-2026-06 corpus JSON. See
-    /// `docs/architecture/TYPE-DISCIPLINE-EMBEDDING.md`.
+    /// `docs/architecture/TYPE-DISCIPLINE-EMBEDDING.adoc`.
     pub fn reindex(&mut self) {
         self.by_name.clear();
         self.by_qualified.clear();

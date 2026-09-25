@@ -12,7 +12,7 @@ The following files in `.machine_readable/` contain structured project metadata:
 
 ## Canonical Roadmap
 
-See [`docs/ROADMAP.md`](../docs/ROADMAP.md) for the single source of truth on
+See [`docs/ROADMAP.adoc`](../docs/ROADMAP.adoc) for the single source of truth on
 where ECHIDNA is going: the 8‑stage map, row‑by‑row endpoint targets,
 current sprint (S1–S5), and agent‑tier guidance.  Record decisions
 there, not in chat.

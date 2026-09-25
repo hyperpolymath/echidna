@@ -100,7 +100,7 @@ transit; design for that now so L2 doesn’t re-spec.
 
 ==== Resolved decisions
 
-* *Julia transport (was: "``+CapnProto.jl+` vs Zig C-ABI shim`", TODO.md
+* *Julia transport (was: "``+CapnProto.jl+` vs Zig C-ABI shim`", TODO.adoc
 open Q#2)* — *RATIFIED 2026-05-18: Zig C-ABI shim, buffer-oriented.*
 Estate-canonical (FFI=Zig; one codec shared with Rust; Zig = the
 interface-safety transaction layer). `+CapnProto.jl+` rejected (low

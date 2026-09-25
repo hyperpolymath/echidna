@@ -11,7 +11,7 @@ pipeline.
 
 * *Prover portfolio*: Coq, Lean 4, Isabelle/HOL, Z3, CVC5, Agda, Idris2,
 and many more — see the canonical tier table in the repository’s
-`+docs/PROVER_COUNT.md+`
+`+docs/PROVER_COUNT.adoc+`
 * *Trust pipeline*: solver integrity, proof certificates, axiom
 tracking, confidence scoring
 * *API interfaces*: REST (OpenAPI), GraphQL, gRPC

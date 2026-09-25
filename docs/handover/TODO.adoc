@@ -36,7 +36,7 @@ across term/trust/danger/pareto modules (`+99198b0+`).
 (proof_state JSON deserialization, trust pipeline, axiom tracker)
 replacing stub (`+46453c4+`).
 * ✅ *Stage 8a — Idris2 trust-kernel proofs* — TrustKernelMonotonicity,
-AxiomPolicyOrdering, ClampTrustBounds; zero believe_me; PROOF-NEEDS.md
+AxiomPolicyOrdering, ClampTrustBounds; zero believe_me; PROOF-NEEDS.adoc
 updated (`+1444a30+`).
 * ✅ *Stage 3a/3b — VeriSimDB read paths + dispatch advisor* —
 `+query_by_goal_hash+`, `+query_prover_success_by_class+`,

@@ -32,7 +32,7 @@ owner 1-liner |#216
 |MUST |`+salt/+`/Python rule stale vs standards (no `+salt/+` exists)
 |open · owner doc |#254·1
 
-|MUST |Prover-count drift (48/105/113/128 vs `+PROVER_COUNT.md+`) |open
+|MUST |Prover-count drift (48/105/113/128 vs `+PROVER_COUNT.adoc+`) |open
 · owner (R5a) |#251
 
 |INTEND |`+--features verisim+` 22 compile errors |open |#245
@@ -54,7 +54,7 @@ migration |open |#242, #240, #266
 |WISH |Split Rust/FFI/proof safety alerts by risk class |open |#239
 
 |WISH |GNN-at-scale; Cap’n Proto / Chapel-full / coprocessors; 8-stage
-endpoint |aspirational |`+docs/ROADMAP.md+`
+endpoint |aspirational |`+docs/ROADMAP.adoc+`
 |===
 
 === Status — ECHIDNABOT
@@ -148,4 +148,4 @@ ____
 '''''
 
 _Generated 2026-06-15. Source of truth for status: the linked issues +
-`+CHANGELOG.md+` + git log; this snapshot drifts._
+`+CHANGELOG.adoc+` + git log; this snapshot drifts._

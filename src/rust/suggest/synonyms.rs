@@ -166,7 +166,7 @@ pub struct CrossProverDicts {
     pub conceptnet_seed: SynonymTable,
     /// Type-discipline vocabulary (42 TypeChecker disciplines). See
     /// `data/synonyms/_disciplines.toml` and
-    /// `docs/architecture/TYPE-DISCIPLINE-EMBEDDING.md`. Added 2026-06-01
+    /// `docs/architecture/TYPE-DISCIPLINE-EMBEDDING.adoc`. Added 2026-06-01
     /// as part of the saturation campaign discipline-embedding layer.
     pub disciplines: SynonymTable,
 }

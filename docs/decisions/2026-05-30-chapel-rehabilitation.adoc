@@ -52,7 +52,7 @@ language level rather than burying it in async runtimes, and (b) already
 terminates at the Rust↔Zig↔Chapel triple-boundary that the L1 Cap’n
 Proto plan presupposes. Parking would discard ~650 LOC of staged work
 and would not actually save the work in the long run — the
-parallel-dispatch row in `+docs/ROADMAP.md+` is a stage requirement, not
+parallel-dispatch row in `+docs/ROADMAP.adoc+` is a stage requirement, not
 an accelerator we can drop without re-planning.
 
 The specific commitments inside the rewrite decision:

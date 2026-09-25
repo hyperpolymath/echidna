@@ -132,7 +132,7 @@ This project follows the REUSE Software Licensing specification.
 
 Verify locally: `reuse lint`
 
-Known gaps are recorded in docs/DEBT.md rather than left silent.
+Known gaps are recorded in docs/DEBT.adoc rather than left silent.
 
 ================================================================================
 
@@ -190,4 +190,4 @@ Documentation: docs/ + RSR_COMPLIANCE.adoc + CLAUDE.md
 
 ================================================================================
 
-Version: see CHANGELOG.md
+Version: see CHANGELOG.adoc

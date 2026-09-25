@@ -30,7 +30,7 @@ and is the load-bearing primitive for cross-corpus equivalence in the
 S5 verification gate.
 
 See `data/synonyms/README.adoc` for the TOML schema and
-`docs/decisions/2026-06-01-saturation-campaign.md` for the campaign
+`docs/decisions/2026-06-01-saturation-campaign.adoc` for the campaign
 that grew the row count from ~863 to ~3,400.
 """
 module SaturationSynonyms

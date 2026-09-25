@@ -13,7 +13,7 @@ plain disclosure of what is verified, what is aspirational, and what is
 known-debt as of the date above.
 
 Companion to `RSR_COMPLIANCE.adoc` (hard-rule compliance) and `EXPLAINME.adoc`
-(receipts for README claims). Canonical live state: `CHANGELOG.md` + the git
+(receipts for README claims). Canonical live state: `CHANGELOG.adoc` + the git
 log + open issues.
 
 [NOTE]
@@ -33,7 +33,7 @@ available.
 . *No hidden proof debt.* Known gaps are disclosed under "Known debt" below, not
   buried; where stubs exist they are named.
 . *Stability discipline.* ECHIDNA is *not* affirmed `stable` or `v1.0.0`; the
-  real release line is in `CHANGELOG.md`.
+  real release line is in `CHANGELOG.adoc`.
 . *Critical Reception Grade.* CRG-C is complete (unit + smoke + build + P2P +
   E2E + contract + aspect + benchmarks baselined, per
   `.machine_readable/descriptiles/STATE.a2ml`); CRG-B criteria are populated but B is
@@ -54,7 +54,7 @@ available.
 * ML-at-scale: GNN/Transformer training on the real corpus (scaffolds present,
   weights not trained on real data).
 * Cap'n Proto IPC; full Chapel-parallel dispatch; coprocessor hardware paths.
-* Stages 5–8 of `docs/ROADMAP.md` (distributed, cross-prover semantics,
+* Stages 5–8 of `docs/ROADMAP.adoc` (distributed, cross-prover semantics,
   sovereign tooling, self-verified kernel).
 
 == Known debt (disclosed, not hidden)
@@ -64,7 +64,7 @@ available.
   apt-installable (#250).
 * `src/rust/main.rs` SPDX-FileCopyrightText hook blocks commits to that file
   (#216) — owner-only fix; gates the 13-adapter dispatcher branch.
-* Prover-count drift across surfaces vs `docs/PROVER_COUNT.md` (#251).
+* Prover-count drift across surfaces vs `docs/PROVER_COUNT.adoc` (#251).
 * RSR divergences vs the standards repo: stale `salt/` Python wording, and the
   polyglot language set not yet declared as an out-of-template adaptation
   (#254). The RSR `hooks/` requirement is addressed in the change that

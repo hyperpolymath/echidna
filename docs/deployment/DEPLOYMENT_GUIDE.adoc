@@ -27,7 +27,7 @@ Current documentation:
 |link:../../.machine_readable/deployment.a2ml[`+.machine_readable/deployment.a2ml+`]
 
 |Canonical prover counts
-|link:../PROVER_COUNT.md[`+docs/PROVER_COUNT.md+`]
+|link:../PROVER_COUNT.adoc[`+docs/PROVER_COUNT.adoc+`]
 |===
 
 This stub is kept rather than deleted so existing links do not dead-end.

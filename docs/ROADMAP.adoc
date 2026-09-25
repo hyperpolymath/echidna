@@ -21,7 +21,7 @@ they are infrastructure around the work, not on the critical path.
 
 This document is the single source of truth for where ECHIDNA is going.
 The domain‑specific plans under link:./handover/[`+handover/+`] and
-link:./design/SPARK_ADOPTION_PLAN.md[`+design/SPARK_ADOPTION_PLAN.md+`]
+link:./design/SPARK_ADOPTION_PLAN.adoc[`+design/SPARK_ADOPTION_PLAN.adoc+`]
 are still authoritative for their sub‑areas; they fit _inside_ this
 roadmap as implementations of individual stages.
 
@@ -62,7 +62,7 @@ Stage 1  Train the model at all             ML layer can receive signal
     1a  extractors emit premises            [done 2026‑04‑20, 22 of 50 ✓]
     1b  align_premises joins correctly      [done 2026‑04‑19 ✓]
     1c  residual extractor gaps fixed       [done 2026‑04‑26 ✓ — 50/50 named extractors;
-                                             see handover/TODO.md S1 batches]
+                                             see handover/TODO.adoc S1 batches]
     1d  vocab covers the surface            [255 K; target ~1 M]
 
 Stage 2  Signal becomes useful              MRR moves off 0.66 baseline
@@ -134,7 +134,7 @@ Stage 8  Self‑verified                      ECHIDNA proves ECHIDNA
 |"`Every important solver`" |*128 ProverKind variants* (89 external
 prover bindings + 39 TypeChecker disciplines routed through TypedWasm);
 *91 / 91 with real `+suggest_tactics+`* (5 still heuristic-only;
-GNN-ranked is the end-state target per `+docs/PROVER_COUNT.md+`); *72
+GNN-ranked is the end-state target per `+docs/PROVER_COUNT.adoc+`); *72
 backends with empty native search but a cross-prover Verisim fallback at
 the dispatcher layer (CLI/REST/REPL)* |*All variants with real
 `+suggest_tactics+` (GNN‑ranked top‑k); per-backend search reflects each
@@ -208,7 +208,7 @@ K+`", and start the self‑learning loop closure.
 |# |Stage |Commitment |Agent tier |Status
 |S1 |1c |Finish the extractor premise‑emission wave (22 done; 28
 remaining) |*Sonnet* |*done 2026‑04‑26 ✓* — 50/50 named extractors (3
-batches in `+handover/TODO.md+`: 12 + 20 + 6)
+batches in `+handover/TODO.adoc+`: 12 + 20 + 6)
 
 |S2 |2a / 2c |Run training on the fixed corpus; record new MRR; commit
 `+metrics_baseline.jsonl+` |*Hardware / you* |gated by S1 (S1 ✓; S2
@@ -313,14 +313,14 @@ this document is the source of truth for sequencing.
 — L1/L2/L3 sprint doc. L1 = Stage 5a. L2 = Stage 5b. L3 Wave‑1/2 are
 complete (in Stage 4 surface); Wave‑3 is partially complete in this
 branch (tamarin/proverif/metamath/twelf/ortools); Wave‑4 is Stage 5d.
-* *link:design/SPARK_ADOPTION_PLAN.md[`+docs/design/SPARK_ADOPTION_PLAN.md+`]*
+* *link:design/SPARK_ADOPTION_PLAN.adoc[`+docs/design/SPARK_ADOPTION_PLAN.adoc+`]*
 — design for the SPARK‑verified kernel. Executes Stage 8c.
 * *link:handover/L1-CAPNPROTO-PROMPT.md[`+docs/handover/L1-CAPNPROTO-PROMPT.md+`]*
 — implementation brief for Stage 5a. Use as the Sonnet prompt when S6
 begins.
 * *link:handover/L2-CHAPEL-PROMPT.md[`+docs/handover/L2-CHAPEL-PROMPT.md+`]*
 — implementation brief for Stage 5b.
-* *link:handover/L3-LIVE-PROVER-CI-PROMPT.md[`+docs/handover/L3-LIVE-PROVER-CI-PROMPT.md+`]*
+* *link:handover/L3-LIVE-PROVER-CI-PROMPT.adoc[`+docs/handover/L3-LIVE-PROVER-CI-PROMPT.adoc+`]*
 — implementation brief for Stage 5d.
 * *link:handover/STATE.md[`+docs/handover/STATE.md+`]* and
 *link:../.machine_readable/descriptiles/STATE.a2ml[`+.machine_readable/descriptiles/STATE.a2ml+`]*

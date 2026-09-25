@@ -323,5 +323,5 @@ consumer mid-rebase. All degrade gracefully.
 * C15 PR — hypatia push-fixes wiring (gitbot-fleet).
 * `+docs/architecture/CORRECTNESS-ARCHITECTURE.md+` — the soundness
 invariant the DAG must not violate.
-* `+docs/architecture/VERISIM-ER-SCHEMA.md+` — where ingested edges
+* `+docs/architecture/VERISIM-ER-SCHEMA.adoc+` — where ingested edges
 eventually persist for cross-prover analytics.

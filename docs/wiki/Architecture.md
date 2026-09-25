@@ -3,7 +3,7 @@
 # Architecture
 
 The canonical, current architecture overview lives in the repo at
-[`docs/ARCHITECTURE.md`](https://github.com/hyperpolymath/echidna/blob/main/docs/ARCHITECTURE.md).
+[`docs/ARCHITECTURE.adoc`](https://github.com/hyperpolymath/echidna/blob/main/docs/ARCHITECTURE.adoc).
 This page is a short summary; consult the in-repo doc for the up-to-date
 component map and the 11-step trust pipeline walkthrough.
 
@@ -12,7 +12,7 @@ component map and the 11-step trust pipeline walkthrough.
 ECHIDNA is a polyglot system. The **Rust core** (`src/rust/`, plus extracted
 workspace crates in `crates/`) owns dispatch, the trust pipeline, and the prover
 backend implementations (105 implementation files behind 141 `ProverKind`
-variants — see [`docs/PROVER_COUNT.md`](https://github.com/hyperpolymath/echidna/blob/main/docs/PROVER_COUNT.md)). Four API surfaces (CLI, REPL, REST/GraphQL
+variants — see [`docs/PROVER_COUNT.adoc`](https://github.com/hyperpolymath/echidna/blob/main/docs/PROVER_COUNT.adoc)). Four API surfaces (CLI, REPL, REST/GraphQL
 on port 8000, gRPC on port 50051) hit `ProverDispatcher`, which picks a
 backend, runs the verification under sandboxing (Podman / bubblewrap), and
 walks the proof through the trust pipeline. A **Julia ML sidecar**
@@ -21,7 +21,7 @@ suggestion, and accumulates per-(prover, domain) success-rate weights from
 proof outcomes. **VeriSimDB** (cross-repo) persists `proof_attempts` rows
 and serves `mv_prover_success_by_class` for history-guided routing; the
 on-the-wire data dictionary is the formal E-R schema in
-[`docs/architecture/VERISIM-ER-SCHEMA.md`](https://github.com/hyperpolymath/echidna/blob/main/docs/architecture/VERISIM-ER-SCHEMA.md)
+[`docs/architecture/VERISIM-ER-SCHEMA.adoc`](https://github.com/hyperpolymath/echidna/blob/main/docs/architecture/VERISIM-ER-SCHEMA.adoc)
 (companion Cap'n Proto schema:
 [`crates/echidna-wire/schemas/verisim_er.capnp`](https://github.com/hyperpolymath/echidna/blob/main/crates/echidna-wire/schemas/verisim_er.capnp)).
 **Idris2** (`src/abi/`) carries the FFI ABI proofs (zero `believe_me`).
@@ -59,7 +59,7 @@ The adapters use a **two-pass extraction pattern**
 Full per-adapter hazard inventory, fixture layout, and downstream consumer
 wiring (`suggest` synonym table, `octad-emit` → VeriSimDB, GNN training data)
 are documented in
-[`docs/CORPUS-ADAPTERS.md`](https://github.com/hyperpolymath/echidna/blob/main/docs/CORPUS-ADAPTERS.md).
+[`docs/CORPUS-ADAPTERS.adoc`](https://github.com/hyperpolymath/echidna/blob/main/docs/CORPUS-ADAPTERS.adoc).
 
 ## Cross-prover Vocabulary
 
@@ -158,7 +158,7 @@ Outcome emission (step 11 of the trust pipeline) writes through the formal
 **VeriSim ↔ ECHIDNA E-R schema** rather than an ad-hoc payload. Authoritative
 spec:
 
-- [`docs/architecture/VERISIM-ER-SCHEMA.md`](https://github.com/hyperpolymath/echidna/blob/main/docs/architecture/VERISIM-ER-SCHEMA.md)
+- [`docs/architecture/VERISIM-ER-SCHEMA.adoc`](https://github.com/hyperpolymath/echidna/blob/main/docs/architecture/VERISIM-ER-SCHEMA.adoc)
   — **12 first-class entities** (`Octad`, `SemanticModality`, …) and
   **7 first-class relationships**. Each entity declares its Rust struct
   (e.g. `src/rust/verisim_bridge.rs::OctadPayload`), its VeriSimDB table
@@ -215,4 +215,4 @@ See [`src/rust/provers/mod.rs`](https://github.com/hyperpolymath/echidna/blob/ma
 | `src/ui/tea/` | AffineScript-TEA | UI sources; compile pipeline unavailable |
 | `src/ui/public/` | HTML/static assets | Working browser shell |
 
-Pointers and history evolve; the in-repo [`docs/ARCHITECTURE.md`](https://github.com/hyperpolymath/echidna/blob/main/docs/ARCHITECTURE.md) is authoritative.
+Pointers and history evolve; the in-repo [`docs/ARCHITECTURE.adoc`](https://github.com/hyperpolymath/echidna/blob/main/docs/ARCHITECTURE.adoc) is authoritative.

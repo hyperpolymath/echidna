@@ -16,7 +16,7 @@ Phase 3 backends, names the worked example already landed
 to closing the phase.
 
 *Master plan*: `+~/Desktop/ECHIDNA-EXPANSION-TOMORROW-2026-04-28.md+`
-*Reference doc*: `+docs/ROADMAP.md+` row "`Every important solver`"
+*Reference doc*: `+docs/ROADMAP.adoc+` row "`Every important solver`"
 *Status as of 2026-04-27*: KeYmaera X *landed* in
 `+src/rust/provers/keymaerax.rs+` (8/8 tests passing); 6 backends
 remain.
@@ -235,9 +235,9 @@ doesn’t have to re-derive them:
 correct flag — gated such that *missing binary returns a structured
 error*, not a panic. (KeYmaera X already does this via
 `+Command::spawn().context(...)+`.)
-. `+docs/ROADMAP.md+` row "`Every important solver`" updated with the
+. `+docs/ROADMAP.adoc+` row "`Every important solver`" updated with the
 new ProverKind count (currently 128 → 134 after Phase 3 closes).
-. `+PROOF-NEEDS.md+` and `+.machine_readable/descriptiles/STATE.a2ml+`
+. `+PROOF-NEEDS.adoc+` and `+.machine_readable/descriptiles/STATE.a2ml+`
 reflect the closure of Phase 3.
 
 === Non-goals

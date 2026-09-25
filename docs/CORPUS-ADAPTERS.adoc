@@ -1,7 +1,7 @@
 == Corpus Adapters — Index
 
 *Status*: canonical. Updated 2026-06-01 as part of the saturation
-campaign (see `+docs/decisions/2026-06-01-saturation-campaign.md+`).
+campaign (see `+docs/decisions/2026-06-01-saturation-campaign.adoc+`).
 
 Each adapter is a `+pub fn ingest(root: &Path) -> Result<Corpus>+` in
 `+src/rust/corpus/<name>.rs+`, structurally indexing a proof tree into
@@ -111,7 +111,7 @@ reads per-prover TOMLs. The cross-prover dictionaries are loaded via
 methods landing in the same campaign).
 . *octad emission*: `+src/rust/corpus/octad.rs::Corpus::emit_octads()+`
 walks any `+Corpus+` produced by any adapter and emits 8-modality octads
-into VeriSimDB (see `+docs/architecture/VERISIM-ER-SCHEMA.md+`).
+into VeriSimDB (see `+docs/architecture/VERISIM-ER-SCHEMA.adoc+`).
 . *GNN training*: `+src/julia/training/train.jl+` consumes
 `+premises_<adapter>.jsonl+` files under `+training_data/+`. The new
 adapters can produce these files via
@@ -149,7 +149,7 @@ consumer needs each.
 
 === Type-discipline detection
 
-See `+docs/architecture/TYPE-DISCIPLINE-EMBEDDING.md+` for the canonical
+See `+docs/architecture/TYPE-DISCIPLINE-EMBEDDING.adoc+` for the canonical
 specification.
 
 Every adapter calls
@@ -162,8 +162,8 @@ Sigma parameters), and the result is surfaced as
 `+CorpusEntry.type_discipline_tags+`.
 
 The tags flow through `+SemanticPayload+`
-(`+src/rust/verisim_bridge.rs+`, new field per `+VERISIM-ER-SCHEMA.md+`
+(`+src/rust/verisim_bridge.rs+`, new field per `+VERISIM-ER-SCHEMA.adoc+`
 E2 / Cap’n Proto `+@11+`) into VeriSimDB and into the Julia GNN training
 pipeline as a 39-dim multi-hot feature vector per example. See sub-table
-§4 of `+TYPE-DISCIPLINE-EMBEDDING.md+` for the per-adapter × per-family
+§4 of `+TYPE-DISCIPLINE-EMBEDDING.adoc+` for the per-adapter × per-family
 expected-hit-frequency matrix.

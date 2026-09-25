@@ -23,7 +23,7 @@ Key workflows:
 == Releasing
 
 1. Update version in project config
-2. Update CHANGELOG.md
+2. Update CHANGELOG.adoc
 3. Tag: `git tag -s v<VERSION>`
 4. Push: `git push origin main --tags`
 

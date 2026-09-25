@@ -9,7 +9,7 @@ handover context tracked in version control.
 [width="100%",cols="47%,53%",options="header",]
 |===
 |File |Scope
-|*`+TODO.md+`* |*Tight actionable backlog, P0→P4, across L1+L2+L3.*
+|*`+TODO.adoc+`* |*Tight actionable backlog, P0→P4, across L1+L2+L3.*
 Start here.
 
 |*`+STATE.md+`* |*Where we are now vs forward vision — per-phase status
@@ -24,7 +24,7 @@ Proto — full prompt
 |`+L2-CHAPEL-PROMPT.md+` |L2 — promote Chapel POC to first-class
 parallel dispatch layer — full prompt
 
-|`+L3-LIVE-PROVER-CI-PROMPT.md+` |L3 — live subprocess CI tiered across
+|`+L3-LIVE-PROVER-CI-PROMPT.adoc+` |L3 — live subprocess CI tiered across
 48 prover backends — full prompt (marked Wave-2 DONE)
 |===
 

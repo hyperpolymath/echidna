@@ -105,8 +105,8 @@ Apply (where deterministic) with: just adjust-apply
 - defer-if: aide/utoipa not yet adopted; file follow-up to wire
 
 ### A023-verisim-er-schema-drift
-- description: crates/echidna-wire/schemas/verisim_er.capnp diverged from docs/architecture/VERISIM-ER-SCHEMA.md crosswalk table
-- probe: diff <(grep -E '^\| .+ \| .+ \|' docs/architecture/VERISIM-ER-SCHEMA.md) <(parse schema → rows)
+- description: crates/echidna-wire/schemas/verisim_er.capnp diverged from docs/architecture/VERISIM-ER-SCHEMA.adoc crosswalk table
+- probe: diff <(grep -E '^\| .+ \| .+ \|' docs/architecture/VERISIM-ER-SCHEMA.adoc) <(parse schema → rows)
 - severity: high
 - adjust: update whichever lags; both must move together
 - defer-if: VerisimDB upstream schema is itself in flux (federation pending)
@@ -124,7 +124,7 @@ Apply (where deterministic) with: just adjust-apply
 - description: a new prover backend is wanted (ProverKind::all_core gap)
 - probe: manual — owner identifies
 - severity: medium
-- adjust: add variant to ProverKind enum; implement ProverBackend trait; wire ProverFactory::create; tier-assign in docs/PROVER_COUNT.md
+- adjust: add variant to ProverKind enum; implement ProverBackend trait; wire ProverFactory::create; tier-assign in docs/PROVER_COUNT.adoc
 - defer-if: prover lacks open-source binary distribution
 
 ## Workflow-Adjust

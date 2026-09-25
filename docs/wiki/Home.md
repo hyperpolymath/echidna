@@ -2,11 +2,11 @@
 <!-- SPDX-License-Identifier: CC-BY-SA-4.0 -->
 # ECHIDNA Wiki
 
-**ECHIDNA** — Extensible Cognitive Hybrid Intelligence for Deductive Neural Assistance — is a trust-hardened neurosymbolic theorem-proving platform with a large multi-backend prover surface, of which **12 core backends** are exposed by the default API. Counts differ depending on what is being counted; [`docs/PROVER_COUNT.md`](https://github.com/hyperpolymath/echidna/blob/main/docs/PROVER_COUNT.md) is canonical and carries the commands that reproduce each figure.
+**ECHIDNA** — Extensible Cognitive Hybrid Intelligence for Deductive Neural Assistance — is a trust-hardened neurosymbolic theorem-proving platform with a large multi-backend prover surface, of which **12 core backends** are exposed by the default API. Counts differ depending on what is being counted; [`docs/PROVER_COUNT.adoc`](https://github.com/hyperpolymath/echidna/blob/main/docs/PROVER_COUNT.adoc) is canonical and carries the commands that reproduce each figure.
 
 **License**: four parts, by design — **application code** under AGPL-3.0-or-later; the **machine-readable specification surface** (`.machine_readable/`, manifests, OCI image labels) under MPL-2.0, held weak-copyleft so it stays usable for interoperability and standards submission; **documentation** under CC-BY-SA-4.0; and **`echidna-playground/`** under MPL-2.0. The combined work distributes as AGPL-3.0-or-later, so running a modified ECHIDNA as a network service obliges you to offer users the modified source. MPL §3.3 (Secondary Licenses) is what makes the MPL parts compatible inside the AGPL work. Full statement: [`NOTICE`](https://github.com/hyperpolymath/echidna/blob/main/NOTICE).
 
-**Release history**: [`CHANGELOG.md`](https://github.com/hyperpolymath/echidna/blob/main/CHANGELOG.md); semver pin in [`Cargo.toml`](https://github.com/hyperpolymath/echidna/blob/main/Cargo.toml).
+**Release history**: [`CHANGELOG.adoc`](https://github.com/hyperpolymath/echidna/blob/main/CHANGELOG.adoc); semver pin in [`Cargo.toml`](https://github.com/hyperpolymath/echidna/blob/main/Cargo.toml).
 
 ## Quick navigation
 
@@ -22,11 +22,11 @@ When the wiki and the repo disagree, **the repo wins**:
 
 - [`README.md`](https://github.com/hyperpolymath/echidna/blob/main/README.md) — primary project README
 - [`CLAUDE.md`](https://github.com/hyperpolymath/echidna/blob/main/CLAUDE.md) — codebase orientation
-- [`docs/ARCHITECTURE.md`](https://github.com/hyperpolymath/echidna/blob/main/docs/ARCHITECTURE.md) — current architecture
-- [`docs/PROVER_COUNT.md`](https://github.com/hyperpolymath/echidna/blob/main/docs/PROVER_COUNT.md) — tier table
-- [`docs/ENV-VARS.md`](https://github.com/hyperpolymath/echidna/blob/main/docs/ENV-VARS.md) — environment variables
-- [`docs/ROADMAP.md`](https://github.com/hyperpolymath/echidna/blob/main/docs/ROADMAP.md) — stage map and sprint targets
-- [`docs/handover/HANDOVER-INDEX.md`](https://github.com/hyperpolymath/echidna/blob/main/docs/handover/HANDOVER-INDEX.md) — handover/ navigation
+- [`docs/ARCHITECTURE.adoc`](https://github.com/hyperpolymath/echidna/blob/main/docs/ARCHITECTURE.adoc) — current architecture
+- [`docs/PROVER_COUNT.adoc`](https://github.com/hyperpolymath/echidna/blob/main/docs/PROVER_COUNT.adoc) — tier table
+- [`docs/ENV-VARS.adoc`](https://github.com/hyperpolymath/echidna/blob/main/docs/ENV-VARS.adoc) — environment variables
+- [`docs/ROADMAP.adoc`](https://github.com/hyperpolymath/echidna/blob/main/docs/ROADMAP.adoc) — stage map and sprint targets
+- [`docs/handover/HANDOVER-INDEX.adoc`](https://github.com/hyperpolymath/echidna/blob/main/docs/handover/HANDOVER-INDEX.adoc) — handover/ navigation
 - [`RSR_COMPLIANCE.adoc`](https://github.com/hyperpolymath/echidna/blob/main/RSR_COMPLIANCE.adoc) — RSR / CCCP compliance statement
 - [`.machine_readable/descriptiles/STATE.a2ml`](https://github.com/hyperpolymath/echidna/blob/main/.machine_readable/descriptiles/STATE.a2ml) — machine-readable state
 
@@ -37,8 +37,8 @@ When the wiki and the repo disagree, **the repo wins**:
 
 ## Key concepts
 
-- **12 core backends** exposed by default; the wider surface (external prover bindings plus TypeChecker disciplines routed via TypedWasm Sigma) is reachable through explicit `ProverKind` selection. Figures and their denominators: [`docs/PROVER_COUNT.md`](https://github.com/hyperpolymath/echidna/blob/main/docs/PROVER_COUNT.md).
-- **17 corpus adapters** — every major public proof corpus has a structural ingest path (see [`docs/CORPUS-ADAPTERS.md`](https://github.com/hyperpolymath/echidna/blob/main/docs/CORPUS-ADAPTERS.md)).
+- **12 core backends** exposed by default; the wider surface (external prover bindings plus TypeChecker disciplines routed via TypedWasm Sigma) is reachable through explicit `ProverKind` selection. Figures and their denominators: [`docs/PROVER_COUNT.adoc`](https://github.com/hyperpolymath/echidna/blob/main/docs/PROVER_COUNT.adoc).
+- **17 corpus adapters** — every major public proof corpus has a structural ingest path (see [`docs/CORPUS-ADAPTERS.adoc`](https://github.com/hyperpolymath/echidna/blob/main/docs/CORPUS-ADAPTERS.adoc)).
 - **4 arbitration mechanisms** — portfolio majority-vote, Bayesian posterior, Dempster-Shafer belief combination, Pareto multi-objective frontier.
 - **6 cross-prover exchange formats** — OpenTheory, Dedukti, TPTP, SMT-LIB, SMTCoq, Lambdapi.
 - **11-step trust pipeline** — integrity → portfolio → certificates → axioms → confidence → mutation → pareto → statistics → emission (see Architecture page).
@@ -50,9 +50,9 @@ When the wiki and the repo disagree, **the repo wins**:
 
 The 2026-06-01 **prover/corpus/vocab/synonyms/arbitration saturation campaign** added 13 corpus adapters, 3 new arbiters, 4 new exchange bridges, and a formal data-model spec. Entry points:
 
-- [`docs/CORPUS-ADAPTERS.md`](https://github.com/hyperpolymath/echidna/blob/main/docs/CORPUS-ADAPTERS.md) — 17-adapter index with per-adapter source URLs, hazard flags, and downstream wiring (`suggest` / `octad-emit` / GNN training).
-- [`docs/architecture/VERISIM-ER-SCHEMA.md`](https://github.com/hyperpolymath/echidna/blob/main/docs/architecture/VERISIM-ER-SCHEMA.md) — VeriSim ↔ ECHIDNA E-R schema (12 entities + 7 relationships, each with Rust struct + VeriSimDB table + Cap'n Proto schema + PK/FK).
-- [`docs/decisions/2026-06-01-saturation-campaign.md`](https://github.com/hyperpolymath/echidna/blob/main/docs/decisions/2026-06-01-saturation-campaign.md) — ADR documenting the ordered marginal-benefit hierarchy and the decision to execute levers (1)–(6) and defer (7) GNN-training.
+- [`docs/CORPUS-ADAPTERS.adoc`](https://github.com/hyperpolymath/echidna/blob/main/docs/CORPUS-ADAPTERS.adoc) — 17-adapter index with per-adapter source URLs, hazard flags, and downstream wiring (`suggest` / `octad-emit` / GNN training).
+- [`docs/architecture/VERISIM-ER-SCHEMA.adoc`](https://github.com/hyperpolymath/echidna/blob/main/docs/architecture/VERISIM-ER-SCHEMA.adoc) — VeriSim ↔ ECHIDNA E-R schema (12 entities + 7 relationships, each with Rust struct + VeriSimDB table + Cap'n Proto schema + PK/FK).
+- [`docs/decisions/2026-06-01-saturation-campaign.adoc`](https://github.com/hyperpolymath/echidna/blob/main/docs/decisions/2026-06-01-saturation-campaign.adoc) — ADR documenting the ordered marginal-benefit hierarchy and the decision to execute levers (1)–(6) and defer (7) GNN-training.
 - [`docs/handover/PROVER-CORPUS-SATURATION-LANE.md`](https://github.com/hyperpolymath/echidna/blob/main/docs/handover/PROVER-CORPUS-SATURATION-LANE.md) — saturation lane handover with sibling-branch collision avoidance.
 
 The **dogfood proof corpus is now CI-gated**: every theorem under `proofs/{coq,lean,agda}` and the `src/idris` validator type-checks on each PR (`dogfood-proofs-ci.yml` + `idris2-abi-ci.yml`), each driven by a `just proofs-*` recipe — closing a gap where the corpus had no CI. Run it locally via `just proofs`; see [Getting Started](Getting-Started).

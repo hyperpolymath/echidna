@@ -10,7 +10,7 @@
 //! `"discipline:<tag>"` strings inside `axiom_usage.other`, keeping
 //! the existing serde shape intact.
 //!
-//! See `docs/architecture/TYPE-DISCIPLINE-EMBEDDING.md` §3 for the
+//! See `docs/architecture/TYPE-DISCIPLINE-EMBEDDING.adoc` §3 for the
 //! detection topology and §7 for confidence semantics.
 
 #![allow(dead_code)]

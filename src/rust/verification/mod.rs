@@ -17,7 +17,7 @@
 //! - `portfolio` — majority-vote + flagging when k provers agree
 //!
 //! Added in the saturation campaign (see
-//! `docs/decisions/2026-06-01-saturation-campaign.md`):
+//! `docs/decisions/2026-06-01-saturation-campaign.adoc`):
 //! - `bayesian_arbiter` — log-odds posterior with per-prover calibrated
 //!   likelihoods; reports Shannon entropy.
 //! - `dempster_shafer` — belief-mass combination via Dempster's rule;

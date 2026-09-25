@@ -155,5 +155,5 @@ expressing every proof obligation in machine-verifiable syntax.
 
 * Creusot repository: https://github.com/creusot-rs/creusot
 * Why3 documentation: https://www.why3.org/
-* SPARK Adoption Plan: `+docs/design/SPARK_ADOPTION_PLAN.md+`
-* Echidna ROADMAP Stage 8c: `+docs/ROADMAP.md+`
+* SPARK Adoption Plan: `+docs/design/SPARK_ADOPTION_PLAN.adoc+`
+* Echidna ROADMAP Stage 8c: `+docs/ROADMAP.adoc+`

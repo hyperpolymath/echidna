@@ -143,7 +143,7 @@ file PRs against non-main branches.
 - description: src/rust/integrity uses BLAKE3 + SHAKE3-512 for prover binary verification
 - run: grep -qE 'blake3::|shake3|Shake3_512' src/rust/integrity/*.rs
 - severity: high
-- recovery: re-add per docs/ARCHITECTURE.md integrity section
+- recovery: re-add per docs/ARCHITECTURE.adoc integrity section
 
 ## ABI-Trust
 

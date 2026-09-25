@@ -1088,7 +1088,7 @@ design-swarm problem="brouwer-leq" agents="4" iterations="800":
 # ─────────────────────────────────────────────────────────────────────
 # Saturation campaign 2026-06-01 — recipes for the new corpus / vocab /
 # arbiter / exchange surface. See docs/decisions/2026-06-01-saturation-
-# campaign.md and docs/CORPUS-ADAPTERS.md.
+# campaign.md and docs/CORPUS-ADAPTERS.adoc.
 # ─────────────────────────────────────────────────────────────────────
 
 # Ingest a project tree via one of the 13 new corpus adapters
@@ -1132,11 +1132,11 @@ arbiter-smoke:
 
 # Validate that the E-R schema doc + Cap'n Proto schema are
 # byte-identical with the recorded SHA in .machine_readable/er-schema.sha256.
-# (CI gate planned — see docs/architecture/VERISIM-ER-SCHEMA.md
+# (CI gate planned — see docs/architecture/VERISIM-ER-SCHEMA.adoc
 #  "Drift detection".)
 er-schema-drift-check:
     @echo "Checking E-R schema drift..."
-    @sha256sum docs/architecture/VERISIM-ER-SCHEMA.md \
+    @sha256sum docs/architecture/VERISIM-ER-SCHEMA.adoc \
                crates/echidna-wire/schemas/verisim_er.capnp \
                | sha256sum | head -c 64
     @echo " (current combined hash; compare against .machine_readable/er-schema.sha256 when CI gate lands)"

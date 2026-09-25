@@ -2,7 +2,7 @@
 # SPDX-FileCopyrightText: 2025-2026 Jonathan D.A. Jewell <j.d.a.jewell@open.ac.uk>
 #
 # R5 canonical-reference rule: bare prover counts in load-bearing
-# top-level docs must defer to docs/PROVER_COUNT.md (the canonical
+# top-level docs must defer to docs/PROVER_COUNT.adoc (the canonical
 # tier table).
 #
 # Consumed by the `Canonical-reference drift (R5 generic)` step in
@@ -17,7 +17,7 @@ id: prover-counts
 description: |
   Bare prover counts (variants vs impl files vs advertised vs core)
   in narrative-carrying top-level docs must defer to
-  docs/PROVER_COUNT.md so they cannot drift. Patterns are anchored
+  docs/PROVER_COUNT.adoc so they cannot drift. Patterns are anchored
   with (^|[[:space:]]) so neighbours like Tier-1, v1.2.3, port 8081
   don't false-positive.
 
@@ -30,7 +30,7 @@ patterns:
   - '(^|[[:space:]])[0-9]+[[:space:]]+backend[[:space:]]+implementation[[:space:]]+files?\b'
   - '(^|[[:space:]])[0-9]+/[0-9]+[[:space:]]+(backends?|provers?)\b'
 
-canonical_pointer: docs/PROVER_COUNT.md
+canonical_pointer: docs/PROVER_COUNT.adoc
 
 scope:
   include:

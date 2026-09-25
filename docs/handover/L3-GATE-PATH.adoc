@@ -17,13 +17,13 @@ ticked. This document enumerates exactly what remains.
 
 == Where the criteria come from
 
-`docs/handover/L3-LIVE-PROVER-CI-PROMPT.md` "Hand to L1 when":
+`docs/handover/L3-LIVE-PROVER-CI-PROMPT.adoc` "Hand to L1 when":
 
 * All four waves land or are explicitly deferred with rationale in
   `STATE.a2ml`.
 * Tier-1 has run green on main for ≥7 days.
 
-`docs/handover/TODO.md` adds two operational pre-requisites (P0, P1).
+`docs/handover/TODO.adoc` adds two operational pre-requisites (P0, P1).
 
 These five criteria are unpacked below.
 
@@ -74,7 +74,7 @@ Light deferred to Wave-3.)
 
 | Wave-2 installers green in CI
 | ⚠ UNVERIFIED
-| TODO.md P0 row: "Wave-2 installers (idris2 / isabelle / dafny /
+| TODO.adoc P0 row: "Wave-2 installers (idris2 / isabelle / dafny /
   fstar / tlaps) are local-pass but CI-unverified." Likely failure
   modes documented: Isabelle 500 MB download timeout, tlapm release
   URL drift, `fstar.exe` symlink resolution, apt mirror changes.
@@ -198,7 +198,7 @@ gh run list \
 
 == Criterion 6 — Operational pre-requisites
 
-From `docs/handover/TODO.md`:
+From `docs/handover/TODO.adoc`:
 
 [%header,cols="2,1,3"]
 |===
@@ -262,8 +262,8 @@ Without gh access, Criteria 1/2/3/5 cannot close, full stop.
 
 == Cross-references
 
-* `docs/handover/L3-LIVE-PROVER-CI-PROMPT.md` — original L3 mission.
-* `docs/handover/TODO.md` — P0 / P1 rows referenced above.
+* `docs/handover/L3-LIVE-PROVER-CI-PROMPT.adoc` — original L3 mission.
+* `docs/handover/TODO.adoc` — P0 / P1 rows referenced above.
 * `docs/handover/L1-CAPNPROTO-PROMPT.md` — the prompt that fires
   once this gate closes.
 * `docs/handover/L2-CHAPEL-PROMPT.md` — blocked behind L1 + this gate.

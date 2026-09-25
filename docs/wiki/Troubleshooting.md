@@ -62,7 +62,7 @@ cargo test --lib                    # 1067 unit tests, no Julia needed
 cargo test --test gnn_augment_integration  # mock-server integration, no Julia needed
 ```
 
-The full integration tests that exercise Julia live behind `--features verisim` and require both `VERISIM_URL` reachable and the Julia server running. See [`docs/ENV-VARS.md`](https://github.com/hyperpolymath/echidna/blob/main/docs/ENV-VARS.md).
+The full integration tests that exercise Julia live behind `--features verisim` and require both `VERISIM_URL` reachable and the Julia server running. See [`docs/ENV-VARS.adoc`](https://github.com/hyperpolymath/echidna/blob/main/docs/ENV-VARS.adoc).
 
 ## `just train-cpu` errors with "Manifest not found"
 
@@ -113,7 +113,7 @@ If `corpus::<adapter>::ingest(root)` returns a `Corpus` with `entries.is_empty()
 
 1. **Confirm the root path.** Adapters take the *project* root, not an individual source file. Check the path resolves and is a directory.
 2. **Check walk exclusions.** Each adapter excludes build / VCS / heap caches (e.g. Isabelle skips `*/heaps/*`, Coq skips `_build/`, …). If your tree uses non-standard out-of-tree build directories, files under them won't be indexed.
-3. **Verify the file extension matches.** The [`docs/CORPUS-ADAPTERS.md`](https://github.com/hyperpolymath/echidna/blob/main/docs/CORPUS-ADAPTERS.md) table lists the canonical extensions per adapter (`*.thy` for Isabelle, `*.mm` for Metamath, `*.fst` / `*.fsti` for F\*, etc.). Non-canonical extensions (e.g. `.hol4` instead of `*Script.sml`) are silently skipped.
+3. **Verify the file extension matches.** The [`docs/CORPUS-ADAPTERS.adoc`](https://github.com/hyperpolymath/echidna/blob/main/docs/CORPUS-ADAPTERS.adoc) table lists the canonical extensions per adapter (`*.thy` for Isabelle, `*.mm` for Metamath, `*.fst` / `*.fsti` for F\*, etc.). Non-canonical extensions (e.g. `.hol4` instead of `*Script.sml`) are silently skipped.
 
 ## Synonym lookup returns empty
 
@@ -148,7 +148,7 @@ The likely cause is that every `ProverEvidence` in your slice carries `Verdict::
 
 Review the `axiom_usage.other` strings on the offending `CorpusEntry` — they record the exact substring that triggered the flag. If it's inside a literal, the flag is heuristic noise; the adapter doc-strings (e.g. the Isabelle module-doc) explicitly note that "banned tokens inside ML antiquotations or string literals can still be flagged for human review."
 
-The adapters are deliberately quality "heuristic, not authoritative" — see [`docs/CORPUS-ADAPTERS.md`](https://github.com/hyperpolymath/echidna/blob/main/docs/CORPUS-ADAPTERS.md) and the module-level docs on `src/rust/corpus/mod.rs`. If false positives accumulate for your project, file an issue with the triggering substring; the heuristic can be tightened per-adapter.
+The adapters are deliberately quality "heuristic, not authoritative" — see [`docs/CORPUS-ADAPTERS.adoc`](https://github.com/hyperpolymath/echidna/blob/main/docs/CORPUS-ADAPTERS.adoc) and the module-level docs on `src/rust/corpus/mod.rs`. If false positives accumulate for your project, file an issue with the triggering substring; the heuristic can be tightened per-adapter.
 
 ## Wiki page is wrong
 
