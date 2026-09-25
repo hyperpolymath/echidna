@@ -65,6 +65,9 @@ src/chapel/chapel_smoke
 src/chapel/chapel_smoke_real
 src/chapel/bench_mrr
 src/chapel/bench_mrr_real
+# bench_mrr generated CSVs (#162) — regenerated per run, not tracked
+src/chapel/bench_mrr_telemetry.csv
+src/chapel/bench_mrr_summary.csv
 src/chapel/libechidna_chapel.h
 
 # Zig
