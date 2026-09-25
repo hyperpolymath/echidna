@@ -204,3 +204,13 @@ always-do = [
   "Validate Idris2 ABI proofs before modifying trust pipeline",
   "Run panic-attack on Rust code before commit"
 ]
+
+[self-proof-ci]
+reviewed-on = "2026-09-25"
+fast-corpus-workflow = ".github/workflows/dogfood-proofs-ci.yml"
+abi-workflow = ".github/workflows/idris2-abi-ci.yml"
+safety-workflow = ".github/workflows/proof-safety.yml"
+weekly-workflow = ".github/workflows/verification-proofs-cron.yml"
+weekly-scope = "Isabelle base HOL only; algebra and Mizar repairs remain in #280"
+local-recipes = "Justfile: proofs-coq, proofs-lean, proofs-agda, proofs-idris, proofs-isabelle"
+closure-evidence = "docs/reports/2026-09-25-issue-maintenance.adoc"

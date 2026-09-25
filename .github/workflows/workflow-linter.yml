@@ -8,9 +8,13 @@ on:
   pull_request:
     paths:
       - '.github/workflows/**'
+      - 'scripts/ci/**'
+      - '.hypatia-ignore'
   push:
     paths:
       - '.github/workflows/**'
+      - 'scripts/ci/**'
+      - '.hypatia-ignore'
 
 permissions: read-all
 
@@ -21,29 +25,11 @@ jobs:
     steps:
       - uses: actions/checkout@v7.0.1
 
-      - name: Check SPDX headers
-        run: |
-          errors=0
-          for f in .github/workflows/*.yml .github/workflows/*.yaml; do
-            [ -f "$f" ] || continue
-            if ! head -1 "$f" | grep -q "SPDX-License-Identifier"; then
-              echo "ERROR: $f missing SPDX header"
-              errors=$((errors + 1))
-            fi
-          done
-          exit $errors
-
-      - name: Check permissions declaration
-        run: |
-          errors=0
-          for f in .github/workflows/*.yml .github/workflows/*.yaml; do
-            [ -f "$f" ] || continue
-            if ! grep -q "^permissions:" "$f"; then
-              echo "ERROR: $f missing permissions declaration"
-              errors=$((errors + 1))
-            fi
-          done
-          exit $errors
+      - name: Check workflow policy and issue regressions
+        # Duplicate YAML keys are rejected before Actions creates any jobs.
+        # Also validates SPDX in the comment preamble (actions-lock inserts a
+        # banner before it), permissions, migration exemptions and risk routing.
+        run: bash scripts/ci/test-issue-regressions.sh
 
       - name: Verify immutable action lockfile with the authoritative tool
         env:

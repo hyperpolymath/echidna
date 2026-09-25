@@ -1,0 +1,204 @@
+// SPDX-License-Identifier: CC-BY-SA-4.0
+= Open-issue maintenance review — 2026-09-25
+:toc:
+
+== Scope and evidence
+
+Reviewed all 19 open issues against `main` at
+`9c422f86454216ed8f3917b957574322c3676dd8`, their issue comments, merged PRs,
+and the latest GitHub Actions job/annotation metadata. This is not a claim
+that every roadmap feature has been implemented or that every CI job passes.
+No secrets, licences, proof statements, or baseline severities were changed.
+
+== Repairs in this change
+
+* Remove duplicate `with` mappings from eight Rust-toolchain setup steps.
+  Each retains its intended `stable` toolchain; the formal-verification
+  nightly step and its components are unchanged. Governance run
+  https://github.com/hyperpolymath/echidna/actions/runs/36150127750[36150127750]
+  identified these exact duplicate keys. GitHub rejects them before creating jobs.
+* Validate workflow headers in the comment preamble, not exclusively on line
+  one: `gh actions-lock` inserts a management banner before SPDX.
+* Vendor the unchanged duplicate-key checker from
+  `hyperpolymath/standards@2479cf769ed5f0481ccf64860a2ab954514c2b59`,
+  `scripts/check-workflow-duplicate-keys.sh`. This is a structural checker,
+  not a complete YAML or GitHub Actions schema validator.
+* Add positive/negative regression tests and run them in the existing
+  Workflow Security Linter. No new Actions dependencies or lock changes.
+* Remove all 33 obsolete ReScript exemptions. PR
+  https://github.com/hyperpolymath/echidna/pull/362[#362] already removed the
+  source; leaving exemptions would allow accidental reintroduction.
+* Add a lossless, report-only Hypatia risk classifier (below).
+* Add explicit proof-CI references to the five metadata siblings requested
+  by #252. Document the remaining currency gaps rather than inventing
+  completion or silently rewriting authority/contractile semantics.
+
+== Issue dispositions
+
+[cols="1,2,5",options="header"]
+|===
+|Issue |Disposition |Evidence / remaining acceptance
+|#216 |Resolved on main
+|`src/rust/main.rs:1` already names the canonical owner. No licence edit needed.
+|#175 |Completed informational audit
+|The issue itself records zero deferred ABI lemmas following merged
+https://github.com/hyperpolymath/echidna/pull/166[#166]. Future schema-evolution
+work belongs to #194, not this historical good-news audit. This review does
+not claim a new Idris2 type-check.
+|#196 |Implemented on main
+|Merged https://github.com/hyperpolymath/echidna/pull/154[#154] supplies the
+shared atomic CancelToken, polling/SIGKILL, and distinct preempted outcome;
+`proofs/agda/ParallelSoundness.agda` contains `cancellation-safety`.
+The PR records Chapel compilation, Agda safe checking, and the trivial
+benchmark. This review did not re-run those toolchains. The real-corpus
+speedup remains #161; cross-process transport remains #194.
+|#240 |Legacy-source bucket retired
+|No tracked `.res` files remain after #362. This change removes the obsolete
+exemptions and labels migration findings `language-migration` in triage.
+Source removal is NOT a verified AffineScript/UI port; #117/#266 stay open.
+|#239 |Triage tooling delivered; review remains
+|Lossless risk routing and test-harness handling now have regression tests.
+Current production FFI/proof findings still require source-specific expert
+review and targeted tests. Unknown rules stay in manual review.
+|#314 |Gate re-armed previously; burn-down remains
+|`.hypatia-baseline.json` is already tracked (see merged #328 and #347).
+Run 36150127750 actually executed Validate Hypatia Baseline and rejected
+62 unfiltered findings at threshold `info`. It was NOT skipped. Do not
+regenerate a blanket baseline to make that failure green; obtain current
+scanner output and review those findings. The historic 152/70 counts are
+not a current inventory.
+|#310 |Owner/credential blocked
+|The owner chose rotation in the July 7 comment, not deletion. The session's
+GitHub integration cannot list/manage Actions secrets (HTTP 403). Rotate
+VERISIMDB_PAT through trusted GitHub settings, then verify dispatch. Latest
+Security Scan also has `startup_failure`, so token rotation alone must not
+be presented as proof of a green scan.
+|#280 |Unresolved proof repairs
+|Isabelle ROOT still excludes GroupTheory; weekly CI still excludes Mizar.
+Repair with the actual toolchains and re-enable the gates only after proof
+checking. Do not weaken the statements or insert admits to close the issue.
+|#252 |ECHIDNA reference update and audit; broader work remains
+|See currency inventory below. No echidnabot checkout was changed; this
+cross-repository issue cannot be closed by this PR.
+|#117, #266 |Upstream/build blocked
+|Legacy Client.res no longer exists. Follow the mechanically ported
+`src/ui/tea/` source, real Http/Async/Json/Dict support, and a working compile
+pipeline. No guessed host-binding API was added. #266 overlaps #117 but
+both are retained until their acceptance is reconciled.
+|#194 |Partially implemented
+|`crates/echidna-wire/src/lib.rs` explicitly describes schema-only L1.0;
+transport and Julia/Chapel/UI integrations remain L1.1+. A schema crate is
+not the requested JSON-to-Cap'n Proto cutover.
+|#195 |Launch incomplete
+|Its IPC, coprocessor, and live Tier-4 acceptance and owner approvals are
+not established by the existence of skeletons or cancellation code.
+|#197 |External image/integration verification needed
+|Confirm upstream verisim-api publication and the documented integration
+round-trip before closing; no cross-repository publication was performed.
+|#190, #191 |Conformance work remains
+|Exporter/importer code exists, but this review did not establish native
+OpenTheory/Dedukti standard-library round trips or upstream conformance.
+Do not infer completion from module names or exporter unit tests.
+|#192 |SPARK acceptance not established
+|The named crate currently contains Rust/Creusot code. That alone does not
+satisfy the issue's Ada/SPARK runtime-error proof and canonical C-ABI kernel
+requirements. Preserve the issue pending implementation or explicit scope revision.
+|#193 |Research roadmap
+|AI proof-sketch generation is an aspirational research deliverable, not a
+maintenance defect that can be closed by this sweep.
+|#161 |Benchmark evidence outstanding
+|The existing trivial fixtures and new outcome telemetry do not demonstrate
+the requested 10–30 second real-goal workload or at least 5x speedup.
+|===
+
+== Hypatia classification (#239, #240)
+
+[source,bash]
+----
+# For a fresh report, use the scanner's actual absolute checkout root:
+jq --arg root "$PWD" -f scripts/ci/triage-hypatia.jq findings.json > triaged.json
+
+# Reproduce the archived-report inventory (NOT a fresh scan):
+jq --arg root /home/hyperpolymath/dev/repos/echidna \
+  -f scripts/ci/triage-hypatia.jq reports/hypatia-findings-v4.json > triaged.json
+jq 'group_by(.triage.risk_class) | map({risk: .[0].triage.risk_class, count: length})' triaged.json
+----
+
+The archived v4 report contains 148 findings: 36 runtime-availability,
+17 FFI-memory-safety, 4 proof-soundness, 76 language-migration, 14 other,
+and 1 unclassified-code-safety. These are historical, not current alert counts.
+
+The original object (including severity, file, reason and any supplied line)
+is retained. Only a `triage` annotation is added. Line numbers absent from
+the input remain null; none are invented from an old report against new source.
+Runtime findings under `tests/`, `benches/`, and `fuzz/` get a lower
+review priority with a rationale, NOT a lowered scanner severity or suppression.
+Mixed production modules containing inline tests remain unreviewed production.
+Proof and FFI obligations keep expert routing even in test directories.
+
+`panicbot` is the runtime review route, `echidnabot` the memory/proof route,
+and `rhodibot` the migration route. Routing is advisory data, not a claim
+that those bots have reviewed the code. No default-value substitutions or
+whole-tree mechanical safety rewrites are performed.
+
+== Currency inventory (#252)
+
+* The old `6a2/` descriptor set now lives in `descriptiles/`. META, AGENTIC,
+  NEUROSYM, PLAYBOOK and ECOSYSTEM now link the actual fast-corpus, ABI,
+  proof-safety and weekly workflows. The Isabelle algebra/Mizar exclusions
+  are explicit; no blanket claim that all corpora are gated.
+* Dual ANCHOR asymmetry: `anchors/ANCHOR.a2ml` is the repository authority
+  record. `descriptiles/ANCHOR.a2ml` is an SSG/BoJ build descriptor and still
+  carries `rsr-template-repo` identity text. These are not interchangeable.
+  No repo identity realignment or licence-authority change was made here.
+* Contractile asymmetry: `contractiles/INDEX.a2ml` discovers the six tridents
+  (declaration, Nickel runner, K9 component, coherence manifest). The four
+  root `*.contractile` summaries are a separate legacy surface. For example,
+  root MUST still says Deno-only and references nonexistent `quality.yml`;
+  root ADJUST describes accessibility, whereas the Adjustfile describes
+  dependency/toolchain drift. Treat these as audit debt, not executable
+  enforcement guarantees or grounds for weakening checks.
+* Must/Intend/Adjust/Trust inspected: Intend still overstates universal
+  VeriSimDB recording; Adjust has non-executable placeholder probes (e.g.
+  parse-schema-to-rows); Trust requires specialist proof review. Currency
+  therefore needs a dedicated semantics-preserving reconciliation, not
+  simply fresh timestamps. No licence/SPDX edits were made.
+* The per-verb K9 imports still point at the absent shared
+  `contractiles/k9/template-hunt.k9.ncl`; the local tier templates are in
+  `svc/k9/`. The existing contractile README documents this upstream gap.
+  Dust/Bust and the already-cleared service templates were not rewritten.
+* `bot_directives/` contains an old debt ledger/template commentary; it was
+  inspected, not certified current. `self-validating/` is absent, not a
+  directory whose validation has silently passed. No metadata `.scm` files
+  were found. The echidnabot half of the audit remains outside this checkout.
+
+== Validation and limitations
+
+`bash scripts/ci/test-issue-regressions.sh` passes locally, covering all 34
+workflow files, duplicate-key rejection, valid nested/list/block-scalar
+cases, SPDX preambles, permissions, ReScript reintroduction, lossless risk
+routing, line preservation, conservative test classification, invalid JSON,
+and empty findings. The archived 148-finding report also classifies successfully.
+
+The Actions lockfile and every `uses:` reference are unchanged. The pinned
+checker was compared byte-for-byte to its upstream source. Bash syntax and
+`git diff --check` are part of the local validation.
+
+This sandbox cannot download the Debian toolchain packages or GitHub release
+assets; Elixir and the proof toolchains are unavailable. Actions log blobs
+also failed to download, although job/annotation metadata is readable.
+The GitHub integration returns 403 for secrets and code-scanning alerts.
+Accordingly no fresh Hypatia scan, proof compilation, or alert dismissal is
+claimed here. Existing failing checks remain visible rather than disabled.
+
+=== PR validation blocker
+
+PR https://github.com/hyperpolymath/echidna/pull/396[#396] could not run
+GitHub Actions: run
+https://github.com/hyperpolymath/echidna/actions/runs/36185037867[36185037867]
+reports `Actor is not allowed to trigger Actions workflows` for the
+`arena-ai-coding-agent[bot]` actor. All PR Actions runs failed at startup;
+this is not a result from the regression tests. The main-branch ruleset
+requires `scan / gitleaks`, `scan / rust-secrets`, and `scan / shell-secrets`,
+so an authorized maintainer must permit the actor or re-run validation as
+an allowed actor before normal merge. Do not bypass or fabricate these checks.

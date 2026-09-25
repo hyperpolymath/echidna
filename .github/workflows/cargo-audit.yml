@@ -51,8 +51,6 @@ jobs:
         if: steps.detect.outputs.present == 'true'
         uses: dtolnay/rust-toolchain@v1
         with:
-          toolchain: master
-        with:
           toolchain: stable
 
       - name: Install cargo-audit
