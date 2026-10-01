@@ -1,5 +1,5 @@
 # SPDX-FileCopyrightText: 2026 Jonathan D.A. Jewell <j.d.a.jewell@open.ac.uk>
-# SPDX-License-Identifier: AGPL-3.0-or-later
+# SPDX-License-Identifier: MPL-2.0
 #
 # Smoke test: synthesise a 3-row Corpus JSON in /tmp, run
 # CorpusLoader.corpus_to_training_examples, assert the disciplines

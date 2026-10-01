@@ -1,5 +1,5 @@
 // SPDX-FileCopyrightText: 2026 ECHIDNA Project Team
-// SPDX-License-Identifier: AGPL-3.0-or-later
+// SPDX-License-Identifier: MPL-2.0
 
 //! Integration layer connecting Rust backend ↔ Julia ML ↔ ReScript UI
 //!

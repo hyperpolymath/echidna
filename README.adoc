@@ -1,18 +1,16 @@
-link:LICENSE[image:https://img.shields.io/badge/License-AGPL--3.0--or--later-blue.svg[License:
-AGPL-3.0-or-later]]
+link:LICENSE[image:https://img.shields.io/badge/License-MPL--2.0-blue.svg[License:
+MPL-2.0]]
 https://www.thegreenwebfoundation.org/green-web-check/?url=nesy-prover.dev[image:https://api.thegreenwebfoundation.org/greencheckimage/nesy-prover.dev[Green
 Hosting]]
 
 ____
-*Licensing.* ECHIDNA is licensed in four parts: *application code* under
-AGPL-3.0-or-later; the *machine-readable specification surface*
-(`+.machine_readable/+`, manifests, OCI labels) under MPL-2.0,
-deliberately weak-copyleft so it stays usable for interoperability and
-standards work; *documentation* under CC-BY-SA-4.0; and
-*`+echidna-playground/+`* under MPL-2.0. The combined work distributes
-as AGPL-3.0-or-later — run a modified ECHIDNA as a network service and
-you must offer your users the modified source. MPL §3.3 (Secondary
-Licenses) is what makes the MPL parts compatible inside the AGPL work.
+*Licensing.* ECHIDNA is licensed under MPL-2.0: the code, the
+*machine-readable specification surface* (`+.machine_readable/+`,
+manifests, OCI labels) and *`+echidna-playground/+`*. *Documentation* is
+under CC-BY-SA-4.0. MPL-2.0 is file-level copyleft: changes to ECHIDNA's
+files stay open, while combining them with other code carries no
+obligation on the rest of that work. (Re-ruled 2026-10-01 from the 2026-08
+AGPL-3.0-or-later split.)
 Full statement: link:NOTICE[`+NOTICE+`].
 ____
 
@@ -582,13 +580,14 @@ list and ECHIDNA’s out-of-template adaptations.
 * *Justfile primary* — Just is the build entry point; no Make.
 * *Podman not Docker* — always Podman; `+Containerfile+`
 (`+.containerization/+` for the per-prover images) not `+Dockerfile+`.
-* *License*: AGPL-3.0-or-later. See LICENSE.
+* *License*: MPL-2.0 (code), CC-BY-SA-4.0 (docs). See LICENSE and NOTICE.
 
 == License
 
-This project is licensed under the link:LICENSE[GNU Affero General
-Public License v3.0 or later]. Individual files may carry earlier
-MPL-2.0 SPDX headers pending the header migration sweep.
+This project is licensed under the link:LICENSE[Mozilla Public License
+2.0]; documentation is under CC-BY-SA-4.0. A few `+.a2ml+` manifests
+still carry a stale AGPL-3.0-or-later header until their `+.deed+`
+conversion; see link:NOTICE[`+NOTICE+`].
 
 == Citation
 
@@ -599,7 +598,7 @@ MPL-2.0 SPDX headers pending the header migration sweep.
   author = {Jewell, Jonathan D.A.},
   year = {2026},
   url = {https://github.com/hyperpolymath/echidna},
-  license = {AGPL-3.0-or-later}
+  license = {MPL-2.0}
 }
 ----
 

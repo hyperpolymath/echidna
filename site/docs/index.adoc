@@ -77,7 +77,7 @@ Reject)
 
 === License
 
-AGPL-3.0-or-later. Source at
+MPL-2.0 (documentation CC-BY-SA-4.0). Source at
 https://github.com/hyperpolymath/echidna[github.com/hyperpolymath/echidna].
 
 link:/index.html[Back to home]

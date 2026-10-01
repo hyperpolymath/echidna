@@ -1,5 +1,4 @@
 # SPDX-License-Identifier: MPL-2.0
-# (MPL-2.0 is automatic legal fallback until PMPL is formally recognised)
 #
 # _base.ncl — Shared contractile base
 #

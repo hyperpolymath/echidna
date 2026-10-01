@@ -3,15 +3,15 @@ Upstream-Name: ECHIDNA
 Upstream-Contact: Jonathan D.A. Jewell <j.d.a.jewell@open.ac.uk>
 Source: https://github.com/hyperpolymath/echidna
 
-# ECHIDNA is licensed in four parts. See NOTICE for the rationale and for
-# why the MPL-2.0 components are compatible with the AGPL umbrella
-# (MPL-2.0 section 3.3, Secondary Licenses).
+# ECHIDNA is MPL-2.0 for code and the specification surface, CC-BY-SA-4.0
+# for documentation, and MPL-2.0 (unchanged) for echidna-playground/.
+# See NOTICE. Re-ruled 2026-10-01 (D262) from the 2026-08 AGPL split.
 #
 # Per-file SPDX-License-Identifier headers are authoritative. The stanzas
 # below are the REUSE bulk fallback for files that carry no header.
 
 # ---------------------------------------------------------------------------
-# 1. Code — AGPL-3.0-or-later
+# 1. Code — MPL-2.0
 # ---------------------------------------------------------------------------
 
 Files: src/*
@@ -48,15 +48,14 @@ Files: src/*
  contractile.just
  guix.scm
 Copyright: 2024-2026 Jonathan D.A. Jewell <j.d.a.jewell@open.ac.uk> and ECHIDNA Project Contributors
-License: AGPL-3.0-or-later
+License: MPL-2.0
 
 # ---------------------------------------------------------------------------
 # 2. Machine-readable specification surface — MPL-2.0
 #
-# Deliberately NOT AGPL: specification and metadata intended for
-# interoperability and, in part, standards-body submission, where strong
-# copyleft would obstruct adoption. Weak copyleft keeps improvements open
-# without burdening implementers.
+# Specification and metadata intended for interoperability and, in part,
+# standards-body submission. Kept as its own stanza for that reason, though
+# it now shares the code licence.
 # ---------------------------------------------------------------------------
 
 Files: .machine_readable/*
@@ -84,8 +83,7 @@ License: CC-BY-SA-4.0
 # 4. Coq-Jr playground — MPL-2.0, NOT relicensed
 #
 # Carries contributions from Coq-Jr Contributors rather than the ECHIDNA
-# project. Sits under the AGPL umbrella via MPL-2.0 section 3.3 while
-# remaining individually available under MPL-2.0.
+# project. Has always been MPL-2.0; the 2026-10-01 re-ruling does not touch it.
 # ---------------------------------------------------------------------------
 
 Files: echidna-playground/*

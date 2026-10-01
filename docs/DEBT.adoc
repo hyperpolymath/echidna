@@ -23,7 +23,49 @@ cost, or latent risk.
 
 '''''
 
-=== P0 — Licensing: RESOLVED 2026-08-07
+=== P0 — Licensing: RE-RULED 2026-10-01 (D262) — current
+
+*Now:* the owner re-ruled ECHIDNA onto the estate default (ruling D262,
+2026-10-01): *MPL-2.0* for code, the machine-readable specification
+surface and `+echidna-playground/+`, and *CC-BY-SA-4.0* for documentation.
+This supersedes the 2026-08-07 AGPL-3.0-or-later split recorded below.
+`+LICENSE+` is the verbatim MPL-2.0 text from mozilla.org, and every
+`+Cargo.toml+` `+license+` field, the guix package, `+NOTICE+`,
+`+.reuse/dep5+`, the README and the wiki now say so.
+
+*Deliberate interim — not drift.* The `+.a2ml+` manifests are being
+converted to `+.deed+` in a follow-up PR, which rewrites their headers.
+Until it lands, ten of them still carry an AGPL-3.0-or-later SPDX
+header (under
+`+HOL-o-extension/+`, `+audits/+` and `+training_data/+`), and
+`+LICENSES/AGPL-3.0-or-later.txt+` stays so those headers still resolve
+under `+reuse lint+`. The follow-up PR deletes that file. The
+`+training_data/+` corpus is excluded throughout: SPDX strings inside it
+are scraped content, not grants (see below).
+
+*Residual exposure.* Copies obtained between 2026-08-07 and 2026-10-01
+were licensed AGPL-3.0-or-later and stay so for their recipients. The
+re-ruling only loosens the licence (MPL-2.0 grants a subset of the AGPL's
+obligations), so it misleads no earlier recipient.
+
+*Verification — these should come back clean:*
+
+[source,bash]
+----
+# no AGPL grants outside the interim .a2ml set, the corpus and licence texts
+git grep -lE 'SPDX-License-Identifier:[[:space:]]*AGPL' \
+  | grep -vE '\.a2ml$|^(training_data/|LICENSES/|docs/legal/)'   # expect empty
+
+# no AGPL in packaging metadata
+git grep -In '^license *= *"AGPL' -- '*.toml'                  # expect empty
+
+# GitHub detects MPL-2.0
+gh repo view hyperpolymath/echidna --json licenseInfo
+----
+
+'''''
+
+=== P0 — Licensing: the 2026-08-07 resolution (superseded by D262)
 
 *Was:* the repository stated four different licences at once —
 `+LICENSE+` and `+Cargo.toml+` said AGPL-3.0-or-later while 590 source
@@ -64,7 +106,8 @@ to `+LICENSES/AGPL-3.0-or-later.txt+` — those lines were stopping
 GitHub’s licence detector matching the body, which is why the repository
 showed "`Other`".
 
-*Verification — these should come back clean:*
+*Verification as it stood on 2026-08-07 (historical; inverted by D262 —
+use the check in the current section above):*
 
 [source,bash]
 ----
