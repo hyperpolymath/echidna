@@ -1,8 +1,8 @@
 cff-version: 1.2.0
 message: "If you use this software, please cite it as below."
 type: software
-title: "echidna"
-abstract: "ECHIDNA — Extensible Cognitive Hybrid Intelligence for Deductive Neural Assistance. Neurosymbolic theorem proving with 30 prover backends"
+title: "ECHIDNA"
+abstract: "ECHIDNA — Extensible Cognitive Hybrid Intelligence for Deductive Neural Assistance. Neurosymbolic theorem proving across multiple prover backends"
 authors:
   - family-names: "Jewell"
     given-names: "Jonathan D.A."
