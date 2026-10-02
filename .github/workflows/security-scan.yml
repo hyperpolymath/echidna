@@ -24,6 +24,6 @@ permissions:
 
 jobs:
   scan:
-    uses: hyperpolymath/panic-attack/.github/workflows/scan-and-report.yml@5ee25658c9f3ef54beaa911e77fbb0c823b358fc # main 2026-10-01 panic-attack#209: SHA-pinned steps (skip dispatch without VERISIMDB_PAT)
+    uses: hyperpolymath/panic-attack/.github/workflows/scan-and-report.yml@acdb9821a67fe0a275b39f1b388be364df7fbd4a # main 2026-10-01 panic-attack#209: SHA-pinned steps (skip dispatch without VERISIMDB_PAT)
     secrets:
       VERISIMDB_PAT: ${{ secrets.VERISIMDB_PAT }}
