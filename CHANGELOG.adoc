@@ -8,6 +8,17 @@ https://semver.org/spec/v2.0.0.html[Semantic Versioning].
 
 === [Unreleased]
 
+==== Changed
+
+* *Licence: `+AGPL-3.0-or-later+` → `+MPL-2.0+` for code and the
+specification surface, `+CC-BY-SA-4.0+` for documentation* (owner ruling
+D262, 2026-10-01). `+echidna-playground/+` stays MPL-2.0, untouched.
+`+LICENSE+` is now the verbatim Mozilla text; NOTICE, `+.reuse/dep5+`,
+the crate manifests, `+build/guix.scm+`, README, CLAUDE.md, the wiki and
+`+docs/DEBT.adoc+` record the re-ruling. The `+.a2ml+` manifests keep
+their AGPL headers until their `+.deed+` conversion, so
+`+LICENSES/AGPL-3.0-or-later.txt+` stays until then.
+
 ==== Fixed
 
 * ci(chapel): pin runs-on to ubuntu-22.04 for Chapel 2.8.0

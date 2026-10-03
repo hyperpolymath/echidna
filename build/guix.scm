@@ -1,4 +1,4 @@
-;; SPDX-License-Identifier: AGPL-3.0-or-later
+;; SPDX-License-Identifier: MPL-2.0
 ;; echidna - Guix Package Definition
 ;; Development: guix shell -D -f build/guix.scm
 ;; Build: guix build -f build/guix.scm
@@ -84,7 +84,7 @@ supports 30 prover backends including Agda, Coq, Lean 4, Isabelle, Z3, CVC5,
 and more, with a comprehensive verification pipeline featuring solver integrity
 checking, proof certificate validation, axiom tracking, and confidence scoring.")
     (home-page "https://github.com/hyperpolymath/echidna")
-    (license license:agpl3+)))
+    (license license:mpl2.0)))
 
 ;; For development shell
 echidna

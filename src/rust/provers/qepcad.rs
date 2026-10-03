@@ -1,5 +1,5 @@
 // SPDX-FileCopyrightText: 2026 ECHIDNA Project Team
-// SPDX-License-Identifier: AGPL-3.0-or-later
+// SPDX-License-Identifier: MPL-2.0
 
 //! QEPCAD-B backend — cylindrical algebraic decomposition over the
 //! reals.

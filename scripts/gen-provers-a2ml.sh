@@ -9,10 +9,9 @@
 # Case-only ties are not resolved by the sort: list `Mizar` before
 # `MizAR`, as the committed file does.
 #
-# NOTE: the header template below declares AGPL-3.0-or-later (matching the
-# root LICENSE) while the committed .machine_readable/provers.a2ml declares
-# MPL-2.0. That discrepancy is a licensing call, tracked separately -- do
-# not let a regeneration silently change the file's SPDX line.
+# The header template below declares MPL-2.0, matching both the root LICENSE
+# and the committed .machine_readable/provers.a2ml (reconciled 2026-10-01,
+# D262). Keep the two in step: a regeneration must not change the SPDX line.
 #
 # The variant-list path is a CLI argument (was the hard-coded
 # /tmp/provers-list.txt); predictable /tmp/* paths are a panic-attack
@@ -28,7 +27,7 @@ if [ -z "$VARIANT_LIST" ] || [ ! -r "$VARIANT_LIST" ]; then
 fi
 
 cat << 'HEADER'
-# SPDX-License-Identifier: AGPL-3.0-or-later
+# SPDX-License-Identifier: MPL-2.0
 # SPDX-FileCopyrightText: 2026 Jonathan D.A. Jewell <j.d.a.jewell@open.ac.uk>
 #
 # provers.a2ml — Authoritative enumeration of ECHIDNA prover backends.

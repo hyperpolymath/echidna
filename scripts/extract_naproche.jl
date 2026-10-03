@@ -1,5 +1,5 @@
 #!/usr/bin/env julia
-# SPDX-License-Identifier: AGPL-3.0-or-later
+# SPDX-License-Identifier: MPL-2.0
 # Extract proofs / declarations / ForTheL files from Naproche (ForTheL).
 # Vendor location: external_corpora/naproche/
 using JSON3, Dates

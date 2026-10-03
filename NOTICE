@@ -3,42 +3,34 @@ Copyright (c) 2024-2026 Jonathan D.A. Jewell and ECHIDNA Project Contributors
 
 LICENSING
 
-This project is licensed under the GNU Affero General Public License,
-version 3 or later (AGPL-3.0-or-later).
+This project is licensed under the Mozilla Public License, version 2.0
+(MPL-2.0), with its documentation under Creative Commons
+Attribution-ShareAlike 4.0 (CC-BY-SA-4.0).
 
-  Full text:               LICENSE  (also in LICENSES/AGPL-3.0-or-later.txt)
-  SPDX-License-Identifier: AGPL-3.0-or-later
+  Full text:               LICENSE  (also in LICENSES/MPL-2.0.txt)
+  SPDX-License-Identifier: MPL-2.0
 
-Four licences apply, to four distinct parts of the tree. This is deliberate,
-not drift:
+Three parts of the tree, two licences:
 
-  1. APPLICATION CODE          AGPL-3.0-or-later
+  1. CODE AND SPECIFICATION SURFACE          MPL-2.0
      The Rust core, Julia ML layer, Zig FFI, Chapel parallel layer, SPARK/Ada
-     units, proof corpora, build system and CI. The AGPL's network clause
-     applies: if you run a modified ECHIDNA as a network service, you must
-     offer your users the modified source.
+     units, proof corpora, build system and CI; and everything under
+     .machine_readable/ (descriptiles, contractiles, K9 configurations,
+     anchors, policies), the AI manifest, the package and container
+     manifests, and the OCI image labels emitted by the stapeln / svalinn
+     build tooling. MPL-2.0 is file-level copyleft: modifications to these
+     files must stay open, but combining them with other code, or
+     implementing against the specification surface, carries no obligation
+     on the rest of a larger work.
 
-  2. MACHINE-READABLE SPECIFICATION SURFACE          MPL-2.0
-     Everything under .machine_readable/ (A2ML descriptiles, contractiles,
-     K9 configurations, anchors, policies), 0-AI-MANIFEST.a2ml, the package
-     and container manifests, and the OCI image labels emitted by the
-     stapeln / svalinn build tooling.
-
-     This part is deliberately NOT AGPL. It is specification and metadata
-     intended for interoperability, some of it on a path to standards-body
-     submission, where strong copyleft would obstruct adoption and
-     re-publication. MPL-2.0 keeps it file-level weak copyleft: improvements
-     to these files stay open, but implementing against them carries no
-     obligation.
-
-  3. DOCUMENTATION             CC-BY-SA-4.0
+  2. DOCUMENTATION             CC-BY-SA-4.0
      Everything under docs/, plus the top-level Markdown and AsciiDoc
      documents.
 
-  4. echidna-playground/       MPL-2.0
+  3. echidna-playground/       MPL-2.0
      The Coq-Jr playground sub-project, which carries contributions from
-     Coq-Jr Contributors rather than the ECHIDNA project. It remains under
-     the Mozilla Public License 2.0 and is NOT relicensed.
+     Coq-Jr Contributors rather than the ECHIDNA project. It has always been
+     MPL-2.0 and is NOT relicensed.
 
 Files that previously offered `Palimpsest-0.6` now carry MPL-2.0. The
 Palimpsest Licence is MPL-2.0 with additional ethical provisions layered on
@@ -46,19 +38,11 @@ top, so MPL-2.0 is the faithful reduction when the Palimpsest layer is not
 being asserted. See "THE PALIMPSEST FRAMEWORK IS NOT A LICENCE GRANT HERE"
 below.
 
-WHY THE MPL COMPONENT IS COMPATIBLE
-
-MPL-2.0 section 3.3 designates the GNU licences - including
-AGPL-3.0-or-later - as "Secondary Licenses". MPL-covered files may therefore
-be combined into this AGPL-licensed work, and the combined work distributed
-under the AGPL, while those files individually remain available under the
-MPL. No file in this repository carries the MPL Exhibit B
-"Incompatible With Secondary Licenses" notice, which would have prevented
-this.
-
-In short: the whole distributed work is AGPL-3.0-or-later. If you extract the
-MPL-2.0 parts on their own - the machine-readable specification surface, or
-echidna-playground/ - you may use those under MPL-2.0.
+Until the remaining `.a2ml` manifests are converted to `.deed`, a handful of
+them (and one training-data file) still carry an AGPL-3.0-or-later SPDX
+header; LICENSES/AGPL-3.0-or-later.txt is retained for them in the interim.
+Those headers are stale, not a carve-out: the owner's 2026-10-01 ruling
+places the whole of the project's own code under MPL-2.0. See docs/DEBT.adoc.
 
 THE PALIMPSEST FRAMEWORK IS NOT A LICENCE GRANT HERE
 
@@ -78,14 +62,15 @@ this repository. They were removed in 2026-08.
 LICENCE HISTORY
 
   dual MIT / Palimpsest-0.6  ->  MPL-2.0  ->  AGPL-3.0-or-later for
-  application code, MPL-2.0 retained for the specification surface (2026)
+  application code, MPL-2.0 for the specification surface (2026-08)
+  ->  MPL-2.0 throughout, CC-BY-SA-4.0 for documentation (2026-10-01)
 
-The AGPL decision was taken by the project owner in 2026 and the per-file SPDX
-headers were reconciled to match it in 2026-08, at which point the
-machine-readable specification surface was deliberately held at MPL-2.0 for
-interoperability and standards-submission reasons. Documents predating that
-reconciliation may describe the whole project as MPL-2.0; LICENSE and this
-file are authoritative.
+The owner re-ruled ECHIDNA onto the estate default on 2026-10-01 (ruling
+D262), superseding the 2026-08 AGPL decision. Copies obtained between those
+dates under AGPL-3.0-or-later remain available to their recipients under
+that licence; everything from 2026-10-01 is MPL-2.0. Documents predating the
+re-ruling may describe application code as AGPL; LICENSE and this file are
+authoritative.
 
 ================================================================================
 
@@ -124,10 +109,10 @@ This project follows the REUSE Software Licensing specification.
 
   .reuse/dep5                        bulk copyright declarations
   per-file headers                   SPDX-License-Identifier, per the
-                                     four-part split described above
-  LICENSES/AGPL-3.0-or-later.txt     application code
-  LICENSES/MPL-2.0.txt               machine-readable specification surface
-                                     and echidna-playground/
+                                     split described above
+  LICENSES/MPL-2.0.txt               code, specification surface and
+                                     echidna-playground/
+  LICENSES/AGPL-3.0-or-later.txt     interim only: the stale .a2ml headers
   LICENSES/CC-BY-SA-4.0.txt          documentation
 
 Verify locally: `reuse lint`
@@ -145,9 +130,9 @@ See RSR_COMPLIANCE.adoc at repo root.
 CONTRIBUTIONS
 
 Contributions are licensed under the licence governing the part of the tree
-they land in: AGPL-3.0-or-later for application code, MPL-2.0 for the
-machine-readable specification surface and echidna-playground/, and
-CC-BY-SA-4.0 for documentation. See .github/CONTRIBUTING.md.
+they land in: MPL-2.0 for code, the machine-readable specification
+surface and echidna-playground/, and CC-BY-SA-4.0 for documentation.
+See .github/CONTRIBUTING.md.
 
 By contributing, you certify that:
   1. You have the right to submit the contribution.
@@ -174,7 +159,7 @@ If you use this software in academic work, please cite:
     author = {Jonathan D.A. Jewell and ECHIDNA Project Contributors},
     year   = {2026},
     url    = {https://github.com/hyperpolymath/echidna},
-    license = {AGPL-3.0-or-later},
+    license = {MPL-2.0},
   }
 
 See CITATION.cff for machine-readable metadata and docs/CITATIONS.adoc for

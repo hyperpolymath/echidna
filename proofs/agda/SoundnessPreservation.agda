@@ -1,4 +1,4 @@
--- SPDX-License-Identifier: AGPL-3.0-or-later
+-- SPDX-License-Identifier: MPL-2.0
 -- SoundnessPreservation.agda — composed proofs are sound when axiom sets
 -- are conflict-free.
 --

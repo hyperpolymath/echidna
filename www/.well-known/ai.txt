@@ -1,4 +1,4 @@
-# SPDX-License-Identifier: AGPL-3.0-or-later
+# SPDX-License-Identifier: CC-BY-SA-4.0
 # ai.txt - AI agent instructions for ECHIDNA
 # See https://site.spawning.ai/ai-txt
 

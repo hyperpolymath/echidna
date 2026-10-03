@@ -1,4 +1,4 @@
-// SPDX-License-Identifier: AGPL-3.0-or-later
+// SPDX-License-Identifier: MPL-2.0
 //! Opt-in checks for the parse_string path used by the HTTP service.
 #![cfg(feature = "live-provers")]
 

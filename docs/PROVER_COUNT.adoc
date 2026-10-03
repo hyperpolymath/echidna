@@ -287,11 +287,10 @@ says `+backend-matrix.yml+` reads it to build "`one job per prover`", but
 no such workflow exists in `+.github/workflows/+` and nothing else reads
 the file. The per-prover matrix CI the file was built for is therefore
 absent, not merely stale.
-* `+scripts/gen-provers-a2ml.sh+`'s header template declares
-`+AGPL-3.0-or-later+` (matching the root `+LICENSE+`) while the committed
-`+provers.a2ml+` declares `+MPL-2.0+`. Left as-is: which one is correct is
-a licensing decision (see the SPDX/licensing issue), and a regeneration
-must not silently flip a licence line.
+* `+scripts/gen-provers-a2ml.sh+`'s header template and the committed
+`+provers.a2ml+` both declare `+MPL-2.0+`, matching the root `+LICENSE+`.
+Resolved 2026-10-01 by the owner's MPL-2.0 re-ruling (D262); previously
+the template said `+AGPL-3.0-or-later+`.
 
 Re-check by re-running the sweep:
 

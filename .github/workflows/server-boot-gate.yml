@@ -1,5 +1,5 @@
 # This workflow is managed by gh actions-lock.
-# SPDX-License-Identifier: AGPL-3.0-or-later
+# SPDX-License-Identifier: MPL-2.0
 # This workflow is managed by gh actions-lock.
 # Server boot gate — builds the echidna binary, boots the server, and
 # verifies that /api/health, /api/provers, and a session {id} route all

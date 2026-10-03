@@ -1,4 +1,4 @@
-// SPDX-License-Identifier: AGPL-3.0-or-later
+// SPDX-License-Identifier: MPL-2.0
 //! Minlog minimal logic backend with program extraction
 #![allow(dead_code)]
 use super::{ProverBackend, ProverConfig, ProverKind};

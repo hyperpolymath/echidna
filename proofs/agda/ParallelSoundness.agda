@@ -1,4 +1,4 @@
--- SPDX-License-Identifier: AGPL-3.0-or-later
+-- SPDX-License-Identifier: MPL-2.0
 -- ParallelSoundness.agda — Speculative parallel proof-search soundness.
 --
 -- Models the Chapel `parallelProofSearchSpeculative` function

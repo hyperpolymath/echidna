@@ -1,4 +1,4 @@
--- SPDX-License-Identifier: AGPL-3.0-or-later
+-- SPDX-License-Identifier: MPL-2.0
 -- ProofTerm.idr - Dependent-typed representation of proof terms
 
 module ProofTerm

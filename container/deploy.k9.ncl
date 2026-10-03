@@ -1,5 +1,5 @@
 K9!
-# SPDX-License-Identifier: AGPL-3.0-or-later
+# SPDX-License-Identifier: MPL-2.0
 # deploy.k9.ncl — ECHIDNA deployment component (Hunt level)
 
 let component_pedigree = {

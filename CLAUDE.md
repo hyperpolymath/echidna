@@ -8,11 +8,9 @@ Guidelines and context for working with Claude Code on the ECHIDNA project.
 
 - **Repository**: https://github.com/hyperpolymath/echidna
 - **Version + release history**: [`CHANGELOG.adoc`](CHANGELOG.adoc) (single source of truth; do not duplicate version strings elsewhere)
-- **License**: four parts — AGPL-3.0-or-later (application code), **MPL-2.0
-  (`.machine_readable/` specification surface + manifests + OCI labels, kept
-  weak-copyleft for interoperability/standards work)**, CC-BY-SA-4.0 (docs),
-  MPL-2.0 (`echidna-playground/`). See [`NOTICE`](NOTICE); MPL §3.3 is what
-  makes the MPL parts compatible inside the AGPL work
+- **License**: MPL-2.0 (code, `.machine_readable/` specification surface,
+  manifests, OCI labels, `echidna-playground/`), CC-BY-SA-4.0 (docs).
+  Re-ruled 2026-10-01 (D262) from the 2026-08 AGPL split. See [`NOTICE`](NOTICE)
 - **Architecture overview**: [`docs/ARCHITECTURE.adoc`](docs/ARCHITECTURE.adoc)
 - **Canonical prover count + tier table**: [`docs/PROVER_COUNT.adoc`](docs/PROVER_COUNT.adoc)
 - **Known debt (licence, docs, code)**: [`docs/DEBT.adoc`](docs/DEBT.adoc)
@@ -210,16 +208,16 @@ in `.github/workflows/`:
 - **RSR / CCCP compliance** — see [`RSR_COMPLIANCE.adoc`](RSR_COMPLIANCE.adoc) for the full hard-rule list and out-of-template adaptations.
 - **Justfile primary** (RSR-H14) — Just is the build entry point; no Make.
 - **Podman not Docker** (RSR-H15) — always Podman; `Containerfile` (not `Dockerfile`); `.containerization/Containerfile.wave3` for per-prover images.
-- **License**: four parts, reconciled 2026-08 — **application code**
-  AGPL-3.0-or-later (matching `LICENSE` and `Cargo.toml`); **machine-readable
-  specification surface** (`.machine_readable/`, `0-AI-MANIFEST.a2ml`,
-  package/container manifests, OCI image labels) MPL-2.0, held weak-copyleft
-  on purpose so it stays usable for interoperability and standards
-  submission; **documentation** CC-BY-SA-4.0; **`echidna-playground/`**
-  MPL-2.0 (Coq-Jr contributions, not relicensed). Per-file SPDX headers are
-  authoritative. When adding a file, use the licence of the part of the tree
-  it sits in — do not copy a header from elsewhere. Rationale and the MPL
-  §3.3 compatibility argument: [`NOTICE`](NOTICE).
+- **License**: re-ruled 2026-10-01 (D262), superseding the 2026-08 AGPL
+  split — **code and the machine-readable specification surface**
+  (`.machine_readable/`, package/container manifests, OCI image labels)
+  MPL-2.0, matching `LICENSE` and `Cargo.toml`; **documentation**
+  CC-BY-SA-4.0; **`echidna-playground/`** MPL-2.0 (Coq-Jr contributions,
+  never relicensed). Never AGPL. Per-file SPDX headers are authoritative.
+  When adding a file, use MPL-2.0 for code/config and CC-BY-SA-4.0 for
+  prose — do not copy a header from elsewhere (a few `.a2ml` files still
+  carry a stale AGPL header until their `.deed` conversion). See
+  [`NOTICE`](NOTICE).
 - **Author**: Jonathan D.A. Jewell <j.d.a.jewell@open.ac.uk>.
 
 ---
