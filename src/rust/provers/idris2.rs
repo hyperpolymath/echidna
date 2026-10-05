@@ -807,7 +807,7 @@ impl ProverBackend for Idris2Backend {
         }
         if let Some(source) = state.metadata.get("idris2_source").and_then(|v| v.as_str()) {
             let temp_dir =
-                std::env::temp_dir().join(format!("echidna_idris2_{}", uuid::Uuid::new_v4()));
+                std::env::temp_dir().join(format!("echidna_idris2_{}", crate::ids::temp_token()));
             tokio::fs::create_dir_all(&temp_dir).await?;
             let temp_file = temp_dir.join("Verify.idr");
             tokio::fs::write(&temp_file, source).await?;

@@ -187,7 +187,7 @@ impl ProverBackend for SPASSBackend {
                     .map(Ok)
                     .unwrap_or_else(|| self.to_dfg(state))?;
                 let tmp = std::env::temp_dir()
-                    .join(format!("echidna_spass_{}.dfg", uuid::Uuid::new_v4()));
+                    .join(format!("echidna_spass_{}.dfg", crate::ids::temp_token()));
                 tokio::fs::write(&tmp, dfg_code).await?;
                 tmp
             };

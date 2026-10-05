@@ -1160,7 +1160,7 @@ fn build_proof_attempt(
     let started_at = now - chrono::Duration::milliseconds(duration_ms as i64);
 
     ProofAttempt {
-        attempt_id: uuid::Uuid::new_v4().to_string(),
+        attempt_id: crate::ids::new_record_id().to_string(),
         obligation_id,
         repo: String::new(),
         file: String::new(),

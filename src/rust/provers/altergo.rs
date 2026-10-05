@@ -175,7 +175,7 @@ impl ProverBackend for AltErgoBackend {
                 .and_then(|v| v.as_str())
             {
                 let tmp = std::env::temp_dir()
-                    .join(format!("echidna_altergo_{}.ae", uuid::Uuid::new_v4()));
+                    .join(format!("echidna_altergo_{}.ae", crate::ids::temp_token()));
                 tokio::fs::write(&tmp, src)
                     .await
                     .context("Failed to write temp file")?;

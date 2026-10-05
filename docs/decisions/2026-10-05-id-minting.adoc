@@ -1,0 +1,43 @@
+// SPDX-License-Identifier: CC-BY-SA-4.0
+// SPDX-FileCopyrightText: 2026 Jonathan D.A. Jewell (hyperpolymath) <j.d.a.jewell@open.ac.uk>
+= ADR: one ID-minting module (UUIDv7 records, UUIDv8 content)
+:revdate: 2026-10-05
+:status: accepted (owner decision, delegated 2026-10-05)
+
+== Context
+
+Before this change echidna minted random UUIDv4 values at 28 call sites
+(`git grep -n 'Uuid::new_v4' -- '*.rs'` on `main` at `b761b3a`): proof ids in
+the REST, gRPC and GraphQL interfaces, session ids, dispatch attempt ids, and
+temp-file names in the prover backends. Estate canon
+(`standards/docs/UUID-V7-ESTATE-STANDARD.adoc`) requires UUIDv7 from a library
+API, and the owner additionally asked for deterministic content ids.
+
+== Decision
+
+All minting goes through `src/rust/ids.rs` (`echidna::ids`):
+
+* `new_record_id()` -> UUIDv7 for events and records (proof requests,
+  sessions, attempts, runs, findings). Monotonic within a process.
+* `content_id(value)` -> UUIDv8 per RFC 9562 Appendix B.2: SHA-256 over the
+  JCS (RFC 8785) canonical bytes of `value`, first 16 bytes, version nibble
+  `8`, variant bits `10`. For proof goals, prove results, corpus entries and
+  octads.
+* `temp_token()` -> a hyphen-free v7, for temp-file names only.
+
+JCS comes from the public `serde_json_canonicalizer` crate. The estate crate
+`hyperpolymath/ijson-jcs` is private on GitHub, so a public repository cannot
+build against it.
+
+Julia package UUIDs (`Project.toml`) are outside this module: they are an
+externally-defined format and stay random v4 by Julia convention.
+
+== Status of the parts (honest)
+
+* `new_record_id` / `temp_token`: implemented, tested, wired into every former
+  v4 site.
+* `content_id`: implemented and tested (same JCS content -> same id;
+  version/variant bits; planted-control recomputation). **Not yet wired**:
+  corpus entries, octads and goals still use their existing identity hashes
+  (`proof_encoding.rs`); switching them changes stored identifiers and needs
+  its own migration.

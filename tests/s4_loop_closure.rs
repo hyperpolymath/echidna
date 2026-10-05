@@ -38,10 +38,10 @@ use echidna::verisim_bridge::{prover_kind_to_str, ProofAttempt, VeriSimDBClient}
 fn fresh_attempt(obligation_class: &str, prover: ProverKind, outcome: &str) -> ProofAttempt {
     let now = chrono::Utc::now();
     ProofAttempt {
-        attempt_id: uuid::Uuid::new_v4().to_string(),
+        attempt_id: echidna::ids::new_record_id().to_string(),
         // Tag the obligation_id with the test name so we can find our own
         // rows even if other tests are writing concurrently.
-        obligation_id: format!("test-s4-loop-{}", uuid::Uuid::new_v4()),
+        obligation_id: format!("test-s4-loop-{}", echidna::ids::temp_token()),
         repo: "hyperpolymath/echidna".to_string(),
         file: "tests/s4_loop_closure.rs".to_string(),
         claim: "true".to_string(),
@@ -124,7 +124,7 @@ async fn s4_class_aggregation_visible_in_mv() -> Result<()> {
     // table. The test passes whether or not it sees its own writes — the
     // contract is that the MV endpoint responds and the response shape
     // is parseable.
-    let unique_class = format!("test-mv-{}", uuid::Uuid::new_v4());
+    let unique_class = format!("test-mv-{}", echidna::ids::temp_token());
 
     // Seed a few attempts so the MV has something to aggregate.
     for outcome in ["success", "success", "failure"] {

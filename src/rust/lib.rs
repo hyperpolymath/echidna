@@ -26,6 +26,7 @@ pub mod fault_tolerance; // Circuit breakers, retries, bulkheads
 pub mod ffi;
 pub mod gnn; // Graph Neural Network integration for proof search guidance
 pub mod groove; // Gossamer Groove discovery endpoint (port 9000)
+pub mod ids; // The single ID-minting module: UUIDv7 record ids, UUIDv8 content ids
 pub mod integrity;
 pub mod ipc; // L1: Cap'n Proto IPC transport (UDS primary, TCP fallback)
 pub mod learning; // Continuous self-learning loop (MCTS + self-play + curriculum + daemon)

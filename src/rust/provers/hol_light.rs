@@ -552,7 +552,7 @@ impl ProverBackend for HolLightBackend {
             .and_then(|v| v.as_str())
         {
             let temp_dir = std::env::temp_dir();
-            let temp_file = temp_dir.join(format!("echidna_{}.ml", uuid::Uuid::new_v4()));
+            let temp_file = temp_dir.join(format!("echidna_{}.ml", crate::ids::temp_token()));
             fs::write(&temp_file, source).await?;
             let load_cmd = format!("#use \"{}\";;", temp_file.display());
             let result = self.execute_command(&load_cmd).await;
@@ -577,7 +577,7 @@ impl ProverBackend for HolLightBackend {
 
         // Write to temporary file
         let temp_dir = std::env::temp_dir();
-        let temp_file = temp_dir.join(format!("echidna_{}.ml", uuid::Uuid::new_v4()));
+        let temp_file = temp_dir.join(format!("echidna_{}.ml", crate::ids::temp_token()));
 
         fs::write(&temp_file, hol_content).await?;
 

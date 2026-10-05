@@ -179,7 +179,7 @@ impl ProofService for ProofServiceImpl {
         let core_kind = proto_kind_to_core(req.prover)
             .ok_or_else(|| Status::invalid_argument("Unknown prover kind"))?;
 
-        let proof_id = uuid::Uuid::new_v4().to_string();
+        let proof_id = echidna::ids::new_record_id().to_string();
 
         // Try FFI path first if available
         if self.ffi_initialized {

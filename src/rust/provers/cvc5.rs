@@ -20,7 +20,6 @@ use std::path::PathBuf;
 use std::process::{Child, Command, Stdio};
 use std::sync::{Arc, Mutex};
 use tokio::fs;
-use uuid::Uuid;
 
 use crate::core::{Goal, ProofState, Tactic, TacticResult, Term};
 use crate::provers::{ProverBackend, ProverConfig, ProverKind};
@@ -637,8 +636,10 @@ impl ProverBackend for CVC5Backend {
                 s
             };
 
-        let temp_file =
-            std::env::temp_dir().join(format!("echidna_cvc5_verify_{}.smt2", Uuid::new_v4()));
+        let temp_file = std::env::temp_dir().join(format!(
+            "echidna_cvc5_verify_{}.smt2",
+            crate::ids::temp_token()
+        ));
         fs::write(&temp_file, commands)
             .await
             .context("Failed to write CVC5 temp file")?;

@@ -295,7 +295,7 @@ async fn agent_plan_handler(
     use echidna::agent::Priority;
     let goal = AgenticGoal {
         goal: Goal {
-            id: uuid::Uuid::new_v4().to_string(),
+            id: echidna::ids::new_record_id().to_string(),
             target: Term::Const("?".to_string()),
             hypotheses: vec![],
         },
@@ -1066,7 +1066,7 @@ async fn create_session(
         .map_err(|e| AppError::InternalError(e.to_string()))?;
 
     // Create session
-    let session_id = uuid::Uuid::new_v4().to_string();
+    let session_id = echidna::ids::new_record_id().to_string();
     let session = ProofSession {
         prover,
         state: None,
