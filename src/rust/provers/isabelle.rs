@@ -177,11 +177,13 @@ fn build_isabelle_temp_dir(tag: &str) -> Result<std::path::PathBuf> {
 ///
 /// Isabelle ROOT files declare sessions like:
 ///
-///     session Tropical_Semirings in "." = "HOL-Library" +
-///       theories
-///         Tropical_v2
-///         Tropical_Kleene
-///         ...
+/// ```text
+/// session Tropical_Semirings in "." = "HOL-Library" +
+///   theories
+///     Tropical_v2
+///     Tropical_Kleene
+///     ...
+/// ```
 ///
 /// When a probe theory is going to do `imports Tropical_v2`, the temp
 /// probe session needs to inherit from the session that owns

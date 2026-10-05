@@ -12,10 +12,10 @@ is `master`, not `main`.
 ```bash
 git clone https://github.com/hyperpolymath/echidna.wiki.git /tmp/echidna-wiki
 for f in Home Architecture Getting-Started FAQ Guides Troubleshooting; do
-  cp docs/wiki/"$f".md /tmp/echidna-wiki/"$f".md
+  cp docs/wikis/"$f".md /tmp/echidna-wiki/"$f".md
 done
 git -C /tmp/echidna-wiki add -A
-git -C /tmp/echidna-wiki commit -m "docs: sync wiki from docs/wiki/"
+git -C /tmp/echidna-wiki commit -m "docs: sync wiki from docs/wikis/"
 git -C /tmp/echidna-wiki push origin master
 ```
 

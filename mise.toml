@@ -1,57 +1,24 @@
+# SPDX-License-Identifier: MPL-2.0
+# SPDX-FileCopyrightText: 2026 Jonathan D.A. Jewell (hyperpolymath) <j.d.a.jewell@open.ac.uk>
+#
+# The toolchain for echidna. Specs are `latest`; mise.lock records the concrete
+# version and per-platform checksum of each, so every checkout installs the
+# same bits. Refresh both with: mise upgrade && mise lock
+# Canon: hyperpolymath/standards 3-practice/provisioning (PROVISIONING-STANDARD §4).
+# Estate policy: no python, deno, node/npm/yarn, go, java or make here; the JS
+# runtime is bun.
+#
+# Rust is pinned by rust-toolchain.toml (rustup), not here. Idris2 comes from
+# pack, not mise. Chapel has no mise tool; it is optional (--features chapel).
+
+[settings]
+lockfile = true
+
 [tools]
-# Language runtimes
-node = "latest"
-python = "latest"
-rust = "latest"
-go = "latest"
+just = "latest"
 zig = "latest"
-java = "latest"
+protoc = "latest"         # echidna-grpc build script (tonic-build)
+julia = "latest"
 bun = "latest"
-denojs = "latest"
-
-# Package managers
-npm = "latest"
-yarn = "latest"
-pnpm = "latest"
-pip = "latest"
-cargo = "latest"
-go-task = "latest"
-
-# Formatting & Linting
-gofmt = "latest"
-black = "latest"
-isort = "latest"
-ruff = "latest"
-prettier = "latest"
-shfmt = "latest"
-stylua = "latest"
-
-# Build tools
-cmake = "latest"
-make = "latest"
-ninja = "latest"
-
-# Shell tools
-git = "latest"
-gnu-sed = "latest"
-gnu-tar = "latest"
-gnu-grep = "latest"
-
-# Testing
-vitest = "latest"
-pytest = "latest"
-jest = "latest"
-
-[env]
-# Common environment variables
-NODE_ENV = "development"
-PYTHONDONTWRITEBYTECODE = "1"
-PYTHONUNBUFFERED = "1"
-
-# Task runner alias
-[alias]
-task = "go-task"
-build = "cargo build --release || npm run build || go build"
-test = "cargo test || npm test || go test ./..."
-lint = "ruff check . || prettier --check . || black --check ."
-fmt = "ruff format . || prettier --write . || black ."
+shellcheck = "latest"
+yq = "latest"             # KYAML formatting/checks (standards scripts/kyaml-format.sh)

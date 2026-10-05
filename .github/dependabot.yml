@@ -1,22 +1,49 @@
 # SPDX-License-Identifier: MPL-2.0
-version: 2
-updates:
-  - package-ecosystem: "cargo"
-    directory: "/"
-    schedule:
-      interval: "weekly"
-    ignore:
-      - dependency-name: "*"
-        update-types: ["version-update:semver-patch"]
-  - package-ecosystem: "github-actions"
-    directory: "/"
-    schedule:
-      interval: "weekly"
-    groups:
-      actions:
-        patterns:
-          - "*"
-  - package-ecosystem: "npm"
-    directory: "/"
-    schedule:
-      interval: "weekly"
+# Dependabot configuration for echidna (KYAML; format with
+# standards/scripts/kyaml-format.sh). Only ecosystems present in the repo are
+# listed: there is no package.json, so the former `npm` block only produced
+# failing "npm_and_yarn" update runs.
+#
+# github-actions: Dependabot rewrites `uses:` refs but cannot touch
+# .github/workflows/actions.lock. A bump PR therefore needs `gh actions-lock`
+# run on its branch before it can merge; the governance "Actions lockfile
+# verify" and lint-workflows checks go red until it is. The codeql-action
+# hold mirrors rsr-template-repo: the trailing `*` is load-bearing because
+# workflows use the init/analyze subpaths, which Dependabot names separately.
+#
+# cargo: `open-pull-requests-limit: 0` stops routine version PRs but keeps
+# security PRs flowing (an `ignore: semver-patch` rule would also silence
+# patch-level security fixes).
+{
+  version: 2,
+  updates: [
+    {
+      package-ecosystem: "github-actions",
+      directory: "/",
+      schedule: {
+        interval: "weekly",
+      },
+      groups: {
+        actions: {
+          patterns: [
+            "*",
+          ],
+        },
+      },
+      open-pull-requests-limit: 2,
+      ignore: [
+        {
+          dependency-name: "github/codeql-action*",
+        },
+      ],
+    },
+    {
+      package-ecosystem: "cargo",
+      directory: "/",
+      schedule: {
+        interval: "weekly",
+      },
+      open-pull-requests-limit: 0,
+    },
+  ],
+}

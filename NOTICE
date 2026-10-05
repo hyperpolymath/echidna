@@ -144,7 +144,7 @@ By contributing, you certify that:
 
 SECURITY
 
-See SECURITY.md and .well-known/security.txt.
+See SECURITY.adoc and .well-known/security.txt.
 Do not disclose security issues publicly until they have been addressed.
 
 ================================================================================

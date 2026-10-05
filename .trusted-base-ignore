@@ -23,7 +23,7 @@
 # These files are the *implementation* of the trust-pipeline's
 # axiom-tracker — they're proof infrastructure, not proof escapes.
 src/rust/verification/axiom_tracker.rs
-crates/echidna-core-spark/src/axiom_tracker.rs
+crates/echidna-core-creusot/src/axiom_tracker.rs
 
 # ─────────────────────────────────────────────────────────────────────────────
 # Hazard-classification helpers in the corpus extractor (NOT uses)

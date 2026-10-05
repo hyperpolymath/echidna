@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: MPL-2.0
 
-//! # echidna-core-spark
+//! # echidna-core-creusot
 //!
 //! Creusot-annotated trust-pipeline kernel for ECHIDNA.
 //!
@@ -28,17 +28,25 @@
 //! Build without it for normal stable-Rust use:
 //!
 //! ```text
-//! cargo build -p echidna-core-spark          # stable, no annotations
-//! cargo +nightly creusot -p echidna-core-spark -- --features creusot
+//! cargo build -p echidna-core-creusot          # stable, no annotations
+//! cargo +nightly creusot -p echidna-core-creusot -- --features creusot
 //! ```
 //!
-//! See [`CREUSOT-SETUP.md`](../CREUSOT-SETUP.md) for full toolchain setup.
+//! See [`CREUSOT-SETUP.adoc`](../CREUSOT-SETUP.adoc) for full toolchain setup.
 //!
-//! ## SPARK adoption stage
+//! ## Verification status (honest)
 //!
-//! This scaffold satisfies **Stage 8c** of the ECHIDNA ROADMAP:
-//! "SPARK-verified trust kernel scaffold".  The migration roadmap in
-//! `.machine_readable/6a2/STATE.a2ml` tracks `axiom_tracker.rs` and
+//! The annotations are **stated, not proved**. `creusot-contracts` is not yet
+//! a dependency, the nightly pin predates current Creusot, and no CI run has
+//! discharged a single obligation. What CI does run is the stable-Rust
+//! `#[test]` mirror of every obligation. The crate was formerly named
+//! `echidna-core-spark`; it is Creusot (Rust), not SPARK (Ada).
+//!
+//! ## Roadmap stage
+//!
+//! This scaffold is the **Stage 8c** artefact of the ECHIDNA ROADMAP
+//! ("verified trust kernel scaffold").  The migration roadmap in
+//! `.machine_readable/descriptiles/STATE.a2ml` tracks `axiom_tracker.rs` and
 //! `confidence.rs` as highest-leverage targets.
 //!
 //! ## Modules

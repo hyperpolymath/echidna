@@ -45,110 +45,125 @@
 
 # ─── Repository Settings ───────────────────────────────────────────────────────
 
-repository:
-  has_issues: true
-  has_projects: true
-  has_wiki: false
-  has_downloads: true
-  default_branch: main
-  allow_squash_merge: true
-  allow_merge_commit: true
-  allow_rebase_merge: true
-  delete_branch_on_merge: true
-  enable_automated_security_fixes: true
-  enable_vulnerability_alerts: true
-
-# ─── Labels ────────────────────────────────────────────────────────────────────
-
-labels:
-  - name: "bug"
-    color: "d73a4a"
-    description: "Something isn't working"
-
-  - name: "enhancement"
-    color: "a2eeef"
-    description: "New feature or request"
-
-  - name: "documentation"
-    color: "0075ca"
-    description: "Improvements or additions to documentation"
-
-  - name: "security"
-    color: "e4e669"
-    description: "Security-related issue or vulnerability"
-
-  - name: "good first issue"
-    color: "7057ff"
-    description: "Good for newcomers"
-
-  - name: "help wanted"
-    color: "008672"
-    description: "Extra attention is needed"
-
-  - name: "question"
-    color: "d876e3"
-    description: "Further information is requested"
-
-  - name: "duplicate"
-    color: "cfd3d7"
-    description: "This issue or pull request already exists"
-
-  - name: "invalid"
-    color: "e4e669"
-    description: "This doesn't seem right"
-
-  - name: "wontfix"
-    color: "ffffff"
-    description: "This will not be worked on"
-
-  - name: "dependencies"
-    color: "0366d6"
-    description: "Pull requests that update a dependency file"
-
-  - name: "ci/cd"
-    color: "fbca04"
-    description: "Continuous integration and deployment"
-
-  - name: "rsr"
-    color: "006b75"
-    description: "Rhodium Standard Repository compliance"
-
-  - name: "hypatia"
-    color: "5319e7"
-    description: "Hypatia neurosymbolic scanner finding"
-
-  - name: "bot"
-    color: "b4a8d1"
-    description: "Automated action by gitbot-fleet"
-
-  - name: "breaking-change"
-    color: "b60205"
-    description: "Introduces a breaking change"
-
-  - name: "performance"
-    color: "f9d0c4"
-    description: "Performance improvement"
-
-  - name: "refactor"
-    color: "c5def5"
-    description: "Code refactoring with no functional change"
-
+{
+  repository: {
+    has_issues: true,
+    has_projects: true,
+    has_wiki: true,
+    has_downloads: true,
+    default_branch: "main",
+    allow_squash_merge: true,
+    allow_merge_commit: true,
+    allow_rebase_merge: false,
+    delete_branch_on_merge: true,
+    enable_automated_security_fixes: true,
+    enable_vulnerability_alerts: true,
+  },
+  # ─── Labels ────────────────────────────────────────────────────────────────────
+  labels: [
+    {
+      name: "bug",
+      color: "d73a4a",
+      description: "Something isn't working",
+    },
+    {
+      name: "enhancement",
+      color: "a2eeef",
+      description: "New feature or request",
+    },
+    {
+      name: "documentation",
+      color: "0075ca",
+      description: "Improvements or additions to documentation",
+    },
+    {
+      name: "security",
+      color: "e4e669",
+      description: "Security-related issue or vulnerability",
+    },
+    {
+      name: "good first issue",
+      color: "7057ff",
+      description: "Good for newcomers",
+    },
+    {
+      name: "help wanted",
+      color: "008672",
+      description: "Extra attention is needed",
+    },
+    {
+      name: "question",
+      color: "d876e3",
+      description: "Further information is requested",
+    },
+    {
+      name: "duplicate",
+      color: "cfd3d7",
+      description: "This issue or pull request already exists",
+    },
+    {
+      name: "invalid",
+      color: "e4e669",
+      description: "This doesn't seem right",
+    },
+    {
+      name: "wontfix",
+      color: "ffffff",
+      description: "This will not be worked on",
+    },
+    {
+      name: "dependencies",
+      color: "0366d6",
+      description: "Pull requests that update a dependency file",
+    },
+    {
+      name: "ci/cd",
+      color: "fbca04",
+      description: "Continuous integration and deployment",
+    },
+    {
+      name: "rsr",
+      color: "006b75",
+      description: "Rhodium Standard Repository compliance",
+    },
+    {
+      name: "hypatia",
+      color: "5319e7",
+      description: "Hypatia neurosymbolic scanner finding",
+    },
+    {
+      name: "bot",
+      color: "b4a8d1",
+      description: "Automated action by gitbot-fleet",
+    },
+    {
+      name: "breaking-change",
+      color: "b60205",
+      description: "Introduces a breaking change",
+    },
+    {
+      name: "performance",
+      color: "f9d0c4",
+      description: "Performance improvement",
+    },
+    {
+      name: "refactor",
+      color: "c5def5",
+      description: "Code refactoring with no functional change",
+    },
+  ],
+}
 # ─── Branch Protection ─────────────────────────────────────────────────────────
-
-branches:
-  - name: "main"
-    protection:
-      required_pull_request_reviews:
-        required_approving_review_count: 1
-        dismiss_stale_reviews: true
-        require_code_owner_reviews: true
-      required_status_checks:
-        strict: true
-        contexts:
-          - "hypatia-scan"
-          - "codeql"
-      enforce_admins: true
-      required_signatures: true
-      restrictions: null
-      allow_force_pushes: false
-      allow_deletions: false
+#
+# Deliberately absent. Branch rules for `main` live in repository rulesets
+# (payloads in .github/rulesets/, applied with `gh api`), which is what
+# `squabble verify-satisfied` and AGENTS.md §5a read. A classic-protection
+# block here duplicated them, required a code-owner approval that a
+# single-maintainer repo cannot give, and named contexts ("hypatia-scan",
+# "codeql") that no workflow reports under those names.
+#
+# Merge policy: squash by default, never rebase (rebase-merge replays commits unsigned and breaks
+# required_signatures). Merge commits stay enabled only for proof PRs whose
+# commit series must survive (owner ruling 2026-09-30, AGENTS.md §5c item 6);
+# squash is the default form. Wiki on: the forge wiki is
+# published from docs/wikis/.

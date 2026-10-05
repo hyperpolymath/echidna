@@ -108,7 +108,7 @@ package definitions (not metadata files) and must NOT be deleted.
 | **Guile Scheme** | Guix package definitions (`guix.scm`, `manifests/*.scm`) | `.scm` metadata files are deprecated — see below |
 | **Bash/POSIX Shell** | Build scripts, CI glue | Keep minimal |
 | **AffineScript** | TEA sources in `src/ui/tea/`; static shell in `src/ui/public/` | The compile pipeline is unavailable; `build-ui` fails explicitly |
-| **Bun** | Estate JavaScript runtime | The legacy serve recipes still require migration; open `src/ui/public/prove.html` directly for the working static UI |
+| **Bun** | Estate JavaScript runtime | `just serve-ui` serves the static shell via `scripts/serve-static.js` (Bun) |
 | **JavaScript** | Build tooling only (Tailwind config, test harness) | Not for business logic |
 | **OCaml** | AffineScript compiler host | Decision locked — AffineScript selected for UI |
 | **Nickel** | Configuration language | Used across `configs/`, `echidna-playground/contractiles/k9/`, `.machine_readable/`, `echidnabot/config/` (11+ `.ncl` files) |

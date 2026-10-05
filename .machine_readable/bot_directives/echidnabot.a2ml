@@ -26,8 +26,9 @@ last-updated = "2026-04-25"
 mode = "regulator"
 
 [regulator]
-# Threshold leaves a small flake budget. echidna's CI exercises 113
-# prover backends; transient ECHIDNA-binary unavailability or upstream
+# Threshold leaves a small flake budget. echidna has 105 backend
+# implementation files (141 ProverKind variants; docs/PROVER_COUNT.adoc is
+# the single source for counts); transient ECHIDNA-binary unavailability or upstream
 # prover-binary install hiccups should not block the entire merge gate
 # when the rest of the matrix is solid.
 coverage-threshold = 90  # percent; merge releases at 90/100 provers passing

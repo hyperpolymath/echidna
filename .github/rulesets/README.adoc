@@ -1,0 +1,144 @@
+// SPDX-License-Identifier: CC-BY-SA-4.0
+// Copyright (c) 2026 Jonathan D.A. Jewell <j.d.a.jewell@open.ac.uk>
+= Repository rulesets
+
+[IMPORTANT]
+====
+**GitHub does not read this directory.** Unlike `.github/workflows/`,
+`.github/dependabot.yml` or `.github/settings.yml`, ruleset JSON in a repository
+path is *not* auto-applied by any GitHub feature. These files are
+**documentation of intent plus a ready-to-POST payload** — nothing more.
+
+A ruleset only takes effect once someone applies it via the REST API or imports
+it in the web UI. Until then the protection described here **is not in force**.
+====
+
+== Applying a ruleset
+
+Per ADR-0003 the *Configure* stage is an operator stage: identity, visibility and
+branch/tag protection are set out of band. Automation is future work and must not
+be described as existing.
+
+[source,bash]
+----
+# Apply (create) a ruleset on the current repo:
+gh api --method POST \
+  -H "Accept: application/vnd.github+json" \
+  "/repos/{owner}/{repo}/rulesets" \
+  --input .github/rulesets/base.json
+
+# List what is actually in force — the only authoritative answer:
+gh api "/repos/{owner}/{repo}/rulesets" --jq '.[] | "\(.id)\t\(.name)\t\(.enforcement)"'
+
+# Update an existing ruleset in place (needs its numeric id from the list above):
+gh api --method PUT \
+  "/repos/{owner}/{repo}/rulesets/<id>" \
+  --input .github/rulesets/base.json
+----
+
+== Files
+
+`base.json`:: Canonical branch protection ruleset for the default branch (`~DEFAULT_BRANCH`).
+Enforces deleted-branch protection, linear history, squash merge, signatures and required
+status checks, without unsatisfiable coverage or deadlocking approval requirements.
+Sourced verbatim from `hyperpolymath/standards` `config/rulesets/base.json` (§7.3).
+
+`branch-floor.json`:: The irreducible branch floor for the default branch: deletion and
+non-fast-forward protection only, with no bypass actors. This is the ruleset that keeps a
+branch recoverable when the richer `Base` ruleset is unavailable or has been removed.
+Sourced verbatim from `hyperpolymath/standards` `config/rulesets/branch-floor.json`.
+
+`require-signed-commits.json`:: Standalone, zero-bypass `required_signatures` on the default
+branch (D215). Every new repo is born with it. See `hyperpolymath/standards`
+`docs/SIGNING-POLICY.adoc`. Sourced verbatim from `config/rulesets/require-signed-commits.json`.
+
+`require-linear-history.json`:: Standalone, zero-bypass `required_linear_history` (D216).
+Pair it with squash-only merge settings. A new repo starts with no merge commits, so it is
+always linear-safe. Sourced verbatim from `config/rulesets/require-linear-history.json`.
+
+`Immutable-Tags.json`:: Makes release tags immutable — blocks tag deletion,
+non-fast-forward updates, and overwrites, and requires signed tags.
+
+[NOTE]
+====
+Files here are named to match the *live ruleset name*, which is not always the
+upstream filename. Upstream ships `branch-floor.json` and `immutable-tags.json`
+(lowercase, with a matching lowercase `name` inside the JSON); this repository's
+`Immutable-Tags.json` declares `"name": "Immutable-Tags"`. Renaming a file here
+changes nothing on GitHub, but it does change which upstream file it is diffed
+against — keep that in mind when syncing.
+====
+
+== What is actually enforced on this repository
+
+Files are intent; this table is fact. Regenerate it with:
+
+[source,bash]
+----
+gh api "/repos/{owner}/{repo}/rulesets" --jq '.[] | "\(.id)\t\(.name)\t\(.enforcement)\t\(.target)"'
+----
+
+|===
+| Live ruleset | Enforcement | Target | Covers
+
+| `Base` | active | branch | deletion, required signatures, code scanning (CodeQL/Hypatia), Copilot review, non-fast-forward
+| `Branch-Floor` | active | branch | deletion, non-fast-forward
+| `Immutable-Tags` | active | tag | creation, deletion, non-fast-forward, update, required signatures
+|===
+
+=== Known drift between these files and what is live
+
+The files below are *not* a transcript of the live rulesets. This is the
+divergence as of 2026-09-28, recorded rather than silently reconciled because
+`base.json` is sourced verbatim from upstream and must not be forked here.
+
+*Live `Base` rule that no file describes* ::
+
+`code_scanning` (with CodeQL and Hypatia tools) and `copilot_code_review` are
+enforced live but appear in neither `base.json` nor any upstream file synced into
+this directory. Upstream's nearest equivalent,
+`config/rulesets/Optimus-Extras.json`, declares `code_scanning` with an *empty*
+`code_scanning_tools` list, so it does not describe what is live here either.
+
+*Removed from live `Base` on 2026-10-02 (owner decision)* ::
+
+`Scorecard` was dropped from `code_scanning_tools`, and the `code_coverage` rule
+(minimum 80%, max drop 5) was deleted. Neither could ever be satisfied by a pull
+request. `scorecard.yml` runs only on `schedule` and `workflow_dispatch`, and
+Scorecard scores repository posture rather than a diff, so with
+`alerts_threshold: all` any standing finding would have blocked every PR. Nothing
+in this template produces a coverage report: `rust-ci / llvm-cov` is skipped
+because the template has no Rust. The result was that every PR sat `BLOCKED` until
+an admin bypass (#219). CodeQL and Hypatia both upload results on pull requests,
+so they stay. Do not add either rule back without a producer that runs on
+`pull_request`.
+
+*`base.json` rules that are not in force* ::
+
+`required_linear_history` is in `base.json` but not in live `Base`; it is
+enforced by the separate `Require-Linear-History` ruleset. `required_status_checks` (an empty list, so a no-op) and the
+`pull_request` rule are likewise absent from live `Base`. (`non_fast_forward` is
+live in `Base` as of 2026-10-02, and is also covered by `Branch-Floor`.)
+
+*`Immutable-Tags.json` lags the live ruleset* ::
+
+The live tag ruleset includes a `creation` rule; this file does not. Upstream
+`immutable-tags.json` also populates `bypass_actors` (repository-role 5 and an
+integration) with `bypass_mode: always`, and this file declares none.
+
+[WARNING]
+====
+`bypass_actors` cannot be diffed from a low-privilege token: the REST API returns
+`null` for that field unless the caller has admin on the repository. Absence of
+`bypass_actors` in the output above is *not* evidence that none are configured.
+====
+
+== Verifying
+
+Do not infer that a ruleset is active because the JSON is present. Check with the
+`gh api ... /rulesets` list above. A ruleset that exists as a file but was never
+POSTed is the protection equivalent of a check that cannot fail.
+
+Conversely, do not infer that the estate is protected because a ruleset exists.
+A ruleset with `enforcement: disabled` is inert, and a `pull_request` rule with
+`allowed_merge_methods: []` can never be satisfied at all.

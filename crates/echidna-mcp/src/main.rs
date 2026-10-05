@@ -21,7 +21,7 @@
 
 use rmcp::{
     handler::server::{router::tool::ToolRouter, wrapper::Parameters},
-    model::{ServerCapabilities, ServerInfo},
+    model::{ServerCapabilities, ServerConfig},
     schemars::JsonSchema,
     tool, tool_handler, tool_router,
     transport::stdio,
@@ -256,8 +256,8 @@ impl EchidnaMcp {
 
 #[tool_handler(router = self.tool_router)]
 impl ServerHandler for EchidnaMcp {
-    fn get_info(&self) -> ServerInfo {
-        let mut info = ServerInfo::default();
+    fn get_info(&self) -> ServerConfig {
+        let mut info = ServerConfig::default();
         info.capabilities = ServerCapabilities::builder().enable_tools().build();
         info.instructions = Some(
             "ECHIDNA MCP server. Call `prove` with a proof-file path and \

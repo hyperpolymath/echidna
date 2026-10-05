@@ -42,7 +42,7 @@ use serde::{Deserialize, Serialize};
 /// `with_*` methods, e.g.:
 ///
 /// ```
-/// use echidna::types::{TypeInfo, Multiplicity};
+/// use echidna_core::types::{TypeInfo, Multiplicity};
 /// let info = TypeInfo::default().with_multiplicity(Multiplicity::Linear);
 /// assert_eq!(info.multiplicity, Some(Multiplicity::Linear));
 /// ```

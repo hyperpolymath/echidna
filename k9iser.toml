@@ -3,7 +3,7 @@
 #
 # k9iser manifest for echidna
 # Generates K9 contracts from repo configuration files.
-# echidna is a neurosymbolic theorem proving platform (Rust + Deno)
+# echidna is a neurosymbolic theorem proving platform (Rust + Julia; Bun for the static UI shell)
 
 [project]
 name = "echidna"
@@ -13,11 +13,6 @@ safety_tier = "yard"
 path = "Cargo.toml"
 type = "cargo"
 output = "generated/k9iser/cargo-manifest.k9"
-
-[[source]]
-path = "deno.json"
-type = "deno"
-output = "generated/k9iser/deno-workspace.k9"
 
 [[source]]
 path = "Justfile"
@@ -55,6 +50,3 @@ severity = "warn"
 rule = "workflows includes hypatia-scan"
 severity = "error"
 
-[[constraint]]
-rule = "deno.imports has no npm: specifiers"
-severity = "error"

@@ -60,7 +60,7 @@ impl ProverAttempt {
 
 /// Which fusion mechanism decides the verdict.
 ///
-/// See "Guide: Picking an arbitration mechanism" in `docs/wiki/Guides.md`.
+/// See "Guide: Picking an arbitration mechanism" in `docs/wikis/Guides.md`.
 #[derive(Debug, Clone, Copy, PartialEq, Default, Serialize, Deserialize)]
 #[serde(tag = "mechanism", rename_all = "snake_case")]
 pub enum ArbitrationPolicy {

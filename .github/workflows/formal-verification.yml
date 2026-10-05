@@ -5,31 +5,37 @@
 #
 # formal-verification.yml — Creusot formal verification of the trust-pipeline kernel.
 #
-# Stage 8c of the ECHIDNA ROADMAP.  Both jobs are merge gates as of Stage 8c-M3.
+# Stage 8c of the ECHIDNA ROADMAP.
 #
-#   stable-tests   — `cargo test -p echidna-core-spark` on stable Rust.
-#                    Exercises every proof obligation as a `#[test]` function.
-#                    Fast (~10 s); always passes on a correct Rust installation.
+#   stable-tests   — `cargo test -p echidna-core-creusot` on stable Rust.
+#                    Exercises every stated proof obligation as a `#[test]`.
+#                    Runs on every PR that touches the crate.
 #
-#   creusot-verify — `cargo +nightly creusot` with Why3 + Z3 discharge.
-#                    Hard gate as of Stage 8c-M3.  Requires Why3 in the runner;
-#                    `apt-get install why3` covers Ubuntu 22.04+.
-#                    If Why3 availability changes, re-evaluate whether to keep
-#                    this as a required check or move to a scheduled/manual job.
+#   creusot-verify — `cargo creusot` with Why3 discharge. MANUAL ONLY
+#                    (workflow_dispatch). It has never discharged an
+#                    obligation: the crate does not yet depend on
+#                    `creusot-contracts`, the nightly-2024-05-01 pin predates
+#                    current Creusot, and `cargo install creusot` is not how
+#                    Creusot is installed (it ships an INSTALL script that
+#                    provisions why3/why3find via opam). Running it on every
+#                    push only produced a red check that proved nothing.
+#                    Re-enable on PRs once a dispatch run is green. Until then
+#                    the annotations are STATED, NOT PROVED.
 #
-# See crates/echidna-core-spark/CREUSOT-SETUP.adoc for local setup.
+# See crates/echidna-core-creusot/CREUSOT-SETUP.adoc for local setup.
 
 name: Formal Verification (Stage 8c)
 
 on:
   pull_request:
     paths:
-      - 'crates/echidna-core-spark/**'
+      - 'crates/echidna-core-creusot/**'
       - '.github/workflows/formal-verification.yml'
   push:
     branches: [main]
     paths:
-      - 'crates/echidna-core-spark/**'
+      - 'crates/echidna-core-creusot/**'
+  workflow_dispatch:
 
 # Cause-B mitigation (#77): cancel superseded runs so stacked pushes
 # to the same ref don't pile up identical jobs in the queue.
@@ -62,21 +68,17 @@ jobs:
           workspaces: ". -> target"
 
       - name: Run trust-pipeline invariant tests
-        run: cargo test -p echidna-core-spark --verbose
+        run: cargo test -p echidna-core-creusot --verbose
         env:
           RUST_BACKTRACE: 1
 
-  # ── Job 2: Creusot formal verification (hard gate — Stage 8c-M3) ─────────
+  # ── Job 2: Creusot formal verification (manual; not yet a gate) ───────────
   creusot-verify:
-    name: Creusot formal verification
+    name: Creusot formal verification (manual)
+    # Only on explicit dispatch — see the header for why this is not a gate.
+    if: ${{ github.event_name == 'workflow_dispatch' }}
     runs-on: ubuntu-latest
     timeout-minutes: 15
-    # No continue-on-error — this is a hard merge gate as of Stage 8c-M3.
-    # The outer-loop invariant for compute is now live; all obligations
-    # (PO-1..P8, PO-A1..A12) must discharge under Why3+Z3.
-    #
-    # If this job becomes flaky due to nightly drift, update the pin in
-    # rust-toolchain.toml and the `toolchain:` field below together.
 
     steps:
       - name: Checkout repository
@@ -85,7 +87,7 @@ jobs:
       - name: Install nightly Rust toolchain (Creusot pin)
         uses: dtolnay/rust-toolchain@v1
         with:
-          # Pin matches crates/echidna-core-spark/rust-toolchain.toml.
+          # Pin matches crates/echidna-core-creusot/rust-toolchain.toml.
           # Update both files together when bumping.
           toolchain: nightly-2024-05-01
           components: rustc, cargo, rust-src
@@ -120,7 +122,7 @@ jobs:
       - name: Run Creusot verification
         run: |
           cargo +nightly-2024-05-01 creusot \
-            -p echidna-core-spark \
+            -p echidna-core-creusot \
             -- \
             --features creusot \
             --why3 "$(which why3)"
