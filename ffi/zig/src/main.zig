@@ -42,18 +42,12 @@ pub const Result = enum(c_int) {
     null_pointer = 4,
 };
 
-/// Library handle as C sees it: an opaque pointer.
-pub const Handle = opaque {};
-
-/// Internal state behind a `Handle`; never visible across the C ABI.
-const State = struct {
+/// Library handle. C code treats it as an opaque pointer; it is an
+/// `extern struct` (C layout, C-compatible fields only) so the library can
+/// allocate and use it directly, with no pointer or alignment casts.
+pub const Handle = extern struct {
     initialized: bool,
 };
-
-/// Recover the internal state from a C handle.
-fn state(handle: *Handle) *State {
-    return @ptrCast(@alignCast(handle));
-}
 
 //==============================================================================
 // Library Lifecycle
@@ -62,20 +56,20 @@ fn state(handle: *Handle) *State {
 /// Initialize the library
 /// Returns a handle, or null on failure
 export fn echidna_init() ?*Handle {
-    const st = allocator.create(State) catch {
+    const handle = allocator.create(Handle) catch {
         setError("Failed to allocate handle");
         return null;
     };
 
-    st.* = .{ .initialized = true };
+    handle.* = .{ .initialized = true };
 
     clearError();
-    return @ptrCast(st);
+    return handle;
 }
 
 /// Free the library handle
 export fn echidna_free(handle: ?*Handle) void {
-    const h = state(handle orelse return);
+    const h = handle orelse return;
 
     // Clean up resources
     h.initialized = false;
@@ -90,10 +84,10 @@ export fn echidna_free(handle: ?*Handle) void {
 
 /// Process data (example operation)
 export fn echidna_process(handle: ?*Handle, input: u32) Result {
-    const h = state(handle orelse {
+    const h = handle orelse {
         setError("Null handle");
         return .null_pointer;
-    });
+    };
 
     if (!h.initialized) {
         setError("Handle not initialized");
@@ -114,10 +108,10 @@ export fn echidna_process(handle: ?*Handle, input: u32) Result {
 /// Get a string result (example)
 /// Caller must free the returned string
 export fn echidna_get_string(handle: ?*Handle) ?[*:0]const u8 {
-    const h = state(handle orelse {
+    const h = handle orelse {
         setError("Null handle");
         return null;
-    });
+    };
 
     if (!h.initialized) {
         setError("Handle not initialized");
@@ -152,10 +146,10 @@ export fn echidna_process_array(
     buffer: ?[*]const u8,
     len: u32,
 ) Result {
-    const h = state(handle orelse {
+    const h = handle orelse {
         setError("Null handle");
         return .null_pointer;
-    });
+    };
 
     const buf = buffer orelse {
         setError("Null buffer");
@@ -216,10 +210,10 @@ export fn echidna_register_callback(
     handle: ?*Handle,
     callback: ?Callback,
 ) Result {
-    const h = state(handle orelse {
+    const h = handle orelse {
         setError("Null handle");
         return .null_pointer;
-    });
+    };
 
     const cb = callback orelse {
         setError("Null callback");
@@ -244,7 +238,7 @@ export fn echidna_register_callback(
 
 /// Check if handle is initialized
 export fn echidna_is_initialized(handle: ?*Handle) u32 {
-    const h = state(handle orelse return 0);
+    const h = handle orelse return 0;
     return if (h.initialized) 1 else 0;
 }
 
