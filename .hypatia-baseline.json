@@ -415,5 +415,125 @@
     "type": "unpinned_action",
     "file": "s4-loop.yml",
     "tracking_issue": "hyperpolymath/echidna#314"
+  },
+  {
+    "severity": "medium",
+    "rule_module": "research_extensions",
+    "type": "RE001",
+    "file": ".github/workflows/labels.yml",
+    "tracking_issue": "hyperpolymath/echidna#314",
+    "note": "pre-existing on main; grandfathered at re-arm, burn down under #314"
+  },
+  {
+    "severity": "medium",
+    "rule_module": "research_extensions",
+    "type": "RE001",
+    "file": ".github/workflows/cflite_batch.yml",
+    "tracking_issue": "hyperpolymath/echidna#314",
+    "note": "pre-existing on main; grandfathered at re-arm, burn down under #314"
+  },
+  {
+    "severity": "medium",
+    "rule_module": "research_extensions",
+    "type": "RE001",
+    "file": ".github/workflows/cflite_pr.yml",
+    "tracking_issue": "hyperpolymath/echidna#314",
+    "note": "pre-existing on main; grandfathered at re-arm, burn down under #314"
+  },
+  {
+    "severity": "medium",
+    "rule_module": "research_extensions",
+    "type": "RE001",
+    "file": ".github/workflows/ghcr-publish.yml",
+    "tracking_issue": "hyperpolymath/echidna#314",
+    "note": "pre-existing on main; grandfathered at re-arm, burn down under #314"
+  },
+  {
+    "severity": "medium",
+    "rule_module": "research_extensions",
+    "type": "RE001",
+    "file": ".github/workflows/label-triage.yml",
+    "tracking_issue": "hyperpolymath/echidna#314",
+    "note": "pre-existing on main; grandfathered at re-arm, burn down under #314"
+  },
+  {
+    "severity": "medium",
+    "rule_module": "research_extensions",
+    "type": "RE004",
+    "file": ".github/workflows/s4-loop.yml",
+    "tracking_issue": "hyperpolymath/echidna#314",
+    "note": "pre-existing on main; grandfathered at re-arm, burn down under #314"
+  },
+  {
+    "severity": "medium",
+    "rule_module": "research_extensions",
+    "type": "RE004",
+    "file": ".github/workflows/container-ci.yml",
+    "tracking_issue": "hyperpolymath/echidna#314",
+    "note": "pre-existing on main; grandfathered at re-arm, burn down under #314"
+  },
+  {
+    "severity": "medium",
+    "rule_module": "research_extensions",
+    "type": "RE005",
+    "file": ".github/workflows/server-boot-gate.yml",
+    "tracking_issue": "hyperpolymath/echidna#314",
+    "note": "pre-existing on main; grandfathered at re-arm, burn down under #314"
+  },
+  {
+    "severity": "medium",
+    "rule_module": "research_extensions",
+    "type": "RE005",
+    "file": ".github/workflows/live-provers.yml",
+    "tracking_issue": "hyperpolymath/echidna#314",
+    "note": "pre-existing on main; grandfathered at re-arm, burn down under #314"
+  },
+  {
+    "severity": "medium",
+    "rule_module": "workflow_hardening",
+    "type": "WH008",
+    "file": ".github/workflows/scorecard.yml",
+    "tracking_issue": "hyperpolymath/echidna#314",
+    "note": "pre-existing on main; grandfathered at re-arm, burn down under #314"
+  },
+  {
+    "severity": "medium",
+    "rule_module": "workflow_hardening",
+    "type": "WH008",
+    "file": ".github/workflows/secret-scanner.yml",
+    "tracking_issue": "hyperpolymath/echidna#314",
+    "note": "pre-existing on main; grandfathered at re-arm, burn down under #314"
+  },
+  {
+    "severity": "medium",
+    "rule_module": "workflow_hardening",
+    "type": "WH008",
+    "file": ".github/workflows/hypatia-scan.yml",
+    "tracking_issue": "hyperpolymath/echidna#314",
+    "note": "pre-existing on main; grandfathered at re-arm, burn down under #314"
+  },
+  {
+    "severity": "medium",
+    "rule_module": "workflow_hardening",
+    "type": "WH008",
+    "file": ".github/workflows/mirror.yml",
+    "tracking_issue": "hyperpolymath/echidna#314",
+    "note": "pre-existing on main; grandfathered at re-arm, burn down under #314"
+  },
+  {
+    "severity": "medium",
+    "rule_module": "structural_drift",
+    "type": "SD022",
+    "file": "docs/STALE-REFERENCE-TOMBSTONES.adoc",
+    "tracking_issue": "hyperpolymath/echidna#314",
+    "note": "tombstone document: references to removed paths are intentional"
+  },
+  {
+    "severity": "medium",
+    "rule_module": "content_patterns",
+    "type": "download_then_run_shell",
+    "file": "echidna-playground/.github/workflows/mirror.yml",
+    "tracking_issue": "hyperpolymath/echidna#314",
+    "note": "pre-existing on main; grandfathered at re-arm, burn down under #314"
   }
 ]

@@ -32,7 +32,7 @@ sorry, oops, consts, nitpick, quickcheck |*NEW 2026-06-01*
 |*metamath* |`+*.mm+` |https://github.com/metamath/set.mm |`+$a+` axiom
 usage, `+?+` admitted in proof |*NEW 2026-06-01*
 
-|*mizar* |`+*.miz+`, `+*.abs+` |http://mizar.org/version/8.1.14/mml/
+|*mizar* |`+*.miz+`, `+*.abs+` |https://mizar.org/version/current/mml/
 |`+@proof+` sketch, commented-theorem, consider-without-proof |*NEW
 2026-06-01*
 

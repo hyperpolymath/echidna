@@ -66,11 +66,9 @@ workflows:
     '.github/workflows/proof-safety.yml':
         - 'actions/checkout@v7.0.1'
         - 'swatinem/rust-cache@v2.9.2'
-    '.github/workflows/rust-ci.yml': []
-    '.github/workflows/rust-native-reusable.yml':
+    '.github/workflows/rust-ci.yml':
         - 'actions/checkout@v7.0.1'
-        - 'dtolnay/rust-toolchain@v1'
-        - 'goto-bus-stop/setup-zig@v2.2.1'
+        - 'dtolnay/rust-toolchain@master'
         - 'swatinem/rust-cache@v2.9.2'
     '.github/workflows/s4-loop.yml':
         - 'actions/checkout@v7.0.1'
@@ -144,11 +142,21 @@ dependencies:
         repo_id: 496012378
         uses:
             - 'actions/upload-artifact@bbbca2ddaa5d8feaa63e36b76fdaad77386f024f'
+    'dtolnay/rust-toolchain@master':
+        ref: 'master'
+        commit: 'sha1-02cb101ec7c40f2c49e1d9714d64511d8e1b74de'
+        owner_id: 1940490
+        repo_id: 260749683
     'dtolnay/rust-toolchain@v1':
         ref: 'v1'
         commit: 'sha1-02cb101ec7c40f2c49e1d9714d64511d8e1b74de'
         owner_id: 1940490
         repo_id: 260749683
+    'erlef/setup-beam@v1.24.1':
+        ref: 'v1.24.1'
+        commit: 'sha1-54075bcc5e249e4758d363f27d099f55d843f124'
+        owner_id: 47606891
+        repo_id: 331103973
     'github/codeql-action@v4.38.2':
         ref: 'v4.38.2'
         commit: 'sha1-2892aa5e19bbd11bc0cff5427e3b750a04d9e3c2'
@@ -159,11 +167,6 @@ dependencies:
         commit: 'sha1-884713a6c30a92e5e8544c39945cd7cb630abcd1'
         owner_id: 1342004
         repo_id: 400046858
-    'goto-bus-stop/setup-zig@v2.2.1':
-        ref: 'v2.2.1'
-        commit: 'sha1-abea47f85e598557f500fa1fd2ab7464fcb39406'
-        owner_id: 1006268
-        repo_id: 212984112
     'haskell-actions/setup@v2.12.1':
         ref: 'v2.12.1'
         commit: 'sha1-0f8e8c99d88aeb3fbfd523f1ef2c6f762d10d64d'
@@ -184,63 +187,3 @@ dependencies:
         commit: 'sha1-83ac0ad63c0167e6f06796fab0fce28db1bf3db0'
         owner_id: 43724913
         repo_id: 442947557
-    'actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9':
-        ref: 'v6.1.0'
-        commit: 'sha1-55cc8345863c7cc4c66a329aec7e433d2d1c52a9'
-        owner_id: 44036562
-        repo_id: 215566462
-    'actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1':
-        ref: 'v7.0.1'
-        commit: 'sha1-3d3c42e5aac5ba805825da76410c181273ba90b1'
-        owner_id: 44036562
-        repo_id: 197814629
-    'actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a':
-        ref: 'v7.0.1'
-        commit: 'sha1-043fb46d1a93c77aae656e7c1c64a875d1fc6a0a'
-        owner_id: 44036562
-        repo_id: 192625955
-    'actions/upload-artifact@65c4c4a1ddee5b72f698fdd19549f0f0fb45cf08':
-        ref: 'v4.6.0'
-        commit: 'sha1-65c4c4a1ddee5b72f698fdd19549f0f0fb45cf08'
-        owner_id: 44036562
-        repo_id: 192625955
-    'denoland/setup-deno@22d081ff2d3a40755e97629de92e3bcbfa7cf2ed':
-        ref: 'v2.0.5'
-        commit: 'sha1-22d081ff2d3a40755e97629de92e3bcbfa7cf2ed'
-        owner_id: 42048915
-        repo_id: 356423100
-    'dtolnay/rust-toolchain@6c977a6ca4077a0ceb28ffbe03f59d46e9ac8772':
-        ref: 'stable'
-        commit: 'sha1-6c977a6ca4077a0ceb28ffbe03f59d46e9ac8772'
-        owner_id: 1940490
-        repo_id: 260749683
-    'editorconfig-checker/action-editorconfig-checker@840e866d93b8e032123c23bac69dece044d4d84c':
-        ref: 'v2.2.0'
-        commit: 'sha1-840e866d93b8e032123c23bac69dece044d4d84c'
-        owner_id: 26415196
-        repo_id: 297874902
-    'erlef/setup-beam@54075bcc5e249e4758d363f27d099f55d843f124':
-        ref: 'v1.24.1'
-        commit: 'sha1-54075bcc5e249e4758d363f27d099f55d843f124'
-        owner_id: 47606891
-        repo_id: 331103973
-    'ossf/scorecard-action@2d1146689b8cda280b9bc96326124645441f03bc':
-        ref: 'v2.4.4'
-        commit: 'sha1-2d1146689b8cda280b9bc96326124645441f03bc'
-        owner_id: 67707773
-        repo_id: 421101922
-    'softprops/action-gh-release@c95fe1489396fe8a9eb87c0abf8aa5b2ef267fda':
-        ref: 'v2.2.1'
-        commit: 'sha1-c95fe1489396fe8a9eb87c0abf8aa5b2ef267fda'
-        owner_id: 2242
-        repo_id: 204253808
-    'webfactory/ssh-agent@e83874834305fe9a4a2997156cb26c5de65a8555':
-        ref: 'v0.10.0'
-        commit: 'sha1-e83874834305fe9a4a2997156cb26c5de65a8555'
-        owner_id: 135788
-        repo_id: 208510314
-    'erlef/setup-beam@v1.24.1':
-        ref: 'v1.24.1'
-        commit: 'sha1-54075bcc5e249e4758d363f27d099f55d843f124'
-        owner_id: 47606891
-        repo_id: 331103973

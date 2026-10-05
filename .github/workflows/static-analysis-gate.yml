@@ -87,17 +87,23 @@ jobs:
           # severity,type), so every annotation read "null". `.file` is an absolute
           # runner path, which GitHub cannot anchor to the diff, so it is made
           # workspace-relative here.
-          jq -r --arg ws "$GITHUB_WORKSPACE" '.[] | select(.file != null) |
-            (.file | ltrimstr($ws + "/")) as $f |
-            (.reason // .message // .type // "finding") as $m |
-            if .severity == "critical" then
-              "::error file=\($f),line=\(.line // 1)::[panic-attack] \($m)"
-            elif .severity == "high" then
-              "::error file=\($f),line=\(.line // 1)::[panic-attack] \($m)"
-            else
-              "::warning file=\($f),line=\(.line // 1)::[panic-attack] \($m)"
-            end
-          ' panic-attack-findings.json || true
+          # Annotations are cosmetic, but a malformed findings file is reported
+          # instead of being swallowed.
+          if jq -e 'type == "array"' panic-attack-findings.json >/dev/null 2>&1; then
+            jq -r --arg ws "$GITHUB_WORKSPACE" '.[] | select(.file != null) |
+              (.file | ltrimstr($ws + "/")) as $f |
+              (.reason // .message // .type // "finding") as $m |
+              if .severity == "critical" then
+                "::error file=\($f),line=\(.line // 1)::[panic-attack] \($m)"
+              elif .severity == "high" then
+                "::error file=\($f),line=\(.line // 1)::[panic-attack] \($m)"
+              else
+                "::warning file=\($f),line=\(.line // 1)::[panic-attack] \($m)"
+              end
+            ' panic-attack-findings.json
+          else
+            echo "::warning::panic-attack-findings.json is not a JSON array; no annotations emitted"
+          fi
       - name: Write step summary
         if: steps.install.outputs.installed == 'true'
         run: |
@@ -221,17 +227,23 @@ jobs:
           # severity,type), so every annotation read "null". `.file` is an absolute
           # runner path, which GitHub cannot anchor to the diff, so it is made
           # workspace-relative here.
-          jq -r --arg ws "$GITHUB_WORKSPACE" '.[] | select(.file != null) |
-            (.file | ltrimstr($ws + "/")) as $f |
-            (.reason // .message // .type // "finding") as $m |
-            if .severity == "critical" then
-              "::error file=\($f),line=\(.line // 1)::[hypatia] \($m)"
-            elif .severity == "high" then
-              "::error file=\($f),line=\(.line // 1)::[hypatia] \($m)"
-            else
-              "::warning file=\($f),line=\(.line // 1)::[hypatia] \($m)"
-            end
-          ' hypatia-findings.json || true
+          # Annotations are cosmetic, but a malformed findings file is reported
+          # instead of being swallowed.
+          if jq -e 'type == "array"' hypatia-findings.json >/dev/null 2>&1; then
+            jq -r --arg ws "$GITHUB_WORKSPACE" '.[] | select(.file != null) |
+              (.file | ltrimstr($ws + "/")) as $f |
+              (.reason // .message // .type // "finding") as $m |
+              if .severity == "critical" then
+                "::error file=\($f),line=\(.line // 1)::[hypatia] \($m)"
+              elif .severity == "high" then
+                "::error file=\($f),line=\(.line // 1)::[hypatia] \($m)"
+              else
+                "::warning file=\($f),line=\(.line // 1)::[hypatia] \($m)"
+              end
+            ' hypatia-findings.json
+          else
+            echo "::warning::hypatia-findings.json is not a JSON array; no annotations emitted"
+          fi
       - name: Write step summary
         if: steps.build.outputs.ready == 'true'
         run: |

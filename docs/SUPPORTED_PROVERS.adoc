@@ -38,7 +38,7 @@ external binary — pure-Rust implementation in
 Light: https://github.com/jrh13/hol-light
 
 |Mizar |Tarski–Grothendieck set theory |`+mizf+`, `+verifier+`
-|http://mizar.org/system/index.html
+|https://mizar.org/system/index.html
 
 |PVS |Prototype Verification System |`+pvs+` |https://pvs.csl.sri.com/
 
