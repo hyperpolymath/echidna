@@ -494,7 +494,7 @@ impl EchidnaContext {
     }
 
     pub async fn create_session(&self, goal: &str, kind: CoreProverKind) -> anyhow::Result<String> {
-        let proof_id = uuid::Uuid::new_v4().to_string();
+        let proof_id = echidna::ids::new_record_id().to_string();
 
         if self.ffi_initialized {
             // Use FFI path

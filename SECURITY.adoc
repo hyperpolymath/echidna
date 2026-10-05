@@ -250,7 +250,7 @@ responsibly disclosing vulnerabilities:
 
 '''''
 
-*Document lineage*: revisions tracked via `+git log SECURITY.md+`;
+*Document lineage*: revisions tracked via `+git log SECURITY.adoc+`;
 versioned alongside the project (see
 link:CHANGELOG.adoc[`+CHANGELOG.adoc+`]). This file is intentionally
 count-free and version-free in prose to avoid R5b drift against

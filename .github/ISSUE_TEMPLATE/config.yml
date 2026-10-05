@@ -1,0 +1,20 @@
+# SPDX-License-Identifier: CC-BY-SA-4.0
+# SPDX-FileCopyrightText: 2026 Jonathan D.A. Jewell <j.d.a.jewell@open.ac.uk>
+#
+# Issue chooser configuration. Blank issues stay enabled so that reports which
+# fit neither form are not silently discouraged.
+{
+  blank_issues_enabled: true,
+  contact_links: [
+    {
+      name: "Security vulnerability",
+      url: "https://github.com/hyperpolymath/echidna/security/advisories/new",
+      about: "Report privately via a security advisory. Do NOT open a public issue.",
+    },
+    {
+      name: "Question or support request",
+      url: "https://github.com/hyperpolymath/echidna/discussions",
+      about: "Ask a question. See .github/SUPPORT.md for what to expect.",
+    },
+  ],
+}

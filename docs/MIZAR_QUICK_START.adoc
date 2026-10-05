@@ -9,7 +9,7 @@
 +
 [source,bash]
 ----
-# Download from http://mizar.org
+# Download from https://mizar.org
 # Or use package manager:
 sudo apt-get install mizar  # Debian/Ubuntu
 ----
@@ -414,9 +414,9 @@ structure - Correct operator syntax (`+\/+` not `+∪+`)
 
 === Resources
 
-* *Mizar Homepage*: http://mizar.org
-* *MML Browser*: http://mizar.org/version/current/html/
-* *Mizar Tutorial*: http://mizar.org/project/bibliography.html
+* *Mizar Homepage*: https://mizar.org
+* *MML Browser*: https://mizar.org/version/current/html/
+* *Mizar Tutorial*: https://mizar.org/project/bibliography.html
 * *ECHIDNA Docs*: /home/user/echidna/docs/
 * *Full Backend Docs*: /home/user/echidna/docs/MIZAR_BACKEND.md
 

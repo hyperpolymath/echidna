@@ -564,7 +564,7 @@ impl ProverBackend for MizarBackend {
 
         if let Some(source) = state.metadata.get("mizar_source").and_then(|v| v.as_str()) {
             let temp_dir = std::env::temp_dir();
-            let temp_file = temp_dir.join(format!("echidna_{}.miz", uuid::Uuid::new_v4()));
+            let temp_file = temp_dir.join(format!("echidna_{}.miz", crate::ids::temp_token()));
             let mut file = fs::File::create(&temp_file).await?;
             file.write_all(source.as_bytes()).await?;
             file.sync_all().await?;
@@ -581,7 +581,7 @@ impl ProverBackend for MizarBackend {
         let mizar_content = self.export_to_mizar(state)?;
 
         let temp_dir = std::env::temp_dir();
-        let temp_file = temp_dir.join(format!("echidna_{}.miz", uuid::Uuid::new_v4()));
+        let temp_file = temp_dir.join(format!("echidna_{}.miz", crate::ids::temp_token()));
 
         let mut file = fs::File::create(&temp_file).await?;
         file.write_all(mizar_content.as_bytes()).await?;

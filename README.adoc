@@ -550,7 +550,7 @@ governance ruleset.
 
 * link:CONTRIBUTING.md[Contributing Guidelines]
 * link:CODE_OF_CONDUCT.adoc[Code of Conduct]
-* link:SECURITY.md[Security Policy]
+* link:SECURITY.adoc[Security Policy]
 * link:CHANGELOG.adoc[Changelog]
 * link:docs/ROADMAP.adoc[Roadmap]
 * link:RSR_COMPLIANCE.adoc[RSR / CCCP Compliance Statement]

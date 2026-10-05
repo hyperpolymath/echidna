@@ -122,7 +122,7 @@ Stage 7  Sovereign tooling surround         the rest of the ecosystem
 Stage 8  Self‑verified                      ECHIDNA proves ECHIDNA
     8a  Idris2 meta‑proofs extend           from 32 modules to full kernel
     8b  Agda meta‑proofs extend             from 12 modules
-    8c  SPARK‑verified trust kernel         crates/echidna-core-spark/
+    8c  Verified trust kernel               spark/ (Ada/SPARK) + crates/echidna-core-creusot/ (Creusot, stated not proved)
     8d  panic‑attack hardened               proptest + AFL++ nightly
 ....
 
@@ -175,8 +175,9 @@ Model → Msg → Update loop, talks to core over Cap’n Proto WebSocket
 |"`LOL i18n`" |Not present |*`+locale/+`* with LOL‑sourced translations;
 `+t!()+` macro for every user‑facing string
 
-|"`Rust/SPARK base stable`" |Rust only |*`+crates/echidna-core-spark/+`*
-holds the Ada/SPARK‑verified kernel (axiom scanning, trust‑level
+|"`Rust/SPARK base stable`" |Rust only |*`+spark/+`*
+holds the Ada/SPARK‑verified kernel (with a Creusot‑annotated Rust mirror in
+`+crates/echidna-core-creusot/+`) (axiom scanning, trust‑level
 computation); proved free of runtime errors; called from Rust via C ABI
 
 |"`16‑endpoint Zig ABI`" |4 shared libs, endpoint count unverified

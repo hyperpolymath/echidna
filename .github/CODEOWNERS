@@ -6,7 +6,7 @@
 
 # Core prover backends
 /src/rust/provers/ @hyperpolymath
-/src/rust/core.rs @hyperpolymath
+/src/rust/lib.rs @hyperpolymath
 /src/rust/dispatch.rs @hyperpolymath
 
 # ML layer

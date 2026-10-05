@@ -382,8 +382,10 @@ impl ProverBackend for AgdaBackend {
             return Ok(output.status.success());
         }
         if let Some(source) = state.metadata.get("agda_source").and_then(|v| v.as_str()) {
-            let temp_file = std::env::temp_dir()
-                .join(format!("echidna_agda_verify_{}.agda", uuid::Uuid::new_v4()));
+            let temp_file = std::env::temp_dir().join(format!(
+                "echidna_agda_verify_{}.agda",
+                crate::ids::temp_token()
+            ));
             tokio::fs::write(&temp_file, source).await?;
             let mut cmd = Command::new(&self.config.executable);
             if let Some(parent) = temp_file.parent() {

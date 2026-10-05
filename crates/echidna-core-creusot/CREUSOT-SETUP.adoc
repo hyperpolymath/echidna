@@ -1,6 +1,6 @@
 == Creusot Setup Guide
 
-How to run formal verification on `+echidna-core-spark+` using Creusot.
+How to run formal verification on `+echidna-core-creusot+` using Creusot.
 
 === Prerequisites
 
@@ -18,7 +18,7 @@ nightly and add it:
 [source,bash]
 ----
 rustup toolchain install nightly-2024-05-01   # example — check current pin
-rustup override set nightly-2024-05-01 --path crates/echidna-core-spark
+rustup override set nightly-2024-05-01 --path crates/echidna-core-creusot
 ----
 
 `+rust-toolchain.toml+` is at the crate root (added Stage 8c-M1) and
@@ -66,7 +66,7 @@ From the repository root:
 [source,bash]
 ----
 cargo +nightly creusot \
-    -p echidna-core-spark \
+    -p echidna-core-creusot \
     -- \
     --features creusot \
     --why3 $(which why3)
@@ -97,7 +97,7 @@ All obligations in `+impl_invariants+` are designed to discharge quickly
 `+.github/workflows/formal-verification.yml+` runs two jobs, both merge
 gates:
 
-* `+stable-tests+`: `+cargo test -p echidna-core-spark+` on stable Rust
+* `+stable-tests+`: `+cargo test -p echidna-core-creusot+` on stable Rust
 (~10 s).
 * `+creusot-verify+`: `+cargo +nightly creusot+` with Why3 + Z3
 discharge. Requires `+apt-get install why3 z3 alt-ergo+` in the runner

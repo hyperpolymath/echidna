@@ -8,8 +8,10 @@ use std::os::raw::c_int;
 // External Zig FFI functions (from libechidna_ffi.so)
 extern "C" {
     pub fn echidna_init() -> c_int;
+    #[allow(dead_code)] // mirrors the Zig FFI export; no gRPC handler calls it yet
     pub fn echidna_deinit();
     pub fn echidna_create_prover(kind: u8) -> c_int;
+    #[allow(dead_code)] // mirrors the Zig FFI export; no gRPC handler calls it yet
     pub fn echidna_destroy_prover(handle: c_int);
     pub fn echidna_parse_string(handle: c_int, content: *const u8, len: usize) -> c_int;
     pub fn echidna_verify_proof(handle: c_int) -> c_int;
@@ -81,6 +83,7 @@ pub fn create_prover(prover_kind: u8) -> Result<i32> {
 }
 
 /// Destroy a prover instance
+#[allow(dead_code)] // mirrors the Zig FFI export; no gRPC handler calls it yet
 pub fn destroy_prover(handle: i32) -> Result<()> {
     unsafe {
         echidna_destroy_prover(handle);
@@ -210,6 +213,7 @@ pub fn proto_kind_to_ffi(kind: i32) -> Result<u8> {
 }
 
 /// Convert FFI ordinal to gRPC ProverKind
+#[allow(dead_code)] // mirrors the Zig FFI export; no gRPC handler calls it yet
 pub fn ffi_to_proto_kind(ordinal: u8) -> i32 {
     match ordinal {
         0 => 1,   // Agda

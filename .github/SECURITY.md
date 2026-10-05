@@ -5,4 +5,4 @@ Report vulnerabilities privately using [GitHub Security Advisories](https://gith
 If GitHub is unavailable, contact the maintainer at j.d.a.jewell@open.ac.uk.
 Do not disclose vulnerabilities in public issues.
 
-The full policy, supported versions, requested report details, and response timelines are maintained in [SECURITY.adoc](SECURITY.adoc).
+The full policy, supported versions, requested report details, and response timelines are maintained in [SECURITY.adoc](../SECURITY.adoc).

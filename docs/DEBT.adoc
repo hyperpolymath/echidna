@@ -315,11 +315,12 @@ destinations*:
 git grep -n '6a2/' -- '*.ncl'
 ----
 
-Those were left alone deliberately: `+6a2+` is a concept name there, not
-a stale path, and changing a contractile’s evidence sink is a semantic
-decision. But the directory does not exist, so any drift-log write has
-nowhere to land. Confirm whether the sink should be created or
-repointed.
+*Resolved 2026-10-05 (firstrun/20261005):* the write destinations were
+repointed to `+.machine_readable/descriptiles/+`, the directory that
+exists. rsr-template-repo forbids any contractile writing to `+6a2/+`,
+so repointing (not recreating) is the only conformant choice. The two
+sub-project `+6a2/+` directories (`+echidna-playground/+`,
+`+HOL-o-extension/+`) moved to `+descriptiles/+` in the same change.
 
 '''''
 

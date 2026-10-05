@@ -58,7 +58,7 @@ ECHIDNA diverges from the strict RSR template in three places:
 3. *Extracted Rust crates*: workspace-member crates live in `crates/`
    alongside `src/rust/`. The split between `src/rust/` (binary + main
    library) and `crates/` (extracted workspace members like `echidna-mcp`,
-   `echidna-wire`, `echidna-core-spark`, `typed_wasm`) is intentional and
+   `echidna-wire`, `echidna-core-creusot`, `typed_wasm`) is intentional and
    documented in `Cargo.toml`.
 
 == Verifying compliance locally

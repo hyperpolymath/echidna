@@ -1,12 +1,19 @@
 # This workflow is managed by gh actions-lock.
 # SPDX-License-Identifier: MPL-2.0
-# This workflow is managed by gh actions-lock.
-# This workflow is managed by gh actions-lock.
-# This workflow is managed by gh actions-lock.
-# This workflow is managed by gh actions-lock.
-# Rust CI — thin wrapper calling the shared estate reusable in
-# hyperpolymath/standards. Configure once, propagate everywhere.
-# See: docs/CI-REUSABLE-WORKFLOWS.adoc in standards.
+# SPDX-FileCopyrightText: 2026 Jonathan D.A. Jewell (hyperpolymath) <j.d.a.jewell@open.ac.uk>
+#
+# Rust CI for echidna: check + clippy + fmt, test, cargo audit, llvm-cov.
+#
+# Inlined from the former local reusable `rust-native-reusable.yml`
+# (2026-10-05). Calling that reusable ended every run in a "workflow file
+# issue" failure with zero jobs, both with tag refs and with SHA refs, while
+# plain workflows in this repo (CodeQL, MVP smoke) start normally; actionlint
+# and `gh actions-lock --no-fix` were clean. A plain workflow sidesteps it.
+# The standards `rust-ci-reusable.yml` is not used because it does not
+# install capnproto/protoc, which echidna-wire and echidna-grpc need.
+#
+# Job names carry the `rust-ci / ` prefix so the check contexts keep the
+# estate's canonical Rust names.
 name: Rust CI
 
 on:
@@ -14,13 +21,233 @@ on:
     branches: [main, master]
   pull_request:
 
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
 permissions:
-  actions: read
   contents: read
 
 jobs:
-  rust-ci:
-    uses: ./.github/workflows/rust-native-reusable.yml # main 2026-08-04 (lockfile-bearing ref: actions.lock required by caller-side enforcement, standards#570)
-    with:
-      enable_audit: true
-      enable_coverage: true
+  # Skip the whole reusable when the repo has no Cargo.toml — lets consumers
+  # add the wrapper unconditionally without worrying about repos that don't
+  # ship Rust code yet. This MUST be a checked-out step, NOT a job-level
+  # `if: hashFiles(...)`: job `if:` is evaluated server-side before any
+  # checkout, so hashFiles() sees an empty workspace and always returns ''
+  # — which silently skipped every job on EVERY repo, Rust or not. The
+  # detect job checks out and exposes a real boolean the others gate on.
+  detect:
+    timeout-minutes: 5
+    name: rust-ci / Detect Cargo.toml
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    outputs:
+      has_cargo: ${{ steps.detect.outputs.has_cargo }}
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v7.0.1
+        with:
+          repository: ${{ github.repository }}
+          ref: ${{ github.ref }}
+      - name: Detect Cargo.toml
+        id: detect
+        run: |
+          if [ -f "./Cargo.toml" ]; then
+            echo "has_cargo=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "has_cargo=false" >> "$GITHUB_OUTPUT"
+          fi
+
+  check:
+    timeout-minutes: 20
+    name: rust-ci / Cargo check + clippy + fmt
+    runs-on: ubuntu-latest
+    needs: detect
+    if: ${{ needs.detect.outputs.has_cargo == 'true' }}
+    permissions:
+      contents: read
+    defaults:
+      run:
+        working-directory: .
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v7.0.1
+        with:
+          repository: ${{ github.repository }}
+          ref: ${{ github.ref }}
+
+      - name: Install Rust toolchain
+        # `toolchain:` is mandatory because the action is pinned by commit SHA:
+        # dtolnay/rust-toolchain infers the toolchain from the `@`-ref (e.g.
+        # `@stable`), but a SHA ref carries no version, so the action's "parse
+        # toolchain version" step fails with `'toolchain' is a required input`.
+        # See standards estate-wide rust-ci red.
+        uses: dtolnay/rust-toolchain@master
+        with:
+          toolchain: stable
+          components: clippy, rustfmt
+
+      - name: Install native schema compilers
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y capnproto protobuf-compiler pkg-config libssl-dev
+
+
+      - name: Cache cargo registry and build
+        uses: Swatinem/rust-cache@v2.9.2
+        with:
+          workspaces: .
+
+      - name: Cargo check
+        # `--locked` so CI honours `Cargo.lock` and surfaces dep drift the
+        # first push it happens, instead of silently re-resolving (which
+        # masked the echidna#92 / echidna PR #128 dependabot major-bump
+        # break for 24h). See standards#295.
+        run: cargo check --locked --all-targets
+
+      - name: Cargo fmt
+        run: cargo fmt --all -- --check
+
+      - name: Cargo clippy
+        run: cargo clippy --locked --all-targets -- -D warnings
+
+  test:
+    timeout-minutes: 20
+    name: rust-ci / Cargo test
+    runs-on: ubuntu-latest
+    needs: [detect, check]
+    if: ${{ needs.detect.outputs.has_cargo == 'true' }}
+    permissions:
+      contents: read
+    defaults:
+      run:
+        working-directory: .
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v7.0.1
+        with:
+          repository: ${{ github.repository }}
+          ref: ${{ github.ref }}
+
+      - name: Install Rust toolchain
+        # `toolchain:` mandatory under SHA pin — see Cargo check job above.
+        uses: dtolnay/rust-toolchain@master
+        with:
+          toolchain: stable
+
+      - name: Install native schema compilers
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y capnproto protobuf-compiler pkg-config libssl-dev
+
+
+      - name: Cache cargo registry and build
+        uses: Swatinem/rust-cache@v2.9.2
+        with:
+          workspaces: .
+
+      - name: Run tests
+        # `--locked` — see Cargo check above.
+        run: cargo test --locked --all-targets
+
+      - name: Write summary
+        if: always()
+        run: |
+          {
+            echo "## Rust CI Results"
+            echo ""
+            echo "- **cargo check**: ${{ needs.check.result }}"
+            echo "- **cargo test**: completed"
+          } >> "$GITHUB_STEP_SUMMARY"
+
+  audit:
+    timeout-minutes: 20
+    name: rust-ci / Cargo audit (security)
+    runs-on: ubuntu-latest
+    needs: detect
+    if: ${{ needs.detect.outputs.has_cargo == 'true' }}
+    permissions:
+      contents: read
+    defaults:
+      run:
+        working-directory: .
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v7.0.1
+        with:
+          repository: ${{ github.repository }}
+          ref: ${{ github.ref }}
+
+      - name: Install Rust toolchain
+        # `toolchain:` mandatory under SHA pin — see Cargo check job above.
+        uses: dtolnay/rust-toolchain@master
+        with:
+          toolchain: stable
+
+      - name: Install cargo-audit
+        # Use the binstall path when available to skip a from-source rebuild
+        # on every run — was the single biggest contributor to slow CI on
+        # repos that opted in to audit (~3–4 minute install).
+        run: cargo install cargo-audit --locked
+
+      - name: Security audit
+        run: cargo audit
+
+  coverage:
+    timeout-minutes: 25
+    name: rust-ci / llvm-cov line coverage
+    runs-on: ubuntu-latest
+    needs: detect
+    if: ${{ needs.detect.outputs.has_cargo == 'true' }}
+    permissions:
+      contents: read
+    defaults:
+      run:
+        working-directory: .
+    env:
+      # Ratcheted line-coverage floor (from the caller). Raise toward target; never lower.
+      FLOOR: "0"
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v7.0.1
+        with:
+          repository: ${{ github.repository }}
+          ref: ${{ github.ref }}
+
+      - name: Install Rust toolchain
+        # `toolchain:` mandatory under SHA pin — see Cargo check job above.
+        uses: dtolnay/rust-toolchain@master
+        with:
+          toolchain: stable
+          components: llvm-tools-preview
+
+      - name: Install native schema compilers
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y capnproto protobuf-compiler pkg-config libssl-dev
+
+
+      - name: Install cargo-llvm-cov
+        run: cargo install cargo-llvm-cov --locked
+
+      - name: Measure line coverage
+        id: cov
+        # Self-contained: no external coverage service. Own the gate on our runner.
+        run: |
+          set -euo pipefail
+          cargo llvm-cov --locked --json --output-path cov.json
+          PCT=$(jq -r '.data[0].totals.lines.percent' cov.json)
+          printf '### Line coverage: %.2f%% (floor %s%%)\n' "$PCT" "$FLOOR" >> "$GITHUB_STEP_SUMMARY"
+          echo "pct=$PCT" >> "$GITHUB_OUTPUT"
+
+      - name: Enforce ratchet floor
+        run: |
+          set -euo pipefail
+          awk -v p="${{ steps.cov.outputs.pct }}" -v f="$FLOOR" 'BEGIN {
+            if (f !~ /^[0-9]+([.][0-9]+)?$/ || f + 0 > 100 || p !~ /^[0-9]+([.][0-9]+)?$/ || p + 0 > 100) {
+              print "FAIL: coverage and floor must be numeric percentages in [0, 100]"; exit 1
+            }
+            if (p + 0 < f + 0) { printf "FAIL: line coverage %.2f%% is below floor %s%%\n", p, f; exit 1 }
+            printf "OK: line coverage %.2f%% >= floor %s%%\n", p, f
+          }'

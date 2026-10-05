@@ -27,7 +27,7 @@ coq = { enabled = true, priority = "low" }
 lean = { enabled = true, priority = "low" }
 
 [provers.idris2]
-package_file = "src/abi/echidna.ipkg"
+package_file = "src/abi/echidnaabi.ipkg"
 source_dirs = ["src/abi"]
 totality_required = true
 coverage_required = true

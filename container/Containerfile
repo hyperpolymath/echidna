@@ -12,7 +12,7 @@
 # =============================================================================
 # Stage 1: Builder
 # =============================================================================
-FROM cgr.dev/chainguard/wolfi-base:latest AS builder
+FROM cgr.dev/chainguard/wolfi-base:latest@sha256:9c2092b053779e14c82fb50f77b37bcc38b7d2c83972352d5813280f9d035b03 AS builder
 
 RUN apk add --no-cache \
     rust \
@@ -32,7 +32,7 @@ RUN cargo build --release --bin echidna
 # =============================================================================
 # Stage 2: Runtime
 # =============================================================================
-FROM cgr.dev/chainguard/wolfi-base:latest
+FROM cgr.dev/chainguard/wolfi-base:latest@sha256:9c2092b053779e14c82fb50f77b37bcc38b7d2c83972352d5813280f9d035b03
 
 LABEL org.opencontainers.image.title="ECHIDNA" \
       org.opencontainers.image.description="Extensible Cognitive Hybrid Intelligence for Deductive Neural Assistance" \

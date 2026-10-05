@@ -1,0 +1,91 @@
+# SPDX-License-Identifier: CC-BY-SA-4.0
+# SPDX-FileCopyrightText: 2026 Jonathan D.A. Jewell <j.d.a.jewell@open.ac.uk>
+{
+  name: "Bug report",
+  description: "Something behaves differently from what it claims to do.",
+  labels: [
+    "bug",
+    "needs-triage",
+  ],
+  body: [
+    {
+      type: "markdown",
+      attributes: {
+        value: "Please report what you **observed**, not what you inferred. A command and\nits actual output is worth more than a description of the problem.\n",
+      },
+    },
+    {
+      type: "textarea",
+      id: "what-happened",
+      attributes: {
+        label: "What happened",
+        description: "The observed behaviour, with the exact command and its output.",
+        placeholder: "$ just verify\nerror: ...\n",
+        render: "shell",
+      },
+      validations: {
+        required: true,
+      },
+    },
+    {
+      type: "textarea",
+      id: "expected",
+      attributes: {
+        label: "What you expected instead",
+      },
+      validations: {
+        required: true,
+      },
+    },
+    {
+      type: "textarea",
+      id: "repro",
+      attributes: {
+        label: "Minimal reproduction",
+        description: "The shortest sequence that reproduces it from a clean checkout.",
+      },
+      validations: {
+        required: true,
+      },
+    },
+    {
+      type: "input",
+      id: "version",
+      attributes: {
+        label: "Version / commit",
+        description: "Output of `git rev-parse --short HEAD`.",
+      },
+      validations: {
+        required: true,
+      },
+    },
+    {
+      type: "textarea",
+      id: "environment",
+      attributes: {
+        label: "Environment",
+        description: "OS, and the output of `just --version` and `mise current` if relevant.",
+      },
+      validations: {
+        required: false,
+      },
+    },
+    {
+      type: "checkboxes",
+      id: "checks",
+      attributes: {
+        label: "Before submitting",
+        options: [
+          {
+            label: "I have reported observed output rather than a summary of it.",
+            required: true,
+          },
+          {
+            label: "This is not a security vulnerability (those go via a private advisory).",
+            required: true,
+          },
+        ],
+      },
+    },
+  ],
+}

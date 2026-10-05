@@ -151,8 +151,8 @@ theorem_name: THEOREM
 
 === Resources
 
-* http://pvs.csl.sri.com/[PVS Specification and Verification System]
-* http://pvs.csl.sri.com/doc/pvs-language-reference.pdf[PVS Language
+* https://pvs.csl.sri.com/[PVS Specification and Verification System]
+* https://pvs.csl.sri.com/doc/pvs-language-reference.pdf[PVS Language
 Reference]
-* http://pvs.csl.sri.com/doc/pvs-prover-guide.pdf[PVS Prover Guide]
-* http://shemesh.larc.nasa.gov/fm/pvs/tutorial/[PVS Tutorial]
+* https://pvs.csl.sri.com/doc/pvs-prover-guide.pdf[PVS Prover Guide]
+* https://shemesh.larc.nasa.gov/fm/pvs/[PVS Tutorial]

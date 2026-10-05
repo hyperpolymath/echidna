@@ -142,7 +142,7 @@ impl IntegrationService {
         backend: Box<dyn ProverBackend>,
     ) -> Result<ProveResponse> {
         // Generate unique session ID
-        let session_id = uuid::Uuid::new_v4().to_string();
+        let session_id = crate::ids::new_record_id().to_string();
 
         // Create initial proof state
         let goal = Goal {

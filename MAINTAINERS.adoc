@@ -47,7 +47,7 @@ May be invited to become maintainers at the discretion of existing maintainers.
 For questions about project governance, open an issue or contact
 the maintainers listed above. For security disclosures, use the
 GitHub Security Advisories route documented in
-link:SECURITY.md[`SECURITY.md`] — do NOT open public issues for
+link:SECURITY.adoc[`SECURITY.adoc`] — do NOT open public issues for
 vulnerabilities.
 
 For high-level direction the canonical surfaces are:

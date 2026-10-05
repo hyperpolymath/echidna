@@ -27,7 +27,7 @@
 //!   pluggable tiebreak.
 //!
 //! Picking between them: see the "Guide: Picking an arbitration
-//! mechanism" entry in `docs/wiki/Guides.md`.
+//! mechanism" entry in `docs/wikis/Guides.md`.
 //!
 //! Unified entry point: `result_arbiter` adapts per-prover
 //! [`crate::provers::outcome::ProverOutcome`]s into whichever mechanism

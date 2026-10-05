@@ -90,7 +90,7 @@ this is the reason the sweep checks target existence rather than blindly
 rewriting every `.md` it sees. 47 references fall in this class across the
 21 tracked `+.md+` files: `+SECURITY.md+`, `+CLAUDE.md+`, `+GEMINI.md+`,
 `+.github/CONTRIBUTING.md+`, `+.github/PROVEN-INTEGRATION.md+`,
-`+docs/wiki/*.md+` and the GitLab issue/MR templates. In particular
+`+docs/wikis/*.md+` and the GitLab issue/MR templates. In particular
 `+SECURITY.md+` coexists with `+SECURITY.adoc+` and is *not* stale; an
 earlier, looser version of this sweep rewrote
 link in `+AUTHORS.adoc+` (`+link:SECURITY.md+`) and was caught by this check.

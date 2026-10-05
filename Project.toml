@@ -2,7 +2,7 @@
 # SPDX-FileCopyrightText: 2024-2025 ECHIDNA Project Contributors
 
 name = "ECHIDNA"
-uuid = "00000000-0000-0000-0000-000000000000"  # Generate proper UUID
+uuid = "c2e75152-b2c9-4188-ae72-40d8a7dc1cd0"  # UUIDv4: Julia package UUIDs are random v4 by ecosystem convention (Pkg.generate); exempt from the estate v7 standard as an externally-defined format
 authors = ["ECHIDNA Project Contributors"]
 version = "0.1.0"
 

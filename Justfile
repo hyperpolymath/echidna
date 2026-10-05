@@ -532,9 +532,10 @@ build-ui:
     @echo "Sources: src/ui/tea/echidna_gui.affine; shell: src/ui/public/."
     @exit 1
 
-# Serve the static UI shell (no compile step)
+# Serve the static UI shell (no compile step) on http://localhost:3000.
+# Bun is the estate JavaScript runtime; Deno is retired (2026-09-22 ruling).
 serve-ui:
-    cd src/ui/public && deno run --allow-net --allow-read jsr:@std/http/file-server
+    cd src/ui/public && bun ../../../scripts/serve-static.js 3000
 
 # Launch full ECHIDNA GUI (Backend + UI + Browser)
 gui:
@@ -545,7 +546,7 @@ gui:
     cargo run -- server --port 8081 --cors > /dev/null 2>&1 & BACKEND_PID=$!
     echo "Started backend (PID $BACKEND_PID)"
     # Start UI server
-    (cd src/ui/public && deno run --allow-net --allow-read jsr:@std/http/file-server) > /dev/null 2>&1 & UI_PID=$!
+    (cd src/ui/public && bun ../../../scripts/serve-static.js 3000) > /dev/null 2>&1 & UI_PID=$!
     echo "Started UI server (PID $UI_PID)"
     # Cleanup on exit
     trap "kill $BACKEND_PID $UI_PID 2>/dev/null || true" EXIT
@@ -783,15 +784,15 @@ verify-spark-crosscheck: build-spark
 
 # Run Creusot formal verification on the trust-pipeline kernel.
 #
-# Prerequisites: Creusot + Why3 + Z3/CVC5 (see crates/echidna-core-spark/CREUSOT-SETUP.adoc).
-# The nightly pin lives in crates/echidna-core-spark/rust-toolchain.toml.
+# Prerequisites: Creusot + Why3 + Z3/CVC5 (see crates/echidna-core-creusot/CREUSOT-SETUP.adoc).
+# The nightly pin lives in crates/echidna-core-creusot/rust-toolchain.toml.
 #
 # This recipe is currently in report-only mode: CI runs it and posts
 # results but does not block the merge until Stage 8c-M3.
 verify-trust-pipeline:
-    @echo "Running Creusot formal verification on echidna-core-spark..."
+    @echo "Running Creusot formal verification on echidna-core-creusot..."
     cargo +nightly creusot \
-        -p echidna-core-spark \
+        -p echidna-core-creusot \
         -- \
         --features creusot \
         --why3 "$(which why3)"
@@ -800,8 +801,8 @@ verify-trust-pipeline:
 # Stable-Rust test suite for the Creusot-annotated trust pipeline.
 # Runs on any Rust version; does not require Creusot or Why3.
 test-trust-pipeline:
-    cargo test -p echidna-core-spark
-    @echo "Trust-pipeline invariant tests passed ($(cargo test -p echidna-core-spark 2>&1 | grep 'test result' | head -1 | grep -oP '\d+ passed') tests)."
+    cargo test -p echidna-core-creusot
+    @echo "Trust-pipeline invariant tests passed ($(cargo test -p echidna-core-creusot 2>&1 | grep 'test result' | head -1 | grep -oP '\d+ passed') tests)."
 
 # ── Other ───────────────────────────────────────────────────
 
@@ -863,7 +864,7 @@ doctor:
     check_optional "Idris2" "idris2"
     check_optional "Zig" "zig"
     check_optional "Julia" "julia"
-    check_optional "Deno" "deno"
+    check_optional "Bun" "bun"
     check_optional "Chapel" "chpl"
     check_optional "panic-attack" "panic-attack"
     echo ""

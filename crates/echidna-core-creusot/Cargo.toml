@@ -1,10 +1,10 @@
 # SPDX-License-Identifier: MPL-2.0
 
 [package]
-name = "echidna-core-spark"
+name = "echidna-core-creusot"
 version = "0.1.0"
 edition = "2021"
-description = "Creusot-annotated trust pipeline kernel for ECHIDNA"
+description = "Creusot-annotated (not yet proved) trust pipeline kernel for ECHIDNA"
 # crates.io requires an OSI-approved identifier; MPL-2.0 is the automatic
 # legal fallback for MPL-2.0 until PMPL achieves formal recognition.
 license = "MPL-2.0"
@@ -19,6 +19,6 @@ serde = { version = "1", features = ["derive"] }
 
 [features]
 # Gate all Creusot-specific annotations behind this feature so that
-# `cargo build -p echidna-core-spark` succeeds on stable Rust without
+# `cargo build -p echidna-core-creusot` succeeds on stable Rust without
 # any Creusot installation.
 creusot = []

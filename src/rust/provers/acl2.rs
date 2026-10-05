@@ -1337,10 +1337,7 @@ impl ProverBackend for ACL2Backend {
 
         // Generate defthm with hint
         let defthm = self.generate_defthm(
-            &format!(
-                "echidna_goal_{}",
-                uuid::Uuid::new_v4().to_string().replace('-', "")
-            ),
+            &format!("echidna_goal_{}", crate::ids::temp_token()),
             &goal.target,
             &[hint],
         );
@@ -1391,8 +1388,10 @@ impl ProverBackend for ACL2Backend {
             if let Some(p) = state.metadata.get("source_path").and_then(|v| v.as_str()) {
                 Some(PathBuf::from(p))
             } else if let Some(src) = state.metadata.get("acl2_source").and_then(|v| v.as_str()) {
-                let tmp = std::env::temp_dir()
-                    .join(format!("echidna_acl2_verify_{}.lisp", uuid::Uuid::new_v4()));
+                let tmp = std::env::temp_dir().join(format!(
+                    "echidna_acl2_verify_{}.lisp",
+                    crate::ids::temp_token()
+                ));
                 tokio::fs::write(&tmp, src)
                     .await
                     .context("Failed to write temp file")?;
@@ -1426,8 +1425,10 @@ impl ProverBackend for ACL2Backend {
         let content = self.export(state).await?;
 
         // Write to temp file
-        let temp_file =
-            std::env::temp_dir().join(format!("echidna_acl2_verify_{}.lisp", uuid::Uuid::new_v4()));
+        let temp_file = std::env::temp_dir().join(format!(
+            "echidna_acl2_verify_{}.lisp",
+            crate::ids::temp_token()
+        ));
 
         tokio::fs::write(&temp_file, &content)
             .await

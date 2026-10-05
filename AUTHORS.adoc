@@ -73,7 +73,7 @@ for the deliberation.
 === Contact
 
 * *GitHub Issues*: https://github.com/hyperpolymath/echidna/issues
-* *Security*: see link:SECURITY.md[`+SECURITY.md+`] — use GitHub
+* *Security*: see link:SECURITY.adoc[`+SECURITY.adoc+`] — use GitHub
 Security Advisories for vulnerabilities, not public issues.
 
 '''''

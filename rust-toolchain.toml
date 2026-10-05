@@ -1,0 +1,10 @@
+# SPDX-License-Identifier: MPL-2.0
+# SPDX-FileCopyrightText: 2026 Jonathan D.A. Jewell (hyperpolymath) <j.d.a.jewell@open.ac.uk>
+#
+# Repo-local Rust pin (AGENTS.md §1a: a repo's own pins stay in the repo so it
+# builds standalone). Bump deliberately, together with any new clippy fixes.
+# crates/echidna-core-creusot carries its own nightly pin for Creusot only.
+[toolchain]
+channel = "1.99.0"
+components = ["rustfmt", "clippy", "llvm-tools-preview"]
+profile = "minimal"

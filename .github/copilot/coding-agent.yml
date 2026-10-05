@@ -1,6 +1,16 @@
-mcp_servers:
-  boj-server:
-    command: npx
-    args: ["-y", "@hyperpolymath/boj-server@latest"]
-    env:
-      BOJ_URL: http://localhost:7700
+# SPDX-License-Identifier: MPL-2.0
+# Copilot coding-agent MCP servers, launched with bunx (Bun is the estate
+# JavaScript runtime).
+{
+  mcp_servers: {
+    boj-server: {
+      command: "bunx",
+      args: [
+        "@hyperpolymath/boj-server@latest",
+      ],
+      env: {
+        BOJ_URL: "http://localhost:7700",
+      },
+    },
+  },
+}

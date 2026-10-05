@@ -123,7 +123,7 @@ echidna repl --prover acl2
 
 === Resources
 
-* http://www.cs.utexas.edu/users/moore/acl2/[ACL2 Documentation]
-* http://www.cs.utexas.edu/users/moore/acl2/tutorial.html[ACL2 Tutorial]
-* http://www.cs.utexas.edu/users/moore/acl2/current/manual/index.html?topic=ACL2____HINTS[Proof
+* https://www.cs.utexas.edu/users/moore/acl2/[ACL2 Documentation]
+* https://acl2.org/doc/?topic=ACL2____ACL2-TUTORIAL[ACL2 Tutorial]
+* https://acl2.org/doc/?topic=ACL2____HINTS[Proof
 Hints Guide]

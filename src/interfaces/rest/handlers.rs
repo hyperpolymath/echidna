@@ -194,7 +194,7 @@ pub async fn submit_proof(
     let prover = ProverFactory::create(core_kind, config)
         .map_err(|e| (StatusCode::BAD_REQUEST, e.to_string()))?;
 
-    let proof_id = uuid::Uuid::new_v4().to_string();
+    let proof_id = echidna::ids::new_record_id().to_string();
 
     // Parse the goal
     let proof_state = prover

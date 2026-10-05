@@ -60,8 +60,11 @@ rustyline = "18"
 blake3 = "1"
 tiny-keccak = { version = "2", features = ["shake"] }
 
-# UUID
-uuid = { version = "1.25.0", features = ["v4", "serde"] }
+# UUID — minted only through src/rust/ids.rs: v7 record ids, v8 content ids.
+uuid = { version = "1.25.0", features = ["v7", "v8", "serde"] }
+# JCS (RFC 8785) canonical JSON, for ids::content_id. The estate's own
+# ijson-jcs crate is not public, so this public build cannot depend on it.
+serde_json_canonicalizer = "0.3"
 
 # Lazy statics
 lazy_static = "1"
@@ -144,7 +147,7 @@ harness = false
 [workspace]
 members = [
     "crates/echidna-core",
-    "crates/echidna-core-spark",
+    "crates/echidna-core-creusot",
     "crates/echidna-mcp",
     "crates/echidna-wire",
     "crates/typed_wasm",
@@ -153,6 +156,5 @@ members = [
     "src/interfaces/rest",
 ]
 exclude = [
-    "echidnabot",
     "fuzz",
 ]

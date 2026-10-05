@@ -1198,7 +1198,7 @@ impl ProverBackend for LeanBackend {
 
         // Create a temporary file and check it with Lean
         let temp_dir = std::env::temp_dir();
-        let temp_file = temp_dir.join(format!("echidna_lean_{}.lean", uuid::Uuid::new_v4()));
+        let temp_file = temp_dir.join(format!("echidna_lean_{}.lean", crate::ids::temp_token()));
 
         tokio::fs::write(&temp_file, content)
             .await
@@ -1268,7 +1268,7 @@ impl ProverBackend for LeanBackend {
 
         // Write to temp file and check
         let temp_dir = std::env::temp_dir();
-        let temp_file = temp_dir.join(format!("echidna_tactic_{}.lean", uuid::Uuid::new_v4()));
+        let temp_file = temp_dir.join(format!("echidna_tactic_{}.lean", crate::ids::temp_token()));
 
         tokio::fs::write(&temp_file, &lean_code)
             .await
@@ -1327,8 +1327,10 @@ impl ProverBackend for LeanBackend {
             };
         }
         if let Some(source) = state.metadata.get("lean_source").and_then(|v| v.as_str()) {
-            let temp_file = std::env::temp_dir()
-                .join(format!("echidna_lean_verify_{}.lean", uuid::Uuid::new_v4()));
+            let temp_file = std::env::temp_dir().join(format!(
+                "echidna_lean_verify_{}.lean",
+                crate::ids::temp_token()
+            ));
             tokio::fs::write(&temp_file, source)
                 .await
                 .context("Failed to write temporary file")?;
@@ -1351,7 +1353,7 @@ impl ProverBackend for LeanBackend {
 
         // Write to temp file and check with Lean
         let temp_dir = std::env::temp_dir();
-        let temp_file = temp_dir.join(format!("echidna_verify_{}.lean", uuid::Uuid::new_v4()));
+        let temp_file = temp_dir.join(format!("echidna_verify_{}.lean", crate::ids::temp_token()));
 
         tokio::fs::write(&temp_file, &lean_code)
             .await
@@ -1540,7 +1542,7 @@ impl ProverBackend for LeanBackend {
         let search_code = format!("#check @{}\n", pattern.replace('*', "_"));
 
         let temp_dir = std::env::temp_dir();
-        let temp_file = temp_dir.join(format!("echidna_search_{}.lean", uuid::Uuid::new_v4()));
+        let temp_file = temp_dir.join(format!("echidna_search_{}.lean", crate::ids::temp_token()));
 
         tokio::fs::write(&temp_file, &search_code)
             .await
