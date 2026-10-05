@@ -22,13 +22,13 @@ const BRIDGE_VERSION = "0.1.0";
 // ─── Status codes ─────────────────────────────────────────────────────────────
 
 pub const CapnpStatus = enum(c_int) {
-    ok                   =  0,
-    not_connected        = -1,
+    ok = 0,
+    not_connected = -1,
     stub_not_implemented = -2,
-    invalid_param        = -3,
-    io_error             = -4,
-    connect_failed       = -6,
-    unknown_error        = -99,
+    invalid_param = -3,
+    io_error = -4,
+    connect_failed = -6,
+    unknown_error = -99,
 };
 
 // ─── Thread-local error storage ───────────────────────────────────────────────
@@ -178,12 +178,12 @@ export fn echidna_capnp_status_message(
     }
 
     const generic: []const u8 = switch (status) {
-        0   => "ok",
-        -1  => "not connected",
-        -2  => "stub not implemented (L1 wave 1 pending)",
-        -3  => "invalid parameter",
-        -4  => "I/O error",
-        -6  => "connect failed",
+        0 => "ok",
+        -1 => "not connected",
+        -2 => "stub not implemented (L1 wave 1 pending)",
+        -3 => "invalid parameter",
+        -4 => "I/O error",
+        -6 => "connect failed",
         -99 => "unknown error",
         else => "unrecognised status code",
     };

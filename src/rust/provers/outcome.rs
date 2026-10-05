@@ -143,6 +143,27 @@ impl ProverOutcome {
     pub fn has_suspect_premises(&self) -> bool {
         matches!(self, ProverOutcome::InconsistentPremises { .. })
     }
+
+    /// Map this outcome onto the `echidna.prove.result/1` status.
+    ///
+    /// `Proved` is `verified`; `NoProofFound` is `failed`; `Timeout` is
+    /// `timeout`; input, prover and system failures are `error`.
+    /// `InconsistentPremises` is `unknown`: anything follows from
+    /// inconsistent premises, so the run is neither a usable proof nor a
+    /// refutation of the goal.
+    pub fn prove_status(&self) -> echidna_core::ProveStatus {
+        use echidna_core::ProveStatus;
+        match self {
+            ProverOutcome::Proved { .. } => ProveStatus::Verified,
+            ProverOutcome::NoProofFound { .. } => ProveStatus::Failed,
+            ProverOutcome::Timeout { .. } => ProveStatus::Timeout,
+            ProverOutcome::InconsistentPremises { .. } => ProveStatus::Unknown,
+            ProverOutcome::InvalidInput { .. }
+            | ProverOutcome::UnsupportedFeature { .. }
+            | ProverOutcome::ProverError { .. }
+            | ProverOutcome::SystemError { .. } => ProveStatus::Error,
+        }
+    }
 }
 
 impl fmt::Display for ProverOutcome {
@@ -375,6 +396,58 @@ mod tests {
             let s = serde_json::to_string(o).unwrap();
             let d: ProverOutcome = serde_json::from_str(&s).unwrap();
             assert_eq!(o, &d, "round-trip failed for {}", o);
+        }
+    }
+
+    /// Every outcome variant maps to the documented prove-result status.
+    #[test]
+    fn prove_status_mapping_covers_every_variant() {
+        use echidna_core::ProveStatus as S;
+        let cases = [
+            (ProverOutcome::Proved { elapsed_ms: 1 }, S::Verified),
+            (
+                ProverOutcome::NoProofFound {
+                    elapsed_ms: 1,
+                    reason: None,
+                },
+                S::Failed,
+            ),
+            (ProverOutcome::Timeout { limit_secs: 1 }, S::Timeout),
+            (
+                ProverOutcome::InconsistentPremises { detail: None },
+                S::Unknown,
+            ),
+            (
+                ProverOutcome::InvalidInput {
+                    reason: "x".into(),
+                    location: None,
+                },
+                S::Error,
+            ),
+            (
+                ProverOutcome::UnsupportedFeature {
+                    feature: "x".into(),
+                },
+                S::Error,
+            ),
+            (
+                ProverOutcome::ProverError {
+                    detail: "x".into(),
+                    exit_code: Some(2),
+                },
+                S::Error,
+            ),
+            (ProverOutcome::SystemError { detail: "x".into() }, S::Error),
+        ];
+        for (outcome, want) in &cases {
+            assert_eq!(outcome.prove_status(), *want, "{outcome}");
+        }
+        // Every contract status is produced by at least one outcome.
+        for s in S::ALL {
+            assert!(
+                cases.iter().any(|(_, w)| *w == s),
+                "unreachable status {s:?}"
+            );
         }
     }
 }

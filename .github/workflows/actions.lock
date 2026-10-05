@@ -92,6 +92,10 @@ workflows:
         - 'actions/checkout@v7.0.1'
     '.github/workflows/workflow-linter.yml':
         - 'actions/checkout@v7.0.1'
+    '.github/workflows/zig-ffi-ci.yml':
+        - 'actions/checkout@v7.0.1'
+        - 'hyperpolymath/cicd-suite@main'
+        - 'mlugg/setup-zig@v2.2.1'
 dependencies:
     'actions/attest-build-provenance@v4.2.2':
         ref: 'v4.2.2'
@@ -172,6 +176,11 @@ dependencies:
         commit: 'sha1-0f8e8c99d88aeb3fbfd523f1ef2c6f762d10d64d'
         owner_id: 75048950
         repo_id: 623796603
+    'hyperpolymath/cicd-suite@main':
+        ref: 'main'
+        commit: 'sha1-d9ebcf99ad4593611b4fa0e18f09b03801f200e8'
+        owner_id: 6759885
+        repo_id: 1326697643
     'mlugg/setup-zig@v2.2.1':
         ref: 'v2.2.1'
         commit: 'sha1-d1434d08867e3ee9daa34448df10607b98908d29'

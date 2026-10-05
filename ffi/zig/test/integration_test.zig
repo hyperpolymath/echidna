@@ -149,11 +149,11 @@ test "point: echidna_prover_count returns 30" {
 
 test "point: echidna_prover_name valid kinds" {
     const expected_names = [_][]const u8{
-        "Agda",    "Coq",       "Lean",     "Isabelle", "Z3",       "CVC5",
-        "Metamath", "HOL Light", "Mizar",   "PVS",      "ACL2",     "HOL4",
-        "Idris2",  "Vampire",   "E Prover", "SPASS",    "Alt-Ergo", "F*",
-        "Dafny",   "Why3",      "TLAPS",    "Twelf",    "Nuprl",    "Minlog",
-        "Imandra", "GLPK",      "SCIP",     "MiniZinc", "Chuffed",  "OR-Tools",
+        "Agda",     "Coq",       "Lean",     "Isabelle", "Z3",       "CVC5",
+        "Metamath", "HOL Light", "Mizar",    "PVS",      "ACL2",     "HOL4",
+        "Idris2",   "Vampire",   "E Prover", "SPASS",    "Alt-Ergo", "F*",
+        "Dafny",    "Why3",      "TLAPS",    "Twelf",    "Nuprl",    "Minlog",
+        "Imandra",  "GLPK",      "SCIP",     "MiniZinc", "Chuffed",  "OR-Tools",
     };
     for (expected_names, 0..) |expected, i| {
         const name = echidna_prover_name(@intCast(i));

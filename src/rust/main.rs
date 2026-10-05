@@ -24,6 +24,15 @@ mod server;
 use output::{OutputFormat, OutputFormatter};
 use repl::DiagnosticsREPL;
 
+/// Result form of `echidna prove`.
+#[derive(Clone, Copy, Debug, PartialEq, Eq, clap::ValueEnum)]
+enum ProveOutput {
+    /// Human-readable report (the default).
+    Human,
+    /// One `echidna.prove.result/1` JSON object on stdout.
+    Json,
+}
+
 /// ECHIDNA - Extensible Cognitive Hybrid Intelligence for Deductive Neural Assistance
 #[derive(Parser)]
 #[command(name = "echidna")]
@@ -88,6 +97,12 @@ enum Commands {
         /// One of: none (default), bwrap, podman.
         #[arg(long, default_value = "none")]
         sandbox: String,
+
+        /// Result form. `human` (default) prints the usual report; `json`
+        /// prints exactly one `echidna.prove.result/1` object (JCS-canonical
+        /// I-JSON) on stdout and sends logs to stderr.
+        #[arg(long, value_enum, default_value_t = ProveOutput::Human)]
+        output: ProveOutput,
     },
 
     /// Verify an existing proof
@@ -364,8 +379,16 @@ async fn main() -> Result<()> {
     // Parse CLI arguments
     let cli = Cli::parse();
 
-    // Initialize tracing
-    init_tracing(cli.verbose);
+    // Initialize tracing. With `prove --output json`, stdout carries only the
+    // result object, so logs go to stderr.
+    let json_stdout = matches!(
+        cli.command,
+        Commands::Prove {
+            output: ProveOutput::Json,
+            ..
+        }
+    );
+    init_tracing(cli.verbose, json_stdout);
 
     // Disable colors if requested
     if cli.no_color {
@@ -387,6 +410,33 @@ async fn main() -> Result<()> {
             diagnose,
             project_root,
             sandbox,
+            output: ProveOutput::Json,
+        } => {
+            prove_json_command(
+                file,
+                prover,
+                timeout,
+                neural,
+                executable,
+                library,
+                diagnose,
+                project_root,
+                sandbox,
+            )
+            .await;
+        },
+
+        Commands::Prove {
+            file,
+            prover,
+            timeout,
+            neural,
+            executable,
+            library,
+            diagnose,
+            project_root,
+            sandbox,
+            output: ProveOutput::Human,
         } => {
             prove_command(
                 file,
@@ -482,8 +532,8 @@ async fn main() -> Result<()> {
     Ok(())
 }
 
-/// Initialize tracing/logging
-fn init_tracing(verbose: bool) {
+/// Initialize tracing/logging; logs go to stderr when `to_stderr` is set.
+fn init_tracing(verbose: bool, to_stderr: bool) {
     use tracing_subscriber::filter::EnvFilter;
     use tracing_subscriber::{fmt, prelude::*};
 
@@ -493,10 +543,14 @@ fn init_tracing(verbose: bool) {
         EnvFilter::new("echidna=info,warn")
     };
 
-    tracing_subscriber::registry()
-        .with(filter)
-        .with(fmt::layer())
-        .init();
+    let registry = tracing_subscriber::registry().with(filter);
+    if to_stderr {
+        registry
+            .with(fmt::layer().with_writer(std::io::stderr))
+            .init();
+    } else {
+        registry.with(fmt::layer()).init();
+    }
 }
 
 /// Prove command implementation
@@ -560,6 +614,86 @@ async fn prove_command(
     }
 
     Ok(())
+}
+
+/// `echidna prove --output json`: print one `echidna.prove.result/1` object.
+///
+/// Every failure, including a missing backend or unreadable file, becomes an
+/// `error` result rather than a non-JSON message. Exits 0 when the status is
+/// `verified` and 1 otherwise. With `--diagnose`, the diagnostic report for a
+/// non-verified run goes to stderr.
+#[allow(clippy::too_many_arguments)]
+async fn prove_json_command(
+    file: PathBuf,
+    prover_kind: Option<ProverKind>,
+    timeout: u64,
+    neural: bool,
+    executable: Option<PathBuf>,
+    library: Vec<PathBuf>,
+    diagnose: bool,
+    project_root: Option<PathBuf>,
+    sandbox: String,
+) {
+    use echidna::prove_contract::{self, ProveStatus};
+
+    let goal = file.display().to_string();
+    let start = std::time::Instant::now();
+    let since =
+        |start: std::time::Instant| u64::try_from(start.elapsed().as_millis()).unwrap_or(u64::MAX);
+
+    let kind = match detect_prover(prover_kind, &file) {
+        Ok(k) => k,
+        Err(e) => {
+            let r = prove_contract::result_from_error(prover_kind, &goal, &e, since(start));
+            emit_prove_result(&r);
+        },
+    };
+    let backend = match create_config(
+        kind,
+        timeout,
+        neural,
+        executable,
+        library,
+        project_root,
+        &sandbox,
+    )
+    .and_then(|config| {
+        echidna::provers::ProverFactory::create(kind, config)
+            .context("Failed to create prover backend")
+    }) {
+        Ok(b) => b,
+        Err(e) => {
+            let r = prove_contract::result_from_error(Some(kind), &goal, &e, since(start));
+            emit_prove_result(&r);
+        },
+    };
+
+    let (result, outcome) = prove_contract::run_detailed(kind, &*backend, &file).await;
+    if let (true, Some(outcome)) = (diagnose && result.status != ProveStatus::Verified, outcome) {
+        eprintln!("--- Proof Failure Diagnostic ---");
+        eprintln!("{}", diagnose_from_outcome(kind, &outcome).display());
+    }
+    emit_prove_result(&result);
+}
+
+/// Print `result` as its one JCS line on stdout and exit (0 iff verified).
+///
+/// If the value cannot be serialised (it never should), a minimal `error`
+/// object is printed instead, so stdout always carries one contract object.
+fn emit_prove_result(result: &echidna::prove_contract::ProveResult) -> ! {
+    use echidna::prove_contract::{self, ProveStatus};
+    let line = result.to_jcs().unwrap_or_else(|e| {
+        let e = anyhow::anyhow!("could not serialise prove result: {e}");
+        prove_contract::result_from_error(None, &result.goal, &e, 0)
+            .to_jcs()
+            .expect("an error result with no numbers out of range serialises")
+    });
+    println!("{line}");
+    std::process::exit(if result.status == ProveStatus::Verified {
+        0
+    } else {
+        1
+    });
 }
 
 /// Run `check()` on the prover and display a structured diagnostic report.

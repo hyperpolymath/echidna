@@ -46,7 +46,7 @@ commit.
 | 12 core backends (`GET /api/provers`) | implemented, wired, live-tested (T1/T2 live-prover matrices green) | — |
 | Wider backend surface (see [`docs/PROVER_COUNT.adoc`](https://github.com/hyperpolymath/echidna/blob/main/docs/PROVER_COUNT.adoc)) | implemented | Tier-4 backends are mock-only; the HP-ecosystem type-checker backends call `typell --discipline` / `tropical-type-check`, which upstream does not provide, so they are **not wired** |
 | Trust pipeline (integrity, certificates, axioms, confidence, mutation, Pareto, statistics) | implemented, wired into `dispatch.rs`, unit-tested | not proved |
-| Idris2 ABI (`src/abi/`) | type-checked, CI-gated (`idris2-abi-ci.yml`) | — |
+| Idris2 ABI (`src/abi/`) | type-checked, totality-checked (`%default total` in every packaged module), CI-gated (`idris2-abi-ci.yml`, runs when `src/abi/` changes) | `CapnSchemas.idr` and `NeSyAssistTesting.idr` are outside the package, so CI does not check them |
 | Dogfood proof corpus (`proofs/{coq,lean,agda}`) | CI-gated (`dogfood-proofs-ci.yml`) | — |
 | Agda meta-checker | implemented | its workflow was in `startup_failure` on `main` |
 | Creusot trust kernel (`crates/echidna-core-creusot`) | annotations **stated**; stable-Rust test mirror runs in CI | **not proved**: no obligation has been discharged; the Creusot job is manual-only |
@@ -56,7 +56,9 @@ commit.
 | REST / gRPC / GraphQL servers | implemented; server boot gate green | — |
 | UI | static shell (`just serve-ui`, Bun) | AffineScript-TEA compile pipeline not wired (`just build-ui` fails on purpose) |
 | ID minting (`echidna::ids`) | UUIDv7 record ids: implemented, wired, tested. UUIDv8 content ids (SHA-256 over JCS): implemented, tested | content ids not yet used for goals/corpus/octads |
-| `echidna prove --output json` (`echidna.prove.result/1`) | — | not implemented yet |
+| `echidna prove --output json` (`echidna.prove.result/1`, [contract](https://github.com/hyperpolymath/echidna/blob/main/docs/PROVE-RESULT-CONTRACT.adoc)) | implemented, wired, tested: golden JCS bytes for all five statuses; end-to-end runs of the binary for `verified` / `failed` / `error` (TypedWasm backend, no external prover) | `timeout` / `unknown` only unit-tested; `trust.confidence` is always `null` on this path (no certificate is checked) |
+| `echidna-core` client crate (`ProverKind`, prove-result type, trust kernel) | implemented, tested; git-dependency recipe in `crates/echidna-core/README.adoc` | not published to crates.io; echidnabot not yet switched to it |
+| Zig FFI (`ffi/zig`) | builds and unit-tested in CI on Zig 0.15.2 (`zig-ffi-ci.yml`); unified-api-adapter purity check passing | `src/main.zig` exports are template examples (`echidna_process` does nothing); the Rust-linked integration tests and benchmarks are not built in CI |
 | Containers | built in CI | publication not verified |
 | Forge mirrors | GitLab, Codeberg, SourceHut, Radicle succeed | Bitbucket, Disroot, Gitea mirror jobs fail |
 

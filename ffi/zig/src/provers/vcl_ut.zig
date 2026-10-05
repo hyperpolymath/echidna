@@ -190,9 +190,7 @@ export fn vqlut_parse(
 
     // Classify effect based on operation
     query_sessions[idx].effect = switch (@as(QueryOp, @enumFromInt(operation))) {
-        .find_proof, .find_similar, .cross_prover_search,
-        .provenance_trace, .temporal_history, .dependency_graph,
-        .axiom_usage, .tactic_stats => .read_only,
+        .find_proof, .find_similar, .cross_prover_search, .provenance_trace, .temporal_history, .dependency_graph, .axiom_usage, .tactic_stats => .read_only,
     };
 
     return 0;

@@ -48,11 +48,11 @@ const BUF_SIZE: usize = 131072; // 128KB — large enough for all operations
 
 /// Prover names for table output (must match ProverKind ordinals 0..29).
 const prover_names = [_][]const u8{
-    "Agda",     "Coq",       "Lean",      "Isabelle",  "Z3",        "CVC5",
-    "Metamath", "HOL Light", "Mizar",     "PVS",       "ACL2",      "HOL4",
-    "Idris2",   "Vampire",   "E Prover",  "SPASS",     "Alt-Ergo",  "F*",
-    "Dafny",    "Why3",      "TLAPS",     "Twelf",     "Nuprl",     "Minlog",
-    "Imandra",  "GLPK",      "SCIP",      "MiniZinc",  "Chuffed",   "OR-Tools",
+    "Agda",     "Coq",       "Lean",     "Isabelle", "Z3",       "CVC5",
+    "Metamath", "HOL Light", "Mizar",    "PVS",      "ACL2",     "HOL4",
+    "Idris2",   "Vampire",   "E Prover", "SPASS",    "Alt-Ergo", "F*",
+    "Dafny",    "Why3",      "TLAPS",    "Twelf",    "Nuprl",    "Minlog",
+    "Imandra",  "GLPK",      "SCIP",     "MiniZinc", "Chuffed",  "OR-Tools",
 };
 
 // ============================================================================

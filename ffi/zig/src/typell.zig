@@ -480,7 +480,9 @@ test "TypeLL: version and error" {
 test "TypeLL: callbacks" {
     const Counter = struct {
         var count: u32 = 0;
-        fn handler(_: c_int, _: c_int) callconv(.c) void { count += 1; }
+        fn handler(_: c_int, _: c_int) callconv(.c) void {
+            count += 1;
+        }
     };
     Counter.count = 0;
     _ = echidna_typell_register_on_status_change(Counter.handler);

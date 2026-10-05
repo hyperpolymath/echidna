@@ -305,20 +305,21 @@ export fn echidna_tentacles_get_global_stage() callconv(.c) c_int {
 export fn echidna_tentacles_poll_events(out_ptr: [*]u8, out_len: *usize) callconv(.c) c_int {
     if (!g_initialised) return ERR_NOT_INIT;
 
-    // Build JSON array of agent states
+    // Build JSON array of agent states. Formatting goes through
+    // std.fmt.bufPrint into a fixed buffer: no stream or filesystem module, per the
+    // estate unified-api-adapter purity check.
     var buf: [MAX_EVENT_BUF]u8 = undefined;
-    var stream = std.io.fixedBufferStream(&buf);
-    var writer = stream.writer();
+    var pos: usize = 0;
 
-    writer.writeAll("[") catch return ERR_BUFFER_TOO_SMALL;
+    pos += (std.fmt.bufPrint(buf[pos..], "[", .{}) catch return ERR_BUFFER_TOO_SMALL).len;
 
     for (0..AGENT_COUNT) |i| {
-        if (i > 0) writer.writeAll(",") catch return ERR_BUFFER_TOO_SMALL;
+        if (i > 0) pos += (std.fmt.bufPrint(buf[pos..], ",", .{}) catch return ERR_BUFFER_TOO_SMALL).len;
 
         const a = &g_agents[i];
         const id_enum: TentacleId = @enumFromInt(@as(c_int, @intCast(i)));
 
-        writer.print(
+        pos += (std.fmt.bufPrint(buf[pos..],
             \\{{"id":{d},"name":"{s}","status":{d},"phase":{d},"stage":{d},"busy":{s},"hasTask":{s},"hasError":{s}}}
         , .{
             i,
@@ -329,12 +330,12 @@ export fn echidna_tentacles_poll_events(out_ptr: [*]u8, out_len: *usize) callcon
             if (a.status == .busy) "true" else "false",
             if (a.task_len > 0) "true" else "false",
             if (a.error_len > 0) "true" else "false",
-        }) catch return ERR_BUFFER_TOO_SMALL;
+        }) catch return ERR_BUFFER_TOO_SMALL).len;
     }
 
-    writer.writeAll("]") catch return ERR_BUFFER_TOO_SMALL;
+    pos += (std.fmt.bufPrint(buf[pos..], "]", .{}) catch return ERR_BUFFER_TOO_SMALL).len;
 
-    const written = stream.pos;
+    const written = pos;
     if (written > out_len.*) return ERR_BUFFER_TOO_SMALL;
 
     @memcpy(out_ptr[0..written], buf[0..written]);
@@ -414,4 +415,32 @@ export fn echidna_tentacles_last_error() callconv(.c) ?[*]const u8 {
 
 export fn echidna_tentacles_agent_count() callconv(.c) c_int {
     return AGENT_COUNT;
+}
+
+// ============================================================================
+// Tests
+// ============================================================================
+
+test "poll_events emits a JSON array with one object per agent" {
+    try std.testing.expectEqual(ERR_NOT_INIT, echidna_tentacles_poll_events(undefined, undefined));
+
+    try std.testing.expectEqual(@as(c_int, 0), echidna_tentacles_init());
+    defer echidna_tentacles_shutdown();
+
+    var out: [MAX_EVENT_BUF]u8 = undefined;
+    var len: usize = out.len;
+    try std.testing.expectEqual(@as(c_int, 0), echidna_tentacles_poll_events(&out, &len));
+
+    const json = out[0..len];
+    try std.testing.expect(json[0] == '[' and json[len - 1] == ']');
+    try std.testing.expectEqual(@as(usize, AGENT_COUNT), std.mem.count(u8, json, "\"id\":"));
+}
+
+test "poll_events reports a too-small output buffer" {
+    try std.testing.expectEqual(@as(c_int, 0), echidna_tentacles_init());
+    defer echidna_tentacles_shutdown();
+
+    var out: [4]u8 = undefined;
+    var len: usize = out.len;
+    try std.testing.expectEqual(ERR_BUFFER_TOO_SMALL, echidna_tentacles_poll_events(&out, &len));
 }

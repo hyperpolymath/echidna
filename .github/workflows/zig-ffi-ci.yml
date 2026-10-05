@@ -1,0 +1,62 @@
+# This workflow is managed by gh actions-lock.
+# SPDX-License-Identifier: MPL-2.0
+# SPDX-FileCopyrightText: 2026 Jonathan D.A. Jewell (hyperpolymath) <j.d.a.jewell@open.ac.uk>
+#
+# Zig FFI CI for echidna (ffi/zig): format, unit tests, and the estate
+# unified-api-adapter purity check (no std.fs / std.io in any .zig file).
+#
+# Before 2026-10-05 ffi/zig was built by no workflow and did not compile on
+# any Zig release (opaque Handle with fields, implicit libc). This job keeps
+# it compiling and tested. The library targets that link against the Rust
+# libechidna.so (integration tests, benchmarks) are not built here.
+#
+# Zig is pinned to 0.15.2, the version ffi/zig/build.zig is written for.
+name: Zig FFI CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  zig-ffi:
+    name: zig-ffi / fmt + test (ffi/zig)
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Install Zig
+        uses: mlugg/setup-zig@v2.2.1
+        with:
+          version: 0.15.2
+
+      - name: zig fmt --check
+        run: zig fmt --check ffi/zig/src ffi/zig/test ffi/zig/build.zig
+
+      - name: zig build test
+        working-directory: ffi/zig
+        run: zig build test --summary all
+
+  unified-api-adapter:
+    name: zig-ffi / unified-api-adapter purity
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Zig unified-api-adapter check (hyperpolymath/cicd-suite)
+        uses: hyperpolymath/cicd-suite/actions/zig-unified-api-adapter-check@main

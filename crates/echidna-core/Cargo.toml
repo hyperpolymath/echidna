@@ -2,13 +2,23 @@
 
 [package]
 name = "echidna-core"
-version = "0.1.0"
+version = "0.2.0"
 edition = "2021"
 authors = ["Jonathan D.A. Jewell <j.d.a.jewell@open.ac.uk>"]
 license = "MPL-2.0"
-description = "Canonical Term / Goal / ProofState / Tactic types for ECHIDNA, re-used by vcl-ut and any future proof-exchange client without depending on the full echidna binary."
+description = "Canonical ECHIDNA client types: Term / Goal / ProofState / Tactic, ProverKind, the echidna.prove.result/1 contract and the trust kernel, without depending on the full echidna binary."
 repository = "https://github.com/hyperpolymath/echidna"
 
 [dependencies]
 serde = { version = "1", features = ["derive"] }
 serde_json = "1"
+# ProverKind::from_str keeps its historical anyhow::Error error type.
+anyhow = "1"
+# ProverKind derives strum::EnumIter.
+strum = { version = "0.28.0", features = ["derive"] }
+# JCS (RFC 8785) canonical JSON for the echidna.prove.result/1 contract.
+serde_json_canonicalizer = "0.3"
+# Trust kernel (TrustLevel, compute_trust_level, axiom scanner), re-exported
+# as echidna_core::trust. Path dependency inside this repository; a git
+# dependency on echidna-core resolves it from the same commit.
+echidna-core-creusot = { path = "../echidna-core-creusot", version = "0.1.0" }

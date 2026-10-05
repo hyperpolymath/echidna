@@ -138,13 +138,13 @@ export fn verify_reset(handle: c_int) c_int {
 /// Get kernel size for a declarative prover.
 export fn verify_kernel_size(solver_kind: c_int) c_int {
     return switch (solver_kind) {
-        6 => @intFromEnum(KernelSize.tiny),      // Metamath
-        8 => @intFromEnum(KernelSize.medium),     // Mizar
-        9 => @intFromEnum(KernelSize.large),      // PVS
-        10 => @intFromEnum(KernelSize.large),     // ACL2
-        19 => @intFromEnum(KernelSize.external),  // TLAPS
-        20 => @intFromEnum(KernelSize.small),     // Twelf
-        24 => @intFromEnum(KernelSize.medium),    // Imandra
+        6 => @intFromEnum(KernelSize.tiny), // Metamath
+        8 => @intFromEnum(KernelSize.medium), // Mizar
+        9 => @intFromEnum(KernelSize.large), // PVS
+        10 => @intFromEnum(KernelSize.large), // ACL2
+        19 => @intFromEnum(KernelSize.external), // TLAPS
+        20 => @intFromEnum(KernelSize.small), // Twelf
+        24 => @intFromEnum(KernelSize.medium), // Imandra
         else => -1,
     };
 }
