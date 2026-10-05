@@ -104,16 +104,16 @@ jobs:
         # first push it happens, instead of silently re-resolving (which
         # masked the echidna#92 / echidna PR #128 dependabot major-bump
         # break for 24h). See standards#295.
-        run: cargo check --locked --all-targets
+        run: cargo check --locked --workspace --all-targets
 
       - name: Cargo fmt
         run: cargo fmt --all -- --check
 
       - name: Cargo clippy
-        run: cargo clippy --locked --all-targets -- -D warnings
+        run: cargo clippy --locked --workspace --all-targets -- -D warnings
 
   test:
-    timeout-minutes: 20
+    timeout-minutes: 30
     name: rust-ci / Cargo test
     runs-on: ubuntu-latest
     needs: [detect, check]
@@ -149,7 +149,9 @@ jobs:
 
       - name: Run tests
         # `--locked` — see Cargo check above.
-        run: cargo test --locked --all-targets
+        # `--workspace`: without it only the root package is tested, so the
+        # echidna-core (prove-result contract) and trust-kernel tests never ran.
+        run: cargo test --locked --workspace --all-targets
 
       - name: Write summary
         if: always()

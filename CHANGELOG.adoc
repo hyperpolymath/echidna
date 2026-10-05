@@ -8,6 +8,39 @@ https://semver.org/spec/v2.0.0.html[Semantic Versioning].
 
 === [Unreleased]
 
+==== Added — integrations 2026-10-05
+
+* *`+echidna prove --output json+`*: prints exactly one
+`+echidna.prove.result/1+` object (JCS-canonical I-JSON) on stdout, logs
+to stderr. Statuses `+verified+` / `+failed+` / `+error+` / `+timeout+` /
+`+unknown+`, mapped from `+ProverOutcome+`; `+trust.confidence+` is
+`+null+` unless receipt-backed. Human output stays the default. See
+`+docs/PROVE-RESULT-CONTRACT.adoc+`.
+* *`+echidna-core+` 0.2.0* is consumable by clients (echidnabot,
+proof-burrower): adds `+ProverKind+` (moved from `+echidna::provers+`,
+re-exported there, no source change for ECHIDNA), the
+`+echidna.prove.result/1+` type with a strict parser, and the trust
+kernel as `+echidna_core::trust+`. Git-dependency recipe and stability
+policy in `+crates/echidna-core/README.adoc+`.
+* *`+ffi/zig+` builds and is tested in CI* (`+zig-ffi-ci.yml+`, Zig
+0.15.2): it previously compiled on no Zig release. Pure Zig (page
+allocator, no libc); the estate unified-api-adapter purity check
+(`+hyperpolymath/cicd-suite+`) runs on every PR.
+
+==== Fixed — integrations 2026-10-05
+
+* ci(chapel): build the Zig FFI with `+-Dcpu=baseline+`; the artifact
+runs on a different runner, and native-CPU code crashed there with
+SIGILL in "Rust Build with Chapel Feature".
+* ci(rust): check, clippy and test now run with `+--workspace+`; before,
+only the root package was tested, so `+echidna-core+` and the trust
+kernel tests never ran in CI.
+* abi: `+EchidnaABI.Gnn+` and `+EchidnaABI.TacticRecord+` now declare
+`+%default total+` (both already type-check total).
+* docs(creusot): `+CREUSOT-SETUP.adoc+` no longer claims the Creusot job
+is a hard gate or that milestones 8c-M1..M3 are done; it records why
+Creusot does not run in CI.
+
 ==== Changed
 
 * *Licence: `+AGPL-3.0-or-later+` → `+MPL-2.0+` for code and the

@@ -140,8 +140,8 @@ export fn atp_set_result(handle: c_int, szs_status: c_int) c_int {
 
     atp_sessions[idx].szs_status = @enumFromInt(szs_status);
     atp_sessions[idx].state = switch (szs_status) {
-        0 => .found_proof,      // Theorem
-        1 => .found_counter,    // CounterSatisfiable
+        0 => .found_proof, // Theorem
+        1 => .found_counter, // CounterSatisfiable
         4 => .timeout,
         5 => .gave_up,
         else => .err,

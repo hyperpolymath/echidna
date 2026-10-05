@@ -92,19 +92,40 @@ contract.
 All obligations in `+impl_invariants+` are designed to discharge quickly
 (< 30 s each on a modern workstation).
 
-=== 6 — CI integration
+=== 6 — CI integration (what actually runs)
 
-`+.github/workflows/formal-verification.yml+` runs two jobs, both merge
-gates:
+`+.github/workflows/formal-verification.yml+` has two jobs:
 
-* `+stable-tests+`: `+cargo test -p echidna-core-creusot+` on stable Rust
-(~10 s).
-* `+creusot-verify+`: `+cargo +nightly creusot+` with Why3 + Z3
-discharge. Requires `+apt-get install why3 z3 alt-ergo+` in the runner
-(Ubuntu 22.04+).
+* `+stable-tests+`: `+cargo test -p echidna-core-creusot+` on stable Rust.
+It runs on pull requests that touch this crate, and the crate's tests
+also run in the workspace test job of `+rust-ci.yml+`. It checks the
+stable-Rust mirror of each stated obligation. It does not run Creusot.
+* `+creusot-verify+`: manual only (`+workflow_dispatch+`). It has never
+discharged an obligation.
 
-Both were promoted to hard gates in Stage 8c-M3 (no
-`+continue-on-error+`).
+==== Why Creusot does not run in CI (measured 2026-10-05)
+
+. *The annotations do not compile under Creusot's macros.*
+`+cargo check -p echidna-core-creusot --features creusot+` fails with
+34 errors: `+creusot_contracts+` is unresolved (it is not a
+dependency), so `+ensures+`, `+requires+`, `+invariant+`, `+pure+` and
+`+snapshot!+` are unknown. No obligation has ever reached Why3.
+. *The toolchain pin is stale.* `+rust-toolchain.toml+` pins
+`+nightly-2024-05-01+`, which predates current Creusot releases.
+. *The install path in this guide is wrong for current Creusot.* Creusot
+is installed with its own `+INSTALL+` script, which provisions Why3 and
+`+why3find+` through opam; `+cargo install creusot+` does not do that.
+. *Adding `+creusot-contracts+` as an optional dependency would put a
+nightly-only crate in `+Cargo.lock+`*, which the stable `+--locked+`
+build and `+cargo audit+` also read.
+
+What it would take: pick one Creusot release, pin its nightly here and in
+the workflow, add `+creusot-contracts+` behind the `+creusot+` feature,
+rewrite the annotations against that release's logic syntax until
+`+cargo creusot+` type-checks them, install Creusot with its `+INSTALL+`
+script in the job, and only then make `+creusot-verify+` run on pull
+requests. Until a dispatch run discharges every obligation, call the
+annotations *stated, not proved*.
 
 === Annotation style
 
@@ -124,36 +145,23 @@ no-ops on stable Rust.
 |===
 |Milestone |Contents |Status
 |8c-M1 |`+rust-toolchain.toml+`, `+formal-verification.yml+`,
-`+just verify-trust-pipeline+` |*done*
+`+just verify-trust-pipeline+` |files exist; toolchain pin stale
 
 |8c-M2 |`+dominates+` marked `+#[pure]+`; `+compute+` ensures with
-`+^candidates+`; inner-loop `+#[invariant]+` for `+dominated+` |*done*
+`+^candidates+`; inner-loop `+#[invariant]+` for `+dominated+`
+|annotations written, never type-checked by Creusot
 
 |8c-M3 |Outer-loop invariant (`+snapshot!+` + prefix classification);
-Why3 CI hard gate |*done*
+Why3 CI hard gate |annotations written; *no CI gate* (see above)
 |===
 
-All three milestones are complete. The `+compute+` function now carries
-the full two-level invariant structure:
-
-* *Outer*: `+snapshot!(candidates)+` at entry + `+#[invariant]+`
-asserting
-[loweralpha]
-. objectives unchanged for all k, (b) `+is_pareto_optimal[k]+` correctly
-set for k < i.
-* *Inner*: `+dominated == (∃ k < j, k ≠ i : dominates(k, i))+`.
-
-The CI workflow (`+formal-verification.yml+`) is a hard gate: both
-`+stable-tests+` and `+creusot-verify+` must pass for a merge. If the
-nightly pin drifts, bump `+rust-toolchain.toml+` + the workflow’s
-`+toolchain:+` field together.
-
-This keeps the crate buildable on stable Rust at all times while still
-expressing every proof obligation in machine-verifiable syntax.
+An earlier version of this table marked all three milestones done and
+described both jobs as hard merge gates. That was not true: no obligation
+has been discharged (see "Why Creusot does not run in CI").
 
 === References
 
 * Creusot repository: https://github.com/creusot-rs/creusot
 * Why3 documentation: https://www.why3.org/
-* SPARK Adoption Plan: `+docs/design/SPARK_ADOPTION_PLAN.adoc+`
+* SPARK Adoption Plan: `+docs/design/SPARK_ADOPTION_PLAN.adoc+` (historical; this crate is Creusot, not SPARK)
 * Echidna ROADMAP Stage 8c: `+docs/ROADMAP.adoc+`

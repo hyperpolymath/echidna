@@ -582,7 +582,9 @@ test "BoJ: version and error buffer" {
 test "BoJ: callbacks" {
     const Counter = struct {
         var count: u32 = 0;
-        fn handler(_: c_int, _: c_int) callconv(.c) void { count += 1; }
+        fn handler(_: c_int, _: c_int) callconv(.c) void {
+            count += 1;
+        }
     };
     Counter.count = 0;
     _ = echidna_boj_register_on_status_change(Counter.handler);

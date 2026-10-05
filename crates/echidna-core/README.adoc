@@ -1,0 +1,59 @@
+// SPDX-License-Identifier: CC-BY-SA-4.0
+= echidna-core
+
+The types a client of ECHIDNA needs, without the full `echidna` crate:
+
+[cols="1,3",options="header"]
+|===
+| Module | Contents
+
+| `core`, `types` | `Term`, `Goal`, `ProofState`, `Tactic`, `TypeInfo`.
+| `prover_kind` | `ProverKind`, the backend enumeration, with `FromStr` and `Display`.
+| `prove_result` | `ProveResult`, the `echidna.prove.result/1` contract printed by `echidna prove --output json` (see `docs/PROVE-RESULT-CONTRACT.adoc`), with a JCS serialiser and a strict parser.
+| `trust` | The trust kernel re-exported from `echidna-core-creusot`: `TrustLevel`, `TrustFactors`, `ProverClass`, `compute_trust_level`, `combine_trust`, `axiom_tracker`, `pareto`.
+|===
+
+`echidna` re-exports these, so `echidna::ProverKind` and
+`echidna::provers::ProverKind` are the same type as
+`echidna_core::ProverKind`.
+
+== Using it from another repository
+
+The crate is not published to crates.io. Depend on it from git, pinned to a
+full commit SHA so the build is reproducible:
+
+[source,toml]
+----
+[dependencies]
+echidna-core = { git = "https://github.com/hyperpolymath/echidna", rev = "<full 40-character commit SHA on main>" }
+----
+
+Cargo finds the crate inside the repository by name. Its path dependency on
+`echidna-core-creusot` resolves from the same commit, so nothing else is
+needed. Do not use a `path = "../echidna/..."` dependency in a published
+repository: it only builds on a machine with that checkout.
+
+Dependencies it brings: `serde`, `serde_json`, `anyhow`, `strum`,
+`serde_json_canonicalizer`, and `echidna-core-creusot` (which needs only
+`serde`).
+
+== Stability
+
+The crate follows Semantic Versioning, read the Cargo way for 0.x: a change
+in the minor number (0.2 to 0.3) may break, a change in the patch number
+does not.
+
+* Stable from 0.2.0: the module paths above, the `ProverKind` variant
+  names (they are its serde form), the `ProveResult` fields and the
+  `echidna.prove.result/1` wire format, and the `trust` items listed above.
+* Adding a `ProverKind` variant is not breaking for ECHIDNA's purposes; keep
+  a wildcard arm when you match on it.
+* The trust kernel's Creusot annotations are stated, not proved (see
+  `crates/echidna-core-creusot/CREUSOT-SETUP.adoc`). Its behaviour is
+  covered by stable-Rust tests.
+
+== History
+
+* 0.2.0 (2026-10-05): added `prover_kind`, `prove_result` and `trust`.
+  `ProverKind` moved here from `echidna::provers`; nothing was removed.
+* 0.1.0: `core` and `types`.

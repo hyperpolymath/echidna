@@ -123,7 +123,7 @@ jobs:
           version: 0.14.0
 
       - name: Build Zig FFI library (with Chapel stubs)
-        run: cd src/zig_ffi && zig build -Doptimize=ReleaseSafe
+        run: cd src/zig_ffi && zig build -Doptimize=ReleaseSafe -Dcpu=baseline  # baseline: the artifact runs on another runner (SIGILL otherwise)
 
       - name: Run Zig FFI tests (stub mode)
         run: cd src/zig_ffi && zig build test
@@ -219,7 +219,7 @@ jobs:
       - name: Build Zig FFI without stubs (links against real Chapel)
         run: |
           cd src/zig_ffi
-          zig build -Doptimize=ReleaseSafe -Dstubs=false
+          zig build -Doptimize=ReleaseSafe -Dcpu=baseline -Dstubs=false
 
       - name: Build Rust with real Chapel library
         run: |

@@ -11,11 +11,16 @@ const std = @import("std");
 const VERSION = "0.1.0";
 const BUILD_INFO = "ECHIDNA built with Zig " ++ @import("builtin").zig_version_string;
 
-/// Thread-local error storage
-threadlocal var last_error: ?[]const u8 = null;
+/// Thread-local error storage. Messages are static, NUL-terminated string
+/// literals, so `echidna_last_error` can hand them to C without allocating.
+threadlocal var last_error: ?[:0]const u8 = null;
+
+/// Pure-Zig allocator for library state. No libc: the FFI's only C contract
+/// is the C calling convention of its exports.
+const allocator = std.heap.page_allocator;
 
 /// Set the last error message
-fn setError(msg: []const u8) void {
+fn setError(msg: [:0]const u8) void {
     last_error = msg;
 }
 
@@ -37,13 +42,18 @@ pub const Result = enum(c_int) {
     null_pointer = 4,
 };
 
-/// Library handle (opaque to prevent direct access)
-pub const Handle = opaque {
-    // Internal state hidden from C
-    allocator: std.mem.Allocator,
+/// Library handle as C sees it: an opaque pointer.
+pub const Handle = opaque {};
+
+/// Internal state behind a `Handle`; never visible across the C ABI.
+const State = struct {
     initialized: bool,
-    // Add your fields here
 };
+
+/// Recover the internal state from a C handle.
+fn state(handle: *Handle) *State {
+    return @ptrCast(@alignCast(handle));
+}
 
 //==============================================================================
 // Library Lifecycle
@@ -52,27 +62,20 @@ pub const Handle = opaque {
 /// Initialize the library
 /// Returns a handle, or null on failure
 export fn echidna_init() ?*Handle {
-    const allocator = std.heap.c_allocator;
-
-    const handle = allocator.create(Handle) catch {
+    const st = allocator.create(State) catch {
         setError("Failed to allocate handle");
         return null;
     };
 
-    // Initialize handle
-    handle.* = .{
-        .allocator = allocator,
-        .initialized = true,
-    };
+    st.* = .{ .initialized = true };
 
     clearError();
-    return handle;
+    return @ptrCast(st);
 }
 
 /// Free the library handle
 export fn echidna_free(handle: ?*Handle) void {
-    const h = handle orelse return;
-    const allocator = h.allocator;
+    const h = state(handle orelse return);
 
     // Clean up resources
     h.initialized = false;
@@ -87,10 +90,10 @@ export fn echidna_free(handle: ?*Handle) void {
 
 /// Process data (example operation)
 export fn echidna_process(handle: ?*Handle, input: u32) Result {
-    const h = handle orelse {
+    const h = state(handle orelse {
         setError("Null handle");
         return .null_pointer;
-    };
+    });
 
     if (!h.initialized) {
         setError("Handle not initialized");
@@ -111,10 +114,10 @@ export fn echidna_process(handle: ?*Handle, input: u32) Result {
 /// Get a string result (example)
 /// Caller must free the returned string
 export fn echidna_get_string(handle: ?*Handle) ?[*:0]const u8 {
-    const h = handle orelse {
+    const h = state(handle orelse {
         setError("Null handle");
         return null;
-    };
+    });
 
     if (!h.initialized) {
         setError("Handle not initialized");
@@ -122,7 +125,7 @@ export fn echidna_get_string(handle: ?*Handle) ?[*:0]const u8 {
     }
 
     // Example: allocate and return a string
-    const result = h.allocator.dupeZ(u8, "Example result") catch {
+    const result = allocator.dupeZ(u8, "Example result") catch {
         setError("Failed to allocate string");
         return null;
     };
@@ -134,7 +137,6 @@ export fn echidna_get_string(handle: ?*Handle) ?[*:0]const u8 {
 /// Free a string allocated by the library
 export fn echidna_free_string(str: ?[*:0]const u8) void {
     const s = str orelse return;
-    const allocator = std.heap.c_allocator;
 
     const slice = std.mem.span(s);
     allocator.free(slice);
@@ -150,10 +152,10 @@ export fn echidna_process_array(
     buffer: ?[*]const u8,
     len: u32,
 ) Result {
-    const h = handle orelse {
+    const h = state(handle orelse {
         setError("Null handle");
         return .null_pointer;
-    };
+    });
 
     const buf = buffer orelse {
         setError("Null buffer");
@@ -184,10 +186,8 @@ export fn echidna_process_array(
 export fn echidna_last_error() ?[*:0]const u8 {
     const err = last_error orelse return null;
 
-    // Return C string (static storage, no need to free)
-    const allocator = std.heap.c_allocator;
-    const c_str = allocator.dupeZ(u8, err) catch return null;
-    return c_str.ptr;
+    // Static storage: the caller must not free it.
+    return err.ptr;
 }
 
 //==============================================================================
@@ -209,17 +209,17 @@ export fn echidna_build_info() [*:0]const u8 {
 //==============================================================================
 
 /// Callback function type (C ABI)
-pub const Callback = *const fn (u64, u32) callconv(.C) u32;
+pub const Callback = *const fn (u64, u32) callconv(.c) u32;
 
 /// Register a callback
 export fn echidna_register_callback(
     handle: ?*Handle,
     callback: ?Callback,
 ) Result {
-    const h = handle orelse {
+    const h = state(handle orelse {
         setError("Null handle");
         return .null_pointer;
-    };
+    });
 
     const cb = callback orelse {
         setError("Null callback");
@@ -244,7 +244,7 @@ export fn echidna_register_callback(
 
 /// Check if handle is initialized
 export fn echidna_is_initialized(handle: ?*Handle) u32 {
-    const h = handle orelse return 0;
+    const h = state(handle orelse return 0);
     return if (h.initialized) 1 else 0;
 }
 

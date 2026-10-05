@@ -36,6 +36,7 @@ pub mod parsers;
 #[cfg(feature = "verisim")]
 pub mod proof_encoding; // CBOR encoding + proof identity hashing
 pub mod proof_search; // Chapel parallel proof search (optional feature)
+pub mod prove_contract; // `echidna prove --output json`: the echidna.prove.result/1 producer
 pub mod provers;
 pub mod suggest; // Mechanical tactic-variant finder (echidna suggest verb)
 pub mod vcl_ut;

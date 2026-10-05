@@ -59,12 +59,11 @@ test "ProverKind: out-of-range returns null" {
 
 test "ProverKind: name strings are non-empty" {
     const provers = [_]core.ProverKind{
-        .agda, .coq, .lean, .isabelle, .z3, .cvc5,
-        .metamath, .hol_light, .mizar, .pvs, .acl2,
-        .hol4, .idris2, .vampire, .eprover, .spass,
-        .alt_ergo, .fstar, .dafny, .why3, .tlaps,
-        .twelf, .nuprl, .minlog, .imandra, .glpk,
-        .scip, .minizinc, .chuffed, .ortools,
+        .agda,     .coq,       .lean,    .isabelle, .z3,       .cvc5,
+        .metamath, .hol_light, .mizar,   .pvs,      .acl2,     .hol4,
+        .idris2,   .vampire,   .eprover, .spass,    .alt_ergo, .fstar,
+        .dafny,    .why3,      .tlaps,   .twelf,    .nuprl,    .minlog,
+        .imandra,  .glpk,      .scip,    .minizinc, .chuffed,  .ortools,
     };
     for (provers) |pk| {
         const n = std.mem.span(pk.name());
