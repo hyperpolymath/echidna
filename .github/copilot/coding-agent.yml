@@ -1,6 +1,6 @@
 # SPDX-License-Identifier: MPL-2.0
-# Copilot coding-agent MCP servers. Bun, not npx: npm/npx are banned in this
-# estate (2026-05-25); `bunx` runs the same package.
+# Copilot coding-agent MCP servers, launched with bunx (Bun is the estate
+# JavaScript runtime).
 {
   mcp_servers: {
     boj-server: {

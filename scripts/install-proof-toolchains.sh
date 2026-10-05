@@ -17,6 +17,10 @@ LEAN_VERSION="4.13.0"
 IDRIS2_VERSION="v0.8.0"
 LEAN_PREFIX="/opt/lean-${LEAN_VERSION}-linux"
 
+# Private scratch dir for downloads (never a predictable shared path); removed on exit.
+WORK="$(mktemp -d)"
+trap 'rm -rf "$WORK"' EXIT
+
 log() { printf '\033[1;36m[proof-setup]\033[0m %s\n' "$*"; }
 have() { command -v "$1" >/dev/null 2>&1; }
 
@@ -61,18 +65,18 @@ log "reminder: invoke agda with LC_ALL=C.UTF-8"
 # ── 3. Lean 4 (pinned tarball; the elan host 403s under the network policy) ───
 if [ ! -x "${LEAN_PREFIX}/bin/lean" ]; then
   log "installing Lean ${LEAN_VERSION}"
-  curl -fsSL "https://github.com/leanprover/lean4/releases/download/v${LEAN_VERSION}/lean-${LEAN_VERSION}-linux.tar.zst" -o /tmp/lean.tar.zst
-  $SUDO tar --use-compress-program=unzstd -xf /tmp/lean.tar.zst -C /opt
+  curl -fsSL "https://github.com/leanprover/lean4/releases/download/v${LEAN_VERSION}/lean-${LEAN_VERSION}-linux.tar.zst" -o "$WORK/lean.tar.zst"
+  $SUDO tar --use-compress-program=unzstd -xf "$WORK/lean.tar.zst" -C /opt
 fi
 for b in lean lake; do $SUDO ln -sf "${LEAN_PREFIX}/bin/$b" /usr/local/bin/"$b"; done
 
 # ── 4. Idris2 0.8.0 (not packaged; bootstrap from source via Chez, ~10 min) ───
 if ! have idris2; then
   log "building Idris2 ${IDRIS2_VERSION} from source — this is the slow step"
-  curl -fsSL "https://github.com/idris-lang/Idris2/archive/refs/tags/${IDRIS2_VERSION}.tar.gz" -o /tmp/idris2.tar.gz
-  rm -rf /tmp/idris2-src && mkdir -p /tmp/idris2-src
-  tar xzf /tmp/idris2.tar.gz -C /tmp/idris2-src --strip-components=1
-  ( cd /tmp/idris2-src \
+  curl -fsSL "https://github.com/idris-lang/Idris2/archive/refs/tags/${IDRIS2_VERSION}.tar.gz" -o "$WORK/idris2.tar.gz"
+  mkdir -p "$WORK/idris2-src"
+  tar xzf "$WORK/idris2.tar.gz" -C "$WORK/idris2-src" --strip-components=1
+  ( cd "$WORK/idris2-src" \
       && make bootstrap SCHEME=chezscheme \
       && $SUDO make install PREFIX=/usr/local \
       && $SUDO make install-with-src-libs PREFIX=/usr/local )

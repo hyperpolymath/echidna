@@ -77,7 +77,7 @@ migration destination is AffineScript.
 
 - ABI definitions in Idris2 (`src/abi/`, package `src/abi/echidnaabi.ipkg`).
 - FFI implementations in Zig (`ffi/zig/`, `src/zig_ffi/`).
-- echidna has not yet moved to the template's `src/interface/` layout.
+- echidna keeps its own ABI/FFI layout rather than the template's interface tree.
 
 ## State Files
 
