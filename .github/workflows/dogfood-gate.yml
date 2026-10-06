@@ -249,6 +249,11 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v7.0.1
 
+      - name: Set up bun
+        uses: oven-sh/setup-bun@v2.2.0
+        with:
+          bun-version: 1.3.14 # matches mise.lock
+
       - name: Check and validate eclexiaiser manifest
         id: eclex
         run: |
@@ -263,34 +268,9 @@ jobs:
 
           echo "has_manifest=true" >> "$GITHUB_OUTPUT"
 
-          # Validate TOML structure using Python 3.11+ tomllib.
-          # The Python heredoc body sits at the YAML block-scalar base
-          # indentation, so after GitHub strips the block's common indent
-          # the interpreter receives it column-aligned (no sed dedent —
-          # a sed-based dedent breaks because YAML removes the block's
-          # leading indent before the script ever reaches the shell).
-          if ! python3 - <<'PY'
-          import tomllib, sys
-          with open('eclexiaiser.toml', 'rb') as f:
-              data = tomllib.load(f)
-          project = data.get('project', {})
-          if not project.get('name', '').strip():
-              print('ERROR: project.name is required', file=sys.stderr)
-              sys.exit(1)
-          functions = data.get('functions', [])
-          if not functions:
-              print('ERROR: at least one [[functions]] entry is required', file=sys.stderr)
-              sys.exit(1)
-          for fn in functions:
-              if not fn.get('name', '').strip():
-                  print('ERROR: function name cannot be empty', file=sys.stderr)
-                  sys.exit(1)
-              if not fn.get('source', '').strip():
-                  print(f'ERROR: function {fn["name"]} has no source path', file=sys.stderr)
-                  sys.exit(1)
-          print(f'Valid: {project["name"]} ({len(functions)} function(s))')
-          PY
-          then
+          # Structural checks live in scripts/validate-eclexiaiser.js (tested by
+          # scripts/validate-eclexiaiser.test.js); bun parses the TOML.
+          if ! bun scripts/validate-eclexiaiser.js eclexiaiser.toml; then
             echo "::error file=eclexiaiser.toml::Invalid eclexiaiser.toml — see step output for details"
             exit 1
           fi
@@ -308,13 +288,36 @@ jobs:
           fi
 
   # ---------------------------------------------------------------------------
-  # Job 6: Dogfooding summary
+  # Job 6: Banned-runtime check (no npm or deno artefacts; bun is the runtime)
+  # ---------------------------------------------------------------------------
+  runtime-ban:
+    name: Banned-runtime check
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v7.0.1
+
+      - name: Set up bun
+        uses: oven-sh/setup-bun@v2.2.0
+        with:
+          bun-version: 1.3.14 # matches mise.lock
+
+      - name: Test the repo bun scripts
+        run: bun test scripts/
+
+      - name: No npm or deno artefacts
+        run: bash scripts/ban-npm.sh
+
+  # ---------------------------------------------------------------------------
+  # Job 7: Dogfooding summary
   # ---------------------------------------------------------------------------
   dogfood-summary:
     name: Dogfooding compliance summary
     runs-on: ubuntu-latest
     timeout-minutes: 10
-    needs: [a2ml-validate, k9-validate, empty-lint, groove-check, eclexiaiser-validate]
+    needs: [a2ml-validate, k9-validate, empty-lint, groove-check, eclexiaiser-validate, runtime-ban]
     if: always()
 
     steps:
