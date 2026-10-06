@@ -68,7 +68,7 @@ workflows:
         - 'swatinem/rust-cache@v2.9.2'
     '.github/workflows/rust-ci.yml':
         - 'actions/checkout@v7.0.1'
-        - 'dtolnay/rust-toolchain@master'
+        - 'dtolnay/rust-toolchain@v1'
         - 'swatinem/rust-cache@v2.9.2'
     '.github/workflows/s4-loop.yml':
         - 'actions/checkout@v7.0.1'
@@ -94,7 +94,7 @@ workflows:
         - 'actions/checkout@v7.0.1'
     '.github/workflows/zig-ffi-ci.yml':
         - 'actions/checkout@v7.0.1'
-        - 'hyperpolymath/cicd-suite@main'
+        - 'hyperpolymath/cicd-suite@4c772eb235b04455307d5c03cbbc4f45130f7f0f'
         - 'mlugg/setup-zig@v2.2.1'
 dependencies:
     'actions/attest-build-provenance@v4.2.2':
@@ -146,14 +146,9 @@ dependencies:
         repo_id: 496012378
         uses:
             - 'actions/upload-artifact@bbbca2ddaa5d8feaa63e36b76fdaad77386f024f'
-    'dtolnay/rust-toolchain@master':
-        ref: 'master'
-        commit: 'sha1-02cb101ec7c40f2c49e1d9714d64511d8e1b74de'
-        owner_id: 1940490
-        repo_id: 260749683
     'dtolnay/rust-toolchain@v1':
         ref: 'v1'
-        commit: 'sha1-02cb101ec7c40f2c49e1d9714d64511d8e1b74de'
+        commit: 'sha1-7e38f4b43b4db5c8dd498af069a4f6196df1d067'
         owner_id: 1940490
         repo_id: 260749683
     'erlef/setup-beam@v1.24.1':
@@ -176,9 +171,9 @@ dependencies:
         commit: 'sha1-0f8e8c99d88aeb3fbfd523f1ef2c6f762d10d64d'
         owner_id: 75048950
         repo_id: 623796603
-    'hyperpolymath/cicd-suite@main':
+    'hyperpolymath/cicd-suite@4c772eb235b04455307d5c03cbbc4f45130f7f0f':
         ref: 'main'
-        commit: 'sha1-d9ebcf99ad4593611b4fa0e18f09b03801f200e8'
+        commit: 'sha1-4c772eb235b04455307d5c03cbbc4f45130f7f0f'
         owner_id: 6759885
         repo_id: 1326697643
     'mlugg/setup-zig@v2.2.1':

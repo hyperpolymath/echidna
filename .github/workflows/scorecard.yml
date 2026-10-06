@@ -22,6 +22,7 @@ jobs:
     # contents: read must be restated here — the reusable declares it
     # (checkout needs it) and startup-fails if the caller doesn't grant it.
     permissions:
+      actions: read
       security-events: write
       id-token: write
       contents: read

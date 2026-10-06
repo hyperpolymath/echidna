@@ -166,8 +166,16 @@ jobs:
       - name: Clone and build Hypatia
         id: build
         continue-on-error: true
+        env:
+          # Pinned to the hypatia commit standards@5751b97e vets as its default.
+          # When the standards callers move to that ref, the governance baseline
+          # job and this gate build the same scanner; move them together.
+          HYPATIA_REF: 51ab6496bf47e30a0576d503df31fec30f3cfe56
         run: |
-          git clone https://github.com/hyperpolymath/hypatia.git "$HOME/hypatia" 2>/dev/null || true
+          git init -q "$HOME/hypatia" \
+            && git -C "$HOME/hypatia" fetch -q --depth 1 https://github.com/hyperpolymath/hypatia.git "$HYPATIA_REF" \
+            && git -C "$HOME/hypatia" checkout -q FETCH_HEAD \
+            || true
           if [ -f "$HOME/hypatia/mix.exs" ]; then
             cd "$HOME/hypatia"
             # Build escript if neither hypatia nor hypatia-v2 exists
