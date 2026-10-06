@@ -81,7 +81,7 @@ own licences. See the respective component directories and files for details.
 
 Rust dependencies:    Cargo.toml + `cargo license`
 Julia packages:       Project.toml + Manifest.toml
-Deno / AffineScript:  deno.json (run `deno info`)
+Bun scripts:          scripts/*.js (bun built-ins only, no third-party packages)
 
 Theorem provers (integrated, not redistributed):
   Agda            BSD-3-Clause

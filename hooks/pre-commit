@@ -7,6 +7,9 @@
 # Enable per clone:  git config core.hooksPath hooks
 set -euo pipefail
 
+# Banned runtimes (npm, deno) — fast, needs no toolchain, so it runs before the just check.
+bash scripts/ban-npm.sh
+
 if ! command -v just >/dev/null 2>&1; then
   echo "pre-commit: 'just' not on PATH (RSR-H14 build tool); skipping gate." >&2
   exit 0
