@@ -27,7 +27,7 @@ awk 'f;/^# /{f=1}' issues/<file> | sed '1{/^$/d}' > /tmp/body.md
 
 ## Status
 
-- **ECH-01..04** are filed on hyperpolymath/echidna. Their GitHub bodies and labels still need to be synchronised from these files; only `enhancement` is attached.
+- **ECH-01..04** are filed on hyperpolymath/echidna and carry all their labels. On 2026-10-09 their bodies were replaced by hand with a different text that is not these files; the owner decides which is canonical (see `docs/handover/PARADISEO-ROADMAP-PROMPT.adoc`, WP0). `scripts/issues/sync-roadmap-issues.sh` syncs the bodies from these files (dry run by default; refuses to replace hand-edited bodies without `--overwrite`).
 - **PB-01, PB-02, EB-01** are drafts for copying to their own repositories. They are not filed.
 
 ## Provenance of the PB and EB drafts
