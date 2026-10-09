@@ -158,7 +158,7 @@ Check for drift against live state (needs repository administration read):
 
 [source,bash]
 ----
-GH_TOKEN=<token-with-admin-read> python3 scripts/ci/check-ruleset-drift.py
+GH_TOKEN=<token-with-admin-read> scripts/ci/check-ruleset-drift.sh
 ----
 
 Exit 0 means no drift, 1 means drift, 2 means the rulesets could not be read.
