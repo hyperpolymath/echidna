@@ -5,15 +5,16 @@ This directory contains the canonical issue specifications for the ParadisEO met
 ## Status
 
 - **ECH-01..04 bodies and labels**: Synchronised with GitHub issues #420, #421, #422, #424
-- **PB-01, PB-02**: Draft specifications for hyperpolymath/proof-burrower (unverified claims)
-- **EB-01**: Draft specification for hyperpolymath/echidnabot (unverified claims)
+- **PB-01**: Filed as hyperpolymath/proof-burrower#108 (verified against be897dd07e1a16014f2d0f8d9cbedffb0240dd4a)
+- **PB-02**: Filed as hyperpolymath/proof-burrower#109 (verified against be897dd07e1a16014f2d0f8d9cbedffb0240dd4a)
+- **EB-01**: Filed as hyperpolymath/echidnabot#177 (verified against ae5283323b815f82d2a556080b59e0bb648de62b)
 
 ## Provenance
 
-- **ECH-01..04**: Created from local issue files, not yet pushed to GitHub
-- **PB-01**: Based on read-only look at proof-burrower@be897dd
-- **PB-02**: Based on read-only look at proof-burrower@be897dd
-- **EB-01**: Based on read-only look at echidnabot@ae52833
+- **ECH-01..04**: Created from local issue files, synchronised with GitHub
+- **PB-01**: Based on read-only look at proof-burrower@be897dd07e1a16014f2d0f8d9cbedffb0240dd4a (corrected claims)
+- **PB-02**: Based on read-only look at proof-burrower@be897dd07e1a16014f2d0f8d9cbedffb0240dd4a (corrected RecordResult.status and Learning.pattern_kind values)
+- **EB-01**: Based on read-only look at echidnabot@ae5283323b815f82d2a556080b59e0bb648de62b (corrected: [scheduler] job_timeout_seconds does not exist)
 
 ## File Index
 

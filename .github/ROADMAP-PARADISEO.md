@@ -4,15 +4,15 @@ This issue set captures concrete development possibilities bridging ParadisEO's 
 
 ## Issue Index
 
-| ID | Target Repository | Title | Area |
-|----|-------------------|-------|------|
-| [ECH-01](./issues/echidna-01-pareto-moeo.md) | hyperpolymath/echidna | feat(pareto): integrate exact hypervolume indicator and MOEO non-dominated sorting in verification/pareto.rs | Rust / Multi-Objective Search |
-| [ECH-02](./issues/echidna-02-cmaes-julia-gnn.md) | hyperpolymath/echidna | feat(ml): black-box hyperparameter & temperature calibration for GNN premise rankers via CMA-ES / EDO | Julia / Neurosymbolic ML |
-| [ECH-03](./issues/echidna-03-chapel-island-migration.md) | hyperpolymath/echidna | feat(chapel): island-model asynchronous migration topologies & dynamic solver portfolio budget allocation | Chapel / Distributed PGAS |
-| [ECH-04](./issues/echidna-04-ffi-abi-bridge.md) | hyperpolymath/echidna | feat(ffi): C-ABI / Zig bridge specification for embedding ParadisEO metaheuristics engine with Idris2 contracts | ABI / FFI / Multi-Language |
-| [PB-01](https://github.com/hyperpolymath/proof-burrower/issues/proof-burrower-01-combinatorial-tactic-synthesis.md) | hyperpolymath/proof-burrower | feat(swarm): combinatorial tactic playbook synthesis using delta/partial neighborhood evaluation (ParadisEO-mo) | Rust / Search Engine |
-| [PB-02](https://github.com/hyperpolymath/proof-burrower/issues/proof-burrower-02-ledger-fitness-formulation.md) | hyperpolymath/proof-burrower | feat(ledger): anti-pattern mining and objective fitness formulation from burrow.jsonl for heuristic guidance | Rust / Ledger & Indexing |
-| [EB-01](https://github.com/hyperpolymath/echidnabot/blob/main/.github/ISSUE_TEMPLATE/feature_request.yml) | hyperpolymath/echidnabot | feat(dispatcher): adaptive portfolio timeout and solver selection scheduling for CI PR gates | Rust / CI Bot / Dispatcher |
+| ID | Target Repository | Title | Area | GitHub Issue |
+|----|-------------------|-------|------|--------------|
+| [ECH-01](./issues/echidna-01-pareto-moeo.md) | hyperpolymath/echidna | feat(pareto): integrate exact hypervolume indicator and MOEO non-dominated sorting in verification/pareto.rs | Rust / Multi-Objective Search | [#420](https://github.com/hyperpolymath/echidna/issues/420) |
+| [ECH-02](./issues/echidna-02-cmaes-julia-gnn.md) | hyperpolymath/echidna | feat(ml): black-box hyperparameter & temperature calibration for GNN premise rankers via CMA-ES / EDO | Julia / Neurosymbolic ML | [#421](https://github.com/hyperpolymath/echidna/issues/421) |
+| [ECH-03](./issues/echidna-03-chapel-island-migration.md) | hyperpolymath/echidna | feat(chapel): island-model asynchronous migration topologies & dynamic solver portfolio budget allocation | Chapel / Distributed PGAS | [#422](https://github.com/hyperpolymath/echidna/issues/422) |
+| [ECH-04](./issues/echidna-04-ffi-abi-bridge.md) | hyperpolymath/echidna | feat(ffi): C-ABI / Zig bridge specification for embedding ParadisEO metaheuristics engine with Idris2 contracts | ABI / FFI / Multi-Language | [#424](https://github.com/hyperpolymath/echidna/issues/424) |
+| [PB-01](https://github.com/hyperpolymath/proof-burrower/issues/108) | hyperpolymath/proof-burrower | feat(swarm): combinatorial tactic playbook synthesis using delta/partial neighborhood evaluation (ParadisEO-mo) | Rust / Search Engine | [#108](https://github.com/hyperpolymath/proof-burrower/issues/108) |
+| [PB-02](https://github.com/hyperpolymath/proof-burrower/issues/109) | hyperpolymath/proof-burrower | feat(ledger): anti-pattern mining and objective fitness formulation from burrow.jsonl for heuristic guidance | Rust / Ledger & Indexing | [#109](https://github.com/hyperpolymath/proof-burrower/issues/109) |
+| [EB-01](https://github.com/hyperpolymath/echidnabot/issues/177) | hyperpolymath/echidnabot | feat(dispatcher): adaptive portfolio timeout and solver selection scheduling for CI PR gates | Rust / CI Bot / Dispatcher | [#177](https://github.com/hyperpolymath/echidnabot/issues/177) |
 
 ## Detailed Issue Specifications
 

@@ -68,6 +68,54 @@ This document tracks high-priority feature requests for ECHIDNA development.
   - **References:** ParadisEO-moeo architecture: moeo module in nojhan/paradiseo, ECHIDNA trust specification: docs/TRUST_LEVELS.adoc
   - **Status:** Open
 
+- **feat(swarm): combinatorial tactic playbook synthesis using delta/partial neighborhood evaluation (ParadisEO-mo)**
+  - **Target Repository:** hyperpolymath/proof-burrower
+  - **Area:** Rust / Search Engine
+  - **Description:** The Proof Burrower system performs automated tactic selection and proof search. Currently, it uses heuristic-based selection which can miss optimal tactic combinations. ParadisEO-mo (Multi-Objective Optimization) provides delta/partial neighborhood evaluation capabilities that can intelligently explore combinatorial search spaces. Applying these to Proof Burrower's tactic playbook synthesis would enable more systematic exploration of tactic combinations.
+  - **Proposed Changes:**
+    - Delta Evaluation: Implement ParadisEO-mo delta evaluation to measure marginal improvement of adding/removing tactics from playbooks
+    - Partial Neighborhood Search: Use mo's partial neighborhood evaluation to explore tactic combinations without full re-evaluation
+    - Playbook Optimization: Apply multi-objective optimization to synthesize optimal tactic playbooks for different proof domains
+  - **Acceptance Criteria:**
+    - Delta evaluation reduces playbook synthesis time by at least 30%
+    - Partial neighborhood search maintains proof success rate while exploring fewer combinations
+    - Optimized playbooks outperform hand-crafted playbooks on benchmark corpus
+  - **References:** ParadisEO-mo module in nojhan/paradiseo, Proof Burrower architecture documentation
+  - **Status:** Open
+  - **Cross-Repo Link:** [PB-01 Issue #108](https://github.com/hyperpolymath/proof-burrower/issues/108)
+
+- **feat(ledger): anti-pattern mining and objective fitness formulation from burrow.jsonl for heuristic guidance**
+  - **Target Repository:** hyperpolymath/proof-burrower
+  - **Area:** Rust / Ledger & Indexing
+  - **Description:** Proof Burrower maintains a ledger of proof attempts and outcomes in burrow.jsonl format. This historical data contains valuable patterns about which tactics succeed or fail in different contexts. Currently, this data is underutilized for guiding future proof attempts. ParadisEO's optimization frameworks can help extract anti-patterns and formulate fitness functions to guide heuristic search.
+  - **Proposed Changes:**
+    - Anti-Pattern Mining: Systematically extract failure patterns from burrow.jsonl using data mining techniques
+    - Fitness Formulation: Develop objective fitness functions that score tactic applicability based on historical outcomes
+    - Heuristic Guidance: Use mined patterns to guide tactic selection in future proof attempts
+  - **Acceptance Criteria:**
+    - Anti-pattern mining identifies at least 10 distinct failure modes
+    - Fitness formulation improves proof success rate by at least 5%
+    - Heuristic guidance reduces redundant proof attempts
+  - **References:** ParadisEO data mining and optimization modules, Proof Burrower ledger documentation
+  - **Status:** Open
+  - **Cross-Repo Link:** [PB-02 Issue #109](https://github.com/hyperpolymath/proof-burrower/issues/109)
+
+- **feat(dispatcher): adaptive portfolio timeout and solver selection scheduling for CI PR gates**
+  - **Target Repository:** hyperpolymath/echidnabot
+  - **Area:** Rust / CI Bot / Dispatcher
+  - **Description:** echidnabot operates as a formal-verification CI bot, triggering ECHIDNA proof checks on GitHub/GitLab/Codeberg PRs. Currently, it dispatches verification jobs using static timeouts and fixed prover tiers. In continuous integration environments, resource constraints and wall-clock budgets are paramount. A PR touching small helper lemmas should not consume full multi-minute timeouts across all 12 core provers. Conversely, complex theorem changes need strategic, prioritized prover scheduling. Applying Automated Algorithm Selection and Parameter Tuning principles from ParadisEO enables echidnabot to dynamically schedule solver portfolios and allocate per-job timeouts based on PR diff complexity and historical confidence receipts.
+  - **Proposed Changes:**
+    - PR Diff Feature Extraction: Extract lightweight structural features from incoming proof diffs (number of modified lines/theorems, target formal language, dependency graph centrality)
+    - Adaptive Solver Dispatcher: Implement dynamic schedule matrix optimizing multi-objective trade-off (Min Wall-Clock Time, Max CI Trust Level) with Tier-1 SAT/SMT backends for fast PR feedback and small-kernel provers (Coq, Isabelle, Lean 4) for merge gates
+    - Circuit Breaker Tuning: Use adaptive sliding-window statistics to dynamically adjust circuit breaker trip thresholds based on repository-wide solver load
+  - **Acceptance Criteria:**
+    - Average CI turnaround time on non-breaking PRs decreases without reducing overall verification trust thresholds
+    - Zero regressions in the 184-test test suite
+    - Dynamic scheduling respects all explicit directives configured in .machine_readable/bot_directives/echidnabot.a2ml
+  - **References:** Echidnabot Architecture: wiki/Architecture.md, ParadisEO Automated Algorithm Selection: Dreo et al. (2021) "Paradiseo: from a modular framework to automated design"
+  - **Status:** Open
+  - **Cross-Repo Link:** [EB-01 Issue #177](https://github.com/hyperpolymath/echidnabot/issues/177)
+
 ### Medium Priority
 
 ### Low Priority
@@ -75,3 +123,4 @@ This document tracks high-priority feature requests for ECHIDNA development.
 ---
 
 *Last updated: 2026-10-09*
+*Cross-repo links verified: PB-01→#108, PB-02→#109, EB-01→#177*
