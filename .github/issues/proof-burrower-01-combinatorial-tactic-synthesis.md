@@ -6,7 +6,7 @@
 **Labels:** enhancement, area:swarm, rust, search-tactics  
 **Status:** Draft (unverified)  
 
-**Provenance:** Based on read-only look at proof-burrower@be897dd8  
+**Provenance:** Based on read-only look at proof-burrower@be897dd07e1a16014f2d0f8d9cbedffb0240dd4a  
 
 ---
 
@@ -16,11 +16,11 @@ The Proof Burrower system performs automated tactic selection and proof search. 
 
 ParadisEO-mo (Multi-Objective Optimization) provides delta/partial neighborhood evaluation capabilities that can intelligently explore combinatorial search spaces. Applying these to Proof Burrower's tactic playbook synthesis would enable more systematic exploration of tactic combinations.
 
-## Current State (unverified)
+## Current State
 
-Based on proof-burrower@be897dd:
+Verified against proof-burrower@be897dd07e1a16014f2d0f8d9cbedffb0240dd4a:
 - `TacticTemplate/Playbook/run_playbook/generate_probe` exists in `crates/burrower-core/src/attempt.rs`
-- `SWARM_RELEVANCE_THRESHOLD = 0.02` is defined
+- `SWARM_RELEVANCE_THRESHOLD = 0.02` is defined in `specialist.rs`
 - `Swarm::attempt_all` exists in `specialist.rs`
 
 ## Proposed Changes

@@ -6,7 +6,7 @@
 **Labels:** enhancement, area:ledger, rust, heuristics  
 **Status:** Draft (unverified)  
 
-**Provenance:** Based on read-only look at proof-burrower@be897dd8  
+**Provenance:** Based on read-only look at proof-burrower@be897dd07e1a16014f2d0f8d9cbedffb0240dd4a  
 
 ---
 
@@ -16,14 +16,14 @@ Proof Burrower maintains a ledger of proof attempts and outcomes in `burrow.json
 
 Currently, this data is underutilized for guiding future proof attempts. ParadisEO's optimization frameworks can help extract anti-patterns and formulate fitness functions to guide heuristic search.
 
-## Current State (unverified)
+## Current State
 
-Based on proof-burrower@be897dd:
+Verified against proof-burrower@be897dd07e1a16014f2d0f8d9cbedffb0240dd4a:
 - `LedgerRecord` struct exists in `ledger.rs`
 - `anti_patterns_for` function exists in `ledger.rs`
 - `goal_hash` and `goal_id` are used in `ledger.rs`
-- `RecordResult.status` values include: timeout, skipped, oracle-counter-example
-- `Learning.pattern_kind` doc comments describe pattern classification
+- `RecordResult.status` values include: succeeded, failed, partial, abandoned, proposed (NOT timeout, skipped, oracle-counter-example as previously claimed)
+- `Learning.pattern_kind` values include: positive, anti-pattern, specialisation, boundary (NOT the previously claimed values)
 
 ## Proposed Changes
 

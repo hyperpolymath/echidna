@@ -11,9 +11,9 @@ This directory contains the canonical issue specifications for the ParadisEO met
 ## Provenance
 
 - **ECH-01..04**: Created from local issue files, synchronised with GitHub
-- **PB-01**: Based on read-only look at proof-burrower@be897dd
-- **PB-02**: Based on read-only look at proof-burrower@be897dd
-- **EB-01**: Based on read-only look at echidnabot@ae52833
+- **PB-01**: Based on read-only look at proof-burrower@be897dd07e1a16014f2d0f8d9cbedffb0240dd4a (claims verified and corrected)
+- **PB-02**: Based on read-only look at proof-burrower@be897dd07e1a16014f2d0f8d9cbedffb0240dd4a (claims verified and corrected)
+- **EB-01**: Based on read-only look at echidnabot@ae5283323b815f82d2a556080b59e0bb648de62b (claims verified and corrected)
 
 ## File Index
 
