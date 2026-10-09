@@ -142,3 +142,30 @@ POSTed is the protection equivalent of a check that cannot fail.
 Conversely, do not infer that the estate is protected because a ruleset exists.
 A ruleset with `enforcement: disabled` is inert, and a `pull_request` rule with
 `allowed_merge_methods: []` can never be satisfied at all.
+
+== Live snapshot and drift check (ultraplan Phase 0.5, #416)
+
+`live/` holds one JSON file per ruleset that GitHub actually enforces on
+hyperpolymath/echidna, keyed by ruleset `id`. Volatile fields (timestamps,
+`node_id`, `_links`) are removed so that diffs show only real changes.
+
+The top-level `*.json` files in this directory are historical payloads from
+before the snapshot existed. Some no longer match what is enforced (for example
+`base.json` names contexts that no live ruleset requires). Do not apply them
+without first checking `live/`.
+
+Check for drift against live state (needs repository administration read):
+
+[source,bash]
+----
+GH_TOKEN=<token-with-admin-read> python3 scripts/ci/check-ruleset-drift.py
+----
+
+Exit 0 means no drift, 1 means drift, 2 means the rulesets could not be read.
+After an intentional change in the GitHub UI, regenerate the snapshot with
+`--write` and commit the diff. Do not regenerate it to silence an unexpected
+change.
+
+Not yet automated: the check does not run in CI. The default Actions token
+probably cannot read rulesets, so a dedicated read-only secret is needed first.
+That secret is an owner action. Until it exists, run the check by hand.

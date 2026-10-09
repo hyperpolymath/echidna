@@ -80,7 +80,7 @@ feature.
 | CI is green in the places that matter and red in the places that don't
 | The required-check set on `main` omits the gates that fail most often
   (governance, workflow lint, Hypatia). Some checks can pass without running
-  anything: conditional pass-throughs, skipped jobs, and allow-fail jobs. Allow-fail jobs have no expiry.
+  anything: conditional pass-throughs, skipped jobs, and allow-fail jobs. Allow-fail units have no expiry until the CI hygiene PR (#416) adds one.
 
 | Status documents disagree with each other and with the tree
 | Several hand-typed status documents are stale by months, and the in-repo
@@ -139,6 +139,29 @@ feature.
 . *D-D, sandbox default.* *(E):* default-deny unsandboxed execution. It remains
   available in development only, and the provenance of each result records
   when it was used.
+
+== Progress and ratification
+
+Status as of 2026-10-09, after the owner's first response.
+
+* *Plan ratified as written.* The owner chose the recommended (E) defaults.
+* *D-A decided:* authentication and sandboxed execution before further public
+  traffic on the execution endpoints. Read-only endpoints stay public.
+* *Scope chosen:* CI hygiene first. The trust-code work (Phase 0 containment,
+  Phase 1 verdict) follows.
+* *Done in the CI hygiene PR:* the nine dead playground workflows moved to
+  `echidna-playground/ci-templates/` (P0.6). All 14 allow-fail units carry an
+  owner issue and an expiry, enforced by `scripts/ci/check-allow-fail-expiry.py`
+  in the workflow linter (Phase 2.3, tracking issue #416). A live ruleset
+  snapshot and a drift check were added (P0.5, partial).
+* *Owner-held and not yet done:* rotate `VERISIMDB_PAT` (#310); add a
+  pull-request review requirement and the aggregator as the required check;
+  apply the D-A deployment change on the host (pin the image by digest, stop
+  `AutoUpdate` on `latest`, add authentication in front of the execution
+  endpoints); add a read-only ruleset secret so the drift check can run in CI.
+* *Next:* the repository-side D-A change (quadlet and Caddy configuration), the
+  fail-closed integrity change, and the sandbox-honesty change, as one
+  containment PR. Then Phase 1.1.
 
 == Method and standard
 
@@ -483,10 +506,7 @@ saying what it says, and the plan changes the rule set.
 without the check having exercised anything: conditional pass-throughs,
 skipped jobs, and allow-fail jobs. The conditional pass-through in
 `idris2-abi-ci.yml` is deliberate, and it is sound only if its path detection is
-exhaustive. The allow-fail count is 15: live-provers (tier 2, two tier-3 jobs,
-three tier-4 jobs, tier-4 GPU, tier-1 Guix), chapel-ci (three), static-analysis
-`hypatia-scan` (two), container-ci `tier3-container` (one), and boj-build
-`trigger-boj` (one). The `bridge-gate` workflow is skipped in 10 of its 12 runs,
+exhaustive. The allow-fail count is 14 (verified by grep and by parsing the YAML): live-provers eight (the tier-1 Guix job, the tier-2 provision step, the tier-3 job and step, the tier-4 job, and the tier-4 GPU job with its two steps), chapel-ci two, container-ci one, boj-build one, and static-analysis `hypatia-scan` two. The `bridge-gate` workflow is skipped in 10 of its 12 runs,
 so its purpose needs verifying before it is kept. A silent exit is the same
 hazard in estate code. Per #401's comment, the standards reusable bump was held
 back because on the newer standards ref the governance R5 step "exits silently
@@ -586,7 +606,7 @@ Targets (measured baseline, then target):
 | Runs per typical push (median per SHA) | about 20 | 6 or fewer
 | Startup failure rate | 2.5% | 0% over 14 days
 | Required check red on `main` for more than 14 days | yes (Security Scan) | no
-| Allow-fail jobs without expiry | 15 | 0
+| Allow-fail jobs without expiry | 14 | 0
 | Pull-request merge gate, median | about 5 min (Rust CI) | 10 min or less, all lanes
 |===
 
@@ -812,7 +832,8 @@ Work:
   workflows as Appendix A proposes.
 * *2.2 Build the aggregator.* Create the one required check. Move the lanes
   behind it, with path filters inside the lanes.
-* *2.3 Expire every allow-fail.* Each `continue-on-error` carries an issue
+* *2.3 Expire every allow-fail.* Started in the CI hygiene PR (tracking issue #416;
+  the checker runs in the workflow linter). Each `continue-on-error` carries an issue
   number and a date. Remove or make blocking the ones that have not been
   justified by the date.
 * *2.4 One owner per scanner.* Secrets, SAST, estate Hypatia, panic-attack, SCA,
@@ -1094,7 +1115,7 @@ of the phase named.
 | Workflow files | 35 | 12 or fewer | 2
 | Runs per typical push | about 20 | 6 or fewer | 2
 | Startup failure rate | 2.5% | 0% over 14 days | 2
-| Allow-fail jobs without expiry | 15 | 0 | 2
+| Allow-fail jobs without expiry | 14 | 0 | 2
 | Red-every-run gates | 3 | 0 | 2
 | Training data in working tree | 612 MB | fetched via manifest | 3
 | Broken local links | 31 | 0 | 4
@@ -1165,7 +1186,7 @@ moved (Phase 2.1). Lane letters follow section 4.3.
 | `chapel-ci.yml` | Keep as an optional accelerator lane; fix the real-link job (#408) | C
 | `container-ci.yml` | Keep; weekly, plus on Containerfile changes | C
 | `s4-loop.yml` | Verify purpose; fix its startup failure or fold into C | C
-| `boj-build.yml` | Decide whether the integration remains; otherwise remove the allow-fail | E or remove
+| `boj-build.yml` | Decide whether the integration remains; otherwise remove the allow-fail (#416) | E or remove
 | `ghcr-publish.yml` | Keep; release lane, deployment by digest | D
 | `generator-generic-ossf-slsa3-publish.yml` | Keep; release lane | D
 | `mirror.yml` | Remove the three failing forges until credentials exist (P0.4) | E

@@ -121,7 +121,7 @@ jobs:
     if: >-
       github.event_name == 'schedule' ||
       (github.event_name == 'push' && contains(github.event.head_commit.modified, '.containerization/'))
-    continue-on-error: true
+    continue-on-error: true  # allow-fail: issue=#416 expires=2026-11-30
     strategy:
       fail-fast: false
       matrix:
