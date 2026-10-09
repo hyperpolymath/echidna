@@ -1,0 +1,258 @@
+// SPDX-License-Identifier: CC-BY-SA-4.0
+// SPDX-FileCopyrightText: 2026 Jonathan D.A. Jewell (hyperpolymath) <j.d.a.jewell@open.ac.uk>
+= ParadisEO roadmap: continuation prompt
+:revdate: 2026-10-09
+:toc: macro
+
+*What this is.* A self-contained brief for the next coding agent working on
+the ParadisEO metaheuristic roadmap (ECH-01..04) and the work around it. Read
+it fully before changing anything. Facts are dated 2026-10-09 and were checked
+against the commits named below. Re-check anything you rely on.
+
+toc::[]
+
+== 1. State on 2026-10-09
+
+=== Branches
+
+[cols="1,1,3",options="header"]
+|===
+| Branch | Head | Contents
+| `main` | `7fd369d` | Base. No roadmap files.
+| `arena/16d27c7e-echidna` | `23a9a36` | `issues/` with ECH-01..04 specs and README.
+| `arena/9aef7602-echidna` | ahead of `23a9a36` | Adds the PB/EB specs, the README index, `scripts/issues/sync-roadmap-issues.sh` and this file. Fast-forward of the branch above.
+|===
+
+The owner may fast-forward `arena/16d27c7e-echidna` to the head of
+`arena/9aef7602-echidna`. Work on whichever branch the owner names. Never force-push.
+
+=== Specs (`issues/`)
+
+[cols="1,2,1,3",options="header"]
+|===
+| ID | Repository | GitHub | File
+| ECH-01 | hyperpolymath/echidna | #420 | `issues/echidna-01-pareto-moeo.md`
+| ECH-02 | hyperpolymath/echidna | #421 | `issues/echidna-02-cmaes-julia-gnn.md`
+| ECH-03 | hyperpolymath/echidna | #422 | `issues/echidna-03-chapel-island-migration.md`
+| ECH-04 | hyperpolymath/echidna | #424 | `issues/echidna-04-ffi-abi-bridge.md`
+| PB-01 | hyperpolymath/proof-burrower | not filed | `issues/proof-burrower-01-combinatorial-tactic-synthesis.md`
+| PB-02 | hyperpolymath/proof-burrower | not filed | `issues/proof-burrower-02-ledger-fitness-formulation.md`
+| EB-01 | hyperpolymath/echidnabot | not filed | `issues/echidnabot-01-adaptive-ci-portfolio-scheduler.md`
+|===
+
+#423 is unrelated (CI checkers in bash+jq). Do not touch it.
+
+=== Live GitHub issues: two body texts exist
+
+* All four ECH issues have the right labels (checked 2026-10-09 ~20:00 UTC):
+  #420 `enhancement, rust, area:verification, optimization`; #421
+  `enhancement, area:ml, julia, tuning`; #422 `enhancement, area:parallel,
+  chapel, concurrency`; #424 `enhancement, area:abi, zig, idris2, ffi`.
+* Their bodies were *replaced by hand* at 19:51–19:52 UTC with a different
+  text (starting `**ID:** ECH-0n`, `**Target Repository:**`). It is not the
+  committed spec. Problems in that text, checked against the code:
+** ECH-01 names an objective `proof_size_nodes`. `pareto.rs` has `proof_steps`.
+** All four link to `../ROADMAP-PARADISEO.md`, which does not exist.
+** ECH-01 cites `tests/pareto_tests.rs`, which does not exist (`proptest` is a
+   dev-dependency, so property tests are possible).
+** ECH-01 proposes adding hypervolume and front rank to `echidna.prove.result/1`.
+   That would break echidnabot (see <<contract-hazard>>), and the committed
+   spec lists wiring hypervolume into output as out of scope.
+* The committed spec and the live text must be reconciled by the *owner*.
+  Do not overwrite the live bodies without the owner's explicit decision.
+
+=== GitHub permissions seen in earlier sessions
+
+Issue writes from the Arena integration returned `403 Resource not accessible
+by integration`; `git push` worked. If you hit the same 403, stop and report.
+Do not look for tokens.
+
+== 2. Ground rules (from `CLAUDE.md`, `.claude/CLAUDE.md` and practice)
+
+* *No Python anywhere in the repo* (estate ban). Use Rust for systems, Julia
+  for data or batch, bash+jq for small CI scripts.
+* SPDX header on every new file: `MPL-2.0` for code, `CC-BY-SA-4.0` for docs.
+* Conventional commits (`feat(pareto): ...`, `docs(decisions): ...`), atomic.
+* Docs are AsciiDoc (`.adoc`). `issues/*.md` is Markdown on purpose (GitHub bodies).
+* Rust toolchain is pinned in `rust-toolchain.toml` (1.99.0, with clippy and rustfmt).
+* `--features chapel` must still build when Chapel is absent.
+* No new crates without a stated reason. ECH-01 needs none.
+* Do not claim speed-ups, exactness or guarantees that a test does not back.
+* `rust-ci.yml` runs on `pull_request` and on pushes to `main`/`master` only.
+  A push to a feature branch alone runs no Rust CI. If you cannot run
+  `cargo` locally, you need a draft PR (ask the owner first).
+* Do not open PRs, file issues or create labels in other repos without the owner's say-so.
+
+Local checks (when a toolchain is available):
+
+[source,sh]
+----
+cargo fmt --all -- --check                                   # as rust-ci.yml
+cargo clippy --locked --workspace --all-targets -- -D warnings  # as rust-ci.yml
+cargo test --locked --workspace --all-targets                # as rust-ci.yml
+cargo test --lib verification::pareto                        # fast loop
+cargo test --lib agent::meta_controller
+just check                                  # fmt-check + lint + test roll-up
+----
+
+== 3. Work packages, in recommended order
+
+Each package is independent unless it says otherwise. Do one per PR.
+
+=== WP0: Reconcile and sync issue bodies (owner decision first)
+
+* Ask the owner which text is canonical for #420–#424: the committed specs
+  in `issues/`, the hand-edited live bodies, or a merge.
+* If the specs win, run the sync script. It defaults to a dry run, refuses to
+  replace hand-edited bodies, and verifies afterwards:
++
+[source,sh]
+----
+scripts/issues/sync-roadmap-issues.sh                       # dry run
+scripts/issues/sync-roadmap-issues.sh --apply --overwrite   # only with owner approval
+scripts/issues/sync-roadmap-issues.sh --verify
+----
+* If the live text wins, fix the factual problems listed in section 1 in
+  the specs too, so the repo and GitHub agree.
+* Then update the "Status" section of `issues/README.md`.
+
+=== WP1: ECH-01: non-dominated sorting and exact hypervolume (`pareto.rs`)
+
+Spec: `issues/echidna-01-pareto-moeo.md`. This is the best first coding task:
+pure Rust, no new dependencies, one small module.
+
+Current code (`src/rust/verification/pareto.rs`, 247 lines, `main@7fd369d`):
+
+* `ProofObjective { proof_time_ms: u64, trust_level: TrustLevel, memory_bytes: u64, proof_steps: usize }`.
+  `TrustLevel::value()` returns `u8` (1–5, `src/rust/verification/confidence.rs`).
+* `ProofCandidate { .., is_pareto_optimal: bool }`. `ParetoFrontier::compute(&mut [ProofCandidate]) -> Vec<usize>`
+  is O(n²) with a private `dominates`. `ParetoFrontier::weighted_rank(..)` uses inverse scaling.
+* Existing tests: `test_single_candidate_is_pareto_optimal`, `test_dominated_candidate_excluded`,
+  `test_tradeoff_candidates_both_on_frontier`, `test_three_way_frontier`,
+  `test_weighted_rank`, `test_empty_candidates`. These must stay unchanged and pass.
+* Consumers: `src/rust/agent/meta_controller.rs` (around lines 634–637:
+  `compute`, then `weighted_rank(&candidates, 1.0, 0.5, 0.0, 0.0)`), re-exports in
+  `src/rust/verification/mod.rs:55`, and `src/rust/verification/pareto_arbiter.rs`.
+  Keep public signatures stable. Add new functions rather than changing old ones.
+
+Step 1 (decision, record it in rustdoc and the PR): the hypervolume
+*reference point*. Recommended: an explicit, caller-supplied reference point,
+plus a helper that derives one from a candidate set (worst observed value × a
+documented margin). Document that hypervolumes are comparable only under the
+same reference point and transform.
+
+Step 2: implement, as in the spec:
+
+* One minimisation transform in one place: `[time, -trust, memory, steps]` as `f64`.
+* `non_dominated_sort(&[ProofCandidate]) -> Vec<Vec<usize>>`. F₁ must equal `compute`'s result.
+* `hypervolume(points, reference) -> f64`: exact. 2-D by sweep line; 3-D and 4-D
+  by an exact slicing method (HSO or WFG style). Points not strictly better than the
+  reference on every axis contribute 0. Monte Carlo is out of scope.
+* `hypervolume_contribution(..)`: exclusive contribution per point.
+* Tests: hand-computed 2-D/3-D fixtures (worked out on paper in the PR
+  description); empty → 0.0; duplicates; point equal to reference; permutation
+  invariance; `proptest` properties (adding a dominated point leaves HV unchanged,
+  adding a non-dominated point never decreases it; no point in Fₖ dominates any
+  point in Fⱼ for j < k).
+
+Out of scope: adding these numbers to `echidna.prove.result/1` (see <<contract-hazard>>)
+or to the dispatcher.
+
+=== WP2: #408: "Rust Build — Real Chapel Library" fails to link
+
+* Symptom (from #408): `cargo build --features chapel` against the real Chapel
+  library fails in `rust-lld` with undefined `chapel_is_available`,
+  `chapel_parallel_search`, `chapel_free_result`, `chapel_get_version`,
+  `chapel_available_prover_count`, `chapel_is_prover_available`. These are referenced from
+  `src/zig_ffi/chapel_bridge.zig` (lines ~209–292). `libechidna_chapel_ffi.a`
+  is linked, but the Chapel-compiled object defining them is not on the link line.
+* Files: `.github/workflows/chapel-ci.yml` (the job runs
+  `chpl --library --static -I ../zig_ffi ...` around line 88),
+  `src/chapel/chapel_ffi_exports.chpl`, `src/zig_ffi/{build.zig,chapel_ffi_exports.h,chapel_stubs.c}`,
+  `build.rs`.
+* Acceptable outcomes (from #408): either the job links and runs on a PR head
+  with the real library, or the job is skipped with a stated reason so it is
+  not red on every PR. Either way update the "Chapel parallel search" row in
+  `docs/wikis/Home.md` (line ~54).
+* Start by reading the failing job's log: `gh run list --workflow chapel-ci.yml`,
+  then `gh run view <id> --log-failed`. Check link order and whether `build.rs` emits
+  `cargo:rustc-link-lib` / `-search` for the Chapel static library and its runtime.
+* Zig in CI is 0.15.2 (`zig-ffi-ci.yml`). Locally, `pip install ziglang==0.15.2`
+  provides a matching `python -m ziglang` binary if no Zig is installed (tooling
+  only. Do not commit Python).
+
+=== WP3: ADR: who owns solver time budgets
+
+ECH-03, EB-01 and the existing portfolio code all ask the same question. Write
+`docs/decisions/2026-10-NN-solver-budget-ownership.adoc` in the style of
+`docs/decisions/2026-10-05-id-minting.adoc`, with `:status: proposed`. The owner accepts it.
+
+Inputs:
+
+* `src/rust/verification/portfolio.rs` `PortfolioConfig`: `solver_timeout: 300`,
+  `wait_factor: 2.0`, solver sets per SMT / ATP / ITP, `enabled: false` by default.
+* `.echidnabot.toml` `[verification] timeout_secs = 300`, per-prover `priority`.
+* echidnabot (read-only at `ae52833`, unverified): static 300 s timeouts in `EchidnaConfig`,
+  `ExecutorConfig` and the Podman executor; manifest `timeout_seconds` parsed but apparently
+  not wired; the documented `[scheduler] job_timeout_seconds` does not exist.
+* ECH-03 (Chapel budget allocator) and EB-01 (adaptive CI timeouts).
+
+Recommended shape: one owner per scope. echidna `PortfolioConfig` owns
+per-solver limits within one proof request; the Chapel allocator may only
+redistribute *within* that total; echidnabot owns per-job wall-clock in CI and may only
+*shorten* waits, never lengthen past echidna's limit.
+
+[[contract-hazard]]
+=== WP4: partial-progress field in `echidna.prove.result/1` (proposal; blocked)
+
+PB-01 wants partial progress (for example `subgoals_remaining`). The hazard:
+
+* echidna's contract says adding a field is compatible and consumers must
+  ignore unknown fields (`docs/PROVE-RESULT-CONTRACT.adoc`, "Versioning").
+  `echidna_core::prove_result::ProveResult::parse` tolerates unknown fields.
+* proof-burrower's parser tolerates unknown fields (read-only at `be897dd`,
+  `crates/burrower-core/src/echidna_contract.rs`; unverified).
+* *echidnabot's own parser rejects them*: `src/dispatcher/prove_result.rs:79`
+  has `#[serde(deny_unknown_fields)]` and a `rejects_unknown_fields` test
+  (read-only at `ae52833`; unverified). Any new top-level field breaks echidnabot.
+
+So: (1) file or fix in echidnabot first (tolerate unknown top-level fields, as the
+contract requires); (2) only then add the field to echidna as `Option<_>` with
+`skip_serializing_if = "Option::is_none"`, so existing golden JCS bytes
+(`crates/echidna-core/src/prove_result.rs` `golden_jcs_bytes_for_every_status`,
+`src/rust/prove_contract.rs` tests) stay unchanged when it is absent. Until (1)
+is done, deliver only a written proposal.
+
+=== WP5: ECH-04: C-ABI header and Zig bridge
+
+Spec: `issues/echidna-04-ffi-abi-bridge.md`. There are two Zig trees. Choose
+one and say why:
+
+* `ffi/zig/` (`main.zig`, `capnp_bridge.zig`, `boj.zig`, `overlay.zig`), CI-gated by `zig-ffi-ci.yml`.
+* `src/zig_ffi/` (Chapel bridge, `chapel_ffi_exports.h`).
+
+Idris2 contracts live in `src/abi/` (`Foreign.idr`, `Types.idr`, `Layout.idr`,
+`echidnaabi.ipkg`; `.echidnabot.toml` treats `Foreign`, `Types`, `Layout` as
+critical, totality and coverage required). The header and Zig can be built and
+tested with Zig and a C compiler. The Idris2 side needs `idris2` to type-check, so do not
+claim it checks if you could not run it.
+
+=== WP6: ECH-02 (Julia) and ECH-03 (Chapel)
+
+Implement only where `julia` / `chpl` are available to run the tests the specs
+require. Otherwise produce a design note under `docs/architecture/` and stop.
+ECH-03 depends on WP3.
+
+== 4. Out of scope for this brief
+
+* Filing PB-01, PB-02 or EB-01 in their repositories, or creating labels
+  there. Missing labels: proof-burrower `area:swarm`, `rust`, `search-tactics`,
+  `area:ledger`, `heuristics`; echidnabot `area:dispatcher`, `ci-optimization`.
+  Owner approval is needed.
+* Any ParadisEO (C++) dependency.
+
+== 5. Report back
+
+For each package attempted: what changed (files, commit hashes), which
+checks ran and their results, what was *not* verified and why, and any owner
+decision needed.
