@@ -17,15 +17,15 @@ This directory contains the canonical issue specifications for the ParadisEO met
 
 ## File Index
 
-| ID | File | Target Repository | Title |
-|----|------|-------------------|-------|
-| ECH-01 | echidna-01-pareto-moeo.md | hyperpolymath/echidna | feat(pareto): integrate exact hypervolume indicator and MOEO non-dominated sorting |
-| ECH-02 | echidna-02-cmaes-julia-gnn.md | hyperpolymath/echidna | feat(ml): black-box hyperparameter & temperature calibration for GNN premise rankers |
-| ECH-03 | echidna-03-chapel-island-migration.md | hyperpolymath/echidna | feat(chapel): island-model asynchronous migration topologies |
-| ECH-04 | echidna-04-ffi-abi-bridge.md | hyperpolymath/echidna | feat(ffi): C-ABI / Zig bridge specification |
-| PB-01 | proof-burrower-01-combinatorial-tactic-synthesis.md | hyperpolymath/proof-burrower | feat(swarm): combinatorial tactic playbook synthesis |
-| PB-02 | proof-burrower-02-ledger-fitness-formulation.md | hyperpolymath/proof-burrower | feat(ledger): anti-pattern mining and objective fitness formulation |
-| EB-01 | echidnabot-01-adaptive-ci-portfolio-scheduler.md | hyperpolymath/echidnabot | feat(dispatcher): adaptive portfolio timeout and solver selection |
+| ID | File | Target Repository | GitHub Issue | Title |
+|----|------|-------------------|--------------|-------|
+| ECH-01 | echidna-01-pareto-moeo.md | hyperpolymath/echidna | #420 | feat(pareto): integrate exact hypervolume indicator and MOEO non-dominated sorting |
+| ECH-02 | echidna-02-cmaes-julia-gnn.md | hyperpolymath/echidna | #421 | feat(ml): black-box hyperparameter & temperature calibration for GNN premise rankers |
+| ECH-03 | echidna-03-chapel-island-migration.md | hyperpolymath/echidna | #422 | feat(chapel): island-model asynchronous migration topologies |
+| ECH-04 | echidna-04-ffi-abi-bridge.md | hyperpolymath/echidna | #424 | feat(ffi): C-ABI / Zig bridge specification |
+| PB-01 | proof-burrower-01-combinatorial-tactic-synthesis.md | hyperpolymath/proof-burrower | #108 | feat(swarm): combinatorial tactic playbook synthesis |
+| PB-02 | proof-burrower-02-ledger-fitness-formulation.md | hyperpolymath/proof-burrower | #109 | feat(ledger): anti-pattern mining and objective fitness formulation |
+| EB-01 | echidnabot-01-adaptive-ci-portfolio-scheduler.md | hyperpolymath/echidnabot | #177 | feat(dispatcher): adaptive portfolio timeout and solver selection |
 
 ## Usage
 
