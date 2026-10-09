@@ -9,7 +9,7 @@ type = "state-file"
 [metadata]
 project = "echidna"
 version = "2.3.0"
-last-updated = "2026-06-13"
+last-updated = "2026-10-09"
 status = "active"
 release-tag = "v2.3.0"
 
@@ -17,6 +17,17 @@ release-tag = "v2.3.0"
 name = "echidna"
 completion-percentage = 100
 phase = "v2.3.0 Released — saturation+typing (#198) + GNN training wiring (#207) + dispatcher all-17-adapters (PR pending SPDX hook) + comprehensive contractile family (#214) + first owner-authorised GNN training run completed (best MRR 0.92)"
+
+[session-2026-10-09-deed-baseline]
+summary = "Deed-era baseline landed; STATE refreshed past the 2026-10-05 integrations wave"
+changes = [
+  "Recorded the integrations wave that postdated the last STATE touch (2026-06-13): echidna prove --output json emitting echidna.prove.result/1 (JCS-canonical I-JSON), echidna-core 0.2.0 consumable by echidnabot + proof-burrower, echidna-core-spark renamed echidna-core-creusot with the trust kernel re-exported as echidna_core::trust, ffi/zig building and CI-gated (zig-ffi-ci.yml) — all in CHANGELOG.adoc [Unreleased]",
+  "New echidna_chora.deed at repo root: first deed under the one-deed-per-repo doctrine (standards#837), translated from CLADE.a2ml (family 1) and ECOSYSTEM.a2ml (family 2) per standards 1-formats/deed/mappings/; clade names verbatim from gv-clade-index verisim/seed/clades.a2ml; passes deed_lint (deed.abnf)",
+  "Fail-closed, per the mapping frame: no (meta …) clause yet — this repo's META.a2ml predates the family-2 field table; STATE (family 3) and 0-AI-MANIFEST (family 7) translations stay owner-pending in standards",
+  "The ten stale AGPL-3.0-or-later SPDX headers under HOL-o-extension/, audits/ and training_data/ were left in place by design: D262's recorded plan (CHANGELOG [Unreleased], docs/DEBT.adoc P0) rewrites them inside the a2ml->deed conversion, so this baseline does not touch an owner-gated licensing surface early",
+  "0-AI-MANIFEST.a2ml drift fixed: full-version 1.6.0 -> 2.3.0, UI runtime Deno -> Bun (Deno banned estate-wide 2026-09-22), deed added to canonical-locations",
+]
+consumers-note = ".machine_readable descriptiles stay until their consumers move to the deed; until then identity/status changes go in both places"
 
 [session-2026-06-13-dogfood-proof-ci]
 summary = "Proof corpus repaired and gated in CI (PR #234, squash-merged to main 2026-06-06)"
