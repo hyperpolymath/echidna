@@ -32,6 +32,10 @@ backends (Wave-2 follow-on) |Wave-2 done |~1 sprint
 
 |link:SUGGEST-CLI-PROMPT.adoc[`+SUGGEST-CLI-PROMPT.adoc+`] |`+suggest+` verb
 implementation |None |~3 days
+
+|link:PARADISEO-ROADMAP-PROMPT.adoc[`+PARADISEO-ROADMAP-PROMPT.adoc+`]
+|ParadisEO roadmap (ECH-01..04, #408, budget-ownership ADR) |Owner picks
+canonical issue bodies (WP0) |WP1 ~2 days; others vary
 |===
 
 === Active runbooks (live workstream is in production)

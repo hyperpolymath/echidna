@@ -572,16 +572,6 @@ corpus ingest index
 
 == Critical Constraints
 
-* *No Python* — Julia for ML, Rust for systems, AffineScript /
-AffineScript for UI. (`+salt/+` is the only carve-out.)
-* *RSR / CCCP Compliance* — see
-link:RSR_COMPLIANCE.adoc[`+RSR_COMPLIANCE.adoc+`] for the full hard-rule
-list and ECHIDNA’s out-of-template adaptations.
-* *Justfile primary* — Just is the build entry point; no Make.
-* *Podman not Docker* — always Podman; `+Containerfile+`
-(`+.containerization/+` for the per-prover images) not `+Dockerfile+`.
-* *License*: MPL-2.0 (code), CC-BY-SA-4.0 (docs). See LICENSE and NOTICE.
-
 == License
 
 This project is licensed under the link:LICENSE[Mozilla Public License
@@ -598,7 +588,7 @@ conversion; see link:NOTICE[`+NOTICE+`].
   author = {Jewell, Jonathan D.A.},
   year = {2026},
   url = {https://github.com/hyperpolymath/echidna},
-  license = {MPL-2.0}
+  license = {MPL-2.0} {CC-BY-SA-4.0}
 }
 ----
 

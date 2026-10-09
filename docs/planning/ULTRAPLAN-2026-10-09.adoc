@@ -151,7 +151,7 @@ Status as of 2026-10-09, after the owner's first response.
   Phase 1 verdict) follows.
 * *Done in the CI hygiene PR:* the nine dead playground workflows moved to
   `echidna-playground/ci-templates/` (P0.6). All 14 allow-fail units carry an
-  owner issue and an expiry, enforced by `scripts/ci/check-allow-fail-expiry.py`
+  owner issue and an expiry, enforced by `scripts/ci/check-allow-fail-expiry.sh`
   in the workflow linter (Phase 2.3, tracking issue #416). A live ruleset
   snapshot and a drift check were added (P0.5, partial).
 * *Owner-held and not yet done:* rotate `VERISIMDB_PAT` (#310); add a
@@ -373,7 +373,7 @@ reflects consequence if an outside user relies on the claim.
   is dated 2026-03-24. `docs/tech-debt-2026-05-26.adoc` says it is superseded
   and points to a root `DEBT.md` that is not present. The ROADMAP was last
   revised 2026-06-01.
-| Python link checker; file headers
+| Scratch link checker (not committed); file headers
 | *Medium*
 
 | L14
