@@ -1,0 +1,12 @@
+// SPDX-License-Identifier: CC-BY-SA-4.0
+= Playground CI templates (not executed)
+
+These nine workflow files were under `echidna-playground/.github/workflows/`.
+GitHub reads workflows only from the repository-root `.github/workflows/`, so
+they never ran. They were moved here (ultraplan Phase 0.6, tracking issue
+#416) so that they cannot be mistaken for active CI.
+
+They are kept as templates. Before any of them is revived, check it against the
+root workflow of the same concern. Most of them duplicate one. Revive a file by
+moving it to the root and removing the duplicate. Do not leave a copy here that
+looks like CI.

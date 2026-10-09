@@ -144,7 +144,7 @@ jobs:
     runs-on: ubuntu-22.04
     timeout-minutes: 30
     needs: zig-ffi
-    continue-on-error: true
+    continue-on-error: true  # allow-fail: issue=#416 expires=2026-11-30
     steps:
       - uses: actions/checkout@v7.0.1
 
@@ -183,7 +183,7 @@ jobs:
     runs-on: ubuntu-22.04
     timeout-minutes: 30
     needs: [chapel-build, zig-ffi]
-    continue-on-error: true
+    continue-on-error: true  # allow-fail: issue=#416 expires=2026-11-30
     steps:
       - uses: actions/checkout@v7.0.1
 
