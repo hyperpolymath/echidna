@@ -26,6 +26,6 @@ jobs:
         run: |
           # Send a secure trigger to boj-server to build this repository
           curl -X POST "http://boj-server.local:7700/cartridges/ssg-mcp/invoke"             -H "Content-Type: application/json"             -d "{\"repo\": \"${{ github.repository }}\", \"branch\": \"${{ github.ref_name }}\", \"engine\": \"casket\\"}"}
-        continue-on-error: true
+        continue-on-error: true  # allow-fail: issue=#416 expires=2026-11-30
 permissions:
   contents: read

@@ -31,6 +31,11 @@ jobs:
         # banner before it), permissions, migration exemptions and risk routing.
         run: bash scripts/ci/test-issue-regressions.sh
 
+      # Ultraplan Phase 2.3 (tracking issue #416): every continue-on-error unit
+      # needs an owner issue and an unexpired date on the same line.
+      - name: Allow-fail units have an owner and an unexpired date
+        run: python3 scripts/ci/check-allow-fail-expiry.py
+
       - name: Verify immutable action lockfile with the authoritative tool
         env:
           GH_TOKEN: ${{ github.token }}
