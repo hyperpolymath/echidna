@@ -11,25 +11,7 @@
 use std::path::Path;
 use std::process::{Command, Output};
 
-const SUPPORTED: &[&str] = &[
-    "agda",
-    "coq",
-    "lean",
-    "idris2",
-    "acl2_books",
-    "dafny",
-    "fstar",
-    "hol4",
-    "hol_light",
-    "isabelle",
-    "metamath",
-    "minif2f",
-    "mizar",
-    "proofnet",
-    "smtlib",
-    "tptp",
-    "why3",
-];
+const SUPPORTED: &str = "agda coq lean idris2 acl2_books dafny fstar hol4 hol_light isabelle metamath minif2f mizar proofnet smtlib tptp why3";
 
 fn ingest(dir: &Path, adapter: &str) -> Output {
     let root = dir.join("project");
@@ -56,7 +38,7 @@ fn combined(out: &Output) -> String {
 #[test]
 fn every_advertised_adapter_is_dispatched() {
     let tmp = tempfile::tempdir().expect("tempdir");
-    for adapter in SUPPORTED {
+    for adapter in SUPPORTED.split_whitespace() {
         let out = ingest(tmp.path(), adapter);
         let text = combined(&out);
         assert!(
@@ -76,7 +58,10 @@ fn unknown_adapter_is_rejected() {
         text.contains("Unknown corpus adapter 'not_a_real_adapter'"),
         "unexpected error text: {text}"
     );
-    for adapter in SUPPORTED {
-        assert!(text.contains(adapter), "error should list `{adapter}`: {text}");
+    for adapter in SUPPORTED.split_whitespace() {
+        assert!(
+            text.contains(adapter),
+            "error should list `{adapter}`: {text}"
+        );
     }
 }
