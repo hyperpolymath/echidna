@@ -10,7 +10,7 @@
 version = "1.1"
 project = "echidna"
 type = "neurosymbolic-theorem-prover"
-full-version = "1.6.0"
+full-version = "2.3.0"
 license = "MPL-2.0"
 author = "Jonathan D.A. Jewell <j.d.a.jewell@open.ac.uk>"
 repo = "https://github.com/hyperpolymath/echidna"
@@ -31,6 +31,7 @@ repo = "https://github.com/hyperpolymath/echidna"
 #   node_modules/    — dependencies
 
 [canonical-locations]
+deed = "echidna_chora.deed"
 state-files = ".machine_readable/"
 state = ".machine_readable/descriptiles/STATE.a2ml"
 meta = ".machine_readable/descriptiles/META.a2ml"
@@ -47,7 +48,7 @@ container = "container/"
 
 [tech-stack]
 primary = "Rust (141 ProverKind variants over 105 backend implementations — see docs/PROVER_COUNT.adoc; trust pipeline, CLI, REPL, API servers)"
-secondary = "Julia (ML inference, port 8090), AffineScript+Deno (UI, 33 files, zero TypeScript)"
+secondary = "Julia (ML inference, port 8090), AffineScript+Bun (UI, TEA architecture, zero TypeScript; Deno banned estate-wide 2026-09-22)"
 optional = "Chapel (parallel proof dispatch)"
 abi = "Idris2 (7 modules, zero believe-me)"
 ffi = "Zig (4 shared libraries)"

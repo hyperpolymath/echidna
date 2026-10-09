@@ -1,0 +1,82 @@
+;; SPDX-License-Identifier: MPL-2.0
+;; SPDX-FileCopyrightText: 2026 Jonathan D.A. Jewell (hyperpolymath) <j.d.a.jewell@open.ac.uk>
+;
+; The repo deed of echidna (one-deed-per-repo doctrine, standards#837).
+; Scope of this first deed (2026-10-09): identity, clade, forges, lineage
+; and status translated from .machine_readable/CLADE.a2ml (family 1), plus
+; the ecosystem clause translated from .machine_readable/descriptiles/
+; ECOSYSTEM.a2ml (family 2), per standards 1-formats/deed/mappings/
+; clade-to-repo-deed.adoc and meta-ecosystem-to-repo-deed.adoc. Clade
+; names follow gv-clade-index verisim/seed/clades.a2ml verbatim.
+;
+; Not translated (fail-closed, per the mapping frame):
+;  - the (meta ...) clause: echidna's META.a2ml predates the family-2
+;    field-table shape and needs a table-extension review first
+;  - ECOSYSTEM.a2ml [deployment], [corpus-sources], [vocab-sources],
+;    [proof-exchange-standards] and [self-proof-ci]: not in the family-2
+;    table, so they stay in ECOSYSTEM.a2ml
+;  - STATE.a2ml (family 3) and 0-AI-MANIFEST.a2ml (family 7): owner
+;    decisions pending in standards (state-v1-decision.adoc,
+;    ai-manifest-decision.adoc); nothing here pre-empts them
+; The .a2ml surfaces above are still read by consumers (session protocol,
+; openssf-compliance, contractiles Justfile), so they stay until their
+; consumers move to this deed; until then a change to identity or status
+; must be made in both places.
+;
+; Deviations recorded: CLADE.a2ml [lineage] parent carried a description
+; ("Neurosymbolic theorem proving - neural proof synthesis") although the
+; lineage type is standalone; the deed carries "" per the parent-is-the-
+; monorepo-parent-never-a-description doctrine. The status history note
+; was the clade-status-backfill placeholder; it is re-derived here.
+(repo-deed
+  :schema-version "1.0.0"
+  :canonical-name "echidna"
+  :beholding-chora #u5"estate/chora"
+  :repo-uuid #u5"github.com/hyperpolymath/echidna"
+
+  (identity :primary-forge github
+            :owner "hyperpolymath"
+            :prefixed-name "fv-echidna")
+
+  (clade :primary fv
+         :primary-name "Formal Verification & Proofs"
+         :secondary (ax)
+         :assigned "2026-03-16"
+         :rationale "")
+
+  (forges :github "hyperpolymath/echidna"
+          :gitlab "hyperpolymath/echidna"
+          :bitbucket "hyperpolymath/echidna")
+
+  (lineage :type standalone
+           :parent ""
+           :born "2026-03-16"
+           :previous-names ())
+
+  (status :phase active
+          :since "2026-03-16"
+          :present #t
+          :aliases ()
+          :merged-into ""
+          :superseded-by ""
+          :successors ()
+          :ended ""
+          (history
+            (entry :phase active
+                   :since "2026-03-16"
+                   :note "trust-hardened neurosymbolic theorem prover; proving core of the hyperpolymath estate")))
+
+  (ecosystem :project "echidna"
+             :ecosystem "hyperpolymath"
+             :position-type "component"
+             :purpose "Trust-hardened neurosymbolic theorem proving platform. 141 ProverKind variants across 105 backend implementations, 12 exposed by default at GET /api/provers (Agda, Coq, Lean 4, Isabelle/HOL, Z3, CVC5, Metamath, HOL Light, Mizar, PVS, ACL2, HOL4); canonical tier table and count semantics in docs/PROVER_COUNT.adoc. Sandboxed solver execution (Podman/bubblewrap), proof certificate checking, axiom tracking, GNN-guided proof search, Julia ML inference layer."
+             :coordination ""
+             (related :name "proven-servers (nesy-solver-api)" :relationship consumer :notes "nesy-solver-api calls /api/verify on echidna-nesy.flycast:8090. Cold-start grace 90s.")
+             (related :name "hypatia" :relationship sibling-neurosym :notes "Hypatia performs neurosymbolic CI scanning; echidna does theorem proving. Both are Tier 2 formal verification tools.")
+             (related :name "verisimdb" :relationship active-integration :notes "Corpus emits 8-modality octads (corpus/octad.rs) compatible with /api/v1/octads. Round-trip verified; HTTP push deferred.")
+             (related :name "neural-foundations" :relationship monorepo-satellite :notes "echidna is mirrored as a submodule/satellite inside neural-foundations.")
+             (related :name "maa-framework" :relationship sibling :notes "Absolute-zero and related MA/ML tools in same neurosymbolic tier.")
+             (related :name "echo-types" :relationship active-consumer :notes "Echidna's design-search drove the Phase 1.3 _≤_ redesign + unbudgeted wf-<ᵇʳᶠ rank-function recommendations. Handoff document at echo-types/docs/echidna-design-search-2026-04-28.adoc. 640 entries indexed.")
+             (related :name "januskey/reversible-core" :relationship planned-integration :notes "Bennettian reversibility substrate for the SA annealer trace ledger. Not yet wired.")
+             (related :name "jtv (Lean 4)" :relationship indexed :notes "147 entries verified during Lean adapter rollout.")
+             (related :name "eclexia (Idris 2 ABI)" :relationship indexed :notes "93 entries verified during Idris 2 adapter rollout.")))

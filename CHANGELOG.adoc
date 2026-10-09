@@ -41,6 +41,28 @@ kernel tests never ran in CI.
 is a hard gate or that milestones 8c-M1..M3 are done; it records why
 Creusot does not run in CI.
 
+==== Added — governance 2026-10-09
+
+* *`+echidna_chora.deed+`* at the repo root: the first deed under the
+estate one-deed-per-repo doctrine (standards#837), translated from
+`+CLADE.a2ml+` (family 1) and `+ECOSYSTEM.a2ml+` (family 2) per the
+standards `+1-formats/deed/mappings/+` frame, following the
+`+proof-burrower_chora.deed+` precedent; clade names verbatim from the
+gv-clade-index taxonomy seed; passes the normative `+deed.abnf+`
+validator. The `+.a2ml+` descriptiles stay until their consumers move;
+identity/status edits touch both surfaces until then (noted in the deed
+header).
+
+==== Fixed — governance 2026-10-09
+
+* `+0-AI-MANIFEST.a2ml+`: `+full-version+` was frozen at a stale 1.x
+value; it now tracks `+Cargo.toml+`. The UI runtime line reads Bun
+(Deno was banned estate-wide 2026-09-22; JS-RUNTIME-POLICY), and the
+deed is listed under `+[canonical-locations]+`.
+* `+.machine_readable/descriptiles/STATE.a2ml+`: refreshed past the
+2026-10-05 integrations wave and recorded the deed baseline (session
+protocol).
+
 ==== Changed
 
 * *Licence: `+AGPL-3.0-or-later+` → `+MPL-2.0+` for code and the
