@@ -1,0 +1,20 @@
+{
+  "bypass_actors": [],
+  "conditions": {
+    "ref_name": {
+      "exclude": [],
+      "include": [
+        "~DEFAULT_BRANCH"
+      ]
+    }
+  },
+  "enforcement": "disabled",
+  "id": 23852649,
+  "name": "Require-Signed-Commits",
+  "rules": [
+    {
+      "type": "required_signatures"
+    }
+  ],
+  "target": "branch"
+}

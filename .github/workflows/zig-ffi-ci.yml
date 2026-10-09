@@ -59,4 +59,4 @@ jobs:
           persist-credentials: false
 
       - name: Zig unified-api-adapter check (hyperpolymath/cicd-suite)
-        uses: hyperpolymath/cicd-suite/actions/zig-unified-api-adapter-check@main
+        uses: hyperpolymath/cicd-suite/actions/zig-unified-api-adapter-check@4c772eb235b04455307d5c03cbbc4f45130f7f0f # main 2026-10-02

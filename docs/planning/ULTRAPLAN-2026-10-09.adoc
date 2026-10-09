@@ -1,0 +1,1330 @@
+// SPDX-License-Identifier: CC-BY-SA-4.0
+= ECHIDNA Ultraplan — 2026-10-09
+:toc: left
+:toclevels: 3
+:sectnums:
+
+[.lead]
+A proposal for the long-term path of `hyperpolymath/echidna`, written from a
+read-only recon of the repository, its CI, its public deployment, its issue
+tracker, and the estate documents that govern it. No code, workflow, ruleset,
+or secret was changed to produce it. Every finding carries a path, a
+measurement, or a link. Owner rulings are *requested* here, not assumed.
+
+Status: *proposal for owner ratification*. Branch: `arena/8040463d-echidna`.
+Baseline commit: `822cfc904a123670c2fa9eca6c5e1a5dce0c21de` (`main`).
+Measurements taken 2026-10-09.
+
+== How to read this document
+
+* Section 1 is the whole argument in two pages. Read it alone if short on time.
+* Section 2 states the standard used to choose between alternatives.
+* Section 3 is the evidence, including what is already strong.
+* Sections 4–6 cover CI/CD, community health, and the issue backlog.
+* Section 7 is the sequenced plan with exit criteria.
+* Section 8 is the ruling packet: decisions only the owner can make.
+* Appendices list every workflow's proposed disposition, the reproduction
+  commands, the places where documents disagree, and what was not verified.
+
+Where this document labels an alternative *(E)*, that is the elegant arm under
+the standard in section 2. The other arms are listed so the choice can be
+audited, not so they can be picked on effort.
+
+== Executive summary
+
+=== The thesis
+
+ECHIDNA's core promise is one sentence: *a result that leaves ECHIDNA has been
+checked as far as its label says, and the label is honest.* The repository
+already has the right _types_ for this promise. There is a rich prover outcome
+enum (`ProverOutcome`, with `Proved`, `NoProofFound`, `InvalidInput`,
+`UnsupportedFeature`, `Timeout`, `InconsistentPremises`, `ProverError`,
+`SystemError`), a trust level hierarchy, a solver-integrity status, a sandbox
+mode, and a certificate flag. The promise breaks at the _wiring_. Each of those
+safeguards can be skipped silently:
+
+* the CLI `verify` command branches on a boolean and throws away the typed
+  outcome;
+* the integrity checker has no production caller, its manifest holds only
+  placeholder hashes, and `Uninitialized` counts as a pass;
+* the `--sandbox` flag is parsed and never read, so `--sandbox podman` runs the
+  solver unsandboxed;
+* certificate generation is a config field that nothing reads;
+* the SPARK theatre gate passes with contract enforcement switched off, and
+  `gnatprove` runs in no workflow;
+* the public API that accepts proof content is deliberately unauthenticated,
+  runs solver subprocesses on request content, and auto-deploys whatever
+  `:latest` points to.
+
+None of this is hidden. It is written down in the README and in `CLAUDE.md` as
+present-tense fact. The gap between claim and code is the single largest risk
+to the project's long-term value, larger than any missing prover or missing
+feature.
+
+=== The diagnosis in one table
+
+[cols="1,3"]
+|===
+| Symptom | Root cause (generator-level)
+
+| Integrity and sandbox are advertised but skipped
+| Safeguards are optional stages wired to defaults that turn them off, and the
+  defaults are not recorded in the result. Config fields exist that nothing reads.
+
+| The learning loop can be trained on environment failures
+| The CLI collapses environment errors into "invalid". Stage 3 is defined as a
+  model that "improves from outcomes" (ROADMAP). If a missing Coq library path is
+  recorded as a failed proof, the training signal is about the environment, not
+  the mathematics. (Inference; see section 3.4.)
+
+| CI is green in the places that matter and red in the places that don't
+| The required-check set on `main` omits the gates that fail most often
+  (governance, workflow lint, Hypatia). Some checks can pass without running
+  anything: conditional pass-throughs, skipped jobs, and allow-fail jobs. Allow-fail units have no expiry until the CI hygiene PR (#416) adds one.
+
+| Status documents disagree with each other and with the tree
+| Several hand-typed status documents are stale by months, and the in-repo
+  rulesets do not match the live ones. No document is generated from the
+  code or from CI.
+
+| Community is single-maintainer
+| 139 commits to `main` since 2026-07-01: 103 by the owner, 33 by dependabot,
+  3 by the agent bot, and no external human contributor. Six stars, zero forks.
+|===
+
+=== The plan in ten moves
+
+. *Contain the public execution surface* (Phase 0). Decide the public API
+  posture (D-A), stop auto-deploying `:latest` unpinned, and make the trust
+  path fail closed.
+. *Make the verdict typed end to end* (Phase 1). The CLI and REST use
+  `check()` → `ProverOutcome`, exit codes map to outcome classes, and no path
+  reports a boolean.
+. *Make the pipeline one function with a recorded policy* (Phase 1). There is
+  one `verify_with_trust(state, policy)`. The policy, including any
+  unsandboxed or unchecked downgrade, is recorded in every result.
+. *Delete dead config or make it a compile error* (Phase 1). Every field of
+  `ProverConfig` and `DispatchConfig` must be read. Remove crate-level
+  `#![allow(dead_code)]` and ratchet it down.
+. *Route every solver subprocess through one runner* (Phase 1, ratcheted). About
+  about 100 backend source files call `Command::new` directly today. The target is
+  zero outside the runner.
+. *Implement two certificate checkers, or narrow the claim* (Phase 1, D-C).
+  DRAT/LRAT and Alethe are the first two. Lean and Coq kernel acceptance is
+  labelled as kernel acceptance, not as a certificate.
+. *Consolidate CI from 35 workflow files into five lanes* (Phase 2). Use one
+  aggregator as the required check so that path filtering is safe. Remove
+  allow-fail jobs without an expiry, and make the required set match reality.
+. *Externalise the 612 MB training corpus with a hashed manifest* (Phase 3,
+  D-H). The working tree and checkouts shrink; provenance improves.
+. *Generate status from sources, and keep one strategic document* (Phase 4).
+  `ROADMAP.adoc` remains canonical. Stale status documents become generated
+  or are deleted. Prover tiers are an attribute on the enum, not a table.
+. *Hold Stage 5 (wire and coprocessor) until the verdict and trust types are
+  frozen* (Phase 6, D-G). Do not parallelise untrusted execution (Chapel) before
+  sandboxing is real, and do not freeze a wire schema before the types it
+  encodes.
+
+=== Three decisions that unblock most of the rest
+
+[arabic]
+. *D-A, public API posture.* Until this is decided, the highest-impact risk is
+  open. *(E):* authentication plus sandboxed execution before further public
+  traffic on the execution endpoints; read-only endpoints may stay public in
+  the interim.
+. *D-B, verdict break.* *(E):* make `check()` authoritative now, deprecate the
+  boolean `verify_proof` path in the 2.x line, and remove it in the next major
+  version. Consumers such as echidnabot and proof-burrower are not broken in
+  the interim.
+. *D-D, sandbox default.* *(E):* default-deny unsandboxed execution. It remains
+  available in development only, and the provenance of each result records
+  when it was used.
+
+== Progress and ratification
+
+Status as of 2026-10-09, after the owner's first response.
+
+* *Plan ratified as written.* The owner chose the recommended (E) defaults.
+* *D-A decided:* authentication and sandboxed execution before further public
+  traffic on the execution endpoints. Read-only endpoints stay public.
+* *Scope chosen:* CI hygiene first. The trust-code work (Phase 0 containment,
+  Phase 1 verdict) follows.
+* *Done in the CI hygiene PR:* the nine dead playground workflows moved to
+  `echidna-playground/ci-templates/` (P0.6). All 14 allow-fail units carry an
+  owner issue and an expiry, enforced by `scripts/ci/check-allow-fail-expiry.py`
+  in the workflow linter (Phase 2.3, tracking issue #416). A live ruleset
+  snapshot and a drift check were added (P0.5, partial).
+* *Owner-held and not yet done:* rotate `VERISIMDB_PAT` (#310); add a
+  pull-request review requirement and the aggregator as the required check;
+  apply the D-A deployment change on the host (pin the image by digest, stop
+  `AutoUpdate` on `latest`, add authentication in front of the execution
+  endpoints); add a read-only ruleset secret so the drift check can run in CI.
+* *Next:* the repository-side D-A change (quadlet and Caddy configuration), the
+  fail-closed integrity change, and the sandbox-honesty change, as one
+  containment PR. Then Phase 1.1.
+
+== Method and standard
+
+=== The standard
+
+The estate's standing methodology (standards#787, 2026-09-14) sets the lens for
+choices between arms. Stated in the owner's terms, it is:
+
+* *Elegance:* one mechanism per concern, and no special cases that exist only
+  to make a test pass.
+* *Correctness:* the claim is true by construction or by a gate that cannot be
+  bypassed silently. A claim that depends on a hand-maintained statement is not
+  correct.
+* *Comprehensiveness:* every path that produces a result is covered, including
+  the error paths and the deployment path.
+* *Coherence:* the code, the documents, the CI, and the roadmap say the same
+  thing, and each fact has one owner.
+
+The choice is never made by effort, speed, or convenience. Where the cheap arm
+and the elegant arm differ, the plan says so and recommends the elegant arm,
+with the cost stated.
+
+=== Working rule derived from it
+
+Fix the generator, not the instance. For ECHIDNA the generator is the single
+code path that produces a result, the single place where a gate is declared,
+and the single source each status fact is derived from. A fix that edits one
+result, one gate run, or one status sentence is a symptom patch and is
+rejected in this plan unless it is a containment step (Phase 0).
+
+=== Sources
+
+* Repository at the baseline commit (read-only), including `CLAUDE.md`,
+  `README.adoc`, `docs/ROADMAP.adoc`, `docs/DEBT.adoc`, `docs/PROVER_COUNT.adoc`,
+  `docs/handover/*`, `docs/reports/2026-09-25-issue-maintenance.adoc`,
+  `docs/decisions/*`, `.github/workflows/*`, `.github/rulesets/*`,
+  `deploy/hetzner/*`, `config/solver-manifest.toml`, `Containerfile*`.
+* GitHub, via `gh`: issues #117, #161, #190–197, #239, #252, #266, #280, #310,
+  #314, #400, #401, #408, #414; PRs #397–#415; 400 recent workflow runs; live
+  rulesets; community profile; contributor and commit statistics.
+* Estate documents: standards#787 (owner decision sheet D1–D293, with
+  comments); valence-shell `docs/THEORY-FEED.adoc`; echidnabot `ROADMAP.adoc`.
+
+=== Limits
+
+Section 3 and Appendix D list what was not verified. In short: no local build
+or test run, no security-alert data (the alert APIs return 403 for this
+integration), no branch-protection API (403; rulesets were used instead), and
+the local clone is a single squashed commit, so history was taken from the
+API.
+
+== The state of the project
+
+=== 3.1 What is genuinely strong (keep these)
+
+These are real, and the plan builds on them rather than replacing them.
+
+* *Proof corpora carry no escape hatches at grep level.* Across the Coq, Lean,
+  Agda, and Idris2 ABI sources: zero `Admitted`/`Axiom`, zero
+  `sorry`/`axiom`, zero `postulate`, zero `believe_me`/`assert_total` in
+  `src/abi`. Recheck this in CI rather than trusting it (Phase 5).
+* *Typed outcome already exists.* `src/rust/provers/outcome.rs` defines a
+  classified enum, and the dispatcher uses it through `check()`.
+* *Live prover runs are mostly green.* Of 25 recent Live Provers runs, 24
+  completed in success. The nightly tier-2 matrix was all success (run
+  37879167142). Tiers 2–4 are skipped on pull requests by design.
+* *Supply-chain discipline is above average.* Action pins are resolved through
+  `actions.lock`, the lock drift was fixed by #410 (#401 holds the close-out evidence), the
+  Containerfile base is pinned by digest, and `attest-build-provenance` is in
+  use.
+* *Community documents exist and are complete.* Community profile at 100%,
+  with CoC, CONTRIBUTING, SECURITY, issue forms, and a private advisory path.
+* *Licence direction is settled.* The root `LICENSE` is MPL-2.0, as D262
+  requires for code. Docs are CC-BY-SA-4.0 by convention. D270 calls for one
+  licence PR per repo.
+* *Test surface is large.* About 1,770 test functions and 22 ignored tests in
+  about 133k lines of Rust across about 300 files.
+
+=== 3.2 The truth ledger: claims that run ahead of the code
+
+Each row is a claim as stated, what the code does, and the evidence. Severity
+reflects consequence if an outside user relies on the claim.
+
+[cols="2,2,3,2,1", options="header"]
+|===
+| # | Claim (where stated) | What the code does | Evidence | Severity
+
+| L1
+| Every result passes solver-integrity verification (`CLAUDE.md`, trust pipeline)
+| The integrity checker has no production caller. The default dispatch config
+  sets `integrity_checker: None`, which yields `solver_integrity_ok = true`.
+  All 17 entries in the solver manifest are `PLACEHOLDER_COMPUTE_ON_FIRST_RUN`.
+  `Uninitialized` passes. An unknown prover passes. `verify_all` errors become
+  `unwrap_or_default()`.
+| `src/rust/dispatch.rs` ~L639–650; `src/rust/integrity/solver_integrity.rs`
+  L359; `config/solver-manifest.toml`
+| *Critical*
+
+| L2
+| Proof certificates are generated and checked (`CLAUDE.md`, item 3; dispatch
+  doc comment)
+| `verification::certificates` has no references outside its module.
+  `generate_certificates` is never read. `certificate_hash` is always `None`
+  and `has_certificate` is always `false`.
+| `dispatch.rs` L79–80, L118, L139, L586, L653–654, L708, L858–859
+| *High*
+
+| L3
+| Solvers are sandboxed: Podman preferred, bubblewrap fallback, unsandboxed only
+  by explicit opt-in (`README.adoc`; `SECURITY.adoc`; CLI "safe-learning b")
+| `ProverConfig.sandbox` is set and never read. `executor::sandbox` has no
+  caller outside its module. About 100 backend source files call
+  `Command::new` directly. `echidna prove --sandbox podman` runs unsandboxed.
+| `src/rust/main.rs` L96–99, L1183–1198; `src/rust/provers/mod.rs` L170,
+  L212; `README.adoc` sandboxing bullet
+| *Critical*
+
+| L4
+| Results are never silently wrong; the verdict is honest (ROADMAP endpoint;
+  valence-shell NW-2 cites this)
+| `verify_command` branches on the boolean from `verify_proof`. When `coqc`
+  fails because a library path is missing, the output is "Proof is invalid" with
+  exit code 1, the same as a refutation. `ProverOutcome` could carry the
+  distinction but the CLI does not use it. The valence-shell NW-2 item cites this
+  behaviour. Its status is recorded in that repository and was not re-checked here.
+| `src/rust/main.rs` L723–766; `src/rust/provers/coq.rs` L934–960
+| *High*
+
+| L5
+| The trust kernel is formally verified (ROADMAP Stage 8c; `spark/README.adoc`)
+| `gnatprove` appears in no workflow file. The workflow named *SPARK Theatre
+  Gate* runs with `enforce_zero_contract: false`. `crates/echidna-core-spark/`
+  does not exist. The only proof record is a manual run ("18/0").
+| `.github/workflows/spark-theatre-gate.yml`; `spark/README.adoc` L48
+| *High*
+
+| L6
+| Tier-4 backends are "placeholder / smoke only" (`docs/PROVER_COUNT.adoc`; DEBT C3)
+| `kissat`, `prism`, `uppaal`, `seahorn`, and `tlc` contain real subprocess
+  invocation code. The tier label and the code disagree. Neither has been
+  settled by a live run.
+| `src/rust/provers/{kissat,prism,uppaal,seahorn,tlc}.rs`
+| *Medium*
+
+| L7
+| The AffineScript-TEA UI has "≥33 modules" (ROADMAP)
+| `src/ui` is 577 lines in four files: one `.affine` file, one JS shim, and two
+  HTML pages. `just build-ui` exits 1 by design.
+| `src/ui/`; `Justfile` build-ui recipe
+| *Medium*
+
+| L8
+| Named artefacts exist (ROADMAP §3)
+| Absent: `src/zig/echidna_abi.zig`, `locale/`, `models/neural/`,
+  `chapel_poc/`, `crates/echidna-core-spark/`. Zig FFI is at `ffi/zig/src` and
+  `src/zig_ffi`. Six `.capnp` files exist, against a roadmap claim of zero.
+| Tree listing
+| *Medium*
+
+| L9
+| Public API is "deliberately public but caged" (`deploy/hetzner/README.adoc`
+  L28)
+| `server.rs` has no authentication middleware. The routes include prove, verify, verify_parallel, verify_raw, suggest, session create and apply, and agent planning. `--cors` applies a permissive CORS layer.
+  The deployment binds `0.0.0.0`. `verify_raw_handler` spawns solver processes on
+  request content. The quadlet uses `Image=…:latest` with `AutoUpdate=registry`,
+  so any image tagged `latest` is deployed unattended. Caddy's rate limit (30
+  requests per minute per IP) and the 1 MB body cap are the only controls.
+| `src/rust/server.rs` L171–190 (routes), L197 (permissive CORS when `--cors` is set), ~L650 (`verify_raw`); `deploy/hetzner/echidna.container`;
+  `deploy/hetzner/README.adoc` L14, L28
+| *Critical* (D-A)
+
+| L10
+| The rulesets enforce quality (`.github/rulesets/base.json`)
+| `base.json` is not among the live rulesets. The live `echidna-proof-stack-branch`
+  requires eight contexts (three secret scans, four `rust-ci` checks, CodeQL).
+  Governance, workflow lint, and Hypatia are not required. PR #412 merged with
+  five failing check runs, none in the required set. No live ruleset carries a
+  `pull_request` rule, so no review is required before merge. `Secret-Scan-Floor`
+  and `echidna-proof-stack-branch` grant a repository-admin bypass. `Branch-Floor`
+  and `Require-Signed-Commits` do not.
+| `gh api repos/hyperpolymath/echidna/rulesets/{id}` for each live ruleset;
+  `gh pr view 412 --json statusCheckRollup`
+| *High*
+
+| L11
+| A required context can be satisfied vacuously (standards#787 D40)
+| D40 names ruleset 14285635 and a context "Idris2 — a2ml proofs", described as
+  vacuously green. Neither the ruleset ID nor the context name appears in this
+  repository, and the ruleset is not among the live ones, so D40 describes a
+  state that no longer exists here. The general hazard remains: a required
+  context that can pass without running anything. Phase 2's aggregator is the
+  structural answer.
+| standards#787 D40 and comments; `git grep 'a2ml proofs'` returns nothing
+| *High*
+
+| L12
+| The README displays an OpenSSF Best Practices badge (DEBT D3)
+| DEBT D3 describes a hardcoded badge in `README.md`. This checkout has no
+  `README.md`, and `README.adoc` carries only a licence badge. DEBT D3 is stale on
+  this point, or the badge was removed without updating the register.
+| `docs/DEBT.adoc` D3; `git grep -i badge -- README.adoc`
+| *Low*
+
+| L13
+| The documentation is current (several)
+| 31 broken local links across about 180 Markdown and AsciiDoc files.
+  `docs/handover/TODO.adoc` and `docs/handover/STATE.adoc` are dated 2026-04-26.
+  `docs/PROVER_COUNT.adoc` is dated 2026-03-31. `.machine_readable/bot_directives/debt.a2ml`
+  is dated 2026-03-24. `docs/tech-debt-2026-05-26.adoc` says it is superseded
+  and points to a root `DEBT.md` that is not present. The ROADMAP was last
+  revised 2026-06-01.
+| Python link checker; file headers
+| *Medium*
+
+| L14
+| There is one maintainer roster (`MAINTAINERS`)
+| `MAINTAINERS` names a primary maintainer under the Metadatastician identity.
+  `MAINTAINERS.adoc` names Jonathan D.A. Jewell. Standards#787 D54 asks whether
+  the Marid family moves to the `metadatastician` account. It does not decide
+  echidna's identity, so no ruling covers it. The roster must follow whichever
+  identity the owner names as canonical (D-J).
+| `MAINTAINERS`; `MAINTAINERS.adoc`; standards#787 D54 (about Marid, not echidna)
+| *Low*
+
+| L15
+| Toolchain installs are integrity-checked, as the solver-integrity framing
+  implies (`src/rust/integrity/`, `config/solver-manifest.toml`)
+| The integrity manifest covers solver binaries only. The toolchain installers
+  (`scripts/install-proof-toolchains.sh`, `scripts/install-provers.sh`) contain
+  no checksum or signature verification. `.containerization/Containerfile.wave3`
+  has about two dozen `curl` or `wget` download lines, with no checksum step.
+| `grep -c` for `sha256`, `sha512`, `gpg` in those files returns 0; see Appendix B
+| *High*
+|===
+
+=== 3.3 Architecture facts that drive the plan
+
+* *Three `ProverKind` definitions.* The core enum in `crates/echidna-core` has
+  141 variants. The GraphQL schema has the same set. The REST model in
+  `src/interfaces/rest/models.rs` has its own 30-variant enum with different
+  spellings (for example `Acl2` in REST and `ACL2` in core). There are no
+  `From` conversions between them. The canonical count lives in
+  `docs/PROVER_COUNT.adoc` and should be generated from the enum (Phase 4).
+* *Dead-code lint is silenced in bulk.* About 150 files carry a file-level
+  `#![allow(dead_code)]`, 103 of them under `provers/`. Unused trust modules
+  therefore compile silently. There are also 33 item-level allows. DEBT C2 counts
+  185 in total, which matches.
+* *The verdict trait is lossy at its base.* `ProverBackend::verify_proof`
+  returns `Result<bool>`. The default `check()` maps `Ok(false)` to
+  `NoProofFound` and sends `Err` through `classify_anyhow_error`. Backends do
+  not classify their tool's environment-failure messages, so most failures
+  fall into the wrong class.
+* *Default dispatch is permissive.* `DispatchConfig::default()` sets
+  `min_trust = Level2`, `track_axioms = true`, and `generate_certificates = false`,
+  and the integrity checker is `None`.
+* *The repository is heavy for a source tree.* `training_data/` is 612 MB across
+  152 tracked files. `models/` is about 26 MB. `.git` is about 99 MB. About 50
+  `actions/checkout` steps each fetch the whole tree. The gitleaks configuration
+  exempts `training_data/` from secret scanning.
+* *Workflows are numerous and overlapping.* There are 35 workflow files plus
+  `actions.lock`. Nine further workflow files sit under
+  `echidna-playground/.github/workflows/` and never run, because GitHub reads
+  only the repository-root `.github/`.
+
+=== 3.4 Why the verdict fix is urgent (the learning-loop argument)
+
+Stage 3 of the roadmap is defined as a learning loop in which the model
+"improves from outcomes": prover outcomes feed strategy selection and,
+eventually, training. If the CLI and the feedback path record
+`SystemError` as "invalid", then a missing library path, a missing binary, or a
+timeout is recorded as a property of the proof or of the strategy. The loop
+then learns to avoid the prover, the library, or the strategy for reasons that
+have nothing to do with the mathematics. This is an inference from the code
+paths, not a measured result. The first test of Phase 1 should demonstrate it
+or refute it on recorded data.
+
+The same argument applies to the valence-shell feed (NW-2): a consumer that
+treats environment errors as refutations will reject correct proofs whenever
+the environment is misconfigured.
+
+== CI/CD: performance, health, and design
+
+=== 4.1 Measured
+
+Source: 400 workflow runs across 19 head SHAs, 2026-10-03 to 2026-10-09,
+collected with `gh run list`. Counts are raw. "Startup" means a
+`startup_failure` conclusion, where no job ran.
+
+[cols="3,1,1,1,1,1,2", options="header"]
+|===
+| Workflow | Runs | OK | Fail | Startup | Cancel | Notes
+
+| Live Provers | 25 | 24 | 0 | 0 | 1 | Median 133 s; tiers 2–4 skipped on PRs by design
+| Workflow Security Linter | 21 | 18 | 3 | 0 | 0 | Median 26 s
+| Rust CI | 19 | 15 | 1 | 1 | 2 | Median about 5 min
+| MVP Smoke (Best Effort) | 19 | 12 | 0 | 7 | 0 | Median 134 s; 37% of starts fail before running
+| Hypatia Security Scan | 19 | 19 | 0 | 0 | 0 | Median 114 s
+| CodeQL | 19 | 18 | 0 | 1 | 0 | Median 78 s
+| Cargo Audit | 19 | 15 | 2 | 0 | 2 | Median 175 s
+| Static Analysis Gate | 18 | 18 | 0 | 0 | 0 | Median 85 s; hypatia-scan job is allow-fail
+| Server Boot Gate | 18 | 18 | 0 | 0 | 0 | Median 98 s
+| Secret Scanner | 18 | 18 | 0 | 0 | 0 | Median 38 s
+| SPARK Theatre Gate | 18 | 18 | 0 | 0 | 0 | Median 28 s; `enforce_zero_contract: false`
+| Proof Safety | 18 | 17 | 0 | 0 | 1 | Median 131 s
+| Governance | 18 | 8 | 10 | 0 | 0 | Median 100 s; 44% green; Hypatia baseline at info threshold
+| Dogfood Gate | 18 | 16 | 0 | 0 | 2 | Median 350 s
+| Zig FFI CI | 14 | 14 | 0 | 0 | 0 | Median 38 s
+| Idris2 ABI Type-Check | 13 | 12 | 0 | 0 | 1 | Median 24 s; conditional pass-through by design; passes when no ABI files change
+| bridge-gate | 12 | 2 | 0 | 0 | 0 | 10 skipped
+| ClusterFuzzLite PR | 12 | 8 | 0 | 0 | 3 | Median 722 s
+| Agda Meta-Checker | 12 | 12 | 0 | 0 | 0 | Median 24 s
+| Chapel Accelerator CI | 9 | 8 | 0 | 0 | 1 | Median 290 s; real-link job red (#408)
+| Container Build Verification | 8 | 8 | 0 | 0 | 0 | Median 458 s
+| Security Scan | 7 | 0 | 7 | 0 | 0 | Every run fails (expired `VERISIMDB_PAT`, #310)
+| Formal Verification (Stage 8c) | 7 | 7 | 0 | 0 | 0 | Median 54 s
+| OSSF Scorecard | 6 | 6 | 0 | 0 | 0 | Median 105 s
+| Mirror to Git Forges | 6 | 0 | 6 | 0 | 0 | Bitbucket, Disroot, Gitea fail every run
+| GitHub Pages | 6 | 6 | 0 | 0 | 0 | 
+| Dependabot Updates | 6 | 4 | 2 | 0 | 0 | Median 249 s
+| BoJ Server Build Trigger | 6 | 6 | 0 | 0 | 0 | Allow-fail (`trigger-boj`)
+| Dogfood Proof Corpus | 4 | 4 | 0 | 0 | 0 | Median 492 s
+|===
+
+Aggregates for the same window: about 20 runs per head SHA (median); 10 of 400
+runs are `startup_failure` (2.5%); 15 (SHA, workflow) pairs ran more than once, typically
+for a push and a pull request. Durations are the time from creation to last
+update, a proxy that includes queue time. The remaining workflows are small,
+except one batch fuzz run of about 2,219 s.
+
+=== 4.2 Findings
+
+*F-CI-1. Gates are advisory by design, and the required set is the wrong set.*
+The live required set on `main` is eight contexts, in the
+`echidna-proof-stack-branch` ruleset. The gates that failed most often in the
+recent runs (governance, workflow lint, Hypatia) are not in it. PR #412 merged
+with five failing check runs, none in that set. No live ruleset requires a
+review, so a single maintainer can merge their own work, and two rulesets grant
+the repository-admin bypass. This is not a process failure. It is the rule set
+saying what it says, and the plan changes the rule set.
+
+*F-CI-2. Green can mean "did not run".* Three mechanisms produce a green result
+without the check having exercised anything: conditional pass-throughs,
+skipped jobs, and allow-fail jobs. The conditional pass-through in
+`idris2-abi-ci.yml` is deliberate, and it is sound only if its path detection is
+exhaustive. The allow-fail count is 14 (verified by grep and by parsing the YAML): live-provers eight (the tier-1 Guix job, the tier-2 provision step, the tier-3 job and step, the tier-4 job, and the tier-4 GPU job with its two steps), chapel-ci two, container-ci one, boj-build one, and static-analysis `hypatia-scan` two. The `bridge-gate` workflow is skipped in 10 of its 12 runs,
+so its purpose needs verifying before it is kept. A silent exit is the same
+hazard in estate code. Per #401's comment, the standards reusable bump was held
+back because on the newer standards ref the governance R5 step "exits silently
+under `bash -e`". A step that exits silently cannot fail, so it is green by
+construction.
+
+*F-CI-3. Several gates are red in every run.* Security Scan (7 of 7), Mirror (6
+of 6), Governance (10 of 18). Such gates train reviewers to ignore red. Either
+the cause is fixed or the gate is removed. A gate that is always red is not a
+gate.
+
+*F-CI-4. Heavy jobs run on every pull request.* ClusterFuzzLite PR has a median
+of 722 s, Container Build 458 s, and Dogfood Gate 350 s. Path filters are used
+sparingly, so most pull requests pay for all of them.
+
+*F-CI-5. Security scanning is spread across at least eight tools.* CodeQL,
+Hypatia (two workflows), gitleaks (in the secret-scan ruleset and in the
+workflow), panic-attack (Security Scan), cargo-audit, Scorecard, and
+ClusterFuzzLite (two workflows). Each tool reports to a different place. No one
+owns the total picture.
+
+*F-CI-6. Startup failures concentrate in one workflow.* MVP Smoke accounts for 7
+of the 10 startup failures. The cause is not established. The lock drift in #401 (fixed by #410) is a
+candidate worth checking first, since the 10 failures span runs before and after
+that fix.
+
+*F-CI-7. Nine workflow files never run.* They sit under `echidna-playground/`.
+Keep them, delete them, or move them, but do not leave them where they look like
+CI.
+
+*F-CI-8. Checkout cost is driven by data.* The 612 MB corpus is fetched by every
+checkout. The gitleaks allowlist is partly a workaround for the same data.
+
+*F-CI-9. Some failures need an owner, not code.* Security Scan needs a rotated
+`VERISIMDB_PAT` (#310). Mirror needs credentials for three forges, or the
+forges should be removed from the mirror. The agent session cannot manage
+Actions secrets (403). These go in the ruling packet, not in a code change.
+
+*F-CI-10. The positive pattern to preserve.* The nightly and scheduled live
+prover runs are green, lock discipline is in place, and reusable workflows from
+`hyperpolymath/standards` are SHA-pinned.
+
+=== 4.3 The target CI design: one gate, five lanes
+
+The elegant arm is to organise CI around _what a result must prove_, not around
+_which tool produces the evidence_. That gives five lanes with one aggregator.
+
+[cols="1,3,2", options="header"]
+|===
+| Lane | Contents | Trigger and budget
+
+| *A. Merge gate* | `fmt`, `clippy -D warnings`, unit and integration tests, workflow lint,
+  secret scan, server boot, FFI build, changed-path proof checks (Coq, Lean,
+  Agda, Idris2 ABI). One aggregator job named as the single required check.
+| Every pull request and push to `main`. Target: under 10 minutes median.
+
+| *B. Security* | CodeQL (SAST), one Hypatia job, gitleaks, cargo-audit and cargo-deny in
+  one job, Scorecard, ClusterFuzzLite. Findings go to SARIF and to the Security
+  tab. Only the blocking tier (high and critical) fails a pull request.
+| Pull request for changed paths; weekly full run.
+
+| *C. Prover live* | Tier 1 and 2 live runs, tier 3 containers, tier 4 on demand, and
+  the per-backend health matrix. Results published as artefacts, plus the
+  generated status (Phase 4).
+| Nightly (tiers 1–2), weekly (tier 3), manual (tier 4) within the budget set
+  by D148.
+
+| *D. Release* | SLSA provenance, image digest, SBOM, attestation. Deployment is by
+  digest, never by `latest`.
+| On release tag only.
+
+| *E. Governance* | Documentation link check, status generation check, licence sweep,
+  label and triage hygiene, ruleset drift check (live versus repository).
+| Pull request on documentation paths and monthly.
+|===
+
+Design rules that make this coherent:
+
+* *One aggregator.* A required check that always runs and reports the
+  combined result of the lanes that apply. Path filtering inside lanes is then
+  safe, and no pass-through shim is needed.
+* *No allow-fail without an expiry.* Every `continue-on-error` names an issue
+  and a date. After the date it becomes blocking or is removed.
+* *Required set equals the set that matters.* The aggregator is the required
+  check, and its definition is in the repository. Rulesets are exported to
+  `.github/rulesets/` and a drift check (lane E) compares them with live state.
+* *Reuse from the estate, not forks.* Coordinate with `hyperpolymath/standards`
+  reusable workflows. Pin them by SHA. Do not copy them into the repository.
+
+Targets (measured baseline, then target):
+
+[cols="3,1,1", options="header"]
+|===
+| Metric | Baseline (2026-10-09) | Target (end of Phase 2)
+
+| Workflow files | 35 | 12 or fewer
+| Runs per typical push (median per SHA) | about 20 | 6 or fewer
+| Startup failure rate | 2.5% | 0% over 14 days
+| Required check red on `main` for more than 14 days | yes (Security Scan) | no
+| Allow-fail jobs without expiry | 14 | 0
+| Pull-request merge gate, median | about 5 min (Rust CI) | 10 min or less, all lanes
+|===
+
+== Community health
+
+=== 5.1 Measured
+
+* Community profile: 100%.
+* Stars 6, forks 0.
+* Commits to `main` since 2026-07-01: 139. Of these, 103 are by the owner, 33 by
+  dependabot, and 3 by the agent bot. No external human committer appears in
+  this window.
+* Issues: 73 in total, 19 open, 54 closed. Median time to close is 2.0 days.
+  The 90th percentile is about 111 days. Of the 19 open issues, 15 are older
+  than 90 days and 12 have no comments.
+* Labels in use: `enhancement` (19), `bug` (9), `documentation` (3),
+  `performance` (1). No `good first issue`, `help wanted`, or equivalent label.
+* Governance and ownership: `GOVERNANCE.adoc` exists. `MAINTAINERS` and
+  `MAINTAINERS.adoc` disagree (L14). `CODEOWNERS` lists eight paths: the
+  provers directory, `dispatch.rs`, `lib.rs`, `src/julia/`, `src/interfaces/`,
+  `.containerization/`, `Containerfile`, and `.machine_readable/`. It does not
+  cover `.github/workflows/`, the verification, integrity, or executor modules,
+  `src/abi`, `proofs/`, `config/`, `deploy/`, or `Containerfile.wave3` and its
+  siblings.
+
+=== 5.2 Interpretation
+
+Closed issues are resolved quickly, so the maintainer is responsive to work
+that is already in motion. Outside people do not appear in the record. This
+suggests that the entry path is the problem, not responsiveness. The inference
+is not proven, but it fits the labels, the age of the open issues, and the
+absence of good-first-issue entries.
+
+The bus factor is one. Every high-severity item in section 3 is in the hands of
+one person, and the decisions in section 8 need that same person.
+
+=== 5.3 Plan (cross-cutting track X)
+
+* *X1 Succession and second maintainer.* The owner decides on a second
+  maintainer and a succession note (D-J). This is the one item the agent
+  cannot advance.
+* *X2 Entry path.* Ten bounded tasks labelled `good first issue`. Candidates
+  from this recon: fix one broken link cluster (L13), remove one file-level
+  `allow(dead_code)` and fix what it reveals, add a classification test for one
+  backend's environment-failure message (Phase 1), and author a backend
+  acceptance checklist.
+* *X3 Triage contract.* Every issue is labelled and answered within seven days.
+  Once a month, every issue older than 90 days is closed, converted to a roadmap
+  item, or re-dated with a reason. Currently 15 open issues would fall into
+  this step.
+* *X4 Contributor front door.* The README is long. Add a short front door that
+  states what ECHIDNA is for, what is verified and how, and how to add a
+  backend. The backend acceptance checklist is part of this (Phase 1 exit).
+* *X5 Release cadence.* Tags exist up to v2.3.0. Release notes are generated
+  from the CHANGELOG `[Unreleased]` section and the merged pull requests.
+  Remove the seven accidental `topic-*` tags on the remote, after confirming
+  they are not referenced.
+
+== The issue backlog: dispositions
+
+Each open issue is assigned to a track in this plan. These are recommendations.
+Closing or re-scoping an issue is an owner action unless noted.
+
+[cols="1,3,2,1", options="header"]
+|===
+| Issue | State and recommendation | Track | Phase
+
+| #401 | CI close-out. Its comment of 2026-10-06 records the acceptance evidence. The two reds left on `main` (Mirror, Security Scan) are owner-held (P0.4). Closure is the owner's decision. | A | 0
+| #400 | Triage of one red check surfaced by PR #397. Empty body, no comments. First confirm which check it was and whether it still reproduces, then close or fold it into #401. | A | 0
+| #310 | Expired `VERISIMDB_PAT`. Owner action only: mint a fine-grained token with
+  Contents read and write on `hyperpolymath/verisimdb-data`, then `gh secret set`. | A | 0
+| #314 | Hypatia gate. The title plans to grandfather 152 findings. The repository baseline holds 71 entries. The 2026-09-25 report says the 152/70 counts are historic and forbids a blanket re-baseline. Re-scope to a fresh triaged inventory with a blocking threshold per D-E. | A/B | 1–2
+| #239 | Split of security alerts by risk class (performance label). Fold into the #314 triage. | B | 2
+| #408 | Chapel real-link job red. Fix the link, or mark the job as skipped with a
+  reason, and do not leave it red. Chapel stays opt-in (D-L). | F | 2
+| #280 | Proof repairs (Isabelle group theory, Mizar). Repair with the pinned
+  toolchain in a container, without weakening any statement. | E | 5
+| #252 | Currency audit. Fold into Phase 4; close when the generated status exists. | D | 4
+| #117, #266 | AffineScript UI and primitives overlap. Merge into one ADR under D150 and
+  defer implementation. Interim UI per D-N. | G | 7
+| #194, #195 | #194 is the Cap'n Proto IPC schema work item, and #195 is the owner-gated Stage 5 meta-tracker. Keep both, with #194 as the child of #195. Both need the D148 ruling. | F | 6
+| #161 | Real-corpus benchmark. Keep. It is the gate for Chapel default-on, and its
+  criterion must be fixed before the run (D-L). | F | 6
+| #190, #191 | Cross-prover exchange (Stage 6). Keep, but require that exported
+  artefacts carry a checkable certificate or are labelled unchecked. | H | 7
+| #192 | SPARK kernel. Decision D-F before any further work. | E | 5
+| #193 | AI sketch generation. Research. No commitment before Stage 3 closes. | H | 7
+| #197 | Verisim integration. External dependency, optional feature. Keep. | H | 7
+| #414 | NeSy progression milestones 1–4. Park 2–4 as research with written success
+  metrics; treat milestone 1 as a measured experiment inside Stage 3 (D-M). The
+  phrase "mathematically guaranteed fuzzy deductive reasoning" is not consistent
+  with the trust model. Fuzzy or learned components cannot carry proof-grade
+  guarantees, so the wording should change. | H | 7
+|===
+
+== The plan
+
+Weeks are counted from the week beginning 2026-10-12 (week 1). Phase 0 is
+measured in days. Each phase lists goal, work, exit criteria, and the rulings it
+needs. Phases overlap where noted.
+
+=== Phase 0 — Containment (days 0–7)
+
+*Goal.* Remove the highest-consequence risks without designing the end state.
+These are containment steps, so the symptom-patch rule in section 2 is
+suspended for them.
+
+Work:
+
+* *P0.1 Public API.* Under D-A, either restrict the Caddy route so that only
+  read-only endpoints are public, or add bearer-token authentication in front of
+  the execution endpoints (`/api/prove`, `/api/verify`, `/api/verify_raw`, and
+  the session endpoints). The quadlet must stop using `AutoUpdate=registry` on
+  `latest`, and the deployment must pin an image digest.
+* *P0.2 Fail closed in the trust path.* In `dispatch.rs`, an integrity status of
+  `Uninitialized`, an unknown prover, a placeholder hash, or a `verify_all`
+  error yields `Unverified`, not pass. The CLI prints the integrity status in
+  its output. Unit tests cover each branch. The placeholder manifest is not
+  altered in this step.
+* *P0.3 Sandbox honesty.* `--sandbox bwrap` or `--sandbox podman` returns a
+  clear "not implemented" error until Phase 1.5 lands. `--sandbox none` is
+  recorded in the result's provenance as `unsandboxed`.
+* *P0.4 Owner actions.* Rotate `VERISIMDB_PAT` (#310). Decide on mirror forge
+  credentials or remove the failing forges from the mirror.
+* *P0.5 Rulesets.* Export the live rulesets into `.github/rulesets/`, replacing
+  the outdated `base.json`. Make the required set equal the aggregator once it
+  exists. Until then, add governance and workflow lint to the required set only
+  if they are green on `main`.
+* *P0.6 Dead workflows.* Resolve the nine files under `echidna-playground/`.
+* *P0.7 Ownership.* Extend `CODEOWNERS` to the paths in F-CI and section 5.
+* *P0.8 Documentation honesty.* Edit the README and `CLAUDE.md` so that the
+  sandbox, integrity, certificate, and SPARK sentences describe what is true
+  today, with a pointer to the Phase 1 item that will make them true. This is
+  the one documentation edit the plan asks for before Phase 4.
+
+Exit criteria:
+
+* The execution endpoints are not reachable without authentication, or the
+  public API is restricted to read-only endpoints (D-A).
+* No deployment uses an unpinned `latest` image.
+* A unit test demonstrates that a placeholder integrity manifest yields
+  `Unverified`.
+* `--sandbox podman` returns an error, not a silent unsandboxed run.
+* Ledger rows L1, L3, and L9 no longer assert behaviour the code lacks.
+
+=== Phase 1 — One verdict, one pipeline (weeks 1–4)
+
+*Goal.* Make the three invariants true in code. Every result carries its
+verdict class, its policy, and its evidence. Every gate is either required and
+green or visibly not required. Every status claim is generated or dated.
+
+Work:
+
+* *1.1 Typed verdict end to end.* The CLI `verify` and `prove` commands call
+  `check()` and receive `ProverOutcome`. Exit codes follow the class: 0 proved;
+  1 no proof found; 2 invalid input; 3 unsupported feature; 4 environment or
+  system error; 5 timeout. Backends classify the messages their tools emit for
+  missing library paths, missing modules, and missing binaries as `SystemError`
+  or `InvalidInput`. The first backends are the seven most used in the tests
+  (Coq, Lean, Agda, Isabelle, Idris2, Z3, cvc5), chosen by usage data rather than
+  by preference. The `echidna.prove.result/1` contract gains an additive `class`
+  field. A breaking change requires a new contract version and is avoided here.
+* *1.2 One pipeline.* A single `verify_with_trust(state, policy)` replaces the
+  parallel paths. The policy names each requirement: integrity, sandbox,
+  certificate, axiom tracking, minimum trust level. The default policy is strict.
+  Any relaxation is a named policy, and its name is recorded in the result.
+* *1.3 No dead configuration.* Every field of `ProverConfig` and `DispatchConfig`
+  is read. Enforce this by destructuring the config in the constructor, so that
+  an unread field is a compile error. `generate_certificates` stays only if 1.4
+  wires it.
+* *1.4 Certificates, scoped honestly (D-C).* Implement DRAT/LRAT checking for the
+  SAT backends and Alethe checking for the SMT backends, through the external
+  checkers (`drat-trim` and `carcara`). For Lean and Coq, the result is labelled
+  *kernel acceptance*, which is a different and honest claim. Remove any other
+  claimed format until it is built.
+* *1.5 One sandboxed runner.* A single `ProverProcess` runner replaces the direct
+  `Command::new` calls across the backends. The runner enforces the sandbox
+  mode, timeout, environment scrubbing, a temporary directory, and output
+  capture. The rollout is ratcheted: the count of raw `Command::new` in
+  `provers/` goes down monotonically in CI, from about 100 files to zero. Each
+  backend family is a separate pull request.
+* *1.6 Dead-code ratchet.* Remove file-level `#![allow(dead_code)]`. Replace
+  each with item-level allows that carry a tracking-issue comment. Delete
+  modules that are genuinely unused, including the certificate stub if 1.4 does
+  not use it.
+* *1.7 One `ProverKind`.* The core enum is canonical. GraphQL and REST map to it
+  through exhaustive `From` implementations, which makes a missing variant a
+  compile error. The OpenAPI schema is generated from the canonical type.
+* *1.8 Backend acceptance checklist.* A backend is accepted when it has
+  classification tests for its environment failures, a live test, a tier
+  attribute, an integrity entry, and a row in the generated status. This makes
+  X4 concrete.
+* *1.9 Test the learning-loop claim (section 3.4).* On recorded data, measure how
+  many failures are environment-class under the old and new classifications.
+  Record the result in the Phase 1 report, whichever way it falls.
+
+Compatibility: `ProverBackend::verify_proof` keeps its signature in the 2.x
+line. `check()` becomes authoritative and the boolean path is deprecated. This
+avoids breaking echidnabot and proof-burrower in the interim (D-B). Confirm the
+consumers' pinned versions before the deprecation is merged.
+
+Exit criteria:
+
+* On a deliberately broken Coq library path, `echidna verify` exits 4 with
+  "environment" in the output.
+* A placeholder integrity manifest yields `Unverified`, and the test is part of
+  the merge gate.
+* No direct `Command::new` remains in `provers/` outside the runner, or the
+  ratchet metric is at its baseline and falling.
+* No file-level `#![allow(dead_code)]` remains outside documented exceptions.
+* One `ProverKind` definition exists, and a test fails if REST and core differ.
+* At least one certificate checker runs in CI on a fixture, and its failure is
+  visible.
+
+=== Phase 2 — CI consolidation (weeks 2–5, overlapping Phase 1)
+
+*Goal.* Implement section 4.3 and reach the targets in its table.
+
+Work:
+
+* *2.1 Map every workflow.* Use Appendix A as the starting point. Verify each
+  disposition against the workflow file before moving anything. Retire or merge
+  workflows as Appendix A proposes.
+* *2.2 Build the aggregator.* Create the one required check. Move the lanes
+  behind it, with path filters inside the lanes.
+* *2.3 Expire every allow-fail.* Started in the CI hygiene PR (tracking issue #416;
+  the checker runs in the workflow linter). Each `continue-on-error` carries an issue
+  number and a date. Remove or make blocking the ones that have not been
+  justified by the date.
+* *2.4 One owner per scanner.* Secrets, SAST, estate Hypatia, panic-attack, SCA,
+  Scorecard, and fuzzing each have one job in one lane. Results go to SARIF.
+* *2.5 Fix the three red-every-run gates.* Security Scan depends on P0.4.
+  Mirror depends on P0.4. Governance depends on the Hypatia triage (#314).
+* *2.6 Diagnose the startup failures.* MVP Smoke has seven startup failures in
+  19 runs. Find the cause before merging it into lane A.
+
+Exit criteria: the Section 4.3 targets are met, measured over a fourteen-day
+window.
+
+=== Phase 3 — Data and repository weight (weeks 3–6)
+
+*Goal.* The working tree holds code, documentation, and small fixtures. Large
+data has content-addressed provenance and is fetched, not checked out.
+
+Work:
+
+* *3.1 Externalise the corpus (D-H).* Move `training_data/` to an external
+  content-addressed store (release assets or a designated bucket). Keep a
+  `training_data/MANIFEST.json` in the repository with a SHA-256 for each file,
+  a fetch script, and a verification step in CI.
+* *3.2 Externalise models.* Apply the same mechanism to `models/`, with the
+  metadata file kept in the repository.
+* *3.3 Keep the fixtures.* Small samples used by tests stay in the repository as
+  fixtures, clearly named.
+* *3.4 Retire the allowlist workaround.* Remove the `training_data/` path
+  exemption from gitleaks once the data is external. History rewriting is not
+  recommended: the pack is about 98 MB, and rewriting history costs more than
+  it saves.
+
+Exit criteria: the working tree is under 100 MB excluding `.git`. CI checkouts
+no longer fetch the corpus. Manifest verification passes in CI.
+
+=== Phase 4 — One source of truth for status (weeks 3–6)
+
+*Goal.* Coherence. Each status fact has one owner, and the rest are derived.
+
+Work:
+
+* *4.1 ROADMAP.adoc is the one strategic document.* Amend it: remove the
+  unverified present-tense claims (L6–L8), add a Stage 0 "truthful core" that
+  consists of Phase 0 and Phase 1, and re-sequence Stage 5 behind it.
+* *4.2 Generate the status.* A script (run by lane E) produces
+  `docs/STATUS.adoc` from the sources: the `ProverKind` enum and its tier
+  attribute, the proof-corpus gate coverage (read from the `Justfile` and
+  workflows), the route list, workflow run statistics via `gh`, and issue
+  counts. The handover `TODO.adoc`, the handover `STATE.adoc`, and the
+  `.machine_readable` STATE copies become pointers to the generated file or are
+  deleted.
+* *4.3 Tier as an attribute (DEBT D2).* The tier of each backend is an attribute
+  on the enum. `docs/PROVER_COUNT.adoc` is generated from it. The R5 canonical
+  reference rule in `.github/canonical-references/` then holds by construction.
+* *4.4 Repair the links and re-measure the debt.* Fix the 31 broken links. Re-measure
+  DEBT C2, C4, and C5 against current CI and code. DEBT C4 and C5 appear stale
+  (Dogfood Gate is 16 of 18 green, Rust CI 15 of 19). Close or update the
+  superseded documents, including `tech-debt-2026-05-26.adoc`.
+* *4.5 One roster (D-J).* Keep one `MAINTAINERS` file, following the canonical
+  identity once the owner rules.
+* *4.6 One agent-instruction source.* `CLAUDE.md`, `.claude/CLAUDE.md`,
+  `GEMINI.md`, and `.github/copilot-instructions.md` have diverged in structure.
+  Generate them from one source, or make the three others pointers to it.
+* *4.7 Badge (D-K).* Decide whether to register for the OpenSSF Best Practices
+  badge. If yes, link the real badge once it is earned. If no, remove the
+  description from DEBT D3 and do not add the badge.
+
+Exit criteria: link check reports zero broken links. The status document is
+generated and CI fails when it is stale. The hand-maintained status documents
+number one (the ROADMAP).
+
+=== Phase 5 — Proof assurance, honestly scoped (weeks 6–12)
+
+*Goal.* Every formal claim in the README has either a CI job or an explicit "not
+gated" label.
+
+Work:
+
+* *5.1 Trust kernel decision (D-F).* Choose one canonical kernel. If Rust with
+  Creusot is chosen, keep the Creusot checks in CI where they are practical and
+  narrow the claims. If SPARK is chosen, `gnatprove` runs in CI with
+  `enforce_zero_contract` on, and the workflow is renamed to match what it
+  checks. If both are kept, they are two claims with two gates.
+* *5.2 Corpus repairs (#280).* Repair the Isabelle and Mizar corpora with the
+  pinned toolchain in a container, without weakening any statement.
+* *5.3 Tier-4 truth.* Run each tier-4 backend live, once, on a fixed input set.
+  Relabel the tiers from the evidence, and record the result in the generated
+  status (Phase 4).
+* *5.4 Idris2 ABI.* Keep the path-detected type-check. Move its pass-through
+  into the lane-A aggregator, and verify that the detection covers every file
+  that can affect the ABI, including `src/abi/` and `src/idris/`.
+* *5.5 Prover-binary provenance.* Populate the integrity manifest from the
+  container image digests and verify checksums in the installers. The Containerfile
+  wave-3 file has about two dozen unverified downloads and the installer scripts
+  have no checksum verification (ledger L15). This connects Phase 1 trust to
+  supply chain.
+
+Exit criteria: section 3.2 rows L5 and L6 are closed. Each gated formal claim
+names its gate.
+
+=== Phase 6 — Interfaces and wire (after D-G, not before week 8)
+
+*Goal.* Stage 5 proceeds on frozen types. Transport follows the verdict and trust
+types, not the other way round.
+
+Work:
+
+* *6.1 Cap'n Proto schema.* Derive the schema from the canonical types
+  (`ProverOutcome`, the trust level, the policy, the goal representation). The
+  JSON form remains a debug representation. Start only after the Phase 1 types
+  are frozen, since a schema written earlier encodes the wrong types.
+* *6.2 Coprocessor trait (D-G).* Defer until a second consumer needs it. Each
+  added trait is a surface to keep correct.
+* *6.3 Chapel (D-L).* Keep Chapel opt-in. Default-on only after #161 meets a
+  criterion fixed before the run. The TODO states 1.5× on eight or more cores.
+  #161 is the real-corpus speedup bench, but its body states no threshold. One
+  criterion must be chosen and written into #161.
+* *6.4 Parallel execution follows sandboxing.* Chapel and any other parallel
+  dispatch run only through the Phase 1.5 runner. Parallelising untrusted
+  execution before sandboxing is real multiplies the exposure.
+* *6.5 Tier-4 budget.* Set the CI minutes budget from measurements taken in
+  Phase 2, as D148 requires.
+
+Exit criteria: D148 is recorded. Schemas are generated, round-trip tests pass,
+and the Chapel criterion is written down before the benchmark runs.
+
+=== Phase 7 — Ecosystem and research (2027 horizon)
+
+*Goal.* Extend outward only with the guarantees in place.
+
+Work:
+
+* *7.1 Exchange and bridges (#190, #191).* Exported artefacts carry a
+  certificate status from Phase 1.4, or are labelled unchecked. The trust
+  level of an import is never higher than that of its source.
+* *7.2 valence-shell feed.* NW-2 is delivered by Phase 1.1. The valence-shell
+  validation script (`scripts/validate-with-echidna.sh`, line 77, per its notes)
+  omits `--library` roots. That is not yet checked against the script.
+  Echidnabot should consume the same contract; this is to be confirmed. The estate
+  feed doctrine (D127) remains: valence-shell steers, and echidna feeds.
+* *7.3 NeSy (#414, D-M).* Milestone 1 becomes a measured experiment inside Stage
+  3, against the recorded baseline. Milestones 2–4 are parked until each has a
+  written success metric and no "guaranteed" language for learned components.
+* *7.4 AI sketch generation (#193).* Research. No commitments until Stage 3
+  closes.
+* *7.5 UI (#117, #266, D150, D-N).* An ADR precedes any UI build. The interim UI
+  is an honest static page with no module-count claim. The AffineScript-TEA
+  build waits for the ADR.
+
+== Decisions needed: the ruling packet
+
+Each row is a decision only the owner can make. The recommendation is the
+elegant arm under section 2. Blocking phases show which work waits on it.
+
+[cols="1,3,3,2,1", options="header"]
+|===
+| ID | Question | Options | Recommendation (E) | Blocks
+
+| D-A | Public API posture for the execution endpoints
+| (a) keep public and unauthenticated; (b) authenticate and sandbox; (c) take the
+  execution endpoints offline and keep read-only ones public
+| (b) before further public traffic; (c) as an interim if (b) is not ready
+| P0, 1.5
+
+| D-B | How the verdict is broken
+| (a) additive `check()` path in 2.x, boolean removed in the next major; (b)
+  breaking trait change now
+| (a), with the boolean deprecated in 2.x
+| 1.1
+
+| D-C | Certificate scope
+| (a) implement DRAT/LRAT and Alethe; (b) narrow every certificate claim and
+  defer; (c) both at once
+| (a); delete other format claims until built
+| 1.4
+
+| D-D | Default for unsandboxed execution
+| (a) default unsandboxed with a warning; (b) default-deny, opt-in recorded in
+  provenance
+| (b) for the public deployment; (b) also in development, with the opt-in
+  recorded
+| P0.3, 1.5
+
+| D-E | Hypatia blocking threshold and baseline
+| (a) blocking at info (current); (b) blocking at high and critical with a fresh
+  triaged baseline; (c) re-baseline the 2026-09 inventory wholesale
+| (b). Not (c), per the 2026-09-25 report
+| 2.5
+
+| D-F | Trust kernel: SPARK/Ada or Rust/Creusot
+| (a) SPARK, with gnatprove gated in CI; (b) Rust/Creusot, claims narrowed; (c)
+  both, as two claims with two gates
+| (b), or (a) only if the gate is enforced in CI. Do not keep an unenforced
+  gate
+| 5.1
+
+| D-G | Stage 5 sign-off (D148) and coprocessor (D148/D149)
+| (a) sign off all three together as the sheet proposes; (b) sequence transport
+  after type freeze and defer the coprocessor
+| (b): freeze, then schema, then transport. Defer the coprocessor until needed
+| 6.x
+
+| D-H | Corpus and model storage
+| (a) Git LFS; (b) external content-addressed store with an in-repo manifest;
+  (c) leave in the repository
+| (b)
+| 3.1
+
+| D-I | CI target architecture
+| (a) approve the five lanes and aggregator; (b) keep the current 35 files
+| (a), with reusables from standards pinned by SHA
+| 2.x
+
+| D-J | Canonical maintainer identity
+| (a) the `metadatastician` account; (b) the owner of record; (c) both listed
+| One roster. The identity follows an explicit owner ruling, since D54 does not cover echidna
+| 4.5, X1
+
+| D-K | OpenSSF Best Practices badge
+| (a) register and link the real badge once earned; (b) drop the claim from the register
+| (a)
+| 4.7
+
+| D-L | Chapel default-on criterion
+| (a) 1.5× on eight or more cores (TODO); (b) a threshold written into #161; (c) a new criterion
+| One criterion, written into #161 before the run
+| 6.3
+
+| D-M | NeSy proposals (#414)
+| (a) accept milestones 1–4 into Stage 3; (b) park 2–4, run 1 as an experiment;
+  (c) reject all
+| (b)
+| 7.3
+
+| D-N | UI path
+| (a) wait for the AffineScript-TEA ADR; (b) build an interim UI now; (c) an
+  honest static page until the ADR
+| (c)
+| 7.5
+|===
+
+Owner-only actions outside the rulings: rotate `VERISIMDB_PAT` (#310), set or
+remove mirror forge credentials, and make ruleset and Actions-secret changes,
+which the agent session cannot make (403).
+
+== Non-goals and things to stop
+
+* *No blanket baselines or allow-lists that make red green.* The 2026-09-25
+  rule stands.
+* *No pass-through shims presented as checks.* A check that cannot fail is not
+  a check.
+* *No new prover backends before Phase 1 exit.* Each new backend arrives with
+  classification tests, a tier attribute, and an integrity entry (1.8).
+* *No ROADMAP claim without a CI job or a measurement.* Describe intent in the
+  roadmap as intent, with a date.
+* *No configuration flags that are read nowhere.* Phase 1.3 makes this a
+  compile error.
+* *No new workflow files.* New checks go into a lane.
+* *No Python, ReScript, or TypeScript,* per estate policy.
+* *No parallel untrusted execution before sandboxing is real* (6.4).
+* *No history rewrite* to shrink the repository (3.4).
+
+== Success metrics
+
+Baselines are the measurements in this document. Targets are reached by the end
+of the phase named.
+
+[cols="3,2,2,1", options="header"]
+|===
+| Metric | Baseline (2026-10-09) | Target | By
+
+| Integrity fail-open paths in the trust path | 4 | 0 | P0
+| Config fields read nowhere (`ProverConfig`, `DispatchConfig`) | at least 2 (`sandbox`, `generate_certificates`) | 0 (compile error) | 1
+| Result paths that report a boolean | 1 (CLI `verify`) | 0 | 1
+| Raw `Command::new` in `provers/` outside the runner | about 100 files | 0 | 1 (ratchet falling from P1)
+| File-level `#![allow(dead_code)]` | about 150 files | documented exceptions only | 1
+| `ProverKind` definitions | 3 | 1 | 1
+| Certificate formats checked in CI | 0 | 2 (DRAT/LRAT, Alethe) plus kernel acceptance labelled | 1
+| Workflow files | 35 | 12 or fewer | 2
+| Runs per typical push | about 20 | 6 or fewer | 2
+| Startup failure rate | 2.5% | 0% over 14 days | 2
+| Allow-fail jobs without expiry | 14 | 0 | 2
+| Red-every-run gates | 3 | 0 | 2
+| Training data in working tree | 612 MB | fetched via manifest | 3
+| Broken local links | 31 | 0 | 4
+| Hand-maintained status documents | several, stale by months | 1 (ROADMAP) plus generated | 4
+| Open issues older than 90 days | 15 | 0, each closed, converted, or re-dated | ongoing (X3)
+| Non-owner human commits to `main` | 0 since 2026-07-01 | at least one regular contributor | ongoing (X2)
+|===
+
+== Risks and mitigations
+
+[cols="3,3,2", options="header"]
+|===
+| Risk | Mitigation | Owner
+
+| Breaking consumers (echidnabot, proof-burrower, valence-shell) | Additive `check()` path
+  in 2.x; confirm pinned versions before deprecating the boolean | Agent with owner review
+| The sandbox does not run in the production container (user namespaces, nested
+  Podman) | Phase 1.5 is ratcheted; the deployment decision D-A is taken first;
+  verify the runner in the actual image before enabling by default | Owner for
+  deployment; agent for the runner
+| Owner bandwidth (single maintainer) | The ruling packet is ordered by blocking
+  phases; recommendations are the default if no answer is given within a
+  fortnight, and each is reversible | Owner
+| Estate coupling (standards reusables, D38 lock versus tag) | Coordinate with
+  standards; pin by SHA; do not fork | Owner and agent
+| Proof repair takes longer than planned (#280) | Time-box per corpus; a corpus
+  that is not repaired is labelled not gated rather than weakened | Agent
+| Cross-repo ownership (verisim, affinescript) | Keep the integration optional
+  behind its feature flag; record the dependency, do not absorb it | Owner
+| Gate tightening breaks a busy pipeline | Phase 2 uses expiry dates and the
+  aggregator so each tightening is visible and reversible | Agent
+|===
+
+== Appendix A — Proposed workflow dispositions
+
+These are proposals based on each file's name, triggers, and the run statistics
+in section 4.1. Each disposition must be checked against the file before it is
+moved (Phase 2.1). Lane letters follow section 4.3.
+
+[cols="3,3,2", options="header"]
+|===
+| Workflow file | Proposed disposition | Lane
+
+| `rust-ci.yml` | Keep; core of the merge gate | A
+| `workflow-linter.yml` | Keep; merge gate | A
+| `secret-scanner.yml` | Keep; merge into one secrets job | A/B
+| `mvp-smoke.yml` | Diagnose startup failures, then fold into A | A
+| `server-boot-gate.yml` | Keep; merge gate | A
+| `zig-ffi-ci.yml` | Keep; path-filtered into A | A
+| `static-analysis-gate.yml` | Keep; split out the hypatia job into B; remove its allow-fail | A/B
+| `dogfood-gate.yml` | Split: fast part into A, heavy part into C | A/C
+| `bridge-gate.yml` | Verify purpose (10 of 12 skipped); fold or delete | A or remove
+| `codeql.yml` | Keep; SAST | B
+| `cargo-audit.yml` | Merge with cargo-deny into one SCA job | B
+| `hypatia-scan.yml` | Keep the single Hypatia job; resolve #314 first | B
+| `security-scan.yml` | Keep after P0.4; owner-gated until then | B
+| `scorecard.yml` | Keep; weekly | B
+| `cflite_pr.yml` | Path-filter to parser and fuzz paths; the median is 722 s | B
+| `cflite_batch.yml` | Keep; nightly | B
+| `proof-safety.yml` | Keep; path-filter into the proofs part of A | A
+| `agda-meta-checker.yml` | Keep; path-filtered proof check | A
+| `idris2-abi-ci.yml` | Keep the conditional pass-through semantics; move the mechanism into the aggregator (Phase 5.4) | A
+| `formal-verification.yml` | Verify what it gates; merge into proofs or remove | A or E
+| `spark-theatre-gate.yml` | Enforce or rename (D-F) | E
+| `dogfood-proofs-ci.yml` | Path-filtered proof corpus; weekly for the full run | A/C
+| `verification-proofs-cron.yml` | Keep; weekly full proof run | C
+| `live-provers.yml` | Keep; tier 1 on PRs, tiers 2–4 nightly, weekly and manual as set by D148 | C
+| `chapel-ci.yml` | Keep as an optional accelerator lane; fix the real-link job (#408) | C
+| `container-ci.yml` | Keep; weekly, plus on Containerfile changes | C
+| `s4-loop.yml` | Verify purpose; fix its startup failure or fold into C | C
+| `boj-build.yml` | Decide whether the integration remains; otherwise remove the allow-fail (#416) | E or remove
+| `ghcr-publish.yml` | Keep; release lane, deployment by digest | D
+| `generator-generic-ossf-slsa3-publish.yml` | Keep; release lane | D
+| `mirror.yml` | Remove the three failing forges until credentials exist (P0.4) | E
+| `governance.yml` | Keep; governance lane; fix the Hypatia baseline (#314) | E
+| `labels.yml` | Keep; housekeeping | E
+| `label-triage.yml` | Keep; housekeeping | E
+| `pages.yml` | Keep; documentation | E
+|===
+
+The 35 rows match the workflow directory listing (plus `actions.lock`, which is
+not a workflow).
+
+== Appendix B — Reproduction commands
+
+Run from the repository root on the baseline commit. Read-only except where
+noted.
+
+[source,bash]
+----
+# Remote tags and releases
+gh api repos/hyperpolymath/echidna/tags --jq '.[].name'
+gh api repos/hyperpolymath/echidna/releases/latest --jq .tag_name
+
+# Commit history since July, by author type
+gh api --paginate 'repos/hyperpolymath/echidna/commits?sha=main&since=2026-07-01T00:00:00Z&per_page=100' \
+  --jq '.[]|(.author.login // .commit.author.name)' | sort | uniq -c
+
+# Recent runs (for section 4.1)
+gh run list --limit 400 --json name,conclusion,headSha,event,createdAt,startedAt,updatedAt
+
+# Live rulesets and their required contexts
+gh api repos/hyperpolymath/echidna/rulesets --jq '.[]|[.id,.name,.enforcement]|@tsv'
+gh api repos/hyperpolymath/echidna/rulesets/23852649
+
+# Issues and ages
+gh issue list --state open --limit 300 --json number,title,createdAt,comments,labels
+
+# Integrity fail-open
+grep -n 'Uninitialized' src/rust/integrity/solver_integrity.rs
+grep -rn 'integrity_checker' src/rust/dispatch.rs
+grep -c 'PLACEHOLDER' config/solver-manifest.toml
+
+# Sandbox and certificate are written but never read
+grep -rn -i 'sandbox' src/rust crates --include=*.rs | grep -v '^src/rust/executor/'
+grep -rn -i 'certificate' src/rust/dispatch.rs src/rust/main.rs src/rust/server.rs
+
+# Raw subprocess calls in backends
+grep -l 'Command::new' src/rust/provers/*.rs | wc -l
+
+# Toolchain install verification (expected: 0)
+grep -c -i 'sha256\|sha512\|gpg' scripts/install-proof-toolchains.sh scripts/install-provers.sh
+grep -c -i 'curl\|wget' .containerization/Containerfile.wave3
+
+# Rulesets: contexts, bypass actors, pull-request review rules
+gh api repos/hyperpolymath/echidna/rulesets/22415566 --jq '.rules[].type'
+gh api repos/hyperpolymath/echidna/rulesets/24309043 --jq '.bypass_actors'
+
+# Dead-code silencing
+grep -rln '#!\[allow(dead_code)\]' src | wc -l
+
+# Verdict path
+grep -n 'verify_proof\|\.check(' src/rust/main.rs src/rust/dispatch.rs | head
+
+# Unauthenticated execution endpoint
+grep -n 'verify_raw_handler' -A10 src/rust/server.rs | head -30
+grep -n 'AutoUpdate\|Image=' deploy/hetzner/echidna.container
+
+# Proof escape hatches (grep level)
+grep -rn 'believe_me\|assert_total' src/abi
+grep -rln 'postulate' proofs/agda | wc -l
+grep -rln 'sorry\|Admitted\|Axiom' proofs/lean proofs/coq | wc -l
+
+# SPARK gate and gnatprove
+grep -rl 'gnatprove' .github/workflows | wc -l
+grep -n 'enforce_zero_contract' .github/workflows/spark-theatre-gate.yml
+
+# Repository weight
+du -sh training_data models .git
+git ls-files training_data | wc -l
+----
+
+== Appendix C — Where the documents disagree
+
+Each row is a conflict between two sources. The plan resolves it toward the code,
+which is the source of truth for behaviour, and toward the owner's ruling where
+a ruling exists.
+
+[cols="2,3,3", options="header"]
+|===
+| Topic | Source A | Source B
+
+| Sandbox | `README.adoc`: auto-detects Podman or bubblewrap; unsandboxed only with
+  explicit opt-in | The code: `--sandbox` is parsed and never read (L3)
+| Integrity | `CLAUDE.md`: integrity verification is part of the trust pipeline | The
+  code: no production caller; placeholder manifest; fail open (L1)
+| Certificates | `CLAUDE.md`: certificates are generated and checked | The code: never
+  generated (L2)
+| Verdict | ROADMAP endpoint: results are never silently wrong | The CLI: a
+  missing library path reads as "invalid" (L4)
+| SPARK | ROADMAP Stage 8c: formally verified kernel | The workflow: gate runs
+  with enforcement off; no `gnatprove` in CI (L5)
+| Tier 4 | `docs/PROVER_COUNT.adoc`: placeholder or smoke only | The code: real
+  invocation in five backends (L6)
+| UI | ROADMAP: at least 33 modules | The tree: four files; build exits 1 (L7)
+| Hypatia baseline | `#314` (title): generate the baseline to grandfather 152 findings | `docs/reports/2026-09-25-issue-maintenance.adoc`: the 152/70 counts are historic, and a blanket re-baseline is forbidden. The repository baseline holds 71 entries
+| Chapel criterion | `docs/handover/TODO.adoc`: 1.5× on eight or more cores | #161 (real-corpus speedup bench) states no threshold
+| DEBT status | `docs/DEBT.adoc` C4 (Dogfood Gate failing) and C5 (Rust CI test
+  failures) | Current CI: Dogfood Gate 16 of 18 green; Rust CI 15 of 19 green
+| Debt register location | `docs/tech-debt-2026-05-26.adoc`: DEBT.md is the live register | No root `DEBT.md` in the tree; the live register is `docs/DEBT.adoc`
+| Maintainer | `MAINTAINERS`: Metadatastician as primary | `MAINTAINERS.adoc`: Jonathan D.A. Jewell
+| Server port | `CLAUDE.md`: REST on port 8000, GraphQL on port 8081 | The `server` command's default is 127.0.0.1:8081 (`main.rs` L165–170). Whether REST and GraphQL share that port was not verified.
+| D40 ruleset | standards#787 D40: ruleset 14285635, context "Idris2 — a2ml proofs" | This repository: neither the ID nor the context exists (L11)
+|===
+
+== Appendix D — What was not verified
+
+* *No local build or test run.* Claims about test pass rates come from CI, not
+  from a local run. The plan's Phase 1 exit includes running the tests.
+* *Security alerts unavailable.* Code-scanning, Dependabot, and secret-scanning
+  alert APIs return 403 for this integration. The alert backlog is unknown, and
+  the security posture section relies on the code and the configuration.
+* *Branch protection API unavailable.* 403 on `branches/main/protection`. The
+  live rulesets were read instead. Any classic branch-protection rules are not
+  covered by this plan.
+* *Local history is a single squashed commit.* Commit history and author
+  statistics come from the API. File modification dates in the working tree
+  reflect checkout, not authorship.
+* *Workflow dispositions are proposals.* Appendix A is based on file names,
+  triggers, and run statistics. Files were not all read in full.
+* *Tier-4 behaviour is undecided.* Whether the five backends in L6 work is a
+  live-run question, not a code-reading question.
+* *Learning-loop impact is inferred.* Section 3.4 follows from the code paths.
+  The effect on recorded training data has not been measured (Phase 1.9).
+* *Cross-repo claims are as stated by those repos.* The valence-shell and
+  echidnabot statements (NW-2, a 30-backend figure versus 12, `--library`
+  roots) are taken from their documents. The valence-shell line 77 claim has
+  not been checked against its script.
+* *Owner rulings are read from standards#787.* Its comments and body were read
+  as recorded. Any ruling made after 2026-10-09 is not reflected.
+* *The external dependency verisimdb-data was not inspected.* The 401 is
+  inferred from #310.

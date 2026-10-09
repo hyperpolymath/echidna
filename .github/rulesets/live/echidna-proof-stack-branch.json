@@ -1,0 +1,64 @@
+{
+  "bypass_actors": [
+    {
+      "actor_id": 5,
+      "actor_type": "RepositoryRole",
+      "bypass_mode": "always"
+    }
+  ],
+  "conditions": {
+    "ref_name": {
+      "exclude": [],
+      "include": [
+        "~DEFAULT_BRANCH"
+      ]
+    }
+  },
+  "enforcement": "active",
+  "id": 22415566,
+  "name": "echidna-proof-stack-branch",
+  "rules": [
+    {
+      "parameters": {
+        "do_not_enforce_on_create": false,
+        "required_status_checks": [
+          {
+            "context": "scan / gitleaks",
+            "integration_id": 15368
+          },
+          {
+            "context": "scan / rust-secrets",
+            "integration_id": 15368
+          },
+          {
+            "context": "scan / shell-secrets",
+            "integration_id": 15368
+          },
+          {
+            "context": "rust-ci / Cargo check + clippy + fmt",
+            "integration_id": 15368
+          },
+          {
+            "context": "rust-ci / Cargo test",
+            "integration_id": 15368
+          },
+          {
+            "context": "rust-ci / Cargo audit (security)",
+            "integration_id": 15368
+          },
+          {
+            "context": "rust-ci / llvm-cov line coverage",
+            "integration_id": 15368
+          },
+          {
+            "context": "CodeQL",
+            "integration_id": 57789
+          }
+        ],
+        "strict_required_status_checks_policy": false
+      },
+      "type": "required_status_checks"
+    }
+  ],
+  "target": "branch"
+}

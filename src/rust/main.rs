@@ -241,7 +241,9 @@ enum CorpusOp {
         /// Path to the project root.
         #[arg(short, long)]
         root: PathBuf,
-        /// Adapter to use (currently only `agda`).
+        /// Adapter to use: agda, coq, lean, idris2, acl2_books, dafny,
+        /// fstar, hol4, hol_light, isabelle, metamath, minif2f, mizar,
+        /// proofnet, smtlib, tptp, why3.
         #[arg(short, long, default_value = "agda")]
         adapter: String,
         /// Where to write the JSON index. Defaults to
@@ -1317,9 +1319,35 @@ fn corpus_command(op: CorpusOp, formatter: &OutputFormatter) -> Result<()> {
                     .with_context(|| format!("lean ingest of {}", root.display()))?,
                 "idris2" | "idris" => corpus::idris2::ingest(&root)
                     .with_context(|| format!("idris2 ingest of {}", root.display()))?,
+                "acl2_books" => corpus::acl2_books::ingest(&root)
+                    .with_context(|| format!("acl2_books ingest of {}", root.display()))?,
+                "dafny" => corpus::dafny::ingest(&root)
+                    .with_context(|| format!("dafny ingest of {}", root.display()))?,
+                "fstar" => corpus::fstar::ingest(&root)
+                    .with_context(|| format!("fstar ingest of {}", root.display()))?,
+                "hol4" => corpus::hol4::ingest(&root)
+                    .with_context(|| format!("hol4 ingest of {}", root.display()))?,
+                "hol_light" => corpus::hol_light::ingest(&root)
+                    .with_context(|| format!("hol_light ingest of {}", root.display()))?,
+                "isabelle" => corpus::isabelle::ingest(&root)
+                    .with_context(|| format!("isabelle ingest of {}", root.display()))?,
+                "metamath" => corpus::metamath::ingest(&root)
+                    .with_context(|| format!("metamath ingest of {}", root.display()))?,
+                "minif2f" => corpus::minif2f::ingest(&root)
+                    .with_context(|| format!("minif2f ingest of {}", root.display()))?,
+                "mizar" => corpus::mizar::ingest(&root)
+                    .with_context(|| format!("mizar ingest of {}", root.display()))?,
+                "proofnet" => corpus::proofnet::ingest(&root)
+                    .with_context(|| format!("proofnet ingest of {}", root.display()))?,
+                "smtlib" => corpus::smtlib::ingest(&root)
+                    .with_context(|| format!("smtlib ingest of {}", root.display()))?,
+                "tptp" => corpus::tptp::ingest(&root)
+                    .with_context(|| format!("tptp ingest of {}", root.display()))?,
+                "why3" => corpus::why3::ingest(&root)
+                    .with_context(|| format!("why3 ingest of {}", root.display()))?,
                 other => {
                     return Err(anyhow::anyhow!(
-                        "Unknown corpus adapter '{}' (supported: agda, coq, lean, idris2)",
+                        "Unknown corpus adapter '{}' (supported: agda, coq, lean, idris2, acl2_books, dafny, fstar, hol4, hol_light, isabelle, metamath, minif2f, mizar, proofnet, smtlib, tptp, why3)",
                         other
                     ))
                 },

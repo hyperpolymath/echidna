@@ -78,12 +78,13 @@ jobs:
           ref: ${{ github.ref }}
 
       - name: Install Rust toolchain
-        # `toolchain:` is mandatory because the action is pinned by commit SHA:
+        # `toolchain:` is mandatory because the ref is `@v1` (pinned to a commit
+        # through actions.lock), not a toolchain name:
         # dtolnay/rust-toolchain infers the toolchain from the `@`-ref (e.g.
         # `@stable`), but a SHA ref carries no version, so the action's "parse
         # toolchain version" step fails with `'toolchain' is a required input`.
         # See standards estate-wide rust-ci red.
-        uses: dtolnay/rust-toolchain@master
+        uses: dtolnay/rust-toolchain@v1
         with:
           toolchain: stable
           components: clippy, rustfmt
@@ -132,7 +133,7 @@ jobs:
 
       - name: Install Rust toolchain
         # `toolchain:` mandatory under SHA pin — see Cargo check job above.
-        uses: dtolnay/rust-toolchain@master
+        uses: dtolnay/rust-toolchain@v1
         with:
           toolchain: stable
 
@@ -183,7 +184,7 @@ jobs:
 
       - name: Install Rust toolchain
         # `toolchain:` mandatory under SHA pin — see Cargo check job above.
-        uses: dtolnay/rust-toolchain@master
+        uses: dtolnay/rust-toolchain@v1
         with:
           toolchain: stable
 
@@ -219,7 +220,7 @@ jobs:
 
       - name: Install Rust toolchain
         # `toolchain:` mandatory under SHA pin — see Cargo check job above.
-        uses: dtolnay/rust-toolchain@master
+        uses: dtolnay/rust-toolchain@v1
         with:
           toolchain: stable
           components: llvm-tools-preview
