@@ -49,17 +49,25 @@ Each issue file contains:
 **Purpose**: Issue template with embedded issues list
 
 **Contents**:
-- EB-01: feat(dispatcher) - adaptive portfolio timeout and solver selection
+- EB-01: feat(dispatcher) - adaptive portfolio timeout and solver selection (filed as [#177](https://github.com/hyperpolymath/echidnabot/issues/177))
 - Navigation section linking to the master roadmap
 - Cross-references to echidna ECH-01 through ECH-04
 
 **GitHub URL**: `https://github.com/hyperpolymath/echidnabot/blob/main/.github/ISSUE_TEMPLATE/feature_request.yml`
 
-#### proof-burrower Repository (Planned)
+#### proof-burrower Repository
 
-**Note**: The issue files for proof-burrower (PB-01, PB-02) are referenced in the master roadmap but the actual markdown files need to be created in the proof-burrower repository at:
-- `.github/issues/proof-burrower-01-combinatorial-tactic-synthesis.md`
-- `.github/issues/proof-burrower-02-ledger-fitness-formulation.md`
+**Location**: Issues filed in hyperpolymath/proof-burrower repository
+
+**Issues**:
+- PB-01: feat(swarm) - combinatorial tactic playbook synthesis ([#108](https://github.com/hyperpolymath/proof-burrower/issues/108))
+- PB-02: feat(ledger) - anti-pattern mining and objective fitness formulation ([#109](https://github.com/hyperpolymath/proof-burrower/issues/109))
+
+**Status**: Both issues filed and ready for implementation
+
+**GitHub URLs**:
+- PB-01: https://github.com/hyperpolymath/proof-burrower/issues/108
+- PB-02: https://github.com/hyperpolymath/proof-burrower/issues/109
 
 ## Traceability for Humans
 
@@ -135,15 +143,15 @@ All cross-repo links use **absolute GitHub URLs**:
 ### ✅ echidnabot Repository
 - [x] Feature template exists: `.github/ISSUE_TEMPLATE/feature_request.yml`
 - [x] EB-01 issue is documented in the template
+- [x] EB-01 filed as GitHub issue [#177](https://github.com/hyperpolymath/echidnabot/issues/177)
 - [x] Navigation links to master roadmap
 - [x] Cross-references to echidna issues
 
-### ⏳ proof-burrower Repository (To Do)
-- [ ] Create `.github/issues/` directory
-- [ ] Create `proof-burrower-01-combinatorial-tactic-synthesis.md`
-- [ ] Create `proof-burrower-02-ledger-fitness-formulation.md`
-- [ ] Add cross-references to echidna issues
-- [ ] Add navigation links to master roadmap
+### ✅ proof-burrower Repository
+- [x] PB-01 filed as GitHub issue [#108](https://github.com/hyperpolymath/proof-burrower/issues/108)
+- [x] PB-02 filed as GitHub issue [#109](https://github.com/hyperpolymath/proof-burrower/issues/109)
+- [x] Cross-references to echidna issues added
+- [x] All claims verified against upstream (be897dd07e1a16014f2d0f8d9cbedffb0240dd4a)
 
 ## Query Paths
 
@@ -196,7 +204,8 @@ cat .github/issues/echidna-01-pareto-moeo.md
 
 ---
 
-**Document Version**: 1.0  
+**Document Version**: 1.1  
 **Last Updated**: 2026-10-09  
 **Owner**: hyperpolymath/echidna maintainers  
 **Related**: [ROADMAP-PARADISEO.md](./ROADMAP-PARADISEO.md)
+**GitHub Issues Filed**: ECH-01→#420, ECH-02→#421, ECH-03→#422, ECH-04→#424, PB-01→#108, PB-02→#109, EB-01→#177
