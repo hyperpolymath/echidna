@@ -212,9 +212,10 @@ kernel‑checked translation. `+ResultArbiter+` grades each verdict
 (ECH‑05), so a synonym collision cannot reach `+sound+`; dispatch attaches
 no evidence yet, so every dispatched verdict is `+belief+`
 |*A `+KernelTranslation+` certificate is producible for a named backend
-pair*, and a verdict on that pair reaches `+sound+`. First candidate:
-HOL4 ↔ HOL Light through OpenTheory (6a); then Lean 4 ↔ Rocq through
-Dedukti (6b). Pair table: `+docs/design/ADVANCED_TYPING_GAP_ANALYSIS.adoc+`
+pair*, and a verdict on that pair reaches `+sound+`. First target (owner
+decision, 2026-10-14): HOL4 ↔ HOL Light through OpenTheory (6a); next
+candidate Lean 4 ↔ Rocq through Dedukti (6b). Pair table:
+`+docs/design/ADVANCED_TYPING_GAP_ANALYSIS.adoc+`
 § "Backend pairs that can share a term"
 |===
 
