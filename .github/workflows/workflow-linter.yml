@@ -36,11 +36,8 @@ jobs:
       - name: Allow-fail units have an owner and an unexpired date
         run: bash scripts/ci/check-allow-fail-expiry.sh
 
-      - name: Verify immutable action lockfile with the authoritative tool
-        env:
-          GH_TOKEN: ${{ github.token }}
-        run: |
-          curl -fsSL --retry 3 -o "$RUNNER_TEMP/gh-actions-lock" https://github.com/github/gh-actions-lock/releases/download/v0.1.6/linux-amd64
-          echo "4181ec1da5408b34b9a542a7ee5c6ce3a4d6ac815c7d0206a00ceca8a817f4e3  $RUNNER_TEMP/gh-actions-lock" | sha256sum --check
-          chmod u+x "$RUNNER_TEMP/gh-actions-lock"
-          "$RUNNER_TEMP/gh-actions-lock" --rescan --no-fix
+      # actions.lock is verified by governance's lockfile check (standards
+      # scripts/update-actions-lock.sh): one tested implementation, one
+      # gh-actions-lock pin, and it accepts reusable-workflow coverage. The step
+      # that stood here pinned its own v0.1.6 binary, which cannot read
+      # lockfile v0.0.3, so it failed whenever a current tool wrote the lock.
