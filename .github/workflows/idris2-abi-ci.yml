@@ -11,6 +11,8 @@ on:
     paths:
       - 'src/abi/**'
       - 'src/idris/**'
+      - 'tests/abi/**'
+      - 'scripts/abi-fixtures.sh'
       - '.github/workflows/idris2-abi-ci.yml'
   # No paths-filter on pull_request: this job is a REQUIRED status check, so it
   # must report on every PR (a path-filtered required check deadlocks PRs that
@@ -44,7 +46,7 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         run: |
           set -euo pipefail
-          PATTERN='^(src/abi/|src/idris/)'
+          PATTERN='^(src/abi/|src/idris/|tests/abi/|scripts/abi-fixtures\.sh$)'
           if [ "${{ github.event_name }}" = "pull_request" ]; then
             FILES=$(gh api "repos/${{ github.repository }}/pulls/${{ github.event.pull_request.number }}/files" \
                       --paginate --jq '.[].filename')
@@ -92,6 +94,13 @@ jobs:
           echo "=== Type-checking ECHIDNA ABI package (16 modules) ==="
           idris2 --build echidnaabi.ipkg
           echo "✓ All ABI modules type-check successfully"
+
+      - name: Accept/reject fixtures (mechanical falsifier)
+        if: steps.detect.outputs.relevant == 'true'
+        run: |
+          # tests/abi/accept must type-check; tests/abi/reject must be refused
+          # with a unification error (each reject mirrors one accept fixture).
+          bash scripts/abi-fixtures.sh
 
       - name: Type-check Idris2 proof validator (src/idris)
         if: steps.detect.outputs.relevant == 'true'

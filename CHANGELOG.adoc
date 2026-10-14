@@ -8,6 +8,24 @@ https://semver.org/spec/v2.0.0.html[Semantic Versioning].
 
 === [Unreleased]
 
+==== Added — arbitration 2026-10-14 (ECH-05)
+
+* *Fidelity-levelled arbitration*: `+ProverAttempt+` carries
+`+FidelityEvidence+` (`+KernelTranslation+` / `+DeclaredCorrespondence+` /
+`+None+`) and `+ArbitratedVerdict+` gains `+level+` (`+belief+` / `+epi+` /
+`+sound+`), `+retracted+` and `+warranted_term+`. `+sound+` needs every
+fused attempt to be a kernel-checked translation to one exchange-layer
+term (`+exchange::term_hash+`); a synonym collision stays `+belief+`
+however many backends agree. `+ResultArbiter::retract+` marks a backend
+unsound and lowers every verdict that rested on it. Numeric fusion is
+unchanged: `+tests/arbitration_regression_test.rs+` replays the
+pre-change numbers. Dispatch attaches no evidence yet, so dispatched
+verdicts are `+belief+`.
+* *`+EchidnaABI.Arbitration+`* (Idris2): the three-level verdict as a
+closed sum whose `+Sound+` constructor carries the hash-equality proofs,
+with the classifier and its properties; `+tests/abi/{accept,reject}+`
+fixtures checked by `+scripts/abi-fixtures.sh+` in `+idris2-abi-ci.yml+`.
+
 ==== Added — integrations 2026-10-05
 
 * *`+echidna prove --output json+`*: prints exactly one

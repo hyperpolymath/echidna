@@ -311,6 +311,11 @@ proofs-verif-idris:
     fi
     echo "Idris2 verification corpus: all files type-check"
 
+# Accept fixtures must type-check, reject fixtures must be refused (tests/abi).
+# Type-check the Idris2 ABI accept/reject fixtures (mechanical falsifier).
+abi-fixtures:
+    bash scripts/abi-fixtures.sh
+
 # Heavy (downloads the ~500MB Isabelle release), so this is gated by the weekly
 # verification-proofs-cron workflow, not the per-PR `proofs` rollup. Covers the
 # base-HOL theories; algebra/GroupTheory.thy is excluded (see proofs/isabelle/ROOT).

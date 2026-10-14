@@ -26,6 +26,32 @@
 //! - `InconsistentPremises` from any prover sets `suspect_premises`
 //!   (and `needs_review`): an unqualified PROVED over inconsistent
 //!   premises is epistemically worthless.
+//!
+//! # Fidelity level (ECH-05)
+//!
+//! Agreement between backends says nothing about whether they proved
+//! the *same* statement: N re-proofs of N lexically aligned statements
+//! are N warrants for N propositions. Each [`ProverAttempt`] therefore
+//! carries [`FidelityEvidence`] that its formal statement denotes the
+//! source claim, and [`ArbitratedVerdict::level`] grades the fused
+//! verdict by that evidence ([`fidelity_level`]):
+//!
+//! - `Belief` if the verdict needs review, rests on a retracted backend
+//!   ([`ResultArbiter::retract`]), or any attempt carries
+//!   [`FidelityEvidence::None`]; also when no attempt was fused.
+//! - `Sound` only if every fused attempt carries a
+//!   [`FidelityEvidence::KernelTranslation`] and all of them name the
+//!   same exchange-layer `term_hash`.
+//! - `Epi` if every fused attempt is a kernel translation or a
+//!   [`FidelityEvidence::DeclaredCorrespondence`] with at least one
+//!   consequence test and zero failures, and the kernel translations
+//!   agree on the term.
+//! - `Belief` otherwise — in particular when two kernel translations
+//!   name different terms (a synonym collision).
+//!
+//! The level sits on top of the numeric fusion, which is unchanged:
+//! `tests/arbitration_regression_test.rs` replays the pre-ECH-05 numbers.
+//! The Idris2 statement of the levels is `src/abi/EchidnaABI/Arbitration.idr`.
 
 use serde::{Deserialize, Serialize};
 
@@ -36,25 +62,80 @@ use super::dempster_shafer::{
 };
 use super::pareto_arbiter::{AttemptOutcome, ParetoArbiter};
 use super::portfolio::{PortfolioConfidence, PortfolioSolver, SolverResult};
+use crate::exchange::ExchangeFormat;
 use crate::provers::outcome::ProverOutcome;
 use crate::provers::ProverKind;
 
+/// Evidence that a backend's formal statement denotes the source claim.
+#[derive(Debug, Clone, PartialEq, Eq, Default, Serialize, Deserialize)]
+#[serde(tag = "kind", rename_all = "snake_case")]
+pub enum FidelityEvidence {
+    /// The statement was translated through the exchange layer and the
+    /// translation was checked by `checked_by`'s kernel. `term_hash`
+    /// names the exchange-layer term (see [`crate::exchange::term_hash`]).
+    KernelTranslation {
+        format: ExchangeFormat,
+        checked_by: ProverKind,
+        term_hash: String,
+    },
+    /// A declared correspondence (e.g. a synonym-table alignment) that
+    /// was checked by consequence testing: `failures` of
+    /// `consequence_tests` consequences of the source claim were not
+    /// consequences of the formal statement, or vice versa.
+    DeclaredCorrespondence {
+        consequence_tests: u32,
+        failures: u32,
+    },
+    /// No evidence beyond the goal the backend was handed (lexical
+    /// alignment at best). Caps the arbitrated level at `Belief`.
+    #[default]
+    None,
+}
+
+/// How far an arbitrated verdict is warranted for the source claim.
+/// Ordered `Belief < Epi < Sound`.
+#[derive(
+    Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash, Default, Serialize, Deserialize,
+)]
+#[serde(rename_all = "snake_case")]
+pub enum EpistemicLevel {
+    /// Agreement without a fidelity map to the source claim.
+    #[default]
+    Belief,
+    /// Every fused attempt has fidelity evidence, not all of it a
+    /// kernel-checked translation.
+    Epi,
+    /// Every fused attempt is a kernel-checked translation to one
+    /// exchange-layer term.
+    Sound,
+}
+
 /// One prover's contribution to arbitration: which backend ran, what it
-/// concluded, and how long it took.
+/// concluded, how long it took, and the evidence that its statement is
+/// the source claim.
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct ProverAttempt {
     pub prover: ProverKind,
     pub outcome: ProverOutcome,
     pub elapsed_ms: u64,
+    #[serde(default)]
+    pub fidelity: FidelityEvidence,
 }
 
 impl ProverAttempt {
+    /// An attempt with no fidelity evidence.
     pub fn new(prover: ProverKind, outcome: ProverOutcome, elapsed_ms: u64) -> Self {
         Self {
             prover,
             outcome,
             elapsed_ms,
+            fidelity: FidelityEvidence::None,
         }
+    }
+
+    pub fn with_fidelity(mut self, fidelity: FidelityEvidence) -> Self {
+        self.fidelity = fidelity;
+        self
     }
 }
 
@@ -114,6 +195,18 @@ pub struct ArbitratedVerdict {
     pub recommended: Option<ProverKind>,
     /// The policy that produced this verdict.
     pub policy: ArbitrationPolicy,
+    /// How far `verdict` is warranted for the source claim, from the
+    /// attempts' fidelity evidence (see [`fidelity_level`]).
+    #[serde(default)]
+    pub level: EpistemicLevel,
+    /// Retracted backends among the fused attempts; non-empty forces
+    /// `level` to `Belief`.
+    #[serde(default)]
+    pub retracted: Vec<ProverKind>,
+    /// The exchange-layer term hash all fused attempts share; set only
+    /// when `level` is `Sound`.
+    #[serde(default)]
+    pub warranted_term: Option<String>,
 }
 
 /// Map a rich prover outcome onto the arbitration verdict frame.
@@ -135,6 +228,58 @@ pub fn outcome_to_verdict(outcome: &ProverOutcome) -> Verdict {
     }
 }
 
+/// The ECH-05 levelling policy (see the module docs). `attempts` is the
+/// whole arbitration input, `fused` the attempts whose verdict was fused
+/// into the winning one, and `blocked` is true when the verdict needs
+/// review or rests on a retracted backend. Returns the level and, at
+/// `Sound`, the shared term hash.
+///
+/// Mirrors `level` in `src/abi/EchidnaABI/Arbitration.idr` (by review; no
+/// test ties the two).
+pub fn fidelity_level(
+    attempts: &[ProverAttempt],
+    fused: &[&ProverAttempt],
+    blocked: bool,
+) -> (EpistemicLevel, Option<String>) {
+    if blocked
+        || fused.is_empty()
+        || attempts
+            .iter()
+            .any(|a| a.fidelity == FidelityEvidence::None)
+    {
+        return (EpistemicLevel::Belief, None);
+    }
+
+    let mut term: Option<&str> = None;
+    let mut all_kernel = true;
+    for a in fused {
+        match &a.fidelity {
+            FidelityEvidence::KernelTranslation { term_hash, .. } => {
+                if term_hash.is_empty() || term.is_some_and(|t| t != term_hash) {
+                    return (EpistemicLevel::Belief, None);
+                }
+                term = Some(term_hash);
+            },
+            FidelityEvidence::DeclaredCorrespondence {
+                consequence_tests,
+                failures,
+            } => {
+                if *consequence_tests == 0 || *failures > 0 {
+                    return (EpistemicLevel::Belief, None);
+                }
+                all_kernel = false;
+            },
+            FidelityEvidence::None => return (EpistemicLevel::Belief, None),
+        }
+    }
+
+    if all_kernel {
+        (EpistemicLevel::Sound, term.map(str::to_owned))
+    } else {
+        (EpistemicLevel::Epi, None)
+    }
+}
+
 /// Policy-driven result arbiter. Construct once per dispatch with the
 /// configured policy and the per-prover timeout (used by the
 /// Dempster-Shafer mass helpers to discount near-timeout verdicts).
@@ -142,11 +287,31 @@ pub fn outcome_to_verdict(outcome: &ProverOutcome) -> Verdict {
 pub struct ResultArbiter {
     policy: ArbitrationPolicy,
     timeout_ms: u64,
+    retracted: Vec<ProverKind>,
 }
 
 impl ResultArbiter {
     pub fn new(policy: ArbitrationPolicy, timeout_ms: u64) -> Self {
-        Self { policy, timeout_ms }
+        Self {
+            policy,
+            timeout_ms,
+            retracted: Vec::new(),
+        }
+    }
+
+    /// Mark `prover` unsound. Every later verdict that fuses one of its
+    /// attempts drops to `Belief`; verdicts that do not rest on it keep
+    /// their level. The numeric fusion still counts its vote — drop the
+    /// attempt and re-arbitrate to fuse without it.
+    pub fn retract(&mut self, prover: ProverKind) {
+        if !self.retracted.contains(&prover) {
+            self.retracted.push(prover);
+        }
+    }
+
+    /// Backends marked unsound via [`Self::retract`].
+    pub fn retracted(&self) -> &[ProverKind] {
+        &self.retracted
     }
 
     /// Arbitrate a set of attempts on the same goal into one verdict.
@@ -307,6 +472,25 @@ impl ResultArbiter {
             .recommended
             .map(|o| o.prover);
 
+        // Fidelity level over the fused attempts — the ones whose
+        // conclusive verdict is the winning one.
+        let needs_review = policy_needs_review || suspect_premises;
+        let fused: Vec<&ProverAttempt> = attempts
+            .iter()
+            .filter(|a| {
+                matches!(verdict, Verdict::Proven | Verdict::Refuted)
+                    && outcome_to_verdict(&a.outcome) == verdict
+            })
+            .collect();
+        let mut retracted: Vec<ProverKind> = Vec::new();
+        for a in &fused {
+            if self.retracted.contains(&a.prover) && !retracted.contains(&a.prover) {
+                retracted.push(a.prover);
+            }
+        }
+        let (level, warranted_term) =
+            fidelity_level(attempts, &fused, needs_review || !retracted.is_empty());
+
         ArbitratedVerdict {
             verdict,
             verified,
@@ -314,13 +498,16 @@ impl ResultArbiter {
             agreeing,
             disagreeing,
             inconclusive,
-            needs_review: policy_needs_review || suspect_premises,
+            needs_review,
             conflict,
             suspect_premises,
             posterior,
             belief,
             recommended,
             policy: self.policy,
+            level,
+            retracted,
+            warranted_term,
         }
     }
 }
@@ -477,5 +664,149 @@ mod tests {
         let back: ArbitratedVerdict = serde_json::from_str(&json).unwrap();
         assert_eq!(back.verified, v.verified);
         assert_eq!(back.needs_review, v.needs_review);
+    }
+
+    // --- ECH-05 fidelity level -------------------------------------------
+
+    fn kernel(term_hash: &str) -> FidelityEvidence {
+        FidelityEvidence::KernelTranslation {
+            format: ExchangeFormat::Dedukti,
+            checked_by: ProverKind::Dedukti,
+            term_hash: term_hash.into(),
+        }
+    }
+
+    fn correspondence(consequence_tests: u32, failures: u32) -> FidelityEvidence {
+        FidelityEvidence::DeclaredCorrespondence {
+            consequence_tests,
+            failures,
+        }
+    }
+
+    fn level_of(attempts: &[ProverAttempt]) -> ArbitratedVerdict {
+        arbiter(ArbitrationPolicy::Portfolio).arbitrate(attempts)
+    }
+
+    #[test]
+    fn no_fidelity_evidence_is_belief() {
+        let v = level_of(&[proved(ProverKind::Z3, 100), proved(ProverKind::CVC5, 200)]);
+        assert_eq!(v.confidence, PortfolioConfidence::CrossChecked);
+        assert_eq!(v.level, EpistemicLevel::Belief);
+        assert_eq!(v.warranted_term, None);
+    }
+
+    #[test]
+    fn kernel_translations_to_one_term_are_sound() {
+        let v = level_of(&[
+            proved(ProverKind::Lean, 900).with_fidelity(kernel("h1")),
+            proved(ProverKind::Isabelle, 1_200).with_fidelity(kernel("h1")),
+        ]);
+        assert_eq!(v.level, EpistemicLevel::Sound);
+        assert_eq!(v.warranted_term.as_deref(), Some("h1"));
+    }
+
+    #[test]
+    fn kernel_translations_to_different_terms_are_belief() {
+        let v = level_of(&[
+            proved(ProverKind::Lean, 900).with_fidelity(kernel("h1")),
+            proved(ProverKind::Isabelle, 1_200).with_fidelity(kernel("h2")),
+        ]);
+        assert_eq!(v.verified, Some(true), "numeric fusion is untouched");
+        assert_eq!(v.level, EpistemicLevel::Belief);
+    }
+
+    #[test]
+    fn empty_term_hash_is_not_a_certificate() {
+        let v = level_of(&[
+            proved(ProverKind::Lean, 900).with_fidelity(kernel("")),
+            proved(ProverKind::Isabelle, 1_200).with_fidelity(kernel("")),
+        ]);
+        assert_eq!(v.level, EpistemicLevel::Belief);
+    }
+
+    #[test]
+    fn tested_correspondence_without_failures_is_epi() {
+        let v = level_of(&[
+            proved(ProverKind::Lean, 900).with_fidelity(kernel("h1")),
+            proved(ProverKind::Coq, 1_100).with_fidelity(correspondence(12, 0)),
+        ]);
+        assert_eq!(v.level, EpistemicLevel::Epi);
+        assert_eq!(v.warranted_term, None);
+    }
+
+    #[test]
+    fn failed_or_untested_correspondence_is_belief() {
+        for evidence in [correspondence(12, 1), correspondence(0, 0)] {
+            let v = level_of(&[
+                proved(ProverKind::Lean, 900).with_fidelity(correspondence(12, 0)),
+                proved(ProverKind::Coq, 1_100).with_fidelity(evidence),
+            ]);
+            assert_eq!(v.level, EpistemicLevel::Belief);
+        }
+    }
+
+    #[test]
+    fn any_attempt_without_evidence_caps_at_belief() {
+        // The timed-out attempt is not fused, but it carries no evidence.
+        let v = level_of(&[
+            proved(ProverKind::Lean, 900).with_fidelity(kernel("h1")),
+            proved(ProverKind::Isabelle, 1_200).with_fidelity(kernel("h1")),
+            timeout(ProverKind::Vampire),
+        ]);
+        assert_eq!(v.verified, Some(true));
+        assert_eq!(v.level, EpistemicLevel::Belief);
+    }
+
+    #[test]
+    fn a_verdict_needing_review_is_belief() {
+        let v = arbiter(ArbitrationPolicy::Bayesian { prior_p_true: 0.5 }).arbitrate(&[
+            proved(ProverKind::Lean, 900).with_fidelity(kernel("h1")),
+            no_proof(ProverKind::Coq, 200).with_fidelity(kernel("h1")),
+        ]);
+        assert!(v.needs_review);
+        assert_eq!(v.level, EpistemicLevel::Belief);
+    }
+
+    #[test]
+    fn retracting_a_fused_backend_lowers_the_level() {
+        let attempts = [
+            proved(ProverKind::Lean, 900).with_fidelity(kernel("h1")),
+            proved(ProverKind::Isabelle, 1_200).with_fidelity(kernel("h1")),
+        ];
+        let mut a = arbiter(ArbitrationPolicy::Portfolio);
+        assert_eq!(a.arbitrate(&attempts).level, EpistemicLevel::Sound);
+
+        a.retract(ProverKind::Lean);
+        a.retract(ProverKind::Lean);
+        assert_eq!(a.retracted(), &[ProverKind::Lean]);
+        let v = a.arbitrate(&attempts);
+        assert_eq!(v.level, EpistemicLevel::Belief);
+        assert_eq!(v.retracted, vec![ProverKind::Lean]);
+        assert_eq!(v.verified, Some(true), "numeric fusion is untouched");
+    }
+
+    #[test]
+    fn levels_are_ordered() {
+        assert!(EpistemicLevel::Belief < EpistemicLevel::Epi);
+        assert!(EpistemicLevel::Epi < EpistemicLevel::Sound);
+    }
+
+    #[test]
+    fn pre_ech05_json_reads_back_at_belief() {
+        let attempt: ProverAttempt = serde_json::from_str(
+            r#"{"prover":"Z3","outcome":{"status":"PROVED","elapsed_ms":5},"elapsed_ms":5}"#,
+        )
+        .unwrap();
+        assert_eq!(attempt.fidelity, FidelityEvidence::None);
+
+        let v = level_of(&[proved(ProverKind::Z3, 100)]);
+        let mut json = serde_json::to_value(&v).unwrap();
+        let obj = json.as_object_mut().unwrap();
+        for k in ["level", "retracted", "warranted_term"] {
+            obj.remove(k);
+        }
+        let back: ArbitratedVerdict = serde_json::from_value(json).unwrap();
+        assert_eq!(back.level, EpistemicLevel::Belief);
+        assert!(back.retracted.is_empty());
     }
 }

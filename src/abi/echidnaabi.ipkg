@@ -21,6 +21,7 @@ depends = base
 modules = EchidnaABI.AxiomTracker
         , EchidnaABI.Gnn
         , EchidnaABI.TacticRecord
+        , EchidnaABI.Arbitration
         , EchidnaABI.Types
         , EchidnaABI.Layout
         , EchidnaABI.Foreign

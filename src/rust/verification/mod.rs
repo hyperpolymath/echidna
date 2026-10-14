@@ -58,5 +58,8 @@ pub use portfolio::{PortfolioConfig, PortfolioResult, PortfolioSolver};
 pub use proof::{
     theorem_identity, Proof, ProofStateRecord, ProofVersion, TacticApplication, TacticStatus,
 };
-pub use result_arbiter::{ArbitratedVerdict, ArbitrationPolicy, ProverAttempt, ResultArbiter};
+pub use result_arbiter::{
+    ArbitratedVerdict, ArbitrationPolicy, EpistemicLevel, FidelityEvidence, ProverAttempt,
+    ResultArbiter,
+};
 pub use statistics::{StatisticsTracker, StatsSummaryRecord};

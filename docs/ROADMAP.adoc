@@ -108,6 +108,12 @@ Stage 6  Cross‑prover semantics             translation actually works
     6b  Dedukti bridge real                 λΠ modulo as lingua franca
     6c  mathematical identity arbitration   canonicalise across representations
     6d  Coursera delivery                   Zig ABI exposes capability
+    acceptance (ECH‑05)                     a KernelTranslation certificate
+                                            is producible for a named backend
+                                            pair; arbitration already levels
+                                            verdicts belief / epi / sound by
+                                            that evidence (row "Cross‑prover
+                                            semantics" in §3)
 
 Stage 7  Sovereign tooling surround         the rest of the ecosystem
     7a  Stapeln container lifecycle
@@ -198,6 +204,18 @@ schema; nightly CI ≥ 1 h; zero known panic paths
 orphans, verified 2026‑04‑27) |*`+ProverKind+` ≥ 65 variants, every one
 factory‑dispatched*; CLAUDE.md states the canonical count; no orphans —
 *target met and exceeded*
+
+|"`Cross‑prover semantics`" |The exchange bridges
+(`+src/rust/exchange/+`) parse and emit their formats; none produces a
+kernel‑checked translation. `+ResultArbiter+` grades each verdict
+`+belief+` / `+epi+` / `+sound+` by per‑attempt `+FidelityEvidence+`
+(ECH‑05), so a synonym collision cannot reach `+sound+`; dispatch attaches
+no evidence yet, so every dispatched verdict is `+belief+`
+|*A `+KernelTranslation+` certificate is producible for a named backend
+pair*, and a verdict on that pair reaches `+sound+`. First candidate:
+HOL4 ↔ HOL Light through OpenTheory (6a); then Lean 4 ↔ Rocq through
+Dedukti (6b). Pair table: `+docs/design/ADVANCED_TYPING_GAP_ANALYSIS.adoc+`
+§ "Backend pairs that can share a term"
 |===
 
 === 4. Current sprint — "`the smallest set that flips half the table`"

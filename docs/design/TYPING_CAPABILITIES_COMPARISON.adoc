@@ -194,7 +194,11 @@ comparing:
 ==== What We Provide That Single Systems Cannot
 
 * *Cross-System Type Arbitration*: Determine when types from different
-systems are equivalent
+systems are equivalent. Today the arbiter grades each verdict `belief` /
+`epi` / `sound` by per-backend fidelity evidence (ECH-05); `sound` needs a
+kernel-checked shared term, which no backend pair can produce yet. Pair
+table: `ADVANCED_TYPING_GAP_ANALYSIS.adoc`, "Backend pairs that can share
+a term".
 * *Multi-Type-System Proof Routing*: Send proofs to the most appropriate
 type system
 * *Heterogeneous Type Safety*: Ensure type safety across mixed-system

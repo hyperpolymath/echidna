@@ -4,7 +4,8 @@ SPDX-License-Identifier: CC-BY-SA-4.0
 
 # Issue specifications
 
-Drafted issue specifications for the ParadisEO metaheuristic integration roadmap.
+Drafted issue specifications: ECH-01..04, PB and EB for the ParadisEO metaheuristic
+integration roadmap; ECH-05 for fidelity-levelled result arbitration.
 Each file is the body for one GitHub issue; the title and labels are in the file header.
 
 To produce an issue body from a file (everything after the `# ` title line, without the SPDX header):
@@ -19,6 +20,7 @@ awk 'f;/^# /{f=1}' issues/<file> | sed '1{/^$/d}' > /tmp/body.md
 | ECH-02 | hyperpolymath/echidna        | #421         | `echidna-02-cmaes-julia-gnn.md`                       |
 | ECH-03 | hyperpolymath/echidna        | #422         | `echidna-03-chapel-island-migration.md`               |
 | ECH-04 | hyperpolymath/echidna        | #424         | `echidna-04-ffi-abi-bridge.md`                        |
+| ECH-05 | hyperpolymath/echidna        | not filed    | `echidna-05-fidelity-evidence.md`                     |
 | PB-01  | hyperpolymath/proof-burrower | not filed    | `proof-burrower-01-combinatorial-tactic-synthesis.md` |
 | PB-02  | hyperpolymath/proof-burrower | not filed    | `proof-burrower-02-ledger-fitness-formulation.md`     |
 | EB-01  | hyperpolymath/echidnabot     | not filed    | `echidnabot-01-adaptive-ci-portfolio-scheduler.md`    |
@@ -28,6 +30,7 @@ awk 'f;/^# /{f=1}' issues/<file> | sed '1{/^$/d}' > /tmp/body.md
 ## Status
 
 - **ECH-01..04** are filed on hyperpolymath/echidna and carry all their labels. On 2026-10-09 their bodies were replaced by hand with a different text that is not these files; the owner decides which is canonical (see `docs/handover/PARADISEO-ROADMAP-PROMPT.adoc`, WP0). `scripts/issues/sync-roadmap-issues.sh` syncs the bodies from these files (dry run by default; refuses to replace hand-edited bodies without `--overwrite`).
+- **ECH-05** is a draft for hyperpolymath/echidna, not filed. Its implementation (fidelity evidence on `ProverAttempt`, `level` on `ArbitratedVerdict`, `EchidnaABI.Arbitration`, the fidelity tests) lands with the PR that adds the file.
 - **PB-01, PB-02, EB-01** are drafts for copying to their own repositories. They are not filed.
 
 ## Provenance of the PB and EB drafts
@@ -46,5 +49,6 @@ Labels named in the drafts that did not exist when they were written (checked 20
 |------------------------------|---------------------------------------------------------------------|
 | hyperpolymath/proof-burrower | `area:swarm`, `rust`, `search-tactics`, `area:ledger`, `heuristics` |
 | hyperpolymath/echidnabot     | `area:dispatcher`, `ci-optimization` (`rust` exists)                |
+| hyperpolymath/echidna        | `area:arbitration`, `area:exchange`, `epistemic-types`, `residual-evidence-types` (ECH-05; checked 2026-10-14) |
 
-All labels used by ECH-01..04 exist on hyperpolymath/echidna.
+All labels used by ECH-01..04 exist on hyperpolymath/echidna; ECH-05's `enhancement` and `idris2` do.
