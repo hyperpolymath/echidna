@@ -244,7 +244,7 @@ certificate for one pair is the ROADMAP stage 6 acceptance.
 |Backend pair |`ExchangeFormat` |External route |In ECHIDNA
 |HOL4 ↔ HOL Light |`open_theory` |OpenTheory articles, both directions;
 checked by the OpenTheory article reader |DESIGNED (`opentheory.rs`
-exports and imports proof states, not checked articles); first candidate
+exports and imports proof states, not checked articles); first target (2026-10-14)
 |Lean 4 ↔ Rocq |`dedukti` / `lambdapi` |Lean and Coq encodings in λΠ
 modulo (Lean4Less/lean4dk, CoqInE); checked by Dedukti or Lambdapi
 |DESIGNED (`dedukti.rs`, `lambdapi.rs` translate syntax only)

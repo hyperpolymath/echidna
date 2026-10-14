@@ -16,6 +16,10 @@
 //! the ECH-05 additions, and every replayed verdict must sit at level
 //! `belief` — the attempts carry no fidelity evidence.
 //!
+//! The fixture is JCS (RFC 8785) I-JSON, the estate format standard;
+//! `fixture_is_jcs_canonical` keeps it that way. It was re-serialised to
+//! JCS after generation without changing any value.
+//!
 //! Regenerate only at a commit whose numbers are the intended reference:
 //!
 //! ```sh
@@ -296,7 +300,21 @@ fn regenerate_arbitration_fixture() {
         "tolerance": TOLERANCE,
         "cases": replay(),
     });
-    let mut out = serde_json::to_string_pretty(&doc).unwrap();
+    // Estate format standard: JCS (RFC 8785) I-JSON, plus the final LF
+    // that .editorconfig requires.
+    let mut out = serde_json_canonicalizer::to_string(&doc).unwrap();
     out.push('\n');
     std::fs::write(FIXTURE, out).expect("write fixture");
+}
+
+#[test]
+fn fixture_is_jcs_canonical() {
+    let raw = std::fs::read_to_string(FIXTURE).expect("fixture present");
+    let body = raw.strip_suffix('\n').expect("fixture ends with one LF");
+    let value: Value = serde_json::from_str(body).expect("fixture is JSON");
+    assert_eq!(
+        body,
+        serde_json_canonicalizer::to_string(&value).unwrap(),
+        "fixture must be JCS (RFC 8785) canonical"
+    );
 }
