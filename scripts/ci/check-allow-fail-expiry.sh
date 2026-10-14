@@ -12,6 +12,11 @@
 # the same literal the runner sees. It does not decide what happens at expiry.
 # A person does (ultraplan Phase 2.3, tracking issue #416).
 #
+# Block YAML and KYAML (YAML-POLICY §3.4) are both read. In KYAML the key may
+# be quoted and the value ends in a comma (`continue-on-error: false, # …`);
+# `yq -o kyaml` keeps the trailing comment on the same line, so the mark
+# survives the conversion.
+#
 # Usage: check-allow-fail-expiry.sh [--today YYYY-MM-DD] [--warn-days N] [DIR ...]
 #
 # Exit codes: 0 all units owned and in date, 1 a unit is unowned, undated,
@@ -67,8 +72,8 @@ for file in "${files[@]}"; do
   while IFS= read -r line || [ -n "$line" ]; do
     lineno=$((lineno + 1))
     # Same shape as the old Python KEY pattern: the key must open the line.
-    [[ $line =~ ^[[:space:]]*continue-on-error:[[:space:]]*(.*)$ ]] || continue
-    value=$(printf '%s' "${BASH_REMATCH[1]}" | sed -E 's/[[:space:]]*(#.*)?$//')
+    [[ $line =~ ^[[:space:]]*\"?continue-on-error\"?:[[:space:]]*(.*)$ ]] || continue
+    value=$(printf '%s' "${BASH_REMATCH[1]}" | sed -E 's/[[:space:]]*(#.*)?$//; s/,$//')
     [ "$value" = "false" ] && continue
 
     units=$((units + 1))
