@@ -1,0 +1,2052 @@
+{
+  "cases": [
+    {
+      "policy": {
+        "mechanism": "portfolio"
+      },
+      "scenario": "unanimous_proven_three",
+      "verdict": {
+        "agreeing": [
+          "Z3",
+          "CVC5",
+          "Vampire"
+        ],
+        "belief": null,
+        "confidence": "CrossChecked",
+        "conflict": 0.0,
+        "disagreeing": [],
+        "inconclusive": [],
+        "needs_review": false,
+        "policy": {
+          "mechanism": "portfolio"
+        },
+        "posterior": null,
+        "recommended": "Z3",
+        "suspect_premises": false,
+        "verdict": "Proven",
+        "verified": true
+      }
+    },
+    {
+      "policy": {
+        "mechanism": "bayesian",
+        "prior_p_true": 0.5
+      },
+      "scenario": "unanimous_proven_three",
+      "verdict": {
+        "agreeing": [
+          "Z3",
+          "CVC5",
+          "Vampire"
+        ],
+        "belief": null,
+        "confidence": "CrossChecked",
+        "conflict": 0.00567268512118722,
+        "disagreeing": [],
+        "inconclusive": [],
+        "needs_review": false,
+        "policy": {
+          "mechanism": "bayesian",
+          "prior_p_true": 0.5
+        },
+        "posterior": {
+          "entropy_bits": 0.008990993195480591,
+          "p_proven": 0.9992380634907406,
+          "p_refuted": 0.0007619365092593755,
+          "p_unknown": 0.0,
+          "winning": "Proven"
+        },
+        "recommended": "Z3",
+        "suspect_premises": false,
+        "verdict": "Proven",
+        "verified": true
+      }
+    },
+    {
+      "policy": {
+        "mechanism": "bayesian",
+        "prior_p_true": 0.9
+      },
+      "scenario": "unanimous_proven_three",
+      "verdict": {
+        "agreeing": [
+          "Z3",
+          "CVC5",
+          "Vampire"
+        ],
+        "belief": null,
+        "confidence": "CrossChecked",
+        "conflict": 0.0008001333747528126,
+        "disagreeing": [],
+        "inconclusive": [],
+        "needs_review": false,
+        "policy": {
+          "mechanism": "bayesian",
+          "prior_p_true": 0.9
+        },
+        "posterior": {
+          "entropy_bits": 0.0012681813945586758,
+          "p_proven": 0.9999152830110007,
+          "p_refuted": 0.00008471698899925606,
+          "p_unknown": 0.0,
+          "winning": "Proven"
+        },
+        "recommended": "Z3",
+        "suspect_premises": false,
+        "verdict": "Proven",
+        "verified": true
+      }
+    },
+    {
+      "policy": {
+        "mechanism": "dempster_shafer"
+      },
+      "scenario": "unanimous_proven_three",
+      "verdict": {
+        "agreeing": [
+          "Z3",
+          "CVC5",
+          "Vampire"
+        ],
+        "belief": {
+          "belief_proven": 0.999872359223,
+          "belief_refuted": 0.0,
+          "conflict_k": 0.0,
+          "plausibility_proven": 1.0,
+          "plausibility_refuted": 0.00012764077700000033
+        },
+        "confidence": "CrossChecked",
+        "conflict": 0.0,
+        "disagreeing": [],
+        "inconclusive": [],
+        "needs_review": false,
+        "policy": {
+          "mechanism": "dempster_shafer"
+        },
+        "posterior": null,
+        "recommended": "Z3",
+        "suspect_premises": false,
+        "verdict": "Proven",
+        "verified": true
+      }
+    },
+    {
+      "policy": {
+        "mechanism": "portfolio"
+      },
+      "scenario": "proven_vs_refuted",
+      "verdict": {
+        "agreeing": [],
+        "belief": null,
+        "confidence": "Inconclusive",
+        "conflict": 0.5,
+        "disagreeing": [
+          "Z3",
+          "CVC5"
+        ],
+        "inconclusive": [],
+        "needs_review": true,
+        "policy": {
+          "mechanism": "portfolio"
+        },
+        "posterior": null,
+        "recommended": null,
+        "suspect_premises": false,
+        "verdict": "Unknown",
+        "verified": null
+      }
+    },
+    {
+      "policy": {
+        "mechanism": "bayesian",
+        "prior_p_true": 0.5
+      },
+      "scenario": "proven_vs_refuted",
+      "verdict": {
+        "agreeing": [
+          "CVC5"
+        ],
+        "belief": null,
+        "confidence": "Inconclusive",
+        "conflict": 0.6096223209092397,
+        "disagreeing": [
+          "Z3"
+        ],
+        "inconclusive": [],
+        "needs_review": true,
+        "policy": {
+          "mechanism": "bayesian",
+          "prior_p_true": 0.5
+        },
+        "posterior": {
+          "entropy_bits": 0.9662285182437437,
+          "p_proven": 0.39223781998348506,
+          "p_refuted": 0.6077621800165149,
+          "p_unknown": 0.0,
+          "winning": "Refuted"
+        },
+        "recommended": "CVC5",
+        "suspect_premises": false,
+        "verdict": "Refuted",
+        "verified": false
+      }
+    },
+    {
+      "policy": {
+        "mechanism": "bayesian",
+        "prior_p_true": 0.9
+      },
+      "scenario": "proven_vs_refuted",
+      "verdict": {
+        "agreeing": [
+          "Z3"
+        ],
+        "belief": null,
+        "confidence": "Inconclusive",
+        "conflict": 0.3798002601162462,
+        "disagreeing": [
+          "CVC5"
+        ],
+        "inconclusive": [],
+        "needs_review": true,
+        "policy": {
+          "mechanism": "bayesian",
+          "prior_p_true": 0.9
+        },
+        "posterior": {
+          "entropy_bits": 0.6019691700483911,
+          "p_proven": 0.8531231291159451,
+          "p_refuted": 0.14687687088405488,
+          "p_unknown": 0.0,
+          "winning": "Proven"
+        },
+        "recommended": "Z3",
+        "suspect_premises": false,
+        "verdict": "Proven",
+        "verified": true
+      }
+    },
+    {
+      "policy": {
+        "mechanism": "dempster_shafer"
+      },
+      "scenario": "proven_vs_refuted",
+      "verdict": {
+        "agreeing": [],
+        "belief": {
+          "belief_proven": 0.48788621127752185,
+          "belief_refuted": 0.4863544651497379,
+          "conflict_k": 0.902072545,
+          "plausibility_proven": 0.5136455348502625,
+          "plausibility_refuted": 0.5121137887224786
+        },
+        "confidence": "Inconclusive",
+        "conflict": 0.902072545,
+        "disagreeing": [
+          "Z3",
+          "CVC5"
+        ],
+        "inconclusive": [],
+        "needs_review": true,
+        "policy": {
+          "mechanism": "dempster_shafer"
+        },
+        "posterior": null,
+        "recommended": null,
+        "suspect_premises": false,
+        "verdict": "Unknown",
+        "verified": null
+      }
+    },
+    {
+      "policy": {
+        "mechanism": "portfolio"
+      },
+      "scenario": "proven_with_timeout",
+      "verdict": {
+        "agreeing": [
+          "Z3",
+          "CVC5"
+        ],
+        "belief": null,
+        "confidence": "CrossChecked",
+        "conflict": 0.0,
+        "disagreeing": [],
+        "inconclusive": [
+          "Vampire"
+        ],
+        "needs_review": false,
+        "policy": {
+          "mechanism": "portfolio"
+        },
+        "posterior": null,
+        "recommended": "Z3",
+        "suspect_premises": false,
+        "verdict": "Proven",
+        "verified": true
+      }
+    },
+    {
+      "policy": {
+        "mechanism": "bayesian",
+        "prior_p_true": 0.5
+      },
+      "scenario": "proven_with_timeout",
+      "verdict": {
+        "agreeing": [
+          "Z3",
+          "CVC5"
+        ],
+        "belief": null,
+        "confidence": "CrossChecked",
+        "conflict": 0.6048145266621299,
+        "disagreeing": [],
+        "inconclusive": [
+          "Vampire"
+        ],
+        "needs_review": false,
+        "policy": {
+          "mechanism": "bayesian",
+          "prior_p_true": 0.5
+        },
+        "posterior": {
+          "entropy_bits": 0.9586083446508917,
+          "p_proven": 0.661972347526314,
+          "p_refuted": 0.004694319140352788,
+          "p_unknown": 0.3333333333333333,
+          "winning": "Proven"
+        },
+        "recommended": "Z3",
+        "suspect_premises": false,
+        "verdict": "Proven",
+        "verified": true
+      }
+    },
+    {
+      "policy": {
+        "mechanism": "bayesian",
+        "prior_p_true": 0.9
+      },
+      "scenario": "proven_with_timeout",
+      "verdict": {
+        "agreeing": [
+          "Z3",
+          "CVC5"
+        ],
+        "belief": null,
+        "confidence": "CrossChecked",
+        "conflict": 0.5832722550928507,
+        "disagreeing": [],
+        "inconclusive": [
+          "Vampire"
+        ],
+        "needs_review": false,
+        "policy": {
+          "mechanism": "bayesian",
+          "prior_p_true": 0.9
+        },
+        "posterior": {
+          "entropy_bits": 0.9244646520332328,
+          "p_proven": 0.6661417904021455,
+          "p_refuted": 0.0005248762645212087,
+          "p_unknown": 0.3333333333333333,
+          "winning": "Proven"
+        },
+        "recommended": "Z3",
+        "suspect_premises": false,
+        "verdict": "Proven",
+        "verified": true
+      }
+    },
+    {
+      "policy": {
+        "mechanism": "dempster_shafer"
+      },
+      "scenario": "proven_with_timeout",
+      "verdict": {
+        "agreeing": [
+          "Z3",
+          "CVC5"
+        ],
+        "belief": {
+          "belief_proven": 0.997477455,
+          "belief_refuted": 0.0,
+          "conflict_k": 0.0,
+          "plausibility_proven": 1.0,
+          "plausibility_refuted": 0.002522545000000002
+        },
+        "confidence": "CrossChecked",
+        "conflict": 0.0,
+        "disagreeing": [],
+        "inconclusive": [
+          "Vampire"
+        ],
+        "needs_review": false,
+        "policy": {
+          "mechanism": "dempster_shafer"
+        },
+        "posterior": null,
+        "recommended": "Z3",
+        "suspect_premises": false,
+        "verdict": "Proven",
+        "verified": true
+      }
+    },
+    {
+      "policy": {
+        "mechanism": "portfolio"
+      },
+      "scenario": "all_timed_out",
+      "verdict": {
+        "agreeing": [],
+        "belief": null,
+        "confidence": "AllTimedOut",
+        "conflict": 0.0,
+        "disagreeing": [],
+        "inconclusive": [
+          "Z3",
+          "CVC5"
+        ],
+        "needs_review": true,
+        "policy": {
+          "mechanism": "portfolio"
+        },
+        "posterior": null,
+        "recommended": null,
+        "suspect_premises": false,
+        "verdict": "Timeout",
+        "verified": null
+      }
+    },
+    {
+      "policy": {
+        "mechanism": "bayesian",
+        "prior_p_true": 0.5
+      },
+      "scenario": "all_timed_out",
+      "verdict": {
+        "agreeing": [],
+        "belief": null,
+        "confidence": "AllTimedOut",
+        "conflict": 0.9463946303571862,
+        "disagreeing": [],
+        "inconclusive": [
+          "Z3",
+          "CVC5"
+        ],
+        "needs_review": true,
+        "policy": {
+          "mechanism": "bayesian",
+          "prior_p_true": 0.5
+        },
+        "posterior": {
+          "entropy_bits": 1.5,
+          "p_proven": 0.25,
+          "p_refuted": 0.25,
+          "p_unknown": 0.5,
+          "winning": "Unknown"
+        },
+        "recommended": null,
+        "suspect_premises": false,
+        "verdict": "Unknown",
+        "verified": null
+      }
+    },
+    {
+      "policy": {
+        "mechanism": "bayesian",
+        "prior_p_true": 0.9
+      },
+      "scenario": "all_timed_out",
+      "verdict": {
+        "agreeing": [],
+        "belief": null,
+        "confidence": "AllTimedOut",
+        "conflict": 0.7788813907161498,
+        "disagreeing": [],
+        "inconclusive": [
+          "Z3",
+          "CVC5"
+        ],
+        "needs_review": true,
+        "policy": {
+          "mechanism": "bayesian",
+          "prior_p_true": 0.9
+        },
+        "posterior": {
+          "entropy_bits": 1.2344977967946407,
+          "p_proven": 0.44999999999999996,
+          "p_refuted": 0.050000000000000044,
+          "p_unknown": 0.5,
+          "winning": "Unknown"
+        },
+        "recommended": null,
+        "suspect_premises": false,
+        "verdict": "Unknown",
+        "verified": null
+      }
+    },
+    {
+      "policy": {
+        "mechanism": "dempster_shafer"
+      },
+      "scenario": "all_timed_out",
+      "verdict": {
+        "agreeing": [],
+        "belief": {
+          "belief_proven": 0.0,
+          "belief_refuted": 0.0,
+          "conflict_k": 0.0,
+          "plausibility_proven": 1.0,
+          "plausibility_refuted": 1.0
+        },
+        "confidence": "AllTimedOut",
+        "conflict": 0.0,
+        "disagreeing": [],
+        "inconclusive": [
+          "Z3",
+          "CVC5"
+        ],
+        "needs_review": true,
+        "policy": {
+          "mechanism": "dempster_shafer"
+        },
+        "posterior": null,
+        "recommended": null,
+        "suspect_premises": false,
+        "verdict": "Unknown",
+        "verified": null
+      }
+    },
+    {
+      "policy": {
+        "mechanism": "portfolio"
+      },
+      "scenario": "inconsistent_premises",
+      "verdict": {
+        "agreeing": [
+          "Z3"
+        ],
+        "belief": null,
+        "confidence": "SingleSolver",
+        "conflict": 0.0,
+        "disagreeing": [],
+        "inconclusive": [
+          "CVC5"
+        ],
+        "needs_review": true,
+        "policy": {
+          "mechanism": "portfolio"
+        },
+        "posterior": null,
+        "recommended": "Z3",
+        "suspect_premises": true,
+        "verdict": "Proven",
+        "verified": true
+      }
+    },
+    {
+      "policy": {
+        "mechanism": "bayesian",
+        "prior_p_true": 0.5
+      },
+      "scenario": "inconsistent_premises",
+      "verdict": {
+        "agreeing": [],
+        "belief": null,
+        "confidence": "SingleSolver",
+        "conflict": 0.7551961816996249,
+        "disagreeing": [
+          "Z3"
+        ],
+        "inconclusive": [
+          "CVC5"
+        ],
+        "needs_review": true,
+        "policy": {
+          "mechanism": "bayesian",
+          "prior_p_true": 0.5
+        },
+        "posterior": {
+          "entropy_bits": 1.196957628681706,
+          "p_proven": 0.4611650485436893,
+          "p_refuted": 0.03883495145631072,
+          "p_unknown": 0.5,
+          "winning": "Unknown"
+        },
+        "recommended": null,
+        "suspect_premises": true,
+        "verdict": "Unknown",
+        "verified": null
+      }
+    },
+    {
+      "policy": {
+        "mechanism": "bayesian",
+        "prior_p_true": 0.9
+      },
+      "scenario": "inconsistent_premises",
+      "verdict": {
+        "agreeing": [],
+        "belief": null,
+        "confidence": "SingleSolver",
+        "conflict": 0.6548778998293792,
+        "disagreeing": [
+          "Z3"
+        ],
+        "inconclusive": [
+          "CVC5"
+        ],
+        "needs_review": true,
+        "policy": {
+          "mechanism": "bayesian",
+          "prior_p_true": 0.9
+        },
+        "posterior": {
+          "entropy_bits": 1.0379569137805915,
+          "p_proven": 0.49536500579374276,
+          "p_refuted": 0.004634994206257237,
+          "p_unknown": 0.5,
+          "winning": "Unknown"
+        },
+        "recommended": null,
+        "suspect_premises": true,
+        "verdict": "Unknown",
+        "verified": null
+      }
+    },
+    {
+      "policy": {
+        "mechanism": "dempster_shafer"
+      },
+      "scenario": "inconsistent_premises",
+      "verdict": {
+        "agreeing": [
+          "Z3"
+        ],
+        "belief": {
+          "belief_proven": 0.94985,
+          "belief_refuted": 0.0,
+          "conflict_k": 0.0,
+          "plausibility_proven": 1.0,
+          "plausibility_refuted": 0.05015000000000003
+        },
+        "confidence": "SingleSolver",
+        "conflict": 0.0,
+        "disagreeing": [],
+        "inconclusive": [
+          "CVC5"
+        ],
+        "needs_review": true,
+        "policy": {
+          "mechanism": "dempster_shafer"
+        },
+        "posterior": null,
+        "recommended": "Z3",
+        "suspect_premises": true,
+        "verdict": "Proven",
+        "verified": true
+      }
+    },
+    {
+      "policy": {
+        "mechanism": "portfolio"
+      },
+      "scenario": "empty",
+      "verdict": {
+        "agreeing": [],
+        "belief": null,
+        "confidence": "AllTimedOut",
+        "conflict": 0.0,
+        "disagreeing": [],
+        "inconclusive": [],
+        "needs_review": true,
+        "policy": {
+          "mechanism": "portfolio"
+        },
+        "posterior": null,
+        "recommended": null,
+        "suspect_premises": false,
+        "verdict": "Timeout",
+        "verified": null
+      }
+    },
+    {
+      "policy": {
+        "mechanism": "bayesian",
+        "prior_p_true": 0.5
+      },
+      "scenario": "empty",
+      "verdict": {
+        "agreeing": [],
+        "belief": null,
+        "confidence": "AllTimedOut",
+        "conflict": 0.6309297535714575,
+        "disagreeing": [],
+        "inconclusive": [],
+        "needs_review": false,
+        "policy": {
+          "mechanism": "bayesian",
+          "prior_p_true": 0.5
+        },
+        "posterior": {
+          "entropy_bits": 1.0,
+          "p_proven": 0.5,
+          "p_refuted": 0.5,
+          "p_unknown": 0.0,
+          "winning": "Proven"
+        },
+        "recommended": null,
+        "suspect_premises": false,
+        "verdict": "Proven",
+        "verified": true
+      }
+    },
+    {
+      "policy": {
+        "mechanism": "bayesian",
+        "prior_p_true": 0.9
+      },
+      "scenario": "empty",
+      "verdict": {
+        "agreeing": [],
+        "belief": null,
+        "confidence": "AllTimedOut",
+        "conflict": 0.29590327428938484,
+        "disagreeing": [],
+        "inconclusive": [],
+        "needs_review": false,
+        "policy": {
+          "mechanism": "bayesian",
+          "prior_p_true": 0.9
+        },
+        "posterior": {
+          "entropy_bits": 0.46899559358928156,
+          "p_proven": 0.8999999999999999,
+          "p_refuted": 0.10000000000000009,
+          "p_unknown": 0.0,
+          "winning": "Proven"
+        },
+        "recommended": null,
+        "suspect_premises": false,
+        "verdict": "Proven",
+        "verified": true
+      }
+    },
+    {
+      "policy": {
+        "mechanism": "dempster_shafer"
+      },
+      "scenario": "empty",
+      "verdict": {
+        "agreeing": [],
+        "belief": null,
+        "confidence": "AllTimedOut",
+        "conflict": 0.0,
+        "disagreeing": [],
+        "inconclusive": [],
+        "needs_review": true,
+        "policy": {
+          "mechanism": "dempster_shafer"
+        },
+        "posterior": null,
+        "recommended": null,
+        "suspect_premises": false,
+        "verdict": "Unknown",
+        "verified": null
+      }
+    },
+    {
+      "policy": {
+        "mechanism": "portfolio"
+      },
+      "scenario": "two_vs_two_fast",
+      "verdict": {
+        "agreeing": [],
+        "belief": null,
+        "confidence": "Inconclusive",
+        "conflict": 0.5,
+        "disagreeing": [
+          "Z3",
+          "Coq",
+          "Lean",
+          "Agda"
+        ],
+        "inconclusive": [],
+        "needs_review": true,
+        "policy": {
+          "mechanism": "portfolio"
+        },
+        "posterior": null,
+        "recommended": null,
+        "suspect_premises": false,
+        "verdict": "Unknown",
+        "verified": null
+      }
+    },
+    {
+      "policy": {
+        "mechanism": "bayesian",
+        "prior_p_true": 0.5
+      },
+      "scenario": "two_vs_two_fast",
+      "verdict": {
+        "agreeing": [
+          "Coq",
+          "Agda"
+        ],
+        "belief": null,
+        "confidence": "Inconclusive",
+        "conflict": 0.2827090405532507,
+        "disagreeing": [
+          "Z3",
+          "Lean"
+        ],
+        "inconclusive": [],
+        "needs_review": true,
+        "policy": {
+          "mechanism": "bayesian",
+          "prior_p_true": 0.5
+        },
+        "posterior": {
+          "entropy_bits": 0.4480832278917589,
+          "p_proven": 0.09351145038167956,
+          "p_refuted": 0.9064885496183205,
+          "p_unknown": 0.0,
+          "winning": "Refuted"
+        },
+        "recommended": "Coq",
+        "suspect_premises": false,
+        "verdict": "Refuted",
+        "verified": false
+      }
+    },
+    {
+      "policy": {
+        "mechanism": "bayesian",
+        "prior_p_true": 0.9
+      },
+      "scenario": "two_vs_two_fast",
+      "verdict": {
+        "agreeing": [
+          "Coq",
+          "Agda"
+        ],
+        "belief": null,
+        "confidence": "Inconclusive",
+        "conflict": 0.6303025735637556,
+        "disagreeing": [
+          "Z3",
+          "Lean"
+        ],
+        "inconclusive": [],
+        "needs_review": true,
+        "policy": {
+          "mechanism": "bayesian",
+          "prior_p_true": 0.9
+        },
+        "posterior": {
+          "entropy_bits": 0.9990059432065905,
+          "p_proven": 0.48144104803493515,
+          "p_refuted": 0.5185589519650649,
+          "p_unknown": 0.0,
+          "winning": "Refuted"
+        },
+        "recommended": "Coq",
+        "suspect_premises": false,
+        "verdict": "Refuted",
+        "verified": false
+      }
+    },
+    {
+      "policy": {
+        "mechanism": "dempster_shafer"
+      },
+      "scenario": "two_vs_two_fast",
+      "verdict": {
+        "agreeing": [],
+        "belief": null,
+        "confidence": "Inconclusive",
+        "conflict": 0.9949762803381755,
+        "disagreeing": [
+          "Z3",
+          "Coq",
+          "Lean",
+          "Agda"
+        ],
+        "inconclusive": [],
+        "needs_review": true,
+        "policy": {
+          "mechanism": "dempster_shafer"
+        },
+        "posterior": null,
+        "recommended": null,
+        "suspect_premises": false,
+        "verdict": "Unknown",
+        "verified": null
+      }
+    },
+    {
+      "policy": {
+        "mechanism": "portfolio"
+      },
+      "scenario": "two_proven_fast",
+      "verdict": {
+        "agreeing": [
+          "Z3",
+          "CVC5"
+        ],
+        "belief": null,
+        "confidence": "CrossChecked",
+        "conflict": 0.0,
+        "disagreeing": [],
+        "inconclusive": [],
+        "needs_review": false,
+        "policy": {
+          "mechanism": "portfolio"
+        },
+        "posterior": null,
+        "recommended": "Z3",
+        "suspect_premises": false,
+        "verdict": "Proven",
+        "verified": true
+      }
+    },
+    {
+      "policy": {
+        "mechanism": "bayesian",
+        "prior_p_true": 0.5
+      },
+      "scenario": "two_proven_fast",
+      "verdict": {
+        "agreeing": [
+          "Z3",
+          "CVC5"
+        ],
+        "belief": null,
+        "confidence": "CrossChecked",
+        "conflict": 0.03815154356465222,
+        "disagreeing": [],
+        "inconclusive": [],
+        "needs_review": false,
+        "policy": {
+          "mechanism": "bayesian",
+          "prior_p_true": 0.5
+        },
+        "posterior": {
+          "entropy_bits": 0.0604687658946033,
+          "p_proven": 0.9929585212894708,
+          "p_refuted": 0.007041478710529181,
+          "p_unknown": 0.0,
+          "winning": "Proven"
+        },
+        "recommended": "Z3",
+        "suspect_premises": false,
+        "verdict": "Proven",
+        "verified": true
+      }
+    },
+    {
+      "policy": {
+        "mechanism": "bayesian",
+        "prior_p_true": 0.9
+      },
+      "scenario": "two_proven_fast",
+      "verdict": {
+        "agreeing": [
+          "Z3",
+          "CVC5"
+        ],
+        "belief": null,
+        "confidence": "CrossChecked",
+        "conflict": 0.005838136210733476,
+        "disagreeing": [],
+        "inconclusive": [],
+        "needs_review": false,
+        "policy": {
+          "mechanism": "bayesian",
+          "prior_p_true": 0.9
+        },
+        "posterior": {
+          "entropy_bits": 0.009253226968114864,
+          "p_proven": 0.9992126856032182,
+          "p_refuted": 0.000787314396781813,
+          "p_unknown": 0.0,
+          "winning": "Proven"
+        },
+        "recommended": "Z3",
+        "suspect_premises": false,
+        "verdict": "Proven",
+        "verified": true
+      }
+    },
+    {
+      "policy": {
+        "mechanism": "dempster_shafer"
+      },
+      "scenario": "two_proven_fast",
+      "verdict": {
+        "agreeing": [
+          "Z3",
+          "CVC5"
+        ],
+        "belief": {
+          "belief_proven": 0.997477455,
+          "belief_refuted": 0.0,
+          "conflict_k": 0.0,
+          "plausibility_proven": 1.0,
+          "plausibility_refuted": 0.002522545000000002
+        },
+        "confidence": "CrossChecked",
+        "conflict": 0.0,
+        "disagreeing": [],
+        "inconclusive": [],
+        "needs_review": false,
+        "policy": {
+          "mechanism": "dempster_shafer"
+        },
+        "posterior": null,
+        "recommended": "Z3",
+        "suspect_premises": false,
+        "verdict": "Proven",
+        "verified": true
+      }
+    },
+    {
+      "policy": {
+        "mechanism": "portfolio"
+      },
+      "scenario": "pareto_three",
+      "verdict": {
+        "agreeing": [
+          "Vampire",
+          "Z3",
+          "CVC5"
+        ],
+        "belief": null,
+        "confidence": "CrossChecked",
+        "conflict": 0.0,
+        "disagreeing": [],
+        "inconclusive": [],
+        "needs_review": false,
+        "policy": {
+          "mechanism": "portfolio"
+        },
+        "posterior": null,
+        "recommended": "Z3",
+        "suspect_premises": false,
+        "verdict": "Proven",
+        "verified": true
+      }
+    },
+    {
+      "policy": {
+        "mechanism": "bayesian",
+        "prior_p_true": 0.5
+      },
+      "scenario": "pareto_three",
+      "verdict": {
+        "agreeing": [
+          "Vampire",
+          "Z3",
+          "CVC5"
+        ],
+        "belief": null,
+        "confidence": "CrossChecked",
+        "conflict": 0.00567268512118722,
+        "disagreeing": [],
+        "inconclusive": [],
+        "needs_review": false,
+        "policy": {
+          "mechanism": "bayesian",
+          "prior_p_true": 0.5
+        },
+        "posterior": {
+          "entropy_bits": 0.008990993195480591,
+          "p_proven": 0.9992380634907406,
+          "p_refuted": 0.0007619365092593755,
+          "p_unknown": 0.0,
+          "winning": "Proven"
+        },
+        "recommended": "Z3",
+        "suspect_premises": false,
+        "verdict": "Proven",
+        "verified": true
+      }
+    },
+    {
+      "policy": {
+        "mechanism": "bayesian",
+        "prior_p_true": 0.9
+      },
+      "scenario": "pareto_three",
+      "verdict": {
+        "agreeing": [
+          "Vampire",
+          "Z3",
+          "CVC5"
+        ],
+        "belief": null,
+        "confidence": "CrossChecked",
+        "conflict": 0.0008001333747528126,
+        "disagreeing": [],
+        "inconclusive": [],
+        "needs_review": false,
+        "policy": {
+          "mechanism": "bayesian",
+          "prior_p_true": 0.9
+        },
+        "posterior": {
+          "entropy_bits": 0.0012681813945586758,
+          "p_proven": 0.9999152830110007,
+          "p_refuted": 0.00008471698899925606,
+          "p_unknown": 0.0,
+          "winning": "Proven"
+        },
+        "recommended": "Z3",
+        "suspect_premises": false,
+        "verdict": "Proven",
+        "verified": true
+      }
+    },
+    {
+      "policy": {
+        "mechanism": "dempster_shafer"
+      },
+      "scenario": "pareto_three",
+      "verdict": {
+        "agreeing": [
+          "Vampire",
+          "Z3",
+          "CVC5"
+        ],
+        "belief": {
+          "belief_proven": 0.9998518372775,
+          "belief_refuted": 0.0,
+          "conflict_k": 0.0,
+          "plausibility_proven": 1.0,
+          "plausibility_refuted": 0.00014816272250000004
+        },
+        "confidence": "CrossChecked",
+        "conflict": 0.0,
+        "disagreeing": [],
+        "inconclusive": [],
+        "needs_review": false,
+        "policy": {
+          "mechanism": "dempster_shafer"
+        },
+        "posterior": null,
+        "recommended": "Z3",
+        "suspect_premises": false,
+        "verdict": "Proven",
+        "verified": true
+      }
+    },
+    {
+      "policy": {
+        "mechanism": "portfolio"
+      },
+      "scenario": "unanimous_refuted",
+      "verdict": {
+        "agreeing": [
+          "Z3",
+          "CVC5"
+        ],
+        "belief": null,
+        "confidence": "CrossChecked",
+        "conflict": 0.0,
+        "disagreeing": [],
+        "inconclusive": [],
+        "needs_review": false,
+        "policy": {
+          "mechanism": "portfolio"
+        },
+        "posterior": null,
+        "recommended": "Z3",
+        "suspect_premises": false,
+        "verdict": "Refuted",
+        "verified": false
+      }
+    },
+    {
+      "policy": {
+        "mechanism": "bayesian",
+        "prior_p_true": 0.5
+      },
+      "scenario": "unanimous_refuted",
+      "verdict": {
+        "agreeing": [
+          "Z3",
+          "CVC5"
+        ],
+        "belief": null,
+        "confidence": "CrossChecked",
+        "conflict": 0.018298544642544233,
+        "disagreeing": [],
+        "inconclusive": [],
+        "needs_review": false,
+        "policy": {
+          "mechanism": "bayesian",
+          "prior_p_true": 0.5
+        },
+        "posterior": {
+          "entropy_bits": 0.029002507076204623,
+          "p_proven": 0.0029449876310519547,
+          "p_refuted": 0.997055012368948,
+          "p_unknown": 0.0,
+          "winning": "Refuted"
+        },
+        "recommended": "Z3",
+        "suspect_premises": false,
+        "verdict": "Refuted",
+        "verified": false
+      }
+    },
+    {
+      "policy": {
+        "mechanism": "bayesian",
+        "prior_p_true": 0.9
+      },
+      "scenario": "unanimous_refuted",
+      "verdict": {
+        "agreeing": [
+          "Z3",
+          "CVC5"
+        ],
+        "belief": null,
+        "confidence": "CrossChecked",
+        "conflict": 0.10938235767326467,
+        "disagreeing": [],
+        "inconclusive": [],
+        "needs_review": false,
+        "policy": {
+          "mechanism": "bayesian",
+          "prior_p_true": 0.9
+        },
+        "posterior": {
+          "entropy_bits": 0.1733669351525935,
+          "p_proven": 0.025894809529289953,
+          "p_refuted": 0.9741051904707101,
+          "p_unknown": 0.0,
+          "winning": "Refuted"
+        },
+        "recommended": "Z3",
+        "suspect_premises": false,
+        "verdict": "Refuted",
+        "verified": false
+      }
+    },
+    {
+      "policy": {
+        "mechanism": "dempster_shafer"
+      },
+      "scenario": "unanimous_refuted",
+      "verdict": {
+        "agreeing": [
+          "Z3",
+          "CVC5"
+        ],
+        "belief": {
+          "belief_proven": 0.0,
+          "belief_refuted": 0.997490992125,
+          "conflict_k": 0.0,
+          "plausibility_proven": 0.002509007875000008,
+          "plausibility_refuted": 1.0
+        },
+        "confidence": "CrossChecked",
+        "conflict": 0.0,
+        "disagreeing": [],
+        "inconclusive": [],
+        "needs_review": false,
+        "policy": {
+          "mechanism": "dempster_shafer"
+        },
+        "posterior": null,
+        "recommended": "Z3",
+        "suspect_premises": false,
+        "verdict": "Refuted",
+        "verified": false
+      }
+    },
+    {
+      "policy": {
+        "mechanism": "portfolio"
+      },
+      "scenario": "errors_mixed",
+      "verdict": {
+        "agreeing": [
+          "Lean"
+        ],
+        "belief": null,
+        "confidence": "SingleSolver",
+        "conflict": 0.0,
+        "disagreeing": [],
+        "inconclusive": [
+          "Coq",
+          "Isabelle",
+          "Agda",
+          "Z3"
+        ],
+        "needs_review": false,
+        "policy": {
+          "mechanism": "portfolio"
+        },
+        "posterior": null,
+        "recommended": "Lean",
+        "suspect_premises": false,
+        "verdict": "Proven",
+        "verified": true
+      }
+    },
+    {
+      "policy": {
+        "mechanism": "bayesian",
+        "prior_p_true": 0.5
+      },
+      "scenario": "errors_mixed",
+      "verdict": {
+        "agreeing": [],
+        "belief": null,
+        "confidence": "SingleSolver",
+        "conflict": 0.7193161180738602,
+        "disagreeing": [
+          "Lean"
+        ],
+        "inconclusive": [
+          "Coq",
+          "Isabelle",
+          "Agda",
+          "Z3"
+        ],
+        "needs_review": true,
+        "policy": {
+          "mechanism": "bayesian",
+          "prior_p_true": 0.5
+        },
+        "posterior": {
+          "entropy_bits": 1.1400890733113798,
+          "p_proven": 0.47572815533980584,
+          "p_refuted": 0.024271844660194164,
+          "p_unknown": 0.5,
+          "winning": "Unknown"
+        },
+        "recommended": null,
+        "suspect_premises": false,
+        "verdict": "Unknown",
+        "verified": null
+      }
+    },
+    {
+      "policy": {
+        "mechanism": "bayesian",
+        "prior_p_true": 0.9
+      },
+      "scenario": "errors_mixed",
+      "verdict": {
+        "agreeing": [],
+        "belief": null,
+        "confidence": "SingleSolver",
+        "conflict": 0.6467732094321391,
+        "disagreeing": [
+          "Lean"
+        ],
+        "inconclusive": [
+          "Coq",
+          "Isabelle",
+          "Agda",
+          "Z3"
+        ],
+        "needs_review": true,
+        "policy": {
+          "mechanism": "bayesian",
+          "prior_p_true": 0.9
+        },
+        "posterior": {
+          "entropy_bits": 1.0251112834210112,
+          "p_proven": 0.4971815107102593,
+          "p_refuted": 0.002818489289740711,
+          "p_unknown": 0.5,
+          "winning": "Unknown"
+        },
+        "recommended": null,
+        "suspect_premises": false,
+        "verdict": "Unknown",
+        "verified": null
+      }
+    },
+    {
+      "policy": {
+        "mechanism": "dempster_shafer"
+      },
+      "scenario": "errors_mixed",
+      "verdict": {
+        "agreeing": [
+          "Lean"
+        ],
+        "belief": {
+          "belief_proven": 0.94775,
+          "belief_refuted": 0.0,
+          "conflict_k": 0.0,
+          "plausibility_proven": 1.0,
+          "plausibility_refuted": 0.05225000000000002
+        },
+        "confidence": "SingleSolver",
+        "conflict": 0.0,
+        "disagreeing": [],
+        "inconclusive": [
+          "Coq",
+          "Isabelle",
+          "Agda",
+          "Z3"
+        ],
+        "needs_review": false,
+        "policy": {
+          "mechanism": "dempster_shafer"
+        },
+        "posterior": null,
+        "recommended": "Lean",
+        "suspect_premises": false,
+        "verdict": "Proven",
+        "verified": true
+      }
+    },
+    {
+      "policy": {
+        "mechanism": "portfolio"
+      },
+      "scenario": "interactive_majority",
+      "verdict": {
+        "agreeing": [],
+        "belief": null,
+        "confidence": "Inconclusive",
+        "conflict": 0.25,
+        "disagreeing": [
+          "Lean",
+          "Isabelle",
+          "Coq",
+          "Z3"
+        ],
+        "inconclusive": [],
+        "needs_review": true,
+        "policy": {
+          "mechanism": "portfolio"
+        },
+        "posterior": null,
+        "recommended": null,
+        "suspect_premises": false,
+        "verdict": "Unknown",
+        "verified": null
+      }
+    },
+    {
+      "policy": {
+        "mechanism": "bayesian",
+        "prior_p_true": 0.5
+      },
+      "scenario": "interactive_majority",
+      "verdict": {
+        "agreeing": [
+          "Lean",
+          "Isabelle",
+          "Coq"
+        ],
+        "belief": null,
+        "confidence": "Inconclusive",
+        "conflict": 0.015566868104288006,
+        "disagreeing": [
+          "Z3"
+        ],
+        "inconclusive": [],
+        "needs_review": true,
+        "policy": {
+          "mechanism": "bayesian",
+          "prior_p_true": 0.5
+        },
+        "posterior": {
+          "entropy_bits": 0.02467290219896872,
+          "p_proven": 0.9975622474806357,
+          "p_refuted": 0.002437752519364289,
+          "p_unknown": 0.0,
+          "winning": "Proven"
+        },
+        "recommended": "Lean",
+        "suspect_premises": false,
+        "verdict": "Proven",
+        "verified": true
+      }
+    },
+    {
+      "policy": {
+        "mechanism": "bayesian",
+        "prior_p_true": 0.9
+      },
+      "scenario": "interactive_majority",
+      "verdict": {
+        "agreeing": [
+          "Lean",
+          "Isabelle",
+          "Coq"
+        ],
+        "belief": null,
+        "confidence": "Inconclusive",
+        "conflict": 0.002276039190031149,
+        "disagreeing": [
+          "Z3"
+        ],
+        "inconclusive": [],
+        "needs_review": true,
+        "policy": {
+          "mechanism": "bayesian",
+          "prior_p_true": 0.9
+        },
+        "posterior": {
+          "entropy_bits": 0.0036074367663711244,
+          "p_proven": 0.9997285504072452,
+          "p_refuted": 0.0002714495927548244,
+          "p_unknown": 0.0,
+          "winning": "Proven"
+        },
+        "recommended": "Lean",
+        "suspect_premises": false,
+        "verdict": "Proven",
+        "verified": true
+      }
+    },
+    {
+      "policy": {
+        "mechanism": "dempster_shafer"
+      },
+      "scenario": "interactive_majority",
+      "verdict": {
+        "agreeing": [
+          "Lean",
+          "Isabelle",
+          "Coq"
+        ],
+        "belief": {
+          "belief_proven": 0.996907694622053,
+          "belief_refuted": 0.0029375045707274337,
+          "conflict_k": 0.9497925152841625,
+          "plausibility_proven": 0.997062495429273,
+          "plausibility_refuted": 0.0030923053779474846
+        },
+        "confidence": "Inconclusive",
+        "conflict": 0.9497925152841625,
+        "disagreeing": [
+          "Z3"
+        ],
+        "inconclusive": [],
+        "needs_review": true,
+        "policy": {
+          "mechanism": "dempster_shafer"
+        },
+        "posterior": null,
+        "recommended": "Lean",
+        "suspect_premises": false,
+        "verdict": "Proven",
+        "verified": true
+      }
+    },
+    {
+      "policy": {
+        "mechanism": "portfolio"
+      },
+      "scenario": "near_timeout",
+      "verdict": {
+        "agreeing": [
+          "Z3",
+          "CVC5"
+        ],
+        "belief": null,
+        "confidence": "CrossChecked",
+        "conflict": 0.0,
+        "disagreeing": [],
+        "inconclusive": [],
+        "needs_review": false,
+        "policy": {
+          "mechanism": "portfolio"
+        },
+        "posterior": null,
+        "recommended": "Z3",
+        "suspect_premises": false,
+        "verdict": "Proven",
+        "verified": true
+      }
+    },
+    {
+      "policy": {
+        "mechanism": "bayesian",
+        "prior_p_true": 0.5
+      },
+      "scenario": "near_timeout",
+      "verdict": {
+        "agreeing": [
+          "Z3",
+          "CVC5"
+        ],
+        "belief": null,
+        "confidence": "CrossChecked",
+        "conflict": 0.03815154356465222,
+        "disagreeing": [],
+        "inconclusive": [],
+        "needs_review": false,
+        "policy": {
+          "mechanism": "bayesian",
+          "prior_p_true": 0.5
+        },
+        "posterior": {
+          "entropy_bits": 0.0604687658946033,
+          "p_proven": 0.9929585212894708,
+          "p_refuted": 0.007041478710529181,
+          "p_unknown": 0.0,
+          "winning": "Proven"
+        },
+        "recommended": "Z3",
+        "suspect_premises": false,
+        "verdict": "Proven",
+        "verified": true
+      }
+    },
+    {
+      "policy": {
+        "mechanism": "bayesian",
+        "prior_p_true": 0.9
+      },
+      "scenario": "near_timeout",
+      "verdict": {
+        "agreeing": [
+          "Z3",
+          "CVC5"
+        ],
+        "belief": null,
+        "confidence": "CrossChecked",
+        "conflict": 0.005838136210733476,
+        "disagreeing": [],
+        "inconclusive": [],
+        "needs_review": false,
+        "policy": {
+          "mechanism": "bayesian",
+          "prior_p_true": 0.9
+        },
+        "posterior": {
+          "entropy_bits": 0.009253226968114864,
+          "p_proven": 0.9992126856032182,
+          "p_refuted": 0.000787314396781813,
+          "p_unknown": 0.0,
+          "winning": "Proven"
+        },
+        "recommended": "Z3",
+        "suspect_premises": false,
+        "verdict": "Proven",
+        "verified": true
+      }
+    },
+    {
+      "policy": {
+        "mechanism": "dempster_shafer"
+      },
+      "scenario": "near_timeout",
+      "verdict": {
+        "agreeing": [
+          "Z3",
+          "CVC5"
+        ],
+        "belief": {
+          "belief_proven": 0.7582274999999999,
+          "belief_refuted": 0.0,
+          "conflict_k": 0.0,
+          "plausibility_proven": 1.0,
+          "plausibility_refuted": 0.24177250000000008
+        },
+        "confidence": "CrossChecked",
+        "conflict": 0.0,
+        "disagreeing": [],
+        "inconclusive": [],
+        "needs_review": false,
+        "policy": {
+          "mechanism": "dempster_shafer"
+        },
+        "posterior": null,
+        "recommended": "Z3",
+        "suspect_premises": false,
+        "verdict": "Proven",
+        "verified": true
+      }
+    },
+    {
+      "policy": {
+        "mechanism": "portfolio"
+      },
+      "scenario": "short_budget",
+      "verdict": {
+        "agreeing": [],
+        "belief": null,
+        "confidence": "Inconclusive",
+        "conflict": 0.5,
+        "disagreeing": [
+          "Z3",
+          "Vampire"
+        ],
+        "inconclusive": [],
+        "needs_review": true,
+        "policy": {
+          "mechanism": "portfolio"
+        },
+        "posterior": null,
+        "recommended": null,
+        "suspect_premises": false,
+        "verdict": "Unknown",
+        "verified": null
+      }
+    },
+    {
+      "policy": {
+        "mechanism": "bayesian",
+        "prior_p_true": 0.5
+      },
+      "scenario": "short_budget",
+      "verdict": {
+        "agreeing": [
+          "Vampire"
+        ],
+        "belief": null,
+        "confidence": "Inconclusive",
+        "conflict": 0.6302118508717413,
+        "disagreeing": [
+          "Z3"
+        ],
+        "inconclusive": [],
+        "needs_review": true,
+        "policy": {
+          "mechanism": "bayesian",
+          "prior_p_true": 0.5
+        },
+        "posterior": {
+          "entropy_bits": 0.9988621511417832,
+          "p_proven": 0.4801444043321299,
+          "p_refuted": 0.5198555956678701,
+          "p_unknown": 0.0,
+          "winning": "Refuted"
+        },
+        "recommended": "Vampire",
+        "suspect_premises": false,
+        "verdict": "Refuted",
+        "verified": false
+      }
+    },
+    {
+      "policy": {
+        "mechanism": "bayesian",
+        "prior_p_true": 0.9
+      },
+      "scenario": "short_budget",
+      "verdict": {
+        "agreeing": [
+          "Z3"
+        ],
+        "belief": null,
+        "confidence": "Inconclusive",
+        "conflict": 0.3103985770368175,
+        "disagreeing": [
+          "Vampire"
+        ],
+        "inconclusive": [],
+        "needs_review": true,
+        "policy": {
+          "mechanism": "bayesian",
+          "prior_p_true": 0.9
+        },
+        "posterior": {
+          "entropy_bits": 0.4919701048805627,
+          "p_proven": 0.8926174496644296,
+          "p_refuted": 0.10738255033557043,
+          "p_unknown": 0.0,
+          "winning": "Proven"
+        },
+        "recommended": "Z3",
+        "suspect_premises": false,
+        "verdict": "Proven",
+        "verified": true
+      }
+    },
+    {
+      "policy": {
+        "mechanism": "dempster_shafer"
+      },
+      "scenario": "short_budget",
+      "verdict": {
+        "agreeing": [
+          "Vampire"
+        ],
+        "belief": {
+          "belief_proven": 0.07990192361163771,
+          "belief_refuted": 0.8533909658502061,
+          "conflict_k": 0.5054875,
+          "plausibility_proven": 0.14660903414979398,
+          "plausibility_refuted": 0.9200980763883624
+        },
+        "confidence": "Inconclusive",
+        "conflict": 0.5054875,
+        "disagreeing": [
+          "Z3"
+        ],
+        "inconclusive": [],
+        "needs_review": true,
+        "policy": {
+          "mechanism": "dempster_shafer"
+        },
+        "posterior": null,
+        "recommended": "Vampire",
+        "suspect_premises": false,
+        "verdict": "Refuted",
+        "verified": false
+      }
+    },
+    {
+      "policy": {
+        "mechanism": "portfolio"
+      },
+      "scenario": "single_proved",
+      "verdict": {
+        "agreeing": [
+          "Lean"
+        ],
+        "belief": null,
+        "confidence": "SingleSolver",
+        "conflict": 0.0,
+        "disagreeing": [],
+        "inconclusive": [],
+        "needs_review": false,
+        "policy": {
+          "mechanism": "portfolio"
+        },
+        "posterior": null,
+        "recommended": "Lean",
+        "suspect_premises": false,
+        "verdict": "Proven",
+        "verified": true
+      }
+    },
+    {
+      "policy": {
+        "mechanism": "bayesian",
+        "prior_p_true": 0.5
+      },
+      "scenario": "single_proved",
+      "verdict": {
+        "agreeing": [
+          "Lean"
+        ],
+        "belief": null,
+        "confidence": "SingleSolver",
+        "conflict": 0.17677272900480556,
+        "disagreeing": [],
+        "inconclusive": [],
+        "needs_review": false,
+        "policy": {
+          "mechanism": "bayesian",
+          "prior_p_true": 0.5
+        },
+        "posterior": {
+          "entropy_bits": 0.28017814662275986,
+          "p_proven": 0.9514563106796117,
+          "p_refuted": 0.04854368932038833,
+          "p_unknown": 0.0,
+          "winning": "Proven"
+        },
+        "recommended": "Lean",
+        "suspect_premises": false,
+        "verdict": "Proven",
+        "verified": true
+      }
+    },
+    {
+      "policy": {
+        "mechanism": "bayesian",
+        "prior_p_true": 0.9
+      },
+      "scenario": "single_proved",
+      "verdict": {
+        "agreeing": [
+          "Lean"
+        ],
+        "belief": null,
+        "confidence": "SingleSolver",
+        "conflict": 0.03168691172136324,
+        "disagreeing": [],
+        "inconclusive": [],
+        "needs_review": false,
+        "policy": {
+          "mechanism": "bayesian",
+          "prior_p_true": 0.9
+        },
+        "posterior": {
+          "entropy_bits": 0.05022256684202239,
+          "p_proven": 0.9943630214205186,
+          "p_refuted": 0.005636978579481422,
+          "p_unknown": 0.0,
+          "winning": "Proven"
+        },
+        "recommended": "Lean",
+        "suspect_premises": false,
+        "verdict": "Proven",
+        "verified": true
+      }
+    },
+    {
+      "policy": {
+        "mechanism": "dempster_shafer"
+      },
+      "scenario": "single_proved",
+      "verdict": {
+        "agreeing": [
+          "Lean"
+        ],
+        "belief": {
+          "belief_proven": 0.9488,
+          "belief_refuted": 0.0,
+          "conflict_k": 0.0,
+          "plausibility_proven": 1.0,
+          "plausibility_refuted": 0.05120000000000002
+        },
+        "confidence": "SingleSolver",
+        "conflict": 0.0,
+        "disagreeing": [],
+        "inconclusive": [],
+        "needs_review": false,
+        "policy": {
+          "mechanism": "dempster_shafer"
+        },
+        "posterior": null,
+        "recommended": "Lean",
+        "suspect_premises": false,
+        "verdict": "Proven",
+        "verified": true
+      }
+    },
+    {
+      "policy": {
+        "mechanism": "portfolio"
+      },
+      "scenario": "single_refuted",
+      "verdict": {
+        "agreeing": [
+          "Coq"
+        ],
+        "belief": null,
+        "confidence": "SingleSolver",
+        "conflict": 0.0,
+        "disagreeing": [],
+        "inconclusive": [],
+        "needs_review": false,
+        "policy": {
+          "mechanism": "portfolio"
+        },
+        "posterior": null,
+        "recommended": "Coq",
+        "suspect_premises": false,
+        "verdict": "Refuted",
+        "verified": false
+      }
+    },
+    {
+      "policy": {
+        "mechanism": "bayesian",
+        "prior_p_true": 0.5
+      },
+      "scenario": "single_refuted",
+      "verdict": {
+        "agreeing": [
+          "Coq"
+        ],
+        "belief": null,
+        "confidence": "SingleSolver",
+        "conflict": 0.09142147998276146,
+        "disagreeing": [],
+        "inconclusive": [],
+        "needs_review": false,
+        "policy": {
+          "mechanism": "bayesian",
+          "prior_p_true": 0.5
+        },
+        "posterior": {
+          "entropy_bits": 0.1448996175331067,
+          "p_proven": 0.020618556701030945,
+          "p_refuted": 0.979381443298969,
+          "p_unknown": 0.0,
+          "winning": "Refuted"
+        },
+        "recommended": "Coq",
+        "suspect_premises": false,
+        "verdict": "Refuted",
+        "verified": false
+      }
+    },
+    {
+      "policy": {
+        "mechanism": "bayesian",
+        "prior_p_true": 0.9
+      },
+      "scenario": "single_refuted",
+      "verdict": {
+        "agreeing": [
+          "Coq"
+        ],
+        "belief": null,
+        "confidence": "SingleSolver",
+        "conflict": 0.3991344810884815,
+        "disagreeing": [],
+        "inconclusive": [],
+        "needs_review": false,
+        "policy": {
+          "mechanism": "bayesian",
+          "prior_p_true": 0.9
+        },
+        "posterior": {
+          "entropy_bits": 0.6326131852700406,
+          "p_proven": 0.15929203539823025,
+          "p_refuted": 0.8407079646017698,
+          "p_unknown": 0.0,
+          "winning": "Refuted"
+        },
+        "recommended": "Coq",
+        "suspect_premises": false,
+        "verdict": "Refuted",
+        "verified": false
+      }
+    },
+    {
+      "policy": {
+        "mechanism": "dempster_shafer"
+      },
+      "scenario": "single_refuted",
+      "verdict": {
+        "agreeing": [
+          "Coq"
+        ],
+        "belief": {
+          "belief_proven": 0.0,
+          "belief_refuted": 0.94865,
+          "conflict_k": 0.0,
+          "plausibility_proven": 0.05135000000000001,
+          "plausibility_refuted": 1.0
+        },
+        "confidence": "SingleSolver",
+        "conflict": 0.0,
+        "disagreeing": [],
+        "inconclusive": [],
+        "needs_review": false,
+        "policy": {
+          "mechanism": "dempster_shafer"
+        },
+        "posterior": null,
+        "recommended": "Coq",
+        "suspect_premises": false,
+        "verdict": "Refuted",
+        "verified": false
+      }
+    }
+  ],
+  "provenance": "ResultArbiter numeric fusion at echidna 29b18ea (pre-ECH-05); produced by tests/arbitration_regression_test.rs::regenerate_arbitration_fixture",
+  "tolerance": 1e-12
+}
