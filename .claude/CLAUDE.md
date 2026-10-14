@@ -164,7 +164,8 @@ source in `hyperpolymath/standards`; read that, not a paraphrase.
   for reports and explanations.
 - Work lands as **stacked PRs**: small, each independently reviewable.
 - Fix a finding at its source before reaching for a baseline or ledger.
-  The governance exemption ratchet rejects ledger growth.
+  The governance exemption ratchet rejects ledger growth unless a commit
+  or the PR body carries a `Ratchet-exception:` line naming that ledger.
 
 ### Formats (standard, estate-wide)
 
