@@ -212,7 +212,7 @@ PB-01 wants partial progress (for example `subgoals_remaining`). The hazard:
   `echidna_core::prove_result::ProveResult::parse` tolerates unknown fields.
 * proof-burrower's parser tolerates unknown fields (read-only at `be897dd`,
   `crates/burrower-core/src/echidna_contract.rs`; unverified).
-* *echidnabot's own parser rejects them*: `src/dispatcher/prove_result.rs:79`
+* *echidnabot's own parser rejects them*: `echidnabot/src/dispatcher/prove_result.rs:79`
   has `#[serde(deny_unknown_fields)]` and a `rejects_unknown_fields` test
   (read-only at `ae52833`; unverified). Any new top-level field breaks echidnabot.
 

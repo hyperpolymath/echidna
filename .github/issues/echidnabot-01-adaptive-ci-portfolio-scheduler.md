@@ -21,7 +21,7 @@ Applying Automated Algorithm Selection and Parameter Tuning principles from Para
 ## Current State
 
 Verified against echidnabot@ae5283323b815f82d2a556080b59e0bb648de62b:
-- `enqueue_repo_jobs` in `src/api/webhooks.rs` creates one job per enabled prover (VERIFIED: iterates over `repo.enabled_provers`)
+- `enqueue_repo_jobs` in `echidnabot/src/api/webhooks.rs` creates one job per enabled prover (VERIFIED: iterates over `repo.enabled_provers`)
 - `JobLimiter` defaults to 10 global / 3 per repo concurrent jobs (VERIFIED: in limiter.rs)
 - Static 300 second timeouts are used as default (VERIFIED: `default_timeout()` returns 300 in config.rs)
 - `manifest [provers.<slug>] timeout_seconds` is wired into dispatch (VERIFIED: accessed in manifest.rs, used in echidna_client.rs)
