@@ -39,6 +39,15 @@
 #   * LIST ITEMS — every step in a job legitimately repeats `name:`.
 #   * DOCUMENT SEPARATORS — `---` starts a fresh sibling scope.
 #   * QUOTED KEYS — `"on":` and `on:` are the same key.
+#   * KYAML FLOW ITEMS — KYAML (YAML-POLICY §3.4) writes a sequence of
+#     mappings as `{` lines with no `- ` marker, so a line that is only `{`
+#     opens a fresh scope for the keys under it, exactly as `- ` does.
+#     A quoted scalar item such as `"echo: hi",` is not a key, and `}`/`]`
+#     lines close a scope without naming one.
+#
+# KYAML is checked in the layout `yq -o kyaml` writes (one key per line),
+# which `kyaml-format.sh --check` enforces. Duplicates inside a single-line
+# flow mapping such as `{a: 1, a: 2}` are not seen; that layout is not KYAML.
 set -uo pipefail
 
 scan_one() {
@@ -65,13 +74,19 @@ scan_one() {
       if (trimmed == "" || substr(trimmed, 1, 1) == "#") next
 
       if (trimmed == "---") { delete seen; next }
+
+      # KYAML: a bare `{` is a mapping item of a sequence, a fresh scope.
+      if (trimmed == "{") { clear_from(ind + 1); next }
+      # KYAML: closing brackets end a scope and name no key.
+      c = substr(trimmed, 1, 1)
+      if (c == "}" || c == "]") next
       if (trimmed == "...") { delete seen; next }
 
       # a list item opens a fresh mapping scope
       if (substr(trimmed, 1, 2) == "- " || trimmed == "-") {
         clear_from(ind)
         rest = substr(trimmed, 3)
-        if (match(rest, /^("[^"]*"|\x27[^\x27]*\x27|[^ #][^:]*):( |$)/)) {
+        if (match(rest, /^("[^"]*"|\x27[^\x27]*\x27|[^ #"\x27][^:]*):( |$)/)) {
           key = substr(rest, RSTART, RLENGTH)
           sub(/:.*$/, "", key); gsub(/^["\x27]|["\x27]$/, "", key)
           seen[ind + 2, key] = 1
@@ -80,7 +95,7 @@ scan_one() {
         next
       }
 
-      if (!match(trimmed, /^("[^"]*"|\x27[^\x27]*\x27|[^ #][^:]*):( |$)/)) {
+      if (!match(trimmed, /^("[^"]*"|\x27[^\x27]*\x27|[^ #"\x27][^:]*):( |$)/)) {
         if (match(trimmed, /:[ ]*[|>][-+0-9]*$/)) block = ind
         next
       }
