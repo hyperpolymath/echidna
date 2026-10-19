@@ -22,13 +22,16 @@ tab="$(printf '\t')"
 work="$(mktemp -d)"
 trap 'rm -rf "$work"' EXIT
 
-# prover -> TSV "name<TAB>goal" with whitespace normalised, one row per
-# distinct (name, goal) pair, sorted on the name for join(1).
+# prover -> TSV "name<TAB>goal": name trimmed, goal whitespace-normalised, rows
+# with an empty name or goal dropped, one row per distinct pair, sorted on the
+# name for join(1).
 extract() {
   local f="$dir/proof_states_$1.jsonl"
   [ -s "$f" ] || { echo "no records: $f" >&2; return 1; }
   jq -r 'select(.theorem != null and .goal != null)
-         | [.theorem, (.goal | gsub("[[:space:]]+"; " ") | gsub("^ | $"; ""))]
+         | [(.theorem | gsub("^[[:space:]]+|[[:space:]]+$"; "")),
+            (.goal | gsub("[[:space:]]+"; " ") | gsub("^ | $"; ""))]
+         | select(.[0] != "" and .[1] != "")
          | @tsv' "$f" | LC_ALL=C sort -u | LC_ALL=C sort -t "$tab" -k1,1 -s
 }
 

@@ -18,8 +18,13 @@ What the tree already has:
 * *Exchange bridges*: six (`src/rust/exchange/`: OpenTheory, Dedukti,
   Lambdapi, TPTP, SMT-LIB, SMTCoq). All work on rendered text. None produces a
   kernel-checked translation; `term_hash` is taken over the rendering, with no
-  α-normalisation (roadmap 6c), so α-equivalent terms hash apart. The failure
-  direction is safe (a missed `sound`, never a false one).
+  α-normalisation (roadmap 6c), so α-equivalent terms hash apart. Worse, the
+  renderings are lossy: `term_to_opentheory` collapses every term outside
+  Var / Const / App / Lambda to `const "echidna_opaque"` and drops binder
+  types, so two different source terms can render, and hash, alike. Nothing
+  fuses on these hashes today because dispatch attaches no evidence; once it
+  does, a `KernelTranslation` may only come from an injective rendering of a
+  supported fragment, with unsupported terms rejected, never collapsed (§5).
 * *Arbitration*: four fusion mechanisms behind `ResultArbiter`, and since
   2026-10-14 (ECH-05, #430) a fidelity level `belief` / `epi` / `sound` set by
   per-attempt `FidelityEvidence` (`KernelTranslation` /
@@ -51,12 +56,13 @@ What the tree already has:
 === Experiment 1 — the owner's first pair, HOL4 ↔ HOL Light
 
 `scripts/false_friend_scan.sh training_data hol4 hol_light` (this PR;
-deterministic, jq + coreutils, under a minute):
+deterministic, jq + coreutils, under a minute; rows with an empty name or
+statement are dropped, which removes three HOL4 rows):
 
 [cols="3,1",options="header"]
 |===
 | Quantity | Value
-| HOL4 distinct (name, statement) rows / distinct names | 95,740 / 90,170
+| HOL4 distinct (name, statement) rows / distinct names | 95,738 / 90,168
 | HOL Light distinct (name, statement) rows / distinct names | 43,937 / 42,456
 | Theorem names shared by both corpora | 5,060
 | Shared-name statement pairs | 11,490
@@ -77,22 +83,23 @@ name `lemma` carries unrelated statements in each corpus.
 
 === Experiment 2 — within-prover homonymy
 
-Same script, census rows (one name, more than one distinct statement):
+Same script, census rows (one name, more than one distinct statement; rows
+with an empty name or statement dropped):
 
 [cols="2,1,1,1,1",options="header"]
 |===
 | Corpus | Rows | Names | Homonymous names | Rate
-| hol4 | 95,740 | 90,170 | 3,755 | 4.2 %
+| hol4 | 95,738 | 90,168 | 3,755 | 4.2 %
 | hol_light | 43,937 | 42,456 | 1,218 | 2.9 %
 | lean3 | 92,680 | 68,823 | 13,213 | 19.2 %
 | mizar | 76,522 | 18,795 | 340 | 1.8 %
 | agda | 46,028 | 36,936 | 3,178 | 8.6 %
-| afp | 102,685 | 100,116 | 2,077 | 2.1 %
-| acl2 | 135,964 | 118,117 | 9,438 | 8.0 %
-| why3 | 25,183 | 15,396 | 3,368 | 21.9 %
+| afp | 102,683 | 100,116 | 2,075 | 2.1 %
+| acl2 | 135,963 | 118,117 | 9,437 | 8.0 %
+| why3 | 25,180 | 15,395 | 3,368 | 21.9 %
 | dafny | 10,487 | 7,551 | 920 | 12.2 %
 | fstar | 9,386 | 6,367 | 1,216 | 19.1 %
-| lambda_prolog | 24,970 | 15,263 | 7,628 | 50.0 %
+| lambda_prolog | 24,897 | 15,232 | 7,615 | 50.0 %
 |===
 
 The Mizar figure is an artefact of the extractor keying on article-local
@@ -149,8 +156,16 @@ lands in the existing `DeclaredCorrespondence { consequence_tests, failures }`
 constructor and yields `epi`, never `sound`.
 
 * Elegance / correctness: high; reuses the ECH-05 vocabulary unchanged.
-  Correctness is bounded by the probe set and by independence, which must be
-  recorded (same kernel, same library, same author all reduce it).
+  Correctness is bounded by the probe set and by independence (same kernel,
+  same library, same author all reduce it). The current
+  `DeclaredCorrespondence { consequence_tests, failures }` has no place to
+  carry independence, and `fidelity_level` lifts any tested, failure-free
+  correspondence to `Epi`, so independence must travel inside the evidence:
+  `DeclaredCorrespondence` gains a standpoint record (kernel, library and
+  authorship of each side), `fidelity_level` lifts to `Epi` only when the
+  standpoints differ, and the `Arbitration.idr` constructor takes the same
+  argument. That is an additive arbiter and ABI change, and the one this
+  proposal needs.
 * Dependability / security: high. Probes are ordinary prover invocations and
   run inside the existing sandbox and integrity checks.
 * Aspect: this is the route that handles *false friends* natively (different
@@ -191,10 +206,12 @@ owner asked to look for. It belongs in verisimdb, not here.
 *Hub and probe*: A for `sound` where an encoder exists (6a OpenTheory on the
 owner's HOL4 ↔ HOL Light pair first, 6b Dedukti next), B for `epi` everywhere
 else, D as feeders, C rejected, E as the persistence layer, filed against
-verisimdb. The hybrid is the elegant option because it maps one-to-one onto
-the two evidence constructors ECH-05 already proves properties about, so no
-arbiter or ABI change is needed to adopt it; it departs from nothing the
-owner has ruled.
+verisimdb. The hybrid is the elegant option because it maps onto the two
+evidence constructors ECH-05 already proves properties about: the fusion
+mechanisms are untouched, and the arbiter and ABI changes it needs are
+additive (the standpoint record on `DeclaredCorrespondence`, option B, and
+the injectivity requirement on `KernelTranslation` renderings, option A).
+It departs from nothing the owner has ruled.
 
 == Decision (proposed; lands only after D1–D5)
 
@@ -222,7 +239,9 @@ owner has ruled.
   `evidence = none`. Candidates never set `semantic_class` on their own.
 . *Consequence probes*: a `verification/consequence_probe.rs` that takes a
   probe set per pair, runs it through the existing dispatcher and sandbox,
-  records independence, and produces `DeclaredCorrespondence`. First probe
+  and produces `DeclaredCorrespondence` with its standpoint record;
+  `fidelity_level` and `Arbitration.idr` are extended in the same PR so that
+  correlated probes cannot reach `Epi`. First probe
   pair: the SMT-LIB pair Z3 ↔ CVC5, because both binaries already install in
   `live-provers.yml` Tier 1, so the probe loop is testable in CI today.
 . *Hub*: 6a real OpenTheory (article reader and writer against the real
@@ -230,7 +249,10 @@ owner has ruled.
   with the CR-8 round-trip test from `standards`
   `3-practice/testing-and-benchmarking/TESTING-TAXONOMY.adoc`.
 . *6c*: α-normalised projection of `core::Term` to λΠ; `term_hash` over the
-  canonical form; property tests that α-equivalent terms hash equal.
+  canonical form; the renderer rejects terms outside the supported fragment
+  instead of collapsing them to an opaque constant; property tests that
+  α-equivalent terms hash equal and that distinct terms in the fragment never
+  share a hash.
 . *Dispatch attaches evidence* (closes "every verdict is `belief`"), then
   #429's ingestion.
 
@@ -243,9 +265,9 @@ owner has ruled.
 | 1 | Lexicon v2 schema in `src/rust/suggest/synonyms.rs` + `data/synonyms/README.adoc` + tests; existing tables load unchanged | D2
 | 2 | Fill `semantic_class` on the 282 per-prover rows that lack it, curated, with `evidence = curated`; relations added from the scan where the owner's reading confirms them | 1, D4
 | 3 | `echidna lexicon scan`: Rust port of the census, emits v2 candidate rows across all corpus pairs; cognate and specialisation candidates for HOL4 ↔ HOL Light as fixtures | 1
-| 4 | `consequence_probe.rs` + `DeclaredCorrespondence` producer + CI job on Z3 ↔ CVC5 | D3
+| 4 | `consequence_probe.rs` + `DeclaredCorrespondence` producer with the standpoint record + `fidelity_level` and `Arbitration.idr` extension + CI job on Z3 ↔ CVC5 | D3
 | 5 | 6a OpenTheory real + CR-8 round-trip test (#190) | —
-| 6 | 6c α-normalised λΠ projection; canonical `term_hash` | 5
+| 6 | 6c α-normalised λΠ projection; unsupported terms rejected; canonical `term_hash`; injectivity property test | 5
 | 7 | Dispatch attaches fidelity; #429 ingestion | 4, 6
 |===
 
