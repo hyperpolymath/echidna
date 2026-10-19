@@ -24,6 +24,11 @@ trap 'rm -rf "$work"' EXIT
 
 # prover -> TSV "name<TAB>goal" with whitespace normalised, one row per
 # distinct (name, goal) pair, sorted on the name for join(1).
+# $1 is the prover key for "$dir/proof_states_$1.jsonl"; output goes to stdout.
+# Rows with a missing or null theorem or goal are omitted; goal whitespace is
+# collapsed to single spaces and trimmed. Missing or empty input returns 1
+# with a diagnostic on stderr; read, JSON and processing errors propagate a
+# non-zero status.
 extract() {
   local f="$dir/proof_states_$1.jsonl"
   [ -s "$f" ] || { echo "no records: $f" >&2; return 1; }
@@ -34,6 +39,9 @@ extract() {
 
 # prover tsv -> one census row: records, distinct names, homonymous names
 # (one name, more than one distinct goal), homonym rate.
+# $1 labels the prover; $2 is a TSV file of distinct (name, goal) pairs, as
+# produced by extract. Writes to stdout; the rate is a percentage, or 0 when
+# there are no names. File read and processing failures abort the scan.
 census() {
   local r n h
   r=$(wc -l < "$2")
