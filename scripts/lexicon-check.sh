@@ -27,7 +27,23 @@ errfile="$(mktemp)"
 trap 'rm -f "$errfile"' EXIT
 bad=0 n=0
 
-for f in "$root"/data/synonyms/*.toml "$root"/tests/lexicon_fixtures/accept/*.toml; do
+# An unmatched glob must not pass as a file (it would "fail" to load and so
+# count as a rejection), and an empty set must not pass silently.
+shopt -s nullglob
+tables=("$root"/data/synonyms/*.toml)
+accepts=("$root"/tests/lexicon_fixtures/accept/*.toml)
+rejects=("$root"/tests/lexicon_fixtures/reject/*.toml)
+shopt -u nullglob
+for set in tables accepts rejects; do
+  declare -n files="$set"
+  if [ "${#files[@]}" -eq 0 ]; then
+    echo "lexicon-check: no $set found; refusing to pass an empty set" >&2
+    exit 1
+  fi
+  unset -n files
+done
+
+for f in "${tables[@]}" "${accepts[@]}"; do
   n=$((n + 1))
   if ! check "$f"; then
     echo "FAIL (must pass): ${f#"$root"/}"
@@ -36,7 +52,7 @@ for f in "$root"/data/synonyms/*.toml "$root"/tests/lexicon_fixtures/accept/*.to
   fi
 done
 
-for f in "$root"/tests/lexicon_fixtures/reject/*.toml; do
+for f in "${rejects[@]}"; do
   n=$((n + 1))
   if check "$f"; then
     echo "FAIL (must be rejected): ${f#"$root"/}"
