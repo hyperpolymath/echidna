@@ -51,6 +51,17 @@ pub struct ProofSession {
     pub start_time: std::time::Instant,
 }
 
+/// Runs the REST API with permissive CORS, ReDoc at `/redoc` and the OpenAPI
+/// JSON specification at `/api-docs/openapi.json`.
+///
+/// Binds to `ECHIDNA_REST_ADDR`, defaulting to `127.0.0.1:8000` when the variable
+/// is absent or is not valid Unicode. Probes Julia ML at `http://127.0.0.1:8090`
+/// and initialises the FFI layer; failures of either check do not prevent startup.
+///
+/// # Panics
+///
+/// Panics if tracing initialisation, HTTP client creation, listener binding or
+/// serving fails.
 #[tokio::main]
 async fn main() {
     tracing_subscriber::fmt()
