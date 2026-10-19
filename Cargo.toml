@@ -159,4 +159,6 @@ exclude = [
     # Governance builds this standalone checker from a sparse Standards checkout.
     ".standards-js/tools/js-runtimes",
     "fuzz",
+    # Governance builds this tool from a sparse standards checkout inside our tree.
+    ".standards-js/tools/js-runtimes",
 ]
