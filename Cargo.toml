@@ -156,5 +156,7 @@ members = [
     "src/interfaces/rest",
 ]
 exclude = [
+    # Governance builds this standalone checker from a sparse Standards checkout.
+    ".standards-js/tools/js-runtimes",
     "fuzz",
 ]
