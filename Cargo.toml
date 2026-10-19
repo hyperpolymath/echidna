@@ -157,9 +157,6 @@ members = [
 ]
 exclude = [
     "fuzz",
-    # The governance reusable checks hyperpolymath/standards out at .standards-js
-    # and builds tools/js-runtimes from there; at the pinned standards commit that
-    # crate is not its own workspace root, so this keeps it out of ours. Remove
-    # once the governance pin reaches hyperpolymath/standards#1299.
+    # The governance workflow builds this external checker in a nested checkout.
     ".standards-js/tools/js-runtimes",
 ]
