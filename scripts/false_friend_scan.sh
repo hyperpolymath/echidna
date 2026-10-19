@@ -38,7 +38,7 @@ census() {
   local r n h
   r=$(wc -l < "$2")
   n=$(cut -f1 "$2" | LC_ALL=C sort -u | wc -l)
-  h=$(cut -f1 "$2" | LC_ALL=C sort | uniq -d | wc -l)
+  h=$(cut -f1 "$2" | LC_ALL=C sort | LC_ALL=C uniq -d | wc -l)
   awk -v p="$1" -v r="$r" -v n="$n" -v h="$h" \
     'BEGIN { printf "%-14s %9d %9d %9d %6.1f%%\n", p, r, n, h, (n ? 100*h/n : 0) }'
 }
@@ -62,11 +62,13 @@ echo "$b-only: $(LC_ALL=C comm -13 "$work/na" "$work/nb" | wc -l)"
 LC_ALL=C join -t "$tab" "$work/a.tsv" "$work/b.tsv" > "$work/joined.tsv"
 echo
 echo "== shared names, statement text agreement (name-pairs: $(wc -l < "$work/joined.tsv"))"
-awk -F'\t' '{ if ($2 == $3) s++; else d++ }
-  END { printf "cognate (identical statement text): %d\ndiffering statement text (false-friend or specialisation candidates): %d\n", s, d }' \
+awk -F'\t' '{ if (($2 "") == ($3 "")) s++; else d++ }
+  END { printf "cognate (equal after whitespace normalisation): %d\ndiffering statement text (false-friend or specialisation candidates): %d\n", s, d }' \
   "$work/joined.tsv"
 echo
-echo "== first differing name-pairs (deterministic order)"
-awk -F'\t' -v A="$a" -v B="$b" '$2 != $3 {
-  printf "%s\n  %s: %s\n  %s: %s\n", $1, A, substr($2, 1, 100), B, substr($3, 1, 100) }' \
-  "$work/joined.tsv" | head -24
+echo "== first differing name-pairs (deterministic order, at most 8)"
+# awk stops itself after eight pairs; truncating with head(1) would close
+# the pipe early and, under pipefail, turn a finished scan into exit 141.
+awk -F'\t' -v A="$a" -v B="$b" '($2 "") != ($3 "") {
+  printf "%s\n  %s: %s\n  %s: %s\n", $1, A, substr($2, 1, 100), B, substr($3, 1, 100)
+  if (++shown >= 8) exit }' "$work/joined.tsv"

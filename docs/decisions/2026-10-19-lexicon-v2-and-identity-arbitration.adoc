@@ -60,7 +60,7 @@ deterministic, jq + coreutils, under a minute):
 | HOL Light distinct (name, statement) rows / distinct names | 43,937 / 42,456
 | Theorem names shared by both corpora | 5,060
 | Shared-name statement pairs | 11,490
-| … with byte-identical statement text (cognates) | 1,030
+| … with equal statement text after whitespace normalisation (cognates) | 1,030
 | … with differing statement text | 10,460
 |===
 
@@ -106,9 +106,9 @@ joins corpora by name: a name is not an identity, even inside one prover.
 
 . Lexical alignment is unsafe as *evidence*, which ECH-05 already assumes; the
   experiment quantifies how unsafe (nine in ten shared-name pairs differ).
-. Lexical alignment is a high-yield *candidate generator*: 1,030 exact
-  cognates and roughly ten thousand specialisation candidates fall out of the
-  first pair for free, before any kernel runs.
+. Lexical alignment is a high-yield *candidate generator*: 1,030
+  whitespace-normalised cognates and roughly ten thousand specialisation
+  candidates fall out of the first pair for free, before any kernel runs.
 . The relation the lexicon most needs next is not more synonyms but
   `specialisation` / `generalisation`, then `false_friend`, then `phrase`.
 
@@ -207,9 +207,12 @@ owner has ruled.
   * `false_friends`: names that *look* like this entry in other tables and
     are not it, with the other table named.
   * `evidence`: `none` (default), `curated`, `probe { tests, failures }`,
-    `kernel { format, term_hash }` — the same three shapes as
-    `FidelityEvidence`, so a lexicon row can be lifted straight into an
-    attempt's fidelity.
+    `kernel { format, checked_by, term_hash }`. `curated` records provenance
+    only and lifts to `FidelityEvidence::None` until probe or kernel evidence
+    is attached; `probe` lifts to `DeclaredCorrespondence`, and `kernel` to
+    `KernelTranslation` only when every field, `checked_by` included, is
+    present. A lexicon row therefore never raises an attempt's fidelity
+    above what its own evidence carries.
   * `fidelity`: `exact` or `lossy` with a `residue` note, after echo-types'
     loss-with-residue formalism, so a lossy correspondence says what is lost.
   * `scope`: library and version the relation holds in (the existing `since`
