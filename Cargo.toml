@@ -156,9 +156,10 @@ members = [
     "src/interfaces/rest",
 ]
 exclude = [
-    # Governance builds this standalone checker from a sparse Standards checkout.
-    ".standards-js/tools/js-runtimes",
     "fuzz",
-    # Governance builds this tool from a sparse standards checkout inside our tree.
+    # The governance reusable checks hyperpolymath/standards out at .standards-js
+    # and builds tools/js-runtimes from there; at the pinned standards commit that
+    # crate is not its own workspace root, so this keeps it out of ours. Remove
+    # once the governance pin reaches hyperpolymath/standards#1299.
     ".standards-js/tools/js-runtimes",
 ]
