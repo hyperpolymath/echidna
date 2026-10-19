@@ -48,6 +48,6 @@ jobs:
           (cd pb && ACTIONS_LOCK_VERIFIER="$PWD/../std-gate/scripts/update-actions-lock.sh" \
             bash ../std-gate/scripts/check-actions-lock-gate.sh .github/workflows); echo "GATE_RC=$?"
           echo "LOCK-SHA256 $(sha256sum < pb/.github/workflows/actions.lock | cut -d' ' -f1)"
-          echo "DIFF-BEGIN"
-          git -C pb diff -- .github/workflows/actions.lock
-          echo "DIFF-END"
+          echo "LOCK-BEGIN"
+          cat pb/.github/workflows/actions.lock
+          echo "LOCK-END"
