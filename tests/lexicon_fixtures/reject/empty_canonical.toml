@@ -1,0 +1,5 @@
+# SPDX-License-Identifier: MPL-2.0
+# Must be rejected by data/synonyms/schema.ncl: an empty canonical name
+[[synonym]]
+canonical = ""
+aliases = ["y"]

@@ -77,6 +77,20 @@ jobs:
           repository: ${{ github.repository }}
           ref: ${{ github.ref }}
 
+      - name: Lexicon v2 contract (Nickel)
+        # data/synonyms/schema.ncl applied to every shipped table, plus the
+        # accept/reject fixtures that prove the contract still bites.
+        # Nickel is a pinned release binary checked by SHA-256 (no action, so
+        # no actions.lock record). Bump both lines together.
+        env:
+          NICKEL_VERSION: 1.12.2
+          NICKEL_SHA256: dae58ae8a96bbcacf141d61a5f93a971c89341f9d7164f763aa170459336ea46
+        run: |
+          curl -sSfL -o "$RUNNER_TEMP/nickel" "https://github.com/tweag/nickel/releases/download/${NICKEL_VERSION}/nickel-x86_64-linux"
+          echo "${NICKEL_SHA256}  $RUNNER_TEMP/nickel" | sha256sum -c -
+          chmod +x "$RUNNER_TEMP/nickel"
+          NICKEL="$RUNNER_TEMP/nickel" scripts/lexicon-check.sh
+
       - name: Install Rust toolchain
         # `toolchain:` is mandatory because the ref is `@v1` (pinned to a commit
         # through actions.lock), not a toolchain name:

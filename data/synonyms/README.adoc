@@ -68,6 +68,57 @@ Each `[[synonym]]` entry has:
 | Version range over which the alias applies.  Empty means "always".
 |===
 
+== Lexicon v2 fields
+
+Owner decisions 2026-10-19 (D2, D4) in
+`docs/decisions/2026-10-19-lexicon-v2-and-identity-arbitration.adoc`.
+All fields are optional; v1 rows load unchanged. The schema of record is the
+Nickel contract `schema.ncl`; `scripts/lexicon-check.sh` (or
+`just lexicon-check`) applies it to every table here and to the fixtures in
+`tests/lexicon_fixtures/`, and CI runs it in the `rust-ci` check job.
+
+[cols="1,3"]
+|===
+| Field | Meaning
+
+| `relation`
+| How `aliases` relate to `canonical`: `synonym` (default, interchangeable),
+  `specialisation` (each alias is a special case), `generalisation`,
+  `false_friend` (looks alike, is not; never substituted) or `phrase`
+  (`canonical` is a multi-token idiom). Only `synonym` and `phrase` rows feed
+  the variant tester; the others are reported by `SynonymTable::related`.
+
+| `phrase`
+| Token list of a multi-token idiom. Required with, and only allowed with,
+  `relation = "phrase"`.
+
+| `false_friends`
+| Look-alike names in other tables, each `{ name, table }` where `table` is
+  the other file's stem.
+
+| `evidence`
+| The witness behind the row: `{ kind = "none" }` (default), `"curated"`,
+  `"probe"` with `tests` and `failures`, or `"kernel"` with `format`,
+  `checked_by` and a 64-hex BLAKE3 `term_hash`. It lifts into the
+  arbiter's `FidelityEvidence`: `none` and `curated` lift to `None`
+  (curation is provenance, not fidelity evidence), `probe` to
+  `DeclaredCorrespondence`, `kernel` to `KernelTranslation`. A lexicon row
+  never raises a verdict above its own evidence.
+
+| `fidelity`, `residue`
+| `exact` or `lossy`; a lossy row must say what is lost in `residue`.
+
+| `scope`
+| `{ library, version }` the relation holds in.
+|===
+
+Corpus-mined candidates (owner decision D4) are flag-only: they carry
+`evidence = { kind = "none" }` and never set `semantic_class` on their own.
+
+Nickel checks shape and the cross-field rules; serde checks that
+`checked_by` names a `ProverKind` and `format` an `ExchangeFormat` when Rust
+loads a table (`tests/lexicon_v2_test.rs`).
+
 == Variant-tester contract
 
 When `echidna suggest` encounters a tactic name in a failing proof, it:
