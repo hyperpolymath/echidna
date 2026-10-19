@@ -35,6 +35,9 @@ jobs:
           # Full estate regen (gh actions-lock first, which also migrates the
           # format to v0.0.3, then the repair chain).
           export GH_BIN=gh REGEN_TOOLS="$PWD/std-regen/scripts"
+          # Start from no lock: main's pins v1 at a commit the tag no longer
+          # names, which gh actions-lock rejects as a conflicting target.
+          rm -f pb/.github/workflows/actions.lock
           source std-regen/scripts/regen-dependabot-locks.sh
           outcome="$(regen_lock "$PWD/pb" || true)"
           echo "OUTCOME=$outcome"
