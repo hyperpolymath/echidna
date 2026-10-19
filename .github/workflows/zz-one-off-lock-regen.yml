@@ -1,5 +1,5 @@
 # SPDX-License-Identifier: MPL-2.0
-# ONE-OFF, scratch branch only, deleted after use. Regenerates main's
+# ONE-OFF, scratch branch only, deleted after use. Regenerates panic-attack's fix branch's
 # actions.lock with the estate repair order (regen_lock in
 # standards/scripts/regen-dependabot-locks.sh), runs the governance gate's own
 # check against the result, and prints the lock base64-encoded. It has no
@@ -17,14 +17,14 @@ jobs:
     timeout-minutes: 20
     env:
       GH_TOKEN: ${{ github.token }}
-      REPO: ${{ github.repository }}
+      REPO: hyperpolymath/panic-attack
       STANDARDS_REGEN_SHA: 333b06a01db1874ffedb2de1bfabb195640927c7
-      STANDARDS_GATE_SHA: 75bd5994470661a099df562d6d5ad2fe744dbd66
+      STANDARDS_GATE_SHA: 333b06a01db1874ffedb2de1bfabb195640927c7
     steps:
-      - name: Regenerate main's actions.lock and check it with the gate
+      - name: Regenerate the repair branch's actions.lock and check it with the gate
         run: |
           set -uo pipefail
-          git clone --quiet --branch main "https://github.com/$REPO.git" pb
+          git clone --quiet --branch claude/new-session-th4e9w https://github.com/hyperpolymath/panic-attack.git pb
           git -C pb log --oneline -1
           git clone --quiet https://github.com/hyperpolymath/standards.git std
           git -C std worktree add --quiet --detach ../std-regen "$STANDARDS_REGEN_SHA"
@@ -32,14 +32,14 @@ jobs:
           sudo apt-get install -y -qq gawk >/dev/null
           gh extension install github/gh-actions-lock --pin v0.2.0
           gh actions-lock --version
-          # close-lock only: add the missing records and keep the ones main
-          # already has (a full regen drops records it cannot re-resolve).
+          # The repair chain without a gh actions-lock fix-mode pass (it drops
+          # records it cannot re-resolve).
           export GH_BIN=gh
-          (cd pb && bash ../std-regen/scripts/close-lock.sh .github/workflows; echo "CLOSE_RC=$?")
-          (cd pb && bash ../std-regen/scripts/prune-stale.sh .github/workflows; echo "PRUNE_RC=$?")
-          (cd pb && bash ../std-regen/scripts/check-lock-sync.sh .github/workflows; echo "SYNC_RC=$?")
+          for s in relock-sha-keys complete-job-refs close-lock prune-stale check-lock-sync; do
+            (cd pb && { bash ../std-regen/scripts/$s.sh .github/workflows && echo "$s RC=0" || echo "$s RC=$?"; })
+          done
           git -C pb status --porcelain
-          echo "== the governance gate, as pinned by echidna ($STANDARDS_GATE_SHA)"
+          echo "== the governance gate, as pinned by the repair branch ($STANDARDS_GATE_SHA)"
           (cd pb && ACTIONS_LOCK_VERIFIER="$PWD/../std-gate/scripts/update-actions-lock.sh" \
             bash ../std-gate/scripts/check-actions-lock-gate.sh .github/workflows); echo "GATE_RC=$?"
           echo "LOCK-SHA256 $(sha256sum < pb/.github/workflows/actions.lock | cut -d' ' -f1)"
