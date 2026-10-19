@@ -1,0 +1,288 @@
+// SPDX-License-Identifier: CC-BY-SA-4.0
+// SPDX-FileCopyrightText: 2026 Jonathan D.A. Jewell (hyperpolymath) <j.d.a.jewell@open.ac.uk>
+= ADR: lexicon v2 (false friends, phrases, equivalences) and hub-and-probe identity arbitration (stage 6c)
+:revdate: 2026-10-19
+:status: proposed — owner decisions D1–D5 in §7 are open; nothing below is ruled
+
+== Context (measured on `main` at `ed6ef60`, 2026-10-19)
+
+The owner asked for two things at once: push the saturation levers again
+(provers, corpora, vocabulary, synonyms) and go past lexical synonymy toward
+*phrases*, *equivalent expressions*, *false friends*, and ultimately a way to
+arbitrate proofs across prover families by establishing what mathematical
+object each system is talking about — "feeling our way around mathematical
+objects" rather than only checking the same text in many kernels.
+
+What the tree already has:
+
+* *Exchange bridges*: six (`src/rust/exchange/`: OpenTheory, Dedukti,
+  Lambdapi, TPTP, SMT-LIB, SMTCoq). All work on rendered text. None produces a
+  kernel-checked translation; `term_hash` is taken over the rendering, with no
+  α-normalisation (roadmap 6c), so α-equivalent terms hash apart. The failure
+  direction is safe (a missed `sound`, never a false one).
+* *Arbitration*: four fusion mechanisms behind `ResultArbiter`, and since
+  2026-10-14 (ECH-05, #430) a fidelity level `belief` / `epi` / `sound` set by
+  per-attempt `FidelityEvidence` (`KernelTranslation` /
+  `DeclaredCorrespondence` / `None`), with the Idris2 statement in
+  `src/abi/EchidnaABI/Arbitration.idr`. Dispatch attaches no evidence yet, so
+  every dispatched verdict is `belief`. The owner's first kernel-translation
+  target is HOL4 ↔ HOL Light through OpenTheory (6a), then Lean 4 ↔ Rocq
+  through Dedukti (6b). Issue #429 asks to *consume* fidelity evidence (fibre
+  coverage, round trips, cross-prover agreement from one kernel plus
+  independent standpoints) rather than collect N re-proofs.
+* *Lexicon*: `data/synonyms/` holds 14 per-prover tables (343 `[[synonym]]`
+  rows) and 4 cross-prover dictionaries (`_msc2020`, `_wordnet_math`,
+  `_conceptnet_seed`, `_disciplines`; 262 rows). `semantic_class`, the only
+  cross-prover join key, is present on 61 of the 343 per-prover rows, 40 of
+  them in `mizar.toml`; nine tables have none. The schema can say "these names
+  are interchangeable" and nothing else: no way to record a *false friend*
+  (same name, different object), a *phrase* (a multi-token idiom that is one
+  tactic or one concept), a *specialisation* (same theorem at a narrower
+  type), or an *equivalence with a witness* (and which kind of witness).
+* *Corpus*: `training_data/` is uneven. Over thirty provers have empty
+  `premises_*` / `tactics_*` files; HOL Light alone contributes 328,825
+  premise rows. `models/premise_vocab.txt` has 1,311,903 lines, which already
+  exceeds the roadmap's "~1 M canonical tokens" target as a raw count; the
+  metric that matters is `metrics/oov_rate.jl` (≤ 3 %), unmeasured since the
+  saturation campaign.
+* *Toolchain in the session container*: Rust only. No prover, no Julia, no
+  Idris2. Everything measured below is lexical; no kernel was consulted.
+
+=== Experiment 1 — the owner's first pair, HOL4 ↔ HOL Light
+
+`scripts/false_friend_scan.sh training_data hol4 hol_light` (this PR;
+deterministic, jq + coreutils, under a minute):
+
+[cols="3,1",options="header"]
+|===
+| Quantity | Value
+| HOL4 distinct (name, statement) rows / distinct names | 95,740 / 90,170
+| HOL Light distinct (name, statement) rows / distinct names | 43,937 / 42,456
+| Theorem names shared by both corpora | 5,060
+| Shared-name statement pairs | 11,490
+| … with byte-identical statement text (cognates) | 1,030
+| … with differing statement text | 10,460
+|===
+
+Reading the differing pairs in order shows the dominant pattern is *not*
+contradiction and *not* synonymy. It is type generalisation: HOL4's
+`!f:real->real …` against HOL Light's `!f:real^M->real^N …`, `abs` against
+`norm`, `0` against `vec 0` (HOL Light's multivariate library is the
+n-dimensional generalisation of the shared ancestor). Those are
+*specialisation* pairs: the HOL4 statement is an instance of the HOL Light
+one. A lexicon with only `synonym` cannot express that, and an arbiter that
+accepted them as "the same theorem" would be wrong in one direction and
+right in the other. Genuine false friends also exist in the same list: the
+name `lemma` carries unrelated statements in each corpus.
+
+=== Experiment 2 — within-prover homonymy
+
+Same script, census rows (one name, more than one distinct statement):
+
+[cols="2,1,1,1,1",options="header"]
+|===
+| Corpus | Rows | Names | Homonymous names | Rate
+| hol4 | 95,740 | 90,170 | 3,755 | 4.2 %
+| hol_light | 43,937 | 42,456 | 1,218 | 2.9 %
+| lean3 | 92,680 | 68,823 | 13,213 | 19.2 %
+| mizar | 76,522 | 18,795 | 340 | 1.8 %
+| agda | 46,028 | 36,936 | 3,178 | 8.6 %
+| afp | 102,685 | 100,116 | 2,077 | 2.1 %
+| acl2 | 135,964 | 118,117 | 9,438 | 8.0 %
+| why3 | 25,183 | 15,396 | 3,368 | 21.9 %
+| dafny | 10,487 | 7,551 | 920 | 12.2 %
+| fstar | 9,386 | 6,367 | 1,216 | 19.1 %
+| lambda_prolog | 24,970 | 15,263 | 7,628 | 50.0 %
+|===
+
+The Mizar figure is an artefact of the extractor keying on article-local
+labels (`Th1`, `Th2`, …): 76,522 rows collapse onto 18,795 names, so the
+corpus is nearly all homonyms *by construction*, and the low rate means the
+extractor dropped most of them. Lean 3 and Why3 are genuinely namespace-heavy
+(`add_comm` in dozens of structures). Both facts matter for anything that
+joins corpora by name: a name is not an identity, even inside one prover.
+
+=== What the numbers establish
+
+. Lexical alignment is unsafe as *evidence*, which ECH-05 already assumes; the
+  experiment quantifies how unsafe (nine in ten shared-name pairs differ).
+. Lexical alignment is a high-yield *candidate generator*: 1,030 exact
+  cognates and roughly ten thousand specialisation candidates fall out of the
+  first pair for free, before any kernel runs.
+. The relation the lexicon most needs next is not more synonyms but
+  `specialisation` / `generalisation`, then `false_friend`, then `phrase`.
+
+== Options
+
+Rated first for elegance and correctness, then for dependability and
+security. Aspects noted where relevant.
+
+=== A. Logical-framework hub (λΠ-modulo as the lingua franca)
+
+Dedukti / Lambdapi as the single exchange target; prover-specific encoders do
+the work (the Dedukti ecosystem ships them: OpenTheory → Dedukti, Coq →
+Dedukti, Agda → Dedukti, Isabelle → Dedukti, Lean partial). Identity of two
+statements is identity of their λΠ terms after normalisation, which the
+arbiter already names as `KernelTranslation { term_hash }` and already proves
+cannot fuse a collision to `sound`.
+
+* Elegance / correctness: highest. One hub, kernel-checked, matches roadmap
+  6b and #191 exactly, and the arbiter's `sound` level is already defined
+  over it.
+* Dependability / security: high once an encoder exists; each encoder is a
+  research-grade artefact and the set of provers it covers is bounded.
+* Aspect: this is the *only* route to `sound`. Everything else tops out at
+  `epi`.
+
+=== B. Behavioural identity by consequence partitions ("feeling our way around")
+
+Identify an object by what it does, not by its term: fix a shared probe set
+(consequences, instances, counter-instances), have each prover decide the
+probes for its candidate statement, and call two candidates the same object
+when they induce the same partition of the probe set. This is the standpoint
+in `hyperpolymath/autoformal-fidelity` (two target standpoints; agreement is
+identical partitions; convergence is evidence only under independence) and it
+is what #429 asks ECHIDNA to consume. It is neurosymbolic in the intended
+sense: the neural layer proposes alignments from corpus embeddings and
+lexical candidates (Experiment 1); the symbolic layer tests them; the result
+lands in the existing `DeclaredCorrespondence { consequence_tests, failures }`
+constructor and yields `epi`, never `sound`.
+
+* Elegance / correctness: high; reuses the ECH-05 vocabulary unchanged.
+  Correctness is bounded by the probe set and by independence, which must be
+  recorded (same kernel, same library, same author all reduce it).
+* Dependability / security: high. Probes are ordinary prover invocations and
+  run inside the existing sandbox and integrity checks.
+* Aspect: this is the route that handles *false friends* natively (different
+  partitions) and *specialisation* (one partition refines the other), neither
+  of which a term hash can express.
+
+=== C. An in-house super-language or universal IR
+
+A new estate language in which every prover's statements are written.
+Rated lowest: it reinvents MMT / Dedukti, needs the same per-prover encoders
+as A, and adds a kernel nobody has checked. The useful kernel of the idea is
+already in the tree: `core::Term` in `crates/echidna-core/src/core.rs` is a
+small dependent-type IR (Var, Const, App, Lambda, Pi, Sigma, universes, Let).
+The elegant move is to make `core::Term` the α-normalised *projection target*
+that renders to λΠ (6c), not to invent a language around it. KYAML, deed and
+System-ET are serialisation surfaces, not logics: they can carry the lexicon
+and the certificates, and they cannot carry identity.
+
+=== D. Pairwise translators (Mathport-style)
+
+Lean 3 → Lean 4, HOL Light → HOL4 via OpenTheory, and so on. Pragmatic where
+a mature tool exists; quadratic in the number of provers; keeps every pair as
+its own special case. Kept as *feeders* into A, never as the architecture.
+
+=== E. Identity as a VeriSimDB consonance subject (alternative framing, cross-repo)
+
+`hyperpolymath/verisimdb` already defines exactly this problem for data:
+one identity maintained across modal witnesses, with drift detection and the
+verbs `MERGE` / `SPLIT` / `RETRACT`. Treat each prover as a modal witness of
+one mathematical object: a cognate is consonance, a false friend is drift,
+curation is `MERGE` or `SPLIT`, retraction of a backend
+(`ResultArbiter::retract`) is `RETRACT`. This is not a competitor to A + B;
+it is where the identity lives between runs, and it is the estate trope the
+owner asked to look for. It belongs in verisimdb, not here.
+
+== Recommendation
+
+*Hub and probe*: A for `sound` where an encoder exists (6a OpenTheory on the
+owner's HOL4 ↔ HOL Light pair first, 6b Dedukti next), B for `epi` everywhere
+else, D as feeders, C rejected, E as the persistence layer, filed against
+verisimdb. The hybrid is the elegant option because it maps one-to-one onto
+the two evidence constructors ECH-05 already proves properties about, so no
+arbiter or ABI change is needed to adopt it; it departs from nothing the
+owner has ruled.
+
+== Decision (proposed; lands only after D1–D5)
+
+. *Lexicon v2 schema*, additive and loader-compatible (serde defaults), on
+  every `[[synonym]]` row:
+  * `relation`: one of `synonym` (default), `specialisation`,
+    `generalisation`, `false_friend`, `phrase`.
+  * `phrase`: ordered token list for a multi-token idiom (for example
+    Mizar's `then thus`, Coq's `apply … ; auto`, Isabelle's `by (simp add:`).
+  * `false_friends`: names that *look* like this entry in other tables and
+    are not it, with the other table named.
+  * `evidence`: `none` (default), `curated`, `probe { tests, failures }`,
+    `kernel { format, term_hash }` — the same three shapes as
+    `FidelityEvidence`, so a lexicon row can be lifted straight into an
+    attempt's fidelity.
+  * `fidelity`: `exact` or `lossy` with a `residue` note, after echo-types'
+    loss-with-residue formalism, so a lossy correspondence says what is lost.
+  * `scope`: library and version the relation holds in (the existing `since`
+    / `until` cover the prover version only).
+. *Candidate generation from corpora*: `scripts/false_friend_scan.sh` now; a
+  Rust `echidna lexicon scan` later that emits v2 rows with
+  `evidence = none`. Candidates never set `semantic_class` on their own.
+. *Consequence probes*: a `verification/consequence_probe.rs` that takes a
+  probe set per pair, runs it through the existing dispatcher and sandbox,
+  records independence, and produces `DeclaredCorrespondence`. First probe
+  pair: the SMT-LIB pair Z3 ↔ CVC5, because both binaries already install in
+  `live-provers.yml` Tier 1, so the probe loop is testable in CI today.
+. *Hub*: 6a real OpenTheory (article reader and writer against the real
+  stack-machine format, compatible with the OpenTheory → Dedukti encoder),
+  with the CR-8 round-trip test from `standards`
+  `3-practice/testing-and-benchmarking/TESTING-TAXONOMY.adoc`.
+. *6c*: α-normalised projection of `core::Term` to λΠ; `term_hash` over the
+  canonical form; property tests that α-equivalent terms hash equal.
+. *Dispatch attaches evidence* (closes "every verdict is `belief`"), then
+  #429's ingestion.
+
+== Work breakdown (stacked PRs, each independently reviewable)
+
+[cols="1,4,2",options="header"]
+|===
+| PR | Content | Depends on
+| 0 (this) | This ADR + `scripts/false_friend_scan.sh` | —
+| 1 | Lexicon v2 schema in `src/rust/suggest/synonyms.rs` + `data/synonyms/README.adoc` + tests; existing tables load unchanged | D2
+| 2 | Fill `semantic_class` on the 282 per-prover rows that lack it, curated, with `evidence = curated`; relations added from the scan where the owner's reading confirms them | 1, D4
+| 3 | `echidna lexicon scan`: Rust port of the census, emits v2 candidate rows across all corpus pairs; cognate and specialisation candidates for HOL4 ↔ HOL Light as fixtures | 1
+| 4 | `consequence_probe.rs` + `DeclaredCorrespondence` producer + CI job on Z3 ↔ CVC5 | D3
+| 5 | 6a OpenTheory real + CR-8 round-trip test (#190) | —
+| 6 | 6c α-normalised λΠ projection; canonical `term_hash` | 5
+| 7 | Dispatch attaches fidelity; #429 ingestion | 4, 6
+|===
+
+Saturation levers that need no decision and can run alongside: synonym
+tables for the Tier-1 provers that still have none (Z3, CVC5, PVS), filling
+the empty `premises_*` files for Tier-2 provers whose extractor exists, and
+re-running `metrics/run_all.jl` to re-baseline `oov_rate` and
+`alignment_rate` (needs Julia; not possible in the session container).
+
+== Beyond this repository
+
+* `hyperpolymath/verisimdb`: map cross-prover object identity onto a
+  consonance subject (option E); one issue to open.
+* `hyperpolymath/standards`: CR-8 names the round-trip pairs; the FRG grades'
+  "cross-prover replication ≥ 2 / ≥ 3" (V2 / V3) should require `epi` or
+  better, not lexical agreement, once this lands.
+* `hyperpolymath/autoformal-fidelity` and `hyperpolymath/nextgen-typing`
+  (`docs/TYPE-CONNECTIONS.adoc`): the partition-agreement statement B
+  implements; cite, do not re-derive.
+* `hyperpolymath/echo-types`: the residue of a lossy correspondence
+  (`fidelity = lossy`) is an echo-types L3 object; the lexicon should cite the
+  loss taxonomy rather than invent names for kinds of loss.
+* `hyperpolymath/echidnabot`: consumes `echidna.prove.result/1`; the
+  verdict's `level` should surface in its trust bridge once dispatch attaches
+  evidence.
+
+== Open owner decisions (the selector questions this session could not ask)
+
+[cols="1,5,3",options="header"]
+|===
+| # | Question | Recommended
+| D1 | Architecture for identity arbitration: hub and probe (A + B), super-language (C), or pairwise only (D)? | A + B
+| D2 | Lexicon v2 format: extend the TOML tables in place (loader-compatible) or move `data/synonyms/` to Nickel or deed? | TOML in place
+| D3 | First consequence-probe pair: Z3 ↔ CVC5 (runs in CI today) alongside the HOL4 ↔ HOL Light hub pilot, or wait for HOL binaries in CI? | Z3 ↔ CVC5 now
+| D4 | May corpus-mined candidates set `semantic_class` automatically? | No: `evidence = none`, flag-only until curated or probe-tested
+| D5 | Open the verisimdb consonance-subject issue (option E) now? | Yes
+|===
+
+== Non-claims
+
+No prover ran during the measurement. Every number above is lexical. Nothing
+in this ADR raises any verdict above `belief`; the ECH-05 regression and
+fidelity tests are untouched.
