@@ -191,7 +191,7 @@ shape (Idris2 / Agda case studies in link:src/chapel/[`+src/chapel/+`]).
 * *Three API surfaces*:
 ** GraphQL (async-graphql, port 8081)
 ** gRPC (tonic + Protocol Buffers, port 50051)
-** REST (axum + OpenAPI/Swagger, port 8000)
+** REST (axum + OpenAPI/ReDoc, port 8000)
 * *AffineScript / AffineScript UI*: AffineScript components are being
 ported to AffineScript-TEA as the stdlib primitives needed for the port
 (Http / Promise / Json / Dict) land in

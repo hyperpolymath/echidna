@@ -14,7 +14,7 @@ use std::time::Duration;
 use tokio::sync::{Mutex, RwLock};
 use tower_http::cors::CorsLayer;
 use utoipa::OpenApi;
-use utoipa_swagger_ui::SwaggerUi;
+use utoipa_redoc::{Redoc, Servable};
 
 mod ffi_wrapper;
 mod handlers;
@@ -117,14 +117,20 @@ async fn main() {
         // Consultant-mode Q&A — free-form question + optional context →
         // LLM-shaped markdown answer via BoJ's cartridge router.
         .route("/api/v1/consult", post(handlers::consult))
-        // OpenAPI documentation
-        .merge(SwaggerUi::new("/swagger-ui").url("/api-docs/openapi.json", ApiDoc::openapi()))
+        // OpenAPI documentation: the raw spec, and ReDoc rendering it.
+        // ReDoc replaced Swagger UI because utoipa-swagger-ui builds
+        // against zip ^8.6, which has no fix for RUSTSEC-2026-0367..0369.
+        .route(
+            "/api-docs/openapi.json",
+            get(|| async { axum::Json(ApiDoc::openapi()) }),
+        )
+        .merge(Redoc::with_url("/redoc", ApiDoc::openapi()))
         .layer(CorsLayer::permissive())
         .with_state(state);
 
     let addr = std::env::var("ECHIDNA_REST_ADDR").unwrap_or_else(|_| "127.0.0.1:8000".to_string());
     tracing::info!("REST API listening on http://{}", addr);
-    tracing::info!("Swagger UI available at http://{}/swagger-ui", addr);
+    tracing::info!("API docs (ReDoc) available at http://{}/redoc", addr);
 
     let listener = tokio::net::TcpListener::bind(&addr).await.unwrap();
     axum::serve(listener, app).await.unwrap();
