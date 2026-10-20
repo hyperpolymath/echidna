@@ -72,6 +72,9 @@ impl LexiconEvidence {
     /// Lift to the arbiter's evidence. `none` and `curated` lift to
     /// [`FidelityEvidence::None`], so a lexicon row never raises an
     /// attempt's fidelity above what its own evidence carries.
+    /// Probe evidence becomes [`FidelityEvidence::DeclaredCorrespondence`];
+    /// kernel evidence becomes [`FidelityEvidence::KernelTranslation`].
+    /// Field values are carried over without validation.
     pub fn to_fidelity(&self) -> FidelityEvidence {
         match self {
             LexiconEvidence::None | LexiconEvidence::Curated => FidelityEvidence::None,
@@ -181,6 +184,14 @@ struct RawTable {
 
 impl SynonymTable {
     /// Load the table for `prover` from `dir/<prover-name>.toml`.
+    ///
+    /// Returns an empty table if the path is missing or its existence
+    /// cannot be checked.
+    ///
+    /// # Errors
+    ///
+    /// If the path exists, propagates the read and parse errors from
+    /// [`Self::load_path`].
     pub fn load(prover: ProverKind, dir: &Path) -> Result<Self> {
         let filename = prover_table_filename(prover);
         let path = dir.join(&filename);
@@ -192,6 +203,14 @@ impl SynonymTable {
 
     /// Load one table file, whatever its name (per-prover or an
     /// underscore-prefixed cross-prover dictionary).
+    ///
+    /// Indexes canonical names and aliases. The Nickel contract's
+    /// cross-field rules are not checked here.
+    ///
+    /// # Errors
+    ///
+    /// Returns an error if the file cannot be opened or read as UTF-8,
+    /// exceeds 64 MiB, or cannot be deserialised as a synonym table.
     pub fn load_path(path: &Path) -> Result<Self> {
         let raw = crate::provers::bounded_read_corpus_file(path)?;
         let parsed: RawTable =
@@ -216,6 +235,9 @@ impl SynonymTable {
     /// contribute: a false friend, specialisation or generalisation is
     /// never offered as a drop-in replacement. Use [`Self::related`]
     /// for those.
+    ///
+    /// Matches names exactly and returns sorted, deduplicated names.
+    /// Returns an empty vector if `name` is unknown.
     pub fn alternatives(&self, name: &str) -> Vec<String> {
         let indices = match self.by_name.get(name) {
             Some(v) => v,
@@ -246,6 +268,11 @@ impl SynonymTable {
     /// canonical of a `specialisation` row, every alias is a
     /// specialisation of it; if `name` is one of those aliases, the
     /// canonical is its generalisation. False friends are symmetric.
+    ///
+    /// Matches names exactly and returns sorted, deduplicated pairs.
+    /// An alias lookup returns only the canonical name from each row,
+    /// not the other aliases. The separate `false_friends` metadata is
+    /// not searched. Returns an empty vector if `name` is unknown.
     pub fn related(&self, name: &str) -> Vec<(String, Relation)> {
         let mut out = Vec::new();
         for &i in self.by_name.get(name).map(Vec::as_slice).unwrap_or(&[]) {
