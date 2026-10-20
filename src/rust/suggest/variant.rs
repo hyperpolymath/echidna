@@ -183,6 +183,7 @@ mod tests {
             since: None,
             until: None,
             semantic_class: None,
+            ..Default::default()
         }])
     }
 

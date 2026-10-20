@@ -2,7 +2,7 @@
 // SPDX-FileCopyrightText: 2026 Jonathan D.A. Jewell (hyperpolymath) <j.d.a.jewell@open.ac.uk>
 = ADR: lexicon v2 (false friends, phrases, equivalences) and hub-and-probe identity arbitration (stage 6c)
 :revdate: 2026-10-19
-:status: proposed — owner decisions D1–D5 in §7 are open; nothing below is ruled
+:status: accepted in part — D1, D2 and D4 ruled 2026-10-19 (§7); D3 and D5 open
 
 == Context (measured on `main` at `ed6ef60`, 2026-10-19)
 
@@ -294,16 +294,20 @@ re-running `metrics/run_all.jl` to re-baseline `oov_rate` and
   verdict's `level` should surface in its trust bridge once dispatch attaches
   evidence.
 
-== Open owner decisions (the selector questions this session could not ask)
+== Owner decisions
 
-[cols="1,5,3",options="header"]
+Ruled 2026-10-19 through the selector: D1, D2 and D4. D3 and D5 remain open.
+The owner also ruled the pacing: PRs 1 and 3 proceed now; PRs 4–6 (arbiter
+and ABI changes, kernel translation) wait for the stronger model.
+
+[cols="1,5,3,3",options="header"]
 |===
-| # | Question | Recommended
-| D1 | Architecture for identity arbitration: hub and probe (A + B), super-language (C), or pairwise only (D)? | A + B
-| D2 | Lexicon v2 format: extend the TOML tables in place (loader-compatible) or move `data/synonyms/` to Nickel or deed? | TOML in place
-| D3 | First consequence-probe pair: Z3 ↔ CVC5 (runs in CI today) alongside the HOL4 ↔ HOL Light hub pilot, or wait for HOL binaries in CI? | Z3 ↔ CVC5 now
-| D4 | May corpus-mined candidates set `semantic_class` automatically? | No: `evidence = none`, flag-only until curated or probe-tested
-| D5 | Open the verisimdb consonance-subject issue (option E) now? | Yes
+| # | Question | Recommended | Ruling
+| D1 | Architecture for identity arbitration: hub and probe (A + B), super-language (C), or pairwise only (D)? | A + B | A + B (hub and probe)
+| D2 | Lexicon v2 format: extend the TOML tables in place (loader-compatible) or move `data/synonyms/` to Nickel or deed? | TOML in place | Nickel. Read as: the schema is a Nickel contract (`data/synonyms/schema.ncl`) applied to the TOML tables, which stay the data so the Rust and Julia loaders are unchanged. Converting the tables themselves to `.ncl` remains open.
+| D3 | First consequence-probe pair: Z3 ↔ CVC5 (runs in CI today) alongside the HOL4 ↔ HOL Light hub pilot, or wait for HOL binaries in CI? | Z3 ↔ CVC5 now | open
+| D4 | May corpus-mined candidates set `semantic_class` automatically? | No: `evidence = none`, flag-only until curated or probe-tested | as recommended
+| D5 | Open the verisimdb consonance-subject issue (option E) now? | Yes | open
 |===
 
 == Non-claims

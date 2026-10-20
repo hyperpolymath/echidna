@@ -9,17 +9,139 @@ use std::collections::HashMap;
 use std::path::Path;
 
 use anyhow::{Context, Result};
-use serde::Deserialize;
+use serde::{Deserialize, Serialize};
 
+use crate::exchange::ExchangeFormat;
+use crate::verification::FidelityEvidence;
 use crate::ProverKind;
 
-#[derive(Debug, Clone, Deserialize)]
+/// How a row's `aliases` relate to its `canonical` name (lexicon v2).
+///
+/// The schema of record is `data/synonyms/schema.ncl`; see
+/// `docs/decisions/2026-10-19-lexicon-v2-and-identity-arbitration.adoc`.
+#[derive(
+    Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash, Default, Deserialize, Serialize,
+)]
+#[serde(rename_all = "snake_case")]
+pub enum Relation {
+    /// Interchangeable names (the v1 meaning).
+    #[default]
+    Synonym,
+    /// Each alias is a special case of `canonical`.
+    Specialisation,
+    /// Each alias generalises `canonical`.
+    Generalisation,
+    /// Each alias looks like `canonical` and is not it. Never substituted.
+    FalseFriend,
+    /// `canonical` is a multi-token idiom spelled out in `phrase`.
+    ///
+    /// Substitution runs one way today: an alias found at a tactic site
+    /// can be replaced by the phrase spelling, but the extractors record
+    /// single identifiers, so a canonical phrase in a proof is never a
+    /// site and is not replaced by an alias. That direction needs
+    /// phrase-aware site detection.
+    Phrase,
+}
+
+impl Relation {
+    /// Whether the variant tester may substitute an alias for the
+    /// canonical name (and back). Only synonyms and phrase spellings are
+    /// interchangeable; specialisations, generalisations and false friends
+    /// are reported by [`SynonymTable::related`] instead.
+    pub fn interchangeable(self) -> bool {
+        matches!(self, Relation::Synonym | Relation::Phrase)
+    }
+}
+
+/// The witness behind a lexicon row. Mirrors the ECH-05
+/// [`FidelityEvidence`] shapes. It attests the row's relation, whatever
+/// that is; only [`SynonymEntry::fidelity_evidence`] lifts it to the arbiter.
+#[derive(Debug, Clone, PartialEq, Eq, Default, Deserialize, Serialize)]
+#[serde(tag = "kind", rename_all = "snake_case", deny_unknown_fields)]
+pub enum LexiconEvidence {
+    /// No evidence (the default, and the only value a corpus-mined
+    /// candidate may carry: owner decision D4).
+    #[default]
+    None,
+    /// A person curated the row. Provenance only, not fidelity evidence.
+    Curated,
+    /// Consequence-tested correspondence.
+    Probe { tests: u32, failures: u32 },
+    /// Kernel-checked translation through the exchange layer.
+    Kernel {
+        format: ExchangeFormat,
+        checked_by: ProverKind,
+        term_hash: String,
+    },
+}
+
+impl LexiconEvidence {
+    /// The shape-for-shape lift, without the row's context. Private: a
+    /// probe on a false friend or a lossy row must not reach the arbiter
+    /// as identity evidence, so callers go through
+    /// [`SynonymEntry::fidelity_evidence`].
+    fn lift(&self) -> FidelityEvidence {
+        match self {
+            LexiconEvidence::None | LexiconEvidence::Curated => FidelityEvidence::None,
+            LexiconEvidence::Probe { tests, failures } => {
+                FidelityEvidence::DeclaredCorrespondence {
+                    consequence_tests: *tests,
+                    failures: *failures,
+                }
+            },
+            LexiconEvidence::Kernel {
+                format,
+                checked_by,
+                term_hash,
+            } => FidelityEvidence::KernelTranslation {
+                format: *format,
+                checked_by: *checked_by,
+                term_hash: term_hash.clone(),
+            },
+        }
+    }
+}
+
+/// A name in another table that looks like this entry and is not it.
+#[derive(Debug, Clone, PartialEq, Eq, Deserialize, Serialize)]
+#[serde(deny_unknown_fields)]
+pub struct FalseFriend {
+    pub name: String,
+    /// The other table's file stem, e.g. `"lean4"` or `"metamath"`.
+    pub table: String,
+}
+
+/// Whether a correspondence loses information, after echo-types'
+/// loss-with-residue formalism.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Deserialize, Serialize)]
+#[serde(rename_all = "snake_case")]
+pub enum Fidelity {
+    Exact,
+    /// Lossy: the row's `residue` says what is lost.
+    Lossy,
+}
+
+/// The library (and optionally version) a relation holds in.
+#[derive(Debug, Clone, PartialEq, Eq, Deserialize, Serialize)]
+#[serde(deny_unknown_fields)]
+pub struct Scope {
+    pub library: String,
+    #[serde(default)]
+    pub version: Option<String>,
+}
+
+#[derive(Debug, Clone, Default, Deserialize)]
+#[serde(deny_unknown_fields)]
 pub struct SynonymEntry {
     pub canonical: String,
     pub aliases: Vec<String>,
+    #[serde(default)]
     pub tactic_class: Option<String>,
+    #[serde(default)]
     pub notes: Option<String>,
+    #[serde(default)]
     pub since: Option<String>,
+    #[serde(default)]
     pub until: Option<String>,
     /// Cross-prover semantic class. Two entries (potentially from
     /// different prover synonym tables) sharing the same
@@ -30,6 +152,53 @@ pub struct SynonymEntry {
     /// Dedukti exchange layer (`src/rust/exchange/`).
     #[serde(default)]
     pub semantic_class: Option<String>,
+    // ---- lexicon v2 (all optional; v1 rows load unchanged) ----
+    /// How `aliases` relate to `canonical`; defaults to `synonym`.
+    #[serde(default)]
+    pub relation: Relation,
+    /// Token spelling of a multi-token idiom (relation `phrase`).
+    #[serde(default)]
+    pub phrase: Option<Vec<String>>,
+    /// Look-alike names in other tables that are not this entry.
+    #[serde(default)]
+    pub false_friends: Vec<FalseFriend>,
+    #[serde(default)]
+    pub evidence: LexiconEvidence,
+    #[serde(default)]
+    pub fidelity: Option<Fidelity>,
+    /// What a lossy correspondence loses.
+    #[serde(default)]
+    pub residue: Option<String>,
+    #[serde(default)]
+    pub scope: Option<Scope>,
+}
+
+impl SynonymEntry {
+    /// Whether the row claims identity: its aliases are interchangeable
+    /// with `canonical` ([`Relation::interchangeable`]) and nothing is
+    /// lost between them (fidelity not [`Fidelity::Lossy`]).
+    pub fn claims_identity(&self) -> bool {
+        self.relation.interchangeable() && self.fidelity != Some(Fidelity::Lossy)
+    }
+
+    /// The arbiter's evidence for this row.
+    ///
+    /// Only an identity claim ([`Self::claims_identity`]) lifts its
+    /// evidence: probe to [`FidelityEvidence::DeclaredCorrespondence`],
+    /// kernel to [`FidelityEvidence::KernelTranslation`]. Every other row
+    /// gives [`FidelityEvidence::None`], whatever it carries: a probe on a
+    /// false friend, a specialisation or a lossy row attests that
+    /// relation, not identity, and must not raise an attempt's
+    /// fidelity level. `none` and `curated` also give
+    /// [`FidelityEvidence::None`]. Field values are carried over without
+    /// validation.
+    pub fn fidelity_evidence(&self) -> FidelityEvidence {
+        if self.claims_identity() {
+            self.evidence.lift()
+        } else {
+            FidelityEvidence::None
+        }
+    }
 }
 
 /// Parsed and indexed synonym table for a single prover.
@@ -48,15 +217,52 @@ struct RawTable {
 
 impl SynonymTable {
     /// Load the table for `prover` from `dir/<prover-name>.toml`.
+    ///
+    /// Returns an empty table if the path is missing or its existence
+    /// cannot be checked.
+    ///
+    /// # Errors
+    ///
+    /// If the path exists, propagates the read and parse errors from
+    /// [`Self::load_path`].
     pub fn load(prover: ProverKind, dir: &Path) -> Result<Self> {
         let filename = prover_table_filename(prover);
         let path = dir.join(&filename);
         if !path.exists() {
             return Ok(Self::default());
         }
-        let raw = crate::provers::bounded_read_corpus_file(&path)?;
+        Self::load_path(&path)
+    }
+
+    /// Load one table file, whatever its name (per-prover or an
+    /// underscore-prefixed cross-prover dictionary).
+    ///
+    /// Indexes canonical names and aliases. The Nickel contract's
+    /// cross-field rules are not checked here.
+    ///
+    /// # Errors
+    ///
+    /// Returns an error if the file cannot be opened or read as UTF-8,
+    /// exceeds 64 MiB, cannot be deserialised as a synonym table, or has
+    /// a row with an empty canonical name or alias.
+    pub fn load_path(path: &Path) -> Result<Self> {
+        let raw = crate::provers::bounded_read_corpus_file(path)?;
         let parsed: RawTable =
             toml::from_str(&raw).with_context(|| format!("Failed to parse {}", path.display()))?;
+        // An empty name would be offered as a replacement that deletes
+        // the matched tactic. The contract refuses it too; this keeps an
+        // unchecked table from reaching the variant tester.
+        if let Some(entry) = parsed
+            .synonyms
+            .iter()
+            .find(|e| e.canonical.is_empty() || e.aliases.iter().any(String::is_empty))
+        {
+            anyhow::bail!(
+                "{}: row `{}` has an empty canonical name or alias",
+                path.display(),
+                entry.canonical
+            );
+        }
         Ok(Self::from_entries(parsed.synonyms))
     }
 
@@ -71,7 +277,15 @@ impl SynonymTable {
         SynonymTable { entries, by_name }
     }
 
-    /// All names in the same entry as `name`, excluding `name` itself.
+    /// All names interchangeable with `name`, excluding `name` itself.
+    ///
+    /// Only rows whose [`Relation`] is interchangeable (synonym, phrase)
+    /// contribute: a false friend, specialisation or generalisation is
+    /// never offered as a drop-in replacement. Use [`Self::related`]
+    /// for those.
+    ///
+    /// Matches names exactly and returns sorted, deduplicated names.
+    /// Returns an empty vector if `name` is unknown.
     pub fn alternatives(&self, name: &str) -> Vec<String> {
         let indices = match self.by_name.get(name) {
             Some(v) => v,
@@ -80,6 +294,9 @@ impl SynonymTable {
         let mut out = Vec::new();
         for &i in indices {
             let entry = &self.entries[i];
+            if !entry.relation.interchangeable() {
+                continue;
+            }
             if entry.canonical != name {
                 out.push(entry.canonical.clone());
             }
@@ -87,6 +304,41 @@ impl SynonymTable {
                 if alias != name {
                     out.push(alias.clone());
                 }
+            }
+        }
+        out.sort();
+        out.dedup();
+        out
+    }
+
+    /// Names related to `name` by a non-interchangeable [`Relation`],
+    /// each with the relation read from `name`'s side: if `name` is the
+    /// canonical of a `specialisation` row, every alias is a
+    /// specialisation of it; if `name` is one of those aliases, the
+    /// canonical is its generalisation. False friends are symmetric.
+    ///
+    /// Matches names exactly and returns sorted, deduplicated pairs.
+    /// An alias lookup returns only the canonical name from each row,
+    /// not the other aliases. The separate `false_friends` metadata is
+    /// not searched. Returns an empty vector if `name` is unknown.
+    pub fn related(&self, name: &str) -> Vec<(String, Relation)> {
+        let mut out = Vec::new();
+        for &i in self.by_name.get(name).map(Vec::as_slice).unwrap_or(&[]) {
+            let entry = &self.entries[i];
+            if entry.relation.interchangeable() {
+                continue;
+            }
+            if entry.canonical == name {
+                for alias in &entry.aliases {
+                    out.push((alias.clone(), entry.relation));
+                }
+            } else {
+                let inverse = match entry.relation {
+                    Relation::Specialisation => Relation::Generalisation,
+                    Relation::Generalisation => Relation::Specialisation,
+                    other => other,
+                };
+                out.push((entry.canonical.clone(), inverse));
             }
         }
         out.sort();
@@ -242,6 +494,7 @@ mod tests {
                 since: None,
                 until: None,
                 semantic_class: None,
+                ..Default::default()
             },
             SynonymEntry {
                 canonical: "linarith".to_string(),
@@ -251,6 +504,7 @@ mod tests {
                 since: None,
                 until: None,
                 semantic_class: None,
+                ..Default::default()
             },
         ])
     }

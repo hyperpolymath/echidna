@@ -1138,6 +1138,12 @@ corpus-stats-all:
 synonym-load-test:
     cargo test --lib --quiet suggest::synonyms 2>&1 | tail -20
 
+# Lexicon v2: apply the Nickel contract (data/synonyms/schema.ncl) to every
+# synonym table and to the accept/reject fixtures. Needs nickel >= 1.12.
+lexicon-check:
+    scripts/lexicon-check.sh
+    cargo test --locked --test lexicon_v2_test
+
 # Run the saturation-campaign cargo tests only (139 cases + 1 ignored).
 test-saturation:
     cargo test --lib -- \

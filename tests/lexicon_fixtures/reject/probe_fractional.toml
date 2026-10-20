@@ -1,0 +1,6 @@
+# SPDX-License-Identifier: MPL-2.0
+# Probe counts are u32 in Rust; a fractional count must not pass the contract.
+[[synonym]]
+canonical = "omega"
+aliases = ["lia"]
+evidence = { kind = "probe", tests = 1.5, failures = 0 }

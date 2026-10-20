@@ -1,0 +1,6 @@
+# SPDX-License-Identifier: MPL-2.0
+# Must be rejected by data/synonyms/schema.ncl: relation phrase without a phrase list
+[[synonym]]
+canonical = "then thus"
+aliases = ["hence"]
+relation = "phrase"
