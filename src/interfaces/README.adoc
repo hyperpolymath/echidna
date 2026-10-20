@@ -37,10 +37,10 @@ CancelProof
 
 * *Framework:* Rust + axum + utoipa (OpenAPI)
 * *Port:* 8000
-* *Swagger UI:* http://localhost:8000/swagger-ui
+* *API docs (ReDoc):* http://localhost:8000/redoc (raw spec: `+/api-docs/openapi.json+`)
 * *Features:*
 ** RESTful JSON API
-** OpenAPI 3.0 specification with Swagger UI
+** OpenAPI 3.0 specification rendered with ReDoc
 ** Standard HTTP verbs (GET, POST, DELETE)
 ** Endpoints: `+/api/v1/provers+`, `+/api/v1/proofs+`,
 `+/api/v1/proofs/:id/tactics+`
