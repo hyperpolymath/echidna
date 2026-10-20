@@ -1,0 +1,6 @@
+# SPDX-License-Identifier: MPL-2.0
+# Must be rejected by data/synonyms/schema.ncl: a false_friends item without its table
+[[synonym]]
+canonical = "x"
+aliases = ["y"]
+false_friends = [{ name = "Nat" }]

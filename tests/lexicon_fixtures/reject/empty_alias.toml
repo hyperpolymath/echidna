@@ -1,0 +1,5 @@
+# SPDX-License-Identifier: MPL-2.0
+# An empty alias would be offered as a replacement that deletes the tactic.
+[[synonym]]
+canonical = "omega"
+aliases = ["lia", ""]

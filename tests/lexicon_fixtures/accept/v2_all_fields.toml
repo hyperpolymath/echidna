@@ -1,0 +1,32 @@
+# SPDX-License-Identifier: MPL-2.0
+# Every lexicon v2 field, valid. Must pass data/synonyms/schema.ncl.
+[[synonym]]
+canonical = "omega"
+aliases = ["lia"]
+
+[[synonym]]
+canonical = "NN"
+aliases = ["NN0"]
+relation = "false_friend"
+false_friends = [{ name = "Nat", table = "lean4" }]
+evidence = { kind = "curated" }
+
+[[synonym]]
+canonical = "le_trans"
+aliases = ["Rle_trans"]
+relation = "specialisation"
+fidelity = "lossy"
+residue = "Rle_trans fixes the carrier to R"
+scope = { library = "Coq.Reals", version = "8.18" }
+evidence = { kind = "probe", tests = 12, failures = 0 }
+
+[[synonym]]
+canonical = "then thus"
+aliases = ["hence"]
+relation = "phrase"
+phrase = ["then", "thus"]
+
+[[synonym]]
+canonical = "add_comm"
+aliases = ["Nat.add_comm"]
+evidence = { kind = "kernel", format = "dedukti", checked_by = "Dedukti", term_hash = "af1349b9f5f9a1a6a0404dea36dcc9499bcb25c9adc112b7cc9a93cae41f3262" }

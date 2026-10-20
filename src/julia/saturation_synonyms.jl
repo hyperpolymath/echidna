@@ -24,7 +24,7 @@ dictionaries (`_msc2020`, `_wordnet_math`, `_conceptnet_seed`) added in
 the saturation campaign.
 
 Each entry exposes `(canonical, aliases, tactic_class, semantic_class,
-notes, since, until)`. The cross-prover lookup `by_semantic_class`
+notes, since, until, relation)`. The cross-prover lookup `by_semantic_class`
 mirrors `src/rust/suggest/synonyms.rs::SynonymTable::by_semantic_class`
 and is the load-bearing primitive for cross-corpus equivalence in the
 S5 verification gate.
@@ -44,6 +44,12 @@ export load_prover_synonyms,
        by_semantic_class,
        expand_aliases
 
+# Lexicon v2 relations whose aliases are interchangeable with the
+# canonical name. Mirrors `Relation::interchangeable` in
+# `src/rust/suggest/synonyms.rs`: specialisations, generalisations and
+# false friends are never expanded as synonyms.
+const INTERCHANGEABLE_RELATIONS = ("synonym", "phrase")
+
 # ----------------------------------------------------------------------
 # Per-prover loader
 # ----------------------------------------------------------------------
@@ -53,7 +59,8 @@ export load_prover_synonyms,
 
 Load `dir/<prover>.toml` and return a `Dict{String, NamedTuple}` keyed
 by the canonical name. Each value is a NamedTuple with fields
-`(:aliases, :tactic_class, :semantic_class, :notes, :since, :until)`.
+`(:aliases, :tactic_class, :semantic_class, :notes, :since, :until,
+:relation)`; `relation` defaults to `"synonym"` as in the Rust loader.
 
 The TOML schema is `[[synonym]]` rows, each with the same fields as
 `src/rust/suggest/synonyms.rs::SynonymEntry`. Missing optional fields
@@ -85,6 +92,7 @@ function load_prover_synonyms(prover::Symbol, dir::String)
             notes = _opt_string(get(row, "notes", nothing)),
             since = _opt_string(get(row, "since", nothing)),
             until = _opt_string(get(row, "until", nothing)),
+            relation = String(get(row, "relation", "synonym")),
         )
     end
     return table
@@ -185,6 +193,9 @@ end
 
 Given a name (canonical or alias), return every OTHER name in the same
 entry. Mirrors `src/rust/suggest/synonyms.rs::SynonymTable::alternatives`.
+Only `synonym` and `phrase` rows are expanded (lexicon v2): a false friend,
+specialisation or generalisation is not a synonym and must not reach the
+GNN training data as one.
 
 Returns an empty vector if `name` is not present in `table`. The result
 is sorted and de-duplicated to match the Rust contract.
@@ -193,6 +204,7 @@ function expand_aliases(name::String, table::Dict)
     out = String[]
     for (canonical, entry) in table
         entry isa NamedTuple || continue
+        get(entry, :relation, "synonym") in INTERCHANGEABLE_RELATIONS || continue
         if String(canonical) == name
             for alias in entry.aliases
                 alias == name || push!(out, alias)
@@ -238,6 +250,7 @@ function _load_underscore_table(dir::String, filename::String)
             notes = _opt_string(get(row, "notes", nothing)),
             since = _opt_string(get(row, "since", nothing)),
             until = _opt_string(get(row, "until", nothing)),
+            relation = String(get(row, "relation", "synonym")),
         )
     end
     return table

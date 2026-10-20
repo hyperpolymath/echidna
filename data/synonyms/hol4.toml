@@ -108,7 +108,7 @@ aliases      = ["Induct_on", "recInduct", "completeInduct_on"]
 tactic_class = "induction"
 notes        = """
 `Induct` does induction on the *outermost* universally-quantified
-variable. `Induct_on \`x\`` picks the variable explicitly.
+variable. `Induct_on `x`` picks the variable explicitly.
 `recInduct` uses the recursion induction principle generated from a
 `Define`. `completeInduct_on` is strong (course-of-values) induction.
 """
@@ -128,7 +128,7 @@ canonical    = "Cases"
 aliases      = ["Cases_on", "FULL_CASES_TAC"]
 tactic_class = "case"
 notes        = """
-Case split on the outermost universal. `Cases_on \`x\`` picks the
+Case split on the outermost universal. `Cases_on `x`` picks the
 variable. `FULL_CASES_TAC` is the legacy form that also splits
 hypotheses by case.
 """
@@ -161,7 +161,7 @@ canonical    = "EXISTS_TAC"
 aliases      = ["Q.EXISTS_TAC", "qexists_tac", "MAP_EVERY EXISTS_TAC"]
 tactic_class = "structural"
 notes        = """
-Witness an existential. `Q.EXISTS_TAC \`t\`` accepts a quotation
+Witness an existential. `Q.EXISTS_TAC `t`` accepts a quotation
 (parses `t` in the current goal's context). `qexists_tac` is the
 modern lower-case alias.
 """
@@ -172,7 +172,7 @@ aliases      = ["Q.SPECL", "ISPEC", "SPEC"]
 tactic_class = "lemma"
 notes        = """
 Specialise a universally-quantified theorem to a quoted term.
-`Q.SPECL [\`a\`,\`b\`]` does multiple at once. `ISPEC` infers the type
+`Q.SPECL [`a`,`b`]` does multiple at once. `ISPEC` infers the type
 from the term; bare `SPEC` requires a term of the matching type.
 """
 
@@ -230,7 +230,7 @@ canonical    = "Definition"
 aliases      = ["Define", "tDefine", "Hol_reln"]
 tactic_class = "term_builder"
 notes        = """
-`Definition name: eqn End` (modern) / `Define \`eqn\`` (classic).
+`Definition name: eqn End` (modern) / `Define `eqn`` (classic).
 `tDefine` accepts a termination-measure annotation for definitions
 whose termination isn't structural. `Hol_reln` is the inductive-
 relation variant (corresponds to `Inductive`).
@@ -315,7 +315,7 @@ canonical    = "by"
 aliases      = ["sg", "SUBGOAL_THEN", "qsuff_tac"]
 tactic_class = "structural"
 notes        = """
-HOL4 modern Theorem syntax: `\`stmt\` by tac` proves a side-lemma
+HOL4 modern Theorem syntax: ``stmt` by tac` proves a side-lemma
 and adds it as a hypothesis. `qsuff_tac` is the "it-suffices-to-show"
 form (turns the current goal into the lemma + a discharge step).
 """
@@ -325,7 +325,7 @@ canonical    = "first_assum"
 aliases      = ["pop_assum", "qpat_assum", "Q.PAT_ASSUM"]
 tactic_class = "structural"
 notes        = """
-Hypothesis lookup. `qpat_assum \`pat\` f` finds the first hypothesis
+Hypothesis lookup. `qpat_assum `pat` f` finds the first hypothesis
 matching `pat` and applies `f`. `pop_assum f` pops the most-recent
 hypothesis and applies `f` (typical use: `pop_assum mp_tac`).
 """

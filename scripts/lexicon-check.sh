@@ -1,0 +1,67 @@
+#!/usr/bin/env bash
+# SPDX-License-Identifier: MPL-2.0
+# SPDX-FileCopyrightText: 2026 Jonathan D.A. Jewell (hyperpolymath) <j.d.a.jewell@open.ac.uk>
+#
+# lexicon-check.sh — apply the lexicon v2 Nickel contract
+# (data/synonyms/schema.ncl) to every shipped table, and prove the contract
+# still bites: every fixture under tests/lexicon_fixtures/accept/ must pass
+# and every fixture under tests/lexicon_fixtures/reject/ must fail.
+#
+# Usage: scripts/lexicon-check.sh        (from the repository root)
+# Needs: nickel (>= 1.12) on PATH, or NICKEL=/path/to/nickel.
+set -euo pipefail
+
+nickel="${NICKEL:-nickel}"
+command -v "$nickel" >/dev/null || { echo "lexicon-check: nickel not found (set NICKEL)" >&2; exit 2; }
+root="$(pwd)"
+schema="$root/data/synonyms/schema.ncl"
+[ -f "$schema" ] || { echo "lexicon-check: run from the repository root" >&2; exit 2; }
+
+# check FILE -> exit status of applying the contract to FILE.
+check() {
+  printf '(import "%s") | (import "%s").Table\n' "$1" "$schema" \
+    | "$nickel" export --format json >/dev/null 2>"$errfile"
+}
+
+errfile="$(mktemp)"
+trap 'rm -f "$errfile"' EXIT
+bad=0 n=0
+
+# An unmatched glob must not pass as a file (it would "fail" to load and so
+# count as a rejection), and an empty set must not pass silently.
+shopt -s nullglob
+tables=("$root"/data/synonyms/*.toml)
+accepts=("$root"/tests/lexicon_fixtures/accept/*.toml)
+rejects=("$root"/tests/lexicon_fixtures/reject/*.toml)
+shopt -u nullglob
+for set in tables accepts rejects; do
+  declare -n files="$set"
+  if [ "${#files[@]}" -eq 0 ]; then
+    echo "lexicon-check: no $set found; refusing to pass an empty set" >&2
+    exit 1
+  fi
+  unset -n files
+done
+
+for f in "${tables[@]}" "${accepts[@]}"; do
+  n=$((n + 1))
+  if ! check "$f"; then
+    echo "FAIL (must pass): ${f#"$root"/}"
+    sed -n '1,12p' "$errfile"
+    bad=$((bad + 1))
+  fi
+done
+
+for f in "${rejects[@]}"; do
+  n=$((n + 1))
+  if check "$f"; then
+    echo "FAIL (must be rejected): ${f#"$root"/}"
+    bad=$((bad + 1))
+  fi
+done
+
+if [ "$bad" -ne 0 ]; then
+  echo "lexicon-check: $bad of $n files failed"
+  exit 1
+fi
+echo "lexicon-check: $n files, all as expected"

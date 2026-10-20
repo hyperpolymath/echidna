@@ -1,0 +1,6 @@
+# SPDX-License-Identifier: MPL-2.0
+# Probe counts are u32 in Rust; 2^32 is out of range.
+[[synonym]]
+canonical = "omega"
+aliases = ["lia"]
+evidence = { kind = "probe", tests = 4294967296, failures = 0 }
