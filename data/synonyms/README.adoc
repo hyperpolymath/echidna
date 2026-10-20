@@ -51,7 +51,7 @@ Each `[[synonym]]` entry has:
 
 | `aliases`
 | yes
-| Array of equivalent names.  Order is *not* significant.
+| Array of non-empty names; `relation` says how they relate to `canonical`.  Order is *not* significant.
 
 | `tactic_class`
 | no
@@ -87,6 +87,9 @@ Nickel contract `schema.ncl`; `scripts/lexicon-check.sh` (or
   `false_friend` (looks alike, is not; never substituted) or `phrase`
   (`canonical` is a multi-token idiom). Only `synonym` and `phrase` rows feed
   the variant tester; the others are reported by `SynonymTable::related`.
+  Phrase substitution runs one way for now: an alias at a tactic site can be
+  replaced by the phrase spelling, but the extractors see single identifiers,
+  so a canonical phrase in a proof is not yet replaced by an alias.
 
 | `phrase`
 | Token list of a multi-token idiom. Required with, and only allowed with,
@@ -99,11 +102,14 @@ Nickel contract `schema.ncl`; `scripts/lexicon-check.sh` (or
 | `evidence`
 | The witness behind the row: `{ kind = "none" }` (default), `"curated"`,
   `"probe"` with `tests` and `failures`, or `"kernel"` with `format`,
-  `checked_by` and a 64-hex BLAKE3 `term_hash`. It lifts into the
-  arbiter's `FidelityEvidence`: `none` and `curated` lift to `None`
-  (curation is provenance, not fidelity evidence), `probe` to
-  `DeclaredCorrespondence`, `kernel` to `KernelTranslation`. A lexicon row
-  never raises a verdict above its own evidence.
+  `checked_by` and a 64-hex BLAKE3 `term_hash`; counts are integers that fit
+  a u32. Evidence attests the row's relation, whatever it is, but lifts into
+  the arbiter's `FidelityEvidence` (`SynonymEntry::fidelity_evidence`) only
+  for an identity claim: a `synonym` or `phrase` row that is not `lossy`.
+  There `probe` lifts to `DeclaredCorrespondence` and `kernel` to
+  `KernelTranslation`; `none`, `curated` (provenance, not fidelity
+  evidence) and every other row lift to `None`. A lexicon row never raises
+  a verdict above its own evidence.
 
 | `fidelity`, `residue`
 | `exact` or `lossy`; a lossy row must say what is lost in `residue`.

@@ -34,6 +34,12 @@ pub enum Relation {
     /// Each alias looks like `canonical` and is not it. Never substituted.
     FalseFriend,
     /// `canonical` is a multi-token idiom spelled out in `phrase`.
+    ///
+    /// Substitution runs one way today: an alias found at a tactic site
+    /// can be replaced by the phrase spelling, but the extractors record
+    /// single identifiers, so a canonical phrase in a proof is never a
+    /// site and is not replaced by an alias. That direction needs
+    /// phrase-aware site detection.
     Phrase,
 }
 
@@ -48,7 +54,8 @@ impl Relation {
 }
 
 /// The witness behind a lexicon row. Mirrors the ECH-05
-/// [`FidelityEvidence`] shapes; see [`LexiconEvidence::to_fidelity`].
+/// [`FidelityEvidence`] shapes. It attests the row's relation, whatever
+/// that is; only [`SynonymEntry::fidelity_evidence`] lifts it to the arbiter.
 #[derive(Debug, Clone, PartialEq, Eq, Default, Deserialize, Serialize)]
 #[serde(tag = "kind", rename_all = "snake_case", deny_unknown_fields)]
 pub enum LexiconEvidence {
@@ -69,13 +76,11 @@ pub enum LexiconEvidence {
 }
 
 impl LexiconEvidence {
-    /// Lift to the arbiter's evidence. `none` and `curated` lift to
-    /// [`FidelityEvidence::None`], so a lexicon row never raises an
-    /// attempt's fidelity above what its own evidence carries.
-    /// Probe evidence becomes [`FidelityEvidence::DeclaredCorrespondence`];
-    /// kernel evidence becomes [`FidelityEvidence::KernelTranslation`].
-    /// Field values are carried over without validation.
-    pub fn to_fidelity(&self) -> FidelityEvidence {
+    /// The shape-for-shape lift, without the row's context. Private: a
+    /// probe on a false friend or a lossy row must not reach the arbiter
+    /// as identity evidence, so callers go through
+    /// [`SynonymEntry::fidelity_evidence`].
+    fn lift(&self) -> FidelityEvidence {
         match self {
             LexiconEvidence::None | LexiconEvidence::Curated => FidelityEvidence::None,
             LexiconEvidence::Probe { tests, failures } => {
@@ -168,6 +173,34 @@ pub struct SynonymEntry {
     pub scope: Option<Scope>,
 }
 
+impl SynonymEntry {
+    /// Whether the row claims identity: its aliases are interchangeable
+    /// with `canonical` ([`Relation::interchangeable`]) and nothing is
+    /// lost between them (fidelity not [`Fidelity::Lossy`]).
+    pub fn claims_identity(&self) -> bool {
+        self.relation.interchangeable() && self.fidelity != Some(Fidelity::Lossy)
+    }
+
+    /// The arbiter's evidence for this row.
+    ///
+    /// Only an identity claim ([`Self::claims_identity`]) lifts its
+    /// evidence: probe to [`FidelityEvidence::DeclaredCorrespondence`],
+    /// kernel to [`FidelityEvidence::KernelTranslation`]. Every other row
+    /// gives [`FidelityEvidence::None`], whatever it carries: a probe on a
+    /// false friend, a specialisation or a lossy row attests that
+    /// relation, not identity, and must not raise an attempt's
+    /// fidelity level. `none` and `curated` also give
+    /// [`FidelityEvidence::None`]. Field values are carried over without
+    /// validation.
+    pub fn fidelity_evidence(&self) -> FidelityEvidence {
+        if self.claims_identity() {
+            self.evidence.lift()
+        } else {
+            FidelityEvidence::None
+        }
+    }
+}
+
 /// Parsed and indexed synonym table for a single prover.
 #[derive(Debug, Clone, Default)]
 pub struct SynonymTable {
@@ -210,11 +243,26 @@ impl SynonymTable {
     /// # Errors
     ///
     /// Returns an error if the file cannot be opened or read as UTF-8,
-    /// exceeds 64 MiB, or cannot be deserialised as a synonym table.
+    /// exceeds 64 MiB, cannot be deserialised as a synonym table, or has
+    /// a row with an empty canonical name or alias.
     pub fn load_path(path: &Path) -> Result<Self> {
         let raw = crate::provers::bounded_read_corpus_file(path)?;
         let parsed: RawTable =
             toml::from_str(&raw).with_context(|| format!("Failed to parse {}", path.display()))?;
+        // An empty name would be offered as a replacement that deletes
+        // the matched tactic. The contract refuses it too; this keeps an
+        // unchecked table from reaching the variant tester.
+        if let Some(entry) = parsed
+            .synonyms
+            .iter()
+            .find(|e| e.canonical.is_empty() || e.aliases.iter().any(String::is_empty))
+        {
+            anyhow::bail!(
+                "{}: row `{}` has an empty canonical name or alias",
+                path.display(),
+                entry.canonical
+            );
+        }
         Ok(Self::from_entries(parsed.synonyms))
     }
 

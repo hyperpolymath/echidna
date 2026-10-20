@@ -26,6 +26,12 @@ let all_nonempty_strings = fun v =>
   std.is_array v && std.array.all is_nonempty_string v
 in
 
+# `LexiconEvidence::Probe` holds u32 counts; the contract must not certify
+# a count the Rust loader rejects.
+let is_u32 = fun v =>
+  std.is_number v && std.number.is_integer v && v >= 0 && v <= 4294967295
+in
+
 let only_fields = fun allowed r =>
   std.array.all (fun f => std.array.elem f allowed) (std.record.fields r)
 in
@@ -44,9 +50,13 @@ in
 let relations = ["synonym", "specialisation", "generalisation", "false_friend", "phrase"] in
 
 # The witness behind a row, mirroring the ECH-05 `FidelityEvidence` shapes.
-# `none` and `curated` lift to `FidelityEvidence::None` (curated is
-# provenance, not fidelity evidence); `probe` lifts to
-# `DeclaredCorrespondence`; `kernel` lifts to `KernelTranslation`.
+# Evidence attests the row's relation, whatever it is. It lifts to the
+# arbiter only for an identity claim: a `synonym` or `phrase` row whose
+# fidelity is not `lossy` (`SynonymEntry::fidelity_evidence` in Rust).
+# There `probe` lifts to `DeclaredCorrespondence` and `kernel` to
+# `KernelTranslation`; `none` and `curated` (provenance, not fidelity
+# evidence) lift to `FidelityEvidence::None`, as does every row that is
+# not an identity claim.
 let evidence_check = fun value =>
   if !(std.is_record value) || !(std.record.has_field "kind" value) then
     fail "evidence must be a table with a `kind` field"
@@ -60,9 +70,9 @@ let evidence_check = fun value =>
         || !(std.record.has_field "tests" value)
         || !(std.record.has_field "failures" value) then
         fail "probe evidence needs exactly `tests` and `failures`"
-      else if !(std.is_number value.tests) || !(std.is_number value.failures)
-        || value.tests < 1 || value.failures < 0
-        || value.failures > value.tests then
+      else if !(is_u32 value.tests) || !(is_u32 value.failures) then
+        fail "probe evidence `tests` and `failures` must be integers from 0 to 4294967295"
+      else if value.tests < 1 || value.failures > value.tests then
         fail "probe evidence needs tests >= 1 and 0 <= failures <= tests"
       else 'Ok value
     else if k == "kernel" then
@@ -96,9 +106,8 @@ let entry_contract = std.contract.custom (fun _label e =>
     fail "unknown field(s): %{std.string.join ", " (unknown_fields entry_fields e)}"
   else if !(std.record.has_field "canonical" e) || !(is_nonempty_string e.canonical) then
     fail "`canonical` must be a non-empty string"
-  else if !(std.record.has_field "aliases" e) || !(std.is_array e.aliases)
-    || !(std.array.all std.is_string e.aliases) then
-    fail "`%{e.canonical}`: `aliases` must be an array of strings"
+  else if !(std.record.has_field "aliases" e) || !(all_nonempty_strings e.aliases) then
+    fail "`%{e.canonical}`: `aliases` must be an array of non-empty strings"
   else if !(std.array.all
       (fun f => !(std.record.has_field f e) || std.is_string (std.record.get f e))
       optional_strings) then

@@ -3,7 +3,7 @@
 
 //! Lexicon v2: every shipped table loads, v2 fields parse, false friends
 //! are never offered as substitutes, and lexicon evidence lifts to the
-//! arbiter's fidelity evidence without raising it.
+//! arbiter's fidelity evidence only for an identity claim.
 //!
 //! The normative shape check is the Nickel contract
 //! `data/synonyms/schema.ncl` (`scripts/lexicon-check.sh`); this suite
@@ -80,6 +80,18 @@ phrase = ["then", "thus"]
 canonical = "add_comm"
 aliases = ["Nat.add_comm"]
 evidence = { kind = "kernel", format = "dedukti", checked_by = "Dedukti", term_hash = "0000000000000000000000000000000000000000000000000000000000000000" }
+
+[[synonym]]
+canonical = "lt_irrefl"
+aliases = ["Nat.lt_irrefl"]
+evidence = { kind = "probe", tests = 8, failures = 0 }
+
+[[synonym]]
+canonical = "Rplus_comm"
+aliases = ["plus_comm_R"]
+fidelity = "lossy"
+residue = "Rplus_comm fixes the carrier to R"
+evidence = { kind = "kernel", format = "dedukti", checked_by = "Dedukti", term_hash = "1111111111111111111111111111111111111111111111111111111111111111" }
 "#;
 
 fn v2_table() -> SynonymTable {
@@ -125,20 +137,36 @@ fn phrase_spellings_are_interchangeable() {
 }
 
 #[test]
-fn evidence_lifts_without_raising_fidelity() {
+fn only_identity_claims_lift_their_evidence() {
     let t = v2_table();
     let by = |c: &str| t.entries.iter().find(|e| e.canonical == c).unwrap();
     assert_eq!(by("omega").evidence, LexiconEvidence::None);
-    assert_eq!(by("omega").evidence.to_fidelity(), FidelityEvidence::None);
-    assert_eq!(by("NN").evidence.to_fidelity(), FidelityEvidence::None);
+    assert_eq!(by("omega").fidelity_evidence(), FidelityEvidence::None);
+    // Curated is provenance, not fidelity evidence.
+    assert_eq!(by("NN").fidelity_evidence(), FidelityEvidence::None);
+    // A failure-free probe on a lossy specialisation attests that
+    // relation, not identity: it is kept but never reaches the arbiter.
     assert_eq!(
-        by("le_trans").evidence.to_fidelity(),
-        FidelityEvidence::DeclaredCorrespondence {
-            consequence_tests: 12,
+        by("le_trans").evidence,
+        LexiconEvidence::Probe {
+            tests: 12,
             failures: 0
         }
     );
-    match by("add_comm").evidence.to_fidelity() {
+    assert!(!by("le_trans").claims_identity());
+    assert_eq!(by("le_trans").fidelity_evidence(), FidelityEvidence::None);
+    // The same probe on an exact synonym lifts.
+    assert_eq!(
+        by("lt_irrefl").fidelity_evidence(),
+        FidelityEvidence::DeclaredCorrespondence {
+            consequence_tests: 8,
+            failures: 0
+        }
+    );
+    // A kernel check on a lossy synonym does not lift either.
+    assert!(!by("Rplus_comm").claims_identity());
+    assert_eq!(by("Rplus_comm").fidelity_evidence(), FidelityEvidence::None);
+    match by("add_comm").fidelity_evidence() {
         FidelityEvidence::KernelTranslation {
             format, checked_by, ..
         } => {
@@ -147,6 +175,23 @@ fn evidence_lifts_without_raising_fidelity() {
         },
         other => panic!("expected a kernel translation, got {other:?}"),
     }
+}
+
+/// The contract and the loader must agree: what Nickel refuses for a
+/// probe count or an empty name, the loader refuses too, and the u32
+/// boundary passes both.
+#[test]
+fn loader_agrees_with_contract_on_counts_and_empty_names() {
+    let fixtures = Path::new(env!("CARGO_MANIFEST_DIR")).join("tests/lexicon_fixtures/reject");
+    for name in ["empty_alias", "probe_fractional", "probe_over_u32"] {
+        let path = fixtures.join(format!("{name}.toml"));
+        assert!(
+            SynonymTable::load_path(&path).is_err(),
+            "{name} must not load"
+        );
+    }
+    let boundary = "[[synonym]]\ncanonical = \"a\"\naliases = [\"b\"]\nevidence = { kind = \"probe\", tests = 4294967295, failures = 4294967295 }\n";
+    SynonymTable::load_path(&write_tmp("boundary.toml", boundary)).expect("u32::MAX loads");
 }
 
 #[test]
