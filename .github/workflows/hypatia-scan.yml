@@ -21,6 +21,6 @@ permissions:
 
 jobs:
   hypatia:
-    uses: hyperpolymath/standards/.github/workflows/hypatia-scan-reusable.yml@75bd5994470661a099df562d6d5ad2fe744dbd66 # main 2026-08-04 (lockfile-bearing ref: actions.lock required by caller-side enforcement, standards#570)
+    uses: hyperpolymath/standards/.github/workflows/hypatia-scan-reusable.yml@3c00687a5bbd0d881d351db8502417b5d0a8b0b0 # main 2026-10-20, standards#1315 hypatia-ref aa34a4cc (lockfile-bearing ref: actions.lock required by caller-side enforcement, standards#570)
     secrets:
       HYPATIA_SCAN_PAT: ${{ secrets.HYPATIA_SCAN_PAT }}
