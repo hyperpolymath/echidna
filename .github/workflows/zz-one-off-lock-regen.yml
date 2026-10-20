@@ -1,55 +1,103 @@
 # SPDX-License-Identifier: MPL-2.0
-# ONE-OFF, scratch branch only, deleted after use. Regenerates panic-attack's fix branch's
+# ONE-OFF, removed again before the PR leaves draft. Regenerates echidna's own
 # actions.lock with the estate repair order (regen_lock in
-# standards/scripts/regen-dependabot-locks.sh), runs the governance gate's own
-# check against the result, and prints the lock base64-encoded. It has no
-# `uses:` steps, so it needs no lock entry to start. It writes nothing back:
-# the lock reaches the repository in a reviewed PR.
+# standards/scripts/regen-dependabot-locks.sh: gh actions-lock, relock-sha-keys,
+# complete-job-refs, close-lock, prune-stale), on a tree where this file is
+# already deleted, then checks the result with close-lock (dangling count),
+# `gh actions-lock --verify`, check-lock-sync, the governance gate, and a
+# Hypatia scan at aa34a4cc. It has no `uses:` steps, so it needs no lock entry
+# to start. It writes nothing back: the lock is printed and reaches the
+# repository in a reviewed commit.
 name: one-off actions.lock regeneration
 on:
   push:
-    branches: [claude/new-session-th4e9w-lockregen]
+    branches: [claude/stoic-brown-26h7xi]
 permissions:
   contents: read
 jobs:
   regen:
-    runs-on: ubuntu-latest
-    timeout-minutes: 20
+    runs-on: ubuntu-24.04
+    timeout-minutes: 40
     env:
       GH_TOKEN: ${{ github.token }}
-      REPO: hyperpolymath/panic-attack
-      STANDARDS_REGEN_SHA: 333b06a01db1874ffedb2de1bfabb195640927c7
-      STANDARDS_GATE_SHA: 333b06a01db1874ffedb2de1bfabb195640927c7
+      BRANCH: claude/stoic-brown-26h7xi
+      STANDARDS_SHA: 3c00687a5bbd0d881d351db8502417b5d0a8b0b0
+      STANDARDS_GATE_PINNED_SHA: 75bd5994470661a099df562d6d5ad2fe744dbd66
+      HYPATIA_SHA: aa34a4cc6ba39d873710ff39763fdb9cde715f9d
     steps:
-      - name: Regenerate the repair branch's actions.lock and check it with the gate
+      - name: Regenerate actions.lock and verify it
         run: |
           set -uo pipefail
-          git clone --quiet --branch claude/new-session-th4e9w https://github.com/hyperpolymath/panic-attack.git pb
-          git -C pb log --oneline -1
+          cd "$RUNNER_TEMP"
+          git clone --quiet --branch "$BRANCH" https://github.com/hyperpolymath/echidna.git ec
+          git -C ec log --oneline -1
+          cp ec/.github/workflows/actions.lock lock.before
+          # The tree the PR lands: this one-off file deleted.
+          git -C ec -c user.name=regen -c user.email=regen@localhost rm --quiet .github/workflows/zz-one-off-lock-regen.yml
+          git -C ec -c user.name=regen -c user.email=regen@localhost commit --quiet -m "drop one-off"
           git clone --quiet https://github.com/hyperpolymath/standards.git std
-          git -C std worktree add --quiet --detach ../std-regen "$STANDARDS_REGEN_SHA"
-          git -C std worktree add --quiet --detach ../std-gate "$STANDARDS_GATE_SHA"
+          git -C std worktree add --quiet --detach ../std-new "$STANDARDS_SHA"
+          git -C std worktree add --quiet --detach ../std-pin "$STANDARDS_GATE_PINNED_SHA"
           sudo apt-get install -y -qq gawk >/dev/null
           gh extension install github/gh-actions-lock --pin v0.2.0
           gh actions-lock --version
-          # Full estate regen (gh actions-lock first, which also migrates the
-          # format to v0.0.3, then the repair chain).
-          export GH_BIN=gh REGEN_TOOLS="$PWD/std-regen/scripts"
-          # Start from no lock: main's pins v1 at a commit the tag no longer
-          # names, which gh actions-lock rejects as a conflicting target.
-          rm -f pb/.github/workflows/actions.lock
-          (cd pb && { gh actions-lock >&2 || echo "seed gh actions-lock RC=$?"; })
-          test -f pb/.github/workflows/actions.lock && echo SEEDED
-          source std-regen/scripts/regen-dependabot-locks.sh
-          outcome="$(regen_lock "$PWD/pb" || true)"
+          export GH_BIN=gh REGEN_TOOLS="$PWD/std-new/scripts"
+          source std-new/scripts/regen-dependabot-locks.sh
+          outcome="$(regen_lock "$PWD/ec" || true)"
           echo "OUTCOME=$outcome"
-          (cd pb && { bash ../std-regen/scripts/check-lock-sync.sh .github/workflows && echo "SYNC RC=0" || echo "SYNC RC=$?"; })
-          head -5 pb/.github/workflows/actions.lock
-          git -C pb status --porcelain
-          echo "== the governance gate, as pinned by the repair branch ($STANDARDS_GATE_SHA)"
-          (cd pb && ACTIONS_LOCK_VERIFIER="$PWD/../std-gate/scripts/update-actions-lock.sh" \
-            bash ../std-gate/scripts/check-actions-lock-gate.sh .github/workflows); echo "GATE_RC=$?"
-          echo "LOCK-SHA256 $(sha256sum < pb/.github/workflows/actions.lock | cut -d' ' -f1)"
-          echo "LOCK-BEGIN"
-          cat pb/.github/workflows/actions.lock
-          echo "LOCK-END"
+          git -C ec status --porcelain
+          echo "== close-lock re-run (expect dangling refs: 0, exit 0)"
+          (cd ec && GH_BIN=gh bash ../std-new/scripts/close-lock.sh; echo "CLOSE_RC=$?")
+          git -C ec diff --quiet -- .github/workflows/actions.lock && echo "close-lock re-run: no further change" || echo "close-lock re-run: CHANGED the lock"
+          echo "== independent dangling-edge count"
+          L=ec/.github/workflows/actions.lock
+          awk '/^dependencies:/{f=1;next} f&&match($0,/^    '\''[^'\'']+'\'':$/){k=$0;sub(/^    '\''/,"",k);sub(/'\'':$/,"",k);print k}' "$L" | LC_ALL=C sort -u > keys.txt
+          { awk '/^workflows:/{f=1;next} f&&/^[a-z_]+:/{f=0} f&&match($0,/^        - '\''[^'\'']+'\''/){k=$0;sub(/^        - '\''/,"",k);sub(/'\''.*$/,"",k);print k}' "$L"
+            awk '/^dependencies:/{f=1} f&&match($0,/^            - '\''[^'\'']+'\''/){k=$0;sub(/^            - '\''/,"",k);sub(/'\''.*$/,"",k);print k}' "$L"; } | LC_ALL=C sort -u > edges.txt
+          echo "DANGLING=$(LC_ALL=C comm -23 edges.txt keys.txt | grep -c . || true)"
+          LC_ALL=C comm -23 edges.txt keys.txt
+          echo "== gh actions-lock --verify"
+          (cd ec && { gh actions-lock --verify; echo "VERIFY_RC=$?"; })
+          git -C ec status --porcelain
+          git -C ec checkout --quiet -- . ':(exclude).github/workflows/actions.lock'
+          echo "== update-actions-lock.sh --verify-local"
+          (cd ec && { GH_BIN=gh bash ../std-new/scripts/update-actions-lock.sh --verify-local; echo "VERIFY_LOCAL_RC=$?"; })
+          echo "== check-lock-sync.sh"
+          (cd ec && { bash ../std-new/scripts/check-lock-sync.sh .github/workflows; echo "SYNC_RC=$?"; })
+          for g in std-pin std-new; do
+            echo "== governance lock gate at $g"
+            (cd ec && ACTIONS_LOCK_VERIFIER="$PWD/../$g/scripts/update-actions-lock.sh" \
+              bash "../$g/scripts/check-actions-lock-gate.sh" .github/workflows; echo "GATE_RC[$g]=$?")
+          done
+          git -C ec status --porcelain
+          echo "== diff against the branch's lock"
+          diff -u lock.before "$L"
+          echo "LOCK-SHA256 $(sha256sum < "$L" | cut -d' ' -f1)"
+          echo "LOCK-B64 $(base64 -w0 < "$L")"
+          cp "$L" lock.after
+
+      - name: Hypatia scan at aa34a4cc, before and after
+        run: |
+          set -euo pipefail
+          cd "$RUNNER_TEMP"
+          # Elixir 1.19.4 / OTP 28.3 from builds.hex.pm (what erlef/setup-beam
+          # installs), so this job needs no `uses:` step.
+          mkdir -p otp elixir
+          curl -fsSL https://builds.hex.pm/builds/otp/ubuntu-24.04/OTP-28.3.tar.gz | tar xz -C otp --strip-components=1
+          (cd otp && ./Install -minimal "$PWD" >/dev/null)
+          curl -fsSL -o elixir.zip https://builds.hex.pm/builds/elixir/v1.19.4-otp-28.zip
+          unzip -q elixir.zip -d elixir
+          export PATH="$PWD/otp/bin:$PWD/elixir/bin:$PATH"
+          elixir --version
+          mix local.hex --force >/dev/null && mix local.rebar --force >/dev/null
+          git init -q hy && git -C hy remote add origin https://github.com/hyperpolymath/hypatia.git
+          git -C hy fetch -q --depth 1 origin "$HYPATIA_SHA" && git -C hy checkout -q --detach FETCH_HEAD
+          git -C hy rev-parse HEAD
+          (cd hy && mix deps.get >/dev/null && mix escript.build >/dev/null)
+          for which in before after; do
+            cp "lock.$which" ec/.github/workflows/actions.lock
+            (cd ec && HYPATIA_FORMAT=json "$RUNNER_TEMP/hy/hypatia-cli.sh" scan . > "$RUNNER_TEMP/findings.$which.json" || true)
+            jq -e 'type == "array"' "findings.$which.json" >/dev/null || { echo "scan $which did not produce a JSON array"; head -c 2000 "findings.$which.json"; exit 1; }
+            echo "== $which: $(jq length "findings.$which.json") findings; invalid_actions_lock: $(grep -c invalid_actions_lock "findings.$which.json" || true) matching lines"
+            jq -c '.[] | select(tostring | test("invalid_actions_lock|workflow_dependencies_missing"))' "findings.$which.json" | head -20
+          done
