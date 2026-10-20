@@ -1,0 +1,7 @@
+# SPDX-License-Identifier: MPL-2.0
+# Must be rejected by data/synonyms/schema.ncl: a residue on an exact correspondence
+[[synonym]]
+canonical = "x"
+aliases = ["y"]
+fidelity = "exact"
+residue = "nothing"

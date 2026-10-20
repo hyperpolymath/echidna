@@ -219,7 +219,11 @@ jobs:
 
   agda:
     name: Agda
-    runs-on: ubuntu-latest
+    # Pinned: ubuntu-latest moved to 26.04, whose apt agda 2.8.0 rejects the
+    # options agda-stdlib v1.7.3 sets ("Unrecognized option:
+    # --warn=noUserWarning"). 24.04 ships agda 2.6.3, the version the corpus
+    # is verified against. Unpin when the stdlib moves to a 2.8-compatible tag.
+    runs-on: ubuntu-24.04
     timeout-minutes: 20
     steps:
       - uses: actions/checkout@v7.0.1

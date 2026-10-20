@@ -157,4 +157,6 @@ members = [
 ]
 exclude = [
     "fuzz",
+    # The governance workflow builds this external checker in a nested checkout.
+    ".standards-js/tools/js-runtimes",
 ]
