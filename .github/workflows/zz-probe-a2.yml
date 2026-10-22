@@ -1,4 +1,4 @@
-name: ZZ probe a
+name: ZZ probe a2
 
 on:
   push:
@@ -9,17 +9,11 @@ permissions:
 
 jobs:
   diag:
-    timeout-minutes: 25
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout repository
-        uses: actions/checkout@v7.0.1
-
       - name: Install Rust toolchain
         uses: dtolnay/rust-toolchain@v1
         with:
           toolchain: stable
-          components: clippy, rustfmt
-
       - name: Say hi
         run: echo hi
