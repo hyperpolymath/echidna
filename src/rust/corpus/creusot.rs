@@ -413,7 +413,7 @@ fn collect_attrs(src: &str, toks: &[Tok]) -> Vec<Attr> {
 }
 
 /// Attributes immediately preceding `start`, nearest last.
-fn leading_attrs(attrs: &[Attr], clean: &str, start: usize) -> Vec<&Attr> {
+fn leading_attrs<'a>(attrs: &'a [Attr], clean: &str, start: usize) -> Vec<&'a Attr> {
     let mut out: Vec<&Attr> = Vec::new();
     let mut cursor = start;
     for attr in attrs.iter().rev() {

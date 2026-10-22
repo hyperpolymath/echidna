@@ -1,0 +1,62 @@
+# SPDX-License-Identifier: MPL-2.0
+# Temporary diagnostic workflow: runs the same gates as rust-ci and posts
+# the compiler output as a PR comment, because the job logs are not
+# reachable from the environment this branch was prepared in.
+# Delete once the branch is green.
+name: Diag build
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pull-requests: write
+
+jobs:
+  diag:
+    timeout-minutes: 25
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v7.0.1
+
+      - name: Install Rust toolchain
+        uses: dtolnay/rust-toolchain@v1
+        with:
+          toolchain: stable
+          components: clippy, rustfmt
+
+      - name: Install native schema compilers
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y capnproto protobuf-compiler pkg-config libssl-dev
+
+      - name: Run the gates
+        run: |
+          set +e
+          {
+            echo '=== cargo check --locked --workspace --all-targets ==='
+            cargo check --locked --workspace --all-targets 2>&1 | grep -E '^(error|warning)' -A 10 | head -n 250
+            echo
+            echo '=== cargo fmt --all -- --check ==='
+            cargo fmt --all -- --check 2>&1 | head -n 150
+            echo
+            echo '=== cargo clippy (workspace) ==='
+            cargo clippy --locked --workspace --all-targets -- -D warnings 2>&1 | grep -E '^(error|warning)' -A 10 | head -n 250
+          } > /tmp/diag.txt
+          cat /tmp/diag.txt
+
+      - name: Comment the diagnostics
+        if: always()
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          {
+            echo '### Diagnostics (temporary)'
+            echo
+            echo '```'
+            head -c 50000 /tmp/diag.txt
+            echo
+            echo '```'
+          } > /tmp/body.md
+          gh pr comment 448 --body-file /tmp/body.md
