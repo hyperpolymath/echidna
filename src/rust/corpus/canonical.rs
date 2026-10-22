@@ -91,7 +91,9 @@ use sha2::{Digest, Sha256};
 pub const SCHEME: &str = "dk-shape-v1";
 
 /// How much of the statement a key is known to preserve.
-#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, serde::Serialize, serde::Deserialize)]
+#[derive(
+    Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, serde::Serialize, serde::Deserialize,
+)]
 pub enum KeyTier {
     /// Bindings and sorts survived: the strongest key.
     Structural,
@@ -611,7 +613,8 @@ fn extract_binders(toks: &[Tk]) -> (Vec<Tk>, Binders) {
         if names.is_empty() {
             break;
         }
-        let after_ok = cur.get(j + 1)
+        let after_ok = cur
+            .get(j + 1)
             .map(|t| matches!(t, Tk::Sym(s) if s == ":" || s == "->" || s == "→" || s == ","))
             .unwrap_or(false);
         if !after_ok {
@@ -835,16 +838,16 @@ impl Parser {
                     self.i += 1;
                 }
                 Some(inner)
-            }
+            },
             Tk::Close(_) => None,
             Tk::Num(s) => {
                 self.i += 1;
                 Some(Node::Num(s))
-            }
+            },
             Tk::Name(s) => {
                 self.i += 1;
                 Some(Node::Name(s))
-            }
+            },
             Tk::Sym(s) => {
                 if s == ":" || s == "::" || s == "," || s == "." {
                     self.i += 1;
@@ -854,13 +857,13 @@ impl Parser {
                     Some(op) => {
                         self.i += 1;
                         Some(Node::Op(op, Vec::new()))
-                    }
+                    },
                     None => {
                         self.i += 1;
                         Some(Node::Name(s))
-                    }
+                    },
                 }
-            }
+            },
             Tk::Id(s) => {
                 self.i += 1;
                 if let Some(v) = self.varmap.get(&s).cloned() {
@@ -873,7 +876,7 @@ impl Parser {
                     return Some(Node::Sort(sort.to_string()));
                 }
                 Some(Node::Name(unqualify(&s).to_string()))
-            }
+            },
         }
     }
 
@@ -922,7 +925,7 @@ impl Parser {
                     if matches!(t, Tk::Sym(s) if s == "," || s == ":" || s == "::" || s == ".") {
                         break;
                     }
-                }
+                },
             }
             match self.atom() {
                 Some(a) => args.push(a),
@@ -971,7 +974,7 @@ fn render(node: &Node, skeleton: bool) -> String {
             } else {
                 s.clone()
             }
-        }
+        },
         Node::Hole => "_".to_string(),
         Node::Op(op, kids) => {
             let mut out = String::from("(");
@@ -982,7 +985,7 @@ fn render(node: &Node, skeleton: bool) -> String {
             }
             out.push(')');
             out
-        }
+        },
         Node::App(kids) => {
             let mut out = String::from("(");
             for (i, k) in kids.iter().enumerate() {
@@ -993,7 +996,7 @@ fn render(node: &Node, skeleton: bool) -> String {
             }
             out.push(')');
             out
-        }
+        },
     }
 }
 
@@ -1033,10 +1036,7 @@ fn is_blank_shape(shape: &str) -> bool {
 /// lower-case name (`x`, `xs`, `p'`), or a single upper-case letter (`A`,
 /// the Coq/Lean convention for a type variable). Sorts and canonical
 /// operators never become variables, whatever they look like.
-fn number_variables(
-    body: &[Tk],
-    bound: &Binders,
-) -> std::collections::HashMap<String, String> {
+fn number_variables(body: &[Tk], bound: &Binders) -> std::collections::HashMap<String, String> {
     let mut varmap: std::collections::HashMap<String, String> = std::collections::HashMap::new();
     let mut next = 0usize;
     for t in body {
@@ -1149,14 +1149,8 @@ mod tests {
     use super::*;
 
     const ADD_COMM: [(&str, &str); 8] = [
-        (
-            "agda",
-            "+-comm : ∀ (x y : ℕ) → x + y ≡ y + x",
-        ),
-        (
-            "coq",
-            "Lemma add_comm : forall x y : nat, x + y = y + x.",
-        ),
+        ("agda", "+-comm : ∀ (x y : ℕ) → x + y ≡ y + x"),
+        ("coq", "Lemma add_comm : forall x y : nat, x + y = y + x."),
         (
             "lean4",
             "theorem Nat.add_comm (x y : Nat) : x + y = y + x := by omega",
@@ -1231,7 +1225,10 @@ mod tests {
     fn arrows_are_right_associative_like_the_toolchains() {
         let coq = canonical_shape("Definition compose : (B -> C) -> (A -> B) -> A -> C.");
         let lean = canonical_shape("theorem compose : (B -> C) -> (A -> B) -> A -> C");
-        assert_eq!(coq, "(ARROW (ARROW v0 v1) (ARROW (ARROW v2 v0) (ARROW v2 v1)))");
+        assert_eq!(
+            coq,
+            "(ARROW (ARROW v0 v1) (ARROW (ARROW v2 v0) (ARROW v2 v1)))"
+        );
         assert_eq!(coq, lean);
     }
 
@@ -1253,7 +1250,10 @@ mod tests {
         assert_eq!(k.key.len(), 64);
         assert_ne!(k.key, structural_key("data Nat where zero suc").key);
         // whitespace is not part of the text tier
-        assert_eq!(k.key, structural_key("  data  Bool\n where  true false ").key);
+        assert_eq!(
+            k.key,
+            structural_key("  data  Bool\n where  true false ").key
+        );
     }
 
     #[test]

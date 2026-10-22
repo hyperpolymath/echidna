@@ -1627,7 +1627,7 @@ fn corpus_command(op: CorpusOp, formatter: &OutputFormatter) -> Result<()> {
                         .map(|s| s.to_string_lossy().into_owned())
                         .unwrap_or_else(|| "project".to_string());
                     default_index(&basename)
-                }
+                },
             };
             let corpus = Corpus::load_json(&path)
                 .with_context(|| format!("load corpus index {}", path.display()))?;
@@ -1637,7 +1637,10 @@ fn corpus_command(op: CorpusOp, formatter: &OutputFormatter) -> Result<()> {
             // Group by structural key, keeping the key itself for display.
             let mut groups: std::collections::BTreeMap<
                 String,
-                (echidna::corpus::canonical::StructuralKey, Vec<(String, String)>),
+                (
+                    echidna::corpus::canonical::StructuralKey,
+                    Vec<(String, String)>,
+                ),
             > = std::collections::BTreeMap::new();
             for entry in &corpus.entries {
                 let matches = everything
@@ -1650,7 +1653,8 @@ fn corpus_command(op: CorpusOp, formatter: &OutputFormatter) -> Result<()> {
                 let slot = groups
                     .entry(key.key.clone())
                     .or_insert_with(|| (key, Vec::new()));
-                slot.1.push((corpus.adapter.clone(), entry.qualified.clone()));
+                slot.1
+                    .push((corpus.adapter.clone(), entry.qualified.clone()));
             }
 
             if groups.is_empty() {

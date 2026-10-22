@@ -751,7 +751,10 @@ mod tests {
         // The legacy name-tail hashes necessarily differ…
         assert_ne!(coq.graph.cross_prover_id, smtlib.graph.cross_prover_id);
         // …but the structural keys agree.
-        assert_eq!(coq.graph.cross_prover_identity_key, smtlib.graph.cross_prover_identity_key);
+        assert_eq!(
+            coq.graph.cross_prover_identity_key,
+            smtlib.graph.cross_prover_identity_key
+        );
         assert_eq!(coq.graph.identity_scheme, super::canonical::SCHEME);
         assert_eq!(
             coq.graph.canonical_type,
