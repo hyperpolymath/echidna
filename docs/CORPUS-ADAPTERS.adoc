@@ -1,7 +1,9 @@
 == Corpus Adapters — Index
 
 *Status*: canonical. Updated 2026-06-01 as part of the saturation
-campaign (see `+docs/decisions/2026-06-01-saturation-campaign.adoc+`).
+campaign (see `+docs/decisions/2026-06-01-saturation-campaign.adoc+`), and
+2026-10-22 with the estate's own TCB languages (`+spark_ada+`,
+`+creusot+`) and the `+hyperpolymath_estate+` profile.
 
 Each adapter is a `+pub fn ingest(root: &Path) -> Result<Corpus>+` in
 `+src/rust/corpus/<name>.rs+`, structurally indexing a proof tree into
@@ -72,17 +74,85 @@ unnamed_bang_pattern |*NEW 2026-06-01*
 |*minif2f* |`+*.lean+`, `+*.thy+`, `+*.ml+`, `+*.mm+`, `+*.v+` (multi)
 |https://github.com/openai/miniF2F |sorry, admit, Admitted, empty_body,
 todo |*NEW 2026-06-01*
+
+|*spark_ada* |`+*.ads+`, `+*.adb+` |https://github.com/AdaCore/spark2014
+(and `+sparklib+`) |`+pragma Assume+`, old-style `+--# assume+`, proof
+disabled via `+pragma Annotate+`, `+pragma Suppress+`, `+Unchecked_Conversion+`,
+`+pragma Import+`, `+SPARK_Mode => Off+` |*NEW 2026-10-22*
+
+|*creusot* |`+*.rs+` (Creusot-annotated)
+|https://github.com/creusot-rs/creusot |`+#[trusted]+` (reported as a
+postulate), `+unsafe+`, `+transmute+`, `+unimplemented!+`/`+todo!+`,
+`+extern "C"+`, `+#[cfg(creusot)]+` |*NEW 2026-10-22*
+
+|*hyperpolymath_estate* |multi (profile: `+*.idr+` under every
+`+src/abi/+`, `+*.agda+` under the five type libraries) |the estate's own
+repositories |everything the delegating adapters report, plus `+repo:+` and
+`+layer:+` module tags |*NEW 2026-10-22*
 |===
 
 === Coverage summary
 
 *Pre-2026-04*: 4 adapters (agda, coq, lean, idris2). *Post-2026-06-01*:
-17 adapters — 4.25× expansion.
+17 adapters — 4.25× expansion. *From 2026-10-22*: 20 adapters, the three
+additions being the ones the estate's own stack is written in rather than
+another public corpus (Ada/SPARK, Rust/Creusot, and the estate profile).
+
+=== Estate corpus profile (`+hyperpolymath_estate+`)
+
+The profile adapter is the one addition that is not a public corpus: it
+indexes *the estate's own lemmas first*.
+
+[source,bash]
+----
+just corpus-ingest-estate              # ROOT defaults to .. (the repo parent)
+cargo run --bin echidna -- corpus ingest --root .. --adapter hyperpolymath_estate
+----
+
+The manifest is `+data/corpus-profiles/hyperpolymath-estate.toml+`:
+
+[cols="1,3"]
+|===
+|Rule |What it indexes
+
+|`+name = "*"`, `+paths = ["src/abi"]+`, `+adapter = "idris2"+`
+|The ABI tree of **every** repository under the root. This is how
+"`+*.idr+` under `+src/abi/+`, whatever the repo" is expressed without
+listing repositories that do not exist yet.
+
+|`+echo-types+`, `+epistemic-types+`, `+secret-types+`, `+tropical-types+`,
+`+choreographic-types+` (`+adapter = "agda"+`)
+|The five Agda type-theory libraries. `+paths = ["src", ""]+` because not
+all of them keep `+src/+`.
+|===
+
+Merging semantics:
+
+* Each sub-tree is indexed by its own adapter, so its hazard detection,
+  `+AxiomUsage+` and type-discipline tags are the real ones.
+* Module names gain a `+repo::+` prefix and carry `+repo:<name>+` /
+  `+layer:<layer>+` in `+ModuleEntry::options+`.
+* Entry qualified names gain the same prefix, so `+by_qualified+` stays
+  unique across repositories.
+* `+CorpusEntry::dependencies+` keeps bare local names, so a symbol named
+  in two repositories resolves across them — deliberate, because "the same
+  concept, proved twice" is the case the index wants to find — at the cost
+  of not distinguishing the two in the dependency list.
+* `+Corpus::reindex_links()+` (not `+reindex()`) rebuilds the maps, because
+  re-running `+reindex()+` would re-detect disciplines with the *profile's*
+  adapter name and throw away what the sub-adapters found.
+
+`ECHIDNA_ESTATE_MANIFEST=/path/to/manifest.toml` overrides the location;
+with no manifest the built-in copy in `+profile.rs+` is used, and
+`+manifest_file_matches_builtin+` keeps the two in step.
 
 === Test fixtures
 
 Every adapter has a minimal smoke fixture under
-`+tests/corpus_fixtures/<adapter>/+`. Fixtures cover the happy-path decl
+`+tests/corpus_fixtures/<adapter>/+` (`+spark_ada+` and `+creusot+` ship
+one each and are driven end-to-end by `+tests/corpus_estate_adapters.rs+`;
+the `+hyperpolymath_estate+` profile has no fixture directory because its
+tests synthesise repository trees in a tempdir instead). Fixtures cover the happy-path decl
 parse plus at least one hazard-detection case. They are intentionally
 tiny — the goal is "`compile + smoke correctness`", not "`extensive
 coverage`". Larger evaluation corpora live outside the repo (mathlib4
@@ -92,9 +162,9 @@ etc. are fetched at training time via `+just provision-corpora+`).
 
 Every adapter has a corresponding per-prover synonyms TOML at
 `+data/synonyms/<adapter>.toml+` listing tactic / decl / hazard
-vocabulary with canonical-and-aliases form. Plus four cross-prover
+vocabulary with canonical-and-aliases form. Plus five cross-prover
 taxonomic dictionaries (underscore-prefix; merged into `+SynonymTable+`
-via `+merge_external()+`):
+via `+merge_external()+` or `+merge_cross_prover_dicts()+`):
 
 * `+_msc2020.toml+` — 181 MSC2020 codes for cross-domain classification
 (68Qxx and 68Nxx complete; 03B/03C/03D/03F for logic and proof theory)
@@ -102,7 +172,8 @@ via `+merge_external()+`):
 sub-hierarchy
 * `+_conceptnet_seed.toml+` — 53 pre-fetched ConceptNet 5.7 edges for
 offline-resilient semantic_class resolution
-* `+_verification_systems.toml+` — 657 program-verification concepts
+* `+_disciplines.toml+` — 41 rows for the 42 TypeChecker disciplines
+* `+_verification_systems.toml+` — 665 program-verification concepts
 (bitvectors, memory layout, separation/region framing, termination
 measures, resource algebras, information flow, estate layer boundaries).
 This is the dictionary that ProofNet/MiniF2F-shaped vocabularies do not
@@ -140,15 +211,56 @@ it’s a format like TPTP/SMT-LIB rather than a prover).
 
 === Open backlog (next saturation wave)
 
-* `+src/rust/corpus/naproche.rs+` (Naproche-SAD)
-* `+src/rust/corpus/mathcomp.rs+` (Coq MathComp — distinct from generic
-coq.rs)
-* `+src/rust/corpus/iris.rs+` (Coq Iris separation logic)
-* `+src/rust/corpus/cubical_agda.rs+` (Cubical Agda stdlib)
-* `+src/rust/corpus/tlaps.rs+` (TLA+ Proofs)
-* `+src/rust/corpus/pvs.rs+` (PVS theories)
-* `+src/rust/corpus/naturalproofs.rs+` (Bobrow et al. NL→Coq dataset)
-* `+src/rust/corpus/alphaproof.rs+` (DeepMind 2024 olympiad set)
+Ordered by which obligation the estate cannot currently index, not by how
+well known the corpus is.
+
+[cols="1,3,1"]
+|===
+|Adapter |Why it is where it is |Rank
+
+|`+src/rust/corpus/iris.rs+` (Coq Iris)
+|Separation logic with ghost state, invariants and ownership — the
+closest existing corpus to the Zig borrow/region model and to the
+Rust/Creusot `+Inv+`/`+Perm+` vocabulary. Every `+frame-rule+`,
+`+slice_disjoint+` and `+ghost_resource+` row in
+`+_verification_systems.toml+` should be anchored to a real Iris lemma, and
+today none is. Pulled to the top. |*next*
+
+|`+src/rust/corpus/tlaps.rs+` (TLA+ Proofs)
+|Temporal safety and liveness proofs. The Elixir/OTP layer's MAA
+protocols and the SNIF boundary are temporal properties, and none of the
+20 shipped adapters indexes a temporal proof at all — so this is the only
+gap that is a *category* gap rather than a coverage gap. Pulled to the
+top. |*next*
+
+|`+src/rust/corpus/mathcomp.rs+` (Coq MathComp)
+|Distinct from generic `+coq.rs+`: SSReflect's `+/+` and `+rewrite+`
+idioms make generic extraction lossy. |high
+
+|`+src/rust/corpus/cubical_agda.rs+` (Cubical Agda stdlib)
+|The univalent layer under the `+homotopy_fiber+` / path-algebra
+vocabulary. `+_msc2020.toml+` already carries `+18N60+` and `+18N45+` for
+it. |high
+
+|`+src/rust/corpus/pvs.rs+` (PVS theories)
+|Longest-standing gap in the interactive-assistant set. |medium
+
+|`+src/rust/corpus/naturalproofs.rs+` (NL to Coq dataset)
+|Another NL/formal pair set; overlaps ProofNet. |medium
+
+|`+src/rust/corpus/alphaproof.rs+` (DeepMind 2024 olympiad set)
+|*Demoted to the bottom.* There is no published corpus or file format to
+ingest — AlphaProof's outputs are not released in a form an adapter could
+walk — so this would be a filename with no data behind it. It also adds
+nothing to the TCB languages: the vocabulary is olympiad mathematics,
+which ProofNet and MiniF2F already cover. Revisit only if DeepMind
+publishes the archive. |*lowest*
+
+|`+src/rust/corpus/naproche.rs+` (Naproche-SAD)
+|*Demoted to the bottom.* A small library written in controlled natural
+language; the extractable structure is the CNL skeleton rather than proof
+vocabulary, and no estate layer uses CNL. |*lowest*
+|===
 
 Drop here as upstream URLs are confirmed and at least one production
 consumer needs each.

@@ -4,7 +4,8 @@
 # corpus_loader.jl
 #
 # Reads `Corpus` JSON files emitted by the Rust corpus adapters added
-# in the saturation campaign (2026-06-01). Bridges the 17 adapter output
+# in the saturation campaign (2026-06-01) and the estate additions
+# (2026-10-22). Bridges the 20 adapter output
 # paths (agda, coq, lean, idris2, isabelle, metamath, mizar, hol_light,
 # hol4, dafny, why3, fstar, acl2_books, tptp, smtlib, proofnet, minif2f)
 # into the Julia GNN training pipeline as `TrainingExample`-shaped rows.
@@ -18,7 +19,7 @@
     CorpusLoader
 
 Reads `Corpus` JSON files emitted by Rust corpus adapters (saturation
-campaign 2026-06-01). Bridges the 17 adapter output paths into the
+campaign 2026-06-01, estate additions 2026-10-22). Bridges the 20 adapter output paths into the
 Julia GNN training pipeline.
 
 The Rust source of truth is `src/rust/corpus/mod.rs::Corpus`. Schema

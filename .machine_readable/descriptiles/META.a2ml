@@ -55,6 +55,9 @@ corpus = [
   "src/rust/corpus/smtlib.rs",
   "src/rust/corpus/proofnet.rs",
   "src/rust/corpus/minif2f.rs",
+  "src/rust/corpus/spark_ada.rs",
+  "src/rust/corpus/creusot.rs",
+  "src/rust/corpus/profile.rs",
 ]
 verification = [
   "src/rust/verification/bayesian_arbiter.rs",

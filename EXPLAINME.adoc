@@ -53,7 +53,7 @@ ____
   (mass-function combination with explicit ignorance), and
   link:src/rust/verification/pareto_arbiter.rs[`pareto_arbiter.rs`]
   (multi-objective dominance with tiebreak).
-* Corpus ingest: 17 adapters under
+* Corpus ingest: 20 adapters under
   link:src/rust/corpus/[`src/rust/corpus/`] cover 17 distinct proof
   languages — agda / coq / lean / idris2 (pre-2026-04) plus isabelle
   / metamath / mizar / hol_light / hol4 / dafny / why3 / fstar /
@@ -65,7 +65,7 @@ ____
   dictionaries — `_msc2020.toml` (181 MSC2020 codes, 68Q/68N complete),
   `_wordnet_math.toml` (81 WordNet 3.1 math lemmas),
   `_conceptnet_seed.toml` (53 ConceptNet 5.7 edges), and
-  `_verification_systems.toml` (657 program-verification concepts:
+  `_verification_systems.toml` (665 program-verification concepts:
   bitvectors, memory layout, separation logic, termination, resource
   algebras, information flow, estate layer boundaries) — used by the
   `echidna suggest` variant tester.
@@ -175,7 +175,7 @@ Rust trust-pipeline properties; see `proofs/agda/`.
 
 | `src/rust/provers/`        | `ProverKind` enum + per-backend `ProverBackend` impls (see link:docs/PROVER_COUNT.adoc[`docs/PROVER_COUNT.adoc`] for the live tier table)
 | `src/rust/verification/`   | Trust pipeline (portfolio, certificates, axioms, confidence, mutation, pareto, statistics) + four arbiters (`portfolio.rs`, `bayesian_arbiter.rs`, `dempster_shafer.rs`, `pareto_arbiter.rs`)
-| `src/rust/corpus/`         | 17 corpus adapters (see link:docs/CORPUS-ADAPTERS.adoc[`docs/CORPUS-ADAPTERS.adoc`])
+| `src/rust/corpus/`         | 20 corpus adapters (see link:docs/CORPUS-ADAPTERS.adoc[`docs/CORPUS-ADAPTERS.adoc`])
 | `src/rust/integrity/`      | Solver-binary integrity (SHAKE3-512, BLAKE3)
 | `src/rust/executor/`       | Sandboxed solver execution (Podman, bubblewrap)
 | `src/rust/exchange/`       | Cross-prover proof exchange — six formats (OpenTheory, Dedukti, TPTP, SMT-LIB, SMTCoq, Lambdapi)

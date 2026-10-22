@@ -8,9 +8,55 @@ https://semver.org/spec/v2.0.0.html[Semantic Versioning].
 
 === [Unreleased]
 
+==== Added — corpus adapters for the estate's own TCB languages, 2026-10-22
+
+* *`+src/rust/corpus/spark_ada.rs+`* — Ada/SPARK adapter (`+*.ads+` /
+`+*.adb+`). Extracts packages, `+with+`/`+use+` clauses, subprograms with
+their `+Pre+`/`+Post+`/`+Contract_Cases+`/`+Global+`/`+Depends+` aspects, and
+the GNATprove escape hatches: `+pragma Assume+` (and the old `+--# assume+`
+form) is reported as a *postulate*, plus `+pragma Annotate+` proof
+disabling, `+pragma Suppress+`, `+Unchecked_Conversion+`, `+pragma Import+`
+and `+SPARK_Mode => Off+`. Recognises the sparklib `+Lemma_*+` + `+Ghost+`
+lemma convention as `+sparklib:lemma+` so reusable lemmas are separable
+from executable subprograms. Spec and body are paired across files into
+one entry (unambiguous pairs only).
+* *`+src/rust/corpus/creusot.rs+`* — Rust/Creusot adapter (`+*.rs+`).
+Folds `+#[requires]+`, `+#[ensures]+`, `+#[invariant]+`, `+#[variant]+`,
+`+#[logic]+`, `+#[predicate]+` and `+#[cfg(creusot)]+` into the entry's
+statement, and tags `+pearlite!+`, `+proof_assert!+`, `+snapshot!+`,
+`+unsafe+`, `+transmute+` and `+extern "C"+`. `+#[trusted]+` is reported as
+a postulate, because Creusot accepts the contract and skips the body.
+`+#[test]+` / `+#[cfg(test)]+` items are excluded: a corpus of proofs
+should not be dominated by test functions.
+* *`+src/rust/corpus/profile.rs+`* + `+data/corpus-profiles/hyperpolymath-estate.toml+`
+— the `+hyperpolymath_estate+` profile: every repository's `+src/abi+`
+Idris2 tree (a `+name = "*"+` rule, so new repos are picked up without a
+manifest change) plus the five Agda type libraries (`+echo-types+`,
+`+epistemic-types+`, `+secret-types+`, `+tropical-types+`,
+`+choreographic-types+`). Sub-trees are indexed by their own adapters,
+then merged with `+repo::+` name prefixes and `+repo:+` / `+layer:+` module
+tags. `+ECHIDNA_ESTATE_MANIFEST+` overrides the manifest path.
+* *`+Corpus::reindex_links()+`* — split out of `+reindex()+` so a merge can
+rebuild the lookup maps without re-running discipline detection under the
+merging adapter's name.
+* *`+crates/echidna-core-creusot/src/estate_layers.rs+`* — Creusot-annotated
+layer classification (PO-L1..L5): totality, partition, and the checkable
+form of "every ABI is Idris2". Stated, not proved, like the rest of that
+crate; the stable-Rust tests mirror every obligation.
+* *`+_verification_systems.toml+`* +8 rows for the syntax the new adapters
+detect (`+pragma_assume+`, `+contract_cases+`, `+spark_mode+`,
+`+ghost_lemma+`, `+trusted_attribute+`, `+pearlite+`, `+proof_assert+`,
+`+variant_clause+`), so the semantic layer can resolve what the indexer
+reports.
+* Corpus adapters: 17 → *20*. Open backlog re-ordered: `+iris.rs+` and
+`+tlaps.rs+` to the top (separation logic for the Zig/Rust layers;
+temporal proofs for the Elixir/OTP and SNIF layers), `+alphaproof.rs+` and
+`+naproche.rs+` to the bottom (no published corpus or file format, and no
+estate vocabulary).
+
 ==== Added — verification vocabulary 2026-10-22
 
-* *`+data/synonyms/_verification_systems.toml+`* (657 rows): the first
+* *`+data/synonyms/_verification_systems.toml+`* (665 rows): the first
 cross-prover dictionary aimed at program verification rather than
 undergraduate pure mathematics. Sections: bitvectors and machine integers,
 memory layout and ABI, ownership and slicing, separation logic and region

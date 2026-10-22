@@ -56,8 +56,10 @@
 //! | (this file) | `confidence.rs` | `TrustLevel` total order, combine monotonicity |
 //! | [`axiom_tracker`] | `axiom_tracker.rs` | `DangerLevel` order, classify monotonicity |
 //! | [`pareto`] | `verification/pareto.rs` | Dominance irreflexivity / antisymmetry / transitivity, frontier soundness + completeness, best-axis preservation (E10) |
+//! | [`estate_layers`] | `corpus/profile.rs` | Layer classification totality (PO-L1/L2), partition (PO-L3), "every ABI is Idris2" (PO-L4) |
 
 pub mod axiom_tracker;
+pub mod estate_layers;
 pub mod pareto;
 
 // ---------------------------------------------------------------------------

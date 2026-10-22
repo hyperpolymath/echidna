@@ -241,9 +241,10 @@ enum CorpusOp {
         /// Path to the project root.
         #[arg(short, long)]
         root: PathBuf,
-        /// Adapter to use: agda, coq, lean, idris2, acl2_books, dafny,
-        /// fstar, hol4, hol_light, isabelle, metamath, minif2f, mizar,
-        /// proofnet, smtlib, tptp, why3.
+        /// Adapter to use: agda, coq, lean, idris2, acl2_books, creusot,
+        /// dafny, fstar, hol4, hol_light, isabelle, metamath, minif2f,
+        /// mizar, proofnet, smtlib, spark_ada, tptp, why3, or
+        /// hyperpolymath_estate (the multi-repo estate profile).
         #[arg(short, long, default_value = "agda")]
         adapter: String,
         /// Where to write the JSON index. Defaults to
@@ -1331,6 +1332,12 @@ fn corpus_command(op: CorpusOp, formatter: &OutputFormatter) -> Result<()> {
                     .with_context(|| format!("acl2_books ingest of {}", root.display()))?,
                 "dafny" => corpus::dafny::ingest(&root)
                     .with_context(|| format!("dafny ingest of {}", root.display()))?,
+                "spark_ada" | "spark" | "ada" => corpus::spark_ada::ingest(&root)
+                    .with_context(|| format!("spark_ada ingest of {}", root.display()))?,
+                "creusot" | "rust_creusot" => corpus::creusot::ingest(&root)
+                    .with_context(|| format!("creusot ingest of {}", root.display()))?,
+                "hyperpolymath_estate" | "estate" => corpus::profile::ingest(&root)
+                    .with_context(|| format!("estate profile ingest of {}", root.display()))?,
                 "fstar" => corpus::fstar::ingest(&root)
                     .with_context(|| format!("fstar ingest of {}", root.display()))?,
                 "hol4" => corpus::hol4::ingest(&root)
@@ -1355,7 +1362,7 @@ fn corpus_command(op: CorpusOp, formatter: &OutputFormatter) -> Result<()> {
                     .with_context(|| format!("why3 ingest of {}", root.display()))?,
                 other => {
                     return Err(anyhow::anyhow!(
-                        "Unknown corpus adapter '{}' (supported: agda, coq, lean, idris2, acl2_books, dafny, fstar, hol4, hol_light, isabelle, metamath, minif2f, mizar, proofnet, smtlib, tptp, why3)",
+                        "Unknown corpus adapter '{}' (supported: agda, coq, lean, idris2, acl2_books, creusot, dafny, fstar, hol4, hol_light, isabelle, metamath, minif2f, mizar, proofnet, smtlib, spark_ada, tptp, why3, hyperpolymath_estate)",
                         other
                     ))
                 },

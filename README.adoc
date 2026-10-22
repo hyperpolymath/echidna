@@ -49,8 +49,10 @@ provers always have the final word.
 * *Cross-prover proof exchange* — universal interchange across six
 formats: OpenTheory, Dedukti, TPTP, SMT-LIB, SMTCoq, Lambdapi
 (`+src/rust/exchange/+`).
-* *17 corpus adapters* — every major public proof corpus has a
-structural ingest path. See Corpus Coverage.
+* *20 corpus adapters* — every major public proof corpus has a
+structural ingest path, plus Ada/SPARK, Rust/Creusot and the
+`hyperpolymath_estate` profile that indexes the estate's own Idris2 ABI
+trees and Agda type libraries. See Corpus Coverage.
 * *Axiom-usage tracking* — four danger levels (Safe, Noted, Warning,
 Reject) applied uniformly across every backend.
 
@@ -318,7 +320,7 @@ src/rust/
   repl.rs           # Interactive REPL
   main.rs           # CLI entry point
   lib.rs            # Library root
-  corpus/           # 17 corpus adapters (see "Corpus Coverage" below)
+  corpus/           # 20 corpus adapters (see "Corpus Coverage" below)
 ....
 
 === Corpus Coverage
@@ -398,7 +400,7 @@ verification, `+68V20+` formalised mathematics).
 sub-hierarchy for natural-language anchor terms.
 * `+_conceptnet_seed.toml+` — *53* pre-fetched ConceptNet 5.7 edges for
 offline-resilient `+semantic_class+` resolution.
-* `+_verification_systems.toml+` — *657* program-verification concepts for
+* `+_verification_systems.toml+` — *665* program-verification concepts for
 the estate's proof stack: bitvectors and machine arithmetic, memory layout
 and ABI, ownership and slicing, separation-logic framing, contracts and
 proof obligations, termination measures, refinement, resource algebras,

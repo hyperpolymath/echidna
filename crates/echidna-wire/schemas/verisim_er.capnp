@@ -12,7 +12,7 @@ using Common = import "common.capnp";
 struct Octad {
   key              @0  :Text;             # UUIDv7
   createdAt        @1  :UInt64;           # epoch millis
-  adapter          @2  :Text;             # "agda" / "coq" / "lean" / "idris2" / "isabelle" / "metamath" / "mizar" / "hol_light" / "hol4" / "dafny" / "why3" / "fstar" / "acl2_books" / "tptp" / "smtlib" / "proofnet" / "minif2f"
+  adapter          @2  :Text;             # "agda" / "coq" / "lean" / "idris2" / "isabelle" / "metamath" / "mizar" / "hol_light" / "hol4" / "dafny" / "why3" / "fstar" / "acl2_books" / "tptp" / "smtlib" / "proofnet" / "minif2f" / "spark_ada" / "creusot" / "hyperpolymath_estate"
   moduleQualified  @3  :Text;             # CorpusEntry.qualified
   semantic         @4  :Semantic;
   temporal         @5  :Temporal;

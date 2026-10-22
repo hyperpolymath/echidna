@@ -66,7 +66,7 @@ have not pretended otherwise in the commit or the CHANGELOG.
 ECHIDNA is a neurosymbolic theorem-proving platform: a Rust core
 orchestrating ~128 `ProverKind` backends through a trust-hardening
 pipeline (integrity hashing, axiom tracking, certificate checking,
-5-level confidence), with 17 corpus adapters, six exchange formats, four
+5-level confidence), with 20 corpus adapters, six exchange formats, four
 arbitration mechanisms, a Julia ML side, a Chapel parallel layer, an
 Idris2 ABI and a Zig FFI. The synonym layer is one small part of it — it
 feeds `echidna suggest` (the variant tester) and cross-corpus
@@ -99,7 +99,7 @@ feeds `echidna suggest` (the variant tester) and cross-corpus
 | The 42 TypeChecker disciplines (polymorphism, substructural, effects, …).
 
 | `_verification_systems.toml`
-| *657* (new)
+| *665* (new)
 | Program-verification concepts, 11 families + estate layering.
 |===
 
@@ -232,7 +232,7 @@ Additive except for the 15 documented MSC repairs.
 | Path | Change
 
 | `data/synonyms/_verification_systems.toml`
-| *New*, 657 rows, 11 vocabulary families + estate layering. No `evidence`
+| *New*, 665 rows, 11 vocabulary families + estate layering. No `evidence`
   field: these rows assert concept membership, not cross-prover identity.
 
 | `data/synonyms/_msc2020.toml`

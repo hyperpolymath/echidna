@@ -55,6 +55,8 @@ The adapters use a **two-pass extraction pattern**
 | `acl2_books` | `.lisp` / `.acl2` | 2026-06-01 |
 | `tptp` / `smtlib` | `.p` `.tptp` / `.smt2` `.smt` | 2026-06-01 |
 | `proofnet` / `minif2f` | `.jsonl` / multi-target | 2026-06-01 |
+| `spark_ada` / `creusot` | `.ads` `.adb` / `.rs` with Creusot contracts | 2026-10-22 |
+| `hyperpolymath_estate` | profile: `src/abi` Idris2 + the five Agda libraries | 2026-10-22 |
 
 Full per-adapter hazard inventory, fixture layout, and downstream consumer
 wiring (`suggest` synonym table, `octad-emit` → VeriSimDB, GNN training data)
@@ -82,7 +84,7 @@ Three layers stack over the per-prover synonym tables to give the
 5. **Type disciplines** — `data/synonyms/_disciplines.toml`, 41 rows for
    the 42 TypeChecker disciplines.
 6. **Verification systems** — `data/synonyms/_verification_systems.toml`,
-   657 program-verification concepts (bitvectors, memory layout,
+   665 program-verification concepts (bitvectors, memory layout,
    separation/region framing, termination, resource algebras,
    information flow, estate layer boundaries).
 

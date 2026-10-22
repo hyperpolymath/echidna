@@ -1,0 +1,69 @@
+# SPDX-FileCopyrightText: 2026 ECHIDNA Project Team
+# SPDX-FileCopyrightText: 2026 Jonathan D.A. Jewell <j.d.a.jewell@open.ac.uk>
+# SPDX-License-Identifier: MPL-2.0
+#
+# hyperpolymath_estate — corpus profile
+#
+# Read by `src/rust/corpus/profile.rs` (`corpus ingest --adapter
+# hyperpolymath_estate --root <dir-containing-the-repositories>`).
+#
+# Why this profile exists: ECHIDNA's own lemmas should be in the index
+# before anybody else's. The ABI layer is Idris 2, and the type-theory
+# libraries that the estate proves things about are Agda. Neither can be
+# seen by a single-repository adapter.
+#
+# `name = "*"` matches every immediate child directory of the root, which
+# is how "the `src/abi` tree of every repo, whatever it is called" is
+# expressed without listing repos that do not exist yet.
+#
+# This file must stay in step with `Manifest::builtin()` in
+# `src/rust/corpus/profile.rs`; `manifest_file_matches_builtin` asserts it.
+#
+# Estate language policy (binding): every ABI is Idris2, every API and
+# FFI is Zig, every BEAM native boundary is a SNIF, the Rust layer is
+# Rust/Creusot, Julia owns numeric work, Chapel owns the parallel layer.
+
+[profile]
+name = "hyperpolymath_estate"
+description = "Idris2 ABI trees plus the five Agda type libraries"
+
+# Every repository's ABI tree. Idris2 modules under src/abi carry the
+# layout, foreign-interface and capability-index definitions that the
+# Zig FFI and the Rust/Creusot layers are checked against.
+[[repo]]
+name = "*"
+paths = ["src/abi"]
+adapter = "idris2"
+layer = "abi"
+
+# The Agda type-theory libraries. `src` first, then the repository root,
+# because not all of them keep `src/`.
+[[repo]]
+name = "echo-types"
+paths = ["src", ""]
+adapter = "agda"
+layer = "echo"
+
+[[repo]]
+name = "epistemic-types"
+paths = ["src", ""]
+adapter = "agda"
+layer = "epistemic"
+
+[[repo]]
+name = "secret-types"
+paths = ["src", ""]
+adapter = "agda"
+layer = "secret"
+
+[[repo]]
+name = "tropical-types"
+paths = ["src", ""]
+adapter = "agda"
+layer = "tropical"
+
+[[repo]]
+name = "choreographic-types"
+paths = ["src", ""]
+adapter = "agda"
+layer = "choreographic"

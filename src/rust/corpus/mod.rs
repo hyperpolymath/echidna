@@ -21,9 +21,15 @@
 //! programme). Now-shipped adapters: `coq`, `lean`, `idris2`, plus the
 //! saturation-campaign 2026-06-01 additions: `isabelle`, `metamath`,
 //! `mizar`, `hol_light`, `hol4`, `dafny`, `why3`, `fstar`,
-//! `acl2_books`, `tptp`, `smtlib`, `proofnet`, `minif2f`. **17 total
-//! adapters**. See `docs/CORPUS-ADAPTERS.adoc` for the canonical index,
-//! per-adapter hazard inventory, and source URLs.
+//! `acl2_books`, `tptp`, `smtlib`, `proofnet`, `minif2f`.
+//!
+//! Estate additions (2026-10-22): `spark_ada` (Ada/SPARK, including the
+//! sparklib `Lemma_*` convention), `creusot` (Rust with Creusot
+//! contracts), and `profile` (the `hyperpolymath_estate` multi-repo
+//! profile that indexes every repo's `src/abi` Idris2 tree and the five
+//! Agda type-theory libraries). **20 total adapters**. See
+//! `docs/CORPUS-ADAPTERS.adoc` for the canonical index, per-adapter
+//! hazard inventory, and source URLs.
 //!
 //! ## Design
 //!
@@ -51,6 +57,7 @@ pub mod query; // Multi-axis query DSL (capstone)
 // Saturation campaign — new corpus adapters (2026-06-01).
 // See docs/handover/PROVER-CORPUS-SATURATION-LANE.adoc.
 pub mod acl2_books;
+pub mod creusot;
 pub mod dafny;
 pub mod fstar;
 pub mod hol4;
@@ -59,8 +66,10 @@ pub mod isabelle;
 pub mod metamath;
 pub mod minif2f;
 pub mod mizar;
+pub mod profile;
 pub mod proofnet;
 pub mod smtlib;
+pub mod spark_ada;
 pub mod tptp;
 pub mod why3;
 
@@ -264,26 +273,10 @@ impl Corpus {
     /// serde back-compat with pre-2026-06 corpus JSON. See
     /// `docs/architecture/TYPE-DISCIPLINE-EMBEDDING.adoc`.
     pub fn reindex(&mut self) {
-        self.by_name.clear();
-        self.by_qualified.clear();
-        self.dependents.clear();
-        for (i, e) in self.entries.iter().enumerate() {
-            self.by_name.entry(e.name.clone()).or_default().push(i);
-            self.by_qualified.insert(e.qualified.clone(), i);
-        }
-        for (i, e) in self.entries.iter().enumerate() {
-            for dep in &e.dependencies {
-                self.dependents.entry(dep.clone()).or_default().push(i);
-            }
-        }
-        // Stable order so output is deterministic.
-        for v in self.dependents.values_mut() {
-            v.sort_unstable();
-            v.dedup();
-        }
+        self.reindex_links();
 
         // Discipline detection across all entries. Universal coverage
-        // for the 17 adapters that all already call reindex().
+        // for the 20 adapters that all already call reindex().
         use crate::disciplines::{detect_disciplines, DetectionContext, MarkerRegistry};
         let registry = MarkerRegistry::canonical();
         let adapter = self.adapter.clone();
@@ -303,6 +296,32 @@ impl Corpus {
                     .other
                     .push(format!("discipline:{}", d.tag()));
             }
+        }
+    }
+
+    /// Rebuild only the lookup and reverse-dependency maps, leaving
+    /// `axiom_usage` untouched.
+    ///
+    /// Used when merging corpora that a per-format adapter has already
+    /// indexed: re-running [`Self::reindex`] would re-detect disciplines
+    /// with the *merging* adapter's name and lose the originals.
+    pub fn reindex_links(&mut self) {
+        self.by_name.clear();
+        self.by_qualified.clear();
+        self.dependents.clear();
+        for (i, e) in self.entries.iter().enumerate() {
+            self.by_name.entry(e.name.clone()).or_default().push(i);
+            self.by_qualified.insert(e.qualified.clone(), i);
+        }
+        for (i, e) in self.entries.iter().enumerate() {
+            for dep in &e.dependencies {
+                self.dependents.entry(dep.clone()).or_default().push(i);
+            }
+        }
+        // Stable order so output is deterministic.
+        for v in self.dependents.values_mut() {
+            v.sort_unstable();
+            v.dedup();
         }
     }
 

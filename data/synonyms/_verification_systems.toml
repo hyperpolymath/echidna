@@ -4703,3 +4703,99 @@ aliases = ["conformanceTest", "abi_conformance", "boundary_test"]
 tactic_class = "estate"
 semantic_class = "estate-layer"
 notes = "A test that exercises the boundary contract from the far side."
+
+# ============================================================
+# Syntax-level contract vocabulary (2026-10-22)
+# ============================================================
+#
+# The corpus adapters added 2026-10-22 (`spark_ada.rs`, `creusot.rs`)
+# detect these spellings directly, so they need entries here for the
+# semantic layer to resolve what the indexer reports. Same concept,
+# different spelling, per language -- which is the whole point of the
+# dictionary.
+
+[[synonym]]
+canonical = "pragma_assume"
+aliases = ["pragma Assume", "--# assume", "assume_directive", "trustinme"]
+tactic_class = "hazard"
+semantic_class = "trusted-assertion"
+notes = """
+SPARK's unchecked assertion, in both the pragma and the old `--#`
+comment form. GNATprove accepts the predicate without discharging it,
+so `spark_ada.rs` reports it as a postulate rather than a proof step.
+"""
+
+[[synonym]]
+canonical = "contract_cases"
+aliases = ["Contract_Cases", "contractCases", "case_split_contract"]
+tactic_class = "contract"
+semantic_class = "contract"
+notes = """
+SPARK's guarded multi-clause postcondition: one obligation per case,
+which is how a case analysis is made checkable instead of asserted.
+"""
+
+[[synonym]]
+canonical = "spark_mode"
+aliases = ["SPARK_Mode", "sparkMode", "spark_mode_off"]
+tactic_class = "pragma"
+semantic_class = "estate-layer"
+notes = """
+The aspect that places a unit inside (or outside) the proved subset.
+`SPARK_Mode => Off` is a hazard tag in the adapter, because the unit is
+then outside the TCB it appears to belong to.
+"""
+
+[[synonym]]
+canonical = "ghost_lemma"
+aliases = ["Lemma_", "sparklib_lemma", "ghost_procedure", "Ghost"]
+tactic_class = "lemma"
+semantic_class = "proof-reuse"
+notes = """
+The sparklib convention: a `Ghost` procedure named `Lemma_*` whose Post
+is the fact being memoised. Not executable, reusable across proofs --
+the Ada side of premise selection.
+"""
+
+[[synonym]]
+canonical = "trusted_attribute"
+aliases = ["#[trusted]", "trusted", "Creusot trusted"]
+tactic_class = "hazard"
+semantic_class = "trusted-assertion"
+notes = """
+Creusot's "accept this contract, skip the body". Semantically a
+postulate: the obligation exists and is unproved, so downstream
+consumers must not treat the function as verified.
+"""
+
+[[synonym]]
+canonical = "pearlite"
+aliases = ["pearlite!", "pearlite_expr", "spec_expression"]
+tactic_class = "spec"
+semantic_class = "specification-language"
+notes = """
+Creusot's specification expression language, embedded in Rust via the
+`pearlite!` macro. Where `#[requires]` is the syntax, Pearlite is the
+logic the clauses are written in.
+"""
+
+[[synonym]]
+canonical = "proof_assert"
+aliases = ["proof_assert!", "proofAssert", "assert_proof"]
+tactic_class = "assertion"
+semantic_class = "specification-language"
+notes = """
+An assertion checked by the verifier but erased from the compiled
+program -- a proof step that costs nothing at run time.
+"""
+
+[[synonym]]
+canonical = "variant_clause"
+aliases = ["#[variant]", "variant", "decreases_clause", "Loop_Variant"]
+tactic_class = "termination"
+semantic_class = "termination"
+notes = """
+The decreasing measure that turns termination into an obligation.
+SPARK spells it `Loop_Variant`, Creusot `#[variant]`, Dafny
+`decreases` -- one concept, three corpora.
+"""

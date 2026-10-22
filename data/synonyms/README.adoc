@@ -102,7 +102,7 @@ corpus items can be joined across systems by `semantic_class`.
   `docs/architecture/TYPE-DISCIPLINE-EMBEDDING.adoc`).
 
 | `_verification_systems.toml`
-| 657
+| 665
 | Program verification: bitvectors and machine integers, memory layout and
   ABI, ownership and slicing, separation logic and region framing,
   contracts and proof obligations, termination measures, refinement,
