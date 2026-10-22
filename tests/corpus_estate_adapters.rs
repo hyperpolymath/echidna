@@ -81,7 +81,20 @@ fn creusot_fixture_ingests_with_contracts_and_trust() {
     assert!(inc[0].statement.contains("#[requires(x@ < 1000)]"));
     assert!(inc[0].statement.contains("#[ensures(result@ == x@ + 1)]"));
     assert_eq!(inc[0].proof.as_deref(), Some("x + 1"));
-    assert!(!inc[0].axiom_usage.any());
+    assert!(
+        !inc[0].axiom_usage.postulate,
+        "a contract is not a postulate: increment is proved, not trusted"
+    );
+    assert!(inc[0]
+        .axiom_usage
+        .other
+        .iter()
+        .any(|t| t == "creusot:requires"));
+    assert!(inc[0]
+        .axiom_usage
+        .other
+        .iter()
+        .any(|t| t == "creusot:ensures"));
 
     let trusted = find(&corpus, "trusted_identity");
     assert_eq!(trusted.len(), 1);

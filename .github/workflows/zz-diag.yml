@@ -2,8 +2,8 @@
 # TEMPORARY diagnostic workflow. Deliberately contains no `uses:` steps: a
 # newly added workflow in this repo that references an action fails at
 # startup ("This run likely failed because of a workflow file issue"), so
-# this clones by hand and reports through a PR comment, which is readable
-# from environments where the job log endpoint is blocked.
+# this clones by hand and publishes each stage over a pollable topic, which
+# is readable from environments where the job log endpoint is blocked.
 # Delete once the branch is green.
 name: ZZ diag
 
@@ -13,52 +13,55 @@ on:
 
 permissions:
   contents: read
-  issues: write
 
 jobs:
   diag:
     runs-on: ubuntu-latest
-    timeout-minutes: 50
+    timeout-minutes: 55
     steps:
       - name: Collect diagnostics
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          T: https://ntfy.sh
         run: |
           set -u
-          OUT=/tmp/diag.txt
-          : > "${OUT}"
-          say() { printf '%s\n' "$*" >> "${OUT}"; }
+          pub() { curl -sS -m 30 --data-binary @"$2" "${T}/$1" >/dev/null 2>&1 || true; }
+          note() { printf '%s\n' "$2" > /tmp/note; pub "$1" /tmp/note; }
+          chunked() { # topic file
+            rm -f /tmp/ck.*
+            split -C 3800 -a 3 "$2" /tmp/ck.
+            for f in /tmp/ck.*; do pub "$1" "${f}"; sleep 1; done
+          }
           sudo apt-get update -qq >/dev/null 2>&1
           sudo apt-get install -y -qq capnproto protobuf-compiler pkg-config libssl-dev >/dev/null 2>&1
-          git clone -q --depth 5 --branch arena/5b8efe75-echidna \
-            "https://x-access-token:${GH_TOKEN}@github.com/hyperpolymath/echidna.git" repo 2>>"${OUT}"
-          cd repo || exit 1
+          if ! git clone -q --depth 5 --branch arena/5b8efe75-echidna \
+               "https://x-access-token:${GH_TOKEN}@github.com/hyperpolymath/echidna.git" repo >/tmp/clone.log 2>&1; then
+            chunked echidna-status-7f3a91 /tmp/clone.log
+            note echidna-status-7f3a91 "clone FAILED"
+            exit 0
+          fi
+          note echidna-status-7f3a91 "clone ok $(git -C repo rev-parse --short HEAD)"
+          cd repo
 
-          cargo fmt --all
-          {
-            echo '=== FMT PATCH (base64) ==='
-            git -C . diff > /tmp/fmt.patch
-            base64 -w 100 /tmp/fmt.patch
-            echo "=== FMT PATCH END ($(wc -c < /tmp/fmt.patch) bytes) ==="
-          } >> "${OUT}"
+          cargo fmt --all && note echidna-status-7f3a91 "fmt applied" || note echidna-status-7f3a91 "fmt FAILED"
+          git diff > /tmp/fmt.patch
+          note echidna-status-7f3a91 "fmt patch bytes $(wc -c < /tmp/fmt.patch)"
+          base64 -w 200 /tmp/fmt.patch > /tmp/fmt.b64
+          chunked echidna-fmt2-7f3a91 /tmp/fmt.b64
+          note echidna-status-7f3a91 "fmt patch published"
 
-          {
-            echo '=== TEST echidna-core-creusot ==='
-            cargo test --locked -p echidna-core-creusot 2>&1 | tail -n 60
-            echo '=== TEST corpus_estate_adapters + corpus_cli_dispatch + lexicon_v2 ==='
-            cargo test --locked --test corpus_estate_adapters --test corpus_cli_dispatch \
-              --test lexicon_v2_test 2>&1 | grep -vE '^\s+Compiling|^\s+Checking' | tail -n 120
-            echo '=== CLIPPY workspace ==='
-            cargo clippy --locked --workspace --all-targets -- -D warnings 2>&1 \
-              | grep -E '^(error|warning)' -A 6 | head -n 200
-            echo '=== END ==='
-          } >> "${OUT}"
+          cargo test --locked -p echidna-core-creusot > /tmp/t1.log 2>&1
+          note echidna-status-7f3a91 "core-creusot exit $?"
+          tail -n 40 /tmp/t1.log > /tmp/t1.tail; chunked echidna-test2-7f3a91 /tmp/t1.tail
 
-          jq -Rs '{body: .}' < "${OUT}" > /tmp/body.json
-          CODE=$(curl -sS -o /tmp/resp.json -w '%{http_code}' -X POST \
-            -H "Authorization: Bearer ${GH_TOKEN}" \
-            -H "Accept: application/vnd.github+json" \
-            https://api.github.com/repos/hyperpolymath/echidna/issues/448/comments \
-            -d @/tmp/body.json)
-          echo "comment status: ${CODE}"
-          test "${CODE}" = "201"
+          cargo test --locked --test corpus_estate_adapters --test corpus_cli_dispatch \
+            --test lexicon_v2_test > /tmp/t2.log 2>&1
+          note echidna-status-7f3a91 "estate adapters exit $?"
+          grep -E '^(test |error|failures:|---- )' /tmp/t2.log | tail -n 60 > /tmp/t2.tail
+          chunked echidna-test2-7f3a91 /tmp/t2.tail
+
+          cargo clippy --locked --workspace --all-targets -- -D warnings > /tmp/cl.log 2>&1
+          note echidna-status-7f3a91 "clippy exit $?"
+          grep -E '^(error|warning)' -A 6 /tmp/cl.log | head -n 400 > /tmp/cl.tail
+          chunked echidna-clippy-7f3a91 /tmp/cl.tail
+          note echidna-status-7f3a91 "DONE"

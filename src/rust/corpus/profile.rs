@@ -348,11 +348,25 @@ mod tests {
 
     #[test]
     fn rules_resolve_repositories_on_disk() {
-        let root = Path::new(env!("CARGO_MANIFEST_DIR"));
-        let dirs = repo_dirs(root, "echidna");
-        assert!(dirs.iter().any(|d| d == root));
-        let wildcard = repo_dirs(root, "*");
-        assert!(!wildcard.is_empty());
+        // A named rule matches the checkout when it is called that, and a
+        // subdirectory of that name; the wildcard skips dotfiles and build
+        // output. Built here rather than read from the checkout so the test
+        // does not depend on what the clone directory happens to be called.
+        let tmp = tempfile::tempdir().unwrap();
+        let root = tmp.path().join("echidna");
+        std::fs::create_dir_all(root.join("echo-types")).unwrap();
+        std::fs::create_dir_all(root.join(".git")).unwrap();
+        std::fs::create_dir_all(root.join("target")).unwrap();
+
+        assert_eq!(repo_dirs(&root, "echidna"), vec![root.clone()]);
+        assert_eq!(repo_dirs(&root, "echo-types"), vec![root.join("echo-types")]);
+
+        let wildcard = repo_dirs(&root, "*");
+        assert_eq!(
+            wildcard,
+            vec![root.join("echo-types")],
+            "only real, non-build directories"
+        );
         assert!(wildcard.iter().all(|d| d.is_dir()));
     }
 
