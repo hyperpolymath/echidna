@@ -62,6 +62,15 @@ use anyhow::{Context, Result};
 use super::{AxiomUsage, Corpus, CorpusEntry, DeclKind, ModuleEntry};
 
 /// Walk `root` and produce a corpus from every Rust source file.
+///
+/// Includes unannotated declarations as well as Creusot contracts, records
+/// textual dependencies and hazards, and builds lookup and discipline indices.
+/// A missing root produces an empty corpus.
+///
+/// # Errors
+///
+/// Propagates directory traversal and file read errors, including invalid
+/// UTF-8 and source files exceeding the 64 MiB read limit.
 pub fn ingest(root: &Path) -> Result<Corpus> {
     let mut files: Vec<PathBuf> = Vec::new();
     walk_rust(root, &mut files)?;
@@ -138,6 +147,9 @@ pub fn ingest(root: &Path) -> Result<Corpus> {
     Ok(corpus)
 }
 
+/// Append `.rs` paths recursively, skipping symbolic links and directories
+/// named `.git`, `target`, `node_modules`, `.cargo`, `build` or `dist`.
+/// Missing paths are ignored; directory and file-type errors are propagated.
 fn walk_rust(dir: &Path, out: &mut Vec<PathBuf>) -> Result<()> {
     if !dir.exists() {
         return Ok(());
@@ -294,6 +306,8 @@ fn clean_source(src: &str) -> String {
     String::from_utf8_lossy(&out).into_owned()
 }
 
+/// Split cleaned source into ASCII identifiers, numbers, strings and
+/// punctuation, retaining byte spans for slicing the original source.
 fn tokenise(clean: &str) -> Vec<Tok> {
     let bytes = clean.as_bytes();
     let mut toks: Vec<Tok> = Vec::new();
@@ -360,6 +374,8 @@ fn tokenise(clean: &str) -> Vec<Tok> {
     toks
 }
 
+/// Return the one-based line at a byte offset on a UTF-8 boundary;
+/// offsets past the source are clamped to its length.
 fn line_of(src: &str, offset: usize) -> usize {
     src[..offset.min(src.len())]
         .bytes()
@@ -443,6 +459,7 @@ fn leading_attrs<'a>(attrs: &'a [Attr], clean: &str, start: usize) -> Vec<&'a At
     out
 }
 
+/// Join attribute spellings in their existing order for an entry's statement.
 fn attr_text(attrs: &[&Attr]) -> String {
     attrs
         .iter()
@@ -451,6 +468,7 @@ fn attr_text(attrs: &[&Attr]) -> String {
         .join(" ")
 }
 
+/// Test for a case-sensitive substring in any attribute's original spelling.
 fn has_attr(attrs: &[&Attr], needle: &str) -> bool {
     attrs.iter().any(|a| a.text.contains(needle))
 }
@@ -656,7 +674,8 @@ fn match_brace(toks: &[Tok], open: usize) -> Option<usize> {
     None
 }
 
-/// Collect `use ...;` paths, trimmed to the path (no `::{}` groups).
+/// Collect distinct `use ...;` paths in source order, removing grouped and
+/// wildcard imports and retaining at most three `::`-separated components.
 fn collect_uses(src: &str, toks: &[Tok]) -> Vec<String> {
     let mut out: Vec<String> = Vec::new();
     let mut i = 0;
@@ -691,6 +710,8 @@ fn normalise_ws(s: &str) -> String {
     s.split_whitespace().collect::<Vec<_>>().join(" ")
 }
 
+/// Extract runs of Unicode letters, digits and underscores for textual
+/// dependency matching; Rust path separators split names into components.
 fn tokenise_idents(s: &str) -> Vec<&str> {
     s.split(|c: char| !(c.is_alphanumeric() || c == '_'))
         .filter(|t| !t.is_empty())
@@ -724,6 +745,8 @@ fn flag_creusot_attrs(statement: &str, hz: &mut AxiomUsage) {
     }
 }
 
+/// Accumulate trust, specification-macro and unsafe-surface tags using
+/// case-sensitive substring matches; `#[trusted` also sets `postulate`.
 fn flag_creusot_hazards(text: &str, hz: &mut AxiomUsage) {
     if text.contains("#[trusted") {
         hz.postulate = true;

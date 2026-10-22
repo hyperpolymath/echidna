@@ -67,6 +67,15 @@ use anyhow::{Context, Result};
 use super::{AxiomUsage, Corpus, CorpusEntry, DeclKind, ModuleEntry};
 
 /// Walk `root` and produce a corpus from every Ada/SPARK unit.
+///
+/// Pairs specifications with bodies, records textual dependencies and hazards,
+/// and builds lookup and discipline indices. A missing root produces an
+/// empty corpus.
+///
+/// # Errors
+///
+/// Propagates directory traversal and file read errors, including invalid
+/// UTF-8 and source files exceeding the 64 MiB read limit.
 pub fn ingest(root: &Path) -> Result<Corpus> {
     let mut files: Vec<PathBuf> = Vec::new();
     walk_ada(root, &mut files)?;
@@ -151,6 +160,10 @@ pub fn ingest(root: &Path) -> Result<Corpus> {
     Ok(corpus)
 }
 
+/// Append `.ads` and `.adb` paths recursively, matching extensions without
+/// regard to ASCII case. Skips `.git`, `target`, `obj`, `lib`, `gnatprove`,
+/// `node_modules` and `.cache` directories. Missing paths are ignored;
+/// directory enumeration errors are propagated.
 fn walk_ada(dir: &Path, out: &mut Vec<PathBuf>) -> Result<()> {
     if !dir.exists() {
         return Ok(());
@@ -264,6 +277,8 @@ fn clean_source(src: &str) -> String {
     String::from_utf8_lossy(&out).into_owned()
 }
 
+/// Split cleaned source into ASCII identifiers, numbers, strings and
+/// punctuation, retaining byte spans and lowercase spellings for keywords.
 fn tokenise(clean: &str) -> Vec<Tok> {
     let bytes = clean.as_bytes();
     let mut toks: Vec<Tok> = Vec::new();
@@ -338,6 +353,8 @@ fn tokenise(clean: &str) -> Vec<Tok> {
     toks
 }
 
+/// Return the one-based line at a byte offset on a UTF-8 boundary;
+/// offsets past the source are clamped to its length.
 fn line_of(src: &str, offset: usize) -> usize {
     src[..offset.min(src.len())]
         .bytes()
@@ -509,8 +526,10 @@ pub(crate) fn parse_ada_file(src: &str) -> ParsedFile {
 }
 
 /// Pair each spec-only entry with the single body entry that shares its
-/// qualified name. Unambiguous pairs only: Ada overloading means a name
-/// match is not a declaration match in general.
+/// qualified name. Names with zero or multiple bodies are left unpaired.
+/// The body keeps its module and proof but receives the specification's
+/// statement, line and hazard tags. Removes paired specifications and
+/// remaps module entry indices; lookup maps must be rebuilt afterwards.
 fn merge_cross_file(corpus: &mut Corpus) {
     let n = corpus.entries.len();
     let mut drop_flags: Vec<bool> = vec![false; n];
@@ -733,7 +752,8 @@ fn collect_imports(toks: &[Tok]) -> Vec<String> {
 /// From the declaration name at `name_idx`, find the end of the spec
 /// (index of the terminating `;`) or of the spec-and-`is` of a body.
 /// Returns `(spec_end, body_start)` where `body_start` is the index just
-/// past `is` when a body follows.
+/// past `is` when a body follows. A depth-zero `renames` also ends the
+/// specification; an unterminated header returns `(toks.len(), None)`.
 fn decl_extent(toks: &[Tok], name_idx: usize, allows_body: bool) -> (usize, Option<usize>) {
     let mut depth = 0i32;
     let mut j = name_idx;
@@ -798,6 +818,8 @@ fn normalise_ws(s: &str) -> String {
     s.split_whitespace().collect::<Vec<_>>().join(" ")
 }
 
+/// Extract runs of Unicode letters, digits, underscores, apostrophes and
+/// dots for textual dependency matching, preserving qualified Ada names.
 fn tokenise_idents(s: &str) -> Vec<&str> {
     s.split(|c: char| !(c.is_alphanumeric() || c == '_' || c == '\'' || c == '.'))
         .filter(|t| !t.is_empty())

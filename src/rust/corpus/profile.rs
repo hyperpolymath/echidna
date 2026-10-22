@@ -114,6 +114,8 @@ impl Manifest {
     }
 }
 
+/// Build an Agda rule that scans both `src` and the repository root,
+/// attaching `layer` to the resulting modules.
 fn agda_repo(repo: &str, layer: &str) -> RepoRule {
     RepoRule {
         name: repo.to_string(),
@@ -124,6 +126,11 @@ fn agda_repo(repo: &str, layer: &str) -> RepoRule {
 }
 
 /// Load a manifest from `path`.
+///
+/// # Errors
+///
+/// Returns an error if the file cannot be read as UTF-8 or deserialised
+/// as a manifest. Adapter names and repository paths are not validated here.
 pub fn load_manifest(path: &Path) -> Result<Manifest> {
     let raw = std::fs::read_to_string(path)
         .with_context(|| format!("read corpus profile {}", path.display()))?;
@@ -133,7 +140,8 @@ pub fn load_manifest(path: &Path) -> Result<Manifest> {
 }
 
 /// Locate the manifest: environment override, then the root, then the
-/// working directory.
+/// working directory. Candidates that are not files are skipped; failure
+/// to obtain the working directory is ignored. Returns `None` if none match.
 fn manifest_path(root: &Path) -> Option<PathBuf> {
     if let Some(p) = std::env::var_os(MANIFEST_ENV) {
         let p = PathBuf::from(p);
@@ -156,6 +164,15 @@ fn manifest_path(root: &Path) -> Option<PathBuf> {
 
 /// Ingest the estate rooted at `root` (the directory containing the
 /// repositories) using the shipped manifest when it can be found.
+///
+/// Searches `ECHIDNA_ESTATE_MANIFEST`, then [`DEFAULT_MANIFEST`] under
+/// `root` and the working directory. If no candidate is a file, uses
+/// [`Manifest::builtin`].
+///
+/// # Errors
+///
+/// Propagates manifest read and parse errors, without falling back on a
+/// malformed manifest, and errors from [`ingest_with_manifest`].
 pub fn ingest(root: &Path) -> Result<Corpus> {
     let manifest = match manifest_path(root) {
         Some(p) => load_manifest(&p)?,
@@ -167,6 +184,16 @@ pub fn ingest(root: &Path) -> Result<Corpus> {
 /// Ingest using an explicit manifest. `root` is the directory that
 /// contains the repositories; a rule may also match `root` itself when
 /// its name equals the root's basename.
+///
+/// Missing directories are skipped. Each exact adapter/path pair is ingested
+/// once, so the first matching rule supplies its layer. Modules and qualified
+/// entry names receive repository prefixes; short names, dependencies and
+/// discipline tags are preserved. No matches produce an empty corpus.
+///
+/// # Errors
+///
+/// Returns an error for an unsupported adapter on a matched directory and
+/// propagates errors from the selected adapters, including file read errors.
 pub fn ingest_with_manifest(root: &Path, manifest: &Manifest) -> Result<Corpus> {
     let mut corpus = Corpus {
         root: root.to_path_buf(),
@@ -221,6 +248,8 @@ pub fn ingest_with_manifest(root: &Path, manifest: &Manifest) -> Result<Corpus> 
 
 /// Immediate child directories of `root` for `name == "*"`, otherwise the
 /// named repository (either `root/<name>` or `root` itself).
+/// Wildcard results are sorted, excluding dot-prefixed directories,
+/// `target`, `node_modules` and `build`; enumeration errors are ignored.
 fn repo_dirs(root: &Path, name: &str) -> Vec<PathBuf> {
     if name == "*" {
         let mut out: Vec<PathBuf> = Vec::new();
@@ -258,6 +287,8 @@ fn repo_dirs(root: &Path, name: &str) -> Vec<PathBuf> {
     }
 }
 
+/// Ingest a directory with a supported profile adapter, adding adapter/path
+/// context to propagated errors. An unknown adapter returns an error.
 fn ingest_dir(adapter: &str, dir: &Path) -> Result<Corpus> {
     let corpus = match adapter {
         "agda" => super::agda::ingest(dir),
@@ -274,8 +305,10 @@ fn ingest_dir(adapter: &str, dir: &Path) -> Result<Corpus> {
     corpus.with_context(|| format!("{} ingest of {}", adapter, dir.display()))
 }
 
-/// Merge `sub` into `dst`, prefixing module and entry names with the
-/// repository and recording the estate layer on each module.
+/// Append `sub` to `dst`, prefixing module and qualified entry names with
+/// `repo`, adding a repository tag and a non-empty layer tag to each module,
+/// and adjusting entry/module indices. Short names and dependencies are
+/// unchanged. Lookup maps must be rebuilt after merging.
 fn merge_subcorpus(dst: &mut Corpus, sub: Corpus, repo: &str, layer: &str) {
     let entry_offset = dst.entries.len();
     let module_offset = dst.modules.len();

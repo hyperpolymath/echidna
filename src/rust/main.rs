@@ -1303,6 +1303,16 @@ async fn diagnostics_command() -> Result<()> {
 /// then query it without re-walking the source. The index is plain
 /// JSON at `data/corpus/<basename>.json` so other tools (suggest, the
 /// upcoming SA design search) can consume it directly.
+///
+/// Crossquery prints exact semantic-class and canonical-name matches from
+/// per-prover tables and, unless `provers_only` is set, cross-prover dictionaries.
+///
+/// # Errors
+///
+/// Returns an error for an unknown ingest adapter and propagates errors from
+/// corpus ingestion, index or dictionary loading, export/import, saving and
+/// output formatting. Resolving a default index can also fail if the working
+/// directory cannot be obtained. Queries with no matches succeed.
 fn corpus_command(op: CorpusOp, formatter: &OutputFormatter) -> Result<()> {
     use echidna::corpus::{self, Corpus};
 

@@ -463,6 +463,12 @@ impl CrossProverDicts {
 
 /// Load every cross-prover dictionary from `dir`. Missing files are
 /// silently treated as empty; the campaign target is offline resilience.
+/// Paths whose existence cannot be checked are also treated as missing.
+///
+/// # Errors
+///
+/// Propagates file open/read errors, invalid UTF-8, files exceeding the
+/// 64 MiB read limit, and TOML deserialisation errors for existing paths.
 pub fn load_cross_prover_dicts(dir: &Path) -> Result<CrossProverDicts> {
     Ok(CrossProverDicts {
         msc2020: load_underscore_dict(dir, "_msc2020.toml")?,
@@ -502,6 +508,8 @@ impl SynonymTable {
     /// This is the one call the Guides / wiki examples want: after it,
     /// `by_semantic_class` on this table resolves classes that only the
     /// cross-prover dictionaries carry (`frame-rule`, `estate-snif`, …).
+    /// Rows are appended without deduplication and the name index is rebuilt;
+    /// repeated calls append the same rows again.
     pub fn merge_cross_prover_dicts(&mut self, dicts: &CrossProverDicts) {
         for (_, table) in dicts.tables() {
             self.merge_external(table);

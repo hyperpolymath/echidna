@@ -162,6 +162,10 @@ Keyed by discipline slug (e.g. `"linear"`, `"epistemic"`).
 Added alongside `load_verification_systems` so the Julia side can load
 every shipped cross-prover dictionary, the way
 `CrossProverDicts::tables()` does on the Rust side.
+
+Returns the same Dict shape as `load_prover_synonyms`, or an empty Dict if
+the path is not a file. File-reading, TOML parsing and row-conversion errors
+propagate to the caller.
 """
 function load_disciplines(dir::String)
     return _load_underscore_table(dir, "_disciplines.toml")
@@ -183,6 +187,9 @@ Rust+Creusot / Julia / Chapel). Mirrors
 `CrossProverDicts::verification_systems` on the Rust side.
 
 See `data/synonyms/_verification_systems.toml` for the row-level wording.
+
+Returns an empty Dict if the path is not a file. File-reading, TOML parsing
+and row-conversion errors propagate to the caller.
 """
 function load_verification_systems(dir::String)
     return _load_underscore_table(dir, "_verification_systems.toml")
