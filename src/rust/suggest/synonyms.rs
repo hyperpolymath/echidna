@@ -433,6 +433,34 @@ pub struct CrossProverDicts {
     pub verification_systems: SynonymTable,
 }
 
+impl CrossProverDicts {
+    /// The dictionaries with their file stems, in load order.
+    ///
+    /// Used by `corpus crossquery` so a semantic-class lookup covers the
+    /// cross-prover dictionaries as well as the per-prover tables: the
+    /// verification vocabulary (`wrapping-arithmetic`, `frame-rule`, …)
+    /// only exists in these, never in a per-prover table.
+    pub fn tables(&self) -> [(&'static str, &SynonymTable); 5] {
+        [
+            ("_msc2020", &self.msc2020),
+            ("_wordnet_math", &self.wordnet_math),
+            ("_conceptnet_seed", &self.conceptnet_seed),
+            ("_disciplines", &self.disciplines),
+            ("_verification_systems", &self.verification_systems),
+        ]
+    }
+
+    /// Total number of rows across every dictionary.
+    pub fn len(&self) -> usize {
+        self.tables().iter().map(|(_, t)| t.len()).sum()
+    }
+
+    /// True when no dictionary shipped a row.
+    pub fn is_empty(&self) -> bool {
+        self.len() == 0
+    }
+}
+
 /// Load every cross-prover dictionary from `dir`. Missing files are
 /// silently treated as empty; the campaign target is offline resilience.
 pub fn load_cross_prover_dicts(dir: &Path) -> Result<CrossProverDicts> {
@@ -458,14 +486,26 @@ fn load_underscore_dict(dir: &Path, filename: &str) -> Result<SynonymTable> {
 
 impl SynonymTable {
     /// Extend this per-prover table with rows from a cross-prover
-    /// dictionary (MSC2020 / WordNet / ConceptNet). New entries are
-    /// appended; the by_name index is rebuilt. Idempotent if called with
-    /// the same `other` twice (duplicates dedup at lookup time via
-    /// `alternatives()`).
+    /// dictionary (MSC2020 / WordNet / ConceptNet / disciplines /
+    /// verification systems). New entries are appended; the by_name
+    /// index is rebuilt. Idempotent if called with the same `other`
+    /// twice (duplicates dedup at lookup time via `alternatives()`).
     pub fn merge_external(&mut self, other: &SynonymTable) {
         let mut entries = std::mem::take(&mut self.entries);
         entries.extend(other.entries.iter().cloned());
         *self = SynonymTable::from_entries(entries);
+    }
+
+    /// Extend this table with every dictionary in `dicts`, in
+    /// `CrossProverDicts::tables()` order.
+    ///
+    /// This is the one call the Guides / wiki examples want: after it,
+    /// `by_semantic_class` on this table resolves classes that only the
+    /// cross-prover dictionaries carry (`frame-rule`, `estate-snif`, …).
+    pub fn merge_cross_prover_dicts(&mut self, dicts: &CrossProverDicts) {
+        for (_, table) in dicts.tables() {
+            self.merge_external(table);
+        }
     }
 }
 

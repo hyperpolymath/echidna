@@ -390,7 +390,7 @@ Four cross-prover taxonomic dictionaries (underscore-prefixed, merged
 via `+SynonymTable::merge_external()+`) layer a common vocabulary over
 the per-prover tables:
 
-* `+_msc2020.toml+` — *177* MSC2020 codes for cross-domain classification.
+* `+_msc2020.toml+` — *181* MSC2020 codes for cross-domain classification.
 68Qxx and 68Nxx are complete; 03B/03C/03D/03F cover logic, computability
 and proof theory (e.g. `+03B45+` modal logic, `+68Q60+` specification and
 verification, `+68V20+` formalised mathematics).

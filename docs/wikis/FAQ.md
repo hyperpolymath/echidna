@@ -101,7 +101,7 @@ Full table with file extensions, upstream source URLs, and hazard flags: [`docs/
 
 ## Are MSC2020 / WordNet / ConceptNet required to run echidna?
 
-**No.** They are offline-resilient enhancements to the synonym layer. `load_cross_prover_dicts` (`src/rust/suggest/synonyms.rs`) silently returns empty `SynonymTable`s if the underscore-prefix TOMLs (`_msc2020.toml`, `_wordnet_math.toml`, `_conceptnet_seed.toml`) are missing from `data/synonyms/`. Per-prover synonym lookup still works; cross-prover `by_semantic_class` queries just return fewer hits.
+**No.** They are offline-resilient enhancements to the synonym layer. `load_cross_prover_dicts` (`src/rust/suggest/synonyms.rs`) silently returns empty `SynonymTable`s if the underscore-prefix TOMLs (`_msc2020.toml`, `_wordnet_math.toml`, `_conceptnet_seed.toml`, `_disciplines.toml`, `_verification_systems.toml`) are missing from `data/synonyms/`. Per-prover synonym lookup still works; cross-prover `by_semantic_class` queries just return fewer hits.
 
 ## Can I use TPTP problems with echidna?
 

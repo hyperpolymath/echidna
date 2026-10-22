@@ -83,7 +83,7 @@ feeds `echidna suggest` (the variant tester) and cross-corpus
 | Tactic/decl name drift per backend: `induct` vs `induction`, `add_le_add` vs `add_mono`.
 
 | `_msc2020.toml`
-| 87 → *177*
+| 87 → *181*
 | Cross-walk: canonical is an MSC code, aliases are topic names.
 
 | `_wordnet_math.toml`
@@ -163,7 +163,7 @@ corpus is made of, and the vocabulary layer has neither.
    inventing codes. I delivered the honest ceiling instead: *all* of
    68Qxx and 68Nxx, the whole of 03B (28 codes) plus the 03C/03D/03F
    codes that bear on verification, the 68M/68P/68T/68V/68W ring and
-   06B35 — 177 codes total, every one checked against the zbMATH MSC2020
+   06B35 — 181 codes total, every one checked against the zbMATH MSC2020
    listing.
 2. *The existing `_msc2020.toml` was not just sparse, it was wrong in
    places.* Fifteen rows carried MSC2010 or transferred wording:
@@ -236,7 +236,7 @@ Additive except for the 15 documented MSC repairs.
   field: these rows assert concept membership, not cross-prover identity.
 
 | `data/synonyms/_msc2020.toml`
-| 87 → 177 codes; 68Qxx and 68Nxx complete; 15 rows repaired with MSC2020
+| 87 → 181 codes; 68Qxx and 68Nxx complete; 19 rows repaired with MSC2020
   notes; header documents scope, provenance and the 250-code ceiling.
 
 | `src/rust/suggest/synonyms.rs`
@@ -257,49 +257,97 @@ Additive except for the 15 documented MSC repairs.
 
 | `.machine_readable/descriptiles/{STATE,META}.a2ml`
 | New table registered; cross-prover count 3 → 5.
+
+| `src/rust/main.rs`
+| `corpus crossquery` searches the cross-prover dictionaries too, and
+  gained `--provers-only`.
+
+| `tests/lexicon_v2_test.rs`
+| Two new tests: the dictionary must be non-empty with resolvable classes,
+  and the estate-layer vocabulary (Idris2 ABI / Zig / SNIF / Creusot /
+  Julia / Chapel / no-Python) must be present. The SNIF row may not offer
+  a bare `nif` as a synonym.
+
+| `data/synonyms/idris2.toml`
+| 6 → 26 rows: ABI-layer vocabulary.
+
+| `src/julia/run_training.jl`
+| Pre-loads all five dictionaries at launch.
 |===
 
 == Validation performed
 
-* *Contract*: Nickel is not installed in this sandbox and there is no
-  `cargo`, so `scripts/lexicon-check.sh` and `cargo test` could not run
-  here. I mirrored `schema.ncl` (shape + every cross-field rule) in a
-  throwaway checker and ran it over all 19 tables plus the 18 fixtures:
-  **19 tables, 1357 rows, 0 failures**, and all 17 reject fixtures still
-  reject. The mirror's only divergence is deliberate: it reports empty
-  `aliases` and self-aliases as warnings rather than errors, because
-  `schema.ncl` permits both (`mizar.toml` relies on empty alias lists).
+* *Contract*: `cargo` is absent from this sandbox, and the pinned Nickel
+  release binary is unreachable (its GitHub release asset redirects to
+  `release-assets.githubusercontent.com`, which is outside the allowed
+  egress set), so `scripts/lexicon-check.sh` and `cargo test` could not
+  run here. I mirrored `schema.ncl` rule-for-rule in a throwaway checker
+  and ran it over all 19 tables plus the 18 fixtures: **19 tables, 1381
+  rows, 0 failures**, and all 17 reject fixtures still reject. The
+  mirror's only divergence is deliberate: it treats empty `aliases` and
+  self-aliases as warnings rather than errors, because `schema.ncl`
+  permits both (`mizar.toml` relies on empty alias lists).
 * *CI must still run the real gate*: `just lexicon-check` (Nickel +
-  `tests/lexicon_v2_test.rs`). That is the first thing to run on this
-  branch.
+  `tests/lexicon_v2_test.rs`). `tests/lexicon_v2_test.rs` now also
+  asserts the new dictionary is non-empty, that its classes resolve, and
+  that `merge_cross_prover_dicts` reaches them, so a silently-empty file
+  fails rather than passing as "loads fine".
 * *No Python in tree*: `git ls-files '*.py'` → 0.
-* *No deletions*: no existing row removed; 15 rows corrected, each with a
+* *No deletions*: no existing row removed; 19 rows corrected, each with a
   note explaining the MSC2020 wording.
 
-== What is still open
+== Follow-ups (delivered in the same branch)
+
+[cols="1,3"]
+|===
+| Item | What landed
+
+| Consumer | `corpus crossquery <class>` now searches the per-prover tables
+  *and* the cross-prover dictionaries, so classes that only exist in the
+  new file resolve (`crossquery estate-snif`, `crossquery frame-rule`,
+  `crossquery 68Q60`). Added `CrossProverDicts::tables()` / `len()` and
+  `SynonymTable::merge_cross_prover_dicts()`. `--provers-only` restores
+  the old behaviour.
+
+| Julia training | `run_training.jl` pre-loads every shipped dictionary at
+  launch (msc2020, wordnet, conceptnet, verification systems,
+  disciplines), so a broken row fails at launch rather than mid-epoch.
+  Added `load_disciplines` so Julia can load all five.
+
+| Doc mirrors | `docs/wikis/{Architecture,Guides,Troubleshooting,FAQ}.md`,
+  `docs/architecture/JULIA-SATURATION-HOOKS.adoc` and the `Justfile`
+  updated. The wikis also referenced a `SynonymTable::with_msc2020()`
+  API that **never existed**; the examples now use the real
+  `load_cross_prover_dicts` + `merge_cross_prover_dicts`.
+
+| Prover-name precision | `idris2.toml` 6 → 26 rows: `Fin`, `Bits8/16/32/64`,
+  `Int8…64`, `Vect`, `So`, `LTE`, `Dec`, `cast`, `total`/`partial`,
+  `%foreign`, `export`, `%inline`, `Prim__`, `Ptr`, `IO`, `Ref`,
+  multiplicity/`%World`, `erasure` — the names the ABI layer in
+  `src/abi/` is actually written in.
+
+| Misc row fixes | Verified the 18/14 rows against zbMATH and corrected
+  four more: `18N40` (model categories, *not* HoTT), `18G80` (derived,
+  *not* infinity-categories), `18D05` (MSC2010-only, moved to 18N10),
+  `14F08` (wording). Added `18G35`, `18M05`, `18N45` (the real
+  HoTT-adjacent code) and `18N60`. MSC total is now 181.
+|===
+
+== Still open
 
 [cols="1,2"]
 |===
 | Item | Why it matters
 
-| Wire a consumer | Nothing ranks on `semantic_class` yet. A first consumer
-  could be `suggest`'s variant tester preferring same-class replacements,
-  or premise selection filtering by family.
+| Rank on `semantic_class` | `crossquery` is a lookup, not a ranker.
+  Making premise selection or the variant tester *prefer* same-class
+  replacements is a behaviour change that needs its own eval, not a data
+  change.
 
-| Julia training wiring | `load_verification_systems` exists but
-  `run_training.jl` pre-loads only `_msc2020`. Adding the new table there
-  is a two-line change, deliberately not bundled with data work.
+| Real Nickel + cargo run | The contract and the Rust suite must run in CI
+  before this is merged; see the validation note above for why they could
+  not run in this sandbox.
 
-| Stale doc mirrors | `docs/wikis/{Architecture,Guides,Troubleshooting,FAQ}.md`
-  and `docs/architecture/JULIA-SATURATION-HOOKS.adoc` still say "three
-  cross-prover dictionaries". The 2026-06-01 ADR is historical and should
-  keep its original wording.
-
-| Prover-name precision | The estate rows name *layers* (`zig_ffi`,
-  `snif_contract`) but not per-tool API spellings. Filling those belongs
-  in the per-prover tables (`idris2.toml` is only 6 rows today).
-
-| MSC 18/14 rows | `18N40`, `18G80`, `18Axx` and `14F08` still carry
-  MSC2010-era wording I could not verify from zbMATH in this pass. Left
-  untouched rather than guessed at.
+| The 2026-06-01 ADR | Left with its original "3 dictionaries" wording on
+  purpose: it is a dated decision record, not a live description.
 |===

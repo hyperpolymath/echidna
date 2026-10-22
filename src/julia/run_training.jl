@@ -111,11 +111,21 @@ function load_corpus_examples(corpus_paths::Vector{String},
 
     # Pre-load cross-prover vocab tables (currently consumed downstream;
     # called here so any TOML breakage surfaces at training-launch time,
-    # not mid-epoch).
-    try
-        SaturationSynonyms.load_msc2020(synonyms_dir)
-    catch e
-        @warn "load_msc2020 failed (continuing with empty table)" exception=e
+    # not mid-epoch). Every shipped dictionary is loaded: the verification
+    # vocabulary is the one that covers the ABI / FFI / separation-logic
+    # material, and a broken row there must fail at launch, not mid-epoch.
+    for (label, loader) in (
+        ("load_msc2020", SaturationSynonyms.load_msc2020),
+        ("load_wordnet_math", SaturationSynonyms.load_wordnet_math),
+        ("load_conceptnet_seed", SaturationSynonyms.load_conceptnet_seed),
+        ("load_verification_systems", SaturationSynonyms.load_verification_systems),
+        ("load_disciplines", SaturationSynonyms.load_disciplines),
+    )
+        try
+            loader(synonyms_dir)
+        catch e
+            @warn "$(label) failed (continuing with empty table)" exception=e
+        end
     end
 
     examples = TrainingExample[]

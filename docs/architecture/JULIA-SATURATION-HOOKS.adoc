@@ -37,8 +37,11 @@ All under `+src/julia/+`:
 JSON and produces `+TrainingExample+`-shaped NamedTuples.
 
 |`+saturation_synonyms.jl+` |New `+SaturationSynonyms+` module — reads
-per-prover synonym TOMLs and the three cross-prover dictionaries
-(`+_msc2020+`, `+_wordnet_math+`, `+_conceptnet_seed+`).
+per-prover synonym TOMLs and the cross-prover dictionaries as they
+existed in the campaign (`+_msc2020+`, `+_wordnet_math+`,
+`+_conceptnet_seed+`); `+_disciplines+` and `+_verification_systems+`
+were added later (2026-10-22) behind `+load_disciplines+` /
+`+load_verification_systems+`.
 
 |`+README.adoc+` (addendum section only) |Documents the two new modules
 and the deliberate hand-off boundary. Existing content untouched.

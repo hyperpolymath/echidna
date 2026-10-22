@@ -20,13 +20,30 @@ fixpoint), information flow and epistemic vocabulary, concurrency, and the
 estate layer boundaries. Loaded as
 `+CrossProverDicts::verification_systems+` (Rust) and
 `+SaturationSynonyms.load_verification_systems+` (Julia).
-* *`+_msc2020.toml+`* 87 -> *177* codes. 68Qxx (26 codes) and 68Nxx (10
+* *`+_msc2020.toml+`* 87 -> *181* codes. 68Qxx (26 codes) and 68Nxx (10
 codes) are now complete; 03B/03C/03D/03F cover logic, computability and
 proof theory; 68M/68P/68T/68V/68W and 06B35 cover the systems and proof
-assistant ring. Fifteen pre-existing rows had MSC2010 or transferred
+assistant ring. Nineteen pre-existing rows had MSC2010 or transferred
 wording and are repaired in place, with a note naming the MSC2020 code
 (`+03B15+` -> 03B16/03B38, `+68T15+` -> 68V15, `+68V05+`/`+68V25+`/
 `+68V30+`/`+68V35+` re-pointed to their current meanings).
+* *Consumer wiring*: `corpus crossquery` now searches the cross-prover
+dictionaries as well as the per-prover tables, so `crossquery frame-rule`,
+`crossquery estate-snif` or `crossquery 68Q60` resolve; `--provers-only`
+restores the old scope. `CrossProverDicts::tables()/len()` and
+`SynonymTable::merge_cross_prover_dicts()` added. The Julia training
+launcher pre-loads all five dictionaries at launch.
+* *`+idris2.toml+`* 6 -> *26* rows: `Fin`, `Bits8/16/32/64`, `Int8..64`,
+`Vect`, `So`, `LTE`, `Dec`, `cast`, totality annotations, `%foreign`,
+`export`, `Prim__`, `Ptr`, `IO`, `Ref`, multiplicities and erasure — the
+vocabulary the Idris2 ABI layer is written in.
+* *More MSC repairs*: `18N40`, `18G80`, `18D05` and `14F08` corrected
+against zbMATH (18N40 is model categories, not HoTT; 18G80 is derived
+categories, not infinity-categories; 18D05 is MSC2010-only and moved to
+18N10). Added 18G35, 18M05, 18N45 and 18N60; MSC total 181.
+* *Doc mirrors*: the wiki pages named a `SynonymTable::with_msc2020()`
+API that never existed; they now use the real loader. Wiki/architecture
+pages updated to the five-dictionary reality.
 * *Estate language policy* recorded in `+data/synonyms/README.adoc+`:
 ABIs in Idris2, APIs and FFIs in Zig, BEAM native boundaries as SNIFs
 (not bare NIFs), Rust/Creusot for the Rust layer, Julia and Chapel for

@@ -47,7 +47,7 @@ Well-founded recursion derived from `WellFounded`.
 canonical    = "believe_me"
 aliases      = ["unsafeCoerce", "Obj.magic"]
 tactic_class = "danger"
-notes        = """
+notes          = """
 Idris 2's unsafe cast. BANNED across the whole hyperpolymath estate
 (panic-attack rejects). Use a constructive proof or a `partial`
 totality annotation instead.
@@ -57,7 +57,7 @@ totality annotation instead.
 canonical    = "assert_total"
 aliases      = ["assert_smaller", "%total-fudge"]
 tactic_class = "danger"
-notes        = """
+notes          = """
 Tells the totality checker to trust this call without proof. Avoid;
 restructure to a structurally-decreasing recursion or use
 `well-founded-recursion` with an explicit measure.
@@ -67,7 +67,7 @@ restructure to a structurally-decreasing recursion or use
 canonical    = "idris_crash"
 aliases      = ["partial-stub"]
 tactic_class = "stub"
-notes        = """
+notes          = """
 Per project memory (Cerro-Torre 2026-04-25): `partial + idris_crash`
 is the accepted pattern for postulate-style stubs that downstream
 proofs are allowed to depend on, provided the dependent is also
@@ -75,4 +75,222 @@ annotated `partial` and the design intent is documented.
 
 Not preferred for new code, but recognised as the workaround when
 Idris 2 0.8.0's `postulate` is unavailable in the desired position.
+"""
+
+# ---------------------------------------------------------------------------
+# ABI / boundary vocabulary (2026-10-22)
+# ---------------------------------------------------------------------------
+#
+# The ABI layer is written in Idris 2 (`src/abi/`), so the names the ABI
+# proofs actually use need entries here, not only in the cross-prover
+# verification dictionary. `semantic_class` is shared with
+# `_verification_systems.toml` where the concept is the same.
+
+[[synonym]]
+canonical      = "Fin"
+aliases        = ["Fin.t", "bounded_nat", "refined_index", "index_bound"]
+tactic_class   = "type"
+semantic_class = "bounded-index"
+notes          = """
+`Fin n`: naturals below `n`. The type that makes an offset or width
+impossible to use out of range, so ABI layout proofs need no dynamic
+bounds check.
+"""
+
+[[synonym]]
+canonical      = "Bits8"
+aliases        = ["Bits16", "Bits32", "Bits64", "unsigned_word"]
+tactic_class   = "type"
+semantic_class = "fixed-width-bits"
+notes          = """
+Fixed-width unsigned words in `Data.Bits`. Width is part of the type, so
+`wrapping_add`-style lemmas are per-width. Sibling types: `Bits16`,
+`Bits32`, `Bits64`.
+"""
+
+[[synonym]]
+canonical      = "Int64"
+aliases        = ["Int8", "Int16", "Int32", "signed_word"]
+tactic_class   = "type"
+semantic_class = "fixed-width-bits"
+notes          = """
+Fixed-width signed words. `Int64` is the ABI's default for offsets and
+lengths; the signed/unsigned split is a separate row in
+`_verification_systems.toml` (`signed_interpretation`).
+"""
+
+[[synonym]]
+canonical      = "Vect"
+aliases        = ["Vect n a", "length_indexed_vector", "vec"]
+tactic_class   = "type"
+semantic_class = "length-indexed-vector"
+notes          = """
+Length-indexed vector. The length is in the type, which is what lets a
+slice descriptor carry its bound as evidence rather than as a comment.
+"""
+
+[[synonym]]
+canonical      = "So"
+aliases        = ["So True", "boolean_evidence", "so_witness"]
+tactic_class   = "type"
+semantic_class = "boolean-refinement"
+notes          = """
+`So b`: evidence that the boolean `b` is `True`. Turns a runtime check
+into a type-level precondition.
+"""
+
+[[synonym]]
+canonical      = "LTE"
+aliases        = ["LTE m n", "lte_evidence", "is_lte"]
+tactic_class   = "type"
+semantic_class = "ordering-evidence"
+notes          = """
+Evidence that `m <= n`. Used to carry bounds/alignment obligations into
+the type of a layout function.
+"""
+
+[[synonym]]
+canonical      = "Dec"
+aliases        = ["Dec p", "DecEq", "decEq", "decidable"]
+tactic_class   = "type"
+semantic_class = "decidable-proposition"
+notes          = """
+`Dec p` is `Yes proof` or `No counterexample`. The shape that keeps a
+failed check from becoming a silent `believe_me`.
+"""
+
+[[synonym]]
+canonical      = "cast"
+aliases        = ["Cast.cast", "fromInteger", "integer_coercion"]
+tactic_class   = "conversion"
+semantic_class = "integer-coercion"
+notes          = """
+Interface-based conversion. A `Cast` instance is a claim: for narrowing
+casts it must be paired with a proof of representability, otherwise it is
+a silent truncation (`narrowing_cast` in the verification dictionary).
+"""
+
+[[synonym]]
+canonical      = "total"
+aliases        = ["%default total", "total_function", "totality"]
+tactic_class   = "pragma"
+semantic_class = "totality-annotation"
+notes          = """
+`%default total` makes totality the default for a module. The ABI layer
+is expected to be total: covering and terminating, with no `partial`
+escape in a boundary contract.
+"""
+
+[[synonym]]
+canonical      = "partial"
+aliases        = ["%default partial", "partial_function_"]
+tactic_class   = "danger"
+semantic_class = "totality-annotation"
+notes          = """
+Opting out of totality checking. Acceptable only at the outermost edge of
+a boundary (an FFI stub), never in a layout or ownership proof.
+"""
+
+[[synonym]]
+canonical      = "foreign_import"
+aliases        = ["%foreign", "ffi_import"]
+tactic_class   = "pragma"
+semantic_class = "estate-api"
+notes          = """
+The FFI import pragma. Per estate policy the callee is a Zig-exported
+symbol (`zig_ffi` in `_verification_systems.toml`); the Idris side states
+the type, the Zig side owns the calling convention and layout.
+"""
+
+[[synonym]]
+canonical      = "export"
+aliases        = ["%export", "public_export", "exported_symbol_"]
+tactic_class   = "pragma"
+semantic_class = "exported-symbol"
+notes          = """
+Marks a definition as part of the module's public surface. The ABI's
+exported set is the contract the Zig side implements.
+"""
+
+[[synonym]]
+canonical      = "inline_directive"
+aliases        = ["%inline", "%noinline", "inline_pragma"]
+tactic_class   = "pragma"
+semantic_class = "compiler-directive"
+notes          = """
+Code-generation directives. They carry no proof obligation, but a
+replacement or erasure proof must account for them if the ABI is claimed
+to be observationally stable.
+"""
+
+[[synonym]]
+canonical      = "Prim__"
+aliases        = ["prim__", "primitive_op", "builtin_op"]
+tactic_class   = "primitive"
+semantic_class = "primitive-operation"
+notes          = """
+Compiler primitives (`prim__add_Integer`, …). Not exported to user code;
+they are the trusted base that the high-level lemmas are proved against.
+"""
+
+[[synonym]]
+canonical      = "Ptr"
+aliases        = ["AnyPtr", "Buffer", "raw_pointer_"]
+tactic_class   = "type"
+semantic_class = "pointer"
+notes          = """
+Raw pointer types at the FFI boundary. A `Ptr` carries no lifetime in its
+type, so any ownership claim has to be stated in the surrounding contract
+(`boundary_ownership`).
+"""
+
+[[synonym]]
+canonical      = "IO"
+aliases        = ["HasIO", "io_monad", "io_action"]
+tactic_class   = "type"
+semantic_class = "io-monad"
+notes          = """
+The IO monad. Effectful code sits outside the total fragment; keep it at
+the thin edge so the ABI's proofs stay pure.
+"""
+
+[[synonym]]
+canonical      = "Ref"
+aliases        = ["IORef", "io_ref", "mutable_cell"]
+tactic_class   = "type"
+semantic_class = "mutable-reference"
+notes          = """
+Mutable reference in `IO`. Any sharing must be argued explicitly; there
+is no borrow checker between two `Ref` handles.
+"""
+
+[[synonym]]
+canonical      = "multiplicity"
+aliases        = ["quantity", "1", "0", "unrestricted", "linear_token"]
+tactic_class   = "quantity"
+semantic_class = "linearity"
+notes          = """
+Quantities in Idris 2's multiplicity annotation: `1` (exactly once),
+`0` (erased) and unrestricted. `%World` is the linear token that keeps FFI
+sequencing honest, so it lands in the same class.
+"""
+
+[[synonym]]
+canonical      = "%World"
+aliases        = ["World", "world_token"]
+tactic_class   = "quantity"
+semantic_class = "linearity"
+notes          = """
+The linear world token. Threading it through an IO sequence makes the
+order of FFI calls a typing obligation rather than a convention.
+"""
+
+[[synonym]]
+canonical      = "erasure"
+aliases        = ["0", "erased", "irrelevant", "proof_erased"]
+tactic_class   = "quantity"
+semantic_class = "proof-erasure"
+notes          = """
+Erased arguments: present for the proof, absent at run time. What makes a
+verified ABI layout cost nothing at the boundary.
 """

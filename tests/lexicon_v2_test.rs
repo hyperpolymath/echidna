@@ -209,3 +209,75 @@ fn write_tmp(name: &str, body: &str) -> PathBuf {
     std::fs::write(&path, body).unwrap();
     path
 }
+
+/// The verification dictionary must actually ship and be reachable. A
+/// silently-empty `_verification_systems.toml` would pass `every_shipped_table_loads`
+/// (the file exists, the rows parse) while making the whole point of the
+/// 2026-10-22 expansion a no-op, so assert on content, not just loadability.
+#[test]
+fn verification_systems_dictionary_is_wired() {
+    let dicts = load_cross_prover_dicts(&synonyms_dir()).expect("cross-prover dicts");
+    assert!(
+        dicts.verification_systems.len() >= 600,
+        "verification dictionary lost rows: {}",
+        dicts.verification_systems.len()
+    );
+    for class in [
+        "wrapping-arithmetic",
+        "frame-rule",
+        "termination",
+        "resource-algebra",
+        "information-flow",
+        "estate-snif",
+        "estate-abi",
+        "estate-api",
+    ] {
+        assert!(
+            !dicts.verification_systems.by_semantic_class(class).is_empty(),
+            "no entry for semantic class {class:?}"
+        );
+    }
+    // Every dictionary is on the `tables()` list, and merging the whole set
+    // makes the verification classes resolvable from a per-prover table.
+    assert_eq!(dicts.tables().len(), 5, "a dictionary is not in tables()");
+    let mut merged = SynonymTable::default();
+    merged.merge_cross_prover_dicts(&dicts);
+    assert!(
+        !merged.by_semantic_class("estate-snif").is_empty(),
+        "merge_cross_prover_dicts dropped the verification dictionary"
+    );
+    assert!(dicts.len() > 900, "cross-prover row count collapsed");
+}
+
+/// The estate language policy has to be visible in the vocabulary, because
+/// that is the layer whose names the corpus indexers will look up.
+#[test]
+fn estate_layer_vocabulary_is_present() {
+    let dicts = load_cross_prover_dicts(&synonyms_dir()).expect("cross-prover dicts");
+    let table = &dicts.verification_systems;
+    for name in [
+        "idris2_abi",
+        "zig_api",
+        "zig_ffi",
+        "snif",
+        "snif_contract",
+        "rust_creusot_layer",
+        "julia_layer",
+        "chapel_layer",
+        "no_python_dependency",
+    ] {
+        assert!(
+            !table.alternatives(name).is_empty(),
+            "{name} has no synonyms in the verification dictionary"
+        );
+    }
+    // A bare NIF must never be offered as a replacement for a SNIF: the
+    // estate spells the safe boundary differently and the difference is the
+    // point. This is a regression guard on the row's relation.
+    let snif = table
+        .by_semantic_class("estate-snif")
+        .into_iter()
+        .find(|e| e.canonical == "snif")
+        .expect("snif row");
+    assert!(!snif.aliases.iter().any(|a| a.as_str() == "nif"));
+}

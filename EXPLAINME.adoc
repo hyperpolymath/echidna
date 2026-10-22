@@ -62,7 +62,7 @@ ____
   link:docs/CORPUS-ADAPTERS.adoc[`docs/CORPUS-ADAPTERS.adoc`].
 * Cross-prover vocabulary: per-prover synonym TOMLs under
   link:data/synonyms/[`data/synonyms/`] plus four taxonomic
-  dictionaries — `_msc2020.toml` (177 MSC2020 codes, 68Q/68N complete),
+  dictionaries — `_msc2020.toml` (181 MSC2020 codes, 68Q/68N complete),
   `_wordnet_math.toml` (81 WordNet 3.1 math lemmas),
   `_conceptnet_seed.toml` (53 ConceptNet 5.7 edges), and
   `_verification_systems.toml` (657 program-verification concepts:

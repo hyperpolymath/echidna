@@ -1133,8 +1133,9 @@ corpus-stats-all:
         cargo run --bin echidna --quiet -- corpus stats --index "$f" 2>/dev/null || echo "  (skipped)"; \
     done
 
-# Load every per-prover synonym TOML + the 3 cross-prover dictionaries
-# (_msc2020 / _wordnet_math / _conceptnet_seed) and report counts.
+# Load every per-prover synonym TOML + the 5 cross-prover dictionaries
+# (_msc2020 / _wordnet_math / _conceptnet_seed / _disciplines /
+# _verification_systems) and report counts.
 synonym-load-test:
     cargo test --lib --quiet suggest::synonyms 2>&1 | tail -20
 

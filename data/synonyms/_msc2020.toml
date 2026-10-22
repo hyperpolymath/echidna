@@ -8,8 +8,9 @@
 # Underscore-prefix filename `_msc2020.toml` signals: this is NOT a per-prover
 # synonym table (those are unprefixed: lean4.toml, coq.toml, etc.). Instead
 # it's a cross-prover *taxonomic* dictionary loaded as a SECONDARY index by
-# `SynonymTable::with_msc2020()`. Consumers may merge it into per-prover
-# `semantic_class` resolution to bridge corpus items across systems.
+# `load_cross_prover_dicts()` (`CrossProverDicts::msc2020`). Consumers merge
+# it into per-prover `semantic_class` resolution with `merge_external()` or
+# `merge_cross_prover_dicts()` to bridge corpus items across systems.
 #
 # Coverage scope: areas with strong formalisation activity. Heaviest density
 # in 03 (Logic) and 68 (Computer Science / Automated reasoning), with
@@ -344,7 +345,7 @@ canonical = "14F08"
 aliases = ["derived_category", "Db_Coh", "perfect_complex", "triangulated"]
 tactic_class = "14-AlgebraicGeometry"
 semantic_class = "derived-category"
-notes = "Derived categories of sheaves, dg categories, and related constructions."
+notes = "Derived categories of sheaves, dg categories, and related constructions in algebraic geometry."
 
 # ============================================================
 # 18 — Category theory; homological algebra
@@ -380,17 +381,17 @@ notes = "Categorical semantics of formal languages."
 
 [[synonym]]
 canonical = "18D05"
-aliases = ["bicategory", "2_category", "double_category", "weak_equivalence"]
+aliases = ["bicategory", "2_category", "double_category"]
 tactic_class = "18-Category"
 semantic_class = "2-category"
-notes = "Double categories, 2-categories, bicategories."
+notes = "MSC2010 code (double categories, 2-categories, bicategories). MSC2020 moved this material to 18N10; kept so pre-2020 metadata still resolves."
 
 [[synonym]]
 canonical = "18G80"
-aliases = ["infinity_category", "quasi_category", "infty_groupoid", "Joyal"]
+aliases = ["derived_category", "triangulated_category", "stable_category", "Db"]
 tactic_class = "18-Category"
-semantic_class = "infinity-category"
-notes = "Derivators, triangulated categories, infinity-categories."
+semantic_class = "derived-triangulated"
+notes = "Derived categories, triangulated categories. Infinity-categories are 18N60, not here."
 
 [[synonym]]
 canonical = "18N10"
@@ -401,10 +402,10 @@ notes = "2-categories, bicategories, double categories. Monoidal categories are 
 
 [[synonym]]
 canonical = "18N40"
-aliases = ["homotopy_type_theory", "HoTT", "univalence", "higher_inductive_type", "Voevodsky"]
+aliases = ["homotopical_algebra", "model_category", "quillen_model_category", "derivator"]
 tactic_class = "18-Category"
-semantic_class = "homotopy-type-theory"
-notes = "Homotopical algebra, model categories, infinity-categories."
+semantic_class = "homotopical-algebra"
+notes = "Homotopical algebra, Quillen model categories, derivators. Homotopy type theory is 18N45; infinity-categories are 18N60."
 
 # ============================================================
 # 26 — Real functions
@@ -1346,3 +1347,31 @@ aliases = ["theory_of_computing_unspecified"]
 tactic_class = "68-ComputerScience"
 semantic_class = "theory-of-computing-unspecified"
 notes = "None of the above, but in this section."
+
+[[synonym]]
+canonical = "18G35"
+aliases = ["chain_complex", "dg_category", "differential_graded"]
+tactic_class = "18-Category"
+semantic_class = "chain-complex"
+notes = "Chain complexes (category-theoretic aspects), dg categories."
+
+[[synonym]]
+canonical = "18M05"
+aliases = ["monoidal_category", "symmetric_monoidal", "tensor_product", "braided_monoidal"]
+tactic_class = "18-Category"
+semantic_class = "monoidal-category"
+notes = "Monoidal categories, symmetric monoidal categories."
+
+[[synonym]]
+canonical = "18N45"
+aliases = ["homotopy_type_theory", "HoTT", "univalence", "higher_inductive_type", "type_theory_relations"]
+tactic_class = "18-Category"
+semantic_class = "homotopy-type-theory"
+notes = "Categories of fibrations, relations to K-theory, relations to type theory. This is the HoTT-adjacent code; 18N40 is model categories."
+
+[[synonym]]
+canonical = "18N60"
+aliases = ["infinity_category", "quasi_category", "infty_groupoid", "Joyal", "segalspace"]
+tactic_class = "18-Category"
+semantic_class = "infinity-category"
+notes = "Infinity-categories (quasi-categories, Segal spaces, etc.); infinity-topoi, stable infinity-categories."

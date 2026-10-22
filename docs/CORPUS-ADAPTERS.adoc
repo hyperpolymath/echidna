@@ -96,7 +96,7 @@ vocabulary with canonical-and-aliases form. Plus four cross-prover
 taxonomic dictionaries (underscore-prefix; merged into `+SynonymTable+`
 via `+merge_external()+`):
 
-* `+_msc2020.toml+` — 177 MSC2020 codes for cross-domain classification
+* `+_msc2020.toml+` — 181 MSC2020 codes for cross-domain classification
 (68Qxx and 68Nxx complete; 03B/03C/03D/03F for logic and proof theory)
 * `+_wordnet_math.toml+` — 81 lemmas from WordNet 3.1 math
 sub-hierarchy
@@ -113,8 +113,8 @@ cover.
 [arabic]
 . *suggest*: `+src/rust/suggest/synonyms.rs::SynonymTable::load_all()+`
 reads per-prover TOMLs. The cross-prover dictionaries are loaded via
-`+with_msc2020()+` / `+with_wordnet()+` / `+with_conceptnet()+` (new
-methods landing in the same campaign).
+`+load_cross_prover_dicts()+` and merged with `+merge_external()+` or
+`+merge_cross_prover_dicts()+`.
 . *octad emission*: `+src/rust/corpus/octad.rs::Corpus::emit_octads()+`
 walks any `+Corpus+` produced by any adapter and emits 8-modality octads
 into VeriSimDB (see `+docs/architecture/VERISIM-ER-SCHEMA.adoc+`).

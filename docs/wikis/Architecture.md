@@ -71,16 +71,24 @@ Three layers stack over the per-prover synonym tables to give the
    The schema and variant-tester contract are documented in
    [`data/synonyms/README.adoc`](https://github.com/hyperpolymath/echidna/blob/main/data/synonyms/README.adoc).
    Loaded by `src/rust/suggest/synonyms.rs::SynonymTable::load_all()`.
-2. **MSC2020** — `data/synonyms/_msc2020.toml`, 87 codes covering the
+2. **MSC2020** — `data/synonyms/_msc2020.toml`, 181 codes covering the
    Mathematics Subject Classification 2020 surface (e.g. `03B45` modal
-   logic, `68V20` formalised mathematics). Merged via
-   `SynonymTable::with_msc2020()`.
+   logic, `68Q60` specification and verification, `68V20` formalised
+   mathematics).
 3. **WordNet 3.1 math sub-hierarchy** — `data/synonyms/_wordnet_math.toml`,
-   ~80 lemmas anchoring natural-language terms to formal concepts.
-   Merged via `SynonymTable::with_wordnet()`.
-4. **ConceptNet 5.7 seed** — `data/synonyms/_conceptnet_seed.toml`, ~55
+   81 lemmas anchoring natural-language terms to formal concepts.
+4. **ConceptNet 5.7 seed** — `data/synonyms/_conceptnet_seed.toml`, 53
    pre-fetched edges so `semantic_class` resolution stays offline-resilient.
-   Merged via `SynonymTable::with_conceptnet()`.
+5. **Type disciplines** — `data/synonyms/_disciplines.toml`, 41 rows for
+   the 42 TypeChecker disciplines.
+6. **Verification systems** — `data/synonyms/_verification_systems.toml`,
+   657 program-verification concepts (bitvectors, memory layout,
+   separation/region framing, termination, resource algebras,
+   information flow, estate layer boundaries).
+
+   All five are loaded by `load_cross_prover_dicts` and merged into a
+   per-prover table with `merge_cross_prover_dicts(&dicts)` (or one at a
+   time with `merge_external(&dicts.<field>)`).
 
 The cross-prover dictionaries are deliberately underscore-prefixed so the
 loader can distinguish them from per-prover tables and route them through

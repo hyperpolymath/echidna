@@ -277,17 +277,25 @@ enum CorpusOp {
         index: Option<PathBuf>,
     },
 
-    /// Look up entries across every prover's synonym table by
-    /// `semantic_class`. Demonstrates cross-prover semantic
-    /// equivalence — e.g. `corpus crossquery well-foundedness`
-    /// reports `WellFounded` in Agda + `well_founded` in Coq +
-    /// `WellFounded` in Lean + `WellFounded` in Idris 2.
+    /// Look up entries across every synonym table by `semantic_class`.
+    /// Demonstrates cross-prover semantic equivalence — e.g.
+    /// `corpus crossquery well-foundedness` reports `WellFounded` in Agda
+    /// + `well_founded` in Coq + `WellFounded` in Lean + `WellFounded` in
+    /// Idris 2.
+    ///
+    /// The cross-prover dictionaries are searched too, so classes that
+    /// only exist there (`wrapping-arithmetic`, `frame-rule`,
+    /// `estate-snif`, or an MSC code such as `68Q60`) resolve.
     Crossquery {
         /// Semantic class to look up (e.g. `well-foundedness`).
         class: String,
         /// Synonym directory (defaults to `data/synonyms`).
         #[arg(long)]
         synonyms_dir: Option<PathBuf>,
+        /// Only search the per-prover tables, skipping the cross-prover
+        /// dictionaries.
+        #[arg(long)]
+        provers_only: bool,
     },
 
     /// Find the K nearest-neighbour entries to a free-form text
@@ -1449,33 +1457,73 @@ fn corpus_command(op: CorpusOp, formatter: &OutputFormatter) -> Result<()> {
         CorpusOp::Crossquery {
             class,
             synonyms_dir,
+            provers_only,
         } => {
-            use echidna::suggest::synonyms::load_all;
+            use echidna::suggest::synonyms::{
+                load_all, load_cross_prover_dicts, SynonymEntry, SynonymTable,
+            };
             let dir = synonyms_dir.unwrap_or_else(|| PathBuf::from("data/synonyms"));
             let tables = load_all(&dir)
                 .with_context(|| format!("load synonym tables from {}", dir.display()))?;
+            // Prints the hits in `table` for `class` and returns how many.
+            // A row whose canonical name *is* `class` also counts: the MSC
+            // dictionary is keyed by code, so `crossquery 68Q60` should find
+            // 68Q60 even though its semantic class is `program-specification`.
+            let print_hits = |table: &SynonymTable, label: std::fmt::Arguments<'_>| -> usize {
+                let mut hits: Vec<&SynonymEntry> = table.by_semantic_class(&class);
+                if let Some(entry) = table.entries.iter().find(|e| e.canonical == class) {
+                    if !hits.iter().any(|h| h.canonical == entry.canonical) {
+                        hits.push(entry);
+                    }
+                }
+                if hits.is_empty() {
+                    return 0;
+                }
+                println!("{label}:");
+                for entry in &hits {
+                    let aliases = if entry.aliases.is_empty() {
+                        String::new()
+                    } else {
+                        format!(" (aliases: {})", entry.aliases.join(", "))
+                    };
+                    println!("  {}{}", entry.canonical, aliases);
+                }
+                hits.len()
+            };
             let mut total = 0usize;
+            let mut sources = 0usize;
             for prover in [
                 ProverKind::Agda,
                 ProverKind::Coq,
                 ProverKind::Lean,
                 ProverKind::Idris2,
                 ProverKind::Isabelle,
+                ProverKind::Metamath,
+                ProverKind::Mizar,
+                ProverKind::HOL4,
+                ProverKind::HOLLight,
+                ProverKind::Dafny,
+                ProverKind::Why3,
+                ProverKind::FStar,
+                ProverKind::ACL2,
             ] {
                 if let Some(table) = tables.get(&prover) {
-                    let hits = table.by_semantic_class(&class);
-                    if hits.is_empty() {
-                        continue;
+                    let hits = print_hits(table, format_args!("{:?}", prover));
+                    total += hits;
+                    if hits > 0 {
+                        sources += 1;
                     }
-                    println!("{:?}:", prover);
-                    for entry in &hits {
-                        let aliases = if entry.aliases.is_empty() {
-                            String::new()
-                        } else {
-                            format!(" (aliases: {})", entry.aliases.join(", "))
-                        };
-                        println!("  {}{}", entry.canonical, aliases);
-                        total += 1;
+                }
+            }
+            if !provers_only {
+                let dicts = load_cross_prover_dicts(&dir).with_context(|| {
+                    format!("load cross-prover dictionaries from {}", dir.display())
+                })?;
+                for (name, table) in dicts.tables() {
+                    let hits = print_hits(table, format_args!("dictionary {}", name));
+                    total += hits;
+                    if hits > 0 {
+                        sources += 1;
                     }
                 }
             }
@@ -1483,10 +1531,8 @@ fn corpus_command(op: CorpusOp, formatter: &OutputFormatter) -> Result<()> {
                 formatter.info(&format!("no entries for semantic class '{}'", class))?;
             } else {
                 formatter.info(&format!(
-                    "{} entries across {} prover(s) for semantic class '{}'",
-                    total,
-                    tables.len(),
-                    class
+                    "{} entries across {} table(s) for semantic class '{}'",
+                    total, sources, class
                 ))?;
             }
         },

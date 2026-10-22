@@ -83,7 +83,7 @@ corpus items can be joined across systems by `semantic_class`.
 | File | Rows (2026-10-22) | Scope
 
 | `_msc2020.toml`
-| 177
+| 181
 | MSC2020 codes. 68Qxx (theory of computing) and 68Nxx (theory of software)
   are complete; 03B/03C/03D/03F cover logic, computability and proof theory;
   68M/68P/68T/68V/68W cover systems, data, AI and proof assistants.

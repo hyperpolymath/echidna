@@ -45,6 +45,7 @@ export load_prover_synonyms,
        load_wordnet_math,
        load_conceptnet_seed,
        load_verification_systems,
+       load_disciplines,
        by_semantic_class,
        expand_aliases
 
@@ -115,7 +116,7 @@ cross-prover dictionary. Returns the same Dict shape as
 `"03B70"`).
 
 The MSC dictionary is loaded as a SECONDARY index by
-`SynonymTable::with_msc2020()` on the Rust side; downstream training
+`CrossProverDicts::msc2020` on the Rust side; downstream training
 code merges it into per-prover `semantic_class` resolution to bridge
 corpus items across prover taxonomies.
 
@@ -149,6 +150,21 @@ Load-bearing for the offline S5 verification gate (no network access).
 """
 function load_conceptnet_seed(dir::String)
     return _load_underscore_table(dir, "_conceptnet_seed.toml")
+end
+
+"""
+    load_disciplines(dir::String) -> Dict
+
+Load `dir/_disciplines.toml` — the TypeChecker discipline vocabulary
+(42 disciplines; see `docs/architecture/TYPE-DISCIPLINE-EMBEDDING.adoc`).
+Keyed by discipline slug (e.g. `"linear"`, `"epistemic"`).
+
+Added alongside `load_verification_systems` so the Julia side can load
+every shipped cross-prover dictionary, the way
+`CrossProverDicts::tables()` does on the Rust side.
+"""
+function load_disciplines(dir::String)
+    return _load_underscore_table(dir, "_disciplines.toml")
 end
 
 """

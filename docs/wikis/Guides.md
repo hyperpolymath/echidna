@@ -109,7 +109,7 @@ Agreement is not identity: N backends proving N lexically aligned statements are
 
 ## Guide: Cross-prover semantic queries
 
-The synonym layer carries an optional `semantic_class` tag per entry. Combined with the three cross-prover dictionaries (`_msc2020.toml`, `_wordnet_math.toml`, `_conceptnet_seed.toml`) this gives "every prover's name for the same concept" lookups, fully offline.
+The synonym layer carries an optional `semantic_class` tag per entry. Combined with the five cross-prover dictionaries (`_msc2020.toml`, `_wordnet_math.toml`, `_conceptnet_seed.toml`, `_disciplines.toml`, `_verification_systems.toml`) this gives "every prover's name for the same concept" lookups, fully offline.
 
 ```rust
 use std::path::Path;
@@ -123,16 +123,16 @@ let dir = Path::new("data/synonyms");
 // Load all per-prover tables (saturation-campaign set: 13 provers).
 let mut tables = load_all(dir)?;
 
-// Merge each cross-prover dictionary into every per-prover table
-// so `by_semantic_class` queries find rows regardless of origin.
+// Merge every cross-prover dictionary into each per-prover table so
+// `by_semantic_class` queries find rows regardless of origin.
 let dicts = load_cross_prover_dicts(dir)?;
 for table in tables.values_mut() {
-    table.merge_external(&dicts.msc2020);
-    table.merge_external(&dicts.wordnet_math);
-    table.merge_external(&dicts.conceptnet_seed);
+    table.merge_cross_prover_dicts(&dicts);
 }
 
 // "What's everyone's name for well-foundedness?"
+// Or name a class only the verification dictionary carries, e.g.
+// "wrapping-arithmetic", "frame-rule" or "estate-snif".
 for (prover, table) in &tables {
     for entry in table.by_semantic_class("well-foundedness") {
         println!(
