@@ -105,7 +105,11 @@ fn creusot_fixture_ingests_with_contracts_and_trust() {
 
     let double = find(&corpus, "double");
     assert_eq!(double.len(), 1);
-    assert!(double[0].axiom_usage.other.iter().any(|t| t == "creusot:logic"));
+    assert!(double[0]
+        .axiom_usage
+        .other
+        .iter()
+        .any(|t| t == "creusot:logic"));
     assert!(double[0]
         .axiom_usage
         .other

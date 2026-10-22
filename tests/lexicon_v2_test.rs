@@ -233,7 +233,10 @@ fn verification_systems_dictionary_is_wired() {
         "estate-api",
     ] {
         assert!(
-            !dicts.verification_systems.by_semantic_class(class).is_empty(),
+            !dicts
+                .verification_systems
+                .by_semantic_class(class)
+                .is_empty(),
             "no entry for semantic class {class:?}"
         );
     }

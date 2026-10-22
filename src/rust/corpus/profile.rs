@@ -127,8 +127,8 @@ fn agda_repo(repo: &str, layer: &str) -> RepoRule {
 pub fn load_manifest(path: &Path) -> Result<Manifest> {
     let raw = std::fs::read_to_string(path)
         .with_context(|| format!("read corpus profile {}", path.display()))?;
-    let manifest: Manifest = toml::from_str(&raw)
-        .with_context(|| format!("parse corpus profile {}", path.display()))?;
+    let manifest: Manifest =
+        toml::from_str(&raw).with_context(|| format!("parse corpus profile {}", path.display()))?;
     Ok(manifest)
 }
 
@@ -359,7 +359,10 @@ mod tests {
         std::fs::create_dir_all(root.join("target")).unwrap();
 
         assert_eq!(repo_dirs(&root, "echidna"), vec![root.clone()]);
-        assert_eq!(repo_dirs(&root, "echo-types"), vec![root.join("echo-types")]);
+        assert_eq!(
+            repo_dirs(&root, "echo-types"),
+            vec![root.join("echo-types")]
+        );
 
         let wildcard = repo_dirs(&root, "*");
         assert_eq!(

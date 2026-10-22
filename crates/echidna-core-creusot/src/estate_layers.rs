@@ -187,8 +187,18 @@ mod tests {
     fn adapter_mapping_is_total_and_within_the_enum() {
         // PO-L1: total over names, and the result is always a member.
         for adapter in [
-            "idris2", "agda", "coq", "lean", "isabelle", "spark_ada", "dafny", "fstar",
-            "why3", "creusot", "not_an_adapter", "",
+            "idris2",
+            "agda",
+            "coq",
+            "lean",
+            "isabelle",
+            "spark_ada",
+            "dafny",
+            "fstar",
+            "why3",
+            "creusot",
+            "not_an_adapter",
+            "",
         ] {
             let layer = layer_of_adapter(adapter);
             assert!(Layer::ALL.contains(&layer), "{adapter} -> {layer:?}");
@@ -198,9 +208,14 @@ mod tests {
     #[test]
     fn extension_mapping_never_claims_unknown() {
         // PO-L2
-        for ext in ["idr", "zig", "ads", "adb", "rs", "jl", "chpl", "ex", "agda", "zzz", ""] {
+        for ext in [
+            "idr", "zig", "ads", "adb", "rs", "jl", "chpl", "ex", "agda", "zzz", "",
+        ] {
             let layer = layer_of_extension(ext);
-            assert!(layer != Some(Layer::Unknown), "{ext} claimed the unknown layer");
+            assert!(
+                layer != Some(Layer::Unknown),
+                "{ext} claimed the unknown layer"
+            );
         }
         assert_eq!(layer_of_extension("zzz"), None);
     }

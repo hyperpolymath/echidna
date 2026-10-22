@@ -80,7 +80,10 @@ pub fn ingest(root: &Path) -> Result<Corpus> {
         let parsed = parse_rust_file(&raw);
 
         let module_idx = corpus.modules.len();
-        let module_name = parsed.module.clone().unwrap_or_else(|| module_name_from_rel(&rel));
+        let module_name = parsed
+            .module
+            .clone()
+            .unwrap_or_else(|| module_name_from_rel(&rel));
         corpus.modules.push(ModuleEntry {
             name: module_name,
             path: rel,
@@ -358,7 +361,11 @@ fn tokenise(clean: &str) -> Vec<Tok> {
 }
 
 fn line_of(src: &str, offset: usize) -> usize {
-    src[..offset.min(src.len())].bytes().filter(|b| *b == b'\n').count() + 1
+    src[..offset.min(src.len())]
+        .bytes()
+        .filter(|b| *b == b'\n')
+        .count()
+        + 1
 }
 
 fn is_kw(tok: &Tok, kw: &str) -> bool {
@@ -666,7 +673,10 @@ fn collect_uses(src: &str, toks: &[Tok]) -> Vec<String> {
         if j < toks.len() {
             let raw = normalise_ws(&src[start..toks[j].start]);
             let base = raw.split("::{").next().unwrap_or("").trim().to_string();
-            let base = base.trim_end_matches("::*").trim_end_matches("::").to_string();
+            let base = base
+                .trim_end_matches("::*")
+                .trim_end_matches("::")
+                .to_string();
             let path = base.split("::").take(3).collect::<Vec<_>>().join("::");
             if !path.is_empty() && !out.contains(&path) {
                 out.push(path);
@@ -801,7 +811,11 @@ pub trait Measured {
         let inc = find(&p, "increment").expect("increment");
         assert!(inc.statement.contains("requires(x@ < 1000)"));
         assert!(inc.statement.contains("ensures(result@ == x@ + 1)"));
-        assert!(inc.axiom_usage.other.iter().any(|t| t == "creusot:requires"));
+        assert!(inc
+            .axiom_usage
+            .other
+            .iter()
+            .any(|t| t == "creusot:requires"));
         assert!(inc.axiom_usage.other.iter().any(|t| t == "creusot:ensures"));
     }
 
@@ -825,11 +839,7 @@ pub trait Measured {
         let p = parse(CONTRACTS);
         let h = find(&p, "half").expect("half");
         assert!(h.axiom_usage.other.iter().any(|s| s == "creusot:logic"));
-        assert!(h
-            .axiom_usage
-            .other
-            .iter()
-            .any(|s| s == "creusot:pearlite"));
+        assert!(h.axiom_usage.other.iter().any(|s| s == "creusot:pearlite"));
     }
 
     #[test]
@@ -893,7 +903,10 @@ fn widen(x: u32) -> u64 {
 
     #[test]
     fn module_name_from_source_path() {
-        assert_eq!(module_name_from_rel(Path::new("src/corpus/mod.rs")), "corpus");
+        assert_eq!(
+            module_name_from_rel(Path::new("src/corpus/mod.rs")),
+            "corpus"
+        );
         assert_eq!(module_name_from_rel(Path::new("src/lib.rs")), "crate");
         assert_eq!(
             module_name_from_rel(Path::new("src/abi/layout.rs")),

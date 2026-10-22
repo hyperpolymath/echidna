@@ -339,7 +339,11 @@ fn tokenise(clean: &str) -> Vec<Tok> {
 }
 
 fn line_of(src: &str, offset: usize) -> usize {
-    src[..offset.min(src.len())].bytes().filter(|b| *b == b'\n').count() + 1
+    src[..offset.min(src.len())]
+        .bytes()
+        .filter(|b| *b == b'\n')
+        .count()
+        + 1
 }
 
 fn is_kw(tok: &Tok, kw: &str) -> bool {
@@ -1003,7 +1007,11 @@ end Opaque;
             .iter()
             .find(|d| d.name == "Lemma_Mult_Comm")
             .expect("lemma");
-        assert!(lemma.axiom_usage.other.iter().any(|t| t == "sparklib:lemma"));
+        assert!(lemma
+            .axiom_usage
+            .other
+            .iter()
+            .any(|t| t == "sparklib:lemma"));
         assert!(lemma.axiom_usage.other.iter().any(|t| t == "spark:ghost"));
     }
 
