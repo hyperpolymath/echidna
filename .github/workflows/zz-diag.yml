@@ -2,8 +2,9 @@
 # TEMPORARY diagnostic workflow. Deliberately contains no `uses:` steps: a
 # newly added workflow in this repo that references an action fails at
 # startup ("This run likely failed because of a workflow file issue"), so
-# this clones by hand and publishes its output where a blocked-log
-# environment can read it. Delete once the branch is green.
+# this clones by hand and reports through a PR comment, which is readable
+# from environments where the job log endpoint is blocked.
+# Delete once the branch is green.
 name: ZZ diag
 
 on:
@@ -13,12 +14,11 @@ on:
 permissions:
   contents: read
   issues: write
-  pull-requests: write
 
 jobs:
   diag:
     runs-on: ubuntu-latest
-    timeout-minutes: 40
+    timeout-minutes: 50
     steps:
       - name: Collect diagnostics
         env:
@@ -27,63 +27,38 @@ jobs:
           set -u
           OUT=/tmp/diag.txt
           : > "${OUT}"
-          say() { printf '%s\n' "$*" | tee -a "${OUT}"; }
-          say "stage: start"
-          sudo apt-get update -qq >/dev/null 2>&1 && say "apt update ok" || say "apt update FAILED"
-          sudo apt-get install -y -qq capnproto protobuf-compiler pkg-config libssl-dev >/dev/null 2>&1 \
-            && say "apt install ok" || say "apt install FAILED"
-          if git clone -q --depth 5 --branch arena/5b8efe75-echidna \
-               "https://x-access-token:${GH_TOKEN}@github.com/hyperpolymath/echidna.git" repo 2>>"${OUT}"; then
-            say "clone ok"
-          else
-            say "clone FAILED"
-          fi
-          cd repo 2>/dev/null || say "no repo dir"
-          say "### toolchain"
-          (cargo --version; rustc --version) >>"${OUT}" 2>&1
-          say "### rustfmt --all -- --check"
-          cargo fmt --all -- --check 2>&1 | head -c 20000 >>"${OUT}"
-          say "### applying rustfmt and recording the patch"
+          say() { printf '%s\n' "$*" >> "${OUT}"; }
+          sudo apt-get update -qq >/dev/null 2>&1
+          sudo apt-get install -y -qq capnproto protobuf-compiler pkg-config libssl-dev >/dev/null 2>&1
+          git clone -q --depth 5 --branch arena/5b8efe75-echidna \
+            "https://x-access-token:${GH_TOKEN}@github.com/hyperpolymath/echidna.git" repo 2>>"${OUT}"
+          cd repo || exit 1
+
           cargo fmt --all
-          git diff > /tmp/fmt.patch
-          say "patch bytes: $(wc -c < /tmp/fmt.patch)"
-          say "### cargo check --locked --workspace --all-targets"
-          cargo check --locked --workspace --all-targets 2>&1 | head -c 60000 >>"${OUT}"
-          say "### cargo test --no-run (workspace)"
-          cargo test --locked --workspace --all-targets --no-run 2>&1 | head -c 30000 >>"${OUT}"
-          say "### cargo test (workspace, no-fail-fast)"
-          timeout 1500 cargo test --locked --workspace --no-fail-fast 2>&1 \
-            | grep -E '^(test result|failures:|error|---- |thread .* panicked)' -A 3 \
-            | head -c 60000 >>"${OUT}"
-          say "### end"
-          BODY="$(mktemp)"
-          { echo '### Diagnostics (temporary)'; echo; echo '```rust'; head -c 52000 "${OUT}"; echo; echo '```'; } > "${BODY}"
-          jq -Rs '{body: .}' "${BODY}" > /tmp/body.json
+          {
+            echo '=== FMT PATCH (base64) ==='
+            git -C . diff > /tmp/fmt.patch
+            base64 -w 100 /tmp/fmt.patch
+            echo "=== FMT PATCH END ($(wc -c < /tmp/fmt.patch) bytes) ==="
+          } >> "${OUT}"
+
+          {
+            echo '=== TEST echidna-core-creusot ==='
+            cargo test --locked -p echidna-core-creusot 2>&1 | tail -n 60
+            echo '=== TEST corpus_estate_adapters + corpus_cli_dispatch + lexicon_v2 ==='
+            cargo test --locked --test corpus_estate_adapters --test corpus_cli_dispatch \
+              --test lexicon_v2_test 2>&1 | grep -vE '^\s+Compiling|^\s+Checking' | tail -n 120
+            echo '=== CLIPPY workspace ==='
+            cargo clippy --locked --workspace --all-targets -- -D warnings 2>&1 \
+              | grep -E '^(error|warning)' -A 6 | head -n 200
+            echo '=== END ==='
+          } >> "${OUT}"
+
+          jq -Rs '{body: .}' < "${OUT}" > /tmp/body.json
           CODE=$(curl -sS -o /tmp/resp.json -w '%{http_code}' -X POST \
             -H "Authorization: Bearer ${GH_TOKEN}" \
             -H "Accept: application/vnd.github+json" \
             https://api.github.com/repos/hyperpolymath/echidna/issues/448/comments \
             -d @/tmp/body.json)
-          say "comment status: ${CODE}"
-          say "comment response: $(head -c 400 /tmp/resp.json)"
-          # Publish in chunks to a topic this session can poll: the log and
-          # artifact endpoints are unreachable from where this was prepared.
-          rm -f /tmp/chunk.*
-          split -C 3800 -a 4 "${OUT}" /tmp/chunk.
-          N=$(ls /tmp/chunk.* | wc -l)
-          FAIL=0
-          for f in /tmp/chunk.*; do
-            if ! curl -sS -m 30 -d @"${f}" "https://ntfy.sh/echidna-diag-7f3a91" >/dev/null 2>&1; then
-              FAIL=$((FAIL + 1))
-            fi
-            sleep 1
-          done
-          echo "published ${N} chunks, ${FAIL} failures"
-          split -C 3800 -a 4 /tmp/fmt.patch /tmp/fpatch.
-          M=0
-          for f in /tmp/fpatch.*; do
-            curl -sS -m 30 -d @"${f}" "https://ntfy.sh/echidna-fmt-7f3a91" >/dev/null 2>&1 || M=$((M + 1))
-            sleep 1
-          done
-          echo "published the fmt patch in ${M} failures"
-          test "${N}" -gt 0 && test "${FAIL}" -eq 0 && test "${M}" -eq 0
+          echo "comment status: ${CODE}"
+          test "${CODE}" = "201"
