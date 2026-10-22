@@ -1,0 +1,4705 @@
+# SPDX-FileCopyrightText: 2026 ECHIDNA Project Team
+# SPDX-License-Identifier: MPL-2.0
+#
+# Verification-systems vocabulary. Program-verification concepts for the
+# estate's proof stack (Idris2 ABI + Zig FFI + Ada/SPARK + Rust/Creusot +
+# Elixir/OTP), which WordNet and ConceptNet do not carry.
+#
+# Underscore-prefix filename `_verification_systems.toml` signals: secondary
+# vocabulary index, NOT a per-prover synonym table. Consumers merge it into
+# per-prover `semantic_class` resolution through
+# `CrossProverDicts::verification_systems` (Rust) / `load_verification_systems`
+# (Julia), exactly like `_msc2020.toml` and `_disciplines.toml`.
+#
+# Why this file exists
+#
+# `_wordnet_math.toml` (81 rows) and `_conceptnet_seed.toml` (53 rows) are
+# anchored in undergraduate / competition pure mathematics: primes, rings,
+# continuity, commutativity. ProofNet and MiniF2F are the same shape. The
+# concepts this repository's own verification surface is written in --
+# zero-extension, wrapping arithmetic, alignment, separation-logic framing,
+# termination measures, resource algebras, noninterference -- are absent from
+# those dictionaries. A corpus indexer or premise selector that only knows the
+# math dictionaries cannot resolve `wrapping_add` to a semantic class, so the
+# cross-prover join silently drops the row.
+#
+# Selection criteria
+#
+# 1. The concept must be *load-bearing* for machine-level or specification-level
+#    reasoning: it appears in at least one of the proof corpora / toolchains
+#    this repository drives (Lean4+mathlib4, Coq/Rocq, Isabelle/HOL, Agda,
+#    Idris2, F*, Dafny, Why3, SPARK, Creusot, Kani, Zig, ACL2, TLA+).
+# 2. `canonical` is the concept name in the spelling used by the toolchain that
+#    owns the concept (mostly snake_case; PascalCase where the library name is
+#    PascalCase).
+# 3. `aliases` are spelling variants and API names a corpus extractor can
+#    actually encounter, not definitions.
+# 4. `semantic_class` is the cross-table join key and is deliberately coarse.
+#    `tactic_class` is the vocabulary family for this file: bitvector, memory,
+#    ownership, separation, contract, termination, refinement, resource-algebra,
+#    epistemic, concurrency, toolchain, estate.
+#
+# Estate policy reflected here (owner directive, 2026-10-22): every ABI is
+# written in Idris2, every API and FFI in Zig, every BEAM native boundary is a
+# SNIF (never a bare NIF), the Rust layer is Rust/Creusot (annotated Rust, not
+# "Rust plus hope"), Julia owns the numeric/ML layer and Chapel the parallel
+# layer. Python is not part of the estate: nothing in this tree may depend on a
+# Python runtime.
+#
+# Evidence policy
+#
+# Rows carry no `evidence` field (the loader default is `none`). These are
+# vocabulary anchors: they assert that a token belongs to a concept class, not
+# that two provers' names denote the same proposition. Rows that would claim a
+# cross-prover identity belong in the per-prover tables, where the lexicon v2
+# `relation` / `fidelity` / `residue` fields can say what is lost.
+#
+# Schema: data/synonyms/schema.ncl (Nickel). Checked by
+# scripts/lexicon-check.sh; loaded by tests/lexicon_v2_test.rs.
+
+# ============================================================
+# Bitvectors and machine integers
+# ============================================================
+
+[[synonym]]
+canonical = "zero_extend"
+aliases = ["uext", "zeroExtend", "zero-extend", "Z.zero_extend", "BitVec.zeroExtend", "bvzeroextend", "zero_extension"]
+tactic_class = "bitvector"
+semantic_class = "zero-extension"
+notes = "Widen an unsigned value by filling high bits with zero; Lean BitVec.zeroExtend, Coq Z.zero_extend, SMT-LIB bvzeroextend."
+
+[[synonym]]
+canonical = "sign_extend"
+aliases = ["sext", "signExtend", "sign-extend", "Z.sign_extend", "BitVec.signExtend", "bvsignextend", "sign_extension"]
+tactic_class = "bitvector"
+semantic_class = "sign-extension"
+notes = "Widen by replicating the sign bit; Sound and Complete for the two's-complement interpretation."
+
+[[synonym]]
+canonical = "truncate"
+aliases = ["trunc", "truncate_bits", "Z.truncate", "BitVec.truncate", "bvextract", "low_bits"]
+tactic_class = "bitvector"
+semantic_class = "truncation"
+notes = "Narrow to a smaller width; discards high bits and is not value preserving."
+
+[[synonym]]
+canonical = "extract_bits"
+aliases = ["extract", "extractBits", "BitVec.extract", "extract_range", "bvextract", "bit_slice"]
+tactic_class = "bitvector"
+semantic_class = "bit-extraction"
+notes = "Select a bit range [hi:lo]; the only width-changing operation besides concat and split."
+
+[[synonym]]
+canonical = "concat_bits"
+aliases = ["concat", "append_bits", "BitVec.append", "concatBits", "bvconcat", "zero_append"]
+tactic_class = "bitvector"
+semantic_class = "bit-concatenation"
+notes = "Join two bitvectors; width is the sum of the widths."
+
+[[synonym]]
+canonical = "bitwise_not"
+aliases = ["complement", "bvnot", "BitVec.not", "bitwise_complement", "ones_complement"]
+tactic_class = "bitvector"
+semantic_class = "bitwise-negation"
+notes = "Per-bit complement; distinct from arithmetic negation."
+
+[[synonym]]
+canonical = "bitwise_and"
+aliases = ["bvand", "BitVec.and", "land", "band", "masking"]
+tactic_class = "bitvector"
+semantic_class = "bitwise-and"
+notes = "Per-bit conjunction; the usual mask operator."
+
+[[synonym]]
+canonical = "bitwise_or"
+aliases = ["bvor", "BitVec.or", "lor", "bor", "set_bits"]
+tactic_class = "bitvector"
+semantic_class = "bitwise-or"
+notes = "Per-bit disjunction."
+
+[[synonym]]
+canonical = "bitwise_xor"
+aliases = ["bvxor", "BitVec.xor", "lxor", "bxor", "difference_bits"]
+tactic_class = "bitvector"
+semantic_class = "bitwise-xor"
+notes = "Per-bit exclusive or; its own inverse."
+
+[[synonym]]
+canonical = "shift_left"
+aliases = ["shl", "BitVec.shiftLeft", "bvshl", "lsl", "shiftl", "left_shift"]
+tactic_class = "bitvector"
+semantic_class = "shift-left"
+notes = "Logical left shift; vacated low bits are zero."
+
+[[synonym]]
+canonical = "logical_shift_right"
+aliases = ["lshr", "bvlshr", "BitVec.ushiftRight", "lsr", "logical_right_shift", "zero_fill_shift"]
+tactic_class = "bitvector"
+semantic_class = "logical-shift-right"
+notes = "Right shift filling with zero; unsigned interpretation."
+
+[[synonym]]
+canonical = "arithmetic_shift_right"
+aliases = ["ashr", "bvashr", "BitVec.sshiftRight", "asr", "arithmetic_right_shift", "sign_fill_shift"]
+tactic_class = "bitvector"
+semantic_class = "arithmetic-shift-right"
+notes = "Right shift replicating the sign bit; signed division by a power of two only for exact cases."
+
+[[synonym]]
+canonical = "rotate_left"
+aliases = ["rotl", "BitVec.rotateLeft", "bvrol", "rotate_l", "circular_shift_left"]
+tactic_class = "bitvector"
+semantic_class = "rotation"
+notes = "Left rotation; no bits are lost."
+
+[[synonym]]
+canonical = "rotate_right"
+aliases = ["rotr", "BitVec.rotateRight", "bvror", "rotate_r", "circular_shift_right"]
+tactic_class = "bitvector"
+semantic_class = "rotation"
+notes = "Right rotation; inverse of rotate_left by width."
+
+[[synonym]]
+canonical = "rotate_through_carry"
+aliases = ["rcl", "rcr", "rotate_carry", "through_carry"]
+tactic_class = "bitvector"
+semantic_class = "rotation"
+notes = "Nine-bit rotation used by x86 and some hardware models."
+
+[[synonym]]
+canonical = "count_leading_zeros"
+aliases = ["clz", "leading_zeros", "BitVec.clz", "countLeadingZeros", "nlz"]
+tactic_class = "bitvector"
+semantic_class = "bit-count"
+notes = "Number of high zero bits before the first one."
+
+[[synonym]]
+canonical = "count_trailing_zeros"
+aliases = ["ctz", "trailing_zeros", "BitVec.ctz", "countTrailingZeros", "ntz"]
+tactic_class = "bitvector"
+semantic_class = "bit-count"
+notes = "Number of low zero bits before the first one."
+
+[[synonym]]
+canonical = "population_count"
+aliases = ["popcount", "popcnt", "BitVec.popcount", "hamming_weight", "count_ones"]
+tactic_class = "bitvector"
+semantic_class = "bit-count"
+notes = "Number of set bits; Hamming weight of the bitvector."
+
+[[synonym]]
+canonical = "bit_reverse"
+aliases = ["reverse_bits", "bitrev", "BitVec.reverse", "bswap_bits"]
+tactic_class = "bitvector"
+semantic_class = "bit-permutation"
+notes = "Reverse bit order; not the same as byte swap."
+
+[[synonym]]
+canonical = "test_bit"
+aliases = ["bit_test", "BitVec.getLsbD", "get_bit", "bt", "testbit"]
+tactic_class = "bitvector"
+semantic_class = "bit-access"
+notes = "Read a single bit; a bounds obligation in most APIs."
+
+[[synonym]]
+canonical = "set_bit"
+aliases = ["bit_set", "BitVec.setWidth", "bts"]
+tactic_class = "bitvector"
+semantic_class = "bit-access"
+notes = "Write a single bit true."
+
+[[synonym]]
+canonical = "clear_bit"
+aliases = ["bit_clear", "btr", "reset_bit", "clear_bits"]
+tactic_class = "bitvector"
+semantic_class = "bit-access"
+notes = "Write a single bit false."
+
+[[synonym]]
+canonical = "toggle_bit"
+aliases = ["bit_toggle", "btc", "flip_bit", "complement_bit"]
+tactic_class = "bitvector"
+semantic_class = "bit-access"
+notes = "Flip a single bit."
+
+[[synonym]]
+canonical = "bitmask"
+aliases = ["mask", "BitVec.mask", "mask_bits", "bit_mask", "all_ones_mask"]
+tactic_class = "bitvector"
+semantic_class = "bitmask"
+notes = "A bitvector used to select positions; `mask &&& x` is the usual idiom."
+
+[[synonym]]
+canonical = "bitvector_type"
+aliases = ["bitvec", "BitVec", "BV", "bit_vector", "bv", "word_type"]
+tactic_class = "bitvector"
+semantic_class = "bitvector"
+notes = "Fixed-width sequence of bits; Lean BitVec w, SMT-LIB (_ BitVec w)."
+
+[[synonym]]
+canonical = "machine_word"
+aliases = ["word", "Word", "usize", "uintptr", "word_size", "register_width"]
+tactic_class = "bitvector"
+semantic_class = "machine-word"
+notes = "Width of a machine register; the natural index type for memory."
+
+[[synonym]]
+canonical = "octet"
+aliases = ["byte", "u8", "uint8"]
+tactic_class = "bitvector"
+semantic_class = "octet"
+notes = "Eight bits; the addressable unit of memory."
+
+[[synonym]]
+canonical = "nibble"
+aliases = ["half_byte", "four_bits"]
+tactic_class = "bitvector"
+semantic_class = "octet"
+notes = "Four bits; one hexadecimal digit."
+
+[[synonym]]
+canonical = "signed_interpretation"
+aliases = ["toInt", "signed_value", "BitVec.toInt", "bvsdiv", "signed"]
+tactic_class = "bitvector"
+semantic_class = "signedness"
+notes = "Read a bitvector as two's-complement signed integer."
+
+[[synonym]]
+canonical = "unsigned_interpretation"
+aliases = ["toNat", "unsigned_value", "BitVec.toNat", "bvudiv", "unsigned"]
+tactic_class = "bitvector"
+semantic_class = "signedness"
+notes = "Read a bitvector as a natural number."
+
+[[synonym]]
+canonical = "twos_complement"
+aliases = ["two_complement", "twos_complement_neg", "BitVec.neg", "bvneg", "neg_bits"]
+tactic_class = "bitvector"
+semantic_class = "twos-complement"
+notes = "Arithmetic negation as complement plus one."
+
+[[synonym]]
+canonical = "ones_complement"
+aliases = ["ones_complement_neg", "bitwise_negation_complement"]
+tactic_class = "bitvector"
+semantic_class = "twos-complement"
+notes = "Negation of every bit; equals minus one minus x."
+
+[[synonym]]
+canonical = "sign_bit"
+aliases = ["msb", "most_significant_bit", "sign_position"]
+tactic_class = "bitvector"
+semantic_class = "bit-position"
+notes = "The high bit under a signed interpretation."
+
+[[synonym]]
+canonical = "least_significant_bit"
+aliases = ["lsb", "low_bit", "least_significant"]
+tactic_class = "bitvector"
+semantic_class = "bit-position"
+notes = "The low bit; the unit of the two-adic valuation."
+
+[[synonym]]
+canonical = "carry_flag"
+aliases = ["carry", "CF", "carry_out_flag"]
+tactic_class = "bitvector"
+semantic_class = "flags"
+notes = "Out-of-width carry of an addition."
+
+[[synonym]]
+canonical = "overflow_flag"
+aliases = ["overflow", "OF", "signed_overflow_flag"]
+tactic_class = "bitvector"
+semantic_class = "flags"
+notes = "Signed overflow indicator; distinct from carry."
+
+[[synonym]]
+canonical = "add_with_carry"
+aliases = ["adc", "carry_in", "addition_carry", "BitVec.adc"]
+tactic_class = "bitvector"
+semantic_class = "carry-arithmetic"
+notes = "Addition consuming and producing a carry bit."
+
+[[synonym]]
+canonical = "sub_with_borrow"
+aliases = ["sbb", "borrow_in", "subtraction_borrow", "BitVec.sbb"]
+tactic_class = "bitvector"
+semantic_class = "carry-arithmetic"
+notes = "Subtraction consuming and producing a borrow bit."
+
+[[synonym]]
+canonical = "wrapping_add"
+aliases = ["wrappingAdd", "wrapping-add", "uadd_overflow", "add_wrapping", "Wrapping.add"]
+tactic_class = "bitvector"
+semantic_class = "wrapping-arithmetic"
+notes = "Addition modulo 2^w; the default in release-mode Rust and in Zig's +%."
+
+[[synonym]]
+canonical = "wrapping_sub"
+aliases = ["wrappingSub", "wrapping-sub", "Wrapping.sub", "sub_wrapping"]
+tactic_class = "bitvector"
+semantic_class = "wrapping-arithmetic"
+notes = "Subtraction modulo 2^w."
+
+[[synonym]]
+canonical = "wrapping_mul"
+aliases = ["wrappingMul", "wrapping-mul", "Wrapping.mul", "mul_wrapping"]
+tactic_class = "bitvector"
+semantic_class = "wrapping-arithmetic"
+notes = "Multiplication modulo 2^w."
+
+[[synonym]]
+canonical = "wrapping_neg"
+aliases = ["wrappingNeg", "wrapping-neg", "Wrapping.neg", "neg_wrapping", "twos_complement_wrap"]
+tactic_class = "bitvector"
+semantic_class = "wrapping-arithmetic"
+notes = "Negation modulo 2^w; the minimum signed value is its own negation."
+
+[[synonym]]
+canonical = "checked_add"
+aliases = ["checkedAdd", "checked-add", "Option.checked_add", "overflow_checked"]
+tactic_class = "bitvector"
+semantic_class = "checked-arithmetic"
+notes = "Addition returning none/None on overflow instead of wrapping or trapping."
+
+[[synonym]]
+canonical = "checked_sub"
+aliases = ["checkedSub", "checked-sub", "overflow_checked_sub"]
+tactic_class = "bitvector"
+semantic_class = "checked-arithmetic"
+notes = "Subtraction returning none/None on underflow."
+
+[[synonym]]
+canonical = "checked_mul"
+aliases = ["checkedMul", "checked-mul", "overflow_checked_mul"]
+tactic_class = "bitvector"
+semantic_class = "checked-arithmetic"
+notes = "Multiplication returning none/None on overflow."
+
+[[synonym]]
+canonical = "checked_div"
+aliases = ["checkedDiv", "checked-div", "checked_division", "division_checked"]
+tactic_class = "bitvector"
+semantic_class = "checked-arithmetic"
+notes = "Division that reports division-by-zero and signed overflow separately."
+
+[[synonym]]
+canonical = "overflowing_add"
+aliases = ["overflowingAdd", "overflowing-add", "add_overflow", "carry_report"]
+tactic_class = "bitvector"
+semantic_class = "overflow-arithmetic"
+notes = "Addition returning the wrapped result together with an overflow flag."
+
+[[synonym]]
+canonical = "overflowing_sub"
+aliases = ["overflowingSub", "overflowing-sub", "sub_overflow", "borrow_report"]
+tactic_class = "bitvector"
+semantic_class = "overflow-arithmetic"
+notes = "Subtraction returning the wrapped result with an underflow flag."
+
+[[synonym]]
+canonical = "saturating_add"
+aliases = ["saturatingAdd", "saturating-add", "sat_add", "clamp_add"]
+tactic_class = "bitvector"
+semantic_class = "saturating-arithmetic"
+notes = "Addition clamped to the type bounds; used in signal and audio code."
+
+[[synonym]]
+canonical = "saturating_sub"
+aliases = ["saturatingSub", "saturating-sub", "sat_sub", "clamp_sub"]
+tactic_class = "bitvector"
+semantic_class = "saturating-arithmetic"
+notes = "Subtraction clamped at the minimum value."
+
+[[synonym]]
+canonical = "saturating_mul"
+aliases = ["saturatingMul", "saturating-mul", "sat_mul", "clamp_mul"]
+tactic_class = "bitvector"
+semantic_class = "saturating-arithmetic"
+notes = "Multiplication clamped to the type bounds."
+
+[[synonym]]
+canonical = "saturating_cast"
+aliases = ["saturatingCast", "saturating-cast", "clamp_cast", "saturate"]
+tactic_class = "bitvector"
+semantic_class = "saturating-arithmetic"
+notes = "Narrowing cast that clamps rather than wraps."
+
+[[synonym]]
+canonical = "division_by_zero"
+aliases = ["div_by_zero", "division_zero", "divide_by_zero_trap"]
+tactic_class = "bitvector"
+semantic_class = "arithmetic-fault"
+notes = "A partial operation: every total specification must exclude it."
+
+[[synonym]]
+canonical = "remainder"
+aliases = ["rem", "modulo_remainder", "BitVec.umod", "bvsrem", "signed_remainder"]
+tactic_class = "bitvector"
+semantic_class = "division"
+notes = "Remainder with the sign following the dividend in the signed case."
+
+[[synonym]]
+canonical = "modulo_operation"
+aliases = ["mod", "BitVec.umod", "umod", "mod_op"]
+tactic_class = "bitvector"
+semantic_class = "division"
+notes = "Natural-number modulus; total because the divisor is usually refined to be non-zero."
+
+[[synonym]]
+canonical = "euclidean_division"
+aliases = ["ediv", "euclidean_div", "div_mod_euclidean"]
+tactic_class = "bitvector"
+semantic_class = "division"
+notes = "Division with a non-negative remainder; total on all integers."
+
+[[synonym]]
+canonical = "truncating_division"
+aliases = ["quot", "tdiv", "trunc_div", "Int.tdiv", "truncated"]
+tactic_class = "bitvector"
+semantic_class = "division"
+notes = "Division rounding toward zero; C and Rust integer division."
+
+[[synonym]]
+canonical = "floor_division"
+aliases = ["fdiv", "floor_div", "Int.fdiv"]
+tactic_class = "bitvector"
+semantic_class = "division"
+notes = "Division rounding toward negative infinity; used in dependent indexing."
+
+[[synonym]]
+canonical = "arithmetic_overflow"
+aliases = ["overflow", "integer_overflow", "overflow_trap"]
+tactic_class = "bitvector"
+semantic_class = "arithmetic-fault"
+notes = "A violation of the representable range; panic in debug Rust, UB in C."
+
+[[synonym]]
+canonical = "integer_underflow"
+aliases = ["underflow", "negative_overflow", "borrow"]
+tactic_class = "bitvector"
+semantic_class = "arithmetic-fault"
+notes = "Result below the type minimum."
+
+[[synonym]]
+canonical = "integer_promotion"
+aliases = ["promote", "promotion", "widen_operand", "usual_arithmetic_conversions"]
+tactic_class = "bitvector"
+semantic_class = "coercion"
+notes = "Implicit widening before an operation; a classic source of C surprises."
+
+[[synonym]]
+canonical = "integer_coercion"
+aliases = ["coerce", "coercion", "as_cast", "numeral_literal_cast"]
+tactic_class = "bitvector"
+semantic_class = "coercion"
+notes = "Explicit or implicit conversion between integer types."
+
+[[synonym]]
+canonical = "widening_cast"
+aliases = ["widening", "widen_cast", "upcast", "lossless_cast"]
+tactic_class = "bitvector"
+semantic_class = "coercion"
+notes = "Cast to a strictly wider type; value preserving."
+
+[[synonym]]
+canonical = "narrowing_cast"
+aliases = ["narrowing", "narrow_cast", "downcast", "lossy_cast"]
+tactic_class = "bitvector"
+semantic_class = "coercion"
+notes = "Cast to a strictly narrower type; truncates unless checked."
+
+[[synonym]]
+canonical = "value_preserving_cast"
+aliases = ["cast_value_preserving", "identity_cast", "representable_cast"]
+tactic_class = "bitvector"
+semantic_class = "coercion"
+notes = "A cast whose result denotes the same integer; the obligation behind `try_into`."
+
+[[synonym]]
+canonical = "bit_cast"
+aliases = ["bitcast", "reinterpret_bits", "transmute_bits", "to_bits", "from_bits"]
+tactic_class = "bitvector"
+semantic_class = "reinterpretation"
+notes = "Reinterpret the same bytes as another type; no conversion is performed."
+
+[[synonym]]
+canonical = "pointer_cast"
+aliases = ["ptr_cast", "cast_pointer", "pointer_to_integer", "integer_to_pointer"]
+tactic_class = "bitvector"
+semantic_class = "reinterpretation"
+notes = "Address-space reinterpretation; the boundary of provenance reasoning."
+
+[[synonym]]
+canonical = "float_to_int_cast"
+aliases = ["float_to_int", "f2i", "float_truncation", "NaN_to_int"]
+tactic_class = "bitvector"
+semantic_class = "coercion"
+notes = "Partial: undefined or saturating at NaN and out-of-range values depending on the language."
+
+[[synonym]]
+canonical = "int_to_float_cast"
+aliases = ["int_to_float", "i2f", "rounding_conversion"]
+tactic_class = "bitvector"
+semantic_class = "coercion"
+notes = "May round; not injective beyond the mantissa width."
+
+[[synonym]]
+canonical = "ieee754"
+aliases = ["IEEE754", "ieee_754", "binary32", "binary64", "float_format"]
+tactic_class = "bitvector"
+semantic_class = "floating-point"
+notes = "The bit-level contract behind every float reasoning obligation."
+
+[[synonym]]
+canonical = "floating_point_bits"
+aliases = ["fp_bits", "float_width", "significand", "exponent_field", "mantissa"]
+tactic_class = "bitvector"
+semantic_class = "floating-point"
+notes = "Field decomposition of a float bit pattern."
+
+[[synonym]]
+canonical = "signed_zero"
+aliases = ["negative_zero", "minus_zero", "pos_zero"]
+tactic_class = "bitvector"
+semantic_class = "floating-point"
+notes = "IEEE 754 distinguishes +0 and -0 while comparing them equal."
+
+[[synonym]]
+canonical = "not_a_number"
+aliases = ["NaN", "nan", "qNaN", "sNaN"]
+tactic_class = "bitvector"
+semantic_class = "floating-point"
+notes = "Propagating and signalling NaN; equality is not reflexive on it."
+
+[[synonym]]
+canonical = "denormal"
+aliases = ["subnormal", "denormalized", "gradual_underflow"]
+tactic_class = "bitvector"
+semantic_class = "floating-point"
+notes = "Values below the smallest normal magnitude."
+
+[[synonym]]
+canonical = "rounding_mode"
+aliases = ["rounding", "round_to_nearest", "round_toward_zero", "round_up", "round_down", "RN", "RZ"]
+tactic_class = "bitvector"
+semantic_class = "floating-point"
+notes = "IEEE 754 rounding attributes; a proof obligation whenever float and int are mixed."
+
+[[synonym]]
+canonical = "arbitrary_precision_integer"
+aliases = ["bignum", "big_integer", "Int", "Nat", "Z", "unbounded_integer"]
+tactic_class = "bitvector"
+semantic_class = "numeric-type"
+notes = "Mathematical integers with no width; Coq Z, Lean Int, Python int."
+
+[[synonym]]
+canonical = "fixed_width_integer"
+aliases = ["machine_integer", "i32", "u64", "bounded_integer", "fixed_int"]
+tactic_class = "bitvector"
+semantic_class = "numeric-type"
+notes = "A type whose range is a refinement of the mathematical integers."
+
+[[synonym]]
+canonical = "modular_arithmetic"
+aliases = ["mod_ring", "ZMod", "Int.ModEq", "congruent_mod"]
+tactic_class = "bitvector"
+semantic_class = "numeric-type"
+notes = "Arithmetic in Z/nZ; the semantic model of wrapping bitvector arithmetic."
+
+[[synonym]]
+canonical = "modular_congruence"
+aliases = ["ModEq", "congruence", "mod_equiv", "triple_equals"]
+tactic_class = "bitvector"
+semantic_class = "numeric-type"
+notes = "a = b (mod n); Lean's Int.ModEq, Coq's Z.modulo congruence lemmas."
+
+[[synonym]]
+canonical = "residue_class"
+aliases = ["residue", "ZMod.class", "quotient_class"]
+tactic_class = "bitvector"
+semantic_class = "numeric-type"
+notes = "Equivalence class of an integer modulo n."
+
+[[synonym]]
+canonical = "quotient_remainder"
+aliases = ["div_mod", "divMod", "divmod", "quotient_and_remainder"]
+tactic_class = "bitvector"
+semantic_class = "division"
+notes = "The pair returned by Euclidean division; the basis of reflection proofs."
+
+[[synonym]]
+canonical = "exponentiation_by_squaring"
+aliases = ["pow", "fast_pow", "square_and_multiply", "binary_exponentiation"]
+tactic_class = "bitvector"
+semantic_class = "algorithm"
+notes = "Logarithmic exponentiation; a standard termination-and-correctness exercise."
+
+[[synonym]]
+canonical = "modular_inverse"
+aliases = ["mod_inverse", "inverse_mod", "Fermat_inverse"]
+tactic_class = "bitvector"
+semantic_class = "algorithm"
+notes = "Requires coprimality; the usual totalisation adds a precondition."
+
+# ============================================================
+# Memory layout, ABI and byte order
+# ============================================================
+
+[[synonym]]
+canonical = "alignment"
+aliases = ["align", "aligned", "alignment_requirement", "alignof"]
+tactic_class = "memory"
+semantic_class = "alignment"
+notes = "An address must be a multiple of the type's alignment; the invariant behind every pointer cast."
+
+[[synonym]]
+canonical = "alignment_power_of_two"
+aliases = ["alignment_is_power_of_two", "align_pow2", "power_of_two_alignment", "aligned"]
+tactic_class = "memory"
+semantic_class = "alignment"
+notes = "Rust and Zig both guarantee alignments are powers of two, which makes align-up a mask operation."
+
+[[synonym]]
+canonical = "align_up"
+aliases = ["alignUp", "align-up", "round_up_alignment", "align_to"]
+tactic_class = "memory"
+semantic_class = "alignment"
+notes = "Smallest aligned address at or above a given address."
+
+[[synonym]]
+canonical = "align_down"
+aliases = ["alignDown", "align-down", "round_down_alignment", "truncate_alignment"]
+tactic_class = "memory"
+semantic_class = "alignment"
+notes = "Largest aligned address at or below a given address."
+
+[[synonym]]
+canonical = "is_aligned"
+aliases = ["isAligned", "misaligned_test", "aligned_check", "divides_address"]
+tactic_class = "memory"
+semantic_class = "alignment"
+notes = "The test that guards an unaligned-access precondition."
+
+[[synonym]]
+canonical = "natural_alignment"
+aliases = ["natural_align", "preferred_alignment", "default_alignment"]
+tactic_class = "memory"
+semantic_class = "alignment"
+notes = "Alignment a type gets when nothing overrides it."
+
+[[synonym]]
+canonical = "over_aligned"
+aliases = ["overalign", "repr_align", "align_128", "cache_line_align"]
+tactic_class = "memory"
+semantic_class = "alignment"
+notes = "Explicitly raised alignment; must still be a power of two."
+
+[[synonym]]
+canonical = "struct_padding"
+aliases = ["padding", "bytes_between_fields", "interior_padding"]
+tactic_class = "memory"
+semantic_class = "padding"
+notes = "Bytes inserted to satisfy field alignment; not part of any field's value."
+
+[[synonym]]
+canonical = "trailing_padding"
+aliases = ["tail_padding", "end_padding", "padding_at_end"]
+tactic_class = "memory"
+semantic_class = "padding"
+notes = "Padding after the last field, determined by the struct's alignment."
+
+[[synonym]]
+canonical = "padding_bytes_are_uninitialised"
+aliases = ["padding_uninit", "uninit_padding", "padding_indeterminate"]
+tactic_class = "memory"
+semantic_class = "padding"
+notes = "Reading padding is undefined; it also breaks byte-wise equality proofs."
+
+[[synonym]]
+canonical = "field_offset"
+aliases = ["offset", "byte_offset", "offsetof"]
+tactic_class = "memory"
+semantic_class = "layout"
+notes = "Byte distance from the struct start to a field; C offsetof is the canonical form."
+
+[[synonym]]
+canonical = "size_of_type"
+aliases = ["sizeOf", "size-of", "sizeof", "size_in_bytes", "byte_size"]
+tactic_class = "memory"
+semantic_class = "layout"
+notes = "Allocation size of a value; total for sized types only."
+
+[[synonym]]
+canonical = "align_of_type"
+aliases = ["alignOf", "align-of", "alignof_of", "alignment_of"]
+tactic_class = "memory"
+semantic_class = "layout"
+notes = "Compile-time alignment of a type."
+
+[[synonym]]
+canonical = "size_of_slice"
+aliases = ["slice_bytes", "len_times_size_of"]
+tactic_class = "memory"
+semantic_class = "layout"
+notes = "A slice's byte size is a multiplication that may overflow; the classic totalisation bug."
+
+[[synonym]]
+canonical = "repr_c"
+aliases = ["reprC", "repr-c", "c_layout", "#[repr(C)]", "stable_layout"]
+tactic_class = "memory"
+semantic_class = "layout"
+notes = "Opt-out of layout randomness; required at every FFI boundary."
+
+[[synonym]]
+canonical = "repr_transparent"
+aliases = ["reprTransparent", "repr-transparent", "newtype_layout"]
+tactic_class = "memory"
+semantic_class = "layout"
+notes = "Guarantees a one-field struct has the field's layout."
+
+[[synonym]]
+canonical = "repr_packed"
+aliases = ["reprPacked", "repr-packed", "packed_struct", "unaligned_fields"]
+tactic_class = "memory"
+semantic_class = "layout"
+notes = "Removes padding, making field references potentially unaligned."
+
+[[synonym]]
+canonical = "niche_optimization"
+aliases = ["niche", "niche_opt", "Option_layout", "null_pointer_optimization"]
+tactic_class = "memory"
+semantic_class = "layout"
+notes = "Uses an invalid bit pattern to encode an enum tag for free."
+
+[[synonym]]
+canonical = "discriminant"
+aliases = ["tag", "enum_tag", "variant_index"]
+tactic_class = "memory"
+semantic_class = "layout"
+notes = "The integer that selects an enum case; part of the layout contract."
+
+[[synonym]]
+canonical = "tagged_union"
+aliases = ["taggedUnion", "sum_type", "variant_union", "discriminated_union"]
+tactic_class = "memory"
+semantic_class = "layout"
+notes = "A discriminant together with a union payload."
+
+[[synonym]]
+canonical = "enum_layout"
+aliases = ["repr_enum", "discriminant_size"]
+tactic_class = "memory"
+semantic_class = "layout"
+notes = "Tag plus payload layout rules."
+
+[[synonym]]
+canonical = "union_layout"
+aliases = ["overlapping_fields", "reinterpret_union"]
+tactic_class = "memory"
+semantic_class = "layout"
+notes = "Fields share storage; only one is live at a time."
+
+[[synonym]]
+canonical = "zero_sized_type"
+aliases = ["ZST", "zero_sized", "unit_type", "empty_struct"]
+tactic_class = "memory"
+semantic_class = "layout"
+notes = "A type with size zero; alignment may still be non-trivial."
+
+[[synonym]]
+canonical = "layout_compatibility"
+aliases = ["layout_compatible", "abi_compatible", "same_layout"]
+tactic_class = "memory"
+semantic_class = "layout"
+notes = "Two types agree on size, alignment and field offsets."
+
+[[synonym]]
+canonical = "abi_stability"
+aliases = ["abi_stable", "stable_abi", "abi_contract"]
+tactic_class = "memory"
+semantic_class = "abi"
+notes = "The promise that a layout will not change across versions."
+
+[[synonym]]
+canonical = "foreign_function_interface"
+aliases = ["FFI", "foreign_interface", "extern_c", "ffi_boundary"]
+tactic_class = "memory"
+semantic_class = "abi"
+notes = "The boundary where layout and calling-convention assumptions are load bearing."
+
+[[synonym]]
+canonical = "calling_convention"
+aliases = ["callingConvention", "calling-convention", "callconv", "extern_abi", "sysv_abi"]
+tactic_class = "memory"
+semantic_class = "abi"
+notes = "Who saves which register, and in what order arguments travel."
+
+[[synonym]]
+canonical = "c_abi"
+aliases = ["cAbi", "c-abi", "extern_C", "ccc"]
+tactic_class = "memory"
+semantic_class = "abi"
+notes = "The platform C calling convention; Zig's .C, Rust's extern \"C\"."
+
+[[synonym]]
+canonical = "stack_frame"
+aliases = ["frame", "activation_record"]
+tactic_class = "memory"
+semantic_class = "abi"
+notes = "Per-call storage; its layout is part of the ABI, not the language."
+
+[[synonym]]
+canonical = "stack_pointer"
+aliases = ["sp", "esp", "rsp"]
+tactic_class = "memory"
+semantic_class = "abi"
+notes = "The register that delimits the live stack region."
+
+[[synonym]]
+canonical = "frame_pointer"
+aliases = ["fp", "ebp", "rbp"]
+tactic_class = "memory"
+semantic_class = "abi"
+notes = "Optional anchor for unwinding and debugger frame walks."
+
+[[synonym]]
+canonical = "return_address"
+aliases = ["ret_addr", "caller_pc"]
+tactic_class = "memory"
+semantic_class = "abi"
+notes = "Where control resumes; its integrity is a security property."
+
+[[synonym]]
+canonical = "heap_allocation"
+aliases = ["allocate", "malloc", "new", "heap_alloc"]
+tactic_class = "memory"
+semantic_class = "allocation"
+notes = "A request for storage with a lifetime not tied to a frame."
+
+[[synonym]]
+canonical = "stack_allocation"
+aliases = ["stack_alloc", "alloca", "local_storage"]
+tactic_class = "memory"
+semantic_class = "allocation"
+notes = "Storage released automatically when the frame exits."
+
+[[synonym]]
+canonical = "static_allocation"
+aliases = ["static_alloc", "global_storage", "static_lifetime"]
+tactic_class = "memory"
+semantic_class = "allocation"
+notes = "Storage valid for the whole program run."
+
+[[synonym]]
+canonical = "allocation_size"
+aliases = ["alloc_size", "layout_size", "capacity"]
+tactic_class = "memory"
+semantic_class = "allocation"
+notes = "The number of bytes requested; must be paired with a matching deallocation."
+
+[[synonym]]
+canonical = "allocation_ownership"
+aliases = ["alloc_owner", "allocation_owner", "owns_allocation"]
+tactic_class = "memory"
+semantic_class = "allocation"
+notes = "Which function is responsible for freeing the block."
+
+[[synonym]]
+canonical = "deallocation"
+aliases = ["free", "dealloc", "release", "drop_heap"]
+tactic_class = "memory"
+semantic_class = "allocation"
+notes = "Returns a block to the allocator; must happen exactly once."
+
+[[synonym]]
+canonical = "double_free"
+aliases = ["doubleFree", "double-free", "use_after_free_variant"]
+tactic_class = "memory"
+semantic_class = "memory-safety"
+notes = "Two deallocations of one block; a classic soundness counterexample."
+
+[[synonym]]
+canonical = "use_after_free"
+aliases = ["useAfterFree", "use-after-free", "dangling_heap_access"]
+tactic_class = "memory"
+semantic_class = "memory-safety"
+notes = "Access to a block that has been deallocated; excluded by ownership typing."
+
+[[synonym]]
+canonical = "dangling_pointer"
+aliases = ["dangling_ref"]
+tactic_class = "memory"
+semantic_class = "memory-safety"
+notes = "A pointer whose referent is no longer live."
+
+[[synonym]]
+canonical = "null_pointer"
+aliases = ["null", "nullPtr", "nullptr", "NULL"]
+tactic_class = "memory"
+semantic_class = "pointer"
+notes = "The distinguished non-address value."
+
+[[synonym]]
+canonical = "non_null_pointer"
+aliases = ["nonNull", "NonNull", "non_null", "not_null"]
+tactic_class = "memory"
+semantic_class = "pointer"
+notes = "A pointer refined to exclude null; the premise of safe dereference."
+
+[[synonym]]
+canonical = "null_non_aliasing"
+aliases = ["nullNonAliasing", "null_excludes_alias", "nonnull_disjoint"]
+tactic_class = "memory"
+semantic_class = "pointer"
+notes = "Null pointers never alias a live object, which lets region reasoning ignore them."
+
+[[synonym]]
+canonical = "pointer_provenance"
+aliases = ["provenance", "alloc_id", "strict_provenance"]
+tactic_class = "memory"
+semantic_class = "pointer"
+notes = "The allocation a pointer derives from; integer round-trips may lose it."
+
+[[synonym]]
+canonical = "strict_provenance"
+aliases = ["strictProvenance", "with_addr", "expose_addr", "provenance_api"]
+tactic_class = "memory"
+semantic_class = "pointer"
+notes = "Rust's explicit provenance API: expose, then with_addr."
+
+[[synonym]]
+canonical = "address_space"
+aliases = ["virtual_memory_space", "flat_address_space"]
+tactic_class = "memory"
+semantic_class = "memory"
+notes = "The set of addresses a program may name."
+
+[[synonym]]
+canonical = "virtual_address"
+aliases = ["vaddr", "logical_address"]
+tactic_class = "memory"
+semantic_class = "memory"
+notes = "Address before translation by the memory-management unit."
+
+[[synonym]]
+canonical = "physical_address"
+aliases = ["paddr", "real_address"]
+tactic_class = "memory"
+semantic_class = "memory"
+notes = "Address after translation."
+
+[[synonym]]
+canonical = "page"
+aliases = ["frame_size", "page_size"]
+tactic_class = "memory"
+semantic_class = "memory"
+notes = "The granularity of memory mapping and protection."
+
+[[synonym]]
+canonical = "page_table"
+aliases = ["pageTable", "page-table", "translation_table"]
+tactic_class = "memory"
+semantic_class = "memory"
+notes = "The map from virtual to physical pages."
+
+[[synonym]]
+canonical = "memory_mapping"
+aliases = ["mmap", "mapping", "mapped_region"]
+tactic_class = "memory"
+semantic_class = "memory"
+notes = "A region installed by the operating system."
+
+[[synonym]]
+canonical = "memory_protection"
+aliases = ["mprotect", "protection", "read_write_exec"]
+tactic_class = "memory"
+semantic_class = "memory"
+notes = "Per-page permissions; the enforcement point behind W^X."
+
+[[synonym]]
+canonical = "read_only_memory"
+aliases = ["readOnly", "read-only", "immutable_region"]
+tactic_class = "memory"
+semantic_class = "memory"
+notes = "A region that may not be written; a frame-like permission."
+
+[[synonym]]
+canonical = "executable_memory"
+aliases = ["executable", "code_page", "wx_violation"]
+tactic_class = "memory"
+semantic_class = "memory"
+notes = "A region that may be executed; the other half of W^X."
+
+[[synonym]]
+canonical = "volatile_access"
+aliases = ["volatile", "volatileRead", "volatileWrite", "volatile_reg"]
+tactic_class = "memory"
+semantic_class = "memory"
+notes = "Access that the compiler may not elide or reorder."
+
+[[synonym]]
+canonical = "atomic_access"
+aliases = ["atomic", "atomicLoad", "atomicStore", "acquire", "release"]
+tactic_class = "memory"
+semantic_class = "memory"
+notes = "Access with ordering guarantees; the primitive of concurrency proofs."
+
+[[synonym]]
+canonical = "unaligned_access"
+aliases = ["unaligned", "unalignedRead", "misaligned_access"]
+tactic_class = "memory"
+semantic_class = "memory"
+notes = "An access whose address does not satisfy the type's alignment; UB in Rust."
+
+[[synonym]]
+canonical = "endian_swap"
+aliases = ["byteswap", "bswap", "swapBytes", "byte_swap", "to_be", "to_le"]
+tactic_class = "memory"
+semantic_class = "byte-order"
+notes = "Reverse the byte order of a scalar; Zig std.mem.byteSwapAll."
+
+[[synonym]]
+canonical = "byte_order"
+aliases = ["endianness", "endian", "byte", "order"]
+tactic_class = "memory"
+semantic_class = "byte-order"
+notes = "Which end of a multi-byte value sits at the lower address."
+
+[[synonym]]
+canonical = "big_endian"
+aliases = ["bigEndian", "big-endian", "BE", "network_order"]
+tactic_class = "memory"
+semantic_class = "byte-order"
+notes = "Most significant byte first; the IP/TCP convention."
+
+[[synonym]]
+canonical = "little_endian"
+aliases = ["littleEndian", "little-endian", "LE", "host_order"]
+tactic_class = "memory"
+semantic_class = "byte-order"
+notes = "Least significant byte first; x86, ARM in default mode, RISC-V."
+
+[[synonym]]
+canonical = "network_byte_order"
+aliases = ["networkOrder", "ntoh", "hton", "network_endian"]
+tactic_class = "memory"
+semantic_class = "byte-order"
+notes = "Big-endian as fixed by the IETF protocols."
+
+[[synonym]]
+canonical = "host_byte_order"
+aliases = ["hostOrder", "native_endian", "host_endian"]
+tactic_class = "memory"
+semantic_class = "byte-order"
+notes = "Whatever the current machine uses; a portability hazard in proofs."
+
+[[synonym]]
+canonical = "endianness_conversion"
+aliases = ["toBe", "toLe", "fromBe", "fromLe", "endianConvert"]
+tactic_class = "memory"
+semantic_class = "byte-order"
+notes = "Explicit conversion at a serialisation boundary."
+
+[[synonym]]
+canonical = "serialisation_roundtrip"
+aliases = ["roundtrip", "serialise_deserialise", "encode_decode"]
+tactic_class = "memory"
+semantic_class = "byte-order"
+notes = "The proof obligation that encode followed by decode is the identity."
+
+[[synonym]]
+canonical = "memory_copy"
+aliases = ["memcpy", "copy_memory", "copy_nonoverlapping"]
+tactic_class = "memory"
+semantic_class = "memory-operation"
+notes = "Copies between regions that must not overlap (or must, for memmove)."
+
+[[synonym]]
+canonical = "memory_move"
+aliases = ["memmove", "move_memory", "overlapping_copy"]
+tactic_class = "memory"
+semantic_class = "memory-operation"
+notes = "Copy that tolerates overlap by choosing a direction."
+
+[[synonym]]
+canonical = "memory_compare"
+aliases = ["memcmp", "compare_bytes", "byte_equality"]
+tactic_class = "memory"
+semantic_class = "memory-operation"
+notes = "Lexicographic comparison; sensitive to padding bytes."
+
+[[synonym]]
+canonical = "memory_set"
+aliases = ["memset", "fill_bytes", "zero_fill"]
+tactic_class = "memory"
+semantic_class = "memory-operation"
+notes = "Writes one byte value across a region."
+
+[[synonym]]
+canonical = "buffer"
+aliases = ["buf", "bytes_span"]
+tactic_class = "memory"
+semantic_class = "memory"
+notes = "A contiguous region addressed by pointer and length."
+
+[[synonym]]
+canonical = "buffer_length"
+aliases = ["buf_len", "len", "length_field"]
+tactic_class = "memory"
+semantic_class = "memory"
+notes = "The second component of every slice; the first thing a memory-safety proof constrains."
+
+[[synonym]]
+canonical = "buffer_overflow"
+aliases = ["overflow_write", "out_of_bounds_write"]
+tactic_class = "memory"
+semantic_class = "memory-safety"
+notes = "A write past the region's end; the archetypal CWE."
+
+[[synonym]]
+canonical = "arena_allocation"
+aliases = ["arena", "bump_allocator", "region_allocator"]
+tactic_class = "memory"
+semantic_class = "allocation"
+notes = "Bulk allocation released all at once; a natural region."
+
+[[synonym]]
+canonical = "slab_allocation"
+aliases = ["slab", "pool_allocator", "freelist"]
+tactic_class = "memory"
+semantic_class = "allocation"
+notes = "Fixed-size object cache; its invariants are a standard separation-logic exercise."
+
+[[synonym]]
+canonical = "zero_initialised"
+aliases = ["zeroed", "zero_initialized", "zero_init"]
+tactic_class = "memory"
+semantic_class = "initialisation"
+notes = "Bytes set to zero before use."
+
+[[synonym]]
+canonical = "uninitialised_memory"
+aliases = ["uninit", "uninitialized", "MaybeUninit", "undef"]
+tactic_class = "memory"
+semantic_class = "initialisation"
+notes = "Storage without a value; reading it is undefined."
+
+[[synonym]]
+canonical = "initialisation_invariant"
+aliases = ["initInvariant", "fully_initialized", "init_state"]
+tactic_class = "memory"
+semantic_class = "initialisation"
+notes = "The predicate that turns raw storage into a value of a type."
+
+[[synonym]]
+canonical = "drop_in_place"
+aliases = ["dropInPlace", "destructor_call"]
+tactic_class = "memory"
+semantic_class = "allocation"
+notes = "Runs the destructor without freeing storage."
+
+[[synonym]]
+canonical = "memory_model"
+aliases = ["memoryModel", "memory-model", "consistency_model"]
+tactic_class = "memory"
+semantic_class = "memory"
+notes = "The rules that say which writes a read may observe."
+
+# ============================================================
+# Ownership, borrowing, lifetimes and slices
+# ============================================================
+
+[[synonym]]
+canonical = "ownership"
+aliases = ["own", "owns", "owned_value"]
+tactic_class = "ownership"
+semantic_class = "ownership"
+notes = "Exactly one owner is responsible for a value's release."
+
+[[synonym]]
+canonical = "move_semantics"
+aliases = ["move", "moved", "move-out", "affine_move"]
+tactic_class = "ownership"
+semantic_class = "ownership"
+notes = "Transfer of ownership that invalidates the source binding."
+
+[[synonym]]
+canonical = "copy_semantics"
+aliases = ["copy", "Copy", "bitwise_copy"]
+tactic_class = "ownership"
+semantic_class = "ownership"
+notes = "Duplication that leaves the source valid."
+
+[[synonym]]
+canonical = "clone_semantics"
+aliases = ["clone", "Clone", "deep_copy"]
+tactic_class = "ownership"
+semantic_class = "ownership"
+notes = "Explicit duplication, possibly of owned heap data."
+
+[[synonym]]
+canonical = "borrow"
+aliases = ["borrow_ref", "reference", "ref"]
+tactic_class = "ownership"
+semantic_class = "borrowing"
+notes = "Temporary access without transfer of ownership."
+
+[[synonym]]
+canonical = "shared_borrow"
+aliases = ["sharedBorrow", "immutable_borrow", "ref_shared", "&T"]
+tactic_class = "ownership"
+semantic_class = "borrowing"
+notes = "Any number of readers, no writers."
+
+[[synonym]]
+canonical = "mutable_borrow"
+aliases = ["mutableBorrow", "exclusive_borrow", "ref_mut", "&mut", "T"]
+tactic_class = "ownership"
+semantic_class = "borrowing"
+notes = "Exactly one writer, no readers."
+
+[[synonym]]
+canonical = "borrow_checker"
+aliases = ["borrowck", "NLL_analysis"]
+tactic_class = "ownership"
+semantic_class = "borrowing"
+notes = "The static analysis that enforces the aliasing discipline."
+
+[[synonym]]
+canonical = "lifetime"
+aliases = ["region_annotation", "'a"]
+tactic_class = "ownership"
+semantic_class = "lifetime"
+notes = "The interval over which a reference is usable."
+
+[[synonym]]
+canonical = "lifetime_elision"
+aliases = ["elision", "inferred_lifetime"]
+tactic_class = "ownership"
+semantic_class = "lifetime"
+notes = "Omitted annotations resolved by the stated rules."
+
+[[synonym]]
+canonical = "lifetime_bound"
+aliases = ["outlives", "'a_outlives_'b"]
+tactic_class = "ownership"
+semantic_class = "lifetime"
+notes = "A constraint that one region contains another."
+
+[[synonym]]
+canonical = "region_inference"
+aliases = ["regionInference", "NLL"]
+tactic_class = "ownership"
+semantic_class = "lifetime"
+notes = "Inferring region constraints from the program shape."
+
+[[synonym]]
+canonical = "reborrow"
+aliases = ["reborrow_mut", "reborrowing"]
+tactic_class = "ownership"
+semantic_class = "borrowing"
+notes = "A shorter borrow derived from an existing one."
+
+[[synonym]]
+canonical = "borrow_split"
+aliases = ["borrowSplit", "split_borrow", "split_at_mut"]
+tactic_class = "ownership"
+semantic_class = "borrowing"
+notes = "Dividing one mutable borrow into disjoint parts; needs disjointness."
+
+[[synonym]]
+canonical = "disjoint_borrow"
+aliases = ["disjointBorrow", "disjoint_borrows", "two_mutable_borrows"]
+tactic_class = "ownership"
+semantic_class = "borrowing"
+notes = "Two borrows with provably non-overlapping extents."
+
+[[synonym]]
+canonical = "two_phase_borrow"
+aliases = ["twoPhase", "reservation"]
+tactic_class = "ownership"
+semantic_class = "borrowing"
+notes = "Reserve then activate, to keep argument evaluation order-friendly."
+
+[[synonym]]
+canonical = "dangling_reference"
+aliases = ["danglingRef", "dangle"]
+tactic_class = "ownership"
+semantic_class = "lifetime"
+notes = "A reference outliving its referent; the error lifetimes prevent."
+
+[[synonym]]
+canonical = "aliasing"
+aliases = ["alias", "overlap"]
+tactic_class = "ownership"
+semantic_class = "aliasing"
+notes = "Two accesses to the same location; the thing separation logic forbids."
+
+[[synonym]]
+canonical = "mutable_aliasing"
+aliases = ["mutableAliasing", "unique_alias", "exclusive_access"]
+tactic_class = "ownership"
+semantic_class = "aliasing"
+notes = "Two writers, or a writer and a reader, at once."
+
+[[synonym]]
+canonical = "uniqueness"
+aliases = ["unique", "unique_ownership", "sole_reference"]
+tactic_class = "ownership"
+semantic_class = "aliasing"
+notes = "Exactly one live access path to a location."
+
+[[synonym]]
+canonical = "linear_type"
+aliases = ["linear", "use_exactly_once"]
+tactic_class = "ownership"
+semantic_class = "linearity"
+notes = "Every value is consumed exactly once."
+
+[[synonym]]
+canonical = "affine_type"
+aliases = ["affine", "at_most_once"]
+tactic_class = "ownership"
+semantic_class = "linearity"
+notes = "Values may be discarded but not duplicated."
+
+[[synonym]]
+canonical = "linear_consume"
+aliases = ["consume", "lin_consume", "use_once", "consume_linear"]
+tactic_class = "ownership"
+semantic_class = "linearity"
+notes = "The elimination rule of a linear resource: the handle ceases to exist."
+
+[[synonym]]
+canonical = "relevant_type"
+aliases = ["relevant", "relevance", "at_least_once"]
+tactic_class = "ownership"
+semantic_class = "linearity"
+notes = "Values may be duplicated but not discarded."
+
+[[synonym]]
+canonical = "ordered_type"
+aliases = ["ordered", "noncommutative_use"]
+tactic_class = "ownership"
+semantic_class = "linearity"
+notes = "Resources must be used in a fixed order."
+
+[[synonym]]
+canonical = "drop_semantics"
+aliases = ["Drop", "drop_glue", "destructor_glue"]
+tactic_class = "ownership"
+semantic_class = "ownership"
+notes = "The code run when a value's scope ends."
+
+[[synonym]]
+canonical = "destructor"
+aliases = ["finalizer", "dtor"]
+tactic_class = "ownership"
+semantic_class = "ownership"
+notes = "Releases the resources a value holds."
+
+[[synonym]]
+canonical = "resource_release"
+aliases = ["release_resource", "free_resource", "close_handle"]
+tactic_class = "ownership"
+semantic_class = "ownership"
+notes = "The event every ownership discipline must schedule exactly once."
+
+[[synonym]]
+canonical = "pinning"
+aliases = ["pin", "Pin", "!Unpin", "pinned_value"]
+tactic_class = "ownership"
+semantic_class = "ownership"
+notes = "A value whose address must not change after pinning."
+
+[[synonym]]
+canonical = "interior_mutability"
+aliases = ["interiorMutability", "Cell", "RefCell", "UnsafeCell"]
+tactic_class = "ownership"
+semantic_class = "ownership"
+notes = "Mutation through a shared reference, with the check moved to run time."
+
+[[synonym]]
+canonical = "reference_counting"
+aliases = ["Rc", "refcount"]
+tactic_class = "ownership"
+semantic_class = "ownership"
+notes = "Shared ownership with a counted release."
+
+[[synonym]]
+canonical = "atomic_reference_counting"
+aliases = ["Arc", "atomic_refcount", "thread_safe_rc"]
+tactic_class = "ownership"
+semantic_class = "ownership"
+notes = "Reference counting safe across threads."
+
+[[synonym]]
+canonical = "weak_reference"
+aliases = ["Weak", "weak_ref", "weak_count"]
+tactic_class = "ownership"
+semantic_class = "ownership"
+notes = "A non-owning reference that can observe destruction."
+
+[[synonym]]
+canonical = "cycle_leak"
+aliases = ["reference_cycle", "strong_cycle"]
+tactic_class = "ownership"
+semantic_class = "ownership"
+notes = "A cycle that counting cannot collect; a standard liveness counterexample."
+
+[[synonym]]
+canonical = "slice"
+aliases = ["Slice", "[]T", "view_into"]
+tactic_class = "ownership"
+semantic_class = "slice"
+notes = "A pointer plus a length: a bounded window into a contiguous region."
+
+[[synonym]]
+canonical = "slice_length"
+aliases = ["sliceLen", "slice_len", "len_of_slice"]
+tactic_class = "ownership"
+semantic_class = "slice"
+notes = "The number of elements; the bound in every index obligation."
+
+[[synonym]]
+canonical = "slice_index"
+aliases = ["index", "indexSlice", "getElem", "lookup"]
+tactic_class = "ownership"
+semantic_class = "slice"
+notes = "Read an element; requires the index be in bounds."
+
+[[synonym]]
+canonical = "slice_range"
+aliases = ["range", "subslice_range", "range_index"]
+tactic_class = "ownership"
+semantic_class = "slice"
+notes = "A sub-window described by start and end."
+
+[[synonym]]
+canonical = "slice_disjoint"
+aliases = ["sliceDisjoint", "disjoint_slices", "non_overlapping_slices"]
+tactic_class = "ownership"
+semantic_class = "slice"
+notes = "Two slices cover no common byte; the precondition of parallel mutation."
+
+[[synonym]]
+canonical = "contiguous_subslice"
+aliases = ["contiguous", "contiguous_slice", "contiguous_region"]
+tactic_class = "ownership"
+semantic_class = "slice"
+notes = "A range with no gaps; what makes a slice view possible."
+
+[[synonym]]
+canonical = "split_at"
+aliases = ["splitAt", "split-at", "split_slice", "divide_slice"]
+tactic_class = "ownership"
+semantic_class = "slice"
+notes = "Two disjoint subslices covering the original."
+
+[[synonym]]
+canonical = "split_at_mut"
+aliases = ["splitAtMut", "mutable_split"]
+tactic_class = "ownership"
+semantic_class = "slice"
+notes = "The mutable variant; its soundness rests on disjointness."
+
+[[synonym]]
+canonical = "chunk"
+aliases = ["chunks", "chunked", "windows", "in_chunks"]
+tactic_class = "ownership"
+semantic_class = "slice"
+notes = "Fixed-size, non-overlapping consecutive divisions."
+
+[[synonym]]
+canonical = "subslice"
+aliases = ["slice_of_slice", "prefix_of"]
+tactic_class = "ownership"
+semantic_class = "slice"
+notes = "A slice of a slice; extent inclusion is transitive."
+
+[[synonym]]
+canonical = "raw_slice"
+aliases = ["rawSlice", "slice_raw", "parts_raw", "ptr_len"]
+tactic_class = "ownership"
+semantic_class = "slice"
+notes = "The raw pointer and length pair, with no validity guarantee."
+
+[[synonym]]
+canonical = "span"
+aliases = ["Span", "extent"]
+tactic_class = "ownership"
+semantic_class = "slice"
+notes = "The interval of memory a slice or region occupies."
+
+[[synonym]]
+canonical = "view"
+aliases = ["View", "read_view"]
+tactic_class = "ownership"
+semantic_class = "slice"
+notes = "A read-only window into another structure."
+
+[[synonym]]
+canonical = "mutable_view"
+aliases = ["mutView", "mut_view", "exclusive_window"]
+tactic_class = "ownership"
+semantic_class = "slice"
+notes = "A window through which writes are permitted."
+
+[[synonym]]
+canonical = "bounds_check"
+aliases = ["boundsCheck", "index_check"]
+tactic_class = "ownership"
+semantic_class = "bounds"
+notes = "The dynamic test that an index lies within the length."
+
+[[synonym]]
+canonical = "in_bounds"
+aliases = ["inBounds", "index_in_range", "bounds_ok"]
+tactic_class = "ownership"
+semantic_class = "bounds"
+notes = "The proposition that an index is within 0..len; the precondition of indexing."
+
+[[synonym]]
+canonical = "out_of_bounds"
+aliases = ["outOfBounds", "oob", "index_overflow"]
+tactic_class = "ownership"
+semantic_class = "bounds"
+notes = "An index outside the valid range; UB in unchecked languages."
+
+[[synonym]]
+canonical = "index_safety"
+aliases = ["indexSafety", "no_oob"]
+tactic_class = "ownership"
+semantic_class = "bounds"
+notes = "The property that every index is in bounds."
+
+[[synonym]]
+canonical = "memory_safety"
+aliases = ["memorySafety", "memory-safety", "no_ub"]
+tactic_class = "ownership"
+semantic_class = "memory-safety"
+notes = "No out-of-bounds access, no use after free, no invalid dereference."
+
+[[synonym]]
+canonical = "type_safety"
+aliases = ["typeSafety", "type-safety", "well_typed_no_go"]
+tactic_class = "ownership"
+semantic_class = "memory-safety"
+notes = "Well-typed programs do not get stuck."
+
+[[synonym]]
+canonical = "temporal_safety"
+aliases = ["temporalSafety", "temporal-safety", "use_after_free_excluded"]
+tactic_class = "ownership"
+semantic_class = "memory-safety"
+notes = "No access outside a value's lifetime."
+
+# ============================================================
+# Separation logic, heap and region framing
+# ============================================================
+
+[[synonym]]
+canonical = "separation_logic"
+aliases = ["separationLogic", "sep_logic", "SL", "separation-logic"]
+tactic_class = "separation"
+semantic_class = "separation-logic"
+notes = "Heap reasoning with a conjunction that implies disjointness."
+
+[[synonym]]
+canonical = "separating_conjunction"
+aliases = ["star", "sepConj", "separating_and", "points_to_star"]
+tactic_class = "separation"
+semantic_class = "separating-conjunction"
+notes = "P * Q: the heap splits into two disjoint parts satisfying P and Q."
+
+[[synonym]]
+canonical = "separating_implication"
+aliases = ["wand", "magic_wand", "-o"]
+tactic_class = "separation"
+semantic_class = "separating-implication"
+notes = "P -* Q: the weakest heap that, combined with P, satisfies Q."
+
+[[synonym]]
+canonical = "points_to"
+aliases = ["mapsto", "pointsTo", "p_mapsto", "heap_cell"]
+tactic_class = "separation"
+semantic_class = "points-to"
+notes = "x |-> v: the heap contains exactly one cell at x holding v."
+
+[[synonym]]
+canonical = "emp"
+aliases = ["empty_heap", "empty_separating"]
+tactic_class = "separation"
+semantic_class = "empty-heap"
+notes = "The empty heap; the unit of separating conjunction."
+
+[[synonym]]
+canonical = "heap_disjointness"
+aliases = ["disjoint", "heaps_disjoint", "heap_split"]
+tactic_class = "separation"
+semantic_class = "disjointness"
+notes = "Two heaps whose domains do not intersect."
+
+[[synonym]]
+canonical = "heap_union"
+aliases = ["union_heaps", "heap_plus"]
+tactic_class = "separation"
+semantic_class = "disjointness"
+notes = "Partial union, defined only on disjoint heaps."
+
+[[synonym]]
+canonical = "frame_rule"
+aliases = ["frame", "frameRule", "preserved_assertion"]
+tactic_class = "separation"
+semantic_class = "frame-rule"
+notes = "If {P} c {Q} then {P * R} c {Q * R}: the rule that makes local reasoning scale."
+
+[[synonym]]
+canonical = "frame_property"
+aliases = ["frameProperty", "locality"]
+tactic_class = "separation"
+semantic_class = "frame-rule"
+notes = "A property preserved when the state is extended with untouched resources."
+
+[[synonym]]
+canonical = "small_axioms"
+aliases = ["smallAxioms", "small_axiom", "axioms_for_primitives"]
+tactic_class = "separation"
+semantic_class = "frame-rule"
+notes = "Specify each primitive on the heap cells it actually touches."
+
+[[synonym]]
+canonical = "ghost_state"
+aliases = ["ghost", "ghostState", "ghost_variable", "logical_state"]
+tactic_class = "separation"
+semantic_class = "ghost-state"
+notes = "Specification-only state that must be erased before execution."
+
+[[synonym]]
+canonical = "ghost_update"
+aliases = ["ghostUpdate", "ghost_step"]
+tactic_class = "separation"
+semantic_class = "ghost-state"
+notes = "A specification-only transition, sound only if it commutes with the code."
+
+[[synonym]]
+canonical = "invariant"
+aliases = ["Inv", "loop_invariant", "global_invariant"]
+tactic_class = "separation"
+semantic_class = "invariant"
+notes = "A property preserved by every transition of the system."
+
+[[synonym]]
+canonical = "loop_invariant"
+aliases = ["loopInvariant", "while_invariant"]
+tactic_class = "separation"
+semantic_class = "invariant"
+notes = "The assertion preserved by each iteration; basis of Hoare while rules."
+
+[[synonym]]
+canonical = "class_invariant"
+aliases = ["classInvariant", "rep_invariant", "representation_invariant"]
+tactic_class = "separation"
+semantic_class = "invariant"
+notes = "The property every public method may assume and must re-establish."
+
+[[synonym]]
+canonical = "invariant_preservation"
+aliases = ["preservesInvariant", "preserves_invariant", "invariant_preserved"]
+tactic_class = "separation"
+semantic_class = "invariant"
+notes = "The proof obligation for each operation that may break the invariant."
+
+[[synonym]]
+canonical = "rely_guarantee"
+aliases = ["relyGuarantee", "RG", "rely_guarantee_condition"]
+tactic_class = "separation"
+semantic_class = "rely-guarantee"
+notes = "Assume environment steps satisfy Rely, guarantee own steps satisfy Guarantee."
+
+[[synonym]]
+canonical = "concurrent_separation_logic"
+aliases = ["CSL", "concurrentSeparationLogic", "RGSep", "deny_guarantee"]
+tactic_class = "separation"
+semantic_class = "concurrent-separation-logic"
+notes = "Separation logic plus interference: CSL, RGSep, deny-guarantee, Iris."
+
+[[synonym]]
+canonical = "resource_invariant"
+aliases = ["resourceInvariant", "shared_resource"]
+tactic_class = "separation"
+semantic_class = "concurrent-separation-logic"
+notes = "An invariant over a shared resource that any thread may temporarily own."
+
+[[synonym]]
+canonical = "ownership_transfer"
+aliases = ["ownershipTransfer", "transfer_ownership", "hand_over"]
+tactic_class = "separation"
+semantic_class = "concurrent-separation-logic"
+notes = "Moving a heap cell between threads is a separating-conjunction split."
+
+[[synonym]]
+canonical = "heap_abs"
+aliases = ["heap", "abstraction", "heap_representation"]
+tactic_class = "separation"
+semantic_class = "separation-logic"
+notes = "Mapping concrete cells to an abstract data structure."
+
+[[synonym]]
+canonical = "abstract_predicate"
+aliases = ["abstractPredicate", "inductive_predicate", "repr_predicate", "linked_list_pred"]
+tactic_class = "separation"
+semantic_class = "separation-logic"
+notes = "A recursive predicate describing a shape such as a list or tree."
+
+[[synonym]]
+canonical = "list_segment"
+aliases = ["listSegment", "lseg"]
+tactic_class = "separation"
+semantic_class = "separation-logic"
+notes = "The classic recursive predicate between two pointers."
+
+[[synonym]]
+canonical = "tree_predicate"
+aliases = ["treePredicate", "btree", "heap_tree"]
+tactic_class = "separation"
+semantic_class = "separation-logic"
+notes = "Recursive ownership of a tree-shaped heap."
+
+[[synonym]]
+canonical = "footprint"
+aliases = ["read_footprint", "write_footprint", "touched_cells"]
+tactic_class = "separation"
+semantic_class = "frame-rule"
+notes = "The part of the state a command actually depends on or changes."
+
+[[synonym]]
+canonical = "local_reasoning"
+aliases = ["localReasoning"]
+tactic_class = "separation"
+semantic_class = "frame-rule"
+notes = "Reason about a command using only its footprint."
+
+[[synonym]]
+canonical = "region"
+aliases = ["Region", "arena_region"]
+tactic_class = "separation"
+semantic_class = "region"
+notes = "A named extent of memory whose liveness is tracked as a whole."
+
+[[synonym]]
+canonical = "region_live"
+aliases = ["regionLive", "live_region", "region_alive"]
+tactic_class = "separation"
+semantic_class = "region"
+notes = "The region is still allocated and usable."
+
+[[synonym]]
+canonical = "region_dead"
+aliases = ["regionDead", "dead_region", "freed_region"]
+tactic_class = "separation"
+semantic_class = "region"
+notes = "The region has been released; accesses are invalid."
+
+[[synonym]]
+canonical = "region_typing"
+aliases = ["regionTyping", "region_kind"]
+tactic_class = "separation"
+semantic_class = "region"
+notes = "Taint-style association of allocations with regions."
+
+[[synonym]]
+canonical = "region_inference_static"
+aliases = ["regionInferenceStatic", "Tofte_Talpin", "region_analysis"]
+tactic_class = "separation"
+semantic_class = "region"
+notes = "Static region inference as in Tofte-Talpin."
+
+[[synonym]]
+canonical = "region_based_memory_management"
+aliases = ["RBMM", "region_based_memory", "regions_release"]
+tactic_class = "separation"
+semantic_class = "region"
+notes = "Allocation in regions released wholesale."
+
+[[synonym]]
+canonical = "stack_region"
+aliases = ["stackRegion", "frame_region"]
+tactic_class = "separation"
+semantic_class = "region"
+notes = "The region belonging to one stack frame."
+
+[[synonym]]
+canonical = "heap_region"
+aliases = ["heapRegion", "allocation_region"]
+tactic_class = "separation"
+semantic_class = "region"
+notes = "A region carved from the heap."
+
+[[synonym]]
+canonical = "separation_algebra"
+aliases = ["separationAlgebra", "sep_algebra", "partial_commutative_monoid"]
+tactic_class = "separation"
+semantic_class = "separation-logic"
+notes = "A partial commutative monoid of resources; the algebraic core of SL."
+
+[[synonym]]
+canonical = "core_predicate"
+aliases = ["core", "core_of_resource", "duplicable_part"]
+tactic_class = "separation"
+semantic_class = "separation-logic"
+notes = "The duplicable part of a resource in a separation algebra."
+
+[[synonym]]
+canonical = "precise_predicate"
+aliases = ["precisePredicate", "precise", "predicate_determinacy"]
+tactic_class = "separation"
+semantic_class = "separation-logic"
+notes = "A predicate satisfied by exactly one sub-heap of any larger heap."
+
+[[synonym]]
+canonical = "spatial_predicate"
+aliases = ["spatial", "heap_shape"]
+tactic_class = "separation"
+semantic_class = "separation-logic"
+notes = "A predicate whose truth depends on the heap."
+
+[[synonym]]
+canonical = "pure_predicate"
+aliases = ["pure", "heap_independent", "state_independent"]
+tactic_class = "separation"
+semantic_class = "separation-logic"
+notes = "A predicate whose truth is independent of the heap."
+
+[[synonym]]
+canonical = "structural_frame"
+aliases = ["structuralFrame"]
+tactic_class = "separation"
+semantic_class = "frame-rule"
+notes = "The frame-inference step performed by a tool rather than stated by the user."
+
+[[synonym]]
+canonical = "read_only_frame"
+aliases = ["readOnlyFrame", "const_frame"]
+tactic_class = "separation"
+semantic_class = "frame-rule"
+notes = "Framing over immutable data; the permission is duplicable."
+
+[[synonym]]
+canonical = "permission"
+aliases = ["Perm", "fractional_permission"]
+tactic_class = "separation"
+semantic_class = "permission"
+notes = "Ownership as a quantity that may be split and recombined."
+
+[[synonym]]
+canonical = "fractional_permission"
+aliases = ["fractionalPermission", "fractional_perm", "fraction_read"]
+tactic_class = "separation"
+semantic_class = "permission"
+notes = "A rational share of a heap cell; any positive share permits reading."
+
+[[synonym]]
+canonical = "read_permission"
+aliases = ["readPermission", "read_perm", "reader"]
+tactic_class = "separation"
+semantic_class = "permission"
+notes = "Permission sufficient to read but not write."
+
+[[synonym]]
+canonical = "write_permission"
+aliases = ["writePermission", "write_perm", "exclusive_write"]
+tactic_class = "separation"
+semantic_class = "permission"
+notes = "The whole permission required to write."
+
+[[synonym]]
+canonical = "borrow_permission"
+aliases = ["borrowPermission", "unique_borrow", "temporary_ownership"]
+tactic_class = "separation"
+semantic_class = "permission"
+notes = "A permission derived from a borrow and returned on its end."
+
+[[synonym]]
+canonical = "lifetime_logic"
+aliases = ["lifetimeLogic", "lifeline"]
+tactic_class = "separation"
+semantic_class = "permission"
+notes = "Permissions indexed by lifetimes; RustBelt's core idea."
+
+[[synonym]]
+canonical = "stacked_borrows"
+aliases = ["stackedBorrows", "borrow_stack"]
+tactic_class = "separation"
+semantic_class = "permission"
+notes = "A concrete model of aliasing discipline used by Miri."
+
+[[synonym]]
+canonical = "tree_borrows"
+aliases = ["treeBorrows", "borrow_tree"]
+tactic_class = "separation"
+semantic_class = "permission"
+notes = "The successor aliasing model to stacked borrows."
+
+[[synonym]]
+canonical = "ghost_resource"
+aliases = ["ghostResource", "authoritative_view"]
+tactic_class = "separation"
+semantic_class = "ghost-state"
+notes = "Authoritative and fragment resources in Iris-style ghost state."
+
+[[synonym]]
+canonical = "heap_cell"
+aliases = ["heapCell", "cell"]
+tactic_class = "separation"
+semantic_class = "points-to"
+notes = "One addressable unit of the heap model."
+
+[[synonym]]
+canonical = "strongest_postcondition"
+aliases = ["strongestPostcondition", "strongest_post", "SP", "sp"]
+tactic_class = "separation"
+semantic_class = "specification"
+notes = "The set of states reachable by executing the command from the given precondition."
+
+[[synonym]]
+canonical = "weakest_precondition"
+aliases = ["weakestPrecondition", "weakest_pre", "WP", "wp"]
+tactic_class = "separation"
+semantic_class = "specification"
+notes = "The set of states from which every terminating execution satisfies the postcondition."
+
+[[synonym]]
+canonical = "predicate_transformer"
+aliases = ["predicateTransformer", "transformer", "wp_semantics"]
+tactic_class = "separation"
+semantic_class = "specification"
+notes = "A function from postconditions to preconditions; the semantic core of Hoare logic."
+
+[[synonym]]
+canonical = "demonically_terminating"
+aliases = ["demonicallyTerminating", "total_correctness", "must_terminate"]
+tactic_class = "separation"
+semantic_class = "specification"
+notes = "Partial-correctness semantics plus termination; the strongest natural specification."
+
+[[synonym]]
+canonical = "partial_correctness"
+aliases = ["partialCorrectness", "safety_only"]
+tactic_class = "separation"
+semantic_class = "specification"
+notes = "Correct whenever it terminates."
+
+[[synonym]]
+canonical = "total_correctness"
+aliases = ["totalCorrectness", "termination_plus_safety"]
+tactic_class = "separation"
+semantic_class = "specification"
+notes = "Terminates in a state satisfying the postcondition."
+
+[[synonym]]
+canonical = "frame_condition"
+aliases = ["frameCondition", "modifies_reads", "writes_clause"]
+tactic_class = "separation"
+semantic_class = "specification"
+notes = "The clause that fixes which locations a command may write."
+
+[[synonym]]
+canonical = "protects_clause"
+aliases = ["protects", "protectsClause", "writes_clause", "SPARK"]
+tactic_class = "separation"
+semantic_class = "specification"
+notes = "SPARK's write frame; a state-relation restriction checked by the tool."
+
+[[synonym]]
+canonical = "reads_clause"
+aliases = ["reads", "readsClause", "data_dependency_contract"]
+tactic_class = "separation"
+semantic_class = "specification"
+notes = "SPARK's read dependency contract."
+
+[[synonym]]
+canonical = "data_dependency_contract"
+aliases = ["depends", "dependsClause", "dependency_contract"]
+tactic_class = "separation"
+semantic_class = "specification"
+notes = "Information-flow contract on inputs and outputs."
+
+[[synonym]]
+canonical = "global_contract"
+aliases = ["global", "withGlobal", "abstract_state_type"]
+tactic_class = "separation"
+semantic_class = "specification"
+notes = "SPARK's declaration of state read and written by a subprogram."
+
+[[synonym]]
+canonical = "separation_contract"
+aliases = ["sep", "none_sep", "is_separated", "independent_parameters"]
+tactic_class = "separation"
+semantic_class = "specification"
+notes = "SPARK's declaration that parameters may be reordered safely."
+
+[[synonym]]
+canonical = "specification_comment"
+aliases = ["spec", "specComment", "ACSL_JML_annotation", "contract_comment"]
+tactic_class = "separation"
+semantic_class = "specification"
+notes = "An in-source contract in ACSL, JML, SPARK or Dafny form."
+
+[[synonym]]
+canonical = "assume_statement"
+aliases = ["assume", "assumeStmt", "axiom_admitted", "unchecked_hypothesis"]
+tactic_class = "separation"
+semantic_class = "specification"
+notes = "An unchecked hypothesis; must be reported in an axiom audit."
+
+[[synonym]]
+canonical = "assert_statement"
+aliases = ["assert", "assertStmt", "assertion", "runtime_assert"]
+tactic_class = "separation"
+semantic_class = "specification"
+notes = "A claim the checker must discharge."
+
+[[synonym]]
+canonical = "assertion_failure"
+aliases = ["assertionFailure", "assert_failure", "assert_violation"]
+tactic_class = "separation"
+semantic_class = "specification"
+notes = "A violated assertion; the top of a counterexample trace."
+
+[[synonym]]
+canonical = "proof_obligation"
+aliases = ["PO", "proofObligation", "VC", "verification_condition"]
+tactic_class = "separation"
+semantic_class = "proof-obligation"
+notes = "A logical formula whose validity implies the property."
+
+[[synonym]]
+canonical = "invariant_obligation"
+aliases = ["invariantObligation", "init_preserved", "exit_obligation"]
+tactic_class = "separation"
+semantic_class = "proof-obligation"
+notes = "The three obligations of a loop invariant."
+
+[[synonym]]
+canonical = "termination_obligation"
+aliases = ["terminationObligation", "variant_decreases", "decrease_obligation"]
+tactic_class = "separation"
+semantic_class = "proof-obligation"
+notes = "The obligation that a measure strictly decreases."
+
+[[synonym]]
+canonical = "range_check"
+aliases = ["rangeCheck", "overflow_obligation"]
+tactic_class = "separation"
+semantic_class = "proof-obligation"
+notes = "The obligation that a value stays within its type's range."
+
+[[synonym]]
+canonical = "discharge"
+aliases = ["prove_obligation", "close_goal"]
+tactic_class = "separation"
+semantic_class = "proof-obligation"
+notes = "Proving a generated obligation, by SMT or interactively."
+
+[[synonym]]
+canonical = "undischarged_obligation"
+aliases = ["unproved", "undischarged", "open_obligation"]
+tactic_class = "separation"
+semantic_class = "proof-obligation"
+notes = "An obligation the tool could neither prove nor refute."
+
+[[synonym]]
+canonical = "counterexample"
+aliases = ["counter_example", "cex", "witness_violation"]
+tactic_class = "separation"
+semantic_class = "proof-obligation"
+notes = "A concrete state refuting the property; the useful output of a failed proof."
+
+[[synonym]]
+canonical = "soundness"
+aliases = ["Sound", "sound"]
+tactic_class = "separation"
+semantic_class = "soundness"
+notes = "Every provable judgement is true; the property a verification tool must have."
+
+[[synonym]]
+canonical = "completeness"
+aliases = ["Complete", "complete"]
+tactic_class = "separation"
+semantic_class = "soundness"
+notes = "Every true judgement is provable; rarely achieved and not needed for safety."
+
+[[synonym]]
+canonical = "relative_completeness"
+aliases = ["relativeCompleteness", "Cook_completeness"]
+tactic_class = "separation"
+semantic_class = "soundness"
+notes = "Completeness relative to the expressiveness of the assertion language."
+
+[[synonym]]
+canonical = "trusted_computing_base"
+aliases = ["TCB", "trustedBase"]
+tactic_class = "separation"
+semantic_class = "soundness"
+notes = "The components one must trust for the proof to mean anything."
+
+[[synonym]]
+canonical = "kernel_soundness"
+aliases = ["kernelSoundness", "small_kernel", "de_bruijn_criterion"]
+tactic_class = "separation"
+semantic_class = "soundness"
+notes = "A small checker whose correctness is the whole argument."
+
+[[synonym]]
+canonical = "proof_certificate"
+aliases = ["certificate", "proofCertificate", "checker_witness"]
+tactic_class = "separation"
+semantic_class = "proof-artefact"
+notes = "Machine-checkable evidence that a proof or refutation is valid."
+
+[[synonym]]
+canonical = "proof_term"
+aliases = ["proofTerm", "lambda_term", "curry_howard_term"]
+tactic_class = "separation"
+semantic_class = "proof-artefact"
+notes = "The program extracted from a proof under Curry-Howard."
+
+[[synonym]]
+canonical = "de_bruijn_criterion"
+aliases = ["deBruijn", "de_Bruijn_criterion"]
+tactic_class = "separation"
+semantic_class = "soundness"
+notes = "The formal statement of what it means for a proof checker to be sound."
+
+# ============================================================
+# Specifications, contracts and proof obligations
+# ============================================================
+
+[[synonym]]
+canonical = "precondition"
+aliases = ["pre", "requires", "Pre", "requires_clause"]
+tactic_class = "contract"
+semantic_class = "contract"
+notes = "The caller's obligation and the callee's assumption."
+
+[[synonym]]
+canonical = "postcondition"
+aliases = ["post", "ensures", "Post", "ensures_clause"]
+tactic_class = "contract"
+semantic_class = "contract"
+notes = "The callee's obligation at return."
+
+[[synonym]]
+canonical = "hoare_triple"
+aliases = ["hoareTriple", "hall_triple", "judgement"]
+tactic_class = "contract"
+semantic_class = "contract"
+notes = "{P} c {Q}: the canonical partial-correctness judgement."
+
+[[synonym]]
+canonical = "design_by_contract"
+aliases = ["DbC", "designByContract", "contract_programming"]
+tactic_class = "contract"
+semantic_class = "contract"
+notes = "Preconditions, postconditions and invariants as the interface."
+
+[[synonym]]
+canonical = "contract_inheritance"
+aliases = ["contractInheritance", "behavioural_subtyping", "Liskov"]
+tactic_class = "contract"
+semantic_class = "contract"
+notes = "Subtypes may weaken preconditions and strengthen postconditions only."
+
+[[synonym]]
+canonical = "old_state"
+aliases = ["old", "oldState", "pre_state", "at_entry"]
+tactic_class = "contract"
+semantic_class = "contract"
+notes = "The entry-state value a postcondition refers to."
+
+[[synonym]]
+canonical = "result_value"
+aliases = ["result", "Result", "return_value", "\result"]
+tactic_class = "contract"
+semantic_class = "contract"
+notes = "The value being returned, named inside the postcondition."
+
+[[synonym]]
+canonical = "exit_status"
+aliases = ["exitStatus", "exit_case", "normal_return"]
+tactic_class = "contract"
+semantic_class = "contract"
+notes = "Distinguishes normal from exceptional return in a contract."
+
+[[synonym]]
+canonical = "exceptional_return"
+aliases = ["exceptionalReturn", "raises", "throws", "contract_exception"]
+tactic_class = "contract"
+semantic_class = "contract"
+notes = "A contract case keyed on an exception rather than a value."
+
+[[synonym]]
+canonical = "null_contract"
+aliases = ["nullContract", "not_null", "null_exclusion"]
+tactic_class = "contract"
+semantic_class = "contract"
+notes = "The contract that a reference is non-null."
+
+[[synonym]]
+canonical = "default_initialisation"
+aliases = ["defaultInit", "default_initialization", "zero_default"]
+tactic_class = "contract"
+semantic_class = "contract"
+notes = "The implicit initial value a type promises."
+
+[[synonym]]
+canonical = "type_invariant"
+aliases = ["typeInvariant", "well_formed", "invariant_of_type"]
+tactic_class = "contract"
+semantic_class = "contract"
+notes = "The predicate every inhabitant of a refined type satisfies."
+
+[[synonym]]
+canonical = "refinement_type"
+aliases = ["refinementType", "LiquidHaskell", "FStar_refinement"]
+tactic_class = "contract"
+semantic_class = "contract"
+notes = "A base type plus a predicate on its values."
+
+[[synonym]]
+canonical = "dependent_type"
+aliases = ["dependentType", "pi_type", "sigma_type", "dependent_pair"]
+tactic_class = "contract"
+semantic_class = "contract"
+notes = "A type whose indices may mention values."
+
+[[synonym]]
+canonical = "subset_type"
+aliases = ["subsetType", "Subtype", "setSubtype"]
+tactic_class = "contract"
+semantic_class = "contract"
+notes = "The values of a type satisfying a predicate."
+
+[[synonym]]
+canonical = "ghost_code"
+aliases = ["ghost", "ghostCode", "specification_only", "erased_code"]
+tactic_class = "contract"
+semantic_class = "contract"
+notes = "Code that exists only for verification and is erased at run time."
+
+[[synonym]]
+canonical = "model_field"
+aliases = ["model", "modelField", "abstraction_field"]
+tactic_class = "contract"
+semantic_class = "contract"
+notes = "A specification-only field giving the abstract value of an object."
+
+[[synonym]]
+canonical = "represents_clause"
+aliases = ["represents", "representsClause", "coupling_invariant"]
+tactic_class = "contract"
+semantic_class = "contract"
+notes = "The link between concrete and abstract state in Dafny or JML."
+
+[[synonym]]
+canonical = "coupling_invariant"
+aliases = ["couplingInvariant", "abstraction_relation"]
+tactic_class = "contract"
+semantic_class = "contract"
+notes = "The relation between a concrete representation and its abstraction."
+
+[[synonym]]
+canonical = "abstraction_function"
+aliases = ["abstractionFunction", "alpha", "abstraction_map"]
+tactic_class = "contract"
+semantic_class = "contract"
+notes = "The map from concrete to abstract state."
+
+[[synonym]]
+canonical = "simulation_relation"
+aliases = ["simulationRelation", "forward_simulation"]
+tactic_class = "contract"
+semantic_class = "refinement"
+notes = "The relation witnessing that one machine refines another."
+
+[[synonym]]
+canonical = "specification_statement"
+aliases = ["specStatement", "abstract_module"]
+tactic_class = "contract"
+semantic_class = "contract"
+notes = "A declaration without a body, constrained only by its contract."
+
+[[synonym]]
+canonical = "bodyless_function"
+aliases = ["bodyless", "Function_declaration", "assume_body"]
+tactic_class = "contract"
+semantic_class = "contract"
+notes = "A function whose body is supplied later or never."
+
+[[synonym]]
+canonical = "modifies_clause"
+aliases = ["modifies", "modifiesClause", "writes_set"]
+tactic_class = "contract"
+semantic_class = "contract"
+notes = "The set of locations a command may change."
+
+[[synonym]]
+canonical = "reads_frame"
+aliases = ["readsFrame", "footprint_clause"]
+tactic_class = "contract"
+semantic_class = "contract"
+notes = "The set of locations a command may observe."
+
+[[synonym]]
+canonical = "no_write_guarantee"
+aliases = ["noWrite", "pure_contract", "const_contract"]
+tactic_class = "contract"
+semantic_class = "contract"
+notes = "The promise that a command does not write."
+
+[[synonym]]
+canonical = "purity"
+aliases = ["pure", "referentially_transparent"]
+tactic_class = "contract"
+semantic_class = "contract"
+notes = "Same inputs, same outputs, no observable effect."
+
+[[synonym]]
+canonical = "effect_signature"
+aliases = ["effect", "effects", "effect_row", "latent_effect"]
+tactic_class = "contract"
+semantic_class = "contract"
+notes = "The effects a computation may perform, tracked in the type."
+
+[[synonym]]
+canonical = "effect_handler"
+aliases = ["handler", "effectHandler", "algebraic_effect_handler"]
+tactic_class = "contract"
+semantic_class = "contract"
+notes = "The eliminator of an algebraic effect."
+
+[[synonym]]
+canonical = "state_monad"
+aliases = ["State", "stateMonad", "state_transformer"]
+tactic_class = "contract"
+semantic_class = "contract"
+notes = "The monadic encoding of a mutable state thread."
+
+[[synonym]]
+canonical = "separation_monad"
+aliases = ["separationMonad", "ST_separation", "heap_monad"]
+tactic_class = "contract"
+semantic_class = "contract"
+notes = "Hoare-style pre/post pairs as a monad (ST, F*'s Tac)."
+
+[[synonym]]
+canonical = "verification_condition_generator"
+aliases = ["VCG", "vcGen"]
+tactic_class = "contract"
+semantic_class = "proof-obligation"
+notes = "Translates annotated code into proof obligations."
+
+[[synonym]]
+canonical = "annotated_program"
+aliases = ["annotatedProgram", "annotated_code", "contract_annotated"]
+tactic_class = "contract"
+semantic_class = "contract"
+notes = "A program carrying its specification in-source."
+
+[[synonym]]
+canonical = "runtime_check"
+aliases = ["runtimeCheck", "dynamic_assert"]
+tactic_class = "contract"
+semantic_class = "contract"
+notes = "A contract enforced at run time rather than statically."
+
+[[synonym]]
+canonical = "defensive_copy"
+aliases = ["defensiveCopy", "aliasing_barrier"]
+tactic_class = "contract"
+semantic_class = "contract"
+notes = "A copy made to keep an aliasing guarantee at a boundary."
+
+[[synonym]]
+canonical = "representation_exposure"
+aliases = ["exposes", "exposesClause", "leak_representation"]
+tactic_class = "contract"
+semantic_class = "contract"
+notes = "The permission for a subprogram to reveal part of an abstraction."
+
+[[synonym]]
+canonical = "information_flow_contract"
+aliases = ["infoFlowContract", "flow_contract", "taint_contract"]
+tactic_class = "contract"
+semantic_class = "contract"
+notes = "The contract that outputs depend only on declared inputs."
+
+# ============================================================
+# Termination and well-founded measures
+# ============================================================
+
+[[synonym]]
+canonical = "termination"
+aliases = ["terminates", "total_function"]
+tactic_class = "termination"
+semantic_class = "termination"
+notes = "Every execution reaches a return; a separate obligation from correctness."
+
+[[synonym]]
+canonical = "termination_measure"
+aliases = ["measure", "terminationMeasure", "decreasing_measure", "variant"]
+tactic_class = "termination"
+semantic_class = "termination"
+notes = "A function into a well-founded order that strictly decreases at each recursive call."
+
+[[synonym]]
+canonical = "decreases_clause"
+aliases = ["decreases", "decreasesClause", "Dafny_decreases"]
+tactic_class = "termination"
+semantic_class = "termination"
+notes = "Dafny's syntactic termination argument attached to a loop or method."
+
+[[synonym]]
+canonical = "loop_variant"
+aliases = ["loopVariant", "variant_expression", "loop_decreases"]
+tactic_class = "termination"
+semantic_class = "termination"
+notes = "An expression that strictly decreases on every iteration."
+
+[[synonym]]
+canonical = "well_founded_relation"
+aliases = ["wellFounded", "WellFounded", "well_founded", "wf"]
+tactic_class = "termination"
+semantic_class = "termination"
+notes = "A relation with no infinite descending chain."
+
+[[synonym]]
+canonical = "well_founded_induction"
+aliases = ["wellFoundedInduction", "wf_induction", "Noetherian_induction"]
+tactic_class = "termination"
+semantic_class = "termination"
+notes = "Induction along a well-founded relation; the proof rule behind termination."
+
+[[synonym]]
+canonical = "accessibility"
+aliases = ["Accessible", "Acc", "accessible"]
+tactic_class = "termination"
+semantic_class = "termination"
+notes = "The inductive witness that a element has no infinite descent."
+
+[[synonym]]
+canonical = "well_founded_recursion"
+aliases = ["wfRec", "rec_well_founded"]
+tactic_class = "termination"
+semantic_class = "termination"
+notes = "Recursion justified by a well-founded relation rather than syntax."
+
+[[synonym]]
+canonical = "structural_recursion"
+aliases = ["structuralRecursion", "structural_decrease", "subterm_recursion"]
+tactic_class = "termination"
+semantic_class = "termination"
+notes = "Recursion on a strictly smaller subterm; accepted by most checkers automatically."
+
+[[synonym]]
+canonical = "guarded_recursion"
+aliases = ["guarded", "guardedness", "guardedness_check", "coinduction_guard"]
+tactic_class = "termination"
+semantic_class = "termination"
+notes = "Coinductive productivity: every recursive call sits under a constructor."
+
+[[synonym]]
+canonical = "productivity"
+aliases = ["productive", "coinductive_termination"]
+tactic_class = "termination"
+semantic_class = "termination"
+notes = "Every finite prefix of a coinductive value can be produced."
+
+[[synonym]]
+canonical = "lexicographic_order"
+aliases = ["lexOrder", "lexicographic_combination", "rpo"]
+tactic_class = "termination"
+semantic_class = "termination"
+notes = "A measure into a lexicographic product of well-founded orders."
+
+[[synonym]]
+canonical = "multiset_extension"
+aliases = ["multisetExtension", "multiset_order", "Dershowitz_Manna"]
+tactic_class = "termination"
+semantic_class = "termination"
+notes = "A well-founded order on multisets used when arguments are permuted."
+
+[[synonym]]
+canonical = "size_change_termination"
+aliases = ["sizeChange", "termination_checker"]
+tactic_class = "termination"
+semantic_class = "termination"
+notes = "The size-change principle for higher-order termination."
+
+[[synonym]]
+canonical = "ranking_function"
+aliases = ["rankingFunction", "rank_function", "variant_function"]
+tactic_class = "termination"
+semantic_class = "termination"
+notes = "A function into the naturals whose decrease certifies termination."
+
+[[synonym]]
+canonical = "loop_termination"
+aliases = ["loopTermination", "loop_terminates", "while_variant"]
+tactic_class = "termination"
+semantic_class = "termination"
+notes = "Termination of a loop, usually by a bounded counter."
+
+[[synonym]]
+canonical = "recursion_depth"
+aliases = ["recursionDepth", "call_depth", "stack_bound"]
+tactic_class = "termination"
+semantic_class = "termination"
+notes = "A bound on nested calls; relevant to stack-overflow freedom."
+
+[[synonym]]
+canonical = "stack_overflow_freedom"
+aliases = ["noStackOverflow", "stack_bound_proof", "bounded_recursion"]
+tactic_class = "termination"
+semantic_class = "termination"
+notes = "The absence of unbounded stack growth, provable with a depth measure."
+
+[[synonym]]
+canonical = "fuel"
+aliases = ["fuelParameter", "gas", "bounded_evaluation"]
+tactic_class = "termination"
+semantic_class = "termination"
+notes = "An explicit step budget that makes an evaluator total by construction."
+
+[[synonym]]
+canonical = "partial_function"
+aliases = ["partialFunction", "option_result"]
+tactic_class = "termination"
+semantic_class = "termination"
+notes = "A function that may be undefined; totalisation adds a precondition."
+
+[[synonym]]
+canonical = "totalisation"
+aliases = ["totalise", "totalization", "make_total"]
+tactic_class = "termination"
+semantic_class = "termination"
+notes = "Replacing a partial operation by one with an explicit precondition or result type."
+
+[[synonym]]
+canonical = "tail_recursion"
+aliases = ["tailRec", "tail_call"]
+tactic_class = "termination"
+semantic_class = "termination"
+notes = "A recursive call in tail position, eliminable by the compiler."
+
+[[synonym]]
+canonical = "coinductive_type"
+aliases = ["coinductive", "Coinductive", "greatest_fixpoint"]
+tactic_class = "termination"
+semantic_class = "termination"
+notes = "A type defined by its observations rather than its constructors."
+
+[[synonym]]
+canonical = "greatest_fixpoint"
+aliases = ["gfp", "greatestFixpoint", "nu", "greatest_fixed_point"]
+tactic_class = "termination"
+semantic_class = "termination"
+notes = "The largest set closed under a generating rule; liveness lives here."
+
+[[synonym]]
+canonical = "least_fixpoint"
+aliases = ["lfp", "leastFixpoint", "mu", "inductive_definition"]
+tactic_class = "termination"
+semantic_class = "termination"
+notes = "The smallest set closed under a generating rule; safety lives here."
+
+[[synonym]]
+canonical = "induction_principle"
+aliases = ["inductionPrinciple", "eliminator", "induction_rule"]
+tactic_class = "termination"
+semantic_class = "termination"
+notes = "The eliminator generated by an inductive definition."
+
+[[synonym]]
+canonical = "measure_decrease_proof"
+aliases = ["decreaseProof", "decreasing_step", "ranking_decrease"]
+tactic_class = "termination"
+semantic_class = "termination"
+notes = "The per-call obligation that the measure is strictly smaller."
+
+[[synonym]]
+canonical = "non_termination_witness"
+aliases = ["nonTermination", "infinite_loop", "divergent_trace"]
+tactic_class = "termination"
+semantic_class = "termination"
+notes = "A trace with no terminal state; the counterexample to termination."
+
+[[synonym]]
+canonical = "fairness"
+aliases = ["fair", "fairScheduling", "weak_fairness", "strong_fairness"]
+tactic_class = "termination"
+semantic_class = "termination"
+notes = "The scheduling assumption needed to prove liveness."
+
+[[synonym]]
+canonical = "liveness"
+aliases = ["live", "eventually"]
+tactic_class = "termination"
+semantic_class = "termination"
+notes = "Something good eventually happens."
+
+[[synonym]]
+canonical = "safety_property"
+aliases = ["safety", "nothing_bad"]
+tactic_class = "termination"
+semantic_class = "termination"
+notes = "No finite prefix violates the property."
+
+[[synonym]]
+canonical = "progress"
+aliases = ["progress_property", "no_stuck"]
+tactic_class = "termination"
+semantic_class = "termination"
+notes = "A well-typed non-terminal state can step."
+
+[[synonym]]
+canonical = "preservation"
+aliases = ["subject_reduction", "type_preservation"]
+tactic_class = "termination"
+semantic_class = "termination"
+notes = "Stepping preserves typing."
+
+# ============================================================
+# Refinement, simulation and semantics
+# ============================================================
+
+[[synonym]]
+canonical = "refinement"
+aliases = ["refines", "implementation_refines"]
+tactic_class = "refinement"
+semantic_class = "refinement"
+notes = "Every behaviour of the concrete system is a behaviour of the abstract one."
+
+[[synonym]]
+canonical = "data_refinement"
+aliases = ["dataRefinement", "retrieve_relation"]
+tactic_class = "refinement"
+semantic_class = "refinement"
+notes = "Refinement where the abstraction function relates state spaces."
+
+[[synonym]]
+canonical = "forward_simulation"
+aliases = ["forwardSimulation"]
+tactic_class = "refinement"
+semantic_class = "refinement"
+notes = "A step-for-step correspondence from concrete to abstract."
+
+[[synonym]]
+canonical = "backward_simulation"
+aliases = ["backwardSimulation"]
+tactic_class = "refinement"
+semantic_class = "refinement"
+notes = "A correspondence that may lag behind, used for stuttering steps."
+
+[[synonym]]
+canonical = "bisimulation"
+aliases = ["bisimilar", "bisimilarity"]
+tactic_class = "refinement"
+semantic_class = "refinement"
+notes = "Mutual simulation; the finest behavioural equivalence of labelled transition systems."
+
+[[synonym]]
+canonical = "weak_bisimulation"
+aliases = ["weakBisimulation", "tau_steps"]
+tactic_class = "refinement"
+semantic_class = "refinement"
+notes = "Bisimulation insensitive to internal steps."
+
+[[synonym]]
+canonical = "trace_refinement"
+aliases = ["traceRefinement", "trace_inclusion", "traces_refine"]
+tactic_class = "refinement"
+semantic_class = "refinement"
+notes = "Every concrete trace is an abstract trace."
+
+[[synonym]]
+canonical = "failure_refinement"
+aliases = ["failureRefinement", "failures_divergences", "CSP_refinement"]
+tactic_class = "refinement"
+semantic_class = "refinement"
+notes = "CSP refinement: traces plus refusals plus divergences."
+
+[[synonym]]
+canonical = "stuttering_step"
+aliases = ["stutter", "invisible_step"]
+tactic_class = "refinement"
+semantic_class = "refinement"
+notes = "An abstract step that changes nothing observable."
+
+[[synonym]]
+canonical = "abstraction_relation"
+aliases = ["abstractionRelation"]
+tactic_class = "refinement"
+semantic_class = "refinement"
+notes = "The relation witnessing refinement between states."
+
+[[synonym]]
+canonical = "galois_connection"
+aliases = ["galoisConnection", "Galois_connection", "adjunction_orders"]
+tactic_class = "refinement"
+semantic_class = "refinement"
+notes = "A pair of monotone maps that form an adjunction between orders."
+
+[[synonym]]
+canonical = "concretisation"
+aliases = ["gamma", "concretization"]
+tactic_class = "refinement"
+semantic_class = "refinement"
+notes = "The map from an abstract domain back to sets of concrete states."
+
+[[synonym]]
+canonical = "abstract_interpretation"
+aliases = ["abstractInterpretation", "AI", "abstract_domain"]
+tactic_class = "refinement"
+semantic_class = "refinement"
+notes = "Sound over-approximation of concrete behaviour in an abstract domain."
+
+[[synonym]]
+canonical = "sound_approximation"
+aliases = ["soundApproximation", "over_approximation", "soundness_AI"]
+tactic_class = "refinement"
+semantic_class = "refinement"
+notes = "Every concrete behaviour is included in the abstract one."
+
+[[synonym]]
+canonical = "widening"
+aliases = ["widening_operator", "accelerate_fixpoint"]
+tactic_class = "refinement"
+semantic_class = "refinement"
+notes = "An extrapolation operator that forces a fixpoint to exist."
+
+[[synonym]]
+canonical = "narrowing"
+aliases = ["narrowing_operator", "refine_below_fixpoint"]
+tactic_class = "refinement"
+semantic_class = "refinement"
+notes = "A refinement step after widening."
+
+[[synonym]]
+canonical = "refinement_calculus"
+aliases = ["refinementCalculus", "Morgan_back_rule"]
+tactic_class = "refinement"
+semantic_class = "refinement"
+notes = "Program construction by stepwise weakening of the specification."
+
+[[synonym]]
+canonical = "correctness_by_construction"
+aliases = ["correctByConstruction", "refinement_to_code"]
+tactic_class = "refinement"
+semantic_class = "refinement"
+notes = "Deriving code from the specification so correctness is immediate."
+
+[[synonym]]
+canonical = "operational_semantics"
+aliases = ["operationalSemantics", "small_step", "big_step", "SOS"]
+tactic_class = "refinement"
+semantic_class = "semantics"
+notes = "Proof rules relating programs to steps or final states."
+
+[[synonym]]
+canonical = "denotational_semantics"
+aliases = ["denotationalSemantics", "Scott_Strachey", "meaning_function"]
+tactic_class = "refinement"
+semantic_class = "semantics"
+notes = "Compositional mapping from programs to mathematical objects."
+
+[[synonym]]
+canonical = "axiomatic_semantics"
+aliases = ["axiomaticSemantics", "Hoare_Floyd", "logic_of_programs"]
+tactic_class = "refinement"
+semantic_class = "semantics"
+notes = "Programs characterised by the assertions they satisfy."
+
+[[synonym]]
+canonical = "small_step_semantics"
+aliases = ["smallStep", "step_relation", "reduction_relation"]
+tactic_class = "refinement"
+semantic_class = "semantics"
+notes = "One computation step at a time."
+
+[[synonym]]
+canonical = "big_step_semantics"
+aliases = ["bigStep", "evaluation_judgement", "natural_semantics"]
+tactic_class = "refinement"
+semantic_class = "semantics"
+notes = "Program to final state in one judgement."
+
+[[synonym]]
+canonical = "categorical_semantics"
+aliases = ["categoricalSemantics", "internal_language", "functorial_semantics"]
+tactic_class = "refinement"
+semantic_class = "semantics"
+notes = "Models of a theory as structure in a category."
+
+[[synonym]]
+canonical = "game_semantics"
+aliases = ["gameSemantics", "interactive_semantics"]
+tactic_class = "refinement"
+semantic_class = "semantics"
+notes = "Meaning as a strategy in a game between program and environment."
+
+[[synonym]]
+canonical = "behavioural_equivalence"
+aliases = ["behaviouralEquivalence", "observational_equivalence", "congruence"]
+tactic_class = "refinement"
+semantic_class = "semantics"
+notes = "Equivalence under every observable context."
+
+[[synonym]]
+canonical = "contextual_equivalence"
+aliases = ["contextualEquivalence", "context_equivalence", "ciu"]
+tactic_class = "refinement"
+semantic_class = "semantics"
+notes = "Equivalence in all program contexts."
+
+[[synonym]]
+canonical = "logical_relation"
+aliases = ["logicalRelation", "reducibility_candidate", "parametricity"]
+tactic_class = "refinement"
+semantic_class = "semantics"
+notes = "A relation defined by induction on types; the tool for proving contextual equivalence."
+
+[[synonym]]
+canonical = "parametricity"
+aliases = ["free_theorem", "Reynolds_abstraction"]
+tactic_class = "refinement"
+semantic_class = "semantics"
+notes = "Theorems that follow from a polymorphic type alone."
+
+[[synonym]]
+canonical = "normalisation"
+aliases = ["normalization", "strong_normalization", "SN"]
+tactic_class = "refinement"
+semantic_class = "semantics"
+notes = "Every reduction sequence terminates; the property behind total languages."
+
+[[synonym]]
+canonical = "confluence"
+aliases = ["Church_Rosser", "diamond_property"]
+tactic_class = "refinement"
+semantic_class = "semantics"
+notes = "Two reduction paths from a term can be rejoined."
+
+[[synonym]]
+canonical = "canonicity"
+aliases = ["canonical_form"]
+tactic_class = "refinement"
+semantic_class = "semantics"
+notes = "Closed values of an inductive type are constructor forms."
+
+[[synonym]]
+canonical = "type_preservation"
+aliases = ["preservation", "subjectReduction"]
+tactic_class = "refinement"
+semantic_class = "semantics"
+notes = "Typing is invariant under reduction."
+
+[[synonym]]
+canonical = "semantic_model"
+aliases = ["model", "soundness_model", "interpretation"]
+tactic_class = "refinement"
+semantic_class = "semantics"
+notes = "An assignment of mathematical meaning to syntax that respects the rules."
+
+[[synonym]]
+canonical = "adequate_encoding"
+aliases = ["adequacy", "encoding", "adequacy_theorem"]
+tactic_class = "refinement"
+semantic_class = "semantics"
+notes = "A shallow embedding whose judgements correspond exactly to the object system."
+
+[[synonym]]
+canonical = "shallow_embedding"
+aliases = ["shallowEmbedding", "object_logic"]
+tactic_class = "refinement"
+semantic_class = "semantics"
+notes = "The object logic is encoded using the host logic's own connectives."
+
+[[synonym]]
+canonical = "deep_embedding"
+aliases = ["deepEmbedding", "syntax_representation"]
+tactic_class = "refinement"
+semantic_class = "semantics"
+notes = "The object logic's syntax is represented as an inductive type."
+
+[[synonym]]
+canonical = "metatheory"
+aliases = ["meta_theory", "object_theory"]
+tactic_class = "refinement"
+semantic_class = "semantics"
+notes = "Reasoning about a logic rather than within it."
+
+[[synonym]]
+canonical = "syntactic_category"
+aliases = ["syntacticCategory", "classifying_topos", "term_model"]
+tactic_class = "refinement"
+semantic_class = "semantics"
+notes = "The category built from a theory's terms and provable equations."
+
+[[synonym]]
+canonical = "free_theorem"
+aliases = ["freeTheorem", "relational_param"]
+tactic_class = "refinement"
+semantic_class = "semantics"
+notes = "A theorem derived purely from a type's relational structure."
+
+[[synonym]]
+canonical = "monadic_semantics"
+aliases = ["monadicSemantics", "monad_interpretation", "effect_semantics"]
+tactic_class = "refinement"
+semantic_class = "semantics"
+notes = "Effectful meaning via a monad over the base category."
+
+# ============================================================
+# Resource algebras, order and fixpoints
+# ============================================================
+
+[[synonym]]
+canonical = "resource_algebra"
+aliases = ["resourceAlgebra", "monoid_of_resources"]
+tactic_class = "resource-algebra"
+semantic_class = "resource-algebra"
+notes = "A partial commutative monoid whose elements are ownable resources."
+
+[[synonym]]
+canonical = "dioid"
+aliases = ["Dioid", "idempotent_semiring"]
+tactic_class = "resource-algebra"
+semantic_class = "resource-algebra"
+notes = "A semiring with idempotent addition; the algebra of paths and costs."
+
+[[synonym]]
+canonical = "idempotent_semiring"
+aliases = ["idempotentSemiring", "semiring_idempotent"]
+tactic_class = "resource-algebra"
+semantic_class = "resource-algebra"
+notes = "Addition is idempotent, so addition is a join."
+
+[[synonym]]
+canonical = "semiring"
+aliases = ["Semiring", "ring_without_negation"]
+tactic_class = "resource-algebra"
+semantic_class = "resource-algebra"
+notes = "Addition and multiplication with distributivity, no additive inverses required."
+
+[[synonym]]
+canonical = "kleene_algebra"
+aliases = ["KleeneAlgebra", "Kleene_algebra", "star_axioms"]
+tactic_class = "resource-algebra"
+semantic_class = "resource-algebra"
+notes = "A semiring with a star operation axiomatising transitive closure."
+
+[[synonym]]
+canonical = "kleene_star"
+aliases = ["star", "Kleene_star", "closure", "reflexive_transitive"]
+tactic_class = "resource-algebra"
+semantic_class = "resource-algebra"
+notes = "Finite iteration; the algebraic content of while loops."
+
+[[synonym]]
+canonical = "tropical_semiring"
+aliases = ["tropicalSemiring", "tropical", "max_plus", "min_plus"]
+tactic_class = "resource-algebra"
+semantic_class = "resource-algebra"
+notes = "Max-plus or min-plus semiring where addition is a choice of cost."
+
+[[synonym]]
+canonical = "tropical_max_plus"
+aliases = ["maxPlus", "max_plus", "maxplus", "tropical_max"]
+tactic_class = "resource-algebra"
+semantic_class = "resource-algebra"
+notes = "Addition is max, multiplication is +; models longest-path and bottleneck cost."
+
+[[synonym]]
+canonical = "tropical_min_plus"
+aliases = ["minPlus", "min_plus", "minplus", "tropical_min"]
+tactic_class = "resource-algebra"
+semantic_class = "resource-algebra"
+notes = "Addition is min, multiplication is +; models shortest-path cost."
+
+[[synonym]]
+canonical = "tropical_matrix"
+aliases = ["tropicalMatrix", "matrix_semiring", "closed_semiring"]
+tactic_class = "resource-algebra"
+semantic_class = "resource-algebra"
+notes = "Matrices over a tropical semiring; path problems become linear algebra."
+
+[[synonym]]
+canonical = "closed_semiring"
+aliases = ["closedSemiring", "star_semiring"]
+tactic_class = "resource-algebra"
+semantic_class = "resource-algebra"
+notes = "A semiring where the star is definable as an infinite sum."
+
+[[synonym]]
+canonical = "quantale"
+aliases = ["Quantale", "sup_lattice_monoid"]
+tactic_class = "resource-algebra"
+semantic_class = "resource-algebra"
+notes = "A complete lattice with an associative multiplication distributing over joins."
+
+[[synonym]]
+canonical = "residuated_lattice"
+aliases = ["residuatedLattice", "residuated", "implication_residual"]
+tactic_class = "resource-algebra"
+semantic_class = "resource-algebra"
+notes = "A lattice with residuals; the algebraic reading of separating implication."
+
+[[synonym]]
+canonical = "effect_algebra"
+aliases = ["effectAlgebra", "partial_abelian_monoid"]
+tactic_class = "resource-algebra"
+semantic_class = "resource-algebra"
+notes = "The algebraic structure behind ghost state and permissions."
+
+[[synonym]]
+canonical = "separation_algebra_monoid"
+aliases = ["sepAlgebra", "pcm", "partial_commutative_monoid"]
+tactic_class = "resource-algebra"
+semantic_class = "resource-algebra"
+notes = "The partial commutative monoid underlying a separation logic."
+
+[[synonym]]
+canonical = "resource_monotonicity"
+aliases = ["resourceMonotone", "resource_order", "extension_order"]
+tactic_class = "resource-algebra"
+semantic_class = "resource-algebra"
+notes = "Resources only grow along the order; the premise of framing."
+
+[[synonym]]
+canonical = "antichain"
+aliases = ["antichains", "maximal_elements"]
+tactic_class = "resource-algebra"
+semantic_class = "order"
+notes = "A set of pairwise incomparable elements."
+
+[[synonym]]
+canonical = "antichain_cut"
+aliases = ["antichainCut", "cut_of_antichains"]
+tactic_class = "resource-algebra"
+semantic_class = "order"
+notes = "A maximal antichain used as a proof-obligation frontier or cut."
+
+[[synonym]]
+canonical = "downset"
+aliases = ["down_set", "lower_set", "ideal"]
+tactic_class = "resource-algebra"
+semantic_class = "order"
+notes = "All elements below some element of a set."
+
+[[synonym]]
+canonical = "upset"
+aliases = ["up_set", "upper_set", "filter"]
+tactic_class = "resource-algebra"
+semantic_class = "order"
+notes = "All elements above some element of a set."
+
+[[synonym]]
+canonical = "complete_lattice"
+aliases = ["completeLattice", "sup_inf_complete"]
+tactic_class = "resource-algebra"
+semantic_class = "order"
+notes = "Every subset has a join and a meet."
+
+[[synonym]]
+canonical = "directed_complete_partial_order"
+aliases = ["dcpo", "directed_complete", "directed_sup"]
+tactic_class = "resource-algebra"
+semantic_class = "order"
+notes = "Every directed subset has a supremum; the domain-theoretic order."
+
+[[synonym]]
+canonical = "scott_continuity"
+aliases = ["scottContinuous", "continuous_function_domains"]
+tactic_class = "resource-algebra"
+semantic_class = "order"
+notes = "Preserves directed suprema."
+
+[[synonym]]
+canonical = "monotone_function"
+aliases = ["monotone", "monotonicity", "order_preserving"]
+tactic_class = "resource-algebra"
+semantic_class = "order"
+notes = "x <= y implies f x <= f y; the hypothesis of every fixpoint theorem."
+
+[[synonym]]
+canonical = "monotonicity"
+aliases = ["monotone_property", "monotone_in"]
+tactic_class = "resource-algebra"
+semantic_class = "order"
+notes = "If the premise grows, the conclusion grows; the core of framing and abstraction."
+
+[[synonym]]
+canonical = "antitone_function"
+aliases = ["antitone", "order_reversing"]
+tactic_class = "resource-algebra"
+semantic_class = "order"
+notes = "x <= y implies f y <= f x."
+
+[[synonym]]
+canonical = "galois_embedding"
+aliases = ["galoisEmbedding", "projection_embedding"]
+tactic_class = "resource-algebra"
+semantic_class = "order"
+notes = "A Galois connection given by a section-retraction pair."
+
+[[synonym]]
+canonical = "fixpoint"
+aliases = ["fixed_point", "invariant_point"]
+tactic_class = "resource-algebra"
+semantic_class = "order"
+notes = "x with f x = x; where loop invariants and recursive meanings meet."
+
+[[synonym]]
+canonical = "least_fixpoint_iteration"
+aliases = ["kleeneIteration", "fixpoint_iteration", "lfp_iteration"]
+tactic_class = "resource-algebra"
+semantic_class = "order"
+notes = "The ascending chain whose limit is the least fixpoint."
+
+[[synonym]]
+canonical = "knaster_tarski"
+aliases = ["knasterTarski", "Tarski_fixpoint"]
+tactic_class = "resource-algebra"
+semantic_class = "order"
+notes = "A monotone map on a complete lattice has a least fixpoint."
+
+[[synonym]]
+canonical = "banach_fixpoint"
+aliases = ["banachFixpoint", "contraction_mapping"]
+tactic_class = "resource-algebra"
+semantic_class = "order"
+notes = "A contraction on a complete metric space has a unique fixpoint."
+
+[[synonym]]
+canonical = "coinductive_fixpoint"
+aliases = ["gfpIteration", "descending_chain_limit"]
+tactic_class = "resource-algebra"
+semantic_class = "order"
+notes = "The greatest fixpoint as a limit of descending iterations."
+
+[[synonym]]
+canonical = "preorder"
+aliases = ["pre_order", "quasi_order"]
+tactic_class = "resource-algebra"
+semantic_class = "order"
+notes = "Reflexive and transitive; the carrier of a refinement relation."
+
+[[synonym]]
+canonical = "partial_order"
+aliases = ["partialOrder", "poset", "antisymmetric"]
+tactic_class = "resource-algebra"
+semantic_class = "order"
+notes = "Reflexive, transitive, antisymmetric."
+
+[[synonym]]
+canonical = "total_order"
+aliases = ["totalOrder", "linear_order", "chain"]
+tactic_class = "resource-algebra"
+semantic_class = "order"
+notes = "Every pair is comparable."
+
+[[synonym]]
+canonical = "well_order"
+aliases = ["wellOrder", "well_ordering", "every_subset_has_least"]
+tactic_class = "resource-algebra"
+semantic_class = "order"
+notes = "Every non-empty subset has a least element."
+
+[[synonym]]
+canonical = "lattice"
+aliases = ["join_meet"]
+tactic_class = "resource-algebra"
+semantic_class = "order"
+notes = "Every finite non-empty subset has a join and a meet."
+
+[[synonym]]
+canonical = "semilattice"
+aliases = ["join_semilattice", "meet_semilattice"]
+tactic_class = "resource-algebra"
+semantic_class = "order"
+notes = "One of join or meet is defined for finite non-empty subsets."
+
+[[synonym]]
+canonical = "bounded_lattice"
+aliases = ["boundedLattice", "top_bottom"]
+tactic_class = "resource-algebra"
+semantic_class = "order"
+notes = "A lattice with a least and a greatest element."
+
+[[synonym]]
+canonical = "heyting_algebra"
+aliases = ["heytingAlgebra", "relative_pseudocomplement"]
+tactic_class = "resource-algebra"
+semantic_class = "order"
+notes = "A lattice whose meet has a residual; the algebraic reading of implication."
+
+[[synonym]]
+canonical = "boolean_algebra"
+aliases = ["booleanAlgebra", "complement_boolean"]
+tactic_class = "resource-algebra"
+semantic_class = "order"
+notes = "A Heyting algebra where every element has a complement."
+
+[[synonym]]
+canonical = "frame"
+aliases = ["locale", "distributive_complete"]
+tactic_class = "resource-algebra"
+semantic_class = "order"
+notes = "A complete lattice where meet distributes over arbitrary joins."
+
+[[synonym]]
+canonical = "domain_theory"
+aliases = ["domainTheory", "Scott_domain", "continuous_domain"]
+tactic_class = "resource-algebra"
+semantic_class = "order"
+notes = "Orders where computation is approximated by directed suprema."
+
+[[synonym]]
+canonical = "algebraic_domain"
+aliases = ["algebraicDomain", "compact_elements"]
+tactic_class = "resource-algebra"
+semantic_class = "order"
+notes = "A domain generated by its compact elements."
+
+[[synonym]]
+canonical = "information_order"
+aliases = ["informationOrder", "approximation_order"]
+tactic_class = "resource-algebra"
+semantic_class = "order"
+notes = "x <= y means x is a partial approximation of y."
+
+[[synonym]]
+canonical = "powerdomain"
+aliases = ["nondeterminism_semantics"]
+tactic_class = "resource-algebra"
+semantic_class = "order"
+notes = "The order-theoretic model of nondeterministic choice."
+
+[[synonym]]
+canonical = "tropical_shortest_path"
+aliases = ["shortestPath", "Bellman_Ford", "Dijkstra_tropical"]
+tactic_class = "resource-algebra"
+semantic_class = "resource-algebra"
+notes = "The tropical reading of a shortest-path algorithm."
+
+[[synonym]]
+canonical = "matrix_star"
+aliases = ["matrixStar", "Kleene_star_matrix", "all_pairs"]
+tactic_class = "resource-algebra"
+semantic_class = "resource-algebra"
+notes = "All-pairs reachability as the star of an adjacency matrix."
+
+[[synonym]]
+canonical = "valuation_semiring"
+aliases = ["valuationSemiring", "weighted_automaton", "semiring_valuation"]
+tactic_class = "resource-algebra"
+semantic_class = "resource-algebra"
+notes = "Automata whose edge labels live in a semiring."
+
+[[synonym]]
+canonical = "idempotent_addition"
+aliases = ["idempotentAddition", "join_like_addition"]
+tactic_class = "resource-algebra"
+semantic_class = "resource-algebra"
+notes = "x + x = x; addition is not counting but choosing."
+
+[[synonym]]
+canonical = "absorbing_element"
+aliases = ["zero", "absorbing_zero", "infinity_tropical"]
+tactic_class = "resource-algebra"
+semantic_class = "resource-algebra"
+notes = "The additive identity; in max-plus this is negative infinity."
+
+[[synonym]]
+canonical = "unit_element"
+aliases = ["one", "multiplicative_unit", "identity_tropical"]
+tactic_class = "resource-algebra"
+semantic_class = "resource-algebra"
+notes = "The multiplicative identity; in max-plus this is zero."
+
+# ============================================================
+# Epistemic, information flow and warrant
+# ============================================================
+
+[[synonym]]
+canonical = "epistemic_logic"
+aliases = ["epistemicLogic", "K_knows", "knowledge_modality"]
+tactic_class = "epistemic"
+semantic_class = "epistemic"
+notes = "Modal logic of knowledge operators per agent."
+
+[[synonym]]
+canonical = "knowledge_operator"
+aliases = ["knowledge", "knows", "K_i", "box_agent"]
+tactic_class = "epistemic"
+semantic_class = "epistemic"
+notes = "K_i p: agent i knows p."
+
+[[synonym]]
+canonical = "belief_operator"
+aliases = ["belief", "believes", "B_i", "doxastic"]
+tactic_class = "epistemic"
+semantic_class = "epistemic"
+notes = "B_i p: agent i believes p; not factive."
+
+[[synonym]]
+canonical = "factivity"
+aliases = ["T_axiom", "knowledge_is_true"]
+tactic_class = "epistemic"
+semantic_class = "epistemic"
+notes = "K_i p implies p; the axiom distinguishing knowledge from belief."
+
+[[synonym]]
+canonical = "positive_introspection"
+aliases = ["positiveIntrospection", "4_axiom", "KK_axiom"]
+tactic_class = "epistemic"
+semantic_class = "epistemic"
+notes = "Knowing p implies knowing that one knows p."
+
+[[synonym]]
+canonical = "negative_introspection"
+aliases = ["negativeIntrospection", "5_axiom"]
+tactic_class = "epistemic"
+semantic_class = "epistemic"
+notes = "Not knowing p implies knowing that one does not know p."
+
+[[synonym]]
+canonical = "common_knowledge"
+aliases = ["commonKnowledge", "mutual_knowledge", "public_announcement"]
+tactic_class = "epistemic"
+semantic_class = "epistemic"
+notes = "Everyone knows, and everyone knows everyone knows, transfinitely."
+
+[[synonym]]
+canonical = "distributed_knowledge"
+aliases = ["distributedKnowledge", "group_knowledge"]
+tactic_class = "epistemic"
+semantic_class = "epistemic"
+notes = "What the group would know if it pooled its information."
+
+[[synonym]]
+canonical = "knowledge_base"
+aliases = ["knowledgeBase", "KB", "facts_rules"]
+tactic_class = "epistemic"
+semantic_class = "epistemic"
+notes = "A set of sentences closed under consequence."
+
+[[synonym]]
+canonical = "justification_logic"
+aliases = ["justificationLogic", "explicit_knowledge", "evidence_term"]
+tactic_class = "epistemic"
+semantic_class = "epistemic"
+notes = "t : p, an explicit justification term witnessing p."
+
+[[synonym]]
+canonical = "warrant"
+aliases = ["Warranted", "justification_ground"]
+tactic_class = "epistemic"
+semantic_class = "epistemic"
+notes = "The ground on which a claim is asserted; what an evidence field records."
+
+[[synonym]]
+canonical = "warrant_soundness"
+aliases = ["warrantSound", "warranted_implies_true"]
+tactic_class = "epistemic"
+semantic_class = "epistemic"
+notes = "Every warranted claim is true; the soundness condition on a warranting discipline."
+
+[[synonym]]
+canonical = "warrant_defeasibility"
+aliases = ["defeasible", "defeasibility", "non_monotonic_warrant"]
+tactic_class = "epistemic"
+semantic_class = "epistemic"
+notes = "A warrant that further evidence may withdraw."
+
+[[synonym]]
+canonical = "defeasible_reasoning"
+aliases = ["nonMonotonic", "default_reasoning", "defeasible_inference"]
+tactic_class = "epistemic"
+semantic_class = "epistemic"
+notes = "Conclusions that may be retracted when premises grow."
+
+[[synonym]]
+canonical = "attestation"
+aliases = ["attest", "signed_claim"]
+tactic_class = "epistemic"
+semantic_class = "epistemic"
+notes = "A signed assertion about a subject, checked by a verifier."
+
+[[synonym]]
+canonical = "receipt"
+aliases = ["proofReceipt", "run_receipt"]
+tactic_class = "epistemic"
+semantic_class = "epistemic"
+notes = "Evidence that a verification run happened, bound to its inputs."
+
+[[synonym]]
+canonical = "provenance_record"
+aliases = ["provenanceRecord", "provenance_chain", "lineage"]
+tactic_class = "epistemic"
+semantic_class = "epistemic"
+notes = "Where a claim or artefact came from, and what it depends on."
+
+[[synonym]]
+canonical = "trust_level"
+aliases = ["trustLevel", "confidence_level", "trust_hierarchy"]
+tactic_class = "epistemic"
+semantic_class = "epistemic"
+notes = "A graded statement of how much a result may be relied on."
+
+[[synonym]]
+canonical = "epistemic_confidence"
+aliases = ["confidence", "posterior_belief", "belief_mass"]
+tactic_class = "epistemic"
+semantic_class = "epistemic"
+notes = "A calibrated degree of belief attached to a verdict."
+
+[[synonym]]
+canonical = "dempster_shafer"
+aliases = ["dempsterShafer", "belief_function", "plausibility", "mass_function"]
+tactic_class = "epistemic"
+semantic_class = "epistemic"
+notes = "Belief and plausibility from evidence masses; conflict as a first-class signal."
+
+[[synonym]]
+canonical = "bayesian_posterior"
+aliases = ["posterior", "bayesUpdate", "log_odds"]
+tactic_class = "epistemic"
+semantic_class = "epistemic"
+notes = "The posterior odds after evidence; the basis of the Bayesian arbiter."
+
+[[synonym]]
+canonical = "conflict_detection"
+aliases = ["conflict", "conflict_mass", "disagreement"]
+tactic_class = "epistemic"
+semantic_class = "epistemic"
+notes = "Evidence that cannot be jointly satisfied."
+
+[[synonym]]
+canonical = "information_flow"
+aliases = ["infoFlow", "dependency"]
+tactic_class = "epistemic"
+semantic_class = "information-flow"
+notes = "What an output may reveal about an input."
+
+[[synonym]]
+canonical = "noninterference"
+aliases = ["NI", "no_leak"]
+tactic_class = "epistemic"
+semantic_class = "information-flow"
+notes = "Changes to high inputs never affect low outputs."
+
+[[synonym]]
+canonical = "noninterference_tini"
+aliases = ["TINI", "termination_insensitive_noninterference"]
+tactic_class = "epistemic"
+semantic_class = "information-flow"
+notes = "Termination-insensitive noninterference: only values, not timing, are constrained."
+
+[[synonym]]
+canonical = "noninterference_sini"
+aliases = ["SINI", "termination_sensitive_noninterference"]
+tactic_class = "epistemic"
+semantic_class = "information-flow"
+notes = "Timing and termination must also be independent of high inputs."
+
+[[synonym]]
+canonical = "termination_sensitive_noninterference"
+aliases = ["tsNoninterference", "SINI_covert", "timing_leak"]
+tactic_class = "epistemic"
+semantic_class = "information-flow"
+notes = "The stronger discipline that closes timing channels."
+
+[[synonym]]
+canonical = "observational_noninterference"
+aliases = ["observationalNI", "obs_equivalence", "low_equivalence"]
+tactic_class = "epistemic"
+semantic_class = "information-flow"
+notes = "Two runs agreeing on low inputs are observationally indistinguishable."
+
+[[synonym]]
+canonical = "label"
+aliases = ["securityLabel", "sensitivity_tag"]
+tactic_class = "epistemic"
+semantic_class = "information-flow"
+notes = "The classification attached to a value or channel."
+
+[[synonym]]
+canonical = "lattice_of_labels"
+aliases = ["securityLattice", "label_lattice", "classification_order"]
+tactic_class = "epistemic"
+semantic_class = "information-flow"
+notes = "Labels ordered by permitted flow."
+
+[[synonym]]
+canonical = "declassification"
+aliases = ["declassify", "downgrade"]
+tactic_class = "epistemic"
+semantic_class = "information-flow"
+notes = "An explicit, justified release of high information to a low channel."
+
+[[synonym]]
+canonical = "endorsement"
+aliases = ["endorse", "upgrade_integrity"]
+tactic_class = "epistemic"
+semantic_class = "information-flow"
+notes = "The dual of declassification, for integrity labels."
+
+[[synonym]]
+canonical = "covert_channel"
+aliases = ["covertChannel", "timing_channel", "side_channel"]
+tactic_class = "epistemic"
+semantic_class = "information-flow"
+notes = "A channel that carries information without a declared flow."
+
+[[synonym]]
+canonical = "taint_tracking"
+aliases = ["taint", "taintTracking", "label_propagation"]
+tactic_class = "epistemic"
+semantic_class = "information-flow"
+notes = "Propagating labels along data and control dependencies."
+
+[[synonym]]
+canonical = "implicit_flow"
+aliases = ["implicitFlow", "control_dependency"]
+tactic_class = "epistemic"
+semantic_class = "information-flow"
+notes = "Information leaked through control flow rather than data."
+
+[[synonym]]
+canonical = "explicit_flow"
+aliases = ["explicitFlow", "data_dependency"]
+tactic_class = "epistemic"
+semantic_class = "information-flow"
+notes = "Information leaked through a value's data dependency."
+
+[[synonym]]
+canonical = "program_counter_label"
+aliases = ["pcLabel", "pc_label", "program_counter_level"]
+tactic_class = "epistemic"
+semantic_class = "information-flow"
+notes = "The label of the current program point in a dynamic analysis."
+
+[[synonym]]
+canonical = "observation"
+aliases = ["obs", "observer_view"]
+tactic_class = "epistemic"
+semantic_class = "information-flow"
+notes = "What an adversary may see of a run."
+
+[[synonym]]
+canonical = "observational_equivalence"
+aliases = ["obsEquivalence", "obs_equiv", "indistinguishability"]
+tactic_class = "epistemic"
+semantic_class = "information-flow"
+notes = "Two systems are indistinguishable to the observer."
+
+[[synonym]]
+canonical = "echo"
+aliases = ["Echo", "replay_residue"]
+tactic_class = "epistemic"
+semantic_class = "epistemic"
+notes = "The estate's observation-with-residue notion: what a replay reveals, and what it loses."
+
+[[synonym]]
+canonical = "residue"
+aliases = ["loss_residue", "what_is_lost"]
+tactic_class = "epistemic"
+semantic_class = "epistemic"
+notes = "The information a lossy correspondence discards; required whenever fidelity is lossy."
+
+[[synonym]]
+canonical = "loss_with_residue"
+aliases = ["lossWithResidue", "graded_loss", "loss_grade"]
+tactic_class = "epistemic"
+semantic_class = "epistemic"
+notes = "A lossy map together with an accounting of what it loses."
+
+[[synonym]]
+canonical = "homotopy_fiber"
+aliases = ["fiber", "homotopyFiber", "hfiber", "preimage_path"]
+tactic_class = "epistemic"
+semantic_class = "epistemic"
+notes = "The type of points over a base point, with its path structure."
+
+[[synonym]]
+canonical = "fiber"
+aliases = ["fibre", "fiber_over"]
+tactic_class = "epistemic"
+semantic_class = "epistemic"
+notes = "The preimage of a point under a map."
+
+[[synonym]]
+canonical = "contractibility"
+aliases = ["contractible", "isContr", "unique_inhabitant"]
+tactic_class = "epistemic"
+semantic_class = "epistemic"
+notes = "The type has exactly one inhabitant up to path."
+
+[[synonym]]
+canonical = "propositional_truncation"
+aliases = ["truncation", "bracket", "propositionalTruncation", "squashed"]
+tactic_class = "epistemic"
+semantic_class = "epistemic"
+notes = "The propositional reflection of a type; forgets which witness was used."
+
+[[synonym]]
+canonical = "univalence"
+aliases = ["univalenceAxiom", "equivalence_equals_identity"]
+tactic_class = "epistemic"
+semantic_class = "epistemic"
+notes = "Equivalent structures are identical; the HoTT identification principle."
+
+[[synonym]]
+canonical = "identity_type"
+aliases = ["identityType", "Id_path", "equality_type"]
+tactic_class = "epistemic"
+semantic_class = "epistemic"
+notes = "The type of identifications of two terms."
+
+[[synonym]]
+canonical = "higher_inductive_type"
+aliases = ["HIT", "higherInductiveType", "quotient_inductive"]
+tactic_class = "epistemic"
+semantic_class = "epistemic"
+notes = "An inductive type with path constructors."
+
+[[synonym]]
+canonical = "squash_type"
+aliases = ["squash", "squashType", "irrelevant_evidence"]
+tactic_class = "epistemic"
+semantic_class = "epistemic"
+notes = "A type whose inhabitants are not distinguished; proof irrelevance made explicit."
+
+[[synonym]]
+canonical = "proof_irrelevance"
+aliases = ["proofIrrelevance", "irrelevant_proofs"]
+tactic_class = "epistemic"
+semantic_class = "epistemic"
+notes = "Any two proofs of a proposition are equal."
+
+# ============================================================
+# Concurrency, protocols and OTP shape
+# ============================================================
+
+[[synonym]]
+canonical = "linearizability"
+aliases = ["linearizable", "linearisation_point"]
+tactic_class = "concurrency"
+semantic_class = "concurrency"
+notes = "Each operation appears to take effect atomically at some point between call and return."
+
+[[synonym]]
+canonical = "sequential_consistency"
+aliases = ["sequentialConsistency", "SC", "memory_order"]
+tactic_class = "concurrency"
+semantic_class = "concurrency"
+notes = "A single global order consistent with each thread's program order."
+
+[[synonym]]
+canonical = "happens_before"
+aliases = ["happensBefore", "HB_relation"]
+tactic_class = "concurrency"
+semantic_class = "concurrency"
+notes = "The partial order induced by program order and synchronisation."
+
+[[synonym]]
+canonical = "data_race"
+aliases = ["dataRace", "race", "free_of_races"]
+tactic_class = "concurrency"
+semantic_class = "concurrency"
+notes = "Two conflicting accesses without a happens-before edge."
+
+[[synonym]]
+canonical = "race_freedom"
+aliases = ["raceFree"]
+tactic_class = "concurrency"
+semantic_class = "concurrency"
+notes = "No two conflicting accesses are unordered."
+
+[[synonym]]
+canonical = "deadlock"
+aliases = ["circular_wait"]
+tactic_class = "concurrency"
+semantic_class = "concurrency"
+notes = "A cycle of waits with no progress."
+
+[[synonym]]
+canonical = "deadlock_freedom"
+aliases = ["deadlockFree", "lock_order"]
+tactic_class = "concurrency"
+semantic_class = "concurrency"
+notes = "The absence of a wait cycle; usually proved by a global lock order."
+
+[[synonym]]
+canonical = "livelock"
+aliases = ["busy_cycle"]
+tactic_class = "concurrency"
+semantic_class = "concurrency"
+notes = "Progress is possible but never taken."
+
+[[synonym]]
+canonical = "mutual_exclusion"
+aliases = ["mutex", "mutualExclusion", "critical_section"]
+tactic_class = "concurrency"
+semantic_class = "concurrency"
+notes = "At most one thread inside the critical section."
+
+[[synonym]]
+canonical = "critical_section"
+aliases = ["criticalSection", "cs_region"]
+tactic_class = "concurrency"
+semantic_class = "concurrency"
+notes = "The region governed by a mutual-exclusion discipline."
+
+[[synonym]]
+canonical = "lock"
+aliases = ["mutex_lock", "Lock", "Mutex", "acquire_release"]
+tactic_class = "concurrency"
+semantic_class = "concurrency"
+notes = "A token granting temporary exclusive access."
+
+[[synonym]]
+canonical = "lock_order"
+aliases = ["lockOrder", "lock_hierarchy"]
+tactic_class = "concurrency"
+semantic_class = "concurrency"
+notes = "A total order on locks that rules out deadlock."
+
+[[synonym]]
+canonical = "semaphore"
+aliases = ["counting_semaphore", "permit"]
+tactic_class = "concurrency"
+semantic_class = "concurrency"
+notes = "A counter that blocks when exhausted."
+
+[[synonym]]
+canonical = "monitor"
+aliases = ["condition_variable"]
+tactic_class = "concurrency"
+semantic_class = "concurrency"
+notes = "A lock plus condition variables."
+
+[[synonym]]
+canonical = "actor"
+aliases = ["Actor", "mailbox_owner"]
+tactic_class = "concurrency"
+semantic_class = "concurrency"
+notes = "A unit of concurrency that owns state and communicates only by messages."
+
+[[synonym]]
+canonical = "mailbox"
+aliases = ["message_queue", "inbox"]
+tactic_class = "concurrency"
+semantic_class = "concurrency"
+notes = "The unbounded or bounded queue in front of an actor."
+
+[[synonym]]
+canonical = "message_passing"
+aliases = ["messagePassing", "send_receive", "channel"]
+tactic_class = "concurrency"
+semantic_class = "concurrency"
+notes = "Communication by explicit messages rather than shared memory."
+
+[[synonym]]
+canonical = "channel"
+aliases = ["Chan", "pipe"]
+tactic_class = "concurrency"
+semantic_class = "concurrency"
+notes = "A typed conduit between concurrent processes."
+
+[[synonym]]
+canonical = "session_type"
+aliases = ["sessionType", "session_types", "protocol_type"]
+tactic_class = "concurrency"
+semantic_class = "concurrency"
+notes = "A type describing a communication protocol's sequence of messages."
+
+[[synonym]]
+canonical = "protocol"
+aliases = ["stateMachine_protocol"]
+tactic_class = "concurrency"
+semantic_class = "concurrency"
+notes = "A set of allowed message sequences."
+
+[[synonym]]
+canonical = "linear_channel"
+aliases = ["linearChannel", "use_once_channel"]
+tactic_class = "concurrency"
+semantic_class = "concurrency"
+notes = "A channel whose endpoints are linear resources."
+
+[[synonym]]
+canonical = "supervision_tree"
+aliases = ["supervisionTree", "supervisor_tree", "OTP_supervision"]
+tactic_class = "concurrency"
+semantic_class = "concurrency"
+notes = "A hierarchy in which failures propagate to a supervisor."
+
+[[synonym]]
+canonical = "supervisor"
+aliases = ["Supervisor", "restart_strategy"]
+tactic_class = "concurrency"
+semantic_class = "concurrency"
+notes = "The OTP process that starts and restarts children."
+
+[[synonym]]
+canonical = "gen_server"
+aliases = ["genServer", "GenServer", "behaviour_callback"]
+tactic_class = "concurrency"
+semantic_class = "concurrency"
+notes = "The OTP request/response behaviour, specified as a message-state protocol."
+
+[[synonym]]
+canonical = "callback"
+aliases = ["handle_call", "handle_cast"]
+tactic_class = "concurrency"
+semantic_class = "concurrency"
+notes = "The protocol step a behaviour delegates to the application."
+
+[[synonym]]
+canonical = "restart_strategy"
+aliases = ["restartStrategy", "one_for_one", "one_for_all", "rest_for_one"]
+tactic_class = "concurrency"
+semantic_class = "concurrency"
+notes = "Which siblings restart when a child fails."
+
+[[synonym]]
+canonical = "let_it_crash"
+aliases = ["letItCrash", "fail_fast", "supervision_philosophy"]
+tactic_class = "concurrency"
+semantic_class = "concurrency"
+notes = "Prefer restarting a component to patching a corrupt state."
+
+[[synonym]]
+canonical = "fault_tolerance"
+aliases = ["faultTolerance", "fault_tolerant", "resilience"]
+tactic_class = "concurrency"
+semantic_class = "concurrency"
+notes = "Continued service despite component failure."
+
+[[synonym]]
+canonical = "crash_recovery"
+aliases = ["crashRecovery", "recovery", "restart_persistence"]
+tactic_class = "concurrency"
+semantic_class = "concurrency"
+notes = "Rebuilding state after a failure."
+
+[[synonym]]
+canonical = "linearizable_register"
+aliases = ["atomicRegister"]
+tactic_class = "concurrency"
+semantic_class = "concurrency"
+notes = "The simplest shared object with a linearizability specification."
+
+[[synonym]]
+canonical = "consensus"
+aliases = ["agreement_termination_validity"]
+tactic_class = "concurrency"
+semantic_class = "concurrency"
+notes = "The problem of agreeing on one value despite failures."
+
+[[synonym]]
+canonical = "quorum"
+aliases = ["majority_intersection"]
+tactic_class = "concurrency"
+semantic_class = "concurrency"
+notes = "A set of participants large enough that any two intersect."
+
+[[synonym]]
+canonical = "two_phase_commit"
+aliases = ["twoPhaseCommit", "2PC", "prepare_commit"]
+tactic_class = "concurrency"
+semantic_class = "concurrency"
+notes = "The classic atomic-commit protocol and its blocking failure mode."
+
+[[synonym]]
+canonical = "causal_consistency"
+aliases = ["causalConsistency", "causal_order"]
+tactic_class = "concurrency"
+semantic_class = "concurrency"
+notes = "Ordering that respects happens-before but not total order."
+
+[[synonym]]
+canonical = "eventual_consistency"
+aliases = ["eventualConsistency", "convergence"]
+tactic_class = "concurrency"
+semantic_class = "concurrency"
+notes = "Replicas converge once updates stop."
+
+[[synonym]]
+canonical = "refinement_mapping"
+aliases = ["refinementMapping", "abstraction_map_concurrent"]
+tactic_class = "concurrency"
+semantic_class = "concurrency"
+notes = "The map used to prove a concurrent implementation refines an atomic specification."
+
+[[synonym]]
+canonical = "resource_ownership_discipline"
+aliases = ["ownershipDiscipline", "separation_thread"]
+tactic_class = "concurrency"
+semantic_class = "concurrency"
+notes = "Which thread owns which resource at each point."
+
+[[synonym]]
+canonical = "interference"
+aliases = ["environment_step", "rely_condition"]
+tactic_class = "concurrency"
+semantic_class = "concurrency"
+notes = "What other threads may do between two steps of this thread."
+
+# ============================================================
+# Toolchains, verifiers and proof artefacts
+# ============================================================
+
+[[synonym]]
+canonical = "idris2"
+aliases = ["Idris2", "Idris", "idris2_total"]
+tactic_class = "toolchain"
+semantic_class = "toolchain"
+notes = "Dependently typed language with totality checking; the ABI layer's host."
+
+[[synonym]]
+canonical = "zig"
+aliases = ["Zig", "zig_ffi", "ziglang"]
+tactic_class = "toolchain"
+semantic_class = "toolchain"
+notes = "Systems language with explicit alignment, overflow modes and C ABI interop."
+
+[[synonym]]
+canonical = "spark_ada"
+aliases = ["SPARK", "Ada", "Ada2012", "SPARK_Pro"]
+tactic_class = "toolchain"
+semantic_class = "toolchain"
+notes = "Ada subset with contracts, flow analysis and proof obligations."
+
+[[synonym]]
+canonical = "gnatprove"
+aliases = ["GNATprove", "gnat_prove"]
+tactic_class = "toolchain"
+semantic_class = "toolchain"
+notes = "The SPARK verification tool that discharges contracts by SMT and manual proof."
+
+[[synonym]]
+canonical = "creusot"
+aliases = ["Creusot", "creusot_rust"]
+tactic_class = "toolchain"
+semantic_class = "toolchain"
+notes = "Rust-to-Why3 verifier for annotated Rust functions."
+
+[[synonym]]
+canonical = "why3"
+aliases = ["Why3", "why3ml", "why3_mlw"]
+tactic_class = "toolchain"
+semantic_class = "toolchain"
+notes = "Intermediate verification language with many SMT and ITP backends."
+
+[[synonym]]
+canonical = "kani"
+aliases = ["Kani", "kani_verifier", "cbmc_rust"]
+tactic_class = "toolchain"
+semantic_class = "toolchain"
+notes = "Bounded model checker for Rust built on CBMC."
+
+[[synonym]]
+canonical = "prusti"
+aliases = ["Prusti", "prusti_rust"]
+tactic_class = "toolchain"
+semantic_class = "toolchain"
+notes = "Viper-based Rust verifier using specifications in annotations."
+
+[[synonym]]
+canonical = "cbmc"
+aliases = ["CBMC", "bounded_model_checker"]
+tactic_class = "toolchain"
+semantic_class = "toolchain"
+notes = "Bounded model checker for C and C++."
+
+[[synonym]]
+canonical = "frama_c"
+aliases = ["FramaC", "Frama_C", "ACSL_plugin"]
+tactic_class = "toolchain"
+semantic_class = "toolchain"
+notes = "C analyser with the ACSL specification language."
+
+[[synonym]]
+canonical = "dafny"
+aliases = ["Dafny", "dafny_verifier"]
+tactic_class = "toolchain"
+semantic_class = "toolchain"
+notes = "Auto-active verifier with built-in specification constructs."
+
+[[synonym]]
+canonical = "fstar"
+aliases = ["FStar", "F*", "fstar_lang"]
+tactic_class = "toolchain"
+semantic_class = "toolchain"
+notes = "Dependently typed language with effects and SMT-backed proofs."
+
+[[synonym]]
+canonical = "lean4"
+aliases = ["Lean4", "Lean", "lean_mathlib", "mathlib4"]
+tactic_class = "toolchain"
+semantic_class = "toolchain"
+notes = "Dependent type theory with the mathlib4 library."
+
+[[synonym]]
+canonical = "coq_rocq"
+aliases = ["Coq", "Rocq", "coq_kernel", "rocq_prover"]
+tactic_class = "toolchain"
+semantic_class = "toolchain"
+notes = "Calculus of inductive constructions with a small trusted kernel."
+
+[[synonym]]
+canonical = "isabelle_hol"
+aliases = ["Isabelle", "IsabelleHOL"]
+tactic_class = "toolchain"
+semantic_class = "toolchain"
+notes = "LCF-style prover with the Isabelle/Pure logical framework."
+
+[[synonym]]
+canonical = "agda"
+aliases = ["Agda", "agda_lang"]
+tactic_class = "toolchain"
+semantic_class = "toolchain"
+notes = "Dependently typed language with termination and coverage checking."
+
+[[synonym]]
+canonical = "acl2"
+aliases = ["ACL2", "acl2_books"]
+tactic_class = "toolchain"
+semantic_class = "toolchain"
+notes = "First-order logic of recursive functions over a Lisp universe."
+
+[[synonym]]
+canonical = "metamath"
+aliases = ["Metamath", "set_mm", "metamath_verifier"]
+tactic_class = "toolchain"
+semantic_class = "toolchain"
+notes = "A tiny substitution-based proof language with independent checkers."
+
+[[synonym]]
+canonical = "mizar"
+aliases = ["Mizar", "MML", "mizar_prover"]
+tactic_class = "toolchain"
+semantic_class = "toolchain"
+notes = "Declarative proof language with the Mizar Mathematical Library."
+
+[[synonym]]
+canonical = "tla_plus"
+aliases = ["TLAPlus", "TLA+", "TLC_model_checker"]
+tactic_class = "toolchain"
+semantic_class = "toolchain"
+notes = "Temporal specification language with model checking."
+
+[[synonym]]
+canonical = "alloy"
+aliases = ["Alloy", "alloy_analyzer", "relational_model_finding"]
+tactic_class = "toolchain"
+semantic_class = "toolchain"
+notes = "Relational bounded model finder."
+
+[[synonym]]
+canonical = "smt_lib"
+aliases = ["SMTLIB", "SMT-LIB", "smt2"]
+tactic_class = "toolchain"
+semantic_class = "toolchain"
+notes = "The standard input language for SMT solvers."
+
+[[synonym]]
+canonical = "z3"
+aliases = ["Z3", "z3_solver"]
+tactic_class = "toolchain"
+semantic_class = "toolchain"
+notes = "SMT solver used as the default discharge engine."
+
+[[synonym]]
+canonical = "cvc5"
+aliases = ["CVC5", "cvc5_solver"]
+tactic_class = "toolchain"
+semantic_class = "toolchain"
+notes = "SMT solver with Alethe proof output."
+
+[[synonym]]
+canonical = "alt_ergo"
+aliases = ["AltErgo", "Alt-Ergo"]
+tactic_class = "toolchain"
+semantic_class = "toolchain"
+notes = "SMT solver tuned for program-verification obligations."
+
+[[synonym]]
+canonical = "vampire"
+aliases = ["Vampire", "vampire_atp"]
+tactic_class = "toolchain"
+semantic_class = "toolchain"
+notes = "First-order ATP with a saturation core."
+
+[[synonym]]
+canonical = "eprover"
+aliases = ["EProver", "E_ATP"]
+tactic_class = "toolchain"
+semantic_class = "toolchain"
+notes = "Equational first-order prover."
+
+[[synonym]]
+canonical = "alethe"
+aliases = ["Alethe", "alethe_proof"]
+tactic_class = "toolchain"
+semantic_class = "toolchain"
+notes = "A proof format for SMT, checkable by Carcara."
+
+[[synonym]]
+canonical = "drat"
+aliases = ["DRAT", "drat_proof", "LRAT"]
+tactic_class = "toolchain"
+semantic_class = "toolchain"
+notes = "The standard proof format for SAT refutations."
+
+[[synonym]]
+canonical = "tstp"
+aliases = ["TSTP", "TPTP_proof"]
+tactic_class = "toolchain"
+semantic_class = "toolchain"
+notes = "The TPTP world's proof output format."
+
+[[synonym]]
+canonical = "dedukti"
+aliases = ["Dedukti", "lambdapi_style", "lambda_pi_modulo"]
+tactic_class = "toolchain"
+semantic_class = "toolchain"
+notes = "Lambda-Pi calculus modulo rewriting as an exchange lingua franca."
+
+[[synonym]]
+canonical = "opentheory"
+aliases = ["OpenTheory", "article_proof"]
+tactic_class = "toolchain"
+semantic_class = "toolchain"
+notes = "A proof-article format for the HOL family."
+
+[[synonym]]
+canonical = "smtcoq"
+aliases = ["SMTCoq", "smt_coq"]
+tactic_class = "toolchain"
+semantic_class = "toolchain"
+notes = "Rechecks SMT proofs inside Coq."
+
+[[synonym]]
+canonical = "proof_assistant"
+aliases = ["proofAssistant", "interactive_prover", "ITP"]
+tactic_class = "toolchain"
+semantic_class = "toolchain"
+notes = "An interactive system for constructing machine-checked proofs."
+
+[[synonym]]
+canonical = "automated_theorem_prover"
+aliases = ["ATP", "automatedTheoremProver", "saturation_prover"]
+tactic_class = "toolchain"
+semantic_class = "toolchain"
+notes = "A prover that searches for a refutation without interaction."
+
+[[synonym]]
+canonical = "model_checker"
+aliases = ["modelChecker", "model_checking"]
+tactic_class = "toolchain"
+semantic_class = "toolchain"
+notes = "Explores a finite state space for a counterexample."
+
+[[synonym]]
+canonical = "bounded_model_checker"
+aliases = ["BMC", "bounded_model_check"]
+tactic_class = "toolchain"
+semantic_class = "toolchain"
+notes = "Model checking to a fixed depth or bound."
+
+[[synonym]]
+canonical = "abstract_verifier"
+aliases = ["autoActive", "auto_active", "verifier"]
+tactic_class = "toolchain"
+semantic_class = "toolchain"
+notes = "A verifier that generates its own obligations from annotations."
+
+[[synonym]]
+canonical = "tactic"
+aliases = ["Tactics", "Ltac2", "Eisbach"]
+tactic_class = "toolchain"
+semantic_class = "toolchain"
+notes = "A procedure that transforms proof goals."
+
+[[synonym]]
+canonical = "tactic_language"
+aliases = ["tacticLanguage", "Ltac", "SSReflect", "Eisbach_Method"]
+tactic_class = "toolchain"
+semantic_class = "toolchain"
+notes = "The language in which tactics are written."
+
+[[synonym]]
+canonical = "proof_state"
+aliases = ["proofState", "goals_subgoals"]
+tactic_class = "toolchain"
+semantic_class = "toolchain"
+notes = "The remaining goals at a point in an interactive proof."
+
+[[synonym]]
+canonical = "term_elaboration"
+aliases = ["elaboration", "elaborator"]
+tactic_class = "toolchain"
+semantic_class = "toolchain"
+notes = "Turning surface syntax into kernel-checked terms."
+
+[[synonym]]
+canonical = "kernel_check"
+aliases = ["kernelCheck", "typeCheck", "recheck"]
+tactic_class = "toolchain"
+semantic_class = "toolchain"
+notes = "The final, small check a proof must pass."
+
+[[synonym]]
+canonical = "axiom_audit"
+aliases = ["axiomAudit", "axiom_usage", "postulate_scan"]
+tactic_class = "toolchain"
+semantic_class = "toolchain"
+notes = "Reporting which axioms a proof relies on; `sorry` and `admit` are the markers."
+
+[[synonym]]
+canonical = "sorry_marker"
+aliases = ["sorry", "admit", "Admitted"]
+tactic_class = "toolchain"
+semantic_class = "toolchain"
+notes = "An unfinished proof marker; a warning-level finding in the axiom tracker."
+
+[[synonym]]
+canonical = "unsound_escape"
+aliases = ["believe_me", "assert_total", "unsafeCast"]
+tactic_class = "toolchain"
+semantic_class = "toolchain"
+notes = "An escape hatch that voids the guarantee; a reject-level finding."
+
+[[synonym]]
+canonical = "totality_check"
+aliases = ["totality", "totalityChecking", "covering_termination"]
+tactic_class = "toolchain"
+semantic_class = "toolchain"
+notes = "The check that a function is total: covering and terminating."
+
+[[synonym]]
+canonical = "coverage_check"
+aliases = ["coverage", "coverageChecking", "exhaustive_match"]
+tactic_class = "toolchain"
+semantic_class = "toolchain"
+notes = "The check that every constructor case is handled."
+
+[[synonym]]
+canonical = "definitional_equality"
+aliases = ["definitionalEquality", "conversion", "judgemental_equality"]
+tactic_class = "toolchain"
+semantic_class = "toolchain"
+notes = "Equality by computation in the kernel."
+
+[[synonym]]
+canonical = "propositional_equality"
+aliases = ["propositionalEquality", "eq_refl", "identity_elimination"]
+tactic_class = "toolchain"
+semantic_class = "toolchain"
+notes = "Equality witnessed by a term, eliminated by J."
+
+[[synonym]]
+canonical = "universe"
+aliases = ["Type_i", "sort_hierarchy"]
+tactic_class = "toolchain"
+semantic_class = "toolchain"
+notes = "The stratification of types that keeps the logic consistent."
+
+[[synonym]]
+canonical = "impredicativity"
+aliases = ["impredicative", "Prop_impredicative"]
+tactic_class = "toolchain"
+semantic_class = "toolchain"
+notes = "A sort quantified over itself; a consistency-relevant design choice."
+
+[[synonym]]
+canonical = "proof_erasure"
+aliases = ["erasure", "proofErasure", "erased_arguments"]
+tactic_class = "toolchain"
+semantic_class = "toolchain"
+notes = "Removing proof-only arguments before execution."
+
+[[synonym]]
+canonical = "extraction"
+aliases = ["extract_verified_code"]
+tactic_class = "toolchain"
+semantic_class = "toolchain"
+notes = "Turning a verified definition into runnable code."
+
+[[synonym]]
+canonical = "ffi_boundary"
+aliases = ["ffiBoundary", "foreign_call", "cgo_bridge"]
+tactic_class = "toolchain"
+semantic_class = "toolchain"
+notes = "The seam where verified and unverified code meet; every claim must stop or be checked here."
+
+[[synonym]]
+canonical = "abi_specification"
+aliases = ["abiSpec", "abi_contract_spec", "layout_specification"]
+tactic_class = "toolchain"
+semantic_class = "toolchain"
+notes = "The type-level description of a foreign interface."
+
+[[synonym]]
+canonical = "wire_schema"
+aliases = ["wireSchema", "capnp", "capn_proto"]
+tactic_class = "toolchain"
+semantic_class = "toolchain"
+notes = "The serialisation contract shared across processes."
+
+[[synonym]]
+canonical = "refinement_proof"
+aliases = ["refinementProof", "refinement_obligation"]
+tactic_class = "toolchain"
+semantic_class = "toolchain"
+notes = "The proof that an implementation meets its specification."
+
+[[synonym]]
+canonical = "verified_extraction"
+aliases = ["verifiedExtraction", "correctness_preserving_extraction"]
+tactic_class = "toolchain"
+semantic_class = "toolchain"
+notes = "Extraction that preserves the proved property."
+
+# ============================================================
+# Estate layering: ABI, API, FFI and SNIF
+# ============================================================
+
+[[synonym]]
+canonical = "idris2_abi"
+aliases = ["ABI", "idris2ABI", "idr_abi", "type_level_spec"]
+tactic_class = "estate"
+semantic_class = "estate-abi"
+notes = "The estate's only ABI layer: Idris2 types and totality proofs pinning the on-wire contract."
+
+[[synonym]]
+canonical = "abi_contract"
+aliases = ["abiContract", "abi_type", "layout_contract"]
+tactic_class = "estate"
+semantic_class = "estate-abi"
+notes = "The typed statement of sizes, alignments and ownership across a boundary."
+
+[[synonym]]
+canonical = "abi_representation"
+aliases = ["abiRepresentation", "repr_abi", "wire_representation"]
+tactic_class = "estate"
+semantic_class = "estate-abi"
+notes = "How each logical value is laid out on the wire."
+
+[[synonym]]
+canonical = "abi_stability_guarantee"
+aliases = ["abiStability", "layout_stable", "versioned_abi"]
+tactic_class = "estate"
+semantic_class = "estate-abi"
+notes = "The proof obligation that a layout will not silently change."
+
+[[synonym]]
+canonical = "totality_proof"
+aliases = ["totalityProof", "total_by_construction", "no_partial"]
+tactic_class = "estate"
+semantic_class = "estate-abi"
+notes = "Zero believe_me, zero postulates, zero admits at the ABI layer."
+
+[[synonym]]
+canonical = "refined_index"
+aliases = ["refinedIndex", "Fin", "bounded_index"]
+tactic_class = "estate"
+semantic_class = "estate-abi"
+notes = "A Fin-indexed width or offset; illegal values become unrepresentable."
+
+[[synonym]]
+canonical = "foreign_descriptor"
+aliases = ["foreignDescriptor", "fdesc", "descriptor_table"]
+tactic_class = "estate"
+semantic_class = "estate-abi"
+notes = "The ABI-side table describing an exported function."
+
+[[synonym]]
+canonical = "opaque_handle"
+aliases = ["opaqueHandle", "Handle", "token_handle"]
+tactic_class = "estate"
+semantic_class = "estate-abi"
+notes = "An uninterpreted token whose invariants live on the ABI side."
+
+[[synonym]]
+canonical = "handle_lifetime"
+aliases = ["handleLifetime", "handle_validity", "token_live"]
+tactic_class = "estate"
+semantic_class = "estate-abi"
+notes = "When a handle may be used, and by whom, across the boundary."
+
+[[synonym]]
+canonical = "zig_api"
+aliases = ["zigAPI", "public_api", "zig_export"]
+tactic_class = "estate"
+semantic_class = "estate-api"
+notes = "The public surface is Zig: no other language defines the API."
+
+[[synonym]]
+canonical = "zig_ffi"
+aliases = ["zigFFI", "ffi_zig", "exported_fn", "callconv_C"]
+tactic_class = "estate"
+semantic_class = "estate-api"
+notes = "Zig owns the foreign-function boundary, including alignment and calling convention."
+
+[[synonym]]
+canonical = "exported_symbol"
+aliases = ["export", "exported", "symbol_visibility", "dllexport"]
+tactic_class = "estate"
+semantic_class = "estate-api"
+notes = "A function made callable from outside its compilation unit."
+
+[[synonym]]
+canonical = "symbol_table"
+aliases = ["symbolTable", "exports", "link_name"]
+tactic_class = "estate"
+semantic_class = "estate-api"
+notes = "The names a boundary actually exposes."
+
+[[synonym]]
+canonical = "marshalling"
+aliases = ["marshal", "encode_boundary", "pack_args"]
+tactic_class = "estate"
+semantic_class = "estate-api"
+notes = "Moving a value across a boundary representation."
+
+[[synonym]]
+canonical = "unmarshalling"
+aliases = ["unmarshal", "decode_boundary", "unpack_args"]
+tactic_class = "estate"
+semantic_class = "estate-api"
+notes = "Reconstructing a value from its boundary representation."
+
+[[synonym]]
+canonical = "boundary_ownership"
+aliases = ["boundaryOwnership", "who_frees", "ownership_at_boundary"]
+tactic_class = "estate"
+semantic_class = "estate-api"
+notes = "The single most important line of an FFI contract: who frees this."
+
+[[synonym]]
+canonical = "out_parameter"
+aliases = ["outParam", "outptr"]
+tactic_class = "estate"
+semantic_class = "estate-api"
+notes = "A parameter used to return a value; an aliasing question as well as a shape."
+
+[[synonym]]
+canonical = "error_code"
+aliases = ["errno", "errorCode", "status_enum", "return_code"]
+tactic_class = "estate"
+semantic_class = "estate-api"
+notes = "Out-of-band failure reporting across a boundary that cannot throw."
+
+[[synonym]]
+canonical = "null_at_boundary"
+aliases = ["nullable", "optionalPointer", "null_sentinel"]
+tactic_class = "estate"
+semantic_class = "estate-api"
+notes = "Nullability is explicit at the boundary, never implied."
+
+[[synonym]]
+canonical = "string_at_boundary"
+aliases = ["cString", "stringBoundary", "ptr_len_string", "utf8_boundary"]
+tactic_class = "estate"
+semantic_class = "estate-api"
+notes = "Strings cross as pointer plus length with a fixed encoding."
+
+[[synonym]]
+canonical = "callback_into_host"
+aliases = ["callbackHost", "host_callback", "upcall"]
+tactic_class = "estate"
+semantic_class = "estate-api"
+notes = "A function pointer calling back into the host; lifetime and thread must be stated."
+
+[[synonym]]
+canonical = "snif"
+aliases = ["SNIF", "safe_native_interface"]
+tactic_class = "estate"
+semantic_class = "estate-snif"
+notes = "The estate's only BEAM native boundary: a safe NIF with stated scheduling and lifetime rules."
+
+[[synonym]]
+canonical = "snif_contract"
+aliases = ["snifContract", "snif_spec", "boundary_contract_snif"]
+tactic_class = "estate"
+semantic_class = "estate-snif"
+notes = "The documented preconditions a SNIF requires, including term lifetime and thread."
+
+[[synonym]]
+canonical = "nif"
+aliases = ["NIF", "nif_erl", "erlang_nif"]
+tactic_class = "estate"
+semantic_class = "estate-snif"
+notes = "An Erlang native function; the unsafe baseline that a SNIF wraps."
+
+[[synonym]]
+canonical = "dirty_nif"
+aliases = ["dirtyNIF", "dirty_scheduler"]
+tactic_class = "estate"
+semantic_class = "estate-snif"
+notes = "A NIF scheduled off the normal scheduler because it may block."
+
+[[synonym]]
+canonical = "nif_resource"
+aliases = ["nifResource", "resource_object", "enif_resource"]
+tactic_class = "estate"
+semantic_class = "estate-snif"
+notes = "A native object whose lifetime is tied to a BEAM term."
+
+[[synonym]]
+canonical = "term_lifetime"
+aliases = ["termLifetime", "env_valid", "term_valid_scope"]
+tactic_class = "estate"
+semantic_class = "estate-snif"
+notes = "Terms are valid only while the environment is; the classic SNIF hazard."
+
+[[synonym]]
+canonical = "scheduler_thread"
+aliases = ["schedulerThread", "normal_scheduler", "dirty_scheduler"]
+tactic_class = "estate"
+semantic_class = "estate-snif"
+notes = "Which BEAM scheduler runs the native code, and what that forbids."
+
+[[synonym]]
+canonical = "blocking_call_discipline"
+aliases = ["blockingCall", "must_not_block", "yield_nif"]
+tactic_class = "estate"
+semantic_class = "estate-snif"
+notes = "A normal-scheduler NIF must not block; a SNIF states how it yields."
+
+[[synonym]]
+canonical = "beam_process"
+aliases = ["beamProcess", "pid", "process_boundary"]
+tactic_class = "estate"
+semantic_class = "estate-snif"
+notes = "The unit of isolation on the BEAM side of a SNIF."
+
+[[synonym]]
+canonical = "resource_release_callback"
+aliases = ["dtor", "releaseCallback", "destructor_nif"]
+tactic_class = "estate"
+semantic_class = "estate-snif"
+notes = "The callback that frees a native resource when the term is collected."
+
+[[synonym]]
+canonical = "panic_across_boundary"
+aliases = ["panicAcrossBoundary", "unwinding_ffi", "abort_on_panic"]
+tactic_class = "estate"
+semantic_class = "estate-snif"
+notes = "A panic must never unwind through the boundary; it is a soundness violation."
+
+[[synonym]]
+canonical = "result_into_beam"
+aliases = ["resultIntoBeam", "ok_tuple", "error_tuple"]
+tactic_class = "estate"
+semantic_class = "estate-snif"
+notes = "Mapping a Rust/Zig result into BEAM terms without leaking ownership."
+
+[[synonym]]
+canonical = "rust_creusot_layer"
+aliases = ["rustCreusot", "annotatedRust", "creusot_contract"]
+tactic_class = "estate"
+semantic_class = "estate-layer"
+notes = "The Rust layer is Rust/Creusot: contracts are written, not assumed."
+
+[[synonym]]
+canonical = "creusot_annotation"
+aliases = ["creusotAnnotation", "requires", "ensures", "invariant_rust"]
+tactic_class = "estate"
+semantic_class = "estate-layer"
+notes = "The in-source contract syntax Creusot translates to Why3."
+
+[[synonym]]
+canonical = "julia_layer"
+aliases = ["juliaLayer", "julia_numeric", "gnn_layer"]
+tactic_class = "estate"
+semantic_class = "estate-layer"
+notes = "Julia owns numeric, ML and ranking work, reached by IPC rather than FFI."
+
+[[synonym]]
+canonical = "chapel_layer"
+aliases = ["chapelLayer", "chapel_parallel", "dispatch_layer"]
+tactic_class = "estate"
+semantic_class = "estate-layer"
+notes = "Chapel owns the parallel dispatch and rank-merge layer."
+
+[[synonym]]
+canonical = "ipc_channel"
+aliases = ["ipcChannel", "capnp_rpc", "sidecar_channel"]
+tactic_class = "estate"
+semantic_class = "estate-layer"
+notes = "Inter-process transport between Rust, Julia and Chapel."
+
+[[synonym]]
+canonical = "sidecar"
+aliases = ["service_process"]
+tactic_class = "estate"
+semantic_class = "estate-layer"
+notes = "A separate process reached over IPC; the alternative to an in-process boundary."
+
+[[synonym]]
+canonical = "polyglot_boundary"
+aliases = ["polyglotBoundary", "language_boundary", "layer_boundary"]
+tactic_class = "estate"
+semantic_class = "estate-layer"
+notes = "Every place where two estate languages meet, and which one owns the contract."
+
+[[synonym]]
+canonical = "language_ownership"
+aliases = ["layerOwnership", "owns_layer", "contract_owner"]
+tactic_class = "estate"
+semantic_class = "estate-layer"
+notes = "Exactly one language owns each contract; the others consume it."
+
+[[synonym]]
+canonical = "no_python_dependency"
+aliases = ["noPython", "pythonFree", "estate_policy"]
+tactic_class = "estate"
+semantic_class = "estate-layer"
+notes = "Build, test and verification paths must not require a Python runtime."
+
+[[synonym]]
+canonical = "generated_binding"
+aliases = ["generatedBinding", "codegen", "bindings_stub"]
+tactic_class = "estate"
+semantic_class = "estate-layer"
+notes = "Bindings derived from the ABI definition rather than hand-written twice."
+
+[[synonym]]
+canonical = "hand_written_binding"
+aliases = ["handWrittenBinding", "manual_binding", "drift_risk"]
+tactic_class = "estate"
+semantic_class = "estate-layer"
+notes = "A binding that can drift from the ABI; the thing generated bindings replace."
+
+[[synonym]]
+canonical = "binding_drift"
+aliases = ["bindingDrift", "abi_drift", "stale_binding"]
+tactic_class = "estate"
+semantic_class = "estate-layer"
+notes = "A binding that no longer matches the ABI it claims to implement."
+
+[[synonym]]
+canonical = "conformance_test"
+aliases = ["conformanceTest", "abi_conformance", "boundary_test"]
+tactic_class = "estate"
+semantic_class = "estate-layer"
+notes = "A test that exercises the boundary contract from the far side."

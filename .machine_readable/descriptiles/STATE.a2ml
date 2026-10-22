@@ -1374,12 +1374,13 @@ corpus_adapters_list = [
   "tptp", "smtlib", "proofnet", "minif2f",
 ]
 
-synonym_tables_count = "14 per-prover + 3 cross-prover dictionaries"
+synonym_tables_count = "14 per-prover + 5 cross-prover dictionaries"
 synonym_tables_list = [
   "agda", "coq", "lean4", "idris2",
   "isabelle", "isabelle_afp", "metamath", "mizar",
   "hol_light", "hol4", "dafny", "why3", "fstar", "acl2",
-  "_msc2020", "_wordnet_math", "_conceptnet_seed",
+  "_msc2020", "_wordnet_math", "_conceptnet_seed", "_disciplines",
+  "_verification_systems",
 ]
 
 arbitration_mechanisms_count = 4  # was 1

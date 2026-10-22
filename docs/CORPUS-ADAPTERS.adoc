@@ -92,15 +92,21 @@ etc. are fetched at training time via `+just provision-corpora+`).
 
 Every adapter has a corresponding per-prover synonyms TOML at
 `+data/synonyms/<adapter>.toml+` listing tactic / decl / hazard
-vocabulary with canonical-and-aliases form. Plus three cross-prover
+vocabulary with canonical-and-aliases form. Plus four cross-prover
 taxonomic dictionaries (underscore-prefix; merged into `+SynonymTable+`
 via `+merge_external()+`):
 
-* `+_msc2020.toml+` — 87 MSC2020 codes for cross-domain classification
-* `+_wordnet_math.toml+` — ~80 lemmas from WordNet 3.1 math
+* `+_msc2020.toml+` — 177 MSC2020 codes for cross-domain classification
+(68Qxx and 68Nxx complete; 03B/03C/03D/03F for logic and proof theory)
+* `+_wordnet_math.toml+` — 81 lemmas from WordNet 3.1 math
 sub-hierarchy
-* `+_conceptnet_seed.toml+` — ~55 pre-fetched ConceptNet 5.7 edges for
+* `+_conceptnet_seed.toml+` — 53 pre-fetched ConceptNet 5.7 edges for
 offline-resilient semantic_class resolution
+* `+_verification_systems.toml+` — 657 program-verification concepts
+(bitvectors, memory layout, separation/region framing, termination
+measures, resource algebras, information flow, estate layer boundaries).
+This is the dictionary that ProofNet/MiniF2F-shaped vocabularies do not
+cover.
 
 === Wiring into downstream consumers
 

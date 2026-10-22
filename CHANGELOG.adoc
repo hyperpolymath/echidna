@@ -8,6 +8,30 @@ https://semver.org/spec/v2.0.0.html[Semantic Versioning].
 
 === [Unreleased]
 
+==== Added — verification vocabulary 2026-10-22
+
+* *`+data/synonyms/_verification_systems.toml+`* (657 rows): the first
+cross-prover dictionary aimed at program verification rather than
+undergraduate pure mathematics. Sections: bitvectors and machine integers,
+memory layout and ABI, ownership and slicing, separation logic and region
+framing, contracts and proof obligations, termination measures, refinement
+and semantics, resource algebras (dioid / tropical / antichain /
+fixpoint), information flow and epistemic vocabulary, concurrency, and the
+estate layer boundaries. Loaded as
+`+CrossProverDicts::verification_systems+` (Rust) and
+`+SaturationSynonyms.load_verification_systems+` (Julia).
+* *`+_msc2020.toml+`* 87 -> *177* codes. 68Qxx (26 codes) and 68Nxx (10
+codes) are now complete; 03B/03C/03D/03F cover logic, computability and
+proof theory; 68M/68P/68T/68V/68W and 06B35 cover the systems and proof
+assistant ring. Fifteen pre-existing rows had MSC2010 or transferred
+wording and are repaired in place, with a note naming the MSC2020 code
+(`+03B15+` -> 03B16/03B38, `+68T15+` -> 68V15, `+68V05+`/`+68V25+`/
+`+68V30+`/`+68V35+` re-pointed to their current meanings).
+* *Estate language policy* recorded in `+data/synonyms/README.adoc+`:
+ABIs in Idris2, APIs and FFIs in Zig, BEAM native boundaries as SNIFs
+(not bare NIFs), Rust/Creusot for the Rust layer, Julia and Chapel for
+their layers, and no Python anywhere in the tree.
+
 ==== Added — arbitration 2026-10-14 (ECH-05)
 
 * *Fidelity-levelled arbitration*: `+ProverAttempt+` carries

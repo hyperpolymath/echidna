@@ -82,6 +82,7 @@ synonyms = [
   "data/synonyms/_msc2020.toml",
   "data/synonyms/_wordnet_math.toml",
   "data/synonyms/_conceptnet_seed.toml",
+  "data/synonyms/_verification_systems.toml",
 ]
 
 [saturation-campaign.new-docs]

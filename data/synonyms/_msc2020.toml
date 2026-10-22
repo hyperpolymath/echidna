@@ -18,6 +18,26 @@
 # (Functional analysis), 54 (Topology), 55 (Algebraic topology), 60
 # (Probability), 65 (Numerical analysis).
 #
+# 2026-10-22 verification expansion (owner directive): 87 -> 177 codes.
+#   * 68Qxx (Theory of computing) is now COMPLETE: all 26 MSC2020 codes.
+#   * 68Nxx (Theory of software) is now COMPLETE: all 10 MSC2020 codes.
+#   * 03B / 03C / 03D / 03F (logic, computability, proof theory) completed
+#     across the codes that bear on program verification.
+#   * Added the 68M / 68P / 68T / 68V / 68W ring plus 06B35 (continuous
+#     lattices) so termination, information flow, distributed protocols and
+#     proof-assistant work all have a home code.
+#
+# Fidelity note. Codes were checked against the zbMATH MSC2020 listing on
+# 2026-10-22, and that pass found mislabels in the pre-existing rows; those
+# are repaired in place with a MSC2020 wording note. Two rows are MSC2010-only
+# and kept deliberately for backwards compatibility with pre-2020 metadata:
+# 03B15 (split in MSC2020 into 03B16 + 03B38) and 68T15 (renumbered 68V15).
+# New rows must use the MSC2020 code.
+#
+# There is no way to reach "250 codes across 68Q / 68N / 03B70": MSC2020
+# defines 26 codes in 68Qxx, 10 in 68Nxx and exactly one 03B70. 250 would
+# require inventing codes, which is worse than a smaller honest set.
+#
 # Schema: `canonical` is the MSC code; `aliases` are common name fragments
 # corpus indexers and tactic-suggestion engines see in the wild; `tactic_class`
 # is reused as a coarse "MSC top section" tag; `semantic_class` is the
@@ -46,7 +66,7 @@ canonical = "03B15"
 aliases = ["higher_order_logic", "HOL", "type_theory_extensional", "STT", "simple_type_theory"]
 tactic_class = "03-Logic"
 semantic_class = "higher-order-logic"
-notes = "Higher-order logic; type theory."
+notes = "MSC2010 code (higher-order logic; type theory). MSC2020 splits it into 03B16 (higher-order logic) and 03B38 (type theory); kept so pre-2020 metadata still resolves. Prefer 03B16 / 03B38 in new rows."
 
 [[synonym]]
 canonical = "03B20"
@@ -85,10 +105,10 @@ notes = "Temporal logic."
 
 [[synonym]]
 canonical = "03B45"
-aliases = ["modal_logic", "S4", "S5", "K", "T"]
+aliases = ["modal_logic", "S4", "S5", "K", "T", "normal_modal_logic"]
 tactic_class = "03-Logic"
 semantic_class = "modal-logic"
-notes = "Modal logic; logic of knowledge and belief."
+notes = "Modal logic (including the logic of norms). MSC2020 sends knowledge and belief to 03B42 and temporal logic to 03B44."
 
 [[synonym]]
 canonical = "03B47"
@@ -99,10 +119,10 @@ notes = "Substructural logics."
 
 [[synonym]]
 canonical = "03B50"
-aliases = ["many_valued", "fuzzy_logic", "lukasiewicz", "godel_logic"]
+aliases = ["many_valued", "lukasiewicz", "post_algebra", "kleene_logic", "three_valued"]
 tactic_class = "03-Logic"
 semantic_class = "many-valued-logic"
-notes = "Many-valued logic."
+notes = "Many-valued logic. Fuzzy logic is 03B52, not here."
 
 [[synonym]]
 canonical = "03B52"
@@ -120,10 +140,10 @@ notes = "Logic in computer science."
 
 [[synonym]]
 canonical = "03B80"
-aliases = ["other_systems_logic", "linear_temporal", "epistemic_logic", "deontic"]
+aliases = ["applications_of_logic", "applied_logic", "logic_in_law", "logic_in_linguistics"]
 tactic_class = "03-Logic"
-semantic_class = "specialised-logic"
-notes = "Other systems of logic."
+semantic_class = "applied-logic"
+notes = "Other applications of logic."
 
 [[synonym]]
 canonical = "03C05"
@@ -134,10 +154,10 @@ notes = "Model theory: equational classes, universal algebra."
 
 [[synonym]]
 canonical = "03D03"
-aliases = ["computability", "recursion_theory", "Turing_machine", "halting_problem"]
+aliases = ["thue_system", "post_system", "markov_algorithm", "semi_thue"]
 tactic_class = "03-Logic"
-semantic_class = "computability"
-notes = "Thue and Markov systems; word problems."
+semantic_class = "string-rewriting"
+notes = "Thue and Post systems, etc. Turing machines are 03D10; the halting problem is 03D35."
 
 [[synonym]]
 canonical = "03D15"
@@ -183,9 +203,9 @@ notes = "Cut-elimination and normal-form theorems; ordinal analysis."
 
 [[synonym]]
 canonical = "03F07"
-aliases = ["realizability", "BHK", "Kreisel", "extracted_program"]
+aliases = ["proof_structure", "proof_grammar", "proof_representation", "proof_net"]
 tactic_class = "03-Logic"
-semantic_class = "realizability"
+semantic_class = "proof-structure"
 notes = "Structure of proofs."
 
 [[synonym]]
@@ -197,10 +217,10 @@ notes = "Provability logics and related algebras."
 
 [[synonym]]
 canonical = "03F50"
-aliases = ["metamathematics", "PA", "PRA", "first_order_arithmetic", "incompleteness"]
+aliases = ["constructive_metamathematics", "realizability_semantics", "BHK_semantics"]
 tactic_class = "03-Logic"
-semantic_class = "arithmetic-metamath"
-notes = "Metamathematics of constructive systems."
+semantic_class = "constructive-metamathematics"
+notes = "Metamathematics of constructive systems. First-order arithmetic is 03F30."
 
 [[synonym]]
 canonical = "03F55"
@@ -250,10 +270,10 @@ notes = "Combinatorics of partially ordered sets."
 
 [[synonym]]
 canonical = "06A11"
-aliases = ["chain_condition", "DCC", "ACC", "well_founded", "Noetherian"]
+aliases = ["chain_condition", "DCC", "ACC", "descending_chain_condition", "ascending_chain_condition"]
 tactic_class = "06-Order"
-semantic_class = "well-founded"
-notes = "Chain conditions on partial orders."
+semantic_class = "chain-condition"
+notes = "Chain conditions on partial orders. Well-foundedness is a relation property, not a chain condition."
 
 [[synonym]]
 canonical = "06B23"
@@ -374,10 +394,10 @@ notes = "Derivators, triangulated categories, infinity-categories."
 
 [[synonym]]
 canonical = "18N10"
-aliases = ["monoidal_category", "tensor_product", "braided_monoidal", "symmetric_monoidal"]
+aliases = ["bicategory", "2_category", "double_category", "weak_2_category"]
 tactic_class = "18-Category"
-semantic_class = "monoidal-category"
-notes = "2-categories, bicategories, double categories."
+semantic_class = "bicategory"
+notes = "2-categories, bicategories, double categories. Monoidal categories are 18M05."
 
 [[synonym]]
 canonical = "18N40"
@@ -619,7 +639,7 @@ canonical = "68T15"
 aliases = ["automated_theorem_proving", "ATP", "tableau_method", "resolution_proof", "saturation"]
 tactic_class = "68-ComputerScience"
 semantic_class = "automated-theorem-proving"
-notes = "Theorem proving (deduction, resolution, etc.)."
+notes = "MSC2010 code. MSC2020 renumbers theorem proving as 68V15; kept so pre-2020 metadata still resolves. Prefer 68V15 in new rows."
 
 [[synonym]]
 canonical = "68T27"
@@ -644,17 +664,17 @@ notes = "Reasoning under uncertainty in the context of artificial intelligence."
 
 [[synonym]]
 canonical = "68V05"
-aliases = ["computer_aided_proof", "interactive_theorem_proving", "Coq", "Isabelle", "Lean", "Agda"]
+aliases = ["proof_by_exhaustion", "computer_assisted_case_check", "exhaustive_case_analysis"]
 tactic_class = "68-ComputerScience"
-semantic_class = "computer-aided-proof"
-notes = "Mathematical knowledge management; computational aspects of proof and proof systems."
+semantic_class = "proof-by-exhaustion"
+notes = "Computer assisted proofs of proofs-by-exhaustion type. Interactive and automated provers are 68V15."
 
 [[synonym]]
 canonical = "68V15"
-aliases = ["theory_of_ATP", "automated_proof_search", "tableau_calculus", "instantiation"]
+aliases = ["theory_of_ATP", "automated_proof_search", "tableau_calculus", "instantiation", "ATPs", "interactive_theorem_proving"]
 tactic_class = "68-ComputerScience"
-semantic_class = "theory-of-atp"
-notes = "Theory of automated theorem proving."
+semantic_class = "theorem-proving"
+notes = "Theorem proving (automated and interactive theorem provers, deduction, resolution, etc.)."
 
 [[synonym]]
 canonical = "68V20"
@@ -665,21 +685,664 @@ notes = "Formalization of mathematics in connection with theorem provers."
 
 [[synonym]]
 canonical = "68V25"
-aliases = ["proof_assistant", "tactic_language", "Ltac", "Mtac", "Eisbach"]
+aliases = ["math_markup", "content_markup", "presentation_markup", "OpenMath", "OMDoc_markup"]
 tactic_class = "68-ComputerScience"
-semantic_class = "proof-assistant"
-notes = "Proof assistants and related software."
+semantic_class = "math-markup"
+notes = "Presentation and content markup for mathematics."
 
 [[synonym]]
 canonical = "68V30"
-aliases = ["proof_certificate", "proof_checking", "kernel_verification", "small_core"]
+aliases = ["mathematical_knowledge_management", "MKM", "OMDoc", "math_knowledge_base", "semantic_math"]
 tactic_class = "68-ComputerScience"
-semantic_class = "proof-certificate"
-notes = "Mathematical aspects of automated reasoning (correctness, search strategies, etc.)."
+semantic_class = "math-knowledge-management"
+notes = "Mathematical knowledge management."
 
 [[synonym]]
 canonical = "68V35"
-aliases = ["mathematical_knowledge_management", "OMDoc", "ontology_mathematics", "semantic_math"]
+aliases = ["digital_math_library", "digital_mathematics_library", "math_repository", "MML", "AFP"]
 tactic_class = "68-ComputerScience"
-semantic_class = "math-knowledge-management"
-notes = "Digital mathematics libraries, search engines, knowledge bases."
+semantic_class = "digital-math-library"
+notes = "Digital mathematics libraries and repositories."
+
+# ============================================================
+# 03 — Logic: MSC2020 completion of 03B / 03C / 03D / 03F
+# Verified against the zbMATH MSC2020 classification listing.
+# ============================================================
+
+[[synonym]]
+canonical = "03B16"
+aliases = ["higher_order_logic", "HOL", "simple_type_theory"]
+tactic_class = "03-Logic"
+semantic_class = "higher-order-logic"
+notes = "Higher-order logic. MSC2020 split of MSC2010 03B15; the HOL family's home code."
+
+[[synonym]]
+canonical = "03B22"
+aliases = ["abstract_deductive_system", "proof_system_abstract", "consequence_operator"]
+tactic_class = "03-Logic"
+semantic_class = "abstract-deductive-system"
+notes = "Abstract deductive systems."
+
+[[synonym]]
+canonical = "03B25"
+aliases = ["decidability", "decision_procedure", "decidable_theory"]
+tactic_class = "03-Logic"
+semantic_class = "decidability"
+notes = "Decidability of theories and sets of sentences."
+
+[[synonym]]
+canonical = "03B38"
+aliases = ["type_theory", "dependent_type_theory", "lambda_calculus_typed"]
+tactic_class = "03-Logic"
+semantic_class = "type-theory"
+notes = "Type theory. MSC2020 split of MSC2010 03B15; the Idris2/Agda/Coq home code."
+
+[[synonym]]
+canonical = "03B42"
+aliases = ["epistemic_logic", "logic_of_knowledge", "doxastic_logic", "belief_change"]
+tactic_class = "03-Logic"
+semantic_class = "epistemic-logic"
+notes = "Logics of knowledge and belief (including belief change)."
+
+[[synonym]]
+canonical = "03B48"
+aliases = ["inductive_logic", "probability_logic", "bayesian_confirmation"]
+tactic_class = "03-Logic"
+semantic_class = "probabilistic-logic"
+notes = "Probability and inductive logic."
+
+[[synonym]]
+canonical = "03B53"
+aliases = ["paraconsistent_logic", "inconsistency_tolerant"]
+tactic_class = "03-Logic"
+semantic_class = "paraconsistent-logic"
+notes = "Paraconsistent logics."
+
+[[synonym]]
+canonical = "03B55"
+aliases = ["intermediate_logic", "superintuitionistic"]
+tactic_class = "03-Logic"
+semantic_class = "intermediate-logic"
+notes = "Intermediate logics."
+
+[[synonym]]
+canonical = "03B60"
+aliases = ["nonclassical_logic", "other_nonclassical"]
+tactic_class = "03-Logic"
+semantic_class = "nonclassical-logic"
+notes = "Other nonclassical logic."
+
+[[synonym]]
+canonical = "03B62"
+aliases = ["combined_logic", "fibring", "logic_combination"]
+tactic_class = "03-Logic"
+semantic_class = "combined-logic"
+notes = "Combined logics."
+
+[[synonym]]
+canonical = "03B65"
+aliases = ["natural_language_logic", "formal_semantics_logic"]
+tactic_class = "03-Logic"
+semantic_class = "logic-of-natural-language"
+notes = "Logic of natural languages."
+
+[[synonym]]
+canonical = "03B99"
+aliases = ["logic_unspecified"]
+tactic_class = "03-Logic"
+semantic_class = "logic-unspecified"
+notes = "None of the above, but in this section."
+
+[[synonym]]
+canonical = "03C13"
+aliases = ["finite_model_theory", "finite_structure", "descriptive_complexity_finite"]
+tactic_class = "03-Logic"
+semantic_class = "finite-model-theory"
+notes = "Finite structures."
+
+[[synonym]]
+canonical = "03D05"
+aliases = ["automata_and_logic", "MSO_automata"]
+tactic_class = "03-Logic"
+semantic_class = "automata-and-logic"
+notes = "Automata and formal grammars in connection with logical questions."
+
+[[synonym]]
+canonical = "03D10"
+aliases = ["turing_machine", "turing_computable", "universal_machine"]
+tactic_class = "03-Logic"
+semantic_class = "turing-machine"
+notes = "Turing machines and related notions."
+
+[[synonym]]
+canonical = "03D20"
+aliases = ["recursive_function", "subrecursive_hierarchy", "primitive_recursive"]
+tactic_class = "03-Logic"
+semantic_class = "recursive-function"
+notes = "Recursive functions and relations, subrecursive hierarchies."
+
+[[synonym]]
+canonical = "03D25"
+aliases = ["computably_enumerable", "recursively_enumerable", "r_e_set"]
+tactic_class = "03-Logic"
+semantic_class = "computably-enumerable"
+notes = "Recursively (computably) enumerable sets and degrees."
+
+[[synonym]]
+canonical = "03D30"
+aliases = ["reducibility", "turing_reduction", "many_one_reduction"]
+tactic_class = "03-Logic"
+semantic_class = "degrees-and-reducibility"
+notes = "Other degrees and reducibilities in computability and recursion theory."
+
+[[synonym]]
+canonical = "03D32"
+aliases = ["algorithmic_randomness", "kolmogorov_random", "martin_lof"]
+tactic_class = "03-Logic"
+semantic_class = "algorithmic-randomness"
+notes = "Algorithmic randomness and dimension."
+
+[[synonym]]
+canonical = "03D35"
+aliases = ["undecidability", "halting_problem", "undecidable_set"]
+tactic_class = "03-Logic"
+semantic_class = "undecidability"
+notes = "Undecidability and degrees of sets of sentences."
+
+[[synonym]]
+canonical = "03D40"
+aliases = ["word_problem", "undecidable_word_problem"]
+tactic_class = "03-Logic"
+semantic_class = "word-problem"
+notes = "Word problems, etc. in computability and recursion theory."
+
+[[synonym]]
+canonical = "03D45"
+aliases = ["numeration", "effectively_presented_structure"]
+tactic_class = "03-Logic"
+semantic_class = "effective-presentation"
+notes = "Theory of numerations, effectively presented structures."
+
+[[synonym]]
+canonical = "03D55"
+aliases = ["arithmetical_hierarchy", "definability_hierarchy"]
+tactic_class = "03-Logic"
+semantic_class = "hierarchies"
+notes = "Hierarchies of computability and definability."
+
+[[synonym]]
+canonical = "03D60"
+aliases = ["computability_on_ordinals", "admissible_set"]
+tactic_class = "03-Logic"
+semantic_class = "computability-on-ordinals"
+notes = "Computability and recursion theory on ordinals, admissible sets, etc."
+
+[[synonym]]
+canonical = "03D65"
+aliases = ["higher_type_recursion", "set_recursion"]
+tactic_class = "03-Logic"
+semantic_class = "higher-type-computability"
+notes = "Higher-type and set recursion theory."
+
+[[synonym]]
+canonical = "03D70"
+aliases = ["inductive_definability", "least_fixpoint_definability"]
+tactic_class = "03-Logic"
+semantic_class = "inductive-definability"
+notes = "Inductive definability."
+
+[[synonym]]
+canonical = "03D75"
+aliases = ["abstract_computability", "axiomatic_computability"]
+tactic_class = "03-Logic"
+semantic_class = "abstract-computability"
+notes = "Abstract and axiomatic computability and recursion theory."
+
+[[synonym]]
+canonical = "03D78"
+aliases = ["computable_analysis", "computation_over_reals"]
+tactic_class = "03-Logic"
+semantic_class = "computable-analysis"
+notes = "Computation over the reals, computable analysis."
+
+[[synonym]]
+canonical = "03F10"
+aliases = ["proof_theoretic_functional", "functional_interpretation"]
+tactic_class = "03-Logic"
+semantic_class = "proof-theoretic-functional"
+notes = "Functionals in proof theory."
+
+[[synonym]]
+canonical = "03F15"
+aliases = ["ordinal_notation", "recursive_ordinal"]
+tactic_class = "03-Logic"
+semantic_class = "recursive-ordinal"
+notes = "Recursive ordinals and ordinal notations."
+
+[[synonym]]
+canonical = "03F20"
+aliases = ["proof_complexity", "proof_length", "lower_bound_proof_length"]
+tactic_class = "03-Logic"
+semantic_class = "proof-complexity"
+notes = "Complexity of proofs."
+
+[[synonym]]
+canonical = "03F25"
+aliases = ["relative_consistency", "interpretation_of_theories"]
+tactic_class = "03-Logic"
+semantic_class = "relative-consistency"
+notes = "Relative consistency and interpretations."
+
+[[synonym]]
+canonical = "03F30"
+aliases = ["first_order_arithmetic", "PA", "PRA", "fragment_arithmetic"]
+tactic_class = "03-Logic"
+semantic_class = "first-order-arithmetic"
+notes = "First-order arithmetic and fragments."
+
+[[synonym]]
+canonical = "03F35"
+aliases = ["second_order_arithmetic", "reverse_mathematics"]
+tactic_class = "03-Logic"
+semantic_class = "higher-order-arithmetic"
+notes = "Second- and higher-order arithmetic and fragments."
+
+[[synonym]]
+canonical = "03F40"
+aliases = ["incompleteness", "godel_numbering", "godel_incompleteness"]
+tactic_class = "03-Logic"
+semantic_class = "incompleteness"
+notes = "Gödel numberings and issues of incompleteness."
+
+[[synonym]]
+canonical = "03F52"
+aliases = ["linear_logic", "substructural_proof_theory", "cut_elimination_linear"]
+tactic_class = "03-Logic"
+semantic_class = "linear-logic-proof-theory"
+notes = "Proof-theoretic aspects of linear logic and other substructural logics."
+
+[[synonym]]
+canonical = "03F65"
+aliases = ["constructive_mathematics", "Bishop_constructive"]
+tactic_class = "03-Logic"
+semantic_class = "constructive-mathematics"
+notes = "Other constructive mathematics."
+
+[[synonym]]
+canonical = "03F99"
+aliases = ["proof_theory_unspecified"]
+tactic_class = "03-Logic"
+semantic_class = "proof-theory-unspecified"
+notes = "None of the above, but in this section."
+
+[[synonym]]
+canonical = "06B35"
+aliases = ["continuous_lattice", "continuous_poset", "domain_equation"]
+tactic_class = "03-Logic"
+semantic_class = "continuous-lattice"
+notes = "Continuous lattices and posets, applications."
+
+# ============================================================
+# 68— software, systems and algorithms ring (68N / 68M / 68P / 68T / 68V / 68W)
+# ============================================================
+
+[[synonym]]
+canonical = "68N01"
+aliases = ["software_general", "theory_of_software"]
+tactic_class = "68-ComputerScience"
+semantic_class = "software-general"
+notes = "General topics in the theory of software."
+
+[[synonym]]
+canonical = "68N19"
+aliases = ["programming_paradigm", "object_oriented", "concurrent_programming"]
+tactic_class = "68-ComputerScience"
+semantic_class = "programming-paradigm"
+notes = "Other programming paradigms (object-oriented, sequential, concurrent, automatic, etc.)."
+
+[[synonym]]
+canonical = "68N20"
+aliases = ["compiler", "interpreter", "compiler_theory"]
+tactic_class = "68-ComputerScience"
+semantic_class = "compiler-theory"
+notes = "Theory of compilers and interpreters."
+
+[[synonym]]
+canonical = "68N25"
+aliases = ["operating_system", "os_theory"]
+tactic_class = "68-ComputerScience"
+semantic_class = "operating-system"
+notes = "Theory of operating systems."
+
+[[synonym]]
+canonical = "68N99"
+aliases = ["software_unspecified"]
+tactic_class = "68-ComputerScience"
+semantic_class = "software-unspecified"
+notes = "None of the above, but in this section."
+
+[[synonym]]
+canonical = "68M01"
+aliases = ["computer_system_general"]
+tactic_class = "68-ComputerScience"
+semantic_class = "computer-system-general"
+notes = "General theory of computer systems."
+
+[[synonym]]
+canonical = "68M07"
+aliases = ["computer_architecture", "architecture_mathematics"]
+tactic_class = "68-ComputerScience"
+semantic_class = "computer-architecture"
+notes = "Mathematical problems of computer architecture."
+
+[[synonym]]
+canonical = "68M12"
+aliases = ["network_protocol", "protocol_verification"]
+tactic_class = "68-ComputerScience"
+semantic_class = "network-protocol"
+notes = "Network protocols."
+
+[[synonym]]
+canonical = "68M14"
+aliases = ["distributed_system", "distributed_computing"]
+tactic_class = "68-ComputerScience"
+semantic_class = "distributed-system"
+notes = "Distributed systems."
+
+[[synonym]]
+canonical = "68M15"
+aliases = ["fault_tolerance", "reliability", "testing_reliability"]
+tactic_class = "68-ComputerScience"
+semantic_class = "fault-tolerance"
+notes = "Reliability, testing and fault tolerance of networks and computer systems."
+
+[[synonym]]
+canonical = "68M25"
+aliases = ["computer_security", "security_model"]
+tactic_class = "68-ComputerScience"
+semantic_class = "computer-security"
+notes = "Computer security."
+
+[[synonym]]
+canonical = "68P05"
+aliases = ["data_structure", "persistent_data_structure"]
+tactic_class = "68-ComputerScience"
+semantic_class = "data-structure"
+notes = "Data structures."
+
+[[synonym]]
+canonical = "68P15"
+aliases = ["database_theory", "relational_model"]
+tactic_class = "68-ComputerScience"
+semantic_class = "database-theory"
+notes = "Database theory."
+
+[[synonym]]
+canonical = "68P25"
+aliases = ["encryption", "cryptography_data", "data_encryption"]
+tactic_class = "68-ComputerScience"
+semantic_class = "data-encryption"
+notes = "Data encryption."
+
+[[synonym]]
+canonical = "68P27"
+aliases = ["privacy", "data_privacy"]
+tactic_class = "68-ComputerScience"
+semantic_class = "privacy"
+notes = "Privacy of data."
+
+[[synonym]]
+canonical = "68T07"
+aliases = ["neural_network", "deep_learning"]
+tactic_class = "68-ComputerScience"
+semantic_class = "neural-network"
+notes = "Artificial neural networks and deep learning."
+
+[[synonym]]
+canonical = "68T20"
+aliases = ["heuristic_search", "problem_solving_ai", "tactic_search"]
+tactic_class = "68-ComputerScience"
+semantic_class = "ai-problem-solving"
+notes = "Problem solving in the context of artificial intelligence (heuristics, search strategies, etc.)."
+
+[[synonym]]
+canonical = "68T35"
+aliases = ["knowledge_based_system", "expert_system"]
+tactic_class = "68-ComputerScience"
+semantic_class = "ai-software-system"
+notes = "Theory of languages and software systems (knowledge-based systems, expert systems, etc.) for artificial intelligence."
+
+[[synonym]]
+canonical = "68T42"
+aliases = ["agent_technology", "multi_agent"]
+tactic_class = "68-ComputerScience"
+semantic_class = "agent-technology"
+notes = "Agent technology and artificial intelligence."
+
+[[synonym]]
+canonical = "68T50"
+aliases = ["natural_language_processing", "NLP"]
+tactic_class = "68-ComputerScience"
+semantic_class = "natural-language-processing"
+notes = "Natural language processing."
+
+[[synonym]]
+canonical = "68V99"
+aliases = ["cs_support_unspecified"]
+tactic_class = "68-ComputerScience"
+semantic_class = "cs-support-unspecified"
+notes = "None of the above, but in this section."
+
+[[synonym]]
+canonical = "68W01"
+aliases = ["algorithms_general"]
+tactic_class = "68-ComputerScience"
+semantic_class = "algorithms-general"
+notes = "General topics in the theory of algorithms."
+
+[[synonym]]
+canonical = "68W05"
+aliases = ["nonnumerical_algorithm", "discrete_algorithm"]
+tactic_class = "68-ComputerScience"
+semantic_class = "nonnumerical-algorithm"
+notes = "Nonnumerical algorithms."
+
+[[synonym]]
+canonical = "68W10"
+aliases = ["parallel_algorithm", "parallel_complexity"]
+tactic_class = "68-ComputerScience"
+semantic_class = "parallel-algorithm"
+notes = "Parallel algorithms in computer science."
+
+[[synonym]]
+canonical = "68W15"
+aliases = ["distributed_algorithm", "consensus_algorithm"]
+tactic_class = "68-ComputerScience"
+semantic_class = "distributed-algorithm"
+notes = "Distributed algorithms."
+
+[[synonym]]
+canonical = "68W20"
+aliases = ["randomized_algorithm", "probabilistic_algorithm"]
+tactic_class = "68-ComputerScience"
+semantic_class = "randomized-algorithm"
+notes = "Randomized algorithms."
+
+[[synonym]]
+canonical = "68W25"
+aliases = ["approximation_algorithm", "approximation_ratio"]
+tactic_class = "68-ComputerScience"
+semantic_class = "approximation-algorithm"
+notes = "Approximation algorithms."
+
+[[synonym]]
+canonical = "68W30"
+aliases = ["symbolic_computation", "computer_algebra"]
+tactic_class = "68-ComputerScience"
+semantic_class = "symbolic-computation"
+notes = "Symbolic computation and algebraic computation."
+
+[[synonym]]
+canonical = "68W40"
+aliases = ["algorithm_analysis", "asymptotic_analysis", "complexity_analysis"]
+tactic_class = "68-ComputerScience"
+semantic_class = "algorithm-analysis"
+notes = "Analysis of algorithms."
+
+[[synonym]]
+canonical = "68W50"
+aliases = ["evolutionary_algorithm", "genetic_algorithm"]
+tactic_class = "68-ComputerScience"
+semantic_class = "evolutionary-algorithm"
+notes = "Evolutionary algorithms, genetic algorithms (computational aspects)."
+
+# ============================================================
+# 68Q — Theory of computing (complete MSC2020 section)
+# ============================================================
+
+[[synonym]]
+canonical = "68Q04"
+aliases = ["classical_model_of_computation", "turing_model"]
+tactic_class = "68-ComputerScience"
+semantic_class = "classical-model-of-computation"
+notes = "Classical models of computation (Turing machines, etc.)."
+
+[[synonym]]
+canonical = "68Q06"
+aliases = ["circuit_complexity", "circuit_model", "boolean_circuit"]
+tactic_class = "68-ComputerScience"
+semantic_class = "circuit-complexity"
+notes = "Networks and circuits as models of computation; circuit complexity."
+
+[[synonym]]
+canonical = "68Q07"
+aliases = ["biologically_inspired_computation", "DNA_computing", "membrane_computing"]
+tactic_class = "68-ComputerScience"
+semantic_class = "biologically-inspired-computation"
+notes = "Biologically inspired models of computation (DNA computing, membrane computing, etc.)."
+
+[[synonym]]
+canonical = "68Q09"
+aliases = ["nonclassical_model", "hypercomputation", "analogue_computation"]
+tactic_class = "68-ComputerScience"
+semantic_class = "nonclassical-model-of-computation"
+notes = "Other nonclassical models of computation."
+
+[[synonym]]
+canonical = "68Q10"
+aliases = ["nondeterministic_computation", "interactive_computation", "modes_of_computation"]
+tactic_class = "68-ComputerScience"
+semantic_class = "modes-of-computation"
+notes = "Modes of computation (nondeterministic, parallel, interactive, probabilistic, etc.)."
+
+[[synonym]]
+canonical = "68Q11"
+aliases = ["communication_complexity", "information_complexity"]
+tactic_class = "68-ComputerScience"
+semantic_class = "communication-complexity"
+notes = "Communication complexity, information complexity."
+
+[[synonym]]
+canonical = "68Q12"
+aliases = ["quantum_algorithm", "quantum_complexity", "quantum_speedup"]
+tactic_class = "68-ComputerScience"
+semantic_class = "quantum-algorithm"
+notes = "Quantum algorithms and complexity in the theory of computing."
+
+[[synonym]]
+canonical = "68Q15"
+aliases = ["complexity_class", "P_vs_NP", "polynomial_hierarchy"]
+tactic_class = "68-ComputerScience"
+semantic_class = "complexity-class"
+notes = "Complexity classes (hierarchies, relations among complexity classes, etc.)."
+
+[[synonym]]
+canonical = "68Q17"
+aliases = ["lower_bound_complexity", "completeness_result", "hardness_of_approximation"]
+tactic_class = "68-ComputerScience"
+semantic_class = "computational-difficulty"
+notes = "Computational difficulty of problems (lower bounds, completeness, difficulty of approximation, etc.)."
+
+[[synonym]]
+canonical = "68Q19"
+aliases = ["descriptive_complexity", "finite_model_theory_CS"]
+tactic_class = "68-ComputerScience"
+semantic_class = "descriptive-complexity"
+notes = "Descriptive complexity and finite models."
+
+[[synonym]]
+canonical = "68Q25"
+aliases = ["algorithm_analysis_complexity", "problem_complexity"]
+tactic_class = "68-ComputerScience"
+semantic_class = "algorithm-complexity"
+notes = "Analysis of algorithms and problem complexity."
+
+[[synonym]]
+canonical = "68Q27"
+aliases = ["parameterized_complexity", "kernelization", "FPT"]
+tactic_class = "68-ComputerScience"
+semantic_class = "parameterized-complexity"
+notes = "Parameterized complexity, tractability and kernelization."
+
+[[synonym]]
+canonical = "68Q30"
+aliases = ["kolmogorov_complexity", "algorithmic_information_theory", "descriptive_entropy"]
+tactic_class = "68-ComputerScience"
+semantic_class = "algorithmic-information-theory"
+notes = "Algorithmic information theory (Kolmogorov complexity, etc.)."
+
+[[synonym]]
+canonical = "68Q32"
+aliases = ["computational_learning_theory", "PAC_learning"]
+tactic_class = "68-ComputerScience"
+semantic_class = "computational-learning-theory"
+notes = "Computational learning theory."
+
+[[synonym]]
+canonical = "68Q45"
+aliases = ["formal_language", "automata_theory", "regular_language"]
+tactic_class = "68-ComputerScience"
+semantic_class = "formal-language"
+notes = "Formal languages and automata."
+
+[[synonym]]
+canonical = "68Q65"
+aliases = ["abstract_data_type", "algebraic_specification"]
+tactic_class = "68-ComputerScience"
+semantic_class = "abstract-data-type"
+notes = "Abstract data types; algebraic specification."
+
+[[synonym]]
+canonical = "68Q70"
+aliases = ["algebraic_automata_theory", "language_variety"]
+tactic_class = "68-ComputerScience"
+semantic_class = "algebraic-language-theory"
+notes = "Algebraic theory of languages and automata."
+
+[[synonym]]
+canonical = "68Q80"
+aliases = ["cellular_automaton", "cellular_computation"]
+tactic_class = "68-ComputerScience"
+semantic_class = "cellular-automaton"
+notes = "Cellular automata (computational aspects)."
+
+[[synonym]]
+canonical = "68Q85"
+aliases = ["process_algebra", "bisimulation_models", "petri_net", "concurrency_model"]
+tactic_class = "68-ComputerScience"
+semantic_class = "concurrency-model"
+notes = "Models and methods for concurrent and distributed computing (process algebras, bisimulation, transition nets, etc.)."
+
+[[synonym]]
+canonical = "68Q87"
+aliases = ["probabilistic_computing", "random_structures"]
+tactic_class = "68-ComputerScience"
+semantic_class = "probabilistic-computing"
+notes = "Probability in computer science (algorithm analysis, random structures, phase transitions, etc.)."
+
+[[synonym]]
+canonical = "68Q99"
+aliases = ["theory_of_computing_unspecified"]
+tactic_class = "68-ComputerScience"
+semantic_class = "theory-of-computing-unspecified"
+notes = "None of the above, but in this section."

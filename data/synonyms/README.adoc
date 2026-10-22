@@ -14,7 +14,9 @@ go through under one name but fail under another.
 
 == Scope
 
-Three files, one per prover system:
+=== Per-prover tables
+
+Fourteen files, one per backend with a curated table:
 
 [cols="1,2"]
 |===
@@ -28,6 +30,39 @@ Three files, one per prover system:
 
 | `lean4.toml`
 | Lean 4 + mathlib4
+
+| `agda.toml`
+| Agda
+
+| `idris2.toml`
+| Idris 2 (`base` / `contrib`)
+
+| `isabelle_afp.toml`
+| Isabelle/AFP naming
+
+| `metamath.toml`
+| Metamath `set.mm`
+
+| `mizar.toml`
+| Mizar MML
+
+| `hol4.toml`
+| HOL4
+
+| `hol_light.toml`
+| HOL Light
+
+| `dafny.toml`
+| Dafny
+
+| `why3.toml`
+| Why3 / WhyML
+
+| `fstar.toml`
+| F*
+
+| `acl2.toml`
+| ACL2
 |===
 
 The **first 20+ entries** were seeded by Opus on 2026-04-27 from the two
@@ -35,6 +70,69 @@ ECHIDNA-discovered drifts during the tropical-resource-typing fix
 session (`induct→induction`, `add_le_add→add_mono`) and from
 hand-knowledge of common idiom drift across mathlib / mathcomp /
 Isabelle's Main.
+
+=== Cross-prover dictionaries
+
+Underscore-prefixed files are *not* per-prover tables. They are loaded as
+secondary indices by `SynonymTable::with_*()` / `load_cross_prover_dicts`
+(Rust) and `SaturationSynonyms.load_*(dir)` (Julia), and exist so that
+corpus items can be joined across systems by `semantic_class`.
+
+[cols="1,1,3"]
+|===
+| File | Rows (2026-10-22) | Scope
+
+| `_msc2020.toml`
+| 177
+| MSC2020 codes. 68Qxx (theory of computing) and 68Nxx (theory of software)
+  are complete; 03B/03C/03D/03F cover logic, computability and proof theory;
+  68M/68P/68T/68V/68W cover systems, data, AI and proof assistants.
+
+| `_wordnet_math.toml`
+| 81
+| WordNet 3.1 math senses. Undergraduate / textbook pure mathematics.
+
+| `_conceptnet_seed.toml`
+| 53
+| ConceptNet 5.7 edges, pre-fetched for the offline S5 gate.
+
+| `_disciplines.toml`
+| 41
+| The 42 TypeChecker disciplines (see
+  `docs/architecture/TYPE-DISCIPLINE-EMBEDDING.adoc`).
+
+| `_verification_systems.toml`
+| 657
+| Program verification: bitvectors and machine integers, memory layout and
+  ABI, ownership and slicing, separation logic and region framing,
+  contracts and proof obligations, termination measures, refinement,
+  resource algebras (dioid / tropical / antichain), information flow and
+  epistemic vocabulary, concurrency, and estate layering.
+|===
+
+`_verification_systems.toml` exists because the WordNet and ConceptNet
+dictionaries are anchored in competition and undergraduate pure
+mathematics (the same shape as the ProofNet and MiniF2F corpora). The
+concepts this repository's own verification surface is written in --
+`zero_extend`, `wrapping_add`, `alignment_power_of_two`, `slice_disjoint`,
+`frame_rule`, `decreases_clause`, `noninterference_tini` -- had no
+`semantic_class` at all, so the cross-prover join silently dropped them.
+
+=== Estate layer policy
+
+The vocabulary follows the estate's language policy, and rows are named to
+match it:
+
+* *ABIs* are Idris2 (`abi_contract`, `idris2_abi`, `foreign_descriptor`).
+* *APIs and FFIs* are Zig (`zig_api`, `zig_ffi`, `calling_convention`).
+* *BEAM native boundaries are SNIFs, never bare NIFs* (`snif`,
+  `snif_contract`, `scheduler_thread`, `term_lifetime`).
+* The Rust layer is *Rust/Creusot* (`creusot_annotation`,
+  `rust_creusot_layer`), Julia owns the numeric/ML layer, Chapel the
+  parallel layer.
+* *Python is not part of the estate.* No table, script or verification
+  path may require a Python runtime.
+
 
 == Entry schema
 

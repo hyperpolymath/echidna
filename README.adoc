@@ -386,16 +386,24 @@ schema (canonical + aliases + tactic_class + version range) and contract
 are documented in
 link:data/synonyms/README.adoc[`+data/synonyms/README.adoc+`].
 
-Three cross-prover taxonomic dictionaries (underscore-prefixed, merged
-via `+SynonymTable::merge_external()+`) layer a common mathematical
-vocabulary over the per-prover tables:
+Four cross-prover taxonomic dictionaries (underscore-prefixed, merged
+via `+SynonymTable::merge_external()+`) layer a common vocabulary over
+the per-prover tables:
 
-* `+_msc2020.toml+` — *87* MSC2020 codes for cross-domain classification
-(e.g. `+03B45+` modal logic, `+68V20+` formalised mathematics).
-* `+_wordnet_math.toml+` — *~80* lemmas from the WordNet 3.1 math
+* `+_msc2020.toml+` — *177* MSC2020 codes for cross-domain classification.
+68Qxx and 68Nxx are complete; 03B/03C/03D/03F cover logic, computability
+and proof theory (e.g. `+03B45+` modal logic, `+68Q60+` specification and
+verification, `+68V20+` formalised mathematics).
+* `+_wordnet_math.toml+` — *81* lemmas from the WordNet 3.1 math
 sub-hierarchy for natural-language anchor terms.
-* `+_conceptnet_seed.toml+` — *~55* pre-fetched ConceptNet 5.7 edges for
+* `+_conceptnet_seed.toml+` — *53* pre-fetched ConceptNet 5.7 edges for
 offline-resilient `+semantic_class+` resolution.
+* `+_verification_systems.toml+` — *657* program-verification concepts for
+the estate's proof stack: bitvectors and machine arithmetic, memory layout
+and ABI, ownership and slicing, separation-logic framing, contracts and
+proof obligations, termination measures, refinement, resource algebras,
+information flow, concurrency, and the layer boundaries (Idris2 ABI, Zig
+API+FFI, SNIF, Rust/Creusot, Julia, Chapel).
 
 === Arbitration
 

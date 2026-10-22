@@ -1,0 +1,305 @@
+// SPDX-License-Identifier: CC-BY-SA-4.0
+= ECHIDNA vocabulary recon — is the verification lexicon a priority?
+:toc: macro
+:toclevels: 2
+
+*Date*: 2026-10-22
+*Scope*: `data/synonyms/`, the corpus adapters that feed it (ProofNet,
+MiniF2F), and the verification stack it is supposed to describe.
+*Status*: recon complete; the first tranche of the fix is implemented in
+this branch (see <<_what_changed>>).
+
+== Verdict
+
+*Yes — but for a different reason than "the corpora are the priority".*
+
+The diagnosis in the brief is correct and measurable: the three shipped
+maths dictionaries are undergraduate/competition pure mathematics, and
+essentially none of the vocabulary this repository's own verification
+surface is written in exists in them. I re-ran the check and got 21 of 23
+probe concepts in the brief with **zero** occurrences anywhere under
+`data/synonyms/` (the two hits were incidental substrings, not entries).
+
+The reason this is a priority is *not* that ProofNet or MiniF2F are
+wrong. They are correct for what they are: ProofNet is textbook
+undergraduate problems (Rudin, Munkres, Dummit-Foote) and MiniF2F is
+olympiad problems. Both adapters in `src/rust/corpus/` say so in their
+module docs. They should stay exactly as they are.
+
+The priority comes from Stage 1d of `docs/ROADMAP.adoc`: *"vocab covers
+the surface [255 K; target ~1 M]"*. The repository's surface includes
+`src/abi/` (Idris2), `ffi/zig/` (Zig), `spark/`, `crates/echidna-core-creusot/`,
+and the Julia/Chapel layers. That surface has no semantic classes at all
+today, so the cross-prover join cannot carry it. That gap is real,
+load-bearing, and orthogonal to the maths corpora.
+
+=== One honest caveat about priority
+
+The dictionaries are *loaded* on every run but almost nothing *consumes*
+them yet:
+
+[cols="1,1,3"]
+|===
+| Dictionary | Loaded by | Read by a consumer?
+
+| `_msc2020.toml`
+| `load_cross_prover_dicts` (Rust); `load_msc2020` (Julia)
+| Partly — `src/julia/run_training.jl:116` pre-loads it at training launch
+  so TOML breakage surfaces early. Its own comment says "currently consumed
+  downstream; data path only".
+
+| `_wordnet_math.toml`, `_conceptnet_seed.toml`, `_disciplines.toml`,
+  `_verification_systems.toml`
+| same loader
+| No. In Rust, `load_cross_prover_dicts` is called only from
+  `tests/lexicon_v2_test.rs`. There is no ranking path that reads
+  `by_semantic_class` yet.
+|===
+
+So the correct framing is: *the vocabulary is a latent asset*. Expanding
+it is cheap and safe now, and it unblocks Stage 1d/2b; but nobody should
+expect a metric movement until a consumer joins on `semantic_class`. I
+have not pretended otherwise in the commit or the CHANGELOG.
+
+== What the repository actually is
+
+ECHIDNA is a neurosymbolic theorem-proving platform: a Rust core
+orchestrating ~128 `ProverKind` backends through a trust-hardening
+pipeline (integrity hashing, axiom tracking, certificate checking,
+5-level confidence), with 17 corpus adapters, six exchange formats, four
+arbitration mechanisms, a Julia ML side, a Chapel parallel layer, an
+Idris2 ABI and a Zig FFI. The synonym layer is one small part of it — it
+feeds `echidna suggest` (the variant tester) and cross-corpus
+`semantic_class` resolution.
+
+=== The vocabulary layer, precisely
+
+[cols="1,1,3"]
+|===
+| File | Rows | Shape
+
+| 14 per-prover tables (`agda` … `acl2`)
+| 386
+| Tactic/decl name drift per backend: `induct` vs `induction`, `add_le_add` vs `add_mono`.
+
+| `_msc2020.toml`
+| 87 → *177*
+| Cross-walk: canonical is an MSC code, aliases are topic names.
+
+| `_wordnet_math.toml`
+| 81
+| WordNet 3.1 math senses, natural-language anchors.
+
+| `_conceptnet_seed.toml`
+| 53
+| ConceptNet 5.7 edges, offline-resilient.
+
+| `_disciplines.toml`
+| 41
+| The 42 TypeChecker disciplines (polymorphism, substructural, effects, …).
+
+| `_verification_systems.toml`
+| *657* (new)
+| Program-verification concepts, 11 families + estate layering.
+|===
+
+All tables are governed by one contract, `data/synonyms/schema.ncl`
+(Nickel, lexicon v2: `relation`, `phrase`, `false_friends`, `evidence`,
+`fidelity`/`residue`, `scope`), checked by `scripts/lexicon-check.sh` in
+the `rust-ci` job and loaded by `tests/lexicon_v2_test.rs`.
+
+=== Evidence for the diagnosis
+
+`_wordnet_math.toml` semantic classes, in full: `natural-numbers`,
+`integers`, `rationals`, `reals`, `complex`, `prime`, `even`, `odd`,
+`addition`, `multiplication`, `subtraction`, `division`, `exponentiation`,
+`modulo`, `absolute-value`, `negation`, `equality`, `strict-less`,
+`strict-greater`, `less-or-equal`, `greater-or-equal`, `divides`,
+`congruence`, `isomorphism`, `homomorphism`, `function`, `injective`,
+`surjective`, `bijective`, `composition`, `identity`, `inverse`, `set`,
+`subset`, `set-union`, `set-intersection`, `empty-set`, `set-complement`,
+`power-set`, `cardinality`, `conjunction`, `disjunction`, `implication`,
+`logical-negation`, `biconditional`, `universal`, `existential`, `theorem`,
+`lemma`, `corollary`, `proof`, `axiom`, `definition`, `hypothesis`,
+`conclusion`, `group`, `ring`, `field`, `vector-space`, `monoid`,
+`semigroup`, `lattice`, `structure-homomorphism`, `topological-space`,
+`open-set`, `closed-set`, `continuity`, `compactness`, `connectedness`,
+`homeomorphism`, `limit`, `convergence`, `divergence`, `supremum`,
+`infimum`, `prove`, `imply`, `assume`, `induction`, `contradiction`,
+`constructive`.
+
+`_conceptnet_seed.toml` adds `program`, `algorithm`, `data-structure`,
+`recursion`, `type`, `verification`, `specification`, `invariant`,
+`precondition`, `postcondition`. *That is the entire memory-safety and
+program-logic surface: four words.*
+
+The brief's probe list, checked against every name (canonical + alias) in
+every table:
+
+[cols="1,1,1"]
+|===
+| Zero hits (21) | Incidental substring only (2) | Genuinely present
+
+| `zero_extend`, `sign_extend`, `wrapping_add`, `saturating_sub`,
+  `struct_padding`, `endian_swap`, `slice_disjoint`, `in_bounds`,
+  `null_non_aliasing`, `region_live`, `linear_consume`, `dioid`,
+  `idempotent_semiring`, `tropical_max_plus`, `antichain_cut`,
+  `noninterference`, `homotopy_fiber`, `warrant_soundness`,
+  `weakest_precondition`, `strongest_postcondition`, `alignment_power_of_two`
+| `alignment` (inside a `notes` prose line), `monotonicity` (inside
+  `_wordnet_math` notes and a `_msc2020` note)
+| `separation_logic` (already an alias of `03B70`, and of `68N30`)
+|===
+
+Note the shape of the failure: `weakest_precondition` and
+`strongest_postcondition` are *the* two words a program-verification
+corpus is made of, and the vocabulary layer has neither.
+
+== Corrections to the brief (before they cost you work)
+
+1. *"~250 codes across 68Qxx / 68Nxx / 03B70" is arithmetically
+   impossible.* MSC2020 defines **26** codes in 68Qxx, **10** in 68Nxx,
+   and exactly **one** 03B70. Hitting 250 in those sections would mean
+   inventing codes. I delivered the honest ceiling instead: *all* of
+   68Qxx and 68Nxx, the whole of 03B (28 codes) plus the 03C/03D/03F
+   codes that bear on verification, the 68M/68P/68T/68V/68W ring and
+   06B35 — 177 codes total, every one checked against the zbMATH MSC2020
+   listing.
+2. *The existing `_msc2020.toml` was not just sparse, it was wrong in
+   places.* Fifteen rows carried MSC2010 or transferred wording:
+   * `03B15` and `68T15` are MSC2010-only codes; MSC2020 splits
+     `03B15` into `03B16` (higher-order logic) + `03B38` (type theory)
+     and renumbers `68T15` as `68V15`.
+   * All four `68V` rows were wrong: `68V05` is *proofs-by-exhaustion*
+     (not "computer-aided proof"), `68V25` is *math markup* (not
+     "proof assistant"), `68V30` is *MKM* (not "proof certificate"),
+     `68V35` is *digital math libraries* (not "MKM").
+   * `03D03` said "computability / Turing machine" but is *Thue and Post
+     systems*; `03F50` said "PA / PRA" but is *metamathematics of
+     constructive systems* (PA is 03F30).
+   * `06A11` said `well_founded`; it is *chain conditions*, a different
+     property. `18N10` listed monoidal categories; it is *2-/bicategories*
+     (monoidal is 18M05).
+
+   These are repaired in place with a note naming the MSC2020 code, and
+   the two MSC2010-only rows are kept deliberately so pre-2020 metadata
+   still resolves.
+3. *Row-count targets now in the tree*: `_wordnet_math` is 81 rows (not
+   "~80"), `_conceptnet_seed` is 53 (not "~55"). Docs in `README.adoc`,
+   `EXPLAINME.adoc`, `docs/CORPUS-ADAPTERS.adoc` and
+   `data/synonyms/README.adoc` now carry the real numbers.
+4. *"A fourth dictionary"* — the tree already had four cross-prover
+   dictionaries (`_msc2020`, `_wordnet_math`, `_conceptnet_seed`,
+   `_disciplines`), and the docs said "three" because `_disciplines` was
+   added later and never folded into the prose. The new file is the
+   fifth, and `CrossProverDicts` now exposes it as
+   `verification_systems`.
+
+== Estate policy
+
+The brief's clarification is recorded in `data/synonyms/README.adoc` and
+reflected in the dictionary's estate section:
+
+* *ABIs in Idris2* — `idris2_abi`, `abi_contract`, `abi_representation`,
+  `abi_stability_guarantee`, `totality_proof`, `foreign_descriptor`,
+  `opaque_handle`, `handle_lifetime`.
+* *APIs and FFIs in Zig* — `zig_api`, `zig_ffi`, `exported_symbol`,
+  `symbol_table`, `marshalling`, `boundary_ownership`, `out_parameter`,
+  `error_code`, `null_at_boundary`, `string_at_boundary`,
+  `callback_into_host`.
+* *SNIFs, not bare NIFs* — `snif`, `snif_contract`, `nif`, `dirty_nif`,
+  `nif_resource`, `term_lifetime`, `scheduler_thread`,
+  `blocking_call_discipline`, `beam_process`,
+  `resource_release_callback`, `panic_across_boundary`,
+  `result_into_beam`. The repo had **no** SNIF vocabulary at all before
+  this change.
+* *Rust/Creusot* — `rust_creusot_layer`, `creusot_annotation`,
+  `creusot`, `why3`; the vocabulary describes annotated Rust, not
+  "Rust plus hope".
+* *Julia and Chapel for their layers* — `julia_layer`, `chapel_layer`,
+  `ipc_channel`, `sidecar`, `polyglot_boundary`, `language_ownership`.
+* *No Python* — `no_python_dependency`, and `git ls-files '*.py'` returns
+  zero files. This recon used Python only as throwaway tooling in `/tmp`
+  (a TOML generator and a Nickel-contract mirror); nothing Python is
+  added to the tree.
+
+== What changed
+
+Additive except for the 15 documented MSC repairs.
+
+[cols="1,3"]
+|===
+| Path | Change
+
+| `data/synonyms/_verification_systems.toml`
+| *New*, 657 rows, 11 vocabulary families + estate layering. No `evidence`
+  field: these rows assert concept membership, not cross-prover identity.
+
+| `data/synonyms/_msc2020.toml`
+| 87 → 177 codes; 68Qxx and 68Nxx complete; 15 rows repaired with MSC2020
+  notes; header documents scope, provenance and the 250-code ceiling.
+
+| `src/rust/suggest/synonyms.rs`
+| `CrossProverDicts` gains `verification_systems`; loader reads
+  `_verification_systems.toml`; comments updated. Additive field, no
+  signature change.
+
+| `src/julia/saturation_synonyms.jl`
+| New `load_verification_systems(dir)`, exported; module doc updated.
+
+| `data/synonyms/README.adoc`
+| Adds the cross-prover dictionary table, the estate layer policy, and
+  completes the per-prover table to all 14 tables.
+
+| `README.adoc`, `EXPLAINME.adoc`, `docs/CORPUS-ADAPTERS.adoc`,
+  `src/julia/README.adoc`, `CHANGELOG.adoc`
+| Counts and dictionary lists brought in line with the tree.
+
+| `.machine_readable/descriptiles/{STATE,META}.a2ml`
+| New table registered; cross-prover count 3 → 5.
+|===
+
+== Validation performed
+
+* *Contract*: Nickel is not installed in this sandbox and there is no
+  `cargo`, so `scripts/lexicon-check.sh` and `cargo test` could not run
+  here. I mirrored `schema.ncl` (shape + every cross-field rule) in a
+  throwaway checker and ran it over all 19 tables plus the 18 fixtures:
+  **19 tables, 1357 rows, 0 failures**, and all 17 reject fixtures still
+  reject. The mirror's only divergence is deliberate: it reports empty
+  `aliases` and self-aliases as warnings rather than errors, because
+  `schema.ncl` permits both (`mizar.toml` relies on empty alias lists).
+* *CI must still run the real gate*: `just lexicon-check` (Nickel +
+  `tests/lexicon_v2_test.rs`). That is the first thing to run on this
+  branch.
+* *No Python in tree*: `git ls-files '*.py'` → 0.
+* *No deletions*: no existing row removed; 15 rows corrected, each with a
+  note explaining the MSC2020 wording.
+
+== What is still open
+
+[cols="1,2"]
+|===
+| Item | Why it matters
+
+| Wire a consumer | Nothing ranks on `semantic_class` yet. A first consumer
+  could be `suggest`'s variant tester preferring same-class replacements,
+  or premise selection filtering by family.
+
+| Julia training wiring | `load_verification_systems` exists but
+  `run_training.jl` pre-loads only `_msc2020`. Adding the new table there
+  is a two-line change, deliberately not bundled with data work.
+
+| Stale doc mirrors | `docs/wikis/{Architecture,Guides,Troubleshooting,FAQ}.md`
+  and `docs/architecture/JULIA-SATURATION-HOOKS.adoc` still say "three
+  cross-prover dictionaries". The 2026-06-01 ADR is historical and should
+  keep its original wording.
+
+| Prover-name precision | The estate rows name *layers* (`zig_ffi`,
+  `snif_contract`) but not per-tool API spellings. Filling those belongs
+  in the per-prover tables (`idris2.toml` is only 6 rows today).
+
+| MSC 18/14 rows | `18N40`, `18G80`, `18Axx` and `14F08` still carry
+  MSC2010-era wording I could not verify from zbMATH in this pass. Left
+  untouched rather than guessed at.
+|===
