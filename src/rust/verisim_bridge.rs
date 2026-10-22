@@ -228,6 +228,13 @@ pub struct GraphPayload {
     /// Cross-prover identity (goal-only hash, prover-agnostic)
     pub cross_prover_id: String,
 
+    /// Structural cross-prover identity: SHA-256 of the canonical type
+    /// shape of the goal (see `corpus::canonical`). This is the E6
+    /// `cross_prover_identity_key`; two provers that state the same
+    /// theorem in different syntax share it.
+    #[serde(default)]
+    pub cross_prover_identity_key: String,
+
     /// Prover that produced this proof
     pub prover_id: String,
 }
@@ -448,6 +455,10 @@ impl ProofOctadBuilder {
             depends_on: self.parent_proofs,
             sub_goals: self.sub_goals,
             cross_prover_id,
+            cross_prover_identity_key: crate::corpus::canonical::structural_key(
+                &document.theorem_statement,
+            )
+            .key,
             prover_id: format!("echidna:prover:{:?}", self.prover),
         };
 

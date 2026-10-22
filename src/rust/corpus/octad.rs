@@ -114,19 +114,49 @@ pub struct DeclDocument {
 }
 
 /// Graph modality — both forward and reverse edges in one place.
-/// Cross-prover identity is the SHA-256 of just the adapter-stripped
-/// qualified name; two entries from different adapters with the same
-/// qualified name (e.g. `Brouwer.WellFounded` in Agda and Coq) match
-/// on this hash.
+/// Cross-prover identity.
+///
+/// Two keys, because they answer different questions:
+///
+/// - `cross_prover_identity_key` — SHA-256 of the **structural shape** of
+///   the declaration's type (see [`super::canonical`]). This is the E6
+///   identity key: `∀ (x y : ℕ) → x + y ≡ y + x` in Agda, `Nat.add_comm`
+///   in Lean, `(+ x y)` in SMT-LIB and `eq Nat (add x y) (add y x)` in
+///   Dedukti all normalise to `(PI [NAT NAT] (EQ (ADD v0 v1) (ADD v1 v0)))`
+///   and therefore to the same key, with no dictionary involved.
+/// - `cross_prover_skeleton_key` — the same shape with binders and sorts
+///   erased, for provers that elide them (Isabelle's free variables, SMT
+///   scripts without explicit binders). A tier-2 join.
+/// - `cross_prover_id` — the older name-tail hash. Kept because existing
+///   octad files and query clients carry it; it is a *fallback*, and it
+///   only ever matched declarations whose local names happened to agree.
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct DeclGraph {
     pub depends_on: Vec<String>,
     pub depended_on_by: Vec<String>,
+    /// Name-tail hash (legacy: names, not types).
+    #[serde(default)]
     pub cross_prover_id: String,
+    /// Structural identity key (E6 `cross_prover_identity_key`).
+    #[serde(default)]
+    pub cross_prover_identity_key: String,
+    /// Structural identity with binders and sorts erased.
+    #[serde(default)]
+    pub cross_prover_skeleton_key: String,
+    /// Version of the normalisation rules, e.g. `dk-shape-v1`.
+    #[serde(default)]
+    pub identity_scheme: String,
+    /// The canonical prefix term itself, for eyeballing and debugging.
+    #[serde(default)]
+    pub canonical_type: String,
     pub adapter_id: String,
 }
 
-/// Vector modality — reserved for Step 5 embeddings.
+/// Vector modality — structural embeddings (E7).
+///
+/// Populated by [`Corpus::save_octads_jsonl`] from the canonical atom
+/// stream: 256-dim structural 1–3-gram hashing, model
+/// `echidna-corpus-structural-v2`. See [`super::embed`].
 #[derive(Debug, Clone, Serialize, Deserialize, Default)]
 pub struct DeclVector {
     pub goal_embedding: Vec<f32>,
@@ -167,6 +197,7 @@ impl DeclarationOctad {
     ) -> Self {
         let key = octad_key(adapter, &entry.qualified, &entry.statement);
         let cross_prover_id = cross_prover_key(&entry.qualified);
+        let identity = super::canonical::structural_key(&entry.statement);
         let content_hash = content_hash_of(entry);
 
         let semantic = DeclSemantic {
@@ -226,6 +257,10 @@ impl DeclarationOctad {
             depends_on: entry.dependencies.clone(),
             depended_on_by: reverse_deps.to_vec(),
             cross_prover_id,
+            cross_prover_identity_key: identity.key.clone(),
+            cross_prover_skeleton_key: identity.skeleton_key.clone(),
+            identity_scheme: identity.scheme.clone(),
+            canonical_type: identity.shape.clone(),
             adapter_id: format!("echidna:adapter:{}", adapter),
         };
 
@@ -444,8 +479,8 @@ impl Corpus {
         // whole corpus (Steps 4, 5). Tensor → tensor.metrics; vectors
         // → vector.goal_embedding.
         let metrics_per_entry = self.compute_metrics();
-        let embedder = super::embed::HashEmbedder;
-        let info = <super::embed::HashEmbedder as super::embed::Embedder>::info(&embedder);
+        let embedder = super::embed::StructuralEmbedder;
+        let info = <super::embed::StructuralEmbedder as super::embed::Embedder>::info(&embedder);
         let embeddings = self.compute_embeddings();
         let mut out = String::new();
         for (i, entry) in self.entries.iter().enumerate() {
@@ -659,6 +694,68 @@ mod tests {
         assert_eq!(
             agda_octad.graph.cross_prover_id,
             coq_octad.graph.cross_prover_id
+        );
+    }
+
+    #[test]
+    fn structural_identity_joins_different_syntaxes() {
+        // Same theorem, three surface languages, one key. This is the
+        // whole point of the E6 structural key: no synonym table, no
+        // shared naming convention.
+        let coq = DeclarationOctad::from_entry(
+            &CorpusEntry {
+                name: "add_comm".into(),
+                qualified: "Nat.add_comm".into(),
+                module_idx: 0,
+                kind: DeclKind::Function,
+                statement: "forall x y : nat, x + y = y + x".into(),
+                proof: None,
+                line: 1,
+                dependencies: vec![],
+                axiom_usage: AxiomUsage::default(),
+            },
+            &ModuleEntry {
+                name: "Nat".into(),
+                path: PathBuf::from("Nat.v"),
+                options: vec![],
+                imports: vec![],
+                entries: vec![],
+            },
+            "coq",
+            &[],
+            "T",
+        );
+        let smtlib = DeclarationOctad::from_entry(
+            &CorpusEntry {
+                name: "comm".into(),
+                qualified: "bvadd_comm".into(),
+                module_idx: 0,
+                kind: DeclKind::Function,
+                statement: "(assert (forall ((x Nat) (y Nat)) (= (+ x y) (+ y x))))".into(),
+                proof: None,
+                line: 1,
+                dependencies: vec![],
+                axiom_usage: AxiomUsage::default(),
+            },
+            &ModuleEntry {
+                name: "bv".into(),
+                path: PathBuf::from("bv.smt2"),
+                options: vec![],
+                imports: vec![],
+                entries: vec![],
+            },
+            "smtlib",
+            &[],
+            "T",
+        );
+        // The legacy name-tail hashes necessarily differ…
+        assert_ne!(coq.graph.cross_prover_id, smtlib.graph.cross_prover_id);
+        // …but the structural keys agree.
+        assert_eq!(coq.graph.cross_prover_identity_key, smtlib.graph.cross_prover_identity_key);
+        assert_eq!(coq.graph.identity_scheme, super::canonical::SCHEME);
+        assert_eq!(
+            coq.graph.canonical_type,
+            "(PI [NAT NAT] (EQ (ADD v0 v1) (ADD v1 v0)))"
         );
     }
 

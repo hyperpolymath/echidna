@@ -28,8 +28,10 @@ and an `+AxiomUsage+` hazard flag set.
 * A *per-entry metrics tensor* (`+EntryMetrics+`): size, connectivity,
 shape (recursive vs structural), hazards, K-elimination risk, head-
 symbol class.
-* A *per-entry embedding* (`+Vec<f32>+`, default 32-dim hashing-trick;
-GNN backend pluggable via the `+Embedder+` trait).
+* A *per-entry embedding* (`+Vec<f32>+`, default *256-dim* structural
+n-gram hashing over the declaration's canonical type shape; the legacy
+32-dim raw-text backend is still available, and a GNN backend is
+pluggable via the `+Embedder+` trait).
 * An *8-modality octad* (`+DeclarationOctad+`) form for VeriSim
 compatibility — semantic / temporal / provenance / document / graph /
 vector / tensor / spatial.
@@ -73,6 +75,9 @@ echidna corpus near "<query text>" [--top N]
 
 # Cross-prover semantic-class lookup (synonym table)
 echidna corpus crossquery <semantic-class>
+
+# Cross-prover identity, keyed on the canonical type shape (no dictionary)
+echidna corpus identity <pattern> [--skeleton] [--cross-only]
 
 # Octad emit / round-trip
 echidna corpus export-octads --index <X.json> --out <X.octads.jsonl>
@@ -147,7 +152,7 @@ identifier.
 [cols=",",options="header",]
 |===
 |Method |What
-|`+near_text("…")+` |Embed via `+HashEmbedder+`, cosine-rank.
+|`+near_text("…")+` |Canonicalise the query, embed with `+StructuralEmbedder+` (256-dim), cosine-rank. A query written in one prover's syntax matches entries written in another's.
 |`+near_vector(Vec<f32>)+` |Pre-computed embedding (e.g. from a GNN).
 |===
 
@@ -165,7 +170,8 @@ src/rust/corpus/
 ├── lean.rs      # Lean 4 adapter
 ├── idris2.rs    # Idris 2 adapter
 ├── metrics.rs   # EntryMetrics tensor (Step 4)
-├── embed.rs     # Embedder trait + HashEmbedder (Step 5)
+├── canonical.rs # Canonical type shape → E6 structural identity key
+├── embed.rs     # Embedder trait + StructuralEmbedder (256-dim) + HashEmbedder (32-dim, legacy)
 ├── octad.rs     # DeclarationOctad (8-modality, Step 3)
 └── query.rs     # Multi-axis query DSL (capstone)
 
@@ -187,18 +193,70 @@ Each declaration becomes one `+DeclarationOctad+` with eight modalities
 |Modality |Carries
 |`+semantic+` |adapter, kind, name, qualified, statement, proof
 |`+document+` |searchable_text + aspect tags (incl. hazard tags)
-|`+graph+` |depends_on + depended_on_by + cross_prover_id
+|`+graph+` |depends_on + depended_on_by + cross_prover_id (name tail, legacy) + cross_prover_identity_key / cross_prover_skeleton_key / identity_scheme / canonical_type
 |`+provenance+` |SHA-256 hash chain over (parent, event, ts, file, line)
 |`+spatial+` |file path + line + adapter namespace
 |`+temporal+` |version chain — content_hash per rung
 |`+tensor+` |EntryMetrics serialised as `+HashMap<String, f64>+`
-|`+vector+` |embedding (default 32-dim HashEmbedder)
+|`+vector+` |embedding (default 256-dim StructuralEmbedder)
 |===
 
-`+cross_prover_id+` is SHA-256 of the qualified-name’s _local tail_, so
-`+Foo.WellFounded+` (Agda) and `+Bar.WellFounded+` (Coq) share an
-identity — cross-prover joins fall out of the graph octad without going
-through the synonym layer.
+==== Cross-prover identity (E6 `+Graph+`)
+
+There are three keys, in decreasing order of strength. The first two are
+computed from the declaration's *type*, with no dictionary involved; the
+third is the older name-based hash and survives only for compatibility.
+
+[cols="20%,40%,40%",options="header",]
+|===
+|Field |Computed from |Joins
+|`+cross_prover_identity_key+` |SHA-256 of the canonical type shape: variable names renamed `+v0, v1, …+`, module paths dropped, operator spellings and binder keywords normalised, sorts canonicalised |Statements of the *same theorem* across provers that keep their binders and agree on sorts
+|`+cross_prover_skeleton_key+` |The same shape with the binder prefix and sort atoms erased |Provers that elide binders (Isabelle writes `+"(x::nat) + y = y + x"+`) or use a different numeric sort (Why3: `+int+`)
+|`+cross_prover_id+` |SHA-256 of the qualified name's _local tail_ |Only declarations whose local names happen to agree — kept for existing octad files and query clients
+|===
+
+`+identity_scheme+` records which rules produced the key (`+dk-shape-v1+`),
+so a change of normalisation rules can never masquerade as a change of
+theorem, and `+canonical_type+` keeps the rendered shape itself for
+eyeballing and debugging.
+
+The canonicalisation is purely syntactic: it does not know that `+x + y+
+equals `+y + x+`, and deliberately does not try to. See
+`+src/rust/corpus/canonical.rs+` and
+`+docs/decisions/2026-10-22-structural-cross-prover-identity.adoc+`.
+
+[source,text]
+----
+Agda     +-comm : ∀ (x y : ℕ) → x + y ≡ y + x
+Coq      Lemma add_comm : forall x y : nat, x + y = y + x.
+Lean 4   theorem Nat.add_comm (x y : Nat) : x + y = y + x := by omega
+Idris2   addComm : (x, y : Nat) -> x + y = y + x
+SMT-LIB  (assert (forall ((x Nat) (y Nat)) (= (+ x y) (+ y x))))
+Dedukti  def add_comm : Π (x y : Nat), eq Nat (add x y) (add y x).
+         ⟹ (PI [NAT NAT] (EQ (ADD v0 v1) (ADD v1 v0)))
+----
+
+Isabelle writes the same fact without binders and Why3 states it over
+`+int+`; both land on
+`+(EQ (ADD v0 v1) (ADD v1 v0))+` — the skeleton key — instead. Matching is
+therefore *tiered*: exact structural key first, skeleton key second. Any
+consumer that only compares one field should compare both.
+
+The CLI surfaces it directly:
+
+[source,bash]
+----
+$ echidna corpus identity add_comm --skeleton
+<sha256-prefix>  [structural] 6 declaration(s) across 6 adapter(s)
+  type: (PI [NAT NAT] (EQ (ADD v0 v1) (ADD v1 v0)))
+  skeleton: (EQ (ADD v0 v1) (ADD v1 v0))
+    agda     Ordinal.Brouwer.+-comm
+    coq      Nat.add_comm
+    dedukti  arith.add_comm
+    idris2   Nat.addComm
+    lean4    Nat.add_comm
+    smtlib   bvadd_comm
+----
 
 === Synonym table cross-prover joins
 
@@ -239,9 +297,13 @@ gaps surface.
 widen reverse-closures (over-conservative, which is the safer side for
 impact analysis). Step 3’s `+cross_prover_id+` and octad provenance can
 underwrite a follow-up content-addressed dep resolver.
-* *Hashing-trick embeddings collide* at 32 dims on large corpora; swap
-in a GNN backend (`+Embedder+` trait) when the Julia ML pipeline is
-primed against real corpora.
+* *The structural embedder is a baseline, not a model.* It hashes
+1–3-grams of the canonical atom stream into 256 buckets, so it captures
+type structure but not proof structure, and unrelated declarations that
+share a type shape (e.g. two `+x = x+` lemmas) are near-identical by
+construction. Swap in a GNN backend (`+Embedder+` trait) when the Julia ML
+pipeline is primed against real corpora; the 256-dim structural vectors
+are the baseline those runs are measured against.
 
 === Verified end-to-end
 

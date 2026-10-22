@@ -1,0 +1,151 @@
+// SPDX-License-Identifier: CC-BY-SA-4.0
+// SPDX-FileCopyrightText: 2026 Jonathan D.A. Jewell (hyperpolymath) <j.d.a.jewell@open.ac.uk>
+= ADR: structural cross-prover identity keys and a 256-dim structural embedder
+:revdate: 2026-10-22
+:status: accepted
+
+== Context
+
+Two claims in the tree were weaker than the documentation implied.
+
+. *Cross-prover identity was name-based.*
+  `+GraphModality.cross_prover_identity_key+` was populated from
+  `+cross_prover_key(&entry.qualified)+` — a SHA-256 of the qualified name's
+  local tail. Two declarations joined only if their authors happened to pick
+  the same local name. Across the estate's seventeen libraries that is
+  routinely false: `+-comm+` (Agda), `+Nat.add_comm+` (Lean/Coq),
+  `+addComm+` (Idris 2), `+bvadd_comm+` (SMT-LIB) are the same theorem and
+  shared nothing. The synonym tables papered over some of this with
+  per-name dictionary entries — expensive, incomplete, and wrong the moment
+  a library is added.
+
+. *The Vector octad was 32-dimensional and surface-text based.*
+  `+HashEmbedder+` hashed raw statement tokens into 32 buckets. Two
+  statements of the same theorem in different syntaxes shared almost no
+  vocabulary, so cross-prover similarity search was effectively
+  name-matching again.
+
+The owner's instruction was to use the *type signature* rather than the
+name, on the grounds that the estate standardises on Dedukti and every
+prover can render a type, then to raise the embedder dimension so there is
+a usable baseline before the first Flux GNN run.
+
+== Decision
+
+=== D1. Identity is the hashed canonical shape of the type
+
+`+src/rust/corpus/canonical.rs+` normalises a declaration's statement into a
+nameless prefix term and hashes it (SHA-256, scheme `+dk-shape-v1+`).
+
+[cols="25%,75%",options="header",]
+|===
+|Step |Rule
+|Header |Drop the declaration keyword (`+theorem+`, `+lemma+`, `+def+`, `+assert+`, …) and the declared name; cut the proof body at `+:=+` / `+by+` / `+where+`.
+|Names |Dotted names reduce to their last component before lookup (`+Nat.add_comm+` → `+add_comm+`).
+|Operators |Spellings collapse to canonical prefix operators: `+++`, `+plus+`, `+HAdd.hAdd+`, `+bvadd+` → `+ADD+`; `+=+`, `+≡+`, `+eq+` → `+EQ+`; `+->+`, `+→+` → `+ARROW+`.
+|Associativity |Arrows and `+↔+` right-associative; arithmetic and comparisons left.
+|Sorts |`+nat+`/`+ℕ+` → `+NAT+`, `+int+`/`+ℤ+` → `+INT+`, `+Prop+`/`+Set+`/`+Type+` → `+TYPE+`, …
+|Variables |Every variable is renamed `+v0, v1, …+` by first appearance — alpha-normalisation, so `+(x, y)+` and `+(a, b)+` agree.
+|Ascriptions |Isabelle's `+(x::nat)+` is unwrapped; Dedukti's explicit `+eq Nat a b+` sort argument is dropped.
+|===
+
+The same theorem, seven ways:
+
+[source,text]
+----
+Agda     +-comm : ∀ (x y : ℕ) → x + y ≡ y + x
+Coq      Lemma add_comm : forall x y : nat, x + y = y + x.
+Lean 4   theorem Nat.add_comm (x y : Nat) : x + y = y + x := by omega
+Idris2   addComm : (x, y : Nat) -> x + y = y + x
+SMT-LIB  (assert (forall ((x Nat) (y Nat)) (= (+ x y) (+ y x))))
+Dedukti  def add_comm : Π (x y : Nat), eq Nat (add x y) (add y x).
+         ⟹ (PI [NAT NAT] (EQ (ADD v0 v1) (ADD v1 v0)))
+----
+
+=== D2. Two tiers, because some provers cannot state the first
+
+Isabelle writes `+lemma add_comm: "(x::nat) + y = y + x"+` with no binders at
+all; Why3 states arithmetic over `+int+` where the others use `+nat+`. Both
+are the same theorem. Erasing aspects of a key to force a match would have
+made the primary key weaker for everybody, so the module emits *both*:
+
+* `+cross_prover_identity_key+` — the shape as written (binders and sorts
+  included). Exact, sort-aware.
+* `+cross_prover_skeleton_key+` — the same term with the binder prefix and
+  sort atoms erased. Isabelle and Why3 match here:
+  `+(EQ (ADD v0 v1) (ADD v1 v0))+`.
+
+Consumers join on tier 1 first, then tier 2. `+identity_scheme+` travels
+with every key so a change of normalisation rules cannot masquerade as a
+change of theorem, and `+canonical_type+` keeps the rendered shape for
+debugging.
+
+=== D3. What is deliberately *not* normalised
+
+No equational theory is applied. `+x + y+` and `+y + x+` are different
+shapes; so are `+x + (y + z)+` and `+(x + y) + z+`. The key is a syntactic
+identity, not a decision procedure, and the tests pin that down so a future
+"improvement" cannot silently merge distinct theorems. Neither is the
+calculus rewritten: a statement mentioning `+WellFounded+` still mentions
+`+WellFounded+`.
+
+=== D4. The Vector octad becomes 256-dim and structural
+
+`+StructuralEmbedder+` hashes 1-, 2- and 3-grams of the *canonical* atom
+stream into 256 buckets (weights 1.0 / 0.6 / 0.35, L2-normalised),
+model id `+echidna-corpus-structural-v2+`. Consequences:
+
+* `+corpus near <text>+` canonicalises the query first, so a query written
+  in SMT-LIB syntax retrieves entries written in Coq syntax. This is tested.
+* `+HashEmbedder+` (32-dim, `+echidna-corpus-hash-v1+`) remains available as
+  `+Corpus::compute_embeddings_legacy+` for GNN-compatible `+FEATURE_DIM+`
+  vectors and for replaying octads written before this change.
+* The capnp schema's `+embedder+` / `+embedder_dim+` fields now carry the
+  model id and dimension explicitly; consumers must compare both before
+  computing cosine similarity (a 32-vs-256 comparison returns 0.0 rather
+  than a wrong number).
+
+This is a *baseline*, not a model: it captures type structure, not proof
+structure, and two unrelated declarations with the same type shape are
+near-identical by construction. It exists so the first GNN run has
+something honest to beat.
+
+== Evidence
+
+The canonicaliser was prototyped and validated before being ported to Rust
+(the prototype lived outside the tree, per the no-Python rule; the Rust
+module is the artefact of record). On the fixture set:
+
+* Agda, Coq, Lean 4, Idris 2, SMT-LIB and Dedukti agree on the primary key
+  for `+add_comm+`; Isabelle agrees on the skeleton key; Why3 agrees on the
+  skeleton key and differs on the primary (`+int+` vs `+nat`), by design.
+* `+add_zero+` agrees across Agda, Coq, Lean 4 and SMT-LIB; Isabelle joins
+  on the skeleton.
+* Associativity and commutativity produce different keys; alpha-renaming
+  does not change the key.
+
+The unit tests in `+src/rust/corpus/canonical.rs+` pin every one of those
+properties, and `+src/rust/corpus/octad.rs+` asserts that a Coq and an
+SMT-LIB statement of the same theorem share the structural key while their
+legacy name-tail hashes differ.
+
+== Consequences
+
+* `+DeclGraph+` gains `+cross_prover_identity_key+`,
+  `+cross_prover_skeleton_key+`, `+identity_scheme+` and `+canonical_type+`;
+  all are `+#[serde(default)]+`, so existing octad files still load.
+* `+GraphPayload+` (VeriSim bridge) and `+QueryResultEntry+` (VCL-UT) carry
+  the structural key through to consumers.
+* `+echidna corpus identity <pattern>+` exposes the grouping directly.
+* The synonym dictionaries are still useful for *names* and *concepts*;
+  they are no longer on the identity path.
+
+== Open
+
+* The canonicaliser handles the statement shapes in the fixtures and the
+  estate's corpora; it is not a grammar for any prover. Statements it
+  cannot parse fall back to a whitespace-normalised text key at tier 3
+  (`+KeyTier::Text+`), which is honest but weak — worth measuring.
+* Sorts are compared by name. `+Nat+` in Lean and `+nat+` in Coq agree
+  because both are aliased to `+NAT+`; type classes and universe levels are
+  not modelled.

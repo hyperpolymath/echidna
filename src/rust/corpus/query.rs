@@ -227,9 +227,13 @@ impl<'c> CorpusQuery<'c> {
 
         // Compute similarity (post-filter is cheaper).
         if let Some(qv) = &self.near_query {
-            let embedder = super::embed::HashEmbedder;
+            // Same embedder the query vector came from: the structural
+            // 256-dim n-gram hasher. `near_vector` callers that supply a
+            // foreign vector simply get 0.0 from `cosine` (dim mismatch),
+            // which keeps ordering stable instead of panicking.
+            let embedder = super::embed::StructuralEmbedder;
             for hit in results.iter_mut() {
-                let v = <super::embed::HashEmbedder as super::embed::Embedder>::embed(
+                let v = <super::embed::StructuralEmbedder as super::embed::Embedder>::embed(
                     &embedder, hit.entry,
                 );
                 hit.similarity = Some(cosine(qv, &v));

@@ -31,7 +31,7 @@ which can be opened directly in a browser.
 
 ## Corpus Ingest
 
-Seventeen structural ingest adapters live under `src/rust/corpus/<name>.rs`,
+Twenty structural ingest adapters live under `src/rust/corpus/<name>.rs`,
 each exposing `pub fn ingest(root: &Path) -> Result<Corpus>` that returns the
 canonical `Corpus` struct ([`src/rust/corpus/mod.rs:156`](https://github.com/hyperpolymath/echidna/blob/main/src/rust/corpus/mod.rs#L156)).
 The adapters use a **two-pass extraction pattern**
@@ -62,6 +62,62 @@ Full per-adapter hazard inventory, fixture layout, and downstream consumer
 wiring (`suggest` synonym table, `octad-emit` → VeriSimDB, GNN training data)
 are documented in
 [`docs/CORPUS-ADAPTERS.adoc`](https://github.com/hyperpolymath/echidna/blob/main/docs/CORPUS-ADAPTERS.adoc).
+
+## Cross-prover Identity and Embeddings
+
+Declarations are joined across provers by the **shape of their type**, not by
+their names. `src/rust/corpus/canonical.rs` normalises a statement into a
+nameless prefix term — variables renamed `v0, v1, …` by first appearance,
+module qualifiers dropped, operator spellings and binder keywords
+canonicalised, sorts mapped to `NAT`/`INT`/`TYPE`/… — and hashes it
+(SHA-256, scheme `dk-shape-v1`):
+
+```
+Agda     +-comm : ∀ (x y : ℕ) → x + y ≡ y + x
+Coq      Lemma add_comm : forall x y : nat, x + y = y + x.
+Lean 4   theorem Nat.add_comm (x y : Nat) : x + y = y + x := by omega
+Idris2   addComm : (x, y : Nat) -> x + y = y + x
+SMT-LIB  (assert (forall ((x Nat) (y Nat)) (= (+ x y) (+ y x))))
+Dedukti  def add_comm : Π (x y : Nat), eq Nat (add x y) (add y x).
+         ⟹ (PI [NAT NAT] (EQ (ADD v0 v1) (ADD v1 v0)))
+```
+
+Two keys are emitted, and consumers join on tier 1 first, tier 2 second:
+
+| Field | Meaning |
+|---|---|
+| `graph.cross_prover_identity_key` | SHA-256 of the canonical type shape, binders and sorts included |
+| `graph.cross_prover_skeleton_key` | The same shape with the binder prefix and sort atoms erased — the tier-2 join |
+| `graph.identity_scheme` | Which rules produced the keys (`dk-shape-v1`) |
+| `graph.canonical_type` | The rendered shape, for debugging |
+| `graph.cross_prover_id` | Legacy name-tail hash, kept for existing octad files and clients |
+
+Tier 2 exists because some provers cannot produce a tier-1 key: Isabelle
+writes `lemma add_comm: "(x::nat) + y = y + x"` with no binders, and Why3
+states arithmetic over `int` where the others state it over `nat`. Both
+join on `(EQ (ADD v0 v1) (ADD v1 v0))`.
+
+No equational theory is applied — `x + y` and `y + x` are different keys,
+deliberately — and no synonym table is consulted on the identity path. The
+CLI exposes the grouping:
+
+```
+$ echidna corpus identity add_comm --skeleton
+```
+
+Vector octads carry a 256-dimensional embedding
+(`echidna-corpus-structural-v2`): 1-, 2- and 3-grams of the canonical atom
+stream hashed into 256 buckets and L2-normalised. Because the input is
+canonical, a query written in SMT-LIB syntax retrieves entries written in
+Coq syntax. The older 32-dim raw-text `HashEmbedder`
+(`echidna-corpus-hash-v1`) is retained for GNN-compatible `FEATURE_DIM`
+vectors and for replaying pre-2026-10-22 octads; consumers must compare
+`embedder` and `embedder_dim` before comparing vectors. This embedder is a
+baseline for the first Flux GNN run, not a trained model.
+
+See [`docs/CORPUS.adoc`](https://github.com/hyperpolymath/echidna/blob/main/docs/CORPUS.adoc)
+and the ADR
+[`docs/decisions/2026-10-22-structural-cross-prover-identity.adoc`](https://github.com/hyperpolymath/echidna/blob/main/docs/decisions/2026-10-22-structural-cross-prover-identity.adoc).
 
 ## Cross-prover Vocabulary
 

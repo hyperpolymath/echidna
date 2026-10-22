@@ -8,6 +8,42 @@ https://semver.org/spec/v2.0.0.html[Semantic Versioning].
 
 === [Unreleased]
 
+==== Added — structural cross-prover identity keys, 2026-10-22
+
+* *`+src/rust/corpus/canonical.rs+`* — normalises a declaration's *type*
+  into a nameless prefix term (variables renamed `+v0, v1, …+`, module
+  qualifiers dropped, operator spellings and binder keywords canonicalised,
+  sorts mapped to `+NAT+`/`+INT+`/`+TYPE+`/…, ascriptions unwrapped) and
+  hashes it with SHA-256 under scheme `+dk-shape-v1+`. No dictionary and no
+  per-prover naming convention is consulted.
+* *`+DeclGraph+`* gains `+cross_prover_identity_key+`,
+  `+cross_prover_skeleton_key+` (binders and sorts erased — the tier-2 join
+  for Isabelle and Why3), `+identity_scheme+` and `+canonical_type+`. All
+  are `+#[serde(default)]+`, so existing octad files still load;
+  `+cross_prover_id+` (the name-tail hash) is still emitted for
+  compatibility.
+* *`+GraphPayload+`* (VeriSim bridge) and `+QueryResultEntry+` (VCL-UT)
+  carry the structural key through to consumers.
+* *`+echidna corpus identity <pattern>+`* — groups declarations by
+  structural key, with `+--skeleton+` (print the tier-2 key) and
+  `+--cross-only+` (only groups spanning several adapters).
+
+==== Changed — structural 256-dim Vector octad, 2026-10-22
+
+* The default embedder is now `+StructuralEmbedder+`: 1–3-grams of the
+  canonical type atoms hashed into *256* buckets (L2-normalised, model
+  `+echidna-corpus-structural-v2+`). `+corpus near+` canonicalises the
+  query first, so a query written in one prover's syntax retrieves entries
+  written in another's.
+* `+HashEmbedder+` (32-dim, `+echidna-corpus-hash-v1+`) remains available
+  as `+Corpus::compute_embeddings_legacy+` for GNN `+FEATURE_DIM+` parity
+  and for replaying octads written before this change. The capnp
+  `+embedder+` / `+embedder_dim+` fields carry both, and consumers must
+  compare them before comparing vectors.
+* Supersedes the embedder half of D6 in
+  `+docs/decisions/2026-04-28-corpus-and-design-search.adoc+`; the decision
+  record is annotated in place.
+
 ==== Added — corpus adapters for the estate's own TCB languages, 2026-10-22
 
 * *`+src/rust/corpus/spark_ada.rs+`* — Ada/SPARK adapter (`+*.ads+` /

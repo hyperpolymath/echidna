@@ -138,6 +138,14 @@ to the GNN’s `+FEATURE_DIM+`. When the GNN server is primed, swap one
 trait impl. Vector octad’s `+model+` field reflects which embedder
 produced each row — replays distinguish them.
 
+NOTE: Superseded in part on 2026-10-22. The default `+Embedder+` is now
+`+StructuralEmbedder+` — 256-dim 1–3-gram hashing over the declaration's
+_canonical type shape_ rather than its raw text, so statements written in
+different provers' syntaxes land near each other. The 32-dim
+`+HashEmbedder+` is retained for GNN-compatible (`+FEATURE_DIM+`) vectors
+and for replaying pre-2026-10-22 octads. See
+`+docs/decisions/2026-10-22-structural-cross-prover-identity.adoc+`.
+
 ==== D7. Bennettian / Landauer caveat
 
 User asked whether the design-search stack is near-Landauer, very
