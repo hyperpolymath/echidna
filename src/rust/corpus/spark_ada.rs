@@ -661,6 +661,13 @@ fn merge_spec_and_body(decls: &mut Vec<DraftDecl>) {
         for tag in &decls[body].axiom_usage.other {
             push_once(&mut usage.other, tag);
         }
+        let b = &decls[body].axiom_usage;
+        usage.postulate |= b.postulate;
+        usage.believe_me |= b.believe_me;
+        usage.assert_total |= b.assert_total;
+        usage.admitted |= b.admitted;
+        usage.sorry |= b.sorry;
+        usage.trustme |= b.trustme;
         decls[body].statement = statement;
         decls[body].line = line;
         decls[body].axiom_usage = usage;
