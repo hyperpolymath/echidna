@@ -144,7 +144,11 @@ fn walk_rust(dir: &Path, out: &mut Vec<PathBuf>) -> Result<()> {
         let entry = entry?;
         let p = entry.path();
         let name_s = entry.file_name().to_string_lossy().into_owned();
-        if p.is_dir() {
+        let ft = entry.file_type()?;
+        if ft.is_symlink() {
+            continue;
+        }
+        if ft.is_dir() {
             if matches!(
                 name_s.as_str(),
                 ".git" | "target" | "node_modules" | ".cargo" | "build" | "dist"
