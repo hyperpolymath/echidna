@@ -64,7 +64,7 @@ fn spark_ada_reports_spark_syntax_on_the_module() {
         corpus
             .modules
             .iter()
-            .any(|m| m.options.iter().any(|o| o.starts_with("SPARK"))),
+            .any(|m| m.options.iter().any(|o| o == "SPARK" || o == "SPARK_Mode")),
         "the spec file carries contracts, so it should be marked SPARK"
     );
     assert!(corpus.modules.iter().any(|m| m.name == "Smoke"));
