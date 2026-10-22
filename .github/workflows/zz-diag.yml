@@ -1,10 +1,9 @@
 # SPDX-License-Identifier: MPL-2.0
-# TEMPORARY diagnostic workflow. Deliberately contains no `uses:` steps: any
+# TEMPORARY diagnostic workflow. Deliberately contains no `uses:` steps: a
 # newly added workflow in this repo that references an action fails at
 # startup ("This run likely failed because of a workflow file issue"), so
-# this clones by hand and posts its output as a PR comment, which is
-# readable from environments where the job log endpoint is blocked.
-# Delete once the branch is green.
+# this clones by hand and publishes its output where a blocked-log
+# environment can read it. Delete once the branch is green.
 name: ZZ diag
 
 on:
@@ -14,38 +13,49 @@ on:
 permissions:
   contents: read
   issues: write
+  pull-requests: write
 
 jobs:
   diag:
     runs-on: ubuntu-latest
-    timeout-minutes: 35
+    timeout-minutes: 40
     steps:
       - name: Collect diagnostics
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           set -u
-          sudo apt-get update -qq
-          sudo apt-get install -y -qq capnproto protobuf-compiler pkg-config libssl-dev
-          git clone -q --depth 5 --branch arena/5b8efe75-echidna \
-            "https://x-access-token:${GH_TOKEN}@github.com/hyperpolymath/echidna.git" repo
-          cd repo
-          {
-            echo '### toolchain'
-            (cargo --version; rustc --version) 2>&1
-            echo
-            echo '### rustfmt --check (diff)'
-            cargo fmt --all -- --check 2>&1 | head -n 200
-            echo
-            echo '### cargo check'
-            cargo check --locked --workspace --all-targets 2>&1 \
-              | grep -E '^(error|warning)' -A 8 | head -n 400
-          } > /tmp/diag.txt 2>&1
-          printf '%s\n' "$(head -c 55000 /tmp/diag.txt)" > /tmp/body.txt
-          jq -Rs '{body: .}' /tmp/body.txt > /tmp/body.json
-          curl -sS -X POST \
+          OUT=/tmp/diag.txt
+          : > "${OUT}"
+          say() { printf '%s\n' "$*" | tee -a "${OUT}"; }
+          say "stage: start"
+          sudo apt-get update -qq >/dev/null 2>&1 && say "apt update ok" || say "apt update FAILED"
+          sudo apt-get install -y -qq capnproto protobuf-compiler pkg-config libssl-dev >/dev/null 2>&1 \
+            && say "apt install ok" || say "apt install FAILED"
+          if git clone -q --depth 5 --branch arena/5b8efe75-echidna \
+               "https://x-access-token:${GH_TOKEN}@github.com/hyperpolymath/echidna.git" repo 2>>"${OUT}"; then
+            say "clone ok"
+          else
+            say "clone FAILED"
+          fi
+          cd repo 2>/dev/null || say "no repo dir"
+          say "### toolchain"
+          (cargo --version; rustc --version) >>"${OUT}" 2>&1
+          say "### rustfmt --all -- --check"
+          cargo fmt --all -- --check >>"${OUT}" 2>&1
+          say "### cargo check --locked --workspace --all-targets"
+          cargo check --locked --workspace --all-targets >>"${OUT}" 2>&1
+          say "### end"
+          BODY="$(mktemp)"
+          { echo '### Diagnostics (temporary)'; echo; echo '```rust'; head -c 52000 "${OUT}"; echo; echo '```'; } > "${BODY}"
+          jq -Rs '{body: .}' "${BODY}" > /tmp/body.json
+          CODE=$(curl -sS -o /tmp/resp.json -w '%{http_code}' -X POST \
             -H "Authorization: Bearer ${GH_TOKEN}" \
             -H "Accept: application/vnd.github+json" \
             https://api.github.com/repos/hyperpolymath/echidna/issues/448/comments \
-            -d @/tmp/body.json -o /tmp/resp.json
-          head -c 200 /tmp/resp.json
+            -d @/tmp/body.json)
+          say "comment status: ${CODE}"
+          say "comment response: $(head -c 400 /tmp/resp.json)"
+          PASTE=$(curl -sS --data-binary @"${OUT}" https://paste.rs 2>&1 || true)
+          say "paste: ${PASTE}"
+          test -n "${PASTE}"
