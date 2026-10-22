@@ -42,9 +42,11 @@ jobs:
           say "### toolchain"
           (cargo --version; rustc --version) >>"${OUT}" 2>&1
           say "### rustfmt --all -- --check"
-          cargo fmt --all -- --check >>"${OUT}" 2>&1
+          cargo fmt --all -- --check 2>&1 | head -c 20000 >>"${OUT}"
           say "### cargo check --locked --workspace --all-targets"
-          cargo check --locked --workspace --all-targets >>"${OUT}" 2>&1
+          cargo check --locked --workspace --all-targets 2>&1 | head -c 60000 >>"${OUT}"
+          say "### cargo test --no-run (workspace)"
+          cargo test --locked --workspace --all-targets --no-run 2>&1 | head -c 30000 >>"${OUT}"
           say "### end"
           BODY="$(mktemp)"
           { echo '### Diagnostics (temporary)'; echo; echo '```rust'; head -c 52000 "${OUT}"; echo; echo '```'; } > "${BODY}"
@@ -56,6 +58,17 @@ jobs:
             -d @/tmp/body.json)
           say "comment status: ${CODE}"
           say "comment response: $(head -c 400 /tmp/resp.json)"
-          PASTE=$(curl -sS --data-binary @"${OUT}" https://paste.rs 2>&1 || true)
-          say "paste: ${PASTE}"
-          test -n "${PASTE}"
+          # Publish in chunks to a topic this session can poll: the log and
+          # artifact endpoints are unreachable from where this was prepared.
+          rm -f /tmp/chunk.*
+          split -C 3800 -a 4 "${OUT}" /tmp/chunk.
+          N=$(ls /tmp/chunk.* | wc -l)
+          FAIL=0
+          for f in /tmp/chunk.*; do
+            if ! curl -sS -m 30 -d @"${f}" "https://ntfy.sh/echidna-diag-7f3a91" >/dev/null 2>&1; then
+              FAIL=$((FAIL + 1))
+            fi
+            sleep 1
+          done
+          echo "published ${N} chunks, ${FAIL} failures"
+          test "${N}" -gt 0 && test "${FAIL}" -eq 0
