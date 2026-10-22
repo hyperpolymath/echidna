@@ -18,7 +18,7 @@ package Smoke with SPARK_Mode is
           Post => X in Lo .. Hi;
 
    --  The body of this one asserts its own precondition without proof;
-   --  corpus_estate_adapter.rs checks that the body side is flagged.
+   --  corpus_estate_adapters.rs checks that the body side is flagged.
    procedure Trusted_Step (X : Integer) with Post => X = X;
 
    type Word is mod 2 ** 32;
