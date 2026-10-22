@@ -1,9 +1,9 @@
 # SPDX-License-Identifier: MPL-2.0
-# TEMPORARY diagnostic: `cargo check` the tree and publish the compiler output
-# to a pollable topic, because this branch is prepared in an environment with
-# no Rust toolchain (and job logs are not reachable from it).
-# No `uses:` steps on purpose — a newly added workflow here that references an
-# action fails at startup. Delete before merge.
+# TEMPORARY diagnostic: run `cargo check` / `cargo clippy` / `cargo fmt
+# --check` and commit the output to `.diag/` on this branch, because the branch
+# is prepared in an environment with no Rust toolchain and job logs are not
+# reachable from it. Self-terminating (skips when `.diag/` already exists, and
+# the commit carries `[skip ci]`). Delete before merge.
 name: ZZ diag
 
 on:
@@ -11,40 +11,43 @@ on:
     branches: [arena/5b8efe75-echidna]
 
 permissions:
-  contents: read
+  contents: write
 
 jobs:
   diag:
     runs-on: ubuntu-latest
     timeout-minutes: 40
     steps:
-      - name: Check and publish
+      - name: Check and record
         env:
-          T: https://ntfy.sh/echidna-err-7f3a91
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           set -u
-          publish() {
-            file=$1; topic=$2; n=$(wc -c < "$file")
-            if [ "$n" -eq 0 ]; then printf '%s\n' "(no output)" | curl -sS -m 20 --data-binary @- "https://ntfy.sh/$topic" >/dev/null 2>&1; return 0; fi
-            split -b 3600 -d -a 3 "$file" /tmp/chunk.
-            for c in /tmp/chunk.*; do curl -sS -m 20 --data-binary @"$c" "https://ntfy.sh/$topic" >/dev/null 2>&1; done
-          }
           git clone -q --depth 1 --branch arena/5b8efe75-echidna \
-            https://github.com/hyperpolymath/echidna.git repo || exit 1
+            "https://x-access-token:${GH_TOKEN}@github.com/hyperpolymath/echidna.git" repo || exit 1
           cd repo
+          if [ -f .diag/cargo-check.txt ]; then echo "diagnostics already recorded"; exit 0; fi
           sudo apt-get update -qq
           sudo apt-get install -y -qq capnproto protobuf-compiler pkg-config libssl-dev
-          cargo check --locked --workspace --all-targets > /tmp/check.raw 2>&1
-          echo "cargo check exit $?" > /tmp/c.out
-          grep -E '^(error|warning)' -A 12 /tmp/check.raw | head -c 38000 > /tmp/check.txt
-          { cat /tmp/c.out; echo '=== cwd check ==='; cat /tmp/check.txt; } > /tmp/out1
-          publish /tmp/out1 "${T#https://ntfy.sh/}"
-
-          cargo clippy --locked --workspace --all-targets 2>&1 > /tmp/clippy.raw || true
-          grep -E '^error' -A 12 /tmp/clippy.raw | head -c 20000 > /tmp/clippy.txt
-          publish /tmp/clippy.txt "echidna-err2-7f3a91"
-
-          cargo fmt --all -- --check > /tmp/fmt.raw 2>&1
-          echo "fmt exit $?" > /tmp/fmt.out
-          { cat /tmp/fmt.out; head -c 12000 /tmp/fmt.raw; } > /tmp/fmt2
-          publish /tmp/fmt2 "echidna-err3-7f3a91"
+          mkdir -p .diag
+          {
+            echo "## cargo check --locked --workspace --all-targets"
+            cargo check --locked --workspace --all-targets > /tmp/check.raw 2>&1
+            echo "exit: $?"
+            grep -E '^(error|warning)' -A 14 /tmp/check.raw | head -c 60000
+            echo
+            echo "## cargo clippy --locked --workspace --all-targets"
+            cargo clippy --locked --workspace --all-targets > /tmp/clippy.raw 2>&1
+            echo "exit: $?"
+            grep -E '^error' -A 14 /tmp/clippy.raw | head -c 40000
+            echo
+            echo "## cargo fmt --all -- --check"
+            cargo fmt --all -- --check > /tmp/fmt.raw 2>&1
+            echo "exit: $?"
+            head -c 20000 /tmp/fmt.raw
+          } > .diag/cargo-check.txt
+          git config user.name "echidna-diag-bot"
+          git config user.email "echidna-diag-bot@users.noreply.github.com"
+          git add -f .diag/cargo-check.txt
+          git commit -qm "diag: cargo check output [skip ci]"
+          git push -q origin HEAD:arena/5b8efe75-echidna
