@@ -940,14 +940,9 @@ impl Parser {
 
     fn expr(&mut self, min_prec: u8) -> Node {
         let mut left = self.app();
-        loop {
-            let op = match self.op_at() {
-                Some(op) => op,
-                None => break,
-            };
-            let prec = match precedence(op) {
-                Some(p) => p,
-                None => break,
+        while let Some(op) = self.op_at() {
+            let Some(prec) = precedence(op) else {
+                break;
             };
             if prec < min_prec {
                 break;
