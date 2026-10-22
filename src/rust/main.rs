@@ -279,10 +279,9 @@ enum CorpusOp {
     },
 
     /// Look up entries across every synonym table by `semantic_class`.
-    /// Demonstrates cross-prover semantic equivalence — e.g.
-    /// `corpus crossquery well-foundedness` reports `WellFounded` in Agda
-    /// + `well_founded` in Coq + `WellFounded` in Lean + `WellFounded` in
-    /// Idris 2.
+    /// Demonstrates cross-prover semantic equivalence: `corpus crossquery
+    /// well-foundedness` reports `WellFounded` in Agda, `well_founded` in
+    /// Coq, and `WellFounded` in Lean and Idris 2.
     ///
     /// The cross-prover dictionaries are searched too, so classes that
     /// only exist there (`wrapping-arithmetic`, `frame-rule`,
