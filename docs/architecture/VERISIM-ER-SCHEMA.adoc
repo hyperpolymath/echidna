@@ -149,8 +149,17 @@ Dependency edges + cross-prover identity edges.
 
 |`+depended_on_by+` |`+List<UUIDv7>+` |reverse deps
 
-|`+cross_prover_identity_key+` |`+String+` |groups Octads representing
-the SAME mathematical object across adapters — see Rel-2 below
+|`+cross_prover_identity_key+` |`+String+` (64-hex SHA-256) |groups
+Octads representing the SAME theorem across adapters by the *canonical
+shape of its type* — see Rel-2 below
+|`+cross_prover_skeleton_key+` |`+String+` (64-hex SHA-256) |the same
+shape with binders and sorts erased; the tier-2 join for provers that
+elide binders (Isabelle) or use a different numeric sort (Why3)
+|`+identity_scheme+` |`+String+` |which normalisation rules produced the
+keys — currently `+"dk-shape-v1"+`
+|`+canonical_type+` |`+String+` |the rendered canonical shape itself,
+e.g. `+(PI [NAT NAT] (EQ (ADD v0 v1) (ADD v1 v0)))+`; debug/eyeball only,
+never a join key
 |===
 
 Rust: `+OctadPayload.graph+` VeriSimDB table: `+octads_graph+` Indexed
@@ -166,10 +175,15 @@ Goal embeddings for `+near_text+` and GNN-guided search.
 |Field |Type |Notes
 |`+octad_key+` (PK,FK→E1) |`+UUIDv7+` |
 
-|`+goal_embedding+` |`+List<f32>+` |currently 32-dim HashEmbedder,
-future 256-dim GNN
+|`+goal_embedding+` |`+List<f32>+` |256-dim structural 1–3-gram hashing
+over the canonical type shape (`+echidna-corpus-structural-v2+`);
+32-dim raw-text vectors (`+echidna-corpus-hash-v1+`) remain readable
 
-|`+embedder+` |`+String+` (`+"hash-v1"+`/`+"gnn-v1"+`) |versioning
+|`+embedder+` |`+String+` |`+echidna-corpus-structural-v2+` (default),
+`+echidna-corpus-hash-v1+` (legacy), `+gnn-v1+` (future)
+
+|`+embedder_dim+` |`+UInt32+` |256 for the structural embedder, 32 for the
+legacy hash embedder; consumers must check it before comparing vectors
 |===
 
 Rust: `+OctadPayload.vector+` VeriSimDB table: `+octads_vector+` Indexed
@@ -303,11 +317,24 @@ table holds at most one row per octad_key.
 `+GraphModality.cross_prover_identity_key+`.
 
 Semantics: two Octads `+o1+`, `+o2+` are _cross-prover-identified_ iff
+they have distinct adapters AND either
 `+o1.graph.cross_prover_identity_key == o2.graph.cross_prover_identity_key+`
-AND they have distinct adapters. Example: the Coq `+Nat.add_comm+` and
-the Lean `+Nat.add_comm+` both carry identity key
-`+"nat-add-commutativity"+`. Used to answer queries like _"`every prover
-that has formalised theorem X`"_.
+(tier 1) or
+`+o1.graph.cross_prover_skeleton_key == o2.graph.cross_prover_skeleton_key+`
+(tier 2). Tier 2 exists because some provers cannot produce a tier-1 key:
+Isabelle writes `+"(x::nat) + y = y + x"+` with no binders, and Why3 states
+arithmetic over `+int+` where others state it over `+nat+`.
+
+The key is the SHA-256 of a canonical, alpha-normalised prefix term
+derived from the declaration's *type*, not from its name. So the Coq
+`+Nat.add_comm+`, the Agda `+Ordinal.Brouwer.+-comm+` and the SMT-LIB
+`+bvadd_comm+` all carry the same key, because all three normalise to
+`+(PI [NAT NAT] (EQ (ADD v0 v1) (ADD v1 v0)))+`. No synonym table and no
+per-prover naming convention is consulted. Used to answer queries like
+_"'`every prover that has formalised theorem X`"_.
+
+`+identity_scheme+` must be compared along with the keys: a key produced
+by `+dk-shape-v1+` is not comparable with one produced by a later scheme.
 
 Materialised view: `+cross_prover_clusters+` in VeriSimDB.
 

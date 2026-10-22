@@ -71,6 +71,7 @@ commit.
 
 - **12 core backends** exposed by default; the wider surface (external prover bindings plus TypeChecker disciplines routed via TypedWasm Sigma) is reachable through explicit `ProverKind` selection. Figures and their denominators: [`docs/PROVER_COUNT.adoc`](https://github.com/hyperpolymath/echidna/blob/main/docs/PROVER_COUNT.adoc).
 - **20 corpus adapters** — every major public proof corpus has a structural ingest path, plus Ada/SPARK, Rust/Creusot and the estate profile (see [`docs/CORPUS-ADAPTERS.adoc`](https://github.com/hyperpolymath/echidna/blob/main/docs/CORPUS-ADAPTERS.adoc)).
+- **Dictionary-free cross-prover identity** — declarations are matched on a hashed canonical form of their *type* (`dk-shape-v1`), so `+-comm` (Agda), `Nat.add_comm` (Coq/Lean), `addComm` (Idris 2) and `bvadd_comm` (SMT-LIB) share a key; a 256-dim structural embedder backs `corpus near` (see Architecture → Cross-prover Identity).
 - **4 arbitration mechanisms** — portfolio majority-vote, Bayesian posterior, Dempster-Shafer belief combination, Pareto multi-objective frontier.
 - **6 cross-prover exchange formats** — OpenTheory, Dedukti, TPTP, SMT-LIB, SMTCoq, Lambdapi.
 - **11-step trust pipeline** — integrity → portfolio → certificates → axioms → confidence → mutation → pareto → statistics → emission (see Architecture page).

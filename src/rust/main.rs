@@ -280,8 +280,9 @@ enum CorpusOp {
 
     /// Look up entries across every synonym table by `semantic_class`.
     /// Demonstrates cross-prover semantic equivalence — e.g.
-    /// `corpus crossquery well-foundedness` reports `WellFounded` in Agda,
-    /// `well_founded` in Coq, and `WellFounded` in Lean and Idris 2.
+    /// `corpus crossquery well-foundedness` reports `WellFounded` in Agda
+    /// + `well_founded` in Coq + `WellFounded` in Lean + `WellFounded` in
+    /// Idris 2.
     ///
     /// The cross-prover dictionaries are searched too, so classes that
     /// only exist there (`wrapping-arithmetic`, `frame-rule`,
@@ -300,13 +301,42 @@ enum CorpusOp {
 
     /// Find the K nearest-neighbour entries to a free-form text
     /// query by cosine similarity over the Vector octad embeddings.
-    /// Useful for "find lemmas semantically near `WellFounded _<_`".
+    /// The query is canonicalised the same way the corpus is, so a
+    /// statement written in one prover's syntax matches entries written
+    /// in another's. Useful for "find lemmas structurally near
+    /// `WellFounded _<_`".
     Near {
         query: String,
         #[arg(short, long)]
         index: Option<PathBuf>,
         #[arg(short, long, default_value_t = 10)]
         top: usize,
+    },
+
+    /// Group matching declarations by their *structural* identity key.
+    ///
+    /// The key is the SHA-256 of the type's canonical shape — variable
+    /// names, module paths, operator spellings and binder keywords are
+    /// normalised away — so `+-comm` in Agda, `Nat.add_comm` in Lean and
+    /// `eq Nat (add x y) (add y x)` in Dedukti land on one key with no
+    /// synonym lookup. `--skeleton` additionally prints the binder- and
+    /// sort-free key, which is what provers that elide binders (Isabelle)
+    /// match on.
+    Identity {
+        /// Name pattern to match: a substring of the qualified or short
+        /// name, case-insensitive. `*` matches every declaration.
+        pattern: String,
+        /// Path to the corpus JSON. Defaults to
+        /// `data/corpus/<basename>.json` for the cwd's basename.
+        #[arg(short, long)]
+        index: Option<PathBuf>,
+        /// Also print the skeleton key (binders and sorts erased).
+        #[arg(long)]
+        skeleton: bool,
+        /// Only show keys that group declarations from more than one
+        /// adapter.
+        #[arg(long)]
+        cross_only: bool,
     },
 
     /// Convert a JSON corpus index into 8-modality octad JSONL
@@ -1581,6 +1611,86 @@ fn corpus_command(op: CorpusOp, formatter: &OutputFormatter) -> Result<()> {
                 println!("{:.3}  {}  [{:?}]", sim, entry.qualified, entry.kind);
                 println!("       : {}", entry.statement);
             }
+        },
+
+        CorpusOp::Identity {
+            pattern,
+            index,
+            skeleton,
+            cross_only,
+        } => {
+            let path = match index {
+                Some(p) => p,
+                None => {
+                    let basename = std::env::current_dir()?
+                        .file_name()
+                        .map(|s| s.to_string_lossy().into_owned())
+                        .unwrap_or_else(|| "project".to_string());
+                    default_index(&basename)
+                },
+            };
+            let corpus = Corpus::load_json(&path)
+                .with_context(|| format!("load corpus index {}", path.display()))?;
+            let needle = pattern.to_lowercase();
+            let everything = needle == "*";
+
+            // Group by structural key, keeping the key itself for display.
+            let mut groups: std::collections::BTreeMap<
+                String,
+                (
+                    echidna::corpus::canonical::StructuralKey,
+                    Vec<(String, String)>,
+                ),
+            > = std::collections::BTreeMap::new();
+            for entry in &corpus.entries {
+                let matches = everything
+                    || entry.qualified.to_lowercase().contains(&needle)
+                    || entry.name.to_lowercase().contains(&needle);
+                if !matches {
+                    continue;
+                }
+                let key = echidna::corpus::canonical::structural_key(&entry.statement);
+                let slot = groups
+                    .entry(key.key.clone())
+                    .or_insert_with(|| (key, Vec::new()));
+                slot.1
+                    .push((corpus.adapter.clone(), entry.qualified.clone()));
+            }
+
+            if groups.is_empty() {
+                formatter.info(&format!("no declarations matching '{}'", pattern))?;
+                return Ok(());
+            }
+
+            let mut shown = 0usize;
+            for (key, (structural, members)) in &groups {
+                let adapters: std::collections::BTreeSet<&str> =
+                    members.iter().map(|(a, _)| a.as_str()).collect();
+                if cross_only && adapters.len() < 2 {
+                    continue;
+                }
+                shown += 1;
+                println!(
+                    "{}  [{}] {} declaration(s) across {} adapter(s)",
+                    &key[..16.min(key.len())],
+                    structural.tier.as_str(),
+                    members.len(),
+                    adapters.len()
+                );
+                println!("  type: {}", structural.shape);
+                if skeleton {
+                    println!("  skeleton: {}", structural.skeleton);
+                }
+                for (adapter, qualified) in members {
+                    println!("    {}  {}", adapter, qualified);
+                }
+            }
+            formatter.info(&format!(
+                "{} key(s) over {} declaration(s) in {}",
+                shown,
+                groups.values().map(|(_, m)| m.len()).sum::<usize>(),
+                path.display()
+            ))?;
         },
 
         CorpusOp::ExportOctads { index, out } => {

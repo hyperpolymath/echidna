@@ -46,6 +46,7 @@
 #![allow(dead_code)]
 
 pub mod agda;
+pub mod canonical; // Structural (alpha-normalised) type shapes — E6 identity keys
 pub mod coq;
 pub mod embed; // Vector-octad embeddings (Step 5)
 pub mod idris2;

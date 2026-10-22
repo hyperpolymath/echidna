@@ -4,20 +4,28 @@
 //! Vector-octad embeddings for the corpus — Step 5 of the N-dim
 //! VeriSim plan.
 //!
-//! Two backends:
+//! Three backends:
 //!
-//! 1. **Hashing-trick** (default, offline): tokenise statement +
-//!    proof on whitespace + Agda-syntax separators, hash each token
-//!    into one of 32 buckets, accumulate L2-normalised counts. Free,
-//!    deterministic, no network. Good enough for cosine-similarity
-//!    nearest-neighbour queries over shared vocabulary, which is
-//!    exactly what the SA / MCTS prior layer needs.
+//! 1. **Structural n-gram hashing** (default, offline): normalise the
+//!    statement through [`super::canonical`], then hash its 1-, 2- and
+//!    3-grams of canonical atoms into 256 buckets, weighted by n-gram
+//!    order and L2-normalised. Because the input is the *canonical*
+//!    token stream, `x + y = y + x` in Coq and `(+ x y) = (+ y x)` in
+//!    SMT-LIB land on the same buckets — the vector carries type
+//!    structure, not surface spelling. Still free, deterministic and
+//!    offline, and still no training run: it is the baseline the Flux
+//!    GNN is measured against, not a replacement for it.
 //!
-//! 2. **GNN client** (future, online): for when the Julia server at
+//! 2. **Hashing-trick over raw text** ([`HashEmbedder`], 32-dim): the
+//!    original backend, kept because `src/rust/gnn/embeddings.rs`
+//!    fixes `FEATURE_DIM = 32` for node features and some deployments
+//!    want the narrow, GNN-compatible vector.
+//!
+//! 3. **GNN client** (future, online): for when the Julia server at
 //!    `/gnn/embed` is primed against real proof corpora (Wave-3 ML
 //!    work tracked in `docs/handover/TODO.adoc`). The trait `Embedder`
-//!    abstracts the choice; replacing the default `HashEmbedder`
-//!    with a `GnnEmbedder` is one-line.
+//!    abstracts the choice; replacing the default
+//!    [`StructuralEmbedder`] with a `GnnEmbedder` is one-line.
 //!
 //! The corpus's `compute_embeddings` returns `Vec<Vec<f32>>` parallel
 //! to `entries`; `octad.rs::save_octads_jsonl` populates each Vector
@@ -29,12 +37,23 @@ use serde::{Deserialize, Serialize};
 
 use super::{Corpus, CorpusEntry};
 
-/// Embedding dimension used by the default hashing-trick embedder.
-/// Chosen to match the 32-dim GNN local-term embeddings already
-/// shipped in `src/rust/gnn/embeddings.rs` (`FEATURE_DIM = 32`), so
-/// stored octads can be later re-embedded from the GNN client without
+/// Embedding dimension of the *legacy* raw-text hashing-trick
+/// embedder. Chosen to match the 32-dim GNN local-term embeddings
+/// already shipped in `src/rust/gnn/embeddings.rs` (`FEATURE_DIM = 32`),
+/// so stored octads can be re-embedded from the GNN client without
 /// changing dimensions.
 pub const HASH_EMBED_DIM: usize = 32;
+
+/// Embedding dimension of the default structural embedder (E7
+/// `VectorModality`). 256 buckets is enough to keep 1–3-gram
+/// collisions rare on the estate's corpora while staying trivially
+/// hashable, sortable and comparable — the point is a usable
+/// similarity baseline before any trained model exists.
+pub const STRUCTURAL_EMBED_DIM: usize = 256;
+
+/// Weights applied to 1-, 2- and 3-grams respectively. Unigrams carry
+/// the vocabulary, longer n-grams carry the type structure.
+const NGRAM_WEIGHTS: [f32; 3] = [1.0, 0.6, 0.35];
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct EmbedderInfo {
@@ -47,8 +66,11 @@ pub trait Embedder {
     fn embed(&self, entry: &CorpusEntry) -> Vec<f32>;
 }
 
-/// Default offline embedder: hashing-trick over the entry's
-/// statement + proof tokens, with L2 normalisation.
+/// Legacy offline embedder: hashing-trick over the entry's raw
+/// statement + proof tokens, with L2 normalisation. Superseded as the
+/// default by [`StructuralEmbedder`]; retained because
+/// `src/rust/gnn/embeddings.rs` fixes 32-dim features and some stored
+/// octads carry `echidna-corpus-hash-v1` vectors.
 #[derive(Debug, Clone, Default)]
 pub struct HashEmbedder;
 
@@ -76,6 +98,51 @@ impl Embedder for HashEmbedder {
     }
 }
 
+/// Default offline embedder: n-gram hashing over the *canonical* type
+/// shape (see [`super::canonical`]).
+///
+/// Feature layout: every unigram, bigram and trigram of the canonical
+/// atom stream is hashed into one of [`STRUCTURAL_EMBED_DIM`] buckets
+/// and accumulated with [`NGRAM_WEIGHTS`]; the vector is L2-normalised
+/// so cosine similarity is meaningful. Deterministic, dependency-free
+/// and identical on every platform.
+#[derive(Debug, Clone, Default)]
+pub struct StructuralEmbedder;
+
+impl Embedder for StructuralEmbedder {
+    fn info(&self) -> EmbedderInfo {
+        EmbedderInfo {
+            model: "echidna-corpus-structural-v2".to_string(),
+            dimensions: STRUCTURAL_EMBED_DIM,
+        }
+    }
+
+    fn embed(&self, entry: &CorpusEntry) -> Vec<f32> {
+        let atoms = super::canonical::canonical_tokens(&entry.statement);
+        embed_atoms(&atoms)
+    }
+}
+
+/// Hash a canonical atom stream into a [`STRUCTURAL_EMBED_DIM`] vector.
+///
+/// Shared by entry embedding and free-text query embedding so the two
+/// always live in the same space.
+pub fn embed_atoms(atoms: &[String]) -> Vec<f32> {
+    let mut buckets = vec![0.0_f32; STRUCTURAL_EMBED_DIM];
+    for n in 1..=3usize {
+        if atoms.len() < n {
+            break;
+        }
+        let weight = NGRAM_WEIGHTS[n - 1];
+        for window in atoms.windows(n) {
+            let key = window.join("\u{1f}");
+            buckets[bucket_for_dim(&key, STRUCTURAL_EMBED_DIM)] += weight;
+        }
+    }
+    l2_normalise(&mut buckets);
+    buckets
+}
+
 fn tokenise(s: &str) -> impl Iterator<Item = &str> {
     s.split(|c: char| {
         c.is_whitespace()
@@ -89,12 +156,16 @@ fn tokenise(s: &str) -> impl Iterator<Item = &str> {
 
 /// FxHash-style fast hash; we only need stable bucketing, not crypto.
 fn bucket_for(tok: &str) -> usize {
+    bucket_for_dim(tok, HASH_EMBED_DIM)
+}
+
+fn bucket_for_dim(tok: &str, dim: usize) -> usize {
     let mut h: u64 = 0xcbf29ce484222325; // FNV-1a offset
     for b in tok.as_bytes() {
         h ^= *b as u64;
         h = h.wrapping_mul(0x100000001b3);
     }
-    (h as usize) % HASH_EMBED_DIM
+    (h as usize) % dim
 }
 
 fn l2_normalise(v: &mut [f32]) {
@@ -124,27 +195,29 @@ pub fn cosine(a: &[f32], b: &[f32]) -> f32 {
 
 impl Corpus {
     /// Compute embeddings for every entry using the default
-    /// `HashEmbedder`. Result is parallel to `self.entries`.
+    /// [`StructuralEmbedder`] (256-dim). Result is parallel to
+    /// `self.entries`.
     pub fn compute_embeddings(&self) -> Vec<Vec<f32>> {
+        let embedder = StructuralEmbedder;
+        self.entries.iter().map(|e| embedder.embed(e)).collect()
+    }
+
+    /// Compute 32-dim GNN-compatible embeddings with the legacy
+    /// raw-text hashing trick. Used where a consumer expects
+    /// `FEATURE_DIM` vectors.
+    pub fn compute_embeddings_legacy(&self) -> Vec<Vec<f32>> {
         let embedder = HashEmbedder;
         self.entries.iter().map(|e| embedder.embed(e)).collect()
     }
 
-    /// Embed a free-form text query using the same default
-    /// embedder. Used for `corpus query --near <text>`.
+    /// Embed a free-form text query into the same space as
+    /// [`Corpus::compute_embeddings`]. Used for `corpus near <text>`,
+    /// which runs the query through the *same* canonicaliser so a
+    /// query written in one prover's syntax matches statements written
+    /// in another's.
     pub fn embed_query(&self, query: &str) -> Vec<f32> {
-        let synthetic = CorpusEntry {
-            name: String::new(),
-            qualified: String::new(),
-            module_idx: 0,
-            kind: super::DeclKind::Function,
-            statement: query.to_string(),
-            proof: None,
-            line: 0,
-            dependencies: vec![],
-            axiom_usage: super::AxiomUsage::default(),
-        };
-        HashEmbedder.embed(&synthetic)
+        let atoms = super::canonical::canonical_tokens(query);
+        embed_atoms(&atoms)
     }
 
     /// Top-k nearest entries to `query_vec` by cosine similarity.
@@ -218,13 +291,72 @@ mod tests {
     }
 
     #[test]
-    fn hash_embedder_dimensions() {
+    fn structural_embedder_is_256_dimensional_by_default() {
         let c = sample_corpus();
         let embeds = c.compute_embeddings();
         assert_eq!(embeds.len(), 3);
         for v in &embeds {
+            assert_eq!(v.len(), STRUCTURAL_EMBED_DIM);
+            assert_eq!(v.len(), 256);
+        }
+        let info = StructuralEmbedder.info();
+        assert_eq!(info.dimensions, STRUCTURAL_EMBED_DIM);
+        assert_eq!(info.model, "echidna-corpus-structural-v2");
+    }
+
+    #[test]
+    fn legacy_hash_embedder_stays_32_dimensional() {
+        let c = sample_corpus();
+        let embeds = c.compute_embeddings_legacy();
+        assert_eq!(embeds.len(), 3);
+        for v in &embeds {
             assert_eq!(v.len(), HASH_EMBED_DIM);
         }
+        assert_eq!(HashEmbedder.info().dimensions, 32);
+    }
+
+    #[test]
+    fn queries_match_across_prover_syntaxes() {
+        // An entry written the way Coq writes it, queried the way SMT-LIB
+        // writes it: the canonical stream is what gets hashed, so the two
+        // must land close together — and far from an unrelated statement.
+        let mut c = Corpus {
+            adapter: "coq".into(),
+            ..Default::default()
+        };
+        c.entries.push(CorpusEntry {
+            name: "add_comm".into(),
+            qualified: "Nat.add_comm".into(),
+            module_idx: 0,
+            kind: DeclKind::Function,
+            statement: "forall x y : nat, x + y = y + x".into(),
+            proof: None,
+            line: 1,
+            dependencies: vec![],
+            axiom_usage: AxiomUsage::default(),
+        });
+        c.entries.push(CorpusEntry {
+            name: "mul_zero".into(),
+            qualified: "Nat.mul_zero".into(),
+            module_idx: 0,
+            kind: DeclKind::Function,
+            statement: "forall n : nat, n * 0 = 0".into(),
+            proof: None,
+            line: 2,
+            dependencies: vec![],
+            axiom_usage: AxiomUsage::default(),
+        });
+        c.reindex();
+
+        let embeds = c.compute_embeddings();
+        let q = c.embed_query("(assert (forall ((x Nat) (y Nat)) (= (+ x y) (+ y x))))");
+        let same = cosine(&q, &embeds[0]);
+        let other = cosine(&q, &embeds[1]);
+        assert!(
+            same > other,
+            "cross-syntax query should match the same theorem: {same} vs {other}"
+        );
+        assert!(same > 0.8, "expected a close match, got {same}");
     }
 
     #[test]

@@ -162,8 +162,13 @@ pub struct QueryResultEntry {
     /// Axioms used
     pub axioms: Vec<String>,
 
-    /// Cross-prover identity (goal-only hash)
+    /// Cross-prover identity (name-tail hash; legacy)
     pub cross_prover_id: String,
+
+    /// Structural cross-prover identity — SHA-256 of the canonical type
+    /// shape (E6). Present when the producing build wrote it.
+    #[serde(default)]
+    pub cross_prover_identity_key: Option<String>,
 }
 
 // ═══════════════════════════════════════════════════════════════════════
@@ -830,6 +835,15 @@ fn search_result_to_entry(value: &serde_json::Value) -> Option<QueryResultEntry>
             .and_then(|v| v.as_str())
             .unwrap_or("")
             .to_string(),
+        cross_prover_identity_key: value
+            .get("cross_prover_identity_key")
+            .or_else(|| {
+                value
+                    .get("graph")
+                    .and_then(|g| g.get("cross_prover_identity_key"))
+            })
+            .and_then(|v| v.as_str())
+            .map(String::from),
     })
 }
 
@@ -866,6 +880,8 @@ fn octad_to_entry(octad: &OctadPayload) -> QueryResultEntry {
         aspects: octad.document.aspects.clone(),
         axioms: octad.semantic.axioms_used.clone(),
         cross_prover_id: octad.graph.cross_prover_id.clone(),
+        cross_prover_identity_key: Some(octad.graph.cross_prover_identity_key.clone())
+            .filter(|k| !k.is_empty()),
     }
 }
 

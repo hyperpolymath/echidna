@@ -83,14 +83,25 @@ struct Graph {
   octadKey                  @0 :Text;
   dependsOn                 @1 :List(Text);   # UUIDv7 list
   dependedOnBy              @2 :List(Text);
+  # SHA-256 (hex) of the canonical type shape: variable names, module
+  # paths, binder keywords and operator spellings normalised away. See
+  # `src/rust/corpus/canonical.rs` (scheme `dk-shape-v1`). This joins a
+  # theorem across provers by *type*, not by name.
   crossProverIdentityKey    @3 :Text;
+  # Same shape with binders and sorts erased: the tier-2 join for provers
+  # that elide binders (Isabelle) or use a different numeric sort (Why3).
+  crossProverSkeletonKey    @4 :Text;
+  # Version of the normalisation rules, e.g. "dk-shape-v1".
+  identityScheme            @5 :Text;
 }
 
 # --- E7 — Vector ---
 struct Vector {
   octadKey         @0 :Text;
   goalEmbedding    @1 :List(Float32);
-  embedder         @2 :Text;    # "hash-v1" / "gnn-v1"
+  embedder         @2 :Text;    # "echidna-corpus-structural-v2" / "gnn-v1"
+  # 256 for the default structural (canonical type n-gram) embedder,
+  # 32 for the legacy raw-text "echidna-corpus-hash-v1" vectors.
   embedderDim      @3 :UInt32;
 }
 
