@@ -94,7 +94,7 @@ for the end-to-end verification flow.
 
 ## Ingest a corpus
 
-The 2026-06-01 saturation campaign added 13 new corpus adapters (17 total: agda, coq, lean, idris2, isabelle, metamath, mizar, hol_light, hol4, dafny, why3, fstar, acl2_books, tptp, smtlib, proofnet, minif2f). Each one is a `pub fn ingest(root: &Path) -> Result<Corpus>` under `src/rust/corpus/<name>.rs`.
+The 2026-06-01 saturation campaign added 13 new corpus adapters (20 total as of 2026-10-22: agda, coq, lean, idris2, isabelle, metamath, mizar, hol_light, hol4, dafny, why3, fstar, acl2_books, tptp, smtlib, proofnet, minif2f). Each one is a `pub fn ingest(root: &Path) -> Result<Corpus>` under `src/rust/corpus/<name>.rs`.
 
 ```rust
 use std::path::Path;

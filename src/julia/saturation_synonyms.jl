@@ -3,12 +3,13 @@
 #
 # saturation_synonyms.jl
 #
-# Reads per-prover synonym TOML tables and the three cross-prover
-# dictionaries shipped by the saturation campaign (2026-06-01):
-#   data/synonyms/<prover>.toml             — 14 per-prover tables
-#   data/synonyms/_msc2020.toml             — MSC2020 cross-walk
-#   data/synonyms/_wordnet_math.toml        — WordNet (math senses)
-#   data/synonyms/_conceptnet_seed.toml     — ConceptNet seed terms
+# Reads per-prover synonym TOML tables and the cross-prover dictionaries:
+#   data/synonyms/<prover>.toml               — 14 per-prover tables
+#   data/synonyms/_msc2020.toml               — MSC2020 cross-walk
+#   data/synonyms/_wordnet_math.toml          — WordNet (math senses)
+#   data/synonyms/_conceptnet_seed.toml       — ConceptNet seed terms
+#   data/synonyms/_verification_systems.toml  — program-verification vocab
+#                                               (added 2026-10-22)
 #
 # Schema source of truth: `src/rust/suggest/synonyms.rs` (`SynonymEntry`,
 # `SynonymTable`). The Rust loader is the authoritative implementation;
@@ -19,9 +20,11 @@
 """
     SaturationSynonyms
 
-Loads the 14 per-prover synonym TOML tables plus the three cross-prover
+Loads the 14 per-prover synonym TOML tables plus the cross-prover
 dictionaries (`_msc2020`, `_wordnet_math`, `_conceptnet_seed`) added in
-the saturation campaign.
+the saturation campaign, and `_verification_systems` added 2026-10-22 to
+cover machine-level and specification-level vocabulary that WordNet and
+ConceptNet do not carry.
 
 Each entry exposes `(canonical, aliases, tactic_class, semantic_class,
 notes, since, until, relation)`. The cross-prover lookup `by_semantic_class`
@@ -41,6 +44,8 @@ export load_prover_synonyms,
        load_msc2020,
        load_wordnet_math,
        load_conceptnet_seed,
+       load_verification_systems,
+       load_disciplines,
        by_semantic_class,
        expand_aliases
 
@@ -111,7 +116,7 @@ cross-prover dictionary. Returns the same Dict shape as
 `"03B70"`).
 
 The MSC dictionary is loaded as a SECONDARY index by
-`SynonymTable::with_msc2020()` on the Rust side; downstream training
+`CrossProverDicts::msc2020` on the Rust side; downstream training
 code merges it into per-prover `semantic_class` resolution to bridge
 corpus items across prover taxonomies.
 
@@ -145,6 +150,49 @@ Load-bearing for the offline S5 verification gate (no network access).
 """
 function load_conceptnet_seed(dir::String)
     return _load_underscore_table(dir, "_conceptnet_seed.toml")
+end
+
+"""
+    load_disciplines(dir::String) -> Dict
+
+Load `dir/_disciplines.toml` — the TypeChecker discipline vocabulary
+(42 disciplines; see `docs/architecture/TYPE-DISCIPLINE-EMBEDDING.adoc`).
+Keyed by discipline slug (e.g. `"linear"`, `"epistemic"`).
+
+Added alongside `load_verification_systems` so the Julia side can load
+every shipped cross-prover dictionary, the way
+`CrossProverDicts::tables()` does on the Rust side.
+
+Returns the same Dict shape as `load_prover_synonyms`, or an empty Dict if
+the path is not a file. File-reading, TOML parsing and row-conversion errors
+propagate to the caller.
+"""
+function load_disciplines(dir::String)
+    return _load_underscore_table(dir, "_disciplines.toml")
+end
+
+"""
+    load_verification_systems(dir::String) -> Dict
+
+Load `dir/_verification_systems.toml` — the program-verification
+vocabulary dictionary added 2026-10-22. Returns the same Dict shape as
+`load_prover_synonyms`, keyed by the canonical concept name (e.g.
+`"wrapping_add"`, `"frame_rule"`, `"noninterference_tini"`).
+
+This is the dictionary that covers what `_wordnet_math` and
+`_conceptnet_seed` do not: bitvectors, memory layout, separation and
+region framing, termination measures, resource algebras, information
+flow, and the estate layer boundaries (Idris2 ABI / Zig API+FFI / SNIF /
+Rust+Creusot / Julia / Chapel). Mirrors
+`CrossProverDicts::verification_systems` on the Rust side.
+
+See `data/synonyms/_verification_systems.toml` for the row-level wording.
+
+Returns an empty Dict if the path is not a file. File-reading, TOML parsing
+and row-conversion errors propagate to the caller.
+"""
+function load_verification_systems(dir::String)
+    return _load_underscore_table(dir, "_verification_systems.toml")
 end
 
 # ----------------------------------------------------------------------

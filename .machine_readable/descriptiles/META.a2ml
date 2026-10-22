@@ -55,6 +55,9 @@ corpus = [
   "src/rust/corpus/smtlib.rs",
   "src/rust/corpus/proofnet.rs",
   "src/rust/corpus/minif2f.rs",
+  "src/rust/corpus/spark_ada.rs",
+  "src/rust/corpus/creusot.rs",
+  "src/rust/corpus/profile.rs",
 ]
 verification = [
   "src/rust/verification/bayesian_arbiter.rs",
@@ -82,6 +85,7 @@ synonyms = [
   "data/synonyms/_msc2020.toml",
   "data/synonyms/_wordnet_math.toml",
   "data/synonyms/_conceptnet_seed.toml",
+  "data/synonyms/_verification_systems.toml",
 ]
 
 [saturation-campaign.new-docs]

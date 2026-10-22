@@ -11,7 +11,7 @@
 use std::path::Path;
 use std::process::{Command, Output};
 
-const SUPPORTED: &str = "agda coq lean idris2 acl2_books dafny fstar hol4 hol_light isabelle metamath minif2f mizar proofnet smtlib tptp why3";
+const SUPPORTED: &str = "agda coq lean idris2 acl2_books creusot dafny fstar hol4 hol_light isabelle metamath minif2f mizar proofnet smtlib spark_ada tptp why3 hyperpolymath_estate";
 
 fn ingest(dir: &Path, adapter: &str) -> Output {
     let root = dir.join("project");

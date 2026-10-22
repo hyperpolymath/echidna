@@ -93,8 +93,9 @@ using .SaturationSynonyms
 
 Read one or more Corpus JSON files (saturation-campaign Rust adapter
 output), translate to `TrainingExample` rows. Hazard-filtered: entries
-with any `axiom_usage` flag set are dropped, matching the SA
-design-search reject convention in `src/rust/corpus/mod.rs`.
+with any true Boolean `axiom_usage` field other than `other` are dropped;
+tags in `other` alone do not exclude an entry. `prover_kind` supplies the
+prover for every row; rows are skipped if it is not recognised.
 
 The `discipline_tags` field of each emitted `TrainingExample` is
 populated from `CorpusLoader.entry_disciplines(entry)`, sourced from
@@ -103,6 +104,12 @@ synonym tables are pre-loaded for future feature-lookup paths
 (downstream consumer in `training/train.jl` may concatenate
 `discipline_feature_vector` onto goal embeddings; this PR ships the
 data path only).
+
+Returns an empty vector immediately when `corpus_paths` is empty. Otherwise,
+all five cross-prover dictionaries are read from `synonyms_dir` and their
+results discarded; dictionary-loading errors are caught and processing
+continues. Missing corpus files are skipped. Errors reading or parsing an
+existing corpus file, converting its rows or constructing examples propagate.
 """
 function load_corpus_examples(corpus_paths::Vector{String},
                               prover_kind::Symbol,
@@ -111,11 +118,21 @@ function load_corpus_examples(corpus_paths::Vector{String},
 
     # Pre-load cross-prover vocab tables (currently consumed downstream;
     # called here so any TOML breakage surfaces at training-launch time,
-    # not mid-epoch).
-    try
-        SaturationSynonyms.load_msc2020(synonyms_dir)
-    catch e
-        @warn "load_msc2020 failed (continuing with empty table)" exception=e
+    # not mid-epoch). Every shipped dictionary is loaded: the verification
+    # vocabulary is the one that covers the ABI / FFI / separation-logic
+    # material, and a broken row there must fail at launch, not mid-epoch.
+    for (label, loader) in (
+        ("load_msc2020", SaturationSynonyms.load_msc2020),
+        ("load_wordnet_math", SaturationSynonyms.load_wordnet_math),
+        ("load_conceptnet_seed", SaturationSynonyms.load_conceptnet_seed),
+        ("load_verification_systems", SaturationSynonyms.load_verification_systems),
+        ("load_disciplines", SaturationSynonyms.load_disciplines),
+    )
+        try
+            loader(synonyms_dir)
+        catch e
+            @warn "$(label) failed (continuing with empty table)" exception=e
+        end
     end
 
     examples = TrainingExample[]

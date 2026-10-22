@@ -65,6 +65,8 @@ tptp_problems = "https://tptp.org/"
 smtlib_benchmarks = "https://smt-lib.org/benchmarks.shtml"
 proofnet = "https://github.com/zhangir-azerbayev/ProofNet"
 minif2f = "https://github.com/openai/miniF2F"
+sparklib = "https://github.com/AdaCore/spark2014"
+creusot = "https://github.com/creusot-rs/creusot"
 
 [vocab-sources]
 msc2020 = "https://msc2020.org/"

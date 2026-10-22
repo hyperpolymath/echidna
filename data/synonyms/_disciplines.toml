@@ -6,7 +6,8 @@
 # Underscore-prefix filename `_disciplines.toml` signals: this is NOT a
 # per-prover synonym table (those are unprefixed: lean4.toml, coq.toml,
 # etc.). Instead it is a cross-prover *taxonomic* dictionary loaded as a
-# SECONDARY index by `SynonymTable::with_disciplines()`, sibling to
+# SECONDARY index by `load_cross_prover_dicts()`
+# (`CrossProverDicts::disciplines`), sibling to
 # `_msc2020.toml`, `_wordnet_math.toml`, `_conceptnet_seed.toml`.
 #
 # Each `[[synonym]]` entry captures one of the 41 TypeChecker disciplines

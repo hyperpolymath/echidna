@@ -381,7 +381,8 @@ pub fn load_all(dir: &Path) -> Result<HashMap<ProverKind, SynonymTable>> {
     let mut out: HashMap<ProverKind, SynonymTable> = HashMap::new();
     // Original five + 2026-06-01 saturation campaign additions (9 more).
     // Underscore-prefix dictionaries (_msc2020, _wordnet_math,
-    // _conceptnet_seed) are loaded separately by `load_cross_prover_dicts`.
+    // _conceptnet_seed, _disciplines, _verification_systems) are loaded
+    // separately by `load_cross_prover_dicts`.
     for prover in [
         ProverKind::Agda,
         ProverKind::Coq,
@@ -408,9 +409,9 @@ pub fn load_all(dir: &Path) -> Result<HashMap<ProverKind, SynonymTable>> {
 
 /// Cross-prover taxonomic dictionaries. Loaded from underscore-prefix
 /// TOMLs that are NOT per-prover (`_msc2020.toml`, `_wordnet_math.toml`,
-/// `_conceptnet_seed.toml`, `_disciplines.toml`). Consumers merge these
-/// into per-prover resolution to bridge corpus items across systems by
-/// `semantic_class`.
+/// `_conceptnet_seed.toml`, `_disciplines.toml`,
+/// `_verification_systems.toml`). Consumers merge these into per-prover
+/// resolution to bridge corpus items across systems by `semantic_class`.
 #[derive(Debug, Clone, Default)]
 pub struct CrossProverDicts {
     pub msc2020: SynonymTable,
@@ -421,16 +422,60 @@ pub struct CrossProverDicts {
     /// `docs/architecture/TYPE-DISCIPLINE-EMBEDDING.adoc`. Added 2026-06-01
     /// as part of the saturation campaign discipline-embedding layer.
     pub disciplines: SynonymTable,
+    /// Program-verification vocabulary: bitvectors, memory layout,
+    /// separation and region framing, termination measures, resource
+    /// algebras, information flow, and the estate layer boundaries
+    /// (Idris2 ABI / Zig API+FFI / SNIF / Rust+Creusot / Julia / Chapel).
+    /// See `data/synonyms/_verification_systems.toml`. Added 2026-10-22:
+    /// the WordNet / ConceptNet seeds only carry undergraduate and
+    /// competition pure mathematics, so the verification surface had no
+    /// semantic classes at all.
+    pub verification_systems: SynonymTable,
+}
+
+impl CrossProverDicts {
+    /// The dictionaries with their file stems, in load order.
+    ///
+    /// Used by `corpus crossquery` so a semantic-class lookup covers the
+    /// cross-prover dictionaries as well as the per-prover tables: the
+    /// verification vocabulary (`wrapping-arithmetic`, `frame-rule`, …)
+    /// only exists in these, never in a per-prover table.
+    pub fn tables(&self) -> [(&'static str, &SynonymTable); 5] {
+        [
+            ("_msc2020", &self.msc2020),
+            ("_wordnet_math", &self.wordnet_math),
+            ("_conceptnet_seed", &self.conceptnet_seed),
+            ("_disciplines", &self.disciplines),
+            ("_verification_systems", &self.verification_systems),
+        ]
+    }
+
+    /// Total number of rows across every dictionary.
+    pub fn len(&self) -> usize {
+        self.tables().iter().map(|(_, t)| t.len()).sum()
+    }
+
+    /// True when no dictionary shipped a row.
+    pub fn is_empty(&self) -> bool {
+        self.len() == 0
+    }
 }
 
 /// Load every cross-prover dictionary from `dir`. Missing files are
 /// silently treated as empty; the campaign target is offline resilience.
+/// Paths whose existence cannot be checked are also treated as missing.
+///
+/// # Errors
+///
+/// Propagates file open/read errors, invalid UTF-8, files exceeding the
+/// 64 MiB read limit, and TOML deserialisation errors for existing paths.
 pub fn load_cross_prover_dicts(dir: &Path) -> Result<CrossProverDicts> {
     Ok(CrossProverDicts {
         msc2020: load_underscore_dict(dir, "_msc2020.toml")?,
         wordnet_math: load_underscore_dict(dir, "_wordnet_math.toml")?,
         conceptnet_seed: load_underscore_dict(dir, "_conceptnet_seed.toml")?,
         disciplines: load_underscore_dict(dir, "_disciplines.toml")?,
+        verification_systems: load_underscore_dict(dir, "_verification_systems.toml")?,
     })
 }
 
@@ -447,14 +492,28 @@ fn load_underscore_dict(dir: &Path, filename: &str) -> Result<SynonymTable> {
 
 impl SynonymTable {
     /// Extend this per-prover table with rows from a cross-prover
-    /// dictionary (MSC2020 / WordNet / ConceptNet). New entries are
-    /// appended; the by_name index is rebuilt. Idempotent if called with
-    /// the same `other` twice (duplicates dedup at lookup time via
-    /// `alternatives()`).
+    /// dictionary (MSC2020 / WordNet / ConceptNet / disciplines /
+    /// verification systems). New entries are appended; the by_name
+    /// index is rebuilt. Idempotent if called with the same `other`
+    /// twice (duplicates dedup at lookup time via `alternatives()`).
     pub fn merge_external(&mut self, other: &SynonymTable) {
         let mut entries = std::mem::take(&mut self.entries);
         entries.extend(other.entries.iter().cloned());
         *self = SynonymTable::from_entries(entries);
+    }
+
+    /// Extend this table with every dictionary in `dicts`, in
+    /// `CrossProverDicts::tables()` order.
+    ///
+    /// This is the one call the Guides / wiki examples want: after it,
+    /// `by_semantic_class` on this table resolves classes that only the
+    /// cross-prover dictionaries carry (`frame-rule`, `estate-snif`, …).
+    /// Rows are appended without deduplication and the name index is rebuilt;
+    /// repeated calls append the same rows again.
+    pub fn merge_cross_prover_dicts(&mut self, dicts: &CrossProverDicts) {
+        for (_, table) in dicts.tables() {
+            self.merge_external(table);
+        }
     }
 }
 

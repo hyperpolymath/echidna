@@ -7,8 +7,9 @@
 
 === 1. Why this doc exists
 
-The 2026-06-01 saturation campaign added 17 corpus adapters (see
-`+docs/CORPUS-ADAPTERS.adoc+`). Every adapter emits `+CorpusEntry+` values
+The 2026-06-01 saturation campaign added 17 corpus adapters, and
+2026-10-22 brought that to 20 with `+spark_ada+`, `+creusot+` and the
+`+hyperpolymath_estate+` profile (see `+docs/CORPUS-ADAPTERS.adoc+`). Every adapter emits `+CorpusEntry+` values
 with a flat `+DeclKind = {Function, Data, Record, Postulate, Module}+`
 (defined at `+src/rust/corpus/mod.rs:53+`). That flat tagging is
 sufficient for hazard accounting but blind to the _type discipline_ each

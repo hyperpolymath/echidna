@@ -122,7 +122,7 @@ If `SynonymTable::load(ProverKind::X, dir)?.alternatives("name")` returns `vec![
 1. **Confirm the TOML exists** at `data/synonyms/<prover>.toml`. `SynonymTable::load` returns an empty table (without error) if the file is missing — verify with `ls data/synonyms/`.
 2. **Check the schema.** Rows must be `[[synonym]]`, not `[[entries]]` or `[[entry]]`. Each row needs `canonical = "..."` and `aliases = [...]` at minimum. Anything else parses as zero entries.
 3. **Verify the filename mapping** in `prover_table_filename` in [`src/rust/suggest/synonyms.rs`](https://github.com/hyperpolymath/echidna/blob/main/src/rust/suggest/synonyms.rs). The canonical filenames are: `agda.toml`, `coq.toml`, `lean4.toml` (note the `4`), `idris2.toml`, `isabelle.toml`, `metamath.toml`, `mizar.toml`, `hol4.toml`, `hol_light.toml` (underscore), `dafny.toml`, `why3.toml`, `fstar.toml`, `acl2.toml`. Mismatches resolve to an empty table.
-4. **Cross-prover dictionaries are different.** `_msc2020.toml`, `_wordnet_math.toml`, `_conceptnet_seed.toml` load via `load_cross_prover_dicts`, not `SynonymTable::load`; merge them into a per-prover table with `merge_external()`.
+4. **Cross-prover dictionaries are different.** `_msc2020.toml`, `_wordnet_math.toml`, `_conceptnet_seed.toml`, `_disciplines.toml` and `_verification_systems.toml` load via `load_cross_prover_dicts`, not `SynonymTable::load`; merge them into a per-prover table with `merge_external()` or `merge_cross_prover_dicts()`.
 
 ## Bayesian arbiter posterior stuck at 0.5
 

@@ -80,11 +80,11 @@ See [`SECURITY.md`](https://github.com/hyperpolymath/echidna/blob/main/SECURITY.
 
 ## Which corpus formats does echidna ingest?
 
-**17 adapters as of the 2026-06-01 saturation campaign** (`src/rust/corpus/<name>.rs`):
+**20 adapters as of 2026-10-22** (`src/rust/corpus/<name>.rs`):
 
-agda, coq, lean, idris2, isabelle, metamath, mizar, hol_light, hol4, dafny, why3, fstar, acl2_books, tptp, smtlib, proofnet, minif2f.
+agda, coq, lean, idris2, isabelle, metamath, mizar, hol_light, hol4, dafny, why3, fstar, acl2_books, tptp, smtlib, proofnet, minif2f, spark_ada, creusot, hyperpolymath_estate.
 
-The first four shipped pre-2026-04; the other 13 landed in the saturation campaign. Each adapter is `pub fn ingest(root: &Path) -> Result<Corpus>` and surfaces hazard flags (`postulate`, `believe_me`, `sorry`, `cheat`, `Admitted`, …) via `AxiomUsage`.
+The first four shipped pre-2026-04; 13 landed in the 2026-06-01 saturation campaign; `spark_ada` (Ada/SPARK, including the sparklib `Lemma_*` convention), `creusot` (Rust with `#[requires]`/`#[ensures]`/`pearlite!`) and `hyperpolymath_estate` (a multi-repo profile over every repo's `src/abi` Idris2 tree and the five Agda type libraries) landed 2026-10-22. Each adapter is `pub fn ingest(root: &Path) -> Result<Corpus>` and surfaces hazard flags (`postulate`, `believe_me`, `sorry`, `cheat`, `Admitted`, …) via `AxiomUsage`.
 
 Full table with file extensions, upstream source URLs, and hazard flags: [`docs/CORPUS-ADAPTERS.adoc`](https://github.com/hyperpolymath/echidna/blob/main/docs/CORPUS-ADAPTERS.adoc).
 
@@ -101,7 +101,7 @@ Full table with file extensions, upstream source URLs, and hazard flags: [`docs/
 
 ## Are MSC2020 / WordNet / ConceptNet required to run echidna?
 
-**No.** They are offline-resilient enhancements to the synonym layer. `load_cross_prover_dicts` (`src/rust/suggest/synonyms.rs`) silently returns empty `SynonymTable`s if the underscore-prefix TOMLs (`_msc2020.toml`, `_wordnet_math.toml`, `_conceptnet_seed.toml`) are missing from `data/synonyms/`. Per-prover synonym lookup still works; cross-prover `by_semantic_class` queries just return fewer hits.
+**No.** They are offline-resilient enhancements to the synonym layer. `load_cross_prover_dicts` (`src/rust/suggest/synonyms.rs`) silently returns empty `SynonymTable`s if the underscore-prefix TOMLs (`_msc2020.toml`, `_wordnet_math.toml`, `_conceptnet_seed.toml`, `_disciplines.toml`, `_verification_systems.toml`) are missing from `data/synonyms/`. Per-prover synonym lookup still works; cross-prover `by_semantic_class` queries just return fewer hits.
 
 ## Can I use TPTP problems with echidna?
 

@@ -13,8 +13,9 @@ new surface AFTER wave3 lands, without pre-empting wave3’s edits.
 Three new surfaces are now first-class in the Rust core:
 
 [arabic]
-. *17 corpus adapters*
-(`+src/rust/corpus/{agda,coq,lean,idris2,isabelle,metamath,mizar,hol_light,hol4,dafny,why3,fstar,acl2_books,tptp,smtlib,proofnet,minif2f}.rs+`).
+. *20 corpus adapters*
+(`+src/rust/corpus/{agda,coq,lean,idris2,isabelle,metamath,mizar,hol_light,hol4,dafny,why3,fstar,acl2_books,tptp,smtlib,proofnet,minif2f,spark_ada,creusot,profile}.rs+`;
+`+profile.rs+` is the `+hyperpolymath_estate+` multi-repo profile).
 Each emits a `+Corpus+` value with structured `+CorpusEntry+` rows +
 dependency edges.
 . *4-mechanism arbitration stack*
@@ -59,7 +60,7 @@ in the wave3 branch.
 
 *What it enables*: instead of Chapel benching against the existing
 `+training_data/premises_<adapter>.jsonl+` files only, Chapel can pull a
-fresh batch of goals from any of the 17 adapters via the Rust C FFI.
+fresh batch of goals from any of the 20 adapters via the Rust C FFI.
 
 *Surface contract* (Rust-side, already present):
 

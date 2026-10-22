@@ -1124,7 +1124,25 @@ design-swarm problem="brouwer-leq" agents="4" iterations="800":
 corpus-ingest-saturation adapter root:
     cargo run --bin echidna -- corpus ingest --root {{root}} --adapter {{adapter}}
 
-# Run the corpus-stats summary across all 17 adapter outputs found under
+# Ingest an Ada/SPARK tree (specs `*.ads`, bodies `*.adb`). Detects
+# GNATprove escape hatches (`pragma Assume`, suppressed checks) and the
+# sparklib `Lemma_*` convention.
+corpus-ingest-spark root:
+    cargo run --bin echidna -- corpus ingest --root {{root}} --adapter spark_ada
+
+# Ingest a Rust/Creusot tree (`#[requires]` / `#[ensures]` / `pearlite!`).
+# `#[trusted]` is reported as a postulate, not as a proved function.
+corpus-ingest-creusot root:
+    cargo run --bin echidna -- corpus ingest --root {{root}} --adapter creusot
+
+# Ingest the hyperpolymath estate: every repo's `src/abi` Idris2 tree plus
+# the Agda type-theory libraries (echo/epistemic/secret/tropical/
+# choreographic-types), merged into one corpus tagged with repo + layer.
+# ROOT is the directory that contains the repositories.
+corpus-ingest-estate root="..":
+    cargo run --bin echidna -- corpus ingest --root {{root}} --adapter hyperpolymath_estate
+
+# Run the corpus-stats summary across all 20 adapter outputs found under
 # data/corpus/*.json (skips any missing without failing).
 corpus-stats-all:
     @for f in data/corpus/*.json; do \
@@ -1133,8 +1151,9 @@ corpus-stats-all:
         cargo run --bin echidna --quiet -- corpus stats --index "$f" 2>/dev/null || echo "  (skipped)"; \
     done
 
-# Load every per-prover synonym TOML + the 3 cross-prover dictionaries
-# (_msc2020 / _wordnet_math / _conceptnet_seed) and report counts.
+# Load every per-prover synonym TOML + the 5 cross-prover dictionaries
+# (_msc2020 / _wordnet_math / _conceptnet_seed / _disciplines /
+# _verification_systems) and report counts.
 synonym-load-test:
     cargo test --lib --quiet suggest::synonyms 2>&1 | tail -20
 

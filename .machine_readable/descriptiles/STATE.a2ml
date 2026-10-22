@@ -705,7 +705,7 @@ changes = [
   "feat(Mizar): clone MizarSystem/MML (1 153 .miz files) + walk recursively (commit 76696cf). 66 → 59 030 proofs (894×). Closed #14.",
   "feat(Agda): clone agda-cubical + agda-unimath, accept .lagda.md, multi-corpus walk (commit 583fe60). 9 312 → 19 829 proofs (2.1×). Fixed multi-byte UTF-8 crash in signature truncation. Partial progress on #17 — literate-markdown parser still needed for unimath's full contribution.",
 ]
-cumulative-new-records = 154657
+cumulative-new-records = 154665
 top-corpus-by-count = [
   "Lean        131 770",
   "Coq          85 190  (was 14)",
@@ -1364,22 +1364,25 @@ not-done = [
 # ═══════════════════════════════════════════════════════════════════════════════
 
 [saturation-surface]
-last_revised = "2026-06-01"
+last_revised = "2026-10-22"
 
-corpus_adapters_count = 17  # was 4
+corpus_adapters_count = 20  # was 4, then 17
 corpus_adapters_list = [
   "agda", "coq", "lean", "idris2",
   "isabelle", "metamath", "mizar", "hol_light", "hol4",
   "dafny", "why3", "fstar", "acl2_books",
   "tptp", "smtlib", "proofnet", "minif2f",
+  # 2026-10-22: the estate's own TCB languages + the estate profile
+  "spark_ada", "creusot", "hyperpolymath_estate",
 ]
 
-synonym_tables_count = "14 per-prover + 3 cross-prover dictionaries"
+synonym_tables_count = "14 per-prover + 5 cross-prover dictionaries"
 synonym_tables_list = [
   "agda", "coq", "lean4", "idris2",
   "isabelle", "isabelle_afp", "metamath", "mizar",
   "hol_light", "hol4", "dafny", "why3", "fstar", "acl2",
-  "_msc2020", "_wordnet_math", "_conceptnet_seed",
+  "_msc2020", "_wordnet_math", "_conceptnet_seed", "_disciplines",
+  "_verification_systems",
 ]
 
 arbitration_mechanisms_count = 4  # was 1

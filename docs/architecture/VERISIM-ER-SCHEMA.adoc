@@ -43,7 +43,7 @@ one moment in time, with all 8 modalities populated.
 |`+created_at+` |`+Timestamp+` |Auto-set on insert
 
 |`+adapter+` |`+String+`
-(`+"agda"+`/`+"coq"+`/…/`+"metamath"+`/`+"mizar"+`/`+"tptp"+`/`+"smtlib"+`/`+"proofnet"+`/`+"minif2f"+`)
+(`+"agda"+`/`+"coq"+`/…/`+"metamath"+`/`+"mizar"+`/`+"tptp"+`/`+"smtlib"+`/`+"proofnet"+`/`+"minif2f"+`/`+"spark_ada"+`/`+"creusot"+`/`+"hyperpolymath_estate"+`)
 |`+Corpus.adapter+`
 
 |`+module_qualified+` |`+String+` |`+CorpusEntry.qualified+`
@@ -435,5 +435,5 @@ schema)
 `+src/rust/verification/{portfolio,bayesian_arbiter,dempster_shafer,pareto_arbiter}.rs+`
 (consumers of `+proof_attempts+`)
 * Corpus adapters:
-`+src/rust/corpus/{agda,coq,lean,idris2,isabelle,metamath,mizar,hol_light,hol4,dafny,why3,fstar,acl2_books,tptp,smtlib,proofnet,minif2f}.rs+`
+`+src/rust/corpus/{agda,coq,lean,idris2,isabelle,metamath,mizar,hol_light,hol4,dafny,why3,fstar,acl2_books,tptp,smtlib,proofnet,minif2f,spark_ada,creusot,profile}.rs+`
 (producers of E1–E9)
