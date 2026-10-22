@@ -725,10 +725,7 @@ fn collect_imports(toks: &[Tok]) -> Vec<String> {
         let mut names: Vec<String> = Vec::new();
         let mut j = i + 1;
         let mut terminated = false;
-        loop {
-            let Some((name, next)) = dotted_name(&toks, j) else {
-                break;
-            };
+        while let Some((name, next)) = dotted_name(toks, j) {
             names.push(name);
             if next < toks.len() && is_punct(&toks[next], ",") {
                 j = next + 1;
@@ -804,10 +801,11 @@ fn body_end_idx(toks: &[Tok], from: usize, name: &str) -> Option<usize> {
 fn find_end_name(toks: &[Tok], from: usize, name: &str) -> Option<usize> {
     let mut j = from;
     while j + 1 < toks.len() {
-        if is_kw(&toks[j], "end") && toks[j + 1].kind == TokKind::Ident {
-            if toks[j + 1].text.eq_ignore_ascii_case(name) {
-                return Some(j);
-            }
+        if is_kw(&toks[j], "end")
+            && toks[j + 1].kind == TokKind::Ident
+            && toks[j + 1].text.eq_ignore_ascii_case(name)
+        {
+            return Some(j);
         }
         j += 1;
     }
