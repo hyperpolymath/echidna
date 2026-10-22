@@ -153,19 +153,19 @@ pub fn layer_of_extension(ext: &str) -> Option<Layer> {
     }
 }
 
-/// The adapter that owns a layer, if any. Inverse of
-/// [`layer_of_adapter`] at the granularity the profile manifest uses.
+/// The corpus adapter that indexes a layer, if any.
+///
+/// Only four layers have an adapter: there is no corpus adapter for the
+/// Zig FFI, Julia, Chapel or BEAM boundaries, so claiming one here would
+/// be a lie the manifest could not honour. Those layers return `None`
+/// even though [`layer_of_extension`] can recognise their files.
 pub fn adapter_of_layer(layer: Layer) -> Option<&'static str> {
     match layer {
         Layer::Abi => Some("idris2"),
-        Layer::Api => Some("zig"),
         Layer::Spark => Some("spark_ada"),
         Layer::Rust => Some("creusot"),
-        Layer::Julia => Some("julia"),
-        Layer::Chapel => Some("chapel"),
-        Layer::Beam => Some("snif"),
         Layer::Types => Some("agda"),
-        Layer::Unknown => None,
+        Layer::Api | Layer::Julia | Layer::Chapel | Layer::Beam | Layer::Unknown => None,
     }
 }
 
@@ -232,11 +232,15 @@ mod tests {
     }
 
     #[test]
-    fn adapter_of_layer_round_trips() {
+    fn adapter_of_layer_round_trips_where_an_adapter_exists() {
         for layer in Layer::ALL {
             if let Some(adapter) = adapter_of_layer(layer) {
                 assert_eq!(layer_of_adapter(adapter), layer, "{layer:?}");
             }
+        }
+        // The layers with no corpus adapter say so rather than naming one.
+        for layer in [Layer::Api, Layer::Julia, Layer::Chapel, Layer::Beam] {
+            assert_eq!(adapter_of_layer(layer), None, "{layer:?}");
         }
         assert_eq!(adapter_of_layer(Layer::Unknown), None);
     }
