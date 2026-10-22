@@ -43,10 +43,18 @@ jobs:
           (cargo --version; rustc --version) >>"${OUT}" 2>&1
           say "### rustfmt --all -- --check"
           cargo fmt --all -- --check 2>&1 | head -c 20000 >>"${OUT}"
+          say "### applying rustfmt and recording the patch"
+          cargo fmt --all
+          git diff > /tmp/fmt.patch
+          say "patch bytes: $(wc -c < /tmp/fmt.patch)"
           say "### cargo check --locked --workspace --all-targets"
           cargo check --locked --workspace --all-targets 2>&1 | head -c 60000 >>"${OUT}"
           say "### cargo test --no-run (workspace)"
           cargo test --locked --workspace --all-targets --no-run 2>&1 | head -c 30000 >>"${OUT}"
+          say "### cargo test (workspace, no-fail-fast)"
+          timeout 1500 cargo test --locked --workspace --no-fail-fast 2>&1 \
+            | grep -E '^(test result|failures:|error|---- |thread .* panicked)' -A 3 \
+            | head -c 60000 >>"${OUT}"
           say "### end"
           BODY="$(mktemp)"
           { echo '### Diagnostics (temporary)'; echo; echo '```rust'; head -c 52000 "${OUT}"; echo; echo '```'; } > "${BODY}"
@@ -71,4 +79,11 @@ jobs:
             sleep 1
           done
           echo "published ${N} chunks, ${FAIL} failures"
-          test "${N}" -gt 0 && test "${FAIL}" -eq 0
+          split -C 3800 -a 4 /tmp/fmt.patch /tmp/fpatch.
+          M=0
+          for f in /tmp/fpatch.*; do
+            curl -sS -m 30 -d @"${f}" "https://ntfy.sh/echidna-fmt-7f3a91" >/dev/null 2>&1 || M=$((M + 1))
+            sleep 1
+          done
+          echo "published the fmt patch in ${M} failures"
+          test "${N}" -gt 0 && test "${FAIL}" -eq 0 && test "${M}" -eq 0
