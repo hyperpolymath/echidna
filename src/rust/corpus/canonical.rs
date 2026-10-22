@@ -882,11 +882,23 @@ impl Parser {
 
     /// Application, including prefix operator use: `(+ x y)`.
     fn app(&mut self) -> Node {
+        // A bracketed group is already complete: `(eq a b)` must not be
+        // re-read as the prefix form `eq a b`, or the group's own arguments
+        // are swallowed by the enclosing application and the term collapses
+        // to a bare operator name.
+        let from_group = matches!(self.peek(), Some(Tk::Open(_)));
         let head = match self.atom() {
             Some(h) => h,
             None => return Node::Hole,
         };
-        if let Node::Op(op, _) = head.clone() {
+        if let Node::Op(op, args) = head.clone() {
+            if from_group {
+                return if args.is_empty() {
+                    Node::Name(op.to_string())
+                } else {
+                    head
+                };
+            }
             let mut args: Vec<Node> = Vec::new();
             loop {
                 let stop = match self.peek() {
@@ -940,14 +952,9 @@ impl Parser {
 
     fn expr(&mut self, min_prec: u8) -> Node {
         let mut left = self.app();
-        loop {
-            let op = match self.op_at() {
-                Some(op) => op,
-                None => break,
-            };
-            let prec = match precedence(op) {
-                Some(p) => p,
-                None => break,
+        while let Some(op) = self.op_at() {
+            let Some(prec) = precedence(op) else {
+                break;
             };
             if prec < min_prec {
                 break;

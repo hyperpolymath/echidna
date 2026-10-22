@@ -478,22 +478,23 @@ pub(crate) fn parse_rust_file(src: &str) -> ParsedFile {
     let clean = clean_source(src);
     let toks = tokenise(&clean);
     let attrs = collect_attrs(src, &toks);
-    let mut parsed = ParsedFile::default();
-
-    parsed.imports = collect_uses(src, &toks);
+    let mut parsed = ParsedFile {
+        imports: collect_uses(src, &toks),
+        ..Default::default()
+    };
 
     let mut k = 0;
     while k < toks.len() {
         let t = &toks[k];
+        let next_is_fn = k + 1 < toks.len() && is_kw(&toks[k + 1], "fn");
+        let is_const_item = is_kw(t, "const") && !next_is_fn;
         let (kind, name_idx) = if is_kw(t, "fn") {
             (DeclKind::Function, k + 1)
         } else if is_kw(t, "struct") || is_kw(t, "enum") || is_kw(t, "union") {
             (DeclKind::Data, k + 1)
         } else if is_kw(t, "trait") {
             (DeclKind::Record, k + 1)
-        } else if is_kw(t, "type") || is_kw(t, "static") {
-            (DeclKind::Data, k + 1)
-        } else if is_kw(t, "const") && !(k + 1 < toks.len() && is_kw(&toks[k + 1], "fn")) {
+        } else if is_kw(t, "type") || is_kw(t, "static") || is_const_item {
             (DeclKind::Data, k + 1)
         } else {
             k += 1;
@@ -565,10 +566,10 @@ pub(crate) fn parse_rust_file(src: &str) -> ParsedFile {
             axiom_usage,
         });
 
-        if has_attr(&leading, "cfg(creusot)") {
-            if !parsed.options.iter().any(|o| o == "creusot-gated") {
-                parsed.options.push("creusot-gated".to_string());
-            }
+        if has_attr(&leading, "cfg(creusot)")
+            && !parsed.options.iter().any(|o| o == "creusot-gated")
+        {
+            parsed.options.push("creusot-gated".to_string());
         }
 
         k = advance.max(k + 1);

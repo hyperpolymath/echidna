@@ -755,7 +755,7 @@ mod tests {
             coq.graph.cross_prover_identity_key,
             smtlib.graph.cross_prover_identity_key
         );
-        assert_eq!(coq.graph.identity_scheme, super::canonical::SCHEME);
+        assert_eq!(coq.graph.identity_scheme, crate::corpus::canonical::SCHEME);
         assert_eq!(
             coq.graph.canonical_type,
             "(PI [NAT NAT] (EQ (ADD v0 v1) (ADD v1 v0)))"
