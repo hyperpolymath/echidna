@@ -149,6 +149,10 @@ pub fn validate_corpus_key(key: &str) -> Result<()> {
     {
         bail!("corpus key `{key}` must be non-empty [a-z0-9_]");
     }
+    // `pairs/<a>__<b>.jsonl` is unambiguous only if no key contains `__`.
+    if key.contains("__") {
+        bail!("corpus key `{key}` must not contain `__`");
+    }
     Ok(())
 }
 
@@ -1076,6 +1080,17 @@ pub fn run(opts: &RunOptions) -> Result<RunReport> {
     fs::create_dir_all(&pairs_dir).with_context(|| format!("create {}", pairs_dir.display()))?;
     fs::create_dir_all(&collisions_dir)
         .with_context(|| format!("create {}", collisions_dir.display()))?;
+    // A re-run over a different pair set must not leave the previous run's
+    // files beside this run's summary. Only the scan's own `.jsonl` files
+    // are removed; anything else in the directory is left alone.
+    for dir in [&pairs_dir, &collisions_dir] {
+        for entry in fs::read_dir(dir).with_context(|| format!("read {}", dir.display()))? {
+            let path = entry?.path();
+            if path.extension().and_then(|e| e.to_str()) == Some("jsonl") {
+                fs::remove_file(&path).with_context(|| format!("remove {}", path.display()))?;
+            }
+        }
+    }
 
     let coverage: Vec<Coverage> = corpora.values().map(Corpus::coverage).collect();
     write_lines(&opts.out.join("coverage.jsonl"), &coverage)?;
@@ -1164,6 +1179,8 @@ mod tests {
         assert!(parse_pair("hol4").is_err());
         assert!(parse_pair("hol4:hol4").is_err());
         assert!(parse_pair("../etc:hol4").is_err());
+        // `a__b:c` and `a:b__c` would both write pairs/a__b__c.jsonl
+        assert!(parse_pair("a__b:c").is_err());
     }
 
     #[test]

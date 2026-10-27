@@ -1400,7 +1400,12 @@ fn lexicon_command(op: LexiconOp) -> Result<()> {
     }
     for p in &pairs {
         let pair = scan::parse_pair(p)?;
-        if !all_pairs.contains(&pair) {
+        // A pair is the same pair in either direction; the first spelling
+        // requested is the one scanned.
+        let seen = all_pairs
+            .iter()
+            .any(|(a, b)| (a, b) == (&pair.0, &pair.1) || (a, b) == (&pair.1, &pair.0));
+        if !seen {
             all_pairs.push(pair);
         }
     }

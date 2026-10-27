@@ -333,11 +333,13 @@ The second finding is larger. When the canonicaliser cannot read a
 statement it rarely falls back to its text tier; it returns a
 *structural-tier* key for the prefix it did read, and different statements
 share that prefix. `StructuralKey::complete` now says whether the whole
-statement was read. It is false when the parser stops early, when the body
-holds notation the scheme has no rule for (`!`, `?`, `@` and `\` binders,
-Isabelle's `\<…>` escapes, Lean 3's `$`), when a header drop discarded
-the statement's own tokens, or when a leading bracket group was misread as
-a binder telescope. It changes no key. The scan treats an
+statement was read. It is false when the parser stops early or the input
+ends inside an open bracket (ACL2s goals truncated mid-expression), when
+the body holds notation the scheme has no rule for (`!`, `?`, `@` and `\`
+binders, `~`, `==>`, Isabelle's `\<…>` escapes, Lean 3's `$`), when a
+header drop discarded the statement's own tokens, or when a leading
+bracket group was misread as a binder telescope. It changes no key. The
+scan treats an
 incomplete key as no identity: such pairs are `unparsed`, and such
 statements take no part in shape joins.
 
@@ -346,19 +348,19 @@ Share of each corpus read completely (`dk-shape-v1`, 2026-10-27):
 [cols="2,2,2,2,2",options="header"]
 |===
 | Corpus | Distinct rows | Read completely | Keys shared by distinct statements | Homonymous names
-| acl2 | 135963 | 25.6 % | 2063 | 7.9 %
-| acl2s | 112677 | 88.1 % | 3576 | 4.7 %
-| afp | 102683 | 10.8 % | 530 | 2.0 %
-| agda | 46028 | 41.4 % | 585 | 8.6 %
-| dafny | 10487 | 58.4 % | 202 | 12.1 %
-| dedukti | 1453 | 77.4 % | 57 | 20.6 %
-| hol4 | 95738 | 10.0 % | 130 | 4.1 %
-| hol_light | 43937 | 2.5 % | 24 | 2.8 %
-| isabelle_zf | 3577 | 0.3 % | 0 | 0.3 %
-| lambda_prolog | 24897 | 94.0 % | 133 | 49.9 %
-| lean3 | 92680 | 27.3 % | 2901 | 19.1 %
-| mizar | 76522 | 20.5 % | 512 | 1.8 %
-| why3 | 25180 | 30.5 % | 396 | 21.8 %
+| acl2 | 135963 | 16.6 % | 822 | 8.0 %
+| acl2s | 112677 | 5.4 % | 361 | 4.8 %
+| afp | 102683 | 10.8 % | 525 | 2.1 %
+| agda | 46028 | 41.3 % | 584 | 8.6 %
+| dafny | 10487 | 58.2 % | 201 | 12.2 %
+| dedukti | 1453 | 76.7 % | 56 | 20.6 %
+| hol4 | 95738 | 9.0 % | 109 | 4.2 %
+| hol_light | 43937 | 2.0 % | 19 | 2.9 %
+| isabelle_zf | 3577 | 0.4 % | 0 | 0.3 %
+| lambda_prolog | 24897 | 94.0 % | 130 | 50.0 %
+| lean3 | 92680 | 27.1 % | 2875 | 19.2 %
+| mizar | 76522 | 20.3 % | 498 | 1.8 %
+| why3 | 25180 | 29.8 % | 390 | 21.9 %
 |===
 
 "Keys shared by distinct statements" counts complete keys only. Most are
@@ -392,7 +394,8 @@ than changed under `dk-shape-v1`:
   in positive positions; the probes found no pair merged by that alone.
 
 `complete` now flags the header drop, the keyword drop, unread notation,
-∃ (the parser stops) and the telescope misread. It does not flag the
+∃ (the parser stops), truncation inside a group and the telescope
+misread. It does not flag the
 short-name rule or the hypothesis-as-sort rule, which produce well-formed
 but wrong shapes; the scan's `informative` filter catches the short-name
 rule's commonest form (a variable in function position). The corpus
@@ -401,15 +404,15 @@ identity keys (E6 `cross_prover_identity_key`) inherit all four causes.
 === What the measurement found in the corpora
 
 Over all 33 pairs: 203,860 same-name statement pairs, of which 1,070 are
-exact cognates, 3,619 shape cognates, 76 skeleton (specialisation)
-candidates, 36,470 differ, and 162,625 (80 %) are `unparsed`. Synonym
-candidates under different names: 269 by identical text, 848 by shape,
-882 by skeleton. Debug build: 171 s for all thirteen corpora, almost all
+exact cognates, 2,771 shape cognates, 71 skeleton (specialisation)
+candidates, 8,414 differ, and 191,534 (94 %) are `unparsed`. Synonym
+candidates under different names: 269 by identical text, 495 by shape,
+871 by skeleton. Debug build: 182 s for all thirteen corpora, almost all
 of it loading and canonicalising; one pair scans in about a second.
 
 * *HOL4 ↔ HOL Light* (pilot pair): 1,033 exact cognates and 144 text
-  synonyms (`FACT_0` / `pth_0`), but 5,550 same-name pairs `unparsed`:
-  `dk-shape-v1` reads 2.5 % of HOL Light. The pilot pair needs HOL
+  synonyms (`FACT_0` / `pth_0`), but 5,554 same-name pairs `unparsed`:
+  `dk-shape-v1` reads 2 % of HOL Light. The pilot pair needs HOL
   notation in the canonicaliser before shape evidence means anything.
 * *Lean 3 ↔ AFP, AFP ↔ Mizar, Lean 3 ↔ Mizar*: the synonym joins find real
   cross-family correspondences: `sqrt_zero ~ lemSqrt0`,
@@ -425,7 +428,7 @@ of it loading and canonicalising; one pair scans in about a second.
   short-name rule above), fewer than three constants, or a bare type
   signature (λProlog's `int -> int -> int` against Dedukti's
   `Int -> Int -> Int`) say nothing about which statement it is. Joins
-  between different names skip them (3,749 groups, counted).
+  between different names skip them (3,415 groups, counted).
 
 === Equivalence by invariant and by witness
 

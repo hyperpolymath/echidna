@@ -130,7 +130,8 @@ pub struct StructuralKey {
     pub tier: KeyTier,
     /// Whether the shape accounts for the whole statement. False when the
     /// parser stopped early (anything but a trailing `.`/`,`/`;` or an
-    /// unmatched closing bracket left over), when the body holds notation
+    /// unmatched closing bracket left over), when the input ended inside an
+    /// open bracket (a statement truncated mid-group), when the body holds notation
     /// this scheme has no rule for ([`is_unread_notation`]), when the header
     /// drop discarded tokens that were not a declared head, or when a leading
     /// bracket group was misread as a binder telescope. In each case the
@@ -869,11 +870,20 @@ struct Parser {
     toks: Vec<Tk>,
     i: usize,
     varmap: std::collections::HashMap<String, String>,
+    /// Opening brackets the input ended before closing: a statement
+    /// truncated inside a group (`(x = y`) parses to the end and would
+    /// otherwise look complete.
+    unclosed: usize,
 }
 
 impl Parser {
     fn new(toks: Vec<Tk>, varmap: std::collections::HashMap<String, String>) -> Self {
-        Parser { toks, i: 0, varmap }
+        Parser {
+            toks,
+            i: 0,
+            varmap,
+            unclosed: 0,
+        }
     }
 
     fn peek(&self) -> Option<&Tk> {
@@ -908,6 +918,8 @@ impl Parser {
                 let inner = self.expr(0);
                 if matches!(self.peek(), Some(Tk::Close(_))) {
                     self.i += 1;
+                } else if self.peek().is_none() {
+                    self.unclosed += 1;
                 }
                 Some(inner)
             },
@@ -1142,13 +1154,25 @@ fn number_variables(body: &[Tk], bound: &Binders) -> std::collections::HashMap<S
 }
 
 /// Tokens that introduce notation this scheme has no rule for: HOL's `!`,
-/// `?`, `@` and `\` binders, Isabelle's `\<…>` symbol escapes (which lex as
-/// `\`, `<`, name, `>`), and Lean 3's `$` application. The parser reads them
-/// as plain names and consumes them, so a shape can look complete and still
-/// be wrong; their presence marks the key incomplete. Over-cautious by
-/// design: Lean's `s \ t` set difference is flagged too.
+/// `?`, `@` and `\` binders and `~` negation, Isabelle's `\<…>` symbol
+/// escapes (which lex as `\`, `<`, name, `>`), and Lean 3's `$` application.
+/// The parser reads them as plain names and consumes them, so a shape can
+/// look complete and still be wrong; their presence marks the key
+/// incomplete. Over-cautious by design: Lean's `s \ t` set difference is
+/// flagged too.
 fn is_unread_notation(t: &Tk) -> bool {
-    matches!(t, Tk::Sym(s) if matches!(s.as_str(), "\\" | "!" | "?" | "@" | "$"))
+    matches!(t, Tk::Sym(s) if matches!(s.as_str(), "\\" | "!" | "?" | "@" | "$" | "~"))
+}
+
+/// Whether the body holds unread notation: a token [`is_unread_notation`]
+/// names, or HOL's `==>` implication, which the lexer splits into `==` and
+/// `>` (the shape it then renders is an equality applied to a comparison).
+/// The lexer is left alone so that no key changes; only the flag sees it.
+fn has_unread_notation(body: &[Tk]) -> bool {
+    body.iter().any(is_unread_notation)
+        || body
+            .windows(2)
+            .any(|w| matches!((&w[0], &w[1]), (Tk::Sym(a), Tk::Sym(b)) if a == "==" && b == ">"))
 }
 
 /// Both canonical forms from one pass, and whether the shape accounts for
@@ -1161,10 +1185,14 @@ fn normalise(statement: &str) -> (String, String, bool) {
     let toks = drop_ascriptions(&toks);
     let (body, bound) = extract_binders(&toks);
     let varmap = number_variables(&body, &bound);
-    let unread = body.iter().any(is_unread_notation);
+    let unread = has_unread_notation(&body);
     let mut parser = Parser::new(body, varmap);
     let ast = parser.expr(0);
-    let complete = parser.rest_is_ignorable() && !unread && !dropped_body && !bound.misread;
+    let complete = parser.rest_is_ignorable()
+        && parser.unclosed == 0
+        && !unread
+        && !dropped_body
+        && !bound.misread;
 
     let core = render(&ast, false);
     let skel = render(&ast, true);
@@ -1406,10 +1434,16 @@ mod tests {
     #[test]
     fn unread_notation_and_early_stops_are_incomplete() {
         for s in [
-            // HOL binders
+            // HOL binders, negation and implication (`==>` lexes as `==` `>`)
             "!m n. m + n = n + m",
             "?x. x = 0",
             "(\\x. x) = I",
+            "~F",
+            "F ==> T",
+            // truncated inside a group: the parser reaches the end with the
+            // group still open
+            "(x = y",
+            "(implies (and (bvp m) (< (len m) (expt 2 64))",
             // Isabelle ASCII symbol escapes
             "x \\<noteq> y \\<Longrightarrow> f x = f y",
             // Lean 3 `$`

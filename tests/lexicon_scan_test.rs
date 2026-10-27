@@ -199,3 +199,37 @@ fn unknown_corpus_keys_fail_loudly() {
     assert!(Corpus::load(&fixtures(), "no_such_corpus").is_err());
     assert!(Corpus::load(&fixtures(), "../etc").is_err());
 }
+
+#[test]
+fn a_rerun_with_fewer_pairs_leaves_no_stale_pair_files() {
+    let out = std::env::temp_dir().join(format!("echidna-lexicon-rerun-{}", std::process::id()));
+    let run_with = |pairs: Vec<(String, String)>| {
+        scan::run(&RunOptions {
+            training_dir: fixtures(),
+            pairs,
+            out: out.clone(),
+            scan: ScanOptions::default(),
+            collision_samples: 10,
+        })
+        .expect("run")
+    };
+    run_with(vec![
+        ("lean_mini".into(), "isabelle_mini".into()),
+        ("hol4_mini".into(), "hol_light_mini".into()),
+    ]);
+    run_with(vec![("lean_mini".into(), "isabelle_mini".into())]);
+    let listed = |dir: &str| {
+        let mut names: Vec<String> = std::fs::read_dir(out.join(dir))
+            .unwrap()
+            .map(|e| e.unwrap().file_name().to_string_lossy().into_owned())
+            .collect();
+        names.sort();
+        names
+    };
+    assert_eq!(listed("pairs"), vec!["lean_mini__isabelle_mini.jsonl"]);
+    assert_eq!(
+        listed("collisions"),
+        vec!["isabelle_mini.jsonl", "lean_mini.jsonl"]
+    );
+    let _ = std::fs::remove_dir_all(&out);
+}

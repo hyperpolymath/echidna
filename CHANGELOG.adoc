@@ -28,10 +28,11 @@ https://semver.org/spec/v2.0.0.html[Semantic Versioning].
   and the octad identity keys. No key changes.
 * *`+StructuralKey::complete+`* (new, `+#[serde(default)]+`) reports
   whether the shape accounts for the whole statement: false when the
-  parser stops early, meets notation `+dk-shape-v1+` has no rule for
-  (HOL binders, Isabelle `+\<…>+` escapes), drops a statement's own leading
-  tokens as a "header", or misreads a leading group as a telescope. No key
-  changes. Measured on `+training_data/+`, 0.3 %–94 % of a corpus is read
+  parser stops early or the input ends inside an open bracket, meets
+  notation `+dk-shape-v1+` has no rule for (HOL binders, `+~+`, `+==>+`,
+  Isabelle `+\<…>+` escapes), drops a statement's own leading tokens as a
+  "header", or misreads a leading group as a telescope. No key changes.
+  Measured on `+training_data/+`, 0.4 %–94 % of a corpus is read
   completely; the rule-level causes are recorded for a `+dk-shape-v2+`
   decision in `+docs/decisions/2026-10-19-lexicon-v2-and-identity-arbitration.adoc+`.
 
