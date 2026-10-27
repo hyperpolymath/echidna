@@ -418,6 +418,14 @@ fn matching(toks: &[Tk], at: usize) -> usize {
     toks.len().saturating_sub(1)
 }
 
+/// The tokens strictly between an opening bracket at `open` and the index
+/// [`matching`] returned for it. Empty when nothing lies between, which
+/// includes an unbalanced opening bracket that is the last token: there
+/// [`matching`] returns `open` itself, and slicing `open + 1..open` panics.
+fn between(toks: &[Tk], open: usize, close: usize) -> &[Tk] {
+    toks.get(open + 1..close).unwrap_or(&[])
+}
+
 /// Agda writes operators as names: `_<_`, `_+_`, `_≡_`. Read the wrapped
 /// symbol as one atom so it is not mistaken for three punctuation tokens.
 fn glue_agda_operators(toks: &[Tk]) -> Vec<Tk> {
@@ -495,7 +503,7 @@ fn unwrap_assert(toks: Vec<Tk>) -> Vec<Tk> {
         if j + 1 != cur.len() {
             return cur;
         }
-        let inner = cur[1..j].to_vec();
+        let inner = between(&cur, 0, j).to_vec();
         let head_is_assert = match inner.first() {
             Some(Tk::Id(s)) => matches!(
                 s.to_lowercase().as_str(),
@@ -609,7 +617,7 @@ fn extract_binders(toks: &[Tk]) -> (Vec<Tk>, Binders) {
     // 1. leading binder group without a keyword
     while cur.first().map(is_open).unwrap_or(false) {
         let j = matching(&cur, 0);
-        let (names, sort) = split_binder_group(&cur[1..j]);
+        let (names, sort) = split_binder_group(between(&cur, 0, j));
         if names.is_empty() {
             break;
         }
@@ -620,7 +628,7 @@ fn extract_binders(toks: &[Tk]) -> (Vec<Tk>, Binders) {
         if !after_ok {
             break;
         }
-        if !has_colon(&cur[1..j]) {
+        if !has_colon(between(&cur, 0, j)) {
             break;
         }
         for n in &names {
@@ -633,20 +641,20 @@ fn extract_binders(toks: &[Tk]) -> (Vec<Tk>, Binders) {
     if cur.first().map(is_open).unwrap_or(false) {
         let j = matching(&cur, 0);
         if j + 1 == cur.len() {
-            let inner: Vec<Tk> = cur[1..j].to_vec();
+            let inner: Vec<Tk> = between(&cur, 0, j).to_vec();
             let head_ok = matches!(inner.first(), Some(Tk::Id(s)) if is_pi_kw(s) || is_lam_kw(s));
             if head_ok {
                 let rest: Vec<Tk> = inner[1..].to_vec();
                 if rest.first().map(is_open).unwrap_or(false) {
                     let m = matching(&rest, 0);
-                    let group: Vec<Tk> = rest[1..m].to_vec();
+                    let group: Vec<Tk> = between(&rest, 0, m).to_vec();
                     let mut names: Vec<String> = Vec::new();
                     let mut sorts: Vec<String> = Vec::new();
                     if group.first().map(is_open).unwrap_or(false) {
                         let mut k = 0usize;
                         while k < group.len() && is_open(&group[k]) {
                             let e = matching(&group, k);
-                            let (n, s) = split_binder_group(&group[k + 1..e]);
+                            let (n, s) = split_binder_group(between(&group, k, e));
                             for name in n {
                                 names.push(name);
                                 sorts.push(s.clone());
@@ -701,7 +709,7 @@ fn extract_binders(toks: &[Tk]) -> (Vec<Tk>, Binders) {
             }
             if is_open(&cur[i]) {
                 let m = matching(&cur, i);
-                let (n, s) = split_binder_group(&cur[i + 1..m]);
+                let (n, s) = split_binder_group(between(&cur, i, m));
                 if n.is_empty() {
                     break;
                 }
@@ -763,7 +771,7 @@ fn drop_ascriptions(toks: &[Tk]) -> Vec<Tk> {
     while i < toks.len() {
         if is_open(&toks[i]) {
             let j = matching(toks, i);
-            let inner: Vec<Tk> = toks[i + 1..j].to_vec();
+            let inner: Vec<Tk> = between(toks, i, j).to_vec();
             let ids: Vec<&String> = inner
                 .iter()
                 .filter_map(|t| match t {
@@ -1278,5 +1286,38 @@ mod tests {
         assert!(toks.contains(&"EQ".to_string()));
         assert!(toks.contains(&"v0".to_string()));
         assert!(!toks.iter().any(|t| t.contains("forall")));
+    }
+
+    /// An opening bracket with nothing after it used to make `matching`
+    /// return the bracket's own index, and every `open + 1..close` slice
+    /// then panicked. Corpus statements truncated mid-term hit this.
+    #[test]
+    fn unbalanced_trailing_bracket_does_not_panic() {
+        for s in [
+            "(",
+            "f x = (",
+            "forall (",
+            "∀ x, x = (",
+            "(assert (",
+            "(forall ((x Nat)) (",
+            "theorem t (x : nat) : x = (",
+        ] {
+            let k = structural_key(s);
+            assert_eq!(k.key.len(), 64, "{s:?}");
+            assert_eq!(k.scheme, SCHEME);
+        }
+    }
+
+    /// The guard is a no-op on balanced input: keys stay as they were.
+    #[test]
+    fn balanced_input_keys_are_unchanged_by_the_bracket_guard() {
+        assert_eq!(
+            canonical_shape("forall x y : nat, x + y = y + x"),
+            "(PI [NAT NAT] (EQ (ADD v0 v1) (ADD v1 v0)))"
+        );
+        assert_eq!(
+            canonical_shape("(assert (forall ((x Nat) (y Nat)) (= (+ x y) (+ y x))))"),
+            "(PI [NAT NAT] (EQ (ADD v0 v1) (ADD v1 v0)))"
+        );
     }
 }
