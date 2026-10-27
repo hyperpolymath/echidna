@@ -105,6 +105,10 @@ workflows:
         - 'actions/checkout@v7.0.1'
         - 'hyperpolymath/cicd-suite@4c772eb235b04455307d5c03cbbc4f45130f7f0f'
         - 'mlugg/setup-zig@v2.2.1'
+    '.github/workflows/zz-one-off-close-lock.yml': []
+    '.github/workflows/zz-probe-moved-tags.yml':
+        - 'hyperpolymath/panic-attack@b689a74d2762a1c19839ae3fbd59b7fe5ef920ea'
+        - 'hyperpolymath/standards@75bd5994470661a099df562d6d5ad2fe744dbd66'
 dependencies:
     'Swatinem/rust-cache@6323deb102c322ba6fcbdcafc7e3dddab59af2b6':
         ref: 'v2.9.2'
@@ -185,9 +189,19 @@ dependencies:
         commit: 'sha1-22d081ff2d3a40755e97629de92e3bcbfa7cf2ed'
         owner_id: 42048915
         repo_id: 356423100
+    'dtolnay/rust-toolchain@02cb101ec7c40f2c49e1d9714d64511d8e1b74de':
+        ref: 'v1'
+        commit: 'sha1-02cb101ec7c40f2c49e1d9714d64511d8e1b74de'
+        owner_id: 1940490
+        repo_id: 260749683
     'dtolnay/rust-toolchain@683b588c487a69d01f6c6ddf40f036ff682cc2c8':
         ref: 'v1'
         commit: 'sha1-683b588c487a69d01f6c6ddf40f036ff682cc2c8'
+        owner_id: 1940490
+        repo_id: 260749683
+    'dtolnay/rust-toolchain@e2a55d2ffb04f378e9626c28d38b36d230d1e12f':
+        ref: 'v1'
+        commit: 'sha1-e2a55d2ffb04f378e9626c28d38b36d230d1e12f'
         owner_id: 1940490
         repo_id: 260749683
     'dtolnay/rust-toolchain@v1':
@@ -244,10 +258,19 @@ dependencies:
             - 'Swatinem/rust-cache@6323deb102c322ba6fcbdcafc7e3dddab59af2b6'
             - 'actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1'
             - 'dtolnay/rust-toolchain@683b588c487a69d01f6c6ddf40f036ff682cc2c8'
+    'hyperpolymath/panic-attack@b689a74d2762a1c19839ae3fbd59b7fe5ef920ea':
+        ref: 'b689a74d2762a1c19839ae3fbd59b7fe5ef920ea'
+        commit: 'sha1-b689a74d2762a1c19839ae3fbd59b7fe5ef920ea'
+        owner_id: 6759885
+        repo_id: 1152434997
+        uses:
+            - 'Swatinem/rust-cache@6323deb102c322ba6fcbdcafc7e3dddab59af2b6'
+            - 'actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1'
+            - 'dtolnay/rust-toolchain@02cb101ec7c40f2c49e1d9714d64511d8e1b74de'
     'hyperpolymath/standards@3c00687a5bbd0d881d351db8502417b5d0a8b0b0':
         ref: '3c00687a5bbd0d881d351db8502417b5d0a8b0b0'
         commit: 'sha1-3c00687a5bbd0d881d351db8502417b5d0a8b0b0'
-        owner_id: 6759885
+        owner_id: 297579217
         repo_id: 1116521501
         uses:
             - 'actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9'
@@ -260,6 +283,15 @@ dependencies:
             - 'github/codeql-action@b96794f015dfd88f77b49b1c93e0fa7110f94c63'
             - 'ossf/scorecard-action@fa7117db83c52d787ae5a89f350999701505d78e'
             - 'oven-sh/setup-bun@0c5077e51419868618aeaa5fe8019c62421857d6'
+            - 'webfactory/ssh-agent@e83874834305fe9a4a2997156cb26c5de65a8555'
+    'hyperpolymath/standards@75bd5994470661a099df562d6d5ad2fe744dbd66':
+        ref: '75bd5994470661a099df562d6d5ad2fe744dbd66'
+        commit: 'sha1-75bd5994470661a099df562d6d5ad2fe744dbd66'
+        owner_id: 297579217
+        repo_id: 1116521501
+        uses:
+            - 'actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1'
+            - 'dtolnay/rust-toolchain@e2a55d2ffb04f378e9626c28d38b36d230d1e12f'
             - 'webfactory/ssh-agent@e83874834305fe9a4a2997156cb26c5de65a8555'
     'mlugg/setup-zig@v2.2.1':
         ref: 'v2.2.1'
