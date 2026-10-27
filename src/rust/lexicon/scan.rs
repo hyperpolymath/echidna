@@ -244,8 +244,57 @@ pub struct Corpus {
     by_skeleton: BTreeMap<String, Vec<usize>>,
 }
 
+/// Collapse each whitespace run to one character: a newline if the run
+/// holds one, else a space. Line breaks are kept because they end line
+/// comments (`-- …`, `// …`); joining the lines would turn the rest of
+/// the statement into comment.
 fn collapse_whitespace(s: &str) -> String {
-    s.split_whitespace().collect::<Vec<_>>().join(" ")
+    let mut out = String::with_capacity(s.len());
+    let mut pending: Option<char> = None;
+    for c in s.trim().chars() {
+        if c.is_whitespace() {
+            if c == '\n' {
+                pending = Some('\n');
+            } else if pending.is_none() {
+                pending = Some(' ');
+            }
+        } else {
+            if let Some(p) = pending.take() {
+                out.push(p);
+            }
+            out.push(c);
+        }
+    }
+    out
+}
+
+/// `<a>__<b>.jsonl` with two valid corpus keys: a name `run` writes.
+fn is_pair_file_name(name: &str) -> bool {
+    name.strip_suffix(".jsonl")
+        .and_then(|stem| stem.split_once("__"))
+        .is_some_and(|(a, b)| validate_corpus_key(a).is_ok() && validate_corpus_key(b).is_ok())
+}
+
+/// Remove the files in `dir` whose names `is_ours` recognises.
+fn remove_generated(dir: &Path, is_ours: fn(&str) -> bool) -> Result<()> {
+    for entry in fs::read_dir(dir).with_context(|| format!("read {}", dir.display()))? {
+        let path = entry?.path();
+        let ours = path.is_file()
+            && path
+                .file_name()
+                .and_then(|n| n.to_str())
+                .is_some_and(is_ours);
+        if ours {
+            fs::remove_file(&path).with_context(|| format!("remove {}", path.display()))?;
+        }
+    }
+    Ok(())
+}
+
+/// `<key>.jsonl` with a valid corpus key: a name `run` writes.
+fn is_collision_file_name(name: &str) -> bool {
+    name.strip_suffix(".jsonl")
+        .is_some_and(|stem| validate_corpus_key(stem).is_ok())
 }
 
 impl Corpus {
@@ -1081,16 +1130,11 @@ pub fn run(opts: &RunOptions) -> Result<RunReport> {
     fs::create_dir_all(&collisions_dir)
         .with_context(|| format!("create {}", collisions_dir.display()))?;
     // A re-run over a different pair set must not leave the previous run's
-    // files beside this run's summary. Only the scan's own `.jsonl` files
-    // are removed; anything else in the directory is left alone.
-    for dir in [&pairs_dir, &collisions_dir] {
-        for entry in fs::read_dir(dir).with_context(|| format!("read {}", dir.display()))? {
-            let path = entry?.path();
-            if path.extension().and_then(|e| e.to_str()) == Some("jsonl") {
-                fs::remove_file(&path).with_context(|| format!("remove {}", path.display()))?;
-            }
-        }
-    }
+    // files beside this run's summary. Only names this command writes are
+    // removed (`pairs/<a>__<b>.jsonl` and `collisions/<key>.jsonl`, with
+    // valid corpus keys); anything else in the directory is left alone.
+    remove_generated(&pairs_dir, is_pair_file_name)?;
+    remove_generated(&collisions_dir, is_collision_file_name)?;
 
     let coverage: Vec<Coverage> = corpora.values().map(Corpus::coverage).collect();
     write_lines(&opts.out.join("coverage.jsonl"), &coverage)?;
@@ -1224,6 +1268,28 @@ mod tests {
         assert!(canonical::token_count("f(x)=g(x)") >= 3);
         assert!(canonical::token_count("T") < 3);
         assert!(canonical::token_count("x = y") >= 3);
+    }
+
+    #[test]
+    fn collapsing_whitespace_keeps_the_line_break_that_ends_a_comment() {
+        let s = "x = y -- note\n   \t  /\\ y = x  ";
+        assert_eq!(collapse_whitespace(s), "x = y -- note\n/\\ y = x");
+        assert_eq!(collapse_whitespace("a \t  b"), "a b");
+        // the conjunct after the comment still reaches the canonicaliser
+        let joined = canonical::structural_key(&collapse_whitespace(s));
+        let split = canonical::structural_key("x = y /\\ y = x");
+        assert_eq!(joined.shape, split.shape);
+    }
+
+    #[test]
+    fn cleanup_matches_only_generated_names() {
+        assert!(is_pair_file_name("hol4__hol_light.jsonl"));
+        assert!(!is_pair_file_name("notes.jsonl"));
+        assert!(!is_pair_file_name("hol4__Hol.jsonl"));
+        assert!(!is_pair_file_name("hol4__hol_light.json"));
+        assert!(is_collision_file_name("lean3.jsonl"));
+        assert!(!is_collision_file_name("my-export.jsonl"));
+        assert!(!is_collision_file_name("lean3.txt"));
     }
 
     #[test]

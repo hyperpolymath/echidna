@@ -336,6 +336,8 @@ share that prefix. `StructuralKey::complete` now says whether the whole
 statement was read. It is false when the parser stops early, invents a
 missing operand (`x + 1 =`) or reaches the end inside an open bracket or
 an unclosed `(assert …` wrapper (ACL2s goals truncated mid-expression),
+when a closer meets a group of another kind (`(x]`) or a quoted statement
+or block comment never closes,
 when the statement holds notation the scheme has no rule for (`!`, `?`,
 `@` and `\` binders, `~`, `==>`, Isabelle's `\<…>` escapes, Lean 3's `$`;
 checked before binders and ascriptions are removed), when a header drop
@@ -349,19 +351,19 @@ Share of each corpus read completely (`dk-shape-v1`, 2026-10-27):
 [cols="2,2,2,2,2",options="header"]
 |===
 | Corpus | Distinct rows | Read completely | Keys shared by distinct statements | Homonymous names
-| acl2 | 135963 | 16.1 % | 798 | 8.0 %
-| acl2s | 112677 | 5.3 % | 352 | 4.8 %
-| afp | 102683 | 10.7 % | 522 | 2.1 %
-| agda | 46028 | 41.0 % | 578 | 8.6 %
-| dafny | 10487 | 53.8 % | 154 | 12.2 %
-| dedukti | 1453 | 76.0 % | 54 | 20.6 %
-| hol4 | 95738 | 8.7 % | 107 | 4.2 %
+| acl2 | 135963 | 16.0 % | 783 | 8.0 %
+| acl2s | 112742 | 4.8 % | 330 | 4.8 %
+| afp | 102717 | 10.7 % | 530 | 2.1 %
+| agda | 46028 | 40.9 % | 577 | 8.6 %
+| dafny | 10487 | 53.8 % | 153 | 12.2 %
+| dedukti | 1453 | 75.4 % | 54 | 20.6 %
+| hol4 | 95738 | 8.6 % | 106 | 4.2 %
 | hol_light | 43937 | 1.9 % | 15 | 2.9 %
 | isabelle_zf | 3577 | 0.4 % | 0 | 0.3 %
-| lambda_prolog | 24897 | 93.6 % | 122 | 50.0 %
-| lean3 | 92680 | 26.5 % | 2777 | 19.2 %
-| mizar | 76522 | 20.0 % | 477 | 1.8 %
-| why3 | 25180 | 28.5 % | 378 | 21.9 %
+| lambda_prolog | 24897 | 93.5 % | 120 | 50.0 %
+| lean3 | 92695 | 26.0 % | 2675 | 19.2 %
+| mizar | 76522 | 19.5 % | 456 | 1.8 %
+| why3 | 25180 | 28.2 % | 365 | 21.9 %
 |===
 
 "Keys shared by distinct statements" counts complete keys only. Most are
@@ -404,11 +406,11 @@ identity keys (E6 `cross_prover_identity_key`) inherit all four causes.
 
 === What the measurement found in the corpora
 
-Over all 33 pairs: 203,860 same-name statement pairs, of which 1,070 are
-exact cognates, 2,708 shape cognates, 71 skeleton (specialisation)
-candidates, 7,854 differ, and 192,157 (94 %) are `unparsed`. Synonym
-candidates under different names: 315 by identical text, 491 by shape,
-865 by skeleton. Debug build: 179 s for all thirteen corpora, almost all
+Over all 33 pairs: 204,002 same-name statement pairs, of which 1,070 are
+exact cognates, 2,631 shape cognates, 69 skeleton (specialisation)
+candidates, 7,512 differ, and 192,720 (94 %) are `unparsed`. Synonym
+candidates under different names: 315 by identical text, 436 by shape,
+822 by skeleton. Debug build: 168 s for all thirteen corpora, almost all
 of it loading and canonicalising; one pair scans in about a second.
 
 * *HOL4 ↔ HOL Light* (pilot pair): 1,033 exact cognates and 144 text
@@ -429,7 +431,7 @@ of it loading and canonicalising; one pair scans in about a second.
   short-name rule above), fewer than three constants, or a bare type
   signature (λProlog's `int -> int -> int` against Dedukti's
   `Int -> Int -> Int`) say nothing about which statement it is. Joins
-  between different names skip them (3,335 groups, counted).
+  between different names skip them (3,295 groups, counted).
 
 === Equivalence by invariant and by witness
 

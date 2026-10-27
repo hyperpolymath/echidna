@@ -19,6 +19,9 @@ https://semver.org/spec/v2.0.0.html[Semantic Versioning].
   `+data/synonyms/+` is never written. Presets `+learning+`,
   `+spanning+` (one corpus per prover family), `+in-family+` and `+full+`.
   Per-corpus coverage and key-collision samples are written alongside.
+  Whitespace runs collapse to one space, or to a newline when they hold
+  one, so a line comment cannot swallow the rest of a statement. A re-run
+  removes only the file names the scan writes.
 
 ==== Fixed — canonicaliser, 2026-10-27
 
@@ -28,7 +31,9 @@ https://semver.org/spec/v2.0.0.html[Semantic Versioning].
   and the octad identity keys. No key changes.
 * *`+StructuralKey::complete+`* (new, `+#[serde(default)]+`) reports
   whether the shape accounts for the whole statement: false when the
-  parser stops early or the input ends inside an open bracket, meets
+  parser stops early, invents a missing operand, or the input ends inside
+  an open bracket, a quoted statement or a block comment; when a closer
+  meets a group of another kind; when the statement meets
   notation `+dk-shape-v1+` has no rule for (HOL binders, `+~+`, `+==>+`,
   Isabelle `+\<…>+` escapes), drops a statement's own leading tokens as a
   "header", misreads a leading group as a telescope, or cuts off nesting

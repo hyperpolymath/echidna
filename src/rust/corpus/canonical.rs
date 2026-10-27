@@ -303,6 +303,13 @@ fn is_ident_char(c: char) -> bool {
 }
 
 fn lex(src: &str) -> Vec<Tk> {
+    lex_flagged(src).0
+}
+
+/// Lex `src`; the flag is false when a quoted statement or block comment
+/// runs off the end of the input (part of the statement was swallowed).
+fn lex_flagged(src: &str) -> (Vec<Tk>, bool) {
+    let mut terminated = true;
     let chars: Vec<char> = src.chars().collect();
     let n = chars.len();
     let mut out: Vec<Tk> = Vec::new();
@@ -328,6 +335,9 @@ fn lex(src: &str) -> Vec<Tk> {
             while i + 1 < n && !(chars[i] == '*' && chars[i + 1] == ')') {
                 i += 1;
             }
+            if i + 1 >= n {
+                terminated = false;
+            }
             i = (i + 2).min(n);
             continue;
         }
@@ -338,7 +348,12 @@ fn lex(src: &str) -> Vec<Tk> {
                 j += 1;
             }
             let inner: String = chars[i + 1..j.min(n)].iter().collect();
-            out.extend(lex(&inner));
+            if j >= n {
+                terminated = false;
+            }
+            let (inner_toks, inner_ok) = lex_flagged(&inner);
+            terminated &= inner_ok;
+            out.extend(inner_toks);
             i = j + 1;
             continue;
         }
@@ -392,7 +407,36 @@ fn lex(src: &str) -> Vec<Tk> {
         out.push(Tk::Sym(c.to_string()));
         i += 1;
     }
-    out
+    (out, terminated)
+}
+
+/// True when every closer that meets an open group is of that group's kind
+/// and nothing is left open. A mismatched closer (`(x]`) is not a structure
+/// the parser can read faithfully. A closer with no group open is left to
+/// the parser: extraction often keeps the enclosing form's closer at the
+/// end (ACL2 `defthm … )`), which `rest_is_ignorable` accepts, while a
+/// stray closer followed by more of the statement stops the parse early.
+fn brackets_balanced(toks: &[Tk]) -> bool {
+    let mut stack: Vec<char> = Vec::new();
+    for t in toks {
+        match t {
+            Tk::Open(c) => stack.push(*c),
+            Tk::Close(c) => {
+                let want = match c {
+                    ')' => '(',
+                    ']' => '[',
+                    _ => '{',
+                };
+                match stack.pop() {
+                    None => {},
+                    Some(open) if open == want => {},
+                    Some(_) => return false,
+                }
+            },
+            _ => {},
+        }
+    }
+    stack.is_empty()
 }
 
 // ===========================================================================
@@ -1253,7 +1297,12 @@ fn has_unread_notation(body: &[Tk]) -> bool {
 /// as a telescope, the body holds no unread notation, and the parser
 /// consumed the body.
 fn normalise(statement: &str) -> (String, String, bool) {
-    let (toks, dropped_body) = strip_header(&lex(statement));
+    let (raw, terminated) = lex_flagged(statement);
+    // Read over the whole statement, header included: a mismatched or
+    // stray bracket, or a quote or block comment that never closes, means
+    // the tokens are not the statement as written.
+    let well_formed = terminated && brackets_balanced(&raw);
+    let (toks, dropped_body) = strip_header(&raw);
     // Checked before ascriptions and binders are removed: a binder's sort
     // can hold notation too (`(x : F $ A)`), and extraction would drop it.
     let unread = has_unread_notation(&toks);
@@ -1263,6 +1312,7 @@ fn normalise(statement: &str) -> (String, String, bool) {
     let mut parser = Parser::new(body, varmap);
     let ast = parser.expr(0);
     let complete = !has_hole(&ast)
+        && well_formed
         && parser.rest_is_ignorable()
         && parser.unclosed == 0
         && !parser.too_deep
@@ -1509,6 +1559,8 @@ mod tests {
             assert!(k.complete, "{prover}: {s:?} -> {}", k.shape);
         }
         assert!(structural_key("Lemma add_comm : forall x y : nat, x + y = y + x.").complete);
+        // ACL2 extraction keeps the `defthm` form's closer at the end
+        assert!(structural_key("(equal (len (rev x)) (len x)))").complete);
     }
 
     /// Statements the scheme cannot read are marked incomplete even though
@@ -1533,6 +1585,12 @@ mod tests {
             // change) and reported
             "(assert x y",
             "(assert (forall ((x Nat)) (= x x",
+            // a closer of the wrong kind, or a stray one
+            "(x + y] = z",
+            "x + y) = z",
+            // a quote or block comment that runs off the end
+            "\"x + y = y + x",
+            "x + y = y + x (* commutes",
             // notation inside a binder's sort is dropped by extraction
             "forall (x : F $ A), x + 0 = x",
             // Isabelle ASCII symbol escapes

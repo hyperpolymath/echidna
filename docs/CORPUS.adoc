@@ -244,9 +244,11 @@ consumer that only compares one field should compare both.
 
 A key is only as good as the parse behind it. `+StructuralKey::complete+`
 says whether the canonicaliser read the *whole* statement; when it did not
-(its parser stopped early, it met notation it has no rule for — HOL's `+!+`
-and `+?+` binders, Isabelle's `+\<…>+` escapes — or a header drop discarded
-the statement's own leading tokens), the key is still reported at the
+(its parser stopped early or invented an operand, the input ended inside an
+open bracket, quote or comment, a closer met a group of another kind, it
+met notation it has no rule for — HOL's `+!+` and `+?+` binders, Isabelle's
+`+\<…>+` escapes — or a header drop discarded the statement's own leading
+tokens), the key is still reported at the
 structural tier but is a *prefix* that other statements share. Treat an
 incomplete key as no identity at all: `+corpus identity+` skips such
 declarations and reports how many it skipped. Measured on `+training_data/+`, the
