@@ -11,6 +11,7 @@
 # the lock was not the cause. The pattern was added on 2026-10-27.
 name: one-off moved-tag probe (standards, new path)
 on:
+  workflow_dispatch:
   push:
     branches: [claude/compassionate-fermat-9x7vpe]
 permissions:
