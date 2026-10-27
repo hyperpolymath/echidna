@@ -196,6 +196,12 @@ enum Commands {
         op: CorpusOp,
     },
 
+    /// Mine lexicon candidates across training corpora (flag-only)
+    Lexicon {
+        #[command(subcommand)]
+        op: LexiconOp,
+    },
+
     /// Search proof-design space via simulated annealing
     Design {
         #[command(subcommand)]
@@ -358,6 +364,39 @@ enum CorpusOp {
         octads: PathBuf,
         #[arg(short, long)]
         out: PathBuf,
+    },
+}
+
+#[derive(Subcommand)]
+enum LexiconOp {
+    /// Pair theorem names and canonical statement shapes across training
+    /// corpora and write review candidates as JCS JSON Lines. Every
+    /// candidate carries `evidence = none`; `data/synonyms/` is never edited.
+    Scan {
+        /// Directory holding `proof_states_<corpus>.jsonl` files.
+        #[arg(long, default_value = "training_data")]
+        training_dir: PathBuf,
+        /// A corpus pair, `A:B`. Repeatable; combines with `--preset`.
+        #[arg(long = "pair", value_name = "A:B")]
+        pairs: Vec<String>,
+        /// A named pair set: `learning`, `spanning`, `in-family` or `full`.
+        #[arg(long)]
+        preset: Option<String>,
+        /// Output directory (pairs/, collisions/, summary.jsonl, coverage.jsonl).
+        #[arg(long, default_value = "target/lexicon-scan")]
+        out: PathBuf,
+        /// Also emit pairs whose shared name is generic (`lemma3`, `aux`, `ex1`).
+        #[arg(long)]
+        keep_generic: bool,
+        /// Skip a shared name whose statement cross product exceeds this.
+        #[arg(long, default_value_t = 64)]
+        max_pairs_per_name: usize,
+        /// Skip a shape or skeleton group larger than this on either side.
+        #[arg(long, default_value_t = 8)]
+        max_shape_group: usize,
+        /// Key-collision groups to sample per corpus.
+        #[arg(long, default_value_t = 40)]
+        collision_samples: usize,
     },
 }
 
@@ -539,6 +578,10 @@ async fn main() -> Result<()> {
         },
         Commands::Corpus { op } => {
             corpus_command(op, &formatter)?;
+        },
+
+        Commands::Lexicon { op } => {
+            lexicon_command(op)?;
         },
 
         Commands::Design { op } => {
@@ -1321,6 +1364,129 @@ async fn diagnostics_command() -> Result<()> {
     let health = dispatcher.health_status();
     let mut repl = DiagnosticsREPL::new();
     repl.run(&health).await;
+    Ok(())
+}
+
+/// Lexicon command - mine cross-corpus candidates for curation.
+///
+/// The scan runs on a thread with a large stack: the canonicaliser's parser
+/// recurses on nesting depth, and some corpus statements (ACL2 books) nest
+/// deeply. Timings go to stderr; the JCS files under `--out` carry none, so
+/// two runs over the same data write the same bytes.
+///
+/// # Errors
+///
+/// An unknown preset, a malformed `--pair`, no pairs at all, a corpus that
+/// fails to load, or an output file that cannot be written.
+fn lexicon_command(op: LexiconOp) -> Result<()> {
+    use echidna::lexicon::scan::{self, RunOptions, ScanOptions};
+
+    let LexiconOp::Scan {
+        training_dir,
+        pairs,
+        preset,
+        out,
+        keep_generic,
+        max_pairs_per_name,
+        max_shape_group,
+        collision_samples,
+    } = op;
+
+    let mut all_pairs = Vec::new();
+    if let Some(name) = preset.as_deref() {
+        all_pairs.extend(scan::preset_pairs(name).with_context(|| {
+            format!("unknown preset `{name}` (learning, spanning, in-family, full)")
+        })?);
+    }
+    for p in &pairs {
+        let pair = scan::parse_pair(p)?;
+        if !all_pairs.contains(&pair) {
+            all_pairs.push(pair);
+        }
+    }
+    let opts = RunOptions {
+        training_dir,
+        pairs: all_pairs,
+        out,
+        scan: ScanOptions {
+            keep_generic,
+            max_pairs_per_name,
+            max_shape_group,
+        },
+        collision_samples,
+    };
+
+    let report = std::thread::Builder::new()
+        .name("lexicon-scan".into())
+        .stack_size(512 * 1024 * 1024)
+        .spawn(move || scan::run(&opts).map(|r| (r, opts.out)))
+        .context("spawn the scan thread")?
+        .join()
+        .map_err(|_| anyhow::anyhow!("the scan thread panicked"))??;
+    let (report, out) = report;
+
+    println!(
+        "{:<14} {:>8} {:>8} {:>6} {:>7} {:>6} {:>6} {:>6} {:>8}",
+        "corpus", "rows", "names", "hom%", "struct%", "skel%", "text%", "cmpl%", "collide"
+    );
+    for c in &report.coverage {
+        let pct = |n: usize| 100.0 * n as f64 / c.rows.max(1) as f64;
+        println!(
+            "{:<14} {:>8} {:>8} {:>6.1} {:>7.1} {:>6.1} {:>6.1} {:>6.1} {:>8}",
+            c.corpus,
+            c.rows,
+            c.names,
+            100.0 * c.homonym_names as f64 / c.names.max(1) as f64,
+            pct(c.tiers.structural),
+            pct(c.tiers.skeleton),
+            pct(c.tiers.text),
+            pct(c.tiers.complete),
+            c.collision_keys
+        );
+    }
+    println!();
+    println!(
+        "{:<26} {:>7} {:>7} {:>7} {:>7} {:>7} {:>7} {:>7} {:>8} {:>7} {:>7} {:>7}",
+        "pair",
+        "shared",
+        "generic",
+        "capped",
+        "exact",
+        "shape",
+        "skel",
+        "differs",
+        "unparsed",
+        "syn-tx",
+        "syn-sh",
+        "syn-sk"
+    );
+    for s in &report.pairs {
+        let names = [&s.candidates.name_exact, &s.candidates.name_folded];
+        let sum =
+            |f: fn(&scan::CandidateCounts) -> usize| names.iter().map(|c| f(c)).sum::<usize>();
+        println!(
+            "{:<26} {:>7} {:>7} {:>7} {:>7} {:>7} {:>7} {:>7} {:>8} {:>7} {:>7} {:>7}",
+            format!("{}:{}", s.pair[0], s.pair[1]),
+            s.folded_names_shared,
+            s.generic_names_skipped,
+            s.name_pairs_capped,
+            sum(|c| c.cognate_exact),
+            sum(|c| c.cognate_shape),
+            sum(|c| c.cognate_skeleton),
+            sum(|c| c.differs),
+            sum(|c| c.unparsed),
+            s.candidates.text.total(),
+            s.candidates.shape.total(),
+            s.candidates.skeleton.total()
+        );
+    }
+    for (corpus, t) in &report.load_times {
+        eprintln!("load {corpus}: {:.2?}", t);
+    }
+    for (pair, t) in &report.pair_times {
+        eprintln!("scan {pair}: {:.2?}", t);
+    }
+    eprintln!("total: {:.2?}; output in {}", report.total, out.display());
     Ok(())
 }
 

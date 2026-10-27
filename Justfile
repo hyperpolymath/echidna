@@ -1163,6 +1163,14 @@ lexicon-check:
     scripts/lexicon-check.sh
     cargo test --locked --test lexicon_v2_test
 
+# Mine lexicon candidates across training_data/ corpora: cognates, false
+# friends and synonym candidates as JCS JSON Lines under target/lexicon-scan.
+# Flag-only (evidence = none); never edits data/synonyms/. Presets: learning,
+# spanning, in-family, full.
+lexicon-scan preset="learning":
+    cargo run --locked --bin echidna -- lexicon scan --preset {{preset}}
+    cargo test --locked --test lexicon_scan_test
+
 # Run the saturation-campaign cargo tests only (139 cases + 1 ignored).
 test-saturation:
     cargo test --lib -- \

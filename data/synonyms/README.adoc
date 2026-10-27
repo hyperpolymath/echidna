@@ -219,6 +219,42 @@ Nickel contract `schema.ncl`; `scripts/lexicon-check.sh` (or
 Corpus-mined candidates (owner decision D4) are flag-only: they carry
 `evidence = { kind = "none" }` and never set `semantic_class` on their own.
 
+=== Mining candidates: `echidna lexicon scan`
+
+`echidna lexicon scan --preset learning` (or `just lexicon-scan`) compares
+`training_data/proof_states_<corpus>.jsonl` corpora on two axes, the theorem
+*name* and the canonical *shape* of its statement (`dk-shape-v1`,
+`src/rust/corpus/canonical.rs`), and writes review candidates as JCS JSON
+Lines under `target/lexicon-scan/`. It never edits this directory.
+
+[cols="1,2,2"]
+|===
+| | same shape | different shape
+
+| *same name*
+| cognate (`cognate_exact`, `cognate_shape`)
+| false friend or specialisation (`cognate_skeleton`, `differs`)
+
+| *different name*
+| synonym candidate (joins `text`, `shape`, `skeleton`)
+| unrelated, not reported
+|===
+
+A pair is `unparsed` when either statement was not read completely by the
+canonicaliser (`StructuralKey::complete`): its key is then a prefix that
+other statements share, so it says nothing. Joins between different names
+also skip shapes too thin to identify anything (`informative`: a variable in
+function position, fewer than three constants, or a bare type signature).
+Every skip is counted in `summary.jsonl`; `coverage.jsonl` reports, per
+corpus, how much the canonicaliser read and how often distinct statements
+share a key. Each candidate's `id` is the UUIDv8 content id of the
+statement pair, independent of scan direction and normaliser version, so a
+review decision survives a re-scan.
+
+A candidate becomes a row here only by curation: a person writes the row
+with `evidence = curated` (or `probe` / `kernel` once that evidence exists),
+and the Nickel contract checks it like any other.
+
 Nickel checks shape and the cross-field rules; serde checks that
 `checked_by` names a `ProverKind` and `format` an `ExchangeFormat` when Rust
 loads a table (`tests/lexicon_v2_test.rs`).
@@ -242,8 +278,9 @@ prover no longer accepts (or never accepted in this version).
 - Cross-prover synonym graph (Isabelle `le_trans` ↔ Coq `Rle_trans` ↔
   Lean `le_trans`) is intentionally **out of scope** here — that's
   `echidna port`, not `echidna suggest`.
-- ML-driven synonym discovery from the corpus (mining
-  `training_data/`) is in §4.4 of the notes, not this layer.
+- ML-driven synonym discovery from the corpus is in §4.4 of the notes,
+  not this layer. Syntactic mining of `training_data/` is
+  `echidna lexicon scan` (above); it proposes, it never writes here.
 
 == Maintenance
 
