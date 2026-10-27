@@ -1,0 +1,49 @@
+# SPDX-License-Identifier: MPL-2.0
+# ONE-OFF, scratch branch only, deleted after use. Regenerates this branch's
+# actions.lock with the estate repair order (regen_lock in
+# standards/scripts/regen-dependabot-locks.sh) from hyperpolymath/standards#1350,
+# reports close-lock's moved-tag decisions and the --check verdict, and prints
+# the lock. It has no `uses:` steps, so it needs no lock entry to start. It
+# writes nothing back.
+name: one-off actions.lock regeneration (moved tags)
+on:
+  push:
+    branches: [claude/compassionate-fermat-9x7vpe]
+permissions:
+  contents: read
+jobs:
+  regen:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    env:
+      GH_TOKEN: ${{ github.token }}
+      STANDARDS_BRANCH: claude/compassionate-fermat-9x7vpe-callee-lock
+    steps:
+      - name: Regenerate actions.lock and check closure
+        run: |
+          set -uo pipefail
+          git clone --quiet https://github.com/${{ github.repository }}.git e
+          git -C e checkout --quiet ${{ github.sha }}
+          git -C e log --oneline -1
+          git clone --quiet --depth 1 --branch "$STANDARDS_BRANCH" https://github.com/metadatastician/standards.git std
+          git -C std log --oneline -1
+          sudo apt-get install -y -qq gawk >/dev/null
+          gh extension install github/gh-actions-lock --pin v0.2.0
+          gh actions-lock --version
+          export GH_BIN=gh REGEN_TOOLS="$PWD/std/scripts"
+          cp e/.github/workflows/actions.lock prior.lock
+          source std/scripts/regen-dependabot-locks.sh
+          outcome="$(regen_lock "$PWD/e" 2> regen.log || true)"
+          cat regen.log
+          echo "OUTCOME=$outcome"
+          echo "== close-lock moved-tag decisions"
+          grep -E '^  (~|SKIP|\+) ' regen.log || echo "(none)"
+          echo "== close-lock --check"
+          bash std/scripts/close-lock.sh --check e/.github/workflows; echo "CHECK_RC=$?"
+          echo "== dtolnay records"
+          grep -A4 "^    'dtolnay/rust-toolchain@\(e2a55d2\|02cb101\)" e/.github/workflows/actions.lock || echo "(no dtolnay records)"
+          git -C e status --porcelain
+          echo "LOCK-SHA256 $(sha256sum < e/.github/workflows/actions.lock | cut -d' ' -f1)"
+          echo "LOCK-BEGIN"
+          base64 -w 76 e/.github/workflows/actions.lock
+          echo "LOCK-END"
