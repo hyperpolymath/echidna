@@ -233,3 +233,25 @@ fn a_rerun_with_fewer_pairs_leaves_no_stale_pair_files() {
     );
     let _ = std::fs::remove_dir_all(&out);
 }
+
+#[test]
+fn the_global_json_format_prints_one_parseable_object() {
+    let out = tempfile::tempdir().expect("tempdir");
+    let run = std::process::Command::new(env!("CARGO_BIN_EXE_echidna"))
+        .args(["--format", "json", "lexicon", "scan", "--training-dir"])
+        .arg(fixtures())
+        .args(["--pair", "hol4_mini:hol_light_mini", "--out"])
+        .arg(out.path())
+        .output()
+        .expect("run echidna lexicon scan");
+    assert!(
+        run.status.success(),
+        "{}",
+        String::from_utf8_lossy(&run.stderr)
+    );
+    let stdout = String::from_utf8(run.stdout).expect("utf-8");
+    assert_eq!(stdout.lines().count(), 1, "one JSON line: {stdout}");
+    let v: serde_json::Value = serde_json::from_str(&stdout).expect("stdout is JSON");
+    assert_eq!(v["pairs"][0]["pair"][0], "hol4_mini");
+    assert_eq!(v["coverage"].as_array().map(Vec::len), Some(2));
+}

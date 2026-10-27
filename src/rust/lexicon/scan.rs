@@ -357,10 +357,11 @@ impl Corpus {
         for (i, e) in entries.iter().enumerate() {
             by_name.entry(e.name.clone()).or_default().push(i);
             by_statement.entry(e.statement.clone()).or_default().push(i);
+            // An anonymous name (`_`) folds to the empty string. It is indexed
+            // like any other: `is_generic` and `--keep-generic` decide whether
+            // it joins, and the other joins already treat it as a shared name.
             let folded = fold_name(&e.name);
-            if !folded.is_empty() {
-                by_fold.entry(folded).or_default().insert(e.name.clone());
-            }
+            by_fold.entry(folded).or_default().insert(e.name.clone());
             // Only a complete parse can stand for its statement in a join;
             // an incomplete shape is a prefix that other statements share.
             let k = &keys[e.key];
@@ -800,6 +801,13 @@ const TYPE_ATOMS: [&str; 9] = [
     "ARROW", "NAT", "INT", "BOOL", "REAL", "TYPE", "STRING", "LIST", "VEC",
 ];
 
+/// `dk-shape-v1`'s canonical operators other than `ARROW`: the marks of a
+/// statement rather than a type.
+const NON_TYPE_OPERATORS: [&str; 17] = [
+    "ADD", "MUL", "SUB", "DIV", "MOD", "EQ", "NEQ", "LT", "LE", "GT", "GE", "AND", "OR", "NOT",
+    "IFF", "IN", "APPEND",
+];
+
 /// Whether a skeleton carries enough structure to propose a synonym between
 /// two *differently named* statements: at least three non-variable atoms,
 /// at least one of them outside the type language, and no variable applied
@@ -808,7 +816,10 @@ const TYPE_ATOMS: [&str; 9] = [
 /// `(EQ (v0 0) 1)`; a variable in function position is the mark of that.
 /// A bare `(summable v0)` says only that something is summable, and a bare
 /// signature such as `int -> int -> int` is shared by every function of
-/// that type. Name joins are not filtered: there the shared name anchors.
+/// that type. So is `Tree -> Tree -> Tree`, whose type is not a canonical
+/// sort: a shape with arrows, no variables and no operator besides `ARROW`
+/// is a signature whatever its type names. Name joins are not filtered:
+/// there the shared name anchors.
 pub fn informative(skeleton: &str) -> bool {
     let chars: Vec<char> = skeleton.chars().collect();
     let variable_head = chars.windows(3).enumerate().any(|(i, w)| {
@@ -827,7 +838,13 @@ pub fn informative(skeleton: &str) -> bool {
         })
         .collect();
     let beyond_types = constants.iter().any(|t| !TYPE_ATOMS.contains(t));
-    !variable_head && constants.len() >= 3 && beyond_types
+    let has_variable = skeleton
+        .split(|c: char| c.is_whitespace() || matches!(c, '(' | ')' | '[' | ']'))
+        .any(|t| t.len() > 1 && t.starts_with('v') && t[1..].chars().all(|c| c.is_ascii_digit()));
+    let bare_signature = !has_variable
+        && constants.contains(&"ARROW")
+        && !constants.iter().any(|t| NON_TYPE_OPERATORS.contains(t));
+    !variable_head && constants.len() >= 3 && beyond_types && !bare_signature
 }
 
 /// Jaccard similarity of the shapes' non-variable atoms in thousandths,
@@ -1318,6 +1335,25 @@ mod tests {
     }
 
     #[test]
+    fn anonymous_names_join_only_when_generic_names_are_kept() {
+        let side =
+            |key: &str| Corpus::from_rows(key, [("_".to_string(), "x + y = y + x".to_string())]);
+        let (a, b) = (side("a"), side("b"));
+        let run = |keep_generic: bool| {
+            let opts = ScanOptions {
+                keep_generic,
+                ..ScanOptions::default()
+            };
+            scan_pair(&a, &b, &opts, &mut |_| Ok(())).unwrap()
+        };
+        let skipped = run(false);
+        assert_eq!(skipped.generic_names_skipped, 1);
+        assert_eq!(skipped.candidates.name_exact.total(), 0);
+        let kept = run(true);
+        assert_eq!(kept.candidates.name_exact.total(), 1);
+    }
+
+    #[test]
     fn the_name_cap_bounds_a_whole_folded_group() {
         // Five raw names per side fold to `add_comm`; each raw pair is one
         // statement pair, but together they make 25 folded pairs.
@@ -1412,6 +1448,10 @@ mod tests {
         // ...and their skeletons, where sorts render as `?`
         assert!(!informative("(ARROW ? (ARROW ? ?))"));
         assert!(!informative("(ARROW ? ?)"));
+        // a signature over type names that are not canonical sorts
+        assert!(!informative("(ARROW Tree (ARROW Tree Tree))"));
+        // an implication between predicates of a variable is a statement
+        assert!(informative("(ARROW (prime v0) (odd v0))"));
         assert!(informative("(ARROW (LE v0 v1) (LE (ADD v0 1) (ADD v1 1)))"));
     }
 

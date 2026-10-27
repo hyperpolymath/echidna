@@ -355,7 +355,7 @@ Share of each corpus read completely (`dk-shape-v1`, 2026-10-27):
 | acl2 | 135963 | 15.9 % | 779 | 8.0 %
 | acl2s | 112742 | 4.8 % | 330 | 4.8 %
 | afp | 102717 | 10.6 % | 525 | 2.1 %
-| agda | 46028 | 40.8 % | 577 | 8.6 %
+| agda | 46028 | 40.8 % | 574 | 8.6 %
 | dafny | 10487 | 53.8 % | 153 | 12.2 %
 | dedukti | 1453 | 75.4 % | 54 | 20.6 %
 | hol4 | 95738 | 8.7 % | 104 | 4.2 %
@@ -409,11 +409,11 @@ identity keys (E6 `cross_prover_identity_key`) inherit all four causes.
 
 Over all 33 pairs: 167,040 same-name statement pairs, of which 1,070 are
 exact cognates, 2,631 shape cognates, 64 skeleton (specialisation)
-candidates, 5,458 differ, and 157,817 (94 %) are `unparsed`. A further
+candidates, 5,469 differ, and 157,806 (94 %) are `unparsed`. A further
 90,191 statement pairs under 308 over-large names are counted, not
 emitted: the per-name cap (64) bounds exact pairs per raw name and folded
 pairs per folded name. Synonym candidates under different names: 315 by
-identical text, 433 by shape, 819 by skeleton. Debug build: 169 s for all
+identical text, 433 by shape, 819 by skeleton. Debug build: 175 s for all
 thirteen corpora, almost all of it loading and canonicalising; one pair scans in about a second.
 
 * *HOL4 ↔ HOL Light* (pilot pair): 1,033 exact cognates and 144 text

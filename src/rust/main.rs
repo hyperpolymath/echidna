@@ -583,7 +583,7 @@ async fn main() -> Result<()> {
         },
 
         Commands::Lexicon { op } => {
-            lexicon_command(op)?;
+            lexicon_command(op, &formatter)?;
         },
 
         Commands::Design { op } => {
@@ -1383,7 +1383,7 @@ async fn diagnostics_command() -> Result<()> {
 /// old output file that cannot be removed, or a serialisation or output
 /// write failure. Also returns an error if the scan thread cannot be
 /// spawned or panics. Failed scans may leave partial output.
-fn lexicon_command(op: LexiconOp) -> Result<()> {
+fn lexicon_command(op: LexiconOp, formatter: &OutputFormatter) -> Result<()> {
     use echidna::lexicon::scan::{self, RunOptions, ScanOptions};
 
     let LexiconOp::Scan {
@@ -1434,6 +1434,19 @@ fn lexicon_command(op: LexiconOp) -> Result<()> {
         .join()
         .map_err(|_| anyhow::anyhow!("the scan thread panicked"))??;
     let (report, out) = report;
+
+    if formatter.is_json() {
+        // One JCS object on stdout; the timings stay on stderr.
+        let summary = serde_json::json!({
+            "coverage": report.coverage,
+            "pairs": report.pairs,
+            "out": out.display().to_string(),
+            "total_ms": u64::try_from(report.total.as_millis()).unwrap_or(u64::MAX),
+        });
+        std::io::Write::write_all(&mut std::io::stdout(), &scan::jcs_line(&summary)?)?;
+        eprintln!("total: {:.2?}; output in {}", report.total, out.display());
+        return Ok(());
+    }
 
     println!(
         "{:<14} {:>8} {:>8} {:>6} {:>7} {:>6} {:>6} {:>6} {:>8}",

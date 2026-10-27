@@ -369,7 +369,7 @@ fn lex_flagged(src: &str) -> (Vec<Tk>, bool) {
             if j >= n {
                 terminated = false;
             }
-            if opens_formula(out.last()) {
+            if opens_formula(out.last()) && closes_formula(&chars[(j + 1).min(n)..]) {
                 let (inner_toks, inner_ok) = lex_flagged(&inner);
                 terminated &= inner_ok;
                 out.extend(inner_toks);
@@ -432,25 +432,50 @@ fn lex_flagged(src: &str) -> (Vec<Tk>, bool) {
     (out, terminated)
 }
 
-/// Whether a quote after `prev` wraps a formula rather than a string
+/// Isabelle words that open or continue a quoted statement.
+const FORMULA_KEYWORDS: [&str; 9] = [
+    "lemma",
+    "theorem",
+    "corollary",
+    "proposition",
+    "schematic_goal",
+    "assumes",
+    "shows",
+    "obtains",
+    "and",
+];
+
+/// Whether a quote after `prev` can wrap a formula rather than a string
 /// literal: at the start of the statement, after a `:` (`lemma foo: "…"`),
-/// or after an Isabelle statement keyword.
+/// or after an Isabelle statement keyword. [`closes_formula`] must also
+/// hold for the text after the closing quote.
 fn opens_formula(prev: Option<&Tk>) -> bool {
-    const KEYWORDS: [&str; 9] = [
-        "lemma",
-        "theorem",
-        "corollary",
-        "proposition",
-        "schematic_goal",
-        "assumes",
-        "shows",
-        "obtains",
-        "and",
-    ];
     match prev {
         None => true,
         Some(Tk::Sym(s)) => s == ":",
-        Some(Tk::Id(s)) => KEYWORDS.contains(&s.as_str()),
+        Some(Tk::Id(s)) => FORMULA_KEYWORDS.contains(&s.as_str()),
+        _ => false,
+    }
+}
+
+/// Whether the text after a closing quote ends the quoted statement: the
+/// end of input or a terminator, another quoted proposition
+/// (`assumes "A" "B"`), or an Isabelle keyword (`shows`, `and`, `for`, …).
+/// Anything else (`"a" == "z"`) means the quote was a string literal.
+fn closes_formula(rest: &[char]) -> bool {
+    const FOLLOWERS: [&str; 6] = ["for", "if", "where", "using", "unfolding", "by"];
+    let rest: Vec<char> = rest
+        .iter()
+        .copied()
+        .skip_while(|c| c.is_whitespace())
+        .collect();
+    match rest.first() {
+        None | Some('"') => true,
+        Some('.' | ';') => rest[1..].iter().all(|c| c.is_whitespace()),
+        Some(c) if is_ident_start(*c) => {
+            let word: String = rest.iter().take_while(|c| is_ident_char(**c)).collect();
+            FORMULA_KEYWORDS.contains(&word.as_str()) || FOLLOWERS.contains(&word.as_str())
+        },
         _ => false,
     }
 }
@@ -1773,6 +1798,17 @@ mod tests {
             structural_key("s = \"a \\\" b\"").key,
             structural_key("s = \"a \\\" c\"").key,
             "an escaped quote does not end the literal"
+        );
+        // a literal at the start of the statement is still a literal when
+        // the statement goes on after it
+        assert_ne!(
+            structural_key("\"a\" == \"z\"").key,
+            structural_key("\"b\" == \"z\"").key
+        );
+        // Isabelle's quoted assumptions and conclusion are all unwrapped
+        assert_eq!(
+            structural_key("assumes \"x = y\" shows \"y = x\"").shape,
+            structural_key("assumes x = y shows y = x").shape
         );
         let bare = structural_key("x + y = y + x").key;
         for s in ["\"x + y = y + x\"", "lemma add_comm: \"x + y = y + x\""] {

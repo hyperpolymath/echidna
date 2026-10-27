@@ -25,6 +25,10 @@ https://semver.org/spec/v2.0.0.html[Semantic Versioning].
   The per-name cap (`+--max-pairs-per-name+`) bounds folded-name pairs
   across a whole folded group, not per raw-name pair. Corpus keys may not
   start or end with `+_+`, so pair file names stay unambiguous.
+  Anonymous names (`+_+`) are indexed like any other, so
+  `+--keep-generic+` now joins them. A bare signature over any type names
+  (`+Tree -> Tree -> Tree+`) no longer proposes a synonym. With the global
+  `+--format json+`, the scan prints one JCS summary object on stdout.
 
 ==== Fixed — canonicaliser, 2026-10-27
 
@@ -37,7 +41,9 @@ https://semver.org/spec/v2.0.0.html[Semantic Versioning].
   after an Isabelle statement keyword. Elsewhere (`+s = "a//b"+`, ACL2
   `+"Goal"+` hints, Why3 `+meta "…"+`) it is one constant, so its contents
   are no longer read as comments, operators or variables, and a backslash
-  escapes the next character. *Key change*: statements with such a literal
+  escapes the next character. A quote opens a formula only when its close
+  also ends the statement (or meets another quote or an Isabelle keyword),
+  so `+"a" == "z"+` keeps its leading literal. *Key change*: statements with such a literal
   get new keys; distinct literals no longer share one. On
   `+training_data/+` this splits a dozen Mizar and seven Why3 key
   collisions; coverage moves by at most 0.1 point per corpus.
