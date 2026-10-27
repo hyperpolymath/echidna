@@ -24,7 +24,8 @@ https://semver.org/spec/v2.0.0.html[Semantic Versioning].
   removes only the file names the scan writes.
   The per-name cap (`+--max-pairs-per-name+`) bounds folded-name pairs
   across a whole folded group, not per raw-name pair. Corpus keys may not
-  start or end with `+_+`, so pair file names stay unambiguous.
+  start or end with `+_+`, so pair file names stay unambiguous; a hyphen is
+  allowed, so the shipped `+2026-03-20+` corpus can be scanned.
   Anonymous names (`+_+`) are indexed like any other, so
   `+--keep-generic+` now joins them. A bare signature over any type names
   (`+Tree -> Tree -> Tree+`) no longer proposes a synonym. With the global
@@ -43,6 +44,7 @@ https://semver.org/spec/v2.0.0.html[Semantic Versioning].
   are no longer read as comments, operators or variables, and a backslash
   escapes the next character. A quote opens a formula only when its close
   also ends the statement (or meets another quote or an Isabelle keyword),
+  and a quote right after an unwrapped formula is the next proposition,
   so `+"a" == "z"+` keeps its leading literal. *Key change*: statements with such a literal
   get new keys; distinct literals no longer share one. On
   `+training_data/+` this splits a dozen Mizar and seven Why3 key

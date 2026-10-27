@@ -149,7 +149,8 @@ pub fn parse_pair(arg: &str) -> Result<(String, String)> {
 ///
 /// # Errors
 ///
-/// The key is empty, contains characters outside `[a-z0-9_]`, contains
+/// The key is empty, contains characters outside `[a-z0-9_-]` (the shipped
+/// `proof_states_2026-03-20.jsonl` needs the hyphen), contains
 /// `__`, or starts or ends with `_`. `__` separates the two keys in a pair
 /// file name, and a key at either edge of it must not supply a third `_`
 /// (`a_:b` and `a:_b` would both write `pairs/a___b.jsonl`).
@@ -157,9 +158,9 @@ pub fn validate_corpus_key(key: &str) -> Result<()> {
     if key.is_empty()
         || !key
             .chars()
-            .all(|c| c.is_ascii_lowercase() || c.is_ascii_digit() || c == '_')
+            .all(|c| c.is_ascii_lowercase() || c.is_ascii_digit() || c == '_' || c == '-')
     {
-        bail!("corpus key `{key}` must be non-empty [a-z0-9_]");
+        bail!("corpus key `{key}` must be non-empty [a-z0-9_-]");
     }
     // `pairs/<a>__<b>.jsonl` is unambiguous only if no key contains `__`
     // and no key starts or ends with `_`.
@@ -1413,6 +1414,8 @@ mod tests {
         assert!(parse_pair("a__b:c").is_err());
         // `a_:b` and `a:_b` would both write pairs/a___b.jsonl
         assert!(parse_pair("a_:b").is_err());
+        // the shipped `proof_states_2026-03-20.jsonl` corpus
+        assert!(parse_pair("2026-03-20:lean3").is_ok());
         assert!(parse_pair("a:_b").is_err());
     }
 
@@ -1481,7 +1484,7 @@ mod tests {
         assert!(!is_pair_file_name("hol4__Hol.jsonl"));
         assert!(!is_pair_file_name("hol4__hol_light.json"));
         assert!(is_collision_file_name("lean3.jsonl"));
-        assert!(!is_collision_file_name("my-export.jsonl"));
+        assert!(!is_collision_file_name("notes.v2.jsonl"));
         assert!(!is_collision_file_name("lean3.txt"));
     }
 

@@ -322,6 +322,9 @@ fn lex(src: &str) -> Vec<Tk> {
 /// runs off the end of the input (part of the statement was swallowed).
 fn lex_flagged(src: &str) -> (Vec<Tk>, bool) {
     let mut terminated = true;
+    // `out.len()` just after an unwrapped formula: a quote right there is
+    // the next proposition (`assumes "P x" "Q x"`), not a string literal.
+    let mut after_wrapper: Option<usize> = None;
     let chars: Vec<char> = src.chars().collect();
     let n = chars.len();
     let mut out: Vec<Tk> = Vec::new();
@@ -369,10 +372,12 @@ fn lex_flagged(src: &str) -> (Vec<Tk>, bool) {
             if j >= n {
                 terminated = false;
             }
-            if opens_formula(out.last()) && closes_formula(&chars[(j + 1).min(n)..]) {
+            let wrapper_position = opens_formula(out.last()) || after_wrapper == Some(out.len());
+            if wrapper_position && closes_formula(&chars[(j + 1).min(n)..]) {
                 let (inner_toks, inner_ok) = lex_flagged(&inner);
                 terminated &= inner_ok;
                 out.extend(inner_toks);
+                after_wrapper = Some(out.len());
             } else {
                 out.push(Tk::Name(format!("\"{inner}\"")));
             }
@@ -1809,6 +1814,11 @@ mod tests {
         assert_eq!(
             structural_key("assumes \"x = y\" shows \"y = x\"").shape,
             structural_key("assumes x = y shows y = x").shape
+        );
+        // adjacent quoted propositions are all formulas
+        assert_eq!(
+            structural_key("assumes \"x = y\" \"y = z\" shows \"x = z\"").shape,
+            structural_key("assumes x = y y = z shows x = z").shape
         );
         let bare = structural_key("x + y = y + x").key;
         for s in ["\"x + y = y + x\"", "lemma add_comm: \"x + y = y + x\""] {

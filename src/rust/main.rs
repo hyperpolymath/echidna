@@ -1861,7 +1861,14 @@ fn corpus_command(op: CorpusOp, formatter: &OutputFormatter) -> Result<()> {
                 ))?;
             }
             if groups.is_empty() {
-                formatter.info(&format!("no declarations matching '{}'", pattern))?;
+                // When every match was skipped, the name is present but carries
+                // no identity; saying "no declarations" would mislead.
+                let what = if skipped_incomplete > 0 {
+                    "no completely read declarations"
+                } else {
+                    "no declarations"
+                };
+                formatter.info(&format!("{what} matching '{}'", pattern))?;
                 return Ok(());
             }
 
