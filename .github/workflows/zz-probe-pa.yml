@@ -1,0 +1,14 @@
+# SPDX-License-Identifier: MPL-2.0
+# ONE-OFF, scratch branch only, deleted after use. Probe for
+# hyperpolymath/standards#1350, separated from the standards repository move:
+# panic-attack@b689a74 scan-and-report pins dtolnay/rust-toolchain@02cb101,
+# which no current tag names. No secrets, so the cross-repo dispatch skips.
+name: one-off moved-tag probe (panic-attack)
+on:
+  push:
+    branches: [claude/compassionate-fermat-9x7vpe]
+permissions:
+  contents: read
+jobs:
+  scan:
+    uses: hyperpolymath/panic-attack/.github/workflows/scan-and-report.yml@b689a74d2762a1c19839ae3fbd59b7fe5ef920ea # main 2026-10-01

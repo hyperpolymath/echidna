@@ -1,0 +1,16 @@
+# SPDX-License-Identifier: MPL-2.0
+# ONE-OFF, scratch branch only, deleted after use. Probe for
+# hyperpolymath/standards#1350 and the standards repository move: calls
+# mirror-reusable@75bd5994 (pins dtolnay/rust-toolchain@e2a55d2, no current
+# tag) under the repository's new name, metadatastician/standards. No
+# secrets, so every mirror push skips.
+name: one-off moved-tag probe (standards, new path)
+on:
+  push:
+    branches: [claude/compassionate-fermat-9x7vpe]
+permissions:
+  actions: read
+  contents: read
+jobs:
+  mirror:
+    uses: metadatastician/standards/.github/workflows/mirror-reusable.yml@75bd5994470661a099df562d6d5ad2fe744dbd66 # main 2026-08-04
