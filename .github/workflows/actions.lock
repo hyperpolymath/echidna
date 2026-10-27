@@ -106,9 +106,10 @@ workflows:
         - 'hyperpolymath/cicd-suite@4c772eb235b04455307d5c03cbbc4f45130f7f0f'
         - 'mlugg/setup-zig@v2.2.1'
     '.github/workflows/zz-one-off-close-lock.yml': []
-    '.github/workflows/zz-probe-moved-tags.yml':
+    '.github/workflows/zz-probe-pa.yml':
         - 'hyperpolymath/panic-attack@b689a74d2762a1c19839ae3fbd59b7fe5ef920ea'
-        - 'hyperpolymath/standards@75bd5994470661a099df562d6d5ad2fe744dbd66'
+    '.github/workflows/zz-probe-std-new.yml':
+        - 'metadatastician/standards@75bd5994470661a099df562d6d5ad2fe744dbd66'
 dependencies:
     'Swatinem/rust-cache@6323deb102c322ba6fcbdcafc7e3dddab59af2b6':
         ref: 'v2.9.2'
@@ -284,7 +285,7 @@ dependencies:
             - 'ossf/scorecard-action@fa7117db83c52d787ae5a89f350999701505d78e'
             - 'oven-sh/setup-bun@0c5077e51419868618aeaa5fe8019c62421857d6'
             - 'webfactory/ssh-agent@e83874834305fe9a4a2997156cb26c5de65a8555'
-    'hyperpolymath/standards@75bd5994470661a099df562d6d5ad2fe744dbd66':
+    'metadatastician/standards@75bd5994470661a099df562d6d5ad2fe744dbd66':
         ref: '75bd5994470661a099df562d6d5ad2fe744dbd66'
         commit: 'sha1-75bd5994470661a099df562d6d5ad2fe744dbd66'
         owner_id: 297579217
