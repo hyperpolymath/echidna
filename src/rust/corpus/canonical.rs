@@ -929,40 +929,72 @@ fn extract_binders(toks: &[Tk]) -> (Vec<Tk>, Binders) {
 
 /// Unwrap Isabelle-style `(x :: nat)` ascriptions with recognised sorts,
 /// retaining the term identifier. Other groups are preserved.
+///
+/// A group qualifies when, between its brackets, there are exactly two
+/// identifiers and one symbol, the symbol is `::` and the second identifier
+/// is a known sort; numbers and nested brackets do not count. The group is
+/// replaced by the first identifier, so `(f 0 :: nat)` and `((x) :: nat)`
+/// reduce as `dk-shape-v1` always has. Bracket matches and token counts are
+/// computed once, so the pass is linear even on deeply nested input.
 fn drop_ascriptions(toks: &[Tk]) -> Vec<Tk> {
+    let n = toks.len();
+    // close[i]: the index `matching(toks, i)` returns for an opener at `i`.
+    let mut close: Vec<usize> = vec![n.saturating_sub(1); n];
+    let mut stack: Vec<usize> = Vec::new();
+    for (j, t) in toks.iter().enumerate() {
+        if is_open(t) {
+            stack.push(j);
+        } else if is_close(t) {
+            if let Some(i) = stack.pop() {
+                close[i] = j;
+            }
+        }
+    }
+    // Prefix counts and next-occurrence tables for identifiers and symbols.
+    let mut ids_before = vec![0usize; n + 1];
+    let mut syms_before = vec![0usize; n + 1];
+    for (k, t) in toks.iter().enumerate() {
+        ids_before[k + 1] = ids_before[k] + usize::from(matches!(t, Tk::Id(_)));
+        syms_before[k + 1] = syms_before[k] + usize::from(matches!(t, Tk::Sym(_)));
+    }
+    let mut next_id = vec![n; n + 1];
+    let mut next_sym = vec![n; n + 1];
+    for k in (0..n).rev() {
+        next_id[k] = if matches!(toks[k], Tk::Id(_)) {
+            k
+        } else {
+            next_id[k + 1]
+        };
+        next_sym[k] = if matches!(toks[k], Tk::Sym(_)) {
+            k
+        } else {
+            next_sym[k + 1]
+        };
+    }
+    let id_at = |k: usize| match &toks[k] {
+        Tk::Id(s) => s,
+        _ => unreachable!("next_id points at an identifier"),
+    };
+
     let mut out: Vec<Tk> = Vec::new();
     let mut i = 0usize;
-    while i < toks.len() {
+    while i < n {
         if is_open(&toks[i]) {
-            // Only `( x :: sort )` qualifies, so a group without `::` in second
-            // place is left alone without scanning for its close (that scan
-            // made this quadratic on deeply nested input).
-            let could_ascribe = matches!(toks.get(i + 2), Some(Tk::Sym(s)) if s == "::");
-            if !could_ascribe {
-                out.push(toks[i].clone());
-                i += 1;
-                continue;
-            }
-            let j = matching(toks, i);
-            let inner: Vec<Tk> = between(toks, i, j).to_vec();
-            let ids: Vec<&String> = inner
-                .iter()
-                .filter_map(|t| match t {
-                    Tk::Id(s) => Some(s),
-                    _ => None,
-                })
-                .collect();
-            let syms: Vec<&String> = inner
-                .iter()
-                .filter_map(|t| match t {
-                    Tk::Sym(s) => Some(s),
-                    _ => None,
-                })
-                .collect();
-            if ids.len() == 2 && syms.len() == 1 && syms[0] == "::" && sort_of(ids[1]).is_some() {
-                out.push(Tk::Id(ids[0].clone()));
-                i = j + 1;
-                continue;
+            let j = close[i];
+            // the tokens strictly between, as `between(toks, i, j)` gives them
+            let (lo, hi) = (i + 1, j.max(i + 1));
+            let ids = ids_before[hi] - ids_before[lo];
+            let syms = syms_before[hi] - syms_before[lo];
+            if ids == 2 && syms == 1 {
+                let first = next_id[lo];
+                let second = next_id[first + 1];
+                let is_ascription = matches!(&toks[next_sym[lo]], Tk::Sym(s) if s == "::")
+                    && sort_of(id_at(second)).is_some();
+                if is_ascription {
+                    out.push(Tk::Id(id_at(first).clone()));
+                    i = j + 1;
+                    continue;
+                }
             }
         }
         out.push(toks[i].clone());
@@ -994,17 +1026,22 @@ struct Parser {
     /// truncated inside a group (`(x = y`) parses to the end and would
     /// otherwise look complete.
     unclosed: usize,
-    /// Current bracket nesting, bounded by [`MAX_NESTING`].
+    /// Current tree depth (brackets and operator nesting), bounded by
+    /// [`MAX_NESTING`].
     depth: usize,
-    /// A group deeper than [`MAX_NESTING`] was skipped as a hole.
+    /// The tree reached [`MAX_NESTING`]: a group was skipped as a hole, or
+    /// the rest of an operator chain was skipped.
     too_deep: bool,
 }
 
-/// Deepest bracket nesting the parser descends into. Each level costs three
-/// stack frames (`expr` → `app` → `atom`), and `structural_key` runs on the
-/// caller's stack (`corpus ingest`, octad export), so a statement nested
-/// deeper than this is cut off rather than allowed to overflow it. The
-/// shipped corpora reach a depth in the fifties.
+/// Deepest tree the parser builds. Each bracket group and each infix
+/// operator nests the tree one level (a bracket costs three stack frames,
+/// `expr` → `app` → `atom`; a right-associative operator costs one `expr`
+/// frame; a left-associative chain deepens the tree that `render`,
+/// `has_hole` and drop then walk). `structural_key` runs on the caller's
+/// stack (`corpus ingest`, octad export), so a statement deeper than this
+/// is cut off and marked incomplete rather than allowed to overflow it.
+/// The shipped corpora reach a bracket depth in the fifties.
 const MAX_NESTING: usize = 256;
 
 impl Parser {
@@ -1182,11 +1219,24 @@ impl Parser {
 
     fn expr(&mut self, min_prec: u8) -> Node {
         let mut left = self.app();
+        // Operators applied so far at this level: a left-associative chain
+        // deepens `left` by one node each time.
+        let mut chain = 0usize;
         while let Some(op) = self.op_at() {
             let Some(prec) = precedence(op) else {
                 break;
             };
             if prec < min_prec {
+                break;
+            }
+            // Every operator nests the tree one level deeper, whether the
+            // chain grows left (`a + a + …`) or recurses right (`a -> a -> …`).
+            // Past MAX_NESTING the rest is skipped and the key marked
+            // incomplete, so neither this parser nor the recursive passes over
+            // the tree (`render`, `has_hole`, drop) can overflow the stack.
+            if self.depth + chain >= MAX_NESTING {
+                self.too_deep = true;
+                self.i = self.toks.len();
                 break;
             }
             self.i += 1;
@@ -1195,7 +1245,10 @@ impl Parser {
             } else {
                 prec + 1
             };
+            chain += 1;
+            self.depth += chain;
             let right = self.expr(rhs_min);
+            self.depth -= chain;
             left = Node::Op(op, vec![left, right]);
         }
         left
@@ -1610,6 +1663,77 @@ mod tests {
         assert!(structural_key("(equal (len (rev x)) (len x)))").complete);
     }
 
+    /// `drop_ascriptions` as `dk-shape-v1` shipped it (c03386b), with the
+    /// slice guarded. The linear version must agree with it exactly.
+    fn drop_ascriptions_reference(toks: &[Tk]) -> Vec<Tk> {
+        let mut out: Vec<Tk> = Vec::new();
+        let mut i = 0usize;
+        while i < toks.len() {
+            if is_open(&toks[i]) {
+                let j = matching(toks, i);
+                let inner = between(toks, i, j);
+                let ids: Vec<&String> = inner
+                    .iter()
+                    .filter_map(|t| match t {
+                        Tk::Id(s) => Some(s),
+                        _ => None,
+                    })
+                    .collect();
+                let syms: Vec<&String> = inner
+                    .iter()
+                    .filter_map(|t| match t {
+                        Tk::Sym(s) => Some(s),
+                        _ => None,
+                    })
+                    .collect();
+                if ids.len() == 2 && syms.len() == 1 && syms[0] == "::" && sort_of(ids[1]).is_some()
+                {
+                    out.push(Tk::Id(ids[0].clone()));
+                    i = j + 1;
+                    continue;
+                }
+            }
+            out.push(toks[i].clone());
+            i += 1;
+        }
+        out
+    }
+
+    #[test]
+    fn drop_ascriptions_matches_dk_shape_v1() {
+        for s in [
+            "(x :: nat) + 0 = x",
+            "(f 0 :: nat) = f 0",
+            "((x) :: nat) = x",
+            "[x :: int] = y",
+            "(x :: foo) = x",
+            "(x :: nat",
+            "(",
+            "(x y :: nat) = z",
+            "((a :: nat) :: nat)",
+            "(x :: nat] + (y :: int)",
+        ] {
+            let toks = lex(s);
+            assert_eq!(
+                drop_ascriptions(&toks),
+                drop_ascriptions_reference(&toks),
+                "{s}"
+            );
+        }
+    }
+
+    proptest::proptest! {
+        #[test]
+        fn drop_ascriptions_agrees_with_reference_on_random_tokens(
+            picks in proptest::collection::vec(0usize..9, 0..60)
+        ) {
+            const ALPHABET: [&str; 9] = ["(", ")", "[", "]", "x", "nat", "::", "0", "+"];
+            let s: String = picks.iter().map(|&p| ALPHABET[p]).collect::<Vec<_>>().join(" ");
+            let toks = lex(&s);
+            proptest::prop_assert_eq!(drop_ascriptions(&toks), drop_ascriptions_reference(&toks));
+        }
+    }
+
     /// A string literal is one opaque atom; a formula wrapper is unwrapped.
     #[test]
     fn string_literals_are_atoms_and_formula_quotes_are_unwrapped() {
@@ -1740,6 +1864,21 @@ mod tests {
         let s = structural_key(&shallow);
         assert!(s.complete, "{}", s.shape);
         assert_eq!(s.key, structural_key("x = y").key);
+    }
+
+    /// Flat operator chains nest the tree too: a right-associative chain
+    /// recurses once per operator and a left-associative one builds a tree
+    /// that deep. Both overflowed a test thread's stack before the bound.
+    #[test]
+    fn operator_chains_are_bounded() {
+        for chain in ["a -> ", "a + ", "a /\\ ", "a = "] {
+            let long = format!("{}a", chain.repeat(200_000));
+            let k = structural_key(&long);
+            assert!(!k.complete, "{chain}");
+            assert_eq!(k.key.len(), 64);
+        }
+        let short = format!("{}a", "a + ".repeat(100));
+        assert!(structural_key(&short).complete);
     }
 
     /// The guard is a no-op on balanced input: keys stay as they were.

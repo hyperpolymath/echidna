@@ -22,6 +22,9 @@ https://semver.org/spec/v2.0.0.html[Semantic Versioning].
   Whitespace runs collapse to one space, or to a newline when they hold
   one, so a line comment cannot swallow the rest of a statement. A re-run
   removes only the file names the scan writes.
+  The per-name cap (`+--max-pairs-per-name+`) bounds folded-name pairs
+  across a whole folded group, not per raw-name pair. Corpus keys may not
+  start or end with `+_+`, so pair file names stay unambiguous.
 
 ==== Fixed — canonicaliser, 2026-10-27
 
@@ -45,10 +48,11 @@ https://semver.org/spec/v2.0.0.html[Semantic Versioning].
   meets a group of another kind; when the statement meets
   notation `+dk-shape-v1+` has no rule for (HOL binders, `+~+`, `+==>+`,
   Isabelle `+\<…>+` escapes), drops a statement's own leading tokens as a
-  "header", misreads a leading group as a telescope, or cuts off nesting
-  deeper than 256 levels (the parser is now bounded, so a deeply nested
-  statement cannot overflow a caller's stack). `+corpus identity+` skips
-  incomplete declarations and says how many. No key changes.
+  "header", misreads a leading group as a telescope, or cuts off a tree
+  deeper than 256 levels, counting bracket groups and infix operators
+  (the parser is now bounded, so neither deep nesting nor a long flat
+  chain such as `+a -> a -> …+` can overflow a caller's stack).
+  `+corpus identity+` skips incomplete declarations and says how many. No key changes.
   Measured on `+training_data/+`, 0.4 %–94 % of a corpus is read
   completely; the rule-level causes are recorded for a `+dk-shape-v2+`
   decision in `+docs/decisions/2026-10-19-lexicon-v2-and-identity-arbitration.adoc+`.

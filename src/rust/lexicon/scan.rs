@@ -149,8 +149,10 @@ pub fn parse_pair(arg: &str) -> Result<(String, String)> {
 ///
 /// # Errors
 ///
-/// The key is empty, contains characters outside `[a-z0-9_]`, or contains
-/// `__`, which is reserved as the separator in pair file names.
+/// The key is empty, contains characters outside `[a-z0-9_]`, contains
+/// `__`, or starts or ends with `_`. `__` separates the two keys in a pair
+/// file name, and a key at either edge of it must not supply a third `_`
+/// (`a_:b` and `a:_b` would both write `pairs/a___b.jsonl`).
 pub fn validate_corpus_key(key: &str) -> Result<()> {
     if key.is_empty()
         || !key
@@ -159,9 +161,13 @@ pub fn validate_corpus_key(key: &str) -> Result<()> {
     {
         bail!("corpus key `{key}` must be non-empty [a-z0-9_]");
     }
-    // `pairs/<a>__<b>.jsonl` is unambiguous only if no key contains `__`.
+    // `pairs/<a>__<b>.jsonl` is unambiguous only if no key contains `__`
+    // and no key starts or ends with `_`.
     if key.contains("__") {
         bail!("corpus key `{key}` must not contain `__`");
+    }
+    if key.starts_with('_') || key.ends_with('_') {
+        bail!("corpus key `{key}` must not start or end with `_`");
     }
     Ok(())
 }
@@ -993,18 +999,39 @@ pub fn scan_pair(
             summary.generic_names_skipped += 1;
             continue;
         }
+        // The cap bounds each join per name: exact pairs per raw name, and
+        // folded pairs across the whole folded group, so many distinct raw
+        // names that fold together (`list.map`, `option.map`, …) cannot
+        // each slip under it.
+        let rows = |c: &Corpus, n: &String| c.by_name[n].len();
+        let exact_product: usize = names_a
+            .iter()
+            .filter(|n| names_b.contains(*n))
+            .map(|n| rows(a, n) * rows(b, n))
+            .sum();
+        let all_product = names_a.iter().map(|n| rows(a, n)).sum::<usize>()
+            * names_b.iter().map(|n| rows(b, n)).sum::<usize>();
+        let folded_product = all_product - exact_product;
+        let folded_capped = folded_product > opts.max_pairs_per_name;
+        if folded_capped {
+            summary.name_pairs_capped += 1;
+            summary.statement_pairs_capped += folded_product;
+        }
         for na in names_a {
             for nb in names_b {
                 let (ga, gb) = (&a.by_name[na], &b.by_name[nb]);
-                let product = ga.len() * gb.len();
-                if product > opts.max_pairs_per_name {
-                    summary.name_pairs_capped += 1;
-                    summary.statement_pairs_capped += product;
-                    continue;
-                }
                 let join = if na == nb {
+                    let product = ga.len() * gb.len();
+                    if product > opts.max_pairs_per_name {
+                        summary.name_pairs_capped += 1;
+                        summary.statement_pairs_capped += product;
+                        continue;
+                    }
                     Join::NameExact
                 } else {
+                    if folded_capped {
+                        continue;
+                    }
                     Join::NameFolded
                 };
                 for &ia in ga {
@@ -1291,6 +1318,53 @@ mod tests {
     }
 
     #[test]
+    fn the_name_cap_bounds_a_whole_folded_group() {
+        // Five raw names per side fold to `add_comm`; each raw pair is one
+        // statement pair, but together they make 25 folded pairs.
+        let side = |prefix: &str| {
+            Corpus::from_rows(
+                prefix,
+                (0..5)
+                    .map(|i| {
+                        (
+                            format!("{prefix}{i}.add_comm"),
+                            format!("x + y = y + x + {i}"),
+                        )
+                    })
+                    .chain(std::iter::once((
+                        "nat.add_comm".to_string(),
+                        "x + y = y + x".to_string(),
+                    ))),
+            )
+        };
+        let (a, b) = (side("a"), side("b"));
+        let opts = ScanOptions {
+            max_pairs_per_name: 4,
+            ..ScanOptions::default()
+        };
+        let mut emitted = 0usize;
+        let s = scan_pair(&a, &b, &opts, &mut |_| {
+            emitted += 1;
+            Ok(())
+        })
+        .unwrap();
+        assert_eq!(
+            s.candidates.name_folded.total(),
+            0,
+            "folded group is capped"
+        );
+        assert_eq!(
+            s.candidates.name_exact.total(),
+            1,
+            "the exact name still joins"
+        );
+        assert_eq!(s.name_pairs_capped, 1);
+        // 6 × 6 rows in the folded group, minus the one exact pair
+        assert_eq!(s.statement_pairs_capped, 35);
+        assert!(emitted >= 1);
+    }
+
+    #[test]
     fn pair_arguments_are_validated() {
         assert_eq!(
             parse_pair("hol4:hol_light").unwrap(),
@@ -1301,6 +1375,9 @@ mod tests {
         assert!(parse_pair("../etc:hol4").is_err());
         // `a__b:c` and `a:b__c` would both write pairs/a__b__c.jsonl
         assert!(parse_pair("a__b:c").is_err());
+        // `a_:b` and `a:_b` would both write pairs/a___b.jsonl
+        assert!(parse_pair("a_:b").is_err());
+        assert!(parse_pair("a:_b").is_err());
     }
 
     #[test]

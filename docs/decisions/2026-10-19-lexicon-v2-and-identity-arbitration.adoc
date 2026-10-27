@@ -406,11 +406,13 @@ identity keys (E6 `cross_prover_identity_key`) inherit all four causes.
 
 === What the measurement found in the corpora
 
-Over all 33 pairs: 204,002 same-name statement pairs, of which 1,070 are
-exact cognates, 2,631 shape cognates, 69 skeleton (specialisation)
-candidates, 7,516 differ, and 192,716 (94 %) are `unparsed`. Synonym
-candidates under different names: 315 by identical text, 433 by shape,
-819 by skeleton. Debug build: 177 s for all thirteen corpora, almost all
+Over all 33 pairs: 167,040 same-name statement pairs, of which 1,070 are
+exact cognates, 2,631 shape cognates, 64 skeleton (specialisation)
+candidates, 5,777 differ, and 157,498 (94 %) are `unparsed`. A further
+90,191 statement pairs under 308 over-large names are counted, not
+emitted: the per-name cap (64) bounds exact pairs per raw name and folded
+pairs per folded name. Synonym candidates under different names: 315 by
+identical text, 433 by shape, 819 by skeleton. Debug build: 167 s for all thirteen corpora, almost all
 of it loading and canonicalising; one pair scans in about a second.
 
 * *HOL4 ↔ HOL Light* (pilot pair): 1,033 exact cognates and 144 text

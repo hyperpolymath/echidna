@@ -388,7 +388,8 @@ enum LexiconOp {
         /// Also emit pairs whose shared name is generic (`lemma3`, `aux`, `ex1`).
         #[arg(long)]
         keep_generic: bool,
-        /// Skip a shared name whose statement cross product exceeds this.
+        /// Skip a shared name whose statement cross product exceeds this:
+        /// exact pairs per raw name, folded pairs per whole folded group.
         #[arg(long, default_value_t = 64)]
         max_pairs_per_name: usize,
         /// Skip a shape or skeleton group larger than this on either side.
