@@ -21,7 +21,10 @@ jobs:
     steps:
       - name: Regenerate actions.lock and check closure
         run: |
-          set -uo pipefail
+          # errexit: a failed clone, install or checkout must fail the step,
+          # not fall through to a green echo. Only regen_lock and --check
+          # may return nonzero, and each is captured on its own line.
+          set -euo pipefail
           git clone --quiet https://github.com/${{ github.repository }}.git e
           git -C e checkout --quiet ${{ github.sha }}
           git -C e log --oneline -1
@@ -39,7 +42,9 @@ jobs:
           echo "== close-lock moved-tag decisions"
           grep -E '^  (~|SKIP|\+) ' regen.log || echo "(none)"
           echo "== close-lock --check"
-          bash std/scripts/close-lock.sh --check e/.github/workflows; echo "CHECK_RC=$?"
+          check_rc=0
+          bash std/scripts/close-lock.sh --check e/.github/workflows || check_rc=$?
+          echo "CHECK_RC=$check_rc"
           echo "== dtolnay records"
           grep -A4 "^    'dtolnay/rust-toolchain@\(e2a55d2\|02cb101\)" e/.github/workflows/actions.lock || echo "(no dtolnay records)"
           git -C e status --porcelain
