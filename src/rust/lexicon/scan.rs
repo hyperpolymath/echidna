@@ -127,7 +127,12 @@ pub fn preset_pairs(preset: &str) -> Option<Vec<(String, String)>> {
 }
 
 /// Parse a `A:B` pair argument. Both sides must be corpus keys as they
-/// appear in `proof_states_<key>.jsonl`.
+/// appear in `proof_states_<key>.jsonl`; their existence is not checked.
+///
+/// # Errors
+///
+/// The separator is missing, either key fails [`validate_corpus_key`], or
+/// both keys are identical. Whitespace is not trimmed.
 pub fn parse_pair(arg: &str) -> Result<(String, String)> {
     let (a, b) = arg
         .split_once(':')
@@ -140,7 +145,12 @@ pub fn parse_pair(arg: &str) -> Result<(String, String)> {
     Ok((a.to_string(), b.to_string()))
 }
 
-/// Corpus keys become file names, so only `[a-z0-9_]` is accepted.
+/// Validate a corpus key for use in scan file names.
+///
+/// # Errors
+///
+/// The key is empty, contains characters outside `[a-z0-9_]`, or contains
+/// `__`, which is reserved as the separator in pair file names.
 pub fn validate_corpus_key(key: &str) -> Result<()> {
     if key.is_empty()
         || !key
@@ -159,7 +169,8 @@ pub fn validate_corpus_key(key: &str) -> Result<()> {
 /// Fold a theorem name for cross-prover matching: keep the last component
 /// of a dotted or `::`-qualified name, lower-case it, read `-` as `_`, and
 /// trim surrounding underscores. `nat.add_comm`, `ADD_COMM` and `add-comm`
-/// all fold to `add_comm`.
+/// all fold to `add_comm`. A single `:` also separates components. If the
+/// name ends in a separator, the whole name is used before folding.
 pub fn fold_name(name: &str) -> String {
     let tail = name.rsplit(['.', ':']).next().unwrap_or(name);
     let tail = if tail.is_empty() { name } else { tail };
@@ -244,6 +255,7 @@ pub struct Corpus {
     by_skeleton: BTreeMap<String, Vec<usize>>,
 }
 
+/// Trim whitespace and replace each internal run with one space.
 fn collapse_whitespace(s: &str) -> String {
     s.split_whitespace().collect::<Vec<_>>().join(" ")
 }
@@ -251,7 +263,9 @@ fn collapse_whitespace(s: &str) -> String {
 impl Corpus {
     /// Build a corpus from `(name, statement)` rows. Names are trimmed,
     /// statement whitespace is collapsed, and rows with an empty side or a
-    /// duplicate of an earlier row are dropped.
+    /// duplicate of an earlier row are dropped. Entries are sorted by name
+    /// then statement; only complete keys enter the shape and skeleton
+    /// indices. The corpus key is stored without validation.
     pub fn from_rows<I>(key: &str, rows: I) -> Self
     where
         I: IntoIterator<Item = (String, String)>,
@@ -326,13 +340,15 @@ impl Corpus {
     }
 
     /// Load `training_dir/proof_states_<key>.jsonl`, reading each line's
-    /// `theorem` and `goal` strings.
+    /// `theorem` and `goal` strings. Blank lines are ignored. Malformed JSON
+    /// increments `lines_malformed`; valid JSON without non-empty string
+    /// fields increments `lines_without_statement`.
     ///
     /// # Errors
     ///
-    /// The key is not `[a-z0-9_]`, or the file is missing, unreadable, not
-    /// UTF-8, or holds no usable row. Lines that are not JSON objects, or
-    /// lack a string `theorem` or `goal`, are counted rather than fatal.
+    /// The key fails [`validate_corpus_key`], or the file is missing,
+    /// unreadable, not UTF-8, or holds no usable row. Invalid rows are
+    /// counted and skipped rather than causing an error individually.
     pub fn load(training_dir: &Path, key: &str) -> Result<Self> {
         validate_corpus_key(key)?;
         let path = training_dir.join(format!("proof_states_{key}.jsonl"));
@@ -371,6 +387,11 @@ impl Corpus {
         Ok(corpus)
     }
 
+    /// Look up the canonical key for an index into `entries`.
+    ///
+    /// # Panics
+    ///
+    /// Panics if `i` is outside `entries`.
     fn key_of(&self, i: usize) -> &StructuralKey {
         &self.keys[self.entries[i].key]
     }
@@ -381,7 +402,9 @@ impl Corpus {
     }
 
     /// How much of the corpus the canonicaliser keyed at each tier, and how
-    /// often distinct statements share one structural key.
+    /// often distinct statements share one structural key. Tier counts
+    /// count `(name, statement)` rows; collisions count distinct statement
+    /// texts among complete structural keys only.
     pub fn coverage(&self) -> Coverage {
         let mut tiers = TierCounts::default();
         for e in &self.entries {
@@ -419,6 +442,7 @@ impl Corpus {
         }
     }
 
+    /// Count distinct statement texts at these entry indices, regardless of name.
     fn distinct_statements(&self, group: &[usize]) -> usize {
         group
             .iter()
@@ -427,10 +451,12 @@ impl Corpus {
             .len()
     }
 
-    /// Sample structural keys that distinct statements share: half the
-    /// sample from the largest groups (trivial shapes), half from groups of
-    /// exactly two (where a false merge is easiest to read). Each group lists
-    /// at most six members.
+    /// Sample at most `limit` complete structural keys shared by distinct
+    /// statements. Take up to `limit / 2` from the largest groups (trivial
+    /// shapes), then fill remaining places from groups of exactly two
+    /// (where a false merge is easiest to read), without repeating a key.
+    /// Each group lists at most six distinct statements. The result may be
+    /// shorter than `limit` if too few eligible groups remain.
     pub fn collisions(&self, limit: usize) -> Vec<CollisionRecord> {
         let mut multi: Vec<(&String, &Vec<usize>, usize)> = self
             .by_shape
@@ -608,6 +634,7 @@ pub struct CandidateCounts {
 }
 
 impl CandidateCounts {
+    /// Count one emitted candidate in its classification.
     fn add(&mut self, c: Candidate) {
         match c {
             Candidate::CognateExact => self.cognate_exact += 1,
@@ -618,6 +645,7 @@ impl CandidateCounts {
         }
     }
 
+    /// Count candidates across all classifications, including `unparsed`.
     pub fn total(&self) -> usize {
         self.cognate_exact
             + self.cognate_shape
@@ -638,6 +666,7 @@ pub struct JoinCounts {
 }
 
 impl JoinCounts {
+    /// Count one candidate under the join that emitted it and its classification.
     fn add(&mut self, join: Join, c: Candidate) {
         match join {
             Join::NameExact => self.name_exact.add(c),
@@ -689,6 +718,8 @@ pub struct ScanOptions {
 }
 
 impl Default for ScanOptions {
+    /// Skip generic name joins; cap name cross products at 64 pairs and
+    /// text, shape and skeleton groups at eight entries per corpus.
     fn default() -> Self {
         ScanOptions {
             keep_generic: false,
@@ -698,6 +729,7 @@ impl Default for ScanOptions {
     }
 }
 
+/// Distinct shape atoms for similarity, excluding `PI` and numbered variables.
 fn atoms(shape: &str) -> BTreeSet<&str> {
     shape
         .split(|c: char| c.is_whitespace() || matches!(c, '(' | ')' | '[' | ']'))
@@ -744,6 +776,8 @@ pub fn informative(skeleton: &str) -> bool {
     !variable_head && constants.len() >= 3 && beyond_types
 }
 
+/// Jaccard similarity of the shapes' non-variable atoms in thousandths,
+/// rounded down. Return zero when both atom sets are empty.
 fn similarity_permille(a: &str, b: &str) -> u32 {
     let (sa, sb) = (atoms(a), atoms(b));
     let union = sa.union(&sb).count();
@@ -753,6 +787,9 @@ fn similarity_permille(a: &str, b: &str) -> u32 {
     (sa.intersection(&sb).count() * 1000 / union) as u32
 }
 
+/// Prefer identical text, then matching structural and skeleton keys.
+/// Differing texts with either key incomplete are `Unparsed` regardless
+/// of key equality; complete statements with no match are `Differs`.
 fn classify(a: &Entry, ka: &StructuralKey, b: &Entry, kb: &StructuralKey) -> Candidate {
     if a.statement == b.statement {
         return Candidate::CognateExact;
@@ -783,7 +820,13 @@ struct IdPair<'s> {
     b: IdSide<'s>,
 }
 
-/// The order-independent content id of a statement pair.
+/// The order-independent UUIDv8 content id of a statement pair. Each tuple
+/// contains the corpus key, theorem name and statement text, used verbatim
+/// without name folding or whitespace normalisation.
+///
+/// # Errors
+///
+/// Propagates errors from JCS serialisation in [`crate::ids::content_id`].
 pub fn pair_id(
     (ca, na, sa): (&str, &str, &str),
     (cb, nb, sb): (&str, &str, &str),
@@ -806,6 +849,7 @@ pub fn pair_id(
     Ok(crate::ids::content_id(&pair)?.to_string())
 }
 
+/// Copy an indexed corpus entry and its canonicalisation status into a candidate side.
 fn side(c: &Corpus, i: usize) -> Side {
     let e = &c.entries[i];
     let k = c.key_of(i);
@@ -819,6 +863,12 @@ fn side(c: &Corpus, i: usize) -> Side {
     }
 }
 
+/// Build a candidate for the indexed entries with the supplied join and
+/// classification, atom similarity and `None` evidence.
+///
+/// # Errors
+///
+/// Propagates content-id serialisation errors from [`pair_id`].
 fn record(
     a: &Corpus,
     ia: usize,
@@ -848,11 +898,19 @@ fn record(
 
 /// Scan one corpus pair, passing every candidate to `emit` in a fixed
 /// order: name joins by folded name, then text, shape and skeleton joins,
-/// each by key. A pair is reported by the first join that finds it.
+/// each by key. Later joins exclude pairs meeting an earlier join
+/// criterion, even if that earlier group was skipped by a limit. Limits
+/// skip whole groups rather than truncating them. Shape and skeleton
+/// joins require complete keys and an [`informative`] skeleton; text joins
+/// require at least three whitespace-separated tokens.
+///
+/// Return candidate counts and skipped-group counts. Every emitted record
+/// carries `None` evidence.
 ///
 /// # Errors
 ///
-/// Whatever `emit` returns, or a failure to derive a content id.
+/// Propagates errors from `emit` or content-id serialisation, stopping at
+/// the first error. Earlier callback side effects are not rolled back.
 pub fn scan_pair(
     a: &Corpus,
     b: &Corpus,
@@ -1010,6 +1068,10 @@ pub fn scan_pair(
 }
 
 /// Serialise `value` as one JCS line (RFC 8785 plus a final LF).
+///
+/// # Errors
+///
+/// Propagates errors from JSON serialisation or JCS canonicalisation.
 pub fn jcs_line<T: Serialize>(value: &T) -> Result<Vec<u8>> {
     let mut bytes = serde_json_canonicalizer::to_vec(value)?;
     bytes.push(b'\n');
@@ -1038,6 +1100,13 @@ pub struct RunReport {
     pub total: Duration,
 }
 
+/// Create or truncate `path`, write each item as a JCS line, then flush.
+/// Parent directories must already exist; an empty slice creates an empty file.
+///
+/// # Errors
+///
+/// Propagates file creation, serialisation, write and flush errors. A
+/// failure may leave the file empty or partially written.
 fn write_lines<T: Serialize>(path: &Path, items: &[T]) -> Result<()> {
     let mut w =
         BufWriter::new(File::create(path).with_context(|| format!("create {}", path.display()))?);
@@ -1050,11 +1119,19 @@ fn write_lines<T: Serialize>(path: &Path, items: &[T]) -> Result<()> {
 
 /// Load every corpus the pairs name (each once), scan each pair, and write
 /// `pairs/<a>__<b>.jsonl`, `summary.jsonl`, `coverage.jsonl` and
-/// `collisions/<corpus>.jsonl` under `opts.out`.
+/// `collisions/<corpus>.jsonl` under `opts.out`. Return coverage, pair
+/// summaries and timings; timings are omitted from the files.
+///
+/// Create output directories as needed, remove existing `.jsonl` files
+/// directly inside `pairs/` and `collisions/`, and replace the coverage
+/// and summary files. Pairs are scanned in the supplied order.
 ///
 /// # Errors
 ///
-/// A corpus fails to load, or an output file cannot be written.
+/// No pairs are supplied, a corpus fails to load, output directories
+/// cannot be created or read, an old file cannot be removed, or
+/// serialisation, file creation, writing or flushing fails. Output may
+/// already have been removed or partially written when an error occurs.
 pub fn run(opts: &RunOptions) -> Result<RunReport> {
     let started = Instant::now();
     if opts.pairs.is_empty() {

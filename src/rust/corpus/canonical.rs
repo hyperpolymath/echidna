@@ -476,7 +476,7 @@ fn has_colon(toks: &[Tk]) -> bool {
         .any(|t| matches!(t, Tk::Sym(s) if s == ":" || s == "::"))
 }
 
-/// Whether a top-level `:` occurs anywhere in `toks` (depth 0 relative to
+/// Whether a top-level `:` or `::=` occurs in `toks` (depth 0 relative to
 /// the start of the slice).
 fn colon_at_top(toks: &[Tk]) -> bool {
     let mut depth = 0usize;
@@ -556,9 +556,9 @@ fn unwrap_assert(toks: Vec<Tk>) -> Vec<Tk> {
 /// The statement body with any declaration header and proof body removed, and
 /// whether the header drop discarded tokens that were not a declared head:
 /// a bracket drop (see [`drop_declared_head`]), or a declaration keyword
-/// with no top-level `:` after it. Keywords match case-insensitively, so a
+/// with no top-level `:` or `::=` after it. Keywords match case-insensitively, so a
 /// statement that merely *starts* with one (HOL4's `FACT 1 = 1`, keyed as
-/// `1 = 1`) loses it; without a following colon nothing was declared.
+/// `1 = 1`) loses it; without either separator the drop is flagged.
 fn strip_header(toks: &[Tk]) -> (Vec<Tk>, bool) {
     let mut cur = unwrap_assert(glue_agda_operators(toks));
     // declaration keyword + declared name
@@ -817,7 +817,8 @@ fn extract_binders(toks: &[Tk]) -> (Vec<Tk>, Binders) {
     (out, bound)
 }
 
-/// Isabelle's `(x :: nat)` is a term ascription, not a binder.
+/// Unwrap Isabelle-style `(x :: nat)` ascriptions with recognised sorts,
+/// retaining the term identifier. Other groups are preserved.
 fn drop_ascriptions(toks: &[Tk]) -> Vec<Tk> {
     let mut out: Vec<Tk> = Vec::new();
     let mut i = 0usize;
@@ -897,6 +898,7 @@ struct Parser {
 const MAX_NESTING: usize = 256;
 
 impl Parser {
+    /// Start at the first token, using `varmap` to map source names to canonical variables.
     fn new(toks: Vec<Tk>, varmap: std::collections::HashMap<String, String>) -> Self {
         Parser {
             toks,
@@ -932,6 +934,10 @@ impl Parser {
         }
     }
 
+    /// Read an atom or bracketed expression, advancing the cursor. Return
+    /// `None` at end of input, before a closing bracket, or after consuming
+    /// `:`, `::`, `,` or `.`. Groups beyond the nesting limit become holes
+    /// and set `too_deep`; groups ending at EOF set `unclosed`.
     fn atom(&mut self) -> Option<Node> {
         let t = self.peek()?.clone();
         match t {
@@ -1209,7 +1215,8 @@ fn has_unread_notation(body: &[Tk]) -> bool {
 /// the whole statement: `(shape, skeleton, complete)`. Complete means the
 /// header drop discarded only a declared head, no leading group was misread
 /// as a telescope, the body holds no unread notation, and the parser
-/// consumed the body.
+/// left only ignorable terminators or closing brackets, with no group
+/// left open at end of input or skipped beyond [`MAX_NESTING`].
 fn normalise(statement: &str) -> (String, String, bool) {
     let (toks, dropped_body) = strip_header(&lex(statement));
     let toks = drop_ascriptions(&toks);
@@ -1259,6 +1266,9 @@ pub fn canonical_skeleton(statement: &str) -> String {
 /// The three tiers are tried in order: the shape as written; the shape with
 /// binders and sorts erased (covers provers that elide them); and finally
 /// whitespace-normalised text (covers statements that are not terms).
+/// A partial parse can still yield a structural key; consult
+/// [`StructuralKey::complete`] before treating it as the whole statement.
+/// Text-tier keys always have `complete = false`.
 pub fn structural_key(statement: &str) -> StructuralKey {
     let (shape, skeleton, parsed_all) = normalise(statement);
 
