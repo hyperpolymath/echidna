@@ -30,6 +30,7 @@ pub mod ids; // The single ID-minting module: UUIDv7 record ids, UUIDv8 content 
 pub mod integrity;
 pub mod ipc; // L1: Cap'n Proto IPC transport (UDS primary, TCP fallback)
 pub mod learning; // Continuous self-learning loop (MCTS + self-play + curriculum + daemon)
+pub mod lexicon; // Lexicon candidate mining across corpora (echidna lexicon scan)
 pub mod llm; // Frontier LLM advisor (via BoJ Server)
 pub mod neural;
 pub mod parsers;

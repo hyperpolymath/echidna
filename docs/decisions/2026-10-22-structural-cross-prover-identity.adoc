@@ -146,6 +146,13 @@ legacy name-tail hashes differ.
   estate's corpora; it is not a grammar for any prover. Statements it
   cannot parse fall back to a whitespace-normalised text key at tier 3
   (`+KeyTier::Text+`), which is honest but weak — worth measuring.
+  *Measured 2026-10-27* (`+echidna lexicon scan+` over thirteen
+  `+training_data/+` corpora): statements it cannot *fully* read mostly do
+  not fall back to tier 3; they get a structural-tier key for the prefix it
+  did read, which distinct statements share. `+StructuralKey::complete+`
+  now reports that, without changing any key, and four rule-level causes
+  of false identity are recorded for a `+dk-shape-v2+` decision in
+  `+2026-10-19-lexicon-v2-and-identity-arbitration.adoc+` (PR 3 results).
 * Sorts are compared by name. `+Nat+` in Lean and `+nat+` in Coq agree
   because both are aliased to `+NAT+`; type classes and universe levels are
   not modelled.

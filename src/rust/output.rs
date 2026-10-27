@@ -53,6 +53,11 @@ impl OutputFormatter {
         Self { format }
     }
 
+    /// Whether output is machine-readable JSON (`--format json`).
+    pub fn is_json(&self) -> bool {
+        matches!(self.format, OutputFormat::Json)
+    }
+
     /// Output a success message
     pub fn success(&self, message: &str) -> Result<()> {
         match self.format {

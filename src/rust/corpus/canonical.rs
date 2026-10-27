@@ -128,6 +128,22 @@ pub struct StructuralKey {
     pub skeleton_key: String,
     /// Which tier this declaration's shape is trustworthy at.
     pub tier: KeyTier,
+    /// Whether the shape accounts for the whole statement. False when the
+    /// parser stopped early (anything but a trailing `.`/`,`/`;` or an
+    /// unmatched closing bracket left over), invented a missing operand, or
+    /// gave a binary-only prefix operator one operand (`(= (+ x 1))`),
+    /// when the input ended inside an open bracket, quote or block comment
+    /// (a statement truncated mid-group), when a closer met a group of
+    /// another kind, when the body holds notation this scheme has no rule
+    /// for (`!`, `?`, `@`, `\`, `$`, `~`, `==>`), when the header
+    /// drop discarded tokens that were not a declared head, or when a leading
+    /// bracket group was misread as a binder telescope. In each case the
+    /// shape is still reported at the structural tier but stands for part of
+    /// the statement, and different statements can share it. Always `false`
+    /// at the text tier. Not part of `key`: it qualifies the key, so adding
+    /// it changed no key.
+    #[serde(default)]
+    pub complete: bool,
 }
 
 // ===========================================================================
@@ -164,6 +180,15 @@ fn op_of(name: &str) -> Option<&'static str> {
         _ => return None,
     };
     Some(op)
+}
+
+/// Operators that always take two operands. Unary minus, `not`, and the
+/// one-argument `(+ x)` / `(and x)` that ACL2 accepts are not listed.
+fn is_binary_only(op: &str) -> bool {
+    matches!(
+        op,
+        "EQ" | "NEQ" | "LT" | "LE" | "GT" | "GE" | "IN" | "ARROW" | "IFF" | "DIV" | "MOD"
+    )
 }
 
 /// Infix precedence. `ARROW`/`IFF` are right-associative, the rest are
@@ -290,6 +315,16 @@ fn is_ident_char(c: char) -> bool {
 }
 
 fn lex(src: &str) -> Vec<Tk> {
+    lex_flagged(src).0
+}
+
+/// Lex `src`; the flag is false when a quoted statement or block comment
+/// runs off the end of the input (part of the statement was swallowed).
+fn lex_flagged(src: &str) -> (Vec<Tk>, bool) {
+    let mut terminated = true;
+    // `out.len()` just after an unwrapped formula: a quote right there is
+    // the next proposition (`assumes "P x" "Q x"`), not a string literal.
+    let mut after_wrapper: Option<usize> = None;
     let chars: Vec<char> = src.chars().collect();
     let n = chars.len();
     let mut out: Vec<Tk> = Vec::new();
@@ -315,17 +350,37 @@ fn lex(src: &str) -> Vec<Tk> {
             while i + 1 < n && !(chars[i] == '*' && chars[i + 1] == ')') {
                 i += 1;
             }
+            if i + 1 >= n {
+                terminated = false;
+            }
             i = (i + 2).min(n);
             continue;
         }
-        // quoted statement (Isabelle quotes the whole formula)
+        // A quoted span is either a formula wrapper (Isabelle quotes the whole
+        // formula: `"x = y"`, `lemma foo: "…"`, `assumes "…" shows "…"`),
+        // whose contents are lexed as the statement, or a string literal
+        // (`s = "a//b"`, ACL2's `"Goal"` hints), which is one opaque atom so
+        // its contents are never read as comments, operators or variables.
         if c == '"' {
             let mut j = i + 1;
             while j < n && chars[j] != '"' {
-                j += 1;
+                // a backslash escapes the next character (`\"` in a literal,
+                // `\<forall>` in an Isabelle formula)
+                j += if chars[j] == '\\' { 2 } else { 1 };
             }
             let inner: String = chars[i + 1..j.min(n)].iter().collect();
-            out.extend(lex(&inner));
+            if j >= n {
+                terminated = false;
+            }
+            let wrapper_position = opens_formula(out.last()) || after_wrapper == Some(out.len());
+            if wrapper_position && closes_formula(&chars[(j + 1).min(n)..]) {
+                let (inner_toks, inner_ok) = lex_flagged(&inner);
+                terminated &= inner_ok;
+                out.extend(inner_toks);
+                after_wrapper = Some(out.len());
+            } else {
+                out.push(Tk::Name(format!("\"{inner}\"")));
+            }
             i = j + 1;
             continue;
         }
@@ -379,7 +434,84 @@ fn lex(src: &str) -> Vec<Tk> {
         out.push(Tk::Sym(c.to_string()));
         i += 1;
     }
-    out
+    (out, terminated)
+}
+
+/// Isabelle words that open or continue a quoted statement.
+const FORMULA_KEYWORDS: [&str; 9] = [
+    "lemma",
+    "theorem",
+    "corollary",
+    "proposition",
+    "schematic_goal",
+    "assumes",
+    "shows",
+    "obtains",
+    "and",
+];
+
+/// Whether a quote after `prev` can wrap a formula rather than a string
+/// literal: at the start of the statement, after a `:` (`lemma foo: "…"`),
+/// or after an Isabelle statement keyword. [`closes_formula`] must also
+/// hold for the text after the closing quote.
+fn opens_formula(prev: Option<&Tk>) -> bool {
+    match prev {
+        None => true,
+        Some(Tk::Sym(s)) => s == ":",
+        Some(Tk::Id(s)) => FORMULA_KEYWORDS.contains(&s.as_str()),
+        _ => false,
+    }
+}
+
+/// Whether the text after a closing quote ends the quoted statement: the
+/// end of input or a terminator, another quoted proposition
+/// (`assumes "A" "B"`), or an Isabelle keyword (`shows`, `and`, `for`, …).
+/// Anything else (`"a" == "z"`) means the quote was a string literal.
+fn closes_formula(rest: &[char]) -> bool {
+    const FOLLOWERS: [&str; 6] = ["for", "if", "where", "using", "unfolding", "by"];
+    let rest: Vec<char> = rest
+        .iter()
+        .copied()
+        .skip_while(|c| c.is_whitespace())
+        .collect();
+    match rest.first() {
+        None | Some('"') => true,
+        Some('.' | ';') => rest[1..].iter().all(|c| c.is_whitespace()),
+        Some(c) if is_ident_start(*c) => {
+            let word: String = rest.iter().take_while(|c| is_ident_char(**c)).collect();
+            FORMULA_KEYWORDS.contains(&word.as_str()) || FOLLOWERS.contains(&word.as_str())
+        },
+        _ => false,
+    }
+}
+
+/// True when every closer that meets an open group is of that group's kind
+/// and nothing is left open. A mismatched closer (`(x]`) is not a structure
+/// the parser can read faithfully. A closer with no group open is left to
+/// the parser: extraction often keeps the enclosing form's closer at the
+/// end (ACL2 `defthm … )`), which `rest_is_ignorable` accepts, while a
+/// stray closer followed by more of the statement stops the parse early.
+fn brackets_balanced(toks: &[Tk]) -> bool {
+    let mut stack: Vec<char> = Vec::new();
+    for t in toks {
+        match t {
+            Tk::Open(c) => stack.push(*c),
+            Tk::Close(c) => {
+                let want = match c {
+                    ')' => '(',
+                    ']' => '[',
+                    _ => '{',
+                };
+                match stack.pop() {
+                    None => {},
+                    Some(open) if open == want => {},
+                    Some(_) => return false,
+                }
+            },
+            _ => {},
+        }
+    }
+    stack.is_empty()
 }
 
 // ===========================================================================
@@ -416,6 +548,14 @@ fn matching(toks: &[Tk], at: usize) -> usize {
         }
     }
     toks.len().saturating_sub(1)
+}
+
+/// The tokens strictly between an opening bracket at `open` and the index
+/// [`matching`] returned for it. Empty when nothing lies between, which
+/// includes an unbalanced opening bracket that is the last token: there
+/// [`matching`] returns `open` itself, and slicing `open + 1..open` panics.
+fn between(toks: &[Tk], open: usize, close: usize) -> &[Tk] {
+    toks.get(open + 1..close).unwrap_or(&[])
 }
 
 /// Agda writes operators as names: `_<_`, `_+_`, `_≡_`. Read the wrapped
@@ -455,15 +595,37 @@ fn has_colon(toks: &[Tk]) -> bool {
         .any(|t| matches!(t, Tk::Sym(s) if s == ":" || s == "::"))
 }
 
+/// Whether a top-level `:` or `::=` occurs in `toks` (depth 0 relative to
+/// the start of the slice).
+fn colon_at_top(toks: &[Tk]) -> bool {
+    let mut depth = 0usize;
+    for t in toks {
+        if is_open(t) {
+            depth += 1;
+        } else if is_close(t) {
+            depth = depth.saturating_sub(1);
+        } else if depth == 0 && matches!(t, Tk::Sym(s) if s == ":" || s == "::=") {
+            return true;
+        }
+    }
+    false
+}
+
 /// `+-comm : body` and `addComm : body` and `: Π …` all have the declared
 /// name before a top-level colon; drop it. A group that starts the
 /// statement (`(x y : Nat) : body`) means there is no head to drop.
-fn drop_declared_head(toks: Vec<Tk>) -> Vec<Tk> {
+///
+/// The second value reports a drop that was *not* a declared head: the
+/// first top-level bracket comes after other tokens and no top-level colon
+/// follows it, so the dropped tokens were the statement's own (`f (g x) = y`
+/// loses `f`). The key is unchanged; [`StructuralKey::complete`] reports it.
+fn drop_declared_head(toks: Vec<Tk>) -> (Vec<Tk>, bool) {
     let mut depth = 0usize;
     for (i, t) in toks.iter().enumerate() {
         if is_open(t) {
             if depth == 0 {
-                return toks[i..].to_vec();
+                let unexplained = i > 0 && !colon_at_top(&toks[i..]);
+                return (toks[i..].to_vec(), unexplained);
             }
             depth += 1;
         } else if is_close(t) {
@@ -471,31 +633,38 @@ fn drop_declared_head(toks: Vec<Tk>) -> Vec<Tk> {
         } else if depth == 0 {
             if let Tk::Sym(s) = t {
                 if s == ":" || s == "::=" {
-                    return toks[i + 1..].to_vec();
+                    return (toks[i + 1..].to_vec(), false);
                 }
             }
             if let Tk::Id(s) = t {
                 if is_pi_kw(s) || is_lam_kw(s) {
-                    return toks[i..].to_vec();
+                    return (toks[i..].to_vec(), false);
                 }
             }
         }
     }
-    toks
+    (toks, false)
 }
 
 /// `(assert (forall …))` → `(forall …)`.
-fn unwrap_assert(toks: Vec<Tk>) -> Vec<Tk> {
+///
+/// The second value reports a wrapper that was unwrapped although its
+/// closing bracket is missing (`(assert x y`): [`matching`]'s fallback
+/// index is the last token, which also passes the "closes at the end"
+/// test, so the wrapper is unwrapped as before (no key changes) and the
+/// key is reported incomplete through [`StructuralKey::complete`].
+fn unwrap_assert(toks: Vec<Tk>) -> (Vec<Tk>, bool) {
     let mut cur = toks;
+    let mut unbalanced = false;
     loop {
         if !cur.first().map(is_open).unwrap_or(false) {
-            return cur;
+            return (cur, unbalanced);
         }
         let j = matching(&cur, 0);
         if j + 1 != cur.len() {
-            return cur;
+            return (cur, unbalanced);
         }
-        let inner = cur[1..j].to_vec();
+        let inner = between(&cur, 0, j).to_vec();
         let head_is_assert = match inner.first() {
             Some(Tk::Id(s)) => matches!(
                 s.to_lowercase().as_str(),
@@ -504,20 +673,49 @@ fn unwrap_assert(toks: Vec<Tk>) -> Vec<Tk> {
             _ => false,
         };
         if !head_is_assert {
-            return cur;
+            return (cur, unbalanced);
+        }
+        if matching_exact(&cur, 0).is_none() {
+            unbalanced = true;
         }
         cur = inner[1..].to_vec();
     }
 }
 
-fn strip_header(toks: &[Tk]) -> Vec<Tk> {
-    let mut cur = unwrap_assert(glue_agda_operators(toks));
+/// Index of the bracket matching `toks[at]`, or `None` when the group is
+/// never closed. [`matching`] returns the last index in that case, which
+/// callers that need to tell the two apart cannot use.
+fn matching_exact(toks: &[Tk], at: usize) -> Option<usize> {
+    let mut depth = 0usize;
+    for (j, t) in toks.iter().enumerate().skip(at) {
+        if is_open(t) {
+            depth += 1;
+        } else if is_close(t) {
+            depth = depth.saturating_sub(1);
+            if depth == 0 {
+                return Some(j);
+            }
+        }
+    }
+    None
+}
+
+/// The statement body with any declaration header and proof body removed, and
+/// whether the header drop discarded tokens that were not a declared head:
+/// a bracket drop (see [`drop_declared_head`]), or a declaration keyword
+/// with no top-level `:` or `::=` after it. Keywords match case-insensitively, so a
+/// statement that merely *starts* with one (HOL4's `FACT 1 = 1`, keyed as
+/// `1 = 1`) loses it; without either separator the drop is flagged.
+fn strip_header(toks: &[Tk]) -> (Vec<Tk>, bool) {
+    let (mut cur, unbalanced_wrapper) = unwrap_assert(glue_agda_operators(toks));
     // declaration keyword + declared name
+    let mut dropped_kw = false;
     loop {
         let drops_kw = matches!(cur.first(), Some(Tk::Id(s)) if is_decl_kw(s));
         if !drops_kw {
             break;
         }
+        dropped_kw = true;
         cur.remove(0);
         if matches!(cur.first(), Some(Tk::Id(_))) {
             cur.remove(0);
@@ -543,7 +741,12 @@ fn strip_header(toks: &[Tk]) -> Vec<Tk> {
         Some(i) => cur[..i].to_vec(),
         None => cur,
     };
-    drop_declared_head(cur)
+    let keyword_unexplained = dropped_kw && !colon_at_top(&cur);
+    let (body, head_unexplained) = drop_declared_head(cur);
+    (
+        body,
+        head_unexplained || keyword_unexplained || unbalanced_wrapper,
+    )
 }
 
 /// `x y : Nat` → (["x","y"], NAT); SMT-LIB `x Nat` likewise.
@@ -584,6 +787,11 @@ fn sort_name(toks: &[Tk]) -> String {
 struct Binders {
     names: Vec<String>,
     sorts: Vec<String>,
+    /// A leading bracket group was read as a telescope although one of its
+    /// "names" is a binder keyword: `(forall x : nat, P x) -> Q` binds
+    /// `forall` and `x` and keeps only `Q`. Reported through
+    /// [`StructuralKey::complete`]; the key is unchanged.
+    misread: bool,
 }
 
 impl Binders {
@@ -609,7 +817,7 @@ fn extract_binders(toks: &[Tk]) -> (Vec<Tk>, Binders) {
     // 1. leading binder group without a keyword
     while cur.first().map(is_open).unwrap_or(false) {
         let j = matching(&cur, 0);
-        let (names, sort) = split_binder_group(&cur[1..j]);
+        let (names, sort) = split_binder_group(between(&cur, 0, j));
         if names.is_empty() {
             break;
         }
@@ -620,8 +828,11 @@ fn extract_binders(toks: &[Tk]) -> (Vec<Tk>, Binders) {
         if !after_ok {
             break;
         }
-        if !has_colon(&cur[1..j]) {
+        if !has_colon(between(&cur, 0, j)) {
             break;
+        }
+        if names.iter().any(|n| is_pi_kw(n) || is_lam_kw(n)) {
+            bound.misread = true;
         }
         for n in &names {
             bound.push(std::slice::from_ref(n), &sort);
@@ -633,20 +844,20 @@ fn extract_binders(toks: &[Tk]) -> (Vec<Tk>, Binders) {
     if cur.first().map(is_open).unwrap_or(false) {
         let j = matching(&cur, 0);
         if j + 1 == cur.len() {
-            let inner: Vec<Tk> = cur[1..j].to_vec();
+            let inner: Vec<Tk> = between(&cur, 0, j).to_vec();
             let head_ok = matches!(inner.first(), Some(Tk::Id(s)) if is_pi_kw(s) || is_lam_kw(s));
             if head_ok {
                 let rest: Vec<Tk> = inner[1..].to_vec();
                 if rest.first().map(is_open).unwrap_or(false) {
                     let m = matching(&rest, 0);
-                    let group: Vec<Tk> = rest[1..m].to_vec();
+                    let group: Vec<Tk> = between(&rest, 0, m).to_vec();
                     let mut names: Vec<String> = Vec::new();
                     let mut sorts: Vec<String> = Vec::new();
                     if group.first().map(is_open).unwrap_or(false) {
                         let mut k = 0usize;
                         while k < group.len() && is_open(&group[k]) {
                             let e = matching(&group, k);
-                            let (n, s) = split_binder_group(&group[k + 1..e]);
+                            let (n, s) = split_binder_group(between(&group, k, e));
                             for name in n {
                                 names.push(name);
                                 sorts.push(s.clone());
@@ -701,7 +912,7 @@ fn extract_binders(toks: &[Tk]) -> (Vec<Tk>, Binders) {
             }
             if is_open(&cur[i]) {
                 let m = matching(&cur, i);
-                let (n, s) = split_binder_group(&cur[i + 1..m]);
+                let (n, s) = split_binder_group(between(&cur, i, m));
                 if n.is_empty() {
                     break;
                 }
@@ -756,32 +967,74 @@ fn extract_binders(toks: &[Tk]) -> (Vec<Tk>, Binders) {
     (out, bound)
 }
 
-/// Isabelle's `(x :: nat)` is a term ascription, not a binder.
+/// Unwrap Isabelle-style `(x :: nat)` ascriptions with recognised sorts,
+/// retaining the term identifier. Other groups are preserved.
+///
+/// A group qualifies when, between its brackets, there are exactly two
+/// identifiers and one symbol, the symbol is `::` and the second identifier
+/// is a known sort; numbers and nested brackets do not count. The group is
+/// replaced by the first identifier, so `(f 0 :: nat)` and `((x) :: nat)`
+/// reduce as `dk-shape-v1` always has. Bracket matches and token counts are
+/// computed once, so the pass is linear even on deeply nested input.
 fn drop_ascriptions(toks: &[Tk]) -> Vec<Tk> {
+    let n = toks.len();
+    // close[i]: the index `matching(toks, i)` returns for an opener at `i`.
+    let mut close: Vec<usize> = vec![n.saturating_sub(1); n];
+    let mut stack: Vec<usize> = Vec::new();
+    for (j, t) in toks.iter().enumerate() {
+        if is_open(t) {
+            stack.push(j);
+        } else if is_close(t) {
+            if let Some(i) = stack.pop() {
+                close[i] = j;
+            }
+        }
+    }
+    // Prefix counts and next-occurrence tables for identifiers and symbols.
+    let mut ids_before = vec![0usize; n + 1];
+    let mut syms_before = vec![0usize; n + 1];
+    for (k, t) in toks.iter().enumerate() {
+        ids_before[k + 1] = ids_before[k] + usize::from(matches!(t, Tk::Id(_)));
+        syms_before[k + 1] = syms_before[k] + usize::from(matches!(t, Tk::Sym(_)));
+    }
+    let mut next_id = vec![n; n + 1];
+    let mut next_sym = vec![n; n + 1];
+    for k in (0..n).rev() {
+        next_id[k] = if matches!(toks[k], Tk::Id(_)) {
+            k
+        } else {
+            next_id[k + 1]
+        };
+        next_sym[k] = if matches!(toks[k], Tk::Sym(_)) {
+            k
+        } else {
+            next_sym[k + 1]
+        };
+    }
+    let id_at = |k: usize| match &toks[k] {
+        Tk::Id(s) => s,
+        _ => unreachable!("next_id points at an identifier"),
+    };
+
     let mut out: Vec<Tk> = Vec::new();
     let mut i = 0usize;
-    while i < toks.len() {
+    while i < n {
         if is_open(&toks[i]) {
-            let j = matching(toks, i);
-            let inner: Vec<Tk> = toks[i + 1..j].to_vec();
-            let ids: Vec<&String> = inner
-                .iter()
-                .filter_map(|t| match t {
-                    Tk::Id(s) => Some(s),
-                    _ => None,
-                })
-                .collect();
-            let syms: Vec<&String> = inner
-                .iter()
-                .filter_map(|t| match t {
-                    Tk::Sym(s) => Some(s),
-                    _ => None,
-                })
-                .collect();
-            if ids.len() == 2 && syms.len() == 1 && syms[0] == "::" && sort_of(ids[1]).is_some() {
-                out.push(Tk::Id(ids[0].clone()));
-                i = j + 1;
-                continue;
+            let j = close[i];
+            // the tokens strictly between, as `between(toks, i, j)` gives them
+            let (lo, hi) = (i + 1, j.max(i + 1));
+            let ids = ids_before[hi] - ids_before[lo];
+            let syms = syms_before[hi] - syms_before[lo];
+            if ids == 2 && syms == 1 {
+                let first = next_id[lo];
+                let second = next_id[first + 1];
+                let is_ascription = matches!(&toks[next_sym[lo]], Tk::Sym(s) if s == "::")
+                    && sort_of(id_at(second)).is_some();
+                if is_ascription {
+                    out.push(Tk::Id(id_at(first).clone()));
+                    i = j + 1;
+                    continue;
+                }
             }
         }
         out.push(toks[i].clone());
@@ -809,15 +1062,58 @@ struct Parser {
     toks: Vec<Tk>,
     i: usize,
     varmap: std::collections::HashMap<String, String>,
+    /// Opening brackets the input ended before closing: a statement
+    /// truncated inside a group (`(x = y`) parses to the end and would
+    /// otherwise look complete.
+    unclosed: usize,
+    /// Current tree depth (brackets and operator nesting), bounded by
+    /// [`MAX_NESTING`].
+    depth: usize,
+    /// The tree reached [`MAX_NESTING`]: a group was skipped as a hole, or
+    /// the rest of an operator chain was skipped.
+    too_deep: bool,
+    /// A prefix operator that needs two operands was given one.
+    under_arity: bool,
 }
 
+/// Deepest tree the parser builds. Each bracket group and each infix
+/// operator nests the tree one level (a bracket costs three stack frames,
+/// `expr` → `app` → `atom`; a right-associative operator costs one `expr`
+/// frame; a left-associative chain deepens the tree that `render`,
+/// `has_hole` and drop then walk). `structural_key` runs on the caller's
+/// stack (`corpus ingest`, octad export), so a statement deeper than this
+/// is cut off and marked incomplete rather than allowed to overflow it.
+/// The shipped corpora reach a bracket depth in the fifties.
+const MAX_NESTING: usize = 256;
+
 impl Parser {
+    /// Start at the first token, using `varmap` to map source names to canonical variables.
     fn new(toks: Vec<Tk>, varmap: std::collections::HashMap<String, String>) -> Self {
-        Parser { toks, i: 0, varmap }
+        Parser {
+            toks,
+            i: 0,
+            varmap,
+            unclosed: 0,
+            depth: 0,
+            too_deep: false,
+            under_arity: false,
+        }
     }
 
     fn peek(&self) -> Option<&Tk> {
         self.toks.get(self.i)
+    }
+
+    /// Whether everything after the cursor is ignorable: a statement
+    /// terminator (`.`, `,`, `;`) or an unmatched closing bracket.
+    fn rest_is_ignorable(&self) -> bool {
+        self.toks[self.i.min(self.toks.len())..]
+            .iter()
+            .all(|t| match t {
+                Tk::Close(_) => true,
+                Tk::Sym(s) => matches!(s.as_str(), "." | "," | ";"),
+                _ => false,
+            })
     }
 
     /// Canonical operator starting at the cursor, if any.
@@ -828,14 +1124,28 @@ impl Parser {
         }
     }
 
+    /// Read an atom or bracketed expression, advancing the cursor. Return
+    /// `None` at end of input, before a closing bracket, or after consuming
+    /// `:`, `::`, `,` or `.`. Groups beyond the nesting limit become holes
+    /// and set `too_deep`; groups ending at EOF set `unclosed`.
     fn atom(&mut self) -> Option<Node> {
         let t = self.peek()?.clone();
         match t {
             Tk::Open(_) => {
+                if self.depth >= MAX_NESTING {
+                    // Skip the whole group; the key is marked incomplete.
+                    self.too_deep = true;
+                    self.i = matching(&self.toks, self.i) + 1;
+                    return Some(Node::Hole);
+                }
+                self.depth += 1;
                 self.i += 1;
                 let inner = self.expr(0);
+                self.depth -= 1;
                 if matches!(self.peek(), Some(Tk::Close(_))) {
                     self.i += 1;
+                } else if self.peek().is_none() {
+                    self.unclosed += 1;
                 }
                 Some(inner)
             },
@@ -924,6 +1234,11 @@ impl Parser {
             if args.is_empty() {
                 return Node::Name(op_name.to_string());
             }
+            // A relation or other binary-only operator with one operand
+            // (`(= (+ x 1))`) is a truncated statement, not a shape.
+            if args.len() < 2 && is_binary_only(op_name) {
+                self.under_arity = true;
+            }
             return Node::Op(op_name, args);
         }
         let mut args: Vec<Node> = vec![head.clone()];
@@ -952,11 +1267,24 @@ impl Parser {
 
     fn expr(&mut self, min_prec: u8) -> Node {
         let mut left = self.app();
+        // Operators applied so far at this level: a left-associative chain
+        // deepens `left` by one node each time.
+        let mut chain = 0usize;
         while let Some(op) = self.op_at() {
             let Some(prec) = precedence(op) else {
                 break;
             };
             if prec < min_prec {
+                break;
+            }
+            // Every operator nests the tree one level deeper, whether the
+            // chain grows left (`a + a + …`) or recurses right (`a -> a -> …`).
+            // Past MAX_NESTING the rest is skipped and the key marked
+            // incomplete, so neither this parser nor the recursive passes over
+            // the tree (`render`, `has_hole`, drop) can overflow the stack.
+            if self.depth + chain >= MAX_NESTING {
+                self.too_deep = true;
+                self.i = self.toks.len();
                 break;
             }
             self.i += 1;
@@ -965,10 +1293,24 @@ impl Parser {
             } else {
                 prec + 1
             };
+            chain += 1;
+            self.depth += chain;
             let right = self.expr(rhs_min);
+            self.depth -= chain;
             left = Node::Op(op, vec![left, right]);
         }
         left
+    }
+}
+
+/// Whether the parser had to invent a node: a missing operand after a
+/// trailing operator (`x + 1 =`), or a group it refused to descend into.
+/// Either way the shape does not describe the statement.
+fn has_hole(node: &Node) -> bool {
+    match node {
+        Node::Hole => true,
+        Node::Op(_, kids) | Node::App(kids) => kids.iter().any(has_hole),
+        _ => false,
     }
 }
 
@@ -1069,13 +1411,60 @@ fn number_variables(body: &[Tk], bound: &Binders) -> std::collections::HashMap<S
     varmap
 }
 
-/// Both canonical forms from one pass: `(shape, skeleton)`.
-fn normalise(statement: &str) -> (String, String) {
-    let toks = strip_header(&lex(statement));
+/// Tokens that introduce notation this scheme has no rule for: HOL's `!`,
+/// `?`, `@` and `\` binders and `~` negation, Isabelle's `\<…>` symbol
+/// escapes (which lex as `\`, `<`, name, `>`), and Lean 3's `$` application.
+/// The parser reads them as plain names and consumes them, so a shape can
+/// look complete and still be wrong; their presence marks the key
+/// incomplete. Over-cautious by design: Lean's `s \ t` set difference is
+/// flagged too.
+fn is_unread_notation(t: &Tk) -> bool {
+    matches!(t, Tk::Sym(s) if matches!(s.as_str(), "\\" | "!" | "?" | "@" | "$" | "~"))
+}
+
+/// Whether the body holds unread notation: a token [`is_unread_notation`]
+/// names, or HOL's `==>` implication, which the lexer splits into `==` and
+/// `>` (the shape it then renders is an equality applied to a comparison).
+/// The lexer is left alone so that no key changes; only the flag sees it.
+fn has_unread_notation(body: &[Tk]) -> bool {
+    body.iter().any(is_unread_notation)
+        || body
+            .windows(2)
+            .any(|w| matches!((&w[0], &w[1]), (Tk::Sym(a), Tk::Sym(b)) if a == "==" && b == ">"))
+}
+
+/// Both canonical forms from one pass, and whether the shape accounts for
+/// the whole statement: `(shape, skeleton, complete)`. Complete means every
+/// quote and block comment closes, no closer meets a group of another kind,
+/// the header drop discarded only a declared head, no leading group was misread
+/// as a telescope, the body holds no unread notation, and the parser
+/// left only ignorable terminators or closing brackets, with no group
+/// left open at end of input or skipped beyond [`MAX_NESTING`], invented
+/// no missing operand, and gave no binary-only prefix operator one operand.
+fn normalise(statement: &str) -> (String, String, bool) {
+    let (raw, terminated) = lex_flagged(statement);
+    // Read over the whole statement, header included: a mismatched or
+    // stray bracket, or a quote or block comment that never closes, means
+    // the tokens are not the statement as written.
+    let well_formed = terminated && brackets_balanced(&raw);
+    let (toks, dropped_body) = strip_header(&raw);
+    // Checked before ascriptions and binders are removed: a binder's sort
+    // can hold notation too (`(x : F $ A)`), and extraction would drop it.
+    let unread = has_unread_notation(&toks);
     let toks = drop_ascriptions(&toks);
     let (body, bound) = extract_binders(&toks);
     let varmap = number_variables(&body, &bound);
-    let ast = Parser::new(body, varmap).expr(0);
+    let mut parser = Parser::new(body, varmap);
+    let ast = parser.expr(0);
+    let complete = !has_hole(&ast)
+        && well_formed
+        && parser.rest_is_ignorable()
+        && parser.unclosed == 0
+        && !parser.too_deep
+        && !parser.under_arity
+        && !unread
+        && !dropped_body
+        && !bound.misread;
 
     let core = render(&ast, false);
     let skel = render(&ast, true);
@@ -1093,7 +1482,7 @@ fn normalise(statement: &str) -> (String, String) {
     } else {
         skel
     };
-    (shape, skeleton)
+    (shape, skeleton, complete)
 }
 
 /// Canonical prefix shape of `statement`, binder prefix included.
@@ -1111,8 +1500,11 @@ pub fn canonical_skeleton(statement: &str) -> String {
 /// The three tiers are tried in order: the shape as written; the shape with
 /// binders and sorts erased (covers provers that elide them); and finally
 /// whitespace-normalised text (covers statements that are not terms).
+/// A partial parse can still yield a structural key; consult
+/// [`StructuralKey::complete`] before treating it as the whole statement.
+/// Text-tier keys always have `complete = false`.
 pub fn structural_key(statement: &str) -> StructuralKey {
-    let (shape, skeleton) = normalise(statement);
+    let (shape, skeleton, parsed_all) = normalise(statement);
 
     let (shape, skeleton, tier) = if !shape.is_empty() {
         (shape, skeleton, KeyTier::Structural)
@@ -1129,6 +1521,7 @@ pub fn structural_key(statement: &str) -> StructuralKey {
         skeleton_key: sha256_hex(&skeleton),
         shape,
         skeleton,
+        complete: parsed_all && tier != KeyTier::Text,
         tier,
     }
 }
@@ -1137,6 +1530,12 @@ pub fn structural_key(statement: &str) -> StructuralKey {
 ///
 /// Falls back to the lower-cased source tokens when the statement does not
 /// parse, so every declaration contributes *something*.
+/// Number of lexical tokens in `statement`, punctuation counted: `f(x)=g(x)`
+/// is eight. For callers that need "how much is here" without a parse.
+pub fn token_count(statement: &str) -> usize {
+    lex(statement).len()
+}
+
 pub fn canonical_tokens(statement: &str) -> Vec<String> {
     let shape = canonical_shape(statement);
     let source = if shape.is_empty() {
@@ -1278,5 +1677,293 @@ mod tests {
         assert!(toks.contains(&"EQ".to_string()));
         assert!(toks.contains(&"v0".to_string()));
         assert!(!toks.iter().any(|t| t.contains("forall")));
+    }
+
+    /// An opening bracket with nothing after it used to make `matching`
+    /// return the bracket's own index, and every `open + 1..close` slice
+    /// then panicked. Corpus statements truncated mid-term hit this.
+    #[test]
+    fn unbalanced_trailing_bracket_does_not_panic() {
+        for s in [
+            "(",
+            "f x = (",
+            "forall (",
+            "∀ x, x = (",
+            "(assert (",
+            "(forall ((x Nat)) (",
+            "theorem t (x : nat) : x = (",
+        ] {
+            let k = structural_key(s);
+            assert_eq!(k.key.len(), 64, "{s:?}");
+            assert_eq!(k.scheme, SCHEME);
+        }
+    }
+
+    /// Every fixture spelling parses completely; the flag does not change
+    /// any key.
+    #[test]
+    fn fixture_spellings_parse_completely() {
+        for (prover, s) in ADD_COMM {
+            let k = structural_key(s);
+            assert!(k.complete, "{prover}: {s:?} -> {}", k.shape);
+        }
+        assert!(structural_key("Lemma add_comm : forall x y : nat, x + y = y + x.").complete);
+        // ACL2 extraction keeps the `defthm` form's closer at the end
+        assert!(structural_key("(equal (len (rev x)) (len x)))").complete);
+        // one-operand prefix forms that are legitimate
+        for s in ["(= (- x) (- 0 x))", "(not (= x y))", "(= (+ x) x)"] {
+            assert!(structural_key(s).complete, "{s}");
+        }
+    }
+
+    /// `drop_ascriptions` as `dk-shape-v1` shipped it (c03386b), with the
+    /// slice guarded. The linear version must agree with it exactly.
+    fn drop_ascriptions_reference(toks: &[Tk]) -> Vec<Tk> {
+        let mut out: Vec<Tk> = Vec::new();
+        let mut i = 0usize;
+        while i < toks.len() {
+            if is_open(&toks[i]) {
+                let j = matching(toks, i);
+                let inner = between(toks, i, j);
+                let ids: Vec<&String> = inner
+                    .iter()
+                    .filter_map(|t| match t {
+                        Tk::Id(s) => Some(s),
+                        _ => None,
+                    })
+                    .collect();
+                let syms: Vec<&String> = inner
+                    .iter()
+                    .filter_map(|t| match t {
+                        Tk::Sym(s) => Some(s),
+                        _ => None,
+                    })
+                    .collect();
+                if ids.len() == 2 && syms.len() == 1 && syms[0] == "::" && sort_of(ids[1]).is_some()
+                {
+                    out.push(Tk::Id(ids[0].clone()));
+                    i = j + 1;
+                    continue;
+                }
+            }
+            out.push(toks[i].clone());
+            i += 1;
+        }
+        out
+    }
+
+    #[test]
+    fn drop_ascriptions_matches_dk_shape_v1() {
+        for s in [
+            "(x :: nat) + 0 = x",
+            "(f 0 :: nat) = f 0",
+            "((x) :: nat) = x",
+            "[x :: int] = y",
+            "(x :: foo) = x",
+            "(x :: nat",
+            "(",
+            "(x y :: nat) = z",
+            "((a :: nat) :: nat)",
+            "(x :: nat] + (y :: int)",
+        ] {
+            let toks = lex(s);
+            assert_eq!(
+                drop_ascriptions(&toks),
+                drop_ascriptions_reference(&toks),
+                "{s}"
+            );
+        }
+    }
+
+    proptest::proptest! {
+        #[test]
+        fn drop_ascriptions_agrees_with_reference_on_random_tokens(
+            picks in proptest::collection::vec(0usize..9, 0..60)
+        ) {
+            const ALPHABET: [&str; 9] = ["(", ")", "[", "]", "x", "nat", "::", "0", "+"];
+            let s: String = picks.iter().map(|&p| ALPHABET[p]).collect::<Vec<_>>().join(" ");
+            let toks = lex(&s);
+            proptest::prop_assert_eq!(drop_ascriptions(&toks), drop_ascriptions_reference(&toks));
+        }
+    }
+
+    /// A string literal is one opaque atom; a formula wrapper is unwrapped.
+    #[test]
+    fn string_literals_are_atoms_and_formula_quotes_are_unwrapped() {
+        let a = structural_key("s = \"a//b\"");
+        let b = structural_key("s = \"a//c\"");
+        assert!(a.complete && b.complete);
+        assert_ne!(a.key, b.key, "the literal's tail is not a comment");
+        assert_ne!(
+            structural_key("s = \"x\"").key,
+            structural_key("s = x").key,
+            "a literal is not the variable it spells"
+        );
+        assert_ne!(
+            structural_key("s = \"a \\\" b\"").key,
+            structural_key("s = \"a \\\" c\"").key,
+            "an escaped quote does not end the literal"
+        );
+        // a literal at the start of the statement is still a literal when
+        // the statement goes on after it
+        assert_ne!(
+            structural_key("\"a\" == \"z\"").key,
+            structural_key("\"b\" == \"z\"").key
+        );
+        // Isabelle's quoted assumptions and conclusion are all unwrapped
+        assert_eq!(
+            structural_key("assumes \"x = y\" shows \"y = x\"").shape,
+            structural_key("assumes x = y shows y = x").shape
+        );
+        // adjacent quoted propositions are all formulas
+        assert_eq!(
+            structural_key("assumes \"x = y\" \"y = z\" shows \"x = z\"").shape,
+            structural_key("assumes x = y y = z shows x = z").shape
+        );
+        let bare = structural_key("x + y = y + x").key;
+        for s in ["\"x + y = y + x\"", "lemma add_comm: \"x + y = y + x\""] {
+            assert_eq!(structural_key(s).key, bare, "{s}");
+        }
+        // An anonymous `lemma "…"` loses its first token to the header drop
+        // (a dk-shape-v1 rule, D6); the drop is reported, never trusted.
+        let anon = structural_key("lemma \"x + y = y + x\"");
+        assert!(anon.key == bare || !anon.complete);
+    }
+
+    /// Statements the scheme cannot read are marked incomplete even though
+    /// they still get a structural-tier key.
+    #[test]
+    fn unread_notation_and_early_stops_are_incomplete() {
+        for s in [
+            // HOL binders, negation and implication (`==>` lexes as `==` `>`)
+            "!m n. m + n = n + m",
+            "?x. x = 0",
+            "(\\x. x) = I",
+            "~F",
+            "F ==> T",
+            // truncated inside a group: the parser reaches the end with the
+            // group still open
+            "(x = y",
+            "(implies (and (bvp m) (< (len m) (expt 2 64))",
+            // truncated after an operator: the parser invents the operand
+            "x + 1 =",
+            "forall x : nat, x = x /\\",
+            // a wrapper whose close is missing is still unwrapped (no key
+            // change) and reported
+            "(assert x y",
+            "(assert (forall ((x Nat)) (= x x",
+            // a binary-only prefix operator given one operand
+            "(= (+ x 1))",
+            "(< x)",
+            "(implies (p x) (<= x))",
+            // a closer of the wrong kind, or a stray one
+            "(x + y] = z",
+            "x + y) = z",
+            // a quote or block comment that runs off the end
+            "\"x + y = y + x",
+            "x + y = y + x (* commutes",
+            // notation inside a binder's sort is dropped by extraction
+            "forall (x : F $ A), x + 0 = x",
+            // Isabelle ASCII symbol escapes
+            "x \\<noteq> y \\<Longrightarrow> f x = f y",
+            // Lean 3 `$`
+            "f $ g x = h x",
+        ] {
+            let k = structural_key(s);
+            assert!(!k.complete, "{s:?} -> {} should be incomplete", k.shape);
+        }
+        // Text tier is never complete.
+        assert!(!structural_key("data Bool where true false").complete);
+    }
+
+    /// A statement with no declared head used to lose everything before its
+    /// first top-level bracket (`exp(&0) = &1` keyed as `(EQ (& 0) (& 1))`,
+    /// shared with `cos(&0) = &1`). The key is unchanged here; the drop is
+    /// reported as incomplete so no consumer treats the prefix as identity.
+    #[test]
+    fn header_less_bracket_drop_is_incomplete() {
+        let exp = structural_key("exp(0) = 1");
+        let cos = structural_key("cos(0) = 1");
+        assert_eq!(exp.key, cos.key, "the dk-shape-v1 behaviour this flags");
+        assert!(!exp.complete && !cos.complete);
+        assert!(!structural_key("closed (closure M)").complete);
+        // A real declared head before a group is still a head.
+        let lean = structural_key("theorem t (x y : nat) : x + y = y + x");
+        assert!(lean.complete, "{}", lean.shape);
+        let idris = structural_key("addComm : (x, y : Nat) -> x + y = y + x");
+        assert!(idris.complete, "{}", idris.shape);
+    }
+
+    /// `FACT` is HOL's factorial and also matches the `fact` keyword: the
+    /// key drops it (`FACT 1 = 1` keys as `1 = 1`), so the key is reported
+    /// incomplete. A keyword followed by a declaration is still complete.
+    #[test]
+    fn keyword_drop_without_a_declaration_is_incomplete() {
+        let fact = structural_key("FACT 1 = 1");
+        assert_eq!(
+            fact.key,
+            structural_key("1 = 1").key,
+            "the behaviour this flags"
+        );
+        assert!(!fact.complete);
+        assert!(structural_key("1 = 1").complete);
+        assert!(structural_key("Lemma add_comm : forall x y : nat, x + y = y + x.").complete);
+        assert!(structural_key("theorem t (x y : nat) : x + y = y + x").complete);
+    }
+
+    /// A parenthesised quantified antecedent at the start of a statement is
+    /// read as a binder telescope (`forall` and `x` become bound names and
+    /// only `Q` is left). The key is unchanged; it is reported incomplete.
+    #[test]
+    fn telescope_misread_of_a_quantified_antecedent_is_incomplete() {
+        let k = structural_key("(forall x : nat, P x) -> Q");
+        assert_eq!(k.shape, "(PI [NAT NAT] v0)", "the behaviour this flags");
+        assert!(!k.complete);
+        // A real telescope is still complete.
+        assert!(structural_key("(x y : nat) : x + y = y + x").complete);
+    }
+
+    /// Nesting past `MAX_NESTING` is cut off and marked incomplete instead
+    /// of recursing once per level. Fifty thousand levels would overflow a
+    /// test thread's stack without the bound; within the bound keys are as
+    /// before.
+    #[test]
+    fn nesting_is_bounded() {
+        let deep = format!("{}x{}", "(".repeat(50_000), ")".repeat(50_000));
+        let k = structural_key(&deep);
+        assert!(!k.complete);
+        assert_eq!(k.key.len(), 64);
+        let shallow = format!("{}x = y{}", "(".repeat(60), ")".repeat(60));
+        let s = structural_key(&shallow);
+        assert!(s.complete, "{}", s.shape);
+        assert_eq!(s.key, structural_key("x = y").key);
+    }
+
+    /// Flat operator chains nest the tree too: a right-associative chain
+    /// recurses once per operator and a left-associative one builds a tree
+    /// that deep. Both overflowed a test thread's stack before the bound.
+    #[test]
+    fn operator_chains_are_bounded() {
+        for chain in ["a -> ", "a + ", "a /\\ ", "a = "] {
+            let long = format!("{}a", chain.repeat(200_000));
+            let k = structural_key(&long);
+            assert!(!k.complete, "{chain}");
+            assert_eq!(k.key.len(), 64);
+        }
+        let short = format!("{}a", "a + ".repeat(100));
+        assert!(structural_key(&short).complete);
+    }
+
+    /// The guard is a no-op on balanced input: keys stay as they were.
+    #[test]
+    fn balanced_input_keys_are_unchanged_by_the_bracket_guard() {
+        assert_eq!(
+            canonical_shape("forall x y : nat, x + y = y + x"),
+            "(PI [NAT NAT] (EQ (ADD v0 v1) (ADD v1 v0)))"
+        );
+        assert_eq!(
+            canonical_shape("(assert (forall ((x Nat) (y Nat)) (= (+ x y) (+ y x))))"),
+            "(PI [NAT NAT] (EQ (ADD v0 v1) (ADD v1 v0)))"
+        );
     }
 }

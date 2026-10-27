@@ -1,0 +1,6 @@
+{"goal":"!m n. m + n = n + m","theorem":"ADD_SYM"}
+{"goal":"!x y d. 0 < d /\\ ((x - d) < y) /\\ (y < (x + d)) <=> abs(y - x) < d","theorem":"ABS_BETWEEN"}
+{"goal":"FACT 0 = 1","theorem":"FACT_0"}
+{"goal":"T","theorem":"lemma"}
+{"goal":"F ==> T","theorem":"lemma"}
+{"goal":"0 + n = n","theorem":"ADD_0"}

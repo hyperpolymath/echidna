@@ -196,6 +196,12 @@ enum Commands {
         op: CorpusOp,
     },
 
+    /// Mine lexicon candidates across training corpora (flag-only)
+    Lexicon {
+        #[command(subcommand)]
+        op: LexiconOp,
+    },
+
     /// Search proof-design space via simulated annealing
     Design {
         #[command(subcommand)]
@@ -362,6 +368,40 @@ enum CorpusOp {
 }
 
 #[derive(Subcommand)]
+enum LexiconOp {
+    /// Pair theorem names and canonical statement shapes across training
+    /// corpora and write review candidates as JCS JSON Lines. Every
+    /// candidate carries `evidence = none`; `data/synonyms/` is never edited.
+    Scan {
+        /// Directory holding `proof_states_<corpus>.jsonl` files.
+        #[arg(long, default_value = "training_data")]
+        training_dir: PathBuf,
+        /// A corpus pair, `A:B`. Repeatable; combines with `--preset`.
+        #[arg(long = "pair", value_name = "A:B")]
+        pairs: Vec<String>,
+        /// A named pair set: `learning`, `spanning`, `in-family` or `full`.
+        #[arg(long)]
+        preset: Option<String>,
+        /// Output directory (pairs/, collisions/, summary.jsonl, coverage.jsonl).
+        #[arg(long, default_value = "target/lexicon-scan")]
+        out: PathBuf,
+        /// Also emit pairs whose shared name is generic (`lemma3`, `aux`, `ex1`).
+        #[arg(long)]
+        keep_generic: bool,
+        /// Skip a shared name whose statement cross product exceeds this:
+        /// exact pairs per raw name, folded pairs per whole folded group.
+        #[arg(long, default_value_t = 64)]
+        max_pairs_per_name: usize,
+        /// Skip a shape or skeleton group larger than this on either side.
+        #[arg(long, default_value_t = 8)]
+        max_shape_group: usize,
+        /// Key-collision groups to sample per corpus.
+        #[arg(long, default_value_t = 40)]
+        collision_samples: usize,
+    },
+}
+
+#[derive(Subcommand)]
 enum DesignOp {
     /// Run SA over a named design problem.
     Search {
@@ -413,6 +453,7 @@ enum DesignOp {
     },
 }
 
+/// Run the selected CLI command after configuring tracing, colours and output.
 #[tokio::main]
 async fn main() -> Result<()> {
     // Parse CLI arguments
@@ -539,6 +580,10 @@ async fn main() -> Result<()> {
         },
         Commands::Corpus { op } => {
             corpus_command(op, &formatter)?;
+        },
+
+        Commands::Lexicon { op } => {
+            lexicon_command(op, &formatter)?;
         },
 
         Commands::Design { op } => {
@@ -1324,6 +1369,150 @@ async fn diagnostics_command() -> Result<()> {
     Ok(())
 }
 
+/// Lexicon command - mine cross-corpus candidates for curation.
+///
+/// The scan runs on a thread with a large stack: the canonicaliser's parser
+/// recurses on nesting depth, and some corpus statements (ACL2 books) nest
+/// deeply. Timings go to stderr; the JCS files under `--out` carry none, so
+/// two runs over the same data write the same bytes.
+///
+/// # Errors
+///
+/// An unknown preset, a malformed `--pair`, no pairs at all, a corpus that
+/// fails to load, an output directory that cannot be created or read, an
+/// old output file that cannot be removed, or a serialisation or output
+/// write failure. Also returns an error if the scan thread cannot be
+/// spawned or panics. Failed scans may leave partial output.
+fn lexicon_command(op: LexiconOp, formatter: &OutputFormatter) -> Result<()> {
+    use echidna::lexicon::scan::{self, RunOptions, ScanOptions};
+
+    let LexiconOp::Scan {
+        training_dir,
+        pairs,
+        preset,
+        out,
+        keep_generic,
+        max_pairs_per_name,
+        max_shape_group,
+        collision_samples,
+    } = op;
+
+    let mut all_pairs = Vec::new();
+    if let Some(name) = preset.as_deref() {
+        all_pairs.extend(scan::preset_pairs(name).with_context(|| {
+            format!("unknown preset `{name}` (learning, spanning, in-family, full)")
+        })?);
+    }
+    for p in &pairs {
+        let pair = scan::parse_pair(p)?;
+        // A pair is the same pair in either direction; the first spelling
+        // requested is the one scanned.
+        let seen = all_pairs
+            .iter()
+            .any(|(a, b)| (a, b) == (&pair.0, &pair.1) || (a, b) == (&pair.1, &pair.0));
+        if !seen {
+            all_pairs.push(pair);
+        }
+    }
+    let opts = RunOptions {
+        training_dir,
+        pairs: all_pairs,
+        out,
+        scan: ScanOptions {
+            keep_generic,
+            max_pairs_per_name,
+            max_shape_group,
+        },
+        collision_samples,
+    };
+
+    let report = std::thread::Builder::new()
+        .name("lexicon-scan".into())
+        .stack_size(512 * 1024 * 1024)
+        .spawn(move || scan::run(&opts).map(|r| (r, opts.out)))
+        .context("spawn the scan thread")?
+        .join()
+        .map_err(|_| anyhow::anyhow!("the scan thread panicked"))??;
+    let (report, out) = report;
+
+    if formatter.is_json() {
+        // One JCS object on stdout; the timings stay on stderr.
+        let summary = serde_json::json!({
+            "coverage": report.coverage,
+            "pairs": report.pairs,
+            "out": out.display().to_string(),
+            "total_ms": u64::try_from(report.total.as_millis()).unwrap_or(u64::MAX),
+        });
+        std::io::Write::write_all(&mut std::io::stdout(), &scan::jcs_line(&summary)?)?;
+        eprintln!("total: {:.2?}; output in {}", report.total, out.display());
+        return Ok(());
+    }
+
+    println!(
+        "{:<14} {:>8} {:>8} {:>6} {:>7} {:>6} {:>6} {:>6} {:>8}",
+        "corpus", "rows", "names", "hom%", "struct%", "skel%", "text%", "cmpl%", "collide"
+    );
+    for c in &report.coverage {
+        let pct = |n: usize| 100.0 * n as f64 / c.rows.max(1) as f64;
+        println!(
+            "{:<14} {:>8} {:>8} {:>6.1} {:>7.1} {:>6.1} {:>6.1} {:>6.1} {:>8}",
+            c.corpus,
+            c.rows,
+            c.names,
+            100.0 * c.homonym_names as f64 / c.names.max(1) as f64,
+            pct(c.tiers.structural),
+            pct(c.tiers.skeleton),
+            pct(c.tiers.text),
+            pct(c.tiers.complete),
+            c.collision_keys
+        );
+    }
+    println!();
+    println!(
+        "{:<26} {:>7} {:>7} {:>7} {:>7} {:>7} {:>7} {:>7} {:>8} {:>7} {:>7} {:>7}",
+        "pair",
+        "shared",
+        "generic",
+        "capped",
+        "exact",
+        "shape",
+        "skel",
+        "differs",
+        "unparsed",
+        "syn-tx",
+        "syn-sh",
+        "syn-sk"
+    );
+    for s in &report.pairs {
+        let names = [&s.candidates.name_exact, &s.candidates.name_folded];
+        let sum =
+            |f: fn(&scan::CandidateCounts) -> usize| names.iter().map(|c| f(c)).sum::<usize>();
+        println!(
+            "{:<26} {:>7} {:>7} {:>7} {:>7} {:>7} {:>7} {:>7} {:>8} {:>7} {:>7} {:>7}",
+            format!("{}:{}", s.pair[0], s.pair[1]),
+            s.folded_names_shared,
+            s.generic_names_skipped,
+            s.name_pairs_capped,
+            sum(|c| c.cognate_exact),
+            sum(|c| c.cognate_shape),
+            sum(|c| c.cognate_skeleton),
+            sum(|c| c.differs),
+            sum(|c| c.unparsed),
+            s.candidates.text.total(),
+            s.candidates.shape.total(),
+            s.candidates.skeleton.total()
+        );
+    }
+    for (corpus, t) in &report.load_times {
+        eprintln!("load {corpus}: {:.2?}", t);
+    }
+    for (pair, t) in &report.pair_times {
+        eprintln!("scan {pair}: {:.2?}", t);
+    }
+    eprintln!("total: {:.2?}; output in {}", report.total, out.display());
+    Ok(())
+}
+
 /// Corpus command - ingest, query, or summarise a project corpus.
 ///
 /// First adapter is `agda`, targeted at echo-types' Buchholz / Brouwer
@@ -1334,6 +1523,8 @@ async fn diagnostics_command() -> Result<()> {
 ///
 /// Crossquery prints exact semantic-class and canonical-name matches from
 /// per-prover tables and, unless `provers_only` is set, cross-prover dictionaries.
+/// Identity queries skip declarations whose canonical keys are incomplete
+/// and report the number skipped; only complete keys form identity groups.
 ///
 /// # Errors
 ///
@@ -1641,6 +1832,9 @@ fn corpus_command(op: CorpusOp, formatter: &OutputFormatter) -> Result<()> {
                     Vec<(String, String)>,
                 ),
             > = std::collections::BTreeMap::new();
+            // A key the canonicaliser did not derive from the whole statement
+            // is a shared prefix, not an identity (docs/CORPUS.adoc).
+            let mut skipped_incomplete = 0usize;
             for entry in &corpus.entries {
                 let matches = everything
                     || entry.qualified.to_lowercase().contains(&needle)
@@ -1649,6 +1843,10 @@ fn corpus_command(op: CorpusOp, formatter: &OutputFormatter) -> Result<()> {
                     continue;
                 }
                 let key = echidna::corpus::canonical::structural_key(&entry.statement);
+                if !key.complete {
+                    skipped_incomplete += 1;
+                    continue;
+                }
                 let slot = groups
                     .entry(key.key.clone())
                     .or_insert_with(|| (key, Vec::new()));
@@ -1656,8 +1854,21 @@ fn corpus_command(op: CorpusOp, formatter: &OutputFormatter) -> Result<()> {
                     .push((corpus.adapter.clone(), entry.qualified.clone()));
             }
 
+            if skipped_incomplete > 0 {
+                formatter.info(&format!(
+                    "{skipped_incomplete} matching declaration(s) skipped: the canonicaliser \
+                     did not read their statement completely, so they carry no identity"
+                ))?;
+            }
             if groups.is_empty() {
-                formatter.info(&format!("no declarations matching '{}'", pattern))?;
+                // When every match was skipped, the name is present but carries
+                // no identity; saying "no declarations" would mislead.
+                let what = if skipped_incomplete > 0 {
+                    "no completely read declarations"
+                } else {
+                    "no declarations"
+                };
+                formatter.info(&format!("{what} matching '{}'", pattern))?;
                 return Ok(());
             }
 

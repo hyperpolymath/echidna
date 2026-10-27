@@ -242,6 +242,22 @@ Isabelle writes the same fact without binders and Why3 states it over
 therefore *tiered*: exact structural key first, skeleton key second. Any
 consumer that only compares one field should compare both.
 
+A key is only as good as the parse behind it. `+StructuralKey::complete+`
+says whether the canonicaliser read the *whole* statement; when it did not
+(its parser stopped early, invented an operand or found a relation with one
+operand, the input ended inside an
+open bracket, quote or comment, a closer met a group of another kind, it
+met notation it has no rule for — HOL's `+!+` and `+?+` binders, Isabelle's
+`+\<…>+` escapes — or a header drop discarded the statement's own leading
+tokens), the key is still reported at the
+structural tier but is a *prefix* that other statements share. Treat an
+incomplete key as no identity at all: `+corpus identity+` skips such
+declarations and reports how many it skipped. Measured on `+training_data/+`, the
+share of statements read completely ranges from under 1% (Isabelle/ZF) to
+over 90% (λProlog); see
+`+docs/decisions/2026-10-19-lexicon-v2-and-identity-arbitration.adoc+`
+(PR 3 results) and `+echidna lexicon scan+`.
+
 The CLI surfaces it directly:
 
 [source,bash]

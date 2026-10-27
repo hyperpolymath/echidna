@@ -1,0 +1,8 @@
+{"goal":"(a b : nat) : a + b = b + a","theorem":"add_comm"}
+{"goal":"(p q : nat) : p * q = q * p","theorem":"MUL_COMM"}
+{"goal":"(n : int) : n + 0 = n","theorem":"add_zero"}
+{"goal":"(x : nat) : 0 ^ x = 0","theorem":"pow_zero"}
+{"goal":"(x y z : nat) : x * y * z = x * (y * z)","theorem":"times_assoc"}
+{"goal":": exp 0 = 1","theorem":"exp_zero"}
+{"goal":"(u v : nat) : u = v","theorem":"ext"}
+{"goal":"(u v : int) : u * u = v","theorem":"ext"}
