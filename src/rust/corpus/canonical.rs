@@ -823,6 +823,15 @@ fn drop_ascriptions(toks: &[Tk]) -> Vec<Tk> {
     let mut i = 0usize;
     while i < toks.len() {
         if is_open(&toks[i]) {
+            // Only `( x :: sort )` qualifies, so a group without `::` in second
+            // place is left alone without scanning for its close (that scan
+            // made this quadratic on deeply nested input).
+            let could_ascribe = matches!(toks.get(i + 2), Some(Tk::Sym(s)) if s == "::");
+            if !could_ascribe {
+                out.push(toks[i].clone());
+                i += 1;
+                continue;
+            }
             let j = matching(toks, i);
             let inner: Vec<Tk> = between(toks, i, j).to_vec();
             let ids: Vec<&String> = inner
