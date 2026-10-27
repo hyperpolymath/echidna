@@ -130,7 +130,8 @@ pub struct StructuralKey {
     pub tier: KeyTier,
     /// Whether the shape accounts for the whole statement. False when the
     /// parser stopped early (anything but a trailing `.`/`,`/`;` or an
-    /// unmatched closing bracket left over) or invented a missing operand,
+    /// unmatched closing bracket left over), invented a missing operand, or
+    /// gave a binary-only prefix operator one operand (`(= (+ x 1))`),
     /// when the input ended inside an open bracket, quote or block comment
     /// (a statement truncated mid-group), when a closer met a group of
     /// another kind, when the body holds notation this scheme has no rule
@@ -179,6 +180,15 @@ fn op_of(name: &str) -> Option<&'static str> {
         _ => return None,
     };
     Some(op)
+}
+
+/// Operators that always take two operands. Unary minus, `not`, and the
+/// one-argument `(+ x)` / `(and x)` that ACL2 accepts are not listed.
+fn is_binary_only(op: &str) -> bool {
+    matches!(
+        op,
+        "EQ" | "NEQ" | "LT" | "LE" | "GT" | "GE" | "IN" | "ARROW" | "IFF" | "DIV" | "MOD"
+    )
 }
 
 /// Infix precedence. `ARROW`/`IFF` are right-associative, the rest are
@@ -1032,6 +1042,8 @@ struct Parser {
     /// The tree reached [`MAX_NESTING`]: a group was skipped as a hole, or
     /// the rest of an operator chain was skipped.
     too_deep: bool,
+    /// A prefix operator that needs two operands was given one.
+    under_arity: bool,
 }
 
 /// Deepest tree the parser builds. Each bracket group and each infix
@@ -1054,6 +1066,7 @@ impl Parser {
             unclosed: 0,
             depth: 0,
             too_deep: false,
+            under_arity: false,
         }
     }
 
@@ -1190,6 +1203,11 @@ impl Parser {
             }
             if args.is_empty() {
                 return Node::Name(op_name.to_string());
+            }
+            // A relation or other binary-only operator with one operand
+            // (`(= (+ x 1))`) is a truncated statement, not a shape.
+            if args.len() < 2 && is_binary_only(op_name) {
+                self.under_arity = true;
             }
             return Node::Op(op_name, args);
         }
@@ -1391,8 +1409,8 @@ fn has_unread_notation(body: &[Tk]) -> bool {
 /// the header drop discarded only a declared head, no leading group was misread
 /// as a telescope, the body holds no unread notation, and the parser
 /// left only ignorable terminators or closing brackets, with no group
-/// left open at end of input or skipped beyond [`MAX_NESTING`], and invented
-/// no missing operand.
+/// left open at end of input or skipped beyond [`MAX_NESTING`], invented
+/// no missing operand, and gave no binary-only prefix operator one operand.
 fn normalise(statement: &str) -> (String, String, bool) {
     let (raw, terminated) = lex_flagged(statement);
     // Read over the whole statement, header included: a mismatched or
@@ -1413,6 +1431,7 @@ fn normalise(statement: &str) -> (String, String, bool) {
         && parser.rest_is_ignorable()
         && parser.unclosed == 0
         && !parser.too_deep
+        && !parser.under_arity
         && !unread
         && !dropped_body
         && !bound.misread;
@@ -1661,6 +1680,10 @@ mod tests {
         assert!(structural_key("Lemma add_comm : forall x y : nat, x + y = y + x.").complete);
         // ACL2 extraction keeps the `defthm` form's closer at the end
         assert!(structural_key("(equal (len (rev x)) (len x)))").complete);
+        // one-operand prefix forms that are legitimate
+        for s in ["(= (- x) (- 0 x))", "(not (= x y))", "(= (+ x) x)"] {
+            assert!(structural_key(s).complete, "{s}");
+        }
     }
 
     /// `drop_ascriptions` as `dk-shape-v1` shipped it (c03386b), with the
@@ -1783,6 +1806,10 @@ mod tests {
             // change) and reported
             "(assert x y",
             "(assert (forall ((x Nat)) (= x x",
+            // a binary-only prefix operator given one operand
+            "(= (+ x 1))",
+            "(< x)",
+            "(implies (p x) (<= x))",
             // a closer of the wrong kind, or a stray one
             "(x + y] = z",
             "x + y) = z",

@@ -43,7 +43,8 @@ https://semver.org/spec/v2.0.0.html[Semantic Versioning].
   collisions; coverage moves by at most 0.1 point per corpus.
 * *`+StructuralKey::complete+`* (new, `+#[serde(default)]+`) reports
   whether the shape accounts for the whole statement: false when the
-  parser stops early, invents a missing operand, or the input ends inside
+  parser stops early, invents a missing operand, gives a binary-only
+  prefix operator one operand (`+(= (+ x 1))+`), or the input ends inside
   an open bracket, a quoted statement or a block comment; when a closer
   meets a group of another kind; when the statement meets
   notation `+dk-shape-v1+` has no rule for (HOL binders, `+~+`, `+==>+`,

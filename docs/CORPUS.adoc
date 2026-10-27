@@ -244,7 +244,8 @@ consumer that only compares one field should compare both.
 
 A key is only as good as the parse behind it. `+StructuralKey::complete+`
 says whether the canonicaliser read the *whole* statement; when it did not
-(its parser stopped early or invented an operand, the input ended inside an
+(its parser stopped early, invented an operand or found a relation with one
+operand, the input ended inside an
 open bracket, quote or comment, a closer met a group of another kind, it
 met notation it has no rule for — HOL's `+!+` and `+?+` binders, Isabelle's
 `+\<…>+` escapes — or a header drop discarded the statement's own leading
