@@ -1812,6 +1812,9 @@ fn corpus_command(op: CorpusOp, formatter: &OutputFormatter) -> Result<()> {
                     Vec<(String, String)>,
                 ),
             > = std::collections::BTreeMap::new();
+            // A key the canonicaliser did not derive from the whole statement
+            // is a shared prefix, not an identity (docs/CORPUS.adoc).
+            let mut skipped_incomplete = 0usize;
             for entry in &corpus.entries {
                 let matches = everything
                     || entry.qualified.to_lowercase().contains(&needle)
@@ -1820,6 +1823,10 @@ fn corpus_command(op: CorpusOp, formatter: &OutputFormatter) -> Result<()> {
                     continue;
                 }
                 let key = echidna::corpus::canonical::structural_key(&entry.statement);
+                if !key.complete {
+                    skipped_incomplete += 1;
+                    continue;
+                }
                 let slot = groups
                     .entry(key.key.clone())
                     .or_insert_with(|| (key, Vec::new()));
@@ -1827,6 +1834,12 @@ fn corpus_command(op: CorpusOp, formatter: &OutputFormatter) -> Result<()> {
                     .push((corpus.adapter.clone(), entry.qualified.clone()));
             }
 
+            if skipped_incomplete > 0 {
+                formatter.info(&format!(
+                    "{skipped_incomplete} matching declaration(s) skipped: the canonicaliser \
+                     did not read their statement completely, so they carry no identity"
+                ))?;
+            }
             if groups.is_empty() {
                 formatter.info(&format!("no declarations matching '{}'", pattern))?;
                 return Ok(());

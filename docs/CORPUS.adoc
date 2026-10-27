@@ -248,7 +248,8 @@ says whether the canonicaliser read the *whole* statement; when it did not
 and `+?+` binders, Isabelle's `+\<…>+` escapes — or a header drop discarded
 the statement's own leading tokens), the key is still reported at the
 structural tier but is a *prefix* that other statements share. Treat an
-incomplete key as no identity at all. Measured on `+training_data/+`, the
+incomplete key as no identity at all: `+corpus identity+` skips such
+declarations and reports how many it skipped. Measured on `+training_data/+`, the
 share of statements read completely ranges from under 1% (Isabelle/ZF) to
 over 90% (λProlog); see
 `+docs/decisions/2026-10-19-lexicon-v2-and-identity-arbitration.adoc+`

@@ -874,7 +874,18 @@ struct Parser {
     /// truncated inside a group (`(x = y`) parses to the end and would
     /// otherwise look complete.
     unclosed: usize,
+    /// Current bracket nesting, bounded by [`MAX_NESTING`].
+    depth: usize,
+    /// A group deeper than [`MAX_NESTING`] was skipped as a hole.
+    too_deep: bool,
 }
+
+/// Deepest bracket nesting the parser descends into. Each level costs three
+/// stack frames (`expr` → `app` → `atom`), and `structural_key` runs on the
+/// caller's stack (`corpus ingest`, octad export), so a statement nested
+/// deeper than this is cut off rather than allowed to overflow it. The
+/// shipped corpora reach a depth in the fifties.
+const MAX_NESTING: usize = 256;
 
 impl Parser {
     fn new(toks: Vec<Tk>, varmap: std::collections::HashMap<String, String>) -> Self {
@@ -883,6 +894,8 @@ impl Parser {
             i: 0,
             varmap,
             unclosed: 0,
+            depth: 0,
+            too_deep: false,
         }
     }
 
@@ -914,8 +927,16 @@ impl Parser {
         let t = self.peek()?.clone();
         match t {
             Tk::Open(_) => {
+                if self.depth >= MAX_NESTING {
+                    // Skip the whole group; the key is marked incomplete.
+                    self.too_deep = true;
+                    self.i = matching(&self.toks, self.i) + 1;
+                    return Some(Node::Hole);
+                }
+                self.depth += 1;
                 self.i += 1;
                 let inner = self.expr(0);
+                self.depth -= 1;
                 if matches!(self.peek(), Some(Tk::Close(_))) {
                     self.i += 1;
                 } else if self.peek().is_none() {
@@ -1190,6 +1211,7 @@ fn normalise(statement: &str) -> (String, String, bool) {
     let ast = parser.expr(0);
     let complete = parser.rest_is_ignorable()
         && parser.unclosed == 0
+        && !parser.too_deep
         && !unread
         && !dropped_body
         && !bound.misread;
@@ -1501,6 +1523,22 @@ mod tests {
         assert!(!k.complete);
         // A real telescope is still complete.
         assert!(structural_key("(x y : nat) : x + y = y + x").complete);
+    }
+
+    /// Nesting past `MAX_NESTING` is cut off and marked incomplete instead
+    /// of recursing once per level. Fifty thousand levels would overflow a
+    /// test thread's stack without the bound; within the bound keys are as
+    /// before.
+    #[test]
+    fn nesting_is_bounded() {
+        let deep = format!("{}x{}", "(".repeat(50_000), ")".repeat(50_000));
+        let k = structural_key(&deep);
+        assert!(!k.complete);
+        assert_eq!(k.key.len(), 64);
+        let shallow = format!("{}x = y{}", "(".repeat(60), ")".repeat(60));
+        let s = structural_key(&shallow);
+        assert!(s.complete, "{}", s.shape);
+        assert_eq!(s.key, structural_key("x = y").key);
     }
 
     /// The guard is a no-op on balanced input: keys stay as they were.
