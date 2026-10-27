@@ -2,7 +2,7 @@
 // SPDX-FileCopyrightText: 2026 Jonathan D.A. Jewell (hyperpolymath) <j.d.a.jewell@open.ac.uk>
 = ADR: lexicon v2 (false friends, phrases, equivalences) and hub-and-probe identity arbitration (stage 6c)
 :revdate: 2026-10-19
-:status: accepted in part — D1, D2 and D4 ruled 2026-10-19 (§7); D3, D5, D6 and D7 open
+:status: accepted in part — D1, D2 and D4 ruled 2026-10-19, D8 ruled 2026-10-27 (§7); D3, D5, D6 and D7 open
 
 == Context (measured on `main` at `ed6ef60`, 2026-10-19)
 
@@ -487,7 +487,7 @@ and ABI changes, kernel translation) wait for the stronger model. Ruled
 PR 6 (superseded in practice by #449's canonicaliser, see PR 3 results),
 the scan covers one corpus per family plus one in-family pair each, its
 records carry UUIDv8 ids, the invariant/witness reading goes in this ADR,
-and phrase detection follows PR 3. D6 and D7 opened 2026-10-27.
+and phrase detection follows PR 3. D6 and D7 opened, and D8 ruled, 2026-10-27.
 
 [cols="1,5,3,3",options="header"]
 |===
@@ -499,6 +499,7 @@ and phrase detection follows PR 3. D6 and D7 opened 2026-10-27.
 | D5 | Open the verisimdb consonance-subject issue (option E) now? | Yes | open
 | D6 | Fix `dk-shape-v1`'s four rule-level false-identity causes (header drop, keyword drop, short names as variables, unread notation and binders) as `dk-shape-v2`, bumping `SCHEME` and so every corpus identity key? | Yes, as its own PR, starting with the header and keyword drops (smallest, largest effect), with the scan as the before/after measure | open
 | D7 | Fix the `training_data/` extractors for ACL2 (hints, escape codes) and ACL2s (truncation, comment lines), and strip proof bodies from Lean 3 goals? | Yes, at the extractors, then re-scan | open
+| D8 | The VeriSim bridge and the octad export write `cross_prover_identity_key` for every declaration, incomplete keys included, and consumers join on equality (CodeRabbit on #453; predates this stack, from #449). Make the keys `Option`, or add a flag? | Additive `identity_complete: bool` on `DeclGraph` and `GraphPayload`, own PR | As recommended, 2026-10-27: additive flag, serde default and an added capnp field, key fields unchanged, consumers filter on it; own PR after #453, ER schema doc updated. The `Option` shape waits for D6.
 |===
 
 == Non-claims
