@@ -128,6 +128,18 @@ pub struct StructuralKey {
     pub skeleton_key: String,
     /// Which tier this declaration's shape is trustworthy at.
     pub tier: KeyTier,
+    /// Whether the shape accounts for the whole statement. False when the
+    /// parser stopped early (anything but a trailing `.`/`,`/`;` or an
+    /// unmatched closing bracket left over), when the body holds notation
+    /// this scheme has no rule for ([`is_unread_notation`]), when the header
+    /// drop discarded tokens that were not a declared head, or when a leading
+    /// bracket group was misread as a binder telescope. In each case the
+    /// shape is still reported at the structural tier but stands for part of
+    /// the statement, and different statements can share it. Always `false`
+    /// at the text tier. Not part of `key`: it qualifies the key, so adding
+    /// it changed no key.
+    #[serde(default)]
+    pub complete: bool,
 }
 
 // ===========================================================================
@@ -463,15 +475,37 @@ fn has_colon(toks: &[Tk]) -> bool {
         .any(|t| matches!(t, Tk::Sym(s) if s == ":" || s == "::"))
 }
 
+/// Whether a top-level `:` occurs anywhere in `toks` (depth 0 relative to
+/// the start of the slice).
+fn colon_at_top(toks: &[Tk]) -> bool {
+    let mut depth = 0usize;
+    for t in toks {
+        if is_open(t) {
+            depth += 1;
+        } else if is_close(t) {
+            depth = depth.saturating_sub(1);
+        } else if depth == 0 && matches!(t, Tk::Sym(s) if s == ":" || s == "::=") {
+            return true;
+        }
+    }
+    false
+}
+
 /// `+-comm : body` and `addComm : body` and `: Π …` all have the declared
 /// name before a top-level colon; drop it. A group that starts the
 /// statement (`(x y : Nat) : body`) means there is no head to drop.
-fn drop_declared_head(toks: Vec<Tk>) -> Vec<Tk> {
+///
+/// The second value reports a drop that was *not* a declared head: the
+/// first top-level bracket comes after other tokens and no top-level colon
+/// follows it, so the dropped tokens were the statement's own (`f (g x) = y`
+/// loses `f`). The key is unchanged; [`StructuralKey::complete`] reports it.
+fn drop_declared_head(toks: Vec<Tk>) -> (Vec<Tk>, bool) {
     let mut depth = 0usize;
     for (i, t) in toks.iter().enumerate() {
         if is_open(t) {
             if depth == 0 {
-                return toks[i..].to_vec();
+                let unexplained = i > 0 && !colon_at_top(&toks[i..]);
+                return (toks[i..].to_vec(), unexplained);
             }
             depth += 1;
         } else if is_close(t) {
@@ -479,17 +513,17 @@ fn drop_declared_head(toks: Vec<Tk>) -> Vec<Tk> {
         } else if depth == 0 {
             if let Tk::Sym(s) = t {
                 if s == ":" || s == "::=" {
-                    return toks[i + 1..].to_vec();
+                    return (toks[i + 1..].to_vec(), false);
                 }
             }
             if let Tk::Id(s) = t {
                 if is_pi_kw(s) || is_lam_kw(s) {
-                    return toks[i..].to_vec();
+                    return (toks[i..].to_vec(), false);
                 }
             }
         }
     }
-    toks
+    (toks, false)
 }
 
 /// `(assert (forall …))` → `(forall …)`.
@@ -518,14 +552,22 @@ fn unwrap_assert(toks: Vec<Tk>) -> Vec<Tk> {
     }
 }
 
-fn strip_header(toks: &[Tk]) -> Vec<Tk> {
+/// The statement body with any declaration header and proof body removed, and
+/// whether the header drop discarded tokens that were not a declared head:
+/// a bracket drop (see [`drop_declared_head`]), or a declaration keyword
+/// with no top-level `:` after it. Keywords match case-insensitively, so a
+/// statement that merely *starts* with one (HOL4's `FACT 1 = 1`, keyed as
+/// `1 = 1`) loses it; without a following colon nothing was declared.
+fn strip_header(toks: &[Tk]) -> (Vec<Tk>, bool) {
     let mut cur = unwrap_assert(glue_agda_operators(toks));
     // declaration keyword + declared name
+    let mut dropped_kw = false;
     loop {
         let drops_kw = matches!(cur.first(), Some(Tk::Id(s)) if is_decl_kw(s));
         if !drops_kw {
             break;
         }
+        dropped_kw = true;
         cur.remove(0);
         if matches!(cur.first(), Some(Tk::Id(_))) {
             cur.remove(0);
@@ -551,7 +593,9 @@ fn strip_header(toks: &[Tk]) -> Vec<Tk> {
         Some(i) => cur[..i].to_vec(),
         None => cur,
     };
-    drop_declared_head(cur)
+    let keyword_unexplained = dropped_kw && !colon_at_top(&cur);
+    let (body, head_unexplained) = drop_declared_head(cur);
+    (body, head_unexplained || keyword_unexplained)
 }
 
 /// `x y : Nat` → (["x","y"], NAT); SMT-LIB `x Nat` likewise.
@@ -592,6 +636,11 @@ fn sort_name(toks: &[Tk]) -> String {
 struct Binders {
     names: Vec<String>,
     sorts: Vec<String>,
+    /// A leading bracket group was read as a telescope although one of its
+    /// "names" is a binder keyword: `(forall x : nat, P x) -> Q` binds
+    /// `forall` and `x` and keeps only `Q`. Reported through
+    /// [`StructuralKey::complete`]; the key is unchanged.
+    misread: bool,
 }
 
 impl Binders {
@@ -630,6 +679,9 @@ fn extract_binders(toks: &[Tk]) -> (Vec<Tk>, Binders) {
         }
         if !has_colon(between(&cur, 0, j)) {
             break;
+        }
+        if names.iter().any(|n| is_pi_kw(n) || is_lam_kw(n)) {
+            bound.misread = true;
         }
         for n in &names {
             bound.push(std::slice::from_ref(n), &sort);
@@ -826,6 +878,18 @@ impl Parser {
 
     fn peek(&self) -> Option<&Tk> {
         self.toks.get(self.i)
+    }
+
+    /// Whether everything after the cursor is ignorable: a statement
+    /// terminator (`.`, `,`, `;`) or an unmatched closing bracket.
+    fn rest_is_ignorable(&self) -> bool {
+        self.toks[self.i.min(self.toks.len())..]
+            .iter()
+            .all(|t| match t {
+                Tk::Close(_) => true,
+                Tk::Sym(s) => matches!(s.as_str(), "." | "," | ";"),
+                _ => false,
+            })
     }
 
     /// Canonical operator starting at the cursor, if any.
@@ -1077,13 +1141,30 @@ fn number_variables(body: &[Tk], bound: &Binders) -> std::collections::HashMap<S
     varmap
 }
 
-/// Both canonical forms from one pass: `(shape, skeleton)`.
-fn normalise(statement: &str) -> (String, String) {
-    let toks = strip_header(&lex(statement));
+/// Tokens that introduce notation this scheme has no rule for: HOL's `!`,
+/// `?`, `@` and `\` binders, Isabelle's `\<…>` symbol escapes (which lex as
+/// `\`, `<`, name, `>`), and Lean 3's `$` application. The parser reads them
+/// as plain names and consumes them, so a shape can look complete and still
+/// be wrong; their presence marks the key incomplete. Over-cautious by
+/// design: Lean's `s \ t` set difference is flagged too.
+fn is_unread_notation(t: &Tk) -> bool {
+    matches!(t, Tk::Sym(s) if matches!(s.as_str(), "\\" | "!" | "?" | "@" | "$"))
+}
+
+/// Both canonical forms from one pass, and whether the shape accounts for
+/// the whole statement: `(shape, skeleton, complete)`. Complete means the
+/// header drop discarded only a declared head, no leading group was misread
+/// as a telescope, the body holds no unread notation, and the parser
+/// consumed the body.
+fn normalise(statement: &str) -> (String, String, bool) {
+    let (toks, dropped_body) = strip_header(&lex(statement));
     let toks = drop_ascriptions(&toks);
     let (body, bound) = extract_binders(&toks);
     let varmap = number_variables(&body, &bound);
-    let ast = Parser::new(body, varmap).expr(0);
+    let unread = body.iter().any(is_unread_notation);
+    let mut parser = Parser::new(body, varmap);
+    let ast = parser.expr(0);
+    let complete = parser.rest_is_ignorable() && !unread && !dropped_body && !bound.misread;
 
     let core = render(&ast, false);
     let skel = render(&ast, true);
@@ -1101,7 +1182,7 @@ fn normalise(statement: &str) -> (String, String) {
     } else {
         skel
     };
-    (shape, skeleton)
+    (shape, skeleton, complete)
 }
 
 /// Canonical prefix shape of `statement`, binder prefix included.
@@ -1120,7 +1201,7 @@ pub fn canonical_skeleton(statement: &str) -> String {
 /// binders and sorts erased (covers provers that elide them); and finally
 /// whitespace-normalised text (covers statements that are not terms).
 pub fn structural_key(statement: &str) -> StructuralKey {
-    let (shape, skeleton) = normalise(statement);
+    let (shape, skeleton, parsed_all) = normalise(statement);
 
     let (shape, skeleton, tier) = if !shape.is_empty() {
         (shape, skeleton, KeyTier::Structural)
@@ -1137,6 +1218,7 @@ pub fn structural_key(statement: &str) -> StructuralKey {
         skeleton_key: sha256_hex(&skeleton),
         shape,
         skeleton,
+        complete: parsed_all && tier != KeyTier::Text,
         tier,
     }
 }
@@ -1306,6 +1388,85 @@ mod tests {
             assert_eq!(k.key.len(), 64, "{s:?}");
             assert_eq!(k.scheme, SCHEME);
         }
+    }
+
+    /// Every fixture spelling parses completely; the flag does not change
+    /// any key.
+    #[test]
+    fn fixture_spellings_parse_completely() {
+        for (prover, s) in ADD_COMM {
+            let k = structural_key(s);
+            assert!(k.complete, "{prover}: {s:?} -> {}", k.shape);
+        }
+        assert!(structural_key("Lemma add_comm : forall x y : nat, x + y = y + x.").complete);
+    }
+
+    /// Statements the scheme cannot read are marked incomplete even though
+    /// they still get a structural-tier key.
+    #[test]
+    fn unread_notation_and_early_stops_are_incomplete() {
+        for s in [
+            // HOL binders
+            "!m n. m + n = n + m",
+            "?x. x = 0",
+            "(\\x. x) = I",
+            // Isabelle ASCII symbol escapes
+            "x \\<noteq> y \\<Longrightarrow> f x = f y",
+            // Lean 3 `$`
+            "f $ g x = h x",
+        ] {
+            let k = structural_key(s);
+            assert!(!k.complete, "{s:?} -> {} should be incomplete", k.shape);
+        }
+        // Text tier is never complete.
+        assert!(!structural_key("data Bool where true false").complete);
+    }
+
+    /// A statement with no declared head used to lose everything before its
+    /// first top-level bracket (`exp(&0) = &1` keyed as `(EQ (& 0) (& 1))`,
+    /// shared with `cos(&0) = &1`). The key is unchanged here; the drop is
+    /// reported as incomplete so no consumer treats the prefix as identity.
+    #[test]
+    fn header_less_bracket_drop_is_incomplete() {
+        let exp = structural_key("exp(0) = 1");
+        let cos = structural_key("cos(0) = 1");
+        assert_eq!(exp.key, cos.key, "the dk-shape-v1 behaviour this flags");
+        assert!(!exp.complete && !cos.complete);
+        assert!(!structural_key("closed (closure M)").complete);
+        // A real declared head before a group is still a head.
+        let lean = structural_key("theorem t (x y : nat) : x + y = y + x");
+        assert!(lean.complete, "{}", lean.shape);
+        let idris = structural_key("addComm : (x, y : Nat) -> x + y = y + x");
+        assert!(idris.complete, "{}", idris.shape);
+    }
+
+    /// `FACT` is HOL's factorial and also matches the `fact` keyword: the
+    /// key drops it (`FACT 1 = 1` keys as `1 = 1`), so the key is reported
+    /// incomplete. A keyword followed by a declaration is still complete.
+    #[test]
+    fn keyword_drop_without_a_declaration_is_incomplete() {
+        let fact = structural_key("FACT 1 = 1");
+        assert_eq!(
+            fact.key,
+            structural_key("1 = 1").key,
+            "the behaviour this flags"
+        );
+        assert!(!fact.complete);
+        assert!(structural_key("1 = 1").complete);
+        assert!(structural_key("Lemma add_comm : forall x y : nat, x + y = y + x.").complete);
+        assert!(structural_key("theorem t (x y : nat) : x + y = y + x").complete);
+    }
+
+    /// A parenthesised quantified antecedent at the start of a statement is
+    /// read as a binder telescope (`forall` and `x` become bound names and
+    /// only `Q` is left). The key is unchanged; it is reported incomplete.
+    #[test]
+    fn telescope_misread_of_a_quantified_antecedent_is_incomplete() {
+        let k = structural_key("(forall x : nat, P x) -> Q");
+        assert_eq!(k.shape, "(PI [NAT NAT] v0)", "the behaviour this flags");
+        assert!(!k.complete);
+        // A real telescope is still complete.
+        assert!(structural_key("(x y : nat) : x + y = y + x").complete);
     }
 
     /// The guard is a no-op on balanced input: keys stay as they were.
