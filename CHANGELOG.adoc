@@ -29,6 +29,15 @@ https://semver.org/spec/v2.0.0.html[Semantic Versioning].
   token is an unbalanced opening bracket (eight `+open + 1..close+` slices
   are now guarded). `+structural_key+` reaches this from `+corpus ingest+`
   and the octad identity keys. No key changes.
+* *String literals are opaque atoms.* A quoted span is lexed as a formula
+  only where it wraps one: at the start of a statement, after `+:+`, or
+  after an Isabelle statement keyword. Elsewhere (`+s = "a//b"+`, ACL2
+  `+"Goal"+` hints, Why3 `+meta "…"+`) it is one constant, so its contents
+  are no longer read as comments, operators or variables, and a backslash
+  escapes the next character. *Key change*: statements with such a literal
+  get new keys; distinct literals no longer share one. On
+  `+training_data/+` this splits a dozen Mizar and seven Why3 key
+  collisions; coverage moves by at most 0.1 point per corpus.
 * *`+StructuralKey::complete+`* (new, `+#[serde(default)]+`) reports
   whether the shape accounts for the whole statement: false when the
   parser stops early, invents a missing operand, or the input ends inside

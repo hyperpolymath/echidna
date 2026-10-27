@@ -343,19 +343,29 @@ fn lex_flagged(src: &str) -> (Vec<Tk>, bool) {
             i = (i + 2).min(n);
             continue;
         }
-        // quoted statement (Isabelle quotes the whole formula)
+        // A quoted span is either a formula wrapper (Isabelle quotes the whole
+        // formula: `"x = y"`, `lemma foo: "…"`, `assumes "…" shows "…"`),
+        // whose contents are lexed as the statement, or a string literal
+        // (`s = "a//b"`, ACL2's `"Goal"` hints), which is one opaque atom so
+        // its contents are never read as comments, operators or variables.
         if c == '"' {
             let mut j = i + 1;
             while j < n && chars[j] != '"' {
-                j += 1;
+                // a backslash escapes the next character (`\"` in a literal,
+                // `\<forall>` in an Isabelle formula)
+                j += if chars[j] == '\\' { 2 } else { 1 };
             }
             let inner: String = chars[i + 1..j.min(n)].iter().collect();
             if j >= n {
                 terminated = false;
             }
-            let (inner_toks, inner_ok) = lex_flagged(&inner);
-            terminated &= inner_ok;
-            out.extend(inner_toks);
+            if opens_formula(out.last()) {
+                let (inner_toks, inner_ok) = lex_flagged(&inner);
+                terminated &= inner_ok;
+                out.extend(inner_toks);
+            } else {
+                out.push(Tk::Name(format!("\"{inner}\"")));
+            }
             i = j + 1;
             continue;
         }
@@ -410,6 +420,29 @@ fn lex_flagged(src: &str) -> (Vec<Tk>, bool) {
         i += 1;
     }
     (out, terminated)
+}
+
+/// Whether a quote after `prev` wraps a formula rather than a string
+/// literal: at the start of the statement, after a `:` (`lemma foo: "…"`),
+/// or after an Isabelle statement keyword.
+fn opens_formula(prev: Option<&Tk>) -> bool {
+    const KEYWORDS: [&str; 9] = [
+        "lemma",
+        "theorem",
+        "corollary",
+        "proposition",
+        "schematic_goal",
+        "assumes",
+        "shows",
+        "obtains",
+        "and",
+    ];
+    match prev {
+        None => true,
+        Some(Tk::Sym(s)) => s == ":",
+        Some(Tk::Id(s)) => KEYWORDS.contains(&s.as_str()),
+        _ => false,
+    }
 }
 
 /// True when every closer that meets an open group is of that group's kind
@@ -1575,6 +1608,33 @@ mod tests {
         assert!(structural_key("Lemma add_comm : forall x y : nat, x + y = y + x.").complete);
         // ACL2 extraction keeps the `defthm` form's closer at the end
         assert!(structural_key("(equal (len (rev x)) (len x)))").complete);
+    }
+
+    /// A string literal is one opaque atom; a formula wrapper is unwrapped.
+    #[test]
+    fn string_literals_are_atoms_and_formula_quotes_are_unwrapped() {
+        let a = structural_key("s = \"a//b\"");
+        let b = structural_key("s = \"a//c\"");
+        assert!(a.complete && b.complete);
+        assert_ne!(a.key, b.key, "the literal's tail is not a comment");
+        assert_ne!(
+            structural_key("s = \"x\"").key,
+            structural_key("s = x").key,
+            "a literal is not the variable it spells"
+        );
+        assert_ne!(
+            structural_key("s = \"a \\\" b\"").key,
+            structural_key("s = \"a \\\" c\"").key,
+            "an escaped quote does not end the literal"
+        );
+        let bare = structural_key("x + y = y + x").key;
+        for s in ["\"x + y = y + x\"", "lemma add_comm: \"x + y = y + x\""] {
+            assert_eq!(structural_key(s).key, bare, "{s}");
+        }
+        // An anonymous `lemma "…"` loses its first token to the header drop
+        // (a dk-shape-v1 rule, D6); the drop is reported, never trusted.
+        let anon = structural_key("lemma \"x + y = y + x\"");
+        assert!(anon.key == bare || !anon.complete);
     }
 
     /// Statements the scheme cannot read are marked incomplete even though

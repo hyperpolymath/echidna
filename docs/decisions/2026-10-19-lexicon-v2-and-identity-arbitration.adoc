@@ -354,16 +354,16 @@ Share of each corpus read completely (`dk-shape-v1`, 2026-10-27):
 | acl2 | 135963 | 16.0 % | 783 | 8.0 %
 | acl2s | 112742 | 4.8 % | 330 | 4.8 %
 | afp | 102717 | 10.7 % | 530 | 2.1 %
-| agda | 46028 | 40.9 % | 577 | 8.6 %
+| agda | 46028 | 40.9 % | 579 | 8.6 %
 | dafny | 10487 | 53.8 % | 153 | 12.2 %
 | dedukti | 1453 | 75.4 % | 54 | 20.6 %
-| hol4 | 95738 | 8.6 % | 106 | 4.2 %
+| hol4 | 95738 | 8.7 % | 106 | 4.2 %
 | hol_light | 43937 | 1.9 % | 15 | 2.9 %
 | isabelle_zf | 3577 | 0.4 % | 0 | 0.3 %
-| lambda_prolog | 24897 | 93.5 % | 120 | 50.0 %
-| lean3 | 92695 | 26.0 % | 2675 | 19.2 %
-| mizar | 76522 | 19.5 % | 456 | 1.8 %
-| why3 | 25180 | 28.2 % | 365 | 21.9 %
+| lambda_prolog | 24897 | 93.5 % | 119 | 50.0 %
+| lean3 | 92695 | 26.0 % | 2677 | 19.2 %
+| mizar | 76522 | 19.4 % | 444 | 1.8 %
+| why3 | 25180 | 28.3 % | 358 | 21.9 %
 |===
 
 "Keys shared by distinct statements" counts complete keys only. Most are
@@ -408,9 +408,9 @@ identity keys (E6 `cross_prover_identity_key`) inherit all four causes.
 
 Over all 33 pairs: 204,002 same-name statement pairs, of which 1,070 are
 exact cognates, 2,631 shape cognates, 69 skeleton (specialisation)
-candidates, 7,512 differ, and 192,720 (94 %) are `unparsed`. Synonym
-candidates under different names: 315 by identical text, 436 by shape,
-822 by skeleton. Debug build: 168 s for all thirteen corpora, almost all
+candidates, 7,516 differ, and 192,716 (94 %) are `unparsed`. Synonym
+candidates under different names: 315 by identical text, 433 by shape,
+819 by skeleton. Debug build: 177 s for all thirteen corpora, almost all
 of it loading and canonicalising; one pair scans in about a second.
 
 * *HOL4 ↔ HOL Light* (pilot pair): 1,033 exact cognates and 144 text
@@ -431,7 +431,7 @@ of it loading and canonicalising; one pair scans in about a second.
   short-name rule above), fewer than three constants, or a bare type
   signature (λProlog's `int -> int -> int` against Dedukti's
   `Int -> Int -> Int`) say nothing about which statement it is. Joins
-  between different names skip them (3,295 groups, counted).
+  between different names skip them (3,279 groups, counted).
 
 === Equivalence by invariant and by witness
 
