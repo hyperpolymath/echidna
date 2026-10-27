@@ -927,7 +927,7 @@ pub fn scan_pair(
             summary.text_groups_capped += 1;
             continue;
         }
-        if text.split_whitespace().count() < 3 {
+        if canonical::token_count(text) < 3 {
             summary.text_groups_uninformative += 1;
             continue;
         }
@@ -1216,6 +1216,14 @@ mod tests {
         assert!(!informative("(ARROW ? (ARROW ? ?))"));
         assert!(!informative("(ARROW ? ?)"));
         assert!(informative("(ARROW (LE v0 v1) (LE (ADD v0 1) (ADD v1 1)))"));
+    }
+
+    #[test]
+    fn text_join_counts_lexical_tokens_not_words() {
+        // one whitespace field, eight tokens: enough to join two names on
+        assert!(canonical::token_count("f(x)=g(x)") >= 3);
+        assert!(canonical::token_count("T") < 3);
+        assert!(canonical::token_count("x = y") >= 3);
     }
 
     #[test]

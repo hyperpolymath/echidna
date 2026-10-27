@@ -528,15 +528,22 @@ fn drop_declared_head(toks: Vec<Tk>) -> (Vec<Tk>, bool) {
 }
 
 /// `(assert (forall …))` → `(forall …)`.
-fn unwrap_assert(toks: Vec<Tk>) -> Vec<Tk> {
+///
+/// The second value reports a wrapper that was unwrapped although its
+/// closing bracket is missing (`(assert x y`): [`matching`]'s fallback
+/// index is the last token, which also passes the "closes at the end"
+/// test, so the wrapper is unwrapped as before (no key changes) and the
+/// key is reported incomplete through [`StructuralKey::complete`].
+fn unwrap_assert(toks: Vec<Tk>) -> (Vec<Tk>, bool) {
     let mut cur = toks;
+    let mut unbalanced = false;
     loop {
         if !cur.first().map(is_open).unwrap_or(false) {
-            return cur;
+            return (cur, unbalanced);
         }
         let j = matching(&cur, 0);
         if j + 1 != cur.len() {
-            return cur;
+            return (cur, unbalanced);
         }
         let inner = between(&cur, 0, j).to_vec();
         let head_is_assert = match inner.first() {
@@ -547,10 +554,31 @@ fn unwrap_assert(toks: Vec<Tk>) -> Vec<Tk> {
             _ => false,
         };
         if !head_is_assert {
-            return cur;
+            return (cur, unbalanced);
+        }
+        if matching_exact(&cur, 0).is_none() {
+            unbalanced = true;
         }
         cur = inner[1..].to_vec();
     }
+}
+
+/// Index of the bracket matching `toks[at]`, or `None` when the group is
+/// never closed. [`matching`] returns the last index in that case, which
+/// callers that need to tell the two apart cannot use.
+fn matching_exact(toks: &[Tk], at: usize) -> Option<usize> {
+    let mut depth = 0usize;
+    for (j, t) in toks.iter().enumerate().skip(at) {
+        if is_open(t) {
+            depth += 1;
+        } else if is_close(t) {
+            depth = depth.saturating_sub(1);
+            if depth == 0 {
+                return Some(j);
+            }
+        }
+    }
+    None
 }
 
 /// The statement body with any declaration header and proof body removed, and
@@ -560,7 +588,7 @@ fn unwrap_assert(toks: Vec<Tk>) -> Vec<Tk> {
 /// statement that merely *starts* with one (HOL4's `FACT 1 = 1`, keyed as
 /// `1 = 1`) loses it; without a following colon nothing was declared.
 fn strip_header(toks: &[Tk]) -> (Vec<Tk>, bool) {
-    let mut cur = unwrap_assert(glue_agda_operators(toks));
+    let (mut cur, unbalanced_wrapper) = unwrap_assert(glue_agda_operators(toks));
     // declaration keyword + declared name
     let mut dropped_kw = false;
     loop {
@@ -596,7 +624,10 @@ fn strip_header(toks: &[Tk]) -> (Vec<Tk>, bool) {
     };
     let keyword_unexplained = dropped_kw && !colon_at_top(&cur);
     let (body, head_unexplained) = drop_declared_head(cur);
-    (body, head_unexplained || keyword_unexplained)
+    (
+        body,
+        head_unexplained || keyword_unexplained || unbalanced_wrapper,
+    )
 }
 
 /// `x y : Nat` → (["x","y"], NAT); SMT-LIB `x Nat` likewise.
@@ -1086,6 +1117,17 @@ impl Parser {
     }
 }
 
+/// Whether the parser had to invent a node: a missing operand after a
+/// trailing operator (`x + 1 =`), or a group it refused to descend into.
+/// Either way the shape does not describe the statement.
+fn has_hole(node: &Node) -> bool {
+    match node {
+        Node::Hole => true,
+        Node::Op(_, kids) | Node::App(kids) => kids.iter().any(has_hole),
+        _ => false,
+    }
+}
+
 fn render(node: &Node, skeleton: bool) -> String {
     match node {
         Node::Var(s) | Node::Name(s) | Node::Num(s) => s.clone(),
@@ -1212,13 +1254,16 @@ fn has_unread_notation(body: &[Tk]) -> bool {
 /// consumed the body.
 fn normalise(statement: &str) -> (String, String, bool) {
     let (toks, dropped_body) = strip_header(&lex(statement));
+    // Checked before ascriptions and binders are removed: a binder's sort
+    // can hold notation too (`(x : F $ A)`), and extraction would drop it.
+    let unread = has_unread_notation(&toks);
     let toks = drop_ascriptions(&toks);
     let (body, bound) = extract_binders(&toks);
     let varmap = number_variables(&body, &bound);
-    let unread = has_unread_notation(&body);
     let mut parser = Parser::new(body, varmap);
     let ast = parser.expr(0);
-    let complete = parser.rest_is_ignorable()
+    let complete = !has_hole(&ast)
+        && parser.rest_is_ignorable()
         && parser.unclosed == 0
         && !parser.too_deep
         && !unread
@@ -1286,6 +1331,12 @@ pub fn structural_key(statement: &str) -> StructuralKey {
 ///
 /// Falls back to the lower-cased source tokens when the statement does not
 /// parse, so every declaration contributes *something*.
+/// Number of lexical tokens in `statement`, punctuation counted: `f(x)=g(x)`
+/// is eight. For callers that need "how much is here" without a parse.
+pub fn token_count(statement: &str) -> usize {
+    lex(statement).len()
+}
+
 pub fn canonical_tokens(statement: &str) -> Vec<String> {
     let shape = canonical_shape(statement);
     let source = if shape.is_empty() {
@@ -1475,6 +1526,15 @@ mod tests {
             // group still open
             "(x = y",
             "(implies (and (bvp m) (< (len m) (expt 2 64))",
+            // truncated after an operator: the parser invents the operand
+            "x + 1 =",
+            "forall x : nat, x = x /\\",
+            // a wrapper whose close is missing is still unwrapped (no key
+            // change) and reported
+            "(assert x y",
+            "(assert (forall ((x Nat)) (= x x",
+            // notation inside a binder's sort is dropped by extraction
+            "forall (x : F $ A), x + 0 = x",
             // Isabelle ASCII symbol escapes
             "x \\<noteq> y \\<Longrightarrow> f x = f y",
             // Lean 3 `$`
