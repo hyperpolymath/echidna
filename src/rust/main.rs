@@ -452,6 +452,7 @@ enum DesignOp {
     },
 }
 
+/// Run the selected CLI command after configuring tracing, colours and output.
 #[tokio::main]
 async fn main() -> Result<()> {
     // Parse CLI arguments
@@ -1377,7 +1378,10 @@ async fn diagnostics_command() -> Result<()> {
 /// # Errors
 ///
 /// An unknown preset, a malformed `--pair`, no pairs at all, a corpus that
-/// fails to load, or an output file that cannot be written.
+/// fails to load, an output directory that cannot be created or read, an
+/// old output file that cannot be removed, or a serialisation or output
+/// write failure. Also returns an error if the scan thread cannot be
+/// spawned or panics. Failed scans may leave partial output.
 fn lexicon_command(op: LexiconOp) -> Result<()> {
     use echidna::lexicon::scan::{self, RunOptions, ScanOptions};
 
@@ -1505,6 +1509,8 @@ fn lexicon_command(op: LexiconOp) -> Result<()> {
 ///
 /// Crossquery prints exact semantic-class and canonical-name matches from
 /// per-prover tables and, unless `provers_only` is set, cross-prover dictionaries.
+/// Identity queries skip declarations whose canonical keys are incomplete
+/// and report the number skipped; only complete keys form identity groups.
 ///
 /// # Errors
 ///
