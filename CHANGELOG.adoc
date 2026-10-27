@@ -8,6 +8,33 @@ https://semver.org/spec/v2.0.0.html[Semantic Versioning].
 
 === [Unreleased]
 
+==== Added — `echidna lexicon scan`, 2026-10-27
+
+* *`+echidna lexicon scan+`* (`+src/rust/lexicon/scan.rs+`,
+  `+just lexicon-scan+`) — compares `+training_data/+` corpora by theorem
+  name and by canonical statement shape, and writes cognates, false-friend
+  and specialisation candidates, and synonym candidates (joined by
+  identical text, shape or skeleton) as JCS JSON Lines with UUIDv8 pair
+  ids. Flag-only: every record carries `+evidence = none+`, and
+  `+data/synonyms/+` is never written. Presets `+learning+`,
+  `+spanning+` (one corpus per prover family), `+in-family+` and `+full+`.
+  Per-corpus coverage and key-collision samples are written alongside.
+
+==== Fixed — canonicaliser, 2026-10-27
+
+* *`+corpus::canonical+` no longer panics* on a statement whose last
+  token is an unbalanced opening bracket (eight `+open + 1..close+` slices
+  are now guarded). `+structural_key+` reaches this from `+corpus ingest+`
+  and the octad identity keys. No key changes.
+* *`+StructuralKey::complete+`* (new, `+#[serde(default)]+`) reports
+  whether the shape accounts for the whole statement: false when the
+  parser stops early, meets notation `+dk-shape-v1+` has no rule for
+  (HOL binders, Isabelle `+\<…>+` escapes), drops a statement's own leading
+  tokens as a "header", or misreads a leading group as a telescope. No key
+  changes. Measured on `+training_data/+`, 0.3 %–94 % of a corpus is read
+  completely; the rule-level causes are recorded for a `+dk-shape-v2+`
+  decision in `+docs/decisions/2026-10-19-lexicon-v2-and-identity-arbitration.adoc+`.
+
 ==== Added — structural cross-prover identity keys, 2026-10-22
 
 * *`+src/rust/corpus/canonical.rs+`* — normalises a declaration's *type*

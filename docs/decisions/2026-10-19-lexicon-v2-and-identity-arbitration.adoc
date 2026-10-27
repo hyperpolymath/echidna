@@ -2,7 +2,7 @@
 // SPDX-FileCopyrightText: 2026 Jonathan D.A. Jewell (hyperpolymath) <j.d.a.jewell@open.ac.uk>
 = ADR: lexicon v2 (false friends, phrases, equivalences) and hub-and-probe identity arbitration (stage 6c)
 :revdate: 2026-10-19
-:status: accepted in part — D1, D2 and D4 ruled 2026-10-19 (§7); D3 and D5 open
+:status: accepted in part — D1, D2 and D4 ruled 2026-10-19 (§7); D3, D5, D6 and D7 open
 
 == Context (measured on `main` at `ed6ef60`, 2026-10-19)
 
@@ -294,11 +294,197 @@ re-running `metrics/run_all.jl` to re-baseline `oov_rate` and
   verdict's `level` should surface in its trust bridge once dispatch attaches
   evidence.
 
+== PR 3 results: `echidna lexicon scan` (2026-10-27)
+
+=== What landed
+
+`echidna lexicon scan` (`src/rust/lexicon/scan.rs`, `just lexicon-scan`)
+compares `training_data/proof_states_<corpus>.jsonl` corpora on two axes:
+the theorem *name*, and the canonical *shape* of its statement. Same name
+and same shape is a cognate; same name and a different shape is a false
+friend or a specialisation; a different name and the same shape (or
+identical text, or the same skeleton) is a synonym candidate. Output is
+I-JSON serialised as JCS, one record per line, with a UUIDv8 content id per
+statement pair that does not depend on scan direction or normaliser
+version, so a review decision survives a re-scan. Every candidate carries
+`evidence = { kind = "none" }` and nothing is written to `data/synonyms/`
+(D4). The pair sets follow the 2026-10-20 ruling: a learning pass
+(HOL4 ↔ HOL Light, Lean 3 ↔ AFP), then one corpus per family
+(HOL4, AFP, Lean 3, Mizar, ACL2, Why3, λProlog, Dedukti: 28 pairs) plus one
+pair inside each family (5 more).
+
+=== A departure, labelled
+
+The 2026-10-20 ruling was a lexical normaliser in this PR and parsed
+normalisation in PR 6. Before this PR was written, #449 landed
+`src/rust/corpus/canonical.rs` (`dk-shape-v1`), a canonicaliser that
+already does the lexical part and more. Building a second one beside it
+would have been a parallel normaliser; the scan uses `dk-shape-v1` instead
+and measures it. That is the departure, and the measurement is why it paid.
+
+=== What the measurement found in `dk-shape-v1`
+
+The scan's first run panicked inside `canonical.rs`: an unbalanced opening
+bracket as the last token made eight `open + 1..close` slices panic. That
+path is also `corpus ingest`'s. Fixed here with no key change (reproduced
+first; the regression test panics on the old code).
+
+The second finding is larger. When the canonicaliser cannot read a
+statement it rarely falls back to its text tier; it returns a
+*structural-tier* key for the prefix it did read, and different statements
+share that prefix. `StructuralKey::complete` now says whether the whole
+statement was read. It is false when the parser stops early, when the body
+holds notation the scheme has no rule for (`!`, `?`, `@` and `\` binders,
+Isabelle's `\<…>` escapes, Lean 3's `$`), when a header drop discarded
+the statement's own tokens, or when a leading bracket group was misread as
+a binder telescope. It changes no key. The scan treats an
+incomplete key as no identity: such pairs are `unparsed`, and such
+statements take no part in shape joins.
+
+Share of each corpus read completely (`dk-shape-v1`, 2026-10-27):
+
+[cols="2,2,2,2,2",options="header"]
+|===
+| Corpus | Distinct rows | Read completely | Keys shared by distinct statements | Homonymous names
+| acl2 | 135963 | 25.6 % | 2063 | 7.9 %
+| acl2s | 112677 | 88.1 % | 3576 | 4.7 %
+| afp | 102683 | 10.8 % | 530 | 2.0 %
+| agda | 46028 | 41.4 % | 585 | 8.6 %
+| dafny | 10487 | 58.4 % | 202 | 12.1 %
+| dedukti | 1453 | 77.4 % | 57 | 20.6 %
+| hol4 | 95738 | 10.0 % | 130 | 4.1 %
+| hol_light | 43937 | 2.5 % | 24 | 2.8 %
+| isabelle_zf | 3577 | 0.3 % | 0 | 0.3 %
+| lambda_prolog | 24897 | 94.0 % | 133 | 49.9 %
+| lean3 | 92680 | 27.3 % | 2901 | 19.1 %
+| mizar | 76522 | 20.5 % | 512 | 1.8 %
+| why3 | 25180 | 30.5 % | 396 | 21.8 %
+|===
+
+"Keys shared by distinct statements" counts complete keys only. Most are
+benign (Lean 3 goal fields sometimes repeat the statement with its proof
+attached, which the canonicaliser cuts); the rest are the rule-level
+causes below.
+
+Four rule-level causes of false identity cannot be fixed without changing
+keys, so they are recorded here for a `dk-shape-v2` decision (D6) rather
+than changed under `dk-shape-v1`:
+
+. *Header drop.* `drop_declared_head` is documented to skip a group that
+  *starts* the statement, but returns at the first top-level bracket
+  anywhere. A statement with no `name :` header loses everything before
+  its first bracket: `exp(0) = 1` and `cos(0) = 1` both key as
+  `(EQ 0 1)`; `closed (closure M)` keys as `(closure v0)`.
+. *Keyword drop.* Declaration keywords match case-insensitively at the
+  start of any statement: HOL4's `FACT 1 = 1` keys as `1 = 1`.
+. *Short names as variables.* Any lower-case name of three characters or
+  fewer is numbered as a variable, so `cos`, `exp`, `nhd`, `phi` vanish:
+  `nhd 0 = 0` and `phi 0 = 0` share a key.
+. *Unread notation and binders.* No HOL (`!`, `?`, `\`, `==>`, `~`) or
+  Isabelle `\<…>` notation. No ∃: `exists x : nat, x = 0` and
+  `exists x : nat, x = 1` both key as `NAT`. A parenthesised quantified
+  antecedent at the start is read as a binder telescope:
+  `(forall x : nat, P x) -> Q` keys as `(PI [NAT NAT] v0)`, with `forall`
+  taken as a bound name. A Lean hypothesis binder `(h : 2 * n ≤ n)` is
+  reduced to a sort, so `(h : 2 * n ≤ n) : n = 0` and
+  `(h : n ≤ n / 2) : n = 0` share a key. Binder keywords elsewhere are
+  lifted into the leading Π (`extract_binders` step 3), which is sound only
+  in positive positions; the probes found no pair merged by that alone.
+
+`complete` now flags the header drop, the keyword drop, unread notation,
+∃ (the parser stops) and the telescope misread. It does not flag the
+short-name rule or the hypothesis-as-sort rule, which produce well-formed
+but wrong shapes; the scan's `informative` filter catches the short-name
+rule's commonest form (a variable in function position). The corpus
+identity keys (E6 `cross_prover_identity_key`) inherit all four causes.
+
+=== What the measurement found in the corpora
+
+Over all 33 pairs: 203,860 same-name statement pairs, of which 1,070 are
+exact cognates, 3,619 shape cognates, 76 skeleton (specialisation)
+candidates, 36,470 differ, and 162,625 (80 %) are `unparsed`. Synonym
+candidates under different names: 269 by identical text, 848 by shape,
+882 by skeleton. Debug build: 171 s for all thirteen corpora, almost all
+of it loading and canonicalising; one pair scans in about a second.
+
+* *HOL4 ↔ HOL Light* (pilot pair): 1,033 exact cognates and 144 text
+  synonyms (`FACT_0` / `pth_0`), but 5,550 same-name pairs `unparsed`:
+  `dk-shape-v1` reads 2.5 % of HOL Light. The pilot pair needs HOL
+  notation in the canonicaliser before shape evidence means anything.
+* *Lean 3 ↔ AFP, AFP ↔ Mizar, Lean 3 ↔ Mizar*: the synonym joins find real
+  cross-family correspondences: `sqrt_zero ~ lemSqrt0`,
+  `dist_comm ~ dist_sym`, `add_comm ~ plus_commute`,
+  `cantor ~ x_lt_2_x` (`a < 2^a` over cardinals and naturals),
+  `lt_add_one_iff ~ Th13`, and Mizar's article-local labels (`Th29`)
+  matched by content to named AFP and Lean lemmas.
+* *ACL2 and ACL2s are dirty at the source*: ACL2s goals are truncated
+  mid-expression or are comments (`;; (implies …`), and ACL2 goals carry
+  `:hints` text and terminal escape codes. 95,651 shared names yield 31
+  exact cognates. The extractors need fixing (D7).
+* *Thin shapes are not synonyms*: a variable in function position (the
+  short-name rule above), fewer than three constants, or a bare type
+  signature (λProlog's `int -> int -> int` against Dedukti's
+  `Int -> Int -> Int`) say nothing about which statement it is. Joins
+  between different names skip them (3,749 groups, counted).
+
+=== Equivalence by invariant and by witness
+
+Knot theory decides the same question echidna faces. Two knots are equal
+when one deforms into the other; in practice that is settled two ways. An
+*invariant* (the Jones polynomial, quandle colourings) is cheap and can
+prove two knots *different*, but agreement proves sameness only if the
+invariant is complete. A *witness* (a sequence of Reidemeister moves) is
+expensive and proves sameness, step by checkable step. The knot quandle is
+complete up to an orientation symmetry (Joyce; Matveev, 1982), which is
+why QuandleDB (`nextgen-databases/quandledb`) is built on it.
+
+Echidna's evidence ladder has the same two halves. Canonical keys and
+consequence probes are invariants: agreement is a candidate (`belief`) or
+`epi`, never `sound`. A kernel-checked translation is the witness: `sound`.
+Three consequences follow.
+
+. *Difference is cheaper than sameness, but only from a semantic
+  invariant.* One verified consequence that holds of one statement and
+  fails of the other, read in one shared standpoint, is a sound
+  certificate of *distinctness*: a false friend can be proved, not just
+  suspected. PR 4's probe loop should report `distinct` as a first-class
+  outcome. A *syntactic* key that differs proves nothing: this PR shows
+  normalisation gaps separate equal statements and merge different ones.
+. *A complete invariant is as good as a witness.* PR 6's injectivity
+  property test (distinct terms in the fragment never share a `term_hash`)
+  is exactly a completeness proof for the λΠ projection on its fragment.
+  `dk-shape-v1` is far from complete, and the table above says how far.
+. *The residue of a lossy correspondence* (`fidelity = lossy`) is what the
+  invariant cannot see; echo-types' loss-with-residue formalism is the
+  vocabulary for it, as §3 already cites.
+
+=== Formats: why the scan emits JCS and not TOML
+
+TOML has no canonical form: the same data has many valid spellings
+(inline or standard tables, dotted keys, four string styles, several float
+and date forms), and no specification fixes one. So TOML cannot be hashed
+or diffed stably, and it carries types I-JSON lacks (datetimes, 64-bit
+integers beyond I-JSON's safe range). Machine output is therefore JCS. The
+curated tables stay TOML for people (D2); if a table needs a content id,
+the id of record is the JCS of its *parsed* data, which gives TOML a
+canonical identity without changing how it is written.
+
+=== Ordering
+
+Phrase detection (an extractor that finds multi-token idioms at proof
+sites, so the canonical spelling of a `phrase` row can be replaced as well
+as its aliases) comes after this PR, by the 2026-10-20 ruling.
+
 == Owner decisions
 
 Ruled 2026-10-19 through the selector: D1, D2 and D4. D3 and D5 remain open.
 The owner also ruled the pacing: PRs 1 and 3 proceed now; PRs 4–6 (arbiter
-and ABI changes, kernel translation) wait for the stronger model.
+and ABI changes, kernel translation) wait for the stronger model. Ruled
+2026-10-20: the PR 3 normaliser is lexical with parsed normalisation in
+PR 6 (superseded in practice by #449's canonicaliser, see PR 3 results),
+the scan covers one corpus per family plus one in-family pair each, its
+records carry UUIDv8 ids, the invariant/witness reading goes in this ADR,
+and phrase detection follows PR 3. D6 and D7 opened 2026-10-27.
 
 [cols="1,5,3,3",options="header"]
 |===
@@ -308,6 +494,8 @@ and ABI changes, kernel translation) wait for the stronger model.
 | D3 | First consequence-probe pair: Z3 ↔ CVC5 (runs in CI today) alongside the HOL4 ↔ HOL Light hub pilot, or wait for HOL binaries in CI? | Z3 ↔ CVC5 now | open
 | D4 | May corpus-mined candidates set `semantic_class` automatically? | No: `evidence = none`, flag-only until curated or probe-tested | as recommended
 | D5 | Open the verisimdb consonance-subject issue (option E) now? | Yes | open
+| D6 | Fix `dk-shape-v1`'s four rule-level false-identity causes (header drop, keyword drop, short names as variables, unread notation and binders) as `dk-shape-v2`, bumping `SCHEME` and so every corpus identity key? | Yes, as its own PR, starting with the header and keyword drops (smallest, largest effect), with the scan as the before/after measure | open
+| D7 | Fix the `training_data/` extractors for ACL2 (hints, escape codes) and ACL2s (truncation, comment lines), and strip proof bodies from Lean 3 goals? | Yes, at the extractors, then re-scan | open
 |===
 
 == Non-claims
