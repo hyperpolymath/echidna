@@ -70,8 +70,10 @@ let deployment = {
   container = {
     image = "ghcr.io/hyperpolymath/echidna",
     port = 8081,
-    health_check = "/health",
-    readiness_check = "/ready",
+    # The core server serves /api/health; there is no separate /ready or
+    # bare /health route (see src/rust/server.rs), so both probes use it.
+    health_check = "/api/health",
+    readiness_check = "/api/health",
   },
   strategy = {
     type = "rolling",

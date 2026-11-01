@@ -61,8 +61,16 @@
 --   ✓ Fixed points 0/1 -> Level1, >=5 -> Level5
 --   ✓ The clamp is idempotent
 --
--- TOTAL: 45+ proven properties, 0 postulates, 0 assumptions,
--- 0 sorry, 0 believe_me, 0 Admitted.
+-- TOTAL: 45+ proven properties, 0 postulates, 0 sorry, 0 believe_me,
+-- 0 Admitted.
+--
+-- "0 postulates" is not the same claim as "0 hypotheses". `Receipt` is
+-- unconditional. `Integrity` is *not*: its theorems are parameterised by a
+-- `Hash` record whose `≈d-sound` field assumes a sound digest comparator, so
+-- they are conditional on that and say so in their types. That is a named,
+-- caller-supplied assumption — not an escape hatch, because --safe is what
+-- rules escape hatches out — and it is why R9 is about digests rather than
+-- bytes.
 --
 -- Canonical invocation (PROOF-POLICY §2.1):
 --   agda --safe --without-K --cubical-compatible src/Echidna/MetaChecker.agda

@@ -1,3 +1,5 @@
+-- SPDX-License-Identifier: MPL-2.0
+-- Copyright (c) 2026 Jonathan D.A. Jewell (hyperpolymath)
 ------------------------------------------------------------------------
 -- Receipt vs Warrant
 --
@@ -15,14 +17,15 @@
 -- gap — a discriminating check, not more of the same evidence.
 --
 -- Checked with: agda --safe --without-K --cubical-compatible
--- (no postulates, no assumptions; the only hypothesis is the
---  discriminating check in the final section, and it is a parameter)
+-- (no postulates and no hypotheses: every result here is unconditional,
+--  including the sharpened frame, which is a second model rather than an
+--  assumption added to the first)
 ------------------------------------------------------------------------
 
 module Echidna.Receipt where
 
 open import Data.Empty using (⊥; ⊥-elim)
-open import Data.Product using (Σ-syntax; _×_; _,_)
+open import Data.Product using (Σ-syntax; _×_; _,_; proj₁)
 open import Data.Unit using (⊤; tt)
 
 ------------------------------------------------------------------------
@@ -124,20 +127,46 @@ no-receipt-anywhere w-here  r = r ≈-cross
 no-receipt-anywhere w-there r = r ≈-there
 
 ------------------------------------------------------------------------
--- Constructive counterpart: a discriminating check yields a receipt
+-- The sharpened frame: excluding the alternative is what buys a receipt
 --
--- The hypothesis is a *parameter*, not a postulate: any caller that
--- supplies such a check gets a receipt for free.  In ECHIDNA terms this
--- is an independently checked certificate (Rocq/Lean re-check, or
--- statement comparison across two kernels) — precisely the evidence
--- R5 is missing.
+-- Crucially this is a *second model*, not a hypothesis bolted onto the
+-- first.  A function `w-here ≈ w-there → ⊥` cannot exist in the coarse
+-- frame — `≈-cross` inhabits its domain — so taking one as a parameter
+-- would be vacuous, and would say nothing about what a receipt is.  Here
+-- the same two worlds keep their identity and only the accessibility
+-- changes: the agent can now tell them apart.  That is what a
+-- discriminating check buys, and unlike the impossible hypothesis it is
+-- inhabited.
 ------------------------------------------------------------------------
 
-module _ (discriminates : w-here ≈ w-there → ⊥) where
+data _≈′_ : World → World → Set where
+  ≈′-here  : w-here  ≈′ w-here
+  ≈′-there : w-there ≈′ w-there
 
-  receipt-from-check : Receipt sound w-here
-  receipt-from-check {w-here}  _ = tt
-  receipt-from-check {w-there} r = ⊥-elim (discriminates r)
+≈′-refl : ∀ w → w ≈′ w
+≈′-refl w-here  = ≈′-here
+≈′-refl w-there = ≈′-there
+
+Receipt′ : Atom → World → Set
+Receipt′ φ w = ∀ {w′} → w ≈′ w′ → ⟦ φ ⟧ w′
+
+-- A receipt exists in this frame...
+receipt-in-sharpened-frame : Receipt′ sound w-here
+receipt-in-sharpened-frame {w-here}  _ = tt
+receipt-in-sharpened-frame {w-there} ()
+
+-- ...and it is still factive, so the token means the same thing in both
+-- frames: what changed is the evidence, not the standard of proof.
+receipt′-factive : ∀ {φ w} → Receipt′ φ w → ⟦ φ ⟧ w
+receipt′-factive r = r (≈′-refl _)
+
+-- THE CONTRAST, and the point of the whole module: identical worlds,
+-- identical proposition, no receipt in the coarse frame and a receipt in
+-- the sharpened one.  Nothing about the *claim* changed; what changed is
+-- whether the alternative world was excluded.
+coarse-yet-sharpened :
+  (Receipt sound w-here → ⊥) × Receipt′ sound w-here
+coarse-yet-sharpened = no-receipt-anywhere w-here , receipt-in-sharpened-frame
 
 ------------------------------------------------------------------------
 -- Token discipline
@@ -146,6 +175,15 @@ module _ (discriminates : w-here ≈ w-there → ⊥) where
 -- proposition it is about, and the theorem that strengthening a token
 -- is not free.
 ------------------------------------------------------------------------
+
+-- The axioms the policy's PROVEN-WITH-AXIOMS token is *about*.  Naming one
+-- is the entire difference between that token and `proven`: asserting the
+-- proposition alone would make the two indistinguishable, which is the
+-- accounting §5 exists to keep.
+data Axiom : Set where
+  funext : Axiom
+  choice : Axiom
+  em     : Axiom
 
 data Verdict : Set where
   proven               : Verdict
@@ -156,10 +194,16 @@ data Verdict : Set where
 
 Asserts : Verdict → (φ : Atom) → World → Set
 Asserts proven                 φ w = Receipt φ w
-Asserts proven-with-postulates φ w = Receipt φ w
+Asserts proven-with-postulates φ w = Axiom × Receipt φ w
 Asserts tested-only            φ w = Warrant φ w
 Asserts argued                 φ w = Warrant φ w
 Asserts no-claim               φ w = ⊤
+
+-- A `proven-with-postulates` assertion carries the axiom it rests on; a
+-- `proven` assertion carries none, which is why they are different types.
+postulates-name-an-axiom :
+  ∀ {φ w} → Asserts proven-with-postulates φ w → Axiom
+postulates-name-an-axiom = proj₁
 
 -- The same warrant never licences the stronger token.
 no-free-promotion :

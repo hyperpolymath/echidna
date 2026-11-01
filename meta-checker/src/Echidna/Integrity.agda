@@ -1,3 +1,5 @@
+-- SPDX-License-Identifier: MPL-2.0
+-- Copyright (c) 2026 Jonathan D.A. Jewell (hyperpolymath)
 ------------------------------------------------------------------------
 -- Solver Integrity — semantic rewrite of obligation E11
 --
@@ -15,6 +17,11 @@
 -- the specification, not about that code path — which is exactly why it
 -- is worth having a record: it makes the deviation a machine-checked
 -- discrepancy (DEBT D9) instead of a reading of the source.
+--
+-- Scope: a binary is modelled by its digest only, so "substituted" below
+-- means "a binary whose digest differs". Content-level collision resistance is
+-- the `≈d-sound` field of the comparator, i.e. assumed by the caller and not
+-- established here; `sharpness` shows what happens when it fails.
 --
 -- Checked with: agda --safe --without-K --cubical-compatible
 ------------------------------------------------------------------------
@@ -130,8 +137,14 @@ UnsoundHash._≈d_   always-true _ _ = true
 sharpness : UnsoundHash._≈d_ always-true true false ≡ true
 sharpness = refl
 
--- ...while they demonstrably are not.  Hence no inhabitant of
--- `≈d-sound always-true` exists, and E11b cannot be discharged for this
--- comparator: the hypothesis in `Hash` is doing real work.
+-- ...while they demonstrably are not.
 sharpness-matters : ¬ (true ≡ false)
 sharpness-matters ()
+
+-- Hence this comparator satisfies no soundness condition at all: the only
+-- candidate witness forces `true ≡ false`.  So E11b cannot be discharged for
+-- it, and the `≈d-sound` field in `Hash` is doing real work rather than
+-- decorating the record.
+sharpness-blocks-soundness :
+  UnsoundHash._≈d_ always-true true false ≡ true → ¬ (true ≡ false)
+sharpness-blocks-soundness _ = sharpness-matters

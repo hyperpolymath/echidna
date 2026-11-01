@@ -23,10 +23,21 @@
 #   PYTHONPATH=/tmp/py-tc PATH=/tmp/py-tc/bin:$PATH
 #   mkdir -p /tmp/py-tc/agda/data/lib              # wheel ships no primitives
 #   # copy src/data from the v2.7.0.1 tag into /tmp/py-tc/agda/data/
+#
 #   # stdlib: codeload.github.com/agda/agda-stdlib/tar.gz/refs/tags/v2.1
+#   # Downloading is not enough — it must be *registered*, or every module that
+#   # imports Agda.Primitive fails:
+#   echo "/tmp/agda-stdlib-2.1/standard-library.agda-lib" >> ~/.agda/libraries
+#   # the tarball's `name:` line is `standard-library-2.1`, and `defaults` (or a
+#   # .agda-lib `depend:`) must match that name, not the bare `standard-library`
+#   echo "standard-library-2.1" >> ~/.agda/defaults
+#   echo "$PWD/meta-checker/echidna-meta.agda-lib" >> ~/.agda/libraries
 #   export LC_ALL=C.UTF-8                          # Unicode identifiers
 #
-# Then check with the PROOF-POLICY §2.1 flags:
+# Then check with the PROOF-POLICY §2.1 flags. Run it from meta-checker/ — the
+# source path is relative to that directory, so from the repo root it does not
+# resolve:
+#   cd meta-checker
 #   agda --safe --without-K --cubical-compatible src/Echidna/MetaChecker.agda
 #
 # No Rust, Creusot, Lean 4, Idris 2, Coq, Z3 or cvc5 leg was obtainable that way,

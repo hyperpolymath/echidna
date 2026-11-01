@@ -205,6 +205,13 @@ resistance is a record *field*, not a postulate, so the guarantee is
 conditional and says so in its type; `+sharpness+` exhibits a comparator for
 which that field cannot be inhabited, so the hypothesis is load-bearing rather
 than decorative.
+**Scope of the model (from review, 2026-11-01):** a binary is modelled by its
+digest alone, so these are statements about *digests*, not bytes.
+"Substituted" means "a binary whose digest differs", and two binaries colliding
+on a digest are not distinguished by this model. Content-level collision
+resistance sits in the `≈d-sound` field of the comparator — assumed, not
+established. That is what makes the sharpness result the load-bearing part.
+
 |**Specification, not implementation.** `+src/rust/dispatch.rs+` lines 642, 848
 and 998, and `+src/rust/integrity/solver_integrity.rs+` line 359, all accept
 `+IntegrityStatus::Uninitialized+` as passing. The theorem proves the opposite
@@ -230,7 +237,11 @@ plus transitivity rather than the Idris2 file's 36-clause decision table.
 |`+meta-checker/src/Echidna/Receipt.agda+`, inside the R4 receipt. A two-world
 Kripke countermodel: a receipt is factive, a warrant is not; the same warrant
 never licences the stronger token; while the agent cannot discriminate the
-worlds, no receipt exists at all; a discriminating check parameter yields one.
+worlds, no receipt exists at all; and a second frame — same worlds, only the
+accessibility changed — has a receipt, so what buys one is *excluding the
+alternative*, not accumulating more evidence. (An earlier draft took the
+discriminating check as a parameter; that was vacuous, since `≈-cross`
+inhabits the domain of the function required. Two frames say it properly.)
 This is what makes §5's "`+argued+` is not `+proven+`" a theorem instead of a
 style rule.
 |Semantic rewrite of the receipt/warrant distinction from
@@ -337,8 +348,13 @@ mean "ECHIDNA is verified" — it would mean one named obligation was discharged
 by one named tool with its boundary written down. Nothing here vouches for a
 prover backend's own soundness.
 
-No row in this file is above `+argued+` today, and that is the accurate state,
-not an omission.
+Four rows are `+proven+` today — R4, R9, R10, R11 — and each names the kernel,
+the flags and the limit that qualify it (R4 carries the
+`+UnsupportedIndexedMatch+` caveat, R9 the digest-level scope). Every *independent*
+leg is still `+open+`: R5 has never been attempted, which is why the corpus sits
+at Mathesis Grade 3 and not above it. Those two facts are not in tension —
+proven in one kernel is exactly what Grade 3 means — and neither of them is an
+omission.
 
 == Related
 

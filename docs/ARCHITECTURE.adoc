@@ -15,9 +15,13 @@ Two non-negotiable invariants govern every design choice:
 . *ML suggests; provers verify.* Neural components rank, route, and
 propose; formal provers carry the trust. A wrong suggestion is a wasted
 CPU cycle, not a wrong proof.
-. *Trust is checked, not asserted.* Solver binaries are SHAKE3-512 /
-BLAKE3 integrity-checked before invocation; certificates are
-independently reproduced where formats allow (Alethe, DRAT/LRAT, TSTP).
+. *Trust is checked, not asserted.* Certificates are independently
+reproduced where formats allow (Alethe, DRAT/LRAT, TSTP) — that part is
+real. Solver *identity* is not checked today: the integrity step exists,
+nothing in the tree attaches a checker, so binaries are currently
+_assumed_ rather than verified. See the Integrity caveat below and
+link:DEBT.adoc[`+DEBT+`] D9. Do not read this list as a guarantee that
+the binary you invoked is the binary you pinned.
 
 === Component map
 

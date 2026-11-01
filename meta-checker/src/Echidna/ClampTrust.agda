@@ -1,8 +1,11 @@
+-- SPDX-License-Identifier: MPL-2.0
+-- Copyright (c) 2026 Jonathan D.A. Jewell (hyperpolymath)
 ------------------------------------------------------------------------
 -- Clamp Trust Bounds — semantic rewrite of the Idris2 obligation
 --
 -- verification/proofs/idris2/ClampTrustBounds.idr states four
--- obligations for `clamp_trust : Nat → TrustLevel`.  That corpus is out
+-- obligations for `clamp_trust : Nat → TrustLevel`; the four are proved below,
+-- plus idempotence, which the Idris2 file does not state.  That corpus is out
 -- of policy per PROOF-POLICY §3 (engineering claims about this
 -- repository's own types are Idris2/Agda territory, but the corpus is
 -- not wired into any gate and there is no `idris2` binary in CI that
@@ -17,7 +20,7 @@
 --   clamp-fixed-1    : clamp-trust 1 ≡ Level1
 --   clamp-fixed-5    : clamp-trust 5 ≡ Level5
 --   clamp-fixed-10   : clamp-trust 10 ≡ Level5
---   clamp-roundtrip  : the clamp lands on a real level, not between two
+--   clamp-idempotent : the clamp lands on a real level, not between two
 --
 -- Checked with: agda --safe --without-K --cubical-compatible
 ------------------------------------------------------------------------
