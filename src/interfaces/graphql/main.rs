@@ -13,6 +13,15 @@ mod schema;
 use resolvers::EchidnaContext;
 use schema::{MutationRoot, QueryRoot};
 
+/// Runs the GraphQL endpoint and playground at `/` and the health check at
+/// `/health`, with permissive CORS. The bind address comes from
+/// `ECHIDNA_GRAPHQL_ADDR`, defaulting to `127.0.0.1:8081` when it is absent or
+/// not valid Unicode. FFI initialisation failure falls back to direct Rust calls.
+///
+/// # Panics
+///
+/// Panics if logging or the HTTP client cannot be initialised, the address
+/// cannot be bound, or the server fails.
 #[tokio::main]
 async fn main() {
     tracing_subscriber::fmt()

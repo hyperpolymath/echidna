@@ -73,8 +73,9 @@ module _ (H : Hash) where
     field digest : Digest
   open Binary public
 
-  -- The specified checker.  Note the first line: an uninitialised
-  -- manifest produces `Missing`, never `Verified`.
+  -- Check a binary against the recorded digest using the supplied comparator.
+  -- An uninitialised manifest yields `Missing`; otherwise a true comparison
+  -- yields `Verified` and a false comparison yields `Mismatch`.
   check : Manifest → Binary → Result
   check Uninitialised    _ = Missing
   check (Initialised d)  b = decide (_≈d_ d (digest b))

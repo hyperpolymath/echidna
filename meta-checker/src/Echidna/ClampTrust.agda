@@ -45,6 +45,8 @@ open import Echidna.TrustLevel using
 -- The clamp, exactly as the Idris2 model defines it
 ------------------------------------------------------------------------
 
+-- Map a numeric trust score to its level: 0 and 1 yield Level1, 2–4
+-- yield the corresponding level, and scores of 5 or more yield Level5.
 clamp-trust : ℕ → TrustLevel
 clamp-trust zero                                  = Level1
 clamp-trust (suc zero)                            = Level1
