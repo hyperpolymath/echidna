@@ -11,6 +11,27 @@
 # Target: Ubuntu 24.04 (the Claude-on-web / GitHub-Actions base). On any other
 # host, or without root, it prints a note and exits 0 rather than breaking the
 # session.
+#
+# ── Restricted environments: what actually works (2026-11-01) ───────────────
+# A sandbox with no root, no apt, and no access to static.rust-lang.org,
+# sh.rustup.rs, deb.debian.org or GitHub *release assets* cannot run the body of
+# this script: every download below targets one of those hosts. Verified there:
+# only an Agda leg is obtainable, via the PyPI wheel, and even that needs the
+# compiler's data/lib directory populated by hand because the wheel omits it:
+#
+#   pip install --target /tmp/py-tc agda           # Agda 2.7.0.1
+#   PYTHONPATH=/tmp/py-tc PATH=/tmp/py-tc/bin:$PATH
+#   mkdir -p /tmp/py-tc/agda/data/lib              # wheel ships no primitives
+#   # copy src/data from the v2.7.0.1 tag into /tmp/py-tc/agda/data/
+#   # stdlib: codeload.github.com/agda/agda-stdlib/tar.gz/refs/tags/v2.1
+#   export LC_ALL=C.UTF-8                          # Unicode identifiers
+#
+# Then check with the PROOF-POLICY §2.1 flags:
+#   agda --safe --without-K --cubical-compatible src/Echidna/MetaChecker.agda
+#
+# No Rust, Creusot, Lean 4, Idris 2, Coq, Z3 or cvc5 leg was obtainable that way,
+# and PROOF-POLICY §6 says to report such legs as *not run* rather than as
+# passing. Do not weaken the flags to produce a green log — §2.1 forbids it.
 set -euo pipefail
 
 LEAN_VERSION="4.13.0"

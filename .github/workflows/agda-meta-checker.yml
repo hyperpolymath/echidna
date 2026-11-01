@@ -98,10 +98,34 @@ jobs:
           echo "/tmp/agda-stdlib-2.1/standard-library.agda-lib" > ~/.agda/libraries
           echo "standard-library" > ~/.agda/defaults
 
-      - name: Type-check meta-checker
+      - name: Type-check meta-checker (PROOF-POLICY §2.1 canonical invocation)
         if: steps.detect.outputs.relevant == 'true'
         run: |
           cd meta-checker
           echo "$PWD/echidna-meta.agda-lib" >> ~/.agda/libraries
-          agda src/Echidna/MetaChecker.agda
-          echo "✓ All 30+ properties machine-verified"
+          # Canonical invocation, PROOF-POLICY §2.1. --safe is what excludes
+          # postulates, --type-in-type and primTrustMe; it is not a grep.
+          # NEVER weaken these flags to get a green run: a failing leg is the
+          # finding. Note --cubical-compatible is NOT --cubical: the
+          # -W[no]UnsupportedIndexedMatch warnings this emits mean the flagged
+          # functions do not compute under transports. Recorded as a limit in
+          # docs/PROOF-STATUS.adoc R4.
+          agda --safe --without-K --cubical-compatible src/Echidna/MetaChecker.agda
+
+      - name: Assert the checked closure covers every module
+        if: steps.detect.outputs.relevant == 'true'
+        run: |
+          cd meta-checker
+          # A module that nothing imports gets no interface and is never
+          # type-checked — AxiomTrackerCompleteness.agda sat outside the
+          # closure, and did not parse, until 2026-11-01. Guard against a
+          # repeat: every source module must yield an interface.
+          src=$(ls src/Echidna/*.agda | wc -l)
+          iface=$(find . -name '*.agdai' | wc -l)
+          echo "source modules: $src, interfaces produced: $iface"
+          if [ "$src" -ne "$iface" ]; then
+            echo "::error::${src} modules but ${iface} interfaces — at least one module is outside the checked closure"
+            ls -1 src/Echidna/*.agda
+            exit 1
+          fi
+          echo "✓ ${iface} modules type-checked under the PROOF-POLICY §2.1 flags"

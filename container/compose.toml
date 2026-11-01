@@ -24,7 +24,7 @@ environment = {
 }
 volumes = ["echidna-data:/data"]
 restart = "always"
-healthcheck = { test = "curl -sf http://localhost:8081/health", interval = "30s", timeout = "5s", retries = 3 }
+healthcheck = { test = "curl -sf http://localhost:8081/api/health", interval = "30s", timeout = "5s", retries = 3 }
 
 [services.svalinn]
 image = "ghcr.io/hyperpolymath/svalinn:latest.ctp"

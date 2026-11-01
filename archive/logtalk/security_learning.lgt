@@ -1,4 +1,28 @@
 %% SPDX-License-Identifier: MPL-2.0
+%%
+%% ===========================================================================
+%% DEAD SOURCE — quarantined 2026-11-01, body unchanged.
+%%
+%% This file was `rules/security_learning.lgt`, the only Logtalk module in the
+%% ECHIDNA tree. Nothing loaded it: no test, workflow, Justfile recipe, A2ML
+%% manifest or Cargo build step referenced it, and no Logtalk runtime is
+%% installed anywhere in CI. Its input path was a literal `~/repos/...` on one
+%% machine, and its "learning" step reads Prolog terms from a Scheme catalog
+%% (ERROR-CATALOG.scm), so every term falls through to the catch-all clause and
+%% the learned rules are a re-assertion of the static tables below.
+%%
+%% Estate rule authoring moved to Elixir rule modules in Hypatia. ECHIDNA is a
+%% Hypatia *target* (.hypatia-baseline.json, .hypatia-ignore), not a rule
+%% producer — the cicd-hyper-a alert taxonomy this file encodes is no longer
+%% the path by which ECHIDNA-side rules reach the estate.
+%%
+%% Kept rather than deleted so the record is byte-recoverable. Do not add to
+%% it, do not wire it up. Reviving it needs, at minimum: a runtime in CI, a
+%% parameterised input path, a real parser for the catalog format, and a
+%% consumer. See ./README.adoc and
+%% docs/reports/2026-11-01-routing-and-rule-engine-recon.adoc §4.
+%% ===========================================================================
+%%
 %% ECHIDNA Security Rule Learning Module
 %% Learns security patterns from cicd-hyper-a audit data
 

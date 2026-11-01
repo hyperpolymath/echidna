@@ -1,0 +1,992 @@
+// SPDX-License-Identifier: CC-BY-SA-4.0
+// SPDX-FileCopyrightText: 2026 ECHIDNA Project Contributors
+
+= Re-recon: routing surfaces and the rule-engine source
+
+*Status*: current. Supersedes nothing; this is the first pass that classifies
+*every* client-facing path in the tree rather than only the ones a given
+consumer happens to use. *Date*: 2026-11-01. *Method*: static read of the
+checkout at `916b769` — no build, see <<limits>>.
+
+This document answers four questions that were being asked of different
+documents with different answers:
+
+. Is the VeriSimDB bridge a *persistence adapter* or a *mandatory VCL
+communication path*?
+. How does that reconcile with clients that call the echidnabot REST/GraphQL
+surfaces directly, and with proof-burrower's `echidna prove` subprocess
+contract?
+. Which rule engine is live — the Logtalk module in `rules/`, or the Elixir
+rules in Hypatia?
+. Which paths in the tree are *active*, *compatibility-only*, *archival* or
+*dead*?
+
+== 0. Verdicts
+
+*VeriSimDB is a persistence adapter, not a bus.* It is behind the non-default
+`verisim` Cargo feature, it is written to fire-and-forget, and no prover is
+reached through it. Nothing in the default build contacts it. There is exactly
+one exception, and it is an accident rather than a design: enabling `verisim`
+also switches `POST /api/prove` from "factory + backend" onto
+`ProverDispatcher` (<<rd1,RD1>>). Persistence should not be the switch that turns
+the trust pipeline on.
+
+*VCL-UT is a query layer over VeriSim octads, not a transport ECHIDNA requires.*
+In a default build `vcl_ut::cross_prover_search_names` is a stub returning
+`Ok(vec![])` and `QueryExecutor` holds a `PhantomData`. A client that never
+enables the feature never pays for it.
+
+*Clients do not need any of that.* echidnabot talks to `/api/*` (core server)
+or `/graphql` (the separate `echidna-graphql` binary); proof-burrower looks for
+`echidna prove --output json` and reads one JCS line off stdout. Those three
+paths are independent and none of them routes through VeriSimDB.
+
+*The Logtalk material is dead and has been quarantined.* `rules/security_learning.lgt`
+was the only `.lgt` file in the tree, referenced by nothing — not a test, not a
+workflow, not a Justfile recipe, not the REUSE manifest's per-file headers.
+Estate rule authoring is Elixir in Hypatia. The file now lives under
+`archive/logtalk/` with a status header; `rules/` no longer exists.
+
+*Two routing defects were fixed en route* (container entrypoint and health
+probes, <<rd3,RD3>>), *one was documented and left open* (the 8081 port collision,
+<<rd2,RD2>>), *and one is a live correctness gap* (integrity checking never
+configured, <<rd5,RD5>>).
+
+== 0.1 Policy frame — what this document is allowed to claim
+
+Three normative sources bound this recon, all outside this repository. Each one
+changed a conclusion, not just a footnote.
+
+[width="100%",cols="26%,20%,54%",options="header"]
+|===
+|Source |What it governs |Effect here
+
+|`+hyperpolymath/standards+`:
+`+3-practice/PROOF-POLICY.adoc+`
+|Which verifier carries which obligation; the closed status vocabulary
+(§5: `+proven+`, `+proven-with-postulates+`, `+tested-only+`, `+argued+`,
+`+open+`).
+|§2.2 states that ECHIDNA is "`the longer-term automation destination, not a
+prerequisite for current independent checks`" — an external, normative reason
+the VeriSim/VCL bridge *cannot* be a mandatory path. §3 puts
+`+proofs/<prover>/+` trees outside the policy entirely, which settles how this
+recon classifies them. §5 supplies the only status tokens used in §7.
+
+|`+hyperpolymath/standards+`:
+`+0-canon/PORT-REGISTRY.adoc+`
+|"`Every project MUST use a unique port. No two projects share a port.`"
+|Upgrades <<rd2,RD2>> from untidiness to a policy violation, and is why the fix
+is an *override* plus a corrected record rather than a shrug.
+
+|`+hyperpolymath/mathesis+`:
+"`Estate-wide Mathematical Knowledge Architecture`" §5–§6
+|Verification grades (Grade 3 = type-checks in its home system, not translated;
+Grade 2i/2ii = one/two independent translations; Grade 1 = machine-checked via
+a verified checker API in headless CI). §6 forbids flattening assurance into a
+percentage.
+|Sets the ceiling on everything below. Nothing in this recon is above *Grade
+3*, because nothing was translated or independently checked: it is a read of
+one checkout. §6 is also why `+trust.confidence+` is discussed as
+receipt-or-null rather than as a number (see link:../PROOF-STATUS.adoc[`+docs/PROOF-STATUS.adoc+`]
+R7/R8).
+|===
+
+=== Claim ledger
+
+Every headline claim in this document, graded with the vocabulary it is asking
+other people to use. This is deliberately unflattering: the honest row for most
+of this work is `+argued+`.
+
+[width="100%",cols="42%,14%,44%",options="header"]
+|===
+|Claim |Row |What would move it up
+
+|VeriSim is optional and non-blocking; no prover is reached through it
+|`+proven+` (by construction)
+|Already as strong as a static claim gets: the call sites are `+cfg`-gated and
+the writes are `+tokio::spawn+`ed. A build-level test asserting zero network
+calls with the feature off would make it mechanical.
+
+|VCL-UT degrades to a stub without the feature
+|`+proven+` (by construction)
+|Two compiled variants of the same signature exist in `+vcl_ut.rs+`; the
+non-feature one returns `+Ok(vec![])+`.
+
+|echidnabot's and proof-burrower's client paths do not depend on VeriSim
+|`+argued+`
+|They are other repositories. Verify from their trees, not from this one's
+records.
+
+|`+rules/security_learning.lgt+` was loaded by nothing
+|`+argued+` (grep-exhaustive over this tree)
+|Green state only if no external consumer exists. Its input path points at a
+home directory, which makes one unlikely; it does not prove absence.
+
+|The container could not start
+|`+proven+` (subcommand mismatch is decidable by reading `+Commands+`)
+|Already decided: no `+serve+` variant, no alias.
+
+|Solver integrity is not enforced
+|`+proven+` for "no caller attaches a checker"; `+argued+` for the security
+consequence
+|The first is a grep over the tree. The second needs a run with a checker
+attached to observe the difference.
+
+|`+docs-site/+` is unbuilt
+|`+argued+`
+|No workflow in this tree builds it. A forge-side check would settle whether
+some other system publishes it.
+|===
+
+=== What is therefore *not* claimed
+
+* No claim that any proof in this repository is `+proven+`. See
+  link:../PROOF-STATUS.adoc[`+docs/PROOF-STATUS.adoc+`], where every obligation
+  row is `+open+` or `+argued+`, including the Agda meta-checker.
+* No Grade 2/1 claim anywhere. There is no translation leg and no receipt
+  pinned to a commit hash, which Mathesis §6 requires.
+* No percentage. Where a number exists in this codebase
+  (`+verification/confidence.rs+`), it ranks backends against each other and is
+  recorded as `+tested-only+` for internal ranking, never as assurance.
+* No interoperability claim between ECHIDNA and `epistemic-types`. The two
+  share a distinction, not a dependency — see §7.
+
+== 1. Routing inventory
+
+Four HTTP listeners are compiled into this repository. They are *not* one
+service on four ports; they are four independent binaries with different route
+tables, different handlers and different trust behaviour.
+
+[width="100%",cols="20%,18%,14%,48%",options="header"]
+|===
+|Binary |Bind (default) |Route root |Notes
+
+|`+echidna server+`
+|`+127.0.0.1:8081+` — `main.rs:165`
+|`+/api/*+`
+|The core server. 18 routes, documented from `+src/rust/server.rs:171+`.
+Talks to the Julia ML sidecar (hardcoded `+http://127.0.0.1:8090+`,
+`+server.rs:64+`) — as does `+echidna-rest+`; see the note below. This is the
+only listener whose *behaviour* changes with the `+verisim+` feature.
+
+|`+echidna-rest+` (`+src/interfaces/rest+`)
+|`+127.0.0.1:8000+` — `ECHIDNA_REST_ADDR`, `main.rs:142`
+|`+/api/v1/*+`, `+/health+`
+|Independent OpenAPI surface. Own session map, own `+ProofFactory+` calls.
+Does *not* share `+echidna server+` state, routes or trust path.
+
+|`+echidna-graphql+` (`+src/interfaces/graphql+`)
+|`+127.0.0.1:8081+` — `ECHIDNA_GRAPHQL_ADDR`, default unchanged, `main.rs`
+|`+/+` (POST = GraphQL, GET = playground), `+/health+`
+|Same default port as the core server. Env override added by <<rd2,RD2>>.
+
+|`+echidna-grpc+` (`+src/interfaces/grpc+`)
+|`+[::1]:50051+` — `main.rs:594`
+|`+echidna.proto+` `+ProofService+`
+|IPv6 loopback only. No REST equivalent.
+|===
+
+Non-HTTP client paths, which matter just as much:
+
+[width="100%",cols="26%,20%,54%",options="header"]
+|===
+|Path |Entry point |Contract
+
+|CLI subprocess
+|`+echidna prove <file> --output json+`
+|One JCS-canonical `+echidna.prove.result/1+` object on stdout, exit 0 iff
+`+verified+`. Specified in link:../PROVE-RESULT-CONTRACT.adoc[`+docs/PROVE-RESULT-CONTRACT.adoc+`].
+No server, no socket, no VeriSimDB.
+
+|MCP stdio
+|`+echidna-mcp+` (`+crates/echidna-mcp+`)
+|Shells out to the `+echidna+` binary. Two of its three tools match the current
+CLI; one does not (<<rd4,RD4>>).
+
+|Cap'n Proto
+|`+crates/echidna-wire+`
+|Schema-only (`+common/prover/proof/gnn/verisim_er.capnp+`). No transport ships
+yet; `+src/rust/server.rs+` still speaks JSON.
+|===
+
+One diagram correction: `+docs/ARCHITECTURE.adoc+` used to render a
+"`REST / GraphQL (axum :8000)`" box. That port belongs to `+echidna-rest+`; the
+core server is 8081 and serves no GraphQL at all.
+
+One smaller observation from the same pass, recorded rather than fixed. The
+Julia ML sidecar URL appears four times:
+
+* `+server.rs:64+` — `+DEFAULT_ML_API_URL+`, which `+server.rs:71+` correctly
+  overrides from `+ECHIDNA_ML_API_URL+`;
+* `+server.rs:1271+` — hardcoded again inside the suggest handler, so that one
+  path ignores the variable;
+* `+src/interfaces/rest/main.rs:76+` and
+  `+src/interfaces/graphql/resolvers.rs:491+` — hardcoded, no environment read.
+
+`+docs/ENV-VARS.adoc+` describes `+ECHIDNA_ML_API_URL+` as the way to move the
+sidecar. True for the core server's main path, false for three others. This is
+config plumbing across four call sites in three binaries, so it is a change for
+its own PR, not a drive-by.
+
+== 2. VeriSim: adapter, not a communication path
+
+=== 2.1 What the feature flag actually gates
+
+`+verisim+` is off in `+default = []+` (`+Cargo.toml:118+`). It enables
+`+dep:ciborium+` (the CBOR encoder for the Semantic octad) and four call sites:
+
+[width="100%",cols="34%,22%,44%",options="header"]
+|===
+|Call site |Direction |Behaviour when absent
+
+|`+dispatch.rs:725+` `+spawn_record_attempt+`
+|write
+|`+tokio::spawn+`ed `+record_proof_attempt+` after each dispatch exit. Errors
+logged at `+warn+` and swallowed. *Cannot* fail a dispatch.
+
+|`+dispatch.rs:207+` `+VeriSimAdvisor+`
+|read
+|`+verify_proof_verisim_guided+` asks
+`+mv_prover_success_by_class+` which prover to try. Any error → caller's
+fallback prover. Advisory only.
+
+|`+vcl_ut.rs:349+` `+QueryExecutor+`
+|read
+|`+PhantomData+` stub; `+cross_prover_search_names+` returns `+Ok(vec![])+`
+(`+vcl_ut.rs:951+`).
+
+|`+server.rs:104+`
+|wiring
+|`+with_verisim_writer(VERISIM_URL)+`; absent → dispatcher with no writer.
+|===
+
+Read that table as a whole: every one of the four is a *side effect on, or a
+hint to*, a proof run. None of them carries a proof request, a proof result, or
+a client command.
+
+=== 2.2 The one place the flag changes routing
+
+`+POST /api/prove+` is compiled twice (`+server.rs:423–445+`):
+
+* with `+verisim+`: `+app_state.dispatcher.verify_proof(...)+` — trust pipeline;
+* without: `+ProverFactory::create+` then `+parse_string+` directly — no
+  dispatcher.
+
+So the presence of a *storage* feature decides whether an HTTP proof takes the
+arbitration path. Two consequences worth stating plainly:
+
+. A deployment that wants the trust pipeline must enable a database
+  integration it may not have, and point it at a URL that will then be probed.
+. A deployment that enables it for the learning loop silently changes its
+  verification routing.
+
+This is recorded as <<rd1,RD1>>. It is not fixed here: the fix is a behaviour
+change that deserves its own decision record, and any consumer that currently
+relies on the flag to select the pipeline would be moved by surprise.
+
+=== 2.3 What never touches VeriSim
+
+`+echidna prove+` (human and `+--output json+`), `+/api/verify+`,
+`+/api/verify_raw+`, `+echidna-rest+`, `+echidna-graphql+`, `+echidna-grpc+`,
+`+echidna-mcp+`. `/api/search` and `+echidna search+` *do* consult VCL-UT, but
+only to append cross-prover results, and only in a `+verisim+` build — the
+stub swallows the call otherwise (`+server.rs:1043+`, `+main.rs:924+`).
+
+=== 2.4 Drift found in the VeriSim surface
+
+* `+.machine_readable/integrations/verisim.a2ml+` declares `+format = "hexad"+`
+  and a `+verisimdb-data/feeds/+` destination. The implemented and formally
+  specified model is an *octad* (8 modalities,
+  link:../architecture/VERISIM-ER-SCHEMA.adoc[`+VERISIM-ER-SCHEMA.adoc+`]).
+  "Hexad" is not a modality count that exists anywhere in the tree.
+* link:../design/ECHIDNA-VERISIM-TRIANGULATION-2026-04-17.adoc[`+ECHIDNA-VERISIM-TRIANGULATION-2026-04-17.adoc+`]
+  describes the *workflow* for absorbing provers and predates the entity model.
+  `+VERISIM-ER-SCHEMA.adoc+` says it "replaces the aspirational text" there.
+  Classified archival below; not edited.
+* `+docs/ECOSYSTEM-INTEGRATION.adoc+` still lists VeriSimDB as "🔄 Manual" with
+  a `+ingest-scan.sh+` recipe. The *code* path (octad writer + `proof_attempts`
+  table) is more advanced than that recipe; the recipe is a separate,
+  scanner-driven ingestion route that predates it. Both are real; neither is
+  the other.
+* `doc/…`-level claim "HTTP push deferred" in
+  `+.machine_readable/descriptiles/ECOSYSTEM.a2ml:29+` is correct for the
+  corpus adapter and incorrect for `+dispatch.rs+`, which pushes today. The two
+  paths emit different payloads (octads vs corpus records) and both are live.
+
+== 3. Client reconciliation
+
+=== 3.1 echidnabot, calling REST or GraphQL directly
+
+Two independent surfaces, and the doc has to name which:
+
+* *Core server* (`+/api/prove+`, `+/api/verify+`, `+/api/provers+`,
+  `+/api/health+`) — port 8081 by default, route table in
+  `+src/rust/server.rs+`. This is what published examples and
+  `+server-boot-gate.yml+` exercise.
+* *`+echidna-rest+`* (`+/api/v1/proofs+`, `+/api/v1/provers+`, …) — port 8000,
+  OpenAPI + ReDoc. Different paths, different session store, no `/api/prove`.
+* *`+echidna-graphql+`* — `+POST /+` on 8081. Queries are `+provers+`,
+  `+proofState(id:)+`, `+listProofs+`, `+suggestTacticsByProofId+`,
+  `+proverStatus+`, `+health+`; mutations `+submitProof+`, `+applyTactic+`,
+  `+cancelProof+`, `+verifyProof+`, `+suggestTactics+`.
+
+A client that hard-codes 8081 for both REST and GraphQL is relying on two
+binaries not being co-resident. See <<rd2,RD2>>.
+
+*Trust honesty for REST clients*: `/api/verify` never enters the dispatcher
+(`+server.rs:519+`), and `/api/verify_raw+` execs the solver binary directly by
+design. Only `/api/prove` reaches arbitration, and only in a `+verisim+` build.
+A REST client cannot tell, from the response, which of these it got:
+`+ProveResponse+` is `+{success, goals, message}+` and `+VerifyResponse+` is
+`+{valid, outcome, goals_remaining, tactics_used, mode, smt_status}+`. Neither
+carries a schema identifier or a trust level, unlike the prove contract. That
+asymmetry is the strongest argument for pointing new clients at
+`+echidna prove --output json+` rather than HTTP.
+
+=== 3.2 proof-burrower, the `+echidna prove+` subprocess contract
+
+This is the best-specified client path in the tree and it needs no network at
+all:
+
+* one line, JCS-canonical, on stdout; logs and `+--diagnose+` on stderr;
+* `+status+` ∈ `+verified | failed | error | timeout | unknown+`, derived from
+  `+ProverOutcome+` via a total mapping;
+* `+trust.confidence+` is `+null+` on this path *always* — a single-backend
+  check verifies no certificate, so there is no receipt. This is the
+  receipt/warrant distinction applied honestly, and it matches where
+  `+epistemic-types+` has landed: ECHIDNA copies the distinction as a pattern,
+  it does not depend on the Agda library and does not claim interop with it;
+* exit code 0 iff `+verified+`;
+* capability detection by probing `+echidna prove --help+` for `+--output+`.
+
+Feature-detection matters: the contract is *additive* per its own versioning
+rules, so older binaries answering without `+--output+` are still usable, and
+new clients must ignore unknown fields.
+
+=== 3.3 `+echidna-mcp+` — the client that drifted
+
+`+crates/echidna-mcp/src/main.rs+` invokes:
+
+* `+echidna prove <file> --format json+`. `+--format+` *is* a global flag
+  (`+main.rs:43+`, `+global = true+`) so this parses, but it selects the CLI
+  formatter (`+{"level":"success",…}+`), not the prove contract. The tool then
+  sniffs for `+"level": "success"+`. It works and it is the *legacy* shape: a
+  second, undocumented JSON dialect for the same operation.
+* `+echidna list-provers --format json+` — parses; no contract at all.
+* `+echidna check-prover <name>+` — *no such subcommand exists*
+  (`+Commands+` in `+main.rs:57–450+` has no `+CheckProver+`). The tool fails
+  with a clap usage error every time.
+
+Recorded as <<rd4,RD4>>. Not fixed here: the correct repair is a rewrite onto
+`+--output json+` plus a `+check-prover+` subcommand or a `/api/provers` probe,
+which is a feature decision, not a rename.
+
+=== 3.4 What no client can get today
+
+* A partial-progress field. The contract has no "remaining subgoals"; a swarm
+  that wants to score partial attempts must parse prover output.
+* A receipt-backed confidence via HTTP. `+/api/prove+` has no `+trust+` object.
+* A single surface that is both OpenAPI-described and trust-pipeline-backed.
+
+None of these are bugs in the contract. They are the current *scope*, and the
+useful thing a recon can do is stop other documents implying otherwise.
+
+== 4. Logtalk: what was left and why it is dead
+
+=== 4.1 What was there
+
+`+rules/security_learning.lgt+` — 234 lines, two Logtalk objects
+(`+security_learning+`, `+cicd_integration+`), dated 2025-12-29. It encodes 20
+alert categories from cicd-hyper-a's `+ERROR-CATALOG.scm+`, a severity
+classifier, a fix-suggestion table, seven prevention workflows, and a
+`+assertz+`-based "learning" loop that re-derives rules from its own training
+data.
+
+=== 4.2 Why it is dead
+
+* *Nothing loads it.* `+grep -rn '\.lgt' --exclude-dir=.git .+` returns the file
+  and one self-reference inside it. No test, workflow, Justfile recipe, A2ML
+  manifest or Cargo build step names it. No `+logtalk+`/`+swipl+` binary is
+  referenced anywhere in CI.
+* *Its inputs are on someone's disk.* `+cicd_repo_path('~/repos/cicd-hyper-a/.audittraining')+`
+  — a home-directory path with a literal `+~+`, in an object whose job is to
+  open it. Not portable, not parameterised, not a contract.
+* *Its learning loop cannot learn.* `+load_training_data/1+` calls
+  `+read(Stream, Term)+` on a Prolog stream but the file it is pointed at is a
+  Scheme source (`+ERROR-CATALOG.scm+`). Every term fails
+  `+process_training_term/1+` and hits the catch-all `+process_training_term(_)+`.
+  `+learn_rules/0+` then asserts whatever the static tables already said. The
+  output is a transcript of the input constants.
+* *The estate moved.* `+docs/ECOSYSTEM-INTEGRATION.adoc:117+` described Hypatia
+  as auto-generating Logtalk rules after 5+ observations. Hypatia's rule
+  engine is Elixir; the estate's rule-as-data path is Elixir rule modules, not
+  Logtalk objects. An ECHIDNA-side Logtalk module was never a consumer of that
+  output, even when the prose was accurate.
+* *The one live rule surface in this repo is `+.hypatia-baseline.json+` +
+  `+.hypatia-ignore+`* — i.e. ECHIDNA is a Hypatia *target*, not a rule
+  producer.
+
+=== 4.3 Disposition
+
+Moved, not deleted, and marked:
+
+[width="100%",cols="34%,66%",options="header"]
+|===
+|Before |After
+
+|`+rules/security_learning.lgt+`
+|`+archive/logtalk/security_learning.lgt+` — body unchanged (so the record is
+byte-recoverable), preceded by a `+DEAD SOURCE+` block naming the date, the
+reason and the successor.
+
+|_(no index)_
+|`+archive/logtalk/README.adoc+` — what it was, why it is here, what would have
+to be true to revive it.
+
+|`+.reuse/dep5+` `+Files: rules/*+`
+|`+Files: archive/*+` — the same MPL-2.0 bulk stanza, retargeted.
+
+|`+.machine_readable/root-allow.txt+`
+|`+archive/+` added, because it is a root entry outside the template — the file
+exists precisely to record those.
+|===
+
+`+rules/+` is gone rather than emptied, so that the tree cannot imply "ECHIDNA
+has rules in Logtalk" by the existence of the directory.
+
+=== 4.4 Prose also retired
+
+* `+docs/ECOSYSTEM-INTEGRATION.adoc+` — the Logtalk-generation sentence now
+  states Elixir and links here.
+* `+echidna-playground/.machine_readable/descriptiles/NEUROSYM.a2ml+` —
+  `+report-format = "logtalk"+` retired to a comment. That key told a scanner
+  consumer to expect a format nothing produces.
+
+== 5. Path classification
+
+Four classes, used strictly:
+
+* *active* — built, called, or deployed by something in this tree today;
+* *compatibility-only* — works, but exists to serve a consumer or a shape that
+  a newer path supersedes; must not gain new capability;
+* *archival* — retained as a record; explicitly not a build or usage
+  instruction;
+* *dead* — nothing loads it and nothing can.
+
+[width="100%",cols="38%,14%,48%",options="header"]
+|===
+|Path |Class |Basis
+
+|`+src/rust/main.rs+` (`+server+`, `+prove+`, `+verify+`, `+search+`, `+corpus+`, …)
+|active
+|The binary. Booted by `+server-boot-gate.yml+`, exercised by `+QUICKSTART-USER.adoc+`.
+
+|`+src/rust/server.rs+`
+|active
+|18 routes; the published API (`+site/docs/api/core.adoc+`).
+
+|`+src/rust/dispatch.rs+`
+|active
+|`+ProverDispatcher+`. Caveat <<rd1,RD1>> and <<rd5,RD5>>.
+
+|`+src/rust/vcl_ut.rs+`
+|active (conditional)
+|Real executor under `+verisim+`; deliberate stub without it. Both compiled and
+tested.
+
+|`+src/rust/verisim_bridge.rs+`
+|active (conditional)
+|Octad writer/reader. Non-default feature; weekly `+s4-loop.yml+` runs it.
+
+|`+crates/echidna-core+`
+|active
+|Published shared contract types (`+prove_result+`, `+prover_kind+`) for
+external consumers.
+
+|`+crates/echidna-wire+`
+|active, unbuilt in CI
+|Schemas only; `+STATE.a2ml+` records `cargo build` failing on a missing `+capnp+`
+binary — pre-existing, unrelated to routing.
+
+|`+crates/echidna-mcp+`
+|compatibility-only
+|`+prove+` and `+list_provers+` work via the legacy formatter dialect;
+`+check_prover+` is dead (<<rd4,RD4>>).
+
+|`+src/interfaces/rest+`, `+graphql+`, `+grpc+`
+|active
+|Separate binaries, in the workspace, documented in `+site/docs/api/+`.
+
+|`+src/interfaces/*/ffi_wrapper.rs+`
+|compatibility-only
+|C shim against `+libechidna_ffi.so+`; every binary falls back to direct Rust
+calls when it is absent (`+ffi_integration_test.rs+`). Self-described
+scaffolding.
+
+|`+echidna prove --output json+` (`+prove_contract.rs+`,
+`+echidna-core/prove_result.rs+`)
+|active
+|The supported machine contract; golden-JCS tests; consumed by proof-burrower.
+
+|`+--format json+` global CLI output
+|compatibility-only
+|Older machine dialect (`+{"level":…}+`), still used by MCP. Superseded by the
+prove contract; no new consumer should adopt it.
+
+|`+/api/prover+`, `+/api/verify+` response shapes
+|compatibility-only
+|Untagged JSON; no schema id, no trust block. Kept for existing clients.
+
+|`+container/entrypoint.sh+`
+|was dead → fixed
+|Called `+echidna serve+`; the subcommand is `+server+`. Every container start
+failed at `+exec+`.
+
+|`+container/compose.toml+` healthcheck
+|was dead → fixed
+|Probed `+/health+`; the core server only serves `+/api/health+`.
+
+|`+container/vordr.toml+` readiness probe
+|was dead → fixed
+|Probed `+/ready+`, which no binary in this tree has ever served.
+
+|`+container/manifest.toml+`, `+Containerfile+`
+|active
+|`+EXPOSE 8081+` matches the default; `+APP_PORT+` is consumed by the
+entrypoint, not the binary.
+
+|`+rules/security_learning.lgt+`
+|dead → quarantined
+|§4.2.
+
+|`+archive/logtalk/+`
+|archival
+|Quarantine, not a build input. Indexed by `+archive/logtalk/README.adoc+`.
+
+|`+proofs/<prover>/+` trees (16 directories) and `+training_data/+`
+|archival *(out of policy)*
+|Fixtures, not obligations: `+PROOF-POLICY.adoc+` §3 names these explicitly —
+"`echidna's `+proofs/<prover>/+` trees and similar fixtures are test material
+for a multi-prover system and are outside this policy`". They exercise parsers
+and backends. No status row, and none owed — see
+link:../PROOF-STATUS.adoc[`+docs/PROOF-STATUS.adoc+`] "Not obligations".
+
+|`+docs/ECOSYSTEM-INTEGRATION.adoc+`
+|archival (corrected)
+|2026-02-12 point-in-time status; kept as a record, Logtalk claim retired.
+
+|`+docs/design/ECHIDNA-VERISIM-TRIANGULATION-2026-04-17.adoc+`
+|archival
+|Superseded by `+VERISIM-ER-SCHEMA.adoc+` in its own words.
+
+|`+docs/architecture/VERISIM-ER-SCHEMA.adoc+`, `+crates/echidna-wire/schemas/verisim_er.capnp+`
+|active
+|Canonical entity model + wire schema.
+
+|`+.machine_readable/integrations/verisim.a2ml+`
+|active but drifted
+|`+hexad+` is not a model that exists (<<rd6,RD6>>). Still the declared feed
+manifest.
+
+|`+docs-site/+` (content + Eclexia TEA app)
+|dead
+|No workflow builds or deploys it: `+pages.yml+` publishes `+site/+` via Ddraig.
+Its API pages claim `+/graphql+`, `+/playground+`, "30 provers" and
+`+localhost:8000/api/v1+` — none of which matches the code. Not edited: editing
+a dead publisher only makes the corpse tidier. Delete or rebuild as a decision.
+
+|`+site/+` + `+site/docs/api/*.adoc+`
+|active
+|Deployed by `+pages.yml+`; content matches the source as of this read.
+
+|`+docs-site/.well-known/aibdp.json+`, `+docs-site/config/policy.yml+`
+|archival
+|Consumed only if `+docs-site+` is ever served.
+
+|`+docs/reports/audit/+`, `+docs/releases/*+`, `+docs/handover/*+`
+|archival
+|Dated records. `+RELEASE_NOTES_v1.3.adoc+` still shows `+--enable-cors+`, which
+the CLI spells `+--cors+`; left alone deliberately.
+|===
+
+== 6. Defects found
+
+IDs here are local to this report (`+RD`*n*), because link:../DEBT.adoc[`+docs/DEBT.adoc+`]
+already uses `+D`*n* for its documentation-debt entries and `+C`*n* for code.
+The ones that outlive this report carry a DEBT number:
+
+[width="100%",cols="12%,22%,66%",options="header"]
+|===
+|Here |In `+DEBT.adoc+` |Form
+
+|RD1 |D10 |open
+|RD2 |D8 |partly fixed (override + corrected record); default port open
+|RD3 |— |fixed, recorded in DEBT's "`Fixed en route`" list
+|RD4 |D11 |open
+|RD5 |D9 |docs fixed, enforcement decision open
+|RD6 |— |open, small; no DEBT number because there is nothing to decide
+|RD7 |D12 |open
+|RD8 |— |open, small; no DEBT number because there is nothing to decide
+|===
+
+[[rd1]]
+=== RD1. `+verisim+` is a routing switch as well as a storage switch
+*P1 — structural, open.*
+
+`+server.rs:423+` compiles `/api/prove` two ways; whether an HTTP proof enters
+`+ProverDispatcher+` depends on a database feature. No caller-visible field
+distinguishes the two behaviours.
+
+*Fix direction* (not applied): build the dispatcher unconditionally and make
+`+with_verisim_writer+` purely additive — the writer already cannot fail a
+dispatch, so nothing needs the compile-time branch. Requires a decision record
+because it changes what a default build returns.
+
+*Reproduce:*
+[source,bash]
+----
+sed -n '420,450p' src/rust/server.rs
+grep -n 'cfg(feature = "verisim")' src/rust/server.rs
+----
+
+[[rd2]]
+=== RD2. Core server and GraphQL interface both default to 8081
+*P1 — documented, open.*
+
+`+main.rs:165+` (`+server --port+` default 8081) and
+`+src/interfaces/graphql/main.rs:39+` (`+127.0.0.1:8081+`, hard-coded). Whichever
+starts second cannot bind. `+docs/QUICKSTART-USER.adoc+` claimed the three
+interfaces sit "on dedicated ports (8081 / 50051 / 8000)" — false for the first
+two pairings.
+
+This is a policy matter, not a preference:
+`+0-canon/PORT-REGISTRY.adoc+` in hyperpolymath/standards says "`Every project
+MUST use a unique port. No two projects share a port.`" The registry is
+prose-only today ("`no gate reads this registry`"), which is why the collision
+survived a release.
+
+Done here: `+ECHIDNA_GRAPHQL_ADDR+` override (default unchanged, so no client
+breaks), and explicit collision warnings in `+site/docs/index.adoc+`,
+`+site/docs/api/graphql.adoc+` and `+QUICKSTART-USER.adoc+`, plus
+`+core-server = 8081+` in the `+[interfaces]+` block of `+META.a2ml+` so the
+machine record cannot omit it.
+
+Not done: moving the default. Anything pinned to 8081 keeps working; a
+deployment that wants both sets the variable.
+
+*Reproduce:*
+[source,bash]
+----
+grep -n 'default_value = "8081"' src/rust/main.rs
+grep -n '127.0.0.1:8081' src/interfaces/graphql/main.rs
+----
+
+[[rd3]]
+=== RD3. Container entrypoint and health probes targeted strings that do not exist
+*P2 — fixed.*
+
+`+entrypoint.sh+` ran `+echidna serve+` (subcommand is `+server+`, no alias);
+`+compose.toml+` probed `+/health+` and `+vordr.toml+` probed `+/ready+`, neither
+of which the core server serves. Net effect: the published container could not
+start, and would have been unhealthy if it had.
+
+Three-line fix in each file; `+/api/health+` is the real route
+(`+server.rs:173+`).
+
+*Adjacent, found and deliberately not fixed.* `+container/compose.toml+` is not
+valid TOML 1.0: its `+environment = { … }+` inline tables span multiple lines,
+which TOML forbids. `+selur-compose+` accepts the dialect, but the file's own
+header offers `+podman compose --file compose.toml+` as the fallback when selur
+is absent, and a strict parser rejects the file before it looks at the routes
+(verified: Python's `+tomllib+` fails at line 19, column 16, on both the
+pre-and-post-change file). Rewriting the tables to `+[services.echidna.environment]+`
+would fix the fallback but changes what selur reads, so it needs whoever owns
+the selur format to confirm rather than a guess.
+
+[[rd4]]
+=== RD4. `+echidna-mcp+` calls a subcommand that does not exist
+*P2 — open.*
+
+`+cmd.arg("check-prover")+` (`+main.rs:176+`). Fix requires adding the
+subcommand or probing `/api/provers`; both are feature decisions. Its `prove`
+tool additionally uses the legacy `+--format json+` dialect instead of
+`+--output json+`.
+
+[[rd5]]
+=== RD5. Solver integrity checking is never configured
+*P1 — open, and the largest gap this pass found.*
+
+`+docs/ARCHITECTURE.adoc+` promises step 1 of the trust pipeline is
+`+integrity/+`: "solver binary SHAKE3-512 + BLAKE3 against
+`+config/solver-manifest.toml+`". In `+dispatch.rs:632–645+` the check runs only
+`+if let Some(ref checker) = self.integrity_checker+`, else
+`+solver_integrity_ok = true+`. `+with_integrity_checker+` has *no caller
+anywhere in the tree* (`+grep -rn with_integrity_checker src/ crates/ tests/+`
+returns the definition only). And `+config/solver-manifest.toml+` still carries
+`+shake3_512 = "PLACEHOLDER_COMPUTE_ON_FIRST_RUN"+` for every solver, so
+configuring a checker today would report `+Uninitialized+` — which the code
+treats as passing.
+
+So: integrity is *assumed* ok on every path, and the manifest could not prove
+otherwise if it were consulted. Report as a gap; wiring it is a decision (it
+introduces a failure mode where a proof is refused for a hash mismatch).
+
+*Reproduce:*
+[source,bash]
+----
+grep -rn 'with_integrity_checker' src/ crates/ tests/     # definition only
+grep -n 'PLACEHOLDER' config/solver-manifest.toml
+----
+
+[[rd6]]
+=== RD6. VeriSim feed manifest says `+hexad+`
+*P2 — open.*
+
+`+.machine_readable/integrations/verisim.a2ml+`: `+format = "hexad"+`. The model
+is an octad. Either the manifest is stale or the feed is a different shape than
+the octad writer; the document does not say which, and nothing reconciles them.
+
+[[rd7]]
+=== RD7. `+docs-site/+` publishes stale API claims
+*P2 — open.*
+
+Not deployed (see §5), but it is linkable and states `/graphql` and
+`/playground` endpoints (the binary serves `/`), "30 supported prover backends"
+(canonical count is in `+docs/PROVER_COUNT.adoc+`), and a `+localhost:8000/api/v1+`
+base. Delete or rebuild; both are cheap, drift is not.
+
+[[rd8]]
+=== RD8. `+verify_parallel+` ignores the configured dispatcher
+*P2 — open.*
+
+`+server.rs:619+` constructs a fresh `+ProverDispatcher::new()+` instead of using
+`+app_state.dispatcher+`. With `+verisim+` on, parallel verifies therefore
+record nothing in `+proof_attempts+` while serial `/api/prove` calls do — a
+silent second inconsistency in the same learning loop that <<rd1,RD1>> describes.
+
+[[limits]]
+== 7. Limits of this pass
+
+No build was run and none could be: this checkout has no cargo toolchain, no
+`+agda+`, no Creusot, and no network access to a crate registry. Everything
+above is a static read of source and configuration at `916b769`. Where a claim
+depends on runtime behaviour it says so and gives the command that would settle
+it.
+
+By the ledger vocabulary of `+PROOF-POLICY.adoc+` §5, that makes the *whole
+document* `+argued+` — a transcription no kernel, compiler or test runner
+checked. The claim ledger in §0.1 grades the individual claims; none of them is
+above `+proven+`, and the ones that reach `+proven+` (by construction) only do
+so for facts decidable by reading, such as "no `+serve+` variant exists" or
+"this branch is `+cfg`-gated". By the Mathesis grades this is at best *Grade 3*
+in shape — locally consistent, untranslated, independently unchecked — and the
+Agda legs are *not* even locally checked here, since no Agda is installed.
+
+Claims about other repositories — proof-burrower's parser tolerance,
+echidnabot's client wiring, Hypatia's generated-rule format — are taken from
+this repository's own records and are *not* independently verified here. The
+`+issues/+` drafts already mark such claims *[unverified]*; this document keeps
+that discipline.
+
+Scope note: `+epistemic-types@5422cd5+` (22 strict-safe Agda modules, Kripke
+semantics, receipt/warrant split) is *context* for what ECHIDNA may claim, not a
+dependency. `+docs/PROVE-RESULT-CONTRACT.adoc+` and
+`+crates/echidna-core/src/prove_result.rs+` both describe the relationship as
+"copies the distinction as a pattern; does not depend on the Agda library" —
+which is the accurate, scoped statement, and this recon found no place
+overclaiming universal interoperability.
+
+== 8. Reproduction
+
+[source,bash]
+----
+# every HTTP listener and its default bind
+grep -n 'TcpListener::bind\|let addr =' src/rust/server.rs src/interfaces/*/main.rs
+grep -n 'default_value = "8081"' src/rust/main.rs
+
+# the feature flag that is off by default
+sed -n '115,132p' Cargo.toml
+grep -rn 'cfg(feature = "verisim")' src/rust/ | wc -l
+
+# nothing loads Logtalk
+grep -rn '\.lgt' --exclude-dir=.git .        # archived file + its own self-reference
+grep -rni 'logtalk' --exclude-dir=.git .     # prose only, after this change
+
+# the prove contract vs the legacy formatter
+grep -n 'ProveOutput\|--output' src/rust/main.rs | head
+grep -n '"level"' src/rust/output.rs | head
+
+# integrity checker wiring
+grep -rn 'with_integrity_checker' src/ crates/ tests/   # definition only
+----
+
+== 9. Follow-ups, in the order they are worth doing
+
+. <<rd5,RD5>> — decide whether solver integrity is enforced or documented as not
+  enforced. The current text said it is enforced; that is the one item here
+  that could mislead someone into relying on an assumption.
+. **DONE** — `+docs/PROOF-STATUS.adoc+` R4 re-type-checked with the canonical §2.1
+  invocation. It passes; R4 is now `+proven+`, with the
+  `+UnsupportedIndexedMatch+` limit recorded rather than papered over. See
+  <<proof-updating,§10>>.
+. `+docs/PROOF-STATUS.adoc+` R2 — cite a green `+idris2-abi-ci.yml+` run and its
+  commit for the ABI row.
+. <<rd1,RD1>> — decouple the trust pipeline from the `+verisim+` feature.
+. <<rd7,RD7>> — delete `+docs-site/+` or regenerate it from `+site/docs/+`.
+. <<rd2,RD2>> — move the GraphQL default off 8081 once a release note can carry
+  the change.
+. <<rd4,RD4>> — repair or remove `+echidna-mcp+'s `+check_prover+`.
+. <<rd6,RD6>>, <<rd8,RD8>> — small, unambiguous, no decision needed.
+
+=== Not follow-ups
+
+`+proofs/+` trees being unverified, and every `+trust_level+` in the tree
+being disconnected from a receipt. The first is policy (`+PROOF-POLICY+` §3:
+corpora are not obligations); the second is recorded scope
+(`+docs/PROOF-STATUS.adoc+` R7/R8). Chasing either as debt would be a category
+error, which is why they are named here.
+
+[[proof-updating]]
+== 10. Proof updating, 2026-11-01
+
+The follow-up at §9.2 was executed, and the proof corpus was extended rather
+than only re-checked. Receipts are in `+docs/PROOF-STATUS.adoc+` (R4, R9, R10,
+R11) and the narrative in `+docs/PROOF-NEEDS.adoc+`; this section records what
+the *audit* position now is.
+
+=== 10.1 The receipt that matters
+
+[source,bash]
+----
+cd meta-checker
+agda --safe --without-K --cubical-compatible src/Echidna/MetaChecker.agda
+# exit 0, 98 s cold, 9 modules + 214 stdlib modules
+----
+
+Agda 2.7.0.1, `+agda-stdlib+` 2.1, commit `+916b769+`. Zero postulates — and now
+excluded by `+--safe+` rather than by a `+grep+`, which is the difference between
+`+argued+` and `+proven+` in §5 of the policy.
+
+**The limit, stated as a limit.** 53 warnings, all
+`+-W[no]UnsupportedIndexedMatch+`, at `+TrustLevel+` 77/88/235,
+`+AxiomSafety+` 119 and `+ClampTrust+` 98. Those functions do not *compute*
+under Cubical transports. The corpus is `+--cubical-compatible+`, **not**
+`+--cubical+` — `+PROOF-POLICY+` §2.1 draws exactly that distinction, and it is
+why the flag stays and the warning is reported instead of suppressed.
+
+The obvious question — why not use `+--cubical+` and be done with it — was
+tested rather than argued: `+agda --cubical --safe src/Echidna/MetaChecker.agda+`
+fails **inside stdlib 2.1** (`+Data/List/Membership/Setoid/Properties.agda+`,
+unsolved metas) before reaching any ECHIDNA module. The stdlib is written to be
+`+--cubical-compatible+` and ships `+--warning=noUnsupportedIndexedMatch+` for
+itself. So the flag chosen is the strongest the dependency set supports, and the
+warning is a limit to record, not a weakness to hide.
+
+One more result worth having: the out-of-policy `+proofs/agda/+` tree — the one
+R6 cites — is **13/13 green** under the same flags. That does not make it
+in-policy, but it does change R6's remedy from "downgrade the claim" to "move the
+file".
+
+=== 10.2 A module that had never been compiled
+
+`+meta-checker/src/Echidna/AxiomTrackerCompleteness.agda+` was in the tree, and
+in the "30+ properties" summary, but nothing imported it and no workflow named
+it — so it had never been type-checked by any gate. Compiling it showed a syntax
+error (a hand-rolled `+_⊎_+` declared in a `+where+` clause on a type signature)
+and two proofs that assumed `+worst-policy Clean b+` reduces, when
+`+worst-policy+` splits on its first argument and the term is stuck.
+
+This is the same class of finding as the routing audit's: an artefact whose
+existence was being reported as evidence. Two fixes and it is now in the
+closure, and `+agda-meta-checker.yml+` gained a step that fails if any module
+under `+src/Echidna/+` produces no interface — the orphan cannot recur silently.
+
+=== 10.3 Obligations that had prose but no proof
+
+Three new modules, all inside the receipt above:
+
+* `+Integrity.agda+` — **E11**, previously an informal note. It proves the
+  invariant the Rust *violates*: `+dispatch.rs+` 642/848/998 and
+  `+solver_integrity.rs+` 359 accept `+Uninitialized+` as passing. So R9 is
+  `+proven+` on the specification and the implementation leg stays open, keyed to
+  DEBT D9. This is the useful outcome: the divergence is now checked on one side
+  instead of read on both.
+* `+ClampTrust.agda+` — the four `+ClampTrustBounds.idr+` obligations plus
+  idempotence, in a corpus that is actually run. It does not validate the Idris2
+  file, which remains out of policy (§3) with no recorded run.
+* `+Receipt.agda+` — the receipt/warrant distinction carried over from
+  `+epistemic-types@5422cd5+` as a two-world Kripke countermodel: a receipt is
+  factive, a warrant is not, and the same warrant never licences the stronger
+  token. Semantic rewrite, not a port — per §2.2 the source project keeps
+  ownership of its own theorems, and this module proves only what ECHIDNA needs.
+  It is what turns §5's "`+argued+` is not `+proven+`" from a style rule into a
+  theorem.
+
+=== 10.4 What the proof grade did and did not move
+
+*Home-system leg:* R4, R9, R10, R11 are `+proven+`. *Independent legs:* R5
+(Rocq + Lean) is untouched and `+open+`. So the corpus is still **Mathesis Grade
+3** — locally checked, untranslated — and this session did not move it, because
+nothing that establishes Grade 2i/2ii was performed. What moved is the policy
+vocabulary, not the grade.
+
+=== 10.5 Toolchains that could not be installed
+
+No Rust, Creusot, Lean 4, Idris 2, Rocq, Z3 or cvc5 leg ran. The environment
+reached only GitHub, PyPI and npm; GitHub *release assets* — the sole source of
+those tarballs — were blocked, and `+scripts/install-proof-toolchains.sh+`
+requires root, apt and the same host. Agda itself was only installable because a
+PyPI wheel exists, and even that needed the `+data/lib+` primitives lifted from
+the 2.7.0.1 tag to work.
+
+Per `+PROOF-POLICY+` §6, R1, R2, R3, R5 and every Stage-8a Idris2 obligation are
+reported as not run, not as passing. The recon's §7 limits stand unchanged.
+
+=== 10.6 Version choice, flagged rather than assumed
+
+"Latest stable" for this corpus is Agda 2.8.0.2 with stdlib 2.4. Neither is
+reachable here, and §2.1 says to pin versions per commit — so the receipt is
+taken at 2.7.0.1 / 2.1, which is also what `+agda-meta-checker.yml+` pins. A
+future bump is a deliberate act with a new receipt, not a side effect of
+"update to latest".
+
+=== 10.7 The rest of the estate, checked rather than assumed
+
+The session was also asked about proofs elsewhere in the estate. What is
+actually reachable from this environment:
+
+[width="100%",cols="24%,16%,60%",options="header"]
+|===
+|Repository |Reachable |What was found
+
+|`+hyperpolymath/epistemic-types+`
+|yes
+|Cloned at `+5422cd5+` — the commit named in the brief. **22 `.agda` files, all 22
+in the checked closure, `+agda --safe --without-K --cubical-compatible+` exit 0,
+0 postulates, 69 `+UnsupportedIndexedMatch+` warnings.** The brief's "22
+strict-safe modules" is exactly right, and the figure is now a receipt rather
+than a recollection. Nothing was edited: §2.2 keeps proof ownership with the
+source project, and this session cannot push outside its own branch anyway. What
+ECHIDNA took is the receipt/warrant distinction, re-proved as R11.
+
+|`+hyperpolymath/the-metadatastician+`
+|yes
+|Exists (pushed 2026-10-13, language: Shell) with **zero proof artefacts** — no
+`+.agda+`, `+.idr+`, `+.lean+`, `+.v+` or `+.thy+` anywhere in the tree. There is
+no proof updating to do there; whatever is outstanding is not a proof problem.
+
+|`+hyperpolymath/stuff-of-awesome+`
+|**no**
+|404, and a user-scoped search returns 0 results. Not visible to this token:
+either renamed, private, or never existed under this owner.
+
+|`+hyperpolymath/catachresis-colloquium+`
+|**no**
+|404, 0 results in a user-scoped search and 0 under the `+metadatastician+` org.
+Same caveat: private or absent.
+|===
+
+A 404 is not proof of absence, so the last two rows are recorded as *not
+visible from here* rather than as *does not exist*. If they are private, the
+work needs a token with access; if they were renamed, the new names are needed.
+Neither can be discharged by guessing.

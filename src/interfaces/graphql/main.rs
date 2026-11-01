@@ -36,11 +36,19 @@ async fn main() {
         .route("/health", get(health_check))
         .layer(CorsLayer::permissive());
 
-    let addr = "127.0.0.1:8081";
+    // Bind address. Default unchanged (127.0.0.1:8081) so nothing that already
+    // pins it breaks, but it collides with `echidna server`, whose --port also
+    // defaults to 8081: whichever starts second cannot bind. A deployment that
+    // wants both on one host sets ECHIDNA_GRAPHQL_ADDR for this one, e.g.
+    //   ECHIDNA_GRAPHQL_ADDR=127.0.0.1:8082 echidna-graphql
+    // See docs/reports/2026-11-01-routing-and-rule-engine-recon.adoc §6 RD2 and
+    // the one-port-per-project rule in standards 0-canon/PORT-REGISTRY.adoc.
+    let addr = std::env::var("ECHIDNA_GRAPHQL_ADDR")
+        .unwrap_or_else(|_| "127.0.0.1:8081".to_string());
     tracing::info!("GraphQL server listening on http://{}", addr);
     tracing::info!("GraphQL playground available at http://{}/", addr);
 
-    let listener = tokio::net::TcpListener::bind(addr).await.unwrap();
+    let listener = tokio::net::TcpListener::bind(&addr).await.unwrap();
     axum::serve(listener, app).await.unwrap();
 }
 

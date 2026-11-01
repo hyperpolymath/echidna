@@ -28,9 +28,16 @@ primary = ["Rust", "Julia", "AffineScript", "Idris2", "Zig"]
 secondary = ["Chapel", "Bun", "Guix"]
 
 [interfaces]
-graphql = 8081
-grpc = 50051
-rest = 8000
+# Four listeners, four binaries (recon 2026-11-01; see
+# docs/reports/2026-11-01-routing-and-rule-engine-recon.adoc §1).
+core-server = 8081      # `echidna server` (--port default); routes /api/*
+graphql = 8081          # `echidna-graphql`; POST / = GraphQL, GET / = playground.
+                        # Collides with core-server above. Default kept for
+                        # client compatibility; ECHIDNA_GRAPHQL_ADDR overrides.
+grpc = 50051            # `echidna-grpc`; IPv6 loopback only
+rest = 8000             # `echidna-rest`; /api/v1/* + /health (ECHIDNA_REST_ADDR)
+# standards 0-canon/PORT-REGISTRY.adoc: one port per project, no sharing. The
+# 8081 duplication is open debt (docs/DEBT.adoc D8), not an allocation.
 
 # ─────────────────────────────────────────────────────────────────────────────
 # Saturation campaign 2026-06-01 — additive surface declaration

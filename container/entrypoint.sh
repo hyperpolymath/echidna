@@ -22,4 +22,6 @@ if [ -d "${APP_DATA_DIR:-/data}" ]; then
     fi
 fi
 
-exec /app/bin/echidna serve --host "${APP_HOST:-[::]}" --port "${APP_PORT:-8081}" "$@"
+# Subcommand is `server`, not `serve` (clap enum in src/rust/main.rs; there is
+# no alias). Fixing this on 2026-11-01 — every container start failed at exec.
+exec /app/bin/echidna server --host "${APP_HOST:-[::]}" --port "${APP_PORT:-8081}" "$@"

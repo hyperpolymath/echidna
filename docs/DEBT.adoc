@@ -421,6 +421,129 @@ git grep -cE 'todo!\(\)|unimplemented!\(\)' -- '*.rs' | awk -F: '{s+=$2} END{pri
 
 '''''
 
+=== Routing and verification claims (recon 2026-11-01)
+
+Source:
+link:reports/2026-11-01-routing-and-rule-engine-recon.adoc[`+docs/reports/2026-11-01-routing-and-rule-engine-recon.adoc+`].
+Entries here are the ones that outlive that report.
+
+==== D8. Core server and GraphQL interface both default to port 8081
+
+*P1.* Two binaries, one default port. `+echidna server+` takes `+--port+`
+default 8081; `+echidna-graphql+` hard-coded 8081
+(`+src/interfaces/graphql/main.rs+`). Whichever starts second fails to bind.
+
+This is not merely untidy: `0-canon/PORT-REGISTRY.adoc` in
+hyperpolymath/standards states "Every project MUST use a unique port. No two
+projects share a port."
+
+Fixed so far: `+ECHIDNA_GRAPHQL_ADDR+` override (default unchanged, so no
+client breaks) and corrections to `+QUICKSTART-USER.adoc+`, `+README.adoc+`,
+`+docs/ARCHITECTURE.adoc+`, `+site/docs/index.adoc+`,
+`+site/docs/api/graphql.adoc+` and `+.machine_readable/descriptiles/META.a2ml+`,
+which variously omitted the core server or claimed the three interfaces sat
+"on dedicated ports".
+
+Open: the default itself. Moving it needs a release note, since anything
+pinned to 8081 keeps working only while the two are not co-resident.
+
+[source,bash]
+----
+grep -n 'default_value = "8081"' src/rust/main.rs
+grep -n 'ECHIDNA_GRAPHQL_ADDR' src/interfaces/graphql/main.rs
+----
+
+==== D9. Solver integrity is documented as enforced and is not enforced
+
+*P1.* `+docs/ARCHITECTURE.adoc+` and the published site listed solver binary
+integrity as step 1 of the trust pipeline. The check is conditional
+(`+dispatch.rs:632+`): with no checker attached, `+solver_integrity_ok` is
+`true`. `+with_integrity_checker+` has no caller in the tree, and
+`+config/solver-manifest.toml+` holds `+PLACEHOLDER_COMPUTE_ON_FIRST_RUN+` for
+every solver, so attaching one today would report `+Uninitialized+` — which the
+code also treats as passing.
+
+Fixed so far: the docs and the published site now say "capability present, not
+currently engaged" instead of claiming a step that does not run.
+
+Now machine-checked on the specification side:
+`+meta-checker/src/Echidna/Integrity.agda+` (`+docs/PROOF-STATUS.adoc+` R9)
+proves that verification requires an initialised manifest and that an
+uninitialised manifest never verifies — with collision resistance carried as an
+explicit hypothesis, and a sharpness result showing that hypothesis cannot be
+dropped. The accepting call sites are `+dispatch.rs+` 642, 848, 998 and
+`+solver_integrity.rs+` 359. So the divergence is checked on one side and read on
+the other, rather than read on both: closing D9 means changing those four lines,
+not the proof.
+
+Open: decide whether to wire it (introducing a refuse-on-mismatch failure mode)
+or to delete the step from the pipeline description. Recorded rather than
+silently changed.
+
+[source,bash]
+----
+grep -rn 'with_integrity_checker' src/ crates/ tests/   # definition only
+grep -n 'PLACEHOLDER' config/solver-manifest.toml
+----
+
+==== D10. `+--features verisim+` changes verification routing, not just storage
+
+*P1.* `+POST /api/prove+` compiles two ways: through `+ProverDispatcher+` with
+the feature, straight to the backend factory without it (`+server.rs:423+`).
+A persistence flag therefore decides whether an HTTP proof is arbitrated, and
+no response field distinguishes the two.
+
+Open: build the dispatcher unconditionally and make `+with_verisim_writer+`
+purely additive. Not done here because it changes what a default build
+returns — it needs a decision record.
+
+[source,bash]
+----
+sed -n '420,450p' src/rust/server.rs
+----
+
+==== D11. `+echidna-mcp+` calls a subcommand that does not exist
+
+*P2.* `+crates/echidna-mcp/src/main.rs+` runs `+echidna check-prover <name>+`;
+`+Commands+` has no such variant, so the tool fails with a usage error every
+time. Its `+prove+` tool also uses the legacy `+--format json+` dialect
+(`+{"level":"success"}+`) instead of the `+--output json+` prove contract.
+
+Open: needs either a `+check-prover+` subcommand or a `/api/provers` probe, plus
+a rewrite onto the contract. Feature decision.
+
+[source,bash]
+----
+grep -n 'check-prover' crates/echidna-mcp/src/main.rs   # one call site
+grep -n 'CheckProver\|check-prover' src/rust/main.rs     # expect empty
+----
+
+==== D12. `+docs-site/+` is unbuilt and its API pages are wrong
+
+*P2.* Nothing builds or deploys `+docs-site/+`: `+pages.yml+` publishes
+`+site/+` through Ddraig. Its pages still claim a `+/graphql+` endpoint and a
+`+/playground+` (the binary serves both at `+/+`), "30 supported prover
+backends", and a `+localhost:8000/api/v1+` base.
+
+Open: delete the tree or regenerate it from `+site/docs/+`. Left in place here
+because removing a documentation tree is an owner decision, not a cleanup.
+
+==== Fixed en route (recorded so they are not re-triaged)
+
+* `+container/entrypoint.sh+` executed `+echidna serve+`; the subcommand is
+  `+server+`. Every container start failed at `+exec+`.
+* `+container/compose.toml+` healthcheck probed `+/health+` and
+  `+container/vordr.toml+` probed `+/health+` and `+/ready+`; the core server
+  serves `+/api/health+` and never had `+/ready+`.
+* `+rules/security_learning.lgt+` was dead Logtalk, loaded by nothing;
+  quarantined to `+archive/logtalk/+` with a `+DEAD SOURCE+` header. See that
+  directory's README.
+* `+docs/ECOSYSTEM-INTEGRATION.adoc+` and
+  `+echidna-playground/.machine_readable/descriptiles/NEUROSYM.a2ml+` claimed
+  Hypatia emits Logtalk rules. It emits Elixir rules.
+
+'''''
+
 === Already tracked as issues
 
 Open issues covering debt not duplicated above:

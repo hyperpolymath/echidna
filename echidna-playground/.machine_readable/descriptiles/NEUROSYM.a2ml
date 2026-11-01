@@ -9,7 +9,12 @@ last-updated = "2026-04-11"
 [hypatia-config]
 scan-enabled = true
 scan-depth = "standard"  # quick | standard | deep
-report-format = "logtalk"
+# report-format retired 2026-11-01. It read "logtalk", which no scanner in the
+# estate emits: Hypatia's rule engine is Elixir, and this project is a scan
+# target, not a rules producer. Left unset so the consumer applies its own
+# default rather than being told to expect a format nothing produces.
+# See docs/reports/2026-11-01-routing-and-rule-engine-recon.adoc §4.4.
+# report-format = "logtalk"
 
 [symbolic-rules]
 # Custom symbolic rules for this project

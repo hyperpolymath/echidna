@@ -16,6 +16,14 @@ Guidelines and context for working with Claude Code on the ECHIDNA project.
 - **Known debt (licence, docs, code)**: [`docs/DEBT.adoc`](docs/DEBT.adoc)
 - **Environment variables**: [`docs/ENV-VARS.adoc`](docs/ENV-VARS.adoc)
 - **RSR / CCCP compliance statement**: [`RSR_COMPLIANCE.adoc`](RSR_COMPLIANCE.adoc)
+- **Proof and verification policy (normative)**: `3-practice/PROOF-POLICY.adoc`
+  in [hyperpolymath/standards](https://github.com/hyperpolymath/standards) —
+  which prover carries which obligation (Rust→Creusot, Ada→SPARK,
+  APIs/ABIs→Idris 2, theory→Agda rechecked in Rocq and Lean), and the closed
+  status vocabulary (`proven`, `proven-with-postulates`, `tested-only`,
+  `argued`, `open`). A change to the mapping is an owner ruling and requires
+  this pointer to move in the same change.
+- **This repo's proof-status ledger**: [`docs/PROOF-STATUS.adoc`](docs/PROOF-STATUS.adoc)
 - **Receipts for README claims**: [`EXPLAINME.adoc`](EXPLAINME.adoc)
 - **Contributor guide**: [`.github/CONTRIBUTING.md`](.github/CONTRIBUTING.md)
 

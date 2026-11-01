@@ -1,0 +1,350 @@
+// SPDX-License-Identifier: CC-BY-SA-4.0
+// SPDX-FileCopyrightText: 2026 ECHIDNA Project Contributors
+
+= Proof status — policy-vocabulary view
+
+*Status*: current as of 2026-11-01, commit `+916b769+`.
+*Normative policy*: `+3-practice/PROOF-POLICY.adoc+` in
+https://github.com/hyperpolymath/standards[hyperpolymath/standards] (owner
+ruling 2026-10-26).
+
+This is ECHIDNA's *proof-status file* in the sense `+PROOF-POLICY+` uses the
+term: the place each obligation's ledger row lives, in the closed vocabulary of
+§5. It is a *view* over link:PROOF-NEEDS.adoc[`+docs/PROOF-NEEDS.adoc+`], not a
+replacement:
+
+[width="100%",cols="26%,74%",options="header"]
+|===
+|File |Carries
+
+|`+docs/PROOF-NEEDS.adoc+`
+|The register as it grew: per-obligation narrative, which artefact covers
+what, and the dated build receipts (`lake build` run 2026-05-18, per-file error
+counts, root causes). *Authoritative for detail and for failures.*
+
+|`+docs/PROOF-STATUS.adoc+` (this file)
+|The same obligations mapped onto `+PROOF-POLICY+` §1 (which verifier carries
+which kind) and §5 (the closed status vocabulary), plus obligations
+`+PROOF-NEEDS+` does not cover. *Authoritative for the status token.*
+
+|===
+
+Where the two appear to disagree, this file's *token* wins and
+`+PROOF-NEEDS+`'s *narrative* wins, because neither a token nor a narrative can
+be more accurate than the receipt under it.
+
+== Vocabulary
+
+Closed set, `+PROOF-POLICY.adoc+` §5. Machine-readable ledgers use the
+lowercase token; prose may use the label.
+
+[width="100%",cols="22%,16%,62%",options="header"]
+|===
+|Token |Label |Means
+
+|`+proven+` |PROVEN
+|Machine-checked with no escape hatch, trust boundary named. A bounded check is
+not this row.
+
+|`+proven-with-postulates+` |PROVEN-WITH-AXIOMS
+|A kernel checked it and it rests on named necessary axioms, listed here.
+
+|`+tested-only+` |TESTED
+|Checked on a bounded or sampled domain; bounds given.
+
+|`+argued+` |ASSUMED
+|A stated hypothesis, or a transcription no kernel has checked. Includes "the
+CI gate exists and the authors say it passes" when no receipt is cited.
+
+|`+open+` |OPEN
+|Not done.
+|===
+
+=== Relation to the Mathesis grades
+
+https://github.com/hyperpolymath/mathesis[mathesis], *Estate-wide Mathematical
+Knowledge Architecture* §5, grades a *theorem* by how far its witness has
+travelled: **Grade 3** type-checks locally in its home system and is not
+translated; **Grade 2i/2ii** one / two independent translations with statement
+correspondence recorded; **Grade 1** machine-checked through a verified checker
+API in headless CI.
+
+The two vocabularies are orthogonal — one grades a theorem's reach, the other
+records whether a repository's obligation was discharged — but they interact:
+
+* A home-system leg may be `+proven+` while every independent leg is `+open+`.
+  That combination *is* Grade 3, and it is the ceiling for anything in this
+  repository.
+* A translation leg is `+argued+`, not `+proven+`, until the statement
+  correspondence is recorded (`+PROOF-POLICY+` §2: "`the kernel checks the term
+  only against the translated statement`").
+
+Mathesis §6 forbids flattening assurance into a percentage. See R5 and R6.
+
+== Obligations
+
+Grouped by the `+PROOF-POLICY+` §1 mapping, because that is what decides which
+verifier is even allowed to carry the row.
+
+=== Rust — Creusot (§1: first-party Rust)
+
+[width="100%",cols="24%,13%,38%,25%",options="header"]
+|===
+|Obligation |Row |Basis |Evidence / next step
+
+|R1. Trust pipeline, dispatch, arbitration, Pareto
+|`+open+`
+|`+PROOF-POLICY+` §1 maps first-party Rust to Creusot.
+|`+crates/echidna-core-creusot+` describes itself as "`Creusot-annotated (not
+yet proved)`"; the `+creusot+` dev-dependency is commented out and the crate
+builds on stable Rust behind a `+creusot+` feature. Annotation is not proof. Row
+stays `+open+` until a Creusot run yields a receipt with a commit hash.
+
+|===
+
+=== Idris 2 — APIs, ABIs, engineering properties (§1)
+
+`+PROOF-NEEDS+` lists E2, E3, E5, E6, E7, E12, the VQL-UT row, the extensive
+ABI row and the Stage-8a trio as constructively proved, all in
+`+verification/proofs/idris2/+` or `+src/abi/+`, all with zero `+believe_me+`
+(the `+PROOF-NEEDS+` audit of 2026-05-18 establishes that the 21
+`+believe_me+` grep hits are prose and detector strings).
+
+[width="100%",cols="24%,13%,38%,25%",options="header"]
+|===
+|Obligation |Row |Basis |Evidence / next step
+
+|R2. Idris 2 interface/ABI obligations (E2, E3, E5, E6, E7, E12, Stage 8a,
+VQL-UT, extensive ABI)
+|`+argued+`
+|`+PROOF-POLICY+` §1 maps ABIs and engineering properties to Idris 2. The
+artefacts exist and are detailed in `+PROOF-NEEDS+`.
+|No `+idris2 --build+` receipt for
+`+verification/proofs/idris2/echidna-verif-proofs.ipkg+` is cited with a commit
+hash. Promote to `+proven+` by citing a green run and its commit — that is a
+one-line change, and it is the cheapest upgrade in this file.
+
+|===
+
+=== Lean 4 — cross-checks and algebraic properties (§4 exceptions)
+
+[width="100%",cols="24%,13%,38%,25%",options="header"]
+|===
+|Obligation |Row |Basis |Evidence / next step
+
+|R3. Lean 4 legs: E4-L4 `+ConfidenceLattice.lean+`, E10
+`+ParetoMaximality.lean+` / `+ParetoStrongMaximality.lean+`, E11
+`+IntegrityVerification.lean+`, E13 `+PortfolioCompleteness.lean+`
+|`+open+`
+|Directly recorded: `+lake build+` run 2026-05-18 (Lean 4.13.0) — *all five
+fail to compile*, 49 / 2 / 1 / 5 / 31 errors, three root causes
+(`+unfold_let+` removed in 4.13.0; Mathlib tactics under a zero-mathlib
+lakefile; instance synthesis and module resolution).
+|Nothing. This row is correct and must not be softened. `+PROOF-NEEDS+` records
+that `+ConfidenceLattice.lean+` was left byte-identical and that the
+`+unfold_let+` token-swap made it worse (104 errors). The open decision is
+Mathlib-vs-core, which is an owner call.
+
+|===
+
+=== Agda — theory and metatheory (§1, §2)
+
+[width="100%",cols="24%,13%,38%,25%",options="header"]
+|===
+|Obligation |Row |Basis |Evidence / next step
+
+|R4. Agda meta-checker: trust-level order, axiom safety, portfolio, dispatch,
+axiom-tracker completeness, integrity, clamp bounds, receipt/warrant (9 modules)
+|`+proven+`
+|First-party Agda in `+meta-checker/src/+`, type-checked with the §2.1
+canonical invocation. Receipt taken 2026-11-01 at commit `+916b769+`:
+
+----
+agda --safe --without-K --cubical-compatible \
+  src/Echidna/MetaChecker.agda          # exit 0, 98 s cold
+----
+
+Versions: Agda `+2.7.0.1+`, `+agda-stdlib+` `+2.1+` (214 stdlib modules pulled
+in). All 9 modules in `+src/Echidna/+` produce an interface; 53 warnings, all
+of them `+-W[no]UnsupportedIndexedMatch+`, at five sites (`+TrustLevel+` 77,
+88, 235; `+AxiomSafety+` 119; `+ClampTrust+` 98). No `+postulate+`, no
+`+sorry+`, no `+believe_me+`, no `+Admitted+`; `+--safe+` is what excludes
+them rather than a `+grep+`.
+|Trust boundary, named: the Agda 2.7.0.1 kernel under `+--safe+`, plus the
+stdlib. **Limit, recorded not hidden:** those warnings mean the flagged
+functions do not *compute* under Cubical transports. The corpus is
+`+--cubical-compatible+`, not `+--cubical+` — exactly the distinction
+`+PROOF-POLICY+` §2.1 draws — and dropping the warning, or the flag, to get a
+clean log would be the weakening §2.1 forbids. It is immaterial today because
+nothing transports these terms; transport is R5's job, which is where the
+limit would first bite.
+
+**Why not just use `+--cubical+`?** Because it fails, and not on this corpus.
+`+agda --cubical --safe src/Echidna/MetaChecker.agda+` exits non-zero in
+`+agda-stdlib-2.1/src/Data/List/Membership/Setoid/Properties.agda+` with
+unsolved metas, before any ECHIDNA module is reached: stdlib 2.1 is written to
+be `+--cubical-compatible+`, and ships
+`+--warning=noUnsupportedIndexedMatch+` in `+standard-library.agda-lib+` for
+precisely this reason. So `+--cubical-compatible+` is not a weakened choice here;
+it is the strongest flag this dependency set supports, and the policy's own
+distinction between the two flags is what lets that be said plainly.
+
+Promoted from `+argued+` on the strength of that receipt. Before it, the row
+rested on "the CI gate exists and the authors say it passes" — which §5 defines
+as `+argued+`, not a receipt. One module
+(`+AxiomTrackerCompleteness.agda+`) turned out never to have been in the
+checked closure at all, and did not type-check (see R9's note on scope).
+
+|R9. E11 solver-integrity soundness
+|`+proven+`
+|`+meta-checker/src/Echidna/Integrity.agda+`, inside the R4 receipt. States the
+obligation that had no Agda record: verification requires an initialised
+manifest; verification means the recorded digest was matched; a substituted
+binary is never verified; an uninitialised manifest never verifies. Collision
+resistance is a record *field*, not a postulate, so the guarantee is
+conditional and says so in its type; `+sharpness+` exhibits a comparator for
+which that field cannot be inhabited, so the hypothesis is load-bearing rather
+than decorative.
+|**Specification, not implementation.** `+src/rust/dispatch.rs+` lines 642, 848
+and 998, and `+src/rust/integrity/solver_integrity.rs+` line 359, all accept
+`+IntegrityStatus::Uninitialized+` as passing. The theorem proves the opposite
+of what that code does. That divergence is DEBT D9, now machine-checked on one
+side instead of argued on both. Closing R9's implementation leg means changing
+the Rust, not the proof.
+
+|R10. ClampTrustBounds
+|`+proven+`
+|`+meta-checker/src/Echidna/ClampTrust.agda+`, inside the R4 receipt. Restates
+the four obligations of `+verification/proofs/idris2/ClampTrustBounds.idr+`
+(bounds, monotonicity, fixed points, and — added — idempotence, i.e. that the
+clamp lands on a real level rather than between two) over the trust-level type
+the gate actually checks.
+|The Idris2 original stays *out of policy* per §3 and, as far as this
+repository can tell, was never run: `+idris2-abi-ci.yml+` cites it but no
+receipt is recorded. This row does not validate that file; it discharges the
+same obligations in a corpus that is checked. Monotonicity is by step lemma
+plus transitivity rather than the Idris2 file's 36-clause decision table.
+
+|R11. Epistemic separation: receipt vs warrant
+|`+proven+`
+|`+meta-checker/src/Echidna/Receipt.agda+`, inside the R4 receipt. A two-world
+Kripke countermodel: a receipt is factive, a warrant is not; the same warrant
+never licences the stronger token; while the agent cannot discriminate the
+worlds, no receipt exists at all; a discriminating check parameter yields one.
+This is what makes §5's "`+argued+` is not `+proven+`" a theorem instead of a
+style rule.
+|Semantic rewrite of the receipt/warrant distinction from
+https://github.com/hyperpolymath/epistemic-types[epistemic-types] at
+`+5422cd5+`, **not** a port of its theorems. For the record, that source is
+itself green under the same invocation (22/22 modules, exit 0, 0 postulates), so
+this row is a rewrite of something that checks, not of an aspiration: per §2.2 the source project keeps
+ownership of those, and this module proves only what ECHIDNA needs. The
+residual limit is the honest one — a receipt requires a check that
+*discriminates*, which is precisely the evidence R5 does not yet have.
+
+|R5. Independent recheck of R4 in Rocq *and* Lean
+|`+open+`
+|`+PROOF-POLICY+` §2: every Agda theory proof is rechecked in both, transported
+through Dedukti or re-proved, with the route recorded per theorem.
+|Never attempted. This is what holds the set at Mathesis *Grade 3*: locally
+checked, untranslated. ECHIDNA's `+src/rust/exchange/+` speaks Dedukti, so the
+transport route exists; using it is unstarted work, not a missing capability.
+
+|R6. E9 "proof composition soundness"
+|`+argued+`, with a location defect
+|`+PROOF-NEEDS+` evidences it with `+proofs/agda/ProofComposition.agda+`. But
+`+PROOF-POLICY+` §3 says `+proofs/<prover>/+` trees are fixtures, "`outside
+this policy`".
+|The obligation survives; its evidence sits where the policy says evidence
+cannot live. **New (2026-11-01):** the whole `+proofs/agda/+` tree — 13 files
+including `+ProofComposition.agda+` — type-checks under
+`+agda --safe --without-K --cubical-compatible+`, 13/13, no postulates. So the
+cheap remedy is the *move* to a policy-conformant location
+(`+verification/proofs/agda/+`), not re-stating the obligation as unsupported:
+the evidence is good, it is merely filed where §3 says evidence cannot live.
+Recorded, not resolved — moving it is a repository change with cross-references
+to update, so it is left as a named action rather than done silently.
+
+|===
+
+=== Calibrated scores (§5 is about proof, not ranking)
+
+[width="100%",cols="24%,13%,38%,25%",options="header"]
+|===
+|Item |Row |Basis |Note
+
+|R7. `+verification/confidence.rs+` 0–1 score; `+DispatchResult.trust_level+` 1–5
+|`+tested-only+` (internal ranking) — *not an assurance claim*
+|Mathesis §6: "`Do not flatten proof confidence into a percentage.`"
+|The score ranks backends against each other and is unweighted by any receipt.
+It is a routing heuristic. Do not publish it as assurance and do not compare it
+with a Mathesis grade.
+
+|R8. `+echidna.prove.result/1+` `+trust.confidence+`
+|`+open+`, correctly
+|Receipt/warrant discipline: a receipt is transported proof, a warrant is only
+evidence.
+|A single-backend `+echidna prove+` verifies no certificate, so the field is
+`+null+` on every run today. That is the honest value, not a gap to fill with a
+guess.
+
+|===
+
+== Not obligations
+
+`+PROOF-POLICY+` §3: "`Corpora that exist to exercise provers are not
+obligations. echidna's `+proofs/<prover>/+` trees and similar fixtures are test
+material for a multi-prover system and are outside this policy.`"
+
+So the sixteen `+proofs/<prover>/+` directories and `+training_data/+` carry no
+row. They exercise parsers and backends. Listing them is deliberate: an absent
+row should read as *out of policy*, not *forgotten*. The same holds for
+`+archive/logtalk/+` (dead, quarantined) and for `+echidna-playground/+`.
+
+Note the tension with R6 — one artefact in a corpus directory is cited by
+`+PROOF-NEEDS+` as covering a real obligation. §3 is why that is a defect in
+placement rather than a status question.
+
+== Standing assumptions
+
+Recorded per `+PROOF-POLICY+` §1.1: where a first-party claim leans on
+something the estate does not own, the reliance is its own `+argued+` row
+naming the dependency.
+
+[width="100%",cols="30%,14%,56%",options="header"]
+|===
+|Assumption |Row |Scope
+
+|Solver binaries behave as their published versions do
+|`+argued+`
+|See link:DEBT.adoc[`+docs/DEBT.adoc+`] D9. No integrity checker is attached in
+this release and `+config/solver-manifest.toml+` holds
+`+PLACEHOLDER_COMPUTE_ON_FIRST_RUN+` for every solver, so *which* binary ran is
+assumed, not checked. Every end-to-end result in this repository inherits it.
+
+|VeriSimDB persists what it is sent, when it is sent
+|`+argued+`
+|The writer is fire-and-forget by design (`+dispatch.rs:725+`); a dropped record
+is invisible to the proof result. Fine for a learning loop, and precisely why
+it must never become a dependency of one.
+
+|===
+
+== What this file does not do
+
+It is not a release gate and not a CI result. A `+proven+` row here would never
+mean "ECHIDNA is verified" — it would mean one named obligation was discharged
+by one named tool with its boundary written down. Nothing here vouches for a
+prover backend's own soundness.
+
+No row in this file is above `+argued+` today, and that is the accurate state,
+not an omission.
+
+== Related
+
+* `+3-practice/PROOF-POLICY.adoc+`, `+docs/TRUSTED-BASE-REDUCTION-POLICY.adoc+`,
+  `+0-canon/PORT-REGISTRY.adoc+` — hyperpolymath/standards, normative.
+* link:PROOF-NEEDS.adoc[`+docs/PROOF-NEEDS.adoc+`] — the detailed register and
+  its build receipts.
+* link:reports/2026-11-01-routing-and-rule-engine-recon.adoc[`+docs/reports/2026-11-01-routing-and-rule-engine-recon.adoc+`]
+  — the routing audit that produced R7, R8 and D9.

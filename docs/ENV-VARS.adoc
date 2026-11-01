@@ -26,6 +26,33 @@ surfaces using `+VERISIMDB_URL+` are stale and being migrated.
 separate from the ML server only when the GNN runs on a different host.
 |===
 
+=== Interface listeners
+
+Each listener is a separate binary. Two of them default to the same port; see
+link:reports/2026-11-01-routing-and-rule-engine-recon.adoc[`+docs/reports/2026-11-01-routing-and-rule-engine-recon.adoc+`]
+§6 RD2 and `+0-canon/PORT-REGISTRY.adoc+`.
+
+[width="100%",cols="20%,20%,20%,20%,20%",options="header",]
+|===
+|Variable |Type |Default |Used by |Purpose
+|`+ECHIDNA_REST_ADDR+` |host:port |`+127.0.0.1:8000+`
+|`+src/interfaces/rest/main.rs:142+` |Bind address for the `+echidna-rest+`
+binary (`+/api/v1/*+`). Not the core server.
+
+|`+ECHIDNA_GRAPHQL_ADDR+` |host:port |`+127.0.0.1:8081+`
+|`+src/interfaces/graphql/main.rs+` |Bind address for `+echidna-graphql+`.
+Same default as the core server's `+--port+`, so set this when running both.
+
+|`+--port+` / `+--host+` (CLI flags, not env)
+|host:port |`+127.0.0.1:8081+`
+|`+src/rust/main.rs+` |Bind address for `+echidna server+`. There is no
+environment override for this one.
+
+|`+APP_PORT+` / `+APP_HOST+` |host:port |`+[::]` / `+8081+`
+|`+container/entrypoint.sh+` |Read by the container entrypoint and passed to
+`+echidna server+` as flags. The binary itself does not read them.
+|===
+
 === Training & evaluation (Julia)
 
 [width="100%",cols="20%,20%,20%,20%,20%",options="header",]
