@@ -43,8 +43,8 @@ async fn main() {
     //   ECHIDNA_GRAPHQL_ADDR=127.0.0.1:8082 echidna-graphql
     // See docs/reports/2026-11-01-routing-and-rule-engine-recon.adoc §6 RD2 and
     // the one-port-per-project rule in standards 0-canon/PORT-REGISTRY.adoc.
-    let addr = std::env::var("ECHIDNA_GRAPHQL_ADDR")
-        .unwrap_or_else(|_| "127.0.0.1:8081".to_string());
+    let addr =
+        std::env::var("ECHIDNA_GRAPHQL_ADDR").unwrap_or_else(|_| "127.0.0.1:8081".to_string());
     tracing::info!("GraphQL server listening on http://{}", addr);
     tracing::info!("GraphQL playground available at http://{}/", addr);
 
