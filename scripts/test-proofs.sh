@@ -84,7 +84,7 @@ test_agda() {
         local filename=$(basename "$file")
         log_info "Testing $filename..."
 
-        if agda --safe "$file" &> /dev/null; then
+        if agda --safe --without-K --cubical-compatible "$file" &> /dev/null; then
             log_success "$filename"
             PASSED_TESTS=$((PASSED_TESTS + 1))
         else
