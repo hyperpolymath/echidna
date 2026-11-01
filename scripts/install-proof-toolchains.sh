@@ -20,7 +20,8 @@
 # compiler's data/lib directory populated by hand because the wheel omits it:
 #
 #   pip install --target /tmp/py-tc agda           # Agda 2.7.0.1
-#   PYTHONPATH=/tmp/py-tc PATH=/tmp/py-tc/bin:$PATH
+#   export PYTHONPATH=/tmp/py-tc
+#   export PATH=/tmp/py-tc/bin:$PATH
 #   mkdir -p /tmp/py-tc/agda/data/lib              # wheel ships no primitives
 #   # copy src/data from the v2.7.0.1 tag into /tmp/py-tc/agda/data/
 #
