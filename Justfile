@@ -275,8 +275,8 @@ proofs-agda:
     export LC_ALL="${LC_ALL:-C.UTF-8}"
     cd proofs/agda
     for f in $(find . -name '*.agda' -not -path './_build/*' -not -path './dist-newstyle/*' | sort); do
-        echo "agda $f"
-        agda "$f"
+        echo "agda --safe --without-K --cubical-compatible $f"
+        agda --safe --without-K --cubical-compatible "$f"
     done
     echo "Agda corpus: all files type-check"
 
