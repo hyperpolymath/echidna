@@ -47,7 +47,7 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         run: |
           set -euo pipefail
-          PATTERN='^meta-checker/'
+          PATTERN='^(meta-checker/|\.github/workflows/agda-meta-checker\.yml$)'
           if [ "${{ github.event_name }}" = "pull_request" ]; then
             FILES=$(gh api "repos/${{ github.repository }}/pulls/${{ github.event.pull_request.number }}/files" \
                       --paginate --jq '.[].filename')
