@@ -171,10 +171,10 @@ jobs:
           path: src/zig_ffi/zig-out/lib/
 
       - name: Build with chapel feature
-        run: cargo build --features chapel
+        run: cargo build --locked --features chapel
 
       - name: Test with chapel feature
-        run: cargo test --features chapel -- proof_search
+        run: cargo test --locked --features chapel -- proof_search
 
   # Job 4: Build Rust linking against the real Chapel library (no Zig stubs).
   #
@@ -246,7 +246,7 @@ jobs:
           zig build -Doptimize=ReleaseSafe -Dcpu=baseline -Dstubs=false
 
       - name: Build Rust with real Chapel library
-        run: cargo build --features chapel
+        run: cargo build --locked --features chapel
 
       - name: Test Rust with real Chapel library
-        run: cargo test --features chapel -- proof_search
+        run: cargo test --locked --features chapel -- proof_search

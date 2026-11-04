@@ -298,7 +298,10 @@ mod chapel_ffi {
                         .search("True", Duration::from_secs(1))
                         .expect("FFI returns a result when no prover is available");
                     assert!(!result.success);
-                    assert_eq!(result.error_message.as_deref(), Some("All provers exhausted"));
+                    assert_eq!(
+                        result.error_message.as_deref(),
+                        Some("All provers exhausted")
+                    );
                 }
                 println!("ECHIDNA_REAL_CHAPEL_NO_PROVER_PROBE_COMPLETED");
                 return;
@@ -330,7 +333,6 @@ mod chapel_ffi {
             );
         }
     }
-
 }
 
 #[cfg(feature = "chapel")]

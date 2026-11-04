@@ -648,7 +648,7 @@ chapel-smoke:
 
 # Run the Chapel-gated Rust tests (`--features chapel`).
 chapel-test: build-chapel-ffi
-    cargo test --features chapel --lib -- proof_search verify_proof_parallel
+    cargo test --locked --features chapel --lib -- proof_search verify_proof_parallel
 
 # Speedup baseline: compares sequentialProofSearch /
 # parallelProofSearch / parallelProofSearchSpeculative against the
@@ -739,15 +739,15 @@ build-chapel-ffi:
 
 # Build the feature against explicit unavailable stubs.
 build-chapel: build-chapel-ffi
-    ECHIDNA_CHAPEL_EXPECT_MODE=stubs cargo build --features chapel
+    ECHIDNA_CHAPEL_EXPECT_MODE=stubs cargo build --locked --features chapel
 
 # Build the real static bridge and let Cargo consume Chapel's runtime closure.
 build-chapel-real: chapel-build
     cd src/zig_ffi && zig build -Doptimize=ReleaseSafe -Dstubs=false
-    ECHIDNA_CHAPEL_EXPECT_MODE=real cargo build --features chapel
+    ECHIDNA_CHAPEL_EXPECT_MODE=real cargo build --locked --features chapel
 
 chapel-test-real: build-chapel-real
-    ECHIDNA_CHAPEL_EXPECT_MODE=real cargo test --features chapel --lib -- proof_search verify_proof_parallel
+    ECHIDNA_CHAPEL_EXPECT_MODE=real cargo test --locked --features chapel --lib -- proof_search verify_proof_parallel
 
 # Alias retained for muscle-memory; same as chapel-test.
 test-chapel: chapel-test

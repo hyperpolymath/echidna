@@ -236,6 +236,9 @@ impl ProverBackend for Z3Backend {
         let output = super::version_probe::run(&self.config, &["--version"])
             .await
             .context("Failed to get Z3 version")?;
+        if !output.status.success() {
+            anyhow::bail!("Z3 version probe failed: {}", output.status);
+        }
 
         let version = String::from_utf8_lossy(&output.stdout).to_string();
         Ok(version.trim().to_string())
