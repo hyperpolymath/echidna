@@ -65,6 +65,7 @@ impl ProverBackend for OpenSmtBackend {
             std::time::Duration::from_secs(self.config.timeout.clamp(1, 30)),
             Command::new(&self.config.executable)
                 .arg("--version")
+                .stdin(Stdio::null())
                 .kill_on_drop(true)
                 .output(),
         )

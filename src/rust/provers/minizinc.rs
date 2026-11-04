@@ -46,10 +46,7 @@ impl ProverBackend for MiniZincBackend {
         ProverKind::MiniZinc
     }
     async fn version(&self) -> Result<String> {
-        let o = Command::new(&self.config.executable)
-            .arg("--version")
-            .output()
-            .await?;
+        let o = super::version_probe::run(&self.config, &["--version"]).await?;
         Ok(String::from_utf8_lossy(&o.stdout)
             .lines()
             .next()

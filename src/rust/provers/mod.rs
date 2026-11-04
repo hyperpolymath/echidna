@@ -118,6 +118,7 @@ pub mod typed_wasm;
 pub mod uppaal;
 pub mod uppaal_stratego;
 pub mod vampire;
+mod version_probe;
 pub mod viper;
 pub mod why3;
 pub mod z3;
