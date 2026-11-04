@@ -6,7 +6,6 @@ workflows:
     '.github/workflows/agda-meta-checker.yml':
         - 'actions/cache@v6.1.0'
         - 'actions/checkout@v7.0.1'
-        - 'haskell-actions/setup@v2.12.1'
     '.github/workflows/boj-build.yml':
         - 'actions/checkout@v7.0.1'
     '.github/workflows/bridge-gate.yml':
@@ -46,9 +45,9 @@ workflows:
         - 'actions/attest-build-provenance@v4.2.2'
         - 'actions/checkout@v7.0.1'
     '.github/workflows/governance.yml':
-        - 'hyperpolymath/standards@3c00687a5bbd0d881d351db8502417b5d0a8b0b0'
+        - 'metadatastician/standards@a797d308c0517d4e2d21cc7f1cb08d41f82b1a12'
     '.github/workflows/hypatia-scan.yml':
-        - 'hyperpolymath/standards@3c00687a5bbd0d881d351db8502417b5d0a8b0b0'
+        - 'metadatastician/standards@d3e4b485a2af90c92a8e18af0888cd19cb132cd9'
     '.github/workflows/idris2-abi-ci.yml':
         - 'actions/checkout@v7.0.1'
     '.github/workflows/label-triage.yml': []
@@ -81,9 +80,9 @@ workflows:
         - 'swatinem/rust-cache@v2.9.2'
         - 'taiki-e/install-action@v2.87.28'
     '.github/workflows/scorecard.yml':
-        - 'hyperpolymath/standards@3c00687a5bbd0d881d351db8502417b5d0a8b0b0'
+        - 'metadatastician/standards@d3e4b485a2af90c92a8e18af0888cd19cb132cd9'
     '.github/workflows/secret-scanner.yml':
-        - 'hyperpolymath/standards@3c00687a5bbd0d881d351db8502417b5d0a8b0b0'
+        - 'hyperpolymath/cicd-suite@a12b2b4644db1a1250bc50b58fd24c99f89f564e'
     '.github/workflows/security-scan.yml':
         - 'hyperpolymath/panic-attack@8955f615f769204e42340e08bdea2de9d72e81cd'
     '.github/workflows/server-boot-gate.yml':
@@ -91,7 +90,7 @@ workflows:
         - 'dtolnay/rust-toolchain@v1'
         - 'swatinem/rust-cache@v2.9.2'
     '.github/workflows/spark-theatre-gate.yml':
-        - 'hyperpolymath/standards@3c00687a5bbd0d881d351db8502417b5d0a8b0b0'
+        - 'metadatastician/standards@d3e4b485a2af90c92a8e18af0888cd19cb132cd9'
     '.github/workflows/static-analysis-gate.yml':
         - 'actions/checkout@v7.0.1'
         - 'actions/download-artifact@v8.0.2'
@@ -100,7 +99,7 @@ workflows:
     '.github/workflows/verification-proofs-cron.yml':
         - 'actions/checkout@v7.0.1'
     '.github/workflows/workflow-linter.yml':
-        - 'actions/checkout@v7.0.1'
+        - 'actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1'
     '.github/workflows/zig-ffi-ci.yml':
         - 'actions/checkout@v7.0.1'
         - 'hyperpolymath/cicd-suite@4c772eb235b04455307d5c03cbbc4f45130f7f0f'
@@ -148,6 +147,11 @@ dependencies:
         commit: 'sha1-368f82528645a54fb793d4d04e342629a3f51346'
         owner_id: 44036562
         repo_id: 438112499
+    'actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333':
+        ref: 'v8.0.2'
+        commit: 'sha1-9000827ccba6bdab643e8b6fd33ac0654aef8333'
+        owner_id: 44036562
+        repo_id: 192626254
     'actions/download-artifact@v8.0.2':
         ref: 'v8.0.2'
         commit: 'sha1-9000827ccba6bdab643e8b6fd33ac0654aef8333'
@@ -225,16 +229,18 @@ dependencies:
         commit: 'sha1-884713a6c30a92e5e8544c39945cd7cb630abcd1'
         owner_id: 1342004
         repo_id: 400046858
-    'haskell-actions/setup@v2.12.1':
-        ref: 'v2.12.1'
-        commit: 'sha1-0f8e8c99d88aeb3fbfd523f1ef2c6f762d10d64d'
-        owner_id: 75048950
-        repo_id: 623796603
     'hyperpolymath/cicd-suite@4c772eb235b04455307d5c03cbbc4f45130f7f0f':
         ref: 'main'
         commit: 'sha1-4c772eb235b04455307d5c03cbbc4f45130f7f0f'
         owner_id: 6759885
         repo_id: 1326697643
+    'hyperpolymath/cicd-suite@a12b2b4644db1a1250bc50b58fd24c99f89f564e':
+        ref: 'a12b2b4644db1a1250bc50b58fd24c99f89f564e'
+        commit: 'sha1-a12b2b4644db1a1250bc50b58fd24c99f89f564e'
+        owner_id: 6759885
+        repo_id: 1326697643
+        uses:
+            - 'actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1'
     'hyperpolymath/panic-attack@8955f615f769204e42340e08bdea2de9d72e81cd':
         ref: '8955f615f769204e42340e08bdea2de9d72e81cd'
         commit: 'sha1-8955f615f769204e42340e08bdea2de9d72e81cd'
@@ -247,20 +253,37 @@ dependencies:
     'hyperpolymath/standards@3c00687a5bbd0d881d351db8502417b5d0a8b0b0':
         ref: '3c00687a5bbd0d881d351db8502417b5d0a8b0b0'
         commit: 'sha1-3c00687a5bbd0d881d351db8502417b5d0a8b0b0'
-        owner_id: 6759885
+        owner_id: 297579217
+        repo_id: 1116521501
+        uses:
+            - 'actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1'
+            - 'dtolnay/rust-toolchain@683b588c487a69d01f6c6ddf40f036ff682cc2c8'
+            - 'webfactory/ssh-agent@e83874834305fe9a4a2997156cb26c5de65a8555'
+    'metadatastician/standards@a797d308c0517d4e2d21cc7f1cb08d41f82b1a12':
+        ref: 'a797d308c0517d4e2d21cc7f1cb08d41f82b1a12'
+        commit: 'sha1-a797d308c0517d4e2d21cc7f1cb08d41f82b1a12'
+        owner_id: 297579217
         repo_id: 1116521501
         uses:
             - 'actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9'
             - 'actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1'
-            - 'actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9'
             - 'denoland/setup-deno@22d081ff2d3a40755e97629de92e3bcbfa7cf2ed'
-            - 'dtolnay/rust-toolchain@683b588c487a69d01f6c6ddf40f036ff682cc2c8'
             - 'editorconfig-checker/action-editorconfig-checker@51f63319f592f97930c73d9c46184d20bd206393'
+            - 'erlef/setup-beam@54075bcc5e249e4758d363f27d099f55d843f124'
+            - 'oven-sh/setup-bun@0c5077e51419868618aeaa5fe8019c62421857d6'
+    'metadatastician/standards@d3e4b485a2af90c92a8e18af0888cd19cb132cd9':
+        ref: 'd3e4b485a2af90c92a8e18af0888cd19cb132cd9'
+        commit: 'sha1-d3e4b485a2af90c92a8e18af0888cd19cb132cd9'
+        owner_id: 297579217
+        repo_id: 1116521501
+        uses:
+            - 'actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9'
+            - 'actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1'
+            - 'actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333'
+            - 'actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9'
             - 'erlef/setup-beam@54075bcc5e249e4758d363f27d099f55d843f124'
             - 'github/codeql-action@b96794f015dfd88f77b49b1c93e0fa7110f94c63'
             - 'ossf/scorecard-action@fa7117db83c52d787ae5a89f350999701505d78e'
-            - 'oven-sh/setup-bun@0c5077e51419868618aeaa5fe8019c62421857d6'
-            - 'webfactory/ssh-agent@e83874834305fe9a4a2997156cb26c5de65a8555'
     'mlugg/setup-zig@v2.2.1':
         ref: 'v2.2.1'
         commit: 'sha1-d1434d08867e3ee9daa34448df10607b98908d29'

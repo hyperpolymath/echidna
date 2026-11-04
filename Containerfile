@@ -13,7 +13,7 @@
 # =============================================================================
 # Stage 1: Rust Builder
 # =============================================================================
-FROM cgr.dev/chainguard/wolfi-base:latest@sha256:9c2092b053779e14c82fb50f77b37bcc38b7d2c83972352d5813280f9d035b03 AS rust-builder
+FROM cgr.dev/chainguard/wolfi-base@sha256:9c2092b053779e14c82fb50f77b37bcc38b7d2c83972352d5813280f9d035b03 AS rust-builder
 
 RUN apk add --no-cache \
     rust \
@@ -40,12 +40,16 @@ COPY crates ./crates
 # auto-discovered and tolerate absence, so they are intentionally not copied.)
 COPY benches ./benches
 
-RUN cargo build --release --bin echidna
+# Keep the output binary, then remove compilation intermediates in this same
+# layer. Committing the full target tree exhausts small hosted build runners.
+RUN cargo build --locked --release --bin echidna && \
+    install -D -m 0755 target/release/echidna /out/echidna && \
+    cargo clean
 
 # =============================================================================
 # Stage 2: Prover Installer (Z3 from official release, Lean via elan)
 # =============================================================================
-FROM cgr.dev/chainguard/wolfi-base:latest@sha256:9c2092b053779e14c82fb50f77b37bcc38b7d2c83972352d5813280f9d035b03 AS prover-installer
+FROM cgr.dev/chainguard/wolfi-base@sha256:9c2092b053779e14c82fb50f77b37bcc38b7d2c83972352d5813280f9d035b03 AS prover-installer
 
 RUN apk add --no-cache \
     curl \
@@ -57,24 +61,23 @@ RUN apk add --no-cache \
 WORKDIR /tmp
 
 # Install Z3 from official GitHub release
-RUN curl -fsSL "https://github.com/Z3Prover/z3/releases/download/z3-4.13.4/z3-4.13.4-x64-glibc-2.35.zip" \
-    -o z3.zip && \
+RUN curl --proto '=https' --proto-redir '=https' -fsSL --connect-timeout 20 --max-time 180 --retry 3 \
+    "https://github.com/Z3Prover/z3/releases/download/z3-4.13.4/z3-4.13.4-x64-glibc-2.35.zip" -o z3.zip && \
+    echo '93f91f9c6f4a00a041c19fc7a74adc1f441c8244ce70d486e19abcd89c6a014b  z3.zip' | sha256sum -c - && \
     unzip -q z3.zip && \
     mkdir -p /opt/z3/bin && \
     cp z3-4.13.4-x64-glibc-2.35/bin/z3 /opt/z3/bin/ && \
     chmod +x /opt/z3/bin/z3 && \
     rm -rf z3.zip z3-4.13.4-x64-glibc-2.35
 
-# Install Lean 4 via elan
-RUN curl -fsSL https://raw.githubusercontent.com/leanprover/elan/master/elan-init.sh | \
-    bash -s -- -y --default-toolchain stable && \
-    . "$HOME/.elan/env" && \
-    lean --version
+# Use the same verified installer and pinned Lean version as the live gate.
+COPY scripts/ci/install-lean.sh /tmp/install-lean.sh
+RUN ELAN_HOME=/opt/elan bash /tmp/install-lean.sh
 
 # =============================================================================
 # Stage 3: Runtime Image (chainguard)
 # =============================================================================
-FROM cgr.dev/chainguard/wolfi-base:latest@sha256:9c2092b053779e14c82fb50f77b37bcc38b7d2c83972352d5813280f9d035b03
+FROM cgr.dev/chainguard/wolfi-base@sha256:9c2092b053779e14c82fb50f77b37bcc38b7d2c83972352d5813280f9d035b03
 
 LABEL maintainer="Jonathan D.A. Jewell <j.d.a.jewell@open.ac.uk>"
 LABEL org.opencontainers.image.source="https://github.com/hyperpolymath/echidna"
@@ -91,11 +94,12 @@ RUN apk add --no-cache \
 
 WORKDIR /app
 
-COPY --from=rust-builder /build/target/release/echidna /app/bin/echidna
+COPY --from=rust-builder /out/echidna /app/bin/echidna
 COPY --from=prover-installer /opt/z3/bin/z3 /app/bin/z3
-COPY --from=prover-installer /root/.elan /opt/elan
+COPY --from=prover-installer /opt/elan /opt/elan
 
-ENV PATH="/app/bin:/opt/elan/toolchains/stable/bin:${PATH}"
+ENV ELAN_HOME="/opt/elan"
+ENV PATH="/app/bin:/opt/elan/bin:${PATH}"
 ENV ECHIDNA_PROVER_PATH="/opt"
 
 RUN mkdir -p /app/proofs /app/config /app/logs
