@@ -154,7 +154,7 @@ jobs:
           toolchain: stable
 
       - name: Rust cache
-        uses: Swatinem/rust-cache@v2.9.2
+        uses: Swatinem/rust-cache@v2.9.3
 
       - name: Download FFI library
         uses: actions/download-artifact@v8.0.2
@@ -208,7 +208,7 @@ jobs:
           toolchain: stable
 
       - name: Rust cache
-        uses: Swatinem/rust-cache@v2.9.2
+        uses: Swatinem/rust-cache@v2.9.3
 
       - name: Download real Chapel library
         uses: actions/download-artifact@v8.0.2
