@@ -95,7 +95,7 @@ jobs:
           outcome=$(regen_lock "$subject" 2> "$RUNNER_TEMP/actions-lock-refresh.log")
           cat "$RUNNER_TEMP/actions-lock-refresh.log"
           case "$outcome" in
-            changed|unchanged) ;;
+            changed|current) ;;
             *) echo "::error::Canonical lock generation failed: $outcome"; exit 2 ;;
           esac
           git -C "$subject" diff --quiet -- . ':(exclude).github/workflows/actions.lock'
