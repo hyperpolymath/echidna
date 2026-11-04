@@ -24,7 +24,7 @@ workflows:
         - 'actions/upload-artifact@v7.0.2'
         - 'dtolnay/rust-toolchain@v1'
         - 'mlugg/setup-zig@v2.2.1'
-        - 'swatinem/rust-cache@v2.9.2'
+        - 'swatinem/rust-cache@v2.9.3'
     '.github/workflows/codeql.yml':
         - 'actions/checkout@v7.0.1'
         - 'github/codeql-action@v4.38.2'
@@ -38,7 +38,7 @@ workflows:
     '.github/workflows/formal-verification.yml':
         - 'actions/checkout@v7.0.1'
         - 'dtolnay/rust-toolchain@v1'
-        - 'swatinem/rust-cache@v2.9.2'
+        - 'swatinem/rust-cache@v2.9.3'
     '.github/workflows/generator-generic-ossf-slsa3-publish.yml':
         - 'actions/checkout@v7.0.1'
         - 'slsa-framework/slsa-github-generator@f7dd8c54c2067bafc12ca7a55595d5ee9b75204a'
@@ -56,40 +56,39 @@ workflows:
     '.github/workflows/live-provers.yml':
         - 'actions/checkout@v7.0.1'
         - 'dtolnay/rust-toolchain@v1'
-        - 'swatinem/rust-cache@v2.9.2'
+        - 'swatinem/rust-cache@v2.9.3'
     '.github/workflows/mirror.yml':
         - 'hyperpolymath/standards@3c00687a5bbd0d881d351db8502417b5d0a8b0b0'
     '.github/workflows/mvp-smoke.yml':
         - 'actions/checkout@v7.0.1'
         - 'dtolnay/rust-toolchain@v1'
-        - 'swatinem/rust-cache@v2.9.2'
-        - 'taiki-e/install-action@v2.87.28'
+        - 'swatinem/rust-cache@v2.9.3'
+        - 'taiki-e/install-action@v2.87.32'
     '.github/workflows/pages.yml':
         - 'actions/checkout@v7.0.1'
         - 'actions/deploy-pages@v5.0.1'
         - 'actions/upload-pages-artifact@v5.0.0'
     '.github/workflows/proof-safety.yml':
         - 'actions/checkout@v7.0.1'
-        - 'swatinem/rust-cache@v2.9.2'
+        - 'swatinem/rust-cache@v2.9.3'
     '.github/workflows/rust-ci.yml':
         - 'actions/checkout@v7.0.1'
         - 'dtolnay/rust-toolchain@v1'
-        - 'swatinem/rust-cache@v2.9.2'
+        - 'swatinem/rust-cache@v2.9.3'
     '.github/workflows/s4-loop.yml':
         - 'actions/checkout@v7.0.1'
         - 'dtolnay/rust-toolchain@v1'
-        - 'swatinem/rust-cache@v2.9.2'
-        - 'taiki-e/install-action@v2.87.28'
+        - 'swatinem/rust-cache@v2.9.3'
+        - 'taiki-e/install-action@v2.87.32'
     '.github/workflows/scorecard.yml':
         - 'hyperpolymath/standards@3c00687a5bbd0d881d351db8502417b5d0a8b0b0'
     '.github/workflows/secret-scanner.yml':
         - 'hyperpolymath/standards@3c00687a5bbd0d881d351db8502417b5d0a8b0b0'
-    '.github/workflows/security-scan.yml':
-        - 'hyperpolymath/panic-attack@8955f615f769204e42340e08bdea2de9d72e81cd'
+    '.github/workflows/security-scan.yml': []
     '.github/workflows/server-boot-gate.yml':
         - 'actions/checkout@v7.0.1'
         - 'dtolnay/rust-toolchain@v1'
-        - 'swatinem/rust-cache@v2.9.2'
+        - 'swatinem/rust-cache@v2.9.3'
     '.github/workflows/spark-theatre-gate.yml':
         - 'hyperpolymath/standards@3c00687a5bbd0d881d351db8502417b5d0a8b0b0'
     '.github/workflows/static-analysis-gate.yml':
@@ -106,11 +105,6 @@ workflows:
         - 'hyperpolymath/cicd-suite@4c772eb235b04455307d5c03cbbc4f45130f7f0f'
         - 'mlugg/setup-zig@v2.2.1'
 dependencies:
-    'Swatinem/rust-cache@6323deb102c322ba6fcbdcafc7e3dddab59af2b6':
-        ref: 'v2.9.2'
-        commit: 'sha1-6323deb102c322ba6fcbdcafc7e3dddab59af2b6'
-        owner_id: 580492
-        repo_id: 298565987
     'actions/attest-build-provenance@v4.2.2':
         ref: 'v4.2.2'
         commit: 'sha1-4d101475d8b20a2381f78447822ac1eab6504dd8'
@@ -235,15 +229,6 @@ dependencies:
         commit: 'sha1-4c772eb235b04455307d5c03cbbc4f45130f7f0f'
         owner_id: 6759885
         repo_id: 1326697643
-    'hyperpolymath/panic-attack@8955f615f769204e42340e08bdea2de9d72e81cd':
-        ref: '8955f615f769204e42340e08bdea2de9d72e81cd'
-        commit: 'sha1-8955f615f769204e42340e08bdea2de9d72e81cd'
-        owner_id: 6759885
-        repo_id: 1152434997
-        uses:
-            - 'Swatinem/rust-cache@6323deb102c322ba6fcbdcafc7e3dddab59af2b6'
-            - 'actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1'
-            - 'dtolnay/rust-toolchain@683b588c487a69d01f6c6ddf40f036ff682cc2c8'
     'hyperpolymath/standards@3c00687a5bbd0d881d351db8502417b5d0a8b0b0':
         ref: '3c00687a5bbd0d881d351db8502417b5d0a8b0b0'
         commit: 'sha1-3c00687a5bbd0d881d351db8502417b5d0a8b0b0'
@@ -300,14 +285,14 @@ dependencies:
         commit: 'sha1-c95fe1489396fe8a9eb87c0abf8aa5b2ef267fda'
         owner_id: 2242
         repo_id: 204253808
-    'swatinem/rust-cache@v2.9.2':
-        ref: 'v2.9.2'
-        commit: 'sha1-6323deb102c322ba6fcbdcafc7e3dddab59af2b6'
+    'swatinem/rust-cache@v2.9.3':
+        ref: 'v2.9.3'
+        commit: 'sha1-d1527c8f67ef9af357290475d4af4b0fab8f12e0'
         owner_id: 580492
         repo_id: 298565987
-    'taiki-e/install-action@v2.87.28':
-        ref: 'v2.87.28'
-        commit: 'sha1-1168f6810a3cb30a3514bf5756a3b7f0422c6df8'
+    'taiki-e/install-action@v2.87.32':
+        ref: 'v2.87.32'
+        commit: 'sha1-5488ac5a951645ce95062214902ac4b6bc1a1037'
         owner_id: 43724913
         repo_id: 442947557
     'webfactory/ssh-agent@e83874834305fe9a4a2997156cb26c5de65a8555':
