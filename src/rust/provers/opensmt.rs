@@ -62,7 +62,7 @@ impl ProverBackend for OpenSmtBackend {
 
     async fn version(&self) -> Result<String> {
         let output = tokio::time::timeout(
-            std::time::Duration::from_secs(self.config.timeout.max(1)),
+            std::time::Duration::from_secs(self.config.timeout.clamp(1, 30)),
             Command::new(&self.config.executable)
                 .arg("--version")
                 .kill_on_drop(true)
