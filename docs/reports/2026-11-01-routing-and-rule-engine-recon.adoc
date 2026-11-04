@@ -37,7 +37,7 @@ In a default build `vcl_ut::cross_prover_search_names` is a stub returning
 enables the feature never pays for it.
 
 *Clients do not need any of that.* echidnabot talks to `/api/*` (core server)
-or `/graphql` (the separate `echidna-graphql` binary); proof-burrower looks for
+or `POST /` (the separate `echidna-graphql` binary); proof-burrower looks for
 `echidna prove --output json` and reads one JCS line off stdout. Those three
 paths are independent and none of them routes through VeriSimDB.
 
@@ -51,6 +51,11 @@ Estate rule authoring is Elixir in Hypatia. The file now lives under
 probes, <<rd3,RD3>>), *one was documented and left open* (the 8081 port collision,
 <<rd2,RD2>>), *and one is a live correctness gap* (integrity checking never
 configured, <<rd5,RD5>>).
+
+*Follow-up (2026-11-04):* RD2 is now repaired: the GraphQL default is 8082,
+while the core server remains on 8081. The release note describes the client
+migration and the explicit override for deployments retaining the old address.
+The original 2026-11-01 observation is retained below as history.
 
 == 0.1 Policy frame — what this document is allowed to claim
 
@@ -176,9 +181,10 @@ only listener whose *behaviour* changes with the `+verisim+` feature.
 Does *not* share `+echidna server+` state, routes or trust path.
 
 |`+echidna-graphql+` (`+src/interfaces/graphql+`)
-|`+127.0.0.1:8081+` — `ECHIDNA_GRAPHQL_ADDR`, default unchanged, `main.rs`
+|`+127.0.0.1:8082+` — `ECHIDNA_GRAPHQL_ADDR`; changed 2026-11-04 from the 8081 observed in this recon
 |`+/+` (POST = GraphQL, GET = playground), `+/health+`
-|Same default port as the core server. Env override added by <<rd2,RD2>>.
+|Separate default from the core server since the 2026-11-04 follow-up.
+Env override remains available; see <<rd2,RD2>>.
 
 |`+echidna-grpc+` (`+src/interfaces/grpc+`)
 |`+[::1]:50051+` — `main.rs:594`
@@ -272,8 +278,9 @@ a client command.
 * without: `+ProverFactory::create+` then `+parse_string+` directly — no
   dispatcher.
 
-So the presence of a *storage* feature decides whether an HTTP proof takes the
-arbitration path. Two consequences worth stating plainly:
+So the presence of a *storage* feature decides whether this HTTP proof enters
+the dispatcher. This single-prover call does not produce an arbitration
+verdict. Two consequences worth stating plainly:
 
 . A deployment that wants the trust pipeline must enable a database
   integration it may not have, and point it at a URL that will then be probed.
@@ -325,18 +332,21 @@ Two independent surfaces, and the doc has to name which:
   `+server-boot-gate.yml+` exercise.
 * *`+echidna-rest+`* (`+/api/v1/proofs+`, `+/api/v1/provers+`, …) — port 8000,
   OpenAPI + ReDoc. Different paths, different session store, no `/api/prove`.
-* *`+echidna-graphql+`* — `+POST /+` on 8081. Queries are `+provers+`,
+* *`+echidna-graphql+`* — `+POST /+` on 8082 (8081 before 2026-11-04). Queries are `+provers+`,
   `+proofState(id:)+`, `+listProofs+`, `+suggestTacticsByProofId+`,
   `+proverStatus+`, `+health+`; mutations `+submitProof+`, `+applyTactic+`,
   `+cancelProof+`, `+verifyProof+`, `+suggestTactics+`.
 
-A client that hard-codes 8081 for both REST and GraphQL is relying on two
-binaries not being co-resident. See <<rd2,RD2>>.
+A GraphQL client using the former 8081 default must move to 8082, or deliberately
+configure `ECHIDNA_GRAPHQL_ADDR` to a free address. The core server remains on
+8081. See <<rd2,RD2>> and the 2026-11-04 changelog migration entry.
 
-*Trust honesty for REST clients*: `/api/verify` never enters the dispatcher
-(`+server.rs:519+`), and `/api/verify_raw+` execs the solver binary directly by
-design. Only `/api/prove` reaches arbitration, and only in a `+verisim+` build.
-A REST client cannot tell, from the response, which of these it got:
+*Trust honesty for core HTTP clients*: `/api/verify` never enters the dispatcher
+(`+server.rs:519+`), and `/api/verify_raw` execs the solver binary directly by
+design. `/api/prove` enters the dispatcher only in a `+verisim+` build, as a
+single-prover call without arbitration. `/api/verify_parallel` enters the
+dispatcher independently of that feature. A client cannot identify the trust
+path from the two single-prover response shapes:
 `+ProveResponse+` is `+{success, goals, message}+` and `+VerifyResponse+` is
 `+{valid, outcome, goals_remaining, tactics_used, mode, smt_status}+`. Neither
 carries a schema identifier or a trust level, unlike the prove contract. That
@@ -650,8 +660,8 @@ grep -n 'cfg(feature = "verisim")' src/rust/server.rs
 ----
 
 [[rd2]]
-=== RD2. Core server and GraphQL interface both default to 8081
-*P1 — documented, open.*
+=== RD2. Core server and GraphQL interface originally shared default 8081
+*P1 — fixed 2026-11-04; original observation retained.*
 
 `+main.rs:165+` (`+server --port+` default 8081) and
 `+src/interfaces/graphql/main.rs:39+` (`+127.0.0.1:8081+`, hard-coded). Whichever
@@ -671,14 +681,18 @@ breaks), and explicit collision warnings in `+site/docs/index.adoc+`,
 `+core-server = 8081+` in the `+[interfaces]+` block of `+META.a2ml+` so the
 machine record cannot omit it.
 
-Not done: moving the default. Anything pinned to 8081 keeps working; a
-deployment that wants both sets the variable.
+Follow-up on 2026-11-04: the GraphQL default moved to 8082, with a release
+note and current interface documentation updated together. Clients using
+the old GraphQL default must update their endpoint, or deliberately set
+`+ECHIDNA_GRAPHQL_ADDR=127.0.0.1:8081+` while keeping the core listener off
+that address. Invalid and occupied overrides now return contextual startup
+errors.
 
 *Reproduce:*
 [source,bash]
 ----
 grep -n 'default_value = "8081"' src/rust/main.rs
-grep -n '127.0.0.1:8081' src/interfaces/graphql/main.rs
+grep -n -A 1 'VarError::NotPresent' src/interfaces/graphql/main.rs
 ----
 
 [[rd3]]
@@ -833,8 +847,8 @@ grep -rn 'with_integrity_checker' src/ crates/ tests/   # definition only
   commit for the ABI row.
 . <<rd1,RD1>> — decouple the trust pipeline from the `+verisim+` feature.
 . <<rd7,RD7>> — delete `+docs-site/+` or regenerate it from `+site/docs/+`.
-. <<rd2,RD2>> — move the GraphQL default off 8081 once a release note can carry
-  the change.
+. **DONE 2026-11-04** — <<rd2,RD2>> moved GraphQL to 8082 and added the
+  migration release note.
 . <<rd4,RD4>> — repair or remove `+echidna-mcp+'s `+check_prover+`.
 . <<rd6,RD6>>, <<rd8,RD8>> — small, unambiguous, no decision needed.
 

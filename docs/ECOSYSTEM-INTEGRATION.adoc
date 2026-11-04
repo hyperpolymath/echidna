@@ -121,7 +121,7 @@ after 5+ observations 5. Proposes new detection rules via PRs
 Logtalk rules". Hypatia's rule engine is Elixir, and ECHIDNA is a Hypatia
 *target* — `.hypatia-baseline.json` and `.hypatia-ignore` — not a Logtalk
 rule producer. The one Logtalk module that ever lived here
-(`rules/security_learning.lgt`) was loaded by nothing and is quarantined at
+(`rules/security_learning.lgt`) had no in-tree consumer and is quarantined at
 `archive/logtalk/`. See
 link:reports/2026-11-01-routing-and-rule-engine-recon.adoc[`+docs/reports/2026-11-01-routing-and-rule-engine-recon.adoc+`]
 §4.
@@ -199,5 +199,5 @@ Not created yet
 
 '''''
 
-*Last Updated*: 2026-11-01 *Maintained By*: Jonathan D.A. Jewell
+*Last Updated*: 2026-11-04 *Maintained By*: Jonathan D.A. Jewell
 j.d.a.jewell@open.ac.uk

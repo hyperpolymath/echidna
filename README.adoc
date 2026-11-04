@@ -191,14 +191,14 @@ dispatch, including a per-prover cwd/filename-override hook in
 `+tryProver+` so each backend can be invoked with its required workspace
 shape (Idris2 / Agda case studies in link:src/chapel/[`+src/chapel/+`]).
 * *Three interface binaries*, alongside the core server:
-** GraphQL (async-graphql, port 8081)
+** GraphQL (async-graphql, port 8082)
 ** gRPC (tonic + Protocol Buffers, port 50051)
 ** REST (axum + OpenAPI/ReDoc, port 8000)
 
 These are separate processes with separate route tables, not one service on
 four ports. The core `echidna server` is a fourth listener (`/api/*`, port
-8081 by default) and the GraphQL binary's default is the same 8081 — start
-one or set `ECHIDNA_GRAPHQL_ADDR`. See
+8081 by default); GraphQL defaults to 8082 and supports the
+`ECHIDNA_GRAPHQL_ADDR` override. See
 link:docs/reports/2026-11-01-routing-and-rule-engine-recon.adoc[the routing
 recon].
 * *AffineScript / AffineScript UI*: AffineScript components are being

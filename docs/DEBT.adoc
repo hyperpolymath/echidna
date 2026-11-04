@@ -427,32 +427,6 @@ Source:
 link:reports/2026-11-01-routing-and-rule-engine-recon.adoc[`+docs/reports/2026-11-01-routing-and-rule-engine-recon.adoc+`].
 Entries here are the ones that outlive that report.
 
-==== D8. Core server and GraphQL interface both default to port 8081
-
-*P1.* Two binaries, one default port. `+echidna server+` takes `+--port+`
-default 8081; `+echidna-graphql+` hard-coded 8081
-(`+src/interfaces/graphql/main.rs+`). Whichever starts second fails to bind.
-
-This is not merely untidy: `0-canon/PORT-REGISTRY.adoc` in
-hyperpolymath/standards states "Every project MUST use a unique port. No two
-projects share a port."
-
-Fixed so far: `+ECHIDNA_GRAPHQL_ADDR+` override (default unchanged, so no
-client breaks) and corrections to `+QUICKSTART-USER.adoc+`, `+README.adoc+`,
-`+docs/ARCHITECTURE.adoc+`, `+site/docs/index.adoc+`,
-`+site/docs/api/graphql.adoc+` and `+.machine_readable/descriptiles/META.a2ml+`,
-which variously omitted the core server or claimed the three interfaces sat
-"on dedicated ports".
-
-Open: the default itself. Moving it needs a release note, since anything
-pinned to 8081 keeps working only while the two are not co-resident.
-
-[source,bash]
-----
-grep -n 'default_value = "8081"' src/rust/main.rs
-grep -n 'ECHIDNA_GRAPHQL_ADDR' src/interfaces/graphql/main.rs
-----
-
 ==== D9. Solver integrity is documented as enforced and is not enforced
 
 *P1.* `+docs/ARCHITECTURE.adoc+` and the published site listed solver binary
@@ -500,8 +474,9 @@ bash scripts/ci/check-agda.sh
 
 *P1.* `+POST /api/prove+` compiles two ways: through `+ProverDispatcher+` with
 the feature, straight to the backend factory without it (`+server.rs:423+`).
-A persistence flag therefore decides whether an HTTP proof is arbitrated, and
-no response field distinguishes the two.
+A persistence flag therefore decides whether an HTTP proof enters the
+dispatcher/trust pipeline. Single-prover dispatch returns no arbitration
+verdict; cross-checking is a separate path.
 
 Open: build the dispatcher unconditionally and make `+with_verisim_writer+`
 purely additive. Not done here because it changes what a default build
@@ -538,14 +513,25 @@ backends", and a `+localhost:8000/api/v1+` base.
 Open: delete the tree or regenerate it from `+site/docs/+`. Left in place here
 because removing a documentation tree is an owner decision, not a cleanup.
 
+[source,bash]
+----
+rg -n 'ddraig build site|path:.*_site' .github/workflows/pages.yml
+rg -n '/graphql|/playground|30 supported|localhost:8000/api/v1' docs-site/content
+git grep -n 'docs-site' -- .github/workflows Justfile '*.toml' '*.sh'
+# Inspect any hits: references alone do not establish a build/deploy consumer.
+----
+
 ==== Fixed en route (recorded so they are not re-triaged)
 
+* D8: `+echidna-graphql+` now defaults to 8082, distinct from the core
+  server's 8081. The 2026-11-04 release note records the endpoint migration;
+  invalid or occupied overrides return startup errors.
 * `+container/entrypoint.sh+` executed `+echidna serve+`; the subcommand is
   `+server+`. Every container start failed at `+exec+`.
 * `+container/compose.toml+` healthcheck probed `+/health+` and
   `+container/vordr.toml+` probed `+/health+` and `+/ready+`; the core server
   serves `+/api/health+` and never had `+/ready+`.
-* `+rules/security_learning.lgt+` was dead Logtalk, loaded by nothing;
+* `+rules/security_learning.lgt+` had no in-tree consumer;
   quarantined to `+archive/logtalk/+` with a `+DEAD SOURCE+` header. See that
   directory's README.
 * `+docs/ECOSYSTEM-INTEGRATION.adoc+` and

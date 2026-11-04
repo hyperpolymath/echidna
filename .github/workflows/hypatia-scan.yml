@@ -17,10 +17,13 @@ on:
 permissions:
   actions: read
   contents: read
-  security-events: write
 
 jobs:
   hypatia:
+    permissions:
+      actions: read
+      contents: read
+      security-events: write
     uses: metadatastician/standards/.github/workflows/hypatia-scan-reusable.yml@d3e4b485a2af90c92a8e18af0888cd19cb132cd9 # published source, 2026-11-04
     secrets:
       HYPATIA_SCAN_PAT: ${{ secrets.HYPATIA_SCAN_PAT }}

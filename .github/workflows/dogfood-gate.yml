@@ -33,6 +33,8 @@ jobs:
     name: Validate DEED manifests
     runs-on: ubuntu-latest
     timeout-minutes: 10
+    outputs:
+      validation: ${{ steps.validate.outcome }}
 
     steps:
       - name: Checkout repository
@@ -48,8 +50,13 @@ jobs:
           fi
 
       - name: Validate A2ML manifests
+        id: validate
         if: steps.detect.outputs.count > 0
-        run: bash .github/hooks/validate-a2ml.sh
+        env:
+          INPUT_STRICT: "true"
+        run: |
+          bash scripts/ci/test-manifest-validator-regressions.sh
+          bash .github/hooks/validate-a2ml.sh
       - name: Write summary
         run: |
           A2ML_COUNT="${{ steps.detect.outputs.count }}"
@@ -65,6 +72,7 @@ jobs:
             echo "## A2ML Validation" >> "$GITHUB_STEP_SUMMARY"
             echo "" >> "$GITHUB_STEP_SUMMARY"
             echo "Scanned **${A2ML_COUNT}** manifest file(s) (.deed, or legacy .a2ml). See step output for details." >> "$GITHUB_STEP_SUMMARY"
+            echo "Scope: identity/version fields, SPDX header, attestation-field presence and heading structure. This does not verify signatures or proof claims." >> "$GITHUB_STEP_SUMMARY"
           fi
 
   # ---------------------------------------------------------------------------
@@ -74,6 +82,8 @@ jobs:
     name: Validate K9 contracts
     runs-on: ubuntu-latest
     timeout-minutes: 10
+    outputs:
+      validation: ${{ steps.validate.outcome }}
 
     steps:
       - name: Checkout repository
@@ -93,7 +103,10 @@ jobs:
           fi
 
       - name: Validate K9 contracts
+        id: validate
         if: steps.detect.outputs.k9_count > 0
+        env:
+          INPUT_STRICT: "true"
         run: bash .github/hooks/validate-k9.sh
       - name: Write summary
         run: |
@@ -103,14 +116,15 @@ jobs:
             cat <<'EOF' >> "$GITHUB_STEP_SUMMARY"
           ## K9 Contract Validation
 
-          :warning: **No .a2ml/.deed manifest files found.** Every RSR-compliant repo should have a repo deed (`<reponame>_chora.deed`) at its root.
+          :warning: **No K9 contracts found.** Structural K9 validation was not run.
 
           Generate contracts with: `k9iser generate .`
           EOF
           else
             echo "## K9 Contract Validation" >> "$GITHUB_STEP_SUMMARY"
             echo "" >> "$GITHUB_STEP_SUMMARY"
-            echo "Validated **${K9_COUNT}** K9 contract(s) against **${CFG_COUNT}** config file(s)." >> "$GITHUB_STEP_SUMMARY"
+            echo "Checked structural fields in **${K9_COUNT}** K9 contract(s). The repository contains **${CFG_COUNT}** configuration file(s); this hook does not compare their contents with the contracts." >> "$GITHUB_STEP_SUMMARY"
+            echo "This is not Nickel evaluation, cryptographic signature verification or Hunt deployment authorization." >> "$GITHUB_STEP_SUMMARY"
           fi
 
   # ---------------------------------------------------------------------------
@@ -380,7 +394,16 @@ jobs:
           cat <<EOF >> "$GITHUB_STEP_SUMMARY"
           ## Dogfooding Scorecard
 
-          **Score: ${SCORE}/${MAX}**
+          **Inventory score: ${SCORE}/${MAX}** (file/integration presence only).
+
+          | Validator | Job result | Validation step |
+          |-----------|------------|-----------------|
+          | DEED/A2ML structure | ${{ needs.a2ml-validate.result }} | ${{ needs.a2ml-validate.outputs.validation }} |
+          | K9 structure | ${{ needs.k9-validate.result }} | ${{ needs.k9-validate.outputs.validation }} |
+          | Invisible characters | ${{ needs.empty-lint.result }} | See job log |
+          | Groove manifest | ${{ needs.groove-check.result }} | See job log |
+          | Eclexiaiser manifest | ${{ needs.eclexiaiser-validate.result }} | See job log |
+          | Banned runtimes | ${{ needs.runtime-ban.result }} | See job log |
 
           | Tool/Format | Status | Notes |
           |-------------|--------|-------|
@@ -396,3 +419,17 @@ jobs:
           *Dogfooding is guinea pig fooding — we test our tools on ourselves.*
           EOF
 
+      - name: Require completed validation
+        if: always()
+        env:
+          VALIDATION_RESULTS: ${{ toJSON(needs) }}
+        run: |
+          set -euo pipefail
+          if ! jq -e '
+            all(.[]; .result == "success") and
+            .["a2ml-validate"].outputs.validation == "success" and
+            .["k9-validate"].outputs.validation == "success"
+          ' <<< "$VALIDATION_RESULTS" >/dev/null; then
+            echo "::error::A required validation failed, was cancelled, or did not run"
+            exit 1
+          fi

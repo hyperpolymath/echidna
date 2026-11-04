@@ -31,7 +31,10 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 10
     steps:
-      - uses: actions/checkout@v7.0.1
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+          persist-credentials: false
 
       - name: Check workflow policy and issue regressions
         # Duplicate YAML keys are rejected before Actions creates any jobs.
@@ -65,18 +68,39 @@ jobs:
           GH_PROMPT_DISABLED: '1'
         run: |
           set -euo pipefail
-          for tool in gh jq yq; do
+          for tool in gh jq yq gawk; do
             if ! command -v "$tool" >/dev/null 2>&1; then
               echo "::error::$tool missing; lock refresh NOT RUN"
               exit 2
             fi
           done
           gh extension install github/gh-actions-lock --pin v0.2.0
-          gh api 'repos/metadatastician/standards/contents/scripts/update-actions-lock.sh?ref=d3e4b485a2af90c92a8e18af0888cd19cb132cd9' \
-            --jq .content | base64 --decode > "$RUNNER_TEMP/update-actions-lock.sh"
-          bash "$RUNNER_TEMP/update-actions-lock.sh" .github/workflows
+          authority="$RUNNER_TEMP/lock-authority"
+          subject="$RUNNER_TEMP/lock-subject"
+          authority_sha=d3e4b485a2af90c92a8e18af0888cd19cb132cd9
+          git init -q "$authority"
+          git -C "$authority" remote add origin https://github.com/metadatastician/standards.git
+          git -C "$authority" fetch -q --depth 1 origin "$authority_sha"
+          git -C "$authority" checkout -q --detach FETCH_HEAD
+          test "$(git -C "$authority" rev-parse HEAD)" = "$authority_sha"
+          source_sha=$(git rev-parse HEAD)
+          git clone -q --no-hardlinks "$GITHUB_WORKSPACE" "$subject"
+          git -C "$subject" checkout -q --detach "$source_sha"
+          git -C "$subject" remote set-url origin "https://github.com/$GITHUB_REPOSITORY.git"
+          export REGEN_TOOLS="$authority/scripts"
+          # Reuse the authority's complete repair and verification sequence.
+          # It restores all workflow bytes before closing/pruning the lock;
+          # raw generator rewrites to floating refs are never a candidate.
+          source "$REGEN_TOOLS/regen-dependabot-locks.sh"
+          outcome=$(regen_lock "$subject" 2> "$RUNNER_TEMP/actions-lock-refresh.log")
+          cat "$RUNNER_TEMP/actions-lock-refresh.log"
+          case "$outcome" in
+            changed|unchanged) ;;
+            *) echo "::error::Canonical lock generation failed: $outcome"; exit 2 ;;
+          esac
+          git -C "$subject" diff --quiet -- . ':(exclude).github/workflows/actions.lock'
           patch="$RUNNER_TEMP/actions-lock-refresh.patch"
-          git diff --binary -- .github/workflows > "$patch"
+          git -C "$subject" diff --binary -- .github/workflows/actions.lock > "$patch"
           if [ "$(wc -c < "$patch")" -gt 900000 ]; then
             echo "::error::Candidate exceeds the summary budget; lock refresh needs artifact retrieval"
             exit 2
@@ -84,8 +108,9 @@ jobs:
           {
             echo '## Official actions.lock refresh candidate'
             echo
-            echo "Source checkout: $(git rev-parse HEAD)"
-            echo 'Uncommitted candidate only. Re-run canonical governance on the committed result.'
+            echo "Source checkout: $source_sha"
+            echo "Canonical generation outcome: $outcome"
+            echo 'Uncommitted lock-only candidate; all workflow bytes preserved. Re-run canonical governance on the committed result.'
             echo
             echo '````diff'
             cat "$patch"

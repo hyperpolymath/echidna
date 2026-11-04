@@ -17,6 +17,7 @@
 # Exit codes:
 #   0 — All files valid (or only warnings in non-strict mode)
 #   1 — Validation errors found
+#   2 — Required input scan could not run
 
 set -euo pipefail
 
@@ -199,6 +200,12 @@ validate_a2ml() {
         if [[ "$line" =~ ^[[:space:]]*:schema-version[[:space:]] ]]; then
             has_version=true
         fi
+        # These are presence checks. Once both facts have witnesses, later
+        # corpus records cannot change them. Body/attestation checks below
+        # still inspect the complete file.
+        if [[ "$has_identity" == "true" && "$has_version" == "true" ]]; then
+            break
+        fi
     done < "$file"
 
     # AI manifest files (0-AI-MANIFEST.a2ml, 0.1-AI-MANIFEST.a2ml, etc.)
@@ -299,28 +306,39 @@ validate_a2ml() {
     local attestation_has_content=false
     line_num=0
 
-    while IFS= read -r line; do
-        line_num=$((line_num + 1))
+    # A native grep scans the whole file before choosing whether the slower
+    # stateful shell walk is needed. Most large training corpora have no
+    # attestation section; no body or path is excluded from validation.
+    local attestation_probe=0
+    grep -qE '^\[attestation\]|^##[[:space:]]+([Aa]ttestation|ATTESTATION)' "$file" || attestation_probe=$?
+    if [[ "$attestation_probe" -gt 1 ]]; then
+        echo "::error::Cannot read $file; manifest validation NOT RUN"
+        exit 2
+    fi
+    if [[ "$attestation_probe" -eq 0 ]]; then
+        while IFS= read -r line; do
+            line_num=$((line_num + 1))
 
-        # Detect attestation section start
-        if [[ "$line" =~ ^\[attestation\] ]] || [[ "$line" =~ ^##[[:space:]]+[Aa]ttestation ]] || [[ "$line" =~ ^##[[:space:]]+ATTESTATION ]]; then
-            in_attestation=true
-            attestation_line=$line_num
-            continue
-        fi
-
-        # Detect next section (ends attestation block)
-        if [[ "$in_attestation" == "true" ]]; then
-            if [[ "$line" =~ ^\[.+\] ]] || [[ "$line" =~ ^##[[:space:]] ]]; then
-                in_attestation=false
+            # Detect attestation section start
+            if [[ "$line" =~ ^\[attestation\] ]] || [[ "$line" =~ ^##[[:space:]]+[Aa]ttestation ]] || [[ "$line" =~ ^##[[:space:]]+ATTESTATION ]]; then
+                in_attestation=true
+                attestation_line=$line_num
                 continue
             fi
-            # Check for content in attestation block
-            if [[ "$line" =~ (proof|signature|verified|hash)[[:space:]]*= ]]; then
-                attestation_has_content=true
+
+            # Detect next section (ends attestation block)
+            if [[ "$in_attestation" == "true" ]]; then
+                if [[ "$line" =~ ^\[.+\] ]] || [[ "$line" =~ ^##[[:space:]] ]]; then
+                    in_attestation=false
+                    continue
+                fi
+                # Check for content in attestation block
+                if [[ "$line" =~ (proof|signature|verified|hash)[[:space:]]*= ]]; then
+                    attestation_has_content=true
+                fi
             fi
-        fi
-    done < "$file"
+        done < "$file"
+    fi
 
     if [[ $attestation_line -gt 0 && "$attestation_has_content" == "false" && "$is_manifest" == "false" ]]; then
         report_issue "warning" "$file" "$attestation_line" \
@@ -329,18 +347,20 @@ validate_a2ml() {
 
     # --- Check 4: Section heading syntax ---
     # Validate that [section] headings are well-formed (no unclosed brackets)
-    line_num=0
-    while IFS= read -r line; do
-        line_num=$((line_num + 1))
-        # Lines starting with [ should have a matching ]
-        if [[ "$line" =~ ^\[ && ! "$line" =~ ^\[.+\] ]]; then
-            # Exclude markdown-style links and multi-line values
-            if [[ ! "$line" =~ ^\[.*\]\( && ! "$line" =~ ^\[TODO && ! "$line" =~ ^\[YOUR ]]; then
-                report_issue "warning" "$file" "$line_num" \
-                    "Possibly malformed section heading: unclosed bracket"
-            fi
-        fi
-    done < "$file"
+    # Apply the same heading predicates in one native full-file pass. Preserve
+    # original line numbers, and fail if the scan itself cannot read the file.
+    local malformed_headings
+    if ! malformed_headings=$(awk '
+      /^\[/ && !/^\[.+\]/ && !/^\[.*\]\(/ && !/^\[TODO/ && !/^\[YOUR/ { print NR }
+    ' "$file"); then
+        echo "::error::Cannot scan headings in $file; manifest validation NOT RUN"
+        exit 2
+    fi
+    while IFS= read -r line_num; do
+        [[ -n "$line_num" ]] || continue
+        report_issue "warning" "$file" "$line_num" \
+            "Possibly malformed section heading: unclosed bracket"
+    done <<< "$malformed_headings"
 }
 
 # ---------------------------------------------------------------------------

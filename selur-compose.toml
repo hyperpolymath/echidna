@@ -4,7 +4,7 @@
 # ECHIDNA — Stapeln/Selur service definition.
 #
 # Multi-stage Rust build with Z3 SMT solver + Lean 4 prover.
-# Exposes HTTP API on port 8081 (GraphQL/gRPC/REST interfaces).
+# Exposes the core HTTP API on port 8081; optional interface binaries are separate.
 #
 # Usage:
 #   podman-compose -f selur-compose.toml up -d

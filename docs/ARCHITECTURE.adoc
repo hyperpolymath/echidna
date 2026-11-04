@@ -5,7 +5,7 @@ machine-readable
 link:../.machine_readable/descriptiles/META.a2ml[`+.machine_readable/descriptiles/META.a2ml+`]
 (architecture decisions) and
 link:../.machine_readable/descriptiles/STATE.a2ml[`+STATE.a2ml+`]
-(current state). Last revised: 2026-05-26.
+(current state). Last revised: 2026-11-04.
 
 ECHIDNA — Extensible Cognitive Hybrid Intelligence for Deductive Neural
 Assistance — is the reasoning substrate of the hyperpolymath ecosystem.
@@ -15,9 +15,14 @@ Two non-negotiable invariants govern every design choice:
 . *ML suggests; provers verify.* Neural components rank, route, and
 propose; formal provers carry the trust. A wrong suggestion is a wasted
 CPU cycle, not a wrong proof.
-. *Trust is checked, not asserted.* Certificates are independently
-reproduced where formats allow (Alethe, DRAT/LRAT, TSTP) — that part is
-real. Solver *identity* is not checked today: the integrity step exists,
+. *Trust depends on the checker and execution path.* The in-tree Alethe
+checker validates step structure, not logical correctness. The DRAT/LRAT
+helper invokes `+drat-trim+` when called; that is a separate capability,
+not a guarantee that every proof path uses it. The `+echidna prove+` CLI
+calls the selected backend directly and does not independently check a
+certificate. This overview therefore makes no blanket claim of independent
+Alethe or TSTP proof reproduction. Solver *identity* is not checked today:
+the integrity step exists,
 nothing in the tree attaches a checker, so binaries are currently
 _assumed_ rather than verified. See the Integrity caveat below and
 link:DEBT.adoc[`+DEBT+`] D9. Do not read this list as a guarantee that
@@ -150,15 +155,15 @@ a separate binary with its own route table and its own path to the provers:
 |`+echidna server+` |`+127.0.0.1:8081+` |`+/api/*+` — `/api/health`,
 `+/api/provers+`, `/api/prove`, `/api/verify`, `/api/session/*`, …
 |`+echidna-rest+` |`+127.0.0.1:8000+` |`+/api/v1/*+` plus root `+/health+`
-|`+echidna-graphql+` |`+127.0.0.1:8081+` |`+POST /+` (GraphQL), `+GET /+`
+|`+echidna-graphql+` |`+127.0.0.1:8082+` |`+POST /+` (GraphQL), `+GET /+`
 (playground), `+/health+`
 |`+echidna-grpc+` |`+[::1]:50051+` |`+ProofService+` over `+echidna.proto+`
 |===
 
-`+echidna server+` and `+echidna-graphql+` share a default port; start only one
-without setting `+ECHIDNA_GRAPHQL_ADDR+`. The one-port-per-project rule is
-`+0-canon/PORT-REGISTRY.adoc+` in hyperpolymath/standards; the collision is
-open debt.
+`+echidna-graphql+` moved from 8081 to 8082 on 2026-11-04 so it can run
+alongside the core server. `+ECHIDNA_GRAPHQL_ADDR+` remains an override;
+deployments deliberately retaining the old GraphQL address must set it
+explicitly and avoid binding the core server there.
 
 *VeriSimDB is a persistence and learning adapter, not a communication path.*
 It sits behind the non-default `+verisim+` Cargo feature, is written to

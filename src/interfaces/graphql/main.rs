@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: MPL-2.0
 // ECHIDNA GraphQL Interface - Main server
 
+use anyhow::Context;
 use async_graphql::{EmptySubscription, Schema};
 use async_graphql_axum::GraphQL;
 use axum::{routing::get, Router};
@@ -15,18 +16,30 @@ use schema::{MutationRoot, QueryRoot};
 
 /// Runs the GraphQL endpoint and playground at `/` and the health check at
 /// `/health`, with permissive CORS. The bind address comes from
-/// `ECHIDNA_GRAPHQL_ADDR`, defaulting to `127.0.0.1:8081` when it is absent or
-/// not valid Unicode. FFI initialisation failure falls back to direct Rust calls.
+/// `ECHIDNA_GRAPHQL_ADDR`, defaulting to `127.0.0.1:8082` when it is absent.
+/// Invalid configuration, bind failures and server errors are returned with
+/// context. FFI initialisation failure falls back to direct Rust calls.
 ///
 /// # Panics
 ///
-/// Panics if logging or the HTTP client cannot be initialised, the address
-/// cannot be bound, or the server fails.
+/// Panics if logging or the HTTP client cannot be initialised.
 #[tokio::main]
-async fn main() {
+async fn main() -> anyhow::Result<()> {
     tracing_subscriber::fmt()
         .with_env_filter(tracing_subscriber::EnvFilter::from_default_env())
         .init();
+
+    let addr = match std::env::var("ECHIDNA_GRAPHQL_ADDR") {
+        Ok(addr) => addr,
+        Err(std::env::VarError::NotPresent) => "127.0.0.1:8082".to_string(),
+        Err(error) => return Err(error).context("ECHIDNA_GRAPHQL_ADDR must be valid Unicode"),
+    };
+    // Bind before initialising the schema: invalid configuration is a startup
+    // error, and the listener remains independent of the core server on 8081.
+    // TcpListener retains support for hostname overrides such as localhost:8082.
+    let listener = tokio::net::TcpListener::bind(&addr)
+        .await
+        .with_context(|| format!("Could not bind ECHIDNA_GRAPHQL_ADDR={addr:?}"))?;
 
     // Create ECHIDNA context with core integration
     let echidna_ctx = EchidnaContext::new();
@@ -45,20 +58,13 @@ async fn main() {
         .route("/health", get(health_check))
         .layer(CorsLayer::permissive());
 
-    // Bind address. Default unchanged (127.0.0.1:8081) so nothing that already
-    // pins it breaks, but it collides with `echidna server`, whose --port also
-    // defaults to 8081: whichever starts second cannot bind. A deployment that
-    // wants both on one host sets ECHIDNA_GRAPHQL_ADDR for this one, e.g.
-    //   ECHIDNA_GRAPHQL_ADDR=127.0.0.1:8082 echidna-graphql
-    // See docs/reports/2026-11-01-routing-and-rule-engine-recon.adoc §6 RD2 and
-    // the one-port-per-project rule in standards 0-canon/PORT-REGISTRY.adoc.
-    let addr =
-        std::env::var("ECHIDNA_GRAPHQL_ADDR").unwrap_or_else(|_| "127.0.0.1:8081".to_string());
     tracing::info!("GraphQL server listening on http://{}", addr);
     tracing::info!("GraphQL playground available at http://{}/", addr);
 
-    let listener = tokio::net::TcpListener::bind(&addr).await.unwrap();
-    axum::serve(listener, app).await.unwrap();
+    axum::serve(listener, app)
+        .await
+        .context("GraphQL server failed")?;
+    Ok(())
 }
 
 async fn graphql_playground() -> impl axum::response::IntoResponse {

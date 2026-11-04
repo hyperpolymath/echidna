@@ -70,8 +70,10 @@ let deployment = {
   container = {
     image = "ghcr.io/hyperpolymath/echidna",
     port = 8081,
-    # The core server serves /api/health; there is no separate /ready or
-    # bare /health route (see src/rust/server.rs), so both probes use it.
+    # Process-level readiness only: /api/health reports that this HTTP process
+    # responds. It does not check dispatcher, solver or dependent-service
+    # readiness. Consumers that gate traffic on those dependencies need their
+    # own checks; this probe cannot establish that stronger contract.
     health_check = "/api/health",
     readiness_check = "/api/health",
   },
