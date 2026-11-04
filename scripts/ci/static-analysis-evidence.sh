@@ -9,14 +9,15 @@ root=${SCAN_ROOT:-$PWD}
 subject=$(git -C "$root" rev-parse HEAD)
 subject_tree=$(git -C "$root" rev-parse 'HEAD^{tree}')
 worktree_clean=false
-if [ -z "$(git -C "$root" status --porcelain)" ]; then worktree_clean=true; fi
+if [[ -z "$(git -C "$root" status --porcelain)" ]]; then worktree_clean=true; fi
 expected=${SCAN_EXPECTED_SHA:?the workflow must name the exact scanned commit}
 repository=${GITHUB_REPOSITORY:-local/fixture}
 run_id=${GITHUB_RUN_ID:-local}
 run_attempt=${GITHUB_RUN_ATTEMPT:-1}
 
 one_json() {
-  jq -e -s 'length == 1' "$1" >/dev/null 2>&1
+  local report=$1
+  jq -e -s 'length == 1' "$report" >/dev/null 2>&1
 }
 
 valid_report() {
@@ -50,7 +51,7 @@ valid_report() {
 
 counts() {
   local tool=$1 report=$2
-  if [ "$tool" = patch-bridge ]; then
+  if [[ "$tool" = patch-bridge ]]; then
     jq -c '{mitigated,unmitigable,concatenative,informational,total:(.cves|length)}' "$report"
   else
     jq -c --arg tool "$tool" '
@@ -74,13 +75,13 @@ scan() {
   report_path=$null_report
   rm -f -- "$report" "$receipt"
 
-  if [ "$subject" != "$expected" ] || [ "$worktree_clean" != true ]; then
+  if [[ "$subject" != "$expected" ]] || [[ "$worktree_clean" != true ]]; then
     reason="checkout is dirty or does not match the requested scan commit"
-  elif [ -x "$binary" ] && [ -s "$source" ] && one_json "$source" &&
+  elif [[ -x "$binary" ]] && [[ -s "$source" ]] && one_json "$source" &&
        jq -e --arg ref "$ref" '.source_sha == $ref and (.binary_sha256 | test("^[0-9a-f]{64}$"))' "$source" >/dev/null; then
     digest=$(sha256sum "$binary" | cut -d' ' -f1)
     source_sha=$(jq -r '.source_sha' "$source")
-    if [ "$digest" != "$(jq -r '.binary_sha256' "$source")" ]; then
+    if [[ "$digest" != "$(jq -r '.binary_sha256' "$source")" ]]; then
       reason="scanner binary does not match its build receipt"
     else
       local -a argv
@@ -92,19 +93,19 @@ scan() {
       esac
       command=$(jq -cn --args '$ARGS.positional' -- "${argv[@]}")
       rc=0
-      if [ "$tool" = hypatia ]; then
+      if [[ "$tool" = hypatia ]]; then
         timeout 300 "${argv[@]}" > "$report" 2> "$log" || rc=$?
       else
         timeout 300 "${argv[@]}" > "$log" 2>&1 || rc=$?
       fi
       # Preserve the tool's own partial coverage even when its nonzero exit
       # prevents qualification. A partial report is evidence, not a clean scan.
-      if [ "$tool" = panic-attack ] && one_json "$report" &&
+      if [[ "$tool" = panic-attack ]] && one_json "$report" &&
          jq -e 'type == "object" and (.coverage | type == "object")' "$report" >/dev/null 2>&1; then
         jq -c '.coverage' "$report" > "$coverage_file"
       fi
       status=error
-      if [ "$rc" -ne 0 ]; then
+      if [[ "$rc" -ne 0 ]]; then
         reason="scanner execution failed or timed out (exit $rc); raw output retained"
       elif ! valid_report "$tool" "$report"; then
         reason="scanner returned no complete report matching its pinned output contract"
@@ -117,6 +118,7 @@ scan() {
           panic-attack) jq -c '.coverage' "$report" > "$coverage_file" ;;
           patch-bridge) jq -c '{mode:"online",total_dependencies}' "$report" > "$coverage_file" ;;
           hypatia) printf '%s\n' '{"mode":"hypatia-default-rules","severity_threshold":"medium","remote_alert_credentials":"not_supplied"}' > "$coverage_file" ;;
+          *) echo "Unknown scanner: $tool" >&2; return 2 ;;
         esac
       fi
     fi
@@ -135,19 +137,19 @@ scan() {
          binary_sha256:(if $digest == "" then null else $digest end),command:$command},
        evidence_kind:"scanner_observation"}' > "$receipt"
   rm -f -- "$null_report"
-  if [ -n "${GITHUB_OUTPUT:-}" ]; then
+  if [[ -n "${GITHUB_OUTPUT:-}" ]]; then
     printf 'status=%s\n' "$status" >> "$GITHUB_OUTPUT"
   fi
-  if [ -n "${GITHUB_STEP_SUMMARY:-}" ]; then
+  if [[ -n "${GITHUB_STEP_SUMMARY:-}" ]]; then
     {
       printf '## %s\n\nStatus: **%s**\n\nSource: `%s`\n\nScanned commit: `%s`\n\n' "$tool" "$status" "$ref" "$subject"
-      if [ "$status" = ran ]; then jq -r '.counts | to_entries[] | "- \(.key): \(.value)"' "$receipt"
+      if [[ "$status" = ran ]]; then jq -r '.counts | to_entries[] | "- \(.key): \(.value)"' "$receipt"
       else printf '%s. This is not a clean scan.\n' "$reason"; fi
     } >> "$GITHUB_STEP_SUMMARY"
   fi
-  if [ "$status" != ran ]; then
+  if [[ "$status" != ran ]]; then
     printf '::error::%s: %s\n' "$tool" "$reason" >&2
-    [ ! -f "$log" ] || cat "$log" >&2
+    [[ ! -f "$log" ]] || cat "$log" >&2
     return 2
   fi
 }
@@ -162,8 +164,8 @@ expected_ref() {
 
 qualified_receipt() {
   local tool=$1 ref=$2 receipt=$3 report=$4 expected_counts
-  [ "$subject" = "$expected" ] || return 1
-  [ -s "$receipt" ] && one_json "$receipt" || return 1
+  [[ "$subject" = "$expected" ]] || return 1
+  [[ -s "$receipt" ]] && one_json "$receipt" || return 1
   jq -e --arg tool "$tool" --arg ref "$ref" --arg sha "$expected" --arg tree "$subject_tree" \
     --arg repo "$repository" --arg run "$run_id" --arg attempt "$run_attempt" '
       .tool == $tool and .ref == $ref and .status == "ran" and .exit_code == 0
@@ -192,11 +194,11 @@ gate() {
     return 2
   fi
   rm -f -- "$report"
-  if [ "$tool" = patch-bridge ]; then
-    if [ "$(jq -r .counts.unmitigable "$receipt")" -gt 0 ]; then
+  if [[ "$tool" = patch-bridge ]]; then
+    if [[ "$(jq -r .counts.unmitigable "$receipt")" -gt 0 ]]; then
       echo '::warning::Patch Bridge found unmitigable CVEs; architectural review is required.'
     fi
-  elif [ "$(jq -r .counts.critical "$receipt")" -gt 0 ]; then
+  elif [[ "$(jq -r .counts.critical "$receipt")" -gt 0 ]]; then
     echo '::error::Critical scanner findings block merge; the original findings remain in the artifact.'
     return 1
   fi
@@ -213,6 +215,7 @@ deposit() {
       panic-attack) name=panic-attack-findings; ref=${PANIC_ATTACK_REF:?} ;;
       hypatia) name=hypatia-findings; ref=${HYPATIA_REF:?} ;;
       patch-bridge) name=bridge-report; ref=${PANIC_ATTACK_REF:?} ;;
+      *) echo "Unknown scanner: $tool" >&2; return 2 ;;
     esac
     receipt="$dir/$name/receipt.json"
     if qualified_receipt "$tool" "$ref" "$receipt" "$temp/$tool-report.json"; then
@@ -221,14 +224,14 @@ deposit() {
     fi
     complete=false
     local receipt_status=not_run
-    if [ -e "$receipt" ]; then receipt_status=error; fi
+    if [[ -e "$receipt" ]]; then receipt_status=error; fi
     jq -cn --arg tool "$tool" --arg status "$receipt_status" \
       '{tool:$tool,status:$status,reason:"missing, failed, malformed or mismatched scan receipt"}' > "$temp/$tool-status.json"
   done
   jq -cs --argjson complete "$complete" \
     '{complete:$complete,evidence_kind:"scanner_observation",scanners:.,fleet_ingestion:"not_confirmed",repair_verification:"not_performed"}' \
     "$temp/panic-attack-status.json" "$temp/hypatia-status.json" "$temp/patch-bridge-status.json" > "$dir/deposit-status.json"
-  if [ "$complete" != true ]; then
+  if [[ "$complete" != true ]]; then
     echo '::error::Incomplete scanner evidence; no unified-findings artifact or clean result is produced.' >&2
     return 2
   fi

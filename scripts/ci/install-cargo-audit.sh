@@ -11,7 +11,7 @@ if [[ "$(uname -s)" != Linux || "$(uname -m)" != x86_64 ]]; then
 fi
 tool_dir=$(mktemp -d "${RUNNER_TEMP:-${TMPDIR:-/tmp}}/echidna-cargo-audit.XXXXXX")
 archive="$tool_dir/cargo-audit.tgz"
-curl --fail --location --retry 3 --output "$archive" \
+curl --proto '=https' --proto-redir '=https' --fail --location --retry 3 --output "$archive" \
   https://github.com/rustsec/rustsec/releases/download/cargo-audit/v0.22.2/cargo-audit-x86_64-unknown-linux-musl-v0.22.2.tgz
 printf '%s  %s\n' \
   7fb9497f8594b389e5fce5ef9b92db08432996895b2e0c5a0167a69ed445c428 \

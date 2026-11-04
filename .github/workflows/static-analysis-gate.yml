@@ -14,8 +14,9 @@ concurrency:
 permissions:
   contents: read
 env:
-  # The vetted scanner pins from standards@d3e4b485a2af90c92a8e18af0888cd19cb132cd9.
-  HYPATIA_REF: adb2f41db34156cf81b2508f6596a10c7f076098
+  # Exact Hypatia repair canary: Agda keyword boundaries and patched dependencies.
+  # The panic-attack pin remains the standards-vetted source pending coverage repair.
+  HYPATIA_REF: 82396d81677b11d17c7a0dede5bf0efcf768d5a1
   PANIC_ATTACK_REF: 410a8f821ea8297833162565b50a298f787815da
   SCAN_EXPECTED_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
 jobs:

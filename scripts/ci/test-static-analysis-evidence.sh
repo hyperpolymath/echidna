@@ -25,11 +25,11 @@ cat > "$tmp/scanner" <<'MOCK'
 #!/usr/bin/env bash
 set -euo pipefail
 printf '%s\n' "$@" > "$MOCK_ARGS"
-if [ "$1" = scan ]; then
+if [[ "$1" = scan ]]; then
   cat "$MOCK_REPORT"
 else
-  while [ "$#" -gt 0 ]; do
-    if [ "$1" = --output ]; then cp "$MOCK_REPORT" "$2"; break; fi
+  while [[ "$#" -gt 0 ]]; do
+    if [[ "$1" = --output ]]; then cp "$MOCK_REPORT" "$2"; break; fi
     shift
   done
 fi
@@ -45,7 +45,7 @@ expect_exit() {
   local wanted=$1 actual=0
   shift
   "$@" > "$tmp/control.log" 2>&1 || actual=$?
-  if [ "$actual" -ne "$wanted" ]; then
+  if [[ "$actual" -ne "$wanted" ]]; then
     cat "$tmp/control.log" >&2
     printf 'Expected exit %s, received %s: %s\n' "$wanted" "$actual" "$*" >&2
     exit 1
@@ -69,6 +69,17 @@ printf '[]\n' > "$MOCK_REPORT"
 expect_exit 0 hypatia
 jq -e '.status == "ran" and .counts.total == 0' "$tmp/hypatia/receipt.json" >/dev/null
 expect_exit 0 bash "$adapter" gate "$tmp/hypatia/receipt.json"
+# A failed-jobs-only rerun may reuse earlier successful jobs from this same
+# run and exact source. Future/invalid attempts and another run are rejected.
+jq '.provenance.run_attempt = "1"' "$tmp/hypatia/receipt.json" > "$tmp/prior-attempt.json"
+expect_exit 0 bash "$adapter" gate "$tmp/prior-attempt.json"
+for bad_attempt in 0 3 invalid; do
+  jq --arg attempt "$bad_attempt" '.provenance.run_attempt = $attempt' \
+    "$tmp/hypatia/receipt.json" > "$tmp/bad-attempt.json"
+  expect_exit 2 bash "$adapter" gate "$tmp/bad-attempt.json"
+done
+jq '.provenance.run_id = "124"' "$tmp/prior-attempt.json" > "$tmp/other-run.json"
+expect_exit 2 bash "$adapter" gate "$tmp/other-run.json"
 : > "$MOCK_REPORT"
 expect_exit 2 hypatia
 jq -e '.status == "error" and .counts == null and .report == null' "$tmp/hypatia/receipt.json" >/dev/null
@@ -149,17 +160,17 @@ jq -e '.scan_completion.complete and .scan_completion.fleet_ingestion == "not_co
   and (.findings|length) == 2 and any(.findings[]; .severity == "critical")' "$tmp/findings/unified-findings.json" >/dev/null
 mv "$tmp/findings/bridge-report/receipt.json" "$tmp/bridge-backup.json"
 expect_exit 2 bash "$adapter" deposit "$tmp/findings"
-test ! -e "$tmp/findings/unified-findings.json"
+[[ ! -e "$tmp/findings/unified-findings.json" ]]
 jq -e '.complete == false' "$tmp/findings/deposit-status.json" >/dev/null
 cp "$tmp/bridge-backup.json" "$tmp/findings/bridge-report/receipt.json"
 jq '.provenance.commit_sha = "cccccccccccccccccccccccccccccccccccccccc"' "$tmp/qualified-hypatia.json" > "$tmp/findings/hypatia-findings/receipt.json"
 expect_exit 2 bash "$adapter" deposit "$tmp/findings"
-test ! -e "$tmp/findings/unified-findings.json"
+[[ ! -e "$tmp/findings/unified-findings.json" ]]
 cp "$tmp/qualified-hypatia.json" "$tmp/findings/hypatia-findings/receipt.json"
 cp "$tmp/missing-tool/receipt.json" "$tmp/findings/panic-attack-findings/receipt.json"
 expect_exit 2 bash "$adapter" deposit "$tmp/findings"
-test ! -e "$tmp/findings/unified-findings.json"
+[[ ! -e "$tmp/findings/unified-findings.json" ]]
 printf 'not-json\n' > "$tmp/findings/panic-attack-findings/receipt.json"
 expect_exit 2 bash "$adapter" deposit "$tmp/findings"
-test ! -e "$tmp/findings/unified-findings.json"
+[[ ! -e "$tmp/findings/unified-findings.json" ]]
 printf '%s receipt controls passed\n' "$passed"

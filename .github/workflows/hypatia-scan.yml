@@ -25,5 +25,7 @@ jobs:
       contents: read
       security-events: write
     uses: metadatastician/standards/.github/workflows/hypatia-scan-reusable.yml@d3e4b485a2af90c92a8e18af0888cd19cb132cd9 # published source, 2026-11-04
+    with:
+      hypatia-ref: 82396d81677b11d17c7a0dede5bf0efcf768d5a1
     secrets:
       HYPATIA_SCAN_PAT: ${{ secrets.HYPATIA_SCAN_PAT }}
