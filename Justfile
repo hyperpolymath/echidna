@@ -737,9 +737,17 @@ build-chapel-ffi:
     cd src/zig_ffi && zig build -Doptimize=ReleaseSafe
     @echo "Library built at src/zig_ffi/zig-out/lib/"
 
-# Build with Chapel support enabled (requires Zig FFI built first)
+# Build the feature against explicit unavailable stubs.
 build-chapel: build-chapel-ffi
-    cargo build --features chapel
+    ECHIDNA_CHAPEL_EXPECT_MODE=stubs cargo build --features chapel
+
+# Build the real static bridge and let Cargo consume Chapel's runtime closure.
+build-chapel-real: chapel-build
+    cd src/zig_ffi && zig build -Doptimize=ReleaseSafe -Dstubs=false
+    ECHIDNA_CHAPEL_EXPECT_MODE=real cargo build --features chapel
+
+chapel-test-real: build-chapel-real
+    ECHIDNA_CHAPEL_EXPECT_MODE=real cargo test --features chapel --lib -- proof_search verify_proof_parallel
 
 # Alias retained for muscle-memory; same as chapel-test.
 test-chapel: chapel-test
@@ -748,9 +756,9 @@ test-chapel: chapel-test
 test-chapel-ffi:
     cd src/zig_ffi && zig build test
 
-# Full Chapel build + test
-chapel-all: chapel-build chapel-smoke build-chapel-ffi chapel-test
-    @echo "Chapel accelerator fully built and tested"
+# Full local real-library path, with the independent stub bridge unit tests.
+chapel-all: chapel-smoke test-chapel-ffi chapel-test-real
+    @echo "Real Chapel build and selected Rust/FFI tests completed"
 
 # ── SPARK axiom-policy layer ─────────────────────────────────
 

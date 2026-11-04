@@ -23,11 +23,16 @@ RUN apk add --no-cache \
 
 WORKDIR /build
 
-COPY Cargo.toml Cargo.lock ./
+COPY Cargo.toml Cargo.lock build.rs ./
+COPY build_support ./build_support
 COPY src/rust ./src/rust
 COPY src/interfaces ./src/interfaces
+# Cargo loads all workspace member manifests and validates explicit bench targets,
+# even when only the echidna binary is requested.
+COPY crates ./crates
+COPY benches ./benches
 
-RUN cargo build --release --bin echidna
+RUN cargo build --locked --release --bin echidna
 
 # =============================================================================
 # Stage 2: Runtime

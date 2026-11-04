@@ -10,6 +10,7 @@
 //   Chapel (C API) → Zig (@cImport) → Rust (safe calls)
 
 const std = @import("std");
+const options = @import("chapel_options");
 
 //==============================================================================
 // Import Chapel's C API
@@ -17,7 +18,40 @@ const std = @import("std");
 
 const chapel = @cImport({
     @cInclude("chapel_ffi_exports.h");
+    @cInclude("stdlib.h");
 });
+
+// Chapel 2.8's library ABI requires runtime + exported module initialization
+// before any library call. The once guard is shared by every bridge entry;
+// stub builds do not reference or initialize a Chapel runtime.
+const ChapelRuntime = struct {
+    var program_name = [_:0]u8{ 'e', 'c', 'h', 'i', 'd', 'n', 'a' };
+    var arguments = [_]?[*:0]u8{ &program_name, null };
+
+    extern fn chpl_library_init(argc: c_int, argv: [*]?[*:0]u8) void;
+    extern fn chpl_library_finalize() void;
+    extern fn chpl__init_parallel_proof_search(line: i64, file: i32) void;
+    extern fn chpl__init_chapel_ffi_exports(line: i64, file: i32) void;
+
+    fn initialize() void {
+        chpl_library_init(1, &arguments);
+        chpl__init_parallel_proof_search(0, 0);
+        chpl__init_chapel_ffi_exports(0, 0);
+        if (chapel.atexit(finalize) != 0) {
+            @panic("could not register Chapel runtime finalization");
+        }
+    }
+
+    fn finalize() callconv(.c) void {
+        chpl_library_finalize();
+    }
+};
+
+var chapel_runtime_once = std.once(ChapelRuntime.initialize);
+
+fn ensureChapelInitialized() void {
+    if (!options.chapel_stubs) chapel_runtime_once.call();
+}
 
 //==============================================================================
 // Core Types — all 30 prover backends
@@ -206,12 +240,14 @@ pub const ChapelError = error{
 
 /// Check if Chapel runtime is available
 pub fn isChapelAvailable() bool {
+    ensureChapelInitialized();
     const result = chapel.chapel_is_available();
     return result != 0;
 }
 
 /// Get Chapel metalayer version string
 pub fn getChapelVersion(allocator: std.mem.Allocator) ![]const u8 {
+    ensureChapelInitialized();
     const c_version = chapel.chapel_get_version();
     if (c_version == null) {
         return error.ChapelRuntimeUnavailable;
@@ -223,12 +259,14 @@ pub fn getChapelVersion(allocator: std.mem.Allocator) ![]const u8 {
 
 /// Get count of provers available on this system (0-30)
 pub fn availableProverCount() u32 {
+    ensureChapelInitialized();
     const count = chapel.chapel_available_prover_count();
     return if (count >= 0) @intCast(count) else 0;
 }
 
 /// Check if a specific prover is available
 pub fn isProverAvailable(prover: ProverKind) bool {
+    ensureChapelInitialized();
     return chapel.chapel_is_prover_available(@intFromEnum(prover)) != 0;
 }
 

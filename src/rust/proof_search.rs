@@ -220,14 +220,14 @@ mod chapel_ffi {
         }
 
         fn available(&self) -> bool {
-            // SAFETY: echidna_chapel_is_available is a pure query with no side effects.
+            // SAFETY: The bridge initializes the real runtime once before querying it.
             unsafe { echidna_chapel_is_available() != 0 }
         }
     }
 
     impl ChapelParallelSearch {
         pub fn new() -> Result<Self> {
-            // SAFETY: echidna_chapel_is_available is a pure query with no side effects.
+            // SAFETY: The bridge initializes the real runtime once before querying it.
             if unsafe { echidna_chapel_is_available() } == 0 {
                 anyhow::bail!("Chapel runtime not available");
             }
@@ -253,7 +253,7 @@ mod chapel_ffi {
 
         /// Get count of provers available on this system (0-30)
         pub fn available_prover_count() -> u32 {
-            // SAFETY: Pure query, no side effects.
+            // SAFETY: The bridge initializes the real runtime before querying the registry.
             let count = unsafe { echidna_chapel_available_prover_count() };
             if count >= 0 {
                 count as u32
@@ -262,6 +262,75 @@ mod chapel_ffi {
             }
         }
     }
+    #[cfg(test)]
+    mod tests {
+        use super::*;
+
+        #[cfg(echidna_chapel_stubs)]
+        #[test]
+        fn stub_mode_cannot_claim_a_real_runtime() {
+            assert!(ChapelParallelSearch::new().is_err());
+            assert!(ChapelParallelSearch::get_version().is_err());
+            assert_eq!(ChapelParallelSearch::available_prover_count(), 0);
+        }
+
+        #[cfg(echidna_chapel_real)]
+        #[test]
+        fn real_runtime_initializes_once_and_reports_its_version() {
+            for _ in 0..2 {
+                let strategy = ChapelParallelSearch::new().expect("real Chapel runtime");
+                assert!(strategy.available());
+                let version = ChapelParallelSearch::get_version().expect("real Chapel version");
+                assert!(version.starts_with("ECHIDNA Chapel Metalayer "));
+                assert!(ChapelParallelSearch::available_prover_count() <= 30);
+            }
+        }
+
+        #[cfg(echidna_chapel_real)]
+        #[test]
+        fn real_search_without_provers_fails_and_frees_result() {
+            const CHILD: &str = "ECHIDNA_CHAPEL_EMPTY_PATH_CHILD";
+            if std::env::var_os(CHILD).is_some() {
+                let strategy = ChapelParallelSearch::new().expect("real Chapel runtime");
+                assert_eq!(ChapelParallelSearch::available_prover_count(), 0);
+                for _ in 0..2 {
+                    let result = strategy
+                        .search("True", Duration::from_secs(1))
+                        .expect("FFI returns a result when no prover is available");
+                    assert!(!result.success);
+                    assert_eq!(result.error_message.as_deref(), Some("All provers exhausted"));
+                }
+                println!("ECHIDNA_REAL_CHAPEL_NO_PROVER_PROBE_COMPLETED");
+                return;
+            }
+
+            // A fresh process gets an empty PATH before runtime initialization.
+            // No global environment mutation races with other Rust tests, and
+            // no external prover can be dispatched by this allocation/free probe.
+            let empty_path = tempfile::tempdir().expect("empty prover search directory");
+            let result = std::process::Command::new(std::env::current_exe().unwrap())
+                .args([
+                    "--exact",
+                    "proof_search::chapel_ffi::tests::real_search_without_provers_fails_and_frees_result",
+                    "--nocapture",
+                ])
+                .env(CHILD, "1")
+                .env("PATH", empty_path.path())
+                .output()
+                .expect("launch isolated real-runtime probe");
+            assert!(
+                result.status.success(),
+                "real-runtime child failed: {}",
+                String::from_utf8_lossy(&result.stderr)
+            );
+            assert!(
+                String::from_utf8_lossy(&result.stdout)
+                    .contains("ECHIDNA_REAL_CHAPEL_NO_PROVER_PROBE_COMPLETED"),
+                "the exact child test did not complete its real-runtime assertions"
+            );
+        }
+    }
+
 }
 
 #[cfg(feature = "chapel")]
