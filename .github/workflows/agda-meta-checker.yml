@@ -47,7 +47,7 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         run: |
           set -euo pipefail
-          PATTERN='^meta-checker/'
+          PATTERN='^(meta-checker/|\.github/workflows/agda-meta-checker\.yml$)'
           if [ "${{ github.event_name }}" = "pull_request" ]; then
             FILES=$(gh api "repos/${{ github.repository }}/pulls/${{ github.event.pull_request.number }}/files" \
                       --paginate --jq '.[].filename')
@@ -103,5 +103,5 @@ jobs:
         run: |
           cd meta-checker
           echo "$PWD/echidna-meta.agda-lib" >> ~/.agda/libraries
-          agda src/Echidna/MetaChecker.agda
-          echo "✓ All 30+ properties machine-verified"
+          agda --safe --without-K --cubical-compatible src/Echidna/MetaChecker.agda
+          echo "✓ Meta-checker passed with safe / without-K / cubical-compatible; proof assumptions require a separate audit"
