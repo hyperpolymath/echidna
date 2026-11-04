@@ -217,8 +217,11 @@ mod tests {
         // Linux x86-64 EAFNOSUPPORT is 97. Rust 1.99.1 leaves it
         // Uncategorized, so ErrorKind::Unsupported alone misses it.
         // Keep this raw-code exception target-specific; other bind errors fail.
-        cfg!(all(target_os = "linux", target_env = "gnu", target_arch = "x86_64"))
-            && error.raw_os_error() == Some(97)
+        cfg!(all(
+            target_os = "linux",
+            target_env = "gnu",
+            target_arch = "x86_64"
+        )) && error.raw_os_error() == Some(97)
     }
 
     #[test]
@@ -238,7 +241,11 @@ mod tests {
         }
         assert_eq!(
             ipv6_loopback_unavailable(&Error::from_raw_os_error(97)),
-            cfg!(all(target_os = "linux", target_env = "gnu", target_arch = "x86_64"))
+            cfg!(all(
+                target_os = "linux",
+                target_env = "gnu",
+                target_arch = "x86_64"
+            ))
         );
         assert!(!ipv6_loopback_unavailable(&Error::from_raw_os_error(12345)));
     }
@@ -250,7 +257,7 @@ mod tests {
             Err(error) if ipv6_loopback_unavailable(&error) => {
                 eprintln!("IPv6 loopback unavailable; probe test not run: {error}");
                 return;
-            }
+            },
             Err(error) => panic!("bind IPv6 loopback fixture: {error}"),
         };
         let port = listener.local_addr().unwrap().port();
