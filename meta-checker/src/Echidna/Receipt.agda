@@ -13,20 +13,25 @@
 --
 -- The argument is a two-world Kripke countermodel: an agent holding a
 -- warrant cannot distinguish the world in which the verdict is sound
--- from one in which it is not.  A receipt is exactly what closes that
--- gap — a discriminating check, not more of the same evidence.
+-- from one in which it is not.  A second, sharpened frame admits a
+-- receipt.  This is a comparison of models: no runtime check or
+-- transition between those frames is implemented or verified here.
 --
 -- Checked with: agda --safe --without-K --cubical-compatible
--- (no postulates and no hypotheses: every result here is unconditional,
---  including the sharpened frame, which is a second model rather than an
---  assumption added to the first)
+-- No postulates.  The token interpretation takes an explicit family of
+-- named assumptions; a conditional receipt requires the corresponding
+-- assumption before it can be discharged.  The theorems below prove
+-- properties of this model, not the admission of external evidence.
 ------------------------------------------------------------------------
 
 module Echidna.Receipt where
 
 open import Data.Empty using (⊥; ⊥-elim)
-open import Data.Product using (Σ-syntax; _×_; _,_; proj₁)
+open import Data.Nat using (ℕ; zero; suc)
+open import Data.Product using (Σ-syntax; _×_; _,_; proj₁; proj₂)
 open import Data.Unit using (⊤; tt)
+open import Data.Vec using (Vec; []; _∷_)
+open import Data.Vec.Relation.Unary.All using (All; []; _∷_)
 
 ------------------------------------------------------------------------
 -- Kripke frame
@@ -121,7 +126,7 @@ warrant-not-receipt _ r = r ≈-there
 
 -- Stronger: because the agent cannot exclude `w-there`, no receipt for
 -- `sound` exists at *either* world.  Accumulating more evidence of the
--- same kind cannot produce one; only a check that discriminates can.
+-- same kind cannot produce one within this frame.
 no-receipt-anywhere : ∀ w → Receipt sound w → ⊥
 no-receipt-anywhere w-here  r = r ≈-cross
 no-receipt-anywhere w-there r = r ≈-there
@@ -134,9 +139,9 @@ no-receipt-anywhere w-there r = r ≈-there
 -- frame — `≈-cross` inhabits its domain — so taking one as a parameter
 -- would be vacuous, and would say nothing about what a receipt is.  Here
 -- the same two worlds keep their identity and only the accessibility
--- changes: the agent can now tell them apart.  That is what a
--- discriminating check buys, and unlike the impossible hypothesis it is
--- inhabited.
+-- changes: the agent can now tell them apart.  The receipt is inhabited
+-- in this frame; proving that a real check justifies this change is a
+-- separate obligation outside this model.
 ------------------------------------------------------------------------
 
 data _≈′_ : World → World → Set where
@@ -156,7 +161,7 @@ receipt-in-sharpened-frame {w-here}  _ = tt
 receipt-in-sharpened-frame {w-there} ()
 
 -- ...and it is still factive, so the token means the same thing in both
--- frames: what changed is the evidence, not the standard of proof.
+-- frames: accessibility changed, while factivity still holds.
 receipt′-factive : ∀ {φ w} → Receipt′ φ w → ⟦ φ ⟧ w
 receipt′-factive r = r (≈′-refl _)
 
@@ -176,10 +181,53 @@ coarse-yet-sharpened = no-receipt-anywhere w-here , receipt-in-sharpened-frame
 -- is not free.
 ------------------------------------------------------------------------
 
--- The axioms the policy's PROVEN-WITH-AXIOMS token is *about*.  Naming one
--- is the entire difference between that token and `proven`: asserting the
--- proposition alone would make the two indistinguishable, which is the
--- accounting §5 exists to keep.
+-- The applicable frame is part of a receipt's type.  Keeping the coarse
+-- countermodel does not make successful assertions in the sharpened
+-- frame impossible.
+data Frame : Set where
+  coarse sharpened : Frame
+
+Accessible : Frame → World → World → Set
+Accessible coarse    = _≈_
+Accessible sharpened = _≈′_
+
+FrameReceipt : Frame → Atom → World → Set
+FrameReceipt coarse    = Receipt
+FrameReceipt sharpened = Receipt′
+
+frame-receipt-factive :
+  ∀ {frame φ w} → FrameReceipt frame φ w → ⟦ φ ⟧ w
+frame-receipt-factive {coarse}    = receipt-factive
+frame-receipt-factive {sharpened} = receipt′-factive
+
+FrameWarrant : Frame → Atom → World → Set
+FrameWarrant frame φ w =
+  Σ[ e ∈ Evidence φ ] (Accessible frame w (grounds e)) × ⟦ φ ⟧ (grounds e)
+
+-- A bounded check has a nonempty, explicitly enumerated population and
+-- a result for every sample.  This is semantic test evidence in the
+-- model, not an attestation that an external test runner executed.
+-- Its results establish the claim only at the sampled worlds.
+record TestEvidence (φ : Atom) : Set where
+  constructor checked-samples
+  field
+    extra-samples : ℕ
+    samples       : Vec World (suc extra-samples)
+    passed        : All (λ w → ⟦ φ ⟧ w) samples
+
+one-passing-sample : TestEvidence sound
+one-passing-sample = checked-samples zero (w-here ∷ []) (tt ∷ [])
+
+-- A false sample cannot be hidden inside an all-passing result.
+false-sample-rejected :
+  ∀ {n} {rest : Vec World n} →
+  All (λ w → ⟦ sound ⟧ w) (w-there ∷ rest) → ⊥
+false-sample-rejected (() ∷ _)
+
+-- These are names, not proofs of the named axioms.  The interpretation
+-- `assumptions` is supplied explicitly at the boundary.  A postulated
+-- assertion stores a function from that proposition to a receipt, not
+-- an unconditional receipt paired with an inert label.
 data Axiom : Set where
   funext : Axiom
   choice : Axiom
@@ -192,21 +240,66 @@ data Verdict : Set where
   argued               : Verdict
   no-claim             : Verdict   -- the `open` token (`open` is a keyword)
 
-Asserts : Verdict → (φ : Atom) → World → Set
-Asserts proven                 φ w = Receipt φ w
-Asserts proven-with-postulates φ w = Axiom × Receipt φ w
-Asserts tested-only            φ w = Warrant φ w
-Asserts argued                 φ w = Warrant φ w
-Asserts no-claim               φ w = ⊤
+Asserts : (Axiom → Set) → Frame → Verdict → (φ : Atom) → World → Set
+Asserts assumptions frame proven                 φ w = FrameReceipt frame φ w
+Asserts assumptions frame proven-with-postulates φ w =
+  Σ[ ax ∈ Axiom ] (assumptions ax → FrameReceipt frame φ w)
+Asserts assumptions frame tested-only            φ w = TestEvidence φ
+Asserts assumptions frame argued                 φ w = FrameWarrant frame φ w
+Asserts assumptions frame no-claim               φ w = ⊤
 
--- A `proven-with-postulates` assertion carries the axiom it rests on; a
--- `proven` assertion carries none, which is why they are different types.
 postulates-name-an-axiom :
-  ∀ {φ w} → Asserts proven-with-postulates φ w → Axiom
+  ∀ {assumptions frame φ w} →
+  Asserts assumptions frame proven-with-postulates φ w → Axiom
 postulates-name-an-axiom = proj₁
 
--- The same warrant never licences the stronger token.
+discharge-postulates :
+  ∀ {assumptions frame φ w}
+  (claim : Asserts assumptions frame proven-with-postulates φ w) →
+  assumptions (proj₁ claim) → Asserts assumptions frame proven φ w
+discharge-postulates claim premise = proj₂ claim premise
+
+-- A positive control: the stronger token is inhabited in the sharpened
+-- frame.  Warrant and receipt may coexist; the theorem below rejects a
+-- uniform conversion, not the coexistence of the two kinds of evidence.
+proven-in-sharpened-frame :
+  ∀ {assumptions} → Asserts assumptions sharpened proven sound w-here
+proven-in-sharpened-frame = receipt-in-sharpened-frame
+
+warrant-and-receipt :
+  ∀ {assumptions} →
+  Asserts assumptions sharpened argued sound w-here ×
+  Asserts assumptions sharpened proven sound w-here
+warrant-and-receipt =
+  (ev-sound , ≈′-here , tt) , receipt-in-sharpened-frame
+
+-- No operation may promote every warrant in every frame.  The coarse
+-- false-world witness refutes such an operation without making the
+-- sharpened positive control impossible.
 no-free-promotion :
-  ∀ {φ w} → Asserts argued φ w → Asserts proven φ w → ⊥
-no-free-promotion {sound} {w-here}  _ r = r ≈-cross
-no-free-promotion {sound} {w-there} _ r = r ≈-there
+  ∀ {assumptions} →
+  (∀ {frame φ w} → Asserts assumptions frame argued φ w →
+                    Asserts assumptions frame proven φ w) → ⊥
+no-free-promotion promote =
+  promote {coarse} {sound} {w-there} warrant-elsewhere ≈-there
+
+-- The opaque names do not supply their interpretations.  In particular,
+-- an implication from an unavailable premise cannot be projected into
+-- an unconditional receipt.  This countermodel does not assert that
+-- any actual mathematical axiom is false.
+no-unconditional-postulate-promotion :
+  (∀ {assumptions frame φ w} →
+    Asserts assumptions frame proven-with-postulates φ w →
+    Asserts assumptions frame proven φ w) → ⊥
+no-unconditional-postulate-promotion promote =
+  promote {λ _ → ⊥} {sharpened} {sound} {w-there}
+    (em , λ impossible → ⊥-elim impossible) ≈′-there
+
+-- A sample at w-here can pass while the unsampled w-there is false.
+-- Explicit bounds prevent a tested-only claim from becoming universal.
+no-test-promotion :
+  ∀ {assumptions} →
+  (∀ {frame φ w} → Asserts assumptions frame tested-only φ w →
+                    Asserts assumptions frame proven φ w) → ⊥
+no-test-promotion promote =
+  promote {sharpened} {sound} {w-there} one-passing-sample ≈′-there

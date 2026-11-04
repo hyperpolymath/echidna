@@ -1,0 +1,132 @@
+{
+  "schema_version": 1,
+  "spdx_license_id": "MPL-2.0",
+  "kind": "local-agda-model-check",
+  "recorded_at_utc": "2026-11-04T17:26:43Z",
+  "source": {
+    "repository": "https://github.com/hyperpolymath/echidna",
+    "base_commit": "9dd7847dfb095f0ddf3d41bac3327fcc4486fb6b",
+    "identity": "base commit plus the exact checked file digests below; not the unmodified base commit",
+    "modified_source_files": [
+      "meta-checker/src/Echidna/Integrity.agda",
+      "meta-checker/src/Echidna/MetaChecker.agda",
+      "meta-checker/src/Echidna/Receipt.agda"
+    ],
+    "files": [
+      {
+        "sha256": "e8bce1e39b54b5d2a122e971a9c550c48d11e2a950b788027e6ccf2ee213e407",
+        "path": "meta-checker/echidna-meta.agda-lib"
+      },
+      {
+        "sha256": "0789afd299c326905be7575bc7e0a207af5bd3a18aa6725f827793d1b3b0f07a",
+        "path": "meta-checker/src/Echidna/AxiomSafety.agda"
+      },
+      {
+        "sha256": "a43cbaeba44d73b96061e104c5e063ec64e052e61a3ef4cb58af42b1fc73326a",
+        "path": "meta-checker/src/Echidna/AxiomTrackerCompleteness.agda"
+      },
+      {
+        "sha256": "b13a4814e9992b625770756c602ac4783451a2d268ad0774684fcbe27c640f4e",
+        "path": "meta-checker/src/Echidna/ClampTrust.agda"
+      },
+      {
+        "sha256": "3891f7f8dc0fd8b70149690aa9818685dd147c2a4aefc63072f7be6f2fecf7d9",
+        "path": "meta-checker/src/Echidna/Dispatch.agda"
+      },
+      {
+        "sha256": "5ab8b7ef7e6fbc93a9c7d594647463c5f4aa31c9636d80edfef812a455614844",
+        "path": "meta-checker/src/Echidna/Integrity.agda"
+      },
+      {
+        "sha256": "d13c846a233390d3b00bdd8c2f4ba8775e60989808dc114ffd74988f41f249ed",
+        "path": "meta-checker/src/Echidna/MetaChecker.agda"
+      },
+      {
+        "sha256": "3a6f43fc49d10c1b63f3e3849ca1fc99b209f5ae4d697c8123ad78d82a0b1e1e",
+        "path": "meta-checker/src/Echidna/Portfolio.agda"
+      },
+      {
+        "sha256": "6741bae9360b0b3064ef67b073c06f2831775b70eeb01e1d6e998bc74f02c6e2",
+        "path": "meta-checker/src/Echidna/Receipt.agda"
+      },
+      {
+        "sha256": "dab086fcbe17a0611e5679716a36f8db2d93fbe9b63472f0b2caecd50316fa62",
+        "path": "meta-checker/src/Echidna/TrustLevel.agda"
+      }
+    ]
+  },
+  "toolchain": {
+    "agda": {
+      "version": "2.7.0.1",
+      "release_url": "https://github.com/agda/agda/releases/download/v2.7.0.1/Agda-v2.7.0.1-linux.tar.xz",
+      "archive_sha256": "975b515a14877ab6bce5bfc641e16c4a3ee52ca5d7f846577dee80aa2145db8a",
+      "executable_sha256": "6de41437c14c05c9fe576d724cc67386444c0fa9fee662a08250fefb91bee8b6"
+    },
+    "standard_library": {
+      "version": "2.1",
+      "archive_url": "https://github.com/agda/agda-stdlib/archive/refs/tags/v2.1.tar.gz",
+      "archive_sha256": "72ca3ea25094efa0439e106f0d949330414232ec4cc5c3c3316e7e70dd06d431"
+    }
+  },
+  "invocation": {
+    "working_directory": "meta-checker",
+    "argv": [
+      "agda",
+      "--no-default-libraries",
+      "--library-file",
+      "$AGDA_LIBRARIES_FILE",
+      "--safe",
+      "--without-K",
+      "--cubical-compatible",
+      "src/Echidna/MetaChecker.agda"
+    ],
+    "library_file_entries": [
+      "$AGDA_STDLIB_DIR/standard-library.agda-lib",
+      "$REPOSITORY/meta-checker/echidna-meta.agda-lib"
+    ],
+    "Agda_datadir": "$AGDA_DISTRIBUTION/data",
+    "LC_ALL": "C.UTF-8"
+  },
+  "result": {
+    "exit_code": 0,
+    "source_module_count": 9,
+    "fresh_interface_count": 9,
+    "interface_identity": "_build/2.7.0.1/agda/<full source path with .agdai suffix>",
+    "warning_count": 55,
+    "warning_classes": [
+      "UnsupportedIndexedMatch"
+    ],
+    "warning_sites": [
+      "Echidna.TrustLevel:77",
+      "Echidna.TrustLevel:88",
+      "Echidna.TrustLevel:235",
+      "Echidna.AxiomSafety:119",
+      "Echidna.ClampTrust:103",
+      "Echidna.Receipt:225"
+    ],
+    "log_sha256": "946d37af6692390c459c80ed973276e40a1f62ccbfa49b3d040828da24427b83"
+  },
+  "controls": {
+    "script": "scripts/ci/check-receipt-controls.sh",
+    "script_sha256": "a2f0c7e1a040be2ded1fabd1e6604781a0f28f3336e6a8f6d85cf7a4242acd84",
+    "exit_code": 0,
+    "accepted": [
+      "sharpened frame proven witness",
+      "nonempty bounded sample witness"
+    ],
+    "rejected": [
+      "project conditional assumption function into unconditional receipt",
+      "use a warrant as tested-only evidence",
+      "claim a false-world sample passed"
+    ],
+    "log_sha256": "984a1ad325690ec533bc7ad2f2b84ecda4ddd2ef51a275d914102666c8a91b8a"
+  },
+  "limitations": [
+    "A local observation, not a hosted CI attestation or a proof about an arbitrary later revision.",
+    "Only the listed Agda model sources were checked; no Rust/Creusot, Idris2, Rocq or Lean leg is discharged.",
+    "UnsupportedIndexedMatch warnings retain the recorded Cubical-transport computation limitation; full Cubical was not run.",
+    "Receipt compares two frames and models evidence; no runtime checker, frame transition or external test-evidence adapter is verified.",
+    "Integrity compares digests, not binary contents; no content-level collision resistance or Rust dispatch refinement is established.",
+    "Named assumptions remain conditional; no external assumption is supplied by this check."
+  ]
+}

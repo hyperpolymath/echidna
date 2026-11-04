@@ -460,21 +460,29 @@ integrity as step 1 of the trust pipeline. The check is conditional
 (`+dispatch.rs:632+`): with no checker attached, `+solver_integrity_ok` is
 `true`. `+with_integrity_checker+` has no caller in the tree, and
 `+config/solver-manifest.toml+` holds `+PLACEHOLDER_COMPUTE_ON_FIRST_RUN+` for
-every solver, so attaching one today would report `+Uninitialized+` — which the
-code also treats as passing.
+every solver. An installed binary with a placeholder digest reports
+`+Uninitialized+`, which the dispatch code permits; an absent binary reports
+`+Missing+`. Neither outcome is a verified binary identity.
 
 Fixed so far: the docs and the published site now say "capability present, not
 currently engaged" instead of claiming a step that does not run.
 
 Now machine-checked on the specification side:
 `+meta-checker/src/Echidna/Integrity.agda+` (`+docs/PROOF-STATUS.adoc+` R9)
-proves that verification requires an initialised manifest and that an
-uninitialised manifest never verifies — with collision resistance carried as an
-explicit hypothesis, and a sharpness result showing that hypothesis cannot be
-dropped. The accepting call sites are `+dispatch.rs+` 642, 848, 998 and
-`+solver_integrity.rs+` 359. So the divergence is checked on one side and read on
-the other, rather than read on both: closing D9 means changing those four lines,
-not the proof.
+proves that verification in its model requires an initialised manifest and
+that an uninitialised manifest never verifies. Its explicit hypothesis is
+digest-comparison soundness: an accepted comparison implies equal digests.
+The model has no binary contents or hashing function, so it does not prove
+content-level collision resistance and cannot distinguish equal-digest
+substitutions. The sharpness theorem directly refutes comparator soundness
+for an accept-everything comparator.
+
+The accepting Rust branches in `+dispatch.rs+` and
+`+integrity/solver_integrity.rs+` are established by source comparison. The
+Agda model has no dispatch-permission decision and no machine-checked
+refinement connecting it to those branches. Closing D9 requires an explicit
+runtime policy, correct wiring, non-placeholder manifests and execution tests;
+the model theorem alone does not enforce that policy.
 
 Open: decide whether to wire it (introducing a refuse-on-mismatch failure mode)
 or to delete the step from the pipeline description. Recorded rather than
@@ -482,8 +490,10 @@ silently changed.
 
 [source,bash]
 ----
-grep -rn 'with_integrity_checker' src/ crates/ tests/   # definition only
-grep -n 'PLACEHOLDER' config/solver-manifest.toml
+rg -n 'with_integrity_checker|IntegrityStatus::Uninitialized|solver_integrity_ok' src/ crates/ tests/
+rg -n 'PLACEHOLDER' config/solver-manifest.toml
+# After the pinned setup in scripts/ci/setup-agda.sh:
+bash scripts/ci/check-agda.sh
 ----
 
 ==== D10. `+--features verisim+` changes verification routing, not just storage

@@ -13,11 +13,16 @@ on:
     branches: [main]
     paths:
       - 'meta-checker/**'
+      - 'scripts/ci/*agda.sh'
+      - 'scripts/ci/check-receipt-controls.sh'
+      - '.github/workflows/agda-meta-checker.yml'
   # No paths-filter on pull_request: this is a REQUIRED status check, so it must
   # report on every PR (a path-filtered required check deadlocks PRs that don't
   # touch its paths). The "Detect relevant changes" step path-gates internally.
   pull_request:
     branches: [main]
+  schedule:
+    - cron: '30 2 * * *'
   workflow_dispatch:
 
 # Cause-B mitigation (#77): cancel superseded runs so stacked pushes
@@ -33,11 +38,14 @@ permissions:
 jobs:
   verify-proofs:
     name: Type-check Agda proofs
-    runs-on: ubuntu-latest
-    timeout-minutes: 15
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
     steps:
       - name: Checkout
         uses: actions/checkout@v7.0.1
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+          persist-credentials: false
 
       # Required-check shim: only the meta-checker/ tree needs the real proof
       # check. Non-PR events (push, workflow_dispatch) always run it.
@@ -47,7 +55,7 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         run: |
           set -euo pipefail
-          PATTERN='^(meta-checker/|\.github/workflows/agda-meta-checker\.yml$)'
+          PATTERN='^(meta-checker/|scripts/ci/(setup-agda|check-agda|check-receipt-controls)\.sh$|\.github/workflows/agda-meta-checker\.yml$)'
           if [ "${{ github.event_name }}" = "pull_request" ]; then
             FILES=$(gh api "repos/${{ github.repository }}/pulls/${{ github.event.pull_request.number }}/files" \
                       --paginate --jq '.[].filename')
@@ -56,85 +64,24 @@ jobs:
               echo "meta-checker/ sources changed — running full Agda type-check."
             else
               echo "relevant=false" >> "$GITHUB_OUTPUT"
-              echo "No meta-checker changes — pass-through (required-check shim)."
+              echo "NOT APPLICABLE: proof source/tooling paths unchanged; compiler did not run."
             fi
           else
             echo "relevant=true" >> "$GITHUB_OUTPUT"
             echo "Non-PR event — running full Agda type-check."
           fi
 
-      - name: Setup Haskell
-        if: steps.detect.outputs.relevant == 'true'
-        uses: haskell-actions/setup@v2.12.1
-        with:
-          ghc-version: '9.6'
-          cabal-version: '3.10'
-
-      - name: Cache Agda
+      - name: Cache pinned Agda archives
         if: steps.detect.outputs.relevant == 'true'
         uses: actions/cache@v6.1.0
         with:
-          path: |
-            ~/.cabal
-            ~/.agda
-          key: agda-${{ runner.os }}-${{ hashFiles('meta-checker/**/*.agda') }}
+          path: ~/.cache/echidna/agda
+          key: agda-archives-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('scripts/ci/setup-agda.sh') }}
 
-      - name: Install Agda
+      - name: Install pinned Agda and standard library
         if: steps.detect.outputs.relevant == 'true'
-        run: |
-          cabal update
-          # --overwrite-policy=always: the cached ~/.cabal restore already
-          # carries the agda symlink, so a plain install aborts with
-          # "Path '.../bin/agda' already exists" on a warm cache.
-          cabal install Agda-2.7.0.1 --overwrite-policy=always
-
-      - name: Install Agda standard library
-        if: steps.detect.outputs.relevant == 'true'
-        run: |
-          mkdir -p ~/.agda
-          cd /tmp
-          wget -q https://github.com/agda/agda-stdlib/archive/refs/tags/v2.1.tar.gz
-          tar xzf v2.1.tar.gz
-          echo "/tmp/agda-stdlib-2.1/standard-library.agda-lib" > ~/.agda/libraries
-          echo "standard-library" > ~/.agda/defaults
+        run: bash scripts/ci/setup-agda.sh
 
       - name: Type-check meta-checker (PROOF-POLICY §2.1 canonical invocation)
         if: steps.detect.outputs.relevant == 'true'
-        run: |
-          cd meta-checker
-          echo "$PWD/echidna-meta.agda-lib" >> ~/.agda/libraries
-          # Canonical invocation, PROOF-POLICY §2.1. --safe is what excludes
-          # postulates, --type-in-type and primTrustMe; it is not a grep.
-          # NEVER weaken these flags to get a green run: a failing leg is the
-          # finding. Note --cubical-compatible is NOT --cubical: the
-          # -W[no]UnsupportedIndexedMatch warnings this emits mean the flagged
-          # functions do not compute under transports. Recorded as a limit in
-          # docs/PROOF-STATUS.adoc R4.
-          agda --safe --without-K --cubical-compatible src/Echidna/MetaChecker.agda
-
-      - name: Assert the checked closure covers every module
-        if: steps.detect.outputs.relevant == 'true'
-        run: |
-          cd meta-checker
-          # A module that nothing imports gets no interface and is never
-          # type-checked — AxiomTrackerCompleteness.agda sat outside the
-          # closure, and did not parse, until 2026-11-01. Check each source
-          # against *its own* interface rather than comparing totals: a count
-          # can be offset by a stray interface elsewhere, and a non-recursive
-          # glob misses nested modules.
-          # Agda writes interfaces under _build/<version>/agda/ when a
-          # .agda-lib is present, so mirroring the source path is
-          # version-dependent; match on module basename instead.
-          ifaces=$(find . -name '*.agdai' -type f | sed 's#.*/##; s#\.agdai$##' | sort -u)
-          missing=0
-          total=0
-          while IFS= read -r f; do
-            total=$((total + 1))
-            mod=$(basename "${f%.agda}")
-            if ! printf '%s\n' "$ifaces" | grep -qx "$mod"; then
-              echo "::error::$f produced no interface — module is outside the checked closure"
-              missing=$((missing + 1))
-            fi
-          done < <(find src -name '*.agda' | sort)
-          echo "${total} source modules, $((total - missing)) with interfaces"
-          test "$missing" -eq 0
+        run: bash scripts/ci/check-agda.sh

@@ -116,37 +116,56 @@ jobs:
                         sudo install -m 0755 /tmp/alt-ergo /usr/local/bin/alt-ergo ;;
             glpk)       sudo apt-get install -y --fix-missing glpk-utils ;;
             minizinc)   sudo apt-get install -y --fix-missing minizinc ;;
-            chuffed)    sudo apt-get install -y --fix-missing minizinc # chuffed bundled with minizinc-ide on recent ubuntu
+            chuffed)    # Ubuntu's minizinc package does not include fzn-chuffed.
+                        # The upstream bundle does; authenticate it before extraction.
+                        bundle="$RUNNER_TEMP/MiniZincIDE-2.10.1-x86_64-linux-gnu.tgz"
+                        curl --fail --location --retry 3 --max-time 120 --output "$bundle" \
+                          https://github.com/MiniZinc/MiniZincIDE/releases/download/2.10.1/MiniZincIDE-2.10.1-x86_64-linux-gnu.tgz
+                        printf '%s  %s\n' b63dd88491d47b05d0eb0ff4aa1112d1e6f77292c023800b20b98851458ce01c "$bundle" | sha256sum --check
+                        tar --no-same-owner -xzf "$bundle" -C "$RUNNER_TEMP" \
+                          MiniZincIDE-2.10.1-x86_64-linux-gnu/bin/fzn-chuffed
+                        echo "$RUNNER_TEMP/MiniZincIDE-2.10.1-x86_64-linux-gnu/bin" >> "$GITHUB_PATH"
                         ;;
           esac
-          "${{ matrix.backend }}" --version 2>/dev/null || "${{ matrix.backend }}" --help 2>/dev/null || true
 
       - name: Run live test for ${{ matrix.backend }}
-        run: cargo test --test live_prover_suite --features live-provers -- --nocapture ${{ matrix.backend }}
+        env:
+          LIVE_PROVER: ${{ matrix.backend }}
+        run: bash scripts/ci/run-live-prover.sh "$LIVE_PROVER"
 
   # ============================================================================
-  # Tier 1 reproducibility check — ensure Guix manifest actually resolves.
-  # Allow-fail: this is additional proof, not a gate (Guix-on-Ubuntu is flaky
-  # without dedicated setup).
+  # Resolve the explicitly packaged Guix subset. This is not live-prover
+  # execution evidence and does not cover the externally provisioned backends.
   # ============================================================================
   tier1-guix-reproducibility:
     name: T1 Guix manifest check
-    if: github.event_name != 'schedule'
-    runs-on: ubuntu-latest
+    if: github.event_name != 'schedule' || github.event.schedule == '0 3 * * *'
+    # Ubuntu 26.04 removed the guix APT package. Noble has this audited version.
+    runs-on: ubuntu-24.04
     timeout-minutes: 20
-    continue-on-error: true  # allow-fail: issue=#416 expires=2026-11-30
     steps:
       - name: Checkout
         uses: actions/checkout@v7.0.1
       - name: Install Guix
         run: |
-          sudo apt-get update -qq || sudo apt-get update -qq --fix-missing
-          sudo apt-get install -y --fix-missing guix
-      - name: Resolve manifest (doesn't run tests — just proves the .scm parses)
+          set -euo pipefail
+          trap 'echo "::error::Guix setup failed; manifest check NOT RUN"; exit 2' ERR
+          sudo apt-get update -qq
+          sudo apt-get install -y --no-install-recommends guix=1.4.0-6build1
+          sudo systemctl start guix-daemon
+          guix --version
+      - name: Resolve packaged manifest (not a live-prover test)
         run: |
-          guix describe || true
-          guix package -m manifests/live-provers.scm --dry-run || \
-            echo "NOTE: Guix manifest resolution failed — non-blocking reproducibility signal."
+          set -euo pipefail
+          {
+            echo '## Guix manifest scope'
+            echo
+            echo 'This job resolves the Guix-packaged subset; it does not build or run provers.'
+            echo 'Guix coverage for cvc5, alt-ergo, vampire, eprover, spass, chuffed, Idris2 and Isabelle is UNKNOWN.'
+            echo 'Their separate live-prover jobs must supply execution evidence; this job cannot satisfy it.'
+            echo 'See manifests/live-provers.scm for the package boundary.'
+          } >> "$GITHUB_STEP_SUMMARY"
+          guix package --manifest=manifests/live-provers.scm --dry-run --no-substitutes
 
   # ============================================================================
   # Tier 2 — nightly.  Larger build-from-source provers.

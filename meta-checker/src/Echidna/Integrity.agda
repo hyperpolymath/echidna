@@ -6,22 +6,23 @@
 -- The current repository has an informal note for E11 and no Agda
 -- record.  This module states the invariant that the integrity checker
 -- is *supposed* to guarantee, and then proves the sharpness result
--- that makes the collision-resistance assumption load-bearing rather
+-- that makes the digest-comparison soundness hypothesis load-bearing rather
 -- than decorative.
 --
--- The headline theorem is the one the Rust implementation violates:
--- an UNINITIALISED manifest must never yield `Verified`.
+-- The model's headline theorem says an UNINITIALISED manifest never
+-- yields `Verified`.
 -- src/rust/dispatch.rs:642,848,998 and
 -- src/rust/integrity/solver_integrity.rs:359 all accept
--- `IntegrityStatus::Uninitialized` as passing.  The proof below is about
--- the specification, not about that code path — which is exactly why it
--- is worth having a record: it makes the deviation a machine-checked
--- discrepancy (DEBT D9) instead of a reading of the source.
+-- `IntegrityStatus::Uninitialized` as permitting dispatch.  Rust does not
+-- report `Verified` in that case.  The model has no dispatch-permission
+-- decision: DEBT D9 is a source comparison with this specification, not
+-- a machine-checked refinement theorem about the Rust implementation.
 --
 -- Scope: a binary is modelled by its digest only, so "substituted" below
--- means "a binary whose digest differs". Content-level collision resistance is
--- the `≈d-sound` field of the comparator, i.e. assumed by the caller and not
--- established here; `sharpness` shows what happens when it fails.
+-- means "a binary whose digest differs".  `≈d-sound` requires an accepted
+-- comparison to imply equal digests.  There are no binary contents or
+-- hashing function in the model, so content-level collision resistance
+-- is outside its scope.  Equal-digest substitutions remain indistinguishable.
 --
 -- Checked with: agda --safe --without-K --cubical-compatible
 ------------------------------------------------------------------------
@@ -36,7 +37,7 @@ open import Relation.Binary.PropositionalEquality using (_≡_; refl; sym)
 open import Relation.Nullary using (¬_)
 
 ------------------------------------------------------------------------
--- Collision resistance, carried as a record field
+-- Digest-comparison soundness, carried as a record field
 --
 -- This is deliberately an *assumption recorded in a structure* rather
 -- than a postulate: the theorems below are parameterised by it, so the
@@ -103,14 +104,14 @@ module _ (H : Hash) where
     ∀ {d b} → check (Initialised d) b ≡ Verified → d ≡ digest b
   verified-means-match {d} {b} p = ≈d-sound (decide-verified p)
 
-  -- E11c. A substituted binary is never verified.
+  -- E11c. A binary with a different digest is never verified.
   substituted-never-verified :
     ∀ {d b} → ¬ (digest b ≡ d) → ¬ (check (Initialised d) b ≡ Verified)
   substituted-never-verified {d} {b} neq p =
     neq (sym (verified-means-match {d} {b} p))
 
-  -- E11d. THE INVARIANT THE IMPLEMENTATION BREAKS (DEBT D9):
-  -- an uninitialised manifest never yields `Verified`.
+  -- E11d. An uninitialised manifest never yields `Verified` in this model.
+  -- Dispatch permission in Rust is a separate, unverified property (D9).
   uninitialised-never-verified :
     ∀ b → ¬ (check Uninitialised b ≡ Verified)
   uninitialised-never-verified b ()
@@ -118,10 +119,10 @@ module _ (H : Hash) where
 ------------------------------------------------------------------------
 -- Sharpness: the assumption is load-bearing
 --
--- Without `≈d-sound`, verification does not imply anything about the
--- binary.  This is proved by exhibiting a comparator that accepts
--- everything, under which a manifest for `true` verifies a binary whose
--- digest is `false`.
+-- An accept-everything comparator accepts distinct digests.  Its
+-- soundness property is explicitly refuted below; therefore it cannot
+-- supply the `≈d-sound` field required by `Hash` and E11b.  No `check`
+-- function over UnsoundHash, or binary-content theorem, is claimed here.
 ------------------------------------------------------------------------
 
 record UnsoundHash : Set₁ where
@@ -129,7 +130,7 @@ record UnsoundHash : Set₁ where
     Digest : Set
     _≈d_   : Digest → Digest → Bool
 
--- A comparator that accepts everything: collision resistance fails.
+-- A comparator that accepts everything: digest-comparison soundness fails.
 always-true : UnsoundHash
 UnsoundHash.Digest always-true = Bool
 UnsoundHash._≈d_   always-true _ _ = true
@@ -142,10 +143,10 @@ sharpness = refl
 sharpness-matters : ¬ (true ≡ false)
 sharpness-matters ()
 
--- Hence this comparator satisfies no soundness condition at all: the only
--- candidate witness forces `true ≡ false`.  So E11b cannot be discharged for
--- it, and the `≈d-sound` field in `Hash` is doing real work rather than
--- decorating the record.
+-- Refute precisely the property required by Hash, not merely Bool
+-- inequality: any proposed soundness witness makes true equal false.
 sharpness-blocks-soundness :
-  UnsoundHash._≈d_ always-true true false ≡ true → ¬ (true ≡ false)
-sharpness-blocks-soundness _ = sharpness-matters
+  ¬ (∀ {d e : Bool} →
+       UnsoundHash._≈d_ always-true d e ≡ true → d ≡ e)
+sharpness-blocks-soundness sound-comparison =
+  sharpness-matters (sound-comparison {true} {false} refl)

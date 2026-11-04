@@ -3,9 +3,11 @@
 
 = Proof status — policy-vocabulary view
 
-*Status*: current as of 2026-11-01, commit `+916b769+`.
+*Status*: reviewed 2026-11-04. Each row is scoped to its recorded source
+identity and check; this file does not claim a single revision was checked
+for every obligation.
 *Normative policy*: `+3-practice/PROOF-POLICY.adoc+` in
-https://github.com/hyperpolymath/standards[hyperpolymath/standards] (owner
+https://github.com/metadatastician/standards[metadatastician/standards] (owner
 ruling 2026-10-26).
 
 This is ECHIDNA's *proof-status file* in the sense `+PROOF-POLICY+` uses the
@@ -157,67 +159,67 @@ Mathlib-vs-core, which is an owner call.
 axiom-tracker completeness, integrity, clamp bounds, receipt/warrant (9 modules)
 |`+proven+`
 |First-party Agda in `+meta-checker/src/+`, type-checked with the §2.1
-canonical invocation. Receipt taken 2026-11-01 at commit `+916b769+`:
+canonical invocation. The reproducible local receipt is
+link:reports/2026-11-04-agda-meta-checker-receipt.json[`+2026-11-04-agda-meta-checker-receipt.json+`].
+It records base commit `+9dd7847dfb095f0ddf3d41bac3327fcc4486fb6b+` plus
+the exact SHA-256 of every checked source and library descriptor, and names
+the three source files modified in that working tree. It is not a claim
+that the unmodified base commit contains these repairs.
 
 ----
-agda --safe --without-K --cubical-compatible \
-  src/Echidna/MetaChecker.agda          # exit 0, 98 s cold
+agda --no-default-libraries --library-file "$AGDA_LIBRARIES_FILE" \
+  --safe --without-K --cubical-compatible src/Echidna/MetaChecker.agda
 ----
 
-Versions: Agda `+2.7.0.1+`, `+agda-stdlib+` `+2.1+` (214 stdlib modules pulled
-in). All 9 modules in `+src/Echidna/+` produce an interface; 53 warnings, all
-of them `+-W[no]UnsupportedIndexedMatch+`, at five sites (`+TrustLevel+` 77,
-88, 235; `+AxiomSafety+` 119; `+ClampTrust+` 98). No `+postulate+`, no
-`+sorry+`, no `+believe_me+`, no `+Admitted+`; `+--safe+` is what excludes
-them rather than a `+grep+`.
+Run from `+meta-checker/+`; the explicit library file lists the pinned
+standard library and `+meta-checker/echidna-meta.agda-lib+`. Versions:
+Agda `+2.7.0.1+`, `+agda-stdlib+` `+2.1+`; archive digests are in the receipt.
+Observed exit 0, all 9 full module paths produced fresh interfaces.
+The positive receipt/test witnesses and three rejecting verdict controls
+also passed. The log contained 55 warnings, all
+`+-W[no]UnsupportedIndexedMatch+`, at six sites in `+TrustLevel+`,
+`+AxiomSafety+`, `+ClampTrust+` and `+Receipt+`. `+--safe+` enforces the
+absence of proof escape hatches; a text search alone is not the receipt.
 |Trust boundary, named: the Agda 2.7.0.1 kernel under `+--safe+`, plus the
 stdlib. **Limit, recorded not hidden:** those warnings mean the flagged
 functions do not *compute* under Cubical transports. The corpus is
 `+--cubical-compatible+`, not `+--cubical+` — exactly the distinction
 `+PROOF-POLICY+` §2.1 draws — and dropping the warning, or the flag, to get a
-clean log would be the weakening §2.1 forbids. It is immaterial today because
-nothing transports these terms; transport is R5's job, which is where the
-limit would first bite.
+clean log would weaken the profile. Full Cubical and the independent Rocq
+and Lean legs were not run for this receipt. Changes to any recorded source
+invalidate its use for that changed source until a fresh check is recorded.
 
-**Why not just use `+--cubical+`?** Because it fails, and not on this corpus.
-`+agda --cubical --safe src/Echidna/MetaChecker.agda+` exits non-zero in
-`+agda-stdlib-2.1/src/Data/List/Membership/Setoid/Properties.agda+` with
-unsolved metas, before any ECHIDNA module is reached: stdlib 2.1 is written to
-be `+--cubical-compatible+`, and ships
-`+--warning=noUnsupportedIndexedMatch+` in `+standard-library.agda-lib+` for
-precisely this reason. So `+--cubical-compatible+` is not a weakened choice here;
-it is the strongest flag this dependency set supports, and the policy's own
-distinction between the two flags is what lets that be said plainly.
-
-Promoted from `+argued+` on the strength of that receipt. Before it, the row
-rested on "the CI gate exists and the authors say it passes" — which §5 defines
-as `+argued+`, not a receipt. One module
-(`+AxiomTrackerCompleteness.agda+`) turned out never to have been in the
-checked closure at all, and did not type-check (see R9's note on scope).
+**Correction to the old receipt:** `+916b769+` predates `+Integrity+`,
+`+ClampTrust+` and `+Receipt+`, and its entrypoint omitted
+`+AxiomTrackerCompleteness+`. It cannot substantiate a nine-module claim.
+The earlier 2026-11-01 timing/count report is historical, not the evidence
+for the current `+proven+` row; the source-bound 2026-11-04 receipt replaces it.
 
 |R9. E11 solver-integrity soundness
 |`+proven+`
 |`+meta-checker/src/Echidna/Integrity.agda+`, inside the R4 receipt. States the
 obligation that had no Agda record: verification requires an initialised
-manifest; verification means the recorded digest was matched; a substituted
-binary is never verified; an uninitialised manifest never verifies. Collision
-resistance is a record *field*, not a postulate, so the guarantee is
-conditional and says so in its type; `+sharpness+` exhibits a comparator for
-which that field cannot be inhabited, so the hypothesis is load-bearing rather
-than decorative.
+manifest; verification means the recorded digest was matched; a binary with
+a different digest is never verified; an uninitialised manifest never
+verifies. Digest-comparison soundness is a record *field*, not a postulate,
+so the matching theorem is explicitly conditional on that field.
+`+sharpness-blocks-soundness+` refutes the exact soundness property for an
+accept-everything comparator.
 **Scope of the model (from review, 2026-11-01):** a binary is modelled by its
 digest alone, so these are statements about *digests*, not bytes.
 "Substituted" means "a binary whose digest differs", and two binaries colliding
-on a digest are not distinguished by this model. Content-level collision
-resistance sits in the `≈d-sound` field of the comparator — assumed, not
-established. That is what makes the sharpness result the load-bearing part.
+on a digest are not distinguished by this model. `+≈d-sound+` says that an
+accepted comparison implies equal digests; the model contains neither
+binary contents nor a hashing function. Content-level collision resistance
+is outside this model, not a property established or assumed by that field.
 
-|**Specification, not implementation.** `+src/rust/dispatch.rs+` lines 642, 848
-and 998, and `+src/rust/integrity/solver_integrity.rs+` line 359, all accept
-`+IntegrityStatus::Uninitialized+` as passing. The theorem proves the opposite
-of what that code does. That divergence is DEBT D9, now machine-checked on one
-side instead of argued on both. Closing R9's implementation leg means changing
-the Rust, not the proof.
+|**Specification, not implementation.** Rust returns
+`+IntegrityStatus::Uninitialized+` for an installed binary with a placeholder
+manifest, and dispatch can permit that status. It does not report
+`+Verified+` in that case. Agda proves a property of its `+check+` function
+and has no dispatch-permission decision. DEBT D9 is therefore a source
+comparison, not a machine-checked discrepancy or refinement proof. The Rust
+implementation leg remains open under R1's Creusot obligation.
 
 |R10. ClampTrustBounds
 |`+proven+`
@@ -226,32 +228,33 @@ the four obligations of `+verification/proofs/idris2/ClampTrustBounds.idr+`
 (bounds, monotonicity, fixed points, and — added — idempotence, i.e. that the
 clamp lands on a real level rather than between two) over the trust-level type
 the gate actually checks.
-|The Idris2 original stays *out of policy* per §3 and, as far as this
-repository can tell, was never run: `+idris2-abi-ci.yml+` cites it but no
-receipt is recorded. This row does not validate that file; it discharges the
-same obligations in a corpus that is checked. Monotonicity is by step lemma
-plus transitivity rather than the Idris2 file's 36-clause decision table.
+|This row establishes finite-order algebra in the Agda model. It does not
+validate the Idris2 file or its correspondence to runtime code. Existing
+Idris2 interface and engineering checks remain active under §1; their
+receipt status is R2. Monotonicity here is by step lemma plus transitivity,
+rather than the Idris2 file's decision table.
 
 |R11. Epistemic separation: receipt vs warrant
 |`+proven+`
 |`+meta-checker/src/Echidna/Receipt.agda+`, inside the R4 receipt. A two-world
-Kripke countermodel: a receipt is factive, a warrant is not; the same warrant
-never licences the stronger token; while the agent cannot discriminate the
-worlds, no receipt exists at all; and a second frame — same worlds, only the
-accessibility changed — has a receipt, so what buys one is *excluding the
-alternative*, not accumulating more evidence. (An earlier draft took the
-discriminating check as a parameter; that was vacuous, since `≈-cross`
-inhabits the domain of the function required. Two frames say it properly.)
-This is what makes §5's "`+argued+` is not `+proven+`" a theorem instead of a
-style rule.
+Kripke countermodel: a receipt is factive, a warrant is not, and no uniform
+function can promote every warrant to a receipt. No receipt for `+sound+`
+exists in the coarse frame. The sharpened frame has an inhabited
+`+Asserts assumptions sharpened proven sound w-here+` witness, so the
+stronger token is not vacuously impossible. Warrant and receipt can coexist
+when both are justified. `+proven-with-postulates+` records a named,
+explicitly interpreted assumption and a function from it to a receipt;
+discharging that assumption is required. `+tested-only+` has a distinct
+nonempty sample population with a checked result per sample. The model
+refutes unconditional promotions from conditional and bounded evidence.
 |Semantic rewrite of the receipt/warrant distinction from
 https://github.com/hyperpolymath/epistemic-types[epistemic-types] at
-`+5422cd5+`, **not** a port of its theorems. For the record, that source is
-itself green under the same invocation (22/22 modules, exit 0, 0 postulates), so
-this row is a rewrite of something that checks, not of an aspiration: per §2.2 the source project keeps
-ownership of those, and this module proves only what ECHIDNA needs. The
-residual limit is the honest one — a receipt requires a check that
-*discriminates*, which is precisely the evidence R5 does not yet have.
+`+5422cd5+`, **not** a port or a receipt for that project's theorems. The
+source project retains its own proof ownership under §2.2. This model
+compares two frames; it implements no discriminating checker, transition,
+external test attestation or runtime-evidence adapter. Justifying that a
+real check permits the sharper frame is a separate open obligation. The
+Rocq/Lean rechecks and statement correspondence also remain open in R5.
 
 |R5. Independent recheck of R4 in Rocq *and* Lean
 |`+open+`

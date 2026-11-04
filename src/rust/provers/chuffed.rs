@@ -43,7 +43,20 @@ impl ProverBackend for ChuffedBackend {
         ProverKind::Chuffed
     }
     async fn version(&self) -> Result<String> {
-        Ok("chuffed".to_string())
+        // Upstream fzn-chuffed has no --version option. Require a successful
+        // real process response instead of returning a constant without exec.
+        let output = Command::new(&self.config.executable)
+            .arg("--help")
+            .output()
+            .await
+            .context("Failed to execute fzn-chuffed --help")?;
+        anyhow::ensure!(output.status.success(), "fzn-chuffed --help failed");
+        let help = String::from_utf8_lossy(&output.stdout);
+        let banner = help
+            .lines()
+            .find(|line| !line.trim().is_empty())
+            .context("fzn-chuffed --help returned no output")?;
+        Ok(format!("Chuffed (version unavailable; --help): {banner}"))
     }
     async fn parse_file(&self, path: PathBuf) -> Result<ProofState> {
         let content = super::bounded_read_proof_file(&path).await?;

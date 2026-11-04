@@ -13,11 +13,14 @@
 //
 // Skip semantics: every test first runs `which <binary>` via the `which`
 // crate; if the binary is absent the test is *skipped* (returns Ok) rather
-// than failing.  This lets the same suite run locally (sparse tool install)
-// and in CI (per-job single binary) without branching.
+// than failing for a local sparse installation. CI sets
+// ECHIDNA_REQUIRE_LIVE_PROVER=1 for its selected test: absence then fails.
+// Backend construction errors always fail; they are not missing-tool skips.
 //
-// Wave-1 (this file): Tier-1 backends — version-check smoke tests.  Proves
+// Wave-1 (this file): Tier-1 backends — process/version smoke tests.  Shows
 // the subprocess wiring is real, not mocked, and that the binary responds.
+// Chuffed has no version flag; its smoke check validates the --help response.
+// These are not checks of logical proof validity.
 // L3 hygiene: emits VeriSimDB records for each test outcome via
 // `record_proof_attempt`, feeding the learning loop.
 //
@@ -60,7 +63,9 @@ fn live_config(executable: &str) -> ProverConfig {
 fn try_live_backend(kind: ProverKind, exe: &str) -> Option<Box<dyn ProverBackend>> {
     let _resolved = binary_on_path(exe)?;
     let config = live_config(exe);
-    ProverFactory::create(kind, config).ok()
+    Some(ProverFactory::create(kind, config).unwrap_or_else(|error| {
+        panic!("{} backend construction failed: {error}", kind_label(kind))
+    }))
 }
 
 /// Emit a VeriSimDB proof-attempt record for the test outcome.
@@ -94,7 +99,7 @@ async fn emit_live_result(kind: ProverKind, exe: &str, version: Option<&str>, el
         repo: "hyperpolymath/echidna".to_string(),
         file: "tests/live_prover_suite.rs".to_string(),
         claim: format!(
-            "Prover {} is reachable and can report version",
+            "Prover {} is reachable and reports identifying output",
             kind_label(kind)
         ),
         obligation_class: "system_integration".to_string(),
@@ -133,6 +138,12 @@ async fn emit_live_result(kind: ProverKind, exe: &str, version: Option<&str>, el
 /// exists to catch.  Also emits a VeriSimDB record on completion.
 async fn assert_version_reachable(kind: ProverKind, exe: &str) {
     let Some(backend) = try_live_backend(kind, exe) else {
+        assert!(
+            std::env::var("ECHIDNA_REQUIRE_LIVE_PROVER").as_deref() != Ok("1"),
+            "NOT RUN: required {} binary is absent from PATH (searched for `{}`)",
+            kind_label(kind),
+            exe,
+        );
         eprintln!(
             "SKIP: {} not on PATH (searched for `{}`)",
             kind_label(kind),
@@ -142,12 +153,15 @@ async fn assert_version_reachable(kind: ProverKind, exe: &str) {
     };
 
     let start_time = Instant::now();
-    match backend.version().await {
+    let response = tokio::time::timeout(std::time::Duration::from_secs(30), backend.version())
+        .await
+        .unwrap_or_else(|_| panic!("{} process/version check timed out", kind_label(kind)));
+    match response {
         Ok(v) => {
             let elapsed_ms = start_time.elapsed().as_millis() as u64;
             assert!(
-                !v.trim().is_empty(),
-                "{} version() returned empty string — subprocess is wired but produced no output",
+                !v.trim().is_empty() && v.trim() != "unknown",
+                "{} version() returned no identifying output",
                 kind_label(kind),
             );
             eprintln!("OK: {} reported version = {:?}", kind_label(kind), v);

@@ -45,15 +45,20 @@
 --
 -- FROM Receipt (epistemic-types semantic rewrite):
 --   ✓ A receipt is factive; a warrant is not
---   ✓ A warrant never promotes to a receipt ("no free promotion")
+--   ✓ No uniform warrant-to-receipt conversion exists
 --   ✓ No receipt exists while the agent cannot discriminate the worlds
---   ✓ A discriminating check yields a receipt
+--   ✓ The second, sharpened frame has an inhabited proven assertion
+--   ✓ Named assumptions must be discharged before conditional receipts
+--   ✓ Bounded test evidence is distinct from a warrant or universal proof
+-- These are model results; no runtime check or frame transition is proved.
 --
 -- FROM Integrity (E11 semantic rewrite):
 --   ✓ Verification requires an initialised manifest
 --   ✓ Verification means the recorded digest was matched
---   ✓ An uninitialised manifest NEVER verifies (the invariant DEBT D9 breaks)
---   ✓ The collision-resistance hypothesis is load-bearing (sharpness)
+--   ✓ An uninitialised manifest never verifies in the model
+--   ✓ Digest-comparison soundness is load-bearing (sharpness)
+-- Rust dispatch permission and content-level collision resistance are outside
+-- this model; DEBT D9 records a source comparison, not a refinement proof.
 --
 -- FROM ClampTrust (ClampTrustBounds semantic rewrite):
 --   ✓ The clamp stays within [1,5]
@@ -64,8 +69,9 @@
 -- TOTAL: 45+ proven properties, 0 postulates, 0 sorry, 0 believe_me,
 -- 0 Admitted.
 --
--- "0 postulates" is not the same claim as "0 hypotheses". `Receipt` is
--- unconditional. `Integrity` is *not*: its theorems are parameterised by a
+-- "0 postulates" is not the same claim as "0 hypotheses". Receipt's token
+-- interpretation explicitly carries named assumptions when requested;
+-- its model theorems do not admit external evidence. Integrity takes a
 -- `Hash` record whose `≈d-sound` field assumes a sound digest comparator, so
 -- they are conditional on that and say so in their types. That is a named,
 -- caller-supplied assumption — not an escape hatch, because --safe is what
@@ -121,12 +127,12 @@ key-order-2 = ≤ₜ-antisym
 key-order-3 = ≤ₜ-trans
 key-order-4 = ≤ₜ-total
 
--- 8. Epistemic separation: a warrant is never a receipt
+-- 8. Epistemic separation: no uniform warrant-to-receipt conversion
 key-epistemic-1 = receipt-factive
 key-epistemic-2 = warrant-not-factive
 key-epistemic-3 = no-free-promotion
 
--- 9. Integrity: an uninitialised manifest never verifies (DEBT D9)
+-- 9. Integrity: an uninitialised manifest never verifies in the model
 key-integrity-1 = uninitialised-never-verified
 key-integrity-2 = verified-means-match
 

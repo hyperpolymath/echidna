@@ -28,9 +28,10 @@
 #   # stdlib: codeload.github.com/agda/agda-stdlib/tar.gz/refs/tags/v2.1
 #   # Downloading is not enough — it must be *registered*, or every module that
 #   # imports Agda.Primitive fails:
+#   mkdir -p ~/.agda
 #   echo "/tmp/agda-stdlib-2.1/standard-library.agda-lib" >> ~/.agda/libraries
-#   # the tarball's `name:` line is `standard-library-2.1`, and `defaults` (or a
-#   # .agda-lib `depend:`) must match that name, not the bare `standard-library`
+#   # Register the pinned version explicitly as the default. The project's
+#   # bare standard-library dependency resolves to this registered version.
 #   echo "standard-library-2.1" >> ~/.agda/defaults
 #   echo "$PWD/meta-checker/echidna-meta.agda-lib" >> ~/.agda/libraries
 #   export LC_ALL=C.UTF-8                          # Unicode identifiers

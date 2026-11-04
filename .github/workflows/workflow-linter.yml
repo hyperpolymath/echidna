@@ -6,6 +6,7 @@ name: Workflow Security Linter
 
 on:
   pull_request:
+    types: [opened, synchronize, reopened, labeled]
     paths:
       - '.github/workflows/**'
       - 'scripts/ci/**'
@@ -15,6 +16,13 @@ on:
       - '.github/workflows/**'
       - 'scripts/ci/**'
       - '.hypatia-ignore'
+  workflow_dispatch:
+    inputs:
+      refresh_actions_lock:
+        description: Generate an official actions.lock candidate for review
+        type: boolean
+        required: false
+        default: false
 
 permissions: read-all
 
@@ -41,3 +49,46 @@ jobs:
       # gh-actions-lock pin, and it accepts reusable-workflow coverage. The step
       # that stood here pinned its own v0.1.6 binary, which cannot read
       # lockfile v0.0.3, so it failed whenever a current tool wrote the lock.
+
+      # Opt-in repair surface, not verification of the committed lock. The
+      # canonical governance gate above remains authoritative after application.
+      # No write token, commit, push, or automatic admission is involved.
+      - name: Prepare official actions.lock refresh candidate
+        if: >-
+          always() &&
+          ((github.event_name == 'workflow_dispatch' && inputs.refresh_actions_lock) ||
+           (github.event_name == 'pull_request' &&
+            github.event.pull_request.head.repo.full_name == github.repository &&
+            contains(github.event.pull_request.labels.*.name, 'ci:refresh-actions-lock')))
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_PROMPT_DISABLED: '1'
+        run: |
+          set -euo pipefail
+          for tool in gh jq yq; do
+            if ! command -v "$tool" >/dev/null 2>&1; then
+              echo "::error::$tool missing; lock refresh NOT RUN"
+              exit 2
+            fi
+          done
+          gh extension install github/gh-actions-lock --pin v0.2.0
+          gh api 'repos/metadatastician/standards/contents/scripts/update-actions-lock.sh?ref=d3e4b485a2af90c92a8e18af0888cd19cb132cd9' \
+            --jq .content | base64 --decode > "$RUNNER_TEMP/update-actions-lock.sh"
+          bash "$RUNNER_TEMP/update-actions-lock.sh" .github/workflows
+          patch="$RUNNER_TEMP/actions-lock-refresh.patch"
+          git diff --binary -- .github/workflows > "$patch"
+          if [ "$(wc -c < "$patch")" -gt 900000 ]; then
+            echo "::error::Candidate exceeds the summary budget; lock refresh needs artifact retrieval"
+            exit 2
+          fi
+          {
+            echo '## Official actions.lock refresh candidate'
+            echo
+            echo "Source checkout: $(git rev-parse HEAD)"
+            echo 'Uncommitted candidate only. Re-run canonical governance on the committed result.'
+            echo
+            echo '````diff'
+            cat "$patch"
+            echo '````'
+          } >> "$GITHUB_STEP_SUMMARY"
+          cat "$patch"
