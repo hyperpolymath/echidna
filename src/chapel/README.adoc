@@ -1,64 +1,69 @@
-== Chapel Production Integration for ECHIDNA
+// SPDX-License-Identifier: MPL-2.0
+= Chapel integration for ECHIDNA
 
-Parallel proof search using Chapel’s task parallelism, integrated into
-the main ECHIDNA codebase.
+Parallel proof search implemented in Chapel, with a Zig bridge consumed by
+the optional Rust `chapel` feature.
 
-=== Overview
+== Current build boundary
 
-This directory contains the Chapel-based parallel proof search
-framework, now integrated into the main ECHIDNA codebase. The Chapel
-code is used to accelerate proof search by dispatching theorem proving
-goals to multiple prover backends concurrently.
+The real native link repair requires exact-source hosted qualification.
+The stub build deliberately reports Chapel unavailable; it is a separate
+fallback test and cannot qualify the real runtime.
 
-=== Integration Status
+The final Rust executable links three parts in order: the static Zig bridge,
+`libechidna_chapel.a`, and the runtime/dependency flags returned by the installed
+Chapel compiler's official `util/config/compileline --libraries` helper.
+`LD_LIBRARY_PATH` cannot supply a missing static link. Real mode currently
+supports native Linux and refuses unsupported compiler flags instead of
+silently discarding them.
 
-* *Status*: Production-ready
-* *Location*: `+src/chapel/+`
-* *Build System*: Integrated with `+Justfile+` and `+Cargo.toml+`
-* *FFI Bridge*: Zig bridge at `+src/zig_ffi/chapel_bridge.zig+`
+The bridge initializes the real runtime and both generated module initializers
+once before an export is called, then registers finalization at process exit.
+The installed `echidna_chapel_ffi.mode` records real versus stub build intent;
+tests also assert actual availability, version, and a no-prover failure result.
+That metadata is not an attestation of artifact contents.
 
-=== Build Instructions
+== Build and checks
 
-==== 1. Install Chapel
-
-[source,bash]
-----
-# Download Chapel 2.0
-wget https://github.com/chapel-lang/chapel/releases/download/2.0.0/chapel-2.0.0.tar.gz
-tar xzf chapel-2.0.0.tar.gz
-cd chapel-2.0.0
-
-# Set environment
-source util/setchplenv.bash
-
-# Build (takes ~10 minutes)
-make
-----
-
-==== 2. Build Chapel Code
+Install the same Chapel 2.8.0 and Zig 0.14.0 used by
+`../../.github/workflows/chapel-ci.yml`. The workflow pins and verifies the
+official Ubuntu 22.04 Chapel package before installation.
 
 [source,bash]
 ----
-cd src/chapel
-chpl parallel_proof_search.chpl -o proof_search
+# Real static library, bridge, and Rust feature.
+just build-chapel-real
+just chapel-test-real
+
+# Includes the standalone Chapel smoke target and independent stub tests.
+just chapel-all
+
+# Deliberate unavailable-stub fallback only.
+just build-chapel
+just chapel-test
 ----
 
-==== 3. Build Zig FFI Bridge
+The default real library directory is `src/chapel/lib`.
+`ECHIDNA_CHAPEL_LIB_DIR` selects another directory containing
+`libechidna_chapel.a`; the matching compiler/runtime must be installed.
+`ECHIDNA_CHAPEL_EXPECT_MODE=real` refuses a stub artifact or missing bridge;
+`stubs` refuses a real artifact. Rebuild the bridge when mode metadata is
+missing. Metadata-only Cargo checks retain the existing warning when no
+optional bridge was built and no mode was requested.
 
-[source,bash]
-----
-cd src/zig_ffi
-zig build -Dstubs=false
-----
+The real CI consumer downloads the same-run archive into that directory,
+checks its exports, runs the native-link refusal controls, and executes Rust
+FFI tests. The empty-PATH child test exercises a real search/result/free cycle
+without starting an external prover. It checks failure, never a proof claim.
 
-==== 4. Build Rust with Chapel Feature
+The existing CI waiver and its expiry are unchanged. A source patch, stub
+success, or separate Chapel smoke target does not establish that this complete
+native path has passed.
 
-[source,bash]
-----
-cargo build --features chapel
-----
+=== Historical example output
 
-=== Expected Output
+The example below is retained as an illustration, not as a receipt from the
+current CI job or a newly measured performance result.
 
 ....
 ╔═══════════════════════════════════════════════════════╗
@@ -103,7 +108,7 @@ Speedup: 1.51x
 ✓ Parallel search is significantly faster!
 ....
 
-=== What This Demonstrates
+=== Intended behavior illustrated above
 
 ==== 1. Parallel Proof Search
 
@@ -113,7 +118,7 @@ Speedup: 1.51x
 
 ==== 2. Performance Benefits
 
-* Typical speedup: 1.5x - 12x (depending on prover success rate)
+* Historical claimed speedup: 1.5x - 12x; remeasurement is required for current code.
 * Best case: 12x (all provers take similar time)
 * Worst case: 1x (first prover succeeds immediately)
 
@@ -158,7 +163,7 @@ communication between Rust and Chapel.
 [arabic]
 . *Update Rust Dispatch*: Modify `+src/rust/dispatch.rs+` to use Chapel
 for parallel proof search when the `+chapel+` feature is enabled.
-. *Add CI/CD Support*: Ensure Chapel code is built and tested in CI.
+. *Qualify the real-library CI path*: require its actual final link and runtime tests.
 . *Performance Optimization*: Run benchmarks and tune the Chapel code.
 . *Documentation*: Update documentation to reflect the production
 integration.

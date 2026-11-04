@@ -87,6 +87,9 @@ impl ProverBackend for EProverBackend {
         let output = super::version_probe::run(&self.config, &["--version"])
             .await
             .context("Failed to run eprover --version")?;
+        if !output.status.success() {
+            anyhow::bail!("EProver version probe failed: {}", output.status);
+        }
 
         let stdout = String::from_utf8_lossy(&output.stdout);
         Ok(stdout

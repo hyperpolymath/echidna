@@ -23,7 +23,8 @@ RUN apk add --no-cache \
 
 WORKDIR /build
 
-COPY Cargo.toml Cargo.lock ./
+COPY Cargo.toml Cargo.lock build.rs ./
+COPY build_support ./build_support
 COPY src/rust ./src/rust
 COPY src/interfaces ./src/interfaces
 # The root `echidna` package is a Cargo workspace whose members include

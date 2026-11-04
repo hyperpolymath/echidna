@@ -128,3 +128,42 @@ async fn hostname_override_serves_graphql_at_the_root() {
         reqwest::StatusCode::NOT_FOUND
     );
 }
+
+#[tokio::test]
+async fn absent_override_starts_the_binary_on_the_default_address() {
+    // A fixed default is the contract under test. Fail explicitly if another
+    // service already owns it, rather than probing that service or skipping.
+    let reservation =
+        TcpListener::bind("127.0.0.1:8082").expect("default GraphQL test port must be available");
+    let mut command = server();
+    command.env_remove("ECHIDNA_GRAPHQL_ADDR");
+    drop(reservation);
+
+    let mut process = RunningServer(command.spawn().expect("start default GraphQL process"));
+    let client = reqwest::Client::builder()
+        .no_proxy()
+        .timeout(Duration::from_millis(250))
+        .build()
+        .unwrap();
+    let deadline = Instant::now() + Duration::from_secs(5);
+    loop {
+        assert!(
+            process.0.try_wait().unwrap().is_none(),
+            "default GraphQL process exited before serving health"
+        );
+        if let Ok(response) = client.get("http://127.0.0.1:8082/health").send().await {
+            if response.status().is_success() && response.text().await.unwrap() == "OK" {
+                assert!(
+                    process.0.try_wait().unwrap().is_none(),
+                    "default GraphQL process exited while checking health"
+                );
+                return;
+            }
+        }
+        assert!(
+            Instant::now() < deadline,
+            "binary without ECHIDNA_GRAPHQL_ADDR did not serve 127.0.0.1:8082"
+        );
+        tokio::time::sleep(Duration::from_millis(20)).await;
+    }
+}

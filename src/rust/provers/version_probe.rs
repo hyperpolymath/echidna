@@ -84,6 +84,60 @@ mod tests {
             }
         }
 
+        const STATUS_BACKENDS: [(&str, &str); 7] = [
+            ("z3", "Z3 version 4.13.4"),
+            ("cvc5", "This is cvc5 version 1.1.2"),
+            ("alt-ergo", "2.6.2"),
+            ("vampire", "Vampire 4.9"),
+            ("eprover", "E 3.1"),
+            ("glpk", "GLPSOL--GLPK LP/MIP Solver 5.0"),
+            ("minizinc", "MiniZinc to FlatZinc converter, version 2.8.7"),
+        ];
+
+        #[tokio::test]
+        async fn factory_backends_reject_failed_probes_with_identifying_output() {
+            for (name, banner) in STATUS_BACKENDS {
+                for (exit_code, redirect) in [(1, ""), (7, ">&2")] {
+                    let script = format!("printf '%s\\n' '{banner}' {redirect}; exit {exit_code}");
+                    let (_directory, config) = fixture(&script, 5);
+                    let backend = ProverFactory::create(kind(name), config).unwrap();
+                    let error = backend.version().await.expect_err(
+                        "version-like text must not turn a failed process into availability",
+                    );
+                    let message = format!("{error:#}");
+                    assert!(
+                        message.contains("version probe failed")
+                            && message.contains(&format!("exit status: {exit_code}")),
+                        "{name}: expected the fixture's actual exit status, got {message}"
+                    );
+                }
+            }
+        }
+
+        #[tokio::test]
+        async fn successful_factory_probes_preserve_backend_output_selection() {
+            for (name, banner) in STATUS_BACKENDS {
+                for with_stderr in [false, true] {
+                    let mut script = format!("printf '%s\\n' '{banner}' 'additional stdout'");
+                    if with_stderr {
+                        script.push_str(
+                            "\nprintf '%s\\n' 'stderr version banner' 'additional stderr' >&2",
+                        );
+                    }
+                    script.push_str("\nexit 0");
+                    let (_directory, config) = fixture(&script, 5);
+                    let backend = ProverFactory::create(kind(name), config).unwrap();
+                    let actual = backend.version().await.unwrap();
+                    let expected = match (name, with_stderr) {
+                        ("z3", _) => format!("{banner}\nadditional stdout"),
+                        ("vampire", true) => "stderr version banner".to_string(),
+                        _ => banner.to_string(),
+                    };
+                    assert_eq!(actual, expected, "{name}: stderr={with_stderr}");
+                }
+            }
+        }
+
         #[tokio::test]
         async fn runner_preserves_real_status_and_both_output_streams() {
             let (_directory, config) = fixture(

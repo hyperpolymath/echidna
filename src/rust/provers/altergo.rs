@@ -99,6 +99,9 @@ impl ProverBackend for AltErgoBackend {
         let output = super::version_probe::run(&self.config, &["--version"])
             .await
             .context("Failed to run alt-ergo --version")?;
+        if !output.status.success() {
+            anyhow::bail!("Alt-Ergo version probe failed: {}", output.status);
+        }
 
         let stdout = String::from_utf8_lossy(&output.stdout);
         Ok(stdout
