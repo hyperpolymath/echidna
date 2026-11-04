@@ -90,10 +90,16 @@ jobs:
         run: |
           set -euo pipefail
           readonly https_protocol='=https'
-          # Retry apt-get update once on mirror failure before proceeding.
-          sudo apt-get update -qq || sudo apt-get update -qq --fix-missing
+          # Only the apt-installed provers refresh the apt index. The image's
+          # third-party sources (packages.microsoft.com) have answered 403 and
+          # failed the whole step for provers that never touch apt (vampire,
+          # PR #446). Retry the update once on mirror failure.
+          apt_install() {
+            sudo apt-get update -qq || sudo apt-get update -qq --fix-missing
+            sudo apt-get install -y --fix-missing "$@"
+          }
           case "${{ matrix.backend }}" in
-            z3)         sudo apt-get install -y --fix-missing z3 ;;
+            z3)         apt_install z3 ;;
             cvc5)       # Since cvc5 1.2.0 releases ship as a zip with the binary at
                         # bin/cvc5; the old bare `cvc5-Linux-static` asset no longer exists.
                         curl --proto "$https_protocol" --proto-redir "$https_protocol" -sSL --max-time 120 -o /tmp/cvc5.zip \
@@ -107,16 +113,16 @@ jobs:
                           https://github.com/vprover/vampire/releases/download/v5.0.1/vampire-Linux-X64.zip
                         unzip -j -o /tmp/vampire.zip -d /tmp
                         sudo install -m 0755 /tmp/vampire /usr/local/bin/vampire ;;
-            eprover)    sudo apt-get install -y --fix-missing eprover ;;
-            spass)      sudo apt-get install -y --fix-missing spass ;;
+            eprover)    apt_install eprover ;;
+            spass)      apt_install spass ;;
             alt-ergo)   # alt-ergo is not in the Ubuntu 24.04 (noble) apt repos.
                         # Install the prebuilt musl static binary from OCamlPro's
                         # GitHub releases instead.
                         curl --proto "$https_protocol" --proto-redir "$https_protocol" -sSL --max-time 120 -o /tmp/alt-ergo \
                           https://github.com/OCamlPro/alt-ergo/releases/download/v2.6.3/alt-ergo-v2.6.3-x86_64-linux-musl
                         sudo install -m 0755 /tmp/alt-ergo /usr/local/bin/alt-ergo ;;
-            glpk)       sudo apt-get install -y --fix-missing glpk-utils ;;
-            minizinc)   sudo apt-get install -y --fix-missing minizinc ;;
+            glpk)       apt_install glpk-utils ;;
+            minizinc)   apt_install minizinc ;;
             chuffed)    # Ubuntu's minizinc package does not include fzn-chuffed.
                         # The upstream bundle does; authenticate it before extraction.
                         bundle="$RUNNER_TEMP/MiniZincIDE-2.10.1-x86_64-linux-gnu.tgz"
