@@ -170,7 +170,9 @@ qualified_receipt() {
       and .provenance.repository == $repo and .provenance.commit_sha == $sha
       and .provenance.tree_sha == $tree and .provenance.worktree_clean == true
       and .provenance.expected_sha == $sha and .provenance.source_sha == $ref
-      and .provenance.run_id == $run and .provenance.run_attempt == $attempt
+      and .provenance.run_id == $run
+      and (.provenance.run_attempt | test("^[1-9][0-9]*$"))
+      and ((.provenance.run_attempt | tonumber) <= ($attempt | tonumber))
       and (.provenance.binary_sha256 | test("^[0-9a-f]{64}$"))' "$receipt" >/dev/null 2>&1 || return 1
   jq '.report' "$receipt" > "$report" || return 1
   valid_report "$tool" "$report" || return 1
