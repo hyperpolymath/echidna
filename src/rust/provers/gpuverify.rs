@@ -148,20 +148,27 @@ impl ProverBackend for GpuVerifyBackend {
     }
 
     async fn version(&self) -> Result<String> {
-        let output = Command::new(self.binary()).arg("--version").output().await;
-        match output {
-            Ok(out) => {
-                let text = String::from_utf8_lossy(&out.stdout);
-                let text_err = String::from_utf8_lossy(&out.stderr);
-                let combined = format!("{}{}", text, text_err).trim().to_string();
-                if combined.is_empty() {
-                    Ok("gpuverify@unknown-version".to_string())
-                } else {
-                    Ok(combined)
-                }
-            },
-            Err(_) => Ok("gpuverify@not-installed".to_string()),
+        // Version discovery is a short availability probe, not a proof run.
+        let limit = std::time::Duration::from_secs(self.config.timeout.min(10));
+        let mut command = Command::new(self.binary());
+        command
+            .arg("--version")
+            .stdin(Stdio::null())
+            .kill_on_drop(true);
+        let output = tokio::time::timeout(limit, command.output())
+            .await
+            .with_context(|| format!("GPUVerify: --version timed out after {}s", limit.as_secs()))?
+            .context("GPUVerify: failed to execute --version")?;
+        if !output.status.success() {
+            return Err(anyhow!("GPUVerify: --version exited with {}", output.status));
         }
+        let stdout = String::from_utf8_lossy(&output.stdout);
+        let stderr = String::from_utf8_lossy(&output.stderr);
+        let version = format!("{}\n{}", stdout, stderr).trim().to_string();
+        if version.is_empty() {
+            return Err(anyhow!("GPUVerify: --version returned empty output"));
+        }
+        Ok(version)
     }
 
     async fn parse_file(&self, path: PathBuf) -> Result<ProofState> {
@@ -364,6 +371,125 @@ impl ProverBackend for GpuVerifyBackend {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[tokio::test]
+    async fn version_rejects_a_missing_executable() {
+        let directory = tempfile::tempdir().unwrap();
+        let backend = GpuVerifyBackend::new(ProverConfig {
+            executable: directory.path().join("missing-prover"),
+            timeout: 5,
+            ..ProverConfig::default()
+        });
+        let error = backend.version().await.unwrap_err();
+        assert!(error.to_string().contains("failed to execute --version"));
+    }
+
+    #[cfg(unix)]
+    fn version_fixture(script: &str, timeout: u64) -> (tempfile::TempDir, GpuVerifyBackend) {
+        use std::os::unix::fs::PermissionsExt;
+
+        let directory = tempfile::tempdir().unwrap();
+        let executable = directory.path().join("version-probe");
+        std::fs::write(
+            &executable,
+            format!(
+                "#!/bin/sh\n[ \"$#\" -eq 1 ] && [ \"$1\" = '--version' ] || exit 64\n{script}\n"
+            ),
+        )
+        .unwrap();
+        std::fs::set_permissions(&executable, std::fs::Permissions::from_mode(0o700)).unwrap();
+        let backend = GpuVerifyBackend::new(ProverConfig {
+            executable,
+            timeout,
+            ..ProverConfig::default()
+        });
+        (directory, backend)
+    }
+
+    #[cfg(unix)]
+    #[tokio::test]
+    async fn version_accepts_successful_stdout_or_stderr() {
+        for script in [
+            "printf 'fixture version 1.2\\n'",
+            "printf 'fixture version 1.2\\n' >&2",
+        ] {
+            let (_directory, backend) = version_fixture(script, 5);
+            assert_eq!(backend.version().await.unwrap(), "fixture version 1.2");
+        }
+    }
+
+    #[cfg(unix)]
+    #[tokio::test]
+    async fn version_rejects_failed_or_empty_output() {
+        for (script, expected) in [
+            ("printf 'fixture version 1.2\\n'; exit 7", "exited with"),
+            ("exit 0", "empty output"),
+            ("printf ' \\n\\t'; printf '\\n ' >&2", "empty output"),
+        ] {
+            let (_directory, backend) = version_fixture(script, 5);
+            let error = backend.version().await.unwrap_err();
+            assert!(error.to_string().contains(expected), "{error:#}");
+        }
+    }
+
+    #[cfg(unix)]
+    #[tokio::test]
+    async fn version_rejects_a_non_executable_file() {
+        use std::os::unix::fs::PermissionsExt;
+
+        let (_directory, backend) = version_fixture("printf 'fixture version 1.2\\n'", 5);
+        std::fs::set_permissions(backend.binary(), std::fs::Permissions::from_mode(0o600))
+            .unwrap();
+        let error = backend.version().await.unwrap_err();
+        assert!(error.to_string().contains("failed to execute --version"));
+    }
+
+    #[cfg(unix)]
+    #[tokio::test]
+    async fn version_times_out_and_terminates_the_process() {
+        use std::time::Duration;
+
+        let (_directory, backend) =
+            version_fixture("printf '%s' \"$$\" > \"$0.pid\"\nexec /bin/sleep 30", 1);
+        // Bound the regression itself if the implementation loses its deadline.
+        let result = tokio::time::timeout(Duration::from_secs(3), backend.version()).await;
+        let pid_path = backend.binary().with_extension("pid");
+        let pid = std::fs::read_to_string(pid_path)
+            .unwrap()
+            .parse::<u32>()
+            .unwrap()
+            .to_string();
+        let running = || {
+            std::process::Command::new("/bin/kill")
+                .args(["-0", pid.as_str()])
+                .stdin(Stdio::null())
+                .stdout(Stdio::null())
+                .stderr(Stdio::null())
+                .status()
+                .expect("inspect the fixture process")
+                .success()
+        };
+        let mut still_running = running();
+        for _ in 0..50 {
+            if !still_running {
+                break;
+            }
+            tokio::time::sleep(Duration::from_millis(20)).await;
+            still_running = running();
+        }
+        // Clean up a deliberately defective implementation before asserting.
+        if still_running {
+            std::process::Command::new("/bin/kill")
+                .args(["-9", pid.as_str()])
+                .status()
+                .expect("clean up the fixture process");
+        }
+        assert!(!still_running, "the timed-out version process survived");
+        let error = result
+            .expect("version must enforce its own deadline")
+            .unwrap_err();
+        assert!(error.to_string().contains("--version timed out"));
+    }
 
     #[test]
     fn kind_is_gpuverify() {

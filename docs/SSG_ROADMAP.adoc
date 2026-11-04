@@ -117,4 +117,4 @@ Earlier versions of this roadmap remain available in version control at
 the source revision named above; they are historical proposals.
 
 * link:../.github/CONTRIBUTING.md[Contribution guidelines].
-* link:reports/2026-11-04-security-alert-triage.adoc[Source review and alert disposition].
+* https://github.com/hyperpolymath/echidna/pull/455[Current repair review and unresolved alert work].

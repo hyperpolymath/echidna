@@ -3,7 +3,8 @@
 
 = Re-recon: routing surfaces and the rule-engine source
 
-*Status*: current. Supersedes nothing; this is the first pass that classifies
+*Status*: historical source review with follow-ups recorded on 2026-11-04.
+Supersedes nothing; this is the first pass that classifies
 *every* client-facing path in the tree rather than only the ones a given
 consumer happens to use. *Date*: 2026-11-01. *Method*: static read of the
 checkout at `916b769` — no build, see <<limits>>.
@@ -145,11 +146,16 @@ some other system publishes it.
 
 === What is therefore *not* claimed
 
-* No claim that any proof in this repository is `+proven+`. See
-  link:../PROOF-STATUS.adoc[`+docs/PROOF-STATUS.adoc+`], where every obligation
-  row is `+open+` or `+argued+`, including the Agda meta-checker.
-* No Grade 2/1 claim anywhere. There is no translation leg and no receipt
-  pinned to a commit hash, which Mathesis §6 requires.
+* The 2026-11-04 follow-up in
+  link:../PROOF-STATUS.adoc[`+docs/PROOF-STATUS.adoc+`] records Agda rows R4,
+  R9, R10 and R11 as `+proven+` for the sources identified in
+  link:2026-11-04-agda-meta-checker-receipt.json[the Agda receipt].
+  That receipt identifies a base commit plus exact checked file digests;
+  it does not certify an arbitrary later checkout or the operational Rust.
+  Other obligation statuses remain governed by their individual ledger rows.
+* No Grade 2/1 claim anywhere. The recorded Agda home-system result remains
+  Grade 3: no independent translation and statement-correspondence leg has
+  been discharged. A source-bound local receipt does not supply that leg.
 * No percentage. Where a number exists in this codebase
   (`+verification/confidence.rs+`), it ranks backends against each other and is
   recorded as `+tested-only+` for internal ranking, never as assurance.
@@ -543,7 +549,7 @@ scaffolding.
 |Older machine dialect (`+{"level":…}+`), still used by MCP. Superseded by the
 prove contract; no new consumer should adopt it.
 
-|`+/api/prover+`, `+/api/verify+` response shapes
+|`+/api/provers+`, `+/api/verify+` response shapes
 |compatibility-only
 |Untagged JSON; no schema id, no trust block. Kept for existing clients.
 

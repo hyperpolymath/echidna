@@ -59,7 +59,7 @@ jobs:
           if [ "${{ github.event_name }}" = "pull_request" ]; then
             FILES=$(gh api "repos/${{ github.repository }}/pulls/${{ github.event.pull_request.number }}/files" \
                       --paginate --jq '.[].filename')
-            if printf '%s\n' "$FILES" | grep -qE "$PATTERN"; then
+            if printf '%s\n' "$FILES" | grep -E "$PATTERN" > /dev/null; then
               echo "relevant=true" >> "$GITHUB_OUTPUT"
               echo "meta-checker/ sources changed — running full Agda type-check."
             else

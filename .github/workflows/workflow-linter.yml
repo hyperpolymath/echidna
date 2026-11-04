@@ -102,7 +102,7 @@ jobs:
           patch="$RUNNER_TEMP/actions-lock-refresh.patch"
           git -C "$subject" diff --binary -- .github/workflows/actions.lock > "$patch"
           if [ "$(wc -c < "$patch")" -gt 900000 ]; then
-            echo "::error::Candidate exceeds the summary budget; lock refresh needs artifact retrieval"
+            echo "::error::Candidate exceeds the summary budget; this workflow cannot publish it"
             exit 2
           fi
           {

@@ -76,14 +76,16 @@ impl Transport {
         match self {
             Transport::Uds { path } => path.exists(),
             Transport::Tcp { host, port } => {
-                use std::net::{SocketAddr, TcpStream};
+                use std::net::{TcpStream, ToSocketAddrs};
                 use std::time::Duration;
-                let Ok(address) = format!("{}:{}", host, port).parse::<SocketAddr>() else {
-                    // A malformed requested endpoint is unavailable. Probing a
-                    // different fallback service would report false readiness.
+                // Resolve only the configured endpoint. A resolution failure
+                // must not probe a different fallback service.
+                let Ok(mut addresses) = (host.as_str(), *port).to_socket_addrs() else {
                     return false;
                 };
-                TcpStream::connect_timeout(&address, Duration::from_millis(200)).is_ok()
+                addresses.any(|address| {
+                    TcpStream::connect_timeout(&address, Duration::from_millis(200)).is_ok()
+                })
             },
         }
     }
@@ -189,6 +191,28 @@ mod tests {
         .probe());
         assert!(!Transport::Tcp {
             host: "not an IP address".into(),
+            port
+        }
+        .probe());
+    }
+
+    #[test]
+    fn test_transport_tcp_resolves_localhost() {
+        let listener = std::net::TcpListener::bind(("127.0.0.1", 0)).unwrap();
+        let port = listener.local_addr().unwrap().port();
+        assert!(Transport::Tcp {
+            host: "localhost".into(),
+            port
+        }
+        .probe());
+    }
+
+    #[test]
+    fn test_transport_tcp_accepts_unbracketed_ipv6() {
+        let listener = std::net::TcpListener::bind(("::1", 0)).unwrap();
+        let port = listener.local_addr().unwrap().port();
+        assert!(Transport::Tcp {
+            host: "::1".into(),
             port
         }
         .probe());

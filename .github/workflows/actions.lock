@@ -57,7 +57,7 @@ workflows:
         - 'dtolnay/rust-toolchain@v1'
         - 'swatinem/rust-cache@v2.9.2'
     '.github/workflows/mirror.yml':
-        - 'hyperpolymath/standards@3c00687a5bbd0d881d351db8502417b5d0a8b0b0'
+        - 'metadatastician/standards@3c00687a5bbd0d881d351db8502417b5d0a8b0b0'
     '.github/workflows/mvp-smoke.yml':
         - 'actions/checkout@v7.0.1'
         - 'dtolnay/rust-toolchain@v1'
@@ -82,7 +82,7 @@ workflows:
     '.github/workflows/scorecard.yml':
         - 'metadatastician/standards@d3e4b485a2af90c92a8e18af0888cd19cb132cd9'
     '.github/workflows/secret-scanner.yml':
-        - 'hyperpolymath/cicd-suite@a12b2b4644db1a1250bc50b58fd24c99f89f564e'
+        - 'hyperpolymath/proven-cicd@a12b2b4644db1a1250bc50b58fd24c99f89f564e'
     '.github/workflows/security-scan.yml':
         - 'hyperpolymath/panic-attack@8955f615f769204e42340e08bdea2de9d72e81cd'
     '.github/workflows/server-boot-gate.yml':
@@ -234,13 +234,6 @@ dependencies:
         commit: 'sha1-4c772eb235b04455307d5c03cbbc4f45130f7f0f'
         owner_id: 6759885
         repo_id: 1326697643
-    'hyperpolymath/cicd-suite@a12b2b4644db1a1250bc50b58fd24c99f89f564e':
-        ref: 'a12b2b4644db1a1250bc50b58fd24c99f89f564e'
-        commit: 'sha1-a12b2b4644db1a1250bc50b58fd24c99f89f564e'
-        owner_id: 6759885
-        repo_id: 1326697643
-        uses:
-            - 'actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1'
     'hyperpolymath/panic-attack@8955f615f769204e42340e08bdea2de9d72e81cd':
         ref: '8955f615f769204e42340e08bdea2de9d72e81cd'
         commit: 'sha1-8955f615f769204e42340e08bdea2de9d72e81cd'
@@ -250,7 +243,14 @@ dependencies:
             - 'Swatinem/rust-cache@6323deb102c322ba6fcbdcafc7e3dddab59af2b6'
             - 'actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1'
             - 'dtolnay/rust-toolchain@683b588c487a69d01f6c6ddf40f036ff682cc2c8'
-    'hyperpolymath/standards@3c00687a5bbd0d881d351db8502417b5d0a8b0b0':
+    'hyperpolymath/proven-cicd@a12b2b4644db1a1250bc50b58fd24c99f89f564e':
+        ref: 'a12b2b4644db1a1250bc50b58fd24c99f89f564e'
+        commit: 'sha1-a12b2b4644db1a1250bc50b58fd24c99f89f564e'
+        owner_id: 6759885
+        repo_id: 1446155688
+        uses:
+            - 'actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1'
+    'metadatastician/standards@3c00687a5bbd0d881d351db8502417b5d0a8b0b0':
         ref: '3c00687a5bbd0d881d351db8502417b5d0a8b0b0'
         commit: 'sha1-3c00687a5bbd0d881d351db8502417b5d0a8b0b0'
         owner_id: 297579217

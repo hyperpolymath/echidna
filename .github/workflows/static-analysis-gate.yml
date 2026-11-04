@@ -53,6 +53,7 @@ jobs:
       - name: Preserve the pinned scanner for Patch Bridge
         uses: actions/upload-artifact@v7.0.2
         with:
+          overwrite: true
           name: panic-attack-toolchain
           path: |
             ${{ runner.temp }}/panic-toolchain/bin/panic-attack
@@ -69,6 +70,7 @@ jobs:
         if: always()
         uses: actions/upload-artifact@v7.0.2
         with:
+          overwrite: true
           name: panic-attack-findings
           path: ${{ runner.temp }}/panic-attack-findings/
           if-no-files-found: error
@@ -119,6 +121,7 @@ jobs:
         if: always()
         uses: actions/upload-artifact@v7.0.2
         with:
+          overwrite: true
           name: hypatia-findings
           path: ${{ runner.temp }}/hypatia-findings/
           if-no-files-found: error
@@ -159,6 +162,7 @@ jobs:
         if: always()
         uses: actions/upload-artifact@v7.0.2
         with:
+          overwrite: true
           name: bridge-report
           path: ${{ runner.temp }}/bridge-report/
           if-no-files-found: error
@@ -206,6 +210,7 @@ jobs:
         if: always()
         uses: actions/upload-artifact@v7.0.2
         with:
+          overwrite: true
           name: static-analysis-evidence
           path: findings/
           if-no-files-found: error
@@ -214,6 +219,7 @@ jobs:
         if: steps.combine.outcome == 'success'
         uses: actions/upload-artifact@v7.0.2
         with:
+          overwrite: true
           name: unified-findings
           path: findings/unified-findings.json
           if-no-files-found: error
