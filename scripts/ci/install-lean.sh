@@ -18,7 +18,7 @@ curl --fail --silent --show-error --location \
   --connect-timeout 20 --max-time 120 --retry 3 --retry-max-time 300 \
   -o "$installer_dir/elan.tar.gz" \
   "https://github.com/leanprover/elan/releases/download/${elan_version}/elan-x86_64-unknown-linux-gnu.tar.gz"
-printf '%s  %s\n' "$elan_sha256" "$installer_dir/elan.tar.gz" | sha256sum --check
+printf '%s  %s\n' "$elan_sha256" "$installer_dir/elan.tar.gz" | sha256sum -c -
 tar --no-same-owner -xzf "$installer_dir/elan.tar.gz" -C "$installer_dir"
 export ELAN_HOME="${ELAN_HOME:-$HOME/.elan}"
 "$installer_dir/elan-init" -y --no-modify-path --default-toolchain "$lean_toolchain"
