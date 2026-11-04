@@ -30,12 +30,21 @@ Foreign Rust/Zig caller threads submit synchronous work to that owner. Requests
 are serialized at this boundary; each Chapel search still uses its existing
 parallel tasks internally. Re-entry from the owner is refused.
 
-The owner copies result strings into bridge-owned storage and frees the original
-Chapel allocation before completing a request, including allocation-error paths.
-Rust receives independent copies and keeps its existing `echidna_free_*`
-obligation. At normal process exit, the bridge stops admitting work, completes
-the accepted request, finalizes on the owner, and joins that thread. A native
-fatal exit cannot be converted into successful cleanup.
+The owner copies result strings into temporary `c_allocator` storage and frees
+the original Chapel allocation before completing a request, including
+allocation-error paths. The public Zig API then clones those temporaries with
+the caller's supplied allocator on the caller thread; that allocator never runs
+on the runtime owner. Temporary copies are freed on success or failure, and
+partial caller-side copies are freed if a later allocation fails. Rust receives
+independent copies and keeps its existing `echidna_free_*` obligation.
+
+Normal process exit requires callers to have completed their requests. The
+exit handler atomically stops admission and joins/finalizes only an idle owner.
+If a request or another shutdown is active, it refuses to join and aborts the
+process. A fatal Chapel task can call `exit` while its owner waits for the same
+task; draining from that unknown exit thread would create a join cycle. The
+explicit owner shutdown primitive still drains accepted work and joins, but
+the process-exit hook cannot assume that calling context.
 
 This follows the pinned Chapel sources:
 https://github.com/chapel-lang/chapel/blob/2.8.0/runtime/src/tasks/qthreads/tasks-qthreads.c[`chpl_task_init`]
@@ -48,7 +57,16 @@ creates and releases the task-local dynamic end-count.
 The public
 https://github.com/chapel-lang/chapel/blob/2.8.0/doc/rst/technotes/libraries.rst[library API]
 requires initialization before exports and finalization after them. The bridge
-keeps the installed task runtime and its assertions intact.
+keeps the installed task runtime and its assertions intact. The failed-exit
+case follows
+https://github.com/chapel-lang/chapel/blob/2.8.0/runtime/src/error.c[`chpl_error`]
+through
+https://github.com/chapel-lang/chapel/blob/2.8.0/runtime/src/chplexit.c[`chpl_exit_any`]
+to process exit; in
+https://github.com/chapel-lang/chapel/blob/2.8.0/runtime/src/comm/none/comm-none.c[comm/none],
+that path does not first shut down all tasks. The guard qualifies a finite
+in-flight-export boundary; no full Chapel fatal-task execution receipt is
+claimed by the source change.
 
 The installed `echidna_chapel_ffi.mode` records real versus stub build intent.
 That metadata is not an attestation of artifact contents.
@@ -59,13 +77,14 @@ The Rust strategy remains synchronous. It accepts positive whole-second
 per-prover timeouts representable by the C ABI and rejects zero, fractional,
 or overflowing durations before entering FFI; those values must not silently
 select Chapel's native default timeout. The native C API retains its documented
-zero-means-default convention.
+zero-means-default convention. Public Zig timeouts above the signed C range
+and negative C timeouts are refused before runtime admission.
 
 Queueing, runtime initialization, and availability checks are outside that
 per-prover timer. This repair does not provide a hard whole-call deadline or
 safe asynchronous cancellation of an in-process Chapel export. A caller must
-not terminate the owner thread. Normal shutdown drains accepted work before
-finalization. The existing speculative-search loser cancellation remains a
+not terminate the owner thread, and must finish outstanding calls before normal
+process exit. The existing speculative-search loser cancellation remains a
 separate Chapel operation; this bridge continues to invoke best-of search.
 
 == Build and checks
@@ -107,9 +126,18 @@ separate deadline and reaps a stuck test process. Neither fixture is proof
 evidence.
 
 The Zig test target also exercises actual OS threads with an instrumented
-runtime: one initialization/finalization thread, concurrent callers, shutdown
-while accepted work is in flight, refusal after shutdown, and callback
-re-entry refusal. These controls do not substitute for the real Chapel tests.
+runtime: one initialization/finalization thread, concurrent callers, explicit
+shutdown while accepted work is in flight, refusal after shutdown, callback
+re-entry refusal, and prompt refusal of a nonowner process-exit request while
+work is active. The last control releases its held work after a finite wait so
+a regressed join can be cleaned up and reported as failure.
+
+Transfer controls use the production transfer helpers, a real OS owner producing
+fixture results, and a recording allocator that refuses foreign-thread
+allocation. They cover successful version/result copies, first and partial
+allocation failures, and invalid timeout refusal before owner startup. These
+fixtures qualify that boundary behavior when executed; they do not substitute
+for the real Chapel tests.
 
 The existing CI waiver and its expiry are unchanged. A source patch, stub
 success, or separate Chapel smoke target does not establish that this complete

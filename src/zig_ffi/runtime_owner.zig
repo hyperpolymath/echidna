@@ -11,12 +11,12 @@ pub const Work = struct {
     completed: bool = false,
 };
 
-pub const CallError = error{ RuntimeUnavailable, ReentrantCall };
+pub const CallError = error{ RuntimeUnavailable, ReentrantCall, RuntimeBusy };
 
 pub fn Owner(comptime Runtime: type) type {
     return struct {
         const Self = @This();
-        const State = enum { idle, running, stopping, stopped, failed };
+        const State = enum { idle, running, exit_refused, stopping, stopped, failed };
 
         runtime: Runtime,
         mutex: std.Thread.Mutex = .{},
@@ -61,7 +61,29 @@ pub fn Owner(comptime Runtime: type) type {
         // owner, and join. Concurrent shutdown callers wait for the same join.
         // An idle or closed owner is never restarted.
         pub fn shutdown(self: *Self) CallError!void {
+            return self.stop(true);
+        }
+
+        // atexit can run on an unknown Chapel task which the owner is waiting
+        // for. Joining active work there can deadlock. Close admission and
+        // refuse instead; the exit handler must turn this refusal into abort.
+        pub fn shutdownForProcessExit(self: *Self) CallError!void {
+            return self.stop(false);
+        }
+
+        fn stop(self: *Self, allow_active: bool) CallError!void {
             self.mutex.lock();
+            if (!allow_active and
+                (self.pending != null or self.state == .stopping or self.state == .exit_refused))
+            {
+                if (self.state == .running) {
+                    self.state = .exit_refused;
+                    self.work_available.signal();
+                    self.changed.broadcast();
+                }
+                self.mutex.unlock();
+                return error.RuntimeBusy;
+            }
             if (self.worker_id == std.Thread.getCurrentId()) {
                 self.mutex.unlock();
                 return error.ReentrantCall;
@@ -82,7 +104,7 @@ pub fn Owner(comptime Runtime: type) type {
                     self.mutex.unlock();
                     return;
                 },
-                .running => {},
+                .running, .exit_refused => {},
             }
 
             self.state = .stopping;
@@ -185,7 +207,7 @@ test "one OS thread owns init concurrent work and finalization" {
     }
     for (threads[0..started]) |thread| thread.join();
     started = 0;
-    try owner.shutdown();
+    try owner.shutdownForProcessExit();
 
     try std.testing.expectEqual(@as(usize, 1), probe.initialized);
     try std.testing.expectEqual(@as(usize, 1), probe.finalized);
@@ -316,4 +338,91 @@ test "shutdown before initialization never starts the runtime" {
     try std.testing.expectError(error.RuntimeUnavailable, owner.call(&request));
     try std.testing.expectEqual(@as(usize, 0), probe.initialized);
     try std.testing.expectEqual(@as(usize, 0), probe.finalized);
+}
+
+
+test "a nonowner process-exit request refuses active work without a join cycle" {
+    const TestOwner = Owner(*Probe);
+    var probe = Probe{};
+    var owner = TestOwner.init(&probe);
+    defer owner.shutdown() catch unreachable;
+
+    const Active = struct {
+        owner: *TestOwner,
+        mutex: std.Thread.Mutex = .{},
+        changed: std.Thread.Condition = .{},
+        entered: bool = false,
+        release: bool = false,
+        call_failed: bool = false,
+        exit_done: bool = false,
+        exit_refused: bool = false,
+
+        fn work(raw: *anyopaque) void {
+            const self: *@This() = @ptrCast(@alignCast(raw));
+            self.mutex.lock();
+            self.entered = true;
+            self.changed.broadcast();
+            while (!self.release) self.changed.wait(&self.mutex);
+            self.mutex.unlock();
+        }
+
+        fn call(self: *@This()) void {
+            var request = Work{ .context = self, .run = work };
+            self.owner.call(&request) catch {
+                self.call_failed = true;
+            };
+        }
+
+        fn processExit(self: *@This()) void {
+            const refused = if (self.owner.shutdownForProcessExit()) |_| false else |err| err == error.RuntimeBusy;
+            self.mutex.lock();
+            self.exit_refused = refused;
+            self.exit_done = true;
+            self.changed.broadcast();
+            self.mutex.unlock();
+        }
+    };
+
+    var active = Active{ .owner = &owner };
+    const caller = try std.Thread.spawn(.{}, Active.call, .{&active});
+    var caller_joined = false;
+    defer if (!caller_joined) caller.join();
+    defer {
+        active.mutex.lock();
+        active.release = true;
+        active.changed.broadcast();
+        active.mutex.unlock();
+    }
+
+    active.mutex.lock();
+    while (!active.entered) active.changed.wait(&active.mutex);
+    active.mutex.unlock();
+    var timer = try std.time.Timer.start();
+    const exit_thread = try std.Thread.spawn(.{}, Active.processExit, .{&active});
+    active.mutex.lock();
+    while (!active.exit_done) {
+        const remaining = std.time.ns_per_s -| timer.read();
+        if (remaining == 0) break;
+        active.changed.timedWait(&active.mutex, remaining) catch break;
+    }
+    const promptly_refused = active.exit_done and active.exit_refused;
+    // A regressed draining exit path can now finish too: the negative control
+    // fails after cleanup, rather than leaving the test owner blocked forever.
+    active.release = true;
+    active.changed.broadcast();
+    active.mutex.unlock();
+
+    exit_thread.join();
+    caller.join();
+    caller_joined = true;
+    var refused = Work{ .context = &probe, .run = Probe.work };
+    const admission_closed = if (owner.call(&refused)) |_| false else |err| err == error.RuntimeUnavailable;
+    try owner.shutdown();
+
+    try std.testing.expect(promptly_refused);
+    try std.testing.expect(admission_closed);
+    try std.testing.expect(!active.call_failed);
+    try std.testing.expectEqual(@as(usize, 0), probe.calls);
+    try std.testing.expectEqual(@as(usize, 1), probe.finalized);
+    try std.testing.expectEqual(probe.init_id, probe.finalize_id);
 }
