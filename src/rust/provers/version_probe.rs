@@ -61,8 +61,7 @@ mod tests {
                 ),
             )
             .unwrap();
-            std::fs::set_permissions(&executable, std::fs::Permissions::from_mode(0o700))
-                .unwrap();
+            std::fs::set_permissions(&executable, std::fs::Permissions::from_mode(0o700)).unwrap();
             let config = ProverConfig {
                 executable,
                 timeout,
@@ -100,11 +99,8 @@ mod tests {
         #[tokio::test]
         async fn runner_rejects_missing_and_non_executable_files() {
             let (_directory, mut config) = fixture("exit 0", 5);
-            std::fs::set_permissions(
-                &config.executable,
-                std::fs::Permissions::from_mode(0o600),
-            )
-            .unwrap();
+            std::fs::set_permissions(&config.executable, std::fs::Permissions::from_mode(0o600))
+                .unwrap();
             assert!(run(&config, &["--version"]).await.is_err());
             config.executable.set_file_name("missing-version-probe");
             assert!(run(&config, &["--version"]).await.is_err());
@@ -162,15 +158,15 @@ mod tests {
                     .spawn()
                     .unwrap();
                 let mut input = child.stdin.take().unwrap();
-                input.write_all(b"input reserved for the application\n").await.unwrap();
+                input
+                    .write_all(b"input reserved for the application\n")
+                    .await
+                    .unwrap();
                 drop(input);
-                let output = tokio::time::timeout(
-                    Duration::from_secs(5),
-                    child.wait_with_output(),
-                )
-                .await
-                .expect("child harness must finish within its deadline")
-                .expect("child harness process");
+                let output = tokio::time::timeout(Duration::from_secs(5), child.wait_with_output())
+                    .await
+                    .expect("child harness must finish within its deadline")
+                    .expect("child harness process");
                 assert!(
                     output.status.success(),
                     "{name}: stdout={}; stderr={}",
@@ -291,15 +287,10 @@ mod tests {
 
         #[tokio::test]
         async fn runner_times_out_and_terminates_the_process() {
-            let (_directory, config) = fixture(
-                "printf '%s' \"$$\" > \"$0.pid\"\nexec /bin/sleep 30",
-                1,
-            );
-            let result = tokio::time::timeout(
-                Duration::from_secs(3),
-                run(&config, &["--version"]),
-            )
-            .await;
+            let (_directory, config) =
+                fixture("printf '%s' \"$\" > \"$0.pid\"\nexec /bin/sleep 30", 1);
+            let result =
+                tokio::time::timeout(Duration::from_secs(3), run(&config, &["--version"])).await;
             let pid = fixture_pid(&config).expect("fixture process started");
             assert_terminated(&pid).await;
             let error = result
@@ -315,17 +306,11 @@ mod tests {
             ] {
                 // The finite sleep also bounds a regression to a blocking
                 // subprocess: Tokio cannot interrupt a future that never yields.
-                let (_directory, config) = fixture(
-                    "printf '%s' \"$$\" > \"$0.pid\"\nexec /bin/sleep 4",
-                    1,
-                );
+                let (_directory, config) =
+                    fixture("printf '%s' \"$\" > \"$0.pid\"\nexec /bin/sleep 4", 1);
                 let backend = ProverFactory::create(kind(name), config.clone()).unwrap();
                 let started = std::time::Instant::now();
-                let result = tokio::time::timeout(
-                    Duration::from_secs(3),
-                    backend.version(),
-                )
-                .await;
+                let result = tokio::time::timeout(Duration::from_secs(3), backend.version()).await;
                 let elapsed = started.elapsed();
                 let pid = fixture_pid(&config).expect("fixture process started");
                 // Check termination and attempt cleanup before any deadline or
@@ -347,10 +332,8 @@ mod tests {
 
         #[tokio::test]
         async fn caller_cancellation_terminates_an_in_flight_probe() {
-            let (_directory, config) = fixture(
-                "printf '%s' \"$$\" > \"$0.pid\"\nexec /bin/sleep 30",
-                10,
-            );
+            let (_directory, config) =
+                fixture("printf '%s' \"$\" > \"$0.pid\"\nexec /bin/sleep 30", 10);
             let task_config = config.clone();
             let task = tokio::spawn(async move { run(&task_config, &["--version"]).await });
             let mut pid = fixture_pid(&config);
