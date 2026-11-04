@@ -26,10 +26,14 @@ impl DiagnosticsREPL {
 
         loop {
             print!("{}", self.prompt);
-            io::stdout().flush().unwrap();
+            if let Err(error) = io::stdout().flush() {
+                eprintln!("Cannot write diagnostics prompt: {error}");
+                break;
+            }
 
             let mut input = String::new();
             match io::stdin().read_line(&mut input) {
+                Ok(0) => break,
                 Ok(_) => {
                     let trimmed = input.trim();
                     if !trimmed.is_empty() {
@@ -51,7 +55,10 @@ impl DiagnosticsREPL {
                         "corpus" => self.print_corpus_status(health),
                         "clear" => {
                             print!("\x1B[2J\x1B[1;1H");
-                            io::stdout().flush().unwrap();
+                            if let Err(error) = io::stdout().flush() {
+                                eprintln!("Cannot clear diagnostics terminal: {error}");
+                                break;
+                            }
                         },
                         "history" => self.print_history(),
                         cmd => {

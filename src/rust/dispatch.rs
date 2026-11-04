@@ -6,7 +6,7 @@
 //! pipeline: integrity check -> sandbox -> prove -> certificate check ->
 //! axiom scan -> confidence scoring.
 
-use anyhow::{Context, Result};
+use anyhow::{anyhow, Context, Result};
 use chrono::Utc;
 use serde::{Deserialize, Serialize};
 #[cfg(feature = "verisim")]
@@ -389,11 +389,16 @@ impl ProverDispatcher {
             .await
     }
 
-    /// Get current health status snapshot
-    pub fn health_status(&self) -> HealthStatus {
-        let mut health = self.health_status.lock().unwrap().clone();
+    /// Get the current health status snapshot, or an error if its state is uncertain.
+    /// A poisoned lock must never be replaced with a healthy default snapshot.
+    pub fn health_status(&self) -> Result<HealthStatus> {
+        let mut health = self
+            .health_status
+            .lock()
+            .map_err(|_| anyhow!("Dispatcher health state is poisoned"))?
+            .clone();
         health.compute_degradation_mode();
-        health
+        Ok(health)
     }
 
     /// Update prover health metrics after a proof attempt
@@ -402,8 +407,11 @@ impl ProverDispatcher {
         prover_kind: ProverKind,
         outcome: &ProverOutcome,
         latency_ms: u64,
-    ) {
-        let mut health = self.health_status.lock().unwrap();
+    ) -> Result<()> {
+        let mut health = self
+            .health_status
+            .lock()
+            .map_err(|_| anyhow!("Dispatcher health state is poisoned"))?;
         let prover_name = format!("{:?}", prover_kind);
 
         let entry = health
@@ -449,11 +457,12 @@ impl ProverDispatcher {
 
         entry.success_rate = entry.success_rate.clamp(0.0, 1.0);
         health.compute_degradation_mode();
+        Ok(())
     }
 
     /// Get current system degradation mode
-    pub fn degradation_mode(&self) -> DegradationMode {
-        self.health_status().system_degradation
+    pub fn degradation_mode(&self) -> Result<DegradationMode> {
+        Ok(self.health_status()?.system_degradation)
     }
 
     /// Dispatch with LLM-guided optimisation
@@ -533,6 +542,11 @@ impl ProverDispatcher {
     ) -> Result<DispatchResult> {
         let start = Instant::now();
 
+        // Reject a known poisoned health state before starting a backend.
+        // Recording below checks again, so a concurrent poison event cannot
+        // turn a completed backend result into a successful dispatch receipt.
+        self.health_status()?;
+
         // Step 1: Create the prover
         let prover_config = ProverConfig {
             timeout: self.config.timeout,
@@ -554,7 +568,7 @@ impl ProverDispatcher {
             Err(e) => {
                 let outcome = classify_anyhow_error(&e, self.config.timeout);
                 let elapsed_ms = prover_started.elapsed().as_millis() as u64;
-                self.record_prover_result(prover_kind, &outcome, elapsed_ms);
+                self.record_prover_result(prover_kind, &outcome, elapsed_ms)?;
                 let diagnostics = if self.config.diagnostics {
                     Some(RunDiagnostics {
                         normalized_input: content.trim().to_string(),
@@ -603,7 +617,7 @@ impl ProverDispatcher {
             .context("Failed to verify proof")?;
         let verified = outcome.is_proved();
         let prover_elapsed_ms = prover_started.elapsed().as_millis() as u64;
-        self.record_prover_result(prover_kind, &outcome, prover_elapsed_ms);
+        self.record_prover_result(prover_kind, &outcome, prover_elapsed_ms)?;
 
         // Step 4: Track axiom usage
         let axiom_usages = if self.config.track_axioms {
@@ -762,7 +776,7 @@ impl ProverDispatcher {
         // CosineOnly = "use cosine for premise selection instead of GNN" — independent of
         // multi-prover cross-checking.  Only ReadOnly / Minimal (genuinely degraded, few provers
         // available) should skip cross-checking.
-        let degradation = self.degradation_mode();
+        let degradation = self.degradation_mode()?;
         match degradation {
             DegradationMode::ReadOnly | DegradationMode::Minimal => {
                 return Ok(primary_result);
@@ -778,7 +792,10 @@ impl ProverDispatcher {
         };
 
         let available_cross_checkers: Vec<ProverKind> = {
-            let health = self.health_status.lock().unwrap();
+            let health = self
+                .health_status
+                .lock()
+                .map_err(|_| anyhow!("Dispatcher health state is poisoned"))?;
             additional_provers
                 .iter()
                 .filter(|p| {
@@ -1182,6 +1199,29 @@ fn build_proof_attempt(
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[tokio::test]
+    async fn test_poisoned_dispatch_health_rejects_snapshots_and_proofs() {
+        let dispatcher = ProverDispatcher::new();
+        let poison = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
+            let _guard = dispatcher
+                .health_status
+                .lock()
+                .expect("initially healthy lock");
+            panic!("deliberate poison regression fixture");
+        }));
+        assert!(poison.is_err());
+        assert!(dispatcher.health_status().is_err());
+        assert!(dispatcher.degradation_mode().is_err());
+        assert!(dispatcher
+            .record_prover_result(ProverKind::Z3, &ProverOutcome::Proved { elapsed_ms: 1 }, 1)
+            .is_err());
+        let error = dispatcher
+            .verify_proof(ProverKind::Z3, "(assert true)")
+            .await
+            .expect_err("poisoned health cannot produce a successful proof result");
+        assert!(error.to_string().contains("health state is poisoned"));
+    }
 
     #[test]
     fn test_dispatch_config_defaults() {

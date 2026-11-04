@@ -491,6 +491,20 @@ jobs:
               echo "See: https://github.com/elliotttate/faial"
               ;;
           esac
-      - name: Run live version check (SKIP if binary absent)
-        continue-on-error: true  # allow-fail: issue=#416 expires=2026-11-30
-        run: cargo test --test live_prover_suite --features live-provers -- --nocapture live_${{ matrix.backend }}_version
+      - name: Require selected live version check
+        env:
+          LIVE_PROVER: ${{ matrix.backend }}
+        run: bash scripts/ci/run-live-prover.sh "$LIVE_PROVER"
+      - name: Record selected GPU capability
+        if: always()
+        env:
+          LIVE_PROVER: ${{ matrix.backend }}
+          GPU_JOB_STATUS: ${{ job.status }}
+        run: |
+          {
+            echo "## Selected GPU backend: $LIVE_PROVER"
+            echo "Execution status: $GPU_JOB_STATUS"
+            echo 'Missing tools mean NOT RUN, never a passed version check.'
+            echo 'The temporary job-level allow-fail is issue #416, expires 2026-11-30.'
+            echo 'A passed version probe establishes executable identity, not proof correctness.'
+          } >> "$GITHUB_STEP_SUMMARY"

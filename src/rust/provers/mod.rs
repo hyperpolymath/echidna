@@ -216,8 +216,9 @@ impl Default for ProverConfig {
 
 /// GNN-augmented tactic suggestions: calls the Julia GNN server to rank premises,
 /// then prepends top-k `Apply` and prover-specific `apply` tactics to the list.
-/// Falls back silently (returns `hints` unchanged) if the server is unreachable
-/// or `neural_enabled` is false or `gnn_api_url` is unset.
+/// Returns the bounded heuristic hints if the optional server is unreachable,
+/// neural guidance is disabled or no GNN URL is configured. Client setup errors
+/// are logged and also retain the heuristic path without claiming GNN results.
 ///
 /// # Arguments
 /// * `config`      – prover config supplying the GNN URL and neural flag
@@ -242,7 +243,7 @@ pub(crate) async fn gnn_augment_tactics(
     use crate::gnn::graph::ProofGraphBuilder;
 
     let graph = ProofGraphBuilder::new(4).build_from_proof_state(state);
-    let mut gnn = GnnClient::with_config(GnnConfig {
+    let mut gnn = match GnnClient::with_config(GnnConfig {
         api_url: url,
         timeout_ms: 2000,
         top_k: 8,
@@ -250,7 +251,13 @@ pub(crate) async fn gnn_augment_tactics(
         request_embeddings: false,
         num_gnn_layers: 3,
         use_attention: true,
-    });
+    }) {
+        Ok(client) => client,
+        Err(error) => {
+            tracing::warn!(%error, "GNN client setup failed; retaining heuristic tactics");
+            return hints.into_iter().take(limit).collect();
+        },
+    };
 
     // Extract goal aspects from state metadata (written by AgentCore::process_goal)
     // so Julia's /gnn/rank can apply per-domain weights from prior outcomes.

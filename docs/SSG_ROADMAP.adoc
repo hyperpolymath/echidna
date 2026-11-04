@@ -4,202 +4,117 @@
 = SSG Integration Roadmap
 :toc:
 
-== Overview
+== Status and evidence
 
-ECHIDNA's neurosymbolic verification capabilities extend naturally to static site generation, enabling formally verified content pipelines. This roadmap outlines three integration paths currently in development.
+The three SSG integration tracks below are retained design proposals.
+The 2026-11-04 source review at `977ce94d9a83b8a3a47f54a67a14d004380fcdfa`
+did not find the dedicated SSG renderer, MCP property-oracle service,
+SSG-specific proofs, or extracted SSG library previously described here as
+complete or in progress. Those implementation claims and the elapsed
+2025 delivery dates are withdrawn. This document does not establish that
+any SSG property has been proved or that an SSG integration is deployed.
 
-== Active Development Tracks
+The reusable ECHIDNA components that do exist are:
 
-=== Track 1: `echidna-docs` — Proof Content SSG
-
-*Status*: 🟢 Active Development
-
-A static site generator that understands formal proof content from 12 theorem prover systems.
-
-[cols="1,1,1"]
+[cols="1,2",options="header"]
 |===
-|Component |Status |Location
-
-|Prover backend traits
-|✅ Complete
-|`src/echidna_provers.rs`
-
-|Agda parser integration
-|✅ Complete
-|`src/prover/agda.rs`
-
-|Aspect tagging system
-|✅ Complete
-|`src/aspect/`
-
-|HTML proof renderer
-|🔨 In Progress
-|`src/echidna_docs/render.rs`
-
-|Dependency graph generator
-|🔨 In Progress
-|`src/echidna_docs/graph.rs`
-
-|CLI interface
-|📋 Planned
-|`src/bin/echidna-docs.rs`
+|Component |Current source
+|Prover backend interface |link:../src/rust/provers/mod.rs[ProverBackend]
+|Agda backend |link:../src/rust/provers/agda.rs[Agda adapter]
+|Z3 backend |link:../src/rust/provers/z3.rs[Z3 adapter]
+|CVC5 backend |link:../src/rust/provers/cvc5.rs[CVC5 adapter]
+|Aspect representation |link:../src/rust/aspect.rs[Aspect model]
 |===
 
-*Unique Capabilities*:
+Their presence is a starting point for integration. It does not supply the
+missing SSG implementation or qualify an arbitrary property encoding.
 
-* Semantic syntax highlighting (type-aware, not regex)
-* Cross-prover theorem linking
-* Aspect-tagged navigation
-* Proof dependency visualisation
+== Retained design tracks
 
-=== Track 2: `echidna-verify` — Property Oracle MCP
+=== Track 1: `echidna-docs` — proof content generation
 
-*Status*: 🟡 Architecture Complete
+*Status*: proposed; no dedicated implementation is qualified by this review.
 
-MCP server for verifying semantic properties of SSG implementations across the polyglot-ssg ecosystem.
+The intended generator would render proof-bearing documents and expose
+cross-prover references, aspect navigation, and dependency graphs.
+Reusable backend parsing is available; the following work still needs an
+implementation and tests:
 
-[cols="1,1,1"]
+* an HTML renderer that escapes content and preserves semantic structure;
+* stable links between theorem identifiers and generated pages;
+* a dependency graph derived from parsed proofs;
+* a CLI with explicit error handling for unparsed or unsupported content;
+* a supported-prover matrix established by actual fixtures and executions.
+
+Do not infer support for a prover solely from its presence in ECHIDNA's
+enum or from a successful executable version probe.
+
+=== Track 2: `echidna-verify` — property oracle
+
+*Status*: proposed architecture; no dedicated SSG MCP service is qualified.
+
+The intended MCP tools are `verify_ssg_property`,
+`compare_implementations`, and `generate_counterexample`.
+Existing solver adapters can be reused, but each tool needs a specified
+input language, property encoder, result contract, and tests.
+
+A successful solver invocation alone is insufficient. The service must
+record the exact input and encoding, selected backend and version,
+timeout or unsupported result, and the evidence needed to interpret the
+solver's answer. Cross-language comparisons require a shared semantics;
+agreement between implementations does not establish that semantics.
+Counterexample minimisation and fuzzing remain implementation work.
+
+=== Track 3: `libechidna-ssg` — verified core library
+
+*Status*: proposed specification and extraction work; no extracted library
+or SSG-specific proof corpus is qualified.
+
+The retained candidate properties are:
+
+[cols="1,2",options="header"]
 |===
-|Component |Status |Location
-
-|MCP tool definitions
-|✅ Complete
-|`src/echidna_verify/lib.rs`
-
-|Z3 backend integration
-|✅ Complete
-|`src/solver/z3.rs`
-
-|CVC5 backend integration
-|✅ Complete
-|`src/solver/cvc5.rs`
-
-|Property encoders
-|🔨 In Progress
-|`src/echidna_verify/properties/`
-
-|Counterexample minimiser
-|📋 Planned
-|`src/echidna_verify/minimize.rs`
-
-|Fuzzing harness
-|📋 Planned
-|`src/echidna_verify/fuzz.rs`
-|===
-
-*MCP Tools*:
-
-* `verify_ssg_property` — Check semantic properties hold
-* `compare_implementations` — Verify equivalence across languages
-* `generate_counterexample` — Find inputs that distinguish implementations
-
-=== Track 3: `libechidna-ssg` — Verified Core Library
-
-*Status*: 🔵 Specification Phase
-
-Formally verified SSG core with proofs extracted to a shared native library.
-
-[cols="1,1,1"]
-|===
-|Component |Status |Location
-
-|Agda AST specification
-|🔨 In Progress
-|`proofs/agda/SSG/Specification.agda`
-
-|Idempotence proofs
-|📋 Planned
-|`proofs/agda/SSG/Idempotence.agda`
-
-|Well-formedness proofs
-|📋 Planned
-|`proofs/agda/SSG/WellFormed.agda`
-
-|Lean template formalisation
-|📋 Planned
-|`proofs/lean/SSG/`
-
-|Extraction pipeline
-|📋 Planned
-|`extraction/`
-
-|Rust FFI wrapper
-|📋 Planned
-|`src/libechidna_ssg/`
+|Property |Required clarification before proving it
+|Rendering idempotence
+|Define whether the output is also a valid input and which normal form is compared.
+|Structure preservation
+|Specify the source AST, output structure and the nodes that must be preserved.
+|HTML well-formedness
+|Choose the accepted HTML model and validation boundary.
+|Template safety
+|Specify escaping, trusted markup, URL handling and execution contexts.
+|Determinism
+|Bind configuration, dependencies, environment inputs and output ordering.
 |===
 
-*Formal Properties Under Development*:
+A future Agda or Lean development must distinguish checked theorems,
+explicit assumptions, incomplete proofs, and bounded test witnesses.
+Extraction also needs an ABI and tests of the generated artifact; a source
+proof does not automatically establish the behavior of an FFI consumer.
 
-1. **Rendering Idempotence**: `render(render(x)) = render(x)`
-2. **Structure Preservation**: Heading counts preserved across transformation
-3. **HTML Well-formedness**: Output always valid HTML5
-4. **Template Safety**: No script injection through variables
-5. **Determinism**: Same input always produces same output
+== Delivery gates
 
-== Timeline
+The previous 2025 dates were proposals and are not current completion
+receipts. No replacement dates are asserted here.
 
-[cols="1,2,1"]
-|===
-|Phase |Deliverables |Target
+. Specify one small end-to-end use case and its observable acceptance criteria.
+. Implement the renderer or property encoder using the existing backend interface.
+. Add positive and adversarial fixtures, including unavailable tools and unsupported inputs.
+. Run the selected real backend and retain its command, version, input and result.
+. Add proof obligations with explicit assumptions and rejection controls.
+. Qualify extraction and bindings before describing a shared library as available.
 
-|*Q1 2025*
-|`echidna-docs` MVP with Agda/Lean/Coq support
-|✅ On Track
+Each gate needs evidence from the revision being assessed. A missing tool,
+skipped test, unimplemented path or absent artifact remains unknown.
 
-|*Q2 2025*
-|`echidna-verify` MCP server beta
-|🟡 Scheduled
+== Integration context and references
 
-|*Q3 2025*
-|Formal specifications complete, proof sketches
-|🔵 Scheduled
+The proposed consumer is the polyglot SSG ecosystem. The role envisaged
+for ECHIDNA is property checking and proof-content processing; that is an
+integration goal, not a current service contract.
 
-|*Q4 2025*
-|`libechidna-ssg` extraction pipeline prototype
-|🔵 Scheduled
+Earlier versions of this roadmap remain available in version control at
+the source revision named above; they are historical proposals.
 
-|*2026*
-|Production `libechidna-ssg` with polyglot bindings
-|📋 Roadmap
-|===
-
-== Integration with polyglot-ssg-mcp
-
-ECHIDNA serves as the verification layer for the polyglot-ssg-mcp project:
-
-[source]
-----
-┌─────────────────────────────────────────────────────┐
-│              polyglot-ssg-mcp                       │
-│  ┌─────────┐  ┌─────────┐  ┌─────────┐            │
-│  │ Forth   │  │ Ada     │  │ Haskell │  ...       │
-│  │ SSG     │  │ SSG     │  │ SSG     │            │
-│  └────┬────┘  └────┬────┘  └────┬────┘            │
-│       │            │            │                  │
-│       └────────────┼────────────┘                  │
-│                    │                               │
-│                    ▼                               │
-│       ┌────────────────────────┐                  │
-│       │   echidna-verify MCP   │ ◄── Verification │
-│       │   Property Oracle      │     Layer        │
-│       └────────────────────────┘                  │
-└─────────────────────────────────────────────────────┘
-----
-
-== Contributing
-
-We particularly welcome contributions in:
-
-* **Formal verification**: Agda, Lean, Coq, Isabelle proofs
-* **SSG implementation**: Rust, proof rendering
-* **MCP tooling**: Protocol handling, solver integration
-* **Test corpus**: Diverse markdown/proof content for testing
-
-See link:../CONTRIBUTING.md[CONTRIBUTING.md] for guidelines.
-
-== References
-
-* link:docs/SSG_INTEGRATION.adoc[Full SSG Integration Architecture]
-* link:src/echidna_docs/lib.rs[echidna-docs source]
-* link:src/echidna_verify/lib.rs[echidna-verify source]
-* link:proofs/agda/SSG/Specification.agda[Agda specification]
+* link:../.github/CONTRIBUTING.md[Contribution guidelines].
+* link:reports/2026-11-04-security-alert-triage.adoc[Source review and alert disposition].

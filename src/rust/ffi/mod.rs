@@ -7,38 +7,24 @@
 //! enabling external systems like bulletproof-core to use
 //! ECHIDNA's theorem proving capabilities.
 //!
-//! # Safety & Unsafe Code Justification
+//! # Safety obligations
 //!
-//! This module contains 24 unsafe blocks which are **NECESSARY** for FFI:
+//! Raw pointer conversion and foreign allocation ownership require unsafe
+//! code. Each caller must satisfy the relevant function's pointer, length,
+//! lifetime and ownership contract; a non-null pointer alone does not prove
+//! those conditions. Scanner findings at this boundary require review.
 //!
-//! ## Why Unsafe Is Required for FFI:
-//! - Converting between C pointers and Rust references requires unsafe
-//! - Dereferencing raw pointers from C requires unsafe
-//! - Converting C strings to Rust strings requires unsafe
-//! - Manual memory management for FFI requires unsafe
-//!
-//! ## Safety Guarantees:
-//! - Every unsafe block is documented with SAFETY comments
-//! - All pointer checks (null checks) before dereferencing
-//! - Proper lifetime management for Box::into_raw/from_raw
-//! - UTF-8 validation for string conversions
-//! - Thread-safe global state with Mutex
-//!
-//! ## Audit Status (2026-02-12):
-//! - ✓ All unsafe blocks reviewed and documented
-//! - ✓ No undefined behavior detected
-//! - ✓ Follows Rust FFI best practices (Rustonomicon guidelines)
-//! - ✓ Null pointer checks before all dereferences
-//! - ✓ Memory ownership properly tracked
-//!
-//! panic-attack flagged these as "High" severity because they use unsafe,
-//! but they are LEGITIMATE and NECESSARY for C interoperability.
+//! The 2026-11-04 review corrected the C error-message buffer's termination
+//! and cross-thread lifetime. Focused tests cover those behaviors. This is
+//! not a whole-module memory-safety proof or a proof that the high-level
+//! compatibility exports implement the complete prover protocol.
 
 // SPARK-verified axiom-policy bindings (requires --features spark + libechidna_spark)
 #[cfg(feature = "spark")]
 pub mod spark_axiom;
 
-use std::ffi::{c_int, c_void};
+use std::cell::RefCell;
+use std::ffi::{c_int, c_void, CString};
 use std::path::PathBuf;
 use std::ptr;
 
@@ -109,12 +95,17 @@ impl FfiStringSlice {
         }
     }
 
+    /// Empty input is accepted; null pointers with a nonzero length are rejected.
+    ///
     /// # Safety
-    /// Caller must ensure `self.ptr` points to a valid, aligned, UTF-8
+    /// For non-null pointers, the caller must ensure `self.ptr` points to a valid, aligned, UTF-8
     /// byte buffer of at least `self.len` bytes that outlives the returned `&str`.
     pub unsafe fn to_str(&self) -> Option<&str> {
-        if self.ptr.is_null() || self.len == 0 {
+        if self.len == 0 {
             return Some("");
+        }
+        if self.ptr.is_null() {
+            return None;
         }
         // SAFETY: Caller guarantees ptr is valid for len bytes and properly aligned.
         let slice = std::slice::from_raw_parts(self.ptr, self.len);
@@ -325,7 +316,9 @@ impl FfiTactic {
     }
 }
 
-/// Tactic result for FFI
+/// Tactic result for FFI.
+/// `message` is borrowed from the calling thread until its next
+/// `rust_apply_tactic` call or thread exit. Copy it before either event.
 #[repr(C)]
 #[derive(Debug)]
 pub struct FfiTacticResult {
@@ -360,6 +353,22 @@ pub struct FfiVerificationResult {
 // ============================================================================
 // Global State
 // ============================================================================
+
+thread_local! {
+    /// Own callback messages beyond the lifetime of the temporary TacticResult.
+    static TACTIC_MESSAGE: RefCell<String> = const { RefCell::new(String::new()) };
+}
+
+fn retain_tactic_message(message: &str) -> Result<(*const u8, u32), FfiStatus> {
+    let length = u32::try_from(message.len()).map_err(|_| FfiStatus::ErrorInvalidArgument)?;
+    let pointer = TACTIC_MESSAGE.with(|buffer| {
+        let mut buffer = buffer.borrow_mut();
+        buffer.clear();
+        buffer.push_str(message);
+        buffer.as_ptr()
+    });
+    Ok((pointer, length))
+}
 
 use std::collections::HashMap;
 use std::sync::Mutex;
@@ -647,6 +656,9 @@ pub unsafe extern "C" fn rust_parse_string(
 
 /// Apply tactic callback for Zig FFI
 ///
+/// The returned message is borrowed until this thread's next call to this
+/// function or thread exit. Its bytes must be copied before then.
+///
 /// # Safety
 /// - `state` must be a valid pointer previously returned by `rust_parse_file`/`rust_parse_string`.
 /// - `tactic` must point to a valid `FfiTactic` with valid inner pointers.
@@ -710,12 +722,18 @@ pub unsafe extern "C" fn rust_apply_tactic(
                 },
             };
 
-            // SAFETY: out_result is valid per caller contract.
+            let (message, message_len) = match retain_tactic_message(msg) {
+                Ok(message) => message,
+                Err(status) => return status as c_int,
+            };
+
+            // SAFETY: out_result is valid per caller contract. The message
+            // is retained by this thread after the temporary result is dropped.
             unsafe {
                 (*out_result).kind = result_kind;
                 (*out_result)._padding = [0; 3];
-                (*out_result).message_len = msg.len() as u32;
-                (*out_result).message = msg.as_ptr();
+                (*out_result).message_len = message_len;
+                (*out_result).message = message;
             }
 
             FfiStatus::Ok as c_int
@@ -939,13 +957,17 @@ pub async fn get_version(handle_id: usize) -> Result<String, FfiStatus> {
 // ffi_wrapper modules, providing a complete bridge from API → Rust core.
 // ============================================================================
 
-/// Thread-local error message buffer for `echidna_last_error()`
-static LAST_ERROR: Mutex<String> = Mutex::new(String::new());
+thread_local! {
+    /// Owned, NUL-terminated error message for this calling thread.
+    static LAST_ERROR: RefCell<Option<CString>> = const { RefCell::new(None) };
+}
 
 fn set_last_error(msg: &str) {
-    if let Ok(mut e) = LAST_ERROR.lock() {
-        *e = msg.to_string();
-    }
+    // Error messages can contain input text. Escape embedded NUL bytes so
+    // C callers receive the full message instead of a truncated prefix.
+    let message = CString::new(msg.replace('\0', "\\0"))
+        .unwrap_or_else(|_| c"Invalid FFI error message".to_owned());
+    LAST_ERROR.with(|error| *error.borrow_mut() = Some(message));
 }
 
 /// Initialize the ECHIDNA FFI layer. Returns 0 on success, negative on error.
@@ -1122,13 +1144,19 @@ pub unsafe extern "C" fn echidna_export_proof(
     }
 }
 
-/// Get last error message. Returns null-terminated string or null if no error.
+/// Get this thread's last error as a NUL-terminated string, or null if absent.
+///
+/// The returned pointer is borrowed. It remains valid until the next failing
+/// FFI call on the same thread or that thread exits. The caller must copy it
+/// before either event and must not free it. Other threads cannot mutate it.
 #[no_mangle]
 pub extern "C" fn echidna_last_error() -> *const u8 {
-    match LAST_ERROR.lock() {
-        Ok(e) if !e.is_empty() => e.as_ptr(),
-        _ => ptr::null(),
-    }
+    LAST_ERROR.with(|error| {
+        error
+            .borrow()
+            .as_ref()
+            .map_or(ptr::null(), |message| message.as_ptr().cast())
+    })
 }
 
 /// Get ECHIDNA version string.
@@ -1304,6 +1332,63 @@ pub fn kind_to_u8(kind: ProverKind) -> u8 {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn test_ffi_error_is_nul_terminated_and_escapes_embedded_nul() {
+        set_last_error("bad\0input");
+        // SAFETY: this thread's owned buffer remains alive and unchanged
+        // until the next set_last_error call on this thread.
+        let message = unsafe { std::ffi::CStr::from_ptr(echidna_last_error().cast()) };
+        assert_eq!(message.to_bytes_with_nul(), b"bad\\0input\0");
+    }
+
+    #[test]
+    fn test_ffi_error_is_isolated_from_other_threads() {
+        set_last_error("original thread");
+        let pointer = echidna_last_error();
+        std::thread::spawn(|| {
+            assert!(echidna_last_error().is_null());
+            set_last_error("another thread");
+            // SAFETY: this thread's buffer remains alive and unchanged.
+            let message = unsafe { std::ffi::CStr::from_ptr(echidna_last_error().cast()) };
+            assert_eq!(message.to_bytes(), b"another thread");
+        })
+        .join()
+        .expect("other thread completes");
+        // SAFETY: another thread cannot replace this thread's allocation.
+        let message = unsafe { std::ffi::CStr::from_ptr(pointer.cast()) };
+        assert_eq!(message.to_bytes(), b"original thread");
+    }
+
+    #[test]
+    fn test_ffi_null_nonempty_slice_is_rejected() {
+        let slice = FfiStringSlice {
+            ptr: ptr::null(),
+            len: 1,
+        };
+        // SAFETY: the invalid null pointer is rejected before dereference.
+        assert_eq!(unsafe { slice.to_str() }, None);
+    }
+
+    #[test]
+    fn test_ffi_tactic_error_message_outlives_temporary_result() {
+        let (pointer, length) = {
+            let result = TacticResult::Error("owned backend error".to_string());
+            let TacticResult::Error(message) = result else {
+                unreachable!()
+            };
+            retain_tactic_message(&message).expect("bounded message")
+        };
+        std::thread::spawn(|| {
+            retain_tactic_message("another thread's message").expect("bounded message");
+        })
+        .join()
+        .expect("other thread completes");
+        // SAFETY: the message is retained on this thread, independently of
+        // the dropped result and of other threads' subsequent callbacks.
+        let message = unsafe { std::slice::from_raw_parts(pointer, length as usize) };
+        assert_eq!(message, b"owned backend error");
+    }
 
     #[test]
     fn test_ffi_string_slice() {

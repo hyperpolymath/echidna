@@ -14,7 +14,7 @@
 
 #![allow(dead_code)]
 
-use anyhow::{Context, Result};
+use anyhow::{bail, Context, Result};
 use async_trait::async_trait;
 use std::path::PathBuf;
 use std::process::Stdio;
@@ -31,6 +31,25 @@ pub struct SPASSBackend {
 impl SPASSBackend {
     pub fn new(config: ProverConfig) -> Self {
         SPASSBackend { config }
+    }
+
+    fn version_banner(output: &str) -> Option<String> {
+        output.lines().find_map(|line| {
+            let mut fields = line.split_whitespace();
+            let executable = fields.next()?.rsplit('/').next()?;
+            let marker = fields.next()?;
+            let version = fields.next()?;
+            if executable.eq_ignore_ascii_case("SPASS")
+                && matches!(marker, "V" | "Version")
+                && version
+                    .split('.')
+                    .all(|part| !part.is_empty() && part.bytes().all(|byte| byte.is_ascii_digit()))
+            {
+                Some(format!("SPASS {marker} {version}"))
+            } else {
+                None
+            }
+        })
     }
 
     /// Convert proof state to SPASS DFG format
@@ -89,18 +108,30 @@ impl ProverBackend for SPASSBackend {
     }
 
     async fn version(&self) -> Result<String> {
-        let output = Command::new(&self.config.executable)
-            .output()
-            .await
-            .context("Failed to run SPASS")?;
+        let output = tokio::time::timeout(
+            std::time::Duration::from_secs(self.config.timeout.clamp(1, 30)),
+            Command::new(&self.config.executable)
+                .stdin(Stdio::null())
+                .kill_on_drop(true)
+                .output(),
+        )
+        .await
+        .context("SPASS version probe timed out")?
+        .context("Failed to run SPASS")?;
 
         let stdout = String::from_utf8_lossy(&output.stdout);
-        for line in stdout.lines() {
-            if line.contains("SPASS") && line.contains("Version") {
-                return Ok(line.trim().to_string());
-            }
+        let stderr = String::from_utf8_lossy(&output.stderr);
+        // Ubuntu's SPASS 3.9 emits its real banner plus usage, then exits 1
+        // when invoked without an input file. This is its identification
+        // interface, not a successful proof attempt. Other errors still fail.
+        let usage_exit = output.status.code() == Some(1)
+            && (stdout.contains("Usage: SPASS") || stderr.contains("Usage: SPASS"));
+        if !output.status.success() && !usage_exit {
+            bail!("SPASS version probe failed: {}", output.status);
         }
-        Ok("unknown".to_string())
+        Self::version_banner(&stdout)
+            .or_else(|| Self::version_banner(&stderr))
+            .context("SPASS did not return a recognized version banner")
     }
 
     async fn parse_file(&self, path: PathBuf) -> Result<ProofState> {
@@ -264,6 +295,37 @@ impl ProverBackend for SPASSBackend {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn test_spass_version_banner_matches_real_usage_output() {
+        assert_eq!(
+            SPASSBackend::version_banner("\n\t/usr/bin/SPASS V 3.9\nUsage: SPASS [options]\n"),
+            Some("SPASS V 3.9".to_string())
+        );
+        assert_eq!(
+            SPASSBackend::version_banner("SPASS Version 3.7"),
+            Some("SPASS Version 3.7".to_string())
+        );
+        for unrelated in [
+            "",
+            "SPASS V unknown",
+            "OtherTool V 3.9",
+            "error: SPASS V 3.9",
+            "SPASS V 3..9",
+        ] {
+            assert!(SPASSBackend::version_banner(unrelated).is_none());
+        }
+    }
+
+    #[tokio::test]
+    async fn test_spass_version_rejects_a_missing_executable() {
+        let directory = tempfile::tempdir().unwrap();
+        let backend = SPASSBackend::new(ProverConfig {
+            executable: directory.path().join("missing-SPASS"),
+            ..ProverConfig::default()
+        });
+        assert!(backend.version().await.is_err());
+    }
 
     #[test]
     fn test_spass_kind() {

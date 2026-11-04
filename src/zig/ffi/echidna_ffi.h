@@ -156,7 +156,11 @@ typedef struct {
     const uint8_t* arg;
 } EchidnaTactic;
 
-/** Tactic result */
+/** Tactic result.
+ * A message from the Rust callback is borrowed until the next tactic callback
+ * on the same thread or thread exit. Copy message_len bytes before then;
+ * the message need not be NUL-terminated and must not be freed by the caller.
+ */
 typedef struct {
     EchidnaTacticResultKind kind;
     uint8_t _padding[3];

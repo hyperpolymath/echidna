@@ -1363,7 +1363,7 @@ fn create_progress_bar(message: &str) -> ProgressBar {
 async fn diagnostics_command() -> Result<()> {
     info!("Starting diagnostics REPL for health monitoring");
     let dispatcher = Arc::new(ProverDispatcher::new());
-    let health = dispatcher.health_status();
+    let health = dispatcher.health_status()?;
     let mut repl = DiagnosticsREPL::new();
     repl.run(&health).await;
     Ok(())

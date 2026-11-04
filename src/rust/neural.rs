@@ -144,22 +144,31 @@ pub struct NeuralSuggester {
 
 impl NeuralSuggester {
     /// Create a new neural suggester with default configuration
-    pub fn new() -> Self {
+    /// Returns an error if the HTTP client cannot be initialized.
+    pub fn new() -> Result<Self> {
         Self::with_config(NeuralConfig::default())
     }
 
     /// Create a new neural suggester with custom configuration
-    pub fn with_config(config: NeuralConfig) -> Self {
-        let client = Client::builder()
+    /// Returns an error if the HTTP client cannot be initialized.
+    pub fn with_config(config: NeuralConfig) -> Result<Self> {
+        Self::with_config_and_builder(config, Client::builder())
+    }
+
+    fn with_config_and_builder(
+        config: NeuralConfig,
+        builder: reqwest::ClientBuilder,
+    ) -> Result<Self> {
+        let client = builder
             .timeout(Duration::from_millis(config.timeout_ms))
             .build()
-            .expect("Failed to create HTTP client");
+            .context("Failed to create HTTP client for neural inference")?;
 
-        Self {
+        Ok(Self {
             config,
             client,
             connected: false,
-        }
+        })
     }
 
     /// Check if Julia ML server is available
@@ -340,24 +349,25 @@ impl NeuralSuggester {
     }
 
     /// Update configuration
-    pub fn set_config(&mut self, config: NeuralConfig) {
-        self.config = config;
-        // Rebuild client with new timeout
-        self.client = Client::builder()
-            .timeout(Duration::from_millis(self.config.timeout_ms))
-            .build()
-            .expect("Failed to create HTTP client");
+    /// On failure, retains the previous client, configuration and health.
+    /// On success, a new health check is required before requesting suggestions.
+    pub fn set_config(&mut self, config: NeuralConfig) -> Result<()> {
+        self.set_config_with_builder(config, Client::builder())
+    }
+
+    fn set_config_with_builder(
+        &mut self,
+        config: NeuralConfig,
+        builder: reqwest::ClientBuilder,
+    ) -> Result<()> {
+        let replacement = Self::with_config_and_builder(config, builder)?;
+        *self = replacement;
+        Ok(())
     }
 
     /// Check if connected to Julia ML server
     pub fn is_connected(&self) -> bool {
         self.connected
-    }
-}
-
-impl Default for NeuralSuggester {
-    fn default() -> Self {
-        Self::new()
     }
 }
 
@@ -375,18 +385,60 @@ mod tests {
 
     #[test]
     fn test_neural_suggester_creation() {
-        let suggester = NeuralSuggester::new();
+        let suggester = NeuralSuggester::new().expect("neural HTTP client should initialize");
         assert!(!suggester.is_connected());
         assert_eq!(suggester.config().top_k, 10);
     }
 
     #[tokio::test]
     async fn test_suggest_tactics_no_connection() {
-        let suggester = NeuralSuggester::new();
+        let suggester = NeuralSuggester::new().expect("neural HTTP client should initialize");
         // Create a simple goal term for the proof state
         let goal = Term::Const("test_goal".to_string());
         let state = ProofState::new(goal);
         let tactics = suggester.suggest_tactics(&state).await;
         assert!(tactics.is_empty()); // No connection, empty result
+    }
+
+    #[test]
+    fn test_http_client_build_error_is_returned() {
+        let error = NeuralSuggester::with_config_and_builder(
+            NeuralConfig::default(),
+            Client::builder().user_agent("invalid\nheader"),
+        )
+        .err()
+        .expect("invalid HTTP headers must reject client construction");
+        assert!(error.downcast_ref::<reqwest::Error>().unwrap().is_builder());
+        assert!(error.to_string().contains("neural inference"));
+    }
+
+    #[test]
+    fn test_http_client_config_failure_preserves_state() {
+        let mut suggester = NeuralSuggester::new().expect("neural HTTP client should initialize");
+        suggester.connected = true;
+        let replacement = NeuralConfig {
+            api_url: "http://localhost:9091".to_string(),
+            timeout_ms: 25,
+            ..NeuralConfig::default()
+        };
+
+        let error = suggester
+            .set_config_with_builder(
+                replacement.clone(),
+                Client::builder().user_agent("invalid\nheader"),
+            )
+            .expect_err("failed rebuild must reject the update");
+        assert!(error.downcast_ref::<reqwest::Error>().unwrap().is_builder());
+        assert_eq!(suggester.config().api_url, "http://localhost:8081");
+        assert_eq!(suggester.config().timeout_ms, 5000);
+        assert!(suggester.is_connected());
+
+        suggester.set_config(replacement).expect("valid update");
+        assert_eq!(suggester.config().api_url, "http://localhost:9091");
+        assert_eq!(suggester.config().timeout_ms, 25);
+        assert!(
+            !suggester.is_connected(),
+            "new endpoint needs its own health check"
+        );
     }
 }

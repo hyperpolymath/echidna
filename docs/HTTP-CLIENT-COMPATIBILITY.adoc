@@ -1,0 +1,52 @@
+// SPDX-License-Identifier: PMPL-1.0-or-later
+= Fallible HTTP client construction
+
+HTTP transport construction returns errors through the Julia coprocessor bridge,
+GNN client, neural suggester, LLM advisor, guided search and API startup paths.
+Callers must propagate or handle these errors.
+
+[cols="2,3",options="header"]
+|===
+|API |Caller handling
+|GnnClient, NeuralSuggester, LlmAdvisor, GnnGuidedSearch
+|new and with_config return anyhow::Result<Self>.
+|JuliaCoprocessorBridge::new
+|Returns anyhow::Result<Self>; successful construction does not establish health.
+|GnnClient::set_config, NeuralSuggester::set_config
+|Return anyhow::Result<()>. Failure preserves the previous client, configuration
+and health. Success requires a new health probe before inference.
+|Runtime Default implementations for the first four types
+|Removed because construction can fail. Use new()? or explicit error handling.
+Configuration structs retain Default.
+|===
+
+GraphQL context construction and REST/GraphQL startup propagate HTTP setup
+errors. Optional GNN augmentation logs setup failure and retains bounded
+heuristic suggestions without claiming GNN execution.
+
+All in-tree Rust consumers were migrated. External Rust consumers need the
+same error handling; this document does not establish their compatibility.
+
+== Qualification
+
+The failure controls use invalid headers with the real reqwest builder, retain
+the typed builder error, and exercise atomic configuration replacement.
+The bridge remains unprobed after successful construction.
+
+The affected core client and guided-search modules passed 30 tests; these
+include seven constructor and state controls. GNN augmentation passed 99
+controlled HTTP-mock tests, fallback monitoring passed seven tests, and neural
+integration passed two tests with its five existing live-Julia cases ignored.
+GraphQL passed nine binary tests, including its constructor error control, and
+four actual child-process listener/startup tests.
+
+The combined core, GraphQL and REST API source passed:
+
+[source,shell]
+----
+cargo clippy --locked -p echidna -p echidna-graphql -p echidna-rest --all-targets -- -D warnings
+----
+
+These test counts overlap. Mock-service and builder-boundary results do not
+establish live Julia, BoJ, model or native prover capability. Hosted checks and
+the default-branch scans still determine the resulting repository status.

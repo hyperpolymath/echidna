@@ -336,6 +336,11 @@ pub fn parse_twasm(content: &str) -> Result<Vec<TwasmInstruction>> {
             let brace_close = line
                 .rfind('}')
                 .ok_or_else(|| anyhow!("Missing '}}' in region def"))?;
+            if brace_close <= brace_open {
+                return Err(anyhow!(
+                    "Region closing brace must follow its opening brace"
+                ));
+            }
             let fields_str = &line[brace_open + 1..brace_close];
             let fields = parse_fields(fields_str)?;
 
@@ -362,16 +367,22 @@ pub fn parse_twasm(content: &str) -> Result<Vec<TwasmInstruction>> {
         if line.starts_with("module ") {
             let tokens: Vec<&str> = line.split_whitespace().collect();
             if tokens.len() >= 4 && tokens[2] == "export" && tokens[3] == "region" {
+                let region = tokens
+                    .get(4)
+                    .ok_or_else(|| anyhow!("Missing region name in module export"))?;
                 instructions.push(TwasmInstruction::ModuleExport {
                     module_name: tokens[1].to_string(),
-                    region_name: tokens[4].to_string(),
+                    region_name: region.to_string(),
                 });
                 continue;
             }
             if tokens.len() >= 4 && tokens[2] == "import" && tokens[3] == "region" {
+                let region = tokens
+                    .get(4)
+                    .ok_or_else(|| anyhow!("Missing region name in module import"))?;
                 instructions.push(TwasmInstruction::ModuleImport {
                     module_name: tokens[1].to_string(),
-                    region_name: tokens[4].to_string(),
+                    region_name: region.to_string(),
                 });
                 continue;
             }
@@ -418,11 +429,18 @@ pub fn parse_twasm(content: &str) -> Result<Vec<TwasmInstruction>> {
 
         if line.starts_with("effect ") && line.contains('{') {
             let rest = &line["effect ".len()..];
-            let brace_open = rest.find('{').unwrap();
+            let brace_open = rest
+                .find('{')
+                .ok_or_else(|| anyhow!("Missing '{{' in effect"))?;
             let region = rest[..brace_open].trim().to_string();
             let brace_close = rest
                 .rfind('}')
                 .ok_or_else(|| anyhow!("Missing '}}' in effect"))?;
+            if brace_close <= brace_open {
+                return Err(anyhow!(
+                    "Effect closing brace must follow its opening brace"
+                ));
+            }
             let effects_str = &rest[brace_open + 1..brace_close];
             let effects: Vec<String> = effects_str
                 .split(';')
@@ -955,6 +973,18 @@ region.get Small[99] .val
     fn test_level1_parse_failure() {
         let bad = "this is not valid twasm syntax";
         assert!(parse_twasm(bad).is_err());
+    }
+
+    #[test]
+    fn test_malformed_delimiters_and_module_names_return_errors() {
+        for malformed in [
+            "region Foo } {",
+            "effect Foo } {",
+            "module Demo import region",
+            "module Demo export region",
+        ] {
+            assert!(parse_twasm(malformed).is_err(), "{malformed}");
+        }
     }
 
     #[test]

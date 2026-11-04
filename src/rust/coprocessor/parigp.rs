@@ -70,12 +70,8 @@ fn which(name: &str) -> bool {
 
 /// Accept only decimal integers: optional leading `-`, then ASCII digits.
 fn is_decimal_int(s: &str) -> bool {
-    if s.is_empty() {
-        return false;
-    }
-    let mut chars = s.chars();
-    let first = chars.next().unwrap();
-    (first == '-' || first.is_ascii_digit()) && chars.all(|c| c.is_ascii_digit())
+    let digits = s.strip_prefix('-').unwrap_or(s);
+    !digits.is_empty() && digits.bytes().all(|byte| byte.is_ascii_digit())
 }
 
 impl Default for PariGpBackend {
@@ -226,6 +222,9 @@ mod tests {
         assert!(is_decimal_int("-7"));
         assert!(is_decimal_int("123456789012345678901234567890"));
         assert!(!is_decimal_int(""));
+        assert!(!is_decimal_int("-"));
+        assert!(!is_decimal_int("--7"));
+        assert!(!is_decimal_int("+7"));
         assert!(!is_decimal_int("4.2"));
         assert!(!is_decimal_int("1e10"));
         assert!(!is_decimal_int("1; echo pwned"));

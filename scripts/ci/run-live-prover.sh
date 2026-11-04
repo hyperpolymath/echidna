@@ -11,6 +11,8 @@ case "$backend" in
   spass) executable=SPASS ;;
   glpk) executable=glpsol ;;
   chuffed) executable=fzn-chuffed ;;
+  gpuverify) executable=gpuverify ;;
+  faial) executable=faial-drf ;;
   *) echo "::error::Unsupported required backend: $backend"; exit 2 ;;
 esac
 for tool in cargo "$executable"; do

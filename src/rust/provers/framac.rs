@@ -103,11 +103,13 @@ impl FramaCBackend {
             }
 
             // Detect start of multi-line ACSL block: /*@ ... */
-            if trimmed.contains("/*@") {
+            if let Some(start_idx) = trimmed.find("/*@") {
+                let annotation = &trimmed[start_idx + 3..];
                 // Check if it's a single-line block: /*@ ... */
-                if let Some(end_idx) = trimmed.find("*/") {
-                    let start_idx = trimmed.find("/*@").unwrap();
-                    let acsl_text = &trimmed[start_idx + 3..end_idx];
+                // Only a closing delimiter after this opening delimiter
+                // belongs to the annotation; earlier C comments may precede it.
+                if let Some(end_idx) = annotation.find("*/") {
+                    let acsl_text = &annotation[..end_idx];
                     for clause in acsl_text.split(';') {
                         let clause = clause.trim();
                         if !clause.is_empty() {
@@ -122,17 +124,15 @@ impl FramaCBackend {
                 } else {
                     // Start of multi-line block
                     in_acsl_block = true;
-                    let start_idx = trimmed.find("/*@").unwrap();
-                    acsl_buffer = trimmed[start_idx + 3..].to_string();
+                    acsl_buffer = annotation.to_string();
                 }
                 continue;
             }
 
             // Inside a multi-line ACSL block
             if in_acsl_block {
-                if trimmed.contains("*/") {
+                if let Some(end_idx) = trimmed.find("*/") {
                     // End of multi-line block
-                    let end_idx = trimmed.find("*/").unwrap();
                     acsl_buffer.push(' ');
                     acsl_buffer.push_str(&trimmed[..end_idx]);
                     in_acsl_block = false;
@@ -171,6 +171,10 @@ impl FramaCBackend {
             {
                 state.context.axioms.push(trimmed.to_string());
             }
+        }
+
+        if in_acsl_block {
+            return Err(anyhow!("Unterminated ACSL annotation block"));
         }
 
         // Store the WP prover and timeout in metadata for roundtripping
@@ -855,6 +859,22 @@ mod tests {
             ..Default::default()
         };
         FramaCBackend::new(config)
+    }
+
+    #[test]
+    fn test_acsl_after_an_ordinary_comment() {
+        let state = test_backend()
+            .parse_acsl_source("/* ordinary C comment */ /*@ requires x > 0; */")
+            .expect("the annotation closes after its own opening delimiter");
+        assert_eq!(state.goals.len(), 1);
+    }
+
+    #[test]
+    fn test_unterminated_acsl_is_an_error() {
+        let error = test_backend()
+            .parse_acsl_source("*/ /*@ requires x > 0;")
+            .expect_err("an earlier closing delimiter cannot close this annotation");
+        assert!(error.to_string().contains("Unterminated ACSL"));
     }
 
     #[tokio::test]

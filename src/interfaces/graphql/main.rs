@@ -17,12 +17,13 @@ use schema::{MutationRoot, QueryRoot};
 /// Runs the GraphQL endpoint and playground at `/` and the health check at
 /// `/health`, with permissive CORS. The bind address comes from
 /// `ECHIDNA_GRAPHQL_ADDR`, defaulting to `127.0.0.1:8082` when it is absent.
-/// Invalid configuration, bind failures and server errors are returned with
-/// context. FFI initialisation failure falls back to direct Rust calls.
+/// Invalid configuration, HTTP client setup, bind failures and server errors
+/// are returned with context. FFI initialisation failure falls back to direct
+/// Rust calls.
 ///
 /// # Panics
 ///
-/// Panics if logging or the HTTP client cannot be initialised.
+/// Panics if logging cannot be initialised.
 #[tokio::main]
 async fn main() -> anyhow::Result<()> {
     tracing_subscriber::fmt()
@@ -42,7 +43,7 @@ async fn main() -> anyhow::Result<()> {
         .with_context(|| format!("Could not bind ECHIDNA_GRAPHQL_ADDR={addr:?}"))?;
 
     // Create ECHIDNA context with core integration
-    let echidna_ctx = EchidnaContext::new();
+    let echidna_ctx = EchidnaContext::new()?;
 
     // Build GraphQL schema with ECHIDNA context
     let schema = Schema::build(QueryRoot, MutationRoot, EmptySubscription)

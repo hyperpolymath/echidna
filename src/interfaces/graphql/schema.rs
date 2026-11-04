@@ -544,7 +544,9 @@ impl MutationRoot {
 
         // Fetch back the created session state
         let sessions = echidna_ctx.sessions.read().await;
-        let session_arc = sessions.get(&proof_id).unwrap().clone();
+        let session_arc = sessions.get(&proof_id).cloned().ok_or_else(|| {
+            async_graphql::Error::new("Created proof session is no longer available")
+        })?;
         drop(sessions);
         let session = session_arc.lock().await;
 
@@ -1103,7 +1105,7 @@ mod tests {
 
     fn build_schema() -> Schema<QueryRoot, MutationRoot, EmptySubscription> {
         Schema::build(QueryRoot, MutationRoot, EmptySubscription)
-            .data(EchidnaContext::new())
+            .data(EchidnaContext::new().expect("GraphQL context should initialize"))
             .finish()
     }
 

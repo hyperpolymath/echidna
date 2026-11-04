@@ -15,7 +15,7 @@ mod prove_handler_health_tests {
         let dispatcher = Arc::new(ProverDispatcher::new());
 
         // Initial health: no provers tracked
-        let initial_health = dispatcher.health_status();
+        let initial_health = dispatcher.health_status().expect("healthy dispatcher");
         assert_eq!(initial_health.prover_health.len(), 0);
         // GNN is not loaded by default, so degradation is CosineOnly
         assert_eq!(
@@ -26,10 +26,12 @@ mod prove_handler_health_tests {
         // Record a successful proof for Z3
         use echidna::provers::ProverOutcome;
         let z3_success = ProverOutcome::Proved { elapsed_ms: 45 };
-        dispatcher.record_prover_result(ProverKind::Z3, &z3_success, 45);
+        dispatcher
+            .record_prover_result(ProverKind::Z3, &z3_success, 45)
+            .expect("record prover result");
 
         // After recording, health should track Z3
-        let updated_health = dispatcher.health_status();
+        let updated_health = dispatcher.health_status().expect("healthy dispatcher");
         assert_eq!(updated_health.prover_health.len(), 1);
         assert!(updated_health.prover_health.contains_key("Z3"));
 
@@ -47,10 +49,12 @@ mod prove_handler_health_tests {
             elapsed_ms: 120,
             reason: Some("No proof found".to_string()),
         };
-        dispatcher.record_prover_result(ProverKind::Coq, &coq_failure, 120);
+        dispatcher
+            .record_prover_result(ProverKind::Coq, &coq_failure, 120)
+            .expect("record prover result");
 
         // After second recording, health tracks both
-        let final_health = dispatcher.health_status();
+        let final_health = dispatcher.health_status().expect("healthy dispatcher");
         assert_eq!(final_health.prover_health.len(), 2);
 
         let coq_health = &final_health.prover_health["Coq"];
@@ -87,10 +91,12 @@ mod prove_handler_health_tests {
                 detail: format!("Prover crash {}", i),
                 exit_code: Some(1),
             };
-            dispatcher.record_prover_result(ProverKind::Lean, &failure, 30);
+            dispatcher
+                .record_prover_result(ProverKind::Lean, &failure, 30)
+                .expect("record prover result");
         }
 
-        let health = dispatcher.health_status();
+        let health = dispatcher.health_status().expect("healthy dispatcher");
         let lean_health = &health.prover_health["Lean"];
 
         // After 3 failures, is_available should be false
@@ -113,18 +119,22 @@ mod prove_handler_health_tests {
 
         // First invocation: 50ms
         let outcome1 = ProverOutcome::Proved { elapsed_ms: 50 };
-        dispatcher.record_prover_result(ProverKind::Isabelle, &outcome1, 50);
+        dispatcher
+            .record_prover_result(ProverKind::Isabelle, &outcome1, 50)
+            .expect("record prover result");
 
-        let health1 = dispatcher.health_status();
+        let health1 = dispatcher.health_status().expect("healthy dispatcher");
         let isabelle1 = &health1.prover_health["Isabelle"];
         // EMA: 0.8 * 0.0 + 0.2 * 50.0 = 10.0
         assert!((isabelle1.avg_latency_ms - 10.0).abs() < 0.1);
 
         // Second invocation: 100ms
         let outcome2 = ProverOutcome::Proved { elapsed_ms: 100 };
-        dispatcher.record_prover_result(ProverKind::Isabelle, &outcome2, 100);
+        dispatcher
+            .record_prover_result(ProverKind::Isabelle, &outcome2, 100)
+            .expect("record prover result");
 
-        let health2 = dispatcher.health_status();
+        let health2 = dispatcher.health_status().expect("healthy dispatcher");
         let isabelle2 = &health2.prover_health["Isabelle"];
         // EMA: 0.8 * 10.0 + 0.2 * 100.0 = 8.0 + 20.0 = 28.0
         assert!((isabelle2.avg_latency_ms - 28.0).abs() < 0.1);
@@ -149,10 +159,12 @@ mod prove_handler_health_tests {
                 _ => ProverKind::Z3,
             };
             let outcome = ProverOutcome::Proved { elapsed_ms: 50 };
-            dispatcher.record_prover_result(kind, &outcome, 50);
+            dispatcher
+                .record_prover_result(kind, &outcome, 50)
+                .expect("record prover result");
         }
 
-        let health = dispatcher.health_status();
+        let health = dispatcher.health_status().expect("healthy dispatcher");
         let health_pct = health.health_percentage();
 
         // With all provers available and success_rate ~0.5 default, health should be good

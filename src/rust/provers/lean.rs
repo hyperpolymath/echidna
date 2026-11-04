@@ -155,11 +155,17 @@ impl LeanBackend {
     }
 
     /// Generate a fresh metavariable name
-    fn fresh_meta(&self) -> String {
-        let mut counter = self.meta_counter.lock().unwrap();
+    fn fresh_meta(&self) -> Result<String> {
+        let mut counter = self
+            .meta_counter
+            .lock()
+            .map_err(|_| anyhow!("Lean metavariable counter is poisoned"))?;
+        let next = counter
+            .checked_add(1)
+            .ok_or_else(|| anyhow!("Lean metavariable counter exhausted"))?;
         let name = format!("?m{}", *counter);
-        *counter += 1;
-        name
+        *counter = next;
+        Ok(name)
     }
 
     /// Run Lean on a file and capture output
@@ -548,7 +554,7 @@ impl LeanBackend {
                 if let Some(goal) = current_goal.take() {
                     goals.push(goal);
                 }
-                let id = self.fresh_meta();
+                let id = self.fresh_meta()?;
                 current_goal = Some(LeanGoal {
                     id,
                     context: Vec::new(),
@@ -586,7 +592,7 @@ impl LeanBackend {
 
         // Handle basic cases
         if input.is_empty() {
-            return Ok(LeanExpr::MVar(self.fresh_meta()));
+            return Ok(LeanExpr::MVar(self.fresh_meta()?));
         }
 
         // Check for function types
@@ -1663,13 +1669,32 @@ mod tests {
         let config = ProverConfig::default();
         let backend = LeanBackend::new(config);
 
-        let m1 = backend.fresh_meta();
-        let m2 = backend.fresh_meta();
-        let m3 = backend.fresh_meta();
+        let m1 = backend.fresh_meta().unwrap();
+        let m2 = backend.fresh_meta().unwrap();
+        let m3 = backend.fresh_meta().unwrap();
 
         assert_eq!(m1, "?m0");
         assert_eq!(m2, "?m1");
         assert_eq!(m3, "?m2");
+    }
+
+    #[test]
+    fn test_fresh_meta_rejects_poison_and_exhaustion() {
+        let poisoned = LeanBackend::new(ProverConfig::default());
+        let outcome = std::panic::catch_unwind(|| {
+            let _guard = poisoned
+                .meta_counter
+                .lock()
+                .expect("initially healthy lock");
+            panic!("deliberate poison regression fixture");
+        });
+        assert!(outcome.is_err());
+        assert!(poisoned.fresh_meta().is_err());
+
+        let exhausted = LeanBackend::new(ProverConfig::default());
+        *exhausted.meta_counter.lock().unwrap() = usize::MAX;
+        assert!(exhausted.fresh_meta().is_err());
+        assert_eq!(*exhausted.meta_counter.lock().unwrap(), usize::MAX);
     }
 
     #[test]

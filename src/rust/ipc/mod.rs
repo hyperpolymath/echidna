@@ -76,15 +76,14 @@ impl Transport {
         match self {
             Transport::Uds { path } => path.exists(),
             Transport::Tcp { host, port } => {
-                use std::net::TcpStream;
+                use std::net::{SocketAddr, TcpStream};
                 use std::time::Duration;
-                TcpStream::connect_timeout(
-                    &format!("{}:{}", host, port)
-                        .parse()
-                        .unwrap_or_else(|_| "127.0.0.1:9090".parse().unwrap()),
-                    Duration::from_millis(200),
-                )
-                .is_ok()
+                let Ok(address) = format!("{}:{}", host, port).parse::<SocketAddr>() else {
+                    // A malformed requested endpoint is unavailable. Probing a
+                    // different fallback service would report false readiness.
+                    return false;
+                };
+                TcpStream::connect_timeout(&address, Duration::from_millis(200)).is_ok()
             },
         }
     }
@@ -177,6 +176,22 @@ mod tests {
             path: PathBuf::from("/tmp/echidna_no_such_sock_xyz.sock"),
         };
         assert!(!t.probe());
+    }
+
+    #[test]
+    fn test_transport_tcp_probes_the_configured_address() {
+        let listener = std::net::TcpListener::bind("127.0.0.1:0").unwrap();
+        let port = listener.local_addr().unwrap().port();
+        assert!(Transport::Tcp {
+            host: "127.0.0.1".into(),
+            port
+        }
+        .probe());
+        assert!(!Transport::Tcp {
+            host: "not an IP address".into(),
+            port
+        }
+        .probe());
     }
 
     #[test]

@@ -163,15 +163,15 @@ impl Fmpz {
         }
     }
 
-    fn get_str(&self) -> String {
+    fn get_str(&self) -> Result<String> {
         // FLINT allocates when str argument is NULL; we free with flint_free.
         let ptr: *mut c_char = unsafe { fmpz_get_str(std::ptr::null_mut(), 10, &self.inner) };
         if ptr.is_null() {
-            return "0".to_string();
+            return Err(anyhow!("FLINT returned no decimal string"));
         }
         let s = unsafe { CStr::from_ptr(ptr).to_string_lossy().into_owned() };
         unsafe { flint_free(ptr.cast()) };
-        s
+        Ok(s)
     }
 }
 
@@ -240,18 +240,18 @@ fn parse_poly(s: &str) -> Result<FmpzPoly> {
 /// Returns `"0"` for the zero polynomial; otherwise returns space-separated
 /// coefficients from degree 0 to degree n (the output is FLINT-normalised,
 /// so the leading coefficient is never zero).
-fn poly_to_string(poly: &FmpzPoly) -> String {
+fn poly_to_string(poly: &FmpzPoly) -> Result<String> {
     let len = poly.length();
     if len == 0 {
-        return "0".to_string();
+        return Ok("0".to_string());
     }
     let mut coeff = Fmpz::new();
     let mut parts = Vec::with_capacity(len as usize);
     for i in 0..len {
         unsafe { fmpz_poly_get_coeff_fmpz(&mut coeff.inner, &poly.inner, i) };
-        parts.push(coeff.get_str());
+        parts.push(coeff.get_str()?);
     }
-    parts.join(" ")
+    Ok(parts.join(" "))
 }
 
 // ── Backend ───────────────────────────────────────────────────────────────────
@@ -325,7 +325,7 @@ fn dispatch_sync(op: CoprocessorOp) -> Result<CoprocessorOutcome> {
             let gp = parse_poly(&g)?;
             let mut res = FmpzPoly::new();
             unsafe { fmpz_poly_gcd(&mut res.inner, &fp.inner, &gp.inner) };
-            Ok(CoprocessorOutcome::Polynomial(poly_to_string(&res)))
+            Ok(CoprocessorOutcome::Polynomial(poly_to_string(&res)?))
         },
 
         CoprocessorOp::FlintPolyMul { f, g } => {
@@ -333,7 +333,7 @@ fn dispatch_sync(op: CoprocessorOp) -> Result<CoprocessorOutcome> {
             let gp = parse_poly(&g)?;
             let mut res = FmpzPoly::new();
             unsafe { fmpz_poly_mul(&mut res.inner, &fp.inner, &gp.inner) };
-            Ok(CoprocessorOutcome::Polynomial(poly_to_string(&res)))
+            Ok(CoprocessorOutcome::Polynomial(poly_to_string(&res)?))
         },
 
         CoprocessorOp::FlintPolyRem { f, g } => {
@@ -347,14 +347,14 @@ fn dispatch_sync(op: CoprocessorOp) -> Result<CoprocessorOutcome> {
             let mut rem = FmpzPoly::new();
             let mut d: Ulong = 0;
             unsafe { fmpz_poly_pseudo_rem(&mut rem.inner, &mut d, &fp.inner, &gp.inner) };
-            Ok(CoprocessorOutcome::Polynomial(poly_to_string(&rem)))
+            Ok(CoprocessorOutcome::Polynomial(poly_to_string(&rem)?))
         },
 
         CoprocessorOp::FlintPolyContent { f } => {
             let fp = parse_poly(&f)?;
             let mut content = Fmpz::new();
             unsafe { fmpz_poly_content(&mut content.inner, &fp.inner) };
-            Ok(CoprocessorOutcome::BigInt(content.get_str()))
+            Ok(CoprocessorOutcome::BigInt(content.get_str()?))
         },
 
         CoprocessorOp::FlintNthRoot { n, k } => {
@@ -362,10 +362,18 @@ fn dispatch_sync(op: CoprocessorOp) -> Result<CoprocessorOutcome> {
                 return Err(anyhow!("FlintNthRoot: exponent k must be ≥ 1, got 0"));
             }
             let nz = Fmpz::from_str(&n)?;
+            // FLINT raises a native exception for an even root of a negative
+            // integer. Reject it before crossing the FFI boundary.
+            if k % 2 == 0 && nz.get_str()?.starts_with('-') {
+                return Err(anyhow!(
+                    "FlintNthRoot: an even root requires a non-negative integer"
+                ));
+            }
+            let exponent = Slong::from(k);
             let mut root = Fmpz::new();
-            let exact = unsafe { fmpz_root(&mut root.inner, &nz.inner, k as Slong) };
+            let exact = unsafe { fmpz_root(&mut root.inner, &nz.inner, exponent) };
             if exact == 1 {
-                Ok(CoprocessorOutcome::BigInt(root.get_str()))
+                Ok(CoprocessorOutcome::BigInt(root.get_str()?))
             } else {
                 Ok(CoprocessorOutcome::Empty)
             }
@@ -374,7 +382,7 @@ fn dispatch_sync(op: CoprocessorOp) -> Result<CoprocessorOutcome> {
         CoprocessorOp::FlintBinomial { n, k } => {
             let mut res = Fmpz::new();
             unsafe { fmpz_bin_uiui(&mut res.inner, n, k) };
-            Ok(CoprocessorOutcome::BigInt(res.get_str()))
+            Ok(CoprocessorOutcome::BigInt(res.get_str()?))
         },
 
         other => Ok(CoprocessorOutcome::Failure(format!(
@@ -461,6 +469,26 @@ mod tests {
         }) {
             CoprocessorOutcome::Empty => {},
             other => panic!("expected Empty, got: {other:?}"),
+        }
+    }
+
+    #[test]
+    fn nth_root_rejects_invalid_native_preconditions() {
+        for (n, k) in [("-4", 2), ("16", 0)] {
+            assert!(dispatch_sync(CoprocessorOp::FlintNthRoot {
+                n: n.to_string(),
+                k,
+            })
+            .is_err());
+        }
+        match dispatch_sync(CoprocessorOp::FlintNthRoot {
+            n: "-27".to_string(),
+            k: 3,
+        })
+        .expect("negative odd roots are valid")
+        {
+            CoprocessorOutcome::BigInt(value) => assert_eq!(value, "-3"),
+            other => panic!("unexpected negative root result: {other:?}"),
         }
     }
 

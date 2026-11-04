@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: MPL-2.0
 // GraphQL resolvers - wired to ECHIDNA core
 
+use anyhow::Context;
 use echidna::core::{
     ProofState as CoreProofState, Tactic as CoreTactic, TacticResult as CoreTacticResult, Term,
 };
@@ -471,11 +472,16 @@ pub struct EchidnaContext {
 }
 
 impl EchidnaContext {
-    pub fn new() -> Self {
-        let ml_client = reqwest::Client::builder()
+    /// Initialize shared state, returning HTTP setup failures to the server.
+    pub fn new() -> anyhow::Result<Self> {
+        Self::with_builder(reqwest::Client::builder())
+    }
+
+    fn with_builder(builder: reqwest::ClientBuilder) -> anyhow::Result<Self> {
+        let ml_client = builder
             .timeout(std::time::Duration::from_secs(10))
             .build()
-            .expect("Failed to create HTTP client");
+            .context("Failed to create GraphQL ML HTTP client")?;
 
         // Initialize FFI layer
         let ffi_initialized = ffi_wrapper::init_ffi().is_ok();
@@ -485,12 +491,12 @@ impl EchidnaContext {
             tracing::warn!("FFI layer initialization failed, falling back to direct Rust calls");
         }
 
-        EchidnaContext {
+        Ok(EchidnaContext {
             sessions: Arc::new(RwLock::new(HashMap::new())),
             ml_client,
             ml_api_url: "http://127.0.0.1:8090".to_string(),
             ffi_initialized,
-        }
+        })
     }
 
     pub async fn create_session(&self, goal: &str, kind: CoreProverKind) -> anyhow::Result<String> {
@@ -740,5 +746,20 @@ impl EchidnaContext {
 
         // Fallback to prover suggestions
         session.prover.suggest_tactics(proof_state, limit).await
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_http_client_build_error_is_returned() {
+        let error =
+            EchidnaContext::with_builder(reqwest::Client::builder().user_agent("invalid\nheader"))
+                .err()
+                .expect("invalid HTTP headers must reject context construction");
+        assert!(error.downcast_ref::<reqwest::Error>().unwrap().is_builder());
+        assert!(error.to_string().contains("GraphQL ML HTTP client"));
     }
 }
