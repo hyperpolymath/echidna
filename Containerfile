@@ -13,7 +13,7 @@
 # =============================================================================
 # Stage 1: Rust Builder
 # =============================================================================
-FROM cgr.dev/chainguard/wolfi-base@sha256:9c2092b053779e14c82fb50f77b37bcc38b7d2c83972352d5813280f9d035b03 AS rust-builder
+FROM cgr.dev/chainguard/wolfi-base:latest@sha256:9c2092b053779e14c82fb50f77b37bcc38b7d2c83972352d5813280f9d035b03 AS rust-builder
 
 RUN apk add --no-cache \
     rust \
@@ -49,7 +49,7 @@ RUN cargo build --locked --release --bin echidna && \
 # =============================================================================
 # Stage 2: Prover Installer (Z3 from official release, Lean via elan)
 # =============================================================================
-FROM cgr.dev/chainguard/wolfi-base@sha256:9c2092b053779e14c82fb50f77b37bcc38b7d2c83972352d5813280f9d035b03 AS prover-installer
+FROM cgr.dev/chainguard/wolfi-base:latest@sha256:9c2092b053779e14c82fb50f77b37bcc38b7d2c83972352d5813280f9d035b03 AS prover-installer
 
 RUN apk add --no-cache \
     curl \
@@ -77,7 +77,7 @@ RUN ELAN_HOME=/opt/elan bash /tmp/install-lean.sh
 # =============================================================================
 # Stage 3: Runtime Image (chainguard)
 # =============================================================================
-FROM cgr.dev/chainguard/wolfi-base@sha256:9c2092b053779e14c82fb50f77b37bcc38b7d2c83972352d5813280f9d035b03
+FROM cgr.dev/chainguard/wolfi-base:latest@sha256:9c2092b053779e14c82fb50f77b37bcc38b7d2c83972352d5813280f9d035b03
 
 LABEL maintainer="Jonathan D.A. Jewell <j.d.a.jewell@open.ac.uk>"
 LABEL org.opencontainers.image.source="https://github.com/hyperpolymath/echidna"
