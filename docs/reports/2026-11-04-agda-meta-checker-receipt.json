@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "spdx_license_id": "MPL-2.0",
+  "spdx_license_id": "CC-BY-SA-4.0",
   "kind": "local-agda-model-check",
   "recorded_at_utc": "2026-11-04T17:26:43Z",
   "source": {
