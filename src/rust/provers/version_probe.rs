@@ -288,7 +288,7 @@ mod tests {
         #[tokio::test]
         async fn runner_times_out_and_terminates_the_process() {
             let (_directory, config) =
-                fixture("printf '%s' \"$\" > \"$0.pid\"\nexec /bin/sleep 30", 1);
+                fixture("printf '%s' \"$$\" > \"$0.pid\"\nexec /bin/sleep 30", 1);
             let result =
                 tokio::time::timeout(Duration::from_secs(3), run(&config, &["--version"])).await;
             let pid = fixture_pid(&config).expect("fixture process started");
@@ -307,7 +307,7 @@ mod tests {
                 // The finite sleep also bounds a regression to a blocking
                 // subprocess: Tokio cannot interrupt a future that never yields.
                 let (_directory, config) =
-                    fixture("printf '%s' \"$\" > \"$0.pid\"\nexec /bin/sleep 4", 1);
+                    fixture("printf '%s' \"$$\" > \"$0.pid\"\nexec /bin/sleep 4", 1);
                 let backend = ProverFactory::create(kind(name), config.clone()).unwrap();
                 let started = std::time::Instant::now();
                 let result = tokio::time::timeout(Duration::from_secs(3), backend.version()).await;
@@ -333,7 +333,7 @@ mod tests {
         #[tokio::test]
         async fn caller_cancellation_terminates_an_in_flight_probe() {
             let (_directory, config) =
-                fixture("printf '%s' \"$\" > \"$0.pid\"\nexec /bin/sleep 30", 10);
+                fixture("printf '%s' \"$$\" > \"$0.pid\"\nexec /bin/sleep 30", 10);
             let task_config = config.clone();
             let task = tokio::spawn(async move { run(&task_config, &["--version"]).await });
             let mut pid = fixture_pid(&config);
