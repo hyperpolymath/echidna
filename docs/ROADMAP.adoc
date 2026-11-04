@@ -153,17 +153,17 @@ Verisim by `+goal_hash+`*
 Iris + VST + Flyspeck + HoTT absorption, with *online growth* adding
 tokens during training
 
-|"`Chapel fully supported`" |*rewritten and CI-green 2026-05-30* —
-`+src/chapel/+` compiles under chpl 2.3.0 / 2.8.0 (static lib, apt
-Chapel ships `+CHPL_LIB_PIC=none+` only); L2.2
-`+parallelProofSearchSpeculative+` (first-success-wins atomic CAS)
-shipped next to best-of `+parallelProofSearch+`; `+chapel-ci.yml+`
-chapel-build + zig-ffi strict; aggregation invariants proved in
-`+proofs/agda/ParallelSoundness.agda+` with zero
-postulate/admit/believe_me. L2.3 cancel-token preemption next
-|*`+dispatch.rs+` picks Chapel‑parallel dispatch by config*; runtime
-init + cancellation + error propagation wired; ≥1 OoM speedup on
-portfolio solves
+|"`Chapel fully supported`" |*partial native qualification* — the
+`f160493` hosted real-library job linked and queried the runtime version, but
+its no-prover FFI probe and process exit aborted in qthreads task-state lookup.
+The bridge repair assigns initialization, calls, allocation cleanup, and
+finalization to one stable OS thread without changing the task runtime.
+Fresh runtime qualification remains required; the existing issue #416
+allow-failure boundary is unchanged. See
+link:../src/chapel/README.adoc[the source-bound receipt and lifecycle contract].
+|*`+dispatch.rs+` picks Chapel-parallel dispatch by config*; qualify real
+search/result cleanup and per-prover timeouts. Hard caller cancellation and
+portfolio speedup claims require their own implementation and evidence.
 
 |"`Cap’n Proto serialisation`" |0 `+.capnp+` files
 |*`+crates/echidna-wire/+`* contains schemas for ProofState / Goal /

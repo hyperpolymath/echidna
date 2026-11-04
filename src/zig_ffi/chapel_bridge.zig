@@ -11,6 +11,7 @@
 
 const std = @import("std");
 const options = @import("chapel_options");
+const runtime_owner = @import("runtime_owner.zig");
 
 //==============================================================================
 // Import Chapel's C API
@@ -21,9 +22,10 @@ const chapel = @cImport({
     @cInclude("stdlib.h");
 });
 
-// Chapel 2.8's library ABI requires runtime + exported module initialization
-// before any library call. The once guard is shared by every bridge entry;
-// stub builds do not reference or initialize a Chapel runtime.
+// Chapel's qthreads runtime binds its process task bundle to the OS thread
+// that initializes it. A once guard alone does not make foreign threads valid.
+// Every real export, Chapel allocation/free, and finalization uses this owner.
+// Stub builds call only the unavailable stubs and start no native runtime.
 const ChapelRuntime = struct {
     var program_name = [_:0]u8{ 'e', 'c', 'h', 'i', 'd', 'n', 'a' };
     var arguments = [_]?[*:0]u8{ &program_name, null };
@@ -33,24 +35,54 @@ const ChapelRuntime = struct {
     extern fn chpl__init_parallel_proof_search(line: i64, file: i32) void;
     extern fn chpl__init_chapel_ffi_exports(line: i64, file: i32) void;
 
-    fn initialize() void {
+    pub fn initialize(_: *@This()) void {
         chpl_library_init(1, &arguments);
         chpl__init_parallel_proof_search(0, 0);
         chpl__init_chapel_ffi_exports(0, 0);
-        if (chapel.atexit(finalize) != 0) {
-            @panic("could not register Chapel runtime finalization");
-        }
     }
 
-    fn finalize() callconv(.c) void {
+    pub fn finalize(_: *@This()) void {
         chpl_library_finalize();
     }
 };
 
-var chapel_runtime_once = std.once(ChapelRuntime.initialize);
+var chapel_owner = runtime_owner.Owner(ChapelRuntime).init(.{});
+var chapel_shutdown_once = std.once(registerChapelShutdown);
 
-fn ensureChapelInitialized() void {
-    if (!options.chapel_stubs) chapel_runtime_once.call();
+fn registerChapelShutdown() void {
+    if (chapel.atexit(shutdownChapel) != 0) {
+        // Refuse startup if normal process exit cannot join the owner.
+        chapel_owner.shutdown() catch unreachable;
+    }
+}
+
+fn shutdownChapel() callconv(.c) void {
+    chapel_owner.shutdown() catch {
+        // A fatal exit inside Chapel could invoke atexit on its own worker.
+        // Recursive finalization/self-join is unsafe; retain a failed process.
+        std.process.abort();
+    };
+}
+
+fn callOnChapelOwner(comptime function: anytype, args: anytype, result: anytype) runtime_owner.CallError!void {
+    const Context = struct {
+        arguments: @TypeOf(args),
+        result: @TypeOf(result),
+
+        fn run(raw: *anyopaque) void {
+            const self: *@This() = @ptrCast(@alignCast(raw));
+            self.result.* = @call(.auto, function, self.arguments);
+        }
+    };
+    var context = Context{ .arguments = args, .result = result };
+    if (options.chapel_stubs) {
+        Context.run(&context);
+        return;
+    }
+
+    chapel_shutdown_once.call();
+    var work = runtime_owner.Work{ .context = &context, .run = Context.run };
+    try chapel_owner.call(&work);
 }
 
 //==============================================================================
@@ -185,6 +217,7 @@ pub const ProofResult = struct {
             .error_message = null,
             .category = null,
         };
+        errdefer result.deinit(allocator);
 
         // Parse prover ID
         if (c_result.prover_id >= 0 and c_result.prover_id < @as(c_int, ProverKind.count)) {
@@ -240,14 +273,23 @@ pub const ChapelError = error{
 
 /// Check if Chapel runtime is available
 pub fn isChapelAvailable() bool {
-    ensureChapelInitialized();
-    const result = chapel.chapel_is_available();
-    return result != 0;
+    var result: bool = undefined;
+    callOnChapelOwner(isChapelAvailableOnOwner, .{}, &result) catch return false;
+    return result;
+}
+
+fn isChapelAvailableOnOwner() bool {
+    return chapel.chapel_is_available() != 0;
 }
 
 /// Get Chapel metalayer version string
 pub fn getChapelVersion(allocator: std.mem.Allocator) ![]const u8 {
-    ensureChapelInitialized();
+    var result: anyerror![]const u8 = undefined;
+    try callOnChapelOwner(getChapelVersionOnOwner, .{allocator}, &result);
+    return result;
+}
+
+fn getChapelVersionOnOwner(allocator: std.mem.Allocator) ![]const u8 {
     const c_version = chapel.chapel_get_version();
     if (c_version == null) {
         return error.ChapelRuntimeUnavailable;
@@ -259,14 +301,24 @@ pub fn getChapelVersion(allocator: std.mem.Allocator) ![]const u8 {
 
 /// Get count of provers available on this system (0-30)
 pub fn availableProverCount() u32 {
-    ensureChapelInitialized();
+    var result: u32 = undefined;
+    callOnChapelOwner(availableProverCountOnOwner, .{}, &result) catch return 0;
+    return result;
+}
+
+fn availableProverCountOnOwner() u32 {
     const count = chapel.chapel_available_prover_count();
     return if (count >= 0) @intCast(count) else 0;
 }
 
 /// Check if a specific prover is available
 pub fn isProverAvailable(prover: ProverKind) bool {
-    ensureChapelInitialized();
+    var result: bool = undefined;
+    callOnChapelOwner(isProverAvailableOnOwner, .{prover}, &result) catch return false;
+    return result;
+}
+
+fn isProverAvailableOnOwner(prover: ProverKind) bool {
     return chapel.chapel_is_prover_available(@intFromEnum(prover)) != 0;
 }
 
@@ -291,10 +343,18 @@ pub fn parallelProofSearch(
     timeout_secs: u32,
     allocator: std.mem.Allocator,
 ) !ProofResult {
-    // Validate Chapel is available
-    if (!isChapelAvailable()) {
-        return error.ChapelRuntimeUnavailable;
-    }
+    var result: anyerror!ProofResult = undefined;
+    try callOnChapelOwner(parallelProofSearchOnOwner, .{ goal, provers, timeout_secs, allocator }, &result);
+    return result;
+}
+
+fn parallelProofSearchOnOwner(
+    goal: []const u8,
+    provers: ?[]const ProverKind,
+    timeout_secs: u32,
+    allocator: std.mem.Allocator,
+) !ProofResult {
+    if (!isChapelAvailableOnOwner()) return error.ChapelRuntimeUnavailable;
 
     // Convert goal to C string
     const goal_cstr = try allocator.dupeZ(u8, goal);
@@ -323,13 +383,10 @@ pub fn parallelProofSearch(
         @intCast(timeout_secs),
     );
 
-    // Convert Chapel result to Zig (copies strings)
-    const result = try ProofResult.fromChapel(c_result, allocator);
-
-    // Free Chapel-allocated strings
-    chapel.chapel_free_result(&c_result);
-
-    return result;
+    // Copy and free on the owner even when copying fails. Only bridge-owned
+    // strings cross back to the caller, so shutdown never races Chapel data.
+    defer chapel.chapel_free_result(&c_result);
+    return ProofResult.fromChapel(c_result, allocator);
 }
 
 //==============================================================================
@@ -449,8 +506,8 @@ export fn echidna_chapel_is_available() c_int {
 export fn echidna_chapel_get_version() ?[*:0]const u8 {
     const allocator = std.heap.c_allocator;
     const version = getChapelVersion(allocator) catch return null;
+    defer allocator.free(version);
     const c_version = allocator.dupeZ(u8, version) catch return null;
-    allocator.free(version);
     return c_version.ptr;
 }
 

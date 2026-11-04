@@ -83,4 +83,17 @@ pub fn build(b: *std.Build) void {
     const run_lib_tests = b.addRunArtifact(lib_tests);
     const test_step = b.step("test", "Run FFI tests with explicit Chapel stubs");
     test_step.dependOn(&run_lib_tests.step);
+
+    // Exercise real OS-thread ownership and shutdown ordering independently
+    // of the deliberately unavailable Chapel stubs.
+    const owner_tests = b.addTest(.{
+        .root_module = b.createModule(.{
+            .root_source_file = b.path("runtime_owner.zig"),
+            .target = target,
+            .optimize = optimize,
+            .link_libc = true,
+        }),
+    });
+    const run_owner_tests = b.addRunArtifact(owner_tests);
+    test_step.dependOn(&run_owner_tests.step);
 }

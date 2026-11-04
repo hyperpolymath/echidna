@@ -163,16 +163,28 @@ mod chapel_ffi {
         fn echidna_free_string(s: *const c_char);
     }
 
+    /// Synchronous Chapel search, serialized through the bridge's OS owner.
+    ///
+    /// The timeout is a per-prover whole-second limit. This API does not offer
+    /// caller cancellation or a hard deadline covering queueing and runtime setup.
     pub struct ChapelParallelSearch;
+
+    fn chapel_timeout_seconds(timeout: Duration) -> Result<c_int> {
+        if timeout.is_zero() || timeout.subsec_nanos() != 0 {
+            anyhow::bail!("Chapel timeout must be a positive whole number of seconds");
+        }
+        c_int::try_from(timeout.as_secs()).context("Chapel timeout exceeds the C ABI range")
+    }
 
     impl ProofSearchStrategy for ChapelParallelSearch {
         fn search(&self, goal: &str, timeout: Duration) -> Result<ProofResult> {
             // Convert goal to C string
             let c_goal = CString::new(goal).context("Invalid goal string")?;
-            let timeout_secs = timeout.as_secs() as c_int;
+            let timeout_secs = chapel_timeout_seconds(timeout)?;
 
             // SAFETY: c_goal is a valid CString, null prover_ids with 0 count
-            // means "use all 30 provers". Chapel FFI allocates the result.
+            // means "use all 30 provers". The bridge runs on its runtime owner
+            // and returns independent copies allocated by the bridge.
             let mut c_result = unsafe {
                 echidna_prove_parallel(c_goal.as_ptr(), std::ptr::null(), 0, timeout_secs)
             };
@@ -207,7 +219,7 @@ mod chapel_ffi {
                 strategy_used: self.name().to_string(),
             };
 
-            // SAFETY: c_result was allocated by Chapel FFI and must be freed once.
+            // SAFETY: c_result contains bridge-owned copies and must be freed once.
             unsafe {
                 echidna_free_proof_result(&mut c_result as *mut _);
             }
@@ -266,6 +278,81 @@ mod chapel_ffi {
     mod tests {
         use super::*;
 
+        #[test]
+        fn chapel_timeout_cannot_become_the_native_default_or_wrap() {
+            assert_eq!(chapel_timeout_seconds(Duration::from_secs(1)).unwrap(), 1);
+            assert_eq!(
+                chapel_timeout_seconds(Duration::from_secs(c_int::MAX as u64)).unwrap(),
+                c_int::MAX
+            );
+            for timeout in [
+                Duration::ZERO,
+                Duration::from_millis(500),
+                Duration::from_millis(1500),
+                Duration::from_secs(c_int::MAX as u64 + 1),
+                Duration::MAX,
+            ] {
+                assert!(chapel_timeout_seconds(timeout).is_err(), "{timeout:?}");
+            }
+        }
+
+        #[cfg(echidna_chapel_real)]
+        fn real_probe_command(test_name: &str, child_env: &str) -> std::process::Command {
+            let mut command = std::process::Command::new(std::env::current_exe().unwrap());
+            command
+                .arg("--exact")
+                .arg(format!("proof_search::chapel_ffi::tests::{test_name}"))
+                .arg("--nocapture")
+                .env(child_env, "1")
+                .stdin(std::process::Stdio::null());
+            command
+        }
+
+        #[cfg(echidna_chapel_real)]
+        fn run_real_probe(command: &mut std::process::Command, marker: &str) {
+            use std::fs::File;
+            use std::process::{Child, Stdio};
+
+            struct Reap(Child);
+            impl Drop for Reap {
+                fn drop(&mut self) {
+                    let _ = self.0.kill();
+                    let _ = self.0.wait();
+                }
+            }
+
+            // Files avoid pipe backpressure while waiting and retain diagnostics
+            // if a native assertion aborts before the child test reports failure.
+            let logs = tempfile::tempdir().expect("probe log directory");
+            let stdout_path = logs.path().join("stdout");
+            let stderr_path = logs.path().join("stderr");
+            command
+                .stdout(Stdio::from(File::create(&stdout_path).unwrap()))
+                .stderr(Stdio::from(File::create(&stderr_path).unwrap()));
+            let mut child = Reap(command.spawn().expect("launch isolated real-runtime probe"));
+            let started = Instant::now();
+            let (status, timed_out) = loop {
+                if let Some(status) = child.0.try_wait().expect("inspect real-runtime probe") {
+                    break (status, false);
+                }
+                if started.elapsed() >= Duration::from_secs(30) {
+                    child.0.kill().expect("stop timed-out real-runtime probe");
+                    break (child.0.wait().expect("reap real-runtime probe"), true);
+                }
+                std::thread::sleep(Duration::from_millis(10));
+            };
+            let stdout = std::fs::read_to_string(stdout_path).expect("probe stdout");
+            let stderr = std::fs::read_to_string(stderr_path).expect("probe stderr");
+            assert!(
+                !timed_out && status.success(),
+                "real-runtime child failed (timeout={timed_out}, {status}):\n{stdout}\n{stderr}"
+            );
+            assert!(
+                stdout.contains(marker),
+                "the exact child test did not complete its real-runtime assertions: {stdout}"
+            );
+        }
+
         #[cfg(echidna_chapel_stubs)]
         #[test]
         fn stub_mode_cannot_claim_a_real_runtime() {
@@ -291,17 +378,33 @@ mod chapel_ffi {
         fn real_search_without_provers_fails_and_frees_result() {
             const CHILD: &str = "ECHIDNA_CHAPEL_EMPTY_PATH_CHILD";
             if std::env::var_os(CHILD).is_some() {
-                let strategy = ChapelParallelSearch::new().expect("real Chapel runtime");
-                assert_eq!(ChapelParallelSearch::available_prover_count(), 0);
-                for _ in 0..2 {
-                    let result = strategy
-                        .search("True", Duration::from_secs(1))
-                        .expect("FFI returns a result when no prover is available");
-                    assert!(!result.success);
-                    assert_eq!(
-                        result.error_message.as_deref(),
-                        Some("All provers exhausted")
-                    );
+                let start = std::sync::Arc::new(std::sync::Barrier::new(4));
+                let callers: Vec<_> = (0..4)
+                    .map(|_| {
+                        let start = start.clone();
+                        std::thread::spawn(move || {
+                            start.wait();
+                            let strategy = ChapelParallelSearch::new().expect("real Chapel runtime");
+                            assert_eq!(ChapelParallelSearch::available_prover_count(), 0);
+                            for _ in 0..2 {
+                                assert!(strategy.available());
+                                assert!(ChapelParallelSearch::get_version()
+                                    .unwrap()
+                                    .starts_with("ECHIDNA Chapel Metalayer "));
+                                let result = strategy
+                                    .search("True", Duration::from_secs(1))
+                                    .expect("FFI returns a result when no prover is available");
+                                assert!(!result.success);
+                                assert_eq!(
+                                    result.error_message.as_deref(),
+                                    Some("All provers exhausted")
+                                );
+                            }
+                        })
+                    })
+                    .collect();
+                for caller in callers {
+                    caller.join().expect("concurrent Chapel caller");
                 }
                 println!("ECHIDNA_REAL_CHAPEL_NO_PROVER_PROBE_COMPLETED");
                 return;
@@ -311,25 +414,102 @@ mod chapel_ffi {
             // No global environment mutation races with other Rust tests, and
             // no external prover can be dispatched by this allocation/free probe.
             let empty_path = tempfile::tempdir().expect("empty prover search directory");
-            let result = std::process::Command::new(std::env::current_exe().unwrap())
-                .args([
-                    "--exact",
-                    "proof_search::chapel_ffi::tests::real_search_without_provers_fails_and_frees_result",
-                    "--nocapture",
-                ])
-                .env(CHILD, "1")
-                .env("PATH", empty_path.path())
-                .output()
-                .expect("launch isolated real-runtime probe");
-            assert!(
-                result.status.success(),
-                "real-runtime child failed: {}",
-                String::from_utf8_lossy(&result.stderr)
+            let mut command = real_probe_command(
+                "real_search_without_provers_fails_and_frees_result",
+                CHILD,
             );
-            assert!(
-                String::from_utf8_lossy(&result.stdout)
-                    .contains("ECHIDNA_REAL_CHAPEL_NO_PROVER_PROBE_COMPLETED"),
-                "the exact child test did not complete its real-runtime assertions"
+            command.env("PATH", empty_path.path());
+            run_real_probe(
+                &mut command,
+                "ECHIDNA_REAL_CHAPEL_NO_PROVER_PROBE_COMPLETED",
+            );
+        }
+
+        #[cfg(all(echidna_chapel_real, target_os = "linux"))]
+        fn probe_process_stopped(pid: u32) -> std::io::Result<bool> {
+            match std::fs::read_to_string(format!("/proc/{pid}/stat")) {
+                Ok(stat) => {
+                    let state = stat
+                        .rsplit_once(')')
+                        .and_then(|(_, fields)| fields.split_whitespace().next())
+                        .ok_or_else(|| std::io::Error::other("malformed process state"))?;
+                    Ok(matches!(state, "Z" | "X" | "x"))
+                },
+                Err(error) if error.kind() == std::io::ErrorKind::NotFound => Ok(true),
+                Err(error) => Err(error),
+            }
+        }
+
+        #[cfg(all(echidna_chapel_real, target_os = "linux"))]
+        #[test]
+        fn real_search_deadline_stops_the_owned_prover() {
+            use std::os::unix::fs::{symlink, PermissionsExt};
+
+            const CHILD: &str = "ECHIDNA_CHAPEL_DEADLINE_CHILD";
+            const PID_FILE: &str = "ECHIDNA_CHAPEL_PROVER_PID";
+            if std::env::var_os(CHILD).is_some() {
+                let strategy = ChapelParallelSearch::new().expect("real Chapel runtime");
+                assert_eq!(ChapelParallelSearch::available_prover_count(), 1);
+                let started = Instant::now();
+                let result = strategy.search("True", Duration::from_secs(1));
+                let elapsed = started.elapsed();
+                let pid: u32 = std::fs::read_to_string(std::env::var_os(PID_FILE).unwrap())
+                    .expect("the finite prover actually started")
+                    .trim()
+                    .parse()
+                    .expect("prover PID");
+                let stopped_before_cleanup = probe_process_stopped(pid);
+
+                // Cleanup precedes assertions. The fake prover also has its own
+                // finite four-second lifetime if the parent process must abort.
+                if !matches!(stopped_before_cleanup, Ok(true)) {
+                    let _ = std::process::Command::new("/bin/kill")
+                        .args(["-KILL", &pid.to_string()])
+                        .status();
+                    let cleanup = Instant::now();
+                    while matches!(probe_process_stopped(pid), Ok(false))
+                        && cleanup.elapsed() < Duration::from_secs(2)
+                    {
+                        std::thread::sleep(Duration::from_millis(10));
+                    }
+                }
+
+                assert!(
+                    matches!(stopped_before_cleanup, Ok(true)),
+                    "deadline returned with a live or unobservable prover: {stopped_before_cleanup:?}"
+                );
+                assert!(elapsed < Duration::from_secs(3), "deadline took {elapsed:?}");
+                let result = result.expect("native timeout returns a failed search result");
+                assert!(!result.success);
+                assert_eq!(
+                    result.error_message.as_deref(),
+                    Some("All provers exhausted")
+                );
+                println!("ECHIDNA_REAL_CHAPEL_DEADLINE_PROBE_COMPLETED");
+                return;
+            }
+
+            let fixture = tempfile::tempdir().expect("isolated finite prover directory");
+            let which = which::which("which").expect("availability probe executable");
+            symlink(which, fixture.path().join("which")).expect("isolated which");
+            let prover = fixture.path().join("z3");
+            std::fs::write(
+                &prover,
+                "#!/bin/sh\nprintf '%s\\n' \"$$\" > \"$ECHIDNA_CHAPEL_PROVER_PID\"\nexec /bin/sleep 4\n",
+            )
+            .expect("write finite prover");
+            std::fs::set_permissions(&prover, std::fs::Permissions::from_mode(0o700))
+                .expect("make finite prover executable");
+            let mut command = real_probe_command(
+                "real_search_deadline_stops_the_owned_prover",
+                CHILD,
+            );
+            command
+                .env("PATH", fixture.path())
+                .env(PID_FILE, fixture.path().join("prover.pid"));
+            run_real_probe(
+                &mut command,
+                "ECHIDNA_REAL_CHAPEL_DEADLINE_PROBE_COMPLETED",
             );
         }
     }

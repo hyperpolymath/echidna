@@ -6,9 +6,16 @@ the optional Rust `chapel` feature.
 
 == Current build boundary
 
-The real native link repair requires exact-source hosted qualification.
-The stub build deliberately reports Chapel unavailable; it is a separate
-fallback test and cannot qualify the real runtime.
+The hosted real-library job
+https://github.com/hyperpolymath/echidna/actions/runs/41929785899/job/126923985200[126923985200]
+on source `f160493cc1e0331d649b30cf94b3d03c40773b1e` qualified the native link,
+the compiler-layout controls, and the runtime version query. Its no-prover child
+and process shutdown aborted in the qthreads task-state assertion. The job's
+allow-failure workflow conclusion is not a passed runtime test.
+
+The thread-ownership repair below requires fresh exact-source hosted
+qualification. The stub build deliberately reports Chapel unavailable; it is
+a separate fallback test and cannot qualify the real runtime.
 
 The final Rust executable links three parts in order: the static Zig bridge,
 `libechidna_chapel.a`, and the runtime/dependency flags returned by the installed
@@ -17,11 +24,49 @@ Chapel compiler's official `util/config/compileline --libraries` helper.
 supports native Linux and refuses unsupported compiler flags instead of
 silently discarding them.
 
-The bridge initializes the real runtime and both generated module initializers
-once before an export is called, then registers finalization at process exit.
-The installed `echidna_chapel_ffi.mode` records real versus stub build intent;
-tests also assert actual availability, version, and a no-prover failure result.
+The bridge owns the real runtime on one stable OS thread. Initialization, both
+generated module initializers, every Chapel export, and finalization run there.
+Foreign Rust/Zig caller threads submit synchronous work to that owner. Requests
+are serialized at this boundary; each Chapel search still uses its existing
+parallel tasks internally. Re-entry from the owner is refused.
+
+The owner copies result strings into bridge-owned storage and frees the original
+Chapel allocation before completing a request, including allocation-error paths.
+Rust receives independent copies and keeps its existing `echidna_free_*`
+obligation. At normal process exit, the bridge stops admitting work, completes
+the accepted request, finalizes on the owner, and joins that thread. A native
+fatal exit cannot be converted into successful cleanup.
+
+This follows the pinned Chapel sources:
+https://github.com/chapel-lang/chapel/blob/2.8.0/runtime/src/tasks/qthreads/tasks-qthreads.c[`chpl_task_init`]
+records the initializing pthread;
+https://github.com/chapel-lang/chapel/blob/2.8.0/runtime/include/tasks/qthreads/chpl-tasks-impl-fns.h[`chpl_qthread_get_tasklocal`]
+returns its process task bundle only to that pthread or an existing Chapel/task
+thread; and
+https://github.com/chapel-lang/chapel/blob/2.8.0/modules/internal/ExportWrappers.chpl[library setup/cleanup]
+creates and releases the task-local dynamic end-count.
+The public
+https://github.com/chapel-lang/chapel/blob/2.8.0/doc/rst/technotes/libraries.rst[library API]
+requires initialization before exports and finalization after them. The bridge
+keeps the installed task runtime and its assertions intact.
+
+The installed `echidna_chapel_ffi.mode` records real versus stub build intent.
 That metadata is not an attestation of artifact contents.
+
+=== Timeout and cancellation boundary
+
+The Rust strategy remains synchronous. It accepts positive whole-second
+per-prover timeouts representable by the C ABI and rejects zero, fractional,
+or overflowing durations before entering FFI; those values must not silently
+select Chapel's native default timeout. The native C API retains its documented
+zero-means-default convention.
+
+Queueing, runtime initialization, and availability checks are outside that
+per-prover timer. This repair does not provide a hard whole-call deadline or
+safe asynchronous cancellation of an in-process Chapel export. A caller must
+not terminate the owner thread. Normal shutdown drains accepted work before
+finalization. The existing speculative-search loser cancellation remains a
+separate Chapel operation; this bridge continues to invoke best-of search.
 
 == Build and checks
 
@@ -53,8 +98,18 @@ optional bridge was built and no mode was requested.
 
 The real CI consumer downloads the same-run archive into that directory,
 checks its exports, runs the native-link refusal controls, and executes Rust
-FFI tests. The empty-PATH child test exercises a real search/result/free cycle
-without starting an external prover. It checks failure, never a proof claim.
+FFI tests. The empty-PATH child test runs concurrent Rust callers through real
+search/result/free cycles without starting an external prover, then requires a
+normal process exit. A separate isolated finite prover records its PID and
+sleeps longer than its configured per-prover limit; the test requires a failed
+search, bounded return, and the prover already stopped. Its parent has a
+separate deadline and reaps a stuck test process. Neither fixture is proof
+evidence.
+
+The Zig test target also exercises actual OS threads with an instrumented
+runtime: one initialization/finalization thread, concurrent callers, shutdown
+while accepted work is in flight, refusal after shutdown, and callback
+re-entry refusal. These controls do not substitute for the real Chapel tests.
 
 The existing CI waiver and its expiry are unchanged. A source patch, stub
 success, or separate Chapel smoke target does not establish that this complete
