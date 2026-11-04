@@ -345,10 +345,7 @@ mod tests {
     fn compiler_layout_rejects_incomplete_ambiguous_and_relative_headers() {
         let invalid = [
             String::new(),
-            PREFIX_SETTINGS.replace(
-                "CHPL_RUNTIME_LIB: /prefix/lib/chapel/2.8/runtime/lib\n",
-                "",
-            ),
+            PREFIX_SETTINGS.replace("CHPL_RUNTIME_LIB: /prefix/lib/chapel/2.8/runtime/lib\n", ""),
             PREFIX_SETTINGS.replace(
                 "CHPL_RUNTIME_LIB: /prefix/lib/chapel/2.8/runtime/lib",
                 "CHPL_RUNTIME_LIB: relative/lib",
