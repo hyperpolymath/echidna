@@ -156,16 +156,18 @@ jobs:
         uses: actions/checkout@v7.0.1
         with:
           fetch-depth: 0
+      # CI-4 (#416, 2026-11-05): these two steps were allow-fail. Both passed,
+      # and the scan they feed ran, in the 15 latest non-cancelled runs
+      # (main run 41943675300 among them), so they are now blocking: a
+      # toolchain or build failure fails this job.
       - name: Setup Elixir for Hypatia scanner
         id: beam
-        continue-on-error: true  # allow-fail: issue=#416 expires=2026-11-30
         uses: erlef/setup-beam@v1.24.1
         with:
           elixir-version: '1.19.4'
           otp-version: '28.3'
       - name: Clone and build Hypatia
         id: build
-        continue-on-error: true  # allow-fail: issue=#416 expires=2026-11-30
         env:
           # Pinned to the hypatia commit standards@5751b97e vets as its default.
           # When the standards callers move to that ref, the governance baseline

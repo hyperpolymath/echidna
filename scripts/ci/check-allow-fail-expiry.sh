@@ -19,6 +19,10 @@
 #
 # Usage: check-allow-fail-expiry.sh [--today YYYY-MM-DD] [--warn-days N] [DIR ...]
 #
+# The date defaults to FAKE_DATE when that is set (for example
+# `FAKE_DATE=2026-12-01 scripts/ci/check-allow-fail-expiry.sh`, the W0 exit
+# gate), otherwise to today in UTC. `--today` overrides both.
+#
 # Exit codes: 0 all units owned and in date, 1 a unit is unowned, undated,
 # or expired, 2 bad arguments.
 
@@ -33,7 +37,7 @@ while [ $# -gt 0 ]; do
   case "$1" in
     --today) [ $# -ge 2 ] || { echo "--today needs a value" >&2; exit 2; }; today="$2"; shift 2 ;;
     --warn-days) [ $# -ge 2 ] || { echo "--warn-days needs a value" >&2; exit 2; }; warn_days="$2"; shift 2 ;;
-    -h|--help) sed -n '3,20p' "$0"; exit 0 ;;
+    -h|--help) sed -n '3,25p' "$0"; exit 0 ;;
     --) shift; dirs+=("$@"); break ;;
     -*) echo "unknown option: $1" >&2; exit 2 ;;
     *) dirs+=("$1"); shift ;;
@@ -44,7 +48,7 @@ if [ ${#dirs[@]} -eq 0 ]; then
   dirs=(.github/workflows)
 fi
 if [ -z "$today" ]; then
-  today=$(date +%F)
+  today=${FAKE_DATE:-$(date +%F)}
 fi
 if ! today_s=$(date -d "$today" +%s 2>/dev/null); then
   echo "invalid --today: $today" >&2

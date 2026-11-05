@@ -6,18 +6,19 @@
 # Exercises real prover binaries against canonical micro-goals. Complements
 # rust-ci.yml (which runs mock tests on every PR) with live-subprocess coverage.
 #
-# Tiering (matches ~/Desktop/ECHIDNA-PRODUCTION-WIRING-PLAN.md + manifests/live-provers.scm):
+# Tiering (matches ~/Desktop/ECHIDNA-PRODUCTION-WIRING-PLAN.md):
 #   T1 — trivial    — every PR + push to main
 #   T2 — build      — nightly
 #   T3 — container  — weekly
-#   T4 — niche      — quarterly, allow-fail
 #
-# Reproducibility paths (both tried; at least one must succeed):
-#   1. Guix manifest (PRIMARY, per project CLAUDE.md): manifests/live-provers.scm
-#   2. apt-get (expedient bootstrap for T1 only):       jobs below
+# The quarterly T4 jobs (a TODO announcement and a GPUVerify/Faial version
+# check that never provisioned either binary) were removed 2026-11-05 under
+# the CI-4 ruling (#416): every allow-fail unit is made blocking or deleted.
 #
-# (Guix flake removed 2026-06-01 per estate-wide guix-deprecation directive;
-# Guix is the sole reproducible-build primary.)
+# Reproducibility: the Containerfile (and .containerization/Containerfile.wave3
+# for the Tier-3 images) is the reproducibility path. The T1 Guix manifest
+# check was retired 2026-11-05 by owner ruling (ultraplan item CI-3); the
+# jobs below provision provers with apt and upstream releases.
 
 name: Live Provers
 
@@ -29,11 +30,10 @@ on:
   schedule:
     - cron: '0 3 * * *'    # Tier-2 nightly at 03:00 UTC
     - cron: '0 5 * * 0'    # Tier-3 weekly  Sunday 05:00 UTC
-    - cron: '0 6 1 */3 *'  # Tier-4 quarterly 1st of Jan/Apr/Jul/Oct 06:00 UTC
   workflow_dispatch:
     inputs:
       tier:
-        description: 'Which tier to run (1|2|3|4|all)'
+        description: 'Which tier to run (1|2|3|all)'
         required: false
         default: '1'
 
@@ -125,30 +125,6 @@ jobs:
         run: cargo test --test live_prover_suite --features live-provers -- --nocapture ${{ matrix.backend }}
 
   # ============================================================================
-  # Tier 1 reproducibility check — ensure Guix manifest actually resolves.
-  # Allow-fail: this is additional proof, not a gate (Guix-on-Ubuntu is flaky
-  # without dedicated setup).
-  # ============================================================================
-  tier1-guix-reproducibility:
-    name: T1 Guix manifest check
-    if: github.event_name != 'schedule'
-    runs-on: ubuntu-latest
-    timeout-minutes: 20
-    continue-on-error: true  # allow-fail: issue=#416 expires=2026-11-30
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v7.0.1
-      - name: Install Guix
-        run: |
-          sudo apt-get update -qq || sudo apt-get update -qq --fix-missing
-          sudo apt-get install -y --fix-missing guix
-      - name: Resolve manifest (doesn't run tests — just proves the .scm parses)
-        run: |
-          guix describe || true
-          guix package -m manifests/live-provers.scm --dry-run || \
-            echo "NOTE: Guix manifest resolution failed — non-blocking reproducibility signal."
-
-  # ============================================================================
   # Tier 2 — nightly.  Larger build-from-source provers.
   # ============================================================================
   tier2:
@@ -179,8 +155,10 @@ jobs:
           toolchain: stable
       - name: Cache Cargo
         uses: Swatinem/rust-cache@v2.9.3
+      # Blocking since 2026-11-05 (CI-4, #416). On the three latest nightly
+      # runs only the isabelle download failed; it now degrades to a warning
+      # (see the isabelle case). Any other provisioning failure fails the job.
       - name: Provision ${{ matrix.backend }} (best-effort via apt / upstream release)
-        continue-on-error: true  # allow-fail: issue=#416 expires=2026-11-30
         run: |
           set -euo pipefail
           sudo apt-get update -qq || sudo apt-get update -qq --fix-missing
@@ -222,13 +200,22 @@ jobs:
               # --retry 3 + --max-time 600 guard the large download.
               # find locates the binary regardless of extracted dir name,
               # so the symlink survives a future Isabelle2025 release.
-              curl -fsSL --max-time 600 --retry 3 --retry-delay 15 \
-                -o /tmp/isabelle.tar.gz \
-                https://isabelle.in.tum.de/dist/Isabelle2024_linux.tar.gz
-              sudo mkdir -p /opt/isabelle
-              sudo tar xzf /tmp/isabelle.tar.gz -C /opt/isabelle
-              ISABELLE_BIN="$(find /opt/isabelle -type f -name isabelle | head -n 1)"
-              [ -n "$ISABELLE_BIN" ] && sudo ln -sf "$ISABELLE_BIN" /usr/local/bin/isabelle
+              # The upstream host reset the connection from hosted runners
+              # (curl exit 35) on every nightly run checked up to 2026-11-05.
+              # Since this step became blocking (CI-4, #416) that failure is
+              # reported as a warning, Isabelle is left uninstalled and the
+              # live test reports SKIP. Every other provisioning failure in
+              # this step fails the job.
+              if curl -fsSL --max-time 600 --retry 3 --retry-delay 15 --retry-all-errors \
+                  -o /tmp/isabelle.tar.gz \
+                  https://isabelle.in.tum.de/dist/Isabelle2024_linux.tar.gz; then
+                sudo mkdir -p /opt/isabelle
+                sudo tar xzf /tmp/isabelle.tar.gz -C /opt/isabelle
+                ISABELLE_BIN="$(find /opt/isabelle -type f -name isabelle | head -n 1)"
+                [ -n "$ISABELLE_BIN" ] && sudo ln -sf "$ISABELLE_BIN" /usr/local/bin/isabelle
+              else
+                echo "::warning::isabelle: download from isabelle.in.tum.de failed (curl exit $?); Isabelle is not installed and its live test will SKIP."
+              fi
               ;;
             why3)
               sudo apt-get install -y --fix-missing why3
@@ -297,16 +284,19 @@ jobs:
   #   A — live-provisioned today via apt / upstream tarball (tamarin, proverif,
   #       metamath, twelf, ortools).  Version-check runs, skip-if-absent.
   #   B — heavy-build deferred (hol4, acl2, scip) and proprietary (imandra).
-  #       Provisioning step emits a skip note; test step runs the suite with
-  #       continue-on-error so the matrix stays green and the binary's absence
-  #       is logged as SKIP by the suite's `which` probe.
+  #       Provisioning step emits a skip note, and the binary's absence is
+  #       logged as SKIP by the suite's `which` probe.
+  #
+  # The job and its provisioning step are blocking since 2026-11-05 (CI-4,
+  # #416). On the two latest weekly runs every cell passed; inside the
+  # provisioning step only proverif failed (no apt package on the runner
+  # image), and it now degrades to a warning like twelf.
   # ============================================================================
   tier3:
     name: T3 / ${{ matrix.backend }}
     if: github.event_name == 'schedule' && github.event.schedule == '0 5 * * 0' || (github.event_name == 'workflow_dispatch' && (inputs.tier == '3' || inputs.tier == 'all'))
     runs-on: ubuntu-latest
     timeout-minutes: 20
-    continue-on-error: true  # allow-fail: issue=#416 expires=2026-11-30
     strategy:
       fail-fast: false
       matrix:
@@ -330,7 +320,6 @@ jobs:
       - name: Cache Cargo
         uses: Swatinem/rust-cache@v2.9.3
       - name: Provision ${{ matrix.backend }} (best-effort)
-        continue-on-error: true  # allow-fail: issue=#416 expires=2026-11-30
         run: |
           set -euo pipefail
           sudo apt-get update -qq || sudo apt-get update -qq --fix-missing
@@ -348,8 +337,10 @@ jobs:
               [ -n "$TAMARIN_BIN" ] && sudo ln -sf "$TAMARIN_BIN" /usr/local/bin/tamarin-prover
               ;;
             proverif)
-              # ProVerif is in the Ubuntu/Debian main repos.
-              sudo apt-get install -y proverif
+              # ProVerif had no apt package on ubuntu-latest in the weekly runs
+              # of 2026-10-25 and 2026-11-01 ("Unable to locate package").
+              sudo apt-get install -y proverif || \
+                echo "::warning::proverif: no apt package on this runner image; ProVerif is not installed and its live test will SKIP."
               ;;
             metamath)
               # metamath-exe is small; apt-installable on Ubuntu with build fallback.
@@ -415,63 +406,3 @@ jobs:
       - name: Run live test for ${{ matrix.backend }}
         run: cargo test --test live_prover_suite --features live-provers -- --nocapture ${{ matrix.backend }}
 
-  # ============================================================================
-  # Tier 4 — quarterly, best-effort / allow-fail.
-  # ============================================================================
-  tier4:
-    name: T4 niche provers
-    if: github.event_name == 'schedule' && github.event.schedule == '0 6 1 */3 *' || (github.event_name == 'workflow_dispatch' && (inputs.tier == '4' || inputs.tier == 'all'))
-    runs-on: ubuntu-latest
-    timeout-minutes: 20
-    continue-on-error: true  # allow-fail: issue=#416 expires=2026-11-30
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v7.0.1
-      - name: Announce Wave-4 TODO
-        run: |
-          echo "Tier-4 backends (Mizar, Nuprl, PVS, Minlog, Dedukti, Arend, KeY, Prism, UPPAAL,"
-          echo "ViPER, NuSMV, Spin, TLC, CBMC, Seahorn, dReal, Boogie, Kissat, Alloy) are"
-          echo "retained as mock-only unless a maintainer volunteers a Containerfile."
-
-  # ============================================================================
-  # Tier 4 GPU — quarterly, best-effort / allow-fail.
-  # GPUVerify and Faial require CUDA SDK or OpenCL runtime; provisioning is
-  # deferred to a developer workstation or GPU-capable CI runner.
-  # ============================================================================
-  tier4-gpu:
-    name: T4 / ${{ matrix.backend }}
-    if: github.event_name == 'schedule' && github.event.schedule == '0 6 1 */3 *' || (github.event_name == 'workflow_dispatch' && (inputs.tier == '4' || inputs.tier == 'all'))
-    runs-on: ubuntu-latest
-    timeout-minutes: 20
-    continue-on-error: true  # allow-fail: issue=#416 expires=2026-11-30
-    strategy:
-      fail-fast: false
-      matrix:
-        backend:
-          - gpuverify
-          - faial
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v7.0.1
-      - name: Install Rust
-        uses: dtolnay/rust-toolchain@v1
-        with:
-          toolchain: stable
-      - name: Cache Cargo
-        uses: Swatinem/rust-cache@v2.9.3
-      - name: Provision ${{ matrix.backend }} (best-effort, CUDA/OpenCL required)
-        continue-on-error: true  # allow-fail: issue=#416 expires=2026-11-30
-        run: |
-          case "${{ matrix.backend }}" in
-            gpuverify)
-              echo "GPUVerify requires CUDA SDK + .NET; deferred to developer workstation."
-              echo "See: https://github.com/mc-imperial/gpuverify"
-              ;;
-            faial)
-              echo "Faial requires CUDA/OpenCL headers; install via: cargo install faial"
-              echo "See: https://github.com/elliotttate/faial"
-              ;;
-          esac
-      - name: Run live version check (SKIP if binary absent)
-        continue-on-error: true  # allow-fail: issue=#416 expires=2026-11-30
-        run: cargo test --test live_prover_suite --features live-provers -- --nocapture live_${{ matrix.backend }}_version
