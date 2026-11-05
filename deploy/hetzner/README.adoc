@@ -106,7 +106,7 @@ curl -s  -o /dev/null -w '%{http_code}\n' https://api.nesy-prover.dev/api/health
 curl -s  -o /dev/null -w '%{http_code}\n' -X POST https://api.nesy-prover.dev/api/verify  # expect 403
 ----
 
-Stop and reassess if step 1 prints neither `quadlet` nor `appendix`, or if
+Stop and reassess if step 1 does not print exactly one of `quadlet` or `appendix`, or if
 step 5 does not print `same-image`, `200` and `403`.
 
 The stopgap ends in the change that enables authentication. That change
