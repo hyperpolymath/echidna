@@ -1,0 +1,163 @@
+Available recipes:
+    default                                          # Show all recipes
+    init                                             # Initialize from RSR template (placeholder replacement)
+    build                                            # Build debug
+    build-release                                    # Build release
+    test                                             # Run unit tests
+    test-all                                         # Run all tests (unit + integration)
+    test-verbose                                     # Run tests verbose
+    test-integration                                 # Run integration tests only
+    test-neural                                      # Run neural integration tests (requires Julia server)
+    test-s4-loop                                     # the test will exercise the full record_proof_attempt → query_by_goal_hash loop.
+    proofs                                           # Type-check the whole dogfood proof corpus across every assistant.
+    proofs-coq                                       # Compile the Coq proof corpus (proofs/coq/**/*.v).
+    proofs-lean                                      # Build the Lean 4 proof corpus via Lake (proofs/lean).
+    proofs-agda                                      # Type-check the Agda proof corpus (proofs/agda/*.agda).
+    proofs-idris                                     # Type-check the Idris2 validator (src/idris) — --typecheck needs no codegen backend.
+    proofs-verif-lean                                # Build the Lean 4 trust-pipeline property proofs via Lake (verification/proofs/lean4).
+    proofs-verif-idris                               # Type-check the Idris2 trust-pipeline property proofs (verification/proofs/idris2).
+    abi-fixtures                                     # Type-check the Idris2 ABI accept/reject fixtures (mechanical falsifier).
+    proofs-isabelle                                  # Verify the Isabelle/HOL self-proof corpus (proofs/isabelle) via `isabelle build`.
+    proofs-mizar                                     # Verify the Mizar self-proof corpus (proofs/mizar) with the Mizar verifier.
+    fmt                                              # Format code
+    fmt-check                                        # Check formatting
+    lint                                             # Run clippy lints
+    check                                            # Check without building
+    clean                                            # Clean build artifacts
+    run *ARGS                                        # Run the project
+    invariant-path *ARGS                             # Run Invariant Path overlay tools for this repository
+    vocab-canon                                      # src/julia/training/dataloader.jl:build_vocabulary_from_data.
+    provision-corpora *NAMES                         # Pass specific names to provision a subset: `just provision-corpora metamath mathlib4`.
+    corpora-status                                   # Report which upstream corpora are on disk and their sizes.
+    extract-corpora *NAMES                           # Pass names to run a subset: `just extract-corpora metamath mathlib4`.
+    merge-corpora                                    # with fresh sequential ids (dedupes by prover+theorem).
+    align-premises                                   # dataloader's proof_id join matches ~0% of records.
+    retrain                                          # align-premises is idempotent and cheap (seconds on a 2M premise set).
+    retrain-skip-align                               # just align-premises manually and want to iterate on model code).
+    train                                            # updates models/model_metadata.txt, and appends to training_data/metrics_baseline.jsonl.
+    train-cpu                                        # Safe to run on any dev box without a GPU.  Produces the same artefacts as `train`.
+    eval                                             # if MRR < 0.66 (below the cosine baseline).
+    corpus-refresh                                   # Use `ECHIDNA_MAX_PROOF_STATES=0 just corpus-refresh` to lift the sample cap.
+    train-from-corpus prover="lean"                  # data/corpus/ first. Per-prover invocation; default lean.
+    metrics                                          # metrics/README.adoc.
+    corpus-stats                                     # Report corpus balance across provers from stats_UNIFIED.json.
+    doc                                              # Generate docs
+    update                                           # Update dependencies
+    capnp-gen                                        # Output: src/rust/ipc/echidna_capnp.rs (checked in; do not edit by hand)
+    audit                                            # Audit dependencies
+    build-ui                                         # Build the UI — blocked on the AffineScript-TEA toolchain
+    serve-ui                                         # Bun is the estate JavaScript runtime; Deno is retired (2026-09-22 ruling).
+    gui                                              # Launch full ECHIDNA GUI (Backend + UI + Browser)
+    pre-commit                                       # All checks before commit
+    mvp                                              # MVP 1.0 smoke checks
+    mvp-env                                          # MVP 1.0 dependency checklist (best-effort)
+    container-build                                  # Build minimal container image (Z3, CVC5, Lean, Idris2)
+    container-build-full                             # Build full container image (all provers + Julia)
+    container-build-tier3                            # Build all non-proprietary Tier-3 prover containers (skip imandra — licence required)
+    container-build-tamarin
+    container-build-proverif
+    container-build-metamath
+    container-build-twelf
+    container-build-or-tools
+    container-build-scip
+    container-build-hol4
+    container-build-acl2
+    container-build-imandra                          # Build imandra stub (proprietary; real binary requires a signed licence — see Containerfile.wave3 imandra target)
+    container-run *ARGS                              # Run echidna container
+    chapel-build                                     # longer explanation and #133 for the closure trace.
+    chapel-smoke                                     # CAS + reduction. Used in CI as the toolchain-health signal.
+    chapel-test                                      # Run the Chapel-gated Rust tests (`--features chapel`).
+    bench-chapel-mrr                                 # both source builds and asdf-shimmed installs.
+    bench-chapel-mrr-telemetry                       # opening the 360-row telemetry file.
+    chapel-pic-from-source                           # docs/decisions/2026-05-30-chapel-pic-rebuild.adoc. NOT a CI step.
+    build-chapel-ffi                                 # Build Zig FFI bridge for Chapel (prerequisite for --features chapel)
+    build-chapel                                     # Build with Chapel support enabled (requires Zig FFI built first)
+    test-chapel                                      # Alias retained for muscle-memory; same as chapel-test.
+    test-chapel-ffi                                  # Test Zig FFI bridge independently
+    chapel-all                                       # Full Chapel build + test
+    build-spark-ada                                  # Step 1: compile Ada/SPARK to static library (requires GNAT + GNATprove)
+    prove-spark                                      # Step 2: run GNATprove to formally verify the SPARK contracts
+    build-spark-zig                                  # Step 3: compile Zig bridge (links against libechidna_spark.a)
+    build-spark                                      # Step 4: build Rust with SPARK feature enabled
+    spark-all                                        # Full SPARK pipeline: prove → build → test
+    verify-spark-crosscheck                          # Cross-check: run both Rust and SPARK enforce_policy, assert agreement
+    verify-trust-pipeline                            # results but does not block the merge until Stage 8c-M3.
+    test-trust-pipeline                              # Runs on any Rust version; does not require Creusot or Why3.
+    build-riscv                                      # [AUTO-GENERATED] Multi-arch / RISC-V target
+    assail                                           # Run panic-attacker pre-commit scan
+    doctor                                           # Check that all required tools are installed and working
+    heal                                             # Show install instructions for missing tools
+    tour                                             # Guided tour of the repository structure
+    help-me                                          # Show available recipes with descriptions
+    crg-grade                                        # Print the current CRG grade (reads from READINESS.md '**Current Grade:** X' line)
+    crg-badge                                        # Looks for '**Current Grade:** X' in READINESS.md; falls back to X
+    corpus-ingest-agda root                          # Ingest an Agda project into the corpus
+    corpus-ingest-coq root                           # Ingest a Coq project into the corpus
+    corpus-ingest-lean root                          # Ingest a Lean 4 project into the corpus
+    corpus-ingest-idris root                         # Ingest an Idris 2 project into the corpus
+    corpus-impact name index="data/corpus/agda.json" # Query the corpus by name with full reverse-dep impact set
+    # Cosine-similarity nearest-neighbour query
+    corpus-near query index="data/corpus/agda.json" top="10"
+    corpus-cross class                               # Cross-prover semantic-class lookup
+    # Export a JSON index as 8-modality octad JSONL (VeriSim-compatible)
+    corpus-octads in="data/corpus/agda.json" out="data/corpus/agda.octads.jsonl"
+    # Run the SA design-search on a named problem
+    design-search problem="brouwer-leq" iterations="2000" top="10"
+    # Run the parallel-swarm design-search
+    design-swarm problem="brouwer-leq" agents="4" iterations="800"
+    corpus-ingest-saturation adapter root            # fstar / acl2_books / tptp / smtlib / proofnet / minif2f).
+    corpus-ingest-spark root                         # sparklib `Lemma_*` convention.
+    corpus-ingest-creusot root                       # `#[trusted]` is reported as a postulate, not as a proved function.
+    corpus-ingest-estate root=".."                   # ROOT is the directory that contains the repositories.
+    corpus-stats-all                                 # data/corpus/*.json (skips any missing without failing).
+    synonym-load-test                                # _verification_systems) and report counts.
+    lexicon-check                                    # synonym table and to the accept/reject fixtures. Needs nickel >= 1.12.
+    lexicon-scan preset="learning"                   # spanning, in-family, full.
+    test-saturation                                  # Run the saturation-campaign cargo tests only (139 cases + 1 ignored).
+    arbiter-smoke                                    # Prints posterior verdict from each of: Bayesian, Dempster-Shafer, Pareto.
+    er-schema-drift-check                            # "Drift detection".)
+    secret-scan-trufflehog
+    contractile-all                                  # Run every contractile family check (must + trust + adjust-check + bust-check + dust)
+    contractile-tour                                 # Show the error-code inventory across the family
+    must-check
+    must-license-present
+    must-readme-present
+    must-spdx-headers
+    must-no-banned-files
+    trust-verify
+    trust-license-content
+    trust-no-secrets
+    trust-gpg-signed
+    trust-shas-pinned
+    trust-no-fake-shas
+    trust-cargo-lock-tracked
+    trust-axiom-tracker
+    trust-sandbox-enforced
+    trust-totality-enforced
+    trust-no-banned-token-in-abi
+    adjust-check
+    adjust-rust-toolchain
+    adjust-julia-channel
+    adjust-chapel-version
+    adjust-cargo-outdated
+    adjust-julia-outdated
+    adjust-shas-stale
+    bust-check
+    bust-cargo-build
+    bust-cargo-test
+    bust-prover-binaries
+    bust-idris2-abi
+    bust-cargo-cache
+    bust-target-dir
+    bust-chapel-artefacts
+    bust-zig-cache
+    dust-check
+    dust-stale-branches
+    dust-dangling-worktrees
+    dust-orphan-pids
+    dust-source-todos
+    dust-source-rollback
+    dust-prune-worktrees
+    dust-archive-old-models
+    intend-list
+    heal-provers

@@ -1,0 +1,492 @@
+==> echidna --help <==
+Neurosymbolic theorem proving platform with multi-prover support
+
+Usage: echidna [OPTIONS] <COMMAND>
+
+Commands:
+  prove         Prove a theorem from file
+  verify        Verify an existing proof
+  search        Search theorem libraries
+  interactive   Start interactive REPL mode
+  server        Start HTTP API server
+  list-provers  List available provers
+  info          Show information about a specific prover
+  diagnostics   Interactive diagnostics REPL for health monitoring
+  corpus        Build / query a project corpus (named decls + dependency DAG)
+  lexicon       Mine lexicon candidates across training corpora (flag-only)
+  design        Search proof-design space via simulated annealing
+  suggest       Suggest tactic variants that close a failing lemma
+  help          Print this message or the help of the given subcommand(s)
+
+Options:
+      --format <FORMAT>  Output format (text, json) [default: text]
+  -v, --verbose          Verbose output
+      --no-color         Disable colors
+  -h, --help             Print help
+  -V, --version          Print version
+
+==> echidna prove --help <==
+Prove a theorem from file
+
+Usage: echidna prove [OPTIONS] <FILE>
+
+Arguments:
+  <FILE>
+          Path to proof file
+
+Options:
+      --format <FORMAT>
+          Output format (text, json)
+          
+          [default: text]
+
+  -p, --prover <PROVER>
+          Prover to use (auto-detect if not specified)
+
+  -t, --timeout <TIMEOUT>
+          Timeout in seconds
+          
+          [default: 300]
+
+  -v, --verbose
+          Verbose output
+
+      --neural
+          Enable neural premise selection
+
+      --no-color
+          Disable colors
+
+      --executable <EXECUTABLE>
+          Prover executable path (override default)
+
+      --library <LIBRARY>
+          Library paths
+
+      --diagnose
+          On failure, run diagnostics and explain why the proof failed
+
+      --project-root <PROJECT_ROOT>
+          Project root for backends with session-based builds (EI-1). Today: Isabelle uses this to add `-d <root>` to the build invocation and to import the file's session from the project's existing ROOT, so theory imports resolve
+
+      --sandbox <SANDBOX>
+          Sandbox mode for prover invocation (safe-learning b). One of: none (default), bwrap, podman
+          
+          [default: none]
+
+      --output <OUTPUT>
+          Result form. `human` (default) prints the usual report; `json` prints exactly one `echidna.prove.result/1` object (JCS-canonical I-JSON) on stdout and sends logs to stderr
+
+          Possible values:
+          - human: Human-readable report (the default)
+          - json:  One `echidna.prove.result/1` JSON object on stdout
+          
+          [default: human]
+
+  -h, --help
+          Print help (see a summary with '-h')
+
+==> echidna verify --help <==
+Verify an existing proof
+
+Usage: echidna verify [OPTIONS] <FILE>
+
+Arguments:
+  <FILE>  Path to proof file
+
+Options:
+      --format <FORMAT>          Output format (text, json) [default: text]
+  -p, --prover <PROVER>          Prover to use (auto-detect if not specified)
+  -t, --timeout <TIMEOUT>        Timeout in seconds [default: 300]
+  -v, --verbose                  Verbose output
+      --executable <EXECUTABLE>  Prover executable path (override default)
+      --no-color                 Disable colors
+      --library <LIBRARY>        Library paths
+      --diagnose                 On failure, run diagnostics and explain why the proof failed
+  -h, --help                     Print help
+
+==> echidna search --help <==
+Search theorem libraries
+
+Usage: echidna search [OPTIONS] <PATTERN>
+
+Arguments:
+  <PATTERN>  Search pattern (regex supported)
+
+Options:
+      --format <FORMAT>  Output format (text, json) [default: text]
+  -p, --prover <PROVER>  Prover to search (searches all if not specified)
+  -l, --limit <LIMIT>    Maximum results to return [default: 20]
+  -v, --verbose          Verbose output
+      --no-color         Disable colors
+  -h, --help             Print help
+
+==> echidna interactive --help <==
+Start interactive REPL mode
+
+Usage: echidna interactive [OPTIONS] [FILE]
+
+Arguments:
+  [FILE]  Initial proof file to load
+
+Options:
+      --format <FORMAT>  Output format (text, json) [default: text]
+  -p, --prover <PROVER>  Prover to use
+      --neural           Enable neural premise selection
+  -v, --verbose          Verbose output
+      --no-color         Disable colors
+  -h, --help             Print help
+
+==> echidna server --help <==
+Start HTTP API server
+
+Usage: echidna server [OPTIONS]
+
+Options:
+      --format <FORMAT>  Output format (text, json) [default: text]
+  -p, --port <PORT>      Port to bind to [default: 8081]
+      --host <HOST>      Host to bind to [default: 127.0.0.1]
+  -v, --verbose          Verbose output
+      --cors             Enable CORS
+      --no-color         Disable colors
+  -h, --help             Print help
+
+==> echidna list-provers --help <==
+List available provers
+
+Usage: echidna list-provers [OPTIONS]
+
+Options:
+  -d, --detailed         Show detailed information
+      --format <FORMAT>  Output format (text, json) [default: text]
+  -v, --verbose          Verbose output
+      --no-color         Disable colors
+  -h, --help             Print help
+
+==> echidna info --help <==
+Show information about a specific prover
+
+Usage: echidna info [OPTIONS] <PROVER>
+
+Arguments:
+  <PROVER>  Prover name
+
+Options:
+      --format <FORMAT>  Output format (text, json) [default: text]
+  -v, --verbose          Verbose output
+      --no-color         Disable colors
+  -h, --help             Print help
+
+==> echidna diagnostics --help <==
+Interactive diagnostics REPL for health monitoring
+
+Usage: echidna diagnostics [OPTIONS]
+
+Options:
+      --format <FORMAT>  Output format (text, json) [default: text]
+  -v, --verbose          Verbose output
+      --no-color         Disable colors
+  -h, --help             Print help
+
+==> echidna corpus --help <==
+Build / query a project corpus (named decls + dependency DAG)
+
+Usage: echidna corpus [OPTIONS] <COMMAND>
+
+Commands:
+  ingest         Walk a project tree and build a corpus index
+  query          Query a previously-ingested corpus index
+  stats          Print summary statistics for a corpus index
+  crossquery     Look up entries across every synonym table by `semantic_class`. Demonstrates cross-prover semantic equivalence: `corpus crossquery well-foundedness` reports `WellFounded` in Agda, `well_founded` in Coq, and `WellFounded` in Lean and Idris 2
+  near           Find the K nearest-neighbour entries to a free-form text query by cosine similarity over the Vector octad embeddings. The query is canonicalised the same way the corpus is, so a statement written in one prover's syntax matches entries written in another's. Useful for "find lemmas structurally near `WellFounded _<_`"
+  identity       Group matching declarations by their *structural* identity key
+  export-octads  Convert a JSON corpus index into 8-modality octad JSONL (one DeclarationOctad per line). Streamable; compatible with VeriSim's `/api/v1/octads` endpoint when posted line-by-line
+  import-octads  Load an octad JSONL stream back into a corpus and persist as JSON. Round-trip is best-effort but lossless for the fields the corpus cares about (statements, proofs, deps, hazards)
+  help           Print this message or the help of the given subcommand(s)
+
+Options:
+      --format <FORMAT>  Output format (text, json) [default: text]
+  -v, --verbose          Verbose output
+      --no-color         Disable colors
+  -h, --help             Print help
+
+==> echidna corpus ingest --help <==
+Walk a project tree and build a corpus index
+
+Usage: echidna corpus ingest [OPTIONS] --root <ROOT>
+
+Options:
+      --format <FORMAT>    Output format (text, json) [default: text]
+  -r, --root <ROOT>        Path to the project root
+  -a, --adapter <ADAPTER>  Adapter to use: agda, coq, lean, idris2, acl2_books, creusot, dafny, fstar, hol4, hol_light, isabelle, metamath, minif2f, mizar, proofnet, smtlib, spark_ada, tptp, why3, or hyperpolymath_estate (the multi-repo estate profile) [default: agda]
+  -v, --verbose            Verbose output
+      --no-color           Disable colors
+  -o, --out <OUT>          Where to write the JSON index. Defaults to `data/corpus/<basename>.json`
+  -h, --help               Print help
+
+==> echidna corpus query --help <==
+Query a previously-ingested corpus index
+
+Usage: echidna corpus query [OPTIONS] <PATTERN>
+
+Arguments:
+  <PATTERN>  Search term (qualified name, short name, or substring)
+
+Options:
+      --format <FORMAT>  Output format (text, json) [default: text]
+  -i, --index <INDEX>    Path to the corpus JSON. Defaults to `data/corpus/<basename>.json` for the cwd's basename
+      --deps             Show transitive (forward) dependencies of the matched entry
+  -v, --verbose          Verbose output
+      --no-color         Disable colors
+      --reverse-deps     Show direct reverse-dependencies — entries that reference the matched name, i.e. things that would (potentially) break if the matched entry changed
+      --reverse-closure  Show transitive reverse-closure — full impact set
+  -h, --help             Print help
+
+==> echidna corpus stats --help <==
+Print summary statistics for a corpus index
+
+Usage: echidna corpus stats [OPTIONS]
+
+Options:
+      --format <FORMAT>  Output format (text, json) [default: text]
+  -i, --index <INDEX>    
+  -v, --verbose          Verbose output
+      --no-color         Disable colors
+  -h, --help             Print help
+
+==> echidna corpus crossquery --help <==
+Look up entries across every synonym table by `semantic_class`. Demonstrates cross-prover semantic equivalence: `corpus crossquery well-foundedness` reports `WellFounded` in Agda, `well_founded` in Coq, and `WellFounded` in Lean and Idris 2.
+
+The cross-prover dictionaries are searched too, so classes that only exist there (`wrapping-arithmetic`, `frame-rule`, `estate-snif`, or an MSC code such as `68Q60`) resolve.
+
+Usage: echidna corpus crossquery [OPTIONS] <CLASS>
+
+Arguments:
+  <CLASS>
+          Semantic class to look up (e.g. `well-foundedness`)
+
+Options:
+      --format <FORMAT>
+          Output format (text, json)
+          
+          [default: text]
+
+      --synonyms-dir <SYNONYMS_DIR>
+          Synonym directory (defaults to `data/synonyms`)
+
+      --provers-only
+          Only search the per-prover tables, skipping the cross-prover dictionaries
+
+  -v, --verbose
+          Verbose output
+
+      --no-color
+          Disable colors
+
+  -h, --help
+          Print help (see a summary with '-h')
+
+==> echidna corpus near --help <==
+Find the K nearest-neighbour entries to a free-form text query by cosine similarity over the Vector octad embeddings. The query is canonicalised the same way the corpus is, so a statement written in one prover's syntax matches entries written in another's. Useful for "find lemmas structurally near `WellFounded _<_`"
+
+Usage: echidna corpus near [OPTIONS] <QUERY>
+
+Arguments:
+  <QUERY>  
+
+Options:
+      --format <FORMAT>  Output format (text, json) [default: text]
+  -i, --index <INDEX>    
+  -t, --top <TOP>        [default: 10]
+  -v, --verbose          Verbose output
+      --no-color         Disable colors
+  -h, --help             Print help
+
+==> echidna corpus identity --help <==
+Group matching declarations by their *structural* identity key.
+
+The key is the SHA-256 of the type's canonical shape — variable names, module paths, operator spellings and binder keywords are normalised away — so `+-comm` in Agda, `Nat.add_comm` in Lean and `eq Nat (add x y) (add y x)` in Dedukti land on one key with no synonym lookup. `--skeleton` additionally prints the binder- and sort-free key, which is what provers that elide binders (Isabelle) match on.
+
+Usage: echidna corpus identity [OPTIONS] <PATTERN>
+
+Arguments:
+  <PATTERN>
+          Name pattern to match: a substring of the qualified or short name, case-insensitive. `*` matches every declaration
+
+Options:
+      --format <FORMAT>
+          Output format (text, json)
+          
+          [default: text]
+
+  -i, --index <INDEX>
+          Path to the corpus JSON. Defaults to `data/corpus/<basename>.json` for the cwd's basename
+
+      --skeleton
+          Also print the skeleton key (binders and sorts erased)
+
+  -v, --verbose
+          Verbose output
+
+      --cross-only
+          Only show keys that group declarations from more than one adapter
+
+      --no-color
+          Disable colors
+
+  -h, --help
+          Print help (see a summary with '-h')
+
+==> echidna corpus export-octads --help <==
+Convert a JSON corpus index into 8-modality octad JSONL (one DeclarationOctad per line). Streamable; compatible with VeriSim's `/api/v1/octads` endpoint when posted line-by-line
+
+Usage: echidna corpus export-octads [OPTIONS] --index <INDEX> --out <OUT>
+
+Options:
+      --format <FORMAT>  Output format (text, json) [default: text]
+  -i, --index <INDEX>    Path to the JSON corpus index
+  -o, --out <OUT>        Output JSONL path
+  -v, --verbose          Verbose output
+      --no-color         Disable colors
+  -h, --help             Print help
+
+==> echidna corpus import-octads --help <==
+
+thread 'main' panicked at debug_asserts.rs:125:17:
+Command import-octads: Short option names must be unique for each argument, but '-o' is in use by both 'octads' and 'out'
+[exit status 101]
+
+==> echidna lexicon --help <==
+Mine lexicon candidates across training corpora (flag-only)
+
+Usage: echidna lexicon [OPTIONS] <COMMAND>
+
+Commands:
+  scan  Pair theorem names and canonical statement shapes across training corpora and write review candidates as JCS JSON Lines. Every candidate carries `evidence = none`; `data/synonyms/` is never edited
+  help  Print this message or the help of the given subcommand(s)
+
+Options:
+      --format <FORMAT>  Output format (text, json) [default: text]
+  -v, --verbose          Verbose output
+      --no-color         Disable colors
+  -h, --help             Print help
+
+==> echidna lexicon scan --help <==
+Pair theorem names and canonical statement shapes across training corpora and write review candidates as JCS JSON Lines. Every candidate carries `evidence = none`; `data/synonyms/` is never edited
+
+Usage: echidna lexicon scan [OPTIONS]
+
+Options:
+      --format <FORMAT>
+          Output format (text, json) [default: text]
+      --training-dir <TRAINING_DIR>
+          Directory holding `proof_states_<corpus>.jsonl` files [default: training_data]
+      --pair <A:B>
+          A corpus pair, `A:B`. Repeatable; combines with `--preset`
+  -v, --verbose
+          Verbose output
+      --no-color
+          Disable colors
+      --preset <PRESET>
+          A named pair set: `learning`, `spanning`, `in-family` or `full`
+      --out <OUT>
+          Output directory (pairs/, collisions/, summary.jsonl, coverage.jsonl) [default: target/lexicon-scan]
+      --keep-generic
+          Also emit pairs whose shared name is generic (`lemma3`, `aux`, `ex1`)
+      --max-pairs-per-name <MAX_PAIRS_PER_NAME>
+          Skip a shared name whose statement cross product exceeds this: exact pairs per raw name, folded pairs per whole folded group [default: 64]
+      --max-shape-group <MAX_SHAPE_GROUP>
+          Skip a shape or skeleton group larger than this on either side [default: 8]
+      --collision-samples <COLLISION_SAMPLES>
+          Key-collision groups to sample per corpus [default: 40]
+  -h, --help
+          Print help
+
+==> echidna design --help <==
+Search proof-design space via simulated annealing
+
+Usage: echidna design [OPTIONS] <COMMAND>
+
+Commands:
+  search  Run SA over a named design problem
+  swarm   Run a parallel swarm of SA agents with cross-pollination
+  help    Print this message or the help of the given subcommand(s)
+
+Options:
+      --format <FORMAT>  Output format (text, json) [default: text]
+  -v, --verbose          Verbose output
+      --no-color         Disable colors
+  -h, --help             Print help
+
+==> echidna design search --help <==
+Run SA over a named design problem
+
+Usage: echidna design search [OPTIONS] <PROBLEM>
+
+Arguments:
+  <PROBLEM>  Problem identifier. Currently: `brouwer-leq` (Phase 1.3 `_≤_` redesign for `Ordinal.Brouwer`)
+
+Options:
+      --format <FORMAT>          Output format (text, json) [default: text]
+      --iterations <ITERATIONS>  Iterations per restart [default: 1000]
+      --restarts <RESTARTS>      Number of independent restarts [default: 4]
+  -v, --verbose                  Verbose output
+      --no-color                 Disable colors
+      --temp <TEMP>              Initial Metropolis temperature [default: 4]
+      --cooling <COOLING>        Multiplicative cooling factor per iteration [default: 0.995]
+      --seed <SEED>              Seed [default: 12648430]
+      --top <TOP>                Top-K candidates to print [default: 8]
+  -h, --help                     Print help
+
+==> echidna design swarm --help <==
+Run a parallel swarm of SA agents with cross-pollination
+
+Usage: echidna design swarm [OPTIONS] <PROBLEM>
+
+Arguments:
+  <PROBLEM>  Problem identifier. Currently: `brouwer-leq`
+
+Options:
+      --agents <AGENTS>
+          Number of parallel agents [default: 4]
+      --format <FORMAT>
+          Output format (text, json) [default: text]
+      --iterations <ITERATIONS>
+          [default: 1000]
+  -v, --verbose
+          Verbose output
+      --no-color
+          Disable colors
+      --temp <TEMP>
+          [default: 4]
+      --cooling <COOLING>
+          [default: 0.995]
+      --seed <SEED>
+          [default: 12648430]
+      --broadcast-every <BROADCAST_EVERY>
+          Broadcast best-so-far every N iterations [default: 100]
+      --adopt-threshold <ADOPT_THRESHOLD>
+          Adopt a peer's broadcast only if it beats the agent's best by this lex-margin (0 = adopt on any improvement) [default: 0]
+  -h, --help
+          Print help
+
+==> echidna suggest --help <==
+Suggest tactic variants that close a failing lemma
+
+Usage: echidna suggest [OPTIONS] <TARGET>
+
+Arguments:
+  <TARGET>  Target in `<file>:<lemma>` form, e.g. `Foo.thy:bar`
+
+Options:
+      --format <FORMAT>              Output format (text, json) [default: text]
+  -p, --prover <PROVER>              Prover to use (auto-detected from file extension if absent)
+      --budget <BUDGET>              Time budget per variant attempt in seconds [default: 60]
+  -v, --verbose                      Verbose output
+      --no-color                     Disable colors
+      --top <TOP>                    Maximum number of variants to report [default: 10]
+      --synonyms-dir <SYNONYMS_DIR>  Synonym table directory (defaults to `data/synonyms/`)
+      --dry-run                      Don't run the prover; just print candidate variants
+      --max-parallel <MAX_PARALLEL>  Maximum concurrent variant tests [default: 4]
+  -h, --help                         Print help
+
