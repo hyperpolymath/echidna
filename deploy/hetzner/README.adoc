@@ -30,6 +30,41 @@ Let's Encrypt), orchestrated with podman systemd quadlets.
   If abuse appears, add a bearer-token matcher in the Caddyfile for
   POST routes. A server-side per-request prover timeout is tracked as a
   follow-up issue in the main repo.
+  *Superseded 2026-11-05*: see <<containment-stopgap>>.
+
+[[containment-stopgap]]
+== Containment stopgap (owner ruling 2026-11-05)
+
+Until bearer authentication lands on every execution route, this host
+serves read-only routes only, and it no longer rolls out new images by
+itself.
+
+* The `Caddyfile` forwards only `GET`/`HEAD` on `/api/health` and
+  `/api/provers`. Every other request is answered `403` by Caddy and
+  never reaches the container. That includes `/api/prove`,
+  `/api/verify*`, `/api/session/*`, `/api/agent/*` and `/api/search`.
+* `echidna.container` drops `AutoUpdate=registry` and sets `Pull=never`.
+  The unit runs the image already on the host, so a newly published
+  `:latest` is not deployed. This *freezes* the running image. It does
+  not verify it.
+
+Apply on the host as the `deploy` user. Record the running digest
+first, so the freeze is auditable:
+
+[source,console]
+----
+systemctl --user disable --now podman-auto-update.timer
+podman image inspect --format '{{.Digest}}' ghcr.io/hyperpolymath/echidna:latest  # record this
+# copy the updated Caddyfile and echidna.container into place, then:
+systemctl --user daemon-reload
+systemctl --user restart echidna caddy
+curl -s  -o /dev/null -w '%{http_code}\n' https://api.nesy-prover.dev/api/health          # expect 200
+curl -s  -o /dev/null -w '%{http_code}\n' -X POST https://api.nesy-prover.dev/api/verify  # expect 403
+----
+
+The stopgap ends in the change that enables authentication. That change
+re-pins `Image=` to the signed image by digest and removes the `@public`
+matcher. Do not re-enable `podman-auto-update.timer` before then.
 
 == 0. Preflight (read-only, do first)
 
@@ -194,6 +229,10 @@ podman ps && curl -s https://api.nesy-prover.dev/api/health
 ----
 
 == 5. Updates and rollback
+
+NOTE: Unattended rollout is *disabled* while the
+<<containment-stopgap>> is in force. The commands below describe the
+mechanism for when it is restored with a signed, digest-pinned image.
 
 `ghcr-publish.yml` pushes a new `:latest` on every GitHub release.
 Enable unattended rollout:
