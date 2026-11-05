@@ -46,9 +46,9 @@ workflows:
         - 'actions/attest-build-provenance@v4.2.2'
         - 'actions/checkout@v7.0.1'
     '.github/workflows/governance.yml':
-        - 'hyperpolymath/standards@3c00687a5bbd0d881d351db8502417b5d0a8b0b0'
+        - 'metadatastician/standards@087f6bff5135ce3da6f287c83752256ce4a8efc1'
     '.github/workflows/hypatia-scan.yml':
-        - 'hyperpolymath/standards@3c00687a5bbd0d881d351db8502417b5d0a8b0b0'
+        - 'metadatastician/standards@087f6bff5135ce3da6f287c83752256ce4a8efc1'
     '.github/workflows/idris2-abi-ci.yml':
         - 'actions/checkout@v7.0.1'
     '.github/workflows/label-triage.yml': []
@@ -58,7 +58,7 @@ workflows:
         - 'dtolnay/rust-toolchain@v1'
         - 'swatinem/rust-cache@v2.9.3'
     '.github/workflows/mirror.yml':
-        - 'hyperpolymath/standards@3c00687a5bbd0d881d351db8502417b5d0a8b0b0'
+        - 'metadatastician/standards@087f6bff5135ce3da6f287c83752256ce4a8efc1'
     '.github/workflows/mvp-smoke.yml':
         - 'actions/checkout@v7.0.1'
         - 'dtolnay/rust-toolchain@v1'
@@ -81,16 +81,16 @@ workflows:
         - 'swatinem/rust-cache@v2.9.3'
         - 'taiki-e/install-action@v2.87.32'
     '.github/workflows/scorecard.yml':
-        - 'hyperpolymath/standards@3c00687a5bbd0d881d351db8502417b5d0a8b0b0'
+        - 'metadatastician/standards@087f6bff5135ce3da6f287c83752256ce4a8efc1'
     '.github/workflows/secret-scanner.yml':
-        - 'hyperpolymath/standards@3c00687a5bbd0d881d351db8502417b5d0a8b0b0'
+        - 'metadatastician/standards@087f6bff5135ce3da6f287c83752256ce4a8efc1'
     '.github/workflows/security-scan.yml': []
     '.github/workflows/server-boot-gate.yml':
         - 'actions/checkout@v7.0.1'
         - 'dtolnay/rust-toolchain@v1'
         - 'swatinem/rust-cache@v2.9.3'
     '.github/workflows/spark-theatre-gate.yml':
-        - 'hyperpolymath/standards@3c00687a5bbd0d881d351db8502417b5d0a8b0b0'
+        - 'metadatastician/standards@087f6bff5135ce3da6f287c83752256ce4a8efc1'
     '.github/workflows/static-analysis-gate.yml':
         - 'actions/checkout@v7.0.1'
         - 'actions/download-artifact@v8.0.2'
@@ -142,6 +142,11 @@ dependencies:
         commit: 'sha1-368f82528645a54fb793d4d04e342629a3f51346'
         owner_id: 44036562
         repo_id: 438112499
+    'actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333':
+        ref: 'v8.0.2'
+        commit: 'sha1-9000827ccba6bdab643e8b6fd33ac0654aef8333'
+        owner_id: 44036562
+        repo_id: 192626254
     'actions/download-artifact@v8.0.2':
         ref: 'v8.0.2'
         commit: 'sha1-9000827ccba6bdab643e8b6fd33ac0654aef8333'
@@ -229,14 +234,15 @@ dependencies:
         commit: 'sha1-4c772eb235b04455307d5c03cbbc4f45130f7f0f'
         owner_id: 6759885
         repo_id: 1326697643
-    'hyperpolymath/standards@3c00687a5bbd0d881d351db8502417b5d0a8b0b0':
-        ref: '3c00687a5bbd0d881d351db8502417b5d0a8b0b0'
-        commit: 'sha1-3c00687a5bbd0d881d351db8502417b5d0a8b0b0'
-        owner_id: 6759885
+    'metadatastician/standards@087f6bff5135ce3da6f287c83752256ce4a8efc1':
+        ref: '087f6bff5135ce3da6f287c83752256ce4a8efc1'
+        commit: 'sha1-087f6bff5135ce3da6f287c83752256ce4a8efc1'
+        owner_id: 297579217
         repo_id: 1116521501
         uses:
             - 'actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9'
             - 'actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1'
+            - 'actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333'
             - 'actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9'
             - 'denoland/setup-deno@22d081ff2d3a40755e97629de92e3bcbfa7cf2ed'
             - 'dtolnay/rust-toolchain@683b588c487a69d01f6c6ddf40f036ff682cc2c8'
