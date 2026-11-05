@@ -84,9 +84,13 @@ through Caddy
 a *1 MB request body cap*
 * the container is capped at `+--memory=1500m --pids-limit=512+`, with a
 tmpfs `+/tmp+` and `+NoNewPrivileges+`
-* `+AutoUpdate=registry+` plus `+HealthOnFailure=kill+` means a new
-release rolls out unattended and an unhealthy container *fails the
-unit*, which is what makes rollback actually fire
+* `+HealthOnFailure=kill+` means an unhealthy container *fails the
+unit*, so systemd restarts it
+* *Containment stopgap (2026-11-05):* Caddy forwards only `GET`/`HEAD`
+on `+/api/health+` and `+/api/provers+`, and refuses every execution
+route with `403`. `+AutoUpdate=registry+` is off, and `+Pull=never+`
+freezes the running image until authentication lands. See
+link:../deploy/hetzner/README.adoc#containment-stopgap[the runbook].
 
 ==== Why the caging matters
 

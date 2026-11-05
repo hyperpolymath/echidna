@@ -8,17 +8,19 @@
 # over echidna-net), memory/pids limits, tmpfs /tmp, no privilege
 # escalation. Healthcheck uses the binary — the image ships no curl.
 #
-# Image tag :latest is intentional together with AutoUpdate=registry +
-# podman-auto-update.timer: new releases roll out automatically and a
-# failing healthcheck rolls back. For pinned mode, set Image= to a
-# :vX.Y.Z tag or digest and bump via PR (see README.adoc).
+# CONTAINMENT STOPGAP (owner ruling 2026-11-05): automatic rollout is OFF.
+# AutoUpdate=registry is removed and Pull=never makes the unit run the
+# image already on the host, so a newly published :latest is never pulled.
+# This freezes the running image; it does not verify it. Re-pin to the
+# signed image by digest in the change that lands authentication
+# (see README.adoc, "Containment stopgap").
 
 [Unit]
 Description=ECHIDNA theorem-prover API
 
 [Container]
 Image=ghcr.io/hyperpolymath/echidna:latest
-AutoUpdate=registry
+Pull=never
 ContainerName=echidna
 Network=echidna.network
 Exec=server --port 8081 --host 0.0.0.0 --cors
