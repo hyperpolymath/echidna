@@ -36,7 +36,7 @@ jobs:
       - name: Install system dependencies
         run: sudo apt-get install -y libssl-dev pkg-config
       - name: Build echidna binary
-        run: cargo build -p echidna
+        run: cargo build --locked -p echidna
       - name: Boot server and verify routes
         run: |
           ./target/debug/echidna server --port 8081 &
@@ -63,13 +63,12 @@ jobs:
             -d '{"prover":"Z3"}') || { echo "FAIL: session/create"; exit 1; }
           echo "$SESSION"
 
-          SESSION_ID=$(echo "$SESSION" | grep -o '"session_id":"[^"]*"' | cut -d'"' -f4)
-          if [ -n "$SESSION_ID" ]; then
-            echo ""
-            echo "=== GET /api/session/{id}/state ==="
-            curl -sf "http://127.0.0.1:8081/api/session/${SESSION_ID}/state" \
-              || { echo "FAIL: session/{id}/state"; exit 1; }
-          fi
+          SESSION_ID=$(jq -er '.session_id | select(type == "string" and length > 0)' <<< "$SESSION") \
+            || { echo "FAIL: session/create returned no usable session_id"; exit 1; }
+          echo ""
+          echo "=== GET /api/session/{id}/state ==="
+          curl -sf "http://127.0.0.1:8081/api/session/${SESSION_ID}/state" \
+            || { echo "FAIL: session/{id}/state"; exit 1; }
 
           echo ""
           echo "Boot gate PASSED"

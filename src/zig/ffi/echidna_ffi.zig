@@ -186,7 +186,9 @@ pub const Tactic = extern struct {
     }
 };
 
-/// Tactic result for FFI
+/// Tactic result for FFI. A Rust callback's message is borrowed until the
+/// next tactic callback on the same thread or thread exit. Copy it before
+/// then; do not free it or assume NUL termination.
 pub const TacticResult = extern struct {
     kind: TacticResultKind,
     _padding: [3]u8 = [_]u8{0} ** 3,

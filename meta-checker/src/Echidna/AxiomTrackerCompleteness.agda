@@ -22,6 +22,7 @@ module Echidna.AxiomTrackerCompleteness where
 open import Data.Nat using (ℕ; zero; suc; _+_)
 open import Data.List using (List; []; _∷_; length; map; _++_)
 open import Data.Product using (_×_; _,_)
+open import Data.Sum using (_⊎_; inj₁; inj₂)
 open import Relation.Binary.PropositionalEquality using (_≡_; refl; sym; trans; cong)
 
 open import Echidna.AxiomSafety
@@ -78,7 +79,7 @@ scan-entry-length (mk-entry p (d ∷ ds)) =
 
 fold-worst-++ : ∀ (xs ys : List AxiomPolicy) →
   fold-worst (xs ++ ys) ≡ worst-policy (fold-worst xs) (fold-worst ys)
-fold-worst-++ [] ys = refl
+fold-worst-++ [] ys = sym (clean-left-neutral (fold-worst ys))
 fold-worst-++ (x ∷ xs) ys =
   trans (cong (worst-policy x) (fold-worst-++ xs ys))
         (sym (worst-assoc x (fold-worst xs) (fold-worst ys)))
@@ -90,19 +91,7 @@ fold-worst-++ (x ∷ xs) ys =
 
 fold-worst-prepend-monotonic : ∀ (p : AxiomPolicy) (ps : List AxiomPolicy) →
   fold-worst ps ≤ₚ worst-policy p (fold-worst ps)
-fold-worst-prepend-monotonic Clean ps = ≤ₚ-refl (fold-worst ps)
-fold-worst-prepend-monotonic ClassicalAxioms Clean = clean≤
-fold-worst-prepend-monotonic ClassicalAxioms ClassicalAxioms = class≤c
-fold-worst-prepend-monotonic ClassicalAxioms IncompleteProof = inc≤i
-fold-worst-prepend-monotonic ClassicalAxioms Rejected = rej≤r
-fold-worst-prepend-monotonic IncompleteProof Clean = clean≤
-fold-worst-prepend-monotonic IncompleteProof ClassicalAxioms = class≤i
-fold-worst-prepend-monotonic IncompleteProof IncompleteProof = inc≤i
-fold-worst-prepend-monotonic IncompleteProof Rejected = rej≤r
-fold-worst-prepend-monotonic Rejected Clean = clean≤
-fold-worst-prepend-monotonic Rejected ClassicalAxioms = class≤r
-fold-worst-prepend-monotonic Rejected IncompleteProof = inc≤r
-fold-worst-prepend-monotonic Rejected Rejected = rej≤r
+fold-worst-prepend-monotonic p ps = worst-ub-right p (fold-worst ps)
 
 ------------------------------------------------------------------------
 -- THEOREM 4: Empty registry produces Clean
@@ -138,30 +127,10 @@ reject-head-propagates _ = refl
 worst-policy-rejected-inv : ∀ (a b : AxiomPolicy) →
   worst-policy a b ≡ Rejected →
   (a ≡ Rejected) ⊎ (b ≡ Rejected)
-  where
-    data _⊎_ (A B : Set) : Set where
-      inj₁ : A → A ⊎ B
-      inj₂ : B → A ⊎ B
 worst-policy-rejected-inv Rejected _ _ = inj₁ refl
-  where
-    data _⊎_ (A B : Set) : Set where
-      inj₁ : A → A ⊎ B
-      inj₂ : B → A ⊎ B
 worst-policy-rejected-inv IncompleteProof Rejected _ = inj₂ refl
-  where
-    data _⊎_ (A B : Set) : Set where
-      inj₁ : A → A ⊎ B
-      inj₂ : B → A ⊎ B
 worst-policy-rejected-inv ClassicalAxioms Rejected _ = inj₂ refl
-  where
-    data _⊎_ (A B : Set) : Set where
-      inj₁ : A → A ⊎ B
-      inj₂ : B → A ⊎ B
 worst-policy-rejected-inv Clean Rejected _ = inj₂ refl
-  where
-    data _⊎_ (A B : Set) : Set where
-      inj₁ : A → A ⊎ B
-      inj₂ : B → A ⊎ B
 
 ------------------------------------------------------------------------
 -- THEOREM 7: Rejected is absorbing on the left in worst-policy

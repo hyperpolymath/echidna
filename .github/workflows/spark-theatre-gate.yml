@@ -20,7 +20,7 @@ permissions:
 
 jobs:
   spark-theatre-gate:
-    uses: metadatastician/standards/.github/workflows/spark-theatre-gate.yml@087f6bff5135ce3da6f287c83752256ce4a8efc1 # main 2026-11-04, standards#1395 hypatia-ref adb2f41d (lockfile-bearing ref: actions.lock required by caller-side enforcement, standards#570)
+    uses: metadatastician/standards/.github/workflows/spark-theatre-gate.yml@d3e4b485a2af90c92a8e18af0888cd19cb132cd9 # published source, 2026-11-04
     with:
       paths: "."
       enforce_zero_contract: false

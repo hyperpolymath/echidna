@@ -17,10 +17,15 @@ on:
 permissions:
   actions: read
   contents: read
-  security-events: write
 
 jobs:
   hypatia:
-    uses: metadatastician/standards/.github/workflows/hypatia-scan-reusable.yml@087f6bff5135ce3da6f287c83752256ce4a8efc1 # main 2026-11-04, standards#1395 hypatia-ref adb2f41d (lockfile-bearing ref: actions.lock required by caller-side enforcement, standards#570)
+    permissions:
+      actions: read
+      contents: read
+      security-events: write
+    uses: metadatastician/standards/.github/workflows/hypatia-scan-reusable.yml@d3e4b485a2af90c92a8e18af0888cd19cb132cd9 # published source, 2026-11-04
+    with:
+      hypatia-ref: 82396d81677b11d17c7a0dede5bf0efcf768d5a1
     secrets:
       HYPATIA_SCAN_PAT: ${{ secrets.HYPATIA_SCAN_PAT }}

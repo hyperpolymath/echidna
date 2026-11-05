@@ -26,7 +26,7 @@ async fn test_julia_health_check() -> Result<()> {
         use_cache: true,
     };
 
-    let mut suggester = NeuralSuggester::with_config(config);
+    let mut suggester = NeuralSuggester::with_config(config)?;
     let healthy = suggester.check_health().await?;
 
     assert!(healthy, "Julia server should report healthy");
@@ -51,7 +51,7 @@ async fn test_julia_predict_premises() -> Result<()> {
         use_cache: false,
     };
 
-    let mut suggester = NeuralSuggester::with_config(config);
+    let mut suggester = NeuralSuggester::with_config(config)?;
 
     // First connect
     let healthy = suggester.check_health().await?;
@@ -90,7 +90,7 @@ async fn test_julia_suggest_tactics() -> Result<()> {
         use_cache: true,
     };
 
-    let mut suggester = NeuralSuggester::with_config(config);
+    let mut suggester = NeuralSuggester::with_config(config)?;
 
     // First connect
     let healthy = suggester.check_health().await?;
@@ -121,7 +121,7 @@ async fn test_julia_suggest_tactics_scored() -> Result<()> {
         use_cache: false,
     };
 
-    let mut suggester = NeuralSuggester::with_config(config);
+    let mut suggester = NeuralSuggester::with_config(config)?;
 
     // First connect
     suggester.check_health().await?;
@@ -156,7 +156,7 @@ async fn test_connection_failure_graceful() -> Result<()> {
         use_cache: false,
     };
 
-    let mut suggester = NeuralSuggester::with_config(config);
+    let mut suggester = NeuralSuggester::with_config(config)?;
 
     // Health check should fail gracefully
     let healthy = suggester.check_health().await?;
@@ -188,7 +188,7 @@ async fn test_config_update() -> Result<()> {
         use_cache: true,
     };
 
-    let mut suggester = NeuralSuggester::with_config(initial_config);
+    let mut suggester = NeuralSuggester::with_config(initial_config)?;
 
     assert_eq!(suggester.config().top_k, 5);
     assert_eq!(suggester.config().timeout_ms, 1000);
@@ -204,7 +204,7 @@ async fn test_config_update() -> Result<()> {
         use_cache: false,
     };
 
-    suggester.set_config(new_config);
+    suggester.set_config(new_config)?;
 
     assert_eq!(suggester.config().top_k, 20);
     assert_eq!(suggester.config().timeout_ms, 3000);
@@ -226,7 +226,7 @@ async fn test_multiple_provers() -> Result<()> {
         use_cache: false,
     };
 
-    let mut suggester = NeuralSuggester::with_config(config);
+    let mut suggester = NeuralSuggester::with_config(config)?;
     suggester.check_health().await?;
 
     let goal = Term::Const("test".to_string());

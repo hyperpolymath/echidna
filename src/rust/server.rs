@@ -395,9 +395,14 @@ async fn health_check() -> Json<HealthResponse> {
 
 /// Detailed diagnostics health endpoint
 /// Returns full HealthStatus snapshot from dispatcher with prover metrics and degradation mode
-async fn diagnostics_health_handler(State(app_state): State<AppState>) -> Json<HealthStatus> {
-    let health = app_state.dispatcher.health_status();
-    Json(health)
+async fn diagnostics_health_handler(
+    State(app_state): State<AppState>,
+) -> Result<Json<HealthStatus>, AppError> {
+    let health = app_state
+        .dispatcher
+        .health_status()
+        .map_err(|error| AppError::InternalError(error.to_string()))?;
+    Ok(Json(health))
 }
 
 /// List available provers
@@ -471,7 +476,8 @@ async fn prove_handler(
             };
             app_state
                 .dispatcher
-                .record_prover_result(req.prover, &outcome, 0);
+                .record_prover_result(req.prover, &outcome, 0)
+                .map_err(|error| AppError::InternalError(error.to_string()))?;
             return Ok(Json(ProveResponse {
                 success: false,
                 goals: 0,
@@ -501,7 +507,8 @@ async fn prove_handler(
         };
         app_state
             .dispatcher
-            .record_prover_result(req.prover, &outcome, verify_elapsed_ms);
+            .record_prover_result(req.prover, &outcome, verify_elapsed_ms)
+            .map_err(|error| AppError::InternalError(error.to_string()))?;
 
         Ok(Json(ProveResponse {
             success: valid,

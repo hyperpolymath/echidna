@@ -203,13 +203,11 @@ jobs:
           toolchain: stable
 
       - name: Install cargo-audit
-        # Use the binstall path when available to skip a from-source rebuild
-        # on every run — was the single biggest contributor to slow CI on
-        # repos that opted in to audit (~3–4 minute install).
-        run: cargo install cargo-audit --locked
+        # SHA-256-verified upstream release: no source rebuild on every run.
+        run: bash scripts/ci/install-cargo-audit.sh
 
       - name: Security audit
-        run: cargo audit
+        run: bash scripts/ci/audit-dependencies.sh
 
   coverage:
     timeout-minutes: 25

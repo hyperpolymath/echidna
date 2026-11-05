@@ -9,7 +9,13 @@
 //!   2. cd src/zig && zig build -Dspark
 //!   3. cargo build --features spark
 
+#[cfg(feature = "chapel")]
+#[path = "build_support/chapel.rs"]
+mod chapel_link;
+
 fn main() {
+    println!("cargo:rustc-check-cfg=cfg(echidna_chapel_real)");
+    println!("cargo:rustc-check-cfg=cfg(echidna_chapel_stubs)");
     // SPARK axiom-policy bridge (requires GPRbuild + Zig; see just spark-all)
     #[cfg(feature = "spark")]
     {
@@ -90,42 +96,14 @@ fn main() {
         println!("cargo:rerun-if-changed=src/rust/coprocessor/flint.rs");
     }
 
-    // Chapel parallel proof search bridge
+    // Chapel parallel proof search bridge. Real mode also links the compiler's
+    // runtime closure; a static Zig archive does not supply transitive links.
     #[cfg(feature = "chapel")]
     {
-        // Look for the Zig-built library in src/zig_ffi/zig-out/lib/
-        let zig_ffi_dir = std::path::PathBuf::from(env!("CARGO_MANIFEST_DIR"))
-            .join("src")
-            .join("zig_ffi")
-            .join("zig-out")
-            .join("lib");
-
-        if zig_ffi_dir.exists() {
-            println!("cargo:rustc-link-search=native={}", zig_ffi_dir.display());
-            println!("cargo:rustc-link-lib=static=echidna_chapel_ffi");
-            println!("cargo:rustc-link-lib=dylib=c");
-        } else {
-            // Also check standard install location
-            let alt_dir = std::path::PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("lib");
-            if alt_dir.exists() {
-                println!("cargo:rustc-link-search=native={}", alt_dir.display());
-                println!("cargo:rustc-link-lib=static=echidna_chapel_ffi");
-                println!("cargo:rustc-link-lib=dylib=c");
-            } else {
-                println!("cargo:warning=Chapel FFI library not found. Build it first with: just build-chapel-ffi");
-                println!("cargo:warning=Looked in: {}", zig_ffi_dir.display());
-            }
-        }
-
-        // Re-run if FFI source changes
+        chapel_link::configure(std::path::Path::new(env!("CARGO_MANIFEST_DIR")))
+            .unwrap_or_else(|error| panic!("Chapel native link setup: {error}"));
+        println!("cargo:rerun-if-changed=build_support/chapel.rs");
         println!("cargo:rerun-if-changed=src/zig_ffi/chapel_bridge.zig");
         println!("cargo:rerun-if-changed=src/zig_ffi/build.zig");
-        // Re-run when the *built artifact* appears or changes. Without this,
-        // a `cargo build` performed before `just build-chapel-ffi` caches the
-        // "library not found" decision (no link directives emitted) and a
-        // later Zig build is never picked up — link fails with undefined
-        // `echidna_chapel_*` symbols regardless of recipe order.
-        println!("cargo:rerun-if-changed=src/zig_ffi/zig-out/lib/libechidna_chapel_ffi.a");
-        println!("cargo:rerun-if-changed=src/zig_ffi/zig-out/lib");
     }
 }

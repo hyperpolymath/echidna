@@ -16,7 +16,6 @@ secondary_languages = ["julia", "affinescript", "idris2", "chapel", "spark"]
 
 [provers]
 # ECHIDNA is self-hosting - can verify its own Idris2 ABI definitions
-idris2 = { enabled = true, priority = "high" }
 
 # Can also use SMT solvers for property checking
 z3 = { enabled = true, priority = "medium" }
@@ -27,6 +26,8 @@ coq = { enabled = true, priority = "low" }
 lean = { enabled = true, priority = "low" }
 
 [provers.idris2]
+enabled = true
+priority = "high"
 package_file = "src/abi/echidnaabi.ipkg"
 source_dirs = ["src/abi"]
 totality_required = true

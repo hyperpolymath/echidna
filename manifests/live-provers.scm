@@ -3,10 +3,16 @@
 ;;
 ;; ECHIDNA — Live-Prover CI Manifest (Guix, PRIMARY)
 ;;
-;; Purpose: declare every prover binary that live-prover CI exercises.
+;; Purpose: resolve the subset packaged by GNU Guix 1.4.0 (the CI baseline).
+;; This manifest is NOT a declaration that every live prover is packaged or
+;; tested. Resolution does not prove that a prover ran or that a proof passed.
 ;; Used by `.github/workflows/live-provers.yml` and local developers via:
 ;;
-;;     guix shell -m manifests/live-provers.scm -- cargo test --test live_prover_suite --features live-provers
+;;     guix package -m manifests/live-provers.scm --dry-run --no-substitutes
+;;
+;; The release's Rust package is not the repository's pinned Rust toolchain.
+;; Building the live test harness also requires rust-toolchain.toml and its
+;; native dependencies; manifest resolution alone does not establish that.
 ;;
 ;; Tiering (matches ~/Desktop/ECHIDNA-PRODUCTION-WIRING-PLAN.md):
 ;;   T1 — trivial (apt/Guix single-package)       — run on every PR
@@ -22,29 +28,32 @@
 ;;   SEALED CONTAINER (.containerization/Containerfile.wave3), not a Nix twin.
 ;;
 ;; Availability note:
-;;   Guix package availability drifts. The comment beside each line records the
-;;   Guix module the package lives in at audit time. Anything previously marked
+;;   Package names below were checked against the GNU Guix 1.4.0 release.
+;;   The comment beside each line records its upstream module. Anything marked
 ;;   NIX_ONLY or CONTAINER_ONLY is *not* in Guix upstream and is provisioned via
 ;;   the Wave-3 sealed container (Containerfile.wave3 --target <prover>). The
 ;;   "NIX_ONLY" label is retained below only as a historical availability fact
 ;;   (the package is absent from Guix) — it does NOT imply a Nix provisioning
-;;   path is permitted; the provisioning path is the container.
+;;   path is permitted; the intended provisioning path is the container.
+;;
+;; Explicit boundary (Guix coverage UNKNOWN, not passed by this manifest):
+;;   T1 cvc5, alt-ergo, vampire, eprover, spass and chuffed are provisioned by
+;;   the separate live-prover matrix. cvc4 is not an equivalent cvc5 check.
+;;   T2 Idris2 and Isabelle are also absent from this baseline. Their separate
+;;   jobs must provide execution evidence; this resolution job cannot.
+;;   Chuffed appears in Guix 1.5.0; the other names remain absent from that
+;;   release inventory. CI currently checks the explicit 1.4.0 baseline.
 
 (specifications->manifest
  '(;; ----------------------------------------------------------------------
-   ;; Tier 1 — trivial: ships directly in Guix, every PR runs these live
+   ;; Tier 1 — packaged subset; live execution is checked by separate jobs
    ;; ----------------------------------------------------------------------
    "z3"              ; (gnu packages maths) — SMT, deep wiring
-   "cvc4"            ; (gnu packages maths) — SMT, cvc5 not yet upstream; cvc4 is a usable stand-in
-   "alt-ergo"        ; (gnu packages ocaml) — SMT
-   "vampire"         ; (gnu packages maths) — first-order ATP
-   "eprover"         ; (gnu packages maths) — first-order ATP
-   "spass"           ; (gnu packages maths) — first-order ATP
    "glpk"            ; (gnu packages maths) — LP/MIP constraint solver (glpsol)
    "minizinc"        ; (gnu packages maths) — constraint modelling
    ;; --- Harness prerequisites
-   "coreutils"       ; which/timeout/etc. used by the harness
-   "util-linux"      ; timeout(1) on GNU systems
+   "coreutils"       ; timeout(1) and other GNU core utilities
+   "util-linux"      ; Linux system utilities used by the harness
    "gcc-toolchain"   ; linker for compiled provers that invoke backends
 
    ;; ----------------------------------------------------------------------
@@ -52,9 +61,7 @@
    ;; ----------------------------------------------------------------------
    "coq"             ; (gnu packages coq) — Coq/Rocq
    "agda"            ; (gnu packages agda) — dependent-type proof assistant
-   "idris2"          ; (gnu packages idris) — dependent-type proof assistant
-   "isabelle"        ; (gnu packages isabelle) — HOL proof assistant
-   "why3"            ; (gnu packages ocaml) — auto-active verifier
+   "why3"            ; (gnu packages maths) — auto-active verifier
    ;; Lean 4 — NIX_ONLY: not in Guix; install via the Wave-3 sealed container
    ;; (the upstream installer ships pre-built binaries; the historical "flake.nix"
    ;; path was closed 2026-06-01 per estate-wide nix-deprecation).
@@ -85,9 +92,9 @@
    ;; NuSMV, Spin, TLC, CBMC, Seahorn, dReal, Boogie, Kissat, Alloy
 
    ;; ----------------------------------------------------------------------
-   ;; Build toolchain (so Rust test harness compiles inside `guix shell`)
+   ;; Packaged build tools (not the repository's pinned Rust toolchain)
    ;; ----------------------------------------------------------------------
    "rust"
-   "rust-cargo"
+   "rust:cargo"      ; cargo output of rust, not the rust-cargo library crate
    "pkg-config"
    "openssl"))

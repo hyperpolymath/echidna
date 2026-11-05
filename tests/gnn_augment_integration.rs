@@ -104,7 +104,8 @@ async fn test_health_status_richer_payload() {
         api_url: base_url,
         timeout_ms: 5000,
         ..GnnConfig::default()
-    });
+    })
+    .expect("GNN HTTP client should initialize");
 
     let health = client
         .health_status()

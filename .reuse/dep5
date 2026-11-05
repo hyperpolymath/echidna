@@ -29,7 +29,7 @@ Files: src/*
  docs-site/*
  generated/*
  schemas/*
- rules/*
+ archive/*
  training_data/*
  deploy/*
  container/*

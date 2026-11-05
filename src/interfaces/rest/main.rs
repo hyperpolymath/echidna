@@ -2,6 +2,7 @@
 // SPDX-License-Identifier: MPL-2.0
 // ECHIDNA REST API Server
 
+use anyhow::Context;
 use axum::{
     routing::{delete, get, post},
     Router,
@@ -57,13 +58,13 @@ pub struct ProofSession {
 /// Binds to `ECHIDNA_REST_ADDR`, defaulting to `127.0.0.1:8000` when the variable
 /// is absent or is not valid Unicode. Probes Julia ML at `http://127.0.0.1:8090`
 /// and initialises the FFI layer; failures of either check do not prevent startup.
+/// HTTP client setup, listener binding and serving failures return errors.
 ///
 /// # Panics
 ///
-/// Panics if tracing initialisation, HTTP client creation, listener binding or
-/// serving fails.
+/// Panics if tracing initialisation fails.
 #[tokio::main]
-async fn main() {
+async fn main() -> anyhow::Result<()> {
     tracing_subscriber::fmt()
         .with_env_filter(tracing_subscriber::EnvFilter::from_default_env())
         .init();
@@ -71,7 +72,7 @@ async fn main() {
     let ml_client = reqwest::Client::builder()
         .timeout(Duration::from_secs(10))
         .build()
-        .expect("Failed to create HTTP client");
+        .context("Failed to create REST ML HTTP client")?;
 
     let ml_api_url = "http://127.0.0.1:8090".to_string();
 
@@ -101,7 +102,7 @@ async fn main() {
         ml_client,
         ml_api_url,
         ffi_initialized,
-        llm_advisor: Arc::new(Mutex::new(echidna::llm::LlmAdvisor::new())),
+        llm_advisor: Arc::new(Mutex::new(echidna::llm::LlmAdvisor::new()?)),
     };
 
     let app = Router::new()
@@ -143,8 +144,13 @@ async fn main() {
     tracing::info!("REST API listening on http://{}", addr);
     tracing::info!("API docs (ReDoc) available at http://{}/redoc", addr);
 
-    let listener = tokio::net::TcpListener::bind(&addr).await.unwrap();
-    axum::serve(listener, app).await.unwrap();
+    let listener = tokio::net::TcpListener::bind(&addr)
+        .await
+        .with_context(|| format!("Could not bind ECHIDNA_REST_ADDR={addr:?}"))?;
+    axum::serve(listener, app)
+        .await
+        .context("REST server failed")?;
+    Ok(())
 }
 
 async fn health_check() -> &'static str {

@@ -8,6 +8,18 @@ https://semver.org/spec/v2.0.0.html[Semantic Versioning].
 
 === [Unreleased]
 
+==== Changed — GraphQL listener default, 2026-11-04
+
+* `+echidna-graphql+` now defaults to `+127.0.0.1:8082+`, avoiding the
+core `+echidna server+` listener on 8081. Update clients and reverse-proxy
+upstreams that used the old GraphQL default. To retain the previous address,
+set `+ECHIDNA_GRAPHQL_ADDR=127.0.0.1:8081+` explicitly and run the core
+listener on a different address.
+* The GraphQL endpoint and playground remain `+POST /+` and `+GET /+`;
+`+/health+` remains the process health route. Hostname overrides still work.
+Malformed or occupied bind addresses now return a contextual startup error
+instead of panicking.
+
 ==== Added — `echidna lexicon scan`, 2026-10-27
 
 * *`+echidna lexicon scan+`* (`+src/rust/lexicon/scan.rs+`,

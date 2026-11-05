@@ -13,12 +13,10 @@ on:
 permissions:
   actions: read
   contents: read
-  id-token: write
-  security-events: write
 
 jobs:
   analysis:
-    # Job-level permissions REPLACE the workflow-level read-all block, so
+    # Job-level permissions REPLACE the workflow-level read-only block, so
     # contents: read must be restated here — the reusable declares it
     # (checkout needs it) and startup-fails if the caller doesn't grant it.
     permissions:
@@ -26,4 +24,4 @@ jobs:
       security-events: write
       id-token: write
       contents: read
-    uses: metadatastician/standards/.github/workflows/scorecard-reusable.yml@087f6bff5135ce3da6f287c83752256ce4a8efc1 # main 2026-11-04, standards#1395 hypatia-ref adb2f41d (lockfile-bearing ref: actions.lock required by caller-side enforcement, standards#570)
+    uses: metadatastician/standards/.github/workflows/scorecard-reusable.yml@d3e4b485a2af90c92a8e18af0888cd19cb132cd9 # published source, 2026-11-04

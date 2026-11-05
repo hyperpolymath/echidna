@@ -133,8 +133,26 @@ curl -X POST http://127.0.0.1:8081/api/prove \
 
 The full route table is in `src/rust/server.rs`. Separate
 GraphQL / gRPC / REST interface crates live under `src/interfaces/`
-on dedicated ports (8081 / 50051 / 8000 respectively); they share
-the same dispatch path.
+(gRPC 50051, REST 8000, GraphQL 8082). They are independent binaries, not
+one service on four ports: a GraphQL proof does not take the same path as
+`/api/prove` here. The dispatcher is reached by `/api/prove` (only in a
+`--features verisim` build) *and* by `/api/verify_parallel`, which calls
+`ProverDispatcher::verify_proof_parallel` unconditionally.
+
+`echidna-graphql` defaults to 8082 and can run alongside the core server
+on 8081. Start it with:
+
+[source,bash]
+----
+cargo run -p echidna-graphql
+----
+
+`ECHIDNA_GRAPHQL_ADDR=host:port` overrides this listener. A deployment
+retaining GraphQL on the previous 8081 default must set that value
+explicitly and keep the core listener on another address.
+
+See `docs/ARCHITECTURE.adoc` §"Client-facing surfaces, and what VeriSimDB
+is not" and `docs/reports/2026-11-01-routing-and-rule-engine-recon.adoc`.
 
 For a no-build browser UI, open `src/ui/public/prove.html` directly
 and point the "API base" field at the running server.

@@ -18,4 +18,7 @@ permissions:
 
 jobs:
   governance:
-    uses: metadatastician/standards/.github/workflows/governance-reusable.yml@087f6bff5135ce3da6f287c83752256ce4a8efc1 # main 2026-11-04, standards#1395 hypatia-ref adb2f41d (lockfile-bearing ref: actions.lock required by caller-side enforcement, standards#570)
+    uses: metadatastician/standards/.github/workflows/governance-reusable.yml@a797d308c0517d4e2d21cc7f1cb08d41f82b1a12 # published source, 2026-11-04
+    with:
+      # Qualified source canary; the shared default remains independently vetted.
+      hypatia-ref: 82396d81677b11d17c7a0dede5bf0efcf768d5a1

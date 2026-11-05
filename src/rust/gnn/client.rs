@@ -200,22 +200,28 @@ pub struct GnnClient {
 
 impl GnnClient {
     /// Create a new GNN client with default configuration.
-    pub fn new() -> Self {
+    /// Returns an error if the HTTP client cannot be initialized.
+    pub fn new() -> Result<Self> {
         Self::with_config(GnnConfig::default())
     }
 
     /// Create a new GNN client with custom configuration.
-    pub fn with_config(config: GnnConfig) -> Self {
-        let client = Client::builder()
+    /// Returns an error if the HTTP client cannot be initialized.
+    pub fn with_config(config: GnnConfig) -> Result<Self> {
+        Self::with_config_and_builder(config, Client::builder())
+    }
+
+    fn with_config_and_builder(config: GnnConfig, builder: reqwest::ClientBuilder) -> Result<Self> {
+        let client = builder
             .timeout(Duration::from_millis(config.timeout_ms))
             .build()
-            .expect("Failed to create HTTP client for GNN inference");
+            .context("Failed to create HTTP client for GNN inference")?;
 
-        Self {
+        Ok(Self {
             config,
             client,
             server_available: false,
-        }
+        })
     }
 
     /// Fetch the richer `/gnn/health` payload introduced in S5.
@@ -441,18 +447,20 @@ impl GnnClient {
     }
 
     /// Update configuration (rebuilds HTTP client for new timeout).
-    pub fn set_config(&mut self, config: GnnConfig) {
-        self.client = Client::builder()
-            .timeout(Duration::from_millis(config.timeout_ms))
-            .build()
-            .expect("Failed to create HTTP client for GNN inference");
-        self.config = config;
+    /// On failure, retains the previous client, configuration and health.
+    /// On success, a new health check is required before using the server.
+    pub fn set_config(&mut self, config: GnnConfig) -> Result<()> {
+        self.set_config_with_builder(config, Client::builder())
     }
-}
 
-impl Default for GnnClient {
-    fn default() -> Self {
-        Self::new()
+    fn set_config_with_builder(
+        &mut self,
+        config: GnnConfig,
+        builder: reqwest::ClientBuilder,
+    ) -> Result<()> {
+        let replacement = Self::with_config_and_builder(config, builder)?;
+        *self = replacement;
+        Ok(())
     }
 }
 
@@ -474,8 +482,50 @@ mod tests {
 
     #[test]
     fn test_gnn_client_creation() {
-        let client = GnnClient::new();
+        let client = GnnClient::new().expect("GNN HTTP client should initialize");
         assert!(!client.is_available());
+    }
+
+    #[test]
+    fn test_http_client_build_error_is_returned() {
+        let error = GnnClient::with_config_and_builder(
+            GnnConfig::default(),
+            Client::builder().user_agent("invalid\nheader"),
+        )
+        .err()
+        .expect("invalid HTTP headers must reject client construction");
+        assert!(error.downcast_ref::<reqwest::Error>().unwrap().is_builder());
+        assert!(error.to_string().contains("GNN inference"));
+    }
+
+    #[test]
+    fn test_http_client_config_failure_preserves_state() {
+        let mut client = GnnClient::new().expect("GNN HTTP client should initialize");
+        client.server_available = true;
+        let replacement = GnnConfig {
+            api_url: "http://localhost:9091".to_string(),
+            timeout_ms: 25,
+            ..GnnConfig::default()
+        };
+
+        let error = client
+            .set_config_with_builder(
+                replacement.clone(),
+                Client::builder().user_agent("invalid\nheader"),
+            )
+            .expect_err("failed rebuild must reject the update");
+        assert!(error.downcast_ref::<reqwest::Error>().unwrap().is_builder());
+        assert_eq!(client.config().api_url, "http://localhost:8081");
+        assert_eq!(client.config().timeout_ms, 10_000);
+        assert!(client.is_available());
+
+        client.set_config(replacement).expect("valid update");
+        assert_eq!(client.config().api_url, "http://localhost:9091");
+        assert_eq!(client.config().timeout_ms, 25);
+        assert!(
+            !client.is_available(),
+            "new endpoint needs its own health check"
+        );
     }
 
     #[test]
@@ -491,7 +541,7 @@ mod tests {
         let mut extractor = TermFeatureExtractor::new();
         extractor.extract_features(&mut graph);
 
-        let client = GnnClient::new();
+        let client = GnnClient::new().expect("GNN HTTP client should initialize");
         let payload = client.build_request_payload(&graph, &[]);
 
         assert_eq!(payload.graph.num_nodes, graph.num_nodes());
@@ -510,7 +560,7 @@ mod tests {
 
     #[tokio::test]
     async fn test_rank_premises_no_server() {
-        let client = GnnClient::new();
+        let client = GnnClient::new().expect("GNN HTTP client should initialize");
         // Server not available, should return empty result
         let state = ProofState::new(Term::Const("test".to_string()));
         let mut builder = ProofGraphBuilder::new(2);

@@ -53,7 +53,7 @@ packages = ["ca-certificates", "curl"]
 copy-from = [
     { layer = "build", src = "/app/", dst = "/app/" },
 ]
-entrypoint = ["["/app/bin/echidna"]"]
+entrypoint = ["/app/echidna"]
 user = "echidna"
 expose = [8081]
 env = { PATH = "/app/bin:/opt/elan/toolchains/stable/bin:${PATH}", ECHIDNA_PROVER_PATH = "/opt" }

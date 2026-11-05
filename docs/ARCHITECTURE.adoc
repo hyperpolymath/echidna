@@ -5,7 +5,7 @@ machine-readable
 link:../.machine_readable/descriptiles/META.a2ml[`+.machine_readable/descriptiles/META.a2ml+`]
 (architecture decisions) and
 link:../.machine_readable/descriptiles/STATE.a2ml[`+STATE.a2ml+`]
-(current state). Last revised: 2026-05-26.
+(current state). Last revised: 2026-11-04.
 
 ECHIDNA — Extensible Cognitive Hybrid Intelligence for Deductive Neural
 Assistance — is the reasoning substrate of the hyperpolymath ecosystem.
@@ -15,9 +15,18 @@ Two non-negotiable invariants govern every design choice:
 . *ML suggests; provers verify.* Neural components rank, route, and
 propose; formal provers carry the trust. A wrong suggestion is a wasted
 CPU cycle, not a wrong proof.
-. *Trust is checked, not asserted.* Solver binaries are SHAKE3-512 /
-BLAKE3 integrity-checked before invocation; certificates are
-independently reproduced where formats allow (Alethe, DRAT/LRAT, TSTP).
+. *Trust depends on the checker and execution path.* The in-tree Alethe
+checker validates step structure, not logical correctness. The DRAT/LRAT
+helper invokes `+drat-trim+` when called; that is a separate capability,
+not a guarantee that every proof path uses it. The `+echidna prove+` CLI
+calls the selected backend directly and does not independently check a
+certificate. This overview therefore makes no blanket claim of independent
+Alethe or TSTP proof reproduction. Solver *identity* is not checked today:
+the integrity step exists,
+nothing in the tree attaches a checker, so binaries are currently
+_assumed_ rather than verified. See the Integrity caveat below and
+link:DEBT.adoc[`+DEBT+`] D9. Do not read this list as a guarantee that
+the binary you invoked is the binary you pinned.
 
 === Component map
 
@@ -31,7 +40,7 @@ independently reproduced where formats allow (Alethe, DRAT/LRAT, TSTP).
 │                       Rust Core  (src/rust/, crates/)                   │
 │                                                                         │
 │  ┌──────────┐  ┌──────────────┐  ┌────────────────┐  ┌──────────────┐  │
-│  │ CLI/REPL │  │ REST / GraphQL│  │ gRPC          │  │ FFI (Zig)    │  │
+│  │ CLI/REPL │  │ REST          │  │ gRPC          │  │ FFI (Zig)    │  │
 │  │ (main.rs)│  │ (axum :8000)  │  │ (tonic :50051)│  │ (16 exports) │  │
 │  └────┬─────┘  └──────┬────────┘  └──────┬────────┘  └──────┬───────┘  │
 │       └────────────────┴──────────────────┴────────────────┘            │
@@ -103,7 +112,14 @@ link:handover/TODO.adoc[`+handover/TODO.adoc+`] for current state):
 
 [arabic]
 . *Integrity* (`+integrity/+`) — solver binary SHAKE3-512 + BLAKE3
-against `+config/solver-manifest.toml+`.
+against `+config/solver-manifest.toml+`. *Caveat, 2026-11-01*: this step
+runs only when a checker is attached, and nothing in the tree calls
+`+with_integrity_checker+`; unconfigured, the pipeline treats integrity as
+passing (`+dispatch.rs:632+`). The manifest also still holds
+`+PLACEHOLDER_COMPUTE_ON_FIRST_RUN+` for every solver. Treat this step as
+*not executed* until it is wired; see
+link:reports/2026-11-01-routing-and-rule-engine-recon.adoc[`+docs/reports/2026-11-01-routing-and-rule-engine-recon.adoc+`]
+§6 RD5.
 . *Dispatch* (`+dispatch.rs+`) — `+ProverDispatcher::select_prover+`
 picks the backend; under `+with_verisim+`, `+VeriSimAdvisor+` queries
 `+mv_prover_success_by_class+` for historical success-rate hints.
@@ -126,6 +142,49 @@ updates.
 . *Outcome emission* (`+dispatch.rs::spawn_record_attempt+`, gated on
 `+with_verisim_writer+`) — fire-and-forget write to VeriSimDB
 `+proof_attempts+`, closes the learning loop.
+
+=== Client-facing surfaces, and what VeriSimDB is not
+
+There are *four independent listeners*, not one service on four ports. Each is
+a separate binary with its own route table and its own path to the provers:
+
+[width="100%",cols="30%,16%,54%",options="header",]
+|===
+|Listener |Default bind |Route root
+
+|`+echidna server+` |`+127.0.0.1:8081+` |`+/api/*+` — `/api/health`,
+`+/api/provers+`, `/api/prove`, `/api/verify`, `/api/session/*`, …
+|`+echidna-rest+` |`+127.0.0.1:8000+` |`+/api/v1/*+` plus root `+/health+`
+|`+echidna-graphql+` |`+127.0.0.1:8082+` |`+POST /+` (GraphQL), `+GET /+`
+(playground), `+/health+`
+|`+echidna-grpc+` |`+[::1]:50051+` |`+ProofService+` over `+echidna.proto+`
+|===
+
+`+echidna-graphql+` moved from 8081 to 8082 on 2026-11-04 so it can run
+alongside the core server. `+ECHIDNA_GRAPHQL_ADDR+` remains an override;
+deployments deliberately retaining the old GraphQL address must set it
+explicitly and avoid binding the core server there.
+
+*VeriSimDB is a persistence and learning adapter, not a communication path.*
+It sits behind the non-default `+verisim+` Cargo feature, is written to
+fire-and-forget after a dispatch, and is never consulted to reach a prover.
+Clients do not route through it, and *must not* need to: the estate's
+`+3-practice/PROOF-POLICY.adoc+` §2.2 states that ECHIDNA is "`the
+longer-term automation destination, not a prerequisite for current independent
+checks`". A mandatory VCL hop would violate that. Two consequences worth
+knowing before you deploy:
+
+* Enabling `+verisim+` also moves `+POST /api/prove+` onto `+ProverDispatcher+`
+  (`+server.rs:423+`); without it, `/api/prove` goes to the backend factory
+  directly. A storage feature should not decide the verification route.
+* `/api/verify` never enters the dispatcher at all, and `/api/verify_raw`
+  executes the solver binary directly by design.
+
+So "which pipeline ran" depends on the surface and the feature set. If a client
+needs a machine-readable answer it can trust, use `+echidna prove <file>
+--output json+` — the documented
+link:PROVE-RESULT-CONTRACT.adoc[`+echidna.prove.result/1+`] contract — rather
+than inferring it from an HTTP response body.
 
 === Polyglot source layout
 

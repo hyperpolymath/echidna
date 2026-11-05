@@ -1,3 +1,4 @@
 .hypatia-ignore
 CLAUDE.md
 build/                     # build orchestration: guix.scm relocated here (canon 1.2.1 guix-primary template_ref = "build/")
+archive/                   # quarantine for dead sources (2026-11-01; Logtalk, see archive/logtalk/README.adoc)

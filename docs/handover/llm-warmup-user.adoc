@@ -92,7 +92,7 @@ execution (trusted provers only)
 |===
 |Interface |Port |Tech
 |REST |8000 |axum + OpenAPI
-|GraphQL |8081 |async-graphql
+|GraphQL |8082 |async-graphql
 |gRPC |50051 |tonic
 |===
 

@@ -187,8 +187,23 @@ impl CircuitBreaker {
         }
     }
 
+    /// A poisoned breaker cannot authorize work or recover automatically.
+    fn lock_state(&self) -> Option<std::sync::MutexGuard<'_, CircuitState>> {
+        if self.last_failure.is_poisoned() {
+            tracing::error!(breaker = %self.name, "Circuit recovery timestamp is poisoned; refusing calls");
+            return None;
+        }
+        match self.state.lock() {
+            Ok(state) => Some(state),
+            Err(_) => {
+                tracing::error!(breaker = %self.name, "Circuit state is poisoned; refusing calls");
+                None
+            },
+        }
+    }
+
     pub fn state(&self) -> CircuitState {
-        *self.state.lock().unwrap()
+        self.lock_state().map_or(CircuitState::Open, |state| *state)
     }
 
     /// Identifier for this breaker (typically the prover/backend name).
@@ -206,7 +221,9 @@ impl CircuitBreaker {
 
     /// Record a successful call
     pub fn record_success(&self) {
-        let mut state = self.state.lock().unwrap();
+        let Some(mut state) = self.lock_state() else {
+            return;
+        };
         match *state {
             CircuitState::HalfOpen => {
                 self.success_count.fetch_add(1, Ordering::SeqCst);
@@ -225,7 +242,9 @@ impl CircuitBreaker {
 
     /// Record a failed call
     pub fn record_failure(&self) {
-        let mut state = self.state.lock().unwrap();
+        let Some(mut state) = self.lock_state() else {
+            return;
+        };
         self.failure_count.fetch_add(1, Ordering::SeqCst);
 
         match *state {
@@ -233,11 +252,15 @@ impl CircuitBreaker {
                 if self.failure_count.load(Ordering::SeqCst) as usize >= self.failure_threshold =>
             {
                 *state = CircuitState::Open;
-                *self.last_failure.lock().unwrap() = Some(Instant::now());
+                if let Ok(mut last_failure) = self.last_failure.lock() {
+                    *last_failure = Some(Instant::now());
+                }
             },
             CircuitState::HalfOpen => {
                 *state = CircuitState::Open;
-                *self.last_failure.lock().unwrap() = Some(Instant::now());
+                if let Ok(mut last_failure) = self.last_failure.lock() {
+                    *last_failure = Some(Instant::now());
+                }
             },
             _ => {},
         }
@@ -245,9 +268,14 @@ impl CircuitBreaker {
 
     /// Check if circuit can transition from Open to HalfOpen
     pub fn check_timeout_recovery(&self) {
-        let mut state = self.state.lock().unwrap();
+        let Some(mut state) = self.lock_state() else {
+            return;
+        };
         if let CircuitState::Open = *state {
-            if let Some(last_failure) = *self.last_failure.lock().unwrap() {
+            let Ok(last_failure) = self.last_failure.lock() else {
+                return;
+            };
+            if let Some(last_failure) = *last_failure {
                 if last_failure.elapsed() >= self.timeout {
                     *state = CircuitState::HalfOpen;
                     self.success_count.store(0, Ordering::SeqCst);
@@ -268,6 +296,9 @@ impl CircuitBreaker {
             CircuitState::HalfOpen | CircuitState::Closed => match f.await {
                 Ok(result) => {
                     self.record_success();
+                    if self.state.is_poisoned() || self.last_failure.is_poisoned() {
+                        return Err(CircuitBreakerError::CircuitOpen);
+                    }
                     Ok(result)
                 },
                 Err(e) => {
@@ -352,6 +383,54 @@ impl Drop for BulkheadGuard {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[tokio::test]
+    async fn test_poisoned_breaker_never_runs_or_recovers() {
+        for poison_timestamp in [false, true] {
+            let breaker = CircuitBreaker::new("poison fixture".into(), 1, 1, Duration::ZERO);
+            breaker.record_failure();
+            let outcome = std::panic::catch_unwind(|| {
+                if poison_timestamp {
+                    let _guard = breaker.last_failure.lock().expect("initially healthy lock");
+                    panic!("deliberate timestamp poison fixture");
+                } else {
+                    let _guard = breaker.state.lock().expect("initially healthy lock");
+                    panic!("deliberate state poison fixture");
+                }
+            });
+            assert!(outcome.is_err());
+            breaker.record_success();
+            breaker.record_failure();
+            breaker.check_timeout_recovery();
+            assert_eq!(breaker.state(), CircuitState::Open);
+            let ran = std::sync::atomic::AtomicBool::new(false);
+            let result = breaker
+                .call(async {
+                    ran.store(true, Ordering::SeqCst);
+                    Ok::<_, String>(())
+                })
+                .await;
+            assert!(matches!(result, Err(CircuitBreakerError::CircuitOpen)));
+            assert!(!ran.load(Ordering::SeqCst));
+        }
+    }
+
+    #[tokio::test]
+    async fn test_breaker_poisoned_during_call_refuses_success() {
+        let breaker = CircuitBreaker::new("in-flight poison fixture".into(), 1, 1, Duration::ZERO);
+        let result = breaker
+            .call(async {
+                let outcome = std::panic::catch_unwind(|| {
+                    let _guard = breaker.state.lock().expect("initially healthy lock");
+                    panic!("deliberate in-flight poison fixture");
+                });
+                assert!(outcome.is_err());
+                Ok::<_, String>(())
+            })
+            .await;
+        assert!(matches!(result, Err(CircuitBreakerError::CircuitOpen)));
+        assert_eq!(breaker.state(), CircuitState::Open);
+    }
 
     #[test]
     fn test_fibonacci() {

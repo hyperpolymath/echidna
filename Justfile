@@ -648,7 +648,7 @@ chapel-smoke:
 
 # Run the Chapel-gated Rust tests (`--features chapel`).
 chapel-test: build-chapel-ffi
-    cargo test --features chapel --lib -- proof_search verify_proof_parallel
+    cargo test --locked --features chapel --lib -- proof_search verify_proof_parallel
 
 # Speedup baseline: compares sequentialProofSearch /
 # parallelProofSearch / parallelProofSearchSpeculative against the
@@ -737,9 +737,17 @@ build-chapel-ffi:
     cd src/zig_ffi && zig build -Doptimize=ReleaseSafe
     @echo "Library built at src/zig_ffi/zig-out/lib/"
 
-# Build with Chapel support enabled (requires Zig FFI built first)
+# Build the feature against explicit unavailable stubs.
 build-chapel: build-chapel-ffi
-    cargo build --features chapel
+    ECHIDNA_CHAPEL_EXPECT_MODE=stubs cargo build --locked --features chapel
+
+# Build the real static bridge and let Cargo consume Chapel's runtime closure.
+build-chapel-real: chapel-build
+    cd src/zig_ffi && zig build -Doptimize=ReleaseSafe -Dstubs=false
+    ECHIDNA_CHAPEL_EXPECT_MODE=real cargo build --locked --features chapel
+
+chapel-test-real: build-chapel-real
+    ECHIDNA_CHAPEL_EXPECT_MODE=real cargo test --locked --features chapel --lib -- proof_search verify_proof_parallel
 
 # Alias retained for muscle-memory; same as chapel-test.
 test-chapel: chapel-test
@@ -748,9 +756,9 @@ test-chapel: chapel-test
 test-chapel-ffi:
     cd src/zig_ffi && zig build test
 
-# Full Chapel build + test
-chapel-all: chapel-build chapel-smoke build-chapel-ffi chapel-test
-    @echo "Chapel accelerator fully built and tested"
+# Full local real-library path, with the independent stub bridge unit tests.
+chapel-all: chapel-smoke test-chapel-ffi chapel-test-real
+    @echo "Real Chapel build and selected Rust/FFI tests completed"
 
 # ── SPARK axiom-policy layer ─────────────────────────────────
 
@@ -965,7 +973,7 @@ tour:
     echo "     src/rust/agent/           - Agentic proof search (actor model)"
     echo ""
     echo "2. API INTERFACES: src/interfaces/"
-    echo "     graphql/   - async-graphql (port 8081)"
+    echo "     graphql/   - async-graphql (port 8082)"
     echo "     grpc/      - tonic gRPC (port 50051)"
     echo "     rest/       - axum + OpenAPI (port 8000)"
     echo ""

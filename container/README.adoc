@@ -24,6 +24,17 @@ ECHIDNA uses the Stapeln container ecosystem for production deployment.
 
 == Quick Start
 
+The image, compose and K9 probes use `+/api/health+`. A successful response
+establishes that the core HTTP process is responding. The handler does not
+check solver availability, dispatcher readiness or dependent services, so
+the K9 readiness field has a process-level contract. Deployments that gate
+traffic on those dependencies must check them separately.
+
+The K9 file is a Hunt-level deployment template. Its placeholder signature,
+placeholder checksum and `+hunt_authorized = false+` are not deployment
+authorization. The repository's K9 CI hook checks structural fields; it does
+not verify a cryptographic signature or evaluate Nickel.
+
 [source,bash]
 ----
 # Build

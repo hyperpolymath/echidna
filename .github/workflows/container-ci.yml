@@ -23,6 +23,7 @@ on:
     branches: [main, master]
     paths:
       - 'Containerfile'
+      - 'scripts/ci/install-lean.sh'
       - '.containerization/**'
       - 'Cargo.toml'
       - 'Cargo.lock'
@@ -31,6 +32,7 @@ on:
   pull_request:
     paths:
       - 'Containerfile'
+      - 'scripts/ci/install-lean.sh'
       - '.containerization/**'
       - 'Cargo.toml'
       - 'Cargo.lock'
@@ -94,10 +96,9 @@ jobs:
       - name: Verify solver availability inside container
         run: |
           echo "=== Checking installed solvers ==="
-          podman run --rm --entrypoint /bin/sh echidna:ci-test -c '
-            echo "Z3:";    z3     --version 2>/dev/null || echo "  not found"
-            echo "Lean:";  lean   --version 2>/dev/null || echo "  not found"
-            echo "Idris2:"; idris2 --version 2>/dev/null || echo "  not found"
+          podman run --rm --entrypoint /bin/sh echidna:ci-test -ec '
+            echo "Z3:"; z3 --version
+            echo "Lean:"; lean --version
           '
 
       - name: Clean up
