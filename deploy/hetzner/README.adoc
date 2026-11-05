@@ -48,19 +48,66 @@ itself.
   `:latest` is not deployed. This *freezes* the running image. It does
   not verify it.
 
-Apply on the host as the `deploy` user. Record the running digest
-first, so the freeze is auditable:
+Apply on the host as the `deploy` user.
+
+*1. Find out which install this host has.* These steps are for a host
+installed with the quadlets in §2 (units `echidna.service` and
+`caddy.service`). A host installed from the appendix runs
+`container-echidna` and `container-caddy` instead. For that kind of host,
+use step 4 instead of step 3.
+
+[source,console]
+----
+systemctl --user cat echidna.service caddy.service >/dev/null && echo quadlet
+systemctl --user cat container-echidna.service container-caddy.service >/dev/null && echo appendix
+----
+
+*2. Record the image the container is running.* Record the running
+container's image ID, not the tag's digest. If an auto-update or a manual
+pull has moved the local `:latest` tag since the container started, a
+restart with `Pull=never` would start the image the tag now points to.
 
 [source,console]
 ----
 systemctl --user disable --now podman-auto-update.timer
-podman image inspect --format '{{.Digest}}' ghcr.io/hyperpolymath/echidna:latest  # record this
-# copy the updated Caddyfile and echidna.container into place, then:
+RUNNING=$(podman container inspect echidna --format '{{.Image}}')       # record this
+TAGGED=$(podman image inspect --format '{{.Id}}' ghcr.io/hyperpolymath/echidna:latest)
+echo "running=$RUNNING tagged=$TAGGED"
+# If they differ, point :latest back at the running image before restarting:
+[ "$RUNNING" = "$TAGGED" ] || podman tag "$RUNNING" ghcr.io/hyperpolymath/echidna:latest
+----
+
+*3. Quadlet host.* Copy the updated `Caddyfile` and `echidna.container`
+into place, then:
+
+[source,console]
+----
 systemctl --user daemon-reload
 systemctl --user restart echidna caddy
+----
+
+*4. Appendix host.* Those containers carry no auto-update label, and
+`podman generate systemd --new` units do not pull an image that is
+already present. So only the proxy changes. Copy the updated
+`Caddyfile` to `/opt/echidna/Caddyfile`, then:
+
+[source,console]
+----
+systemctl --user restart container-caddy
+----
+
+*5. Verify, on either kind of host.* The container must still run the
+image recorded in step 2.
+
+[source,console]
+----
+[ "$(podman container inspect echidna --format '{{.Image}}')" = "$RUNNING" ] && echo same-image
 curl -s  -o /dev/null -w '%{http_code}\n' https://api.nesy-prover.dev/api/health          # expect 200
 curl -s  -o /dev/null -w '%{http_code}\n' -X POST https://api.nesy-prover.dev/api/verify  # expect 403
 ----
+
+Stop and reassess if step 1 prints neither `quadlet` nor `appendix`, or if
+step 5 does not print `same-image`, `200` and `403`.
 
 The stopgap ends in the change that enables authentication. That change
 re-pins `Image=` to the signed image by digest and removes the `@public`
@@ -231,8 +278,11 @@ podman ps && curl -s https://api.nesy-prover.dev/api/health
 == 5. Updates and rollback
 
 NOTE: Unattended rollout is *disabled* while the
-<<containment-stopgap>> is in force. The commands below describe the
-mechanism for when it is restored with a signed, digest-pinned image.
+<<containment-stopgap>> is in force. The commands below apply only to a
+tag-based `Image=` with `AutoUpdate=registry`, because `podman
+auto-update` acts only on containers that carry that label. A
+digest-pinned image, which is what the change ending the stopgap
+introduces, changes only through a PR that bumps the digest.
 
 `ghcr-publish.yml` pushes a new `:latest` on every GitHub release.
 Enable unattended rollout:
