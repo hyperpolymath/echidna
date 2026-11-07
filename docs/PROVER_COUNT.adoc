@@ -18,10 +18,16 @@ ____
 
 === TL;DR
 
+Counts describe declarations and source files, not successful tool runs.
+The machine-readable link:../.machine_readable/verification-integrations.a2ml[verification integration ledger]
+distinguishes selected backend, corpus, internal-proof, and non-prover roles.
+Run `python scripts/check-verification-integrations.py` to check its source
+references and the full 141-variant declaration inventory.
+
 [width="100%",cols="34%,33%,33%",options="header",]
 |===
 |Question |Answer |Command
-|Total `+ProverKind+` variants in `+src/rust/provers/mod.rs+` |*141*
+|Total `+ProverKind+` variants in `+crates/echidna-core/src/prover_kind.rs+` |*141*
 |`+V+` below
 
 |Backend implementation files in `+src/rust/provers/+` |*105* |`+F+`
@@ -309,7 +315,7 @@ root.
 [source,bash]
 ----
 # V — total ProverKind variants (141)
-awk '/pub enum ProverKind/{f=1;next} f&&/^\}/{exit} f' src/rust/provers/mod.rs \
+awk '/pub enum ProverKind/{f=1;next} f&&/^\}/{exit} f' crates/echidna-core/src/prover_kind.rs \
   | grep -cE '^\s*[A-Z][A-Za-z0-9_]*\s*,'
 
 # F — backend implementation files (105)
@@ -319,15 +325,15 @@ ls src/rust/provers/*.rs | grep -cv 'mod\.rs$'
 git grep -l 'fn suggest_tactics' -- 'src/rust/provers/*.rs' | wc -l
 
 # C — Tier-1 core, exposed by default at GET /api/provers (12)
-awk '/fn all_core/{f=1} f&&/\]/{print;exit} f' src/rust/provers/mod.rs \
+awk '/fn all_core/{f=1} f&&/\]/{print;exit} f' crates/echidna-core/src/prover_kind.rs \
   | grep -oE 'ProverKind::[A-Za-z0-9_]+' | wc -l
 
 # D — variants carrying a type-checker / discipline role (46)
-awk '/pub enum ProverKind/{f=1;next} f&&/^\}/{exit} f' src/rust/provers/mod.rs \
+awk '/pub enum ProverKind/{f=1;next} f&&/^\}/{exit} f' crates/echidna-core/src/prover_kind.rs \
   | grep -icE 'typecheck|discipline'
 ----
 
-`+ProverKind::all()+` in `+src/rust/provers/mod.rs+` is the machine
+`+ProverKind::all()+` in `+crates/echidna-core/src/prover_kind.rs+` is the machine
 source of truth; this document is its human-readable mirror. If a count
 changes, update this file *and* `+.machine_readable/provers.a2ml+` in
 the same PR.
@@ -345,5 +351,5 @@ provers`".
 
 If a count changes (new wave absorbed, backend retired), update this
 file in the same PR. The single source of truth for the count is
-`+ProverKind::all()+` in `+src/rust/provers/mod.rs+`; this doc is the
+`+ProverKind::all()+` in `+crates/echidna-core/src/prover_kind.rs+`; this doc is the
 human-readable mirror.
