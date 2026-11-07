@@ -21,7 +21,7 @@ ____
 Counts describe declarations and source files, not successful tool runs.
 The machine-readable link:../.machine_readable/verification-integrations.a2ml[verification integration ledger]
 distinguishes selected backend, corpus, internal-proof, and non-prover roles.
-Run `python scripts/check-verification-integrations.py` to check its source
+Run `bash scripts/check-verification-integrations.sh` to check its source
 references and the full 141-variant declaration inventory.
 
 [width="100%",cols="34%,33%,33%",options="header",]
