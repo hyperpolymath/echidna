@@ -57,6 +57,8 @@ jobs:
         run: |
           bash scripts/ci/test-manifest-validator-regressions.sh
           bash .github/hooks/validate-a2ml.sh
+      - name: Check prover integration inventory
+        run: bash scripts/check-verification-integrations.sh
       - name: Write summary
         run: |
           A2ML_COUNT="${{ steps.detect.outputs.count }}"
