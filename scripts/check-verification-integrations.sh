@@ -67,6 +67,8 @@ while IFS='|' read -r tool status kind parent role has_paths; do
   roles[$tool]="$role"
   evidence[$tool]="$has_paths"
 done < <(awk '
+  # Write the current tool, status, kind, parent, role and path-presence flag
+  # to stdout as one pipe-delimited line; emit nothing when tool is empty.
   function emit() { if (tool != "") print tool "|" status "|" kind "|" parent "|" role "|" has_paths }
   /^\[tool\.[[:alnum:]_]+\]$/ {
     emit(); tool = $0; sub(/^\[tool\./, "", tool); sub(/\]$/, "", tool)
