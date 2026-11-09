@@ -119,6 +119,7 @@ fn security_trust_level_capped_at_level5() {
     let factors = TrustFactors {
         prover: ProverKind::Lean,
         confirming_provers: u32::MAX,
+        small_kernel_confirmations: 0,
         has_certificate: true,
         certificate_verified: true,
         worst_axiom_danger: DangerLevel::Safe,
@@ -188,6 +189,7 @@ fn security_reject_axiom_always_yields_level1() {
     let positive = TrustFactors {
         prover: ProverKind::Lean,
         confirming_provers: 5,
+        small_kernel_confirmations: 0,
         has_certificate: true,
         certificate_verified: true,
         worst_axiom_danger: DangerLevel::Safe,
@@ -222,6 +224,7 @@ fn security_noted_axiom_does_not_raise_trust() {
     let base = TrustFactors {
         prover: ProverKind::Z3,
         confirming_provers: 1,
+        small_kernel_confirmations: 0,
         has_certificate: false,
         certificate_verified: false,
         worst_axiom_danger: DangerLevel::Safe,
@@ -249,6 +252,7 @@ fn security_integrity_failure_never_raises_trust() {
     let passing = TrustFactors {
         prover: ProverKind::Z3,
         confirming_provers: 2,
+        small_kernel_confirmations: 0,
         has_certificate: false,
         certificate_verified: false,
         worst_axiom_danger: DangerLevel::Safe,

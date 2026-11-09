@@ -129,6 +129,7 @@ proptest! {
         let base_factors = TrustFactors {
             prover: ProverKind::Z3,
             confirming_provers: base_count,
+            small_kernel_confirmations: 0,
             has_certificate: false,
             certificate_verified: false,
             worst_axiom_danger: DangerLevel::Safe,
@@ -137,6 +138,7 @@ proptest! {
         };
         let more_factors = TrustFactors {
             confirming_provers: base_count + extra,
+            small_kernel_confirmations: 0,
             ..base_factors.clone()
         };
         let base_trust = compute_trust_level(&base_factors);
@@ -157,6 +159,7 @@ proptest! {
         let safe_factors = TrustFactors {
             prover: ProverKind::Lean,
             confirming_provers: confirming,
+            small_kernel_confirmations: 0,
             has_certificate: has_cert,
             certificate_verified: has_cert,
             worst_axiom_danger: DangerLevel::Safe,

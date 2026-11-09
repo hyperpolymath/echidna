@@ -106,6 +106,23 @@ shipped code. *Verus:* not started; no Verus specification or proof exists.
 Row stays `+open+` until a Creusot or Verus run on shipped code yields a receipt
 with a commit hash.
 
+*Trust kernel (2026-11-09).* `+compute_trust_level+` exists once, in
+`+crates/echidna-core-creusot+`; `+src/rust/verification/confidence.rs+`
+re-exports its `+TrustLevel+` and delegates to it. Two defects found by the
+2026-11-09 proof audit are fixed at that source: Level 4 fired on
+`+certificate_verified+` without `+has_certificate+`, and Level 5 checked only
+the producing prover's kernel class. The new contracts are TK-4 (Level 4 and
+above need a small kernel and a produced, verified certificate) and TK-5
+(Level 5 needs two or more small-kernel confirmations, the new
+`+small_kernel_confirmations+` input). They are `+tested-only+`:
+`+impl_invariants::tk4_*+`, `+tk5_*+` and `+tk6_*+` (monotone in the
+evidence) check every input with counts 0..=4. That covers every case only
+because the rule reads counts through `+>= 2+` and a minimum, which is
+argued, not mechanised. The Creusot annotations are stated, not discharged.
+Verus (§1.2) has not been applied yet; its scope is the same TK obligations
+on the same function. The Idris 2 `+TrustKernelMonotonicity+` model, which
+proved the defective Level 5 rule, is retired.
+
 |===
 
 === Idris 2 — APIs, ABIs, engineering properties (§1)

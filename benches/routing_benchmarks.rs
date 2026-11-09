@@ -125,6 +125,7 @@ fn bench_trust_level_computation(c: &mut Criterion) {
             TrustFactors {
                 prover: ProverKind::Z3,
                 confirming_provers: 1,
+                small_kernel_confirmations: 0,
                 has_certificate: false,
                 certificate_verified: false,
                 worst_axiom_danger: DangerLevel::Safe,
@@ -137,6 +138,7 @@ fn bench_trust_level_computation(c: &mut Criterion) {
             TrustFactors {
                 prover: ProverKind::Lean,
                 confirming_provers: 3,
+                small_kernel_confirmations: 0,
                 has_certificate: true,
                 certificate_verified: true,
                 worst_axiom_danger: DangerLevel::Safe,
@@ -149,6 +151,7 @@ fn bench_trust_level_computation(c: &mut Criterion) {
             TrustFactors {
                 prover: ProverKind::Z3,
                 confirming_provers: 5,
+                small_kernel_confirmations: 0,
                 has_certificate: true,
                 certificate_verified: true,
                 worst_axiom_danger: DangerLevel::Reject,

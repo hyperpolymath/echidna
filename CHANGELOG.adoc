@@ -8,6 +8,27 @@ https://semver.org/spec/v2.0.0.html[Semantic Versioning].
 
 === [Unreleased]
 
+==== Fixed — one trust kernel; Level 4 and Level 5 conditions, 2026-11-09
+
+* `+compute_trust_level+` now exists once, in `+echidna-core-creusot+`
+(`+echidna_core::trust+`). `+verification::confidence+` re-exports its
+`+TrustLevel+` and delegates to it instead of keeping a second copy.
+* *Level 4* now needs a produced certificate (`+has_certificate+`) as well
+as a verified one. A result with `+certificate_verified+` but no certificate
+used to score Level 4.
+* *Level 5* now needs two or more small-kernel systems that checked a
+certificate. It used to check only the producing prover's kernel class, so
+one small-kernel prover plus an SMT confirmer scored Level 5.
+* `+TrustFactors+` gains `+small_kernel_confirmations+`, the number of
+confirming provers that are small-kernel systems with a verified certificate,
+the producing prover included. It defaults to 0 (`+#[serde(default)]+`), so
+callers that cannot vouch for their confirmers never reach Level 5. The
+shipped dispatch paths set it to 0, as they already reported no certificate.
+* Contracts TK-4/TK-5 are stated on the kernel and checked exhaustively over
+a finite input space by the crate's tests (`+tested-only+`; the Creusot run
+is still open). The Idris 2 `+TrustKernelMonotonicity+` model, which proved
+the old Level 5 rule, is retired.
+
 ==== Changed — GraphQL listener default, 2026-11-04
 
 * `+echidna-graphql+` now defaults to `+127.0.0.1:8082+`, avoiding the

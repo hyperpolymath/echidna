@@ -115,6 +115,7 @@ fn arb_trust_factors_with_danger(danger: DangerLevel) -> impl Strategy<Value = T
             move |(prover, confirming, has_cert, cert_verified, integrity_ok)| TrustFactors {
                 prover,
                 confirming_provers: confirming,
+                small_kernel_confirmations: 0,
                 has_certificate: has_cert,
                 certificate_verified: cert_verified,
                 worst_axiom_danger: danger,
@@ -145,6 +146,7 @@ proptest! {
         let factors = TrustFactors {
             prover,
             confirming_provers: confirming,
+            small_kernel_confirmations: 0,
             has_certificate: has_cert,
             certificate_verified: cert_verified,
             worst_axiom_danger: danger,
@@ -201,6 +203,7 @@ proptest! {
         let safe_factors = TrustFactors {
             prover,
             confirming_provers: confirming,
+            small_kernel_confirmations: 0,
             has_certificate: has_cert,
             certificate_verified: cert_verified,
             worst_axiom_danger: DangerLevel::Safe,
