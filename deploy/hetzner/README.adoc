@@ -61,12 +61,30 @@ ssh deploy@<SERVER_IP> 'bash /opt/echidna/stopgap/stopgap-apply.sh apply /opt/ec
 The script fails closed. It stops before restarting anything when a step
 cannot be confirmed, and it ends by printing `stopgap: PASS`. In order, it:
 
-. Checks that the two files are the stopgap versions (`Pull=never`, no
-  `AutoUpdate`, the `@public` matcher).
+. Checks that `echidna.container` is the stopgap version. It reads the
+  directives as systemd does: indentation and spaces around `=` are
+  ignored, and so are `#` and `;` comment lines. The `[Container]` section
+  must set exactly one `Image=ghcr.io/hyperpolymath/echidna:latest` and
+  exactly one `Pull=never`. No `AutoUpdate=` may appear in any section,
+  and no `io.containers.autoupdate` label either.
+. Checks that the `Caddyfile` has the stopgap shape. Comments are ignored.
+  There must be exactly one `@public` matcher, holding exactly
+  `method GET HEAD` and `path /api/health /api/provers`, and no other named
+  matcher. There must be exactly one `reverse_proxy`, and it must be the
+  only thing inside `handle @public`. Exactly one catch-all `handle`, next
+  to it, must hold only `respond ... 403`. No other `handle` is allowed,
+  and neither is `import`, `invoke`, `handle_path`, `rewrite`, `uri`,
+  `php_fastcgi` or `forward_auth`. `method` is allowed only inside
+  `@public`. This is a check of the text, not of `caddy adapt` output: the
+  proxy image carries the `rate_limit` plugin, which a stock `caddy` does
+  not know, and the host has no `caddy` outside that image.
 . Detects the install layout, and refuses unless exactly one is present.
   A quadlet host (§2) runs `echidna.service` and `caddy.service`; an
   appendix host runs `container-echidna` and `container-caddy`.
-. Disables `podman-auto-update.timer`.
+. Disables `podman-auto-update.timer`. That does not end a run the timer
+  has already started, so it also stops `podman-auto-update.service`. It
+  then refuses unless `systemctl --user is-active` reports that service
+  `inactive` or `failed`.
 . Records the image ID the `echidna` container is running, in
   `~/.local/state/echidna/stopgap-running-image`. If the local `:latest`
   tag has moved since the container started, it points the tag back at
@@ -78,8 +96,16 @@ cannot be confirmed, and it ends by printing `stopgap: PASS`. In order, it:
   containers carry no auto-update label, and `podman generate systemd
   --new` units do not pull an image that is already present.
 . Verifies that the container still runs the recorded image, that the
-  timer is disabled, that `/api/health` answers `200`, and that
-  `POST /api/verify` answers `403`.
+  timer is disabled and no auto-update run is active, and that
+  `GET /api/health` answers `200`. It then sends each of these and
+  requires `403` from every one: `POST` to `/api/prove`, `/api/verify`,
+  `/api/verify_raw`, `/api/verify_parallel`, `/api/suggest`,
+  `/api/session/create` and `/api/agent/plan`, `GET /api/search`,
+  `POST /api/health`, and `GET` on a route the server does not have. Any
+  other answer, a `429` from the rate limiter included, fails the run. One
+  run sends at least 11 requests, and more while it waits for
+  `/api/health`. The limit is 30 a minute for each client, so wait a
+  minute before running `verify` again after a failure.
 
 To check the host again later, from any shell:
 
