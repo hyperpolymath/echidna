@@ -90,13 +90,27 @@ help_tree() {
 }
 help_tree 0
 
-rg --no-filename --no-line-number --glob '*.rs' '^\s*\.route\(' src/rust \
-  | sed -E 's/^[[:space:]]+//; s/[[:space:]]+$//' | sort > "$out/routes.txt" || true
+# Prefix each matched line with the module that owns it, so moving a
+# `.route(...)` from one router to another changes the golden. The owner is
+# the first path component under src/rust/ with `.rs` removed: server.rs
+# and server/prove.rs are both `server`, groove.rs is `groove`. That keeps
+# the golden invariant under a module split, which is what it guards.
+owned() {
+  awk '{
+    i = index($0, ":"); path = substr($0, 1, i - 1); line = substr($0, i + 1)
+    sub(/^src\/rust\//, "", path); sub(/\/.*$/, "", path); sub(/\.rs$/, "", path)
+    gsub(/^[[:space:]]+|[[:space:]]+$/, "", line)
+    print path ": " line
+  }'
+}
+
+rg --with-filename --no-line-number --glob '*.rs' '^\s*\.route\(' src/rust \
+  | owned | sort > "$out/routes.txt" || true
 [ -s "$out/routes.txt" ] || { echo "cannot run: no .route( lines found under src/rust" >&2; exit 2; }
 
-rg --no-filename --no-line-number --glob '*.rs' \
+rg --with-filename --no-line-number --glob '*.rs' \
    '(^|[^A-Za-z0-9_])Router::new\(|\.(merge|nest|nest_service|fallback|with_state|layer)\(' src/rust \
-  | sed -E 's/^[[:space:]]+//; s/[[:space:]]+$//' | sort > "$out/router-composition.txt" || true
+  | owned | sort > "$out/router-composition.txt" || true
 [ -s "$out/router-composition.txt" ] || { echo "cannot run: no Router::new( lines found under src/rust" >&2; exit 2; }
 
 just --list > "$out/just-list.txt" 2>&1 || { echo "cannot run: just --list failed" >&2; exit 2; }
