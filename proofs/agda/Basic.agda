@@ -154,10 +154,11 @@ uncurry f (x , y) = f x y
 -- Proof that curry and uncurry are inverses.
 --
 -- Stated *pointwise* (the functions agree on every input), which is
--- provable in plain Agda by `refl` with ZERO axioms. The fully-extensional
--- form `curry (uncurry f) ≡ f` would require function extensionality
--- (funext) — a standard axiom, but an axiom nonetheless; the pointwise
--- statements below are the axiom-free truth and need no postulate.
+-- provable in plain Agda by `refl` with zero axioms. The extensional form
+-- `curry (uncurry f) ≡ f` also holds by `refl` here, through η for
+-- functions and records, so it needs no function extensionality either.
+-- (Corrected 2026-11-09: an earlier comment said it required funext; a
+-- probe under --safe --without-K --cubical-compatible checks it by refl.)
 module CurryUncurryLaws where
   curry-uncurry : {A B C : Set} → (f : A → B → C) → (x : A) → (y : B)
                 → curry (uncurry f) x y ≡ f x y

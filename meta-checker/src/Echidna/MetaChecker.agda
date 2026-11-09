@@ -18,14 +18,13 @@
 --   ✓ Axiom policies form a total preorder
 --   ✓ worst-policy is commutative, associative, has identity (Clean)
 --   ✓ Rejected is absorbing (once rejected, always rejected)
---   ✓ Comment-aware scanning is sound
 --   ✓ Every danger class maps to exactly one policy
 --
 -- FROM Portfolio:
 --   ✓ Cross-checking improves trust over single-solver
 --   ✓ Inconclusive and timeout always produce Level1
 --   ✓ Small-kernel provers always have higher trust
---   ✓ Agreement is reflexive and symmetric
+--   ✓ Agreement is symmetric, and reflexive on Valid and Invalid (not on Unknown)
 --   ✓ Unknown verdicts never count as agreement
 --
 -- FROM Dispatch:
@@ -33,7 +32,6 @@
 --   ✓ Dangerous axioms always produce Level1
 --   ✓ Maximum trust (Level5) requires all positive factors
 --   ✓ Pipeline is monotonically degrading
---   ✓ Pipeline is deterministic
 --
 -- FROM AxiomTrackerCompleteness:
 --   ✓ Scan-entry preserves length (no silent omissions)
@@ -56,7 +54,8 @@
 --   ✓ Verification requires an initialised manifest
 --   ✓ Verification means the recorded digest was matched
 --   ✓ An uninitialised manifest never verifies in the model
---   ✓ Digest-comparison soundness is load-bearing (sharpness)
+--   ✓ An accept-everything comparator is unsound (this does not show the
+--     soundness hypothesis is needed by any other result)
 -- Rust dispatch permission and content-level collision resistance are outside
 -- this model; DEBT D9 records a source comparison, not a refinement proof.
 --
@@ -66,7 +65,7 @@
 --   ✓ Fixed points 0/1 -> Level1, >=5 -> Level5
 --   ✓ The clamp is idempotent
 --
--- TOTAL: 45+ proven properties, 0 postulates, 0 sorry, 0 believe_me,
+-- TOTAL: (count not maintained; see docs/PROOF-STATUS.adoc); 0 postulates, 0 sorry, 0 believe_me,
 -- 0 Admitted.
 --
 -- "0 postulates" is not the same claim as "0 hypotheses". Receipt's token
@@ -118,8 +117,7 @@ key-safety-4 = max-trust-requires-all
 -- 5. Rejected axiom policy is absorbing
 key-safety-5 = rejected-absorbing
 
--- 6. Pipeline is deterministic
-key-safety-6 = pipeline-deterministic
+-- 6. (retracted 2026-11-09: `pipeline-deterministic` was congruence)
 
 -- 7. Trust levels form a total order
 key-order-1 = ≤ₜ-refl

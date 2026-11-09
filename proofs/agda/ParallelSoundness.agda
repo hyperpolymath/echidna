@@ -39,8 +39,11 @@
 -- the `CancelToken` class (class for shared-by-reference semantics across
 -- coforall tasks), the `cancelToken` parameter on `tryProver`, and the
 -- `cancelToken.cancelled.write(true)` paired with the CAS in
--- `parallelProofSearchSpeculative`. `cancellation-safety` below is the
--- formal statement of what that implementation preserves.
+-- `parallelProofSearchSpeculative`. `cancellation-safety` below is NOT a
+-- statement about that implementation: it checks by computation that the
+-- speculative aggregate is true when the head is true (its proof is `tt`),
+-- and models no cancellation, interleaving or token. (Corrected 2026-11-09,
+-- proof audit, ultraplan F-10.)
 --
 -- Wave-1 scope: this module proves the AGGREGATION layer. The
 -- complementary layer — that `tryProver` itself is sound (i.e. its

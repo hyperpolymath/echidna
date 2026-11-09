@@ -1,10 +1,11 @@
 -- SPDX-License-Identifier: MPL-2.0
--- ProofComposition.agda — axiom-set consistency for composed proofs.
+-- ProofComposition.agda — list-append lemmas for axiom lists.
 --
--- Simplified version: proves that combining two consistent axiom
--- lists yields a consistent union if neither introduces the other's
--- negation. Enough to exercise the agda backend without fighting
--- stdlib namespace clashes.
+-- A test fixture for the Agda backend (PROOF-POLICY §3), not evidence for
+-- any obligation. It proves only that list append is associative and has a
+-- left identity. It does not state or prove consistency of a union of
+-- axiom sets, and it does not discharge obligation E9 (corrected
+-- 2026-11-09, proof audit; see docs/PROOF-STATUS.adoc R6).
 
 module ProofComposition where
 

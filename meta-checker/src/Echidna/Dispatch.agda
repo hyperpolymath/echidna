@@ -137,11 +137,6 @@ pipeline-monotonic t Noted   = ≤ₜ-refl t
 pipeline-monotonic _ Warning = l1≤
 pipeline-monotonic _ Reject  = l1≤
 
-------------------------------------------------------------------------
--- THEOREM: Pipeline is deterministic
--- (same inputs always produce the same trust level)
-------------------------------------------------------------------------
-
-pipeline-deterministic : ∀ (tf₁ tf₂ : TrustFactors) →
-  tf₁ ≡ tf₂ → compute-trust tf₁ ≡ compute-trust tf₂
-pipeline-deterministic _ _ refl = refl
+-- Retracted 2026-11-09 (proof audit, ultraplan F-10): `pipeline-deterministic`
+-- was congruence (`tf₁ ≡ tf₂ → f tf₁ ≡ f tf₂`), which holds for every
+-- function, so it established nothing about the pipeline.

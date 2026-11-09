@@ -143,13 +143,8 @@ rejected-left-absorbing ClassicalAxioms = refl
 rejected-left-absorbing IncompleteProof = refl
 rejected-left-absorbing Rejected = refl
 
-------------------------------------------------------------------------
--- THEOREM 8: Scanning is deterministic
-------------------------------------------------------------------------
-
-scan-deterministic : ∀ (r₁ r₂ : Registry) →
-  r₁ ≡ r₂ → fold-worst (scan-all r₁) ≡ fold-worst (scan-all r₂)
-scan-deterministic _ _ refl = refl
+-- Retracted 2026-11-09 (proof audit, ultraplan F-10): THEOREM 8,
+-- `scan-deterministic`, was congruence, true of every function.
 
 ------------------------------------------------------------------------
 -- THEOREM 9: Every danger class maps to the correct policy

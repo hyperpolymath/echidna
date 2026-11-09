@@ -71,8 +71,11 @@ compose p1 p2 = MkProof
 ------------------------------------------------------------------------
 -- 5.  Main theorem: composition preserves soundness
 --
---     If p1 is sound, p2 is sound, and their axiom sets do not
---     conflict, then compose p1 p2 is sound.
+--     If p1 is sound and p2 is sound, then compose p1 p2 is sound.
+--     The no-conflict hypothesis is accepted but never used: soundness
+--     here is a Bool flag combined with `∧`, so this does not establish
+--     axiom-conflict detection or obligation E9. (Corrected 2026-11-09,
+--     proof audit, ultraplan F-10.)
 ------------------------------------------------------------------------
 
 compose-sound : (Conflicts : List Axiom → List Axiom → Set)

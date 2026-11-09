@@ -5,9 +5,9 @@
 --
 -- Proves:
 -- 1. Dangerous pattern classification is exhaustive
--- 2. Scanning is sound (no false negatives for known patterns)
+-- 2. (retracted 2026-11-09: no theorem states scanner soundness)
 -- 3. Axiom policy enforcement is consistent
--- 4. Comment-aware scanning doesn't miss real axioms
+-- 4. (retracted 2026-11-09: no theorem states comment-aware scanning)
 
 module Echidna.AxiomSafety where
 
@@ -257,24 +257,13 @@ worst-assoc Clean Clean IncompleteProof = refl
 worst-assoc Clean Clean ClassicalAxioms = refl
 worst-assoc Clean Clean Clean = refl
 
-------------------------------------------------------------------------
--- CRITICAL: Comment-skipping soundness
-------------------------------------------------------------------------
-
--- If a pattern is in a comment, it should not affect policy
-comment-skip-sound : ∀ (p : DangerPattern) →
-  DangerPattern.in-comment p ≡ true →
-  danger-to-policy DC-Safe ≡ Clean
-comment-skip-sound _ _ = refl
-
--- If a pattern is NOT in a comment, it should be classified
--- (The classification result depends on the prover and pattern)
-real-pattern-classified : ∀ (d : DangerClass) →
-  ∃[ p ] (danger-to-policy d ≡ p)
-real-pattern-classified DC-Safe    = Clean , refl
-real-pattern-classified DC-Noted   = ClassicalAxioms , refl
-real-pattern-classified DC-Warning = IncompleteProof , refl
-real-pattern-classified DC-Reject  = Rejected , refl
+-- Retracted 2026-11-09 (proof audit, ultraplan F-10): `comment-skip-sound`
+-- concluded `danger-to-policy DC-Safe ≡ Clean` whatever the pattern, with its
+-- hypothesis unused, and `real-pattern-classified` (∃ p. f d ≡ p) holds for
+-- any function. Neither said anything about comment-aware scanning, so both
+-- are removed rather than kept as advertised properties. A real statement
+-- needs a model of the scanner; under PROOF-POLICY §1 that obligation is the
+-- Rust detector's, verified on the code.
 
 ------------------------------------------------------------------------
 -- THEOREM: Rejected policy is absorbing (once Rejected, always Rejected)
