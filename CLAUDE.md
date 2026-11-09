@@ -18,7 +18,7 @@ Guidelines and context for working with Claude Code on the ECHIDNA project.
 - **RSR / CCCP compliance statement**: [`RSR_COMPLIANCE.adoc`](RSR_COMPLIANCE.adoc)
 - **Proof and verification policy (normative)**: `3-practice/PROOF-POLICY.adoc`
   in [hyperpolymath/standards](https://github.com/hyperpolymath/standards) —
-  which prover carries which obligation (Rust→Creusot, Ada→SPARK,
+  which prover carries which obligation (Rust→Creusot with Pearlite, and Verus (§1.2); Ada→SPARK,
   APIs/ABIs→Idris 2, theory→Agda rechecked in Rocq and Lean), and the closed
   status vocabulary (`proven`, `proven-with-postulates`, `tested-only`,
   `argued`, `open`). A change to the mapping is an owner ruling and requires
