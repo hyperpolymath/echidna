@@ -78,8 +78,10 @@ no collisions in kind_to_u8 |I2
 |E7 GNN embedding faithfulness |`+src/abi/EchidnaABI/Gnn.idr+`
 |Structural properties, feature bounds, score normalisation |I2
 
-|E9 Proof composition soundness |`+proofs/agda/ProofComposition.agda+`
-|Soundness preservation, axiom conflict detection |Agda
+|E9 Proof composition soundness |*none* (corrected 2026-11-09)
+|Not stated by any theorem. `+proofs/agda/ProofComposition.agda+`, cited here
+before, proves only list-append associativity and left identity. See
+PROOF-STATUS R6 |—
 
 |E12 ProofState serialization losslessness
 |`+verification/proofs/idris2/ProofStateSerialisation.idr+`

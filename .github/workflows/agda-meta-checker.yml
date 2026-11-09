@@ -55,7 +55,7 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         run: |
           set -euo pipefail
-          PATTERN='^(meta-checker/|scripts/ci/(setup-agda|check-agda|check-receipt-controls)\.sh$|\.github/workflows/agda-meta-checker\.yml$)'
+          PATTERN='^(meta-checker/|scripts/ci/(setup-agda|check-agda|check-receipt-controls|agda-cone-receipt|test-agda-cone-receipt)\.sh$|\.github/workflows/agda-meta-checker\.yml$)'
           if [ "${{ github.event_name }}" = "pull_request" ]; then
             FILES=$(gh api "repos/${{ github.repository }}/pulls/${{ github.event.pull_request.number }}/files" \
                       --paginate --jq '.[].filename')
@@ -85,3 +85,26 @@ jobs:
       - name: Type-check meta-checker (PROOF-POLICY §2.1 canonical invocation)
         if: steps.detect.outputs.relevant == 'true'
         run: bash scripts/ci/check-agda.sh
+
+      # PROOF-POLICY §8.2/§8.4: the receipt a PWG-3 grade is derived from. It
+      # records the toolchain, the flags, the import cone of the theory
+      # module with a digest per file, and a comment-aware postulate scan of
+      # that cone. The receipt is printed to the log and the step summary.
+      - name: Record the §8.2 cone receipt for the theory theorems (Receipt.agda)
+        if: steps.detect.outputs.relevant == 'true'
+        env:
+          AGDA_STDLIB_SHA256: 72ca3ea25094efa0439e106f0d949330414232ec4cc5c3c3316e7e70dd06d431
+        run: |
+          set -euo pipefail
+          bash scripts/ci/test-agda-cone-receipt.sh
+          receipt="$RUNNER_TEMP/agda-cone-receipt.json"
+          (cd meta-checker && bash ../scripts/ci/agda-cone-receipt.sh src/Echidna/Receipt.agda) > "$receipt"
+          cat "$receipt"
+          {
+            echo '## PROOF-POLICY §8.2 cone receipt (Receipt.agda)'
+            jq -r '"commit \(.source.commit), \(.toolchain.agda), \(.import_cone.count) modules in the import cone, postulate scan: \(.postulate_scan.result)"' "$receipt"
+            echo
+            echo '```json'
+            cat "$receipt"
+            echo '```'
+          } >> "$GITHUB_STEP_SUMMARY"

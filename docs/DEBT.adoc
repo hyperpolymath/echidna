@@ -442,7 +442,7 @@ Fixed so far: the docs and the published site now say "capability present, not
 currently engaged" instead of claiming a step that does not run.
 
 Now machine-checked on the specification side:
-`+meta-checker/src/Echidna/Integrity.agda+` (`+docs/PROOF-STATUS.adoc+` R9)
+`+meta-checker/src/Echidna/Integrity.agda+` (`+docs/PROOF-STATUS.adoc+` R4b, an engineering model under the 2026-11-09 §1 classification; the Rust obligation is R1)
 proves that verification in its model requires an initialised manifest and
 that an uninitialised manifest never verifies. Its explicit hypothesis is
 digest-comparison soundness: an accepted comparison implies equal digests.

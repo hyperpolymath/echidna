@@ -51,7 +51,7 @@ it provides a **machine-verified guarantee** that the system's safety invariants
 |===
 | Construct | Count
 
-| `postulate` | 1 (funext — standard, provable in HoTT)
+| `postulate` | 0 (every module is checked under `--safe`, which refuses one)
 | `sorry` | 0
 | `believe_me` | 0
 | `Admitted` | 0

@@ -164,8 +164,12 @@ ECHIDNA-specific anchors:
   backends).
 * `generated/abi/` — auto-generated C headers from the Idris2 ABI.
 
-The Agda meta-checker provides independent formal verification of the
-Rust trust-pipeline properties; see `proofs/agda/`.
+The Agda meta-checker (`meta-checker/`) type-checks *models* of the trust
+pipeline and one theory result (receipt vs warrant). A model is not a proof
+about the Rust code: under `3-practice/PROOF-POLICY.adoc` §1 the Rust
+behaviour is verified with Creusot/Pearlite and Verus on the code, and that is
+still open. `proofs/agda/` is a test corpus, not evidence. Status per
+obligation: `docs/PROOF-STATUS.adoc`.
 
 == File map: key modules
 
@@ -194,7 +198,8 @@ Rust trust-pipeline properties; see `proofs/agda/`.
 | `src/ui/tea/`, `src/ui/public/` | TEA sources (compile pipeline unavailable) and working static shell
 | `src/abi/`                 | Idris2 formal specifications (ABI contracts + totality proofs)
 | `ffi/zig/`, `src/zig_ffi/` | Zig FFI implementation
-| `proofs/agda/`             | Agda meta-checker (independent verification of trust properties)
+| `meta-checker/`            | Agda meta-checker: trust-pipeline models and the receipt/warrant theory (see `docs/PROOF-STATUS.adoc`)
+| `proofs/agda/`             | Agda test corpus (fixtures for the Agda backend; not evidence, `PROOF-POLICY` §3)
 | `tests/`                   | Integration / property / interface test suites
 |===
 
