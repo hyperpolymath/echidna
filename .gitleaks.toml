@@ -41,3 +41,13 @@ paths = [
   '''(^|/)models/premise_vocab\.txt$''',
 
 ]
+
+# One exact value each, anchored, never a path: a credential planted in the
+# same file is still caught (estate baseline, "prefer a value entry").
+regexes = [
+  # Commit SHA of metadatastician/standards that workflow-linter.yml's lock
+  # refresh checks out as `authority_sha=` and re-verifies with rev-parse. A
+  # public git object id, not a credential; generic-api-key reports it from
+  # #455 on (scanned 2026-11-09 with gitleaks 8.18.4: 1 finding, this one).
+  '''^d3e4b485a2af90c92a8e18af0888cd19cb132cd9$''',
+]
