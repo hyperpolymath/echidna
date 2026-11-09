@@ -1,0 +1,5 @@
+[exit 101]
+
+thread 'main' panicked:
+Command import-octads: Short option names must be unique for each argument, but '-o' is in use by both 'octads' and 'out'
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace

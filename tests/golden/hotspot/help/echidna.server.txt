@@ -1,0 +1,12 @@
+Start HTTP API server
+
+Usage: echidna server [OPTIONS]
+
+Options:
+      --format <FORMAT>  Output format (text, json) [default: text]
+  -p, --port <PORT>      Port to bind to [default: 8081]
+      --host <HOST>      Host to bind to [default: 127.0.0.1]
+  -v, --verbose          Verbose output
+      --cors             Enable CORS
+      --no-color         Disable colors
+  -h, --help             Print help

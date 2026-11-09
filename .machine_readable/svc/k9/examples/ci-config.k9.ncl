@@ -10,7 +10,7 @@ K9!
     component_type = "ci-configuration",
     security = {
       leash = 'Yard,
-      leash = "yard",
+      trust_level = "validated-config",
       allow_network = false,
       allow_filesystem_write = false,
       allow_subprocess = false,
