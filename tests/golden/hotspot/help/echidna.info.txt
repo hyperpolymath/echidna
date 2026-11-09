@@ -1,0 +1,12 @@
+Show information about a specific prover
+
+Usage: echidna info [OPTIONS] <PROVER>
+
+Arguments:
+  <PROVER>  Prover name
+
+Options:
+      --format <FORMAT>  Output format (text, json) [default: text]
+  -v, --verbose          Verbose output
+      --no-color         Disable colors
+  -h, --help             Print help
