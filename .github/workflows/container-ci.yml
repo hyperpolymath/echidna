@@ -21,7 +21,8 @@
 # and file mtimes cannot make two builds of the same inputs differ. A
 # mismatch means an input floats (an unpinned package, a download without
 # a digest, a non-deterministic build step). The compare job prints the
-# layer digests of both builds so the drifting layer can be found.
+# layer digests of both builds, and the deepest paths whose digests differ
+# (each build prints a per-path fingerprint, scripts/ci/fs-fingerprint.sh).
 
 name: Container Build Verification
 
@@ -34,6 +35,7 @@ on:
     paths:
       - 'Containerfile'
       - 'scripts/ci/install-lean.sh'
+      - 'scripts/ci/fs-fingerprint.sh'
       - '.containerization/**'
       - 'Cargo.toml'
       - 'Cargo.lock'
@@ -43,6 +45,7 @@ on:
     paths:
       - 'Containerfile'
       - 'scripts/ci/install-lean.sh'
+      - 'scripts/ci/fs-fingerprint.sh'
       - '.containerization/**'
       - 'Cargo.toml'
       - 'Cargo.lock'
@@ -99,6 +102,21 @@ jobs:
           set -euo pipefail
           echo "image-id=$(podman image inspect echidna:ci-test --format '{{.Id}}')" >> "$GITHUB_OUTPUT"
           echo "layers=$(podman image inspect echidna:ci-test --format '{{json .RootFS.Layers}}')" >> "$GITHUB_OUTPUT"
+
+      # Per-path digests of the image filesystem, printed between markers so
+      # container-reproducible can name the drifting paths, not only the layer.
+      - name: Fingerprint the image filesystem
+        run: |
+          set -euo pipefail
+          cid=$(podman create echidna:ci-test)
+          podman export "$cid" | bash scripts/ci/fs-fingerprint.sh 12 > "$RUNNER_TEMP/fs-fingerprint"
+          podman rm "$cid" >/dev/null
+          echo "fs-fingerprint: $(wc -l < "$RUNNER_TEMP/fs-fingerprint") paths"
+          echo "::group::fs-fingerprint (depth 12)"
+          echo "FS-FINGERPRINT-BEGIN"
+          cat "$RUNNER_TEMP/fs-fingerprint"
+          echo "FS-FINGERPRINT-END"
+          echo "::endgroup::"
 
       - name: Verify image metadata
         run: |
@@ -160,21 +178,43 @@ jobs:
           echo "image-id=$(podman image inspect echidna:ci-rebuild --format '{{.Id}}')" >> "$GITHUB_OUTPUT"
           echo "layers=$(podman image inspect echidna:ci-rebuild --format '{{json .RootFS.Layers}}')" >> "$GITHUB_OUTPUT"
 
+      # Per-path digests of the image filesystem, printed between markers so
+      # container-reproducible can name the drifting paths, not only the layer.
+      - name: Fingerprint the image filesystem
+        run: |
+          set -euo pipefail
+          cid=$(podman create echidna:ci-rebuild)
+          podman export "$cid" | bash scripts/ci/fs-fingerprint.sh 12 > "$RUNNER_TEMP/fs-fingerprint"
+          podman rm "$cid" >/dev/null
+          echo "fs-fingerprint: $(wc -l < "$RUNNER_TEMP/fs-fingerprint") paths"
+          echo "::group::fs-fingerprint (depth 12)"
+          echo "FS-FINGERPRINT-BEGIN"
+          cat "$RUNNER_TEMP/fs-fingerprint"
+          echo "FS-FINGERPRINT-END"
+          echo "::endgroup::"
+
   container-reproducible:
     name: Containerfile reproducibility (same image ID twice)
     runs-on: ubuntu-latest
-    timeout-minutes: 5
+    timeout-minutes: 10
     needs: [container-build, container-rebuild]
+    permissions:
+      actions: read     # read the two build jobs' logs for their fs-fingerprints
+      contents: read
     steps:
+      - name: Checkout
+        uses: actions/checkout@v7.0.1
+
       - name: Compare the two builds
         env:
+          GH_TOKEN: ${{ github.token }}
           ID_A: ${{ needs.container-build.outputs.image-id }}
           ID_B: ${{ needs.container-rebuild.outputs.image-id }}
           LAYERS_A: ${{ needs.container-build.outputs.layers }}
           LAYERS_B: ${{ needs.container-rebuild.outputs.layers }}
         run: |
           set -euo pipefail
-          [ -n "$ID_A" ] && [ -n "$ID_B" ] || { echo "::error::a build reported no image ID"; exit 1; }
+          if [ -z "$ID_A" ] || [ -z "$ID_B" ]; then echo "::error::a build reported no image ID"; exit 1; fi
           {
             echo "## Containerfile reproducibility"
             echo "build:   $ID_A"
@@ -188,6 +228,29 @@ jobs:
           paste <(jq -r '.[]' <<<"$LAYERS_A") <(jq -r '.[]' <<<"$LAYERS_B") \
             | awk -F '\t' '{ printf "layer %d: %s %s %s\n", NR, ($1 == $2 ? "same" : "DIFFERS"), $1, $2 }' \
             | tee -a "$GITHUB_STEP_SUMMARY"
+          # Name the drift: each build job printed per-path digests of its
+          # image between markers (scripts/ci/fs-fingerprint.sh).
+          fingerprint() {
+            local id
+            id=$(gh api "repos/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID/attempts/$GITHUB_RUN_ATTEMPT/jobs" \
+                   --paginate --jq ".jobs[] | select(.name == \"$1\") | .id" | head -n 1)
+            [ -n "$id" ] || { echo "::warning::no job named '$1' in this run attempt"; return 1; }
+            gh api "repos/$GITHUB_REPOSITORY/actions/jobs/$id/logs" \
+              | sed -E 's/^[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9:.]+Z //' \
+              | sed -n '/^FS-FINGERPRINT-BEGIN$/,/^FS-FINGERPRINT-END$/p' \
+              | grep -E '^[0-9a-f]{64}  '
+          }
+          if fingerprint "Build & verify container image" > "$RUNNER_TEMP/fp-a" \
+             && fingerprint "Rebuild container image (independent runner)" > "$RUNNER_TEMP/fp-b"; then
+            {
+              echo "### Paths that differ between the two builds (deepest only)"
+              echo '```'
+              bash scripts/ci/fs-fingerprint-drift.sh "$RUNNER_TEMP/fp-a" "$RUNNER_TEMP/fp-b" | head -n 200
+              echo '```'
+            } | tee -a "$GITHUB_STEP_SUMMARY"
+          else
+            echo "::warning::could not read both fs-fingerprints; only the layer comparison is available"
+          fi
           exit 1
 
   # ── Wave-3 Tier-3 prover images — weekly, blocking per image ──────────────
