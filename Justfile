@@ -254,8 +254,11 @@ proofs: proofs-coq proofs-lean proofs-agda proofs-idris proofs-verif-lean proofs
 
 # Compile the Rocq rechecks of the meta-checker (verification/proofs/rocq/*.v).
 # These are PROOF-POLICY §2 recheck legs, not dogfood corpus. Each file is compiled
-# in a temporary copy so no .vo/.glob lands in the tree, then `Print Assumptions`
-# must report every theorem closed under the global context.
+# in a temporary copy so no .vo/.glob lands in the tree. Then `coqchk`, Rocq's
+# separate checker kernel, re-checks every compiled library and must report no
+# axioms and no unsafe flags. Every Axiom, Parameter and Admitted declaration
+# counts as an axiom, whatever its keyword, indentation or section, and whether
+# or not a theorem uses it. Any other summary output fails the recipe.
 proofs-verif-rocq:
     #!/usr/bin/env bash
     set -euo pipefail
@@ -263,20 +266,24 @@ proofs-verif-rocq:
     trap 'rm -rf "$work"' EXIT
     cp verification/proofs/rocq/*.v "$work/"
     cd "$work"
+    mods=()
     for f in $(ls *.v | sort); do
         echo "coqc $f"
-        coqc -q "$f"
-        mod="${f%.v}"
-        thms=$(grep -oE '^(Theorem|Lemma) [A-Za-z0-9_]+' "$f" | awk '{print $2}')
-        { echo "Require Import $mod."; for t in $thms; do echo "Print Assumptions $t."; done; } > "assumptions_$mod.v"
-        open=$(coqc -Q . '' "assumptions_$mod.v" 2>&1 | grep -vc 'Closed under the global context' || true)
-        if [ "$open" -ne 0 ]; then
-            coqc -Q . '' "assumptions_$mod.v"
-            echo "FAIL: $f has a theorem that rests on an assumption"
+        coqc -q -Q . '' "$f"
+        mods+=("${f%.v}")
+    done
+    echo "coqchk -o ${mods[*]}"
+    summary=$(coqchk -o -silent -Q . '' "${mods[@]}" 2>&1 | sed -n '/^CONTEXT SUMMARY/,$p')
+    for want in 'Axioms' 'Constants/Inductives relying on type-in-type' \
+                'Constants/Inductives relying on unsafe (co)fixpoints' \
+                'Inductives whose positivity is assumed'; do
+        if ! grep -qxF "* $want: <none>" <<<"$(sed 's/[[:space:]]*$//' <<<"$summary")"; then
+            printf '%s\n' "$summary"
+            echo "FAIL: coqchk does not report '$want: <none>'"
             exit 1
         fi
     done
-    echo "Rocq recheck legs: all files compile, every theorem closed"
+    echo "Rocq recheck legs: all files compile, coqchk reports no axioms"
 
 # Compile the Coq proof corpus (proofs/coq/**/*.v), then the Rocq recheck legs
 # (CI's Coq job runs this recipe, so the legs ride on its toolchain).

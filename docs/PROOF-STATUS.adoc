@@ -221,8 +221,11 @@ non-monotone rule fails to check. The transcription from Rust is unchecked by an
 rests on it as an `+argued+` assumption.
 |*Rocq leg:* `+verification/proofs/rocq/TrustRule.v+`, route `+re-proved+`
 (no Dedukti transport here). Each statement restates the Agda one of the same
-name. Coq `+8.18.0+` compiles it, every theorem is closed under the global
-context, and the same mutant fails. CI runs it as `+just proofs-verif-rocq+`
+name. Coq `+8.18.0+` compiles it, and `+coqchk -o+` (the separate checker
+kernel) re-checks the compiled library and reports no axioms. Any `+Axiom+`,
+`+Parameter+` or `+Admitted+` declaration, used or not, would be listed. The
+same mutant fails, as do four planted escape hatches (an indented `+Fact+`, a
+`+Corollary+`, an `+Axiom+`, a `+Remark+` in a section). CI runs it as `+just proofs-verif-rocq+`
 inside the Coq job. Correspondence state: `+COQ-CHECKED+`, `+BRIDGE-PENDING+`
 until the statement-by-statement table in the file header is reviewed.
 *Lean leg:* `+open+`; no Lean toolchain could be run where this was written.
