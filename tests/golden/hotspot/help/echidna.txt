@@ -1,0 +1,25 @@
+Neurosymbolic theorem proving platform with multi-prover support
+
+Usage: echidna [OPTIONS] <COMMAND>
+
+Commands:
+  prove         Prove a theorem from file
+  verify        Verify an existing proof
+  search        Search theorem libraries
+  interactive   Start interactive REPL mode
+  server        Start HTTP API server
+  list-provers  List available provers
+  info          Show information about a specific prover
+  diagnostics   Interactive diagnostics REPL for health monitoring
+  corpus        Build / query a project corpus (named decls + dependency DAG)
+  lexicon       Mine lexicon candidates across training corpora (flag-only)
+  design        Search proof-design space via simulated annealing
+  suggest       Suggest tactic variants that close a failing lemma
+  help          Print this message or the help of the given subcommand(s)
+
+Options:
+      --format <FORMAT>  Output format (text, json) [default: text]
+  -v, --verbose          Verbose output
+      --no-color         Disable colors
+  -h, --help             Print help
+  -V, --version          Print version

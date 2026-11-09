@@ -1,0 +1,20 @@
+Build / query a project corpus (named decls + dependency DAG)
+
+Usage: echidna corpus [OPTIONS] <COMMAND>
+
+Commands:
+  ingest         Walk a project tree and build a corpus index
+  query          Query a previously-ingested corpus index
+  stats          Print summary statistics for a corpus index
+  crossquery     Look up entries across every synonym table by `semantic_class`. Demonstrates cross-prover semantic equivalence: `corpus crossquery well-foundedness` reports `WellFounded` in Agda, `well_founded` in Coq, and `WellFounded` in Lean and Idris 2
+  near           Find the K nearest-neighbour entries to a free-form text query by cosine similarity over the Vector octad embeddings. The query is canonicalised the same way the corpus is, so a statement written in one prover's syntax matches entries written in another's. Useful for "find lemmas structurally near `WellFounded _<_`"
+  identity       Group matching declarations by their *structural* identity key
+  export-octads  Convert a JSON corpus index into 8-modality octad JSONL (one DeclarationOctad per line). Streamable; compatible with VeriSim's `/api/v1/octads` endpoint when posted line-by-line
+  import-octads  Load an octad JSONL stream back into a corpus and persist as JSON. Round-trip is best-effort but lossless for the fields the corpus cares about (statements, proofs, deps, hazards)
+  help           Print this message or the help of the given subcommand(s)
+
+Options:
+      --format <FORMAT>  Output format (text, json) [default: text]
+  -v, --verbose          Verbose output
+      --no-color         Disable colors
+  -h, --help             Print help

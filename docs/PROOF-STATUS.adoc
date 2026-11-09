@@ -62,33 +62,31 @@ CI gate exists and the authors say it passes" when no receipt is cited.
 |Not done.
 |===
 
-=== Relation to the Mathesis grades
+=== Relation to the Proof Witness Grades (PWG)
 
-https://github.com/hyperpolymath/mathesis[mathesis], *Estate-wide Mathematical
-Knowledge Architecture* §5, grades a *theorem* by how far its witness has
-travelled: **Grade 3** type-checks locally in its home system and is not
-translated; **Grade 2i/2ii** one / two independent translations with statement
-correspondence recorded; **Grade 1** machine-checked through a verified checker
-API in headless CI.
+`+PROOF-POLICY+` §8 (owner ruling 2026-11-04) is normative for grades. A PWG
+says how many independent machine-checked witnesses a *theory* theorem has:
+`+PWG-3+` (Agda source checked under the §2.1 invocation, with a receipt),
+`+PWG-2i+` (plus one counted Rocq or Lean leg), `+PWG-2ii+` (plus both),
+`+PWG-1+` (every counted witness has a current per-commit receipt from a
+headless, isolated, pinned run). Always write the `+PWG-+` prefix.
 
-The two vocabularies are orthogonal — one grades a theorem's reach, the other
-records whether a repository's obligation was discharged — but they interact:
+* *Engineering proofs are not graded* (§8.1). Creusot, Verus, SPARK and Idris 2
+  results, and Agda statements about ECHIDNA's own functions and types, use the
+  §5 tokens only. In this file that covers R1, R2, R3, R9, R10, R12 and most of
+  R4. A theory theorem below `+PWG-3+` is `+ungraded+`.
+* A recheck leg counts only when its kernel accepted it *and* its §2.2
+  correspondence is `+RECONCILED+`. Until then it is not a witness.
 
-* A home-system leg may be `+proven+` while every independent leg is `+open+`.
-  That combination *is* Grade 3, and it is the ceiling for anything in this
-  repository.
-* A translation leg is `+argued+`, not `+proven+`, until the statement
-  correspondence is recorded (`+PROOF-POLICY+` §2: "`the kernel checks the term
-  only against the translated statement`").
-
-Mathesis §6 forbids flattening assurance into a percentage. See R5 and R6.
+Grades are derived from receipts, never asserted, and are never flattened into
+a percentage. See R5 and R6.
 
 == Obligations
 
 Grouped by the `+PROOF-POLICY+` §1 mapping, because that is what decides which
 verifier is even allowed to carry the row.
 
-=== Rust — Creusot (§1: first-party Rust)
+=== Rust — Creusot, Pearlite and Verus (§1, §1.2: first-party Rust)
 
 [width="100%",cols="24%,13%,38%,25%",options="header"]
 |===
@@ -96,11 +94,17 @@ verifier is even allowed to carry the row.
 
 |R1. Trust pipeline, dispatch, arbitration, Pareto
 |`+open+`
-|`+PROOF-POLICY+` §1 maps first-party Rust to Creusot.
-|`+crates/echidna-core-creusot+` describes itself as "`Creusot-annotated (not
-yet proved)`"; the `+creusot+` dev-dependency is commented out and the crate
-builds on stable Rust behind a `+creusot+` feature. Annotation is not proof. Row
-stays `+open+` until a Creusot run yields a receipt with a commit hash.
+|`+PROOF-POLICY+` §1 maps first-party Rust to Creusot with Pearlite contracts,
+and Verus (§1.2, owner ruling 2026-11-07: the default Rust toolset).
+|*Creusot:* `+crates/echidna-core-creusot+` describes itself as
+"`Creusot-annotated (not yet proved)`"; the `+creusot+` dev-dependency is
+commented out and the crate builds on stable Rust behind a `+creusot+` feature.
+Annotation is not proof. It is also a *parallel model* ("`NOT a runtime
+dependency`"), so even a green Creusot run would cover that model, not the
+shipped `+src/rust/+` code, until a refinement or the annotations move onto the
+shipped code. *Verus:* not started; no Verus specification or proof exists.
+Row stays `+open+` until a Creusot or Verus run on shipped code yields a receipt
+with a commit hash.
 
 |===
 
@@ -118,13 +122,32 @@ ABI row and the Stage-8a trio as constructively proved, all in
 
 |R2. Idris 2 interface/ABI obligations (E2, E3, E5, E6, E7, E12, Stage 8a,
 VQL-UT, extensive ABI)
-|`+argued+`
+|`+proven+`
 |`+PROOF-POLICY+` §1 maps ABIs and engineering properties to Idris 2. The
 artefacts exist and are detailed in `+PROOF-NEEDS+`.
-|No `+idris2 --build+` receipt for
-`+verification/proofs/idris2/echidna-verif-proofs.ipkg+` is cited with a commit
-hash. Promote to `+proven+` by citing a green run and its commit — that is a
-one-line change, and it is the cheapest upgrade in this file.
+|*Receipts (2026-11-09).* CI runs on commit
+`+a2a8643b1b96bb33519950586375c07e3fa12f96+`, whose `+verification/+` and
+`+src/abi/+` trees are byte-identical to `+main+` `+2ab7574+` (checked with
+`+git diff+`):
+https://github.com/hyperpolymath/echidna/actions/runs/42624461538/job/129184535654[Idris2 (verification)]
+builds `+verification/proofs/idris2/echidna-verif-proofs.ipkg+` and
+https://github.com/hyperpolymath/echidna/actions/runs/42624461712/job/129184533713[Type-check Idris2 ABI definitions]
+builds `+src/abi/echidnaabi.ipkg+`, both on Idris 2 0.8.0, both success.
+`+%default total+`. A 2026-11-09 audit of both packages found no `+believe_me+`,
+`+assert_total+` or `+postulate+` declarations (the only textual hits are a
+doc comment and the pattern strings in `+AxiomCompleteness.idr+`). That is a
+receipt-time audit, not an enforced property: `+idris2-abi-ci.yml+` greps
+`+src/abi/+` only, for `+believe_me+`, `+assert_total+`, `+unsafePerformIO+`
+and `+prim__crash+`, and checks neither `+postulate+` nor
+`+verification/proofs/idris2/+`. *Limit:* `+EchidnaABI.CapnSchemas+` was
+outside the package and failed to build; hyperpolymath/echidna#472 fixes it and
+gates it. Nine other `+.idr+` files at the `+src/abi/+` root are outside the
+package: `+BojForeign+`, `+OverlayForeign+`, `+TentaclesForeign+`,
+`+TypeLLForeign+`, `+Types+`, `+Layout+` and `+Foreign+` (shadow copies of
+packaged modules), `+CoprocessorForeign+` (an orphan whose module name does not
+match its path) and `+NeSyAssistTesting+` (does not parse, and states an
+empirical claim rather than a provable one). They carry no row until the owner
+decides their fate (open question A5).
 
 |===
 
@@ -137,15 +160,41 @@ one-line change, and it is the cheapest upgrade in this file.
 |R3. Lean 4 legs: E4-L4 `+ConfidenceLattice.lean+`, E10
 `+ParetoMaximality.lean+` / `+ParetoStrongMaximality.lean+`, E11
 `+IntegrityVerification.lean+`, E13 `+PortfolioCompleteness.lean+`
+|`+open+` (the Lean build passes; the verifier placement is unresolved)
+|*Corrected 2026-11-09.* The 2026-05-18 record (all five failing) is stale.
+https://github.com/hyperpolymath/echidna/actions/runs/42624461538/job/129184535185[Lean 4 (verification)]
+builds all five with `+lake build+` on the pinned `+lean-toolchain+` (4.13.0),
+success, on commit `+a2a8643+` (tree identical to `+main+` `+2ab7574+`). A
+2026-11-09 audit run of `+#print axioms+` over 77 of the 79 theorems found only
+`+propext+`, `+Quot.sound+` and `+Classical.choice+` — no `+sorryAx+`.
+|*Placement is still open.* These statements are about ECHIDNA's own types
+(confidence lattice, Pareto order, integrity, portfolio), so §1 assigns them
+to Idris 2 (or Creusot/Verus on the Rust), not Lean. Calling them "§4
+exceptions" is not enough: no §4 exception record (reason, alternative
+considered) exists beside them. Owner call: write the §4 records, or move the
+statements to Idris 2. Being engineering proofs, they carry no PWG (§8.1).
+
+|===
+
+=== Ada — SPARK (§1: first-party Ada)
+
+[width="100%",cols="24%,13%,38%,25%",options="header"]
+|===
+|Obligation |Row |Basis |Evidence / next step
+
+|R12. SPARK projects: `+src/ada/spark/echidna_spark.gpr+`,
+`+spark/axiom_tracker+`, `+spark/certificates+`, `+spark/solver_integrity+`
 |`+open+`
-|Directly recorded: `+lake build+` run 2026-05-18 (Lean 4.13.0) — *all five
-fail to compile*, 49 / 2 / 1 / 5 / 31 errors, three root causes
-(`+unfold_let+` removed in 4.13.0; Mathlib tactics under a zero-mathlib
-lakefile; instance synthesis and module resolution).
-|Nothing. This row is correct and must not be softened. `+PROOF-NEEDS+` records
-that `+ConfidenceLattice.lean+` was left byte-identical and that the
-`+unfold_let+` token-swap made it worse (104 errors). The open decision is
-Mathlib-vs-core, which is an owner call.
+|`+PROOF-POLICY+` §1 maps Ada to SPARK. Four GPR projects exist; this row was
+missing from the file until 2026-11-09.
+|No `+gnatprove+` receipt exists. No workflow runs `+gnatprove+`; the only
+recipe (`+Justfile+`, `+gnatprove -P src/ada/spark/echidna_spark.gpr+`) covers
+one of the four projects and is not run in CI. *Boundary, recorded:*
+`+Axiom_C_Bridge+` (`+src/ada/spark/axiom_c_bridge.ads:23+`, `+.adb:16+`) is
+`+SPARK_Mode => Off+` — the C-ABI seam — so it is outside any SPARK proof and is
+an `+ASSUMED+` boundary for anything that calls through it. Next step: a pinned
+`+gnatprove+` job over all four projects, or a §6 toolchain deviation recorded
+here.
 
 |===
 
@@ -188,6 +237,13 @@ functions do not *compute* under Cubical transports. The corpus is
 clean log would weaken the profile. Full Cubical and the independent Rocq
 and Lean legs were not run for this receipt. Changes to any recorded source
 invalidate its use for that changed source until a fresh check is recorded.
+**Since that receipt,** `+MetaChecker.agda+` changed: it now also imports
+`+Composition+` (R6), so the checked closure is ten modules. The nine modules
+this row covers are unchanged and keep their recorded digests, so the row
+stands for them; the entrypoint's new digest, and R6, are covered only once
+the `+agda-meta-checker+` job, which now prints a source-bound receipt
+(toolchain, flags, library descriptors and every source's SHA-256), has run
+on `+main+`.
 
 **Correction to the old receipt:** `+916b769+` predates `+Integrity+`,
 `+ClampTrust+` and `+Receipt+`, and its entrypoint omitted
@@ -260,24 +316,31 @@ Rocq/Lean rechecks and statement correspondence also remain open in R5.
 |`+open+`
 |`+PROOF-POLICY+` §2: every Agda theory proof is rechecked in both, transported
 through Dedukti or re-proved, with the route recorded per theorem.
-|Never attempted. This is what holds the set at Mathesis *Grade 3*: locally
+|Never attempted. This is what holds the theory set at `+PWG-3+`: locally
 checked, untranslated. ECHIDNA's `+src/rust/exchange/+` speaks Dedukti, so the
 transport route exists; using it is unstarted work, not a missing capability.
 
 |R6. E9 "proof composition soundness"
-|`+argued+`, with a location defect
-|`+PROOF-NEEDS+` evidences it with `+proofs/agda/ProofComposition.agda+`. But
-`+PROOF-POLICY+` §3 says `+proofs/<prover>/+` trees are fixtures, "`outside
-this policy`".
-|The obligation survives; its evidence sits where the policy says evidence
-cannot live. **New (2026-11-01):** the whole `+proofs/agda/+` tree — 13 files
-including `+ProofComposition.agda+` — type-checks under
-`+agda --safe --without-K --cubical-compatible+`, 13/13, no postulates. So the
-cheap remedy is the *move* to a policy-conformant location
-(`+verification/proofs/agda/+`), not re-stating the obligation as unsupported:
-the evidence is good, it is merely filed where §3 says evidence cannot live.
-Recorded, not resolved — moving it is a repository change with cross-references
-to update, so it is left as a named action rather than done silently.
+|`+argued+` until the `+agda-meta-checker+` job prints a source-bound receipt
+for this module on `+main+`
+|`+meta-checker/src/Echidna/Composition.agda+`, imported by
+`+MetaChecker.agda+` and so inside the `+agda-meta-checker+` closure (pinned
+Agda 2.7.0.1, canonical flags).
+|*Corrected 2026-11-09.* The earlier entry called the old evidence "good,
+merely misfiled". It was not good: `+ProofComposition.agda+` proved
+list-append associativity, and `+SoundnessPreservation.agda+`'s
+`+compose-sound+` discharged a Bool flag with `+∧+` while ignoring its conflict
+hypothesis. The replacement is theory over an arbitrary logic: `+cut+`
+(composition preserves semantic soundness), `+explosion+` (why a conflict
+check is load-bearing), `+compose-realised+`, and `+detector-must-flag+`
+(a detector that decides its conflict relation returns a conflict witness
+for every inconsistent composition; without decidability only
+`+detector-cannot-miss+`, a double negation, holds). Type-checked locally
+under the canonical flags (Agda 2.6.3, not the pinned toolchain, so not a
+receipt). No
+Rust code composes proofs, so no implementation is claimed. The two corpus
+files stay in `+proofs/agda/+` as fixtures, with headers saying what they
+show. Rocq/Lean rechecks (§2): not started.
 
 |===
 
@@ -315,9 +378,9 @@ row. They exercise parsers and backends. Listing them is deliberate: an absent
 row should read as *out of policy*, not *forgotten*. The same holds for
 `+archive/logtalk/+` (dead, quarantined) and for `+echidna-playground/+`.
 
-Note the tension with R6 — one artefact in a corpus directory is cited by
-`+PROOF-NEEDS+` as covering a real obligation. §3 is why that is a defect in
-placement rather than a status question.
+R6 used to cite a corpus artefact as covering a real obligation. It now cites
+`+meta-checker/src/Echidna/Composition.agda+`, and both corpus files say in
+their headers that they are not E9 evidence.
 
 == Standing assumptions
 
@@ -351,13 +414,15 @@ mean "ECHIDNA is verified" — it would mean one named obligation was discharged
 by one named tool with its boundary written down. Nothing here vouches for a
 prover backend's own soundness.
 
-Four rows are `+proven+` today — R4, R9, R10, R11 — and each names the kernel,
-the flags and the limit that qualify it (R4 carries the
-`+UnsupportedIndexedMatch+` caveat, R9 the digest-level scope). Every *independent*
-leg is still `+open+`: R5 has never been attempted, which is why the corpus sits
-at Mathesis Grade 3 and not above it. Those two facts are not in tension —
-proven in one kernel is exactly what Grade 3 means — and neither of them is an
-omission.
+The `+proven+` rows — R2, R4, R9, R10, R11 — each name the kernel, the
+receipt and the limit that qualify them (R2 the receipt-time escape-hatch
+audit, R4 the `+UnsupportedIndexedMatch+` caveat, R9 the digest-level scope).
+R3 stays `+open+`: its Lean build passes, but Lean is not the verifier §1
+assigns to those statements until the placement is decided. Only theory theorems are graded (§8.1): R11 is at
+`+PWG-3+`; the engineering rows carry no PWG. Every *independent* leg is still
+`+open+`: R5 has never been attempted, which is why nothing here is above
+`+PWG-3+`. Proven in one kernel is exactly what `+PWG-3+` means, and neither fact
+is an omission.
 
 == Related
 

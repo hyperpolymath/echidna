@@ -54,14 +54,12 @@ mod tests {
         fn fixture(script: &str, timeout: u64) -> (tempfile::TempDir, ProverConfig) {
             let directory = tempfile::tempdir().unwrap();
             let executable = directory.path().join("version-probe");
-            std::fs::write(
+            crate::provers::test_fixture::write_executable(
                 &executable,
-                format!(
+                &format!(
                     "#!/bin/sh\n[ \"$#\" -eq 1 ] && [ \"$1\" = '--version' ] || exit 64\n{script}\n"
                 ),
-            )
-            .unwrap();
-            std::fs::set_permissions(&executable, std::fs::Permissions::from_mode(0o700)).unwrap();
+            );
             let config = ProverConfig {
                 executable,
                 timeout,
