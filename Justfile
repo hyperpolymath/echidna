@@ -217,6 +217,10 @@ build-release:
 test:
     cargo test --lib
 
+# Test the containment stopgap script against stub podman/systemctl/curl
+test-deploy:
+    bash tests/deploy/stopgap-apply.test.sh
+
 # Run all tests (unit + integration)
 test-all:
     cargo test
