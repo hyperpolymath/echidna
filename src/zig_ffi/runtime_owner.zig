@@ -169,7 +169,8 @@ const Probe = struct {
     }
 
     fn work(raw: *anyopaque) void {
-        const self: *@This() = @ptrCast(@alignCast(raw));
+        // hypatia: allow code_safety/zig_ptr_cast -- raw is the type-erased *@This() this callback was registered with
+        const self: *@This() = @ptrCast(@alignCast(raw)); // hypatia: allow code_safety/zig_align_cast -- same pointer, so @This() alignment holds
         self.wrong_thread = self.wrong_thread or self.init_id != std.Thread.getCurrentId();
         self.calls += 1;
     }
@@ -239,7 +240,8 @@ test "shutdown drains accepted work and refuses new work before joining" {
         shutdown_failed: bool = false,
 
         fn work(raw: *anyopaque) void {
-            const self: *@This() = @ptrCast(@alignCast(raw));
+            // hypatia: allow code_safety/zig_ptr_cast -- raw is the type-erased *@This() this callback was registered with
+            const self: *@This() = @ptrCast(@alignCast(raw)); // hypatia: allow code_safety/zig_align_cast -- same pointer, so @This() alignment holds
             self.mutex.lock();
             self.entered = true;
             self.changed.broadcast();
@@ -311,7 +313,8 @@ test "owner callbacks cannot re-enter or finalize themselves" {
         stop_refused: bool = false,
 
         fn work(raw: *anyopaque) void {
-            const self: *@This() = @ptrCast(@alignCast(raw));
+            // hypatia: allow code_safety/zig_ptr_cast -- raw is the type-erased *@This() this callback was registered with
+            const self: *@This() = @ptrCast(@alignCast(raw)); // hypatia: allow code_safety/zig_align_cast -- same pointer, so @This() alignment holds
             var nested = Work{ .context = self.probe, .run = Probe.work };
             self.call_refused = if (self.owner.call(&nested)) |_| false else |err| err == error.ReentrantCall;
             self.stop_refused = if (self.owner.shutdown()) |_| false else |err| err == error.ReentrantCall;
@@ -358,7 +361,8 @@ test "a nonowner process-exit request refuses active work without a join cycle" 
         exit_refused: bool = false,
 
         fn work(raw: *anyopaque) void {
-            const self: *@This() = @ptrCast(@alignCast(raw));
+            // hypatia: allow code_safety/zig_ptr_cast -- raw is the type-erased *@This() this callback was registered with
+            const self: *@This() = @ptrCast(@alignCast(raw)); // hypatia: allow code_safety/zig_align_cast -- same pointer, so @This() alignment holds
             self.mutex.lock();
             self.entered = true;
             self.changed.broadcast();
