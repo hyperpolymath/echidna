@@ -30,9 +30,10 @@ coherence manifest:
   actual invariants / trust actions / tolerances / intents).
 * `<verb>.ncl` — the paired Nickel *runner* (pedigree + schema + run
   policy). Imports `../_base.ncl`.
-* `<verb>.k9.ncl` — the *K9 trust-tier component* (execution surface,
-  evidence sinks, session-open/close negotiation). Imports the Hunt
-  base via `../k9/template-hunt.k9.ncl` and `../_base.ncl`.
+* `<verb>.k9.ncl` — the *K9 component* (K9 contract v1.0.0, D173): a
+  declaration evaluated at 'Yard. It records evidence sinks and
+  session-open/close negotiation; the paired runner is the execution
+  surface, so this record spawns nothing. Imports `../_base.ncl`.
 * `<verb>.manifest.a2ml` — the *trident coherence manifest* (file roles,
   cross-refs, signature, history).
 
@@ -125,14 +126,14 @@ no paired xfile is non-conformant.
 
 [NOTE]
 ====
-*Local k9-base status.* Echidna's three trust-tier templates currently
-live under `../svc/k9/` (`template-kennel.k9.ncl`, `template-yard.k9.ncl`,
-`template-hunt.k9.ncl`). The per-verb `<verb>.k9.ncl` components import the
-canonical `../k9/template-hunt.k9.ncl` base path used estate-wide; that
-shared Hunt base is a known estate-level gap (the same import is unresolved
-in `standards`) and is tracked by the machine-readable respec programme
-rather than patched per-repo here. The runner `.ncl` files (which import
-only `_base.ncl`) `nickel typecheck` clean.
+*Validation.* Every `<verb>.k9.ncl` passes the canonical validator
+(`metadatastician/standards` `1-formats/k9/tools/k9-validate.sh --strict`,
+layers L0–L2), run by the `k9-validate` job in `dogfood-gate.yml` through
+`.github/hooks/validate-k9.sh`. The former import of an estate-wide
+`../k9/template-hunt.k9.ncl` base never resolved and has been removed, as
+rsr-template-repo did. Echidna's templates for new components are
+`../svc/k9/template-{kennel,yard,hunt}.k9.ncl.in`: they carry unfilled
+placeholders, so they are not components and are not validated.
 ====
 
 == Fill-in / maintenance rules

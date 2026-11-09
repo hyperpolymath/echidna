@@ -1,0 +1,14 @@
+Search theorem libraries
+
+Usage: echidna search [OPTIONS] <PATTERN>
+
+Arguments:
+  <PATTERN>  Search pattern (regex supported)
+
+Options:
+      --format <FORMAT>  Output format (text, json) [default: text]
+  -p, --prover <PROVER>  Prover to search (searches all if not specified)
+  -l, --limit <LIMIT>    Maximum results to return [default: 20]
+  -v, --verbose          Verbose output
+      --no-color         Disable colors
+  -h, --help             Print help

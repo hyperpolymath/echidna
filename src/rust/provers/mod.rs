@@ -14,6 +14,8 @@ use std::path::{Path, PathBuf};
 use crate::core::{ProofState, Tactic, TacticResult};
 
 pub mod outcome;
+#[cfg(all(test, unix))]
+pub(crate) mod test_fixture;
 pub use outcome::{classify_anyhow_error, ProverOutcome};
 
 pub mod io;

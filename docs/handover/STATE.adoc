@@ -45,7 +45,9 @@ highest-leverage gap, surfaces real bugs mocks hide. Cap’n Proto next,
 since Chapel consumes those schemas.
 
 |D5 |*Live-prover CI cadence tiered* |T1 every PR, T2 nightly, T3
-weekly, T4 quarterly allow-fail.
+weekly. (The T4 quarterly allow-fail jobs and the T1 Guix manifest check
+were removed 2026-11-09 under the CI-4 ruling, #416; every remaining job
+is blocking.)
 
 |D6 |*No JSON emit on hot path* |Per `+feedback_no_json_emit_a2ml+`.
 Cap’n Proto replaces HTTP-JSON Rust↔Julia. Tool config stays
@@ -75,8 +77,9 @@ CI-unverified |`+9a4aeeb+`, `+6717b12+`
 OR-Tools, HOL4, ACL2, Twelf, Metamath). Needs per-backend Containerfiles
 (Podman). |*SCAFFOLD ONLY* — handover hints in STATE.a2ml |—
 
-|Wave-4 |Tier-4 quarterly, 19 backends. Retained as mock-only unless a
-maintainer volunteers. |*SCAFFOLD ONLY* |—
+|Wave-4 |Tier-4, 19 backends, mock-only. The quarterly CI placeholder jobs
+were removed 2026-11-09 (CI-4, #416); a backend returns to CI in a blocking
+job once it has a Containerfile. |*SCAFFOLD ONLY* |—
 |===
 
 Local verification of Wave-1 + Wave-2: *18/18 live tests pass* (13 real
@@ -133,8 +136,8 @@ Baseline smoke.
 FFI bridge. *Does not feed into dispatch* and *does not link real
 Chapel*; tests run against bundled stubs only.
 * `+.github/workflows/live-provers.yml+` — tiered workflow (T1 PR, T2
-nightly, T3 weekly, T4 quarterly). T1 + T2 matrices filled with real
-provisioning; T3 + T4 placeholder jobs.
+nightly, T3 weekly). T1 + T2 matrices filled with real provisioning. The
+T4 quarterly placeholder jobs were removed 2026-11-09 (CI-4, #416).
 * `+.github/workflows/agda-meta-checker.yml+` — formally-verified
 trust-pipeline properties.
 
