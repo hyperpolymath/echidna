@@ -63,17 +63,19 @@
 #   docs/decisions/ADR-*-rulings-ledger.adoc (check 10)
 #     One section per ruling (D-A, ..., D-N, D2, D3, D5, D6, D7) whose
 #     heading (== or deeper) names exactly one ruling id, with exactly one
-#     attribute line `:status: open` or `:status: ruled`. A ruled section
-#     links the owner's record on https://github.com/hyperpolymath/.
+#     attribute line `:status: open` or `:status: ruled`, all outside
+#     comment and verbatim blocks (////, ----, ...., ++++, ```). A ruled
+#     section links the owner's record on https://github.com/hyperpolymath/.
 #   scripts/ci/ruling-cited.sh (check 10b)
 #     Called as `ruling-cited.sh <W0_BASE> <W0_HEAD>`; exits 0 iff every W0
 #     PR in that range cites the rulings it acts on.
 #   docs/proofs/claims.json (check 13)
-#     One JCS value holding an object whose id, name or claim names the Lean
-#     build ("lake build", "lean build", "lean4 build"), which mentions the
-#     version 4.13.0 as a whole token, and which carries either a green
-#     result (result/status/outcome: green, pass, passed, success) or a
-#     "repair" object with a non-empty "id" and "before": "F-3".
+#     One JCS value whose root is an object (a root array FAILs), holding
+#     an object whose id, name or claim names the Lean build ("lake build",
+#     "lean build", "lean4 build"), which mentions the version 4.13.0 as a
+#     whole token, and which carries either a green result
+#     (result/status/outcome: green, pass, passed, success) or a "repair"
+#     object with a non-empty "id" and "before": "F-3".
 
 # The checks are called through "check_$c", which shellcheck cannot follow.
 # shellcheck disable=SC2317
@@ -95,38 +97,72 @@ GOLDENS="${W0_HOTSPOT_GOLDENS:-tests/golden/hotspot}"
 # ---------------------------------------------------------------- helpers
 
 # gh_get <api path>: GET from the GitHub REST API, body on stdout. The
-# Authorization header is sent only when a token is present.
+# Authorization header is sent only when a token is present. Every request
+# is bounded (connect 10 s, transfer 60 s, retries 120 s in all), so a
+# stalled API is a FAIL, not a gate that never ends.
 gh_get() {
   local auth=()
   [ -n "${GITHUB_TOKEN:-}" ] && auth=(-H "Authorization: Bearer $GITHUB_TOKEN")
-  curl -fsS --retry 2 \
+  curl -fsS --connect-timeout 10 --max-time 60 --retry 2 --retry-max-time 120 \
     ${auth[@]+"${auth[@]}"} \
     -H "Accept: application/vnd.github+json" \
     -H "X-GitHub-Api-Version: 2022-11-28" \
     "https://api.github.com/$1"
 }
 
-# check_runs <repo> <sha>: every check run on the commit, latest per name,
-# as a JSON array of {name, status, conclusion}. Returns non-zero, with no
-# output, when any page cannot be read or parsed, or when there are more
-# pages than it will follow: a partial list must never read as a full one.
-# Pages are collected in a file, not passed through argv, because a commit
-# with many runs produces arrays larger than the argument limit.
-check_runs() {
-  local repo="$1" sha="$2" page=1 body n tmp out
-  tmp=$(mktemp) || return 1
+# gh_pages <out file> <api path> <jq path to the page's array>: GET every
+# page (per_page=100) of a paginated endpoint and write the bodies to the
+# file, one per line. Returns non-zero when any page cannot be read, when a
+# page's items are not an array, or when there are more pages than it will
+# follow: a partial list must never read as a full one. Pages go to a file,
+# not through argv, because a commit with many runs produces arrays larger
+# than the argument limit.
+gh_pages() {
+  local out="$1" path="$2" items="$3" page=1 body n
+  : > "$out" || return 1
   while :; do
-    if ! body=$(gh_get "repos/$repo/commits/$sha/check-runs?per_page=100&page=$page") \
-       || ! n=$(jq -e '.check_runs | length' <<<"$body" 2>/dev/null); then
-      rm -f "$tmp"; return 1
+    if ! body=$(gh_get "$path?per_page=100&page=$page") \
+       || ! n=$(jq -e "$items | if type == \"array\" then length else error(\"not an array\") end" <<<"$body" 2>/dev/null); then
+      return 1
     fi
-    printf '%s\n' "$body" >> "$tmp"
-    [ "$n" -lt 100 ] && break
+    printf '%s\n' "$body" >> "$out"
+    [ "$n" -lt 100 ] && return 0
     page=$((page + 1))
-    if [ "$page" -gt 20 ]; then rm -f "$tmp"; return 1; fi
+    [ "$page" -gt 20 ] && return 1
   done
-  if ! out=$(jq -cs 'map(.check_runs) | add // [] | group_by(.name) | map(max_by(.id) | {name, status, conclusion})' "$tmp") \
+}
+
+# check_runs <repo> <sha>: every check run on the commit, latest per name
+# and app, as a JSON array of {name, status, conclusion, app_id}. Returns
+# non-zero, with no output, when the runs cannot be read in full.
+check_runs() {
+  local repo="$1" sha="$2" tmp out
+  tmp=$(mktemp) || return 1
+  if ! gh_pages "$tmp" "repos/$repo/commits/$sha/check-runs" '.check_runs' \
+     || ! out=$(jq -cs 'map(.check_runs) | add // []
+                        | map(. + {app_id: (.app.id // null)})
+                        | group_by([.name, .app_id])
+                        | map(max_by(.id) | {name, status, conclusion, app_id})' "$tmp") \
      || [ -z "$out" ] || ! jq -e 'type == "array"' <<<"$out" >/dev/null 2>&1; then
+    rm -f "$tmp"; return 1
+  fi
+  rm -f "$tmp"
+  printf '%s\n' "$out"
+}
+
+# commit_statuses <repo> <sha>: the combined legacy commit status with the
+# statuses of every page, as {state, total_count, statuses}. Returns
+# non-zero, with no output, when any page cannot be read or the pages do not
+# add up to total_count.
+commit_statuses() {
+  local repo="$1" sha="$2" tmp out
+  tmp=$(mktemp) || return 1
+  if ! gh_pages "$tmp" "repos/$repo/commits/$sha/status" '.statuses' \
+     || ! out=$(jq -cs '{state: .[0].state, total_count: .[0].total_count, statuses: (map(.statuses) | add // [])}
+                        | if (.state | type) == "string" and (.total_count | type) == "number"
+                             and (.statuses | length) == .total_count
+                          then . else error("incomplete combined status") end' "$tmp" 2>/dev/null) \
+     || [ -z "$out" ]; then
     rm -f "$tmp"; return 1
   fi
   rm -f "$tmp"
@@ -142,8 +178,24 @@ is_jcs() {
   cmp -s <(jq -cS . "$f") "$f"
 }
 
-# strip_hash_comments <file>: the file without shell/YAML `#` comment lines.
-strip_hash_comments() { grep -vE '^[[:space:]]*#' "$1"; }
+# strip_hash_comments <file>: the file without shell/YAML `#` comments,
+# whole-line and inline. A `#` starts a comment at the start of a line or
+# after whitespace, outside single and double quotes. A quote opens only
+# where it does not follow a letter or digit, so the apostrophe in "don't"
+# does not hide a comment after it. Quote state does not span lines.
+strip_hash_comments() {
+  awk '
+    { line = $0; out = ""; q = ""; prev = ""
+      for (i = 1; i <= length(line); i++) {
+        c = substr(line, i, 1)
+        if (q == "\"" && c == "\\") { out = out c substr(line, i + 1, 1); prev = substr(line, i + 1, 1); i++; continue }
+        if (q != "") { if (c == q) q = ""; out = out c; prev = c; continue }
+        if (c == "#" && (prev == "" || prev ~ /[[:space:]]/)) break
+        if ((c == "\"" || c == "'\''") && prev !~ /[[:alnum:]]/) q = c
+        out = out c; prev = c
+      }
+      print out }' "$1"
+}
 
 # strip_agda_comments <file>: the file without `--` line comments and
 # (nested) `{- ... -}` block comments.
@@ -186,11 +238,17 @@ handover_ok() {
 # --------------------------------------------- (1) probe PR required contexts
 
 check_1() {
-  local id="01-probe-pr-required-contexts" rules req sha runs statuses missing ctx ok
-  if ! rules=$(gh_get "repos/$REPO/rules/branches/main"); then
-    fail "$id" "cannot read the live ruleset for $REPO main"; return
+  local id="01-probe-pr-required-contexts" tmp rules req sha runs statuses missing r ctx ok
+  # Every page of rules: a required_status_checks rule on page 2 still gates.
+  tmp=$(mktemp) || { fail "$id" "cannot create a temporary file"; return; }
+  if ! gh_pages "$tmp" "repos/$REPO/rules/branches/main" '.' || ! rules=$(jq -cs 'add // []' "$tmp"); then
+    rm -f "$tmp"; fail "$id" "cannot read the live ruleset for $REPO main"; return
   fi
-  if ! req=$(jq -er '[.[] | select(.type == "required_status_checks") | .parameters.required_status_checks[].context] | unique | .[]' <<<"$rules"); then
+  rm -f "$tmp"
+  # One {context, integration_id} per line; integration_id is null when the
+  # context is not pinned to an app.
+  if ! req=$(jq -ec '[.[] | select(.type == "required_status_checks") | .parameters.required_status_checks[]
+                      | {context, integration_id: (.integration_id // null)}] | unique | .[]' <<<"$rules"); then
     fail "$id" "the live ruleset requires no status context; nothing would gate a merge"; return
   fi
   if ! [[ ${W0_PROBE_PR:-} =~ ^[0-9]+$ ]]; then
@@ -199,16 +257,21 @@ check_1() {
   if ! sha=$(gh_get "repos/$REPO/pulls/$W0_PROBE_PR" | jq -er '.head.sha'); then
     fail "$id" "cannot read probe PR #$W0_PROBE_PR"; return
   fi
-  if ! runs=$(check_runs "$REPO" "$sha") || ! statuses=$(gh_get "repos/$REPO/commits/$sha/status"); then
+  if ! runs=$(check_runs "$REPO" "$sha") || ! statuses=$(commit_statuses "$REPO" "$sha"); then
     fail "$id" "cannot read check runs for probe PR #$W0_PROBE_PR ($sha)"; return
   fi
   missing=()
-  while IFS= read -r ctx; do
-    # Not jq -e: a context that is not green evaluates to false, which is an
-    # answer, not an error.
-    ok=$(jq -r --arg c "$ctx" --slurpfile s <(printf '%s\n' "$statuses") '
-        ([.[] | select(.name == $c and .conclusion == "success")] | length > 0)
-        or ([$s[0].statuses[] | select(.context == $c and .state == "success")] | length > 0)' <<<"$runs")
+  while IFS= read -r r; do
+    # A context pinned to an app (integration_id) is satisfied only by a
+    # check run from that app; a legacy status cannot satisfy it. Not jq -e:
+    # a context that is not green evaluates to false, which is an answer,
+    # not an error.
+    ok=$(jq -r --argjson r "$r" --slurpfile s <(printf '%s\n' "$statuses") '
+        ([.[] | select(.name == $r.context and .conclusion == "success"
+                       and ($r.integration_id == null or .app_id == $r.integration_id))] | length > 0)
+        or ($r.integration_id == null
+            and ([$s[0].statuses[] | select(.context == $r.context and .state == "success")] | length > 0))' <<<"$runs")
+    ctx=$(jq -r '.context + (if .integration_id == null then "" else " (app \(.integration_id))" end)' <<<"$r")
     case "$ok" in
       true|false) ;;
       *) fail "$id" "cannot evaluate required context '$ctx'"; return ;;
@@ -234,15 +297,21 @@ check_2() {
   fi
   for c in $commits; do
     n=$((n + 1))
-    if ! runs=$(check_runs "$REPO" "$c") || ! statuses=$(gh_get "repos/$REPO/commits/$c/status") \
-       || ! nr=$(jq -e 'length' <<<"$runs") || ! ns=$(jq -e '.statuses | length' <<<"$statuses"); then
+    # Legacy statuses: every page is read, and GitHub's combined state must
+    # also be success whenever any status exists. The combined state is
+    # computed over every context, so even a page this script failed to
+    # read cannot hide a red status; the pages only name which one.
+    if ! runs=$(check_runs "$REPO" "$c") || ! statuses=$(commit_statuses "$REPO" "$c") \
+       || ! nr=$(jq -e 'length' <<<"$runs") || ! ns=$(jq -e '.total_count' <<<"$statuses"); then
       problems+=("${c:0:9} unreadable"); continue
     fi
     if [ "$nr" -eq 0 ] && [ "$ns" -eq 0 ]; then
       problems+=("${c:0:9} has no check runs"); continue
     fi
     if ! bad=$(jq -er '[.[] | select((.conclusion // "pending") as $k | ["success","skipped","neutral"] | index($k) | not) | "\(.name)=\(.conclusion // .status)"] | join(", ")' <<<"$runs") \
-       || ! st=$(jq -er '[.statuses[] | select(.state != "success") | "\(.context)=\(.state)"] | join(", ")' <<<"$statuses"); then
+       || ! st=$(jq -er '[.statuses[] | select(.state != "success") | "\(.context)=\(.state)"]
+                         + (if .total_count > 0 and .state != "success" then ["combined status=\(.state)"] else [] end)
+                         | join(", ")' <<<"$statuses"); then
       problems+=("${c:0:9} unparseable"); continue
     fi
     soft=$((soft + $(jq '[.[] | select(.conclusion == "skipped" or .conclusion == "neutral")] | length' <<<"$runs")))
@@ -411,6 +480,18 @@ check_9() {
 
 RULING_IDS="D-A D-B D-C D-D D-E D-F D-G D-H D-I D-J D-K D-L D-M D-N D2 D3 D5 D6 D7"
 
+# adoc_strip_blocks <adoc>: the file with every line of a comment (////),
+# listing (----), literal (....), passthrough (++++) or fenced (```) block,
+# delimiters included, blanked. Line numbers are kept. A block closes only
+# on a line equal to its opening delimiter; an unclosed block runs to the
+# end of the file, so nothing after a stray delimiter can count.
+adoc_strip_blocks() {
+  awk '
+    delim != "" { if ($0 == delim) delim = ""; print ""; next }
+    /^(\/\/\/\/+|----+|\.\.\.\.+|\+\+\+\++)$/ || /^```/ { delim = ($0 ~ /^```/) ? "```" : $0; print ""; next }
+    { print }' "$1"
+}
+
 # ruling_sections <adr>: for every section heading (== or deeper), the line
 # "<heading line number> <ruling ids named in it>".
 ruling_sections() {
@@ -425,7 +506,7 @@ ruling_sections() {
 }
 
 check_10() {
-  local id="10a-rulings-ledger" adrs adr r sections line from to block statuses status problems=()
+  local id="10a-rulings-ledger" adrs adr r sections line from to block statuses status text problems=()
   adrs=$(find docs/decisions -maxdepth 1 -name 'ADR-*-rulings-ledger.adoc' 2>/dev/null | sort)
   if [ -z "$adrs" ]; then
     fail "$id" "no docs/decisions/ADR-*-rulings-ledger.adoc"
@@ -433,7 +514,10 @@ check_10() {
     fail "$id" "more than one rulings ledger: $(tr '\n' ' ' <<<"$adrs")"
   else
     adr="$adrs"
-    sections=$(ruling_sections "$adr")
+    # Headings, :status: lines and links inside comment or verbatim blocks
+    # are not ledger content.
+    text=$(adoc_strip_blocks "$adr")
+    sections=$(ruling_sections <(printf '%s\n' "$text"))
     while read -r line r rest; do
       [ -n "${rest:-}" ] && problems+=("heading at line $line names more than one ruling ($r $rest)")
     done <<<"$sections"
@@ -443,7 +527,7 @@ check_10() {
       if [ "$(wc -l <<<"$line")" -ne 1 ]; then problems+=("$r: more than one section"); continue; fi
       from="$line"
       to=$(awk -v f="$from" '$1 > f { print $1 - 1; exit }' <<<"$sections")
-      block=$(sed -n "${from},${to:-\$}p" "$adr")
+      block=$(sed -n "${from},${to:-\$}p" <<<"$text")
       statuses=$(grep -cE '^:status:' <<<"$block")
       status=$(grep -E '^:status:' <<<"$block" | sed -E 's/^:status:[[:space:]]*//; s/[[:space:]]+$//')
       if [ "$statuses" -ne 1 ]; then problems+=("$r: $statuses :status: lines"); continue; fi
@@ -530,6 +614,9 @@ check_13() {
   fi
   if ! is_jcs "$f"; then
     fail "$id" "$f is not one JCS value with a final LF"; return
+  fi
+  if ! jq -e 'type == "object"' "$f" >/dev/null 2>&1; then
+    fail "$id" "$f is not a JSON object at its root"; return
   fi
   if ! hit=$(jq -e '[.. | objects
       | select(([.id, .name, .claim] | map(strings) | join(" ")) | test("\\blake[ _-]build\\b|\\blean4?[ _-]build\\b"; "i"))

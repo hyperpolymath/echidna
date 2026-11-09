@@ -10,7 +10,10 @@
 # The planted artefacts include each false green found in review: a commit
 # with more than 100 check runs, governance jobs named "... conformance",
 # empty untracked handover files, blank and glob backend names, nudged
-# fabricated metrics, a one-heading rulings ledger and a "nix flake" claim.
+# fabricated metrics, a one-heading rulings ledger, a "nix flake" claim,
+# legacy statuses and rules past page one, a pinned context met by the
+# wrong app, inline `#` comments, ledger sections inside comment blocks and
+# a claims.json whose root is an array.
 #
 # Usage: scripts/gates/w0.selftest.sh     Exit 0 iff every case behaves.
 
@@ -31,8 +34,10 @@ cases=0
 mkdir -p "$tmp/bin"
 cat > "$tmp/bin/curl" <<'EOF'
 #!/usr/bin/env bash
-# Serves https://api.github.com/<path> from $STUB_API/<path with /?&= as _>.
+# Serves https://api.github.com/<path> from $STUB_API/<path with /?&= as _>
+# and logs its arguments, one call per line, to $STUB_API.calls.
 url="${*: -1}"
+printf '%s\n' "$*" >> "$STUB_API.calls"
 key=$(printf '%s' "${url#https://api.github.com/}" | tr '/?&=' '____')
 [ -f "$STUB_API/$key" ] || { echo "curl stub: no fixture for $url" >&2; exit 22; }
 cat "$STUB_API/$key"
@@ -59,6 +64,20 @@ commit_all() {
 # serve <api path> <body>: the stub curl answers <api path> with <body>.
 serve() {
   printf '%s\n' "$2" > "$STUB_API/$(printf '%s' "$1" | tr '/?&=' '____')"
+}
+
+# serve_status <repo> <sha> <body>: page 1 of the combined commit status.
+# The unpaged path is served the same body, so the cases also run against
+# the gate before it paginated (to show they fail there).
+serve_status() {
+  serve "repos/$1/commits/$2/status?per_page=100&page=1" "$3"
+  serve "repos/$1/commits/$2/status" "$3"
+}
+
+# serve_rules <body>: page 1 of the echidna main rules (and the unpaged path).
+serve_rules() {
+  serve "repos/hyperpolymath/echidna/rules/branches/main?per_page=100&page=1" "$1"
+  serve "repos/hyperpolymath/echidna/rules/branches/main" "$1"
 }
 
 # runs_json <count> <failing name or ""> <name padding>: a check-runs page.
@@ -104,7 +123,7 @@ head=$(git -C "$R" rev-parse HEAD)
 pad=$(printf 'p%.0s' $(seq 1 1500))
 serve "repos/hyperpolymath/echidna/commits/$head/check-runs?per_page=100&page=1" "$(runs_json 100 "" "$pad")"
 serve "repos/hyperpolymath/echidna/commits/$head/check-runs?per_page=100&page=2" "$(runs_json 50 "job-140-$pad" "$pad" 100)"
-serve "repos/hyperpolymath/echidna/commits/$head/status" '{"statuses":[]}'
+serve_status hyperpolymath/echidna "$head" '{"state":"pending","total_count":0,"statuses":[]}'
 gate 2 W0_BASE="$base" W0_HEAD="$head"
 expect "check 2 sees a failure on page 2 of 150 large runs" FAIL 02-w0-merges-green "job-140-p+=failure"
 
@@ -120,13 +139,44 @@ rm -f "$STUB_API"/*page_2
 gate 2 W0_BASE="$base" W0_HEAD="$head"
 expect "check 2 fails closed on an unreadable page" FAIL 02-w0-merges-green "unreadable"
 
+# ------------------------------- check 2: legacy statuses beyond page one
+
+# statuses_json <count> <state of the last one> <combined state> <total> [offset]
+statuses_json() {
+  jq -cn --argjson n "$1" --arg last "$2" --arg st "$3" --argjson t "$4" --argjson off "${5:-0}" '
+    {state: $st, total_count: $t, statuses: [range($n) as $i
+      | {context: "legacy-\($i + $off)", state: (if $i == $n - 1 then $last else "success" end)}]}'
+}
+new_repo
+base=$(git -C "$R" rev-parse HEAD)
+echo x > "$R/f"; commit_all merge
+head=$(git -C "$R" rev-parse HEAD)
+serve "repos/hyperpolymath/echidna/commits/$head/check-runs?per_page=100&page=1" "$(runs_json 1 "" x)"
+serve_status hyperpolymath/echidna "$head" "$(statuses_json 100 success failure 101)"
+serve "repos/hyperpolymath/echidna/commits/$head/status?per_page=100&page=2" "$(statuses_json 1 failure failure 101 100)"
+gate 2 W0_BASE="$base" W0_HEAD="$head"
+expect "check 2 reads a red legacy status on page 2 of the statuses" FAIL 02-w0-merges-green "legacy-100=failure"
+
+rm -f "$STUB_API"/*status_per_page_100_page_2
+gate 2 W0_BASE="$base" W0_HEAD="$head"
+expect "check 2 fails closed when a statuses page is missing" FAIL 02-w0-merges-green "unreadable"
+
+serve_status hyperpolymath/echidna "$head" "$(statuses_json 2 success failure 2)"
+gate 2 W0_BASE="$base" W0_HEAD="$head"
+expect "check 2 requires the combined legacy state to be success" FAIL 02-w0-merges-green "combined status=failure"
+
+serve_status hyperpolymath/echidna "$head" "$(statuses_json 100 success success 101)"
+serve "repos/hyperpolymath/echidna/commits/$head/status?per_page=100&page=2" "$(statuses_json 1 success success 101 100)"
+gate 2 W0_BASE="$base" W0_HEAD="$head"
+expect "check 2 passes 101 green legacy statuses over two pages" PASS 02-w0-merges-green
+
 # ----------------------------------------- check 1: probe PR required contexts
 
 new_repo
 psha=0123456789abcdef0123456789abcdef0123abcd
-serve "repos/hyperpolymath/echidna/rules/branches/main" '[{"type":"required_status_checks","parameters":{"required_status_checks":[{"context":"rust-ci / Cargo test"},{"context":"gitleaks"}]}}]'
+serve_rules '[{"type":"required_status_checks","parameters":{"required_status_checks":[{"context":"rust-ci / Cargo test"},{"context":"gitleaks"}]}}]'
 serve "repos/hyperpolymath/echidna/pulls/7" "{\"head\":{\"sha\":\"$psha\"}}"
-serve "repos/hyperpolymath/echidna/commits/$psha/status" '{"statuses":[{"context":"gitleaks","state":"success"}]}'
+serve_status hyperpolymath/echidna "$psha" '{"state":"success","total_count":1,"statuses":[{"context":"gitleaks","state":"success"}]}'
 serve "repos/hyperpolymath/echidna/commits/$psha/check-runs?per_page=100&page=1" '{"check_runs":[{"id":1,"name":"rust-ci / Cargo test","status":"completed","conclusion":"failure"}]}'
 gate 1 W0_PROBE_PR=7
 expect "a red required context fails check 1 by name" FAIL 01-probe-pr-required-contexts "not success: rust-ci / Cargo test;"
@@ -135,9 +185,46 @@ gate 1 W0_PROBE_PR=7
 expect "every required context green passes check 1" PASS 01-probe-pr-required-contexts "all 2 required contexts"
 gate 1
 expect "check 1 needs W0_PROBE_PR" FAIL 01-probe-pr-required-contexts "W0_PROBE_PR is not set"
-serve "repos/hyperpolymath/echidna/rules/branches/main" '[]'
+serve_rules '[]'
 gate 1 W0_PROBE_PR=7
 expect "a ruleset with no required context fails check 1" FAIL 01-probe-pr-required-contexts "requires no status context"
+
+# Pinned contexts: integration_id names the app whose check run counts.
+pinned='[{"type":"required_status_checks","parameters":{"required_status_checks":[{"context":"rust-ci / Cargo test","integration_id":15368},{"context":"gitleaks"}]}}]'
+serve_rules "$pinned"
+serve "repos/hyperpolymath/echidna/commits/$psha/check-runs?per_page=100&page=1" '{"check_runs":[{"id":1,"name":"rust-ci / Cargo test","status":"completed","conclusion":"success","app":{"id":999}}]}'
+gate 1 W0_PROBE_PR=7
+expect "a run from another app does not satisfy a pinned context" FAIL 01-probe-pr-required-contexts "not success: rust-ci / Cargo test \(app 15368\);"
+serve "repos/hyperpolymath/echidna/commits/$psha/check-runs?per_page=100&page=1" '{"check_runs":[]}'
+serve_status hyperpolymath/echidna "$psha" '{"state":"success","total_count":2,"statuses":[{"context":"gitleaks","state":"success"},{"context":"rust-ci / Cargo test","state":"success"}]}'
+gate 1 W0_PROBE_PR=7
+expect "a legacy status does not satisfy a pinned context" FAIL 01-probe-pr-required-contexts "rust-ci / Cargo test \(app 15368\)"
+serve "repos/hyperpolymath/echidna/commits/$psha/check-runs?per_page=100&page=1" '{"check_runs":[{"id":1,"name":"rust-ci / Cargo test","status":"completed","conclusion":"success","app":{"id":999}},{"id":2,"name":"rust-ci / Cargo test","status":"completed","conclusion":"success","app":{"id":15368}}]}'
+gate 1 W0_PROBE_PR=7
+expect "a green run from the pinned app passes check 1" PASS 01-probe-pr-required-contexts "all 2 required contexts"
+
+# Rules on page 2: page 1 is full (100 rules), the red context is on page 2.
+serve_status hyperpolymath/echidna "$psha" '{"state":"success","total_count":1,"statuses":[{"context":"gitleaks","state":"success"}]}'
+serve_rules "$(jq -cn '[range(99) | {type: "deletion"}] + [{type: "required_status_checks", parameters: {required_status_checks: [{context: "gitleaks"}]}}]')"
+serve "repos/hyperpolymath/echidna/rules/branches/main?per_page=100&page=2" '[{"type":"required_status_checks","parameters":{"required_status_checks":[{"context":"rust-ci / Cargo test"}]}}]'
+serve "repos/hyperpolymath/echidna/commits/$psha/check-runs?per_page=100&page=1" '{"check_runs":[{"id":1,"name":"rust-ci / Cargo test","status":"completed","conclusion":"failure"}]}'
+gate 1 W0_PROBE_PR=7
+expect "a required context in rules page 2 still gates check 1" FAIL 01-probe-pr-required-contexts "not success: rust-ci / Cargo test;"
+rm -f "$STUB_API"/*main_per_page_100_page_2
+gate 1 W0_PROBE_PR=7
+expect "check 1 fails closed when a rules page is missing" FAIL 01-probe-pr-required-contexts "cannot read the live ruleset"
+
+# Every GitHub API request is bounded in time.
+cases=$((cases + 1))
+if [ -s "$STUB_API.calls" ] \
+   && ! grep -vE -- '--connect-timeout [0-9]+ ' "$STUB_API.calls" | grep -q . \
+   && ! grep -vE -- '--max-time [0-9]+ ' "$STUB_API.calls" | grep -q . \
+   && ! grep -vE -- '--retry-max-time [0-9]+ ' "$STUB_API.calls" | grep -q .; then
+  echo "ok   every GitHub API request sets connect, total and retry time limits"
+else
+  failures=$((failures + 1)); echo "FAIL every GitHub API request sets connect, total and retry time limits"
+  sed 's/^/     | /' "$STUB_API.calls" | head -n 3
+fi
 
 # ------------------------------------------- checks 11/12: consumer repos
 
@@ -257,6 +344,20 @@ expect "a ruled section with the owner's record passes 10a" PASS 10a-rulings-led
 ledger "${good_ledger/:status: open/:status: open
 :status: ruled}"
 expect "two status lines in one section fail 10a" FAIL 10a-rulings-ledger "D-A: 2 :status: lines"
+commented_ledger=$(printf '= Rulings\n\n////\n== D-A\n:status: open\n////\n'; for r in ${ids#D-A }; do printf '\n== %s\n:status: open\n' "$r"; done)
+ledger "$commented_ledger"
+expect "a section inside a //// comment block does not count for 10a" FAIL 10a-rulings-ledger "D-A: no section of its own"
+ledger "${good_ledger/:status: open/:status: open
+
+----
+:status: ruled
+== D-A
+----
+
+....
+:status: ruled
+....}"
+expect "status lines and headings in listing blocks do not count for 10a" PASS 10a-rulings-ledger
 
 # ------------------------------------------------- check 13: Lean claims
 
@@ -274,6 +375,8 @@ claims '{"claims":[{"claim":"lake build","toolchain":"4.13.0","repair":{"id":"R-
 expect "a repair item before F-3 passes 13" PASS 13-lean-build-recorded
 claims '{"claims":[{"claim":"Lean 4 lake build of verification/proofs/lean4","toolchain":"leanprover/lean4:v4.13.0","result":"green"}]}'
 expect "a green lake build passes 13" PASS 13-lean-build-recorded
+claims '[{"claim":"Lean 4 lake build","toolchain":"4.13.0","result":"green"}]'
+expect "a claims.json whose root is an array fails 13" FAIL 13-lean-build-recorded "not a JSON object at its root"
 
 # ----------------------------------------------- check 7: Idris/Agda hygiene
 
@@ -296,6 +399,22 @@ gate 7
 expect "a real postulate grep passes 07a" PASS 07a-idris-postulate-grep
 expect "a module listed under depends does not count for 07b" FAIL 07b-ipkg-coverage "CoprocessorForeign"
 expect "a real import checked through check-agda.sh passes 07c" PASS 07c-meta-checker-completeness
+
+# Inline `#` comments: a mention after code on the line does not count.
+printf 'run: echo ok # grep -rn postulate src/abi\n' > "$R/.github/workflows/idris2-abi-ci.yml"
+printf 'module Echidna.MetaChecker where\n' > "$R/meta-checker/src/Echidna/MetaChecker.agda"
+printf 'run: echo ok # agda src/Echidna/AxiomTrackerCompleteness.agda\n' > "$R/.github/workflows/agda-meta-checker.yml"
+gate 7
+expect "a postulate grep in an inline comment fails 07a" FAIL 07a-idris-postulate-grep
+expect "an agda call in an inline comment fails 07c" FAIL 07c-meta-checker-completeness
+printf 'run: grep -rnE "believe_me #|postulate" src/abi\n' > "$R/.github/workflows/idris2-abi-ci.yml"
+printf "run: echo don't # agda src/Echidna/AxiomTrackerCompleteness.agda\n" > "$R/.github/workflows/agda-meta-checker.yml"
+gate 7
+expect "a # inside quotes does not cut the line for 07a" PASS 07a-idris-postulate-grep
+expect "an apostrophe does not hide an inline comment from 07c" FAIL 07c-meta-checker-completeness
+printf 'run: agda --safe src/Echidna/AxiomTrackerCompleteness.agda # completeness\n' > "$R/.github/workflows/agda-meta-checker.yml"
+gate 7
+expect "an agda call before an inline comment passes 07c" PASS 07c-meta-checker-completeness
 
 # ---------------------------------------------------- subset runs and config
 
