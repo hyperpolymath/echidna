@@ -17,7 +17,7 @@ theorem double_zero: "double 0 = 0"
 (* A lemma left open with `sorry` — the corpus adapter must flag this
    as a sorry hazard. *)
 lemma double_mono: "n \<le> m \<Longrightarrow> double n \<le> double m"
-  (* panic-attack: accepted (detector fixture: the corpus adapter must flag this sorry) *)
+  (* panic-attack: accepted (detector fixture: the corpus adapter must flag the unfinished proof below) *)
   sorry
 
 (* An axiomatization block — the adapter must flag the postulate hazard. *)
