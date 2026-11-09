@@ -155,7 +155,11 @@ at-source. *#74 (proverif opam) resolved.* Imandra remains the only stub
 — genuinely proprietary, honestly fail-loud, kept by decision (real
 adapter + Idris2 ABI proofs retained). No stub-theatre.
 
-==== Wave-4 (Tier-4 quarterly, 19 backends, allow-fail placeholder)
+==== Wave-4 (Tier-4, 19 backends, mock-only)
+
+_The quarterly Tier-4 CI placeholder jobs were removed 2026-11-09 under the
+CI-4 ruling (#416): they announced a TODO and never provisioned a binary.
+A backend returns to CI in a blocking job once it has a Containerfile._
 
 Mizar, Nuprl, PVS, Minlog, Dedukti, Arend, KeY, Prism, UPPAAL, ViPER,
 NuSMV, Spin, TLC, CBMC, Seahorn, dReal, Boogie, Kissat, Alloy. Retain as

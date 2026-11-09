@@ -145,6 +145,11 @@ composable with the existing `+SoundnessPreservation+` proof.
 * Static-library distribution means the Rust-side link path
 (`+rust-chapel-real+`) remains allow-fail until the PIC-runtime CI image
 lands. Wave-2 work is non-trivial.
++
+_Update 2026-11-09._ The real link landed with #455 as a static link
+with Cargo as the final consumer (`+build.rs+`, `+build_support/chapel.rs+`),
+with no PIC rebuild. `+rust-chapel-real+` passed on main from then on and is
+blocking under the CI-4 ruling (#416), as is `+rust-chapel-feature+`.
 * `+chapel-ci.yml+`’s install step downloads a ~150 MB Chapel deb per
 run; this is unchanged from the prior state but matters more now that
 the job is strict (any apt mirror flake red-checks the workflow).

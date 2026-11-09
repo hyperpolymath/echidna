@@ -45,7 +45,9 @@ highest-leverage gap, surfaces real bugs mocks hide. Cap’n Proto next,
 since Chapel consumes those schemas.
 
 |D5 |*Live-prover CI cadence tiered* |T1 every PR, T2 nightly, T3
-weekly, T4 quarterly allow-fail.
+weekly. (The T4 quarterly allow-fail jobs and the T1 Guix manifest check
+were removed 2026-11-09 under the CI-4 ruling, #416; every remaining job
+is blocking.)
 
 |D6 |*No JSON emit on hot path* |Per `+feedback_no_json_emit_a2ml+`.
 Cap’n Proto replaces HTTP-JSON Rust↔Julia. Tool config stays

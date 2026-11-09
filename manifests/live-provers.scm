@@ -6,7 +6,11 @@
 ;; Purpose: resolve the subset packaged by GNU Guix 1.4.0 (the CI baseline).
 ;; This manifest is NOT a declaration that every live prover is packaged or
 ;; tested. Resolution does not prove that a prover ran or that a proof passed.
-;; Used by `.github/workflows/live-provers.yml` and local developers via:
+;; It has no CI consumer: the T1 Guix manifest check in live-provers.yml was
+;; retired 2026-11-09 under the CI-4 ruling (#416), and the Containerfile is
+;; the reproducibility path (container-ci.yml rebuilds the image on an
+;; independent runner and requires the same image ID). Local developers can
+;; still resolve it via:
 ;;
 ;;     guix package -m manifests/live-provers.scm --dry-run --no-substitutes
 ;;

@@ -6,12 +6,22 @@
 #
 # container-ci.yml — Container build verification.
 #
-# Two jobs:
-#   container-build   — builds the minimal ECHIDNA image on every PR/push;
-#                       hard gate.
-#   tier3-container   — builds each Wave-3 prover image weekly (Sunday 06:00 UTC)
-#                       and on any change to the .containerization/** tree;
-#                       allow-fail per image (proprietary builds excluded).
+# Jobs, all blocking:
+#   container-build         — builds and verifies the minimal ECHIDNA image.
+#   container-rebuild       — builds the same image again on an independent
+#                             runner.
+#   container-reproducible  — requires both builds to have the same image ID.
+#                             This is the reproducibility check that replaced
+#                             the T1 Guix manifest job (owner ruling, CI-4):
+#                             the Containerfile is the reproducibility path.
+#   tier3-container         — builds each Wave-3 prover image weekly (Sunday
+#                             06:00 UTC); proprietary builds excluded.
+#
+# Both minimal builds use --no-cache and --timestamp 0, so creation times
+# and file mtimes cannot make two builds of the same inputs differ. A
+# mismatch means an input floats (an unpinned package, a download without
+# a digest, a non-deterministic build step). The compare job prints the
+# layer digests of both builds so the drifting layer can be found.
 
 name: Container Build Verification
 
@@ -43,6 +53,7 @@ on:
     # Distinct from live-provers.yml Tier-3 run (Sunday 05:00 UTC)
     # so the container build does not race the live-prover tests.
     - cron: '0 6 * * 0'
+  workflow_dispatch:
 
 # Cause-B mitigation (#77): de-duplicate superseded builds on the same
 # ref. cancel-in-progress is false so an in-flight image build/publish
@@ -60,6 +71,9 @@ jobs:
     name: Build & verify container image
     runs-on: ubuntu-latest
     timeout-minutes: 90
+    outputs:
+      image-id: ${{ steps.identity.outputs.image-id }}
+      layers: ${{ steps.identity.outputs.layers }}
 
     steps:
       - name: Checkout
@@ -76,7 +90,15 @@ jobs:
             -f Containerfile \
             -t echidna:ci-test \
             --no-cache \
+            --timestamp 0 \
             .
+
+      - name: Record image identity
+        id: identity
+        run: |
+          set -euo pipefail
+          echo "image-id=$(podman image inspect echidna:ci-test --format '{{.Id}}')" >> "$GITHUB_OUTPUT"
+          echo "layers=$(podman image inspect echidna:ci-test --format '{{json .RootFS.Layers}}')" >> "$GITHUB_OUTPUT"
 
       - name: Verify image metadata
         run: |
@@ -105,11 +127,75 @@ jobs:
         if: always()
         run: podman rmi echidna:ci-test 2>/dev/null || true
 
-  # ── Job 2: Wave-3 Tier-3 prover images — weekly, allow-fail per image ─────
+  # ── Containerfile reproducibility: an independent rebuild ─────────────────
+  container-rebuild:
+    name: Rebuild container image (independent runner)
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    outputs:
+      image-id: ${{ steps.identity.outputs.image-id }}
+      layers: ${{ steps.identity.outputs.layers }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7.0.1
+
+      - name: Install Podman
+        run: |
+          sudo apt-get update -q
+          sudo apt-get install -y -q podman
+
+      - name: Rebuild minimal container image
+        run: |
+          podman build \
+            -f Containerfile \
+            -t echidna:ci-rebuild \
+            --no-cache \
+            --timestamp 0 \
+            .
+
+      - name: Record image identity
+        id: identity
+        run: |
+          set -euo pipefail
+          echo "image-id=$(podman image inspect echidna:ci-rebuild --format '{{.Id}}')" >> "$GITHUB_OUTPUT"
+          echo "layers=$(podman image inspect echidna:ci-rebuild --format '{{json .RootFS.Layers}}')" >> "$GITHUB_OUTPUT"
+
+  container-reproducible:
+    name: Containerfile reproducibility (same image ID twice)
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    needs: [container-build, container-rebuild]
+    steps:
+      - name: Compare the two builds
+        env:
+          ID_A: ${{ needs.container-build.outputs.image-id }}
+          ID_B: ${{ needs.container-rebuild.outputs.image-id }}
+          LAYERS_A: ${{ needs.container-build.outputs.layers }}
+          LAYERS_B: ${{ needs.container-rebuild.outputs.layers }}
+        run: |
+          set -euo pipefail
+          [ -n "$ID_A" ] && [ -n "$ID_B" ] || { echo "::error::a build reported no image ID"; exit 1; }
+          {
+            echo "## Containerfile reproducibility"
+            echo "build:   $ID_A"
+            echo "rebuild: $ID_B"
+          } >> "$GITHUB_STEP_SUMMARY"
+          if [ "$ID_A" = "$ID_B" ]; then
+            echo "OK: two independent --no-cache --timestamp 0 builds gave image $ID_A"
+            exit 0
+          fi
+          echo "::error::The Containerfile is not reproducible: two builds of the same commit gave $ID_A and $ID_B."
+          paste <(jq -r '.[]' <<<"$LAYERS_A") <(jq -r '.[]' <<<"$LAYERS_B") \
+            | awk -F '\t' '{ printf "layer %d: %s %s %s\n", NR, ($1 == $2 ? "same" : "DIFFERS"), $1, $2 }' \
+            | tee -a "$GITHUB_STEP_SUMMARY"
+          exit 1
+
+  # ── Wave-3 Tier-3 prover images — weekly, blocking per image ──────────────
   #
-  # Runs on the weekly schedule and whenever any .containerization/** file
-  # changes.  Each prover builds in its own matrix cell; allow-fail is set
-  # at cell level so one broken prover does not mask the others.
+  # Runs on the weekly schedule. Each prover builds in its own matrix cell
+  # (fail-fast off), so one broken prover does not mask the others. Blocking
+  # since the CI-4 ruling (#416): the scheduled run on main of 2026-11-08
+  # (42453284210) passed all eight cells, stub-sentinel detection included.
   #
   # Imandra is excluded: it is proprietary and requires a licence token not
   # available in public CI.
@@ -117,12 +203,9 @@ jobs:
     name: Tier-3 / ${{ matrix.prover }}
     runs-on: ubuntu-latest
     timeout-minutes: 90
-    # Run on schedule or when the .containerization tree changes on main.
-    # Not a merge gate — these are informational weekly builds.
-    if: >-
-      github.event_name == 'schedule' ||
-      (github.event_name == 'push' && contains(github.event.head_commit.modified, '.containerization/'))
-    continue-on-error: true  # allow-fail: issue=#416 expires=2026-11-30
+    # Weekly and on manual dispatch. A red cell is a real failure, but these
+    # builds are too slow to gate every PR.
+    if: github.event_name == 'schedule' || github.event_name == 'workflow_dispatch'
     strategy:
       fail-fast: false
       matrix:
