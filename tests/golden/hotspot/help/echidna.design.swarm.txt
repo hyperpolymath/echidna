@@ -1,0 +1,30 @@
+Run a parallel swarm of SA agents with cross-pollination
+
+Usage: echidna design swarm [OPTIONS] <PROBLEM>
+
+Arguments:
+  <PROBLEM>  Problem identifier. Currently: `brouwer-leq`
+
+Options:
+      --agents <AGENTS>
+          Number of parallel agents [default: 4]
+      --format <FORMAT>
+          Output format (text, json) [default: text]
+      --iterations <ITERATIONS>
+          [default: 1000]
+  -v, --verbose
+          Verbose output
+      --no-color
+          Disable colors
+      --temp <TEMP>
+          [default: 4]
+      --cooling <COOLING>
+          [default: 0.995]
+      --seed <SEED>
+          [default: 12648430]
+      --broadcast-every <BROADCAST_EVERY>
+          Broadcast best-so-far every N iterations [default: 100]
+      --adopt-threshold <ADOPT_THRESHOLD>
+          Adopt a peer's broadcast only if it beats the agent's best by this lex-margin (0 = adopt on any improvement) [default: 0]
+  -h, --help
+          Print help

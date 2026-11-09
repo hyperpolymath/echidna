@@ -1,0 +1,14 @@
+Find the K nearest-neighbour entries to a free-form text query by cosine similarity over the Vector octad embeddings. The query is canonicalised the same way the corpus is, so a statement written in one prover's syntax matches entries written in another's. Useful for "find lemmas structurally near `WellFounded _<_`"
+
+Usage: echidna corpus near [OPTIONS] <QUERY>
+
+Arguments:
+  <QUERY>  
+
+Options:
+      --format <FORMAT>  Output format (text, json) [default: text]
+  -i, --index <INDEX>    
+  -t, --top <TOP>        [default: 10]
+  -v, --verbose          Verbose output
+      --no-color         Disable colors
+  -h, --help             Print help

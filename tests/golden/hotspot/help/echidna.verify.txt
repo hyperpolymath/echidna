@@ -1,0 +1,17 @@
+Verify an existing proof
+
+Usage: echidna verify [OPTIONS] <FILE>
+
+Arguments:
+  <FILE>  Path to proof file
+
+Options:
+      --format <FORMAT>          Output format (text, json) [default: text]
+  -p, --prover <PROVER>          Prover to use (auto-detect if not specified)
+  -t, --timeout <TIMEOUT>        Timeout in seconds [default: 300]
+  -v, --verbose                  Verbose output
+      --executable <EXECUTABLE>  Prover executable path (override default)
+      --no-color                 Disable colors
+      --library <LIBRARY>        Library paths
+      --diagnose                 On failure, run diagnostics and explain why the proof failed
+  -h, --help                     Print help

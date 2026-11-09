@@ -1,0 +1,9 @@
+Interactive diagnostics REPL for health monitoring
+
+Usage: echidna diagnostics [OPTIONS]
+
+Options:
+      --format <FORMAT>  Output format (text, json) [default: text]
+  -v, --verbose          Verbose output
+      --no-color         Disable colors
+  -h, --help             Print help

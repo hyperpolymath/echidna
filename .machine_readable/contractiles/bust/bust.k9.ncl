@@ -23,16 +23,28 @@ K9!
 # (invariant) and trust (cleanliness) as the third blocking verb in the
 # (Hunt, blocking) triple.
 
-let base_k9 = import "../k9/template-hunt.k9.ncl" in
+#
+# 2026-11-09 (K9 contract v1.0.0, D173, standards#1058): this record is a
+# DECLARATION evaluated at 'Yard. The probes it lists are run by the paired
+# runner (bust.ncl and the scripts/run-*.sh runners), which is the execution
+# surface; this file spawns nothing. A 'Hunt record needs signature_required,
+# a signature block and a verified signature (K9-S008/S009/C001); no
+# contractile carries one, so 'Hunt here was a claim the gate could never honour.
+# Mirrors rsr-template-repo's contractiles (WO-9).
+
 let base    = import "../_base.ncl" in
 
 {
-  pedigree = base_k9.pedigree_schema & {
+  pedigree = base.pedigree_schema & {
     contractile_verb = "bust",
+    schema_version   = "1.0.0",
+    component_type   = "contractile:bust",
+    semantics        = "hard-stop / expiry / must-not-run declarations",
+    side_effects     = [],
     paired_xfile     = "../bust/Bustfile.a2ml",
     paired_runner    = "../bust/bust.ncl",
 
-    tier      = 'Hunt,
+    tier      = 'Yard,
     authority = 'blocking,
 
     metadata = {
@@ -45,20 +57,18 @@ let base    = import "../_base.ncl" in
     },
 
     security = {
-      leash = 'Hunt,
+      leash = 'Yard,
+      signature_required = false,
       trust_level = "controlled failure injection; scoped to system-under-test",
       allow_network = false,
-      allow_filesystem_write = true,      # drills may write transient state (tmp dirs, test DBs)
-      allow_subprocess = true,
+      allow_filesystem_write = false,     # the runner's drills write transient state (tmp dirs, test DBs); this record does not
+      allow_subprocess = false,   # the paired runner spawns; this record does not
       injection_scope = 'system_under_test_only,
-      # Hunt-tier files must declare whether a cryptographic signature
-      # is required. Bust trident runs in CI on every PR; signatures
-      # are enforced at the trident-runner layer, not in-band.
-      signature_required = true,
     },
   },
 
-  variance_schema = {
+  # A record SHAPE (contract-only fields, no values): kept out of `nickel export`.
+  variance_schema | not_exported = {
     entry_id           | String,
     reason             | String,
     approved_by        | String,
