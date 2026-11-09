@@ -188,6 +188,13 @@ functions do not *compute* under Cubical transports. The corpus is
 clean log would weaken the profile. Full Cubical and the independent Rocq
 and Lean legs were not run for this receipt. Changes to any recorded source
 invalidate its use for that changed source until a fresh check is recorded.
+**Since that receipt,** `+MetaChecker.agda+` changed: it now also imports
+`+Composition+` (R6), so the checked closure is ten modules. The nine modules
+this row covers are unchanged and keep their recorded digests, so the row
+stands for them; the entrypoint's new digest, and R6, are covered only once
+the `+agda-meta-checker+` job, which now prints a source-bound receipt
+(toolchain, flags, library descriptors and every source's SHA-256), has run
+on `+main+`.
 
 **Correction to the old receipt:** `+916b769+` predates `+Integrity+`,
 `+ClampTrust+` and `+Receipt+`, and its entrypoint omitted
@@ -265,19 +272,26 @@ checked, untranslated. ECHIDNA's `+src/rust/exchange/+` speaks Dedukti, so the
 transport route exists; using it is unstarted work, not a missing capability.
 
 |R6. E9 "proof composition soundness"
-|`+argued+`, with a location defect
-|`+PROOF-NEEDS+` evidences it with `+proofs/agda/ProofComposition.agda+`. But
-`+PROOF-POLICY+` §3 says `+proofs/<prover>/+` trees are fixtures, "`outside
-this policy`".
-|The obligation survives; its evidence sits where the policy says evidence
-cannot live. **New (2026-11-01):** the whole `+proofs/agda/+` tree — 13 files
-including `+ProofComposition.agda+` — type-checks under
-`+agda --safe --without-K --cubical-compatible+`, 13/13, no postulates. So the
-cheap remedy is the *move* to a policy-conformant location
-(`+verification/proofs/agda/+`), not re-stating the obligation as unsupported:
-the evidence is good, it is merely filed where §3 says evidence cannot live.
-Recorded, not resolved — moving it is a repository change with cross-references
-to update, so it is left as a named action rather than done silently.
+|`+argued+` until the `+agda-meta-checker+` job prints a source-bound receipt
+for this module on `+main+`
+|`+meta-checker/src/Echidna/Composition.agda+`, imported by
+`+MetaChecker.agda+` and so inside the `+agda-meta-checker+` closure (pinned
+Agda 2.7.0.1, canonical flags).
+|*Corrected 2026-11-09.* The earlier entry called the old evidence "good,
+merely misfiled". It was not good: `+ProofComposition.agda+` proved
+list-append associativity, and `+SoundnessPreservation.agda+`'s
+`+compose-sound+` discharged a Bool flag with `+∧+` while ignoring its conflict
+hypothesis. The replacement is theory over an arbitrary logic: `+cut+`
+(composition preserves semantic soundness), `+explosion+` (why a conflict
+check is load-bearing), `+compose-realised+`, and `+detector-must-flag+`
+(a detector that decides its conflict relation returns a conflict witness
+for every inconsistent composition; without decidability only
+`+detector-cannot-miss+`, a double negation, holds). Type-checked locally
+under the canonical flags (Agda 2.6.3, not the pinned toolchain, so not a
+receipt). No
+Rust code composes proofs, so no implementation is claimed. The two corpus
+files stay in `+proofs/agda/+` as fixtures, with headers saying what they
+show. Rocq/Lean rechecks (§2): not started.
 
 |===
 
@@ -315,9 +329,9 @@ row. They exercise parsers and backends. Listing them is deliberate: an absent
 row should read as *out of policy*, not *forgotten*. The same holds for
 `+archive/logtalk/+` (dead, quarantined) and for `+echidna-playground/+`.
 
-Note the tension with R6 — one artefact in a corpus directory is cited by
-`+PROOF-NEEDS+` as covering a real obligation. §3 is why that is a defect in
-placement rather than a status question.
+R6 used to cite a corpus artefact as covering a real obligation. It now cites
+`+meta-checker/src/Echidna/Composition.agda+`, and both corpus files say in
+their headers that they are not E9 evidence.
 
 == Standing assumptions
 

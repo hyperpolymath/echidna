@@ -1,14 +1,13 @@
 -- SPDX-License-Identifier: MPL-2.0
--- SoundnessPreservation.agda — composed proofs are sound when axiom sets
--- are conflict-free.
+-- SoundnessPreservation.agda — corpus fixture (PROOF-POLICY §3): Bool-flag
+-- composition.
 --
--- Models a Proof as a record carrying a list of axiom indices and a
--- soundness flag.  Proves that composing two individually-sound proofs
--- whose axiom sets do not conflict yields a sound composite proof.
---
--- "Conflict" is an abstract predicate so the proof is parametric:
--- concrete conflict detectors (e.g. the axiom danger tracker in
--- src/rust/verification/axioms.rs) can instantiate it at will.
+-- What it proves: if two Bool "sound" flags are true, their conjunction is
+-- true. `compose-sound` takes a Conflicts hypothesis but never uses it, so
+-- it says nothing about conflicting axioms and is not evidence that
+-- composition preserves soundness. E9's evidence is meta-checker/src/
+-- Echidna/Composition.agda, where soundness is semantic entailment and the
+-- conflict check is shown to be load-bearing (`explosion`).
 
 module SoundnessPreservation where
 
