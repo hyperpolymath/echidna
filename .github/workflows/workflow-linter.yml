@@ -77,12 +77,12 @@ jobs:
           gh extension install github/gh-actions-lock --pin v0.2.0
           authority="$RUNNER_TEMP/lock-authority"
           subject="$RUNNER_TEMP/lock-subject"
-          authority_sha=d3e4b485a2af90c92a8e18af0888cd19cb132cd9
+          standards_rev=d3e4b485a2af90c92a8e18af0888cd19cb132cd9
           git init -q "$authority"
           git -C "$authority" remote add origin https://github.com/metadatastician/standards.git
-          git -C "$authority" fetch -q --depth 1 origin "$authority_sha"
+          git -C "$authority" fetch -q --depth 1 origin "$standards_rev"
           git -C "$authority" checkout -q --detach FETCH_HEAD
-          test "$(git -C "$authority" rev-parse HEAD)" = "$authority_sha"
+          test "$(git -C "$authority" rev-parse HEAD)" = "$standards_rev"
           source_sha=$(git rev-parse HEAD)
           git clone -q --no-hardlinks "$GITHUB_WORKSPACE" "$subject"
           git -C "$subject" checkout -q --detach "$source_sha"
