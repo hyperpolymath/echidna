@@ -40,7 +40,7 @@ async fn test_fallback_monitor_sla_compliance() {
 
 #[tokio::test]
 async fn test_guided_search_integrates_fallback_monitor() {
-    let mut search = GnnGuidedSearch::new();
+    let mut search = GnnGuidedSearch::new().expect("guided search should initialize");
 
     // Create a simple proof state
     let state = ProofState {

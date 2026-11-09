@@ -296,3 +296,83 @@ representation / transport* (encoding shapes for Http / Promise / JSON /
 Dict). It carries no L3 obligation (no claim about fibre structure of
 the wire transport), so audit-and-not-relevant applies. Recorded here so
 a future port reviewer does not need to re-audit.
+
+=== Proof updating, 2026-11-01
+
+The 2026-11-01 report described the first session in which the Agda corpus
+was type-checked under the
+`+PROOF-POLICY+` §2.1 canonical invocation
+(`--safe --without-K --cubical-compatible`) rather than plain `agda`.
+Its cited commit `+916b769+` does not contain the reported nine-module
+closure, so those historical timing/count claims are not a reproducible
+receipt for the current corpus. The replacement check and exact source
+digests are recorded in
+link:reports/2026-11-04-agda-meta-checker-receipt.json[`+2026-11-04-agda-meta-checker-receipt.json+`]
+and `+docs/PROOF-STATUS.adoc+` R4, R9, R10, R11.
+
+==== What changed
+
+[width="100%",cols="26%,16%,58%",options="header"]
+|===
+|Module |Before |Now
+
+|`+AxiomTrackerCompleteness.agda+`
+|**Outside the checked closure and did not parse.** Nothing imported it, no
+workflow named it, so no gate had ever compiled it.
+|In the closure. Two defects fixed: a hand-rolled `+_⊎_+` was being declared in
+a `+where+` clause attached to a type signature (a syntax error — now imported
+from `+Data.Sum+`), and two proofs relied on `+worst-policy Clean b+` reducing
+when `+worst-policy+` splits on its **first** argument, so the term was stuck
+(now via `+clean-left-neutral+` and the new `+worst-ub-right+` in
+`+AxiomSafety.agda+`).
+
+|`+Integrity.agda+`
+|did not exist; E11 had prose only
+|Models E11 over digests: verification requires an initialised manifest,
+a binary with a different digest is never verified, and an uninitialised
+manifest never verifies. `+≈d-sound+` is digest-comparison soundness:
+accepted comparisons imply equal digests. `+sharpness-blocks-soundness+`
+refutes that property for an accept-everything comparator. Binary contents,
+hashing and content-level collision resistance are outside the model, so
+equal-digest substitutions remain indistinguishable. The model does not
+verify Rust dispatch permission.
+
+|`+ClampTrust.agda+`
+|did not exist; related obligations lived in
+`+verification/proofs/idris2/ClampTrustBounds.idr+`, with no recorded run
+|Bounds, monotonicity, fixed points and idempotence, restated over the
+trust-level type the gate checks. Monotonicity by step lemma plus transitivity,
+not the Idris2 file's decision table.
+
+|`+Receipt.agda+`
+|did not exist
+|Receipt/warrant separation as a two-world Kripke countermodel: receipts are
+factive, warrants are not, and there is no uniform warrant-to-receipt
+conversion. The coarse frame has no receipt; the sharpened frame has an
+inhabited `+proven+` assertion. Conditional assertions require their named
+assumption, and bounded tests require a nonempty checked population; neither
+may be promoted unconditionally. This compares models and does not prove
+that a runtime check changes accessibility. Carried over from
+`+epistemic-types@5422cd5+` by semantic rewrite; that repo keeps ownership
+of its own theorems (`+PROOF-POLICY+` §2.2).
+
+|`+MetaChecker.agda+`
+|claimed "30+ proven properties, 0 postulates (except funext in AxiomSafety)"
+|Summary corrected: the `+funext+` clause was stale (no postulates anywhere),
+the property count was never derived from a count, and the canonical invocation
+plus its `+UnsupportedIndexedMatch+` limit are now recorded in the header.
+|===
+
+==== What was not run, and why (PROOF-POLICY §6)
+
+The 2026-11-01 report records no Rust, Creusot, Lean 4, Idris 2, Rocq, Z3 or
+cvc5 leg. The sandbox used then could reach only GitHub, PyPI and npm; GitHub *release
+assets* (the only source of the Agda/Lean/Idris2 tarballs) were blocked, and
+`+scripts/install-proof-toolchains.sh+` needs root, apt and that same host. So
+R1, R2, R3, R5 and every Stage-8a Idris2 obligation remain exactly as recorded
+— `+open+` or `+argued+` — and no leg is reported as passing. Reporting them as
+passing because the flags were "the right ones" would be the failure §6 names.
+
+The 2026-11-04 repair independently ran pinned Agda and the receipt-model
+positive/negative controls. It does not upgrade any of those other prover
+legs; see the source-bound receipt and its explicit limitations.

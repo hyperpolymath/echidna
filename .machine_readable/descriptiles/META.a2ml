@@ -9,7 +9,7 @@ author = "Jonathan D.A. Jewell <j.d.a.jewell@open.ac.uk>"
 license = "MPL-2.0"
 standard = "RSR 2026"
 version = "2.3.0"
-last-updated = "2026-10-05"
+last-updated = "2026-11-04"
 status = "active"
 
 [project-context]
@@ -28,9 +28,14 @@ primary = ["Rust", "Julia", "AffineScript", "Idris2", "Zig"]
 secondary = ["Chapel", "Bun", "Guix"]
 
 [interfaces]
-graphql = 8081
-grpc = 50051
-rest = 8000
+# Four listeners, four binaries (recon 2026-11-01; see
+# docs/reports/2026-11-01-routing-and-rule-engine-recon.adoc §1).
+core-server = 8081      # `echidna server` (--port default); routes /api/*
+graphql = 8082          # `echidna-graphql`; POST / = GraphQL, GET / = playground.
+                        # Distinct default since 2026-11-04; ECHIDNA_GRAPHQL_ADDR overrides.
+grpc = 50051            # `echidna-grpc`; IPv6 loopback only
+rest = 8000             # `echidna-rest`; /api/v1/* + /health (ECHIDNA_REST_ADDR)
+# These are actual binary defaults, not a claim of estate-wide port allocation.
 
 # ─────────────────────────────────────────────────────────────────────────────
 # Saturation campaign 2026-06-01 — additive surface declaration

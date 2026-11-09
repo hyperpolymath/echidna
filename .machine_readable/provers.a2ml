@@ -3,23 +3,23 @@
 #
 # provers.a2ml — Authoritative enumeration of ECHIDNA prover backends.
 #
-# Generated from src/rust/provers/mod.rs::ProverKind. One section per
+# Generated from crates/echidna-core/src/prover_kind.rs::ProverKind. One section per
 # variant, keyed by the variant's PascalCase name for stability against
 # slug-format drift. `slug` is the snake_case identifier used on the
 # wire (matches serde's rename_all = "snake_case" default).
 #
-# Downstream consumers:
-#   - .github/workflows/backend-matrix.yml (vcl-ut) reads this file to
-#     build its matrix strategy, one job per prover.
-#   - Future sync check fails CI if this file drifts from ProverKind::all().
+# This is a declaration inventory, not a claim that each variant has a
+# runnable backend or a successful proof. See verification-integrations.a2ml
+# for the assessed roles of selected tools outside and within this enum.
 #
-# SYNC SOURCE-OF-TRUTH: `pub enum ProverKind` in src/rust/provers/mod.rs.
+# SYNC SOURCE-OF-TRUTH: `pub enum ProverKind` in
+# crates/echidna-core/src/prover_kind.rs.
 # If that enum changes, regenerate with scripts/gen-provers-a2ml.sh.
 
 [metadata]
 version = "1.0.0"
-source  = "src/rust/provers/mod.rs::ProverKind"
-date    = "2026-09-25"
+source  = "crates/echidna-core/src/prover_kind.rs::ProverKind"
+date    = "2026-11-07"
 count   = 141
 
 [prover.ABC]

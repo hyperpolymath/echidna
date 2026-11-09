@@ -76,15 +76,16 @@ impl Transport {
         match self {
             Transport::Uds { path } => path.exists(),
             Transport::Tcp { host, port } => {
-                use std::net::TcpStream;
+                use std::net::{TcpStream, ToSocketAddrs};
                 use std::time::Duration;
-                TcpStream::connect_timeout(
-                    &format!("{}:{}", host, port)
-                        .parse()
-                        .unwrap_or_else(|_| "127.0.0.1:9090".parse().unwrap()),
-                    Duration::from_millis(200),
-                )
-                .is_ok()
+                // Resolve only the configured endpoint. A resolution failure
+                // must not probe a different fallback service.
+                let Ok(mut addresses) = (host.as_str(), *port).to_socket_addrs() else {
+                    return false;
+                };
+                addresses.any(|address| {
+                    TcpStream::connect_timeout(&address, Duration::from_millis(200)).is_ok()
+                })
             },
         }
     }
@@ -177,6 +178,94 @@ mod tests {
             path: PathBuf::from("/tmp/echidna_no_such_sock_xyz.sock"),
         };
         assert!(!t.probe());
+    }
+
+    #[test]
+    fn test_transport_tcp_probes_the_configured_address() {
+        let listener = std::net::TcpListener::bind("127.0.0.1:0").unwrap();
+        let port = listener.local_addr().unwrap().port();
+        assert!(Transport::Tcp {
+            host: "127.0.0.1".into(),
+            port
+        }
+        .probe());
+        assert!(!Transport::Tcp {
+            host: "not an IP address".into(),
+            port
+        }
+        .probe());
+    }
+
+    #[test]
+    fn test_transport_tcp_resolves_localhost() {
+        let listener = std::net::TcpListener::bind(("127.0.0.1", 0)).unwrap();
+        let port = listener.local_addr().unwrap().port();
+        assert!(Transport::Tcp {
+            host: "localhost".into(),
+            port
+        }
+        .probe());
+    }
+
+    fn ipv6_loopback_unavailable(error: &std::io::Error) -> bool {
+        if matches!(
+            error.kind(),
+            std::io::ErrorKind::AddrNotAvailable | std::io::ErrorKind::Unsupported
+        ) {
+            return true;
+        }
+        // Linux x86-64 EAFNOSUPPORT is 97. Rust 1.99.1 leaves it
+        // Uncategorized, so ErrorKind::Unsupported alone misses it.
+        // Keep this raw-code exception target-specific; other bind errors fail.
+        cfg!(all(
+            target_os = "linux",
+            target_env = "gnu",
+            target_arch = "x86_64"
+        )) && error.raw_os_error() == Some(97)
+    }
+
+    #[test]
+    fn test_ipv6_loopback_unavailable_rejects_other_bind_errors() {
+        use std::io::{Error, ErrorKind};
+
+        for kind in [ErrorKind::AddrNotAvailable, ErrorKind::Unsupported] {
+            assert!(ipv6_loopback_unavailable(&Error::from(kind)));
+        }
+        for kind in [
+            ErrorKind::AddrInUse,
+            ErrorKind::PermissionDenied,
+            ErrorKind::InvalidInput,
+            ErrorKind::Other,
+        ] {
+            assert!(!ipv6_loopback_unavailable(&Error::from(kind)));
+        }
+        assert_eq!(
+            ipv6_loopback_unavailable(&Error::from_raw_os_error(97)),
+            cfg!(all(
+                target_os = "linux",
+                target_env = "gnu",
+                target_arch = "x86_64"
+            ))
+        );
+        assert!(!ipv6_loopback_unavailable(&Error::from_raw_os_error(12345)));
+    }
+
+    #[test]
+    fn test_transport_tcp_accepts_unbracketed_ipv6() {
+        let listener = match std::net::TcpListener::bind(("::1", 0)) {
+            Ok(listener) => listener,
+            Err(error) if ipv6_loopback_unavailable(&error) => {
+                eprintln!("IPv6 loopback unavailable; probe test not run: {error}");
+                return;
+            },
+            Err(error) => panic!("bind IPv6 loopback fixture: {error}"),
+        };
+        let port = listener.local_addr().unwrap().port();
+        assert!(Transport::Tcp {
+            host: "::1".into(),
+            port
+        }
+        .probe());
     }
 
     #[test]

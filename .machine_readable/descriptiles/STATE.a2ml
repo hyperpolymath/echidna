@@ -1412,3 +1412,15 @@ commits = [
   "f73ee00", "46a7408", "6019860", "3828056", "d05dfff",
   "4a0b068", "c61140c", "85c1b8c", "cb8caff",
 ]
+
+[session-2026-11-04-chapel-native-link-candidate]
+status = "source candidate; exact-source hosted build and runtime qualification pending"
+observed-job = "https://github.com/hyperpolymath/echidna/actions/runs/41921084840/job/126896916928"
+observed-failure = "Real Zig bridge omitted all six Chapel export definitions at the final Rust link; build.rs supplied neither the Chapel archive nor runtime dependency closure."
+changes = [
+  "Separate explicit real and stub bridge modes; real mode links the archive plus official compiler-derived runtime libraries.",
+  "Initialize the real Chapel runtime and generated modules once before calls; finalize at process exit.",
+  "Align artifact consumer directory with the local build; check exports and retain the existing job names and waiver expiry.",
+  "Author native-link refusal controls and real runtime/version/no-prover allocation/free tests; no local execution receipt claimed.",
+]
+qualification-needed = "Pinned Chapel 2.8.0/Zig 0.14.0 hosted archive, final Rust link, stub controls, real FFI runtime tests, normal formatting and workflow checks."

@@ -1,6 +1,6 @@
 == ECHIDNA Environment Variables
 
-*Status*: canonical reference. Last revised: 2026-05-26.
+*Status*: canonical reference. Last revised: 2026-11-04.
 
 Every environment variable the system reads, with type, default, and the
 files that consume it. If you add a new env var, update this table in
@@ -24,6 +24,34 @@ surfaces using `+VERISIMDB_URL+` are stale and being migrated.
 |`+ECHIDNA_GNN_URL+` |URL |falls back to `+ECHIDNA_ML_API_URL+`
 |(planned C5 — see Stage 3c fix list) |Specifically the GNN endpoint;
 separate from the ML server only when the GNN runs on a different host.
+|===
+
+=== Interface listeners
+
+Each listener is a separate binary. GraphQL defaults to 8082 from 2026-11-04,
+removing its collision with the core server on 8081. See the migration note
+in link:../CHANGELOG.adoc[`+CHANGELOG.adoc+`].
+
+[width="100%",cols="20%,20%,20%,20%,20%",options="header",]
+|===
+|Variable |Type |Default |Used by |Purpose
+|`+ECHIDNA_REST_ADDR+` |host:port |`+127.0.0.1:8000+`
+|`+src/interfaces/rest/main.rs:142+` |Bind address for the `+echidna-rest+`
+binary (`+/api/v1/*+`). Not the core server.
+
+|`+ECHIDNA_GRAPHQL_ADDR+` |host:port |`+127.0.0.1:8082+`
+|`+src/interfaces/graphql/main.rs+` |Bind address for `+echidna-graphql+`.
+Hostnames remain supported. Invalid values and occupied addresses produce
+a startup error instead of a bind panic.
+
+|`+--port+` / `+--host+` (CLI flags, not env)
+|host:port |`+127.0.0.1:8081+`
+|`+src/rust/main.rs+` |Bind address for `+echidna server+`. There is no
+environment override for this one.
+
+|`+APP_PORT+` / `+APP_HOST+` |host:port |`+[::]` / `+8081+`
+|`+container/entrypoint.sh+` |Read by the container entrypoint and passed to
+`+echidna server+` as flags. The binary itself does not read them.
 |===
 
 === Training & evaluation (Julia)

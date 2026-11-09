@@ -55,11 +55,14 @@ Rationale:
 * The PIC rebuild is a one-shot ~30 min operation per CI runner, which
 cannot be amortised across PRs without a registry-pushed container image
 — see follow-up below.
-* The static-library form (`+--library --static+`) is correct for the
-current Rust-link path; Rust binaries already embed the Chapel runtime
-by linking against `+libechidna_chapel.a+`. Switching to `+.so+` linkage
-gains separability of the Chapel runtime but adds packaging complexity
-(now two artifacts to ship and version).
+* The static-library form (`+--library --static+`) is suitable for a
+Rust executable. The 2026-11-04 real CI failure showed that the old
+`build.rs` linked only the Zig bridge, omitting both the generated Chapel
+archive and its runtime closure. The repair consumes the official compiler
+link flags and initializes the runtime before exports; its exact-source
+hosted test is still required. A PIC rebuild is not a prerequisite for
+this static executable link. Shared linkage adds separate packaging and
+runtime constraints.
 * The PIC form is only *required* for L2.5 (multi-locale Chapel dispatch
 under PGAS), where the runtime needs to be loadable from multiple
 Chapel-distinct executables. That work is gated on L1 Cap’n Proto, so

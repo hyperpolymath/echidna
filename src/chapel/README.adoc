@@ -1,64 +1,152 @@
-== Chapel Production Integration for ECHIDNA
+// SPDX-License-Identifier: MPL-2.0
+= Chapel integration for ECHIDNA
 
-Parallel proof search using Chapel’s task parallelism, integrated into
-the main ECHIDNA codebase.
+Parallel proof search implemented in Chapel, with a Zig bridge consumed by
+the optional Rust `chapel` feature.
 
-=== Overview
+== Current build boundary
 
-This directory contains the Chapel-based parallel proof search
-framework, now integrated into the main ECHIDNA codebase. The Chapel
-code is used to accelerate proof search by dispatching theorem proving
-goals to multiple prover backends concurrently.
+The hosted real-library job
+https://github.com/hyperpolymath/echidna/actions/runs/41929785899/job/126923985200[126923985200]
+on source `f160493cc1e0331d649b30cf94b3d03c40773b1e` qualified the native link,
+the compiler-layout controls, and the runtime version query. Its no-prover child
+and process shutdown aborted in the qthreads task-state assertion. The job's
+allow-failure workflow conclusion is not a passed runtime test.
 
-=== Integration Status
+The thread-ownership repair below requires fresh exact-source hosted
+qualification. The stub build deliberately reports Chapel unavailable; it is
+a separate fallback test and cannot qualify the real runtime.
 
-* *Status*: Production-ready
-* *Location*: `+src/chapel/+`
-* *Build System*: Integrated with `+Justfile+` and `+Cargo.toml+`
-* *FFI Bridge*: Zig bridge at `+src/zig_ffi/chapel_bridge.zig+`
+The final Rust executable links three parts in order: the static Zig bridge,
+`libechidna_chapel.a`, and the runtime/dependency flags returned by the installed
+Chapel compiler's official `util/config/compileline --libraries` helper.
+`LD_LIBRARY_PATH` cannot supply a missing static link. Real mode currently
+supports native Linux and refuses unsupported compiler flags instead of
+silently discarding them.
 
-=== Build Instructions
+The bridge owns the real runtime on one stable OS thread. Initialization, both
+generated module initializers, every Chapel export, and finalization run there.
+Foreign Rust/Zig caller threads submit synchronous work to that owner. Requests
+are serialized at this boundary; each Chapel search still uses its existing
+parallel tasks internally. Re-entry from the owner is refused.
 
-==== 1. Install Chapel
+The owner copies result strings into temporary `c_allocator` storage and frees
+the original Chapel allocation before completing a request, including
+allocation-error paths. The public Zig API then clones those temporaries with
+the caller's supplied allocator on the caller thread; that allocator never runs
+on the runtime owner. Temporary copies are freed on success or failure, and
+partial caller-side copies are freed if a later allocation fails. Rust receives
+independent copies and keeps its existing `echidna_free_*` obligation.
+
+Normal process exit requires callers to have completed their requests. The
+exit handler atomically stops admission and joins/finalizes only an idle owner.
+If a request or another shutdown is active, it refuses to join and aborts the
+process. A fatal Chapel task can call `exit` while its owner waits for the same
+task; draining from that unknown exit thread would create a join cycle. The
+explicit owner shutdown primitive still drains accepted work and joins, but
+the process-exit hook cannot assume that calling context.
+
+This follows the pinned Chapel sources:
+https://github.com/chapel-lang/chapel/blob/2.8.0/runtime/src/tasks/qthreads/tasks-qthreads.c[`chpl_task_init`]
+records the initializing pthread;
+https://github.com/chapel-lang/chapel/blob/2.8.0/runtime/include/tasks/qthreads/chpl-tasks-impl-fns.h[`chpl_qthread_get_tasklocal`]
+returns its process task bundle only to that pthread or an existing Chapel/task
+thread; and
+https://github.com/chapel-lang/chapel/blob/2.8.0/modules/internal/ExportWrappers.chpl[library setup/cleanup]
+creates and releases the task-local dynamic end-count.
+The public
+https://github.com/chapel-lang/chapel/blob/2.8.0/doc/rst/technotes/libraries.rst[library API]
+requires initialization before exports and finalization after them. The bridge
+keeps the installed task runtime and its assertions intact. The failed-exit
+case follows
+https://github.com/chapel-lang/chapel/blob/2.8.0/runtime/src/error.c[`chpl_error`]
+through
+https://github.com/chapel-lang/chapel/blob/2.8.0/runtime/src/chplexit.c[`chpl_exit_any`]
+to process exit; in
+https://github.com/chapel-lang/chapel/blob/2.8.0/runtime/src/comm/none/comm-none.c[comm/none],
+that path does not first shut down all tasks. The guard qualifies a finite
+in-flight-export boundary; no full Chapel fatal-task execution receipt is
+claimed by the source change.
+
+The installed `echidna_chapel_ffi.mode` records real versus stub build intent.
+That metadata is not an attestation of artifact contents.
+
+=== Timeout and cancellation boundary
+
+The Rust strategy remains synchronous. It accepts positive whole-second
+per-prover timeouts representable by the C ABI and rejects zero, fractional,
+or overflowing durations before entering FFI; those values must not silently
+select Chapel's native default timeout. The native C API retains its documented
+zero-means-default convention. Public Zig timeouts above the signed C range
+and negative C timeouts are refused before runtime admission.
+
+Queueing, runtime initialization, and availability checks are outside that
+per-prover timer. This repair does not provide a hard whole-call deadline or
+safe asynchronous cancellation of an in-process Chapel export. A caller must
+not terminate the owner thread, and must finish outstanding calls before normal
+process exit. The existing speculative-search loser cancellation remains a
+separate Chapel operation; this bridge continues to invoke best-of search.
+
+== Build and checks
+
+Install the same Chapel 2.8.0 and Zig 0.14.0 used by
+`../../.github/workflows/chapel-ci.yml`. The workflow pins and verifies the
+official Ubuntu 22.04 Chapel package before installation.
 
 [source,bash]
 ----
-# Download Chapel 2.0
-wget https://github.com/chapel-lang/chapel/releases/download/2.0.0/chapel-2.0.0.tar.gz
-tar xzf chapel-2.0.0.tar.gz
-cd chapel-2.0.0
+# Real static library, bridge, and Rust feature.
+just build-chapel-real
+just chapel-test-real
 
-# Set environment
-source util/setchplenv.bash
+# Includes the standalone Chapel smoke target and independent stub tests.
+just chapel-all
 
-# Build (takes ~10 minutes)
-make
+# Deliberate unavailable-stub fallback only.
+just build-chapel
+just chapel-test
 ----
 
-==== 2. Build Chapel Code
+The default real library directory is `src/chapel/lib`.
+`ECHIDNA_CHAPEL_LIB_DIR` selects another directory containing
+`libechidna_chapel.a`; the matching compiler/runtime must be installed.
+`ECHIDNA_CHAPEL_EXPECT_MODE=real` refuses a stub artifact or missing bridge;
+`stubs` refuses a real artifact. Rebuild the bridge when mode metadata is
+missing. Metadata-only Cargo checks retain the existing warning when no
+optional bridge was built and no mode was requested.
 
-[source,bash]
-----
-cd src/chapel
-chpl parallel_proof_search.chpl -o proof_search
-----
+The real CI consumer downloads the same-run archive into that directory,
+checks its exports, runs the native-link refusal controls, and executes Rust
+FFI tests. The empty-PATH child test runs concurrent Rust callers through real
+search/result/free cycles without starting an external prover, then requires a
+normal process exit. A separate isolated finite prover records its PID and
+sleeps longer than its configured per-prover limit; the test requires a failed
+search, bounded return, and the prover already stopped. Its parent has a
+separate deadline and reaps a stuck test process. Neither fixture is proof
+evidence.
 
-==== 3. Build Zig FFI Bridge
+The Zig test target also exercises actual OS threads with an instrumented
+runtime: one initialization/finalization thread, concurrent callers, explicit
+shutdown while accepted work is in flight, refusal after shutdown, callback
+re-entry refusal, and prompt refusal of a nonowner process-exit request while
+work is active. The last control releases its held work after a finite wait so
+a regressed join can be cleaned up and reported as failure.
 
-[source,bash]
-----
-cd src/zig_ffi
-zig build -Dstubs=false
-----
+Transfer controls use the production transfer helpers, a real OS owner producing
+fixture results, and a recording allocator that refuses foreign-thread
+allocation. They cover successful version/result copies, first and partial
+allocation failures, and invalid timeout refusal before owner startup. These
+fixtures qualify that boundary behavior when executed; they do not substitute
+for the real Chapel tests.
 
-==== 4. Build Rust with Chapel Feature
+The existing CI waiver and its expiry are unchanged. A source patch, stub
+success, or separate Chapel smoke target does not establish that this complete
+native path has passed.
 
-[source,bash]
-----
-cargo build --features chapel
-----
+=== Historical example output
 
-=== Expected Output
+The example below is retained as an illustration, not as a receipt from the
+current CI job or a newly measured performance result.
 
 ....
 ╔═══════════════════════════════════════════════════════╗
@@ -103,7 +191,7 @@ Speedup: 1.51x
 ✓ Parallel search is significantly faster!
 ....
 
-=== What This Demonstrates
+=== Intended behavior illustrated above
 
 ==== 1. Parallel Proof Search
 
@@ -113,7 +201,7 @@ Speedup: 1.51x
 
 ==== 2. Performance Benefits
 
-* Typical speedup: 1.5x - 12x (depending on prover success rate)
+* Historical claimed speedup: 1.5x - 12x; remeasurement is required for current code.
 * Best case: 12x (all provers take similar time)
 * Worst case: 1x (first prover succeeds immediately)
 
@@ -158,7 +246,7 @@ communication between Rust and Chapel.
 [arabic]
 . *Update Rust Dispatch*: Modify `+src/rust/dispatch.rs+` to use Chapel
 for parallel proof search when the `+chapel+` feature is enabled.
-. *Add CI/CD Support*: Ensure Chapel code is built and tested in CI.
+. *Qualify the real-library CI path*: require its actual final link and runtime tests.
 . *Performance Optimization*: Run benchmarks and tune the Chapel code.
 . *Documentation*: Update documentation to reflect the production
 integration.

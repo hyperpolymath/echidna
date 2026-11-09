@@ -1,10 +1,24 @@
 == GraphQL Interface Reference
 
 The `+echidna-graphql+` binary is an optional self-hosted service. It
-binds `+127.0.0.1:8081+` over plain HTTP and serves both the GraphQL
-endpoint and the interactive playground at the server root — a `+POST+`
-to `+/+` executes operations, a `+GET+` renders the playground. There is
-a separate `+GET /health+`.
+binds `+127.0.0.1:8082+` by default over plain HTTP and serves both the
+GraphQL endpoint and the interactive playground at the server root — a
+`+POST+` to `+/+` executes operations, a `+GET+` renders the playground.
+There is a separate `+GET /health+`.
+
+The core `+echidna server+` defaults to 8081, so both can run together.
+Set `+ECHIDNA_GRAPHQL_ADDR+` to override the GraphQL address:
+
+[source,bash]
+----
+ECHIDNA_GRAPHQL_ADDR=127.0.0.1:8092 ./echidna-graphql
+----
+
+GraphQL operations and the core server's `+/api/*+` routes are separate
+handlers. Without `+verisim+`, both GraphQL `+verifyProof+` and core
+`+POST /api/prove+` call `+ProverFactory+` directly. A `+verisim+` build
+routes only the latter through `+ProverDispatcher+`. The independent
+`+echidna-rest+` binary serves `+/api/v1/*+`.
 
 Documented from `+src/interfaces/graphql/{main,schema}.rs+`.
 

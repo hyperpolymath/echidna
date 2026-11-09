@@ -114,7 +114,7 @@ adjust-julia-outdated:
 
 adjust-shas-stale:
     @echo 'A040: Standards reusable SHA pin staleness'
-    @grep -rE 'uses: hyperpolymath/standards/.+@[0-9a-f]{40}' .github/workflows/ 2>/dev/null | head -5 || echo 'A040 SKIP: no standards-reusable callers'
+    @grep -rE 'uses: (metadatastician|hyperpolymath)/standards/.+@[0-9a-f]{40}' .github/workflows/ 2>/dev/null | head -5 || echo 'A040 SKIP: no standards-reusable callers'
 
 # ── BUST (Breakage / Rollback) ────────────────────────────────────────
 # Source: .machine_readable/contractiles/bust/Bustfile.a2ml

@@ -25,6 +25,7 @@
 //! (`src/rust/agent/planner.rs`) as a tactic selector. It produces
 //! `ScoredPremise` values that the planner converts to tactics.
 
+use anyhow::Result;
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use std::time::Instant;
@@ -122,22 +123,24 @@ pub struct SearchStats {
 
 impl GnnGuidedSearch {
     /// Create a new GNN-guided search with default configuration.
-    pub fn new() -> Self {
+    /// Returns an error if the GNN HTTP client cannot be initialized.
+    pub fn new() -> Result<Self> {
         Self::with_config(GuidedSearchConfig::default())
     }
 
     /// Create a new GNN-guided search with custom configuration.
-    pub fn with_config(config: GuidedSearchConfig) -> Self {
-        let gnn_client = GnnClient::with_config(config.gnn_config.clone());
+    /// Returns an error if the GNN HTTP client cannot be initialized.
+    pub fn with_config(config: GuidedSearchConfig) -> Result<Self> {
+        let gnn_client = GnnClient::with_config(config.gnn_config.clone())?;
         let fallback_monitor = FallbackMonitor::with_config(FallbackSlaConfig::default());
-        Self {
+        Ok(Self {
             config,
             gnn_client,
             feature_extractor: TermFeatureExtractor::new(),
             premise_embedding_cache: HashMap::new(),
             stats: SearchStats::default(),
             fallback_monitor,
-        }
+        })
     }
 
     /// Check GNN server availability. Call once at startup or periodically.
@@ -392,12 +395,6 @@ impl GnnGuidedSearch {
     }
 }
 
-impl Default for GnnGuidedSearch {
-    fn default() -> Self {
-        Self::new()
-    }
-}
-
 /// Infer the most likely tactic for applying a theorem.
 ///
 /// Examines the theorem's name and statement to guess the appropriate
@@ -542,7 +539,7 @@ mod tests {
 
     #[tokio::test]
     async fn test_rank_premises_without_server() {
-        let mut search = GnnGuidedSearch::new();
+        let mut search = GnnGuidedSearch::new().expect("guided search should initialize");
         let state = make_test_state();
         let premises = make_test_premises();
 
@@ -566,7 +563,7 @@ mod tests {
 
     #[tokio::test]
     async fn test_all_premises_scored() {
-        let mut search = GnnGuidedSearch::new();
+        let mut search = GnnGuidedSearch::new().expect("guided search should initialize");
         let state = make_test_state();
         let premises = make_test_premises();
 
@@ -629,14 +626,14 @@ mod tests {
 
     #[test]
     fn test_search_stats_tracking() {
-        let search = GnnGuidedSearch::new();
+        let search = GnnGuidedSearch::new().expect("guided search should initialize");
         assert_eq!(search.stats().total_calls, 0);
         assert_eq!(search.stats().gnn_calls, 0);
     }
 
     #[tokio::test]
     async fn test_stats_increment_on_call() {
-        let mut search = GnnGuidedSearch::new();
+        let mut search = GnnGuidedSearch::new().expect("guided search should initialize");
         let state = make_test_state();
         let premises = make_test_premises();
 

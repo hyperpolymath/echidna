@@ -40,10 +40,10 @@ impl ProverBackend for GLPKBackend {
         ProverKind::GLPK
     }
     async fn version(&self) -> Result<String> {
-        let o = Command::new(&self.config.executable)
-            .arg("--version")
-            .output()
-            .await?;
+        let o = super::version_probe::run(&self.config, &["--version"]).await?;
+        if !o.status.success() {
+            anyhow::bail!("GLPK version probe failed: {}", o.status);
+        }
         Ok(String::from_utf8_lossy(&o.stdout)
             .lines()
             .next()

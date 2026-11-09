@@ -51,10 +51,13 @@ each binding loopback over plain HTTP:
 An OpenAPI-documented `+/api/v1+` surface — see the
 link:/docs/api/rest.html[REST interface reference].
 
-==== GraphQL interface (port 8081)
+==== GraphQL interface (port 8082)
 
 Endpoint and interactive playground both at the server root — see the
 link:/docs/api/graphql.html[GraphQL interface reference].
+
+GraphQL and the core server use distinct default ports. Set
+`+ECHIDNA_GRAPHQL_ADDR+` to override the GraphQL listener.
 
 ==== gRPC interface (port 50051)
 
@@ -66,7 +69,11 @@ definition at `+src/interfaces/grpc/proto/echidna.proto+`.
 ECHIDNA follows a trust-hardened architecture:
 
 [arabic]
-. *Solver Binary Integrity* — SHAKE3-512 + BLAKE3 verification
+. *Solver Binary Integrity* — SHAKE3-512 + BLAKE3 verification. Capability
+present, *not currently engaged*: no caller attaches an integrity checker in
+this release, so proofs are checked with solver identity assumed. The
+manifest at `+config/solver-manifest.toml+` also still carries placeholder
+hashes. Reported plainly rather than implied.
 . *SMT Portfolio Solving* — cross-checking across solvers
 . *Proof Certificate Checking* — Alethe, DRAT/LRAT, TSTP
 . *Axiom Usage Tracking* — 4 danger levels (Safe, Noted, Warning,

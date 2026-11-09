@@ -1,0 +1,68 @@
+// SPDX-License-Identifier: CC-BY-SA-4.0
+// SPDX-FileCopyrightText: 2026 ECHIDNA Project Contributors
+
+= Quarantine: Logtalk sources
+
+*Status*: dead source, retained as a record. *Quarantined*: 2026-11-01.
+*Read this first*: nothing here is built, imported, tested or shipped.
+
+== Contents
+
+[width="100%",cols="38%,62%",options="header"]
+|===
+|File |Status
+
+|`+security_learning.lgt+`
+|DEAD. Was `+rules/security_learning.lgt+`, the only Logtalk module in the
+tree (234 lines, two objects, dated 2025-12-29). Body unchanged; a
+`+DEAD SOURCE+` header records the evidence.
+|===
+
+== Why it is here and not in `+rules/+`
+
+Four questions decided it, and each one alone would have been enough:
+
+. *Nothing loaded it.* No test, workflow, Justfile recipe, A2ML manifest or
+  Cargo build step named the file. `+grep -rn '\.lgt' --exclude-dir=.git .+`
+  returned it and one self-reference inside it. No Logtalk runtime is
+  installed in CI, and none is declared anywhere.
+. *Its input was a machine-local path.* `+cicd_repo_path('~/repos/cicd-hyper-a/.audittraining')+`
+  — a literal `+~+` in a path the module opens.
+. *Its learning step cannot learn.* `+load_training_data/1+` reads Prolog
+  terms with `+read/2+`, but the catalog it is pointed at is Scheme
+  (`+ERROR-CATALOG.scm+`). Every term reaches the catch-all clause
+  `+process_training_term(_)+`, so `+learn_rules/0+` re-asserts the static
+  tables already in the file. The output is a transcript of the input
+  constants.
+. *The estate moved.* Rule authoring is Elixir in
+  https://github.com/hyperpolymath/hypatia[hypatia]. ECHIDNA is a Hypatia
+  *target* (`.hypatia-baseline.json`, `.hypatia-ignore`), never a Logtalk
+  rule producer. The prose that described Logtalk generation was retired in
+  `+docs/ECOSYSTEM-INTEGRATION.adoc+` and
+  `+echidna-playground/.machine_readable/descriptiles/NEUROSYM.a2ml+` in the
+  same change.
+
+`+rules/+` was removed rather than left empty, so that the tree cannot imply
+by its shape that ECHIDNA carries rules in Logtalk.
+
+The full audit, including the path classification and the reproduction
+commands, is
+link:../../docs/reports/2026-11-01-routing-and-rule-engine-recon.adoc[`+docs/reports/2026-11-01-routing-and-rule-engine-recon.adoc+`]
+§4.
+
+== What it would take to revive this
+
+Not a rename and not a wrapper. All five, or it stays dead:
+
+. A Logtalk or compatible Prolog runtime in CI, pinned the way every other
+   toolchain in this repo is pinned.
+. A parameterised input path — no `+~+`, no home directory.
+. A real parser for whatever format the catalog actually is, with a fixture
+   test per term shape.
+. A named consumer in this repository or a sibling, with a contract.
+. A reason not to write it in Elixir like the rest of the estate's rules.
+
+== Licence
+
+MPL-2.0, unchanged, per the `+SPDX-License-Identifier+` header in the file
+and the `+Files: archive/*+` stanza in `+.reuse/dep5+`.

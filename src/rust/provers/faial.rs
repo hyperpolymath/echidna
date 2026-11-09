@@ -125,20 +125,27 @@ impl ProverBackend for FaialBackend {
     }
 
     async fn version(&self) -> Result<String> {
-        let output = Command::new(self.binary()).arg("--version").output().await;
-        match output {
-            Ok(out) => {
-                let text = String::from_utf8_lossy(&out.stdout);
-                let text_err = String::from_utf8_lossy(&out.stderr);
-                let combined = format!("{}{}", text, text_err).trim().to_string();
-                if combined.is_empty() {
-                    Ok("faial@unknown-version".to_string())
-                } else {
-                    Ok(combined)
-                }
-            },
-            Err(_) => Ok("faial@not-installed".to_string()),
+        // Version discovery is a short availability probe, not a proof run.
+        let limit = std::time::Duration::from_secs(self.config.timeout.min(10));
+        let mut command = Command::new(self.binary());
+        command
+            .arg("--version")
+            .stdin(Stdio::null())
+            .kill_on_drop(true);
+        let output = tokio::time::timeout(limit, command.output())
+            .await
+            .with_context(|| format!("Faial: --version timed out after {}s", limit.as_secs()))?
+            .context("Faial: failed to execute --version")?;
+        if !output.status.success() {
+            return Err(anyhow!("Faial: --version exited with {}", output.status));
         }
+        let stdout = String::from_utf8_lossy(&output.stdout);
+        let stderr = String::from_utf8_lossy(&output.stderr);
+        let version = format!("{}\n{}", stdout, stderr).trim().to_string();
+        if version.is_empty() {
+            return Err(anyhow!("Faial: --version returned empty output"));
+        }
+        Ok(version)
     }
 
     async fn parse_file(&self, path: PathBuf) -> Result<ProofState> {
@@ -333,6 +340,197 @@ impl ProverBackend for FaialBackend {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[tokio::test]
+    async fn version_rejects_a_missing_executable() {
+        let directory = tempfile::tempdir().unwrap();
+        let backend = FaialBackend::new(ProverConfig {
+            executable: directory.path().join("missing-prover"),
+            timeout: 5,
+            ..ProverConfig::default()
+        });
+        let error = backend.version().await.unwrap_err();
+        assert!(error.to_string().contains("failed to execute --version"));
+    }
+
+    #[cfg(unix)]
+    fn version_fixture(script: &str, timeout: u64) -> (tempfile::TempDir, FaialBackend) {
+        use std::os::unix::fs::PermissionsExt;
+
+        let directory = tempfile::tempdir().unwrap();
+        let executable = directory.path().join("version-probe");
+        std::fs::write(
+            &executable,
+            format!(
+                "#!/bin/sh\n[ \"$#\" -eq 1 ] && [ \"$1\" = '--version' ] || exit 64\n{script}\n"
+            ),
+        )
+        .unwrap();
+        std::fs::set_permissions(&executable, std::fs::Permissions::from_mode(0o700)).unwrap();
+        let backend = FaialBackend::new(ProverConfig {
+            executable,
+            timeout,
+            ..ProverConfig::default()
+        });
+        (directory, backend)
+    }
+
+    #[cfg(unix)]
+    #[tokio::test]
+    async fn version_accepts_successful_stdout_or_stderr() {
+        for script in [
+            "printf 'fixture version 1.2\\n'",
+            "printf 'fixture version 1.2\\n' >&2",
+        ] {
+            let (_directory, backend) = version_fixture(script, 5);
+            assert_eq!(backend.version().await.unwrap(), "fixture version 1.2");
+        }
+    }
+
+    #[cfg(unix)]
+    #[tokio::test]
+    async fn version_rejects_failed_or_empty_output() {
+        for (script, expected) in [
+            ("printf 'fixture version 1.2\\n'; exit 7", "exited with"),
+            ("exit 0", "empty output"),
+            ("printf ' \\n\\t'; printf '\\n ' >&2", "empty output"),
+        ] {
+            let (_directory, backend) = version_fixture(script, 5);
+            let error = backend.version().await.unwrap_err();
+            assert!(error.to_string().contains(expected), "{error:#}");
+        }
+    }
+
+    #[cfg(unix)]
+    #[tokio::test]
+    async fn version_rejects_a_non_executable_file() {
+        use std::os::unix::fs::PermissionsExt;
+
+        let (_directory, backend) = version_fixture("printf 'fixture version 1.2\\n'", 5);
+        std::fs::set_permissions(backend.binary(), std::fs::Permissions::from_mode(0o600)).unwrap();
+        let error = backend.version().await.unwrap_err();
+        assert!(error.to_string().contains("failed to execute --version"));
+    }
+
+    #[cfg(unix)]
+    fn fixture_process_running(pid: &str) -> std::io::Result<bool> {
+        let output = std::process::Command::new("/bin/ps")
+            .args(["-o", "stat=", "-p", pid])
+            .stdin(Stdio::null())
+            .output()?;
+        fixture_process_state(output.status.code(), &output.stdout, &output.stderr)
+    }
+
+    #[cfg(unix)]
+    fn fixture_process_state(
+        exit_code: Option<i32>,
+        stdout: &[u8],
+        stderr: &[u8],
+    ) -> std::io::Result<bool> {
+        let invalid = || {
+            std::io::Error::other(format!(
+                "cannot inspect fixture process: ps exit={exit_code:?}, stdout={stdout:?}, stderr={stderr:?}"
+            ))
+        };
+        if !stderr.is_empty() {
+            return Err(invalid());
+        }
+        if exit_code == Some(1) && stdout.iter().all(u8::is_ascii_whitespace) {
+            return Ok(false);
+        }
+        if exit_code != Some(0) {
+            return Err(invalid());
+        }
+        let text = std::str::from_utf8(stdout).map_err(|_| invalid())?;
+        let mut fields = text.split_whitespace();
+        let state = fields.next().ok_or_else(invalid)?;
+        if fields.next().is_some()
+            || !state.as_bytes()[1..]
+                .iter()
+                .all(|flag| matches!(flag, b'<' | b'N' | b'L' | b's' | b'l' | b'+'))
+        {
+            return Err(invalid());
+        }
+        match state.as_bytes()[0] {
+            b'Z' | b'X' => Ok(false),
+            b'R' | b'S' | b'D' | b'T' | b't' | b'I' | b'W' => Ok(true),
+            _ => Err(invalid()),
+        }
+    }
+
+    #[cfg(unix)]
+    #[test]
+    fn fixture_process_state_distinguishes_termination_from_inspection_errors() {
+        for state in ["R\n", "S+\n", "D\n", "T\n", "t\n", "I\n", "W\n"] {
+            assert!(fixture_process_state(Some(0), state.as_bytes(), b"").unwrap());
+        }
+        for state in ["Z\n", "Zs\n", "X\n"] {
+            assert!(!fixture_process_state(Some(0), state.as_bytes(), b"").unwrap());
+        }
+        assert!(!fixture_process_state(Some(1), b"", b"").unwrap());
+        for (exit_code, stdout, stderr) in [
+            (Some(0), b"".as_slice(), b"".as_slice()),
+            (Some(0), b"S\nZ\n".as_slice(), b"".as_slice()),
+            (Some(0), b"Zgarbage\n".as_slice(), b"".as_slice()),
+            (Some(0), b"?\n".as_slice(), b"".as_slice()),
+            (Some(0), b"\xff".as_slice(), b"".as_slice()),
+            (Some(1), b"".as_slice(), b"fatal library error".as_slice()),
+            (Some(1), b"Z\n".as_slice(), b"".as_slice()),
+            (Some(2), b"Z\n".as_slice(), b"".as_slice()),
+            (None, b"Z\n".as_slice(), b"".as_slice()),
+        ] {
+            assert!(fixture_process_state(exit_code, stdout, stderr).is_err());
+        }
+    }
+
+    #[cfg(unix)]
+    #[tokio::test]
+    async fn version_times_out_and_terminates_the_process() {
+        use std::time::Duration;
+
+        let (_directory, backend) =
+            version_fixture("printf '%s' \"$$\" > \"$0.pid\"\nexec /bin/sleep 30", 1);
+        // Bound the regression itself if the implementation loses its deadline.
+        let result = tokio::time::timeout(Duration::from_secs(3), backend.version()).await;
+        let pid_path = backend.binary().with_extension("pid");
+        let pid = std::fs::read_to_string(pid_path)
+            .unwrap()
+            .parse::<u32>()
+            .unwrap()
+            .to_string();
+        // A killed but unreaped child is terminated. Tokio owns reaping;
+        // PID existence (kill -0) must not impose a second cleanup deadline.
+        let mut state = fixture_process_running(&pid);
+        for _ in 0..50 {
+            if !matches!(&state, Ok(true)) {
+                break;
+            }
+            tokio::time::sleep(Duration::from_millis(20)).await;
+            state = fixture_process_running(&pid);
+        }
+        // Attempt cleanup before either a liveness or inspection assertion.
+        // Do not reap a child owned by Tokio.
+        let cleanup = if matches!(&state, Ok(false)) {
+            None
+        } else {
+            Some(
+                std::process::Command::new("/bin/kill")
+                    .args(["-9", pid.as_str()])
+                    .status(),
+            )
+        };
+        let still_running = state.unwrap_or_else(|error| {
+            panic!("inspect the fixture process: {error}; cleanup attempt: {cleanup:?}")
+        });
+        assert!(
+            !still_running,
+            "the timed-out version process survived; cleanup attempt: {cleanup:?}"
+        );
+        let error = result
+            .expect("version must enforce its own deadline")
+            .unwrap_err();
+        assert!(error.to_string().contains("--version timed out"));
+    }
 
     #[test]
     fn kind_is_faial() {

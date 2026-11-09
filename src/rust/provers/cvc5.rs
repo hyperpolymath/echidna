@@ -534,10 +534,12 @@ impl ProverBackend for CVC5Backend {
     }
 
     async fn version(&self) -> Result<String> {
-        let output = Command::new(&self.config.base.executable)
-            .arg("--version")
-            .output()
+        let output = super::version_probe::run(&self.config.base, &["--version"])
+            .await
             .context("Failed to execute CVC5")?;
+        if !output.status.success() {
+            anyhow::bail!("CVC5 version probe failed: {}", output.status);
+        }
         let version_str = String::from_utf8_lossy(&output.stdout);
         Ok(version_str.lines().next().unwrap_or("unknown").to_string())
     }

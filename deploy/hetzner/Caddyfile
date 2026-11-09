@@ -18,13 +18,6 @@ api.nesy-prover.dev {
 	request_body {
 		max_size 1MB
 	}
-	rate_limit {
-		zone api {
-			key {remote_host}
-			events 30
-			window 1m
-		}
-	}
 
 	header {
 		Strict-Transport-Security "max-age=31536000"
@@ -34,11 +27,42 @@ api.nesy-prover.dev {
 		-Server
 	}
 
-	# `echidna` resolves on the shared podman network (echidna.network);
-	# the API container publishes no host port.
-	reverse_proxy echidna:8081 {
-		transport http {
-			response_header_timeout 120s
+	# CONTAINMENT STOPGAP (owner ruling 2026-11-05). The API has no
+	# authentication yet and its execution routes spawn prover binaries
+	# on caller input. Until bearer auth lands on every execution route,
+	# only these two read-only GET routes are forwarded. Everything else,
+	# including /api/prove, /api/verify*, /api/session/* and
+	# /api/agent/*, is refused here and never reaches the container.
+	# Remove this matcher only in the change that enables auth.
+	@public {
+		method GET HEAD
+		path /api/health /api/provers
+	}
+
+	# `route` keeps the written order. The rate limiter must run first: at
+	# site level Caddy would sort it after the terminal `handle` blocks
+	# below, and it would then never run.
+	route {
+		rate_limit {
+			zone api {
+				key {remote_host}
+				events 30
+				window 1m
+			}
+		}
+
+		handle @public {
+			# `echidna` resolves on the shared podman network (echidna.network);
+			# the API container publishes no host port.
+			reverse_proxy echidna:8081 {
+				transport http {
+					response_header_timeout 120s
+				}
+			}
+		}
+
+		handle {
+			respond "Prover execution is disabled on this host until authentication is enabled." 403
 		}
 	}
 }

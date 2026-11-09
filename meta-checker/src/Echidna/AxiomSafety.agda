@@ -154,6 +154,37 @@ worst-ub-left IncompleteProof IncompleteProof = inc≤i
 worst-ub-left IncompleteProof Rejected = inc≤r
 worst-ub-left Rejected _ = rej≤r
 
+-- THEOREM: Clean is a left unit for worst-case composition.
+-- (`worst-policy` splits on its first argument, so this needs the
+--  second argument enumerated even though the equation is "obvious".)
+clean-left-neutral : ∀ (b : AxiomPolicy) → worst-policy Clean b ≡ b
+clean-left-neutral Clean           = refl
+clean-left-neutral ClassicalAxioms = refl
+clean-left-neutral IncompleteProof = refl
+clean-left-neutral Rejected        = refl
+
+-- THEOREM: worst-policy is an upper bound in its SECOND argument.
+-- Needed to rewrite `fold-worst ps ≤ₚ worst-policy p (fold-worst ps)`
+-- when the first argument is neutral: `worst-policy` splits on its first
+-- argument, so the result is stuck until the second is enumerated.
+worst-ub-right : ∀ (a b : AxiomPolicy) → b ≤ₚ worst-policy a b
+worst-ub-right Clean Clean                    = clean≤
+worst-ub-right Clean ClassicalAxioms          = class≤c
+worst-ub-right Clean IncompleteProof          = inc≤i
+worst-ub-right Clean Rejected                 = rej≤r
+worst-ub-right ClassicalAxioms Clean          = clean≤
+worst-ub-right ClassicalAxioms ClassicalAxioms = class≤c
+worst-ub-right ClassicalAxioms IncompleteProof = inc≤i
+worst-ub-right ClassicalAxioms Rejected       = rej≤r
+worst-ub-right IncompleteProof Clean          = clean≤
+worst-ub-right IncompleteProof ClassicalAxioms = class≤i
+worst-ub-right IncompleteProof IncompleteProof = inc≤i
+worst-ub-right IncompleteProof Rejected       = rej≤r
+worst-ub-right Rejected Clean                 = clean≤
+worst-ub-right Rejected ClassicalAxioms       = class≤r
+worst-ub-right Rejected IncompleteProof       = inc≤r
+worst-ub-right Rejected Rejected              = rej≤r
+
 -- THEOREM: worst-policy is commutative
 worst-comm : ∀ (a b : AxiomPolicy) → worst-policy a b ≡ worst-policy b a
 worst-comm Clean Clean = refl

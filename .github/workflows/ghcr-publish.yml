@@ -47,17 +47,21 @@ jobs:
           # Install nerdctl full (includes containerd, CNI plugins, buildkit)
           NERDCTL_VERSION=2.2.1
           curl -fsSL "https://github.com/containerd/nerdctl/releases/download/v${NERDCTL_VERSION}/nerdctl-full-${NERDCTL_VERSION}-linux-amd64.tar.gz" -o /tmp/nerdctl.tar.gz
+          # Official v2.2.1 SHA256SUMS; verify before privileged extraction.
+          echo 'cf4720a290f098f1a66d34a1b2e1d3736c9014fceca737861fb7a069c66c01c2  /tmp/nerdctl.tar.gz' | sha256sum --check --strict
           sudo tar -xzf /tmp/nerdctl.tar.gz -C /usr/local
           sudo mkdir -p /opt/cni/bin
-          sudo cp /usr/local/libexec/cni/* /opt/cni/bin/ 2>/dev/null || true
+          sudo cp /usr/local/libexec/cni/* /opt/cni/bin/
 
           # Start buildkitd daemon
           sudo /usr/local/bin/buildkitd &
           sleep 3
 
       - name: Log in to GHCR
+        env:
+          GHCR_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          echo "${{ secrets.GITHUB_TOKEN }}" | sudo nerdctl login ghcr.io -u ${{ github.actor }} --password-stdin
+          printf '%s' "$GHCR_TOKEN" | sudo nerdctl login ghcr.io -u "$GITHUB_ACTOR" --password-stdin
 
       - name: Build minimal image
         run: |
@@ -70,6 +74,8 @@ jobs:
 
       - name: Push images
         id: push
+        env:
+          GHCR_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           sudo nerdctl push ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ github.sha }}
           sudo nerdctl push ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:latest
@@ -79,10 +85,10 @@ jobs:
           # ubuntu-latest). The minimal (:sha/:latest) and :full images are
           # distinct artifacts, so each gets its own attestation.
           MIN_DIGEST="$(skopeo inspect --format '{{.Digest}}' \
-            --creds "${{ github.actor }}:${{ secrets.GITHUB_TOKEN }}" \
+            --creds "$GITHUB_ACTOR:$GHCR_TOKEN" \
             docker://${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ github.sha }})"
           FULL_DIGEST="$(skopeo inspect --format '{{.Digest}}' \
-            --creds "${{ github.actor }}:${{ secrets.GITHUB_TOKEN }}" \
+            --creds "$GITHUB_ACTOR:$GHCR_TOKEN" \
             docker://${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:full)"
           echo "min_digest=$MIN_DIGEST" >> "$GITHUB_OUTPUT"
           echo "full_digest=$FULL_DIGEST" >> "$GITHUB_OUTPUT"
@@ -107,7 +113,10 @@ jobs:
 
       - name: Tag release version
         if: github.event_name == 'release'
+        env:
+          RELEASE_TAG: ${{ github.event.release.tag_name }}
         run: |
-          VERSION=${{ github.event.release.tag_name }}
-          sudo nerdctl tag ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ github.sha }} ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${VERSION}
-          sudo nerdctl push ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${VERSION}
+          [[ "$RELEASE_TAG" =~ ^[A-Za-z0-9_][A-Za-z0-9_.-]{0,127}$ ]] \
+            || { echo 'Invalid container release tag' >&2; exit 1; }
+          sudo nerdctl tag "$REGISTRY/$IMAGE_NAME:$GITHUB_SHA" "$REGISTRY/$IMAGE_NAME:$RELEASE_TAG"
+          sudo nerdctl push "$REGISTRY/$IMAGE_NAME:$RELEASE_TAG"

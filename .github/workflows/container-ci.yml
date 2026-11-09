@@ -6,12 +6,12 @@
 #
 # container-ci.yml — Container build verification.
 #
-# One job:
+# Two jobs:
 #   container-build   — builds the minimal ECHIDNA image on every PR/push;
 #                       hard gate.
-#
-# The weekly Tier-3 prover-image matrix was removed 2026-11-05 (CI-4, #416);
-# see the note at the end of this file for why and how to restore it.
+#   tier3-container   — builds each Wave-3 prover image weekly (Sunday 06:00 UTC)
+#                       and on any change to the .containerization/** tree;
+#                       allow-fail per image (proprietary builds excluded).
 
 name: Container Build Verification
 
@@ -23,6 +23,7 @@ on:
     branches: [main, master]
     paths:
       - 'Containerfile'
+      - 'scripts/ci/install-lean.sh'
       - '.containerization/**'
       - 'Cargo.toml'
       - 'Cargo.lock'
@@ -31,11 +32,17 @@ on:
   pull_request:
     paths:
       - 'Containerfile'
+      - 'scripts/ci/install-lean.sh'
       - '.containerization/**'
       - 'Cargo.toml'
       - 'Cargo.lock'
       - 'src/rust/**'
       - '.github/workflows/container-ci.yml'
+  schedule:
+    # Weekly build of Tier-3 prover images (Sunday 06:00 UTC).
+    # Distinct from live-provers.yml Tier-3 run (Sunday 05:00 UTC)
+    # so the container build does not race the live-prover tests.
+    - cron: '0 6 * * 0'
 
 # Cause-B mitigation (#77): de-duplicate superseded builds on the same
 # ref. cancel-in-progress is false so an in-flight image build/publish
@@ -89,23 +96,133 @@ jobs:
       - name: Verify solver availability inside container
         run: |
           echo "=== Checking installed solvers ==="
-          podman run --rm --entrypoint /bin/sh echidna:ci-test -c '
-            echo "Z3:";    z3     --version 2>/dev/null || echo "  not found"
-            echo "Lean:";  lean   --version 2>/dev/null || echo "  not found"
-            echo "Idris2:"; idris2 --version 2>/dev/null || echo "  not found"
+          podman run --rm --entrypoint /bin/sh echidna:ci-test -ec '
+            echo "Z3:"; z3 --version
+            echo "Lean:"; lean --version
           '
 
       - name: Clean up
         if: always()
         run: podman rmi echidna:ci-test 2>/dev/null || true
 
-  # The weekly `tier3-container` matrix (one Containerfile.wave3 target per
-  # Tier-3 prover, with stub-sentinel detection, #75) was removed on
-  # 2026-11-05 under the CI-4 ruling: every allow-fail unit is made blocking
-  # or deleted, never re-dated (#416). It could not be made blocking because
-  # it failed on its latest scheduled run (41279400647, 2026-11-01): all 8
-  # cells stopped at `cargo build` in the rust-builder stage with E0391
-  # ("cycle detected when computing when `provers::pvs::PVSBinding` needs
-  # async drop"), because Containerfile.wave3 installs an unpinned nightly.
-  # Restore it as a blocking job, without continue-on-error, once the
-  # rust-builder stage pins its toolchain and a manual run is green.
+  # ── Job 2: Wave-3 Tier-3 prover images — weekly, allow-fail per image ─────
+  #
+  # Runs on the weekly schedule and whenever any .containerization/** file
+  # changes.  Each prover builds in its own matrix cell; allow-fail is set
+  # at cell level so one broken prover does not mask the others.
+  #
+  # Imandra is excluded: it is proprietary and requires a licence token not
+  # available in public CI.
+  tier3-container:
+    name: Tier-3 / ${{ matrix.prover }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    # Run on schedule or when the .containerization tree changes on main.
+    # Not a merge gate — these are informational weekly builds.
+    if: >-
+      github.event_name == 'schedule' ||
+      (github.event_name == 'push' && contains(github.event.head_commit.modified, '.containerization/'))
+    continue-on-error: true  # allow-fail: issue=#416 expires=2026-11-30
+    strategy:
+      fail-fast: false
+      matrix:
+        # All targets live in the consolidated .containerization/Containerfile.wave3
+        # (shared rust-builder stage, one --target per prover). Each matrix cell
+        # is an isolated runner so the shared stage still rebuilds per cell with
+        # --no-cache; cross-cell base caching would need a registry and is a
+        # deliberate future optimisation, not required for correctness.
+        include:
+          - prover: tamarin
+            image: echidna:tamarin
+            version_check: "tamarin-prover --version"
+          - prover: proverif
+            image: echidna:proverif
+            version_check: "proverif -help 2>&1 | head -1"
+          - prover: metamath
+            image: echidna:metamath
+            version_check: "echo exit | metamath 2>&1 | head -1 || true"
+          - prover: twelf
+            image: "echidna:twelf"
+            version_check: "twelf-server --help 2>&1 | head -1 || true"
+          - prover: or-tools
+            image: echidna:or-tools
+            version_check: "ls /usr/local/lib/libortools* 2>/dev/null | head -1 || true"
+          - prover: scip
+            image: echidna:scip
+            version_check: "scip --version 2>&1 | head -1 || true"
+          - prover: hol4
+            image: echidna:hol4
+            version_check: "echo '(* quit *);' | hol 2>&1 | head -1 || true"
+          - prover: acl2
+            image: echidna:acl2
+            version_check: "echo '(acl2::quit)' | acl2 2>&1 | head -3 || true"
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7.0.1
+
+      - name: Install Podman
+        run: |
+          sudo apt-get update -q
+          sudo apt-get install -y -q podman
+
+      - name: Build ${{ matrix.prover }} image
+        # HOL4 and ACL2 have long build times; give them extra headroom.
+        timeout-minutes: 90
+        run: |
+          podman build \
+            -f .containerization/Containerfile.wave3 \
+            --target "${{ matrix.prover }}" \
+            -t "${{ matrix.image }}" \
+            --no-cache \
+            .
+
+      - name: Verify ECHIDNA binary inside ${{ matrix.prover }} image
+        run: |
+          podman run --rm "${{ matrix.image }}" --version
+
+      # version_check is passed via env to avoid the YAML→outer-shell→inner-sh
+      # single-quote nesting trap: for acl2 (`echo '(acl2::quit)' | acl2 …`) and
+      # hol4 (`echo '(* quit *);' | hol …`), the inline `-c '${{ matrix.version_check }}'`
+      # form lets the embedded `'` close the outer string and the bash parser
+      # fails with "syntax error near unexpected token `('". Confirmed root-cause
+      # of the persistent acl2/hol4 cron red since 2026-04-27 (a87fae12).
+      - name: Smoke-check ${{ matrix.prover }} binary
+        env:
+          VERSION_CHECK: ${{ matrix.version_check }}
+        run: |
+          podman run --rm --entrypoint /bin/sh "${{ matrix.image }}" \
+            -c "$VERSION_CHECK"
+
+      # #75: the per-prover version_check above uses `|| true` for several
+      # backends because tools like metamath / hol4 / acl2 exit non-zero on
+      # quit. Side effect: a stub fallback (graceful-degrade on a dead
+      # upstream pin, see Containerfile.wave3 :: tamarin/proverif/scip/metamath)
+      # prints "<prover> not available (... failed at image build time)" and
+      # `|| true` swallows it. This step re-runs the check, captures the
+      # output verbatim, and fails LOUDLY on any stub sentinel — turning the
+      # silent degradation into a visible weekly red.
+      - name: Stub-sentinel detection (#75)
+        env:
+          VERSION_CHECK: ${{ matrix.version_check }}
+        run: |
+          set +e
+          OUTPUT=$(podman run --rm --entrypoint /bin/sh "${{ matrix.image }}" \
+            -c "$VERSION_CHECK" 2>&1)
+          echo "--- version_check output ---"
+          echo "$OUTPUT"
+          echo "--- end ---"
+          if echo "$OUTPUT" | grep -qiE 'not available \(bundle install failed|not available \(build failed|not available \(source build failed|bundle install failed at image build time|build failed at image build time|source build failed at image build'; then
+            echo "::error file=.containerization/Containerfile.wave3::Stub sentinel detected in ${{ matrix.prover }} image. The upstream pin is broken and was masked by graceful fallback — bump the pin (#75)."
+            exit 1
+          fi
+          echo "OK: no stub sentinel for ${{ matrix.prover }}"
+
+      - name: Verify image metadata
+        run: |
+          podman inspect "${{ matrix.image }}" \
+            --format '{{index .Config.Labels "org.opencontainers.image.description"}}'
+
+      - name: Clean up
+        if: always()
+        run: podman rmi "${{ matrix.image }}" 2>/dev/null || true

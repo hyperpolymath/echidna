@@ -99,6 +99,8 @@ pub enum SparkError {
     UnexpectedReturn(i32),
     #[error("SPARK bridge not available (built without --features spark)")]
     NotAvailable,
+    #[error("SPARK/Rust policy cross-check failed: {0}")]
+    CrosscheckFailed(String),
 }
 
 /// Call the SPARK-verified `Enforce` function.

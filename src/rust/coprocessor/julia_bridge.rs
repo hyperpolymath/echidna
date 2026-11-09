@@ -17,7 +17,7 @@
 //! `src/julia/coprocessor.jl`.  Bridge probe is non-throwing — callers
 //! check `health()` before routing.
 
-use anyhow::{anyhow, Result};
+use anyhow::{anyhow, Context, Result};
 use async_trait::async_trait;
 use serde::{Deserialize, Serialize};
 use std::time::Duration;
@@ -62,20 +62,29 @@ impl JuliaCoprocessorBridge {
     /// Construct a bridge with reported `kind` and assumed capabilities.
     /// Call `probe()` afterwards to refresh `health` and `capabilities`
     /// from the live endpoint.
-    pub fn new(kind: CoprocessorKind, capabilities: CoprocessorCapabilities) -> Self {
+    /// Returns an error if the HTTP client cannot be initialized.
+    pub fn new(kind: CoprocessorKind, capabilities: CoprocessorCapabilities) -> Result<Self> {
+        Self::with_builder(kind, capabilities, reqwest::Client::builder())
+    }
+
+    fn with_builder(
+        kind: CoprocessorKind,
+        capabilities: CoprocessorCapabilities,
+        builder: reqwest::ClientBuilder,
+    ) -> Result<Self> {
         let url =
             std::env::var("ECHIDNA_JULIA_COPROC_URL").unwrap_or_else(|_| DEFAULT_URL.to_string());
-        let client = reqwest::Client::builder()
+        let client = builder
             .timeout(Duration::from_secs(DEFAULT_TIMEOUT_SECS))
             .build()
-            .expect("reqwest client builds with static config");
-        JuliaCoprocessorBridge {
+            .context("Failed to create HTTP client for Julia coprocessor bridge")?;
+        Ok(JuliaCoprocessorBridge {
             kind,
             capabilities,
             health: CoprocessorHealth::Unhealthy, // until probed
             url,
             client,
-        }
+        })
     }
 
     /// Non-throwing reachability probe — updates `self.health`.
@@ -197,5 +206,31 @@ fn kind_name(k: CoprocessorKind) -> &'static str {
         CoprocessorKind::Singular => "Singular",
         CoprocessorKind::Gap => "Gap",
         CoprocessorKind::Macaulay2 => "Macaulay2",
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_http_client_build_error_is_returned() {
+        let error = JuliaCoprocessorBridge::with_builder(
+            CoprocessorKind::Math,
+            CoprocessorCapabilities::default(),
+            reqwest::Client::builder().user_agent("invalid\nheader"),
+        )
+        .err()
+        .expect("invalid HTTP headers must reject bridge construction");
+        assert!(error.downcast_ref::<reqwest::Error>().unwrap().is_builder());
+        assert!(error.to_string().contains("Julia coprocessor bridge"));
+    }
+
+    #[test]
+    fn test_http_client_construction_does_not_claim_health() {
+        let bridge =
+            JuliaCoprocessorBridge::new(CoprocessorKind::Math, CoprocessorCapabilities::default())
+                .expect("Julia bridge HTTP client should initialize");
+        assert_eq!(bridge.health(), CoprocessorHealth::Unhealthy);
     }
 }

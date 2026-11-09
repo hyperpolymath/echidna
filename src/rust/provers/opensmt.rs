@@ -11,9 +11,8 @@
 
 #![allow(dead_code)]
 
-use anyhow::{Context, Result};
+use anyhow::{bail, Context, Result};
 use async_trait::async_trait;
-use std::os::unix::process::ExitStatusExt;
 use std::path::PathBuf;
 use std::process::Stdio;
 use tokio::process::Command;
@@ -62,17 +61,36 @@ impl ProverBackend for OpenSmtBackend {
     }
 
     async fn version(&self) -> Result<String> {
-        let output = Command::new(&self.config.executable)
-            .arg("--version")
-            .output()
-            .await
-            .unwrap_or_else(|_| std::process::Output {
-                status: std::process::ExitStatus::from_raw(1),
-                stdout: b"OpenSMT (version unknown)".to_vec(),
-                stderr: vec![],
-            });
-
-        Ok(String::from_utf8_lossy(&output.stdout).to_string())
+        let output = tokio::time::timeout(
+            std::time::Duration::from_secs(self.config.timeout.clamp(1, 30)),
+            Command::new(&self.config.executable)
+                .arg("--version")
+                .stdin(Stdio::null())
+                .kill_on_drop(true)
+                .output(),
+        )
+        .await
+        .context("OpenSMT version probe timed out")?
+        .with_context(|| {
+            format!(
+                "Failed to execute OpenSMT at {}",
+                self.config.executable.display()
+            )
+        })?;
+        if !output.status.success() {
+            bail!("OpenSMT version probe failed: {}", output.status);
+        }
+        let stdout = String::from_utf8_lossy(&output.stdout);
+        let stderr = String::from_utf8_lossy(&output.stderr);
+        let version = if stdout.trim().is_empty() {
+            stderr.trim()
+        } else {
+            stdout.trim()
+        };
+        if version.is_empty() {
+            bail!("OpenSMT version probe returned no version information");
+        }
+        Ok(version.to_owned())
     }
 
     async fn parse_file(&self, path: PathBuf) -> Result<ProofState> {
@@ -186,6 +204,16 @@ mod tests {
         let config = ProverConfig::default();
         let backend = OpenSmtBackend::new(config);
         assert_eq!(backend.kind(), ProverKind::OpenSmt);
+    }
+
+    #[tokio::test]
+    async fn test_version_rejects_a_missing_executable() {
+        let directory = tempfile::tempdir().unwrap();
+        let backend = OpenSmtBackend::new(ProverConfig {
+            executable: directory.path().join("missing-opensmt"),
+            ..ProverConfig::default()
+        });
+        assert!(backend.version().await.is_err());
     }
 
     #[test]

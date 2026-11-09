@@ -222,24 +222,30 @@ pub struct LlmAdvisor {
 
 impl LlmAdvisor {
     /// Create a new LLM advisor with default configuration
-    pub fn new() -> Self {
+    /// Returns an error if the HTTP client cannot be initialized.
+    pub fn new() -> Result<Self> {
         Self::with_config(LlmConfig::default())
     }
 
     /// Create with custom configuration
-    pub fn with_config(config: LlmConfig) -> Self {
-        let client = Client::builder()
+    /// Returns an error if the HTTP client cannot be initialized.
+    pub fn with_config(config: LlmConfig) -> Result<Self> {
+        Self::with_config_and_builder(config, Client::builder())
+    }
+
+    fn with_config_and_builder(config: LlmConfig, builder: reqwest::ClientBuilder) -> Result<Self> {
+        let client = builder
             .timeout(Duration::from_millis(config.timeout_ms))
             .build()
-            .expect("Failed to create HTTP client for LLM advisor");
+            .context("Failed to create HTTP client for LLM advisor")?;
 
-        Self {
+        Ok(Self {
             config,
             client,
             available: false,
             session_token: None,
             history: Vec::new(),
-        }
+        })
     }
 
     /// Check if BoJ server is available and LLM is reachable
@@ -598,12 +604,6 @@ impl LlmAdvisor {
     }
 }
 
-impl Default for LlmAdvisor {
-    fn default() -> Self {
-        Self::new()
-    }
-}
-
 // ─── Dispatch Optimisation ──────────────────────────────────────────────────
 
 /// LLM-suggested dispatch optimisation
@@ -739,8 +739,20 @@ mod tests {
 
     #[test]
     fn test_llm_advisor_creation() {
-        let advisor = LlmAdvisor::new();
+        let advisor = LlmAdvisor::new().expect("LLM HTTP client should initialize");
         assert!(!advisor.is_available());
+    }
+
+    #[test]
+    fn test_http_client_build_error_is_returned() {
+        let error = LlmAdvisor::with_config_and_builder(
+            LlmConfig::default(),
+            Client::builder().user_agent("invalid\nheader"),
+        )
+        .err()
+        .expect("invalid HTTP headers must reject advisor construction");
+        assert!(error.downcast_ref::<reqwest::Error>().unwrap().is_builder());
+        assert!(error.to_string().contains("LLM advisor"));
     }
 
     #[test]
@@ -770,7 +782,7 @@ mod tests {
 
     #[test]
     fn test_record_attempt() {
-        let mut advisor = LlmAdvisor::new();
+        let mut advisor = LlmAdvisor::new().expect("LLM HTTP client should initialize");
         advisor.record_attempt(ProverKind::Lean, "induction n", true, 1500);
         assert_eq!(advisor.history.len(), 1);
         assert!(advisor.history[0].succeeded);
@@ -778,7 +790,7 @@ mod tests {
 
     #[tokio::test]
     async fn test_suggest_tactics_no_connection() {
-        let advisor = LlmAdvisor::new();
+        let advisor = LlmAdvisor::new().expect("LLM HTTP client should initialize");
         let goal = crate::core::Term::Const("test".to_string());
         let state = ProofState::new(goal);
         let tactics = advisor.suggest_tactics(&state).await;
@@ -787,7 +799,7 @@ mod tests {
 
     #[tokio::test]
     async fn test_rank_provers_no_connection() {
-        let advisor = LlmAdvisor::new();
+        let advisor = LlmAdvisor::new().expect("LLM HTTP client should initialize");
         let goal = crate::core::Term::Const("test".to_string());
         let state = ProofState::new(goal);
         let ranked = advisor

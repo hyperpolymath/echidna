@@ -1,0 +1,79 @@
+# SPDX-License-Identifier: MPL-2.0
+# Selected verification-tool roles at the ECHIDNA boundary.
+# This complements provers.a2ml: every enum variant not listed below defaults
+# to declared_unverified. A source file or enum variant is not a successful run.
+# This ledger records source integration, not proof validity or tool health.
+
+[metadata]
+schema = "verification-integrations/1"
+reviewed = "2026-11-07"
+enum_source = "crates/echidna-core/src/prover_kind.rs"
+enum_registry = ".machine_readable/provers.a2ml"
+enum_default = "declared_unverified"
+
+# backend_declared: enum variant and backend source exist; runtime unverified.
+# partial_non_backend: ECHIDNA has corpus/internal code, not a prover backend.
+# via_parent: a language/family served by the named tool, not its own backend.
+# not_integrated: a verifier with no ECHIDNA backend at this review.
+# not_a_prover: language or compute substrate, not a prover integration.
+
+[tool.Idris2]
+status = "backend_declared"
+role = "dependent-type checker"
+prover_kind = "Idris2"
+local_paths = ["src/rust/provers/idris2.rs"]
+
+[tool.GNATprove]
+status = "backend_declared"
+role = "SPARK/Ada verifier"
+prover_kind = "GNATprove"
+local_paths = ["src/rust/provers/gnatprove.rs"]
+
+[tool.SPARK]
+status = "via_parent"
+role = "Ada verification language and toolchain"
+parent_tool = "GNATprove"
+
+[tool.Creusot]
+status = "partial_non_backend"
+role = "Rust deductive verification"
+local_paths = ["src/rust/corpus/creusot.rs", "crates/echidna-core-creusot/src/lib.rs"]
+upstream = "https://github.com/creusot-rs/creusot"
+
+[tool.Pearlite]
+status = "via_parent"
+role = "Creusot specification language"
+parent_tool = "Creusot"
+
+[tool.Verus]
+status = "not_integrated"
+role = "Rust verification"
+upstream = "https://github.com/verus-lang/verus"
+
+[tool.Kani]
+status = "not_integrated"
+role = "Rust model checking"
+upstream = "https://github.com/model-checking/kani"
+
+[tool.Aeneas]
+status = "not_integrated"
+role = "Rust-to-proof translation"
+upstream = "https://github.com/AeneasVerif/aeneas"
+
+[tool.Atoma]
+status = "not_integrated"
+role = "estate Zig verification research prototype"
+upstream = "https://github.com/hyperpolymath/atoma"
+
+[tool.Chapel]
+status = "not_a_prover"
+role = "parallel proof-search compute substrate"
+local_paths = ["src/chapel/parallel_proof_search.chpl"]
+
+[tool.ATS2]
+status = "not_a_prover"
+role = "programming language and type system"
+
+[tool.Zig]
+status = "not_a_prover"
+role = "implementation and FFI language"
