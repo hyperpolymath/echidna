@@ -55,9 +55,19 @@ gate_init() {
   GATE_DEFERS=0
 }
 
+# _gate_flat <text>: the text on one line. A newline or carriage return in a
+# detail could otherwise print a line that reads like another check's result.
+_gate_flat() {
+  local s="$1"
+  s="${s//$'\r'/ }"
+  printf '%s' "${s//$'\n'/ }"
+}
+
 # _gate_record <id> <result> <reason> <detail>
 _gate_record() {
-  local id="$1" result="$2" reason="$3" detail="$4" seen
+  local id result="$2" reason="$3" detail seen
+  id=$(_gate_flat "$1")
+  detail=$(_gate_flat "$4")
   if [ -z "$id" ]; then
     id="(unnamed)"
     result=FAIL
@@ -117,8 +127,9 @@ gate_cmd() {
   local id="$1" detail="$2" out rc
   shift 2
   [ "${1:-}" = "--" ] && shift
-  out=$("$@" 2>&1)
-  rc=$?
+  # `&& rc=0 || rc=$?` keeps a failing command from aborting a caller that
+  # runs under `set -e` before its FAIL is recorded.
+  out=$("$@" 2>&1) && rc=0 || rc=$?
   if [ "$rc" -eq 0 ]; then
     pass "$id" "$detail"
   else
@@ -140,15 +151,30 @@ gate_summary() {
     esac
   done
   printf '%s: %d pass, %d fail, %d deferred\n' "$GATE_NAME" "$GATE_PASSES" "$GATE_FAILS" "$GATE_DEFERS"
-  if [ -n "${GATE_REPORT:-}" ]; then
-    : > "$GATE_REPORT"
-    for ((i = 0; i < n; i++)); do
-      jq -cnS --arg check "${GATE_IDS[$i]}" --arg result "${GATE_RESULTS[$i]}" \
-        --arg reason "${GATE_REASONS[$i]}" --arg detail "${GATE_DETAILS[$i]}" \
-        '{check: $check, detail: $detail, reason: $reason, result: $result}' >> "$GATE_REPORT"
-    done
+  if [ -n "${GATE_REPORT:-}" ] && ! _gate_write_report "$n"; then
+    # The STATUS generator reads this file. A missing, empty or stale report
+    # must not sit beside a green exit.
+    printf 'FAIL      gate-report: cannot write GATE_REPORT=%s\n' "$GATE_REPORT"
+    return 1
   fi
   [ "$GATE_FAILS" -eq 0 ]
+}
+
+# _gate_write_report <n>: write the report to a temporary file beside the
+# target and move it into place, so a failed write never leaves a partial or
+# stale report under the target name.
+_gate_write_report() {
+  local n="$1" i tmp
+  command -v jq >/dev/null 2>&1 || return 1
+  tmp=$(mktemp "${GATE_REPORT}.XXXXXX" 2>/dev/null) || return 1
+  for ((i = 0; i < n; i++)); do
+    jq -cnS --arg check "${GATE_IDS[$i]}" --arg result "${GATE_RESULTS[$i]}" \
+      --arg reason "${GATE_REASONS[$i]}" --arg detail "${GATE_DETAILS[$i]}" \
+      '{check: $check, detail: $detail, reason: $reason, result: $result}' >> "$tmp" \
+      || { rm -f "$tmp"; return 1; }
+  done
+  [ "$(wc -l < "$tmp")" -eq "$n" ] || { rm -f "$tmp"; return 1; }
+  mv -f "$tmp" "$GATE_REPORT" || { rm -f "$tmp"; return 1; }
 }
 
 gate_finish() {

@@ -5,10 +5,17 @@
 # cli/*, server.rs into server/* and the Justfile into just/*.just is a pure
 # move, so these three surfaces must not change:
 #
-#   help/echidna[-<sub>[-<subsub>]].txt   `echidna [<sub> ...] --help`, every
-#                                         subcommand, recursively (depth 3)
+#   help/echidna[.<sub>[.<subsub>]].txt   `echidna [<sub> ...] --help`, every
+#                                         subcommand, recursively (depth 3);
+#                                         "." joins the words because clap
+#                                         names never contain one
 #   routes.txt                            every `.route(...)` line under
 #                                         src/rust/, whitespace-trimmed, sorted
+#   router-composition.txt                every Router::new, .merge, .nest,
+#                                         .nest_service, .fallback, .with_state
+#                                         and .layer line under src/rust/, so a
+#                                         route moved into a sub-router that is
+#                                         never mounted shows up as a diff
 #   just-list.txt                         `just --list`
 #
 # Usage:
@@ -34,11 +41,11 @@ while [ $# -gt 0 ]; do
   case "$1" in
     --dir) dir="$2"; shift 2 ;;
     --bin) bin="$2"; shift 2 ;;
-    -h|--help) sed -n '3,24p' "$0"; exit 0 ;;
+    -h|--help) sed -n '3,31p' "$0"; exit 0 ;;
     *) echo "unknown argument: $1" >&2; exit 2 ;;
   esac
 done
-case "$mode" in capture|check) ;; *) sed -n '3,24p' "$0" >&2; exit 2 ;; esac
+case "$mode" in capture|check) ;; *) sed -n '3,31p' "$0" >&2; exit 2 ;; esac
 
 for tool in just rg; do
   command -v "$tool" >/dev/null 2>&1 || { echo "cannot run: $tool is not installed" >&2; exit 2; }
@@ -64,7 +71,7 @@ subcommands() {
 help_tree() {
   local depth="$1" name sub text
   shift
-  name=$(printf '%s' "echidna${*:+ $*}" | tr ' ' '-')
+  name=$(printf '%s' "echidna${*:+ $*}" | tr ' ' '.')
   local rc=0
   text=$(NO_COLOR=1 COLUMNS=100 RUST_BACKTRACE=0 "$bin" "$@" --help 2>&1) || rc=$?
   if [ "$rc" -ne 0 ]; then
@@ -86,6 +93,11 @@ help_tree 0
 rg --no-filename --no-line-number --glob '*.rs' '^\s*\.route\(' src/rust \
   | sed -E 's/^[[:space:]]+//; s/[[:space:]]+$//' | sort > "$out/routes.txt" || true
 [ -s "$out/routes.txt" ] || { echo "cannot run: no .route( lines found under src/rust" >&2; exit 2; }
+
+rg --no-filename --no-line-number --glob '*.rs' \
+   '(^|[^A-Za-z0-9_])Router::new\(|\.(merge|nest|nest_service|fallback|with_state|layer)\(' src/rust \
+  | sed -E 's/^[[:space:]]+//; s/[[:space:]]+$//' | sort > "$out/router-composition.txt" || true
+[ -s "$out/router-composition.txt" ] || { echo "cannot run: no Router::new( lines found under src/rust" >&2; exit 2; }
 
 just --list > "$out/just-list.txt" 2>&1 || { echo "cannot run: just --list failed" >&2; exit 2; }
 

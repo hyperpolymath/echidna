@@ -9,10 +9,12 @@
 # lands. That is the point of the gate: do not soften a check to get green.
 #
 # Environment:
-#   GITHUB_TOKEN          read token for the GitHub API (checks 1, 2, 11, 12).
-#                         Unset: those checks are DEFERRED(secret:GITHUB_TOKEN).
-#   W0_REPO               default hyperpolymath/echidna
+#   GITHUB_TOKEN          optional read token for the GitHub API. The
+#                         repositories read here are public, so without it
+#                         the API is read anonymously (60 requests per hour);
+#                         a rate-limited or unreadable API is a FAIL.
 #   W0_PROBE_PR           number of the no-op probe PR (check 1). Required.
+#   W0_REPO               default hyperpolymath/echidna
 #   W0_BASE               last main commit before W0 (check 2). Default
 #                         6dbfea5 (main before #460, the CI-2 merge).
 #   W0_HEAD               ref whose first-parent W0 merges are checked
@@ -21,36 +23,60 @@
 #                         tests/golden/hotspot (see hotspot-goldens.sh).
 #   W0_CONSUMER_OWNER     owner of the consumer repositories, default
 #                         hyperpolymath.
-#   W0_CHECK_RE_<REPO>    extended regex for the conformance check-run name in
-#                         a consumer repository (REPO upper-cased, - as _).
-#                         Defaults: conformance, and for verisimdb
-#                         verisim-api (the crate job that runs the L-7 list
-#                         test; a bare "list" also matches "Allowlist").
+#   W0_CHECKS             space-separated check numbers to run instead of all
+#                         thirteen. A subset run always exits non-zero: it is
+#                         a diagnostic, never a gate result.
 #   GATE_REPORT           also write the results as JCS JSON Lines (lib.sh).
 #
-# Cross-repo deferral (checks 11 and 12): a repository counts as
-# DEFERRED(no-push:<repo>) only when docs/handover/cross-repo/<repo>/ holds
-# both a patch (*.patch or *.diff) and the issue text (a file whose name
-# contains "issue"); for check 12 the patch must be the Agda one (its name
-# contains "agda").
+# The effective configuration is printed first, so a result always shows
+# what it was computed over.
 #
-# Shapes this gate reads from other lanes' artefacts (state them, so a lane
-# that chooses another shape changes this script in the same PR):
-#   tests/fixtures/XFAIL.json   one JCS value: an array of entries, or an
-#                               object with "entries"; each entry names its
-#                               backend in "backend" (or "prover").
-#   docs/decisions/ADR-*-rulings-ledger.adoc
-#                               one section heading per ruling naming its id
-#                               (D-A, ..., D-N, D2, D3, D5, D6, D7), with an
-#                               attribute line `:status: open` or
-#                               `:status: ruled` in that section; a ruled
-#                               section carries a link to the owner's record.
-#   docs/proofs/claims.json     one JCS value; an object whose id, name or
-#                               claim mentions the Lean/lake build, whose
-#                               text names 4.13.0, and which carries a green
-#                               result (result/status/outcome) or a
-#                               repair item (repair_item/repair/issue).
+# Check 2 counts a check run as green when its conclusion is success,
+# skipped or neutral. The ultraplan says "at success"; every merge on main
+# carries schedule-only and matrix jobs that GitHub records as skipped, so a
+# literal reading could never pass. The PASS detail counts the skipped and
+# neutral runs so the reading stays visible.
+#
+# Contracts this gate reads from other lanes' artefacts. A lane that chooses
+# another shape changes this script in the same PR.
+#
+#   Consumer conformance jobs (checks 11, 12): a check run on the default
+#   branch's head whose name is exactly the job name below, or ends in
+#   " / <name>" (a reusable-workflow prefix):
+#     echidnabot, proof-burrower, panic-attack   prove-result-conformance
+#     verisimdb                                  verisim-api-list
+#     proof-burrower (check 12)                  agda-proofs
+#   A consumer check counts as DEFERRED(no-push:<repo>) only when the job is
+#   not green AND docs/handover/cross-repo/<repo>/ is committed (tracked,
+#   no uncommitted changes) with three non-empty files: a patch (*.patch or
+#   *.diff; for check 12 its name contains "agda"), the issue text (a file
+#   whose name contains "issue"), and PUSH-REFUSED.txt holding the output of
+#   the refused push.
+#   tests/fixtures/XFAIL.json
+#     One JCS value: an array of entries, or an object with "entries". Each
+#     entry names its backend in "backend" (or "prover"), matching
+#     ^[a-z0-9_]+$.
+#   models/training_metrics.json (check 9)
+#     Absent, or a JSON object whose "provenance" object carries "commit"
+#     (40 lower-case hex digits) and "run_id" (a non-empty string), and which
+#     does not repeat the fabricated values.
+#   docs/decisions/ADR-*-rulings-ledger.adoc (check 10)
+#     One section per ruling (D-A, ..., D-N, D2, D3, D5, D6, D7) whose
+#     heading (== or deeper) names exactly one ruling id, with exactly one
+#     attribute line `:status: open` or `:status: ruled`. A ruled section
+#     links the owner's record on https://github.com/hyperpolymath/.
+#   scripts/ci/ruling-cited.sh (check 10b)
+#     Called as `ruling-cited.sh <W0_BASE> <W0_HEAD>`; exits 0 iff every W0
+#     PR in that range cites the rulings it acts on.
+#   docs/proofs/claims.json (check 13)
+#     One JCS value holding an object whose id, name or claim names the Lean
+#     build ("lake build", "lean build", "lean4 build"), which mentions the
+#     version 4.13.0 as a whole token, and which carries either a green
+#     result (result/status/outcome: green, pass, passed, success) or a
+#     "repair" object with a non-empty "id" and "before": "F-3".
 
+# The checks are called through "check_$c", which shellcheck cannot follow.
+# shellcheck disable=SC2317
 set -uo pipefail
 export LC_ALL=C
 
@@ -66,34 +92,45 @@ W0_BASE="${W0_BASE:-6dbfea562beee3c46d754e380dec3dbef95bff24}"
 W0_HEAD="${W0_HEAD:-HEAD}"
 GOLDENS="${W0_HOTSPOT_GOLDENS:-tests/golden/hotspot}"
 
-gate_init W0
-
 # ---------------------------------------------------------------- helpers
 
-have_token() { [ -n "${GITHUB_TOKEN:-}" ]; }
-
-# gh_get <api path>: GET from the GitHub REST API, body on stdout.
+# gh_get <api path>: GET from the GitHub REST API, body on stdout. The
+# Authorization header is sent only when a token is present.
 gh_get() {
+  local auth=()
+  [ -n "${GITHUB_TOKEN:-}" ] && auth=(-H "Authorization: Bearer $GITHUB_TOKEN")
   curl -fsS --retry 2 \
-    -H "Authorization: Bearer $GITHUB_TOKEN" \
+    ${auth[@]+"${auth[@]}"} \
     -H "Accept: application/vnd.github+json" \
     -H "X-GitHub-Api-Version: 2022-11-28" \
     "https://api.github.com/$1"
 }
 
 # check_runs <repo> <sha>: every check run on the commit, latest per name,
-# as a JSON array of {name, status, conclusion}.
+# as a JSON array of {name, status, conclusion}. Returns non-zero, with no
+# output, when any page cannot be read or parsed, or when there are more
+# pages than it will follow: a partial list must never read as a full one.
+# Pages are collected in a file, not passed through argv, because a commit
+# with many runs produces arrays larger than the argument limit.
 check_runs() {
-  local repo="$1" sha="$2" page=1 acc='[]' body n
+  local repo="$1" sha="$2" page=1 body n tmp out
+  tmp=$(mktemp) || return 1
   while :; do
-    body=$(gh_get "repos/$repo/commits/$sha/check-runs?per_page=100&page=$page") || return 1
-    acc=$(jq -c --argjson acc "$acc" '$acc + .check_runs' <<<"$body")
-    n=$(jq '.check_runs | length' <<<"$body")
+    if ! body=$(gh_get "repos/$repo/commits/$sha/check-runs?per_page=100&page=$page") \
+       || ! n=$(jq -e '.check_runs | length' <<<"$body" 2>/dev/null); then
+      rm -f "$tmp"; return 1
+    fi
+    printf '%s\n' "$body" >> "$tmp"
     [ "$n" -lt 100 ] && break
     page=$((page + 1))
-    [ "$page" -gt 20 ] && break
+    if [ "$page" -gt 20 ]; then rm -f "$tmp"; return 1; fi
   done
-  jq -c 'group_by(.name) | map(max_by(.id) | {name, status, conclusion})' <<<"$acc"
+  if ! out=$(jq -cs 'map(.check_runs) | add // [] | group_by(.name) | map(max_by(.id) | {name, status, conclusion})' "$tmp") \
+     || [ -z "$out" ] || ! jq -e 'type == "array"' <<<"$out" >/dev/null 2>&1; then
+    rm -f "$tmp"; return 1
+  fi
+  rm -f "$tmp"
+  printf '%s\n' "$out"
 }
 
 # is_jcs <file>: one JSON value, serialised as JCS, one final LF.
@@ -105,30 +142,55 @@ is_jcs() {
   cmp -s <(jq -cS . "$f") "$f"
 }
 
-handover_dir() { printf 'docs/handover/cross-repo/%s' "$1"; }
+# strip_hash_comments <file>: the file without shell/YAML `#` comment lines.
+strip_hash_comments() { grep -vE '^[[:space:]]*#' "$1"; }
 
-# has_handover <repo> [patch-name-substring]
-has_handover() {
-  local d sub="${2:-}" p i
-  d=$(handover_dir "$1")
-  [ -d "$d" ] || return 1
-  p=$(find "$d" -type f \( -name '*.patch' -o -name '*.diff' \) -iname "*${sub}*" | head -1)
-  i=$(find "$d" -type f -iname '*issue*' | head -1)
-  [ -n "$p" ] && [ -n "$i" ]
+# strip_agda_comments <file>: the file without `--` line comments and
+# (nested) `{- ... -}` block comments.
+strip_agda_comments() {
+  awk '
+    { line = $0; out = ""; i = 1
+      while (i <= length(line)) {
+        two = substr(line, i, 2)
+        if (depth == 0 && two == "--") break
+        if (two == "{-") { depth++; i += 2; continue }
+        if (depth > 0 && two == "-}") { depth--; i += 2; continue }
+        if (depth == 0) out = out substr(line, i, 1)
+        i++
+      }
+      print out }' "$1"
 }
 
-# ------------------------------------------- (1) probe PR required contexts
+handover_dir() { printf 'docs/handover/cross-repo/%s' "$1"; }
+
+# handover_ok <repo> [patch-name-substring]: the committed handover the
+# contract above describes.
+handover_ok() {
+  local d sub="${2:-}" f base patch="" issue="" refused=""
+  d=$(handover_dir "$1")
+  [ -d "$d" ] || return 1
+  git diff --quiet HEAD -- "$d" 2>/dev/null || return 1
+  [ -z "$(git ls-files --others --exclude-standard -- "$d")" ] || return 1
+  while IFS= read -r -d '' f; do
+    [ -s "$f" ] || continue
+    base="${f##*/}"
+    case "$base" in
+      PUSH-REFUSED.txt) refused=1 ;;
+      *.patch|*.diff) [[ ${base,,} == *"${sub,,}"* ]] && patch=1 ;;
+    esac
+    [[ ${base,,} == *issue* ]] && issue=1
+  done < <(git ls-files -z -- "$d")
+  [ -n "$patch" ] && [ -n "$issue" ] && [ -n "$refused" ]
+}
+
+# --------------------------------------------- (1) probe PR required contexts
 
 check_1() {
   local id="01-probe-pr-required-contexts" rules req sha runs statuses missing ctx ok
-  if ! have_token; then
-    deferred "$id" secret:GITHUB_TOKEN "the rules and check-runs APIs need a read token"; return
-  fi
   if ! rules=$(gh_get "repos/$REPO/rules/branches/main"); then
     fail "$id" "cannot read the live ruleset for $REPO main"; return
   fi
-  req=$(jq -r '[.[] | select(.type == "required_status_checks") | .parameters.required_status_checks[].context] | unique | .[]' <<<"$rules")
-  if [ -z "$req" ]; then
+  if ! req=$(jq -er '[.[] | select(.type == "required_status_checks") | .parameters.required_status_checks[].context] | unique | .[]' <<<"$rules"); then
     fail "$id" "the live ruleset requires no status context; nothing would gate a merge"; return
   fi
   if ! [[ ${W0_PROBE_PR:-} =~ ^[0-9]+$ ]]; then
@@ -142,13 +204,19 @@ check_1() {
   fi
   missing=()
   while IFS= read -r ctx; do
-    ok=$(jq -r --arg c "$ctx" --argjson s "$statuses" '
-      ([.[] | select(.name == $c and .conclusion == "success")] | length > 0)
-      or ([$s.statuses[] | select(.context == $c and .state == "success")] | length > 0)' <<<"$runs")
+    # Not jq -e: a context that is not green evaluates to false, which is an
+    # answer, not an error.
+    ok=$(jq -r --arg c "$ctx" --slurpfile s <(printf '%s\n' "$statuses") '
+        ([.[] | select(.name == $c and .conclusion == "success")] | length > 0)
+        or ([$s[0].statuses[] | select(.context == $c and .state == "success")] | length > 0)' <<<"$runs")
+    case "$ok" in
+      true|false) ;;
+      *) fail "$id" "cannot evaluate required context '$ctx'"; return ;;
+    esac
     [ "$ok" = true ] || missing+=("$ctx")
   done <<<"$req"
   if [ ${#missing[@]} -eq 0 ]; then
-    pass "$id" "probe PR #$W0_PROBE_PR: all $(wc -l <<<"$req") required contexts are success"
+    pass "$id" "probe PR #$W0_PROBE_PR (${sha:0:9}): all $(wc -l <<<"$req") required contexts are success"
   else
     fail "$id" "probe PR #$W0_PROBE_PR: not success: $(printf '%s; ' "${missing[@]}")"
   fi
@@ -157,10 +225,7 @@ check_1() {
 # --------------------------------------- (2) every W0 merge commit is green
 
 check_2() {
-  local id="02-w0-merges-green" commits c runs bad statuses st n=0 problems=()
-  if ! have_token; then
-    deferred "$id" secret:GITHUB_TOKEN "the check-runs API needs a read token"; return
-  fi
+  local id="02-w0-merges-green" commits c runs bad statuses st nr ns soft=0 n=0 problems=()
   if ! commits=$(git rev-list --first-parent "$W0_BASE..$W0_HEAD" 2>/dev/null); then
     fail "$id" "cannot list commits $W0_BASE..$W0_HEAD (fetch history?)"; return
   fi
@@ -169,20 +234,22 @@ check_2() {
   fi
   for c in $commits; do
     n=$((n + 1))
-    if ! runs=$(check_runs "$REPO" "$c") || ! statuses=$(gh_get "repos/$REPO/commits/$c/status"); then
+    if ! runs=$(check_runs "$REPO" "$c") || ! statuses=$(gh_get "repos/$REPO/commits/$c/status") \
+       || ! nr=$(jq -e 'length' <<<"$runs") || ! ns=$(jq -e '.statuses | length' <<<"$statuses"); then
       problems+=("${c:0:9} unreadable"); continue
     fi
-    if [ "$(jq 'length' <<<"$runs")" -eq 0 ] && [ "$(jq '.statuses | length' <<<"$statuses")" -eq 0 ]; then
+    if [ "$nr" -eq 0 ] && [ "$ns" -eq 0 ]; then
       problems+=("${c:0:9} has no check runs"); continue
     fi
-    # skipped and neutral are not failures (GitHub's required-check meaning);
-    # anything else that is not success, including in progress, is.
-    bad=$(jq -r '[.[] | select((.conclusion // "pending") as $k | ["success","skipped","neutral"] | index($k) | not) | "\(.name)=\(.conclusion // .status)"] | join(", ")' <<<"$runs")
-    st=$(jq -r '[.statuses[] | select(.state != "success") | "\(.context)=\(.state)"] | join(", ")' <<<"$statuses")
+    if ! bad=$(jq -er '[.[] | select((.conclusion // "pending") as $k | ["success","skipped","neutral"] | index($k) | not) | "\(.name)=\(.conclusion // .status)"] | join(", ")' <<<"$runs") \
+       || ! st=$(jq -er '[.statuses[] | select(.state != "success") | "\(.context)=\(.state)"] | join(", ")' <<<"$statuses"); then
+      problems+=("${c:0:9} unparseable"); continue
+    fi
+    soft=$((soft + $(jq '[.[] | select(.conclusion == "skipped" or .conclusion == "neutral")] | length' <<<"$runs")))
     [ -n "$bad$st" ] && problems+=("${c:0:9}: ${bad}${bad:+${st:+, }}${st}")
   done
   if [ ${#problems[@]} -eq 0 ]; then
-    pass "$id" "$n W0 first-parent commits, every check run success/skipped/neutral (the bypass log stays an owner checkpoint)"
+    pass "$id" "$n first-parent commits in ${W0_BASE:0:9}..$W0_HEAD, every check run success ($soft skipped or neutral; the bypass log stays an owner checkpoint)"
   else
     fail "$id" "$(printf '%s; ' "${problems[@]}")"
   fi
@@ -230,25 +297,29 @@ check_5() {
 XFAIL_ALLOWED="acl2 agda coq cvc5 hol4 hol_light idris2 isabelle lean metamath pvs rocq z3"
 
 check_6() {
-  local idx="06a-xfail-ledger" idl="06b-live-fixtures" f="tests/fixtures/XFAIL.json" backends b bad=()
+  local idx="06a-xfail-ledger" idl="06b-live-fixtures" f="tests/fixtures/XFAIL.json" backends b n=0 bad=()
   if [ ! -f "$f" ]; then
     fail "$idx" "$f is missing"
   elif ! is_jcs "$f"; then
     fail "$idx" "$f is not one JCS value with a final LF"
   elif ! backends=$(jq -r 'if type == "array" then . elif type == "object" and (.entries | type) == "array" then .entries else error("neither an array nor an object with an entries array") end
-        | map(if type == "object" and ((.backend // .prover) | type) == "string" then (.backend // .prover) else error("an entry names no backend") end)
+        | map(if type == "object" and ((.backend // .prover) | type) == "string" and ((.backend // .prover) | test("^[a-z0-9_]+$"))
+              then (.backend // .prover)
+              else error("an entry does not name its backend as ^[a-z0-9_]+$: \(tojson)") end)
         | .[]' "$f" 2>&1); then
     fail "$idx" "$f has an unrecognised shape: $backends"
-  elif [ -z "$backends" ]; then
-    pass "$idx" "$f is JCS and empty"
   else
-    for b in $backends; do
-      [[ " $XFAIL_ALLOWED " == *" ${b,,} "* ]] || bad+=("$b")
-    done
-    if [ ${#bad[@]} -eq 0 ]; then
-      pass "$idx" "$f is JCS and lists only V-3 backends/IR fallbacks ($(wc -w <<<"$backends") entries)"
-    else
+    while IFS= read -r b; do
+      [ -n "$b" ] || continue
+      n=$((n + 1))
+      [[ " $XFAIL_ALLOWED " == *" $b "* ]] || bad+=("$b")
+    done <<<"$backends"
+    if [ ${#bad[@]} -gt 0 ]; then
       fail "$idx" "$f lists backends outside V-3 scope: ${bad[*]}"
+    elif [ "$n" -eq 0 ]; then
+      pass "$idx" "$f is JCS and empty"
+    else
+      pass "$idx" "$f is JCS and lists only V-3 backends/IR fallbacks ($n entries)"
     fi
   fi
 
@@ -261,30 +332,45 @@ check_6() {
 
 # ------------------------------------------------ (7) Idris / Agda hygiene
 
+# ipkg_modules <ipkg>: the module names listed under `modules`, one per line,
+# for both the one-line and the leading-comma layouts.
+ipkg_modules() {
+  sed -E 's/--.*$//' "$1" | awk '
+    /^[[:space:]]*[a-z][a-z0-9_]*[[:space:]]*=/ { on = ($1 == "modules" || $0 ~ /^[[:space:]]*modules[[:space:]]*=/); sub(/^[^=]*=/, "") }
+    on { gsub(/,/, " "); for (i = 1; i <= NF; i++) print $i }'
+}
+
 check_7() {
-  local wf=.github/workflows/idris2-abi-ci.yml ipkg=src/abi/echidnaabi.ipkg rel mod missing=()
-  if [ -f "$wf" ] && grep -E 'postulate' "$wf" | grep -qE 'grep|rg |for pattern in'; then
+  local wf=.github/workflows/idris2-abi-ci.yml ipkg=src/abi/echidnaabi.ipkg rel mod mods missing=()
+  if [ -f "$wf" ] && strip_hash_comments "$wf" | grep -E '\bpostulate\b' | grep -qE 'grep|rg |for pattern in'; then
     pass "07a-idris-postulate-grep" "$wf greps src/abi for postulate"
   else
-    fail "07a-idris-postulate-grep" "$wf does not grep for postulate"
+    fail "07a-idris-postulate-grep" "$wf does not grep for postulate outside comments"
   fi
 
-  for rel in EchidnaABI/CapnSchemas.idr CoprocessorForeign.idr; do
-    [ -f "src/abi/$rel" ] || continue
-    mod=$(sed 's/\.idr$//; s#/#.#g' <<<"$rel")
-    grep -qE "^[[:space:]]*(modules[[:space:]]*=|,)[[:space:]]*${mod//./\\.}[[:space:]]*(,|$)" "$ipkg" || missing+=("$mod")
-  done
-  if [ ${#missing[@]} -eq 0 ]; then
-    pass "07b-ipkg-coverage" "CapnSchemas and CoprocessorForeign are in $ipkg or deleted"
+  if [ ! -f "$ipkg" ]; then
+    fail "07b-ipkg-coverage" "$ipkg is missing"
   else
-    fail "07b-ipkg-coverage" "present but not in $ipkg: ${missing[*]}"
+    mods=$(ipkg_modules "$ipkg")
+    for rel in EchidnaABI/CapnSchemas.idr CoprocessorForeign.idr; do
+      [ -f "src/abi/$rel" ] || continue
+      mod=$(sed 's/\.idr$//; s#/#.#g' <<<"$rel")
+      grep -qxF "$mod" <<<"$mods" || missing+=("$mod")
+    done
+    if [ ${#missing[@]} -eq 0 ]; then
+      pass "07b-ipkg-coverage" "CapnSchemas and CoprocessorForeign are in $ipkg or deleted"
+    else
+      fail "07b-ipkg-coverage" "present but not in $ipkg: ${missing[*]}"
+    fi
   fi
 
   local mc=meta-checker/src/Echidna/MetaChecker.agda awf=.github/workflows/agda-meta-checker.yml
-  if [ -f "$awf" ] && grep -qE 'agda .*AxiomTrackerCompleteness\.agda' "$awf"; then
+  if [ -f "$awf" ] && strip_hash_comments "$awf" | grep -qE 'agda .*AxiomTrackerCompleteness\.agda'; then
     pass "07c-meta-checker-completeness" "$awf type-checks AxiomTrackerCompleteness.agda directly"
-  elif [ -f "$mc" ] && grep -qE '^[[:space:]]*(open[[:space:]]+)?import[[:space:]]+Echidna\.AxiomTrackerCompleteness([[:space:]]|$)' "$mc" \
-       && [ -f "$awf" ] && grep -qE 'agda .*MetaChecker\.agda' "$awf"; then
+  elif [ -f "$mc" ] && strip_agda_comments "$mc" | grep -qE '^[[:space:]]*(open[[:space:]]+)?import[[:space:]]+Echidna\.AxiomTrackerCompleteness([[:space:]]|$)' \
+       && [ -f "$awf" ] && { strip_hash_comments "$awf" | grep -qE 'agda .*MetaChecker\.agda' \
+            || { strip_hash_comments "$awf" | grep -qE 'scripts/ci/check-agda\.sh' \
+                 && [ -f scripts/ci/check-agda.sh ] && strip_hash_comments scripts/ci/check-agda.sh | grep -qE 'MetaChecker\.agda'; }; }; then
     pass "07c-meta-checker-completeness" "MetaChecker.agda imports Echidna.AxiomTrackerCompleteness and $awf checks MetaChecker.agda"
   else
     fail "07c-meta-checker-completeness" "AxiomTrackerCompleteness is not type-checked by the meta-checker job"
@@ -308,12 +394,16 @@ check_9() {
   # timestamp 2026-04-25T15:26:45.716Z, with no run behind it (L-4).
   if [ ! -e "$f" ]; then
     pass "$id" "$f is gone"
-  elif jq -e '(.timestamp == "2026-04-25T15:26:45.716Z") or (.MRR == 0.85 and .nDCG == 0.85 and .training_data_size == 10011)' "$f" >/dev/null 2>&1; then
+  elif ! jq -e 'type == "object"' "$f" >/dev/null 2>&1; then
+    fail "$id" "$f is not a JSON object"
+  elif jq -e '(.MRR == 0.85 and .nDCG == 0.85) or ((.timestamp // "") | startswith("2026-04-25T15:26"))' "$f" >/dev/null 2>&1; then
     fail "$id" "$f still holds the fabricated metrics"
-  elif ! jq -e . "$f" >/dev/null 2>&1; then
-    fail "$id" "$f is not valid JSON"
+  elif jq -e '(.provenance | type) == "object"
+        and ((.provenance.commit // "") | test("^[0-9a-f]{40}$"))
+        and ((.provenance.run_id // "") | type == "string" and length > 0)' "$f" >/dev/null 2>&1; then
+    pass "$id" "$f carries run provenance ($(jq -r '.provenance.run_id + " at " + .provenance.commit[0:9]' "$f"))"
   else
-    pass "$id" "$f no longer holds the fabricated metrics"
+    fail "$id" "$f has no run provenance (provenance.commit and provenance.run_id)"
   fi
 }
 
@@ -321,8 +411,21 @@ check_9() {
 
 RULING_IDS="D-A D-B D-C D-D D-E D-F D-G D-H D-I D-J D-K D-L D-M D-N D2 D3 D5 D6 D7"
 
+# ruling_sections <adr>: for every section heading (== or deeper), the line
+# "<heading line number> <ruling ids named in it>".
+ruling_sections() {
+  awk -v ids="$RULING_IDS" '
+    BEGIN { n = split(ids, id, " ") }
+    /^==+[[:space:]]/ {
+      named = ""
+      for (k = 1; k <= n; k++)
+        if (match($0, "(^|[^A-Za-z0-9-])" id[k] "([^A-Za-z0-9]|$)")) named = named " " id[k]
+      print NR named
+    }' "$1"
+}
+
 check_10() {
-  local id="10a-rulings-ledger" adrs adr r block status problems=()
+  local id="10a-rulings-ledger" adrs adr r sections line from to block statuses status problems=()
   adrs=$(find docs/decisions -maxdepth 1 -name 'ADR-*-rulings-ledger.adoc' 2>/dev/null | sort)
   if [ -z "$adrs" ]; then
     fail "$id" "no docs/decisions/ADR-*-rulings-ledger.adoc"
@@ -330,23 +433,29 @@ check_10() {
     fail "$id" "more than one rulings ledger: $(tr '\n' ' ' <<<"$adrs")"
   else
     adr="$adrs"
+    sections=$(ruling_sections "$adr")
+    while read -r line r rest; do
+      [ -n "${rest:-}" ] && problems+=("heading at line $line names more than one ruling ($r $rest)")
+    done <<<"$sections"
     for r in $RULING_IDS; do
-      # The section whose heading names the ruling, up to the next heading.
-      block=$(awk -v r="$r" '
-        function names(s) { return match(s, "(^|[^A-Za-z0-9-])" r "([^A-Za-z0-9]|$)") }
-        /^=+[[:space:]]/ { on = names($0); if (on) found = 1 }
-        on { print }
-        END { exit found ? 0 : 1 }' "$adr") || { problems+=("$r: no section"); continue; }
-      status=$(grep -E '^:status:[[:space:]]*' <<<"$block" | tail -1 | sed -E 's/^:status:[[:space:]]*//; s/[[:space:]]+$//')
+      line=$(awk -v r="$r" 'NF == 2 && $2 == r { print $1 }' <<<"$sections")
+      if [ -z "$line" ]; then problems+=("$r: no section of its own"); continue; fi
+      if [ "$(wc -l <<<"$line")" -ne 1 ]; then problems+=("$r: more than one section"); continue; fi
+      from="$line"
+      to=$(awk -v f="$from" '$1 > f { print $1 - 1; exit }' <<<"$sections")
+      block=$(sed -n "${from},${to:-\$}p" "$adr")
+      statuses=$(grep -cE '^:status:' <<<"$block")
+      status=$(grep -E '^:status:' <<<"$block" | sed -E 's/^:status:[[:space:]]*//; s/[[:space:]]+$//')
+      if [ "$statuses" -ne 1 ]; then problems+=("$r: $statuses :status: lines"); continue; fi
       case "$status" in
         open) ;;
-        ruled) grep -qE 'https://|link:|xref:|<<' <<<"$block" || problems+=("$r: ruled without a link to the owner's record") ;;
-        "") problems+=("$r: no :status:") ;;
+        ruled) grep -qE 'https://github\.com/hyperpolymath/[^[:space:]]+' <<<"$block" \
+                 || problems+=("$r: ruled without a link to the owner's record on github.com/hyperpolymath") ;;
         *) problems+=("$r: :status: $status") ;;
       esac
     done
     if [ ${#problems[@]} -eq 0 ]; then
-      pass "$id" "$adr records all $(wc -w <<<"$RULING_IDS") rulings as open or ruled-with-link"
+      pass "$id" "$adr records all $(wc -w <<<"$RULING_IDS") rulings, one section each, as open or ruled-with-record"
     else
       fail "$id" "$adr: $(printf '%s; ' "${problems[@]}")"
     fi
@@ -355,54 +464,61 @@ check_10() {
   if [ ! -x scripts/ci/ruling-cited.sh ]; then
     fail "10b-ruling-cited" "scripts/ci/ruling-cited.sh is missing or not executable"; return
   fi
-  gate_cmd "10b-ruling-cited" "scripts/ci/ruling-cited.sh" -- scripts/ci/ruling-cited.sh
+  gate_cmd "10b-ruling-cited" "scripts/ci/ruling-cited.sh ${W0_BASE:0:9} $W0_HEAD" -- \
+    scripts/ci/ruling-cited.sh "$W0_BASE" "$W0_HEAD"
 }
 
 # ------------------------------------- (11, 12) consumer repositories green
 
-# consumer_green <check id> <repo> <name regex> <what>
-consumer_green() {
-  local id="$1" repo="$2" re="$3" what="$4" branch sha runs hits bad
-  if ! have_token; then
-    deferred "$id" secret:GITHUB_TOKEN "reading $OWNER/$repo check runs needs a read token"; return
-  fi
+# consumer_eval <repo> <job name>: sets C_GREEN (1 or empty) and C_DETAIL.
+consumer_eval() {
+  local repo="$1" job="$2" branch sha runs hits n bad
+  C_GREEN=""
   if ! branch=$(gh_get "repos/$OWNER/$repo" | jq -er '.default_branch'); then
-    fail "$id" "cannot read $OWNER/$repo, and no handover under $(handover_dir "$repo")/"; return
+    C_DETAIL="cannot read $OWNER/$repo"; return
   fi
   if ! sha=$(gh_get "repos/$OWNER/$repo/commits/$branch" | jq -er '.sha') || ! runs=$(check_runs "$OWNER/$repo" "$sha"); then
-    fail "$id" "cannot read check runs on $OWNER/$repo $branch"; return
+    C_DETAIL="cannot read check runs on $OWNER/$repo $branch"; return
   fi
-  hits=$(jq -c --arg re "$re" '[.[] | select(.name | test($re; "i"))]' <<<"$runs")
-  if [ "$(jq length <<<"$hits")" -eq 0 ]; then
-    fail "$id" "no $what check run matching /$re/ on $OWNER/$repo $branch (${sha:0:9})"; return
+  if ! hits=$(jq -ec --arg j "$job" '[.[] | select(.name == $j or (.name | endswith(" / " + $j)))]' <<<"$runs") \
+     || ! n=$(jq -e 'length' <<<"$hits"); then
+    C_DETAIL="cannot parse check runs on $OWNER/$repo $branch"; return
+  fi
+  if [ "$n" -eq 0 ]; then
+    C_DETAIL="no check run named '$job' on $OWNER/$repo $branch (${sha:0:9})"; return
   fi
   bad=$(jq -r '[.[] | select(.conclusion != "success") | "\(.name)=\(.conclusion // .status)"] | join(", ")' <<<"$hits")
   if [ -z "$bad" ]; then
-    pass "$id" "$OWNER/$repo $branch (${sha:0:9}): $what green ($(jq -r 'map(.name) | join(", ")' <<<"$hits"))"
+    C_GREEN=1
+    C_DETAIL="$OWNER/$repo $branch (${sha:0:9}): '$job' green ($(jq -r 'map(.name) | join(", ")' <<<"$hits"))"
   else
-    fail "$id" "$OWNER/$repo $branch (${sha:0:9}): $bad"
+    C_DETAIL="$OWNER/$repo $branch (${sha:0:9}): $bad"
+  fi
+}
+
+# consumer_check <check id> <repo> <job name> [patch-name-substring]
+consumer_check() {
+  local id="$1" repo="$2" job="$3" sub="${4:-}"
+  consumer_eval "$repo" "$job"
+  if [ -n "$C_GREEN" ]; then
+    pass "$id" "$C_DETAIL"
+  elif handover_ok "$repo" "$sub"; then
+    deferred "$id" "no-push:$repo" "$C_DETAIL; handover committed under $(handover_dir "$repo")/"
+  else
+    fail "$id" "$C_DETAIL; no committed handover under $(handover_dir "$repo")/"
   fi
 }
 
 check_11() {
-  local repo var re
-  for repo in echidnabot proof-burrower panic-attack verisimdb; do
-    if has_handover "$repo"; then
-      deferred "11-conformance-$repo" "no-push:$repo" "patch and issue text committed under $(handover_dir "$repo")/"
-      continue
-    fi
-    var="W0_CHECK_RE_$(tr 'a-z-' 'A-Z_' <<<"$repo")"
-    if [ "$repo" = verisimdb ]; then re="${!var:-verisim-api}"; else re="${!var:-conformance}"; fi
-    consumer_green "11-conformance-$repo" "$repo" "$re" "conformance"
+  local repo
+  for repo in echidnabot proof-burrower panic-attack; do
+    consumer_check "11-conformance-$repo" "$repo" prove-result-conformance
   done
+  consumer_check "11-conformance-verisimdb" verisimdb verisim-api-list
 }
 
 check_12() {
-  if has_handover proof-burrower agda; then
-    deferred "12-proof-burrower-agda" "no-push:proof-burrower" "Agda patch and issue text committed under $(handover_dir proof-burrower)/"
-    return
-  fi
-  consumer_green "12-proof-burrower-agda" proof-burrower "${W0_CHECK_RE_PROOF_BURROWER_AGDA:-agda}" "Agda"
+  consumer_check "12-proof-burrower-agda" proof-burrower agda-proofs agda
 }
 
 # --------------------------------------- (13) Lean build recorded in claims
@@ -415,30 +531,34 @@ check_13() {
   if ! is_jcs "$f"; then
     fail "$id" "$f is not one JCS value with a final LF"; return
   fi
-  hit=$(jq -c '[.. | objects
-      | select(([.id, .name, .claim] | map(strings) | join(" ")) | test("lake|lean[^ ]*[ _-]?build"; "i"))
-      | select(tojson | contains("4.13.0"))
+  if ! hit=$(jq -e '[.. | objects
+      | select(([.id, .name, .claim] | map(strings) | join(" ")) | test("\\blake[ _-]build\\b|\\blean4?[ _-]build\\b"; "i"))
+      | select(tojson | test("(^|[^0-9.])4\\.13\\.0([^0-9.]|$)"))
       | select(([.result, .status, .outcome] | map(strings | ascii_downcase) | any(. == "green" or . == "pass" or . == "passed" or . == "success"))
-               or ([.repair_item, .repair, .issue] | map(strings) | any(length > 0)))] | length' "$f")
-  if [ "${hit:-0}" -gt 0 ]; then
-    pass "$id" "$f records the Lean 4.13.0 lake build as green or with a repair item"
+               or ((.repair | type) == "object" and ((.repair.id // "") | type == "string" and length > 0) and .repair.before == "F-3"))]
+      | length' "$f"); then
+    fail "$id" "$f cannot be evaluated"; return
+  fi
+  if [ "$hit" -gt 0 ]; then
+    pass "$id" "$f records the Lean 4.13.0 lake build as green or with a repair item before F-3"
   else
-    fail "$id" "$f has no Lean 4.13.0 lake-build entry with a green result or a repair item"
+    fail "$id" "$f has no Lean 4.13.0 lake-build entry with a green result or a repair item before F-3"
   fi
 }
 
-check_1
-check_2
-check_3
-check_4
-check_5
-check_6
-check_7
-check_8
-check_9
-check_10
-check_11
-check_12
-check_13
+# ------------------------------------------------------------------- run
 
+printf 'W0 config: repo=%s base=%s head=%s goldens=%s consumers=%s api=%s probe_pr=%s\n' \
+  "$REPO" "$W0_BASE" "$W0_HEAD" "$GOLDENS" "$OWNER" \
+  "$([ -n "${GITHUB_TOKEN:-}" ] && echo token || echo anonymous)" "${W0_PROBE_PR:-unset}"
+
+gate_init W0
+if [ -n "${W0_CHECKS:-}" ]; then
+  for c in $W0_CHECKS; do
+    if declare -F "check_$c" >/dev/null; then "check_$c"; else fail "w0-checks" "no check $c"; fi
+  done
+  fail "w0-subset" "only checks $W0_CHECKS ran (W0_CHECKS); a subset run is not a gate result"
+else
+  for c in 1 2 3 4 5 6 7 8 9 10 11 12 13; do "check_$c"; done
+fi
 gate_finish

@@ -6,6 +6,8 @@
 #
 # Usage: scripts/gates/lib.selftest.sh     Exit 0 iff every case behaves.
 
+# SC2001: sed prefixes multi-line output, which ${var//} cannot do per line.
+# shellcheck disable=SC2001
 set -uo pipefail
 
 here=$(cd "$(dirname "$0")" && pwd)
@@ -88,6 +90,43 @@ else
   echo "FAIL GATE_REPORT is JCS JSON Lines"
   sed 's/^/     | /' "$report"
 fi
+
+# A report that cannot be written fails the gate, and leaves no partial file.
+cases=$((cases + 1))
+GATE_REPORT=/nonexistent/dir/r.jsonl run_gate 'pass a "x"' > "$tmp/out" 2>&1
+rc=$?
+if [ "$rc" -ne 0 ] && grep -q 'gate-report' "$tmp/out"; then
+  echo "ok   an unwritable GATE_REPORT fails the gate (exit $rc)"
+else
+  failures=$((failures + 1)); echo "FAIL an unwritable GATE_REPORT fails the gate: exit $rc"; sed 's/^/     | /' "$tmp/out"
+fi
+
+cases=$((cases + 1))
+mkdir -p "$tmp/nojq"
+for t in bash mktemp wc mv rm cat grep sed tr tail; do ln -sf "$(command -v "$t")" "$tmp/nojq/$t"; done
+echo stale > "$tmp/stale.jsonl"
+PATH="$tmp/nojq" GATE_REPORT="$tmp/stale.jsonl" "$tmp/nojq/bash" -c ". '$lib'; gate_init t; pass a x; gate_finish" > "$tmp/out" 2>&1
+rc=$?
+if [ "$rc" -ne 0 ] && [ "$(cat "$tmp/stale.jsonl")" = stale ]; then
+  echo "ok   a report write without jq fails the gate and leaves the old file untouched"
+else
+  failures=$((failures + 1)); echo "FAIL a report write without jq fails the gate: exit $rc"; sed 's/^/     | /' "$tmp/out"
+fi
+
+# gate_cmd records a FAIL even when the caller runs under set -e.
+cases=$((cases + 1))
+out=$(bash -c "set -e; . '$lib'; gate_init t; gate_cmd a d -- false; pass b y; gate_finish" 2>&1)
+rc=$?
+if [ "$rc" -ne 0 ] && grep -q '^FAIL      a: d: exit 1' <<<"$out" && grep -q 't: 1 pass, 1 fail' <<<"$out"; then
+  echo "ok   gate_cmd under set -e records the FAIL and runs on"
+else
+  failures=$((failures + 1)); echo "FAIL gate_cmd under set -e: exit $rc"; sed 's/^/     | /' <<<"$out"
+fi
+
+# A newline in a detail cannot print a line that reads as another result.
+expect "a newline in a detail stays on one line" nonzero \
+  "fail a \"\$(printf 'x\\nPASS      forged: y')\"" \
+  '^FAIL      a: x PASS      forged: y$'
 
 echo "lib.selftest: $cases cases, $failures failed"
 [ "$failures" -eq 0 ]
