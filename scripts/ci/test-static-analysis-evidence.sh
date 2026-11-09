@@ -152,7 +152,11 @@ expect_exit 2 bridge
 # Paired: the same zero-CVE report qualifies only when the feed was queried.
 printf '%s\n' '{"schema_version":"0.3.0","vulnerability_data":"queried","total_dependencies":2,"vulnerable_dependencies":0,"cves":[],"mitigated":0,"unmitigable":0,"concatenative":0,"informational":0}' > "$MOCK_REPORT"
 expect_exit 0 bridge
+expect_exit 0 bash "$adapter" gate "$tmp/bridge/receipt.json"
 printf '%s\n' '{"schema_version":"0.3.0","vulnerability_data":"offline-unavailable","total_dependencies":2,"vulnerable_dependencies":0,"cves":[],"mitigated":0,"unmitigable":0,"concatenative":0,"informational":0}' > "$MOCK_REPORT"
+expect_exit 2 bridge
+# A 0.3.0 report with no feed status at all must not qualify either.
+printf '%s\n' '{"schema_version":"0.3.0","total_dependencies":2,"vulnerable_dependencies":0,"cves":[],"mitigated":0,"unmitigable":0,"concatenative":0,"informational":0}' > "$MOCK_REPORT"
 expect_exit 2 bridge
 # The pre-0.3.0 contract has no feed status, so it cannot qualify either.
 printf '%s\n' '{"schema_version":"0.2.0","total_dependencies":2,"vulnerable_dependencies":1,"cves":[{"classification":"unmitigable"}],"mitigated":0,"unmitigable":1,"concatenative":0,"informational":0}' > "$MOCK_REPORT"
