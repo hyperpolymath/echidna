@@ -38,3 +38,6 @@ modules = EchidnaABI.AxiomTracker
         , Boj.Foreign
         , TypeLL.Foreign
         , Tentacles.Foreign
+        , Coprocessor.Foreign
+        , EchidnaABI.CapnSchemas
+        , NeSyAssistTesting
