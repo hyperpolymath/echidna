@@ -13,6 +13,7 @@ on:
       - 'src/idris/**'
       - 'tests/abi/**'
       - 'scripts/abi-fixtures.sh'
+      - 'scripts/ci/idris-code-lines.sh'
       - '.github/workflows/idris2-abi-ci.yml'
   # No paths-filter on pull_request: this job is a REQUIRED status check, so it
   # must report on every PR (a path-filtered required check deadlocks PRs that
@@ -46,7 +47,7 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         run: |
           set -euo pipefail
-          PATTERN='^(src/abi/|src/idris/|tests/abi/|scripts/abi-fixtures\.sh$)'
+          PATTERN='^(src/abi/|src/idris/|tests/abi/|scripts/abi-fixtures\.sh$|scripts/ci/idris-code-lines\.sh$|\.github/workflows/idris2-abi-ci\.yml$)'
           if [ "${{ github.event_name }}" = "pull_request" ]; then
             FILES=$(gh api "repos/${{ github.repository }}/pulls/${{ github.event.pull_request.number }}/files" \
                       --paginate --jq '.[].filename')
@@ -118,8 +119,12 @@ jobs:
         run: |
           echo "=== Scanning for dangerous patterns in ABI code ==="
           FOUND=0
-          for pattern in "believe_me" "assert_total" "unsafePerformIO" "prim__crash"; do
-            if grep -r "$pattern" src/abi/ --include="*.idr"; then
+          # Comment-aware (scripts/ci/idris-code-lines.sh): documentation such
+          # as "NO postulate" is not a finding. postulate, idris_crash and
+          # assert_smaller were added 2026-11-09 (ultraplan CI-13).
+          bash scripts/ci/idris-code-lines.sh src/abi > "$RUNNER_TEMP/abi-code-lines.txt"
+          for pattern in "believe_me" "assert_total" "unsafePerformIO" "prim__crash" "postulate" "idris_crash" "assert_smaller"; do
+            if grep -w -- "$pattern" "$RUNNER_TEMP/abi-code-lines.txt"; then
               echo "✗ DANGEROUS: Found '$pattern' in ABI code"
               FOUND=1
             fi
