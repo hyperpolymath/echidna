@@ -78,8 +78,12 @@ no collisions in kind_to_u8 |I2
 |E7 GNN embedding faithfulness |`+src/abi/EchidnaABI/Gnn.idr+`
 |Structural properties, feature bounds, score normalisation |I2
 
-|E9 Proof composition soundness |`+proofs/agda/ProofComposition.agda+`
-|Soundness preservation, axiom conflict detection |Agda
+|E9 Proof composition soundness |`+meta-checker/src/Echidna/Composition.agda+`
+|Cut preserves semantic soundness; explosion shows a conflict check is
+load-bearing; a sound detector realises every composite, and a sound
+detector that decides its conflict relation returns a conflict witness for
+every inconsistent one. Theory over an arbitrary logic; no Rust composer
+exists to verify |Agda
 
 |E12 ProofState serialization losslessness
 |`+verification/proofs/idris2/ProofStateSerialisation.idr+`

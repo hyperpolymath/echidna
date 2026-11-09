@@ -141,10 +141,10 @@ jobs:
           path: src/zig_ffi/zig-out/lib/
 
   # Job 3: Build Rust with chapel feature (links against Zig FFI stubs).
-  # Marked continue-on-error: true alongside its needed dependency zig-ffi
-  # (#133) — when the upstream Zig FFI build is allowed to fail, this job's
-  # "Download FFI library" step has no artifact to consume and red-fires.
-  # Re-enable strict gating once #133's Chapel + FFI rehabilitation lands.
+  # Blocking since the CI-4 ruling (#416). It was allow-fail while its
+  # dependency zig-ffi was; zig-ffi has been strict since #133 closed, and
+  # this job passed on main after #455 (run 42100322359) and on every PR run
+  # checked up to 2026-11-09.
   rust-chapel-feature:
     name: Rust Build with Chapel Feature
     runs-on: ubuntu-22.04
@@ -152,7 +152,6 @@ jobs:
     needs: zig-ffi
     env:
       ECHIDNA_CHAPEL_EXPECT_MODE: stubs
-    continue-on-error: true  # allow-fail: issue=#416 expires=2026-11-30
     steps:
       - uses: actions/checkout@v7.0.1
 
@@ -180,16 +179,19 @@ jobs:
   #
   # Cargo is the final static consumer: Zig's archive intentionally leaves
   # chapel_* references for libechidna_chapel.a + the compiler's runtime.
-  # No PIC rebuild is needed for this executable link. The existing #416
-  # waiver is unchanged; promotion requires the exact-source hosted result.
+  # No PIC rebuild is needed for this executable link.
+  #
+  # Blocking since the CI-4 ruling (#416). The real link landed with #455
+  # (build.rs, build_support/chapel.rs), and this job passed on main
+  # (run 42100322359, job 127501960139) and on every PR run checked up to
+  # 2026-11-09. It also consumes chapel-build's chapel-lib artifact.
   rust-chapel-real:
-    name: Rust Build — Real Chapel Library (allow-fail, L2.3+ gate)
+    name: Rust Build — Real Chapel Library
     runs-on: ubuntu-22.04
     timeout-minutes: 30
     needs: [chapel-build, zig-ffi]
     env:
       ECHIDNA_CHAPEL_EXPECT_MODE: real
-    continue-on-error: true  # allow-fail: issue=#416 expires=2026-11-30
     steps:
       - uses: actions/checkout@v7.0.1
 

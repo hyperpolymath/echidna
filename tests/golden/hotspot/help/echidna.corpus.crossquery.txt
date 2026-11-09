@@ -1,0 +1,30 @@
+Look up entries across every synonym table by `semantic_class`. Demonstrates cross-prover semantic equivalence: `corpus crossquery well-foundedness` reports `WellFounded` in Agda, `well_founded` in Coq, and `WellFounded` in Lean and Idris 2.
+
+The cross-prover dictionaries are searched too, so classes that only exist there (`wrapping-arithmetic`, `frame-rule`, `estate-snif`, or an MSC code such as `68Q60`) resolve.
+
+Usage: echidna corpus crossquery [OPTIONS] <CLASS>
+
+Arguments:
+  <CLASS>
+          Semantic class to look up (e.g. `well-foundedness`)
+
+Options:
+      --format <FORMAT>
+          Output format (text, json)
+          
+          [default: text]
+
+      --synonyms-dir <SYNONYMS_DIR>
+          Synonym directory (defaults to `data/synonyms`)
+
+      --provers-only
+          Only search the per-prover tables, skipping the cross-prover dictionaries
+
+  -v, --verbose
+          Verbose output
+
+      --no-color
+          Disable colors
+
+  -h, --help
+          Print help (see a summary with '-h')

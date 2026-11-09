@@ -1,10 +1,11 @@
 -- SPDX-License-Identifier: MPL-2.0
--- ProofComposition.agda — axiom-set consistency for composed proofs.
+-- ProofComposition.agda — corpus fixture (PROOF-POLICY §3): list algebra
+-- over axiom lists.
 --
--- Simplified version: proves that combining two consistent axiom
--- lists yields a consistent union if neither introduces the other's
--- negation. Enough to exercise the agda backend without fighting
--- stdlib namespace clashes.
+-- What it proves: axiom-list concatenation is associative and has a left
+-- identity. It does NOT prove consistency or soundness of composed proofs,
+-- and it is not E9's evidence: that is meta-checker/src/Echidna/
+-- Composition.agda (cut soundness, explosion, sound conflict detectors).
 
 module ProofComposition where
 

@@ -33,12 +33,24 @@ K9!
 # * Evidence sinks: VeriSimDB (queryable) + descriptiles/DRIFT.a2ml (repo-local).
 # * Failure-mode defenses cross-referenced to the AI failure catalog.
 
-let base_k9 = import "../k9/template-hunt.k9.ncl" in
+#
+# 2026-11-09 (K9 contract v1.0.0, D173, standards#1058): this record is a
+# DECLARATION evaluated at 'Yard. The probes it lists are run by the paired
+# runner (intend.ncl and the scripts/run-*.sh runners), which is the execution
+# surface; this file spawns nothing. A 'Hunt record needs signature_required,
+# a signature block and a verified signature (K9-S008/S009/C001); no
+# contractile carries one, so 'Hunt here was a claim the gate could never honour.
+# Mirrors rsr-template-repo's contractiles (WO-9).
+
 let base    = import "../_base.ncl" in
 
 {
-  pedigree = base_k9.pedigree_schema & {
+  pedigree = base.pedigree_schema & {
     contractile_verb = "intend",
+    schema_version   = "1.0.0",
+    component_type   = "contractile:intend",
+    semantics        = "north-star (commitments + aspirations)",
+    side_effects     = [],
     paired_xfile     = "../intend/Intentfile.a2ml",
     paired_runner    = "../intend/intend.ncl",
 
@@ -48,7 +60,7 @@ let base    = import "../_base.ncl" in
     # adjust/dust declare (Yard, advisory). Splitting the axes
     # means "I'm Hunt-tier so I can override everything" is structurally
     # impossible — authority is a separate field.
-    tier      = 'Hunt,
+    tier      = 'Yard,
     authority = 'reporting,
 
     metadata = {
@@ -65,12 +77,12 @@ let base    = import "../_base.ncl" in
     },
 
     security = {
-      leash = 'Hunt,
-      signature_required = true,
+      leash = 'Yard,
+      signature_required = false,
       trust_level = "subprocess + filesystem-read",
       allow_network = false,
       allow_filesystem_write = false,   # evidence sinks are indirected
-      allow_subprocess = true,
+      allow_subprocess = false,   # the paired runner spawns; this record does not
     },
   },
 
@@ -83,7 +95,8 @@ let base    = import "../_base.ncl" in
   # Per user 2026-04-18: variances are structural, not magic-comment
   # markers — markers are gameable.
   # -------------------------------------------------------------------
-  variance_schema = {
+  # A record SHAPE (contract-only fields, no values): kept out of `nickel export`.
+  variance_schema | not_exported = {
     entry_id     | String,   # which intent/wish id the variance applies to
     reason       | String,
     approved_by  | String,

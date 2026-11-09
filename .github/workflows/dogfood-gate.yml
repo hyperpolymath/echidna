@@ -83,51 +83,53 @@ jobs:
   k9-validate:
     name: Validate K9 contracts
     runs-on: ubuntu-latest
-    timeout-minutes: 10
+    timeout-minutes: 15
     outputs:
       validation: ${{ steps.validate.outcome }}
+    env:
+      NICKEL_VERSION: '1.18.0'
+      NICKEL_SHA256: '9cba4dd65ae9915ec61f73033aafcff307a377665a83fd8f530df086763318cb'
 
     steps:
       - name: Checkout repository
         uses: actions/checkout@v7.0.1
+        with:
+          persist-credentials: false
 
-      - name: Check for K9 files
-        id: detect
+      - name: Checkout canonical K9 validator and contract
+        uses: actions/checkout@v7.0.1
+        with:
+          repository: metadatastician/standards
+          ref: e064539116c2dcfdf282a4749dbd58c69961c7e6
+          path: .standards-k9
+          sparse-checkout: 1-formats/k9
+          sparse-checkout-cone-mode: true
+          persist-credentials: false
+
+      - name: Install sha256-verified Nickel CLI
         run: |
-          COUNT=$(find . \( -name '*.k9' -o -name '*.k9.ncl' \) -not -path './.git/*' | wc -l)
-          CONFIG_COUNT=$(find . \( -name '*.toml' -o -name '*.yaml' -o -name '*.yml' -o -name '*.json' \) \
-            -not -path './.git/*' -not -path './node_modules/*' -not -path './.deno/*' \
-            -not -name 'package-lock.json' -not -name 'Cargo.lock' -not -name 'deno.lock' | wc -l)
-          echo "k9_count=$COUNT" >> "$GITHUB_OUTPUT"
-          echo "config_count=$CONFIG_COUNT" >> "$GITHUB_OUTPUT"
-          if [ "$COUNT" -eq 0 ] && [ "$CONFIG_COUNT" -gt 0 ]; then
-            echo "::warning::Found $CONFIG_COUNT config files but no K9 contracts. Run k9iser to generate contracts."
-          fi
+          set -euo pipefail
+          URL="https://github.com/tweag/nickel/releases/download/${NICKEL_VERSION}/nickel-x86_64-linux"
+          curl -sSfL --proto '=https' --proto-redir '=https' --tlsv1.2 --retry 3 -o "$RUNNER_TEMP/nickel" "$URL"
+          echo "${NICKEL_SHA256}  ${RUNNER_TEMP}/nickel" | sha256sum -c -
+          chmod +x "$RUNNER_TEMP/nickel"
+          echo "$RUNNER_TEMP" >> "$GITHUB_PATH"
 
-      - name: Validate K9 contracts
+      - name: Validate K9 contracts (L0–L2)
         id: validate
-        if: steps.detect.outputs.k9_count > 0
-        env:
-          INPUT_STRICT: "true"
-        run: bash .github/hooks/validate-k9.sh
-      - name: Write summary
         run: |
-          K9_COUNT="${{ steps.detect.outputs.k9_count }}"
-          CFG_COUNT="${{ steps.detect.outputs.config_count }}"
-          if [ "$K9_COUNT" -eq 0 ]; then
-            cat <<'EOF' >> "$GITHUB_STEP_SUMMARY"
-          ## K9 Contract Validation
-
-          :warning: **No K9 contracts found.** Structural K9 validation was not run.
-
-          Generate contracts with: `k9iser generate .`
-          EOF
-          else
-            echo "## K9 Contract Validation" >> "$GITHUB_STEP_SUMMARY"
-            echo "" >> "$GITHUB_STEP_SUMMARY"
-            echo "Checked structural fields in **${K9_COUNT}** K9 contract(s). The repository contains **${CFG_COUNT}** configuration file(s); this hook does not compare their contents with the contracts." >> "$GITHUB_STEP_SUMMARY"
-            echo "This is not Nickel evaluation, cryptographic signature verification or Hunt deployment authorization." >> "$GITHUB_STEP_SUMMARY"
+          set -euo pipefail
+          rm -rf "$RUNNER_TEMP/standards-k9"
+          mv "$PWD/.standards-k9" "$RUNNER_TEMP/standards-k9"
+          if [ ! -f "$RUNNER_TEMP/standards-k9/1-formats/k9/tools/k9-validate.sh" ]; then
+            echo "::error::K9 validator is missing from the standards checkout"
+            exit 1
           fi
+          if ! command -v nickel >/dev/null 2>&1; then
+            echo "::error::nickel is required for K9 layer L2 validation"
+            exit 1
+          fi
+          STANDARDS_DIR="$RUNNER_TEMP/standards-k9" bash .github/hooks/validate-k9.sh
 
   # ---------------------------------------------------------------------------
   # Job 3: Empty-linter — invisible character detection

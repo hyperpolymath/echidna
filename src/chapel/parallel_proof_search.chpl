@@ -656,8 +656,11 @@ proc parallelProofSearch(goal: string, provers: [] ProverInfo,
 // terminate — their results land in the table with exitCode = -5
 // instead of running to completion, but they are never returned to
 // the caller because `winner` is set before any cancellation could
-// race the CAS. See proofs/agda/ParallelSoundness.agda:
-// `cancellation-safety` for the formal statement.
+// race the CAS. See proofs/agda/ParallelSoundness.agda, layer B: a
+// small-step model of this procedure over every interleaving, with
+// `winner-stable`, `preempted-inert`, `cancel-after-win`, `race-sound`,
+// `race-complete` and `winner-is-first`. Its assumed boundary is that
+// these atomics are sequentially consistent (Chapel's default order).
 //
 // Telemetry: losers that self-SIGKILLed land in `results` with
 // exitCode = -5, which `classifyOutcome` maps to `preempted`.
