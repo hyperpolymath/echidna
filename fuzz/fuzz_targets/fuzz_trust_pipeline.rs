@@ -36,6 +36,10 @@ struct FuzzTrustFactors {
     use_small_kernel: bool,
     /// Number of independent provers that confirmed the result.
     confirming_provers: u32,
+    /// How many of those confirmations came from small-kernel provers.
+    /// Fuzzed independently, so inconsistent inputs (more small-kernel
+    /// confirmations than confirmations) are exercised as well.
+    small_kernel_confirmations: u32,
     /// Whether a proof certificate was produced.
     has_certificate: bool,
     /// Whether the certificate was independently verified.
@@ -69,6 +73,7 @@ fuzz_target!(|fuzz: FuzzTrustFactors| {
     let factors = TrustFactors {
         prover,
         confirming_provers: fuzz.confirming_provers,
+        small_kernel_confirmations: fuzz.small_kernel_confirmations,
         has_certificate: fuzz.has_certificate,
         certificate_verified: fuzz.certificate_verified,
         worst_axiom_danger: index_to_danger(fuzz.worst_axiom_danger_index),
@@ -88,6 +93,24 @@ fuzz_target!(|fuzz: FuzzTrustFactors| {
         (1..=5).contains(&value),
         "compute_trust_level returned out-of-range value {value} for factors {factors:?}"
     );
+
+    // TK-4: level 4 or above needs a small-kernel prover and a certificate
+    // that was both produced and verified.
+    if value >= 4 {
+        assert!(
+            fuzz.use_small_kernel && fuzz.has_certificate && fuzz.certificate_verified,
+            "TK-4 violated: level {value} without small kernel and verified certificate: {factors:?}"
+        );
+    }
+
+    // TK-5: level 5 needs two small-kernel confirmations, which can never
+    // exceed the confirming provers.
+    if value == 5 {
+        assert!(
+            fuzz.small_kernel_confirmations >= 2 && fuzz.confirming_provers >= 2,
+            "TK-5 violated: level 5 with fewer than two small-kernel confirmations: {factors:?}"
+        );
+    }
 
     // Exercise the description and Display impls while we have a live value.
     let _ = level.description();
