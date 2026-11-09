@@ -124,7 +124,7 @@ jq -cnS \
     kind: "agda-cone-receipt",
     policy: "standards 3-practice/PROOF-POLICY.adoc §8.2, §8.4",
     source: {repository: "https://github.com/hyperpolymath/echidna", commit: $commit,
-             uncommitted_changes: ($dirty == "yes"), entrypoint: $entry},
+             uncommitted_changes_under_entry_dir: ($dirty == "yes"), entrypoint: $entry},
     toolchain: {agda: $agda, agda_executable_sha256: $agda_sha,
                 stdlib_archive_sha256: $stdlib_sha, flags: $flags},
     import_cone: {count: ($cone | length), modules: $cone},
