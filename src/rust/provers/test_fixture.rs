@@ -15,7 +15,7 @@
 //! once on any argument they do not expect, so the probe runs no fixture body.
 
 use std::io::{ErrorKind, Write};
-use std::os::unix::fs::OpenOptionsExt;
+use std::os::unix::fs::{OpenOptionsExt, PermissionsExt};
 use std::path::Path;
 use std::time::Duration;
 
@@ -33,6 +33,10 @@ pub(crate) fn write_executable(path: &Path, contents: &str) {
         file.write_all(contents.as_bytes())
             .expect("write fixture executable");
     }
+    // The creation mode is filtered by the umask; set it explicitly so the
+    // fixture is executable whatever umask the test runner inherited.
+    std::fs::set_permissions(path, std::fs::Permissions::from_mode(0o700))
+        .expect("make fixture executable");
     for _ in 0..200 {
         match std::process::Command::new(path)
             .arg("--echidna-fixture-ready")
