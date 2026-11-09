@@ -30,12 +30,24 @@ K9!
 # previous existence — e.g. D040-D042 archive rather than delete; the
 # PR is the durable record for D001/D002; git history covers D050-D052).
 
-let base_k9 = import "../k9/template-hunt.k9.ncl" in
+#
+# 2026-11-09 (K9 contract v1.0.0, D173, standards#1058): this record is a
+# DECLARATION evaluated at 'Yard. The probes it lists are run by the paired
+# runner (dust.ncl and the scripts/run-*.sh runners), which is the execution
+# surface; this file spawns nothing. A 'Hunt record needs signature_required,
+# a signature block and a verified signature (K9-S008/S009/C001); no
+# contractile carries one, so 'Hunt here was a claim the gate could never honour.
+# Mirrors rsr-template-repo's contractiles (WO-9).
+
 let base    = import "../_base.ncl" in
 
 {
-  pedigree = base_k9.pedigree_schema & {
+  pedigree = base.pedigree_schema & {
     contractile_verb = "dust",
+    schema_version   = "1.0.0",
+    component_type   = "contractile:dust",
+    semantics        = "rollback / recovery / deprecation / audit-trail preservation",
+    side_effects     = [],
     paired_xfile     = "../dust/Dustfile.a2ml",
     paired_runner    = "../dust/dust.ncl",
 
@@ -60,7 +72,7 @@ let base    = import "../_base.ncl" in
       # orphan pids/caches, archive prior-run artefacts) — but only
       # behind explicit --apply flag + per-item approval. Default is dry-run.
       allow_filesystem_write_conditional = true,
-      allow_subprocess = true,
+      allow_subprocess = false,   # the paired runner spawns; this record does not
       destructive_action_gating = {
         default_mode = 'dry_run,
         requires_flag = "--apply",
@@ -80,7 +92,8 @@ let base    = import "../_base.ncl" in
     },
   },
 
-  variance_schema = {
+  # A record SHAPE (contract-only fields, no values): kept out of `nickel export`.
+  variance_schema | not_exported = {
     entry_id     | String,
     reason       | String,
     approved_by  | String,
