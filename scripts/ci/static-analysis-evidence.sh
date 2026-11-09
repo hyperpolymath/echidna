@@ -34,7 +34,7 @@ valid_report() {
         and (.weak_points | type == "array") and all(.weak_points[];
           type == "object" and (.severity as $s | ["Critical","High","Medium","Low"] | index($s) != null)))' "$report" >/dev/null 2>&1 ;;
     patch-bridge)
-      jq -e -s 'length == 1 and (.[0] | type == "object" and .schema_version == "0.2.0"
+      jq -e -s 'length == 1 and (.[0] | type == "object" and .schema_version == "0.3.0" and .vulnerability_data == "queried"
         and (.total_dependencies | type == "number" and . > 0 and floor == .)
         and (.cves | type == "array")
         and all(.cves[]; type == "object" and (.classification as $c |

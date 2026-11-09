@@ -135,7 +135,7 @@ expect_exit 2 panic
 
 # Bridge needs its real subcommand and output-file contract. CLI/parser errors
 # cannot turn into a fabricated zero-CVE report; no offline zero is requested.
-printf '%s\n' '{"schema_version":"0.2.0","total_dependencies":2,"vulnerable_dependencies":1,"cves":[{"classification":"unmitigable"}],"mitigated":0,"unmitigable":1,"concatenative":0,"informational":0}' > "$MOCK_REPORT"
+printf '%s\n' '{"schema_version":"0.3.0","vulnerability_data":"queried","total_dependencies":2,"vulnerable_dependencies":1,"cves":[{"classification":"unmitigable"}],"mitigated":0,"unmitigable":1,"concatenative":0,"informational":0}' > "$MOCK_REPORT"
 expect_exit 0 bridge
 grep -Fxq bridge "$MOCK_ARGS"
 grep -Fxq triage "$MOCK_ARGS"
@@ -147,6 +147,15 @@ expect_exit 2 bridge
 export MOCK_EXIT=0
 jq '.unmitigable = 0' "$MOCK_REPORT" > "$tmp/inconsistent.json"
 cp "$tmp/inconsistent.json" "$MOCK_REPORT"
+expect_exit 2 bridge
+# A report that never reached the vulnerability feed is not a zero-CVE result.
+# Paired: the same zero-CVE report qualifies only when the feed was queried.
+printf '%s\n' '{"schema_version":"0.3.0","vulnerability_data":"queried","total_dependencies":2,"vulnerable_dependencies":0,"cves":[],"mitigated":0,"unmitigable":0,"concatenative":0,"informational":0}' > "$MOCK_REPORT"
+expect_exit 0 bridge
+printf '%s\n' '{"schema_version":"0.3.0","vulnerability_data":"offline-unavailable","total_dependencies":2,"vulnerable_dependencies":0,"cves":[],"mitigated":0,"unmitigable":0,"concatenative":0,"informational":0}' > "$MOCK_REPORT"
+expect_exit 2 bridge
+# The pre-0.3.0 contract has no feed status, so it cannot qualify either.
+printf '%s\n' '{"schema_version":"0.2.0","total_dependencies":2,"vulnerable_dependencies":1,"cves":[{"classification":"unmitigable"}],"mitigated":0,"unmitigable":1,"concatenative":0,"informational":0}' > "$MOCK_REPORT"
 expect_exit 2 bridge
 
 # Deposit preserves actual critical findings even though their gate failed.
