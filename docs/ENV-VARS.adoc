@@ -116,7 +116,7 @@ proxy
 |===
 |Variable |Note
 |`+VERISIMDB_URL+` |Old name for `+VERISIM_URL+`. Still read by
-`+tests/live_prover_suite.rs:118+` and enforced by `+k9iser.toml:47+`.
+`+tests/live_prover_suite.rs:118+`.
 Migration tracked in Stage 3c fix C3.
 |===
 
