@@ -110,6 +110,13 @@ fi
 grep -q 'allow-fail units checked: 1$' "$tmp/allow-fail.log"
 grep -q 'units.yml:7: continue-on-error without' "$tmp/allow-fail.log"
 
+# An explicit empty --today is an error, not a fall-back to FAKE_DATE (an
+# earlier FAKE_DATE would otherwise accept an expired unit).
+rc=0
+FAKE_DATE=2020-01-01 bash scripts/ci/check-allow-fail-expiry.sh --today "" "$tmp/allow-fail" \
+  > /dev/null 2>&1 || rc=$?
+[ "$rc" -eq 2 ] || { echo "FAIL: empty --today gave exit $rc, expected 2" >&2; exit 1; }
+
 # Managed workflows start with an actions-lock comment, not the SPDX header.
 # Inspect the comment preamble rather than assuming the licence is line one.
 # Top-level `permissions` is read with yq (YAML-POLICY Y-1): in KYAML it is
