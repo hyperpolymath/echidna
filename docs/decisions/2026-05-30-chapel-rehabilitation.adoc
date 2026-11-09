@@ -88,6 +88,9 @@ indicate a genuine regression. `+rust-chapel-real+` stays allow-fail
 because the Rust-side link of the full Chapel runtime is a different
 scope (gated on the PIC-runtime work above and on the static-archive
 integration in `+build.zig+`).
+_Superseded 2026-11-09:_ `+rust-chapel-real+` is blocking. The real link
+landed with #455 as a static link (see the update under *Negative* below);
+the PIC rebuild now concerns shared-library output only.
 
 === Rollout
 
@@ -104,6 +107,9 @@ recipes: `+chapel-build+`, `+chapel-smoke+`, `+chapel-test+`.
 Wave 2 (separate PR, after Wave 1 green-on-main for ≥7 days): - Rebuild
 Chapel from source with `+CHPL_LIB_PIC=pic+` runtime; revert the
 metalayer build to `+--dynamic+`; flip `+rust-chapel-real+` to strict.
+_Superseded 2026-11-09:_ `+rust-chapel-real+` was made strict without the
+PIC rebuild (static link, #455); the PIC rebuild remains relevant only for
+shared-library output.
 Recipe + tradeoffs:
 link:./2026-05-30-chapel-pic-rebuild.md[2026-05-30-chapel-pic-rebuild.adoc].
 CI flip deferred — the ~30 min source build dominates the chapel-ci

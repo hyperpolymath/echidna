@@ -36,6 +36,14 @@ on:
       - 'Containerfile'
       - 'scripts/ci/install-lean.sh'
       - 'scripts/ci/fs-fingerprint.sh'
+      - 'scripts/ci/fs-fingerprint-drift.sh'
+      - 'scripts/ci/test-fs-fingerprint.sh'
+      # Everything the Containerfile copies into the image (lines 26-42).
+      - 'build.rs'
+      - 'build_support/**'
+      - 'crates/**'
+      - 'benches/**'
+      - 'src/interfaces/**'
       - '.containerization/**'
       - 'Cargo.toml'
       - 'Cargo.lock'
@@ -46,6 +54,14 @@ on:
       - 'Containerfile'
       - 'scripts/ci/install-lean.sh'
       - 'scripts/ci/fs-fingerprint.sh'
+      - 'scripts/ci/fs-fingerprint-drift.sh'
+      - 'scripts/ci/test-fs-fingerprint.sh'
+      # Everything the Containerfile copies into the image (lines 26-42).
+      - 'build.rs'
+      - 'build_support/**'
+      - 'crates/**'
+      - 'benches/**'
+      - 'src/interfaces/**'
       - '.containerization/**'
       - 'Cargo.toml'
       - 'Cargo.lock'
@@ -81,6 +97,11 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v7.0.1
+
+      # The fingerprint and drift scripts are exercised on every run, not only
+      # when two builds differ.
+      - name: Test filesystem fingerprints
+        run: bash scripts/ci/test-fs-fingerprint.sh
 
       - name: Install Podman
         run: |

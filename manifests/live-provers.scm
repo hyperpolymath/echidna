@@ -22,7 +22,8 @@
 ;;   T1 — trivial (apt/Guix single-package)       — run on every PR
 ;;   T2 — build-from-source                       — run nightly
 ;;   T3 — container / special env                 — run weekly
-;;   T4 — niche / best-effort                     — run quarterly, allow-fail
+;;   T4 — niche / best-effort                     — no CI job (quarterly
+;;        allow-fail jobs retired 2026-11-09, CI-4 #416; mock-only)
 ;;
 ;; Policy (estate ruling 2026-05-18 + estate-wide nix-deprecation 2026-06-01):
 ;;   Guix is the PRIMARY (and only) package-management path declared here.

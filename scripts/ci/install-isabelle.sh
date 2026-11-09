@@ -35,8 +35,8 @@ fetched=""
 for url in "${MIRRORS[@]}"; do
   echo "install-isabelle: trying $url"
   rm -f "$dest"
-  if curl --proto '=https' --proto-redir '=https' -fL --max-time 900 \
-       --retry 3 --retry-delay 15 --retry-all-errors -o "$dest" "$url" \
+  if curl --proto '=https' --proto-redir '=https' -fL --connect-timeout 20 --max-time 420 \
+       --retry 2 --retry-delay 10 --retry-max-time 420 --retry-all-errors -o "$dest" "$url" \
      && printf '%s  %s\n' "$SHA256" "$dest" | sha256sum --check --status; then
     fetched="$url"
     break

@@ -384,7 +384,8 @@ acceptance run.
 
 *P1 L3 finishers:* Wave-3 ✅ DONE & consolidated to one
 `+Containerfile.wave3+` (2026-05-18; see Wave-3 section above), Wave-4
-✅ (19 placeholder + rationale docs in STATE.a2ml). L3 P1 finisher work
+✅ (19 backends documented as mock-only in STATE.a2ml; the CI placeholder
+jobs were removed 2026-11-09, CI-4 #416). L3 P1 finisher work
 is complete; the L3→L1 hand-off remains gated only on the calendar/infra
 gate (Tier-1 green ≥7 days on main — blocked by main CI stuck
 `+queued/+`, infra-owned, not collapsible here).

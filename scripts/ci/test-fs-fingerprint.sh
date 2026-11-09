@@ -44,4 +44,31 @@ leaves=$(bash "$here/fs-fingerprint-drift.sh" "$t/fa" "$t/fb" | tr "\n" "|")
 [[ -z $(bash "$here/fs-fingerprint-drift.sh" "$t/fa" "$t/fa") ]] || fail "self-drift not empty"
 
 if echo | bash "$here/fs-fingerprint.sh" 0 2>/dev/null; then fail "depth 0 accepted"; fi
-echo "PASS: fs-fingerprint names exactly the changed paths (content, mode, link target)"
+# Untrusted names never reach a shell: a name that is a command substitution
+# stays data, and nothing runs.
+clone; touch "$t/b/opt/a\$(touch PWNED)" "$t/b/opt/a\`touch PWNED\`" "$t/b/opt/q\"uote's"
+# Run from a scratch directory, where an injected relative `touch` would land.
+mkdir -p "$t/cwd"
+(cd "$t/cwd" && fp "$t/b" 3) > "$t/fb" 2>/dev/null
+[[ ! -e "$t/cwd/PWNED" && ! -e "$t/b/PWNED" ]] || fail "a file name was executed"
+grep -qF "opt/q\\\"uote's" "$t/fb" || fail "quote in a name lost"
+grep -qF "opt/a\$(touch" "$t/fb" || fail "command-substitution name lost"
+
+# Hard links: the name and its target are parsed apart ("link to").
+clone; ln "$t/b/usr/bin/x" "$t/b/usr/bin/hard"
+fp "$t/b" 3 | grep -qx "[0-9a-f]\{64\}  usr/bin/hard" || fail "hard link name mis-parsed"
+
+# Whitespace inside a link target and a tab inside a name are lossless.
+clone; ln -sfn "target value" "$t/a/opt/sp"; ln -sfn "target  value" "$t/b/opt/sp"
+[[ $(changed 2) == *"opt/sp "* ]] || fail "double space in a link target not detected"
+clone; touch "$t/a/opt/tab$(printf '\t')a" "$t/b/opt/tab$(printf '\t')b"
+[[ $(fp "$t/a" 2 | grep -c 'opt/tab\\ta$') == 1 && $(changed 2) == *"opt/tab\\tb"* ]] \
+  || fail "tab names collided or were truncated: $(changed 2)"
+
+# Owners and timestamps are not part of the fingerprint.
+clone
+A=$( (cd "$t/a" && tar --sort=name --owner=0 --group=0 --mtime=@0 -cf - .) | bash "$here/fs-fingerprint.sh" 4)
+B=$( (cd "$t/b" && tar --sort=name --owner=4242 --group=4242 --mtime=@1700000000 -cf - .) | bash "$here/fs-fingerprint.sh" 4)
+[[ "$A" == "$B" ]] || fail "owner or mtime changed the fingerprint"
+
+echo "PASS: fs-fingerprint names exactly the changed paths (content, mode, link target, hard links); names stay data; owners and times are ignored"

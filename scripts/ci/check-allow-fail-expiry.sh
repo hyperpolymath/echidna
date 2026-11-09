@@ -35,7 +35,7 @@ dirs=()
 
 while [ $# -gt 0 ]; do
   case "$1" in
-    --today) [ $# -ge 2 ] || { echo "--today needs a value" >&2; exit 2; }; today="$2"; shift 2 ;;
+    --today) { [ $# -ge 2 ] && [ -n "$2" ]; } || { echo "--today needs a non-empty value" >&2; exit 2; }; today="$2"; shift 2 ;;
     --warn-days) [ $# -ge 2 ] || { echo "--warn-days needs a value" >&2; exit 2; }; warn_days="$2"; shift 2 ;;
     -h|--help) sed -n '3,25p' "$0"; exit 0 ;;
     --) shift; dirs+=("$@"); break ;;
