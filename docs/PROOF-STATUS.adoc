@@ -3,12 +3,14 @@
 
 = Proof status — policy-vocabulary view
 
-*Status*: reviewed 2026-11-04. Each row is scoped to its recorded source
-identity and check; this file does not claim a single revision was checked
-for every obligation.
+*Status*: reviewed 2026-11-09 against main `+2ab7574ae1e574b0e881422fde6252bf79dea178+`.
+Each row is scoped to its recorded source identity and check; this file does
+not claim a single revision was checked for every obligation.
 *Normative policy*: `+3-practice/PROOF-POLICY.adoc+` in
-https://github.com/metadatastician/standards[metadatastician/standards] (owner
-ruling 2026-10-26).
+https://github.com/metadatastician/standards[metadatastician/standards], read
+at commit `+b8f60511e76c9015d86990317162dce653c92fe1+` (owner rulings
+2026-10-26, 2026-11-04 for §8 Proof Witness Grades, and 2026-11-07 for §1.2
+Creusot, Pearlite and Verus).
 
 This is ECHIDNA's *proof-status file* in the sense `+PROOF-POLICY+` uses the
 term: the place each obligation's ledger row lives, in the closed vocabulary of
@@ -62,33 +64,45 @@ CI gate exists and the authors say it passes" when no receipt is cited.
 |Not done.
 |===
 
-=== Relation to the Mathesis grades
+=== Proof Witness Grades (`+PROOF-POLICY+` §8)
 
-https://github.com/hyperpolymath/mathesis[mathesis], *Estate-wide Mathematical
-Knowledge Architecture* §5, grades a *theorem* by how far its witness has
-travelled: **Grade 3** type-checks locally in its home system and is not
-translated; **Grade 2i/2ii** one / two independent translations with statement
-correspondence recorded; **Grade 1** machine-checked through a verified checker
-API in headless CI.
+A Proof Witness Grade (`+PWG-3+`, `+PWG-2i+`, `+PWG-2ii+`, `+PWG-1+`; lower is
+stronger) counts the independent machine-checked witnesses of a *theory*
+theorem. It is not a §5 status token and not a §2.2 correspondence state, and
+each record below carries all three separately. It is always written with its
+`+PWG-+` prefix; the earlier "Mathesis Grade" wording in this file is retired
+because §8 forbids a bare "Grade".
 
-The two vocabularies are orthogonal — one grades a theorem's reach, the other
-records whether a repository's obligation was discharged — but they interact:
+* PWG applies only to theory obligations (§8.1). Engineering proofs (Idris2,
+  Creusot/Pearlite and Verus, SPARK) use §5 tokens only and carry no grade.
+* A theory theorem below `+PWG-3+` is `+ungraded+`.
+* Grades are derived from receipts (§8.4), never asserted. A grade census, if
+  published, is a count per grade with its denominator, never a percentage.
 
-* A home-system leg may be `+proven+` while every independent leg is `+open+`.
-  That combination *is* Grade 3, and it is the ceiling for anything in this
-  repository.
-* A translation leg is `+argued+`, not `+proven+`, until the statement
-  correspondence is recorded (`+PROOF-POLICY+` §2: "`the kernel checks the term
-  only against the translated statement`").
+[width="100%",cols="22%,10%,12%,56%",options="header"]
+|===
+|Theory theorem |`+pwg+` |`+foundation_diverse+` |Legs (route, §5 token, §2.2 state, receipt)
 
-Mathesis §6 forbids flattening assurance into a percentage. See R5 and R6.
+|Receipt/warrant separation, `+meta-checker/src/Echidna/Receipt.agda+` (R11)
+|`+3+`
+|`+false+`
+|*Agda*: source, `+proven+`, `+AGDA-VERIFIED+`, hosted run
+https://github.com/hyperpolymath/echidna/actions/runs/42551607796[42551607796]
+on `+2ab7574+`. *Rocq*: `+open+`, `+BRIDGE-PENDING+`, no receipt. *Lean*:
+`+open+`, `+BRIDGE-PENDING+`, no receipt. Owes both recheck legs (§8.4.1).
+|===
+
+The other meta-checker modules (R4, R9, R10) state properties of this
+repository's own types, so under §1 they are engineering, not theory, and are
+not graded here. They stay `+proven+` in Agda until the split recorded under
+R4 moves each statement to its mapped home.
 
 == Obligations
 
 Grouped by the `+PROOF-POLICY+` §1 mapping, because that is what decides which
 verifier is even allowed to carry the row.
 
-=== Rust — Creusot (§1: first-party Rust)
+=== Rust — Creusot with Pearlite, and Verus (§1, §1.2: first-party Rust)
 
 [width="100%",cols="24%,13%,38%,25%",options="header"]
 |===
@@ -96,11 +110,19 @@ verifier is even allowed to carry the row.
 
 |R1. Trust pipeline, dispatch, arbitration, Pareto
 |`+open+`
-|`+PROOF-POLICY+` §1 maps first-party Rust to Creusot.
-|`+crates/echidna-core-creusot+` describes itself as "`Creusot-annotated (not
-yet proved)`"; the `+creusot+` dev-dependency is commented out and the crate
-builds on stable Rust behind a `+creusot+` feature. Annotation is not proof. Row
-stays `+open+` until a Creusot run yields a receipt with a commit hash.
+|`+PROOF-POLICY+` §1 and §1.2 (owner ruling 2026-11-07) make *Creusot*, with
+*Pearlite* contracts, and *Verus* the default toolset for first-party Rust.
+Pearlite is Creusot's specification language, not a third verifier.
+|*Creusot/Pearlite*: `+crates/echidna-core-creusot+` describes itself as
+"`Creusot-annotated (not yet proved)`"; the `+creusot+` dev-dependency is
+commented out and the crate builds on stable Rust behind a `+creusot+` feature.
+The `+formal-verification.yml+` Creusot job runs only on manual dispatch and has
+no recorded receipt. Annotation is not proof. *Verus*: not started; no
+specification, proof code or toolchain exists in this repository. Next action
+for both: contracts on `+src/rust/verification/confidence.rs+`,
+`+src/rust/integrity/solver_integrity.rs+` and `+src/rust/dispatch.rs+`, checked
+against the specifications that the R4 split produces. The row stays `+open+`
+until each verifier yields a receipt with a commit hash.
 
 |===
 
@@ -118,17 +140,26 @@ ABI row and the Stage-8a trio as constructively proved, all in
 
 |R2. Idris 2 interface/ABI obligations (E2, E3, E5, E6, E7, E12, Stage 8a,
 VQL-UT, extensive ABI)
-|`+argued+`
+|`+proven+` for the eleven `+verification/proofs/idris2+` modules. The
+`+src/abi+` modules they import were built in the same job as their dependency;
+the rest of `+src/abi+` keeps its `+idris2-abi-ci.yml+` gate and is not
+re-scored here.
 |`+PROOF-POLICY+` §1 maps ABIs and engineering properties to Idris 2. The
 artefacts exist and are detailed in `+PROOF-NEEDS+`.
-|No `+idris2 --build+` receipt for
-`+verification/proofs/idris2/echidna-verif-proofs.ipkg+` is cited with a commit
-hash. Promote to `+proven+` by citing a green run and its commit — that is a
-one-line change, and it is the cheapest upgrade in this file.
+|Receipt: the *Idris2 (verification)* job of the Dogfood Proof Corpus workflow,
+https://github.com/hyperpolymath/echidna/actions/runs/42100322554/job/127501094018[job
+127501094018] on `+a81467bbbf0b142dc016eda7c9b16b55d3962734+`, built
+`+echidna-verif-proofs.ipkg+` with all eleven modules listed in it (1/11 to
+11/11, `+ClampTrustBounds+` included) and exit 0. No proof source changed between
+`+a81467b+` and `+2ab7574+`. The package depends on the installed
+`+echidnaabi+` package from `+src/abi+`. A source scan of the eleven modules
+finds `+believe_me+`, `+assert_total+` and `+postulate+` only inside strings and
+comments. Trust boundary: the Idris 2 compiler installed by that job (Ubuntu
+`+idris2+` package, else a v0.8.0 source build; see Toolchain deviations).
 
 |===
 
-=== Lean 4 — cross-checks and algebraic properties (§4 exceptions)
+=== Lean 4 — engineering properties held outside Idris 2 (§3 re-homing pending)
 
 [width="100%",cols="24%,13%,38%,25%",options="header"]
 |===
@@ -137,15 +168,27 @@ one-line change, and it is the cheapest upgrade in this file.
 |R3. Lean 4 legs: E4-L4 `+ConfidenceLattice.lean+`, E10
 `+ParetoMaximality.lean+` / `+ParetoStrongMaximality.lean+`, E11
 `+IntegrityVerification.lean+`, E13 `+PortfolioCompleteness.lean+`
-|`+open+`
-|Directly recorded: `+lake build+` run 2026-05-18 (Lean 4.13.0) — *all five
-fail to compile*, 49 / 2 / 1 / 5 / 31 errors, three root causes
-(`+unfold_let+` removed in 4.13.0; Mathlib tactics under a zero-mathlib
-lakefile; instance synthesis and module resolution).
-|Nothing. This row is correct and must not be softened. `+PROOF-NEEDS+` records
-that `+ConfidenceLattice.lean+` was left byte-identical and that the
-`+unfold_let+` token-swap made it worse (104 errors). The open decision is
-Mathlib-vs-core, which is an owner call.
+|`+proven-with-postulates+` (109 of 167 theorems need no axiom; the other 58
+use only Lean core's standard axioms, listed in the next column)
+|Hosted receipt: the *Lean 4 (verification)* job,
+https://github.com/hyperpolymath/echidna/actions/runs/42100322554/job/127501093731[job
+127501093731] on `+a81467b+`, built all five roots of
+`+verification/proofs/lean4/lakefile.lean+` with Lean 4.13.0 and no Mathlib
+(`+lake-manifest+` has no packages). No proof source changed up to `+2ab7574+`.
+Local recheck on 2026-11-09 with the release archive of Lean 4.13.0 (commit
+`+6d22e0e5cc5a+`, archive SHA-256
+`+44ceeac7ee4c98d177bfb4a3e5c210555c87e75b08807b68d523237fe4f09997+`):
+`+lake build+` succeeded, and `+Lean.collectAxioms+` over every non-internal
+theorem of the five modules found 167 theorems. 109 depend on no axiom. 58
+depend only on `+propext+` (58), `+Quot.sound+` (22) and `+Classical.choice+`
+(9). There is no `+sorryAx+` and no project-declared axiom.
+|The 2026-05-18 record of five failing files is superseded by these receipts.
+Its Mathlib-versus-core question is closed by `+PROOF-POLICY+` §2 ("`No
+Mathlib`"), and the corpus builds without Mathlib. *Classification:* these files
+state properties of this repository's own types, so under §1 they are
+engineering, not theory, and they are not a Lean recheck leg for any Agda
+theorem. Under §3 they move to Idris 2 when next touched, unless a §4 exception
+is recorded. Until then they stay, labelled with their prover.
 
 |===
 
@@ -159,7 +202,21 @@ Mathlib-vs-core, which is an owner call.
 axiom-tracker completeness, integrity, clamp bounds, receipt/warrant (9 modules)
 |`+proven+`
 |First-party Agda in `+meta-checker/src/+`, type-checked with the §2.1
-canonical invocation. The reproducible local receipt is
+canonical invocation.
+*Current receipt (exact commit):* the scheduled Agda Meta-Checker run
+https://github.com/hyperpolymath/echidna/actions/runs/42551607796[42551607796]
+on main `+2ab7574ae1e574b0e881422fde6252bf79dea178+` passed, using the pinned
+`+scripts/ci/setup-agda.sh+` and `+scripts/ci/check-agda.sh+`. A local recheck of
+the same commit on 2026-11-09 also passed: 9 of 9 modules produced fresh
+interfaces, the receipt controls accepted the two witnesses and rejected the
+three planted claims, and there were 55 `+UnsupportedIndexedMatch+` warnings at
+the same six sites. The Agda executable SHA-256 matched
+`+6de41437c14c05c9fe576d724cc67386444c0fa9fee662a08250fefb91bee8b6+`. The standard
+library came from the `+v2.1+` git tag, commit `+97bc55e+`, because that
+session's network refused the archive host; see Toolchain deviations. Every
+source digest at `+2ab7574+` equals the corresponding digest in the earlier
+receipt below.
+*Earlier local receipt:*
 link:reports/2026-11-04-agda-meta-checker-receipt.json[`+2026-11-04-agda-meta-checker-receipt.json+`].
 It records base commit `+9dd7847dfb095f0ddf3d41bac3327fcc4486fb6b+` plus
 the exact SHA-256 of every checked source and library descriptor, and names
@@ -194,6 +251,16 @@ invalidate its use for that changed source until a fresh check is recorded.
 `+AxiomTrackerCompleteness+`. It cannot substantiate a nine-module claim.
 The earlier 2026-11-01 timing/count report is historical, not the evidence
 for the current `+proven+` row; the source-bound 2026-11-04 receipt replaces it.
+
+**Classification (§1), decided 2026-11-09:** only `+Receipt+` states theory.
+`+TrustLevel+`, `+AxiomSafety+`, `+Portfolio+`, `+Dispatch+`,
+`+AxiomTrackerCompleteness+`, `+Integrity+` and `+ClampTrust+` name this
+repository's types, and §1 places them as engineering. The owner chose to
+*split* the meta-checker. What holds for any implementation (orders,
+lattices) becomes parametric Agda theory. The echidna-specific instances
+move to Idris 2 under `+verification/proofs/idris2/+`. The Rust is then
+verified against those specifications with Creusot/Pearlite and Verus (R1).
+Until that lands, these rows keep their `+proven+` token. They carry no PWG.
 
 |R9. E11 solver-integrity soundness
 |`+proven+`
@@ -233,6 +300,14 @@ validate the Idris2 file or its correspondence to runtime code. Existing
 Idris2 interface and engineering checks remain active under §1; their
 receipt status is R2. Monotonicity here is by step lemma plus transitivity,
 rather than the Idris2 file's decision table.
+**Model-only:** no `+clamp_trust+` function exists in the Rust
+(`+src/rust/verification/confidence.rs+` derives a `+TrustLevel+` from
+`+TrustFactors+` and never clamps a number). This is therefore a property of a
+specified function, not of shipped code. The module header's reason for
+restating the obligation in Agda ("`there is no idris2 binary in CI that runs
+it`") is out of date: R2 records the Idris 2 corpus, `+ClampTrustBounds+`
+included, building in CI. The split recorded under R4 returns this obligation
+to Idris 2.
 
 |R11. Epistemic separation: receipt vs warrant
 |`+proven+`
@@ -260,9 +335,13 @@ Rocq/Lean rechecks and statement correspondence also remain open in R5.
 |`+open+`
 |`+PROOF-POLICY+` §2: every Agda theory proof is rechecked in both, transported
 through Dedukti or re-proved, with the route recorded per theorem.
-|Never attempted. This is what holds the set at Mathesis *Grade 3*: locally
-checked, untranslated. ECHIDNA's `+src/rust/exchange/+` speaks Dedukti, so the
-transport route exists; using it is unstarted work, not a missing capability.
+|Not yet discharged for any theorem. Under the R4 split, the theory theorem
+that owes these legs is `+Receipt+` (R11). It is `+PWG-3+` until a leg counts
+(§8.2). Owner decision 2026-11-09: try the §2 *transport* route first (Agda →
+Dedukti/Lambdapi → Rocq, through the same Dedukti route as echidna's
+`+src/rust/exchange/+`), record how it performs, then re-prove in Lean (core
+library, no Mathlib) and Rocq where transport fails. Each leg records its route,
+§5 token, §2.2 state and receipt in the PWG table.
 
 |R6. E9 "proof composition soundness"
 |`+argued+`, with a location defect
@@ -289,10 +368,11 @@ to update, so it is left as a named action rather than done silently.
 
 |R7. `+verification/confidence.rs+` 0–1 score; `+DispatchResult.trust_level+` 1–5
 |`+tested-only+` (internal ranking) — *not an assurance claim*
-|Mathesis §6: "`Do not flatten proof confidence into a percentage.`"
+|`+PROOF-POLICY+` §8.4.7: a census, never a percentage or a single confidence
+score. §8 also says an ECHIDNA `+TrustLevel+` does not convert into a PWG.
 |The score ranks backends against each other and is unweighted by any receipt.
 It is a routing heuristic. Do not publish it as assurance and do not compare it
-with a Mathesis grade.
+with a PWG.
 
 |R8. `+echidna.prove.result/1+` `+trust.confidence+`
 |`+open+`, correctly
@@ -303,6 +383,53 @@ evidence.
 guess.
 
 |===
+
+== Toolchain deviations (`+PROOF-POLICY+` §6)
+
+§6 requires proof toolchains to install through the repository's Guix manifest
+or its container. Where a lane installs another way, it must carry a
+`+deviation+` record here and in the installing workflow. These records were
+missing until 2026-11-09. All three are `+open+`.
+
+[width="100%",cols="16%,18%,30%,24%,12%",options="header"]
+|===
+|Leg |Tool and digest |How CI installs it |Why not Guix or the container |State
+
+|R4, R11 (Agda)
+|Agda 2.7.0.1, archive SHA-256
+`+975b515a14877ab6bce5bfc641e16c4a3ee52ca5d7f846577dee80aa2145db8a+`; agda-stdlib 2.1, archive SHA-256 `+72ca3ea25094efa0439e106f0d949330414232ec4cc5c3c3316e7e70dd06d431+`
+|`+scripts/ci/setup-agda.sh+` downloads both GitHub release archives, checks
+them against the pinned digests (including on a cache hit), and
+`+check-agda.sh+` asserts the version and fails on a mismatch.
+|`+manifests/live-provers.scm+` names `+agda+`, but the lane pins a binary
+distribution to avoid a cold GHC bootstrap (comment in `+setup-agda.sh+`). The
+Guix `+agda+` package's version and stdlib pin have not been checked against
+2.7.0.1 and 2.1.
+|`+open+`
+
+|R2 (Idris 2)
+|Ubuntu `+idris2+` package, otherwise the v0.8.0 source tarball; no digest
+recorded
+|`+dogfood-proofs-ci.yml+` *Idris2 (verification)* job and
+`+idris2-abi-ci.yml+` install from apt, falling back to a source build.
+|`+manifests/live-provers.scm+` records Idris 2 as absent from its baseline. No
+container stage installs it.
+|`+open+`; the lane does not yet assert a version or a digest.
+
+|R3 (Lean 4)
+|Lean 4.13.0 through elan; local recheck archive SHA-256 `+44ceeac7ee4c98d177bfb4a3e5c210555c87e75b08807b68d523237fe4f09997+`
+|`+dogfood-proofs-ci.yml+` *Lean 4 (verification)* job runs `+elan-init.sh+` and
+installs the toolchain pinned by `+verification/proofs/lean4/lean-toolchain+`.
+|Not in Guix (`+manifests/live-provers.scm+`). The manifest points to the
+Wave-3 container, but `+Containerfile.wave3+` has no Lean stage.
+|`+open+`; the lane asserts the version through `+lean-toolchain+`, not a digest.
+|===
+
+The local rechecks on 2026-11-09 add one more deviation. The agent session's
+network refused `+codeload.github.com+`, so it fetched agda-stdlib by the
+`+v2.1+` git tag (peeled commit `+97bc55e47367c562b3032bf104f2a00b19716f88+`)
+rather than by the archive digest. That affects only the local corroboration
+of R4, not the hosted receipt.
 
 == Not obligations
 
@@ -351,13 +478,13 @@ mean "ECHIDNA is verified" — it would mean one named obligation was discharged
 by one named tool with its boundary written down. Nothing here vouches for a
 prover backend's own soundness.
 
-Four rows are `+proven+` today — R4, R9, R10, R11 — and each names the kernel,
-the flags and the limit that qualify it (R4 carries the
-`+UnsupportedIndexedMatch+` caveat, R9 the digest-level scope). Every *independent*
-leg is still `+open+`: R5 has never been attempted, which is why the corpus sits
-at Mathesis Grade 3 and not above it. Those two facts are not in tension —
-proven in one kernel is exactly what Grade 3 means — and neither of them is an
-omission.
+Six rows are `+proven+` today (R2, R4, R9, R10, R11) or `+proven-with-postulates+`
+(R3), and each names the kernel, the receipt and the limit that qualify it: R4
+carries the `+UnsupportedIndexedMatch+` caveat, R9 the digest-level scope, R10
+the model-only scope, and R3 its three Lean core axioms. R1 (Rust) is `+open+`.
+One theory theorem is graded: `+Receipt+` at `+PWG-3+`, because both of its
+recheck legs (R5) are still `+open+`. Being proven in one kernel is exactly what
+`+PWG-3+` means, and a grade is not a discharge of §2 (§8.4.1).
 
 == Related
 
