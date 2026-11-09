@@ -389,3 +389,64 @@ passing because the flags were "the right ones" would be the failure §6 names.
 The 2026-11-04 repair independently ran pinned Agda and the receipt-model
 positive/negative controls. It does not upgrade any of those other prover
 legs; see the source-bound receipt and its explicit limitations.
+
+=== ABI package audit, 2026-11-09
+
+Idris 2 0.8.0 (built from the `+v0.8.0+` tag, `+make bootstrap+` on Chez
+Scheme) was run locally on both Idris packages for the first time in this
+ledger's history. Both runs are recorded with the source commit they checked;
+the ledger in `+docs/PROOF-STATUS.adoc+` (R2) should cite the CI run on the
+merged commit, not this local run.
+
+[cols="2,1,3",options="header"]
+|===
+|Package |Result |Notes
+
+|`+src/abi/echidnaabi.ipkg+`
+|22/22 modules check
+|Before this change, `+EchidnaABI.CapnSchemas+` and `+Coprocessor.Foreign+`
+were outside the package and so never checked. `+Coprocessor.Foreign+` sat at
+a path that did not match its module name; it moved to
+`+src/abi/Coprocessor/Foreign.idr+` and checks unchanged.
+
+|`+verification/proofs/idris2/echidna-verif-proofs.ipkg+`
+|11/11 modules check
+|Needs `+echidnaabi+` installed first (`+idris2 --install echidnaabi.ipkg+`).
+No implicit-binding warnings.
+|===
+
+==== `+EchidnaABI.CapnSchemas+`: every lemma stated something else
+
+All twelve lemmas failed to check. The cause was one defect: a lowercase name
+in a signature that Idris 2 does not already have in scope as a bound variable
+is *bound as a fresh implicit argument*, even when a top-level definition of
+that name exists. Idris 2 only warns ("You may be unintentionally shadowing").
+So:
+
+* `+schemaIdNonZero : Not (echidnaSchemaId = 0)+` stated that *every* `+Nat+`
+  is non-zero, which is false;
+* each `+xCountCorrect : length allX = xCount+` stated that every `+Vect+`'s
+  length equals every `+Nat+`;
+* each `+xBounded : LTE xCount 256+` stated that every `+Nat+` is at most 256.
+
+None of them could be proved, so none were. The repair qualifies the names
+(`+CapnSchemas.x+`), proves the bounds by `+Data.Nat.lteReflectsLTE+` on a
+decided `+lte+`, and proves non-zero by transporting `+IsSucc+` along the
+hypothesis. `+scripts/ci/idris-shadow-guard.sh+` now fails the ABI CI job when
+a signature shadows a definition from a module of the package; it was shown to
+fail on the pre-repair build log and pass on the repaired one. The one
+remaining warning (`+minimum+` in `+EchidnaABI.Types+`) shadows
+`+Data.Nat.minimum+`, a library function, where `+minimum+` is meant as an
+index variable.
+
+==== `+NeSyAssistTesting.idr+`: not a proof, left outside the package
+
+It does not parse (`+total+` is a keyword), and it would not check if it did:
+record fields such as `+gnn_in_top_k : gnn_score >= gnn_threshold+` use a
+`+Bool+` where a type is required, and
+`+high_agreement_implies_soundness+` returns `+True+` — a `+Bool+` value, not
+a proposition — "held by formal semantics". It states nothing about the GNN
+or the symbolic verifier. It stays out of `+echidnaabi.ipkg+`. Whether to
+delete it or rewrite it as a real contract (agreement as a `+Dec+`-backed
+property over recorded runs) is an owner decision; until then it is `+open+`,
+not `+argued+`.

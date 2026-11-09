@@ -11,7 +11,11 @@
 ||| is attempted the type-checker guarantees that every enum fits in a UInt8
 ||| and that the schema identifier is genuinely non-zero.
 |||
-||| NO believe-me — every proof is constructive (Refl, Vect witness, %search).
+||| NO believe-me — every proof is constructive (Refl, IsSucc transport,
+||| and Data.Nat.lteReflectsLTE on a decided `lte`). Names of this module are
+||| written qualified (CapnSchemas.x) in signatures: a bare lowercase name is
+||| bound by Idris2 as a fresh implicit variable, which is how every count and
+||| bound lemma here meant something else until 2026-11-09.
 ||| NO postulate  — all properties derived from definitions.
 |||
 ||| Schema ID : 0xd3b45f8ae1c79012  (echidna.capnp @0xd3b45f8ae1c79012)
@@ -40,8 +44,8 @@ echidnaSchemaId = 15242516543891767314
 ||| Cap'n Proto uses 0 as the "no schema" sentinel; a zero schema ID
 ||| would silently poison all wire messages.
 public export
-schemaIdNonZero : Not (echidnaSchemaId = 0)
-schemaIdNonZero = \h => absurd h
+schemaIdNonZero : Not (CapnSchemas.echidnaSchemaId = 0)
+schemaIdNonZero h = uninhabited (replace {p = IsSucc} h ItIsSucc)
 
 ------------------------------------------------------------------------
 -- § 2  ProofGoal — 6 fields (5 data fields + 1 metadata list)
@@ -74,7 +78,7 @@ proofGoalFieldCount = 6
 ||| Proof: ProofGoal has exactly 6 fields.
 ||| The Vect literal fixes the length at compile time; this is Refl.
 public export
-proofGoalFieldCountCorrect : length allProofGoalTags = proofGoalFieldCount
+proofGoalFieldCountCorrect : Vect.length CapnSchemas.allProofGoalTags = CapnSchemas.proofGoalFieldCount
 proofGoalFieldCountCorrect = Refl
 
 ------------------------------------------------------------------------
@@ -133,8 +137,8 @@ outcomeTagToFinInjective SystemError          SystemError          Refl = Refl
 
 ||| Proof: 8 outcome variants fit in a UInt8 (cardinality ≤ 256).
 public export
-outcomeBounded : LTE outcomeTagCount 256
-outcomeBounded = %search
+outcomeBounded : LTE CapnSchemas.outcomeTagCount 256
+outcomeBounded = lteReflectsLTE _ _ Refl
 
 ------------------------------------------------------------------------
 -- § 4  NodeKind — 7 variants  (GraphNode.NodeKind in .capnp)
@@ -163,7 +167,7 @@ nodeKindCount : Nat
 nodeKindCount = 7
 
 public export
-nodeKindCountCorrect : length allCapnNodeKinds = nodeKindCount
+nodeKindCountCorrect : Vect.length CapnSchemas.allCapnNodeKinds = CapnSchemas.nodeKindCount
 nodeKindCountCorrect = Refl
 
 public export
@@ -191,8 +195,8 @@ nodeKindToFinInjective CNK_Term       CNK_Term       Refl = Refl
 
 ||| Proof: 7 node kinds fit in a UInt8.
 public export
-nodeKindBounded : LTE nodeKindCount 256
-nodeKindBounded = %search
+nodeKindBounded : LTE CapnSchemas.nodeKindCount 256
+nodeKindBounded = lteReflectsLTE _ _ Refl
 
 ------------------------------------------------------------------------
 -- § 5  EdgeKind — 8 variants  (GraphEdge.EdgeKind in .capnp)
@@ -222,7 +226,7 @@ edgeKindCount : Nat
 edgeKindCount = 8
 
 public export
-edgeKindCountCorrect : length allCapnEdgeKinds = edgeKindCount
+edgeKindCountCorrect : Vect.length CapnSchemas.allCapnEdgeKinds = CapnSchemas.edgeKindCount
 edgeKindCountCorrect = Refl
 
 public export
@@ -252,8 +256,8 @@ edgeKindToFinInjective CEK_HasSubterm  CEK_HasSubterm  Refl = Refl
 
 ||| Proof: 8 edge kinds fit in a UInt8.
 public export
-edgeKindBounded : LTE edgeKindCount 256
-edgeKindBounded = %search
+edgeKindBounded : LTE CapnSchemas.edgeKindCount 256
+edgeKindBounded = lteReflectsLTE _ _ Refl
 
 ------------------------------------------------------------------------
 -- § 6  DangerLevel — 4 variants  (AxiomReport.DangerLevel in .capnp)
@@ -276,7 +280,7 @@ dangerLevelCount : Nat
 dangerLevelCount = 4
 
 public export
-dangerLevelCountCorrect : length allCapnDangerLevels = dangerLevelCount
+dangerLevelCountCorrect : Vect.length CapnSchemas.allCapnDangerLevels = CapnSchemas.dangerLevelCount
 dangerLevelCountCorrect = Refl
 
 public export
@@ -298,8 +302,8 @@ dangerLevelToFinInjective CDL_Reject  CDL_Reject  Refl = Refl
 
 ||| Proof: 4 danger levels fit in a UInt8.
 public export
-dangerLevelBounded : LTE dangerLevelCount 256
-dangerLevelBounded = %search
+dangerLevelBounded : LTE CapnSchemas.dangerLevelCount 256
+dangerLevelBounded = lteReflectsLTE _ _ Refl
 
 ------------------------------------------------------------------------
 -- § 7  DispatchStrategy — 3 variants  (ProverInvocation in .capnp)
@@ -321,7 +325,7 @@ dispatchStrategyCount : Nat
 dispatchStrategyCount = 3
 
 public export
-dispatchStrategyCountCorrect : length allCapnDispatchStrategies = dispatchStrategyCount
+dispatchStrategyCountCorrect : Vect.length CapnSchemas.allCapnDispatchStrategies = CapnSchemas.dispatchStrategyCount
 dispatchStrategyCountCorrect = Refl
 
 public export
@@ -341,8 +345,8 @@ dispatchStrategyToFinInjective CDS_Portfolio CDS_Portfolio Refl = Refl
 
 ||| Proof: 3 dispatch strategies fit in a UInt8.
 public export
-dispatchStrategyBounded : LTE dispatchStrategyCount 256
-dispatchStrategyBounded = %search
+dispatchStrategyBounded : LTE CapnSchemas.dispatchStrategyCount 256
+dispatchStrategyBounded = lteReflectsLTE _ _ Refl
 
 ------------------------------------------------------------------------
 -- § 8  GnnRankRequest default invariants
@@ -356,5 +360,5 @@ defaultTopK = 20
 ||| Proof: the default topK is positive (> 0).
 ||| Required by the GNN ranking logic which uses topK as a loop bound.
 public export
-topKDefaultPositive : GT defaultTopK 0
-topKDefaultPositive = %search
+topKDefaultPositive : GT CapnSchemas.defaultTopK 0
+topKDefaultPositive = lteReflectsLTE _ _ Refl

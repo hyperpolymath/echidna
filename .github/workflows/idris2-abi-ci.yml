@@ -14,6 +14,7 @@ on:
       - 'tests/abi/**'
       - 'scripts/abi-fixtures.sh'
       - 'scripts/ci/idris-code-lines.sh'
+      - 'scripts/ci/idris-shadow-guard.sh'
       - '.github/workflows/idris2-abi-ci.yml'
   # No paths-filter on pull_request: this job is a REQUIRED status check, so it
   # must report on every PR (a path-filtered required check deadlocks PRs that
@@ -47,7 +48,7 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         run: |
           set -euo pipefail
-          PATTERN='^(src/abi/|src/idris/|tests/abi/|scripts/abi-fixtures\.sh$|scripts/ci/idris-code-lines\.sh$|\.github/workflows/idris2-abi-ci\.yml$)'
+          PATTERN='^(src/abi/|src/idris/|tests/abi/|scripts/abi-fixtures\.sh$|scripts/ci/idris-code-lines\.sh$|scripts/ci/idris-shadow-guard\.sh$|\.github/workflows/idris2-abi-ci\.yml$)'
           if [ "${{ github.event_name }}" = "pull_request" ]; then
             FILES=$(gh api "repos/${{ github.repository }}/pulls/${{ github.event.pull_request.number }}/files" \
                       --paginate --jq '.[].filename')
@@ -91,10 +92,14 @@ jobs:
       - name: Type-check all ABI modules via ipkg
         if: steps.detect.outputs.relevant == 'true'
         run: |
-          cd src/abi
-          echo "=== Type-checking ECHIDNA ABI package (16 modules) ==="
-          idris2 --build echidnaabi.ipkg
+          set -o pipefail
+          echo "=== Type-checking ECHIDNA ABI package ==="
+          (cd src/abi && idris2 --build echidnaabi.ipkg) 2>&1 | tee "$RUNNER_TEMP/abi-build.log"
           echo "✓ All ABI modules type-check successfully"
+          # A bare lowercase package name in a signature is bound as a fresh
+          # implicit variable, which silently changes the statement (2026-11-09:
+          # every count/bound lemma in EchidnaABI.CapnSchemas). Fail on it.
+          bash scripts/ci/idris-shadow-guard.sh src/abi/echidnaabi.ipkg "$RUNNER_TEMP/abi-build.log"
 
       - name: Accept/reject fixtures (mechanical falsifier)
         if: steps.detect.outputs.relevant == 'true'

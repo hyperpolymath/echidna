@@ -101,7 +101,7 @@ package definitions (not metadata files) and must NOT be deleted.
 |---------------|----------|-------|
 | **Rust** | Core systems, prover backends, trust pipeline, CLI, WASM | Primary implementation language |
 | **Julia** | ML inference, batch data processing, extract scripts | Per RSR |
-| **Idris2** | ABI formal proofs (zero `believe_me`) | `src/abi/` — 16 modules, constructive |
+| **Idris2** | ABI formal proofs (zero `believe_me`) | `src/abi/` — modules listed in `echidnaabi.ipkg`, constructive |
 | **Agda** | Trust-pipeline meta-checker proofs | `proofs/agda/` |
 | **Zig** | FFI shim between Rust and Chapel | `src/zig_ffi/` |
 | **Chapel** | Optional parallel proof dispatch | Wired via Cargo `chapel` feature |

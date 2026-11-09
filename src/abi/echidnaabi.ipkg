@@ -40,4 +40,3 @@ modules = EchidnaABI.AxiomTracker
         , Tentacles.Foreign
         , Coprocessor.Foreign
         , EchidnaABI.CapnSchemas
-        , NeSyAssistTesting

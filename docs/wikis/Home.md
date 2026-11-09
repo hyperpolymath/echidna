@@ -46,7 +46,7 @@ commit.
 | 12 core backends (`GET /api/provers`) | implemented, wired, live-tested (T1/T2 live-prover matrices green) | — |
 | Wider backend surface (see [`docs/PROVER_COUNT.adoc`](https://github.com/hyperpolymath/echidna/blob/main/docs/PROVER_COUNT.adoc)) | implemented | Tier-4 backends are mock-only; the HP-ecosystem type-checker backends call `typell --discipline` / `tropical-type-check`, which upstream does not provide, so they are **not wired** |
 | Trust pipeline (integrity, certificates, axioms, confidence, mutation, Pareto, statistics) | implemented, wired into `dispatch.rs`, unit-tested | not proved |
-| Idris2 ABI (`src/abi/`) | type-checked, totality-checked (`%default total` in every packaged module), CI-gated (`idris2-abi-ci.yml`, runs when `src/abi/` changes) | `CapnSchemas.idr` and `NeSyAssistTesting.idr` are outside the package, so CI does not check them |
+| Idris2 ABI (`src/abi/`) | type-checked, totality-checked (`%default total` in every packaged module), CI-gated (`idris2-abi-ci.yml`, runs when `src/abi/` changes) | `NeSyAssistTesting.idr` is outside the package (it does not parse, and its one "formal claim" has no content); `EchidnaABI.CapnSchemas` and `Coprocessor.Foreign` are in it since 2026-11-09 |
 | Dogfood proof corpus (`proofs/{coq,lean,agda}`) | CI-gated (`dogfood-proofs-ci.yml`) | — |
 | Agda meta-checker | implemented | its workflow was in `startup_failure` on `main` |
 | Creusot trust kernel (`crates/echidna-core-creusot`) | annotations **stated**; stable-Rust test mirror runs in CI | **not proved**: no obligation has been discharged; the Creusot job is manual-only |
