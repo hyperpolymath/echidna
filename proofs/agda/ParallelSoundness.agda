@@ -13,11 +13,19 @@
 --     src/chapel/parallel_proof_search.chpl, run over EVERY interleaving
 --     of its events:
 --
---       * `done i`  — prover i's `tryProver` call returns. A prover that
---                     observes the cancel token before finishing returns a
---                     preempted result (exitCode = -5, success = false).
---                     Otherwise it reports its outcome `rs[i]`, and on
---                     success it attempts the CAS `winnerIdx: -1 → i`.
+--       * `done i`  — prover i reaches its CAS, after its `tryProver` call
+--                     has returned. A prover that observed the cancel token
+--                     before finishing returned a preempted result
+--                     (exitCode = -5, success = false). Otherwise it reports
+--                     its outcome `rs[i]`, and on success it attempts the
+--                     CAS `winnerIdx: -1 → i`. In Chapel the return and the
+--                     CAS are separate statements, so a prover can return
+--                     and be descheduled before its CAS. Nothing it does in
+--                     that gap is visible to the others (`results[i]` and
+--                     `attempted[i]` are its own slots, read only after the
+--                     join), so the event sits at the CAS, the
+--                     linearisation point, and the gap is just a later
+--                     `done i`.
 --       * `signal`  — the CAS winner's `cancelToken.cancelled.write(true)`.
 --                     It is a separate event, so every interleaving of the
 --                     CAS and the cancel write with other provers' finishes
@@ -34,7 +42,10 @@
 --                           success is preempted before a winner exists;
 --       race-complete       if a successful prover finishes, a winner exists;
 --       winner-is-first     the winner is exactly the first successful
---                           finisher in schedule order (any index);
+--                           prover to reach the CAS in schedule order (any
+--                           index). It need not be the first to return from
+--                           `tryProver`: one that returns first and is
+--                           descheduled before its CAS can lose;
 --       race-agrees         on a schedule in which every prover finishes,
 --                           "a winner exists" ⇔ `speculative rs` (layer A).
 --
@@ -274,7 +285,7 @@ race-complete rs s (done i ∷ es) inv ok now with done-sets rs s i inv ok
 race-complete rs s (e ∷ es) inv ok (later p) =
   race-complete rs (step rs s e) es (step-inv rs s e inv) ok p
 
--- The first successful finisher in schedule order.
+-- The first successful prover to reach the CAS, in schedule order.
 pick : {n : ℕ} → Bool → Fin n → Maybe (Fin n) → Maybe (Fin n)
 pick true  i _    = just i
 pick false _ rest = rest
@@ -284,7 +295,8 @@ first rs []            = nothing
 first rs (signal ∷ es) = first rs es
 first rs (done i ∷ es) = pick (lookup rs i) i (first rs es)
 
--- The winner is exactly the first successful finisher: any index can win,
+-- The winner is exactly the first successful prover to reach the CAS (not
+-- necessarily the first to return from `tryProver`): any index can win,
 -- and the result is determined by the schedule alone.
 winner-is-first : {n : ℕ} (rs : Vec Bool n) (es : List (Event n))
                 → winner (run rs start es) ≡ first rs es
