@@ -167,6 +167,19 @@ same Mathlib-vs-core decision as E10 plus genuine proof repair.
 
 === Priority
 
+[IMPORTANT]
+.Superseded 2026-11-09: the Lean build now succeeds
+====
+The `lake build` failures recorded below (run 2026-05-18) no longer hold. The
+dogfood CI at `a81467b` (run 42100322554, job 127501093731, Lean 4.13.0)
+builds all five files in `verification/proofs/lean4` with no warning lines,
+and the tree is identical at `2ab7574`. The result is recorded in
+`docs/proofs/claims.json`. Under the owner's strict PROOF-POLICY §1 ruling
+(2026-11-09) these files are engineering models of Rust code, so a green
+build is not evidence for the Rust behaviour; see `docs/PROOF-STATUS.adoc` R3.
+The text below is kept as the history of the 2026-05-18 run.
+====
+
 * *MEDIUM* (was HIGH) — Core trust pipeline proofs that are
 _Idris2/Agda_ (E2, E3, E5, E6, E7, E9, E12, the Stage-8a trio, VqlUt,
 the I2 half of E4) are constructive and stand. The *Lean4 layer (E4-L4,
