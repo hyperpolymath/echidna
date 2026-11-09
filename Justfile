@@ -250,10 +250,37 @@ test-s4-loop:
 # exact same commands.
 
 # Type-check the whole dogfood proof corpus across every assistant.
-proofs: proofs-coq proofs-lean proofs-agda proofs-idris proofs-verif-lean proofs-verif-idris
+proofs: proofs-coq proofs-lean proofs-agda proofs-idris proofs-verif-lean proofs-verif-idris proofs-verif-rocq
 
-# Compile the Coq proof corpus (proofs/coq/**/*.v).
-proofs-coq:
+# Compile the Rocq rechecks of the meta-checker (verification/proofs/rocq/*.v).
+# These are PROOF-POLICY §2 recheck legs, not dogfood corpus. Each file is compiled
+# in a temporary copy so no .vo/.glob lands in the tree, then `Print Assumptions`
+# must report every theorem closed under the global context.
+proofs-verif-rocq:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    work=$(mktemp -d)
+    trap 'rm -rf "$work"' EXIT
+    cp verification/proofs/rocq/*.v "$work/"
+    cd "$work"
+    for f in $(ls *.v | sort); do
+        echo "coqc $f"
+        coqc -q "$f"
+        mod="${f%.v}"
+        thms=$(grep -oE '^(Theorem|Lemma) [A-Za-z0-9_]+' "$f" | awk '{print $2}')
+        { echo "Require Import $mod."; for t in $thms; do echo "Print Assumptions $t."; done; } > "assumptions_$mod.v"
+        open=$(coqc -Q . '' "assumptions_$mod.v" 2>&1 | grep -vc 'Closed under the global context' || true)
+        if [ "$open" -ne 0 ]; then
+            coqc -Q . '' "assumptions_$mod.v"
+            echo "FAIL: $f has a theorem that rests on an assumption"
+            exit 1
+        fi
+    done
+    echo "Rocq recheck legs: all files compile, every theorem closed"
+
+# Compile the Coq proof corpus (proofs/coq/**/*.v), then the Rocq recheck legs
+# (CI's Coq job runs this recipe, so the legs ride on its toolchain).
+proofs-coq: proofs-verif-rocq
     #!/usr/bin/env bash
     set -euo pipefail
     cd proofs/coq

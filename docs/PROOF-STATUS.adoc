@@ -195,6 +195,47 @@ invalidate its use for that changed source until a fresh check is recorded.
 The earlier 2026-11-01 timing/count report is historical, not the evidence
 for the current `+proven+` row; the source-bound 2026-11-04 receipt replaces it.
 
+**Model fidelity, found 2026-11-09:** `+Dispatch.compute-trust+` is not a
+faithful model of `+compute_trust_level+`. With two confirming provers and
+no certificate, the Rust code returns Level3 (its `+confirming_provers >= 2+`
+rule) and the model returns Level2. The model also uses one flag for both
+"certificate produced" and "certificate verified". The theorems hold of the
+model; they do not transfer to that input. R12 adds a faithful model and
+states the divergence as a theorem (`+dispatch-model-diverges+`).
+
+|R12. `+compute_trust_level+` rule (`+confidence.rs+`): guards, what Level5
+requires, monotonicity in every factor
+|`+proven+` (Agda, model); model-to-Rust correspondence `+argued+`
+|`+meta-checker/src/Echidna/TrustRule.agda+` transcribes the Rust rule line
+for line: separate certificate flags, the confirming count, the four rules in
+Rust order. Theorems: `+dangerous-gives-level1+`,
+`+integrity-failure-gives-level1+`, `+level5-sound+`, `+compute-mono+`, and
+two witnesses, `+level5-without-certificate+` and `+dispatch-model-diverges+`.
+In the `+MetaChecker+` closure, so `+agda-meta-checker.yml+` checks it with
+Agda `+2.7.0.1+` and stdlib `+2.1+`. Session check 2026-11-09 (not a
+receipt): Agda `+2.6.3+` with stdlib `+1.7.3+`, all three §2.1 flags, exit 0,
+all 10 modules from fresh interfaces. Unlike the R4 modules, `+TrustRule+`
+raises no `+UnsupportedIndexedMatch+` warning: equality and order proofs are
+matched only in absurd clauses, or through stdlib `+≤-pred+`. A mutant with a
+non-monotone rule fails to check. The transcription from Rust is unchecked by any kernel, so the row
+rests on it as an `+argued+` assumption.
+|*Rocq leg:* `+verification/proofs/rocq/TrustRule.v+`, route `+re-proved+`
+(no Dedukti transport here). Each statement restates the Agda one of the same
+name. Coq `+8.18.0+` compiles it, every theorem is closed under the global
+context, and the same mutant fails. CI runs it as `+just proofs-verif-rocq+`
+inside the Coq job. Correspondence state: `+COQ-CHECKED+`, `+BRIDGE-PENDING+`
+until the statement-by-statement table in the file header is reviewed.
+*Lean leg:* `+open+`; no Lean toolchain could be run where this was written.
+
+*Findings in the Rust, not fixed here:*
+(a) Level5 is documented as "cross-checked by 2+ independent small-kernel
+systems", but `+TrustFactors+` carries only the primary prover's kernel and a
+count of agreeing provers, so the documented condition is not enforced.
+(b) Level4 and Level5 test `+certificate_verified+` but not
+`+has_certificate+`, so a verified flag with no certificate reaches Level5
+(`+level5-without-certificate+`). Which behaviour is intended is an owner
+decision.
+
 |R9. E11 solver-integrity soundness
 |`+proven+`
 |`+meta-checker/src/Echidna/Integrity.agda+`, inside the R4 receipt. States the
@@ -260,9 +301,11 @@ Rocq/Lean rechecks and statement correspondence also remain open in R5.
 |`+open+`
 |`+PROOF-POLICY+` §2: every Agda theory proof is rechecked in both, transported
 through Dedukti or re-proved, with the route recorded per theorem.
-|Never attempted. This is what holds the set at Mathesis *Grade 3*: locally
+|Never attempted for the R4 modules. This is what holds the set at Mathesis *Grade 3*: locally
 checked, untranslated. ECHIDNA's `+src/rust/exchange/+` speaks Dedukti, so the
 transport route exists; using it is unstarted work, not a missing capability.
+The first Rocq leg exists for R12 (`+verification/proofs/rocq/TrustRule.v+`,
+re-proved); its Lean leg and every R4 module's legs remain open.
 
 |R6. E9 "proof composition soundness"
 |`+argued+`, with a location defect

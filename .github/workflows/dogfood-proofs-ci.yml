@@ -24,6 +24,7 @@ on:
       - 'proofs/**'
       - 'verification/proofs/lean4/**'
       - 'verification/proofs/idris2/**'
+      - 'verification/proofs/rocq/**'
       - 'Justfile'
       - '.github/workflows/dogfood-proofs-ci.yml'
   pull_request:
@@ -32,6 +33,7 @@ on:
       - 'proofs/**'
       - 'verification/proofs/lean4/**'
       - 'verification/proofs/idris2/**'
+      - 'verification/proofs/rocq/**'
       - 'Justfile'
       - '.github/workflows/dogfood-proofs-ci.yml'
   workflow_dispatch:

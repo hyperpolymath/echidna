@@ -8,6 +8,22 @@ https://semver.org/spec/v2.0.0.html[Semantic Versioning].
 
 === [Unreleased]
 
+==== Added — trust-rule model with a Rocq recheck, 2026-11-09
+
+* *`+meta-checker/src/Echidna/TrustRule.agda+`* transcribes
+  `+compute_trust_level+` (`+src/rust/verification/confidence.rs+`) and
+  proves its guards, what Level5 requires, and monotonicity in every factor.
+  It replaces nothing: `+Dispatch.compute-trust+` stays, and a theorem
+  (`+dispatch-model-diverges+`) records the input on which that older model
+  and the Rust rule disagree. Ledger row R12 in `+docs/PROOF-STATUS.adoc+`.
+* *`+verification/proofs/rocq/TrustRule.v+`* re-proves the same statements
+  in Rocq. `+just proofs-verif-rocq+` compiles it and fails unless every
+  theorem is closed under the global context; `+just proofs-coq+` (the CI Coq
+  job) now runs it. The Lean leg is open.
+* Two findings in the Rust rule are recorded for an owner decision, not
+  changed: Level5 does not check "2+ small-kernel provers", and Level4/5 do
+  not check that a certificate was produced.
+
 ==== Changed — GraphQL listener default, 2026-11-04
 
 * `+echidna-graphql+` now defaults to `+127.0.0.1:8082+`, avoiding the

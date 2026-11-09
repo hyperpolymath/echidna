@@ -96,6 +96,9 @@ open import Echidna.Receipt public
 open import Echidna.Integrity public
 open import Echidna.ClampTrust public
 open import Echidna.AxiomTrackerCompleteness public
+-- Qualified: its names (compute, rule, Factors) would shadow the coarser
+-- Dispatch model, which it is compared against.
+import Echidna.TrustRule as TrustRule
 
 ------------------------------------------------------------------------
 -- Summary: Key safety invariants proven
