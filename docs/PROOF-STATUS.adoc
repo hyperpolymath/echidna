@@ -95,7 +95,7 @@ on `+2ab7574+`. *Rocq*: `+open+`, `+BRIDGE-PENDING+`, no receipt. *Lean*:
 The other meta-checker modules (R4, R9, R10) state properties of this
 repository's own types, so under §1 they are engineering, not theory, and are
 not graded here. They stay `+proven+` in Agda until the split recorded under
-R4 moves each statement to its mapped home.
+R4 replaces each with Creusot/Verus contracts on the Rust (R1).
 
 == Obligations
 
@@ -121,7 +121,9 @@ no recorded receipt. Annotation is not proof. *Verus*: not started; no
 specification, proof code or toolchain exists in this repository. Next action
 for both: contracts on `+src/rust/verification/confidence.rs+`,
 `+src/rust/integrity/solver_integrity.rs+` and `+src/rust/dispatch.rs+`, checked
-against the specifications that the R4 split produces. The row stays `+open+`
+against the statements the R4 design review lists. #477 starts this for
+`+compute_trust_level+` (one `+echidna_core::trust+` kernel, Creusot `+ensures+`
+TK-4/TK-5, recorded there as `+tested-only+`). The row stays `+open+`
 until each verifier yields a receipt with a commit hash.
 
 |===
@@ -187,8 +189,10 @@ Its Mathlib-versus-core question is closed by `+PROOF-POLICY+` §2 ("`No
 Mathlib`"), and the corpus builds without Mathlib. *Classification:* these files
 state properties of this repository's own types, so under §1 they are
 engineering, not theory, and they are not a Lean recheck leg for any Agda
-theorem. Under §3 they move to Idris 2 when next touched, unless a §4 exception
-is recorded. Until then they stay, labelled with their prover.
+theorem. Under §3 they are re-homed when next touched, unless a §4 exception is
+recorded: a statement about Rust behaviour (such as `+ConfidenceLattice+`) goes
+to Creusot/Verus on the code, an API or ABI property to Idris 2. Until then they
+stay, labelled with their prover.
 
 |===
 
@@ -256,11 +260,14 @@ for the current `+proven+` row; the source-bound 2026-11-04 receipt replaces it.
 `+TrustLevel+`, `+AxiomSafety+`, `+Portfolio+`, `+Dispatch+`,
 `+AxiomTrackerCompleteness+`, `+Integrity+` and `+ClampTrust+` name this
 repository's types, and §1 places them as engineering. The owner chose to
-*split* the meta-checker. What holds for any implementation (orders,
-lattices) becomes parametric Agda theory. The echidna-specific instances
-move to Idris 2 under `+verification/proofs/idris2/+`. The Rust is then
-verified against those specifications with Creusot/Pearlite and Verus (R1).
-Until that lands, these rows keep their `+proven+` token. They carry no PWG.
+*split* the meta-checker. Generic theory stays in Agda: `+Receipt+`, and any
+statement that holds for an arbitrary logic or order, such as E9 composition
+(#471). The echidna-specific statements are verified *on the Rust* with
+Creusot/Pearlite and Verus (R1). They are not restated in Idris 2: the strict
+§1 ruling that #477 applies retires Idris restatements of Rust behaviour
+(it removes `+TrustKernelMonotonicity.idr+`). Each Agda module retires once its
+Rust contracts carry a receipt. Until then these rows keep their `+proven+`
+token as statements about a model. They carry no PWG.
 
 **Design review of the statements (2026-11-09):** the kernel accepting a proof
 says nothing about whether the statement models the code or says what its name
@@ -333,8 +340,9 @@ rather than the Idris2 file's decision table.
 specified function, not of shipped code. The module header's reason for
 restating the obligation in Agda ("`there is no idris2 binary in CI that runs
 it`") is out of date: R2 records the Idris 2 corpus, `+ClampTrustBounds+`
-included, building in CI. The split recorded under R4 returns this obligation
-to Idris 2.
+included, building in CI. Because no Rust `+clamp_trust+` exists, the R4 split
+gives this obligation no Creusot/Verus target: it is retired with the module
+unless a clamp is added to the code.
 
 |R11. Epistemic separation: receipt vs warrant
 |`+proven+`

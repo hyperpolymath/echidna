@@ -21,8 +21,8 @@ with which limits. This README describes the modules and how to check them.
 The model does not match the Rust everywhere, and some theorem names promise more
 than their statements give. The design review under R4 in `+PROOF-STATUS+`
 lists each case: for example, the dispatch model gives Level 2 where the Rust
-gives Level 3, and `+comment-skip-sound+` ignores its hypothesis. The planned
-split fixes them; until then, read each statement, not its name.
+gives Level 3, and `+comment-skip-sound+` ignores its hypothesis. Until the
+Rust contracts replace these modules, read each statement, not its name.
 
 == Modules
 
@@ -73,9 +73,11 @@ comparison soundness is a record field, not a postulate.
 
 Under `+PROOF-POLICY+` §1 only `+Receipt+` is theory. The other modules state
 properties of this repository's own types, which §1 places with Idris 2. The
-owner's decision of 2026-11-09 splits them: what holds for any implementation
-becomes parametric Agda, and the echidna-specific instances move to
-`+verification/proofs/idris2/+`. See R4 in `+docs/PROOF-STATUS.adoc+`.
+owner's decision of 2026-11-09 splits them. What holds for any implementation
+stays as Agda theory. The echidna-specific statements are verified on the Rust
+with Creusot/Pearlite and Verus, not restated in Idris 2, and each module here
+retires once its contracts carry a receipt. See R4 in
+`+docs/PROOF-STATUS.adoc+`.
 
 == Escape hatches
 
