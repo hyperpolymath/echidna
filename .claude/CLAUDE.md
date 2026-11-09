@@ -101,8 +101,8 @@ package definitions (not metadata files) and must NOT be deleted.
 |---------------|----------|-------|
 | **Rust** | Core systems, prover backends, trust pipeline, CLI, WASM | Primary implementation language |
 | **Julia** | ML inference, batch data processing, extract scripts | Per RSR |
-| **Idris2** | ABI formal proofs (zero `believe_me`) | `src/abi/` — 16 modules, constructive |
-| **Agda** | Trust-pipeline meta-checker proofs | `proofs/agda/` |
+| **Idris2** | ABI formal proofs (zero `believe_me`) | `src/abi/` — modules listed in `echidnaabi.ipkg`, constructive |
+| **Agda** | Trust-pipeline meta-checker proofs | `meta-checker/` (CI-gated, pinned Agda); `proofs/agda/` is a fixture corpus (PROOF-POLICY §3) |
 | **Zig** | FFI shim between Rust and Chapel | `src/zig_ffi/` |
 | **Chapel** | Optional parallel proof dispatch | Wired via Cargo `chapel` feature |
 | **Guile Scheme** | Guix package definitions (`guix.scm`, `manifests/*.scm`) | `.scm` metadata files are deprecated — see below |
