@@ -66,6 +66,15 @@
 --   ✓ Fixed points 0/1 -> Level1, >=5 -> Level5
 --   ✓ The clamp is idempotent
 --
+-- FROM Composition (E9, theory over an arbitrary logic):
+--   ✓ Cut: composing certified proofs preserves semantic soundness
+--   ✓ Weakening on either side preserves entailment
+--   ✓ Inconsistent axioms entail everything (explosion), so soundness
+--     preservation alone is vacuous without a conflict check
+--   ✓ A sound conflict detector makes a composite realised
+--   ✓ A sound detector must flag every inconsistent composition
+-- No ECHIDNA Rust code composes proofs today; nothing here verifies one.
+--
 -- TOTAL: 45+ proven properties, 0 postulates, 0 sorry, 0 believe_me,
 -- 0 Admitted.
 --
@@ -96,6 +105,7 @@ open import Echidna.Receipt public
 open import Echidna.Integrity public
 open import Echidna.ClampTrust public
 open import Echidna.AxiomTrackerCompleteness public
+open import Echidna.Composition public
 
 ------------------------------------------------------------------------
 -- Summary: Key safety invariants proven

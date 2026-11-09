@@ -265,19 +265,20 @@ checked, untranslated. ECHIDNA's `+src/rust/exchange/+` speaks Dedukti, so the
 transport route exists; using it is unstarted work, not a missing capability.
 
 |R6. E9 "proof composition soundness"
-|`+argued+`, with a location defect
-|`+PROOF-NEEDS+` evidences it with `+proofs/agda/ProofComposition.agda+`. But
-`+PROOF-POLICY+` §3 says `+proofs/<prover>/+` trees are fixtures, "`outside
-this policy`".
-|The obligation survives; its evidence sits where the policy says evidence
-cannot live. **New (2026-11-01):** the whole `+proofs/agda/+` tree — 13 files
-including `+ProofComposition.agda+` — type-checks under
-`+agda --safe --without-K --cubical-compatible+`, 13/13, no postulates. So the
-cheap remedy is the *move* to a policy-conformant location
-(`+verification/proofs/agda/+`), not re-stating the obligation as unsupported:
-the evidence is good, it is merely filed where §3 says evidence cannot live.
-Recorded, not resolved — moving it is a repository change with cross-references
-to update, so it is left as a named action rather than done silently.
+|`+proven+` (Agda leg, pending the first CI receipt of this module)
+|`+meta-checker/src/Echidna/Composition.agda+`, imported by
+`+MetaChecker.agda+` and so inside the `+agda-meta-checker+` closure (pinned
+Agda 2.7.0.1, canonical flags).
+|*Corrected 2026-11-09.* The earlier entry called the old evidence "good,
+merely misfiled". It was not good: `+ProofComposition.agda+` proved
+list-append associativity, and `+SoundnessPreservation.agda+`'s
+`+compose-sound+` discharged a Bool flag with `+∧+` while ignoring its conflict
+hypothesis. The replacement is theory over an arbitrary logic: `+cut+`
+(composition preserves semantic soundness), `+explosion+` (why a conflict
+check is load-bearing), `+compose-realised+` and `+detector-must-flag+`. No
+Rust code composes proofs, so no implementation is claimed. The two corpus
+files stay in `+proofs/agda/+` as fixtures, with headers saying what they
+show. Rocq/Lean rechecks (§2): not started.
 
 |===
 
