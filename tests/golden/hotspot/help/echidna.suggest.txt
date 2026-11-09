@@ -1,0 +1,18 @@
+Suggest tactic variants that close a failing lemma
+
+Usage: echidna suggest [OPTIONS] <TARGET>
+
+Arguments:
+  <TARGET>  Target in `<file>:<lemma>` form, e.g. `Foo.thy:bar`
+
+Options:
+      --format <FORMAT>              Output format (text, json) [default: text]
+  -p, --prover <PROVER>              Prover to use (auto-detected from file extension if absent)
+      --budget <BUDGET>              Time budget per variant attempt in seconds [default: 60]
+  -v, --verbose                      Verbose output
+      --no-color                     Disable colors
+      --top <TOP>                    Maximum number of variants to report [default: 10]
+      --synonyms-dir <SYNONYMS_DIR>  Synonym table directory (defaults to `data/synonyms/`)
+      --dry-run                      Don't run the prover; just print candidate variants
+      --max-parallel <MAX_PARALLEL>  Maximum concurrent variant tests [default: 4]
+  -h, --help                         Print help

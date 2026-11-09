@@ -1,0 +1,59 @@
+Prove a theorem from file
+
+Usage: echidna prove [OPTIONS] <FILE>
+
+Arguments:
+  <FILE>
+          Path to proof file
+
+Options:
+      --format <FORMAT>
+          Output format (text, json)
+          
+          [default: text]
+
+  -p, --prover <PROVER>
+          Prover to use (auto-detect if not specified)
+
+  -t, --timeout <TIMEOUT>
+          Timeout in seconds
+          
+          [default: 300]
+
+  -v, --verbose
+          Verbose output
+
+      --neural
+          Enable neural premise selection
+
+      --no-color
+          Disable colors
+
+      --executable <EXECUTABLE>
+          Prover executable path (override default)
+
+      --library <LIBRARY>
+          Library paths
+
+      --diagnose
+          On failure, run diagnostics and explain why the proof failed
+
+      --project-root <PROJECT_ROOT>
+          Project root for backends with session-based builds (EI-1). Today: Isabelle uses this to add `-d <root>` to the build invocation and to import the file's session from the project's existing ROOT, so theory imports resolve
+
+      --sandbox <SANDBOX>
+          Sandbox mode for prover invocation (safe-learning b). One of: none (default), bwrap, podman
+          
+          [default: none]
+
+      --output <OUTPUT>
+          Result form. `human` (default) prints the usual report; `json` prints exactly one `echidna.prove.result/1` object (JCS-canonical I-JSON) on stdout and sends logs to stderr
+
+          Possible values:
+          - human: Human-readable report (the default)
+          - json:  One `echidna.prove.result/1` JSON object on stdout
+          
+          [default: human]
+
+  -h, --help
+          Print help (see a summary with '-h')

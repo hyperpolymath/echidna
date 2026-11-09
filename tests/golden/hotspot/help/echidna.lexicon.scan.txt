@@ -1,0 +1,29 @@
+Pair theorem names and canonical statement shapes across training corpora and write review candidates as JCS JSON Lines. Every candidate carries `evidence = none`; `data/synonyms/` is never edited
+
+Usage: echidna lexicon scan [OPTIONS]
+
+Options:
+      --format <FORMAT>
+          Output format (text, json) [default: text]
+      --training-dir <TRAINING_DIR>
+          Directory holding `proof_states_<corpus>.jsonl` files [default: training_data]
+      --pair <A:B>
+          A corpus pair, `A:B`. Repeatable; combines with `--preset`
+  -v, --verbose
+          Verbose output
+      --no-color
+          Disable colors
+      --preset <PRESET>
+          A named pair set: `learning`, `spanning`, `in-family` or `full`
+      --out <OUT>
+          Output directory (pairs/, collisions/, summary.jsonl, coverage.jsonl) [default: target/lexicon-scan]
+      --keep-generic
+          Also emit pairs whose shared name is generic (`lemma3`, `aux`, `ex1`)
+      --max-pairs-per-name <MAX_PAIRS_PER_NAME>
+          Skip a shared name whose statement cross product exceeds this: exact pairs per raw name, folded pairs per whole folded group [default: 64]
+      --max-shape-group <MAX_SHAPE_GROUP>
+          Skip a shape or skeleton group larger than this on either side [default: 8]
+      --collision-samples <COLLISION_SAMPLES>
+          Key-collision groups to sample per corpus [default: 40]
+  -h, --help
+          Print help

@@ -1,0 +1,14 @@
+Start interactive REPL mode
+
+Usage: echidna interactive [OPTIONS] [FILE]
+
+Arguments:
+  [FILE]  Initial proof file to load
+
+Options:
+      --format <FORMAT>  Output format (text, json) [default: text]
+  -p, --prover <PROVER>  Prover to use
+      --neural           Enable neural premise selection
+  -v, --verbose          Verbose output
+      --no-color         Disable colors
+  -h, --help             Print help

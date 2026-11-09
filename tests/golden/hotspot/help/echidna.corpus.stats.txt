@@ -1,0 +1,10 @@
+Print summary statistics for a corpus index
+
+Usage: echidna corpus stats [OPTIONS]
+
+Options:
+      --format <FORMAT>  Output format (text, json) [default: text]
+  -i, --index <INDEX>    
+  -v, --verbose          Verbose output
+      --no-color         Disable colors
+  -h, --help             Print help
