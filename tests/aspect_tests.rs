@@ -65,6 +65,7 @@ fn aspect_security_malicious_input_no_high_trust() {
         let trust = compute_trust_level(&TrustFactors {
             prover: ProverKind::Lean,
             confirming_provers: 10,
+            small_kernel_confirmations: 0,
             has_certificate: true,
             certificate_verified: true,
             worst_axiom_danger: DangerLevel::Reject,
@@ -447,6 +448,7 @@ fn aspect_trust_computation_deterministic() {
     let factors = TrustFactors {
         prover: ProverKind::Z3,
         confirming_provers: 2,
+        small_kernel_confirmations: 0,
         has_certificate: true,
         certificate_verified: true,
         worst_axiom_danger: DangerLevel::Noted,

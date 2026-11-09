@@ -187,6 +187,7 @@ async fn concurrency_trust_level_computation_thread_safe() {
     let factors = TrustFactors {
         prover: ProverKind::Lean,
         confirming_provers: 3,
+        small_kernel_confirmations: 0,
         has_certificate: true,
         certificate_verified: true,
         worst_axiom_danger: DangerLevel::Safe,
