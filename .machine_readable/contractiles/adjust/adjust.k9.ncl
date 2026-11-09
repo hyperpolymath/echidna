@@ -22,12 +22,24 @@ K9!
 # erosion causing gradual parameter drift). Where must flags "broken
 # now", adjust flags "drifting toward broken".
 
-let base_k9 = import "../k9/template-hunt.k9.ncl" in
+#
+# 2026-11-09 (K9 contract v1.0.0, D173, standards#1058): this record is a
+# DECLARATION evaluated at 'Yard. The probes it lists are run by the paired
+# runner (adjust.ncl and the scripts/run-*.sh runners), which is the execution
+# surface; this file spawns nothing. A 'Hunt record needs signature_required,
+# a signature block and a verified signature (K9-S008/S009/C001); no
+# contractile carries one, so 'Hunt here was a claim the gate could never honour.
+# Mirrors rsr-template-repo's contractiles (WO-9).
+
 let base    = import "../_base.ncl" in
 
 {
-  pedigree = base_k9.pedigree_schema & {
+  pedigree = base.pedigree_schema & {
     contractile_verb = "adjust",
+    schema_version   = "1.0.0",
+    component_type   = "contractile:adjust",
+    semantics        = "drift tolerances + corrective actions",
+    side_effects     = [],
     paired_xfile     = "../adjust/Adjustfile.a2ml",
     paired_runner    = "../adjust/adjust.ncl",
 
@@ -48,12 +60,13 @@ let base    = import "../_base.ncl" in
       trust_level = "tolerance measurement + declared auto-fix",
       allow_network = false,
       allow_filesystem_write_conditional = true,  # auto_fix_when_available may edit
-      allow_subprocess = true,
+      allow_subprocess = false,   # the paired runner spawns; this record does not
       probe_scope = 'measurement_plus_declared_fix,
     },
   },
 
-  variance_schema = {
+  # A record SHAPE (contract-only fields, no values): kept out of `nickel export`.
+  variance_schema | not_exported = {
     entry_id     | String,
     reason       | String,
     approved_by  | String,
