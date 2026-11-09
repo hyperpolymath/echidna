@@ -217,6 +217,11 @@ build-release:
 test:
     cargo test --lib
 
+# Self-test the wave gates (scripts/gates/*.selftest.sh): fixtures, no network
+test-gates:
+    bash scripts/gates/lib.selftest.sh
+    bash scripts/gates/w0.selftest.sh
+
 # Run all tests (unit + integration)
 test-all:
     cargo test
