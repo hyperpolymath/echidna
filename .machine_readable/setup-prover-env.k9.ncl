@@ -90,11 +90,12 @@ K9!
   recipes = {
     check-prerequisites = {
       description = "Confirm the tools the sanctioned paths need are present",
-      commands = [
-        "command -v just >/dev/null 2>&1 || { echo 'just not found'; exit 1; }",
-        "command -v guix >/dev/null 2>&1 || echo 'guix not found: the Guix path will be skipped'",
-        "command -v podman >/dev/null 2>&1 || echo 'podman not found: the sealed-container path will be skipped'",
-      ],
+      # An enabled path whose tool is missing fails here, loudly; a disabled
+      # path is not checked. Nothing is skipped silently.
+      commands =
+        ["command -v just >/dev/null 2>&1 || { echo 'just not found'; exit 1; }"]
+        @ (if config.use_guix then ["command -v guix >/dev/null 2>&1 || { echo 'guix not found but config.use_guix is true'; exit 1; }"] else [])
+        @ (if config.use_sealed_containers then ["command -v podman >/dev/null 2>&1 || { echo 'podman not found but config.use_sealed_containers is true'; exit 1; }"] else []),
     },
     install-guix = {
       description = "Install the Guix-packaged provers listed in manifests/live-provers.scm",
@@ -110,10 +111,16 @@ K9!
       description = "Report which tools are present (read-only)",
       commands = ["just doctor"],
     },
+    # The dependency list is built from `config`, so a disabled path does not
+    # run and an enabled one does.
     install-all = {
-      description = "Run every enabled path, then report",
-      dependencies = ["check-prerequisites", "install-guix", "doctor"],
-      commands = ["echo 'Sealed containers are built separately: run the install-containers recipe.'"],
+      description = "Run every path enabled in config, then report",
+      dependencies =
+        ["check-prerequisites"]
+        @ (if config.use_guix then ["install-guix"] else [])
+        @ (if config.use_sealed_containers then ["install-containers"] else [])
+        @ (if config.run_doctor then ["doctor"] else []),
+      commands = ["echo 'install-all: every path enabled in config has run'"],
     },
   },
 }
