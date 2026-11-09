@@ -296,25 +296,41 @@ other results (`+postulates-name-an-axiom+`, `+discharge-postulates+`,
 |===
 |Theorem |§5 token |PWG |`+foundation_diverse+` |Rocq leg |Lean leg
 
-|`+receipt-factive+` |`+proven+` |ungraded |no |`+open+` |`+open+`
-|`+warrant-not-factive+` |`+proven+` |ungraded |no |`+open+` |`+open+`
-|`+warrant-not-receipt+` |`+proven+` |ungraded |no |`+open+` |`+open+`
-|`+no-receipt-anywhere+` |`+proven+` |ungraded |no |`+open+` |`+open+`
-|`+receipt′-factive+` |`+proven+` |ungraded |no |`+open+` |`+open+`
-|`+frame-receipt-factive+` |`+proven+` |ungraded |no |`+open+` |`+open+`
-|`+false-sample-rejected+` |`+proven+` |ungraded |no |`+open+` |`+open+`
-|`+no-free-promotion+` |`+proven+` |ungraded |no |`+open+` |`+open+`
-|`+no-unconditional-postulate-promotion+` |`+proven+` |ungraded |no |`+open+` |`+open+`
-|`+no-test-promotion+` |`+proven+` |ungraded |no |`+open+` |`+open+`
+|`+receipt-factive+` |`+proven+` |`+PWG-3+` |no |`+open+` |`+open+`
+|`+warrant-not-factive+` |`+proven+` |`+PWG-3+` |no |`+open+` |`+open+`
+|`+warrant-not-receipt+` |`+proven+` |`+PWG-3+` |no |`+open+` |`+open+`
+|`+no-receipt-anywhere+` |`+proven+` |`+PWG-3+` |no |`+open+` |`+open+`
+|`+receipt′-factive+` |`+proven+` |`+PWG-3+` |no |`+open+` |`+open+`
+|`+frame-receipt-factive+` |`+proven+` |`+PWG-3+` |no |`+open+` |`+open+`
+|`+false-sample-rejected+` |`+proven+` |`+PWG-3+` |no |`+open+` |`+open+`
+|`+no-free-promotion+` |`+proven+` |`+PWG-3+` |no |`+open+` |`+open+`
+|`+no-unconditional-postulate-promotion+` |`+proven+` |`+PWG-3+` |no |`+open+` |`+open+`
+|`+no-test-promotion+` |`+proven+` |`+PWG-3+` |no |`+open+` |`+open+`
 |===
 
-Census: `+PWG-1+` 0/10, `+PWG-2ii+` 0/10, `+PWG-2i+` 0/10, `+PWG-3+` 0/10,
-ungraded 10/10. The Agda kernel accepted all ten under the §2.1 flags, so
-`+PWG-3+` is within reach, but no committed receipt yet records the import
-cone together with a comment-aware postulate scan of it (§8.2, §8.4); the
-in-repo receipt records file digests only, and CI relies on `+--safe+` alone.
-`+PWG-3+` becomes derivable for all ten once the `+agda-meta-checker+` job
-writes that receipt. No result carries `+foundation_diverse+`.
+Census: `+PWG-1+` 0/10, `+PWG-2ii+` 0/10, `+PWG-2i+` 0/10, `+PWG-3+` 10/10,
+ungraded 0/10. No result carries `+foundation_diverse+`.
+
+`+PWG-3+` is derived from the receipt
+link:reports/2026-11-09-agda-cone-receipt.json[`+2026-11-09-agda-cone-receipt.json+`]
+(§8.2, §8.4), written by `+scripts/ci/agda-cone-receipt.sh+`:
+
+* Commit `+4c3ea688+`, with no uncommitted change under `+meta-checker/+`.
+  The `+meta-checker/+` sources are identical to `+2ab7574+`.
+* Agda 2.7.0.1, executable SHA-256 `+6de41437…+` (the repository pin), and
+  `+agda-stdlib+` 2.1, archive SHA-256 `+72ca3ea2…+`.
+* Flags `+--safe --without-K --cubical-compatible+`, entrypoint
+  `+src/Echidna/Receipt.agda+`, which the kernel accepted.
+* An import cone of 211 modules, each with its SHA-256: 1 first-party, 202
+  from the standard library and 8 from Agda's built-in library.
+* A comment-aware scan of the cone that is clean. Its only postulates are
+  `+Agda.Primitive+`'s universe-level primitives, which belong to the
+  Agda kernel's trust base.
+
+The `+agda-meta-checker+` job writes the same receipt on every run that
+touches these sources. Any change to a cone file invalidates the grade until
+a fresh receipt is recorded. The ceiling is `+PWG-3+` while R5's Rocq and
+Lean legs are `+open+`.
 
 === Calibrated scores (§5 is about proof, not ranking)
 
@@ -389,9 +405,9 @@ prover backend's own soundness.
 Two rows are `+proven+` today, R2a and R4a, and each names the kernel, the
 receipt and the limit that qualify it. Every other first-party obligation is
 `+open+`, and most of the Rust behaviour it concerns sits in R1, waiting on a
-Creusot or Verus run. The ten theory theorems are ungraded until a receipt
-records the import cone and a postulate scan; they cannot rise above `+PWG-3+`
-until R5's Rocq and Lean legs exist. None of this is an omission.
+Creusot or Verus run. The ten theory theorems are at `+PWG-3+`, derived from the
+2026-11-09 cone receipt; they cannot rise above it until R5's Rocq and Lean
+legs exist. None of this is an omission.
 
 == Related
 
