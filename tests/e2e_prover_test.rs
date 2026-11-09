@@ -114,6 +114,7 @@ fn e2e_trust_pipeline_all_levels_ordered() {
     let l5 = compute_trust_level(&TrustFactors {
         prover: ProverKind::Lean, // small-kernel prover
         confirming_provers: 3,
+        small_kernel_confirmations: 0,
         has_certificate: true,
         certificate_verified: true,
         worst_axiom_danger: DangerLevel::Safe,
@@ -127,6 +128,7 @@ fn e2e_trust_pipeline_all_levels_ordered() {
     let l4 = compute_trust_level(&TrustFactors {
         prover: ProverKind::Z3,
         confirming_provers: 2,
+        small_kernel_confirmations: 0,
         has_certificate: true,
         certificate_verified: true,
         worst_axiom_danger: DangerLevel::Safe,
@@ -140,6 +142,7 @@ fn e2e_trust_pipeline_all_levels_ordered() {
     let l3 = compute_trust_level(&TrustFactors {
         prover: ProverKind::Z3,
         confirming_provers: 1,
+        small_kernel_confirmations: 0,
         has_certificate: true,
         certificate_verified: true,
         worst_axiom_danger: DangerLevel::Safe,
@@ -151,6 +154,7 @@ fn e2e_trust_pipeline_all_levels_ordered() {
     let l2 = compute_trust_level(&TrustFactors {
         prover: ProverKind::Z3,
         confirming_provers: 1,
+        small_kernel_confirmations: 0,
         has_certificate: false,
         certificate_verified: false,
         worst_axiom_danger: DangerLevel::Safe,
@@ -162,6 +166,7 @@ fn e2e_trust_pipeline_all_levels_ordered() {
     let l1 = compute_trust_level(&TrustFactors {
         prover: ProverKind::Lean,
         confirming_provers: 1,
+        small_kernel_confirmations: 0,
         has_certificate: false,
         certificate_verified: false,
         worst_axiom_danger: DangerLevel::Warning,
@@ -212,6 +217,7 @@ fn e2e_reject_axiom_prevents_high_trust() {
     let trust = compute_trust_level(&TrustFactors {
         prover: ProverKind::Lean,
         confirming_provers: 5,
+        small_kernel_confirmations: 0,
         has_certificate: true,
         certificate_verified: true,
         worst_axiom_danger: DangerLevel::Reject, // unsound construct
