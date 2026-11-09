@@ -334,15 +334,22 @@ validate the Idris2 file or its correspondence to runtime code. Existing
 Idris2 interface and engineering checks remain active under §1; their
 receipt status is R2. Monotonicity here is by step lemma plus transitivity,
 rather than the Idris2 file's decision table.
-**Model-only:** no `+clamp_trust+` function exists in the Rust
-(`+src/rust/verification/confidence.rs+` derives a `+TrustLevel+` from
-`+TrustFactors+` and never clamps a number). This is therefore a property of a
-specified function, not of shipped code. The module header's reason for
-restating the obligation in Agda ("`there is no idris2 binary in CI that runs
-it`") is out of date: R2 records the Idris 2 corpus, `+ClampTrustBounds+`
-included, building in CI. Because no Rust `+clamp_trust+` exists, the R4 split
-gives this obligation no Creusot/Verus target: it is retired with the module
-unless a clamp is added to the code.
+**Model and code differ:** the Rust has
+`+echidna_core_creusot::clamp_trust(level, min_level, max_level)+`
+(`+crates/echidna-core-creusot/src/lib.rs:274+`). It clamps a `+TrustLevel+` into
+a level range. Its bounds contract (`+requires min_level <= max_level+`,
+`+ensures min_level <= result <= max_level+`) is written but not discharged, and
+unit test PO-7 checks it exhaustively. The Agda model instead clamps a natural
+number into the five levels. Only its bounds statement carries over, as a
+special case of the Rust contract (range `+[Level1, Level5]+`). Its fixed-point
+and monotone-in-ℕ statements have no counterpart. `+src/rust/verification/
+confidence.rs+` does not call `+clamp_trust+`; it derives a level from
+`+TrustFactors+`. The module header's reason for restating the obligation in
+Agda ("`there is no idris2 binary in CI that runs it`") is out of date: R2
+records the Idris 2 corpus, `+ClampTrustBounds+` included, building in CI. Under
+the R4 split, the target is Creusot/Verus on the Rust `+clamp_trust+`: discharge
+the written bounds contract, and add idempotence and monotonicity in `+level+`
+as level-to-level statements. The ℕ-specific statements retire with the module.
 
 |R11. Epistemic separation: receipt vs warrant
 |`+proven+`

@@ -61,7 +61,9 @@ comparison soundness is a record field, not a postulate.
 
 |`+Echidna.ClampTrust+`
 |Bounds, monotonicity, fixed points and idempotence of a modelled
-`+clamp-trust : ℕ → TrustLevel+`. No such function exists in the Rust (R10).
+`+clamp-trust : ℕ → TrustLevel+`. The Rust `+clamp_trust+` in
+`+crates/echidna-core-creusot+` has a different signature (it clamps a level
+into a level range), so only the bounds statement carries over (R10).
 
 |`+Echidna.Receipt+`
 |A two-world Kripke countermodel separating receipts (factive) from warrants
@@ -99,10 +101,16 @@ The scripts install Agda 2.7.0.1 and agda-stdlib 2.1 from release archives
 checked against pinned SHA-256 digests, then check every module and require a
 fresh interface for each one:
 
+Outside GitHub Actions, `+setup-agda.sh+` cannot change the calling shell's
+environment. Give it the two files Actions would provide, then load them:
+
 [source,bash]
 ----
-bash scripts/ci/setup-agda.sh     # prints the paths to export
-bash scripts/ci/check-agda.sh     # runs from meta-checker/
+export GITHUB_ENV=$(mktemp) GITHUB_PATH=$(mktemp)
+bash scripts/ci/setup-agda.sh             # writes Agda_datadir, AGDA_LIBRARIES_FILE, LC_ALL
+set -a; . "$GITHUB_ENV"; set +a           # the values are mktemp paths, without spaces
+export PATH="$(cat "$GITHUB_PATH"):$PATH"
+bash scripts/ci/check-agda.sh             # runs from meta-checker/
 ----
 
 `+check-agda.sh+` runs:
