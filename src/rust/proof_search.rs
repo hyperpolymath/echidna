@@ -384,7 +384,8 @@ mod chapel_ffi {
                         let start = start.clone();
                         std::thread::spawn(move || {
                             start.wait();
-                            let strategy = ChapelParallelSearch::new().expect("real Chapel runtime");
+                            let strategy =
+                                ChapelParallelSearch::new().expect("real Chapel runtime");
                             assert_eq!(ChapelParallelSearch::available_prover_count(), 0);
                             for _ in 0..2 {
                                 assert!(strategy.available());
@@ -414,10 +415,8 @@ mod chapel_ffi {
             // No global environment mutation races with other Rust tests, and
             // no external prover can be dispatched by this allocation/free probe.
             let empty_path = tempfile::tempdir().expect("empty prover search directory");
-            let mut command = real_probe_command(
-                "real_search_without_provers_fails_and_frees_result",
-                CHILD,
-            );
+            let mut command =
+                real_probe_command("real_search_without_provers_fails_and_frees_result", CHILD);
             command.env("PATH", empty_path.path());
             run_real_probe(
                 &mut command,
@@ -478,7 +477,10 @@ mod chapel_ffi {
                     matches!(stopped_before_cleanup, Ok(true)),
                     "deadline returned with a live or unobservable prover: {stopped_before_cleanup:?}"
                 );
-                assert!(elapsed < Duration::from_secs(3), "deadline took {elapsed:?}");
+                assert!(
+                    elapsed < Duration::from_secs(3),
+                    "deadline took {elapsed:?}"
+                );
                 let result = result.expect("native timeout returns a failed search result");
                 assert!(!result.success);
                 assert_eq!(
@@ -500,17 +502,12 @@ mod chapel_ffi {
             .expect("write finite prover");
             std::fs::set_permissions(&prover, std::fs::Permissions::from_mode(0o700))
                 .expect("make finite prover executable");
-            let mut command = real_probe_command(
-                "real_search_deadline_stops_the_owned_prover",
-                CHILD,
-            );
+            let mut command =
+                real_probe_command("real_search_deadline_stops_the_owned_prover", CHILD);
             command
                 .env("PATH", fixture.path())
                 .env(PID_FILE, fixture.path().join("prover.pid"));
-            run_real_probe(
-                &mut command,
-                "ECHIDNA_REAL_CHAPEL_DEADLINE_PROBE_COMPLETED",
-            );
+            run_real_probe(&mut command, "ECHIDNA_REAL_CHAPEL_DEADLINE_PROBE_COMPLETED");
         }
     }
 }
