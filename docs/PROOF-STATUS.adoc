@@ -133,8 +133,13 @@ https://github.com/hyperpolymath/echidna/actions/runs/42624461538/job/1291845356
 builds `+verification/proofs/idris2/echidna-verif-proofs.ipkg+` and
 https://github.com/hyperpolymath/echidna/actions/runs/42624461712/job/129184533713[Type-check Idris2 ABI definitions]
 builds `+src/abi/echidnaabi.ipkg+`, both on Idris 2 0.8.0, both success.
-`+%default total+`; zero `+believe_me+` / `+assert_total+` / `+postulate+`
-(enforced by `+idris2-abi-ci.yml+`). *Limit:* `+EchidnaABI.CapnSchemas+` was
+`+%default total+`. A 2026-11-09 audit of both packages found no `+believe_me+`,
+`+assert_total+` or `+postulate+` declarations (the only textual hits are a
+doc comment and the pattern strings in `+AxiomCompleteness.idr+`). That is a
+receipt-time audit, not an enforced property: `+idris2-abi-ci.yml+` greps
+`+src/abi/+` only, for `+believe_me+`, `+assert_total+`, `+unsafePerformIO+`
+and `+prim__crash+`, and checks neither `+postulate+` nor
+`+verification/proofs/idris2/+`. *Limit:* `+EchidnaABI.CapnSchemas+` was
 outside the package and failed to build; hyperpolymath/echidna#472 fixes it and
 gates it. Nine other `+.idr+` files at the `+src/abi/+` root are outside the
 package: `+BojForeign+`, `+OverlayForeign+`, `+TentaclesForeign+`,
@@ -155,7 +160,7 @@ decides their fate (open question A5).
 |R3. Lean 4 legs: E4-L4 `+ConfidenceLattice.lean+`, E10
 `+ParetoMaximality.lean+` / `+ParetoStrongMaximality.lean+`, E11
 `+IntegrityVerification.lean+`, E13 `+PortfolioCompleteness.lean+`
-|`+proven+` (Lean leg); verifier placement `+open+`
+|`+open+` (the Lean build passes; the verifier placement is unresolved)
 |*Corrected 2026-11-09.* The 2026-05-18 record (all five failing) is stale.
 https://github.com/hyperpolymath/echidna/actions/runs/42624461538/job/129184535185[Lean 4 (verification)]
 builds all five with `+lake build+` on the pinned `+lean-toolchain+` (4.13.0),
@@ -395,10 +400,11 @@ mean "ECHIDNA is verified" — it would mean one named obligation was discharged
 by one named tool with its boundary written down. Nothing here vouches for a
 prover backend's own soundness.
 
-The `+proven+` rows — R2, R3 (Lean leg), R4, R9, R10, R11 — each name the
-kernel, the receipt and the limit that qualify them (R4 carries the
-`+UnsupportedIndexedMatch+` caveat, R9 the digest-level scope, R3 the open
-verifier placement). Only theory theorems are graded (§8.1): R11 is at
+The `+proven+` rows — R2, R4, R9, R10, R11 — each name the kernel, the
+receipt and the limit that qualify them (R2 the receipt-time escape-hatch
+audit, R4 the `+UnsupportedIndexedMatch+` caveat, R9 the digest-level scope).
+R3 stays `+open+`: its Lean build passes, but Lean is not the verifier §1
+assigns to those statements until the placement is decided. Only theory theorems are graded (§8.1): R11 is at
 `+PWG-3+`; the engineering rows carry no PWG. Every *independent* leg is still
 `+open+`: R5 has never been attempted, which is why nothing here is above
 `+PWG-3+`. Proven in one kernel is exactly what `+PWG-3+` means, and neither fact
