@@ -21,8 +21,12 @@
 --                        conflict ⇒ the joined axioms have a model), the
 --                        composite's axioms and goal hold together in some
 --                        model: the composition is not vacuously "sound";
---   detector-must-flag   any sound detector must report a conflict whenever
---                        the joined axioms are inconsistent;
+--   detector-cannot-miss for any sound detector, "no conflict" is refutable
+--                        whenever the joined axioms are inconsistent
+--                        (only a double negation, for an arbitrary relation);
+--   detector-must-flag   a sound detector that DECIDES its conflict relation
+--                        returns a conflict witness, the reportable flag,
+--                        whenever the joined axioms are inconsistent;
 --   Literals.*           a concrete logic in which pos 0 and neg 0 clash,
 --                        and that clash entails an unrelated goal.
 --
@@ -43,7 +47,7 @@ open import Data.Nat     using (ℕ)
 open import Data.List    using (List; []; _∷_; _++_)
 open import Data.Product using (Σ; _,_; _×_)
 open import Data.Empty   using (⊥; ⊥-elim)
-open import Relation.Nullary using (¬_)
+open import Relation.Nullary using (¬_; Dec; yes; no)
 open import Relation.Binary.PropositionalEquality using (_≡_; refl; sym; trans)
 
 -- Every element satisfies P (defined here to avoid library-version drift).
@@ -130,10 +134,20 @@ module Semantics (Form Model : Set) (_⊨_ : Model → Form → Set) where
   compose-realised det {Γ₁} {Γ₂} h₁ h₂ nc with det Γ₁ Γ₂ nc
   ... | M , m = M , m , cut h₁ h₂ M m
 
-  -- A sound detector cannot miss an inconsistent composition.
+  -- For an arbitrary relation, soundness only refutes "no conflict": a
+  -- double negation, not a witness a checker could report.
+  detector-cannot-miss : {Conflicts : Ctx → Ctx → Set} → SoundDetector Conflicts
+                       → (Γ Δ : Ctx) → ¬ Consistent (Γ ++ Δ) → ¬ ¬ Conflicts Γ Δ
+  detector-cannot-miss det Γ Δ inc noc = inc (det Γ Δ noc)
+
+  -- A detector is a decision procedure. A sound one returns the conflict
+  -- witness itself for every inconsistent composition: the reportable flag.
   detector-must-flag : {Conflicts : Ctx → Ctx → Set} → SoundDetector Conflicts
-                     → (Γ Δ : Ctx) → ¬ Consistent (Γ ++ Δ) → ¬ ¬ Conflicts Γ Δ
-  detector-must-flag det Γ Δ inc noc = inc (det Γ Δ noc)
+                     → ((Γ Δ : Ctx) → Dec (Conflicts Γ Δ))
+                     → (Γ Δ : Ctx) → ¬ Consistent (Γ ++ Δ) → Conflicts Γ Δ
+  detector-must-flag det decide Γ Δ inc with decide Γ Δ
+  ... | yes c  = c
+  ... | no  nc = ⊥-elim (inc (det Γ Δ nc))
 
 ------------------------------------------------------------------------
 -- A concrete logic: literals over a Boolean valuation

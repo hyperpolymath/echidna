@@ -72,7 +72,9 @@
 --   ✓ Inconsistent axioms entail everything (explosion), so soundness
 --     preservation alone is vacuous without a conflict check
 --   ✓ A sound conflict detector makes a composite realised
---   ✓ A sound detector must flag every inconsistent composition
+--   ✓ A sound detector that decides its conflict relation returns a
+--     conflict witness for every inconsistent composition (for an
+--     undecided relation, only a double negation)
 -- No ECHIDNA Rust code composes proofs today; nothing here verifies one.
 --
 -- TOTAL: 45+ proven properties, 0 postulates, 0 sorry, 0 believe_me,

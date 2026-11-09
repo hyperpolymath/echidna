@@ -80,7 +80,8 @@ no collisions in kind_to_u8 |I2
 
 |E9 Proof composition soundness |`+meta-checker/src/Echidna/Composition.agda+`
 |Cut preserves semantic soundness; explosion shows a conflict check is
-load-bearing; a sound detector realises every composite and must flag
+load-bearing; a sound detector realises every composite, and a sound
+detector that decides its conflict relation returns a conflict witness for
 every inconsistent one. Theory over an arbitrary logic; no Rust composer
 exists to verify |Agda
 
