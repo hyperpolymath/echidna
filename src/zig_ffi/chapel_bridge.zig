@@ -70,7 +70,8 @@ fn callOnOwner(owner: anytype, comptime function: anytype, args: anytype, result
         result: @TypeOf(result),
 
         fn run(raw: *anyopaque) void {
-            const self: *@This() = @ptrCast(@alignCast(raw));
+            // hypatia: allow code_safety/zig_ptr_cast -- raw is the type-erased *@This() this callback was registered with
+            const self: *@This() = @ptrCast(@alignCast(raw)); // hypatia: allow code_safety/zig_align_cast -- same pointer, so @This() alignment holds
             self.result.* = @call(.auto, function, self.arguments);
         }
     };
@@ -650,7 +651,8 @@ const CallerAllocator = struct {
     }
 
     fn alloc(raw: *anyopaque, len: usize, alignment: std.mem.Alignment, ret_addr: usize) ?[*]u8 {
-        const self: *@This() = @ptrCast(@alignCast(raw));
+        // hypatia: allow code_safety/zig_ptr_cast -- raw is the type-erased *@This() this callback was registered with
+        const self: *@This() = @ptrCast(@alignCast(raw)); // hypatia: allow code_safety/zig_align_cast -- same pointer, so @This() alignment holds
         if (!self.record() or self.allocations >= self.fail_after) return null;
         const pointer = std.heap.c_allocator.rawAlloc(len, alignment, ret_addr) orelse return null;
         self.allocations += 1;
@@ -659,7 +661,8 @@ const CallerAllocator = struct {
     }
 
     fn resize(raw: *anyopaque, memory: []u8, alignment: std.mem.Alignment, new_len: usize, ret_addr: usize) bool {
-        const self: *@This() = @ptrCast(@alignCast(raw));
+        // hypatia: allow code_safety/zig_ptr_cast -- raw is the type-erased *@This() this callback was registered with
+        const self: *@This() = @ptrCast(@alignCast(raw)); // hypatia: allow code_safety/zig_align_cast -- same pointer, so @This() alignment holds
         _ = self.record();
         _ = memory;
         _ = alignment;
@@ -669,7 +672,8 @@ const CallerAllocator = struct {
     }
 
     fn remap(raw: *anyopaque, memory: []u8, alignment: std.mem.Alignment, new_len: usize, ret_addr: usize) ?[*]u8 {
-        const self: *@This() = @ptrCast(@alignCast(raw));
+        // hypatia: allow code_safety/zig_ptr_cast -- raw is the type-erased *@This() this callback was registered with
+        const self: *@This() = @ptrCast(@alignCast(raw)); // hypatia: allow code_safety/zig_align_cast -- same pointer, so @This() alignment holds
         _ = self.record();
         _ = memory;
         _ = alignment;
@@ -679,7 +683,8 @@ const CallerAllocator = struct {
     }
 
     fn free(raw: *anyopaque, memory: []u8, alignment: std.mem.Alignment, ret_addr: usize) void {
-        const self: *@This() = @ptrCast(@alignCast(raw));
+        // hypatia: allow code_safety/zig_ptr_cast -- raw is the type-erased *@This() this callback was registered with
+        const self: *@This() = @ptrCast(@alignCast(raw)); // hypatia: allow code_safety/zig_align_cast -- same pointer, so @This() alignment holds
         _ = self.record();
         // The backing allocator is cross-thread safe so a failed assertion
         // never requires corrupting memory or leaking the test allocation.
