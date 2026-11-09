@@ -18,6 +18,12 @@ link:../docs/PROOF-STATUS.adoc[`+docs/PROOF-STATUS.adoc+`].
 That file is the authoritative record of what is proved, by which receipt, and
 with which limits. This README describes the modules and how to check them.
 
+The model does not match the Rust everywhere, and some theorem names promise more
+than their statements give. The design review under R4 in `+PROOF-STATUS+`
+lists each case: for example, the dispatch model gives Level 2 where the Rust
+gives Level 3, and `+comment-skip-sound+` ignores its hypothesis. The planned
+split fixes them; until then, read each statement, not its name.
+
 == Modules
 
 [cols="1,3",options="header"]

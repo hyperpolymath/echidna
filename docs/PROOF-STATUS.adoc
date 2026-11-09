@@ -262,6 +262,33 @@ move to Idris 2 under `+verification/proofs/idris2/+`. The Rust is then
 verified against those specifications with Creusot/Pearlite and Verus (R1).
 Until that lands, these rows keep their `+proven+` token. They carry no PWG.
 
+**Design review of the statements (2026-11-09):** the kernel accepting a proof
+says nothing about whether the statement models the code or says what its name
+claims. A statement-by-statement comparison with the Rust, the Idris 2 corpus
+and the Lean corpus found the following. Each is to be fixed in the split, not
+by changing a token.
+
+* *Model diverges from the Rust.* `+Dispatch.compute-trust+` gives Level 2 for a
+  cross-checked result without a certificate. The Rust
+  (`+src/rust/verification/confidence.rs+`, the "Cross-checked without
+  certificate" branch) and Idris 2 `+TrustKernelMonotonicity.computeTrustLevel+`
+  give Level 3. `+Integrity.check+` maps an uninitialised manifest to `+Missing+`,
+  where the Rust and Lean `+verify_placeholder+` give `+Uninitialized+`; the model
+  also has no "file not found" input.
+* *No Rust counterpart.* `+Portfolio.portfolio-trust+` (the Rust
+  `+compute_trust_level+` never reads `+portfolio_confidence+`) and
+  `+ClampTrust.clamp-trust+` (R10).
+* *Statements weaker than their names.* `+AxiomSafety.comment-skip-sound+`
+  ignores its hypothesis and proves only `+danger-to-policy DC-Safe ≡ Clean+`.
+  `+AxiomSafety.real-pattern-classified+` proves only that a function has a
+  value. `+Dispatch.pipeline-deterministic+` and
+  `+AxiomTrackerCompleteness.scan-deterministic+` are instances of `+cong+`. The
+  `+classify-*+` stubs always return `+DC-Safe+` and no theorem uses them.
+* *Gaps.* Idris 2 proves the sufficiency of the Level 5 conditions
+  (`+trustMono_level5_exact+`) but not their necessity, which Agda
+  `+max-trust-requires-all+` states. Idris 2 `+ClampTrustBounds+` lacks
+  `+clamp-idempotent+`.
+
 |R9. E11 solver-integrity soundness
 |`+proven+`
 |`+meta-checker/src/Echidna/Integrity.agda+`, inside the R4 receipt. States the
