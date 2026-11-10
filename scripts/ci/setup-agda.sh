@@ -2,6 +2,9 @@
 # SPDX-License-Identifier: MPL-2.0
 # Copyright (c) 2026 Jonathan D.A. Jewell
 # Pinned upstream binaries: no cold GHC bootstrap and no cached proof results.
+# PROOF-POLICY §6 deviation (open): installs from GitHub release archives, not
+# the Guix manifest or the container. Recorded in docs/PROOF-STATUS.adoc,
+# "Toolchain deviations".
 set -Eeuo pipefail
 trap 'echo "::error::Agda setup did not complete; proof check NOT RUN"; exit 2' ERR
 
