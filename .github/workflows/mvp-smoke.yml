@@ -54,6 +54,9 @@ jobs:
           # #130 landed (2026-05-30). 1.51.0 is the current upstream stable.
           tool: just@1.51.0
 
+      - name: Containment stopgap script tests (stub commands, no host)
+        run: bash tests/deploy/stopgap-apply.test.sh
+
       - name: Build release
         run: cargo build --release
 

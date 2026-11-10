@@ -8,23 +8,1209 @@ project := "echidna"
 default:
     @just --list --unsorted
 
-# Recipes live in just/*.just, one file per area, imported here in the
-# order they used to appear in this file.
-import "just/init.just"
-import "just/build.just"
-import "just/proofs.just"
-import "just/dev.just"
-import "just/corpus.just"
-import "just/ui.just"
-import "just/containers.just"
-import "just/chapel.just"
-import "just/spark.just"
-import "just/creusot.just"
-import "just/other.just"
-import "just/onboarding.just"
-import "just/corpus-design.just"
-import "just/saturation.just"
+# Initialize from RSR template (placeholder replacement)
+init:
+    #!/usr/bin/env bash
+    set -euo pipefail
 
-# Contractile recipes list after the project recipes, as they did before
-# the split.
-import? "contractile.just"
+    echo "═══════════════════════════════════════════════════"
+    echo "  RSR Project Bootstrap"
+    echo "═══════════════════════════════════════════════════"
+    echo ""
+
+    # --- Load defaults from config (if exists) ---
+    # Create yours: ~/.config/rsr/defaults
+    # Format: OWNER=myorg  AUTHOR="My Name"  AUTHOR_EMAIL=me@example.org ...
+    DEFAULTS="${XDG_CONFIG_HOME:-$HOME/.config}/rsr/defaults"
+    if [ -f "$DEFAULTS" ]; then
+        echo "Loading defaults from $DEFAULTS"
+        # shellcheck source=/dev/null
+        source "$DEFAULTS"
+        echo ""
+    fi
+
+    # --- Required values (pre-filled from defaults if available) ---
+    read -rp "Project name (human-readable, e.g. My Project): " PROJECT_NAME
+    [ -z "$PROJECT_NAME" ] && echo "Error: project name required" && exit 1
+
+    read -rp "Repository slug (e.g. my-project): " REPO
+    [ -z "$REPO" ] && echo "Error: repo slug required" && exit 1
+
+    read -rp "Owner [${OWNER:-}]: " _OWNER
+    OWNER="${_OWNER:-${OWNER:-}}"
+    [ -z "$OWNER" ] && echo "Error: owner required" && exit 1
+
+    read -rp "Author full name [${AUTHOR:-}]: " _AUTHOR
+    AUTHOR="${_AUTHOR:-${AUTHOR:-}}"
+    [ -z "$AUTHOR" ] && echo "Error: author name required" && exit 1
+
+    read -rp "Author email [${AUTHOR_EMAIL:-}]: " _AUTHOR_EMAIL
+    AUTHOR_EMAIL="${_AUTHOR_EMAIL:-${AUTHOR_EMAIL:-}}"
+    [ -z "$AUTHOR_EMAIL" ] && echo "Error: email required" && exit 1
+
+    # --- Optional values (pre-filled from defaults if available) ---
+    read -rp "Author organization [${AUTHOR_ORG:-none}]: " _AUTHOR_ORG
+    AUTHOR_ORG="${_AUTHOR_ORG:-${AUTHOR_ORG:-}}"
+
+    read -rp "Previous/alt email [${AUTHOR_EMAIL_ALT:-none}]: " _AUTHOR_EMAIL_ALT
+    AUTHOR_EMAIL_ALT="${_AUTHOR_EMAIL_ALT:-${AUTHOR_EMAIL_ALT:-}}"
+
+    read -rp "Project description []: " PROJECT_DESCRIPTION
+
+    read -rp "Forge domain [${FORGE:-github.com}]: " _FORGE
+    FORGE="${_FORGE:-${FORGE:-github.com}}"
+
+    read -rp "Security contact email [${SECURITY_EMAIL:-$AUTHOR_EMAIL}]: " _SECURITY_EMAIL
+    SECURITY_EMAIL="${_SECURITY_EMAIL:-${SECURITY_EMAIL:-$AUTHOR_EMAIL}}"
+
+    read -rp "Conduct contact email [${CONDUCT_EMAIL:-$AUTHOR_EMAIL}]: " _CONDUCT_EMAIL
+    CONDUCT_EMAIL="${_CONDUCT_EMAIL:-${CONDUCT_EMAIL:-$AUTHOR_EMAIL}}"
+
+    read -rp "Project type (library|binary|monorepo|service|website) [library]: " PROJECT_TYPE
+    PROJECT_TYPE="${PROJECT_TYPE:-library}"
+
+    read -rp "Website URL [https://${FORGE}/${OWNER}/${REPO}]: " WEBSITE
+    WEBSITE="${WEBSITE:-https://${FORGE}/${OWNER}/${REPO}}"
+
+    # --- Container values (optional — only relevant if container/ exists) ---
+    if [ -d "container" ]; then
+        echo ""
+        echo "── Container configuration (optional) ─────────"
+        read -rp "Service name [${REPO}]: " _SERVICE_NAME
+        SERVICE_NAME="${_SERVICE_NAME:-${REPO}}"
+        read -rp "Primary port [8080]: " _PORT
+        PORT="${_PORT:-8080}"
+        read -rp "Container registry [ghcr.io/${OWNER}]: " _REGISTRY
+        REGISTRY="${_REGISTRY:-ghcr.io/${OWNER}}"
+    else
+        SERVICE_NAME="${REPO}"
+        PORT="8080"
+        REGISTRY="ghcr.io/${OWNER}"
+    fi
+
+    # --- Derived values ---
+    PROJECT_UPPER=$(echo "$REPO" | tr '[:lower:]-' '[:upper:]_')
+    PROJECT_LOWER=$(echo "$REPO" | tr '[:upper:]-' '[:lower:]_')
+    CURRENT_YEAR=$(date +%Y)
+    CURRENT_DATE=$(date +%Y-%m-%d)
+    VERSION="0.1.0"
+
+    # Derive citation name parts (best-effort split on last space)
+    AUTHOR_LAST="${AUTHOR##* }"
+    AUTHOR_FIRST="${AUTHOR% *}"
+    FIRST_INITIAL="${AUTHOR_FIRST:0:1}."
+    if [ "$AUTHOR_LAST" = "$AUTHOR_FIRST" ]; then
+        AUTHOR_FIRST="$AUTHOR"
+        AUTHOR_LAST=""
+        FIRST_INITIAL=""
+    fi
+
+    echo ""
+    echo "── Summary ──────────────────────────────────────"
+    echo "  Project:     $PROJECT_NAME"
+    echo "  Repo:        $REPO"
+    echo "  Owner:       $OWNER"
+    echo "  Author:      $AUTHOR <$AUTHOR_EMAIL>"
+    [ -n "$AUTHOR_ORG" ] && echo "  Organization: $AUTHOR_ORG"
+    echo "  Forge:       $FORGE"
+    echo "  Year:        $CURRENT_YEAR"
+    echo "────────────────────────────────────────────────"
+    echo ""
+    read -rp "Proceed? [Y/n] " CONFIRM
+    [[ "${CONFIRM:-Y}" =~ ^[Nn] ]] && echo "Aborted." && exit 0
+
+    echo ""
+    echo "Replacing placeholders..."
+
+    # Brace tokens as variables (hex avoids just interpolation)
+    LB=$(printf '\x7b\x7b')
+    RB=$(printf '\x7d\x7d')
+
+    # Build the sed expression list
+    # Note: using | as delimiter since URLs contain /
+    SED_ARGS=(
+        -e "s|${LB}PROJECT_NAME${RB}|${PROJECT_NAME}|g"
+        -e "s|${LB}PROJECT_DESCRIPTION${RB}|${PROJECT_DESCRIPTION}|g"
+        -e "s|${LB}PROJECT${RB}|${PROJECT_UPPER}|g"
+        -e "s|${LB}project${RB}|${PROJECT_LOWER}|g"
+        -e "s|${LB}REPO${RB}|${REPO}|g"
+        -e "s|${LB}OWNER${RB}|${OWNER}|g"
+        -e "s|${LB}AUTHOR${RB}|${AUTHOR}|g"
+        -e "s|${LB}AUTHOR_EMAIL${RB}|${AUTHOR_EMAIL}|g"
+        -e "s|${LB}AUTHOR_ORG${RB}|${AUTHOR_ORG}|g"
+        -e "s|${LB}AUTHOR_LAST${RB}|${AUTHOR_LAST}|g"
+        -e "s|${LB}AUTHOR_FIRST${RB}|${AUTHOR_FIRST}|g"
+        -e "s|${LB}AUTHOR_INITIALS${RB}|${FIRST_INITIAL}|g"
+        -e "s|${LB}FORGE${RB}|${FORGE}|g"
+        -e "s|${LB}CURRENT_YEAR${RB}|${CURRENT_YEAR}|g"
+        -e "s|${LB}CURRENT_DATE${RB}|${CURRENT_DATE}|g"
+        -e "s|${LB}DATE${RB}|${CURRENT_DATE}|g"
+        -e "s|${LB}SECURITY_EMAIL${RB}|${SECURITY_EMAIL}|g"
+        -e "s|${LB}CONDUCT_EMAIL${RB}|${CONDUCT_EMAIL}|g"
+        -e "s|${LB}LICENSE${RB}|MPL-2.0|g"
+        -e "s|${LB}CONDUCT_TEAM${RB}|Code of Conduct Committee|g"
+        -e "s|${LB}RESPONSE_TIME${RB}|48 hours|g"
+        -e "s|${LB}MAIN_BRANCH${RB}|main|g"
+        -e "s|${LB}PROJECT_PURPOSE${RB}|${PROJECT_DESCRIPTION}|g"
+        -e "s|${LB}PROJECT_ROLE${RB}|${PROJECT_TYPE}|g"
+        -e "s|${LB}PROJECT_TYPE${RB}|${PROJECT_TYPE}|g"
+        -e "s|${LB}WEBSITE${RB}|${WEBSITE}|g"
+        -e "s|${LB}SERVICE_NAME${RB}|${SERVICE_NAME}|g"
+        -e "s|${LB}PORT${RB}|${PORT}|g"
+        -e "s|${LB}REGISTRY${RB}|${REGISTRY}|g"
+        -e "s|${LB}IMAGE${RB}|${REGISTRY}/${SERVICE_NAME}|g"
+        -e "s|${LB}VERSION${RB}|${VERSION}|g"
+        -e "s|${LB}EMAIL${RB}|${AUTHOR_EMAIL}|g"
+    )
+    [ -n "$AUTHOR_EMAIL_ALT" ] && SED_ARGS+=(-e "s|${LB}AUTHOR_EMAIL_ALT${RB}|${AUTHOR_EMAIL_ALT}|g")
+
+    # Replace in all text files (skip .git, LICENSE text, and binaries)
+    find . -type f \
+        -not -path './.git/*' \
+        -not -name 'MPL-2.0.txt' \
+        -not -name '*.png' -not -name '*.jpg' -not -name '*.gif' \
+        -not -name '*.woff' -not -name '*.woff2' \
+        | while read -r file; do
+        if file --brief "$file" | grep -qi 'text\|ascii\|utf'; then
+            sed -i "${SED_ARGS[@]}" "$file"
+        fi
+    done
+
+    # Also replace [YOUR-REPO-NAME] and [YOUR-NAME/ORG] in AI manifest
+    sed -i "s|\[YOUR-REPO-NAME\]|${PROJECT_NAME}|g" 0-AI-MANIFEST.a2ml 2>/dev/null || true
+    sed -i "s|\[YOUR-NAME/ORG\]|${OWNER}|g" 0-AI-MANIFEST.a2ml 2>/dev/null || true
+
+    echo ""
+    echo "── Validation ───────────────────────────────────"
+
+    # Check for remaining placeholders
+    PATTERN="${LB}[A-Z_]*${RB}"
+    REMAINING=$(grep -rl "$PATTERN" . --include='*.md' --include='*.adoc' --include='*.yml' --include='*.yaml' --include='*.a2ml' --include='*.toml' --include='*.scm' --include='*.ncl' --include='*.guix' --include='*.json' --include='*.sh' 2>/dev/null | grep -v '.git/' | grep -v '.machine_readable/ai/PLACEHOLDERS.adoc' || true)
+    if [ -n "$REMAINING" ]; then
+        echo "WARNING: Remaining placeholders in:"
+        echo "$REMAINING" | sed 's/^/  /'
+        echo ""
+        echo "Run: grep -rn '$LB' . --include='*.md' to inspect"
+    else
+        echo "All placeholders replaced successfully!"
+    fi
+
+    echo ""
+    echo "Done! Next steps:"
+    echo "  1. Review changes: git diff"
+    echo "  2. Remove template cruft: rm .machine_readable/ai/PLACEHOLDERS.adoc"
+    echo "  3. Customize README.adoc for your project"
+    echo "  4. Commit: git add -A && git commit -m 'feat: initialize from RSR template'"
+    echo "  5. Push: git remote add origin git@github.com:$OWNER/$REPO.git && git push -u origin main"
+
+# Build debug
+build:
+    cargo build
+
+# Build release
+build-release:
+    cargo build --release
+
+# Run unit tests
+test:
+    cargo test --lib
+
+# Test the containment stopgap script against stub podman/systemctl/curl
+test-deploy:
+    bash tests/deploy/stopgap-apply.test.sh
+
+# Run all tests (unit + integration)
+test-all:
+    cargo test
+
+# Run tests verbose
+test-verbose:
+    cargo test -- --nocapture
+
+# Run integration tests only
+test-integration:
+    cargo test --test integration_tests
+
+# Run neural integration tests (requires Julia server)
+test-neural:
+    ./scripts/test-integration.sh
+
+# Run the S4 loop-closure integration test against a VeriSimDB instance.
+# Skips with a notice when VeriSimDB is unreachable (no failure).
+# Set VERISIM_URL to override the default of http://localhost:8080.
+#
+# Local dev: start verisim-api beforehand (see docs/runbooks/s4-loop-closure.md);
+# the test will exercise the full record_proof_attempt → query_by_goal_hash loop.
+test-s4-loop:
+    @echo "Running S4 loop-closure test against ${VERISIM_URL:-http://localhost:8080}"
+    @echo "Test will skip cleanly if the endpoint is unreachable."
+    cargo test --features verisim --test s4_loop_closure -- --nocapture
+
+# ── Dogfood proof corpus (proofs/{coq,lean,agda} + src/idris validator) ──
+# Each recipe assumes its toolchain is already installed (see `just doctor`);
+# CI installs the toolchains first, then calls these so local and CI run the
+# exact same commands.
+
+# Type-check the whole dogfood proof corpus across every assistant.
+proofs: proofs-coq proofs-lean proofs-agda proofs-idris proofs-verif-lean proofs-verif-idris
+
+# Compile the Coq proof corpus (proofs/coq/**/*.v).
+proofs-coq:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    cd proofs/coq
+    for f in $(find . -name '*.v' | sort); do
+        echo "coqc $f"
+        coqc -q "$f"
+    done
+    echo "Coq corpus: all files type-check"
+
+# Build the Lean 4 proof corpus via Lake (proofs/lean).
+proofs-lean:
+    cd proofs/lean && lake build
+
+# Type-check the Agda proof corpus (proofs/agda/*.agda).
+proofs-agda:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    # Agda writes UTF-8 to stdout and aborts under a non-UTF-8 locale (C/POSIX).
+    export LC_ALL="${LC_ALL:-C.UTF-8}"
+    cd proofs/agda
+    for f in $(find . -name '*.agda' -not -path './_build/*' -not -path './dist-newstyle/*' | sort); do
+        echo "agda --safe --without-K --cubical-compatible $f"
+        agda --safe --without-K --cubical-compatible "$f"
+    done
+    echo "Agda corpus: all files type-check"
+
+# Type-check the Idris2 validator (src/idris) — --typecheck needs no codegen backend.
+proofs-idris:
+    cd src/idris && idris2 --typecheck echidna-validator.ipkg
+
+# Distinct from proofs-lean: the verification-pipeline *property* proofs
+# (ConfidenceLattice, ParetoMaximality, ParetoStrongMaximality, IntegrityVerification,
+# PortfolioCompleteness) under verification/proofs/lean4, not the dogfood corpus under
+# proofs/lean. No mathlib dependency (lake-manifest packages: []), so the build is light.
+# Build the Lean 4 trust-pipeline property proofs via Lake (verification/proofs/lean4).
+proofs-verif-lean:
+    cd verification/proofs/lean4 && lake build
+
+# DispatchCorrectness imports EchidnaABI.Types, so the echidnaabi package
+# (src/abi) is installed first (--install builds it on the way); the ipkg then
+# type-checks all 11 modules with a reliable aggregate exit code. A bare per-file
+# `idris2 --check` is unsafe here -- it exits 0 even on an unresolved import -- so
+# the ipkg build is the gate and any "Error" line is also treated as failure.
+# Type-check the Idris2 trust-pipeline property proofs (verification/proofs/idris2).
+proofs-verif-idris:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    (cd src/abi && idris2 --install echidnaabi.ipkg >/dev/null)
+    cd verification/proofs/idris2
+    out=$(idris2 --typecheck echidna-verif-proofs.ipkg 2>&1)
+    printf '%s\n' "$out"
+    if printf '%s\n' "$out" | grep -qE '^Error'; then
+        echo "Idris2 verification corpus: TYPE ERRORS DETECTED" >&2
+        exit 1
+    fi
+    echo "Idris2 verification corpus: all files type-check"
+
+# Accept fixtures must type-check, reject fixtures must be refused (tests/abi).
+# Type-check the Idris2 ABI accept/reject fixtures (mechanical falsifier).
+abi-fixtures:
+    bash scripts/abi-fixtures.sh
+
+# Heavy (downloads the ~500MB Isabelle release), so this is gated by the weekly
+# verification-proofs-cron workflow, not the per-PR `proofs` rollup. Covers the
+# base-HOL theories; algebra/GroupTheory.thy is excluded (see proofs/isabelle/ROOT).
+# Verify the Isabelle/HOL self-proof corpus (proofs/isabelle) via `isabelle build`.
+proofs-isabelle:
+    cd proofs/isabelle && isabelle build -d . -v Echidna_Isabelle
+
+# Mizar is not packaged for apt and ships only from mizar.org (Tier-4 in this
+# project); like Isabelle it is gated by the weekly cron, not per-PR. MIZFILES
+# must point at the Mizar share dir. Errors are reported in a per-file .err file
+# (the verifier's exit code is not reliable), so a non-empty .err fails the recipe.
+# Verify the Mizar self-proof corpus (proofs/mizar) with the Mizar verifier.
+proofs-mizar:
+    #!/usr/bin/env bash
+    # Not -e: makeenv/verifier signal errors via a per-file .err (line col code),
+    # not a reliable exit code, so inspect that rather than abort on first non-zero.
+    set -uo pipefail
+    : "${MIZFILES:?MIZFILES must point at the Mizar share dir}"
+    cd proofs/mizar
+    rc=0
+    for f in *.miz; do
+        base="${f%.miz}"
+        echo "=== $f ==="
+        makeenv "$f" || echo "(makeenv exit $?)"
+        verifier "$f" || echo "(verifier exit $?)"
+        if [ -s "$base.err" ]; then
+            echo "--- $base.err (line col code) ---"
+            cat "$base.err"
+            while read -r line col code; do
+                src="$(sed -n "${line}p" "$f" 2>/dev/null)"
+                [ -n "$src" ] && echo "    L${line}:${col} (code ${code}): ${src}"
+            done < "$base.err"
+            rc=1
+        else
+            echo "($f verifies clean)"
+        fi
+    done
+    [ "$rc" -eq 0 ] || { echo "Mizar corpus: VERIFICATION ERRORS (see .err above)" >&2; exit 1; }
+    echo "Mizar corpus: all files verify"
+
+# Format code
+fmt:
+    cargo fmt
+
+# Check formatting
+fmt-check:
+    cargo fmt -- --check
+
+# Run clippy lints
+lint:
+    cargo clippy -- -D warnings
+
+# Check without building
+check:
+    cargo check
+
+# Clean build artifacts
+clean:
+    cargo clean
+
+# Run the project
+run *ARGS:
+    cargo run -- {{ARGS}}
+
+# Run Invariant Path overlay tools for this repository
+invariant-path *ARGS:
+    ./scripts/invariant-path.sh {{ARGS}}
+
+# Rebuild the canonical seed vocabulary (training_data/vocabulary_CANON.txt).
+# Two stages: (1) mine frequency-filtered identifiers from the per-prover
+# proof corpora, then (2) union with the hand-curated sets. Consumed by
+# src/julia/training/dataloader.jl:build_vocabulary_from_data.
+vocab-canon:
+    julia scripts/vocabulary_mine_corpus.jl
+    julia scripts/vocabulary_canonicalize.jl
+
+# ── Corpus / training pipeline ─────────────────────────────────
+#
+# Five steps in order: provision upstream mirrors, run every extractor,
+# merge per-prover proof_states into UNIFIED, align the premise files
+# to UNIFIED's fresh ids, then retrain.  Each step is idempotent;
+# re-running only touches what has changed.  See
+# scripts/provision_corpora.sh --list for the source catalogue.
+
+# Clone every upstream prover corpus into external_corpora/.
+# Pass specific names to provision a subset: `just provision-corpora metamath mathlib4`.
+provision-corpora *NAMES:
+    @if [ -z "{{NAMES}}" ]; then \
+        scripts/provision_corpora.sh --all; \
+    else \
+        scripts/provision_corpora.sh {{NAMES}}; \
+    fi
+
+# Report which upstream corpora are on disk and their sizes.
+corpora-status:
+    scripts/provision_corpora.sh --status
+
+# Run every scripts/extract_*.jl against the provisioned corpora.
+# Pass names to run a subset: `just extract-corpora metamath mathlib4`.
+extract-corpora *NAMES:
+    scripts/extract_all.sh {{NAMES}}
+
+# Merge per-prover proof_states_*.jsonl into proof_states_UNIFIED.jsonl
+# with fresh sequential ids (dedupes by prover+theorem).
+merge-corpora:
+    julia --project=src/julia scripts/merge_corpus.jl
+
+# Rebuild premises_COMPLETE.jsonl with proof_ids that match UNIFIED.
+# merge-corpora rewrites every proof_state id to a fresh sequential
+# counter; the premise files keep the original extractor ids, so this
+# step re-joins premises to UNIFIED via (prover, theorem) — the durable
+# key merge_corpus.jl already dedupes on.  Without this step the
+# dataloader's proof_id join matches ~0% of records.
+align-premises:
+    julia --project=src/julia scripts/align_premises.jl
+
+# Full retrain from provisioned corpora.  Honours ECHIDNA_MAX_PROOF_STATES
+# (0 = unlimited), ECHIDNA_NUM_EPOCHS, ECHIDNA_NUM_NEGATIVES.
+#
+# Depends on align-premises: without that step the dataloader joins
+# premise.proof_id against proof_state.id and fails at ~0% match because
+# merge_corpus.jl rewrites proof_state ids to fresh sequential counters
+# while the premise files keep the original per-extractor ids.  Running
+# align-premises is idempotent and cheap (seconds on a 2M premise set).
+retrain: align-premises
+    julia --project=src/julia src/julia/run_training.jl
+
+# Retrain without the align-premises prerequisite — use only when you
+# know premises_COMPLETE.jsonl is already aligned (e.g. you just ran
+# just align-premises manually and want to iterate on model code).
+retrain-skip-align:
+    julia --project=src/julia src/julia/run_training.jl
+
+# Full training run on the real corpus (auto-selects GPU when available).
+# Honours ECHIDNA_MAX_PROOF_STATES, ECHIDNA_NUM_EPOCHS, ECHIDNA_NUM_NEGATIVES.
+# Produces models/neural/{premise_selector,tactic_predictor}.bson, vocab.json,
+# updates models/model_metadata.txt, and appends to training_data/metrics_baseline.jsonl.
+train:
+    julia --project=src/julia src/julia/run_training.jl
+
+# CPU smoke pass: 2000 proof states, 2 epochs — fast end-to-end sanity check.
+# Safe to run on any dev box without a GPU.  Produces the same artefacts as `train`.
+train-cpu:
+    ECHIDNA_MAX_PROOF_STATES=2000 ECHIDNA_NUM_EPOCHS=2 julia --project=src/julia src/julia/run_training_cpu.jl
+
+# Evaluate trained model on held-out validation split (MRR / top-k).
+# Requires `just train-cpu` (or `just train`) to have produced models/neural/.
+# Appends one JSONL row to training_data/eval_results.jsonl and exits non-zero
+# if MRR < 0.66 (below the cosine baseline).
+eval:
+    julia --project=src/julia src/julia/eval_held_out.jl
+
+# End-to-end pipeline: provision → extract → merge → align → retrain.
+# Use `ECHIDNA_MAX_PROOF_STATES=0 just corpus-refresh` to lift the sample cap.
+corpus-refresh: provision-corpora extract-corpora merge-corpora align-premises retrain
+
+# Run training using the saturation-campaign corpus adapters as the
+# data source. Requires `just provision-corpora` to have populated
+# data/corpus/ first. Per-prover invocation; default lean.
+train-from-corpus prover="lean":
+    @julia --project=src/julia src/julia/run_training.jl \
+        --prover {{prover}} \
+        --corpus-json $(ls data/corpus/*.json | tr '\n' ',') \
+        --synonyms-dir data/synonyms
+
+# Run the eight-axis metrics suite against the current corpus and post
+# results to VeriSimDB. Falls back to training_data/metrics_<run_id>.jsonl
+# if VERISIM_URL is unreachable. Target values are documented in
+# metrics/README.adoc.
+metrics:
+    julia --project=src/julia metrics/run_all.jl
+
+# Report corpus balance across provers from stats_UNIFIED.json.
+corpus-stats:
+    @julia -e 'using JSON3, Printf; \
+      s = JSON3.read(read("training_data/stats_UNIFIED.json", String)); \
+      counts = s.per_prover_counts; \
+      pairs = sort(collect(counts), by = x -> -x[2]); \
+      total = sum(last.(pairs)); \
+      println("Total proofs: ", total, "   provers with data: ", length(pairs)); \
+      println("Rank  Prover                     Count    Share"); \
+      for (i,(p,c)) in enumerate(pairs); \
+          @printf("%3d   %-25s  %7d   %5.2f%%\n", i, p, c, 100c/total); \
+      end'
+
+# Generate docs
+doc:
+    cargo doc --no-deps --open
+
+# Update dependencies
+update:
+    cargo update
+
+# Regenerate Cap'n Proto bindings from schemas/echidna.capnp.
+# Requires capnp compiler: https://capnproto.org/install.html
+# Output: src/rust/ipc/echidna_capnp.rs (checked in; do not edit by hand)
+capnp-gen:
+    @command -v capnp >/dev/null 2>&1 || { echo "capnp compiler not found — install from https://capnproto.org/install.html"; exit 1; }
+    capnp compile -orust schemas/echidna.capnp -I /usr/include
+    @echo "Rust bindings generated. Commit src/rust/ipc/echidna_capnp.rs."
+
+# Audit dependencies
+audit:
+    cargo audit
+
+# ── UI Management ──────────────────────────────────────────
+
+# ── UI ──
+# The AffineScript UI was removed 2026-08 (AffineScript is a banned language under the
+# estate language policy; AffineScript-TEA is the replacement). The TEA sources
+# live in src/ui/tea/ and the static shell in src/ui/public/, but the
+# AffineScript compile pipeline is NOT wired yet — see issues #117 and #266
+# (missing Http::fetch / Async / Json primitives).
+
+# Build the UI — blocked on the AffineScript-TEA toolchain
+build-ui:
+    @echo "build-ui is unavailable: the AffineScript UI was removed and the"
+    @echo "AffineScript-TEA pipeline is not wired yet (issues #117, #266)."
+    @echo "Sources: src/ui/tea/echidna_gui.affine; shell: src/ui/public/."
+    @exit 1
+
+# Serve the static UI shell (no compile step) on http://localhost:3000.
+# Bun is the estate JavaScript runtime; Deno is retired (2026-09-22 ruling).
+serve-ui:
+    cd src/ui/public && bun ../../../scripts/serve-static.js 3000
+
+# Launch full ECHIDNA GUI (Backend + UI + Browser)
+gui:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    echo "Launching ECHIDNA GUI..."
+    # Start backend
+    cargo run -- server --port 8081 --cors > /dev/null 2>&1 & BACKEND_PID=$!
+    echo "Started backend (PID $BACKEND_PID)"
+    # Start UI server
+    (cd src/ui/public && bun ../../../scripts/serve-static.js 3000) > /dev/null 2>&1 & UI_PID=$!
+    echo "Started UI server (PID $UI_PID)"
+    # Cleanup on exit
+    trap "kill $BACKEND_PID $UI_PID 2>/dev/null || true" EXIT
+    # Wait for servers to start
+    echo "Waiting for servers to initialize..."
+    sleep 2
+    # Open browser
+    URL="http://localhost:3000"
+    echo "Opening $URL..."
+    xdg-open "$URL" > /dev/null 2>&1 || open "$URL" > /dev/null 2>&1 || echo "Please open $URL in your browser"
+    echo "ECHIDNA GUI is running. Press Ctrl+C in this terminal to stop."
+    # Wait for background processes
+    wait
+
+# All checks before commit
+pre-commit: fmt-check lint test
+    @echo "All checks passed!"
+
+# MVP 1.0 smoke checks
+mvp:
+    ./scripts/mvp-smoke.sh
+
+# MVP 1.0 dependency checklist (best-effort)
+mvp-env:
+    ./scripts/mvp-smoke.sh || true
+
+# Build minimal container image (Z3, CVC5, Lean, Idris2)
+container-build:
+    podman build -f .containerization/Containerfile -t echidna:latest .
+
+# Build full container image (all provers + Julia)
+container-build-full:
+    podman build -f .containerization/Containerfile.full -t echidna:full .
+
+# ── Tier-3 prover containers (Wave-3) ────────────────────────────────────────
+# All nine targets live in ONE consolidated multi-target Containerfile.wave3.
+# The Rust core is compiled once (shared `rust-builder` stage) and every prover
+# image is a `--target`; podman caches the shared stage across builds on a host.
+
+# Build all non-proprietary Tier-3 prover containers (skip imandra — licence required)
+container-build-tier3: container-build-tamarin container-build-proverif container-build-metamath \
+    container-build-twelf container-build-or-tools container-build-scip \
+    container-build-hol4 container-build-acl2
+
+container-build-tamarin:
+    podman build -f .containerization/Containerfile.wave3 --target tamarin -t echidna:tamarin .
+
+container-build-proverif:
+    podman build -f .containerization/Containerfile.wave3 --target proverif -t echidna:proverif .
+
+container-build-metamath:
+    podman build -f .containerization/Containerfile.wave3 --target metamath -t echidna:metamath .
+
+container-build-twelf:
+    podman build -f .containerization/Containerfile.wave3 --target twelf -t echidna:twelf .
+
+container-build-or-tools:
+    podman build -f .containerization/Containerfile.wave3 --target or-tools -t echidna:or-tools .
+
+container-build-scip:
+    podman build -f .containerization/Containerfile.wave3 --target scip -t echidna:scip .
+
+container-build-hol4:
+    podman build -f .containerization/Containerfile.wave3 --target hol4 -t echidna:hol4 .
+
+container-build-acl2:
+    podman build -f .containerization/Containerfile.wave3 --target acl2 -t echidna:acl2 .
+
+# Build imandra stub (proprietary; real binary requires a signed licence — see Containerfile.wave3 imandra target)
+container-build-imandra:
+    podman build -f .containerization/Containerfile.wave3 --target imandra -t echidna:imandra .
+
+# Run echidna container
+container-run *ARGS:
+    podman run --rm -it echidna:latest {{ARGS}}
+
+# ── Chapel Accelerator ──────────────────────────────────────
+
+# Compile the Chapel metalayer into a static library.
+# --static (not --dynamic) because the apt-shipped Chapel runtime is
+# CHPL_LIB_PIC=none only; see .github/workflows/chapel-ci.yml for the
+# longer explanation and #133 for the closure trace.
+chapel-build:
+    @echo "Compiling Chapel metalayer (static)..."
+    cd src/chapel && chpl --library --static -I ../zig_ffi \
+        -o libechidna_chapel \
+        chapel_ffi_exports.chpl parallel_proof_search.chpl
+    @echo "Built src/chapel/lib/libechidna_chapel.a"
+
+# Build the Chapel "hello" smoke target — exercises coforall + atomic
+# CAS + reduction. Used in CI as the toolchain-health signal.
+chapel-smoke:
+    cd src/chapel && chpl -o chapel_smoke smoke.chpl && ./chapel_smoke
+
+# Run the Chapel-gated Rust tests (`--features chapel`).
+chapel-test: build-chapel-ffi
+    cargo test --locked --features chapel --lib -- proof_search verify_proof_parallel
+
+# Speedup baseline: compares sequentialProofSearch /
+# parallelProofSearch / parallelProofSearchSpeculative against the
+# fixture corpus in tests/chapel_fixtures/. Emits CSV to stdout. Doc:
+# docs/bench/2026-05-30-chapel-mrr-baseline.adoc.
+#
+# IDRIS2_PREFIX is derived from `which idris2` because Idris2's prelude
+# resolution requires the env var to be set when invoking `--check`;
+# the per-prover cwd hook (#158) sets the subprocess working dir but
+# doesn't help if the parent never had the env var (see
+# src/chapel/parallel_proof_search.chpl ProverInfo[4]). The derived
+# prefix is `dirname(dirname(realpath(which idris2)))` — works for
+# both source builds and asdf-shimmed installs.
+bench-chapel-mrr:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    if command -v idris2 >/dev/null 2>&1 && [ -z "${IDRIS2_PREFIX:-}" ]; then
+      export IDRIS2_PREFIX="$(dirname "$(dirname "$(readlink -f "$(command -v idris2)")")")"
+      echo "# IDRIS2_PREFIX=$IDRIS2_PREFIX (derived from which idris2)" >&2
+    fi
+    cd src/chapel
+    chpl -o bench_mrr bench_mrr.chpl
+    ./bench_mrr --verbose=false --timeout=10
+    echo "# wrote src/chapel/bench_mrr_telemetry.csv + src/chapel/bench_mrr_summary.csv" >&2
+
+# Same bench, but surface only the corpus-level outcome breakdown: the
+# per-prover preempted / timed-out / success counts and the preemption
+# rate next to wall-clock, one line per strategy. This is the #162 view —
+# it answers "how much of the speculative win is preemption?" without
+# opening the 360-row telemetry file.
+bench-chapel-mrr-telemetry:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    if command -v idris2 >/dev/null 2>&1 && [ -z "${IDRIS2_PREFIX:-}" ]; then
+      export IDRIS2_PREFIX="$(dirname "$(dirname "$(readlink -f "$(command -v idris2)")")")"
+    fi
+    cd src/chapel
+    chpl -o bench_mrr bench_mrr.chpl
+    ./bench_mrr --verbose=false --timeout=10 --telemetry-only=true
+    echo "corpus-level outcome breakdown (fixture=ALL):"
+    grep '^ALL,' bench_mrr_summary.csv | while IFS=, read -r _ strategy att ok fail preempt timeout na err notatt rate wall _ _; do
+      printf '  %-22s attempted=%-3s success=%-3s failure=%-3s preempted=%-3s timed_out=%-3s rate=%s wall=%ss\n' \
+        "$strategy" "$att" "$ok" "$fail" "$preempt" "$timeout" "$rate" "$wall"
+    done
+
+# Rebuild Chapel 2.8.0 from source with CHPL_LIB_PIC=pic so that
+# `chpl --library --dynamic` can produce a shared-library form of the
+# metalayer. The apt deb ships only the `lib_pic-none` runtime
+# variant. ~25-35 min wall on a 4-core x86_64. ~5 GB disk under
+# ~/.cache/echidna/chapel-pic. Procedure + tradeoffs:
+# docs/decisions/2026-05-30-chapel-pic-rebuild.adoc. NOT a CI step.
+chapel-pic-from-source:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    CACHE_DIR="${ECHIDNA_CHAPEL_PIC_CACHE:-$HOME/.cache/echidna/chapel-pic}"
+    CHPL_VERSION="${CHPL_VERSION:-2.8.0}"
+    mkdir -p "$CACHE_DIR"
+    cd "$CACHE_DIR"
+    if [ ! -f "chapel-${CHPL_VERSION}.tar.gz" ]; then
+      echo "Downloading chapel ${CHPL_VERSION}..."
+      curl -fL "https://github.com/chapel-lang/chapel/releases/download/${CHPL_VERSION}/chapel-${CHPL_VERSION}.tar.gz" \
+        -o "chapel-${CHPL_VERSION}.tar.gz"
+    fi
+    if [ ! -d "chapel-${CHPL_VERSION}" ]; then
+      tar xf "chapel-${CHPL_VERSION}.tar.gz"
+    fi
+    cd "chapel-${CHPL_VERSION}"
+    export CHPL_LIB_PIC=pic
+    export CHPL_LLVM=bundled
+    export CHPL_HOME="$PWD"
+    source util/setchplenv.bash
+    echo "Building chapel runtime with CHPL_LIB_PIC=pic (~30 min)..."
+    make -j"$(nproc)"
+    echo "Verifying lib_pic-pic variant landed..."
+    if find lib -name 'lib_pic-pic' -type d | head -1 | grep -q .; then
+      echo "OK: PIC runtime built at $CHPL_HOME"
+      echo "Use:  PATH=$CHPL_HOME/bin/linux64-x86_64:\$PATH chpl --library --dynamic ..."
+    else
+      echo "ERROR: lib_pic-pic variant not found after build" >&2
+      exit 1
+    fi
+
+# Build Zig FFI bridge for Chapel (prerequisite for --features chapel)
+build-chapel-ffi:
+    @echo "Building Zig FFI bridge..."
+    cd src/zig_ffi && zig build -Doptimize=ReleaseSafe
+    @echo "Library built at src/zig_ffi/zig-out/lib/"
+
+# Build the feature against explicit unavailable stubs.
+build-chapel: build-chapel-ffi
+    ECHIDNA_CHAPEL_EXPECT_MODE=stubs cargo build --locked --features chapel
+
+# Build the real static bridge and let Cargo consume Chapel's runtime closure.
+build-chapel-real: chapel-build
+    cd src/zig_ffi && zig build -Doptimize=ReleaseSafe -Dstubs=false
+    ECHIDNA_CHAPEL_EXPECT_MODE=real cargo build --locked --features chapel
+
+chapel-test-real: build-chapel-real
+    ECHIDNA_CHAPEL_EXPECT_MODE=real cargo test --locked --features chapel --lib -- proof_search verify_proof_parallel
+
+# Alias retained for muscle-memory; same as chapel-test.
+test-chapel: chapel-test
+
+# Test Zig FFI bridge independently
+test-chapel-ffi:
+    cd src/zig_ffi && zig build test
+
+# Full local real-library path, with the independent stub bridge unit tests.
+chapel-all: chapel-smoke test-chapel-ffi chapel-test-real
+    @echo "Real Chapel build and selected Rust/FFI tests completed"
+
+# ── SPARK axiom-policy layer ─────────────────────────────────
+
+# Step 1: compile Ada/SPARK to static library (requires GNAT + GNATprove)
+build-spark-ada:
+    gprbuild -P src/ada/spark/echidna_spark.gpr -j0
+    @echo "SPARK library built at lib/spark/libechidna_spark.a"
+
+# Step 2: run GNATprove to formally verify the SPARK contracts
+prove-spark:
+    gnatprove -P src/ada/spark/echidna_spark.gpr --level=2 \
+        --prover=z3,cvc5,altergo --timeout=30 --report=fail -j0
+    @echo "GNATprove: all SPARK contracts discharged"
+
+# Step 3: compile Zig bridge (links against libechidna_spark.a)
+build-spark-zig: build-spark-ada
+    cd src/zig && zig build -Dspark=true -Doptimize=ReleaseSafe
+    @echo "SPARK Zig bridge built at src/zig/zig-out/lib/libechidna_spark_zig.a"
+
+# Step 4: build Rust with SPARK feature enabled
+build-spark: build-spark-zig
+    cargo build --features spark
+    @echo "Rust+SPARK build complete"
+
+# Full SPARK pipeline: prove → build → test
+spark-all: prove-spark build-spark-zig
+    cargo test --features spark -- spark
+    @echo "SPARK layer: proved, built, tested"
+
+# Cross-check: run both Rust and SPARK enforce_policy, assert agreement
+verify-spark-crosscheck: build-spark
+    cargo test --features spark -- crosscheck
+    @echo "SPARK/Rust crosscheck passed"
+
+# ── Creusot formal verification (Stage 8c) ──────────────────
+
+# Run Creusot formal verification on the trust-pipeline kernel.
+#
+# Prerequisites: Creusot + Why3 + Z3/CVC5 (see crates/echidna-core-creusot/CREUSOT-SETUP.adoc).
+# The nightly pin lives in crates/echidna-core-creusot/rust-toolchain.toml.
+#
+# This recipe is currently in report-only mode: CI runs it and posts
+# results but does not block the merge until Stage 8c-M3.
+verify-trust-pipeline:
+    @echo "Running Creusot formal verification on echidna-core-creusot..."
+    cargo +nightly creusot \
+        -p echidna-core-creusot \
+        -- \
+        --features creusot \
+        --why3 "$(which why3)"
+    @echo "Creusot obligations discharged. See Why3 output above."
+
+# Stable-Rust test suite for the Creusot-annotated trust pipeline.
+# Runs on any Rust version; does not require Creusot or Why3.
+test-trust-pipeline:
+    cargo test -p echidna-core-creusot
+    @echo "Trust-pipeline invariant tests passed ($(cargo test -p echidna-core-creusot 2>&1 | grep 'test result' | head -1 | grep -oP '\d+ passed') tests)."
+
+# ── Other ───────────────────────────────────────────────────
+
+# [AUTO-GENERATED] Multi-arch / RISC-V target
+build-riscv:
+	@echo "Building for RISC-V..."
+	cross build --target riscv64gc-unknown-linux-gnu
+
+# Run panic-attacker pre-commit scan
+assail:
+    @command -v panic-attack >/dev/null 2>&1 && panic-attack assail . || echo "panic-attack not found — install from https://github.com/hyperpolymath/panic-attacker"
+
+# ── Onboarding ────────────────────────────────────────────────
+
+# Check that all required tools are installed and working
+doctor:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    PASS=0; FAIL=0; WARN=0
+    check() {
+        local name="$1" cmd="$2"
+        if command -v "$cmd" >/dev/null 2>&1; then
+            ver=$("$cmd" --version 2>/dev/null | head -1 || echo "unknown")
+            echo "  [OK] $name: $ver"
+            PASS=$((PASS + 1))
+        else
+            echo "  [FAIL] $name: '$cmd' not found"
+            FAIL=$((FAIL + 1))
+        fi
+    }
+    check_optional() {
+        local name="$1" cmd="$2"
+        if command -v "$cmd" >/dev/null 2>&1; then
+            ver=$("$cmd" --version 2>/dev/null | head -1 || echo "unknown")
+            echo "  [OK] $name: $ver"
+            PASS=$((PASS + 1))
+        else
+            echo "  [WARN] $name: '$cmd' not found (optional)"
+            WARN=$((WARN + 1))
+        fi
+    }
+    echo "=== echidna: Doctor ==="
+    echo ""
+    echo "Required tools:"
+    check "Rust/cargo" "cargo"
+    check "just" "just"
+    check "pkg-config" "pkg-config"
+    # Check openssl headers
+    if pkg-config --exists openssl 2>/dev/null; then
+        echo "  [OK] openssl-devel: $(pkg-config --modversion openssl)"
+        PASS=$((PASS + 1))
+    else
+        echo "  [FAIL] openssl-devel: not found (install openssl-devel or libssl-dev)"
+        FAIL=$((FAIL + 1))
+    fi
+    echo ""
+    echo "Optional tools (full stack):"
+    check_optional "Podman" "podman"
+    check_optional "Idris2" "idris2"
+    check_optional "Zig" "zig"
+    check_optional "Julia" "julia"
+    check_optional "Bun" "bun"
+    check_optional "Chapel" "chpl"
+    check_optional "panic-attack" "panic-attack"
+    echo ""
+    echo "Prover backends (spot check):"
+    check_optional "Z3" "z3"
+    check_optional "CVC5" "cvc5"
+    echo ""
+    echo "Build artefacts:"
+    if [ -f "target/debug/echidna" ] || [ -f "target/release/echidna" ]; then
+        echo "  [OK] echidna binary built"
+    else
+        echo "  [INFO] echidna not built — run 'just build'"
+    fi
+    echo ""
+    echo "=== Results: $PASS passed, $FAIL failed, $WARN warnings ==="
+    if [ "$FAIL" -gt 0 ]; then
+        echo "Run 'just heal' for install instructions."
+        exit 1
+    fi
+
+# Show install instructions for missing tools
+heal:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    echo "=== echidna: Heal ==="
+    echo ""
+    echo "Install missing tools:"
+    echo ""
+    if ! command -v cargo >/dev/null 2>&1; then
+        echo "  Rust (REQUIRED):"
+        echo "    asdf install rust nightly"
+        echo "    # Or: curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh"
+        echo ""
+    fi
+    if ! pkg-config --exists openssl 2>/dev/null; then
+        echo "  OpenSSL development headers (REQUIRED):"
+        echo "    Fedora: sudo dnf install openssl-devel pkg-config"
+        echo "    Ubuntu: sudo apt install libssl-dev pkg-config"
+        echo ""
+    fi
+    if ! command -v podman >/dev/null 2>&1; then
+        echo "  Podman (for containers):"
+        echo "    Fedora: sudo dnf install podman"
+        echo "    Ubuntu: sudo apt install podman"
+        echo ""
+    fi
+    if ! command -v idris2 >/dev/null 2>&1; then
+        echo "  Idris2 (for ABI layer):"
+        echo "    Install via pack: https://github.com/stefan-hoeck/idris2-pack"
+        echo ""
+    fi
+    if ! command -v zig >/dev/null 2>&1; then
+        echo "  Zig (for FFI bridge):"
+        echo "    asdf plugin add zig && asdf install zig 0.13.0"
+        echo ""
+    fi
+    if ! command -v julia >/dev/null 2>&1; then
+        echo "  Julia (for ML layer):"
+        echo "    asdf plugin add julia && asdf install julia latest"
+        echo ""
+    fi
+    if ! command -v z3 >/dev/null 2>&1; then
+        echo "  Z3 (SMT solver):"
+        echo "    Fedora: sudo dnf install z3"
+        echo "    Ubuntu: sudo apt install z3"
+        echo ""
+    fi
+    if ! command -v panic-attack >/dev/null 2>&1; then
+        echo "  panic-attack (pre-commit scans):"
+        echo "    cargo install --git https://github.com/hyperpolymath/panic-attacker"
+        echo ""
+    fi
+    echo "After installing, run 'just doctor' to verify."
+
+# Guided tour of the repository structure
+tour:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    echo "=== ECHIDNA: Guided Tour ==="
+    echo ""
+    echo "ECHIDNA is a neurosymbolic theorem proving platform with 48 prover backends."
+    echo ""
+    echo "1. RUST CORE: src/rust/"
+    echo "   The main implementation. 48 prover backends, trust pipeline, CLI, REPL."
+    echo "     src/rust/main.rs          - CLI entry point"
+    echo "     src/rust/repl.rs          - Interactive REPL"
+    echo "     src/rust/server.rs        - HTTP API server"
+    echo "     src/rust/provers/         - 30 prover backend implementations"
+    echo "     src/rust/verification/    - Trust pipeline (portfolio, certificates, axioms)"
+    echo "     src/rust/integrity/       - Solver binary integrity (SHAKE3-512, BLAKE3)"
+    echo "     src/rust/executor/        - Sandboxed execution (Podman, bubblewrap)"
+    echo "     src/rust/exchange/        - Cross-prover proof exchange"
+    echo "     src/rust/agent/           - Agentic proof search (actor model)"
+    echo ""
+    echo "2. API INTERFACES: src/interfaces/"
+    echo "     graphql/   - async-graphql (port 8082)"
+    echo "     grpc/      - tonic gRPC (port 50051)"
+    echo "     rest/       - axum + OpenAPI (port 8000)"
+    echo ""
+    echo "3. ML LAYER: src/julia/"
+    echo "   Julia-based tactic prediction and premise selection."
+    echo ""
+    echo "4. ABI/FFI:"
+    echo "     src/abi/   - Idris2 formal type definitions"
+    echo "     ffi/zig/   - Zig FFI bridge (4 shared libraries)"
+    echo ""
+    echo "5. UI: src/ui/"
+    echo "   AffineScript-TEA (src/ui/tea/) + static shell (src/ui/public/)."
+    echo ""
+    echo "6. BUILD SYSTEM:"
+    echo "   Cargo.toml   - Rust workspace"
+    echo "   Justfile      - Primary build system"
+    echo "   guix.scm      - Guix package definition (PRIMARY; no Guix mirror — estate ruling 2026-05-18)"
+    echo "   .containerization/Containerfile.wave3 - sealed-container escape hatch (Tier-3 provers)"
+    echo ""
+    echo "Try: just build       (compile Rust core)"
+    echo "     just test        (run 232 unit tests)"
+    echo "     just run repl    (interactive theorem prover)"
+
+# Show available recipes with descriptions
+help-me:
+    #!/usr/bin/env bash
+    echo "=== ECHIDNA: Help ==="
+    echo ""
+    echo "Onboarding:"
+    echo "  just doctor          - Check required tools are installed"
+    echo "  just heal            - Show install instructions for missing tools"
+    echo "  just tour            - Guided walkthrough of repo structure"
+    echo "  just help-me         - This help message"
+    echo ""
+    echo "Build:"
+    echo "  just build           - Build debug binary"
+    echo "  just build-release   - Build optimised release binary"
+    echo "  just build-riscv     - Cross-compile for RISC-V"
+    echo ""
+    echo "Testing:"
+    echo "  just test            - Run unit tests (232)"
+    echo "  just test-all        - Run all tests (389)"
+    echo "  just test-verbose    - Run tests with output"
+    echo "  just test-integration - Integration tests only"
+    echo "  just test-neural     - Neural integration tests (requires Julia)"
+    echo ""
+    echo "Quality:"
+    echo "  just fmt             - Format code"
+    echo "  just fmt-check       - Check formatting"
+    echo "  just lint            - Run clippy lints"
+    echo "  just check           - Cargo check (fast)"
+    echo "  just pre-commit      - Full pre-commit checks"
+    echo "  just assail          - panic-attacker scan"
+    echo ""
+    echo "Running:"
+    echo "  just run repl        - Interactive REPL"
+    echo "  just run serve       - Start API server"
+    echo "  just run prove <f>   - Prove a file"
+    echo ""
+    echo "Containers:"
+    echo "  just container-build          - Minimal image"
+    echo "  just container-build-full     - Full image (all provers)"
+    echo "  just container-build-tier3    - All Wave-3 prover images (except imandra)"
+    echo "  just container-build-tamarin  - Tamarin security protocol prover"
+    echo "  just container-build-proverif - ProVerif cryptographic protocol verifier"
+    echo "  just container-build-metamath - Metamath (pure-Rust in-process + bundled databases)"
+    echo "  just container-build-twelf    - Twelf LF meta-logical framework"
+    echo "  just container-build-or-tools - OR-Tools combinatorial optimisation C++ library"
+    echo "  just container-build-scip     - SCIP constraint integer programming solver"
+    echo "  just container-build-hol4     - HOL4 (Poly/ML build, slow)"
+    echo "  just container-build-acl2     - ACL2 (SBCL build, slow)"
+    echo "  just container-build-imandra  - Imandra stub (proprietary licence required)"
+    echo "  just container-run            - Run container"
+    echo ""
+    echo "Chapel accelerator:"
+    echo "  just chapel-all      - Build + test Chapel layer"
+    echo ""
+    echo "Housekeeping:"
+    echo "  just clean           - Remove build artefacts"
+    echo "  just doc             - Generate and open docs"
+    echo "  just update          - Update dependencies"
+    echo "  just audit           - Audit dependencies"
+
+
+# Print the current CRG grade (reads from READINESS.md '**Current Grade:** X' line)
+crg-grade:
+    @grade=$$(grep -oP '(?<=\*\*Current Grade:\*\* )[A-FX]' READINESS.md 2>/dev/null | head -1); \
+    [ -z "$$grade" ] && grade="X"; \
+    echo "$$grade"
+
+# Generate a shields.io badge markdown for the current CRG grade
+# Looks for '**Current Grade:** X' in READINESS.md; falls back to X
+crg-badge:
+    @grade=$$(grep -oP '(?<=\*\*Current Grade:\*\* )[A-FX]' READINESS.md 2>/dev/null | head -1); \
+    [ -z "$$grade" ] && grade="X"; \
+    case "$$grade" in \
+      A) color="brightgreen" ;; B) color="green" ;; C) color="yellow" ;; \
+      D) color="orange" ;; E) color="red" ;; F) color="critical" ;; \
+      *) color="lightgrey" ;; esac; \
+    echo "[![CRG $$grade](https://img.shields.io/badge/CRG-$$grade-$$color?style=flat-square)](https://github.com/hyperpolymath/standards/tree/main/component-readiness-grades)"
+
+
+# ────────────────────────────────────────────────────────────────────
+# Corpus + design-search (added 2026-04-28)
+# ────────────────────────────────────────────────────────────────────
+
+# Ingest an Agda project into the corpus
+corpus-ingest-agda root:
+    cargo run --bin echidna -- corpus ingest --root {{root}} --adapter agda
+
+# Ingest a Coq project into the corpus
+corpus-ingest-coq root:
+    cargo run --bin echidna -- corpus ingest --root {{root}} --adapter coq
+
+# Ingest a Lean 4 project into the corpus
+corpus-ingest-lean root:
+    cargo run --bin echidna -- corpus ingest --root {{root}} --adapter lean
+
+# Ingest an Idris 2 project into the corpus
+corpus-ingest-idris root:
+    cargo run --bin echidna -- corpus ingest --root {{root}} --adapter idris2
+
+# Query the corpus by name with full reverse-dep impact set
+corpus-impact name index="data/corpus/agda.json":
+    cargo run --bin echidna -- corpus query "{{name}}" --index {{index}} --reverse-closure
+
+# Cosine-similarity nearest-neighbour query
+corpus-near query index="data/corpus/agda.json" top="10":
+    cargo run --bin echidna -- corpus near "{{query}}" --index {{index}} --top {{top}}
+
+# Cross-prover semantic-class lookup
+corpus-cross class:
+    cargo run --bin echidna -- corpus crossquery {{class}}
+
+# Export a JSON index as 8-modality octad JSONL (VeriSim-compatible)
+corpus-octads in="data/corpus/agda.json" out="data/corpus/agda.octads.jsonl":
+    cargo run --bin echidna -- corpus export-octads --index {{in}} --out {{out}}
+
+# Run the SA design-search on a named problem
+design-search problem="brouwer-leq" iterations="2000" top="10":
+    cargo run --bin echidna -- design search {{problem}} --iterations {{iterations}} --top {{top}}
+
+# Run the parallel-swarm design-search
+design-swarm problem="brouwer-leq" agents="4" iterations="800":
+    cargo run --bin echidna -- design swarm {{problem}} --agents {{agents}} --iterations {{iterations}} --broadcast-every 50
+
+# ─────────────────────────────────────────────────────────────────────
+# Saturation campaign 2026-06-01 — recipes for the new corpus / vocab /
+# arbiter / exchange surface. See docs/decisions/2026-06-01-saturation-
+# campaign.md and docs/CORPUS-ADAPTERS.adoc.
+# ─────────────────────────────────────────────────────────────────────
+
+# Ingest a project tree via one of the 13 new corpus adapters
+# (isabelle / metamath / mizar / hol_light / hol4 / dafny / why3 /
+#  fstar / acl2_books / tptp / smtlib / proofnet / minif2f).
+corpus-ingest-saturation adapter root:
+    cargo run --bin echidna -- corpus ingest --root {{root}} --adapter {{adapter}}
+
+# Ingest an Ada/SPARK tree (specs `*.ads`, bodies `*.adb`). Detects
+# GNATprove escape hatches (`pragma Assume`, suppressed checks) and the
+# sparklib `Lemma_*` convention.
+corpus-ingest-spark root:
+    cargo run --bin echidna -- corpus ingest --root {{root}} --adapter spark_ada
+
+# Ingest a Rust/Creusot tree (`#[requires]` / `#[ensures]` / `pearlite!`).
+# `#[trusted]` is reported as a postulate, not as a proved function.
+corpus-ingest-creusot root:
+    cargo run --bin echidna -- corpus ingest --root {{root}} --adapter creusot
+
+# Ingest the hyperpolymath estate: every repo's `src/abi` Idris2 tree plus
+# the Agda type-theory libraries (echo/epistemic/secret/tropical/
+# choreographic-types), merged into one corpus tagged with repo + layer.
+# ROOT is the directory that contains the repositories.
+corpus-ingest-estate root="..":
+    cargo run --bin echidna -- corpus ingest --root {{root}} --adapter hyperpolymath_estate
+
+# Run the corpus-stats summary across all 20 adapter outputs found under
+# data/corpus/*.json (skips any missing without failing).
+corpus-stats-all:
+    @for f in data/corpus/*.json; do \
+        [ -f "$f" ] || continue; \
+        echo "--- $f"; \
+        cargo run --bin echidna --quiet -- corpus stats --index "$f" 2>/dev/null || echo "  (skipped)"; \
+    done
+
+# Load every per-prover synonym TOML + the 5 cross-prover dictionaries
+# (_msc2020 / _wordnet_math / _conceptnet_seed / _disciplines /
+# _verification_systems) and report counts.
+synonym-load-test:
+    cargo test --lib --quiet suggest::synonyms 2>&1 | tail -20
+
+# Lexicon v2: apply the Nickel contract (data/synonyms/schema.ncl) to every
+# synonym table and to the accept/reject fixtures. Needs nickel >= 1.12.
+lexicon-check:
+    scripts/lexicon-check.sh
+    cargo test --locked --test lexicon_v2_test
+
+# Mine lexicon candidates across training_data/ corpora: cognates, false
+# friends and synonym candidates as JCS JSON Lines under target/lexicon-scan.
+# Flag-only (evidence = none); never edits data/synonyms/. Presets: learning,
+# spanning, in-family, full.
+lexicon-scan preset="learning":
+    cargo run --locked --bin echidna -- lexicon scan --preset {{preset}}
+    cargo test --locked --test lexicon_scan_test
+
+# Run the saturation-campaign cargo tests only (139 cases + 1 ignored).
+test-saturation:
+    cargo test --lib -- \
+        corpus:: \
+        verification::bayesian_arbiter \
+        verification::dempster_shafer \
+        verification::pareto_arbiter \
+        exchange::tptp \
+        exchange::smtlib \
+        exchange::smtcoq \
+        exchange::lambdapi \
+        suggest::synonyms
+
+# Smoke-test the arbiter trio with synthetic evidence.
+# Prints posterior verdict from each of: Bayesian, Dempster-Shafer, Pareto.
+arbiter-smoke:
+    cargo run --bin echidna --quiet -- arbiter smoke 2>/dev/null || \
+        echo "(arbiter-smoke CLI not yet wired — see src/rust/verification/{bayesian,dempster_shafer,pareto}_arbiter.rs for unit-test entry points)"
+
+# Validate that the E-R schema doc + Cap'n Proto schema are
+# byte-identical with the recorded SHA in .machine_readable/er-schema.sha256.
+# (CI gate planned — see docs/architecture/VERISIM-ER-SCHEMA.adoc
+#  "Drift detection".)
+er-schema-drift-check:
+    @echo "Checking E-R schema drift..."
+    @sha256sum docs/architecture/VERISIM-ER-SCHEMA.adoc \
+               crates/echidna-wire/schemas/verisim_er.capnp \
+               | sha256sum | head -c 64
+    @echo " (current combined hash; compare against .machine_readable/er-schema.sha256 when CI gate lands)"
+
+
+secret-scan-trufflehog:
+    @command -v trufflehog >/dev/null && trufflehog filesystem . --only-verified || true

@@ -48,66 +48,75 @@ itself.
   `:latest` is not deployed. This *freezes* the running image. It does
   not verify it.
 
-Apply on the host as the `deploy` user.
-
-*1. Find out which install this host has.* These steps are for a host
-installed with the quadlets in §2 (units `echidna.service` and
-`caddy.service`). A host installed from the appendix runs
-`container-echidna` and `container-caddy` instead. For that kind of host,
-use step 4 instead of step 3.
+Apply it on the host as the `deploy` user with `stopgap-apply.sh`, from a
+copy of this directory:
 
 [source,console]
 ----
-systemctl --user cat echidna.service caddy.service >/dev/null && echo quadlet
-systemctl --user cat container-echidna.service container-caddy.service >/dev/null && echo appendix
+ssh deploy@<SERVER_IP> 'mkdir -p /opt/echidna/stopgap'
+scp Caddyfile echidna.container stopgap-apply.sh deploy@<SERVER_IP>:/opt/echidna/stopgap/
+ssh deploy@<SERVER_IP> 'bash /opt/echidna/stopgap/stopgap-apply.sh apply /opt/echidna/stopgap'
 ----
 
-*2. Record the image the container is running.* Record the running
-container's image ID, not the tag's digest. If an auto-update or a manual
-pull has moved the local `:latest` tag since the container started, a
-restart with `Pull=never` would start the image the tag now points to.
+The script fails closed. It stops before restarting anything when a step
+cannot be confirmed, and it ends by printing `stopgap: PASS`. In order, it:
+
+. Checks that `echidna.container` is the stopgap version. It reads the
+  directives as systemd does: indentation and spaces around `=` are
+  ignored, and so are `#` and `;` comment lines. The `[Container]` section
+  must set exactly one `Image=ghcr.io/hyperpolymath/echidna:latest` and
+  exactly one `Pull=never`. No `AutoUpdate=` may appear in any section,
+  and no `io.containers.autoupdate` label either.
+. Checks that the `Caddyfile` has the stopgap shape. Comments are ignored.
+  There must be exactly one `@public` matcher, holding exactly
+  `method GET HEAD` and `path /api/health /api/provers`, and no other named
+  matcher. There must be exactly one `reverse_proxy`, and it must be the
+  only thing inside `handle @public`. Exactly one catch-all `handle`, next
+  to it, must hold only `respond ... 403`. No other `handle` is allowed,
+  and neither is `import`, `invoke`, `handle_path`, `rewrite`, `uri`,
+  `php_fastcgi` or `forward_auth`. `method` is allowed only inside
+  `@public`. This is a check of the text, not of `caddy adapt` output: the
+  proxy image carries the `rate_limit` plugin, which a stock `caddy` does
+  not know, and the host has no `caddy` outside that image.
+. Detects the install layout, and refuses unless exactly one is present.
+  A quadlet host (§2) runs `echidna.service` and `caddy.service`; an
+  appendix host runs `container-echidna` and `container-caddy`.
+. Disables `podman-auto-update.timer`. That does not end a run the timer
+  has already started, so it also stops `podman-auto-update.service`. It
+  then refuses unless `systemctl --user is-active` reports that service
+  `inactive` or `failed`.
+. Records the image ID the `echidna` container is running, in
+  `~/.local/state/echidna/stopgap-running-image`. If the local `:latest`
+  tag has moved since the container started, it points the tag back at
+  the running image, because a restart under `Pull=never` starts whatever
+  `:latest` resolves to.
+. Installs the `Caddyfile` into `/opt/echidna/`. On a quadlet host it also
+  installs `echidna.container`, reloads systemd and restarts `echidna` and
+  `caddy`. On an appendix host it restarts only `container-caddy`: those
+  containers carry no auto-update label, and `podman generate systemd
+  --new` units do not pull an image that is already present.
+. Verifies that the container still runs the recorded image, that the
+  timer is disabled and no auto-update run is active, and that
+  `GET /api/health` answers `200`. It then sends each of these and
+  requires `403` from every one: `POST` to `/api/prove`, `/api/verify`,
+  `/api/verify_raw`, `/api/verify_parallel`, `/api/suggest`,
+  `/api/session/create` and `/api/agent/plan`, `GET /api/search`,
+  `POST /api/health`, and `GET` on a route the server does not have. Any
+  other answer, a `429` from the rate limiter included, fails the run. One
+  run sends at least 11 requests, and more while it waits for
+  `/api/health`. The limit is 30 a minute for each client, so wait a
+  minute before running `verify` again after a failure.
+
+To check the host again later, from any shell:
 
 [source,console]
 ----
-systemctl --user disable --now podman-auto-update.timer
-RUNNING=$(podman container inspect echidna --format '{{.Image}}') || exit 1
-TAGGED=$(podman image inspect --format '{{.Id}}' ghcr.io/hyperpolymath/echidna:latest) || exit 1
-echo "running=$RUNNING tagged=$TAGGED"
-# If they differ, point :latest back at the running image before restarting:
-[ "$RUNNING" = "$TAGGED" ] || podman tag "$RUNNING" ghcr.io/hyperpolymath/echidna:latest || exit 1
+bash /opt/echidna/stopgap/stopgap-apply.sh verify
 ----
 
-*3. Quadlet host.* Copy the updated `Caddyfile` and `echidna.container`
-into place, then:
-
-[source,console]
-----
-systemctl --user daemon-reload
-systemctl --user restart echidna caddy
-----
-
-*4. Appendix host.* Those containers carry no auto-update label, and
-`podman generate systemd --new` units do not pull an image that is
-already present. So only the proxy changes. Copy the updated
-`Caddyfile` to `/opt/echidna/Caddyfile`, then:
-
-[source,console]
-----
-systemctl --user restart container-caddy
-----
-
-*5. Verify, on either kind of host.* The container must still run the
-image recorded in step 2.
-
-[source,console]
-----
-[ "$(podman container inspect echidna --format '{{.Image}}')" = "$RUNNING" ] && echo same-image
-curl -s  -o /dev/null -w '%{http_code}\n' https://api.nesy-prover.dev/api/health          # expect 200
-curl -s  -o /dev/null -w '%{http_code}\n' -X POST https://api.nesy-prover.dev/api/verify  # expect 403
-----
-
-Stop and reassess if step 1 does not print exactly one of `quadlet` or `appendix`, or if
-step 5 does not print `same-image`, `200` and `403`.
+Do not proceed if it prints a `FAIL` line. The script's behaviour is
+tested with stub commands in `tests/deploy/stopgap-apply.test.sh`. Neither
+the script nor its test has been run against the live host.
 
 The stopgap ends in the change that enables authentication. That change
 re-pins `Image=` to the signed image by digest and removes the `@public`
@@ -244,9 +253,11 @@ End-to-end, from anywhere:
 ----
 curl -s https://api.nesy-prover.dev/api/health        # {"status":"ok",...}
 curl -s https://api.nesy-prover.dev/api/provers | head
-curl -s -X POST https://api.nesy-prover.dev/api/verify \
+# While the containment stopgap is in force, execution routes answer 403
+# from Caddy. That is the correct result, not a failed deployment:
+curl -s -o /dev/null -w '%{http_code}\n' -X POST https://api.nesy-prover.dev/api/verify \
   -H 'content-type: application/json' \
-  -d '{"prover":"Z3","content":"(assert (forall ((x Int)) (= (+ x 0) x)))(check-sat)"}'
+  -d '{"prover":"Z3","content":"(assert (forall ((x Int)) (= (+ x 0) x)))(check-sat)"}'   # expect 403
 ----
 
 Controls:
@@ -314,10 +325,15 @@ podman tag  ghcr.io/hyperpolymath/echidna@<DIGEST> ghcr.io/hyperpolymath/echidna
 systemctl --user restart echidna
 ----
 
-Re-enable the timer only once a fixed `:latest` has been published,
-or switch to pinned mode permanently: set `Image=` in
-`echidna.container` to a `:vX.Y.Z` tag or digest, drop
-`AutoUpdate=registry`, and bump it via PR.
+Re-enabling the timer does nothing on its own: `podman auto-update` acts
+only on containers labelled by `AutoUpdate=registry`, and the stopgap
+unit removes that key. Restoring unattended rollout therefore means
+putting `AutoUpdate=registry` back in `echidna.container` (and dropping
+`Pull=never`), reloading systemd, and only then enabling the timer. That
+ends the containment stopgap, so it belongs to the change that lands
+authentication, not to an operator step. The intended end state is pinned
+mode: `Image=` set to the signed image's digest, no `AutoUpdate`, and
+updates by PR.
 
 == Appendix: fallback for podman without quadlet support
 
