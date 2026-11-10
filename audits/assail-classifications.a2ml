@@ -172,20 +172,4 @@ schema_version = "1.0.0"
     (audit "audits/audit-ffi-boundary.adoc §11")
     (rationale "Single @ptrCast at line 333 in echidna_typell_last_error(): identical pattern to boj.zig and overlay.zig — module-static error_buf [N]u8 → [*:0]const u8 with null-fast-path guard"))
 
-  ; ─── PA021 ProofDrift, deliberate corpus-adapter test fixtures ──────────
-  ; Each fixture holds one open `sorry` on purpose: the corpus adapters must
-  ; flag it as a hazard, and the tests below fail if it is removed. These
-  ; files are test inputs, not proofs ECHIDNA relies on.
-  (classification
-    (file "tests/corpus_fixtures/isabelle/Smoke.thy")
-    (category "ProofDrift")
-    (audit "tests/corpus_hazard_fixtures.rs isabelle_fixture_keeps_incomplete_proofs_unqualified")
-    (rationale "Deliberate open `sorry` in lemma double_mono; the test asserts the Isabelle adapter marks it as a sorry hazard"))
-
-  (classification
-    (file "tests/corpus_fixtures/minif2f/algebra.lean")
-    (category "ProofDrift")
-    (audit "tests/corpus_hazard_fixtures.rs minif2f_fixture_keeps_incomplete_proofs_unqualified")
-    (rationale "Deliberate open `sorry` in imo_1959_p1; the test asserts the MiniF2F adapter marks it as a sorry hazard"))
-
 )
