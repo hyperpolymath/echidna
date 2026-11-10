@@ -24,6 +24,6 @@ permissions:
 
 jobs:
   scan:
-    uses: hyperpolymath/panic-attack/.github/workflows/scan-and-report.yml@be6ac46716eaf049570ec4966f4ae4699b319689 # main 2026-10-20: dtolnay/rust-toolchain v1 at 683b588 (the b689a74 pin was a commit no tag names any more)
+    uses: hyperpolymath/panic-attack/.github/workflows/scan-and-report.yml@55ffcc9a240e937edd968487af15ab45c6f0522f # main 2026-11-10: builds the scanner at the workflow commit, not the caller (panic-attack#276)
     secrets:
       VERISIMDB_PAT: ${{ secrets.VERISIMDB_PAT }}
