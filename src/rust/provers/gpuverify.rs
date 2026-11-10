@@ -396,7 +396,8 @@ mod tests {
             &format!(
                 "#!/bin/sh\n[ \"$#\" -eq 1 ] && [ \"$1\" = '--version' ] || exit 64\n{script}\n"
             ),
-        );
+        )
+        .unwrap();
         let backend = GpuVerifyBackend::new(ProverConfig {
             executable,
             timeout,

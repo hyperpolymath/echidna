@@ -19,24 +19,31 @@ use std::os::unix::fs::{OpenOptionsExt, PermissionsExt};
 use std::path::Path;
 use std::time::Duration;
 
+/// Name the step in a failed fixture write, so a test failure says which one.
+fn step(what: &'static str) -> impl FnOnce(std::io::Error) -> std::io::Error {
+    move |error| std::io::Error::new(error.kind(), format!("{what}: {error}"))
+}
+
 /// Write `contents` to `path` as an owner-executable script and wait until the
 /// kernel will execute it. The script must exit without side effects when
 /// called with a single unexpected argument.
-pub(crate) fn write_executable(path: &Path, contents: &str) {
+///
+/// An error names the step that failed. The calling test decides how to fail.
+pub(crate) fn write_executable(path: &Path, contents: &str) -> std::io::Result<()> {
     {
         let mut file = std::fs::OpenOptions::new()
             .write(true)
             .create_new(true)
             .mode(0o700)
             .open(path)
-            .expect("create fixture executable");
+            .map_err(step("create fixture executable"))?;
         file.write_all(contents.as_bytes())
-            .expect("write fixture executable");
+            .map_err(step("write fixture executable"))?;
     }
     // The creation mode is filtered by the umask; set it explicitly so the
     // fixture is executable whatever umask the test runner inherited.
     std::fs::set_permissions(path, std::fs::Permissions::from_mode(0o700))
-        .expect("make fixture executable");
+        .map_err(step("make fixture executable"))?;
     for _ in 0..200 {
         match std::process::Command::new(path)
             .arg("--echidna-fixture-ready")
@@ -48,9 +55,12 @@ pub(crate) fn write_executable(path: &Path, contents: &str) {
             Err(error) if error.kind() == ErrorKind::ExecutableFileBusy => {
                 std::thread::sleep(Duration::from_millis(10));
             },
-            Err(error) => panic!("fixture executable cannot run: {error}"),
-            Ok(_) => return,
+            Err(error) => return Err(step("fixture executable cannot run")(error)),
+            Ok(_) => return Ok(()),
         }
     }
-    panic!("fixture executable stayed busy (ETXTBSY) for 2 s");
+    Err(std::io::Error::new(
+        ErrorKind::ExecutableFileBusy,
+        "fixture executable stayed busy (ETXTBSY) for 2 s",
+    ))
 }

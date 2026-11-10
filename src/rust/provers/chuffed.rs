@@ -241,7 +241,8 @@ mod tests {
         crate::provers::test_fixture::write_executable(
             &executable,
             &format!("#!/bin/sh\n[ \"$#\" -eq 1 ] && [ \"$1\" = '--help' ] || exit 64\n{script}\n"),
-        );
+        )
+        .unwrap();
         let backend = ChuffedBackend::new(ProverConfig {
             executable,
             timeout,
