@@ -1,4 +1,6 @@
 // SPDX-License-Identifier: MPL-2.0
+// hypatia: allow code_safety/expect_in_hot_path -- test-only module, compiled only under #[cfg(all(test, unix))] in provers/mod.rs
+// hypatia: allow code_safety/panic_macro -- test-only module; a failed fixture setup must fail the test
 //! Test-only helper for writing an executable fixture script.
 //!
 //! Writing a script and executing it straight away races with every other
