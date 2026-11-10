@@ -33,6 +33,7 @@ modules = EchidnaABI.AxiomTracker
         , EchidnaABI.Provers.AutoActive
         , EchidnaABI.Provers.ConstraintSolvers
         , EchidnaABI.VqlUt
+        , EchidnaABI.CapnSchemas
         , Overlay
         , Overlay.Foreign
         , Boj.Foreign

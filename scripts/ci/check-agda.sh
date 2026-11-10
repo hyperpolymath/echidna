@@ -35,4 +35,15 @@ while IFS= read -r -d '' source; do
 done < <(find src -type f -name '*.agda' -print0)
 echo "$total source modules, $((total - missing)) with fresh interfaces"
 [[ "$total" -gt 0 && "$missing" -eq 0 ]]
+
+# Source-bound receipt (PROOF-POLICY §8): toolchain, flags and the SHA-256 of
+# every first-party source and library descriptor this run checked.
+echo "receipt: $version; commit ${GITHUB_SHA:-$(git -C "$repo_root" rev-parse HEAD)}"
+echo "receipt: flags --safe --without-K --cubical-compatible; library file $AGDA_LIBRARIES_FILE"
+while IFS= read -r lib; do
+  if [[ -n "$lib" ]]; then
+    echo "receipt: library $lib sha256 $(sha256sum "$lib" | cut -d" " -f1)"
+  fi
+done < "$AGDA_LIBRARIES_FILE"
+find src -type f -name "*.agda" -print0 | sort -z | xargs -0 sha256sum | sed "s/^/receipt: /"
 bash "$repo_root/scripts/ci/check-receipt-controls.sh"

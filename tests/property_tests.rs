@@ -207,6 +207,7 @@ mod trust_hardening_property_tests {
             let factors_low = TrustFactors {
                 prover: ProverKind::Lean,
                 confirming_provers: 1,
+                small_kernel_confirmations: 0,
                 has_certificate: true,
                 certificate_verified: true,
                 worst_axiom_danger: DangerLevel::Safe,
@@ -217,6 +218,7 @@ mod trust_hardening_property_tests {
             let factors_high = TrustFactors {
                 prover: ProverKind::Lean,
                 confirming_provers: confirming.max(2),
+                small_kernel_confirmations: 0,
                 has_certificate: true,
                 certificate_verified: true,
                 worst_axiom_danger: DangerLevel::Safe,
@@ -243,6 +245,7 @@ mod trust_hardening_property_tests {
             let factors = TrustFactors {
                 prover: ProverKind::Lean,
                 confirming_provers: confirming,
+                small_kernel_confirmations: 0,
                 has_certificate: has_cert,
                 certificate_verified: cert_verified,
                 worst_axiom_danger: DangerLevel::Reject,
@@ -266,6 +269,7 @@ mod trust_hardening_property_tests {
             let factors = TrustFactors {
                 prover: ProverKind::Lean,
                 confirming_provers: confirming,
+                small_kernel_confirmations: 0,
                 has_certificate: has_cert,
                 certificate_verified: has_cert,
                 worst_axiom_danger: DangerLevel::Safe,
@@ -291,6 +295,7 @@ mod trust_hardening_property_tests {
             let factors = TrustFactors {
                 prover: ProverKind::Z3,
                 confirming_provers: confirming,
+                small_kernel_confirmations: 0,
                 has_certificate: has_cert,
                 certificate_verified: cert_verified,
                 worst_axiom_danger: DangerLevel::Safe,

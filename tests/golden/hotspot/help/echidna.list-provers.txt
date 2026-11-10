@@ -1,0 +1,10 @@
+List available provers
+
+Usage: echidna list-provers [OPTIONS]
+
+Options:
+  -d, --detailed         Show detailed information
+      --format <FORMAT>  Output format (text, json) [default: text]
+  -v, --verbose          Verbose output
+      --no-color         Disable colors
+  -h, --help             Print help

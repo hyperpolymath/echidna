@@ -54,6 +54,7 @@ fn make_factors(
     TrustFactors {
         prover: ProverKind::Z3,
         confirming_provers,
+        small_kernel_confirmations: 0,
         has_certificate,
         certificate_verified,
         worst_axiom_danger,

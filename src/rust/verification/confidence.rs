@@ -15,44 +15,13 @@ use super::axiom_tracker::DangerLevel;
 use super::portfolio::PortfolioConfidence;
 use crate::provers::ProverKind;
 
-/// Trust level for a proof result (5-level hierarchy)
-#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash, Serialize, Deserialize)]
-pub enum TrustLevel {
-    /// Large-TCB system, unchecked result, or uses dangerous axioms
-    Level1 = 1,
-    /// Single prover result without certificate, but no dangerous axioms
-    Level2 = 2,
-    /// Single prover with proof certificate (Alethe, DRAT/LRAT)
-    Level3 = 3,
-    /// Checked by small-kernel system (Lean4, Coq, Isabelle) with proof certificate
-    Level4 = 4,
-    /// Cross-checked by 2+ independent small-kernel systems with certificates
-    Level5 = 5,
-}
-
-impl TrustLevel {
-    /// Human-readable description
-    pub fn description(&self) -> &str {
-        match self {
-            TrustLevel::Level1 => "Minimal trust: large-TCB, unchecked, or dangerous axioms",
-            TrustLevel::Level2 => "Basic trust: single prover, no dangerous axioms",
-            TrustLevel::Level3 => "Moderate trust: single prover with proof certificate",
-            TrustLevel::Level4 => "High trust: small-kernel prover with certificate",
-            TrustLevel::Level5 => "Maximum trust: cross-checked by 2+ small-kernel systems",
-        }
-    }
-
-    /// Numeric value (1-5)
-    pub fn value(&self) -> u8 {
-        *self as u8
-    }
-}
-
-impl std::fmt::Display for TrustLevel {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(f, "Level {} ({})", self.value(), self.description())
-    }
-}
+/// Trust level for a proof result (5-level hierarchy).
+///
+/// There is one trust kernel: this type and [`compute_trust_level`] come
+/// from `echidna-core` (`echidna_core::trust`, the Creusot-annotated crate).
+/// This module keeps the `ProverKind`-shaped [`TrustFactors`] that dispatch
+/// builds, and maps them onto the kernel's input.
+pub use echidna_core::trust::TrustLevel;
 
 /// Input factors for computing trust level
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -61,6 +30,13 @@ pub struct TrustFactors {
     pub prover: ProverKind,
     /// Number of independent provers that agree
     pub confirming_provers: u32,
+    /// How many of the `confirming_provers` are small-kernel systems whose
+    /// certificate for this result was independently verified, the producing
+    /// prover included. Level 5 needs at least two. Defaults to 0, so a
+    /// caller that cannot vouch for its confirmers' kernels never reaches
+    /// Level 5.
+    #[serde(default)]
+    pub small_kernel_confirmations: u32,
     /// Whether a proof certificate was produced
     pub has_certificate: bool,
     /// Whether the certificate was independently verified
@@ -73,47 +49,36 @@ pub struct TrustFactors {
     pub portfolio_confidence: Option<PortfolioConfidence>,
 }
 
-/// Compute the trust level for a proof result
+/// Compute the trust level for a proof result.
+///
+/// Delegates to the single kernel, `echidna_core::trust::compute_trust_level`,
+/// after mapping the prover to its kernel class and the axiom danger level
+/// to the kernel's enum. The kernel's contracts (TK-4: Level 4 and above
+/// need a small kernel and a produced, verified certificate; TK-5: Level 5
+/// needs two or more small-kernel confirmations) hold here because there is
+/// no second implementation to drift from.
 pub fn compute_trust_level(factors: &TrustFactors) -> TrustLevel {
-    // Reject-level axioms always result in Level 1
-    if factors.worst_axiom_danger == DangerLevel::Reject {
-        return TrustLevel::Level1;
-    }
-
-    // Warning-level axioms cap at Level 1
-    if factors.worst_axiom_danger == DangerLevel::Warning {
-        return TrustLevel::Level1;
-    }
-
-    // Failed integrity check caps at Level 1
-    if !factors.solver_integrity_ok {
-        return TrustLevel::Level1;
-    }
-
-    let is_small_kernel = is_small_kernel_prover(factors.prover);
-
-    // Level 5: Cross-checked by 2+ small-kernel systems with certificates
-    if factors.confirming_provers >= 2 && factors.certificate_verified && is_small_kernel {
-        return TrustLevel::Level5;
-    }
-
-    // Level 4: Small-kernel prover with verified certificate
-    if is_small_kernel && factors.certificate_verified {
-        return TrustLevel::Level4;
-    }
-
-    // Level 3: Any prover with verified certificate
-    if factors.has_certificate && factors.certificate_verified {
-        return TrustLevel::Level3;
-    }
-
-    // Level 3: Cross-checked without certificate
-    if factors.confirming_provers >= 2 {
-        return TrustLevel::Level3;
-    }
-
-    // Level 2: Single prover, no dangerous axioms (already checked above)
-    TrustLevel::Level2
+    use echidna_core::trust::{axiom_tracker::DangerLevel as KernelDanger, ProverClass};
+    let prover_class = if is_small_kernel_prover(factors.prover) {
+        ProverClass::SmallKernel
+    } else {
+        ProverClass::Other
+    };
+    let worst_axiom_danger = match factors.worst_axiom_danger {
+        DangerLevel::Safe => KernelDanger::Safe,
+        DangerLevel::Noted => KernelDanger::Noted,
+        DangerLevel::Warning => KernelDanger::Warning,
+        DangerLevel::Reject => KernelDanger::Reject,
+    };
+    echidna_core::trust::compute_trust_level(&echidna_core::trust::TrustFactors {
+        prover_class,
+        confirming_provers: factors.confirming_provers,
+        small_kernel_confirmations: factors.small_kernel_confirmations,
+        has_certificate: factors.has_certificate,
+        certificate_verified: factors.certificate_verified,
+        worst_axiom_danger,
+        solver_integrity_ok: factors.solver_integrity_ok,
+    })
 }
 
 /// Whether a prover has a small trusted computing base (kernel)
@@ -150,6 +115,7 @@ mod tests {
         TrustFactors {
             prover,
             confirming_provers: 1,
+            small_kernel_confirmations: 0,
             has_certificate: false,
             certificate_verified: false,
             worst_axiom_danger: DangerLevel::Safe,
@@ -163,6 +129,7 @@ mod tests {
         let factors = TrustFactors {
             prover: ProverKind::Lean,
             confirming_provers: 2,
+            small_kernel_confirmations: 2,
             has_certificate: true,
             certificate_verified: true,
             worst_axiom_danger: DangerLevel::Safe,
@@ -173,11 +140,58 @@ mod tests {
         assert_eq!(compute_trust_level(&factors), TrustLevel::Level5);
     }
 
+    /// One small-kernel prover plus a confirmer that is not a small-kernel
+    /// system with a checked certificate is not Level 5 (audit 2026-11-09).
+    #[test]
+    fn test_one_small_kernel_confirmation_is_not_level5() {
+        let factors = TrustFactors {
+            prover: ProverKind::Lean,
+            confirming_provers: 2,
+            small_kernel_confirmations: 1,
+            has_certificate: true,
+            certificate_verified: true,
+            worst_axiom_danger: DangerLevel::Safe,
+            solver_integrity_ok: true,
+            portfolio_confidence: Some(PortfolioConfidence::CrossChecked),
+        };
+
+        assert_eq!(compute_trust_level(&factors), TrustLevel::Level4);
+    }
+
+    /// A verified flag with no certificate produced is not Level 4
+    /// (audit 2026-11-09).
+    #[test]
+    fn test_verified_flag_without_certificate_is_not_level4() {
+        let mut factors = make_factors(ProverKind::Lean);
+        factors.certificate_verified = true;
+        assert_eq!(compute_trust_level(&factors), TrustLevel::Level2);
+    }
+
+    /// The kernel's notion of a small kernel is `is_small_kernel_prover`.
+    #[test]
+    fn test_small_kernel_class_follows_is_small_kernel_prover() {
+        for prover in [
+            ProverKind::Lean,
+            ProverKind::Coq,
+            ProverKind::Z3,
+            ProverKind::CVC5,
+        ] {
+            let factors = TrustFactors {
+                has_certificate: true,
+                certificate_verified: true,
+                ..make_factors(prover)
+            };
+            let level4 = compute_trust_level(&factors) == TrustLevel::Level4;
+            assert_eq!(level4, is_small_kernel_prover(prover), "{prover:?}");
+        }
+    }
+
     #[test]
     fn test_lean_with_cert_level4() {
         let factors = TrustFactors {
             prover: ProverKind::Lean,
             confirming_provers: 1,
+            small_kernel_confirmations: 0,
             has_certificate: true,
             certificate_verified: true,
             worst_axiom_danger: DangerLevel::Safe,
@@ -193,6 +207,7 @@ mod tests {
         let factors = TrustFactors {
             prover: ProverKind::CVC5,
             confirming_provers: 1,
+            small_kernel_confirmations: 0,
             has_certificate: true,
             certificate_verified: true,
             worst_axiom_danger: DangerLevel::Safe,

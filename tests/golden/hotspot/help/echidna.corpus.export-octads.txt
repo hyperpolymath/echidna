@@ -1,0 +1,11 @@
+Convert a JSON corpus index into 8-modality octad JSONL (one DeclarationOctad per line). Streamable; compatible with VeriSim's `/api/v1/octads` endpoint when posted line-by-line
+
+Usage: echidna corpus export-octads [OPTIONS] --index <INDEX> --out <OUT>
+
+Options:
+      --format <FORMAT>  Output format (text, json) [default: text]
+  -i, --index <INDEX>    Path to the JSON corpus index
+  -o, --out <OUT>        Output JSONL path
+  -v, --verbose          Verbose output
+      --no-color         Disable colors
+  -h, --help             Print help

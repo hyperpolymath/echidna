@@ -1,0 +1,18 @@
+Run SA over a named design problem
+
+Usage: echidna design search [OPTIONS] <PROBLEM>
+
+Arguments:
+  <PROBLEM>  Problem identifier. Currently: `brouwer-leq` (Phase 1.3 `_≤_` redesign for `Ordinal.Brouwer`)
+
+Options:
+      --format <FORMAT>          Output format (text, json) [default: text]
+      --iterations <ITERATIONS>  Iterations per restart [default: 1000]
+      --restarts <RESTARTS>      Number of independent restarts [default: 4]
+  -v, --verbose                  Verbose output
+      --no-color                 Disable colors
+      --temp <TEMP>              Initial Metropolis temperature [default: 4]
+      --cooling <COOLING>        Multiplicative cooling factor per iteration [default: 0.995]
+      --seed <SEED>              Seed [default: 12648430]
+      --top <TOP>                Top-K candidates to print [default: 8]
+  -h, --help                     Print help

@@ -211,6 +211,14 @@ pub struct TrustFactors {
     pub prover_class: ProverClass,
     /// Number of independent provers that agree on this result.
     pub confirming_provers: u32,
+    /// How many of the `confirming_provers` are small-kernel systems whose
+    /// certificate for this result was independently verified, the producing
+    /// prover included. Level 5 needs at least two. `confirming_provers`
+    /// alone cannot decide that, because it does not say what kind of system
+    /// each confirmer is. Defaults to 0, so data written before this field
+    /// existed can never reach Level 5.
+    #[serde(default)]
+    pub small_kernel_confirmations: u32,
     /// Whether a proof certificate was produced.
     pub has_certificate: bool,
     /// Whether the certificate was independently verified.
@@ -295,23 +303,44 @@ pub fn clamp_trust(level: TrustLevel, min_level: TrustLevel, max_level: TrustLev
 /// ### Creusot contracts
 /// ```text
 /// #[requires(true)]
-/// #[ensures(
-///     factors.worst_axiom_danger == DangerLevel::Reject
-///     ==> result == TrustLevel::Level1
-/// )]
-/// #[ensures(
-///     !factors.solver_integrity_ok
-///     ==> result == TrustLevel::Level1
-/// )]
-/// #[ensures(result >= TrustLevel::Level1)]
-/// #[ensures(result <= TrustLevel::Level5)]
+/// #[ensures(factors.worst_axiom_danger == DangerLevel::Reject ==> result == TrustLevel::Level1)]
+/// #[ensures(factors.worst_axiom_danger == DangerLevel::Warning ==> result == TrustLevel::Level1)]
+/// #[ensures(!factors.solver_integrity_ok ==> result == TrustLevel::Level1)]
+/// // TK-4: Level 4 and above need a small kernel AND a produced, verified certificate.
+/// #[ensures(result >= TrustLevel::Level4 ==>
+///     factors.prover_class == ProverClass::SmallKernel
+///     && factors.has_certificate && factors.certificate_verified)]
+/// // TK-5: Level 5 needs two or more small-kernel systems that checked a certificate.
+/// #[ensures(result == TrustLevel::Level5 ==>
+///     factors.small_kernel_confirmations >= 2 && factors.confirming_provers >= 2)]
+/// #[ensures(result >= TrustLevel::Level1 && result <= TrustLevel::Level5)]
 /// ```
+///
+/// TK-4 and TK-5 close two defects in the earlier rule. Level 4 used to fire
+/// on `certificate_verified` without `has_certificate`. Level 5 used to check
+/// only the producing prover's kernel class, never the confirmers'. Both
+/// are checked exhaustively over a finite input space by
+/// `impl_invariants::tk_*`, which run on stable Rust in CI. The Creusot
+/// annotations are stated, not yet discharged (see the crate header).
 #[cfg_attr(feature = "creusot",
     ensures(
         factors.worst_axiom_danger == DangerLevel::Reject
         ==> result == TrustLevel::Level1
     ),
+    ensures(
+        factors.worst_axiom_danger == DangerLevel::Warning
+        ==> result == TrustLevel::Level1
+    ),
     ensures(!factors.solver_integrity_ok ==> result == TrustLevel::Level1),
+    ensures(
+        result >= TrustLevel::Level4
+        ==> (factors.prover_class == ProverClass::SmallKernel
+             && factors.has_certificate && factors.certificate_verified)
+    ),
+    ensures(
+        result == TrustLevel::Level5
+        ==> (factors.small_kernel_confirmations >= 2u32 && factors.confirming_provers >= 2u32)
+    ),
     ensures(result >= TrustLevel::Level1 && result <= TrustLevel::Level5)
 )]
 pub fn compute_trust_level(factors: &TrustFactors) -> TrustLevel {
@@ -339,19 +368,30 @@ pub fn compute_trust_level(factors: &TrustFactors) -> TrustLevel {
     }
 
     let is_small_kernel = factors.prover_class == ProverClass::SmallKernel;
+    // A certificate counts only when one was produced AND it was verified;
+    // a verification flag on a result with no certificate carries nothing.
+    let certified = factors.has_certificate && factors.certificate_verified;
+    // Small-kernel confirmations can never exceed the confirming provers;
+    // an inconsistent input is read at the lower count.
+    let small_kernel_confirmations =
+        if factors.small_kernel_confirmations < factors.confirming_provers {
+            factors.small_kernel_confirmations
+        } else {
+            factors.confirming_provers
+        };
 
-    // --- Level 5: two or more small-kernel systems cross-check with certs ---
-    if factors.confirming_provers >= 2 && factors.certificate_verified && is_small_kernel {
+    // --- Level 5: two or more small-kernel systems checked a certificate ---
+    if certified && is_small_kernel && small_kernel_confirmations >= 2 {
         return TrustLevel::Level5;
     }
 
-    // --- Level 4: single small-kernel system with verified certificate ---
-    if is_small_kernel && factors.certificate_verified {
+    // --- Level 4: small-kernel system with a produced, verified certificate ---
+    if certified && is_small_kernel {
         return TrustLevel::Level4;
     }
 
-    // --- Level 3: any prover with verified certificate ---
-    if factors.has_certificate && factors.certificate_verified {
+    // --- Level 3: any prover with a produced, verified certificate ---
+    if certified {
         return TrustLevel::Level3;
     }
 
@@ -494,6 +534,7 @@ pub mod impl_invariants {
         let factors = TrustFactors {
             prover_class: ProverClass::SmallKernel,
             confirming_provers: 10, // maximum cross-checking
+            small_kernel_confirmations: 10,
             has_certificate: true,
             certificate_verified: true,
             worst_axiom_danger: DangerLevel::Reject,
@@ -517,6 +558,7 @@ pub mod impl_invariants {
         let factors = TrustFactors {
             prover_class: ProverClass::SmallKernel,
             confirming_provers: 5,
+            small_kernel_confirmations: 5,
             has_certificate: true,
             certificate_verified: true,
             worst_axiom_danger: DangerLevel::Safe,
@@ -580,6 +622,136 @@ pub mod impl_invariants {
     }
 
     // -----------------------------------------------------------------------
+    // TK-4 / TK-5: the certificate and kernel conditions of Levels 4 and 5,
+    // checked over every input in a finite space (bounded model check).
+    // -----------------------------------------------------------------------
+
+    /// Every `TrustFactors` with counts in `0..=4`, both certificate flags,
+    /// every danger level, both integrity states and every prover class.
+    #[cfg(test)]
+    fn all_factors() -> Vec<TrustFactors> {
+        use crate::axiom_tracker::DangerLevel::{Noted, Reject, Safe, Warning};
+        let mut out = Vec::new();
+        for pc in [
+            ProverClass::SmallKernel,
+            ProverClass::SmtOrAtp,
+            ProverClass::Other,
+        ] {
+            for confirming_provers in 0u32..=4 {
+                for small_kernel_confirmations in 0u32..=4 {
+                    for has_certificate in [false, true] {
+                        for certificate_verified in [false, true] {
+                            for worst_axiom_danger in [Safe, Noted, Warning, Reject] {
+                                for solver_integrity_ok in [false, true] {
+                                    out.push(TrustFactors {
+                                        prover_class: pc,
+                                        confirming_provers,
+                                        small_kernel_confirmations,
+                                        has_certificate,
+                                        certificate_verified,
+                                        worst_axiom_danger,
+                                        solver_integrity_ok,
+                                    });
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        out
+    }
+
+    /// **TK-4** Level 4 and above need a small-kernel prover with a
+    /// certificate that was both produced and verified.
+    #[test]
+    fn tk4_level4_needs_small_kernel_and_produced_verified_certificate() {
+        for f in all_factors() {
+            if compute_trust_level(&f) >= TrustLevel::Level4 {
+                assert!(
+                    f.prover_class == ProverClass::SmallKernel
+                        && f.has_certificate
+                        && f.certificate_verified,
+                    "TK-4 violated by {f:?}"
+                );
+            }
+        }
+    }
+
+    /// **TK-5** Level 5 needs two or more small-kernel systems that checked a
+    /// certificate, and two or more confirming provers.
+    #[test]
+    fn tk5_level5_needs_two_small_kernel_confirmations() {
+        for f in all_factors() {
+            if compute_trust_level(&f) == TrustLevel::Level5 {
+                assert!(
+                    f.small_kernel_confirmations >= 2 && f.confirming_provers >= 2,
+                    "TK-5 violated by {f:?}"
+                );
+            }
+        }
+    }
+
+    /// **TK-6** Monotone in the evidence: one more confirming prover, one more
+    /// small-kernel confirmation, or a produced and verified certificate
+    /// never lowers the level.
+    #[test]
+    fn tk6_more_evidence_never_lowers_trust() {
+        for f in all_factors() {
+            let base = compute_trust_level(&f);
+            let more_provers = TrustFactors {
+                confirming_provers: f.confirming_provers + 1,
+                ..f.clone()
+            };
+            let more_kernels = TrustFactors {
+                confirming_provers: f.confirming_provers + 1,
+                small_kernel_confirmations: f.small_kernel_confirmations + 1,
+                ..f.clone()
+            };
+            let certified = TrustFactors {
+                has_certificate: true,
+                certificate_verified: true,
+                ..f.clone()
+            };
+            for g in [more_provers, more_kernels, certified] {
+                assert!(
+                    compute_trust_level(&g) >= base,
+                    "TK-6: {g:?} scored below {f:?}"
+                );
+            }
+        }
+    }
+
+    /// Regression: the two defects found in the 2026-11-09 proof audit.
+    #[test]
+    fn tk_regressions_for_the_audited_defects() {
+        use crate::axiom_tracker::DangerLevel::Safe;
+        // Level 5 from one small-kernel prover plus an SMT confirmer: the old
+        // rule saw only the producing prover's class and returned Level5.
+        let one_kernel = TrustFactors {
+            prover_class: ProverClass::SmallKernel,
+            confirming_provers: 2,
+            small_kernel_confirmations: 1,
+            has_certificate: true,
+            certificate_verified: true,
+            worst_axiom_danger: Safe,
+            solver_integrity_ok: true,
+        };
+        assert_eq!(compute_trust_level(&one_kernel), TrustLevel::Level4);
+        // Level 4 without a produced certificate: the old rule returned Level4.
+        let no_certificate = TrustFactors {
+            prover_class: ProverClass::SmallKernel,
+            confirming_provers: 1,
+            small_kernel_confirmations: 1,
+            has_certificate: false,
+            certificate_verified: true,
+            worst_axiom_danger: Safe,
+            solver_integrity_ok: true,
+        };
+        assert_eq!(compute_trust_level(&no_certificate), TrustLevel::Level2);
+    }
+
+    // -----------------------------------------------------------------------
     // Property: compute_trust_level output is always in [Level1, Level5]
     // -----------------------------------------------------------------------
 
@@ -604,6 +776,7 @@ pub mod impl_invariants {
                             let f = TrustFactors {
                                 prover_class: pc,
                                 confirming_provers: confirming,
+                                small_kernel_confirmations: confirming,
                                 has_certificate: certs,
                                 certificate_verified: certs,
                                 worst_axiom_danger: dl,
@@ -632,6 +805,7 @@ mod tests {
         let factors = TrustFactors {
             prover_class: ProverClass::SmallKernel,
             confirming_provers: 2,
+            small_kernel_confirmations: 2,
             has_certificate: true,
             certificate_verified: true,
             worst_axiom_danger: DangerLevel::Safe,
@@ -645,6 +819,7 @@ mod tests {
         let factors = TrustFactors {
             prover_class: ProverClass::SmallKernel,
             confirming_provers: 1,
+            small_kernel_confirmations: 0,
             has_certificate: true,
             certificate_verified: true,
             worst_axiom_danger: DangerLevel::Safe,
@@ -658,6 +833,7 @@ mod tests {
         let factors = TrustFactors {
             prover_class: ProverClass::SmtOrAtp,
             confirming_provers: 1,
+            small_kernel_confirmations: 0,
             has_certificate: true,
             certificate_verified: true,
             worst_axiom_danger: DangerLevel::Safe,
@@ -671,6 +847,7 @@ mod tests {
         let factors = TrustFactors {
             prover_class: ProverClass::SmtOrAtp,
             confirming_provers: 1,
+            small_kernel_confirmations: 0,
             has_certificate: false,
             certificate_verified: false,
             worst_axiom_danger: DangerLevel::Safe,
@@ -685,6 +862,7 @@ mod tests {
         let factors = TrustFactors {
             prover_class: ProverClass::SmallKernel,
             confirming_provers: 1,
+            small_kernel_confirmations: 0,
             has_certificate: true,
             certificate_verified: true,
             worst_axiom_danger: DangerLevel::Noted,

@@ -32,6 +32,11 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v7.0.1
 
+      - name: Gate library and W0 gate self-tests (fixtures, no network)
+        run: |
+          bash scripts/gates/lib.selftest.sh
+          bash scripts/gates/w0.selftest.sh
+
       - name: Setup Rust toolchain
         uses: dtolnay/rust-toolchain@v1
         with:
