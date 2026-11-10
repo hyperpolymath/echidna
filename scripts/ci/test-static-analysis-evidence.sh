@@ -162,6 +162,58 @@ expect_exit 2 bridge
 printf '%s\n' '{"schema_version":"0.2.0","total_dependencies":2,"vulnerable_dependencies":1,"cves":[{"classification":"unmitigable"}],"mitigated":0,"unmitigable":1,"concatenative":0,"informational":0}' > "$MOCK_REPORT"
 expect_exit 2 bridge
 
+# B1 (bridge-gate.yml): exit 1 only for a reachable unmitigable CVE in a
+# qualified report. No qualified report, or an unknown reachability value, is
+# exit 2: it is never a pass.
+b1() { bash "$adapter" bridge-b1 "$tmp/bridge/receipt.json"; }
+bridge_report() { # <vulnerability_data> <classification> <reachability status>
+  local data=$1 class=$2 reach=$3
+  jq -cn --arg data "$data" --arg class "$class" --arg reach "$reach" '
+    {schema_version:"0.3.0",vulnerability_data:$data,total_dependencies:2,vulnerable_dependencies:1,
+     cves:[{classification:$class,reachability:{status:$reach},vulnerability:{id:"FIXTURE-0001"},rationale:"planted"}],
+     mitigated:(if $class == "mitigable" then 1 else 0 end),unmitigable:(if $class == "unmitigable" then 1 else 0 end),
+     concatenative:0,informational:(if $class == "informational" then 1 else 0 end)}' > "$MOCK_REPORT"
+}
+bridge_report queried unmitigable reachable
+expect_exit 0 bridge
+expect_exit 1 b1
+grep -Fq 'FIXTURE-0001: planted' "$tmp/control.log"
+# Paired: the same CVE does not block when it is not reachable or is mitigable.
+for reach in unreachable phantom-declared phantom-transitive; do
+  bridge_report queried unmitigable "$reach"
+  expect_exit 0 bridge
+  expect_exit 0 b1
+done
+bridge_report queried mitigable reachable
+expect_exit 0 bridge
+expect_exit 0 b1
+printf '%s\n' '{"schema_version":"0.3.0","vulnerability_data":"queried","total_dependencies":2,"vulnerable_dependencies":0,"cves":[],"mitigated":0,"unmitigable":0,"concatenative":0,"informational":0}' > "$MOCK_REPORT"
+expect_exit 0 bridge
+expect_exit 0 b1
+# The spelling the workflow compared before #481 never matched the report.
+# An unknown status is refused, so a renamed value cannot pass in silence.
+bridge_report queried unmitigable Reachable
+expect_exit 0 bridge
+expect_exit 2 b1
+# A report whose feed was not queried leaves no qualified receipt to judge.
+for data in offline-unavailable no-dependencies; do
+  bridge_report "$data" unmitigable reachable
+  expect_exit 2 bridge
+  expect_exit 2 b1
+done
+# The verdict checks the report itself, not only that a receipt exists: a
+# receipt whose report says the feed was not queried, or says nothing about
+# the feed, is refused. Without that check this zero-CVE report would pass.
+printf '%s\n' '{"schema_version":"0.3.0","vulnerability_data":"queried","total_dependencies":2,"vulnerable_dependencies":0,"cves":[],"mitigated":0,"unmitigable":0,"concatenative":0,"informational":0}' > "$MOCK_REPORT"
+expect_exit 0 bridge
+jq '.report.vulnerability_data = "offline-unavailable"' "$tmp/bridge/receipt.json" > "$tmp/unqueried-receipt.json"
+expect_exit 2 bash "$adapter" bridge-b1 "$tmp/unqueried-receipt.json"
+jq 'del(.report.vulnerability_data)' "$tmp/bridge/receipt.json" > "$tmp/unqueried-receipt.json"
+expect_exit 2 bash "$adapter" bridge-b1 "$tmp/unqueried-receipt.json"
+# Another scanner's receipt and a missing receipt are not CVE results.
+expect_exit 2 bash "$adapter" bridge-b1 "$tmp/qualified-hypatia.json"
+expect_exit 2 bash "$adapter" bridge-b1 "$tmp/no-such-receipt.json"
+
 # Deposit preserves actual critical findings even though their gate failed.
 # Only mutually matching completed scan receipts may create the legacy artifact.
 mkdir -p "$tmp/findings/"{panic-attack-findings,hypatia-findings,bridge-report}
