@@ -246,9 +246,43 @@ deposit() {
          + [$hyp[0][] | . + {scanner:"hypatia"}]),patch_bridge:$bridge[0]}' > "$dir/unified-findings.json"
 }
 
+# Merge-orchestration B1 (bridge-gate.yml): a reachable unmitigable CVE blocks a
+# dependency bump. Exit 1 is that verdict. Exit 2 means there is no CVE result
+# to judge: the receipt is not a qualified Patch Bridge receipt (which requires
+# vulnerability_data == "queried"), or a CVE carries a reachability status this
+# gate does not know. An unknown value must never count as "not reachable".
+bridge_b1() {
+  local receipt=$1 report blockers
+  local reachable_unmitigable='.cves[] | select(.classification == "unmitigable" and .reachability.status == "reachable")'
+  one_json "$receipt" || return 2
+  report=$(mktemp)
+  if [[ "$(jq -r '.tool' "$receipt")" != patch-bridge ]] ||
+     ! qualified_receipt patch-bridge "${PANIC_ATTACK_REF:?}" "$receipt" "$report"; then
+    rm -f -- "$report"
+    echo '::error::B1: no qualified Patch Bridge report. The vulnerability feed must be queried; this is not a CVE result.' >&2
+    return 2
+  fi
+  if ! jq -e 'all(.cves[]; .reachability.status as $s |
+       ["phantom-declared","phantom-transitive","unreachable","reachable"] | index($s) != null)' "$report" >/dev/null 2>&1; then
+    rm -f -- "$report"
+    echo '::error::B1: a CVE has no known reachability status; the report does not match the pinned contract.' >&2
+    return 2
+  fi
+  blockers=$(jq "[$reachable_unmitigable] | length" "$report")
+  if [[ "$blockers" -gt 0 ]]; then
+    echo "::error::B1: $blockers reachable unmitigable CVE(s) -> safety=flag (auto-merge blocked)"
+    jq -r "$reachable_unmitigable"' | "  - \(.vulnerability.cve // .vulnerability.id // "unidentified"): \(.rationale // "no rationale")"' "$report"
+    rm -f -- "$report"
+    return 1
+  fi
+  rm -f -- "$report"
+  echo 'B1 PASS: the feed was queried and no unmitigable CVE is reachable -> arm-eligible (pool-gated).'
+}
+
 case "${1:-}" in
   scan) shift; scan "$@" ;;
   gate) shift; gate "$@" ;;
   deposit) shift; deposit "$@" ;;
-  *) echo 'usage: static-analysis-evidence.sh scan TOOL REF BIN SOURCE-RECEIPT OUTPUT-DIR | gate RECEIPT | deposit ARTIFACT-DIR' >&2; exit 2 ;;
+  bridge-b1) shift; bridge_b1 "$@" ;;
+  *) echo 'usage: static-analysis-evidence.sh scan TOOL REF BIN SOURCE-RECEIPT OUTPUT-DIR | gate RECEIPT | deposit ARTIFACT-DIR | bridge-b1 RECEIPT' >&2; exit 2 ;;
 esac

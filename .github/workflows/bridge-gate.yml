@@ -68,15 +68,21 @@ jobs:
             > "$tool_root/source.json"
           echo "$tool_root/bin" >> "$GITHUB_PATH"
 
-      - name: Bridge triage (queries OSV) -> BridgeReport
-        run: panic-attack bridge triage . --output bridge-report.json
-
-      - name: Apply B1 verdict -- reachable unmitigable CVE -> flag
+      # The adapter that the Static Analysis Gate uses. It checks the binary
+      # against its build receipt and writes a receipt only for a complete
+      # schema 0.3.0 report whose vulnerability_data is "queried".
+      - name: Bridge triage (queries OSV) -> qualified BridgeReport
+        env:
+          SCAN_EXPECTED_SHA: ${{ github.sha }}
         run: |
-          blockers=$(jq '[.cves[]? | select(.classification=="Unmitigable" and .reachability.status=="Reachable")] | length' bridge-report.json)
-          if [ "$blockers" -gt 0 ]; then
-            echo "::error::B1: $blockers reachable unmitigable CVE(s) -> safety=flag (auto-merge blocked)"
-            jq -r '.cves[]? | select(.classification=="Unmitigable" and .reachability.status=="Reachable") | "  - \(.vulnerability.cve // .vulnerability.id): \(.rationale)"' bridge-report.json
-            exit 1
-          fi
-          echo "B1 PASS: no reachable unmitigable CVEs -> arm-eligible (pool-gated)."
+          bash scripts/ci/static-analysis-evidence.sh scan patch-bridge "$PANIC_ATTACK_REF" \
+            "$RUNNER_TEMP/panic-toolchain/bin/panic-attack" "$RUNNER_TEMP/panic-toolchain/source.json" \
+            "$RUNNER_TEMP/bridge-report"
+
+      # Exit 1: a reachable unmitigable CVE. Exit 2: no qualified report, so
+      # there is no CVE result to judge. Controls for both are in
+      # scripts/ci/test-static-analysis-evidence.sh.
+      - name: Apply B1 verdict -- reachable unmitigable CVE -> flag
+        env:
+          SCAN_EXPECTED_SHA: ${{ github.sha }}
+        run: bash scripts/ci/static-analysis-evidence.sh bridge-b1 "$RUNNER_TEMP/bridge-report/receipt.json"
