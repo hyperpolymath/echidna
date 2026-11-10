@@ -94,7 +94,7 @@ jobs:
         if: steps.detect.outputs.relevant == 'true'
         run: |
           cd src/abi
-          echo "=== Type-checking ECHIDNA ABI package (16 modules) ==="
+          echo "=== Type-checking ECHIDNA ABI package (modules listed in echidnaabi.ipkg) ==="
           idris2 --build echidnaabi.ipkg
           echo "✓ All ABI modules type-check successfully"
 

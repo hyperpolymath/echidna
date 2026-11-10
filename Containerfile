@@ -87,11 +87,15 @@ LABEL org.opencontainers.image.licenses="MPL-2.0"
 LABEL org.opencontainers.image.version="1.5.0"
 LABEL org.opencontainers.image.vendor="hyperpolymath"
 
+# Wolfi's apk commit hook runs ldconfig, whose aux-cache records the build
+# host's inode numbers and timestamps. Drop it so two builds of one commit
+# give the same layer; ld.so.cache itself is deterministic and kept.
 RUN apk add --no-cache \
     ca-certificates \
     libssl3 \
     gmp \
-    libstdc++
+    libstdc++ \
+    && rm -f /var/cache/ldconfig/aux-cache
 
 WORKDIR /app
 

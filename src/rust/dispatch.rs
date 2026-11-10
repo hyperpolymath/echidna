@@ -664,6 +664,7 @@ impl ProverDispatcher {
         let trust_factors = TrustFactors {
             prover: prover_kind,
             confirming_provers: 1,
+            small_kernel_confirmations: 0,
             has_certificate: false,
             certificate_verified: false,
             worst_axiom_danger: worst_danger,
@@ -872,6 +873,7 @@ impl ProverDispatcher {
         let trust_factors = TrustFactors {
             prover: primary_prover,
             confirming_provers: confirming_count,
+            small_kernel_confirmations: 0,
             has_certificate: false,
             certificate_verified: false,
             worst_axiom_danger: worst_danger,
@@ -1022,6 +1024,7 @@ impl ProverDispatcher {
             let trust_factors = TrustFactors {
                 prover: winning_kind,
                 confirming_provers: 1,
+                small_kernel_confirmations: 0,
                 has_certificate: false,
                 certificate_verified: false,
                 worst_axiom_danger: worst_danger,

@@ -155,7 +155,11 @@ at-source. *#74 (proverif opam) resolved.* Imandra remains the only stub
 — genuinely proprietary, honestly fail-loud, kept by decision (real
 adapter + Idris2 ABI proofs retained). No stub-theatre.
 
-==== Wave-4 (Tier-4 quarterly, 19 backends, allow-fail placeholder)
+==== Wave-4 (Tier-4, 19 backends, mock-only)
+
+_The quarterly Tier-4 CI placeholder jobs were removed 2026-11-09 under the
+CI-4 ruling (#416): they announced a TODO and never provisioned a binary.
+A backend returns to CI in a blocking job once it has a Containerfile._
 
 Mizar, Nuprl, PVS, Minlog, Dedukti, Arend, KeY, Prism, UPPAAL, ViPER,
 NuSMV, Spin, TLC, CBMC, Seahorn, dReal, Boogie, Kissat, Alloy. Retain as
@@ -380,7 +384,8 @@ acceptance run.
 
 *P1 L3 finishers:* Wave-3 ✅ DONE & consolidated to one
 `+Containerfile.wave3+` (2026-05-18; see Wave-3 section above), Wave-4
-✅ (19 placeholder + rationale docs in STATE.a2ml). L3 P1 finisher work
+✅ (19 backends documented as mock-only in STATE.a2ml; the CI placeholder
+jobs were removed 2026-11-09, CI-4 #416). L3 P1 finisher work
 is complete; the L3→L1 hand-off remains gated only on the calendar/infra
 gate (Tier-1 green ≥7 days on main — blocked by main CI stuck
 `+queued/+`, infra-owned, not collapsible here).

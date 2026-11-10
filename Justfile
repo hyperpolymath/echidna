@@ -2,8 +2,6 @@
 set shell := ["bash", "-uc"]
 set dotenv-load := true
 
-import? "contractile.just"
-
 project := "echidna"
 
 # Show all recipes
@@ -216,6 +214,10 @@ build-release:
 # Run unit tests
 test:
     cargo test --lib
+
+# Test the containment stopgap script against stub podman/systemctl/curl
+test-deploy:
+    bash tests/deploy/stopgap-apply.test.sh
 
 # Run all tests (unit + integration)
 test-all:

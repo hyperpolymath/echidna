@@ -1,0 +1,33 @@
+Group matching declarations by their *structural* identity key.
+
+The key is the SHA-256 of the type's canonical shape — variable names, module paths, operator spellings and binder keywords are normalised away — so `+-comm` in Agda, `Nat.add_comm` in Lean and `eq Nat (add x y) (add y x)` in Dedukti land on one key with no synonym lookup. `--skeleton` additionally prints the binder- and sort-free key, which is what provers that elide binders (Isabelle) match on.
+
+Usage: echidna corpus identity [OPTIONS] <PATTERN>
+
+Arguments:
+  <PATTERN>
+          Name pattern to match: a substring of the qualified or short name, case-insensitive. `*` matches every declaration
+
+Options:
+      --format <FORMAT>
+          Output format (text, json)
+          
+          [default: text]
+
+  -i, --index <INDEX>
+          Path to the corpus JSON. Defaults to `data/corpus/<basename>.json` for the cwd's basename
+
+      --skeleton
+          Also print the skeleton key (binders and sorts erased)
+
+  -v, --verbose
+          Verbose output
+
+      --cross-only
+          Only show keys that group declarations from more than one adapter
+
+      --no-color
+          Disable colors
+
+  -h, --help
+          Print help (see a summary with '-h')

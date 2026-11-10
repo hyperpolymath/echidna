@@ -28,5 +28,4 @@ modules = AxiomCompleteness
         , NatLte
         , ProofStateSerialisation
         , ProverKindInjectivity
-        , TrustKernelMonotonicity
         , TrustLevelSoundness

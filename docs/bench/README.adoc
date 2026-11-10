@@ -125,5 +125,6 @@ is currently measured anywhere.
 
 * `+docs/decisions/2026-05-30-chapel-l23-cancel-token.adoc+` — the `+-5+`
   preemption contract and why it is distinct from `+-3+`.
-* `+proofs/agda/ParallelSoundness.agda+` — cancellation-safety.
+* `+proofs/agda/ParallelSoundness.agda+` — race-protocol model:
+  `+winner-stable+`, `+preempted-inert+`, `+cancel-after-win+`.
 * `+docs/handover/TODO.adoc+` — real-corpus speedup bench (#161).

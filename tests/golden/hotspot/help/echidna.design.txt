@@ -1,0 +1,14 @@
+Search proof-design space via simulated annealing
+
+Usage: echidna design [OPTIONS] <COMMAND>
+
+Commands:
+  search  Run SA over a named design problem
+  swarm   Run a parallel swarm of SA agents with cross-pollination
+  help    Print this message or the help of the given subcommand(s)
+
+Options:
+      --format <FORMAT>  Output format (text, json) [default: text]
+  -v, --verbose          Verbose output
+      --no-color         Disable colors
+  -h, --help             Print help

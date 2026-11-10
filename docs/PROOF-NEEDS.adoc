@@ -78,8 +78,12 @@ no collisions in kind_to_u8 |I2
 |E7 GNN embedding faithfulness |`+src/abi/EchidnaABI/Gnn.idr+`
 |Structural properties, feature bounds, score normalisation |I2
 
-|E9 Proof composition soundness |`+proofs/agda/ProofComposition.agda+`
-|Soundness preservation, axiom conflict detection |Agda
+|E9 Proof composition soundness |`+meta-checker/src/Echidna/Composition.agda+`
+|Cut preserves semantic soundness; explosion shows a conflict check is
+load-bearing; a sound detector realises every composite, and a sound
+detector that decides its conflict relation returns a conflict witness for
+every inconsistent one. Theory over an arbitrary logic; no Rust composer
+exists to verify |Agda
 
 |E12 ProofState serialization losslessness
 |`+verification/proofs/idris2/ProofStateSerialisation.idr+`
@@ -92,10 +96,13 @@ injection-free, L3 type-safe boundary |I2
 |Extensive ABI |`+src/abi/EchidnaABI/Types.idr+`, `+Foreign.idr+`,
 `+Layout.idr+` |All ABI types, no believe_me |I2
 
-|Stage 8a Trust-Kernel Monotonicity
-|`+verification/proofs/idris2/TrustKernelMonotonicity.idr+`
-|Reject/Warning danger → Level1; bad integrity → Level1; confirming≥2 +
-cert + small_kernel → ≥Level4; zero believe_me |I2
+|Stage 8a Trust-Kernel Monotonicity (*retired 2026-11-09*)
+|was `+verification/proofs/idris2/TrustKernelMonotonicity.idr+`
+|Retired. The model dropped `+has_certificate+` and proved the defective
+Level5 rule (the producing prover's kernel class only) as a property. Under
+`+PROOF-POLICY+` §1 Rust behaviour is verified on the code, not restated in
+Idris 2: the obligations now live as TK-4/TK-5 contracts on
+`+echidna_core::trust::compute_trust_level+` (see PROOF-STATUS R1) |—
 
 |Stage 8a Axiom-Policy Ordering
 |`+verification/proofs/idris2/AxiomPolicyOrdering.idr+` |worstDanger
