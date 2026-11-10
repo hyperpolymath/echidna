@@ -90,17 +90,17 @@ pub(super) async fn apply_tactic_handler(
     let mut session = session_arc.lock().await;
 
     // Ensure we have a state
-    if session.state.is_none() {
+    let Some(proof_state) = session.state.as_ref() else {
         return Err(AppError::BadRequest(
             "No proof loaded in session".to_string(),
         ));
-    }
+    };
+    let goals_before = proof_state.goals.len();
 
     // Parse tactic (simplified)
     let tactic = parse_tactic_from_json(&req.tactic)?;
 
     // Apply tactic
-    let proof_state = session.state.as_ref().unwrap();
     let result = session
         .prover
         .apply_tactic(proof_state, &tactic)
@@ -110,26 +110,30 @@ pub(super) async fn apply_tactic_handler(
     match result {
         TacticResult::Success(new_state) => {
             let complete = new_state.is_complete();
+            let goals_remaining = new_state.goals.len();
             session.state = Some(new_state);
             session.history.push(req.tactic.clone());
 
             Ok(Json(ApplyTacticResponse {
                 success: true,
                 complete,
-                goals_remaining: session.state.as_ref().unwrap().goals.len(),
+                goals_remaining,
                 message: "Tactic applied successfully".to_string(),
             }))
         },
 
+        // A failed tactic leaves the proof state as it was.
         TacticResult::Error(msg) => Ok(Json(ApplyTacticResponse {
             success: false,
             complete: false,
-            goals_remaining: session.state.as_ref().unwrap().goals.len(),
+            goals_remaining: goals_before,
             message: msg,
         })),
 
         TacticResult::QED => {
-            session.state.as_mut().unwrap().goals.clear();
+            if let Some(proof_state) = session.state.as_mut() {
+                proof_state.goals.clear();
+            }
 
             Ok(Json(ApplyTacticResponse {
                 success: true,
