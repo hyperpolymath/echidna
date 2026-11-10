@@ -92,7 +92,7 @@ workflows:
         - 'actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1'
     '.github/workflows/zig-ffi-ci.yml':
         - 'actions/checkout@v7.0.1'
-        - 'hyperpolymath/cicd-suite@4c772eb235b04455307d5c03cbbc4f45130f7f0f'
+        - 'hyperpolymath/proven-cicd-and-workflows@4c772eb235b04455307d5c03cbbc4f45130f7f0f'
         - 'mlugg/setup-zig@v2.2.1'
 dependencies:
     'actions/attest-build-provenance@v4.2.2':
@@ -169,7 +169,7 @@ dependencies:
         commit: 'sha1-884713a6c30a92e5e8544c39945cd7cb630abcd1'
         owner_id: 1342004
         repo_id: 400046858
-    'hyperpolymath/cicd-suite@4c772eb235b04455307d5c03cbbc4f45130f7f0f':
+    'hyperpolymath/proven-cicd-and-workflows@4c772eb235b04455307d5c03cbbc4f45130f7f0f':
         ref: 'main'
         commit: 'sha1-4c772eb235b04455307d5c03cbbc4f45130f7f0f'
         owner_id: 6759885
