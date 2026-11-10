@@ -7,93 +7,141 @@ Jonathan D.A. Jewell <j.d.a.jewell@open.ac.uk>
 
 == Overview
 
-The ECHIDNA meta-checker is an **Agda formalisation** that proves correctness properties
-about ECHIDNA's trust-hardening pipeline. When Agda successfully type-checks these modules,
-it provides a **machine-verified guarantee** that the system's safety invariants hold.
+The meta-checker is an *Agda model* of ECHIDNA's trust-hardening pipeline. It
+states properties of that model and proves them. A successful check means the
+model has those properties. It does not establish that the Rust implementation
+has them: no refinement between these definitions and the Rust source is proved
+here. Verifying the Rust is the job of Creusot with Pearlite contracts and Verus
+(`+PROOF-POLICY+` §1.2), recorded as obligation R1 in
+link:../docs/PROOF-STATUS.adoc[`+docs/PROOF-STATUS.adoc+`].
 
-== Verified Properties (30+)
+That file is the authoritative record of what is proved, by which receipt, and
+with which limits. This README describes the modules and how to check them.
 
-=== Trust Level System (`TrustLevel.agda`)
+The model does not match the Rust everywhere, and some theorem names promise more
+than their statements give. The design review under R4 in `+PROOF-STATUS+`
+lists each case: for example, the dispatch model gives Level 2 where the Rust
+gives Level 3, and `+comment-skip-sound+` ignores its hypothesis. Until the
+Rust contracts replace these modules, read each statement, not its name.
 
-* Trust levels form a **total order** (reflexive, antisymmetric, transitive, total)
-* `min-trust` correctly computes lower bounds
-* **Dangerous axioms always cap trust at Level1**
-* Safe axioms preserve trust level
-* Capping is monotonic
+== Modules
 
-=== Axiom Safety (`AxiomSafety.agda`)
-
-* Axiom policies form a total preorder
-* `worst-policy` is commutative, associative, with identity (Clean)
-* **Rejected is absorbing** — once rejected, always rejected
-* Comment-aware scanning is sound
-* Every danger class maps to exactly one policy
-
-=== Portfolio Verification (`Portfolio.agda`)
-
-* **Cross-checking improves trust** over single-solver
-* Inconclusive and timeout always produce Level1
-* Small-kernel provers always have higher trust
-* Agreement relation is reflexive and symmetric
-* Unknown verdicts never count as agreement
-
-=== Dispatch Pipeline (`Dispatch.agda`)
-
-* **Failed integrity always produces Level1**
-* **Dangerous axioms always produce Level1**
-* Maximum trust (Level5) requires all positive factors
-* Pipeline is monotonically degrading
-* Pipeline is deterministic
-
-== Zero Unsafe Constructs
-
-[cols="1,1"]
+[cols="1,3",options="header"]
 |===
-| Construct | Count
+|Module |What it states
 
-| `postulate` | 1 (funext — standard, provable in HoTT)
-| `sorry` | 0
-| `believe_me` | 0
-| `Admitted` | 0
-| `TRUSTME` | 0
+|`+Echidna.TrustLevel+`
+|The five trust levels form a total order; `+min-trust+` is a lower bound;
+dangerous axioms cap trust at Level 1; capping is monotone.
+
+|`+Echidna.AxiomSafety+`
+|Axiom policies form a total preorder; `+worst-policy+` is commutative and
+associative with `+Clean+` as identity; `+Rejected+` is absorbing; every danger
+class maps to exactly one policy.
+
+|`+Echidna.Portfolio+`
+|Cross-checking does not lower trust below a single solver; inconclusive and
+timed-out results give Level 1; agreement is reflexive and symmetric; unknown
+verdicts never count as agreement.
+
+|`+Echidna.Dispatch+`
+|Failed integrity and dangerous axioms each give Level 1; Level 5 needs every
+positive factor; the modelled pipeline only degrades trust and is deterministic.
+
+|`+Echidna.AxiomTrackerCompleteness+`
+|Every registered pattern yields exactly one policy; the policy fold
+distributes over registry concatenation and is monotone; an empty registry
+yields `+Clean+`; a `+Reject+` pattern anywhere forces `+Rejected+`; scanning is
+deterministic.
+
+|`+Echidna.Integrity+`
+|Obligation E11 over digests: verification needs an initialised manifest, means
+the recorded digest matched, and never accepts a different digest. Digest
+comparison soundness is a record field, not a postulate.
+
+|`+Echidna.ClampTrust+`
+|Bounds, monotonicity, fixed points and idempotence of a modelled
+`+clamp-trust : ℕ → TrustLevel+`. The Rust `+clamp_trust+` in
+`+crates/echidna-core-creusot+` has a different signature (it clamps a level
+into a level range), so only the bounds statement carries over (R10).
+
+|`+Echidna.Receipt+`
+|A two-world Kripke countermodel separating receipts (factive) from warrants
+(not factive). This is the module's one *theory* statement under §1.
+
+|`+Echidna.MetaChecker+`
+|The entry point that imports the eight modules above.
 |===
+
+Under `+PROOF-POLICY+` §1 only `+Receipt+` is theory. The other modules state
+properties of this repository's own types, which §1 places with Idris 2. The
+owner's decision of 2026-11-09 splits them. What holds for any implementation
+stays as Agda theory. The echidna-specific statements are verified on the Rust
+with Creusot/Pearlite and Verus, not restated in Idris 2, and each module here
+retires once its contracts carry a receipt. See R4 in
+`+docs/PROOF-STATUS.adoc+`.
+
+== Escape hatches
+
+The check runs with `+--safe+`, so the compiler refuses `+postulate+`,
+`+primTrustMe+` and unsafe options anywhere in the import cone. There are no
+postulates in these modules. The kernel enforces that; a text search is not the
+evidence.
+
+The check reports `+UnsupportedIndexedMatch+` warnings at a few sites. They mean
+the flagged functions do not compute under Cubical transports, which is the
+difference between `+--cubical-compatible+` and full `+--cubical+` that
+`+PROOF-POLICY+` §2.1 draws. They are recorded in `+PROOF-STATUS+`, not
+suppressed.
 
 == Running
 
+Use the pinned toolchain and the canonical invocation (`+PROOF-POLICY+` §2.1).
+The scripts install Agda 2.7.0.1 and agda-stdlib 2.1 from release archives
+checked against pinned SHA-256 digests, then check every module and require a
+fresh interface for each one:
+
+Outside GitHub Actions, `+setup-agda.sh+` cannot change the calling shell's
+environment. Give it the two files Actions would provide, then load them:
+
 [source,bash]
 ----
-# Install Agda (requires GHC)
-cabal install Agda
-
-# Install standard library
-agda-stdlib-utils install
-
-# Type-check all proofs
-cd meta-checker
-agda src/Echidna/MetaChecker.agda
+export GITHUB_ENV=$(mktemp) GITHUB_PATH=$(mktemp)
+bash scripts/ci/setup-agda.sh             # writes Agda_datadir, AGDA_LIBRARIES_FILE, LC_ALL
+set -a; . "$GITHUB_ENV"; set +a           # the values are mktemp paths, without spaces
+export PATH="$(cat "$GITHUB_PATH"):$PATH"
+bash scripts/ci/check-agda.sh             # runs from meta-checker/
 ----
 
-If the command exits with code 0, all 30+ properties are machine-verified.
+`+check-agda.sh+` runs:
 
-== CI Integration
+[source,bash]
+----
+agda --no-default-libraries --library-file "$AGDA_LIBRARIES_FILE" \
+  --safe --without-K --cubical-compatible src/Echidna/MetaChecker.agda
+----
 
-The `.github/workflows/agda-meta-checker.yml` workflow automatically type-checks
-the meta-checker on every push. A green badge means all proofs are valid.
+It then fails if any module under `+src/Echidna/+` produced no interface, and runs
+`+scripts/ci/check-receipt-controls.sh+`, whose planted claims must be rejected.
 
-== Architecture
+== CI
 
-The meta-checker mirrors the Rust source structure:
+`+.github/workflows/agda-meta-checker.yml+` runs the same two scripts on relevant
+pushes and pull requests and on a schedule. A passing run on a commit is that
+commit's receipt for the Agda leg; `+PROOF-STATUS+` cites it by run and commit.
 
-[cols="1,1"]
+== Rust counterparts
+
+[cols="1,1",options="header"]
 |===
-| Agda Module | Rust Source
+|Agda module |Rust source it models
 
-| `Echidna.TrustLevel` | `verification/confidence.rs`
-| `Echidna.AxiomSafety` | `verification/axiom_tracker.rs`
-| `Echidna.Portfolio` | `verification/portfolio.rs`
-| `Echidna.Dispatch` | `dispatch.rs`
+|`+Echidna.TrustLevel+` |`+src/rust/verification/confidence.rs+`
+|`+Echidna.AxiomSafety+` |`+src/rust/verification/axiom_tracker.rs+`
+|`+Echidna.Portfolio+` |`+src/rust/verification/portfolio.rs+`
+|`+Echidna.Dispatch+` |`+src/rust/dispatch.rs+`
+|`+Echidna.Integrity+` |`+src/rust/integrity/solver_integrity.rs+`
 |===
 
-Each Agda definition is annotated with which Rust function or type it models.
-The proofs verify that the *design* is correct — they do not replace unit tests
-which verify that the *implementation* matches the design.
+The correspondence is by reading, not by proof. These proofs check the design;
+the unit tests and, once R1 lands, the Rust verifiers check the implementation.

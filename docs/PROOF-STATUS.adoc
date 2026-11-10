@@ -3,12 +3,14 @@
 
 = Proof status — policy-vocabulary view
 
-*Status*: reviewed 2026-11-04. Each row is scoped to its recorded source
-identity and check; this file does not claim a single revision was checked
-for every obligation.
+*Status*: reviewed 2026-11-09 against main `+2ab7574ae1e574b0e881422fde6252bf79dea178+`.
+Each row is scoped to its recorded source identity and check; this file does
+not claim a single revision was checked for every obligation.
 *Normative policy*: `+3-practice/PROOF-POLICY.adoc+` in
-https://github.com/metadatastician/standards[metadatastician/standards] (owner
-ruling 2026-10-26).
+https://github.com/metadatastician/standards[metadatastician/standards], read
+at commit `+b8f60511e76c9015d86990317162dce653c92fe1+` (owner rulings
+2026-10-26, 2026-11-04 for §8 Proof Witness Grades, and 2026-11-07 for §1.2
+Creusot, Pearlite and Verus).
 
 This is ECHIDNA's *proof-status file* in the sense `+PROOF-POLICY+` uses the
 term: the place each obligation's ledger row lives, in the closed vocabulary of
@@ -77,6 +79,19 @@ headless, isolated, pinned run). Always write the `+PWG-+` prefix.
   R4. A theory theorem below `+PWG-3+` is `+ungraded+`.
 * A recheck leg counts only when its kernel accepted it *and* its §2.2
   correspondence is `+RECONCILED+`. Until then it is not a witness.
+
+[width="100%",cols="22%,10%,12%,56%",options="header"]
+|===
+|Theory theorem |`+pwg+` |`+foundation_diverse+` |Legs (route, §5 token, §2.2 state, receipt)
+
+|Receipt/warrant separation, `+meta-checker/src/Echidna/Receipt.agda+` (R11)
+|`+3+`
+|`+false+`
+|*Agda*: source, `+proven+`, `+AGDA-VERIFIED+`, hosted run
+https://github.com/hyperpolymath/echidna/actions/runs/42551607796[42551607796]
+on `+2ab7574+`. *Rocq*: `+open+`, `+BRIDGE-PENDING+`, no receipt. *Lean*:
+`+open+`, `+BRIDGE-PENDING+`, no receipt. Owes both recheck legs (§8.4.1).
+|===
 
 Grades are derived from receipts, never asserted, and are never flattened into
 a percentage. See R5 and R6.
@@ -168,7 +183,7 @@ decides their fate (open question A5).
 
 |===
 
-=== Lean 4 — cross-checks and algebraic properties (§4 exceptions)
+=== Lean 4 — engineering properties held outside Idris 2 (§3 re-homing pending)
 
 [width="100%",cols="24%,13%,38%,25%",options="header"]
 |===
@@ -225,7 +240,21 @@ here.
 axiom-tracker completeness, integrity, clamp bounds, receipt/warrant (9 modules)
 |`+proven+`
 |First-party Agda in `+meta-checker/src/+`, type-checked with the §2.1
-canonical invocation. The reproducible local receipt is
+canonical invocation.
+*Current receipt (exact commit):* the scheduled Agda Meta-Checker run
+https://github.com/hyperpolymath/echidna/actions/runs/42551607796[42551607796]
+on main `+2ab7574ae1e574b0e881422fde6252bf79dea178+` passed, using the pinned
+`+scripts/ci/setup-agda.sh+` and `+scripts/ci/check-agda.sh+`. A local recheck of
+the same commit on 2026-11-09 also passed: 9 of 9 modules produced fresh
+interfaces, the receipt controls accepted the two witnesses and rejected the
+three planted claims, and there were 55 `+UnsupportedIndexedMatch+` warnings at
+the same six sites. The Agda executable SHA-256 matched
+`+6de41437c14c05c9fe576d724cc67386444c0fa9fee662a08250fefb91bee8b6+`. The standard
+library came from the `+v2.1+` git tag, commit `+97bc55e+`, because that
+session's network refused the archive host; see Toolchain deviations. Every
+source digest at `+2ab7574+` equals the corresponding digest in the earlier
+receipt below.
+*Earlier local receipt:*
 link:reports/2026-11-04-agda-meta-checker-receipt.json[`+2026-11-04-agda-meta-checker-receipt.json+`].
 It records base commit `+9dd7847dfb095f0ddf3d41bac3327fcc4486fb6b+` plus
 the exact SHA-256 of every checked source and library descriptor, and names
@@ -268,6 +297,47 @@ on `+main+`.
 The earlier 2026-11-01 timing/count report is historical, not the evidence
 for the current `+proven+` row; the source-bound 2026-11-04 receipt replaces it.
 
+**Classification (§1), decided 2026-11-09:** only `+Receipt+` states theory.
+`+TrustLevel+`, `+AxiomSafety+`, `+Portfolio+`, `+Dispatch+`,
+`+AxiomTrackerCompleteness+`, `+Integrity+` and `+ClampTrust+` name this
+repository's types, and §1 places them as engineering. The owner chose to
+*split* the meta-checker. Generic theory stays in Agda: `+Receipt+`, and any
+statement that holds for an arbitrary logic or order, such as E9 composition
+(#471). The echidna-specific statements are verified *on the Rust* with
+Creusot/Pearlite and Verus (R1). They are not restated in Idris 2: the strict
+§1 ruling that #477 applies retires Idris restatements of Rust behaviour
+(it removes `+TrustKernelMonotonicity.idr+`). Each Agda module retires once its
+Rust contracts carry a receipt. Until then these rows keep their `+proven+`
+token as statements about a model. They carry no PWG.
+
+**Design review of the statements (2026-11-09, at `+2ab7574+`, before #477
+replaced the trust kernel and retired `+TrustKernelMonotonicity.idr+`):** the kernel accepting a proof
+says nothing about whether the statement models the code or says what its name
+claims. A statement-by-statement comparison with the Rust, the Idris 2 corpus
+and the Lean corpus found the following. Each is to be fixed in the split, not
+by changing a token.
+
+* *Model diverges from the Rust.* `+Dispatch.compute-trust+` gives Level 2 for a
+  cross-checked result without a certificate. The Rust
+  (`+src/rust/verification/confidence.rs+`, the "Cross-checked without
+  certificate" branch) and Idris 2 `+TrustKernelMonotonicity.computeTrustLevel+`
+  give Level 3. `+Integrity.check+` maps an uninitialised manifest to `+Missing+`,
+  where the Rust and Lean `+verify_placeholder+` give `+Uninitialized+`; the model
+  also has no "file not found" input.
+* *No Rust counterpart.* `+Portfolio.portfolio-trust+` (the Rust
+  `+compute_trust_level+` never reads `+portfolio_confidence+`) and
+  `+ClampTrust.clamp-trust+` (R10).
+* *Statements weaker than their names.* `+AxiomSafety.comment-skip-sound+`
+  ignores its hypothesis and proves only `+danger-to-policy DC-Safe ≡ Clean+`.
+  `+AxiomSafety.real-pattern-classified+` proves only that a function has a
+  value. `+Dispatch.pipeline-deterministic+` and
+  `+AxiomTrackerCompleteness.scan-deterministic+` are instances of `+cong+`. The
+  `+classify-*+` stubs always return `+DC-Safe+` and no theorem uses them.
+* *Gaps.* Idris 2 proves the sufficiency of the Level 5 conditions
+  (`+trustMono_level5_exact+`) but not their necessity, which Agda
+  `+max-trust-requires-all+` states. Idris 2 `+ClampTrustBounds+` lacks
+  `+clamp-idempotent+`.
+
 |R9. E11 solver-integrity soundness
 |`+proven+`
 |`+meta-checker/src/Echidna/Integrity.agda+`, inside the R4 receipt. States the
@@ -306,6 +376,22 @@ validate the Idris2 file or its correspondence to runtime code. Existing
 Idris2 interface and engineering checks remain active under §1; their
 receipt status is R2. Monotonicity here is by step lemma plus transitivity,
 rather than the Idris2 file's decision table.
+**Model and code differ:** the Rust has
+`+echidna_core_creusot::clamp_trust(level, min_level, max_level)+`
+(`+crates/echidna-core-creusot/src/lib.rs:274+`). It clamps a `+TrustLevel+` into
+a level range. Its bounds contract (`+requires min_level <= max_level+`,
+`+ensures min_level <= result <= max_level+`) is written but not discharged, and
+unit test PO-7 checks it exhaustively. The Agda model instead clamps a natural
+number into the five levels. Only its bounds statement carries over, as a
+special case of the Rust contract (range `+[Level1, Level5]+`). Its fixed-point
+and monotone-in-ℕ statements have no counterpart. `+src/rust/verification/
+confidence.rs+` does not call `+clamp_trust+`; it derives a level from
+`+TrustFactors+`. The module header's reason for restating the obligation in
+Agda ("`there is no idris2 binary in CI that runs it`") is out of date: R2
+records the Idris 2 corpus, `+ClampTrustBounds+` included, building in CI. Under
+the R4 split, the target is Creusot/Verus on the Rust `+clamp_trust+`: discharge
+the written bounds contract, and add idempotence and monotonicity in `+level+`
+as level-to-level statements. The ℕ-specific statements retire with the module.
 
 |R11. Epistemic separation: receipt vs warrant
 |`+proven+`
@@ -336,6 +422,10 @@ through Dedukti or re-proved, with the route recorded per theorem.
 |Never attempted. This is what holds the theory set at `+PWG-3+`: locally
 checked, untranslated. ECHIDNA's `+src/rust/exchange/+` speaks Dedukti, so the
 transport route exists; using it is unstarted work, not a missing capability.
+Owner decision 2026-11-09: try the §2 *transport* route first (Agda →
+Dedukti/Lambdapi → Rocq), record how it performs, then re-prove in Lean (core
+library, no Mathlib) and Rocq where transport fails. Each leg records its
+route, §5 token, §2.2 state and receipt in the PWG table.
 
 |R6. E9 "proof composition soundness"
 |`+argued+` until the `+agda-meta-checker+` job prints a source-bound receipt
@@ -369,10 +459,11 @@ show. Rocq/Lean rechecks (§2): not started.
 
 |R7. `+verification/confidence.rs+` 0–1 score; `+DispatchResult.trust_level+` 1–5
 |`+tested-only+` (internal ranking) — *not an assurance claim*
-|Mathesis §6: "`Do not flatten proof confidence into a percentage.`"
+|`+PROOF-POLICY+` §8.4.7: a census, never a percentage or a single confidence
+score. §8 also says an ECHIDNA `+TrustLevel+` does not convert into a PWG.
 |The score ranks backends against each other and is unweighted by any receipt.
 It is a routing heuristic. Do not publish it as assurance and do not compare it
-with a Mathesis grade.
+with a PWG.
 
 |R8. `+echidna.prove.result/1+` `+trust.confidence+`
 |`+open+`, correctly
@@ -383,6 +474,53 @@ evidence.
 guess.
 
 |===
+
+== Toolchain deviations (`+PROOF-POLICY+` §6)
+
+§6 requires proof toolchains to install through the repository's Guix manifest
+or its container. Where a lane installs another way, it must carry a
+`+deviation+` record here and in the installing workflow. These records were
+missing until 2026-11-09. All three are `+open+`.
+
+[width="100%",cols="16%,18%,30%,24%,12%",options="header"]
+|===
+|Leg |Tool and digest |How CI installs it |Why not Guix or the container |State
+
+|R4, R11 (Agda)
+|Agda 2.7.0.1, archive SHA-256
+`+975b515a14877ab6bce5bfc641e16c4a3ee52ca5d7f846577dee80aa2145db8a+`; agda-stdlib 2.1, archive SHA-256 `+72ca3ea25094efa0439e106f0d949330414232ec4cc5c3c3316e7e70dd06d431+`
+|`+scripts/ci/setup-agda.sh+` downloads both GitHub release archives, checks
+them against the pinned digests (including on a cache hit), and
+`+check-agda.sh+` asserts the version and fails on a mismatch.
+|`+manifests/live-provers.scm+` names `+agda+`, but the lane pins a binary
+distribution to avoid a cold GHC bootstrap (comment in `+setup-agda.sh+`). The
+Guix `+agda+` package's version and stdlib pin have not been checked against
+2.7.0.1 and 2.1.
+|`+open+`
+
+|R2 (Idris 2)
+|Ubuntu `+idris2+` package, otherwise the v0.8.0 source tarball; no digest
+recorded
+|`+dogfood-proofs-ci.yml+` *Idris2 (verification)* job and
+`+idris2-abi-ci.yml+` install from apt, falling back to a source build.
+|`+manifests/live-provers.scm+` records Idris 2 as absent from its baseline. No
+container stage installs it.
+|`+open+`; the lane does not yet assert a version or a digest.
+
+|R3 (Lean 4)
+|Lean 4.13.0 through elan; local recheck archive SHA-256 `+44ceeac7ee4c98d177bfb4a3e5c210555c87e75b08807b68d523237fe4f09997+`
+|`+dogfood-proofs-ci.yml+` *Lean 4 (verification)* job runs `+elan-init.sh+` and
+installs the toolchain pinned by `+verification/proofs/lean4/lean-toolchain+`.
+|Not in Guix (`+manifests/live-provers.scm+`). The manifest points to the
+Wave-3 container, but `+Containerfile.wave3+` has no Lean stage.
+|`+open+`; the lane asserts the version through `+lean-toolchain+`, not a digest.
+|===
+
+The local rechecks on 2026-11-09 add one more deviation. The agent session's
+network refused `+codeload.github.com+`, so it fetched agda-stdlib by the
+`+v2.1+` git tag (peeled commit `+97bc55e47367c562b3032bf104f2a00b19716f88+`)
+rather than by the archive digest. That affects only the local corroboration
+of R4, not the hosted receipt.
 
 == Not obligations
 
