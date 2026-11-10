@@ -17,9 +17,9 @@
 # Notes for review:
 #  - B2 (major -> review) is left to the existing human-review path; it can be added
 #    later via dependabot/fetch-metadata.
-#  - panic-attack is built from source (public clone). Production hardening: a released
-#    binary, or -- to match estate convention -- a hyperpolymath/standards reusable
-#    workflow. Offered as a follow-up.
+#  - panic-attack is built at the commit that static-analysis-gate.yml pins in
+#    PANIC_ATTACK_REF. That file owns the pin: this job reads it, so the two
+#    workflows cannot use different scanners and no moving ref is built (#481).
 #  - github context is passed via env: only (no ${{ }} in run lines) per estate rules.
 name: bridge-gate
 on:
@@ -44,11 +44,29 @@ jobs:
             exit 1
           fi
 
-      - name: Build panic-attack (Patch-Bridge)
+      - name: Build panic-attack at the Static Analysis Gate pin (Patch-Bridge)
         run: |
-          git clone --depth 1 https://github.com/hyperpolymath/panic-attack /tmp/pa
-          cargo build --release --features http --manifest-path /tmp/pa/Cargo.toml
-          echo "/tmp/pa/target/release" >> "$GITHUB_PATH"
+          set -euo pipefail
+          # One pin for both workflows. A missing or floating value builds nothing.
+          ref=$(yq -r '.env.PANIC_ATTACK_REF' .github/workflows/static-analysis-gate.yml)
+          if ! [[ "$ref" =~ ^[0-9a-f]{40}$ ]]; then
+            echo "::error::static-analysis-gate.yml has no full-SHA PANIC_ATTACK_REF (got '${ref}'); no scanner was built."
+            exit 2
+          fi
+          echo "PANIC_ATTACK_REF=$ref" >> "$GITHUB_ENV"
+          tool_root="$RUNNER_TEMP/panic-toolchain"
+          # Same build as the Static Analysis Gate: exact revision, locked
+          # dependencies, and proof that the installed binary names that revision.
+          timeout 600 cargo install --git https://github.com/hyperpolymath/panic-attack \
+            --rev "$ref" --locked --features http --root "$tool_root" panic-attack
+          grep -Fq "#$ref" "$tool_root/.crates.toml"
+          "$tool_root/bin/panic-attack" --version
+          jq -cn --arg sha "$ref" \
+            --arg digest "$(sha256sum "$tool_root/bin/panic-attack" | cut -d' ' -f1)" \
+            --arg rust "$(rustc --version)" --arg cargo "$(cargo --version)" \
+            '{source_sha:$sha,binary_sha256:$digest,features:["http"],rustc:$rust,cargo:$cargo}' \
+            > "$tool_root/source.json"
+          echo "$tool_root/bin" >> "$GITHUB_PATH"
 
       - name: Bridge triage (queries OSV) -> BridgeReport
         run: panic-attack bridge triage . --output bridge-report.json
