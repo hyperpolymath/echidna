@@ -96,6 +96,66 @@ on `+2ab7574+`. *Rocq*: `+open+`, `+BRIDGE-PENDING+`, no receipt. *Lean*:
 Grades are derived from receipts, never asserted, and are never flattened into
 a percentage. See R5 and R6.
 
+=== Census of theory theorems (`+PROOF-POLICY+` §8.5)
+
+Denominator: the fifteen theory theorems, ten in `+Receipt.agda+` (R11) and five in
+`+Composition.agda+` (R6). In `+Receipt.agda+` The file has 18 top-level
+proof declarations; three are inhabitation witnesses
+(`+warrant-elsewhere+`, `+receipt-in-sharpened-frame+`,
+`+one-passing-sample+`) and five are projections, aliases or pairings of
+other results (`+postulates-name-an-axiom+`, `+discharge-postulates+`,
+`+proven-in-sharpened-frame+`, `+coarse-yet-sharpened+`,
+`+warrant-and-receipt+`). Those eight are not graded. `+Composition.agda+`'s five are
+`+cut+`, `+explosion+`, `+compose-realised+`, `+detector-cannot-miss+` and
+`+detector-must-flag+`.
+
+[width="100%",cols="34%,12%,12%,14%,14%,14%",options="header"]
+|===
+|Theorem |§5 token |PWG |`+foundation_diverse+` |Rocq leg |Lean leg
+
+|`+receipt-factive+` |`+proven+` |`+PWG-3+` |no |`+open+` |`+open+`
+|`+warrant-not-factive+` |`+proven+` |`+PWG-3+` |no |`+open+` |`+open+`
+|`+warrant-not-receipt+` |`+proven+` |`+PWG-3+` |no |`+open+` |`+open+`
+|`+no-receipt-anywhere+` |`+proven+` |`+PWG-3+` |no |`+open+` |`+open+`
+|`+receipt′-factive+` |`+proven+` |`+PWG-3+` |no |`+open+` |`+open+`
+|`+frame-receipt-factive+` |`+proven+` |`+PWG-3+` |no |`+open+` |`+open+`
+|`+false-sample-rejected+` |`+proven+` |`+PWG-3+` |no |`+open+` |`+open+`
+|`+no-free-promotion+` |`+proven+` |`+PWG-3+` |no |`+open+` |`+open+`
+|`+no-unconditional-postulate-promotion+` |`+proven+` |`+PWG-3+` |no |`+open+` |`+open+`
+|`+no-test-promotion+` |`+proven+` |`+PWG-3+` |no |`+open+` |`+open+`
+|`+cut+` |`+argued+` |ungraded |no |`+open+` |`+open+`
+|`+explosion+` |`+argued+` |ungraded |no |`+open+` |`+open+`
+|`+compose-realised+` |`+argued+` |ungraded |no |`+open+` |`+open+`
+|`+detector-cannot-miss+` |`+argued+` |ungraded |no |`+open+` |`+open+`
+|`+detector-must-flag+` |`+argued+` |ungraded |no |`+open+` |`+open+`
+|===
+
+Census: `+PWG-1+` 0/15, `+PWG-2ii+` 0/15, `+PWG-2i+` 0/15, `+PWG-3+` 10/15,
+ungraded 5/15. The five `+Composition.agda+` theorems stay `+argued+` and
+ungraded until a source-bound receipt covers that module (R6); the cone
+receipt below has `+Receipt.agda+` as its entrypoint only. No result carries `+foundation_diverse+`.
+
+`+PWG-3+` is derived from the receipt
+link:reports/2026-11-09-agda-cone-receipt.json[`+2026-11-09-agda-cone-receipt.json+`]
+(§8.2, §8.4), written by `+scripts/ci/agda-cone-receipt.sh+`:
+
+* Commit `+4c3ea688+`, with no uncommitted change under `+meta-checker/+`.
+  The `+meta-checker/+` sources are identical to `+2ab7574+`.
+* Agda 2.7.0.1, executable SHA-256 `+6de41437…+` (the repository pin), and
+  `+agda-stdlib+` 2.1, archive SHA-256 `+72ca3ea2…+`.
+* Flags `+--safe --without-K --cubical-compatible+`, entrypoint
+  `+src/Echidna/Receipt.agda+`, which the kernel accepted.
+* An import cone of 211 modules, each with its SHA-256: 1 first-party, 202
+  from the standard library and 8 from Agda's built-in library.
+* A comment-aware scan of the cone that is clean. Its only postulates are
+  `+Agda.Primitive+`'s universe-level primitives, which belong to the
+  Agda kernel's trust base.
+
+The `+agda-meta-checker+` job writes the same receipt on every run that
+touches these sources. Any change to a cone file invalidates the grade until
+a fresh receipt is recorded. The ceiling is `+PWG-3+` while R5's Rocq and
+Lean legs are `+open+`.
+
 == Obligations
 
 Grouped by the `+PROOF-POLICY+` §1 mapping, because that is what decides which
@@ -118,6 +178,10 @@ Annotation is not proof. It is also a *parallel model* ("`NOT a runtime
 dependency`"), so even a green Creusot run would cover that model, not the
 shipped `+src/rust/+` code, until a refinement or the annotations move onto the
 shipped code. *Verus:* not started; no Verus specification or proof exists.
+*Known gaps the models hid (2026-11-09 audit):* dispatch accepts an unverified
+solver in four ways (an `+Uninitialized+` status, a prover missing from the
+manifest, no checker configured, and a `+verify_all()+` error read as an empty
+report), and runs the integrity step after proving, not first.
 Row stays `+open+` until a Creusot or Verus run on shipped code yields a receipt
 with a commit hash.
 
@@ -179,7 +243,17 @@ package: `+BojForeign+`, `+OverlayForeign+`, `+TentaclesForeign+`,
 packaged modules), `+CoprocessorForeign+` (an orphan whose module name does not
 match its path) and `+NeSyAssistTesting+` (does not parse, and states an
 empirical claim rather than a provable one). They carry no row until the owner
-decides their fate (open question A5).
+decides their fate (open question A5). *Audit 2026-11-09 of
+`+verification/proofs/idris2/+`:* several modules prove less than their names say:
+`+TrustLevelSoundness+` holds by definition of a local function that
+disagrees with Rust; `+DispatchCorrectness+` never mentions
+`+select_prover+`; `+DispatchOrdering+` proves `+LT 0 1 … LT 0 5+` over an
+unused type; `+BasicTotality+` is filler by its own header;
+`+ClampTrustBounds+` models a `+Nat → TrustLevel+` function that does not
+exist in Rust (the real `+clamp_trust+` is a three-argument range clamp);
+`+ProverKindInjectivity+` encodes 79 of 107 variants differently from
+`+src/rust/ffi/mod.rs+`, so it is about a different function. Retire or
+re-title them; do not count them as evidence.
 
 |===
 
@@ -205,6 +279,14 @@ to Idris 2 (or Creusot/Verus on the Rust), not Lean. Calling them "§4
 exceptions" is not enough: no §4 exception record (reason, alternative
 considered) exists beside them. Owner call: write the §4 records, or move the
 statements to Idris 2. Being engineering proofs, they carry no PWG (§8.1).
+*Audit 2026-11-09.* What the models say about the code, for R1: `+ConfidenceLattice+` matched
+the pre-2026-11-09 trust rule branch for branch and now describes the old
+rule; `+IntegrityVerification+` PI-11 (`+solver_integrity_ok+` iff
+`+Verified+`) contradicts the four fail-open paths in dispatch, and its
+collision-resistance classes assume injectivity on unbounded byte strings,
+which real digests cannot satisfy; PO-12 in `+ParetoMaximality+` assumes no
+two candidates share all four objective values, which real input can
+violate.
 
 |===
 
