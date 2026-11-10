@@ -18,11 +18,15 @@ env:
   # panic-attack runs ahead of the standards-vetted 410a8f8 (hypatia-scan-reusable
   # default) because that commit cannot report complete coverage for this tree:
   # 190 config/markup inputs were "unsupported", so --fail-on-incomplete exited 2
-  # before any finding was counted. f2a6a70 includes the coverage repair
-  # (panic-attack#258: 913/913 inputs here) and Patch Bridge schema 0.3.0
-  # (vulnerability_data), which the qualifier below checks.
+  # before any finding was counted. The pin includes the coverage repair
+  # (panic-attack#258: every input here is analyzed) and Patch Bridge schema
+  # 0.3.0 (vulnerability_data), which the qualifier below checks. It also
+  # includes line-anchored Lean and Isabelle `sorry` findings
+  # (panic-attack#278). Without them the scanner cannot apply the inline
+  # `panic-attack: accepted` markers on the 2 detector fixtures under
+  # tests/corpus_fixtures/, and reports both as Critical.
   HYPATIA_REF: 82396d81677b11d17c7a0dede5bf0efcf768d5a1
-  PANIC_ATTACK_REF: f2a6a70eaec0cb02331e3264e05f185b5faab0f7
+  PANIC_ATTACK_REF: 55ffcc9a240e937edd968487af15ab45c6f0522f
   SCAN_EXPECTED_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
 jobs:
   panic-attack-assail:
