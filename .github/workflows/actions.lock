@@ -6,8 +6,6 @@ workflows:
     '.github/workflows/agda-meta-checker.yml':
         - 'actions/cache@v6.1.0'
         - 'actions/checkout@v7.0.1'
-    '.github/workflows/boj-build.yml':
-        - 'actions/checkout@v7.0.1'
     '.github/workflows/bridge-gate.yml':
         - 'actions/checkout@v7.0.1'
     '.github/workflows/cargo-audit.yml':
@@ -84,7 +82,7 @@ workflows:
     '.github/workflows/secret-scanner.yml':
         - 'hyperpolymath/proven-cicd@a12b2b4644db1a1250bc50b58fd24c99f89f564e'
     '.github/workflows/security-scan.yml':
-        - 'hyperpolymath/panic-attack@be6ac46716eaf049570ec4966f4ae4699b319689'
+        - 'hyperpolymath/panic-attack@55ffcc9a240e937edd968487af15ab45c6f0522f'
     '.github/workflows/server-boot-gate.yml':
         - 'actions/checkout@v7.0.1'
         - 'dtolnay/rust-toolchain@v1'
@@ -102,7 +100,7 @@ workflows:
         - 'actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1'
     '.github/workflows/zig-ffi-ci.yml':
         - 'actions/checkout@v7.0.1'
-        - 'hyperpolymath/cicd-suite@4c772eb235b04455307d5c03cbbc4f45130f7f0f'
+        - 'hyperpolymath/proven-cicd-and-workflows@4c772eb235b04455307d5c03cbbc4f45130f7f0f'
         - 'mlugg/setup-zig@v2.2.1'
 dependencies:
     'Swatinem/rust-cache@d1527c8f67ef9af357290475d4af4b0fab8f12e0':
@@ -229,20 +227,20 @@ dependencies:
         commit: 'sha1-884713a6c30a92e5e8544c39945cd7cb630abcd1'
         owner_id: 1342004
         repo_id: 400046858
-    'hyperpolymath/cicd-suite@4c772eb235b04455307d5c03cbbc4f45130f7f0f':
-        ref: 'main'
-        commit: 'sha1-4c772eb235b04455307d5c03cbbc4f45130f7f0f'
-        owner_id: 6759885
-        repo_id: 1326697643
-    'hyperpolymath/panic-attack@be6ac46716eaf049570ec4966f4ae4699b319689':
-        ref: 'be6ac46716eaf049570ec4966f4ae4699b319689'
-        commit: 'sha1-be6ac46716eaf049570ec4966f4ae4699b319689'
+    'hyperpolymath/panic-attack@55ffcc9a240e937edd968487af15ab45c6f0522f':
+        ref: '55ffcc9a240e937edd968487af15ab45c6f0522f'
+        commit: 'sha1-55ffcc9a240e937edd968487af15ab45c6f0522f'
         owner_id: 6759885
         repo_id: 1152434997
         uses:
             - 'Swatinem/rust-cache@d1527c8f67ef9af357290475d4af4b0fab8f12e0'
             - 'actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1'
             - 'dtolnay/rust-toolchain@683b588c487a69d01f6c6ddf40f036ff682cc2c8'
+    'hyperpolymath/proven-cicd-and-workflows@4c772eb235b04455307d5c03cbbc4f45130f7f0f':
+        ref: 'main'
+        commit: 'sha1-4c772eb235b04455307d5c03cbbc4f45130f7f0f'
+        owner_id: 6759885
+        repo_id: 1326697643
     'hyperpolymath/proven-cicd@a12b2b4644db1a1250bc50b58fd24c99f89f564e':
         ref: 'a12b2b4644db1a1250bc50b58fd24c99f89f564e'
         commit: 'sha1-a12b2b4644db1a1250bc50b58fd24c99f89f564e'
