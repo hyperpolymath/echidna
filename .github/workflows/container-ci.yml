@@ -256,7 +256,13 @@ jobs:
             id=$(gh api "repos/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID/attempts/$GITHUB_RUN_ATTEMPT/jobs" \
                    --paginate --jq ".jobs[] | select(.name == \"$1\") | .id" | head -n 1)
             [ -n "$id" ] || { echo "::warning::no job named '$1' in this run attempt"; return 1; }
-            gh api "repos/$GITHUB_REPOSITORY/actions/jobs/$id/logs" \
+            # Job logs carry ANSI colour codes, which newer gh releases refuse
+            # to print ("terminal escape sequences"), and older ones lack the
+            # override flag. Fetch them with curl; only 64-hex digest lines
+            # survive the grep. -L follows the signed redirect without
+            # forwarding the token to the other host.
+            curl -fsSL --proto '=https' -H "Authorization: Bearer $GH_TOKEN" \
+              "${GITHUB_API_URL:-https://api.github.com}/repos/$GITHUB_REPOSITORY/actions/jobs/$id/logs" \
               | sed -E 's/^[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9:.]+Z //' \
               | sed -n '/^FS-FINGERPRINT-BEGIN$/,/^FS-FINGERPRINT-END$/p' \
               | grep -E '^[0-9a-f]{64}  '
