@@ -167,7 +167,8 @@ expect_exit 2 bridge
 # exit 2: it is never a pass.
 b1() { bash "$adapter" bridge-b1 "$tmp/bridge/receipt.json"; }
 bridge_report() { # <vulnerability_data> <classification> <reachability status>
-  jq -cn --arg data "$1" --arg class "$2" --arg reach "$3" '
+  local data=$1 class=$2 reach=$3
+  jq -cn --arg data "$data" --arg class "$class" --arg reach "$reach" '
     {schema_version:"0.3.0",vulnerability_data:$data,total_dependencies:2,vulnerable_dependencies:1,
      cves:[{classification:$class,reachability:{status:$reach},vulnerability:{id:"FIXTURE-0001"},rationale:"planted"}],
      mitigated:(if $class == "mitigable" then 1 else 0 end),unmitigable:(if $class == "unmitigable" then 1 else 0 end),
