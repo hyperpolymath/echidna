@@ -38,19 +38,31 @@ K9!
 # against marketing copy about prover counts) and D1 (lore fabrication
 # about what the repo contains).
 
-let base_k9 = import "../k9/template-hunt.k9.ncl" in
+#
+# 2026-11-09 (K9 contract v1.0.0, D173, standards#1058): this record is a
+# DECLARATION evaluated at 'Yard. The probes it lists are run by the paired
+# runner (must.ncl and the scripts/run-*.sh runners), which is the execution
+# surface; this file spawns nothing. A 'Hunt record needs signature_required,
+# a signature block and a verified signature (K9-S008/S009/C001); no
+# contractile carries one, so 'Hunt here was a claim the gate could never honour.
+# Mirrors rsr-template-repo's contractiles (WO-9).
+
 let base    = import "../_base.ncl" in
 
 {
-  pedigree = base_k9.pedigree_schema & {
+  pedigree = base.pedigree_schema & {
     contractile_verb = "must",
+    schema_version   = "1.0.0",
+    component_type   = "contractile:must",
+    semantics        = "invariant assertion — release-blocking",
+    side_effects     = [],
     paired_xfile     = "../must/Mustfile.a2ml",
     paired_runner    = "../must/must.ncl",
 
-    # α two-axis: Hunt tier (subprocess for grep/test/etc.) but
-    # restricted to read-only operations. Blocking authority because
+    # α two-axis: Yard tier (the runner shells out for grep/test/etc.;
+    # this record only declares) and read-only operations. Blocking authority because
     # must is the canonical gating verb.
-    tier      = 'Hunt,
+    tier      = 'Yard,
     authority = 'blocking,
 
     metadata = {
@@ -63,16 +75,13 @@ let base    = import "../_base.ncl" in
     },
 
     security = {
-      leash = 'Hunt,
+      leash = 'Yard,
+      signature_required = false,
       trust_level = "read-only invariant verification with subprocess",
       allow_network = false,
       allow_filesystem_write = false,
-      allow_subprocess = true,
+      allow_subprocess = false,   # the paired runner spawns; this record does not
       probe_scope = 'read_only,              # must probes NEVER mutate
-      # Hunt-tier files must declare whether a cryptographic signature
-      # is required. The must trident runs in CI on every PR; signatures
-      # are enforced at the trident-runner layer, not in-band.
-      signature_required = true,
       probe_kinds_allowed = [
         'file_existence,
         'pattern_presence,
@@ -95,7 +104,8 @@ let base    = import "../_base.ncl" in
   # Because must is BLOCKING, variances carry real weight. Critical-
   # severity invariants can only be varied by maintainer-or-above.
   # -------------------------------------------------------------------
-  variance_schema = {
+  # A record SHAPE (contract-only fields, no values): kept out of `nickel export`.
+  variance_schema | not_exported = {
     entry_id     | String,   # which invariant id the variance applies to
     reason       | String,
     approved_by  | String,   # maintainer or above for critical-severity

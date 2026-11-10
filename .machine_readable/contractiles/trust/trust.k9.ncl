@@ -36,12 +36,24 @@ K9!
 # Licence findings (T001) are FLAG-ONLY: never auto-edit — see
 # [[feedback_no_automated_licence_edits]].
 
-let base_k9 = import "../k9/template-hunt.k9.ncl" in
+#
+# 2026-11-09 (K9 contract v1.0.0, D173, standards#1058): this record is a
+# DECLARATION evaluated at 'Yard. The probes it lists are run by the paired
+# runner (trust.ncl and the scripts/run-*.sh runners), which is the execution
+# surface; this file spawns nothing. A 'Hunt record needs signature_required,
+# a signature block and a verified signature (K9-S008/S009/C001); no
+# contractile carries one, so 'Hunt here was a claim the gate could never honour.
+# Mirrors rsr-template-repo's contractiles (WO-9).
+
 let base    = import "../_base.ncl" in
 
 {
-  pedigree = base_k9.pedigree_schema & {
+  pedigree = base.pedigree_schema & {
     contractile_verb = "trust",
+    schema_version   = "1.0.0",
+    component_type   = "contractile:trust",
+    semantics        = "security + provenance + safe-hacking",
+    side_effects     = [],
     paired_xfile     = "../trust/Trustfile.a2ml",
     paired_runner    = "../trust/trust.ncl",
 
@@ -49,7 +61,7 @@ let base    = import "../_base.ncl" in
     # fuzz/injection/auth-bypass/sandbox-escape attempts scoped to the repo)
     # AND blocking-authority (failed verification = failed CI). Completes the
     # (Hunt, blocking) triple with must + bust.
-    tier      = 'Hunt,
+    tier      = 'Yard,
     authority = 'blocking,
 
     metadata = {
@@ -62,20 +74,17 @@ let base    = import "../_base.ncl" in
     },
 
     security = {
-      leash = 'Hunt,
+      leash = 'Yard,
+      signature_required = false,
       trust_level = "verification + authorised-probe + hard-gate",
       allow_network = false,            # verifications offline by default
       allow_filesystem_write = false,   # evidence sinks are indirected
-      allow_subprocess = true,
+      allow_subprocess = false,   # the paired runner spawns; this record does not
       authorised_probes_only = true,    # probe section explicitly lists allowed targets + probe classes
       probe_scope_enforcement = 'this_repo_only,  # probes NEVER hit external systems
       # echidna-bespoke: the dispatcher trust boundary trust enforces.
       dispatcher_trust_boundary = "no-proof-emits-without-axiom-track-integrity-sandbox",
       error_namespace = "T###",
-      # Hunt-tier files must declare whether a cryptographic signature is
-      # required. trust trident runs in CI on every PR; signatures are
-      # enforced at the trident-runner layer, not in-band.
-      signature_required = true,
     },
   },
 
@@ -86,7 +95,8 @@ let base    = import "../_base.ncl" in
   # entries — the variance approver MUST be the repo maintainer or above
   # for critical-severity entries (T001/T002/T010/T020/T030/T040/T050/T051).
   # -------------------------------------------------------------------
-  variance_schema = {
+  # A record SHAPE (contract-only fields, no values): kept out of `nickel export`.
+  variance_schema | not_exported = {
     entry_id     | String,   # which T### verification / probe id
     reason       | String,
     approved_by  | String,   # maintainer or above for critical entries

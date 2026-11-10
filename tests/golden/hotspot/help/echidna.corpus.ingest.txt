@@ -1,0 +1,12 @@
+Walk a project tree and build a corpus index
+
+Usage: echidna corpus ingest [OPTIONS] --root <ROOT>
+
+Options:
+      --format <FORMAT>    Output format (text, json) [default: text]
+  -r, --root <ROOT>        Path to the project root
+  -a, --adapter <ADAPTER>  Adapter to use: agda, coq, lean, idris2, acl2_books, creusot, dafny, fstar, hol4, hol_light, isabelle, metamath, minif2f, mizar, proofnet, smtlib, spark_ada, tptp, why3, or hyperpolymath_estate (the multi-repo estate profile) [default: agda]
+  -v, --verbose            Verbose output
+      --no-color           Disable colors
+  -o, --out <OUT>          Where to write the JSON index. Defaults to `data/corpus/<basename>.json`
+  -h, --help               Print help

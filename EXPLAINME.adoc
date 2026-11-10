@@ -165,7 +165,8 @@ ECHIDNA-specific anchors:
 * `generated/abi/` — auto-generated C headers from the Idris2 ABI.
 
 The Agda meta-checker (`meta-checker/`) type-checks *models* of the trust
-pipeline and one theory result (receipt vs warrant). A model is not a proof
+pipeline and two theory results (receipt vs warrant, and proof composition
+soundness over an arbitrary logic). A model is not a proof
 about the Rust code: under `3-practice/PROOF-POLICY.adoc` §1 the Rust
 behaviour is verified with Creusot/Pearlite and Verus on the code, and that is
 still open. `proofs/agda/` is a test corpus, not evidence. Status per

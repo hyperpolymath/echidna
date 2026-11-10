@@ -78,6 +78,9 @@ jobs:
     steps:
       - uses: actions/checkout@v7.0.1
 
+      # PROOF-POLICY §6 deviation (open): Lean is not in the Guix manifest and the
+      # container has no Lean stage. Recorded in docs/PROOF-STATUS.adoc,
+      # "Toolchain deviations".
       - name: Install elan + pinned Lean toolchain
         run: |
           set -euo pipefail
@@ -130,6 +133,9 @@ jobs:
     steps:
       - uses: actions/checkout@v7.0.1
 
+      # PROOF-POLICY §6 deviation (open): Lean is not in the Guix manifest and the
+      # container has no Lean stage. Recorded in docs/PROOF-STATUS.adoc,
+      # "Toolchain deviations".
       - name: Install elan + pinned Lean toolchain
         run: |
           set -euo pipefail
@@ -180,6 +186,9 @@ jobs:
     steps:
       - uses: actions/checkout@v7.0.1
 
+      # PROOF-POLICY §6 deviation (open): Idris 2 is not in the Guix manifest and no
+      # container stage installs it. Recorded in docs/PROOF-STATUS.adoc,
+      # "Toolchain deviations".
       - name: Install Idris2
         run: |
           set -euo pipefail

@@ -50,7 +50,7 @@ Configuration with Nickel contracts for runtime validation. Evaluated safely wit
 
 === Hunt Level (Full Execution)
 
-**File:** `examples/setup-repo.k9.ncl`
+**File:** `examples/setup-repo.k9.ncl.in` (a template: fill it, then validate it)
 
 Full execution with Just recipes. Can run shell commands and modify filesystem.
 
@@ -71,13 +71,13 @@ Choose the appropriate security level for your use case:
 [source,bash]
 ----
 # Kennel: Pure configuration
-cp contractiles/k9/examples/project-metadata.k9.ncl config/metadata.k9.ncl
+cp .machine_readable/svc/k9/examples/project-metadata.k9.ncl config/metadata.k9.ncl
 
 # Yard: Validated configuration
-cp contractiles/k9/examples/ci-config.k9.ncl .github/ci.k9.ncl
+cp .machine_readable/svc/k9/examples/ci-config.k9.ncl .github/ci.k9.ncl
 
 # Hunt: Full automation
-cp contractiles/k9/examples/setup-repo.k9.ncl scripts/setup.k9.ncl
+cp .machine_readable/svc/k9/examples/setup-repo.k9.ncl.in scripts/setup.k9.ncl  # then fill its placeholders
 ----
 
 === 2. Validate Components
@@ -136,9 +136,12 @@ K9 contractiles integrate with other RSR standards:
 
 Use these as starting points for your own K9 components:
 
-- `template-kennel.k9.ncl` - Pure data template
-- `template-yard.k9.ncl` - Validated config template
-- `template-hunt.k9.ncl` - Full execution template
+- `template-kennel.k9.ncl.in` - Pure data template
+- `template-yard.k9.ncl.in` - Validated config template
+- `template-hunt.k9.ncl.in` - Full execution template
+
+These end in `.in` because a template is not a component: they still carry
+unfilled placeholders. Copy one, fill it, drop the `.in`, and validate it.
 
 == Dependencies
 

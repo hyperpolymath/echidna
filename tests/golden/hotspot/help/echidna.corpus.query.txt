@@ -1,0 +1,16 @@
+Query a previously-ingested corpus index
+
+Usage: echidna corpus query [OPTIONS] <PATTERN>
+
+Arguments:
+  <PATTERN>  Search term (qualified name, short name, or substring)
+
+Options:
+      --format <FORMAT>  Output format (text, json) [default: text]
+  -i, --index <INDEX>    Path to the corpus JSON. Defaults to `data/corpus/<basename>.json` for the cwd's basename
+      --deps             Show transitive (forward) dependencies of the matched entry
+  -v, --verbose          Verbose output
+      --no-color         Disable colors
+      --reverse-deps     Show direct reverse-dependencies — entries that reference the matched name, i.e. things that would (potentially) break if the matched entry changed
+      --reverse-closure  Show transitive reverse-closure — full impact set
+  -h, --help             Print help

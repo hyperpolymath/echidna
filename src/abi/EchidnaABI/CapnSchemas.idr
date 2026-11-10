@@ -40,7 +40,7 @@ echidnaSchemaId = 15242516543891767314
 ||| Cap'n Proto uses 0 as the "no schema" sentinel; a zero schema ID
 ||| would silently poison all wire messages.
 public export
-schemaIdNonZero : Not (echidnaSchemaId = 0)
+schemaIdNonZero : Not (EchidnaABI.CapnSchemas.echidnaSchemaId = 0)
 schemaIdNonZero = \h => absurd h
 
 ------------------------------------------------------------------------
@@ -74,7 +74,7 @@ proofGoalFieldCount = 6
 ||| Proof: ProofGoal has exactly 6 fields.
 ||| The Vect literal fixes the length at compile time; this is Refl.
 public export
-proofGoalFieldCountCorrect : length allProofGoalTags = proofGoalFieldCount
+proofGoalFieldCountCorrect : length EchidnaABI.CapnSchemas.allProofGoalTags = EchidnaABI.CapnSchemas.proofGoalFieldCount
 proofGoalFieldCountCorrect = Refl
 
 ------------------------------------------------------------------------
@@ -133,7 +133,7 @@ outcomeTagToFinInjective SystemError          SystemError          Refl = Refl
 
 ||| Proof: 8 outcome variants fit in a UInt8 (cardinality ≤ 256).
 public export
-outcomeBounded : LTE outcomeTagCount 256
+outcomeBounded : LTE EchidnaABI.CapnSchemas.outcomeTagCount 256
 outcomeBounded = %search
 
 ------------------------------------------------------------------------
@@ -163,7 +163,7 @@ nodeKindCount : Nat
 nodeKindCount = 7
 
 public export
-nodeKindCountCorrect : length allCapnNodeKinds = nodeKindCount
+nodeKindCountCorrect : length EchidnaABI.CapnSchemas.allCapnNodeKinds = EchidnaABI.CapnSchemas.nodeKindCount
 nodeKindCountCorrect = Refl
 
 public export
@@ -191,7 +191,7 @@ nodeKindToFinInjective CNK_Term       CNK_Term       Refl = Refl
 
 ||| Proof: 7 node kinds fit in a UInt8.
 public export
-nodeKindBounded : LTE nodeKindCount 256
+nodeKindBounded : LTE EchidnaABI.CapnSchemas.nodeKindCount 256
 nodeKindBounded = %search
 
 ------------------------------------------------------------------------
@@ -222,7 +222,7 @@ edgeKindCount : Nat
 edgeKindCount = 8
 
 public export
-edgeKindCountCorrect : length allCapnEdgeKinds = edgeKindCount
+edgeKindCountCorrect : length EchidnaABI.CapnSchemas.allCapnEdgeKinds = EchidnaABI.CapnSchemas.edgeKindCount
 edgeKindCountCorrect = Refl
 
 public export
@@ -252,7 +252,7 @@ edgeKindToFinInjective CEK_HasSubterm  CEK_HasSubterm  Refl = Refl
 
 ||| Proof: 8 edge kinds fit in a UInt8.
 public export
-edgeKindBounded : LTE edgeKindCount 256
+edgeKindBounded : LTE EchidnaABI.CapnSchemas.edgeKindCount 256
 edgeKindBounded = %search
 
 ------------------------------------------------------------------------
@@ -276,7 +276,7 @@ dangerLevelCount : Nat
 dangerLevelCount = 4
 
 public export
-dangerLevelCountCorrect : length allCapnDangerLevels = dangerLevelCount
+dangerLevelCountCorrect : length EchidnaABI.CapnSchemas.allCapnDangerLevels = EchidnaABI.CapnSchemas.dangerLevelCount
 dangerLevelCountCorrect = Refl
 
 public export
@@ -298,7 +298,7 @@ dangerLevelToFinInjective CDL_Reject  CDL_Reject  Refl = Refl
 
 ||| Proof: 4 danger levels fit in a UInt8.
 public export
-dangerLevelBounded : LTE dangerLevelCount 256
+dangerLevelBounded : LTE EchidnaABI.CapnSchemas.dangerLevelCount 256
 dangerLevelBounded = %search
 
 ------------------------------------------------------------------------
@@ -321,7 +321,7 @@ dispatchStrategyCount : Nat
 dispatchStrategyCount = 3
 
 public export
-dispatchStrategyCountCorrect : length allCapnDispatchStrategies = dispatchStrategyCount
+dispatchStrategyCountCorrect : length EchidnaABI.CapnSchemas.allCapnDispatchStrategies = EchidnaABI.CapnSchemas.dispatchStrategyCount
 dispatchStrategyCountCorrect = Refl
 
 public export
@@ -341,7 +341,7 @@ dispatchStrategyToFinInjective CDS_Portfolio CDS_Portfolio Refl = Refl
 
 ||| Proof: 3 dispatch strategies fit in a UInt8.
 public export
-dispatchStrategyBounded : LTE dispatchStrategyCount 256
+dispatchStrategyBounded : LTE EchidnaABI.CapnSchemas.dispatchStrategyCount 256
 dispatchStrategyBounded = %search
 
 ------------------------------------------------------------------------
@@ -356,5 +356,5 @@ defaultTopK = 20
 ||| Proof: the default topK is positive (> 0).
 ||| Required by the GNN ranking logic which uses topK as a loop bound.
 public export
-topKDefaultPositive : GT defaultTopK 0
+topKDefaultPositive : GT EchidnaABI.CapnSchemas.defaultTopK 0
 topKDefaultPositive = %search

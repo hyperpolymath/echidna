@@ -86,6 +86,20 @@ verdict over the whole result vector is unaffected by this difference.
 The Agda module’s header docstring is updated in this PR to spell out
 the L2.3 cross-reference.
 
+[NOTE]
+====
+*Superseded 2026-11-09.* The `+cancellation-safety _ = tt+` lemma quoted
+above held by definition (`+true ∨ x = true+`), covered only index 0 and did
+not model the CAS, the token or any interleaving, so it did not establish
+the claim made for it. `+proofs/agda/ParallelSoundness.agda+` now has a
+layer B: a small-step model of this procedure, run over every interleaving
+of `+done i+` and the cancel write. It proves `+winner-stable+`,
+`+preempted-inert+`, `+cancel-after-win+`, `+race-sound+`, `+race-complete+`,
+`+winner-is-first+` and `+race-agrees+`, assuming that Chapel's atomics are
+sequentially consistent. The paragraphs above are kept as the record of
+the original decision.
+====
+
 The CAS itself is the linearisation point: any prover whose poll
 observes `+cancelled = true+` ran AFTER the winning CAS. The
 happens-before edge from `+winnerIdx.compareAndSwap(-1, i)+` →
