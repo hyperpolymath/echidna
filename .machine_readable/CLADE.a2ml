@@ -30,12 +30,13 @@ parent = "Neurosymbolic theorem proving — neural proof synthesis"
 born = "2026-03-16"
 
 # Lifecycle status (added by clade-status-backfill; see gv-clade-index ADR 0006).
-# Identity (uuid) and status are SEPARATE layers: uuid follows the forge path (a
-# move or rename mints a new one, gv-clade-index ADR 0007; a phase change never
-# does); phase is a mutable pointer. No phase is terminal (extinct -> active is
-# a legal "Gitassic Park" transition on the same uuid). A prefixed-name (clade
-# code) change is NOT a phase change — the old prefixed-name goes to aliases[],
-# uuid and phase are untouched.
+# Identity (uuid) and status are SEPARATE layers: uuid follows the GitHub path
+# (a move or rename there mints a new one, gv-clade-index ADR 0007; a mirror
+# move or a phase change never does); phase is a mutable pointer. No phase is
+# terminal (extinct -> active is a legal "Gitassic Park" transition on the same
+# uuid). A prefixed-name (clade code) change with the GitHub path unchanged is
+# NOT a phase change — the old prefixed-name goes to aliases[], uuid and phase
+# are untouched.
 [status]
 # One of: reserved incubating active dormant | merged superseded archived extinct
 phase = "active"
