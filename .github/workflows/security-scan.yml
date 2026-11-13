@@ -24,6 +24,6 @@ permissions:
 
 jobs:
   scan:
-    uses: hyperpolymath/panic-attack/.github/workflows/scan-and-report.yml@55ffcc9a240e937edd968487af15ab45c6f0522f # main 2026-11-10: builds the scanner at the workflow commit, not the caller (panic-attack#276)
+    uses: hyperpolymath/panic-attack/.github/workflows/scan-and-report.yml@0ebbc93a5bd298cf82ccf95b3897cfe9bf86092e # main 2026-11-10: builds the scanner at the workflow commit, not the caller (panic-attack#276)
     secrets:
       VERISIMDB_PAT: ${{ secrets.VERISIMDB_PAT }}
