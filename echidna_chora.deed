@@ -31,8 +31,8 @@
 (repo-deed
   :schema-version "1.0.0"
   :canonical-name "echidna"
-  :beholding-chora #u5"estate/chora"
-  :repo-uuid #u5"github.com/hyperpolymath/echidna"
+  :beholding-chora #u8"chora:estate/github.com/hyperpolymath"
+  :repo-uuid #u8"gv-clade-index:github.com/hyperpolymath/echidna"
 
   (identity :primary-forge github
             :owner "hyperpolymath"
