@@ -24,6 +24,14 @@ surfaces using `+VERISIMDB_URL+` are stale and being migrated.
 |`+ECHIDNA_GNN_URL+` |URL |falls back to `+ECHIDNA_ML_API_URL+`
 |(planned C5 — see Stage 3c fix list) |Specifically the GNN endpoint;
 separate from the ML server only when the GNN runs on a different host.
+
+|`+ECHIDNA_JULIA_COPROC_URL+` |URL
+|`+http://127.0.0.1:8090/coprocessor/dispatch+`
+|`+src/rust/coprocessor/julia_bridge.rs+` |Julia coprocessor router
+(`+src/julia/coprocessor.jl+`). The default port is the same as the
+default port of `+ECHIDNA_ML_API_URL+`. The two servers cannot both use
+it: set one of the two variables when both run. No code constructs the
+bridge yet, and no recipe starts the router.
 |===
 
 === Interface listeners
