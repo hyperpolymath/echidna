@@ -29,9 +29,13 @@ separate from the ML server only when the GNN runs on a different host.
 |`+http://127.0.0.1:8090/coprocessor/dispatch+`
 |`+src/rust/coprocessor/julia_bridge.rs+` |Julia coprocessor router
 (`+src/julia/coprocessor.jl+`). The default port is the same as the
-default port of `+ECHIDNA_ML_API_URL+`. The two servers cannot both use
-it: set one of the two variables when both run. No code constructs the
-bridge yet, and no recipe starts the router.
+default port of `+ECHIDNA_ML_API_URL+`. The two servers cannot both
+bind it. Each variable sets only the address that the Rust client
+calls; it does not move a server. To run both, start one server on
+another port (`+start_coprocessor_server(port)+`, or the second
+argument of `+src/julia/run_server.jl+`), then set its variable to
+match. No code constructs the bridge yet, and no recipe starts the
+router.
 |===
 
 === Interface listeners
