@@ -8,7 +8,7 @@
 // type inference, refinement types, and type-level evaluation.
 //
 // Architecture:
-//   Idris2 ABI (TypeLLForeign.idr) --> Zig FFI (typell.zig) --> C-ABI exports --> zig adapter (port 7800)
+//   Idris2 ABI (TypeLL/Foreign.idr) --> Zig FFI (typell.zig) --> C-ABI exports --> zig adapter (port 7800)
 
 const std = @import("std");
 const builtin = @import("builtin");

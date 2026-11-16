@@ -1,6 +1,6 @@
 // ECHIDNA FFI Implementation
 //
-// This module implements the C-compatible FFI declared in src/abi/Foreign.idr
+// This module implements the C-compatible FFI declared in src/abi/EchidnaABI/Foreign.idr
 // All types and layouts must match the Idris2 ABI definitions.
 //
 // SPDX-License-Identifier: MPL-2.0
@@ -30,7 +30,7 @@ fn clearError() void {
 }
 
 //==============================================================================
-// Core Types (must match src/abi/Types.idr)
+// Core Types (must match src/abi/EchidnaABI/Types.idr)
 //==============================================================================
 
 /// Result codes (must match Idris2 Result type)

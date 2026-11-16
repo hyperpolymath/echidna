@@ -237,13 +237,14 @@ receipt-time audit, not an enforced property: `+idris2-abi-ci.yml+` greps
 and `+prim__crash+`, and checks neither `+postulate+` nor
 `+verification/proofs/idris2/+`. *Limit:* `+EchidnaABI.CapnSchemas+` was
 outside the package and failed to build; hyperpolymath/echidna#472 fixes it and
-gates it. Nine other `+.idr+` files at the `+src/abi/+` root are outside the
-package: `+BojForeign+`, `+OverlayForeign+`, `+TentaclesForeign+`,
-`+TypeLLForeign+`, `+Types+`, `+Layout+` and `+Foreign+` (shadow copies of
-packaged modules), `+CoprocessorForeign+` (an orphan whose module name does not
-match its path) and `+NeSyAssistTesting+` (does not parse, and states an
-empirical claim rather than a provable one). They carry no row until the owner
-decides their fate (open question A5). *Audit 2026-11-09 of
+gates it. Two other `+.idr+` files at the `+src/abi/+` root are outside the
+package: `+CoprocessorForeign+` (an orphan whose module name does not match its
+path) and `+NeSyAssistTesting+` (does not parse, and states an empirical claim
+rather than a provable one). They carry no row. Owner ruling on A5: salvage the
+first into the package if it type-checks, and move the second to `+tests/+` as
+a non-proof fixture. The seven shadow copies of packaged modules
+(`+BojForeign+`, `+OverlayForeign+`, `+TentaclesForeign+`, `+TypeLLForeign+`,
+`+Types+`, `+Layout+`, `+Foreign+`) are deleted. *Audit 2026-11-09 of
 `+verification/proofs/idris2/+`:* several modules prove less than their names say:
 `+TrustLevelSoundness+` holds by definition of a local function that
 disagrees with Rust; `+DispatchCorrectness+` never mentions

@@ -14,7 +14,7 @@ Write the specification for a C-ABI boundary through which a metaheuristics engi
 
 ## Context
 
-- `src/abi/` holds the Idris2 ABI (`echidnaabi.ipkg`, `EchidnaABI/`, `Types.idr`, `Layout.idr`, and per-subsystem `*Foreign.idr` modules such as `CoprocessorForeign.idr`, `OverlayForeign.idr`, `TentaclesForeign.idr`).
+- `src/abi/` holds the Idris2 ABI (`echidnaabi.ipkg`, `EchidnaABI/`, and per-subsystem `<Subsystem>/Foreign.idr` modules such as `Overlay/Foreign.idr` and `Tentacles/Foreign.idr`).
 - `ffi/zig/` (`build.zig`, `src/main.zig`, `src/boj.zig`, `src/capnp_bridge.zig`, `src/provers/`) and `src/zig_ffi/` (`chapel_bridge.zig`, `chapel_ffi_exports.h`) are the existing Zig bridges.
 - `CLAUDE.md` states that Idris2 ABI modules must have zero `believe_me`, zero postulates and zero admits, enforced by `idris2-abi-ci.yml`. The specification must satisfy the same gate.
 - The Rust side has an existing `src/rust/ffi/` module. Reuse its conventions for pointer ownership and error codes.

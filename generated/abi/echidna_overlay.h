@@ -7,7 +7,7 @@
  * Covers Tor, IPFS, and Ethereum overlay network integrations.
  *
  * Source: ffi/zig/src/overlay.zig
- * ABI:    src/abi/OverlayForeign.idr
+ * ABI:    src/abi/Overlay/Foreign.idr
  *
  * DO NOT EDIT — regenerate from the Zig FFI source.
  */

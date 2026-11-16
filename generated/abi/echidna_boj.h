@@ -7,7 +7,7 @@
  * Provides cartridge management and service discovery for the BoJ runtime.
  *
  * Source: ffi/zig/src/boj.zig
- * ABI:    src/abi/BojForeign.idr
+ * ABI:    src/abi/Boj/Foreign.idr
  *
  * DO NOT EDIT — regenerate from the Zig FFI source.
  */
