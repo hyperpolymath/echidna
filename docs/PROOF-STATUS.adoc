@@ -182,8 +182,9 @@ shipped code. *Verus:* not started; no Verus specification or proof exists.
 solver in four ways (an `+Uninitialized+` status, a prover missing from the
 manifest, no checker configured, and a `+verify_all()+` error read as an empty
 report), and runs the integrity step after proving, not first.
-Row stays `+open+` until a Creusot or Verus run on shipped code yields a receipt
-with a commit hash.
+Row stays `+open+` until a Creusot run *and* a Verus run on shipped code each
+yield a receipt with a commit hash. Both are the default Rust toolset (§1.2); one
+leg can be dropped only by a recorded §4 exception, not by the other passing.
 
 *Trust kernel (2026-11-09).* `+compute_trust_level+` exists once, in
 `+crates/echidna-core-creusot+`; `+src/rust/verification/confidence.rs+`
@@ -444,7 +445,7 @@ by changing a token.
   `+clamp-idempotent+`.
 
 |R9. E11 solver-integrity soundness
-|`+proven+`
+|`+open+` (the Agda module checks; placement moves it to Idris 2)
 |`+meta-checker/src/Echidna/Integrity.agda+`, inside the R4 receipt. States the
 obligation that had no Agda record: verification requires an initialised
 manifest; verification means the recorded digest was matched; a binary with
@@ -470,14 +471,16 @@ comparison, not a machine-checked discrepancy or refinement proof. The Rust
 implementation leg remains open under R1's Creusot obligation.
 
 |R10. ClampTrustBounds
-|`+proven+`
+|`+open+` (the Agda module checks; placement moves it to Idris 2)
 |`+meta-checker/src/Echidna/ClampTrust.agda+`, inside the R4 receipt. Restates
 the four obligations of `+verification/proofs/idris2/ClampTrustBounds.idr+`
 (bounds, monotonicity, fixed points, and — added — idempotence, i.e. that the
 clamp lands on a real level rather than between two) over the trust-level type
 the gate actually checks.
 |This row establishes finite-order algebra in the Agda model. It does not
-validate the Idris2 file or its correspondence to runtime code. Existing
+validate the Idris2 file or its correspondence to runtime code. The Idris 2
+file already states bounds, monotonicity and fixed points (R2); only
+idempotence is Agda-only and has to move. Existing
 Idris2 interface and engineering checks remain active under §1; their
 receipt status is R2. Monotonicity here is by step lemma plus transitivity,
 rather than the Idris2 file's decision table.
@@ -674,9 +677,12 @@ mean "ECHIDNA is verified" — it would mean one named obligation was discharged
 by one named tool with its boundary written down. Nothing here vouches for a
 prover backend's own soundness.
 
-The `+proven+` rows — R2, R4, R9, R10, R11 — each name the kernel, the
-receipt and the limit that qualify them (R2 the receipt-time escape-hatch
-audit, R4 the `+UnsupportedIndexedMatch+` caveat, R9 the digest-level scope).
+The `+proven+` rows — R2, R4, R11 — each name the kernel, the receipt and the
+limit that qualify them (R2 the receipt-time escape-hatch audit, R4 the
+`+UnsupportedIndexedMatch+` caveat). R9 and R10 are engineering properties of
+ECHIDNA's own types, which §1 assigns to Idris 2; owner ruling 2026-11-09 moves
+them there, so their Agda checks do not carry `+proven+` until the Idris
+modules have receipts.
 R3 stays `+open+`: its Lean build passes, but Lean is not the verifier §1
 assigns to those statements until the placement is decided. Only theory theorems are graded (§8.1): R11 is at
 `+PWG-3+`; the engineering rows carry no PWG. Every *independent* leg is still
