@@ -246,9 +246,11 @@ success, a pull-request run on head `+dc36ee97291a2614a91b5d6971a075ab9ad15d79+`
 Its `+CoprocessorKind+` then lacked five kinds that the Rust enum
 (`+src/rust/coprocessor/types.rs+`) declares: `+PariGp+`, `+Maxima+`,
 `+Singular+`, `+Gap+`, `+Macaulay2+`. They are now added with tags 11 to 15, in
-the Rust declaration order. The extended module has no receipt yet; until the
-same job is recorded here for the commit that adds them, it is not covered by
-this row's `+proven+`. One other `+.idr+` file at the `+src/abi/+` root
+the Rust declaration order, in commit
+`+ff1eef251b834f44fc73ccd8d008de9451d4eca6+`. Receipt for the extended module
+(sixteen kinds):
+https://github.com/hyperpolymath/echidna/actions/runs/43947887496/job/133582267468[Type-check Idris2 ABI definitions],
+success, a pull-request run on head `+ff1eef2+`. One other `+.idr+` file at the `+src/abi/+` root
 is outside the package: `+NeSyAssistTesting+` (does not parse, and states an
 empirical claim rather than a provable one). It carries no row. Owner ruling on
 A5: move it to `+tests/+` as a non-proof fixture. The seven shadow copies of packaged modules
