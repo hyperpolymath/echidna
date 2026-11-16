@@ -18,8 +18,11 @@ classification paragraph under R4 in `link:PROOF-STATUS.adoc[PROOF-STATUS]`).
 *How this was produced, and what it is not.* For each area, one agent classified every
 top-level statement against the source and the Rust. A second agent tried to
 refute each verdict. A third reconciled the two against the source.
-All three only read the source. Nothing was built or run: no Agda, Lean, Idris 2,
-Creusot, Verus or cargo. This ledger is a placement, not a receipt. No row
+All three read the source. No canonical check was run and no receipt was
+produced: no Lean, Idris 2, Creusot, Verus or cargo, and no pinned Agda run.
+One judge rechecked a few Agda probes on a scratch Agda 2.6.3 with the Debian
+standard library (named in the R10 open questions); that is evidence for a
+verdict, not a receipt. This ledger is a placement, not a receipt. No row
 changes a status token in PROOF-STATUS. A `rust` row is an open obligation
 until a Creusot run *and* a Verus run discharge it.
 
@@ -28,20 +31,25 @@ failing test or a repro before it is treated as a confirmed bug.
 
 == Census
 
+Each row is one source statement or a named group of closely related
+declarations (shown in its name). A statement appears in exactly one area:
+where two areas covered the same file, the finer-grained rows were kept and
+the duplicates dropped, so a statement has one home.
+
 [cols="3,1,1,1,1,1",options="header"]
 |===
 |Area |Rows |rust |idris2 |agda-theory |retire
-|R9: solver integrity (E11) |35 |15 |0 |0 |20
-|R10: ClampTrust |36 |7 |0 |0 |29
+|R9: solver integrity (E11) |32 |15 |0 |0 |17
+|R10: ClampTrust |32 |5 |0 |0 |27
 |R4: engineering modules of the meta-checker |73 |25 |2 |20 |26
 |R3: Lean 4 corpus |66 |38 |1 |11 |16
-|Idris 2 verification corpus |37 |11 |1 |0 |25
-|*Total* |*247* |*96* |*4* |*31* |*116*
+|Idris 2 verification corpus |30 |9 |1 |0 |20
+|*Total* |*233* |*92* |*4* |*31* |*106*
 |===
 
 == R9: solver integrity (E11)
 
-_Files:_ `meta-checker/src/Echidna/Integrity.agda`, `meta-checker/src/Echidna/MetaChecker.agda`, `proofs/agda/DispatchOrdering.agda`, `spark/solver_integrity/solver_integrity.ads`, `verification/proofs/idris2/DispatchOrdering.idr`, `verification/proofs/lean4/IntegrityVerification.lean`
+_Files:_ `meta-checker/src/Echidna/Integrity.agda`, `proofs/agda/DispatchOrdering.agda`, `spark/solver_integrity/solver_integrity.ads`, `verification/proofs/lean4/IntegrityVerification.lean`
 
 [cols="2,3,1,2,4,3",options="header"]
 |===
@@ -108,14 +116,8 @@ Aggregate_Safe (expression function) |Defines a set of solvers as safe when ever
 Cap_At_Tampered (ghost lemma, with Has_Tampered at :113) |If any member is Tampered, the set is not safe. |`retire` |— |none |Added from review. About the aggregate predicate the Rust does not have.
 |`spark/solver_integrity/solver_integrity.ads:134` +
 Hash_Mismatch_Means_Tampered (ghost lemma) |Found, real hash, hash computed and no match gives Tampered. |`rust` |`src/rust/integrity/solver_integrity.rs::IntegrityChecker::verify_solver` |E11-C3 (tamper). On classify: ensures(found && !is_placeholder(expected) && computed == Some(c) && c != expected ==> result == Tampered). |Added from review. The reviewer proposed retire as a restatement inside one file; kept as rust because it is the same fact as E11c and PI-3, which stay rust, so the three group under one clause. No separate lemma is needed on the Rust.
-|`meta-checker/src/Echidna/MetaChecker.agda:148` +
-key-integrity-1 (alias of uninitialised-never-verified) |Re-exports E11d under a second name. |`retire` |— |E11-C4 (placeholder). On classify: ensures(found && is_placeholder(expected) ==> result == Uninitialized), for every computed including None. |Added from review. An alias with no proof of its own; it must go in the same change that moves E11d, or the R4 root module stops compiling. The summary at :55-59 goes with it.
-|`meta-checker/src/Echidna/MetaChecker.agda:149` +
-key-integrity-2 (alias of verified-means-match) |Re-exports E11b under a second name. |`retire` |— |E11-C1 (soundness). On a pure core classify(found, expected, computed) that verify_solver calls: ensures(result == Verified ==> found && !is_placeholder(expected) && computed == Some(c) && c == expected), with == the String equality of solver_integrity.rs:277. |Added from review. An alias with no proof of its own; it must go in the same change that moves E11b.
 |`proofs/agda/DispatchOrdering.agda:81` +
 integrity-before-sandbox, -verify, -certs, -axioms, -confidence, integrity-precedes (6, lines 81-104) |Stage number 0, named Integrity, is less than every other stage number. |`retire` |— |Successor (E11-O), after a code change: in src/rust/dispatch.rs the integrity verdict is computed before the prover runs. Today it is Step 6 at dispatch.rs:647, after the prover run at :611. |Added from review. Arithmetic on literal stage numbers, and the order is not the Rust order. No other area's classification lists this file.
-|`verification/proofs/idris2/DispatchOrdering.idr:23` +
-integrityBeforeSandbox, integrityBeforeConfidence (lines 23, 41) |0 is less than 1, and 0 is less than 5, for stage indices. |`retire` |— |Successor (E11-O), after a code change: in src/rust/dispatch.rs the integrity verdict is computed before the prover runs. Today it is Step 6 at dispatch.rs:647, after the prover run at :611. |Added from review. Arithmetic on literals; the Idris 2 corpus area holds the full row for this file and also retires it.
 |===
 
 === Model gaps
@@ -149,7 +151,7 @@ integrityBeforeSandbox, integrityBeforeConfidence (lines 23, 41) |0 is less than
 
 == R10: ClampTrust
 
-_Files:_ `meta-checker/src/Echidna/ClampTrust.agda`, `meta-checker/src/Echidna/MetaChecker.agda`, `verification/proofs/idris2/ClampTrustBounds.idr`, `verification/proofs/idris2/NatLte.idr`
+_Files:_ `meta-checker/src/Echidna/ClampTrust.agda`, `verification/proofs/idris2/ClampTrustBounds.idr`, `verification/proofs/idris2/NatLte.idr`
 
 [cols="2,3,1,2,4,3",options="header"]
 |===
@@ -182,14 +184,6 @@ clamp-fixed-10 |clamp-trust 10 = Level5. |`retire` |— |Successor (new, Idris2 
 clamp-above |Every natural of the form 5 + k clamps to Level5. |`retire` |— |Successor (new, Idris2 ABI package, blocked on the owner ruling on trust code 0): the numeric trust code is injective on the ABI TrustLevel, its image is exactly the declared codes, a decoder returns the level whose code it was given, and a code outside the image is rejected, never saturated upward. The Rust half is the exact-code ensures on TrustLevel::value. |Holds by refl (the last defining clause). It is the model's policy for codes above 5: maximum trust. The Rust has no such decode; do not carry it forward.
 |`meta-checker/src/Echidna/ClampTrust.agda:147` +
 clamp-idempotent |Clamping the numeric value of clamp-trust n again gives a level with the same numeric value. |`retire` |— |Successor (new, Idris2 ABI package, blocked on the owner ruling on trust code 0): the numeric trust code is injective on the ABI TrustLevel, its image is exactly the declared codes, a decoder returns the level whose code it was given, and a code outside the image is rejected, never saturated upward. The Rust half is the exact-code ensures on TrustLevel::value. |Verdict changed from rust on review. It is cong applied to the round trip clamp-trust (trust-to-ℕ t) ≡ t (rechecked, exit 0), and a constant map satisfies the same shape. Idempotence of the Rust clamp is a new statement, covered by the clamp_trust successor under clamp-monotone.
-|`meta-checker/src/Echidna/MetaChecker.agda:152` +
-key-clamp-1 |Alias of clamp-lower. |`rust` |`crates/echidna-core-creusot/src/lib.rs::TrustLevel::value` |TrustLevel::value: ensures(1u8 <= result && result <= 5u8), already written at crates/echidna-core-creusot/src/lib.rs:127 and never discharged; strengthen to the exact code (Level1..Level5 give 1..5), which implies the range. No requires. Discharge in Creusot (Pearlite) and in Verus. One clause for every row that carries this text; shared with the TrustLevel area (R3/R4). |Missed by the first pass; exists. An alias with no proof of its own, so it takes the placement of clamp-lower and goes when ClampTrust.agda goes.
-|`meta-checker/src/Echidna/MetaChecker.agda:153` +
-key-clamp-2 |Alias of clamp-upper. |`rust` |`crates/echidna-core-creusot/src/lib.rs::TrustLevel::value` |TrustLevel::value: ensures(1u8 <= result && result <= 5u8), already written at crates/echidna-core-creusot/src/lib.rs:127 and never discharged; strengthen to the exact code (Level1..Level5 give 1..5), which implies the range. No requires. Discharge in Creusot (Pearlite) and in Verus. One clause for every row that carries this text; shared with the TrustLevel area (R3/R4). |Missed by the first pass; exists. An alias, so it takes the placement of clamp-upper.
-|`meta-checker/src/Echidna/MetaChecker.agda:154` +
-key-clamp-3 |Alias of clamp-monotone. |`retire` |— |Successor (new, only if the owner keeps clamp_trust): on crates/echidna-core-creusot/src/lib.rs::clamp_trust, requires(min_level <= max_level); ensures(min_level <= result && result <= max_level) (written at lib.rs:278-281, never discharged); add ensures(level < min_level ==> result == min_level), ensures(level > max_level ==> result == max_level), ensures(min_level <= level && level <= max_level ==> result == level). Monotonicity in level and idempotence follow from these three. Creusot (Pearlite) and Verus. If the function is deleted: none. |Missed by the first pass; exists. An alias, so it retires with clamp-monotone.
-|`meta-checker/src/Echidna/MetaChecker.agda:155` +
-key-clamp-4 |Alias of clamp-idempotent. |`retire` |— |Successor (new, Idris2 ABI package, blocked on the owner ruling on trust code 0): the numeric trust code is injective on the ABI TrustLevel, its image is exactly the declared codes, a decoder returns the level whose code it was given, and a code outside the image is rejected, never saturated upward. The Rust half is the exact-code ensures on TrustLevel::value. |Missed by the first pass; exists. An alias, so it retires with clamp-idempotent; the summary line 'The clamp is idempotent' at MetaChecker.agda:67 goes with it.
 |`verification/proofs/idris2/ClampTrustBounds.idr:37` +
 TrustLevel, trustValue, TrustLTE, clamp_trust (definitions at :37, :46, :59, :78) |Defines a local five-level type, its value 1..5, an order by value, and the same one-argument clamp as the Agda module. |`retire` |— |Successor (new, Idris2 ABI package, blocked on the owner ruling on trust code 0): the numeric trust code is injective on the ABI TrustLevel, its image is exactly the declared codes, a decoder returns the level whose code it was given, and a code outside the image is rejected, never saturated upward. The Rust half is the exact-code ensures on TrustLevel::value. |A third local copy of the level type, tied neither to the ABI type (six constructors, src/abi/EchidnaABI/Types.idr:385) nor to the Rust. Its docstring (:76) claims Rust semantics that no Rust function has.
 |`verification/proofs/idris2/ClampTrustBounds.idr:95` +
@@ -428,7 +422,7 @@ axioms_in: trust.axioms of echidna.prove.result/1 |The CLI writes the scanner's 
 * There are two axiom scanners and they differ. The shipped one serves dispatch (dispatch.rs:623-626) and the CLI wire contract (src/rust/prove_contract.rs:28-33). The kernel one is not called by echidna but is live in echidnabot (its src/trust/axiom_tracker.rs:285). The kernel treats '/-' as a comment for Agda and Idris2 (kernel axiom_tracker.rs:230-234), the shipped one only for Lean (axiom_tracker.rs:292-294); the shipped one treats '{-#' as a comment for Idris2 (axiom_tracker.rs:302-304), the kernel does not. A contract on one says nothing about the other.
 * Cross-checked dispatch loses the axiom cap: verify_proof keeps only the first usage (src/rust/dispatch.rs:643-645) and verify_proof_cross_checked recomputes the danger from it and overwrites the level (dispatch.rs:851-855, 890). Read, not run.
 * Cross-checked dispatch drops the minimum-trust gate: verify_proof returns verified && meets_minimum (dispatch.rs:717), the cross-checked path resets verified with no minimum check (dispatch.rs:899-900). With the default minimum Level2 (dispatch.rs:137) a primary proof capped to Level1 comes back verified = true. The LLM advisor selects this path (dispatch.rs:493-501). Neither path has a caller in the binaries, only tests/smoke_e2e.rs:133 and dispatch.rs:495. Read, not run.
-* The integrity flag is permissive at all three sites (dispatch.rs:648-661, 858-871, 1009-1022): Uninitialized, a prover absent from the manifest, no checker and a verify_all error all give true. So the hypothesis of failed-integrity-level1 (Dispatch.agda:68) is almost never reachable.
+* The integrity flag is permissive at all three sites (dispatch.rs:648-661, 858-871, 1009-1022): Uninitialized, a prover absent from the manifest and no checker all give true (a verify_all error cannot occur: it only returns Ok, solver_integrity.rs:164-209). So the hypothesis of failed-integrity-level1 (Dispatch.agda:68) is almost never reachable.
 * Dispatch.agda models 'the full trust-hardening pipeline' (Dispatch.agda:6), but most entry points bypass it and call ProverBackend::verify_proof directly: src/rust/cli/verify.rs:36-40, src/rust/server/verify.rs:81-84, src/interfaces/rest/handlers.rs:206, src/interfaces/grpc/main.rs:250, src/interfaces/graphql/schema.rs:718. The dispatcher is reached only from src/rust/server/verify.rs:117-119 and, under the verisim feature, src/rust/server/prove.rs:36-41.
 * Headers claim more than the files state: TrustLevel.agda:8 and 10 ('combining evidence never lowers trust', 'complete'), Dispatch.agda:7-10 (stage order, minimum of all factors, idempotence have no statement), MetaChecker.agda:18, 21 and 44 ('total preorder', 'comment-aware scanning is sound', 'Rejected is detected on either side'), AxiomTrackerCompleteness.agda:4-5 ('every registered axiom is tracked').
 * Adjacent counterparts are also off the Rust and should not count as evidence: verification/proofs/lean4/ConfidenceLattice.lean:152-160 keeps the pre-#477 Level5 rule while saying it mirrors confidence.rs exactly; src/abi/EchidnaABI/Types.idr:385 gives TrustLevel a sixth constructor Untrusted, where the Rust enum is 1..=5 (lib.rs:94-105).
@@ -590,7 +584,7 @@ EchidnaPareto.dominated_by_frontier_member (PO-12) |For a duplicate-free cs, eve
 * The Lean TrustFactors has no small_kernel_confirmations field and a free Bool is_small_kernel (ConfidenceLattice.lean:136-148). The Rust has ProverClass in the kernel, derived from ProverKind by a twelve-prover table in the wrapper (src/rust/verification/confidence.rs:60-85). The wrapper and the table are unmodelled.
 * The Lean order on TrustLevel is defined as value a ≤ value b (ConfidenceLattice.lean:46-52). The Rust order is the derived Ord (crates/echidna-core-creusot/src/lib.rs:91-93). Nothing states that the two agree, so the Lean order laws are facts about Nat, not about the Rust `<=` used by the minimum-trust gate (src/rust/dispatch.rs:680, :1038).
 * Levels 4 and 5 are modelled but no shipped caller can reach them: all three dispatch call sites pass has_certificate false, certificate_verified false and small_kernel_confirmations 0 (src/rust/dispatch.rs:666-669, 875-878, 1026-1029). Shipped dispatch returns only Level1, Level2 or Level3.
-* The integrity cap's hypothesis is rarely reachable: solver_integrity_ok is true when no checker is configured, when the prover is not in the manifest, when verify_all fails (unwrap_or_default) and when the status is Uninitialized (src/rust/dispatch.rs:648-662, and the same pattern before :875 and :1026).
+* The integrity cap's hypothesis is rarely reachable: solver_integrity_ok is true when no checker is configured, when the prover is not in the manifest and when the status is Uninitialized (verify_all cannot fail: its only return is Ok, solver_integrity.rs:164-209, so the unwrap_or_default is dead) (src/rust/dispatch.rs:648-662, and the same pattern before :875 and :1026).
 * Lean uses Nat; the Rust uses u32, u64, usize and u8. adding_prover_monotone adds 1 with no overflow (ConfidenceLattice.lean:213-215); on the Rust it needs confirming_provers < u32::MAX.
 * The meet and join theorems (ConfidenceLattice.lean:98-110) describe min_level and max_level (crates/echidna-core-creusot/src/lib.rs:147, :168). max_level, clamp_trust and combine_trust have no caller in src/ or crates/ outside the kernel crate and its tests; min_level is reached only through combine_trust.
 * The written postcondition `result >= Level1 && result <= Level5` on compute_trust_level (crates/echidna-core-creusot/src/lib.rs:344), like Lean level1_le_all and all_le_level5 (ConfidenceLattice.lean:116, :120), is true of every value of the type and constrains the function not at all.
@@ -621,7 +615,7 @@ EchidnaPareto.dominated_by_frontier_member (PO-12) |For a duplicate-free cs, eve
 
 == Idris 2 verification corpus
 
-_Files:_ `verification/proofs/idris2/AxiomCompleteness.idr`, `verification/proofs/idris2/AxiomPolicyOrdering.idr`, `verification/proofs/idris2/BasicTotality.idr`, `verification/proofs/idris2/ClampTrustBounds.idr`, `verification/proofs/idris2/DispatchCorrectness.idr`, `verification/proofs/idris2/DispatchOrdering.idr`, `verification/proofs/idris2/NatLte.idr`, `verification/proofs/idris2/ProofStateSerialisation.idr`, `verification/proofs/idris2/ProverKindInjectivity.idr`, `verification/proofs/idris2/TrustLevelSoundness.idr`
+_Files:_ `verification/proofs/idris2/AxiomCompleteness.idr`, `verification/proofs/idris2/AxiomPolicyOrdering.idr`, `verification/proofs/idris2/BasicTotality.idr`, `verification/proofs/idris2/DispatchCorrectness.idr`, `verification/proofs/idris2/DispatchOrdering.idr`, `verification/proofs/idris2/ProofStateSerialisation.idr`, `verification/proofs/idris2/ProverKindInjectivity.idr`, `verification/proofs/idris2/TrustLevelSoundness.idr`
 
 [cols="2,3,1,2,4,3",options="header"]
 |===
@@ -646,18 +640,6 @@ policyLE_danger_mono |For ten hand-listed pairs of a local PolicyLE relation, wo
 cleanNotReject, rejectedNotSafe (2) |worstDanger Clean is not Reject; worstDanger (Rejected xs) is not Safe. |`retire` |— |Successor: the worst_danger contract on AxiomPolicy::worst_danger implies both. |Constructor disjointness applied to the definition.
 |`verification/proofs/idris2/BasicTotality.idr:23,28,33` +
 lenAppend, mapLen, doubleAdd (3) |Length of append, length of map, and double over addition, for local list functions. |`retire` |— |none |Filler by the module's own header; library facts with no echidna consumer.
-|`verification/proofs/idris2/ClampTrustBounds.idr:95,112,310` +
-clamp_lower_bound, clamp_upper_bound, clamp_in_range (3) |1 <= trustValue (clamp_trust n) <= 5 for every n. |`rust` |`crates/echidna-core-creusot/src/lib.rs::TrustLevel::value` |#[ensures(1u8 <= result && result <= 5u8)] on TrustLevel::value (text at lib.rs:127). If clamp_trust is kept: #[requires(min_level <= max_level)] #[ensures(min_level <= result && result <= max_level)] (text at lib.rs:278-281). |The bound is the range of the level-to-number map, not a fact about clamping. The contract text exists but has never been processed: the creusot dependency is commented out (crates/echidna-core-creusot/Cargo.toml:18) and there is no Verus text.
-|`verification/proofs/idris2/ClampTrustBounds.idr:148,157,163` +
-classifyNat, clampZone01, clampZone5up (3) |Every number falls in one of five zones; the local clamp_trust gives Level1 at n <= 1 and Level5 at n >= 5. |`retire` |— |none |Unused helpers about a number-to-level function the Rust does not have.
-|`verification/proofs/idris2/ClampTrustBounds.idr:178-221` +
-l1lteL1, l1lteL2, l1lteL3, l1lteL4, l1lteL5, l2lteL2, l2lteL3, l2lteL4, l2lteL5, l3lteL3, l3lteL4, l3lteL5, l4lteL4, l4lteL5, l5lteL5 (15) |LTE i j for the fifteen pairs 1 <= i <= j <= 5, read as Level i <= Level j. |`rust` |`crates/echidna-core-creusot/src/lib.rs::TrustLevel` |TrustLevel::value: #[ensures(match self { TrustLevel::Level1 => result == 1u8, TrustLevel::Level2 => result == 2u8, TrustLevel::Level3 => result == 3u8, TrustLevel::Level4 => result == 4u8, TrustLevel::Level5 => result == 5u8 })]. Lemma: #[ensures(forall<a: TrustLevel, b: TrustLevel> (a <= b) == (a.value() <= b.value()))]. |In Idris these are closed facts about literals. The system fact is the order of the shipped enum (PO-1, lib.rs:83, doc comment only), which is one contract.
-|`verification/proofs/idris2/ClampTrustBounds.idr:231` +
-clamp_monotone |n <= m implies the local clamp_trust n is at most clamp_trust m. |`retire` |— |No successor for the number-to-level function. If the Rust clamp_trust (level into a level range, lib.rs:282) is kept, write new contracts on it: a <= b ==> clamp_trust(a, lo, hi) <= clamp_trust(b, lo, hi), and clamping twice equals clamping once. |Models a Nat -> TrustLevel conversion that the Rust does not have (no such function in src or crates).
-|`verification/proofs/idris2/ClampTrustBounds.idr:291,296,301` +
-clamp_fp_1, clamp_fp_5, clamp_fp_10 (3) |The local clamp_trust gives Level1 at 1 and Level5 at 5 and 10. |`retire` |— |none |Evaluations of a function the Rust does not have.
-|`verification/proofs/idris2/ClampTrustBounds.idr:315,319,323,327,331` +
-clamp_surjective_L1, clamp_surjective_L2, clamp_surjective_L3, clamp_surjective_L4, clamp_surjective_L5 (5) |The local clamp_trust gives Level i at i, for i from 1 to 5. |`retire` |— |none (a decoder from the UInt8 trustLevel field of proof.capnp, if one is written, gets its specification in the Idris 2 ABI package) |Evaluations of a function the Rust does not have; L1 and L5 repeat clamp_fp_1 and clamp_fp_5.
 |`verification/proofs/idris2/DispatchCorrectness.idr:92,101,110` +
 smtDispatchCorrect, atpDispatchCorrect, itpDispatchCorrect (3) |If requiredLogic g = L and proverLogic p = L then the two are equal, for three logic families. |`retire` |— |Successor (Rust, not yet written): contracts on src/rust/dispatch.rs::ProverDispatcher::select_prover (:1098), for example content containing "(set-logic" and matching no earlier branch returns ProverKind::Z3. |Each is trans and sym on its own hypotheses. No selection function is in the statement; select_prover appears only in a doc comment.
 |`verification/proofs/idris2/DispatchCorrectness.idr:123,127,131,135,139,143` +
@@ -698,8 +680,6 @@ rejectImpliesAtMost1 |If d = Reject, the local assignTrust d is at most TrustLev
 rejectCannotBeLevel2, rejectCannotBeLevel3, rejectCannotBeLevel4, rejectCannotBeLevel5 (4) |If d = Reject, the local assignTrust d is not TrustLevel2, 3, 4 or 5. |`retire` |— |Successor: compute_trust_level: #[ensures(factors.worst_axiom_danger == DangerLevel::Reject ==> result == TrustLevel::Level1)], and the same clause for Warning (text at crates/echidna-core-creusot/src/lib.rs:325-333, never run through Creusot; no Verus text). The same clause on the wrapper src/rust/verification/confidence.rs::compute_trust_level over the shipped DangerLevel. |Each follows from assignTrust Reject = TrustLevel1 and distinct constructors; on the Rust, result == Level1 implies them.
 |`verification/proofs/idris2/TrustLevelSoundness.idr:247,251,255,259` +
 noRejectLevel2Witness, noRejectLevel3Witness, noRejectLevel4Witness, noRejectLevel5Witness (4) |The local type SoundnessWitness has no constructor at (Reject, TrustLevel2) to (Reject, TrustLevel5). |`retire` |— |none |Holds by the definition of the type, and no code is indexed by SoundnessWitness.
-|`verification/proofs/idris2/NatLte.idr:26,33` +
-fromYes, lteLit (2, with the IsYes predicate at :19) |A decision that landed in Yes gives its witness; lteLit m n computes an LTE proof for two literals. |`retire` |— |none (helpers; remove with their last consumer, or move to src/abi only if an ABI code-range lemma needs lteLit) |Added from the review; the declarations exist and the module is in the package. They say nothing about echidna. Their only users are ClampTrustBounds and discriminantBounded, which move to the Rust or retire.
 |===
 
 === Model gaps

@@ -433,8 +433,9 @@ theory. A statement that proves nothing about the system (true by definition,
 an instance of `+cong+`, or a model of behaviour the Rust lacks) retires, with
 its successor named. This applies to R3, R4's engineering modules, R9, R10 and
 the Idris 2 verification corpus. The per-statement placement is
-`link:PROOF-PLACEMENT.adoc[PROOF-PLACEMENT]`: 247 statements, of which 96 go to
-the Rust, 4 to Idris 2 and 31 stay Agda theory, and 116 retire. It is a
+`link:PROOF-PLACEMENT.adoc[PROOF-PLACEMENT]`: 233 rows, each one statement or a
+named group, each in one area; 92 go to the Rust, 4 to Idris 2 and 31 stay
+Agda theory, and 106 retire. It is a
 placement read from source, not a receipt, and it changes no token here.
 
 **Design review of the statements (2026-11-09, at `+2ab7574+`, before #477
