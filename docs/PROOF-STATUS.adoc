@@ -613,7 +613,7 @@ material for a multi-prover system and are outside this policy.`"
 So the sixteen `+proofs/<prover>/+` directories and `+training_data/+` carry no
 row. They exercise parsers and backends. Listing them is deliberate: an absent
 row should read as *out of policy*, not *forgotten*. The same holds for
-`+archive/logtalk/+` (dead, quarantined) and for `+echidna-playground/+`.
+`+echidna-playground/+`.
 
 R6 used to cite a corpus artefact as covering a real obligation. It now cites
 `+meta-checker/src/Echidna/Composition.agda+`, and both corpus files say in

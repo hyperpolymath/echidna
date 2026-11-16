@@ -117,14 +117,8 @@ Hypatia generates findings in shared context 3. Learning engine observes
 patterns (unsafe_panic, eval_usage, etc.) 4. Emits Elixir rule modules
 after 5+ observations 5. Proposes new detection rules via PRs
 
-*Correction (2026-11-01)*: this step previously said "Auto-generates
-Logtalk rules". Hypatia's rule engine is Elixir, and ECHIDNA is a Hypatia
-*target* — `.hypatia-baseline.json` and `.hypatia-ignore` — not a Logtalk
-rule producer. The one Logtalk module that ever lived here
-(`rules/security_learning.lgt`) had no in-tree consumer and is quarantined at
-`archive/logtalk/`. See
-link:reports/2026-11-01-routing-and-rule-engine-recon.adoc[`+docs/reports/2026-11-01-routing-and-rule-engine-recon.adoc+`]
-§4.
+Hypatia's rule engine is Elixir. ECHIDNA is a Hypatia *target* — it carries
+`.hypatia-baseline.json` and `.hypatia-ignore` — not a rule producer.
 
 *Command*:
 
