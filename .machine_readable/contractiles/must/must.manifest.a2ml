@@ -2,7 +2,7 @@
 # must.manifest.a2ml — Trident coherence manifest for the must verb.
 # Author: Jonathan D.A. Jewell <j.d.a.jewell@open.ac.uk>
 #
-# Third trident instance (per INDEX.a2ml). Completes the blocking-authority
+# Third trident instance. Completes the blocking-authority
 # pair (must + trust) and sits inside the (Hunt, blocking) triple
 # (must + trust + bust). must is concrete + persistent invariants; trust
 # is concrete + ephemeral transactions. Together they gate every
