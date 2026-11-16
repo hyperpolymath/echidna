@@ -290,7 +290,7 @@ re-title them; do not count them as evidence.
 |R3. Lean 4 legs: E4-L4 `+ConfidenceLattice.lean+`, E10
 `+ParetoMaximality.lean+` / `+ParetoStrongMaximality.lean+`, E11
 `+IntegrityVerification.lean+`, E13 `+PortfolioCompleteness.lean+`
-|`+open+` (the Lean build passes; the verifier placement is unresolved)
+|`+open+` (the Lean build passes; owner ruling 2026-11-16 splits it by property)
 |*Corrected 2026-11-09.* The 2026-05-18 record (all five failing) is stale.
 https://github.com/hyperpolymath/echidna/actions/runs/42624461538/job/129184535185[Lean 4 (verification)]
 builds all five with `+lake build+` on the pinned `+lean-toolchain+` (4.13.0),
@@ -344,7 +344,7 @@ here.
 
 |R4. Agda meta-checker: trust-level order, axiom safety, portfolio, dispatch,
 axiom-tracker completeness, integrity, clamp bounds, receipt/warrant (9 modules)
-|`+proven+`
+|`+proven+` (the modules other than `+Integrity+` and `+ClampTrust+`, which R9 and R10 carry as `+open+`)
 |First-party Agda in `+meta-checker/src/+`, type-checked with the §2.1
 canonical invocation.
 *Current receipt (exact commit):* the scheduled Agda Meta-Checker run
@@ -491,10 +491,11 @@ clamp lands on a real level rather than between two) over the trust-level type
 the gate actually checks.
 |This row establishes finite-order algebra in the Agda model. It does not
 validate the Idris2 file or its correspondence to runtime code. The Idris 2
-file already states bounds, monotonicity and fixed points (R2); only
-idempotence is Agda-only and has to move. Existing
-Idris2 interface and engineering checks remain active under §1; their
-receipt status is R2. Monotonicity here is by step lemma plus transitivity,
+file states bounds, monotonicity and fixed points of a `+Nat -> TrustLevel+`
+clamp, which the Rust does not have (R2 audit), so those statements are not
+evidence for the Rust `+clamp_trust+` and do not count under R2. Under the
+2026-11-16 split they retire, with the Rust `+clamp_trust+` contract below as
+their successor. Monotonicity here is by step lemma plus transitivity,
 rather than the Idris2 file's decision table.
 **Model and code differ:** the Rust has
 `+echidna_core_creusot::clamp_trust(level, min_level, max_level)+`
@@ -689,14 +690,14 @@ mean "ECHIDNA is verified" — it would mean one named obligation was discharged
 by one named tool with its boundary written down. Nothing here vouches for a
 prover backend's own soundness.
 
-The `+proven+` rows — R2, R4, R11 — each name the kernel, the receipt and the
+The `+proven+` rows — R2, R4 (less `+Integrity+` and `+ClampTrust+`), R11 — each name the kernel, the receipt and the
 limit that qualify them (R2 the receipt-time escape-hatch audit, R4 the
 `+UnsupportedIndexedMatch+` caveat). R9 and R10 are engineering properties of
 ECHIDNA's own types. Owner ruling 2026-11-16 places each of their statements by
 property (see the classification paragraph under R4), so their Agda checks do
 not carry `+proven+` until each statement has a receipt in its home.
-R3 stays `+open+`: its Lean build passes, but Lean is not the verifier §1
-assigns to those statements until the placement is decided. Only theory theorems are graded (§8.1): R11 is at
+R3 stays `+open+`: its Lean build passes, but Lean is not a verifier §1
+assigns to those statements; the 2026-11-16 split gives each its home. Only theory theorems are graded (§8.1): R11 is at
 `+PWG-3+`; the engineering rows carry no PWG. Every *independent* leg is still
 `+open+`: R5 has never been attempted, which is why nothing here is above
 `+PWG-3+`. Proven in one kernel is exactly what `+PWG-3+` means, and neither fact
