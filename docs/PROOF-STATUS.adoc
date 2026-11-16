@@ -297,9 +297,9 @@ builds all five with `+lake build+` on the pinned `+lean-toolchain+` (4.13.0),
 success, on commit `+a2a8643+` (tree identical to `+main+` `+2ab7574+`). A
 2026-11-09 audit run of `+#print axioms+` over 77 of the 79 theorems found only
 `+propext+`, `+Quot.sound+` and `+Classical.choice+` — no `+sorryAx+`.
-|*Placement is still open.* These statements are about ECHIDNA's own types
-(confidence lattice, Pareto order, integrity, portfolio), so §1 assigns them
-to Idris 2 (or Creusot/Verus on the Rust), not Lean. Calling them "§4
+|*Placement decided 2026-11-16 (split by property).* These statements are about
+ECHIDNA's own types (confidence lattice, Pareto order, integrity, portfolio), so
+§1 does not assign them to Lean. Calling them "§4
 exceptions" is not enough: no §4 exception record (reason, alternative
 considered) exists beside them. Owner ruling 2026-11-16: each statement is
 placed by property (see the classification paragraph under R4), not moved
@@ -416,7 +416,12 @@ Creusot/Pearlite and Verus (R1). They are not restated in Idris 2: the strict
 (it removes `+TrustKernelMonotonicity.idr+`). Each Agda module retires once its
 Rust contracts carry a receipt. Until then R4 keeps its `+proven+` token, as
 statements about a model, for its modules other than `+Integrity+` and
-`+ClampTrust+`; R9 and R10 carry those two as `+open+`. They carry no PWG.
+`+ClampTrust+`; R9 and R10 carry those two as `+open+`. That token attests
+only that the Agda kernel accepted these statements about a model; it is not
+evidence about the Rust. The design review below shows several of them prove
+less than their names say. Which statements carry forward, and to which home,
+is the per-statement placement; a statement placed `+retire+` counts for nothing
+beyond this Agda check. They carry no PWG.
 
 **Placement by property (owner ruling 2026-11-16).** An earlier ruling moved
 R3, R9 and R10 to Idris 2, which contradicted the paragraph above (Codex on
