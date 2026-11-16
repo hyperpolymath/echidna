@@ -240,10 +240,10 @@ outside the package and failed to build; hyperpolymath/echidna#472 fixes it and
 gates it. `+Coprocessor.Foreign+` (formerly the orphan `+CoprocessorForeign.idr+`,
 whose module name did not match its path) now sits at its module path and is
 listed in the package, so the ABI job type-checks it. Its receipt is that job's
-first green run after the move. One other `+.idr+` file at the `+src/abi/+` root
-is outside the package: `+NeSyAssistTesting+` (does not parse, and states an
-empirical claim rather than a provable one). It carries no row. Owner ruling on
-A5: move it to `+tests/+` as a non-proof fixture. The seven shadow copies of packaged modules
+first green run after the move. `+NeSyAssistTesting.idr+` (does not parse, and
+states an empirical claim rather than a provable one) moved to
+`+tests/fixtures/non-proof/+` by owner ruling on A5; it carries no row. Every
+`+.idr+` file under `+src/abi/+` is now in the package. The seven shadow copies of packaged modules
 (`+BojForeign+`, `+OverlayForeign+`, `+TentaclesForeign+`, `+TypeLLForeign+`,
 `+Types+`, `+Layout+`, `+Foreign+`) are deleted. *Audit 2026-11-09 of
 `+verification/proofs/idris2/+`:* several modules prove less than their names say:
