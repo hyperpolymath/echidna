@@ -3,7 +3,8 @@
 
 = Re-recon: routing surfaces and the rule-engine source
 
-*Status*: historical source review with follow-ups recorded on 2026-11-04.
+*Status*: historical source review with follow-ups recorded on 2026-11-04
+and 2026-11-16.
 Supersedes nothing; this is the first pass that classifies
 *every* client-facing path in the tree rather than only the ones a given
 consumer happens to use. *Date*: 2026-11-01. *Method*: static read of the
@@ -17,8 +18,8 @@ communication path*?
 . How does that reconcile with clients that call the echidnabot REST/GraphQL
 surfaces directly, and with proof-burrower's `echidna prove` subprocess
 contract?
-. Which rule engine is live — the Logtalk module in `rules/`, or the Elixir
-rules in Hypatia?
+. Which rule engine is live — the retired rule module in `rules/`, or the
+Elixir rules in Hypatia?
 . Which paths in the tree are *active*, *compatibility-only*, *archival* or
 *dead*?
 
@@ -42,11 +43,12 @@ or `POST /` (the separate `echidna-graphql` binary); proof-burrower looks for
 `echidna prove --output json` and reads one JCS line off stdout. Those three
 paths are independent and none of them routes through VeriSimDB.
 
-*The Logtalk material is dead and has been quarantined.* `rules/security_learning.lgt`
-was the only `.lgt` file in the tree, referenced by nothing — not a test, not a
-workflow, not a Justfile recipe, not the REUSE manifest's per-file headers.
-Estate rule authoring is Elixir in Hypatia. The file now lives under
-`archive/logtalk/` with a status header; `rules/` no longer exists.
+*The retired rule engine is dead and has been quarantined.* The one module
+in `rules/` was the only file of its language in the tree, referenced by
+nothing — not a test, not a workflow, not a Justfile recipe, not the REUSE
+manifest's per-file headers. Estate rule authoring is Elixir in Hypatia. The
+file moved under `archive/` with a status header; `rules/` no longer exists.
+*Follow-up (2026-11-16):* the quarantine has since been deleted (§4.3).
 
 *Two routing defects were fixed en route* (container entrypoint and health
 probes, <<rd3,RD3>>), *one was documented and left open* (the 8081 port collision,
@@ -123,7 +125,7 @@ non-feature one returns `+Ok(vec![])+`.
 |They are other repositories. Verify from their trees, not from this one's
 records.
 
-|`+rules/security_learning.lgt+` was loaded by nothing
+|The retired rule module in `+rules/+` was loaded by nothing
 |`+argued+` (grep-exhaustive over this tree)
 |Green state only if no external consumer exists. Its input path points at a
 home directory, which makes one unlikely; it does not prove absence.
@@ -407,12 +409,12 @@ which is a feature decision, not a rename.
 None of these are bugs in the contract. They are the current *scope*, and the
 useful thing a recon can do is stop other documents implying otherwise.
 
-== 4. Logtalk: what was left and why it is dead
+== 4. The retired rule engine: what was left and why it is dead
 
 === 4.1 What was there
 
-`+rules/security_learning.lgt+` — 234 lines, two Logtalk objects
-(`+security_learning+`, `+cicd_integration+`), dated 2025-12-29. It encodes 20
+One module in `+rules/+` — 234 lines in the retired rule language, two
+objects (`+security_learning+`, `+cicd_integration+`), dated 2025-12-29. It encodes 20
 alert categories from cicd-hyper-a's `+ERROR-CATALOG.scm+`, a severity
 classifier, a fix-suggestion table, seven prevention workflows, and a
 `+assertz+`-based "learning" loop that re-derives rules from its own training
@@ -420,9 +422,9 @@ data.
 
 === 4.2 Why it is dead
 
-* *Nothing loads it.* `+grep -rn '\.lgt' --exclude-dir=.git .+` returns the file
-  and one self-reference inside it. No test, workflow, Justfile recipe, A2ML
-  manifest or Cargo build step names it. No `+logtalk+`/`+swipl+` binary is
+* *Nothing loads it.* A grep for its file extension returns the file and one
+  self-reference inside it. No test, workflow, Justfile recipe, A2ML
+  manifest or Cargo build step names it. No runtime for its language is
   referenced anywhere in CI.
 * *Its inputs are on someone's disk.* `+cicd_repo_path('~/repos/cicd-hyper-a/.audittraining')+`
   — a home-directory path with a literal `+~+`, in an object whose job is to
@@ -434,10 +436,10 @@ data.
   `+learn_rules/0+` then asserts whatever the static tables already said. The
   output is a transcript of the input constants.
 * *The estate moved.* `+docs/ECOSYSTEM-INTEGRATION.adoc:117+` described Hypatia
-  as auto-generating Logtalk rules after 5+ observations. Hypatia's rule
-  engine is Elixir; the estate's rule-as-data path is Elixir rule modules, not
-  Logtalk objects. An ECHIDNA-side Logtalk module was never a consumer of that
-  output, even when the prose was accurate.
+  as auto-generating rules in that language after 5+ observations. Hypatia's
+  rule engine is Elixir; the estate's rule-as-data path is Elixir rule
+  modules. An ECHIDNA-side module in the retired language was never a
+  consumer of that output, even when the prose was accurate.
 * *The one live rule surface in this repo is `+.hypatia-baseline.json+` +
   `+.hypatia-ignore+`* — i.e. ECHIDNA is a Hypatia *target*, not a rule
   producer.
@@ -450,14 +452,14 @@ Moved, not deleted, and marked:
 |===
 |Before |After
 
-|`+rules/security_learning.lgt+`
-|`+archive/logtalk/security_learning.lgt+` — body unchanged (so the record is
+|The module in `+rules/+`
+|The same file under `+archive/+` — body unchanged (so the record is
 byte-recoverable), preceded by a `+DEAD SOURCE+` block naming the date, the
 reason and the successor.
 
 |_(no index)_
-|`+archive/logtalk/README.adoc+` — what it was, why it is here, what would have
-to be true to revive it.
+|A README beside it under `+archive/+` — what it was, why it is here, what
+would have to be true to revive it.
 
 |`+.reuse/dep5+` `+Files: rules/*+`
 |`+Files: archive/*+` — the same MPL-2.0 bulk stanza, retargeted.
@@ -467,16 +469,26 @@ to be true to revive it.
 exists precisely to record those.
 |===
 
-`+rules/+` is gone rather than emptied, so that the tree cannot imply "ECHIDNA
-has rules in Logtalk" by the existence of the directory.
+`+rules/+` is gone rather than emptied, so that the tree cannot imply that
+ECHIDNA carries rules in the retired language by the existence of the
+directory.
+
+*Follow-up (2026-11-16):* the quarantine was deleted outright, with
+`+archive/+`, its `+.reuse/dep5+` line and its `+root-allow.txt+` entry. Git
+history keeps both files (last present at `+478b751+`). The module's
+semantics live in `+hyperpolymath/hypatia+`'s `+lib/rules/security_errors.ex+`,
+checked there by the Agda model
+`+verification/proofs/agda/AlertTableCorrespondence.agda+`.
 
 === 4.4 Prose also retired
 
-* `+docs/ECOSYSTEM-INTEGRATION.adoc+` — the Logtalk-generation sentence now
-  states Elixir and links here.
+* `+docs/ECOSYSTEM-INTEGRATION.adoc+` — the rule-generation sentence now
+  states Elixir.
 * `+echidna-playground/.machine_readable/descriptiles/NEUROSYM.a2ml+` —
-  `+report-format = "logtalk"+` retired to a comment. That key told a scanner
-  consumer to expect a format nothing produces.
+  `+report-format+` named the retired rule format and was retired to a
+  comment, because it told a scanner consumer to expect a format nothing
+  produces. *Follow-up (2026-11-16):* it now declares `+"json"+`, Hypatia's
+  canonical report format.
 
 == 5. Path classification
 
@@ -571,13 +583,9 @@ failed at `+exec+`.
 |`+EXPOSE 8081+` matches the default; `+APP_PORT+` is consumed by the
 entrypoint, not the binary.
 
-|`+rules/security_learning.lgt+`
-|dead → quarantined
-|§4.2.
-
-|`+archive/logtalk/+`
-|archival
-|Quarantine, not a build input. Indexed by `+archive/logtalk/README.adoc+`.
+|The retired rule module in `+rules/+`
+|dead → quarantined → deleted
+|§4.2; deleted with `+archive/+` on 2026-11-16 (§4.3).
 
 |`+proofs/<prover>/+` trees (16 directories) and `+training_data/+`
 |archival *(out of policy)*
@@ -589,7 +597,7 @@ link:../PROOF-STATUS.adoc[`+docs/PROOF-STATUS.adoc+`] "Not obligations".
 
 |`+docs/ECOSYSTEM-INTEGRATION.adoc+`
 |archival (corrected)
-|2026-02-12 point-in-time status; kept as a record, Logtalk claim retired.
+|2026-02-12 point-in-time status; kept as a record, rule-engine claim retired.
 
 |`+docs/design/ECHIDNA-VERISIM-TRIANGULATION-2026-04-17.adoc+`
 |archival
@@ -828,9 +836,8 @@ grep -n 'default_value = "8081"' src/rust/main.rs
 sed -n '115,132p' Cargo.toml
 grep -rn 'cfg(feature = "verisim")' src/rust/ | wc -l
 
-# nothing loads Logtalk
-grep -rn '\.lgt' --exclude-dir=.git .        # archived file + its own self-reference
-grep -rni 'logtalk' --exclude-dir=.git .     # prose only, after this change
+# the retired rule engine is gone (both absent since 2026-11-16)
+ls rules archive
 
 # the prove contract vs the legacy formatter
 grep -n 'ProveOutput\|--output' src/rust/main.rs | head
