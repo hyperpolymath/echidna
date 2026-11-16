@@ -702,7 +702,9 @@ limit that qualify them (R2 the receipt-time escape-hatch audit, R4 the
 `+UnsupportedIndexedMatch+` caveat). R9 and R10 are engineering properties of
 ECHIDNA's own types. Owner ruling 2026-11-16 places each of their statements by
 property (see the classification paragraph under R4), so their Agda checks do
-not carry `+proven+` until each statement has a receipt in its home.
+not carry `+proven+`. A row closes when each surviving statement has a receipt
+in its home; a statement placed `+retire+` closes through its recorded
+retirement and its named successor, never through a receipt.
 R3 stays `+open+`: its Lean build passes, but Lean is not a verifier §1
 assigns to those statements; the 2026-11-16 split gives each its home. Only theory theorems are graded (§8.1): R11 is at
 `+PWG-3+`; the engineering rows carry no PWG. Every *independent* leg is still
