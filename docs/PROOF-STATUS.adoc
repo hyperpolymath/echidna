@@ -416,6 +416,18 @@ Creusot/Pearlite and Verus (R1). They are not restated in Idris 2: the strict
 Rust contracts carry a receipt. Until then these rows keep their `+proven+`
 token as statements about a model. They carry no PWG.
 
+**Placement by property (owner ruling 2026-11-16).** An earlier ruling moved
+R3, R9 and R10 to Idris 2, which contradicted the paragraph above (Codex on
+#514). The owner resolved it: each statement goes where its property lives.
+A property of one shipped Rust function or type is proved on the Rust with
+Creusot/Pearlite and Verus. A fact about an interface, ABI or wire encoding
+goes to Idris 2. A statement that holds for any implementation stays Agda
+theory. A statement that proves nothing about the system (true by definition,
+an instance of `+cong+`, or a model of behaviour the Rust lacks) retires, with
+its successor named. This applies to R3, R4's engineering modules, R9, R10 and
+the Idris 2 verification corpus. The per-statement placement is recorded
+separately.
+
 **Design review of the statements (2026-11-09, at `+2ab7574+`, before #477
 replaced the trust kernel and retired `+TrustKernelMonotonicity.idr+`):** the kernel accepting a proof
 says nothing about whether the statement models the code or says what its name
@@ -445,7 +457,7 @@ by changing a token.
   `+clamp-idempotent+`.
 
 |R9. E11 solver-integrity soundness
-|`+open+` (the Agda module checks; placement moves it to Idris 2)
+|`+open+` (the Agda module checks; owner ruling 2026-11-16 splits it by property)
 |`+meta-checker/src/Echidna/Integrity.agda+`, inside the R4 receipt. States the
 obligation that had no Agda record: verification requires an initialised
 manifest; verification means the recorded digest was matched; a binary with
@@ -471,7 +483,7 @@ comparison, not a machine-checked discrepancy or refinement proof. The Rust
 implementation leg remains open under R1's Creusot obligation.
 
 |R10. ClampTrustBounds
-|`+open+` (the Agda module checks; placement moves it to Idris 2)
+|`+open+` (the Agda module checks; owner ruling 2026-11-16 splits it by property)
 |`+meta-checker/src/Echidna/ClampTrust.agda+`, inside the R4 receipt. Restates
 the four obligations of `+verification/proofs/idris2/ClampTrustBounds.idr+`
 (bounds, monotonicity, fixed points, and — added — idempotence, i.e. that the
@@ -680,9 +692,9 @@ prover backend's own soundness.
 The `+proven+` rows — R2, R4, R11 — each name the kernel, the receipt and the
 limit that qualify them (R2 the receipt-time escape-hatch audit, R4 the
 `+UnsupportedIndexedMatch+` caveat). R9 and R10 are engineering properties of
-ECHIDNA's own types, which §1 assigns to Idris 2; owner ruling 2026-11-09 moves
-them there, so their Agda checks do not carry `+proven+` until the Idris
-modules have receipts.
+ECHIDNA's own types. Owner ruling 2026-11-16 places each of their statements by
+property (see the classification paragraph under R4), so their Agda checks do
+not carry `+proven+` until each statement has a receipt in its home.
 R3 stays `+open+`: its Lean build passes, but Lean is not the verifier §1
 assigns to those statements until the placement is decided. Only theory theorems are graded (§8.1): R11 is at
 `+PWG-3+`; the engineering rows carry no PWG. Every *independent* leg is still
