@@ -6,7 +6,7 @@
 --
 -- Mirrors:
 --   src/rust/coprocessor/trust.rs           (CoprocessorTrustTier)
---   src/abi/CoprocessorForeign.idr          (CoprocessorTrustTier + isSelfSufficient)
+--   src/abi/Coprocessor/Foreign.idr          (CoprocessorTrustTier + isSelfSufficient)
 --
 -- The two soundness obligations GNATprove discharges automatically:
 --
@@ -70,7 +70,7 @@ package Coprocessor_Safety with SPARK_Mode => On is
    --  Encode / Decode
    --
    --  Round-trip property: Decode (Encode (T)) = T for every T.
-   --  Mirrors `encodeDecodeId` in CoprocessorForeign.idr.
+   --  Mirrors `encodeDecodeId` in Coprocessor/Foreign.idr.
    --  -----------------------------------------------------------------------
    subtype Tier_Code is Natural range 1 .. 5;
 
