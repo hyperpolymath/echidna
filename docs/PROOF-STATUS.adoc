@@ -698,7 +698,8 @@ by one named tool with its boundary written down. Nothing here vouches for a
 prover backend's own soundness.
 
 The `+proven+` rows — R2, R4 (less `+Integrity+` and `+ClampTrust+`), R11 — each name the kernel, the receipt and the
-limit that qualify them (R2 the receipt-time escape-hatch audit, R4 the
+limit that qualify them (R2 the receipt-time escape-hatch audit, and the fresh
+receipt that `+NatLte+` totality still needs; R4 the
 `+UnsupportedIndexedMatch+` caveat). R9 and R10 are engineering properties of
 ECHIDNA's own types. Owner ruling 2026-11-16 places each of their statements by
 property (see the classification paragraph under R4), so their Agda checks do
