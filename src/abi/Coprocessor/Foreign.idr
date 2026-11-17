@@ -9,9 +9,9 @@
 --   src/rust/coprocessor/mod.rs            (Coprocessor trait surface)
 --   src/ada/spark/coprocessor_safety.ads   (SPARK trust-tier invariant)
 --
--- Phase 0 declares the Math kind only.  Phase 6 backends (Physics, DSP,
--- FPGA, Tensor, Vector, Crypto, Graphics, Audio, IO) extend this module
--- alongside their Rust impls — never as stubs.
+-- It declares all sixteen kinds the Rust enum declares, with the same u8 tags
+-- (scripts/ci/check-coprocessor-tags.sh checks the two agree). A new kind is
+-- added here alongside its Rust impl, with the next tag — never as a stub.
 --
 -- NO believe-me anywhere. All safety is enforced by types.
 
@@ -93,7 +93,8 @@ encodeDecodeId PureFormal         = Refl
 ||| ABI surface is unconditional.  Phase 2b adds the subprocess CAS
 ||| backends PariGp / Maxima / Singular / Gap / Macaulay2. The order and the
 ||| tags follow the declaration order of `CoprocessorKind` in
-||| `src/rust/coprocessor/types.rs`, which carries no explicit discriminants.
+||| `src/rust/coprocessor/types.rs`, whose explicit `#[repr(u8)]` discriminants
+||| equal these tags (scripts/ci/check-coprocessor-tags.sh).
 public export
 data CoprocessorKind : Type where
   Math      : CoprocessorKind  -- Phase 0  (num-bigint + num-integer)
