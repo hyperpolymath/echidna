@@ -14,16 +14,26 @@ rs="$root/src/rust/coprocessor/types.rs"
 idr="$root/src/abi/Coprocessor/Foreign.idr"
 
 body=$(awk '/^pub enum CoprocessorKind \{/{f=1;next} f&&/^\}/{exit} f' "$rs")
-bare=$({ printf '%s\n' "$body" | grep -E '^[[:space:]]+[A-Z][A-Za-z0-9]*,[[:space:]]*$' || true; })
-if [[ -n "$bare" ]]; then
-  echo "::error file=$rs::CoprocessorKind variants without an explicit discriminant:"
-  printf '%s\n' "$bare"
+# Every variant line must be exactly `Name = <decimal>` (comma optional). Anything else (no
+# discriminant, a hex or underscored literal, an expression) is refused rather
+# than half-parsed: a regex that stopped at the first digits would read
+# `Math = 0x10` as Math=0 and pass a real mismatch.
+variants=$({ printf '%s\n' "$body" | grep -E '^[[:space:]]+[A-Z]' || true; })
+odd=$({ printf '%s\n' "$variants" | grep -vE '^[[:space:]]+[A-Z][A-Za-z0-9]*[[:space:]]*=[[:space:]]*[0-9]+,?[[:space:]]*$' || true; })
+if [[ -n "$odd" ]]; then
+  echo "::error file=$rs::CoprocessorKind variants must read 'Name = <decimal>' (comma optional); these do not:"
+  printf '%s\n' "$odd"
   exit 1
 fi
-rust=$({ printf '%s\n' "$body" | grep -oE '^[[:space:]]+[A-Z][A-Za-z0-9]*[[:space:]]*=[[:space:]]*[0-9]+' || true; } \
-  | tr -d ' ' | sort)
-idris=$({ grep -oE '^coprocessorKindToU8[[:space:]]+[A-Z][A-Za-z0-9]*[[:space:]]*=[[:space:]]*[0-9]+' "$idr" || true; } \
-  | sed -E 's/^coprocessorKindToU8[[:space:]]+//' | tr -d ' ' | sort)
+rust=$(printf '%s\n' "$variants" | sed -E 's/,?[[:space:]]*$//' | tr -d ' ' | sort)
+clauses=$({ grep -E '^coprocessorKindToU8[[:space:]]+[A-Z]' "$idr" || true; })
+odd=$({ printf '%s\n' "$clauses" | grep -vE '^coprocessorKindToU8[[:space:]]+[A-Z][A-Za-z0-9]*[[:space:]]*=[[:space:]]*[0-9]+[[:space:]]*$' || true; })
+if [[ -n "$clauses" && -n "$odd" ]]; then
+  echo "::error file=$idr::coprocessorKindToU8 clauses must read 'coprocessorKindToU8 Name = <decimal>'; these do not:"
+  printf '%s\n' "$odd"
+  exit 1
+fi
+idris=$(printf '%s\n' "$clauses" | sed -E 's/^coprocessorKindToU8[[:space:]]+//' | tr -d ' ' | sed '/^$/d' | sort)
 
 if [[ -z "$rust" ]] || [[ -z "$idris" ]]; then
   echo "::error::could not read the tags (rust: ${rust:+found}${rust:-none}, idris: ${idris:+found}${idris:-none})"
