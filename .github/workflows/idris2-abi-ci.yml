@@ -151,6 +151,20 @@ jobs:
             exit 1
           fi
 
+      - name: No partial or covering escape in the ABI
+        # %default total is only a default: a `partial` or `covering` annotation, or
+        # a module-wide `%default partial|covering`, turns the totality check off for
+        # what follows and the package still builds. Runs on every event: cheap.
+        run: |
+          set -euo pipefail
+          hits=$({ grep -rnE '^[[:space:]]*(partial|covering)\b|^%default[[:space:]]+(partial|covering)\b' src/abi/ --include="*.idr" || true; })
+          if [ -n "$hits" ]; then
+            printf '%s\n' "$hits"
+            echo "::error::src/abi/ declares a partial or covering definition or default"
+            exit 1
+          fi
+          echo "no partial or covering escape under src/abi/"
+
       - name: Count modules and report
         if: steps.detect.outputs.relevant == 'true'
         run: |
