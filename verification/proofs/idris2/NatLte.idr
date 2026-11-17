@@ -14,6 +14,8 @@ module NatLte
 
 import Data.Nat
 
+%default total
+
 ||| Inhabited exactly when a decision landed in the `Yes` branch.
 public export
 0 IsYes : Dec p -> Type
