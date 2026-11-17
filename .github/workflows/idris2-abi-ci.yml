@@ -142,8 +142,8 @@ jobs:
           # so compare the two hex literals directly. Runs on every event: it is
           # cheap, and a schema-only change must not skip it.
           set -euo pipefail
-          schema=$(grep -oE '^@0x[0-9a-fA-F]+;' schemas/echidna.capnp | head -n1 | tr -d '@;' | tr 'A-F' 'a-f')
-          mirror=$(grep -oE '^echidnaSchemaId = 0x[0-9a-fA-F]+' src/abi/EchidnaABI/CapnSchemas.idr | awk '{print $3}' | tr 'A-F' 'a-f')
+          schema=$({ grep -oE '^@0x[0-9a-fA-F]+;' schemas/echidna.capnp || true; } | head -n1 | tr -d '@;' | tr 'A-F' 'a-f')
+          mirror=$({ grep -oE '^echidnaSchemaId = 0x[0-9a-fA-F]+' src/abi/EchidnaABI/CapnSchemas.idr || true; } | awk '{print $3}' | tr 'A-F' 'a-f')
           echo "schemas/echidna.capnp: ${schema:-<none>}"
           echo "CapnSchemas.idr:       ${mirror:-<none>}"
           if [ -z "$schema" ] || [ -z "$mirror" ] || [ "$schema" != "$mirror" ]; then
