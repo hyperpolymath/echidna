@@ -235,6 +235,13 @@ jobs:
               echo "::error file=$f::module lacks %default total"
               missing=$((missing + 1))
             fi
+            # A `partial` or `covering` annotation, or a later `%default partial` or
+            # `%default covering`, switches the check off again (Idris 2 defaults to
+            # covering, under which `bad : Void; bad = bad` checks).
+            if grep -nE '^[[:space:]]*(partial|covering)\b|^%default[[:space:]]+(partial|covering)\b' "$f"; then
+              echo "::error file=$f::module declares a partial or covering definition or default"
+              missing=$((missing + 1))
+            fi
           done
           [ "$missing" -eq 0 ]
 
