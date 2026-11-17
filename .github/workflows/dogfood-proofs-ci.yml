@@ -223,6 +223,21 @@ jobs:
           tar xzf /tmp/just.tar.gz -C "$HOME/.local/bin" just
           echo "$HOME/.local/bin" >> "$GITHUB_PATH"
 
+      - name: Every verification module declares %default total
+        run: |
+          # The package build cannot show that a definition is total unless the
+          # module asks for it, and PROOF-STATUS cites totality as evidence. So
+          # each module must carry the directive.
+          set -euo pipefail
+          missing=0
+          for f in verification/proofs/idris2/*.idr; do
+            if ! grep -qE '^%default[[:space:]]+total' "$f"; then
+              echo "::error file=$f::module lacks %default total"
+              missing=$((missing + 1))
+            fi
+          done
+          [ "$missing" -eq 0 ]
+
       - name: Type-check Idris2 verification corpus
         run: just proofs-verif-idris
 
