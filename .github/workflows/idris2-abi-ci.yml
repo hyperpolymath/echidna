@@ -13,6 +13,8 @@ on:
       - 'src/idris/**'
       - 'tests/abi/**'
       - 'scripts/abi-fixtures.sh'
+      - 'src/rust/coprocessor/types.rs'
+      - 'scripts/ci/check-coprocessor-tags.sh'
       - '.github/workflows/idris2-abi-ci.yml'
   # No paths-filter on pull_request: this job is a REQUIRED status check, so it
   # must report on every PR (a path-filtered required check deadlocks PRs that
@@ -147,6 +149,10 @@ jobs:
             exit 1
           fi
           echo "no partial or covering escape under src/abi/"
+
+      - name: Coprocessor kind tags agree with the Rust enum
+        # Runs on every event: a Rust-only renumbering must not skip it.
+        run: bash scripts/ci/check-coprocessor-tags.sh
 
       - name: Count modules and report
         if: steps.detect.outputs.relevant == 'true'
