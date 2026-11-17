@@ -15,7 +15,7 @@ idr="$root/src/abi/Coprocessor/Foreign.idr"
 
 body=$(awk '/^pub enum CoprocessorKind \{/{f=1;next} f&&/^\}/{exit} f' "$rs")
 bare=$({ printf '%s\n' "$body" | grep -E '^[[:space:]]+[A-Z][A-Za-z0-9]*,[[:space:]]*$' || true; })
-if [ -n "$bare" ]; then
+if [[ -n "$bare" ]]; then
   echo "::error file=$rs::CoprocessorKind variants without an explicit discriminant:"
   printf '%s\n' "$bare"
   exit 1
@@ -25,11 +25,11 @@ rust=$({ printf '%s\n' "$body" | grep -oE '^[[:space:]]+[A-Z][A-Za-z0-9]*[[:spac
 idris=$({ grep -oE '^coprocessorKindToU8[[:space:]]+[A-Z][A-Za-z0-9]*[[:space:]]*=[[:space:]]*[0-9]+' "$idr" || true; } \
   | sed -E 's/^coprocessorKindToU8[[:space:]]+//' | tr -d ' ' | sort)
 
-if [ -z "$rust" ] || [ -z "$idris" ]; then
+if [[ -z "$rust" ]] || [[ -z "$idris" ]]; then
   echo "::error::could not read the tags (rust: ${rust:+found}${rust:-none}, idris: ${idris:+found}${idris:-none})"
   exit 1
 fi
-if [ "$rust" != "$idris" ]; then
+if [[ "$rust" != "$idris" ]]; then
   echo "::error file=$idr::coprocessorKindToU8 disagrees with the Rust CoprocessorKind discriminants"
   diff <(printf '%s\n' "$rust") <(printf '%s\n' "$idris") | sed 's/^</rust /;s/^>/idris/' || true
   exit 1
