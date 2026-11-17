@@ -475,7 +475,8 @@ directory.
 
 *Follow-up (2026-11-16):* the quarantine was deleted outright, with
 `+archive/+`, its `+.reuse/dep5+` line and its `+root-allow.txt+` entry. Git
-history keeps both files (last present at `+478b751+`). The module's
+history keeps both files: they can be recovered from any commit before the
+deletion, for example `+478b751+`. The module's
 semantics live in `+hyperpolymath/hypatia+`'s `+lib/rules/security_errors.ex+`,
 checked there by the Agda model
 `+verification/proofs/agda/AlertTableCorrespondence.agda+`.
