@@ -381,10 +381,10 @@ expect "a claims.json whose root is an array fails 13" FAIL 13-lean-build-record
 # ----------------------------------------------- check 7: Idris/Agda hygiene
 
 new_repo
-mkdir -p "$R/.github/workflows" "$R/src/abi/EchidnaABI" "$R/meta-checker/src/Echidna" "$R/scripts/ci"
+mkdir -p "$R/.github/workflows" "$R/src/abi/EchidnaABI" "$R/src/abi/Coprocessor" "$R/meta-checker/src/Echidna" "$R/scripts/ci"
 printf '# for pattern in postulate; do grep\nrun: echo\n' > "$R/.github/workflows/idris2-abi-ci.yml"
-printf 'package x\nmodules = EchidnaABI.CapnSchemas, CoprocessorForeign\n' > "$R/src/abi/echidnaabi.ipkg"
-touch "$R/src/abi/EchidnaABI/CapnSchemas.idr" "$R/src/abi/CoprocessorForeign.idr"
+printf 'package x\nmodules = EchidnaABI.CapnSchemas, Coprocessor.Foreign\n' > "$R/src/abi/echidnaabi.ipkg"
+touch "$R/src/abi/EchidnaABI/CapnSchemas.idr" "$R/src/abi/Coprocessor/Foreign.idr"
 printf 'module Echidna.MetaChecker where\n{- import Echidna.AxiomTrackerCompleteness -}\n' > "$R/meta-checker/src/Echidna/MetaChecker.agda"
 printf 'run: bash scripts/ci/check-agda.sh\n' > "$R/.github/workflows/agda-meta-checker.yml"
 printf 'agda --safe src/Echidna/MetaChecker.agda\n' > "$R/scripts/ci/check-agda.sh"
@@ -393,11 +393,11 @@ expect "a postulate grep inside a comment fails 07a" FAIL 07a-idris-postulate-gr
 expect "the one-line modules layout passes 07b" PASS 07b-ipkg-coverage
 expect "an import inside a block comment fails 07c" FAIL 07c-meta-checker-completeness
 printf 'run: |\n  for pattern in believe_me postulate; do grep -rn "$pattern" src/abi; done\n' > "$R/.github/workflows/idris2-abi-ci.yml"
-printf 'package x\nmodules = Main\n     , EchidnaABI.CapnSchemas\ndepends = base\n     , CoprocessorForeign\n' > "$R/src/abi/echidnaabi.ipkg"
+printf 'package x\nmodules = Main\n     , EchidnaABI.CapnSchemas\ndepends = base\n     , Coprocessor.Foreign\n' > "$R/src/abi/echidnaabi.ipkg"
 printf 'module Echidna.MetaChecker where\nopen import Echidna.AxiomTrackerCompleteness public\n' > "$R/meta-checker/src/Echidna/MetaChecker.agda"
 gate 7
 expect "a real postulate grep passes 07a" PASS 07a-idris-postulate-grep
-expect "a module listed under depends does not count for 07b" FAIL 07b-ipkg-coverage "CoprocessorForeign"
+expect "a module listed under depends does not count for 07b" FAIL 07b-ipkg-coverage "Coprocessor.Foreign"
 expect "a real import checked through check-agda.sh passes 07c" PASS 07c-meta-checker-completeness
 
 # Inline `#` comments: a mention after code on the line does not count.

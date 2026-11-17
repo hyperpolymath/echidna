@@ -421,13 +421,13 @@ check_7() {
     fail "07b-ipkg-coverage" "$ipkg is missing"
   else
     mods=$(ipkg_modules "$ipkg")
-    for rel in EchidnaABI/CapnSchemas.idr CoprocessorForeign.idr; do
+    for rel in EchidnaABI/CapnSchemas.idr Coprocessor/Foreign.idr; do
       [ -f "src/abi/$rel" ] || continue
       mod=$(sed 's/\.idr$//; s#/#.#g' <<<"$rel")
       grep -qxF "$mod" <<<"$mods" || missing+=("$mod")
     done
     if [ ${#missing[@]} -eq 0 ]; then
-      pass "07b-ipkg-coverage" "CapnSchemas and CoprocessorForeign are in $ipkg or deleted"
+      pass "07b-ipkg-coverage" "CapnSchemas and Coprocessor.Foreign are in $ipkg or deleted"
     else
       fail "07b-ipkg-coverage" "present but not in $ipkg: ${missing[*]}"
     fi

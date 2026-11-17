@@ -8,7 +8,7 @@
 // streaming events to external consumers (PanLL, CLI, etc.).
 //
 // Architecture:
-//   Idris2 ABI (TentaclesForeign.idr) --> Zig FFI (tentacles.zig) --> C-ABI --> zig adapter
+//   Idris2 ABI (Tentacles/Foreign.idr) --> Zig FFI (tentacles.zig) --> C-ABI --> zig adapter
 //
 // Each agent maintains:
 //   - Status (idle/busy/error/disabled)

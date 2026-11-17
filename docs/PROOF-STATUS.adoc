@@ -240,13 +240,25 @@ receipt-time audit, not an enforced property: `+idris2-abi-ci.yml+` greps
 and `+prim__crash+`, and checks neither `+postulate+` nor
 `+verification/proofs/idris2/+`. *Limit:* `+EchidnaABI.CapnSchemas+` was
 outside the package and failed to build; hyperpolymath/echidna#472 fixes it and
-gates it. Nine other `+.idr+` files at the `+src/abi/+` root are outside the
-package: `+BojForeign+`, `+OverlayForeign+`, `+TentaclesForeign+`,
-`+TypeLLForeign+`, `+Types+`, `+Layout+` and `+Foreign+` (shadow copies of
-packaged modules), `+CoprocessorForeign+` (an orphan whose module name does not
-match its path) and `+NeSyAssistTesting+` (does not parse, and states an
-empirical claim rather than a provable one). They carry no row until the owner
-decides their fate (open question A5). *Audit 2026-11-09 of
+gates it. `+Coprocessor.Foreign+` (formerly the orphan `+CoprocessorForeign.idr+`,
+whose module name did not match its path) now sits at its module path and is
+listed in the package, so the ABI job type-checks it. Receipt for the moved
+module (eleven kinds):
+https://github.com/hyperpolymath/echidna/actions/runs/43942011801/job/133561724581[Type-check Idris2 ABI definitions],
+success, a pull-request run on head `+dc36ee97291a2614a91b5d6971a075ab9ad15d79+`.
+Its `+CoprocessorKind+` then lacked five kinds that the Rust enum
+(`+src/rust/coprocessor/types.rs+`) declares: `+PariGp+`, `+Maxima+`,
+`+Singular+`, `+Gap+`, `+Macaulay2+`. They are now added with tags 11 to 15, in
+the Rust declaration order, in commit
+`+ff1eef251b834f44fc73ccd8d008de9451d4eca6+`. Receipt for the extended module
+(sixteen kinds):
+https://github.com/hyperpolymath/echidna/actions/runs/43947887496/job/133582267468[Type-check Idris2 ABI definitions],
+success, a pull-request run on head `+ff1eef2+`. One other `+.idr+` file at the `+src/abi/+` root
+is outside the package: `+NeSyAssistTesting+` (does not parse, and states an
+empirical claim rather than a provable one). It carries no row. Owner ruling on
+A5: move it to `+tests/+` as a non-proof fixture. The seven shadow copies of packaged modules
+(`+BojForeign+`, `+OverlayForeign+`, `+TentaclesForeign+`, `+TypeLLForeign+`,
+`+Types+`, `+Layout+`, `+Foreign+`) are deleted. *Audit 2026-11-09 of
 `+verification/proofs/idris2/+`:* several modules prove less than their names say:
 `+TrustLevelSoundness+` holds by definition of a local function that
 disagrees with Rust; `+DispatchCorrectness+` never mentions
