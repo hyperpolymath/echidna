@@ -92,8 +92,10 @@ K9!
       description = "Confirm the tools the sanctioned paths need are present",
       # An enabled path whose tool is missing fails here, loudly; a disabled
       # path is not checked. Nothing is skipped silently.
+      # `just` is checked only when a path that calls it is enabled: the
+      # container build and the doctor. A Guix-only install runs `guix` alone.
       commands =
-        ["command -v just >/dev/null 2>&1 || { echo 'just not found'; exit 1; }"]
+        (if config.use_sealed_containers || config.run_doctor then ["command -v just >/dev/null 2>&1 || { echo 'just not found but config.use_sealed_containers or config.run_doctor is true'; exit 1; }"] else [])
         @ (if config.use_guix then ["command -v guix >/dev/null 2>&1 || { echo 'guix not found but config.use_guix is true'; exit 1; }"] else [])
         @ (if config.use_sealed_containers then ["command -v podman >/dev/null 2>&1 || { echo 'podman not found but config.use_sealed_containers is true'; exit 1; }"] else []),
     },
