@@ -7,7 +7,7 @@
  * Provides compiler agent management, task dispatch, OODA tracking, and events.
  *
  * Source: ffi/zig/src/tentacles.zig
- * ABI:    src/abi/TentaclesForeign.idr
+ * ABI:    src/abi/Tentacles/Foreign.idr
  *
  * DO NOT EDIT — regenerate from the Zig FFI source.
  */

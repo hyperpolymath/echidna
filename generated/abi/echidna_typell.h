@@ -7,7 +7,7 @@
  * Provides type checking, inference, refinement, and type-level computation.
  *
  * Source: ffi/zig/src/typell.zig
- * ABI:    src/abi/TypeLLForeign.idr
+ * ABI:    src/abi/TypeLL/Foreign.idr
  *
  * DO NOT EDIT — regenerate from the Zig FFI source.
  */

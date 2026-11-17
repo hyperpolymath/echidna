@@ -38,7 +38,7 @@ echo "$total source modules, $((total - missing)) with fresh interfaces"
 
 # Source-bound receipt (PROOF-POLICY §8): toolchain, flags and the SHA-256 of
 # every first-party source and library descriptor this run checked.
-echo "receipt: $version; commit ${GITHUB_SHA:-$(git -C "$repo_root" rev-parse HEAD)}"
+echo "receipt: $version; commit $(git -C "$repo_root" rev-parse HEAD)"
 echo "receipt: flags --safe --without-K --cubical-compatible; library file $AGDA_LIBRARIES_FILE"
 while IFS= read -r lib; do
   if [[ -n "$lib" ]]; then
