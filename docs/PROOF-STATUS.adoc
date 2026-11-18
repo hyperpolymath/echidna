@@ -229,6 +229,14 @@ https://github.com/hyperpolymath/echidna/actions/runs/42624461538/job/1291845356
 builds `+verification/proofs/idris2/echidna-verif-proofs.ipkg+` and
 https://github.com/hyperpolymath/echidna/actions/runs/42624461712/job/129184533713[Type-check Idris2 ABI definitions]
 builds `+src/abi/echidnaabi.ipkg+`, both on Idris 2 0.8.0, both success.
+Those receipts cover the trees at `+2ab7574+` only. `+src/abi/+` has changed since:
+hyperpolymath/echidna#511 deleted the seven shadow copies,
+hyperpolymath/echidna#512 moved `+Coprocessor.Foreign+` into the package, and
+hyperpolymath/echidna#508 changed `+EchidnaABI.CapnSchemas+`. The ABI package as
+it stands after #508 checks in
+https://github.com/hyperpolymath/echidna/actions/runs/43986065115/job/133714398981[Type-check Idris2 ABI definitions],
+success, a pull-request run on head `+7edf44f+`, whose `+src/abi/+` tree is the
+one #508 merges.
 At that receipt `+NatLte.idr+` lacked `+%default total+`, so its totality was
 not checked. It now declares the directive, and the `+verif-idris+` job fails
 if any module in `+verification/proofs/idris2/+` does not. A fresh receipt is

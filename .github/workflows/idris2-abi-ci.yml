@@ -13,6 +13,9 @@ on:
       - 'src/idris/**'
       - 'tests/abi/**'
       - 'scripts/abi-fixtures.sh'
+      - 'schemas/echidna.capnp'
+      - 'src/rust/coprocessor/types.rs'
+      - 'scripts/ci/check-coprocessor-tags.sh'
       - '.github/workflows/idris2-abi-ci.yml'
   # No paths-filter on pull_request: this job is a REQUIRED status check, so it
   # must report on every PR (a path-filtered required check deadlocks PRs that
@@ -46,7 +49,7 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         run: |
           set -euo pipefail
-          PATTERN='^(src/abi/|src/idris/|tests/abi/|scripts/abi-fixtures\.sh$)'
+          PATTERN='^(src/abi/|src/idris/|tests/abi/|scripts/abi-fixtures\.sh$|schemas/echidna\.capnp$)'
           if [ "${{ github.event_name }}" = "pull_request" ]; then
             FILES=$(gh api "repos/${{ github.repository }}/pulls/${{ github.event.pull_request.number }}/files" \
                       --paginate --jq '.[].filename')
@@ -133,6 +136,40 @@ jobs:
             echo "✗ Dangerous patterns detected — ABI code must be formally verified"
             exit 1
           fi
+
+      - name: Cap'n Proto schema id matches its Idris mirror
+        run: |
+          # EchidnaABI.CapnSchemas.echidnaSchemaId mirrors the file id of
+          # schemas/echidna.capnp. Its non-zero proof cannot catch a wrong value,
+          # so compare the two hex literals directly. Runs on every event: it is
+          # cheap, and a schema-only change must not skip it.
+          set -euo pipefail
+          schema=$({ grep -oE '^@0x[0-9a-fA-F]+;' schemas/echidna.capnp || true; } | head -n1 | tr -d '@;' | tr 'A-F' 'a-f')
+          mirror=$({ grep -oE '^echidnaSchemaId = 0x[0-9a-fA-F]+' src/abi/EchidnaABI/CapnSchemas.idr || true; } | awk '{print $3}' | tr 'A-F' 'a-f')
+          echo "schemas/echidna.capnp: ${schema:-<none>}"
+          echo "CapnSchemas.idr:       ${mirror:-<none>}"
+          if [ -z "$schema" ] || [ -z "$mirror" ] || [ "$schema" != "$mirror" ]; then
+            echo "::error file=src/abi/EchidnaABI/CapnSchemas.idr::echidnaSchemaId does not match the id in schemas/echidna.capnp"
+            exit 1
+          fi
+
+      - name: No partial or covering escape in the ABI
+        # %default total is only a default: a `partial` or `covering` annotation, or
+        # a module-wide `%default partial|covering`, turns the totality check off for
+        # what follows and the package still builds. Runs on every event: cheap.
+        run: |
+          set -euo pipefail
+          hits=$({ grep -rnE '^[[:space:]]*(partial|covering)\b|^%default[[:space:]]+(partial|covering)\b' src/abi/ --include="*.idr" || true; })
+          if [ -n "$hits" ]; then
+            printf '%s\n' "$hits"
+            echo "::error::src/abi/ declares a partial or covering definition or default"
+            exit 1
+          fi
+          echo "no partial or covering escape under src/abi/"
+
+      - name: Coprocessor kind tags agree with the Rust enum
+        # Runs on every event: a Rust-only renumbering must not skip it.
+        run: bash scripts/ci/check-coprocessor-tags.sh
 
       - name: Count modules and report
         if: steps.detect.outputs.relevant == 'true'

@@ -31,10 +31,12 @@ import Data.Fin
 ------------------------------------------------------------------------
 
 ||| The Cap'n Proto schema unique identifier for echidna.capnp.
-||| Hex: 0xd3b45f8ae1c79012 = 15,242,516,543,891,767,314 (decimal).
+||| Written as the hex literal that `schemas/echidna.capnp` declares (`@0xd3b45f8ae1c79012`,
+||| decimal 15254922887908790290), so the two can be compared textually.
+||| `idris2-abi-ci.yml` fails if they differ.
 public export
 echidnaSchemaId : Nat
-echidnaSchemaId = 15242516543891767314
+echidnaSchemaId = 0xd3b45f8ae1c79012
 
 ||| Proof: the schema identifier is non-zero.
 ||| Cap'n Proto uses 0 as the "no schema" sentinel; a zero schema ID
