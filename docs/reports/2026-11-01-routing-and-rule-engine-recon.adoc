@@ -476,10 +476,17 @@ directory.
 *Follow-up (2026-11-16):* the quarantine was deleted outright, with
 `+archive/+`, its `+.reuse/dep5+` line and its `+root-allow.txt+` entry. Git
 history keeps both files: they can be recovered from any commit before the
-deletion, for example `+478b751+`. The module's
-semantics live in `+hyperpolymath/hypatia+`'s `+lib/rules/security_errors.ex+`,
-checked there by the Agda model
-`+verification/proofs/agda/AlertTableCorrespondence.agda+`.
+deletion, for example `+478b751+`. Hypatia's `+lib/rules/security_errors.ex+`
+preserves part of the alert tables. The Agda model in
+https://github.com/hyperpolymath/hypatia/pull/1185[Hypatia PR #1185]
+(https://github.com/hyperpolymath/hypatia/blob/1741ba104af5d37369d7164f3adbf1030ddc849e/verification/proofs/agda/AlertTableCorrespondence.agda[proof at commit 1741ba1])
+checks agreement between table transcriptions for category, severity,
+auto-fixability and fix presence across 18 alerts, and for six shared
+prevention mappings. `+BranchProtectionID+` maps to
+`+branch-protection-enforcer.yml+` in the retired module and
+`+scorecard-enforcer.yml+` in Hypatia; Hypatia also adds a prevention mapping
+for `+CodeReviewID+`. The model does not cover fix text or prove runtime
+refinement or the learning loop.
 
 === 4.4 Prose also retired
 
