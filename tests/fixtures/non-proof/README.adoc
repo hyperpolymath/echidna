@@ -1,0 +1,11 @@
+// SPDX-License-Identifier: CC-BY-SA-4.0
+= Non-proof fixtures
+
+Files here are kept for reference only. They are *not* proofs, no CI job
+type-checks them, and no proof-status row cites them.
+
+`NeSyAssistTesting.idr`:: Moved from `src/abi/` by owner ruling on open
+question A5. It does not parse. It states an empirical property of the neural
+ranker, which a proof cannot establish, so it is not a proof obligation. If
+that property is wanted, test it against the ranker; do not restore this file
+to the ABI package.
