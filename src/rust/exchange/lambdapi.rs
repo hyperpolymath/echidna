@@ -3,7 +3,7 @@
 
 //! Lambdapi proof exchange format.
 //!
-//! Lambdapi (https://github.com/Deducteam/lambdapi) is Dedukti's
+//! Lambdapi (<https://github.com/Deducteam/lambdapi>) is Dedukti's
 //! successor — a logical framework based on the lambda-Pi calculus
 //! modulo rewriting, upward-compatible with Dedukti syntax but with
 //! inferable types and a tactic language. This module ships an
