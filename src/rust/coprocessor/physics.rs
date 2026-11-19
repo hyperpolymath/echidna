@@ -97,9 +97,9 @@ fn dispatch_sync(op: CoprocessorOp) -> Result<CoprocessorOutcome> {
 /// Classical fourth-order Runge-Kutta step.
 ///
 /// `f(x)` is a kernel selected by name with a parameter vector:
-/// - `"harmonic-oscillator"` — params = [omega]; x = [position, momentum];
+/// - `"harmonic-oscillator"` — params = `[omega]`; x = [position, momentum];
 ///   ẋ₀ = x₁,  ẋ₁ = -ω²·x₀.
-/// - `"exponential-decay"`   — params = [lambda]; ẋᵢ = -λ·xᵢ.
+/// - `"exponential-decay"`   — params = `[lambda]`; ẋᵢ = -λ·xᵢ.
 /// - `"linear"`              — params = [a, b]; ẋᵢ = a·xᵢ + b.
 fn rk4_step(
     kernel: &str,

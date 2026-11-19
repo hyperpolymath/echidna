@@ -515,7 +515,7 @@ impl ProofGraphBuilder {
         }
     }
 
-    /// Add edges from a node to represent its [`TypeInfo`] annotations.
+    /// Add edges from a node to represent its [`TypeInfo`](crate::types::TypeInfo) annotations.
     ///
     /// Creates labelled subterm nodes for multiplicity, effect, and modality
     /// decorations and connects them with the appropriate edge kind.

@@ -103,7 +103,7 @@ impl Embedder for HashEmbedder {
 ///
 /// Feature layout: every unigram, bigram and trigram of the canonical
 /// atom stream is hashed into one of [`STRUCTURAL_EMBED_DIM`] buckets
-/// and accumulated with [`NGRAM_WEIGHTS`]; the vector is L2-normalised
+/// and accumulated with `NGRAM_WEIGHTS`; the vector is L2-normalised
 /// so cosine similarity is meaningful. Deterministic, dependency-free
 /// and identical on every platform.
 #[derive(Debug, Clone, Default)]
