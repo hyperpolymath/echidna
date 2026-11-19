@@ -360,3 +360,44 @@ once it’s next‑up.
 the "`Today`" column becomes "`Done`" and the "`End‑state`" column stays
 as the invariant.
 * Record non‑trivial decisions in this doc, not in chat.
+
+=== 8. Decision record
+
+[[decision-2026-11-19-coprocessor-contract]]
+==== 2026-11-19: coprocessor contract (D-G opens, contract first)
+
+*Ruling.* The owner ruled that D-G opens now, contract first. Until today
+the plan deferred the coprocessor surface "until a second consumer needs
+it" (`docs/planning/ULTRAPLAN-2026-10-09.adoc`, item 6.2 and the D-G row).
+
+*Second consumer.* The per-language verifier family: atoma, quintessence,
+Apodeixis.jl, bactrian, canonry and chancel. Their shared plan is
+`docs/plan/FAMILY-ULTRAPLAN.adoc` in hyperpolymath/atoma, package F10.
+
+*What this change delivers.*
+
+* The contract document
+  link:COPROCESSOR-CONTRACT.adoc[`+docs/COPROCESSOR-CONTRACT.adoc+`], with
+  three schemas: `echidna.coprocessor.request/1`,
+  `echidna.coprocessor.result/1` and `echidna.coprocessor.capabilities/1`.
+* The CLI subcommands `echidna coprocessor dispatch` and
+  `echidna coprocessor capabilities`. Each prints one JCS line.
+* A closed status vocabulary (`computed`, `declined`, `unavailable`,
+  `error`) and the trust rule: a coprocessor answer is a hint, never a
+  proof. `trust.proof` is always `false`.
+* A fail-closed allow-list of in-process kinds that start no external
+  program and read no file: `Math`, `Vector`, `Tensor`, `Crypto`, `Dsp`,
+  `Physics`, and `FlintMath` with the `flint` feature.
+* Unit tests in `src/rust/coprocessor_contract.rs` and end-to-end tests in
+  `tests/coprocessor_output_json.rs`. No Creusot or Verus check has run on
+  the new module.
+
+*What stays deferred.*
+
+* The Julia router wiring.
+* REST and gRPC routes.
+* Exposure of the kinds outside the allow-list (`Io`, `Graphics`, `Audio`,
+  `Fpga`, `PariGp`, `Maxima`, `Singular`, `Gap`, `Macaulay2`), among them
+  the subprocess kinds and the file kind `Io`, until the sandboxed runner
+  of plan item 1.5 exists.
+* Any use of a coprocessor answer in the trust pipeline.

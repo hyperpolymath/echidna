@@ -12,30 +12,27 @@
 //! arithmetic cannot decide alone) and the meta-controller (for example:
 //! tensor / vector ops backing GNN-guided proof search).
 //!
-//! Currently provided:
-//! - `Math` backend (in-process, Rust + `num-bigint` family).
+//! Currently provided, all constructed by `CoprocessorFactory::native`:
+//! - In process, pure Rust: `Math` (`num-bigint` family), `Vector`,
+//!   `Tensor` (`nalgebra`), `Crypto` (`sha2`, `blake3`, `ed25519-dalek`),
+//!   `Physics`, `Dsp` (`rustfft`), `Graphics` (SVG strings) and `Audio`
+//!   (WAV bytes).
+//! - In process, reads files: `Io` (`tokio::fs`).
+//! - In process through C FFI: `FlintMath`, only with `--features flint`.
+//! - External subprocess: `Fpga` (yosys), `PariGp`, `Maxima`, `Singular`,
+//!   `Gap` and `Macaulay2`.
 //! - Generic `JuliaCoprocessorBridge` transport for any Julia-side backend
 //!   that registers at `http://127.0.0.1:8090/coprocessor/dispatch`.
 //!
-//! Planned (Phase 6, each landing with its full implementation — never as
-//! a stub):
-//! - `Physics`   — integration with InvestigativeJournalist.jl numerics
-//! - `Dsp`       — DSP.jl + LowLevel.jl
-//! - `Fpga`      — Yosys/Verilator integration via `ffi/zig`
-//! - `Tensor`    — Tensors.jl + StaticArrays
-//! - `Vector`    — Rust `std::simd` portable SIMD
-//! - `Crypto`    — ProvenCrypto.jl + RustCrypto under SPARK boundary
-//! - `Graphics`  — wgpu compute path
-//! - `Audio`     — DSP.jl audio extensions
-//! - `Io`        — LowLevel.jl IOPU
+//! `src/rust/coprocessor_contract.rs` exposes a fail-closed subset of these
+//! kinds on the command line (`echidna coprocessor`); see
+//! `docs/COPROCESSOR-CONTRACT.adoc`.
 //!
-//! Each variant lands in its own commit with a fully working implementation,
-//! tests, capability declaration, trust tier classification, and Idris2 ABI
-//! entry — never with `unimplemented!()` placeholders.
-//!
-//! The trust pipeline (`dispatch.rs`) consults the coprocessor's trust tier
-//! when folding a coprocessor result into a prover-side trust calculation;
-//! see `coprocessor::trust::CoprocessorTrustTier`.
+//! No code outside this module reads the trust tier today: `dispatch.rs`
+//! does not consult it, and `agent::meta_controller` dispatches coprocessor
+//! pre-steps without reading it. A coprocessor result is not folded into
+//! any prover-side trust calculation. See
+//! `coprocessor::trust::CoprocessorTrustTier` for the ladder.
 
 use anyhow::Result;
 use async_trait::async_trait;
@@ -112,18 +109,17 @@ pub trait Coprocessor: Send + Sync {
 
 /// Factory mirroring `ProverFactory`.
 ///
-/// Phase 0 only constructs the `Math` backend natively.  Phase 6 backends
-/// add their own arms here as they land.  The Julia bridge is constructed
-/// separately because it parameterises by the *Julia-side* backend kind,
-/// not by a fixed Rust impl.
+/// Constructs a native backend for every kind; `FlintMath` only with
+/// `--features flint`.  The Julia bridge is constructed separately because
+/// it parameterises by the *Julia-side* backend kind, not by a fixed Rust
+/// impl.
 pub struct CoprocessorFactory;
 
 impl CoprocessorFactory {
     /// Construct a native (Rust) coprocessor by kind.
     ///
-    /// Returns `None` when the requested kind has no native Rust backend
-    /// — caller should fall through to a Julia bridge or external
-    /// subprocess backend in Phases 6-7.
+    /// Returns `None` only for `FlintMath` built without the `flint`
+    /// feature; the caller may then fall through to a Julia bridge.
     pub fn native(kind: CoprocessorKind) -> Option<Box<dyn Coprocessor>> {
         match kind {
             CoprocessorKind::Math => Some(Box::new(MathBackend::new())),

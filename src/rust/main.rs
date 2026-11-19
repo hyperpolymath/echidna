@@ -24,14 +24,14 @@ async fn main() -> Result<()> {
     // Parse CLI arguments
     let cli = Cli::parse();
 
-    // Initialize tracing. With `prove --output json`, stdout carries only the
-    // result object, so logs go to stderr.
+    // Initialize tracing. With `prove --output json` and `coprocessor`,
+    // stdout carries only the contract object, so logs go to stderr.
     let json_stdout = matches!(
         cli.command,
         Commands::Prove {
             output: ProveOutput::Json,
             ..
-        }
+        } | Commands::Coprocessor { .. }
     );
     init_tracing(cli.verbose, json_stdout);
 
@@ -153,6 +153,10 @@ async fn main() -> Result<()> {
 
         Commands::Design { op } => {
             design_command(op, &formatter).await?;
+        },
+
+        Commands::Coprocessor { op } => {
+            coprocessor_command(op).await;
         },
 
         Commands::Suggest {

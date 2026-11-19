@@ -192,6 +192,12 @@ pub(crate) enum Commands {
         op: DesignOp,
     },
 
+    /// Run one coprocessor computation as a JSON contract (a hint, never a proof)
+    Coprocessor {
+        #[command(subcommand)]
+        op: CoprocessorCommand,
+    },
+
     /// Suggest tactic variants that close a failing lemma
     Suggest {
         /// Target in `<file>:<lemma>` form, e.g. `Foo.thy:bar`
@@ -349,6 +355,21 @@ pub(crate) enum CorpusOp {
         #[arg(short, long)]
         out: PathBuf,
     },
+}
+
+/// Subcommands of `echidna coprocessor` (`docs/COPROCESSOR-CONTRACT.adoc`).
+#[derive(Subcommand)]
+pub(crate) enum CoprocessorCommand {
+    /// Read one `echidna.coprocessor.request/1` object and print one
+    /// `echidna.coprocessor.result/1` object (JCS-canonical I-JSON) on
+    /// stdout. Logs go to stderr.
+    Dispatch {
+        /// Read the request from this file instead of stdin.
+        #[arg(long)]
+        request: Option<PathBuf>,
+    },
+    /// Print one `echidna.coprocessor.capabilities/1` object on stdout.
+    Capabilities,
 }
 
 #[derive(Subcommand)]

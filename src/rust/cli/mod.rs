@@ -6,6 +6,7 @@
 //! dispatches to these.
 
 mod args;
+mod coprocessor;
 mod corpus;
 mod design;
 mod lexicon;
@@ -17,6 +18,7 @@ mod util;
 mod verify;
 
 pub(crate) use args::*;
+pub(crate) use coprocessor::*;
 pub(crate) use corpus::*;
 pub(crate) use design::*;
 pub(crate) use lexicon::*;
