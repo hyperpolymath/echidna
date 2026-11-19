@@ -1,0 +1,191 @@
+// SPDX-License-Identifier: CC-BY-SA-4.0
+= The `echidna.coprocessor.*/1` contract
+:toc: macro
+
+`echidna coprocessor` runs one coprocessor computation and prints the
+answer as machine-readable JSON. The first consumers are the per-language
+verifier family (atoma, quintessence, Apodeixis.jl, bactrian, canonry,
+chancel). Any other client may use it. The decision record is in
+`docs/ROADMAP.adoc`, section 8 (2026-11-19).
+
+toc::[]
+
+[IMPORTANT]
+.Trust rule: a hint, never a proof
+====
+A coprocessor answer is a *hint*. It is never a proof.
+
+* No status says `verified`, `proved` or `proven`.
+* `trust.proof` is always the JSON literal `false`. The Rust type
+  (`NotAProof`) has no other value.
+* The contract has no `trust.confidence` field.
+* A consumer must confirm an answer with a prover or an exhaustive check
+  before it raises any proof status.
+====
+
+== Shape
+
+Two subcommands. Each prints exactly one line on stdout, terminated by one
+newline. The line is a single JCS-canonical (RFC 8785) I-JSON (RFC 7493)
+object. Logs go to stderr.
+
+* `echidna coprocessor dispatch [--request FILE]` reads one request object
+  from `FILE`, or from stdin when no file is given, and prints one result
+  object.
+* `echidna coprocessor capabilities` prints one capabilities object.
+
+=== Request: `echidna.coprocessor.request/1`
+
+[source,json]
+----
+{"schema":"echidna.coprocessor.request/1","kind":"Math","op":{"BigIntGcd":{"a":"12","b":"18"}}}
+----
+
+[cols="1,1,4",options="header"]
+|===
+| Field | Type | Meaning
+
+| `schema` | string | Always `echidna.coprocessor.request/1`.
+| `kind` | string | A `CoprocessorKind` variant name (`Math`, `Vector`, ...).
+| `op` | object | A `CoprocessorOp` in its existing serde form: external tagging, so the variant name is the only key and the fields are its value.
+|===
+
+The request is rejected with status `error` when it is not a JSON object,
+has a key other than these three, misses one of them, names another schema,
+names an unknown kind, or carries an op that does not parse. An op that the
+kind's backend does not list in its `supported_ops` is also an `error`.
+
+=== Result: `echidna.coprocessor.result/1`
+
+[source,json]
+----
+{"deterministic":true,"duration_ms":0,"echidna_version":"<cargo version>","kind":"Math","message":"","op":"BigIntGcd","outcome":{"BigInt":"6"},"schema":"echidna.coprocessor.result/1","status":"computed","trust":{"proof":false,"rank":3,"tier":"LibraryWrapped"}}
+----
+
+[cols="1,1,4",options="header"]
+|===
+| Field | Type | Meaning
+
+| `schema` | string | Always `echidna.coprocessor.result/1`.
+| `status` | string | `computed`, `declined`, `unavailable` or `error` (below).
+| `kind` | string or null | The requested kind. `null` when the request did not parse.
+| `op` | string or null | The op's variant name. `null` when the request did not parse.
+| `outcome` | object, string or null | The `CoprocessorOutcome` in its existing serde form (`{"BigInt":"6"}`, `"Empty"`, `{"Failure":"..."}`, ...). Present for `computed` and `declined`, otherwise `null`.
+| `message` | string | Human-readable diagnostic. Empty for `computed`. For `declined` it repeats the backend's reason.
+| `trust.tier` | string or null | The backend's `CoprocessorTrustTier` variant name. `null` when no backend was constructed.
+| `trust.rank` | integer or null | The tier's `u8` rank (1 to 5). `null` when no backend was constructed.
+| `trust.proof` | `false` | Always `false`. See the trust rule.
+| `deterministic` | boolean or null | The backend's `deterministic` capability. `null` when no backend was constructed.
+| `duration_ms` | integer | Wall-clock time of parsing, construction and dispatch, in milliseconds. Saturates at 2^53 - 1.
+| `echidna_version` | string | The version of the `echidna` binary that printed the object.
+|===
+
+=== Capabilities: `echidna.coprocessor.capabilities/1`
+
+[cols="1,1,4",options="header"]
+|===
+| Field | Type | Meaning
+
+| `schema` | string | Always `echidna.coprocessor.capabilities/1`.
+| `echidna_version` | string | As above.
+| `kinds` | array | One entry for every `CoprocessorKind` variant, sorted by kind name.
+| `kinds[].kind` | string | The kind's variant name.
+| `kinds[].exposed` | boolean | Whether contract version 1 exposes the kind (the allow-list below).
+| `kinds[].available` | boolean | The kind is exposed, this build has a backend for it, and its health is `Healthy`.
+| `kinds[].trust` | object or null | The same `trust` object as in a result. `null` when no backend was constructed.
+| `kinds[].deterministic` | boolean or null | The backend's `deterministic` capability, or `null`.
+| `kinds[].supported_ops` | array of strings | The backend's op names. Empty when the kind is not available.
+|===
+
+The capabilities command never constructs the backend of a kind that is
+not exposed.
+
+== Status mapping
+
+The vocabulary is closed. A new status needs a new schema identifier.
+
+[cols="1,4",options="header"]
+|===
+| `status` | When
+
+| `computed` | The backend returned an outcome other than `Failure`. `Empty` (no answer exists, for example a non-invertible modular inverse) is `computed`.
+| `declined` | The backend returned `Failure`. The input was well formed and the operation refused it. `message` carries the reason. Example: `VectorAdd` on vectors of different length.
+| `unavailable` | The kind is not exposed by contract version 1, the factory returned no backend, or the backend health is not `Healthy`.
+| `error` | The request is malformed, the op does not belong to the kind, dispatch returned an error (for example an integer string that does not parse), or the outcome cannot be written as I-JSON.
+|===
+
+== Exposed kinds
+
+Contract version 1 exposes only in-process kinds that start no external
+program and read no file. The allow-list is one constant,
+`EXPOSED_KINDS` in `src/rust/coprocessor_contract.rs`. It fails closed: a
+kind not on the list is `unavailable`, and its backend is never
+constructed.
+
+* Exposed: `Math`, `Vector`, `Tensor`, `Crypto`, `Dsp`, `Physics`, and
+  `FlintMath` only when the `flint` cargo feature is compiled in.
+* Not exposed: `Io`, `Graphics`, `Audio`, `Fpga`, `PariGp`, `Maxima`,
+  `Singular`, `Gap`, `Macaulay2`. Each answers `unavailable` with a message
+  that says the sandboxed runner of plan item 1.5 does not exist yet.
+
+== Numbers and bytes
+
+I-JSON has no NaN and no infinity. An outcome that holds a non-finite float
+(`Float`, `FloatVec` or `FloatMatrix`) is not written. The result is
+`error` with `outcome` null and a message that names the cause.
+
+Floats are written as JCS numbers, so `2.0` appears as `2`. Integers that
+can grow without bound (`BigInt`, `BigIntPair`, `Factors`) are decimal
+strings. `Vec<u8>` fields (the `Crypto` op inputs) keep their existing
+serde form: an array of numbers from 0 to 255.
+
+== Exit code
+
+`0` when `status` is `computed`, `1` otherwise. This follows the
+`echidna.prove.result/1` convention (`docs/PROVE-RESULT-CONTRACT.adoc`):
+0 only for the one positive status, 1 for every other status. Read
+`status` to tell the non-zero cases apart.
+
+[cols="1,1",options="header"]
+|===
+| `status` | Exit code
+
+| `computed` | 0
+| `declined` | 1
+| `unavailable` | 1
+| `error` | 1
+|===
+
+`capabilities` exits 0.
+
+== Consuming it
+
+Run the binary, read one line from stdout, and parse it as JSON. Check
+`schema` first. Treat `outcome` as a hint: confirm it with a prover or an
+exhaustive check before it raises any proof status. Do not read
+`trust.tier` as a proof grade: it ranks the backend's implementation, not
+the answer.
+
+== Versioning
+
+Adding a field is compatible: consumers must ignore unknown fields.
+Removing, renaming or retyping a field, adding a status value, or
+changing the meaning of an existing value needs a new schema identifier
+(`/2`). Exposing a further kind is additive and keeps `/1`.
+
+== Status of this feature
+
+* Implemented: `src/rust/coprocessor_contract.rs` (types and the
+  request-to-result function), `src/rust/cli/coprocessor.rs` (I/O and exit
+  codes).
+* Tested: a golden JCS line for `computed`; `declined`, `unavailable`
+  (`Io`), `error` for each malformed request, for an op of another kind and
+  for non-finite floats; the exact allow-list; `trust.proof` false in every
+  result (`coprocessor_contract` unit tests). End-to-end runs of the real
+  binary for every status, stdin and `--request FILE`, and `capabilities`
+  (`tests/coprocessor_output_json.rs`).
+* Not verified: no Creusot or Verus check has run on this module.
+* Deferred: the Julia router wiring, REST and gRPC routes, exposure of
+  the kinds outside the allow-list (among them the subprocess kinds and
+  `Io`) until the sandboxed runner exists, and any use of a coprocessor
+  answer in the trust pipeline.

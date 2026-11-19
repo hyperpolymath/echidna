@@ -9,19 +9,18 @@
 //! `CoprocessorCapabilities` is what a backend reports it can do, and
 //! `CoprocessorHealth` is its runtime liveness.
 //!
-//! The op set starts with the Math operations needed by the number-theory
-//! and algebraic-decision-procedure backends planned for Phases 2 and 3
-//! (FLINT, PARI/GP, GAP, QEPCAD-B, …).  Future variants for Physics, DSP,
-//! FPGA, Tensor, Vector, Crypto, Graphics, Audio, IO are added alongside
-//! their backend implementations in Phase 6 — never as stubs.
+//! The op set covers every implemented backend: Math, Vector, Tensor,
+//! Crypto, Physics, FLINT, DSP, IO, Graphics, Audio, FPGA, and the
+//! subprocess CAS backends (PARI/GP, Maxima, Singular, GAP, Macaulay2).
+//! A new op is added together with the backend that implements it, never
+//! as a stub.
 
 use serde::{Deserialize, Serialize};
 
 /// The kind of coprocessor a backend implements.
 ///
-/// Only variants with a fully-functional backend are present.  Phase 6A
-/// adds Vector / Tensor / Crypto / Physics; Phase 6B will add DSP / FPGA /
-/// Graphics / Audio / IO together with their implementations.
+/// Only variants with a fully-functional backend are present; every
+/// variant below has one (`FlintMath` only with `--features flint`).
 ///
 /// Discriminants are explicit and `#[repr(u8)]`: they are the FFI tags that
 /// `src/abi/Coprocessor/Foreign.idr` (`coprocessorKindToU8`) mirrors, and
@@ -56,7 +55,8 @@ pub enum CoprocessorKind {
     /// FLINT integer and polynomial algebra — the only CAS backend that links
     /// the library in-process rather than shelling out.  Requires
     /// `--features flint` and a system FLINT (LGPL-3) installation.
-    /// Enabled by `CoprocessorFactory::native`; absent without the feature.
+    /// Built by `CoprocessorFactory::native`, which returns `None` for it
+    /// without the feature.
     FlintMath = 5,
 
     /// Digital signal processing — FFT/IFFT, window functions.  Backed by
@@ -83,7 +83,7 @@ pub enum CoprocessorKind {
     /// expressed in Verilog / SystemVerilog.
     Fpga = 10,
 
-    // ── Phase 2b: subprocess CAS backends (ExternalSubprocess / Tier 1) ──
+    // ── Subprocess CAS backends (ExternalSubprocess / Tier 1) ──
     /// PARI/GP number theory — subprocess to `gp`.  Advanced factoring (ECM /
     /// GNFS), multiplicative order, next-prime queries.  PARI is the gold
     /// standard for algorithmic number theory.
