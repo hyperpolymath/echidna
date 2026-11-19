@@ -150,6 +150,10 @@ some other system publishes it.
   link:../PROOF-STATUS.adoc[`+docs/PROOF-STATUS.adoc+`] records Agda rows R4,
   R9, R10 and R11 as `+proven+` for the sources identified in
   link:2026-11-04-agda-meta-checker-receipt.json[the Agda receipt].
+  _Note 2026-11-17:_ that record no longer stands for R9 and R10. Owner ruling
+  2026-11-16 places their statements by property, and both rows are now
+  `+open+` (see the classification paragraph under R4 in
+  link:../PROOF-STATUS.adoc[`+docs/PROOF-STATUS.adoc+`]).
   That receipt identifies a base commit plus exact checked file digests;
   it does not certify an arbitrary later checkout or the operational Rust.
   Other obligation statuses remain governed by their individual ledger rows.
@@ -944,7 +948,9 @@ Three new modules, all inside the receipt above:
 
 === 10.4 What the proof grade did and did not move
 
-*Home-system leg:* R4, R9, R10, R11 are `+proven+`. *Independent legs:* R5
+*Home-system leg:* R4, R9, R10, R11 are `+proven+`. _(Note 2026-11-17: R9 and R10
+are `+open+` since owner ruling 2026-11-16 placed their statements by property;
+R4 keeps `+proven+` less `+Integrity+` and `+ClampTrust+`.)_ *Independent legs:* R5
 (Rocq + Lean) is untouched and `+open+`. So the corpus is still **Mathesis Grade
 3** — locally checked, untranslated — and this session did not move it, because
 nothing that establishes Grade 2i/2ii was performed. What moved is the policy
