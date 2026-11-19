@@ -182,8 +182,9 @@ shipped code. *Verus:* not started; no Verus specification or proof exists.
 solver in four ways (an `+Uninitialized+` status, a prover missing from the
 manifest, no checker configured, and a `+verify_all()+` error read as an empty
 report), and runs the integrity step after proving, not first.
-Row stays `+open+` until a Creusot or Verus run on shipped code yields a receipt
-with a commit hash.
+Row stays `+open+` until a Creusot run *and* a Verus run on shipped code each
+yield a receipt with a commit hash. Both are the default Rust toolset (§1.2); one
+leg can be dropped only by a recorded §4 exception, not by the other passing.
 
 *Trust kernel (2026-11-09).* `+compute_trust_level+` exists once, in
 `+crates/echidna-core-creusot+`; `+src/rust/verification/confidence.rs+`
@@ -289,19 +290,20 @@ re-title them; do not count them as evidence.
 |R3. Lean 4 legs: E4-L4 `+ConfidenceLattice.lean+`, E10
 `+ParetoMaximality.lean+` / `+ParetoStrongMaximality.lean+`, E11
 `+IntegrityVerification.lean+`, E13 `+PortfolioCompleteness.lean+`
-|`+open+` (the Lean build passes; the verifier placement is unresolved)
+|`+open+` (the Lean build passes; owner ruling 2026-11-16 splits it by property)
 |*Corrected 2026-11-09.* The 2026-05-18 record (all five failing) is stale.
 https://github.com/hyperpolymath/echidna/actions/runs/42624461538/job/129184535185[Lean 4 (verification)]
 builds all five with `+lake build+` on the pinned `+lean-toolchain+` (4.13.0),
 success, on commit `+a2a8643+` (tree identical to `+main+` `+2ab7574+`). A
 2026-11-09 audit run of `+#print axioms+` over 77 of the 79 theorems found only
 `+propext+`, `+Quot.sound+` and `+Classical.choice+` — no `+sorryAx+`.
-|*Placement is still open.* These statements are about ECHIDNA's own types
-(confidence lattice, Pareto order, integrity, portfolio), so §1 assigns them
-to Idris 2 (or Creusot/Verus on the Rust), not Lean. Calling them "§4
+|*Placement decided 2026-11-16 (split by property).* These statements are about
+ECHIDNA's own types (confidence lattice, Pareto order, integrity, portfolio), so
+§1 does not assign them to Lean. Calling them "§4
 exceptions" is not enough: no §4 exception record (reason, alternative
-considered) exists beside them. Owner call: write the §4 records, or move the
-statements to Idris 2. Being engineering proofs, they carry no PWG (§8.1).
+considered) exists beside them. Owner ruling 2026-11-16: each statement is
+placed by property (see the classification paragraph under R4), not moved
+wholesale. Being engineering proofs, they carry no PWG (§8.1).
 *Audit 2026-11-09.* What the models say about the code, for R1: `+ConfidenceLattice+` matched
 the pre-2026-11-09 trust rule branch for branch and now describes the old
 rule; `+IntegrityVerification+` PI-11 (`+solver_integrity_ok+` iff
@@ -343,7 +345,7 @@ here.
 
 |R4. Agda meta-checker: trust-level order, axiom safety, portfolio, dispatch,
 axiom-tracker completeness, integrity, clamp bounds, receipt/warrant (9 modules)
-|`+proven+`
+|`+proven+` (the modules other than `+Integrity+` and `+ClampTrust+`, which R9 and R10 carry as `+open+`)
 |First-party Agda in `+meta-checker/src/+`, type-checked with the §2.1
 canonical invocation.
 *Current receipt (exact commit):* the scheduled Agda Meta-Checker run
@@ -412,8 +414,26 @@ statement that holds for an arbitrary logic or order, such as E9 composition
 Creusot/Pearlite and Verus (R1). They are not restated in Idris 2: the strict
 §1 ruling that #477 applies retires Idris restatements of Rust behaviour
 (it removes `+TrustKernelMonotonicity.idr+`). Each Agda module retires once its
-Rust contracts carry a receipt. Until then these rows keep their `+proven+`
-token as statements about a model. They carry no PWG.
+Rust contracts carry a receipt. Until then R4 keeps its `+proven+` token, as
+statements about a model, for its modules other than `+Integrity+` and
+`+ClampTrust+`; R9 and R10 carry those two as `+open+`. That token attests
+only that the Agda kernel accepted these statements about a model; it is not
+evidence about the Rust. The design review below shows several of them prove
+less than their names say. Which statements carry forward, and to which home,
+is the per-statement placement; a statement placed `+retire+` counts for nothing
+beyond this Agda check. They carry no PWG.
+
+**Placement by property (owner ruling 2026-11-16).** An earlier ruling moved
+R3, R9 and R10 to Idris 2, which contradicted the paragraph above (Codex on
+#514). The owner resolved it: each statement goes where its property lives.
+A property of one shipped Rust function or type is proved on the Rust with
+Creusot/Pearlite and Verus. A fact about an interface, ABI or wire encoding
+goes to Idris 2. A statement that holds for any implementation stays Agda
+theory. A statement that proves nothing about the system (true by definition,
+an instance of `+cong+`, or a model of behaviour the Rust lacks) retires, with
+its successor named. This applies to R3, R4's engineering modules, R9, R10 and
+the Idris 2 verification corpus. The per-statement placement is recorded
+separately.
 
 **Design review of the statements (2026-11-09, at `+2ab7574+`, before #477
 replaced the trust kernel and retired `+TrustKernelMonotonicity.idr+`):** the kernel accepting a proof
@@ -444,7 +464,7 @@ by changing a token.
   `+clamp-idempotent+`.
 
 |R9. E11 solver-integrity soundness
-|`+proven+`
+|`+open+` (the Agda module checks; owner ruling 2026-11-16 splits it by property)
 |`+meta-checker/src/Echidna/Integrity.agda+`, inside the R4 receipt. States the
 obligation that had no Agda record: verification requires an initialised
 manifest; verification means the recorded digest was matched; a binary with
@@ -470,16 +490,19 @@ comparison, not a machine-checked discrepancy or refinement proof. The Rust
 implementation leg remains open under R1's Creusot obligation.
 
 |R10. ClampTrustBounds
-|`+proven+`
+|`+open+` (the Agda module checks; owner ruling 2026-11-16 splits it by property)
 |`+meta-checker/src/Echidna/ClampTrust.agda+`, inside the R4 receipt. Restates
 the four obligations of `+verification/proofs/idris2/ClampTrustBounds.idr+`
 (bounds, monotonicity, fixed points, and — added — idempotence, i.e. that the
 clamp lands on a real level rather than between two) over the trust-level type
 the gate actually checks.
 |This row establishes finite-order algebra in the Agda model. It does not
-validate the Idris2 file or its correspondence to runtime code. Existing
-Idris2 interface and engineering checks remain active under §1; their
-receipt status is R2. Monotonicity here is by step lemma plus transitivity,
+validate the Idris2 file or its correspondence to runtime code. The Idris 2
+file states bounds, monotonicity and fixed points of a `+Nat -> TrustLevel+`
+clamp, which the Rust does not have (R2 audit), so those statements are not
+evidence for the Rust `+clamp_trust+` and do not count under R2. Under the
+2026-11-16 split they retire, with the Rust `+clamp_trust+` contract below as
+their successor. Monotonicity here is by step lemma plus transitivity,
 rather than the Idris2 file's decision table.
 **Model and code differ:** the Rust has
 `+echidna_core_creusot::clamp_trust(level, min_level, max_level)+`
@@ -674,11 +697,17 @@ mean "ECHIDNA is verified" — it would mean one named obligation was discharged
 by one named tool with its boundary written down. Nothing here vouches for a
 prover backend's own soundness.
 
-The `+proven+` rows — R2, R4, R9, R10, R11 — each name the kernel, the
-receipt and the limit that qualify them (R2 the receipt-time escape-hatch
-audit, R4 the `+UnsupportedIndexedMatch+` caveat, R9 the digest-level scope).
-R3 stays `+open+`: its Lean build passes, but Lean is not the verifier §1
-assigns to those statements until the placement is decided. Only theory theorems are graded (§8.1): R11 is at
+The `+proven+` rows — R2, R4 (less `+Integrity+` and `+ClampTrust+`), R11 — each name the kernel, the receipt and the
+limit that qualify them (R2 the receipt-time escape-hatch audit, and the fresh
+receipt that `+NatLte+` totality still needs; R4 the
+`+UnsupportedIndexedMatch+` caveat). R9 and R10 are engineering properties of
+ECHIDNA's own types. Owner ruling 2026-11-16 places each of their statements by
+property (see the classification paragraph under R4), so their Agda checks do
+not carry `+proven+`. A row closes when each surviving statement has a receipt
+in its home; a statement placed `+retire+` closes through its recorded
+retirement and its named successor, never through a receipt.
+R3 stays `+open+`: its Lean build passes, but Lean is not a verifier §1
+assigns to those statements; the 2026-11-16 split gives each its home. Only theory theorems are graded (§8.1): R11 is at
 `+PWG-3+`; the engineering rows carry no PWG. Every *independent* leg is still
 `+open+`: R5 has never been attempted, which is why nothing here is above
 `+PWG-3+`. Proven in one kernel is exactly what `+PWG-3+` means, and neither fact
