@@ -364,6 +364,11 @@ pub fn parse_request(input: &str) -> Result<CoprocessorRequest, String> {
         None => return Err("missing key `schema`".into()),
     }
     let kind_v = map.get("kind").ok_or("missing key `kind`")?;
+    // The contract says `kind` is a string. serde would also read a unit
+    // variant from the object form (`{"Math":null}`), so refuse it here.
+    if !kind_v.is_string() {
+        return Err("`kind` must be a string".into());
+    }
     let kind: CoprocessorKind = serde_json::from_value(kind_v.clone())
         .map_err(|e| format!("unknown kind {kind_v}: {e}"))?;
     let op_v = map.get("op").ok_or("missing key `op`")?;
@@ -662,7 +667,12 @@ mod tests {
             request("Math", r#"{"BigIntGcd":{"a":"12"}}"#),
             request("Math", gcd).replacen('{', r#"{"extra":1,"#, 1),
             r#"{"schema":"echidna.coprocessor.request/1","kind":"Math"}"#.to_string(),
+            // `kind` must be a JSON string. serde also reads a unit variant
+            // from the object form, so the parser must refuse it itself.
+            request("Math", gcd).replace(r#""kind":"Math""#, r#""kind":{"Math":null}"#),
+            request("Math", gcd).replace(r#""kind":"Math""#, r#""kind":7"#),
         ];
+        assert!(cases[8].contains(r#""kind":{"Math":null}"#), "{}", cases[8]);
         for c in cases {
             let r = dispatch_request(&c).await;
             assert_eq!(r.status, CoprocessorStatus::Error, "{c}");
