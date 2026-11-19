@@ -1,0 +1,59 @@
+# SPDX-License-Identifier: MPL-2.0
+# SPDX-FileCopyrightText: 2026 Jonathan D.A. Jewell (hyperpolymath) <j.d.a.jewell@open.ac.uk>
+#
+# cargo-deny policy for the root workspace (Cargo.lock).
+#
+# The estate rust-ci reusable runs `cargo deny check advisories bans sources`
+# unconditionally and adds `licenses` only when this file exists, because
+# licence policy is owner-authored and the gate never invents one. This file
+# is that policy. Advisories need no configuration here: a RustSec advisory is
+# an error unless a reviewed `ignore` entry says otherwise, and none is set.
+#
+# fuzz/ is excluded from the workspace and has its own lockfile; it is audited
+# by scripts/ci/audit-dependencies.sh, not by this file.
+#
+# Run locally: cargo deny --all-features --locked check
+
+[graph]
+all-features = true
+
+[licenses]
+# Permissive licences found in the dependency graph at adoption. Copyleft is
+# deliberately absent. `r-efi` is `MIT OR Apache-2.0 OR LGPL-2.1-or-later`, so
+# it passes through its MIT arm without LGPL being allowed.
+allow = [
+    "Apache-2.0",
+    "Apache-2.0 WITH LLVM-exception",
+    "BSD-2-Clause",
+    "BSD-3-Clause",
+    "BSL-1.0",
+    "CC0-1.0",
+    # Owner to confirm: webpki-roots ships CA data under CDLA-Permissive-2.0.
+    "CDLA-Permissive-2.0",
+    "ISC",
+    "MIT",
+    "MIT-0",
+    # Project licence, and `colored` (a dependency).
+    "MPL-2.0",
+    "Unicode-3.0",
+    "Unlicense",
+    "Zlib",
+]
+confidence-threshold = 0.93
+
+[bans]
+# 11 duplicate crates at adoption (getrandom x3, syn, sha2, digest, ...), all
+# from upstream version skew. Warn so they stay visible; `deny` would need a
+# skip list that rots.
+multiple-versions = "warn"
+# Path dependencies between workspace members carry no version requirement.
+wildcards = "deny"
+allow-wildcard-paths = true
+
+[sources]
+# Every dependency resolves from crates.io today (no git or alternative
+# registry in Cargo.lock). Keep it that way.
+unknown-registry = "deny"
+unknown-git = "deny"
+allow-registry = ["https://github.com/rust-lang/crates.io-index"]
+allow-git = []

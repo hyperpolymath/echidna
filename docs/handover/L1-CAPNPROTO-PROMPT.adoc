@@ -52,7 +52,7 @@ wire-drift engine. See open-question #2 resolution below.
 * `+src/abi/CapnSchemas.idr+` — formal proofs that schema round-trip
 preserves meaning
 * Zero `+believe_me+` (per estate rule); constructive proofs only
-* Coordinate with `+src/abi/Types.idr+` / `+src/abi/Foreign.idr+`
+* Coordinate with `+src/abi/EchidnaABI/Types.idr+` / `+src/abi/EchidnaABI/Foreign.idr+`
 
 ==== Zig FFI bridge
 

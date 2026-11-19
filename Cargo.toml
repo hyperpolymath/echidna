@@ -105,14 +105,14 @@ rustfft = "6"
 # Provides the pure parse/analyse engine; provers/typed_wasm.rs is a thin
 # adapter that maps its `Analysis` onto echidna core types, and routes the
 # 39 *TypeChecker discipline variants through discipline-specific TypeInfo.
-typed-wasm = { path = "crates/typed_wasm" }
+typed-wasm = { path = "crates/typed_wasm", version = "0.1.0" }
 
 # Canonical Term / Goal / ProofState / Tactic / TypeInfo types.
 # Extracted so vcl-ut (and any other proof-exchange client) can share them
 # without pulling in the full echidna binary. The `core` and `types`
 # modules in this crate are re-exported from lib.rs so downstream
 # `use crate::core::*` / `use crate::types::*` paths keep working.
-echidna-core = { path = "crates/echidna-core" }
+echidna-core = { path = "crates/echidna-core", version = "0.2.0" }
 
 [features]
 default = []

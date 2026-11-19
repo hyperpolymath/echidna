@@ -17,8 +17,9 @@ recovery happens without losing the audit trail.
 
 The estate-level audit semantics (what each verb *means* and the
 minimum bar for "real contract vs template residue") are defined in
-`standards/contractiles/CANONICAL-TEMPLATES.adoc`. The normative
-per-file specification is `docs/CONTRACTILE-SPEC.adoc`. This README
+`1-formats/contractiles/CANONICAL-TEMPLATES.adoc` in
+`metadatastician/standards`. The normative per-file specification is
+`docs/CONTRACTILE-SPEC.adoc` in the same repository. This README
 documents the local realisation.
 
 == Layout — the trident shape
@@ -42,9 +43,14 @@ noun-form PascalCase in the A2ML declaration (e.g. `intend.ncl` +
 `Intentfile.a2ml`, `must.ncl` + `Mustfile.a2ml`).
 
 `_base.ncl` provides the shared `pedigree_schema`, `run_defaults`, and
-`probe_schema` that every runner merges into. `INDEX.a2ml` is the
-machine-readable registry of all verbs — consumers should read it
-rather than hard-coding the verb list.
+`probe_schema` that every runner merges into.
+
+There is no separate registry file. A verb is a directory here that
+holds a `<verb>.k9.ncl`; that component declares the verb's
+`semantics`, `tier`, `authority` and `paired_xfile`, so consumers
+discover verbs and read those facts from the k9 components. The former
+`INDEX.a2ml` registry repeated them, and its tiers had gone stale
+against the components; it was retired (A2ML is retired estate-wide).
 
 == Verbs (6 + k9 exception)
 

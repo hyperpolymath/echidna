@@ -9,9 +9,9 @@
 --   src/rust/coprocessor/mod.rs            (Coprocessor trait surface)
 --   src/ada/spark/coprocessor_safety.ads   (SPARK trust-tier invariant)
 --
--- Phase 0 declares the Math kind only.  Phase 6 backends (Physics, DSP,
--- FPGA, Tensor, Vector, Crypto, Graphics, Audio, IO) extend this module
--- alongside their Rust impls — never as stubs.
+-- It declares all sixteen kinds the Rust enum declares, with the same u8 tags
+-- (scripts/ci/check-coprocessor-tags.sh checks the two agree). A new kind is
+-- added here alongside its Rust impl, with the next tag — never as a stub.
 --
 -- NO believe-me anywhere. All safety is enforced by types.
 
@@ -90,7 +90,11 @@ encodeDecodeId PureFormal         = Refl
 ||| functional Rust + Idris2 implementation appear here.  Phase 6A added
 ||| Vector / Tensor / Crypto / Physics; Phase 6B adds Dsp / Io / Graphics /
 ||| Audio / Fpga.  FlintMath (Phase 2A) is feature-gated in Rust but the
-||| ABI surface is unconditional.
+||| ABI surface is unconditional.  Phase 2b adds the subprocess CAS
+||| backends PariGp / Maxima / Singular / Gap / Macaulay2. The order and the
+||| tags follow the declaration order of `CoprocessorKind` in
+||| `src/rust/coprocessor/types.rs`, whose explicit `#[repr(u8)]` discriminants
+||| equal these tags (scripts/ci/check-coprocessor-tags.sh).
 public export
 data CoprocessorKind : Type where
   Math      : CoprocessorKind  -- Phase 0  (num-bigint + num-integer)
@@ -104,6 +108,11 @@ data CoprocessorKind : Type where
   Graphics  : CoprocessorKind  -- Phase 6B (SVG rendering, no GPU)
   Audio     : CoprocessorKind  -- Phase 6B (PCM/WAV synthesis)
   Fpga      : CoprocessorKind  -- Phase 6B (yosys subprocess, Tier 1)
+  PariGp    : CoprocessorKind  -- Phase 2b (gp subprocess, Tier 1)
+  Maxima    : CoprocessorKind  -- Phase 2b (maxima subprocess, Tier 1)
+  Singular  : CoprocessorKind  -- Phase 2b (Singular subprocess, Tier 1)
+  Gap       : CoprocessorKind  -- Phase 2b (gap subprocess, Tier 1)
+  Macaulay2 : CoprocessorKind  -- Phase 2b (M2 subprocess, Tier 1)
 
 ||| Encoding to u8 — pinned for FFI stability.  Reordering is an ABI break.
 public export
@@ -119,6 +128,11 @@ coprocessorKindToU8 Io        = 7
 coprocessorKindToU8 Graphics  = 8
 coprocessorKindToU8 Audio     = 9
 coprocessorKindToU8 Fpga      = 10
+coprocessorKindToU8 PariGp    = 11
+coprocessorKindToU8 Maxima    = 12
+coprocessorKindToU8 Singular  = 13
+coprocessorKindToU8 Gap       = 14
+coprocessorKindToU8 Macaulay2 = 15
 
 public export
 coprocessorKindFromU8 : Bits8 -> Maybe CoprocessorKind
@@ -133,6 +147,11 @@ coprocessorKindFromU8 7  = Just Io
 coprocessorKindFromU8 8  = Just Graphics
 coprocessorKindFromU8 9  = Just Audio
 coprocessorKindFromU8 10 = Just Fpga
+coprocessorKindFromU8 11 = Just PariGp
+coprocessorKindFromU8 12 = Just Maxima
+coprocessorKindFromU8 13 = Just Singular
+coprocessorKindFromU8 14 = Just Gap
+coprocessorKindFromU8 15 = Just Macaulay2
 coprocessorKindFromU8 _  = Nothing
 
 ||| Round-trip on the kind discriminant.  Constructive — case-analysis
@@ -152,6 +171,11 @@ kindEncodeDecodeId Io        = Refl
 kindEncodeDecodeId Graphics  = Refl
 kindEncodeDecodeId Audio     = Refl
 kindEncodeDecodeId Fpga      = Refl
+kindEncodeDecodeId PariGp    = Refl
+kindEncodeDecodeId Maxima    = Refl
+kindEncodeDecodeId Singular  = Refl
+kindEncodeDecodeId Gap       = Refl
+kindEncodeDecodeId Macaulay2 = Refl
 
 --------------------------------------------------------------------------------
 -- Health
@@ -207,3 +231,8 @@ coprocessorHealthOf Io        = Healthy
 coprocessorHealthOf Graphics  = Healthy
 coprocessorHealthOf Audio     = Healthy
 coprocessorHealthOf Fpga      = Unhealthy  -- subprocess; runtime probe required
+coprocessorHealthOf PariGp    = Unhealthy  -- subprocess; runtime probe required
+coprocessorHealthOf Maxima    = Unhealthy  -- subprocess; runtime probe required
+coprocessorHealthOf Singular  = Unhealthy  -- subprocess; runtime probe required
+coprocessorHealthOf Gap       = Unhealthy  -- subprocess; runtime probe required
+coprocessorHealthOf Macaulay2 = Unhealthy  -- subprocess; runtime probe required

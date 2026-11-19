@@ -9,7 +9,7 @@
 // running in a BoJ server instance.
 //
 // Architecture:
-//   Idris2 ABI (BojForeign.idr) --> Zig FFI (boj.zig) --> C-ABI exports --> zig adapter (port 7700)
+//   Idris2 ABI (Boj/Foreign.idr) --> Zig FFI (boj.zig) --> C-ABI exports --> zig adapter (port 7700)
 //
 // The BoJ server itself lives at hyperpolymath/boj-server with its own ABI+FFI.
 // This module is the ECHIDNA-side client bridge.

@@ -22,82 +22,88 @@ use serde::{Deserialize, Serialize};
 /// Only variants with a fully-functional backend are present.  Phase 6A
 /// adds Vector / Tensor / Crypto / Physics; Phase 6B will add DSP / FPGA /
 /// Graphics / Audio / IO together with their implementations.
+///
+/// Discriminants are explicit and `#[repr(u8)]`: they are the FFI tags that
+/// `src/abi/Coprocessor/Foreign.idr` (`coprocessorKindToU8`) mirrors, and
+/// `scripts/ci/check-coprocessor-tags.sh` fails CI if the two disagree.
+/// Append new kinds with the next number; never renumber.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]
+#[repr(u8)]
 pub enum CoprocessorKind {
     /// Number theory, exact arithmetic, polynomial algebra over Q.
     /// Native Rust impl backed by `num-bigint` / `num-integer` / `num-rational`.
-    Math,
+    Math = 0,
 
     /// Dense vector arithmetic (auto-vectorised f64 loops).  Backs
     /// SIMD-batched ops for the GNN inference path and aggregate reasoning.
-    Vector,
+    Vector = 1,
 
     /// Dense tensor / matrix linear algebra via `nalgebra`.  Backs node-
     /// embedding aggregation, Pareto-frontier dominance computations, and
     /// the matrix kernels that cross-prover certificate exchange depends on.
-    Tensor,
+    Tensor = 2,
 
     /// Cryptographic primitives — hashing, signature verification.
     /// Pairs with the future EasyCrypt / Tamarin / ProVerif backends as
     /// the *computational* (vs symbolic) crypto surface.
-    Crypto,
+    Crypto = 3,
 
     /// Numerical integration of ODE / Hamiltonian systems.  Pairs with the
     /// future KeYmaera X backend as a sanity-check oracle for hybrid-system
     /// trajectories proven correct symbolically.
-    Physics,
+    Physics = 4,
 
     /// FLINT integer and polynomial algebra — the only CAS backend that links
     /// the library in-process rather than shelling out.  Requires
     /// `--features flint` and a system FLINT (LGPL-3) installation.
     /// Enabled by `CoprocessorFactory::native`; absent without the feature.
-    FlintMath,
+    FlintMath = 5,
 
     /// Digital signal processing — FFT/IFFT, window functions.  Backed by
     /// `rustfft`.  Pairs with the Tamarin / ProVerif backends for proofs
     /// about communication channels and signal-bearing protocols.
-    Dsp,
+    Dsp = 6,
 
     /// File and stream I/O.  Async via `tokio::fs`.  Backs proof-artifact
     /// handling — read a Coq .v file, hash it, line-count it.
-    Io,
+    Io = 7,
 
     /// 2-D graphics — emits SVG strings.  No GPU dependency.  Backs the
     /// proof-graph visualisation that the GNN-guided search consumes,
     /// and renders Pareto-frontier diagnostics.
-    Graphics,
+    Graphics = 8,
 
     /// Audio synthesis — generates PCM / WAV.  Backs the completion-chime
     /// machinery and any audio-signal proof obligations (rare but real
     /// for cyber-physical KeYmaera X targets that involve audible signals).
-    Audio,
+    Audio = 9,
 
     /// FPGA / hardware verification — subprocess to yosys.  Trust tier
     /// `ExternalSubprocess` (Tier 1).  Backs proofs about hardware modules
     /// expressed in Verilog / SystemVerilog.
-    Fpga,
+    Fpga = 10,
 
     // ── Phase 2b: subprocess CAS backends (ExternalSubprocess / Tier 1) ──
     /// PARI/GP number theory — subprocess to `gp`.  Advanced factoring (ECM /
     /// GNFS), multiplicative order, next-prime queries.  PARI is the gold
     /// standard for algorithmic number theory.
-    PariGp,
+    PariGp = 11,
 
     /// Maxima symbolic algebra — subprocess to `maxima`.  Simplification,
     /// polynomial factoring, symbolic differentiation.  Free CAS, GPL.
-    Maxima,
+    Maxima = 12,
 
     /// Singular polynomial algebra — subprocess to `Singular`.  Gröbner bases,
     /// ideal membership, Krull dimension over arbitrary fields.  GPL.
-    Singular,
+    Singular = 13,
 
     /// GAP group theory — subprocess to `gap`.  Permutation group order,
     /// abelianness test, symmetric group order.  GPL.
-    Gap,
+    Gap = 14,
 
     /// Macaulay2 algebraic geometry — subprocess to `M2`.  Gröbner bases,
     /// Krull dimension, degree of quotient rings over QQ.  GPL.
-    Macaulay2,
+    Macaulay2 = 15,
 }
 
 /// A request dispatched to a coprocessor.
