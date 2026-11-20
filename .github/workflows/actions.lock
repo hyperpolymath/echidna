@@ -60,7 +60,7 @@ workflows:
         - 'actions/checkout@v7.0.1'
         - 'dtolnay/rust-toolchain@v1'
         - 'swatinem/rust-cache@v2.9.3'
-        - 'taiki-e/install-action@v2.90.3'
+        - 'taiki-e/install-action@v2.90.5'
     '.github/workflows/pages.yml':
         - 'actions/checkout@v7.0.1'
         - 'actions/deploy-pages@v5.0.1'
@@ -76,7 +76,7 @@ workflows:
         - 'actions/checkout@v7.0.1'
         - 'dtolnay/rust-toolchain@v1'
         - 'swatinem/rust-cache@v2.9.3'
-        - 'taiki-e/install-action@v2.90.3'
+        - 'taiki-e/install-action@v2.90.5'
     '.github/workflows/scorecard.yml':
         - 'metadatastician/standards@d3e4b485a2af90c92a8e18af0888cd19cb132cd9'
     '.github/workflows/secret-scanner.yml':
@@ -311,9 +311,9 @@ dependencies:
         commit: 'sha1-d1527c8f67ef9af357290475d4af4b0fab8f12e0'
         owner_id: 580492
         repo_id: 298565987
-    'taiki-e/install-action@v2.90.3':
-        ref: 'v2.90.3'
-        commit: 'sha1-cfdb7ed4ccc7c7dce37759eae89dc5674b469b39'
+    'taiki-e/install-action@v2.90.5':
+        ref: 'v2.90.5'
+        commit: 'sha1-ab49d3c64680143e184118bed66a46419fc15519'
         owner_id: 43724913
         repo_id: 442947557
     'webfactory/ssh-agent@e83874834305fe9a4a2997156cb26c5de65a8555':
