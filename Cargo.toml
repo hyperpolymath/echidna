@@ -4,6 +4,7 @@
 name = "echidna"
 version = "2.3.0"
 edition = "2021"
+rust-version = "1.89"
 authors = ["Jonathan D.A. Jewell <j.d.a.jewell@open.ac.uk>"]
 license = "MPL-2.0"
 description = "Neurosymbolic theorem proving platform with multi-prover support"
