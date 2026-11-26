@@ -18,7 +18,7 @@ Close every open PR in echidna and panic-attack, swap CI/CD for the reusable
 |===
 |Sweep |Scope |State
 
-|1 |unit, smoke, build, P2P |waiting on the shared test pack
+|1 |unit, smoke, build, P2P |echidna PR 531 (draft); panic-attack next
 |2 |rest of C: regression, proof-regression, type-safe, coupling/drift |waits for the hub's go
 |3 |B grade |not started
 |4 |all 18 categories plus extras; pipeline-tail benches |not started
@@ -35,9 +35,9 @@ Close every open PR in echidna and panic-attack, swap CI/CD for the reusable
 |echidna 518 |per-statement placement ledger |Hypatia finding fixed at source
 |echidna 523 |rustdoc warnings |rerun cancelled check once
 |echidna 524 |coprocessor contract and CLI |main merged in; rerun checks
-|echidna 526 |actions group bump |blocked by chrono unmaintained advisory (see below)
-|echidna 527 |upstream pin bump |superseded by the umbrella workflow once it lands
-|panic-attack 306, 307, 310, 311 |test oracle, deps, actions, mise |not yet looked at
+|echidna 526 |actions group bump |dependabot rebase asked; unblocked once 532 merges
+|echidna 527 |upstream pin bump |resolve as superseded at the swap
+|panic-attack 306, 307, 310, 311 |test oracle, deps, actions, mise |307 clippy fixed, 307/310 rebase asked; 306 and 311 wait on the gate
 |===
 
 == Waiting on
@@ -48,5 +48,11 @@ Close every open PR in echidna and panic-attack, swap CI/CD for the reusable
 
 == Later list
 
-* Replace unmaintained `chrono` (RUSTSEC-2026-0543) with `time` or `jiff`; it fails the bridge gate on dependency bumps.
+* Chrono replacement is echidna PR 532 (not later any more).
 * Proof witnesses, full `--cubical`, B-grade work, blocked or flaky items.
+
+== Gate status
+
+Umbrella workflow is in draft upstream (one required check `proven / verdict`, caller job id `proven`,
+manifest `.proven.toml`). The tag and pin follow its merge; the swap PRs then add the caller. echidna's
+llvm-cov, rustdoc and proof-safety needs come in the umbrella's next version.
