@@ -77,20 +77,6 @@ jobs:
           repository: ${{ github.repository }}
           ref: ${{ github.ref }}
 
-      - name: Lexicon v2 contract (Nickel)
-        # data/synonyms/schema.ncl applied to every shipped table, plus the
-        # accept/reject fixtures that prove the contract still bites.
-        # Nickel is a pinned release binary checked by SHA-256 (no action, so
-        # no actions.lock record). Bump both lines together.
-        env:
-          NICKEL_VERSION: 1.12.2
-          NICKEL_SHA256: dae58ae8a96bbcacf141d61a5f93a971c89341f9d7164f763aa170459336ea46
-        run: |
-          curl -sSfL -o "$RUNNER_TEMP/nickel" "https://github.com/tweag/nickel/releases/download/${NICKEL_VERSION}/nickel-x86_64-linux"
-          echo "${NICKEL_SHA256}  $RUNNER_TEMP/nickel" | sha256sum -c -
-          chmod +x "$RUNNER_TEMP/nickel"
-          NICKEL="$RUNNER_TEMP/nickel" scripts/lexicon-check.sh
-
       - name: Install Rust toolchain
         # `toolchain:` is mandatory because the ref is `@v1` (pinned to a commit
         # through actions.lock), not a toolchain name:
@@ -126,6 +112,35 @@ jobs:
 
       - name: Cargo clippy
         run: cargo clippy --locked --workspace --all-targets -- -D warnings
+
+  lexicon:
+    timeout-minutes: 10
+    name: Lexicon v2 contract (Nickel)
+    runs-on: ubuntu-latest
+    needs: detect
+    if: ${{ needs.detect.outputs.has_cargo == 'true' }}
+    permissions:
+      contents: read
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v7.0.1
+        with:
+          repository: ${{ github.repository }}
+          ref: ${{ github.ref }}
+
+      - name: Lexicon v2 contract (Nickel)
+        # data/synonyms/schema.ncl applied to every shipped table, plus the
+        # accept/reject fixtures that prove the contract still bites.
+        # Nickel is a pinned release binary checked by SHA-256 (no action, so
+        # no actions.lock record). Bump both lines together.
+        env:
+          NICKEL_VERSION: 1.12.2
+          NICKEL_SHA256: dae58ae8a96bbcacf141d61a5f93a971c89341f9d7164f763aa170459336ea46
+        run: |
+          curl -sSfL -o "$RUNNER_TEMP/nickel" "https://github.com/tweag/nickel/releases/download/${NICKEL_VERSION}/nickel-x86_64-linux"
+          echo "${NICKEL_SHA256}  $RUNNER_TEMP/nickel" | sha256sum -c -
+          chmod +x "$RUNNER_TEMP/nickel"
+          NICKEL="$RUNNER_TEMP/nickel" scripts/lexicon-check.sh
 
   test:
     timeout-minutes: 30
@@ -278,7 +293,7 @@ jobs:
     timeout-minutes: 5
     name: CI/gate
     runs-on: ubuntu-latest
-    needs: [detect, check, test, audit, coverage]
+    needs: [detect, check, test, audit, coverage, lexicon]
     if: always()
     permissions: {}
     steps:
@@ -293,7 +308,7 @@ jobs:
             exit 1
           fi
           failed=0
-          for job in detect check test audit coverage; do
+          for job in detect check test audit coverage lexicon; do
             result=$(jq -r --arg job "$job" '.[$job].result // "missing"' <<< "$NEEDS_JSON")
             if [ "$result" != success ]; then
               echo "::error::$job did not succeed (result: $result)"
@@ -301,4 +316,4 @@ jobs:
             fi
           done
           [ "$failed" = 0 ] || exit 1
-          echo "CI/gate passed: detect, check, test, audit and coverage all succeeded."
+          echo "CI/gate passed: detect, check, test, audit, coverage and lexicon all succeeded."
