@@ -1,0 +1,8 @@
+# SPDX-License-Identifier: CC-BY-SA-4.0
+# Coverage manifest for the proven umbrella (kit/check-coverage.sh). Sweep 1 only: ids not listed are not yet swept.
+# id	status	language	ref
+UT	covered	rust	src/rust/dispatch.rs
+UT	covered	rust	tests/sanity_suite.rs
+P2P	covered	rust	tests/p2p_property_tests.rs
+SMK	covered	rust	tests/proven_smoke.rs
+BLD	covered	rust	tests/proven_build.rs
