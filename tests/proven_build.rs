@@ -1,6 +1,8 @@
 // SPDX-License-Identifier: MPL-2.0
 //! BLD (taxonomy category 4): the `echidna` binary artefact exists and is
-//! non-empty, and the workspace resolves from the committed lockfile. The
+//! non-empty, and the committed lockfile is current (`cargo update --locked`
+//! fails if it would change, and unlike full metadata resolution it needs no
+//! registry download). The
 //! warnings-denied clean build and its timing run in CI through
 //! `kit/lib/build-check.sh` (the cheap form here must not rebuild the tree).
 use std::path::Path;
@@ -16,18 +18,29 @@ fn the_binary_artifact_exists_and_is_nonempty() {
 #[test]
 fn the_lockfile_resolves_without_network() {
     let out = Command::new(env!("CARGO"))
-        .args(["metadata", "--locked", "--offline", "--format-version", "1", "--no-deps"])
+        .args(["update", "--workspace", "--locked", "--offline"])
         .current_dir(env!("CARGO_MANIFEST_DIR"))
         .output()
         .expect("spawn cargo");
-    assert!(out.status.success(), "{}", String::from_utf8_lossy(&out.stderr));
+    assert!(
+        out.status.success(),
+        "{}",
+        String::from_utf8_lossy(&out.stderr)
+    );
 }
 
 // Negative control: a lockfile check must be able to fail.
 #[test]
 fn a_bogus_manifest_path_is_rejected() {
     let out = Command::new(env!("CARGO"))
-        .args(["metadata", "--locked", "--offline", "--manifest-path", "/nonexistent/Cargo.toml"])
+        .args([
+            "update",
+            "--workspace",
+            "--locked",
+            "--offline",
+            "--manifest-path",
+            "/nonexistent/Cargo.toml",
+        ])
         .output()
         .expect("spawn cargo");
     assert!(!out.status.success());

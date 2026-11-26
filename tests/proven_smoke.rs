@@ -33,17 +33,25 @@ fn help_lists_the_core_subcommands() {
 #[test]
 fn list_provers_answers_with_at_least_one_backend() {
     let out = bin().arg("list-provers").output().expect("spawn echidna");
-    assert!(out.status.success(), "stderr: {}", String::from_utf8_lossy(&out.stderr));
     assert!(
-        out.stdout.iter().any(|b| !b.is_ascii_whitespace()),
-        "list-provers printed nothing"
+        out.status.success(),
+        "stderr: {}",
+        String::from_utf8_lossy(&out.stderr)
+    );
+    let stdout = String::from_utf8_lossy(&out.stdout);
+    assert!(
+        stdout.lines().any(|l| l.contains(" - Tier ")),
+        "list-provers listed no backend:\n{stdout}"
     );
 }
 
 // Negative controls: a smoke test that cannot fail proves nothing.
 #[test]
 fn unknown_subcommand_exits_nonzero() {
-    let out = bin().arg("no-such-subcommand").output().expect("spawn echidna");
+    let out = bin()
+        .arg("no-such-subcommand")
+        .output()
+        .expect("spawn echidna");
     assert!(!out.status.success());
 }
 
@@ -54,4 +62,9 @@ fn proving_a_missing_file_exits_nonzero() {
         .output()
         .expect("spawn echidna");
     assert!(!out.status.success());
+    let stderr = String::from_utf8_lossy(&out.stderr);
+    assert!(
+        stderr.contains("Failed to parse proof file"),
+        "expected the missing-file error, got:\n{stderr}"
+    );
 }
