@@ -109,11 +109,10 @@ async fn emit_live_result(kind: ProverKind, exe: &str, version: Option<&str>, el
         confidence: if version.is_some() { 1.0 } else { 0.0 },
         parent_attempt_id: None,
         strategy_tag: "live_version_check".to_string(),
-        started_at: chrono::Utc::now()
-            .checked_sub_signed(chrono::Duration::milliseconds(elapsed_ms as i64))
-            .unwrap_or_else(chrono::Utc::now)
-            .to_rfc3339(),
-        completed_at: chrono::Utc::now().to_rfc3339(),
+        started_at: echidna::clock::to_rfc3339(
+            echidna::clock::now() - time::Duration::milliseconds(elapsed_ms as i64),
+        ),
+        completed_at: echidna::clock::now_rfc3339(),
         prover_output: version.unwrap_or("").to_string(),
         error_message: error_msg,
     };

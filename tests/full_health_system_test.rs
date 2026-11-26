@@ -213,7 +213,7 @@ mod full_health_system_tests {
                     name: format!("Prover{}", i),
                     is_available: true,
                     circuit_breaker_state: CircuitBreakerStateSnapshot::Closed,
-                    last_successful_proof: Some(chrono::Utc::now()),
+                    last_successful_proof: Some(echidna::clock::now()),
                     consecutive_failures: 0,
                     avg_latency_ms: 40.0,
                     success_rate: 0.98,

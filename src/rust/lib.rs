@@ -9,6 +9,7 @@
 pub mod agent;
 pub mod anomaly_detection;
 pub mod aspect;
+pub mod clock; // The single wall-clock module (UTC now, RFC 3339, Unix seconds)
 pub mod coprocessor; // Math/Physics/DSP/FPGA/Tensor/Vector/Crypto/Graphics/Audio/IO compute (Phase 0: Math)
 pub mod corpus; // Project-corpus indexer (named decls + dependency DAG; first adapter: Agda)
                 // `core` and `types` live in the `echidna-core` crate so vcl-ut and other

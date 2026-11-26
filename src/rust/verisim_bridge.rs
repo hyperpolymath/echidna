@@ -36,7 +36,6 @@
 //! (CI gate planned, see schema doc "Drift detection" section).
 
 use anyhow::{Context, Result};
-use chrono::Utc;
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use tracing::{debug, warn};
@@ -375,8 +374,8 @@ impl ProofOctadBuilder {
 
     /// Build the octad payload.
     pub fn build(self) -> Result<OctadPayload> {
-        let now = Utc::now();
-        let timestamp = now.to_rfc3339();
+        let now = crate::clock::now();
+        let timestamp = crate::clock::to_rfc3339(now);
 
         // Generate identities
         let octad_key = proof_encoding::proof_identity(&self.theorem_name, &self.goal, self.prover);

@@ -67,7 +67,8 @@ pub struct SolverIntegrityReport {
     /// Expected hash from manifest
     pub expected_shake3_512: Option<String>,
     /// Timestamp of last check
-    pub last_checked: chrono::DateTime<chrono::Utc>,
+    #[serde(with = "time::serde::rfc3339")]
+    pub last_checked: time::OffsetDateTime,
 }
 
 /// Integrity checker for solver binaries
@@ -214,7 +215,7 @@ impl IntegrityChecker {
         name: &str,
         entry: &SolverManifestEntry,
     ) -> SolverIntegrityReport {
-        let now = chrono::Utc::now();
+        let now = crate::clock::now();
 
         // Find the binary
         let actual_path = match Self::find_solver_binary(entry) {

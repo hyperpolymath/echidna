@@ -402,7 +402,7 @@ pub(crate) fn corpus_command(op: CorpusOp, formatter: &OutputFormatter) -> Resul
         CorpusOp::ExportOctads { index, out } => {
             let corpus = Corpus::load_json(&index)
                 .with_context(|| format!("load corpus index {}", index.display()))?;
-            let timestamp = chrono::Utc::now().to_rfc3339();
+            let timestamp = echidna::clock::now_rfc3339();
             corpus.save_octads_jsonl(&out, &timestamp)?;
             formatter.info(&format!(
                 "exported {} octad(s) → {}",

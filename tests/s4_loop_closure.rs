@@ -36,7 +36,7 @@ use echidna::verisim_bridge::{prover_kind_to_str, ProofAttempt, VeriSimDBClient}
 /// Build a minimal `ProofAttempt` row with a unique obligation_id so each
 /// test run is independent (no collisions with prior runs in the table).
 fn fresh_attempt(obligation_class: &str, prover: ProverKind, outcome: &str) -> ProofAttempt {
-    let now = chrono::Utc::now();
+    let now = echidna::clock::now();
     ProofAttempt {
         attempt_id: echidna::ids::new_record_id().to_string(),
         // Tag the obligation_id with the test name so we can find our own
@@ -52,8 +52,8 @@ fn fresh_attempt(obligation_class: &str, prover: ProverKind, outcome: &str) -> P
         confidence: if outcome == "success" { 1.0 } else { 0.0 },
         parent_attempt_id: None,
         strategy_tag: "test".to_string(),
-        started_at: now.to_rfc3339(),
-        completed_at: now.to_rfc3339(),
+        started_at: echidna::clock::to_rfc3339(now),
+        completed_at: echidna::clock::to_rfc3339(now),
         prover_output: String::new(),
         error_message: None,
     }
