@@ -1,11 +1,11 @@
 // SPDX-License-Identifier: MPL-2.0
 // Monitor corpus health: proofs, premises, size metrics
 
-use time::OffsetDateTime;
 use serde::{Deserialize, Serialize};
 use std::fs;
 use std::path::Path;
 use std::sync::{Arc, Mutex};
+use time::OffsetDateTime;
 
 /// Snapshot of corpus metrics at a point in time
 #[derive(Debug, Clone, Serialize, Deserialize)]

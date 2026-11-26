@@ -1,9 +1,9 @@
 // SPDX-License-Identifier: MPL-2.0
 // Health status monitoring for echidna services
 
-use time::OffsetDateTime;
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
+use time::OffsetDateTime;
 
 use super::fallback_monitor::FallbackMonitor;
 use super::nesy_validation::NeSyMetrics;

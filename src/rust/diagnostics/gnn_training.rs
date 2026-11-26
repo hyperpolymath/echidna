@@ -1,10 +1,10 @@
 // SPDX-License-Identifier: MPL-2.0
 // GNN model training integration with health monitoring
 
-use time::format_description::well_known::Rfc3339;
-use time::{OffsetDateTime, UtcOffset};
 use serde::{Deserialize, Serialize};
 use std::path::Path;
+use time::format_description::well_known::Rfc3339;
+use time::{OffsetDateTime, UtcOffset};
 
 /// Metrics exported from GNN training pipeline.
 //
