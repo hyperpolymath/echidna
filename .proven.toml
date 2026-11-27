@@ -6,6 +6,13 @@ schema = "proven/manifest/v1"
 
 # The Rust suite carries sweep 1. These are the repo's own tests (tests/proven_*.rs,
 # tests/p2p_property_tests.rs), mapped in .proven/coverage.tsv.
+
+# UT: the library unit tests, the same command as `just test`. Spelled out here
+# because the umbrella runner image has no `just` (the job failed with
+# "just: command not found").
+[categories.unit.rust]
+command = "cargo test --locked --lib"
+
 [categories.smoke.rust]
 command = "cargo test --test proven_smoke"
 
