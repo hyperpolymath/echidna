@@ -1,9 +1,9 @@
 // SPDX-License-Identifier: MPL-2.0
 // Health status monitoring for echidna services
 
-use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
+use time::OffsetDateTime;
 
 use super::fallback_monitor::FallbackMonitor;
 use super::nesy_validation::NeSyMetrics;
@@ -12,7 +12,8 @@ use crate::fault_tolerance::CircuitState;
 /// Overall system health status
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct HealthStatus {
-    pub timestamp: DateTime<Utc>,
+    #[serde(with = "time::serde::rfc3339")]
+    pub timestamp: OffsetDateTime,
     pub prover_health: HashMap<String, ProverHealth>,
     pub gnn_model_health: ModelHealth,
     pub corpus_health: CorpusHealth,
@@ -25,7 +26,8 @@ pub struct ProverHealth {
     pub name: String,
     pub is_available: bool,
     pub circuit_breaker_state: CircuitBreakerStateSnapshot,
-    pub last_successful_proof: Option<DateTime<Utc>>,
+    #[serde(default, with = "time::serde::rfc3339::option")]
+    pub last_successful_proof: Option<OffsetDateTime>,
     pub consecutive_failures: usize,
     pub avg_latency_ms: f64,
     pub success_rate: f64, // 0.0 to 1.0
@@ -62,7 +64,8 @@ impl From<CircuitState> for CircuitBreakerStateSnapshot {
 pub struct ModelHealth {
     pub is_loaded: bool,
     pub model_checksum: Option<String>,
-    pub last_trained: Option<DateTime<Utc>>,
+    #[serde(default, with = "time::serde::rfc3339::option")]
+    pub last_trained: Option<OffsetDateTime>,
     pub last_validation_nDCG: f32,
     pub last_validation_MRR: f32,
     pub nDCG_meets_threshold: bool,
@@ -84,7 +87,8 @@ pub struct ModelHealth {
 pub struct CorpusHealth {
     pub total_proofs: usize,
     pub total_premises: usize,
-    pub last_updated: Option<DateTime<Utc>>,
+    #[serde(default, with = "time::serde::rfc3339::option")]
+    pub last_updated: Option<OffsetDateTime>,
     pub size_mb: f64,
     pub size_change_percent: f64, // % change since last check
 }
@@ -107,7 +111,7 @@ pub enum DegradationMode {
 impl HealthStatus {
     pub fn new() -> Self {
         HealthStatus {
-            timestamp: Utc::now(),
+            timestamp: crate::clock::now(),
             prover_health: HashMap::new(),
             gnn_model_health: ModelHealth {
                 is_loaded: false,

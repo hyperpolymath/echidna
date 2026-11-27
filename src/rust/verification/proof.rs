@@ -31,7 +31,6 @@
 //! working while downstream consumers start reading the new FK-structured
 //! tables.
 
-use chrono::Utc;
 use serde::{Deserialize, Serialize};
 use sha2::{Digest, Sha256};
 
@@ -95,7 +94,7 @@ impl Proof {
             theorem_hash: theorem_identity(theorem_name),
             theorem_name: theorem_name.to_string(),
             prover,
-            first_seen: Utc::now().to_rfc3339(),
+            first_seen: crate::clock::now_rfc3339(),
         }
     }
 }
@@ -162,7 +161,7 @@ impl TacticApplication {
             status,
             goals_after,
             duration_ms,
-            applied_at: Utc::now().to_rfc3339(),
+            applied_at: crate::clock::now_rfc3339(),
         }
     }
 }
@@ -198,7 +197,7 @@ pub struct ProofVersion {
 impl ProofVersion {
     /// Initial snapshot (`version = 0`) of a newly-created proof.
     pub fn initial(proof: &Proof, state: &ProofState, actor: &str) -> Self {
-        let ts = Utc::now().timestamp();
+        let ts = crate::clock::unix_now();
         let seed = format!("{}:v0", proof.id);
         ProofVersion {
             proof_id: proof.id.clone(),
@@ -207,7 +206,7 @@ impl ProofVersion {
             goals_remaining: state.goals.len() as u32,
             is_qed: state.is_complete(),
             actor: actor.to_string(),
-            recorded_at: Utc::now().to_rfc3339(),
+            recorded_at: crate::clock::now_rfc3339(),
         }
     }
 
@@ -215,7 +214,7 @@ impl ProofVersion {
     /// counter.  Passing a stale `prev` will produce a correctly-chained
     /// `version + 1` regardless of real-world timing drift.
     pub fn next(prev: &ProofVersion, state: &ProofState, actor: &str) -> Self {
-        let ts = Utc::now().timestamp();
+        let ts = crate::clock::unix_now();
         let next_version = prev.version + 1;
         let seed = format!("{}:v{}", prev.proof_id, next_version);
         ProofVersion {
@@ -225,7 +224,7 @@ impl ProofVersion {
             goals_remaining: state.goals.len() as u32,
             is_qed: state.is_complete(),
             actor: actor.to_string(),
-            recorded_at: Utc::now().to_rfc3339(),
+            recorded_at: crate::clock::now_rfc3339(),
         }
     }
 }

@@ -7,7 +7,6 @@
 //! axiom scan -> confidence scoring.
 
 use anyhow::{anyhow, Context, Result};
-use chrono::Utc;
 use serde::{Deserialize, Serialize};
 #[cfg(feature = "verisim")]
 use std::collections::HashMap;
@@ -435,7 +434,7 @@ impl ProverDispatcher {
         match outcome {
             ProverOutcome::Proved { .. } => {
                 entry.consecutive_failures = 0;
-                entry.last_successful_proof = Some(Utc::now());
+                entry.last_successful_proof = Some(crate::clock::now());
                 entry.is_available = true;
                 entry.success_rate = (entry.success_rate * 0.9) + (1.0 * 0.1);
             },
@@ -1158,7 +1157,7 @@ fn build_proof_attempt(
 ) -> crate::verisim_bridge::ProofAttempt {
     use crate::verisim_bridge::{prover_kind_to_str, ProofAttempt};
 
-    let now = chrono::Utc::now();
+    let now = crate::clock::now();
     let obligation_id = goal
         .map(|g| crate::proof_encoding::goal_identity("dispatch", g))
         .unwrap_or_else(|| "unknown".to_string());
@@ -1177,7 +1176,7 @@ fn build_proof_attempt(
     } else {
         0.0
     };
-    let started_at = now - chrono::Duration::milliseconds(duration_ms as i64);
+    let started_at = now - time::Duration::milliseconds(duration_ms as i64);
 
     ProofAttempt {
         attempt_id: crate::ids::new_record_id().to_string(),
@@ -1192,8 +1191,8 @@ fn build_proof_attempt(
         confidence,
         parent_attempt_id: None,
         strategy_tag: "dispatch".to_string(),
-        started_at: started_at.to_rfc3339(),
-        completed_at: now.to_rfc3339(),
+        started_at: crate::clock::to_rfc3339(started_at),
+        completed_at: crate::clock::to_rfc3339(now),
         prover_output: String::new(),
         error_message: None,
     }

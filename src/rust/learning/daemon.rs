@@ -178,7 +178,7 @@ impl Daemon {
                 .iter()
                 .map(|t| format!("{:?}", t))
                 .collect(),
-            ts: chrono::Utc::now().to_rfc3339(),
+            ts: crate::clock::now_rfc3339(),
             rationale: &variant.rationale,
         };
         let url = format!(

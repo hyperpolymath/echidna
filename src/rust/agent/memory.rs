@@ -142,7 +142,7 @@ impl ProofMemory for SqliteMemory {
             proof: proof.clone(),
             prover,
             time_ms,
-            timestamp: chrono::Utc::now().timestamp(),
+            timestamp: crate::clock::unix_now(),
             aspects: goal.aspects.clone(),
         };
 
@@ -158,7 +158,7 @@ impl ProofMemory for SqliteMemory {
             goal_id: goal.goal.id.clone(),
             prover: goal.preferred_prover,
             reason,
-            timestamp: chrono::Utc::now().timestamp(),
+            timestamp: crate::clock::unix_now(),
             aspects: goal.aspects.clone(),
         };
 
@@ -344,7 +344,7 @@ impl ProofMemory for VeriSimDBProofStore {
             proof: proof.clone(),
             prover,
             time_ms,
-            timestamp: chrono::Utc::now().timestamp(),
+            timestamp: crate::clock::unix_now(),
             aspects: goal.aspects.clone(),
         };
 
@@ -392,7 +392,7 @@ impl ProofMemory for VeriSimDBProofStore {
             goal_id: goal.goal.id.clone(),
             prover: goal.preferred_prover,
             reason: reason.clone(),
-            timestamp: chrono::Utc::now().timestamp(),
+            timestamp: crate::clock::unix_now(),
             aspects: goal.aspects.clone(),
         };
 

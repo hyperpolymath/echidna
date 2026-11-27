@@ -1,11 +1,11 @@
 // SPDX-License-Identifier: MPL-2.0
 // Monitor corpus health: proofs, premises, size metrics
 
-use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
 use std::fs;
 use std::path::Path;
 use std::sync::{Arc, Mutex};
+use time::OffsetDateTime;
 
 /// Snapshot of corpus metrics at a point in time
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -19,7 +19,8 @@ pub struct CorpusMetrics {
     /// Percentage change since last check
     pub size_change_percent: f64,
     /// Timestamp of last update
-    pub last_updated: DateTime<Utc>,
+    #[serde(with = "time::serde::rfc3339")]
+    pub last_updated: OffsetDateTime,
 }
 
 impl Default for CorpusMetrics {
@@ -29,7 +30,7 @@ impl Default for CorpusMetrics {
             total_premises: 0,
             size_mb: 0.0,
             size_change_percent: 0.0,
-            last_updated: Utc::now(),
+            last_updated: crate::clock::now(),
         }
     }
 }
@@ -118,7 +119,7 @@ impl CorpusMonitor {
             total_premises,
             size_mb,
             size_change_percent,
-            last_updated: Utc::now(),
+            last_updated: crate::clock::now(),
         };
 
         // Update internal state
@@ -146,7 +147,7 @@ impl CorpusMonitor {
         if let Ok(mut metrics) = self.current.lock() {
             metrics.total_proofs += 1;
             metrics.total_premises += premise_count;
-            metrics.last_updated = Utc::now();
+            metrics.last_updated = crate::clock::now();
         }
     }
 
@@ -158,7 +159,7 @@ impl CorpusMonitor {
             if prev_size > 0.0 {
                 metrics.size_change_percent = ((size_mb - prev_size) / prev_size) * 100.0;
             }
-            metrics.last_updated = Utc::now();
+            metrics.last_updated = crate::clock::now();
         }
     }
 
@@ -269,10 +270,10 @@ mod tests {
         monitor.add_proof(1);
 
         let metrics = monitor.metrics();
-        let now = Utc::now();
-        let diff = now.signed_duration_since(metrics.last_updated);
+        let now = crate::clock::now();
+        let diff = now - metrics.last_updated;
         // Timestamp should be recent (within a few seconds)
-        assert!(diff.num_seconds() < 5);
+        assert!(diff.whole_seconds() < 5);
     }
 
     #[test]
@@ -282,7 +283,7 @@ mod tests {
             total_premises: 3000,
             size_mb: 512.5,
             size_change_percent: 5.5,
-            last_updated: Utc::now(),
+            last_updated: crate::clock::now(),
         };
 
         // Verify metrics can be serialized to JSON

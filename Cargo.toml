@@ -75,7 +75,7 @@ strum = { version = "0.28.0", features = ["derive"] }
 ciborium = { version = "0.2", optional = true }
 
 # Chrono for timestamps
-chrono = { version = "0.4", features = ["serde"] }
+time = { version = "0.3", features = ["formatting", "parsing", "serde", "std"] }
 
 # Random number generation (for resilience jitter)
 rand = "0.10"

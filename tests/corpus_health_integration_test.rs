@@ -110,7 +110,6 @@ fn test_corpus_reset() {
 
 #[test]
 fn test_corpus_metrics_serialization() {
-    use chrono::Utc;
     use echidna::diagnostics::CorpusMetrics;
 
     let metrics = CorpusMetrics {
@@ -118,7 +117,7 @@ fn test_corpus_metrics_serialization() {
         total_premises: 15000,
         size_mb: 2048.5,
         size_change_percent: 12.5,
-        last_updated: Utc::now(),
+        last_updated: echidna::clock::now(),
     };
 
     // Verify metrics can be serialized to JSON

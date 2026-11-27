@@ -1,9 +1,10 @@
 // SPDX-License-Identifier: MPL-2.0
 // GNN model training integration with health monitoring
 
-use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
 use std::path::Path;
+use time::format_description::well_known::Rfc3339;
+use time::{OffsetDateTime, UtcOffset};
 
 /// Metrics exported from GNN training pipeline.
 //
@@ -50,8 +51,8 @@ pub fn update_health_with_metrics(
     health.gnn_model_health.nDCG_meets_threshold = metrics.nDCG >= 0.65;
 
     // Update last_trained timestamp
-    if let Ok(ts) = DateTime::parse_from_rfc3339(&metrics.timestamp) {
-        health.gnn_model_health.last_trained = Some(ts.with_timezone(&Utc));
+    if let Ok(ts) = OffsetDateTime::parse(&metrics.timestamp, &Rfc3339) {
+        health.gnn_model_health.last_trained = Some(ts.to_offset(UtcOffset::UTC));
     }
 
     // Recompute degradation with updated GNN metrics
