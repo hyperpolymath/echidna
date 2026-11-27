@@ -1,4 +1,4 @@
-# SPDX-License-Identifier: CC-BY-SA-4.0
+# SPDX-License-Identifier: MPL-2.0
 # Manifest for the proven umbrella gate (schema proven/manifest/v1).
 # Release 0.1.0 of the umbrella enforces sweep 1 (unit, smoke, build, p2p) and
 # ships runners for rust, elixir, go, node, python, zig and shell only.
@@ -11,6 +11,10 @@ command = "cargo test --test proven_smoke"
 
 [categories.p2p.rust]
 command = "cargo test --test p2p_property_tests"
+
+# BLD: compiles the binary with the lockfile frozen and runs tests/proven_build.rs.
+[categories.build.rust]
+command = "cargo test --locked --test proven_build"
 
 # Languages the umbrella has no runner for yet. Each is accounted for with a
 # reason, never dropped silently. They are verified by their own jobs today

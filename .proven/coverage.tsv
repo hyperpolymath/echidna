@@ -1,4 +1,4 @@
-# SPDX-License-Identifier: CC-BY-SA-4.0
+# SPDX-License-Identifier: MPL-2.0
 # Coverage manifest for the proven umbrella (kit/check-coverage.sh). Sweep 1 only: ids not listed are not yet swept.
 # id	status	language	ref
 UT	covered	rust	src/rust/dispatch.rs
