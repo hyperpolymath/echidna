@@ -947,6 +947,7 @@ Work:
   are frozen, since a schema written earlier encodes the wrong types.
 * *6.2 Coprocessor trait (D-G).* Defer until a second consumer needs it. Each
   added trait is a surface to keep correct.
+  _Note 2026-11-19: D-G opened, contract first; see link:../ROADMAP.adoc#decision-2026-11-19-coprocessor-contract[ROADMAP §8]._
 * *6.3 Chapel (D-L).* Keep Chapel opt-in. Default-on only after #161 meets a
   criterion fixed before the run. The TODO states 1.5× on eight or more cores.
   #161 is the real-corpus speedup bench, but its body states no threshold. One
@@ -1034,6 +1035,7 @@ elegant arm under section 2. Blocking phases show which work waits on it.
 | (a) sign off all three together as the sheet proposes; (b) sequence transport
   after type freeze and defer the coprocessor
 | (b): freeze, then schema, then transport. Defer the coprocessor until needed
+  _(Note 2026-11-19: D-G opened, contract first; see link:../ROADMAP.adoc#decision-2026-11-19-coprocessor-contract[ROADMAP §8].)_
 | 6.x
 
 | D-H | Corpus and model storage

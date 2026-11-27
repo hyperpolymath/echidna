@@ -105,8 +105,9 @@ new schema identifier (`echidna.prove.result/2`).
 
 == Status of this feature
 
-* Implemented: `src/rust/prove_contract.rs`, `src/rust/main.rs`
-  (`prove_json_command`), `crates/echidna-core/src/prove_result.rs`.
+* Implemented: `src/rust/prove_contract.rs`, `src/rust/cli/prove.rs`
+  (`prove_json_command`, `emit_prove_result`),
+  `crates/echidna-core/src/prove_result.rs`.
 * Tested: golden JCS bytes for every status (`echidna-core` and
   `prove_contract` unit tests); planted non-canonical payloads are
   rejected; end-to-end runs of the real binary for `verified`, `failed`
