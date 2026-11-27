@@ -28,4 +28,4 @@ permissions:
 
 jobs:
   proven:
-    uses: hyperpolymath/proven-cicd-and-workflows/.github/workflows/proven.yml@95db2ad72d4886b53973859d9343940d66e4dccc # v0.1.1 (tag pending)
+    uses: hyperpolymath/proven-cicd-and-workflows/.github/workflows/proven.yml@9009d1dbc49301d098aa3c921f685de4d2ee8e85 # v0.1.2 (tag pending)
