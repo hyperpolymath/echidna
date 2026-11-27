@@ -1,0 +1,13 @@
+# SPDX-License-Identifier: MPL-2.0
+# Throwaway probe, deleted after the test.
+name: zz-probe-tag
+on:
+  push:
+    branches: [tmp/probe2]
+permissions:
+  contents: read
+jobs:
+  probe:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7.0.1
