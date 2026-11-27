@@ -1,5 +1,5 @@
 # SPDX-License-Identifier: MPL-2.0
-# proven-cicd: proven-lock-gate@0.3.2 sha256:07266ed730561719a7a1f6ac8859b49d1d126d45bcd8390cfaecc9f289789069
+# proven-cicd: proven-lock-gate@0.3.3 sha256:870340e4ad1ce67b9b9f7080d9c99782abf800aeb2a14b0410d0a60eb4a4f547
 # Stamped copy of hyperpolymath/proven-cicd-and-workflows templates/proven-lock-gate.yml.
 # Do not edit by hand. A changed body fails this gate as drift. The applier
 # moves the pinned suite SHA. The line after each `proven-cicd:local-next`
@@ -33,6 +33,7 @@
 name: Proven lock gate
 on:
   pull_request:
+  merge_group:
   push:
     branches: [main]
 permissions:
@@ -50,7 +51,7 @@ jobs:
       - name: Judge actions.lock with the proven suite at its pinned commit
         env:
           # proven-cicd:local-next
-          PROVEN_SHA: "ee40ae1ad4b14ed20392a382612ee92b41fdeace"
+          PROVEN_SHA: "95db2ad72d4886b53973859d9343940d66e4dccc"
           GH_TOKEN: ${{ github.token }}
         run: |
           set -euo pipefail
