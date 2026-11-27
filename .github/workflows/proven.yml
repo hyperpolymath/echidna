@@ -1,0 +1,31 @@
+# SPDX-License-Identifier: MPL-2.0
+# The estate's umbrella gate: ONE caller, ONE required check (`proven / verdict`).
+# Do not copy runner jobs in here: a copy freezes and never receives a fix.
+# New categories, aspects and checks reach this repository when Dependabot
+# (github-actions ecosystem) bumps the pin below. Repo-local content is the
+# repo's own tests and fixtures plus .proven.toml (schema proven/manifest/v1).
+#
+# The job id MUST be `proven` and the job MUST NOT carry `if:` or
+# `continue-on-error` (a skipped gate is void, ER-A8). The pin is a full SHA
+# with its release tag in the comment; never a branch or a bare tag.
+name: Proven
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened, labeled, unlabeled]  # labeled: bench-approved re-runs the gate
+  merge_group:
+  push:
+    branches: [main]
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+  actions: read
+  pull-requests: read  # bench-approved label lookup
+
+jobs:
+  proven:
+    uses: hyperpolymath/proven-cicd-and-workflows/.github/workflows/proven.yml@ee40ae1ad4b14ed20392a382612ee92b41fdeace # v0.1.0

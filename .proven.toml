@@ -1,0 +1,44 @@
+# SPDX-License-Identifier: CC-BY-SA-4.0
+# Manifest for the proven umbrella gate (schema proven/manifest/v1).
+# Release 0.1.0 of the umbrella enforces sweep 1 (unit, smoke, build, p2p) and
+# ships runners for rust, elixir, go, node, python, zig and shell only.
+schema = "proven/manifest/v1"
+
+# The Rust suite carries sweep 1. These are the repo's own tests (tests/proven_*.rs,
+# tests/p2p_property_tests.rs), mapped in .proven/coverage.tsv.
+[categories.smoke.rust]
+command = "cargo test --test proven_smoke"
+
+[categories.p2p.rust]
+command = "cargo test --test p2p_property_tests"
+
+# Languages the umbrella has no runner for yet. Each is accounted for with a
+# reason, never dropped silently. They are verified by their own jobs today
+# (idris2-abi-ci, formal-verification, agda-meta-checker, zig-ffi-ci,
+# chapel-ci); each reason is removed when the umbrella ships that toolchain.
+[languages.ignore.idris2]
+reason = "no umbrella toolchain in 0.1.0; src/abi is type-checked by idris2-abi-ci.yml"
+[languages.ignore.agda]
+reason = "no umbrella toolchain in 0.1.0; checked by agda-meta-checker.yml"
+[languages.ignore.coq]
+reason = "no umbrella toolchain in 0.1.0; proof fixtures checked by formal-verification.yml"
+[languages.ignore.lean]
+reason = "no umbrella toolchain in 0.1.0; proof fixtures checked by formal-verification.yml"
+[languages.ignore.isabelle]
+reason = "no umbrella toolchain in 0.1.0; proof fixtures checked by formal-verification.yml"
+[languages.ignore.julia]
+reason = "no umbrella toolchain in 0.1.0; the Julia ML layer is exercised by live-provers and training scripts"
+[languages.ignore.ocaml]
+reason = "no umbrella toolchain in 0.1.0; a single AffineScript compiler-host file"
+[languages.ignore.c]
+reason = "FFI headers and shims only; compiled and exercised through zig-ffi-ci.yml and the Rust build"
+[languages.ignore.javascript]
+reason = "build tooling only (CLAUDE.md language policy): Tailwind config and the static UI server script"
+[languages.ignore.zig]
+reason = "C-ABI bridge; built and tested by zig-ffi-ci.yml until the umbrella's zig runner covers the FFI layout"
+[languages.ignore.ada]
+reason = "SPARK proof fixtures; checked by spark-theatre-gate.yml"
+[languages.ignore.shell]
+reason = "build and CI glue; shellcheck and the scripts' own tests run in rust-ci and static-analysis-gate"
+[languages.ignore.elixir]
+reason = "docs-site is a documentation generator with no test suite yet; its tests are a sweep 2 item in .proven/coverage.tsv"
