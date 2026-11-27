@@ -1,0 +1,6 @@
+// SPDX-License-Identifier: CC-BY-SA-4.0
+= Estate master schedule
+
+The canonical schedule is
+https://github.com/hyperpolymath/proven-cicd-and-workflows/blob/main/docs/ESTATE-MASTER-SCHEDULE.adoc[docs/ESTATE-MASTER-SCHEDULE.adoc]
+in proven-cicd-and-workflows. This repo keeps no copy, so it cannot drift.
