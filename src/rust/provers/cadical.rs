@@ -35,7 +35,7 @@ impl CaDiCaLBackend {
 
     /// Parse DIMACS CNF content into clause sets.
     ///
-    /// Returns (num_vars, num_clauses, clauses) where each clause is a Vec<i64>
+    /// Returns (num_vars, num_clauses, clauses) where each clause is a `Vec<i64>`
     /// of signed literals (positive = variable, negative = negation).
     fn parse_dimacs(content: &str) -> Result<(usize, usize, Vec<Vec<i64>>)> {
         let mut num_vars: usize = 0;
@@ -171,7 +171,7 @@ impl CaDiCaLBackend {
         }
     }
 
-    /// Convert a clause (Vec<i64>) into a Term representation
+    /// Convert a clause (`Vec<i64>`) into a Term representation
     fn clause_to_term(clause: &[i64]) -> Term {
         if clause.len() == 1 {
             Term::Const(clause[0].to_string())

@@ -229,7 +229,7 @@ impl DRealBackend {
         Ok(DRealResult::Output(trimmed.to_string()))
     }
 
-    /// Extract the delta value from dReal's "delta-sat with delta = <value>" output
+    /// Extract the delta value from dReal's "delta-sat with delta = `<value>`" output
     ///
     /// Falls back to the configured precision if parsing fails.
     fn extract_delta_value(&self, output: &str) -> f64 {
