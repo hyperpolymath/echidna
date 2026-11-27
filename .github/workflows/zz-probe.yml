@@ -1,0 +1,14 @@
+# SPDX-License-Identifier: MPL-2.0
+# Throwaway probe: does Swatinem/rust-cache@v2.9.3 start? Deleted after the test.
+name: zz-probe
+on:
+  push:
+    branches: [tmp/startup-failure-probe]
+permissions:
+  contents: read
+jobs:
+  probe:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7.0.1
+      - uses: Swatinem/rust-cache@v2.9.3
