@@ -29,7 +29,6 @@ Files: src/*
  docs-site/*
  generated/*
  schemas/*
- archive/*
  training_data/*
  deploy/*
  container/*

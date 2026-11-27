@@ -531,12 +531,6 @@ git grep -n 'docs-site' -- .github/workflows Justfile '*.toml' '*.sh'
 * `+container/compose.toml+` healthcheck probed `+/health+` and
   `+container/vordr.toml+` probed `+/health+` and `+/ready+`; the core server
   serves `+/api/health+` and never had `+/ready+`.
-* `+rules/security_learning.lgt+` had no in-tree consumer;
-  quarantined to `+archive/logtalk/+` with a `+DEAD SOURCE+` header. See that
-  directory's README.
-* `+docs/ECOSYSTEM-INTEGRATION.adoc+` and
-  `+echidna-playground/.machine_readable/descriptiles/NEUROSYM.a2ml+` claimed
-  Hypatia emits Logtalk rules. It emits Elixir rules.
 
 '''''
 
