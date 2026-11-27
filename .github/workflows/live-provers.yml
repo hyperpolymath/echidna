@@ -86,7 +86,7 @@ jobs:
           toolchain: stable
 
       - name: Cache Cargo
-        uses: Swatinem/rust-cache@v2.9.3
+        uses: swatinem/rust-cache@v2.9.3
 
       - name: Provision prover (${{ matrix.backend }})
         run: |
@@ -172,7 +172,7 @@ jobs:
         with:
           toolchain: stable
       - name: Cache Cargo
-        uses: Swatinem/rust-cache@v2.9.3
+        uses: swatinem/rust-cache@v2.9.3
       # Blocking since the CI-4 ruling (#416). In the nightly runs up to
       # 2026-11-09 only the Isabelle download failed in this step; Isabelle
       # now installs through scripts/ci/install-isabelle.sh, so any
@@ -320,7 +320,7 @@ jobs:
         with:
           toolchain: stable
       - name: Cache Cargo
-        uses: Swatinem/rust-cache@v2.9.3
+        uses: swatinem/rust-cache@v2.9.3
       - name: Provision ${{ matrix.backend }}
         run: |
           set -euo pipefail
