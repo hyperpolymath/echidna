@@ -1,6 +1,6 @@
 # SPDX-License-Identifier: MPL-2.0
 # Throwaway probe, deleted after the test.
-name: zz-probe-noactions
+name: zz-probe-sha
 on:
   push:
     branches: [tmp/startup-failure-probe]
@@ -10,4 +10,4 @@ jobs:
   probe:
     runs-on: ubuntu-latest
     steps:
-      - run: echo hello
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
